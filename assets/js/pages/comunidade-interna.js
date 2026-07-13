@@ -69,9 +69,6 @@
 
   applyIncomingTransitionSnapshot();
   var messageList = root.querySelector('[data-community-message-list]');
-  var pinnedList = root.querySelector('.community-room-pinned-list');
-  var pinnedBanner = null;
-  var activeCommunityPinnedIndex = 0;
   var composer = root.querySelector('[data-community-composer]');
   var composerInput = root.querySelector('[data-community-composer-input]');
   var mentionPicker = root.querySelector('[data-community-mention-picker]');
@@ -252,11 +249,6 @@
   var currentChannelId = 'geral';
   var manageCoverState = { name: '', type: '', dataUrl: '' };
 
-  if (pinnedList) {
-    Array.prototype.slice.call(pinnedList.children).forEach(function (item) {
-      item.dataset.communityPinnedBaseline = 'true';
-    });
-  }
 
   function safeJsonParse(value) {
     if (!value) return null;
@@ -810,7 +802,7 @@
   }
 
 
-  var COMMUNITY_PERMISSION_KEYS = ['pinMessages', 'deleteMessages', 'addMembers', 'removeMembers', 'editCommunity', 'manageRoles', 'manageChannels', 'mentionRoles', 'bypassSlowMode', 'moderateMembers'];
+  var COMMUNITY_PERMISSION_KEYS = ['deleteMessages', 'addMembers', 'removeMembers', 'editCommunity', 'manageRoles', 'manageChannels', 'mentionRoles', 'bypassSlowMode', 'moderateMembers'];
 
   function normalizePermissions(permissions) {
     var normalized = {};
@@ -822,8 +814,8 @@
 
   function getDefaultRoles() {
     return [
-      { id: 'owner', name: 'Administrador', color: '#0f6f64', system: true, permissions: normalizePermissions({ pinMessages: true, deleteMessages: true, addMembers: true, removeMembers: true, editCommunity: true, manageRoles: true, manageChannels: true, mentionRoles: true, bypassSlowMode: true, moderateMembers: true }) },
-      { id: 'moderator', name: 'Moderador', color: '#2167ae', system: true, permissions: normalizePermissions({ pinMessages: true, deleteMessages: true, addMembers: true, removeMembers: true, moderateMembers: true }) },
+      { id: 'owner', name: 'Administrador', color: '#0f6f64', system: true, permissions: normalizePermissions({ deleteMessages: true, addMembers: true, removeMembers: true, editCommunity: true, manageRoles: true, manageChannels: true, mentionRoles: true, bypassSlowMode: true, moderateMembers: true }) },
+      { id: 'moderator', name: 'Moderador', color: '#2167ae', system: true, permissions: normalizePermissions({ deleteMessages: true, addMembers: true, removeMembers: true, moderateMembers: true }) },
       { id: 'member', name: 'Membro', color: '#64748b', system: true, permissions: normalizePermissions({}) }
     ];
   }
@@ -2098,78 +2090,152 @@
       menuButton.dataset.communityMemberMenuToggle = member.id;
       menuButton.setAttribute('aria-label', 'Ações de ' + String(member.name || 'membro'));
       menuButton.setAttribute('aria-expanded', 'false');
-      menuButton.textContent = '•••';
+      var menuDomId = 'community-member-menu-' + String(member.id || '').replace(/[^a-zA-Z0-9_-]/g, '-');
+      menuButton.setAttribute('aria-controls', menuDomId);
+      menuButton.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.5"></circle><circle cx="12" cy="12" r="1.5"></circle><circle cx="19" cy="12" r="1.5"></circle></svg>';
 
       var menu = document.createElement('div');
-      menu.className = 'community-member-directory__menu';
+      menu.id = menuDomId;
+      menu.className = 'community-member-directory__menu doke-action-menu';
       menu.dataset.communityMemberMenu = member.id;
       menu.hidden = true;
 
+      function createMenuButton(label, className) {
+        var button = document.createElement('button');
+        button.type = 'button';
+        button.className = className || 'doke-action-menu__item doke-btn doke-btn--ghost';
+        button.textContent = label;
+        return button;
+      }
+
+      function createViewHeader(title) {
+        var header = document.createElement('header');
+        header.className = 'community-member-action-sheet__header';
+        var back = document.createElement('button');
+        back.type = 'button';
+        back.className = 'community-member-action-sheet__back doke-icon-btn doke-icon-btn--flat';
+        back.dataset.communityMemberMenuViewBack = 'main';
+        back.setAttribute('aria-label', 'Voltar às ações');
+        back.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 6-6 6 6 6"></path></svg>';
+        var heading = document.createElement('strong');
+        heading.textContent = title;
+        header.append(back, heading);
+        return { element: header, heading: heading };
+      }
+
+      var mainView = document.createElement('div');
+      mainView.className = 'community-member-action-sheet__view community-member-action-sheet__view--main';
+      mainView.dataset.communityMemberMenuView = 'main';
+
       if (canManageRoles) {
-        var roleField = document.createElement('label');
-        roleField.className = 'community-member-directory__field';
-        var roleLabel = document.createElement('span');
-        roleLabel.textContent = 'Cargos';
-        roleField.append(roleLabel, createRoleChecklist(member));
-        menu.appendChild(roleField);
+        var rolesButton = createMenuButton('Alterar cargos');
+        rolesButton.dataset.communityMemberMenuViewOpen = 'roles';
+        mainView.appendChild(rolesButton);
       }
 
       if (canModerateMember) {
-        var discipline = document.createElement('div');
-        discipline.className = 'community-member-directory__discipline-actions';
+        var muteButton = createMenuButton('Silenciar');
+        muteButton.dataset.communityMemberMenuViewOpen = 'moderation';
+        muteButton.dataset.communityMemberModerationAction = 'mute';
+        var restrictButton = createMenuButton('Restringir');
+        restrictButton.dataset.communityMemberMenuViewOpen = 'moderation';
+        restrictButton.dataset.communityMemberModerationAction = 'restrict';
+        mainView.append(muteButton, restrictButton);
+      }
+
+      if (canModerateMember || canRemoveMember) {
+        var separator = document.createElement('span');
+        separator.className = 'doke-action-menu__separator';
+        separator.setAttribute('aria-hidden', 'true');
+        mainView.appendChild(separator);
+      }
+
+      if (canModerateMember) {
+        var banButton = createMenuButton('Banir membro', 'doke-action-menu__item doke-action-menu__item--danger doke-btn doke-btn--ghost');
+        banButton.dataset.communityMemberBan = member.id;
+        mainView.appendChild(banButton);
+      }
+
+      if (canRemoveMember) {
+        var remove = createMenuButton('Remover da comunidade', 'community-member-directory__remove doke-action-menu__item doke-action-menu__item--danger doke-btn doke-btn--ghost');
+        remove.dataset.communityMemberRemove = member.id;
+        mainView.appendChild(remove);
+      }
+
+      menu.appendChild(mainView);
+
+      if (canManageRoles) {
+        var rolesView = document.createElement('section');
+        rolesView.className = 'community-member-action-sheet__view community-member-action-sheet__view--roles';
+        rolesView.dataset.communityMemberMenuView = 'roles';
+        rolesView.hidden = true;
+        var rolesHeader = createViewHeader('Alterar cargos');
+        rolesView.appendChild(rolesHeader.element);
+        var roleField = document.createElement('div');
+        roleField.className = 'community-member-directory__field';
+        roleField.appendChild(createRoleChecklist(member));
+        rolesView.appendChild(roleField);
+        menu.appendChild(rolesView);
+      }
+
+      if (canModerateMember) {
+        var moderationView = document.createElement('section');
+        moderationView.className = 'community-member-action-sheet__view community-member-action-sheet__view--moderation';
+        moderationView.dataset.communityMemberMenuView = 'moderation';
+        moderationView.hidden = true;
+        var moderationHeader = createViewHeader('Silenciar membro');
+        moderationHeader.heading.dataset.communityMemberModerationTitle = member.id;
+        moderationView.appendChild(moderationHeader.element);
+
+        var moderationCopy = document.createElement('p');
+        moderationCopy.className = 'community-member-action-sheet__description';
+        moderationCopy.textContent = 'Defina a duração e onde a ação deve valer.';
+        moderationView.appendChild(moderationCopy);
+
         var disciplineOptions = document.createElement('div');
         disciplineOptions.className = 'community-member-directory__discipline-options';
         var durationSelect = document.createElement('select');
         durationSelect.className = 'doke-select';
         durationSelect.dataset.communityDisciplineDuration = member.id;
         [['15m', '15 minutos'], ['1h', '1 hora'], ['6h', '6 horas'], ['24h', '24 horas'], ['3d', '3 dias'], ['7d', '7 dias'], ['30d', '30 dias'], ['custom', 'Personalizado']].forEach(function (optionData) {
-          var option = document.createElement('option'); option.value = optionData[0]; option.textContent = optionData[1]; durationSelect.appendChild(option);
+          var option = document.createElement('option');
+          option.value = optionData[0];
+          option.textContent = optionData[1];
+          durationSelect.appendChild(option);
         });
         var scopeSelect = document.createElement('select');
         scopeSelect.className = 'doke-select';
         scopeSelect.dataset.communityDisciplineScope = member.id;
         [['community', 'Toda a comunidade'], ['channel', 'Canal atual']].forEach(function (optionData) {
-          var option = document.createElement('option'); option.value = optionData[0]; option.textContent = optionData[1]; scopeSelect.appendChild(option);
+          var option = document.createElement('option');
+          option.value = optionData[0];
+          option.textContent = optionData[1];
+          scopeSelect.appendChild(option);
         });
         disciplineOptions.append(durationSelect, scopeSelect);
-        discipline.appendChild(disciplineOptions);
-        [['mute', 'Silenciar'], ['restrict', 'Restringir']].forEach(function (entry) {
-          var actionButton = document.createElement('button');
-          actionButton.type = 'button';
-          actionButton.className = 'doke-btn doke-btn--ghost doke-btn--sm';
-          actionButton.dataset.communityMemberDiscipline = entry[0];
-          actionButton.dataset.communityMemberId = member.id;
-          actionButton.textContent = entry[1];
-          discipline.appendChild(actionButton);
-        });
-        if (getMemberDisciplineLabel(member)) {
-          var clearButton = document.createElement('button');
-          clearButton.type = 'button'; clearButton.className = 'doke-btn doke-btn--ghost doke-btn--sm';
-          clearButton.dataset.communityMemberDiscipline = 'clear'; clearButton.dataset.communityMemberId = member.id;
-          clearButton.textContent = 'Remover restrição'; discipline.appendChild(clearButton);
-        }
-        var banButton = document.createElement('button');
-        banButton.type = 'button'; banButton.className = 'doke-btn doke-btn--danger doke-btn--sm';
-        banButton.dataset.communityMemberBan = member.id; banButton.textContent = 'Banir membro';
-        discipline.appendChild(banButton);
-        menu.appendChild(discipline);
-      }
+        moderationView.appendChild(disciplineOptions);
 
-      if (canRemoveMember) {
-        var remove = document.createElement('button');
-        remove.className = 'community-member-directory__remove doke-btn doke-btn--danger doke-btn--sm';
-        remove.type = 'button';
-        remove.dataset.communityMemberRemove = member.id;
-        remove.textContent = 'Remover da comunidade';
-        menu.appendChild(remove);
+        var moderationSubmit = createMenuButton('Silenciar membro', 'community-member-action-sheet__submit doke-btn doke-btn--primary');
+        moderationSubmit.dataset.communityMemberDiscipline = 'mute';
+        moderationSubmit.dataset.communityMemberId = member.id;
+        moderationSubmit.dataset.communityMemberModerationSubmit = member.id;
+        moderationView.appendChild(moderationSubmit);
+
+        if (getMemberDisciplineLabel(member)) {
+          var clearButton = createMenuButton('Remover restrição', 'community-member-action-sheet__clear doke-btn doke-btn--secondary');
+          clearButton.dataset.communityMemberDiscipline = 'clear';
+          clearButton.dataset.communityMemberId = member.id;
+          moderationView.appendChild(clearButton);
+        }
+        menu.appendChild(moderationView);
       }
 
       actions.append(menuButton, menu);
       item.appendChild(actions);
-    } else {
+    } else if (!isOwner) {
       var roleBadge = document.createElement('span');
       roleBadge.className = 'community-member-directory__role-badge';
-      roleBadge.textContent = isOwner ? 'Dono' : getMemberRoleLabels(member).join(' · ');
+      roleBadge.textContent = getMemberRoleLabels(member).join(' · ');
       item.appendChild(roleBadge);
     }
 
@@ -3243,7 +3309,29 @@
     }
   }
 
+  function resetMemberActionMenu(menu) {
+    if (!menu) return;
+    menu.querySelectorAll('[data-community-member-menu-view]').forEach(function (view) {
+      view.hidden = view.dataset.communityMemberMenuView !== 'main';
+    });
+  }
+
+  function closeMemberActionMenus(exceptMenu) {
+    if (!memberList) return;
+    memberList.querySelectorAll('[data-community-member-menu]').forEach(function (menu) {
+      if (menu === exceptMenu) return;
+      menu.hidden = true;
+      resetMemberActionMenu(menu);
+    });
+    memberList.querySelectorAll('[data-community-member-menu-toggle]').forEach(function (toggle) {
+      var controlledId = toggle.getAttribute('aria-controls');
+      if (exceptMenu && controlledId === exceptMenu.id) return;
+      toggle.setAttribute('aria-expanded', 'false');
+    });
+  }
+
   function closeFloatingMenus() {
+    closeMemberActionMenus();
     if (filterMenu) filterMenu.hidden = true;
     filterToggles.forEach(function (toggle) { toggle.setAttribute('aria-expanded', 'false'); });
     if (actionsMenu) actionsMenu.hidden = true;
@@ -3607,7 +3695,7 @@
   }
 
   function formatAuditEvent(event) {
-    var labels = { messageEdited: 'editou uma mensagem', messageDeleted: 'removeu uma mensagem', messageRestored: 'restaurou uma mensagem', messagePinned: 'fixou uma mensagem', messageUnpinned: 'desafixou uma mensagem', memberMuted: 'silenciou um membro', memberRestricted: 'restringiu um membro', memberDisciplineCleared: 'removeu uma restrição', memberBanned: 'baniu um membro', memberUnbanned: 'desbaniu um membro', memberKicked: 'expulsou um membro', 'message-security-violation': 'violou uma regra de segurança', disciplineExpiredCleanup: 'limpou punições expiradas' };
+    var labels = { messageEdited: 'editou uma mensagem', messageDeleted: 'removeu uma mensagem', messageRestored: 'restaurou uma mensagem', memberMuted: 'silenciou um membro', memberRestricted: 'restringiu um membro', memberDisciplineCleared: 'removeu uma restrição', memberBanned: 'baniu um membro', memberUnbanned: 'desbaniu um membro', memberKicked: 'expulsou um membro', 'message-security-violation': 'violou uma regra de segurança', disciplineExpiredCleanup: 'limpou punições expiradas' };
     return labels[event.type] || 'realizou uma ação administrativa';
   }
 
@@ -3837,13 +3925,12 @@
       message.deletedByAccountKey = profile.accountKey || profile.email || profile.id || '';
       message.deletedByName = profile.name || 'Membro';
       message.deletionReason = reason;
-      message.pinned = false;
       return message;
     });
     if (!updated) return false;
     appendCommunityAuditEvent('messageDeleted', { messageId: messageId, targetAuthorName: record.author || 'Membro', reason: reason, moderatorAction: isModeratorAction });
     renderPersistedMessagesForChannel(currentChannelId || 'geral');
-    renderPinnedPanel(); renderCommunityAuditLog();
+    renderCommunityAuditLog();
     return true;
   }
 
@@ -3892,16 +3979,8 @@
     if (actionName === 'forward') return forwardCommunityMessage(messageId);
     if (actionName === 'history') { showMessageEditHistory(messageId); return true; }
     if (String(actionName || '').indexOf('react:') === 0) return toggleMessageReaction(messageId, String(actionName).slice(6));
-    if (actionName === 'pin' && !canCommunity('pinMessages')) return null;
     if (!messageId || !actionName) return null;
     var updated = updateCommunityMessageRecord(messageId, function (message) {
-      if (actionName === 'pin') {
-        message.pinned = !message.pinned;
-        message.pinnedAt = message.pinned ? new Date().toISOString() : '';
-        var actor = getCurrentUserProfile();
-        message.pinnedByAccountKey = message.pinned ? (actor.accountKey || actor.email || actor.id || '') : '';
-        message.pinnedByName = message.pinned ? (actor.name || 'Membro') : '';
-      }
       if (actionName === 'useful') {
         var profile = getCurrentUserProfile();
         var accountKey = String(profile.accountKey || profile.email || profile.id || '').trim().toLowerCase();
@@ -3915,116 +3994,14 @@
       return message;
     });
     if (updated) {
-      if (actionName === 'pin') appendCommunityAuditEvent(updated.pinned ? 'messagePinned' : 'messageUnpinned', { messageId: messageId });
       var article = messageList && messageList.querySelector('[data-community-message-id="' + CSS.escape(messageId) + '"]');
       if (article) syncMessageActionState(article, updated);
-      renderPinnedPanel();
-      renderCommunityPinnedBanner();
       updateRoomStats();
     }
     return updated;
   }
 
-  function ensureCommunityPinnedBanner() {
-    if (pinnedBanner || !messageList || !messageList.parentElement) return pinnedBanner;
-    pinnedBanner = document.createElement('div');
-    pinnedBanner.className = 'community-pinned-banner';
-    pinnedBanner.dataset.communityPinnedBanner = 'true';
-    pinnedBanner.hidden = true;
-    pinnedBanner.innerHTML = '<button class="community-pinned-banner__main" type="button" data-community-pinned-jump><span class="community-pinned-banner__icon" aria-hidden="true">⌖</span><span class="community-pinned-banner__content"><strong data-community-pinned-author>Mensagem fixada</strong><span data-community-pinned-preview></span></span></button><span class="community-pinned-banner__position" data-community-pinned-position></span><span class="community-pinned-banner__nav"><button type="button" class="doke-icon-btn doke-icon-btn--flat" data-community-pinned-prev aria-label="Mensagem fixada anterior">‹</button><button type="button" class="doke-icon-btn doke-icon-btn--flat" data-community-pinned-next aria-label="Próxima mensagem fixada">›</button></span>';
-    messageList.parentElement.insertBefore(pinnedBanner, messageList);
-    pinnedBanner.querySelector('[data-community-pinned-jump]').addEventListener('click', function () {
-      var id = pinnedBanner.dataset.communityMessageId;
-      if (!id || !messageList) return;
-      var article = messageList.querySelector('[data-community-message-id="' + CSS.escape(id) + '"]');
-      if (!article) return;
-      article.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      article.classList.remove('is-pin-highlighted');
-      requestAnimationFrame(function () { article.classList.add('is-pin-highlighted'); });
-      window.setTimeout(function () { article.classList.remove('is-pin-highlighted'); }, 2600);
-    });
-    pinnedBanner.querySelector('[data-community-pinned-prev]').addEventListener('click', function () { moveCommunityPinnedBanner(-1); });
-    pinnedBanner.querySelector('[data-community-pinned-next]').addEventListener('click', function () { moveCommunityPinnedBanner(1); });
-    return pinnedBanner;
-  }
-
-  function renderCommunityPinnedBanner() {
-    var banner = ensureCommunityPinnedBanner();
-    if (!banner) return;
-    var pinned = getPinnedMessagesForCurrentChannel();
-    banner.hidden = pinned.length === 0;
-    if (!pinned.length) return;
-    activeCommunityPinnedIndex = Math.min(activeCommunityPinnedIndex, pinned.length - 1);
-    var record = pinned[activeCommunityPinnedIndex];
-    banner.dataset.communityMessageId = record.id || '';
-    var author = banner.querySelector('[data-community-pinned-author]');
-    var preview = banner.querySelector('[data-community-pinned-preview]');
-    var position = banner.querySelector('[data-community-pinned-position]');
-    var prev = banner.querySelector('[data-community-pinned-prev]');
-    var next = banner.querySelector('[data-community-pinned-next]');
-    if (author) author.textContent = (record.author || 'Você') + ':';
-    if (preview) preview.textContent = getMessagePreview(record);
-    if (position) position.textContent = (activeCommunityPinnedIndex + 1) + '/' + pinned.length;
-    if (prev) prev.disabled = pinned.length < 2;
-    if (next) next.disabled = pinned.length < 2;
-  }
-
-  function moveCommunityPinnedBanner(direction) {
-    var pinned = getPinnedMessagesForCurrentChannel();
-    if (!pinned.length) return;
-    activeCommunityPinnedIndex = (activeCommunityPinnedIndex + direction + pinned.length) % pinned.length;
-    renderCommunityPinnedBanner();
-  }
-
-  function getPinnedMessagesForCurrentChannel() {
-    return getStoredChannelMessages(currentChannelId).filter(function (message) {
-      return message && message.pinned;
-    }).sort(function (a, b) {
-      return String(b.pinnedAt || b.createdAt || '').localeCompare(String(a.pinnedAt || a.createdAt || ''));
-    });
-  }
-
-  function getMessagePreview(record) {
-    if (!record) return 'Mensagem fixada na comunidade.';
-    if (record.type === 'audio') return 'Áudio enviado no canal.';
-    if (record.attachmentKind === 'image' || record.attachmentDataUrl) return 'Imagem enviada.';
-    if (record.attachmentName && !record.text) return getAttachmentDisplayName(record) + '.';
-    return String(record.text || getAttachmentDisplayName(record) || 'Mensagem enviada.').trim();
-  }
-
-  function createPinnedPanelItem(record) {
-    var item = document.createElement('article');
-    item.dataset.communityLocalPinned = 'true';
-    item.dataset.communityMessageId = record.id;
-
-    var label = document.createElement('span');
-    label.textContent = record.channelName || currentChannelName || 'Canal';
-
-    var title = document.createElement('strong');
-    title.textContent = record.author || 'Você';
-
-    var paragraph = document.createElement('p');
-    paragraph.textContent = getMessagePreview(record);
-
-    item.append(label, title, paragraph);
-    return item;
-  }
-
-  function renderPinnedPanel() {
-    renderCommunityPinnedBanner();
-    if (!pinnedList) return;
-    pinnedList.innerHTML = '';
-    var pinned = getPinnedMessagesForCurrentChannel();
-    if (!pinned.length) {
-      pinnedList.appendChild(createPanelEmptyState('Nenhum item fixado', 'Fixe mensagens importantes para aparecerem aqui.'));
-      return;
-    }
-    pinned.forEach(function (record) {
-      pinnedList.appendChild(createPinnedPanelItem(record));
-    });
-  }
-
-  function clearRenderedLocalMessages() {
+function clearRenderedLocalMessages() {
     if (!messageList) return;
     Array.prototype.slice.call(messageList.querySelectorAll('[data-community-local-message], [data-community-thread-empty]')).forEach(function (message) {
       message.remove();
@@ -4042,7 +4019,6 @@
     if (!messageList) return;
     clearRenderedLocalMessages();
     var records = getStoredChannelMessages(channelId || currentChannelId);
-    renderCommunityPinnedBanner();
     records.forEach(function (record, index) {
       var element = createMessageFromRecord(record, records, index);
       if (element) {
@@ -4054,7 +4030,6 @@
     if (!records.length) {
       messageList.appendChild(createThreadEmptyState());
     }
-    renderPinnedPanel();
     updateRoomStats();
     focusRequestedMessage();
     applyMessageSearchFilters();
@@ -4218,16 +4193,8 @@
     useful.setAttribute('role', 'menuitem');
     useful.textContent = record.usefulByMe ? 'Remover útil' : 'Marcar como útil';
 
-    var pin = document.createElement('button');
-    pin.className = 'doke-btn doke-btn--ghost';
-    pin.type = 'button';
-    pin.dataset.communityContextAction = 'pin';
-    pin.dataset.communityMessageId = messageId;
-    pin.setAttribute('role', 'menuitem');
-    pin.textContent = record.pinned ? 'Desfixar mensagem' : 'Fixar mensagem';
 
     menu.appendChild(useful);
-    if (canCommunity('pinMessages')) menu.appendChild(pin);
 
     var replyAction = document.createElement('button');
     replyAction.className='doke-btn doke-btn--ghost'; replyAction.type='button'; replyAction.dataset.communityContextAction='reply'; replyAction.dataset.communityMessageId=messageId; replyAction.setAttribute('role','menuitem'); replyAction.textContent='Responder';
@@ -4270,12 +4237,6 @@
 
   function syncMessageActionState(article, record) {
     if (!article || !record) return;
-    article.classList.toggle('is-community-message-pinned', Boolean(record.pinned));
-    var pin = article.querySelector('[data-community-message-action="pin"]');
-    if (pin) {
-      pin.textContent = record.pinned ? 'Desfixar' : 'Fixar';
-      pin.setAttribute('aria-pressed', String(Boolean(record.pinned)));
-    }
     var useful = article.querySelector('[data-community-message-action="useful"]');
     if (useful) {
       var usefulCount = Number(record.usefulCount || 0);
@@ -4483,16 +4444,8 @@
 
     if (options.recordId) {
       article.dataset.communityMessageId = options.recordId;
-      article.classList.toggle('is-community-message-pinned', Boolean(options.pinned));
-      if (options.pinned) {
-        var pinnedBadge = document.createElement('span');
-        pinnedBadge.className = 'community-message-pinned-badge';
-        pinnedBadge.textContent = '⌖ Fixada';
-        bubble.appendChild(pinnedBadge);
-      }
       appendCommunityMessageActions(bubble, {
         id: options.recordId,
-        pinned: options.pinned,
         usefulCount: options.usefulCount,
         usefulByMe: options.usefulByMe
       });
@@ -4536,16 +4489,8 @@
     bubble.appendChild(audio);
     if (options.recordId) {
       article.dataset.communityMessageId = options.recordId;
-      article.classList.toggle('is-community-message-pinned', Boolean(options.pinned));
-      if (options.pinned) {
-        var pinnedBadge = document.createElement('span');
-        pinnedBadge.className = 'community-message-pinned-badge';
-        pinnedBadge.textContent = '⌖ Fixada';
-        bubble.appendChild(pinnedBadge);
-      }
       appendCommunityMessageActions(bubble, {
         id: options.recordId,
-        pinned: options.pinned,
         usefulCount: options.usefulCount,
         usefulByMe: options.usefulByMe
       });
@@ -4629,7 +4574,6 @@
         dataUrl: record.attachmentDataUrl || ''
       },
       recordId: record.id,
-      pinned: Boolean(record.pinned),
       usefulCount: Number(record.usefulCount || 0),
       usefulByMe: isMessageUsefulByCurrentUser(record),
       mine: isMessageOwnedByCurrentUser(record),
@@ -5279,12 +5223,21 @@
         panel.classList.add('is-open');
         panel.setAttribute('aria-hidden', 'false');
         if (panelName === 'events') renderCommunityEvents();
+        if (panelName === 'members') {
+          var memberPanelBody = panel.querySelector('.community-room-panel__body');
+          if (memberPanelBody) memberPanelBody.scrollTop = 0;
+          window.requestAnimationFrame(function () {
+            var memberPanelSearch = panel.querySelector('[data-community-member-search]');
+            if (memberPanelSearch) memberPanelSearch.focus({ preventScroll: true });
+          });
+        }
       }
     });
   });
 
   root.querySelectorAll('[data-community-panel-close]').forEach(function (button) {
     button.addEventListener('click', function () {
+      closeMemberActionMenus();
       root.querySelectorAll('[data-community-panel]').forEach(function (panel) {
         panel.classList.remove('is-open');
         panel.setAttribute('aria-hidden', 'true');
@@ -5467,7 +5420,7 @@
     memberAddToggle.addEventListener('click', function () {
       var shouldOpen = memberCandidates.hidden;
       memberCandidates.hidden = !shouldOpen;
-      memberAddToggle.textContent = shouldOpen ? 'Ocultar contatos' : 'Adicionar das mensagens';
+      memberAddToggle.textContent = shouldOpen ? 'Ocultar opções' : 'Adicionar membro';
       memberAddToggle.setAttribute('aria-expanded', String(shouldOpen));
       if (shouldOpen) {
         renderMemberCandidates();
@@ -5599,18 +5552,48 @@
       if (toggle && memberList.contains(toggle)) {
         var menuId = String(toggle.dataset.communityMemberMenuToggle || '');
         var menu = memberList.querySelector('[data-community-member-menu="' + menuId.replace(/"/g, '\"') + '"]');
-        memberList.querySelectorAll('[data-community-member-menu]').forEach(function (candidate) {
-          if (candidate !== menu) candidate.hidden = true;
-        });
-        memberList.querySelectorAll('[data-community-member-menu-toggle]').forEach(function (candidate) {
-          if (candidate !== toggle) candidate.setAttribute('aria-expanded', 'false');
-        });
+        var shouldOpen = Boolean(menu && menu.hidden);
+        closeMemberActionMenus(menu);
         if (menu) {
-          menu.hidden = !menu.hidden;
-          toggle.setAttribute('aria-expanded', String(!menu.hidden));
+          resetMemberActionMenu(menu);
+          menu.hidden = !shouldOpen;
+          toggle.setAttribute('aria-expanded', String(shouldOpen));
         }
         return;
       }
+
+      var viewOpenButton = event.target.closest('[data-community-member-menu-view-open]');
+      if (viewOpenButton && memberList.contains(viewOpenButton)) {
+        var actionMenu = viewOpenButton.closest('[data-community-member-menu]');
+        var requestedView = String(viewOpenButton.dataset.communityMemberMenuViewOpen || 'main');
+        if (!actionMenu) return;
+        actionMenu.querySelectorAll('[data-community-member-menu-view]').forEach(function (view) {
+          view.hidden = view.dataset.communityMemberMenuView !== requestedView;
+        });
+        if (requestedView === 'moderation') {
+          var moderationAction = String(viewOpenButton.dataset.communityMemberModerationAction || 'mute');
+          var moderationTitle = actionMenu.querySelector('[data-community-member-moderation-title]');
+          var moderationSubmit = actionMenu.querySelector('[data-community-member-moderation-submit]');
+          if (moderationTitle) moderationTitle.textContent = moderationAction === 'restrict' ? 'Restringir membro' : 'Silenciar membro';
+          if (moderationSubmit) {
+            moderationSubmit.dataset.communityMemberDiscipline = moderationAction;
+            moderationSubmit.textContent = moderationAction === 'restrict' ? 'Restringir membro' : 'Silenciar membro';
+          }
+        }
+        var viewBack = actionMenu.querySelector('[data-community-member-menu-view="' + requestedView + '"] [data-community-member-menu-view-back]');
+        if (viewBack) viewBack.focus();
+        return;
+      }
+
+      var viewBackButton = event.target.closest('[data-community-member-menu-view-back]');
+      if (viewBackButton && memberList.contains(viewBackButton)) {
+        var parentMenu = viewBackButton.closest('[data-community-member-menu]');
+        resetMemberActionMenu(parentMenu);
+        var firstAction = parentMenu && parentMenu.querySelector('[data-community-member-menu-view="main"] .doke-action-menu__item');
+        if (firstAction) firstAction.focus();
+        return;
+      }
+
       var disciplineButton = event.target.closest('[data-community-member-discipline]');
       if (disciplineButton && memberList.contains(disciplineButton)) {
         var disciplineAction = disciplineButton.dataset.communityMemberDiscipline;
@@ -6346,7 +6329,7 @@
 
   document.addEventListener('click', function (event) {
     if (root.contains(event.target)) {
-      var insideFloating = event.target.closest('[data-community-filter-toggle], [data-community-filter-menu], [data-community-more-toggle], [data-community-actions-menu], [data-community-attach], [data-community-message-menu]');
+      var insideFloating = event.target.closest('[data-community-filter-toggle], [data-community-filter-menu], [data-community-more-toggle], [data-community-actions-menu], [data-community-attach], [data-community-message-menu], [data-community-member-menu-toggle], [data-community-member-menu]');
       if (!insideFloating) closeFloatingMenus();
     }
   });
@@ -6411,8 +6394,6 @@
     if (event.key === COMMUNITY_MESSAGES_STORAGE_KEY) {
       renderPersistedMessagesForChannel(currentChannelId || 'geral');
       if (!document.hidden) markChannelRead(currentChannelId || 'geral');
-      renderPinnedPanel();
-      renderCommunityPinnedBanner();
       updateRoomStats();
       return;
     }

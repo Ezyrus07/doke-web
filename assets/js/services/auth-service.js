@@ -304,6 +304,7 @@
       headline: source.headline || source.profession || user?.profession || '',
       profession: source.profession || source.headline || user?.profession || '',
       bio: source.bio || user?.bio || '',
+      interests: Array.isArray(source.interests) ? source.interests.slice(0, 8) : [],
       city: source.city || user?.city || '',
       state: source.state || user?.state || '',
       location: source.location || [source.city || user?.city, source.state || user?.state].filter(Boolean).join(', '),
@@ -312,6 +313,7 @@
       metrics: source.metrics && typeof source.metrics === 'object' ? source.metrics : {},
       publicUrl: source.publicUrl || source.publicProfileUrl || '',
       ownerUrl: source.ownerUrl || source.ownerProfileUrl || '',
+      createdAt: source.createdAt || source.created_at || user?.createdAt || '',
       updatedAt: source.updatedAt || ''
     };
   };
@@ -480,10 +482,11 @@
   const apiRegister = async (payload = {}) => {
     const response = await apiRequest('POST', AUTH_ENDPOINTS.register, {
       name: normalizeText(payload.name),
+      handle: normalizeText(payload.handle).toLowerCase(),
       email: normalizeEmail(payload.email),
       phone: normalizePhone(payload.phone),
       password: String(payload.password || ''),
-      role: payload.role === 'professional' ? 'professional' : 'client'
+      role: 'client'
     });
     const session = setSessionFromApiPayload(response, { remember: true });
     const identitySession = await fetchApiCurrentIdentity({ silent: true });
@@ -626,7 +629,7 @@
   const register = async (payload = {}) => {
     await delay();
 
-    const role = payload.role === 'professional' ? 'professional' : 'client';
+    const role = 'client';
 
     if (canUseApiAuth()) {
       const user = await apiRegister({ ...payload, role });
@@ -639,6 +642,7 @@
 
     const user = await repo.create({
       name: payload.name,
+      handle: payload.handle,
       email: payload.email,
       phone: payload.phone,
       password: payload.password,
@@ -651,6 +655,20 @@
       ...session.user,
       pendingConfirmation: false
     };
+  };
+
+
+  const checkUsernameAvailability = async (value) => {
+    const repo = getUsersRepository();
+    if (!repo || typeof repo.isHandleAvailable !== 'function') {
+      return { available: false, reason: 'Verificação de usuário indisponível.' };
+    }
+    const handle = typeof repo.normalizeHandle === 'function' ? repo.normalizeHandle(value) : String(value || '').trim().toLowerCase();
+    if (!repo.isValidHandle?.(handle)) {
+      return { available: false, handle, reason: 'Use de 3 a 30 caracteres: letras, números, ponto ou underline.' };
+    }
+    const available = await repo.isHandleAvailable(handle);
+    return { available, handle, reason: available ? '' : 'Esse usuário já está em uso.' };
   };
 
   const logout = async ({ redirect = false, redirectTo } = {}) => {
@@ -957,6 +975,7 @@
     login,
     signIn,
     register,
+    checkUsernameAvailability,
     logout,
     signOut,
     requestRecovery,

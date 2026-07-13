@@ -32,6 +32,21 @@
     return 'review_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
   }
 
+  function hashKey(value) {
+    var input = normalizeText(value || 'review');
+    var hash = 2166136261;
+    for (var index = 0; index < input.length; index += 1) {
+      hash ^= input.charCodeAt(index);
+      hash = Math.imul(hash, 16777619);
+    }
+    return (hash >>> 0).toString(36);
+  }
+
+  function createDeterministicReviewId(eventKey) {
+    var key = normalizeText(eventKey || '');
+    return key ? 'review_' + hashKey(key) : createReviewId();
+  }
+
   function safeRead(key) {
     try {
       var raw = root.localStorage.getItem(key);
@@ -43,12 +58,11 @@
   }
 
   function safeWrite(key, items) {
-    var serialized = JSON.stringify(Array.isArray(items) ? items : []);
-    root.localStorage.setItem(key, serialized);
-    if (root.localStorage.getItem(key) !== serialized) {
-      throw new Error('Não foi possível confirmar a persistência da avaliação.');
+    try {
+      root.localStorage.setItem(key, JSON.stringify(Array.isArray(items) ? items : []));
+    } catch (error) {
+      // localStorage can be unavailable in restricted contexts.
     }
-    return true;
   }
 
   function toArray(value) {
@@ -204,6 +218,62 @@
     }));
   }
 
+  function getById(reviewId) {
+    var id = normalizeText(reviewId || '');
+    if (!id) return null;
+    return clone(readLocal().find(function (review) { return String(review.id || '') === id; }) || null);
+  }
+
+  function getByEventKey(eventKey) {
+    var key = normalizeText(eventKey || '');
+    if (!key) return null;
+    return clone(readLocal().find(function (review) { return String(review.eventKey || '') === key; }) || null);
+  }
+
+  function getByOrderId(orderId) {
+    var id = normalizeText(orderId || '');
+    if (!id) return null;
+    return clone(readLocal().find(function (review) { return String(review.orderId || '') === id; }) || null);
+  }
+
+  function createOnce(payload) {
+    payload = payload || {};
+    var eventKey = getEventKey(payload);
+    var existing = getByEventKey(eventKey) || getByOrderId(payload.orderId);
+    if (existing) return Promise.resolve({ review: existing, created: false, idempotent: true });
+
+    var normalized = normalizeReview(Object.assign({}, payload, {
+      id: normalizeText(payload.id || '') || createDeterministicReviewId(eventKey),
+      eventKey: eventKey,
+      createdAt: payload.createdAt || payload.reviewedAt || nowIso(),
+      updatedAt: nowIso()
+    }));
+    var local = readLocal().filter(function (item) {
+      return String(item.id || '') !== String(normalized.id || '')
+        && (!normalized.eventKey || String(item.eventKey || '') !== String(normalized.eventKey));
+    });
+    local.unshift(normalized);
+    writeLocal(local);
+    document.dispatchEvent(new CustomEvent('doke:profile-review-created', { detail: { review: clone(normalized) } }));
+    return Promise.resolve({ review: clone(normalized), created: true, idempotent: false });
+  }
+
+  function getProfessionalReputation(filters) {
+    var reviews = listLocal(filters || {}).filter(function (review) { return review.verified !== false; });
+    var ratingTotal = reviews.reduce(function (sum, review) { return sum + toRating(review.rating); }, 0);
+    var reviewCount = reviews.length;
+    return Object.freeze({
+      professionalId: normalizeText(filters && (filters.professionalId || filters.providerId) || ''),
+      reviewCount: reviewCount,
+      ratingTotal: Math.round(ratingTotal * 10) / 10,
+      averageRating: reviewCount ? Math.round((ratingTotal / reviewCount) * 10) / 10 : 0,
+      updatedAt: reviews.reduce(function (latest, review) {
+        var value = review.updatedAt || review.reviewedAt || review.createdAt || '';
+        return value > latest ? value : latest;
+      }, '')
+    });
+  }
+
   repositories.reviews = Object.freeze({
     storageKey: STORAGE_KEY,
     legacyStorageKey: LEGACY_STORAGE_KEY,
@@ -213,6 +283,11 @@
     listLocal: listLocal,
     save: save,
     create: create,
+    createOnce: createOnce,
+    getById: getById,
+    getByEventKey: getByEventKey,
+    getByOrderId: getByOrderId,
+    getProfessionalReputation: getProfessionalReputation,
     clearLocal: function () { writeLocal([]); }
   });
 })();

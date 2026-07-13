@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  const REVIEW_CONTROLLER_VERSION = '20260702-review-route-init-v1';
+  const REVIEW_CONTROLLER_VERSION = '20260712-canonical-review-v1';
 
   function initProfessionalReview() {
     const root = document.querySelector('[data-pro-review-page]');
@@ -36,20 +36,11 @@
 
   let selectedRating = 5;
   let currentConversation = null;
-  let currentCharge = null;
 
   function normalizeText(value) {
     return String(value || '').replace(/\s+/g, ' ').trim();
   }
 
-  function isActualChargeMessage(conversation, message) {
-    if (!message || String(message.type || '').toLowerCase() !== 'charge') return false;
-    const explicitKind = normalizeText(message.financialKind || message.kind || '').toLowerCase();
-    if (explicitKind === 'proposal') return false;
-    if (explicitKind === 'charge' || message.chargeCreatedAt || message.chargeStatus) return true;
-    const chargeMessageId = normalizeText(conversation?.order?.chargeMessageId || '');
-    return Boolean(chargeMessageId) && String(message.id || message.messageId || '') === chargeMessageId;
-  }
 
   function getInitials(value) {
     return normalizeText(value)
@@ -60,41 +51,9 @@
       .join('') || 'DK';
   }
 
-  function getCurrentUser() {
-    try {
-      const sessionUser = window.Doke?.session?.getCurrentUser?.() || window.DokeAuth?.service?.getCurrentUser?.();
-      if (sessionUser) return sessionUser;
-    } catch (error) {
-      // fallback below
-    }
 
-    try {
-      const raw = window.localStorage.getItem('doke.auth.session.v1');
-      const session = raw ? JSON.parse(raw) : null;
-      return session?.user || null;
-    } catch (error) {
-      return null;
-    }
-  }
-
-  function getMessagesRepository() {
-    return window.Doke?.repositories?.messages || null;
-  }
-
-  function getNotificationsService() {
-    return window.Doke?.services?.notifications || null;
-  }
-
-  function getWalletService() {
-    return window.Doke?.services?.wallet || null;
-  }
-
-  function getReviewsRepository() {
-    return window.Doke?.repositories?.reviews || null;
-  }
-
-  function getOrdersRepository() {
-    return window.Doke?.repositories?.orders || null;
+  function getReviewService() {
+    return window.Doke?.services?.reviews || null;
   }
 
   function slugify(value) {
@@ -141,14 +100,6 @@
     return query ? `perfil.html?${query}` : 'perfil.html';
   }
 
-  function resolveCharge(conversation) {
-    const messages = Array.isArray(conversation?.messages) ? conversation.messages : [];
-    if (reviewContext.messageId) {
-      const byId = messages.find((message) => String(message.id || '') === String(reviewContext.messageId));
-      if (isActualChargeMessage(conversation, byId)) return byId;
-    }
-    return messages.slice().reverse().find((message) => isActualChargeMessage(conversation, message)) || null;
-  }
 
   function setContextText(conversation) {
     const order = conversation?.order || {};
@@ -172,24 +123,54 @@
     });
   }
 
+  function setReviewAvailability(eligibility) {
+    if (!submitButton) return;
+    const existingReview = eligibility?.existingReview || null;
+    const unavailableReason = eligibility?.reason || '';
+    if (existingReview) {
+      submitButton.disabled = true;
+      submitButton.textContent = 'Avaliação já enviada';
+      submitButton.setAttribute('aria-disabled', 'true');
+      submitButton.title = 'Este pedido já foi avaliado.';
+      updateRating(Number(existingReview.rating || 5));
+      if (generalComment && existingReview.comment) generalComment.value = existingReview.comment;
+      return;
+    }
+    if (eligibility && eligibility.eligible === false) {
+      submitButton.disabled = true;
+      submitButton.textContent = 'Avaliação indisponível';
+      submitButton.setAttribute('aria-disabled', 'true');
+      submitButton.title = unavailableReason || 'A avaliação ainda não está disponível.';
+      return;
+    }
+    submitButton.disabled = false;
+    submitButton.removeAttribute('aria-disabled');
+    submitButton.removeAttribute('title');
+  }
+
   function loadReviewContext() {
-    const repository = getMessagesRepository();
-    if (!repository?.getById || !reviewContext.conversationId) {
+    const service = getReviewService();
+    if (!service?.getEligibility || !reviewContext.orderId) {
+      currentConversation = null;
       setContextText(null);
+      setReviewAvailability({ eligible: false, reason: 'Pedido inválido para avaliação.' });
       return Promise.resolve(null);
     }
 
-    return repository.getById(reviewContext.conversationId)
-      .then((conversation) => {
-        currentConversation = conversation || null;
-        currentCharge = resolveCharge(currentConversation);
-        setContextText(currentConversation);
-        return currentConversation;
-      })
-      .catch(() => {
-        setContextText(null);
-        return null;
-      });
+    return service.getEligibility(reviewContext.orderId, {
+      conversationId: reviewContext.conversationId,
+      messageId: reviewContext.messageId
+    }).then((eligibility) => {
+      currentConversation = eligibility?.conversation || null;
+      setContextText(currentConversation);
+      setReviewAvailability(eligibility);
+      return eligibility;
+    }).catch((error) => {
+      currentConversation = null;
+      setContextText(null);
+      setReviewAvailability({ eligible: false, reason: error?.message || 'Avaliação indisponível.' });
+      return null;
+    });
   }
 
   function updateRating(value) {
@@ -237,131 +218,11 @@
     document.body.classList.remove('pro-review-modal-open');
   }
 
-  function createReviewNotification(conversation, review) {
-    const service = getNotificationsService();
-    if (!service?.create || !conversation) return Promise.resolve(null);
-
-    const user = getCurrentUser() || {};
-    const order = conversation.order || {};
-    const professionalId = order.professionalId || order.providerId || conversation.professionalId || 'user_profissional_demo';
-    const orderTitle = order.serviceTitle || order.title || 'Pedido';
-    const score = `${review.rating},0`;
-
-    return service.create({
-      type: 'order_reviewed',
-      category: 'orders',
-      userId: professionalId,
-      actorId: user.id || order.clientId || '',
-      actorName: user.name || order.clientName || 'Cliente Doke',
-      orderId: order.id || conversation.orderId || reviewContext.orderId,
-      conversationId: conversation.id || reviewContext.conversationId,
-      messageId: reviewContext.messageId,
-      serviceId: order.serviceId || conversation.serviceId || '',
-      eventKey: ['order_reviewed', order.id || reviewContext.orderId || '', reviewContext.messageId || '', professionalId].filter(Boolean).join(':'),
-      title: 'Avaliação recebida',
-      body: `${user.name || order.clientName || 'Cliente Doke'} avaliou o atendimento "${orderTitle}" com nota ${score}.`,
-      targetUrl: buildConversationUrl({ review: '1' }),
-      actionLabel: 'Abrir conversa',
-      read: false
-    }).catch((error) => {
-      console.warn('[DokeReview:createNotification]', error);
-      return null;
-    });
-  }
-
-  function createProfileReview(conversation, review) {
-    const user = getCurrentUser() || {};
-    const order = conversation?.order || {};
-    const professionalName = order.professionalName || order.providerName || conversation?.peerName || conversation?.name || 'Profissional Doke';
-    const operationalProfessionalId = order.professionalId || order.providerId || conversation?.professionalId || 'user_profissional_demo';
-    const profileProfessionalId = getProfileProfessionalId(conversation);
-    const sourceProfessionalId = order.sourceProfessionalId || order.displayProfessionalId || order.providerProfileId || profileProfessionalId;
-    const serviceTitle = order.serviceTitle || order.title || 'Atendimento concluído';
-    const comment = normalizeText(review.comment || '') || (review.tags.length ? review.tags.join(', ') : 'Atendimento concluído pelo Doke.');
-
-    return {
-      eventKey: ['profile_review', order.id || reviewContext.orderId || '', reviewContext.messageId || '', profileProfessionalId || operationalProfessionalId].filter(Boolean).join(':'),
-      orderId: order.id || conversation?.orderId || reviewContext.orderId,
-      conversationId: conversation?.id || reviewContext.conversationId,
-      messageId: reviewContext.messageId,
-      serviceId: order.serviceId || conversation?.serviceId || '',
-      serviceTitle,
-      professionalId: operationalProfessionalId,
-      providerId: operationalProfessionalId,
-      displayProfessionalId: profileProfessionalId,
-      sourceProfessionalId,
-      profileIds: [operationalProfessionalId, profileProfessionalId, sourceProfessionalId].filter(Boolean),
-      professionalName,
-      providerName: professionalName,
-      clientId: user.id || order.clientId || '',
-      clientName: user.name || order.clientName || 'Cliente Doke',
-      avatarText: user.initials || user.avatarInitials || order.clientInitials || getInitials(user.name || order.clientName || 'Cliente Doke'),
-      rating: review.rating,
-      tags: review.tags,
-      criteria: review.criteria,
-      comment,
-      text: comment,
-      verified: true,
-      source: 'completed-order',
-      reviewedAt: review.reviewedAt
-    };
-  }
-
-  function persistProfileReview(conversation, review) {
-    const repository = getReviewsRepository();
-    if (!repository?.create || !conversation) return Promise.resolve(null);
-    return repository.create(createProfileReview(conversation, review)).catch((error) => {
-      console.warn('[DokeReview:profileReview]', error);
-      return null;
-    });
-  }
-
-  function markOrderReviewed(conversation, review) {
-    const repository = getOrdersRepository();
-    const order = conversation?.order || {};
-    const orderId = order.id || conversation?.orderId || reviewContext.orderId;
-    if (!repository?.getById || !repository?.save || !orderId) return Promise.resolve(null);
-
-    return repository.getById(orderId)
-      .then((storedOrder) => {
-        if (!storedOrder) return null;
-        return repository.save(Object.assign({}, storedOrder, {
-          reviewedAt: review.reviewedAt,
-          reviewRating: review.rating,
-          reviewTags: review.tags,
-          nextAction: 'Avaliação enviada',
-          updatedAt: review.reviewedAt
-        }));
-      })
-      .catch((error) => {
-        console.warn('[DokeReview:markOrderReviewed]', error);
-        return null;
-      });
-  }
-
-  function registerWalletReceivable(conversation, review) {
-    const service = getWalletService();
-    if (!service?.registerReceivableFromOrder || !conversation) return Promise.resolve(null);
-
-    return service.registerReceivableFromOrder({
-      conversation,
-      order: conversation.order || {},
-      charge: currentCharge,
-      review,
-      orderId: reviewContext.orderId,
-      conversationId: reviewContext.conversationId,
-      messageId: reviewContext.messageId
-    }).catch((error) => {
-      console.warn('[DokeReview:walletReceivable]', error);
-      return null;
-    });
-  }
 
   function persistReview() {
-    const repository = getMessagesRepository();
-    if (!repository?.getById || !repository?.save || !reviewContext.conversationId) {
-      openModal();
-      return Promise.resolve(null);
+    const service = getReviewService();
+    if (!service?.submitOrderReview || !reviewContext.orderId) {
+      return Promise.reject(new Error('Serviço de avaliação indisponível.'));
     }
 
     const review = {
@@ -369,70 +230,29 @@
       tags: getSelectedTags(),
       criteria: getAspectReviews(),
       comment: normalizeText(generalComment?.value || ''),
-      reviewedAt: new Date().toISOString()
+      conversationId: reviewContext.conversationId,
+      messageId: reviewContext.messageId
     };
 
     submitButton.disabled = true;
     submitButton.setAttribute('aria-busy', 'true');
 
-    return repository.getById(reviewContext.conversationId)
-      .then((conversation) => {
-        if (!conversation) throw new Error('Conversa da avaliação não encontrada.');
-        const charge = resolveCharge(conversation);
-        if (!charge) throw new Error('Cobrança da avaliação não encontrada.');
-
-        charge.paid = true;
-        charge.completed = true;
-        charge.reviewed = true;
-        charge.review = review;
-        charge.text = charge.text || 'Atendimento concluído e avaliado.';
-        conversation.status = 'completed';
-        conversation.statusLabel = 'Avaliação recebida';
-        conversation.lastSeen = 'Atendimento avaliado';
-        conversation.lastMessage = 'Atendimento avaliado pelo cliente.';
-        conversation.order = Object.assign({}, conversation.order || {}, {
-          status: 'completed',
-          statusLabel: 'Concluído',
-          reviewedAt: review.reviewedAt,
-          reviewRating: review.rating,
-          reviewTags: review.tags
-        });
-        currentConversation = conversation;
-        currentCharge = charge;
-        return repository.save(conversation);
-      })
-      .then((conversation) => {
-        const activeConversation = conversation || currentConversation;
-        return Promise.all([
-          createReviewNotification(activeConversation, review),
-          persistProfileReview(activeConversation, review),
-          markOrderReviewed(activeConversation, review),
-          registerWalletReceivable(activeConversation, review)
-        ]).then(([, profileReview, reviewedOrder, walletResult]) => ({ conversation: activeConversation, profileReview, reviewedOrder, walletResult }));
-      })
-      .then(({ conversation, walletResult }) => {
-        if (walletResult?.transaction && currentCharge) {
-          currentCharge.walletTransactionId = walletResult.transaction.id;
-        }
-        document.dispatchEvent(new CustomEvent('doke:order-reviewed', {
-          detail: {
-            conversation: conversation || currentConversation,
-            charge: currentCharge,
-            review,
-            walletTransaction: walletResult?.transaction || null
-          }
-        }));
+    return service.submitOrderReview(reviewContext.orderId, review)
+      .then((result) => {
+        currentConversation = result?.conversation || currentConversation;
+        setContextText(currentConversation);
+        setReviewAvailability({ existingReview: result?.review, eligible: false, reason: 'Este pedido já foi avaliado.' });
         openModal();
-        return conversation;
+        return result;
       })
       .catch((error) => {
         console.warn('[DokeReview:persist]', error);
-        openModal();
+        submitButton.title = error?.message || 'Não foi possível enviar a avaliação.';
         return null;
       })
       .finally(() => {
-        submitButton.disabled = false;
         submitButton.removeAttribute('aria-busy');
+        if (!submitButton.hasAttribute('aria-disabled')) submitButton.disabled = false;
       });
   }
 

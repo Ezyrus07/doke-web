@@ -10,12 +10,11 @@
  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
  <script src="assets/js/core/shell-state-early.js?v=20260614-drawer-canonical-v2"></script>
-  <link rel="stylesheet" href="assets/css/pages/comunidade-interna-foundation.css?v=20260701-modal-centering-contract-v1&amp;community=20260712-rebuild-v3">
+  <link rel="stylesheet" href="assets/css/pages/comunidade-interna-foundation.css?v=20260701-modal-centering-contract-v1&amp;community=20260712-remove-pinned-feature-v1">
 <script>document.documentElement.classList.add("doke-mobile-shell-pending");</script>
   <script src="assets/js/core/ipad-safari-early-guard.js?v=20260531-v3"></script>
  <link rel="stylesheet" href="assets/css/components/in-app-notifications.css?v=20260712-quick-actions-v2">
- <link rel="stylesheet" href="assets/css/components/overlays/member-action-sheet.css?v=20260712-member-sheet-v2">
- <link rel="stylesheet" href="assets/css/patterns/pinned-message-system.css?v=20260712-pinned-system-v2">
+ <link rel="stylesheet" href="assets/css/components/overlays/member-action-sheet.css?v=20260712-member-sheet-v3">
 </head>
 <body data-page="comunidade-interna" data-page-key="comunidade-interna" data-data-ready="community-room" data-data-state="loading" class="doke-app-shell-page app-shell-page internal-shell-page community-room-page community-room-shell-page messages-page-shell doke-flow doke-message-flow has-global-header">
  <section class="doke-document-preloader" data-community-room-document-preloader aria-label="Carregando Doke" aria-hidden="false">
@@ -184,7 +183,6 @@
         </div>
         <div class="community-room-actions-menu doke-action-menu" data-community-actions-menu role="menu" aria-label="Mais ações da comunidade" hidden>
          <button class="doke-btn doke-btn--ghost" type="button" data-community-panel-open="members" role="menuitem">Membros</button>
-         <button class="doke-btn doke-btn--ghost" type="button" data-community-panel-open="pinned" role="menuitem">Fixados</button>
          <button class="doke-btn doke-btn--ghost" type="button" data-community-panel-open="events" role="menuitem">Eventos</button>
          <button class="doke-btn doke-btn--ghost" type="button" data-community-settings-open role="menuitem">Configurações</button>
         </div>
@@ -303,18 +301,26 @@
        </section>
       </aside>
 
-      <aside class="community-room-panel community-settings-panel doke-settings-shell__panel doke-aux-panel" data-community-panel="members" aria-hidden="true">
+      <aside class="community-room-panel community-room-panel--members community-settings-panel doke-settings-shell__panel doke-aux-panel" data-community-panel="members" aria-hidden="true">
        <button class="community-room-panel__backdrop doke-aux-panel__backdrop doke-btn" type="button" data-community-panel-close aria-label="Fechar painel"></button>
-       <section class="community-room-panel__surface doke-settings-surface doke-aux-panel__surface" role="dialog" aria-modal="true" aria-label="Membros da comunidade">
-        <header class="community-room-panel__header doke-settings-surface__header doke-aux-panel__header"><div><h2>Membros</h2><p>Gerencie participantes, cargos e acesso à comunidade.</p></div><button class="community-room-panel__close doke-close-button doke-icon-btn doke-icon-btn--flat" type="button" data-community-panel-close aria-label="Fechar painel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6 6 18"></path></svg></button></header>
-        <label class="community-room-panel__search"><span>Buscar membro</span><input class="doke-input" type="search" placeholder="Buscar membro..." data-community-member-search></label>
-        <div class="community-room-member-tools">
-         <button class="doke-btn doke-btn--secondary" type="button" data-community-member-add-toggle>Adicionar das mensagens</button>
-        </div>
-        <p class="community-room-panel__feedback" data-community-member-feedback role="status" aria-live="polite" hidden></p>
-        <div class="community-room-member-candidates" data-community-member-candidates hidden></div>
-        <div class="community-room-member-list" data-community-member-list>
+       <section class="community-room-panel__surface doke-settings-surface doke-aux-panel__surface" role="dialog" aria-modal="true" aria-labelledby="community-members-title">
+        <header class="community-room-panel__header doke-settings-surface__header doke-aux-panel__header">
+         <div><h2 id="community-members-title">Membros</h2><p>Gerencie participantes, cargos e acesso à comunidade.</p></div>
+         <button class="community-room-panel__close doke-close-button doke-icon-btn doke-icon-btn--flat" type="button" data-community-panel-close aria-label="Fechar painel">
+          <svg class="community-room-panel__close-icon community-room-panel__close-icon--desktop" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6 6 18"></path></svg>
+          <svg class="community-room-panel__close-icon community-room-panel__close-icon--mobile" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 6-6 6 6 6"></path></svg>
+         </button>
+        </header>
+        <div class="community-room-panel__body doke-aux-panel__body">
+         <label class="community-room-panel__search"><span>Buscar membro</span><input class="doke-input" type="search" placeholder="Buscar membro..." data-community-member-search></label>
+         <div class="community-room-member-tools">
+          <button class="doke-btn doke-btn--secondary" type="button" data-community-member-add-toggle aria-expanded="false" aria-controls="community-member-candidates">Adicionar membro</button>
+         </div>
+         <p class="community-room-panel__feedback" data-community-member-feedback role="status" aria-live="polite" hidden></p>
+         <div id="community-member-candidates" class="community-room-member-candidates" data-community-member-candidates hidden></div>
+         <div class="community-room-member-list" data-community-member-list>
 
+         </div>
         </div>
        </section>
       </aside>
@@ -326,16 +332,6 @@
         <label class="community-room-panel__search"><span>Filtrar solicitações</span><select class="doke-input doke-select community-room-select" data-community-request-filter><option value="pending">Pendentes</option><option value="accepted">Aprovadas</option><option value="rejected">Recusadas</option><option value="all">Todas</option></select></label>
         <p class="community-room-panel__feedback" data-community-request-feedback role="status" aria-live="polite" hidden></p>
         <div class="community-room-member-list community-room-request-list" data-community-request-list></div>
-       </section>
-      </aside>
-
-      <aside class="community-room-panel doke-aux-panel" data-community-panel="pinned" aria-hidden="true">
-       <button class="community-room-panel__backdrop doke-aux-panel__backdrop doke-btn" type="button" data-community-panel-close aria-label="Fechar painel"></button>
-       <section class="community-room-panel__surface doke-settings-surface doke-aux-panel__surface" role="dialog" aria-modal="true" aria-label="Mensagens fixadas">
-        <header class="community-room-panel__header doke-settings-surface__header doke-aux-panel__header"><div><h2>Fixados</h2><p>Mensagens importantes deste canal.</p></div><button class="community-room-panel__close doke-close-button doke-icon-btn doke-icon-btn--flat" type="button" data-community-panel-close aria-label="Fechar painel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6 6 18"></path></svg></button></header>
-        <div class="community-room-pinned-list doke-entity-list">
-
-        </div>
        </section>
       </aside>
 
@@ -414,7 +410,6 @@
          <label><span>Cor</span><input class="doke-input" type="color" data-community-role-color value="#2167ae"></label>
          <fieldset class="community-room-permissions" data-community-role-permissions>
           <legend>Permissões do cargo</legend>
-          <label class="community-room-permission"><input class="doke-checkbox" type="checkbox" value="pinMessages"><span><strong>Fixar mensagens</strong><small>Organizar informações importantes do canal.</small></span></label>
           <label class="community-room-permission"><input class="doke-checkbox" type="checkbox" value="deleteMessages"><span><strong>Excluir mensagens</strong><small>Remover mensagens de outros membros.</small></span></label>
           <label class="community-room-permission"><input class="doke-checkbox" type="checkbox" value="addMembers"><span><strong>Adicionar membros</strong><small>Adicionar contatos existentes à comunidade.</small></span></label>
           <label class="community-room-permission"><input class="doke-checkbox" type="checkbox" value="removeMembers"><span><strong>Remover membros</strong><small>Retirar membros que não sejam administradores.</small></span></label>
@@ -589,7 +584,7 @@
  <script src="assets/js/features/community/community-domain.js?v=20260711-session-authority-v1" defer></script>
  <script src="assets/js/features/community/community-transition.js?v=20260711-shell-atomic-reveal-v1" defer></script>
   <script src="assets/js/components/message-author.js?v=20260711-message-author-v1" defer></script>
-<script src="assets/js/pages/comunidade-interna.js?v=20260712-events-v2" defer></script>
+<script src="assets/js/pages/comunidade-interna.js?v=20260712-remove-pinned-feature-v1" defer></script>
   <script src="assets/js/core/ipad-safari-scroll-guard.js?v=20260602-v1" defer></script>
  <script src="assets/js/features/in-app-notifications.js?v=20260712-quick-actions-v2" defer></script>
 </body>

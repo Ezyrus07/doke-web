@@ -1,3 +1,102 @@
+function initAccountOnboarding(signal) {
+  const overlay = document.querySelector('[data-account-onboarding]');
+  const form = overlay?.querySelector('[data-account-onboarding-form]');
+  if (!overlay || !form) return;
+
+  const feedback = form.querySelector('[data-account-onboarding-feedback]');
+  const submitButton = form.querySelector('[data-account-onboarding-submit]');
+  const skipButton = form.querySelector('[data-account-onboarding-skip]');
+  let submitting = false;
+  let refreshVersion = 0;
+
+  const setFeedback = (message, tone = '') => {
+    if (!feedback) return;
+    feedback.textContent = message || '';
+    feedback.hidden = !message;
+    feedback.dataset.tone = tone;
+  };
+
+  const setOpen = (open) => {
+    const wasHidden = overlay.hidden;
+    overlay.hidden = !open;
+    overlay.setAttribute('aria-hidden', String(!open));
+    document.body.classList.toggle('has-account-onboarding', open);
+    if (open && wasHidden) form.elements.city?.focus();
+  };
+
+  const setBusy = (busy) => {
+    submitting = busy;
+    [submitButton, skipButton].forEach((button) => {
+      if (!button) return;
+      button.disabled = busy;
+      button.setAttribute('aria-busy', String(busy));
+    });
+  };
+
+  const populate = (state) => {
+    const profile = state?.profile || {};
+    const user = state?.user || {};
+    const userId = String(user.id || '');
+    if (overlay.dataset.onboardingUserId === userId) return;
+    overlay.dataset.onboardingUserId = userId;
+    form.elements.city.value = profile.city || '';
+    form.elements.state.value = profile.state || '';
+    form.elements.bio.value = profile.bio || '';
+    form.elements.interests.value = Array.isArray(profile.interests) ? profile.interests.join(', ') : '';
+  };
+
+  const refresh = async () => {
+    const service = window.Doke?.services?.onboarding;
+    if (!service?.resolveState || submitting) return;
+    const version = ++refreshVersion;
+    try {
+      const state = await service.resolveState();
+      if (version !== refreshVersion || signal.aborted) return;
+      if (state.shouldShow) populate(state);
+      setOpen(Boolean(state.shouldShow));
+    } catch (error) {
+      if (!signal.aborted) console.error('[Doke:onboarding:resolve]', error);
+    }
+  };
+
+  const payloadFromForm = (withoutOptional = false) => ({
+    city: String(form.elements.city?.value || '').trim(),
+    state: String(form.elements.state?.value || '').trim().toUpperCase(),
+    bio: withoutOptional ? '' : String(form.elements.bio?.value || '').trim(),
+    interests: withoutOptional ? [] : String(form.elements.interests?.value || '').trim()
+  });
+
+  const complete = async (withoutOptional) => {
+    if (submitting || !form.reportValidity()) return;
+    const service = window.Doke?.services?.onboarding;
+    if (!service?.complete) {
+      setFeedback('Onboarding indisponível.', 'error');
+      return;
+    }
+    setBusy(true);
+    setFeedback('Salvando seu perfil...', 'progress');
+    try {
+      if (withoutOptional && service.skipOptional) await service.skipOptional(payloadFromForm(true));
+      else await service.complete(payloadFromForm(false));
+      setOpen(false);
+      setFeedback('', '');
+    } catch (error) {
+      setFeedback(error?.message || 'Não foi possível concluir o perfil.', 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  form.addEventListener('submit', (event) => {
+    event.preventDefault();
+    complete(false);
+  }, { signal });
+  skipButton?.addEventListener('click', () => complete(true), { signal });
+  document.addEventListener('doke:auth-session-change', refresh, { signal });
+  document.addEventListener('doke:auth-surface-ready', refresh, { signal });
+  refresh();
+}
+
 window.DokeInitHome = function DokeInitHome() {
 const routeController = new AbortController();
 window.DokeHomeCleanup?.();
@@ -11,6 +110,7 @@ window.DokeHomeCleanup = () => {
   routeController.abort();
 };
 const { signal } = routeController;
+initAccountOnboarding(signal);
 /* Home page interactions: filters, location, tabs and rails. */
 const searchData = window.DokeSearchData || {};
 const locationOptions = searchData.locationOptions || { statés: [], citiesByStaté: {}, neighborhoodsByCity: {}, cepLookup: {} };

@@ -112,12 +112,11 @@ for (const token of [
 }
 
 for (const [file, required] of Object.entries({
-  'auth/cadastro.html': ['auth-choice__input doke-radio'],
   'auth/esqueci-senha.html': ['auth-choice__input doke-radio'],
   'avaliacao-profissional.html': ['class="doke-textarea"'],
   'carteira.html': ['class="doke-input" data-wallet-withdraw-amount'],
   'comunidade.html': ['id="community-action-code-input"', 'class="doke-input"', 'class="doke-textarea"'],
-  'index.html': ['home-address-modal__field doke-field doke-modal-field', 'name="titulo"', 'class="doke-input" type="text" name="titulo"'],
+  'index.html': ['home-address-modal__field doke-field doke-modal-field', 'name="titulo"', 'class="doke-input" type="text" name="titulo"', 'data-account-onboarding-form', 'textarea class="doke-textarea" name="bio"'],
   'mensagens.html': ['class="doke-input" type="text" inputmode="decimal"', 'doke-financial-modal__native-select doke-select'],
   'pagamento-profissional.html': ['class="doke-switch__input" type="checkbox" data-points-input'],
   'resultados.html': ['class="doke-select"', 'results-field doke-field'],

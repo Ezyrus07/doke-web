@@ -21,7 +21,8 @@ const REQUIRED_MIGRATIONS = Object.freeze([
   'supabase/migrations/003_communication_finance_community.sql',
   'supabase/migrations/004_mvp_backend_security_foundation.sql',
   'supabase/migrations/005_wallet_runtime_foundation.sql',
-  'supabase/migrations/006_runtime_idempotency_audit_foundation.sql'
+  'supabase/migrations/006_runtime_idempotency_audit_foundation.sql',
+  'supabase/migrations/007_account_profile_base.sql'
 ]);
 
 const REQUIRED_SEEDS = Object.freeze([
@@ -49,7 +50,7 @@ const SQL_PREFLIGHT_TESTS = Object.freeze(REQUIRED_SQL_TESTS.slice(0, 3));
 const SQL_POSTCONDITION_TESTS = Object.freeze(REQUIRED_SQL_TESTS.slice(3));
 
 const RELEASE_GATES = Object.freeze([
-  gate('migrations_apply_cleanly', 'Migrations 001 through 006 apply without disabling RLS.'),
+  gate('migrations_apply_cleanly', 'Migrations 001 through 007 apply without disabling RLS.'),
   gate('seeds_create_expected_identities', 'Seeds create client, professional, support and admin identities for staging validation.'),
   gate('rls_negative_cases_pass', 'SQL tests 001 through 003 pass with real RLS enabled.'),
   gate('runtime_e2e_passes', 'validate:staging-e2e passes with real staging tokens and explicit mutation consent.'),

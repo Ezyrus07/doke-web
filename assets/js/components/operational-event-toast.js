@@ -274,17 +274,26 @@
     };
   }
 
+  function normalizeOrderStatus(status) {
+    var normalized = normalizeText(status || 'pending');
+    var stateMachine = Doke.services && Doke.services.orders && Doke.services.orders.stateMachine;
+    if (stateMachine && typeof stateMachine.normalizeStatus === 'function') return stateMachine.normalizeStatus(normalized);
+    if (normalized === 'conversation') return 'accepted';
+    if (normalized === 'responded') return 'quoted';
+    return normalized;
+  }
+
   function normalizeOrderEvent(order, status) {
     if (!order || !matchesOrderUser(order)) return null;
     var userId = getCurrentUserId();
     if (userId && String(order.clientId || '') === String(userId) && !status) return null;
-    var normalizedStatus = normalizeText(status || order.status || 'pending');
+    var normalizedStatus = normalizeOrderStatus(status || order.status || 'pending');
     var title = normalizedStatus && normalizedStatus !== 'pending' ? 'Status do pedido atualizado' : 'Novo pedido recebido';
     var body = (order.clientName || 'Cliente') + ' solicitou orçamento para ' + (order.serviceTitle || order.title || 'um serviço') + '.';
     var targetUrl = 'pedidos.html?order=' + encodeURIComponent(order.id || '');
     var actionLabel = 'Ver pedido';
 
-    if (normalizedStatus === 'accepted' || normalizedStatus === 'conversation') {
+    if (normalizedStatus === 'accepted') {
       title = 'Pedido aceito';
       body = 'A conversa do pedido "' + (order.serviceTitle || order.title || 'Pedido') + '" foi liberada.';
       targetUrl = 'mensagens.html?order=' + encodeURIComponent(order.id || '');

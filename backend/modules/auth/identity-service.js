@@ -17,6 +17,9 @@ function normalizeUser(row, authUser) {
     role: normalizeRole(source.role || metadata.role),
     status: source.status || 'active',
     accountStatus: source.status || 'active',
+    onboardingStatus: source.onboarding_status || 'not_started',
+    onboardingCompletedAt: source.onboarding_completed_at || '',
+    settings: source.settings && typeof source.settings === 'object' ? source.settings : {},
     createdAt: source.created_at || authUser && authUser.created_at || '',
     updatedAt: source.updated_at || ''
   });
@@ -49,6 +52,7 @@ function normalizeProfile(profileRow, user, professionalRow, clientRow) {
     country: source.country || 'BR',
     location: [source.city, source.state].filter(Boolean).join(', '),
     bio: source.bio || '',
+    interests: Array.isArray(source.interests) ? source.interests : [],
     profession: professional.headline || source.profession || '',
     headline: professional.headline || source.headline || '',
     documentStatus: professional.document_status || '',
@@ -59,6 +63,7 @@ function normalizeProfile(profileRow, user, professionalRow, clientRow) {
     ordersCount: Number(client.orders_count || 0),
     publicUrl,
     ownerUrl,
+    createdAt: source.created_at || '',
     updatedAt: source.updated_at || ''
   });
 }
@@ -73,7 +78,7 @@ async function readUserRow(supabase, userId) {
   if (!supabase || !userId || typeof supabase.from !== 'function') return null;
   return maybeSingle(supabase
     .from('users')
-    .select('id,email,role,status,created_at,updated_at')
+    .select('id,email,role,status,onboarding_status,onboarding_completed_at,settings,created_at,updated_at')
     .eq('id', userId));
 }
 
@@ -81,7 +86,7 @@ async function readProfileRow(supabase, userId) {
   if (!supabase || !userId || typeof supabase.from !== 'function') return null;
   return maybeSingle(supabase
     .from('user_profiles')
-    .select('user_id,display_name,username,avatar_url,city,state,country,bio,created_at,updated_at')
+    .select('user_id,display_name,username,avatar_url,city,state,country,bio,interests,created_at,updated_at')
     .eq('user_id', userId));
 }
 
@@ -135,7 +140,7 @@ async function updateCurrentUser(supabase, actor, patch) {
     .from('users')
     .update(payload)
     .eq('id', actor.id)
-    .select('id,email,role,status,created_at,updated_at')
+    .select('id,email,role,status,onboarding_status,onboarding_completed_at,settings,created_at,updated_at')
     .maybeSingle();
   if (response && response.error) throw response.error;
   return readCurrentIdentity(supabase, actor);
@@ -149,7 +154,7 @@ async function updateCurrentProfile(supabase, actor, patch) {
     .from('user_profiles')
     .update(payload)
     .eq('user_id', actor.id)
-    .select('user_id,display_name,username,avatar_url,city,state,country,bio,created_at,updated_at')
+    .select('user_id,display_name,username,avatar_url,city,state,country,bio,interests,created_at,updated_at')
     .maybeSingle();
   if (response && response.error) throw response.error;
   return readCurrentIdentity(supabase, actor);
@@ -160,6 +165,9 @@ function normalizeUserPatch(patch) {
   const payload = {};
   if (typeof source.email === 'string') payload.email = source.email.trim().toLowerCase();
   if (typeof source.status === 'string') payload.status = source.status.trim().toLowerCase();
+  if (typeof source.onboardingStatus === 'string') payload.onboarding_status = source.onboardingStatus.trim().toLowerCase();
+  if (Object.prototype.hasOwnProperty.call(source, 'onboardingCompletedAt')) payload.onboarding_completed_at = source.onboardingCompletedAt || null;
+  if (source.settings && typeof source.settings === 'object' && !Array.isArray(source.settings)) payload.settings = source.settings;
   return payload;
 }
 
@@ -177,12 +185,17 @@ function normalizeProfilePatch(patch) {
     country: 'country',
     bio: 'bio'
   };
-  return Object.keys(map).reduce((payload, key) => {
+  const payload = Object.keys(map).reduce((result, key) => {
     if (Object.prototype.hasOwnProperty.call(source, key)) {
-      payload[map[key]] = source[key] == null ? null : String(source[key]).trim();
+      result[map[key]] = source[key] == null ? null : String(source[key]).trim();
     }
-    return payload;
+    return result;
   }, {});
+  if (Object.prototype.hasOwnProperty.call(source, 'interests')) {
+    const interests = Array.isArray(source.interests) ? source.interests : String(source.interests || '').split(',');
+    payload.interests = interests.map((item) => String(item || '').trim()).filter(Boolean).slice(0, 8);
+  }
+  return payload;
 }
 
 function buildSessionPayload(session, identity) {

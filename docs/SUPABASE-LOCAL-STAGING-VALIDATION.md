@@ -119,7 +119,7 @@ The frontend must remain on `mock` until the HTTP validation and SQL postconditi
 
 ## Sprint 23 — idempotency replay validation
 
-After applying migrations through `006_runtime_idempotency_audit_foundation.sql`, run the HTTP staging smoke and then:
+After applying migrations through `007_account_profile_base.sql`, run the HTTP staging smoke and then:
 
 ```bash
 psql "$SUPABASE_DB_URL" -f supabase/tests/005_runtime_idempotency_audit_replay_validation.sql

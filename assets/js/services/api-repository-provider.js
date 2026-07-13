@@ -93,12 +93,18 @@
       quote: '/orders/:id/quote',
       charge: '/orders/:id/charge',
       start: '/orders/:id/start',
+      requestCompletion: '/orders/:id/completion-request',
       complete: '/orders/:id/complete',
       updateStatus: '/orders/:id/status',
       transition: '/orders/:id/status'
     }),
     payments: Object.freeze({
-      confirm: '/payments/:id/confirm'
+      confirm: '/payments/:id/confirm',
+      requestCompletion: '/payments/:id/completion-request',
+      release: '/payments/:id/release'
+    }),
+    receivables: Object.freeze({
+      release: '/wallet/receivables/:id/release'
     }),
     walletSummary: Object.freeze({
       saveBankAccount: '/wallet/bank-account'

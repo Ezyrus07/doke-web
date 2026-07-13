@@ -81,12 +81,17 @@
   }
 
   function normalizeStatusToken(value) {
-    return String(value || '')
+    var normalized = String(value || '')
       .toLowerCase()
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
       .replace(/[^a-z0-9_]+/g, '_')
       .replace(/^_+|_+$/g, '');
+    var stateMachine = Doke.services && Doke.services.orders && Doke.services.orders.stateMachine;
+    if (stateMachine && typeof stateMachine.normalizeStatus === 'function') return stateMachine.normalizeStatus(normalized);
+    if (normalized === 'conversation') return 'accepted';
+    if (normalized === 'responded') return 'quoted';
+    return normalized;
   }
 
   function canTransitionOrder(order, nextStatus) {
@@ -140,8 +145,14 @@
   function canReportProblem(order, professionalView, disputePresentation, transaction) {
     if (professionalView || disputePresentation || !transaction) return false;
     var status = normalizeStatusToken(order && order.status || '');
-    var allowed = ['accepted', 'conversation', 'responded', 'quoted', 'in_progress', 'completed'];
-    return allowed.indexOf(status) !== -1;
+    var paymentStatus = normalizeStatusToken(order && order.paymentStatus || '');
+    var completionStatus = normalizeStatusToken(order && order.completionStatus || '');
+    var transactionStatus = normalizeStatusToken(transaction.status || transaction.releaseStatus || '');
+    return status === 'in_progress'
+      && paymentStatus === 'held'
+      && completionStatus !== 'confirmed'
+      && transaction.type === 'receivable'
+      && (transactionStatus === 'held' || transactionStatus === 'pending');
   }
 
   function getOrderDisputePresentation(dispute, order) {
@@ -253,7 +264,11 @@
 
   function getPrimaryActionLabel(order, professionalView) {
     var status = order.status || 'pending';
+    var paymentStatus = normalizeStatusToken(order.paymentStatus || '');
+    var completionStatus = normalizeStatusToken(order.completionStatus || '');
     if (status === 'pending' && professionalView) return 'Aceitar pedido';
+    if (status === 'in_progress' && paymentStatus === 'held' && professionalView && completionStatus !== 'requested') return 'Solicitar conclusão';
+    if (status === 'in_progress' && paymentStatus === 'held' && !professionalView && completionStatus === 'requested') return 'Confirmar conclusão';
     if (status === 'cancelled') return 'Detalhes';
     return 'Conversa';
   }
@@ -265,6 +280,8 @@
     if (status === 'accepted' || status === 'conversation') return 'Conversa';
     if (status === 'quoted') return 'Proposta';
     if (status === 'responded') return 'Acompanhar';
+    if (status === 'in_progress' && normalizeStatusToken(order.completionStatus || '') === 'requested') return 'Confirmar conclusão';
+    if (status === 'in_progress' && normalizeStatusToken(order.paymentStatus || '') === 'held') return 'Pagamento protegido';
     if (status === 'in_progress') return 'Em andamento';
     if (status === 'cancelled') return 'Arquivado';
     return 'Ação pendente';
@@ -301,9 +318,27 @@
     var status = order.status || 'pending';
     if (status === 'accepted' || status === 'conversation' || status === 'responded') return 'Pedido aceito. A conversa está liberada para alinhar proposta e próximos passos.';
     if (status === 'quoted') return 'Proposta enviada pelo profissional. O cliente precisa aprovar para liberar o atendimento.';
-    if (status === 'in_progress') return 'Proposta aprovada. O atendimento está em andamento.';
-    if (status === 'completed') return 'Pedido concluído. O fluxo fica disponível para avaliação e histórico.';
-    if (status === 'cancelled') return 'Pedido recusado pelo profissional. A justificativa fica registrada no histórico do pedido.';
+    if (status === 'in_progress') {
+      var paymentStatus = normalizeStatusToken(order.paymentStatus || '');
+      var completionStatus = normalizeStatusToken(order.completionStatus || '');
+      if (completionStatus === 'requested') return professionalView
+        ? 'Conclusão solicitada. O pagamento permanece em garantia até a confirmação do cliente.'
+        : 'O profissional informou a conclusão. Confirme a entrega ou relate um problema pelo chat.';
+      if (paymentStatus === 'held') return professionalView
+        ? 'Pagamento em garantia. Finalize o serviço antes de solicitar a confirmação do cliente.'
+        : 'Pagamento em garantia. Aguarde o profissional informar a conclusão do serviço.';
+      return 'Proposta aprovada. O atendimento está em andamento.';
+    }
+    if (status === 'completed') return order.reviewId || order.reviewedAt
+      ? 'Pedido concluído e avaliado. A avaliação permanece registrada no histórico.'
+      : 'Pedido concluído. O pagamento foi liberado e o fluxo fica disponível para avaliação e histórico.';
+    if (status === 'cancelled') {
+      if (order.cancellationType === 'client_cancelled_before_payment') return 'Pedido cancelado pelo cliente antes do pagamento. Nenhum valor foi movimentado.';
+      if (order.cancellationType === 'professional_cancelled_before_payment') return 'Pedido cancelado pelo profissional antes do pagamento. Nenhum valor foi movimentado.';
+      if (order.cancellationType === 'proposal_rejected') return 'Proposta recusada pelo cliente. A justificativa fica registrada no histórico do pedido.';
+      if (order.cancellationType === 'dispute_refund') return 'Pedido encerrado após resolução da contestação com reembolso ao cliente.';
+      return 'Pedido recusado pelo profissional. A justificativa fica registrada no histórico do pedido.';
+    }
     return professionalView ? 'Pedido recebido pelo fluxo de orçamento. Responda o cliente para avançar a negociação.' : 'Pedido criado pelo fluxo de orçamento. Aguarde o retorno do profissional.';
   }
 
@@ -316,6 +351,14 @@
     var canDeclineOrder = professionalView && normalizedOrderStatus === 'pending' && canTransitionOrder(order, 'cancelled');
     var canApproveProposal = !professionalView && canTransitionOrder(order, 'in_progress');
     var canRejectProposal = !professionalView && normalizedOrderStatus === 'quoted' && canTransitionOrder(order, 'cancelled');
+    var ordersService = Doke.services && Doke.services.orders;
+    var canCancelBeforePayment = Boolean(
+      ordersService
+      && typeof ordersService.canCancelBeforePayment === 'function'
+      && ordersService.canCancelBeforePayment(order, getCurrentUser())
+      && !canDeclineOrder
+      && !canRejectProposal
+    );
     var dispute = getWalletDisputeForOrder(order);
     var disputePresentation = getOrderDisputePresentation(dispute, order);
     var walletTransaction = getWalletTransactionForOrder(order);
@@ -431,17 +474,21 @@
         <button class="order-card__button order-card__button--secondary doke-btn doke-btn--ghost" type="button" data-order-open="chat"><span>${escapeHtml(getPrimaryActionLabel(order, professionalView))}</span></button>
         `}
       </div>
-      ${walletTransaction && walletTransaction.id ? `
+      ${(walletTransaction && walletTransaction.id) || canCancelBeforePayment ? `
       <div class="order-card__support-actions" aria-label="Ações secundárias do pedido">
+        ${canCancelBeforePayment ? `<button class="order-card__support-action order-card__support-action--warning" type="button" data-order-cancel-before-payment="${id}">
+          <span class="order-card__support-icon" aria-hidden="true">×</span>
+          <span>Cancelar pedido</span>
+        </button>` : ``}
         ${reportProblemAllowed && !disputePresentation ? `<button class="order-card__support-action order-card__support-action--warning" type="button" data-order-report-issue="${id}" data-order-transaction="${escapeHtml(walletTransaction.id || '')}">
           <span class="order-card__support-icon" aria-hidden="true">!</span>
           <span>Relatar problema</span>
         </button>` : ``}
-        <a class="order-card__support-action" href="${escapeHtml(getReceiptUrl(walletTransaction))}" data-order-receipt>
+        ${walletTransaction && walletTransaction.id ? `<a class="order-card__support-action" href="${escapeHtml(getReceiptUrl(walletTransaction))}" data-order-receipt>
           <span class="order-card__support-icon" aria-hidden="true">${CARD_ICONS.receipt}</span>
           <span>Comprovante</span>
         </a>
-        <button class="order-card__support-more doke-more-button" type="button" aria-label="Mais opções do pedido"><span aria-hidden="true">•••</span></button>
+        <button class="order-card__support-more doke-more-button" type="button" aria-label="Mais opções do pedido"><span aria-hidden="true">•••</span></button>` : ``}
       </div>` : ``}
 `;
 
@@ -563,7 +610,7 @@
   }
 
   function submitIssueReport(orderId, transactionId, report, trigger) {
-    var wallet = Doke.services && Doke.services.wallet || Doke.repositories && Doke.repositories.wallet;
+    var wallet = Doke.services && Doke.services.wallet;
     if (!wallet || typeof wallet.openDispute !== 'function') return Promise.reject(new Error('Contestação indisponível.'));
     var user = getCurrentUser() || {};
     return wallet.openDispute({
@@ -626,6 +673,43 @@
 
   document.addEventListener('keydown', function (event) {
     if (event.key === 'Escape') closeOrderActionMenus();
+  });
+
+  document.addEventListener('click', function (event) {
+    var cancelButton = event.target && event.target.closest && event.target.closest('[data-order-cancel-before-payment]');
+    if (!cancelButton) return;
+
+    var orderId = cancelButton.dataset.orderCancelBeforePayment || '';
+    var ordersService = Doke.services && Doke.services.orders;
+    if (!orderId || !ordersService || typeof ordersService.cancelBeforePayment !== 'function') return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    closeOrderActionMenus();
+
+    getOrderForTransition(orderId).then(function (order) {
+      if (!order || typeof ordersService.canCancelBeforePayment !== 'function' || !ordersService.canCancelBeforePayment(order, getCurrentUser())) {
+        scheduleRender({ force: true });
+        window.alert('Este pedido já não pode ser cancelado por este fluxo.');
+        return null;
+      }
+      return requestDeclineReason(orderId, cancelButton, {
+        title: 'Cancelar pedido',
+        text: 'Explique por que o pedido será encerrado antes da confirmação do pagamento.'
+      });
+    }).then(function (reason) {
+      if (!reason || !reason.trim()) return null;
+      cancelButton.disabled = true;
+      cancelButton.setAttribute('aria-busy', 'true');
+      return ordersService.cancelBeforePayment(orderId, reason.trim(), { cancellationSource: 'orders-list' }).then(function () {
+        scheduleRender({ force: true });
+      });
+    }).catch(function (error) {
+      window.alert(error && error.message ? error.message : 'Não foi possível cancelar o pedido.');
+    }).finally(function () {
+      cancelButton.disabled = false;
+      cancelButton.removeAttribute('aria-busy');
+    });
   });
 
   document.addEventListener('click', function (event) {

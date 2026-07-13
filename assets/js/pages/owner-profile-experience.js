@@ -3,6 +3,56 @@
   var Doke = window.Doke || (window.Doke = {});
   if (!Doke.profileExperienceCore) return;
 
+  function text(value) { return String(value || '').trim(); }
+  function initials(name) {
+    var parts = text(name).split(/\s+/).filter(Boolean).slice(0, 2);
+    return parts.length ? parts.map(function (part) { return part.charAt(0).toUpperCase(); }).join('') : 'DK';
+  }
+  function location(profile) {
+    return [text(profile && profile.city), text(profile && profile.state)].filter(Boolean).join(', ');
+  }
+  function set(selector, value, fallback) {
+    var node = document.querySelector(selector);
+    if (node) node.textContent = text(value) || fallback || '';
+  }
+  function renderInterests(profile) {
+    var list = document.querySelector('[data-profile-interests]');
+    if (!list) return;
+    var interests = Array.isArray(profile && profile.interests) ? profile.interests.filter(Boolean) : [];
+    list.innerHTML = '';
+    if (!interests.length) {
+      var empty = document.createElement('li');
+      empty.textContent = 'Nenhum interesse informado.';
+      list.appendChild(empty);
+      return;
+    }
+    interests.forEach(function (interest) {
+      var item = document.createElement('li');
+      item.textContent = interest;
+      list.appendChild(item);
+    });
+  }
+  function render(profile) {
+    profile = profile || {};
+    var name = text(profile.name) || 'Complete seu perfil';
+    var handle = text(profile.handle);
+    var place = location(profile);
+    set('[data-profile-name]', name);
+    set('[data-profile-meta]', [handle ? '@' + handle : '', place].filter(Boolean).join(' · '), 'Adicione identificador e localização');
+    set('[data-profile-avatar-initials]', initials(profile.name));
+    set('[data-profile-about-title]', profile.name ? 'Sobre ' + text(profile.name).split(' ')[0] : 'Sobre você');
+    set('[data-profile-bio]', profile.bio, 'Adicione uma descrição para apresentar seu perfil.');
+    set('[data-profile-location]', place, 'Não informada');
+    set('[data-profile-since]', profile.createdAt ? new Date(profile.createdAt).getFullYear() : '—');
+    renderInterests(profile);
+
+    var verified = document.querySelector('[data-profile-verified]');
+    if (verified) verified.hidden = profile.verified !== true;
+    var boundary = document.querySelector('[data-state-boundary="meu-perfil"]');
+    if (boundary) boundary.dataset.profileId = profile.userId || profile.id || '';
+  }
+
+  var latestProfile = null;
   Doke.ownerProfileExperience = Doke.profileExperienceCore.createSurface({
     name: 'meu-perfil',
     boundary: 'meu-perfil',
@@ -13,35 +63,45 @@
     allowExplicitProfileId: false,
     allowSave: true,
     invalidateAllOnEvent: true,
-    load: function (profileId) {
-      if (Doke.services && Doke.services.profile) {
-        if (typeof Doke.services.profile.getCurrentProfile === 'function') {
-          return Promise.resolve(Doke.services.profile.getCurrentProfile()).then(function (profile) {
-            return { profile: profile || null, source: 'profile-service' };
-          });
-        }
-        if (typeof Doke.services.profile.getById === 'function') {
-          return Promise.resolve(Doke.services.profile.getById(profileId)).then(function (profile) {
-            return { profile: profile || null, source: 'profile-service' };
-          });
-        }
+    load: function () {
+      if (Doke.services && Doke.services.profile && typeof Doke.services.profile.getCurrentProfile === 'function') {
+        return Promise.resolve(Doke.services.profile.getCurrentProfile()).then(function (profile) {
+          latestProfile = profile || null;
+          render(latestProfile);
+          return { profile: latestProfile, source: 'profile-service' };
+        });
       }
-      if (Doke.controllerData && typeof Doke.controllerData.loadForPage === 'function') {
-        return Promise.resolve(Doke.controllerData.loadForPage('perfil'));
-      }
-      return Promise.resolve({ source: 'static-owner-profile', profileId: profileId });
+      return Promise.resolve({ profile: null, source: 'profile-service-unavailable' });
     },
     validate: function (context) {
-      var explicitEmpty = Object.prototype.hasOwnProperty.call(context.payload || {}, 'profile') && !context.payload.profile;
-      var isStatic = context.payload && context.payload.source === 'static-owner-profile';
-      return {
-        valid: true,
-        state: explicitEmpty && !isStatic ? 'empty' : 'ready',
-        profile: context.profile,
-        payload: context.payload
-      };
+      return { valid: true, state: context.profile ? 'ready' : 'empty', profile: context.profile, payload: context.payload };
     }
   });
 
-  Doke.ownerProfileExperience.init();
+  var ownerSurfaceInitialized = false;
+
+  window.DokeInitOwnerProfile = function DokeInitOwnerProfile() {
+    if (!document.querySelector('[data-state-boundary="meu-perfil"]')) return;
+
+    if (!ownerSurfaceInitialized) {
+      ownerSurfaceInitialized = true;
+      Doke.ownerProfileExperience.init();
+      return;
+    }
+
+    var service = Doke.services && Doke.services.profile;
+    if (!service || typeof service.getCurrentProfile !== 'function') {
+      render(null);
+      return;
+    }
+
+    Promise.resolve(service.getCurrentProfile()).then(function (profile) {
+      latestProfile = profile || null;
+      render(latestProfile);
+    }).catch(function () {
+      render(null);
+    });
+  };
+
+  window.DokeInitOwnerProfile();
 })();

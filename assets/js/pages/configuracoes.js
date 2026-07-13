@@ -1,8 +1,16 @@
 (function () {
   'use strict';
 
-  const controller = new AbortController();
-  const { signal } = controller;
+  let activeController = null;
+
+  window.DokeInitSettings = function DokeInitSettings() {
+    const settingsRoot = document.querySelector('.settings-shell, [data-settings-page], .settings-layout');
+    if (!settingsRoot) return;
+
+    activeController?.abort();
+    const controller = new AbortController();
+    activeController = controller;
+    const { signal } = controller;
 
   const pageBody = document.body;
   const sidebarItems = Array.from(document.querySelectorAll('.settings-sidebar__item'));
@@ -25,24 +33,24 @@
   const availabilitySummaries = Array.from(document.querySelectorAll('[data-settings-availability-summary]'));
   const supportSummary = document.querySelector('[data-settings-support-summary]');
   const supportDraftSummary = document.querySelector('[data-settings-support-draft-summary]');
+  const profileForm = document.querySelector('[data-settings-profile-form]');
+  const profileFields = Array.from(document.querySelectorAll('[data-profile-field]'));
+  const profileSaveButton = document.querySelector('[data-settings-save-profile]');
+  const profileError = document.querySelector('[data-settings-profile-error]');
+  const profileInitials = document.querySelector('[data-settings-profile-initials]');
+  let persistedProfile = null;
 
-  const SETTINGS_STORAGE_KEY = 'doke.settings.local.v1';
+
   const DEFAULT_SETTINGS = Object.freeze({
-    account: Object.freeze({
-      fullName: 'Gabriel Oliveira',
-      displayName: 'Gabriel',
-      document: '123.456.789-00',
-      phone: '(11) 99999-9999',
-      email: 'gabriel@example.com'
-    }),
+    account: Object.freeze({ fullName: '', displayName: '', document: '', phone: '', email: '' }),
     professional: Object.freeze({
-      professionalName: 'Gabriel Oliveira',
-      professionalType: 'Autônomo',
-      professionalDescription: 'Atendimento residencial com foco em qualidade, prazo e comunicação clara.',
-      mainCategory: 'Pintura',
-      experience: 'Menos de 1 ano',
-      baseCity: 'Salvador, BA',
-      serviceRadius: 'Até 5 km',
+      professionalName: '',
+      professionalType: '',
+      professionalDescription: '',
+      mainCategory: '',
+      experience: '',
+      baseCity: '',
+      serviceRadius: '',
       neighborhoods: '',
       receiveOrders: true,
       urgentAvailability: false
@@ -116,35 +124,22 @@
     return next;
   };
 
-  const readStoredSettings = () => {
+  let settingsState = cloneSettings(DEFAULT_SETTINGS);
+
+  const hydrateSettings = async () => {
     try {
-      const raw = window.localStorage?.getItem(SETTINGS_STORAGE_KEY);
-      if (!raw) return cloneSettings(DEFAULT_SETTINGS);
-      return mergeSettings(DEFAULT_SETTINGS, JSON.parse(raw));
+      const stored = await window.Doke?.services?.profile?.getCurrentSettings?.();
+      settingsState = mergeSettings(DEFAULT_SETTINGS, stored);
     } catch (error) {
       console.warn('[Doke] Não foi possível ler as preferências de configurações.', error);
-      return cloneSettings(DEFAULT_SETTINGS);
+      settingsState = cloneSettings(DEFAULT_SETTINGS);
     }
   };
 
-  let settingsState = readStoredSettings();
-
-  const saveSettings = async (section) => {
-    if (window.Doke?.settingsExperience?.persist) {
-      return window.Doke.settingsExperience.persist({
-        storageKey: SETTINGS_STORAGE_KEY,
-        settings: cloneSettings(settingsState),
-        section: section || 'all'
-      });
-    }
-
-    const serialized = JSON.stringify(settingsState);
-    window.localStorage?.setItem(SETTINGS_STORAGE_KEY, serialized);
-    const confirmed = window.localStorage?.getItem(SETTINGS_STORAGE_KEY);
-    if (confirmed !== serialized) {
-      throw new Error('Não foi possível confirmar o salvamento das configurações.');
-    }
-    return cloneSettings(settingsState);
+  const saveSettings = () => {
+    const request = window.Doke?.services?.profile?.updateCurrentSettings?.(cloneSettings(settingsState));
+    if (!request || typeof request.then !== 'function') return Promise.reject(new Error('Persistência das preferências indisponível.'));
+    return request;
   };
 
   const getSettingValue = (path) => {
@@ -231,77 +226,6 @@
   const activateTab = (panelName, { scroll = true, updateLocation = true } = {}) => {
     const normalizedPanelName = normalizePanelName(panelName);
     if (!normalizedPanelName) return;
-
-    const getCurrentSession = () => {
-    try {
-      return window.DokeAuth?.service?.getSession?.() || window.Doke?.session?.getSession?.() || null;
-    } catch {
-      return null;
-    }
-  };
-
-  const formatDateTime = (value) => {
-    if (!value) return '';
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return '';
-    return date.toLocaleString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  const syncSecuritySessionSurface = () => {
-    if (!securitySessionSummary && !securitySessionMeta) return;
-
-    const session = getCurrentSession();
-    const user = session?.user || null;
-    const provider = session?.provider || 'mock';
-    const issuedAt = formatDateTime(session?.issuedAt || session?.updatedAt);
-    const userLabel = user?.email || user?.name || 'Usuário local';
-
-    if (securitySessionSummary) {
-      securitySessionSummary.textContent = user
-        ? `Sessão ativa para ${userLabel}.`
-        : 'Nenhuma sessão autenticada neste dispositivo.';
-    }
-
-    if (securitySessionMeta) {
-      securitySessionMeta.textContent = user
-        ? `Provedor ${provider}${issuedAt ? ` · iniciada em ${issuedAt}` : ''}.`
-        : 'Entre novamente para acessar pedidos, mensagens e carteira.';
-    }
-
-    securitySignOutButtons.forEach((button) => {
-      button.disabled = !user;
-      button.setAttribute('aria-disabled', String(!user));
-    });
-  };
-
-  const signOutFromSettings = async (button) => {
-    if (!button || button.disabled) return;
-    const originalLabel = button.dataset.settingsOriginalLabel || button.textContent.trim();
-    button.dataset.settingsOriginalLabel = originalLabel;
-    button.textContent = 'Saindo...';
-    button.disabled = true;
-    button.setAttribute('aria-busy', 'true');
-
-    try {
-      if (window.DokeAuth?.service?.logout) {
-        await window.DokeAuth.service.logout({ redirect: true, redirectTo: 'auth/login.html' });
-        return;
-      }
-      window.Doke?.session?.clear?.();
-      window.location.assign('auth/login.html');
-    } catch (error) {
-      console.warn('[Doke] Não foi possível encerrar a sessão pelas configurações.', error);
-      button.textContent = originalLabel;
-      button.disabled = false;
-      button.setAttribute('aria-busy', 'false');
-    }
-  };
 
   sidebarItems.forEach((button) => {
       const isActive = button.dataset.settingsTab === normalizedPanelName;
@@ -438,7 +362,7 @@
         : 'Entre novamente para acessar pedidos, mensagens e carteira.';
     }
 
-    securitySignOutButtons.forEach((button) => {
+  securitySignOutButtons.forEach((button) => {
       button.disabled = !user;
       button.setAttribute('aria-disabled', String(!user));
     });
@@ -513,6 +437,55 @@
     setNarrowMenuMode(true);
   }, { signal });
 
+
+  const getProfileService = () => window.Doke?.services?.profile || null;
+
+  const getProfileField = (name) => profileFields.find((field) => field.dataset.profileField === name);
+
+  const profileInitialsFromName = (value) => {
+    const parts = String(value || '').trim().split(/\s+/).filter(Boolean).slice(0, 2);
+    return parts.length ? parts.map((part) => part.charAt(0).toUpperCase()).join('') : 'DK';
+  };
+
+  const hydrateProfileForm = async () => {
+    const service = getProfileService();
+    if (!service?.getCurrentProfile || !profileForm) return;
+    try {
+      persistedProfile = await service.getCurrentProfile();
+      const profile = persistedProfile || {};
+      profileFields.forEach((field) => {
+        const key = field.dataset.profileField;
+        const value = key === 'interests' && Array.isArray(profile.interests)
+          ? profile.interests.join(', ')
+          : profile[key] || '';
+        setInputValue(field, value);
+      });
+      if (profileInitials) profileInitials.textContent = profileInitialsFromName(profile.name);
+      if (profileError) profileError.textContent = '';
+    } catch (error) {
+      if (profileError) profileError.textContent = error?.message || 'Não foi possível carregar o perfil.';
+    }
+  };
+
+  const saveProfile = async (button) => {
+    const service = getProfileService();
+    if (!service?.updateCurrentProfile || !profileForm) return;
+    const payload = Object.fromEntries(new FormData(profileForm).entries());
+    if (profileError) profileError.textContent = '';
+    button.disabled = true;
+    button.setAttribute('aria-busy', 'true');
+    try {
+      persistedProfile = await service.updateCurrentProfile(payload);
+      if (profileInitials) profileInitials.textContent = profileInitialsFromName(persistedProfile?.name);
+      setButtonSavedFeedback(button);
+    } catch (error) {
+      if (profileError) profileError.textContent = error?.message || 'Não foi possível salvar o perfil.';
+      button.setAttribute('data-action-state', 'error');
+      button.setAttribute('aria-busy', 'false');
+    } finally {
+      button.disabled = false;
+    }
+  };
 
   const syncPreferenceInputs = () => {
     preferenceInputs.forEach((input) => {
@@ -611,37 +584,6 @@
   const markPanelDirty = (input) => {
     const panel = input.closest('[data-settings-panel]');
     panel?.setAttribute('data-settings-dirty', 'true');
-    window.Doke?.settingsExperience?.setDirty?.(panel?.dataset.settingsPanel, true);
-  };
-
-  const setButtonPendingState = (button, pending) => {
-    if (!button) return;
-    const originalLabel = button.dataset.settingsOriginalLabel || button.textContent.trim();
-    button.dataset.settingsOriginalLabel = originalLabel;
-    button.disabled = Boolean(pending);
-    button.setAttribute('aria-busy', String(Boolean(pending)));
-    button.setAttribute('data-action-state', pending ? 'loading' : 'idle');
-    button.textContent = pending ? (button.dataset.actionLoadingLabel || 'Salvando…') : originalLabel;
-  };
-
-  const setButtonErrorFeedback = (button) => {
-    if (!button) return;
-    const originalLabel = button.dataset.settingsOriginalLabel || button.textContent.trim();
-    button.textContent = 'Tentar novamente';
-    button.disabled = false;
-    button.setAttribute('aria-busy', 'false');
-    button.setAttribute('data-action-state', 'error');
-    window.setTimeout(() => {
-      button.textContent = originalLabel;
-      button.setAttribute('data-action-state', 'idle');
-    }, 1800);
-  };
-
-  const reportSettingsError = (error, section) => {
-    console.warn('[Doke] Não foi possível salvar as configurações.', error);
-    document.dispatchEvent(new CustomEvent('doke:settings-save-failed', {
-      detail: { section, message: error?.message || String(error || 'Erro desconhecido') }
-    }));
   };
 
   const setButtonSavedFeedback = (button) => {
@@ -658,48 +600,27 @@
   };
 
   const savePanelSettings = async (panelName, button) => {
-    const previousState = cloneSettings(settingsState);
     const changed = collectPanelFields(panelName);
     const panel = document.querySelector(`[data-settings-panel="${panelName}"]`);
-
-    if (!changed && panel?.getAttribute('data-settings-dirty') !== 'true') {
-      setButtonSavedFeedback(button);
-      return;
-    }
-
-    setButtonPendingState(button, true);
-    window.Doke?.settingsExperience?.setState?.('submitting', { section: panelName });
-
-    try {
-      await saveSettings(panelName);
-      panel?.setAttribute('data-settings-dirty', 'false');
-      window.Doke?.settingsExperience?.setDirty?.(panelName, false);
-      syncPaymentsSurface();
-      syncAvailabilitySurface();
-      syncSupportSurface();
-      setButtonPendingState(button, false);
-      setButtonSavedFeedback(button);
-      window.Doke?.settingsExperience?.setState?.('success', { section: panelName });
-      document.dispatchEvent(new CustomEvent('doke:settings-updated', {
-        detail: { section: panelName, settings: cloneSettings(settingsState) }
-      }));
-      document.dispatchEvent(new CustomEvent('doke:settings-profile-updated', {
-        detail: {
-          section: panelName,
-          account: cloneSettings(settingsState.account || {}),
-          professional: cloneSettings(settingsState.professional || {})
-        }
-      }));
-    } catch (error) {
-      settingsState = previousState;
-      panel?.setAttribute('data-settings-dirty', 'true');
-      window.Doke?.settingsExperience?.setDirty?.(panelName, true);
-      setButtonPendingState(button, false);
-      setButtonErrorFeedback(button);
-      window.Doke?.settingsExperience?.setState?.(navigator.onLine === false ? 'offline' : 'error', { section: panelName });
-      reportSettingsError(error, panelName);
-      throw error;
-    }
+    if (changed) await saveSettings();
+    panel?.setAttribute('data-settings-dirty', 'false');
+    syncPaymentsSurface();
+    syncAvailabilitySurface();
+    syncSupportSurface();
+    setButtonSavedFeedback(button);
+    document.dispatchEvent(new CustomEvent('doke:settings-updated', {
+      detail: {
+        section: panelName,
+        settings: cloneSettings(settingsState)
+      }
+    }));
+    document.dispatchEvent(new CustomEvent('doke:settings-profile-updated', {
+      detail: {
+        section: panelName,
+        account: cloneSettings(settingsState.account || {}),
+        professional: cloneSettings(settingsState.professional || {})
+      }
+    }));
   };
 
   const resetPanelFields = (panelName) => {
@@ -712,7 +633,6 @@
     syncAvailabilitySurface();
     syncSupportSurface();
     document.querySelector(`[data-settings-panel="${panelName}"]`)?.setAttribute('data-settings-dirty', 'false');
-    window.Doke?.settingsExperience?.setDirty?.(panelName, false);
   };
 
   preferenceInputs.forEach((input) => {
@@ -720,30 +640,25 @@
       const preferencePath = input.dataset.settingsPreference;
       if (!preferencePath) return;
       const previousValue = getSettingValue(preferencePath);
-      const nextValue = Boolean(input.checked);
-      const changed = setSettingValue(preferencePath, nextValue);
-      input.closest('.settings-list-item')?.classList.toggle('is-disabled', !nextValue);
+      const changed = setSettingValue(preferencePath, Boolean(input.checked));
+      input.closest('.settings-list-item')?.classList.toggle('is-disabled', !input.checked);
       if (!changed) return;
-
-      input.disabled = true;
-      input.setAttribute('aria-busy', 'true');
-      window.Doke?.settingsExperience?.setState?.('submitting', { path: preferencePath });
       try {
-        await saveSettings(preferencePath);
-        window.Doke?.settingsExperience?.setState?.('success', { path: preferencePath });
-        document.dispatchEvent(new CustomEvent('doke:settings-updated', {
-          detail: { path: preferencePath, value: nextValue, settings: cloneSettings(settingsState) }
-        }));
+        await saveSettings();
       } catch (error) {
         setSettingValue(preferencePath, previousValue);
         input.checked = Boolean(previousValue);
         input.closest('.settings-list-item')?.classList.toggle('is-disabled', !input.checked);
-        window.Doke?.settingsExperience?.setState?.(navigator.onLine === false ? 'offline' : 'error', { path: preferencePath });
-        reportSettingsError(error, preferencePath);
-      } finally {
-        input.disabled = false;
-        input.setAttribute('aria-busy', 'false');
+        console.warn('[Doke] Não foi possível salvar a preferência.', error);
+        return;
       }
+      document.dispatchEvent(new CustomEvent('doke:settings-updated', {
+        detail: {
+          path: preferencePath,
+          value: Boolean(input.checked),
+          settings: cloneSettings(settingsState)
+        }
+      }));
     }, { signal });
   });
 
@@ -753,11 +668,21 @@
   });
 
   settingsSaveButtons.forEach((button) => {
-    button.addEventListener('click', (event) => {
+    button.addEventListener('click', async (event) => {
       event.preventDefault();
       const panelName = normalizePanelName(button.dataset.settingsSavePanel);
       if (!panelName) return;
-      savePanelSettings(panelName, button).catch(() => null);
+      button.disabled = true;
+      button.setAttribute('aria-busy', 'true');
+      try {
+        await savePanelSettings(panelName, button);
+      } catch (error) {
+        button.setAttribute('data-action-state', 'error');
+        button.setAttribute('aria-busy', 'false');
+        console.warn('[Doke] Não foi possível salvar a seção.', error);
+      } finally {
+        button.disabled = false;
+      }
     }, { signal });
   });
 
@@ -777,6 +702,20 @@
     }, { signal });
   });
 
+  profileSaveButton?.addEventListener('click', (event) => {
+    event.preventDefault();
+    saveProfile(profileSaveButton);
+  }, { signal });
+
+  profileFields.forEach((field) => {
+    field.addEventListener('input', () => {
+      if (profileError) profileError.textContent = '';
+      if (field.dataset.profileField === 'name' && profileInitials) {
+        profileInitials.textContent = profileInitialsFromName(field.value);
+      }
+    }, { signal });
+  });
+
   securitySignOutButtons.forEach((button) => {
     button.addEventListener('click', (event) => {
       event.preventDefault();
@@ -784,19 +723,24 @@
     }, { signal });
   });
 
-  document.addEventListener('doke:auth-session-change', syncSecuritySessionSurface, { signal });
+  document.addEventListener('doke:auth-session-change', () => {
+    syncSecuritySessionSurface();
+    hydrateProfileForm();
+  }, { signal });
 
   if (window.DokeHomeDrawer?.create) {
     const initDrawer = window.DokeHomeDrawer.create({ signal });
     if (typeof initDrawer === 'function') initDrawer();
   }
 
-  const initState = () => {
+  const initState = async () => {
     const initialPanel = getPanelFromLocation() || document.querySelector('.settings-sidebar__item.is-active')?.dataset.settingsTab || sidebarItems.find((item) => item.dataset.settingsTab)?.dataset.settingsTab;
     if (initialPanel) {
       activateTab(initialPanel, { scroll: false, updateLocation: Boolean(getPanelFromLocation()) });
     }
 
+    await hydrateSettings();
+    if (signal.aborted) return;
     filterSettings('');
     syncPreferenceInputs();
     syncSettingsFieldInputs();
@@ -804,13 +748,13 @@
     syncAvailabilitySurface();
     syncSupportSurface();
     syncSecuritySessionSurface();
+    hydrateProfileForm();
     updateSearchClearState();
     setMobileSearchOpen(false);
 
     setNarrowMenuMode(isNarrowSettings());
 
     document.querySelector('.settings-sidebar')?.removeAttribute('hidden');
-    window.Doke?.settingsExperience?.setState?.('ready');
   };
 
   let wasNarrow = isNarrowSettings();
@@ -835,5 +779,8 @@
     });
   }, { signal });
 
-  initState();
+    initState();
+  };
+
+  window.DokeInitSettings();
 })();

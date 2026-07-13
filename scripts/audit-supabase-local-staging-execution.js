@@ -44,7 +44,8 @@ if (gate) {
 
   [
     'supabase/migrations/001_identity_profiles.sql',
-    'supabase/migrations/006_runtime_idempotency_audit_foundation.sql'
+    'supabase/migrations/006_runtime_idempotency_audit_foundation.sql',
+    'supabase/migrations/007_account_profile_base.sql'
   ].forEach((file) => {
     if (!gate.REQUIRED_MIGRATIONS.includes(file)) failures.push(`required migration missing from execution gate: ${file}`);
   });

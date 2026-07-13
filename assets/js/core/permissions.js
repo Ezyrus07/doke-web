@@ -227,7 +227,7 @@
     var status = normalizeText(nextStatus || '');
     if (canAccessAdmin(actor)) return true;
     if (!canAccessOrder(actor, order, ORDER_ACTIONS.UPDATE_STATUS)) return false;
-    if (role === 'professional') return ['accepted', 'conversation', 'quoted', 'in_progress', 'completed', 'cancelled'].indexOf(status) !== -1;
+    if (role === 'professional') return ['accepted', 'quoted', 'in_progress', 'completed', 'cancelled'].indexOf(status === 'conversation' ? 'accepted' : status === 'responded' ? 'quoted' : status) !== -1;
     if (role === 'client') return ['in_progress', 'completed', 'cancelled'].indexOf(status) !== -1;
     return false;
   }

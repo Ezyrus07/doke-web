@@ -1231,6 +1231,53 @@
     return Promise.resolve({ transaction: clone(normalized), created: true, updated: false, wallet: clone(saved) });
   }
 
+  function releaseHeldReceivable(payload) {
+    payload = payload || {};
+    var wallet = readWallet();
+    var transactionIndex = findTransactionIndex(wallet, payload);
+    if (transactionIndex < 0) return Promise.reject(new Error('Recebível em garantia não encontrado.'));
+
+    var transaction = wallet.transactions[transactionIndex];
+    if (transaction.type !== 'receivable') return Promise.reject(new Error('A transação informada não é um recebível.'));
+    var expectedPaymentId = normalizeText(payload.paymentId || '');
+    var transactionPaymentId = normalizeText(transaction.paymentId || '');
+    if (expectedPaymentId && transactionPaymentId && expectedPaymentId !== transactionPaymentId) {
+      return Promise.reject(new Error('O recebível pertence a outro pagamento.'));
+    }
+
+    var dispute = findDisputeForTransaction(transaction, wallet);
+    if (dispute && isDisputeOpen(dispute)) {
+      return Promise.reject(new Error('O recebível está em contestação e não pode ser liberado.'));
+    }
+
+    if (transaction.status === 'available' || transaction.releaseStatus === 'liberado') {
+      return Promise.resolve({ transaction: clone(transaction), created: false, updated: false, wallet: clone(wallet) });
+    }
+    if (transaction.status !== 'held' && transaction.status !== 'pending') {
+      return Promise.reject(new Error('O recebível não está em garantia para liberação.'));
+    }
+
+    var releasedAt = payload.releasedAt || nowIso();
+    var updated = normalizeTransaction(Object.assign({}, transaction, {
+      paymentId: expectedPaymentId || transactionPaymentId,
+      status: 'available',
+      releaseStatus: 'liberado',
+      description: 'Pedido concluído e saldo liberado',
+      note: 'Valor líquido liberado após confirmação do cliente e taxa Doke mockada de 5%.',
+      availableAt: transaction.availableAt && transaction.availableAt !== transaction.createdAt ? transaction.availableAt : releasedAt,
+      releasedAt: transaction.releasedAt || releasedAt,
+      updatedAt: releasedAt
+    }));
+
+    wallet.transactions[transactionIndex] = updated;
+    wallet.updatedAt = releasedAt;
+    var saved = writeWallet(wallet);
+    document.dispatchEvent(new CustomEvent('doke:wallet-receivable-released', {
+      detail: { transaction: clone(updated), previous: clone(transaction), wallet: clone(saved) }
+    }));
+    return Promise.resolve({ transaction: clone(updated), previous: clone(transaction), created: false, updated: true, wallet: clone(saved) });
+  }
+
   function getBankAccount(filters) {
     filters = filters || {};
     var user = filters.currentUser === false ? null : getCurrentUser();
@@ -1472,6 +1519,15 @@
     var transactionIndex = findTransactionIndex(wallet, payload);
     if (transactionIndex < 0) return Promise.reject(new Error('Recebível não encontrado.'));
     var transaction = wallet.transactions[transactionIndex];
+    if (transaction.type !== 'receivable') return Promise.reject(new Error('A transação informada não é um recebível contestável.'));
+    if (transaction.status !== 'held' && transaction.status !== 'pending') {
+      return Promise.reject(new Error('Somente valores em garantia podem entrar em contestação.'));
+    }
+    var expectedPaymentId = normalizeText(payload.paymentId || '');
+    var transactionPaymentId = normalizeText(transaction.paymentId || '');
+    if (expectedPaymentId && transactionPaymentId && expectedPaymentId !== transactionPaymentId) {
+      return Promise.reject(new Error('O recebível pertence a outro pagamento.'));
+    }
     var existingIndex = (wallet.disputes || []).findIndex(function (dispute) {
       return (String(dispute.transactionId || '') === String(transaction.id || '') || (transaction.orderId && String(dispute.orderId || '') === String(transaction.orderId)))
         && isDisputeOpen(dispute);
@@ -1483,6 +1539,7 @@
     var dispute = normalizeDispute({
       transactionId: transaction.id || '',
       orderId: transaction.orderId || payload.orderId || '',
+      paymentId: transactionPaymentId || expectedPaymentId,
       messageId: transaction.messageId || payload.messageId || '',
       conversationId: transaction.conversationId || payload.conversationId || '',
       professionalId: transaction.professionalId || transaction.userId || payload.professionalId || '',
@@ -1505,8 +1562,10 @@
     wallet.disputes.unshift(dispute);
     wallet.updatedAt = createdAt;
     var saved = writeWallet(wallet);
-    syncOrderDisputeState(updated, dispute, 'opened');
-    createDisputeNotification(updated, dispute, 'opened');
+    if (payload.deferSideEffects !== true) {
+      syncOrderDisputeState(updated, dispute, 'opened');
+      createDisputeNotification(updated, dispute, 'opened');
+    }
     document.dispatchEvent(new CustomEvent('doke:wallet-dispute-opened', {
       detail: { dispute: clone(dispute), transaction: clone(updated), wallet: clone(saved) }
     }));
@@ -1551,8 +1610,10 @@
     wallet.transactions[transactionIndex] = updatedTransaction;
     wallet.updatedAt = respondedAt;
     var saved = writeWallet(wallet);
-    syncOrderDisputeState(updatedTransaction, updatedDispute, 'response');
-    createDisputeResponseNotification(updatedTransaction, updatedDispute);
+    if (payload.deferSideEffects !== true) {
+      syncOrderDisputeState(updatedTransaction, updatedDispute, 'response');
+      createDisputeResponseNotification(updatedTransaction, updatedDispute);
+    }
     document.dispatchEvent(new CustomEvent('doke:wallet-dispute-responded', {
       detail: { dispute: clone(updatedDispute), transaction: clone(updatedTransaction), wallet: clone(saved) }
     }));
@@ -1575,8 +1636,23 @@
     if (transactionIndex < 0) return Promise.reject(new Error('Recebível vinculado não encontrado.'));
     var transaction = wallet.transactions[transactionIndex];
     var resolution = normalizeRepasseCode(payload.resolution || payload.status || '');
-    var resolvedForClient = resolution === 'cliente' || resolution === 'client' || resolution === 'resolvida_cliente' || resolution === 'refund' || resolution === 'reembolsado';
+    var clientResolutions = ['cliente', 'client', 'client_refund', 'resolvida_cliente', 'refund', 'refunded', 'reembolsado'];
+    var professionalResolutions = ['profissional', 'professional', 'release', 'released', 'liberado', 'resolvida_profissional'];
+    if (clientResolutions.indexOf(resolution) === -1 && professionalResolutions.indexOf(resolution) === -1) {
+      return Promise.reject(new Error('Informe uma resolução válida para a contestação.'));
+    }
+    var resolvedForClient = clientResolutions.indexOf(resolution) !== -1;
     var nextStatus = resolvedForClient ? 'reembolsado' : 'resolvida_profissional';
+    var currentStatus = normalizeDisputeStatus(dispute.status || '');
+    var terminalStatuses = ['reembolsado', 'resolvida_cliente', 'resolvida_profissional'];
+    if (terminalStatuses.indexOf(currentStatus) !== -1) {
+      var currentResolvedForClient = currentStatus === 'reembolsado' || currentStatus === 'resolvida_cliente' || dispute.resolution === 'cliente';
+      if (currentResolvedForClient !== resolvedForClient) {
+        return Promise.reject(new Error('Esta contestação já foi encerrada com outra resolução.'));
+      }
+      return Promise.resolve({ dispute: clone(dispute), transaction: clone(transaction), updated: false, wallet: clone(wallet), idempotent: true });
+    }
+    if (!isDisputeOpen(dispute)) return Promise.reject(new Error('A contestação não está ativa para resolução.'));
     var resolvedAt = nowIso();
     var updatedDispute = normalizeDispute(Object.assign({}, dispute, {
       status: nextStatus,
@@ -1587,6 +1663,7 @@
     var updatedTransaction;
     if (resolvedForClient) {
       var refundAmount = Math.abs(parseAmount(transaction.netAmount != null ? transaction.netAmount : transaction.amount));
+      var clientRefundAmount = Math.abs(parseAmount(payload.refundAmount || payload.clientRefundAmount || transaction.grossAmount || refundAmount));
       updatedTransaction = normalizeTransaction(Object.assign({}, transaction, {
         type: 'refund',
         status: 'refunded',
@@ -1597,6 +1674,7 @@
         description: 'Contestação encerrada com reembolso ao cliente',
         note: 'Contestação encerrada. Cliente reembolsado.',
         grossAmount: transaction.grossAmount || refundAmount,
+        clientRefundAmount: clientRefundAmount,
         feeAmount: transaction.feeAmount || 0,
         netAmount: -refundAmount,
         amount: -refundAmount,
@@ -1640,8 +1718,10 @@
     });
     wallet.updatedAt = resolvedAt;
     var saved = writeWallet(wallet);
-    syncOrderDisputeState(updatedTransaction, updatedDispute, 'resolved');
-    createDisputeNotification(updatedTransaction, updatedDispute, 'resolved');
+    if (payload.deferSideEffects !== true) {
+      syncOrderDisputeState(updatedTransaction, updatedDispute, 'resolved');
+      createDisputeNotification(updatedTransaction, updatedDispute, 'resolved');
+    }
     document.dispatchEvent(new CustomEvent('doke:wallet-dispute-resolved', {
       detail: { dispute: clone(updatedDispute), transaction: clone(updatedTransaction), wallet: clone(saved) }
     }));
@@ -1859,7 +1939,8 @@
     openDispute: openDispute,
     respondDispute: respondDispute,
     resolveDispute: resolveDispute,
-    registerReceivable: registerReceivable
+    registerReceivable: registerReceivable,
+    releaseHeldReceivable: releaseHeldReceivable
   });
 })();
 /* Doke Payments Repository

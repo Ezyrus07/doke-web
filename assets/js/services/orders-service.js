@@ -25,6 +25,7 @@
     quote: '/orders/:id/quote',
     charge: '/orders/:id/charge',
     start: '/orders/:id/start',
+    requestCompletion: '/orders/:id/completion-request',
     complete: '/orders/:id/complete',
     updateStatus: '/orders/:id/status',
     transition: '/orders/:id/status'
@@ -591,29 +592,32 @@
   var ORDER_TRANSITIONS = Object.freeze({
     pending: Object.freeze({
       accepted: Object.freeze(['professional']),
-      cancelled: Object.freeze(['professional'])
+      cancelled: Object.freeze(['professional', 'client'])
     }),
     accepted: Object.freeze({
-      quoted: Object.freeze(['professional'])
-    }),
-    conversation: Object.freeze({
-      quoted: Object.freeze(['professional'])
+      quoted: Object.freeze(['professional']),
+      cancelled: Object.freeze(['professional', 'client'])
     }),
     quoted: Object.freeze({
       in_progress: Object.freeze(['client']),
-      cancelled: Object.freeze(['client'])
+      cancelled: Object.freeze(['client', 'professional'])
     }),
     in_progress: Object.freeze({
-      completed: Object.freeze(['client', 'professional']),
+      completed: Object.freeze(['client']),
       cancelled: Object.freeze(['client', 'professional'])
     }),
     completed: Object.freeze({}),
     cancelled: Object.freeze({})
   });
 
+  var ORDER_STATUS_ALIASES = Object.freeze({
+    conversation: 'accepted',
+    responded: 'quoted'
+  });
+
   function normalizeStatusToken(status) {
     var normalized = normalizeText(status || '').toLowerCase();
-    return normalized === 'conversation' ? 'accepted' : normalized;
+    return ORDER_STATUS_ALIASES[normalized] || normalized;
   }
 
   function getAllowedTransitions(status, role) {
@@ -876,7 +880,7 @@
     if (!actor || !actor.id) return false;
     if (actor.role === 'professional') {
       if (!canProfessionalActOnOrder(actor, order)) return false;
-      return ['accepted', 'conversation', 'quoted', 'in_progress', 'completed', 'cancelled'].indexOf(nextStatus) !== -1;
+      return ['accepted', 'quoted', 'in_progress', 'cancelled'].indexOf(normalizeStatusToken(nextStatus)) !== -1;
     }
     if (actor.role === 'client') {
       if (!isOrderClient(actor, order)) return false;
@@ -933,7 +937,7 @@
 
       if (!['admin', 'support'].includes(String(actor.role || '').toLowerCase())) {
         var roleAllowedStatuses = actor.role === 'professional'
-          ? ['accepted', 'conversation', 'quoted', 'in_progress', 'completed', 'cancelled']
+          ? ['accepted', 'conversation', 'quoted', 'in_progress', 'cancelled']
           : actor.role === 'client'
             ? ['in_progress', 'completed', 'cancelled']
             : [];
@@ -963,6 +967,12 @@
         throw new Error('Você não tem permissão para alterar este pedido.');
       }
       assertCanonicalTransition(order, normalizedStatus, actor);
+      if (normalizedStatus === 'cancelled' && options.disputeResolutionConfirmed !== true) {
+        var financialStatus = normalizeText(order.paymentStatus || order.escrowStatus || '').toLowerCase();
+        if (normalizeText(order.paymentId || '') || ['held', 'paid', 'confirmed', 'released', 'refunded'].indexOf(financialStatus) !== -1) {
+          throw new Error('Pedidos com pagamento iniciado exigem cancelamento financeiro ou resolução de disputa.');
+        }
+      }
 
       var meta = getStatusMeta(normalizedStatus);
       var updatedAt = nowIso();
@@ -984,7 +994,20 @@
         proposalRejectedBy: options.proposalRejectedBy || order.proposalRejectedBy || '',
         proposalRejectionSource: options.rejectionSource || order.proposalRejectionSource || '',
         cancellationType: options.cancellationType || order.cancellationType || '',
+        cancellationSource: options.cancellationSource || order.cancellationSource || '',
+        cancelledAt: options.cancelledAt || order.cancelledAt || '',
+        cancelledBy: options.cancelledBy || order.cancelledBy || '',
         paymentStatus: options.paymentStatus || order.paymentStatus || '',
+        escrowStatus: options.escrowStatus || order.escrowStatus || '',
+        completionStatus: options.completionStatus || order.completionStatus || '',
+        completionRequestedAt: options.completionRequestedAt || order.completionRequestedAt || '',
+        completionRequestedBy: options.completionRequestedBy || order.completionRequestedBy || '',
+        completionNote: options.completionNote !== undefined ? normalizeText(options.completionNote) : order.completionNote || '',
+        completionConfirmedAt: options.completionConfirmedAt || order.completionConfirmedAt || '',
+        completionConfirmedBy: options.completionConfirmedBy || order.completionConfirmedBy || '',
+        paymentReleasedAt: options.paymentReleasedAt || order.paymentReleasedAt || '',
+        paymentReleasedBy: options.paymentReleasedBy || order.paymentReleasedBy || '',
+        walletTransactionId: options.walletTransactionId || order.walletTransactionId || '',
         acceptedAt: normalizedStatus === 'accepted' || normalizedStatus === 'conversation' ? order.acceptedAt || updatedAt : order.acceptedAt || '',
         quotedAt: normalizedStatus === 'quoted' ? order.quotedAt || updatedAt : order.quotedAt || '',
         startedAt: normalizedStatus === 'in_progress' ? order.startedAt || updatedAt : order.startedAt || '',
@@ -1025,11 +1048,78 @@
     var actor = getCurrentUser() || {};
     if (!normalizedReason) return Promise.reject(new Error('Informe uma justificativa para recusar o pedido.'));
     return getById(orderId).then(function (order) {
-      if (actor.role === 'client' && normalizeStatusToken(order && order.status || '') === 'quoted') {
-        return rejectProposal(orderId, normalizedReason, { rejectionSource: 'decline-alias' });
+      var currentStatus = normalizeStatusToken(order && order.status || '');
+      if (actor.role === 'client') {
+        if (currentStatus === 'quoted') {
+          return rejectProposal(orderId, normalizedReason, { rejectionSource: 'decline-alias' });
+        }
+        return Promise.reject(new Error('Use o cancelamento do pedido para encerrar uma solicitação própria.'));
       }
       return saveStatus(orderId, 'cancelled', 'Pedido recusado', { reason: normalizedReason });
     });
+  }
+
+  var cancellationTasks = Object.create(null);
+
+  function canCancelBeforePayment(order, actor) {
+    actor = actor || getCurrentUser() || {};
+    if (!order || !actor.id || ['client', 'professional'].indexOf(actor.role) === -1) return false;
+    var actorLinked = actor.role === 'client' ? isOrderClient(actor, order) : canProfessionalActOnOrder(actor, order);
+    if (!actorLinked) return false;
+    var status = normalizeStatusToken(order.status || 'pending');
+    if (['pending', 'accepted', 'quoted', 'in_progress'].indexOf(status) === -1) return false;
+    var paymentStatus = normalizeText(order.paymentStatus || order.escrowStatus || 'pending').toLowerCase();
+    if (normalizeText(order.paymentId || '') || ['held', 'paid', 'confirmed', 'released', 'refunded'].indexOf(paymentStatus) !== -1) return false;
+    return !hasActiveDispute(order);
+  }
+
+  function cancelBeforePayment(orderId, reason, options) {
+    options = options || {};
+    var normalizedOrderId = normalizeText(orderId);
+    var normalizedReason = normalizeText(reason);
+    var actor = getCurrentUser() || {};
+    if (!normalizedOrderId) return Promise.reject(new Error('Pedido inválido para cancelamento.'));
+    if (!normalizedReason) return Promise.reject(new Error('Informe uma justificativa para cancelar o pedido.'));
+    if (!actor.id || ['client', 'professional'].indexOf(actor.role) === -1) {
+      return Promise.reject(new Error('Entre como cliente ou profissional para cancelar este pedido.'));
+    }
+    if (cancellationTasks[normalizedOrderId]) return cancellationTasks[normalizedOrderId];
+
+    var task = getById(normalizedOrderId).then(function (order) {
+      if (!order) throw new Error('Pedido não encontrado.');
+      var actorLinked = actor.role === 'client' ? isOrderClient(actor, order) : canProfessionalActOnOrder(actor, order);
+      if (!actorLinked) throw new Error('Você não tem permissão para cancelar este pedido.');
+      var status = normalizeStatusToken(order.status || 'pending');
+      var cancellationType = actor.role === 'client' ? 'client_cancelled_before_payment' : 'professional_cancelled_before_payment';
+      if (status === 'cancelled' && order.cancellationType === cancellationType) return order;
+      if (['pending', 'accepted', 'quoted', 'in_progress'].indexOf(status) === -1) {
+        throw new Error('Este pedido não pode mais ser cancelado antes do pagamento.');
+      }
+      var paymentStatus = normalizeText(order.paymentStatus || order.escrowStatus || 'pending').toLowerCase();
+      if (normalizeText(order.paymentId || '') || ['held', 'paid', 'confirmed', 'released', 'refunded'].indexOf(paymentStatus) !== -1) {
+        throw new Error('O pagamento já foi iniciado. Abra uma contestação para manter o valor protegido.');
+      }
+      if (hasActiveDispute(order)) throw new Error('O pedido está em contestação e não pode ser cancelado por este fluxo.');
+
+      return saveStatus(normalizedOrderId, 'cancelled', 'Pedido cancelado', {
+        reason: normalizedReason,
+        cancellationType: cancellationType,
+        cancellationSource: options.cancellationSource || 'before-payment',
+        cancelledAt: order.cancelledAt || nowIso(),
+        cancelledBy: actor.id,
+        detailFlow: options.detailFlow || 'O pedido foi cancelado antes da confirmação do pagamento. Nenhum valor foi movimentado.',
+        nextAction: options.nextAction || 'Pedido encerrado'
+      });
+    });
+
+    cancellationTasks[normalizedOrderId] = task.then(function (order) {
+      delete cancellationTasks[normalizedOrderId];
+      return order;
+    }, function (error) {
+      delete cancellationTasks[normalizedOrderId];
+      throw error;
+    });
+    return cancellationTasks[normalizedOrderId];
   }
 
   function findConversationForOrder(orderId) {
@@ -1606,12 +1696,168 @@
     return paymentHoldTasks[normalizedOrderId];
   }
 
+  function hasActiveDispute(order) {
+    var status = normalizeText(order && order.disputeStatus || '').toLowerCase();
+    return ['contestacao', 'contestacao_aberta', 'em_analise', 'analise', 'disputed', 'open'].indexOf(status) !== -1;
+  }
+
+  function hasHeldPayment(order) {
+    var status = normalizeText(order && order.paymentStatus || '').toLowerCase();
+    return ['held', 'released'].indexOf(status) !== -1;
+  }
+
+  var completionRequestTasks = Object.create(null);
+
+  function recordCompletionRequest(orderId, options) {
+    options = options || {};
+    var normalizedOrderId = normalizeText(orderId);
+    var actor = getCurrentUser() || {};
+    if (!normalizedOrderId) return Promise.reject(new Error('Pedido inválido para solicitação de conclusão.'));
+    if (!actor.id || actor.role !== 'professional') {
+      return Promise.reject(new Error('Use a conta profissional para solicitar a conclusão.'));
+    }
+    if (completionRequestTasks[normalizedOrderId]) return completionRequestTasks[normalizedOrderId];
+
+    var task = getById(normalizedOrderId).then(function (order) {
+      if (!order) throw new Error('Pedido não encontrado.');
+      if (!canProfessionalActOnOrder(actor, order)) throw new Error('Somente o profissional vinculado pode solicitar a conclusão.');
+      var status = normalizeStatusToken(order.status || 'pending');
+      var completionStatus = normalizeText(order.completionStatus || '').toLowerCase();
+
+      if (status === 'completed' || completionStatus === 'confirmed') return order;
+      if (status !== 'in_progress') throw new Error('A conclusão só pode ser solicitada durante a execução do pedido.');
+      if (!hasHeldPayment(order) || !normalizeText(order.paymentId || '')) {
+        throw new Error('O pagamento precisa estar confirmado em garantia antes da conclusão.');
+      }
+      if (hasActiveDispute(order)) throw new Error('O pedido está em contestação e não pode ser concluído agora.');
+      if (completionStatus === 'requested') return order;
+
+      var requestedAt = normalizeText(options.completionRequestedAt || '') || nowIso();
+      var metadata = {
+        completionStatus: 'requested',
+        completionRequestedAt: requestedAt,
+        completionRequestedBy: actor.id,
+        completionNote: normalizeText(options.completionNote || options.note || ''),
+        detailFlow: options.detailFlow || 'O profissional informou que o serviço foi concluído. O cliente deve confirmar ou relatar um problema.',
+        nextAction: options.nextAction || 'Confirmar conclusão',
+        updatedAt: requestedAt
+      };
+
+      if (shouldUseOrdersWriteCanary()) {
+        return ordersWriteCanaryAction('requestCompletion', normalizedOrderId, Object.assign({}, metadata, {
+          actorId: actor.id,
+          actorRole: actor.role
+        }), options);
+      }
+      if (shouldUseOrdersApi()) {
+        return ordersBoundaryAction('requestCompletion', Object.assign({}, metadata, {
+          id: normalizedOrderId,
+          orderId: normalizedOrderId,
+          actorId: actor.id,
+          actorRole: actor.role
+        }));
+      }
+
+      return assertRepository().save(Object.assign({}, order, metadata));
+    }).then(function (saved) {
+      if (!saved) throw new Error('A solicitação de conclusão não pôde ser registrada.');
+      return updateLinkedConversation(saved, saved.status || 'in_progress', {
+        completionStatus: saved.completionStatus,
+        completionRequestedAt: saved.completionRequestedAt,
+        completionRequestedBy: saved.completionRequestedBy,
+        completionNote: saved.completionNote
+      }).then(function (conversation) {
+        document.dispatchEvent(new CustomEvent('doke:order-completion-requested', {
+          detail: { order: saved, conversation: conversation }
+        }));
+        return saved;
+      });
+    });
+
+    completionRequestTasks[normalizedOrderId] = task.then(function (order) {
+      delete completionRequestTasks[normalizedOrderId];
+      return order;
+    }, function (error) {
+      delete completionRequestTasks[normalizedOrderId];
+      throw error;
+    });
+    return completionRequestTasks[normalizedOrderId];
+  }
+
   function complete(orderId, options) {
     options = options || {};
-    return saveStatus(orderId, 'completed', 'Concluído', Object.assign({}, options, {
-      detailFlow: options.detailFlow || 'Pedido concluído. O cliente pode avaliar o atendimento.',
-      nextAction: options.nextAction || 'Avaliar atendimento'
-    }));
+    var actor = getCurrentUser() || {};
+    return getById(orderId).then(function (order) {
+      if (!order) throw new Error('Pedido não encontrado.');
+      if (!isOrderClient(actor, order)) throw new Error('Somente o cliente vinculado pode confirmar a conclusão.');
+      if (normalizeStatusToken(order.status || '') === 'completed') return order;
+      if (normalizeStatusToken(order.status || '') !== 'in_progress') {
+        throw new Error('O pedido não está em execução para ser concluído.');
+      }
+      if (normalizeText(order.completionStatus || '').toLowerCase() !== 'requested') {
+        throw new Error('O profissional ainda não solicitou a conclusão deste pedido.');
+      }
+      if (hasActiveDispute(order)) throw new Error('O pedido está em contestação e não pode ser concluído.');
+      if (!options.releaseConfirmed || normalizeText(options.paymentStatus || '').toLowerCase() !== 'released') {
+        throw new Error('A conclusão exige a liberação canônica do pagamento em garantia.');
+      }
+      if (!normalizeText(options.paymentId || '') || String(options.paymentId) !== String(order.paymentId || '')) {
+        throw new Error('O pagamento liberado não corresponde ao pedido.');
+      }
+
+      var confirmedAt = normalizeText(options.completionConfirmedAt || options.paymentReleasedAt || '') || nowIso();
+      return saveStatus(orderId, 'completed', 'Concluído', Object.assign({}, options, {
+        paymentStatus: 'released',
+        escrowStatus: 'released',
+        completionStatus: 'confirmed',
+        completionConfirmedAt: confirmedAt,
+        completionConfirmedBy: actor.id,
+        paymentReleasedAt: options.paymentReleasedAt || confirmedAt,
+        paymentReleasedBy: actor.id,
+        detailFlow: options.detailFlow || 'Pedido concluído pelo cliente. O pagamento foi liberado ao profissional e a avaliação está disponível.',
+        nextAction: options.nextAction || 'Avaliar atendimento'
+      }));
+    });
+  }
+
+  function recordReview(orderId, payload) {
+    payload = payload || {};
+    var normalizedOrderId = normalizeText(orderId || '');
+    var actor = getCurrentUser() || {};
+    if (!normalizedOrderId) return Promise.reject(new Error('Pedido inválido para registrar avaliação.'));
+    if (!payload.reviewConfirmed || !normalizeText(payload.reviewId || '')) {
+      return Promise.reject(new Error('A avaliação precisa ser confirmada pelo serviço canônico de avaliações.'));
+    }
+
+    return getById(normalizedOrderId).then(function (order) {
+      if (!order) throw new Error('Pedido não encontrado para registrar avaliação.');
+      if (!isOrderClient(actor, order)) throw new Error('Somente o cliente vinculado pode avaliar este pedido.');
+      if (normalizeStatusToken(order.status || '') !== 'completed') {
+        throw new Error('Somente pedidos concluídos podem ser avaliados.');
+      }
+      if (normalizeText(order.paymentStatus || '').toLowerCase() !== 'released') {
+        throw new Error('A avaliação exige pagamento liberado ao profissional.');
+      }
+      if (hasActiveDispute(order)) throw new Error('Pedidos em contestação não podem ser avaliados.');
+      if (order.reviewId) {
+        if (String(order.reviewId) !== String(payload.reviewId)) {
+          throw new Error('Este pedido já possui outra avaliação registrada.');
+        }
+        return order;
+      }
+
+      var reviewedAt = normalizeText(payload.reviewedAt || '') || nowIso();
+      return assertRepository().save(Object.assign({}, order, {
+        reviewedAt: reviewedAt,
+        reviewedBy: actor.id,
+        reviewId: payload.reviewId,
+        reviewRating: Number(payload.rating || 0),
+        reviewTags: Array.isArray(payload.tags) ? payload.tags.slice() : [],
+        nextAction: 'Avaliação enviada',
+        detailFlow: payload.detailFlow || 'Pedido concluído e avaliado pelo cliente.',
+        updatedAt: reviewedAt
+      }));
+    });
   }
 
   function updateStatus(orderId, status, options) {
@@ -1631,6 +1877,8 @@
     getById: getById,
     accept: accept,
     decline: decline,
+    canCancelBeforePayment: canCancelBeforePayment,
+    cancelBeforePayment: cancelBeforePayment,
     quote: quote,
     submitProposal: submitProposal,
     createCharge: createCharge,
@@ -1639,10 +1887,16 @@
     rejectProposal: rejectProposal,
     start: start,
     recordPaymentHold: recordPaymentHold,
+    recordCompletionRequest: recordCompletionRequest,
     complete: complete,
+    recordReview: recordReview,
     updateStatus: updateStatus,
     stateMachine: Object.freeze({
+      statuses: Object.freeze(['pending', 'accepted', 'quoted', 'in_progress', 'completed', 'cancelled']),
+      aliases: ORDER_STATUS_ALIASES,
       transitions: ORDER_TRANSITIONS,
+      normalizeStatus: normalizeStatusToken,
+      getStatusMeta: getStatusMeta,
       canTransition: canTransition,
       getAllowedTransitions: getAllowedTransitions
     })

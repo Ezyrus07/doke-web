@@ -59,6 +59,14 @@
   const qsa = (selector, root = document) => Array.from(root.querySelectorAll(selector));
 
   const clean = (value) => String(value || '').replace(/\s+/g, ' ').trim();
+  const normalizeOrderStatus = (value) => {
+    const normalized = clean(value).toLowerCase();
+    const stateMachine = window.Doke?.services?.orders?.stateMachine;
+    if (stateMachine?.normalizeStatus) return stateMachine.normalizeStatus(normalized);
+    if (normalized === 'conversation') return 'accepted';
+    if (normalized === 'responded') return 'quoted';
+    return normalized || 'pending';
+  };
 
   const parseCurrencyRange = (value) => {
     const matches = clean(value).match(/[\d.]+(?:,\d{2})?/g) || [];
@@ -107,7 +115,7 @@
 
   const readOrderCard = (card) => {
     const detailBudget = card.dataset.detailBudget || '';
-    const status = card.dataset.status || 'pending';
+    const status = normalizeOrderStatus(card.dataset.status || 'pending');
     const title = clean(qs('.order-card__body h2', card)?.textContent) || card.dataset.id || 'Pedido';
 
     return {
@@ -164,6 +172,7 @@
 
   ns.data = Object.freeze({
     STATUS_CONFIG,
+    normalizeOrderStatus,
     qs,
     qsa,
     clean,

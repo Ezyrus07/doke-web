@@ -151,6 +151,7 @@ Não criar novo documento permanente para cada etapa. Primeiro atualizar um cont
 
 - `backend/shared/security/persistent-idempotency-store.js` — runtime persistence for idempotency claim, replay, conflict and failure states.
 - `supabase/migrations/006_runtime_idempotency_audit_foundation.sql` — SQL helpers/indexes for idempotency completion and failure.
+- `supabase/migrations/007_account_profile_base.sql` — persisted onboarding status, profile interests, and account settings.
 - `supabase/tests/005_runtime_idempotency_audit_replay_validation.sql` — post-smoke validation for replay-safe idempotency and linked audit rows.
 - `npm run audit:runtime-idempotency-audit` — static gate for runtime idempotency/audit readiness.
 

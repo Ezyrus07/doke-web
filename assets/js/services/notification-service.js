@@ -248,18 +248,28 @@
     }
 
     if (normalizedStatus === 'completed') {
-      title = 'Pedido concluído';
-      body = (actor.name || 'Cliente') + ' concluiu o pedido "' + (order.serviceTitle || order.title || 'Pedido') + '".';
+      var paymentReleased = normalizeText(options.paymentStatus || order.paymentStatus || '').toLowerCase() === 'released';
+      title = paymentReleased ? 'Pedido concluído e pagamento liberado' : 'Pedido concluído';
+      body = paymentReleased
+        ? (actor.name || 'Cliente') + ' confirmou a conclusão do pedido "' + (order.serviceTitle || order.title || 'Pedido') + '". O pagamento em garantia foi liberado.'
+        : (actor.name || 'Cliente') + ' concluiu o pedido "' + (order.serviceTitle || order.title || 'Pedido') + '".';
       actionLabel = 'Ver pedido';
       targetUrl = 'pedidos.html?order=' + encodeURIComponent(order.id || '');
     }
 
     if (normalizedStatus === 'cancelled') {
-      var proposalRejected = order.cancellationType === 'proposal_rejected' || options.cancellationType === 'proposal_rejected';
-      title = proposalRejected ? 'Proposta recusada' : 'Pedido recusado';
+      var cancellationType = normalizeText(options.cancellationType || order.cancellationType || '').toLowerCase();
+      var proposalRejected = cancellationType === 'proposal_rejected';
+      var clientCancelled = cancellationType === 'client_cancelled_before_payment';
+      var professionalCancelled = cancellationType === 'professional_cancelled_before_payment';
+      title = proposalRejected ? 'Proposta recusada' : clientCancelled || professionalCancelled ? 'Pedido cancelado' : 'Pedido recusado';
       body = proposalRejected
         ? (actor.name || 'Cliente') + ' recusou a proposta do pedido "' + (order.serviceTitle || order.title || 'Pedido') + '".'
-        : (actor.name || 'Profissional') + ' recusou o pedido "' + (order.serviceTitle || order.title || 'Pedido') + '".';
+        : clientCancelled
+          ? (actor.name || 'Cliente') + ' cancelou o pedido "' + (order.serviceTitle || order.title || 'Pedido') + '" antes do pagamento.'
+          : professionalCancelled
+            ? (actor.name || 'Profissional') + ' cancelou o pedido "' + (order.serviceTitle || order.title || 'Pedido') + '" antes do pagamento.'
+            : (actor.name || 'Profissional') + ' recusou o pedido "' + (order.serviceTitle || order.title || 'Pedido') + '".';
       if (options.reason || order.refusalReason) body += ' Justificativa: ' + (options.reason || order.refusalReason);
     }
 
@@ -283,6 +293,35 @@
       body: body,
       targetUrl: targetUrl,
       actionLabel: actionLabel,
+      read: false
+    });
+  }
+
+  function createOrderReviewed(order, review, options) {
+    order = order || {};
+    review = review || {};
+    options = options || {};
+    var actor = options.actor || getCurrentUser() || {};
+    var recipientId = normalizeText(options.recipientId || order.professionalId || order.providerId || review.professionalId || review.providerId || '');
+    if (!recipientId) return Promise.resolve(null);
+    var rating = Number(review.rating || 0);
+    var ratingLabel = Number.isFinite(rating) && rating > 0 ? rating.toFixed(1).replace('.', ',') : '—';
+
+    return create({
+      type: 'order_reviewed',
+      category: 'orders',
+      userId: recipientId,
+      actorId: actor.id || order.clientId || review.clientId || '',
+      actorName: actor.name || order.clientName || review.clientName || 'Cliente Doke',
+      orderId: order.id || review.orderId || '',
+      conversationId: options.conversationId || review.conversationId || '',
+      messageId: options.messageId || review.messageId || '',
+      serviceId: order.serviceId || review.serviceId || '',
+      eventKey: ['order_reviewed', order.id || review.orderId || '', review.id || '', recipientId].filter(Boolean).join(':'),
+      title: 'Avaliação recebida',
+      body: (actor.name || order.clientName || review.clientName || 'Cliente Doke') + ' avaliou o atendimento "' + (order.serviceTitle || order.title || review.serviceTitle || 'Pedido') + '" com nota ' + ratingLabel + '.',
+      targetUrl: options.targetUrl || 'mensagens.html?order=' + encodeURIComponent(order.id || review.orderId || ''),
+      actionLabel: 'Abrir conversa',
       read: false
     });
   }
@@ -355,6 +394,157 @@
       actionLabel: 'Acompanhar atendimento',
       read: false
     });
+  }
+
+  function createCompletionRequested(order, payment, options) {
+    order = order || {};
+    payment = payment || {};
+    options = options || {};
+    var conversation = options.conversation || {};
+    var actor = options.actor || getCurrentUser() || {};
+    var recipientId = normalizeText(order.clientId || payment.clientId || conversation.clientId || '');
+    if (!recipientId) return Promise.resolve(null);
+    var serviceTitle = normalizeText(order.serviceTitle || order.title || conversation.serviceTitle || 'Pedido');
+
+    return create({
+      type: 'completion_requested',
+      category: 'orders',
+      userId: recipientId,
+      actorId: actor.id || order.professionalId || order.providerId || '',
+      actorName: actor.name || order.professionalName || 'Profissional Doke',
+      orderId: order.id || payment.orderId || conversation.orderId || '',
+      conversationId: payment.conversationId || conversation.id || '',
+      messageId: payment.messageId || payment.chargeMessageId || '',
+      serviceId: order.serviceId || conversation.serviceId || '',
+      eventKey: ['completion_requested', order.id || payment.orderId || '', recipientId].filter(Boolean).join(':'),
+      title: 'Confirme a conclusão do serviço',
+      body: (actor.name || order.professionalName || 'O profissional') + ' informou que "' + serviceTitle + '" foi concluído. Confirme a entrega ou relate um problema.',
+      targetUrl: 'mensagens.html?order=' + encodeURIComponent(order.id || payment.orderId || '') + (conversation.id ? '&conversation=' + encodeURIComponent(conversation.id) : ''),
+      actionLabel: 'Revisar conclusão',
+      read: false
+    });
+  }
+
+  function createDisputeOpened(order, payment, dispute, options) {
+    order = order || {};
+    payment = payment || {};
+    dispute = dispute || {};
+    options = options || {};
+    var actor = options.actor || getCurrentUser() || {};
+    var professionalId = normalizeText(order.professionalId || order.providerId || payment.professionalId || dispute.professionalId || '');
+    var clientId = normalizeText(order.clientId || payment.clientId || dispute.clientId || actor.id || '');
+    var orderId = normalizeText(order.id || payment.orderId || dispute.orderId || '');
+    var conversationId = normalizeText(payment.conversationId || dispute.conversationId || '');
+    var targetUrl = 'mensagens.html?order=' + encodeURIComponent(orderId) + (conversationId ? '&conversation=' + encodeURIComponent(conversationId) : '');
+    var tasks = [];
+
+    if (professionalId) {
+      tasks.push(create({
+        type: 'order_dispute_opened',
+        category: 'orders',
+        userId: professionalId,
+        actorId: actor.id || clientId,
+        actorName: actor.name || order.clientName || 'Cliente Doke',
+        orderId: orderId,
+        conversationId: conversationId,
+        messageId: payment.messageId || payment.chargeMessageId || dispute.messageId || '',
+        eventKey: ['order_dispute_opened', dispute.id || orderId, professionalId].filter(Boolean).join(':'),
+        title: 'Pedido em contestação',
+        body: 'O cliente relatou um problema. O pagamento permanece congelado até a análise.',
+        targetUrl: targetUrl,
+        actionLabel: 'Responder contestação',
+        read: false
+      }));
+    }
+
+    if (clientId) {
+      tasks.push(create({
+        type: 'order_dispute_reported',
+        category: 'orders',
+        userId: clientId,
+        actorId: professionalId,
+        actorName: 'Doke Financeiro',
+        orderId: orderId,
+        conversationId: conversationId,
+        messageId: payment.messageId || payment.chargeMessageId || dispute.messageId || '',
+        eventKey: ['order_dispute_reported', dispute.id || orderId, clientId].filter(Boolean).join(':'),
+        title: 'Relato enviado',
+        body: 'Seu relato foi registrado. O pagamento continuará em garantia durante a análise.',
+        targetUrl: targetUrl,
+        actionLabel: 'Acompanhar contestação',
+        read: false
+      }));
+    }
+
+    return Promise.all(tasks);
+  }
+
+  function createDisputeResponded(order, payment, dispute, options) {
+    order = order || {};
+    payment = payment || {};
+    dispute = dispute || {};
+    options = options || {};
+    var actor = options.actor || getCurrentUser() || {};
+    var clientId = normalizeText(order.clientId || payment.clientId || dispute.clientId || '');
+    if (!clientId) return Promise.resolve([]);
+    var orderId = normalizeText(order.id || payment.orderId || dispute.orderId || '');
+    var conversationId = normalizeText(payment.conversationId || dispute.conversationId || '');
+    return Promise.all([create({
+      type: 'order_dispute_response',
+      category: 'orders',
+      userId: clientId,
+      actorId: actor.id || order.professionalId || order.providerId || '',
+      actorName: actor.name || order.professionalName || 'Profissional Doke',
+      orderId: orderId,
+      conversationId: conversationId,
+      messageId: payment.messageId || payment.chargeMessageId || dispute.messageId || '',
+      eventKey: ['order_dispute_response', dispute.id || orderId, clientId].filter(Boolean).join(':'),
+      title: 'Profissional respondeu',
+      body: 'A resposta foi registrada. O pagamento continua congelado enquanto o suporte analisa o caso.',
+      targetUrl: 'mensagens.html?order=' + encodeURIComponent(orderId) + (conversationId ? '&conversation=' + encodeURIComponent(conversationId) : ''),
+      actionLabel: 'Ver resposta',
+      read: false
+    })]);
+  }
+
+  function createDisputeResolved(order, payment, dispute, options) {
+    order = order || {};
+    payment = payment || {};
+    dispute = dispute || {};
+    options = options || {};
+    var resolution = normalizeText(options.resolution || dispute.resolution || '').toLowerCase();
+    var clientWon = resolution === 'cliente' || resolution === 'client';
+    var clientId = normalizeText(order.clientId || payment.clientId || dispute.clientId || '');
+    var professionalId = normalizeText(order.professionalId || order.providerId || payment.professionalId || dispute.professionalId || '');
+    var orderId = normalizeText(order.id || payment.orderId || dispute.orderId || '');
+    var conversationId = normalizeText(payment.conversationId || dispute.conversationId || '');
+    var targetUrl = 'mensagens.html?order=' + encodeURIComponent(orderId) + (conversationId ? '&conversation=' + encodeURIComponent(conversationId) : '');
+    var title = clientWon ? 'Cliente reembolsado' : 'Repasse liberado';
+    var body = clientWon
+      ? 'A contestação foi encerrada com reembolso ao cliente.'
+      : 'A contestação foi encerrada e o pagamento foi liberado ao profissional.';
+    var tasks = [];
+
+    [clientId, professionalId].filter(Boolean).forEach(function (recipientId) {
+      tasks.push(create({
+        type: 'order_dispute_resolved',
+        category: 'orders',
+        userId: recipientId,
+        actorId: options.actor && options.actor.id || '',
+        actorName: 'Doke Financeiro',
+        orderId: orderId,
+        conversationId: conversationId,
+        messageId: payment.messageId || payment.chargeMessageId || dispute.messageId || '',
+        eventKey: ['order_dispute_resolved', dispute.id || orderId, resolution || 'resolved', recipientId].filter(Boolean).join(':'),
+        title: title,
+        body: body,
+        targetUrl: targetUrl,
+        actionLabel: 'Ver resolução',
+        read: false
+      }));
+    });
+
+    return Promise.all(tasks);
   }
 
   function markAsRead(id) {
@@ -431,6 +621,11 @@
     createOrderCreated: createOrderCreated,
     createOrderStatusChanged: createOrderStatusChanged,
     createPaymentHeld: createPaymentHeld,
+    createCompletionRequested: createCompletionRequested,
+    createDisputeOpened: createDisputeOpened,
+    createDisputeResponded: createDisputeResponded,
+    createDisputeResolved: createDisputeResolved,
+    createOrderReviewed: createOrderReviewed,
     createMessageReceived: createMessageReceived,
     markAsRead: markAsRead,
     dismiss: dismiss,

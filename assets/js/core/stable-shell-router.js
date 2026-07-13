@@ -64,10 +64,10 @@
     '/comunidade.html': ['DokeInitCommunity'],
     '/comunidade-interna.html': [],
     '/perfil.html': ['DokeInitProfile'],
-    '/meu-perfil.html': ['DokeInitProfile'],
-    '/perfil-cliente.html': ['DokeInitProfile'],
+    '/meu-perfil.html': ['DokeInitOwnerProfile'],
+    '/perfil-cliente.html': ['DokeInitClientProfile'],
     '/perfil-profissional.html': ['DokeInitProfile'],
-    '/configuracoes.html': [],
+    '/configuracoes.html': ['DokeInitSettings'],
     '/orcamento.html': ['DokeInitBudget'],
     '/pagamento-profissional.html': ['DokeInitPayment'],
     '/tornar-profissional.html': ['DokeInitBecomePro']

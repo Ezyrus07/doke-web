@@ -19,6 +19,7 @@ const requiredFiles = [
   'supabase/migrations/004_mvp_backend_security_foundation.sql',
   'supabase/migrations/005_wallet_runtime_foundation.sql',
   'supabase/migrations/006_runtime_idempotency_audit_foundation.sql',
+  'supabase/migrations/007_account_profile_base.sql',
   'supabase/seed/001_seed_reference_data.sql',
   'supabase/seed/002_mvp_controlled_seed.sql',
   'supabase/tests/001_rls_matrix_validation.sql',

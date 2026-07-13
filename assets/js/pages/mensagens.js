@@ -36,12 +36,19 @@
     if (professionalId && professionalId === String(user.id)) return true;
     return isDemoProfessionalUser(user) && Boolean(conversation?.orderId || conversation?.order?.id);
   };
-  const normalizeStatusToken = (value) => String(value || "")
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9_]+/g, "_")
-    .replace(/^_+|_+$/g, "");
+  const normalizeStatusToken = (value) => {
+    const normalized = String(value || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9_]+/g, "_")
+      .replace(/^_+|_+$/g, "");
+    const stateMachine = window.Doke?.services?.orders?.stateMachine;
+    if (stateMachine?.normalizeStatus) return stateMachine.normalizeStatus(normalized);
+    if (normalized === "conversation") return "accepted";
+    if (normalized === "responded") return "quoted";
+    return normalized;
+  };
 
   const getOrdersStateMachine = () => window.Doke?.services?.orders?.stateMachine || null;
   const getConversationOrder = (conversation) => Object.assign({}, conversation?.order || {}, {
@@ -270,9 +277,12 @@
     const ownerView = professionalView && message?.mine === true;
     const orderStatus = getOrderStatus(conversation);
     const paymentStatus = normalizeStatusToken(conversation?.order?.paymentStatus || message?.paymentStatus || "");
-    const reviewed = message?.reviewed === true;
-    const completed = reviewed || message?.completed === true || orderStatus === "completed";
+    const completionStatus = normalizeStatusToken(conversation?.order?.completionStatus || message?.completionStatus || "");
+    const disputeActive = Boolean(getConversationDisputePresentation(conversation));
+    const reviewed = message?.reviewed === true || Boolean(conversation?.order?.reviewId || conversation?.order?.reviewedAt);
+    const completed = reviewed || message?.completed === true || orderStatus === "completed" || paymentStatus === "released";
     const paid = message?.paid === true || ["paid", "confirmed", "held", "released"].includes(paymentStatus);
+    const completionRequested = completionStatus === "requested";
 
     if (ownerView) {
       if (reviewed) {
@@ -291,27 +301,53 @@
       if (completed) {
         return {
           label: "Cobrança concluída",
-          status: "Aguardando avaliação",
+          status: "Pagamento liberado",
           state: "completed",
           kicker: "Atendimento finalizado",
-          text: message.text || "O pedido foi finalizado e o cliente ainda pode avaliar o atendimento.",
+          text: message.text || "O cliente confirmou a conclusão e o pagamento em garantia foi liberado.",
           details: ["Recebimento pela Doke", message.installments || "À vista"],
           note: "Pedido encerrado. A avaliação do cliente pode chegar a qualquer momento.",
-          actionHtml: '<span class="message-bubble__charge-meta">Pedido finalizado</span>' + getChargeReceiptActionHtml(conversation, message),
+          actionHtml: '<span class="message-bubble__charge-meta">Saldo liberado</span>' + getChargeReceiptActionHtml(conversation, message),
+          passive: true
+        };
+      }
+      if (disputeActive) {
+        return {
+          label: "Cobrança em análise",
+          status: "Contestação aberta",
+          state: "disputed",
+          kicker: "Liberação suspensa",
+          text: message.text || "O cliente relatou um problema e o pagamento permanece protegido enquanto a contestação é analisada.",
+          details: ["Pagamento em garantia", message.installments || "À vista"],
+          note: "A conclusão fica bloqueada até a resolução da contestação.",
+          actionHtml: '<span class="message-bubble__charge-meta">Em contestação</span>' + getChargeReceiptActionHtml(conversation, message),
+          passive: true
+        };
+      }
+      if (paid && completionRequested) {
+        return {
+          label: "Conclusão solicitada",
+          status: "Aguardando cliente",
+          state: "completion-requested",
+          kicker: "Serviço informado como concluído",
+          text: message.text || "Você informou a conclusão do serviço. O cliente deve confirmar a entrega ou relatar um problema.",
+          details: ["Pagamento em garantia", message.installments || "À vista"],
+          note: "O valor continua protegido até a confirmação do cliente.",
+          actionHtml: '<span class="message-bubble__charge-meta">Aguardando confirmação</span>' + getChargeReceiptActionHtml(conversation, message),
           passive: true
         };
       }
       if (paid) {
         return {
           label: "Cobrança paga",
-          status: "Pagamento confirmado",
+          status: "Pagamento em garantia",
           state: "paid",
-          kicker: "Pagamento registrado",
-          text: message.text || "O cliente confirmou o pagamento. Mantenha a execução registrada pelo chat.",
-          details: ["Recebimento pela Doke", message.installments || "À vista"],
-          note: "Pagamento confirmado. Siga com o atendimento.",
-          actionHtml: '<span class="message-bubble__charge-meta">Pagamento confirmado</span>' + getChargeReceiptActionHtml(conversation, message),
-          passive: true
+          kicker: "Execução em andamento",
+          text: message.text || "O pagamento está protegido pela Doke. Solicite a conclusão somente depois de finalizar o serviço.",
+          details: ["Pagamento em garantia", message.installments || "À vista"],
+          note: "A solicitação permitirá que o cliente confirme a entrega ou relate um problema.",
+          actionHtml: '<button class="message-bubble__charge-pay is-complete doke-btn doke-btn--success" type="button" data-message-request-completion>Solicitar conclusão</button>' + getChargeReceiptActionHtml(conversation, message),
+          passive: false
         };
       }
       return {
@@ -343,27 +379,53 @@
     if (completed) {
       return {
         label: "Cobrança paga",
-        status: "Aguardando avaliação",
+        status: "Pagamento liberado",
         state: "completed",
         kicker: "Atendimento concluído",
-        text: message.text || "O atendimento foi concluído. Você ainda pode avaliar por aqui.",
+        text: message.text || "A conclusão foi confirmada e o pagamento em garantia foi liberado.",
         details: ["Pagamento seguro pela Doke", message.installments || "À vista"],
-        note: "Avalie para concluir o fluxo.",
+        note: "Avalie o atendimento para encerrar o fluxo.",
         actionHtml: '<button class="message-bubble__charge-pay is-done doke-btn doke-btn--soft" type="button" data-message-review>Avaliar</button>' + getChargeReceiptActionHtml(conversation, message),
+        passive: false
+      };
+    }
+    if (disputeActive) {
+      return {
+        label: "Cobrança em análise",
+        status: "Contestação aberta",
+        state: "disputed",
+        kicker: "Problema registrado",
+        text: message.text || "O pagamento permanece em garantia enquanto a contestação é analisada.",
+        details: ["Pagamento protegido", message.installments || "À vista"],
+        note: "A conclusão e a liberação ficam suspensas até a resolução.",
+        actionHtml: getChargeReceiptActionHtml(conversation, message),
+        passive: true
+      };
+    }
+    if (paid && completionRequested) {
+      return {
+        label: "Conclusão solicitada",
+        status: "Confirme a entrega",
+        state: "completion-requested",
+        kicker: "O profissional concluiu o serviço",
+        text: message.text || "Confirme a conclusão para liberar o pagamento ou relate um problema.",
+        details: ["Pagamento em garantia", message.installments || "À vista"],
+        note: "O valor só será liberado após sua confirmação.",
+        actionHtml: '<button class="message-bubble__charge-pay is-complete doke-btn doke-btn--success" type="button" data-message-complete>Confirmar conclusão</button>' + getChargeReceiptActionHtml(conversation, message),
         passive: false
       };
     }
     if (paid) {
       return {
         label: "Cobrança paga",
-        status: "Pagamento confirmado",
+        status: "Pagamento em garantia",
         state: "paid",
-        kicker: "Pagamento registrado",
-        text: message.text || "Pagamento confirmado. Agora você pode acompanhar e finalizar o atendimento.",
+        kicker: "Atendimento em execução",
+        text: message.text || "O pagamento está protegido pela Doke enquanto o profissional executa o serviço.",
         details: ["Pagamento seguro pela Doke", message.installments || "À vista"],
-        note: "Confirme quando o serviço for concluído.",
-        actionHtml: '<button class="message-bubble__charge-pay is-complete doke-btn doke-btn--success" type="button" data-message-complete>Finalizar pedido</button>' + getChargeReceiptActionHtml(conversation, message),
-        passive: false
+        note: "A confirmação será liberada quando o profissional solicitar a conclusão.",
+        actionHtml: '<span class="message-bubble__charge-meta">Aguardando conclusão</span>' + getChargeReceiptActionHtml(conversation, message),
+        passive: true
       };
     }
     return {
@@ -1193,7 +1255,7 @@
     };
 
     const submitIssueReport = (conversation, message, report) => {
-      const wallet = window.Doke?.services?.wallet || window.Doke?.repositories?.wallet;
+      const wallet = window.Doke?.services?.wallet;
       if (!wallet || typeof wallet.openDispute !== "function") return Promise.reject(new Error("Contestação indisponível."));
       const orderId = conversation?.order?.id || conversation?.orderId || pageParams.get("order") || "";
       if (!orderId) return Promise.reject(new Error("Pedido não identificado."));
@@ -1638,6 +1700,11 @@
       const canDeclineRequest = professionalView && orderStatus === 'pending' && canTransitionConversationOrder(conversation, 'cancelled');
       const canRejectProposal = !professionalView && orderStatus === 'quoted' && canTransitionConversationOrder(conversation, 'cancelled');
       const canDecline = canDeclineRequest || canRejectProposal;
+      const ordersService = window.Doke?.services?.orders;
+      const canCancelBeforePayment = Boolean(
+        ordersService?.canCancelBeforePayment?.(order, getCurrentUser())
+        && !canDecline
+      );
       const canQuote = canTransitionConversationOrder(conversation, 'quoted');
       const canApproveProposal = canTransitionConversationOrder(conversation, 'in_progress');
       const financialActionKind = getFinancialActionKind(conversation);
@@ -1699,6 +1766,7 @@
           <div class="messages-order-card__actions doke-order-card__actions">
             <button class="messages-order-card__button messages-order-card__button--ghost doke-btn doke-btn--ghost" type="button" data-messages-open-order-detail>Ver detalhes</button>
             ${canDecline ? `<button class="messages-order-card__button doke-btn doke-btn--ghost" type="button" data-messages-decline-order>${professionalView ? "Recusar" : "Recusar proposta"}</button>` : ""}
+            ${canCancelBeforePayment ? `<button class="messages-order-card__button doke-btn doke-btn--ghost" type="button" data-messages-cancel-order>Cancelar pedido</button>` : ""}
             <button class="messages-order-card__button doke-btn ${primaryClass}" type="button" ${primaryAttrs}>${primaryLabel}</button>
           </div>
         </div>
@@ -1708,23 +1776,8 @@
     const syncPaymentFlowFromQuery = () => {
       const conversationId = pageParams.get("conversation");
       if (!conversationId || !conversations[conversationId]) return;
-      const charge = getLatestChargeMessage(conversationId);
-      if (!charge) return;
-
-      if (pageParams.get("payment") === "success") {
-        return;
-      }
-
-      if (pageParams.get("completed") === "1") {
-        charge.paid = true;
-        charge.completed = true;
-      }
-
-      if (pageParams.get("review") === "1") {
-        charge.paid = true;
-        charge.completed = true;
-        charge.reviewed = true;
-      }
+      // Query parameters are navigation hints only. Financial and completion
+      // state must always come from the repositories/services after hydration.
     };
     const updateOrderFromConversation = (status, options = {}) => {
       const conversation = conversations[activeId];
@@ -1737,8 +1790,6 @@
           ? service.approveProposal(orderId, options)
           : status === 'in_progress'
             ? Promise.reject(new Error('Comando canônico de aprovação indisponível.'))
-          : status === 'completed' && typeof service.complete === 'function'
-            ? service.complete(orderId, options)
             : typeof service.updateStatus === 'function'
               ? service.updateStatus(orderId, status, options)
               : Promise.resolve(null);
@@ -1817,6 +1868,48 @@
         }).catch((error) => {
           renderThread(activeId, { scrollTo: "preserve" });
           showCopyToast(error?.message || "Não foi possível recusar a proposta.");
+          return null;
+        });
+      });
+    };
+
+    const cancelActiveOrderBeforePayment = (trigger) => {
+      const conversation = conversations[activeId];
+      const order = conversation?.order || {};
+      const orderId = order.id || conversation?.orderId;
+      const ordersService = window.Doke?.services?.orders;
+      if (!conversation || !orderId || typeof ordersService?.cancelBeforePayment !== 'function') {
+        showCopyToast('O cancelamento do pedido está indisponível.');
+        return Promise.resolve(null);
+      }
+      if (typeof ordersService.canCancelBeforePayment !== 'function' || !ordersService.canCancelBeforePayment(order, getCurrentUser())) {
+        renderThread(activeId, { scrollTo: 'preserve' });
+        showCopyToast('Este pedido já não pode ser cancelado por este fluxo.');
+        return Promise.resolve(null);
+      }
+
+      return requestDeclineReason(orderId, trigger, {
+        title: 'Cancelar pedido',
+        text: 'Explique por que o pedido será encerrado antes da confirmação do pagamento.'
+      }).then((reason) => {
+        if (!reason || !reason.trim()) return null;
+        if (trigger) {
+          trigger.disabled = true;
+          trigger.setAttribute('aria-busy', 'true');
+          trigger.textContent = 'Cancelando...';
+        }
+        return ordersService.cancelBeforePayment(orderId, reason.trim(), { cancellationSource: 'messages-order-card' }).then((savedOrder) => {
+          syncConversationOrderStatus(conversation, savedOrder);
+          conversation.lastSeen = savedOrder?.statusLabel || 'Pedido cancelado';
+          conversation.lastMessage = 'Pedido cancelado antes do pagamento';
+          return persistConversationState(activeId).then(() => savedOrder);
+        }).then((savedOrder) => {
+          renderThread(activeId, { scrollTo: 'preserve' });
+          showCopyToast('Pedido cancelado. Nenhum valor foi movimentado.');
+          return savedOrder;
+        }).catch((error) => {
+          renderThread(activeId, { scrollTo: 'preserve' });
+          showCopyToast(error?.message || 'Não foi possível cancelar o pedido.');
           return null;
         });
       });
@@ -2677,41 +2770,53 @@
       document.body.classList.remove('messages-completion-modal-open');
     };
 
+    const requestChargeCompletion = (conversationId, messageIndex) => {
+      const conversation = conversations[conversationId];
+      const currentMessage = conversation?.messages?.[messageIndex];
+      const orderId = conversation?.order?.id || conversation?.orderId || "";
+      const paymentService = window.Doke?.services?.payments;
+      if (!conversation || !currentMessage || !isChargeMessage(conversation, currentMessage)) {
+        return Promise.reject(new Error('Cobrança não encontrada.'));
+      }
+      if (!orderId || typeof paymentService?.requestCompletion !== 'function') {
+        return Promise.reject(new Error('Comando canônico de solicitação de conclusão indisponível.'));
+      }
+
+      return paymentService.requestCompletion(orderId, {
+        conversationId,
+        messageId: currentMessage.id || currentMessage.messageId || '',
+        chargeMessageId: currentMessage.id || currentMessage.messageId || ''
+      }).then((result) => {
+        if (result?.conversation) conversations[conversationId] = result.conversation;
+        else if (result?.order) syncConversationOrderStatus(conversation, result.order);
+        renderThread(conversationId, { scrollTo: 'preserve' });
+        return result?.charge || getActualChargeMessage(conversations[conversationId] || conversation) || currentMessage;
+      });
+    };
+
     const completeChargeMessage = (conversationId, messageIndex) => {
       const conversation = conversations[conversationId];
       const currentMessage = conversation?.messages?.[messageIndex];
-      if (!conversation || !currentMessage || !isChargeMessage(conversation, currentMessage)) return Promise.reject(new Error('Cobrança não encontrada.'));
+      const orderId = conversation?.order?.id || conversation?.orderId || "";
+      const paymentService = window.Doke?.services?.payments;
+      if (!conversation || !currentMessage || !isChargeMessage(conversation, currentMessage)) {
+        return Promise.reject(new Error('Cobrança não encontrada.'));
+      }
+      if (!orderId || typeof paymentService?.confirmCompletion !== 'function') {
+        return Promise.reject(new Error('Comando canônico de confirmação da conclusão indisponível.'));
+      }
 
-      const previous = {
-        paid: currentMessage.paid,
-        completed: currentMessage.completed,
-        text: currentMessage.text
-      };
-
-      currentMessage.paid = true;
-      currentMessage.completed = true;
-      currentMessage.text = completionNote?.value?.trim()
-        ? `Atendimento concluído. ${completionNote.value.trim()}`
-        : currentMessage.text || 'Atendimento concluído. Avaliação liberada.';
-
-      const orderAlreadyCompleted = getOrderStatus(conversation) === 'completed';
-      const completionTask = orderAlreadyCompleted
-        ? Promise.resolve(conversation.order || null)
-        : updateOrderFromConversation('completed', { paymentMessageId: currentMessage.id || '', messageId: currentMessage.id || '' });
-
-      return completionTask
-        .then(() => persistConversationState(conversationId))
-        .then(() => {
-          renderThread(conversationId, { scrollTo: 'end' });
-          return currentMessage;
-        })
-        .catch((error) => {
-          currentMessage.paid = previous.paid;
-          currentMessage.completed = previous.completed;
-          currentMessage.text = previous.text;
-          renderThread(conversationId, { scrollTo: 'end' });
-          throw error;
-        });
+      return paymentService.confirmCompletion(orderId, {
+        conversationId,
+        messageId: currentMessage.id || currentMessage.messageId || '',
+        chargeMessageId: currentMessage.id || currentMessage.messageId || '',
+        completionNote: completionNote?.value?.trim() || ''
+      }).then((result) => {
+        if (result?.conversation) conversations[conversationId] = result.conversation;
+        else if (result?.order) syncConversationOrderStatus(conversation, result.order);
+        renderThread(conversationId, { scrollTo: 'end' });
+        return result?.charge || getActualChargeMessage(conversations[conversationId] || conversation) || currentMessage;
+      });
     };
 
     const closeThreadCallMenu = () => {
@@ -2954,6 +3059,7 @@
     root.addEventListener("click", (event) => {
       const acceptOrderButton = event.target.closest("[data-messages-accept-order]");
       const declineOrderButton = event.target.closest("[data-messages-decline-order]");
+      const cancelOrderButton = event.target.closest("[data-messages-cancel-order]");
       const approveProposalButton = event.target.closest("[data-messages-approve-proposal]");
       const proposalButton = event.target.closest("[data-messages-proposal-action]");
       const chargeActionButton = event.target.closest("[data-messages-charge-action]");
@@ -2969,6 +3075,13 @@
           return;
         }
         openChargeModal();
+        return;
+      }
+
+      if (cancelOrderButton && root.contains(cancelOrderButton)) {
+        event.preventDefault();
+        event.stopPropagation();
+        cancelActiveOrderBeforePayment(cancelOrderButton);
         return;
       }
 
@@ -3159,6 +3272,7 @@
     document.addEventListener("doke:auth-surface-ready", markMessagesHydrationAuth);
     document.addEventListener("doke:order-created", () => refreshLocalConversationSurface({ preferRequested: true }));
     document.addEventListener("doke:order-status-changed", () => refreshLocalConversationSurface({ preferRequested: true }));
+    document.addEventListener("doke:order-reviewed", () => refreshLocalConversationSurface({ preferRequested: true }));
     document.addEventListener("doke:message-sent", () => refreshLocalConversationSurface({ preferRequested: true }));
     document.addEventListener("doke:message-removed", () => refreshLocalConversationSurface({ preferRequested: true }));
     document.addEventListener('doke:page-hydration-ready', (event) => {
@@ -3368,6 +3482,24 @@
         const currentMessage = conversation?.messages?.[index];
         if (!currentMessage || !isChargeMessage(conversation, currentMessage)) return;
         openReceiptModal(conversation, currentMessage, receiptButton);
+        return;
+      }
+
+      const requestCompletionButton = event.target.closest("[data-message-request-completion]");
+      if (requestCompletionButton) {
+        event.preventDefault();
+        const index = Number(bubble?.dataset.messageIndex || -1);
+        const conversation = conversations[activeId];
+        const currentMessage = conversation?.messages?.[index];
+        if (!currentMessage || !isChargeMessage(conversation, currentMessage)) return;
+        requestCompletionButton.disabled = true;
+        requestCompletionButton.setAttribute('aria-busy', 'true');
+        requestChargeCompletion(activeId, index)
+          .then(() => showCopyToast('Conclusão solicitada ao cliente.'))
+          .catch((error) => {
+            showCopyToast(error?.message || 'Não foi possível solicitar a conclusão.');
+            renderThread(activeId, { scrollTo: 'preserve' });
+          });
         return;
       }
 
@@ -3960,7 +4092,7 @@
     resetAudioDraft();
     resetImageDraft();
     syncComposerPlaceholder();
-    ["doke:wallet-dispute-opened", "doke:wallet-dispute-resolved", "doke:order-dispute-synced"].forEach((eventName) => {
+    ["doke:wallet-dispute-opened", "doke:wallet-dispute-resolved", "doke:order-dispute-synced", "doke:completion-requested", "doke:payment-released"].forEach((eventName) => {
       document.addEventListener(eventName, () => {
         hydrateLocalConversations(root);
         syncVisibility();

@@ -56,14 +56,14 @@
           </div>
         </header>
         <main class="page__content settings-main doke-page" aria-label="Configurações da conta">
-          <section class="settings-layout doke-page-shell doke-page-section doke-settings-shell" data-state-boundary="configuracoes" data-state-scope="configuracoes" data-view-state="ready" aria-busy="false">
+          <section class="settings-layout doke-page-shell doke-page-section" data-state-boundary="configuracoes" data-state-scope="configuracoes" data-view-state="ready" aria-busy="false">
             <div class="doke-state-region" data-state-region data-state-scope="configuracoes" aria-live="polite" hidden>
               <p data-state-loading hidden class="doke-loading-state">Carregando configurações...</p>
               <p data-state-empty hidden class="doke-empty-state">Nenhuma configuração disponível.</p>
               <p data-state-error hidden class="doke-error-state">Não foi possível carregar as configurações.</p>
             </div>
 
-            <nav class="settings-sidebar doke-settings-shell__sidebar" aria-label="Menu de configurações">
+            <nav class="settings-sidebar" aria-label="Menu de configurações">
               <div class="settings-sidebar-brand" aria-label="Cabeçalho das configurações">
                 <h1 class="settings-sidebar__title">Configurações</h1>
               </div>
@@ -96,94 +96,91 @@
               </div>
             </nav>
 
-            <div class="settings-content doke-settings-shell__content">
+            <div class="settings-content">
               <div class="settings-panel-topbar" aria-label="Navegação da seção de configurações">
                 <button class="home-side-meta__alert detail-standard-topbar__back settings-panel-back doke-icon-btn doke-icon-btn--soft" type="button" data-settings-mobile-back data-settings-panel-back aria-label="Voltar para configurações">
                   <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"></path></svg>
                 </button>
               </div>
-              <section class="settings-panel is-active doke-settings-shell__panel" data-settings-panel="profile" aria-labelledby="settings-profile-title">
-                <article class="settings-card settings-card--profile doke-settings-surface">
-                  <header class="settings-card__header doke-settings-surface__header">
+              <section class="settings-panel is-active" data-settings-panel="profile" aria-labelledby="settings-profile-title">
+                <article class="settings-card settings-card--profile">
+                  <header class="settings-card__header">
                     <div>
                       <h1 id="settings-profile-title">Perfil</h1>
-                      <p>Dados pessoais usados para identificação, contato e acesso à plataforma.</p>
+                      <p>Edite as informações públicas usadas no seu perfil e nas áreas transacionais da Doke.</p>
                     </div>
                   </header>
 
-                  <div class="settings-card__body doke-settings-surface__body">
+                  <div class="settings-card__body">
                     <section class="settings-profile-block" aria-labelledby="settings-avatar-title">
                       <div class="settings-block-copy">
-                        <h2 id="settings-avatar-title">Foto de perfil</h2>
-                        <p>Use uma imagem clara para facilitar o reconhecimento do seu perfil.</p>
+                        <h2 id="settings-avatar-title">Identidade visual</h2>
+                        <p>Foto e capa serão adicionadas quando o fluxo de upload estiver conectado. Nenhuma imagem de exemplo será usada.</p>
                       </div>
                       <div class="settings-avatar-upload">
                         <div class="settings-avatar" aria-label="Foto de perfil atual">
-                          <span class="settings-avatar__fallback" aria-hidden="true">GO</span>
-                        </div>
-                        <div class="settings-avatar-upload__actions">
-                          <button class="settings-action settings-action--primary-soft doke-btn doke-btn--soft" type="button">Fazer upload</button>
-                          <button class="settings-action settings-action--secondary doke-btn doke-btn--ghost" type="button">Remover</button>
-                          <span>PNG ou JPG · máx. 5MB</span>
+                          <span class="settings-avatar__fallback" data-settings-profile-initials aria-hidden="true">DK</span>
                         </div>
                       </div>
                     </section>
 
-                    <form class="settings-form doke-settings-form" aria-label="Dados pessoais">
+                    <form class="settings-form" aria-label="Dados públicos do perfil" data-settings-profile-form>
                       <div class="settings-section-heading">
-                        <h2>Dados pessoais</h2>
-                        <p>Mantenha as informações principais atualizadas para pedidos, segurança e suporte.</p>
+                        <h2>Dados públicos</h2>
+                        <p>Essas informações aparecem no seu perfil e identificam você em pedidos, mensagens e publicações.</p>
                       </div>
 
-                      <div class="settings-form-grid doke-settings-form__grid">
-                        <label class="settings-field doke-field doke-settings-field"><span>Nome completo</span><input class="doke-input" type="text" name="fullName" value="Gabriel Oliveira" autocomplete="name" data-settings-field="account.fullName" /></label>
-                        <label class="settings-field doke-field doke-settings-field"><span>Nome de exibição</span><input class="doke-input" type="text" name="displayName" value="Gabriel" autocomplete="nickname" data-settings-field="account.displayName" /></label>
-                        <label class="settings-field doke-field doke-settings-field"><span>CPF/CNPJ</span><input class="doke-input" type="text" name="document" value="123.456.789-00" inputmode="numeric" data-settings-field="account.document" /></label>
-                        <label class="settings-field doke-field doke-settings-field"><span>Telefone</span><input class="doke-input" type="tel" name="phone" value="(11) 99999-9999" autocomplete="tel" data-settings-field="account.phone" /></label>
-                        <label class="settings-field settings-field--full doke-field doke-settings-field doke-settings-field--full"><span>Email</span><input class="doke-input" type="email" name="email" value="gabriel@example.com" autocomplete="email" data-settings-field="account.email" /></label>
+                      <div class="settings-form-grid">
+                        <label class="settings-field doke-field"><span>Nome</span><input class="doke-input" type="text" name="name" autocomplete="name" maxlength="80" data-profile-field="name" /></label>
+                        <label class="settings-field doke-field"><span>Identificador</span><input class="doke-input" type="text" name="handle" autocomplete="nickname" maxlength="32" data-profile-field="handle" /></label>
+                        <label class="settings-field doke-field"><span>Cidade</span><input class="doke-input" type="text" name="city" autocomplete="address-level2" maxlength="60" data-profile-field="city" /></label>
+                        <label class="settings-field doke-field"><span>Estado</span><input class="doke-input" type="text" name="state" autocomplete="address-level1" maxlength="2" data-profile-field="state" /></label>
+                        <label class="settings-field settings-field--full doke-field"><span>Sobre você</span><textarea class="doke-textarea" name="bio" maxlength="500" rows="5" data-profile-field="bio"></textarea></label>
+                        <label class="settings-field settings-field--full doke-field"><span>Interesses</span><input class="doke-input" type="text" name="interests" placeholder="Separe por vírgulas" data-profile-field="interests" /></label>
                       </div>
+                      <p class="settings-form-message" role="alert" data-settings-profile-error></p>
                     </form>
 
                     <section class="settings-pro-cta" aria-labelledby="settings-pro-cta-title">
                       <div>
                         <span class="settings-pro-cta__eyebrow">Modo profissional</span>
-                        <h2 id="settings-pro-cta-title">Quer anunciar seus serviços no Doke?</h2>
-                        <p>Complete o cadastro profissional para receber pedidos, criar serviços e aparecer na busca.</p>
+                        <h2 id="settings-pro-cta-title">Quer oferecer serviços no Doke?</h2>
+                        <p>O cadastro profissional será tratado em um fluxo separado e não altera automaticamente seu perfil base.</p>
                       </div>
                       <a class="settings-action settings-action--primary doke-btn doke-btn--primary" href="tornar-profissional.html">Tornar-se profissional</a>
                     </section>
                   </div>
 
-                  <footer class="settings-card__footer doke-settings-surface__footer doke-settings-actions">
-                    <button class="settings-action settings-action--secondary button--ghost doke-btn doke-btn--ghost" type="button" data-settings-reset-panel="profile">Cancelar</button>
-                    <button class="settings-action settings-action--primary doke-btn doke-btn--primary" type="submit" data-settings-save-panel="profile" data-action-state="idle" data-action-loading-label="Salvando alterações" aria-busy="false">Salvar alterações</button>
+                  <footer class="settings-card__footer">
+                    <a class="settings-action settings-action--secondary button--ghost doke-btn doke-btn--ghost" href="meu-perfil.html">Voltar ao perfil</a>
+                    <button class="settings-action settings-action--primary doke-btn doke-btn--primary" type="button" data-settings-save-profile data-action-state="idle" data-action-loading-label="Salvando alterações" aria-busy="false">Salvar alterações</button>
                   </footer>
                 </article>
               </section>
 
-              <section class="settings-panel doke-settings-shell__panel" data-settings-panel="security" aria-labelledby="settings-security-title" hidden>
-                <article class="settings-card doke-settings-surface">
-                  <header class="settings-card__header doke-settings-surface__header">
+              <section class="settings-panel" data-settings-panel="security" aria-labelledby="settings-security-title" hidden>
+                <article class="settings-card">
+                  <header class="settings-card__header">
                     <div>
                       <h1 id="settings-security-title">Segurança</h1>
                       <p>Proteja sua conta, revise acessos e controle autenticação.</p>
                     </div>
                   </header>
-                  <div class="settings-card__body settings-card__body--compact doke-settings-surface__body">
+                  <div class="settings-card__body settings-card__body--compact">
                     <div class="settings-rows" aria-label="Opções de segurança">
-                      <div class="settings-list-item doke-entity-row">
+                      <div class="settings-list-item">
                         <div><h2>Senha</h2><p>Última alteração há 42 dias. Use uma senha forte e exclusiva.</p></div>
                         <button class="settings-action settings-action--secondary doke-btn doke-btn--ghost" type="button">Alterar senha</button>
                       </div>
-                      <div class="settings-list-item doke-entity-row">
+                      <div class="settings-list-item">
                         <div><h2>Autenticação em duas etapas</h2><p>Adicione confirmação extra no login da sua conta.</p></div>
                         <label class="toggle-switch doke-switch"><input class="doke-switch__input" type="checkbox" data-settings-preference="security.twoFactor" /><span></span></label>
                       </div>
-                      <div class="settings-list-item doke-entity-row">
+                      <div class="settings-list-item">
                         <div><h2>Alertas de login</h2><p>Receba aviso quando uma nova sessão acessar sua conta.</p></div>
                         <label class="toggle-switch doke-switch"><input class="doke-switch__input" type="checkbox" data-settings-preference="security.loginAlerts" /><span></span></label>
                       </div>
-                      <div class="settings-list-item doke-entity-row">
+                      <div class="settings-list-item">
                         <div><h2>Sessão atual</h2><p><span data-settings-session-summary>Sessão local ativa neste dispositivo.</span><br><span data-settings-session-meta>Dados carregados pela sessão mock/local.</span></p></div>
                         <button class="settings-action settings-action--secondary doke-btn doke-btn--ghost" type="button" data-settings-sign-out>Encerrar sessão</button>
                       </div>
@@ -192,65 +189,65 @@
                 </article>
               </section>
 
-              <section class="settings-panel doke-settings-shell__panel" data-settings-panel="payments" aria-labelledby="settings-payments-title" hidden>
-                <article class="settings-card doke-settings-surface">
-                  <header class="settings-card__header doke-settings-surface__header">
+              <section class="settings-panel" data-settings-panel="payments" aria-labelledby="settings-payments-title" hidden>
+                <article class="settings-card">
+                  <header class="settings-card__header">
                     <div>
                       <h1 id="settings-payments-title">Pagamentos</h1>
                       <p>Gerencie preferências de pagamento, PIX e comprovantes sem alterar o fluxo financeiro real.</p>
                     </div>
                     <a class="settings-action settings-action--primary doke-btn doke-btn--primary" href="carteira.html">Abrir carteira</a>
                   </header>
-                  <div class="settings-card__body settings-card__body--compact doke-settings-surface__body">
+                  <div class="settings-card__body settings-card__body--compact">
                     <section class="settings-section-heading">
                       <h2>Métodos e recebimentos</h2>
                       <p>Defina como o Doke deve priorizar pagamentos, comprovantes e repasses no modo local.</p>
                     </section>
                     <div class="settings-rows">
-                      <div class="settings-list-item settings-list-item--method doke-entity-row">
+                      <div class="settings-list-item settings-list-item--method">
                         <div class="settings-method-icon" aria-hidden="true">MC</div>
                         <div><h2>Método preferido</h2><p data-settings-payment-summary>Cartão principal · comprovantes automáticos</p></div>
                         <button class="settings-action settings-action--secondary doke-btn doke-btn--ghost" type="button" data-settings-focus-field="payments.preferredMethod">Editar</button>
                       </div>
-                      <div class="settings-list-item settings-list-item--method doke-entity-row">
+                      <div class="settings-list-item settings-list-item--method">
                         <div class="settings-method-icon settings-method-icon--pix" aria-hidden="true">PIX</div>
                         <div><h2>PIX para pagamentos rápidos</h2><p data-settings-pix-summary>Chave PIX não configurada.</p></div>
                         <button class="settings-action settings-action--secondary doke-btn doke-btn--ghost" type="button" data-settings-focus-field="payments.pixKey">Configurar</button>
                       </div>
                     </div>
-                    <form class="settings-form doke-settings-form" aria-label="Preferências de pagamentos">
-                      <div class="settings-form-grid doke-settings-form__grid">
-                        <label class="settings-field doke-field doke-settings-field"><span>Método preferido</span><select class="doke-select" data-ui-select name="preferredMethod" data-settings-field="payments.preferredMethod"><option>Cartão principal</option><option>PIX</option><option>Escolher em cada pedido</option></select></label>
-                        <label class="settings-field doke-field doke-settings-field"><span>Chave PIX</span><input class="doke-input" type="text" name="pixKey" placeholder="CPF, e-mail, telefone ou chave aleatória" data-settings-field="payments.pixKey" /></label>
-                        <label class="settings-field doke-field doke-settings-field"><span>Repasse profissional</span><select class="doke-select" data-ui-select name="payoutSchedule" data-settings-field="payments.payoutSchedule"><option>Após conclusão do pedido</option><option>Semanal</option><option>Mensal</option></select></label>
-                        <label class="settings-field doke-field doke-settings-field"><span>Nome no comprovante</span><input class="doke-input" type="text" name="receiptDisplayName" placeholder="Ex: Gabriel Pinturas" data-settings-field="payments.receiptDisplayName" /></label>
+                    <form class="settings-form" aria-label="Preferências de pagamentos">
+                      <div class="settings-form-grid">
+                        <label class="settings-field doke-field"><span>Método preferido</span><select class="doke-select" data-ui-select name="preferredMethod" data-settings-field="payments.preferredMethod"><option>Cartão principal</option><option>PIX</option><option>Escolher em cada pedido</option></select></label>
+                        <label class="settings-field doke-field"><span>Chave PIX</span><input class="doke-input" type="text" name="pixKey" placeholder="CPF, e-mail, telefone ou chave aleatória" data-settings-field="payments.pixKey" /></label>
+                        <label class="settings-field doke-field"><span>Repasse profissional</span><select class="doke-select" data-ui-select name="payoutSchedule" data-settings-field="payments.payoutSchedule"><option>Após conclusão do pedido</option><option>Semanal</option><option>Mensal</option></select></label>
+                        <label class="settings-field doke-field"><span>Nome no comprovante</span><input class="doke-input" type="text" name="receiptDisplayName" placeholder="Ex: Gabriel Pinturas" data-settings-field="payments.receiptDisplayName" /></label>
                       </div>
                       <div class="settings-rows settings-rows--compact">
-                        <label class="settings-list-item settings-list-item--clickable doke-entity-row">
+                        <label class="settings-list-item settings-list-item--clickable">
                           <div><h2>Salvar comprovantes automaticamente</h2><p>Guardar comprovantes no histórico do pedido e na área financeira.</p></div>
                           <span class="toggle-switch doke-switch"><input class="doke-switch__input" type="checkbox" checked data-settings-field="payments.autoReceipts" /><span></span></span>
                         </label>
-                        <label class="settings-list-item settings-list-item--clickable doke-entity-row">
+                        <label class="settings-list-item settings-list-item--clickable">
                           <div><h2>Preferir PIX quando disponível</h2><p>Mostrar PIX como opção principal em pagamentos rápidos.</p></div>
                           <span class="toggle-switch doke-switch"><input class="doke-switch__input" type="checkbox" data-settings-field="payments.preferPix" /><span></span></span>
                         </label>
                       </div>
                     </form>
-                    <div class="settings-inline-note doke-settings-section">
+                    <div class="settings-inline-note">
                       <div><h2>Histórico financeiro</h2><p>Recibos, comprovantes e recebíveis continuam disponíveis na carteira.</p></div>
                       <a class="settings-action settings-action--secondary doke-btn doke-btn--ghost" href="carteira.html">Ver carteira</a>
                     </div>
                   </div>
-                  <footer class="settings-card__footer doke-settings-surface__footer doke-settings-actions">
+                  <footer class="settings-card__footer">
                     <button class="settings-action settings-action--secondary button--ghost doke-btn doke-btn--ghost" type="button" data-settings-reset-panel="payments">Cancelar</button>
                     <button class="settings-action settings-action--primary doke-btn doke-btn--primary" type="button" data-settings-save-panel="payments" data-action-state="idle" aria-busy="false">Salvar pagamentos</button>
                   </footer>
                 </article>
               </section>
 
-              <section class="settings-panel doke-settings-shell__panel" data-settings-panel="professional" aria-labelledby="settings-professional-title" hidden>
-                <article class="settings-card settings-card--professional-onboarding doke-settings-surface">
-                  <header class="settings-card__header doke-settings-surface__header">
+              <section class="settings-panel" data-settings-panel="professional" aria-labelledby="settings-professional-title" hidden>
+                <article class="settings-card settings-card--professional-onboarding">
+                  <header class="settings-card__header">
                     <div>
                       <h1 id="settings-professional-title">Tornar-se profissional</h1>
                       <p>Complete seus dados para anunciar serviços, receber pedidos e construir reputação no Doke.</p>
@@ -258,7 +255,7 @@
                     <span class="settings-status-badge doke-badge doke-badge--warning">Cadastro incompleto</span>
                   </header>
 
-                  <div class="settings-card__body professional-onboarding doke-settings-surface__body">
+                  <div class="settings-card__body professional-onboarding">
                     <section class="professional-step" aria-labelledby="professional-identity-title">
                       <div class="professional-step__header">
                         <span class="professional-step__number">1</span>
@@ -267,10 +264,10 @@
                           <p>Essas informações aparecem para clientes no seu perfil público.</p>
                         </div>
                       </div>
-                      <div class="settings-form-grid doke-settings-form__grid">
-                        <label class="settings-field doke-field doke-settings-field"><span>Nome profissional</span><input class="doke-input" type="text" name="professionalName" value="Gabriel Oliveira" placeholder="Ex: Gabriel Oliveira" data-settings-field="professional.professionalName" /></label>
-                        <label class="settings-field doke-field doke-settings-field"><span>Tipo de profissional</span><select class="doke-select" data-ui-select name="professionalType" data-settings-field="professional.professionalType"><option>Autônomo</option><option>Empresa</option><option>Equipe</option></select></label>
-                        <label class="settings-field settings-field--full doke-field doke-settings-field doke-settings-field--full"><span>Descrição curta</span><textarea name="professionalDescription" rows="4" placeholder="Conte brevemente o que você faz, sua experiência e diferencial." class="doke-textarea" data-settings-field="professional.professionalDescription">Atendimento residencial com foco em qualidade, prazo e comunicação clara.</textarea></label>
+                      <div class="settings-form-grid">
+                        <label class="settings-field doke-field"><span>Nome profissional</span><input class="doke-input" type="text" name="professionalName" placeholder="Informe seu nome profissional" data-settings-field="professional.professionalName" /></label>
+                        <label class="settings-field doke-field"><span>Tipo de profissional</span><select class="doke-select" data-ui-select name="professionalType" data-settings-field="professional.professionalType"><option>Autônomo</option><option>Empresa</option><option>Equipe</option></select></label>
+                        <label class="settings-field settings-field--full doke-field"><span>Descrição curta</span><textarea name="professionalDescription" rows="4" placeholder="Conte brevemente o que você faz, sua experiência e diferencial." class="doke-textarea" data-settings-field="professional.professionalDescription"></textarea></label>
                       </div>
                     </section>
 
@@ -282,10 +279,10 @@
                           <p>Defina a categoria que melhor representa seu trabalho.</p>
                         </div>
                       </div>
-                      <div class="settings-form-grid doke-settings-form__grid">
-                        <label class="settings-field doke-field doke-settings-field"><span>Categoria principal</span><select class="doke-select" data-ui-select name="mainCategory" data-settings-field="professional.mainCategory"><option>Pintura</option><option>Elétrica</option><option>Encanamento</option><option>Limpeza</option><option>Design de interfaces</option></select></label>
-                        <label class="settings-field doke-field doke-settings-field"><span>Experiência</span><select class="doke-select" data-ui-select name="experience" data-settings-field="professional.experience"><option>Menos de 1 ano</option><option>1 a 3 anos</option><option>3 a 5 anos</option><option>Mais de 5 anos</option></select></label>
-                        <div class="settings-field settings-field--full doke-field doke-settings-field doke-settings-field--full">
+                      <div class="settings-form-grid">
+                        <label class="settings-field doke-field"><span>Categoria principal</span><select class="doke-select" data-ui-select name="mainCategory" data-settings-field="professional.mainCategory"><option>Pintura</option><option>Elétrica</option><option>Encanamento</option><option>Limpeza</option><option>Design de interfaces</option></select></label>
+                        <label class="settings-field doke-field"><span>Experiência</span><select class="doke-select" data-ui-select name="experience" data-settings-field="professional.experience"><option>Menos de 1 ano</option><option>1 a 3 anos</option><option>3 a 5 anos</option><option>Mais de 5 anos</option></select></label>
+                        <div class="settings-field settings-field--full doke-field">
                           <span>Especialidades</span>
                           <div class="settings-chip-list" aria-label="Especialidades profissionais">
                             <button type="button" class="settings-chip doke-tab-pill is-active" aria-pressed="true">Residencial</button>
@@ -305,10 +302,10 @@
                           <p>Informe onde você atende clientes.</p>
                         </div>
                       </div>
-                      <div class="settings-form-grid doke-settings-form__grid">
-                        <label class="settings-field doke-field doke-settings-field"><span>Cidade base</span><input class="doke-input" type="text" name="baseCity" value="Salvador, BA" data-settings-field="professional.baseCity" /></label>
-                        <label class="settings-field doke-field doke-settings-field"><span>Raio de atendimento</span><select class="doke-select" data-ui-select name="serviceRadius" data-settings-field="professional.serviceRadius"><option>Até 5 km</option><option>Até 10 km</option><option>Até 20 km</option><option>Toda a cidade</option></select></label>
-                        <label class="settings-field settings-field--full doke-field doke-settings-field doke-settings-field--full"><span>Bairros atendidos</span><input class="doke-input" type="text" name="neighborhoods" placeholder="Ex: Pituba, Barra, Rio Vermelho, Centro" data-settings-field="professional.neighborhoods" /></label>
+                      <div class="settings-form-grid">
+                        <label class="settings-field doke-field"><span>Cidade base</span><input class="doke-input" type="text" name="baseCity" placeholder="Informe sua cidade base" data-settings-field="professional.baseCity" /></label>
+                        <label class="settings-field doke-field"><span>Raio de atendimento</span><select class="doke-select" data-ui-select name="serviceRadius" data-settings-field="professional.serviceRadius"><option>Até 5 km</option><option>Até 10 km</option><option>Até 20 km</option><option>Toda a cidade</option></select></label>
+                        <label class="settings-field settings-field--full doke-field"><span>Bairros atendidos</span><input class="doke-input" type="text" name="neighborhoods" placeholder="Ex: Pituba, Barra, Rio Vermelho, Centro" data-settings-field="professional.neighborhoods" /></label>
                       </div>
                     </section>
 
@@ -341,11 +338,11 @@
                         </div>
                       </div>
                       <div class="settings-rows settings-rows--compact">
-                        <label class="settings-list-item settings-list-item--clickable doke-entity-row">
+                        <label class="settings-list-item settings-list-item--clickable">
                           <div><h2>Receber novos pedidos</h2><p>Permitir solicitações de orçamento pelo Doke.</p></div>
                           <span class="toggle-switch doke-switch"><input class="doke-switch__input" type="checkbox" checked data-settings-field="professional.receiveOrders" /><span></span></span>
                         </label>
-                        <label class="settings-list-item settings-list-item--clickable doke-entity-row">
+                        <label class="settings-list-item settings-list-item--clickable">
                           <div><h2>Atendimento urgente</h2><p>Mostrar disponibilidade para pedidos com prazo curto.</p></div>
                           <span class="toggle-switch doke-switch"><input class="doke-switch__input" type="checkbox" data-settings-field="professional.urgentAvailability" /><span></span></span>
                         </label>
@@ -353,140 +350,140 @@
                     </section>
                   </div>
 
-                  <footer class="settings-card__footer doke-settings-surface__footer doke-settings-actions">
+                  <footer class="settings-card__footer">
                     <button class="settings-action settings-action--secondary doke-btn doke-btn--ghost" type="button" data-settings-save-panel="professional">Salvar rascunho</button>
                     <button class="settings-action settings-action--primary doke-btn doke-btn--primary" type="button">Enviar para análise</button>
                   </footer>
                 </article>
               </section>
 
-              <section class="settings-panel doke-settings-shell__panel" data-settings-panel="availability" aria-labelledby="settings-availability-title" hidden>
-                <article class="settings-card doke-settings-surface">
-                  <header class="settings-card__header doke-settings-surface__header">
+              <section class="settings-panel" data-settings-panel="availability" aria-labelledby="settings-availability-title" hidden>
+                <article class="settings-card">
+                  <header class="settings-card__header">
                     <div>
                       <h1 id="settings-availability-title">Disponibilidade</h1>
                       <p>Controle quando clientes podem solicitar orçamento e como você responde.</p>
                     </div>
                   </header>
-                  <div class="settings-card__body settings-card__body--compact doke-settings-surface__body">
+                  <div class="settings-card__body settings-card__body--compact">
                     <div class="settings-rows settings-rows--compact">
-                      <label class="settings-list-item settings-list-item--clickable doke-entity-row">
+                      <label class="settings-list-item settings-list-item--clickable">
                         <div><h2>Receber novos pedidos</h2><p data-settings-availability-summary="receiveOrders">Seu perfil aparece como disponível para orçamentos.</p></div>
                         <span class="toggle-switch doke-switch"><input class="doke-switch__input" type="checkbox" checked data-settings-field="professional.receiveOrders" /><span></span></span>
                       </label>
-                      <label class="settings-list-item settings-list-item--clickable doke-entity-row">
+                      <label class="settings-list-item settings-list-item--clickable">
                         <div><h2>Atendimento urgente</h2><p data-settings-availability-summary="urgentAvailability">Mostrar disponibilidade para pedidos com prazo curto.</p></div>
                         <span class="toggle-switch doke-switch"><input class="doke-switch__input" type="checkbox" data-settings-field="professional.urgentAvailability" /><span></span></span>
                       </label>
                     </div>
 
-                    <div class="settings-form-grid doke-settings-form__grid" aria-label="Preferências de disponibilidade">
-                      <label class="settings-field doke-field doke-settings-field"><span>Tempo médio de resposta</span><select class="doke-select" data-ui-select name="responseTime" data-settings-field="availability.responseTime"><option>Até 30 minutos</option><option>Até 1 hora</option><option>Até 2 horas úteis</option><option>No mesmo dia</option><option>Em até 24 horas</option></select></label>
-                      <label class="settings-field doke-field doke-settings-field"><span>Dias de atendimento</span><select class="doke-select" data-ui-select name="serviceDays" data-settings-field="availability.serviceDays"><option>Segunda a sexta</option><option>Segunda a sábado</option><option>Todos os dias</option><option>Somente dias úteis</option><option>Personalizado</option></select></label>
-                      <label class="settings-field doke-field doke-settings-field"><span>Início do atendimento</span><input class="doke-input" type="time" name="serviceStart" value="08:00" data-settings-field="availability.serviceStart" /></label>
-                      <label class="settings-field doke-field doke-settings-field"><span>Fim do atendimento</span><input class="doke-input" type="time" name="serviceEnd" value="18:00" data-settings-field="availability.serviceEnd" /></label>
-                      <label class="settings-field settings-field--full doke-field doke-settings-field doke-settings-field--full"><span>Mensagem automática de disponibilidade</span><textarea class="doke-textarea" name="availabilityNote" rows="3" placeholder="Ex: Respondo em horário comercial e priorizo urgências em Salvador." data-settings-field="availability.availabilityNote"></textarea></label>
+                    <div class="settings-form-grid" aria-label="Preferências de disponibilidade">
+                      <label class="settings-field doke-field"><span>Tempo médio de resposta</span><select class="doke-select" data-ui-select name="responseTime" data-settings-field="availability.responseTime"><option>Até 30 minutos</option><option>Até 1 hora</option><option>Até 2 horas úteis</option><option>No mesmo dia</option><option>Em até 24 horas</option></select></label>
+                      <label class="settings-field doke-field"><span>Dias de atendimento</span><select class="doke-select" data-ui-select name="serviceDays" data-settings-field="availability.serviceDays"><option>Segunda a sexta</option><option>Segunda a sábado</option><option>Todos os dias</option><option>Somente dias úteis</option><option>Personalizado</option></select></label>
+                      <label class="settings-field doke-field"><span>Início do atendimento</span><input class="doke-input" type="time" name="serviceStart" value="08:00" data-settings-field="availability.serviceStart" /></label>
+                      <label class="settings-field doke-field"><span>Fim do atendimento</span><input class="doke-input" type="time" name="serviceEnd" value="18:00" data-settings-field="availability.serviceEnd" /></label>
+                      <label class="settings-field settings-field--full doke-field"><span>Mensagem automática de disponibilidade</span><textarea class="doke-textarea" name="availabilityNote" rows="3" placeholder="Ex: Respondo em horário comercial e priorizo urgências em Salvador." data-settings-field="availability.availabilityNote"></textarea></label>
                     </div>
 
                     <div class="settings-rows settings-rows--compact" aria-label="Canais aceitos">
-                      <label class="settings-list-item settings-list-item--clickable doke-entity-row">
+                      <label class="settings-list-item settings-list-item--clickable">
                         <div><h2>Chat Doke</h2><p>Permitir atendimento pelo chat interno.</p></div>
                         <span class="toggle-switch doke-switch"><input class="doke-switch__input" type="checkbox" checked data-settings-field="availability.channelChat" /><span></span></span>
                       </label>
-                      <label class="settings-list-item settings-list-item--clickable doke-entity-row">
+                      <label class="settings-list-item settings-list-item--clickable">
                         <div><h2>Orçamento por pedido</h2><p>Receber solicitações formais com serviço, endereço e detalhes.</p></div>
                         <span class="toggle-switch doke-switch"><input class="doke-switch__input" type="checkbox" checked data-settings-field="availability.channelOrders" /><span></span></span>
                       </label>
-                      <label class="settings-list-item settings-list-item--clickable doke-entity-row">
+                      <label class="settings-list-item settings-list-item--clickable">
                         <div><h2>Atualização pós-serviço</h2><p>Permitir avisos de conclusão, comprovante e avaliação.</p></div>
                         <span class="toggle-switch doke-switch"><input class="doke-switch__input" type="checkbox" checked data-settings-field="availability.channelUpdates" /><span></span></span>
                       </label>
                     </div>
                   </div>
-                  <footer class="settings-card__footer doke-settings-surface__footer doke-settings-actions">
+                  <footer class="settings-card__footer">
                     <button class="settings-action settings-action--secondary doke-btn doke-btn--ghost" type="button" data-settings-reset-panel="availability">Cancelar</button>
                     <button class="settings-action settings-action--primary doke-btn doke-btn--primary" type="button" data-settings-save-panel="availability">Salvar disponibilidade</button>
                   </footer>
                 </article>
               </section>
 
-              <section class="settings-panel doke-settings-shell__panel" data-settings-panel="support" aria-labelledby="settings-support-title" hidden>
-                <article class="settings-card doke-settings-surface">
-                  <header class="settings-card__header doke-settings-surface__header">
+              <section class="settings-panel" data-settings-panel="support" aria-labelledby="settings-support-title" hidden>
+                <article class="settings-card">
+                  <header class="settings-card__header">
                     <div>
                       <h1 id="settings-support-title">Suporte</h1>
                       <p>Organize como você quer acionar ajuda e salve um rascunho de atendimento local.</p>
                     </div>
                     <a class="settings-action settings-action--primary doke-btn doke-btn--primary" href="ajuda.html">Abrir central de ajuda</a>
                   </header>
-                  <div class="settings-card__body settings-card__body--compact doke-settings-surface__body">
+                  <div class="settings-card__body settings-card__body--compact">
                     <section class="settings-section-heading">
                       <h2>Atendimento e contato</h2>
                       <p data-settings-support-summary>Preferência local para suporte e acompanhamento de dúvidas.</p>
                     </section>
-                    <div class="settings-form-grid doke-settings-form__grid" aria-label="Preferências de suporte">
-                      <label class="settings-field doke-field doke-settings-field"><span>Canal preferido</span><select class="doke-select" data-ui-select name="supportChannel" data-settings-field="support.preferredChannel"><option>Chat Doke</option><option>Email</option><option>WhatsApp</option><option>Central de ajuda</option></select></label>
-                      <label class="settings-field doke-field doke-settings-field"><span>Assunto principal</span><select class="doke-select" data-ui-select name="supportTopic" data-settings-field="support.topic"><option>Pedido ou orçamento</option><option>Pagamento ou carteira</option><option>Perfil profissional</option><option>Conta e segurança</option><option>Comunidade</option><option>Outro assunto</option></select></label>
-                      <label class="settings-field doke-field doke-settings-field"><span>Email de retorno</span><input class="doke-input" type="email" name="supportEmail" placeholder="voce@email.com" data-settings-field="support.contactEmail" /></label>
-                      <label class="settings-field settings-field--full doke-field doke-settings-field doke-settings-field--full"><span>Resumo do pedido</span><textarea class="doke-textarea" name="supportMessage" rows="4" placeholder="Descreva rapidamente o que aconteceu para facilitar o atendimento." data-settings-field="support.message"></textarea></label>
+                    <div class="settings-form-grid" aria-label="Preferências de suporte">
+                      <label class="settings-field doke-field"><span>Canal preferido</span><select class="doke-select" data-ui-select name="supportChannel" data-settings-field="support.preferredChannel"><option>Chat Doke</option><option>Email</option><option>WhatsApp</option><option>Central de ajuda</option></select></label>
+                      <label class="settings-field doke-field"><span>Assunto principal</span><select class="doke-select" data-ui-select name="supportTopic" data-settings-field="support.topic"><option>Pedido ou orçamento</option><option>Pagamento ou carteira</option><option>Perfil profissional</option><option>Conta e segurança</option><option>Comunidade</option><option>Outro assunto</option></select></label>
+                      <label class="settings-field doke-field"><span>Email de retorno</span><input class="doke-input" type="email" name="supportEmail" placeholder="voce@email.com" data-settings-field="support.contactEmail" /></label>
+                      <label class="settings-field settings-field--full doke-field"><span>Resumo do pedido</span><textarea class="doke-textarea" name="supportMessage" rows="4" placeholder="Descreva rapidamente o que aconteceu para facilitar o atendimento." data-settings-field="support.message"></textarea></label>
                     </div>
                     <div class="settings-rows settings-rows--compact" aria-label="Preferências de atendimento do suporte">
-                      <label class="settings-list-item settings-list-item--clickable doke-entity-row">
+                      <label class="settings-list-item settings-list-item--clickable">
                         <div><h2>Anexar diagnóstico local</h2><p>Permitir incluir informações técnicas básicas do navegador quando você pedir ajuda.</p></div>
                         <span class="toggle-switch doke-switch"><input class="doke-switch__input" type="checkbox" checked data-settings-field="support.attachDiagnostics" /><span></span></span>
                       </label>
-                      <label class="settings-list-item settings-list-item--clickable doke-entity-row">
+                      <label class="settings-list-item settings-list-item--clickable">
                         <div><h2>Permitir retorno por WhatsApp</h2><p>Autorizar contato pelo telefone salvo nas configurações da conta.</p></div>
                         <span class="toggle-switch doke-switch"><input class="doke-switch__input" type="checkbox" data-settings-field="support.allowWhatsApp" /><span></span></span>
                       </label>
                     </div>
-                    <div class="settings-inline-note doke-settings-section">
+                    <div class="settings-inline-note">
                       <div><h2>Rascunho local</h2><p data-settings-support-draft-summary>Nenhum pedido de suporte salvo neste dispositivo.</p></div>
                       <a class="settings-action settings-action--secondary doke-btn doke-btn--ghost" href="ajuda.html">Ver ajuda</a>
                     </div>
                   </div>
-                  <footer class="settings-card__footer doke-settings-surface__footer doke-settings-actions">
+                  <footer class="settings-card__footer">
                     <button class="settings-action settings-action--secondary button--ghost doke-btn doke-btn--ghost" type="button" data-settings-reset-panel="support">Cancelar</button>
                     <button class="settings-action settings-action--primary doke-btn doke-btn--primary" type="button" data-settings-save-panel="support" data-action-state="idle" aria-busy="false">Salvar suporte</button>
                   </footer>
                 </article>
               </section>
 
-              <section class="settings-panel doke-settings-shell__panel" data-settings-panel="notifications" aria-labelledby="settings-notifications-title" hidden>
-                <article class="settings-card doke-settings-surface">
-                  <header class="settings-card__header doke-settings-surface__header">
+              <section class="settings-panel" data-settings-panel="notifications" aria-labelledby="settings-notifications-title" hidden>
+                <article class="settings-card">
+                  <header class="settings-card__header">
                     <div>
                       <h1 id="settings-notifications-title">Notificações</h1>
                       <p>Escolha quais alertas importantes devem chamar sua atenção.</p>
                     </div>
                   </header>
-                  <div class="settings-card__body settings-card__body--compact doke-settings-surface__body">
+                  <div class="settings-card__body settings-card__body--compact">
                     <div class="settings-rows settings-rows--compact">
-                      <div class="settings-list-item doke-entity-row"><div><h2>Novas mensagens</h2><p>Clientes, conversas e respostas diretas.</p></div><label class="toggle-switch doke-switch"><input class="doke-switch__input" type="checkbox" checked data-settings-preference="notifications.messages" /><span></span></label></div>
-                      <div class="settings-list-item doke-entity-row"><div><h2>Atualizações de pedidos</h2><p>Status, prazos, aceite e conclusão.</p></div><label class="toggle-switch doke-switch"><input class="doke-switch__input" type="checkbox" checked data-settings-preference="notifications.orders" /><span></span></label></div>
-                      <div class="settings-list-item doke-entity-row"><div><h2>Orçamentos</h2><p>Novas solicitações, negociações e aprovações.</p></div><label class="toggle-switch doke-switch"><input class="doke-switch__input" type="checkbox" checked data-settings-preference="notifications.budgets" /><span></span></label></div>
-                      <div class="settings-list-item doke-entity-row"><div><h2>Pagamentos e repasses</h2><p>Comprovantes, saques, taxas e repasses automáticos.</p></div><label class="toggle-switch doke-switch"><input class="doke-switch__input" type="checkbox" checked data-settings-preference="notifications.payments" /><span></span></label></div>
-                      <div class="settings-list-item doke-entity-row"><div><h2>Comunidade</h2><p>Menções, respostas e novidades de grupos.</p></div><label class="toggle-switch doke-switch"><input class="doke-switch__input" type="checkbox" data-settings-preference="notifications.community" /><span></span></label></div>
+                      <div class="settings-list-item"><div><h2>Novas mensagens</h2><p>Clientes, conversas e respostas diretas.</p></div><label class="toggle-switch doke-switch"><input class="doke-switch__input" type="checkbox" checked data-settings-preference="notifications.messages" /><span></span></label></div>
+                      <div class="settings-list-item"><div><h2>Atualizações de pedidos</h2><p>Status, prazos, aceite e conclusão.</p></div><label class="toggle-switch doke-switch"><input class="doke-switch__input" type="checkbox" checked data-settings-preference="notifications.orders" /><span></span></label></div>
+                      <div class="settings-list-item"><div><h2>Orçamentos</h2><p>Novas solicitações, negociações e aprovações.</p></div><label class="toggle-switch doke-switch"><input class="doke-switch__input" type="checkbox" checked data-settings-preference="notifications.budgets" /><span></span></label></div>
+                      <div class="settings-list-item"><div><h2>Pagamentos e repasses</h2><p>Comprovantes, saques, taxas e repasses automáticos.</p></div><label class="toggle-switch doke-switch"><input class="doke-switch__input" type="checkbox" checked data-settings-preference="notifications.payments" /><span></span></label></div>
+                      <div class="settings-list-item"><div><h2>Comunidade</h2><p>Menções, respostas e novidades de grupos.</p></div><label class="toggle-switch doke-switch"><input class="doke-switch__input" type="checkbox" data-settings-preference="notifications.community" /><span></span></label></div>
                     </div>
                   </div>
                 </article>
               </section>
 
-              <section class="settings-panel doke-settings-shell__panel" data-settings-panel="privacy" aria-labelledby="settings-privacy-title" hidden>
-                <article class="settings-card doke-settings-surface">
-                  <header class="settings-card__header doke-settings-surface__header">
+              <section class="settings-panel" data-settings-panel="privacy" aria-labelledby="settings-privacy-title" hidden>
+                <article class="settings-card">
+                  <header class="settings-card__header">
                     <div>
                       <h1 id="settings-privacy-title">Privacidade</h1>
                       <p>Controle visibilidade, dados públicos e ações sensíveis da conta.</p>
                     </div>
                   </header>
-                  <div class="settings-card__body settings-card__body--compact doke-settings-surface__body">
+                  <div class="settings-card__body settings-card__body--compact">
                     <div class="settings-rows">
-                      <div class="settings-list-item doke-entity-row"><div><h2>Perfil público</h2><p>Permitir que usuários encontrem seu perfil no Doke.</p></div><label class="toggle-switch doke-switch"><input class="doke-switch__input" type="checkbox" checked data-settings-preference="privacy.publicProfile" /><span></span></label></div>
-                      <div class="settings-list-item doke-entity-row"><div><h2>Mostrar telefone</h2><p>Exibir telefone somente após pedido aprovado.</p></div><label class="toggle-switch doke-switch"><input class="doke-switch__input" type="checkbox" data-settings-preference="privacy.showPhone" /><span></span></label></div>
-                      <div class="settings-list-item doke-entity-row"><div><h2>Aparecer na busca</h2><p>Permitir descoberta em resultados e recomendações.</p></div><label class="toggle-switch doke-switch"><input class="doke-switch__input" type="checkbox" checked data-settings-preference="privacy.searchable" /><span></span></label></div>
+                      <div class="settings-list-item"><div><h2>Perfil público</h2><p>Permitir que usuários encontrem seu perfil no Doke.</p></div><label class="toggle-switch doke-switch"><input class="doke-switch__input" type="checkbox" checked data-settings-preference="privacy.publicProfile" /><span></span></label></div>
+                      <div class="settings-list-item"><div><h2>Mostrar telefone</h2><p>Exibir telefone somente após pedido aprovado.</p></div><label class="toggle-switch doke-switch"><input class="doke-switch__input" type="checkbox" data-settings-preference="privacy.showPhone" /><span></span></label></div>
+                      <div class="settings-list-item"><div><h2>Aparecer na busca</h2><p>Permitir descoberta em resultados e recomendações.</p></div><label class="toggle-switch doke-switch"><input class="doke-switch__input" type="checkbox" checked data-settings-preference="privacy.searchable" /><span></span></label></div>
                     </div>
-                    <section class="settings-danger-zone doke-settings-section" aria-labelledby="settings-danger-title">
+                    <section class="settings-danger-zone" aria-labelledby="settings-danger-title">
                       <div><h2 id="settings-danger-title">Zona de risco</h2><p>Excluir a conta remove dados, histórico e acesso ao perfil. Essa ação exige confirmação.</p></div>
                       <button class="settings-action settings-action--danger doke-btn doke-btn--danger" type="button">Solicitar exclusão</button>
                     </section>
@@ -508,7 +505,6 @@
     <script src="assets/js/core/app.js?v=20260702-sidebar-quick-alert-flow-v1" defer></script>
     <script src="assets/js/components/operational-event-toast.js?v=20260702-sidebar-quick-alert-flow-v1" defer></script>
     <script src="assets/js/core/stable-shell-router.js?v=20260702-review-route-init-v1" defer></script>
-<script src="assets/js/pages/configuracoes.js?v=20260709-settings-support-flow-v1" defer></script>
     <script src="assets/js/ui/responsive-interaction-guard.js?v=20260428-architecture" defer></script>
     <script src="assets/js/ui/mobile-drawer.js" defer></script>
     <script src="assets/js/ui/mobile-drawer-standard.js?v=20260701-drawer-detail-contract-v1" defer></script>
@@ -520,7 +516,9 @@
     <script src="assets/js/core/session.js?v=20260501-auth-session-v1" defer></script>
     <script src="assets/js/services/auth-service.js?v=20260622-auth-surface-ready-v1" defer></script>
     <script src="assets/js/services/mock-data-service.js?v=20260501-stage31-domain-services" defer></script>
-    <script src="assets/js/services/profile-service.js?v=20260501-stage31-domain-services" defer></script>
+    <script src="assets/js/repositories/users-repository.js?v=20260712-profile-write-v2" defer></script>
+    <script src="assets/js/services/profile-service.js?v=20260712-profile-write-v2" defer></script>
+    <script src="assets/js/pages/configuracoes.js?v=20260712-profile-hydration-v3" defer></script>
     <script src="assets/js/services/search-service.js?v=20260501-stage31-domain-services" defer></script>
     <script src="assets/js/services/order-service.js?v=20260501-stage31-domain-services" defer></script>
     <script src="assets/js/services/message-service.js?v=20260501-stage31-domain-services" defer></script>

@@ -75,18 +75,6 @@ const PRESERVED_BODY_STATE_CLASSES = [...SHELL_STATE_CLASSES, ...ROUTE_SWAP_STAT
 const INTERNAL_PROFILE_PATH = "/perfil.html";
 const OWNER_PROFILE_PATH = "/meu-perfil.html";
 const NAVIGATION_REGISTRY = window.DokeNavigationRegistry || null;
-const ACCOUNT_SETTINGS_STORAGE_KEY = "doke.settings.local.v1";
-
-const readAccountSettingsSnapshot = () => {
-  try {
-    const raw = window.localStorage?.getItem(ACCOUNT_SETTINGS_STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    return parsed && typeof parsed === "object" ? parsed : null;
-  } catch (error) {
-    return null;
-  }
-};
 
 const normalizeIdentityText = (value) => String(value || "").replace(/\s+/g, " ").trim();
 
@@ -108,19 +96,19 @@ const handleFromIdentityName = (value, fallback = "dokepro") => {
 };
 
 const getSavedProfessionalIdentity = () => {
-  const settings = readAccountSettingsSnapshot();
-  const professional = settings?.professional;
-  if (!professional || typeof professional !== "object") return null;
+  const user = getCurrentSessionUser();
+  const profile = user?.profile || {};
+  if (!user) return null;
 
-  const name = normalizeIdentityText(professional.professionalName);
-  const baseCity = normalizeIdentityText(professional.baseCity);
+  const name = normalizeIdentityText(profile.name || user.name);
+  const baseCity = normalizeIdentityText(profile.city || user.city);
   if (!name && !baseCity) return null;
 
   return {
     name,
     baseCity,
-    handle: handleFromIdentityName(name || "Doke Pro"),
-    initials: initialsFromIdentityName(name || "Doke Pro", "DP")
+    handle: normalizeIdentityText(profile.handle || user.handle) || handleFromIdentityName(name || "Doke Pro"),
+    initials: normalizeIdentityText(profile.initials || user.initials) || initialsFromIdentityName(name || "Doke Pro", "DP")
   };
 };
 
@@ -1841,6 +1829,9 @@ const initializeCurrentView = () => {
   runViewInitializer("community-room", window.DokeInitCommunityRoom);
   runViewInitializer("wallet", window.DokeInitWallet);
   runViewInitializer("profile", window.DokeInitProfile);
+  runViewInitializer("owner-profile", window.DokeInitOwnerProfile);
+  runViewInitializer("client-profile", window.DokeInitClientProfile);
+  runViewInitializer("settings", window.DokeInitSettings);
   runViewInitializer("professional-profile", window.DokeInitProfessionalProfile);
   syncLucideIcons();
   runViewInitializer("mobile-shell", window.DokeMobileAppShell?.refresh);
@@ -2396,12 +2387,6 @@ window.addEventListener('storage', () => {
   syncOwnerProfileLinks();
   updateSidebarActiveState();
   syncProfessionalOwnerProfileRoute();
-});
-document.addEventListener('doke:settings-updated', () => {
-  syncProfessionalSettingsIdentity();
-});
-document.addEventListener('doke:settings-profile-updated', () => {
-  syncProfessionalSettingsIdentity();
 });
 window.setTimeout(() => {
   syncProfessionalSettingsIdentity();

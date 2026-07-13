@@ -1420,3 +1420,16 @@ body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .co
 @media (max-width: 900px) {
   body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-security-filters { grid-template-columns: 1fr; }
 }
+
+/* Members panel reuses the drawer markup; settings mode removes off-canvas motion
+ * and lets the existing administrative content rail remain the layout authority.
+ */
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode > .community-room-panel--members .community-room-panel__surface {
+  transform: none;
+  transition: none;
+  will-change: auto;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode > .community-room-panel--members .community-room-panel__body {
+  display: contents;
+}

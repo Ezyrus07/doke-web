@@ -182,21 +182,28 @@ if (authService && signupForm) {
   signupForm.addEventListener("submit", async (event) => {
     event.preventDefault();
 
+    const usernameInput = document.getElementById("usuario-cadastro");
     const nameInput = document.getElementById("nome-cadastro");
     const emailInput = document.getElementById("email-cadastro");
     const passwordInput = document.getElementById("senha-cadastro");
-    const roleInput = signupForm.querySelector('input[name="account-role"]:checked');
     const submitButton = signupForm.querySelector("[data-auth-submit]");
     const feedback = signupForm.querySelector("[data-auth-feedback]");
     const confirmationPanel = signupForm.querySelector("[data-confirmation-panel]");
 
+    const handle = usernameInput ? usernameInput.value.trim() : "";
     const name = nameInput ? nameInput.value.trim() : "";
     const email = emailInput ? emailInput.value.trim() : "";
     const password = passwordInput ? passwordInput.value : "";
-    const role = roleInput ? roleInput.value : "client";
 
-    if (!name || !email || !password) {
-      setFeedback(feedback, "error", "Preencha nome, e-mail e senha.");
+    if (!handle || !name || !email || !password) {
+      setFeedback(feedback, "error", "Preencha usuário, nome de exibição, e-mail e senha.");
+      return;
+    }
+
+    const usernameCheck = await authService.checkUsernameAvailability(handle);
+    if (!usernameCheck.available) {
+      setFeedback(feedback, "error", usernameCheck.reason || "Escolha outro usuário.");
+      usernameInput?.focus();
       return;
     }
 
@@ -213,7 +220,7 @@ if (authService && signupForm) {
     try {
       setButtonLoading(submitButton, true, "Criando conta...");
       setFeedback(feedback, "success", "Preparando seu acesso no Doke...");
-      const user = await authService.register({ name, email, password, role });
+      const user = await authService.register({ name, handle: usernameCheck.handle, email, password, role: "client" });
       if (user.pendingConfirmation) {
         setFeedback(feedback, "success", "Conta criada. Agora confirme o e-mail para liberar o acesso.");
         confirmationPanel?.classList.remove("is-hidden");
@@ -222,7 +229,7 @@ if (authService && signupForm) {
         setFeedback(feedback, "success", `Conta criada com sucesso. Bem-vindo, ${user.name}.`);
         window.DokeHeaderProfileMount?.mount?.();
         document.dispatchEvent(new CustomEvent("doke:auth-login-success", { detail: { user } }));
-        window.setTimeout(redirectAfterAuth, 500);
+        redirectAfterAuth();
       }
     } catch (error) {
       setFeedback(feedback, "error", error.message);
@@ -230,6 +237,28 @@ if (authService && signupForm) {
       setButtonLoading(submitButton, false, "Criar conta");
     }
   });
+}
+
+
+const usernameInput = document.getElementById("usuario-cadastro");
+const usernameHint = document.querySelector("[data-username-hint]");
+let usernameCheckTimer = 0;
+
+if (authService && usernameInput && usernameHint) {
+  const checkUsername = () => {
+    window.clearTimeout(usernameCheckTimer);
+    usernameCheckTimer = window.setTimeout(async () => {
+      const result = await authService.checkUsernameAvailability(usernameInput.value);
+      usernameInput.value = result.handle || usernameInput.value;
+      usernameHint.textContent = result.available
+        ? `@${result.handle} está disponível.`
+        : (result.reason || "Escolha outro usuário.");
+      usernameHint.classList.toggle("is-success", result.available);
+      usernameHint.classList.toggle("is-error", !result.available && Boolean(usernameInput.value.trim()));
+    }, 220);
+  };
+  usernameInput.addEventListener("input", checkUsername);
+  usernameInput.addEventListener("blur", checkUsername);
 }
 
 const recoveryForm = document.querySelector("[data-auth-recovery]");

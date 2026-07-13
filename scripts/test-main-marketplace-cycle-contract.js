@@ -131,7 +131,9 @@ function createReloadedDoke(user) {
     'assets/js/services/notification-service.js',
     'assets/js/services/message-service.js',
     'assets/js/services/orders-service.js',
-    'assets/js/services/payment-service.js'
+    'assets/js/services/payment-service.js',
+    'assets/js/repositories/reviews-repository.js',
+    'assets/js/services/review-service.js'
   ].forEach((relativePath) => {
     const filename = path.join(projectRoot, relativePath);
     vm.runInContext(fs.readFileSync(filename, 'utf8'), reloadSandbox, { filename: relativePath });
@@ -149,7 +151,8 @@ function createReloadedDoke(user) {
   'assets/js/services/message-service.js',
   'assets/js/services/orders-service.js',
   'assets/js/services/wallet-service.js',
-  'assets/js/services/payment-service.js'
+  'assets/js/services/payment-service.js',
+  'assets/js/services/review-service.js'
 ].forEach(runAsset);
 
 function setUser(user) {
@@ -182,112 +185,16 @@ function getCharge(conversation, messageId) {
     : messages.slice().reverse().find(isActualChargeMessage);
 }
 
-async function persistChargeState(Doke, conversationId, messageId, flags) {
-  const conversation = await Doke.repositories.messages.getById(conversationId);
-  assert(conversation, 'Conversa da cobrança não foi encontrada.');
-  const charge = getCharge(conversation, messageId);
-  assert(charge, 'Mensagem de cobrança não foi encontrada.');
-  Object.assign(charge, flags || {});
-  if (flags && flags.paid) charge.text = charge.text || 'Pagamento confirmado. Atendimento liberado.';
-  const savedConversation = await Doke.repositories.messages.save(conversation);
-  return { conversation: savedConversation, charge };
-}
-
-async function releaseReceivable(Doke, order, conversation, charge, amount) {
-  const result = await Doke.services.wallet.registerReceivableFromOrder({
-    order,
-    conversation,
-    charge,
-    amount,
-    orderId: order.id,
-    conversationId: conversation.id,
-    messageId: charge.id
-  });
-  assert(result && result.transaction, 'Conclusão não liberou/criou recebível na carteira.');
-  assert(result.transaction.status === 'available', 'Recebível pós-conclusão deveria ficar available.');
-  assert(result.transaction.netAmount === 266, 'Recebível available deveria descontar taxa mockada de 5% sobre R$ 280,00.');
-  return result.transaction;
-}
 
 async function createProfileReview(Doke, conversation, charge) {
-  const order = conversation.order || {};
-  const reviewedAt = new Date().toISOString();
-  const review = await Doke.repositories.reviews.create({
-    eventKey: ['profile_review', order.id, charge.id, 'profile_renato_acabamentos'].filter(Boolean).join(':'),
-    orderId: order.id || conversation.orderId,
+  return Doke.services.reviews.submitOrderReview(conversation.order.id || conversation.orderId, {
     conversationId: conversation.id,
     messageId: charge.id,
-    serviceId: order.serviceId || conversation.serviceId || '',
-    serviceTitle: order.serviceTitle || order.title || 'Renovação residencial',
-    professionalId: order.professionalId || order.providerId || conversation.professionalId || 'user_profissional_demo',
-    providerId: order.professionalId || order.providerId || conversation.professionalId || 'user_profissional_demo',
-    displayProfessionalId: 'profile_renato_acabamentos',
-    sourceProfessionalId: 'profile_renato_acabamentos',
-    profileIds: [
-      order.professionalId || order.providerId || conversation.professionalId || 'user_profissional_demo',
-      'profile_renato_acabamentos'
-    ],
-    professionalName: order.providerName || order.professionalName || 'Renato Acabamentos',
-    providerName: order.providerName || order.professionalName || 'Renato Acabamentos',
-    clientId: currentUser.id,
-    clientName: currentUser.name,
-    avatarText: currentUser.initials,
     rating: 5,
     tags: ['Pontualidade', 'Qualidade'],
     criteria: [{ key: 'quality', rating: 5 }],
-    comment: 'Atendimento concluído com qualidade e dentro do prazo.',
-    text: 'Atendimento concluído com qualidade e dentro do prazo.',
-    verified: true,
-    source: 'completed-order',
-    reviewedAt
-  });
-
-  await Doke.services.notifications.create({
-    type: 'order_reviewed',
-    category: 'orders',
-    userId: order.professionalId || order.providerId || conversation.professionalId || 'user_profissional_demo',
-    actorId: currentUser.id,
-    actorName: currentUser.name,
-    orderId: order.id || conversation.orderId,
-    conversationId: conversation.id,
-    messageId: charge.id,
-    serviceId: order.serviceId || conversation.serviceId || '',
-    eventKey: ['order_reviewed', order.id || conversation.orderId, charge.id, order.professionalId || order.providerId || 'user_profissional_demo'].filter(Boolean).join(':'),
-    title: 'Avaliação recebida',
-    body: currentUser.name + ' avaliou o atendimento com nota 5,0.',
-    targetUrl: 'mensagens.html?order=' + encodeURIComponent(order.id || conversation.orderId || '') + '&conversation=' + encodeURIComponent(conversation.id || ''),
-    actionLabel: 'Abrir conversa',
-    read: false
-  });
-
-  const storedOrder = await Doke.repositories.orders.getById(order.id || conversation.orderId);
-  await Doke.repositories.orders.save(Object.assign({}, storedOrder, {
-    reviewedAt,
-    reviewRating: 5,
-    reviewTags: ['Pontualidade', 'Qualidade'],
-    nextAction: 'Avaliação enviada',
-    updatedAt: reviewedAt
-  }));
-
-  const currentConversation = await Doke.repositories.messages.getById(conversation.id);
-  const currentCharge = getCharge(currentConversation, charge.id);
-  currentCharge.reviewed = true;
-  currentCharge.review = {
-    rating: 5,
-    tags: ['Pontualidade', 'Qualidade'],
-    comment: 'Atendimento concluído com qualidade e dentro do prazo.',
-    reviewedAt
-  };
-  currentConversation.lastSeen = 'Atendimento avaliado';
-  currentConversation.lastMessage = 'Atendimento avaliado pelo cliente.';
-  currentConversation.order = Object.assign({}, currentConversation.order || {}, {
-    reviewedAt,
-    reviewRating: 5,
-    reviewTags: ['Pontualidade', 'Qualidade']
-  });
-  await Doke.repositories.messages.save(currentConversation);
-
-  return review;
+    comment: 'Atendimento concluído com qualidade e dentro do prazo.'
+  }).then((result) => result.review);
 }
 
 async function main() {
@@ -418,24 +325,26 @@ async function main() {
   assert(paymentResult.order.paymentStatus === 'held', 'Pedido deveria registrar pagamento em garantia.');
   assert(paymentResult.charge.paid === true, 'Cobrança deveria ficar paid=true após pagamento.');
   assert(paymentResult.walletTransaction.status === 'held', 'Carteira deveria registrar held após pagamento.');
-  let persisted = { conversation: paymentResult.conversation, charge: paymentResult.charge };
-
-  const completed = await Doke.services.orders.complete(order.id);
-  assert(completed.status === 'completed', 'Conclusão deveria mover pedido para completed.');
-  persisted = await persistChargeState(Doke, conversation.id, chargeMessage.id, {
-    paid: true,
-    completed: true,
-    paymentMethod: 'Pix',
-    paidAmount: amount
+  setUser({ id: 'user_profissional_demo', name: 'Profissional Doke', role: 'professional', initials: 'PD', avatarInitials: 'PD' });
+  const completionRequest = await Doke.services.payments.requestCompletion(order.id, {
+    conversationId: conversation.id,
+    messageId: chargeMessage.id,
+    completionNote: 'Serviço finalizado conforme a proposta aprovada.'
   });
-  const available = await releaseReceivable(Doke, completed, persisted.conversation, persisted.charge, amount);
-  const completedCharge = getCharge(persisted.conversation, chargeMessage.id);
-  completedCharge.walletTransactionId = available.id;
-  completedCharge.walletReleased = true;
-  persisted = {
-    conversation: await Doke.repositories.messages.save(persisted.conversation),
-    charge: completedCharge
-  };
+  assert(completionRequest.order.completionStatus === 'requested', 'Profissional deveria solicitar formalmente a conclusão.');
+  assert(completionRequest.order.paymentStatus === 'held', 'Solicitação não pode liberar o pagamento.');
+
+  setUser({ id: 'user_cliente_demo', name: 'Cliente Doke', role: 'client', initials: 'CD', avatarInitials: 'CD' });
+  const completionResult = await Doke.services.payments.confirmCompletion(order.id, {
+    conversationId: conversation.id,
+    messageId: chargeMessage.id
+  });
+  const completed = completionResult.order;
+  const persisted = { conversation: completionResult.conversation, charge: completionResult.charge };
+  const available = completionResult.walletTransaction;
+  assert(completed.status === 'completed', 'Confirmação do cliente deveria mover pedido para completed.');
+  assert(completed.paymentStatus === 'released', 'Conclusão deveria liberar o pagamento em garantia.');
+  assert(available && available.status === 'available', 'Conclusão deveria liberar o recebível na carteira.');
 
   const wallet = Doke.repositories.wallet.readWallet();
   assert(wallet.transactions.length === 1, 'Carteira deveria manter um recebível atualizado, sem duplicar held/available.');
@@ -463,7 +372,7 @@ async function main() {
   assert(notifications.some((item) => item.title === 'Proposta aprovada' && item.userId === 'user_profissional_demo'), 'Aprovação da proposta deveria notificar o profissional.');
   assert(notifications.some((item) => item.type === 'payment_held' && item.userId === 'user_profissional_demo'), 'Pagamento deveria notificar o profissional com semântica de garantia.');
   assert(!notifications.some((item) => item.title === 'Pagamento confirmado' && item.orderId === order.id), 'Aprovação não deveria gerar notificação falsa de pagamento.');
-  assert(notifications.some((item) => item.title === 'Pedido concluído' && item.userId === 'user_profissional_demo'), 'Conclusão deveria notificar o profissional.');
+  assert(notifications.some((item) => /Pedido concluído/.test(item.title || '') && item.userId === 'user_profissional_demo'), 'Conclusão deveria notificar o profissional.');
   assert(notifications.some((item) => item.title === 'Saldo disponível' && item.userId === 'user_profissional_demo'), 'Liberação financeira deveria notificar o profissional.');
   assert(notifications.some((item) => item.type === 'order_reviewed' && item.userId === 'user_profissional_demo'), 'Avaliação deveria notificar o profissional.');
 

@@ -66,6 +66,7 @@
       coverUrl: profile.coverUrl || profile.cover || user?.coverUrl || '',
       headline: profile.headline || profile.profession || user?.profession || '',
       bio: profile.bio || user?.bio || '',
+      interests: Array.isArray(profile.interests) ? profile.interests.slice(0, 8) : Array.isArray(user?.interests) ? user.interests.slice(0, 8) : [],
       city: profile.city || user?.city || '',
       state: profile.state || user?.state || '',
       location: profile.location || [profile.city || user?.city, profile.state || user?.state].filter(Boolean).join(', '),
@@ -74,6 +75,7 @@
       metrics: profile.metrics && typeof profile.metrics === 'object' ? profile.metrics : {},
       publicUrl: profile.publicUrl || profile.publicProfileUrl || '',
       ownerUrl: profile.ownerUrl || profile.ownerProfileUrl || '',
+      createdAt: profile.createdAt || user?.createdAt || '',
       updatedAt: profile.updatedAt || ''
     };
   };
@@ -89,11 +91,13 @@
     return {
       id: user.id || `user_${Date.now()}`,
       name,
+      displayName: name,
       email: user.email || '',
       phone: user.phone || '',
       role,
       type: user.type || role,
-      handle: user.handle || profile?.handle || '',
+      handle: user.handle || user.username || profile?.handle || '',
+      username: user.handle || user.username || profile?.handle || '',
       avatar: user.avatar || user.avatarUrl || profile?.avatarUrl || '',
       avatarUrl: user.avatarUrl || user.avatar || profile?.avatarUrl || '',
       initials: user.initials || user.avatarInitials || profile?.initials || getInitials(name),
@@ -115,6 +119,11 @@
       bio: user.bio || profile?.bio || '',
       coverUrl: user.coverUrl || profile?.coverUrl || '',
       profession: user.profession || profile?.headline || '',
+      settings: user.settings && typeof user.settings === 'object' ? user.settings : {},
+      onboardingStatus: ['not_started', 'in_progress', 'completed'].includes(user.onboardingStatus) ? user.onboardingStatus : '',
+      onboardingCompletedAt: user.onboardingCompletedAt || '',
+      createdAt: user.createdAt || '',
+      updatedAt: user.updatedAt || '',
       isMockSupport: user.isMockSupport === true,
       mockSupport: user.mockSupport === true
     };
@@ -202,6 +211,7 @@
     });
 
     document.dispatchEvent(new CustomEvent('doke:auth-session-change', {
+      bubbles: true,
       detail: {
         session,
         user: session?.user || null,

@@ -348,68 +348,6 @@
     });
   }
 
-  function persistChargeState(flags) {
-    const messagesRepository = getMessagesRepository();
-    if (!paymentContext.conversationId) return Promise.resolve(null);
-    if (!messagesRepository?.getById || !messagesRepository?.save) {
-      return Promise.reject(new Error('Conversa de pagamento indisponível.'));
-    }
-    return messagesRepository.getById(paymentContext.conversationId).then((conversation) => {
-      if (!conversation) throw new Error('Conversa de pagamento não encontrada.');
-      const messages = Array.isArray(conversation.messages) ? conversation.messages : [];
-      const charge = paymentContext.messageId
-        ? messages.find((message) => String(message.id || '') === String(paymentContext.messageId) && isActualChargeMessage(conversation, message))
-        : messages.slice().reverse().find((message) => isActualChargeMessage(conversation, message));
-      if (!charge && paymentContext.messageId) throw new Error('Cobrança do pagamento não encontrada.');
-      if (!charge) return conversation;
-      Object.assign(charge, flags || {});
-      if (flags?.paid) charge.text = charge.text || 'Pagamento confirmado. Atendimento liberado.';
-      currentConversation = conversation;
-      currentCharge = charge;
-      return messagesRepository.save(conversation);
-    });
-  }
-
-  function capturePaymentSnapshot(orderId) {
-    const ordersService = getOrdersService();
-    const messagesRepository = getMessagesRepository();
-    const orderTask = ordersService?.getById && orderId
-      ? ordersService.getById(orderId).catch(() => currentOrder)
-      : Promise.resolve(currentOrder);
-    const conversationTask = messagesRepository?.getById && paymentContext.conversationId
-      ? messagesRepository.getById(paymentContext.conversationId).catch(() => currentConversation)
-      : Promise.resolve(currentConversation);
-
-    return Promise.all([orderTask, conversationTask]).then(([order, conversation]) => ({
-      order: cloneValue(order || currentOrder),
-      conversation: cloneValue(conversation || currentConversation)
-    }));
-  }
-
-  function rollbackPayment(snapshot, orderId) {
-    const ordersService = getOrdersService();
-    const messagesRepository = getMessagesRepository();
-    const tasks = [];
-
-    if (snapshot?.order && orderId && ordersService?.updateStatus) {
-      tasks.push(ordersService.updateStatus(orderId, snapshot.order.status || 'quoted', snapshot.order));
-    }
-    if (snapshot?.conversation && messagesRepository?.save) {
-      tasks.push(messagesRepository.save(cloneValue(snapshot.conversation)));
-    }
-
-    return Promise.allSettled(tasks).then((results) => {
-      const failed = results.some((result) => result.status === 'rejected');
-      currentOrder = cloneValue(snapshot?.order) || currentOrder;
-      currentConversation = cloneValue(snapshot?.conversation) || currentConversation;
-      currentCharge = resolveCharge(currentConversation) || currentCharge;
-      applyPaymentContext();
-      invalidatePaymentDomains();
-      if (failed) {
-        throw new Error('O pagamento falhou e o estado anterior não pôde ser restaurado por completo.');
-      }
-    });
-  }
 
   function registerPayment() {
     if (paymentTask) return paymentTask;
@@ -480,70 +418,13 @@
     finishOrderSubmit.textContent = isPending ? 'Finalizando pedido…' : 'Finalizar pedido';
   }
 
-  function releaseWalletReceivableOnCompletion() {
-    const walletService = getWalletService();
-    if (!walletService?.registerReceivableFromOrder) {
-      return Promise.reject(new Error('Carteira indisponível para liberar o recebível.'));
-    }
-    return walletService.registerReceivableFromOrder({
-      order: currentOrder || currentConversation?.order || {},
-      conversation: currentConversation,
-      charge: currentCharge,
-      amount: formatCurrency(getCurrentTotal()),
-      orderId: paymentContext.orderId || currentOrder?.id || currentConversation?.orderId || '',
-      conversationId: paymentContext.conversationId || currentConversation?.id || '',
-      messageId: paymentContext.messageId || currentCharge?.id || ''
-    }).then((result) => {
-      if (!result || (!result.transaction && !result.created && !result.updated)) {
-        throw new Error('A carteira não confirmou a liberação do recebível.');
-      }
-      return result;
-    });
-  }
-
-  function rollbackCompletion(snapshot, orderId) {
-    const ordersService = getOrdersService();
-    const messagesRepository = getMessagesRepository();
-    const walletService = getWalletService();
-    const tasks = [];
-
-    if (snapshot?.order && orderId && ordersService?.updateStatus) {
-      tasks.push(ordersService.updateStatus(orderId, snapshot.order.status || 'in_progress', snapshot.order));
-    }
-    if (snapshot?.conversation && messagesRepository?.save) {
-      tasks.push(messagesRepository.save(cloneValue(snapshot.conversation)));
-    }
-    if (walletService?.registerHeldReceivableFromPayment) {
-      tasks.push(walletService.registerHeldReceivableFromPayment({
-        order: snapshot?.order || currentOrder || {},
-        conversation: snapshot?.conversation || currentConversation,
-        charge: resolveCharge(snapshot?.conversation) || currentCharge,
-        amount: formatCurrency(getCurrentTotal()),
-        orderId: orderId || '',
-        conversationId: paymentContext.conversationId || currentConversation?.id || '',
-        messageId: paymentContext.messageId || currentCharge?.id || ''
-      }));
-    }
-
-    return Promise.allSettled(tasks).then((results) => {
-      currentOrder = cloneValue(snapshot?.order) || currentOrder;
-      currentConversation = cloneValue(snapshot?.conversation) || currentConversation;
-      currentCharge = resolveCharge(currentConversation) || currentCharge;
-      applyPaymentContext();
-      invalidatePaymentDomains();
-      if (results.some((result) => result.status === 'rejected')) {
-        throw new Error('A finalização falhou e o estado anterior não pôde ser restaurado por completo.');
-      }
-    });
-  }
-
   function registerCompletion() {
     if (completionTask) return completionTask;
 
-    const ordersService = getOrdersService();
+    const paymentService = getPaymentService();
     const orderId = paymentContext.orderId || currentOrder?.id || currentConversation?.orderId;
-    if (!orderId || !ordersService?.complete) {
-      return Promise.reject(new Error('Pedido não encontrado para finalização.'));
+    if (!orderId || !paymentService?.confirmCompletion) {
+      return Promise.reject(new Error('Comando canônico de confirmação da conclusão indisponível.'));
     }
 
     publishLatestPaymentState({ status: 'registering-completion', error: '' });
@@ -551,35 +432,28 @@
     setPaymentExperienceState('submitting', { action: 'complete-order' });
     setCompletionActionPending(true);
 
-    completionTask = capturePaymentSnapshot(orderId).then((snapshot) => {
-      return ordersService.complete(orderId)
-        .then((order) => {
-          currentOrder = order || currentOrder;
-          return persistChargeState({ paid: true, completed: true });
-        })
-        .then(() => releaseWalletReceivableOnCompletion())
-        .then((walletResult) => {
-          if (walletResult?.transaction && currentCharge) {
-            currentCharge.walletTransactionId = walletResult.transaction.id;
-            currentCharge.walletReleased = true;
-          }
-          invalidatePaymentDomains();
-          document.dispatchEvent(new CustomEvent('doke:order-completed', {
-            detail: {
-              order: currentOrder,
-              conversation: currentConversation,
-              charge: currentCharge,
-              walletTransaction: walletResult?.transaction || null
-            }
-          }));
-          setPaymentExperienceState('success', { action: 'complete-order' });
-          publishLatestPaymentState({ status: 'completed', error: '' });
-          return currentOrder;
-        })
-        .catch((error) => rollbackCompletion(snapshot, orderId).catch((rollbackError) => {
-          error.rollbackError = rollbackError;
-          throw error;
-        }).then(() => { throw error; }));
+    completionTask = paymentService.confirmCompletion(orderId, {
+      conversationId: paymentContext.conversationId || currentConversation?.id || '',
+      messageId: paymentContext.messageId || currentCharge?.id || '',
+      chargeMessageId: paymentContext.messageId || currentCharge?.id || ''
+    }).then((result) => {
+      if (!result?.order || result.order.status !== 'completed') {
+        throw new Error('A conclusão não foi confirmada pelo domínio.');
+      }
+      if (!result?.payment || result.payment.status !== 'released') {
+        throw new Error('O pagamento em garantia não foi liberado.');
+      }
+      currentOrder = result.order || currentOrder;
+      currentConversation = result.conversation || currentConversation;
+      currentCharge = result.charge || resolveCharge(currentConversation) || currentCharge;
+      paymentContext.orderId = currentOrder?.id || paymentContext.orderId;
+      paymentContext.conversationId = currentConversation?.id || paymentContext.conversationId;
+      paymentContext.messageId = currentCharge?.id || paymentContext.messageId;
+      invalidatePaymentDomains();
+      applyPaymentContext();
+      setPaymentExperienceState('success', { action: 'complete-order' });
+      publishLatestPaymentState({ status: 'completed', error: '' });
+      return currentOrder;
     }).catch((error) => {
       completionRegistered = false;
       setPaymentExperienceState(navigator.onLine === false ? 'offline' : 'error', { action: 'complete-order' });

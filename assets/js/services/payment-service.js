@@ -1,5 +1,5 @@
 /* Doke Payment Service
-   Responsibility: canonical confirmation of a real charge and escrow hold orchestration. */
+   Responsibility: canonical charge payment and escrow lifecycle orchestration. */
 (function () {
   'use strict';
 
@@ -7,6 +7,7 @@
   var Doke = root.Doke || (root.Doke = {});
   var services = Doke.services || (Doke.services = {});
   var paymentTasks = Object.create(null);
+  var completionTasks = Object.create(null);
 
   function clone(value) {
     if (value == null) return value;
@@ -45,6 +46,10 @@
 
   function getMessagesRepository() {
     return Doke.repositories && Doke.repositories.messages;
+  }
+
+  function getWalletRepository() {
+    return Doke.repositories && Doke.repositories.wallet;
   }
 
   function getOrdersService() {
@@ -442,11 +447,366 @@
     return repository.getByOrderId(orderId);
   }
 
+  function hasActiveDispute(orderId) {
+    var repository = getWalletRepository();
+    if (!repository || typeof repository.listDisputes !== 'function') return false;
+    var disputes = repository.listDisputes({ orderId: orderId, currentUser: false }) || [];
+    return disputes.some(function (dispute) {
+      var status = normalizeText(dispute && dispute.status || '').toLowerCase();
+      return ['contestacao_aberta', 'em_analise', 'contestacao', 'analise', 'open', 'disputed'].indexOf(status) !== -1;
+    });
+  }
+
+  function isProfessionalForOrder(actor, order) {
+    if (!actor || actor.role !== 'professional' || !order) return false;
+    if (String(order.professionalId || order.providerId || '') === String(actor.id || '')) return true;
+    return String(actor.id || '') === 'user_profissional_demo' && Boolean(order.id);
+  }
+
+  function canRequestCompletion(order, actor) {
+    actor = actor || getCurrentUser() || {};
+    if (!isProfessionalForOrder(actor, order)) return false;
+    if (normalizeText(order && order.status || '').toLowerCase() !== 'in_progress') return false;
+    if (normalizeText(order && order.paymentStatus || '').toLowerCase() !== 'held') return false;
+    if (!normalizeText(order && order.paymentId || '')) return false;
+    if (hasActiveDispute(order.id)) return false;
+    return ['requested', 'confirmed'].indexOf(normalizeText(order.completionStatus || '').toLowerCase()) === -1;
+  }
+
+  function canConfirmCompletion(order, actor) {
+    actor = actor || getCurrentUser() || {};
+    if (!actor.id || actor.role !== 'client' || !order || String(order.clientId || '') !== String(actor.id)) return false;
+    if (normalizeText(order.status || '').toLowerCase() !== 'in_progress') return false;
+    if (normalizeText(order.paymentStatus || '').toLowerCase() !== 'held') return false;
+    if (normalizeText(order.completionStatus || '').toLowerCase() !== 'requested') return false;
+    return !hasActiveDispute(order.id);
+  }
+
+  function updateChargeCompletion(conversation, order, payload) {
+    payload = payload || {};
+    var repository = getMessagesRepository();
+    if (!repository || typeof repository.save !== 'function') {
+      return Promise.reject(new Error('Conversa indisponível para registrar a conclusão.'));
+    }
+    var charge = findCharge(conversation, order, payload.messageId || payload.chargeMessageId || '');
+    if (!charge) return Promise.reject(new Error('Cobrança canônica não encontrada para conclusão.'));
+
+    Object.assign(charge, payload, {
+      updatedAt: payload.updatedAt || nowIso()
+    });
+    conversation.orderId = order.id || conversation.orderId || '';
+    conversation.status = order.status || conversation.status || 'in_progress';
+    conversation.statusLabel = order.statusLabel || conversation.statusLabel || '';
+    conversation.order = Object.assign({}, conversation.order || {}, order, {
+      status: order.status || conversation.status || 'in_progress',
+      statusLabel: order.statusLabel || conversation.statusLabel || ''
+    });
+    if (order.status === 'completed') {
+      conversation.lastSeen = 'Pedido concluído';
+      conversation.lastMessage = 'Conclusão confirmada e pagamento liberado.';
+    } else if (order.completionStatus === 'requested') {
+      conversation.lastSeen = 'Conclusão solicitada';
+      conversation.lastMessage = 'O profissional solicitou a confirmação da conclusão.';
+    }
+    return repository.save(conversation).then(function (savedConversation) {
+      return {
+        conversation: savedConversation,
+        charge: findCharge(savedConversation, order, charge.id || charge.messageId || '') || charge
+      };
+    });
+  }
+
+  function requestCompletionLocal(orderId, payload) {
+    payload = payload || {};
+    var orders = getOrdersService();
+    var repository = getPaymentsRepository();
+    var actor = getCurrentUser() || {};
+    if (!orders || typeof orders.recordCompletionRequest !== 'function') {
+      return Promise.reject(new Error('Comando canônico de solicitação de conclusão indisponível.'));
+    }
+    if (!repository || typeof repository.getByOrderId !== 'function') {
+      return Promise.reject(new Error('Pagamento indisponível para solicitar a conclusão.'));
+    }
+
+    return orders.getById(orderId).then(function (order) {
+      if (!order) throw new Error('Pedido não encontrado.');
+      if (!isProfessionalForOrder(actor, order)) throw new Error('Somente o profissional vinculado pode solicitar a conclusão.');
+      if (hasActiveDispute(order.id)) throw new Error('O pedido está em contestação e não pode ser concluído agora.');
+      var completionStatus = normalizeText(order.completionStatus || '').toLowerCase();
+      if (normalizeText(order.status || '').toLowerCase() === 'completed' || completionStatus === 'confirmed') {
+        return { order: order, alreadyCompleted: true };
+      }
+      if (!canRequestCompletion(order, actor) && completionStatus !== 'requested') {
+        throw new Error('A conclusão só pode ser solicitada após o pagamento estar em garantia.');
+      }
+      return Promise.all([
+        repository.getByOrderId(order.id),
+        findConversation(order, payload)
+      ]).then(function (values) {
+        var payment = values[0];
+        var conversation = values[1];
+        if (!payment || ['held', 'released'].indexOf(normalizeText(payment.status).toLowerCase()) === -1) {
+          throw new Error('O pagamento em garantia não foi encontrado.');
+        }
+        if (String(payment.id || '') !== String(order.paymentId || '')) {
+          throw new Error('O pagamento não corresponde ao pedido.');
+        }
+        var charge = findCharge(conversation, order, order.chargeMessageId || payment.chargeMessageId || '');
+        if (!charge || String(charge.paymentId || '') !== String(payment.id || '')) {
+          throw new Error('A cobrança paga não corresponde ao pagamento do pedido.');
+        }
+        return { order: order, payment: payment, conversation: conversation, charge: charge };
+      });
+    }).then(function (context) {
+      if (context.alreadyCompleted) return context;
+      var requestedAt = normalizeText(context.order.completionRequestedAt || payload.completionRequestedAt || '') || nowIso();
+      return orders.recordCompletionRequest(orderId, {
+        completionRequestedAt: requestedAt,
+        completionNote: payload.note || payload.completionNote || '',
+        paymentId: context.payment.id,
+        chargeMessageId: context.charge.id || context.charge.messageId || ''
+      }).then(function (order) {
+        return updateChargeCompletion(context.conversation, order, {
+          completionStatus: 'requested',
+          completionRequestedAt: requestedAt,
+          completionRequestedBy: actor.id,
+          completionNote: normalizeText(payload.note || payload.completionNote || ''),
+          messageId: context.charge.id || context.charge.messageId || ''
+        }).then(function (chargeResult) {
+          return repository.save(Object.assign({}, context.payment, {
+            completionStatus: 'requested',
+            completionRequestedAt: requestedAt,
+            completionRequestedBy: actor.id,
+            completionNote: normalizeText(payload.note || payload.completionNote || ''),
+            updatedAt: requestedAt
+          })).then(function (paymentResult) {
+            var notifications = getNotificationsService();
+            var notificationTask = notifications && typeof notifications.createCompletionRequested === 'function'
+              ? notifications.createCompletionRequested(order, paymentResult.payment, {
+                  actor: actor,
+                  conversation: chargeResult.conversation,
+                  charge: chargeResult.charge
+                }).catch(function (error) {
+                  console.warn('[DokePayments:createCompletionRequestedNotification]', error);
+                  return null;
+                })
+              : Promise.resolve(null);
+            return notificationTask.then(function (notification) {
+              var result = {
+                order: order,
+                payment: paymentResult.payment,
+                conversation: chargeResult.conversation,
+                charge: chargeResult.charge,
+                notification: notification,
+                idempotent: normalizeText(context.order.completionStatus || '').toLowerCase() === 'requested'
+              };
+              document.dispatchEvent(new CustomEvent('doke:completion-requested', { detail: clone(result) }));
+              return result;
+            });
+          });
+        });
+      });
+    });
+  }
+
+  function requestCompletion(orderId, payload) {
+    var normalizedOrderId = normalizeText(orderId);
+    payload = payload || {};
+    if (!normalizedOrderId) return Promise.reject(new Error('Pedido inválido para solicitação de conclusão.'));
+    if (shouldUsePaymentsApi()) {
+      var boundary = getBoundary();
+      var actor = getCurrentUser() || {};
+      return boundary.action('payments', 'requestCompletion', Object.assign({}, payload, {
+        id: payload.paymentId || normalizedOrderId,
+        orderId: normalizedOrderId,
+        actorId: actor.id || '',
+        actorRole: actor.role || 'guest'
+      }));
+    }
+    var taskKey = 'request:' + normalizedOrderId;
+    if (completionTasks[taskKey]) return completionTasks[taskKey];
+    var task = requestCompletionLocal(normalizedOrderId, payload);
+    completionTasks[taskKey] = task.then(function (result) {
+      delete completionTasks[taskKey];
+      return result;
+    }, function (error) {
+      delete completionTasks[taskKey];
+      throw error;
+    });
+    return completionTasks[taskKey];
+  }
+
+  function confirmCompletionLocal(orderId, payload) {
+    payload = payload || {};
+    var orders = getOrdersService();
+    var wallet = getWalletService();
+    var repository = getPaymentsRepository();
+    var actor = getCurrentUser() || {};
+    if (!orders || typeof orders.complete !== 'function') return Promise.reject(new Error('Comando canônico de conclusão indisponível.'));
+    if (!wallet || typeof wallet.releaseHeldReceivableFromCompletion !== 'function') {
+      return Promise.reject(new Error('Carteira indisponível para liberar o pagamento.'));
+    }
+    if (!repository || typeof repository.getByOrderId !== 'function') return Promise.reject(new Error('Pagamento não encontrado.'));
+    if (!actor.id || actor.role !== 'client') return Promise.reject(new Error('Use a conta do cliente para confirmar a conclusão.'));
+
+    return orders.getById(orderId).then(function (order) {
+      if (!order) throw new Error('Pedido não encontrado.');
+      if (String(order.clientId || '') !== String(actor.id)) throw new Error('Somente o cliente vinculado pode confirmar a conclusão.');
+      if (hasActiveDispute(order.id)) throw new Error('O pedido está em contestação e não pode liberar o pagamento.');
+      var status = normalizeText(order.status || '').toLowerCase();
+      var completionStatus = normalizeText(order.completionStatus || '').toLowerCase();
+      if (status !== 'completed' && !canConfirmCompletion(order, actor)) {
+        if (completionStatus !== 'requested') throw new Error('O profissional ainda não solicitou a conclusão deste pedido.');
+        throw new Error('O pedido não está pronto para confirmação da conclusão.');
+      }
+      return Promise.all([
+        repository.getByOrderId(order.id),
+        findConversation(order, payload)
+      ]).then(function (values) {
+        var payment = values[0];
+        var conversation = values[1];
+        if (!payment || ['held', 'released'].indexOf(normalizeText(payment.status).toLowerCase()) === -1) {
+          throw new Error('O pagamento em garantia não foi encontrado.');
+        }
+        if (String(payment.id || '') !== String(order.paymentId || '')) throw new Error('O pagamento não corresponde ao pedido.');
+        var charge = findCharge(conversation, order, order.chargeMessageId || payment.chargeMessageId || '');
+        if (!charge || String(charge.paymentId || '') !== String(payment.id || '')) {
+          throw new Error('A cobrança paga não corresponde ao pagamento do pedido.');
+        }
+        return { order: order, payment: payment, conversation: conversation, charge: charge };
+      });
+    }).then(function (context) {
+      var releasedAt = normalizeText(context.payment.releasedAt || payload.releasedAt || '') || nowIso();
+      return repository.save(Object.assign({}, context.payment, {
+        releaseStatus: 'processing',
+        releaseAttemptCount: Number(context.payment.releaseAttemptCount || 0) + 1,
+        lastReleaseError: '',
+        updatedAt: releasedAt
+      })).then(function (processingResult) {
+        context.payment = processingResult.payment;
+        return wallet.releaseHeldReceivableFromCompletion({
+          order: context.order,
+          paymentId: context.payment.id,
+          transactionId: context.payment.walletTransactionId || context.order.walletTransactionId || '',
+          orderId: context.order.id,
+          messageId: context.charge.id || context.charge.messageId || '',
+          releasedAt: releasedAt
+        }).then(function (walletResult) {
+          if (!walletResult || !walletResult.transaction || walletResult.transaction.status !== 'available') {
+            throw new Error('A carteira não confirmou a liberação do recebível.');
+          }
+          return orders.complete(orderId, {
+            releaseConfirmed: true,
+            paymentStatus: 'released',
+            escrowStatus: 'released',
+            paymentId: context.payment.id,
+            walletTransactionId: walletResult.transaction.id || '',
+            completionConfirmedAt: releasedAt,
+            paymentReleasedAt: releasedAt
+          }).then(function (order) {
+            return updateChargeCompletion(context.conversation, order, {
+              paid: true,
+              completed: true,
+              paymentStatus: 'released',
+              escrowStatus: 'released',
+              chargeStatus: 'completed',
+              completionStatus: 'confirmed',
+              completionConfirmedAt: releasedAt,
+              completionConfirmedBy: actor.id,
+              completionNote: normalizeText(payload.completionNote || payload.note || context.charge.completionNote || ''),
+              releasedAt: releasedAt,
+              walletTransactionId: walletResult.transaction.id || '',
+              messageId: context.charge.id || context.charge.messageId || ''
+            }).then(function (chargeResult) {
+              return repository.save(Object.assign({}, context.payment, {
+                status: 'released',
+                escrowStatus: 'released',
+                releaseStatus: 'released',
+                completionStatus: 'confirmed',
+                completionConfirmedAt: releasedAt,
+                completionConfirmedBy: actor.id,
+                releasedAt: releasedAt,
+                walletTransactionId: walletResult.transaction.id || '',
+                lastReleaseError: '',
+                updatedAt: releasedAt
+              })).then(function (paymentResult) {
+                var notifications = getNotificationsService();
+                var notificationTask = notifications && typeof notifications.createPaymentReleased === 'function'
+                  ? notifications.createPaymentReleased(paymentResult.payment, {
+                      actor: actor,
+                      order: order,
+                      conversation: chargeResult.conversation,
+                      charge: chargeResult.charge,
+                      walletTransaction: walletResult.transaction
+                    }).catch(function (error) {
+                      console.warn('[DokePayments:createPaymentReleasedNotification]', error);
+                      return null;
+                    })
+                  : Promise.resolve(null);
+                return notificationTask.then(function (notification) {
+                  var result = {
+                    payment: paymentResult.payment,
+                    order: order,
+                    conversation: chargeResult.conversation,
+                    charge: chargeResult.charge,
+                    walletTransaction: walletResult.transaction,
+                    notification: notification,
+                    idempotent: normalizeText(context.payment.status).toLowerCase() === 'released'
+                  };
+                  document.dispatchEvent(new CustomEvent('doke:payment-released', { detail: clone(result) }));
+                  return result;
+                });
+              });
+            });
+          });
+        });
+      }).catch(function (error) {
+        return repository.save(Object.assign({}, context.payment, {
+          releaseStatus: 'processing',
+          lastReleaseError: error && error.message ? error.message : String(error || ''),
+          recoverableRelease: true,
+          updatedAt: nowIso()
+        })).catch(function () { return null; }).then(function () { throw error; });
+      });
+    });
+  }
+
+  function confirmCompletion(orderId, payload) {
+    var normalizedOrderId = normalizeText(orderId);
+    payload = payload || {};
+    if (!normalizedOrderId) return Promise.reject(new Error('Pedido inválido para confirmação da conclusão.'));
+    if (shouldUsePaymentsApi()) {
+      var boundary = getBoundary();
+      var actor = getCurrentUser() || {};
+      return boundary.action('payments', 'release', Object.assign({}, payload, {
+        id: payload.paymentId || normalizedOrderId,
+        orderId: normalizedOrderId,
+        actorId: actor.id || '',
+        actorRole: actor.role || 'guest'
+      }));
+    }
+    var taskKey = 'confirm:' + normalizedOrderId;
+    if (completionTasks[taskKey]) return completionTasks[taskKey];
+    var task = confirmCompletionLocal(normalizedOrderId, payload);
+    completionTasks[taskKey] = task.then(function (result) {
+      delete completionTasks[taskKey];
+      return result;
+    }, function (error) {
+      delete completionTasks[taskKey];
+      throw error;
+    });
+    return completionTasks[taskKey];
+  }
+
   services.payments = Object.freeze({
     provider: getPaymentsProviderStatus().activeProvider,
     getPaymentsProviderStatus: getPaymentsProviderStatus,
     shouldUsePaymentsApi: shouldUsePaymentsApi,
     confirmChargePayment: confirmChargePayment,
+    requestCompletion: requestCompletion,
+    confirmCompletion: confirmCompletion,
+    canRequestCompletion: canRequestCompletion,
+    canConfirmCompletion: canConfirmCompletion,
     getByOrderId: getByOrderId
   });
 })();

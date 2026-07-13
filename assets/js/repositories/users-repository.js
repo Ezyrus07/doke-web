@@ -8,7 +8,7 @@
   const repositories = ns.repositories || (ns.repositories = {});
 
   const STORAGE_KEY = 'doke.auth.users.v1';
-  const PROFILE_STORAGE_KEY = 'doke.auth.userProfiles.v1';
+  const LEGACY_PROFILE_STORAGE_KEY = 'doke.auth.userProfiles.v1';
   const MOCK_USERS_URL = 'assets/data/mock-users.json';
   const MOCK_USERS_URL_FROM_AUTH = '../assets/data/mock-users.json';
 
@@ -76,19 +76,31 @@
   };
 
   const readLocalUsers = () => safeParse(window.localStorage.getItem(STORAGE_KEY), []);
-  const readLocalProfiles = () => safeParse(window.localStorage.getItem(PROFILE_STORAGE_KEY), {});
+  const readLegacyProfiles = () => safeParse(window.localStorage.getItem(LEGACY_PROFILE_STORAGE_KEY), {});
 
   const writeLocalUsers = (users) => {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.isArray(users) ? users : []));
   };
 
-  const writeLocalProfiles = (profiles) => {
-    window.localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profiles && typeof profiles === 'object' ? profiles : {}));
-  };
-
   const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
   const normalizePhone = (value) => String(value || '').replace(/\D/g, '');
   const normalizeText = (value) => String(value || '').trim().replace(/\s+/g, ' ');
+  const RESERVED_HANDLES = Object.freeze(['admin', 'administrador', 'doke', 'suporte', 'support', 'moderador', 'moderator', 'root', 'sistema', 'system']);
+
+  const normalizeHandle = (value) => String(value || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/^@+/, '')
+    .replace(/[^a-z0-9._]+/g, '')
+    .replace(/^[._]+|[._]+$/g, '')
+    .slice(0, 30);
+
+  const isValidHandle = (value) => {
+    const handle = normalizeHandle(value);
+    return /^[a-z0-9](?:[a-z0-9._]{1,28}[a-z0-9])?$/.test(handle) && !RESERVED_HANDLES.includes(handle);
+  };
 
   const isEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizeEmail(value));
 
@@ -144,7 +156,7 @@
       role,
       type: profile.type || role,
       name,
-      handle: profile.handle || user?.handle || slugify(name) || 'perfil-doke',
+      handle: normalizeHandle(profile.handle || user?.handle || slugify(name) || 'perfil-doke'),
       initials,
       avatarInitials: initials,
       avatar: profile.avatar || profile.avatarUrl || user?.avatar || user?.avatarUrl || '',
@@ -153,6 +165,7 @@
       headline: profile.headline || profile.profession || user?.profession || '',
       profession: profile.profession || profile.headline || user?.profession || '',
       bio: profile.bio || user?.bio || '',
+      interests: Array.isArray(profile.interests || user?.interests) ? (profile.interests || user.interests).map((item) => normalizeText(item)).filter(Boolean).slice(0, 8) : [],
       city: profile.city || user?.city || '',
       state: profile.state || user?.state || '',
       rating: Number.isFinite(Number(profile.rating)) ? Number(profile.rating) : Number.isFinite(Number(user?.rating)) ? Number(user.rating) : 0,
@@ -160,6 +173,7 @@
       metrics: profile.metrics && typeof profile.metrics === 'object' ? profile.metrics : {},
       publicUrl: profile.publicUrl || profile.publicProfileUrl || '',
       ownerUrl: profile.ownerUrl || profile.ownerProfileUrl || '',
+      createdAt: profile.createdAt || user?.createdAt || '',
       updatedAt: profile.updatedAt || ''
     };
   };
@@ -170,19 +184,35 @@
     const name = normalizeText(user.name || user.displayName || user.email || 'Usuário Doke');
     const initials = user.initials || user.avatarInitials || getInitials(name);
 
-    const localProfiles = readLocalProfiles();
-    const savedProfile = user.id ? localProfiles[user.id] : null;
-    const profile = normalizeProfile(user.profile || user.activeProfile || savedProfile, { ...user, name, role, initials });
+    const profileSource = user.profile || user.activeProfile || (user.id && (user.handle || user.city || user.state || user.bio || user.interests || user.avatarUrl || user.coverUrl)
+      ? {
+          id: user.providerProfileId || user.id,
+          userId: user.id,
+          name,
+          handle: user.handle,
+          city: user.city,
+          state: user.state,
+          bio: user.bio,
+          interests: user.interests,
+          avatarUrl: user.avatarUrl || user.avatar,
+          coverUrl: user.coverUrl,
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt
+        }
+      : null);
+    const profile = normalizeProfile(profileSource, { ...user, name, role, initials });
 
     return {
       ...user,
       id: user.id || generateId(role === 'professional' ? 'pro' : 'user'),
       name,
+      displayName: name,
       email: normalizeEmail(user.email),
       phone: normalizePhone(user.phone),
       role,
       type: role,
-      handle: user.handle || profile?.handle || slugify(name) || 'usuario-doke',
+      handle: normalizeHandle(user.handle || user.username || profile?.handle || slugify(name) || 'usuario-doke'),
+      username: normalizeHandle(user.handle || user.username || profile?.handle || slugify(name) || 'usuario-doke'),
       initials,
       avatarInitials: initials,
       avatar: user.avatar || user.avatarUrl || profile?.avatarUrl || '',
@@ -192,6 +222,8 @@
       bio: user.bio || profile?.bio || '',
       coverUrl: user.coverUrl || profile?.coverUrl || '',
       profession: user.profession || profile?.profession || profile?.headline || '',
+      onboardingStatus: ['not_started', 'in_progress', 'completed'].includes(user.onboardingStatus) ? user.onboardingStatus : '',
+      onboardingCompletedAt: user.onboardingCompletedAt || '',
       profile,
       profiles: Array.isArray(user.profiles) ? user.profiles.map((item) => normalizeProfile(item, user)).filter(Boolean) : profile ? [profile] : [],
       providerProfileId: user.providerProfileId || profile?.id || '',
@@ -235,7 +267,24 @@
 
   const list = async () => {
     const seeded = await loadSeededUsers();
-    const local = readLocalUsers().map(normalizeUser).filter(Boolean);
+    let local = readLocalUsers().map(normalizeUser).filter(Boolean);
+    const legacyProfiles = readLegacyProfiles();
+
+    if (legacyProfiles && Object.keys(legacyProfiles).length) {
+      const localById = new Map(local.map((user) => [String(user.id), user]));
+      Object.keys(legacyProfiles).forEach((userId) => {
+        const base = localById.get(String(userId)) || seeded.find((user) => String(user.id) === String(userId));
+        if (!base) return;
+        localById.set(String(userId), normalizeUser({
+          ...base,
+          profile: { ...(base.profile || {}), ...legacyProfiles[userId], userId: String(userId) }
+        }));
+      });
+      local = Array.from(localById.values()).filter(Boolean);
+      writeLocalUsers(local);
+      window.localStorage.removeItem(LEGACY_PROFILE_STORAGE_KEY);
+    }
+
     const byEmail = new Map();
 
     seeded.concat(local).forEach((user) => {
@@ -250,11 +299,13 @@
   const findByLogin = async (login) => {
     const normalizedEmail = normalizeEmail(login);
     const normalizedPhone = normalizePhone(login);
+    const normalizedHandle = normalizeHandle(login);
     const users = await list();
 
     return users.find((user) => {
       if (normalizedEmail && user.email === normalizedEmail) return true;
       if (normalizedPhone && user.phone === normalizedPhone) return true;
+      if (normalizedHandle && normalizeHandle(user.handle || user.profile?.handle) === normalizedHandle) return true;
       return false;
     }) || null;
   };
@@ -264,20 +315,40 @@
     return users.find((user) => user.id === id) || null;
   };
 
+  const findByHandle = async (value) => {
+    const handle = normalizeHandle(value);
+    if (!handle) return null;
+    const users = await list();
+    return users.find((user) => normalizeHandle(user.handle || user.profile?.handle) === handle) || null;
+  };
+
+  const isHandleAvailable = async (value, exceptUserId) => {
+    const handle = normalizeHandle(value);
+    if (!isValidHandle(handle)) return false;
+    const existing = await findByHandle(handle);
+    return !existing || String(existing.id) === String(exceptUserId || '');
+  };
+
   const create = async (payload) => {
     const name = normalizeText(payload.name);
     const email = normalizeEmail(payload.email);
     const phone = normalizePhone(payload.phone);
-    const role = normalizeRole(payload.role);
+    const role = 'client';
+    const handle = normalizeHandle(payload.handle);
     const password = String(payload.password || '');
 
     if (name.length < 3) throw new Error('Informe um nome mais completo.');
+    if (!isValidHandle(handle)) throw new Error('Escolha um usuário válido com 3 a 30 caracteres.');
     if (!isEmail(email)) throw new Error('Digite um e-mail válido.');
     if (password.length < 8) throw new Error('A senha precisa ter pelo menos 8 caracteres.');
 
     const users = await list();
     if (users.some((user) => user.email === email)) {
       throw new Error('Já existe uma conta com esse e-mail.');
+    }
+
+    if (users.some((user) => normalizeHandle(user.handle || user.profile?.handle) === handle)) {
+      throw new Error('Esse usuário já está em uso. Escolha outro.');
     }
 
     if (phone && users.some((user) => user.phone === phone)) {
@@ -291,7 +362,8 @@
       phone,
       role,
       type: role,
-      handle: `${slugify(name) || 'usuario'}-${Math.floor(Math.random() * 900 + 100)}`,
+      handle,
+      onboardingStatus: 'in_progress',
       passwordHash: await hashPassword(password),
       createdAt: new Date().toISOString()
     });
@@ -325,25 +397,41 @@
     return nextUser;
   };
 
-  const updateCurrentProfile = async (userId, patch) => {
+  const updateCurrentProfile = async (userId, patch, sessionUser) => {
     const id = String(userId || '').trim();
     if (!id) throw new Error('Usuário atual não encontrado para atualizar perfil.');
-    const current = await findById(id);
+    const current = await findById(id) || normalizeUser({ ...(sessionUser || {}), id });
     if (!current) throw new Error('Conta não encontrada para atualizar perfil.');
 
-    const profiles = readLocalProfiles();
+    const nextHandle = normalizeHandle(patch?.handle || current.handle || current.profile?.handle);
+    if (!isValidHandle(nextHandle)) throw new Error('Escolha um usuário válido com 3 a 30 caracteres.');
+    if (!await isHandleAvailable(nextHandle, id)) throw new Error('Esse usuário já está em uso. Escolha outro.');
+
+    const nextName = normalizeText(patch?.name || current.name);
     const nextProfile = normalizeProfile({
       ...(current.profile || {}),
-      ...(profiles[id] || {}),
       ...(patch || {}),
       userId: id,
+      name: nextName,
+      handle: nextHandle,
       updatedAt: new Date().toISOString()
     }, current);
-    profiles[id] = nextProfile;
-    writeLocalProfiles(profiles);
 
-    return updateCurrentUser(id, { profile: nextProfile });
+    return updateCurrentUser(id, {
+      name: nextName,
+      handle: nextHandle,
+      profile: nextProfile
+    });
   };
+
+  const getCurrentSettings = async (userId) => {
+    const user = await findById(String(userId || '').trim());
+    return user && user.settings && typeof user.settings === 'object' ? user.settings : {};
+  };
+
+  const updateCurrentSettings = async (userId, settings) => updateCurrentUser(userId, {
+    settings: settings && typeof settings === 'object' ? settings : {}
+  });
 
   const updatePassword = async (userId, password) => {
     const localUsers = readLocalUsers().map(normalizeUser).filter(Boolean);
@@ -370,18 +458,24 @@
 
   repositories.users = Object.freeze({
     STORAGE_KEY,
-    PROFILE_STORAGE_KEY,
+    LEGACY_PROFILE_STORAGE_KEY,
     list,
     findByLogin,
     findById,
+    findByHandle,
+    isHandleAvailable,
     create,
     updateCurrentUser,
     updateCurrentProfile,
+    getCurrentSettings,
+    updateCurrentSettings,
     updatePassword,
     hashPassword,
     isEmail,
     normalizeEmail,
     normalizePhone,
+    normalizeHandle,
+    isValidHandle,
     normalizeProfile,
     toPublicUser
   });

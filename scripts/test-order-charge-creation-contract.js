@@ -124,7 +124,7 @@ function assertSourceContracts() {
   const serviceSource = fs.readFileSync(path.join(projectRoot, 'assets/js/services/orders-service.js'), 'utf8');
   const messagesSource = fs.readFileSync(path.join(projectRoot, 'assets/js/pages/mensagens.js'), 'utf8');
   const paymentSource = fs.readFileSync(path.join(projectRoot, 'assets/js/pages/pagamento-profissional.js'), 'utf8');
-  const reviewSource = fs.readFileSync(path.join(projectRoot, 'assets/js/pages/avaliacao-profissional.js'), 'utf8');
+  const reviewServiceSource = fs.readFileSync(path.join(projectRoot, 'assets/js/services/review-service.js'), 'utf8');
 
   assert(serviceSource.includes("type: 'proposal'"), 'Service deve persistir proposta com tipo próprio.');
   assert(serviceSource.includes("financialKind: 'charge'"), 'Service deve identificar cobrança real explicitamente.');
@@ -132,7 +132,7 @@ function assertSourceContracts() {
   assert(messagesSource.includes('data-messages-charge-action'), 'Chat deve expor ação contextual de cobrança.');
   assert(messagesSource.includes('ordersService?.createCharge'), 'Chat deve usar o comando canônico de cobrança.');
   assert(paymentSource.includes('isActualChargeMessage'), 'Pagamento deve rejeitar mensagens que sejam apenas propostas.');
-  assert(reviewSource.includes('isActualChargeMessage'), 'Avaliação deve localizar somente cobrança real.');
+  assert(reviewServiceSource.includes('function isActualCharge(conversation, message)'), 'Avaliação deve localizar somente cobrança real no serviço canônico.');
 }
 
 async function main() {
