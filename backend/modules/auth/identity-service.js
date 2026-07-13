@@ -86,7 +86,7 @@ async function readProfileRow(supabase, userId) {
   if (!supabase || !userId || typeof supabase.from !== 'function') return null;
   return maybeSingle(supabase
     .from('user_profiles')
-    .select('user_id,display_name,username,avatar_url,city,state,country,bio,interests,created_at,updated_at')
+    .select('user_id,display_name,username,avatar_url,cover_url,city,state,country,bio,interests,created_at,updated_at')
     .eq('user_id', userId));
 }
 
@@ -154,7 +154,7 @@ async function updateCurrentProfile(supabase, actor, patch) {
     .from('user_profiles')
     .update(payload)
     .eq('user_id', actor.id)
-    .select('user_id,display_name,username,avatar_url,city,state,country,bio,interests,created_at,updated_at')
+    .select('user_id,display_name,username,avatar_url,cover_url,city,state,country,bio,interests,created_at,updated_at')
     .maybeSingle();
   if (response && response.error) throw response.error;
   return readCurrentIdentity(supabase, actor);
@@ -180,6 +180,7 @@ function normalizeProfilePatch(patch) {
     handle: 'username',
     avatarUrl: 'avatar_url',
     avatar: 'avatar_url',
+    coverUrl: 'cover_url',
     city: 'city',
     state: 'state',
     country: 'country',

@@ -147,7 +147,7 @@ function createEventTarget() {
   assert(!authPage.includes('openOnboarding'));
   assert(authPage.includes('redirectAfterAuth();'));
   assert(homePage.includes("document.addEventListener('doke:auth-surface-ready', refresh"));
-  ['onboarding_status', 'onboarding_completed_at', 'settings', 'interests'].forEach((field) => {
+  ['onboarding_status', 'onboarding_completed_at', 'settings', 'interests', 'cover_url'].forEach((field) => {
     assert(identityService.includes(field), `Backend API deve mapear ${field}.`);
     assert(migration.includes(field), `Schema deve persistir ${field}.`);
   });

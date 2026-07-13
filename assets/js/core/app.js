@@ -145,12 +145,6 @@ const syncProfessionalSettingsIdentity = () => {
     node.textContent = baseCity || "Profissional";
   });
 
-  if (initials) {
-    document.querySelectorAll(".home-side-meta__avatar.doke-avatar, .sidebar__avatar, [data-user-avatar]").forEach((node) => {
-      node.textContent = initials;
-    });
-  }
-
   const page = (window.location.pathname.split("/").pop() || "index.html").toLowerCase();
   if (page !== "perfil-profissional.html" && page !== "perfil.html") return;
 

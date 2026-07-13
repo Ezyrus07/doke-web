@@ -52,6 +52,40 @@
     }).slice(0, 8);
   }
 
+  function normalizeMediaUrl(value) {
+    var url = String(value || '').trim();
+    if (!url) return '';
+    if (url.length > 180000) throw new Error('A imagem excede o limite local permitido.');
+    if (!/^(data:image\/(?:png|jpeg|webp|gif);base64,|https?:\/\/|\.\.\/|\.\/|\/|assets\/)/i.test(url)) {
+      throw new Error('Formato de imagem não suportado.');
+    }
+    return url;
+  }
+
+  function prepareLocalImage(file) {
+    if (!file) return Promise.reject(new Error('Selecione uma imagem.'));
+    if (!/^image\/(?:png|jpeg|webp|gif)$/i.test(String(file.type || ''))) {
+      return Promise.reject(new Error('Use uma imagem PNG, JPG, WEBP ou GIF.'));
+    }
+    if (Number(file.size || 0) > 120 * 1024) {
+      return Promise.reject(new Error('A imagem deve ter no máximo 120 KB no modo local.'));
+    }
+    if (usesApiProvider()) {
+      return Promise.reject(new Error('Upload de imagem ainda não está habilitado no provider API.'));
+    }
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.addEventListener('load', function () {
+        try { resolve(normalizeMediaUrl(reader.result)); }
+        catch (error) { reject(error); }
+      }, { once: true });
+      reader.addEventListener('error', function () {
+        reject(new Error('Não foi possível ler a imagem.'));
+      }, { once: true });
+      reader.readAsDataURL(file);
+    });
+  }
+
   function normalizePatch(payload) {
     payload = payload || {};
     var name = normalizeText(payload.name, 80);
@@ -71,8 +105,8 @@
       city: city,
       state: state,
       interests: normalizeInterests(payload.interests),
-      avatarUrl: normalizeText(payload.avatarUrl, 2048),
-      coverUrl: normalizeText(payload.coverUrl, 2048)
+      avatarUrl: normalizeMediaUrl(payload.avatarUrl),
+      coverUrl: normalizeMediaUrl(payload.coverUrl)
     };
   }
 
@@ -183,6 +217,7 @@
     updateCurrentProfile: updateCurrentProfile,
     getCurrentSettings: getCurrentSettings,
     updateCurrentSettings: updateCurrentSettings,
+    prepareLocalImage: prepareLocalImage,
     normalizePatch: normalizePatch
   });
 })();

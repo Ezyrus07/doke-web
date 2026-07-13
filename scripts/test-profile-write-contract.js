@@ -52,10 +52,21 @@ vm.runInNewContext(serviceCode, context);
   const publicHtml = fs.readFileSync('perfil-cliente.html', 'utf8');
   const settingsHtml = fs.readFileSync('configuracoes.html', 'utf8');
   const settingsJs = fs.readFileSync('assets/js/pages/configuracoes.js', 'utf8');
+  const ownerExperience = fs.readFileSync('assets/js/pages/owner-profile-experience.js', 'utf8');
   const stableRouter = fs.readFileSync('assets/js/core/stable-shell-router.js', 'utf8');
   const clientExperience = fs.readFileSync('assets/js/pages/client-profile-experience.js', 'utf8');
 
   assert(ownerHtml.includes('configuracoes.html?tab=profile'));
+  assert(!ownerHtml.includes('Ver público'));
+  assert(!ownerHtml.includes('Mais ações do perfil'));
+  assert.strictEqual((ownerHtml.match(/data-profile-media-input=/g) || []).length, 2);
+  assert.strictEqual((settingsHtml.match(/data-settings-profile-media=/g) || []).length, 2);
+  assert(ownerExperience.includes('service.prepareLocalImage(file)'));
+  assert(ownerExperience.includes('service.updateCurrentProfile({ [field]: url })'));
+  assert(settingsJs.includes('service.prepareLocalImage(file)'));
+  assert(settingsJs.includes('service.updateCurrentProfile({ [field]: url })'));
+  assert(publicHtml.includes('data-profile-avatar-image'));
+  assert(publicHtml.includes('data-profile-cover-image'));
   assert(settingsHtml.includes('data-settings-profile-form'));
   assert(settingsHtml.includes('textarea class="doke-textarea"'));
   assert.strictEqual((settingsJs.match(/profileSaveButton\?\.addEventListener\('click'/g) || []).length, 1, 'Salvar perfil deve ter um único listener.');
@@ -68,7 +79,7 @@ vm.runInNewContext(serviceCode, context);
   assert(ownerHtml.includes('repositories/users-repository.js'));
   assert(publicHtml.includes('repositories/users-repository.js'));
 
-  console.log(JSON.stringify({ profileWrite: true, partialUpdate: true, routeReentry: true, oneSaveListener: true, canonicalTextarea: true }));
+  console.log(JSON.stringify({ profileWrite: true, mediaWrite: true, ownerActions: true, partialUpdate: true, routeReentry: true, oneSaveListener: true, canonicalTextarea: true }));
 })().catch((error) => {
   console.error(error);
   process.exit(1);

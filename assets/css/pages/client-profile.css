@@ -14,6 +14,65 @@ body[data-client-profile-contract] .profile-hero__cover {
     linear-gradient(135deg, rgba(42, 95, 144, 0.96) 0%, rgba(41, 143, 127, 0.9) 100%);
 }
 
+body[data-client-profile-contract] .profile-hero__cover-image {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+body[data-client-profile-contract] .profile-hero__cover-mark {
+  position: relative;
+  z-index: 1;
+}
+
+body[data-client-profile-contract] .profile-avatar__image {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border-radius: inherit;
+  object-fit: cover;
+}
+
+body[data-client-profile-contract] .profile-hero__cover-image[hidden],
+body[data-client-profile-contract] .profile-avatar__image[hidden] {
+  display: none;
+}
+
+body[data-profile-mode="client-edit"] .profile-owner-cover-action,
+body[data-profile-mode="client-edit"] .profile-owner-avatar-action {
+  cursor: pointer;
+}
+
+body[data-profile-mode="client-edit"] .profile-media-feedback {
+  grid-column: 3;
+  justify-self: end;
+  margin: 0;
+  color: var(--color-text-soft, #5f7390);
+  font-size: 0.82rem;
+  font-weight: var(--doke-type-weight-emphasis, 700);
+}
+
+@media (max-width: 1240px) {
+  body[data-profile-mode="client-edit"] .profile-media-feedback {
+    grid-column: 2;
+    justify-self: start;
+  }
+}
+
+@media (max-width: 760px) {
+  body[data-profile-mode="client-edit"] .profile-media-feedback {
+    grid-column: auto;
+  }
+}
+
+body[data-profile-mode="client-edit"] .profile-media-feedback[data-state="error"] {
+  color: var(--color-danger-strong, #9f2f3f);
+}
+
 body[data-page="perfil"][data-profile-contract="clean-v1"][data-client-profile-contract] .profile-tabs__item[href="#profile-achievements"],
 body[data-page="perfil"][data-profile-contract="clean-v1"][data-client-profile-contract]:has(#profile-achievements:target) .profile-tabs__item[href="#profile-achievements"],
 body[data-page="perfil"][data-profile-contract="clean-v1"][data-client-profile-contract]:has(#profile-about:target) .profile-tabs__item[href="#profile-about"] {

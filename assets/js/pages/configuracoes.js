@@ -38,6 +38,11 @@
   const profileSaveButton = document.querySelector('[data-settings-save-profile]');
   const profileError = document.querySelector('[data-settings-profile-error]');
   const profileInitials = document.querySelector('[data-settings-profile-initials]');
+  const profileAvatar = document.querySelector('[data-settings-profile-avatar]');
+  const profileCover = document.querySelector('[data-settings-profile-cover]');
+  const profileCoverFallback = document.querySelector('[data-settings-profile-cover-fallback]');
+  const profileMediaInputs = Array.from(document.querySelectorAll('[data-settings-profile-media]'));
+  const profileMediaFeedback = document.querySelector('[data-settings-media-feedback]');
   let persistedProfile = null;
 
 
@@ -447,6 +452,58 @@
     return parts.length ? parts.map((part) => part.charAt(0).toUpperCase()).join('') : 'DK';
   };
 
+  const renderProfileMedia = (profile = {}) => {
+    const avatarUrl = String(profile.avatarUrl || '').trim();
+    const coverUrl = String(profile.coverUrl || '').trim();
+    if (profileAvatar) {
+      profileAvatar.hidden = !avatarUrl;
+      if (avatarUrl) profileAvatar.src = avatarUrl;
+      else profileAvatar.removeAttribute('src');
+    }
+    if (profileInitials) {
+      profileInitials.hidden = Boolean(avatarUrl);
+      profileInitials.textContent = profileInitialsFromName(profile.name);
+    }
+    if (profileCover) {
+      profileCover.hidden = !coverUrl;
+      if (coverUrl) profileCover.src = coverUrl;
+      else profileCover.removeAttribute('src');
+    }
+    if (profileCoverFallback) profileCoverFallback.hidden = Boolean(coverUrl);
+  };
+
+  const setMediaFeedback = (message, isError = false) => {
+    if (!profileMediaFeedback) return;
+    profileMediaFeedback.hidden = !message;
+    profileMediaFeedback.textContent = message || '';
+    profileMediaFeedback.dataset.state = isError ? 'error' : 'success';
+  };
+
+  const updateProfileMedia = async (input) => {
+    const service = getProfileService();
+    const file = input.files?.[0];
+    const mediaKind = input.dataset.settingsProfileMedia;
+    const field = mediaKind === 'cover' ? 'coverUrl' : 'avatarUrl';
+    if (!file || !service?.prepareLocalImage || !service?.updateCurrentProfile) return;
+    const previousProfile = { ...(persistedProfile || {}) };
+    try {
+      setMediaFeedback('Preparando imagem...');
+      const url = await service.prepareLocalImage(file);
+      persistedProfile = { ...previousProfile, [field]: url };
+      renderProfileMedia(persistedProfile);
+      setMediaFeedback('Salvando...');
+      persistedProfile = await service.updateCurrentProfile({ [field]: url });
+      renderProfileMedia(persistedProfile);
+      setMediaFeedback(mediaKind === 'cover' ? 'Capa atualizada.' : 'Foto atualizada.');
+    } catch (error) {
+      persistedProfile = previousProfile;
+      renderProfileMedia(persistedProfile);
+      setMediaFeedback(error?.message || 'Não foi possível atualizar a imagem.', true);
+    } finally {
+      input.value = '';
+    }
+  };
+
   const hydrateProfileForm = async () => {
     const service = getProfileService();
     if (!service?.getCurrentProfile || !profileForm) return;
@@ -460,7 +517,7 @@
           : profile[key] || '';
         setInputValue(field, value);
       });
-      if (profileInitials) profileInitials.textContent = profileInitialsFromName(profile.name);
+      renderProfileMedia(profile);
       if (profileError) profileError.textContent = '';
     } catch (error) {
       if (profileError) profileError.textContent = error?.message || 'Não foi possível carregar o perfil.';
@@ -476,7 +533,7 @@
     button.setAttribute('aria-busy', 'true');
     try {
       persistedProfile = await service.updateCurrentProfile(payload);
-      if (profileInitials) profileInitials.textContent = profileInitialsFromName(persistedProfile?.name);
+      renderProfileMedia(persistedProfile);
       setButtonSavedFeedback(button);
     } catch (error) {
       if (profileError) profileError.textContent = error?.message || 'Não foi possível salvar o perfil.';
@@ -716,6 +773,10 @@
     }, { signal });
   });
 
+  profileMediaInputs.forEach((input) => {
+    input.addEventListener('change', () => updateProfileMedia(input), { signal });
+  });
+
   securitySignOutButtons.forEach((button) => {
     button.addEventListener('click', (event) => {
       event.preventDefault();
@@ -752,7 +813,7 @@
     updateSearchClearState();
     setMobileSearchOpen(false);
 
-    setNarrowMenuMode(isNarrowSettings());
+    setNarrowMenuMode(isNarrowSettings() && !getPanelFromLocation());
 
     document.querySelector('.settings-sidebar')?.removeAttribute('hidden');
   };

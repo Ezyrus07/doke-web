@@ -281,6 +281,48 @@ body.doke-settings-redesign svg {
   gap: 26px;
 }
 
+.settings-media-editor {
+  min-width: 0;
+  display: grid;
+  gap: 22px;
+}
+
+.settings-cover-upload {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 26px;
+}
+
+.settings-cover-preview {
+  width: min(360px, 100%);
+  aspect-ratio: 16 / 5;
+  flex: 0 1 360px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: var(--doke-visual-border);
+  border-radius: var(--radius-surface);
+  background: linear-gradient(135deg, rgba(42, 95, 144, 0.14), rgba(41, 143, 127, 0.14));
+  color: var(--settings-muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.settings-cover-preview img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.settings-avatar__image[hidden],
+.settings-avatar__fallback[hidden],
+.settings-cover-preview img[hidden],
+.settings-cover-preview span[hidden] {
+  display: none;
+}
+
 .avatar-large {
   width: 112px;
   height: 112px;
@@ -490,6 +532,16 @@ body.doke-settings-redesign svg {
 }
 
 @media (max-width: 640px) {
+  .settings-cover-upload {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .settings-cover-preview {
+    width: 100%;
+    flex-basis: auto;
+  }
+
   .settings-main {
     padding-inline: 12px;
   }

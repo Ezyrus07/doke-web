@@ -14,4 +14,5 @@ alter table public.users
   check (onboarding_status in ('not_started', 'in_progress', 'completed'));
 
 alter table public.user_profiles
-  add column if not exists interests jsonb not null default '[]'::jsonb;
+  add column if not exists interests jsonb not null default '[]'::jsonb,
+  add column if not exists cover_url text;

@@ -329,14 +329,14 @@
       profile: normalizedProfile,
       profiles: Array.isArray(publicUser.profiles) ? publicUser.profiles : [normalizedProfile],
       handle: publicUser.handle || normalizedProfile.handle || '',
-      avatarUrl: publicUser.avatarUrl || normalizedProfile.avatarUrl || '',
-      avatar: publicUser.avatar || normalizedProfile.avatarUrl || '',
+      avatarUrl: normalizedProfile.avatarUrl || publicUser.avatarUrl || '',
+      avatar: normalizedProfile.avatarUrl || publicUser.avatar || '',
       avatarInitials: publicUser.avatarInitials || normalizedProfile.avatarInitials || '',
       initials: publicUser.initials || normalizedProfile.initials || '',
       city: publicUser.city || normalizedProfile.city || '',
       state: publicUser.state || normalizedProfile.state || '',
       bio: publicUser.bio || normalizedProfile.bio || '',
-      coverUrl: publicUser.coverUrl || normalizedProfile.coverUrl || '',
+      coverUrl: normalizedProfile.coverUrl || publicUser.coverUrl || '',
       profession: publicUser.profession || normalizedProfile.profession || normalizedProfile.headline || '',
       publicProfileUrl: publicUser.publicProfileUrl || normalizedProfile.publicUrl || (publicUser.role === 'professional' ? 'perfil.html' : 'perfil-cliente.html'),
       ownerProfileUrl: publicUser.ownerProfileUrl || normalizedProfile.ownerUrl || (publicUser.role === 'professional' ? 'perfil-profissional.html' : 'meu-perfil.html')
@@ -873,6 +873,7 @@
     const authenticated = Boolean(user);
     const displayName = authenticated ? getFirstName(user.name || user.email || 'Conta Doke') : 'Entrar';
     const initials = authenticated ? user?.initials || user?.avatarInitials || 'DK' : 'DK';
+    const avatarUrl = authenticated ? user?.profile?.avatarUrl || user?.avatarUrl || user?.avatar || '' : '';
     const roleLabel = authenticated ? getRoleLabel(user) : 'Conta';
 
     document.documentElement.dataset.authenticated = String(authenticated);
@@ -890,7 +891,15 @@
     });
 
     document.querySelectorAll('.home-side-meta__avatar.doke-avatar, .sidebar__avatar, [data-user-avatar]').forEach((element) => {
-      element.textContent = initials;
+      element.replaceChildren();
+      if (avatarUrl) {
+        const image = document.createElement('img');
+        image.src = avatarUrl;
+        image.alt = '';
+        element.appendChild(image);
+      } else {
+        element.textContent = initials;
+      }
     });
 
     document.querySelectorAll('.home-side-meta__identity strong, [data-user-name]').forEach((element) => {
