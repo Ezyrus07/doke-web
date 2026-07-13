@@ -1075,3 +1075,18 @@ body[data-page="configuracoes"].doke-settings-redesign .settings-card__header {
 body[data-page="configuracoes"].doke-settings-redesign .settings-card__footer {
   min-height: var(--doke-settings-footer-min-height, 76px);
 }
+
+/* Configurações — fechamento contínuo do canvas desktop.
+ * O rail do workspace continua limitado; apenas o fundo externo deixa de expor
+ * as superfícies brancas do shell nas laterais da viewport. */
+body[data-page="configuracoes"].doke-settings-redesign,
+body[data-page="configuracoes"].doke-settings-redesign > .app-shell,
+body[data-page="configuracoes"].doke-settings-redesign > .app-shell > .page.settings-page-frame {
+  background: var(--settings-page-bg, var(--settings-bg, #eef5fb));
+}
+
+/* Durante a montagem do shell, não reserve uma faixa branca para uma sidebar vazia. */
+body[data-page="configuracoes"].doke-settings-redesign > .app-shell > .sidebar:empty {
+  background: var(--settings-page-bg, var(--settings-bg, #eef5fb));
+  box-shadow: none;
+}

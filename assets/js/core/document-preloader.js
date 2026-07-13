@@ -83,6 +83,20 @@
     ]);
   }
 
+  function show(source) {
+    if (fallbackTimer) window.clearTimeout(fallbackTimer);
+    released = false;
+    startedAt = performance.now();
+    preloader.hidden = false;
+    preloader.classList.remove('is-leaving');
+    preloader.classList.add('is-operation');
+    preloader.setAttribute('aria-hidden', 'false');
+    root.dataset.dokeDocumentBoot = 'loading';
+    document.dispatchEvent(new CustomEvent('doke:document-preloader-show', {
+      detail: { source: source || 'operation' }
+    }));
+  }
+
   function release(source) {
     if (released) return Promise.resolve();
     released = true;
@@ -92,6 +106,7 @@
     return new Promise(function (resolve) { window.setTimeout(resolve, remaining); })
       .then(nextPaint)
       .then(function () {
+        preloader.classList.remove('is-operation');
         preloader.classList.add('is-leaving');
         preloader.setAttribute('aria-hidden', 'true');
         root.dataset.dokeDocumentBoot = 'ready';
@@ -123,5 +138,5 @@
     .then(function () { return release('shell-paint'); })
     .catch(function () { return release('error-fallback'); });
 
-  window.DokeDocumentPreloader = Object.freeze({ release: release });
+  window.DokeDocumentPreloader = Object.freeze({ show: show, release: release });
 }());

@@ -59,10 +59,10 @@
 
   body.home-index-shell .home-catégories,
   body.home-index-shell .featured-services,
-  body.home-index-shell .short-videos,
-  body.home-index-shell .before-after,
-  body.home-index-shell .more-services,
-  body.home-index-shell .featured-pros {
+  body.home-index-shell .short-videos:not([hidden]),
+  body.home-index-shell .before-after:not([hidden]),
+  body.home-index-shell .more-services:not([hidden]),
+  body.home-index-shell .featured-pros:not([hidden]) {
     padding-inline: var(--home-mobile-edge);
   }
 
@@ -81,10 +81,10 @@
 
 
 @media (max-width: 560px) {
-  body.home-index-shell .short-videos,
-  body.home-index-shell .before-after,
-  body.home-index-shell .more-services,
-  body.home-index-shell .featured-pros {
+  body.home-index-shell .short-videos:not([hidden]),
+  body.home-index-shell .before-after:not([hidden]),
+  body.home-index-shell .more-services:not([hidden]),
+  body.home-index-shell .featured-pros:not([hidden]) {
     display: grid;
   }
 }
@@ -209,15 +209,14 @@
 }
 
 
-/* Mobile footer contract: no white gap below footer; docked bottom nav sits over footer safe area. */
+/* Mobile footer contract: the shell body reserve owns bottom-nav clearance. */
 @media (max-width: 560px) {
   body.home-index-shell .page__content {
-    padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: 0;
   }
 
   body.home-index-shell .home-footer {
     margin-bottom: 0;
-    padding-bottom: calc(104px + env(safe-area-inset-bottom, 0px));
     content-visibility: visible;
     contain-intrinsic-size: auto;
   }

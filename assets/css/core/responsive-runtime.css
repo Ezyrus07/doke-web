@@ -31,14 +31,9 @@
 }
 
 
-/* V1 cumulative: safe area contract for global mobile shell */
-@media (max-width:760px){
+/* Compatibility alias: the shell component owns the actual body reserve. */
+@media (max-width:560px){
   html{
-    --doke-runtime-bottom-nav-height:72px;
-    --doke-mobile-page-bottom-safe:calc(var(--doke-runtime-bottom-nav-height,72px) + 24px + env(safe-area-inset-bottom,0px));
-  }
-
-  body.app-shell-page:not(.chat-room-mobile-open){
-    padding-bottom:var(--doke-mobile-page-bottom-safe);
+    --doke-mobile-page-bottom-safe:var(--doke-mobile-shell-bottom-reserve, calc(var(--doke-runtime-bottom-nav-height, 64px) + 14px + env(safe-area-inset-bottom, 0px)));
   }
 }

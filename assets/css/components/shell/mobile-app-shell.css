@@ -17,6 +17,9 @@
   --doke-mobile-shell-topbar-height: 40px;
   --doke-mobile-shell-search-height: 56px;
   --doke-mobile-shell-nav-height: 64px;
+  --doke-mobile-shell-bottom-reserve: calc(
+    var(--doke-mobile-shell-nav-height) + env(safe-area-inset-bottom, 0px) + 14px
+  );
   --doke-mobile-shell-action-height: var(--doke-mobile-shell-topbar-height);
   --doke-mobile-shell-ink: var(--color-heading-soft, #17395f);
   --doke-mobile-shell-muted: var(--color-text-muted, #8ca1b8);
@@ -30,6 +33,13 @@
   --doke-mobile-shell-without-search-height: calc(
     var(--doke-mobile-shell-top) + var(--doke-mobile-shell-topbar-height) + 18px
   );
+}
+
+@media (max-width: 560px) {
+  html.doke-mobile-shell-pending
+    body:not([data-page="admin"]):not([data-page="notificacoes"]):not([data-page="novidades"]):not(.chat-room-mobile-open) {
+    padding-bottom: var(--doke-mobile-shell-bottom-reserve);
+  }
 }
 
 .doke-mobile-shell,
@@ -47,10 +57,7 @@
     min-width: 0;
     overflow-x: hidden;
     padding-top: var(--doke-mobile-shell-without-search-height);
-    padding-bottom: calc(
-      var(--doke-mobile-shell-nav-height) + env(safe-area-inset-bottom, 0px) +
-        14px
-    );
+    padding-bottom: 0;
   }
 
   html.doke-mobile-shell-pending
@@ -135,10 +142,11 @@
     min-width: 0;
     overflow-x: hidden;
     padding-top: var(--doke-mobile-shell-with-search-height);
-    padding-bottom: calc(
-      var(--doke-mobile-shell-nav-height) + env(safe-area-inset-bottom, 0px) +
-        14px
-    );
+    padding-bottom: 0;
+  }
+
+  body.doke-mobile-shell-mounted:not(.chat-room-mobile-open)[data-shell-bottom-nav="true"] {
+    padding-bottom: var(--doke-mobile-shell-bottom-reserve);
   }
 
   body.doke-mobile-shell-mounted:not(.chat-room-mobile-open)[data-shell-search="false"] {

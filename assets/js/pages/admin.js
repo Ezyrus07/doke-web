@@ -19,6 +19,14 @@
   var verificationDialog = document.querySelector('[data-admin-verification-dialog]');
   var verificationReasonInput = document.querySelector('[data-admin-verification-reason]');
   var verificationRejectConfirm = document.querySelector('[data-admin-verification-reject-confirm]');
+  var verificationReview = document.querySelector('[data-admin-verification-review]');
+  var verificationReviewBody = document.querySelector('[data-admin-verification-review-body]');
+  var verificationReviewTitle = document.querySelector('[data-admin-verification-review-title]');
+  var verificationReviewDescription = document.querySelector('[data-admin-verification-review-description]');
+  var verificationReviewApprove = document.querySelector('[data-admin-verification-review-approve]');
+  var verificationReviewReject = document.querySelector('[data-admin-verification-review-reject]');
+  var activeVerificationReviewId = '';
+  var verificationObjectUrls = [];
   var pendingVerificationId = '';
   var searchQuery = '';
   var toastTimer = null;
@@ -301,9 +309,9 @@
         '</div>',
         item.rejectionReason ? '<p class="admin-list-item__copy">Motivo: ' + escapeHtml(item.rejectionReason) + '</p>' : '',
         '<div class="admin-list-item__actions">',
-          canStart ? '<button class="doke-btn doke-btn--ghost" type="button" data-admin-verification-action="start" data-verification-id="' + escapeHtml(item.id) + '">Iniciar análise</button>' : '',
-          canDecide ? '<button class="doke-btn doke-btn--primary" type="button" data-admin-verification-action="approve" data-verification-id="' + escapeHtml(item.id) + '">Aprovar e ativar</button>' : '',
-          canDecide ? '<button class="doke-btn doke-btn--danger" type="button" data-admin-verification-action="reject" data-verification-id="' + escapeHtml(item.id) + '">Rejeitar</button>' : '',
+          canStart ? '<button class="doke-btn doke-btn--primary" type="button" data-admin-verification-action="start" data-verification-id="' + escapeHtml(item.id) + '">Iniciar análise</button>' : '',
+          canDecide && !canStart ? '<a class="doke-btn doke-btn--primary" href="admin-verificacao.html?id=' + encodeURIComponent(item.id) + '">Abrir análise</a>' : '',
+          !canDecide ? '<a class="doke-btn doke-btn--ghost" href="admin-verificacao.html?id=' + encodeURIComponent(item.id) + '">Ver detalhes</a>' : '',
         '</div>',
       '</article>'
     ].join('');
@@ -317,6 +325,115 @@
       return isSearchMatch([item.id, item.userId, item.status, payload.verificationType, payload.city, payload.state, payload.taxIdLast4]);
     });
     list.innerHTML = filtered.length ? filtered.map(renderVerification).join('') : empty('Nenhuma verificação profissional encontrada.');
+  }
+
+  function releaseVerificationObjectUrls() {
+    verificationObjectUrls.forEach(function (url) { try { URL.revokeObjectURL(url); } catch (_) {} });
+    verificationObjectUrls = [];
+  }
+
+  function formatTaxId(value, type) {
+    var digits = String(value || '').replace(/\D/g, '');
+    if (type === 'business' && digits.length === 14) return digits.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
+    if (digits.length === 11) return digits.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, '$1.$2.$3-$4');
+    return digits || 'Não informado';
+  }
+
+  function formatPostalCode(value) {
+    var digits = String(value || '').replace(/\D/g, '');
+    return digits.length === 8 ? digits.replace(/^(\d{5})(\d{3})$/, '$1-$2') : digits || 'Não informado';
+  }
+
+  function reviewField(label, value) {
+    return '<div class="admin-verification-review__field"><span>' + escapeHtml(label) + '</span><strong>' + escapeHtml(value || 'Não informado') + '</strong></div>';
+  }
+
+  function evidencePreview(file, label) {
+    if (!file) {
+      return '<article class="admin-verification-evidence is-unavailable"><div><strong>' + escapeHtml(label) + '</strong><span>Arquivo não enviado.</span></div></article>';
+    }
+    var name = clean(file.fileName || 'Arquivo');
+    var type = clean(file.type || '');
+    var size = Number(file.size || 0);
+    var meta = [name, size ? (size / 1024 / 1024).toFixed(2).replace('.', ',') + ' MB' : '', type].filter(Boolean).join(' · ');
+    if (!(typeof Blob !== 'undefined' && file.blob instanceof Blob)) {
+      return '<article class="admin-verification-evidence is-unavailable"><div><strong>' + escapeHtml(label) + '</strong><span>' + escapeHtml(meta || 'Metadados preservados') + '</span><p>O arquivo pertence a um envio anterior à persistência documental e não está disponível para pré-visualização.</p></div></article>';
+    }
+    var url = URL.createObjectURL(file.blob);
+    verificationObjectUrls.push(url);
+    var preview = type === 'application/pdf'
+      ? '<iframe class="admin-verification-evidence__pdf" src="' + escapeHtml(url) + '" title="' + escapeHtml(label) + '"></iframe>'
+      : '<img class="admin-verification-evidence__image" src="' + escapeHtml(url) + '" alt="' + escapeHtml(label) + '">';
+    return '<article class="admin-verification-evidence"><div class="admin-verification-evidence__header"><div><strong>' + escapeHtml(label) + '</strong><span>' + escapeHtml(meta) + '</span></div><a class="doke-btn doke-btn--ghost" href="' + escapeHtml(url) + '" target="_blank" rel="noopener">Abrir arquivo</a></div>' + preview + '</article>';
+  }
+
+  function renderVerificationReview(verification) {
+    var payload = verification && verification.payload || {};
+    var business = payload.verificationType === 'business';
+    var address = [payload.street, payload.number, payload.complement, payload.district, payload.city, payload.state].filter(Boolean).join(', ');
+    var hasFullEvidence = ['documentFront', 'documentBack', 'selfieDocument', 'proofOfAddress'].some(function (key) {
+      return payload[key] && typeof Blob !== 'undefined' && payload[key].blob instanceof Blob;
+    });
+    if (verificationReviewTitle) verificationReviewTitle.textContent = business ? 'Verificação de pessoa jurídica' : 'Verificação de pessoa física';
+    if (verificationReviewDescription) verificationReviewDescription.textContent = 'Enviada em ' + formatDate(verification.submittedAt || verification.updatedAt) + ' · ' + statusLabel(verification.status);
+    if (!verificationReviewBody) return;
+    verificationReviewBody.innerHTML = [
+      '<section class="admin-verification-review__section"><div class="admin-verification-review__section-heading"><span>Identificação</span><h3>Dados do titular</h3></div><div class="admin-verification-review__fields">',
+        reviewField(business ? 'Razão social' : 'Nome legal', payload.legalName),
+        reviewField(business ? 'CNPJ' : 'CPF', formatTaxId(payload.taxId || payload.taxIdLast4, payload.verificationType)),
+        business ? reviewField('Responsável legal', payload.representativeName) : reviewField('Data de nascimento', payload.birthDate),
+        reviewField('Tipo de documento', payload.documentType),
+      '</div></section>',
+      '<section class="admin-verification-review__section"><div class="admin-verification-review__section-heading"><span>Endereço</span><h3>Residência ou sede</h3></div><div class="admin-verification-review__fields">',
+        reviewField('CEP', formatPostalCode(payload.postalCode)),
+        reviewField('Endereço completo', address),
+      '</div></section>',
+      '<section class="admin-verification-review__section"><div class="admin-verification-review__section-heading"><span>Documentos</span><h3>Evidências enviadas</h3></div>',
+        hasFullEvidence ? '' : '<div class="admin-verification-review__notice">Este registro não possui todos os binários porque foi enviado antes da implantação do armazenamento documental. Não aprove sem revisar os arquivos originais.</div>',
+        '<div class="admin-verification-review__evidence-grid">',
+          evidencePreview(payload.documentFront, 'Frente do documento'),
+          evidencePreview(payload.documentBack, 'Verso do documento'),
+          evidencePreview(payload.selfieDocument, 'Selfie de verificação'),
+          evidencePreview(payload.proofOfAddress, 'Comprovante de endereço'),
+          business ? evidencePreview(payload.businessDocument, 'Documento empresarial') : '',
+        '</div>',
+      '</section>',
+      '<section class="admin-verification-review__section"><div class="admin-verification-review__section-heading"><span>Declarações</span><h3>Consentimentos</h3></div><div class="admin-verification-review__checks">',
+        '<span class="' + (payload.truthConfirmed ? 'is-confirmed' : 'is-missing') + '">' + (payload.truthConfirmed ? '✓' : '!') + ' Autenticidade dos dados confirmada</span>',
+        '<span class="' + (payload.consentAccepted ? 'is-confirmed' : 'is-missing') + '">' + (payload.consentAccepted ? '✓' : '!') + ' Processamento dos dados autorizado</span>',
+      '</div></section>'
+    ].join('');
+    var canDecide = verification.status === 'under_review';
+    if (verificationReviewApprove) verificationReviewApprove.hidden = !canDecide || !hasFullEvidence;
+    if (verificationReviewReject) verificationReviewReject.hidden = !canDecide;
+  }
+
+  function closeVerificationReview() {
+    activeVerificationReviewId = '';
+    releaseVerificationObjectUrls();
+    if (!verificationReview) return;
+    if (typeof verificationReview.close === 'function' && verificationReview.open) verificationReview.close();
+    else verificationReview.removeAttribute('open');
+  }
+
+  function openVerificationReview(verificationId) {
+    var id = clean(verificationId);
+    var service = verificationService();
+    if (!id || !service || typeof service.getReviewDetail !== 'function' || !verificationReview) return Promise.reject(new Error('Detalhes da verificação indisponíveis.'));
+    activeVerificationReviewId = id;
+    releaseVerificationObjectUrls();
+    if (verificationReviewBody) verificationReviewBody.innerHTML = '<div class="admin-verification-review__loading">Carregando dados e documentos...</div>';
+    if (verificationReviewApprove) verificationReviewApprove.hidden = true;
+    if (verificationReviewReject) verificationReviewReject.hidden = true;
+    if (typeof verificationReview.showModal === 'function') verificationReview.showModal();
+    else verificationReview.setAttribute('open', '');
+    return service.getReviewDetail(id).then(function (verification) {
+      if (activeVerificationReviewId !== id) return;
+      renderVerificationReview(verification);
+    }).catch(function (error) {
+      if (verificationReviewBody) verificationReviewBody.innerHTML = '<div class="admin-verification-review__notice">' + escapeHtml(error && error.message || 'Não foi possível carregar a análise.') + '</div>';
+      throw error;
+    });
   }
 
   function openVerificationRejectDialog(verificationId) {
@@ -359,6 +476,7 @@
     var operation = function () {
       return Promise.resolve(runVerificationAction(action, id, reason)).then(function () {
         closeVerificationRejectDialog();
+        if (action === 'approve' || action === 'reject') closeVerificationReview();
         if (runtime) runtime.invalidateRelated();
         showToast(action === 'approve' ? 'Verificação aprovada e perfil profissional ativado.' : action === 'reject' ? 'Verificação rejeitada com motivo registrado.' : 'Análise iniciada.');
         return loadAdminData(true);
@@ -603,21 +721,83 @@
     if (loadPromise && !force) return loadPromise;
     var runtime = experience();
     if (runtime) runtime.startLoad();
+
     var orders = listOrders();
-    loadPromise = Promise.all([listVerifications(), listDisputes(), listTransactions(), listAuditEvents()]).then(function (result) {
-      var verifications = result[0];
-      var disputes = result[1];
-      var transactions = result[2];
-      var auditEvents = result[3];
-      setStat('verifications', verifications.filter(function (item) { return ['submitted', 'under_review'].indexOf(item.status) >= 0; }).length);
-      renderVerifications(verifications);
-      updateStats(disputes, transactions);
-      renderDisputes(disputes, transactions, orders);
-      renderPayments(transactions);
-      renderWithdraws(transactions);
-      renderAudit(disputes, transactions, auditEvents);
+    var failures = [];
+    var state = {
+      verifications: [],
+      disputes: [],
+      transactions: [],
+      auditEvents: []
+    };
+
+    function trackFailure(scope, error) {
+      failures.push({ scope: scope, error: error });
+      return [];
+    }
+
+    var verificationsTask = listVerifications().then(function (items) {
+      state.verifications = items;
+      setStat('verifications', items.filter(function (item) {
+        return ['submitted', 'under_review'].indexOf(item.status) >= 0;
+      }).length);
+      renderVerifications(items);
+      return items;
+    }).catch(function (error) {
+      renderVerifications([]);
+      return trackFailure('verificações', error);
+    });
+
+    var disputesTask = listDisputes().then(function (items) {
+      state.disputes = items;
+      return items;
+    }).catch(function (error) {
+      return trackFailure('contestações', error);
+    });
+
+    var transactionsTask = listTransactions().then(function (items) {
+      state.transactions = items;
+      renderPayments(items);
+      renderWithdraws(items);
+      return items;
+    }).catch(function (error) {
+      renderPayments([]);
+      renderWithdraws([]);
+      return trackFailure('pagamentos', error);
+    });
+
+    var auditTask = listAuditEvents().then(function (items) {
+      state.auditEvents = items;
+      return items;
+    }).catch(function (error) {
+      return trackFailure('auditoria', error);
+    });
+
+    var disputesRenderTask = Promise.all([disputesTask, transactionsTask]).then(function (result) {
+      updateStats(result[0], result[1]);
+      renderDisputes(result[0], result[1], orders);
+    });
+
+    var auditRenderTask = Promise.all([disputesTask, transactionsTask, auditTask]).then(function (result) {
+      renderAudit(result[0], result[1], result[2]);
+    });
+
+    loadPromise = Promise.all([
+      verificationsTask,
+      transactionsTask,
+      disputesRenderTask,
+      auditRenderTask
+    ]).then(function () {
+      if (failures.length === 4) {
+        var fatal = failures[0] && failures[0].error || new Error('Não foi possível carregar o admin.');
+        if (runtime) runtime.fail(fatal);
+        throw fatal;
+      }
       if (runtime) runtime.finishLoad();
-      return { verifications: verifications, disputes: disputes, transactions: transactions, auditEvents: auditEvents };
+      if (failures.length) {
+        showToast('Parte do painel não pôde ser atualizada: ' + failures.map(function (item) { return item.scope; }).join(', ') + '.');
+      }
+      return state;
     }).catch(function (error) {
       if (runtime) runtime.fail(error);
       showToast(error && error.message ? error.message : 'Não foi possível carregar o admin.');
@@ -625,6 +805,7 @@
     }).finally(function () {
       loadPromise = null;
     });
+
     return loadPromise;
   }
 
@@ -680,12 +861,53 @@
 
   function bind() {
     document.addEventListener('click', function (event) {
+      var verificationOpen = event.target.closest('[data-admin-verification-open]');
+      if (verificationOpen) {
+        event.preventDefault();
+        openVerificationReview(verificationOpen.dataset.verificationId).catch(function (error) { showToast(error && error.message || 'Não foi possível abrir a análise.'); });
+        return;
+      }
+
+      var verificationReviewClose = event.target.closest('[data-admin-verification-review-close]');
+      if (verificationReviewClose) {
+        event.preventDefault();
+        closeVerificationReview();
+        return;
+      }
+
+      var verificationReviewApproveButton = event.target.closest('[data-admin-verification-review-approve]');
+      if (verificationReviewApproveButton) {
+        event.preventDefault();
+        resolveVerification('approve', activeVerificationReviewId);
+        return;
+      }
+
+      var verificationReviewRejectButton = event.target.closest('[data-admin-verification-review-reject]');
+      if (verificationReviewRejectButton) {
+        event.preventDefault();
+        var reviewId = activeVerificationReviewId;
+        closeVerificationReview();
+        openVerificationRejectDialog(reviewId);
+        return;
+      }
+
       var verificationButton = event.target.closest('[data-admin-verification-action]');
       if (verificationButton) {
         event.preventDefault();
         var verificationAction = clean(verificationButton.dataset.adminVerificationAction);
         var verificationId = clean(verificationButton.dataset.verificationId);
-        if (verificationAction === 'reject') openVerificationRejectDialog(verificationId);
+        if (verificationAction === 'start') {
+          var service = verificationService();
+          var runtime = experience();
+          var operation = function () {
+            return service.startReview(verificationId).then(function () {
+              if (runtime) runtime.invalidateRelated();
+              window.location.href = 'admin-verificacao.html?id=' + encodeURIComponent(verificationId);
+            });
+          };
+          var promise = runtime ? runtime.runMutation('verification:' + verificationId, operation) : operation();
+          promise.catch(function (error) { showToast(error && error.message || 'Não foi possível iniciar a análise.'); });
+        } else if (verificationAction === 'reject') openVerificationRejectDialog(verificationId);
         else resolveVerification(verificationAction, verificationId);
         return;
       }

@@ -72,6 +72,10 @@ window.DokeInitCommunity = function DokeInitCommunity() {
     page.dataset.viewState = nextState;
     page.setAttribute('aria-busy', String(nextState === 'loading'));
     document.body.dataset.dataState = nextState;
+    const stateRegion = page.querySelector('[data-state-region]');
+    const errorState = page.querySelector('[data-state-error]');
+    if (stateRegion) stateRegion.hidden = nextState !== 'error';
+    if (errorState) errorState.hidden = nextState !== 'error';
   };
 
   const setCommunityPageState = (state) => {
@@ -2087,35 +2091,8 @@ window.DokeInitCommunity = function DokeInitCommunity() {
 
 };
 
-const ensureCommunityHydrationCompletes = () => {
-  window.setTimeout(() => {
-    const body = document.body;
-    const page = document.querySelector('[data-communities-page]');
-    if (!body || !page || body.dataset.dataState !== 'loading') return;
-    body.dataset.dataState = 'error';
-    page.dataset.state = 'error';
-    page.dataset.viewState = 'error';
-    page.setAttribute('aria-busy', 'false');
-    const skeleton = page.querySelector('[data-community-hydration-skeleton]');
-    if (skeleton) {
-      skeleton.hidden = true;
-      skeleton.setAttribute('aria-hidden', 'true');
-    }
-    body.dataset.communitySkeletonVisible = 'false';
-    const preloader = document.querySelector('[data-community-document-preloader]');
-    if (preloader) {
-      preloader.hidden = true;
-      preloader.setAttribute('aria-hidden', 'true');
-    }
-    console.error('[Community] Hydration timeout: fallback reveal applied.');
-  }, 4500);
-};
-
-ensureCommunityHydrationCompletes();
-
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', window.DokeInitCommunity, { once: true });
 } else {
   window.DokeInitCommunity();
 }
-

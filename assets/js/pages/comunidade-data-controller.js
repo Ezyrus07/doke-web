@@ -29,13 +29,6 @@
     return category || (active && active.getAttribute('data-community-filter')) || 'all';
   }
 
-  function setState(state) {
-    var normalizedState = state === 'ready' ? 'hydrated' : state;
-    var root = getRoot();
-    if (root) root.setAttribute('data-state', normalizedState);
-    if (document.body) document.body.setAttribute('data-data-state', normalizedState);
-  }
-
   function dispatch(name, detail) {
     document.dispatchEvent(new CustomEvent(name, { detail: detail || {} }));
   }
@@ -72,19 +65,17 @@
 
   function init() {
     var root = getRoot();
-    if (!root) return;
+    if (!root) return Promise.resolve([]);
 
     var filters = {
       query: getSearchValue(),
       category: getActiveCategory()
     };
 
-    setState('loading');
     prepareListHooks();
 
-    loadCommunities(filters)
+    return loadCommunities(filters)
       .then(function (communities) {
-        setState('ready');
         dispatch('doke:communities-data-ready', {
           page: 'comunidade',
           filters: filters,
@@ -93,12 +84,12 @@
         });
       })
       .catch(function (error) {
-        setState('error');
         dispatch('doke:communities-data-error', {
           page: 'comunidade',
           filters: filters,
           error: error
         });
+        return [];
       });
   }
 

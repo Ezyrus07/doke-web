@@ -44,7 +44,7 @@ assert(
 );
 
 assert(
-  /section\.more-services \.doke-ad-card[\s\S]*?display:\s*grid !important[\s\S]*?grid-template-columns:\s*clamp\(118px,\s*33vw,\s*132px\)\s*minmax\(0,\s*1fr\)[\s\S]*?section\.more-services \.doke-ad-card__avatar[\s\S]*?display:\s*none !important[\s\S]*?section\.more-services \.doke-ad-card__cta[\s\S]*?min-width:\s*116px !important/i.test(adCard),
+  /section\.more-services \.doke-ad-card[\s\S]*?display:\s*grid[\s\S]*?grid-template-columns:\s*clamp\(118px,\s*33vw,\s*132px\)\s*minmax\(0,\s*1fr\)[\s\S]*?section\.more-services \.doke-ad-card__avatar[\s\S]*?display:\s*none[\s\S]*?section\.more-services \.doke-ad-card__cta[\s\S]*?min-width:\s*116px/i.test(adCard),
   'components/cards/ad-card.css must own the horizontal mobile anatomy for Mais anúncios cards.'
 );
 
@@ -54,13 +54,13 @@ assert(
 );
 
 assert(
-  /<section class="more-services[\s\S]*?<article class="doke-ad-card doke-ad-card--mobile-feed doke-ad-card--mobile-grid"/i.test(indexHtml),
-  'index.html more-services cards must opt into the shared doke-ad-card--mobile-grid density modifier.'
+  /<section class="more-services[\s\S]*?<article class="doke-ad-card doke-ad-card--featured doke-ad-card--results"/i.test(indexHtml),
+  'index.html more-services cards must opt into the shared results-card anatomy.'
 );
 
 assert(
-  /\.page__content\s*\{[\s\S]*?padding-bottom:\s*calc\(88px \+ env\(safe-area-inset-bottom, 0px\)\)/i.test(mobileBase),
-  'home mobile base must reserve safe bottom space for the fixed bottom nav.'
+  /\.page__content\s*\{[\s\S]*?padding-bottom:\s*0/i.test(mobileBase),
+  'home mobile base must leave fixed bottom-nav clearance to the shell owner.'
 );
 
 if (failures.length) {

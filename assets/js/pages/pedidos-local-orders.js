@@ -562,12 +562,16 @@
         document.dispatchEvent(new CustomEvent('doke:orders-list-error', {
           detail: { error: error && error.message ? error.message : String(error) }
         }));
+        renderOrders(list, [], user, { force: true });
         return [];
       });
     }
 
     var repository = Doke.repositories && Doke.repositories.orders;
-    if (!repository || typeof repository.listLocal !== 'function') return Promise.resolve([]);
+    if (!repository || typeof repository.listLocal !== 'function') {
+      renderOrders(list, [], user, { force: true });
+      return Promise.resolve([]);
+    }
     var orders = repository.listLocal({ currentUser: true });
     renderOrders(list, orders, user, options);
     return Promise.resolve(orders);

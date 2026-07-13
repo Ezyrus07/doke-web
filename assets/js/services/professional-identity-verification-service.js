@@ -18,6 +18,10 @@
     return Doke.repositories && Doke.repositories.professionalIdentityVerifications || null;
   }
 
+  function evidenceRepository() {
+    return Doke.repositories && Doke.repositories.professionalVerificationEvidence || null;
+  }
+
   function profileRepository() {
     return Doke.repositories && Doke.repositories.professionalProfiles || null;
   }
@@ -62,7 +66,12 @@
     if (!value || typeof value !== 'object') return null;
     var fileName = normalizeText(value.fileName || value.name, 180);
     if (!fileName) return null;
-    return { fileName: fileName, size: Math.max(0, Number(value.size || 0) || 0), type: normalizeText(value.type, 100) };
+    return {
+      fileName: fileName,
+      size: Math.max(0, Number(value.size || 0) || 0),
+      type: normalizeText(value.type, 100),
+      blob: typeof Blob !== 'undefined' && value.blob instanceof Blob ? value.blob : typeof Blob !== 'undefined' && value.file instanceof Blob ? value.file : null
+    };
   }
 
   function normalizePayload(fields) {
@@ -197,12 +206,22 @@
     });
   }
 
+  function hydrateEvidence(verification) {
+    if (!verification) return Promise.resolve(null);
+    var evidence = evidenceRepository();
+    if (!evidence || typeof evidence.getByVerificationId !== 'function') return Promise.resolve(verification);
+    return evidence.getByVerificationId(verification.id).then(function (record) {
+      if (!record || !record.payload) return verification;
+      return Object.assign({}, verification, { payload: Object.assign({}, verification.payload || {}, record.payload) });
+    });
+  }
+
   function getCurrentVerification() {
     assertLocalProvider();
     var user = currentUser();
     var repo = repository();
     if (!user || !user.id || !repo) return Promise.resolve(null);
-    return repo.getByUserId(user.id);
+    return repo.getByUserId(user.id).then(hydrateEvidence);
   }
 
   function getContext() {
@@ -232,6 +251,23 @@
     });
   }
 
+  function validateBinaryEvidence(payload) {
+    if (typeof Blob === 'undefined' || !evidenceRepository()) return;
+    var fields = [
+      ['documentFront', 'a frente do documento'],
+      ['documentBack', 'o verso do documento'],
+      ['selfieDocument', 'a selfie de verificação'],
+      ['proofOfAddress', 'o comprovante de endereço']
+    ];
+    if (String(payload && payload.verificationType || '') === 'business') fields.push(['businessDocument', 'o documento empresarial']);
+    fields.forEach(function (item) {
+      var file = payload && payload[item[0]];
+      if (!file || !(file.blob instanceof Blob)) {
+        throw validationError('Selecione novamente ' + item[1] + ' para concluir o envio.', item[0]);
+      }
+    });
+  }
+
   function submit(draft) {
     assertLocalProvider();
     var user = requireOwner();
@@ -251,7 +287,9 @@
         throw error;
       }
 
-      var payload = validateAll(draft.payload || draft.fields || {});
+      var rawPayload = draft.payload || draft.fields || {};
+      validateBinaryEvidence(rawPayload);
+      var payload = validateAll(rawPayload);
       return requirePendingProfile(user.id).then(function (profile) {
         return repo.submit(user.id, profile.id, { payload: payload });
       });
@@ -273,6 +311,18 @@
       return (Array.isArray(items) ? items : []).filter(function (item) {
         return ['submitted', 'under_review', 'verified', 'rejected'].indexOf(String(item && item.status || '')) >= 0;
       });
+    });
+  }
+
+
+  function getReviewDetail(verificationId) {
+    assertLocalProvider();
+    requireReviewer();
+    var repo = repository();
+    if (!repo || typeof repo.getById !== 'function') return Promise.reject(new Error('Verificação indisponível para análise.'));
+    return repo.getById(verificationId).then(function (verification) {
+      if (!verification) throw new Error('Verificação de identidade não encontrada.');
+      return hydrateEvidence(verification);
     });
   }
 
@@ -390,6 +440,7 @@
     saveDraft: saveDraft,
     submit: submit,
     listForReview: listForReview,
+    getReviewDetail: getReviewDetail,
     startReview: startReview,
     approve: approve,
     reject: reject,

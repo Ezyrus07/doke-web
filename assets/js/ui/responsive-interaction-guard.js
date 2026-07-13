@@ -15,7 +15,7 @@
   }
 
   function getBottomNav() {
-    return document.querySelector('[data-bottom-nav], .bottom-nav, .mobile-bottom-nav, .app-bottom-nav, .doke-bottom-nav');
+    return document.querySelector('[data-doke-mobile-bottom-nav], .doke-mobile-bottom-nav, [data-bottom-nav], .bottom-nav, .mobile-bottom-nav, .app-bottom-nav, .doke-bottom-nav');
   }
 
   function syncModeClass() {

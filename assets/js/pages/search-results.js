@@ -275,6 +275,17 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
       input.checked = input.value === activeSearchMode;
     });
     syncResultsMode(activeSearchMode);
+    const selectedInput = els.searchModeInputs.find((input) => input.checked);
+    const selectedOption = selectedInput?.closest('label');
+    if (selectedOption && window.matchMedia('(max-width: 760px)').matches) {
+      window.requestAnimationFrame(() => {
+        const rail = selectedOption.closest('.search-scope');
+        if (!rail) return;
+        const endPadding = 18;
+        const targetLeft = selectedOption.offsetLeft + selectedOption.offsetWidth - rail.clientWidth + endPadding;
+        rail.scrollTo({ left: Math.max(0, targetLeft), behavior: 'auto' });
+      });
+    }
   };
 
   const syncResultsMode = (mode = getSearchMode()) => {

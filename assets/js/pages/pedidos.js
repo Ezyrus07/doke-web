@@ -1000,6 +1000,12 @@
       hydration?.mark('local-orders');
       refreshOrdersSurface();
     };
+    const markOrdersHydrationError = (event) => {
+      hydration?.error(new Error(event.detail?.error || 'Não foi possível carregar os pedidos.'), {
+        source: 'orders-list'
+      });
+      refreshOrdersSurface();
+    };
     const markOrdersHydrationCommand = () => {
       hydration?.mark('command-center');
       refreshOrdersSurface();
@@ -1012,6 +1018,7 @@
       refreshOrdersSurface();
     });
     document.addEventListener('doke:orders-list-hydrated', markOrdersHydrationLocal);
+    document.addEventListener('doke:orders-list-error', markOrdersHydrationError);
     if (document.documentElement.dataset.authSurfaceReady === 'true') {
       markOrdersHydrationAuth();
     }

@@ -17,8 +17,7 @@
       readySelectors: '[data-home-hydration-ready]',
       errorSelectors: '[data-state-error]',
       skeletonMode: 'hard-load',
-      maxDuration: 9000,
-      hasItems: function () { return true; }
+      maxDuration: 9000
     });
     return hydration;
   }
@@ -172,8 +171,9 @@
           data: data
         };
 
-        setRootState(root, 'ready');
-        if (Doke.experience && Doke.experience.states) Doke.experience.states.set(root, data.services.length || data.workers.length || data.publications.length ? 'ready' : 'empty', { page: PAGE_NAME });
+        var hasItems = Boolean(data.services.length || data.workers.length || data.publications.length);
+        setRootState(root, hasItems ? 'ready' : 'empty');
+        if (Doke.experience && Doke.experience.states) Doke.experience.states.set(root, hasItems ? 'ready' : 'empty', { page: PAGE_NAME });
         setRegionState(root, 'featured-services', data.services.length ? 'ready' : 'empty');
         setRegionState(root, 'recommended-services', data.services.length ? 'ready' : 'empty');
         setRegionState(root, 'more-services', data.services.length ? 'ready' : 'empty');
@@ -182,7 +182,7 @@
         updateListHooks(root, data);
         Doke.indexDataController.lastPayload = result;
         dispatch(root, 'doke:index-data-ready', result);
-        pageHydration?.ready({ hasItems: true });
+        pageHydration?.ready({ hasItems: hasItems });
         return result;
       })
       .catch(function (error) {

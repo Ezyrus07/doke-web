@@ -240,6 +240,10 @@
         root.dataset.pageHydration = nextState;
         root.dataset.pageHydrationSkeleton = useSkeleton ? 'on' : 'off';
         root.dataset.pageHydrationBoot = splashDuration > 0 ? 'on' : 'off';
+        root.dataset.viewState = nextState === 'document-boot' || nextState === 'hydrating'
+          ? 'loading'
+          : nextState;
+        root.setAttribute('aria-busy', String(nextState === 'document-boot' || nextState === 'hydrating'));
       }
       if (document.documentElement) {
         document.documentElement.dataset.pageHydration = nextState;
@@ -396,7 +400,7 @@
     const canFinalize = () => Array.from(waitFor).every((source) => readySources.has(source));
 
     const mark = (source = 'dom') => {
-      if (state === 'ready' || state === 'empty') return true;
+      if (state === 'ready' || state === 'empty' || state === 'error') return true;
       readySources.add(source);
       if (root) root.dataset.pageHydrationSources = Array.from(readySources).sort().join(',');
       if (canFinalize()) {

@@ -76,12 +76,13 @@
     function fileMetadata(input) {
       if (!input) return null;
       var file = input.files && input.files[0];
-      if (file) return { fileName: file.name, size: file.size || 0, type: file.type || '' };
+      if (file) return { fileName: file.name, size: file.size || 0, type: file.type || '', blob: file };
       if (!input.dataset.persistedFileName) return null;
       return {
         fileName: input.dataset.persistedFileName,
         size: Number(input.dataset.persistedFileSize || 0),
-        type: input.dataset.persistedFileType || ''
+        type: input.dataset.persistedFileType || '',
+        blob: typeof Blob !== 'undefined' && input._dokePersistedBlob instanceof Blob ? input._dokePersistedBlob : null
       };
     }
 
@@ -102,6 +103,7 @@
       input.dataset.persistedFileName = metadata.fileName;
       input.dataset.persistedFileSize = String(metadata.size || 0);
       input.dataset.persistedFileType = metadata.type || '';
+      input._dokePersistedBlob = typeof Blob !== 'undefined' && metadata.blob instanceof Blob ? metadata.blob : null;
       var card = input.closest('.professional-verification-upload-card');
       var label = card && card.querySelector('[data-file-label]');
       if (card) card.classList.add('has-file');

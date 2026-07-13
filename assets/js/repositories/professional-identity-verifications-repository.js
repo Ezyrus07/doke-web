@@ -9,6 +9,7 @@
   var STORAGE_KEY = 'doke.professionalIdentityVerifications.v1';
   var DRAFT_STORAGE_KEY = 'doke.professionalIdentityVerificationDrafts.v1';
   var draftMemory = new Map();
+  var submissionLocks = new Map();
 
   var STATUSES = Object.freeze({
     NOT_STARTED: 'not_started',
@@ -53,7 +54,8 @@
     return {
       fileName: fileName,
       size: Math.max(0, Number(value.size || 0) || 0),
-      type: normalizeText(value.type, 100)
+      type: normalizeText(value.type, 100),
+      blob: typeof Blob !== 'undefined' && value.blob instanceof Blob ? value.blob : typeof Blob !== 'undefined' && value.file instanceof Blob ? value.file : null
     };
   }
 
@@ -270,7 +272,7 @@
     });
   }
 
-  function submit(userId, professionalProfileId, submission) {
+  function submitUnlocked(userId, professionalProfileId, submission) {
     var ownerId = normalizeText(userId);
     var profileId = normalizeText(professionalProfileId);
     if (!ownerId || !profileId) return Promise.reject(new Error('Perfil profissional não identificado para enviar a verificação.'));
@@ -290,24 +292,50 @@
       }
       current = latest || current;
       var now = new Date().toISOString();
-      removeDraft(ownerId);
-      return persist(Object.assign({}, current || {}, {
-        id: current && current.id || deterministicId(ownerId),
-        userId: ownerId,
-        professionalProfileId: profileId,
-        status: STATUSES.SUBMITTED,
-        currentStep: 3,
-        payload: submission.payload || submission.fields || current && current.payload || {},
-        rejectionReason: '',
-        reviewerId: '',
-        createdAt: current && current.createdAt || now,
-        updatedAt: now,
-        savedAt: now,
-        submittedAt: current && current.submittedAt || now,
-        reviewStartedAt: '',
-        decidedAt: ''
-      }));
+      var verificationId = current && current.id || deterministicId(ownerId);
+      var rawPayload = submission.payload || submission.fields || current && current.payload || {};
+      var evidence = repositories.professionalVerificationEvidence;
+      var saveEvidence = evidence && typeof evidence.save === 'function'
+        ? evidence.save(verificationId, ownerId, rawPayload)
+        : Promise.resolve(null);
+      return saveEvidence.then(function () {
+        removeDraft(ownerId);
+        return persist(Object.assign({}, current || {}, {
+          id: verificationId,
+          userId: ownerId,
+          professionalProfileId: profileId,
+          status: STATUSES.SUBMITTED,
+          currentStep: 3,
+          payload: rawPayload,
+          rejectionReason: '',
+          reviewerId: '',
+          createdAt: current && current.createdAt || now,
+          updatedAt: now,
+          savedAt: now,
+          submittedAt: current && current.submittedAt || now,
+          reviewStartedAt: '',
+          decidedAt: ''
+        }));
+      });
     });
+  }
+
+
+  function submit(userId, professionalProfileId, submission) {
+    var ownerId = normalizeText(userId);
+    if (!ownerId) return Promise.reject(new Error('Perfil profissional não identificado para enviar a verificação.'));
+    if (submissionLocks.has(ownerId)) {
+      var lockedError = new Error('A verificação já foi enviada ou está sendo processada e não pode ser reenviada.');
+      lockedError.code = 'PROFESSIONAL_IDENTITY_VERIFICATION_SUBMISSION_LOCKED';
+      return Promise.reject(lockedError);
+    }
+    var operation = Promise.resolve().then(function () {
+      return submitUnlocked(userId, professionalProfileId, submission);
+    }).finally(function () {
+      submissionLocks.delete(ownerId);
+    });
+    submissionLocks.set(ownerId, operation);
+    return operation;
   }
 
   function transition(verificationId, nextStatus, meta) {

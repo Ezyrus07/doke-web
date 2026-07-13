@@ -29,7 +29,6 @@ assert(
 
 const edgeConsumers = [
   ['home/mobile/base.css', mobileBase, '--home-mobile-edge'],
-  ['home/mobile-alignment.css', mobileAlignment, '--index-stage20-axis'],
   ['home/mobile-composition.css', mobileComposition, '--index-mobile-gutter'],
   ['home/mobile-hero-feed.css', mobileHeroFeed, '--home-mobile-edge'],
 ];
@@ -37,6 +36,11 @@ const edgeConsumers = [
 if (mobileFeedRails) {
   edgeConsumers.push(['home/mobile-feed-rails.css', mobileFeedRails, '--home-mobile-feed-gutter']);
 }
+
+assert(
+  /--index-stage20-axis\s*:\s*var\(--doke-mobile-page-gutter,/.test(mobileAlignment),
+  'home/mobile-alignment.css must use the page gutter for content instead of the shell internal edge token.'
+);
 
 for (const [file, css, token] of edgeConsumers) {
   assert(
