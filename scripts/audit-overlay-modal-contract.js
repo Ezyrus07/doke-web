@@ -86,7 +86,7 @@ const expectations = {
     ['post-service-submit-state__actions', ['doke-overlay__actions']],
   ],
   'tornar-profissional.html': [
-    ['become-pro-submit-state', ['doke-overlay']],
+    ['become-pro-submit-state', ['doke-native-overlay']],
     ['become-pro-submit-state__card', ['doke-overlay__surface']],
   ],
   'verificacao-profissional.html': [

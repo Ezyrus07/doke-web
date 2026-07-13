@@ -1,0 +1,90 @@
+/*
+ * Doke Settings Panel Surface Contract
+ * Shared by account settings and community administration.
+ * Owns panel chrome: surface flow, header typography, scroll body and action footer.
+ */
+
+:where(.doke-settings-shell) {
+  --doke-settings-panel-header-padding-block: 24px;
+  --doke-settings-panel-body-padding-block: clamp(30px, 3vw, 44px);
+  --doke-settings-panel-footer-padding-block: 16px;
+  --doke-settings-panel-title-size: clamp(1.08rem, 1.4vw, 1.35rem);
+  --doke-settings-panel-copy-size: 0.9rem;
+}
+
+:where(.doke-settings-shell) :where(.doke-settings-surface) {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+  background: var(--doke-settings-surface);
+}
+
+:where(.doke-settings-shell) :where(.doke-settings-surface__header) {
+  position: relative;
+  z-index: 3;
+  flex: 0 0 auto;
+  min-height: var(--doke-settings-header-min-height);
+  padding: var(--doke-settings-panel-header-padding-block) var(--doke-settings-gutter);
+  border-bottom: 1px solid var(--doke-settings-border);
+  background: var(--doke-settings-surface);
+}
+
+:where(.doke-settings-shell) :where(.doke-settings-surface__header) > div {
+  min-width: 0;
+}
+
+:where(.doke-settings-shell) :where(.doke-settings-surface__header) :is(h1, h2) {
+  margin: 0;
+  color: var(--doke-settings-text);
+  font-size: var(--doke-settings-panel-title-size);
+  line-height: 1.15;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+:where(.doke-settings-shell) :where(.doke-settings-surface__header) p {
+  max-width: 68ch;
+  margin: 6px 0 0;
+  color: var(--doke-settings-muted);
+  font-size: var(--doke-settings-panel-copy-size);
+  line-height: 1.55;
+  font-weight: 500;
+}
+
+:where(.doke-settings-shell) :where(.doke-settings-surface__body) {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  padding: var(--doke-settings-panel-body-padding-block) var(--doke-settings-gutter);
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
+}
+
+:where(.doke-settings-shell) :where(.doke-settings-surface__footer, .doke-settings-actions) {
+  flex: 0 0 auto;
+  min-height: var(--doke-settings-footer-min-height, 76px);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: var(--doke-settings-panel-footer-padding-block) var(--doke-settings-gutter);
+  border-top: 1px solid var(--doke-settings-border);
+  background: color-mix(in srgb, var(--doke-settings-surface-muted) 82%, #fff);
+}
+
+@media (max-width: 760px) {
+  :where(.doke-settings-shell) {
+    --doke-settings-panel-header-padding-block: 20px;
+    --doke-settings-panel-body-padding-block: 22px;
+  }
+
+  :where(.doke-settings-shell) :where(.doke-settings-surface__header) {
+    align-items: flex-start;
+  }
+
+  :where(.doke-settings-shell) :where(.doke-settings-surface__footer, .doke-settings-actions) {
+    flex-wrap: wrap;
+  }
+}

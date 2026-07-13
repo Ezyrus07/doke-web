@@ -16,6 +16,10 @@
   var withdrawModalTitle = document.querySelector('[data-admin-withdraw-modal-title]');
   var withdrawModalCopy = document.querySelector('[data-admin-withdraw-modal-copy]');
   var withdrawModalSubmit = document.querySelector('[data-admin-withdraw-submit]');
+  var verificationDialog = document.querySelector('[data-admin-verification-dialog]');
+  var verificationReasonInput = document.querySelector('[data-admin-verification-reason]');
+  var verificationRejectConfirm = document.querySelector('[data-admin-verification-reject-confirm]');
+  var pendingVerificationId = '';
   var searchQuery = '';
   var toastTimer = null;
   var loadPromise = null;
@@ -85,6 +89,10 @@
 
   function walletService() {
     return Doke.services && Doke.services.wallet || Doke.repositories && Doke.repositories.wallet || null;
+  }
+
+  function verificationService() {
+    return Doke.services && Doke.services.professionalIdentityVerification || null;
   }
 
   function ordersRepository() {
@@ -176,15 +184,18 @@
     if (status === 'refunded') return 'Reembolsado';
     if (status === 'processing') return 'Processando';
     if (status === 'completed') return 'Concluído';
+    if (status === 'submitted') return 'Enviada';
+    if (status === 'under_review') return 'Em análise';
+    if (status === 'verified') return 'Verificada';
     if (status === 'declined' || status === 'rejected') return 'Recusado';
     return clean(value) || 'Pendente';
   }
 
   function statusClass(value, resolution) {
     var status = clean(value);
-    if (status === 'resolvida_profissional' || resolution === 'profissional' || status === 'available' || status === 'completed') return 'admin-status admin-status--success';
+    if (status === 'resolvida_profissional' || resolution === 'profissional' || status === 'available' || status === 'completed' || status === 'verified') return 'admin-status admin-status--success';
     if (status === 'resolvida_cliente' || status === 'reembolsado' || resolution === 'cliente' || status === 'refunded' || status === 'declined' || status === 'rejected') return 'admin-status admin-status--danger';
-    if (status === 'contestacao_aberta' || status === 'em_analise' || status === 'held' || status === 'processing') return 'admin-status admin-status--warning';
+    if (status === 'contestacao_aberta' || status === 'em_analise' || status === 'held' || status === 'processing' || status === 'submitted' || status === 'under_review') return 'admin-status admin-status--warning';
     return 'admin-status';
   }
 
@@ -254,6 +265,110 @@
     list.innerHTML = filtered.length
       ? filtered.map(function (dispute) { return renderDispute(dispute, transactionByDispute(dispute, transactions), orderByDispute(dispute, orders)); }).join('')
       : empty('Nenhuma contestação encontrada para este filtro.');
+  }
+
+  function listVerifications() {
+    var service = verificationService();
+    if (!service || typeof service.listForReview !== 'function') return Promise.resolve([]);
+    return Promise.resolve(service.listForReview()).then(function (items) { return Array.isArray(items) ? items : []; });
+  }
+
+  function verificationTypeLabel(value) {
+    return String(value || '') === 'business' ? 'Pessoa jurídica' : 'Pessoa física';
+  }
+
+  function fileCount(payload) {
+    payload = payload || {};
+    return ['documentFront', 'documentBack', 'selfieDocument', 'proofOfAddress', 'businessDocument'].filter(function (key) { return Boolean(payload[key]); }).length;
+  }
+
+  function renderVerification(item) {
+    var payload = item && item.payload || {};
+    var status = clean(item && item.status);
+    var canStart = status === 'submitted';
+    var canDecide = status === 'submitted' || status === 'under_review';
+    return [
+      '<article class="admin-list-item admin-list-item--verification" data-admin-verification-card data-verification-id="' + escapeHtml(item.id) + '">',
+        '<div class="admin-list-item__top">',
+          '<div><h3 class="admin-list-item__title">' + escapeHtml(verificationTypeLabel(payload.verificationType)) + '</h3><p class="admin-list-item__copy">Usuário: ' + escapeHtml(item.userId) + '</p></div>',
+          '<span class="' + statusClass(status) + '">' + escapeHtml(statusLabel(status)) + '</span>',
+        '</div>',
+        '<div class="admin-verification-details">',
+          '<span>Documento final <strong>' + escapeHtml(payload.taxIdLast4 ? '•••• ' + payload.taxIdLast4 : 'não informado') + '</strong></span>',
+          '<span>Localidade <strong>' + escapeHtml([payload.city, payload.state].filter(Boolean).join(', ') || 'não informada') + '</strong></span>',
+          '<span>Arquivos <strong>' + escapeHtml(fileCount(payload)) + '</strong></span>',
+          '<span>Enviada <strong>' + escapeHtml(formatDate(item.submittedAt || item.updatedAt)) + '</strong></span>',
+        '</div>',
+        item.rejectionReason ? '<p class="admin-list-item__copy">Motivo: ' + escapeHtml(item.rejectionReason) + '</p>' : '',
+        '<div class="admin-list-item__actions">',
+          canStart ? '<button class="doke-btn doke-btn--ghost" type="button" data-admin-verification-action="start" data-verification-id="' + escapeHtml(item.id) + '">Iniciar análise</button>' : '',
+          canDecide ? '<button class="doke-btn doke-btn--primary" type="button" data-admin-verification-action="approve" data-verification-id="' + escapeHtml(item.id) + '">Aprovar e ativar</button>' : '',
+          canDecide ? '<button class="doke-btn doke-btn--danger" type="button" data-admin-verification-action="reject" data-verification-id="' + escapeHtml(item.id) + '">Rejeitar</button>' : '',
+        '</div>',
+      '</article>'
+    ].join('');
+  }
+
+  function renderVerifications(items) {
+    var list = document.querySelector('[data-admin-verifications]');
+    if (!list) return;
+    var filtered = items.filter(function (item) {
+      var payload = item && item.payload || {};
+      return isSearchMatch([item.id, item.userId, item.status, payload.verificationType, payload.city, payload.state, payload.taxIdLast4]);
+    });
+    list.innerHTML = filtered.length ? filtered.map(renderVerification).join('') : empty('Nenhuma verificação profissional encontrada.');
+  }
+
+  function openVerificationRejectDialog(verificationId) {
+    pendingVerificationId = clean(verificationId);
+    if (!verificationDialog || !pendingVerificationId) return;
+    if (verificationReasonInput) verificationReasonInput.value = '';
+    if (typeof verificationDialog.showModal === 'function') verificationDialog.showModal();
+    else verificationDialog.setAttribute('open', '');
+    if (verificationReasonInput) verificationReasonInput.focus({ preventScroll: true });
+  }
+
+  function closeVerificationRejectDialog() {
+    pendingVerificationId = '';
+    if (!verificationDialog) return;
+    if (typeof verificationDialog.close === 'function' && verificationDialog.open) verificationDialog.close();
+    else verificationDialog.removeAttribute('open');
+  }
+
+  function runVerificationAction(action, verificationId, reason) {
+    var service = verificationService();
+    if (!service) return Promise.reject(new Error('Autoridade de verificação indisponível.'));
+    if (action === 'start') return service.startReview(verificationId);
+    if (action === 'approve') return service.approve(verificationId);
+    if (action === 'reject') return service.reject(verificationId, reason);
+    return Promise.reject(new Error('Ação de verificação inválida.'));
+  }
+
+  function resolveVerification(action, verificationId, reason) {
+    if (!canUseAdmin()) return;
+    var id = clean(verificationId);
+    if (!id) return;
+    var mutationKey = 'verification:' + id;
+    var runtime = experience();
+    if (runtime && runtime.isSubmitting(mutationKey)) return;
+    var card = document.querySelector('[data-admin-verification-card][data-verification-id="' + CSS.escape(id) + '"]');
+    var buttons = card ? Array.prototype.slice.call(card.querySelectorAll('button')) : [];
+    buttons.forEach(function (button) { button.disabled = true; button.setAttribute('aria-busy', 'true'); });
+    if (verificationRejectConfirm) { verificationRejectConfirm.disabled = true; verificationRejectConfirm.setAttribute('aria-busy', 'true'); }
+    showToast(action === 'approve' ? 'Ativando perfil profissional...' : action === 'reject' ? 'Registrando rejeição...' : 'Iniciando análise...');
+    var operation = function () {
+      return Promise.resolve(runVerificationAction(action, id, reason)).then(function () {
+        closeVerificationRejectDialog();
+        if (runtime) runtime.invalidateRelated();
+        showToast(action === 'approve' ? 'Verificação aprovada e perfil profissional ativado.' : action === 'reject' ? 'Verificação rejeitada com motivo registrado.' : 'Análise iniciada.');
+        return loadAdminData(true);
+      });
+    };
+    var promise = runtime ? runtime.runMutation(mutationKey, operation) : operation();
+    promise.catch(function (error) { showToast(error && error.message ? error.message : 'Não foi possível atualizar a verificação.'); }).finally(function () {
+      buttons.forEach(function (button) { button.disabled = false; button.removeAttribute('aria-busy'); });
+      if (verificationRejectConfirm) { verificationRejectConfirm.disabled = false; verificationRejectConfirm.removeAttribute('aria-busy'); }
+    });
   }
 
   function paymentTypeLabel(transaction) {
@@ -489,17 +604,20 @@
     var runtime = experience();
     if (runtime) runtime.startLoad();
     var orders = listOrders();
-    loadPromise = Promise.all([listDisputes(), listTransactions(), listAuditEvents()]).then(function (result) {
-      var disputes = result[0];
-      var transactions = result[1];
-      var auditEvents = result[2];
+    loadPromise = Promise.all([listVerifications(), listDisputes(), listTransactions(), listAuditEvents()]).then(function (result) {
+      var verifications = result[0];
+      var disputes = result[1];
+      var transactions = result[2];
+      var auditEvents = result[3];
+      setStat('verifications', verifications.filter(function (item) { return ['submitted', 'under_review'].indexOf(item.status) >= 0; }).length);
+      renderVerifications(verifications);
       updateStats(disputes, transactions);
       renderDisputes(disputes, transactions, orders);
       renderPayments(transactions);
       renderWithdraws(transactions);
       renderAudit(disputes, transactions, auditEvents);
       if (runtime) runtime.finishLoad();
-      return { disputes: disputes, transactions: transactions, auditEvents: auditEvents };
+      return { verifications: verifications, disputes: disputes, transactions: transactions, auditEvents: auditEvents };
     }).catch(function (error) {
       if (runtime) runtime.fail(error);
       showToast(error && error.message ? error.message : 'Não foi possível carregar o admin.');
@@ -562,6 +680,36 @@
 
   function bind() {
     document.addEventListener('click', function (event) {
+      var verificationButton = event.target.closest('[data-admin-verification-action]');
+      if (verificationButton) {
+        event.preventDefault();
+        var verificationAction = clean(verificationButton.dataset.adminVerificationAction);
+        var verificationId = clean(verificationButton.dataset.verificationId);
+        if (verificationAction === 'reject') openVerificationRejectDialog(verificationId);
+        else resolveVerification(verificationAction, verificationId);
+        return;
+      }
+
+      var verificationDialogClose = event.target.closest('[data-admin-verification-dialog-close]');
+      if (verificationDialogClose) {
+        event.preventDefault();
+        closeVerificationRejectDialog();
+        return;
+      }
+
+      var verificationReject = event.target.closest('[data-admin-verification-reject-confirm]');
+      if (verificationReject) {
+        event.preventDefault();
+        var reason = clean(verificationReasonInput && verificationReasonInput.value);
+        if (reason.length < 10) {
+          showToast('Informe um motivo com pelo menos 10 caracteres.');
+          if (verificationReasonInput) verificationReasonInput.focus({ preventScroll: true });
+          return;
+        }
+        resolveVerification('reject', pendingVerificationId, reason);
+        return;
+      }
+
       var resolveButton = event.target.closest('[data-admin-dispute-resolve]');
       if (resolveButton) {
         event.preventDefault();
@@ -612,6 +760,9 @@
     document.addEventListener('doke:wallet-withdraw-requested', function () { loadAdminData(true).catch(function () {}); });
     document.addEventListener('doke:wallet-withdraw-completed', function () { loadAdminData(true).catch(function () {}); });
     document.addEventListener('doke:wallet-withdraw-resolved', function () { loadAdminData(true).catch(function () {}); });
+    document.addEventListener('doke:professional-verification-submitted', function () { loadAdminData(true).catch(function () {}); });
+    document.addEventListener('doke:professional-verification-approved', function () { loadAdminData(true).catch(function () {}); });
+    document.addEventListener('doke:professional-verification-rejected', function () { loadAdminData(true).catch(function () {}); });
   }
 
   function init() {

@@ -37,7 +37,8 @@
     const exitButton = root.querySelector('[data-step-exit]');
     const actions = root.querySelector('.become-pro-actions');
     const submitState = root.querySelector('[data-submit-state]');
-    const submitClose = root.querySelector('[data-submit-close]');
+    const submitCloseButtons = [...root.querySelectorAll('[data-submit-close]')];
+    const submitPrimaryAction = root.querySelector('[data-submit-verification]');
     const counterSource = root.querySelector('[data-count-source]');
     const counterValue = root.querySelector('[data-count-value]');
     const categorySelect = form?.elements?.namedItem('mainCategory') || null;
@@ -248,9 +249,13 @@
         experience?.setState?.('success');
         if (submitState) {
           submitState.hidden = false;
-          submitState.classList.add('is-visible');
+          if (submitState instanceof HTMLDialogElement && typeof submitState.showModal === 'function') {
+            if (!submitState.open) submitState.showModal();
+          } else {
+            submitState.classList.add('is-visible');
+          }
         }
-        submitClose?.focus({ preventScroll: true });
+        window.requestAnimationFrame(() => submitPrimaryAction?.focus({ preventScroll: true }));
       } catch (error) {
         experience?.setState?.(navigator.onLine === false ? 'offline' : 'error', { error });
         handleError(error);
@@ -267,13 +272,26 @@
       });
     });
 
-    submitClose?.addEventListener('click', () => {
-      submitState?.classList.remove('is-visible');
-      if (submitState) submitState.hidden = true;
+    const finalizeSubmitState = () => {
+      if (submitState) {
+        submitState.classList.remove('is-visible');
+        submitState.hidden = true;
+      }
       renderProfile(currentProfile);
       experience?.setState?.('ready');
       statusCard?.focus?.({ preventScroll: true });
-    });
+    };
+
+    const closeSubmitState = () => {
+      if (submitState instanceof HTMLDialogElement && submitState.open) {
+        submitState.close();
+        return;
+      }
+      finalizeSubmitState();
+    };
+
+    submitCloseButtons.forEach((button) => button.addEventListener('click', closeSubmitState));
+    submitState?.addEventListener('close', finalizeSubmitState);
 
     exitButton?.addEventListener('click', async (event) => {
       if (submitting) {

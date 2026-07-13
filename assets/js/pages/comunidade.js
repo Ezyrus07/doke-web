@@ -81,8 +81,8 @@ window.DokeInitCommunity = function DokeInitCommunity() {
       return;
     }
     if (visualHydration) {
+      applyCommunityPageState(nextState);
       visualHydration.complete(() => {
-        applyCommunityPageState(nextState);
         if (nextState === 'hydrated' && incomingCommunityTransition?.context?.listingState) {
           window.Doke?.communityTransition?.restoreListingState(incomingCommunityTransition.context.listingState, {
             setFilter: (filter) => {
@@ -2096,6 +2096,12 @@ const ensureCommunityHydrationCompletes = () => {
     page.dataset.state = 'error';
     page.dataset.viewState = 'error';
     page.setAttribute('aria-busy', 'false');
+    const skeleton = page.querySelector('[data-community-hydration-skeleton]');
+    if (skeleton) {
+      skeleton.hidden = true;
+      skeleton.setAttribute('aria-hidden', 'true');
+    }
+    body.dataset.communitySkeletonVisible = 'false';
     const preloader = document.querySelector('[data-community-document-preloader]');
     if (preloader) {
       preloader.hidden = true;

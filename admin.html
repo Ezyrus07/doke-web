@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet" />
   <script defer src="assets/js/core/shell-state-early.js?v=20260614-drawer-canonical-v2"></script>
-  <link href="assets/css/pages/admin-foundation.css?v=20260703-admin-panel-v1" rel="stylesheet" />
+  <link href="assets/css/pages/admin-foundation.css?v=20260713-admin-visual-v2" rel="stylesheet" />
   <script>document.documentElement.classList.add("doke-mobile-shell-pending");</script>
   <script defer src="assets/js/core/ipad-safari-early-guard.js?v=20260531-v3"></script>
   <link rel="stylesheet" href="assets/css/components/feedback/document-preloader.css?v=20260712-global-document-boot-v1">
@@ -38,7 +38,11 @@
               <input autocomplete="off" class="home-side-meta__search-input doke-input" id="admin-search-input" placeholder="Buscar no admin" type="search" data-admin-search />
             </form>
             <div aria-label="Atalhos administrativos" class="page-header-context" data-header-context role="toolbar">
-              <button class="page-header-context__action doke-context-pill is-view-active doke-btn" data-admin-scroll-to="admin-disputes-title" type="button" aria-pressed="true">
+              <button class="page-header-context__action doke-context-pill is-view-active doke-btn" data-admin-scroll-to="admin-verifications-title" type="button" aria-pressed="true">
+                <svg aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24"><path d="M12 3.5 18 6v5.2c0 4.4-2.6 7.3-6 9.3-3.4-2-6-4.9-6-9.3V6l6-2.5Z"></path><path d="M9 12h6"></path></svg>
+                <span>Verificações</span>
+              </button>
+              <button class="page-header-context__action doke-context-pill doke-btn" data-admin-scroll-to="admin-disputes-title" type="button" aria-pressed="false">
                 <svg aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24"><path d="M12 3.5 18 6v5.2c0 4.4-2.6 7.3-6 9.3-3.4-2-6-4.9-6-9.3V6l6-2.5Z"></path><path d="M9 12h6"></path></svg>
                 <span>Contestações</span>
               </button>
@@ -80,7 +84,7 @@
                 <svg viewBox="0 0 24 24"><path d="M12 3.5 18 6v5.2c0 4.4-2.6 7.3-6 9.3-3.4-2-6-4.9-6-9.3V6l6-2.5Z"></path><path d="M9.5 12.5 11.2 14l3.3-4"></path></svg>
               </span>
               <h1 class="admin-locked__title">Acesso restrito ao suporte Doke</h1>
-              <p class="admin-locked__copy">Este painel é uma área mock de administração financeira. Cliente e profissional acompanham o status em pedidos, mensagens e carteira, mas não decidem contestações.</p>
+              <p class="admin-locked__copy">Este painel é uma área restrita de suporte. Clientes e profissionais acompanham seus próprios status, mas não podem revisar identidades nem tomar decisões administrativas.</p>
               <a class="doke-btn doke-btn--primary" href="pedidos.html">Voltar para pedidos</a>
             </section>
 
@@ -88,8 +92,8 @@
               <section class="admin-hero" aria-labelledby="admin-title">
                 <div>
                   <span class="admin-eyebrow">Ação mock de suporte</span>
-                  <h1 class="admin-hero__title" id="admin-title">Admin financeiro</h1>
-                  <p class="admin-hero__copy">Centralize contestações, pagamentos em garantia, recebíveis bloqueados, saques pendentes e auditoria mock sem expor decisões administrativas ao cliente ou profissional.</p>
+                  <h1 class="admin-hero__title" id="admin-title">Admin operacional</h1>
+                  <p class="admin-hero__copy">Centralize verificações de identidade, contestações, pagamentos, saques e auditoria sem expor decisões administrativas ao cliente ou profissional.</p>
                 </div>
                 <div class="admin-hero__actions">
                   <a class="doke-btn doke-btn--ghost" href="pedidos.html">Ver pedidos</a>
@@ -98,6 +102,7 @@
               </section>
 
               <section class="admin-grid" aria-label="Resumo administrativo">
+                <article class="admin-card"><span class="admin-card__label">Verificações pendentes</span><strong class="admin-card__value" data-admin-stat="verifications">0</strong><p class="admin-card__copy">Identidades aguardando análise.</p></article>
                 <article class="admin-card"><span class="admin-card__label">Contestações abertas</span><strong class="admin-card__value" data-admin-stat="disputes">0</strong><p class="admin-card__copy">Aguardando resposta ou decisão.</p></article>
                 <article class="admin-card"><span class="admin-card__label">Pagamentos em garantia</span><strong class="admin-card__value" data-admin-stat="held">0</strong><p class="admin-card__copy">Valores ainda não liberados.</p></article>
                 <article class="admin-card"><span class="admin-card__label">Recebíveis bloqueados</span><strong class="admin-card__value" data-admin-stat="blocked">0</strong><p class="admin-card__copy">Repasse pausado por contestação.</p></article>
@@ -106,6 +111,17 @@
 
               <div class="admin-layout">
                 <div class="admin-main">
+                  <section class="admin-panel" aria-labelledby="admin-verifications-title">
+                    <div class="admin-panel__header">
+                      <div>
+                        <span class="admin-panel__eyebrow">Identidade profissional</span>
+                        <h2 class="admin-panel__title" id="admin-verifications-title">Verificações pendentes</h2>
+                        <p class="admin-panel__copy">Analise somente registros enviados. Aprovar ativa o perfil e o papel profissional; rejeitar exige motivo.</p>
+                      </div>
+                    </div>
+                    <div class="admin-list" data-admin-verifications></div>
+                  </section>
+
                   <section class="admin-panel" aria-labelledby="admin-disputes-title">
                     <div class="admin-panel__header">
                       <div>
@@ -188,6 +204,28 @@
     </section>
   </div>
 
+
+  <dialog class="doke-native-overlay admin-verification-dialog" data-admin-verification-dialog aria-labelledby="admin-verification-dialog-title">
+    <section class="doke-modal-surface doke-modal-surface--form">
+      <header class="doke-modal-header">
+        <span class="doke-modal-eyebrow">Revisão documental</span>
+        <h2 class="doke-modal-title" id="admin-verification-dialog-title">Rejeitar verificação</h2>
+        <p class="doke-modal-description">Explique claramente o que precisa ser corrigido. O usuário verá este motivo no próprio perfil.</p>
+        <button class="doke-close-button doke-icon-btn doke-icon-btn--flat" type="button" data-admin-verification-dialog-close aria-label="Fechar">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6 6 18"></path></svg>
+        </button>
+      </header>
+      <div class="doke-modal-body">
+        <label class="doke-label" for="admin-verification-reason">Motivo da rejeição</label>
+        <textarea class="doke-textarea" id="admin-verification-reason" data-admin-verification-reason rows="5" minlength="10" maxlength="500" placeholder="Ex.: o documento está ilegível. Envie uma nova imagem com todos os dados visíveis."></textarea>
+      </div>
+      <footer class="doke-modal-actions">
+        <button class="doke-btn doke-btn--ghost" type="button" data-admin-verification-dialog-close>Cancelar</button>
+        <button class="doke-btn doke-btn--danger" type="button" data-admin-verification-reject-confirm>Confirmar rejeição</button>
+      </footer>
+    </section>
+  </dialog>
+
   <div class="admin-toast" data-admin-toast hidden></div>
 
   <script defer src="assets/js/core/runtime-config.js?v=20260531-stable-smooth-v1"></script>
@@ -205,10 +243,15 @@
   <script defer src="assets/js/repositories/messages-repository.js?v=20260626-order-status-flow-v1"></script>
   <script defer src="assets/js/repositories/notifications-repository.js?v=20260628-wallet-withdraw-v1"></script>
   <script defer src="assets/js/repositories/wallet-repository.js?v=20260703-admin-withdraw-v1"></script>
+  <script defer src="assets/js/repositories/users-repository.js?v=20260713-admin-verification-v1"></script>
+  <script defer src="assets/js/repositories/professional-profiles-repository.js?v=20260713-admin-verification-v1"></script>
+  <script defer src="assets/js/repositories/professional-identity-verifications-repository.js?v=20260713-admin-verification-v1"></script>
+  <script defer src="assets/js/services/professional-identity-verification-service.js?v=20260713-admin-verification-v1"></script>
+
   <script defer src="assets/js/services/wallet-service.js?v=20260703-admin-withdraw-v1"></script>
   <script defer src="assets/js/services/notification-service.js?v=20260501-stage31-domain-services"></script>
   <script defer src="assets/js/pages/admin-experience.js?v=20260712-admin-experience-v1"></script>
-  <script defer src="assets/js/pages/admin.js?v=20260712-admin-experience-v1"></script>
+  <script defer src="assets/js/pages/admin.js?v=20260713-admin-visual-v2"></script>
   <script defer src="assets/js/ui/responsive-interaction-guard.js?v=20260428-architecture"></script>
   <script defer src="assets/js/ui/mobile-drawer-standard.js?v=20260701-drawer-detail-contract-v1"></script>
   <script defer src="assets/js/ui/mobile-interaction-standard.js?v=20260428-v1"></script>

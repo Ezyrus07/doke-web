@@ -328,6 +328,7 @@ window.DokeHomeWorkers = (() => {
       const syncCommentsVisibility = () => {
         const visible = root.classList.contains('comments-visible');
         commentsToggle?.setAttribute('aria-label', visible ? 'Ocultar comentários' : 'Mostrar comentários');
+        commentsToggle?.setAttribute('aria-expanded', String(visible));
         commentButtons.forEach((button, index) => {
           const isCurrent = index === activeIndex;
           button.classList.toggle('is-active', visible && isCurrent);

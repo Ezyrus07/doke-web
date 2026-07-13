@@ -238,13 +238,40 @@
     var repo = repository();
     if (!repo) return Promise.reject(new Error('Persistência da verificação indisponível.'));
     draft = draft || {};
-    var payload = validateAll(draft.payload || draft.fields || {});
-    return requirePendingProfile(user.id).then(function (profile) {
-      return repo.submit(user.id, profile.id, { payload: payload });
+
+    return repo.getByUserId(user.id).then(function (current) {
+      if (current && current.status !== 'not_started') {
+        var error = new Error(
+          current.status === 'rejected'
+            ? 'Corrija a verificação rejeitada antes de enviar novamente.'
+            : 'Sua verificação já foi enviada e não pode ser reenviada neste momento.'
+        );
+        error.code = 'PROFESSIONAL_IDENTITY_VERIFICATION_SUBMISSION_LOCKED';
+        error.status = current.status;
+        throw error;
+      }
+
+      var payload = validateAll(draft.payload || draft.fields || {});
+      return requirePendingProfile(user.id).then(function (profile) {
+        return repo.submit(user.id, profile.id, { payload: payload });
+      });
     }).then(function (verification) {
       return syncProfileVerificationStatus(verification.professionalProfileId, 'submitted').then(function () {
         window.dispatchEvent(new CustomEvent('doke:professional-verification-submitted', { detail: { verification: verification } }));
         return verification;
+      });
+    });
+  }
+
+  function listForReview(filters) {
+    assertLocalProvider();
+    requireReviewer();
+    var repo = repository();
+    if (!repo || typeof repo.list !== 'function') return Promise.reject(new Error('Fila de verificações indisponível.'));
+    filters = filters || {};
+    return repo.list(filters).then(function (items) {
+      return (Array.isArray(items) ? items : []).filter(function (item) {
+        return ['submitted', 'under_review', 'verified', 'rejected'].indexOf(String(item && item.status || '')) >= 0;
       });
     });
   }
@@ -362,6 +389,7 @@
     getContext: getContext,
     saveDraft: saveDraft,
     submit: submit,
+    listForReview: listForReview,
     startReview: startReview,
     approve: approve,
     reject: reject,

@@ -150,18 +150,24 @@ function createStorage() {
   const reloaded = await reloadWindow.Doke.services.professionalIdentityVerification.getCurrentVerification();
   assert.strictEqual(reloaded.id, draft.id, 'Rascunho deve sobreviver ao reload.');
 
-  const [submitted, duplicate] = await Promise.all([
+  const concurrentSubmissions = await Promise.allSettled([
     service.submit({ payload: basePayload }),
     service.submit({ payload: basePayload })
   ]);
+  const fulfilledSubmissions = concurrentSubmissions.filter((result) => result.status === 'fulfilled');
+  const rejectedSubmissions = concurrentSubmissions.filter((result) => result.status === 'rejected');
+  assert.strictEqual(fulfilledSubmissions.length, 1, 'Somente um envio concorrente pode ser aceito.');
+  assert.strictEqual(rejectedSubmissions.length, 1, 'O segundo envio concorrente deve ser bloqueado.');
+  assert.match(String(rejectedSubmissions[0].reason && rejectedSubmissions[0].reason.message), /já foi enviada|não pode ser reenviada/);
+  const submitted = fulfilledSubmissions[0].value;
   assert.strictEqual(submitted.status, 'submitted');
   assert.strictEqual(sessionStorage.getItem(verificationRepo.draftStorageKey), '{}', 'Rascunho sensível deve ser removido após o envio.');
   const persistedSubmission = storage.getItem(verificationRepo.storageKey) || '';
   assert(!persistedSubmission.includes(basePayload.taxId), 'CPF bruto não pode permanecer no ledger local após o envio.');
   assert(!persistedSubmission.includes(basePayload.street), 'Endereço bruto não pode permanecer no ledger local após o envio.');
   assert.strictEqual((await profileRepo.getByUserId('client_verification')).verificationStatus, 'submitted');
-  assert.strictEqual(duplicate.id, submitted.id, 'Envios concorrentes devem convergir para a mesma verificação.');
   assert.strictEqual((await verificationRepo.list({ userId: sessionUser.id })).length, 1);
+  await assert.rejects(async () => service.submit({ payload: basePayload }), /já foi enviada|não pode ser reenviada/);
   await assert.rejects(async () => service.saveDraft({ currentStep: 1, payload: basePayload }), /não pode ser alterada/);
 
   sessionUser = { id: 'support_verification', role: 'support', type: 'support' };
@@ -199,16 +205,47 @@ function createStorage() {
   const page = fs.readFileSync('assets/js/pages/verificacao-profissional.js', 'utf8');
   const verificationService = fs.readFileSync('assets/js/services/professional-identity-verification-service.js', 'utf8');
   const setupHtml = fs.readFileSync('tornar-profissional.html', 'utf8');
+  const ownerProfileHtml = fs.readFileSync('meu-perfil.html', 'utf8');
+  const ownerProfilePage = fs.readFileSync('assets/js/pages/owner-profile-experience.js', 'utf8');
+  const flowContract = fs.readFileSync('assets/css/pages/flow-page-contract.css', 'utf8');
   const router = fs.readFileSync('assets/js/core/stable-shell-router.js', 'utf8');
   const hydration = fs.readFileSync('assets/js/core/page-hydration.js', 'utf8');
 
-  assert(html.includes('VERIFICAÇÃO PROFISSIONAL'));
+  assert(html.includes('VERIFICAÇÃO DE IDENTIDADE'));
   assert(html.includes('name="taxId"'));
   assert(html.includes('name="documentFront"'));
   assert(html.includes('name="selfieDocument"'));
   assert(html.includes('name="businessDocument"'));
   assert(html.includes('Enviar para análise') || page.includes('Enviar para análise'));
+  assert(page.includes('var submissionPayload = serialize();'), 'O payload final deve ser capturado antes de desabilitar os campos.');
+  assert(page.indexOf('var submissionPayload = serialize();') < page.indexOf('setSubmitting(true);'), 'A serialização precisa ocorrer antes do estado de envio.');
+  const verificationCss = fs.readFileSync('assets/css/pages/verificacao-profissional.css', 'utf8');
+  assert(verificationCss.includes('.professional-verification-actions'));
+  assert(verificationCss.includes('.professional-verification-layout[hidden]'), 'O layout do formulário precisa respeitar hidden mesmo com display grid compartilhado.');
+  assert(verificationCss.includes('[data-professional-verification-resume][hidden]'), 'O botão de correção precisa permanecer oculto fora do estado rejected.');
+  assert(verificationCss.includes('margin-top: 30px'));
+  assert((html.match(/data-verification-secondary/g) || []).length === 1, 'A barra deve ter um único controle secundário.');
+  assert(!html.includes('data-verification-back'), 'Não deve existir um terceiro botão de retorno.');
+  assert(!html.includes('data-verification-exit'), 'Salvar e sair e Voltar devem compartilhar o mesmo controle.');
+  assert(html.includes('data-professional-verification-loading'), 'O loading canônico de submissão deve existir.');
+  assert(html.includes('doke-loading-spinner doke-loading-spinner--lg'), 'O loading deve reutilizar o spinner canônico do orçamento.');
+  assert(html.includes('professional-verification-success-modal__dialog'), 'O sucesso deve usar uma superfície compacta e canônica.');
+  assert(page.includes('var minimumLoading'), 'O envio deve manter o feedback visível durante a operação.');
+  assert(html.includes('class="professional-verification-content" data-professional-verification-hydration-ready'), 'A hidratação deve revelar um wrapper neutro, não o formulário diretamente.');
+  assert(!html.includes('data-professional-verification-form-layout data-professional-verification-hydration-ready'), 'O formulário não pode ser reaberto automaticamente pela hidratação.');
+  assert(page.includes('formLayout.hidden = !editable'), 'A projeção do status deve controlar a visibilidade do formulário.');
+  assert(page.includes("var canCorrect = status === 'rejected'"), 'Corrigir e reenviar deve existir somente após rejeição.');
+  assert(page.indexOf('hydration && hydration.ready({ hasItems: true });') < page.lastIndexOf('renderStatus(currentVerification);'), 'A projeção de status deve ocorrer depois da liberação da hidratação.');
+  assert(verificationService.includes('PROFESSIONAL_IDENTITY_VERIFICATION_SUBMISSION_LOCKED'), 'O service deve bloquear reenvio após submissão.');
+  const verificationRepository = fs.readFileSync('assets/js/repositories/professional-identity-verifications-repository.js', 'utf8');
+  assert(verificationRepository.includes('PROFESSIONAL_IDENTITY_VERIFICATION_SUBMISSION_LOCKED'), 'O repository deve bloquear reenvio após submissão.');
   assert(setupHtml.includes('verificacao-profissional.html'));
+  assert(ownerProfileHtml.includes('data-professional-next-step'));
+  assert(ownerProfileHtml.includes('verificacao-profissional.html'));
+  assert(ownerProfilePage.includes('loadProfessionalNextStep'));
+  assert(ownerProfilePage.includes('Acompanhar verificação'));
+  assert(flowContract.includes('[data-page="verificacao-profissional"]'));
+  assert(flowContract.includes('.professional-verification-intro h1'));
   assert(router.includes("'/verificacao-profissional.html': ['DokeInitProfessionalVerification']"));
   assert(hydration.includes("'/verificacao-profissional.html'"));
   assert(!page.includes('localStorage'));
@@ -232,7 +269,7 @@ function createStorage() {
     reloadPersistence: true,
     individualAndBusinessValidation: true,
     documentValidation: true,
-    submitIdempotency: true,
+    duplicateSubmissionBlocked: true,
     reviewPermissions: true,
     rejectionCorrection: true,
     verificationActivation: true,

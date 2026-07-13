@@ -62,7 +62,7 @@
     var invalidation = Doke.experience && Doke.experience.invalidation;
     if (invalidation && typeof invalidation.invalidateDomains === 'function') {
       return invalidation.invalidateDomains(
-        ['admin', 'wallet', 'orders', 'messages', 'notifications'],
+        ['admin', 'wallet', 'orders', 'messages', 'notifications', 'profile', 'auth', 'professional'],
         { reason: 'admin-resolution' }
       );
     }
@@ -73,7 +73,7 @@
       });
     }
     if (Doke.stableShellRouter && typeof Doke.stableShellRouter.invalidate === 'function') {
-      ['admin.html', 'carteira.html', 'pedidos.html', 'mensagens.html', 'notificacoes.html'].forEach(function (route) {
+      ['admin.html', 'carteira.html', 'pedidos.html', 'mensagens.html', 'notificacoes.html', 'meu-perfil.html', 'perfil-profissional.html', 'perfil.html'].forEach(function (route) {
         Doke.stableShellRouter.invalidate(route);
       });
     }

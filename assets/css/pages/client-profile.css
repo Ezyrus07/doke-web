@@ -211,3 +211,75 @@ body[data-profile-mode="client-edit"] .profile-owner-mini-action {
     font-size: 0.7rem;
   }
 }
+
+
+/* Professional journey projection on the owner profile. Shared surface, icon and button
+   anatomy remain owned by the component system; this page owns only composition. */
+body[data-profile-mode="client-edit"] .profile-professional-next {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  padding: clamp(16px, 2vw, 22px);
+}
+
+body[data-profile-mode="client-edit"] .profile-professional-next[hidden] {
+  display: none;
+}
+
+body[data-profile-mode="client-edit"] .profile-professional-next__body {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+body[data-profile-mode="client-edit"] .profile-professional-next__eyebrow {
+  color: var(--color-primary-strong, #184a76);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+body[data-profile-mode="client-edit"] .profile-professional-next h2,
+body[data-profile-mode="client-edit"] .profile-professional-next p {
+  margin: 0;
+}
+
+body[data-profile-mode="client-edit"] .profile-professional-next h2 {
+  color: var(--color-heading, #10233a);
+  font-size: clamp(1.05rem, 1.7vw, 1.28rem);
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+}
+
+body[data-profile-mode="client-edit"] .profile-professional-next p {
+  color: var(--color-text-muted, #50647c);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+body[data-profile-mode="client-edit"] .profile-professional-next__action {
+  white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  body[data-profile-mode="client-edit"] .profile-professional-next {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  body[data-profile-mode="client-edit"] .profile-professional-next__action {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+}
+
+@media (max-width: 520px) {
+  body[data-profile-mode="client-edit"] .profile-professional-next {
+    grid-template-columns: 1fr;
+  }
+
+  body[data-profile-mode="client-edit"] .profile-professional-next .content-surface-icon {
+    display: none;
+  }
+}

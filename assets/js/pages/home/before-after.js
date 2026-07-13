@@ -477,6 +477,10 @@ window.DokeHomeBeforeAfter = (() => {
       const setCommentsVisible = (visible, { focusInput = false } = {}) => {
         const shouldShow = Boolean(visible && isMobileCommentsSheet());
         root.classList.toggle('comments-visible', shouldShow);
+        commentsCloseButtons.forEach((button) => {
+          button.setAttribute('aria-expanded', String(shouldShow));
+          button.setAttribute('aria-label', shouldShow ? 'Ocultar comentários' : 'Mostrar comentários');
+        });
         if (!shouldShow && commentsRegion) commentsRegion.scrollTop = 0;
         if (shouldShow && focusInput && commentsSheet?.querySelector('.before-after-post__comment-input:not([hidden])')) {
           window.requestAnimationFrame(() => commentInput?.focus({ preventScroll: true }));

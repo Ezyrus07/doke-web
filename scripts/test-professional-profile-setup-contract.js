@@ -155,6 +155,12 @@ function createStorage() {
   assert(html.includes('Revise seu perfil profissional'));
   assert(html.includes('Criar perfil profissional') || page.includes('Criar perfil profissional'));
   assert(html.includes('Perfil profissional criado'));
+  assert(/<dialog[^>]+become-pro-submit-state[^>]+doke-native-overlay/.test(html), 'O sucesso deve usar dialog nativo para cobrir todo o shell.');
+  assert(html.includes('doke-modal-surface--feedback'));
+  assert(html.includes('data-submit-verification'));
+  assert(html.includes('Iniciar verificação'));
+  assert(page.includes('submitState.showModal()'));
+  assert(page.includes("submitState?.addEventListener('close', finalizeSubmitState)"));
   assert(html.includes('pendente de verificação'));
   assert(!html.includes('Enviar para análise'));
   assert(!html.includes('Candidatura enviada'));

@@ -277,7 +277,18 @@
     submission = submission || {};
 
     return getByUserId(ownerId).then(function (current) {
-      if (current && [STATUSES.SUBMITTED, STATUSES.UNDER_REVIEW, STATUSES.VERIFIED].indexOf(current.status) >= 0) return current;
+      var latest = readAll().find(function (item) { return item.userId === ownerId; }) || current;
+      if (latest && latest.status !== STATUSES.NOT_STARTED) {
+        var error = new Error(
+          latest.status === STATUSES.REJECTED
+            ? 'A verificação rejeitada precisa ser reaberta antes de um novo envio.'
+            : 'A verificação já foi enviada e não pode ser reenviada neste momento.'
+        );
+        error.code = 'PROFESSIONAL_IDENTITY_VERIFICATION_SUBMISSION_LOCKED';
+        error.status = latest.status;
+        throw error;
+      }
+      current = latest || current;
       var now = new Date().toISOString();
       removeDraft(ownerId);
       return persist(Object.assign({}, current || {}, {

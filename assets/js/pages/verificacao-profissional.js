@@ -34,10 +34,10 @@
     var panels = Array.from(root.querySelectorAll('[data-verification-step-panel]'));
     var stepTargets = Array.from(root.querySelectorAll('[data-verification-step-target]'));
     var nextButton = root.querySelector('[data-verification-next]');
-    var backButton = root.querySelector('[data-verification-back]');
-    var exitButton = root.querySelector('[data-verification-exit]');
+    var secondaryButton = root.querySelector('[data-verification-secondary]');
+    var loadingState = root.querySelector('[data-professional-verification-loading]');
     var submitState = root.querySelector('[data-professional-verification-submit-state]');
-    var submitClose = root.querySelector('[data-professional-verification-submit-close]');
+    var submitCloseButtons = Array.from(root.querySelectorAll('[data-professional-verification-submit-close]'));
     var verificationType = form && form.elements.namedItem('verificationType');
     var birthDateField = root.querySelector('[data-birth-date-field]');
     var representativeField = root.querySelector('[data-representative-field]');
@@ -171,8 +171,7 @@
         if (targetStep === currentStep) target.setAttribute('aria-current', 'step');
         else target.removeAttribute('aria-current');
       });
-      if (backButton) backButton.hidden = currentStep === 1;
-      if (exitButton) exitButton.hidden = currentStep > 1;
+      if (secondaryButton) secondaryButton.textContent = currentStep === 1 ? 'Salvar e sair' : 'Voltar';
       if (nextButton) nextButton.textContent = currentStep === totalSteps ? 'Enviar para análise' : 'Continuar';
       if (currentStep === totalSteps) updateReview();
       showFeedback('');
@@ -218,10 +217,43 @@
         statusReason.hidden = !(status === 'rejected' && verification.rejectionReason);
         statusReason.textContent = verification.rejectionReason || '';
       }
-      if (resumeButton) resumeButton.hidden = status !== 'rejected';
+      if (resumeButton) {
+        var canCorrect = status === 'rejected';
+        resumeButton.hidden = !canCorrect;
+        resumeButton.disabled = !canCorrect;
+      }
       var dateValue = verification.decidedAt || verification.reviewStartedAt || verification.submittedAt || verification.updatedAt;
       var formatted = formatDate(dateValue);
       if (statusDate) { statusDate.hidden = !formatted; statusDate.textContent = formatted ? 'Atualizado em: ' + formatted : ''; }
+    }
+
+    function openDialog(dialog) {
+      if (!dialog) return;
+      dialog.hidden = false;
+      if (typeof dialog.showModal === 'function' && !dialog.open) dialog.showModal();
+      else dialog.setAttribute('open', '');
+    }
+
+    function closeDialog(dialog) {
+      if (!dialog) return;
+      if (typeof dialog.close === 'function' && dialog.open) dialog.close();
+      else dialog.removeAttribute('open');
+      dialog.hidden = true;
+    }
+
+    function clearSensitiveForm() {
+      if (!form) return;
+      form.reset();
+      Array.from(form.querySelectorAll('input[type="file"]')).forEach(function (input) {
+        delete input.dataset.persistedFileName;
+        delete input.dataset.persistedFileSize;
+        delete input.dataset.persistedFileType;
+        var card = input.closest('.professional-verification-upload-card');
+        var label = card && card.querySelector('[data-file-label]');
+        if (card) card.classList.remove('has-file');
+        if (label && label.dataset.defaultLabel) label.textContent = label.dataset.defaultLabel;
+      });
+      syncConditionalFields();
     }
 
     function setSubmitting(active) {
@@ -249,30 +281,39 @@
         return;
       }
 
+      var submissionPayload = serialize();
       setSubmitting(true);
+      openDialog(loadingState);
+      var minimumLoading = new Promise(function (resolve) { window.setTimeout(resolve, 2000); });
       try {
-        currentVerification = await service.submit({ payload: serialize() });
-        if (submitState) { submitState.hidden = false; submitState.classList.add('is-visible'); }
-        submitClose && submitClose.focus({ preventScroll: true });
+        var results = await Promise.all([
+          service.submit({ payload: submissionPayload }),
+          minimumLoading
+        ]);
+        currentVerification = results[0];
+        clearSensitiveForm();
+        closeDialog(loadingState);
+        openDialog(submitState);
+        var successFocus = submitState && (submitState.querySelector('.doke-btn--primary') || submitState.querySelector('[data-professional-verification-submit-close]'));
+        successFocus && successFocus.focus({ preventScroll: true });
       } catch (error) {
+        closeDialog(loadingState);
         handleError(error);
       } finally {
         setSubmitting(false);
       }
     });
 
-    backButton && backButton.addEventListener('click', function () {
-      if (submitting || currentStep <= 1) return;
-      setStep(currentStep - 1);
-    });
-
-    exitButton && exitButton.addEventListener('click', async function (event) {
-      event.preventDefault();
+    secondaryButton && secondaryButton.addEventListener('click', async function () {
       if (submitting) return;
-      var target = exitButton.getAttribute('href') || 'tornar-profissional.html';
+      if (currentStep > 1) {
+        setStep(currentStep - 1);
+        return;
+      }
       window.clearTimeout(saveTimer);
       var saved = await persistDraft();
       if (!saved && form) return;
+      var target = 'tornar-profissional.html';
       if (typeof window.DokeNavigate === 'function') window.DokeNavigate(target);
       else window.location.href = target;
     });
@@ -313,11 +354,23 @@
       });
     });
 
-    submitClose && submitClose.addEventListener('click', function () {
-      submitState && submitState.classList.remove('is-visible');
-      if (submitState) submitState.hidden = true;
-      renderStatus(currentVerification);
-      statusCard && statusCard.focus({ preventScroll: true });
+    submitCloseButtons.forEach(function (button) {
+      button.addEventListener('click', function () {
+        closeDialog(submitState);
+        renderStatus(currentVerification);
+        statusCard && statusCard.focus({ preventScroll: true });
+      });
+    });
+
+    submitState && submitState.addEventListener('click', function (event) {
+      if (event.target === submitState) {
+        closeDialog(submitState);
+        renderStatus(currentVerification);
+      }
+    });
+
+    loadingState && loadingState.addEventListener('cancel', function (event) {
+      event.preventDefault();
     });
 
     resumeButton && resumeButton.addEventListener('click', async function () {
@@ -349,8 +402,8 @@
       maxReachedStep = Math.max(1, Number(currentVerification && currentVerification.currentStep || 1));
       setStep(Math.min(maxReachedStep, 3), { skipSave: true });
       updateReview();
-      renderStatus(currentVerification);
       hydration && hydration.ready({ hasItems: true });
+      renderStatus(currentVerification);
     } catch (error) {
       hydration && hydration.error(error);
       handleError(error);

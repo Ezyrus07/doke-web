@@ -23,11 +23,14 @@ body.professional-verification-page-shell svg {
 }
 
 .professional-verification-page-frame {
-  background: linear-gradient(180deg, #eef7fd 0%, #eaf4fb 100%);
+  background:
+    radial-gradient(circle at 28% 12%, rgba(255, 255, 255, 0.9) 0 280px, transparent 520px),
+    linear-gradient(180deg, #eef7fd 0%, #eaf4fb 100%);
 }
 
 .professional-verification-intro {
   max-width: 820px;
+  gap: 10px;
 }
 
 .professional-verification-layout {
@@ -45,9 +48,12 @@ body.professional-verification-page-shell svg {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.professional-verification-content[hidden],
+.professional-verification-layout[hidden],
 .professional-verification-step-panel[hidden],
 .professional-verification-conditional[hidden],
-.professional-verification-status[hidden] {
+.professional-verification-status[hidden],
+[data-professional-verification-resume][hidden] {
   display: none;
 }
 
@@ -265,7 +271,7 @@ body.professional-verification-page-shell svg {
 }
 
 .professional-verification-feedback {
-  margin: 0;
+  margin: 22px 0 0;
   padding: 12px 14px;
   border-radius: var(--radius-sm);
   background: rgba(185, 28, 28, 0.07);
@@ -276,6 +282,10 @@ body.professional-verification-page-shell svg {
 .professional-verification-feedback.is-success {
   background: rgba(22, 184, 149, 0.09);
   color: #0d765f;
+}
+
+.professional-verification-actions {
+  margin-top: 24px;
 }
 
 .professional-verification-status {
@@ -322,6 +332,10 @@ body.professional-verification-page-shell svg {
 }
 
 @media (max-width: 620px) {
+  .professional-verification-actions {
+    margin-top: 18px;
+  }
+
   .professional-verification-steps {
     grid-template-columns: 1fr;
   }
@@ -332,5 +346,274 @@ body.professional-verification-page-shell svg {
 
   .professional-verification-status__actions .doke-btn {
     width: 100%;
+  }
+}
+
+
+/* Verification feedback and action contract. */
+body[data-page="verificacao-profissional"] .professional-verification-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 30px;
+}
+
+body[data-page="verificacao-profissional"] .professional-verification-actions .doke-btn {
+  width: 100%;
+  min-width: 0;
+}
+
+body[data-page="verificacao-profissional"] .professional-verification-upload-grid {
+  margin-top: 16px;
+  margin-bottom: 28px;
+  gap: 18px;
+}
+
+body[data-page="verificacao-profissional"] .professional-verification-upload-card {
+  margin: 0;
+}
+
+body[data-page="verificacao-profissional"] .professional-verification-feedback:not([hidden]) {
+  margin-top: 24px;
+  margin-bottom: 6px;
+}
+
+body[data-page="verificacao-profissional"] .professional-verification-submission-overlay {
+  width: 100vw;
+  max-width: none;
+  height: 100dvh;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+body[data-page="verificacao-profissional"] .professional-verification-submission-overlay:not([open]) {
+  display: none;
+}
+
+body[data-page="verificacao-profissional"] .professional-verification-submission-overlay[open] {
+  display: block;
+}
+
+body[data-page="verificacao-profissional"] .professional-verification-submission-overlay__content {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 12px;
+  padding: clamp(24px, 5vw, 48px);
+  text-align: center;
+  pointer-events: none;
+}
+
+body[data-page="verificacao-profissional"] .professional-verification-submission-overlay__loader {
+  --doke-loading-size: clamp(84px, 12vw, 102px);
+  --doke-loading-thickness: clamp(6px, 0.7vw, 8px);
+  margin-block-end: 2px;
+  filter: drop-shadow(0 18px 34px rgba(16, 58, 100, 0.14));
+}
+
+body[data-page="verificacao-profissional"] .professional-verification-submission-overlay__loader svg {
+  inline-size: 40%;
+  block-size: 40%;
+}
+
+body[data-page="verificacao-profissional"] .professional-verification-submission-overlay__title {
+  max-width: 18ch;
+  margin: 0;
+  color: var(--color-heading, #0b3778);
+  font-size: clamp(1.42rem, 3vw, 1.86rem);
+  line-height: 1.08;
+  letter-spacing: -0.045em;
+  font-weight: 800;
+  text-align: center;
+}
+
+body[data-page="verificacao-profissional"] .professional-verification-submission-overlay__message {
+  max-width: 30ch;
+  margin: 0;
+  color: rgba(13, 47, 89, 0.68);
+  font-size: 0.96rem;
+  line-height: 1.42;
+  font-weight: 700;
+  text-align: center;
+}
+
+body[data-page="verificacao-profissional"] .professional-verification-success-modal {
+  width: min(calc(100vw - 48px), 620px);
+  max-width: 620px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+body[data-page="verificacao-profissional"] .professional-verification-success-modal[open] {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  width: 100vw;
+  max-width: none;
+  height: 100dvh;
+  max-height: none;
+  place-items: center;
+  margin: 0;
+  padding: max(18px, env(safe-area-inset-top)) clamp(18px, 3vw, 32px) max(18px, env(safe-area-inset-bottom));
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+body[data-page="verificacao-profissional"] .professional-verification-success-modal:not([open]) {
+  display: none;
+}
+
+body[data-page="verificacao-profissional"] .professional-verification-success-modal__dialog {
+  position: relative;
+  display: grid;
+  width: min(calc(100vw - 48px), 620px);
+  max-width: 100%;
+  max-height: calc(100dvh - 48px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+  border: 1px solid rgba(207, 222, 239, 0.92);
+  border-radius: var(--radius-xl, 28px);
+  background: #fff;
+  text-align: left;
+  box-shadow: 0 28px 80px rgba(18, 39, 62, 0.24);
+  transform: none;
+  opacity: 1;
+  animation: none;
+}
+
+body[data-page="verificacao-profissional"] .professional-verification-success-modal__close {
+  position: absolute;
+  top: 28px;
+  right: 28px;
+  z-index: 2;
+}
+
+body[data-page="verificacao-profissional"] .professional-verification-success-modal__dialog > :not(.professional-verification-success-modal__close):not(.professional-verification-success__actions) {
+  margin-inline: 36px;
+}
+
+body[data-page="verificacao-profissional"] .professional-verification-success-modal .doke-modal-eyebrow {
+  width: fit-content;
+  justify-self: start;
+  min-height: 34px;
+  margin-top: 34px;
+  margin-bottom: 26px;
+  padding-inline: 16px;
+}
+
+body[data-page="verificacao-profissional"] .professional-verification-success__icon {
+  display: none;
+}
+
+body[data-page="verificacao-profissional"] .professional-verification-success-modal .doke-modal-title {
+  width: auto;
+  max-width: 15ch;
+  margin-block: 0;
+  color: var(--color-heading, #0b3778);
+  font-size: clamp(2rem, 4.6vw, 2.55rem);
+  line-height: 1.02;
+  letter-spacing: -0.052em;
+  font-weight: 800;
+  text-align: left;
+}
+
+body[data-page="verificacao-profissional"] .professional-verification-success-modal .doke-modal-description {
+  max-width: 500px;
+  margin-block: 14px 0;
+  color: rgba(13, 47, 89, 0.64);
+  font-size: 1rem;
+  line-height: 1.5;
+  font-weight: 500;
+  text-align: left;
+}
+
+body[data-page="verificacao-profissional"] .professional-verification-success__summary {
+  width: auto;
+  display: grid;
+  gap: 8px;
+  margin-top: 24px;
+  margin-bottom: 28px;
+  padding: 18px 20px;
+  border: 1px solid #dce7f3;
+  border-radius: var(--radius-md, 16px);
+  background: #f8fbff;
+  text-align: left;
+}
+
+body[data-page="verificacao-profissional"] .professional-verification-success__summary span {
+  color: var(--color-secondary, #298f7f);
+  font-size: 0.76rem;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+body[data-page="verificacao-profissional"] .professional-verification-success__summary strong {
+  color: var(--color-heading, #0b3778);
+  font-size: 1rem;
+  line-height: 1.3;
+  font-weight: 800;
+}
+
+body[data-page="verificacao-profissional"] .professional-verification-success__actions {
+  width: 100%;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 0;
+  padding: 20px 36px 28px;
+  border-top: 1px solid rgba(207, 222, 239, 0.72);
+  background: #fff;
+}
+
+@media (max-width: 620px) {
+  body[data-page="verificacao-profissional"] .professional-verification-actions,
+  body[data-page="verificacao-profissional"] .professional-verification-success__actions {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  body[data-page="verificacao-profissional"] .professional-verification-success-modal[open] {
+    padding: max(14px, env(safe-area-inset-top)) 14px max(14px, env(safe-area-inset-bottom));
+  }
+
+  body[data-page="verificacao-profissional"] .professional-verification-success-modal__dialog {
+    width: 100%;
+    max-height: calc(100dvh - 28px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    overflow-y: auto;
+  }
+
+  body[data-page="verificacao-profissional"] .professional-verification-success-modal__close {
+    top: 18px;
+    right: 18px;
+  }
+
+  body[data-page="verificacao-profissional"] .professional-verification-success-modal__dialog > :not(.professional-verification-success-modal__close):not(.professional-verification-success__actions) {
+    margin-inline: 22px;
+  }
+
+  body[data-page="verificacao-profissional"] .professional-verification-success-modal .doke-modal-eyebrow {
+    margin-top: 24px;
+    margin-bottom: 22px;
+  }
+
+  body[data-page="verificacao-profissional"] .professional-verification-success-modal .doke-modal-title {
+    max-width: 13ch;
+    font-size: clamp(1.85rem, 9vw, 2.2rem);
+  }
+
+  body[data-page="verificacao-profissional"] .professional-verification-success__actions {
+    padding: 18px 22px 22px;
+  }
+
+  body[data-page="verificacao-profissional"] .professional-verification-upload-grid {
+    margin-bottom: 22px;
   }
 }

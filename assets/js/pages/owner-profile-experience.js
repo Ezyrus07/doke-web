@@ -53,6 +53,90 @@
       list.appendChild(item);
     });
   }
+
+  function hideProfessionalNextStep() {
+    var card = document.querySelector('[data-professional-next-step]');
+    if (card) card.hidden = true;
+  }
+
+  function renderProfessionalNextStep(professionalProfile, verification) {
+    var card = document.querySelector('[data-professional-next-step]');
+    if (!card) return;
+    if (!professionalProfile || professionalProfile.status === 'active') {
+      card.hidden = true;
+      return;
+    }
+
+    var label = card.querySelector('[data-professional-next-step-label]');
+    var title = card.querySelector('[data-professional-next-step-title]');
+    var description = card.querySelector('[data-professional-next-step-description]');
+    var action = card.querySelector('[data-professional-next-step-action]');
+    var setupService = Doke.services && Doke.services.professionalProfileSetup;
+    var verificationService = Doke.services && Doke.services.professionalIdentityVerification;
+    var status = String(professionalProfile.status || 'draft');
+    var verificationStatus = String((verification && verification.status) || professionalProfile.verificationStatus || 'not_started');
+    var presentation;
+
+    if (status === 'draft') {
+      presentation = setupService && typeof setupService.getStatusPresentation === 'function'
+        ? setupService.getStatusPresentation('draft')
+        : { label: 'Perfil profissional', title: 'Continue seu perfil profissional', description: 'Finalize as informações para avançar para a verificação de identidade.' };
+      if (action) {
+        action.href = 'tornar-profissional.html';
+        action.textContent = 'Continuar perfil';
+      }
+    } else {
+      presentation = verificationService && typeof verificationService.getStatusPresentation === 'function'
+        ? verificationService.getStatusPresentation(verificationStatus)
+        : { label: 'Verificação profissional', title: 'Verifique sua identidade', description: 'Conclua a verificação para liberar as funções profissionais da sua conta.' };
+      if (action) {
+        action.href = 'verificacao-profissional.html';
+        action.textContent = verificationStatus === 'rejected'
+          ? 'Corrigir verificação'
+          : (verificationStatus === 'submitted' || verificationStatus === 'under_review'
+            ? 'Acompanhar verificação'
+            : 'Iniciar verificação');
+      }
+    }
+
+    if (label) label.textContent = presentation.label || 'Próximo passo profissional';
+    if (title) title.textContent = presentation.title || 'Verifique sua identidade';
+    if (description) description.textContent = presentation.description || '';
+    card.dataset.professionalState = status;
+    card.dataset.verificationState = verificationStatus;
+    card.hidden = false;
+  }
+
+  function loadProfessionalNextStep() {
+    var setupService = Doke.services && Doke.services.professionalProfileSetup;
+    var verificationService = Doke.services && Doke.services.professionalIdentityVerification;
+    if (!setupService || typeof setupService.getCurrentProfileSetup !== 'function') {
+      hideProfessionalNextStep();
+      return Promise.resolve(null);
+    }
+
+    return Promise.resolve().then(function () {
+      return setupService.getCurrentProfileSetup();
+    }).then(function (professionalProfile) {
+      if (!professionalProfile || professionalProfile.status === 'active') {
+        hideProfessionalNextStep();
+        return null;
+      }
+      if (professionalProfile.status === 'draft' || !verificationService || typeof verificationService.getCurrentVerification !== 'function') {
+        renderProfessionalNextStep(professionalProfile, null);
+        return { professionalProfile: professionalProfile, verification: null };
+      }
+      return Promise.resolve().then(function () {
+        return verificationService.getCurrentVerification();
+      }).then(function (verification) {
+        renderProfessionalNextStep(professionalProfile, verification);
+        return { professionalProfile: professionalProfile, verification: verification || null };
+      });
+    }).catch(function () {
+      hideProfessionalNextStep();
+      return null;
+    });
+  }
   function render(profile) {
     profile = profile || {};
     var name = text(profile.name) || 'Complete seu perfil';
@@ -176,9 +260,12 @@
       : Doke.ownerProfileExperience.init();
     ownerSurfaceInitialized = true;
 
-    return Promise.resolve(operation).then(function (result) {
+    return Promise.all([
+      Promise.resolve(operation),
+      loadProfessionalNextStep()
+    ]).then(function (results) {
       hydration?.ready({ hasItems: true });
-      return result;
+      return results[0];
     }).catch(function (error) {
       hydration?.error(error);
       throw error;

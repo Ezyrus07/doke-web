@@ -10,7 +10,7 @@
  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
  <script src="assets/js/core/shell-state-early.js?v=20260614-drawer-canonical-v2"></script>
-  <link rel="stylesheet" href="assets/css/pages/comunidade-interna-foundation.css?v=20260701-modal-centering-contract-v1&amp;community=20260713-settings-forms-v2">
+  <link rel="stylesheet" href="assets/css/pages/comunidade-interna-foundation.css?v=20260701-modal-centering-contract-v1&amp;community=20260713-settings-panel-surface-v1">
 <script>document.documentElement.classList.add("doke-mobile-shell-pending");</script>
   <script src="assets/js/core/ipad-safari-early-guard.js?v=20260531-v3"></script>
  <link rel="stylesheet" href="assets/css/components/in-app-notifications.css?v=20260712-quick-actions-v2">
@@ -240,7 +240,7 @@
 
       <aside class="community-settings-sidebar doke-settings-shell__sidebar" data-community-settings-sidebar aria-label="Configurações da comunidade" hidden>
        <header class="community-settings-sidebar__header settings-sidebar-brand">
-        <button class="community-room-return community-room-return--settings doke-btn" type="button" data-community-settings-close aria-label="Voltar para a comunidade">
+        <button class="community-room-return community-room-return--settings settings-sidebar-return doke-btn" type="button" data-community-settings-close aria-label="Voltar para a comunidade">
          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 6-6 6 6 6"></path></svg><span>Comunidade</span>
         </button>
         <h2 class="settings-sidebar__title">Configurações</h2>
@@ -277,8 +277,8 @@
        <section class="community-room-panel__surface doke-settings-surface doke-aux-panel__surface" role="dialog" aria-modal="true" aria-label="Eventos da comunidade">
         <header class="community-room-panel__header doke-settings-surface__header doke-aux-panel__header"><div><h2>Eventos</h2><p>Organize encontros e acompanhe confirmações.</p></div><button class="community-room-panel__close doke-close-button doke-icon-btn doke-icon-btn--flat" type="button" data-community-panel-close aria-label="Fechar painel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6 6 18"></path></svg></button></header>
         <div class="community-events-tabs" role="tablist" aria-label="Seções de eventos">
-         <button class="community-events-tabs__item is-active" type="button" role="tab" aria-selected="true" data-community-events-view="agenda">Agenda</button>
-         <button class="community-events-tabs__item" type="button" role="tab" aria-selected="false" data-community-events-view="create">Criar evento</button>
+         <button class="community-events-tabs__item doke-segment-button is-active" type="button" role="tab" aria-selected="true" data-community-events-view="agenda">Agenda</button>
+         <button class="community-events-tabs__item doke-segment-button" type="button" role="tab" aria-selected="false" data-community-events-view="create">Criar evento</button>
         </div>
         <div class="community-events-panel__body">
          <section class="community-events-view is-active" data-community-events-view-panel="agenda" aria-label="Agenda de eventos">
@@ -361,7 +361,7 @@
        <button class="community-room-panel__backdrop doke-aux-panel__backdrop doke-btn" type="button" data-community-panel-close aria-label="Fechar painel"></button>
        <section class="community-room-panel__surface doke-settings-surface doke-aux-panel__surface" role="dialog" aria-modal="true" aria-label="Gerenciar comunidade">
         <header class="community-room-panel__header doke-settings-surface__header doke-aux-panel__header"><div><h2>Editar comunidade</h2><p>Atualize identidade, privacidade, capa e aparência.</p></div><button class="community-room-panel__close doke-close-button doke-icon-btn doke-icon-btn--flat" type="button" data-community-panel-close aria-label="Fechar painel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6 6 18"></path></svg></button></header>
-        <form class="community-room-manage-form doke-settings-form doke-settings-rail" data-community-manage-form>
+        <form class="community-room-manage-form doke-settings-surface__body doke-settings-form doke-settings-rail" data-community-manage-form>
          <section class="community-settings-form-section" aria-labelledby="community-manage-identity-title">
           <div class="community-settings-form-section__heading">
            <div><span class="community-settings-form-section__eyebrow">Identidade</span><h3 id="community-manage-identity-title">Informações públicas</h3></div>
@@ -444,7 +444,7 @@
          <p data-community-invite-meta>Compartilhe este código para outras pessoas entrarem pela tela Comunidade.</p>
          <div class="community-room-panel-actions doke-settings-actions"><button class="doke-btn doke-btn--ghost" type="button" data-community-invite-regenerate>Gerar novo</button><button class="doke-btn doke-btn--primary" type="button" data-community-invite-copy>Copiar código</button></div>
         </div>
-        <form class="community-room-invite-form doke-settings-form doke-settings-form__grid doke-settings-rail" data-community-invite-form>
+        <form class="community-room-invite-form doke-settings-surface__body doke-settings-form doke-settings-form__grid doke-settings-rail" data-community-invite-form>
          <label><span>Validade</span><select class="doke-input doke-select" data-community-invite-expiry><option value="1">1 dia</option><option value="7">7 dias</option><option value="30" selected>30 dias</option><option value="0">Sem expiração</option></select></label>
          <label><span>Limite de usos</span><input class="doke-input" type="number" min="0" max="999" value="0" data-community-invite-max-uses><small>0 = ilimitado</small></label>
          <label class="community-room-checkline"><input class="doke-checkbox" type="checkbox" data-community-invite-require-approval><span>Exigir aprovação mesmo com convite</span></label>
@@ -471,7 +471,7 @@
          <div class="community-settings-section-heading">
           <div><span class="community-settings-section-eyebrow">Novo cargo</span><h3 id="community-role-create-title">Identidade e permissões</h3><p>Defina o nome, a cor e exatamente quais ações esse cargo poderá executar.</p></div>
          </div>
-         <form class="community-room-role-form doke-settings-form" data-community-role-form>
+         <form class="community-room-role-form doke-settings-surface__body doke-settings-form" data-community-role-form>
          <label><span>Novo cargo</span><input class="doke-input" type="text" data-community-role-name placeholder="Ex.: Moderador, Síndico, Prestador"></label>
          <label><span>Cor</span><input class="doke-input" type="color" data-community-role-color value="#2167ae"></label>
          <fieldset class="community-room-permissions" data-community-role-permissions>
@@ -509,7 +509,7 @@
          <div class="community-settings-section-heading">
           <div><span class="community-settings-section-eyebrow">Configuração</span><h3 id="community-channel-create-title">Criar ou editar canal</h3><p>Defina finalidade, ritmo de conversa e regras de acesso sem misturar responsabilidades.</p></div>
          </div>
-         <form class="community-room-channel-form doke-settings-form" data-community-channel-form>
+         <form class="community-room-channel-form doke-settings-surface__body doke-settings-form" data-community-channel-form>
          <input type="hidden" data-community-channel-edit-id>
          <label><span>Nome do canal</span><input class="doke-input" type="text" data-community-channel-name maxlength="50" placeholder="Ex.: avisos, suporte, geral"></label>
          <label><span>Descrição</span><input class="doke-input" type="text" data-community-channel-description maxlength="120" placeholder="Explique o objetivo do canal"></label>
@@ -551,9 +551,9 @@
         <section class="community-settings-content-section doke-settings-rail" aria-labelledby="community-security-actions-title">
          <div class="community-settings-section-heading"><div><span class="community-settings-section-eyebrow">Controle</span><h3 id="community-security-actions-title">Ações e ocorrências</h3><p>Consulte cada categoria separadamente e aja apenas quando houver necessidade.</p></div></div>
          <div class="community-security-tabs" role="tablist" aria-label="Categorias de segurança">
-          <button class="community-security-tab is-active" type="button" role="tab" aria-selected="true" data-community-security-tab="discipline">Punições</button>
-          <button class="community-security-tab" type="button" role="tab" aria-selected="false" data-community-security-tab="bans">Banidos</button>
-          <button class="community-security-tab" type="button" role="tab" aria-selected="false" data-community-security-tab="violations">Violações</button>
+          <button class="community-security-tab doke-segment-button is-active" type="button" role="tab" aria-selected="true" data-community-security-tab="discipline">Punições</button>
+          <button class="community-security-tab doke-segment-button" type="button" role="tab" aria-selected="false" data-community-security-tab="bans">Banidos</button>
+          <button class="community-security-tab doke-segment-button" type="button" role="tab" aria-selected="false" data-community-security-tab="violations">Violações</button>
          </div>
          <section class="community-security-section is-active" data-community-security-panel="discipline"><div class="community-security-section__heading"><div><h3>Punições ativas</h3><p>Silenciamentos e restrições globais ou por canal.</p></div><button class="doke-btn doke-btn--secondary doke-btn--sm" type="button" data-community-security-cleanup>Limpar expiradas</button></div><div class="community-security-list doke-empty-state-host" data-community-security-discipline></div></section>
          <section class="community-security-section" data-community-security-panel="bans" hidden><div class="community-security-section__heading"><div><h3>Banidos</h3><p>Contas impedidas de entrar na comunidade.</p></div></div><div class="community-security-list doke-empty-state-host" data-community-security-bans></div></section>

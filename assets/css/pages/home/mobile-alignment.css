@@ -297,3 +297,60 @@
     --home-mobile-content-axis: var(--doke-mobile-shell-edge, var(--doke-mobile-page-gutter, 14px));
   }
 }
+
+/* 2026-07-13 mobile closure: align the home feed to the same shell gutter used by
+   the mobile header and keep "Mais anúncios" as a true one-column feed. */
+@media (max-width: 560px) {
+  html.home-index-root body.home-index-shell {
+    --home-mobile-content-axis: var(--doke-mobile-shell-edge, 18px);
+  }
+
+  html.home-index-root body.home-index-shell .page__content,
+  html.home-index-root body.home-index-shell .page__content-inner.shell-home__workspace {
+    inline-size: 100%;
+    max-inline-size: 100%;
+    margin-inline: 0;
+    padding-inline: 0;
+  }
+
+  html.home-index-root body.home-index-shell .page__content-inner.shell-home__workspace > :is(
+    .home-search-hero,
+    .home-catégories,
+    .featured-services,
+    .short-videos,
+    .before-after,
+    .home-publications,
+    .more-services,
+    .professional-showcase,
+    .home-order-feedback
+  ) {
+    inline-size: 100%;
+    max-inline-size: 100%;
+    margin-inline: 0;
+    padding-inline: var(--home-mobile-content-axis);
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .more-services__cards-rail {
+    overflow: visible;
+    padding: 0;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services [data-more-services-grid] {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-auto-flow: row;
+    grid-auto-columns: auto;
+    gap: 16px;
+    inline-size: 100%;
+    max-inline-size: 100%;
+    padding: 0;
+    overflow: visible;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services [data-more-services-grid] > [data-more-service-card] {
+    grid-column: 1;
+    inline-size: 100%;
+    min-inline-size: 0;
+    max-inline-size: 100%;
+  }
+}
