@@ -170,7 +170,7 @@ const syncProfessionalSettingsIdentity = () => {
 };
 
 const REGISTERED_INTERNAL_VIEW_PATHS = Array.isArray(NAVIGATION_REGISTRY?.getInternalPaths?.()) ? NAVIGATION_REGISTRY.getInternalPaths() : [];
-const INTERNAL_VIEW_PATHS = new Set([...REGISTERED_INTERNAL_VIEW_PATHS, "/index.html", "/resultados.html", "/detalhe-anuncio.html", "/pedidos.html", "/mensagens.html", "/notificacoes.html", "/novidades.html", "/ajuda.html", "/carteira.html", "/admin.html", "/comunidade.html", "/comunidade-interna.html", "/pagamento-profissional.html", "/orcamento.html", "/avaliacao-profissional.html", "/anunciar-servico.html", "/meu-perfil.html", "/perfil-cliente.html", "/perfil-profissional.html", INTERNAL_PROFILE_PATH, "/configuracoes.html", "/tornar-profissional.html", "/"]);
+const INTERNAL_VIEW_PATHS = new Set([...REGISTERED_INTERNAL_VIEW_PATHS, "/index.html", "/resultados.html", "/detalhe-anuncio.html", "/pedidos.html", "/mensagens.html", "/notificacoes.html", "/novidades.html", "/ajuda.html", "/carteira.html", "/admin.html", "/comunidade.html", "/comunidade-interna.html", "/pagamento-profissional.html", "/orcamento.html", "/avaliacao-profissional.html", "/anunciar-servico.html", "/meu-perfil.html", "/perfil-cliente.html", "/perfil-profissional.html", INTERNAL_PROFILE_PATH, "/configuracoes.html", "/tornar-profissional.html", "/verificacao-profissional.html", "/"]);
 const MESSAGES_VIEW_PATH = "/mensagens.html";
 const SIDEBAR_PRIMARY_VIEWS = ["/index.html", "/pedidos.html", "/notificacoes.html", "/comunidade.html", INTERNAL_PROFILE_PATH, "/configuracoes.html"];
 let sidebarViewsHinted = false;
@@ -825,7 +825,7 @@ const updateSidebarActiveState = (pathOverride = null) => {
     messages: path === "/mensagens.html",
     notifications: path === "/notificacoes.html" || path === "/novidades.html",
     communities: path === "/comunidade.html" || path === "/comunidade-interna.html",
-    profile: path === INTERNAL_PROFILE_PATH || path === "/meu-perfil.html" || path === "/perfil-cliente.html" || path === "/perfil-profissional.html" || path === "/tornar-profissional.html" || path === "/anunciar-servico.html",
+    profile: path === INTERNAL_PROFILE_PATH || path === "/meu-perfil.html" || path === "/perfil-cliente.html" || path === "/perfil-profissional.html" || path === "/tornar-profissional.html" || path === "/verificacao-profissional.html" || path === "/anunciar-servico.html",
     wallet: path === "/carteira.html",
     admin: path === "/admin.html",
     settings: path === "/configuracoes.html" || path === "/ajuda.html"
@@ -1155,6 +1155,7 @@ const INTERNAL_VIEW_STYLE_HINTS = {
   "/comunidade-interna.html": ["assets/css/pages/comunidade-interna-foundation.css"],
   "/perfil.html": ["assets/css/pages/profile-foundation.css"],
   "/configuracoes.html": ["assets/css/pages/configuracoes-foundation.css"],
+  "/verificacao-profissional.html": ["assets/css/pages/verificacao-profissional-foundation.css"],
   "/orcamento.html": ["assets/css/pages/orcamento.css"],
   "/detalhe-anuncio.html": ["assets/css/pages/marketplace-detail-foundation.css"]
 };
@@ -1186,7 +1187,8 @@ const INTERNAL_VIEW_SCRIPT_HINTS = {
   "/perfil.html": ["assets/js/controllers/perfil-controller.js"],
   "/detalhe-anuncio.html": ["assets/js/pages/detalhe-anuncio.js"],
   "/orcamento.html": ["assets/js/pages/orcamento.js"],
-  "/tornar-profissional.html": ["assets/js/pages/tornar-profissional.js"]
+  "/tornar-profissional.html": ["assets/js/pages/tornar-profissional.js"],
+  "/verificacao-profissional.html": ["assets/js/pages/verificacao-profissional.js"]
 };
 
 const preloadedScriptHrefs = new Set();

@@ -5,7 +5,7 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = process.cwd();
-const targets = ['orcamento.html', 'anunciar-servico.html', 'tornar-profissional.html', 'pagamento-profissional.html'];
+const targets = ['orcamento.html', 'anunciar-servico.html', 'tornar-profissional.html', 'verificacao-profissional.html', 'pagamento-profissional.html'];
 const forbiddenTopClasses = ['doke-form-page-eyebrow', 'doke-form-page-meta', 'doke-form-page-chip'];
 const violations = [];
 
@@ -13,6 +13,7 @@ const cssForbiddenPatterns = [
   { file: 'assets/css/pages/orcamento.css', patterns: ['quote-context-head h1', 'quote-context-head .doke-form-page-description', 'quote-context-head__meta', 'quote-context-head.doke-form-page-top .doke-form-page-title', 'quote-context-head.doke-form-page-top .doke-form-page-description'] },
   { file: 'assets/css/pages/anunciar-servico.css', patterns: ['post-service-intro h1', 'post-service-intro p', 'post-service-intro.doke-form-page-top', 'post-service-intro.doke-form-page-top .doke-form-page-title', 'post-service-intro.doke-form-page-top .doke-form-page-description'] },
   { file: 'assets/css/pages/tornar-profissional.css', patterns: ['become-pro-intro h1', 'become-pro-intro p', 'become-pro-intro.doke-form-page-top', 'become-pro-intro.doke-form-page-top .doke-form-page-title', 'become-pro-intro.doke-form-page-top .doke-form-page-description'] },
+  { file: 'assets/css/pages/verificacao-profissional.css', patterns: ['professional-verification-intro h1', 'professional-verification-intro p', 'professional-verification-intro.doke-form-page-top .doke-form-page-title'] },
   { file: 'assets/css/pages/pagamento-profissional.css', patterns: ['payment-hero {', 'payment-hero.doke-form-page-top', 'payment-hero .doke-form-page-title', 'payment-hero .doke-form-page-description', '--doke-form-page-title-size', '--doke-form-page-title-color', '--doke-form-page-muted'] }
 ];
 

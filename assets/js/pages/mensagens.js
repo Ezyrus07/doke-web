@@ -2297,7 +2297,7 @@
         modal.className = 'messages-history-modal';
         modal.dataset.messageHistoryModal = '';
         modal.hidden = true;
-        modal.innerHTML = `<button class="messages-history-modal__backdrop" type="button" data-message-history-close aria-label="Fechar histórico"></button><section role="dialog" aria-modal="true" aria-label="Histórico de edição"><header><strong>Histórico de edição</strong><button class="doke-icon-btn doke-icon-btn--flat" type="button" data-message-history-close>×</button></header><div data-message-history-list></div></section>`;
+        modal.innerHTML = `<button class="messages-history-modal__backdrop" type="button" data-message-history-close aria-label="Fechar histórico"></button><section role="dialog" aria-modal="true" aria-label="Histórico de edição"><header><strong>Histórico de edição</strong><button class="doke-close-button doke-icon-btn doke-icon-btn--flat" type="button" data-message-history-close aria-label="Fechar histórico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6 6 18"></path></svg></button></header><div data-message-history-list></div></section>`;
         document.body.appendChild(modal);
       }
     };

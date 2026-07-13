@@ -6,7 +6,7 @@ const path = require('path');
 const { chromium } = require('@playwright/test');
 
 const ROOT = process.cwd();
-const pages = ['index.html', 'meu-perfil.html', 'configuracoes.html', 'pedidos.html', 'auth/cadastro.html'];
+const pages = ['index.html', 'meu-perfil.html', 'configuracoes.html', 'pedidos.html', 'auth/cadastro.html', 'verificacao-profissional.html'];
 const viewports = [
   { name: 'desktop', width: 1366, height: 768 },
   { name: 'tablet', width: 820, height: 1180 },

@@ -16,7 +16,8 @@ const routes = [
   { file: 'meu-perfil.html', page: 'meu-perfil', root: '[data-state-boundary="meu-perfil"]', skeleton: '[data-profile-hydration-skeleton]', ready: '[data-profile-hydration-ready]' },
   { file: 'perfil-cliente.html', page: 'perfil-cliente', root: '[data-state-boundary="perfil-cliente"]', skeleton: '[data-profile-hydration-skeleton]', ready: '[data-profile-hydration-ready]' },
   { file: 'configuracoes.html', page: 'configuracoes', root: '[data-state-boundary="configuracoes"]', skeleton: '[data-settings-hydration-skeleton]', ready: '[data-settings-hydration-ready]', readyMode: 'any' },
-  { file: 'tornar-profissional.html', page: 'tornar-profissional', root: '[data-state-boundary="tornar-profissional"]', skeleton: '[data-professional-onboarding-hydration-skeleton]', ready: '[data-professional-onboarding-hydration-ready]', readyMode: 'any' }
+  { file: 'tornar-profissional.html', page: 'tornar-profissional', root: '[data-state-boundary="tornar-profissional"]', skeleton: '[data-professional-onboarding-hydration-skeleton]', ready: '[data-professional-onboarding-hydration-ready]', readyMode: 'any' },
+  { file: 'verificacao-profissional.html', page: 'verificacao-profissional', root: '[data-state-boundary="verificacao-profissional"]', skeleton: '[data-professional-verification-hydration-skeleton]', ready: '[data-professional-verification-hydration-ready]', readyMode: 'any' }
 ];
 
 function assert(condition, message) {

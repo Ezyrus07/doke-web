@@ -29,6 +29,7 @@
     '/perfil-profissional.html',
     '/resultados.html',
     '/tornar-profissional.html',
+    '/verificacao-profissional.html',
     '/'
   ]);
 
@@ -41,6 +42,7 @@
     '/perfil-cliente.html',
     '/configuracoes.html',
     '/tornar-profissional.html',
+    '/verificacao-profissional.html',
     '/pedidos.html',
     '/mensagens.html',
     '/notificacoes.html'
@@ -52,6 +54,7 @@
     '/perfil-cliente.html',
     '/perfil-profissional.html',
     '/tornar-profissional.html',
+    '/verificacao-profissional.html',
     '/anunciar-servico.html'
   ]);
 
@@ -75,7 +78,8 @@
     '/configuracoes.html': ['DokeInitSettings'],
     '/orcamento.html': ['DokeInitBudget'],
     '/pagamento-profissional.html': ['DokeInitPayment'],
-    '/tornar-profissional.html': ['DokeInitBecomePro']
+    '/tornar-profissional.html': ['DokeInitBecomePro'],
+    '/verificacao-profissional.html': ['DokeInitProfessionalVerification']
   };
 
   var PRESERVED_BODY_CLASSES = [

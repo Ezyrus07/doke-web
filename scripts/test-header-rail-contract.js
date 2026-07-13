@@ -39,6 +39,7 @@ const pages = [
   'avaliacao-profissional.html',
   'anunciar-servico.html',
   'tornar-profissional.html',
+  'verificacao-profissional.html',
   'pagamento-profissional.html',
 ];
 
@@ -74,6 +75,7 @@ const contentSelectors = {
   'avaliacao-profissional.html': ['.pro-review-screen__rail', '.doke-page-shell', '.page__content-inner'],
   'anunciar-servico.html': ['.post-service-layout', '.page__content-inner'],
   'tornar-profissional.html': ['.become-pro-layout', '.doke-page-shell', '.page__content-inner'],
+  'verificacao-profissional.html': ['.professional-verification-layout', '.doke-page-shell', '.page__content-inner'],
   'pagamento-profissional.html': ['.payment-layout', '.doke-page-shell', '.page__content-inner'],
 };
 

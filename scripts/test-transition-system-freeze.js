@@ -50,6 +50,7 @@ function verifyRouterContract() {
     '/perfil-cliente.html',
     '/configuracoes.html',
     '/tornar-profissional.html',
+    '/verificacao-profissional.html',
     '/pedidos.html',
     '/mensagens.html',
     '/carteira.html'
@@ -67,6 +68,7 @@ function verifyRouterContract() {
   assert(router.includes("'/meu-perfil.html': ['DokeInitOwnerProfile']"), 'owner profile initializer is not registered');
   assert(router.includes("'/configuracoes.html': ['DokeInitSettings']"), 'settings initializer is not registered');
   assert(router.includes("'/tornar-profissional.html': ['DokeInitBecomePro']"), 'become-professional initializer is not registered');
+  assert(router.includes("'/verificacao-profissional.html': ['DokeInitProfessionalVerification']"), 'professional verification initializer is not registered');
 }
 
 function verifyPageBoundaries() {
@@ -75,7 +77,8 @@ function verifyPageBoundaries() {
     ['meu-perfil.html', 'data-state-boundary="meu-perfil"', 'data-profile-hydration-skeleton'],
     ['perfil-cliente.html', 'data-state-boundary="perfil-cliente"', 'data-profile-hydration-skeleton'],
     ['configuracoes.html', 'data-state-boundary="configuracoes"', 'data-settings-hydration-skeleton'],
-    ['tornar-profissional.html', 'data-state-boundary="tornar-profissional"', 'data-professional-onboarding-hydration-skeleton']
+    ['tornar-profissional.html', 'data-state-boundary="tornar-profissional"', 'data-professional-onboarding-hydration-skeleton'],
+    ['verificacao-profissional.html', 'data-state-boundary="verificacao-profissional"', 'data-professional-verification-hydration-skeleton']
   ];
 
   pages.forEach(([file, boundary, skeleton]) => {
@@ -92,7 +95,8 @@ function verifyNoDirectPageStorage() {
     'assets/js/pages/owner-profile-experience.js',
     'assets/js/pages/client-profile-experience.js',
     'assets/js/pages/configuracoes.js',
-    'assets/js/pages/tornar-profissional.js'
+    'assets/js/pages/tornar-profissional.js',
+    'assets/js/pages/verificacao-profissional.js'
   ];
   controllers.forEach((file) => {
     const source = read(file);

@@ -8,7 +8,7 @@ const pages = [
   'avaliacao-profissional.html','carteira.html','comunidade-interna.html','comunidade.html','configuracoes.html',
   'detalhe-anuncio.html','index.html','mensagens.html','meu-perfil.html','notificacoes.html','novidades.html',
   'orcamento.html','pagamento-profissional.html','pedidos.html','perfil-cliente.html','perfil-profissional.html',
-  'perfil.html','resultados.html','tornar-profissional.html'
+  'perfil.html','resultados.html','tornar-profissional.html','verificacao-profissional.html'
 ];
 const errors = [];
 const read = (file) => fs.readFileSync(path.join(ROOT, file), 'utf8');

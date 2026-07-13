@@ -82,7 +82,7 @@
       sidebarClass: 'profile',
       group: 'account',
       surfaces: ['desktop-sidebar', 'mobile-drawer', 'mobile-bottom'],
-      activePaths: ['/perfil.html', '/meu-perfil.html', '/perfil-cliente.html', '/perfil-profissional.html', '/tornar-profissional.html', '/anunciar-servico.html']
+      activePaths: ['/perfil.html', '/meu-perfil.html', '/perfil-cliente.html', '/perfil-profissional.html', '/tornar-profissional.html', '/verificacao-profissional.html', '/anunciar-servico.html']
     },
     {
       id: 'wallet',
@@ -146,6 +146,7 @@
     'configuracoes.html': { key: 'configuracoes', search: false, title: 'Configurações', compactSearchButton: true, hideSearchBar: true, hideLocation: true },
     'ajuda.html': { key: 'ajuda', search: false, title: 'Ajuda', compactSearchButton: true, hideSearchBar: true, hideLocation: true },
     'tornar-profissional.html': { key: 'tornar-profissional', search: false, title: 'Tornar-se profissional', compactSearchButton: true, hideSearchBar: true, hideLocation: true },
+    'verificacao-profissional.html': { key: 'verificacao-profissional', search: false, title: 'Verificação profissional', compactSearchButton: true, hideSearchBar: true, hideLocation: true },
     'anunciar-servico.html': { key: 'anunciar-servico', search: false, title: 'Anunciar serviço', compactSearchButton: true, hideSearchBar: true, hideLocation: true }
   };
 

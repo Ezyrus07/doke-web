@@ -38,6 +38,7 @@
     'anunciar-servico.html',
     'configuracoes.html',
     'tornar-profissional.html',
+    'verificacao-profissional.html',
     'pagamento-profissional.html',
     'avaliacao-profissional.html',
     'comunidade.html',

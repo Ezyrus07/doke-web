@@ -137,6 +137,9 @@ const expectations = {
   'tornar-profissional.html': [
     ['become-pro-submit-state__card', ['doke-modal-surface', 'doke-modal-surface--feedback']]
   ],
+  'verificacao-profissional.html': [
+    ['professional-verification-submit-state__card', ['doke-modal-surface', 'doke-modal-surface--feedback']]
+  ],
   'pedidos.html': [
     ['orders-sidepanel', ['doke-modal-surface', 'doke-modal-surface--detail']]
   ]

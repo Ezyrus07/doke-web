@@ -171,7 +171,7 @@ function createStorage() {
   assert(!experience.includes('service.submit'));
   assert(page.includes('experience?.complete?.'));
   assert(!page.includes('reopen'));
-  assert(!page.includes('under_review'));
+  assert(page.includes("verificationStatus === 'submitted' || verificationStatus === 'under_review'"));
   assert(!setupService.includes('startReview'));
   assert(!setupService.includes('approve('));
   assert(!setupService.includes('function reject('));

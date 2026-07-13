@@ -9,6 +9,7 @@ const HTML_FILES = [
   'carteira.html',
   'anunciar-servico.html',
   'tornar-profissional.html',
+  'verificacao-profissional.html',
   'orcamento.html',
 ];
 

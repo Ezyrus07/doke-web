@@ -40,6 +40,12 @@
       ready: '[data-professional-onboarding-hydration-ready]',
       splash: '[data-professional-onboarding-document-preloader]'
     }),
+    '/verificacao-profissional.html': Object.freeze({
+      boundary: '[data-state-boundary="verificacao-profissional"]',
+      skeleton: '[data-professional-verification-hydration-skeleton]',
+      ready: '[data-professional-verification-hydration-ready]',
+      splash: '[data-professional-verification-document-preloader]'
+    }),
     '/pedidos.html': Object.freeze({
       boundary: '[data-state-boundary="pedidos"]',
       skeleton: '[data-orders-hydration-skeleton], [data-orders-hydration-count-skeleton]',

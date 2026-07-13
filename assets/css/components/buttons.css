@@ -48,17 +48,15 @@
   text-decoration: none;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  transition: var(--doke-interaction-transition);
+  transition:
+    transform 160ms var(--doke-motion-ease-out),
+    box-shadow 160ms ease,
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
+    opacity 160ms ease;
 }
 
-:where(.doke-btn, .doke-button):where(:hover) {
-  transform: var(--doke-interaction-lift-control);
-  box-shadow: var(--doke-interaction-shadow-control);
-}
-
-:where(.doke-btn, .doke-button):where(:active) {
-  transform: var(--doke-interaction-press);
-}
 
 :where(.doke-btn, .doke-button):where(:focus-visible) {
   outline: 0;
@@ -140,13 +138,28 @@
   background: var(--control-bg-same-surface);
   color: var(--btn-text);
   cursor: pointer;
-  transition: var(--doke-interaction-transition);
+  transition:
+    transform 160ms var(--doke-motion-ease-out),
+    box-shadow 160ms ease,
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
+    opacity 160ms ease;
 }
 
 :where(.doke-icon-btn, .doke-action-button):where(:hover) {
-  transform: var(--doke-interaction-lift-control);
-  box-shadow: var(--doke-interaction-shadow-control);
   background: var(--color-surface);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  :where(.doke-btn, .doke-button, .doke-icon-btn, .doke-action-button):where(:hover) {
+    transform: var(--doke-interaction-lift-control);
+    box-shadow: var(--doke-interaction-shadow-control);
+  }
+}
+
+:where(.doke-btn, .doke-button, .doke-icon-btn, .doke-action-button):where(:active) {
+  transform: scale(0.97);
 }
 
 :where(.doke-icon-btn, .doke-action-button):where(:focus-visible) {
@@ -203,7 +216,7 @@
   box-shadow: none;
 }
 
-:where(.doke-btn--link, .doke-button--link):where(:hover) {
+:where(.doke-btn--link, .doke-button--link):where(:hover, :active) {
   transform: none;
   box-shadow: none;
 }
@@ -212,6 +225,20 @@
   border-color: transparent;
   background: transparent;
   box-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :where(.doke-btn, .doke-button, .doke-icon-btn, .doke-action-button) {
+    transition:
+      background-color 160ms ease,
+      border-color 160ms ease,
+      color 160ms ease,
+      opacity 160ms ease;
+  }
+
+  :where(.doke-btn, .doke-button, .doke-icon-btn, .doke-action-button):where(:hover, :active) {
+    transform: none;
+  }
 }
 
 :where(.doke-segment-button, .doke-choice-button) {

@@ -1,0 +1,374 @@
+/* Doke Professional Identity Verification Service
+   Responsibility: validate, submit, review and activate professional identity verification. */
+(function () {
+  'use strict';
+
+  var Doke = window.Doke || (window.Doke = {});
+  var services = Doke.services || (Doke.services = {});
+
+  var STATUS_PRESENTATION = Object.freeze({
+    not_started: Object.freeze({ label: 'Não iniciada', title: 'Complete sua verificação', description: 'Envie seus dados e documentos para liberar as funções profissionais.' }),
+    submitted: Object.freeze({ label: 'Enviada', title: 'Verificação enviada', description: 'Recebemos seus dados. Eles serão encaminhados para análise.' }),
+    under_review: Object.freeze({ label: 'Em análise', title: 'Identidade em análise', description: 'A equipe está verificando os dados e documentos enviados.' }),
+    verified: Object.freeze({ label: 'Verificada', title: 'Identidade verificada', description: 'Seu perfil profissional foi ativado e as permissões profissionais foram liberadas.' }),
+    rejected: Object.freeze({ label: 'Ajustes necessários', title: 'Corrija sua verificação', description: 'Revise os dados indicados e envie novamente.' })
+  });
+
+  function repository() {
+    return Doke.repositories && Doke.repositories.professionalIdentityVerifications || null;
+  }
+
+  function profileRepository() {
+    return Doke.repositories && Doke.repositories.professionalProfiles || null;
+  }
+
+  function usersRepository() {
+    return Doke.repositories && Doke.repositories.users || null;
+  }
+
+  function authService() {
+    return window.DokeAuth && window.DokeAuth.service || null;
+  }
+
+  function currentUser() {
+    return Doke.session && typeof Doke.session.getCurrentUser === 'function'
+      ? Doke.session.getCurrentUser()
+      : null;
+  }
+
+  function usesApiProvider() {
+    var auth = authService();
+    return Boolean(auth && typeof auth.getActiveAuthProvider === 'function' && auth.getActiveAuthProvider() === 'api');
+  }
+
+  function assertLocalProvider() {
+    if (usesApiProvider()) throw new Error('A verificação profissional ainda não está conectada ao provider API.');
+  }
+
+  function normalizeText(value, maxLength) {
+    var text = String(value == null ? '' : value).trim().replace(/\s+/g, ' ');
+    return maxLength ? text.slice(0, maxLength) : text;
+  }
+
+  function digits(value) {
+    return String(value || '').replace(/\D/g, '');
+  }
+
+  function normalizeBoolean(value) {
+    return value === true || value === 'true' || value === 'on' || value === 1 || value === '1';
+  }
+
+  function normalizeFile(value) {
+    if (!value || typeof value !== 'object') return null;
+    var fileName = normalizeText(value.fileName || value.name, 180);
+    if (!fileName) return null;
+    return { fileName: fileName, size: Math.max(0, Number(value.size || 0) || 0), type: normalizeText(value.type, 100) };
+  }
+
+  function normalizePayload(fields) {
+    fields = fields || {};
+    var verificationType = String(fields.verificationType || 'individual').toLowerCase() === 'business' ? 'business' : 'individual';
+    return {
+      verificationType: verificationType,
+      legalName: normalizeText(fields.legalName, 120),
+      taxId: digits(fields.taxId).slice(0, verificationType === 'business' ? 14 : 11),
+      birthDate: normalizeText(fields.birthDate, 10),
+      representativeName: normalizeText(fields.representativeName, 120),
+      postalCode: digits(fields.postalCode).slice(0, 8),
+      street: normalizeText(fields.street, 120),
+      number: normalizeText(fields.number, 20),
+      complement: normalizeText(fields.complement, 80),
+      district: normalizeText(fields.district, 80),
+      city: normalizeText(fields.city, 80),
+      state: normalizeText(fields.state, 2).toUpperCase(),
+      documentType: normalizeText(fields.documentType, 40),
+      documentFront: normalizeFile(fields.documentFront),
+      documentBack: normalizeFile(fields.documentBack),
+      selfieDocument: normalizeFile(fields.selfieDocument),
+      proofOfAddress: normalizeFile(fields.proofOfAddress),
+      businessDocument: normalizeFile(fields.businessDocument),
+      truthConfirmed: normalizeBoolean(fields.truthConfirmed),
+      consentAccepted: normalizeBoolean(fields.consentAccepted)
+    };
+  }
+
+  function validationError(message, field) {
+    var error = new Error(message);
+    error.code = 'PROFESSIONAL_IDENTITY_VERIFICATION_VALIDATION';
+    error.field = field || '';
+    return error;
+  }
+
+  function isAdult(dateValue) {
+    var date = new Date(String(dateValue || '') + 'T12:00:00');
+    if (Number.isNaN(date.getTime())) return false;
+    var today = new Date();
+    var age = today.getFullYear() - date.getFullYear();
+    var month = today.getMonth() - date.getMonth();
+    if (month < 0 || (month === 0 && today.getDate() < date.getDate())) age -= 1;
+    return age >= 18;
+  }
+
+  function validateFile(file, field, label, allowedTypes) {
+    if (!file || !file.fileName) throw validationError('Adicione ' + label + '.', field);
+    var type = String(file.type || '').toLowerCase();
+    var name = String(file.fileName || '').toLowerCase();
+    var allowed = allowedTypes.some(function (item) { return type === item || name.endsWith(item); });
+    if (!allowed) throw validationError('Use um arquivo JPG, PNG ou PDF em ' + label + '.', field);
+    if (Number(file.size || 0) > 10 * 1024 * 1024) throw validationError('O arquivo de ' + label + ' deve ter no máximo 10 MB.', field);
+  }
+
+  function validateStep(payload, step) {
+    payload = normalizePayload(payload);
+    var number = Number(step || 1);
+
+    if (number === 1) {
+      if (!payload.legalName || payload.legalName.length < 3) throw validationError(payload.verificationType === 'business' ? 'Informe a razão social.' : 'Informe seu nome legal.', 'legalName');
+      if (payload.verificationType === 'individual') {
+        if (payload.taxId.length !== 11) throw validationError('Informe um CPF válido com 11 dígitos.', 'taxId');
+        if (!payload.birthDate || !isAdult(payload.birthDate)) throw validationError('A verificação profissional exige idade mínima de 18 anos.', 'birthDate');
+      } else {
+        if (payload.taxId.length !== 14) throw validationError('Informe um CNPJ válido com 14 dígitos.', 'taxId');
+        if (payload.representativeName.length < 3) throw validationError('Informe o nome do responsável legal.', 'representativeName');
+      }
+      if (payload.postalCode.length !== 8) throw validationError('Informe um CEP válido com 8 dígitos.', 'postalCode');
+      if (payload.street.length < 3) throw validationError('Informe o endereço.', 'street');
+      if (!payload.number) throw validationError('Informe o número do endereço.', 'number');
+      if (payload.city.length < 2) throw validationError('Informe a cidade.', 'city');
+      if (payload.state.length !== 2) throw validationError('Informe a UF com 2 letras.', 'state');
+    }
+
+    if (number === 2) {
+      if (!payload.documentType) throw validationError('Selecione o tipo de documento.', 'documentType');
+      validateFile(payload.documentFront, 'documentFront', 'a frente do documento', ['image/jpeg', 'image/png', 'application/pdf', '.jpg', '.jpeg', '.png', '.pdf']);
+      validateFile(payload.documentBack, 'documentBack', 'o verso do documento', ['image/jpeg', 'image/png', 'application/pdf', '.jpg', '.jpeg', '.png', '.pdf']);
+      validateFile(payload.selfieDocument, 'selfieDocument', 'a selfie de verificação', ['image/jpeg', 'image/png', '.jpg', '.jpeg', '.png']);
+      validateFile(payload.proofOfAddress, 'proofOfAddress', 'o comprovante de endereço', ['image/jpeg', 'image/png', 'application/pdf', '.jpg', '.jpeg', '.png', '.pdf']);
+      if (payload.verificationType === 'business') {
+        validateFile(payload.businessDocument, 'businessDocument', 'o documento empresarial', ['image/jpeg', 'image/png', 'application/pdf', '.jpg', '.jpeg', '.png', '.pdf']);
+      }
+    }
+
+    if (number === 3) {
+      if (!payload.truthConfirmed) throw validationError('Confirme que os dados e documentos são autênticos.', 'truthConfirmed');
+      if (!payload.consentAccepted) throw validationError('Autorize o processamento dos dados para verificação.', 'consentAccepted');
+    }
+
+    return payload;
+  }
+
+  function validateAll(payload) {
+    var normalized = normalizePayload(payload);
+    [1, 2, 3].forEach(function (step) { validateStep(normalized, step); });
+    return normalized;
+  }
+
+  function requireOwner() {
+    var user = currentUser();
+    if (!user || !user.id) throw new Error('Entre na sua conta para continuar.');
+    var role = String(user.role || user.type || 'client').toLowerCase();
+    if (['support', 'admin', 'moderator'].indexOf(role) >= 0) throw new Error('Contas administrativas não podem enviar verificação profissional.');
+    return user;
+  }
+
+  function requireReviewer() {
+    var user = currentUser();
+    var role = String(user && (user.role || user.type) || '').toLowerCase();
+    if (!user || ['support', 'admin'].indexOf(role) === -1) throw new Error('Somente suporte ou administração pode analisar verificações.');
+    return user;
+  }
+
+  function syncProfileVerificationStatus(profileId, verificationStatus) {
+    var repo = profileRepository();
+    if (!repo || typeof repo.setVerificationStatus !== 'function') {
+      return Promise.reject(new Error('Sincronização do status de verificação indisponível.'));
+    }
+    return repo.setVerificationStatus(profileId, verificationStatus);
+  }
+
+  function requirePendingProfile(userId) {
+    var repo = profileRepository();
+    if (!repo) return Promise.reject(new Error('Perfil profissional indisponível.'));
+    return repo.getByUserId(userId).then(function (profile) {
+      if (!profile) throw new Error('Crie seu perfil profissional antes de iniciar a verificação.');
+      if (profile.status === 'active') return profile;
+      if (profile.status !== 'pending_verification') throw new Error('Seu perfil profissional não está pronto para verificação.');
+      return profile;
+    });
+  }
+
+  function getCurrentVerification() {
+    assertLocalProvider();
+    var user = currentUser();
+    var repo = repository();
+    if (!user || !user.id || !repo) return Promise.resolve(null);
+    return repo.getByUserId(user.id);
+  }
+
+  function getContext() {
+    assertLocalProvider();
+    var user = requireOwner();
+    return Promise.all([requirePendingProfile(user.id), getCurrentVerification()]).then(function (items) {
+      return { user: user, professionalProfile: items[0], verification: items[1] };
+    });
+  }
+
+  function saveDraft(draft) {
+    assertLocalProvider();
+    var user = requireOwner();
+    var repo = repository();
+    if (!repo) return Promise.reject(new Error('Persistência da verificação indisponível.'));
+    draft = draft || {};
+    return requirePendingProfile(user.id).then(function (profile) {
+      return repo.saveDraft(user.id, profile.id, {
+        currentStep: draft.currentStep || draft.step || 1,
+        payload: normalizePayload(draft.payload || draft.fields || {})
+      });
+    }).then(function (verification) {
+      return syncProfileVerificationStatus(verification.professionalProfileId, 'not_started').then(function () {
+        window.dispatchEvent(new CustomEvent('doke:professional-verification-draft-saved', { detail: { verification: verification } }));
+        return verification;
+      });
+    });
+  }
+
+  function submit(draft) {
+    assertLocalProvider();
+    var user = requireOwner();
+    var repo = repository();
+    if (!repo) return Promise.reject(new Error('Persistência da verificação indisponível.'));
+    draft = draft || {};
+    var payload = validateAll(draft.payload || draft.fields || {});
+    return requirePendingProfile(user.id).then(function (profile) {
+      return repo.submit(user.id, profile.id, { payload: payload });
+    }).then(function (verification) {
+      return syncProfileVerificationStatus(verification.professionalProfileId, 'submitted').then(function () {
+        window.dispatchEvent(new CustomEvent('doke:professional-verification-submitted', { detail: { verification: verification } }));
+        return verification;
+      });
+    });
+  }
+
+  function startReview(verificationId) {
+    assertLocalProvider();
+    var reviewer = requireReviewer();
+    var repo = repository();
+    if (!repo) return Promise.reject(new Error('Persistência da verificação indisponível.'));
+    return repo.transition(verificationId, 'under_review', { reviewerId: reviewer.id }).then(function (verification) {
+      return syncProfileVerificationStatus(verification.professionalProfileId, 'under_review').then(function () { return verification; });
+    });
+  }
+
+  function activateProfessional(verification) {
+    var profiles = profileRepository();
+    var users = usersRepository();
+    if (!profiles || !users) return Promise.reject(new Error('Ativação profissional indisponível.'));
+    return syncProfileVerificationStatus(verification.professionalProfileId, 'verified').then(function () {
+      return profiles.transition(verification.professionalProfileId, 'active');
+    }).then(function (professionalProfile) {
+      return users.updateCurrentUser(verification.userId, {
+        role: 'professional',
+        type: 'professional',
+        professionalProfileId: professionalProfile.id,
+        publicProfileUrl: 'perfil.html',
+        ownerProfileUrl: 'perfil-profissional.html'
+      }).then(function (user) {
+        var sessionUser = currentUser();
+        if (sessionUser && String(sessionUser.id) === String(user.id) && Doke.session && typeof Doke.session.setCurrentUser === 'function') {
+          var session = Doke.session.getSession && Doke.session.getSession();
+          Doke.session.setCurrentUser(user, {
+            provider: session && session.provider || 'mock',
+            token: session && session.token || '',
+            refreshToken: session && session.refreshToken || '',
+            remember: session ? session.remember !== false : true,
+            sessionStatus: session && session.sessionStatus || 'active',
+            expiresAt: session && session.expiresAt || ''
+          });
+        }
+        return { professionalProfile: professionalProfile, user: user };
+      });
+    });
+  }
+
+  function approve(verificationId) {
+    assertLocalProvider();
+    var reviewer = requireReviewer();
+    var repo = repository();
+    if (!repo) return Promise.reject(new Error('Persistência da verificação indisponível.'));
+    return repo.getById(verificationId).then(function (current) {
+      if (!current) throw new Error('Verificação de identidade não encontrada.');
+      if (current.status === 'verified') return current;
+      var ensureReview = current.status === 'submitted'
+        ? repo.transition(current.id, 'under_review', { reviewerId: reviewer.id })
+        : Promise.resolve(current);
+      return ensureReview.then(function (reviewing) {
+        return repo.transition(reviewing.id, 'verified', { reviewerId: reviewer.id });
+      });
+    }).then(function (verification) {
+      return activateProfessional(verification).then(function (activation) {
+        window.dispatchEvent(new CustomEvent('doke:professional-verification-approved', {
+          detail: { verification: verification, professionalProfile: activation.professionalProfile, user: activation.user }
+        }));
+        return verification;
+      });
+    });
+  }
+
+  function reject(verificationId, reason) {
+    assertLocalProvider();
+    var reviewer = requireReviewer();
+    var repo = repository();
+    var message = normalizeText(reason, 500);
+    if (message.length < 10) return Promise.reject(validationError('Informe um motivo de rejeição com pelo menos 10 caracteres.', 'rejectionReason'));
+    if (!repo) return Promise.reject(new Error('Persistência da verificação indisponível.'));
+    return repo.getById(verificationId).then(function (current) {
+      if (!current) throw new Error('Verificação de identidade não encontrada.');
+      if (current.status === 'rejected') return current;
+      var ensureReview = current.status === 'submitted'
+        ? repo.transition(current.id, 'under_review', { reviewerId: reviewer.id })
+        : Promise.resolve(current);
+      return ensureReview.then(function (reviewing) {
+        return repo.transition(reviewing.id, 'rejected', { reviewerId: reviewer.id, reason: message });
+      });
+    }).then(function (verification) {
+      return syncProfileVerificationStatus(verification.professionalProfileId, 'rejected').then(function () {
+        window.dispatchEvent(new CustomEvent('doke:professional-verification-rejected', { detail: { verification: verification } }));
+        return verification;
+      });
+    });
+  }
+
+  function reopenRejected() {
+    assertLocalProvider();
+    var user = requireOwner();
+    var repo = repository();
+    if (!repo) return Promise.reject(new Error('Persistência da verificação indisponível.'));
+    return repo.getByUserId(user.id).then(function (current) {
+      if (!current) return null;
+      if (current.status !== 'rejected') return current;
+      return repo.transition(current.id, 'not_started').then(function (verification) {
+        return syncProfileVerificationStatus(verification.professionalProfileId, 'not_started').then(function () { return verification; });
+      });
+    });
+  }
+
+  function getStatusPresentation(status) {
+    return STATUS_PRESENTATION[status] || STATUS_PRESENTATION.not_started;
+  }
+
+  services.professionalIdentityVerification = Object.freeze({
+    statuses: repository() && repository().statuses || Object.freeze({}),
+    getCurrentVerification: getCurrentVerification,
+    getContext: getContext,
+    saveDraft: saveDraft,
+    submit: submit,
+    startReview: startReview,
+    approve: approve,
+    reject: reject,
+    reopenRejected: reopenRejected,
+    normalizePayload: normalizePayload,
+    validateStep: validateStep,
+    validateAll: validateAll,
+    getStatusPresentation: getStatusPresentation
+  });
+})();

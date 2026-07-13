@@ -205,3 +205,95 @@
     border-top: 0;
   }
 }
+
+
+/* 2026-07-13 — canonical phone rail and one-column "Mais anúncios" contract.
+   Root cause: late mobile component rules were reintroducing full-bleed section axes
+   and a two-column internal card anatomy. This block owns only home mobile composition;
+   ad-card.css continues to own the card anatomy itself. */
+@media (max-width: 560px) {
+  html.home-index-root body.home-index-shell {
+    --home-mobile-content-axis: var(--doke-mobile-shell-edge, var(--doke-mobile-page-gutter, 18px));
+  }
+
+  html.home-index-root body.home-index-shell .page__content-inner.shell-home__workspace {
+    width: 100%;
+    max-width: 100%;
+    margin-inline: 0;
+    padding-inline: 0;
+    box-sizing: border-box;
+  }
+
+  html.home-index-root body.home-index-shell .page__content-inner.shell-home__workspace > :is(
+    .home-search-hero,
+    .home-catégories,
+    .featured-services,
+    .short-videos,
+    .home-publications,
+    .more-services,
+    .professional-showcase,
+    .home-order-feedback
+  ) {
+    width: 100%;
+    max-width: 100%;
+    margin-inline: 0;
+    padding-inline: var(--home-mobile-content-axis);
+    box-sizing: border-box;
+  }
+
+  html.home-index-root body.home-index-shell :is(
+    .featured-services,
+    .short-videos,
+    .home-publications,
+    .more-services,
+    .professional-showcase
+  ) > .home-section-header,
+  html.home-index-root body.home-index-shell :is(
+    .featured-services,
+    .short-videos,
+    .home-publications,
+    .more-services,
+    .professional-showcase
+  ) > .section-heading {
+    width: 100%;
+    max-width: 100%;
+    margin-inline: 0;
+    padding-inline: 0;
+    box-sizing: border-box;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .more-services__controls,
+  html.home-index-root body.home-index-shell section.more-services .more-services__tabs-rail,
+  html.home-index-root body.home-index-shell section.more-services .more-services__tabs-track,
+  html.home-index-root body.home-index-shell section.more-services .more-services__cards-rail,
+  html.home-index-root body.home-index-shell section.more-services [data-more-services-grid] {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin-inline: 0;
+    box-sizing: border-box;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services [data-more-services-grid] {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-auto-flow: row;
+    gap: 16px;
+    padding: 0;
+    overflow: visible;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services [data-more-services-grid] > .doke-ad-card {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    margin: 0;
+    justify-self: stretch;
+  }
+}
+
+@media (max-width: 380px) {
+  html.home-index-root body.home-index-shell {
+    --home-mobile-content-axis: var(--doke-mobile-shell-edge, var(--doke-mobile-page-gutter, 14px));
+  }
+}

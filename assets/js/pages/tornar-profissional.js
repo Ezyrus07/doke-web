@@ -27,6 +27,7 @@
     const statusTitle = root.querySelector('[data-professional-profile-status-title]');
     const statusDescription = root.querySelector('[data-professional-profile-status-description]');
     const statusDate = root.querySelector('[data-professional-profile-status-date]');
+    const verificationLink = root.querySelector('[data-professional-verification-link]');
     const feedback = root.querySelector('[data-professional-profile-feedback]');
     const panels = [...root.querySelectorAll('[data-step-panel]')];
     const stepCurrent = root.querySelector('[data-step-current]');
@@ -193,6 +194,15 @@
 
       if (formLayout) formLayout.hidden = !isEditable;
       if (statusCard) statusCard.hidden = isEditable;
+      if (verificationLink) {
+        verificationLink.hidden = status !== 'pending_verification';
+        const verificationStatus = String(currentProfile?.verificationStatus || 'not_started');
+        verificationLink.textContent = verificationStatus === 'rejected'
+          ? 'Corrigir verificação'
+          : (verificationStatus === 'submitted' || verificationStatus === 'under_review'
+            ? 'Acompanhar verificação'
+            : 'Iniciar verificação');
+      }
       if (isEditable) return;
 
       const presentation = experience?.getPresentation?.(status) || {};

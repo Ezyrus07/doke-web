@@ -945,3 +945,220 @@ body[data-page="configuracoes"].doke-settings-redesign .settings-pro-cta,
 body[data-page="configuracoes"].doke-settings-redesign .settings-pro-cta:where(:hover, :focus-within) {
   border-color: transparent;
 }
+
+
+/* Account settings convergence — comunidade-interna is the canonical settings shell.
+ * Responsibility: align account settings geometry, navigation density and surface
+ * hierarchy with the community administration workspace without duplicating domain
+ * form anatomy or changing mobile navigation behavior.
+ */
+body[data-page="configuracoes"].doke-settings-redesign {
+  --settings-menu-column: var(--doke-settings-sidebar-width, 382px);
+  --settings-workspace-height: clamp(640px, calc(100dvh - 40px), 780px);
+  --settings-shell-border: var(--doke-settings-border-strong, rgba(24, 75, 118, 0.18));
+  --settings-shell-surface: var(--doke-settings-surface, #fff);
+  --settings-shell-muted: var(--doke-settings-surface-muted, #f5f9fd);
+  --settings-shell-primary-soft: var(--doke-settings-primary-soft, #eaf3fa);
+  --settings-shell-primary: var(--doke-settings-primary, #245f92);
+  --settings-shell-primary-strong: var(--doke-settings-primary-strong, #174f7d);
+}
+
+@media (min-width: 1181px) {
+  body[data-page="configuracoes"].doke-settings-redesign .settings-main {
+    padding: 20px;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-layout {
+    width: min(100%, var(--doke-page-rail, 1360px));
+    max-width: var(--doke-page-rail, 1360px);
+    height: var(--settings-workspace-height);
+    grid-template-columns: var(--settings-menu-column) minmax(0, 1fr);
+    border: 1px solid var(--settings-shell-border);
+    border-radius: var(--doke-settings-radius-lg, 22px);
+    background: var(--settings-shell-surface);
+    box-shadow: var(--doke-elevation-surface-hover);
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar {
+    padding: 32px 28px;
+    border-right: 1px solid var(--settings-shell-border);
+    background: var(--settings-shell-surface);
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(31, 93, 145, 0.24) transparent;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar::-webkit-scrollbar {
+    display: initial;
+    width: 6px;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: rgba(31, 93, 145, 0.24);
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-content,
+  body[data-page="configuracoes"].doke-settings-redesign .settings-card {
+    background: var(--settings-shell-surface);
+  }
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar-brand {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 14px;
+  padding-inline: 2px;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar__title {
+  margin: 0;
+  color: var(--settings-shell-primary);
+  font-size: clamp(1.35rem, 1.9vw, 1.8rem);
+  line-height: 1.05;
+  font-weight: 900;
+  letter-spacing: -0.035em;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar-search {
+  display: block;
+  position: relative;
+  min-height: 52px;
+  margin: 0 0 14px;
+  padding: 4px 6px;
+  border: 1px solid var(--settings-border, rgba(24, 75, 118, 0.12));
+  border-radius: var(--doke-settings-radius, 16px);
+  background: #fff;
+  box-shadow: var(--doke-elevation-surface);
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-search-icon {
+  position: absolute;
+  z-index: 2;
+  inset-block: 0;
+  left: 20px;
+  width: 20px;
+  height: auto;
+  min-width: 0;
+  min-height: 0;
+  border-radius: 0;
+  color: var(--settings-shell-primary);
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar-search__input {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 14px 0 44px;
+  border: 1px solid transparent;
+  border-radius: calc(var(--doke-settings-radius, 16px) - 4px);
+  background: transparent;
+  color: var(--settings-text, #0b3158);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar-search__input:is(:hover, :focus, :focus-visible) {
+  border: 1px solid rgba(31, 93, 145, 0.24);
+  outline: 0;
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(31, 93, 145, 0.08);
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar__section + .settings-sidebar__section {
+  margin-top: 20px;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar__label {
+  margin: 0 0 6px;
+  padding-inline: 4px;
+  color: #557298;
+  font-size: 0.74rem;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar__item {
+  min-height: 48px;
+  gap: 12px;
+  padding: 0 14px;
+  border: 1px solid transparent;
+  border-radius: var(--doke-settings-radius-sm, 13px);
+  color: #557298;
+  font-size: 0.92rem;
+  font-weight: 700;
+  box-shadow: none;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar__item:hover {
+  border-color: transparent;
+  background: var(--settings-shell-muted);
+  color: var(--settings-shell-primary);
+  transform: translateY(-1px);
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar__item.is-active {
+  border-color: var(--border-color-active, rgba(36, 95, 146, 0.2));
+  background: var(--settings-shell-primary-soft);
+  color: var(--settings-shell-primary-strong);
+  box-shadow: none;
+  transform: none;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-card__header {
+  min-height: var(--doke-settings-header-min-height, 104px);
+  padding: 24px var(--doke-settings-gutter, 44px);
+  background: var(--settings-shell-surface);
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-card__header h1 {
+  font-size: clamp(1.08rem, 1.4vw, 1.35rem);
+  line-height: 1.15;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-card__body {
+  padding: 32px var(--doke-settings-gutter, 44px);
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-card__footer {
+  min-height: 76px;
+  padding: 16px var(--doke-settings-gutter, 44px);
+  background: linear-gradient(180deg, #f8fbfe 0%, #f4f9fd 100%);
+}
+
+
+/* Final account/community visual parity.
+ * Keep only account-specific content differences; shell metrics are shared.
+ */
+body[data-page="configuracoes"].doke-settings-redesign {
+  --settings-menu-column: var(--doke-settings-sidebar-width, clamp(340px, 27vw, 400px));
+}
+
+@media (min-width: 1181px) {
+  body[data-page="configuracoes"].doke-settings-redesign .settings-layout {
+    grid-template-columns: var(--doke-settings-sidebar-width, clamp(340px, 27vw, 400px)) minmax(0, 1fr);
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar {
+    padding: var(--doke-settings-sidebar-padding, 32px 28px);
+  }
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar-search {
+  min-height: var(--doke-settings-search-height, 52px);
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar__item {
+  min-height: var(--doke-settings-navigation-row-height, 48px);
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-card__header {
+  min-height: var(--doke-settings-header-min-height, 104px);
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-card__footer {
+  min-height: var(--doke-settings-footer-min-height, 76px);
+}

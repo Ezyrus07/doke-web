@@ -16,6 +16,10 @@ const targets = [
     containers: ['become-pro-actions']
   },
   {
+    file: 'verificacao-profissional.html',
+    containers: ['professional-verification-actions']
+  },
+  {
     file: 'anunciar-servico.html',
     containers: ['post-service-actions']
   },
@@ -66,7 +70,7 @@ for (const target of targets) {
     }
   }
 
-  const primaryLabels = ['Continuar', 'Salvar endereço', 'Enviar solicitação', 'Entendi', 'Confirmar pagamento', 'Finalizar pedido'];
+  const primaryLabels = ['Continuar', 'Salvar endereço', 'Enviar solicitação', 'Enviar para análise', 'Entendi', 'Confirmar pagamento', 'Finalizar pedido'];
   const secondaryLabels = ['Cancelar', 'Fechar', 'Retornar', 'Voltar ao perfil', 'Abrir conversa'];
 
   for (const label of primaryLabels) {

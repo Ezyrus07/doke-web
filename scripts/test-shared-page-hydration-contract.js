@@ -49,6 +49,14 @@ const routes = [
     skeleton: 'data-professional-onboarding-hydration-skeleton',
     ready: 'data-professional-onboarding-hydration-ready',
     controller: 'assets/js/pages/tornar-profissional.js'
+  },
+  {
+    path: '/verificacao-profissional.html',
+    file: 'verificacao-profissional.html',
+    boundary: 'verificacao-profissional',
+    skeleton: 'data-professional-verification-hydration-skeleton',
+    ready: 'data-professional-verification-hydration-ready',
+    controller: 'assets/js/pages/verificacao-profissional.js'
   }
 ];
 
@@ -89,7 +97,7 @@ assert(loadingCss.includes('.doke-page-hydration-skeleton'), 'shared loading CSS
 assert(loadingCss.includes('prefers-reduced-motion'), 'shared loading CSS: reduced-motion contract missing');
 assert(!loadingCss.includes('!important'), 'shared loading CSS: !important is forbidden');
 
-['index.html', 'meu-perfil.html', 'perfil-cliente.html', 'configuracoes.html', 'tornar-profissional.html'].forEach((file) => {
+['index.html', 'meu-perfil.html', 'perfil-cliente.html', 'configuracoes.html', 'tornar-profissional.html', 'verificacao-profissional.html'].forEach((file) => {
   const html = read(file);
   assert(!/style\s*=/.test(html), `${file}: inline style introduced`);
 });

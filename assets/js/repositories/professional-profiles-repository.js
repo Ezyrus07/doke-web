@@ -16,6 +16,8 @@
     SUSPENDED: 'suspended'
   });
 
+  var VERIFICATION_STATUSES = Object.freeze(['not_started', 'submitted', 'under_review', 'verified', 'rejected']);
+
   var TRANSITIONS = Object.freeze({
     draft: Object.freeze(['pending_verification']),
     pending_verification: Object.freeze(['active', 'suspended']),
@@ -24,6 +26,7 @@
   });
 
   var legacyMigrationChecked = false;
+  var completionInFlight = new Map();
 
   function clone(value) {
     if (value == null) return value;
@@ -71,6 +74,12 @@
     };
   }
 
+  function normalizeVerificationStatus(value, profileStatus) {
+    var status = String(value || '').trim().toLowerCase();
+    if (VERIFICATION_STATUSES.indexOf(status) >= 0) return status;
+    return profileStatus === STATUSES.PENDING_VERIFICATION ? 'not_started' : (profileStatus === STATUSES.ACTIVE ? 'verified' : '');
+  }
+
   function normalizeStatus(value) {
     var status = String(value || '').trim().toLowerCase();
     return Object.values(STATUSES).indexOf(status) >= 0 ? status : STATUSES.DRAFT;
@@ -97,7 +106,7 @@
       updatedAt: profile.updatedAt || now,
       savedAt: profile.savedAt || profile.updatedAt || now,
       completedAt: profile.completedAt || profile.submittedAt || '',
-      verificationStatus: normalizeText(profile.verificationStatus || (status === STATUSES.PENDING_VERIFICATION ? 'not_started' : ''), 40)
+      verificationStatus: normalizeVerificationStatus(profile.verificationStatus, status)
     };
   }
 
@@ -222,8 +231,9 @@
     var id = normalizeText(userId);
     if (!id) return Promise.reject(new Error('Usuário não identificado para criar o perfil profissional.'));
     setup = setup || {};
+    if (completionInFlight.has(id)) return completionInFlight.get(id);
 
-    return getByUserId(id).then(function (current) {
+    var operation = getByUserId(id).then(function (current) {
       if (current && current.status !== STATUSES.DRAFT) return current;
       var now = new Date().toISOString();
       return persist(Object.assign({}, current || {}, {
@@ -237,6 +247,27 @@
         savedAt: now,
         completedAt: current && current.completedAt || now,
         verificationStatus: 'not_started'
+      }));
+    }).finally(function () {
+      completionInFlight.delete(id);
+    });
+
+    completionInFlight.set(id, operation);
+    return operation;
+  }
+
+
+  function setVerificationStatus(profileId, verificationStatus) {
+    var next = String(verificationStatus || '').trim().toLowerCase();
+    if (VERIFICATION_STATUSES.indexOf(next) === -1) {
+      return Promise.reject(new Error('Status de verificação profissional inválido.'));
+    }
+    return getById(profileId).then(function (current) {
+      if (!current) throw new Error('Perfil profissional não encontrado.');
+      if (current.verificationStatus === next) return current;
+      return persist(Object.assign({}, current, {
+        verificationStatus: next,
+        updatedAt: new Date().toISOString()
       }));
     });
   }
@@ -257,6 +288,7 @@
     legacyApplicationKey: LEGACY_APPLICATION_KEY,
     statuses: STATUSES,
     transitions: TRANSITIONS,
+    verificationStatuses: VERIFICATION_STATUSES,
     normalize: normalizeProfile,
     normalizePayload: normalizePayload,
     list: list,
@@ -264,6 +296,7 @@
     getByUserId: getByUserId,
     saveDraft: saveDraft,
     completeSetup: completeSetup,
+    setVerificationStatus: setVerificationStatus,
     transition: transition
   });
 })();

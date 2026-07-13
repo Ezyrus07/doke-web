@@ -89,6 +89,10 @@ const expectations = {
     ['become-pro-submit-state', ['doke-overlay']],
     ['become-pro-submit-state__card', ['doke-overlay__surface']],
   ],
+  'verificacao-profissional.html': [
+    ['professional-verification-submit-state', ['doke-overlay']],
+    ['professional-verification-submit-state__card', ['doke-overlay__surface']],
+  ],
   'avaliacao-profissional.html': [
     ['pro-review-success', ['doke-overlay']],
     ['pro-review-success__backdrop', ['doke-overlay__backdrop']],

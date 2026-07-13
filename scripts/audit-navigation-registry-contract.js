@@ -50,6 +50,7 @@ const expectedRoutes = new Map([
   ['/perfil-cliente.html', 'profile'],
   ['/perfil-profissional.html', 'profile'],
   ['/tornar-profissional.html', 'profile'],
+  ['/verificacao-profissional.html', 'profile'],
   ['/anunciar-servico.html', 'profile'],
   ['/carteira.html', 'wallet'],
   ['/configuracoes.html', 'settings'],

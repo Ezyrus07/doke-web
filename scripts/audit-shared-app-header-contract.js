@@ -31,6 +31,7 @@ const pageContracts = {
   'pedidos.html': { variant: 'contextual', context: true },
   'resultados.html': { variant: 'standard', context: false },
   'tornar-profissional.html': { variant: 'standard', context: false },
+  'verificacao-profissional.html': { variant: 'standard', context: false },
 };
 const failures = [];
 const approvedWorkspaceExceptions = {
