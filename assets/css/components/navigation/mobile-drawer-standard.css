@@ -22,8 +22,16 @@
   position: fixed;
   inset: 0;
   z-index: var(--doke-z-drawer, 1600);
-  display: none;
+  display: block;
   pointer-events: none;
+}
+
+.home-mobile-drawer[hidden],
+[data-mobile-home-drawer][hidden],
+[data-mobile-drawer][hidden],
+.mobile-drawer[hidden],
+.app-mobile-drawer[hidden] {
+  display: none;
 }
 
 .home-mobile-drawer.is-open,
@@ -81,7 +89,9 @@ body.doke-mobile-drawer-open {
   box-shadow: 0 24px 56px rgba(15, 23, 42, 0.18), 0 8px 20px rgba(15, 23, 42, 0.08);
   transform: translate3d(-112%, 0, 0);
   opacity: 0.96;
-  transition: transform 260ms cubic-bezier(.2,.8,.2,1), opacity 220ms ease;
+  transition:
+    transform 260ms cubic-bezier(0.32, 0.72, 0, 1),
+    opacity 220ms cubic-bezier(0.23, 1, 0.32, 1);
   overscroll-behavior: contain;
 }
 
@@ -90,6 +100,45 @@ body.doke-mobile-drawer-open {
 .mobile-drawer.is-open .mobile-drawer__panel {
   transform: translate3d(0, 0, 0);
   opacity: 1;
+}
+
+@starting-style {
+  .home-mobile-drawer.is-open .home-mobile-drawer__backdrop,
+  [data-mobile-drawer-authority="canonical"].is-open .home-mobile-drawer__backdrop,
+  .mobile-drawer.is-open .mobile-drawer__backdrop {
+    opacity: 0;
+  }
+
+  .home-mobile-drawer.is-open .home-mobile-drawer__panel,
+  [data-mobile-drawer-authority="canonical"].is-open .home-mobile-drawer__panel,
+  .mobile-drawer.is-open .mobile-drawer__panel {
+    transform: translate3d(-112%, 0, 0);
+    opacity: 0.96;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-mobile-drawer__panel,
+  .mobile-drawer__panel,
+  [data-mobile-drawer-panel] {
+    transform: none;
+    opacity: 0;
+    transition: opacity 160ms ease;
+  }
+
+  .home-mobile-drawer.is-open .home-mobile-drawer__panel,
+  [data-mobile-drawer-authority="canonical"].is-open .home-mobile-drawer__panel,
+  .mobile-drawer.is-open .mobile-drawer__panel {
+    transform: none;
+    opacity: 1;
+  }
+
+  .home-mobile-drawer__backdrop,
+  .mobile-drawer__backdrop,
+  [data-mobile-drawer-backdrop],
+  [data-mobile-home-menu-close].home-mobile-drawer__backdrop {
+    transition: opacity 160ms ease;
+  }
 }
 
 /* Canonical skin. Page CSS must not restyle this drawer anatomy. */

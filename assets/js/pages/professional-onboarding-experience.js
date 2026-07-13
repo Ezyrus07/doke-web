@@ -12,7 +12,7 @@
   });
   const mutations = core.createMutationGuard();
 
-  const getService = () => Doke.services?.professionalApplications || null;
+  const getService = () => Doke.services?.professionalProfileSetup || null;
 
   const serialize = (form, step) => {
     const fields = {};
@@ -43,8 +43,8 @@
       };
     });
 
-    form.querySelectorAll('[data-application-field]').forEach((control) => {
-      const field = control.dataset.applicationField;
+    form.querySelectorAll('[data-profile-setup-field]').forEach((control) => {
+      const field = control.dataset.profileSetupField;
       if (!field) return;
       fields[field] = control.getAttribute('aria-pressed') === 'true';
     });
@@ -59,12 +59,12 @@
     };
   };
 
-  const hydrate = (form, application) => {
-    if (!form || !application) return application;
-    const fields = application.payload || {};
+  const hydrate = (form, profile) => {
+    if (!form || !profile) return profile;
+    const fields = profile.payload || {};
 
     Object.entries(fields).forEach(([name, value]) => {
-      const toggle = form.querySelector(`[data-application-field="${CSS.escape(name)}"]`);
+      const toggle = form.querySelector(`[data-profile-setup-field="${CSS.escape(name)}"]`);
       if (toggle) {
         const active = value === true || value === 'true' || value === 'on';
         toggle.classList.toggle('is-active', active);
@@ -102,58 +102,51 @@
       });
     });
 
-    return application;
+    return profile;
   };
 
   const load = () => {
     const service = getService();
-    if (!service?.getCurrentApplication) return Promise.resolve(null);
-    return service.getCurrentApplication();
+    if (!service?.getCurrentProfileSetup) return Promise.resolve(null);
+    return service.getCurrentProfileSetup();
   };
 
   const save = (form, step) => {
     const service = getService();
     if (!service?.saveDraft || !form) return Promise.resolve(null);
-    const draft = serialize(form, step);
-    return service.saveDraft(draft);
+    return service.saveDraft(serialize(form, step));
   };
 
   const validateStep = (form, step) => {
     const service = getService();
-    if (!service?.validateStep) throw new Error('Validação da candidatura indisponível.');
+    if (!service?.validateStep) throw new Error('Validação do perfil profissional indisponível.');
     return service.validateStep(serialize(form, step).payload, step);
   };
 
-  const submit = (form, step, preparedDraft) => mutations.run('professional-application-submit', async () => {
+  const complete = (form, step, preparedDraft) => mutations.run('professional-profile-setup-complete', async () => {
     const service = getService();
-    if (!service?.submit) throw new Error('O envio da candidatura profissional não está disponível.');
+    if (!service?.complete) throw new Error('A criação do perfil profissional não está disponível.');
     setState('submitting');
 
     try {
-      const application = await service.submit(preparedDraft || serialize(form, step));
+      const profile = await service.complete(preparedDraft || serialize(form, step));
       core.invalidate({
-        domains: ['profiles', 'admin'],
-        reason: 'professional-application-submitted'
+        domains: ['profiles'],
+        reason: 'professional-profile-created'
       });
-      setState('success', { applicationId: application?.id || '' });
-      return application;
+      setState('success', { professionalProfileId: profile?.id || '' });
+      return profile;
     } catch (error) {
       setState(navigator.onLine === false ? 'offline' : 'error', { error });
       throw error;
     }
   });
 
-  const reopen = () => {
-    const service = getService();
-    if (!service?.reopenRejected) return Promise.reject(new Error('Não foi possível reabrir a candidatura.'));
-    return service.reopenRejected();
-  };
-
   const getPresentation = (status) => {
     const service = getService();
     return service?.getStatusPresentation?.(status) || {
-      label: 'Candidatura',
-      title: 'Acompanhe sua candidatura',
+      label: 'Perfil profissional',
+      title: 'Acompanhe seu perfil profissional',
       description: 'Consulte o status antes de continuar.'
     };
   };
@@ -165,8 +158,7 @@
     load,
     save,
     validateStep,
-    submit,
-    reopen,
+    complete,
     getPresentation
   });
 })();

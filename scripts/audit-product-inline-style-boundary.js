@@ -14,7 +14,6 @@ const HTML_FILES = [
 
 const FLOW_PAGE_INITIAL_PROGRESS = Object.freeze({
   'anunciar-servico.html': 25,
-  'tornar-profissional.html': 50,
   'orcamento.html': 25,
 });
 
@@ -22,7 +21,6 @@ const FLOW_PAGES = Object.keys(FLOW_PAGE_INITIAL_PROGRESS);
 
 const FLOW_SCRIPTS = [
   'assets/js/pages/anunciar-servico.js',
-  'assets/js/pages/tornar-profissional.js',
   'assets/js/pages/orcamento.js',
 ];
 

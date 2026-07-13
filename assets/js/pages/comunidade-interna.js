@@ -6709,6 +6709,24 @@ function clearRenderedLocalMessages() {
   setCommunityRoomPageState('hydrated');
   };
 
+  document.addEventListener('click', function (event) {
+    var tab = event.target && event.target.closest ? event.target.closest('[data-community-security-tab]') : null;
+    if (!tab) return;
+    var securityPanel = tab.closest('[data-community-panel="security"]');
+    if (!securityPanel) return;
+    var target = String(tab.getAttribute('data-community-security-tab') || 'discipline');
+    securityPanel.querySelectorAll('[data-community-security-tab]').forEach(function (item) {
+      var active = item === tab;
+      item.classList.toggle('is-active', active);
+      item.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+    securityPanel.querySelectorAll('[data-community-security-panel]').forEach(function (panel) {
+      var active = panel.getAttribute('data-community-security-panel') === target;
+      panel.hidden = !active;
+      panel.classList.toggle('is-active', active);
+    });
+  });
+
   document.addEventListener('doke:route-ready', function (event) {
     var path = String(event && event.detail && event.detail.path || window.location.pathname || '');
     if (!/comunidade-interna\.html(?:$|[?#])/.test(path) && !/comunidade-interna\.html/.test(window.location.pathname || '')) return;

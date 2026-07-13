@@ -459,11 +459,19 @@
        <button class="community-room-panel__backdrop doke-aux-panel__backdrop doke-btn" type="button" data-community-panel-close aria-label="Fechar painel"></button>
        <section class="community-room-panel__surface doke-settings-surface doke-aux-panel__surface" role="dialog" aria-modal="true" aria-label="Cargos da comunidade">
         <header class="community-room-panel__header doke-settings-surface__header doke-aux-panel__header"><div><h2>Cargos e permissões</h2><p>Defina responsabilidades e controle ações administrativas.</p></div><button class="community-room-panel__close doke-close-button doke-icon-btn doke-icon-btn--flat" type="button" data-community-panel-close aria-label="Fechar painel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6 6 18"></path></svg></button></header>
-        <div class="community-room-roles-overview" data-community-role-overview>
-         <span class="community-room-panel-kicker">Cargos existentes</span>
-         <div class="community-room-role-list" data-community-role-list></div>
-        </div>
-        <form class="community-room-role-form doke-settings-form doke-settings-rail" data-community-role-form>
+        <section class="community-settings-content-section community-settings-content-section--overview doke-settings-rail" aria-labelledby="community-roles-existing-title">
+         <div class="community-settings-section-heading">
+          <div><span class="community-settings-section-eyebrow">Estrutura atual</span><h3 id="community-roles-existing-title">Cargos existentes</h3><p>Revise os cargos já criados antes de adicionar novas responsabilidades.</p></div>
+         </div>
+         <div class="community-room-roles-overview" data-community-role-overview>
+          <div class="community-room-role-list" data-community-role-list></div>
+         </div>
+        </section>
+        <section class="community-settings-content-section doke-settings-rail" aria-labelledby="community-role-create-title">
+         <div class="community-settings-section-heading">
+          <div><span class="community-settings-section-eyebrow">Novo cargo</span><h3 id="community-role-create-title">Identidade e permissões</h3><p>Defina o nome, a cor e exatamente quais ações esse cargo poderá executar.</p></div>
+         </div>
+         <form class="community-room-role-form doke-settings-form" data-community-role-form>
          <label><span>Novo cargo</span><input class="doke-input" type="text" data-community-role-name placeholder="Ex.: Moderador, Síndico, Prestador"></label>
          <label><span>Cor</span><input class="doke-input" type="color" data-community-role-color value="#2167ae"></label>
          <fieldset class="community-room-permissions" data-community-role-permissions>
@@ -480,8 +488,9 @@
           <label class="community-room-permission"><input class="doke-checkbox" type="checkbox" value="mentionRoles"><span><strong>Mencionar cargos</strong><small>Notificar todos os membros de um cargo em uma mensagem.</small></span></label>
          </fieldset>
          <p class="community-room-panel-feedback" data-community-role-feedback hidden>Cargo criado com sucesso.</p>
-         <button class="doke-btn doke-btn--primary" type="submit">Criar cargo</button>
+         <div class="community-room-panel-actions doke-settings-actions"><button class="doke-btn doke-btn--ghost" type="reset">Limpar</button><button class="doke-btn doke-btn--primary" type="submit">Criar cargo</button></div>
         </form>
+        </section>
        </section>
       </aside>
 
@@ -490,8 +499,17 @@
        <button class="community-room-panel__backdrop doke-aux-panel__backdrop doke-btn" type="button" data-community-panel-close aria-label="Fechar painel"></button>
        <section class="community-room-panel__surface doke-settings-surface doke-aux-panel__surface" role="dialog" aria-modal="true" aria-label="Canais da comunidade">
         <header class="community-room-panel__header doke-settings-surface__header doke-aux-panel__header"><div><h2>Canais</h2><p>Organize conversas e defina quem pode visualizar ou enviar mensagens.</p></div><button class="community-room-panel__close doke-close-button doke-icon-btn doke-icon-btn--flat" type="button" data-community-panel-close aria-label="Fechar painel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6 6 18"></path></svg></button></header>
-        <div class="community-room-channel-admin-list" data-community-channel-admin-list></div>
-        <form class="community-room-channel-form doke-settings-form doke-settings-rail" data-community-channel-form>
+        <section class="community-settings-content-section community-settings-content-section--overview doke-settings-rail" aria-labelledby="community-channels-existing-title">
+         <div class="community-settings-section-heading">
+          <div><span class="community-settings-section-eyebrow">Organização</span><h3 id="community-channels-existing-title">Canais existentes</h3><p>Reordene, edite ou revise os espaços de conversa ativos na comunidade.</p></div>
+         </div>
+         <div class="community-room-channel-admin-list" data-community-channel-admin-list></div>
+        </section>
+        <section class="community-settings-content-section doke-settings-rail" aria-labelledby="community-channel-create-title">
+         <div class="community-settings-section-heading">
+          <div><span class="community-settings-section-eyebrow">Configuração</span><h3 id="community-channel-create-title">Criar ou editar canal</h3><p>Defina finalidade, ritmo de conversa e regras de acesso sem misturar responsabilidades.</p></div>
+         </div>
+         <form class="community-room-channel-form doke-settings-form" data-community-channel-form>
          <input type="hidden" data-community-channel-edit-id>
          <label><span>Nome do canal</span><input class="doke-input" type="text" data-community-channel-name maxlength="50" placeholder="Ex.: avisos, suporte, geral"></label>
          <label><span>Descrição</span><input class="doke-input" type="text" data-community-channel-description maxlength="120" placeholder="Explique o objetivo do canal"></label>
@@ -503,8 +521,9 @@
          <fieldset class="community-room-channel-role-access"><legend>Cargos com acesso</legend><p>Sem seleção, todos os membros podem visualizar.</p><div data-community-channel-view-roles></div></fieldset>
          <fieldset class="community-room-channel-role-access"><legend>Cargos que podem enviar</legend><p>Usado em canais somente leitura. O dono sempre pode enviar.</p><div data-community-channel-send-roles></div></fieldset>
          <p class="community-room-panel-feedback" data-community-channel-feedback hidden></p>
-         <button class="doke-btn doke-btn--primary" type="submit" data-community-channel-submit>Criar canal</button>
+         <div class="community-room-panel-actions doke-settings-actions"><button class="doke-btn doke-btn--ghost" type="reset">Limpar</button><button class="doke-btn doke-btn--primary" type="submit" data-community-channel-submit>Criar canal</button></div>
         </form>
+        </section>
        </section>
       </aside>
 
@@ -525,10 +544,21 @@
        <button class="community-room-panel__backdrop doke-aux-panel__backdrop doke-btn" type="button" data-community-panel-close aria-label="Fechar painel"></button>
        <section class="community-room-panel__surface doke-settings-surface doke-aux-panel__surface" role="dialog" aria-modal="true" aria-label="Segurança da comunidade">
         <header class="community-room-panel__header doke-settings-surface__header doke-aux-panel__header"><div><h2>Segurança</h2><p>Gerencie punições ativas, banimentos e violações recentes.</p></div><button class="community-room-panel__close doke-close-button doke-icon-btn doke-icon-btn--flat" type="button" data-community-panel-close aria-label="Fechar painel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6 6 18"></path></svg></button></header>
-        <div class="community-security-summary" data-community-security-summary></div>
-        <section class="community-security-section"><div class="community-security-section__heading"><div><h3>Punições ativas</h3><p>Silenciamentos e restrições globais ou por canal.</p></div><button class="doke-btn doke-btn--secondary doke-btn--sm" type="button" data-community-security-cleanup>Limpar expiradas</button></div><div class="community-security-list doke-empty-state-host" data-community-security-discipline></div></section>
-        <section class="community-security-section"><div class="community-security-section__heading"><div><h3>Banidos</h3><p>Contas impedidas de entrar na comunidade.</p></div></div><div class="community-security-list doke-empty-state-host" data-community-security-bans></div></section>
-        <section class="community-security-section"><div class="community-security-section__heading"><div><h3>Violações recentes</h3><p>Ocorrências de antispam e segurança.</p></div></div><div class="community-security-list doke-empty-state-host" data-community-security-violations></div></section>
+        <section class="community-settings-content-section community-settings-content-section--overview doke-settings-rail" aria-labelledby="community-security-overview-title">
+         <div class="community-settings-section-heading"><div><span class="community-settings-section-eyebrow">Visão geral</span><h3 id="community-security-overview-title">Estado da comunidade</h3><p>Acompanhe rapidamente punições, banimentos e ocorrências de proteção.</p></div></div>
+         <div class="community-security-summary" data-community-security-summary></div>
+        </section>
+        <section class="community-settings-content-section doke-settings-rail" aria-labelledby="community-security-actions-title">
+         <div class="community-settings-section-heading"><div><span class="community-settings-section-eyebrow">Controle</span><h3 id="community-security-actions-title">Ações e ocorrências</h3><p>Consulte cada categoria separadamente e aja apenas quando houver necessidade.</p></div></div>
+         <div class="community-security-tabs" role="tablist" aria-label="Categorias de segurança">
+          <button class="community-security-tab is-active" type="button" role="tab" aria-selected="true" data-community-security-tab="discipline">Punições</button>
+          <button class="community-security-tab" type="button" role="tab" aria-selected="false" data-community-security-tab="bans">Banidos</button>
+          <button class="community-security-tab" type="button" role="tab" aria-selected="false" data-community-security-tab="violations">Violações</button>
+         </div>
+         <section class="community-security-section is-active" data-community-security-panel="discipline"><div class="community-security-section__heading"><div><h3>Punições ativas</h3><p>Silenciamentos e restrições globais ou por canal.</p></div><button class="doke-btn doke-btn--secondary doke-btn--sm" type="button" data-community-security-cleanup>Limpar expiradas</button></div><div class="community-security-list doke-empty-state-host" data-community-security-discipline></div></section>
+         <section class="community-security-section" data-community-security-panel="bans" hidden><div class="community-security-section__heading"><div><h3>Banidos</h3><p>Contas impedidas de entrar na comunidade.</p></div></div><div class="community-security-list doke-empty-state-host" data-community-security-bans></div></section>
+         <section class="community-security-section" data-community-security-panel="violations" hidden><div class="community-security-section__heading"><div><h3>Violações recentes</h3><p>Ocorrências de antispam e segurança.</p></div></div><div class="community-security-list doke-empty-state-host" data-community-security-violations></div></section>
+        </section>
         <p class="community-room-panel-feedback" data-community-security-feedback hidden></p>
        </section>
       </aside>

@@ -21,15 +21,13 @@
     window.DokeHomeDrawer?.create?.()();
 
     const form = root.querySelector('.become-pro-form');
-    const formLayout = root.querySelector('[data-professional-application-form-layout]');
-    const statusCard = root.querySelector('[data-professional-application-status]');
-    const statusBadge = root.querySelector('[data-application-status-badge]');
-    const statusTitle = root.querySelector('[data-application-status-title]');
-    const statusDescription = root.querySelector('[data-application-status-description]');
-    const statusReason = root.querySelector('[data-application-status-reason]');
-    const statusDate = root.querySelector('[data-application-status-date]');
-    const correctionButton = root.querySelector('[data-application-correct]');
-    const feedback = root.querySelector('[data-application-feedback]');
+    const formLayout = root.querySelector('[data-professional-profile-form-layout]');
+    const statusCard = root.querySelector('[data-professional-profile-status]');
+    const statusBadge = root.querySelector('[data-professional-profile-status-badge]');
+    const statusTitle = root.querySelector('[data-professional-profile-status-title]');
+    const statusDescription = root.querySelector('[data-professional-profile-status-description]');
+    const statusDate = root.querySelector('[data-professional-profile-status-date]');
+    const feedback = root.querySelector('[data-professional-profile-feedback]');
     const panels = [...root.querySelectorAll('[data-step-panel]')];
     const stepCurrent = root.querySelector('[data-step-current]');
     const stepTargets = [...root.querySelectorAll('[data-step-target]')];
@@ -55,7 +53,7 @@
     let currentStep = 1;
     let maxReachedStep = 1;
     let submitting = false;
-    let currentApplication = null;
+    let currentProfile = null;
     let saveTimer = 0;
 
     const showFeedback = (message, error = false) => {
@@ -70,15 +68,14 @@
 
     const focusField = (fieldName) => {
       if (!fieldName || !form) return;
-      const control = form.querySelector(`[name="${CSS.escape(fieldName)}"], [data-application-field="${CSS.escape(fieldName)}"]`);
+      const control = form.querySelector(`[name="${CSS.escape(fieldName)}"], [data-profile-setup-field="${CSS.escape(fieldName)}"]`);
       const target = control?.closest('.become-pro-upload-card') || control;
       target?.focus?.({ preventScroll: true });
       target?.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
     };
 
     const handleError = (error) => {
-      const message = error?.message || 'Não foi possível concluir esta ação.';
-      showFeedback(message, true);
+      showFeedback(error?.message || 'Não foi possível concluir esta ação.', true);
       focusField(error?.field);
     };
 
@@ -102,10 +99,7 @@
 
     const updateReviewSummary = () => {
       const selectedCategory = fieldValue('mainCategory');
-      const category = selectedCategory === 'Outros'
-        ? fieldValue('otherCategory')
-        : selectedCategory;
-
+      const category = selectedCategory === 'Outros' ? fieldValue('otherCategory') : selectedCategory;
       if (reviewCategory) reviewCategory.textContent = category || 'Não informada';
       if (reviewExperience) reviewExperience.textContent = fieldValue('experienceYears') || 'Não informada';
       if (reviewSpecialties) reviewSpecialties.textContent = fieldValue('specialties') || 'Não informados';
@@ -114,11 +108,11 @@
     };
 
     const persistDraft = async () => {
-      if (!experience?.save || !form || currentApplication?.status && currentApplication.status !== 'draft') return null;
+      if (!experience?.save || !form || (currentProfile?.status && currentProfile.status !== 'draft')) return null;
       try {
-        currentApplication = await experience.save(form, currentStep) || currentApplication;
-        root.dataset.applicationStatus = currentApplication?.status || 'draft';
-        return currentApplication;
+        currentProfile = await experience.save(form, currentStep) || currentProfile;
+        root.dataset.professionalProfileStatus = currentProfile?.status || 'draft';
+        return currentProfile;
       } catch (error) {
         if (!submitting) handleError(error);
         return null;
@@ -141,8 +135,8 @@
       });
 
       if (stepCurrent) stepCurrent.textContent = String(currentStep);
-
       root.dataset.currentStep = String(currentStep);
+
       stepTargets.forEach((target) => {
         const targetStep = Number(target.dataset.stepTarget);
         target.classList.toggle('is-active', targetStep === currentStep);
@@ -153,7 +147,7 @@
         target.setAttribute('aria-disabled', targetStep > maxReachedStep ? 'true' : 'false');
       });
 
-      if (nextButton) nextButton.textContent = currentStep >= totalSteps ? 'Enviar para análise' : 'Continuar';
+      if (nextButton) nextButton.textContent = currentStep >= totalSteps ? 'Criar perfil profissional' : 'Continuar';
 
       if (backButton) {
         const showBack = currentStep > 1;
@@ -175,8 +169,8 @@
         nextButton.disabled = active;
         nextButton.setAttribute('aria-busy', active ? 'true' : 'false');
         nextButton.textContent = active
-          ? 'Enviando candidatura…'
-          : (currentStep >= totalSteps ? 'Enviar para análise' : 'Continuar');
+          ? 'Criando perfil…'
+          : (currentStep >= totalSteps ? 'Criar perfil profissional' : 'Continuar');
       }
       form?.querySelectorAll('input, select, textarea, button').forEach((control) => {
         if (control === nextButton) return;
@@ -191,35 +185,26 @@
       return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'medium', timeStyle: 'short' }).format(date);
     };
 
-    const renderApplication = (application) => {
-      currentApplication = application || null;
-      const status = currentApplication?.status || 'draft';
-      root.dataset.applicationStatus = status;
-      const isEditable = !currentApplication || status === 'draft';
+    const renderProfile = (profile) => {
+      currentProfile = profile || null;
+      const status = currentProfile?.status || 'draft';
+      root.dataset.professionalProfileStatus = status;
+      const isEditable = !currentProfile || status === 'draft';
 
       if (formLayout) formLayout.hidden = !isEditable;
       if (statusCard) statusCard.hidden = isEditable;
-
       if (isEditable) return;
 
       const presentation = experience?.getPresentation?.(status) || {};
-      if (statusBadge) statusBadge.textContent = presentation.label || 'Candidatura';
-      if (statusTitle) statusTitle.textContent = presentation.title || 'Acompanhe sua candidatura';
+      if (statusBadge) statusBadge.textContent = presentation.label || 'Perfil profissional';
+      if (statusTitle) statusTitle.textContent = presentation.title || 'Perfil profissional criado';
       if (statusDescription) statusDescription.textContent = presentation.description || '';
 
-      if (statusReason) {
-        statusReason.hidden = status !== 'rejected' || !currentApplication?.rejectionReason;
-        statusReason.textContent = currentApplication?.rejectionReason || '';
-      }
-
-      const dateValue = currentApplication?.decidedAt || currentApplication?.underReviewAt || currentApplication?.submittedAt || currentApplication?.updatedAt;
+      const formatted = formatDate(currentProfile?.completedAt || currentProfile?.updatedAt);
       if (statusDate) {
-        const formatted = formatDate(dateValue);
         statusDate.hidden = !formatted;
-        statusDate.textContent = formatted ? `Última atualização: ${formatted}` : '';
+        statusDate.textContent = formatted ? `Criado em: ${formatted}` : '';
       }
-
-      if (correctionButton) correctionButton.hidden = status !== 'rejected';
     };
 
     const validateCurrentStep = () => {
@@ -249,7 +234,7 @@
       experience?.setState?.('submitting');
 
       try {
-        currentApplication = await experience?.submit?.(form, currentStep, preparedDraft);
+        currentProfile = await experience?.complete?.(form, currentStep, preparedDraft);
         experience?.setState?.('success');
         if (submitState) {
           submitState.hidden = false;
@@ -257,8 +242,7 @@
         }
         submitClose?.focus({ preventScroll: true });
       } catch (error) {
-        const offline = navigator.onLine === false;
-        experience?.setState?.(offline ? 'offline' : 'error', { error });
+        experience?.setState?.(navigator.onLine === false ? 'offline' : 'error', { error });
         handleError(error);
       } finally {
         setSubmitting(false);
@@ -276,26 +260,9 @@
     submitClose?.addEventListener('click', () => {
       submitState?.classList.remove('is-visible');
       if (submitState) submitState.hidden = true;
-      renderApplication(currentApplication);
+      renderProfile(currentProfile);
       experience?.setState?.('ready');
       statusCard?.focus?.({ preventScroll: true });
-    });
-
-    correctionButton?.addEventListener('click', async () => {
-      if (submitting) return;
-      correctionButton.disabled = true;
-      try {
-        const application = await experience?.reopen?.();
-        renderApplication(application);
-        experience?.hydrate?.(form, application);
-        maxReachedStep = Math.max(1, Number(application?.currentStep || 1));
-        setStep(Number(application?.currentStep || 1), { skipSave: true });
-        formLayout?.scrollIntoView?.({ block: 'start', behavior: 'smooth' });
-      } catch (error) {
-        handleError(error);
-      } finally {
-        correctionButton.disabled = false;
-      }
     });
 
     exitButton?.addEventListener('click', async (event) => {
@@ -314,7 +281,6 @@
           const saved = await persistDraft();
           if (!saved) return;
         }
-
         if (typeof window.DokeNavigate === 'function') window.DokeNavigate(target);
         else window.location.href = target;
       } finally {
@@ -327,11 +293,8 @@
       if (currentStep > 1) {
         setStep(currentStep - 1);
         root.querySelector('.become-pro-form-card')?.scrollIntoView({ block: 'start', behavior: 'smooth' });
-      } else if (window.history.length > 1) {
-        window.history.back();
-      } else {
-        window.location.href = 'perfil.html';
-      }
+      } else if (window.history.length > 1) window.history.back();
+      else window.location.href = 'meu-perfil.html';
     });
 
     root.querySelectorAll('.become-pro-upload-card input[type="file"]').forEach((input) => {
@@ -371,19 +334,19 @@
     experience?.setState?.('loading');
 
     try {
-      currentApplication = await experience?.load?.();
-      if (currentApplication?.status === 'draft') {
-        experience?.hydrate?.(form, currentApplication);
+      currentProfile = await experience?.load?.();
+      if (currentProfile?.status === 'draft') {
+        experience?.hydrate?.(form, currentProfile);
         syncOtherCategoryField();
-        maxReachedStep = Math.max(1, Number(currentApplication.currentStep || 1));
+        maxReachedStep = Math.max(1, Number(currentProfile.currentStep || 1));
       }
       syncOtherCategoryField();
       updateCount();
       updateReviewSummary();
-      setStep(Number(currentApplication?.currentStep || 1), { skipSave: true });
+      setStep(Number(currentProfile?.currentStep || 1), { skipSave: true });
       experience?.setState?.('ready');
       hydration?.ready({ hasItems: true });
-      renderApplication(currentApplication);
+      renderProfile(currentProfile);
     } catch (error) {
       experience?.setState?.('error', { error });
       hydration?.error(error);
@@ -393,9 +356,6 @@
 
   window.DokeInitBecomePro = initBecomePro;
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initBecomePro, { once: true });
-  } else {
-    initBecomePro();
-  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initBecomePro, { once: true });
+  else initBecomePro();
 })();
