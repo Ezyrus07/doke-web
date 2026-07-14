@@ -310,7 +310,7 @@ const report = {
   },
   priorityPages,
   findings,
-  nextStage: 'Migrar meu-perfil.html, perfil-profissional.html e configuracoes.html para o lifecycle canônico, preservando os guards profissional e administrativo.'
+  nextStage: 'Continuar a Etapa 7 com as páginas públicas e de descoberta restantes, antes da remoção de legado e auditoria final.'
 };
 
 fs.mkdirSync(REPORT_DIR, { recursive: true });

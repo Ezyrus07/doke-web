@@ -8,6 +8,22 @@
     if (!root) return;
     if (root.dataset.reviewControllerInitialized === REVIEW_CONTROLLER_VERSION) return;
     root.dataset.reviewControllerInitialized = REVIEW_CONTROLLER_VERSION;
+    const hydration = window.DokePageHydration?.create({
+      page: 'avaliacao-profissional',
+      root,
+      loadingSelectors: ['[data-state-loading]'],
+      errorSelectors: ['[data-state-error]'],
+      skeletonSelectors: ['[data-review-hydration-skeleton]'],
+      readySelectors: ['[data-review-hydration-ready]'],
+      skeletonMode: 'route-and-document',
+      readyPolicy: 'after-skeleton',
+      waitFor: ['dom', 'auth', 'review-context'],
+      minDuration: 0,
+      maxDuration: 8000,
+      hasItems: () => Boolean(currentConversation)
+    }) || null;
+    hydration?.start();
+    hydration?.mark('dom');
 
   const starGroup = root.querySelector('[data-star-group]');
   const ratingLabel = root.querySelector('[data-rating-label]');
@@ -317,7 +333,25 @@
   });
 
   updateRating(selectedRating);
-  loadReviewContext();
+  const accountAccess = window.Doke?.services?.accountAccess;
+  if (!accountAccess?.guardPage) {
+    hydration?.error(new Error('Serviço de autenticação indisponível.'), { source: 'review-account-access' });
+    return;
+  }
+
+  accountAccess.guardPage({
+    name: 'review-account-access',
+    source: 'avaliacao-profissional.html'
+  }).then((access) => {
+    if (!access?.allowed) return null;
+    hydration?.mark('auth');
+    return loadReviewContext();
+  }).then((eligibility) => {
+    if (!eligibility?.conversation) throw new Error(eligibility?.reason || 'Avaliação indisponível para este pedido.');
+    hydration?.mark('review-context');
+  }).catch((error) => {
+    hydration?.error(error, { source: 'review-hydration' });
+  });
   }
 
   window.DokeInitReview = initProfessionalReview;

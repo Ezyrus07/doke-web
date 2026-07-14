@@ -2,6 +2,22 @@ const initBudgetPage = () => {
   const pageRoot = document.querySelector("[data-budget-page]");
   if (!pageRoot || pageRoot.dataset.budgetInitialized === "true") return;
   pageRoot.dataset.budgetInitialized = "true";
+  const hydration = window.DokePageHydration?.create({
+    page: 'orcamento',
+    root: pageRoot,
+    loadingSelectors: ['[data-state-loading]'],
+    errorSelectors: ['[data-state-error]'],
+    skeletonSelectors: ['[data-budget-hydration-skeleton]'],
+    readySelectors: ['[data-budget-hydration-ready]'],
+    skeletonMode: 'route-and-document',
+    readyPolicy: 'after-skeleton',
+    waitFor: ['dom', 'auth', 'service-context'],
+    minDuration: 0,
+    maxDuration: 8000,
+    hasItems: () => true
+  }) || null;
+  hydration?.start();
+  hydration?.mark('dom');
   const form = pageRoot.querySelector("[data-budget-form]");
   const storageKey = "doke.quoteSubmission";
   const ordersStorageKey = "doke.orders";
@@ -17,7 +33,6 @@ const initBudgetPage = () => {
   const successProvider = pageRoot.querySelector("[data-budget-success-provider]");
   const successService = pageRoot.querySelector("[data-budget-success-service]");
   if (successScreen && !successScreen.open) successScreen.hidden = true;
-  const authService = window.DokeAuth?.service;
   const formatTitleCase = (value) => String(value || "").replace(/\b\w/g, (c) => c.toUpperCase());
   const normalizeBudgetLabel = (value) => String(value || "").replace(/-/g, " ").trim();
   const slugify = (value) => String(value || "")
@@ -26,11 +41,6 @@ const initBudgetPage = () => {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
-
-  if (authService && !authService.isAuthenticated()) {
-    authService.requireAuth({ enforce: true, redirectToLogin: "auth/login.html" });
-    return;
-  }
 
   let selectedService = null;
   let provider = pageRoot.dataset.budgetProvider || query.get("pro") || "Studio Aquarela";
@@ -71,7 +81,9 @@ const initBudgetPage = () => {
 
   const showSuccessScreen = (order) => {
     if (!successScreen || !order) {
-      window.location.href = `${successUrl}?order=${encodeURIComponent(order?.id || "")}`;
+      if (typeof window.DokeNavigate === 'function') {
+        window.DokeNavigate(`${successUrl}?order=${encodeURIComponent(order?.id || "")}`, { source: 'budget-success' });
+      }
       return;
     }
 
@@ -119,7 +131,6 @@ const initBudgetPage = () => {
 
   syncBudgetContext();
   window.DokeUiSelect?.enhanceAll(pageRoot);
-  hydrateServiceContext();
 
   const getStoredOrders = () => {
     try {
@@ -520,10 +531,6 @@ const initBudgetPage = () => {
         message: "Está quase lá...",
         minDuration: 0
       });
-      const minimumLoadingTime = 2000;
-      const loadingDelay = new Promise((resolve) => {
-        window.setTimeout(resolve, minimumLoadingTime);
-      });
       const preventLoadingDismiss = (cancelEvent) => {
         cancelEvent.preventDefault();
       };
@@ -535,7 +542,6 @@ const initBudgetPage = () => {
       }
 
       const attachments = await readAttachments();
-      await loadingDelay;
       loadingScreen?.removeEventListener("cancel", preventLoadingDismiss);
 
       const payload = {
@@ -905,6 +911,25 @@ const initBudgetPage = () => {
   };
 
   renderOrdersPage();
+
+  const accountAccess = window.Doke?.services?.accountAccess;
+  if (!accountAccess?.guardPage) {
+    hydration?.error(new Error('Serviço de autenticação indisponível.'), { source: 'budget-account-access' });
+    return;
+  }
+
+  accountAccess.guardPage({
+    name: 'budget-account-access',
+    source: 'orcamento.html'
+  }).then((access) => {
+    if (!access?.allowed) return null;
+    hydration?.mark('auth');
+    return hydrateServiceContext();
+  }).then(() => {
+    hydration?.mark('service-context');
+  }).catch((error) => {
+    hydration?.error(error, { source: 'budget-hydration' });
+  });
 
 };
 

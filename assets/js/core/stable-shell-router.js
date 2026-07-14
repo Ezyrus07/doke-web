@@ -48,7 +48,10 @@
     '/pedidos.html',
     '/mensagens.html',
     '/pagamento-profissional.html',
-    '/notificacoes.html'
+    '/notificacoes.html',
+    '/carteira.html',
+    '/orcamento.html',
+    '/avaliacao-profissional.html'
   ]);
 
   var PROFILE_ACTIVE_PATHS = new Set([
@@ -70,7 +73,7 @@
     '/pedidos.html': ['DokeInitOrders'],
     '/mensagens.html': ['DokeInitMessages'],
     '/notificacoes.html': ['DokeInitNotifications'],
-    '/carteira.html': ['DokeInitWallet'],
+    '/carteira.html': ['DokeInitWalletPage'],
     '/admin.html': ['DokeInitAdmin'],
     '/comunidade.html': ['DokeInitCommunity'],
     '/comunidade-interna.html': [],
@@ -795,7 +798,7 @@
       return window.DokePageHydration.routeHasSkeleton(nextDoc, path);
     }
     return HYDRATION_BARRIER_ROUTES.has(path) && Boolean(nextDoc.querySelector(
-      '[data-orders-hydration-skeleton], [data-messages-hydration-skeleton], [data-payment-hydration-skeleton], [data-notifications-hydration-skeleton]'
+      '[data-orders-hydration-skeleton], [data-messages-hydration-skeleton], [data-payment-hydration-skeleton], [data-notifications-hydration-skeleton], [data-wallet-hydration-skeleton], [data-budget-hydration-skeleton], [data-review-hydration-skeleton]'
     ));
   }
 

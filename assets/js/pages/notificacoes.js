@@ -92,6 +92,12 @@
     let longPressTimer = null;
 
     const getNotificationsService = () => window.Doke?.services?.notifications || null;
+    let notificationsAccessAllowed = false;
+    const navigateTo = (href, options = {}) => {
+      if (!href || typeof window.DokeNavigate !== 'function') return false;
+      window.DokeNavigate(href, Object.assign({ source: 'notifications-page' }, options));
+      return true;
+    };
 
     const escapeHtml = (value) => String(value || '')
       .replace(/&/g, '&amp;')
@@ -410,7 +416,7 @@
         if (id) { getNotificationsService()?.markAsRead?.(id); window.DokeInAppNotifications?.markAsRead?.(id); }
         const primaryAction = card.querySelector('.notification-card__inline-actions a[href]');
         const href = primaryAction?.getAttribute('href');
-        if (href) window.location.href = href;
+        if (href) navigateTo(href);
       });
     };
 
@@ -453,7 +459,12 @@
     const refreshLocalNotifications = ({ force = false } = {}) => {
       const service = getNotificationsService();
       const center = window.DokeInAppNotifications;
-      if (!service && !center) return Promise.resolve(false);
+      if (!notificationsAccessAllowed) return Promise.resolve(false);
+      if (!service && !center) {
+        notificationsHydrationLocalReady = true;
+        hydration?.mark('local-notifications');
+        return Promise.resolve(true);
+      }
 
       const cache = window.Doke?.experience?.cache;
       const fetcher = () => {
@@ -493,20 +504,34 @@
     };
 
 
-    const markNotificationsHydrationAuth = () => {
-      hydration?.mark('auth');
-      window.Doke?.experience?.cache?.invalidatePrefix?.('notifications:');
-      refreshLocalNotifications({ force: true });
+    const authorizeNotifications = ({ force = false } = {}) => {
+      const accountAccess = window.Doke?.services?.accountAccess;
+      if (!accountAccess?.guardPage) {
+        const error = new Error('Serviço de autenticação indisponível.');
+        hydration?.error(error, { source: 'notifications-account-access' });
+        return Promise.resolve(false);
+      }
+
+      return accountAccess.guardPage({
+        name: 'notifications-account-access',
+        source: 'notificacoes.html'
+      }).then((access) => {
+        if (!access?.allowed) return false;
+        notificationsAccessAllowed = true;
+        hydration?.mark('auth');
+        window.Doke?.experience?.cache?.invalidatePrefix?.('notifications:');
+        return refreshLocalNotifications({ force: true });
+      }).catch((error) => {
+        notificationsAccessAllowed = false;
+        hydration?.error(error, { source: 'notifications-account-access' });
+        return false;
+      });
     };
-    document.addEventListener('doke:auth-surface-ready', markNotificationsHydrationAuth);
-    document.addEventListener('doke:auth-session-change', markNotificationsHydrationAuth);
+    document.addEventListener('doke:auth-session-change', () => authorizeNotifications({ force: true }));
     document.addEventListener('doke:page-hydration-ready', (event) => {
       if (event.detail?.page !== 'notificacoes') return;
       applyFilter(currentFilter, currentTimeFilter);
     });
-    window.addEventListener('load', () => {
-      refreshLocalNotifications({ force: true });
-    }, { once: true });
 
     const syncContextPanelHost = () => {
       if (!headerControls) return;
@@ -983,7 +1008,7 @@
         : selected.find(Boolean);
 
       const href = getPrimaryHref(target);
-      if (href) window.location.href = href;
+      if (href) navigateTo(href);
     };
 
     openSelectedButton?.addEventListener('click', () => {
@@ -1019,7 +1044,7 @@
 
         const primaryAction = card.querySelector('.notification-card__inline-actions a[href]');
         const href = primaryAction?.getAttribute('href');
-        if (href) window.location.href = href;
+        if (href) navigateTo(href);
       });
 
       card.addEventListener('keydown', (event) => {
@@ -1135,10 +1160,7 @@
 
     syncContextPanelHost();
     refreshCards().forEach(bindNotificationCard);
-    if (document.documentElement.dataset.authSurfaceReady === 'true') {
-      markNotificationsHydrationAuth();
-    }
-    refreshLocalNotifications();
+    authorizeNotifications({ force: true });
     const refreshAfterDomainEvent = () => {
       window.Doke?.experience?.cache?.invalidatePrefix?.('notifications:');
       refreshLocalNotifications({ force: true });

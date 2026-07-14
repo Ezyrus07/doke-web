@@ -17,6 +17,23 @@
     }
 
     pageRoot.dataset.walletPageInitialized = 'true';
+    const hydration = window.DokePageHydration?.create({
+      page: 'carteira',
+      root: pageRoot,
+      loadingSelectors: ['[data-state-loading]'],
+      errorSelectors: ['[data-state-error]'],
+      skeletonSelectors: ['[data-wallet-hydration-skeleton]'],
+      readySelectors: ['[data-wallet-hydration-ready]'],
+      skeletonMode: 'route-and-document',
+      readyPolicy: 'after-skeleton',
+      waitFor: ['dom', 'auth', 'wallet'],
+      minDuration: 0,
+      maxDuration: 8000,
+      hasItems: () => true
+    }) || null;
+    hydration?.start();
+    hydration?.mark('dom');
+    let walletAccessAllowed = false;
     const viewButtons = Array.from(document.querySelectorAll('[data-wallet-view-toggle]'));
     const viewPanels = Array.from(document.querySelectorAll('[data-wallet-view-panel]'));
     const filterButtons = Array.from(document.querySelectorAll('[data-wallet-filter]'));
@@ -1129,6 +1146,7 @@
     };
 
     const scheduleWalletStateRefresh = (delay = 0) => {
+      if (!walletAccessAllowed) return;
       window.clearTimeout(walletRefreshTimer);
       walletRefreshTimer = window.setTimeout(() => {
         loadWalletState();
@@ -1145,7 +1163,7 @@
 
       viewPanels.forEach((panel) => {
         const isActivePanel = panel.dataset.walletViewPanel === nextView;
-        panel.hidden = !isActivePanel;
+        panel.hidden = !isActivePanel || !walletAccessAllowed;
         panel.setAttribute('aria-hidden', String(!isActivePanel));
       });
 
@@ -2228,10 +2246,34 @@
     setTransactionFilter(filterButtons.find((button) => button.classList.contains('is-active'))?.dataset.walletFilter || 'all');
     updateTransactionEmptyState();
     setBankAccountEmptyState(true);
-    scheduleWalletStateRefresh(0);
+    const accountAccess = window.Doke?.services?.accountAccess;
+    if (!accountAccess?.guardPage) {
+      hydration?.error(new Error('Serviço de autenticação indisponível.'), { source: 'wallet-account-access' });
+      return false;
+    }
+
+    accountAccess.guardPage({
+      name: 'wallet-account-access',
+      source: 'carteira.html'
+    }).then((access) => {
+      if (!access?.allowed) return null;
+      walletAccessAllowed = true;
+      hydration?.mark('auth');
+      return loadWalletState();
+    }).then((wallet) => {
+      if (!walletAccessAllowed) return false;
+      if (!wallet) throw new Error('Não foi possível carregar a carteira.');
+      setView(document.body.dataset.walletView || 'overview');
+      hydration?.mark('wallet');
+      return true;
+    }).catch((error) => {
+      walletAccessAllowed = false;
+      hydration?.error(error, { source: 'wallet-hydration' });
+    });
     return true;
   };
 
+  window.DokeInitWallet = initWalletPage;
   window.DokeInitWalletPage = initWalletPage;
 
   ready(() => {

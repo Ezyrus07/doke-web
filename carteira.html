@@ -108,14 +108,27 @@
 </header>
 <main class="page__content doke-page">
 <div class="page__content-inner container app-shell-page__workspace app-shell-page__workspace--clean shell-home__workspace shell-home__workspace--clean wallet-shell-content doke-page-shell doke-page-stack">
-<section aria-busy="false" aria-labelledby="wallet-title" class="wallet-page doke-page-section" data-state-boundary="carteira" data-view-state="ready">
+<section aria-busy="true" aria-labelledby="wallet-title" class="wallet-page doke-page-section" data-state-boundary="carteira" data-view-state="loading">
 <h1 class="sr-only" id="wallet-title">Carteira</h1>
-<div aria-atomic="true" aria-live="polite" class="wallet-page-status sr-only" data-state-region="" data-state-scope="carteira">
+<div aria-atomic="true" aria-live="polite" class="wallet-page-status doke-state-region" data-state-region="" data-state-scope="carteira" hidden>
 <p data-state-loading="" hidden="">Carregando carteira...</p>
 <p data-state-empty="" hidden="">Nenhuma movimentação encontrada.</p>
 <p data-state-error="" hidden="">Não foi possível carregar a carteira.</p>
 </div>
-<div class="wallet-overview" data-wallet-view-panel="overview">
+<section class="doke-page-hydration-skeleton doke-page-hydration-skeleton--dashboard" data-wallet-hydration-skeleton aria-label="Carregando carteira" aria-hidden="true">
+<div class="doke-page-hydration-skeleton__surface doke-page-hydration-skeleton__hero">
+<span class="doke-page-hydration-skeleton__block doke-page-hydration-skeleton__line doke-page-hydration-skeleton__line--short"></span>
+<span class="doke-page-hydration-skeleton__block doke-page-hydration-skeleton__line doke-page-hydration-skeleton__line--title"></span>
+<div class="doke-page-hydration-skeleton__metrics"><span class="doke-page-hydration-skeleton__block doke-page-hydration-skeleton__metric"></span><span class="doke-page-hydration-skeleton__block doke-page-hydration-skeleton__metric"></span></div>
+</div>
+<div class="doke-page-hydration-skeleton__surface doke-page-hydration-skeleton__details">
+<span class="doke-page-hydration-skeleton__block doke-page-hydration-skeleton__line doke-page-hydration-skeleton__line--title"></span>
+<span class="doke-page-hydration-skeleton__block doke-page-hydration-skeleton__line doke-page-hydration-skeleton__line--medium"></span>
+<span class="doke-page-hydration-skeleton__block doke-page-hydration-skeleton__line"></span>
+<span class="doke-page-hydration-skeleton__block doke-page-hydration-skeleton__line"></span>
+</div>
+</section>
+<div class="wallet-overview" data-wallet-view-panel="overview" data-wallet-hydration-ready hidden>
 <section aria-label="Resumo financeiro principal" class="wallet-hero doke-wallet-card doke-card doke-page-section">
 <div class="wallet-hero__balance">
 <span class="wallet-hero__eyebrow">Saldo disponível</span>
@@ -629,6 +642,7 @@ Essa será a conta padrão para repasses e saques.
 
 <script src="assets/js/core/navigation-registry.js?v=20260701-navigation-registry-v1" defer></script>
 <script src="assets/js/core/navigation-lifecycle.js?v=20260713-navigation-lifecycle-v1" defer></script>
+<script src="assets/js/core/page-hydration.js?v=20260714-remaining-pages-v1" defer></script>
 <script defer="" src="assets/js/core/app.js?v=20260702-sidebar-quick-alert-flow-v1"></script>
 <script src="assets/js/components/operational-event-toast.js?v=20260702-sidebar-quick-alert-flow-v1" defer></script>
 <script defer="" src="assets/js/core/stable-shell-router.js?v=20260702-payment-route-init-v1"></script>
@@ -636,7 +650,6 @@ Essa será a conta padrão para repasses e saques.
 <script defer="" src="assets/js/repositories/wallet-repository.js?v=20260702-dispute-bridge-v1"></script>
 <script defer="" src="assets/js/services/wallet-service.js?v=20260702-dispute-bridge-v1"></script>
 <script defer="" src="assets/js/components/doke-lite-select.js?v=20260627-form-select-v4"></script>
-<script defer="" src="assets/js/pages/carteira.js?v=20260702-dispute-bridge-v1"></script>
 <script defer="" src="assets/js/ui/responsive-interaction-guard.js?v=20260428-architecture"></script>
 <script defer="" src="assets/js/ui/mobile-drawer-standard.js?v=20260701-drawer-detail-contract-v1"></script>
 <script defer="" src="assets/js/ui/mobile-interaction-standard.js?v=20260428-v1"></script>
@@ -669,6 +682,8 @@ Essa será a conta padrão para repasses e saques.
 <script defer="" src="assets/js/core/permissions.js?v=20260501-auth-session-v1"></script>
 <script defer="" src="assets/js/core/session.js?v=20260501-auth-session-v1"></script>
 <script defer="" src="assets/js/services/auth-service.js?v=20260622-auth-surface-ready-v1"></script>
+<script defer src="assets/js/services/account-access-service.js?v=20260714-remaining-pages-v1"></script>
+<script defer src="assets/js/pages/carteira.js?v=20260714-remaining-pages-v1"></script>
 <script defer="" src="assets/js/services/mock-data-service.js?v=20260501-stage31-domain-services"></script>
 <script defer="" src="assets/js/services/profile-service.js?v=20260501-stage31-domain-services"></script>
 <script defer="" src="assets/js/services/search-service.js?v=20260501-stage31-domain-services"></script>

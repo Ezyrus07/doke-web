@@ -76,6 +76,24 @@
       skeleton: '[data-notifications-hydration-skeleton]',
       ready: '[data-notifications-hydration-ready]',
       splash: '[data-notifications-document-preloader]'
+    }),
+    '/carteira.html': Object.freeze({
+      boundary: '[data-state-boundary="carteira"]',
+      skeleton: '[data-wallet-hydration-skeleton]',
+      ready: '[data-wallet-hydration-ready]',
+      splash: '[data-wallet-document-preloader]'
+    }),
+    '/orcamento.html': Object.freeze({
+      boundary: '[data-state-boundary="orcamento"]',
+      skeleton: '[data-budget-hydration-skeleton]',
+      ready: '[data-budget-hydration-ready]',
+      splash: '[data-budget-document-preloader]'
+    }),
+    '/avaliacao-profissional.html': Object.freeze({
+      boundary: '[data-state-boundary="avaliacao-profissional"]',
+      skeleton: '[data-review-hydration-skeleton]',
+      ready: '[data-review-hydration-ready]',
+      splash: '[data-review-document-preloader]'
     })
   });
 

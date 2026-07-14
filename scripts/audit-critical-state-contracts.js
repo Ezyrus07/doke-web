@@ -19,7 +19,13 @@ const PAGES = {
       ready: 'data-orders-hydration-ready'
     }
   },
-  'carteira.html': { scope: 'carteira' },
+  'carteira.html': {
+    scope: 'carteira',
+    hydration: {
+      skeleton: 'data-wallet-hydration-skeleton',
+      ready: 'data-wallet-hydration-ready'
+    }
+  },
   'mensagens.html': {
     scope: 'mensagens',
     hydration: {

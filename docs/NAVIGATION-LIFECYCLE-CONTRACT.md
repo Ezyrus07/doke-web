@@ -1,6 +1,6 @@
 # Contrato canônico de navegação e lifecycle — Doke Web
 
-Status: **ativo — Etapa 6 implementada**  
+Status: **ativo — Etapa 7 em andamento (lote 1 implementado)**  
 Escopo: navegação, primeiro paint, guards, hidratação, skeletons, histórico, scroll e feedback operacional.  
 Exclusão: nenhuma mudança runtime em `comunidade-interna.html` ou no CSS da Comunidade.
 
@@ -168,7 +168,7 @@ Regras obrigatórias:
 4. Etapa 4 — admin — **concluída**;
 5. Etapa 5 — perfis e configurações — **concluída**;
 6. Etapa 6 — pedidos, mensagens e pagamento — **concluída**;
-7. Etapa 7 — demais páginas — **próxima**;
+7. Etapa 7 — demais páginas — **em andamento (lote 1 concluído: carteira, notificações, orçamento e avaliação)**;
 8. Etapa 8 — remoção de legado e auditoria final.
 
 Nenhuma etapa deve migrar todas as páginas de uma vez.
