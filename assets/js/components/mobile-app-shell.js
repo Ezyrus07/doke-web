@@ -77,6 +77,14 @@
     return text.slice(0, Math.max(1, maxLength - 1)).trimEnd() + '…';
   }
 
+  function navigateTo(href, options) {
+    var navigation = Doke.navigation && Doke.navigation.go || window.DokeNavigate;
+    if (typeof navigation !== 'function') {
+      throw new Error('Doke navigation lifecycle is unavailable.');
+    }
+    return navigation(href, Object.assign({ source: 'mobile-app-shell' }, options || {}));
+  }
+
   function getInitials(value) {
     var parts = normalizeText(value || 'Doke').split(/\s+/).filter(Boolean).slice(0, 2);
     if (!parts.length) return 'DK';
@@ -573,13 +581,13 @@
         event.stopPropagation();
         if (!shellInlineSearch || !shellInlineSearchInput) {
           if (triggerPageSearch()) return;
-          window.location.href = 'resultados.html';
+          navigateTo('resultados.html');
           return;
         }
         var isOpen = shellInlineSearch.classList.contains('is-expanded');
         var value = shellInlineSearchInput.value.trim();
         if (isOpen && value) {
-          window.location.href = 'resultados.html?q=' + encodeURIComponent(value);
+          navigateTo('resultados.html?q=' + encodeURIComponent(value));
           return;
         }
         setShellInlineSearchExpanded(true);
@@ -592,7 +600,7 @@
         event.preventDefault();
         var value = shellInlineSearchInput.value.trim();
         if (!value) return;
-        window.location.href = 'resultados.html?q=' + encodeURIComponent(value);
+        navigateTo('resultados.html?q=' + encodeURIComponent(value));
       });
       document.addEventListener('click', function (event) {
         if (!shell.contains(event.target)) return;
@@ -693,7 +701,7 @@
         event.preventDefault();
         var value = input.value.trim();
         if (!value) return;
-        window.location.href = 'resultados.html?q=' + encodeURIComponent(value);
+        navigateTo('resultados.html?q=' + encodeURIComponent(value));
       });
     }
 

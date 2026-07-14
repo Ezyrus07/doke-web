@@ -86,16 +86,26 @@
     window.setTimeout(function () { window.location.reload(); }, 60);
   }
 
+  function setAttributeIfChanged(node, name, value) {
+    if (node.getAttribute(name) === value) return false;
+    node.setAttribute(name, value);
+    return true;
+  }
+
   function syncAriaState(node) {
     if (!(node instanceof HTMLElement)) return;
-    if (node.hasAttribute('hidden')) node.setAttribute('aria-hidden', 'true');
-    else if (node.matches('[role="dialog"], [data-community-panel], [data-notification-preferences-panel]')) node.setAttribute('aria-hidden', 'false');
-
-    if (node.matches('[aria-expanded]')) {
-      var controlsId = node.getAttribute('aria-controls');
-      var controlled = controlsId ? document.getElementById(controlsId) : null;
-      if (controlled) node.setAttribute('aria-expanded', controlled.hidden ? 'false' : 'true');
+    if (node.hasAttribute('hidden')) setAttributeIfChanged(node, 'aria-hidden', 'true');
+    else if (node.matches('[role="dialog"], [data-community-panel], [data-notification-preferences-panel]')) {
+      setAttributeIfChanged(node, 'aria-hidden', 'false');
     }
+  }
+
+  function syncControlsForTarget(node) {
+    if (!(node instanceof HTMLElement) || !node.id) return;
+    document.querySelectorAll('[aria-controls]').forEach(function (control) {
+      if (control.getAttribute('aria-controls') !== node.id) return;
+      setAttributeIfChanged(control, 'aria-expanded', node.hidden ? 'false' : 'true');
+    });
   }
 
   function startAriaObserver() {
@@ -103,12 +113,13 @@
     observer = new MutationObserver(function (mutations) {
       mutations.forEach(function (mutation) {
         syncAriaState(mutation.target);
+        syncControlsForTarget(mutation.target);
       });
     });
     observer.observe(document.body, {
       subtree: true,
       attributes: true,
-      attributeFilter: ['hidden', 'aria-expanded']
+      attributeFilter: ['hidden']
     });
   }
 

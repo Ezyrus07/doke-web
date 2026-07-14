@@ -6,7 +6,6 @@
   'use strict';
 
   const lifecycle = window.DokeNavigationLifecycle || window.Doke?.navigationLifecycle || null;
-  const DEFAULT_MIN_DURATION = 0;
   const DEFAULT_MAX_DURATION = 8000;
   const INTERNAL_NAVIGATION_TTL = 1800;
   const activeHydrations = new Map();
@@ -94,6 +93,30 @@
       skeleton: '[data-review-hydration-skeleton]',
       ready: '[data-review-hydration-ready]',
       splash: '[data-review-document-preloader]'
+    }),
+    '/resultados.html': Object.freeze({
+      boundary: '[data-state-boundary="resultados"]',
+      skeleton: '[data-results-hydration-skeleton]',
+      ready: '[data-results-hydration-ready]',
+      splash: '[data-results-document-preloader]'
+    }),
+    '/detalhe-anuncio.html': Object.freeze({
+      boundary: '[data-state-boundary="detalhe-anuncio"]',
+      skeleton: '[data-detail-hydration-skeleton]',
+      ready: '[data-detail-hydration-ready]',
+      splash: '[data-detail-document-preloader]'
+    }),
+    '/novidades.html': Object.freeze({
+      boundary: '[data-state-boundary="novidades"]',
+      skeleton: '[data-news-hydration-skeleton]',
+      ready: '[data-news-hydration-ready]',
+      splash: '[data-news-document-preloader]'
+    }),
+    '/ajuda.html': Object.freeze({
+      boundary: '[data-state-boundary="ajuda"]',
+      skeleton: '[data-help-hydration-skeleton]',
+      ready: '[data-help-hydration-ready]',
+      splash: '[data-help-document-preloader]'
     })
   });
 
@@ -135,7 +158,6 @@
     const internalNavigation = isStableShellNavigation();
     const hardLoad = !internalNavigation;
     const skeletonMode = String(options.skeletonMode || options.skeletonPolicy || 'hard-load');
-    const bootMode = String(options.bootMode || options.bootPolicy || 'hard-load');
     const readyPolicy = String(options.readyPolicy || 'internal-immediate');
 
     const routeVisualMode = getRouteVisualMode();
@@ -155,13 +177,6 @@
       return true;
     })();
 
-    const shouldShowBootLogo = (() => {
-      if (bootMode === 'never') return false;
-      if (internalNavigation) return false;
-      if (bootMode === 'reload') return navigationType === 'reload';
-      return hardLoad;
-    })();
-
     const shouldRevealReadyImmediately = readyPolicy !== 'after-skeleton' && internalNavigation;
 
     return Object.freeze({
@@ -169,7 +184,6 @@
       hardLoad,
       internalNavigation,
       routeVisualMode,
-      shouldShowBootLogo,
       shouldShowSkeleton,
       shouldRevealReadyImmediately
     });
@@ -206,12 +220,6 @@
     });
   };
 
-  const resolveDocumentNodes = (selectors) => toArray(selectors).flatMap((selector) => {
-    if (!selector) return [];
-    if (typeof selector !== 'string') return [selector].filter(Boolean);
-    return Array.from(document.querySelectorAll(selector));
-  });
-
   const setHidden = (node, hidden) => {
     if (!node) return;
     node.hidden = hidden;
@@ -232,12 +240,12 @@
     const skeletonSelectors = toArray(options.skeletonSelectors || options.skeletonSelector || []);
     const readySelectors = toArray(options.readySelectors || options.readySelector || []);
     const errorSelectors = toArray(options.errorSelectors || options.errorSelector || ['[data-state-error]']);
-    const splashSelectors = toArray(options.splashSelectors || options.splashSelector || []);
     const policy = getPolicy(options);
     const useSkeleton = typeof options.skeletonMode === 'undefined' && typeof options.skeletonPolicy === 'undefined'
       ? shouldUseSkeletonForMode('hard-load')
       : policy.shouldShowSkeleton;
     const revealReadyImmediately = policy.shouldRevealReadyImmediately && !options.waitFor;
+    const revealReadyOnEmpty = options.revealReadyOnEmpty !== false;
     const waitFor = new Set(toArray(options.waitFor || ['dom']));
     const readySources = new Set();
     const startedAt = Date.now();
@@ -245,17 +253,11 @@
       ? 0
       : Number.isFinite(Number(options.minDuration))
       ? Math.max(0, Number(options.minDuration))
-      : DEFAULT_MIN_DURATION;
+      : 0;
     const maxDuration = Number.isFinite(Number(options.maxDuration))
       ? Math.max(minDuration, Number(options.maxDuration))
       : DEFAULT_MAX_DURATION;
-    const splashDuration = policy.shouldShowBootLogo && useSkeleton && Number.isFinite(Number(options.splashDuration))
-      ? Math.max(0, Number(options.splashDuration))
-      : 0;
     let watchdogTimer = 0;
-    let splashTimer = 0;
-    let pendingFinalizeTimer = 0;
-    let splashActive = false;
     let skeletonShownAt = 0;
     let state = 'idle';
     let finalizing = false;
@@ -279,26 +281,26 @@
       if (root) {
         root.dataset.pageHydration = nextState;
         root.dataset.pageHydrationSkeleton = useSkeleton ? 'on' : 'off';
-        root.dataset.pageHydrationBoot = splashDuration > 0 ? 'on' : 'off';
-        root.dataset.viewState = nextState === 'document-boot' || nextState === 'hydrating'
+        root.dataset.pageHydrationBoot = 'off';
+        root.dataset.viewState = nextState === 'hydrating'
           ? 'loading'
           : nextState;
-        root.setAttribute('aria-busy', String(nextState === 'document-boot' || nextState === 'hydrating'));
+        root.setAttribute('aria-busy', String(nextState === 'hydrating'));
       }
       if (document.documentElement) {
         document.documentElement.dataset.pageHydration = nextState;
         document.documentElement.dataset.pageHydrationSkeleton = useSkeleton ? 'on' : 'off';
-        document.documentElement.dataset.pageHydrationBoot = splashDuration > 0 ? 'on' : 'off';
+        document.documentElement.dataset.pageHydrationBoot = 'off';
       }
       if (document.body) {
         document.body.dataset.pageHydration = nextState;
         document.body.dataset.pageHydrationSkeleton = useSkeleton ? 'on' : 'off';
-        document.body.dataset.pageHydrationBoot = splashDuration > 0 ? 'on' : 'off';
+        document.body.dataset.pageHydrationBoot = 'off';
         const pageHydrationKey = toDatasetKey(`${page}-hydration`);
         if (pageHydrationKey) document.body.dataset[pageHydrationKey] = nextState;
       }
       if (lifecycle?.page && previousState !== nextState) {
-        if (nextState === 'document-boot' || nextState === 'hydrating') {
+        if (nextState === 'hydrating') {
           lifecycle.page.begin({
             page,
             source: detail.source || 'page-hydration',
@@ -346,8 +348,12 @@
       node.append(document.createTextNode(' '), retry);
     };
 
+    const syncEmptyVisibility = (visible) => {
+      resolveNodes(root, emptySelectors).forEach((node) => setHidden(node, !visible));
+    };
+
     const hideEmpties = () => {
-      resolveNodes(root, emptySelectors).forEach((node) => setHidden(node, true));
+      syncEmptyVisibility(false);
     };
 
     const syncLoading = (visible) => {
@@ -371,24 +377,10 @@
       });
     };
 
-    const syncSplash = (visible) => {
-      splashActive = Boolean(visible);
-      resolveDocumentNodes(splashSelectors).forEach((node) => setHidden(node, !visible));
-      if (root) root.dataset.pageHydrationSplash = visible ? 'on' : 'off';
-      if (document.body) document.body.dataset.pageHydrationSplash = visible ? 'on' : 'off';
-    };
-
     const showSkeleton = () => {
-      if (splashActive) return;
       syncLoading(useSkeleton);
       syncSkeleton(useSkeleton);
       if (useSkeleton && !skeletonShownAt) skeletonShownAt = Date.now();
-    };
-
-    const releaseSplash = () => {
-      if (!splashActive) return;
-      syncSplash(false);
-      if (state === 'hydrating') showSkeleton();
     };
 
     const syncEmpty = ({ hasItems } = {}) => {
@@ -402,62 +394,50 @@
       if (state !== nextState) {
         setState(nextState, { hasItems: lastHasItems, source: 'sync-empty' });
       }
-      resolveNodes(root, emptySelectors).forEach((node) => setHidden(node, !shouldShowEmpty));
+      syncEmptyVisibility(shouldShowEmpty);
       return { state: nextState, hasItems: lastHasItems };
     };
 
     const finalize = () => {
       if (finalizing || state === 'ready' || state === 'empty') return;
-      if (state === 'document-boot' && splashActive && splashDuration > 0) {
-        const remainingSplash = Math.max(0, splashDuration - (Date.now() - startedAt));
-        if (remainingSplash > 0) {
-          if (!pendingFinalizeTimer) {
-            pendingFinalizeTimer = window.setTimeout(() => {
-              pendingFinalizeTimer = 0;
-              finalize();
-            }, remainingSplash);
-          }
-          return;
-        }
-      }
       if (watchdogTimer) {
         window.clearTimeout(watchdogTimer);
         watchdogTimer = 0;
       }
-      if (splashTimer) {
-        window.clearTimeout(splashTimer);
-        splashTimer = 0;
-      }
-      if (pendingFinalizeTimer) {
-        window.clearTimeout(pendingFinalizeTimer);
-        pendingFinalizeTimer = 0;
-      }
-      if (state === 'document-boot' && useSkeleton) {
-        setState('hydrating', { from: 'document-boot' });
-        releaseSplash();
-      } else {
-        releaseSplash();
-      }
       finalizing = true;
-      const elapsed = Date.now() - startedAt;
-      const skeletonElapsed = skeletonShownAt ? Date.now() - skeletonShownAt : elapsed;
-      const delay = Math.max(0, minDuration - (useSkeleton ? skeletonElapsed : elapsed));
       const complete = () => {
+        if (state === 'error') {
+          finalizing = false;
+          return;
+        }
         lastHasItems = readHasItems(lastHasItems);
+        const nextState = lastHasItems ? 'ready' : 'empty';
         finalizing = false;
-        setState(lastHasItems ? 'ready' : 'empty', { hasItems: lastHasItems });
+
+        // Settle every visual surface before publishing the terminal state.
+        // This prevents route listeners from observing mixed skeleton/ready/empty DOM.
         syncLoading(false);
         syncSkeleton(false);
-        syncSplash(false);
         syncError(false);
-        syncReady(true);
-        syncEmpty({ hasItems: lastHasItems });
+        syncReady(lastHasItems || revealReadyOnEmpty);
+        syncEmptyVisibility(!lastHasItems);
+        setState(nextState, { hasItems: lastHasItems });
+
         document.dispatchEvent(new CustomEvent('doke:page-hydration-ready', {
           detail: { page, hasItems: lastHasItems }
         }));
       };
-      if (delay > 0) window.setTimeout(complete, delay);
-      else complete();
+      const minimumWait = lifecycle?.timing?.wait
+        ? lifecycle.timing.wait('page', minDuration, { page, source: 'page-hydration' })
+        : (() => {
+            const elapsed = Date.now() - startedAt;
+            const skeletonElapsed = skeletonShownAt ? Date.now() - skeletonShownAt : elapsed;
+            const delay = Math.max(0, minDuration - (useSkeleton ? skeletonElapsed : elapsed));
+            return delay > 0
+              ? new Promise((resolve) => window.setTimeout(resolve, delay))
+              : Promise.resolve();
+          })();
+      minimumWait.then(complete);
     };
 
     const canFinalize = () => Array.from(waitFor).every((source) => readySources.has(source));
@@ -475,26 +455,16 @@
 
     const start = () => {
       if (state !== 'idle') return api;
-      setState(splashDuration > 0 ? 'document-boot' : 'hydrating');
+      setState('hydrating');
       hideEmpties();
       syncError(false);
       syncLoading(false);
       syncSkeleton(false);
       syncReady(revealReadyImmediately);
-      syncSplash(splashDuration > 0);
-      if (splashTimer) window.clearTimeout(splashTimer);
-      if (useSkeleton && splashDuration > 0) {
-        splashTimer = window.setTimeout(() => {
-          splashTimer = 0;
-          setState('hydrating');
-          releaseSplash();
-        }, splashDuration);
-      } else {
-        showSkeleton();
-      }
+      showSkeleton();
       if (watchdogTimer) window.clearTimeout(watchdogTimer);
       watchdogTimer = window.setTimeout(() => {
-        if (state !== 'hydrating' && state !== 'document-boot') return;
+        if (state !== 'hydrating') return;
         error(new Error(`Tempo limite de hidratação excedido para ${page}.`), { source: 'watchdog' });
       }, maxDuration);
       return api;
@@ -510,23 +480,21 @@
     const error = (reason, detail = {}) => {
       if (state === 'ready' || state === 'empty' || state === 'error') return api;
       lastError = reason instanceof Error ? reason : new Error(String(reason || 'Falha ao carregar a página.'));
-      [watchdogTimer, splashTimer, pendingFinalizeTimer].forEach((timer) => {
+      [watchdogTimer].forEach((timer) => {
         if (timer) window.clearTimeout(timer);
       });
       watchdogTimer = 0;
-      splashTimer = 0;
-      pendingFinalizeTimer = 0;
       finalizing = false;
+      // Hide all non-error surfaces before publishing the error state.
+      syncLoading(false);
+      syncSkeleton(false);
+      syncReady(false);
+      hideEmpties();
+      syncError(true);
       setState('error', Object.assign({
         error: lastError.message,
         source: 'controller'
       }, detail));
-      syncLoading(false);
-      syncSkeleton(false);
-      syncSplash(false);
-      syncReady(false);
-      hideEmpties();
-      syncError(true);
       document.dispatchEvent(new CustomEvent('doke:page-hydration-error', {
         detail: Object.assign({ page, error: lastError.message }, detail)
       }));
@@ -542,12 +510,11 @@
       syncSkeleton,
       syncReady,
       syncError,
-      syncSplash,
       hideEmpties,
       getState: () => state,
       getPolicy: () => policy,
       canShowEmpty: () => state === 'ready' || state === 'empty',
-      isHydrating: () => state === 'hydrating' || state === 'document-boot',
+      isHydrating: () => state === 'hydrating',
       usesSkeleton: () => useSkeleton
     });
 

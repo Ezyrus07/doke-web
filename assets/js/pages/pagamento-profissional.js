@@ -43,6 +43,8 @@
     }
     root.dataset.paymentControllerInitialized = PAYMENT_CONTROLLER_VERSION;
 
+  let paymentContextResolved = false;
+
   const hydration = window.DokePageHydration?.create({
     page: 'pagamento',
     root,
@@ -51,13 +53,13 @@
     errorSelectors: ['[data-state-error]'],
     skeletonSelectors: ['[data-payment-hydration-skeleton]'],
     readySelectors: ['[data-payment-hydration-ready]'],
-    splashSelectors: ['[data-payment-document-preloader]'],
     skeletonMode: 'route-and-document',
     readyPolicy: 'after-skeleton',
+    revealReadyOnEmpty: false,
     waitFor: ['dom', 'auth', 'payment-context'],
     minDuration: 0,
     maxDuration: 8000,
-    hasItems: () => Boolean(currentOrder && currentConversation && currentCharge)
+    hasItems: () => paymentContextResolved
   }) || null;
   hydration?.start();
 
@@ -100,6 +102,11 @@
     conversationId: pageParams.get('conversation') || pageParams.get('conversationId') || '',
     messageId: pageParams.get('message') || pageParams.get('messageId') || ''
   };
+  const hasRequestedPaymentContext = () => Boolean(
+    normalizeText(paymentContext.orderId)
+    || normalizeText(paymentContext.conversationId)
+    || normalizeText(paymentContext.messageId)
+  );
   let currentOrder = null;
   let currentConversation = null;
   let currentCharge = null;
@@ -324,21 +331,38 @@
     });
   }
 
-  function assertValidPaymentContext() {
+  function resolvePaymentContextValidation() {
     if (!currentConversation || !currentCharge || !isActualChargeMessage(currentConversation, currentCharge)) {
-      throw new Error('Cobrança válida não encontrada para este pagamento.');
+      return Object.freeze({ valid: false, reason: 'charge_not_found' });
     }
     const orderId = paymentContext.orderId || currentOrder?.id || currentConversation?.orderId || currentConversation?.order?.id || '';
-    if (!orderId) throw new Error('O pedido vinculado à cobrança não foi encontrado.');
+    if (!orderId) return Object.freeze({ valid: false, reason: 'order_not_found' });
     const amount = normalizeText(currentCharge.amount || currentOrder?.proposalAmount || currentOrder?.budget || '');
-    if (!amount) throw new Error('A cobrança não possui um valor válido.');
+    if (!amount) return Object.freeze({ valid: false, reason: 'amount_not_found' });
     paymentContext.orderId = orderId;
     paymentContext.conversationId = paymentContext.conversationId || currentConversation.id || '';
     paymentContext.messageId = paymentContext.messageId || currentCharge.id || currentCharge.messageId || '';
+    return Object.freeze({ valid: true, reason: 'ready' });
+  }
+
+  function settleEmptyPaymentContext(reason) {
+    paymentContextResolved = false;
+    currentOrder = null;
+    currentConversation = null;
+    currentCharge = null;
+    publishLatestPaymentState({
+      status: 'empty-context',
+      emptyReason: reason || 'payment_context_missing',
+      error: ''
+    });
+    return Object.freeze({ empty: true, reason: reason || 'payment_context_missing' });
   }
 
   function loadPaymentContext() {
     publishLatestPaymentState({ status: 'loading-context', error: '' });
+    if (!hasRequestedPaymentContext()) {
+      return Promise.resolve(settleEmptyPaymentContext('route_context_missing'));
+    }
     const orderRepository = getOrderRepository();
     const messagesRepository = getMessagesRepository();
     const orderTask = paymentContext.orderId && orderRepository?.getById
@@ -364,10 +388,13 @@
       }
       return null;
     }).then(() => {
-      assertValidPaymentContext();
+      const validation = resolvePaymentContextValidation();
+      if (!validation.valid) return settleEmptyPaymentContext(validation.reason);
+      paymentContextResolved = true;
       applyPaymentContext();
-      return loadWalletBalance();
+      return loadWalletBalance().then(() => Object.freeze({ empty: false, reason: 'ready' }));
     }).catch((error) => {
+      paymentContextResolved = false;
       publishLatestPaymentState({
         status: 'context-error',
         error: error && error.message ? error.message : 'Não foi possível carregar a cobrança.'
@@ -829,7 +856,16 @@
 
   const accountAccess = window.Doke?.services?.accountAccess;
   let accessTask = Promise.resolve(null);
-  if (!accountAccess?.guardPage) {
+
+  // Opening the checkout URL without a charge is a valid contextual empty
+  // state, not an authentication or repository failure. Settle it
+  // synchronously so internal navigation never exposes a blank workspace.
+  if (!hasRequestedPaymentContext()) {
+    settleEmptyPaymentContext('route_context_missing');
+    hydration?.mark('auth');
+    hydration?.mark('payment-context');
+    accessTask = Promise.resolve({ allowed: true, empty: true });
+  } else if (!accountAccess?.guardPage) {
     hydration?.error(new Error('A autoridade de acesso da conta não está disponível.'), {
       source: 'payment-account-guard'
     });

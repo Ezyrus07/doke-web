@@ -72,7 +72,7 @@ const LEGACY_HOME_WIDTH_VARS = [
 ];
 const SHELL_STATE_CLASSES = ["sidebar-collapsed", "sidebar-open", "theme-dark", "mobile-search-active"];
 const ROUTE_SWAP_STATE_CLASSES = ["is-shell-swapping", "is-route-instant-swap"];
-const PRESERVED_BODY_STATE_CLASSES = [...SHELL_STATE_CLASSES, ...ROUTE_SWAP_STATE_CLASSES];
+const PRESERVED_BODY_STATE_CLASSES = [...SHELL_STATE_CLASSES];
 const INTERNAL_PROFILE_PATH = "/perfil.html";
 const OWNER_PROFILE_PATH = "/meu-perfil.html";
 const NAVIGATION_REGISTRY = window.DokeNavigationRegistry || null;
@@ -1136,7 +1136,6 @@ const BASE_SHELL_STYLE_PATTERNS = [
 ];
 
 const INTERNAL_VIEW_STYLE_HINTS = {
-  "/anunciar-servico.html": ["assets/css/pages/anunciar-servico-foundation.css"],
   "/index.html": ["assets/css/pages/home-foundation.css"],
   "/resultados.html": [
     "assets/css/pages/marketplace-foundation.css",
@@ -1165,7 +1164,6 @@ const INTERNAL_VIEW_STYLE_HINTS = {
 const preloadedStyleHrefs = new Set();
 
 const INTERNAL_VIEW_SCRIPT_HINTS = {
-  "/anunciar-servico.html": ["assets/js/pages/anunciar-servico.js"],
   "/index.html": [
     "assets/js/pages/search-data.js",
     "assets/js/pages/home/filters.js",
@@ -1666,6 +1664,8 @@ const ROUTE_TRANSIENT_CLASSES = [
   "home-inline-filters-open",
   "home-search-overlay-active",
   "is-media-lightbox-open",
+  "is-route-instant-swap",
+  "is-shell-swapping",
   "is-messages-header-search-open",
   "is-search-open",
   "is-wallet-modal-open",
@@ -1831,8 +1831,6 @@ const initializeCurrentView = () => {
   runViewInitializer("owner-profile", window.DokeInitOwnerProfile);
   runViewInitializer("client-profile", window.DokeInitClientProfile);
   runViewInitializer("settings", window.DokeInitSettings);
-  runViewInitializer("post-service", window.DokeInitPostService);
-  runViewInitializer("professional-verification", window.DokeInitProfessionalVerification);
   runViewInitializer("professional-profile", window.DokeInitProfessionalProfile);
   syncLucideIcons();
   runViewInitializer("mobile-shell", window.DokeMobileAppShell?.refresh);
@@ -2036,9 +2034,12 @@ const swapView = async (href, options = {}) => {
     }
     throw error;
   } finally {
+    // Release the legacy shell gate immediately. Waiting for the next paint
+    // can leave route content hidden if the initializer is expensive.
+    body.classList.remove("is-shell-swapping");
+    clearRouteTransientState();
     window.requestAnimationFrame(() => {
       clearRouteTransientState();
-      body.classList.remove("is-shell-swapping");
     });
   }
 };

@@ -14,15 +14,18 @@
     return;
   }
 
-  var VERSION = '20260713-navigation-lifecycle-v1';
+  var VERSION = '20260714-navigation-lifecycle-v2';
   var INTERNAL_MARKER_KEY = 'doke.internalRouteNavigation';
   var INTENT_MARKER_KEY = 'doke.navigationIntent';
   var SCROLL_STORAGE_KEY = 'doke.navigationScroll.v1';
   var INTERNAL_NAVIGATION_TTL = 2500;
   var MAX_LOG_ENTRIES = 160;
+  var VISUAL_MINIMUMS = Object.freeze({ document: 180, route: 150, page: 0, guard: 0 });
   var adapters = new Map();
   var scrollPositions = new Map();
   var sequence = 0;
+  var visualCycleSequence = 0;
+  var visualCycle = { id: 0, mode: 'hard-load', source: 'bootstrap', startedAt: Date.now() };
   var popstateBound = false;
   var log = window.__dokeNavigationLifecycleLog || (window.__dokeNavigationLifecycleLog = []);
 
@@ -36,6 +39,52 @@
     } catch (error) {
       return 0;
     }
+  }
+
+  function normalizeDuration(value, fallback) {
+    var number = Number(value);
+    if (!Number.isFinite(number)) number = Number(fallback || 0);
+    return Math.max(0, number);
+  }
+
+  function beginVisualCycle(detail) {
+    detail = detail || {};
+    visualCycle = {
+      id: ++visualCycleSequence,
+      mode: String(detail.mode || state && state.entry && state.entry.mode || 'hard-load'),
+      source: String(detail.source || 'navigation'),
+      startedAt: now()
+    };
+    document.dispatchEvent(new CustomEvent('doke:navigation-visual-cycle', {
+      detail: copy(visualCycle)
+    }));
+    return copy(visualCycle);
+  }
+
+  function getVisualCycle() {
+    return copy(visualCycle);
+  }
+
+  function visualMinimum(surface, requested) {
+    var fallback = Object.prototype.hasOwnProperty.call(VISUAL_MINIMUMS, surface)
+      ? VISUAL_MINIMUMS[surface]
+      : 0;
+    return normalizeDuration(requested, fallback);
+  }
+
+  function visualMinimumRemaining(surface, requested, detail) {
+    detail = detail || {};
+    var minimum = visualMinimum(surface, requested);
+    var startedAt = Number(detail.startedAt || visualCycle.startedAt || now());
+    return Math.max(0, minimum - Math.max(0, now() - startedAt));
+  }
+
+  function waitForVisualMinimum(surface, requested, detail) {
+    var remaining = visualMinimumRemaining(surface, requested, detail);
+    if (remaining <= 0) return Promise.resolve(0);
+    return new Promise(function (resolve) {
+      window.setTimeout(function () { resolve(remaining); }, remaining);
+    });
   }
 
   function normalizeUrl(value) {
@@ -153,6 +202,13 @@
       updatedAt: now(),
       error: ''
     }
+  };
+
+  visualCycle = {
+    id: ++visualCycleSequence,
+    mode: state.entry.mode,
+    source: 'entry',
+    startedAt: now()
   };
 
   function copy(value) {
@@ -319,6 +375,10 @@
   function routeBegin(detail) {
     detail = detail || {};
     var id = ++sequence;
+    beginVisualCycle({
+      mode: detail.restore ? 'restore' : 'internal',
+      source: detail.source || 'route'
+    });
     updateDomain('route', {
       id: id,
       state: 'pending',
@@ -611,6 +671,24 @@
     }
   }
 
+  function back(fallback, options) {
+    options = Object.assign({
+      replaceFallback: true,
+      source: 'back'
+    }, options || {});
+    if (window.history && window.history.length > 1) {
+      captureScroll(window.location.href);
+      window.history.back();
+      return Promise.resolve(true);
+    }
+    if (!fallback) return Promise.resolve(false);
+    return go(fallback, {
+      replace: options.replaceFallback !== false,
+      restoreScroll: false,
+      source: options.source + '-fallback'
+    });
+  }
+
   function runGuard(options) {
     options = options || {};
     if (typeof options.check !== 'function') {
@@ -712,6 +790,7 @@
     }),
     navigation: Object.freeze({
       go: go,
+      back: back,
       warm: warm,
       registerAdapter: registerNavigationAdapter,
       getAdapters: function () {
@@ -724,12 +803,20 @@
       capture: captureScroll,
       get: getScroll,
       restore: restoreScroll
+    }),
+    timing: Object.freeze({
+      beginCycle: beginVisualCycle,
+      getCycle: getVisualCycle,
+      getMinimum: visualMinimum,
+      remaining: visualMinimumRemaining,
+      wait: waitForVisualMinimum
     })
   });
 
   Doke.navigationLifecycle = api;
   Doke.navigation = Doke.navigation || {};
   Doke.navigation.go = go;
+  Doke.navigation.back = back;
   Doke.navigation.warm = warm;
   Doke.navigation.guard = runGuard;
   Doke.navigation.transition = api.route;

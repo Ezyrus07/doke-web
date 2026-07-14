@@ -1,7 +1,7 @@
 /* Notificações page hydration states
-   Responsibility: first-load skeleton and ready visibility for the data-driven
-   notifications list. Skeleton cards do not use .notification-card so they are
-   never counted as real notifications. */
+   Responsibility: first-load visibility for the data-driven notifications list.
+   The pending surface is deliberately neutral: it does not imply that notification
+   items exist before the repository resolves the real empty/list state. */
 
 body.notifications-page-shell [data-notifications-hydration-skeleton][hidden],
 body.notifications-page-shell [data-notifications-hydration-ready][hidden],
@@ -14,55 +14,101 @@ body.notifications-page-shell [data-page-hydration="hydrating"][data-page-hydrat
   display: none;
 }
 
-body.notifications-page-shell [data-notifications-hydration-skeleton] :where(.doke-skeleton-line, [data-skeleton-line]) {
-  --doke-skeleton-bg: rgba(226, 239, 249, 0.86);
-  --doke-skeleton-shine: rgba(255, 255, 255, 0.64);
+body.notifications-page-shell .notifications-hydration-state {
   display: block;
-  border-radius: var(--radius-pill);
-  background: linear-gradient(90deg, var(--doke-skeleton-bg) 0%, var(--doke-skeleton-shine) 48%, var(--doke-skeleton-bg) 100%);
-  background-size: 220% 100%;
-  animation: dokeNotificationsHydrationShimmer 1.55s ease-in-out infinite;
-}
-
-body.notifications-page-shell .notifications-hydration-skeleton {
-  display: grid;
-  gap: 12px;
   inline-size: 100%;
 }
 
-body.notifications-page-shell .notifications-hydration-skeleton__card {
+body.notifications-page-shell .notifications-hydration-state__surface {
+  box-sizing: border-box;
   display: grid;
-  grid-template-columns: 44px minmax(0, 1fr) 40px;
-  gap: 18px;
-  align-items: start;
-  min-block-size: 116px;
-  padding: 20px;
-  border-radius: var(--radius-lg);
-  background: rgba(255, 255, 255, 0.86);
-  box-shadow: var(--doke-elevation-surface-hover);
+  min-block-size: clamp(112px, 12vw, 154px);
+  place-content: center;
+  justify-items: center;
+  gap: 8px;
+  inline-size: 100%;
+  padding: var(--state-surface-padding);
+  border: var(--border-width) var(--border-style) var(--state-surface-border-color);
+  border-radius: var(--state-surface-radius);
+  background: var(--doke-visual-surface-raised);
+  box-shadow: var(--state-surface-shadow);
+  text-align: center;
 }
 
-body.notifications-page-shell .notifications-hydration-skeleton__icon { inline-size: 42px; block-size: 42px; border-radius: var(--radius-base); }
-body.notifications-page-shell .notifications-hydration-skeleton__content { display: grid; gap: 10px; min-inline-size: 0; }
-body.notifications-page-shell .notifications-hydration-skeleton__meta { display: flex; gap: 8px; align-items: center; }
-body.notifications-page-shell .notifications-hydration-skeleton__tag { inline-size: 78px; block-size: 24px; }
-body.notifications-page-shell .notifications-hydration-skeleton__time { inline-size: 68px; block-size: 12px; }
-body.notifications-page-shell .notifications-hydration-skeleton__title { inline-size: min(240px, 70%); block-size: 18px; }
-body.notifications-page-shell .notifications-hydration-skeleton__text { inline-size: min(620px, 92%); block-size: 14px; }
-body.notifications-page-shell .notifications-hydration-skeleton__actions { display: flex; gap: 12px; align-items: center; }
-body.notifications-page-shell .notifications-hydration-skeleton__action { inline-size: 104px; block-size: 14px; }
-body.notifications-page-shell .notifications-hydration-skeleton__check { inline-size: 28px; block-size: 28px; border-radius: var(--radius-pill); }
+body.notifications-page-shell .notifications-hydration-state__surface > strong {
+  margin: 0;
+  color: var(--state-title-color);
+  font-size: clamp(1rem, 1.25vw, 1.22rem);
+  font-weight: var(--state-title-weight);
+  line-height: var(--state-title-line-height);
+  letter-spacing: var(--state-title-letter-spacing);
+}
 
-@keyframes dokeNotificationsHydrationShimmer {
-  0% { background-position: 120% 0; }
-  100% { background-position: -120% 0; }
+body.notifications-page-shell .notifications-hydration-state__surface > span:last-child {
+  max-inline-size: 48ch;
+  color: var(--state-description-color);
+  font-size: clamp(0.84rem, 0.98vw, 0.96rem);
+  font-weight: var(--state-description-weight);
+  line-height: var(--state-description-line-height);
+}
+
+body.notifications-page-shell .notifications-hydration-state__indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-block-size: 14px;
+  margin-block-end: 2px;
+}
+
+body.notifications-page-shell .notifications-hydration-state__indicator > span {
+  inline-size: 6px;
+  block-size: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary, #2a5f90);
+  opacity: 0.34;
+  animation: dokeNotificationsPendingDot 1.1s ease-in-out infinite;
+}
+
+body.notifications-page-shell .notifications-hydration-state__indicator > span:nth-child(2) {
+  animation-delay: 120ms;
+}
+
+body.notifications-page-shell .notifications-hydration-state__indicator > span:nth-child(3) {
+  animation-delay: 240ms;
+}
+
+@keyframes dokeNotificationsPendingDot {
+  0%, 70%, 100% {
+    opacity: 0.28;
+    transform: translateY(0);
+  }
+
+  35% {
+    opacity: 0.9;
+    transform: translateY(-2px);
+  }
 }
 
 @media (max-width: 760px) {
-  body.notifications-page-shell .notifications-hydration-skeleton__card {
-    grid-template-columns: 40px minmax(0, 1fr);
-    padding: 16px;
+  body.notifications-page-shell .notifications-hydration-state__surface {
+    min-block-size: 118px;
+    padding: 20px 16px;
+    border-radius: var(--radius-card);
   }
 
-  body.notifications-page-shell .notifications-hydration-skeleton__check { display: none; }
+  body.notifications-page-shell .notifications-hydration-state__surface > strong {
+    font-size: 1.05rem;
+  }
+
+  body.notifications-page-shell .notifications-hydration-state__surface > span:last-child {
+    font-size: 0.9rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.notifications-page-shell .notifications-hydration-state__indicator > span {
+    animation: none;
+    opacity: 0.55;
+  }
 }

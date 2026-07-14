@@ -48,8 +48,6 @@
         '[data-orders-hydration-ready]',
         '[data-orders-hydration-count-ready]'
       ],
-      splashSelectors: ['[data-orders-document-preloader]'],
-      splashDuration: 520,
       skeletonMode: 'route-and-document',
       readyPolicy: 'after-skeleton',
       waitFor: ['dom', 'auth', 'local-orders'],

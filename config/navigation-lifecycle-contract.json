@@ -1,7 +1,7 @@
 {
   "contract": "doke-navigation-lifecycle",
-  "version": "4.0.0",
-  "stage": "04-admin-guards",
+  "version": "8.0.0",
+  "stage": "08-final-audit-and-legacy-removal",
   "sourceOfTruth": "docs/NAVIGATION-LIFECYCLE-CONTRACT.md",
   "excludedRuntimeSurfaces": [
     "comunidade-interna.html",
@@ -27,7 +27,8 @@
     "authGuard": "assets/js/core/route-guard.js",
     "professionalGuard": "assets/js/services/professional-access-service.js",
     "operationalFeedback": "assets/js/components/operational-event-toast.js",
-    "adminGuard": "assets/js/services/admin-access-service.js"
+    "adminGuard": "assets/js/services/admin-access-service.js",
+    "visualTiming": "assets/js/core/navigation-lifecycle.js#timing"
   },
   "entryModes": {
     "hard-load": {
@@ -68,7 +69,14 @@
     "mensagens.html",
     "pagamento-profissional.html",
     "carteira.html",
-    "configuracoes.html"
+    "configuracoes.html",
+    "notificacoes.html",
+    "orcamento.html",
+    "avaliacao-profissional.html",
+    "resultados.html",
+    "detalhe-anuncio.html",
+    "novidades.html",
+    "ajuda.html"
   ],
   "mandatoryFlow": {
     "origin": "anunciar-servico.html",
@@ -119,5 +127,38 @@
       "ready content or recoverable error"
     ],
     "status": "migrated"
+  },
+  "stage07": {
+    "batch01": {
+      "pages": [
+        "carteira.html",
+        "notificacoes.html",
+        "orcamento.html",
+        "avaliacao-profissional.html"
+      ],
+      "status": "migrated"
+    },
+    "batch02": {
+      "pages": [
+        "resultados.html",
+        "detalhe-anuncio.html",
+        "novidades.html",
+        "ajuda.html"
+      ],
+      "requiredSequence": [
+        "structural skeleton",
+        "page or data hydration",
+        "ready content, empty state, or recoverable error"
+      ],
+      "status": "migrated"
+    }
+  },
+  "stage08": {
+    "status": "completed",
+    "directInternalLocationMutations": 0,
+    "visualTiming": "single shared cycle for document boot, route threshold and page hydration",
+    "documentPreloaderOwner": "assets/js/core/document-preloader.js",
+    "pageHydrationOwnsDocumentSplash": false,
+    "legacyAdapters": "compatibility-only when navigation lifecycle is absent"
   }
 }

@@ -72,12 +72,13 @@ const listState = read('assets/js/core/list-state.js');
 const controllerRequiredTokens = [
   'Doke.resultadosDataController',
   'Doke.pageDataOrchestrator.getPageData',
-  'dataState',
+  'resultsRepositoryState',
   'doke:resultados-data-ready',
   'doke:resultados-data-error',
   'filters',
   'services',
-  'data-results-grid'
+  'data-results-grid',
+  'repositoryResultCount'
 ];
 for (const token of controllerRequiredTokens) {
   if (!controller.includes(token)) {
@@ -89,6 +90,19 @@ const forbiddenControllerTokens = ['fetch(', 'localStorage', 'sessionStorage', '
 for (const token of forbiddenControllerTokens) {
   if (controller.toLowerCase().includes(token.toLowerCase())) {
     findings.push({ severity: 'error', message: `resultados-data-controller.js must not use ${token}` });
+  }
+}
+
+
+const forbiddenVisualAuthorityTokens = [
+  'DokePageHydration',
+  'Doke.listState.setListState',
+  'Doke.experience.states.set',
+  'dataset.resultCount ='
+];
+for (const token of forbiddenVisualAuthorityTokens) {
+  if (controller.includes(token)) {
+    findings.push({ severity: 'error', message: `resultados-data-controller.js must not own visual state via ${token}` });
   }
 }
 

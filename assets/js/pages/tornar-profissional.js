@@ -309,8 +309,9 @@
           const saved = await persistDraft();
           if (!saved) return;
         }
-        if (typeof window.DokeNavigate === 'function') window.DokeNavigate(target);
-        else window.location.href = target;
+        const navigate = window.Doke?.navigation?.go || window.DokeNavigate;
+        if (typeof navigate !== 'function') throw new Error('Doke navigation lifecycle is unavailable.');
+        await navigate(target, { source: 'tornar-profissional-exit' });
       } finally {
         exitButton.removeAttribute('aria-busy');
       }
@@ -321,8 +322,11 @@
       if (currentStep > 1) {
         setStep(currentStep - 1);
         root.querySelector('.become-pro-form-card')?.scrollIntoView({ block: 'start', behavior: 'smooth' });
-      } else if (window.history.length > 1) window.history.back();
-      else window.location.href = 'meu-perfil.html';
+      } else {
+        const back = window.Doke?.navigation?.back;
+        if (typeof back !== 'function') throw new Error('Doke navigation lifecycle is unavailable.');
+        back('meu-perfil.html', { source: 'tornar-profissional-back' });
+      }
     });
 
     root.querySelectorAll('.become-pro-upload-card input[type="file"]').forEach((input) => {

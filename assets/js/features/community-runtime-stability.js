@@ -3,7 +3,14 @@
   let banner = null;
   let lastFocused = null;
 
-  const safeParse = (value, fallback = []) => { try { return JSON.parse(value); } catch (_error) { return fallback; } };
+  const safeParse = (value, fallback = []) => {
+    try {
+      const parsed = JSON.parse(value);
+      return parsed == null ? fallback : parsed;
+    } catch (_error) {
+      return fallback;
+    }
+  };
   const setConnectionState = () => {
     const online = navigator.onLine;
     document.documentElement.dataset.connectionState = online ? 'online' : 'offline';
@@ -30,14 +37,15 @@
   };
 
   const enqueue = (operation) => {
-    const queue = safeParse(localStorage.getItem(OFFLINE_QUEUE_KEY), []);
+    const parsedQueue = safeParse(localStorage.getItem(OFFLINE_QUEUE_KEY), []);
+    const queue = Array.isArray(parsedQueue) ? parsedQueue : [];
     queue.push({ ...operation, queuedAt: new Date().toISOString() });
     localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(queue.slice(-100)));
     return queue.length;
   };
   const flushQueue = () => {
     const queue = safeParse(localStorage.getItem(OFFLINE_QUEUE_KEY), []);
-    if (!queue.length) return;
+    if (!Array.isArray(queue) || !queue.length) return;
     document.dispatchEvent(new CustomEvent('doke:offline-queue-ready', { detail: { operations: queue } }));
     localStorage.removeItem(OFFLINE_QUEUE_KEY);
   };

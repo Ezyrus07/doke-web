@@ -245,3 +245,34 @@ Use contracts especializados quando a ação não for um botão comum:
 - `doke-rating-star` para estrelas de avaliação.
 
 Não use CSS de página para redesenhar a anatomia do botão. A página pode apenas posicionar, agrupar ou controlar responsividade contextual.
+
+## Política de consolidação de botões e remoção de `!important`
+
+A evolução visual do Doke deve reduzir famílias concorrentes, não criar novos aliases.
+
+### Marcação nova
+
+- Ação textual comum: `doke-btn` + exatamente um modificador semântico (`--primary`, `--secondary`, `--ghost`, `--success` ou `--danger`).
+- Tamanho diferente só quando necessário: `--sm` ou `--lg`.
+- Largura total só quando necessária: `--block`.
+- A classe local pode permanecer como hook de domínio/JS ou para layout do grupo, mas não pode definir altura, padding, raio, borda, fundo, tipografia, sombra ou estados do botão.
+- `doke-button` permanece apenas como alias de compatibilidade; não deve ser usado em marcação nova.
+- Botões contextuais especializados (`doke-filter-pill`, `doke-segment-button`, `doke-choice-button`, `doke-icon-btn`, `doke-close-button`) não devem acumular `doke-btn` quando o contrato especializado já possui anatomia completa.
+
+### Migração progressiva
+
+Ao tocar uma página:
+
+1. inventariar classes locais de botão;
+2. substituir anatomia local por classes canônicas;
+3. remover regras locais equivalentes;
+4. preservar somente classes de domínio necessárias para JS ou posicionamento;
+5. executar `npm run audit:button-system-contract` e `npm run audit:content-action-contract`.
+
+### Política de `!important`
+
+- Nenhum `!important` novo é permitido.
+- Arquivos alterados devem terminar com contagem igual ou menor que a inicial.
+- A remoção deve ser incremental e baseada na regra vencedora real; não fazer remoção em massa sem validar a cascata.
+- Quando um `!important` for encontrado na autoridade tocada, consolidar origem, ordem de importação ou especificidade natural antes de removê-lo.
+- O objetivo de longo prazo é zero `!important` em CSS de produção, sem regressões visuais ou funcionais.

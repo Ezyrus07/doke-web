@@ -158,10 +158,10 @@
       if (currentStep > 1) {
         setStep(currentStep - 1);
         root.querySelector('.post-service-form-card')?.scrollIntoView({ block: 'start', behavior: 'smooth' });
-      } else if (window.history.length > 1) {
-        window.history.back();
       } else {
-        window.location.href = 'perfil.html?mode=owner&panel=services';
+        const back = window.Doke?.navigation?.back;
+        if (typeof back !== 'function') throw new Error('Doke navigation lifecycle is unavailable.');
+        back('perfil.html?mode=owner&panel=services', { source: 'anunciar-servico-back' });
       }
     });
 

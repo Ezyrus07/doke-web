@@ -8,9 +8,9 @@ const ROOT = process.cwd();
 const STRICT = process.argv.includes('--strict');
 const CONTRACT_PATH = path.join(ROOT, 'config/navigation-lifecycle-contract.json');
 const REPORT_DIR = path.join(ROOT, 'reports/generated');
-const JSON_REPORT = path.join(REPORT_DIR, 'navigation-lifecycle-audit-stage-02.json');
-const CSV_REPORT = path.join(REPORT_DIR, 'navigation-lifecycle-navigation-inventory.csv');
-const MD_REPORT = path.join(REPORT_DIR, 'navigation-lifecycle-audit-stage-02.md');
+const JSON_REPORT = path.join(REPORT_DIR, 'navigation-lifecycle-audit-stage-08-final.json');
+const CSV_REPORT = path.join(REPORT_DIR, 'navigation-lifecycle-navigation-inventory-stage-08.csv');
+const MD_REPORT = path.join(REPORT_DIR, 'navigation-lifecycle-audit-stage-08-final.md');
 
 function read(relativePath) {
   return fs.readFileSync(path.join(ROOT, relativePath), 'utf8');
@@ -220,10 +220,22 @@ if (duplicatedAdminReviewScripts.length) {
 
 const preloaderSource = read('assets/js/core/document-preloader.js');
 const hydrationSource = read('assets/js/core/page-hydration.js');
-if (/MIN_VISIBLE_MS\s*=\s*\d+/.test(preloaderSource) && /minDuration/.test(hydrationSource)) {
-  finding('P1', 'STACKED_MIN_DURATION', 'Boot de documento e hidratação possuem controles independentes de duração mínima, permitindo latência percebida acumulada.', [
+const stableRouterTimingSource = fs.existsSync(path.join(ROOT, 'assets/js/core/stable-shell-router.js'))
+  ? read('assets/js/core/stable-shell-router.js')
+  : '';
+const timingFacadeSource = fs.existsSync(path.join(ROOT, 'assets/js/core/navigation-lifecycle.js'))
+  ? read('assets/js/core/navigation-lifecycle.js')
+  : '';
+const lifecycleTimingCentralized = /timing:\s*Object\.freeze/.test(timingFacadeSource)
+  && /lifecycle\.timing\.wait\('document'/.test(preloaderSource)
+  && /lifecycle\.timing\.wait\('page'/.test(hydrationSource)
+  && /lifecycle\.timing\.wait\('route'/.test(stableRouterTimingSource);
+if (!lifecycleTimingCentralized) {
+  finding('P1', 'STACKED_MIN_DURATION', 'Boot, rota e hidratação devem compartilhar um único ciclo visual e uma única política de duração mínima.', [
+    'assets/js/core/navigation-lifecycle.js',
     'assets/js/core/document-preloader.js',
-    'assets/js/core/page-hydration.js'
+    'assets/js/core/page-hydration.js',
+    'assets/js/core/stable-shell-router.js'
   ]);
 }
 
@@ -310,7 +322,7 @@ const report = {
   },
   priorityPages,
   findings,
-  nextStage: 'Continuar a Etapa 7 com as páginas públicas e de descoberta restantes, antes da remoção de legado e auditoria final.'
+  nextStage: 'Lifecycle canônico concluído; executar validação visual manual e monitorar regressões.'
 };
 
 fs.mkdirSync(REPORT_DIR, { recursive: true });

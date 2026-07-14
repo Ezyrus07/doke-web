@@ -3,8 +3,7 @@
 
   var Doke = window.Doke || (window.Doke = {});
   var lifecycle = window.DokeNavigationLifecycle || Doke.navigationLifecycle || null;
-  var ROUTER_VERSION = '20260711-experience-runtime-v1';
-  var ROUTE_VISUAL_THRESHOLD_MS = 150;
+  var ROUTER_VERSION = '20260714-route-deadlock-v1';
   var ROUTE_SETTLEMENT_TIMEOUT_MS = 9000;
 
   var SAFE_ROUTES = new Set([
@@ -51,7 +50,11 @@
     '/notificacoes.html',
     '/carteira.html',
     '/orcamento.html',
-    '/avaliacao-profissional.html'
+    '/avaliacao-profissional.html',
+    '/resultados.html',
+    '/detalhe-anuncio.html',
+    '/novidades.html',
+    '/ajuda.html'
   ]);
 
   var PROFILE_ACTIVE_PATHS = new Set([
@@ -70,6 +73,7 @@
     '/detalhe-anuncio.html': ['DokeInitDetailAd'],
     '/avaliacao-profissional.html': ['DokeInitReview'],
     '/ajuda.html': ['DokeInitHelpCenter'],
+    '/novidades.html': ['DokeInitNewsPage'],
     '/pedidos.html': ['DokeInitOrders'],
     '/mensagens.html': ['DokeInitMessages'],
     '/notificacoes.html': ['DokeInitNotifications'],
@@ -119,6 +123,8 @@
     'home-inline-filters-open',
     'home-search-overlay-active',
     'is-media-lightbox-open',
+    'is-route-instant-swap',
+    'is-shell-swapping',
     'is-messages-header-search-open',
     'is-search-open',
     'is-wallet-modal-open',
@@ -818,7 +824,10 @@
   }
 
   function waitForVisualThreshold(startedAt) {
-    var remaining = Math.max(0, ROUTE_VISUAL_THRESHOLD_MS - (performance.now() - startedAt));
+    if (lifecycle && lifecycle.timing && typeof lifecycle.timing.wait === 'function') {
+      return lifecycle.timing.wait('route').then(function () { return 'threshold'; });
+    }
+    var remaining = Math.max(0, 150 - (performance.now() - startedAt));
     return new Promise(function (resolve) {
       window.setTimeout(function () { resolve('threshold'); }, remaining);
     });
@@ -945,18 +954,16 @@
         .then(function () { return prepareEssentialData(path, url); })
         .then(function () { return 'assets-ready'; });
 
-      var preparationState = await Promise.race([
-        assetsPromise,
-        waitForVisualThreshold(startedAt)
-      ]);
-      if (id !== navigationId) return;
-
-      if (preparationState === 'threshold' && hasSkeleton) {
+      // Data-driven routes must never commit with both the skeleton and the
+      // real surface hidden. Always mount their structural skeleton first;
+      // the page hydration authority is responsible for replacing it.
+      if (hasSkeleton) {
         visualMode = 'skeleton';
       } else {
         await assetsPromise;
         visualMode = 'direct';
       }
+      if (id !== navigationId) return;
       prepareRouteDocument(nextDoc, path, visualMode);
       setRouteVisualMode(visualMode);
       replaceShell(nextDoc, path);
@@ -996,6 +1003,16 @@
       if (id !== navigationId) return;
 
       runInitializers(path);
+
+      // The shell is already committed and interactive. Do not hold the
+      // global navigation mutex while a page hydrates; otherwise every link
+      // becomes inert until settlement or timeout. A subsequent navigation
+      // increments navigationId and safely supersedes this settlement task.
+      if (id === navigationId) {
+        navigating = false;
+        setBusy(false);
+      }
+
       var dataBoot = bootRouteDataController(path);
       if (path === '/detalhe-anuncio.html') {
         await dataBoot;
@@ -1005,6 +1022,7 @@
         });
       }
       var settlement = await waitForRouteSettlement(path);
+      if (id !== navigationId) return;
       if (settlement === 'timeout' && window.DokePageHydration && typeof window.DokePageHydration.showRouteError === 'function') {
         window.DokePageHydration.showRouteError(path, new Error('Tempo limite da rota excedido.'));
         settlement = 'error';
@@ -1052,18 +1070,22 @@
         window.DokePageHydration.showRouteError(path, error);
       }
     } finally {
-      setBusy(false);
-      navigating = false;
-      try {
-        document.documentElement.removeAttribute('data-doke-navigation-mode');
-        if (document.body) document.body.removeAttribute('data-doke-navigation-mode');
-        if (window.DokePageHydration && typeof window.DokePageHydration.clearRouteVisualMode === 'function') {
-          window.DokePageHydration.clearRouteVisualMode();
-        }
-      } catch (error) {}
-      requestAnimationFrame(function () {
-        clearTransientRouteState();
-      });
+      // An older settlement may finish after the user has already started a
+      // new route. Only the current navigation may clear global route state.
+      if (id === navigationId) {
+        setBusy(false);
+        navigating = false;
+        try {
+          document.documentElement.removeAttribute('data-doke-navigation-mode');
+          if (document.body) document.body.removeAttribute('data-doke-navigation-mode');
+          if (window.DokePageHydration && typeof window.DokePageHydration.clearRouteVisualMode === 'function') {
+            window.DokePageHydration.clearRouteVisualMode();
+          }
+        } catch (error) {}
+        requestAnimationFrame(function () {
+          if (id === navigationId) clearTransientRouteState();
+        });
+      }
     }
   }
 

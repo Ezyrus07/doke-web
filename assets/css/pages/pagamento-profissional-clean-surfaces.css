@@ -1,0 +1,150 @@
+/* Pagamento profissional — Doke Clean surface authority.
+ * Responsibility: remove visible strokes from checkout surfaces and controls,
+ * replacing them with the approved micro-shadow hierarchy. Component anatomy
+ * remains owned by shared controls and pagamento-profissional.css.
+ */
+
+body[data-page="pagamento-profissional"] {
+  --payment-clean-surface-shadow:
+    0 0 0 1px rgba(24, 75, 118, 0.03),
+    0 12px 32px rgba(24, 75, 118, 0.065);
+  --payment-clean-control-shadow:
+    0 0 0 1px rgba(24, 75, 118, 0.022),
+    0 3px 10px rgba(24, 75, 118, 0.045);
+  --payment-clean-control-shadow-hover:
+    0 0 0 1px rgba(24, 75, 118, 0.028),
+    0 7px 18px rgba(24, 75, 118, 0.065);
+  --payment-clean-control-shadow-focus:
+    0 0 0 1px rgba(42, 95, 144, 0.08),
+    0 0 0 4px rgba(42, 95, 144, 0.09),
+    0 4px 14px rgba(24, 75, 118, 0.055);
+  --payment-clean-control-bg: #f8fbfe;
+  --payment-clean-control-bg-hover: #fff;
+}
+
+/* One elevated surface per checkout region. */
+body[data-page="pagamento-profissional"] :is(
+  .payment-main-column > .payment-card,
+  .payment-summary__card
+) {
+  border: 0;
+  background: #fff;
+  box-shadow: var(--payment-clean-surface-shadow);
+}
+
+/* Choice controls and inline financial blocks use precise micro-elevation. */
+body[data-page="pagamento-profissional"] :is(
+  .payment-method,
+  .payment-card-empty,
+  .payment-points,
+  .payment-card-fields,
+  .payment-confirm-check
+) {
+  border: 0;
+  background: var(--payment-clean-control-bg);
+  box-shadow: var(--payment-clean-control-shadow);
+}
+
+body[data-page="pagamento-profissional"] .payment-method:hover {
+  border: 0;
+  background: var(--payment-clean-control-bg-hover);
+  box-shadow: var(--payment-clean-control-shadow-hover);
+  transform: translateY(-1px);
+}
+
+body[data-page="pagamento-profissional"] .payment-method.is-selected {
+  border: 0;
+  background: #edf6fd;
+  box-shadow:
+    0 0 0 1px rgba(42, 95, 144, 0.035),
+    0 5px 16px rgba(24, 75, 118, 0.06);
+}
+
+body[data-page="pagamento-profissional"] .payment-method:focus-within {
+  outline: 0;
+  box-shadow: var(--payment-clean-control-shadow-focus);
+}
+
+/* Form controls: no hard outline; interaction is communicated by surface and halo. */
+body[data-page="pagamento-profissional"] :is(.doke-input, .doke-select, .doke-textarea) {
+  border: 0;
+  background: var(--payment-clean-control-bg);
+  box-shadow: var(--payment-clean-control-shadow);
+}
+
+body[data-page="pagamento-profissional"] :is(.doke-input, .doke-select, .doke-textarea):not(:disabled):hover {
+  border: 0;
+  background: var(--payment-clean-control-bg-hover);
+  box-shadow: var(--payment-clean-control-shadow-hover);
+}
+
+body[data-page="pagamento-profissional"] :is(.doke-input, .doke-select, .doke-textarea):is(:focus, :focus-visible) {
+  border: 0;
+  outline: 0;
+  background: #fff;
+  box-shadow: var(--payment-clean-control-shadow-focus);
+}
+
+/* Secondary actions stay in the canonical doke-btn family, with a clean surface. */
+body[data-page="pagamento-profissional"] .doke-btn--ghost {
+  border: 0;
+  background: #fff;
+  box-shadow: var(--payment-clean-control-shadow);
+}
+
+body[data-page="pagamento-profissional"] .doke-btn--ghost:not(:disabled):hover {
+  border: 0;
+  background: #fff;
+  box-shadow: var(--payment-clean-control-shadow-hover);
+  transform: translateY(-1px);
+}
+
+body[data-page="pagamento-profissional"] .doke-btn--ghost:is(:focus, :focus-visible) {
+  border: 0;
+  outline: 0;
+  box-shadow: var(--payment-clean-control-shadow-focus);
+}
+
+/* Supporting information should read as content, not nested outlined cards. */
+body[data-page="pagamento-profissional"] :is(
+  .payment-method-detail,
+  .payment-summary__amount
+) {
+  border: 0;
+  box-shadow: none;
+}
+
+body[data-page="pagamento-profissional"] .payment-summary__provider {
+  border-block: 0;
+  padding-block: 10px;
+}
+
+body[data-page="pagamento-profissional"] :is(.payment-badge--warning, .payment-badge--success) {
+  border: 0;
+  box-shadow: var(--payment-clean-control-shadow);
+}
+
+body[data-page="pagamento-profissional"] :is(
+  .payment-error,
+  .payment-finish-error,
+  .payment-submit-state__error
+) {
+  border: 0;
+  box-shadow:
+    0 0 0 1px rgba(180, 35, 24, 0.025),
+    0 3px 10px rgba(145, 24, 24, 0.05);
+}
+
+/* Modal cards use elevation alone to communicate the floating layer. */
+body[data-page="pagamento-profissional"] :is(
+  .payment-submit-state__card,
+  .payment-finish-modal__card
+) {
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-page="pagamento-profissional"] :is(.payment-method, .doke-btn--ghost) {
+    transform: none;
+  }
+}

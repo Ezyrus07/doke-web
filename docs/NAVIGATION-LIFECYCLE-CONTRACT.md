@@ -61,7 +61,7 @@ A fachada também:
 - publica datasets de diagnóstico em `html` e `body`;
 - emite `doke:navigation-lifecycle-change` e eventos por domínio.
 
-**Estado atual:** guards profissionais, administrativos e de conta já publicam `begin/allow/redirect/fail` na fachada. A migração continua incremental; rotas ainda não contempladas permanecem dívida explícita, sem criar uma segunda autoridade.
+**Estado final da Etapa 8:** guards profissionais, administrativos e de conta publicam `begin/allow/redirect/fail` na fachada; todas as navegações internas inventariadas usam a autoridade canônica. Adapters legados permanecem somente como compatibilidade para superfícies explicitamente excluídas.
 
 ## 3. Modos de entrada
 
@@ -160,6 +160,25 @@ Regras obrigatórias:
 7. delays artificiais não podem sincronizar confirmação de pagamento ou conclusão;
 8. cada rota possui uma única autoridade de inicialização no stable shell.
 
+## 8.2. Contrato das superfícies públicas e editoriais
+
+`resultados.html`, `detalhe-anuncio.html`, `novidades.html` e `ajuda.html` seguem autoridades diferentes sem compartilhar um loading genérico:
+
+- **resultados:** `loading estrutural → dados da busca → ready | empty | error`;
+- **detalhe do anúncio:** `loading estrutural → entidade válida → ready | empty | error`;
+- **novidades:** `loading estrutural → inicialização editorial → ready | error`;
+- **ajuda:** `loading estrutural → inicialização da central → ready | error`.
+
+Regras obrigatórias:
+
+1. resultados e detalhe não exibem conteúdo provisional antes de o controller publicar o payload;
+2. novidades e ajuda não usam delay artificial para simular carregamento;
+3. o stable shell aguarda a hydration barrier das quatro rotas;
+4. cada página exporta um initializer idempotente e limpa listeners globais ao sair da rota;
+5. drawer, filtros, modais e busca só são ativados após o DOM da rota estar montado;
+6. ausência de dependências ou falha de controller produz erro recuperável;
+7. skeletons representam a geometria real de desktop e mobile e respeitam `prefers-reduced-motion`.
+
 ## 9. Sequência de implementação
 
 1. Etapa 1 — auditoria e contrato canônico — **concluída**;
@@ -168,7 +187,21 @@ Regras obrigatórias:
 4. Etapa 4 — admin — **concluída**;
 5. Etapa 5 — perfis e configurações — **concluída**;
 6. Etapa 6 — pedidos, mensagens e pagamento — **concluída**;
-7. Etapa 7 — demais páginas — **em andamento (lote 1 concluído: carteira, notificações, orçamento e avaliação)**;
+7. Etapa 7 — demais páginas — **concluída (lotes 1 e 2)**;
 8. Etapa 8 — remoção de legado e auditoria final.
 
 Nenhuma etapa deve migrar todas as páginas de uma vez.
+
+
+## Política temporal final — Etapa 8
+
+`Doke.navigationLifecycle.timing` é a única autoridade de duração mínima para superfícies de navegação.
+
+- boot de documento: orçamento visual compartilhado de 180 ms;
+- decisão direct/skeleton da rota: limiar compartilhado de 150 ms;
+- hidratação de página: duração solicitada pelo controller é calculada contra o mesmo ciclo, nunca somada ao boot;
+- `page-hydration.js` não controla nem oculta o splash global;
+- `document-preloader.js` é o único proprietário da superfície de boot do documento;
+- navegação voluntária usa `Doke.navigation.go`; retorno usa `Doke.navigation.back` com fallback determinístico.
+
+A regra é **máximo entre os orçamentos solicitados no mesmo ciclo**, nunca soma sequencial de delays.

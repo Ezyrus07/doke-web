@@ -11,7 +11,7 @@
   var preloader = document.querySelector('[data-doke-document-preloader]');
   if (!preloader) return;
 
-  var MIN_VISIBLE_MS = 520;
+  var LEGACY_FALLBACK_MIN_VISIBLE_MS = 520;
   var MAX_WAIT_MS = 2200;
   var EXIT_MS = 180;
   var INTERNAL_NAVIGATION_TTL = 1800;
@@ -107,6 +107,9 @@
     preloader.classList.add('is-operation');
     preloader.setAttribute('aria-hidden', 'false');
     root.dataset.dokeDocumentBoot = 'loading';
+    if (lifecycle && lifecycle.timing && typeof lifecycle.timing.beginCycle === 'function') {
+      lifecycle.timing.beginCycle({ mode: 'hard-load', source: source || 'preloader-operation' });
+    }
     if (lifecycle && lifecycle.document) lifecycle.document.begin({ source: source || 'preloader-operation' });
     document.dispatchEvent(new CustomEvent('doke:document-preloader-show', {
       detail: { source: source || 'operation' }
@@ -119,8 +122,13 @@
     released = true;
     if (fallbackTimer) window.clearTimeout(fallbackTimer);
 
-    var remaining = Math.max(0, MIN_VISIBLE_MS - (performance.now() - startedAt));
-    return new Promise(function (resolve) { window.setTimeout(resolve, remaining); })
+    var minimumWait = lifecycle && lifecycle.timing && typeof lifecycle.timing.wait === 'function'
+      ? lifecycle.timing.wait('document', undefined, { source: source || 'preloader-release' })
+      : new Promise(function (resolve) {
+          var remaining = Math.max(0, LEGACY_FALLBACK_MIN_VISIBLE_MS - (performance.now() - startedAt));
+          window.setTimeout(resolve, remaining);
+        });
+    return minimumWait
       .then(nextPaint)
       .then(function () {
         preloader.classList.remove('is-operation');

@@ -54,7 +54,11 @@ assert(scriptIndex(paymentHtml, 'assets/js/core/session.js') < scriptIndex(payme
 assert(scriptIndex(paymentHtml, 'assets/js/services/account-access-service.js') < scriptIndex(paymentHtml, 'assets/js/pages/pagamento-profissional.js'), 'guard deve carregar antes do controller de pagamento.');
 assert(/DokePageHydration\?\.create/.test(paymentJs) && /waitFor: \['dom', 'auth', 'payment-context'\]/.test(paymentJs), 'pagamento deve separar DOM, auth e contexto financeiro.');
 assert(/accountAccess\.guardPage/.test(paymentJs), 'pagamento deve executar guard autenticado.');
-assert(/assertValidPaymentContext/.test(paymentJs) && /Cobrança válida não encontrada/.test(paymentJs), 'pagamento deve falhar fechado sem cobrança válida.');
+assert(/hasRequestedPaymentContext/.test(paymentJs) && /settleEmptyPaymentContext\('route_context_missing'\)/.test(paymentJs), 'pagamento direto sem contexto deve concluir como empty, sem falso erro técnico.');
+assert(/resolvePaymentContextValidation/.test(paymentJs) && /if \(!validation\.valid\) return settleEmptyPaymentContext\(validation\.reason\)/.test(paymentJs), 'cobrança ausente ou obsoleta deve permanecer fail-closed no estado empty.');
+assert(/if \(!hasRequestedPaymentContext\(\)\)[\s\S]*allowed: true, empty: true/.test(paymentJs), 'URL sem cobrança deve encerrar em empty sem consultar dados privados.');
+assert(/else if \(!accountAccess\?\.guardPage\)[\s\S]*accessTask = accountAccess\.guardPage/.test(paymentJs), 'checkout com contexto de cobrança deve continuar sob guard autenticado.');
+assert(/status: 'context-error'/.test(paymentJs) && /throw error/.test(paymentJs), 'falha técnica de repository deve continuar no estado error.');
 assert(!/status: 'context-fallback'/.test(paymentJs), 'pagamento não deve revelar defaults quando o contexto falha.');
 assert(/function setPaymentOperationState/.test(paymentJs), 'pagamento deve possuir estado operacional separado.');
 assert(!/experience\.states\.set\(root/.test(paymentJs), 'pending operacional não deve alterar o lifecycle da página.');

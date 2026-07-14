@@ -22,7 +22,6 @@
       skeletonSelectors: '[data-professional-profile-hydration-skeleton]',
       readySelectors: '[data-professional-profile-hydration-ready]',
       errorSelectors: '[data-state-error]',
-      splashSelectors: '[data-professional-profile-document-preloader]',
       skeletonMode: 'route-and-document',
       maxDuration: 9000,
       hasItems: function () { return true; },

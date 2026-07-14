@@ -1542,3 +1542,27 @@ body.payment-finish-modal-open {
     animation: none;
   }
 }
+
+/* Hydration state exclusivity: checkout surfaces must never overlap. */
+.payment-screen[data-page-hydration="hydrating"] :is(
+  [data-payment-hydration-ready],
+  [data-state-region]
+),
+.payment-screen[data-page-hydration="ready"] :is(
+  [data-payment-hydration-skeleton],
+  [data-state-region]
+),
+.payment-screen[data-page-hydration="empty"] :is(
+  [data-payment-hydration-skeleton],
+  [data-payment-hydration-ready],
+  [data-state-loading],
+  [data-state-error]
+),
+.payment-screen[data-page-hydration="error"] :is(
+  [data-payment-hydration-skeleton],
+  [data-payment-hydration-ready],
+  [data-state-loading],
+  [data-state-empty]
+) {
+  display: none;
+}

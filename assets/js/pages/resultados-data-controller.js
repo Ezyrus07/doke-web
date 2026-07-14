@@ -5,12 +5,7 @@
   var PAGE_NAME = 'resultados';
 
   function getRoot() {
-    return document.querySelector('[data-page="resultados"], .search-results-body, [data-results-layout]');
-  }
-
-  function getResultsRegion(root) {
-    if (!root || !root.querySelector) return null;
-    return root.querySelector('[data-results-layout]') || root.querySelector('[data-results-pane="content"]');
+    return document.querySelector('[data-state-boundary="resultados"], [data-results-layout], [data-page="resultados"]');
   }
 
   function getResultsGrid(root) {
@@ -46,25 +41,13 @@
     (root || document).dispatchEvent(event);
   }
 
-  function setDataState(root, state, message) {
+  function setRepositoryState(root, state, message) {
     if (!root || !root.dataset) return;
-    root.dataset.dataState = state;
-    if (message) root.dataset.dataMessage = message;
-    else delete root.dataset.dataMessage;
+    root.dataset.resultsRepositoryState = state;
+    if (message) root.dataset.resultsRepositoryMessage = message;
+    else delete root.dataset.resultsRepositoryMessage;
   }
 
-  function setRegionState(root, state, message) {
-    var region = getResultsRegion(root);
-    if (Doke.listState && typeof Doke.listState.setListState === 'function' && region) {
-      Doke.listState.setListState(region, state, message ? { message: message } : {});
-      return;
-    }
-
-    if (region && region.dataset) {
-      region.dataset.state = state;
-      region.setAttribute('aria-busy', state === 'loading' ? 'true' : 'false');
-    }
-  }
 
   function hasDataDependencies() {
     return Boolean(
@@ -86,23 +69,22 @@
     var grid = getResultsGrid(root);
     if (grid && grid.dataset) {
       grid.dataset.list = 'services';
-      grid.dataset.resultCount = String(result.data.services.length);
+      grid.dataset.repositoryResultCount = String(result.data.services.length);
     }
 
     var summary = root && root.querySelector && root.querySelector('[data-results-summary]');
     if (summary && summary.dataset) {
-      summary.dataset.resultCount = String(result.data.services.length);
-      summary.dataset.dataSource = 'repository-boundary';
+      summary.dataset.repositoryResultCount = String(result.data.services.length);
+      summary.dataset.repositoryDataSource = 'repository-boundary';
     }
   }
 
   function load(root) {
     var filters = getQueryFilters();
-
     if (!hasDataDependencies()) {
-      setDataState(root, 'idle', 'data-dependencies-not-loaded');
-      setRegionState(root, 'idle');
-      return Promise.resolve(null);
+      var dependencyError = new Error('As dependências de busca não foram carregadas.');
+      setRepositoryState(root, 'error', dependencyError.message);
+      return Promise.resolve({ page: PAGE_NAME, filters: filters, error: dependencyError.message });
     }
 
     var context = { filters: filters };
@@ -111,17 +93,7 @@
       : null;
     var initialState = cached ? 'refreshing' : 'loading';
 
-    setDataState(root, initialState);
-    if (Doke.experience && Doke.experience.states) {
-      Doke.experience.states.set(root, initialState, { page: PAGE_NAME });
-    }
-
-    if (cached) {
-      var currentRegion = getResultsRegion(root);
-      if (currentRegion) currentRegion.setAttribute('aria-busy', 'true');
-    } else {
-      setRegionState(root, 'loading');
-    }
+    setRepositoryState(root, initialState);
 
     return Doke.pageDataOrchestrator
       .getPageData(PAGE_NAME, context, { maxAge: 45 * 1000 })
@@ -133,9 +105,7 @@
           data: normalized
         };
 
-        setDataState(root, normalized.services.length ? 'ready' : 'empty');
-        if (Doke.experience && Doke.experience.states) Doke.experience.states.set(root, normalized.services.length ? 'ready' : 'empty', { page: PAGE_NAME });
-        setRegionState(root, normalized.services.length ? 'ready' : 'empty');
+        setRepositoryState(root, normalized.services.length ? 'ready' : 'empty');
         updateNonVisualHooks(root, result);
         Doke.resultadosDataController.lastPayload = result;
         dispatch(root, 'doke:resultados-data-ready', result);
@@ -148,9 +118,7 @@
           error: error && error.message ? error.message : 'Erro ao carregar dados dos resultados.'
         };
 
-        setDataState(root, 'error', detail.error);
-        if (Doke.experience && Doke.experience.states) Doke.experience.states.set(root, navigator.onLine === false ? 'offline' : 'error', { page: PAGE_NAME, error: detail.error });
-        setRegionState(root, 'error', detail.error);
+        setRepositoryState(root, navigator.onLine === false ? 'offline' : 'error', detail.error);
         dispatch(root, 'doke:resultados-data-error', detail);
         return detail;
       });
@@ -159,7 +127,15 @@
   function boot() {
     var root = getRoot();
     if (!root) return Promise.resolve(null);
-    return load(root);
+    if (root.__dokeResultsBootPromise) return root.__dokeResultsBootPromise;
+    if (root.__dokeResultsBootComplete) return Promise.resolve(Doke.resultadosDataController.lastPayload);
+    root.__dokeResultsBootPromise = load(root).then(function (result) {
+      root.__dokeResultsBootComplete = true;
+      return result;
+    }).finally(function () {
+      root.__dokeResultsBootPromise = null;
+    });
+    return root.__dokeResultsBootPromise;
   }
 
   Doke.resultadosDataController = {
@@ -177,9 +153,7 @@
     if (!root) return;
     var normalized = normalizePayload(event.detail.data);
     var result = { page: PAGE_NAME, filters: getQueryFilters(), data: normalized, source: 'stale-while-revalidate' };
-    setDataState(root, normalized.services.length ? 'ready' : 'empty');
-    if (Doke.experience && Doke.experience.states) Doke.experience.states.set(root, normalized.services.length ? 'ready' : 'empty', { page: PAGE_NAME, source: 'stale-while-revalidate' });
-    setRegionState(root, normalized.services.length ? 'ready' : 'empty');
+    setRepositoryState(root, normalized.services.length ? 'ready' : 'empty');
     updateNonVisualHooks(root, result);
     Doke.resultadosDataController.lastPayload = result;
     dispatch(root, 'doke:resultados-data-ready', result);

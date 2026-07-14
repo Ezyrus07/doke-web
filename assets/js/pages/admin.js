@@ -303,12 +303,12 @@
         '<div class="admin-list-item__row"><span>Valor: <strong>' + escapeHtml(amount) + '</strong></span><span>Atualizado: <strong>' + escapeHtml(formatDate(dispute.updatedAt || dispute.createdAt)) + '</strong></span></div>',
         '<p class="admin-list-item__copy">Resposta do profissional: ' + escapeHtml(clean(dispute.responseText || dispute.professionalResponse) || 'Ainda não enviada') + '</p>',
         '<div class="admin-list-item__actions">',
-          '<a class="doke-btn doke-btn--ghost" href="' + escapeHtml(orderUrl) + '">Ver pedido</a>',
-          '<a class="doke-btn doke-btn--ghost" href="' + escapeHtml(conversationUrl) + '">Abrir conversa</a>',
-          receipt ? '<a class="doke-btn doke-btn--ghost" href="' + escapeHtml(receipt) + '">Ver comprovante</a>' : '',
+          '<a class="doke-btn doke-btn--ghost doke-btn--sm" href="' + escapeHtml(orderUrl) + '">Ver pedido</a>',
+          '<a class="doke-btn doke-btn--ghost doke-btn--sm" href="' + escapeHtml(conversationUrl) + '">Abrir conversa</a>',
+          receipt ? '<a class="doke-btn doke-btn--ghost doke-btn--sm" href="' + escapeHtml(receipt) + '">Ver comprovante</a>' : '',
           canResolve ? '<span class="admin-support-label">Ação mock de suporte</span>' : '',
-          canResolve ? '<button class="doke-btn doke-btn--primary" type="button" data-admin-dispute-resolve="profissional" data-dispute-id="' + escapeHtml(dispute.id) + '">Liberar repasse</button>' : '',
-          canResolve ? '<button class="doke-btn doke-btn--danger" type="button" data-admin-dispute-resolve="cliente" data-dispute-id="' + escapeHtml(dispute.id) + '">Reembolsar cliente</button>' : '',
+          canResolve ? '<button class="doke-btn doke-btn--primary doke-btn--sm" type="button" data-admin-dispute-resolve="profissional" data-dispute-id="' + escapeHtml(dispute.id) + '">Liberar repasse</button>' : '',
+          canResolve ? '<button class="doke-btn doke-btn--danger doke-btn--sm" type="button" data-admin-dispute-resolve="cliente" data-dispute-id="' + escapeHtml(dispute.id) + '">Reembolsar cliente</button>' : '',
         '</div>',
       '</article>'
     ].join('');
@@ -371,9 +371,9 @@
         '</div>',
         item.rejectionReason ? '<p class="admin-list-item__copy">Motivo: ' + escapeHtml(item.rejectionReason) + '</p>' : '',
         '<div class="admin-list-item__actions">',
-          canStart ? '<button class="doke-btn doke-btn--primary" type="button" data-admin-verification-action="start" data-verification-id="' + escapeHtml(item.id) + '">Iniciar análise</button>' : '',
-          canDecide && !canStart ? '<a class="doke-btn doke-btn--primary" href="admin-verificacao.html?id=' + encodeURIComponent(item.id) + '">Abrir análise</a>' : '',
-          !canDecide ? '<a class="doke-btn doke-btn--ghost" href="admin-verificacao.html?id=' + encodeURIComponent(item.id) + '">Ver detalhes</a>' : '',
+          canStart ? '<button class="doke-btn doke-btn--primary doke-btn--sm" type="button" data-admin-verification-action="start" data-verification-id="' + escapeHtml(item.id) + '">Iniciar análise</button>' : '',
+          canDecide && !canStart ? '<a class="doke-btn doke-btn--primary doke-btn--sm" href="admin-verificacao.html?id=' + encodeURIComponent(item.id) + '">Abrir análise</a>' : '',
+          !canDecide ? '<a class="doke-btn doke-btn--ghost doke-btn--sm" href="admin-verificacao.html?id=' + encodeURIComponent(item.id) + '">Ver detalhes</a>' : '',
         '</div>',
       '</article>'
     ].join('');
@@ -426,7 +426,7 @@
     var preview = type === 'application/pdf'
       ? '<iframe class="admin-verification-evidence__pdf" src="' + escapeHtml(url) + '" title="' + escapeHtml(label) + '"></iframe>'
       : '<img class="admin-verification-evidence__image" src="' + escapeHtml(url) + '" alt="' + escapeHtml(label) + '">';
-    return '<article class="admin-verification-evidence"><div class="admin-verification-evidence__header"><div><strong>' + escapeHtml(label) + '</strong><span>' + escapeHtml(meta) + '</span></div><a class="doke-btn doke-btn--ghost" href="' + escapeHtml(url) + '" target="_blank" rel="noopener">Abrir arquivo</a></div>' + preview + '</article>';
+    return '<article class="admin-verification-evidence"><div class="admin-verification-evidence__header"><div><strong>' + escapeHtml(label) + '</strong><span>' + escapeHtml(meta) + '</span></div><a class="doke-btn doke-btn--ghost doke-btn--sm" href="' + escapeHtml(url) + '" target="_blank" rel="noopener">Abrir arquivo</a></div>' + preview + '</article>';
   }
 
   function renderVerificationReview(verification) {
@@ -587,7 +587,7 @@
           '<td>' + escapeHtml(formatCurrency(transaction.netAmount != null ? transaction.netAmount : transaction.amount)) + '</td>',
           '<td><span class="' + statusClass(transaction.status || transaction.releaseStatus, transaction.releaseStatus) + '">' + escapeHtml(statusLabel(transaction.status || transaction.releaseStatus, transaction.releaseStatus)) + '</span></td>',
           '<td>Pedido: ' + escapeHtml(transaction.orderId || '—') + '<br>Ref.: ' + escapeHtml(transaction.reference || transaction.id || '—') + '</td>',
-          '<td>' + (receipt ? '<a class="doke-btn doke-btn--ghost" href="' + escapeHtml(receipt) + '">Comprovante</a>' : '—') + '</td>',
+          '<td>' + (receipt ? '<a class="doke-btn doke-btn--ghost doke-btn--sm" href="' + escapeHtml(receipt) + '">Comprovante</a>' : '—') + '</td>',
         '</tr>'
       ].join('');
     }).join('');
@@ -614,8 +614,8 @@
         var statusText = statusLabel(status);
         var supportActions = pending ? [
           '<span class="admin-support-label">Ação mock de suporte</span>',
-          '<button class="doke-btn doke-btn--primary" type="button" data-admin-withdraw-resolve="approve" data-transaction-id="' + escapeHtml(transaction.id) + '">Aprovar saque</button>',
-          '<button class="doke-btn doke-btn--danger" type="button" data-admin-withdraw-resolve="decline" data-transaction-id="' + escapeHtml(transaction.id) + '">Recusar saque</button>'
+          '<button class="doke-btn doke-btn--primary doke-btn--sm" type="button" data-admin-withdraw-resolve="approve" data-transaction-id="' + escapeHtml(transaction.id) + '">Aprovar saque</button>',
+          '<button class="doke-btn doke-btn--danger doke-btn--sm" type="button" data-admin-withdraw-resolve="decline" data-transaction-id="' + escapeHtml(transaction.id) + '">Recusar saque</button>'
         ].join('') : '';
         return [
           '<article class="admin-list-item" data-admin-withdraw-card data-transaction-id="' + escapeHtml(transaction.id) + '">',
@@ -623,7 +623,7 @@
             '<div class="admin-list-item__row"><span>Valor: <strong>' + escapeHtml(amount) + '</strong></span><span>Solicitado: <strong>' + escapeHtml(formatDate(transaction.createdAt)) + '</strong></span></div>',
             '<p class="admin-list-item__copy">' + escapeHtml(transaction.note || (pending ? 'Aguardando decisão administrativa.' : 'Decisão administrativa registrada.')) + '</p>',
             transaction.adminReason ? '<p class="admin-list-item__copy">Motivo: ' + escapeHtml(transaction.adminReason) + '</p>' : '',
-            '<div class="admin-list-item__actions"><a class="doke-btn doke-btn--ghost" href="' + escapeHtml(receiptUrl(transaction)) + '">Ver comprovante</a>' + supportActions + '</div>',
+            '<div class="admin-list-item__actions"><a class="doke-btn doke-btn--ghost doke-btn--sm" href="' + escapeHtml(receiptUrl(transaction)) + '">Ver comprovante</a>' + supportActions + '</div>',
           '</article>'
         ].join('');
       }).join('')
@@ -660,8 +660,8 @@
     list.innerHTML = events.length
       ? events.map(function (event) {
         var actions = [
-          event.targetUrl ? '<a class="doke-btn doke-btn--ghost" href="' + escapeHtml(event.targetUrl) + '">Abrir vínculo</a>' : '',
-          event.receiptUrl ? '<a class="doke-btn doke-btn--ghost" href="' + escapeHtml(event.receiptUrl) + '">Comprovante</a>' : ''
+          event.targetUrl ? '<a class="doke-btn doke-btn--ghost doke-btn--sm" href="' + escapeHtml(event.targetUrl) + '">Abrir vínculo</a>' : '',
+          event.receiptUrl ? '<a class="doke-btn doke-btn--ghost doke-btn--sm" href="' + escapeHtml(event.receiptUrl) + '">Comprovante</a>' : ''
         ].filter(Boolean).join('');
         return '<article class="admin-list-item"><div class="admin-list-item__top"><div><h3 class="admin-list-item__title">' + escapeHtml(event.title) + '</h3><p class="admin-list-item__copy">' + escapeHtml(event.body) + '</p></div><span class="admin-status">' + escapeHtml(formatDate(event.date)) + '</span></div>' + (actions ? '<div class="admin-list-item__actions">' + actions + '</div>' : '') + '</article>';
       }).join('')

@@ -208,6 +208,7 @@
         };
       }
       if (approved) {
+        const canIssueCharge = getFinancialActionKind(conversation) === "charge";
         return {
           label: "Proposta aprovada",
           status: "Atendimento liberado",
@@ -215,9 +216,13 @@
           kicker: "Cliente aprovou a proposta",
           text: message.text || "O cliente aprovou os valores. O atendimento pode seguir e a cobrança será emitida separadamente.",
           details: ["Proposta aceita", message.installments || "À vista"],
-          note: "Proposta e cobrança são registros distintos.",
-          actionHtml: '<span class="message-bubble__charge-meta">Atendimento em andamento</span>',
-          passive: true
+          note: canIssueCharge
+            ? "Envie a cobrança para liberar o pagamento do cliente."
+            : "Proposta e cobrança são registros distintos.",
+          actionHtml: canIssueCharge
+            ? '<button class="message-bubble__charge-pay doke-btn doke-btn--primary" type="button" data-messages-charge-action>Enviar cobrança</button>'
+            : '<span class="message-bubble__charge-meta">Atendimento em andamento</span>',
+          passive: !canIssueCharge
         };
       }
       return {
@@ -837,7 +842,11 @@
       "is-messages-header-search-open",
       "messages-chat-is-focused",
       "chat-room-mobile-open",
-      "is-media-lightbox-open"
+      "is-media-lightbox-open",
+      "messages-receipt-modal-open",
+      "messages-completion-modal-open",
+      "orders-detail-open",
+      "mobile-home-drawer-open"
     );
     document.documentElement?.classList.remove(
       "messages-thread-is-open",
@@ -852,6 +861,49 @@
       document.documentElement?.style.removeProperty(property);
       document.body?.style.removeProperty(property);
     });
+    document.querySelectorAll("[data-message-completion-modal]").forEach((modal) => {
+      modal.hidden = true;
+      modal.setAttribute("aria-hidden", "true");
+    });
+    document.querySelectorAll("[data-charge-modal][open], [data-image-lightbox][open]").forEach((dialog) => {
+      try { dialog.close(); } catch (error) { dialog.removeAttribute("open"); }
+    });
+  };
+
+  const showMessagesInitializationError = (root, error) => {
+    if (!root) return;
+    root.dataset.messagesReady = "error";
+    root.dataset.pageHydration = "error";
+    root.dataset.viewState = "error";
+    root.setAttribute("aria-busy", "false");
+    root.querySelectorAll("[data-messages-hydration-skeleton], [data-messages-hydration-ready], [data-messages-empty]").forEach((node) => {
+      node.hidden = true;
+    });
+    const errorNode = root.querySelector("[data-state-error]");
+    if (!errorNode) return;
+    errorNode.hidden = false;
+    errorNode.textContent = error?.message || "Não foi possível iniciar as mensagens.";
+    if (!errorNode.querySelector("[data-messages-init-retry]")) {
+      const retry = document.createElement("button");
+      retry.type = "button";
+      retry.className = "doke-btn doke-btn--secondary";
+      retry.dataset.messagesInitRetry = "true";
+      retry.textContent = "Tentar novamente";
+      retry.addEventListener("click", () => {
+        window.DokeCleanupMessages?.();
+        root.dataset.pageHydration = "hydrating";
+        root.dataset.viewState = "loading";
+        root.setAttribute("aria-busy", "true");
+        errorNode.hidden = true;
+        root.querySelectorAll("[data-messages-hydration-skeleton]").forEach((node) => {
+          node.hidden = false;
+        });
+        Promise.resolve(window.DokeInitMessages?.()).catch((retryError) => {
+          showMessagesInitializationError(root, retryError);
+        });
+      });
+      errorNode.append(document.createTextNode(" "), retry);
+    }
   };
 
   const registerMessagesCleanup = (cleanup) => {
@@ -861,6 +913,7 @@
   window.DokeCleanupMessages = () => {
     try { activeMessagesCleanup?.(); } catch (error) { console.error("[DokeMessages:cleanup]", error); }
     activeMessagesCleanup = null;
+    window.DokeMessagesInitTask = null;
     clearMessagesRouteState();
   };
 
@@ -874,9 +927,16 @@
 
   const initMessagesPage = () => {
     const root = document.querySelector("[data-messages-page]");
-    if (!root || root.dataset.messagesReady === "true") return;
-    root.dataset.messagesReady = "true";
+    if (!root) return Promise.resolve(null);
+    if (root.dataset.messagesReady === "true" || root.dataset.messagesReady === "initializing") {
+      return window.DokeMessagesInitTask || Promise.resolve(root);
+    }
 
+    clearMessagesRouteState();
+    root.dataset.messagesReady = "initializing";
+    let hydration = null;
+
+    try {
     const drawerController = new AbortController();
     const routeCleanupCallbacks = [() => drawerController.abort(), clearMessagesRouteState];
     const addRouteCleanup = (cleanup) => {
@@ -893,9 +953,16 @@
         root.classList.remove("messages-app--thread-open", "is-selection-mode");
         messagesList?.setAttribute("aria-multiselectable", "false");
         delete root.dataset.messagesMode;
+        delete root.dataset.messagesReady;
       }
+      document.body?.classList.remove(
+        "messages-receipt-modal-open",
+        "messages-completion-modal-open",
+        "orders-detail-open"
+      );
     });
-    window.DokeHomeDrawer?.create({ signal: drawerController.signal })?.();
+    const initMessagesDrawer = window.DokeHomeDrawer?.create?.({ signal: drawerController.signal });
+    if (typeof initMessagesDrawer === "function") initMessagesDrawer();
 
     let items = [];
     const refreshConversationItems = () => {
@@ -916,16 +983,14 @@
     const searchInputs = Array.from(root.querySelectorAll("[data-messages-search-input]"));
     const resetSearchButton = root.querySelector("[data-messages-reset-search]");
     const emptyState = root.querySelector("[data-messages-empty]");
-    const hydration = window.DokePageHydration?.create({
+    hydration = window.DokePageHydration?.create({
       page: 'mensagens',
       root,
       emptySelectors: ['[data-messages-empty]'],
       skeletonSelectors: ['[data-messages-hydration-skeleton]'],
       readySelectors: ['[data-messages-hydration-ready]'],
-      splashSelectors: ['[data-messages-document-preloader]'],
       skeletonMode: 'route-and-document',
       readyPolicy: 'after-skeleton',
-      splashDuration: 520,
       waitFor: ['dom', 'auth', 'local-conversations'],
       minDuration: 0,
       maxDuration: 8000,
@@ -3272,27 +3337,50 @@
       if (!accountAuthorized) return;
       refreshLocalConversationSurface(options);
     };
+    const withMessagesAccessTimeout = (task, timeoutMs = 3500) => new Promise((resolve, reject) => {
+      let settled = false;
+      const timer = window.setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        reject(new Error('A sessão demorou demais para liberar as mensagens.'));
+      }, timeoutMs);
+
+      Promise.resolve(task).then((value) => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(timer);
+        resolve(value);
+      }, (error) => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(timer);
+        reject(error);
+      });
+    });
+
     const hydrateAuthorizedMessages = () => {
       const access = window.Doke?.services?.accountAccess;
       if (!access?.guardPage) {
         const error = new Error('A autoridade de acesso da conta não está disponível.');
-        hydration?.error(error, { source: 'messages-account-guard' });
+        showMessagesInitializationError(root, error);
         return Promise.resolve(null);
       }
 
       accountAuthorized = false;
-      return access.guardPage({
+      return withMessagesAccessTimeout(access.guardPage({
         name: 'messages-account-access',
         source: 'mensagens.html',
         next: window.location.pathname + window.location.search
-      }).then((result) => {
+      })).then((result) => {
         if (!result?.allowed) return result;
         accountAuthorized = true;
         hydration?.mark('auth');
         refreshLocalConversationSurface({ preferRequested: true });
+        root.dataset.messagesReady = 'true';
         return result;
       }).catch((error) => {
-        hydration?.error(error, { source: 'messages-account-guard' });
+        accountAuthorized = false;
+        showMessagesInitializationError(root, error);
         return null;
       });
     };
@@ -4129,7 +4217,20 @@
     if (isCompactThreadViewport()) {
       setCompactThreadOpen(false);
     }
-    return accessTask;
+
+    window.DokeMessagesInitTask = Promise.resolve(accessTask).catch((error) => {
+      showMessagesInitializationError(root, error);
+      console.error("[DokeMessages:init]", error);
+      return null;
+    });
+    return window.DokeMessagesInitTask;
+    } catch (error) {
+      clearMessagesRouteState();
+      showMessagesInitializationError(root, error);
+      console.error("[DokeMessages:init]", error);
+      window.DokeMessagesInitTask = Promise.resolve(null);
+      return window.DokeMessagesInitTask;
+    }
   };
 
   window.DokeInitMessages = initMessagesPage;
@@ -4140,49 +4241,6 @@
     initMessagesPage();
   }
 })();
-
-(() => {
-  const initDesktopFiltersFallback = () => {
-    const root = document.querySelector("[data-messages-page]");
-    const toggles = Array.from(root?.querySelectorAll("[data-messages-filter-toggle]") || []);
-    const panel = root?.querySelector("[data-messages-desktop-filters-panel]");
-    if (!root || !toggles.length || !panel || panel.dataset.filtersFallbackBound === "true") return;
-    panel.dataset.filtersFallbackBound = "true";
-
-    const setExpanded = (expanded) => {
-      toggles.forEach((toggle) => {
-        toggle.setAttribute("aria-expanded", expanded ? "true" : "false");
-      });
-    };
-
-    toggles.forEach((toggle) => {
-      toggle.addEventListener("click", (event) => {
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        const willOpen = panel.hidden;
-        panel.hidden = !willOpen;
-        setExpanded(willOpen);
-      }, true);
-    });
-
-    panel.querySelectorAll("[data-messages-filter]").forEach((button) => {
-      button.addEventListener("click", () => {
-        window.setTimeout(() => {
-          panel.hidden = false;
-          setExpanded(true);
-        }, 0);
-      });
-    });
-  };
-
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initDesktopFiltersFallback, { once: true });
-  } else {
-    initDesktopFiltersFallback();
-  }
-})();
-
-
 (() => {
   const initInternalMobileHeaderMenu = () => {
     const toggle = document.querySelector('[data-internal-mobile-menu-toggle]');

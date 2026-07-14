@@ -73,7 +73,9 @@ if (read('comunidade-interna.html').includes('assets/js/core/navigation-lifecycl
   'doke.internalRouteNavigation',
   'doke.navigationIntent',
   'skipHistory',
-  'restoreScroll'
+  'restoreScroll',
+  'Doke.navigation.back',
+  'timing: Object.freeze'
 ].forEach((needle) => {
   if (!lifecycleSource.includes(needle)) errors.push(`${lifecyclePath}: missing ${needle}`);
 });
@@ -160,6 +162,9 @@ async function runtimeContract() {
     location,
     history: {
       state: null,
+      length: 1,
+      backCalls: 0,
+      back() { this.backCalls += 1; },
       pushState() {},
       replaceState() {}
     },
@@ -211,6 +216,10 @@ async function runtimeContract() {
   assert.strictEqual(api.entry.getMode(), 'hard-load');
   assert.strictEqual(windowObject.DokeNavigate, api.navigation.go);
   assert.strictEqual(windowObject.Doke.pageLifecycle, api.page);
+  assert.strictEqual(windowObject.Doke.navigation.back, api.navigation.back);
+  assert.strictEqual(api.timing.getMinimum('document'), 180);
+  assert.strictEqual(api.timing.getMinimum('route'), 150);
+  assert.strictEqual(api.timing.getMinimum('page'), 0);
   assert.strictEqual((windowEvents.listeners.get('popstate') || []).length, 1, 'facade must own one popstate listener');
 
   const calls = [];
@@ -243,6 +252,15 @@ async function runtimeContract() {
   assert.strictEqual(calls[0].intentDuringPending, true, 'structured navigation intent must exist while navigation is pending');
   assert.strictEqual(storage.has('doke.internalRouteNavigation'), false, 'legacy internal marker must be cleared after successful settlement');
   assert.strictEqual(storage.has('doke.navigationIntent'), false, 'structured intent must be cleared after successful settlement');
+
+
+  await api.navigation.back('https://doke.test/index.html', { source: 'test-back' });
+  const fallbackBackCall = calls.at(-1);
+  assert.strictEqual(fallbackBackCall.href, 'https://doke.test/index.html');
+  assert.strictEqual(fallbackBackCall.options.replace, true, 'back fallback must replace history');
+  windowObject.history.length = 2;
+  await api.navigation.back('https://doke.test/index.html', { source: 'test-native-back' });
+  assert.strictEqual(windowObject.history.backCalls, 1, 'canonical back must use browser history when available');
 
   const allowed = await api.guard.run({ name: 'allowed-test', check: () => true });
   assert.strictEqual(allowed.allowed, true);

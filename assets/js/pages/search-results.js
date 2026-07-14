@@ -84,6 +84,52 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
     return;
   }
 
+  const resultsBoundary = queryAny('[data-state-boundary="resultados"]');
+  const resultsHydration = (() => {
+    if (!resultsBoundary || !window.DokePageHydration?.create) return null;
+    if (resultsBoundary.__dokeResultsHydration) return resultsBoundary.__dokeResultsHydration;
+    const hydration = window.DokePageHydration.create({
+      page: 'resultados',
+      root: resultsBoundary,
+      loadingSelectors: ['[data-state-loading]'],
+      emptySelectors: ['[data-state-empty]'],
+      errorSelectors: ['[data-state-error]'],
+      skeletonSelectors: ['[data-results-hydration-skeleton]'],
+      readySelectors: ['[data-results-hydration-ready]'],
+      skeletonMode: 'route-and-document',
+      readyPolicy: 'after-skeleton',
+      revealReadyOnEmpty: false,
+      waitFor: ['dom', 'render'],
+      minDuration: 0,
+      maxDuration: 8000,
+      // The page shell remains useful when a search has zero cards; the
+      // inline empty state inside the results layout owns that condition.
+      hasItems: () => true
+    });
+    resultsBoundary.__dokeResultsHydration = hydration;
+    hydration.start();
+    hydration.mark('dom');
+    return hydration;
+  })();
+
+  let initialResultsHydrationSettled = false;
+  const settleResultsHydration = () => {
+    if (!resultsBoundary) return;
+    resultsBoundary.dataset.dataState = 'ready';
+    resultsBoundary.dataset.resultsUiReady = 'true';
+    if (initialResultsHydrationSettled) {
+      resultsHydration?.hideEmpties?.();
+      resultsHydration?.syncReady?.(true);
+      return;
+    }
+    initialResultsHydrationSettled = true;
+    resultsHydration?.mark?.('render');
+  };
+
+  const failResultsHydration = (error) => {
+    resultsHydration?.error?.(error, { source: 'search-results-renderer' });
+  };
+
   const normalize = searchData.normalize || ((value = '') => String(value || '').toLowerCase());
   const servicePool = searchData.servicePool || [];
   const getServiceMatches = searchData.getServiceMatches || (() => []);
@@ -103,7 +149,6 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
   const cepLookup = locationOptions.cepLookup || {};
 
   let activeModalResolver = null;
-  let resultsLoadTimer = null;
   let activeSearchIndex = -1;
   let activeSearchMode = 'services';
   let previewController = null;
@@ -112,7 +157,6 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
     routeController.abort();
     document.body.classList.remove('results-filters-open', 'results-filters-open-from-home');
     document.documentElement.classList.remove('results-filters-open', 'results-filters-open-from-home');
-    if (resultsLoadTimer) window.clearTimeout(resultsLoadTimer);
     previewController?.abort();
     previewController = null;
     closeResultsSearchDropdown();
@@ -833,6 +877,7 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
       if (els.resultsCount) els.resultsCount.textContent = formatCount(displayUsers.length);
       renderActiveChips(query, filters, displayUsers.length);
       setResultsState(displayUsers.length ? 'results' : 'empty');
+      settleResultsHydration();
       refreshResultPreviews();
       return;
     }
@@ -850,6 +895,7 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
       if (els.resultsCount) els.resultsCount.textContent = formatCount(workerResults.length);
       renderActiveChips(query, filters, workerResults.length);
       setResultsState(workerResults.length ? 'results' : 'empty');
+      settleResultsHydration();
       refreshResultPreviews();
       return;
     }
@@ -867,6 +913,7 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
       if (els.resultsCount) els.resultsCount.textContent = formatCount(beforeAfterResults.length);
       renderActiveChips(query, filters, beforeAfterResults.length);
       setResultsState(beforeAfterResults.length ? 'results' : 'empty');
+      settleResultsHydration();
       refreshResultPreviews();
       return;
     }
@@ -896,6 +943,7 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
       // "não encontrado" block when the grid has cards to offer.
       if (els.resultsInlineEmpty) els.resultsInlineEmpty.hidden = true;
       setResultsState('results');
+      settleResultsHydration();
       refreshResultPreviews();
       return;
     }
@@ -903,16 +951,18 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
     renderEmptySuggestions(query, filters);
     setResultsState('empty');
     els.resultsGrid.hidden = false;
+    settleResultsHydration();
     refreshResultPreviews();
   };
 
   const loadResults = () => {
-    if (resultsLoadTimer) window.clearTimeout(resultsLoadTimer);
     setResultsState('loading');
-    resultsLoadTimer = window.setTimeout(() => {
-      resultsLoadTimer = null;
+    try {
       renderResults();
-    }, 220);
+    } catch (error) {
+      failResultsHydration(error);
+      console.error('[resultados] Falha ao renderizar os resultados.', error);
+    }
   };
 
   const openCepModal = () => {

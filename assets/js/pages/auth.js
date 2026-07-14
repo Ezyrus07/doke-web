@@ -133,8 +133,16 @@ function getPostAuthRedirect() {
   return next || "../index.html";
 }
 
+function navigateAuth(target, options = {}) {
+  const navigate = window.Doke?.navigation?.go || window.DokeNavigate;
+  if (typeof navigate !== 'function') {
+    throw new Error('Doke navigation lifecycle is unavailable.');
+  }
+  return navigate(target, Object.assign({ forceDocument: true, source: 'auth' }, options));
+}
+
 function redirectAfterAuth() {
-  window.location.href = getPostAuthRedirect();
+  return navigateAuth(getPostAuthRedirect(), { source: 'auth-success' });
 }
 
 function isStrongPassword(password) {
@@ -167,7 +175,7 @@ if (authService && loginForm) {
       window.DokeHeaderProfileMount?.mount?.();
       document.dispatchEvent(new CustomEvent("doke:auth-login-success", { detail: { user } }));
       setFeedback(feedback, "success", `Acesso liberado. Bem-vindo, ${user.name}.`);
-      window.setTimeout(redirectAfterAuth, 350);
+      await redirectAfterAuth();
     } catch (error) {
       setFeedback(feedback, "error", error.message);
     } finally {
@@ -384,9 +392,7 @@ if (authService && recoveryForm) {
       });
 
       setFeedback(feedback, "success", "Senha redefinida com sucesso. Voce ja pode entrar.");
-      window.setTimeout(() => {
-        window.location.href = "login.html";
-      }, 900);
+      await navigateAuth('login.html', { replace: true, source: 'password-reset-success' });
     } catch (error) {
       setFeedback(feedback, "error", error.message);
     } finally {

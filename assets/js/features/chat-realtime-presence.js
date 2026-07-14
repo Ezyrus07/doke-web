@@ -15,6 +15,7 @@
   var lastActivityAt = Date.now();
   var lastTypingWrite = 0;
   var typingTimer = null;
+  var domSyncFrame = 0;
 
   function parse(value, fallback) {
     try { return JSON.parse(value) || fallback; } catch (_) { return fallback; }
@@ -141,6 +142,24 @@
     }
   }
 
+  function setHtmlIfChanged(node, html) {
+    if (!node || node.innerHTML === html) return false;
+    node.innerHTML = html;
+    return true;
+  }
+
+  function setTextIfChanged(node, text) {
+    if (!node || node.textContent === text) return false;
+    node.textContent = text;
+    return true;
+  }
+
+  function setHiddenIfChanged(node, hidden) {
+    if (!node || node.hidden === hidden) return false;
+    node.hidden = hidden;
+    return true;
+  }
+
   function renderPresenceLine(users) {
     var line = document.querySelector('[data-realtime-presence-line]');
     if (!line) return;
@@ -148,23 +167,26 @@
     var others = all.filter(function (user) { return user.id !== session.id; });
     var online = others.filter(function (user) { return user.state === 'online'; });
     var away = others.filter(function (user) { return user.state === 'away'; });
+    var html = '';
 
     if (body.dataset.page === 'mensagens') {
       var target = others[0];
       if (!target) {
-        line.innerHTML = '<span class="chat-presence-dot is-offline"></span><span>offline</span>';
+        html = '<span class="chat-presence-dot is-offline"></span><span>offline</span>';
       } else if (target.state === 'online') {
-        line.innerHTML = '<span class="chat-presence-dot is-online"></span><span>online agora</span>';
+        html = '<span class="chat-presence-dot is-online"></span><span>online agora</span>';
       } else if (target.state === 'away') {
-        line.innerHTML = '<span class="chat-presence-dot is-away"></span><span>ausente</span>';
+        html = '<span class="chat-presence-dot is-away"></span><span>ausente</span>';
       } else {
-        line.innerHTML = '<span class="chat-presence-dot is-offline"></span><span>offline</span>';
+        html = '<span class="chat-presence-dot is-offline"></span><span>offline</span>';
       }
+      setHtmlIfChanged(line, html);
       return;
     }
 
     var activeCount = online.length + 1;
-    line.innerHTML = '<span class="chat-presence-dot is-online"></span><span>' + activeCount + ' ativo' + (activeCount === 1 ? '' : 's') + ' agora' + (away.length ? ' · ' + away.length + ' ausente' + (away.length === 1 ? '' : 's') : '') + '</span>';
+    html = '<span class="chat-presence-dot is-online"></span><span>' + activeCount + ' ativo' + (activeCount === 1 ? '' : 's') + ' agora' + (away.length ? ' · ' + away.length + ' ausente' + (away.length === 1 ? '' : 's') : '') + '</span>';
+    setHtmlIfChanged(line, html);
   }
 
   function renderTyping() {
@@ -180,12 +202,12 @@
       if (names.indexOf(entry.name) === -1) names.push(entry.name || 'Alguém');
     });
     if (!names.length) {
-      node.hidden = true;
-      node.textContent = '';
+      setHiddenIfChanged(node, true);
+      setTextIfChanged(node, '');
       return;
     }
-    node.hidden = false;
-    node.innerHTML = '<span class="chat-typing-dots" aria-hidden="true"><i></i><i></i><i></i></span><span>' + names.slice(0, 2).join(' e ') + (names.length > 2 ? ' e mais pessoas' : '') + ' digitando…</span>';
+    setHiddenIfChanged(node, false);
+    setHtmlIfChanged(node, '<span class="chat-typing-dots" aria-hidden="true"><i></i><i></i><i></i></span><span>' + names.slice(0, 2).join(' e ') + (names.length > 2 ? ' e mais pessoas' : '') + ' digitando…</span>');
   }
 
   function markRead() {
@@ -203,15 +225,30 @@
     var rows = body.dataset.page === 'mensagens'
       ? document.querySelectorAll('.message-row--me')
       : document.querySelectorAll('.community-room-message--self');
-    document.querySelectorAll('[data-realtime-read-receipt]').forEach(function (node) { node.remove(); });
-    if (!rows.length) return;
+    var receipts = Array.from(document.querySelectorAll('[data-realtime-read-receipt]'));
+
+    if (!rows.length) {
+      receipts.forEach(function (node) { node.remove(); });
+      return;
+    }
+
     var last = rows[rows.length - 1];
     var bubble = last.querySelector('.message-bubble, .community-room-message__bubble') || last;
-    var receipt = document.createElement('span');
-    receipt.className = 'chat-read-receipt' + (readers.length ? ' is-read' : '');
-    receipt.setAttribute('data-realtime-read-receipt', '');
-    receipt.textContent = readers.length ? '✓✓ Lida' : '✓ Enviada';
-    bubble.appendChild(receipt);
+    var receipt = receipts.find(function (node) { return node.parentElement === bubble; }) || null;
+
+    receipts.forEach(function (node) {
+      if (node !== receipt) node.remove();
+    });
+
+    if (!receipt) {
+      receipt = document.createElement('span');
+      receipt.setAttribute('data-realtime-read-receipt', '');
+      bubble.appendChild(receipt);
+    }
+
+    var nextClassName = 'chat-read-receipt' + (readers.length ? ' is-read' : '');
+    if (receipt.className !== nextClassName) receipt.className = nextClassName;
+    setTextIfChanged(receipt, readers.length ? '✓✓ Lida' : '✓ Enviada');
   }
 
   function render() {
@@ -268,12 +305,38 @@
     writeTyping(false);
   });
 
-  var observer = new MutationObserver(function () {
-    ensureUi();
-    bindComposer();
-    renderReadReceipt();
+  function isManagedRealtimeNode(node) {
+    var element = node && node.nodeType === Node.ELEMENT_NODE ? node : node && node.parentElement;
+    return Boolean(element && element.closest && element.closest([
+      '[data-realtime-presence-line]',
+      '[data-realtime-typing]',
+      '[data-realtime-read-receipt]'
+    ].join(',')));
+  }
+
+  function hasExternalDomMutation(mutations) {
+    return mutations.some(function (mutation) {
+      var changedNodes = Array.from(mutation.addedNodes || []).concat(Array.from(mutation.removedNodes || []));
+      if (!changedNodes.length) return !isManagedRealtimeNode(mutation.target);
+      return changedNodes.some(function (node) { return !isManagedRealtimeNode(node); });
+    });
+  }
+
+  function scheduleDomSync() {
+    if (domSyncFrame) return;
+    domSyncFrame = window.requestAnimationFrame(function () {
+      domSyncFrame = 0;
+      ensureUi();
+      bindComposer();
+      renderReadReceipt();
+    });
+  }
+
+  var observer = new MutationObserver(function (mutations) {
+    if (!hasExternalDomMutation(mutations)) return;
+    scheduleDomSync();
   });
-  observer.observe(document.body, { childList: true, subtree: true, characterData: true });
+  observer.observe(document.body, { childList: true, subtree: true });
 
   ensureUi();
   bindComposer();

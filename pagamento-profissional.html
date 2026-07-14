@@ -11,7 +11,7 @@
   <script>document.documentElement.classList.add("doke-mobile-shell-pending");</script>
   <script src="assets/js/core/ipad-safari-early-guard.js?v=20260531-v3" defer></script>
 
-  <link rel="stylesheet" href="assets/css/pages/pagamento-profissional-foundation.css?v=20260714-transaction-lifecycle-v1">
+  <link rel="stylesheet" href="assets/css/pages/pagamento-profissional-foundation.css?v=20260714-payment-empty-recovery-v1">
   <link rel="stylesheet" href="assets/css/components/feedback/document-preloader.css?v=20260712-global-document-boot-v1">
  <link rel="stylesheet" href="assets/css/components/ui-surface/close-button-authority.css?v=20260713-global-v1">
 </head>
@@ -54,12 +54,29 @@
       </header>
 
       <main class="page__content doke-page payment-screen" data-payment-page data-state-boundary="pagamento" data-state-scope="pagamento" data-view-state="loading" aria-busy="true">
-        <div class="doke-state-region" data-state-region data-state-scope="pagamento" aria-live="polite" hidden>
-          <p data-state-loading hidden class="doke-loading-state">Carregando pagamento...</p>
-          <p data-state-empty hidden class="doke-empty-state">Nenhum pagamento encontrado.</p>
-          <p data-state-error hidden class="doke-error-state">Não foi possível carregar o pagamento.</p>
-        </div>
         <div class="page__content-inner container app-shell-page__workspace app-shell-page__workspace--clean doke-page-shell doke-page-stack doke-form-page-rail payment-screen__rail">
+          <div class="payment-context-states doke-state-region" data-state-region data-state-scope="pagamento" aria-live="polite" aria-atomic="true">
+            <p data-state-loading hidden class="doke-loading-state">Carregando pagamento...</p>
+            <section data-state-empty hidden class="payment-context-state payment-context-state--empty doke-empty-state" aria-labelledby="payment-empty-title">
+              <span class="payment-context-state__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M6 7.5h12v9H6z"></path><path d="M8.5 7.5V5.8h7v1.7"></path><path d="M15 12h3"></path></svg>
+              </span>
+              <div class="payment-context-state__content">
+                <h1 id="payment-empty-title">Nenhuma cobrança selecionada</h1>
+                <p>Abra uma cobrança recebida em uma conversa para revisar e realizar o pagamento.</p>
+              </div>
+              <a class="doke-btn doke-btn--primary" href="mensagens.html">Ir para mensagens</a>
+            </section>
+            <section data-state-error hidden class="payment-context-state payment-context-state--error doke-error-state" aria-labelledby="payment-error-title">
+              <span class="payment-context-state__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M12 4.5 20 19H4L12 4.5Z"></path><path d="M12 9v4"></path><path d="M12 16h.01"></path></svg>
+              </span>
+              <div class="payment-context-state__content">
+                <h1 id="payment-error-title">Não foi possível carregar o pagamento</h1>
+                <p>Ocorreu uma falha ao consultar os dados da cobrança.</p>
+              </div>
+            </section>
+          </div>
           <section class="payment-hydration-skeleton" data-payment-hydration-skeleton aria-label="Carregando dados do pagamento" aria-hidden="true">
             <header class="payment-hydration-skeleton__hero">
               <span class="payment-hydration-skeleton__title doke-skeleton-line"></span>
@@ -346,10 +363,10 @@
 
   <script src="assets/js/core/navigation-registry.js?v=20260701-navigation-registry-v1" defer></script>
   <script src="assets/js/core/navigation-lifecycle.js?v=20260713-navigation-lifecycle-v1" defer></script>
-  <script src="assets/js/core/app.js?v=20260702-sidebar-quick-alert-flow-v1" defer></script>
+  <script src="assets/js/core/app.js?v=20260714-route-deadlock-v1" defer></script>
   <script src="assets/js/components/operational-event-toast.js?v=20260702-sidebar-quick-alert-flow-v1" defer></script>
   <script src="assets/js/core/page-hydration.js?v=20260714-transaction-lifecycle-v1" defer></script>
-  <script src="assets/js/core/stable-shell-router.js?v=20260714-transaction-lifecycle-v1" defer></script>
+  <script src="assets/js/core/stable-shell-router.js?v=20260714-route-deadlock-v1" defer></script>
   <script src="assets/js/components/help/help-drawer.js?v=20260518-help-drawer-v1" defer></script>
   <script src="assets/js/ui/mobile-drawer-standard.js?v=20260701-drawer-detail-contract-v1" defer></script>
   <script src="assets/js/ui/mobile-interaction-standard.js?v=20260428-v1" defer></script>
@@ -379,7 +396,7 @@
   <script src="assets/js/core/view-state.js?v=20260707" defer></script>
   <script src="assets/js/core/page-bootstrap.js?v=20260707" defer></script>
   <script src="assets/js/controllers/page-controller-registry.js?v=20260707" defer></script>
-  <script src="assets/js/pages/pagamento-profissional.js?v=20260714-transaction-lifecycle-v1" defer></script>
+  <script src="assets/js/pages/pagamento-profissional.js?v=20260714-payment-direct-empty-v2" defer></script>
   <script src="assets/js/controllers/controller-bootstrap.js?v=20260707" defer></script>
   <script src="assets/js/components/mobile-app-shell.js?v=20260701-navigation-registry-v1" defer></script>
   <script src="assets/js/core/ipad-safari-scroll-guard.js?v=20260602-v1" defer></script>
