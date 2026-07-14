@@ -90,5 +90,5 @@
     isSubmitting: function (key) { return activeMutations.has(String(key || 'admin')); }
   };
 
-  setState('loading');
+  // The page controller starts loading only after the canonical admin guard allows access.
 })();

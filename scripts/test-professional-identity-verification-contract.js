@@ -235,7 +235,7 @@ function createStorage() {
   assert(!html.includes('data-professional-verification-form-layout data-professional-verification-hydration-ready'), 'O formulário não pode ser reaberto automaticamente pela hidratação.');
   assert(page.includes('formLayout.hidden = !editable'), 'A projeção do status deve controlar a visibilidade do formulário.');
   assert(page.includes("var canCorrect = status === 'rejected'"), 'Corrigir e reenviar deve existir somente após rejeição.');
-  assert(page.indexOf('hydration && hydration.ready({ hasItems: true });') < page.lastIndexOf('renderStatus(currentVerification);'), 'A projeção de status deve ocorrer depois da liberação da hidratação.');
+  assert(page.lastIndexOf('renderStatus(currentVerification);') < page.indexOf('hydration && hydration.ready({ hasItems: true });'), 'A projeção de status deve ocorrer antes da liberação da hidratação para evitar flash de estado incorreto.');
   assert(verificationService.includes('PROFESSIONAL_IDENTITY_VERIFICATION_SUBMISSION_LOCKED'), 'O service deve bloquear reenvio após submissão.');
   const verificationRepository = fs.readFileSync('assets/js/repositories/professional-identity-verifications-repository.js', 'utf8');
   assert(verificationRepository.includes('PROFESSIONAL_IDENTITY_VERIFICATION_SUBMISSION_LOCKED'), 'O repository deve bloquear reenvio após submissão.');

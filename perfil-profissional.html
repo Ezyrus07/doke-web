@@ -18,7 +18,7 @@
  <link rel="stylesheet" href="assets/css/components/ui-surface/close-button-authority.css?v=20260713-global-v1">
 </head>
   <body data-page="perfil-profissional" data-profile-role="professional" data-profile-surface="owner-professional" data-profile-contract="clean-v1" data-profile-mode="owner-edit" data-owner-profile-contract="public-variant-v1" class="doke-app-shell-page app-shell-page internal-shell-page profile-page-shell professional-profile-shell doke-flow doke-profile-flow has-global-header">
-  <section class="doke-document-preloader" data-doke-document-preloader aria-label="Carregando Doke" aria-hidden="false">
+  <section class="doke-document-preloader" data-doke-document-preloader data-professional-profile-document-preloader aria-label="Carregando Doke" aria-hidden="false">
     <div class="doke-document-preloader__mark">
       <img class="doke-document-preloader__logo" src="assets/img/doke-logo-lockup.png" alt="Doke" decoding="async">
     </div>
@@ -89,7 +89,36 @@
 
         <div class="page__content doke-page">
           <main id="doke-professional-profile-rail-lock" class="page__content-inner container app-shell-page__workspace app-shell-page__workspace--clean profile-shell-content profile-page doke-page-shell doke-page-stack" aria-labelledby="profile-title" data-state-boundary="perfil-profissional" data-state-scope="perfil-profissional" data-view-state="loading" aria-busy="true">
-            <section class="profile-hero" aria-labelledby="profile-title">
+            <div class="doke-state-region" data-state-region data-state-scope="perfil-profissional" aria-live="polite" hidden>
+              <p data-state-loading hidden class="doke-loading-state">Carregando perfil profissional...</p>
+              <p data-state-empty hidden class="doke-empty-state">O perfil profissional ainda não está disponível.</p>
+              <p data-state-error hidden class="doke-error-state">Não foi possível carregar o perfil profissional.</p>
+            </div>
+            <section class="doke-page-hydration-skeleton doke-page-hydration-skeleton--profile" data-professional-profile-hydration-skeleton aria-label="Carregando perfil profissional" aria-hidden="true">
+              <div class="doke-page-hydration-skeleton__surface doke-page-hydration-skeleton__hero">
+                <span class="doke-page-hydration-skeleton__block doke-page-hydration-skeleton__cover"></span>
+                <div class="doke-page-hydration-skeleton__identity">
+                  <span class="doke-page-hydration-skeleton__block doke-page-hydration-skeleton__avatar"></span>
+                  <div class="doke-page-hydration-skeleton__copy">
+                    <span class="doke-page-hydration-skeleton__block doke-page-hydration-skeleton__line doke-page-hydration-skeleton__line--title"></span>
+                    <span class="doke-page-hydration-skeleton__block doke-page-hydration-skeleton__line doke-page-hydration-skeleton__line--medium"></span>
+                    <span class="doke-page-hydration-skeleton__block doke-page-hydration-skeleton__line doke-page-hydration-skeleton__line--short"></span>
+                  </div>
+                  <span class="doke-page-hydration-skeleton__block doke-page-hydration-skeleton__action"></span>
+                </div>
+                <div class="doke-page-hydration-skeleton__metrics">
+                  <span class="doke-page-hydration-skeleton__block doke-page-hydration-skeleton__metric"></span>
+                  <span class="doke-page-hydration-skeleton__block doke-page-hydration-skeleton__metric"></span>
+                  <span class="doke-page-hydration-skeleton__block doke-page-hydration-skeleton__metric"></span>
+                </div>
+              </div>
+              <div class="doke-page-hydration-skeleton__surface doke-page-hydration-skeleton__details">
+                <span class="doke-page-hydration-skeleton__block doke-page-hydration-skeleton__line doke-page-hydration-skeleton__line--title"></span>
+                <span class="doke-page-hydration-skeleton__block doke-page-hydration-skeleton__line doke-page-hydration-skeleton__line--medium"></span>
+                <span class="doke-page-hydration-skeleton__block doke-page-hydration-skeleton__line doke-page-hydration-skeleton__line--short"></span>
+              </div>
+            </section>
+            <section class="profile-hero" data-professional-profile-hydration-ready hidden aria-labelledby="profile-title">
               <div class="profile-hero__cover">
                 <span class="profile-hero__cover-mark" aria-hidden="true">Doke Pro</span>
                 <button class="profile-owner-cover-action doke-btn doke-btn--soft" type="button">Alterar capa</button>
@@ -153,7 +182,7 @@
               </nav>
             </section>
 
-            <section class="profile-feed" aria-label="Áreas do perfil">
+            <section class="profile-feed" data-professional-profile-hydration-ready hidden aria-label="Áreas do perfil">
               <section id="profile-ads" class="profile-area profile-area--ads doke-page-section" aria-label="Anúncios do profissional">
                 <div class="profile-owner-section-tools" aria-label="Gestão de anúncios">
                   <span>3 anúncios ativos</span>
@@ -489,9 +518,11 @@
     <script src="assets/js/core/rollout-guard.js?v=20260501-stage32-runtime-flags" defer></script>
 
     <script src="assets/js/core/navigation-registry.js?v=20260701-navigation-registry-v1"></script>
+    <script src="assets/js/core/navigation-lifecycle.js?v=20260713-navigation-lifecycle-v1" defer></script>
     <script src="assets/js/core/app.js?v=20260702-sidebar-quick-alert-flow-v1" defer></script>
     <script src="assets/js/components/operational-event-toast.js?v=20260702-sidebar-quick-alert-flow-v1" defer></script>
-    <script src="assets/js/core/stable-shell-router.js?v=20260702-review-route-init-v1" defer></script>
+    <script src="assets/js/core/page-hydration.js?v=20260714-profile-lifecycle-v1" defer></script>
+    <script src="assets/js/core/stable-shell-router.js?v=20260714-profile-lifecycle-v1" defer></script>
     <script src="assets/js/core/experience-runtime.js?v=20260711-experience-runtime-v1" defer></script>
     <script src="assets/js/ui/responsive-interaction-guard.js?v=20260428-architecture"></script>
     <script src="assets/js/ui/mobile-drawer-standard.js?v=20260701-drawer-detail-contract-v1"></script>
@@ -501,6 +532,9 @@
     <script src="assets/js/core/permissions.js?v=20260501-auth-session-v1" defer></script>
     <script src="assets/js/core/session.js?v=20260501-auth-session-v1" defer></script>
     <script src="assets/js/services/auth-service.js?v=20260622-auth-surface-ready-v1" defer></script>
+    <script src="assets/js/repositories/professional-profiles-repository.js?v=20260714-professional-access-v1" defer></script>
+    <script src="assets/js/repositories/professional-identity-verifications-repository.js?v=20260714-professional-access-v1" defer></script>
+    <script src="assets/js/services/professional-access-service.js?v=20260714-professional-access-v1" defer></script>
     <script src="assets/js/services/mock-data-service.js?v=20260501-stage31-domain-services" defer></script>
     <script src="assets/js/services/search-service.js?v=20260501-stage31-domain-services" defer></script>
     <script src="assets/js/services/order-service.js?v=20260501-stage31-domain-services" defer></script>
@@ -519,7 +553,7 @@
     <script src="assets/js/controllers/page-controller-registry.js?v=20260501-stage31-domain-services" defer></script>
     <script src="assets/js/controllers/controller-bootstrap.js?v=20260501-stage32-runtime-flags" defer></script>
     <script src="assets/js/pages/profile/profile-experience-core.js?v=20260711-profile-core-v1" defer></script>
-    <script src="assets/js/pages/professional-profile-experience.js?v=20260711-profile-consolidated-v1" defer></script>
+    <script src="assets/js/pages/professional-profile-experience.js?v=20260714-profile-lifecycle-v1" defer></script>
     <script src="assets/js/core/ipad-safari-scroll-guard.js?v=20260602-v1" defer></script>
     <script src="assets/js/core/document-preloader.js?v=20260712-global-document-boot-v1" defer></script>
 </body>

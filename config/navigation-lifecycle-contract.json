@@ -1,0 +1,123 @@
+{
+  "contract": "doke-navigation-lifecycle",
+  "version": "4.0.0",
+  "stage": "04-admin-guards",
+  "sourceOfTruth": "docs/NAVIGATION-LIFECYCLE-CONTRACT.md",
+  "excludedRuntimeSurfaces": [
+    "comunidade-interna.html",
+    "assets/js/pages/comunidade-interna.js",
+    "assets/css/pages/comunidade-interna-foundation.css",
+    "assets/css/pages/comunidade-interna.css"
+  ],
+  "invariants": [
+    "At least one explicit surface must always be visible: document boot, structural skeleton, ready content, or recoverable error.",
+    "Protected content must not render before its guard resolves.",
+    "Internal navigation must not replay the document preloader.",
+    "Mandatory authorization redirects must replace browser history.",
+    "Operational pending feedback must not be implemented with page hydration or document boot surfaces.",
+    "No artificial delay may be used as the primary synchronization mechanism."
+  ],
+  "authorities": {
+    "navigationLifecycle": "assets/js/core/navigation-lifecycle.js",
+    "documentBootAdapter": "assets/js/core/document-preloader.js",
+    "pageLifecycleAdapter": "assets/js/core/page-hydration.js",
+    "stableShellAdapter": "assets/js/core/stable-shell-router.js",
+    "legacyShellAdapter": "assets/js/core/app.js",
+    "navigationRegistry": "assets/js/core/navigation-registry.js",
+    "authGuard": "assets/js/core/route-guard.js",
+    "professionalGuard": "assets/js/services/professional-access-service.js",
+    "operationalFeedback": "assets/js/components/operational-event-toast.js",
+    "adminGuard": "assets/js/services/admin-access-service.js"
+  },
+  "entryModes": {
+    "hard-load": {
+      "history": "browser",
+      "documentBoot": "conditional",
+      "shell": "new-document",
+      "content": "structural-skeleton-before-hydration"
+    },
+    "internal": {
+      "history": "push",
+      "documentBoot": "never",
+      "shell": "preserve",
+      "content": "route-skeleton-or-previous-content"
+    },
+    "guard": {
+      "history": "replace",
+      "documentBoot": "never-after-shell-ready",
+      "shell": "must-not-be-empty",
+      "content": "guard-pending-surface-until-resolution"
+    },
+    "restore": {
+      "history": "popstate",
+      "documentBoot": "never-with-existing-shell",
+      "shell": "preserve",
+      "content": "restore-route-and-scroll"
+    }
+  },
+  "priorityPages": [
+    "index.html",
+    "anunciar-servico.html",
+    "verificacao-profissional.html",
+    "tornar-profissional.html",
+    "admin.html",
+    "admin-verificacao.html",
+    "meu-perfil.html",
+    "perfil-profissional.html",
+    "pedidos.html",
+    "mensagens.html",
+    "pagamento-profissional.html",
+    "carteira.html",
+    "configuracoes.html"
+  ],
+  "mandatoryFlow": {
+    "origin": "anunciar-servico.html",
+    "condition": "publish_service denied because professional verification is required, pending, or rejected",
+    "destination": "verificacao-profissional.html",
+    "history": "replace",
+    "requiredVisibleSequence": [
+      "guard-pending surface",
+      "destination structural skeleton",
+      "destination ready content or recoverable error"
+    ]
+  },
+  "stage02": {
+    "runtimeFacade": "assets/js/core/navigation-lifecycle.js",
+    "globalApi": [
+      "Doke.navigation.go",
+      "Doke.navigation.warm",
+      "Doke.navigation.guard",
+      "Doke.navigation.transition",
+      "Doke.pageLifecycle",
+      "window.DokeNavigationLifecycle",
+      "window.DokeNavigate"
+    ],
+    "adapterPriority": {
+      "stable-shell": 100,
+      "legacy-shell": 20,
+      "document-fallback": 0
+    },
+    "ownsPopstate": true,
+    "ownsEntryModeDetection": true,
+    "scrollRestoration": "capture-before-navigation-and-restore-on-popstate",
+    "guardMigrationStatus": "Professional guard migrated in Stage 03; admin dashboard and identity review migrated in Stage 04."
+  },
+  "stage03": {
+    "flow": "anunciar-servico.html -> verificacao-profissional.html",
+    "guard": "assets/js/services/professional-access-service.js",
+    "status": "migrated"
+  },
+  "stage04": {
+    "pages": [
+      "admin.html",
+      "admin-verificacao.html"
+    ],
+    "guard": "assets/js/services/admin-access-service.js",
+    "requiredSequence": [
+      "guard-pending skeleton",
+      "allowed data hydration or mandatory replace redirect",
+      "ready content or recoverable error"
+    ],
+    "status": "migrated"
+  }
+}

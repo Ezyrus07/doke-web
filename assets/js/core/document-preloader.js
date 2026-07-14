@@ -7,6 +7,7 @@
   'use strict';
 
   var root = document.documentElement;
+  var lifecycle = window.DokeNavigationLifecycle || window.Doke && window.Doke.navigationLifecycle || null;
   var preloader = document.querySelector('[data-doke-document-preloader]');
   if (!preloader) return;
 
@@ -19,6 +20,9 @@
   var fallbackTimer = 0;
 
   function navigationType() {
+    if (lifecycle && lifecycle.entry && typeof lifecycle.entry.get === 'function') {
+      return lifecycle.entry.get().navigationType || 'navigate';
+    }
     try {
       var entries = performance.getEntriesByType && performance.getEntriesByType('navigation');
       return entries && entries[0] && entries[0].type || 'navigate';
@@ -38,9 +42,19 @@
   }
 
   function isInternalNavigation() {
+    if (lifecycle && lifecycle.entry) {
+      return lifecycle.entry.isInternal() || lifecycle.entry.isRestore();
+    }
     return root.dataset.dokeNavigationMode === 'stable-shell'
       || document.body && document.body.dataset.dokeNavigationMode === 'stable-shell'
       || hasRecentInternalNavigation();
+  }
+
+  function shouldShowForNavigation() {
+    var mode = String(preloader.dataset.dokeDocumentPreloaderMode || 'document').toLowerCase();
+    if (mode === 'never') return false;
+    if (mode === 'reload') return navigationType() === 'reload';
+    return !isInternalNavigation();
   }
 
   function hideImmediately() {
@@ -48,6 +62,7 @@
     preloader.hidden = true;
     preloader.setAttribute('aria-hidden', 'true');
     root.dataset.dokeDocumentBoot = 'ready';
+    if (lifecycle && lifecycle.document) lifecycle.document.ready({ source: 'preloader-skip' });
   }
 
   function nextPaint() {
@@ -92,6 +107,7 @@
     preloader.classList.add('is-operation');
     preloader.setAttribute('aria-hidden', 'false');
     root.dataset.dokeDocumentBoot = 'loading';
+    if (lifecycle && lifecycle.document) lifecycle.document.begin({ source: source || 'preloader-operation' });
     document.dispatchEvent(new CustomEvent('doke:document-preloader-show', {
       detail: { source: source || 'operation' }
     }));
@@ -99,6 +115,7 @@
 
   function release(source) {
     if (released) return Promise.resolve();
+    if (lifecycle && lifecycle.document) lifecycle.document.markShellReady({ source: source || 'preloader-release' });
     released = true;
     if (fallbackTimer) window.clearTimeout(fallbackTimer);
 
@@ -110,6 +127,7 @@
         preloader.classList.add('is-leaving');
         preloader.setAttribute('aria-hidden', 'true');
         root.dataset.dokeDocumentBoot = 'ready';
+        if (lifecycle && lifecycle.document) lifecycle.document.ready({ source: source || 'preloader-release' });
         document.dispatchEvent(new CustomEvent('doke:document-preloader-release', {
           detail: { source: source || 'runtime' }
         }));
@@ -120,14 +138,16 @@
       });
   }
 
-  if (isInternalNavigation()) {
+  if (!shouldShowForNavigation()) {
     hideImmediately();
+    window.DokeDocumentPreloader = Object.freeze({ show: show, release: release });
     return;
   }
 
   preloader.hidden = false;
   preloader.setAttribute('aria-hidden', 'false');
   root.dataset.dokeDocumentBoot = 'loading';
+  if (lifecycle && lifecycle.document) lifecycle.document.begin({ source: 'document-preloader' });
 
   fallbackTimer = window.setTimeout(function () {
     release('timeout');

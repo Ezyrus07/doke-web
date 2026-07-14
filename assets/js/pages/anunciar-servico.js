@@ -1,5 +1,5 @@
 (() => {
-  const initPostService = () => {
+  const mountPostService = () => {
     const root = document.querySelector('[data-post-service-page]');
     if (!root || root.dataset.ready === 'true') return;
     root.dataset.ready = 'true';
@@ -170,11 +170,101 @@
     setStep(Number(window.Doke?.serviceFormExperience?.restoredStep || 1));
   };
 
+  const getGuardSurface = () => {
+    const root = document.querySelector('[data-post-service-page]');
+    if (!root) return null;
+    return {
+      root,
+      skeleton: root.querySelector('[data-post-service-guard-skeleton]'),
+      ready: [...root.querySelectorAll('[data-post-service-guard-ready]')],
+      error: root.querySelector('[data-post-service-guard-error]'),
+      errorMessage: root.querySelector('[data-post-service-guard-error-message]'),
+      retry: root.querySelector('[data-post-service-guard-retry]')
+    };
+  };
+
+  const setGuardSurface = (state, error) => {
+    const surface = getGuardSurface();
+    if (!surface) return;
+    const pending = state === 'pending' || state === 'redirecting';
+    const allowed = state === 'allowed';
+    const failed = state === 'error';
+
+    surface.root.dataset.viewState = pending ? 'loading' : failed ? 'error' : 'ready';
+    surface.root.setAttribute('aria-busy', pending ? 'true' : 'false');
+    if (surface.skeleton) {
+      surface.skeleton.hidden = !pending;
+      surface.skeleton.setAttribute('aria-hidden', pending ? 'false' : 'true');
+    }
+    surface.ready.forEach((node) => {
+      node.hidden = !allowed;
+      node.setAttribute('aria-hidden', allowed ? 'false' : 'true');
+    });
+    if (surface.error) {
+      surface.error.hidden = !failed;
+      surface.error.setAttribute('aria-hidden', failed ? 'false' : 'true');
+    }
+    if (failed && surface.errorMessage) {
+      surface.errorMessage.textContent = error?.message || 'Tente novamente. Se o problema continuar, retorne ao seu perfil.';
+    }
+    if (failed) surface.error?.focus({ preventScroll: true });
+  };
+
+  const denyWhenGuardUnavailable = (error) => {
+    document.documentElement.dataset.professionalAccessState = 'denied';
+    const lifecycle = window.DokeNavigationLifecycle;
+    const guardId = lifecycle?.guard?.begin({ name: 'publish-service', source: 'anunciar-servico' });
+    lifecycle?.guard?.fail(guardId, error || new Error('Serviço de acesso profissional indisponível.'), {
+      source: 'anunciar-servico'
+    });
+    setGuardSurface('error', error);
+  };
+
+  const initPostService = () => {
+    const access = window.Doke?.services?.professionalAccess;
+    const action = access?.ACTIONS?.PUBLISH_SERVICE || 'publish_service';
+    setGuardSurface('pending');
+
+    if (!access?.guardPage) {
+      denyWhenGuardUnavailable();
+      return;
+    }
+
+    access.guardPage(action, {
+      hardRedirect: true,
+      guardName: 'publish-service',
+      source: 'anunciar-servico',
+      fallbackUrl: 'meu-perfil.html'
+    }).then((result) => {
+      if (!result?.allowed) {
+        setGuardSurface('redirecting');
+        return;
+      }
+      setGuardSurface('allowed');
+      mountPostService();
+      window.DokeNavigationLifecycle?.page?.ready({
+        page: 'anunciar-servico',
+        source: 'professional-access-guard',
+        hasItems: true
+      });
+    }).catch((error) => {
+      denyWhenGuardUnavailable(error);
+    });
+  };
+
+  const bindGuardRetry = () => {
+    const retry = document.querySelector('[data-post-service-guard-retry]');
+    if (!retry || retry.dataset.bound === 'true') return;
+    retry.dataset.bound = 'true';
+    retry.addEventListener('click', initPostService);
+  };
+
   window.DokeInitPostService = initPostService;
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initPostService, { once: true });
+    document.addEventListener('DOMContentLoaded', () => { bindGuardRetry(); initPostService(); }, { once: true });
   } else {
+    bindGuardRetry();
     initPostService();
   }
 })();

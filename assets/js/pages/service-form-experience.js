@@ -56,7 +56,6 @@
   };
   const persist = async (payload) => {
     if (typeof Doke.services?.services?.create === 'function') return Doke.services.services.create(payload);
-    if (typeof Doke.repositories?.services?.save === 'function') return Doke.repositories.services.save(payload);
     throw new Error('A publicação de serviços ainda não está disponível nesta versão.');
   };
   const submit = () => mutations.run('service-submit', async () => {

@@ -11,12 +11,12 @@
   <script>document.documentElement.classList.add("doke-mobile-shell-pending");</script>
   <script src="assets/js/core/ipad-safari-early-guard.js?v=20260531-v3" defer></script>
 
-  <link rel="stylesheet" href="assets/css/pages/pagamento-profissional-foundation.css?v=20260702-payment-finish-success-center-v1">
+  <link rel="stylesheet" href="assets/css/pages/pagamento-profissional-foundation.css?v=20260714-transaction-lifecycle-v1">
   <link rel="stylesheet" href="assets/css/components/feedback/document-preloader.css?v=20260712-global-document-boot-v1">
  <link rel="stylesheet" href="assets/css/components/ui-surface/close-button-authority.css?v=20260713-global-v1">
 </head>
 <body data-page="pagamento-profissional" class="doke-app-shell-page app-shell-page internal-shell-page payment-page-shell doke-flow has-global-header">
-  <section class="doke-document-preloader" data-doke-document-preloader aria-label="Carregando Doke" aria-hidden="false">
+  <section class="doke-document-preloader" data-doke-document-preloader data-payment-document-preloader aria-label="Carregando Doke" aria-hidden="false">
     <div class="doke-document-preloader__mark">
       <img class="doke-document-preloader__logo" src="assets/img/doke-logo-lockup.png" alt="Doke" decoding="async">
     </div>
@@ -53,19 +53,54 @@
         </div>
       </header>
 
-      <main class="page__content doke-page payment-screen" data-payment-page data-state-boundary="pagamento" data-state-scope="pagamento" data-view-state="ready" aria-busy="false">
+      <main class="page__content doke-page payment-screen" data-payment-page data-state-boundary="pagamento" data-state-scope="pagamento" data-view-state="loading" aria-busy="true">
         <div class="doke-state-region" data-state-region data-state-scope="pagamento" aria-live="polite" hidden>
           <p data-state-loading hidden class="doke-loading-state">Carregando pagamento...</p>
           <p data-state-empty hidden class="doke-empty-state">Nenhum pagamento encontrado.</p>
           <p data-state-error hidden class="doke-error-state">Não foi possível carregar o pagamento.</p>
         </div>
         <div class="page__content-inner container app-shell-page__workspace app-shell-page__workspace--clean doke-page-shell doke-page-stack doke-form-page-rail payment-screen__rail">
-          <header class="payment-hero doke-form-page-top" aria-labelledby="payment-title">
+          <section class="payment-hydration-skeleton" data-payment-hydration-skeleton aria-label="Carregando dados do pagamento" aria-hidden="true">
+            <header class="payment-hydration-skeleton__hero">
+              <span class="payment-hydration-skeleton__title doke-skeleton-line"></span>
+              <span class="payment-hydration-skeleton__description doke-skeleton-line"></span>
+            </header>
+            <div class="payment-hydration-skeleton__layout">
+              <div class="payment-hydration-skeleton__main">
+                <section class="payment-hydration-skeleton__card">
+                  <span class="payment-hydration-skeleton__heading doke-skeleton-line"></span>
+                  <span class="payment-hydration-skeleton__copy doke-skeleton-line"></span>
+                  <div class="payment-hydration-skeleton__methods">
+                    <span class="payment-hydration-skeleton__method doke-skeleton-line"></span>
+                    <span class="payment-hydration-skeleton__method doke-skeleton-line"></span>
+                    <span class="payment-hydration-skeleton__method doke-skeleton-line"></span>
+                    <span class="payment-hydration-skeleton__method doke-skeleton-line"></span>
+                  </div>
+                  <span class="payment-hydration-skeleton__detail doke-skeleton-line"></span>
+                </section>
+                <section class="payment-hydration-skeleton__card payment-hydration-skeleton__card--review">
+                  <span class="payment-hydration-skeleton__heading doke-skeleton-line"></span>
+                  <span class="payment-hydration-skeleton__check doke-skeleton-line"></span>
+                  <span class="payment-hydration-skeleton__detail doke-skeleton-line"></span>
+                </section>
+              </div>
+              <aside class="payment-hydration-skeleton__summary">
+                <span class="payment-hydration-skeleton__heading doke-skeleton-line"></span>
+                <span class="payment-hydration-skeleton__provider doke-skeleton-line"></span>
+                <span class="payment-hydration-skeleton__row doke-skeleton-line"></span>
+                <span class="payment-hydration-skeleton__row doke-skeleton-line"></span>
+                <span class="payment-hydration-skeleton__row doke-skeleton-line"></span>
+                <span class="payment-hydration-skeleton__total doke-skeleton-line"></span>
+                <span class="payment-hydration-skeleton__button doke-skeleton-line"></span>
+              </aside>
+            </div>
+          </section>
+          <header class="payment-hero doke-form-page-top" aria-labelledby="payment-title" data-payment-hydration-ready hidden>
             <h1 class="doke-form-page-title" id="payment-title">PAGAMENTO</h1>
             <p class="doke-form-page-description">Revise o pedido, escolha como pagar e confirme com segurança.</p>
           </header>
 
-          <div class="payment-layout doke-form-page-grid" data-payment-checkout>
+          <div class="payment-layout doke-form-page-grid" data-payment-checkout data-payment-hydration-ready hidden>
             <div class="payment-main-column">
               <section class="payment-card payment-method-card" aria-labelledby="method-title">
                 <div class="payment-card__header payment-card__header--compact">
@@ -310,9 +345,11 @@
   <script src="assets/js/core/rollout-guard.js?v=20260707" defer></script>
 
   <script src="assets/js/core/navigation-registry.js?v=20260701-navigation-registry-v1" defer></script>
+  <script src="assets/js/core/navigation-lifecycle.js?v=20260713-navigation-lifecycle-v1" defer></script>
   <script src="assets/js/core/app.js?v=20260702-sidebar-quick-alert-flow-v1" defer></script>
   <script src="assets/js/components/operational-event-toast.js?v=20260702-sidebar-quick-alert-flow-v1" defer></script>
-  <script src="assets/js/core/stable-shell-router.js?v=20260702-review-route-init-v1" defer></script>
+  <script src="assets/js/core/page-hydration.js?v=20260714-transaction-lifecycle-v1" defer></script>
+  <script src="assets/js/core/stable-shell-router.js?v=20260714-transaction-lifecycle-v1" defer></script>
   <script src="assets/js/components/help/help-drawer.js?v=20260518-help-drawer-v1" defer></script>
   <script src="assets/js/ui/mobile-drawer-standard.js?v=20260701-drawer-detail-contract-v1" defer></script>
   <script src="assets/js/ui/mobile-interaction-standard.js?v=20260428-v1" defer></script>
@@ -322,6 +359,7 @@
   <script src="assets/js/core/permissions.js?v=20260501-auth-session-v1" defer></script>
   <script src="assets/js/core/session.js?v=20260501-auth-session-v1" defer></script>
   <script src="assets/js/services/auth-service.js?v=20260622-auth-surface-ready-v1" defer></script>
+  <script src="assets/js/services/account-access-service.js?v=20260714-transaction-lifecycle-v1" defer></script>
   <script src="assets/js/services/mock-data-service.js?v=20260707" defer></script>
   <script src="assets/js/services/profile-service.js?v=20260707" defer></script>
   <script src="assets/js/services/search-service.js?v=20260707" defer></script>
@@ -341,7 +379,7 @@
   <script src="assets/js/core/view-state.js?v=20260707" defer></script>
   <script src="assets/js/core/page-bootstrap.js?v=20260707" defer></script>
   <script src="assets/js/controllers/page-controller-registry.js?v=20260707" defer></script>
-  <script src="assets/js/pages/pagamento-profissional.js?v=20260712-completion-release-v1" defer></script>
+  <script src="assets/js/pages/pagamento-profissional.js?v=20260714-transaction-lifecycle-v1" defer></script>
   <script src="assets/js/controllers/controller-bootstrap.js?v=20260707" defer></script>
   <script src="assets/js/components/mobile-app-shell.js?v=20260701-navigation-registry-v1" defer></script>
   <script src="assets/js/core/ipad-safari-scroll-guard.js?v=20260602-v1" defer></script>

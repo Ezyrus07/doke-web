@@ -992,10 +992,8 @@
     refreshOrdersSurface();
     syncHeaderControls();
     hydration?.mark('dom');
-    const markOrdersHydrationAuth = () => {
-      hydration?.mark('auth');
-      refreshOrdersSurface();
-    };
+    const lifecycleController = new AbortController();
+    const lifecycleSignal = lifecycleController.signal;
     const markOrdersHydrationLocal = () => {
       hydration?.mark('local-orders');
       refreshOrdersSurface();
@@ -1010,24 +1008,56 @@
       hydration?.mark('command-center');
       refreshOrdersSurface();
     };
-    document.addEventListener('doke:auth-surface-ready', markOrdersHydrationAuth);
-    document.addEventListener('doke:auth-session-change', markOrdersHydrationAuth);
-    document.addEventListener('doke:orders-command-center-ready', markOrdersHydrationCommand);
+    const hydrateAuthenticatedOrders = () => {
+      const access = window.Doke?.services?.accountAccess;
+      if (!access?.guardPage) {
+        const error = new Error('A autoridade de acesso da conta não está disponível.');
+        hydration?.error(error, { source: 'orders-account-guard' });
+        return Promise.reject(error);
+      }
+
+      return access.guardPage({
+        name: 'orders-account-access',
+        source: 'pedidos.html',
+        next: window.location.pathname + window.location.search
+      }).then((result) => {
+        if (!result?.allowed) return result;
+        hydration?.mark('auth');
+        refreshOrdersSurface();
+        const hydrateLocalOrders = window.DokeHydrateLocalOrders;
+        if (typeof hydrateLocalOrders !== 'function') {
+          throw new Error('O renderer canônico de pedidos não está disponível.');
+        }
+        return Promise.resolve(hydrateLocalOrders({ force: true, accessGranted: true })).then(() => {
+          hydration?.mark('local-orders');
+          refreshOrdersSurface();
+          return result;
+        });
+      }).catch((error) => {
+        hydration?.error(error, { source: 'orders-account-guard' });
+        return null;
+      });
+    };
+
+    let accessTask = hydrateAuthenticatedOrders();
+    document.addEventListener('doke:auth-session-change', () => {
+      if (!root.isConnected || lifecycleSignal.aborted) return;
+      window.DokeLockLocalOrders?.();
+      accessTask = hydrateAuthenticatedOrders();
+    }, { signal: lifecycleSignal });
+    document.addEventListener('doke:orders-command-center-ready', markOrdersHydrationCommand, { signal: lifecycleSignal });
     document.addEventListener('doke:page-hydration-ready', (event) => {
       if (event.detail?.page !== 'pedidos') return;
       refreshOrdersSurface();
-    });
-    document.addEventListener('doke:orders-list-hydrated', markOrdersHydrationLocal);
-    document.addEventListener('doke:orders-list-error', markOrdersHydrationError);
-    if (document.documentElement.dataset.authSurfaceReady === 'true') {
-      markOrdersHydrationAuth();
-    }
-    document.addEventListener('doke:orders-command-center-ready', () => {
-      refreshOrdersSurface();
-    });
-    document.addEventListener('doke:auth-surface-ready', () => {
-      refreshOrdersSurface();
-    });
+    }, { signal: lifecycleSignal });
+    document.addEventListener('doke:orders-list-hydrated', markOrdersHydrationLocal, { signal: lifecycleSignal });
+    document.addEventListener('doke:orders-list-error', markOrdersHydrationError, { signal: lifecycleSignal });
+    document.addEventListener('doke:route-leaving', (event) => {
+      if (event.detail?.from === '/pedidos.html') {
+        window.DokeLockLocalOrders?.();
+        lifecycleController.abort();
+      }
+    }, { signal: lifecycleSignal });
     if (planner) {
       syncPlannerFirstPaintState();
       renderPlannerCalendar();
@@ -1048,6 +1078,8 @@
       syncSelectState();
       closePopover();
     });
+
+    return accessTask;
   };
 
     window.initOrdersPage = initOrdersPage;

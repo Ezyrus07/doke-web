@@ -11,7 +11,7 @@
   <script>document.documentElement.classList.add("doke-mobile-shell-pending");</script>
   <script src="assets/js/core/ipad-safari-early-guard.js?v=20260531-v3"></script>
 
-  <link rel="stylesheet" href="assets/css/pages/anunciar-servico-foundation.css?v=20260702-sidebar-quick-alert-flow-v1">
+  <link rel="stylesheet" href="assets/css/pages/anunciar-servico-foundation.css?v=20260714-navigation-stage03-v1">
   <link rel="stylesheet" href="assets/css/components/feedback/document-preloader.css?v=20260712-global-document-boot-v1">
  <link rel="stylesheet" href="assets/css/components/ui-surface/close-button-authority.css?v=20260713-global-v1">
 </head>
@@ -58,13 +58,53 @@
 
       <main class="page__content doke-page">
         <div class="page__content-inner container app-shell-page__workspace app-shell-page__workspace--clean doke-page-shell doke-page-stack doke-form-page-rail">
-          <section class="post-service-screen doke-form-page-screen" data-post-service-page data-state-boundary="anunciar-servico" data-view-state="loading">
-            <header class="post-service-intro doke-form-page-top">
+          <section class="post-service-screen doke-form-page-screen" data-post-service-page data-state-boundary="anunciar-servico" data-view-state="loading" aria-busy="true">
+            <div class="post-service-guard-skeleton" data-post-service-guard-skeleton aria-label="Validando acesso profissional" aria-hidden="false">
+              <header class="post-service-guard-skeleton__intro">
+                <span class="post-service-guard-skeleton__block post-service-guard-skeleton__line post-service-guard-skeleton__line--title"></span>
+                <span class="post-service-guard-skeleton__block post-service-guard-skeleton__line post-service-guard-skeleton__line--description"></span>
+              </header>
+              <div class="post-service-guard-skeleton__layout">
+                <section class="post-service-guard-skeleton__surface post-service-guard-skeleton__form">
+                  <span class="post-service-guard-skeleton__block post-service-guard-skeleton__progress"></span>
+                  <div class="post-service-guard-skeleton__steps" aria-hidden="true">
+                    <span class="post-service-guard-skeleton__block"></span>
+                    <span class="post-service-guard-skeleton__block"></span>
+                    <span class="post-service-guard-skeleton__block"></span>
+                    <span class="post-service-guard-skeleton__block"></span>
+                  </div>
+                  <span class="post-service-guard-skeleton__block post-service-guard-skeleton__line post-service-guard-skeleton__line--section"></span>
+                  <div class="post-service-guard-skeleton__fields">
+                    <span class="post-service-guard-skeleton__block"></span>
+                    <span class="post-service-guard-skeleton__block"></span>
+                    <span class="post-service-guard-skeleton__block post-service-guard-skeleton__field--full"></span>
+                    <span class="post-service-guard-skeleton__block post-service-guard-skeleton__textarea"></span>
+                  </div>
+                </section>
+                <aside class="post-service-guard-skeleton__surface post-service-guard-skeleton__aside">
+                  <span class="post-service-guard-skeleton__block post-service-guard-skeleton__line post-service-guard-skeleton__line--section"></span>
+                  <span class="post-service-guard-skeleton__block post-service-guard-skeleton__line"></span>
+                  <span class="post-service-guard-skeleton__block post-service-guard-skeleton__line"></span>
+                  <span class="post-service-guard-skeleton__block post-service-guard-skeleton__line post-service-guard-skeleton__line--short"></span>
+                </aside>
+              </div>
+            </div>
+
+            <section class="post-service-guard-error doke-form-page-card" data-post-service-guard-error hidden role="alert" tabindex="-1">
+              <h1>Não foi possível validar seu acesso profissional</h1>
+              <p data-post-service-guard-error-message>Tente novamente. Se o problema continuar, retorne ao seu perfil.</p>
+              <div class="post-service-guard-error__actions">
+                <button class="doke-btn doke-btn--primary" type="button" data-post-service-guard-retry>Tentar novamente</button>
+                <a class="doke-btn doke-btn--ghost" href="meu-perfil.html">Voltar ao perfil</a>
+              </div>
+            </section>
+
+            <header class="post-service-intro doke-form-page-top" data-post-service-guard-ready hidden>
               <h1 class="doke-form-page-title">ANUNCIAR SERVIÇO</h1>
               <p class="doke-form-page-description">Publique uma oferta clara para clientes entenderem e contratarem.</p>
             </header>
 
-            <div class="post-service-layout doke-form-page-grid">
+            <div class="post-service-layout doke-form-page-grid" data-post-service-guard-ready hidden>
               <section class="post-service-form-card doke-form-page-card" aria-labelledby="post-service-title">
                 <div class="post-service-progress doke-flow-progress" aria-label="Progresso do anúncio">
                   <div class="post-service-progress__top doke-flow-progress__top">
@@ -263,15 +303,11 @@
   <script src="assets/js/core/rollout-guard.js?v=20260501-stage32-runtime-flags" defer></script>
 
   <script src="assets/js/core/navigation-registry.js?v=20260701-navigation-registry-v1" defer></script>
+  <script src="assets/js/core/navigation-lifecycle.js?v=20260713-navigation-lifecycle-v1" defer></script>
   <script src="assets/js/core/app.js?v=20260702-sidebar-quick-alert-flow-v1" defer></script>
   <script src="assets/js/components/operational-event-toast.js?v=20260702-sidebar-quick-alert-flow-v1" defer></script>
   <script src="assets/js/core/stable-shell-router.js?v=20260702-review-route-init-v1" defer></script>
   <script src="assets/js/core/experience-runtime.js?v=20260711-experience-runtime-v1" defer></script>
-<script defer src="assets/js/core/form-experience-core.js?v=20260712-form-core-v1"></script>
-  <script src="assets/js/repositories/services-repository.js?v=20260711-service-write-v1" defer></script>
-  <script src="assets/js/services/services-service.js?v=20260711-service-write-v1" defer></script>
-  <script src="assets/js/pages/service-form-experience.js?v=20260711-service-draft-v1" defer></script>
-  <script src="assets/js/pages/anunciar-servico.js?v=20260711-service-draft-v1" defer></script>
   <script src="assets/js/components/help/help-drawer.js?v=20260518-help-drawer-v1" defer></script>
   <script src="assets/js/ui/mobile-drawer-standard.js?v=20260701-drawer-detail-contract-v1" defer></script>
   <script src="assets/js/ui/mobile-interaction-standard.js?v=20260428-v1" defer></script>
@@ -281,6 +317,14 @@
   <script src="assets/js/core/permissions.js?v=20260501-auth-session-v1" defer></script>
   <script src="assets/js/core/session.js?v=20260501-auth-session-v1" defer></script>
   <script src="assets/js/services/auth-service.js?v=20260622-auth-surface-ready-v1" defer></script>
+  <script src="assets/js/repositories/professional-profiles-repository.js?v=20260714-professional-access-v1" defer></script>
+  <script src="assets/js/repositories/professional-identity-verifications-repository.js?v=20260714-professional-access-v1" defer></script>
+  <script src="assets/js/services/professional-access-service.js?v=20260714-navigation-stage03-v1" defer></script>
+  <script src="assets/js/core/form-experience-core.js?v=20260712-form-core-v1" defer></script>
+  <script src="assets/js/repositories/services-repository.js?v=20260711-service-write-v1" defer></script>
+  <script src="assets/js/services/services-service.js?v=20260714-professional-access-v1" defer></script>
+  <script src="assets/js/pages/service-form-experience.js?v=20260714-professional-access-v1" defer></script>
+  <script src="assets/js/pages/anunciar-servico.js?v=20260714-navigation-stage03-v1" defer></script>
   <script src="assets/js/services/mock-data-service.js?v=20260501-stage31-domain-services" defer></script>
   <script src="assets/js/services/profile-service.js?v=20260501-stage31-domain-services" defer></script>
   <script src="assets/js/services/search-service.js?v=20260501-stage31-domain-services" defer></script>

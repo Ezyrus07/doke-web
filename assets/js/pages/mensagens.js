@@ -896,7 +896,6 @@
       }
     });
     window.DokeHomeDrawer?.create({ signal: drawerController.signal })?.();
-    hydrateLocalConversations(root);
 
     let items = [];
     const refreshConversationItems = () => {
@@ -3264,25 +3263,51 @@
     };
 
     hydration?.mark('dom');
-    const markMessagesHydrationAuth = () => {
-      hydration?.mark('auth');
-      refreshLocalConversationSurface({ preferRequested: true });
+    let accountAuthorized = false;
+    const bindDocumentLifecycle = (eventName, handler) => {
+      document.addEventListener(eventName, handler);
+      addRouteCleanup(() => document.removeEventListener(eventName, handler));
     };
-    document.addEventListener("doke:auth-session-change", markMessagesHydrationAuth);
-    document.addEventListener("doke:auth-surface-ready", markMessagesHydrationAuth);
-    document.addEventListener("doke:order-created", () => refreshLocalConversationSurface({ preferRequested: true }));
-    document.addEventListener("doke:order-status-changed", () => refreshLocalConversationSurface({ preferRequested: true }));
-    document.addEventListener("doke:order-reviewed", () => refreshLocalConversationSurface({ preferRequested: true }));
-    document.addEventListener("doke:message-sent", () => refreshLocalConversationSurface({ preferRequested: true }));
-    document.addEventListener("doke:message-removed", () => refreshLocalConversationSurface({ preferRequested: true }));
-    document.addEventListener('doke:page-hydration-ready', (event) => {
+    const refreshAuthorizedConversationSurface = (options = {}) => {
+      if (!accountAuthorized) return;
+      refreshLocalConversationSurface(options);
+    };
+    const hydrateAuthorizedMessages = () => {
+      const access = window.Doke?.services?.accountAccess;
+      if (!access?.guardPage) {
+        const error = new Error('A autoridade de acesso da conta não está disponível.');
+        hydration?.error(error, { source: 'messages-account-guard' });
+        return Promise.resolve(null);
+      }
+
+      accountAuthorized = false;
+      return access.guardPage({
+        name: 'messages-account-access',
+        source: 'mensagens.html',
+        next: window.location.pathname + window.location.search
+      }).then((result) => {
+        if (!result?.allowed) return result;
+        accountAuthorized = true;
+        hydration?.mark('auth');
+        refreshLocalConversationSurface({ preferRequested: true });
+        return result;
+      }).catch((error) => {
+        hydration?.error(error, { source: 'messages-account-guard' });
+        return null;
+      });
+    };
+
+    let accessTask = hydrateAuthorizedMessages();
+    bindDocumentLifecycle("doke:auth-session-change", () => {
+      accessTask = hydrateAuthorizedMessages();
+    });
+    ["doke:order-created", "doke:order-status-changed", "doke:order-reviewed", "doke:message-sent", "doke:message-removed"].forEach((eventName) => {
+      bindDocumentLifecycle(eventName, () => refreshAuthorizedConversationSurface({ preferRequested: true }));
+    });
+    bindDocumentLifecycle('doke:page-hydration-ready', (event) => {
       if (event.detail?.page !== 'mensagens') return;
       syncVisibility();
     });
-    refreshLocalConversationSurface({ preferRequested: true });
-    if (document.documentElement.dataset.authSurfaceReady === 'true') {
-      hydration?.mark('auth');
-    }
 
     const closeMessageContextMenu = () => {
       const menu = document.querySelector('[data-message-context-menu]');
@@ -4093,17 +4118,18 @@
     resetImageDraft();
     syncComposerPlaceholder();
     ["doke:wallet-dispute-opened", "doke:wallet-dispute-resolved", "doke:order-dispute-synced", "doke:completion-requested", "doke:payment-released"].forEach((eventName) => {
-      document.addEventListener(eventName, () => {
-        hydrateLocalConversations(root);
+      bindDocumentLifecycle(eventName, () => {
+        if (!accountAuthorized) return;
+        refreshLocalConversationSurface({ preferRequested: false });
         syncVisibility();
         if (activeId) renderThread(activeId);
       });
     });
 
-    renderThread(activeId, { scrollTo: "start", openOnMobile: hasDirectThreadRequest });
     if (isCompactThreadViewport()) {
-      setCompactThreadOpen(hasDirectThreadRequest);
+      setCompactThreadOpen(false);
     }
+    return accessTask;
   };
 
   window.DokeInitMessages = initMessagesPage;

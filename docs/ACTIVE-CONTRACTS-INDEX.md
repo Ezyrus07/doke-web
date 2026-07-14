@@ -10,6 +10,8 @@ Este arquivo é o ponto de entrada para agentes humanos, ChatGPT, Codex e qualqu
 - `docs/ARCHITECTURE.md`: mapa vivo da arquitetura frontend.
 - `docs/CSS_AUTHORITY_MAP.md`: autoridade entre core, components, patterns e pages.
 - `docs/GLOBAL-LAYOUT-CONTRACT.md`: autoridade de shell, header, rail, largura e scroll.
+- `docs/NAVIGATION-LIFECYCLE-CONTRACT.md`: autoridade de navegação, guards, boot de documento, hidratação, skeleton, histórico e scroll.
+  - Runtime canônico: `assets/js/core/navigation-lifecycle.js`; routers existentes operam como adapters registrados.
 - `docs/DESIGN-SYSTEM-GUIDE.md`: tokens, componentes, ritmo visual e consistência.
 - `docs/FRONTEND-GOVERNANCE.md`: processo de mudança e critérios de aceite.
 - `docs/SURFACE-CONTRACT.md`: contrato de superfícies visuais, cards, modais e estados.

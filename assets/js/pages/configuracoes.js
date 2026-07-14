@@ -2,11 +2,17 @@
   'use strict';
 
   let activeController = null;
+  let activeInitialization = null;
+  let activeInitializationRoot = null;
+  let activeReadyRoot = null;
 
   window.DokeInitSettings = function DokeInitSettings() {
     const settingsRoot = document.querySelector('.settings-shell, [data-settings-page], .settings-layout');
-    if (!settingsRoot) return;
+    if (!settingsRoot) return Promise.resolve(null);
+    if (activeReadyRoot === settingsRoot) return Promise.resolve(true);
+    if (activeInitializationRoot === settingsRoot && activeInitialization) return activeInitialization;
 
+    activeInitializationRoot = settingsRoot;
     activeController?.abort();
     const controller = new AbortController();
     activeController = controller;
@@ -17,7 +23,7 @@
       skeletonSelectors: '[data-settings-hydration-skeleton]',
       readySelectors: '[data-settings-hydration-ready]',
       errorSelectors: '[data-state-error]',
-      skeletonMode: 'hard-load',
+      skeletonMode: 'route-and-document',
       maxDuration: 9000,
       hasItems: () => true
     }) || null;
@@ -26,6 +32,9 @@
   const pageBody = document.body;
   const sidebarItems = Array.from(document.querySelectorAll('.settings-sidebar__item'));
   const panels = Array.from(document.querySelectorAll('.settings-panel'));
+  const professionalOnlyItems = Array.from(document.querySelectorAll('[data-settings-professional-only]'));
+  const clientOnlyItems = Array.from(document.querySelectorAll('[data-settings-client-only]'));
+  const professionalPanels = Array.from(document.querySelectorAll('[data-settings-professional-panel]'));
   const sectionBlocks = Array.from(document.querySelectorAll('.settings-sidebar__section'));
   const searchInputs = Array.from(document.querySelectorAll('[data-settings-search-input], .settings-sidebar-search__input'));
   const sidebarSearchForms = Array.from(document.querySelectorAll('.settings-sidebar-search'));
@@ -203,7 +212,36 @@
   const isMobileSettings = () => window.innerWidth <= 760;
   const isNarrowSettings = () => window.innerWidth <= narrowBreakpoint;
 
-  const getAvailablePanelNames = () => new Set(panels.map((panel) => panel.dataset.settingsPanel).filter(Boolean));
+  const getAvailablePanelNames = () => new Set(panels.filter((panel) => panel.dataset.settingsAccess !== 'denied').map((panel) => panel.dataset.settingsPanel).filter(Boolean));
+
+  const normalizeRole = (value) => {
+    const role = String(value || '').trim().toLowerCase();
+    if (role === 'pro' || role === 'worker' || role === 'profissional') return 'professional';
+    if (role === 'customer' || role === 'user') return 'client';
+    return role;
+  };
+
+  const applyAccountSurface = (user) => {
+    const isProfessional = normalizeRole(user?.role || user?.type) === 'professional';
+    professionalOnlyItems.forEach((item) => {
+      item.hidden = !isProfessional;
+      item.setAttribute('aria-hidden', String(!isProfessional));
+    });
+    clientOnlyItems.forEach((item) => {
+      item.hidden = isProfessional;
+      item.setAttribute('aria-hidden', String(isProfessional));
+    });
+    professionalPanels.forEach((panel) => {
+      panel.dataset.settingsAccess = isProfessional ? 'allowed' : 'denied';
+      if (!isProfessional) {
+        panel.hidden = true;
+        panel.classList.remove('is-active');
+      }
+    });
+    pageBody.dataset.settingsAccountRole = isProfessional ? 'professional' : 'client';
+    updateSectionVisibility();
+    return isProfessional;
+  };
 
   const normalizePanelName = (panelName) => {
     const normalized = String(panelName || '').trim().replace(/^#/, '');
@@ -211,10 +249,12 @@
     return getAvailablePanelNames().has(normalized) ? normalized : '';
   };
 
-  const getPanelFromLocation = () => {
+  const getRequestedPanelName = () => {
     const params = new URLSearchParams(window.location.search);
-    return normalizePanelName(params.get('tab') || params.get('settings') || window.location.hash);
+    return String(params.get('tab') || params.get('settings') || window.location.hash || '').trim().replace(/^#/, '');
   };
+
+  const getPanelFromLocation = () => normalizePanelName(getRequestedPanelName());
 
   const syncLocationPanel = (panelName) => {
     const normalized = normalizePanelName(panelName);
@@ -398,7 +438,12 @@
         return;
       }
       window.Doke?.session?.clear?.();
-      window.location.assign('auth/login.html');
+      const navigation = window.DokeNavigationLifecycle?.navigation?.go || window.Doke?.navigation?.go || window.DokeNavigate;
+      if (typeof navigation === 'function') {
+        await navigation('auth/login.html', { replace: true, forceDocument: true, source: 'settings-sign-out' });
+      } else {
+        window.location.replace('auth/login.html');
+      }
     } catch (error) {
       console.warn('[Doke] Não foi possível encerrar a sessão pelas configurações.', error);
       button.textContent = originalLabel;
@@ -807,9 +852,21 @@
 
   const initState = async () => {
     try {
-      const initialPanel = getPanelFromLocation() || document.querySelector('.settings-sidebar__item.is-active')?.dataset.settingsTab || sidebarItems.find((item) => item.dataset.settingsTab)?.dataset.settingsTab;
+      const access = window.Doke?.services?.accountAccess;
+      if (!access?.guardPage) throw new Error('O guard da conta não está disponível.');
+      const accessResult = await access.guardPage({
+        name: 'settings-account-access',
+        source: 'configuracoes.html',
+        loginRedirect: 'auth/login.html'
+      });
+      if (signal.aborted || !accessResult?.allowed) return null;
+
+      applyAccountSurface(accessResult.user);
+      const rawRequestedPanel = getRequestedPanelName();
+      const requestedPanel = normalizePanelName(rawRequestedPanel);
+      const initialPanel = requestedPanel || document.querySelector('.settings-sidebar__item.is-active:not([hidden])')?.dataset.settingsTab || sidebarItems.find((item) => item.dataset.settingsTab && !item.hidden)?.dataset.settingsTab;
       if (initialPanel) {
-        activateTab(initialPanel, { scroll: false, updateLocation: Boolean(getPanelFromLocation()) });
+        activateTab(initialPanel, { scroll: false, updateLocation: Boolean(rawRequestedPanel) });
       }
 
       await hydrateSettings();
@@ -826,9 +883,10 @@
       updateSearchClearState();
       setMobileSearchOpen(false);
 
-      setNarrowMenuMode(isNarrowSettings() && !getPanelFromLocation());
+      setNarrowMenuMode(isNarrowSettings() && !requestedPanel);
       document.querySelector('.settings-sidebar')?.removeAttribute('hidden');
       hydration?.ready({ hasItems: true });
+      activeReadyRoot = settingsRoot;
     } catch (error) {
       hydration?.error(error, { source: 'settings-controller' });
     }
@@ -856,8 +914,11 @@
     });
   }, { signal });
 
-    initState();
+    activeInitialization = Promise.resolve(initState()).finally(() => {
+      activeInitialization = null;
+    });
+    return activeInitialization;
   };
 
-  window.DokeInitSettings();
+  Promise.resolve(window.DokeInitSettings()).catch(() => {});
 })();

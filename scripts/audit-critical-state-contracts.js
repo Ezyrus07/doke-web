@@ -1,12 +1,32 @@
+'use strict';
+
 const fs = require('fs');
 const path = require('path');
 
 const ROOT = process.cwd();
 const PAGES = {
-  'pagamento-profissional.html': 'pagamento',
-  'pedidos.html': 'pedidos',
-  'carteira.html': 'carteira',
-  'mensagens.html': 'mensagens',
+  'pagamento-profissional.html': {
+    scope: 'pagamento',
+    hydration: {
+      skeleton: 'data-payment-hydration-skeleton',
+      ready: 'data-payment-hydration-ready'
+    }
+  },
+  'pedidos.html': {
+    scope: 'pedidos',
+    hydration: {
+      skeleton: 'data-orders-hydration-skeleton',
+      ready: 'data-orders-hydration-ready'
+    }
+  },
+  'carteira.html': { scope: 'carteira' },
+  'mensagens.html': {
+    scope: 'mensagens',
+    hydration: {
+      skeleton: 'data-messages-hydration-skeleton',
+      ready: 'data-messages-hydration-ready'
+    }
+  }
 };
 const REPORT = path.join(ROOT, 'docs/validation/global-cycle-131-135-critical-state-contracts-report.json');
 
@@ -18,22 +38,45 @@ function hasAll(content, tokens) {
   return tokens.filter((token) => !content.includes(token));
 }
 
-const results = Object.entries(PAGES).map(([file, scope]) => {
+function hasReadyInitialState(content) {
+  return /data-view-state=["']ready["']/.test(content)
+    && /aria-busy=["']false["']/.test(content);
+}
+
+function hasHydratingInitialState(content, hydration) {
+  if (!hydration) return false;
+  const skeletonPattern = new RegExp(`${hydration.skeleton}(?![^>]*\\shidden(?:\\s|=|>))`);
+  const readyPattern = new RegExp(`${hydration.ready}[^>]*\\shidden(?:\\s|=|>)`);
+  return /data-view-state=["']loading["']/.test(content)
+    && /aria-busy=["']true["']/.test(content)
+    && skeletonPattern.test(content)
+    && readyPattern.test(content);
+}
+
+const results = Object.entries(PAGES).map(([file, config]) => {
   const content = read(file);
+  const { scope, hydration } = config;
   const required = [
     `data-state-boundary="${scope}"`,
     `data-state-scope="${scope}"`,
-    'data-view-state="ready"',
-    'aria-busy="false"',
     'data-state-loading',
     'data-state-empty',
     'data-state-error',
     'assets/js/state/state-contracts.js'
   ];
   const missing = hasAll(content, required);
+  const initialState = hasHydratingInitialState(content, hydration)
+    ? 'loading'
+    : hasReadyInitialState(content)
+      ? 'ready'
+      : 'invalid';
+  if (initialState === 'invalid') {
+    missing.push('valid initial state: ready/idle or loading/busy with visible skeleton and hidden ready content');
+  }
   return {
     file,
     scope,
+    initialState,
     status: missing.length ? 'failed' : 'passed',
     missing
   };

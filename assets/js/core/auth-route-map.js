@@ -33,6 +33,7 @@
     'notificacoes.html',
     'carteira.html',
     'admin.html',
+    'admin-verificacao.html',
     'meu-perfil.html',
     'orcamento.html',
     'anunciar-servico.html',

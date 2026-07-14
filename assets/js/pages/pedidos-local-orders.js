@@ -4,6 +4,7 @@
   'use strict';
 
   var Doke = window.Doke || (window.Doke = {});
+  var accessGranted = false;
 
   var CARD_ICONS = {
     receipt: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5h10v15H7z"></path><path d="M9.5 9.5h5"></path><path d="M9.5 13h5"></path></svg>'
@@ -551,6 +552,7 @@
     var list = document.querySelector('.orders-list');
     if (!list) return Promise.resolve([]);
     var user = getCurrentUser();
+    if (!accessGranted || !user || !user.id) return Promise.resolve([]);
     var experience = window.DokeOrders && window.DokeOrders.experience;
 
     if (experience && typeof experience.load === 'function') {
@@ -856,8 +858,10 @@
 
         acceptTask.then(function () {
           scheduleRender({ force: true });
-          if (typeof window.DokeNavigate === 'function') window.DokeNavigate('mensagens.html?order=' + encodeURIComponent(orderId));
-          else window.location.href = 'mensagens.html?order=' + encodeURIComponent(orderId);
+          var target = 'mensagens.html?order=' + encodeURIComponent(orderId);
+          var navigate = Doke.navigation && Doke.navigation.go || window.DokeNavigate;
+          if (typeof navigate === 'function') navigate(target, { source: 'orders-open-conversation' });
+          else window.location.assign(target);
         }).catch(function (error) {
           acceptButton.disabled = false;
           acceptButton.removeAttribute('aria-disabled');
@@ -907,19 +911,26 @@
   }
 
   window.DokeHydrateLocalOrders = function DokeHydrateLocalOrders(options) {
-    render(Object.assign({ force: true }, options || {}));
+    options = options || {};
+    if (options.accessGranted === true) accessGranted = true;
+    return render(Object.assign({ force: true }, options));
+  };
+  window.DokeLockLocalOrders = function DokeLockLocalOrders() {
+    accessGranted = false;
   };
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function () { render(); }, { once: true });
-  } else {
-    render();
-  }
-
-  document.addEventListener('doke:route-ready', function () { scheduleRender({ force: true }); });
-  document.addEventListener('doke:stable-route-ready', function () { scheduleRender({ force: true }); });
-  document.addEventListener('doke:auth-session-change', function () { scheduleRender({ force: true }); });
-  document.addEventListener('doke:auth-surface-ready', function () { scheduleRender({ force: true }); });
+  document.addEventListener('doke:route-ready', function () {
+    if (accessGranted) scheduleRender({ force: true });
+  });
+  document.addEventListener('doke:stable-route-ready', function () {
+    if (accessGranted) scheduleRender({ force: true });
+  });
+  document.addEventListener('doke:auth-session-change', function () {
+    accessGranted = false;
+  });
+  document.addEventListener('doke:route-leaving', function (event) {
+    if (event.detail && event.detail.from === '/pedidos.html') accessGranted = false;
+  });
   document.addEventListener('doke:order-created', function () { scheduleRender({ force: true }); });
   document.addEventListener('doke:order-status-changed', function () { scheduleRender({ force: true }); });
   document.addEventListener('doke:orders-experience-updated', function () { scheduleRender(); });

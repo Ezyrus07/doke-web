@@ -35,6 +35,29 @@
     SYNC_ORDER: 'sync_conversation_order'
   });
 
+
+
+  var PROFESSIONAL_ACTIONS = Object.freeze({
+    ACCESS_PROFILE: 'access_professional_profile',
+    EDIT_PROFILE: 'edit_professional_profile',
+    PUBLISH_SERVICE: 'publish_service',
+    PUBLISH_CONTENT: 'publish_professional_content',
+    RECEIVE_ORDERS: 'receive_professional_orders',
+    MANAGE_AVAILABILITY: 'manage_professional_availability',
+    REQUEST_PAYOUT: 'request_professional_payout'
+  });
+
+  var PROFESSIONAL_ACCESS_REASONS = Object.freeze({
+    ALLOWED: 'allowed',
+    AUTH_REQUIRED: 'auth_required',
+    PROFILE_REQUIRED: 'professional_profile_required',
+    PROFILE_DRAFT: 'professional_profile_draft',
+    VERIFICATION_REQUIRED: 'professional_verification_required',
+    VERIFICATION_PENDING: 'professional_verification_pending',
+    VERIFICATION_REJECTED: 'professional_verification_rejected',
+    PROFILE_SUSPENDED: 'professional_profile_suspended',
+    ROLE_INACTIVE: 'professional_role_inactive'
+  });
   var WALLET_ACTIONS = Object.freeze({
     READ: 'read_wallet',
     SAVE_BANK_ACCOUNT: 'save_bank_account',
@@ -365,6 +388,65 @@
     throw createPermissionError('admin_action:' + normalized, payload || {});
   }
 
+
+
+  function evaluateProfessionalAccess(action, context) {
+    context = context || {};
+    var user = context.user || null;
+    var profile = context.professionalProfile || context.profile || null;
+    var verification = context.verification || null;
+    var normalizedAction = normalizeText(action || PROFESSIONAL_ACTIONS.ACCESS_PROFILE);
+    var role = normalizeRole(user && (user.role || user.type));
+    var profileStatus = normalizeText(profile && profile.status).toLowerCase();
+    var verificationStatus = normalizeText(
+      verification && verification.status || profile && profile.verificationStatus
+    ).toLowerCase();
+
+    var result = {
+      action: normalizedAction,
+      allowed: false,
+      reason: PROFESSIONAL_ACCESS_REASONS.AUTH_REQUIRED,
+      user: user,
+      professionalProfile: profile,
+      verification: verification,
+      role: role,
+      profileStatus: profileStatus,
+      verificationStatus: verificationStatus
+    };
+
+    if (!user || !normalizeId(user.id || user.userId)) return result;
+    if (!profile) {
+      result.reason = PROFESSIONAL_ACCESS_REASONS.PROFILE_REQUIRED;
+      return result;
+    }
+    if (profileStatus === 'draft') {
+      result.reason = PROFESSIONAL_ACCESS_REASONS.PROFILE_DRAFT;
+      return result;
+    }
+    if (profileStatus === 'suspended') {
+      result.reason = PROFESSIONAL_ACCESS_REASONS.PROFILE_SUSPENDED;
+      return result;
+    }
+    if (verificationStatus === 'rejected') {
+      result.reason = PROFESSIONAL_ACCESS_REASONS.VERIFICATION_REJECTED;
+      return result;
+    }
+    if (profileStatus !== 'active' || verificationStatus !== 'verified') {
+      result.reason = ['submitted', 'under_review'].indexOf(verificationStatus) >= 0
+        ? PROFESSIONAL_ACCESS_REASONS.VERIFICATION_PENDING
+        : PROFESSIONAL_ACCESS_REASONS.VERIFICATION_REQUIRED;
+      return result;
+    }
+    if (role !== 'professional') {
+      result.reason = PROFESSIONAL_ACCESS_REASONS.ROLE_INACTIVE;
+      return result;
+    }
+
+    var protectedActions = Object.keys(PROFESSIONAL_ACTIONS).map(function (key) { return PROFESSIONAL_ACTIONS[key]; });
+    result.allowed = protectedActions.indexOf(normalizedAction) >= 0;
+    result.reason = result.allowed ? PROFESSIONAL_ACCESS_REASONS.ALLOWED : 'unknown_professional_action';
+    return result;
+  }
   function actorPayload(actor) {
     actor = actor || getCurrentUser() || {};
     return {
@@ -391,6 +473,8 @@
     ORDER_ACTIONS: ORDER_ACTIONS,
     MESSAGE_ACTIONS: MESSAGE_ACTIONS,
     WALLET_ACTIONS: WALLET_ACTIONS,
+    PROFESSIONAL_ACTIONS: PROFESSIONAL_ACTIONS,
+    PROFESSIONAL_ACCESS_REASONS: PROFESSIONAL_ACCESS_REASONS,
     SECURITY_AUDIT_KEY: SECURITY_AUDIT_KEY,
     normalizeRole: normalizeRole,
     permissionsForRole: permissionsForRole,
@@ -399,6 +483,7 @@
     isInternalRole: isInternalRole,
     isSupportRole: isSupportRole,
     canAccessAdmin: canAccessAdmin,
+    evaluateProfessionalAccess: evaluateProfessionalAccess,
     canAccessOrder: canAccessOrder,
     canTransitionOrder: canTransitionOrder,
     assertOrderTransition: assertOrderTransition,

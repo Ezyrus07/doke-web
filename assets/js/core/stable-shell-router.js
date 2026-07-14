@@ -2,6 +2,7 @@
   'use strict';
 
   var Doke = window.Doke || (window.Doke = {});
+  var lifecycle = window.DokeNavigationLifecycle || Doke.navigationLifecycle || null;
   var ROUTER_VERSION = '20260711-experience-runtime-v1';
   var ROUTE_VISUAL_THRESHOLD_MS = 150;
   var ROUTE_SETTLEMENT_TIMEOUT_MS = 9000;
@@ -40,11 +41,13 @@
     '/index.html',
     '/meu-perfil.html',
     '/perfil-cliente.html',
+    '/perfil-profissional.html',
     '/configuracoes.html',
     '/tornar-profissional.html',
     '/verificacao-profissional.html',
     '/pedidos.html',
     '/mensagens.html',
+    '/pagamento-profissional.html',
     '/notificacoes.html'
   ]);
 
@@ -64,7 +67,7 @@
     '/detalhe-anuncio.html': ['DokeInitDetailAd'],
     '/avaliacao-profissional.html': ['DokeInitReview'],
     '/ajuda.html': ['DokeInitHelpCenter'],
-    '/pedidos.html': ['DokeInitOrders', 'DokeHydrateLocalOrders'],
+    '/pedidos.html': ['DokeInitOrders'],
     '/mensagens.html': ['DokeInitMessages'],
     '/notificacoes.html': ['DokeInitNotifications'],
     '/carteira.html': ['DokeInitWallet'],
@@ -74,7 +77,7 @@
     '/perfil.html': ['DokeInitProfile'],
     '/meu-perfil.html': ['DokeInitOwnerProfile'],
     '/perfil-cliente.html': ['DokeInitClientProfile'],
-    '/perfil-profissional.html': ['DokeInitProfile'],
+    '/perfil-profissional.html': ['DokeInitProfessionalProfile'],
     '/configuracoes.html': ['DokeInitSettings'],
     '/orcamento.html': ['DokeInitBudget'],
     '/pagamento-profissional.html': ['DokeInitPayment'],
@@ -150,7 +153,7 @@
     'width'
   ];
 
-  var CORE_SCRIPT_RE = /assets\/js\/core\/(?:runtime-config|feature-flags|rollout-guard|app|stable-shell-router|social-page-router)\.js(?:\?.*)?$/i;
+  var CORE_SCRIPT_RE = /assets\/js\/core\/(?:runtime-config|feature-flags|rollout-guard|navigation-lifecycle|app|stable-shell-router|social-page-router)\.js(?:\?.*)?$/i;
   var routeCache = new Map();
   var routeWarmCache = new Map();
   var loadedScripts = new Set(Array.prototype.map.call(document.querySelectorAll('script[src]'), function (script) {
@@ -792,7 +795,7 @@
       return window.DokePageHydration.routeHasSkeleton(nextDoc, path);
     }
     return HYDRATION_BARRIER_ROUTES.has(path) && Boolean(nextDoc.querySelector(
-      '[data-orders-hydration-skeleton], [data-messages-hydration-skeleton], [data-notifications-hydration-skeleton]'
+      '[data-orders-hydration-skeleton], [data-messages-hydration-skeleton], [data-payment-hydration-skeleton], [data-notifications-hydration-skeleton]'
     ));
   }
 
@@ -890,13 +893,37 @@
     var assetsPromise = null;
     var nextDoc = null;
     var stylesPrepared = false;
+    var lifecycleRouteId = Number(options.lifecycleRouteId || 0);
     navigating = true;
+    if (lifecycle && lifecycle.scroll && options.captureScroll !== false && !options.lifecycleAdapter) {
+      lifecycle.scroll.capture(window.location.href);
+    }
     try {
-      window.sessionStorage.setItem('doke.internalRouteNavigation', String(Date.now()));
+      if (lifecycle && lifecycle.entry && typeof lifecycle.entry.markInternal === 'function') {
+        lifecycle.entry.markInternal({
+          source: options.source || 'stable-shell',
+          from: fromPath,
+          to: path,
+          replace: options.replace === true,
+          restore: options.restoreScroll === true
+        });
+      } else {
+        window.sessionStorage.setItem('doke.internalRouteNavigation', String(Date.now()));
+      }
       document.documentElement.dataset.dokeNavigationMode = 'stable-shell';
       if (document.body) document.body.dataset.dokeNavigationMode = 'stable-shell';
       document.dispatchEvent(new CustomEvent('doke:stable-route-start', { detail: { from: fromPath, to: path, router: ROUTER_VERSION } }));
     } catch (error) {}
+    if (!lifecycleRouteId && lifecycle && lifecycle.route && typeof lifecycle.route.begin === 'function') {
+      lifecycleRouteId = lifecycle.route.begin({
+        from: fromPath,
+        to: path,
+        source: options.source || 'stable-shell',
+        replace: options.replace === true,
+        restore: options.restoreScroll === true,
+        adapter: options.lifecycleAdapter || 'stable-shell'
+      });
+    }
     recordTransition(id, 'route-start', { from: fromPath, to: path });
     runRouteLeavingCleanup(fromPath, path);
     try {
@@ -936,15 +963,28 @@
       removeObsoleteRouteStyles(nextDoc);
       assertDocumentReadyForRoute();
       if (id !== navigationId) return;
-      if (options.replace) window.history.replaceState({ dokeStableShell: true, href: url.href }, '', url.href);
-      else window.history.pushState({ dokeStableShell: true, href: url.href }, '', url.href);
+      if (!options.skipHistory) {
+        if (options.replace) window.history.replaceState({ dokeStableShell: true, href: url.href }, '', url.href);
+        else window.history.pushState({ dokeStableShell: true, href: url.href }, '', url.href);
+      }
       committed = true;
+      if (lifecycleRouteId && lifecycle && lifecycle.route) {
+        lifecycle.route.commit(lifecycleRouteId, {
+          adapter: options.lifecycleAdapter || 'stable-shell',
+          visualMode: visualMode,
+          skipHistory: options.skipHistory === true
+        });
+      }
       recordTransition(id, visualMode === 'skeleton' ? 'skeleton-commit' : 'direct-commit', {
         to: path,
         elapsed: Math.round(performance.now() - startedAt)
       });
 
-      await resetScroll();
+      if (options.restoreScroll && lifecycle && lifecycle.scroll) {
+        await lifecycle.scroll.restore(url.href);
+      } else {
+        await resetScroll();
+      }
       updateSidebar(path);
       try { window.lucide && window.lucide.createIcons && window.lucide.createIcons(); } catch (error) {}
       setBusy(false);
@@ -970,9 +1010,19 @@
         to: path,
         elapsed: Math.round(performance.now() - startedAt)
       });
+      if (lifecycleRouteId && lifecycle && lifecycle.route) {
+        lifecycle.route.ready(lifecycleRouteId, {
+          state: settlement,
+          to: path,
+          elapsed: Math.round(performance.now() - startedAt)
+        });
+      }
     } catch (error) {
       console.error('[DokeStableShell:navigate]', error);
       recordTransition(id, 'error', { to: path, error: error && error.message ? error.message : String(error) });
+      if (lifecycleRouteId && lifecycle && lifecycle.route) {
+        lifecycle.route.fail(lifecycleRouteId, error, { to: path, adapter: options.lifecycleAdapter || 'stable-shell' });
+      }
       if (!committed) {
         if (nextDoc && stylesPrepared) {
           prepareRouteDocument(nextDoc, path, 'direct');
@@ -981,8 +1031,10 @@
           setRouteVisualMode('direct');
           activatePendingRouteStyles(nextDoc);
           removeObsoleteRouteStyles(nextDoc);
-          if (options.replace) window.history.replaceState({ dokeStableShell: true, href: url.href }, '', url.href);
-          else window.history.pushState({ dokeStableShell: true, href: url.href }, '', url.href);
+          if (!options.skipHistory) {
+            if (options.replace) window.history.replaceState({ dokeStableShell: true, href: url.href }, '', url.href);
+            else window.history.pushState({ dokeStableShell: true, href: url.href }, '', url.href);
+          }
           committed = true;
           updateSidebar(path);
           if (window.DokePageHydration && typeof window.DokePageHydration.showRouteError === 'function') {
@@ -1053,7 +1105,11 @@
       event.preventDefault();
       event.stopPropagation();
       event.stopImmediatePropagation();
-      navigate(link.href);
+      if (lifecycle && typeof window.DokeNavigate === 'function') {
+        window.DokeNavigate(link.href, { source: 'link' });
+      } else {
+        navigate(link.href);
+      }
     }, true);
 
     document.addEventListener('pointerover', function (event) {
@@ -1074,14 +1130,26 @@
       if (link) warm(link.href);
     }, { passive: true, capture: true });
 
-    window.addEventListener('popstate', function () {
-      navigate(window.location.href, { replace: true });
-    });
+    if (!lifecycle) {
+      window.addEventListener('popstate', function () {
+        navigate(window.location.href, { replace: true, skipHistory: true, restoreScroll: true, source: 'popstate' });
+      });
+    }
 
     window.DokeStableShellRouter = publicRouter;
-    window.DokeNavigate = function (href, options) {
-      return navigate(href, options || {});
-    };
+    if (lifecycle && lifecycle.navigation && typeof lifecycle.navigation.registerAdapter === 'function') {
+      lifecycle.navigation.registerAdapter('stable-shell', {
+        navigate: navigate,
+        warm: warm,
+        canHandle: function (href) {
+          return isEnabled() && isSafeUrl(href);
+        }
+      }, { priority: 100 });
+    } else {
+      window.DokeNavigate = function (href, options) {
+        return navigate(href, options || {});
+      };
+    }
 
     applyRouteRuntimeClasses(currentPath());
     updateSidebar(currentPath());

@@ -10,7 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script defer src="assets/js/core/shell-state-early.js?v=20260614-drawer-canonical-v2"></script>
   <link href="assets/css/pages/admin-foundation.css?v=20260713-admin-review-page-v1" rel="stylesheet">
-  <link href="assets/css/pages/admin-verificacao.css?v=20260713-admin-review-title-v4" rel="stylesheet">
+  <link href="assets/css/pages/admin-verificacao.css?v=20260713-decision-success-v5" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/components/feedback/document-preloader.css?v=20260713-operational-transition-v2">
   <link rel="stylesheet" href="assets/css/components/ui-surface/close-button-authority.css?v=20260713-global-v1">
 </head>
@@ -25,7 +25,7 @@
             <button aria-label="Abrir menu lateral" class="home-side-meta__tablet-menu" data-mobile-home-menu-open type="button"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"></path></svg></button>
             <button aria-label="Buscar no painel admin" class="home-side-meta__search" type="button"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="11" cy="11" r="5.75"></circle><path d="m16 16 4 4"></path></svg></button>
             <div class="page-header-context" data-header-context role="toolbar" aria-label="Navegação da análise">
-              <a class="home-side-meta__alert admin-review-topbar-back doke-icon-btn doke-icon-btn--soft" href="admin.html" aria-label="Voltar ao painel">
+              <a class="home-side-meta__alert admin-review-topbar-back doke-icon-btn doke-icon-btn--soft" href="admin.html" aria-label="Voltar ao painel" data-admin-review-back>
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg>
               </a>
             </div>
@@ -37,10 +37,27 @@
       </header>
       <main class="page__content doke-page">
         <div class="page__content-inner container app-shell-page__workspace app-shell-page__workspace--clean doke-page-shell doke-page-stack">
-          <section class="admin-review-page" data-admin-review-root aria-busy="true">
-            <div class="admin-review-state" data-admin-review-loading>Carregando análise documental...</div>
-            <div class="admin-review-state admin-review-state--error" data-admin-review-error hidden></div>
-            <div data-admin-review-content hidden>
+          <section class="admin-review-page" data-admin-review-root data-state-boundary="admin-verificacao" data-view-state="guard-pending" aria-busy="true">
+            <section class="admin-review-skeleton" data-admin-review-skeleton aria-hidden="true">
+              <span class="admin-review-skeleton__title"></span>
+              <div class="admin-review-skeleton__layout">
+                <div class="admin-review-skeleton__main">
+                  <span class="admin-review-skeleton__card"></span>
+                  <span class="admin-review-skeleton__card"></span>
+                  <span class="admin-review-skeleton__card admin-review-skeleton__card--evidence"></span>
+                </div>
+                <span class="admin-review-skeleton__card admin-review-skeleton__card--summary"></span>
+              </div>
+            </section>
+            <section class="admin-review-state admin-review-state--error" data-admin-review-error role="alert" tabindex="-1" hidden>
+              <h1>Não foi possível abrir a análise</h1>
+              <p data-admin-review-error-message>Nenhum dado administrativo foi exibido.</p>
+              <div class="admin-review-state__actions">
+                <button class="doke-btn doke-btn--primary" type="button" data-admin-review-retry>Tentar novamente</button>
+                <a class="doke-btn doke-btn--ghost" href="admin.html" data-admin-review-back>Voltar ao painel</a>
+              </div>
+            </section>
+            <div data-admin-review-content data-admin-review-ready hidden>
               <header class="admin-review-page-top" aria-labelledby="admin-review-page-title">
                 <h1 id="admin-review-page-title">ANÁLISE DE IDENTIDADE</h1>
               </header>
@@ -63,8 +80,43 @@
   <dialog class="doke-native-overlay" data-admin-review-reject-dialog aria-labelledby="admin-review-reject-title"><section class="doke-modal-surface doke-modal-surface--compact doke-overlay__surface"><header class="doke-modal-header doke-overlay__header"><h2 class="doke-modal-title doke-overlay__title" id="admin-review-reject-title">Rejeitar verificação</h2><p class="doke-modal-description doke-overlay__text">Explique claramente o que precisa ser corrigido.</p><button class="doke-close-button doke-icon-btn doke-icon-btn--flat" type="button" data-admin-review-reject-close aria-label="Fechar"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"></path></svg></button></header><div class="doke-modal-body doke-overlay__body"><label class="doke-label" for="admin-review-reason">Motivo da rejeição</label><textarea class="doke-textarea" id="admin-review-reason" rows="5" minlength="10" maxlength="500" data-admin-review-reason></textarea></div><footer class="doke-modal-actions doke-overlay__actions"><button class="doke-btn doke-btn--ghost" type="button" data-admin-review-reject-close>Cancelar</button><button class="doke-btn doke-btn--danger" type="button" data-admin-review-reject-confirm>Confirmar rejeição</button></footer></section></dialog>
   <dialog class="admin-review-viewer" data-admin-review-viewer><header><strong data-admin-review-viewer-title>Documento</strong><button class="doke-close-button doke-icon-btn doke-icon-btn--flat" type="button" data-admin-review-viewer-close aria-label="Fechar"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"></path></svg></button></header><div data-admin-review-viewer-body></div></dialog>
   <div class="admin-toast" data-admin-review-toast hidden></div>
-  <script defer src="assets/js/core/runtime-config.js"></script><script src="assets/js/services/repository-boundary.js" defer></script><script src="assets/js/services/mock-repository-provider.js" defer></script><script defer src="assets/js/core/navigation-registry.js"></script><script defer src="assets/js/core/app.js"></script><script defer src="assets/js/components/operational-event-toast.js?v=20260702-sidebar-quick-alert-flow-v1"></script><script defer src="assets/js/core/stable-shell-router.js"></script>
-  <script defer src="assets/js/repositories/users-repository.js"></script><script defer src="assets/js/repositories/professional-profiles-repository.js"></script><script defer src="assets/js/repositories/professional-identity-verifications-repository.js"></script><script defer src="assets/js/repositories/professional-verification-evidence-repository.js"></script><script defer src="assets/js/services/professional-identity-verification-service.js"></script>
-  <script defer src="assets/js/core/session.js"></script><script defer src="assets/js/services/auth-service.js"></script><script defer src="assets/js/pages/admin-verificacao.js?v=20260713-decision-loading-v4"></script><script defer src="assets/js/ui/mobile-drawer-standard.js?v=20260701-drawer-detail-contract-v1"></script><script defer src="assets/js/components/mobile-app-shell.js"></script><script src="assets/js/core/document-preloader.js?v=20260713-operational-transition-v2" defer></script>
+
+  <dialog class="admin-decision-success doke-native-overlay" data-admin-decision-success aria-labelledby="admin-decision-success-title" hidden>
+    <section class="admin-decision-success__surface doke-overlay__surface doke-modal-surface doke-modal-surface--feedback" role="status" aria-live="polite">
+      <span class="admin-decision-success__eyebrow doke-modal-eyebrow" data-admin-decision-success-eyebrow>Decisão concluída</span>
+      <div class="admin-decision-success__mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="m7 12 3 3 7-7"></path></svg>
+      </div>
+      <h2 class="doke-modal-title" id="admin-decision-success-title" data-admin-decision-success-title>Verificação atualizada</h2>
+      <p class="doke-modal-description" data-admin-decision-success-message>Retornando ao painel administrativo.</p>
+      <div class="admin-decision-success__progress" aria-hidden="true"><span></span></div>
+    </section>
+  </dialog>
+  <script defer src="assets/js/core/runtime-config.js?v=20260531-stable-smooth-v1"></script>
+  <script defer src="assets/js/core/experience-runtime.js?v=20260712-admin-experience-v1"></script>
+  <script defer src="assets/js/services/repository-boundary.js?v=20260703-orders-api-provider-v1"></script>
+  <script defer src="assets/js/services/mock-repository-provider.js?v=20260703-orders-api-provider-v1"></script>
+  <script defer src="assets/js/services/api-repository-provider.js?v=20260703-orders-api-provider-v1"></script>
+  <script defer src="assets/js/core/feature-flags.js?v=20260501-stage32-runtime-flags"></script>
+  <script defer src="assets/js/core/rollout-guard.js?v=20260501-stage32-runtime-flags"></script>
+  <script defer src="assets/js/core/navigation-registry.js?v=20260703-admin-panel-v1"></script>
+  <script defer src="assets/js/core/navigation-lifecycle.js?v=20260713-navigation-lifecycle-v1"></script>
+  <script defer src="assets/js/core/app-state.js?v=20260501-auth-session-v1"></script>
+  <script defer src="assets/js/core/permissions.js?v=20260501-auth-session-v1"></script>
+  <script defer src="assets/js/core/session.js?v=20260501-auth-session-v1"></script>
+  <script defer src="assets/js/services/auth-service.js?v=20260622-auth-surface-ready-v1"></script>
+  <script defer src="assets/js/services/admin-access-service.js?v=20260714-admin-lifecycle-v1"></script>
+  <script defer src="assets/js/core/app.js?v=20260703-admin-panel-v1"></script>
+  <script defer src="assets/js/components/operational-event-toast.js?v=20260702-sidebar-quick-alert-flow-v1"></script>
+  <script defer src="assets/js/core/stable-shell-router.js?v=20260703-admin-panel-v1"></script>
+  <script defer src="assets/js/repositories/users-repository.js?v=20260713-admin-verification-v1"></script>
+  <script defer src="assets/js/repositories/professional-profiles-repository.js?v=20260713-admin-verification-v1"></script>
+  <script defer src="assets/js/repositories/professional-verification-evidence-repository.js?v=20260713-evidence-v1"></script>
+  <script defer src="assets/js/repositories/professional-identity-verifications-repository.js?v=20260713-admin-verification-v1"></script>
+  <script defer src="assets/js/services/professional-identity-verification-service.js?v=20260713-admin-verification-v1"></script>
+  <script defer src="assets/js/pages/admin-verificacao.js?v=20260714-admin-lifecycle-v1"></script>
+  <script defer src="assets/js/ui/mobile-drawer-standard.js?v=20260701-drawer-detail-contract-v1"></script>
+  <script defer src="assets/js/components/mobile-app-shell.js?v=20260703-admin-panel-v1"></script>
+  <script defer src="assets/js/core/document-preloader.js?v=20260712-global-document-boot-v1"></script>
 </body>
 </html>

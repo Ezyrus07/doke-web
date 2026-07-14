@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  const PAYMENT_CONTROLLER_VERSION = '20260712-canonical-payment-hold-v1';
+  const PAYMENT_CONTROLLER_VERSION = '20260714-transaction-lifecycle-v1';
   const Doke = window.Doke || (window.Doke = {});
 
   let latestPaymentState = {
@@ -43,6 +43,24 @@
     }
     root.dataset.paymentControllerInitialized = PAYMENT_CONTROLLER_VERSION;
 
+  const hydration = window.DokePageHydration?.create({
+    page: 'pagamento',
+    root,
+    emptySelectors: ['[data-state-empty]'],
+    loadingSelectors: ['[data-state-loading]'],
+    errorSelectors: ['[data-state-error]'],
+    skeletonSelectors: ['[data-payment-hydration-skeleton]'],
+    readySelectors: ['[data-payment-hydration-ready]'],
+    splashSelectors: ['[data-payment-document-preloader]'],
+    skeletonMode: 'route-and-document',
+    readyPolicy: 'after-skeleton',
+    waitFor: ['dom', 'auth', 'payment-context'],
+    minDuration: 0,
+    maxDuration: 8000,
+    hasItems: () => Boolean(currentOrder && currentConversation && currentCharge)
+  }) || null;
+  hydration?.start();
+
   let baseTotal = 280;
   const POINTS_DISCOUNT = 23;
 
@@ -73,7 +91,6 @@
 
   let selectedMethod = 'Pix';
   let cardFormOpen = false;
-  let processingTimer = null;
   let walletBalance = null;
   let walletBalanceLoaded = false;
 
@@ -122,15 +139,13 @@
     return Boolean(chargeMessageId) && String(message.id || message.messageId || '') === chargeMessageId;
   }
 
-  function setPaymentExperienceState(state, detail) {
-    const nextState = normalizeText(state || 'ready') || 'ready';
-    root.dataset.paymentExperienceState = nextState;
-    document.body.dataset.paymentExperienceState = nextState;
-    root.setAttribute('aria-busy', String(nextState === 'loading' || nextState === 'refreshing' || nextState === 'submitting'));
-
-    if (window.Doke?.experience?.states?.set) {
-      window.Doke.experience.states.set(root, nextState, detail || {});
-    }
+  function setPaymentOperationState(state, detail) {
+    const nextState = normalizeText(state || 'idle') || 'idle';
+    root.dataset.paymentOperationState = nextState;
+    document.body.dataset.paymentOperationState = nextState;
+    document.dispatchEvent(new CustomEvent('doke:payment-operation-state', {
+      detail: Object.assign({ state: nextState }, detail || {})
+    }));
   }
 
   function setPaymentActionPending(isPending) {
@@ -235,7 +250,7 @@
     const messagesRepository = getMessagesRepository();
     if (!messagesRepository?.list) return Promise.resolve(null);
     return messagesRepository.list({
-      currentUser: false,
+      currentUser: true,
       orderId: paymentContext.orderId || undefined
     }).then((conversations) => {
       const match = findLatestChargeConversation(conversations);
@@ -309,6 +324,19 @@
     });
   }
 
+  function assertValidPaymentContext() {
+    if (!currentConversation || !currentCharge || !isActualChargeMessage(currentConversation, currentCharge)) {
+      throw new Error('Cobrança válida não encontrada para este pagamento.');
+    }
+    const orderId = paymentContext.orderId || currentOrder?.id || currentConversation?.orderId || currentConversation?.order?.id || '';
+    if (!orderId) throw new Error('O pedido vinculado à cobrança não foi encontrado.');
+    const amount = normalizeText(currentCharge.amount || currentOrder?.proposalAmount || currentOrder?.budget || '');
+    if (!amount) throw new Error('A cobrança não possui um valor válido.');
+    paymentContext.orderId = orderId;
+    paymentContext.conversationId = paymentContext.conversationId || currentConversation.id || '';
+    paymentContext.messageId = paymentContext.messageId || currentCharge.id || currentCharge.messageId || '';
+  }
+
   function loadPaymentContext() {
     publishLatestPaymentState({ status: 'loading-context', error: '' });
     const orderRepository = getOrderRepository();
@@ -336,15 +364,15 @@
       }
       return null;
     }).then(() => {
+      assertValidPaymentContext();
       applyPaymentContext();
       return loadWalletBalance();
     }).catch((error) => {
       publishLatestPaymentState({
-        status: 'context-fallback',
-        error: error && error.message ? error.message : ''
+        status: 'context-error',
+        error: error && error.message ? error.message : 'Não foi possível carregar a cobrança.'
       });
-      applyPaymentContext();
-      return loadWalletBalance();
+      throw error;
     });
   }
 
@@ -363,7 +391,7 @@
 
     publishLatestPaymentState({ status: 'registering-payment', error: '' });
     paymentRegistered = true;
-    setPaymentExperienceState('submitting', { action: 'confirm-payment' });
+    setPaymentOperationState('submitting', { action: 'confirm-payment' });
     setPaymentActionPending(true);
 
     const usesPoints = Boolean(pointsInput && pointsInput.checked);
@@ -390,11 +418,11 @@
       paymentContext.messageId = currentCharge?.id || paymentContext.messageId;
       invalidatePaymentDomains();
       applyPaymentContext();
-      setPaymentExperienceState('success', { action: 'confirm-payment' });
+      setPaymentOperationState('success', { action: 'confirm-payment' });
       publishLatestPaymentState({ status: 'paid', error: '' });
       return currentOrder;
     }).catch((error) => {
-      setPaymentExperienceState(navigator.onLine === false ? 'offline' : 'error', { action: 'confirm-payment' });
+      setPaymentOperationState(navigator.onLine === false ? 'offline' : 'error', { action: 'confirm-payment' });
       publishLatestPaymentState({
         status: 'payment-error',
         error: error && error.message ? error.message : 'Não foi possível registrar o pagamento.'
@@ -429,7 +457,7 @@
 
     publishLatestPaymentState({ status: 'registering-completion', error: '' });
     completionRegistered = true;
-    setPaymentExperienceState('submitting', { action: 'complete-order' });
+    setPaymentOperationState('submitting', { action: 'complete-order' });
     setCompletionActionPending(true);
 
     completionTask = paymentService.confirmCompletion(orderId, {
@@ -451,12 +479,12 @@
       paymentContext.messageId = currentCharge?.id || paymentContext.messageId;
       invalidatePaymentDomains();
       applyPaymentContext();
-      setPaymentExperienceState('success', { action: 'complete-order' });
+      setPaymentOperationState('success', { action: 'complete-order' });
       publishLatestPaymentState({ status: 'completed', error: '' });
       return currentOrder;
     }).catch((error) => {
       completionRegistered = false;
-      setPaymentExperienceState(navigator.onLine === false ? 'offline' : 'error', { action: 'complete-order' });
+      setPaymentOperationState(navigator.onLine === false ? 'offline' : 'error', { action: 'complete-order' });
       publishLatestPaymentState({
         status: 'completion-error',
         error: error && error.message ? error.message : 'Não foi possível finalizar o pedido.'
@@ -636,20 +664,21 @@
     if (modalError) modalError.hidden = true;
   }
 
-  function confirmPaymentFlow(delay) {
-    if (!modal) return;
+  function confirmPaymentFlow() {
+    if (!modal) return Promise.resolve(null);
     showPanel('processing');
     clearModalError();
-    window.clearTimeout(processingTimer);
-    processingTimer = window.setTimeout(() => {
-      registerPayment()
-        .then(() => showPanel('success'))
-        .catch((error) => {
-          paymentRegistered = false;
-          showPanel('processing');
-          showModalError(error?.message || 'Não foi possível registrar o pagamento no pedido.');
-        });
-    }, Number.isFinite(delay) ? delay : 500);
+    return registerPayment()
+      .then((result) => {
+        showPanel('success');
+        return result;
+      })
+      .catch((error) => {
+        paymentRegistered = false;
+        showPanel('processing');
+        showModalError(error?.message || 'Não foi possível registrar o pagamento no pedido.');
+        return null;
+      });
   }
 
   function openModal() {
@@ -659,17 +688,13 @@
     modal.setAttribute('aria-hidden', 'false');
     document.body.classList.add('payment-modal-open');
     clearModalError();
-    window.clearTimeout(processingTimer);
 
     if (selectedMethod === 'Pix') {
       showPanel('pix');
       return;
     }
 
-    showPanel('processing');
-    processingTimer = window.setTimeout(() => {
-      confirmPaymentFlow(120);
-    }, 850);
+    confirmPaymentFlow();
   }
 
   function closeModal() {
@@ -678,7 +703,6 @@
     modal.hidden = true;
     modal.setAttribute('aria-hidden', 'true');
     document.body.classList.remove('payment-modal-open');
-    window.clearTimeout(processingTimer);
   }
 
   function showError(message) {
@@ -754,7 +778,7 @@
 
   if (pixPaidButton) {
     pixPaidButton.addEventListener('click', () => {
-      confirmPaymentFlow(650);
+      confirmPaymentFlow();
     });
   }
 
@@ -797,11 +821,35 @@
     }
   });
 
-  setPaymentExperienceState('ready');
+  setPaymentOperationState('idle');
   setSelectedMethod(selectedMethod);
   updateTotals();
   updateSubmitState();
-  loadPaymentContext();
+  hydration?.mark('dom');
+
+  const accountAccess = window.Doke?.services?.accountAccess;
+  let accessTask = Promise.resolve(null);
+  if (!accountAccess?.guardPage) {
+    hydration?.error(new Error('A autoridade de acesso da conta não está disponível.'), {
+      source: 'payment-account-guard'
+    });
+  } else {
+    accessTask = accountAccess.guardPage({
+      name: 'payment-account-access',
+      source: 'pagamento-profissional.html',
+      next: window.location.pathname + window.location.search
+    }).then((result) => {
+      if (!result?.allowed) return result;
+      hydration?.mark('auth');
+      return loadPaymentContext().then(() => {
+        hydration?.mark('payment-context');
+        return result;
+      });
+    }).catch((error) => {
+      hydration?.error(error, { source: 'payment-context' });
+      return null;
+    });
+  }
 
   const finishOrderModal = document.querySelector('[data-finish-order-modal]');
   const finishOrderOpenButtons = Array.from(document.querySelectorAll('[data-finish-order-open]'));
@@ -875,6 +923,7 @@
     }
   });
 
+  return accessTask;
   }
 
   window.DokeInitPayment = initPaymentProfessional;

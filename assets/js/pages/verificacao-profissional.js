@@ -12,7 +12,9 @@
       skeletonSelectors: '[data-professional-verification-hydration-skeleton]',
       readySelectors: '[data-professional-verification-hydration-ready]',
       errorSelectors: '[data-state-error]',
-      skeletonMode: 'hard-load',
+      skeletonMode: 'always',
+      readyPolicy: 'after-skeleton',
+      minDuration: 0,
       maxDuration: 8000,
       hasItems: function () { return true; }
     }) : null;
@@ -404,8 +406,8 @@
       maxReachedStep = Math.max(1, Number(currentVerification && currentVerification.currentStep || 1));
       setStep(Math.min(maxReachedStep, 3), { skipSave: true });
       updateReview();
-      hydration && hydration.ready({ hasItems: true });
       renderStatus(currentVerification);
+      hydration && hydration.ready({ hasItems: true });
     } catch (error) {
       hydration && hydration.error(error);
       handleError(error);

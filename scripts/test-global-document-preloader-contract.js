@@ -14,7 +14,7 @@ const errors = [];
 const read = (file) => fs.readFileSync(path.join(ROOT, file), 'utf8');
 for (const file of pages) {
   const text = read(file);
-  const preloaderCount = (text.match(/data-doke-document-preloader/g) || []).length;
+  const preloaderCount = (text.match(/data-doke-document-preloader(?=\s|=|>)/g) || []).length;
   const scriptCount = (text.match(/document-preloader\.js\?v=20260712-global-document-boot-v1/g) || []).length;
   const bodyMatch = text.match(/<body\b[^>]*>([\s\S]{0,900})/i);
   if (preloaderCount !== 1) errors.push(`${file}: expected one global preloader, found ${preloaderCount}`);

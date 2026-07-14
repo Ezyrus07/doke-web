@@ -1,5 +1,6 @@
 /* Global shell interactions: sidebar, theme, auth avatar/profile menu and internal routing. */
 const body = document.body;
+const navigationLifecycle = window.DokeNavigationLifecycle || window.Doke?.navigationLifecycle || null;
 try {
   if ('scrollRestoration' in window.history) {
     window.history.scrollRestoration = 'manual';
@@ -1135,6 +1136,7 @@ const BASE_SHELL_STYLE_PATTERNS = [
 ];
 
 const INTERNAL_VIEW_STYLE_HINTS = {
+  "/anunciar-servico.html": ["assets/css/pages/anunciar-servico-foundation.css"],
   "/index.html": ["assets/css/pages/home-foundation.css"],
   "/resultados.html": [
     "assets/css/pages/marketplace-foundation.css",
@@ -1163,6 +1165,7 @@ const INTERNAL_VIEW_STYLE_HINTS = {
 const preloadedStyleHrefs = new Set();
 
 const INTERNAL_VIEW_SCRIPT_HINTS = {
+  "/anunciar-servico.html": ["assets/js/pages/anunciar-servico.js"],
   "/index.html": [
     "assets/js/pages/search-data.js",
     "assets/js/pages/home/filters.js",
@@ -1382,7 +1385,7 @@ const ensureScriptsFromDocument = async (nextDoc) => {
   const scripts = [...nextDoc.querySelectorAll('script[src]')]
     .map((node) => node.getAttribute('src'))
     .filter(Boolean)
-    .filter((src) => !/assets\/js\/core\/(?:app|stable-shell-router|social-page-router|runtime-config|feature-flags)\.js(?:\?.*)?$/i.test(src));
+    .filter((src) => !/assets\/js\/core\/(?:navigation-lifecycle|app|stable-shell-router|social-page-router|runtime-config|feature-flags)\.js(?:\?.*)?$/i.test(src));
 
   for (const src of scripts) {
     const absolute = new URL(src, window.location.href).href;
@@ -1828,6 +1831,8 @@ const initializeCurrentView = () => {
   runViewInitializer("owner-profile", window.DokeInitOwnerProfile);
   runViewInitializer("client-profile", window.DokeInitClientProfile);
   runViewInitializer("settings", window.DokeInitSettings);
+  runViewInitializer("post-service", window.DokeInitPostService);
+  runViewInitializer("professional-verification", window.DokeInitProfessionalVerification);
   runViewInitializer("professional-profile", window.DokeInitProfessionalProfile);
   syncLucideIcons();
   runViewInitializer("mobile-shell", window.DokeMobileAppShell?.refresh);
@@ -1903,7 +1908,21 @@ const resetRouteScrollPosition = () => {
   });
 };
 
-const swapView = async (href, { replace = false, preserveScroll = false } = {}) => {
+const swapView = async (href, options = {}) => {
+  const {
+    replace = false,
+    preserveScroll = false,
+    restoreScroll = false,
+    skipHistory = false
+  } = options;
+  const lifecycleRouteId = Number(options.lifecycleRouteId || 0) || (navigationLifecycle?.route?.begin?.({
+    from: window.location.href,
+    to: href,
+    source: options.source || 'legacy-shell',
+    replace,
+    restore: restoreScroll,
+    adapter: options.lifecycleAdapter || 'legacy-shell'
+  }) || 0);
   const url = new URL(href, window.location.href);
   const cacheKey = url.pathname + url.search;
   let stagedStyles = [];
@@ -1964,25 +1983,57 @@ const swapView = async (href, { replace = false, preserveScroll = false } = {}) 
     closeProfileMenu();
     closeMobileSearch();
 
-    if (replace) {
-      window.history.replaceState({ href: url.toString() }, "", url.toString());
-    } else {
-      window.history.pushState({ href: url.toString() }, "", url.toString());
+    if (!skipHistory) {
+      if (replace) {
+        window.history.replaceState({ href: url.toString() }, "", url.toString());
+      } else {
+        window.history.pushState({ href: url.toString() }, "", url.toString());
+      }
+    }
+    if (lifecycleRouteId) {
+      navigationLifecycle?.route?.commit?.(lifecycleRouteId, {
+        adapter: options.lifecycleAdapter || 'legacy-shell',
+        skipHistory
+      });
     }
 
-    if (!preserveScroll) {
+    if (!preserveScroll && !restoreScroll) {
       resetRouteScrollPosition();
     }
 
     try {
       initializeCurrentView();
       document.dispatchEvent(new CustomEvent("doke:route-ready", { detail: { href: url.toString(), path: getCurrentPath(url.href) } }));
-      if (!preserveScroll) resetRouteScrollPosition();
+      if (restoreScroll && navigationLifecycle?.scroll) {
+        await navigationLifecycle.scroll.restore(url.toString());
+      } else if (!preserveScroll) {
+        resetRouteScrollPosition();
+      }
+      if (lifecycleRouteId) {
+        navigationLifecycle?.route?.ready?.(lifecycleRouteId, {
+          state: 'ready',
+          to: getCurrentPath(url.href),
+          adapter: options.lifecycleAdapter || 'legacy-shell'
+        });
+      }
     } catch (error) {
       console.error("[Doke:swap:init-after-replace]", error);
+      if (lifecycleRouteId) {
+        navigationLifecycle?.route?.fail?.(lifecycleRouteId, error, {
+          to: getCurrentPath(url.href),
+          adapter: options.lifecycleAdapter || 'legacy-shell',
+          phase: 'initializer'
+        });
+      }
     }
   } catch (error) {
     discardStagedStyles(stagedStyles);
+    if (lifecycleRouteId) {
+      navigationLifecycle?.route?.fail?.(lifecycleRouteId, error, {
+        to: getCurrentPath(url.href),
+        adapter: options.lifecycleAdapter || 'legacy-shell'
+      });
+    }
     throw error;
   } finally {
     window.requestAnimationFrame(() => {
@@ -1992,14 +2043,14 @@ const swapView = async (href, { replace = false, preserveScroll = false } = {}) 
   }
 };
 
-window.DokeNavigate = (href, options = {}) => {
+const legacyShellNavigate = (href, options = {}) => {
   if (shouldBypassShellSwap(href)) {
     if (options.replace) {
       window.location.replace(href);
-      return;
+      return Promise.resolve(true);
     }
     window.location.href = href;
-    return;
+    return Promise.resolve(true);
   }
 
   try {
@@ -2008,15 +2059,34 @@ window.DokeNavigate = (href, options = {}) => {
     closeMobileSearch();
   } catch {}
 
-  swapView(href, options).catch((error) => {
+  return swapView(href, options).catch((error) => {
     console.error('[Doke:navigation]', error);
     if (options.replace) {
       window.location.replace(href);
-      return;
+      return false;
     }
     window.location.href = href;
+    return false;
   });
 };
+
+if (navigationLifecycle?.navigation?.registerAdapter) {
+  navigationLifecycle.navigation.registerAdapter('legacy-shell', {
+    navigate: legacyShellNavigate,
+    warm: (href) => {
+      hintInternalViewStyles(href);
+      hintInternalViewScripts(href);
+      return prefetchInternalViewDocument(href);
+    },
+    canHandle: (href) => (
+      isInstantShellNavigationEnabled()
+      && isInternalViewUrl(href)
+      && !shouldBypassShellSwap(href)
+    )
+  }, { priority: 20 });
+} else {
+  window.DokeNavigate = legacyShellNavigate;
+}
 
 document.addEventListener("submit", (event) => {
   if (document.body.classList.contains("search-results-body")) return;
@@ -2221,20 +2291,22 @@ document.addEventListener("focusin", (event) => {
   prefetchInternalViewDocument(link.href);
 });
 
-window.addEventListener("popstate", () => {
-  if (!isInstantShellNavigationEnabled()) return;
+if (!navigationLifecycle) {
+  window.addEventListener("popstate", () => {
+    if (!isInstantShellNavigationEnabled()) return;
 
-  const href = window.location.href;
-  if (shouldBypassShellSwap(href)) {
-    window.location.reload();
-    return;
-  }
+    const href = window.location.href;
+    if (shouldBypassShellSwap(href)) {
+      window.location.reload();
+      return;
+    }
 
-  swapView(href, { replace: true, preserveScroll: true }).catch((error) => {
-    console.error('[Doke:navigation:popstate]', error);
-    window.location.reload();
+    swapView(href, { replace: true, preserveScroll: true, skipHistory: true }).catch((error) => {
+      console.error('[Doke:navigation:popstate]', error);
+      window.location.reload();
+    });
   });
-});
+}
 
 document.addEventListener("click", (event) => {
   if (!(event.target instanceof Element)) return;

@@ -78,7 +78,35 @@
 
       <main class="page__content doke-page">
         <div class="page__content-inner container app-shell-page__workspace app-shell-page__workspace--clean admin-shell-content doke-page-shell doke-page-stack">
-          <section class="admin-page doke-page-section" aria-label="Painel administrativo" data-admin-root data-state-boundary="admin" data-view-state="loading" aria-busy="true">
+          <section class="admin-page doke-page-section" aria-label="Painel administrativo" data-admin-root data-state-boundary="admin" data-view-state="guard-pending" aria-busy="true">
+            <section class="admin-lifecycle-skeleton" data-admin-access-skeleton aria-hidden="true">
+              <div class="admin-lifecycle-skeleton__grid" aria-hidden="true">
+                <span></span><span></span><span></span><span></span>
+              </div>
+              <div class="admin-lifecycle-skeleton__layout" aria-hidden="true">
+                <div class="admin-lifecycle-skeleton__main">
+                  <span class="admin-lifecycle-skeleton__panel admin-lifecycle-skeleton__panel--large"></span>
+                  <span class="admin-lifecycle-skeleton__panel"></span>
+                </div>
+                <div class="admin-lifecycle-skeleton__side">
+                  <span class="admin-lifecycle-skeleton__panel"></span>
+                  <span class="admin-lifecycle-skeleton__panel admin-lifecycle-skeleton__panel--compact"></span>
+                </div>
+              </div>
+            </section>
+
+            <section class="admin-lifecycle-error" data-admin-access-error role="alert" tabindex="-1" hidden>
+              <span class="admin-locked__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M12 4 20 19H4L12 4Z"></path><path d="M12 9v4"></path><path d="M12 16h.01"></path></svg>
+              </span>
+              <h1 class="admin-locked__title">Não foi possível validar o acesso</h1>
+              <p class="admin-locked__copy" data-admin-access-error-message>Tente novamente. Nenhum conteúdo administrativo foi exibido.</p>
+              <div class="admin-lifecycle-error__actions">
+                <button class="doke-btn doke-btn--primary" type="button" data-admin-access-retry>Tentar novamente</button>
+                <a class="doke-btn doke-btn--ghost" href="pedidos.html">Voltar para pedidos</a>
+              </div>
+            </section>
+
             <section class="admin-locked" data-admin-locked hidden>
               <span class="admin-locked__icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24"><path d="M12 3.5 18 6v5.2c0 4.4-2.6 7.3-6 9.3-3.4-2-6-4.9-6-9.3V6l6-2.5Z"></path><path d="M9.5 12.5 11.2 14l3.3-4"></path></svg>
@@ -88,7 +116,7 @@
               <a class="doke-btn doke-btn--primary" href="pedidos.html">Voltar para pedidos</a>
             </section>
 
-            <div data-admin-dashboard hidden>
+            <div data-admin-dashboard data-admin-access-ready hidden>
               <section class="admin-grid" aria-label="Resumo administrativo">
                 <article class="admin-card">
                   <span class="admin-card__icon admin-card__icon--info" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3.5 18 6v5.2c0 4.4-2.6 7.3-6 9.3-3.4-2-6-4.9-6-9.3V6l6-2.5Z"></path><path d="M9 12h6"></path></svg></span>
@@ -253,12 +281,18 @@
 
   <script defer src="assets/js/core/runtime-config.js?v=20260531-stable-smooth-v1"></script>
   <script defer src="assets/js/core/experience-runtime.js?v=20260712-admin-experience-v1"></script>
-  <script src="assets/js/services/repository-boundary.js?v=20260703-orders-api-provider-v1" defer></script>
-  <script src="assets/js/services/mock-repository-provider.js?v=20260703-orders-api-provider-v1" defer></script>
-  <script src="assets/js/services/api-repository-provider.js?v=20260703-orders-api-provider-v1" defer></script>
+  <script defer src="assets/js/services/repository-boundary.js?v=20260703-orders-api-provider-v1"></script>
+  <script defer src="assets/js/services/mock-repository-provider.js?v=20260703-orders-api-provider-v1"></script>
+  <script defer src="assets/js/services/api-repository-provider.js?v=20260703-orders-api-provider-v1"></script>
   <script defer src="assets/js/core/feature-flags.js?v=20260501-stage32-runtime-flags"></script>
   <script defer src="assets/js/core/rollout-guard.js?v=20260501-stage32-runtime-flags"></script>
-  <script src="assets/js/core/navigation-registry.js?v=20260703-admin-panel-v1" defer></script>
+  <script defer src="assets/js/core/navigation-registry.js?v=20260703-admin-panel-v1"></script>
+  <script defer src="assets/js/core/navigation-lifecycle.js?v=20260713-navigation-lifecycle-v1"></script>
+  <script defer src="assets/js/core/app-state.js?v=20260501-auth-session-v1"></script>
+  <script defer src="assets/js/core/permissions.js?v=20260501-auth-session-v1"></script>
+  <script defer src="assets/js/core/session.js?v=20260501-auth-session-v1"></script>
+  <script defer src="assets/js/services/auth-service.js?v=20260622-auth-surface-ready-v1"></script>
+  <script defer src="assets/js/services/admin-access-service.js?v=20260714-admin-lifecycle-v1"></script>
   <script defer src="assets/js/core/app.js?v=20260703-admin-panel-v1"></script>
   <script defer src="assets/js/components/operational-event-toast.js?v=20260702-sidebar-quick-alert-flow-v1"></script>
   <script defer src="assets/js/core/stable-shell-router.js?v=20260703-admin-panel-v1"></script>
@@ -268,24 +302,19 @@
   <script defer src="assets/js/repositories/wallet-repository.js?v=20260703-admin-withdraw-v1"></script>
   <script defer src="assets/js/repositories/users-repository.js?v=20260713-admin-verification-v1"></script>
   <script defer src="assets/js/repositories/professional-profiles-repository.js?v=20260713-admin-verification-v1"></script>
-    <script defer src="assets/js/repositories/professional-verification-evidence-repository.js?v=20260713-evidence-v1"></script>
-<script defer src="assets/js/repositories/professional-identity-verifications-repository.js?v=20260713-admin-verification-v1"></script>
+  <script defer src="assets/js/repositories/professional-verification-evidence-repository.js?v=20260713-evidence-v1"></script>
+  <script defer src="assets/js/repositories/professional-identity-verifications-repository.js?v=20260713-admin-verification-v1"></script>
   <script defer src="assets/js/services/professional-identity-verification-service.js?v=20260713-admin-verification-v1"></script>
-
   <script defer src="assets/js/services/wallet-service.js?v=20260703-admin-withdraw-v1"></script>
   <script defer src="assets/js/services/notification-service.js?v=20260501-stage31-domain-services"></script>
-  <script defer src="assets/js/pages/admin-experience.js?v=20260712-admin-experience-v1"></script>
-  <script defer src="assets/js/pages/admin.js?v=20260713-admin-visual-v2"></script>
+  <script defer src="assets/js/pages/admin-experience.js?v=20260714-admin-lifecycle-v1"></script>
+  <script defer src="assets/js/pages/admin.js?v=20260714-admin-lifecycle-v1"></script>
   <script defer src="assets/js/ui/responsive-interaction-guard.js?v=20260428-architecture"></script>
   <script defer src="assets/js/ui/mobile-drawer-standard.js?v=20260701-drawer-detail-contract-v1"></script>
   <script defer src="assets/js/ui/mobile-interaction-standard.js?v=20260428-v1"></script>
   <script defer src="assets/js/ui/mobile-overlay-system.js?v=20260428-v1"></script>
-  <script defer src="assets/js/core/app-state.js?v=20260501-auth-session-v1"></script>
-  <script defer src="assets/js/core/permissions.js?v=20260501-auth-session-v1"></script>
-  <script defer src="assets/js/core/session.js?v=20260501-auth-session-v1"></script>
-  <script defer src="assets/js/services/auth-service.js?v=20260622-auth-surface-ready-v1"></script>
   <script defer src="assets/js/components/mobile-app-shell.js?v=20260703-admin-panel-v1"></script>
   <script defer src="assets/js/core/ipad-safari-scroll-guard.js?v=20260602-v1"></script>
-  <script src="assets/js/core/document-preloader.js?v=20260712-global-document-boot-v1" defer></script>
+  <script defer src="assets/js/core/document-preloader.js?v=20260712-global-document-boot-v1"></script>
 </body>
 </html>

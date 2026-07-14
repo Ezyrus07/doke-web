@@ -5,6 +5,7 @@
 (function () {
   'use strict';
 
+  const lifecycle = window.DokeNavigationLifecycle || window.Doke?.navigationLifecycle || null;
   const DEFAULT_MIN_DURATION = 0;
   const DEFAULT_MAX_DURATION = 8000;
   const INTERNAL_NAVIGATION_TTL = 1800;
@@ -27,6 +28,12 @@
       skeleton: '[data-profile-hydration-skeleton]',
       ready: '[data-profile-hydration-ready]',
       splash: '[data-profile-document-preloader]'
+    }),
+    '/perfil-profissional.html': Object.freeze({
+      boundary: '[data-state-boundary="perfil-profissional"]',
+      skeleton: '[data-professional-profile-hydration-skeleton]',
+      ready: '[data-professional-profile-hydration-ready]',
+      splash: '[data-professional-profile-document-preloader]'
     }),
     '/configuracoes.html': Object.freeze({
       boundary: '[data-state-boundary="configuracoes"]',
@@ -58,6 +65,12 @@
       ready: '[data-messages-hydration-ready]',
       splash: '[data-messages-document-preloader]'
     }),
+    '/pagamento-profissional.html': Object.freeze({
+      boundary: '[data-state-boundary="pagamento"]',
+      skeleton: '[data-payment-hydration-skeleton]',
+      ready: '[data-payment-hydration-ready]',
+      splash: '[data-payment-document-preloader]'
+    }),
     '/notificacoes.html': Object.freeze({
       boundary: '[data-state-boundary="notificacoes"]',
       skeleton: '[data-notifications-hydration-skeleton]',
@@ -67,6 +80,7 @@
   });
 
   const getNavigationType = () => {
+    if (lifecycle?.entry?.get) return lifecycle.entry.get().navigationType || 'navigate';
     try {
       const entries = performance.getEntriesByType?.('navigation') || [];
       return entries[0]?.type || 'navigate';
@@ -86,6 +100,7 @@
   };
 
   const isStableShellNavigation = () => {
+    if (lifecycle?.entry) return lifecycle.entry.isInternal() || lifecycle.entry.isRestore();
     if (document.documentElement?.dataset.dokeNavigationMode === 'stable-shell') return true;
     if (document.body?.dataset.dokeNavigationMode === 'stable-shell') return true;
     return hasRecentInternalNavigation();
@@ -185,6 +200,12 @@
     node.setAttribute('aria-hidden', hidden ? 'true' : 'false');
   };
 
+  const setSkeletonHidden = (node, hidden) => {
+    if (!node) return;
+    node.hidden = hidden;
+    node.setAttribute('aria-hidden', 'true');
+  };
+
   const create = (options = {}) => {
     const page = String(options.page || document.body?.dataset.page || 'page');
     const root = resolveRoot(options.root);
@@ -235,6 +256,7 @@
     };
 
     const setState = (nextState, detail = {}) => {
+      const previousState = state;
       state = nextState;
       if (root) {
         root.dataset.pageHydration = nextState;
@@ -256,6 +278,29 @@
         document.body.dataset.pageHydrationBoot = splashDuration > 0 ? 'on' : 'off';
         const pageHydrationKey = toDatasetKey(`${page}-hydration`);
         if (pageHydrationKey) document.body.dataset[pageHydrationKey] = nextState;
+      }
+      if (lifecycle?.page && previousState !== nextState) {
+        if (nextState === 'document-boot' || nextState === 'hydrating') {
+          lifecycle.page.begin({
+            page,
+            source: detail.source || 'page-hydration',
+            skeleton: useSkeleton,
+            hydrationState: nextState
+          });
+        } else if (nextState === 'empty') {
+          lifecycle.page.empty({ page, source: detail.source || 'page-hydration', hasItems: false });
+        } else if (nextState === 'ready') {
+          lifecycle.page.ready({
+            page,
+            source: detail.source || 'page-hydration',
+            hasItems: typeof detail.hasItems === 'boolean' ? detail.hasItems : lastHasItems
+          });
+        } else if (nextState === 'error') {
+          lifecycle.page.fail(new Error(detail.error || `Falha ao carregar ${page}.`), {
+            page,
+            source: detail.source || 'page-hydration'
+          });
+        }
       }
       document.dispatchEvent(new CustomEvent('doke:page-hydration-state', {
         detail: Object.assign({ page, state: nextState }, detail)
@@ -292,7 +337,7 @@
     };
 
     const syncSkeleton = (visible) => {
-      resolveNodes(root, skeletonSelectors).forEach((node) => setHidden(node, !visible));
+      resolveNodes(root, skeletonSelectors).forEach((node) => setSkeletonHidden(node, !visible));
     };
 
     const syncReady = (visible) => {
@@ -520,7 +565,7 @@
       node.setAttribute('aria-busy', 'true');
     });
     doc.querySelectorAll(contract.splash).forEach((node) => setHidden(node, true));
-    doc.querySelectorAll(contract.skeleton).forEach((node) => setHidden(node, !showSkeleton));
+    doc.querySelectorAll(contract.skeleton).forEach((node) => setSkeletonHidden(node, !showSkeleton));
     doc.querySelectorAll(contract.ready).forEach((node) => setHidden(node, true));
     doc.querySelectorAll('[data-state-error], [data-state-empty]').forEach((node) => setHidden(node, true));
     return true;

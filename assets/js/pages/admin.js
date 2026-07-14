@@ -31,9 +31,88 @@
   var searchQuery = '';
   var toastTimer = null;
   var loadPromise = null;
+  var accessSkeleton = document.querySelector('[data-admin-access-skeleton]');
+  var accessError = document.querySelector('[data-admin-access-error]');
+  var accessErrorMessage = document.querySelector('[data-admin-access-error-message]');
+  var accessRun = 0;
+  var eventsBound = false;
 
   function experience() {
     return Doke.adminExperience || null;
+  }
+
+  function lifecycle() {
+    return window.DokeNavigationLifecycle || Doke.navigationLifecycle || null;
+  }
+
+  function adminAccessService() {
+    return Doke.services && Doke.services.adminAccess || null;
+  }
+
+  function refreshNodes() {
+    root = document.querySelector('[data-admin-root]');
+    locked = document.querySelector('[data-admin-locked]');
+    dashboard = document.querySelector('[data-admin-dashboard]');
+    searchInput = document.querySelector('[data-admin-search]');
+    toast = document.querySelector('[data-admin-toast]');
+    withdrawModal = document.querySelector('[data-admin-withdraw-modal]');
+    withdrawReasonInput = document.querySelector('[data-admin-withdraw-reason]');
+    withdrawModalTitle = document.querySelector('[data-admin-withdraw-modal-title]');
+    withdrawModalCopy = document.querySelector('[data-admin-withdraw-modal-copy]');
+    withdrawModalSubmit = document.querySelector('[data-admin-withdraw-submit]');
+    verificationDialog = document.querySelector('[data-admin-verification-dialog]');
+    verificationReasonInput = document.querySelector('[data-admin-verification-reason]');
+    verificationRejectConfirm = document.querySelector('[data-admin-verification-reject-confirm]');
+    verificationReview = document.querySelector('[data-admin-verification-review]');
+    verificationReviewBody = document.querySelector('[data-admin-verification-review-body]');
+    verificationReviewTitle = document.querySelector('[data-admin-verification-review-title]');
+    verificationReviewDescription = document.querySelector('[data-admin-verification-review-description]');
+    verificationReviewApprove = document.querySelector('[data-admin-verification-review-approve]');
+    verificationReviewReject = document.querySelector('[data-admin-verification-review-reject]');
+    accessSkeleton = document.querySelector('[data-admin-access-skeleton]');
+    accessError = document.querySelector('[data-admin-access-error]');
+    accessErrorMessage = document.querySelector('[data-admin-access-error-message]');
+  }
+
+  function setAccessSurface(state, detail) {
+    var next = String(state || 'guard-pending');
+    var busy = ['guard-pending', 'loading', 'redirecting'].indexOf(next) >= 0;
+    if (root) {
+      root.dataset.viewState = next;
+      root.setAttribute('aria-busy', busy ? 'true' : 'false');
+      root.dataset.adminAccess = next === 'ready' ? 'allowed' : next === 'blocked' ? 'blocked' : 'pending';
+    }
+    if (accessSkeleton) accessSkeleton.hidden = !busy;
+    if (dashboard) dashboard.hidden = next !== 'ready';
+    if (locked) locked.hidden = next !== 'blocked';
+    if (accessError) accessError.hidden = next !== 'error';
+    if (accessErrorMessage && detail && detail.message) accessErrorMessage.textContent = detail.message;
+    if (document.body) document.body.dataset.adminLifecycleState = next;
+    if (next === 'error' && accessError) {
+      window.requestAnimationFrame(function () { accessError.focus(); });
+    }
+  }
+
+  function markPageBegin(source) {
+    var api = lifecycle();
+    if (api && api.page) api.page.begin({ page: 'admin', source: source || 'admin-controller' });
+  }
+
+  function markPageReady(detail) {
+    var api = lifecycle();
+    if (api && api.page) api.page.ready(Object.assign({ page: 'admin', source: 'admin-controller', hasItems: true }, detail || {}));
+  }
+
+  function markPageFailed(error) {
+    var api = lifecycle();
+    if (api && api.page) api.page.fail(error, { page: 'admin', source: 'admin-controller' });
+  }
+
+  function navigateTo(url, options) {
+    var api = lifecycle();
+    var go = api && api.navigation && api.navigation.go || Doke.navigation && Doke.navigation.go;
+    if (typeof go !== 'function') return Promise.reject(new Error('A navegação canônica não está disponível.'));
+    return Promise.resolve(go(url, Object.assign({ source: 'admin-controller' }, options || {})));
   }
 
   function clean(value) {
@@ -69,30 +148,13 @@
   }
 
   function getCurrentUser() {
-    try {
-      var sessionUser = Doke.session && typeof Doke.session.getCurrentUser === 'function'
-        ? Doke.session.getCurrentUser()
-        : null;
-      if (sessionUser) return sessionUser;
-    } catch (error) {
-      // localStorage fallback below.
-    }
-
-    try {
-      var raw = window.localStorage.getItem('doke.auth.session.v1');
-      var session = raw ? JSON.parse(raw) : null;
-      return session && session.user ? session.user : null;
-    } catch (error) {
-      return null;
-    }
+    var access = adminAccessService();
+    return access && typeof access.getCurrentUser === 'function' ? access.getCurrentUser() : null;
   }
 
   function canUseAdmin(user) {
-    var current = user || getCurrentUser() || {};
-    var role = clean(current.role || current.type).toLowerCase();
-    if (ADMIN_ROLES.indexOf(role) >= 0) return true;
-    if (current.isMockSupport === true || current.mockSupport === true) return true;
-    return Boolean(role && Doke.permissions && typeof Doke.permissions.has === 'function' && Doke.permissions.has('*', role));
+    var access = adminAccessService();
+    return Boolean(access && typeof access.canUseAdmin === 'function' && access.canUseAdmin(user || getCurrentUser()));
   }
 
   function walletService() {
@@ -847,20 +909,68 @@
   }
 
   function updateAccess() {
-    var allowed = canUseAdmin();
-    if (locked) locked.hidden = allowed;
-    if (dashboard) dashboard.hidden = !allowed;
-    if (root) root.dataset.adminAccess = allowed ? 'allowed' : 'blocked';
-    if (!allowed) {
-      var runtime = experience();
-      if (runtime) runtime.setState('ready', { access: 'blocked' });
-      return;
+    var runId = ++accessRun;
+    var access = adminAccessService();
+    setAccessSurface('guard-pending');
+    markPageBegin('admin-access-guard');
+
+    if (!access || typeof access.guardPage !== 'function') {
+      var unavailable = new Error('O serviço de acesso administrativo não está disponível.');
+      setAccessSurface('error', { message: unavailable.message });
+      markPageFailed(unavailable);
+      return Promise.resolve(null);
     }
-    loadAdminData().catch(function () { /* state and toast handled by loadAdminData */ });
+
+    return access.guardPage({
+      name: 'admin-dashboard-access',
+      source: 'admin.html',
+      deniedRedirect: 'pedidos.html',
+      loginRedirect: 'auth/login.html'
+    }).then(function (result) {
+      if (runId !== accessRun) return null;
+      if (!result || result.allowed !== true) {
+        setAccessSurface(result && result.redirecting ? 'redirecting' : 'blocked');
+        return null;
+      }
+
+      setAccessSurface('loading');
+      return loadAdminData().then(function (state) {
+        if (runId !== accessRun) return state;
+        setAccessSurface('ready');
+        markPageReady();
+        return state;
+      });
+    }).catch(function (error) {
+      if (runId !== accessRun) return null;
+      setAccessSurface('error', {
+        message: error && error.message ? error.message : 'Não foi possível validar o acesso administrativo.'
+      });
+      markPageFailed(error);
+      return null;
+    });
   }
 
   function bind() {
     document.addEventListener('click', function (event) {
+      var accessRetry = event.target.closest('[data-admin-access-retry]');
+      if (accessRetry) {
+        event.preventDefault();
+        updateAccess();
+        return;
+      }
+
+      var reviewLink = event.target.closest('a[href^="admin-verificacao.html"]');
+      if (reviewLink) {
+        event.preventDefault();
+        navigateTo(reviewLink.getAttribute('href'), {
+          source: 'admin-verification-open',
+          forceDocument: true
+        }).catch(function (error) {
+          showToast(error && error.message ? error.message : 'Não foi possível abrir a análise.');
+        });
+        return;
+      }
+
       var verificationOpen = event.target.closest('[data-admin-verification-open]');
       if (verificationOpen) {
         event.preventDefault();
@@ -902,7 +1012,10 @@
           var operation = function () {
             return service.startReview(verificationId).then(function () {
               if (runtime) runtime.invalidateRelated();
-              window.location.href = 'admin-verificacao.html?id=' + encodeURIComponent(verificationId);
+              return navigateTo('admin-verificacao.html?id=' + encodeURIComponent(verificationId), {
+                source: 'admin-verification-start',
+                forceDocument: true
+              });
             });
           };
           var promise = runtime ? runtime.runMutation('verification:' + verificationId, operation) : operation();
@@ -968,14 +1081,17 @@
       }
     });
 
-    if (searchInput) {
-      searchInput.addEventListener('input', function () {
-        searchQuery = searchInput.value || '';
-        loadAdminData();
-      });
-    }
+    document.addEventListener('input', function (event) {
+      var input = event.target.closest('[data-admin-search]');
+      if (!input) return;
+      searchInput = input;
+      searchQuery = input.value || '';
+      if (canUseAdmin()) loadAdminData().catch(function () {});
+    });
 
-    document.addEventListener('doke:auth-session-change', updateAccess);
+    document.addEventListener('doke:auth-session-change', function () {
+      updateAccess().catch(function () {});
+    });
     document.addEventListener('doke:wallet-dispute-resolved', function () { loadAdminData(true).catch(function () {}); });
     document.addEventListener('doke:wallet-dispute-opened', function () { loadAdminData(true).catch(function () {}); });
     document.addEventListener('doke:wallet-dispute-responded', function () { loadAdminData(true).catch(function () {}); });
@@ -988,9 +1104,13 @@
   }
 
   function init() {
+    refreshNodes();
     if (!root) return;
-    bind();
-    updateAccess();
+    if (!eventsBound) {
+      bind();
+      eventsBound = true;
+    }
+    updateAccess().catch(function () {});
   }
 
   window.DokeInitAdmin = init;

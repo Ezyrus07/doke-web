@@ -188,6 +188,10 @@
   var ownerMediaController = null;
   var ownerHydrationBoundary = null;
   var ownerHydration = null;
+  var ownerInitialization = null;
+  var ownerInitializationBoundary = null;
+  var ownerReadyBoundary = null;
+  var ownerLastResult = null;
 
   function ensureOwnerHydration() {
     var boundary = document.querySelector('[data-state-boundary="meu-perfil"]');
@@ -200,7 +204,7 @@
       skeletonSelectors: '[data-profile-hydration-skeleton]',
       readySelectors: '[data-profile-hydration-ready]',
       errorSelectors: '[data-state-error]',
-      skeletonMode: 'hard-load',
+      skeletonMode: 'route-and-document',
       maxDuration: 8000,
       hasItems: function () { return true; }
     });
@@ -250,26 +254,52 @@
   }
 
   window.DokeInitOwnerProfile = function DokeInitOwnerProfile() {
-    if (!document.querySelector('[data-state-boundary="meu-perfil"]')) return Promise.resolve(null);
+    var boundary = document.querySelector('[data-state-boundary="meu-perfil"]');
+    if (!boundary) return Promise.resolve(null);
+    if (ownerReadyBoundary === boundary) return Promise.resolve(ownerLastResult);
+    if (ownerInitializationBoundary === boundary && ownerInitialization) return ownerInitialization;
+
+    ownerInitializationBoundary = boundary;
     bindMediaEditing();
     var hydration = ensureOwnerHydration();
     hydration?.start();
 
-    var operation = ownerSurfaceInitialized
-      ? Doke.ownerProfileExperience.query({ force: true })
-      : Doke.ownerProfileExperience.init();
-    ownerSurfaceInitialized = true;
+    var access = Doke.services && Doke.services.accountAccess;
+    ownerInitialization = Promise.resolve().then(function () {
+      if (!access || typeof access.guardPage !== 'function') {
+        throw new Error('O guard da conta não está disponível.');
+      }
+      return access.guardPage({
+        name: 'owner-profile-access',
+        source: 'meu-perfil.html',
+        loginRedirect: 'auth/login.html'
+      });
+    }).then(function (accessResult) {
+      if (!accessResult || !accessResult.allowed) return null;
 
-    return Promise.all([
-      Promise.resolve(operation),
-      loadProfessionalNextStep()
-    ]).then(function (results) {
+      var operation = ownerSurfaceInitialized
+        ? Doke.ownerProfileExperience.query({ force: true })
+        : Doke.ownerProfileExperience.init();
+      ownerSurfaceInitialized = true;
+
+      return Promise.all([
+        Promise.resolve(operation),
+        loadProfessionalNextStep()
+      ]);
+    }).then(function (results) {
+      if (!results) return null;
       hydration?.ready({ hasItems: true });
-      return results[0];
+      ownerReadyBoundary = boundary;
+      ownerLastResult = results[0];
+      return ownerLastResult;
     }).catch(function (error) {
-      hydration?.error(error);
+      hydration?.error(error, { source: 'owner-profile-controller' });
       throw error;
+    }).finally(function () {
+      ownerInitialization = null;
     });
+
+    return ownerInitialization;
   };
 
   Promise.resolve(window.DokeInitOwnerProfile()).catch(function () {});

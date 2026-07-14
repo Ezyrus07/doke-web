@@ -37,6 +37,19 @@
     return assertRepository().getById(serviceId);
   }
 
+  function create(payload) {
+    var access = Doke.services && Doke.services.professionalAccess;
+    var action = access && access.ACTIONS && access.ACTIONS.PUBLISH_SERVICE || 'publish_service';
+    if (!access || typeof access.assert !== 'function') {
+      return Promise.reject(new Error('A autoridade de acesso profissional não foi carregada.'));
+    }
+    return access.assert(action).then(function () {
+      var repository = assertRepository();
+      if (typeof repository.save !== 'function') throw new Error('A publicação de serviços não está disponível.');
+      return repository.save(payload || {});
+    });
+  }
+
   function getDetailUrl(serviceOrId) {
     var serviceId = typeof serviceOrId === 'object' ? serviceOrId && serviceOrId.id : serviceOrId;
     var id = normalizeText(serviceId);
@@ -89,6 +102,7 @@
     featured: featured,
     search: search,
     getById: getById,
+    create: create,
     getFromUrl: getFromUrl,
     getDetailUrl: getDetailUrl,
     getBudgetUrl: getBudgetUrl,

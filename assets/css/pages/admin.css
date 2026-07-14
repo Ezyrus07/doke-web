@@ -535,3 +535,128 @@
     flex: 1 1 100%;
   }
 }
+
+/* Navigation lifecycle stage 04: administrative guard and hydration surfaces. */
+.admin-lifecycle-skeleton,
+.admin-lifecycle-error {
+  width: 100%;
+}
+
+.admin-lifecycle-skeleton {
+  display: grid;
+  gap: 18px;
+}
+
+.admin-lifecycle-skeleton__grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.admin-lifecycle-skeleton__grid > span,
+.admin-lifecycle-skeleton__panel {
+  display: block;
+  overflow: hidden;
+  border: 1px solid var(--doke-visual-border);
+  border-radius: var(--doke-visual-radius-lg);
+  background: linear-gradient(100deg, #edf3f8 20%, #f8fafc 38%, #edf3f8 56%);
+  background-size: 220% 100%;
+  box-shadow: var(--doke-visual-shadow);
+  animation: admin-lifecycle-shimmer 1.35s ease-in-out infinite;
+}
+
+.admin-lifecycle-skeleton__grid > span {
+  min-height: 82px;
+}
+
+.admin-lifecycle-skeleton__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.75fr) minmax(280px, 0.85fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.admin-lifecycle-skeleton__main,
+.admin-lifecycle-skeleton__side {
+  display: grid;
+  gap: 16px;
+}
+
+.admin-lifecycle-skeleton__panel {
+  min-height: 248px;
+}
+
+.admin-lifecycle-skeleton__panel--large {
+  min-height: 330px;
+}
+
+.admin-lifecycle-skeleton__panel--compact {
+  min-height: 180px;
+}
+
+.admin-lifecycle-error {
+  display: grid;
+  justify-items: start;
+  gap: 12px;
+  padding: 24px;
+  border: 1px solid var(--doke-visual-border);
+  border-radius: var(--doke-visual-radius-lg);
+  background: var(--doke-visual-surface);
+  box-shadow: var(--doke-visual-shadow);
+}
+
+.admin-lifecycle-error__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.admin-lifecycle-skeleton[hidden],
+.admin-lifecycle-error[hidden] {
+  display: none;
+}
+
+@keyframes admin-lifecycle-shimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: -120% 0; }
+}
+
+@media (max-width: 1040px) {
+  .admin-lifecycle-skeleton__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-lifecycle-skeleton__layout {
+    grid-template-columns: minmax(0, 1fr) 290px;
+  }
+}
+
+@media (max-width: 760px) {
+  .admin-lifecycle-skeleton__layout {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-lifecycle-skeleton__panel--large,
+  .admin-lifecycle-skeleton__panel {
+    min-height: 220px;
+  }
+}
+
+@media (max-width: 520px) {
+  .admin-lifecycle-skeleton__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-lifecycle-error__actions,
+  .admin-lifecycle-error__actions .doke-btn {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-lifecycle-skeleton__grid > span,
+  .admin-lifecycle-skeleton__panel {
+    animation: none;
+    background-position: 50% 0;
+  }
+}
