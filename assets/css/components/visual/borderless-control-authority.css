@@ -1,0 +1,106 @@
+/* Doke Clean — canonical borderless control authority.
+ * Replaces visible strokes with micro-elevation across reusable controls.
+ * Component geometry remains owned by each canonical component stylesheet.
+ */
+:root {
+  --doke-clean-micro-shadow:
+    0 0 0 1px rgba(24, 75, 118, 0.024),
+    0 2px 7px rgba(24, 75, 118, 0.046);
+  --doke-clean-micro-shadow-hover:
+    0 0 0 1px rgba(24, 75, 118, 0.028),
+    0 5px 14px rgba(24, 75, 118, 0.065);
+  --doke-clean-focus-shadow:
+    0 0 0 1px rgba(42, 95, 144, 0.07),
+    0 0 0 4px rgba(42, 95, 144, 0.085),
+    0 4px 14px rgba(24, 75, 118, 0.055);
+  --doke-clean-control-bg: #f8fbfe;
+  --doke-clean-control-bg-hover: #fff;
+}
+
+:is(.doke-btn--ghost, .doke-button--ghost),
+:where(.doke-icon-btn, .doke-action-button),
+.doke-tab-pill,
+:is(.doke-chip, .chip, [data-chip]),
+:is(.doke-badge, .badge, [data-badge]),
+:where(.doke-input, .doke-select, .doke-textarea),
+.doke-select__trigger,
+.ui-select__trigger,
+.doke-filter-pill {
+  border-color: transparent;
+  border-width: 0;
+  box-shadow: var(--doke-clean-micro-shadow);
+}
+
+:where(.doke-input, .doke-select, .doke-textarea),
+.doke-select__trigger,
+.ui-select__trigger {
+  background: var(--doke-clean-control-bg);
+}
+
+:is(.doke-btn--ghost, .doke-button--ghost):not(:disabled):hover,
+:where(.doke-icon-btn, .doke-action-button):not(:disabled):hover,
+.doke-tab-pill:hover,
+:is(.doke-chip, .chip, [data-chip]):where(:hover, :focus-visible),
+:where(.doke-input, .doke-select, .doke-textarea):not(:disabled):hover,
+.doke-select__trigger:hover,
+.ui-select__trigger:hover,
+.doke-filter-pill:hover {
+  border-color: transparent;
+  background-color: var(--doke-clean-control-bg-hover);
+  box-shadow: var(--doke-clean-micro-shadow-hover);
+}
+
+:where(.doke-input, .doke-select, .doke-textarea):is(:focus, :focus-visible),
+.doke-select__trigger:focus-visible,
+.ui-select__trigger:focus-visible,
+.ui-select.is-open .ui-select__trigger,
+.doke-tab-pill:focus-visible,
+.doke-filter-pill:focus-visible {
+  border-color: transparent;
+  outline: 0;
+  background-color: #fff;
+  box-shadow: var(--doke-clean-focus-shadow);
+}
+
+:is(.doke-badge, .badge, [data-badge]) {
+  box-shadow:
+    0 0 0 1px rgba(24, 75, 118, 0.018),
+    0 1px 4px rgba(24, 75, 118, 0.035);
+}
+
+:is(.doke-chip, .chip, [data-chip]),
+.doke-tab-pill {
+  box-shadow:
+    0 0 0 1px rgba(24, 75, 118, 0.02),
+    0 2px 7px rgba(24, 75, 118, 0.04);
+}
+
+.doke-tab-pill:is(.is-active, [aria-pressed="true"], [aria-selected="true"]),
+:is(button, a).is-active > .doke-tab-pill,
+:is(button, a)[aria-pressed="true"] > .doke-tab-pill,
+:is(button, a)[aria-selected="true"] > .doke-tab-pill {
+  border-color: transparent;
+}
+
+.doke-search-pill__field,
+.doke-results-search__field.doke-search-pill__field,
+.home-search-hero__field.doke-search-pill__field,
+.doke-search-panel__form,
+.doke-results-search__form.doke-search-pill {
+  border: 0;
+  box-shadow: var(--doke-clean-micro-shadow);
+}
+
+.doke-search-pill:focus-within .doke-search-pill__field,
+.doke-search-pill.is-search-open .doke-search-pill__field,
+.results-searchbar.is-search-open .doke-search-pill__field {
+  border-color: transparent;
+  box-shadow: var(--doke-clean-focus-shadow);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :is(.doke-btn--ghost, .doke-button--ghost, .doke-tab-pill, .doke-chip, .chip, .doke-filter-pill),
+  :where(.doke-icon-btn, .doke-action-button) {
+    transform: none;
+  }
+}

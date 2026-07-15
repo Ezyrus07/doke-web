@@ -9,8 +9,25 @@ body.professional-verification-page-shell {
   --doke-form-control-bg: #fbfdff;
   --doke-form-control-color: var(--verification-text);
   --doke-form-control-font-weight: 600;
-  --doke-form-control-focus-border: rgba(38, 116, 217, 0.45);
-  --doke-form-control-focus-ring: 0 0 0 4px rgba(38, 116, 217, 0.08);
+  --verification-micro-shadow:
+    0 0 0 1px rgba(24, 75, 118, 0.025),
+    0 2px 7px rgba(24, 75, 118, 0.045);
+  --verification-micro-shadow-hover:
+    0 0 0 1px rgba(24, 75, 118, 0.03),
+    0 6px 16px rgba(24, 75, 118, 0.065);
+  --verification-focus-shadow:
+    0 0 0 1px rgba(42, 95, 144, 0.08),
+    0 0 0 4px rgba(42, 95, 144, 0.09),
+    0 4px 14px rgba(24, 75, 118, 0.055);
+  --verification-panel-shadow:
+    0 0 0 1px rgba(24, 75, 118, 0.035),
+    0 14px 34px rgba(24, 75, 118, 0.07);
+  --doke-form-card-border: 0;
+  --doke-form-card-shadow: var(--verification-panel-shadow);
+  --doke-form-control-border: 0;
+  --doke-form-control-shadow: var(--verification-micro-shadow);
+  --doke-form-control-focus-border: transparent;
+  --doke-form-control-focus-ring: var(--verification-focus-shadow);
   background: var(--verification-bg);
 }
 
@@ -40,8 +57,9 @@ body.professional-verification-page-shell svg {
 .professional-verification-form-card,
 .professional-verification-status,
 .professional-verification-side-card {
-  border: 1px solid var(--verification-border);
+  border: 0;
   background: var(--verification-surface);
+  box-shadow: var(--verification-panel-shadow);
 }
 
 .professional-verification-steps {
@@ -123,25 +141,34 @@ body.professional-verification-page-shell svg {
   gap: 12px;
   align-items: center;
   padding: 16px;
-  border: 1px dashed rgba(38, 116, 217, 0.34);
+  border: 0;
   border-radius: var(--radius-sm);
-  background: #fbfdff;
+  background: #f8fbfe;
+  box-shadow: var(--verification-micro-shadow);
   cursor: pointer;
+  transition: background-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
 }
 
 .professional-verification-upload-card:hover {
-  border-color: rgba(38, 116, 217, 0.6);
-  background: var(--verification-soft);
+  border: 0;
+  background: #fff;
+  box-shadow: var(--verification-micro-shadow-hover);
+  transform: translateY(-1px);
 }
 
 .professional-verification-upload-card:focus-within {
-  border-color: var(--verification-primary);
-  box-shadow: 0 0 0 4px rgba(38, 116, 217, 0.08);
+  border: 0;
+  outline: 0;
+  background: #fff;
+  box-shadow: var(--verification-focus-shadow);
 }
 
 .professional-verification-upload-card.has-file {
-  border-style: solid;
-  background: rgba(22, 184, 149, 0.06);
+  border: 0;
+  background: rgba(22, 184, 149, 0.07);
+  box-shadow:
+    0 0 0 1px rgba(22, 139, 111, 0.025),
+    0 3px 10px rgba(22, 139, 111, 0.055);
 }
 
 .professional-verification-upload-card input[type="file"] {
@@ -194,9 +221,10 @@ body.professional-verification-page-shell svg {
 
 .professional-verification-review > div {
   padding: 14px 16px;
-  border: 1px solid var(--verification-border);
+  border: 0;
   border-radius: var(--radius-sm);
-  background: #f9fbfe;
+  background: #f8fbfe;
+  box-shadow: var(--verification-micro-shadow);
 }
 
 .professional-verification-review dt {
@@ -222,9 +250,10 @@ body.professional-verification-page-shell svg {
   gap: 12px;
   margin-top: 18px;
   padding: 16px;
-  border: 1px solid rgba(38, 116, 217, 0.15);
+  border: 0;
   border-radius: var(--radius-sm);
-  background: var(--verification-soft);
+  background: rgba(38, 116, 217, 0.055);
+  box-shadow: var(--verification-micro-shadow);
 }
 
 .professional-verification-confirm label {
@@ -363,6 +392,81 @@ body[data-page="verificacao-profissional"] .professional-verification-actions .d
   min-width: 0;
 }
 
+
+body[data-page="verificacao-profissional"] .professional-verification-form-card :is(
+  .doke-input,
+  .doke-select,
+  .doke-textarea,
+  .ui-select__trigger
+) {
+  border: 0;
+  background: #f8fbfe;
+  box-shadow: var(--verification-micro-shadow);
+}
+
+body[data-page="verificacao-profissional"] .professional-verification-form-card :is(
+  .doke-input,
+  .doke-select,
+  .doke-textarea,
+  .ui-select__trigger
+):not(:disabled):hover {
+  border: 0;
+  background: #fff;
+  box-shadow: var(--verification-micro-shadow-hover);
+}
+
+body[data-page="verificacao-profissional"] .professional-verification-form-card :is(
+  .doke-input,
+  .doke-select,
+  .doke-textarea,
+  .ui-select__trigger
+):is(:focus, :focus-visible),
+body[data-page="verificacao-profissional"] .professional-verification-form-card .ui-select.is-open .ui-select__trigger {
+  border: 0;
+  outline: 0;
+  background: #fff;
+  box-shadow: var(--verification-focus-shadow);
+}
+
+body[data-page="verificacao-profissional"] .professional-verification-form-card .ui-select__menu {
+  border: 0;
+  background: #fff;
+  box-shadow:
+    0 0 0 1px rgba(24, 75, 118, 0.025),
+    0 12px 30px rgba(24, 75, 118, 0.11);
+}
+
+body[data-page="verificacao-profissional"] :is(
+  .professional-verification-actions,
+  .professional-verification-status__actions,
+  .professional-verification-success__actions
+) .doke-btn--ghost {
+  border: 0;
+  background: #fff;
+  box-shadow: var(--verification-micro-shadow);
+}
+
+body[data-page="verificacao-profissional"] :is(
+  .professional-verification-actions,
+  .professional-verification-status__actions,
+  .professional-verification-success__actions
+) .doke-btn--ghost:not(:disabled):hover {
+  border: 0;
+  background: #fff;
+  box-shadow: var(--verification-micro-shadow-hover);
+  transform: translateY(-1px);
+}
+
+body[data-page="verificacao-profissional"] :is(
+  .professional-verification-actions,
+  .professional-verification-status__actions,
+  .professional-verification-success__actions
+) .doke-btn--ghost:is(:focus, :focus-visible) {
+  border: 0;
+  outline: 0;
+  box-shadow: var(--verification-focus-shadow);
+}
+
 body[data-page="verificacao-profissional"] .professional-verification-upload-grid {
   margin-top: 16px;
   margin-bottom: 28px;
@@ -479,11 +583,13 @@ body[data-page="verificacao-profissional"] .professional-verification-success-mo
   padding: 0;
   overflow: hidden;
   box-sizing: border-box;
-  border: 1px solid rgba(207, 222, 239, 0.92);
+  border: 0;
   border-radius: var(--radius-xl, 28px);
   background: #fff;
   text-align: left;
-  box-shadow: 0 28px 80px rgba(18, 39, 62, 0.24);
+  box-shadow:
+    0 0 0 1px rgba(24, 75, 118, 0.035),
+    0 28px 80px rgba(18, 39, 62, 0.22);
   transform: none;
   opacity: 1;
   animation: none;
@@ -542,9 +648,10 @@ body[data-page="verificacao-profissional"] .professional-verification-success__s
   margin-top: 24px;
   margin-bottom: 28px;
   padding: 18px 20px;
-  border: 1px solid #dce7f3;
+  border: 0;
   border-radius: var(--radius-md, 16px);
-  background: #f8fbff;
+  background: #f8fbfe;
+  box-shadow: var(--verification-micro-shadow);
   text-align: left;
 }
 
@@ -569,8 +676,9 @@ body[data-page="verificacao-profissional"] .professional-verification-success__a
   grid-template-columns: repeat(2, minmax(0, 1fr));
   margin-top: 0;
   padding: 20px 36px 28px;
-  border-top: 1px solid rgba(207, 222, 239, 0.72);
+  border-top: 0;
   background: #fff;
+  box-shadow: 0 -16px 30px rgba(24, 75, 118, 0.05);
 }
 
 @media (max-width: 620px) {
@@ -615,5 +723,12 @@ body[data-page="verificacao-profissional"] .professional-verification-success__a
 
   body[data-page="verificacao-profissional"] .professional-verification-upload-grid {
     margin-bottom: 22px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-page="verificacao-profissional"] :is(.professional-verification-upload-card, .doke-btn--ghost) {
+    transition: none;
+    transform: none;
   }
 }

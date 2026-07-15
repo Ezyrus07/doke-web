@@ -1064,3 +1064,127 @@ body[data-page="perfil"][data-profile-contract="clean-v1"] .profile-faq-card p {
     flex: 0 0 auto;
   }
 }
+
+
+/* 2026-07-14 — Profile clean surface authority.
+ * Responsibility: converge perfil.html with the approved Doke micro-shadow
+ * language while keeping marketplace cards under their shared authorities.
+ */
+body[data-page="perfil"][data-profile-contract="clean-v1"] {
+  --profile-clean-surface-shadow:
+    0 0 0 1px rgba(24, 75, 118, 0.025),
+    0 10px 30px rgba(24, 75, 118, 0.065);
+  --profile-clean-micro-shadow:
+    0 0 0 1px rgba(24, 75, 118, 0.022),
+    0 3px 10px rgba(24, 75, 118, 0.048);
+  --profile-clean-micro-shadow-hover:
+    0 0 0 1px rgba(24, 75, 118, 0.026),
+    0 7px 18px rgba(24, 75, 118, 0.07);
+  --profile-clean-focus:
+    0 0 0 1px rgba(42, 95, 144, 0.07),
+    0 0 0 4px rgba(42, 95, 144, 0.085),
+    0 5px 16px rgba(24, 75, 118, 0.06);
+}
+
+body[data-page="perfil"][data-profile-contract="clean-v1"] .profile-hero {
+  border: 0;
+  box-shadow: var(--profile-clean-surface-shadow);
+}
+
+body[data-page="perfil"][data-profile-contract="clean-v1"] .profile-reputation__item {
+  border: 0;
+  background: #f8fbfe;
+  box-shadow: var(--profile-clean-micro-shadow);
+  transition: transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+}
+
+body[data-page="perfil"][data-profile-contract="clean-v1"] .profile-reputation__item:hover {
+  background: #fff;
+  box-shadow: var(--profile-clean-micro-shadow-hover);
+  transform: translateY(-1px);
+}
+
+body[data-page="perfil"][data-profile-contract="clean-v1"] .profile-tabs__item {
+  border: 0;
+  background: #fff;
+  box-shadow: var(--profile-clean-micro-shadow);
+}
+
+body[data-page="perfil"][data-profile-contract="clean-v1"] .profile-tabs__item:is(:hover, :focus-visible),
+body[data-page="perfil"][data-profile-contract="clean-v1"] .profile-tabs__item[href="#profile-ads"],
+body[data-page="perfil"][data-profile-contract="clean-v1"]:has(#profile-ads:target) .profile-tabs__item[href="#profile-ads"],
+body[data-page="perfil"][data-profile-contract="clean-v1"]:has(#profile-workers:target) .profile-tabs__item[href="#profile-workers"],
+body[data-page="perfil"][data-profile-contract="clean-v1"]:has(#profile-posts:target) .profile-tabs__item[href="#profile-posts"],
+body[data-page="perfil"][data-profile-contract="clean-v1"]:has(#profile-reviews:target) .profile-tabs__item[href="#profile-reviews"],
+body[data-page="perfil"][data-profile-contract="clean-v1"]:has(#profile-about:target) .profile-tabs__item[href="#profile-about"],
+body[data-page="perfil"][data-profile-contract="clean-v1"]:has(#profile-achievements:target) .profile-tabs__item[href="#profile-achievements"],
+body[data-page="perfil"][data-profile-contract="clean-v1"]:has(#profile-certificates:target) .profile-tabs__item[href="#profile-certificates"],
+body[data-page="perfil"][data-profile-contract="clean-v1"]:has(#profile-questions:target) .profile-tabs__item[href="#profile-questions"] {
+  border: 0;
+  background: #eaf4fc;
+  box-shadow: var(--profile-clean-micro-shadow-hover);
+}
+
+body[data-page="perfil"][data-profile-contract="clean-v1"] .profile-tabs__item:focus-visible {
+  outline: 0;
+  box-shadow: var(--profile-clean-focus);
+}
+
+body[data-page="perfil"][data-profile-contract="clean-v1"] :is(
+  .profile-panel--reviews,
+  .profile-surface-card,
+  .profile-chip-card,
+  .profile-list-card,
+  .profile-faq-card
+) {
+  border: 0;
+  background: #fff;
+  box-shadow: var(--profile-clean-micro-shadow);
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+body[data-page="perfil"][data-profile-contract="clean-v1"] :is(
+  .profile-chip-card,
+  .profile-list-card,
+  .profile-faq-card
+):hover {
+  box-shadow: var(--profile-clean-micro-shadow-hover);
+  transform: translateY(-1px);
+}
+
+body[data-page="perfil"][data-profile-contract="clean-v1"] .profile-area--reviews .doke-reviews-recommendation {
+  border: 0;
+  background: rgba(215, 244, 239, 0.62);
+  box-shadow:
+    0 0 0 1px rgba(0, 120, 102, 0.022),
+    0 3px 10px rgba(0, 120, 102, 0.045);
+}
+
+body[data-page="perfil"][data-profile-contract="clean-v1"] .profile-action.doke-btn--ghost {
+  border: 0;
+  background: #fff;
+  box-shadow: var(--profile-clean-micro-shadow);
+}
+
+body[data-page="perfil"][data-profile-contract="clean-v1"] .profile-action.doke-btn--ghost:hover {
+  box-shadow: var(--profile-clean-micro-shadow-hover);
+  transform: translateY(-1px);
+}
+
+body[data-page="perfil"][data-profile-contract="clean-v1"] .profile-action.doke-btn--ghost:focus-visible {
+  outline: 0;
+  box-shadow: var(--profile-clean-focus);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-page="perfil"][data-profile-contract="clean-v1"] :is(
+    .profile-reputation__item,
+    .profile-chip-card,
+    .profile-list-card,
+    .profile-faq-card,
+    .profile-action.doke-btn--ghost
+  ) {
+    transition: none;
+    transform: none;
+  }
+}

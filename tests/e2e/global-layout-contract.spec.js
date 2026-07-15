@@ -19,11 +19,43 @@ const viewports = [
 ];
 
 const navigationFlow = [
-  'perfil.html',
   'pedidos.html',
   'mensagens.html',
   'resultados.html',
+  'notificacoes.html',
 ];
+
+const authenticatedSession = {
+  provider: 'mock',
+  sessionStatus: 'active',
+  accountStatus: 'active',
+  user: {
+    id: 'global-layout-client',
+    role: 'client',
+    name: 'Cliente Layout',
+    email: 'layout@example.test',
+    accountStatus: 'active',
+  },
+};
+
+const installAuthenticatedSession = (page) => page.addInitScript((session) => {
+  localStorage.setItem('doke.auth.session.v1', JSON.stringify(session));
+}, authenticatedSession);
+
+const installDeterministicExternalAssets = async (page) => {
+  await page.route('https://unpkg.com/**', (route) => route.fulfill({
+    contentType: 'application/javascript',
+    body: '',
+  }));
+  await page.route('https://cdn.jsdelivr.net/**', (route) => route.fulfill({
+    contentType: 'application/javascript',
+    body: '',
+  }));
+  await page.route('https://fonts.googleapis.com/**', (route) => route.fulfill({
+    contentType: 'text/css',
+    body: '',
+  }));
+};
 
 async function waitForLayoutStable(page) {
   await page.waitForLoadState('domcontentloaded');
@@ -120,6 +152,11 @@ function parseCssPx(value) {
 }
 
 test.describe('Global layout contract', () => {
+  test.beforeEach(async ({ page }) => {
+    await installDeterministicExternalAssets(page);
+    await installAuthenticatedSession(page);
+  });
+
   for (const viewport of viewports) {
     test.describe(`${viewport.name}`, () => {
       test.use({
@@ -182,7 +219,8 @@ test.describe('Global layout contract', () => {
   test.describe('DokeNavigate no-reload flow', () => {
     test.use({ viewport: { width: 1366, height: 768 }, isMobile: false, hasTouch: false });
 
-    test('index -> perfil -> pedidos -> mensagens -> resultados keeps same JS context', async ({ page }) => {
+    test('index -> pedidos -> mensagens -> resultados -> notificacoes preserves shell and history', async ({ page }) => {
+      test.setTimeout(120_000);
       await page.goto('/index.html');
       await waitForLayoutStable(page);
 
@@ -193,9 +231,40 @@ test.describe('Global layout contract', () => {
 
       await page.evaluate(() => {
         window.__dokeNoReloadMarker = `marker-${Date.now()}`;
+        window.__dokeInitialDocumentNavigationCount = performance.getEntriesByType('navigation').length;
+        window.__dokeStableShellNodes = {
+          header: document.querySelector('[data-app-header]'),
+          sidebar: document.querySelector('.sidebar'),
+          bottomNavigation: document.querySelector('[data-doke-mobile-bottom-nav], [data-bottom-nav], .bottom-nav, .doke-bottom-nav'),
+        };
       });
 
       const initialMarker = await page.evaluate(() => window.__dokeNoReloadMarker);
+      const adapters = await page.evaluate(() => window.DokeNavigationLifecycle?.navigation?.getAdapters?.() || []);
+      expect(adapters).toEqual(expect.arrayContaining([
+        expect.objectContaining({ name: 'stable-shell', priority: 100 }),
+        expect.objectContaining({ name: 'legacy-shell', priority: 20 }),
+      ]));
+
+      const readNavigationState = () => page.evaluate(() => ({
+        marker: window.__dokeNoReloadMarker,
+        documentNavigationCount: performance.getEntriesByType('navigation').length,
+        initialDocumentNavigationCount: window.__dokeInitialDocumentNavigationCount,
+        adapter: document.body.dataset.dokeNavigationAdapter,
+        headerPreserved: window.__dokeStableShellNodes.header === document.querySelector('[data-app-header]'),
+        sidebarPreserved: window.__dokeStableShellNodes.sidebar === document.querySelector('.sidebar'),
+        bottomNavigationPreserved: window.__dokeStableShellNodes.bottomNavigation === document.querySelector('[data-doke-mobile-bottom-nav], [data-bottom-nav], .bottom-nav, .doke-bottom-nav'),
+      }));
+
+      const assertStableContext = async (label) => {
+        const state = await readNavigationState();
+        expect(state.marker, `${label} deve preservar o contexto JavaScript`).toBe(initialMarker);
+        expect(state.documentNavigationCount, `${label} não pode criar nova navegação documental`).toBe(state.initialDocumentNavigationCount);
+        expect(state.adapter, `${label} deve usar o adapter stable-shell`).toBe('stable-shell');
+        expect(state.headerPreserved, `${label} deve manter o header montado`).toBe(true);
+        expect(state.sidebarPreserved, `${label} deve manter a sidebar montada`).toBe(true);
+        expect(state.bottomNavigationPreserved, `${label} deve manter a bottom navigation montada`).toBe(true);
+      };
 
       for (const target of navigationFlow) {
         await page.evaluate(async (route) => {
@@ -208,16 +277,27 @@ test.describe('Global layout contract', () => {
         await expect(page).toHaveURL(new RegExp(`/${target.replace('.', '\\.')}(?:$|[?#])`));
         await waitForLayoutStable(page);
 
-        const markerAfterNavigation = await page.evaluate(() => window.__dokeNoReloadMarker);
-        expect(
-          markerAfterNavigation,
-          `${target} não pode recarregar completamente a página durante DokeNavigate`,
-        ).toBe(initialMarker);
+        await assertStableContext(target);
 
         const metrics = await getLayoutMetrics(page);
         const expected = pages.find((entry) => entry.path === target);
         expect(metrics.bodyPage, `${target} deve sincronizar body[data-page] após DokeNavigate`).toBe(expected.pageKey);
         expect(metrics.scrollWidth, `${target} não pode gerar overflow horizontal após DokeNavigate`).toBeLessThanOrEqual(metrics.clientWidth + 1);
+      }
+
+      const backwardRoutes = ['resultados.html', 'mensagens.html', 'pedidos.html', 'index.html'];
+      for (const target of backwardRoutes) {
+        await page.goBack({ waitUntil: 'commit' });
+        await expect(page).toHaveURL(new RegExp(`/${target.replace('.', '\\.')}(?:$|[?#])`));
+        await waitForLayoutStable(page);
+        await assertStableContext(`back para ${target}`);
+      }
+
+      for (const target of [...navigationFlow]) {
+        await page.goForward({ waitUntil: 'commit' });
+        await expect(page).toHaveURL(new RegExp(`/${target.replace('.', '\\.')}(?:$|[?#])`));
+        await waitForLayoutStable(page);
+        await assertStableContext(`forward para ${target}`);
       }
     });
   });

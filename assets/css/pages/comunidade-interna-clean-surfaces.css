@@ -278,3 +278,190 @@ body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .co
     transform: none;
   }
 }
+
+/* 2026-07-14 — Edit community architecture + final border cleanup.
+ * Keeps the approved Doke micro-shadow language while simplifying the long
+ * management form into clear sections without card-in-card framing.
+ */
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode [data-community-panel="manage"] .community-settings-form-section {
+  grid-template-columns: 1fr;
+  gap: 20px;
+  padding: 32px 0;
+  border-bottom: 0;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode [data-community-panel="manage"] .community-settings-form-section + .community-settings-form-section {
+  margin-top: 4px;
+  padding-top: 36px;
+  box-shadow: inset 0 1px 0 rgba(24, 75, 118, 0.045);
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode [data-community-panel="manage"] .community-settings-form-section__heading {
+  max-width: 720px;
+  gap: 10px;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode [data-community-panel="manage"] .community-settings-form-section__heading h3 {
+  color: #102f52;
+  font-size: 1.08rem;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode [data-community-panel="manage"] .community-settings-form-section__heading p {
+  max-width: 680px;
+  font-size: 0.88rem;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode [data-community-panel="manage"] .community-settings-form-grid {
+  gap: 20px 22px;
+}
+
+/* Large composites are layout groups, not outlined cards. */
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode [data-community-panel="manage"] :is(
+  .community-room-cover-field,
+  .community-onboarding-settings,
+  .community-room-theme-field,
+  .community-room-profile-preview
+) {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+}
+
+/* Cover: upload and preview read as one clean horizontal task. */
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode [data-community-panel="manage"] .community-room-cover-field {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.8fr) minmax(300px, 1.2fr);
+  gap: 14px 18px;
+  align-items: stretch;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode [data-community-panel="manage"] .community-room-cover-field > span {
+  grid-column: 1 / -1;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode [data-community-panel="manage"] .community-room-cover-upload,
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode [data-community-panel="manage"] .community-room-cover-preview {
+  min-height: 112px;
+  margin: 0;
+  border: 0;
+  border-radius: 18px;
+  background: var(--community-clean-control-bg);
+  box-shadow: var(--community-micro-shadow);
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode [data-community-panel="manage"] .community-room-cover-upload {
+  align-content: center;
+  padding: 18px;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode [data-community-panel="manage"] .community-room-cover-preview {
+  place-items: center;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode [data-community-panel="manage"] .community-room-cover-preview:is(:hover, :focus-within),
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode [data-community-panel="manage"] .community-room-cover-upload:is(:hover, :focus-within) {
+  background: #fff;
+  box-shadow: var(--community-micro-shadow-hover);
+}
+
+/* Onboarding: remove the outer shell and let each control define itself. */
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode [data-community-panel="manage"] .community-onboarding-settings {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px 22px;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode [data-community-panel="manage"] .community-onboarding-settings > legend {
+  margin-bottom: 2px;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-onboarding-settings .community-room-checkline {
+  border: 0;
+  background: var(--community-clean-control-bg);
+  box-shadow: var(--community-micro-shadow);
+}
+
+/* Appearance: theme and public preview become balanced siblings. */
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode [data-community-panel="manage"] .community-settings-form-section:last-of-type .community-settings-form-grid {
+  grid-template-columns: minmax(260px, 0.85fr) minmax(320px, 1.15fr);
+  align-items: start;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode [data-community-panel="manage"] :is(.community-room-theme-field, .community-room-profile-preview) {
+  grid-column: auto;
+  min-height: 100%;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode [data-community-panel="manage"] .community-room-theme-field input[type="color"] {
+  border: 0;
+  background: #fff;
+  box-shadow: var(--community-micro-shadow);
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode [data-community-panel="manage"] .community-room-profile-preview__card {
+  max-width: none;
+  border: 0;
+  background: var(--community-clean-control-bg);
+  box-shadow: var(--community-micro-shadow);
+}
+
+/* Native checkboxes follow the same borderless micro-elevation language. */
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-settings-panel .doke-checkbox {
+  border: 0;
+  background: #fff;
+  box-shadow:
+    0 0 0 1px rgba(24, 75, 118, 0.04),
+    0 2px 6px rgba(24, 75, 118, 0.05);
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-settings-panel .doke-checkbox:focus-visible {
+  outline: 0;
+  box-shadow: var(--community-micro-shadow-focus);
+}
+
+/* Security tabs and empty states: no outlined capsule or dashed placeholder. */
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-security-tabs {
+  border: 0;
+  background: #f8fbfe;
+  box-shadow: var(--community-micro-shadow);
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-security-tab {
+  border: 0;
+  box-shadow: none;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-security-tab.is-active {
+  border: 0;
+  background: #fff;
+  box-shadow: var(--community-micro-shadow);
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-settings-panel :is(
+  .community-security-empty,
+  .community-room-panel-empty,
+  .doke-empty-state
+) {
+  border: 0;
+  background: #f8fbfe;
+  box-shadow: var(--community-micro-shadow);
+}
+
+/* Footer is a soft action plane, never a stroked strip. */
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-settings-panel .community-room-panel-actions {
+  border-top: 0;
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: 0 -18px 34px rgba(24, 75, 118, 0.055);
+}
+
+@media (max-width: 760px) {
+  body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode [data-community-panel="manage"] .community-room-cover-field,
+  body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode [data-community-panel="manage"] .community-settings-form-section:last-of-type .community-settings-form-grid,
+  body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode [data-community-panel="manage"] .community-onboarding-settings {
+    grid-template-columns: 1fr;
+  }
+
+  body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode [data-community-panel="manage"] :is(.community-room-theme-field, .community-room-profile-preview) {
+    grid-column: 1;
+  }
+}

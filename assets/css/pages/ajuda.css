@@ -1,4 +1,21 @@
+/* Ajuda e suporte — page composition authority.
+ * Shared visual anatomy remains owned by content surfaces, buttons, search,
+ * disclosures, modal and state components. This file owns only page layout,
+ * contextual spacing and page-scoped design tokens.
+ */
+
 .help-center-shell {
+  --help-micro-shadow:
+    0 0 0 1px rgba(24, 75, 118, 0.025),
+    0 3px 10px rgba(24, 75, 118, 0.055);
+  --help-micro-shadow-hover:
+    0 0 0 1px rgba(24, 75, 118, 0.03),
+    0 8px 20px rgba(24, 75, 118, 0.075);
+  --content-surface-border: 0;
+  --content-surface-shadow: var(--help-micro-shadow);
+  --content-surface-shadow-raised: var(--help-micro-shadow-hover);
+  --content-disclosure-border: transparent;
+  --content-disclosure-bg: transparent;
   background: var(--shell-page-bg, #eff5fb);
 }
 
@@ -37,7 +54,6 @@
   flex-wrap: wrap;
 }
 
-
 .help-center__layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(270px, 0.3fr);
@@ -54,7 +70,7 @@
 .help-topics,
 .help-faq,
 .help-assistance-card {
-  overflow: hidden;
+  min-width: 0;
 }
 
 .help-section-header {
@@ -62,8 +78,7 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
-  padding: 20px 22px 15px;
-  border-bottom: 1px solid rgba(13, 47, 89, 0.08);
+  padding: 4px 2px 15px;
 }
 
 .help-section-header h2,
@@ -88,6 +103,7 @@
 .help-topic-list {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
 }
 
 .help-topic-list > .help-topic-card {
@@ -98,19 +114,6 @@
   min-height: 86px;
   padding: 15px 18px;
   color: var(--color-heading-soft);
-  border: 0;
-  border-bottom: 1px solid rgba(13, 47, 89, 0.08);
-  border-radius: 0;
-  box-shadow: none;
-  background: transparent;
-}
-
-.help-topic-card:nth-child(odd) {
-  border-right: 1px solid rgba(13, 47, 89, 0.08);
-}
-
-.help-topic-card:nth-last-child(-n + 2) {
-  border-bottom: 0;
 }
 
 .help-topic-card h3 {
@@ -137,12 +140,11 @@
 }
 
 .help-faq {
-  padding: 0;
+  padding: 20px 22px 22px;
 }
 
 .help-faq > h2 {
-  padding: 20px 22px 15px;
-  border-bottom: 1px solid rgba(13, 47, 89, 0.08);
+  margin-bottom: 12px;
 }
 
 .help-faq__list {
@@ -156,15 +158,12 @@
 }
 
 .help-assistance-card {
-  padding: 0;
+  display: grid;
+  gap: 14px;
 }
 
 .help-assistance-card > .help-support-card {
   padding: 21px;
-  border: 0;
-  border-radius: 0;
-  box-shadow: none;
-  background: transparent;
 }
 
 .help-support-card__icon {
@@ -184,21 +183,9 @@
   gap: 8px;
 }
 
-.help-support-card__secondary {
-  margin: 0;
-  background: #fff;
-  border: 1px solid rgba(24, 75, 118, 0.14);
-}
-
-.help-support-card__secondary:hover {
-  background: rgba(239, 246, 252, 0.72);
-  border-color: rgba(24, 75, 118, 0.22);
-}
-
 .help-status-summary {
   padding: 17px 21px 19px;
-  border-top: 1px solid rgba(13, 47, 89, 0.08);
-  background: rgba(239, 246, 252, 0.48);
+  background: rgba(248, 251, 254, 0.98);
 }
 
 .help-status-summary__heading {
@@ -256,11 +243,10 @@
 
 .help-status-details ul {
   display: grid;
-  gap: 0;
+  gap: 2px;
   padding: 10px 0 0;
   margin: 10px 0 0;
   list-style: none;
-  border-top: 1px solid rgba(13, 47, 89, 0.08);
 }
 
 .help-status-details li {
@@ -269,7 +255,6 @@
   align-items: center;
   gap: 9px;
   padding: 9px 0;
-  border-bottom: 1px solid rgba(13, 47, 89, 0.07);
 }
 
 .help-status-details li strong {
@@ -301,12 +286,6 @@
   font-weight: var(--font-weight-bold, 700);
 }
 
-.help-topic-list > .help-empty-state {
-  border: 0;
-  border-radius: 0;
-  box-shadow: none;
-}
-
 @media (max-width: 1200px) {
   .help-center__layout {
     grid-template-columns: 1fr;
@@ -317,13 +296,7 @@
   }
 
   .help-assistance-card {
-    display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  }
-
-  .help-status-summary {
-    border-top: 0;
-    border-left: 1px solid rgba(13, 47, 89, 0.08);
   }
 }
 
@@ -364,34 +337,19 @@
   .help-topic-card {
     min-height: 80px;
     padding: 14px 16px;
-    border-right: 0;
   }
 
-  .help-topic-card:nth-child(odd) {
-    border-right: 0;
+  .help-section-header {
+    padding: 2px 1px 12px;
   }
 
-  .help-topic-card:nth-last-child(2) {
-    border-bottom: 1px solid rgba(13, 47, 89, 0.08);
-  }
-
-  .help-topic-card:last-child {
-    border-bottom: 0;
-  }
-
-  .help-section-header,
-  .help-faq > h2 {
-    padding: 17px 17px 13px;
+  .help-faq {
+    padding: 17px;
   }
 
   .help-support-card,
   .help-status-summary {
     padding: 17px;
-  }
-
-  .help-status-summary {
-    border-top: 1px solid rgba(13, 47, 89, 0.08);
-    border-left: 0;
   }
 }
 

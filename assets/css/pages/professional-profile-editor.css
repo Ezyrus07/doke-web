@@ -3,29 +3,40 @@
  * Responsibility: owner/editing affordances for perfil-profissional.html.
  * The visual anatomy is inherited from the clean public profile contract.
  */
-@import url("./profile-foundation.css?v=20260713-mobile-tabs-v1");
+@import url("./profile-foundation.css?v=20260714-clean-profile-v1");
 
 body[data-profile-mode="owner-edit"] .profile-hero__cover {
   overflow: hidden;
 }
 
-body[data-profile-mode="owner-edit"] .profile-owner-cover-action,
-body[data-profile-mode="owner-edit"] .profile-owner-avatar-action,
-body[data-profile-mode="owner-edit"] .profile-owner-mini-action {
-  min-height: 34px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid rgba(24, 75, 118, 0.14);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.94);
-  color: #184a76;
-  font: inherit;
-  font-size: 0.78rem;
-  font-weight: var(--doke-type-weight-emphasis, 700);
-  line-height: 1;
-  text-decoration: none;
-  box-shadow: 0 10px 24px rgba(15, 45, 75, 0.08);
+body[data-profile-mode="owner-edit"] :is(
+  .profile-owner-cover-action,
+  .profile-owner-avatar-action,
+  .profile-owner-mini-action
+).doke-btn--ghost {
+  border: 0;
+  background: rgba(255, 255, 255, 0.96);
+  color: var(--color-primary-strong, #184a76);
+  box-shadow: var(--profile-clean-micro-shadow);
+}
+
+body[data-profile-mode="owner-edit"] :is(
+  .profile-owner-cover-action,
+  .profile-owner-avatar-action,
+  .profile-owner-mini-action
+).doke-btn--ghost:is(:hover, :focus-visible) {
+  border: 0;
+  background: #fff;
+  box-shadow: var(--profile-clean-micro-shadow-hover);
+}
+
+body[data-profile-mode="owner-edit"] :is(
+  .profile-owner-cover-action,
+  .profile-owner-avatar-action,
+  .profile-owner-mini-action
+).doke-btn--ghost:focus-visible {
+  outline: 0;
+  box-shadow: var(--profile-clean-focus);
 }
 
 body[data-profile-mode="owner-edit"] .profile-owner-cover-action {
@@ -82,13 +93,6 @@ body[data-profile-mode="owner-edit"] .profile-owner-section-tools > div {
   flex-wrap: wrap;
   gap: 8px;
 }
-
-body[data-profile-mode="owner-edit"] .profile-owner-mini-action {
-  min-height: 32px;
-  padding: 0 12px;
-  box-shadow: none;
-}
-
 
 @media (max-width: 760px) {
   body[data-profile-mode="owner-edit"] .profile-owner-section-tools {

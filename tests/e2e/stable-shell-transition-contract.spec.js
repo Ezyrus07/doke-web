@@ -1,6 +1,22 @@
 const { test, expect } = require('@playwright/test');
 
+const authenticatedSession = {
+  provider: 'mock',
+  sessionStatus: 'active',
+  accountStatus: 'active',
+  user: {
+    id: 'stable-shell-client',
+    role: 'client',
+    name: 'Cliente Stable Shell',
+    email: 'stable-shell@example.test',
+    accountStatus: 'active',
+  },
+};
+
 const waitForRouter = async (page) => {
+  await page.addInitScript((session) => {
+    localStorage.setItem('doke.auth.session.v1', JSON.stringify(session));
+  }, authenticatedSession);
   await page.goto('/index.html');
   await expect.poll(() => page.evaluate(() => typeof window.DokeNavigate)).toBe('function');
 };

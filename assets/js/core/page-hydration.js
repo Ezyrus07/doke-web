@@ -349,7 +349,11 @@
     };
 
     const syncEmptyVisibility = (visible) => {
-      resolveNodes(root, emptySelectors).forEach((node) => setHidden(node, !visible));
+      resolveNodes(root, emptySelectors).forEach((node) => {
+        setHidden(node, !visible);
+        const region = node.closest('[data-state-region]');
+        if (region) setHidden(region, !visible);
+      });
     };
 
     const hideEmpties = () => {

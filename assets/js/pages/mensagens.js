@@ -390,7 +390,7 @@
         text: message.text || "A conclusão foi confirmada e o pagamento em garantia foi liberado.",
         details: ["Pagamento seguro pela Doke", message.installments || "À vista"],
         note: "Avalie o atendimento para encerrar o fluxo.",
-        actionHtml: '<button class="message-bubble__charge-pay is-done doke-btn doke-btn--soft" type="button" data-message-review>Avaliar</button>' + getChargeReceiptActionHtml(conversation, message),
+        actionHtml: '<button class="message-bubble__charge-pay is-done doke-btn doke-btn--ghost" type="button" data-message-review>Avaliar</button>' + getChargeReceiptActionHtml(conversation, message),
         passive: false
       };
     }
@@ -1773,7 +1773,7 @@
       const canApproveProposal = canTransitionConversationOrder(conversation, 'in_progress');
       const financialActionKind = getFinancialActionKind(conversation);
       let primaryLabel = 'Aguardando aceite';
-      let primaryClass = 'doke-btn--soft';
+      let primaryClass = 'doke-btn--ghost';
       let primaryAttrs = 'aria-disabled="true" disabled';
 
       if (disputePresentation && !isDisputePresentationActive(disputePresentation)) {

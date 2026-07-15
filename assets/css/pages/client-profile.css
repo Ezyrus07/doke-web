@@ -3,7 +3,7 @@
  * Responsibility: client public/editable profile variants only.
  * Inherits the clean profile anatomy and keeps the client profile intentionally simple.
  */
-@import url("./profile-foundation.css?v=20260701-mobile-location-contract-v1");
+@import url("./profile-foundation.css?v=20260714-profile-clean-v1");
 @import url("../components/overlays/doke-modal-system.css?v=20260712-profile-write-v1");
 @import url("../components/overlays/modal-visual-contract.css?v=20260712-profile-write-v1");
 @import url("../components/forms/form-controls.css?v=20260712-profile-write-v1");
@@ -76,20 +76,22 @@ body[data-profile-mode="client-edit"] .profile-media-feedback[data-state="error"
 body[data-page="perfil"][data-profile-contract="clean-v1"][data-client-profile-contract] .profile-tabs__item[href="#profile-achievements"],
 body[data-page="perfil"][data-profile-contract="clean-v1"][data-client-profile-contract]:has(#profile-achievements:target) .profile-tabs__item[href="#profile-achievements"],
 body[data-page="perfil"][data-profile-contract="clean-v1"][data-client-profile-contract]:has(#profile-about:target) .profile-tabs__item[href="#profile-about"] {
-  border-color: var(--color-primary-border, rgba(36, 95, 150, 0.20));
+  border: 0;
   background: var(--color-primary-soft, #e5f0f8);
   color: var(--color-primary-strong, #184a76);
+  box-shadow:
+    0 0 0 1px rgba(42, 95, 144, 0.025),
+    0 4px 13px rgba(24, 75, 118, 0.05);
 }
 
 body[data-page="perfil"][data-profile-contract="clean-v1"][data-client-profile-contract]:has(.profile-area:target) .profile-tabs__item[href="#profile-achievements"] {
-  border-color: var(--doke-card-border, rgba(24, 75, 118, 0.10));
+  border: 0;
   background: var(--color-surface, #ffffff);
   color: var(--color-text-soft, #34465c);
+  box-shadow: none;
 }
 
-body[data-page="perfil"][data-profile-contract="clean-v1"][data-client-profile-contract] .profile-area--achievements,
-body[data-page="perfil"][data-profile-contract="clean-v1"][data-client-profile-contract]:has(#profile-achievements:target) #profile-achievements,
-body[data-page="perfil"][data-profile-contract="clean-v1"][data-client-profile-contract]:has(#profile-about:target) #profile-about {
+body[data-page="perfil"][data-profile-contract="clean-v1"][data-client-profile-contract] .profile-area--achievements {
   display: grid;
 }
 
@@ -106,23 +108,9 @@ body[data-profile-mode="client-edit"] .profile-hero__cover {
   overflow: hidden;
 }
 
-body[data-profile-mode="client-edit"] .profile-owner-cover-action,
-body[data-profile-mode="client-edit"] .profile-owner-avatar-action,
-body[data-profile-mode="client-edit"] .profile-owner-mini-action {
-  min-height: 34px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid rgba(24, 75, 118, 0.14);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.94);
-  color: #184a76;
-  font: inherit;
-  font-size: 0.78rem;
-  font-weight: var(--doke-type-weight-emphasis, 700);
-  line-height: 1;
-  text-decoration: none;
-  box-shadow: 0 10px 24px rgba(15, 45, 75, 0.08);
+body[data-profile-mode="client-edit"] :is(.profile-owner-cover-action, .profile-owner-avatar-action, .profile-owner-mini-action) {
+  cursor: pointer;
+  white-space: nowrap;
 }
 
 body[data-profile-mode="client-edit"] .profile-owner-cover-action {
@@ -146,8 +134,7 @@ body[data-profile-mode="client-edit"] .profile-owner-avatar-action {
   left: 50%;
   bottom: -14px;
   z-index: 2;
-  min-height: 30px;
-  padding: 0 11px;
+  padding-inline: 11px;
   transform: translateX(-50%);
   white-space: nowrap;
 }
@@ -181,9 +168,7 @@ body[data-profile-mode="client-edit"] .profile-owner-section-tools > div {
 }
 
 body[data-profile-mode="client-edit"] .profile-owner-mini-action {
-  min-height: 32px;
-  padding: 0 12px;
-  box-shadow: none;
+  padding-inline: 12px;
 }
 
 @media (max-width: 760px) {
@@ -201,14 +186,7 @@ body[data-profile-mode="client-edit"] .profile-owner-mini-action {
   body[data-profile-mode="client-edit"] .profile-owner-cover-action {
     left: 14px;
     bottom: 14px;
-    min-height: 30px;
     padding-inline: 11px;
-    font-size: 0.72rem;
-  }
-
-  body[data-profile-mode="client-edit"] .profile-owner-avatar-action {
-    min-height: 28px;
-    font-size: 0.7rem;
   }
 }
 

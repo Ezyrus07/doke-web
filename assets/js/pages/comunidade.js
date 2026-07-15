@@ -1044,7 +1044,7 @@ window.DokeInitCommunity = function DokeInitCommunity() {
       const requiresApproval = record.entryMode === 'approval';
       const actionMarkup = isPublic && !requiresApproval
         ? '<button class="community-card__action doke-btn doke-btn--primary" data-community-public-join type="button">Participar</button>'
-        : `<button class="community-card__action doke-btn${isPending ? ' community-card__action--pending' : ''}" data-community-request type="button"${isPending ? ' disabled' : ''}>${isPending ? 'Solicitação pendente' : 'Solicitar entrada'}</button>`;
+        : `<button class="community-card__action doke-btn doke-btn--ghost${isPending ? ' community-card__action--pending' : ''}" data-community-request type="button"${isPending ? ' disabled' : ''}>${isPending ? 'Solicitação pendente' : 'Solicitar entrada'}</button>`;
       return `
         <article class="community-card community-discover-card doke-card doke-community-card" data-community-discover-card data-community-card data-community-id="${escapeCommunityHtml(record.id)}" data-title="${escapeCommunityHtml(record.title)}" data-category="${categoryFilterFromRecord(record)}" data-community-questions='${JSON.stringify(record.joinQuestions || []).replace(/'/g, "&#39;")}'>
           <div class="community-card__cover">

@@ -1,0 +1,158 @@
+/* Comunidade — final page visual authority.
+ * Responsibility: Doke Clean surfaces, micro-elevation and page-local layout only.
+ * Shared button, tab, input, modal and card anatomy remains component-owned.
+ */
+body[data-page="comunidade"] {
+  --community-micro-shadow:
+    0 0 0 1px rgba(24, 75, 118, 0.025),
+    0 2px 7px rgba(24, 75, 118, 0.045);
+  --community-micro-shadow-hover:
+    0 0 0 1px rgba(24, 75, 118, 0.03),
+    0 6px 16px rgba(24, 75, 118, 0.07);
+  --community-surface-shadow:
+    0 0 0 1px rgba(24, 75, 118, 0.025),
+    0 12px 30px rgba(24, 75, 118, 0.07);
+  --community-focus-shadow:
+    0 0 0 1px rgba(42, 95, 144, 0.08),
+    0 0 0 4px rgba(42, 95, 144, 0.09),
+    0 4px 14px rgba(24, 75, 118, 0.055);
+}
+
+body[data-page="comunidade"] :is(
+  .community-continue-card,
+  .community-side-card,
+  .communities-empty-v2,
+  .community-create-page,
+  .community-create-wizard,
+  .community-create-review,
+  .community-create-review__item,
+  .community-create-contact,
+  .community-action-cover > div,
+  .community-action-modal__feedback
+) {
+  border: 0;
+  box-shadow: var(--community-micro-shadow);
+}
+
+body[data-page="comunidade"] :is(
+  .community-card,
+  .community-continue-card,
+  .community-side-card,
+  .community-create-page
+) {
+  box-shadow: var(--community-surface-shadow);
+}
+
+body[data-page="comunidade"] :is(
+  .community-card,
+  .community-continue-card,
+  .community-side-card,
+  .community-create-contact
+) {
+  transition: transform 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
+}
+
+body[data-page="comunidade"] :is(
+  .community-card,
+  .community-continue-card,
+  .community-side-card,
+  .community-create-contact
+):is(:hover, :focus-within) {
+  transform: translateY(-1px);
+  box-shadow: var(--community-micro-shadow-hover);
+}
+
+body[data-page="comunidade"] :is(
+  .communities-v2-search,
+  .community-action-form .doke-input,
+  .community-action-form .doke-select,
+  .community-action-form .doke-textarea,
+  .community-action-form .ui-select__trigger
+) {
+  border: 0;
+  background: #f8fbfe;
+  box-shadow: var(--community-micro-shadow);
+}
+
+body[data-page="comunidade"] :is(
+  .communities-v2-search,
+  .community-action-form .doke-input,
+  .community-action-form .doke-select,
+  .community-action-form .doke-textarea,
+  .community-action-form .ui-select__trigger
+):is(:hover, :focus-within) {
+  background: #fff;
+  box-shadow: var(--community-micro-shadow-hover);
+}
+
+body[data-page="comunidade"] :is(
+  .community-action-form .doke-input,
+  .community-action-form .doke-select,
+  .community-action-form .doke-textarea,
+  .community-action-form .ui-select__trigger
+):is(:focus, :focus-visible),
+body[data-page="comunidade"] .community-action-form .ui-select.is-open .ui-select__trigger {
+  outline: 0;
+  box-shadow: var(--community-focus-shadow);
+}
+
+body[data-page="comunidade"] .community-action-form .ui-select__menu {
+  border: 0;
+  box-shadow: 0 12px 30px rgba(24, 75, 118, 0.11);
+}
+
+body[data-page="comunidade"] .community-create-progress {
+  gap: 10px;
+}
+
+body[data-page="comunidade"] .community-create-progress__item {
+  border: 0;
+  background: #fff;
+  box-shadow: var(--community-micro-shadow);
+}
+
+body[data-page="comunidade"] .community-create-progress__item:is(:hover, :focus-visible) {
+  box-shadow: var(--community-micro-shadow-hover);
+}
+
+body[data-page="comunidade"] .community-create-progress__item.is-active {
+  background: #eaf4fc;
+  color: #245f95;
+  box-shadow:
+    0 0 0 1px rgba(42, 95, 144, 0.025),
+    0 4px 13px rgba(24, 75, 118, 0.05);
+}
+
+body[data-page="comunidade"] .community-action-modal__feedback[data-state="success"] {
+  box-shadow: 0 3px 10px rgba(25, 126, 98, 0.055);
+}
+
+body[data-page="comunidade"] .community-action-modal__feedback[data-state="error"] {
+  box-shadow: 0 3px 10px rgba(145, 24, 24, 0.055);
+}
+
+body[data-page="comunidade"] .communities-load-more__button {
+  margin-inline: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-page="comunidade"] :is(
+    .community-card,
+    .community-continue-card,
+    .community-side-card,
+    .community-create-contact
+  ) {
+    transition: none;
+    transform: none;
+  }
+}
+
+/* Community discovery closure for code input and status tokens. */
+body[data-page="comunidade"] :is(#community-code, .doke-badge, .doke-chip, .community-card__badge, .community-status-badge) {
+  border: 0;
+}
+body[data-page="comunidade"] #community-code {
+  box-shadow:
+    0 0 0 1px rgba(24, 75, 118, 0.022),
+    0 2px 7px rgba(24, 75, 118, 0.045);
+}

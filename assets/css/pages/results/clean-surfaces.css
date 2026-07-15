@@ -1,0 +1,193 @@
+/* Resultados — Doke Clean surface authority.
+ * Responsibility: replace visible strokes on page-owned surfaces and controls
+ * with the approved micro-shadow language. Shared card anatomy remains owned
+ * by components/cards.
+ */
+
+body.search-results-body {
+  --results-surface-shadow:
+    0 0 0 1px rgba(24, 75, 118, 0.025),
+    0 8px 24px rgba(24, 75, 118, 0.065);
+  --results-micro-shadow:
+    0 0 0 1px rgba(24, 75, 118, 0.025),
+    0 2px 7px rgba(24, 75, 118, 0.045);
+  --results-micro-shadow-hover:
+    0 0 0 1px rgba(24, 75, 118, 0.03),
+    0 5px 14px rgba(24, 75, 118, 0.065);
+  --results-micro-shadow-focus:
+    0 0 0 1px rgba(42, 95, 144, 0.08),
+    0 0 0 4px rgba(42, 95, 144, 0.09),
+    0 4px 14px rgba(24, 75, 118, 0.055);
+  --results-control-bg: #f8fbfe;
+  --results-control-bg-hover: #fff;
+}
+
+body.search-results-body :is(
+  .results-searchbar,
+  .results-filters .results-panel,
+  .results-summary,
+  .results-inline-empty,
+  .results-loading,
+  .results-related
+) {
+  border: 0;
+  background: #fff;
+  box-shadow: var(--results-surface-shadow);
+}
+
+body.search-results-body .results-summary__stats {
+  border-left: 0;
+  box-shadow: inset 1px 0 0 rgba(24, 75, 118, 0.055);
+}
+
+body.search-results-body :is(
+  .doke-results-search__field,
+  .search-scope__filter-toggle,
+  .results-location-group__cep,
+  .results-location-group__cep-input,
+  .results-field select,
+  .results-field .ui-select__trigger,
+  .results-filters .doke-input,
+  .results-filters .doke-select,
+  .results-filters .ui-select__trigger
+) {
+  border: 0;
+  background: var(--results-control-bg);
+  box-shadow: var(--results-micro-shadow);
+}
+
+body.search-results-body :is(
+  .doke-results-search__field,
+  .search-scope__filter-toggle,
+  .results-location-group__cep,
+  .results-location-group__cep-input,
+  .results-field select,
+  .results-field .ui-select__trigger,
+  .results-filters .doke-input,
+  .results-filters .doke-select,
+  .results-filters .ui-select__trigger
+):not(:disabled):hover {
+  border: 0;
+  background: var(--results-control-bg-hover);
+  box-shadow: var(--results-micro-shadow-hover);
+}
+
+body.search-results-body :is(
+  .doke-results-search__field,
+  .search-scope__filter-toggle,
+  .results-location-group__cep-input,
+  .results-field select,
+  .results-field .ui-select__trigger,
+  .results-filters .doke-input,
+  .results-filters .doke-select,
+  .results-filters .ui-select__trigger
+):is(:focus, :focus-visible, :focus-within),
+body.search-results-body .results-filters .ui-select.is-open .ui-select__trigger {
+  border: 0;
+  outline: 0;
+  background: #fff;
+  box-shadow: var(--results-micro-shadow-focus);
+}
+
+body.search-results-body :is(.results-category-chip span, .results-active-chips > *) {
+  border: 0;
+  box-shadow: var(--results-micro-shadow);
+}
+
+body.search-results-body .results-category-chip span:hover {
+  background: #fff;
+  box-shadow: var(--results-micro-shadow-hover);
+}
+
+body.search-results-body .results-category-chip input:checked + span {
+  border: 0;
+  box-shadow: 0 5px 14px rgba(31, 93, 147, 0.16);
+}
+
+body.search-results-body .results-location-group {
+  border: 0;
+  box-shadow: none;
+}
+
+body.search-results-body .results-check input[type="checkbox"] {
+  border: 0;
+  box-shadow: var(--results-micro-shadow);
+}
+
+body.search-results-body .results-check input[type="checkbox"]:hover {
+  box-shadow: var(--results-micro-shadow-hover);
+}
+
+body.search-results-body .results-check input[type="checkbox"]:focus-visible {
+  outline: 0;
+  box-shadow: var(--results-micro-shadow-focus);
+}
+
+body.search-results-body .results-check input[type="checkbox"]:checked {
+  border: 0;
+  box-shadow:
+    0 0 0 4px rgba(31, 93, 147, 0.1),
+    0 3px 10px rgba(31, 93, 147, 0.14);
+}
+
+body.search-results-body .results-filters .ui-select__menu,
+body.search-results-body .doke-results-search__dropdown {
+  border: 0;
+  box-shadow:
+    0 0 0 1px rgba(24, 75, 118, 0.025),
+    0 12px 30px rgba(24, 75, 118, 0.11);
+}
+
+body.search-results-body :is(.results-button, .results-empty__button).doke-btn--ghost {
+  border: 0;
+  background: #fff;
+  box-shadow: var(--results-micro-shadow);
+}
+
+body.search-results-body :is(.results-button, .results-empty__button).doke-btn--ghost:not(:disabled):hover {
+  border: 0;
+  box-shadow: var(--results-micro-shadow-hover);
+  transform: translateY(-1px);
+}
+
+body.search-results-body .results-panel__heading {
+  border-bottom: 0;
+  box-shadow: inset 0 -1px 0 rgba(24, 75, 118, 0.045);
+}
+
+@media (max-width: 960px) {
+  body.search-results-body .results-filters .results-panel {
+    min-height: 100%;
+    border-radius: 0 20px 20px 0;
+    box-shadow: 14px 0 34px rgba(24, 75, 118, 0.1);
+  }
+
+  body.search-results-body .results-summary__stats {
+    box-shadow: inset 0 1px 0 rgba(24, 75, 118, 0.055);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.search-results-body :is(
+    .results-category-chip span,
+    .results-button,
+    .results-empty__button,
+    .search-scope__filter-toggle
+  ) {
+    transform: none;
+  }
+}
+
+/* Results closure: search, scope tabs and filter panel rely on elevation, not strokes. */
+body.search-results-body :is(.results-searchbar, .doke-results-search__form, .doke-results-search__field, .search-scope, .results-panel, .results-filters, .doke-tab-pill, .doke-filter-pill) {
+  border-color: transparent;
+}
+body.search-results-body :is(.doke-results-search__form, .search-scope, .results-panel) {
+  border: 0;
+  box-shadow:
+    0 0 0 1px rgba(24, 75, 118, 0.02),
+    0 8px 24px rgba(24, 75, 118, 0.055);
+}
+body.search-results-body .results-filters {
+  border: 0;
+}
