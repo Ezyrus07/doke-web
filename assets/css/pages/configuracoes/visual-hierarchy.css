@@ -1,0 +1,230 @@
+/* Configurações — page visual hierarchy.
+ * Classifies page-owned elements as structural surfaces, standalone controls,
+ * flat controls or selectable options. Shared component anatomy stays global.
+ */
+
+body[data-page="configuracoes"].doke-settings-redesign {
+  --settings-workspace-height: clamp(620px, calc(100dvh - 80px), 700px);
+  --settings-muted-bg: #f5f9fd;
+  --settings-muted-bg-hover: #edf5fb;
+}
+
+/* Structural workspace: one elevation for the whole desktop application plane. */
+@media (min-width: 1181px) {
+  body[data-page="configuracoes"].doke-settings-redesign .settings-main {
+    padding: 30px 20px;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-layout {
+    height: var(--settings-workspace-height);
+    border: 0;
+    background: #fff;
+    box-shadow: var(--doke-surface-shadow);
+  }
+}
+
+body[data-page="configuracoes"].doke-settings-redesign :is(
+  .settings-sidebar,
+  .settings-content,
+  .settings-card,
+  .settings-card__header,
+  .settings-card__body,
+  .settings-content-section
+) {
+  border: 0;
+  background: #fff;
+  box-shadow: none;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-card__footer {
+  border: 0;
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: 0 -12px 28px rgba(24, 75, 118, 0.045);
+}
+
+body[data-page="configuracoes"].doke-settings-redesign :is(
+  .settings-profile-section,
+  .settings-content-section + .settings-content-section
+) {
+  border: 0;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-profile-section + .settings-profile-section {
+  margin-top: 6px;
+  padding-top: 30px;
+}
+
+/* Standalone fields: the outer control owns elevation. */
+body[data-page="configuracoes"].doke-settings-redesign :is(
+  .settings-sidebar-search,
+  .settings-card .doke-input,
+  .settings-card .doke-select,
+  .settings-card .doke-textarea,
+  .settings-card .ui-select__trigger
+) {
+  border: 0;
+  background: var(--doke-clean-input-bg, #f8fbfe);
+  box-shadow: var(--doke-clean-control-shadow);
+}
+
+body[data-page="configuracoes"].doke-settings-redesign :is(
+  .settings-sidebar-search,
+  .settings-card .doke-input,
+  .settings-card .doke-select,
+  .settings-card .doke-textarea,
+  .settings-card .ui-select__trigger
+):not(:disabled):hover {
+  background: #fff;
+  box-shadow: var(--doke-clean-control-shadow-hover);
+}
+
+body[data-page="configuracoes"].doke-settings-redesign :is(
+  .settings-card .doke-input,
+  .settings-card .doke-select,
+  .settings-card .doke-textarea,
+  .settings-card .ui-select__trigger
+):is(:focus, :focus-visible),
+body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar-search:focus-within,
+body[data-page="configuracoes"].doke-settings-redesign .settings-card .ui-select.is-open .ui-select__trigger {
+  border: 0;
+  outline: 0;
+  background: #fff;
+  box-shadow: var(--doke-clean-control-shadow-focus);
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar-search__input {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-card .ui-select__menu {
+  border: 0;
+  background: #fff;
+  box-shadow: var(--doke-overlay-shadow);
+}
+
+/* Flat navigation and metadata controls. */
+body[data-page="configuracoes"].doke-settings-redesign :is(
+  .settings-sidebar__item,
+  .settings-sidebar__back,
+  .settings-list-item,
+  .settings-chip
+) {
+  border: 0;
+  box-shadow: none;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign :is(
+  .settings-sidebar__item,
+  .settings-list-item--clickable,
+  .settings-chip
+):is(:hover, :focus-visible, :focus-within) {
+  background: var(--doke-flat-hover-bg);
+  box-shadow: none;
+  transform: none;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign :is(
+  .settings-sidebar__item.is-active,
+  .settings-sidebar__item[aria-selected="true"],
+  .settings-chip.is-active,
+  .settings-chip[aria-pressed="true"]
+) {
+  border: 0;
+  background: var(--doke-flat-active-bg);
+  color: var(--doke-flat-active-color);
+  box-shadow: none;
+}
+
+/* Upload affordances are selectable/drop targets: border is semantic. */
+body[data-page="configuracoes"].doke-settings-redesign :is(
+  .settings-avatar-upload,
+  .settings-cover-upload
+) {
+  border: var(--doke-selection-border);
+  background: var(--settings-muted-bg);
+  box-shadow: none;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign :is(
+  .settings-avatar-upload,
+  .settings-cover-upload
+):is(:hover, :focus-within) {
+  border-color: var(--doke-selection-border-hover);
+  background: var(--settings-muted-bg-hover);
+  box-shadow: none;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-cover-preview {
+  border: 0;
+  background: var(--settings-muted-bg);
+  box-shadow: none;
+}
+
+/* Informational regions are static and do not react to pointer hover. */
+body[data-page="configuracoes"].doke-settings-redesign :is(
+  .settings-inline-note,
+  .settings-danger-zone,
+  .settings-list-item--emphasis
+) {
+  border: 0;
+  box-shadow: none;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-inline-note,
+body[data-page="configuracoes"].doke-settings-redesign .settings-list-item--emphasis {
+  background: var(--settings-muted-bg);
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-danger-zone {
+  background: #fff8f8;
+}
+
+/* White standalone actions retain control elevation; destructive color stays semantic. */
+body[data-page="configuracoes"].doke-settings-redesign :is(.doke-btn--ghost, .doke-btn--danger) {
+  border: 0;
+  box-shadow: var(--doke-clean-control-shadow);
+}
+
+body[data-page="configuracoes"].doke-settings-redesign :is(.doke-btn--ghost, .doke-btn--danger):not(:disabled):hover {
+  box-shadow: var(--doke-clean-control-shadow-hover);
+  transform: translateY(-1px);
+}
+
+body[data-page="configuracoes"].doke-settings-redesign :is(.doke-btn--ghost, .doke-btn--danger):is(:focus, :focus-visible) {
+  border: 0;
+  outline: 0;
+  box-shadow: var(--doke-clean-control-shadow-focus);
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .doke-btn--danger {
+  background: #fff6f6;
+  color: #b42318;
+}
+
+@media (max-width: 1180px) {
+  body[data-page="configuracoes"].doke-settings-redesign :is(
+    .settings-layout,
+    .settings-sidebar,
+    .settings-content,
+    .settings-card
+  ) {
+    border: 0;
+    box-shadow: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-page="configuracoes"].doke-settings-redesign :is(
+    .settings-sidebar__item,
+    .settings-list-item,
+    .settings-chip,
+    .doke-btn--ghost,
+    .doke-btn--danger,
+    .ui-select__trigger
+  ) {
+    transition: none;
+    transform: none;
+  }
+}

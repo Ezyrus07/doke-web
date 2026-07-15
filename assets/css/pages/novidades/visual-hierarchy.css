@@ -1,0 +1,100 @@
+/* Novidades — autoridade de hierarquia visual.
+ * Cards clicáveis elevam; painéis estáticos, filtros e ações internas permanecem planos.
+ */
+body.news-page-shell :is(.news-feature, .news-card, .news-important-card) {
+  --content-surface-border: 0;
+  --content-surface-bg: #fff;
+  --content-surface-shadow: var(--doke-surface-shadow);
+  --content-surface-shadow-raised: var(--doke-surface-shadow-hover);
+  border: 0;
+}
+
+body.news-page-shell :is(.news-feature, .news-card, .news-important-card):is(:hover, :focus-visible) {
+  --content-surface-bg: #fff;
+  border: 0;
+  box-shadow: var(--doke-surface-shadow-hover);
+  transform: translateY(-2px);
+}
+
+/* Sidebar é painel informativo estático. */
+body.news-page-shell .news-sidebar {
+  --content-surface-border: 0;
+  --content-surface-bg: #fff;
+  --content-surface-shadow: var(--doke-surface-shadow);
+  border: 0;
+  box-shadow: var(--doke-surface-shadow);
+  transform: none;
+}
+
+body.news-page-shell .news-sidebar:hover {
+  box-shadow: var(--doke-surface-shadow);
+  transform: none;
+}
+
+/* Filtros, chips, pins e ações internas são controles planos. */
+body.news-page-shell :is(
+  .news-filter,
+  .news-kicker,
+  .news-feature__badge,
+  .news-sidebar__pin,
+  .news-important-card__pin,
+  .news-detail-modal__close
+) {
+  border: 0;
+  box-shadow: none;
+  transform: none;
+}
+
+body.news-page-shell :is(
+  .news-filter,
+  .news-sidebar__pin,
+  .news-important-card__pin,
+  .news-detail-modal__close
+):not(:disabled):hover {
+  background: var(--doke-flat-hover-bg);
+  box-shadow: none;
+  transform: none;
+}
+
+body.news-page-shell .news-filter.is-active,
+body.news-page-shell .news-filter[aria-selected="true"],
+body.news-page-shell .news-filter[aria-pressed="true"] {
+  border: 0;
+  background: var(--doke-flat-active-bg);
+  color: var(--color-primary, #2a5f90);
+  box-shadow: none;
+}
+
+/* Ilustração interna não cria uma segunda superfície concorrente. */
+body.news-page-shell :is(
+  .news-feature__mockcard,
+  .news-feature__floating-icon,
+  .news-card__cover-icon,
+  .news-important-card__icon
+) {
+  border: 0;
+  box-shadow: none;
+}
+
+/* Modal usa apenas elevação de overlay; conteúdo interno fica plano. */
+body.news-page-shell .news-detail-modal__panel {
+  border: 0;
+  box-shadow: var(--doke-overlay-shadow);
+}
+
+body.news-page-shell .news-detail-modal__content {
+  border: 0;
+  box-shadow: none;
+}
+
+body.news-page-shell .news-detail-modal__meta :is(time, span) {
+  border: 0;
+  box-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.news-page-shell :is(.news-feature, .news-card, .news-important-card) {
+    transform: none;
+    transition: none;
+  }
+}

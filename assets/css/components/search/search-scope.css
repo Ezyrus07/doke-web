@@ -47,7 +47,7 @@
   border-radius: var(--doke-control-pill-radius, var(--radius-pill));
   background: var(--doke-control-pill-bg, rgba(255, 255, 255, 0.92));
   color: var(--doke-control-pill-text, #21598f);
-  box-shadow: var(--doke-control-pill-shadow, 0 8px 20px rgba(29, 56, 88, 0.045));
+  box-shadow: none;
   font: inherit;
   font-size: var(--doke-control-pill-font-size, 0.84rem);
   font-weight: var(--doke-control-pill-font-weight, 900);
@@ -61,7 +61,7 @@
   border-color: var(--doke-control-pill-active-border, transparent);
   background: var(--doke-control-pill-active-bg, #2a73b8);
   color: var(--doke-control-pill-active-text, #fff);
-  box-shadow: var(--doke-control-pill-active-shadow, 0 10px 20px rgba(42, 115, 184, 0.16));
+  box-shadow: none;
 }
 
 .search-scope__option input:focus-visible + :is(.doke-tab-pill, span) {
@@ -82,11 +82,11 @@
   gap: var(--doke-control-pill-gap, 9px);
   min-height: var(--doke-control-pill-height, var(--control-height-sm));
   padding: 0 18px;
-  border: 1px solid transparent;
+  border: 0;
   border-radius: var(--doke-control-pill-radius, var(--radius-pill));
   background: var(--doke-control-pill-bg, rgba(255, 255, 255, 0.94));
   color: var(--doke-control-pill-text, #15598f);
-  box-shadow: var(--doke-control-pill-shadow, 0 8px 20px rgba(29, 56, 88, 0.045));
+  box-shadow: none;
   font: inherit;
   font-size: var(--doke-control-pill-font-size, 0.84rem);
   font-weight: var(--doke-control-pill-font-weight, 900);
@@ -119,9 +119,9 @@
 
 @media (hover: hover) and (pointer: fine) {
   .doke-filter-pill:hover {
-    transform: translateY(-1px);
+    transform: none;
     border-color: transparent;
-    box-shadow: var(--doke-control-pill-hover-shadow, 0 12px 24px rgba(29, 56, 88, 0.075));
+    box-shadow: none;
   }
 }
 
@@ -171,4 +171,18 @@
 .doke-filter-pill[aria-expanded="true"],
 .doke-filter-pill:is(:hover, :focus-visible) {
   border-color: transparent;
+}
+
+/* Scope tabs and refinement pills are selectors, not elevated white controls. */
+:is(.doke-tab-pill, .search-scope__option span, .doke-filter-pill),
+:is(.doke-tab-pill, .search-scope__option span, .doke-filter-pill):is(:hover, [aria-expanded="true"], .is-active) {
+  border-color: transparent;
+  box-shadow: none;
+  transform: none;
+}
+
+:is(.search-scope__option input:focus-visible + .doke-tab-pill,
+    .search-scope__option input:focus-visible + span,
+    .doke-filter-pill:focus-visible) {
+  box-shadow: var(--doke-white-control-shadow-focus);
 }

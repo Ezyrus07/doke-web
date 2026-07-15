@@ -105,7 +105,7 @@ body:has(.worker-preview:not([hidden])) {
   z-index: 1;
   width: min(calc(100vw - (var(--doke-overlay-gutter) * 2)), var(--doke-overlay-max));
   max-height: calc(100dvh - (var(--doke-overlay-gutter) * 2));
-  border: 1px solid var(--doke-overlay-border);
+  border: 0;
   border-radius: var(--doke-overlay-radius);
   background: var(--doke-overlay-surface);
   box-shadow: var(--doke-overlay-shadow);
@@ -118,7 +118,7 @@ body:has(.worker-preview:not([hidden])) {
 
 :where(.media-lightbox__dialog, .media-lightbox__panel, .before-after-preview__dialog, .worker-preview__stage) {
   background: #0f172a;
-  border-color: rgba(255, 255, 255, .12);
+  border-color: transparent;
   color: #ffffff;
 }
 
@@ -134,7 +134,7 @@ body:has(.worker-preview:not([hidden])) {
 ) {
   min-height: var(--doke-overlay-header-min);
   padding: 22px 24px 16px;
-  border-bottom: 1px solid var(--doke-overlay-border);
+  border-bottom: 0;
   background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
 }
 
@@ -227,7 +227,7 @@ body:has(.worker-preview:not([hidden])) {
   justify-content: flex-end;
   gap: 10px;
   padding: 16px 24px 22px;
-  border-top: 1px solid var(--doke-overlay-border);
+  border-top: 0;
   background: rgba(248, 250, 252, .94);
 }
 
@@ -262,7 +262,7 @@ body:has(.worker-preview:not([hidden])) {
 ) {
   min-height: var(--control-height-lg);
   border-radius: var(--radius-base);
-  border: 1px solid rgba(148, 163, 184, .32);
+  border: 0;
   background: #ffffff;
   color: #0f172a;
   font: inherit;
@@ -273,7 +273,7 @@ body:has(.worker-preview:not([hidden])) {
    ============================= */
 :where(.profile-dropdown, .orders-filters-popover, .orders-filters-panel, .filters-popover, .search-popover, .dropdown-menu) {
   z-index: var(--doke-overlay-z-menu);
-  border: 1px solid var(--doke-overlay-border);
+  border: 0;
   border-radius: var(--radius-surface);
   background: rgba(255, 255, 255, .98);
   box-shadow: var(--doke-overlay-popover-shadow);
@@ -403,4 +403,61 @@ body:has(.worker-preview:not([hidden])) {
   :where(.ui-modal__text, .profile-edit-modal__intro, .address-modal__intro, .detail-budget-modal__intro, .wallet-modal__text) {
     font-size: .86rem;
   }
+}
+
+
+/* Borderless overlay surface contract — 2026-07-15 */
+:where(
+  .doke-overlay__surface,
+  .ui-modal__dialog,
+  .wallet-modal__card,
+  .profile-edit-modal__dialog,
+  .profile-followers-modal__dialog,
+  .detail-budget-modal__dialog,
+  .address-modal__dialog,
+  .media-lightbox__dialog,
+  .media-lightbox__panel,
+  .before-after-preview__dialog,
+  .worker-preview__stage
+) {
+  border: 0;
+}
+
+:where(
+  .doke-overlay__header,
+  .ui-modal__header,
+  .profile-edit-modal__head,
+  .profile-followers-modal__head,
+  .address-modal__head,
+  .detail-budget-modal__topbar,
+  .wallet-modal__head
+) {
+  border: 0;
+}
+
+:where(
+  .doke-overlay__actions,
+  .ui-modal__actions,
+  .address-modal__actions,
+  .profile-edit-modal__actions,
+  .wallet-modal__actions
+) {
+  border: 0;
+  box-shadow: var(--modal-footer-shadow, 0 -14px 32px rgba(24, 75, 118, 0.05));
+}
+
+:where(
+  .doke-overlay__body :is(input, select, textarea),
+  .ui-modal__input,
+  .profile-edit-modal__input,
+  .profile-edit-modal__textarea,
+  .address-modal input,
+  .address-modal select,
+  .address-modal textarea,
+  .wallet-modal input,
+  .wallet-modal select,
+  .wallet-modal textarea
+) {
+  border: 0;
+  box-shadow: var(--modal-control-shadow, 0 3px 10px rgba(24, 75, 118, 0.055));
 }

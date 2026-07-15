@@ -205,6 +205,14 @@ Variantes atuais:
 
 Não crie visual local para close, footer, título, radius, sombra ou ação primária/secundária em CSS de página.
 
+### Elevação sem borda em modais
+
+- Superfícies, campos, opções internas, close e rodapés não usam borda visível no estado normal.
+- O estado normal usa sombra de elevação sem anel permanente de `1px`.
+- O halo externo é reservado ao `:focus-visible` por acessibilidade.
+- Divisores estruturais devem ser substituídos por espaçamento, mudança sutil de fundo ou sombra direcional do rodapé.
+- Checkbox e radio preservam sua anatomia de estado; esta regra não autoriza ocultar o indicador de seleção.
+
 ## Controles básicos de formulário
 
 Use sempre classes canônicas em controles visíveis:
@@ -246,6 +254,14 @@ Use contracts especializados quando a ação não for um botão comum:
 
 Não use CSS de página para redesenhar a anatomia do botão. A página pode apenas posicionar, agrupar ou controlar responsividade contextual.
 
+## Contrato Doke Clean para controles canônicos
+
+- Botões secundários, inputs, selects, tabs, chips e badges não usam borda visível no estado normal.
+- A separação visual vem de fundo e elevação curta (`--shadow-control-soft`), sem anel de `1px` externo ou inset.
+- Hover usa `--shadow-control-hover`; foco mantém halo acessível por `--shadow-focus`.
+- Bordas continuam permitidas apenas quando carregam semântica indispensável, como divisores estruturais, mídia recortada ou estados de erro que não possam depender apenas de cor.
+- CSS de página não deve recolocar `border: 1px` nesses componentes. Exceções precisam ser documentadas na autoridade do componente.
+
 ## Política de consolidação de botões e remoção de `!important`
 
 A evolução visual do Doke deve reduzir famílias concorrentes, não criar novos aliases.
@@ -276,3 +292,33 @@ Ao tocar uma página:
 - A remoção deve ser incremental e baseada na regra vencedora real; não fazer remoção em massa sem validar a cascata.
 - Quando um `!important` for encontrado na autoridade tocada, consolidar origem, ordem de importação ou especificidade natural antes de removê-lo.
 - O objetivo de longo prazo é zero `!important` em CSS de produção, sem regressões visuais ou funcionais.
+
+## Escopo de elevação dos controles brancos
+
+A sombra de controle branco é uma propriedade de **controles standalone**, não de qualquer elemento branco.
+
+Recebem `--doke-white-control-shadow` no estado normal:
+
+- inputs, selects e textareas que constituem a própria superfície do campo;
+- botões `doke-btn--ghost` usados como ação secundária independente;
+- shell externo de busca ou campo composto;
+- triggers de select e dropdown que constituem um campo independente;
+- botões de ícone somente quando declaram explicitamente `doke-icon-btn--elevated`.
+
+Permanecem planos (`box-shadow: none`) no estado normal e no hover:
+
+- ícones internos de inputs e buscas;
+- botões de fechar;
+- tabs, chips, badges e filtros de seleção;
+- itens de menu ou navegação;
+- ações posicionadas sobre capa, imagem ou mídia;
+- controles internos de um grupo composto;
+- ações ghost/secondary dentro de `doke-form-actions` ou `doke-modal-actions`.
+
+O foco acessível continua usando `--doke-white-control-shadow-focus`, inclusive nos controles planos. O elemento composto deve possuir apenas **uma superfície elevada**: o shell externo ou o controle standalone, nunca os dois simultaneamente.
+
+Auditoria obrigatória:
+
+```bash
+npm run audit:control-elevation-scope
+```

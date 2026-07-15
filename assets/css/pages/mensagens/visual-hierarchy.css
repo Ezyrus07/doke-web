@@ -1,0 +1,197 @@
+/* Mensagens — visual hierarchy authority.
+ * One elevation per layer: workspace surfaces, standalone controls, flat
+ * internal actions, selectable conversations and floating overlays.
+ */
+body[data-page="mensagens"].messages-page-shell {
+  --messages-surface-shadow: var(--doke-surface-shadow);
+  --messages-surface-shadow-hover: var(--doke-surface-shadow-hover);
+  --messages-control-shadow: var(--doke-clean-control-shadow);
+  --messages-control-shadow-hover: var(--doke-clean-control-shadow-hover);
+  --messages-control-shadow-focus: var(--doke-clean-control-shadow-focus);
+}
+
+/* Structural planes: no nested outlines and no hover reaction. */
+body[data-page="mensagens"].messages-page-shell :is(
+  .messages-layout,
+  .messages-sidebar,
+  .messages-list,
+  .messages-thread,
+  .messages-thread__header,
+  .messages-thread__body,
+  .messages-selection-bar,
+  .messages-composer
+) {
+  border: 0;
+}
+
+body[data-page="mensagens"].messages-page-shell .messages-sidebar {
+  box-shadow: 18px 0 42px rgba(24, 75, 118, 0.075);
+}
+
+body[data-page="mensagens"].messages-page-shell .messages-thread__header {
+  box-shadow: 0 10px 28px rgba(24, 75, 118, 0.055);
+}
+
+body[data-page="mensagens"].messages-page-shell .messages-selection-bar {
+  box-shadow: 0 8px 20px rgba(24, 75, 118, 0.035);
+}
+
+body[data-page="mensagens"].messages-page-shell .messages-composer {
+  box-shadow: 0 -14px 34px rgba(24, 75, 118, 0.055);
+}
+
+/* Standalone composite controls: shell elevates; internal icons remain flat. */
+body[data-page="mensagens"].messages-page-shell :is(
+  .messages-sidebar-search,
+  .messages-search,
+  .messages-composer__field,
+  .doke-financial-modal__select-button
+) {
+  border: 0;
+  box-shadow: var(--messages-control-shadow);
+}
+
+body[data-page="mensagens"].messages-page-shell :is(
+  .messages-sidebar-search,
+  .messages-search,
+  .messages-composer__field,
+  .doke-financial-modal__select-button
+):hover {
+  box-shadow: var(--messages-control-shadow-hover);
+}
+
+body[data-page="mensagens"].messages-page-shell :is(
+  .messages-sidebar-search,
+  .messages-search,
+  .messages-composer__field,
+  .doke-financial-modal__select-button
+):focus-within,
+body[data-page="mensagens"].messages-page-shell .doke-financial-modal__select-button:focus-visible {
+  outline: 0;
+  box-shadow: var(--messages-control-shadow-focus);
+}
+
+body[data-page="mensagens"].messages-page-shell .messages-composer__field {
+  background: #f8fbfe;
+}
+
+body[data-page="mensagens"].messages-page-shell .messages-composer__field:focus-within {
+  background: #fff;
+}
+
+/* Conversation rows are selectable list items, not floating cards. */
+body[data-page="mensagens"].messages-page-shell .message-item {
+  border: 0;
+  box-shadow: none;
+  background: rgba(255, 255, 255, 0.10);
+}
+
+body[data-page="mensagens"].messages-page-shell .message-item:is(:hover, :focus-visible) {
+  background: rgba(255, 255, 255, 0.16);
+  box-shadow: none;
+  transform: none;
+}
+
+body[data-page="mensagens"].messages-page-shell .message-item.is-active {
+  background: rgba(255, 255, 255, 0.19);
+  box-shadow: none;
+}
+
+/* Internal actions remain flat because they live inside another surface. */
+body[data-page="mensagens"].messages-page-shell :is(
+  .messages-thread__action,
+  .messages-thread__link,
+  .messages-composer__tool,
+  .messages-composer__send,
+  .messages-thread__back,
+  .messages-selection-bar__button,
+  .messages-reply-preview__close,
+  .messages-audio-draft__remove,
+  .messages-image-draft__remove
+) {
+  border: 0;
+  box-shadow: none;
+}
+
+body[data-page="mensagens"].messages-page-shell :is(
+  .messages-thread__action,
+  .messages-thread__link,
+  .messages-composer__tool,
+  .messages-thread__back,
+  .messages-selection-bar__button
+):not(:disabled):hover {
+  background: var(--doke-flat-hover-bg);
+  box-shadow: none;
+  transform: none;
+}
+
+body[data-page="mensagens"].messages-page-shell :is(
+  .messages-thread__action,
+  .messages-thread__link,
+  .messages-composer__tool,
+  .messages-thread__back,
+  .messages-selection-bar__button
+):focus-visible {
+  outline: 0;
+  box-shadow: var(--doke-visual-focus-ring);
+}
+
+/* Message content is visually grouped by color; no card outline is needed. */
+body[data-page="mensagens"].messages-page-shell :is(
+  .message-bubble,
+  .messages-thread-replies__list article,
+  .messages-reply-preview,
+  .messages-audio-draft,
+  .messages-image-draft,
+  .messages-thread__order-card,
+  .messages-thread__locked,
+  .messages-thread__status,
+  .messages-pinned-panel,
+  .messages-draft-card,
+  .messages-empty__card,
+  .messages-thread-empty
+) {
+  border: 0;
+}
+
+body[data-page="mensagens"].messages-page-shell .message-bubble {
+  box-shadow: 0 3px 12px rgba(24, 75, 118, 0.055);
+}
+
+body[data-page="mensagens"].messages-page-shell .message-bubble--me {
+  box-shadow: 0 5px 16px rgba(22, 121, 111, 0.16);
+}
+
+body[data-page="mensagens"].messages-page-shell :is(
+  .messages-thread__order-card,
+  .messages-thread__locked,
+  .messages-thread__status,
+  .messages-pinned-panel,
+  .messages-draft-card,
+  .messages-empty__card,
+  .messages-thread-empty
+) {
+  box-shadow: var(--messages-surface-shadow);
+}
+
+/* Floating surfaces alone use overlay elevation. */
+body[data-page="mensagens"].messages-page-shell :is(
+  .messages-context-menu,
+  .messages-attachment-menu,
+  .messages-thread-replies
+) {
+  border: 0;
+  box-shadow: var(--doke-overlay-shadow);
+}
+
+body[data-page="mensagens"].messages-page-shell .messages-thread-replies > :is(header, form) {
+  border: 0;
+  box-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-page="mensagens"].messages-page-shell :is(.message-item, .messages-thread__action, .messages-thread__link, .messages-composer__tool, .messages-thread__back, .messages-selection-bar__button) {
+    transition: none;
+    transform: none;
+  }
+}

@@ -1,0 +1,231 @@
+/* Comunidade interna — visual hierarchy authority.
+ * Separates static workspace planes, standalone controls, flat navigation,
+ * selectable administration rows and true floating overlays.
+ */
+body[data-page="comunidade-interna"] {
+  --community-control-shadow: var(--doke-clean-control-shadow);
+  --community-control-shadow-hover: var(--doke-clean-control-shadow-hover);
+  --community-control-shadow-focus: var(--doke-clean-control-shadow-focus);
+  --community-selected-bg: var(--doke-flat-active-bg);
+}
+
+/* Workspace and major columns are structural planes, not nested cards. */
+body[data-page="comunidade-interna"] :is(
+  .community-room-layout,
+  .community-room-sidebar,
+  .community-room-main,
+  .community-room-thread,
+  .community-room-panel,
+  .community-room-panel__surface,
+  .community-room-panel__header,
+  .community-room-panel__body,
+  .community-settings-sidebar,
+  .community-settings-panel
+) {
+  border: 0;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode {
+  background: #fff;
+  box-shadow: var(--doke-surface-shadow);
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode > :is(.community-settings-sidebar, .community-settings-panel),
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-settings-panel :is(.community-room-panel__surface, .community-room-panel__header, .community-room-panel__body) {
+  background: #fff;
+  box-shadow: none;
+}
+
+/* Standalone search/form controls own one control elevation. */
+body[data-page="comunidade-interna"] :is(
+  .community-settings-search,
+  .community-room-search,
+  .community-room-layout.is-settings-mode .community-settings-panel .doke-input,
+  .community-room-layout.is-settings-mode .community-settings-panel .doke-select,
+  .community-room-layout.is-settings-mode .community-settings-panel .doke-textarea,
+  .community-room-layout.is-settings-mode .community-settings-panel .ui-select__trigger
+) {
+  border: 0;
+  box-shadow: var(--community-control-shadow);
+}
+
+body[data-page="comunidade-interna"] :is(
+  .community-settings-search,
+  .community-room-search,
+  .community-room-layout.is-settings-mode .community-settings-panel .doke-input,
+  .community-room-layout.is-settings-mode .community-settings-panel .doke-select,
+  .community-room-layout.is-settings-mode .community-settings-panel .doke-textarea,
+  .community-room-layout.is-settings-mode .community-settings-panel .ui-select__trigger
+):hover {
+  box-shadow: var(--community-control-shadow-hover);
+}
+
+body[data-page="comunidade-interna"] :is(.community-settings-search, .community-room-search):focus-within,
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-settings-panel :is(.doke-input, .doke-select, .doke-textarea):is(:focus, :focus-visible),
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-settings-panel .ui-select__trigger:focus-visible,
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-settings-panel .ui-select.is-open .ui-select__trigger {
+  outline: 0;
+  box-shadow: var(--community-control-shadow-focus);
+}
+
+body[data-page="comunidade-interna"] :is(.community-settings-search__input, .community-room-search input) {
+  box-shadow: none;
+}
+
+/* Navigation, channels and inline actions are flat controls. */
+body[data-page="comunidade-interna"] :is(
+  .community-settings-nav__item,
+  .community-room-channel,
+  .community-room-nav-item,
+  .community-room-header__action,
+  .community-room-message-action,
+  .community-room-return,
+  .community-room-return--settings,
+  .community-room-layout.is-settings-mode .community-settings-panel .doke-icon-btn
+) {
+  border: 0;
+  box-shadow: none;
+}
+
+body[data-page="comunidade-interna"] :is(
+  .community-settings-nav__item,
+  .community-room-channel,
+  .community-room-nav-item,
+  .community-room-header__action,
+  .community-room-message-action,
+  .community-room-return,
+  .community-room-return--settings
+):is(:hover, :focus-visible) {
+  background: var(--doke-flat-hover-bg);
+  box-shadow: none;
+  transform: none;
+}
+
+body[data-page="comunidade-interna"] :is(
+  .community-settings-nav__item.is-active,
+  .community-settings-nav__item[aria-selected="true"],
+  .community-room-channel.is-active,
+  .community-room-channel[aria-current="page"]
+) {
+  background: var(--community-selected-bg);
+  box-shadow: none;
+}
+
+/* Settings sections remain flat; only actionable/selectable rows react. */
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-settings-panel :is(
+  .community-settings-content-section,
+  .community-settings-form-section,
+  .community-security-section,
+  .community-room-profile-preview__card,
+  .community-security-summary,
+  .community-room-channel-role-access,
+  .community-room-roles-overview,
+  .community-room-invite-form,
+  .community-room-role-form,
+  .community-room-channel-form,
+  .community-room-channel-admin-list
+) {
+  border: 0;
+  box-shadow: none;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-settings-panel :is(
+  .community-room-checkline,
+  .community-room-permission,
+  .community-room-member,
+  .community-room-role-item,
+  .community-room-channel-admin-item,
+  .community-room-invite-item,
+  .community-room-channel-role-option
+) {
+  border: var(--doke-selection-border);
+  box-shadow: none;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-settings-panel :is(
+  .community-room-checkline,
+  .community-room-permission,
+  .community-room-member,
+  .community-room-role-item,
+  .community-room-channel-admin-item,
+  .community-room-invite-item,
+  .community-room-channel-role-option
+):is(:hover, :focus-within) {
+  border-color: var(--doke-selection-border-hover);
+  background: var(--doke-selection-bg-hover);
+  box-shadow: none;
+  transform: none;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-settings-panel :is(
+  .community-room-checkline.is-selected,
+  .community-room-permission.is-selected,
+  .community-room-member.is-selected,
+  .community-room-role-item.is-selected,
+  .community-room-channel-role-option.is-selected,
+  [aria-selected="true"].community-room-channel-role-option
+) {
+  border-color: var(--doke-selection-border-active);
+  background: var(--doke-selection-bg-active);
+  box-shadow: var(--doke-selection-ring);
+}
+
+/* Static notices and empty states do not move on hover. */
+body[data-page="comunidade-interna"] :is(
+  .doke-empty-state,
+  .community-room-panel-empty,
+  .community-security-stat,
+  .community-room-invite-card,
+  .community-settings-danger-card
+) {
+  border: 0;
+  box-shadow: var(--doke-surface-shadow);
+}
+
+body[data-page="comunidade-interna"] .community-settings-danger-card {
+  background: #fff8f8;
+}
+
+/* Chat messages use color grouping; internal badges/actions remain flat. */
+body[data-page="comunidade-interna"] :is(
+  .community-room-message,
+  .community-room-message__bubble,
+  .community-room-member-badge,
+  .community-room-role-badge,
+  .community-room-status-badge
+) {
+  border: 0;
+}
+
+body[data-page="comunidade-interna"] :is(
+  .community-room-member-badge,
+  .community-room-role-badge,
+  .community-room-status-badge
+) {
+  box-shadow: none;
+}
+
+/* Menus, select popovers and action sheets are the only overlay elevation. */
+body[data-page="comunidade-interna"] :is(
+  .ui-select__menu,
+  .community-room-context-menu,
+  .community-room-member-menu,
+  .community-room-action-menu,
+  .community-room-popover
+) {
+  border: 0;
+  box-shadow: var(--doke-overlay-shadow);
+}
+
+@media (max-width: 1180px) {
+  body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode {
+    box-shadow: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-page="comunidade-interna"] :is(.community-settings-nav__item, .community-room-channel, .community-room-nav-item, .community-room-header__action, .community-room-message-action) {
+    transition: none;
+    transform: none;
+  }
+}

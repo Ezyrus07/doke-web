@@ -1,0 +1,184 @@
+/* Home visual hierarchy.
+ * Responsibility: map Home-owned surfaces and interactions to the canonical
+ * surface/control/flat/overlay contracts defined in core/tokens.css.
+ * Geometry and component anatomy stay with their original owners.
+ */
+
+/* Structural surfaces: no decorative border; static containers do not react. */
+body[data-page="home"] :is(
+  .home-search-hero__card,
+  .home-order-feedback__card,
+  .home-order-feedback__loading-card
+) {
+  border: 0;
+  background: var(--surface-card, #fff);
+  box-shadow: var(--doke-surface-shadow);
+}
+
+/* Search: one elevation only. The field shell owns it; inner controls stay flat. */
+body[data-page="home"] :is(.doke-search-panel__form, .home-search-hero__field, .doke-search-pill__field) {
+  border: 0;
+}
+
+body[data-page="home"] .doke-search-panel__form {
+  box-shadow: none;
+}
+
+body[data-page="home"] .home-search-hero__field.doke-search-pill__field {
+  background: #fff;
+  box-shadow: var(--doke-white-control-shadow);
+}
+
+body[data-page="home"] .home-search-hero__field.doke-search-pill__field:hover {
+  box-shadow: var(--doke-white-control-shadow-hover);
+}
+
+body[data-page="home"] .home-search-hero__field.doke-search-pill__field:focus-within {
+  outline: 0;
+  box-shadow: var(--doke-white-control-shadow-focus);
+}
+
+body[data-page="home"] :is(
+  .doke-search-panel__input,
+  .home-search-hero__field input,
+  .doke-search-pill__field input,
+  .home-search-hero__field button,
+  .doke-search-pill__field button
+) {
+  border: 0;
+  box-shadow: none;
+}
+
+/* Autocomplete is an overlay; suggestions and refine chips are flat controls. */
+body[data-page="home"] .search-dropdown {
+  border: 0;
+  box-shadow: var(--doke-overlay-shadow);
+}
+
+body[data-page="home"] :is(
+  .search-dropdown__chips > *,
+  .search-refine-chip,
+  .filter-chip,
+  [data-more-filters-toggle]
+) {
+  border: 0;
+  box-shadow: none;
+}
+
+body[data-page="home"] :is(
+  .search-dropdown__chips > *,
+  .search-refine-chip,
+  .filter-chip,
+  [data-more-filters-toggle]
+):hover {
+  background: var(--doke-flat-hover-bg);
+  box-shadow: none;
+  transform: none;
+}
+
+/* Category links are composed controls: only the white icon tile is elevated. */
+body[data-page="home"] .home-catégory {
+  border: 0;
+  box-shadow: none;
+}
+
+body[data-page="home"] .home-catégory__icon {
+  border: 0;
+  box-shadow: var(--doke-white-control-shadow);
+  transition: box-shadow var(--transition-fast), transform var(--transition-fast), background var(--transition-fast);
+}
+
+body[data-page="home"] .home-catégory:hover .home-catégory__icon,
+body[data-page="home"] .home-catégory:focus-visible .home-catégory__icon {
+  box-shadow: var(--doke-white-control-shadow-hover);
+  transform: translateY(-1px);
+}
+
+body[data-page="home"] .home-catégory:focus-visible {
+  outline: 0;
+}
+
+/* Rail arrows, section links and internal actions are flat controls. */
+body[data-page="home"] :is(
+  .home-catégories__arrow,
+  .section-heading__link,
+  .doke-ad-card__favorite,
+  .publication-card__action,
+  .publication-comments-toggle,
+  .publication-card__play
+) {
+  border: 0;
+  box-shadow: none;
+}
+
+body[data-page="home"] :is(
+  .home-catégories__arrow,
+  .doke-ad-card__favorite,
+  .publication-card__action,
+  .publication-comments-toggle,
+  .publication-card__play
+):hover {
+  background: var(--doke-flat-hover-bg);
+  box-shadow: none;
+  transform: none;
+}
+
+/* Clickable content cards use the surface hierarchy, never a perimeter line. */
+body[data-page="home"] :is(
+  .doke-ad-card,
+  .professional-showcase-card,
+  .publication-card,
+  .video-card
+) {
+  border: 0;
+  box-shadow: var(--doke-surface-shadow);
+}
+
+body[data-page="home"] :is(
+  .doke-ad-card,
+  .professional-showcase-card,
+  .publication-card,
+  .video-card
+):hover,
+body[data-page="home"] :is(
+  .doke-ad-card,
+  .professional-showcase-card,
+  .publication-card,
+  .video-card
+):focus-within {
+  border-color: transparent;
+  box-shadow: var(--doke-surface-shadow-hover);
+  transform: translateY(-2px);
+}
+
+/* Tabs, chips and badges communicate state through fill/color, not elevation. */
+body[data-page="home"] :is(
+  .mini-tab,
+  .filter-toggle,
+  .doke-chip,
+  .doke-ad-card__badge,
+  .professional-showcase-card__new-badge,
+  .publication-card__type
+) {
+  border: 0;
+  box-shadow: none;
+}
+
+body[data-page="home"] :is(.mini-tab, .filter-toggle, .doke-chip):hover {
+  background: var(--doke-flat-hover-bg);
+  box-shadow: none;
+  transform: none;
+}
+
+/* Static section wrappers remain flat. */
+body[data-page="home"] :is(
+  .doke-page-section,
+  .content-rail,
+  .home-catégories__rail,
+  .home-media-rail,
+  .professional-showcase__rail,
+  .more-services__cards-rail,
+  .more-services__tabs-rail
+) {
+  border-color: transparent;
+}

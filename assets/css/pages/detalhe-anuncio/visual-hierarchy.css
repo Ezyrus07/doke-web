@@ -1,0 +1,200 @@
+/* Detalhe do anúncio visual hierarchy.
+ * Static panels do not hover; only clickable cards elevate; nested controls remain flat.
+ */
+body[data-page="detalhe-anuncio"] {
+  --detail-surface-shadow: var(--doke-surface-shadow);
+  --detail-surface-shadow-hover: var(--doke-surface-shadow-hover);
+  --detail-control-shadow: var(--doke-control-shadow, var(--doke-clean-control-shadow));
+  --detail-control-shadow-hover: var(--doke-control-shadow-hover, var(--doke-clean-control-shadow-hover));
+  --detail-focus-shadow: var(--doke-control-shadow-focus, var(--doke-clean-control-shadow-focus));
+  --detail-flat-hover: var(--doke-flat-hover-bg, #f2f7fb);
+  --detail-flat-active: var(--doke-flat-active-bg, #eaf4fc);
+}
+
+/* Structural and informational surfaces stay static. */
+body[data-page="detalhe-anuncio"] :is(
+  .detail-surface,
+  .doke-reviews-panel,
+  .ad-detail-hero,
+  .detail-hydration-skeleton__surface,
+  .provider-card,
+  .ad-action-card,
+  .location-card
+) {
+  border: 0;
+  background: #fff;
+  box-shadow: var(--detail-surface-shadow);
+  transform: none;
+}
+
+body[data-page="detalhe-anuncio"] :is(
+  .detail-surface,
+  .doke-reviews-panel,
+  .ad-detail-hero,
+  .provider-card,
+  .ad-action-card,
+  .location-card
+):hover {
+  box-shadow: var(--detail-surface-shadow);
+  transform: none;
+}
+
+/* Nested information must not become cards inside cards. */
+body[data-page="detalhe-anuncio"] :is(
+  .detail-spec,
+  .ad-detail-stats li,
+  .ad-action-card__meta > div,
+  .provider-card__stat,
+  .ad-action-card__trust,
+  .doke-review-metric,
+  .doke-review-item,
+  .location-card__map,
+  .detail-checklist li
+) {
+  border: 0;
+  box-shadow: none;
+  transform: none;
+}
+
+body[data-page="detalhe-anuncio"] :is(
+  .detail-spec,
+  .ad-detail-stats li,
+  .ad-action-card__meta > div,
+  .provider-card__stat,
+  .ad-action-card__trust,
+  .doke-review-metric,
+  .location-card__map
+) {
+  background: var(--doke-surface-subtle, #f7fafd);
+}
+
+body[data-page="detalhe-anuncio"] :is(
+  .doke-reviews-divider,
+  .provider-card__summary,
+  .ad-action-card__meta,
+  .doke-review-item + .doke-review-item
+) {
+  border: 0;
+  box-shadow: none;
+}
+
+/* Flat controls: thumbnails, filters and image actions. */
+body[data-page="detalhe-anuncio"] :is(
+  .ad-gallery__thumb,
+  .doke-review-filter,
+  .ad-gallery__more,
+  .ad-gallery__favorite,
+  .ad-gallery__share,
+  .ad-gallery__nav,
+  .doke-review-rating,
+  .doke-review-verified,
+  .provider-card__verified
+) {
+  border: 0;
+  box-shadow: none;
+  transform: none;
+}
+
+body[data-page="detalhe-anuncio"] :is(
+  .ad-gallery__thumb,
+  .doke-review-filter,
+  .ad-gallery__more,
+  .ad-gallery__favorite,
+  .ad-gallery__share,
+  .ad-gallery__nav
+):hover {
+  box-shadow: none;
+  background: var(--detail-flat-hover);
+  transform: none;
+}
+
+body[data-page="detalhe-anuncio"] :is(
+  .ad-gallery__thumb.is-active,
+  .doke-review-filter.is-active
+) {
+  border: 1px solid var(--doke-selection-border-active, rgba(42, 95, 144, .35));
+  background: var(--detail-flat-active);
+  box-shadow: var(--doke-selection-ring, 0 0 0 3px rgba(42, 95, 144, .09));
+}
+
+body[data-page="detalhe-anuncio"] :is(
+  .ad-gallery__thumb,
+  .doke-review-filter,
+  .ad-gallery__more,
+  .ad-gallery__favorite,
+  .ad-gallery__share,
+  .ad-gallery__nav
+):focus-visible {
+  outline: 0;
+  box-shadow: var(--detail-focus-shadow);
+}
+
+/* Standalone white actions keep control elevation. */
+body[data-page="detalhe-anuncio"] :is(
+  .detail-btn.doke-btn--ghost,
+  .detail-btn.doke-btn--secondary
+) {
+  border: 0;
+  background: #fff;
+  box-shadow: var(--detail-control-shadow);
+}
+
+body[data-page="detalhe-anuncio"] :is(
+  .detail-btn.doke-btn--ghost,
+  .detail-btn.doke-btn--secondary
+):hover {
+  box-shadow: var(--detail-control-shadow-hover);
+  transform: translateY(-1px);
+}
+
+/* Related clickable cards use surface hover; inner controls remain flat. */
+body[data-page="detalhe-anuncio"] :is(
+  .doke-ad-card,
+  .doke-worker-card,
+  .publication-card,
+  .video-card
+) {
+  border: 0;
+  box-shadow: var(--detail-surface-shadow);
+}
+
+body[data-page="detalhe-anuncio"] :is(
+  .doke-ad-card,
+  .doke-worker-card,
+  .publication-card,
+  .video-card
+):hover {
+  box-shadow: var(--detail-surface-shadow-hover);
+  transform: translateY(-2px);
+}
+
+body[data-page="detalhe-anuncio"] :is(
+  .doke-ad-card__favorite,
+  .publication-card__action,
+  .publication-card__play
+) {
+  border: 0;
+  box-shadow: none;
+}
+
+body[data-page="detalhe-anuncio"] :is(
+  .doke-overlay__surface,
+  .doke-modal-surface,
+  .media-lightbox__dialog
+) {
+  border: 0;
+  box-shadow: var(--doke-overlay-shadow);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-page="detalhe-anuncio"] :is(
+    .doke-ad-card,
+    .doke-worker-card,
+    .publication-card,
+    .video-card,
+    .detail-btn
+  ) {
+    transition: none;
+    transform: none;
+  }
+}

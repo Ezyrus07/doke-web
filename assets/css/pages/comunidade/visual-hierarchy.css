@@ -1,0 +1,200 @@
+/* Comunidade — page visual hierarchy.
+ * Separates structural surfaces, clickable cards, standalone controls,
+ * flat controls, selectable options and overlays.
+ */
+
+body[data-page="comunidade"] {
+  --community-muted-bg: #f6f9fc;
+  --community-muted-bg-hover: #eef5fb;
+}
+
+/* Static structural surfaces: elevation without hover behavior. */
+body[data-page="comunidade"] :is(
+  .community-side-card,
+  .communities-empty-v2,
+  .community-create-page,
+  .community-create-wizard,
+  .community-create-review,
+  .community-action-modal__feedback
+) {
+  border: 0;
+  background-color: #fff;
+  box-shadow: var(--doke-surface-shadow);
+}
+
+/* Clickable content cards may elevate on hover. */
+body[data-page="comunidade"] :is(
+  .community-card,
+  .community-continue-card,
+  .community-create-contact
+) {
+  border: 0;
+  box-shadow: var(--doke-surface-shadow);
+  transition: transform 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
+}
+
+body[data-page="comunidade"] :is(
+  .community-card,
+  .community-continue-card,
+  .community-create-contact
+):is(:hover, :focus-within) {
+  transform: translateY(-2px);
+  box-shadow: var(--doke-surface-shadow-hover);
+}
+
+/* Nested informational blocks stay flat inside their parent surface. */
+body[data-page="comunidade"] :is(
+  .community-create-review__item,
+  .community-action-cover > div
+) {
+  border: 0;
+  background: var(--community-muted-bg);
+  box-shadow: none;
+}
+
+/* Standalone search and form controls. The shell owns elevation. */
+body[data-page="comunidade"] :is(
+  .communities-v2-search,
+  #community-code,
+  .community-action-form .doke-input,
+  .community-action-form .doke-select,
+  .community-action-form .doke-textarea,
+  .community-action-form .ui-select__trigger
+) {
+  border: 0;
+  background: var(--doke-clean-input-bg, #f8fbfe);
+  box-shadow: var(--doke-clean-control-shadow);
+}
+
+body[data-page="comunidade"] :is(
+  .communities-v2-search,
+  #community-code,
+  .community-action-form .doke-input,
+  .community-action-form .doke-select,
+  .community-action-form .doke-textarea,
+  .community-action-form .ui-select__trigger
+):is(:hover, :focus-within) {
+  background: #fff;
+  box-shadow: var(--doke-clean-control-shadow-hover);
+}
+
+body[data-page="comunidade"] :is(
+  #community-code,
+  .community-action-form .doke-input,
+  .community-action-form .doke-select,
+  .community-action-form .doke-textarea,
+  .community-action-form .ui-select__trigger
+):is(:focus, :focus-visible),
+body[data-page="comunidade"] .community-action-form .ui-select.is-open .ui-select__trigger {
+  outline: 0;
+  box-shadow: var(--doke-clean-control-shadow-focus);
+}
+
+body[data-page="comunidade"] .community-action-form .ui-select__menu {
+  border: 0;
+  box-shadow: var(--doke-overlay-shadow);
+}
+
+/* Tabs, chips, badges, filters and icon actions are flat controls. */
+body[data-page="comunidade"] :is(
+  .doke-tab-pill,
+  .doke-chip,
+  .doke-badge,
+  .community-card__badge,
+  .community-status-badge,
+  .community-filter-chip,
+  .community-card__action,
+  .community-action-modal .doke-close-button
+) {
+  border: 0;
+  box-shadow: none;
+  transform: none;
+}
+
+body[data-page="comunidade"] :is(
+  .doke-tab-pill,
+  .doke-chip,
+  .community-filter-chip,
+  .community-card__action,
+  .community-action-modal .doke-close-button
+):is(:hover, :focus-visible) {
+  background: var(--doke-flat-hover-bg);
+  box-shadow: none;
+  transform: none;
+}
+
+body[data-page="comunidade"] :is(
+  .doke-tab-pill.is-active,
+  .doke-tab-pill[aria-selected="true"],
+  .doke-chip.is-active,
+  .doke-chip[aria-pressed="true"],
+  .community-filter-chip.is-active,
+  .community-filter-chip[aria-pressed="true"]
+) {
+  border: 0;
+  background: var(--doke-flat-active-bg);
+  color: var(--doke-flat-active-color);
+  box-shadow: none;
+}
+
+/* Wizard steps and choice cards are selectable: a border communicates state. */
+body[data-page="comunidade"] :is(
+  .community-create-progress__item,
+  .community-create-choice,
+  .community-action-choice,
+  .community-create-upload
+) {
+  border: var(--doke-selection-border);
+  background: #fff;
+  box-shadow: none;
+}
+
+body[data-page="comunidade"] :is(
+  .community-create-progress__item,
+  .community-create-choice,
+  .community-action-choice,
+  .community-create-upload
+):is(:hover, :focus-visible, :focus-within) {
+  border-color: var(--doke-selection-border-hover);
+  background: var(--community-muted-bg-hover);
+  box-shadow: none;
+  transform: none;
+}
+
+body[data-page="comunidade"] :is(
+  .community-create-progress__item.is-active,
+  .community-create-progress__item[aria-current="step"],
+  .community-create-choice.is-selected,
+  .community-create-choice[aria-checked="true"],
+  .community-action-choice.is-selected,
+  .community-action-choice[aria-checked="true"]
+) {
+  border-color: var(--doke-selection-border-active);
+  background: var(--doke-selection-active-bg);
+  box-shadow: 0 0 0 3px var(--doke-selection-ring);
+}
+
+body[data-page="comunidade"] .community-action-modal__feedback[data-state="success"] {
+  background: #f0fbf7;
+  box-shadow: none;
+}
+
+body[data-page="comunidade"] .community-action-modal__feedback[data-state="error"] {
+  background: #fff5f5;
+  box-shadow: none;
+}
+
+body[data-page="comunidade"] .communities-load-more__button {
+  margin-inline: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-page="comunidade"] :is(
+    .community-card,
+    .community-continue-card,
+    .community-create-contact
+  ) {
+    transition: none;
+    transform: none;
+  }
+}

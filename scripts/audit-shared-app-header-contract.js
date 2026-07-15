@@ -7,7 +7,7 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..');
-const HEADER_IMPORT_VERSION = 'layout/header.css?v=20260701-index-profile-contract-v1';
+const HEADER_IMPORT_VERSION = 'layout/header.css?v=20260715-control-elevation-scope-v1';
 const pageContracts = {
   'admin.html': { variant: 'contextual', context: true },
   'admin-verificacao.html': { variant: 'contextual', context: true },
@@ -134,10 +134,23 @@ for (const file of cssFiles) {
   }
 }
 
+function resolvesHeaderImport(relativeFile, visited = new Set()) {
+  const absolute = path.join(ROOT, relativeFile);
+  if (visited.has(absolute) || !fs.existsSync(absolute)) return false;
+  visited.add(absolute);
+  const css = fs.readFileSync(absolute, 'utf8');
+  if (/layout\/header\.css\?v=/.test(css)) return css.includes(HEADER_IMPORT_VERSION);
+  for (const match of css.matchAll(/@import\s+(?:url\()?\s*["']([^"']+\.css)(?:\?[^"']*)?["']/gi)) {
+    const child = path.relative(ROOT, path.resolve(path.dirname(absolute), match[1])).replace(/\\/g, '/');
+    if (resolvesHeaderImport(child, visited)) return true;
+  }
+  return false;
+}
+
 for (const file of ['assets/css/pages/home-foundation.css', 'assets/css/pages/profile-foundation.css', 'assets/css/pages/pedidos-foundation.css']) {
   const css = fs.readFileSync(path.join(ROOT, file), 'utf8');
-  if (!/layout\/header\.css/.test(css) && file !== 'assets/css/pages/home-foundation.css') {
-    fail(file, 'must import layout/header.css');
+  if (!resolvesHeaderImport(file)) {
+    fail(file, 'must resolve layout/header.css through its page manifest graph');
   }
   if (/app-header-canonical-contract\.css|patterns\/app-topbar\.css/.test(css)) {
     fail(file, 'must not import a competing shared header contract');

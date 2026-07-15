@@ -7,7 +7,7 @@ const OUT = path.join(ROOT, 'reports', 'generated', 'mobile-drawer-visual-author
 const CSS_ROOT = path.join(ROOT, 'assets', 'css');
 const CANONICAL = 'assets/css/components/navigation/mobile-drawer-standard.css';
 const APP_SHELL = 'assets/css/pages/app-shell.css';
-const EXPECTED_IMPORT = '../components/navigation/mobile-drawer-standard.css?v=20260701-drawer-detail-contract-v1';
+const EXPECTED_IMPORT = '../components/navigation/mobile-drawer-standard.css?v=20260715-control-elevation-scope-v1';
 
 const forbiddenPatterns = [
   /\.home-mobile-drawer(?:__|[\s,{.#:[>]|$)/g,

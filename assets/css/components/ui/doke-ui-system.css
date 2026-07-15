@@ -82,7 +82,7 @@
     gap: var(--doke-space-2);
     min-height: var(--doke-control-height-md);
     padding: 0 var(--doke-space-5);
-    border: var(--border-width, 1px) var(--border-style, solid) transparent;
+    border: 0;
     border-radius: var(--doke-radius-pill);
     background: var(--doke-color-primary);
     color: #fff;
@@ -113,10 +113,10 @@
 
   .doke-btn--primary { background: var(--doke-color-primary); color: #fff; border-color: transparent; }
   .doke-btn--success { background: var(--color-secondary, #168f7d); color: #fff; border-color: transparent; }
-  .doke-btn--secondary { border-color: var(--control-outline-soft-secondary); background: var(--control-bg-soft-secondary); color: var(--color-secondary-strong, #0f6f64); box-shadow: none; }
-  .doke-btn--soft { border-color: var(--doke-color-line-soft-primary); background: var(--control-bg-soft-primary); color: var(--doke-color-primary); box-shadow: none; }
-  .doke-btn--ghost { background: var(--control-bg-same-surface); color: var(--doke-color-primary); border-color: var(--doke-color-line); box-shadow: none; }
-  .doke-btn--danger { background: var(--color-danger-soft, #fef2f2); color: var(--color-danger-strong, #b42318); border-color: var(--control-outline-soft-danger); box-shadow: none; }
+  .doke-btn--secondary { border-color: transparent; background: var(--control-bg-soft-secondary); color: var(--color-secondary-strong, #0f6f64); box-shadow: var(--shadow-control-soft); }
+  .doke-btn--soft { border-color: transparent; background: var(--control-bg-soft-primary); color: var(--doke-color-primary); box-shadow: var(--shadow-control-soft); }
+  .doke-btn--ghost { background: var(--doke-white-control-bg); color: var(--doke-color-primary); border-color: transparent; box-shadow: var(--doke-white-control-shadow); }
+  .doke-btn--danger { background: var(--color-danger-soft, #fef2f2); color: var(--color-danger-strong, #b42318); border-color: transparent; box-shadow: var(--shadow-control-soft); }
   .doke-btn--pill { border-radius: var(--doke-radius-pill); }
   .doke-btn--sm { min-height: var(--doke-control-height-sm); padding-inline: var(--doke-space-4); font-size: 12px; }
   .doke-btn--lg { min-height: var(--doke-control-height-lg); padding-inline: var(--doke-space-6); font-size: 15px; }
@@ -128,7 +128,7 @@
     justify-content: center;
     min-height: var(--doke-control-height-sm);
     padding: 0 var(--doke-space-4);
-    border: 1px solid var(--doke-color-line);
+    border: 0;
     border-radius: var(--doke-radius-pill);
     background: var(--doke-color-surface);
     color: var(--doke-color-primary);
@@ -160,18 +160,19 @@
     width: 42px;
     height: var(--control-height-md);
     min-width: 42px;
-    border: 1px solid var(--doke-color-line);
+    border: 0;
     border-radius: var(--doke-radius-pill);
     background: var(--doke-color-surface);
     color: var(--doke-color-ink);
     cursor: pointer;
-    box-shadow: var(--doke-shadow-xs);
+    box-shadow: none;
   }
 
   .doke-icon-btn svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
   .doke-icon-btn--primary { background: var(--doke-color-primary); color: #fff; border-color: transparent; }
-  .doke-icon-btn--soft { border-color: var(--doke-color-line-soft-primary); background: var(--control-bg-soft-primary); color: var(--doke-color-primary); box-shadow: none; }
-  .doke-icon-btn--soft:is(:hover, :focus-visible, [aria-expanded="true"]) { border-color: var(--doke-color-line-soft-primary-hover); background: var(--control-bg-soft-primary-hover); }
+  .doke-icon-btn--soft { border-color: transparent; background: var(--control-bg-soft-primary); color: var(--doke-color-primary); box-shadow: none; }
+  .doke-icon-btn--soft:is(:hover, [aria-expanded="true"]) { border-color: transparent; background: var(--control-bg-soft-primary-hover); box-shadow: none; }
+  .doke-icon-btn--soft:focus-visible { border-color: transparent; background: var(--control-bg-soft-primary-hover); box-shadow: var(--doke-white-control-shadow-focus); }
   .doke-icon-btn--flat { box-shadow: none; }
   .doke-icon-btn--sm { width: 34px; height: var(--control-height-xs); min-width: 34px; }
 
@@ -184,22 +185,22 @@
   .doke-textarea {
     width: 100%;
     min-height: var(--doke-control-height-lg);
-    border: var(--input-border);
+    border: 0;
     border-radius: var(--input-radius);
-    background: var(--input-bg);
+    background: var(--doke-white-control-bg);
     color: var(--doke-color-ink);
     font-size: 14px;
     font-weight: 650;
     line-height: 1.35;
-    box-shadow: none;
+    box-shadow: var(--doke-white-control-shadow);
   }
 
   .doke-input:is(:focus, :focus-visible),
   .doke-select:is(:focus, :focus-visible),
   .doke-textarea:is(:focus, :focus-visible) {
-    border-color: var(--input-border-focus);
-    background: var(--input-bg-focus);
-    box-shadow: var(--input-focus-ring);
+    border-color: transparent;
+    background: var(--doke-white-control-bg);
+    box-shadow: var(--doke-white-control-shadow-focus);
   }
 
   .doke-input,
@@ -297,6 +298,8 @@
     font-size: 11px;
     font-weight: var(--doke-type-weight-display);
     letter-spacing: var(--doke-type-tracking-tight);
+    border: 0;
+    box-shadow: none;
   }
 
   .doke-badge--success { background: rgba(32, 201, 151, .12); color: #087f5b; }
@@ -603,7 +606,7 @@
 .doke-form-actions .budget-button--ghost,
 .doke-form-actions .become-pro-btn--soft,
 .doke-form-actions .post-service-btn--soft {
-  border-color: rgba(42, 95, 144, 0.12);
+  border-color: transparent;
   background: var(--doke-action-secondary-bg);
   color: var(--doke-action-secondary-ink);
   box-shadow: none;
@@ -677,7 +680,7 @@
   }
 }
 
-/* Filled controls stay borderless. Soft/tinted controls keep a subtle outline for low-contrast fills. */
+/* Canonical controls stay borderless; fill and elevation carry hierarchy. */
 .doke-btn--primary,
 .doke-btn--success,
 .doke-btn--primary:hover,
@@ -694,10 +697,29 @@
 .doke-chip,
 .doke-tab-pill,
 .doke-tab-pill:hover {
-  border-color: rgba(42, 95, 144, 0.12);
+  border-color: transparent;
 }
 
 .doke-btn--danger,
 .doke-btn--danger:hover {
-  border-color: rgba(220, 38, 38, 0.14);
+  border-color: transparent;
+}
+
+/* Elevation scope: standalone white controls elevate; embedded/grouped actions stay flat. */
+.doke-btn--ghost:not(.doke-icon-btn):not(.doke-action-button):hover {
+  box-shadow: var(--doke-white-control-shadow-hover);
+}
+
+.doke-btn--ghost:not(.doke-icon-btn):not(.doke-action-button):focus-visible,
+.doke-icon-btn:focus-visible {
+  box-shadow: var(--doke-white-control-shadow-focus);
+}
+
+.doke-form-actions :is(.doke-btn--ghost, .doke-btn--secondary) {
+  box-shadow: none;
+}
+
+.doke-form-actions :is(.doke-btn--ghost, .doke-btn--secondary):is(:hover, :active) {
+  box-shadow: none;
+  transform: none;
 }

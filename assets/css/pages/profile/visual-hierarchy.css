@@ -1,0 +1,195 @@
+/* Profile family visual hierarchy.
+ * One elevation per layer; flat controls stay flat; borders only communicate state.
+ */
+body.profile-page-shell[data-profile-contract="clean-v1"] {
+  --profile-surface-shadow: var(--doke-surface-shadow);
+  --profile-surface-shadow-hover: var(--doke-surface-shadow-hover);
+  --profile-control-shadow: var(--doke-control-shadow, var(--doke-clean-control-shadow));
+  --profile-control-shadow-hover: var(--doke-control-shadow-hover, var(--doke-clean-control-shadow-hover));
+  --profile-focus-shadow: var(--doke-control-shadow-focus, var(--doke-clean-control-shadow-focus));
+  --profile-flat-hover: var(--doke-flat-hover-bg, #f2f7fb);
+  --profile-flat-active: var(--doke-flat-active-bg, #eaf4fc);
+}
+
+/* Structural surfaces: static, never lift on hover. */
+body.profile-page-shell[data-profile-contract="clean-v1"] :is(
+  .profile-hero,
+  .profile-panel--reviews,
+  .profile-surface-card,
+  .doke-reviews-panel
+) {
+  border: 0;
+  background: #fff;
+  box-shadow: var(--profile-surface-shadow);
+}
+
+body.profile-page-shell[data-profile-contract="clean-v1"] :is(
+  .profile-hero,
+  .profile-panel--reviews,
+  .profile-surface-card,
+  .doke-reviews-panel
+):hover {
+  box-shadow: var(--profile-surface-shadow);
+  transform: none;
+}
+
+/* Nested informational modules stay flat inside their parent surface. */
+body.profile-page-shell[data-profile-contract="clean-v1"] :is(
+  .profile-reputation__item,
+  .profile-chip-card,
+  .profile-list-card,
+  .profile-faq-card,
+  .doke-review-metric,
+  .profile-facts,
+  .profile-info-grid
+) {
+  border: 0;
+  box-shadow: none;
+  background: var(--doke-surface-subtle, #f7fafd);
+  transform: none;
+}
+
+body.profile-page-shell[data-profile-contract="clean-v1"] :is(
+  .profile-reputation__item,
+  .profile-chip-card,
+  .profile-list-card,
+  .profile-faq-card
+):hover {
+  box-shadow: none;
+  background: var(--profile-flat-hover);
+  transform: none;
+}
+
+/* Tabs, badges and inline actions are flat controls. */
+body.profile-page-shell[data-profile-contract="clean-v1"] :is(
+  .profile-tabs__item,
+  .doke-tab-pill,
+  .profile-owner-mini-action,
+  .profile-owner-avatar-action,
+  .profile-owner-cover-action,
+  .profile-owner-section-tools button,
+  .profile-action-icon,
+  .publication-card__action,
+  .doke-review-filter,
+  .doke-review-more,
+  .doke-badge,
+  .profile-owner-badge
+) {
+  border: 0;
+  box-shadow: none;
+  transform: none;
+}
+
+body.profile-page-shell[data-profile-contract="clean-v1"] :is(
+  .profile-tabs__item,
+  .doke-tab-pill,
+  .profile-owner-mini-action,
+  .profile-owner-avatar-action,
+  .profile-owner-cover-action,
+  .profile-owner-section-tools button,
+  .profile-action-icon,
+  .publication-card__action,
+  .doke-review-filter,
+  .doke-review-more
+):hover {
+  box-shadow: none;
+  background: var(--profile-flat-hover);
+  transform: none;
+}
+
+body.profile-page-shell[data-profile-contract="clean-v1"] :is(
+  .profile-tabs__item[aria-selected="true"],
+  .profile-tabs__item.is-active,
+  .doke-tab-pill[aria-selected="true"],
+  .doke-tab-pill.is-active,
+  .doke-review-filter.is-active
+) {
+  background: var(--profile-flat-active);
+  color: var(--color-primary-strong, #0b4f86);
+  box-shadow: none;
+}
+
+/* Standalone white actions retain control elevation. */
+body.profile-page-shell[data-profile-contract="clean-v1"] :is(
+  .profile-action.doke-btn--ghost,
+  .profile-professional-next__action.doke-btn--ghost
+) {
+  border: 0;
+  background: #fff;
+  box-shadow: var(--profile-control-shadow);
+}
+
+body.profile-page-shell[data-profile-contract="clean-v1"] :is(
+  .profile-action.doke-btn--ghost,
+  .profile-professional-next__action.doke-btn--ghost
+):hover {
+  box-shadow: var(--profile-control-shadow-hover);
+  transform: translateY(-1px);
+}
+
+body.profile-page-shell[data-profile-contract="clean-v1"] :is(
+  .profile-action.doke-btn--ghost,
+  .profile-professional-next__action.doke-btn--ghost,
+  .profile-tabs__item,
+  .profile-owner-mini-action,
+  .profile-owner-avatar-action,
+  .profile-owner-cover-action
+):focus-visible {
+  outline: 0;
+  box-shadow: var(--profile-focus-shadow);
+}
+
+/* Clickable marketplace cards keep card elevation; inner actions remain flat. */
+body.profile-page-shell[data-profile-contract="clean-v1"] :is(
+  .doke-ad-card,
+  .doke-worker-card,
+  .publication-card,
+  .video-card,
+  .doke-media-card
+) {
+  border: 0;
+  box-shadow: var(--profile-surface-shadow);
+}
+
+body.profile-page-shell[data-profile-contract="clean-v1"] :is(
+  .doke-ad-card,
+  .doke-worker-card,
+  .publication-card,
+  .video-card,
+  .doke-media-card
+):hover {
+  box-shadow: var(--profile-surface-shadow-hover);
+  transform: translateY(-2px);
+}
+
+body.profile-page-shell[data-profile-contract="clean-v1"] :is(
+  .doke-ad-card__favorite,
+  .publication-card__action,
+  .publication-card__play
+) {
+  border: 0;
+  box-shadow: none;
+}
+
+body.profile-page-shell[data-profile-contract="clean-v1"] .profile-area--reviews .doke-reviews-recommendation {
+  border: 0;
+  box-shadow: none;
+  background: rgba(215, 244, 239, 0.62);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.profile-page-shell[data-profile-contract="clean-v1"] * {
+    scroll-behavior: auto;
+  }
+  body.profile-page-shell[data-profile-contract="clean-v1"] :is(
+    .doke-ad-card,
+    .doke-worker-card,
+    .publication-card,
+    .video-card,
+    .doke-media-card,
+    .profile-action.doke-btn--ghost
+  ) {
+    transition: none;
+    transform: none;
+  }
+}

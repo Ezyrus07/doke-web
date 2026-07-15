@@ -1,0 +1,269 @@
+/* Carteira — visual hierarchy authority.
+ * Financial information is grouped by spacing and fill. Only true modules,
+ * standalone controls and overlays receive elevation.
+ */
+
+body[data-page="carteira"] {
+  --wallet-surface-bg: #fff;
+  --wallet-muted-bg: #f7fafc;
+  --wallet-control-shadow: var(--doke-white-control-shadow);
+  --wallet-control-shadow-hover: var(--doke-white-control-shadow-hover);
+  --wallet-control-shadow-focus: var(--doke-white-control-shadow-focus);
+}
+
+/* Static structural modules. */
+body[data-page="carteira"] :is(
+  .wallet-hero,
+  .wallet-panel,
+  .wallet-analytics,
+  .wallet-bank-panel,
+  .wallet-transaction-detail-panel,
+  .wallet-receivables-panel,
+  .wallet-empty-state
+) {
+  border: 0;
+  background: var(--wallet-surface-bg);
+  box-shadow: var(--doke-surface-shadow);
+}
+
+/* Clickable financial rows/cards may elevate. Metrics remain static. */
+body[data-page="carteira"] :is(
+  .wallet-transaction,
+  .wallet-bank-card,
+  .wallet-monthly-card,
+  .wallet-receivable-next,
+  .wallet-history-row,
+  .wallet-receivable-row
+) {
+  border: 0;
+  background: var(--wallet-surface-bg);
+  box-shadow: var(--doke-surface-shadow);
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+body[data-page="carteira"] :is(
+  .wallet-transaction,
+  .wallet-bank-card,
+  .wallet-monthly-card,
+  .wallet-receivable-next,
+  .wallet-history-row,
+  .wallet-receivable-row
+):is(:hover, :focus-within) {
+  transform: translateY(-2px);
+  box-shadow: var(--doke-surface-shadow-hover);
+}
+
+body[data-page="carteira"] :is(
+  .wallet-kpi,
+  .wallet-analytics-insight,
+  .wallet-comparison-insight,
+  .wallet-hero-stat,
+  .wallet-bank-status__item,
+  .wallet-stats-dialog__item,
+  .wallet-history-metric,
+  .wallet-comparison-metric
+) {
+  border: 0;
+  background: var(--wallet-muted-bg);
+  box-shadow: none;
+  transform: none;
+}
+
+/* Nested information stays flat inside the owning module. */
+body[data-page="carteira"] :is(
+  .wallet-dialog__scroll,
+  .wallet-dialog-preview,
+  .wallet-dialog-summary,
+  .wallet-dialog-preview__card,
+  .wallet-transaction-detail-card,
+  .wallet-transaction-detail-modal__amount-card,
+  .wallet-withdraw-track-card,
+  .wallet-transaction-receipt-card,
+  .wallet-bank-detail,
+  .wallet-monthly-row,
+  .wallet-distribution__item,
+  .wallet-transaction-detail-grid article,
+  .wallet-transaction-receipt-grid article,
+  .wallet-history-action,
+  .wallet-comparison-trend,
+  .wallet-release-timeline,
+  .wallet-release-timeline__marker,
+  .wallet-dispute-actions
+) {
+  border: 0;
+  box-shadow: none;
+}
+
+/* Standalone form controls and white secondary actions. */
+body[data-page="carteira"] :is(
+  .wallet-statement-search,
+  .wallet-statement-select,
+  .wallet-statement-field input,
+  .wallet-statement-field select,
+  .wallet-dialog-field input,
+  .wallet-dialog-field select,
+  .wallet-bank-modal__control,
+  .wallet-bank-manage,
+  .wallet-statistics-return__button
+) {
+  border: 0;
+  background: #fff;
+  box-shadow: var(--doke-white-control-shadow);
+}
+
+body[data-page="carteira"] :is(
+  .wallet-bank-manage,
+  .wallet-statistics-return__button
+):not(:disabled):hover {
+  transform: translateY(-1px);
+  box-shadow: var(--doke-white-control-shadow-hover);
+}
+
+body[data-page="carteira"] :is(
+  .wallet-statement-search,
+  .wallet-statement-select,
+  .wallet-statement-field input,
+  .wallet-statement-field select,
+  .wallet-dialog-field input,
+  .wallet-dialog-field select,
+  .wallet-bank-modal__control,
+  .wallet-bank-manage,
+  .wallet-statistics-return__button
+):is(:focus, :focus-visible, :focus-within) {
+  outline: 0;
+  box-shadow: var(--doke-white-control-shadow-focus);
+}
+
+/* Flat controls and metadata. */
+body[data-page="carteira"] :is(
+  .wallet-tab,
+  .wallet-filter-chip,
+  .wallet-filter-more__summary,
+  .wallet-analytics-period__button,
+  .wallet-statement-export,
+  .wallet-receivables-status,
+  .wallet-receivable-status,
+  .wallet-eyebrow,
+  .wallet-analytics-eyebrow,
+  .wallet-history-badge,
+  .wallet-toast__close,
+  .wallet-dispute-actions__controls .doke-btn,
+  .doke-modal-actions .wallet-dialog-btn.doke-btn--ghost
+) {
+  border: 0;
+  box-shadow: none;
+  transform: none;
+}
+
+body[data-page="carteira"] :is(
+  .wallet-tab,
+  .wallet-filter-chip,
+  .wallet-filter-more__summary,
+  .wallet-analytics-period__button,
+  .wallet-statement-export,
+  .wallet-toast__close
+):not(:disabled):hover {
+  background: var(--doke-flat-hover-bg);
+  box-shadow: none;
+  transform: none;
+}
+
+body[data-page="carteira"] :is(
+  .wallet-tab,
+  .wallet-filter-chip,
+  .wallet-filter-more__summary,
+  .wallet-analytics-period__button,
+  .wallet-statement-export,
+  .wallet-toast__close
+):focus-visible {
+  outline: 0;
+  box-shadow: var(--doke-white-control-shadow-focus);
+}
+
+body[data-page="carteira"] :is(
+  .wallet-tab.is-active,
+  .wallet-tab[aria-selected="true"],
+  .wallet-filter-chip.is-active,
+  .wallet-analytics-period__button.is-active
+) {
+  background: var(--doke-flat-active-bg);
+  color: var(--doke-primary, #2a5f90);
+  box-shadow: none;
+}
+
+/* Overlay menus and modal shells own the highest elevation. */
+body[data-page="carteira"] .wallet-filter-more__menu {
+  border: 0;
+  box-shadow: var(--doke-overlay-shadow);
+}
+
+body[data-page="carteira"] :is(
+  .wallet-dialog,
+  .wallet-bank-modal__surface,
+  .wallet-transaction-detail-modal__surface,
+  .wallet-withdraw-track-modal__surface,
+  .wallet-transaction-receipt-modal__surface
+) {
+  border: 0;
+  box-shadow: var(--doke-overlay-shadow);
+}
+
+body[data-page="carteira"] :is(
+  .wallet-dialog-error,
+  .wallet-bank-modal__error,
+  .wallet-transaction-detail-note,
+  .wallet-withdraw-track-note,
+  .wallet-transaction-receipt-note
+) {
+  border: 0;
+  box-shadow: none;
+}
+
+body[data-page="carteira"] :is(
+  .wallet-transaction-detail-modal__footer,
+  .wallet-transaction-receipt-modal__footer,
+  .wallet-withdraw-track-modal__footer,
+  .wallet-analytics-toolbar
+) {
+  border: 0;
+  box-shadow: 0 8px 20px rgba(24, 75, 118, 0.035);
+}
+
+body[data-page="carteira"] :is(
+  .wallet-progress,
+  .wallet-progress-meter,
+  .wallet-progress-meter::-webkit-meter-bar,
+  .wallet-line-chart,
+  .wallet-donut-chart,
+  .wallet-bar-chart
+) {
+  border: 0;
+}
+
+body[data-page="carteira"] .wallet-toast {
+  border: 0;
+  box-shadow: var(--doke-overlay-shadow);
+}
+
+@media (max-width: 900px) {
+  body[data-page="carteira"] .wallet-filter-more__menu {
+    background: var(--wallet-muted-bg);
+    box-shadow: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-page="carteira"] :is(
+    .wallet-transaction,
+    .wallet-bank-card,
+    .wallet-monthly-card,
+    .wallet-receivable-next,
+    .wallet-history-row,
+    .wallet-receivable-row,
+    .wallet-bank-manage,
+    .wallet-statistics-return__button
+  ) {
+    transition: none;
+    transform: none;
+  }
+}

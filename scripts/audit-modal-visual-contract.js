@@ -55,16 +55,29 @@ function requireCssContains(file, tokens) {
   if (/!important/.test(css)) failures.push(`${file}: contrato visual de modal não deve usar !important`);
 }
 
+function flattenImportGraph(file, visited = new Set()) {
+  const absolute = path.join(root, file);
+  if (visited.has(absolute) || !fs.existsSync(absolute)) return [];
+  visited.add(absolute);
+  const css = fs.readFileSync(absolute, 'utf8');
+  const sequence = [file.replace(/\\/g, '/')];
+  for (const match of css.matchAll(/@import\s+(?:url\()?\s*["']([^"']+\.css)(?:\?[^"']*)?["']/gi)) {
+    const child = path.relative(root, path.resolve(path.dirname(absolute), match[1])).replace(/\\/g, '/');
+    sequence.push(...flattenImportGraph(child, visited));
+  }
+  return sequence;
+}
+
 function requireImportAfter(file, precedingImportNeedle) {
-  const css = read(file);
+  const sequence = flattenImportGraph(file);
   const modalNeedle = 'modal-visual-contract.css';
-  const modalIndex = css.lastIndexOf(modalNeedle);
+  const modalIndex = sequence.map((item) => item.includes(modalNeedle)).lastIndexOf(true);
   if (modalIndex === -1) {
-    failures.push(`${file}: não importa ${modalNeedle}`);
+    failures.push(`${file}: não resolve ${modalNeedle} no grafo de imports`);
     return;
   }
   if (precedingImportNeedle) {
-    const pageIndex = css.lastIndexOf(precedingImportNeedle);
+    const pageIndex = sequence.map((item) => item.includes(precedingImportNeedle)).lastIndexOf(true);
     if (pageIndex !== -1 && modalIndex < pageIndex) failures.push(`${file}: modal visual deve vir depois de ${precedingImportNeedle}`);
   }
 }

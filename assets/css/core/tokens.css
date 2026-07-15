@@ -192,7 +192,33 @@
   --shadow-card-hover: 0 8px 22px rgba(31, 68, 110, 0.065);
   --shadow-control: 0 3px 10px rgba(15, 45, 75, 0.04);
   --shadow-dock: 0 18px 50px rgba(15, 23, 42, 0.14);
-  --shadow-focus: 0 0 0 3px rgba(var(--color-primary-rgb), 0.18);
+  /* White-control elevation is reserved for standalone controls. */
+  --doke-white-control-bg: #ffffff;
+  --doke-white-control-border: 0;
+  --doke-white-control-shadow: 0 3px 12px rgba(24, 75, 118, 0.065);
+  --doke-white-control-shadow-hover: 0 7px 18px rgba(24, 75, 118, 0.09);
+  --doke-white-control-shadow-focus:
+    0 0 0 4px rgba(var(--color-primary-rgb), 0.09),
+    0 6px 18px rgba(24, 75, 118, 0.08);
+  --doke-flat-control-shadow: none;
+  --doke-flat-control-shadow-hover: none;
+
+  /* Visual hierarchy contracts -----------------------------------------
+     Borders are semantic, not decorative. One elevation per layer. */
+  --doke-surface-border: 0;
+  --doke-surface-shadow: 0 6px 20px rgba(24, 75, 118, 0.06);
+  --doke-surface-shadow-hover: 0 10px 28px rgba(24, 75, 118, 0.085);
+  --doke-overlay-border: 0;
+  --doke-overlay-shadow: 0 18px 48px rgba(20, 50, 80, 0.14);
+  --doke-selection-border: 1px solid rgba(var(--color-primary-rgb), 0.16);
+  --doke-selection-border-hover: rgba(var(--color-primary-rgb), 0.28);
+  --doke-selection-border-active: rgba(var(--color-primary-rgb), 0.52);
+  --doke-selection-bg-hover: rgba(var(--color-primary-rgb), 0.045);
+  --doke-selection-bg-active: rgba(var(--color-primary-rgb), 0.085);
+  --doke-selection-ring: 0 0 0 3px rgba(var(--color-primary-rgb), 0.10);
+  --doke-flat-hover-bg: rgba(var(--color-primary-rgb), 0.065);
+  --doke-flat-active-bg: rgba(var(--color-primary-rgb), 0.11);
+  --shadow-focus: var(--doke-white-control-shadow-focus);
 
   /* Semantic shadow aliases. Prefer these contracts over raw box-shadow values. */
   --shadow-none: none;
@@ -201,8 +227,9 @@
   --shadow-surface: 0 6px 18px rgba(15, 45, 75, 0.045);
   --shadow-surface-strong: 0 10px 26px rgba(31, 68, 110, 0.065);
   --shadow-surface-popover: 0 16px 38px rgba(31, 68, 110, 0.085);
-  --shadow-control-soft: none;
-  --shadow-control-hover: 0 4px 12px rgba(15, 45, 75, 0.055);
+  --shadow-control-soft: var(--doke-white-control-shadow);
+  --shadow-control-hover: var(--doke-white-control-shadow-hover);
+  --shadow-control-badge: 0 2px 6px rgba(24, 75, 118, 0.035);
   --shadow-action-primary: 0 10px 22px rgba(27, 75, 121, 0.18);
   --shadow-action-secondary: 0 8px 18px rgba(24, 168, 141, 0.16);
   --shadow-action-secondary-strong: 0 10px 20px rgba(27, 138, 120, 0.18);
@@ -251,6 +278,11 @@
   --doke-visual-shadow: var(--doke-elevation-surface);
   --doke-visual-shadow-hover: var(--doke-elevation-surface-hover);
   --doke-visual-control-shadow: var(--doke-elevation-control);
+  --doke-clean-control-shadow: var(--doke-white-control-shadow);
+  --doke-clean-control-shadow-hover: var(--doke-white-control-shadow-hover);
+  --doke-clean-control-shadow-focus: var(--doke-white-control-shadow-focus);
+  --doke-clean-control-bg: var(--doke-white-control-bg);
+  --doke-clean-input-bg: var(--doke-white-control-bg);
   --doke-visual-control-shadow-hover: var(--doke-elevation-control-hover);
   --doke-visual-focus-ring: var(--doke-interaction-focus-ring);
   --doke-visual-muted-bg: rgba(var(--color-primary-rgb), 0.08);
@@ -288,19 +320,24 @@
   --modal-backdrop-blur: blur(14px) saturate(115%);
   --modal-surface-bg: var(--color-surface);
   --modal-surface-bg-soft: #f8fbff;
-  --modal-surface-border-color: rgba(36, 88, 135, 0.115);
-  --modal-surface-border: var(--border-width) var(--border-style) var(--modal-surface-border-color);
-  --modal-surface-divider: rgba(36, 88, 135, 0.105);
+  --modal-surface-border-color: transparent;
+  --modal-surface-border: 0;
+  --modal-surface-divider: transparent;
   --modal-surface-shadow: 0 24px 70px rgba(8, 27, 48, 0.18);
-  --modal-control-border-color: rgba(36, 88, 135, 0.12);
-  --modal-control-border: var(--border-width) var(--border-style) var(--modal-control-border-color);
+  --modal-control-border-color: transparent;
+  --modal-control-border: 0;
   --modal-control-border-focus: rgba(var(--color-primary-rgb), 0.34);
   --modal-control-bg: #fbfdff;
   --modal-close-bg: var(--control-bg-soft-primary);
   --modal-close-bg-hover: var(--control-bg-soft-primary-hover);
-  --modal-close-border: var(--border-width) var(--border-style) var(--control-outline-soft-primary);
-  --modal-close-border-hover: var(--border-width) var(--border-style) var(--control-outline-soft-primary-hover);
+  --modal-close-border: 0;
+  --modal-close-border-hover: 0;
   --modal-footer-bg: linear-gradient(180deg, #fbfdff 0%, #f8fbff 100%);
+  --modal-control-shadow: var(--doke-white-control-shadow);
+  --modal-control-shadow-hover: var(--doke-white-control-shadow-hover);
+  --modal-control-shadow-focus: var(--doke-white-control-shadow-focus);
+  --modal-internal-surface-shadow: 0 4px 14px rgba(24, 75, 118, 0.052);
+  --modal-footer-shadow: 0 -14px 32px rgba(24, 75, 118, 0.05);
 
   /* Cross-overlay aliases ----------------------------------------------
      Use these for modal, drawer, lightbox and popover elevation. They keep
@@ -462,28 +499,28 @@
   --btn-radius-sm: var(--radius-xs);
   --btn-radius-lg: var(--radius-control-lg);
   --btn-radius-pill: var(--radius-pill);
-  --btn-border: var(--border-soft);
+  --btn-border: var(--doke-white-control-border);
   --btn-border-strong: var(--border-interactive);
-  --btn-bg: var(--color-surface);
+  --btn-bg: var(--doke-white-control-bg);
   --btn-bg-soft: var(--color-primary-soft);
   --btn-text: var(--color-heading);
   --btn-text-muted: var(--color-text-soft);
-  --btn-shadow: var(--shadow-control-soft);
-  --btn-shadow-hover: var(--shadow-control-hover);
-  --btn-focus-ring: var(--shadow-focus);
+  --btn-shadow: var(--doke-white-control-shadow);
+  --btn-shadow-hover: var(--doke-white-control-shadow-hover);
+  --btn-focus-ring: var(--doke-white-control-shadow-focus);
 
   --input-height-sm: var(--control-height-sm);
   --input-height-md: var(--control-height-lg);
   --input-height-lg: var(--control-height-xl);
   --input-padding-x: var(--control-padding-x-md);
   --input-radius: var(--radius-control);
-  --input-border: var(--border-soft);
-  --input-border-focus: var(--border-color-focus);
-  --input-bg: rgba(255, 255, 255, 0.94);
-  --input-bg-focus: var(--color-surface);
+  --input-border: var(--doke-white-control-border);
+  --input-border-focus: transparent;
+  --input-bg: var(--doke-white-control-bg);
+  --input-bg-focus: var(--doke-white-control-bg);
   --input-text: var(--color-text);
   --input-placeholder: #68788d;
-  --input-focus-ring: 0 0 0 4px rgba(var(--color-primary-rgb), 0.10);
+  --input-focus-ring: var(--doke-white-control-shadow-focus);
 
   /* Form flow/surface contract -------------------------------------------- */
   --form-page-gap: var(--space-7);
@@ -640,13 +677,13 @@
   --chip-border-color-warning: var(--control-outline-soft-warning);
   --chip-border-color-danger: var(--control-outline-soft-danger);
   --chip-border-color-muted: var(--control-outline-soft-neutral);
-  --chip-border: var(--border-width) var(--border-style) var(--chip-border-color);
-  --chip-border-primary: var(--border-width) var(--border-style) var(--chip-border-color-primary);
-  --chip-border-success: var(--border-width) var(--border-style) var(--chip-border-color-success);
-  --chip-border-warning: var(--border-width) var(--border-style) var(--chip-border-color-warning);
-  --chip-border-danger: var(--border-width) var(--border-style) var(--chip-border-color-danger);
-  --chip-shadow: none;
-  --chip-shadow-hover: var(--shadow-control-soft);
+  --chip-border: 0;
+  --chip-border-primary: 0;
+  --chip-border-success: 0;
+  --chip-border-warning: 0;
+  --chip-border-danger: 0;
+  --chip-shadow: var(--shadow-control-soft);
+  --chip-shadow-hover: var(--shadow-control-hover);
 
   --badge-height: 30px;
   --badge-padding-x: 11px;
@@ -666,7 +703,7 @@
   --badge-border-color-success: var(--chip-border-color-success);
   --badge-border-color-warning: var(--chip-border-color-warning);
   --badge-border-color-danger: var(--chip-border-color-danger);
-  --badge-border: var(--border-width) var(--border-style) var(--badge-border-color);
+  --badge-border: 0;
 
   --tab-pill-height: var(--control-height-md);
   --tab-pill-padding-inline: 18px;
@@ -680,8 +717,8 @@
   --tab-pill-text-active: var(--color-white);
   --tab-pill-border-color: var(--control-outline-same-surface);
   --tab-pill-border-color-hover: var(--control-outline-soft-primary-hover);
-  --tab-pill-border: var(--border-width) var(--border-style) var(--tab-pill-border-color);
-  --tab-pill-shadow: none;
+  --tab-pill-border: 0;
+  --tab-pill-shadow: var(--shadow-control-soft);
   --tab-pill-shadow-hover: var(--shadow-control-hover);
   --tab-pill-shadow-active: 0 6px 16px rgba(var(--color-primary-rgb), 0.14);
 

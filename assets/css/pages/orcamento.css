@@ -1,7 +1,7 @@
 /* Doke Web - orçamento page
    Responsibility: local mapping for the budget request flow.
    Visual anatomy is inherited from tornar-profissional.html through the shared form/page contracts. */
-@import url("./tornar-profissional-foundation.css?v=20260625-operational-toast-v1");
+@import url("./tornar-profissional-foundation.css?v=20260715-control-elevation-scope-v1");
 
 body[data-page="orcamento"] {
   --budget-blue: var(--pro-blue, var(--color-primary, #2a5f90));
@@ -737,16 +737,9 @@ body[data-page="orcamento"] {
   --budget-surface-shadow:
     0 0 0 1px rgba(24, 75, 118, 0.025),
     0 8px 26px rgba(24, 75, 118, 0.065);
-  --budget-control-shadow:
-    0 0 0 1px rgba(24, 75, 118, 0.025),
-    0 2px 7px rgba(24, 75, 118, 0.045);
-  --budget-control-shadow-hover:
-    0 0 0 1px rgba(24, 75, 118, 0.03),
-    0 5px 14px rgba(24, 75, 118, 0.065);
-  --budget-control-shadow-focus:
-    0 0 0 1px rgba(42, 95, 144, 0.08),
-    0 0 0 4px rgba(42, 95, 144, 0.09),
-    0 4px 14px rgba(24, 75, 118, 0.055);
+  --budget-control-shadow: var(--doke-white-control-shadow);
+  --budget-control-shadow-hover: var(--doke-white-control-shadow-hover);
+  --budget-control-shadow-focus: var(--doke-white-control-shadow-focus);
   --budget-control-bg: #f8fbfe;
 }
 
@@ -867,4 +860,13 @@ body[data-page="orcamento"] .budget-success__summary {
     transition: none;
     transform: none;
   }
+}
+
+body[data-page="orcamento"] :is(.doke-form-actions, .doke-modal-actions) .doke-btn--ghost,
+body[data-page="orcamento"] :is(.doke-form-actions, .doke-modal-actions) .doke-btn--ghost:hover {
+  box-shadow: none;
+  transform: none;
+}
+body[data-page="orcamento"] :is(.doke-form-actions, .doke-modal-actions) .doke-btn--ghost:focus-visible {
+  box-shadow: var(--doke-white-control-shadow-focus);
 }

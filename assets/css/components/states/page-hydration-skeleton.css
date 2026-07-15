@@ -1,0 +1,58 @@
+/* Shared structural hydration skeleton primitives.
+ * Responsibility: provide the visual shimmer and neutral surfaces only.
+ * Page-specific geometry stays in each page hydration-state stylesheet.
+ */
+:root {
+  --doke-skeleton-bg: rgba(222, 234, 245, 0.88);
+  --doke-skeleton-shine: rgba(255, 255, 255, 0.94);
+  --doke-skeleton-surface: rgba(255, 255, 255, 0.96);
+  --doke-skeleton-shadow: 0 8px 24px rgba(24, 75, 118, 0.055);
+}
+
+.doke-skeleton-line,
+.doke-skeleton-text,
+[data-doke-skeleton] {
+  display: block;
+  min-inline-size: 0;
+  color: transparent;
+  background:
+    linear-gradient(
+      90deg,
+      var(--doke-skeleton-bg) 0%,
+      var(--doke-skeleton-shine) 48%,
+      var(--doke-skeleton-bg) 100%
+    );
+  background-size: 220% 100%;
+  animation: dokePageHydrationShimmer 1.55s ease-in-out infinite;
+}
+
+.doke-skeleton-line,
+.doke-skeleton-text {
+  border-radius: var(--radius-pill, 999px);
+}
+
+[data-doke-skeleton-surface],
+.results-hydration-skeleton__search,
+.results-hydration-skeleton__filters,
+.results-hydration-skeleton__card,
+.detail-hydration-skeleton__hero,
+.detail-hydration-skeleton__section,
+.detail-hydration-skeleton__panel {
+  border: 0;
+  background: var(--doke-skeleton-surface);
+  box-shadow: var(--doke-skeleton-shadow);
+}
+
+@keyframes dokePageHydrationShimmer {
+  0% { background-position: 180% 0; }
+  100% { background-position: -40% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .doke-skeleton-line,
+  .doke-skeleton-text,
+  [data-doke-skeleton] {
+    animation: none;
+    background-position: 50% 0;
+  }
+}

@@ -73,3 +73,20 @@ Arquivos em quarentena lógica:
 - `assets/css/pages/shell-normalize.css`
 - `assets/css/components/layout/professional-responsive-layout.css`
 - `assets/css/components/shell/ipad-safari-scroll.css`
+
+## Lote Doke Clean — autoridade transitória de controles aposentada
+
+O arquivo `assets/css/components/visual/borderless-control-authority.css` deixou de ser importado por `assets/css/core/components.css`.
+
+A responsabilidade por bordas, elevação, hover e foco dos controles compartilhados foi devolvida às autoridades canônicas:
+
+- `assets/css/core/tokens.css`
+- `assets/css/components/buttons.css`
+- `assets/css/components/forms/form-controls.css`
+- `assets/css/components/tabs/tabs.css`
+- `assets/css/components/status/chips-badges.css`
+- `assets/css/components/dropdowns/dropdown.css`
+- `assets/css/components/search/search-field.css`
+- `assets/css/components/internal/filter-select-standard.css`
+
+O arquivo aposentado permanece fisicamente no pacote apenas para rollback e rastreabilidade. Não deve voltar a ser importado nem receber novas regras. Exceções de página devem ser resolvidas na autoridade correta do componente ou da composição, sem recriar uma camada global tardia.

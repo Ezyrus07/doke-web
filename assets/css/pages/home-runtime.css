@@ -1,106 +1,15 @@
-@import url("./internal-shell.css");
-
 /* Home runtime manifest.
-   Cleanup Stage 04 removed duplicated global shell/card imports from this page manifest.
-   Cleanup Stage 05 removed legacy mobile fragments now superseded by pages/home/mobile/index.css.
-   Shared components now come from core/components.css and layout/page-rail.css.
-   Single CSS entry for index.html.
+   Import-only orchestration for index.html.
 
-   Runtime ownership:
-   - home-shell.css: shell scaffolding and workspace spacing exclusive to home
-   - home-search-chrome.css: hero, top chrome and search field/dropdown composition
-   - home-sections.css: section structure, rails and cards rendered on the landing feed
-   - home-refresh.css: remaining home refinements and responsive cleanup
-   - home-overlays.css: location surfaces, drawers, address modal and layered UI
-   - home/mobile/index.css: mobile-only refinements owned inside pages/home/mobile/
+   Ordered ownership layers:
+   1. page-owned composition
+   2. reusable component dependencies
+   3. shell and responsive infrastructure
+   4. feed, rails and presentation
 
-   Governance rule:
-   - edit the runtime owners above first
-   - do not recreate parallel owners under assets/css/pages/home/
-   - retired parallel modules were archived to archive/legacy-home-css/ in 2026-04 */
-@import url("./home-shell.css?v=20260614-home-desktop-rail-axis-v1");
-@import url("./home-sections.css?v=20260612-lower-feed-contract-v3");
-@import url("./home-refresh.css?v=20260621-more-filters-icon-refine-v1");
-@import url("./home-overlays.css?v=20260621-address-modal-nosidescroll-v4");
-@import url("../components/search/search-autocomplete.css?v=20260502-shared-search-autocomplete-v3");
-@import url("./home-search-chrome.css?v=20260614-index-closure-v1");
-@import url("../components/search/search-bar.css?v=20260614-home-mobile-more-grid-v3");
-@import url("./home/mobile/index.css?v=20260701-mobile-footer-fit-v1") screen and (max-width: 560px);
-
-@import url("./home-ux-popovers.css?v=20260505-more-filters-popover-v1");
-
-@import url("../components/actions/favorite-action.css?v=20260511-action-favorite-ownership-v1");
-
-@import url("./home/filter-route.css?v=20260427-v26-filter-route");
-
-@import url("./search-results/results-density-preview-contract.css?v=20260427-v33-density-preview");
-@import url("./search-results/worker-preview-layout-v34.css?v=20260427-v34-workers-preview-grid");
-
-/* Home page dependencies
-   index.html must load only core/index.css, pages/app-shell.css and this file.
-   Keep home-specific ownership here so CSS order is visible in one place. */
-@import url("../components/before-after-workers-preview.css?v=20260429-index-recovery-comments");
-@import url("../components/cards/mobile-card-contract.css?v=20260630-home-more-grid-v1");
-@import url("../components/ui-surface-system.css?v=20260427-modal-alignment-v22");
-@import url("../core/responsive-foundation.css?v=20260510-mobile-width-contract-v1");
-@import url("../components/internal/topbar-standard.css?v=20260428-architecture");
-@import url("../components/cards/card-grid-contract.css?v=20260502-stage2-card-contract-v1");
-@import url("../components/cards/recommendation-card.css?v=20260428-index-recommendations-v3");
-@import url("../components/cards/ad-card.css?v=20260713-more-services-mobile-vertical-v1");
-@import url("../patterns/home-results-card.css?v=20260428-architecture");
-@import url("../components/overlays/overlay-contract.css?v=20260428-architecture");
-@import url("../components/forms-actions/form-action-contract.css?v=20260428-architecture");
-@import url("../core/responsive-runtime.css?v=20260428-architecture");
-@import url("../patterns/responsive-layout-guards.css?v=20260428-architecture");
-@import url("./home/mobile-layout.css?v=20260614-home-mobile-more-grid-v3");
-@import url("./home/mobile-interactions.css?v=20260428-architecture");
-@import url("./home/mobile-composition.css?v=20260614-home-mobile-more-grid-v3");
-@import url("../components/shell/page-container-contract.css?v=20260614-home-mobile-more-grid-v3");
-@import url("../components/cards/mobile-list-card-system.css?v=20260428-v1");
-@import url("../components/overlays/mobile-overlay-system.css?v=20260428-overlay-v1");
-@import url("../components/identity/avatar.css?v=20260429-avatar-circle-v1");
-@import url("../components/internal/filter-select-standard.css?v=20260429-global-header-avatar");
-@import url("../patterns/mobile-app-shell.css?v=20260701-mobile-location-contract-v1");
-@import url("../components/navigation/app-header.css?v=20260501-canonical-mobile-architecture");
-@import url("../components/navigation/search-bar.css?v=20260614-home-mobile-more-grid-v3");
-@import url("../components/shell/mobile-app-shell.css?v=20260701-mobile-location-contract-v1");
-@import url("../components/ui/doke-ui-system.css?v=20260613-shared-button-adoption-v2");
-@import url("../components/domain/doke-domain-cards.css?v=20260501-domain-cards-v1");
-@import url("../components/layout/doke-layout-system.css?v=20260501-layout-system-v1");
-@import url("../components/flows/doke-product-flows.css?v=20260501-product-flows-v1");
-@import url("../components/shell/desktop-shell.css?v=20260614-index-closure-v1");
-@import url("../components/shell/desktop-sidebar.css?v=20260501-desktop-contract-v1");
-@import url("../components/shell/desktop-topbar.css?v=20260501-desktop-contract-v1");
-@import url("../components/shell/desktop-search.css?v=20260501-desktop-contract-v1");
-@import url("../components/shell/responsive-boundary.css?v=20260501-responsive-boundary-v1");
-@import url("../components/shell/desktop-base-stability.css?v=20260501-desktop-base-stability-v1");
-@import url("../components/shell/mobile-base-stability.css?v=20260501-mobile-base-stability-v1");
-
-@import url("../components/search/search-filter-contract.css?v=20260502-stage3-search-filter-v1");
-@import url("../components/cards/publication-card.css?v=20260608-publication-final-authority-v1");
-@import url("../components/cards/worker-card.css?v=20260609-workers-mobile-v3");
-@import url("../patterns/horizontal-rail.css?v=20260614-index-closure-v1");
-@import url("../components/cards/service-card-home-hero-feed.css?v=20260706-home-hero-service-card-v1");
-@import url("../components/cards/search-results-ad-rail-card-contract.css?v=20260713-home-more-results-parity-v1");
-@import url("./home/mobile-hero-feed.css?v=20260707-more-services-single-column-v3");
-@import url("./home/footer.css?v=20260704-footer-viewport-contract-v1");
-@import url("./home/mobile-alignment.css?v=20260713-mobile-axis-single-column-v2");
-
-/*
-  Retired inline home runtime overrides — 2026-06-10 CSS Cleanup Stage 03.
-
-  This file is now a manifest only. The removed inline blocks contained accumulated
-  desktop/tablet/mobile/card/rail overrides with hundreds of cascade priority flags and
-  repeated "final" contracts. Keeping those rules here made the home page a late
-  cascade authority over layout, components and patterns, which violates the target
-  architecture:
-
-  core      = foundation
-  layout    = shell/header/rail/sidebar/breakpoints
-  components= reusable pieces such as cards/buttons/inputs/modals/tabs
-  patterns  = carousel/rail/grid/list/section-header composition
-  pages     = page-specific composition only
-
-  Future corrections must be moved to the responsible owner instead of being added
-  back here as another runtime override layer.
-*/
+   Do not add declarations here. Add imports to the matching submanifest and edit
+   visual rules in the actual owner documented in docs/VISUAL-AUTHORITY-MAP.md. */
+@import url("./home-runtime-page.css?v=20260715-control-elevation-scope-v1");
+@import url("./home-runtime-components.css?v=20260715-control-elevation-scope-v1");
+@import url("./home-runtime-shell.css?v=20260715-control-elevation-scope-v1");
+@import url("./home-runtime-feed.css?v=20260715-manifest-organization-lote6");

@@ -1,0 +1,191 @@
+/* Notificações — autoridade de hierarquia visual.
+ * Superfícies, controles planos, seleção e overlays seguem o contrato global.
+ */
+body.notifications-page-shell {
+  --notifications-control-bg: var(--doke-clean-input-bg, #f8fbfe);
+}
+
+/* Cards da lista são superfícies interativas. */
+body.notifications-page-shell .notification-card {
+  --card-border: 0;
+  --doke-card-border: transparent;
+  border: 0;
+  background: #fff;
+  box-shadow: var(--doke-surface-shadow);
+}
+
+body.notifications-page-shell .notification-card:hover {
+  border: 0;
+  box-shadow: var(--doke-surface-shadow-hover);
+  transform: translateY(-2px);
+}
+
+body.notifications-page-shell .notification-card.is-unread {
+  border: 0;
+  background: linear-gradient(180deg, #fff 0%, #f8fbff 100%);
+  box-shadow: var(--doke-surface-shadow);
+}
+
+body.notifications-page-shell .notification-card.is-selected {
+  border: 1px solid var(--doke-selection-border-active);
+  background: var(--doke-selection-bg-active);
+  box-shadow: var(--doke-selection-ring);
+}
+
+/* Painéis e estados são superfícies estáticas: sem hover ou deslocamento. */
+body.notifications-page-shell :is(
+  .notifications-settings-panel,
+  .doke-mobile-action-panel,
+  .notifications-empty,
+  .notifications-hydration-state__surface
+) {
+  border: 0;
+  background: #fff;
+  box-shadow: var(--doke-surface-shadow);
+  transform: none;
+}
+
+body.notifications-page-shell :is(
+  .notifications-settings-panel,
+  .doke-mobile-action-panel,
+  .notifications-empty,
+  .notifications-hydration-state__surface
+):hover {
+  box-shadow: var(--doke-surface-shadow);
+  transform: none;
+}
+
+body.notifications-page-shell :is(
+  .notifications-settings-panel__head,
+  .notifications-settings-panel__footer,
+  .notifications-page-header--auxiliary,
+  .notifications-list
+) {
+  border: 0;
+  box-shadow: none;
+}
+
+/* Opções internas permanecem na mesma superfície; apenas divisores funcionais. */
+body.notifications-page-shell .notifications-settings-panel__options label,
+body.notifications-page-shell .notifications-settings-panel__muted {
+  border: 0;
+  background: transparent;
+  box-shadow: inset 0 -1px 0 rgba(24, 75, 118, 0.055);
+}
+
+body.notifications-page-shell .notifications-settings-panel__options label:last-child {
+  box-shadow: none;
+}
+
+/* Select standalone conserva elevação de controle. */
+body.notifications-page-shell .notifications-settings-panel :is(.doke-select, select) {
+  border: 0;
+  background-color: var(--notifications-control-bg);
+  box-shadow: var(--doke-white-control-shadow);
+}
+
+body.notifications-page-shell .notifications-settings-panel :is(.doke-select, select):hover {
+  border: 0;
+  background-color: #fff;
+  box-shadow: var(--doke-white-control-shadow-hover);
+}
+
+body.notifications-page-shell .notifications-settings-panel :is(.doke-select, select):focus-visible {
+  border: 0;
+  outline: 0;
+  background-color: #fff;
+  box-shadow: var(--doke-white-control-shadow-focus);
+}
+
+/* Ferramentas, filtros, chips e ações internas são controles planos. */
+body.notifications-page-shell :is(
+  .notification-card__context-button,
+  .notifications-filter-button,
+  .notifications-mark-all-button,
+  .doke-mobile-selection-action,
+  .doke-mobile-filter-pill,
+  .doke-filter-pill,
+  .orders-active-filter-clear,
+  .page-header-context__action,
+  .notification-card__inline-actions :is(a, button)
+) {
+  border: 0;
+  box-shadow: none;
+  transform: none;
+}
+
+body.notifications-page-shell :is(
+  .notification-card__context-button,
+  .notifications-filter-button,
+  .notifications-mark-all-button,
+  .doke-mobile-selection-action,
+  .doke-mobile-filter-pill,
+  .doke-filter-pill,
+  .orders-active-filter-clear,
+  .page-header-context__action,
+  .notification-card__inline-actions :is(a, button)
+):not(:disabled):hover {
+  border: 0;
+  background: var(--doke-flat-hover-bg);
+  box-shadow: none;
+  transform: none;
+}
+
+body.notifications-page-shell :is(
+  .doke-mobile-filter-pill,
+  .doke-filter-pill,
+  .doke-mobile-selection-action
+):is(.is-active, [aria-pressed="true"]) {
+  border: 0;
+  background: var(--doke-flat-active-bg);
+  color: var(--color-primary, #2a5f90);
+  box-shadow: none;
+  transform: none;
+}
+
+body.notifications-page-shell :is(
+  .notification-card__context-button,
+  .notifications-filter-button,
+  .notifications-mark-all-button,
+  .doke-mobile-selection-action,
+  .doke-mobile-filter-pill,
+  .doke-filter-pill,
+  .orders-active-filter-clear,
+  .page-header-context__action
+):focus-visible {
+  border: 0;
+  outline: 0;
+  box-shadow: var(--doke-white-control-shadow-focus);
+}
+
+body.notifications-page-shell .notification-card__context-button--danger {
+  border: 0;
+  background: #fff7f7;
+  color: #a73948;
+  box-shadow: none;
+}
+
+@media (max-width: 760px) {
+  body.notifications-page-shell .notification-card__inline-actions button {
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.notifications-page-shell :is(
+    .notification-card,
+    .notification-card__context-button,
+    .notifications-filter-button,
+    .notifications-mark-all-button,
+    .doke-mobile-selection-action,
+    .doke-mobile-filter-pill,
+    .doke-filter-pill,
+    .orders-active-filter-clear,
+    .page-header-context__action
+  ) {
+    transform: none;
+    transition: none;
+  }
+}

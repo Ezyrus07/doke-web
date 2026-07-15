@@ -36,11 +36,11 @@
   gap: var(--doke-btn-gap);
   min-height: var(--doke-btn-height-md);
   padding: 0 var(--doke-btn-padding-x);
-  border: var(--btn-border);
-  border-color: transparent;
+  border: 0;
   border-radius: var(--doke-btn-radius);
   background: var(--btn-bg);
   color: var(--btn-text);
+  box-shadow: var(--doke-flat-control-shadow);
   font: inherit;
   font-weight: var(--control-font-weight);
   line-height: var(--control-line-height);
@@ -60,7 +60,7 @@
 
 :is(.doke-btn, .doke-button):focus-visible {
   outline: 0;
-  box-shadow: var(--doke-interaction-focus-ring, var(--shadow-focus, 0 0 0 3px rgba(31, 101, 173, 0.16)));
+  box-shadow: var(--doke-white-control-shadow-focus);
 }
 
 :is(.doke-btn, .doke-button):is([disabled], [aria-disabled="true"]) {
@@ -79,29 +79,30 @@
 
 :is(.doke-btn--secondary, .doke-button--secondary) {
   background: var(--doke-soft-button-bg-secondary);
-  border-color: var(--doke-soft-button-border-secondary);
+  border-color: transparent;
   color: var(--color-secondary-strong);
-  box-shadow: none;
+  box-shadow: var(--btn-shadow);
 }
 
 :is(.doke-btn--ghost, .doke-button--ghost) {
-  background: var(--control-bg-same-surface);
-  border-color: var(--control-outline-same-surface);
+  background: var(--doke-white-control-bg);
+  border-color: transparent;
   color: var(--btn-text);
-  box-shadow: none;
+  box-shadow: var(--doke-white-control-shadow);
 }
 
 :is(.doke-btn--soft, .doke-button--soft) {
   background: var(--doke-soft-button-bg-primary);
-  border-color: var(--doke-soft-button-border-primary);
+  border-color: transparent;
   color: var(--color-primary-strong);
-  box-shadow: none;
+  box-shadow: var(--btn-shadow);
 }
 
 :is(.doke-btn--danger, .doke-button--danger) {
   background: var(--color-danger-soft);
-  border-color: var(--doke-soft-button-border-danger);
+  border-color: transparent;
   color: var(--color-danger-strong);
+  box-shadow: var(--btn-shadow);
 }
 
 :is(.doke-btn--sm, .doke-button--sm) {
@@ -133,10 +134,11 @@
   flex: 0 0 auto;
   width: var(--icon-button-size);
   height: var(--icon-button-size);
-  border: var(--btn-border);
+  border: 0;
   border-radius: var(--btn-radius-sm);
-  background: var(--control-bg-same-surface);
+  background: transparent;
   color: var(--btn-text);
+  box-shadow: var(--doke-flat-control-shadow);
   cursor: pointer;
   transition:
     transform 160ms var(--doke-motion-ease-out),
@@ -152,10 +154,14 @@
 }
 
 @media (hover: hover) and (pointer: fine) {
-  :is(.doke-btn, .doke-button):where(:hover),
-  :where(.doke-icon-btn, .doke-action-button):where(:hover) {
+  :is(.doke-btn--ghost, .doke-button--ghost):where(:hover) {
     transform: var(--doke-interaction-lift-control);
-    box-shadow: var(--doke-interaction-shadow-control);
+    box-shadow: var(--doke-white-control-shadow-hover);
+  }
+
+  :is(.doke-btn, .doke-button):not(.doke-btn--ghost):not(.doke-button--ghost):where(:hover),
+  :where(.doke-icon-btn, .doke-action-button):where(:hover) {
+    transform: none;
   }
 }
 
@@ -166,7 +172,7 @@
 
 :where(.doke-icon-btn, .doke-action-button):where(:focus-visible) {
   outline: 0;
-  box-shadow: var(--doke-interaction-focus-ring, var(--shadow-focus, 0 0 0 3px rgba(31, 101, 173, 0.16)));
+  box-shadow: var(--doke-white-control-shadow-focus);
 }
 
 :where(.doke-btn, .doke-button, .doke-icon-btn, .doke-action-button) > :is(span, strong) {
@@ -185,7 +191,7 @@
 }
 
 :where(.doke-icon-btn--soft, .doke-action-button--soft) {
-  border-color: var(--doke-soft-button-border-primary);
+  border-color: transparent;
   background: var(--doke-soft-button-bg-primary);
   color: var(--color-primary-strong);
   box-shadow: none;
@@ -193,12 +199,12 @@
 
 :is(.doke-btn--soft, .doke-button--soft):where(:hover, :focus-visible, [aria-expanded="true"]),
 :where(.doke-icon-btn--soft, .doke-action-button--soft):where(:hover, :focus-visible, [aria-expanded="true"]) {
-  border-color: var(--doke-soft-button-border-primary-hover);
+  border-color: transparent;
   background: var(--doke-soft-button-bg-primary-hover);
 }
 
 :is(.doke-btn--secondary, .doke-button--secondary):where(:hover, :focus-visible, [aria-expanded="true"]) {
-  border-color: var(--doke-soft-button-border-secondary-hover);
+  border-color: transparent;
   background: var(--doke-soft-button-bg-secondary-hover);
 }
 
@@ -228,6 +234,19 @@
   border-color: transparent;
   background: transparent;
   box-shadow: none;
+}
+
+
+:where(.doke-icon-btn--elevated, .doke-action-button--elevated) {
+  background: var(--doke-white-control-bg);
+  box-shadow: var(--doke-white-control-shadow);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  :where(.doke-icon-btn--elevated, .doke-action-button--elevated):hover {
+    transform: var(--doke-interaction-lift-control);
+    box-shadow: var(--doke-white-control-shadow-hover);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -266,8 +285,7 @@
   min-width: calc(var(--icon-button-size) + 12px);
   min-height: var(--icon-button-size);
   padding-inline: 12px;
-  border: var(--btn-border);
-  border-color: var(--border-color-soft, var(--doke-card-border));
+  border: 0;
   border-radius: var(--radius-pill);
   background: rgba(255, 255, 255, 0.96);
   color: var(--color-text-strong);
@@ -276,7 +294,7 @@
 
 :where(.doke-more-button):where(:hover, :focus-visible, [aria-expanded="true"]) {
   transform: var(--doke-interaction-lift-control);
-  border-color: var(--doke-interaction-border);
+  border-color: transparent;
   background: var(--doke-interaction-bg);
   color: var(--doke-interaction-text);
   box-shadow: var(--doke-interaction-shadow-control);
@@ -300,23 +318,28 @@
 }
 
 
-/* Soft-control outline policy: tinted/low-contrast buttons keep a subtle outline.
-   Flat controls remain borderless because they intentionally have no filled surface. */
+/* Soft and flat controls remain borderless; surface and elevation carry hierarchy. */
 :where(.doke-icon-btn--flat, .doke-action-button--flat),
 :where(.doke-icon-btn--flat, .doke-action-button--flat):where(:hover, :focus-visible, [aria-expanded="true"]) {
   border-color: transparent;
 }
 
-:where(.doke-icon-btn--soft, .doke-action-button--soft) {
-  border-color: var(--doke-soft-button-border-primary);
-}
-
+:where(.doke-icon-btn--soft, .doke-action-button--soft),
 :where(.doke-icon-btn--soft, .doke-action-button--soft):where(:hover, :focus-visible, [aria-expanded="true"]) {
-  border-color: var(--doke-soft-button-border-primary-hover);
+  border-color: transparent;
 }
 
-/* Filled CTAs stay borderless; soft buttons use their own subtle outline above. */
+/* Filled CTAs stay borderless and preserve their semantic elevation. */
 :is(.doke-btn--primary, .doke-button--primary, .doke-btn--success, .doke-button--success),
 :is(.doke-btn--primary, .doke-button--primary, .doke-btn--success, .doke-button--success):where(:hover, :focus-visible, :active) {
   border-color: transparent;
+}
+
+:is(.doke-btn--primary, .doke-button--primary, .doke-btn--success, .doke-button--success):where(:hover) {
+  box-shadow: var(--shadow-action-primary);
+}
+@media (prefers-reduced-motion: reduce) {
+  body.doke-app-shell-page :is(.doke-btn--ghost, .doke-icon-btn, .doke-tab-pill, .doke-chip) {
+    transform: none;
+  }
 }

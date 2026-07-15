@@ -1,0 +1,201 @@
+/* Pedidos — visual hierarchy authority.
+ * One elevation per layer: operational modules, standalone controls, flat
+ * controls, semantic selections and overlays are deliberately separated.
+ */
+
+body.orders-page-shell {
+  --orders-surface-bg: #fff;
+  --orders-muted-bg: #f7fafd;
+  --orders-muted-bg-hover: #f1f7fc;
+}
+
+/* Structural surfaces: static modules do not react on hover. */
+body.orders-page-shell :is(
+  .orders-page-header__controls:not([hidden]),
+  .orders-planner,
+  .orders-command-summary__card,
+  .orders-command-insight,
+  .orders-empty__card,
+  .orders-sidepanel,
+  .orders-card-skeleton
+) {
+  border: 0;
+  background: var(--orders-surface-bg);
+  box-shadow: var(--doke-surface-shadow);
+}
+
+/* Clickable order cards are the only local surfaces that elevate. */
+body.orders-page-shell .orders-list .order-card {
+  border: 0;
+  background: var(--orders-surface-bg);
+  box-shadow: var(--doke-surface-shadow);
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+body.orders-page-shell .orders-list .order-card:is(:hover, :focus-within) {
+  transform: translateY(-2px);
+  box-shadow: var(--doke-surface-shadow-hover);
+}
+
+/* Nested structural regions stay flat inside their parent surface. */
+body.orders-page-shell :is(
+  .orders-command-center,
+  .orders-command-summary,
+  .orders-command-insights,
+  .orders-planner__calendar,
+  .orders-planner__card,
+  .orders-planner__day,
+  .orders-filter-panel,
+  .orders-selection-panel,
+  .orders-sidepanel__section,
+  .orders-list .order-card__body,
+  .orders-list .order-card__actions,
+  .orders-list .order-card__support-actions,
+  .order-card__progress-summary,
+  .order-card__meta,
+  .orders-chat-demo,
+  .orders-sidepanel__body
+) {
+  border: 0;
+  box-shadow: none;
+}
+
+body.orders-page-shell :is(.order-card__next-action, .orders-planner__empty) {
+  border: 0;
+  background: var(--orders-muted-bg);
+  box-shadow: none;
+}
+
+/* Standalone controls own the control elevation. */
+body.orders-page-shell :is(
+  .orders-header-search,
+  .orders-page-header__search,
+  .orders-planner__month-popover,
+  .orders-planner__mobile-summary,
+  .orders-empty__button,
+  .order-card__button--secondary,
+  .order-card__next-action-button
+) {
+  border: 0;
+  box-shadow: var(--doke-white-control-shadow);
+}
+
+body.orders-page-shell :is(
+  .orders-empty__button,
+  .order-card__button--secondary,
+  .order-card__next-action-button
+):not(:disabled):hover {
+  transform: translateY(-1px);
+  box-shadow: var(--doke-white-control-shadow-hover);
+}
+
+body.orders-page-shell :is(
+  .orders-header-search,
+  .orders-page-header__search,
+  .orders-empty__button,
+  .order-card__button--secondary,
+  .order-card__next-action-button
+):focus-visible {
+  outline: 0;
+  box-shadow: var(--doke-white-control-shadow-focus);
+}
+
+/* Flat controls: navigation, filters, chips, icons and in-card actions. */
+body.orders-page-shell :is(
+  .orders-planner__month-nav,
+  .orders-active-filter-chip,
+  .orders-active-filter-clear,
+  .orders-filter-item,
+  .doke-mobile-panel-button,
+  .doke-mobile-selection-action,
+  .orders-list .order-card__support-action,
+  .orders-list .order-card__support-more,
+  .orders-list .order-card__smart-badge,
+  .orders-empty__badge,
+  .orders-kpi,
+  .orders-empty-state__eyebrow
+) {
+  border: 0;
+  box-shadow: none;
+  transform: none;
+}
+
+body.orders-page-shell :is(
+  .orders-planner__month-nav,
+  .orders-active-filter-clear,
+  .orders-filter-item,
+  .doke-mobile-panel-button,
+  .doke-mobile-selection-action,
+  .orders-list .order-card__support-action,
+  .orders-list .order-card__support-more
+):not(:disabled):hover {
+  background: var(--doke-flat-hover-bg);
+  box-shadow: none;
+  transform: none;
+}
+
+body.orders-page-shell :is(
+  .orders-planner__month-nav,
+  .orders-active-filter-clear,
+  .orders-filter-item,
+  .doke-mobile-panel-button,
+  .doke-mobile-selection-action,
+  .orders-list .order-card__support-action,
+  .orders-list .order-card__support-more
+):focus-visible {
+  outline: 0;
+  box-shadow: var(--doke-white-control-shadow-focus);
+}
+
+/* Calendar events are selectable state objects, not elevated controls. */
+body.orders-page-shell .orders-planner__event {
+  border: var(--doke-selection-border);
+  box-shadow: none;
+}
+
+body.orders-page-shell .orders-planner__event:is(:hover, :focus-visible) {
+  border-color: var(--doke-selection-border-hover);
+  background: var(--doke-flat-hover-bg);
+  box-shadow: none;
+}
+
+body.orders-page-shell .orders-planner__event:is(.is-selected, [aria-selected="true"]) {
+  border-color: var(--doke-selection-border-active);
+  background: var(--doke-selection-bg-active);
+  box-shadow: var(--doke-selection-ring);
+}
+
+body.orders-page-shell .orders-sidepanel__header {
+  border-bottom: 0;
+  box-shadow: 0 8px 20px rgba(24, 75, 118, 0.035);
+}
+
+body.orders-page-shell :is(
+  .orders-command-summary__card h2,
+  .orders-page-header__hero-name,
+  .orders-sidepanel__header h2
+) {
+  color: var(--doke-color-primary, #2a5f90);
+}
+
+@media (max-width: 760px) {
+  body.orders-page-shell :is(
+    .orders-planner,
+    .orders-page-header__controls:not([hidden]),
+    .orders-sidepanel
+  ) {
+    box-shadow: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.orders-page-shell .orders-list .order-card,
+  body.orders-page-shell :is(
+    .orders-empty__button,
+    .order-card__button--secondary,
+    .order-card__next-action-button
+  ) {
+    transition: none;
+    transform: none;
+  }
+}
