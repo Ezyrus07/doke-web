@@ -155,6 +155,57 @@
   --control-bg-soft-danger: rgba(220, 38, 38, 0.09);
   --control-bg-same-surface: rgba(255, 255, 255, 0.94);
 
+
+  /* Semantic state surfaces ---------------------------------------------
+     Colors communicate feedback; geometry and spacing remain component-owned.
+     Use muted/emphasis variants only when the surrounding surface requires
+     additional contrast. Borders remain reserved for semantic state. */
+  --doke-state-info-bg: rgba(42, 95, 144, 0.08);
+  --doke-state-info-bg-muted: rgba(42, 95, 144, 0.06);
+  --doke-state-info-bg-strong: rgba(42, 95, 144, 0.10);
+  --doke-state-info-border: rgba(42, 95, 144, 0.14);
+  --doke-state-info-border-neutral: rgba(24, 75, 118, 0.14);
+  --doke-state-info-border-soft: rgba(207, 222, 239, 0.92);
+  --doke-state-info-text: var(--color-primary);
+  --doke-state-info-text-strong: var(--color-primary-strong);
+
+  --doke-state-success-bg: #eefaf6;
+  --doke-state-success-bg-muted: rgba(17, 124, 104, 0.07);
+  --doke-state-success-bg-emphasis: rgba(236, 253, 245, 0.78);
+  --doke-state-success-bg-interactive: rgba(35, 143, 127, 0.10);
+  --doke-state-success-bg-status: #edf9f5;
+  --doke-state-success-border: rgba(17, 124, 104, 0.20);
+  --doke-state-success-border-soft: rgba(191, 230, 220, 0.92);
+  --doke-state-success-border-strong: rgba(17, 124, 104, 0.35);
+  --doke-state-success-border-emphasis: rgba(13, 143, 119, 0.32);
+  --doke-state-success-border-status: rgba(20, 127, 112, 0.18);
+  --doke-state-success-text: var(--color-secondary);
+  --doke-state-success-text-strong: var(--color-secondary-strong);
+  --doke-state-success-text-interactive: #087466;
+  --doke-state-success-text-status: #147f70;
+  --doke-state-success-icon: #118878;
+  --doke-state-success-ring: 0 0 0 3px rgba(17, 124, 104, 0.08);
+
+  --doke-state-warning-bg: #fff7e8;
+  --doke-state-warning-border: rgba(245, 158, 11, 0.22);
+  --doke-state-warning-text: #865a00;
+  --doke-state-warning-shadow: 0 3px 10px rgba(134, 90, 0, 0.055);
+
+  --doke-state-danger-bg: #fff2f3;
+  --doke-state-danger-bg-status: #fff2f2;
+  --doke-state-danger-bg-muted: #fff7f7;
+  --doke-state-danger-bg-icon: rgba(198, 64, 64, 0.11);
+  --doke-state-danger-border: rgba(200, 63, 75, 0.22);
+  --doke-state-danger-border-soft: rgba(185, 63, 63, 0.16);
+  --doke-state-danger-border-strong: rgba(198, 64, 64, 0.30);
+  --doke-state-danger-border-form: #f0c6cb;
+  --doke-state-danger-text: var(--color-danger-strong);
+  --doke-state-danger-text-form: #c83f4b;
+  --doke-state-danger-text-status: #a93636;
+  --doke-state-danger-text-muted: #a73948;
+  --doke-state-danger-text-icon: #a32f2f;
+  --doke-state-danger-text-expired: #b33b3b;
+
   /* Legacy/color aliases kept mapped to the standard border system. */
   --color-border: var(--border-color);
   --color-border-soft: var(--border-color-soft);
@@ -244,6 +295,16 @@
   --shadow-action-primary: 0 10px 22px rgba(27, 75, 121, 0.18);
   --shadow-action-secondary: 0 8px 18px rgba(24, 168, 141, 0.16);
   --shadow-action-secondary-strong: 0 10px 20px rgba(27, 138, 120, 0.18);
+
+  /* Semantic action/status elevation. Keep component-specific geometry outside these tokens. */
+  --doke-shadow-action-primary-strong: 0 16px 34px rgba(42, 95, 144, 0.20);
+  --doke-shadow-action-success-strong: 0 16px 34px rgba(41, 143, 127, 0.18);
+  --doke-shadow-action-success-card: 0 16px 28px rgba(7, 139, 127, 0.16);
+  --doke-shadow-action-success-active: 0 14px 28px rgba(41, 143, 127, 0.20);
+  --doke-shadow-status-primary: 0 12px 24px rgba(42, 95, 144, 0.20);
+  --doke-shadow-status-success-soft: 0 3px 10px rgba(13, 143, 119, 0.05);
+  --doke-shadow-status-warning-soft: 0 3px 10px rgba(215, 154, 50, 0.08);
+  --doke-shadow-status-danger-soft: 0 3px 10px rgba(198, 64, 64, 0.08);
   --doke-elevation-control: var(--shadow-control-soft);
   --doke-elevation-control-hover: var(--shadow-control-hover);
   --doke-elevation-surface: var(--shadow-surface);
@@ -413,14 +474,37 @@
   --radius-exact-34: 34px;
 
   /* Semantic radius aliases. Components should prefer these over literals. */
+  --radius-control-sm: var(--radius-xs);
   --radius-control: var(--radius-compact);
+  --radius-control-comfortable: var(--radius-sm);
   --radius-control-lg: var(--radius-base);
+  --radius-action-item: var(--radius-exact-11);
   --radius-card-sm: var(--radius-sm);
   --radius-card: var(--radius-base);
   --radius-card-lg: var(--radius-surface);
+  --radius-panel: var(--radius-card-lg);
+  --radius-panel-compact: var(--radius-md);
+  --radius-popover: var(--radius-card-sm);
   --radius-sheet: var(--radius-surface);
   --radius-modal: var(--radius-lg);
   --radius-avatar: var(--radius-full);
+
+  /* Public Doke radius families: stable knobs for site-wide visual changes. */
+  --doke-radius-control-sm: var(--radius-control-sm);
+  --doke-radius-control: var(--radius-control);
+  --doke-radius-control-comfortable: var(--radius-control-comfortable);
+  --doke-radius-control-lg: var(--radius-control-lg);
+  --doke-radius-action-item: var(--radius-action-item);
+  --doke-radius-card-sm: var(--radius-card-sm);
+  --doke-radius-card: var(--radius-card);
+  --doke-radius-card-lg: var(--radius-card-lg);
+  --doke-radius-panel: var(--radius-panel);
+  --doke-radius-panel-compact: var(--radius-panel-compact);
+  --doke-radius-popover: var(--radius-popover);
+  --doke-radius-sheet: var(--radius-sheet);
+  --doke-radius-modal: var(--radius-modal);
+  --doke-radius-avatar: var(--radius-avatar);
+  --doke-radius-pill: var(--radius-pill);
 
   /* Spacing ------------------------------------------------------------- */
   --space-0: 0px;

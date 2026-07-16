@@ -27,6 +27,25 @@ Cards devem separar:
 
 Cards de anúncio, worker, publicação, pedido, avaliação e profissional devem reaproveitar contratos existentes antes de criar variações.
 
+## Famílias de raio
+
+Raios de produção devem consumir as famílias públicas declaradas em `assets/css/core/tokens.css`:
+
+- `--doke-radius-control-sm`, `--doke-radius-control`, `--doke-radius-control-comfortable` e `--doke-radius-control-lg` para controles;
+- `--doke-radius-action-item` para itens compactos de menus e listas de ação;
+- `--doke-radius-card-sm`, `--doke-radius-card` e `--doke-radius-card-lg` para cards;
+- `--doke-radius-panel` e `--doke-radius-panel-compact` para painéis;
+- `--doke-radius-popover`, `--doke-radius-sheet` e `--doke-radius-modal` para overlays;
+- `--doke-radius-avatar` e `--doke-radius-pill` para círculos e pílulas.
+
+CSS de componente não deve declarar raio literal quando uma dessas famílias representa a função do elemento. Tokens `--radius-exact-*` são apenas uma ponte para geometrias históricas que ainda precisam preservar exatamente o baseline; eles não devem ser usados em componentes novos.
+
+Validação:
+
+```bash
+npm run audit:radius-family-contract
+```
+
 ## Estados visuais
 
 Estados recomendados:
