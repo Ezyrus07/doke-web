@@ -6,7 +6,8 @@ const path = require('path');
 
 const root = process.cwd();
 const fail = [];
-const version = '20260702-sidebar-quick-alert-flow-v1';
+const jsVersion = '20260702-sidebar-quick-alert-flow-v1';
+const cssVersion = '20260716-semantic-state-contract-v1';
 const componentPath = 'assets/js/components/operational-event-toast.js';
 const cssPath = 'assets/css/components/feedback/notification-event-toast.css';
 const appPath = 'assets/js/core/app.js';
@@ -65,8 +66,8 @@ if (exists(cssPath)) {
 }
 
 const coreComponents = read('assets/css/core/components.css');
-if (!coreComponents.includes(`notification-event-toast.css?v=${version}`)) {
-  fail.push(`assets/css/core/components.css: notification-event-toast.css deve usar v=${version}.`);
+if (!coreComponents.includes(`notification-event-toast.css?v=${cssVersion}`)) {
+  fail.push(`assets/css/core/components.css: notification-event-toast.css deve usar v=${cssVersion}.`);
 }
 
 const htmlFiles = listRootHtml();
@@ -74,8 +75,8 @@ htmlFiles.forEach((file) => {
   const html = read(file);
   if (!html.includes('assets/js/core/app.js')) return;
   const appIndex = html.indexOf('assets/js/core/app.js');
-  const toastIndex = html.indexOf(`assets/js/components/operational-event-toast.js?v=${version}`);
-  if (toastIndex === -1) fail.push(`${file}: deve carregar ${componentPath} com v=${version}.`);
+  const toastIndex = html.indexOf(`assets/js/components/operational-event-toast.js?v=${jsVersion}`);
+  if (toastIndex === -1) fail.push(`${file}: deve carregar ${componentPath} com v=${jsVersion}.`);
   if (toastIndex !== -1 && toastIndex < appIndex) fail.push(`${file}: operational-event-toast.js deve carregar depois de app.js.`);
 });
 
