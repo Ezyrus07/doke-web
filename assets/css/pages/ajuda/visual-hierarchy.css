@@ -1,0 +1,106 @@
+/* Ajuda — visual hierarchy authority.
+ * Classifies structural surfaces, standalone controls, flat controls and overlays.
+ * Component anatomy remains owned by the shared design system.
+ */
+
+body[data-page="ajuda"] {
+  --help-surface-shadow: var(--doke-surface-shadow);
+  --help-surface-shadow-hover: var(--doke-surface-shadow-hover);
+  --help-control-shadow: var(--doke-white-control-shadow);
+  --help-control-shadow-hover: var(--doke-white-control-shadow-hover);
+  --help-overlay-shadow: var(--doke-overlay-shadow);
+}
+
+/* Structural surfaces: static unless the whole surface is actionable. */
+body[data-page="ajuda"] :where(
+  .help-faq,
+  .help-support-card,
+  .help-status-summary,
+  .help-hydration-skeleton__faq,
+  .help-hydration-skeleton__side,
+  .help-hydration-skeleton__topics
+) {
+  border: 0;
+  box-shadow: var(--help-surface-shadow);
+}
+
+body[data-page="ajuda"] :where(
+  .help-faq,
+  .help-support-card,
+  .help-status-summary
+):hover {
+  box-shadow: var(--help-surface-shadow);
+  transform: none;
+}
+
+/* Topic cards are the only content surfaces that elevate on hover. */
+body[data-page="ajuda"] .help-topic-card {
+  border: 0;
+  box-shadow: var(--help-surface-shadow);
+  transition: transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+}
+
+body[data-page="ajuda"] .help-topic-card:hover {
+  box-shadow: var(--help-surface-shadow-hover);
+  transform: translateY(-2px);
+}
+
+/* Search: one elevation on the outer composed control only. */
+body[data-page="ajuda"] .help-center-search {
+  border: 0;
+  box-shadow: var(--help-control-shadow);
+}
+
+body[data-page="ajuda"] .help-center-search:hover {
+  box-shadow: var(--help-control-shadow-hover);
+}
+
+body[data-page="ajuda"] .help-center-search:focus-within {
+  box-shadow: var(--doke-white-control-shadow-focus);
+}
+
+body[data-page="ajuda"] .help-center-search :where(
+  .doke-search-panel__field,
+  .doke-search-panel__input,
+  .doke-search-panel__button
+) {
+  border: 0;
+  box-shadow: none;
+}
+
+/* Tabs, disclosure rows and internal actions remain flat. */
+body[data-page="ajuda"] :where(
+  .help-tab,
+  .help-faq__item,
+  .help-status-details summary,
+  .help-topic-card__arrow,
+  .doke-close-button
+) {
+  box-shadow: none;
+  transform: none;
+}
+
+body[data-page="ajuda"] :where(.help-tab, .help-faq__item):hover {
+  background: var(--doke-flat-hover-bg);
+}
+
+body[data-page="ajuda"] .help-tab.is-active {
+  background: var(--doke-flat-active-bg);
+  color: var(--doke-flat-active-color, var(--color-primary));
+}
+
+/* Modal is the only overlay layer on this page. */
+body[data-page="ajuda"] .doke-modal-surface {
+  border: 0;
+  box-shadow: var(--help-overlay-shadow);
+}
+
+/* Internal icons and status metadata do not create nested elevation. */
+body[data-page="ajuda"] :where(
+  .content-surface-icon,
+  .help-status-details li,
+  .help-status-summary__heading,
+  .help-support-card__actions
+) {
+  box-shadow: none;
+}

@@ -79,19 +79,19 @@ assertContains('assets/css/components/ui-surface/buttons-close.css', [
 
 const canonicalAliases = [
   ['assets/css/pages/admin.css', '--admin-shadow-control: var(--doke-white-control-shadow);'],
-  ['assets/css/pages/anunciar-servico.css', '--post-service-micro-shadow: var(--doke-white-control-shadow);'],
-  ['assets/css/pages/avaliacao-profissional.css', '--review-micro-shadow: var(--doke-white-control-shadow);'],
+  ['assets/css/pages/anunciar-servico/visual-hierarchy.css', '--post-service-control-shadow: var(--doke-white-control-shadow);'],
+  ['assets/css/pages/avaliacao-profissional/visual-hierarchy.css', 'box-shadow: var(--doke-white-control-shadow);'],
   ['assets/css/pages/carteira/visual-hierarchy.css', '--wallet-control-shadow: var(--doke-white-control-shadow);'],
   ['assets/css/pages/comunidade/visual-hierarchy.css', 'box-shadow: var(--doke-clean-control-shadow);'],
   ['assets/css/pages/comunidade-interna-visual-hierarchy.css', '--community-control-shadow: var(--doke-clean-control-shadow);'],
   ['assets/css/pages/configuracoes/visual-hierarchy.css', 'box-shadow: var(--doke-clean-control-shadow);'],
   ['assets/css/pages/profile/visual-hierarchy.css', '--profile-control-shadow: var(--doke-control-shadow, var(--doke-clean-control-shadow));'],
   ['assets/css/pages/notificacoes/visual-hierarchy.css', 'box-shadow: var(--doke-white-control-shadow);'],
-  ['assets/css/pages/orcamento.css', '--budget-control-shadow: var(--doke-white-control-shadow);'],
-  ['assets/css/pages/tornar-profissional.css', '--become-pro-micro-shadow: var(--doke-white-control-shadow);'],
-  ['assets/css/pages/pagamento-profissional-clean-surfaces.css', '--payment-clean-control-shadow: var(--doke-white-control-shadow);'],
+  ['assets/css/pages/orcamento/visual-hierarchy.css', '--budget-control-shadow: var(--doke-white-control-shadow);'],
+  ['assets/css/pages/tornar-profissional/visual-hierarchy.css', '--become-pro-control-shadow: var(--doke-white-control-shadow);'],
+  ['assets/css/pages/pagamento-profissional/visual-hierarchy.css', 'box-shadow: var(--doke-white-control-shadow);'],
   ['assets/css/pages/verificacao-profissional.css', '--verification-micro-shadow: var(--doke-white-control-shadow);'],
-  ['assets/css/pages/results/clean-surfaces.css', '--results-micro-shadow: var(--doke-white-control-shadow);'],
+  ['assets/css/pages/results/visual-hierarchy.css', '--results-micro-shadow: var(--doke-white-control-shadow);'],
 ];
 for (const [file, snippet] of canonicalAliases) assertContains(file, [snippet]);
 

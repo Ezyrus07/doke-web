@@ -1,0 +1,86 @@
+/* Admin — visual hierarchy authority. */
+body[data-page="admin"] {
+  --admin-shadow-surface: var(--doke-surface-shadow);
+  --admin-shadow-surface-hover: var(--doke-surface-shadow-hover);
+  --admin-shadow-control: var(--doke-white-control-shadow);
+  --admin-shadow-control-hover: var(--doke-white-control-shadow-hover);
+  --admin-shadow-warning: none;
+}
+
+/* Dashboard metrics are static information, not clickable cards. */
+body[data-page="admin"] .admin-card {
+  border: 0;
+  box-shadow: none;
+  background: var(--admin-surface-muted);
+  transform: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  body[data-page="admin"] .admin-card:hover {
+    box-shadow: none;
+    transform: none;
+  }
+}
+
+body[data-page="admin"] :is(.admin-panel, .admin-locked, .admin-lifecycle-error) {
+  border: 0;
+  box-shadow: var(--admin-shadow-surface);
+}
+
+/* Queue rows are clickable and may elevate as a complete unit. */
+body[data-page="admin"] .admin-list-item {
+  border: 0;
+  box-shadow: var(--admin-shadow-control);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  body[data-page="admin"] .admin-list-item:hover {
+    box-shadow: var(--admin-shadow-control-hover);
+    transform: translateY(-1px);
+  }
+}
+
+body[data-page="admin"] :is(
+  .admin-status,
+  .admin-panel__count,
+  .admin-list-item__actions .doke-btn,
+  .admin-verification-review__checks span
+) {
+  box-shadow: none;
+}
+
+body[data-page="admin"] :is(
+  .admin-verification-details,
+  .admin-verification-review__field,
+  .admin-verification-review__section,
+  .admin-empty,
+  .admin-table-wrap
+) {
+  border: 0;
+  box-shadow: none;
+}
+
+body[data-page="admin"] :is(.admin-verification-details, .admin-verification-review__field, .admin-empty) {
+  background: var(--admin-surface-muted);
+}
+
+body[data-page="admin"] .admin-verification-evidence {
+  border: 0;
+  box-shadow: var(--admin-shadow-control);
+}
+
+body[data-page="admin"] :is(.admin-verification-evidence__image, .admin-verification-evidence__pdf) {
+  border: 0;
+  box-shadow: none;
+}
+
+body[data-page="admin"] .admin-verification-review__notice {
+  border: 0;
+  box-shadow: none;
+}
+
+body[data-page="admin"] .admin-verification-review__surface,
+body[data-page="admin"] .admin-toast {
+  border: 0;
+  box-shadow: var(--doke-overlay-shadow);
+}

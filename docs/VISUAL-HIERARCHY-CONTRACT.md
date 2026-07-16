@@ -59,3 +59,90 @@ It maps Home-specific surfaces to the canonical tokens without redefining card g
 - Static hero, review and information panels do not react to hover.
 - Marketplace cards elevate only when the whole card is clickable.
 - Tabs, badges, media actions and controls over images stay flat.
+
+## Flow pages migrated in Lote 20
+
+The following transactional flows now use page-owned hierarchy authorities:
+
+- `orcamento/visual-hierarchy.css`
+- `pagamento-profissional/visual-hierarchy.css`
+- `avaliacao-profissional/visual-hierarchy.css`
+- `verificacao-profissional/visual-hierarchy.css`
+
+Engineering rules applied:
+
+- form cards and summaries are static surfaces;
+- inputs/selects/textareas are standalone controls;
+- payment methods, evaluation tags and flow choices are selectable controls;
+- uploads retain a functional dashed selection border;
+- nested summaries, badges and grouped footer actions remain flat;
+- success dialogs use overlay elevation only.
+
+## Flow and administration owners
+
+The following page-specific authorities classify onboarding and administration UI without redefining shared component anatomy:
+
+- `assets/css/pages/anunciar-servico/visual-hierarchy.css`
+- `assets/css/pages/tornar-profissional/visual-hierarchy.css`
+- `assets/css/pages/admin/visual-hierarchy.css`
+- `assets/css/pages/admin-verificacao/visual-hierarchy.css`
+
+Upload targets keep dashed functional boundaries. Choice rows use selection borders and rings. Static metrics and summaries remain flat inside their parent surface. Only complete clickable queue/evidence rows may elevate on hover.
+
+
+## Lote 22 — Ajuda e laboratório do design system
+
+- `assets/css/pages/ajuda/visual-hierarchy.css` classifica tópicos clicáveis, painéis estáticos, busca composta, tabs e modal.
+- `assets/css/pages/doke-ui-standard/visual-hierarchy.css` aplica a hierarquia ao shell de documentação sem alterar exemplos marcados como `before` ou `bad`.
+- A documentação visual deve demonstrar o contrato oficial sem transformar componentes internos em superfícies elevadas.
+
+## Coverage audit
+
+Run `npm run audit:visual-hierarchy-coverage` to verify that every production, authentication, lab, and UI-kit HTML reaches an explicit visual hierarchy authority through its CSS import graph.
+
+The audit writes:
+
+- `reports/visual-hierarchy-coverage.md`
+- `reports/visual-hierarchy-coverage.json`
+
+A page is considered covered only when its active stylesheet graph reaches a CSS owner whose filename contains `visual-hierarchy.css`.
+
+## Lote 24 — Results and Auth ownership closure
+
+- `assets/css/pages/results/visual-hierarchy.css` owns Resultados surface/control classification.
+- `assets/css/pages/auth/visual-hierarchy.css` owns Login, Cadastro and password recovery hierarchy.
+- Legacy `results/clean-surfaces.css` was retired.
+
+## Lote 25 — Lab and UI Kit coverage closure
+
+- `assets/css/pages/modal-lab/visual-hierarchy.css` owns the presentation hierarchy of `labs/modal-lab.html` without redefining production modal anatomy.
+- `assets/css/pages/ui-kit/visual-hierarchy.css` owns the documentation shell of `docs/ui-kit.html` while canonical components remain controlled by their shared owners.
+- Lab frames and documentation sections are static surfaces; they do not elevate on hover.
+- Modal surfaces use overlay elevation, fields use standalone-control elevation, and close/metadata/internal actions remain flat.
+- The visual hierarchy coverage gate now reports 30/30 HTMLs covered (100%).
+
+## Residual audit
+
+Run `npm run audit:visual-hierarchy-residuals` after hierarchy changes. The audit inventories active CSS and reports:
+
+- permanent 1px rings that visually behave as borders;
+- literal shadows inside page hierarchy authorities;
+- borders without an obvious selection, upload, status, table or divider role;
+- vertical hover motion on likely static surfaces.
+
+The report is intentionally diagnostic. Medium findings require selector-level or visual confirmation before editing; they must not be mass-rewritten.
+
+## Directional elevation tokens
+
+Directional shadows must use semantic tokens rather than page-local literals. This preserves the existing appearance while keeping drawers, sticky footers, sidepanels and nested surfaces adjustable from `assets/css/core/tokens.css`.
+
+- `--doke-shadow-nested-soft`
+- `--doke-shadow-divider-top`
+- `--doke-shadow-footer-lift`
+- `--doke-shadow-drawer-inline-start`
+- `--doke-shadow-sidepanel-inline-start`
+- `--doke-shadow-overlay-deep`
+- `--doke-shadow-overlay-strong`
+- `--doke-shadow-popover-strong`
+
+Do not reuse these tokens by visual similarity alone. Choose them according to the layer and direction of separation.

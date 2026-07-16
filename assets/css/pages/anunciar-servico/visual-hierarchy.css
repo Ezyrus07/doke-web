@@ -1,0 +1,147 @@
+/* Anunciar serviço — visual hierarchy authority.
+ * Classifies structural surfaces, standalone controls, flat controls,
+ * selectable options, upload targets and overlays without changing layout.
+ */
+body[data-page="anunciar-servico"] {
+  --post-service-surface-shadow: var(--doke-surface-shadow);
+  --post-service-control-shadow: var(--doke-white-control-shadow);
+  --post-service-control-shadow-hover: var(--doke-white-control-shadow-hover);
+  --post-service-control-shadow-focus: var(--doke-white-control-shadow-focus);
+}
+
+body[data-page="anunciar-servico"] :is(
+  .post-service-form-card,
+  .post-service-tips-card,
+  .post-service-guard-error,
+  .post-service-guard-skeleton__surface
+) {
+  border: 0;
+  box-shadow: var(--post-service-surface-shadow);
+}
+
+body[data-page="anunciar-servico"] :is(
+  .post-service-field .doke-input,
+  .post-service-field .doke-select,
+  .post-service-field .doke-textarea,
+  .post-service-field .ui-select__trigger
+) {
+  border: 0;
+  background: var(--doke-clean-input-bg, #f8fbfe);
+  box-shadow: var(--post-service-control-shadow);
+}
+
+body[data-page="anunciar-servico"] :is(
+  .post-service-field .doke-input,
+  .post-service-field .doke-select,
+  .post-service-field .doke-textarea,
+  .post-service-field .ui-select__trigger
+):not(:disabled):hover {
+  background: #fff;
+  box-shadow: var(--post-service-control-shadow-hover);
+}
+
+body[data-page="anunciar-servico"] :is(
+  .post-service-field .doke-input,
+  .post-service-field .doke-select,
+  .post-service-field .doke-textarea
+):is(:focus, :focus-visible),
+body[data-page="anunciar-servico"] .post-service-field .ui-select__trigger:focus-visible,
+body[data-page="anunciar-servico"] .post-service-field .ui-select.is-open .ui-select__trigger {
+  outline: 0;
+  background: #fff;
+  box-shadow: var(--post-service-control-shadow-focus);
+}
+
+body[data-page="anunciar-servico"] .post-service-field .ui-select__menu,
+body[data-page="anunciar-servico"] .post-service-submit-state__card {
+  border: 0;
+  box-shadow: var(--doke-overlay-shadow);
+}
+
+/* Flat segmented navigation: state is communicated by background, not elevation. */
+body[data-page="anunciar-servico"] .post-service-segmented {
+  border: 0;
+  background: var(--doke-flat-hover-bg, #f4f8fd);
+  box-shadow: none;
+}
+
+body[data-page="anunciar-servico"] .post-service-segment {
+  border: 0;
+  box-shadow: none;
+}
+
+body[data-page="anunciar-servico"] .post-service-segment:is(:hover, .is-active) {
+  background: #fff;
+  box-shadow: none;
+  transform: none;
+}
+
+/* Upload targets retain a functional dashed boundary. */
+body[data-page="anunciar-servico"] .post-service-upload-card {
+  border: 1px dashed rgba(42, 95, 144, 0.28);
+  background: var(--doke-clean-input-bg, #f8fbfe);
+  box-shadow: none;
+  transition: border-color .18s ease, background-color .18s ease;
+}
+
+body[data-page="anunciar-servico"] .post-service-upload-card:is(:hover, :focus-within) {
+  border-color: var(--doke-selection-border-hover, rgba(42, 95, 144, 0.5));
+  background: #fff;
+  box-shadow: none;
+  transform: none;
+}
+
+body[data-page="anunciar-servico"] .post-service-upload-card:focus-within {
+  box-shadow: var(--post-service-control-shadow-focus);
+}
+
+/* Selection cards use border + fill because the boundary communicates state. */
+body[data-page="anunciar-servico"] :is(.post-service-check, .post-service-confirm-check) {
+  border: var(--doke-selection-border);
+  background: #fff;
+  box-shadow: none;
+  transition: border-color .18s ease, background-color .18s ease;
+}
+
+body[data-page="anunciar-servico"] :is(.post-service-check, .post-service-confirm-check):hover {
+  border-color: var(--doke-selection-border-hover);
+  background: var(--doke-selection-bg-hover, #f7fbff);
+  box-shadow: none;
+  transform: none;
+}
+
+body[data-page="anunciar-servico"] :is(.post-service-check, .post-service-confirm-check).is-active {
+  border-color: var(--doke-selection-border-active);
+  background: var(--doke-selection-bg-active);
+  box-shadow: var(--doke-selection-ring);
+}
+
+body[data-page="anunciar-servico"] :is(.post-service-review-card, .post-service-more-media) {
+  border: 0;
+  background: var(--doke-flat-hover-bg, #f7fafe);
+  box-shadow: none;
+}
+
+body[data-page="anunciar-servico"] :is(
+  .post-service-review-list li + li,
+  .post-service-confirm,
+  .post-service-tips-card p
+) {
+  border: 0;
+  box-shadow: none;
+}
+
+body[data-page="anunciar-servico"] .post-service-tips-card li > span {
+  border: 0;
+  box-shadow: none;
+}
+
+body[data-page="anunciar-servico"] .post-service-actions .doke-btn--ghost,
+body[data-page="anunciar-servico"] .post-service-actions .doke-btn--ghost:hover {
+  box-shadow: none;
+  transform: none;
+}
+
+body[data-page="anunciar-servico"] .post-service-actions .doke-btn--ghost:focus-visible {
+  box-shadow: var(--post-service-control-shadow-focus);
+}

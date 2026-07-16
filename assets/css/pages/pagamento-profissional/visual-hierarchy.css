@@ -1,0 +1,92 @@
+/* Pagamento profissional — visual hierarchy authority. */
+body[data-page="pagamento-profissional"] :is(.payment-main-column > .payment-card, .payment-summary__card) {
+  border: 0;
+  background: #fff;
+  box-shadow: var(--doke-surface-shadow);
+}
+
+/* Payment methods are selectable, not floating cards. */
+body[data-page="pagamento-profissional"] .payment-method {
+  border: var(--doke-selection-border);
+  background: #fff;
+  box-shadow: none;
+  transform: none;
+  transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease;
+}
+body[data-page="pagamento-profissional"] .payment-method:hover {
+  border-color: var(--doke-selection-border-hover);
+  background: var(--doke-flat-hover-bg);
+  box-shadow: none;
+  transform: none;
+}
+body[data-page="pagamento-profissional"] .payment-method.is-selected {
+  border-color: var(--doke-selection-border-active);
+  background: var(--doke-selection-bg-active);
+  box-shadow: var(--doke-selection-ring);
+}
+body[data-page="pagamento-profissional"] .payment-method:focus-within {
+  outline: 0;
+  box-shadow: var(--doke-white-control-shadow-focus);
+}
+
+body[data-page="pagamento-profissional"] :is(.doke-input, .doke-select, .doke-textarea) {
+  border: 0;
+  background: var(--doke-clean-input-bg, #f8fbfe);
+  box-shadow: var(--doke-white-control-shadow);
+}
+body[data-page="pagamento-profissional"] :is(.doke-input, .doke-select, .doke-textarea):not(:disabled):hover {
+  background: #fff;
+  box-shadow: var(--doke-white-control-shadow-hover);
+}
+body[data-page="pagamento-profissional"] :is(.doke-input, .doke-select, .doke-textarea):is(:focus, :focus-visible) {
+  outline: 0;
+  background: #fff;
+  box-shadow: var(--doke-white-control-shadow-focus);
+}
+
+/* Nested financial information remains flat inside the main card. */
+body[data-page="pagamento-profissional"] :is(
+  .payment-method-detail,
+  .payment-card-empty,
+  .payment-points,
+  .payment-card-fields,
+  .payment-confirm-check,
+  .payment-summary__amount,
+  .payment-summary__provider,
+  .payment-summary__row,
+  .payment-security,
+  .payment-review
+) {
+  border: 0;
+  box-shadow: none;
+  transform: none;
+}
+
+body[data-page="pagamento-profissional"] :is(.payment-badge, [class*="payment-badge--"]) {
+  border: 0;
+  box-shadow: none;
+}
+
+/* Error/success borders are semantic and therefore retained only on feedback. */
+body[data-page="pagamento-profissional"] :is(.payment-error, .payment-finish-error, .payment-submit-state__error) {
+  border: 1px solid rgba(200, 63, 75, 0.22);
+  box-shadow: none;
+}
+body[data-page="pagamento-profissional"] :is(.payment-success, .payment-submit-state__success) {
+  border: 1px solid rgba(17, 124, 104, 0.2);
+  box-shadow: none;
+}
+
+body[data-page="pagamento-profissional"] :is(.payment-submit-state__card, .payment-finish-modal__card) {
+  border: 0;
+  box-shadow: var(--doke-overlay-shadow);
+}
+
+body[data-page="pagamento-profissional"] .doke-modal-actions .doke-btn--ghost,
+body[data-page="pagamento-profissional"] .doke-modal-actions .doke-btn--ghost:hover {
+  box-shadow: none;
+  transform: none;
+}
+body[data-page="pagamento-profissional"] .doke-modal-actions .doke-btn--ghost:focus-visible {
+  box-shadow: var(--doke-white-control-shadow-focus);
+}

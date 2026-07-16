@@ -1,0 +1,127 @@
+/* Doke UI Standard — visual hierarchy authority.
+ * Applies the production hierarchy to the documentation shell while preserving
+ * intentionally labelled "before" and "bad" examples used for comparison.
+ */
+
+body.doke-ui-page {
+  --ui-shadow-control: var(--doke-white-control-shadow);
+  --ui-shadow-control-hover: var(--doke-white-control-shadow-hover);
+  --ui-shadow-surface: var(--doke-surface-shadow);
+  --ui-shadow-surface-hover: var(--doke-surface-shadow-hover);
+  --ui-shadow-overlay: var(--doke-overlay-shadow);
+}
+
+/* Documentation shell: dividers are functional; no decorative container borders. */
+body.doke-ui-page :where(.ui-intro, .ui-type-board, .ui-demo-surface, .ui-form-board,
+  .ui-settings-demo, .ui-content-card, .ui-dropdown-example, .ui-token-card,
+  .ui-empty-state, .ui-modal-demo, .ui-standard-verdict, .ui-surface-verdict) {
+  border: 0;
+  box-shadow: var(--ui-shadow-surface);
+}
+
+body.doke-ui-page :where(.ui-intro, .ui-type-board, .ui-demo-surface, .ui-form-board,
+  .ui-settings-demo, .ui-content-card, .ui-dropdown-example, .ui-token-card,
+  .ui-empty-state, .ui-standard-verdict, .ui-surface-verdict):hover {
+  box-shadow: var(--ui-shadow-surface);
+  transform: none;
+}
+
+/* Only complete examples explicitly presented as clickable may elevate. */
+body.doke-ui-page :where(.ui-token-card, .ui-dropdown-example) {
+  transition: box-shadow 160ms ease, transform 160ms ease;
+}
+
+body.doke-ui-page :where(.ui-token-card, .ui-dropdown-example):hover {
+  box-shadow: var(--ui-shadow-surface-hover);
+  transform: translateY(-2px);
+}
+
+/* Internal metadata and navigation are flat. */
+body.doke-ui-page :where(
+  .ui-nav a,
+  .ui-principles div,
+  .ui-component-notes > *,
+  .ui-setting-row,
+  .ui-choice-row,
+  .ui-inline-filters,
+  .ui-pattern-status__item,
+  .ui-modal-demo__summary,
+  .ui-surface-verdict__rules span,
+  .ui-elevation-sample,
+  .ui-elevation-sample--internal > span
+) {
+  box-shadow: none;
+  transform: none;
+}
+
+body.doke-ui-page .ui-nav a:hover {
+  background: var(--doke-flat-hover-bg);
+}
+
+body.doke-ui-page .ui-nav a.is-active {
+  background: var(--doke-flat-active-bg);
+  color: var(--ui-primary);
+}
+
+/* Canonical flat controls remain flat in the lab outside focus. */
+body.doke-ui-page :where(
+  .doke-tab-pill,
+  .doke-chip,
+  .doke-badge,
+  .doke-icon-btn,
+  .doke-close-button,
+  .doke-dropdown__option
+) {
+  box-shadow: none;
+}
+
+/* Standalone fields and triggers use control elevation. */
+body.doke-ui-page :where(
+  .doke-input,
+  .doke-select,
+  .doke-textarea,
+  .doke-dropdown__trigger,
+  .doke-btn--ghost
+) {
+  border: 0;
+  box-shadow: var(--ui-shadow-control);
+}
+
+body.doke-ui-page :where(
+  .doke-input,
+  .doke-select,
+  .doke-textarea,
+  .doke-dropdown__trigger,
+  .doke-btn--ghost
+):hover {
+  box-shadow: var(--ui-shadow-control-hover);
+}
+
+/* Grouped controls and modal footer actions do not create nested elevation. */
+body.doke-ui-page :where(
+  .ui-modal-demo footer,
+  .ui-settings-demo footer,
+  .ui-empty-state__actions,
+  .doke-dropdown__menu
+) .doke-btn {
+  box-shadow: none;
+}
+
+/* Overlay layer. */
+body.doke-ui-page :where(.ui-modal-demo, .doke-dropdown__menu) {
+  border: 0;
+  box-shadow: var(--ui-shadow-overlay);
+}
+
+/* Preserve deliberate comparison examples exactly as demonstrations. */
+body.doke-ui-page :where(
+  .ui-border-comparison__bad,
+  .ui-border-stack,
+  .ui-before-after__panel--before,
+  .ui-ba-workspace--before,
+  .ui-ba-workspace--before .ui-ba-sidebar,
+  .ui-ba-workspace--before .ui-ba-sidebar span,
+  .ui-ba-row--boxed
+) {
+  box-shadow: revert-layer;
+}

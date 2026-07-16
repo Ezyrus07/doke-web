@@ -1,0 +1,87 @@
+/* Auth — explicit visual hierarchy authority.
+ * Surfaces: auth card and onboarding card.
+ * Standalone controls: field shells and social buttons.
+ * Flat controls: embedded password action and grouped actions.
+ * Selectable elements: recovery choices.
+ * Overlays: onboarding card.
+ */
+
+body.auth-page :is(.auth-card, .auth-onboarding__card) {
+  border: 0;
+  box-shadow: var(--auth-card-shadow);
+}
+
+body.auth-page :is(.auth-card, .auth-onboarding__card):hover {
+  transform: none;
+  box-shadow: var(--auth-card-shadow);
+}
+
+body.auth-page :is(.auth-input, .auth-password, .auth-social-btn) {
+  border: 0;
+  box-shadow: var(--doke-white-control-shadow);
+}
+
+body.auth-page :is(.auth-input, .auth-password, .auth-social-btn):hover {
+  box-shadow: var(--doke-white-control-shadow-hover);
+}
+
+body.auth-page :is(.auth-input, .auth-password):focus-within,
+body.auth-page .auth-social-btn:focus-visible {
+  outline: 0;
+  box-shadow: var(--doke-white-control-shadow-focus);
+}
+
+body.auth-page :is(
+  .auth-password button,
+  .auth-onboarding__actions .doke-btn,
+  .auth-meta-row .doke-btn,
+  .auth-close,
+  .doke-close-button
+) {
+  border: 0;
+  box-shadow: none;
+  transform: none;
+}
+
+body.auth-page :is(.auth-password button, .auth-close, .doke-close-button):hover {
+  box-shadow: none;
+  transform: none;
+  background: var(--doke-flat-hover-bg);
+}
+
+body.auth-page .auth-choice-card {
+  border: var(--doke-selection-border);
+  background: #fff;
+  box-shadow: none;
+  transform: none;
+}
+
+body.auth-page .auth-choice-card:hover {
+  border-color: var(--doke-selection-border-hover);
+  background: var(--doke-selection-hover-bg);
+  box-shadow: none;
+  transform: none;
+}
+
+body.auth-page .auth-choice__input:checked + .auth-choice-card {
+  border-color: var(--doke-selection-active-border);
+  background: var(--doke-selection-active-bg);
+  box-shadow: var(--doke-selection-ring);
+}
+
+body.auth-page .auth-choice__input:focus-visible + .auth-choice-card {
+  outline: 0;
+  box-shadow: var(--doke-selection-ring);
+}
+
+body.auth-page :is(.auth-account-note, .auth-recovery-reset) {
+  border: 0;
+  box-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.auth-page :is(.auth-social-btn, .auth-choice-card) {
+    transition: none;
+    transform: none;
+  }
+}

@@ -1,0 +1,124 @@
+/* Orçamento — visual hierarchy authority.
+ * Static regions use surface elevation; standalone controls use control elevation;
+ * choice controls keep semantic selection borders; internal actions remain flat.
+ */
+body[data-page="orcamento"] {
+  --budget-surface-shadow: var(--doke-surface-shadow);
+  --budget-control-shadow: var(--doke-white-control-shadow);
+  --budget-control-shadow-hover: var(--doke-white-control-shadow-hover);
+  --budget-control-shadow-focus: var(--doke-white-control-shadow-focus);
+}
+
+body[data-page="orcamento"] :is(.become-pro-form-card, .become-pro-benefits-card) {
+  border: 0;
+  background: #fff;
+  box-shadow: var(--budget-surface-shadow);
+}
+
+body[data-page="orcamento"] :is(.budget-field .ui-select__trigger, .doke-input, .doke-select, .doke-textarea) {
+  border: 0;
+  background: var(--doke-clean-input-bg, #f8fbfe);
+  box-shadow: var(--budget-control-shadow);
+}
+
+body[data-page="orcamento"] :is(.budget-field .ui-select__trigger, .doke-input, .doke-select, .doke-textarea):not(:disabled):hover {
+  background: #fff;
+  box-shadow: var(--budget-control-shadow-hover);
+}
+
+body[data-page="orcamento"] :is(.budget-field .ui-select__trigger, .doke-input, .doke-select, .doke-textarea):is(:focus, :focus-visible),
+body[data-page="orcamento"] .budget-field .ui-select.is-open .ui-select__trigger {
+  outline: 0;
+  background: #fff;
+  box-shadow: var(--budget-control-shadow-focus);
+}
+
+body[data-page="orcamento"] .budget-field .ui-select__menu {
+  border: 0;
+  background: #fff;
+  box-shadow: var(--doke-overlay-shadow);
+}
+
+/* Choice pills communicate state with border/background, never elevation. */
+body[data-page="orcamento"] .budget-choice {
+  border: var(--doke-selection-border);
+  background: #fff;
+  box-shadow: none;
+  transform: none;
+  transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease;
+}
+body[data-page="orcamento"] .budget-choice:not(:disabled):hover {
+  border-color: var(--doke-selection-border-hover);
+  background: var(--doke-flat-hover-bg);
+  box-shadow: none;
+  transform: none;
+}
+body[data-page="orcamento"] .budget-choice.is-active {
+  border-color: var(--doke-selection-border-active);
+  background: var(--doke-selection-bg-active);
+  color: var(--budget-blue-strong);
+  box-shadow: var(--doke-selection-ring);
+}
+
+body[data-page="orcamento"] .budget-check__box {
+  border: var(--doke-selection-border);
+  background: #fff;
+  box-shadow: none;
+}
+body[data-page="orcamento"] .budget-check input:checked + .budget-check__box {
+  border-color: var(--budget-blue-strong);
+  background: var(--budget-blue-strong);
+  box-shadow: var(--doke-selection-ring);
+}
+body[data-page="orcamento"] .budget-check input:focus-visible + .budget-check__box {
+  box-shadow: var(--doke-white-control-shadow-focus);
+}
+
+/* Supporting blocks are static content inside the form card. */
+body[data-page="orcamento"] :is(.budget-triage, .budget-address-card, .budget-confirm-card, .budget-optional-details, .budget-helper-card) {
+  border: 0;
+  background: var(--doke-flat-hover-bg);
+  box-shadow: none;
+  transform: none;
+}
+body[data-page="orcamento"] :is(.budget-triage, .budget-address-card, .budget-confirm-card, .budget-optional-details, .budget-helper-card):hover {
+  box-shadow: none;
+  transform: none;
+}
+
+/* Upload is a selectable drop target, so a functional border is retained. */
+body[data-page="orcamento"] .budget-upload {
+  border: 1px dashed var(--doke-selection-border);
+  background: #fff;
+  box-shadow: none;
+  transform: none;
+}
+body[data-page="orcamento"] .budget-upload:hover,
+body[data-page="orcamento"] .budget-upload:focus-within {
+  border-color: var(--doke-selection-border-hover);
+  background: var(--doke-flat-hover-bg);
+  box-shadow: none;
+}
+
+body[data-page="orcamento"] :is(.budget-address-card__meta, .budget-review-note) {
+  border: 0;
+  box-shadow: none;
+}
+
+body[data-page="orcamento"] .budget-success-modal__dialog {
+  border: 0;
+  box-shadow: var(--doke-overlay-shadow);
+}
+body[data-page="orcamento"] :is(.budget-success__eyebrow, .budget-success__summary) {
+  border: 0;
+  box-shadow: none;
+}
+
+body[data-page="orcamento"] :is(.doke-form-actions, .doke-modal-actions) .doke-btn--ghost,
+body[data-page="orcamento"] :is(.doke-form-actions, .doke-modal-actions) .doke-btn--ghost:hover {
+  box-shadow: none;
+  transform: none;
+}
+body[data-page="orcamento"] :is(.doke-form-actions, .doke-modal-actions) .doke-btn--ghost:focus-visible {
+  box-shadow: var(--budget-control-shadow-focus);
+}
