@@ -32,6 +32,72 @@
     return Doke.repositories && Doke.repositories.professionalIdentityVerifications;
   }
 
+  function usersRepository() {
+    return root.DokeAuth && root.DokeAuth.repositories && root.DokeAuth.repositories.users
+      ? root.DokeAuth.repositories.users
+      : null;
+  }
+
+  function syncCurrentSession(user) {
+    var sessionUser = currentUser();
+    if (!sessionUser || String(sessionUser.id) !== String(user && user.id)) return;
+    if (!Doke.session || typeof Doke.session.setCurrentUser !== 'function') return;
+    var session = Doke.session.getSession && Doke.session.getSession();
+    Doke.session.setCurrentUser(user, {
+      provider: session && session.provider || 'mock',
+      token: session && session.token || '',
+      refreshToken: session && session.refreshToken || '',
+      remember: session ? session.remember !== false : true,
+      sessionStatus: session && session.sessionStatus || 'active',
+      expiresAt: session && session.expiresAt || ''
+    });
+  }
+
+  function reconcileVerifiedProfessionalState(context) {
+    var actor = context && context.user;
+    var profile = context && context.professionalProfile;
+    var verification = context && context.verification;
+    if (!actor || !actor.id || !profile || !verification || verification.status !== 'verified') {
+      return Promise.resolve(context);
+    }
+    if (profile.status === 'suspended') return Promise.resolve(context);
+
+    var profiles = profilesRepository();
+    var users = usersRepository();
+    if (!profiles || !users) return Promise.resolve(context);
+
+    var profilePromise = Promise.resolve(profile);
+    if (profile.verificationStatus !== 'verified' && typeof profiles.setVerificationStatus === 'function') {
+      profilePromise = profiles.setVerificationStatus(profile.id, 'verified');
+    }
+
+    return profilePromise.then(function (nextProfile) {
+      if (nextProfile.status === 'pending_verification' && typeof profiles.transition === 'function') {
+        return profiles.transition(nextProfile.id, 'active');
+      }
+      return nextProfile;
+    }).then(function (nextProfile) {
+      if (nextProfile.status !== 'active') return context;
+      if (actor.role === 'professional' && actor.professionalProfileId === nextProfile.id) {
+        return Object.assign({}, context, { professionalProfile: nextProfile });
+      }
+      if (typeof users.updateCurrentUser !== 'function') return context;
+      return users.updateCurrentUser(actor.id, {
+        role: 'professional',
+        type: 'professional',
+        professionalProfileId: nextProfile.id,
+        publicProfileUrl: 'perfil.html',
+        ownerProfileUrl: 'perfil-profissional.html'
+      }).then(function (nextUser) {
+        syncCurrentSession(nextUser);
+        return { user: nextUser, professionalProfile: nextProfile, verification: verification };
+      });
+    }).catch(function (error) {
+      console.warn && console.warn('[Doke] Falha ao reconciliar ativação profissional.', error);
+      return context;
+    });
+  }
+
   function resolveContext(user) {
     var actor = user || currentUser();
     if (!actor || !actor.id) {
@@ -48,7 +114,11 @@
       : Promise.resolve(null);
 
     return Promise.all([profilePromise, verificationPromise]).then(function (items) {
-      return { user: actor, professionalProfile: items[0] || null, verification: items[1] || null };
+      return reconcileVerifiedProfessionalState({
+        user: actor,
+        professionalProfile: items[0] || null,
+        verification: items[1] || null
+      });
     });
   }
 

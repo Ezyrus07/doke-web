@@ -11,7 +11,7 @@
   <script>document.documentElement.classList.add("doke-mobile-shell-pending");</script>
   <script src="assets/js/core/ipad-safari-early-guard.js?v=20260531-v3"></script>
 
-  <link rel="stylesheet" href="assets/css/pages/anunciar-servico-foundation.css?v=20260715-visual-hierarchy-v1">
+  <link rel="stylesheet" href="assets/css/pages/anunciar-servico-foundation.css?v=20260717-guard-single-flight-v1">
   <link rel="stylesheet" href="assets/css/components/feedback/document-preloader.css?v=20260712-global-document-boot-v1">
  <link rel="stylesheet" href="assets/css/components/ui-surface/close-button-authority.css?v=20260713-global-v1">
 </head>
@@ -58,22 +58,33 @@
 
       <main class="page__content doke-page">
         <div class="page__content-inner container app-shell-page__workspace app-shell-page__workspace--clean doke-page-shell doke-page-stack doke-form-page-rail">
-          <section class="post-service-screen doke-form-page-screen" data-post-service-page data-state-boundary="anunciar-servico" data-view-state="loading" aria-busy="true">
-            <section class="post-service-access-pending doke-state-region--pending" data-post-service-access-pending role="status" aria-live="polite">
-              <div class="post-service-access-pending__surface">
-                <span class="doke-loading-spinner doke-loading-spinner--sm" aria-hidden="true"></span>
-                <div class="post-service-access-pending__copy">
-                  <strong data-post-service-access-pending-title>Validando acesso profissional</strong>
-                  <span data-post-service-access-pending-message>Confirmando sua conta e permissão para publicar serviços.</span>
+          <section class="post-service-screen doke-form-page-screen" data-post-service-page data-state-boundary="anunciar-servico" data-page-lifecycle-state="loading" data-view-state="loading" aria-busy="true">
+            <section class="post-service-access-pending doke-page-hydration-skeleton doke-page-hydration-skeleton--form" data-post-service-access-pending data-post-service-guard-hydration-skeleton aria-label="Carregando formulário de anúncio" aria-hidden="false">
+              <div class="doke-page-hydration-skeleton__intro">
+                <span class="doke-page-hydration-skeleton__block doke-page-hydration-skeleton__line doke-page-hydration-skeleton__line--title"></span>
+                <span class="doke-page-hydration-skeleton__block doke-page-hydration-skeleton__line doke-page-hydration-skeleton__line--medium"></span>
+              </div>
+              <div class="doke-page-hydration-skeleton__form-layout">
+                <div class="doke-page-hydration-skeleton__surface doke-page-hydration-skeleton__form-card">
+                  <span class="doke-page-hydration-skeleton__block doke-page-hydration-skeleton__line doke-page-hydration-skeleton__line--title"></span>
+                  <span class="doke-page-hydration-skeleton__block doke-page-hydration-skeleton__field"></span>
+                  <span class="doke-page-hydration-skeleton__block doke-page-hydration-skeleton__field"></span>
+                  <span class="doke-page-hydration-skeleton__block doke-page-hydration-skeleton__field"></span>
+                  <span class="doke-page-hydration-skeleton__block doke-page-hydration-skeleton__field"></span>
+                </div>
+                <div class="doke-page-hydration-skeleton__surface doke-page-hydration-skeleton__side-card">
+                  <span class="doke-page-hydration-skeleton__block doke-page-hydration-skeleton__line doke-page-hydration-skeleton__line--medium"></span>
+                  <span class="doke-page-hydration-skeleton__block doke-page-hydration-skeleton__line doke-page-hydration-skeleton__line--short"></span>
+                  <span class="doke-page-hydration-skeleton__block doke-page-hydration-skeleton__card"></span>
                 </div>
               </div>
             </section>
 
-            <section class="post-service-guard-error doke-form-page-card" data-post-service-guard-error hidden role="alert" tabindex="-1">
+            <section class="post-service-guard-error doke-form-page-card" data-post-service-guard-error data-state-error hidden role="alert" tabindex="-1">
               <h1>Não foi possível validar seu acesso profissional</h1>
               <p data-post-service-guard-error-message>Tente novamente. Se o problema continuar, retorne ao seu perfil.</p>
               <div class="post-service-guard-error__actions">
-                <button class="doke-btn doke-btn--primary" type="button" data-post-service-guard-retry>Tentar novamente</button>
+                <button class="doke-btn doke-btn--primary" type="button" data-post-service-guard-retry data-page-hydration-retry>Tentar novamente</button>
                 <a class="doke-btn doke-btn--ghost" href="meu-perfil.html">Voltar ao perfil</a>
               </div>
             </section>
@@ -172,24 +183,47 @@
                           <option value="Presencial e online">Presencial e online</option>
                         </select>
                       </label>
-                      <label class="post-service-field doke-field"><span>Disponibilidade</span>
-                        <select class="doke-select" name="availability" data-ui-select>
-                          <option value="" selected>Selecione a disponibilidade</option>
-                          <option value="Durante a semana">Durante a semana</option>
-                          <option value="Finais de semana">Finais de semana</option>
-                          <option value="Todos os dias">Todos os dias</option>
-                          <option value="Emergência">Emergência</option>
-                        </select>
-                      </label>
-                      <label class="post-service-field doke-field"><span>Tempo médio de resposta</span>
-                        <select class="doke-select" name="responseTime" data-ui-select>
-                          <option value="" selected>Selecione o tempo</option>
-                          <option value="Até 1 hora">Até 1 hora</option>
-                          <option value="Mesmo dia">Mesmo dia</option>
-                          <option value="Até 24 horas">Até 24 horas</option>
-                        </select>
-                      </label>
-                      <label class="post-service-field doke-field"><span>Avaliação inicial</span><input type="text" name="initialAssessment" placeholder="Ex.: Atendimento sob avaliação pelo chat" class="doke-input"></label>
+                      <fieldset class="post-service-field post-service-field--full post-service-availability doke-field" data-service-availability>
+                        <legend>Disponibilidade semanal</legend>
+                        <p class="doke-form-hint">Informe os dias e intervalos em que normalmente aceita novos atendimentos. Você poderá ajustar a agenda depois.</p>
+                        <div class="post-service-availability__list">
+                          <div class="post-service-availability__row" data-availability-row>
+                            <label class="post-service-availability__day"><input type="checkbox" name="availabilityDay" value="monday" data-availability-day><span>Segunda</span></label>
+                            <label><span class="doke-label">Início</span><input class="doke-input" type="time" name="availabilityStart_monday" value="08:00" data-availability-time disabled></label>
+                            <label><span class="doke-label">Fim</span><input class="doke-input" type="time" name="availabilityEnd_monday" value="18:00" data-availability-time disabled></label>
+                          </div>
+                          <div class="post-service-availability__row" data-availability-row>
+                            <label class="post-service-availability__day"><input type="checkbox" name="availabilityDay" value="tuesday" data-availability-day><span>Terça</span></label>
+                            <label><span class="doke-label">Início</span><input class="doke-input" type="time" name="availabilityStart_tuesday" value="08:00" data-availability-time disabled></label>
+                            <label><span class="doke-label">Fim</span><input class="doke-input" type="time" name="availabilityEnd_tuesday" value="18:00" data-availability-time disabled></label>
+                          </div>
+                          <div class="post-service-availability__row" data-availability-row>
+                            <label class="post-service-availability__day"><input type="checkbox" name="availabilityDay" value="wednesday" data-availability-day><span>Quarta</span></label>
+                            <label><span class="doke-label">Início</span><input class="doke-input" type="time" name="availabilityStart_wednesday" value="08:00" data-availability-time disabled></label>
+                            <label><span class="doke-label">Fim</span><input class="doke-input" type="time" name="availabilityEnd_wednesday" value="18:00" data-availability-time disabled></label>
+                          </div>
+                          <div class="post-service-availability__row" data-availability-row>
+                            <label class="post-service-availability__day"><input type="checkbox" name="availabilityDay" value="thursday" data-availability-day><span>Quinta</span></label>
+                            <label><span class="doke-label">Início</span><input class="doke-input" type="time" name="availabilityStart_thursday" value="08:00" data-availability-time disabled></label>
+                            <label><span class="doke-label">Fim</span><input class="doke-input" type="time" name="availabilityEnd_thursday" value="18:00" data-availability-time disabled></label>
+                          </div>
+                          <div class="post-service-availability__row" data-availability-row>
+                            <label class="post-service-availability__day"><input type="checkbox" name="availabilityDay" value="friday" data-availability-day><span>Sexta</span></label>
+                            <label><span class="doke-label">Início</span><input class="doke-input" type="time" name="availabilityStart_friday" value="08:00" data-availability-time disabled></label>
+                            <label><span class="doke-label">Fim</span><input class="doke-input" type="time" name="availabilityEnd_friday" value="18:00" data-availability-time disabled></label>
+                          </div>
+                          <div class="post-service-availability__row" data-availability-row>
+                            <label class="post-service-availability__day"><input type="checkbox" name="availabilityDay" value="saturday" data-availability-day><span>Sábado</span></label>
+                            <label><span class="doke-label">Início</span><input class="doke-input" type="time" name="availabilityStart_saturday" value="08:00" data-availability-time disabled></label>
+                            <label><span class="doke-label">Fim</span><input class="doke-input" type="time" name="availabilityEnd_saturday" value="13:00" data-availability-time disabled></label>
+                          </div>
+                          <div class="post-service-availability__row" data-availability-row>
+                            <label class="post-service-availability__day"><input type="checkbox" name="availabilityDay" value="sunday" data-availability-day><span>Domingo</span></label>
+                            <label><span class="doke-label">Início</span><input class="doke-input" type="time" name="availabilityStart_sunday" value="08:00" data-availability-time disabled></label>
+                            <label><span class="doke-label">Fim</span><input class="doke-input" type="time" name="availabilityEnd_sunday" value="13:00" data-availability-time disabled></label>
+                          </div>
+                        </div>
+                      </fieldset>
                     </div>
                   </div>
 
@@ -225,14 +259,30 @@
                   <div class="post-service-step-panel" data-step-panel="4" hidden>
                     <div class="post-service-section-head">
                       <h2>Revisão e publicação</h2>
-                      <p>Revise as informações antes de enviar. Após a análise, você poderá editar e acompanhar o anúncio pelo seu perfil profissional.</p>
+                      <p>Revise como o anúncio será exibido. Depois de publicar, você poderá editar ou desativar o serviço pelo perfil profissional.</p>
                     </div>
-                    <div class="post-service-review-grid">
-                      <article class="post-service-review-card"><strong>Como aparecerá para clientes</strong><span data-review-title>Pintura residencial com acabamento fino</span><p data-review-short>Descrição curta do anúncio aparecerá aqui.</p></article>
-                      <article class="post-service-review-card"><strong>Preço e região</strong><span data-review-price>A partir de R$ 150,00</span><p data-review-region>Belo Horizonte e região</p></article>
-                      <article class="post-service-review-card"><strong>Fotos e diferenciais</strong><span>Imagem principal + fotos extras</span><p>Use diferenciais objetivos para aumentar confiança.</p></article>
-                      <article class="post-service-review-card"><strong>Status do anúncio</strong><span>Pronto para análise</span><p>Após o envio, a Doke revisará o anúncio antes de liberar a exibição pública.</p></article>
-                    </div>
+                    <section class="post-service-review-preview" aria-label="Prévia do anúncio">
+                      <div class="post-service-review-preview__media" data-review-media>
+                        <span data-review-media-placeholder>Prévia da imagem principal</span>
+                        <img data-review-image alt="" hidden>
+                      </div>
+                      <div class="post-service-review-preview__body">
+                        <span class="post-service-review-preview__category" data-review-category>Categoria não informada</span>
+                        <h3 data-review-title>Informe o título do anúncio</h3>
+                        <p data-review-short>A descrição curta aparecerá aqui.</p>
+                        <div class="post-service-review-preview__facts">
+                          <span data-review-price>Preço não informado</span>
+                          <span data-review-region>Região não informada</span>
+                          <span data-review-mode>Forma de atendimento não informada</span>
+                        </div>
+                      </div>
+                    </section>
+                    <dl class="post-service-review-list">
+                      <div><dt>Disponibilidade</dt><dd data-review-availability>Nenhum horário informado</dd></div>
+                      <div><dt>Fotos</dt><dd data-review-images>Nenhuma imagem selecionada</dd></div>
+                      <div><dt>Diferenciais</dt><dd data-review-tags>Nenhum diferencial selecionado</dd></div>
+                      <div><dt>Publicação</dt><dd>O anúncio ficará público imediatamente e poderá ser editado ou desativado no seu perfil.</dd></div>
+                    </dl>
                     <div class="post-service-confirm">
                       <button class="post-service-confirm-check is-active doke-choice-button" type="button" aria-pressed="true" data-post-check><span></span>Confirmo que as informações do anúncio são verdadeiras e atualizadas.</button>
                       <button class="post-service-confirm-check is-active doke-choice-button" type="button" aria-pressed="true" data-post-check><span></span>Aceito as regras de publicação da Doke.</button>
@@ -265,10 +315,10 @@
             <div class="post-service-submit-state doke-overlay doke-overlay--feedback" data-submit-state hidden aria-live="polite" aria-modal="true" role="dialog">
               <div class="post-service-submit-state__card doke-overlay__surface doke-modal-surface doke-modal-surface--feedback">
                 <span class="post-service-submit-state__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m6 12 4 4 8-9"></path></svg></span>
-                <h2 class="doke-modal-title">Anúncio enviado para análise</h2>
-                <p class="doke-modal-description">Recebemos seu serviço para revisão. A Doke vai analisar as informações antes de liberar o anúncio para clientes.</p>
+                <h2 class="doke-modal-title">Anúncio publicado</h2>
+                <p class="doke-modal-description">Seu serviço já está disponível no perfil profissional e nas superfícies públicas da Doke.</p>
                 <div class="post-service-submit-state__actions doke-overlay__actions post-service-submit-state__actions--single doke-modal-actions doke-modal-actions--single">
-                  <a class="doke-btn doke-btn--primary" href="perfil.html?mode=owner&panel=services">Ver andamento</a>
+                  <a class="doke-btn doke-btn--primary" href="perfil.html?mode=owner&panel=services">Ver anúncio no perfil</a>
                 </div>
               </div>
             </div>
@@ -285,7 +335,8 @@
   <script src="assets/js/core/navigation-lifecycle.js?v=20260713-navigation-lifecycle-v1" defer></script>
   <script src="assets/js/core/app.js?v=20260714-route-deadlock-v1" defer></script>
   <script src="assets/js/components/operational-event-toast.js?v=20260702-sidebar-quick-alert-flow-v1" defer></script>
-  <script src="assets/js/core/stable-shell-router.js?v=20260714-route-deadlock-v1" defer></script>
+  <script src="assets/js/core/page-hydration.js?v=20260717-professional-service-lifecycle-v1" defer></script>
+  <script src="assets/js/core/stable-shell-router.js?v=20260717-professional-service-lifecycle-v1" defer></script>
   <script src="assets/js/core/experience-runtime.js?v=20260711-experience-runtime-v1" defer></script>
   <script src="assets/js/components/help/help-drawer.js?v=20260518-help-drawer-v1" defer></script>
   <script src="assets/js/ui/mobile-drawer-standard.js?v=20260701-drawer-detail-contract-v1" defer></script>
@@ -302,8 +353,8 @@
   <script src="assets/js/core/form-experience-core.js?v=20260712-form-core-v1" defer></script>
   <script src="assets/js/repositories/services-repository.js?v=20260711-service-write-v1" defer></script>
   <script src="assets/js/services/services-service.js?v=20260714-professional-access-v1" defer></script>
-  <script src="assets/js/pages/service-form-experience.js?v=20260714-professional-access-v1" defer></script>
-  <script src="assets/js/pages/anunciar-servico.js?v=20260714-navigation-stage03-v1" defer></script>
+  <script src="assets/js/pages/service-form-experience.js?v=20260717-service-flow-v2" defer></script>
+  <script src="assets/js/pages/anunciar-servico.js?v=20260717-service-flow-v2" defer></script>
   <script src="assets/js/services/mock-data-service.js?v=20260501-stage31-domain-services" defer></script>
   <script src="assets/js/services/profile-service.js?v=20260501-stage31-domain-services" defer></script>
   <script src="assets/js/services/search-service.js?v=20260501-stage31-domain-services" defer></script>

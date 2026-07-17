@@ -75,8 +75,61 @@
     }
   };
 
+  const PROFESSIONAL_PROFILES_STORAGE_KEY = 'doke.professionalProfiles.v1';
+  const PROFESSIONAL_VERIFICATIONS_STORAGE_KEY = 'doke.professionalIdentityVerifications.v1';
+
   const readLocalUsers = () => safeParse(window.localStorage.getItem(STORAGE_KEY), []);
   const readLegacyProfiles = () => safeParse(window.localStorage.getItem(LEGACY_PROFILE_STORAGE_KEY), {});
+
+  const newestByTimestamp = (items) => items.slice().sort((a, b) => {
+    const aTime = String(a?.updatedAt || a?.submittedAt || a?.createdAt || '');
+    const bTime = String(b?.updatedAt || b?.submittedAt || b?.createdAt || '');
+    return bTime.localeCompare(aTime);
+  })[0] || null;
+
+  const reconcileProfessionalUser = (user) => {
+    if (!user || !user.id || user.role === 'support' || user.role === 'admin') return user;
+    const profiles = safeParse(window.localStorage.getItem(PROFESSIONAL_PROFILES_STORAGE_KEY), []);
+    const verifications = safeParse(window.localStorage.getItem(PROFESSIONAL_VERIFICATIONS_STORAGE_KEY), []);
+    if (!Array.isArray(profiles) || !Array.isArray(verifications)) return user;
+
+    const profileCandidates = profiles.filter((item) => String(item?.userId || item?.ownerId || '') === String(user.id));
+    const verificationCandidates = verifications.filter((item) => String(item?.userId || '') === String(user.id));
+    const profile = newestByTimestamp(profileCandidates);
+    const verification = newestByTimestamp(verificationCandidates);
+    const verificationStatus = String(verification?.status || '').toLowerCase();
+    if (!profile || verificationStatus !== 'verified') return user;
+
+    const profileStatus = String(profile.status || '').toLowerCase();
+    if (profileStatus === 'draft' || profileStatus === 'suspended') return user;
+
+    let repairedProfile = profile;
+    if (profileStatus === 'pending_verification' || String(profile.verificationStatus || '').toLowerCase() !== 'verified') {
+      const now = new Date().toISOString();
+      repairedProfile = {
+        ...profile,
+        status: profileStatus === 'pending_verification' ? 'active' : profile.status,
+        verificationStatus: 'verified',
+        updatedAt: now,
+        completedAt: profile.completedAt || now
+      };
+      const profileIndex = profiles.findIndex((item) => String(item?.id || '') === String(profile.id || ''));
+      if (profileIndex >= 0) {
+        profiles[profileIndex] = repairedProfile;
+        window.localStorage.setItem(PROFESSIONAL_PROFILES_STORAGE_KEY, JSON.stringify(profiles));
+      }
+    }
+
+    if (String(repairedProfile.status || '').toLowerCase() !== 'active') return user;
+    return normalizeUser({
+      ...user,
+      role: 'professional',
+      type: 'professional',
+      professionalProfileId: repairedProfile.id,
+      publicProfileUrl: 'perfil.html',
+      ownerProfileUrl: 'perfil-profissional.html'
+    });
+  };
 
   const writeLocalUsers = (users) => {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.isArray(users) ? users : []));
@@ -293,7 +346,20 @@
       byEmail.set(key, user);
     });
 
-    return Array.from(byEmail.values());
+    const reconciled = Array.from(byEmail.values()).map(reconcileProfessionalUser);
+    const localById = new Map(local.map((user) => [String(user.id), user]));
+    let localChanged = false;
+    reconciled.forEach((user) => {
+      const previous = localById.get(String(user.id));
+      if (!previous || previous.role !== user.role || previous.professionalProfileId !== user.professionalProfileId) {
+        if (previous || user.role === 'professional') {
+          localById.set(String(user.id), user);
+          localChanged = true;
+        }
+      }
+    });
+    if (localChanged) writeLocalUsers(Array.from(localById.values()));
+    return reconciled;
   };
 
   const findByLogin = async (login) => {

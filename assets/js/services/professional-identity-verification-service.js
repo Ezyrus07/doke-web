@@ -27,6 +27,9 @@
   }
 
   function usersRepository() {
+    if (window.DokeAuth && window.DokeAuth.repositories && window.DokeAuth.repositories.users) {
+      return window.DokeAuth.repositories.users;
+    }
     return Doke.repositories && Doke.repositories.users || null;
   }
 
@@ -336,12 +339,57 @@
     });
   }
 
+  function resolveProfessionalProfile(verification) {
+    var profiles = profileRepository();
+    if (!profiles) return Promise.reject(new Error('Perfil profissional indisponível para ativação.'));
+    if (verification && verification.professionalProfileId && typeof profiles.getById === 'function') {
+      return profiles.getById(verification.professionalProfileId).then(function (profile) {
+        if (profile) return profile;
+        return typeof profiles.getByUserId === 'function' ? profiles.getByUserId(verification.userId) : null;
+      });
+    }
+    return typeof profiles.getByUserId === 'function'
+      ? profiles.getByUserId(verification && verification.userId)
+      : Promise.resolve(null);
+  }
+
+  function syncTargetSession(user) {
+    var sessionUser = currentUser();
+    if (!sessionUser || String(sessionUser.id) !== String(user && user.id)) return;
+    if (!Doke.session || typeof Doke.session.setCurrentUser !== 'function') return;
+    var session = Doke.session.getSession && Doke.session.getSession();
+    Doke.session.setCurrentUser(user, {
+      provider: session && session.provider || 'mock',
+      token: session && session.token || '',
+      refreshToken: session && session.refreshToken || '',
+      remember: session ? session.remember !== false : true,
+      sessionStatus: session && session.sessionStatus || 'active',
+      expiresAt: session && session.expiresAt || ''
+    });
+  }
+
   function activateProfessional(verification) {
     var profiles = profileRepository();
     var users = usersRepository();
     if (!profiles || !users) return Promise.reject(new Error('Ativação profissional indisponível.'));
-    return syncProfileVerificationStatus(verification.professionalProfileId, 'verified').then(function () {
-      return profiles.transition(verification.professionalProfileId, 'active');
+
+    return resolveProfessionalProfile(verification).then(function (currentProfile) {
+      if (!currentProfile) throw new Error('Perfil profissional vinculado à verificação não foi encontrado.');
+      if (currentProfile.status !== 'active' && currentProfile.status !== 'pending_verification') {
+        throw new Error('O perfil profissional não está pronto para ativação.');
+      }
+
+      var activateProfile = Promise.resolve(currentProfile);
+      if (currentProfile.verificationStatus !== 'verified') {
+        activateProfile = profiles.setVerificationStatus(currentProfile.id, 'verified');
+      }
+      return activateProfile.then(function (profileWithVerification) {
+        if (profileWithVerification.status === 'active') return profileWithVerification;
+        if (verification.professionalProfileId && String(profileWithVerification.id) === String(verification.professionalProfileId)) {
+          return profiles.transition(verification.professionalProfileId, 'active');
+        }
+        return profiles.transition(profileWithVerification.id, 'active');
+      });
     }).then(function (professionalProfile) {
       return users.updateCurrentUser(verification.userId, {
         role: 'professional',
@@ -350,19 +398,24 @@
         publicProfileUrl: 'perfil.html',
         ownerProfileUrl: 'perfil-profissional.html'
       }).then(function (user) {
-        var sessionUser = currentUser();
-        if (sessionUser && String(sessionUser.id) === String(user.id) && Doke.session && typeof Doke.session.setCurrentUser === 'function') {
-          var session = Doke.session.getSession && Doke.session.getSession();
-          Doke.session.setCurrentUser(user, {
-            provider: session && session.provider || 'mock',
-            token: session && session.token || '',
-            refreshToken: session && session.refreshToken || '',
-            remember: session ? session.remember !== false : true,
-            sessionStatus: session && session.sessionStatus || 'active',
-            expiresAt: session && session.expiresAt || ''
-          });
-        }
-        return { professionalProfile: professionalProfile, user: user };
+        syncTargetSession(user);
+        var confirmedProfilePromise = typeof profiles.getById === 'function'
+          ? profiles.getById(professionalProfile.id)
+          : Promise.resolve(professionalProfile);
+        var confirmedUserPromise = typeof users.findById === 'function'
+          ? users.findById(user.id)
+          : Promise.resolve(user);
+        return Promise.all([confirmedProfilePromise, confirmedUserPromise]).then(function (items) {
+          var confirmedProfile = items[0] || professionalProfile;
+          var confirmedUser = items[1] || user;
+          if (!confirmedProfile || confirmedProfile.status !== 'active' || confirmedProfile.verificationStatus !== 'verified') {
+            throw new Error('A ativação do perfil profissional não foi confirmada.');
+          }
+          if (!confirmedUser || confirmedUser.role !== 'professional') {
+            throw new Error('A promoção da conta para profissional não foi confirmada.');
+          }
+          return { professionalProfile: confirmedProfile, user: confirmedUser };
+        });
       });
     });
   }
@@ -372,22 +425,32 @@
     var reviewer = requireReviewer();
     var repo = repository();
     if (!repo) return Promise.reject(new Error('Persistência da verificação indisponível.'));
+
     return repo.getById(verificationId).then(function (current) {
       if (!current) throw new Error('Verificação de identidade não encontrada.');
-      if (current.status === 'verified') return current;
       var ensureReview = current.status === 'submitted'
         ? repo.transition(current.id, 'under_review', { reviewerId: reviewer.id })
         : Promise.resolve(current);
+
       return ensureReview.then(function (reviewing) {
-        return repo.transition(reviewing.id, 'verified', { reviewerId: reviewer.id });
+        return activateProfessional(reviewing).then(function (activation) {
+          if (reviewing.status === 'verified') {
+            return { verification: reviewing, activation: activation };
+          }
+          return repo.transition(reviewing.id, 'verified', { reviewerId: reviewer.id }).then(function (verified) {
+            return { verification: verified, activation: activation };
+          });
+        });
       });
-    }).then(function (verification) {
-      return activateProfessional(verification).then(function (activation) {
-        window.dispatchEvent(new CustomEvent('doke:professional-verification-approved', {
-          detail: { verification: verification, professionalProfile: activation.professionalProfile, user: activation.user }
-        }));
-        return verification;
-      });
+    }).then(function (result) {
+      window.dispatchEvent(new CustomEvent('doke:professional-verification-approved', {
+        detail: {
+          verification: result.verification,
+          professionalProfile: result.activation.professionalProfile,
+          user: result.activation.user
+        }
+      }));
+      return result.verification;
     });
   }
 

@@ -13,7 +13,8 @@
       rel="stylesheet"
     />
     <script src="assets/js/core/shell-state-early.js?v=20260614-drawer-canonical-v2"></script>
-    <link rel="stylesheet" href="assets/css/pages/client-profile.css?v=20260715-residual-cleanup-v1" />
+    <link rel="stylesheet" href="assets/css/pages/client-profile.css?v=20260717-profile-media-frame-v3" />
+    <link rel="stylesheet" href="assets/css/pages/client-profile-editor.css?v=20260717-profile-media-frame-v3" />
     <link rel="stylesheet" href="assets/css/components/feedback/document-preloader.css?v=20260712-global-document-boot-v1">
 </head>
   <body data-page="perfil" data-profile-contract="clean-v1" data-client-profile-contract="owner-edit-v1" data-profile-mode="client-edit" class="doke-app-shell-page app-shell-page internal-shell-page profile-page-shell client-profile-shell doke-flow doke-profile-flow has-global-header">
@@ -121,11 +122,11 @@
               <div class="profile-hero__cover">
                 <img class="profile-hero__cover-image" data-profile-cover-image alt="" hidden />
                 <span class="profile-hero__cover-mark" aria-hidden="true">Doke</span>
-                <label class="profile-owner-cover-action doke-btn doke-btn--ghost doke-btn--sm">Alterar capa<input class="sr-only" type="file" accept="image/png,image/jpeg,image/webp,image/gif" data-profile-media-input="cover" /></label>
+                <label class="profile-owner-cover-action doke-icon-btn" aria-label="Alterar imagem de capa"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M8.5 6.5 10 4.5h4l1.5 2H19a2 2 0 0 1 2 2v8.5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8.5a2 2 0 0 1 2-2h3.5Z"></path><circle cx="12" cy="12.5" r="3.5"></circle></svg><input class="sr-only" type="file" accept="image/png,image/jpeg,image/webp,image/gif" data-profile-media-input="cover" /></label>
               </div>
 
               <div class="profile-hero__identity">
-                <div class="profile-avatar profile-avatar--editable" aria-label="Avatar do perfil"><img class="profile-avatar__image" data-profile-avatar-image alt="" hidden /><span data-profile-avatar-initials aria-hidden="true">DK</span><label class="profile-owner-avatar-action doke-btn doke-btn--ghost doke-btn--sm" aria-label="Alterar foto do perfil">Alterar foto<input class="sr-only" type="file" accept="image/png,image/jpeg,image/webp,image/gif" data-profile-media-input="avatar" /></label></div>
+                <div class="profile-avatar profile-avatar--editable" aria-label="Avatar do perfil"><img class="profile-avatar__image" data-profile-avatar-image alt="" hidden /><span data-profile-avatar-initials aria-hidden="true">DK</span><label class="profile-owner-avatar-action doke-icon-btn" aria-label="Alterar foto do perfil"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M8.5 6.5 10 4.5h4l1.5 2H19a2 2 0 0 1 2 2v8.5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8.5a2 2 0 0 1 2-2h3.5Z"></path><circle cx="12" cy="12.5" r="3.5"></circle></svg><input class="sr-only" type="file" accept="image/png,image/jpeg,image/webp,image/gif" data-profile-media-input="avatar" /></label></div>
 
                 <div class="profile-heading">
                   <p class="profile-heading__eyebrow">Meu perfil</p>
@@ -138,7 +139,7 @@
                 </div>
 
                 <div class="profile-actions" aria-label="Ações do perfil">
-                  <a class="doke-btn doke-btn--primary profile-action" href="configuracoes.html?tab=profile">Editar perfil</a>
+                  <button class="doke-btn doke-btn--primary profile-action" data-client-edit-action type="button">Editar perfil</button>
                 </div>
                 <p class="profile-media-feedback" data-profile-media-feedback role="status" aria-live="polite" hidden></p>
               </div>
@@ -179,7 +180,7 @@
               </section>
 
               <section id="profile-about" class="profile-area profile-area--about doke-page-section" aria-label="Sobre o cliente">
-                <div class="profile-owner-section-tools"><span>Sobre</span><div><a class="profile-owner-mini-action doke-btn doke-btn--ghost doke-btn--sm" href="configuracoes.html?tab=profile">Editar sobre</a><a class="profile-owner-mini-action doke-btn doke-btn--ghost doke-btn--sm" href="configuracoes.html?tab=profile">Editar interesses</a></div></div>
+                <div class="profile-owner-section-tools"><span>Sobre</span><div><button class="profile-owner-mini-action doke-btn doke-btn--ghost doke-btn--sm" data-client-edit-action data-client-edit-focus="bio" type="button">Editar sobre</button><button class="profile-owner-mini-action doke-btn doke-btn--ghost doke-btn--sm" data-client-edit-action data-client-edit-focus="interests" type="button">Editar interesses</button></div></div>
                 <div class="profile-info-grid">
                   <article class="profile-surface-card profile-surface-card--about">
                     <h3 data-profile-about-title>Sobre você</h3>
@@ -203,6 +204,36 @@
         </div>
       </div>
     </div>
+<dialog aria-labelledby="client-profile-editor-title" class="client-profile-editor-dialog doke-native-overlay" data-client-profile-editor>
+  <section class="client-profile-editor-dialog__surface doke-modal-surface doke-modal-surface--form doke-overlay__surface">
+    <header class="doke-modal-header doke-overlay__header">
+      <div>
+        <p class="client-profile-editor-dialog__eyebrow">Perfil cliente</p>
+        <h2 class="doke-modal-title doke-overlay__title" id="client-profile-editor-title">Editar perfil</h2>
+        <p class="doke-modal-description doke-overlay__text">Atualize suas informações públicas na Doke.</p>
+      </div>
+      <button aria-label="Fechar edição" class="doke-close-button doke-icon-btn doke-icon-btn--flat" data-client-profile-editor-close type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+    </header>
+    <form class="client-profile-editor-form doke-overlay__body" data-client-profile-editor-form novalidate>
+      <div class="client-profile-editor-form__grid">
+        <label class="client-profile-editor-form__field"><span class="doke-label">Nome</span><input class="doke-input" data-client-editor-field="name" maxlength="80" required type="text"></label>
+        <label class="client-profile-editor-form__field"><span class="doke-label">Usuário</span><input class="doke-input" data-client-editor-field="handle" maxlength="30" required type="text"></label>
+        <label class="client-profile-editor-form__field"><span class="doke-label">Cidade</span><input class="doke-input" data-client-editor-field="city" maxlength="60" type="text"></label>
+        <label class="client-profile-editor-form__field"><span class="doke-label">Estado</span><input class="doke-input" data-client-editor-field="state" maxlength="2" placeholder="BA" type="text"></label>
+        <label class="client-profile-editor-form__field client-profile-editor-form__field--wide"><span class="doke-label">Interesses</span><input class="doke-input" data-client-editor-field="interests" maxlength="180" type="text"><small>Separe por vírgulas.</small></label>
+        <label class="client-profile-editor-form__field client-profile-editor-form__field--wide"><span class="doke-label">Sobre você</span><textarea class="doke-textarea" data-client-editor-field="bio" maxlength="500" minlength="10" rows="5"></textarea></label>
+        <label class="client-profile-editor-form__field"><span class="doke-label">Foto do perfil</span><input accept="image/png,image/jpeg,image/webp,image/gif" data-client-editor-file="avatar" type="file"><small>PNG, JPG, WEBP ou GIF; até 120 KB no modo local.</small></label>
+        <label class="client-profile-editor-form__field"><span class="doke-label">Imagem de capa</span><input accept="image/png,image/jpeg,image/webp,image/gif" data-client-editor-file="cover" type="file"><small>PNG, JPG, WEBP ou GIF; até 120 KB no modo local.</small></label>
+      </div>
+      <p aria-live="polite" class="client-profile-editor-form__status" data-client-profile-editor-status></p>
+      <footer class="doke-modal-actions doke-overlay__actions">
+        <button class="doke-btn doke-btn--ghost" data-client-profile-editor-close type="button">Cancelar</button>
+        <button class="doke-btn doke-btn--primary" data-client-profile-editor-save type="submit">Salvar alterações</button>
+      </footer>
+    </form>
+  </section>
+</dialog>
+
 <script src="assets/js/core/runtime-config.js?v=20260531-stable-smooth-v1" defer></script>
     <script src="assets/js/core/feature-flags.js?v=20260501-stage32-runtime-flags" defer></script>
     <script src="assets/js/core/rollout-guard.js?v=20260501-stage32-runtime-flags" defer></script>
@@ -211,8 +242,8 @@
     <script src="assets/js/core/navigation-lifecycle.js?v=20260713-navigation-lifecycle-v1" defer></script>
     <script src="assets/js/core/app.js?v=20260714-route-deadlock-v1" defer></script>
     <script src="assets/js/components/operational-event-toast.js?v=20260702-sidebar-quick-alert-flow-v1" defer></script>
-    <script src="assets/js/core/page-hydration.js?v=20260713-shared-page-hydration-v1" defer></script>
-    <script src="assets/js/core/stable-shell-router.js?v=20260714-route-deadlock-v1" defer></script>
+    <script src="assets/js/core/page-hydration.js?v=20260717-professional-service-lifecycle-v1" defer></script>
+    <script src="assets/js/core/stable-shell-router.js?v=20260717-professional-service-lifecycle-v1" defer></script>
     <script src="assets/js/ui/responsive-interaction-guard.js?v=20260428-architecture"></script>
     <script src="assets/js/ui/mobile-drawer-standard.js?v=20260701-drawer-detail-contract-v1"></script>
     <script src="assets/js/components/mobile-app-shell.js?v=20260701-navigation-registry-v1" defer></script>
@@ -220,7 +251,7 @@
     <script src="assets/js/state/state-contracts.js?v=20260512-state-contracts-v1" defer></script>
     <script src="assets/js/core/permissions.js?v=20260501-auth-session-v1" defer></script>
     <script src="assets/js/core/session.js?v=20260501-auth-session-v1" defer></script>
-    <script src="assets/js/repositories/users-repository.js?v=20260712-profile-write-v1" defer></script>
+    <script src="assets/js/repositories/users-repository.js?v=20260717-professional-activation-v2" defer></script>
     <script src="assets/js/services/auth-service.js?v=20260622-auth-surface-ready-v1" defer></script>
     <script src="assets/js/services/account-access-service.js?v=20260714-profile-lifecycle-v1" defer></script>
     <script src="assets/js/services/mock-data-service.js?v=20260501-stage31-domain-services" defer></script>
@@ -228,7 +259,7 @@
     <script src="assets/js/repositories/professional-profiles-repository.js?v=20260714-profile-verification-entry-v1" defer></script>
     <script src="assets/js/repositories/professional-identity-verifications-repository.js?v=20260714-profile-verification-entry-v1" defer></script>
     <script src="assets/js/services/professional-profile-setup-service.js?v=20260714-profile-verification-entry-v1" defer></script>
-    <script src="assets/js/services/professional-identity-verification-service.js?v=20260714-profile-verification-entry-v1" defer></script>
+    <script src="assets/js/services/professional-identity-verification-service.js?v=20260717-professional-activation-v2" defer></script>
     <script src="assets/js/services/search-service.js?v=20260501-stage31-domain-services" defer></script>
     <script src="assets/js/services/order-service.js?v=20260501-stage31-domain-services" defer></script>
     <script src="assets/js/services/message-service.js?v=20260501-stage31-domain-services" defer></script>
@@ -245,6 +276,7 @@
     <script src="assets/js/controllers/controller-bootstrap.js?v=20260501-stage32-runtime-flags" defer></script>
     <script src="assets/js/core/experience-runtime.js?v=20260711-experience-runtime-v1" defer></script>
     <script src="assets/js/pages/profile/profile-experience-core.js?v=20260711-profile-core-v1" defer></script>
+    <script src="assets/js/pages/profile/client-profile-editor.js?v=20260717-shared-client-profile-editor-v1" defer></script>
     <script src="assets/js/pages/owner-profile-experience.js?v=20260714-profile-lifecycle-v1" defer></script>
     <script src="assets/js/core/ipad-safari-scroll-guard.js?v=20260602-v1" defer></script>
     <script src="assets/js/core/document-preloader.js?v=20260712-global-document-boot-v1" defer></script>

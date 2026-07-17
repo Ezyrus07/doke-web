@@ -37,17 +37,67 @@
     return assertRepository().getById(serviceId);
   }
 
+  function currentUser() {
+    return Doke.session && typeof Doke.session.getCurrentUser === 'function'
+      ? Doke.session.getCurrentUser()
+      : null;
+  }
+
   function create(payload) {
     var access = Doke.services && Doke.services.professionalAccess;
     var action = access && access.ACTIONS && access.ACTIONS.PUBLISH_SERVICE || 'publish_service';
     if (!access || typeof access.assert !== 'function') {
       return Promise.reject(new Error('A autoridade de acesso profissional não foi carregada.'));
     }
-    return access.assert(action).then(function () {
+    return access.assert(action).then(function (result) {
       var repository = assertRepository();
       if (typeof repository.save !== 'function') throw new Error('A publicação de serviços não está disponível.');
-      return repository.save(payload || {});
+      var actor = result.user || currentUser() || {};
+      var professionalProfile = result.professionalProfile || {};
+      var now = new Date().toISOString();
+      var service = Object.assign({}, payload || {}, {
+        ownerId: actor.id || '',
+        professionalId: actor.id || '',
+        providerId: actor.id || '',
+        professionalProfileId: professionalProfile.id || '',
+        providerName: actor.name || actor.displayName || payload && payload.providerName || 'Profissional Doke',
+        providerInitials: actor.initials || actor.avatarInitials || payload && payload.providerInitials || 'DK',
+        verified: result.verification && result.verification.status === 'verified',
+        status: payload && payload.status === 'inactive' ? 'inactive' : 'active',
+        createdAt: payload && payload.createdAt || now,
+        updatedAt: now
+      });
+      return repository.save(service);
     });
+  }
+
+  function listByProfessional(professionalId, filters) {
+    var repository = assertRepository();
+    if (typeof repository.listByProfessional === 'function') {
+      return repository.listByProfessional(professionalId, filters || {});
+    }
+    return repository.list(Object.assign({}, filters || {}, { ownerId: professionalId }));
+  }
+
+  function updateOwned(serviceId, patch) {
+    var access = Doke.services && Doke.services.professionalAccess;
+    var action = access && access.ACTIONS && access.ACTIONS.PUBLISH_SERVICE || 'publish_service';
+    if (!access || typeof access.assert !== 'function') return Promise.reject(new Error('A autoridade de acesso profissional não foi carregada.'));
+    return Promise.all([access.assert(action), getById(serviceId)]).then(function (items) {
+      var result = items[0];
+      var current = items[1];
+      if (!current) throw new Error('Serviço não encontrado.');
+      if (String(current.ownerId || current.professionalId || current.providerId || '') !== String(result.user && result.user.id || '')) {
+        throw new Error('Você não pode alterar este serviço.');
+      }
+      var repository = assertRepository();
+      if (typeof repository.update !== 'function') throw new Error('Edição de serviço indisponível.');
+      return repository.update(serviceId, patch || {});
+    });
+  }
+
+  function deactivateOwned(serviceId) {
+    return updateOwned(serviceId, { status: 'inactive' });
   }
 
   function getDetailUrl(serviceOrId) {
@@ -103,6 +153,9 @@
     search: search,
     getById: getById,
     create: create,
+    listByProfessional: listByProfessional,
+    updateOwned: updateOwned,
+    deactivateOwned: deactivateOwned,
     getFromUrl: getFromUrl,
     getDetailUrl: getDetailUrl,
     getBudgetUrl: getBudgetUrl,

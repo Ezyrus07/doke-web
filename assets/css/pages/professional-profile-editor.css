@@ -3,7 +3,7 @@
  * Responsibility: owner/editing affordances for perfil-profissional.html.
  * The visual anatomy is inherited from the clean public profile contract.
  */
-@import url("./profile-foundation.css?v=20260715-control-elevation-scope-v1");
+@import url("./profile-foundation.css?v=20260717-profile-media-frame-v3");
 
 /* First-paint authorization boundary.
  * The owner profile content must never override the native hidden contract
@@ -56,8 +56,18 @@ body[data-profile-mode="owner-edit"] .profile-owner-cover-action {
   padding: 0 14px;
 }
 
+body[data-profile-mode="owner-edit"] .profile-owner-avatar-stack {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  justify-items: center;
+  align-self: end;
+  gap: 8px;
+  min-width: 0;
+}
+
 body[data-profile-mode="owner-edit"] .profile-avatar--editable {
-  overflow: visible;
+  overflow: hidden;
 }
 
 body[data-profile-mode="owner-edit"] .profile-avatar--editable > span {
@@ -65,13 +75,11 @@ body[data-profile-mode="owner-edit"] .profile-avatar--editable > span {
 }
 
 body[data-profile-mode="owner-edit"] .profile-owner-avatar-action {
-  position: absolute;
-  left: 50%;
-  bottom: -14px;
-  z-index: 2;
+  position: static;
+  z-index: auto;
   min-height: 30px;
   padding: 0 11px;
-  transform: translateX(-50%);
+  transform: none;
   white-space: nowrap;
 }
 
@@ -146,4 +154,154 @@ body[data-profile-mode="owner-edit"] :is(.profile-owner-cover-action, .profile-o
 }
 body[data-profile-mode="owner-edit"] :is(.profile-owner-cover-action, .profile-owner-avatar-action).doke-btn--ghost:focus-visible {
   box-shadow: var(--doke-white-control-shadow-focus);
+}
+
+/* Active professional profile editor. */
+body[data-page="perfil-profissional"] .profile-hero__cover-image,
+body[data-page="perfil-profissional"] .profile-avatar__image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+body[data-page="perfil-profissional"] :is(.profile-hero__cover-image, .profile-avatar__image)[hidden] {
+  display: none;
+}
+
+body[data-page="perfil-profissional"] .professional-profile-editor-dialog__surface {
+  width: min(760px, calc(100vw - 32px));
+  max-height: min(860px, calc(100vh - 32px));
+  overflow: auto;
+}
+
+body[data-page="perfil-profissional"] .professional-profile-editor-dialog__eyebrow {
+  margin: 0 0 4px;
+  color: var(--color-primary-strong, #184a76);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+body[data-page="perfil-profissional"] .professional-profile-editor-form {
+  display: grid;
+  gap: 18px;
+}
+
+body[data-page="perfil-profissional"] .professional-profile-editor-form__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+body[data-page="perfil-profissional"] .professional-profile-editor-form__field {
+  display: grid;
+  align-content: start;
+  gap: 7px;
+  min-width: 0;
+}
+
+body[data-page="perfil-profissional"] .professional-profile-editor-form__field--wide {
+  grid-column: 1 / -1;
+}
+
+body[data-page="perfil-profissional"] .professional-profile-editor-form__field small {
+  color: var(--doke-text-muted, #6b7f99);
+  font-size: 0.75rem;
+}
+
+body[data-page="perfil-profissional"] .professional-profile-editor-form__status {
+  min-height: 1.25rem;
+  margin: 0;
+  color: var(--doke-text-muted, #6b7f99);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+body[data-page="perfil-profissional"] .professional-profile-editor-form__status[data-state="error"] {
+  color: var(--color-danger, #b42318);
+}
+
+body[data-page="perfil-profissional"] .professional-profile-editor-form__status[data-state="success"] {
+  color: var(--color-success, #087f5b);
+}
+
+@media (max-width: 680px) {
+  body[data-page="perfil-profissional"] .professional-profile-editor-form__grid {
+    grid-template-columns: 1fr;
+  }
+
+  body[data-page="perfil-profissional"] .professional-profile-editor-form__field--wide {
+    grid-column: auto;
+  }
+}
+
+/* Compact media controls and mobile parity with the client owner profile. */
+body[data-profile-mode="owner-edit"] :is(.profile-owner-cover-action, .profile-owner-avatar-action).doke-icon-btn {
+  inline-size: 38px;
+  block-size: 38px;
+  min-inline-size: 38px;
+  min-block-size: 38px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-full, 999px);
+  background: rgba(255, 255, 255, 0.96);
+  color: var(--color-primary-strong, #184a76);
+  box-shadow: var(--doke-white-control-shadow, 0 8px 20px rgba(16, 59, 99, 0.16));
+}
+
+body[data-profile-mode="owner-edit"] :is(.profile-owner-cover-action, .profile-owner-avatar-action).doke-icon-btn svg {
+  inline-size: 18px;
+  block-size: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+body[data-profile-mode="owner-edit"] .profile-owner-cover-action.doke-icon-btn {
+  left: auto;
+  right: clamp(14px, 2vw, 22px);
+  bottom: clamp(14px, 2vw, 22px);
+}
+
+body[data-profile-mode="owner-edit"] .profile-owner-avatar-stack {
+  position: relative;
+  display: block;
+  inline-size: fit-content;
+}
+
+body[data-profile-mode="owner-edit"] .profile-owner-avatar-action.doke-icon-btn {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  z-index: 3;
+  transform: none;
+}
+
+@media (max-width: 760px) {
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-owner-avatar-stack {
+    justify-self: start;
+    align-self: start;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-hero__identity {
+    gap: 10px;
+  }
+}
+
+@media (max-width: 520px) {
+  body[data-profile-mode="owner-edit"] :is(.profile-owner-cover-action, .profile-owner-avatar-action).doke-icon-btn {
+    inline-size: 34px;
+    block-size: 34px;
+    min-inline-size: 34px;
+    min-block-size: 34px;
+  }
+
+  body[data-profile-mode="owner-edit"] .profile-owner-cover-action.doke-icon-btn {
+    right: 12px;
+    bottom: 12px;
+  }
 }

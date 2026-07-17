@@ -12,6 +12,7 @@
     '/avaliacao-profissional.html',
     '/carteira.html',
     '/admin.html',
+    '/admin-verificacao.html',
     '/comunidade-interna.html',
     '/comunidade.html',
     '/configuracoes.html',
@@ -58,6 +59,7 @@
     '/perfil-profissional.html',
     '/comunidade.html',
     '/admin.html',
+    '/admin-verificacao.html',
     '/pagamento-profissional.html',
     '/anunciar-servico.html'
   ]);
@@ -84,6 +86,7 @@
     '/notificacoes.html': ['DokeInitNotifications'],
     '/carteira.html': ['DokeInitWalletPage'],
     '/admin.html': ['DokeInitAdmin'],
+    '/admin-verificacao.html': ['DokeInitAdminVerification'],
     '/comunidade.html': ['DokeInitCommunity'],
     '/comunidade-interna.html': [],
     '/perfil.html': ['DokeInitProfile'],
@@ -94,7 +97,8 @@
     '/orcamento.html': ['DokeInitBudget'],
     '/pagamento-profissional.html': ['DokeInitPayment'],
     '/tornar-profissional.html': ['DokeInitBecomePro'],
-    '/verificacao-profissional.html': ['DokeInitProfessionalVerification']
+    '/verificacao-profissional.html': ['DokeInitProfessionalVerification'],
+    '/anunciar-servico.html': ['DokeInitPostService']
   };
 
   var PRESERVED_BODY_CLASSES = [
@@ -705,13 +709,49 @@
       });
     });
     return new Promise(function (resolve) {
-      requestAnimationFrame(function () {
+      var settled = false;
+      var fallbackTimer = 0;
+      function finishReset() {
+        if (settled) return;
+        settled = true;
+        if (fallbackTimer) window.clearTimeout(fallbackTimer);
         clearTransientRouteState();
         try { window.scrollTo(0, 0); } catch (error) {}
         if (document.documentElement) document.documentElement.style.scrollBehavior = previousHtmlBehavior;
         if (document.body) document.body.style.scrollBehavior = previousBodyBehavior;
         resolve();
-      });
+      }
+      fallbackTimer = window.setTimeout(finishReset, 120);
+      try {
+        requestAnimationFrame(finishReset);
+      } catch (error) {
+        finishReset();
+      }
+    });
+  }
+
+  function restoreScrollWithFallback(href) {
+    if (!lifecycle || !lifecycle.scroll || typeof lifecycle.scroll.restore !== 'function') {
+      return resetScroll();
+    }
+    return new Promise(function (resolve) {
+      var settled = false;
+      var fallbackTimer = 0;
+      function finishRestore(result) {
+        if (settled) return;
+        settled = true;
+        if (fallbackTimer) window.clearTimeout(fallbackTimer);
+        resolve(result);
+      }
+      fallbackTimer = window.setTimeout(function () { finishRestore(false); }, 120);
+      try {
+        Promise.resolve(lifecycle.scroll.restore(href)).then(
+          function (result) { finishRestore(result); },
+          function () { finishRestore(false); }
+        );
+      } catch (error) {
+        finishRestore(false);
+      }
     });
   }
 
@@ -735,7 +775,7 @@
       '.nav-link--communities': normalized === '/comunidade.html' || normalized === '/comunidade-interna.html',
       '.nav-link--profile': PROFILE_ACTIVE_PATHS.has(normalized),
       '.nav-link--wallet': normalized === '/carteira.html',
-      '.nav-link--admin': normalized === '/admin.html',
+      '.nav-link--admin': normalized === '/admin.html' || normalized === '/admin-verificacao.html',
       '.nav-link--settings': normalized === '/configuracoes.html'
     };
 
@@ -1017,7 +1057,7 @@
       });
 
       if (options.restoreScroll && lifecycle && lifecycle.scroll) {
-        await lifecycle.scroll.restore(url.href);
+        await restoreScrollWithFallback(url.href);
       } else {
         await resetScroll();
       }

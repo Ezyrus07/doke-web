@@ -257,6 +257,14 @@
   window.DokeInitOwnerProfile = function DokeInitOwnerProfile() {
     var boundary = document.querySelector('[data-state-boundary="meu-perfil"]');
     if (!boundary) return Promise.resolve(null);
+    if (Doke.clientProfileEditor && typeof Doke.clientProfileEditor.register === 'function') {
+      Doke.clientProfileEditor.register({
+        getProfile: function () { return latestProfile; },
+        setProfile: function (profile) { latestProfile = profile || latestProfile; },
+        render: render,
+        canEdit: function () { return true; }
+      });
+    }
     if (ownerReadyBoundary === boundary) return Promise.resolve(ownerLastResult);
     if (ownerInitializationBoundary === boundary && ownerInitialization) return ownerInitialization;
 

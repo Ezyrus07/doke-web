@@ -6,12 +6,11 @@
   'use strict';
 
   var Doke = window.Doke || (window.Doke = {});
-  var root = document.querySelector('[data-admin-review-root]');
-  if (!root) return;
-
+  var root = null;
   var objectUrls = [];
   var current = null;
-  var loadRun = 0;
+  var initializationByRoot = new WeakMap();
+  var REVIEW_TIMEOUT_MS = 9000;
   var eventsBound = false;
   var decisionInFlight = false;
 
@@ -299,6 +298,20 @@
     });
   }
 
+  function withTimeout(operation, timeoutMs, message) {
+    var timer = null;
+    return Promise.race([
+      Promise.resolve(operation),
+      new Promise(function (_, reject) {
+        timer = window.setTimeout(function () {
+          reject(new Error(message || 'A operação demorou mais do que o esperado.'));
+        }, timeoutMs);
+      })
+    ]).finally(function () {
+      if (timer) window.clearTimeout(timer);
+    });
+  }
+
   function handleDecision(operation, kind, errorMessage) {
     if (decisionInFlight) return Promise.resolve(null);
     decisionInFlight = true;
@@ -318,26 +331,32 @@
       .catch(function () { return null; });
   }
 
-  function loadReview() {
-    var runId = ++loadRun;
+  function loadReview(targetRoot) {
+    var activeRoot = targetRoot || document.querySelector('[data-admin-review-root]');
+    if (!activeRoot) return Promise.resolve(null);
+    var existing = initializationByRoot.get(activeRoot);
+    if (existing) return existing;
+
+    root = activeRoot;
     current = null;
     releaseObjectUrls();
     setSurface('guard-pending');
     beginPage('admin-review-access-guard');
 
-    var access = accessService();
-    if (!access || typeof access.guardPage !== 'function') {
-      fail(new Error('O serviço de acesso administrativo não está disponível.'));
-      return Promise.resolve(null);
-    }
-
-    return access.guardPage({
-      name: 'admin-verification-access',
-      source: 'admin-verificacao.html',
-      deniedRedirect: 'pedidos.html',
-      loginRedirect: 'auth/login.html'
+    var operation = Promise.resolve().then(function () {
+      var access = accessService();
+      if (!access || typeof access.guardPage !== 'function') {
+        throw new Error('O serviço de acesso administrativo não está disponível.');
+      }
+      return withTimeout(access.guardPage({
+        name: 'admin-verification-access',
+        source: 'admin-verificacao.html',
+        deniedRedirect: 'pedidos.html',
+        loginRedirect: 'auth/login.html'
+      }), REVIEW_TIMEOUT_MS, 'A validação do acesso administrativo demorou mais do que o esperado.');
     }).then(function (result) {
-      if (runId !== loadRun) return null;
+      if (!activeRoot.isConnected || document.querySelector('[data-admin-review-root]') !== activeRoot) return null;
+      root = activeRoot;
       if (!result || result.allowed !== true) {
         setSurface(result && result.redirecting ? 'redirecting' : 'error', 'Acesso restrito ao suporte Doke.');
         return null;
@@ -350,17 +369,30 @@
       if (!service || typeof service.getReviewDetail !== 'function') {
         throw new Error('O serviço de verificação não está disponível.');
       }
-
-      return service.getReviewDetail(id).then(function (verification) {
-        if (runId !== loadRun) return null;
+      return withTimeout(
+        Promise.resolve(service.getReviewDetail(id)),
+        REVIEW_TIMEOUT_MS,
+        'O carregamento da análise demorou mais do que o esperado.'
+      ).then(function (verification) {
+        if (!activeRoot.isConnected || document.querySelector('[data-admin-review-root]') !== activeRoot) return null;
+        root = activeRoot;
         if (!verification) throw new Error('Verificação não encontrada.');
         render(verification);
         return verification;
       });
     }).catch(function (error) {
-      if (runId === loadRun) fail(error);
+      if (activeRoot.isConnected && document.querySelector('[data-admin-review-root]') === activeRoot) {
+        root = activeRoot;
+        console.error('[Doke][admin-verificacao] Falha no lifecycle da análise', error);
+        fail(error);
+      }
       return null;
+    }).finally(function () {
+      if (initializationByRoot.get(activeRoot) === operation) initializationByRoot.delete(activeRoot);
     });
+
+    initializationByRoot.set(activeRoot, operation);
+    return operation;
   }
 
   function bind() {
@@ -377,7 +409,7 @@
 
       if (event.target.closest('[data-admin-review-retry]')) {
         event.preventDefault();
-        loadReview();
+        loadReview(document.querySelector('[data-admin-review-root]'));
         return;
       }
 
@@ -444,17 +476,24 @@
   }
 
   function init() {
-    root = document.querySelector('[data-admin-review-root]');
-    if (!root) return;
+    var activeRoot = document.querySelector('[data-admin-review-root]');
+    if (!activeRoot) return Promise.resolve(null);
+    root = activeRoot;
     bind();
-    loadReview();
+    return loadReview(activeRoot);
   }
 
   window.DokeInitAdminVerification = init;
 
+  function bootstrap() {
+    Promise.resolve(init()).catch(function (error) {
+      console.error('[Doke][admin-verificacao] Falha na inicialização', error);
+    });
+  }
+
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init, { once: true });
+    document.addEventListener('DOMContentLoaded', bootstrap, { once: true });
   } else {
-    init();
+    bootstrap();
   }
 }());

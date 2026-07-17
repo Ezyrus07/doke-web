@@ -65,7 +65,8 @@
     var state = service.state || service.staté || '';
     var city = service.city || '';
     var location = service.location || [city, state].filter(Boolean).join(', ');
-    var providerId = service.professionalId || service.providerId || '';
+    var providerId = service.ownerId || service.professionalId || service.providerId || '';
+    var professionalProfileId = normalizeText(service.professionalProfileId || service.profileId);
     var id = normalizeText(service.id);
 
     return Object.assign({}, service, {
@@ -78,8 +79,10 @@
       staté: state,
       city: city,
       location: location,
+      ownerId: providerId,
       providerId: providerId,
       professionalId: providerId,
+      professionalProfileId: professionalProfileId,
       providerName: service.providerName || service.professionalName || 'Profissional Doke',
       providerInitials: service.providerInitials || service.avatar || 'DK',
       price: typeof price === 'number' ? price : service.priceValue || price,
@@ -126,6 +129,8 @@
     var state = normalizeSearch(filters.state || filters.estado);
     var status = normalizeSearch(filters.status || 'active');
     var verified = filters.verified === true;
+    var ownerId = normalizeText(filters.ownerId || filters.professionalId || filters.providerId);
+    var professionalProfileId = normalizeText(filters.professionalProfileId || filters.profileId);
     var limit = Number(filters.limit || filters.take || 0);
 
     return load(filters).then(function (items) {
@@ -148,6 +153,8 @@
         if (city && normalizeSearch(item.city) !== city) return false;
         if (state && normalizeSearch(item.state) !== state) return false;
         if (verified && item.verified !== true) return false;
+        if (ownerId && String(item.ownerId || item.professionalId || item.providerId || '') !== ownerId) return false;
+        if (professionalProfileId && String(item.professionalProfileId || '') !== professionalProfileId) return false;
         return true;
       });
 
@@ -175,13 +182,37 @@
     return Promise.resolve(clone(normalized));
   }
 
+
+  function listByProfessional(professionalId, filters) {
+    var id = normalizeText(professionalId);
+    if (!id) return Promise.resolve([]);
+    return list(Object.assign({}, filters || {}, { ownerId: id, status: filters && filters.status !== undefined ? filters.status : '' }));
+  }
+
+  function update(serviceId, patch) {
+    var id = normalizeText(serviceId);
+    if (!id) return Promise.reject(new Error('Service id is required.'));
+    return getById(id).then(function (current) {
+      if (!current) throw new Error('Serviço não encontrado.');
+      var next = normalizeService(Object.assign({}, current, patch || {}, { id: id, updatedAt: new Date().toISOString() }));
+      return save(next);
+    });
+  }
+
+  function deactivate(serviceId) {
+    return update(serviceId, { status: 'inactive' });
+  }
+
   repositories.services = Object.freeze({
     storageKey: STORAGE_KEY,
     normalize: normalizeService,
     load: load,
     list: list,
     getById: getById,
+    listByProfessional: listByProfessional,
     save: save,
+    update: update,
+    deactivate: deactivate,
     clearCache: function () { cache = null; }
   });
 })();

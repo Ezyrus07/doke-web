@@ -52,6 +52,18 @@
       ready: '[data-professional-verification-hydration-ready]',
       splash: '[data-professional-verification-document-preloader]'
     }),
+    '/anunciar-servico.html': Object.freeze({
+      boundary: '[data-state-boundary="anunciar-servico"]',
+      pending: '[data-post-service-guard-hydration-skeleton]',
+      ready: '[data-post-service-guard-ready]',
+      splash: '[data-doke-document-preloader]'
+    }),
+    '/admin-verificacao.html': Object.freeze({
+      boundary: '[data-state-boundary="admin-verificacao"]',
+      pending: '[data-admin-review-pending]',
+      ready: '[data-admin-review-ready]',
+      error: '[data-admin-review-error]'
+    }),
     '/pedidos.html': Object.freeze({
       boundary: '[data-state-boundary="pedidos"]',
       skeleton: '[data-orders-hydration-skeleton], [data-orders-hydration-count-skeleton]',

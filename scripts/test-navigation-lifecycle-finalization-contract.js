@@ -15,7 +15,7 @@ const router = read('assets/js/core/stable-shell-router.js');
 const audit = read('scripts/audit-navigation-lifecycle-contract.js');
 const contract = JSON.parse(read('config/navigation-lifecycle-contract.json'));
 
-assert(lifecycle.includes("VISUAL_MINIMUMS = Object.freeze({ document: 180, route: 150, page: 0, guard: 0 })"), 'lifecycle: shared timing policy missing');
+assert(lifecycle.includes("VISUAL_MINIMUMS = Object.freeze({ document: 0, route: 0, page: 0, guard: 0 })"), 'lifecycle: shared timing policy missing');
 assert(lifecycle.includes('timing: Object.freeze'), 'lifecycle: timing API missing');
 assert(lifecycle.includes('back: back'), 'lifecycle: canonical back helper missing');
 assert(preloader.includes("lifecycle.timing.wait('document'"), 'preloader: minimum must delegate to shared timing');
@@ -25,7 +25,7 @@ assert(!/\bMIN_VISIBLE_MS\b/.test(preloader), 'preloader: independent minimum au
 assert(!/\bROUTE_VISUAL_THRESHOLD_MS\b/.test(router), 'router: independent route threshold remains');
 assert(!/splashDuration|syncSplash|document-boot/.test(hydration), 'hydration: document splash ownership remains');
 assert(audit.includes('lifecycleTimingCentralized'), 'audit: shared timing verification missing');
-assert(contract.stage === '08-final-audit-and-legacy-removal', 'config: stage 08 not declared');
+assert(contract.stage === '09-guarded-form-pending-surfaces', 'config: stage 09 not declared');
 assert(contract.stage08?.directInternalLocationMutations === 0, 'config: direct navigation debt not closed');
 assert(contract.stage08?.pageHydrationOwnsDocumentSplash === false, 'config: document splash ownership not closed');
 

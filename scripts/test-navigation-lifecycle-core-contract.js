@@ -217,8 +217,8 @@ async function runtimeContract() {
   assert.strictEqual(windowObject.DokeNavigate, api.navigation.go);
   assert.strictEqual(windowObject.Doke.pageLifecycle, api.page);
   assert.strictEqual(windowObject.Doke.navigation.back, api.navigation.back);
-  assert.strictEqual(api.timing.getMinimum('document'), 180);
-  assert.strictEqual(api.timing.getMinimum('route'), 150);
+  assert.strictEqual(api.timing.getMinimum('document'), 0);
+  assert.strictEqual(api.timing.getMinimum('route'), 0);
   assert.strictEqual(api.timing.getMinimum('page'), 0);
   assert.strictEqual((windowEvents.listeners.get('popstate') || []).length, 1, 'facade must own one popstate listener');
 

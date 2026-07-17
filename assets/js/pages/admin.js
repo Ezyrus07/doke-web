@@ -37,6 +37,9 @@
   var accessError = document.querySelector('[data-admin-access-error]');
   var accessErrorMessage = document.querySelector('[data-admin-access-error-message]');
   var accessRun = 0;
+  var accessOperation = null;
+  var accessOperationRoot = null;
+  var ADMIN_LIFECYCLE_TIMEOUT_MS = 9000;
   var eventsBound = false;
 
   function experience() {
@@ -914,7 +917,26 @@
     });
   }
 
+  function withAdminTimeout(operation, message) {
+    var timer = null;
+    return Promise.race([
+      Promise.resolve(operation),
+      new Promise(function (_, reject) {
+        timer = window.setTimeout(function () {
+          reject(new Error(message || 'A operação administrativa demorou mais do que o esperado.'));
+        }, ADMIN_LIFECYCLE_TIMEOUT_MS);
+      })
+    ]).finally(function () {
+      if (timer) window.clearTimeout(timer);
+    });
+  }
+
   function updateAccess() {
+    refreshNodes();
+    var activeRoot = root;
+    if (!activeRoot) return Promise.resolve(null);
+    if (accessOperation && accessOperationRoot === activeRoot) return accessOperation;
+
     var runId = ++accessRun;
     var access = adminAccessService();
     setAccessSurface('guard-pending');
@@ -927,33 +949,42 @@
       return Promise.resolve(null);
     }
 
-    return access.guardPage({
+    accessOperationRoot = activeRoot;
+    accessOperation = withAdminTimeout(access.guardPage({
       name: 'admin-dashboard-access',
       source: 'admin.html',
       deniedRedirect: 'pedidos.html',
       loginRedirect: 'auth/login.html'
-    }).then(function (result) {
-      if (runId !== accessRun) return null;
+    }), 'A validação do acesso administrativo demorou mais do que o esperado.').then(function (result) {
+      if (runId !== accessRun || !activeRoot.isConnected || root !== activeRoot) return null;
       if (!result || result.allowed !== true) {
         setAccessSurface(result && result.redirecting ? 'redirecting' : 'blocked');
         return null;
       }
 
       setAccessSurface('loading');
-      return loadAdminData().then(function (state) {
-        if (runId !== accessRun) return state;
+      return withAdminTimeout(loadAdminData(), 'O carregamento do painel administrativo demorou mais do que o esperado.').then(function (state) {
+        if (runId !== accessRun || !activeRoot.isConnected || root !== activeRoot) return state;
         setAccessSurface('ready');
         markPageReady();
         return state;
       });
     }).catch(function (error) {
-      if (runId !== accessRun) return null;
+      if (runId !== accessRun || !activeRoot.isConnected || root !== activeRoot) return null;
+      console.error('[Doke][admin] Falha no lifecycle administrativo', error);
       setAccessSurface('error', {
         message: error && error.message ? error.message : 'Não foi possível validar o acesso administrativo.'
       });
       markPageFailed(error);
       return null;
+    }).finally(function () {
+      if (accessOperationRoot === activeRoot) {
+        accessOperation = null;
+        accessOperationRoot = null;
+      }
     });
+
+    return accessOperation;
   }
 
   function bind() {
@@ -1116,14 +1147,20 @@
       bind();
       eventsBound = true;
     }
-    updateAccess().catch(function () {});
+    return updateAccess();
   }
 
   window.DokeInitAdmin = init;
 
+  function bootstrap() {
+    Promise.resolve(init()).catch(function (error) {
+      console.error('[Doke][admin] Falha na inicialização', error);
+    });
+  }
+
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init, { once: true });
+    document.addEventListener('DOMContentLoaded', bootstrap, { once: true });
   } else {
-    init();
+    bootstrap();
   }
 })();

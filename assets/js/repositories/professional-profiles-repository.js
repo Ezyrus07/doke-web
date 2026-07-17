@@ -290,6 +290,25 @@
   }
 
 
+  function updateActiveProfile(userId, patch) {
+    var id = normalizeText(userId);
+    if (!id) return Promise.reject(new Error('Usuário não identificado para editar o perfil profissional.'));
+    patch = patch && typeof patch === 'object' ? patch : {};
+
+    return getByUserId(id).then(function (current) {
+      if (!current) throw new Error('Perfil profissional não encontrado.');
+      if (current.status !== STATUSES.ACTIVE) {
+        throw new Error('Apenas perfis profissionais ativos podem ser editados.');
+      }
+      var nextPayload = normalizePayload(Object.assign({}, current.payload || {}, patch.payload || patch.fields || patch));
+      return persist(Object.assign({}, current, {
+        payload: nextPayload,
+        updatedAt: new Date().toISOString(),
+        savedAt: new Date().toISOString()
+      }));
+    });
+  }
+
   function setVerificationStatus(profileId, verificationStatus) {
     var next = String(verificationStatus || '').trim().toLowerCase();
     if (VERIFICATION_STATUSES.indexOf(next) === -1) {
@@ -329,6 +348,7 @@
     getByUserId: getByUserId,
     saveDraft: saveDraft,
     completeSetup: completeSetup,
+    updateActiveProfile: updateActiveProfile,
     setVerificationStatus: setVerificationStatus,
     transition: transition
   });

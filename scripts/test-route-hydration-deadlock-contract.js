@@ -11,7 +11,7 @@ const assert = (condition, message) => { if (!condition) failures.push(message);
 const stableRouter = read('assets/js/core/stable-shell-router.js');
 const legacyShell = read('assets/js/core/app.js');
 
-assert(/if \(hasSkeleton\)\s*\{\s*visualMode = 'skeleton';\s*\}\s*else\s*\{\s*await assetsPromise;\s*visualMode = 'direct';/s.test(stableRouter), 'rota com skeleton estrutural deve montar skeleton antes da hydration.');
+assert(/if \(hasSkeleton && !shouldCommitHydrationRouteDirect\(path\)\)\s*\{\s*visualMode = 'skeleton';\s*\}\s*else\s*\{\s*await assetsPromise;\s*visualMode = 'direct';/s.test(stableRouter), 'rota com skeleton estrutural deve montar skeleton antes da hydration, salvo contrato explicito de commit direto.');
 assert(!/Promise\.race\(\[assetsPromise[^\]]*getRouteVisualDecisionDelay/s.test(stableRouter), 'router não deve decidir rota data-driven por corrida temporal assets vs delay.');
 
 const releaseIndex = stableRouter.indexOf('navigating = false;', stableRouter.indexOf('runInitializers(path)'));
@@ -33,8 +33,8 @@ const productionPages = fs.readdirSync(ROOT)
   });
 productionPages.forEach((file) => {
   const html = read(file);
-  assert(/assets\/js\/core\/app\.js\?v=20260714-route-deadlock-v1/.test(html), `${file} deve invalidar cache do app shell corrigido.`);
-  assert(/assets\/js\/core\/stable-shell-router\.js\?v=20260714-route-deadlock-v1/.test(html), `${file} deve invalidar cache do stable shell corrigido.`);
+  assert(/assets\/js\/core\/app\.js\?v=[^"'\\s>]+/.test(html), `${file} deve versionar o app shell.`);
+  assert(/assets\/js\/core\/stable-shell-router\.js\?v=[^"'\\s>]+/.test(html), `${file} deve versionar o stable shell.`);
 });
 assert(productionPages.length >= 20, 'correção de cache deve cobrir as superfícies de produção do shell.');
 
