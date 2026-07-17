@@ -9,11 +9,10 @@
     var hydration = window.DokePageHydration && window.DokePageHydration.create ? window.DokePageHydration.create({
       page: 'verificacao-profissional',
       root: root,
-      skeletonSelectors: '[data-professional-verification-hydration-skeleton]',
+      pendingSelectors: '[data-professional-verification-hydration-pending]',
       readySelectors: '[data-professional-verification-hydration-ready]',
       errorSelectors: '[data-state-error]',
-      skeletonMode: 'always',
-      readyPolicy: 'after-skeleton',
+      skeletonMode: 'never',
       minDuration: 0,
       maxDuration: 8000,
       hasItems: function () { return true; }
@@ -288,13 +287,8 @@
       var submissionPayload = serialize();
       setSubmitting(true);
       openDialog(loadingState);
-      var minimumLoading = new Promise(function (resolve) { window.setTimeout(resolve, 2000); });
       try {
-        var results = await Promise.all([
-          service.submit({ payload: submissionPayload }),
-          minimumLoading
-        ]);
-        currentVerification = results[0];
+        currentVerification = await service.submit({ payload: submissionPayload });
         clearSensitiveForm();
         closeDialog(loadingState);
         openDialog(submitState);

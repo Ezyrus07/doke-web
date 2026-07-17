@@ -20,7 +20,7 @@
   var SCROLL_STORAGE_KEY = 'doke.navigationScroll.v1';
   var INTERNAL_NAVIGATION_TTL = 2500;
   var MAX_LOG_ENTRIES = 160;
-  var VISUAL_MINIMUMS = Object.freeze({ document: 180, route: 150, page: 0, guard: 0 });
+  var VISUAL_MINIMUMS = Object.freeze({ document: 0, route: 0, page: 0, guard: 0 });
   var adapters = new Map();
   var scrollPositions = new Map();
   var sequence = 0;

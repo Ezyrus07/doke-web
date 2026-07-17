@@ -98,7 +98,7 @@ async function main() {
       await page.setContent(html, { waitUntil: 'domcontentloaded' });
       await page.evaluate(() => {
         document.querySelector('[data-doke-document-preloader]')?.setAttribute('hidden', '');
-        document.querySelector('[data-professional-verification-hydration-skeleton]')?.setAttribute('hidden', '');
+        document.querySelector('[data-professional-verification-hydration-pending]')?.setAttribute('hidden', '');
         document.querySelectorAll('[data-professional-verification-hydration-ready]').forEach((node) => { node.hidden = false; });
         const status = document.querySelector('[data-professional-verification-status]');
         if (status) status.hidden = true;

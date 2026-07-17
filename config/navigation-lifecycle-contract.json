@@ -1,7 +1,7 @@
 {
   "contract": "doke-navigation-lifecycle",
-  "version": "8.0.0",
-  "stage": "08-final-audit-and-legacy-removal",
+  "version": "9.0.0",
+  "stage": "09-guarded-form-pending-surfaces",
   "sourceOfTruth": "docs/NAVIGATION-LIFECYCLE-CONTRACT.md",
   "excludedRuntimeSurfaces": [
     "comunidade-interna.html",
@@ -10,8 +10,9 @@
     "assets/css/pages/comunidade-interna.css"
   ],
   "invariants": [
-    "At least one explicit surface must always be visible: document boot, structural skeleton, ready content, or recoverable error.",
+    "At least one explicit surface must always be visible: document boot, ready static content, explicit guard/context pending, structural data skeleton, preserved content, or recoverable error.",
     "Protected content must not render before its guard resolves.",
+    "Guarded forms and account-specific setup pages must use explicit pending surfaces instead of generic page skeletons.",
     "Internal navigation must not replay the document preloader.",
     "Mandatory authorization redirects must replace browser history.",
     "Operational pending feedback must not be implemented with page hydration or document boot surfaces.",
@@ -35,13 +36,13 @@
       "history": "browser",
       "documentBoot": "conditional",
       "shell": "new-document",
-      "content": "structural-skeleton-before-hydration"
+      "content": "static-content-direct-or-explicit-context-pending-or-structural-data-skeleton-before-hydration"
     },
     "internal": {
       "history": "push",
       "documentBoot": "never",
       "shell": "preserve",
-      "content": "route-skeleton-or-previous-content"
+      "content": "direct-static-content-or-explicit-context-pending-or-structural-data-skeleton-or-previous-content"
     },
     "guard": {
       "history": "replace",
@@ -84,8 +85,8 @@
     "destination": "verificacao-profissional.html",
     "history": "replace",
     "requiredVisibleSequence": [
-      "guard-pending surface",
-      "destination structural skeleton",
+      "origin guard-pending surface",
+      "destination account/context pending surface",
       "destination ready content or recoverable error"
     ]
   },
@@ -136,7 +137,11 @@
         "orcamento.html",
         "avaliacao-profissional.html"
       ],
-      "status": "migrated"
+      "status": "migrated",
+      "requiredSequence": [
+        "carteira/notificacoes: structural data skeleton then ready, empty, or recoverable error",
+        "orcamento/avaliacao: explicit account/context pending surface then ready or recoverable error"
+      ]
     },
     "batch02": {
       "pages": [
@@ -146,9 +151,8 @@
         "ajuda.html"
       ],
       "requiredSequence": [
-        "structural skeleton",
-        "page or data hydration",
-        "ready content, empty state, or recoverable error"
+        "resultados/detalhe: structural data skeleton then ready, empty, or recoverable error",
+        "novidades/ajuda: direct static content; no page skeleton or hydration barrier"
       ],
       "status": "migrated"
     }
@@ -160,5 +164,17 @@
     "documentPreloaderOwner": "assets/js/core/document-preloader.js",
     "pageHydrationOwnsDocumentSplash": false,
     "legacyAdapters": "compatibility-only when navigation lifecycle is absent"
+  },
+  "stage09": {
+    "pages": [
+      "configuracoes.html",
+      "orcamento.html",
+      "avaliacao-profissional.html",
+      "tornar-profissional.html",
+      "verificacao-profissional.html"
+    ],
+    "policy": "guarded-or-context-dependent forms use explicit pending surfaces; no generic route skeleton",
+    "routeCommit": "direct after required assets; page lifecycle remains a hydration barrier until ready or error",
+    "status": "completed"
   }
 }

@@ -113,7 +113,7 @@
    Responsibility: first-load placeholders for data-driven page compositions.
    Final component anatomy remains owned by each page/component; these selectors
    only describe reusable loading surfaces and preserve broad page geometry. */
-:where(.doke-page-hydration-skeleton)[hidden] {
+html .doke-page-hydration-skeleton[hidden] {
   display: none;
 }
 
@@ -344,5 +344,120 @@
 @media (prefers-reduced-motion: reduce) {
   :where(.doke-page-hydration-skeleton__block) {
     animation: none;
+  }
+}
+
+/* Home hard-load skeleton: only remote recommendation regions are represented.
+   Search and categories are static navigation surfaces and remain immediately usable. */
+:where(.doke-page-hydration-skeleton--home) {
+  gap: clamp(24px, 3vw, 36px);
+}
+
+:where(.doke-page-hydration-skeleton--home) .doke-page-hydration-skeleton__home-region {
+  display: grid;
+  gap: 14px;
+}
+
+:where(.doke-page-hydration-skeleton--home) .doke-page-hydration-skeleton__home-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+:where(.doke-page-hydration-skeleton--home) .doke-page-hydration-skeleton__home-link {
+  inline-size: 72px;
+  block-size: 14px;
+  border-radius: var(--doke-skeleton-line-radius-sm, 8px);
+}
+
+:where(.doke-page-hydration-skeleton--home) .doke-page-hydration-skeleton__home-grid {
+  display: grid;
+  gap: 14px;
+  min-inline-size: 0;
+}
+
+:where(.doke-page-hydration-skeleton--home) .doke-page-hydration-skeleton__home-grid--ads {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+:where(.doke-page-hydration-skeleton--home) .doke-page-hydration-skeleton__home-ad-card {
+  display: grid;
+  overflow: hidden;
+  min-inline-size: 0;
+  border: 1px solid var(--doke-border-subtle, rgba(15, 23, 42, 0.08));
+  border-radius: var(--doke-radius-card, 16px);
+  background: var(--doke-surface, #fff);
+}
+
+:where(.doke-page-hydration-skeleton--home) .doke-page-hydration-skeleton__home-ad-media {
+  inline-size: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 0;
+}
+
+:where(.doke-page-hydration-skeleton--home) .doke-page-hydration-skeleton__home-ad-body {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+}
+
+:where(.doke-page-hydration-skeleton--home) .doke-page-hydration-skeleton__home-meta {
+  inline-size: 68%;
+  block-size: 12px;
+  border-radius: var(--doke-skeleton-line-radius-sm, 8px);
+}
+
+:where(.doke-page-hydration-skeleton--home) .doke-page-hydration-skeleton__home-action {
+  inline-size: 100%;
+  block-size: 40px;
+  margin-block-start: 2px;
+  border-radius: var(--doke-radius-control, 12px);
+}
+
+:where(.doke-page-hydration-skeleton--home) .doke-page-hydration-skeleton__home-grid--media {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+:where(.doke-page-hydration-skeleton--home) .doke-page-hydration-skeleton__home-media-card {
+  inline-size: 100%;
+  aspect-ratio: 9 / 14;
+  border-radius: var(--doke-radius-card, 16px);
+}
+
+@media (max-width: 1080px) {
+  :where(.doke-page-hydration-skeleton--home) .doke-page-hydration-skeleton__home-grid--ads {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  :where(.doke-page-hydration-skeleton--home) .doke-page-hydration-skeleton__home-ad-card:nth-child(n + 4) {
+    display: none;
+  }
+
+  :where(.doke-page-hydration-skeleton--home) .doke-page-hydration-skeleton__home-grid--media {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  :where(.doke-page-hydration-skeleton--home) .doke-page-hydration-skeleton__home-media-card:nth-child(n + 5) {
+    display: none;
+  }
+}
+
+@media (max-width: 760px) {
+  :where(.doke-page-hydration-skeleton--home) {
+    gap: 24px;
+  }
+
+  :where(.doke-page-hydration-skeleton--home) .doke-page-hydration-skeleton__home-grid {
+    display: flex;
+    overflow: hidden;
+  }
+
+  :where(.doke-page-hydration-skeleton--home) .doke-page-hydration-skeleton__home-ad-card {
+    flex: 0 0 min(84vw, 310px);
+  }
+
+  :where(.doke-page-hydration-skeleton--home) .doke-page-hydration-skeleton__home-media-card {
+    flex: 0 0 min(44vw, 170px);
   }
 }

@@ -22,7 +22,8 @@ assert(/data-profile-hydration-skeleton/.test(ownerHtml), 'meu-perfil deve mante
 assert(/data-profile-hydration-ready hidden/.test(ownerHtml), 'conteúdo do meu perfil deve iniciar oculto.');
 assert(ownerHtml.indexOf('assets/js/core/session.js') < ownerHtml.indexOf('assets/js/services/account-access-service.js'), 'session.js deve carregar antes do guard de conta em meu-perfil.');
 assert(ownerHtml.indexOf('assets/js/services/account-access-service.js') < ownerHtml.indexOf('assets/js/pages/owner-profile-experience.js'), 'guard de conta deve carregar antes do controller do meu perfil.');
-assert(/skeletonMode:\s*'route-and-document'/.test(ownerJs), 'meu-perfil deve usar skeleton em documento e rota interna.');
+assert(/skeletonMode:\s*'hard-load'/.test(ownerJs), 'meu-perfil deve reservar skeleton para hard load.');
+assert(/preserveReadyDuringHydration:\s*true/.test(ownerJs), 'meu-perfil deve preservar conteúdo pronto durante revalidação interna.');
 assert(/access\.guardPage/.test(ownerJs), 'meu-perfil deve executar guard autenticado.');
 assert(/hydration\?\.ready/.test(ownerJs) && /hydration\?\.error/.test(ownerJs), 'meu-perfil deve publicar ready e error no hydration contract.');
 assert(/ownerInitializationBoundary/.test(ownerJs), 'inicialização do meu perfil deve ser idempotente por boundary.');
@@ -33,20 +34,23 @@ assert(/data-state-boundary="perfil-profissional"[^>]*data-view-state="loading"[
 assert(professionalHtml.indexOf('assets/js/core/page-hydration.js') < professionalHtml.indexOf('assets/js/core/stable-shell-router.js'), 'page-hydration deve carregar antes do router no perfil profissional.');
 assert(/window\.DokeInitProfessionalProfile\s*=/.test(professionalJs), 'perfil profissional deve expor initializer canônico.');
 assert(/access\.guardPage/.test(professionalJs), 'perfil profissional deve executar guard profissional antes de montar.');
-assert(/skeletonMode:\s*'route-and-document'/.test(professionalJs), 'perfil profissional deve usar skeleton em hard load e rota interna.');
+assert(/skeletonMode:\s*'hard-load'/.test(professionalJs), 'perfil profissional deve reservar skeleton para hard load.');
+assert(/preserveReadyDuringHydration:\s*true/.test(professionalJs), 'perfil profissional deve preservar conteúdo pronto durante revalidação interna.');
 assert(/hydration\?\.ready/.test(professionalJs) && /hydration\?\.error/.test(professionalJs), 'perfil profissional deve publicar ready e error.');
 assert(/professionalInitializationBoundary/.test(professionalJs), 'initializer profissional deve ser idempotente por boundary.');
 assert(/'\/perfil-profissional\.html':\s*Object\.freeze/.test(pageHydration), 'page-hydration deve registrar contrato da rota profissional.');
 assert(/'\/perfil-profissional\.html',/.test(stableRouter), 'perfil profissional deve participar da barreira de hydration.');
 assert(/'\/perfil-profissional\.html':\s*\['DokeInitProfessionalProfile'\]/.test(stableRouter), 'router deve chamar o initializer profissional correto.');
 
-assert(/data-settings-hydration-skeleton/.test(settingsHtml), 'configurações deve manter skeleton estrutural.');
+assert(/data-settings-hydration-pending/.test(settingsHtml), 'configurações deve manter pending explícito de conta/contexto.');
+assert(!/data-settings-hydration-skeleton/.test(settingsHtml), 'configurações não deve simular dados com skeleton genérico.');
 assert(/data-settings-hydration-ready hidden/.test(settingsHtml), 'conteúdo de configurações deve iniciar oculto.');
 assert(settingsHtml.indexOf('assets/js/core/session.js') < settingsHtml.indexOf('assets/js/services/account-access-service.js'), 'session.js deve carregar antes do guard em configurações.');
 assert(settingsHtml.indexOf('assets/js/services/account-access-service.js') < settingsHtml.indexOf('assets/js/pages/configuracoes.js'), 'guard deve carregar antes do controller de configurações.');
 assert(/data-settings-professional-only hidden/.test(settingsHtml), 'itens profissionais devem iniciar ocultos para impedir flash em conta cliente.');
 assert(/data-settings-professional-panel[^>]*hidden/.test(settingsHtml), 'painéis profissionais e agenda devem iniciar ocultos.');
-assert(/skeletonMode:\s*'route-and-document'/.test(settingsJs), 'configurações deve usar skeleton em documento e rota interna.');
+assert(/pendingSelectors:\s*'\[data-settings-hydration-pending\]'/.test(settingsJs), 'configurações deve registrar sua superfície pending.');
+assert(/skeletonMode:\s*'never'/.test(settingsJs), 'configurações não deve usar skeleton para bootstrap/guard.');
 assert(/accountAccess/.test(settingsJs) && /access\.guardPage/.test(settingsJs), 'configurações deve executar guard autenticado.');
 assert(/applyAccountSurface/.test(settingsJs), 'configurações deve projetar superfícies por papel da conta.');
 assert(/dataset\.settingsAccess\s*=\s*isProfessional\s*\?\s*'allowed'\s*:\s*'denied'/.test(settingsJs), 'agenda e painéis profissionais devem ser indisponíveis para cliente.');

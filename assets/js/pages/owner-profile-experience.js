@@ -204,7 +204,8 @@
       skeletonSelectors: '[data-profile-hydration-skeleton]',
       readySelectors: '[data-profile-hydration-ready]',
       errorSelectors: '[data-state-error]',
-      skeletonMode: 'route-and-document',
+      skeletonMode: 'hard-load',
+      preserveReadyDuringHydration: true,
       maxDuration: 8000,
       hasItems: function () { return true; }
     });

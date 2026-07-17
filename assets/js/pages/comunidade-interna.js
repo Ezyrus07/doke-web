@@ -726,16 +726,27 @@
   var documentPreloader = document.documentElement.classList.contains('doke-community-document-reload')
     ? document.querySelector('[data-community-room-document-preloader]')
     : null;
-  var roomSkeleton = document.querySelector('[data-community-room-skeleton]');
+  var roomPending = document.querySelector('[data-community-room-pending]');
+  var roomPendingTitle = document.querySelector('[data-community-room-pending-title]');
+  var roomPendingMessage = document.querySelector('[data-community-room-pending-message]');
   var visualHydration = window.Doke && window.Doke.communityTransition && window.Doke.communityTransition.createVisualHydration
     ? window.Doke.communityTransition.createVisualHydration({
       body: document.body,
       preloader: documentPreloader,
-      skeleton: roomSkeleton,
+      skeleton: null,
       isTransition: Boolean(incomingCommunityTransition)
     })
     : null;
   if (visualHydration) visualHydration.start();
+
+  function setCommunityRoomPending(state) {
+    var visible = state === 'checking' || state === 'preparing' || state === 'redirecting';
+    if (roomPending) roomPending.hidden = !visible;
+    if (roomPendingTitle) roomPendingTitle.textContent = state === 'preparing' ? 'Preparando a sala da comunidade' : state === 'redirecting' ? 'Redirecionando com segurança' : 'Validando acesso à comunidade';
+    if (roomPendingMessage) roomPendingMessage.textContent = state === 'preparing' ? 'Acesso confirmado. Restaurando canais, mensagens e preferências.' : state === 'redirecting' ? 'Sua participação não permite abrir esta sala.' : 'Confirmando sua sessão e participação nesta comunidade.';
+  }
+
+  setCommunityRoomPending('checking');
 
   function applyCommunityRoomPageState(nextState) {
     document.body.dataset.dataState = nextState;
@@ -6670,6 +6681,7 @@ function clearRenderedLocalMessages() {
   var initialCommunityId = getCurrentCommunityId();
   if (isCommunityTombstoned(initialCommunityId)) {
     root.dataset.communityAccessState = 'deleted';
+    setCommunityRoomPending('redirecting');
     redirectToCommunityAccess({ action: 'deleted', reason: 'community-deleted' }, { id: initialCommunityId, title: currentCommunityContext && currentCommunityContext.title });
     return;
   }
@@ -6677,6 +6689,7 @@ function clearRenderedLocalMessages() {
   var accessDecision = getCommunityAccessDecision(accessRecord);
   if (!accessDecision.allowed) {
     root.dataset.communityAccessState = 'denied';
+    setCommunityRoomPending('redirecting');
     redirectToCommunityAccess(accessDecision, accessRecord);
     return;
   }
@@ -6685,6 +6698,7 @@ function clearRenderedLocalMessages() {
 
   applyCommunityContext();
   root.dataset.communityAccessState = 'allowed';
+  setCommunityRoomPending('preparing');
   ensureCurrentCommunityRecord();
   syncManageForm();
   renderInviteCode();
@@ -6705,6 +6719,7 @@ function clearRenderedLocalMessages() {
   updateComposerDraftState();
   scrollToStart();
   root.hidden = false;
+  setCommunityRoomPending('hidden');
   root.dataset.communityHydrated = 'true';
   setCommunityRoomPageState('hydrated');
   };
@@ -6749,6 +6764,8 @@ function clearRenderedLocalMessages() {
     room.dataset.state = 'error';
     room.setAttribute('aria-busy', 'false');
     room.hidden = false;
+    var pending = document.querySelector('[data-community-room-pending]');
+    if (pending) pending.hidden = true;
     var preloader = document.querySelector('[data-community-room-document-preloader]');
     if (preloader) {
       preloader.hidden = true;

@@ -17,6 +17,8 @@
       readySelectors: '[data-home-hydration-ready]',
       errorSelectors: '[data-state-error]',
       skeletonMode: 'hard-load',
+      readyPolicy: 'internal-immediate',
+      preserveReadyDuringHydration: true,
       maxDuration: 9000
     });
     return hydration;

@@ -45,14 +45,23 @@
   function setSurface(state, message) {
     var next = String(state || 'guard-pending');
     var busy = ['guard-pending', 'loading', 'redirecting'].indexOf(next) >= 0;
-    var skeleton = q('[data-admin-review-skeleton]');
+    var pending = q('[data-admin-review-pending]');
+    var pendingTitle = q('[data-admin-review-pending-title]');
+    var pendingMessage = q('[data-admin-review-pending-message]');
     var content = q('[data-admin-review-content]');
     var error = q('[data-admin-review-error]');
     var errorMessage = q('[data-admin-review-error-message]');
+    var pendingCopy = {
+      'guard-pending': ['Validando acesso à análise', 'Confirmando sua sessão e permissões administrativas.'],
+      loading: ['Preparando a análise de identidade', 'Carregando os dados e documentos enviados pelo profissional.'],
+      redirecting: ['Redirecionando com segurança', 'Você será direcionado para uma área disponível para sua conta.']
+    }[next];
 
     root.dataset.viewState = next;
     root.setAttribute('aria-busy', busy ? 'true' : 'false');
-    if (skeleton) skeleton.hidden = !busy;
+    if (pending) pending.hidden = !busy;
+    if (pendingTitle && pendingCopy) pendingTitle.textContent = pendingCopy[0];
+    if (pendingMessage && pendingCopy) pendingMessage.textContent = pendingCopy[1];
     if (content) content.hidden = next !== 'ready';
     if (error) error.hidden = next !== 'error';
     if (errorMessage && message) errorMessage.textContent = message;

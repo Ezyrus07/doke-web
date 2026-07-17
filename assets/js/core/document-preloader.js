@@ -11,7 +11,7 @@
   var preloader = document.querySelector('[data-doke-document-preloader]');
   if (!preloader) return;
 
-  var LEGACY_FALLBACK_MIN_VISIBLE_MS = 520;
+  var LEGACY_FALLBACK_MIN_VISIBLE_MS = 0;
   var MAX_WAIT_MS = 2200;
   var EXIT_MS = 180;
   var INTERNAL_NAVIGATION_TTL = 1800;

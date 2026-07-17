@@ -12,12 +12,14 @@ const viewports = [
   { width: 390, height: 844, name: 'mobile' }
 ];
 const routes = [
-  { file: 'index.html', page: 'index', root: '[data-state-boundary="index"]', skeleton: '[data-home-hydration-skeleton]', ready: '[data-home-hydration-ready]' },
-  { file: 'meu-perfil.html', page: 'meu-perfil', root: '[data-state-boundary="meu-perfil"]', skeleton: '[data-profile-hydration-skeleton]', ready: '[data-profile-hydration-ready]' },
-  { file: 'perfil-cliente.html', page: 'perfil-cliente', root: '[data-state-boundary="perfil-cliente"]', skeleton: '[data-profile-hydration-skeleton]', ready: '[data-profile-hydration-ready]' },
-  { file: 'configuracoes.html', page: 'configuracoes', root: '[data-state-boundary="configuracoes"]', skeleton: '[data-settings-hydration-skeleton]', ready: '[data-settings-hydration-ready]', readyMode: 'any' },
-  { file: 'tornar-profissional.html', page: 'tornar-profissional', root: '[data-state-boundary="tornar-profissional"]', skeleton: '[data-professional-onboarding-hydration-skeleton]', ready: '[data-professional-onboarding-hydration-ready]', readyMode: 'any' },
-  { file: 'verificacao-profissional.html', page: 'verificacao-profissional', root: '[data-state-boundary="verificacao-profissional"]', skeleton: '[data-professional-verification-hydration-skeleton]', ready: '[data-professional-verification-hydration-ready]', readyMode: 'any' }
+  { file: 'index.html', page: 'index', root: '[data-state-boundary="index"]', loadingType: 'skeleton', loading: '[data-home-hydration-skeleton]', ready: '[data-home-hydration-ready]' },
+  { file: 'meu-perfil.html', page: 'meu-perfil', root: '[data-state-boundary="meu-perfil"]', loadingType: 'skeleton', loading: '[data-profile-hydration-skeleton]', ready: '[data-profile-hydration-ready]' },
+  { file: 'perfil-cliente.html', page: 'perfil-cliente', root: '[data-state-boundary="perfil-cliente"]', loadingType: 'skeleton', loading: '[data-profile-hydration-skeleton]', ready: '[data-profile-hydration-ready]' },
+  { file: 'configuracoes.html', page: 'configuracoes', root: '[data-state-boundary="configuracoes"]', loadingType: 'pending', loading: '[data-settings-hydration-pending]', ready: '[data-settings-hydration-ready]', readyMode: 'any' },
+  { file: 'orcamento.html', page: 'orcamento', root: '[data-state-boundary="orcamento"]', loadingType: 'pending', loading: '[data-budget-hydration-pending]', ready: '[data-budget-hydration-ready]', readyMode: 'any' },
+  { file: 'avaliacao-profissional.html', page: 'avaliacao-profissional', root: '[data-state-boundary="avaliacao-profissional"]', loadingType: 'pending', loading: '[data-review-hydration-pending]', ready: '[data-review-hydration-ready]', readyMode: 'any' },
+  { file: 'tornar-profissional.html', page: 'tornar-profissional', root: '[data-state-boundary="tornar-profissional"]', loadingType: 'pending', loading: '[data-professional-onboarding-hydration-pending]', ready: '[data-professional-onboarding-hydration-ready]', readyMode: 'any' },
+  { file: 'verificacao-profissional.html', page: 'verificacao-profissional', root: '[data-state-boundary="verificacao-profissional"]', loadingType: 'pending', loading: '[data-professional-verification-hydration-pending]', ready: '[data-professional-verification-hydration-ready]', readyMode: 'any' }
 ];
 
 function assert(condition, message) {
@@ -72,19 +74,24 @@ async function inspect(page, route, phase) {
       return !node.hidden && rect.width > 0 && rect.height > 0 && style.display !== 'none' && style.visibility !== 'hidden';
     };
     const root = document.querySelector(route.root);
-    const skeleton = document.querySelector(route.skeleton);
+    const loadingSurface = document.querySelector(route.loading);
     const ready = Array.from(document.querySelectorAll(route.ready));
     const rootRect = root?.getBoundingClientRect();
+    const loadingRect = loadingSurface?.getBoundingClientRect();
     return {
       phase,
       state: root?.dataset.pageHydration || root?.dataset.viewState || '',
-      skeletonVisible: visible(skeleton),
+      loadingVisible: visible(loadingSurface),
       readyVisible: ready.filter(visible).length,
       readyCount: ready.length,
       overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
       rootWidth: rootRect?.width || 0,
       rootLeft: rootRect?.left || 0,
-      rootRight: rootRect?.right || 0
+      rootRight: rootRect?.right || 0,
+      loadingWidth: loadingRect?.width || 0,
+      loadingCenterDelta: rootRect && loadingRect
+        ? Math.abs((rootRect.left + rootRect.width / 2) - (loadingRect.left + loadingRect.width / 2))
+        : 0
     };
   }, { route, phase });
 }
@@ -105,9 +112,10 @@ async function main() {
           const hydration = window.DokePageHydration.create({
             page: route.page,
             root: route.root,
-            skeletonSelectors: route.skeleton,
+            skeletonSelectors: route.loadingType === 'skeleton' ? route.loading : [],
+            pendingSelectors: route.loadingType === 'pending' ? route.loading : [],
             readySelectors: route.ready,
-            skeletonMode: 'hard-load',
+            skeletonMode: route.loadingType === 'skeleton' ? 'hard-load' : 'never',
             hasItems: () => true
           });
           window.__hydrationUnderTest = hydration;
@@ -115,15 +123,19 @@ async function main() {
         }, route);
         await page.waitForTimeout(30);
         const loading = await inspect(page, route, 'loading');
-        assert(loading.skeletonVisible, `${route.file} ${viewport.name}: skeleton is not visible while loading`);
+        assert(loading.loadingVisible, `${route.file} ${viewport.name}: ${route.loadingType} surface is not visible while loading`);
         assert(loading.readyVisible === 0, `${route.file} ${viewport.name}: ready content leaked during loading`);
-        assert(loading.overflow <= 1, `${route.file} ${viewport.name}: skeleton caused horizontal overflow (${loading.overflow}px)`);
+        assert(loading.overflow <= 1, `${route.file} ${viewport.name}: loading surface caused horizontal overflow (${loading.overflow}px)`);
         assert(loading.rootWidth > 0, `${route.file} ${viewport.name}: state boundary has no geometry`);
+        if (route.loadingType === 'pending') {
+          assert(loading.loadingWidth > 0 && loading.loadingWidth <= 721, `${route.file} ${viewport.name}: pending surface is not compact (${loading.loadingWidth}px)`);
+          assert(loading.loadingCenterDelta <= 1, `${route.file} ${viewport.name}: pending surface is not centered (${loading.loadingCenterDelta}px)`);
+        }
 
         await page.evaluate(() => window.__hydrationUnderTest.ready({ hasItems: true }));
         await page.waitForTimeout(30);
         const ready = await inspect(page, route, 'ready');
-        assert(!ready.skeletonVisible, `${route.file} ${viewport.name}: skeleton remains visible after ready`);
+        assert(!ready.loadingVisible, `${route.file} ${viewport.name}: loading surface remains visible after ready`);
         if (route.readyMode === 'any') {
           assert(ready.readyVisible > 0, `${route.file} ${viewport.name}: no responsive ready surface was revealed`);
         } else {
@@ -139,7 +151,7 @@ async function main() {
   }
   console.log('[shared-page-hydration-visual] ok');
   console.log(`- scenarios: ${report.length}`);
-  console.log('- skeleton/ready visibility and horizontal overflow validated without local navigation');
+  console.log('- canonical skeleton/pending surfaces, ready visibility and horizontal overflow validated without local navigation');
 }
 
 main().catch((error) => {

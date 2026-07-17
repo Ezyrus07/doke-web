@@ -20,10 +20,10 @@
     const hydration = window.DokePageHydration?.create?.({
       page: 'configuracoes',
       root: settingsRoot,
-      skeletonSelectors: '[data-settings-hydration-skeleton]',
+      pendingSelectors: '[data-settings-hydration-pending]',
       readySelectors: '[data-settings-hydration-ready]',
       errorSelectors: '[data-state-error]',
-      skeletonMode: 'route-and-document',
+      skeletonMode: 'never',
       maxDuration: 9000,
       hasItems: () => true
     }) || null;

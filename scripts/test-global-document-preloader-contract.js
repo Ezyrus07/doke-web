@@ -23,8 +23,7 @@ for (const file of pages) {
   const prefix = file.startsWith('auth/') ? '../' : '';
   if (!text.includes(`src="${prefix}assets/js/core/document-preloader.js?v=20260712-global-document-boot-v1"`)) errors.push(`${file}: invalid runtime path`);
   const hasDirectCss = text.includes(`${prefix}assets/css/components/feedback/document-preloader.css?v=20260712-global-document-boot-v1`);
-  const foundationBacked = ['comunidade-interna.html','comunidade.html','mensagens.html','notificacoes.html'].includes(file);
-  if (!hasDirectCss && !foundationBacked) errors.push(`${file}: preloader stylesheet is not loaded`);
+  if (!hasDirectCss) errors.push(`${file}: canonical preloader stylesheet must be loaded directly for first-paint safety`);
 }
 const css = read('assets/css/components/feedback/document-preloader.css');
 ['position: fixed','inset: 0','data-doke-document-boot="ready"','dokeDocumentPreloaderFailsafe'].forEach((needle) => {

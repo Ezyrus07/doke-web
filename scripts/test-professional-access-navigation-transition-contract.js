@@ -27,8 +27,10 @@ assert(/lifecycleApi\.guard\.redirect/.test(accessService), 'service deve public
 assert(/forceDocument:\s*options\.hard\s*===\s*true/.test(accessService), 'redirect obrigatório deve forçar documento completo.');
 assert(/replace:\s*options\.replace\s*!==\s*false/.test(accessService), 'redirect obrigatório deve usar replace por padrão.');
 assert(/data-doke-document-preloader-mode="reload"/.test(verificationHtml), 'destino não deve mostrar splash em navegação por guard.');
-assert(/data-professional-verification-hydration-skeleton/.test(verificationHtml), 'destino deve possuir skeleton estrutural no primeiro frame.');
-assert(/skeletonMode:\s*'always'/.test(verificationJs), 'destino deve ativar o skeleton durante hidratação.');
+assert(/data-professional-verification-hydration-pending/.test(verificationHtml), 'destino deve possuir pending explícito no primeiro frame.');
+assert(!/data-professional-verification-hydration-skeleton/.test(verificationHtml), 'destino não deve simular o formulário com skeleton genérico.');
+assert(/pendingSelectors:\s*'\[data-professional-verification-hydration-pending\]'/.test(verificationJs), 'destino deve registrar o pending de verificação.');
+assert(/skeletonMode:\s*'never'/.test(verificationJs), 'destino deve reservar skeleton para dados com geometria previsível.');
 assert(/prefers-reduced-motion:\s*reduce/.test(announceCss), 'skeleton do guard deve respeitar reduced motion.');
 assert(!/setTimeout\([^)]*redirect|setTimeout\([^)]*location/i.test(announceJs + accessService), 'guard não pode usar delay artificial para redirecionar.');
 

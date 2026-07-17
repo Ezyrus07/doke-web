@@ -683,119 +683,60 @@ body.post-service-page-shell svg {
 
 
 /* Professional access gate: fail closed until the canonical policy resolves. */
-html:not([data-professional-access-state="allowed"]) body[data-page="anunciar-servico"] .post-service-screen {
+html:not([data-professional-access-state="allowed"]) body[data-page="anunciar-servico"] [data-post-service-guard-ready] {
   visibility: hidden;
   pointer-events: none;
 }
 
-html[data-professional-access-state="allowed"] body[data-page="anunciar-servico"] .post-service-screen {
+html[data-professional-access-state="allowed"] body[data-page="anunciar-servico"] [data-post-service-guard-ready]:not([hidden]) {
   visibility: visible;
 }
 
 /* Navigation lifecycle stage 03: professional access guard surface.
    The protected form remains hidden until the canonical guard resolves. */
-.post-service-guard-skeleton {
+.post-service-access-pending {
+  min-block-size: clamp(220px, 42vh, 420px);
   display: grid;
-  gap: 24px;
-  width: 100%;
+  place-items: center;
 }
 
-.post-service-guard-skeleton[hidden],
+.post-service-access-pending[hidden] { display: none; }
+
+.post-service-access-pending__surface {
+  inline-size: min(100%, 560px);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 22px;
+  border: 1px solid var(--color-border, #dfe7ee);
+  border-radius: var(--radius-lg, 16px);
+  background: var(--color-surface, #fff);
+}
+
+.post-service-access-pending__copy { display: grid; gap: 4px; min-inline-size: 0; }
+.post-service-access-pending__copy strong { color: var(--color-text, #17324d); }
+.post-service-access-pending__copy span { color: var(--color-text-muted, #66788a); line-height: 1.5; }
+
 .post-service-guard-error[hidden],
 [data-post-service-guard-ready][hidden] {
   display: none;
 }
 
-.post-service-guard-skeleton__intro {
-  display: grid;
-  gap: 10px;
-  max-width: 790px;
-}
 
-.post-service-guard-skeleton__layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(260px, 340px);
-  gap: 22px;
-  align-items: start;
-}
 
-.post-service-guard-skeleton__surface {
-  display: grid;
-  gap: 18px;
-  min-width: 0;
-  padding: 24px;
-  border: 1px solid var(--post-service-border);
-  border-radius: var(--form-page-card-radius, 18px);
-  background: var(--post-service-surface);
-  box-shadow: var(--post-service-shadow);
-}
 
-.post-service-guard-skeleton__block {
-  display: block;
-  min-width: 0;
-  border-radius: 10px;
-  background: linear-gradient(90deg, rgba(225, 236, 247, 0.82) 20%, rgba(240, 247, 252, 0.98) 50%, rgba(225, 236, 247, 0.82) 80%);
-  background-size: 220% 100%;
-  animation: post-service-guard-shimmer 1.35s ease-in-out infinite;
-}
 
-.post-service-guard-skeleton__line {
-  width: 72%;
-  height: 14px;
-}
 
-.post-service-guard-skeleton__line--title {
-  width: min(410px, 72%);
-  height: 30px;
-}
 
-.post-service-guard-skeleton__line--description {
-  width: min(650px, 92%);
-}
 
-.post-service-guard-skeleton__line--section {
-  width: 42%;
-  height: 20px;
-}
 
-.post-service-guard-skeleton__line--short {
-  width: 54%;
-}
 
-.post-service-guard-skeleton__progress {
-  width: 100%;
-  height: 8px;
-  border-radius: 999px;
-}
 
-.post-service-guard-skeleton__steps {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
-}
 
-.post-service-guard-skeleton__steps > span {
-  height: 54px;
-}
 
-.post-service-guard-skeleton__fields {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px 18px;
-}
 
-.post-service-guard-skeleton__fields > span {
-  height: 48px;
-}
 
-.post-service-guard-skeleton__fields .post-service-guard-skeleton__field--full,
-.post-service-guard-skeleton__fields .post-service-guard-skeleton__textarea {
-  grid-column: 1 / -1;
-}
 
-.post-service-guard-skeleton__fields .post-service-guard-skeleton__textarea {
-  height: 126px;
-}
 
 .post-service-guard-error {
   display: grid;
@@ -826,49 +767,6 @@ html[data-professional-access-state="allowed"] body[data-page="anunciar-servico"
   margin-top: 6px;
 }
 
-@keyframes post-service-guard-shimmer {
-  0% { background-position: 100% 0; }
-  100% { background-position: -100% 0; }
-}
 
-@media (max-width: 900px) {
-  .post-service-guard-skeleton__layout {
-    grid-template-columns: 1fr;
-  }
 
-  .post-service-guard-skeleton__aside {
-    min-height: 150px;
-  }
-}
 
-@media (max-width: 608px) {
-  .post-service-guard-skeleton {
-    gap: 18px;
-  }
-
-  .post-service-guard-skeleton__surface {
-    padding: 18px;
-    border-radius: 16px;
-  }
-
-  .post-service-guard-skeleton__steps {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .post-service-guard-skeleton__fields {
-    grid-template-columns: 1fr;
-  }
-
-  .post-service-guard-skeleton__fields > span,
-  .post-service-guard-skeleton__fields .post-service-guard-skeleton__field--full,
-  .post-service-guard-skeleton__fields .post-service-guard-skeleton__textarea {
-    grid-column: 1;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .post-service-guard-skeleton__block {
-    animation: none;
-    background-position: 50% 0;
-  }
-}

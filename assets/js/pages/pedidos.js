@@ -48,8 +48,9 @@
         '[data-orders-hydration-ready]',
         '[data-orders-hydration-count-ready]'
       ],
-      skeletonMode: 'route-and-document',
+      skeletonMode: 'hard-load',
       readyPolicy: 'after-skeleton',
+      preserveReadyDuringHydration: true,
       waitFor: ['dom', 'auth', 'local-orders'],
       minDuration: 0,
       maxDuration: 8000,

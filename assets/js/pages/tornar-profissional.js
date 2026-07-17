@@ -9,10 +9,10 @@
     const hydration = window.DokePageHydration?.create?.({
       page: 'tornar-profissional',
       root,
-      skeletonSelectors: '[data-professional-onboarding-hydration-skeleton]',
+      pendingSelectors: '[data-professional-onboarding-hydration-pending]',
       readySelectors: '[data-professional-onboarding-hydration-ready]',
       errorSelectors: '[data-state-error]',
-      skeletonMode: 'hard-load',
+      skeletonMode: 'never',
       maxDuration: 8000,
       hasItems: () => true
     }) || null;

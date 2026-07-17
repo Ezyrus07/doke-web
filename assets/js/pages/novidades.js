@@ -190,6 +190,7 @@
   };
 
   window.DokeInitNews = initNewsPage;
+  window.DokeInitNewsPage = initNewsPage;
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initNewsPage, { once: true });

@@ -147,6 +147,7 @@ const priorityPages = (contract.priorityPages || []).map((page) => {
     hasPageHydrationScript: scripts.some((src) => src.includes('assets/js/core/page-hydration.js')),
     hasStableShellRouter: scripts.some((src) => src.includes('assets/js/core/stable-shell-router.js')),
     hasStructuralSkeleton: /data-[\w-]*(?:hydration|guard|access|review)-skeleton/i.test(html),
+    hasPendingSurface: /data-[\w-]*(?:hydration|guard|access|review)-pending/i.test(html),
     hasHydrationReadySurface: /data-[\w-]*hydration-ready/i.test(html),
     boundaryState: firstAttribute(boundaryTag, 'data-view-state') || 'undeclared',
     boundaryAriaBusy: firstAttribute(boundaryTag, 'aria-busy') || 'undeclared',
@@ -163,7 +164,7 @@ const announceCss = fs.existsSync(path.join(ROOT, 'assets/css/pages/anunciar-ser
   ? read('assets/css/pages/anunciar-servico.css')
   : '';
 const announcePage = priorityPages.find((item) => item.page === 'anunciar-servico.html');
-if (/professional-access-state[^}]+visibility:\s*hidden/is.test(announceCss) && announcePage && !announcePage.hasStructuralSkeleton) {
+if (/professional-access-state[^}]+visibility:\s*hidden/is.test(announceCss) && announcePage && !announcePage.hasStructuralSkeleton && !announcePage.hasPendingSurface) {
   finding('P0', 'GUARD_ZERO_SURFACE', 'anunciar-servico oculta a superfície protegida enquanto o guard resolve, mas não possui skeleton/pending estrutural próprio.', [
     'anunciar-servico.html',
     'assets/css/pages/anunciar-servico.css',
@@ -179,21 +180,22 @@ const adminAccessSource = fs.existsSync(path.join(ROOT, 'assets/js/services/admi
   ? read('assets/js/services/admin-access-service.js')
   : '';
 
-if (!/data-admin-access-skeleton/.test(adminHtml)
+if (!/data-admin-access-pending/.test(adminHtml)
   || !/data-admin-dashboard[^>]*hidden/.test(adminHtml)
   || !/adminAccessService\(\)/.test(adminJs)
   || !/access\.guardPage/.test(adminJs)) {
-  finding('P0', 'ADMIN_DASHBOARD_GUARD_SURFACE_MISSING', 'admin.html deve manter skeleton visível e dashboard oculto até o guard administrativo canônico autorizar.', [
+  finding('P0', 'ADMIN_DASHBOARD_GUARD_SURFACE_MISSING', 'admin.html deve manter uma superfície pendente compacta e o dashboard oculto até o guard administrativo canônico autorizar.', [
     'admin.html',
     'assets/js/pages/admin.js',
     'assets/js/services/admin-access-service.js'
   ]);
 }
 
-if (!/data-admin-review-skeleton/.test(adminReviewHtml)
+if (!/data-admin-review-pending/.test(adminReviewHtml)
+  || /data-admin-review-skeleton/.test(adminReviewHtml)
   || !/data-admin-review-content[^>]*hidden/.test(adminReviewHtml)
   || !/access\.guardPage/.test(adminReviewJs)) {
-  finding('P0', 'ADMIN_REVIEW_GUARD_SURFACE_MISSING', 'admin-verificacao.html deve iniciar com skeleton estrutural, conteúdo sensível oculto e guard canônico antes da hidratação.', [
+  finding('P0', 'ADMIN_REVIEW_GUARD_SURFACE_MISSING', 'admin-verificacao.html deve iniciar com pending compacto, conteúdo sensível oculto e guard canônico antes de carregar os dados da análise.', [
     'admin-verificacao.html',
     'assets/js/pages/admin-verificacao.js',
     'assets/js/services/admin-access-service.js'
@@ -273,8 +275,8 @@ for (const page of priorityPages) {
   if (!page.hasNavigationLifecycle) {
     finding('P1', 'PRIORITY_PAGE_WITHOUT_LIFECYCLE_FACADE', `${page.page} não carrega a fachada canônica antes dos adapters.`, [page.page]);
   }
-  if (page.hasDocumentPreloader && !page.hasStructuralSkeleton && page.boundaryState === 'loading') {
-    finding('P1', 'LOADING_WITHOUT_STRUCTURAL_SKELETON', `${page.page} declara loading, mas não possui skeleton estrutural canônico.`, [page.page]);
+  if (page.hasDocumentPreloader && !page.hasStructuralSkeleton && !page.hasPendingSurface && page.boundaryState === 'loading') {
+    finding('P1', 'LOADING_WITHOUT_EXPLICIT_SURFACE', `${page.page} declara loading, mas não possui skeleton de dados nem superfície pending explícita.`, [page.page]);
   }
   if (page.hasPageHydrationScript && page.boundaryState === 'ready' && page.hasHydrationReadySurface) {
     finding('P1', 'READY_BOUNDARY_WITH_HIDDEN_HYDRATION_CONTENT', `${page.page} declara boundary ready enquanto superfícies de hydration começam ocultas.`, [page.page]);
@@ -335,14 +337,14 @@ const csvRows = [
 fs.writeFileSync(CSV_REPORT, csvRows.map((row) => row.map(csv).join(',')).join('\n') + '\n');
 
 const pageTable = priorityPages.map((page) =>
-  `| \`${page.page}\` | ${page.hasNavigationLifecycle ? 'sim' : 'não'} | ${page.hasDocumentPreloader ? page.documentPreloaderMode : 'não'} | ${page.hasPageHydrationScript ? 'sim' : 'não'} | ${page.hasStructuralSkeleton ? 'sim' : 'não'} | ${page.boundaryState} |`
+  `| \`${page.page}\` | ${page.hasNavigationLifecycle ? 'sim' : 'não'} | ${page.hasDocumentPreloader ? page.documentPreloaderMode : 'não'} | ${page.hasPageHydrationScript ? 'sim' : 'não'} | ${page.hasStructuralSkeleton ? 'sim' : 'não'} | ${page.hasPendingSurface ? 'sim' : 'não'} | ${page.boundaryState} |`
 ).join('\n');
 const findingList = findings.map((item) =>
   `- **${item.severity} ${item.code}** — ${item.message}${item.files.length ? ` (${item.files.map((file) => `\`${file}\``).join(', ')})` : ''}`
 ).join('\n');
 const methodSummary = Object.entries(methodCounts).sort((a, b) => b[1] - a[1]).map(([method, count]) => `- ${method}: ${count}`).join('\n');
 
-fs.writeFileSync(MD_REPORT, `# Relatório gerado — navegação e lifecycle\n\nStatus: **${report.status}**  \nArquivos-fonte analisados: ${report.scope.sourceFilesScanned}  \nOcorrências de navegação: ${report.navigation.totalOccurrences} em ${report.navigation.filesWithOccurrences} arquivos.\n\n## Métodos encontrados\n\n${methodSummary || '- nenhum'}\n\n## Páginas prioritárias\n\n| Página | Facade | Preloader | Hydration | Skeleton | Boundary |\n|---|---:|---|---:|---:|---|\n${pageTable}\n\n## Findings\n\n${findingList || '- Nenhum finding.'}\n\n## Próxima etapa\n\n${report.nextStage}\n`);
+fs.writeFileSync(MD_REPORT, `# Relatório gerado — navegação e lifecycle\n\nStatus: **${report.status}**  \nArquivos-fonte analisados: ${report.scope.sourceFilesScanned}  \nOcorrências de navegação: ${report.navigation.totalOccurrences} em ${report.navigation.filesWithOccurrences} arquivos.\n\n## Métodos encontrados\n\n${methodSummary || '- nenhum'}\n\n## Páginas prioritárias\n\n| Página | Facade | Preloader | Hydration | Skeleton | Pending | Boundary |\n|---|---:|---|---:|---:|---:|---|\n${pageTable}\n\n## Findings\n\n${findingList || '- Nenhum finding.'}\n\n## Próxima etapa\n\n${report.nextStage}\n`);
 
 console.log('[audit:navigation-lifecycle-contract] concluído');
 console.log(`- status: ${report.status}`);

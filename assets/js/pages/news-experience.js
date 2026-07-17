@@ -72,8 +72,9 @@
 
   const api = {
     begin() {
-      setState('loading');
-      return readPreference();
+      const preference = readPreference();
+      setState('ready', { source: 'static-editorial-content', preference });
+      return preference;
     },
     ready(detail = {}) {
       setState('ready', detail);

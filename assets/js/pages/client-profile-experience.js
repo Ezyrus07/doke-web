@@ -98,6 +98,7 @@
       readySelectors: '[data-profile-hydration-ready]',
       errorSelectors: '[data-state-error]',
       skeletonMode: 'hard-load',
+      preserveReadyDuringHydration: true,
       maxDuration: 8000,
       hasItems: function () { return true; }
     });

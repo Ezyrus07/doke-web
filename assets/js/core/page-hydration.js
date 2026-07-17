@@ -36,19 +36,19 @@
     }),
     '/configuracoes.html': Object.freeze({
       boundary: '[data-state-boundary="configuracoes"]',
-      skeleton: '[data-settings-hydration-skeleton]',
+      pending: '[data-settings-hydration-pending]',
       ready: '[data-settings-hydration-ready]',
       splash: '[data-settings-document-preloader]'
     }),
     '/tornar-profissional.html': Object.freeze({
       boundary: '[data-state-boundary="tornar-profissional"]',
-      skeleton: '[data-professional-onboarding-hydration-skeleton]',
+      pending: '[data-professional-onboarding-hydration-pending]',
       ready: '[data-professional-onboarding-hydration-ready]',
       splash: '[data-professional-onboarding-document-preloader]'
     }),
     '/verificacao-profissional.html': Object.freeze({
       boundary: '[data-state-boundary="verificacao-profissional"]',
-      skeleton: '[data-professional-verification-hydration-skeleton]',
+      pending: '[data-professional-verification-hydration-pending]',
       ready: '[data-professional-verification-hydration-ready]',
       splash: '[data-professional-verification-document-preloader]'
     }),
@@ -84,13 +84,13 @@
     }),
     '/orcamento.html': Object.freeze({
       boundary: '[data-state-boundary="orcamento"]',
-      skeleton: '[data-budget-hydration-skeleton]',
+      pending: '[data-budget-hydration-pending]',
       ready: '[data-budget-hydration-ready]',
       splash: '[data-budget-document-preloader]'
     }),
     '/avaliacao-profissional.html': Object.freeze({
       boundary: '[data-state-boundary="avaliacao-profissional"]',
-      skeleton: '[data-review-hydration-skeleton]',
+      pending: '[data-review-hydration-pending]',
       ready: '[data-review-hydration-ready]',
       splash: '[data-review-document-preloader]'
     }),
@@ -105,18 +105,6 @@
       skeleton: '[data-detail-hydration-skeleton]',
       ready: '[data-detail-hydration-ready]',
       splash: '[data-detail-document-preloader]'
-    }),
-    '/novidades.html': Object.freeze({
-      boundary: '[data-state-boundary="novidades"]',
-      skeleton: '[data-news-hydration-skeleton]',
-      ready: '[data-news-hydration-ready]',
-      splash: '[data-news-document-preloader]'
-    }),
-    '/ajuda.html': Object.freeze({
-      boundary: '[data-state-boundary="ajuda"]',
-      skeleton: '[data-help-hydration-skeleton]',
-      ready: '[data-help-hydration-ready]',
-      splash: '[data-help-document-preloader]'
     })
   });
 
@@ -238,13 +226,16 @@
     const emptySelectors = toArray(options.emptySelectors || options.emptySelector || []);
     const loadingSelectors = toArray(options.loadingSelectors || options.loadingSelector || []);
     const skeletonSelectors = toArray(options.skeletonSelectors || options.skeletonSelector || []);
+    const pendingSelectors = toArray(options.pendingSelectors || options.pendingSelector || []);
     const readySelectors = toArray(options.readySelectors || options.readySelector || []);
     const errorSelectors = toArray(options.errorSelectors || options.errorSelector || ['[data-state-error]']);
     const policy = getPolicy(options);
     const useSkeleton = typeof options.skeletonMode === 'undefined' && typeof options.skeletonPolicy === 'undefined'
       ? shouldUseSkeletonForMode('hard-load')
       : policy.shouldShowSkeleton;
-    const revealReadyImmediately = policy.shouldRevealReadyImmediately && !options.waitFor;
+    const preserveReadyDuringHydration = options.preserveReadyDuringHydration === true;
+    const revealReadyImmediately = policy.shouldRevealReadyImmediately
+      && (!options.waitFor || preserveReadyDuringHydration);
     const revealReadyOnEmpty = options.revealReadyOnEmpty !== false;
     const waitFor = new Set(toArray(options.waitFor || ['dom']));
     const readySources = new Set();
@@ -368,6 +359,14 @@
       resolveNodes(root, skeletonSelectors).forEach((node) => setSkeletonHidden(node, !visible));
     };
 
+    const syncPending = (visible) => {
+      resolveNodes(root, pendingSelectors).forEach((node) => {
+        setHidden(node, !visible);
+        const region = node.closest('[data-state-region]');
+        if (region) setHidden(region, !visible);
+      });
+    };
+
     const syncReady = (visible) => {
       resolveNodes(root, readySelectors).forEach((node) => setHidden(node, !visible));
     };
@@ -422,6 +421,7 @@
         // This prevents route listeners from observing mixed skeleton/ready/empty DOM.
         syncLoading(false);
         syncSkeleton(false);
+        syncPending(false);
         syncError(false);
         syncReady(lastHasItems || revealReadyOnEmpty);
         syncEmptyVisibility(!lastHasItems);
@@ -464,6 +464,7 @@
       syncError(false);
       syncLoading(false);
       syncSkeleton(false);
+      syncPending(true);
       syncReady(revealReadyImmediately);
       showSkeleton();
       if (watchdogTimer) window.clearTimeout(watchdogTimer);
@@ -492,6 +493,7 @@
       // Hide all non-error surfaces before publishing the error state.
       syncLoading(false);
       syncSkeleton(false);
+      syncPending(false);
       syncReady(false);
       hideEmpties();
       syncError(true);
@@ -512,6 +514,7 @@
       error,
       syncEmpty,
       syncSkeleton,
+      syncPending,
       syncReady,
       syncError,
       hideEmpties,
@@ -540,7 +543,7 @@
 
   const routeHasSkeleton = (doc, path) => {
     const contract = getRouteSkeletonContract(path);
-    return Boolean(contract && doc?.querySelector?.(contract.skeleton));
+    return Boolean(contract?.skeleton && doc?.querySelector?.(contract.skeleton));
   };
 
   const prepareRouteDocument = (doc, path, mode = 'direct') => {
@@ -553,9 +556,10 @@
       node.dataset.pageHydrationSkeleton = showSkeleton ? 'on' : 'off';
       node.setAttribute('aria-busy', 'true');
     });
-    doc.querySelectorAll(contract.splash).forEach((node) => setHidden(node, true));
-    doc.querySelectorAll(contract.skeleton).forEach((node) => setSkeletonHidden(node, !showSkeleton));
-    doc.querySelectorAll(contract.ready).forEach((node) => setHidden(node, true));
+    if (contract.splash) doc.querySelectorAll(contract.splash).forEach((node) => setHidden(node, true));
+    if (contract.skeleton) doc.querySelectorAll(contract.skeleton).forEach((node) => setSkeletonHidden(node, !showSkeleton));
+    if (contract.pending) doc.querySelectorAll(contract.pending).forEach((node) => setHidden(node, false));
+    if (contract.ready) doc.querySelectorAll(contract.ready).forEach((node) => setHidden(node, true));
     doc.querySelectorAll('[data-state-error], [data-state-empty]').forEach((node) => setHidden(node, true));
     return true;
   };
@@ -581,8 +585,9 @@
     }
     const contract = getRouteSkeletonContract(path);
     if (contract) {
-      document.querySelectorAll(contract.skeleton).forEach((node) => setHidden(node, true));
-      document.querySelectorAll(contract.ready).forEach((node) => setHidden(node, true));
+      if (contract.skeleton) document.querySelectorAll(contract.skeleton).forEach((node) => setHidden(node, true));
+      if (contract.pending) document.querySelectorAll(contract.pending).forEach((node) => setHidden(node, true));
+      if (contract.ready) document.querySelectorAll(contract.ready).forEach((node) => setHidden(node, true));
     }
     const errorNode = document.querySelector('[data-state-error]');
     if (errorNode) {

@@ -240,10 +240,14 @@ npm run test:first-paint-loading-contract
 ## Internal route hydration contract
 
 - `assets/js/core/stable-shell-router.js` owns route preparation, the 150 ms visual threshold, stable sidebar/header nodes, history and route commit.
-- `assets/js/core/page-hydration.js` owns destination loading, skeleton, ready, empty, error, retry and the documented hydration watchdog.
+- `assets/js/core/page-hydration.js` owns destination pending, loading, skeleton, ready, empty, error, retry and the documented hydration watchdog.
 - The current page remains mounted while destination HTML, CSS and essential scripts are prepared.
-- `pedidos.html`, `mensagens.html` and `notificacoes.html` use their page-specific skeletons only when preparation exceeds 150 ms.
+- `pedidos.html`, `mensagens.html` and `notificacoes.html` use their page-specific data skeletons only when preparation exceeds 150 ms.
+- `configuracoes.html`, `orcamento.html`, `avaliacao-profissional.html`, `tornar-profissional.html` and `verificacao-profissional.html` use explicit account/context pending surfaces, never generic page skeletons. They remain hydration barriers because protected content cannot commit before guard/context resolution.
 - Static or already-renderable pages commit directly without a generic loading overlay.
+- `ajuda.html` and `novidades.html` are canonical static/editorial routes: their boundary starts in `ready`, their real content is not hidden, and they do not belong to `ROUTE_SKELETON_CONTRACTS` or `HYDRATION_BARRIER_ROUTES`.
+- Static origin pages still load `page-hydration.js` before `stable-shell-router.js`, so later navigation to a data-driven destination retains the canonical lifecycle authority.
+- Route contracts may declare either `skeleton` for unknown data geometry or `pending` for guard/context resolution; they must not declare fake geometry merely to cover JavaScript bootstrap.
 - Controllers may complete hydration only from declared DOM, authentication and essential-data signals. Timers cannot stand in for those signals.
 - A watchdog must end in `error` and expose retry; it must never force `ready`.
 - `page-data-orchestrator.js` provides in-memory stale-while-revalidate behavior: valid cached data is returned immediately and `doke:page-data-revalidated` carries the background refresh.

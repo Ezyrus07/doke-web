@@ -1,9 +1,6 @@
 /* resultados.html structural hydration geometry. */
 @import url("../../components/states/page-hydration-skeleton.css?v=20260716-skeleton-radius-contract-v1");
 
-
-/* Lifecycle visibility contract: page composition rules must never override
-   the semantic hidden attribute applied by page-hydration.js. */
 body.search-results-body [data-results-hydration-skeleton][hidden],
 body.search-results-body [data-results-hydration-ready][hidden],
 body.search-results-body [data-state-loading][hidden],
@@ -16,47 +13,51 @@ body.search-results-body [data-results-loading][hidden],
 body.search-results-body [data-results-users][hidden],
 body.search-results-body [data-results-videos][hidden],
 body.search-results-body [data-results-before-after][hidden],
-body.search-results-body [data-results-filters-backdrop][hidden] {
-  display: none;
-}
+body.search-results-body [data-results-filters-backdrop][hidden] { display: none; }
 
-body.search-results-body .results-hydration-skeleton {
-  display: grid;
-  gap: 18px;
-}
-body.search-results-body .results-hydration-skeleton__search {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 48px;
-  gap: 12px;
-  padding: 12px;
-  border-radius: var(--doke-radius-panel-compact);
-}
-body.search-results-body .results-hydration-skeleton__input,
-body.search-results-body .results-hydration-skeleton__button { block-size: 44px; border-radius: var(--doke-radius-control-comfortable); }
-body.search-results-body .results-hydration-skeleton__scope { display: flex; gap: 10px; flex-wrap: wrap; }
-body.search-results-body .results-hydration-skeleton__scope .doke-skeleton-line { inline-size: 112px; block-size: 36px; border-radius: var(--doke-radius-pill); }
-body.search-results-body .results-hydration-skeleton__layout { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 22px; align-items: start; }
-body.search-results-body .results-hydration-skeleton__filters { display: grid; gap: 18px; padding: 20px; border-radius: var(--doke-radius-panel-compact); }
-body.search-results-body .results-hydration-skeleton__heading { inline-size: 58%; block-size: 20px; border-radius: var(--doke-skeleton-line-radius); }
-body.search-results-body .results-hydration-skeleton__field { inline-size: 100%; block-size: 42px; border-radius: var(--doke-radius-control); }
-body.search-results-body .results-hydration-skeleton__content { display: grid; gap: 16px; }
-body.search-results-body .results-hydration-skeleton__summary { display: flex; justify-content: space-between; gap: 16px; align-items: center; }
-body.search-results-body .results-hydration-skeleton__sort { inline-size: 150px; block-size: 38px; border-radius: var(--doke-radius-control); }
+body.search-results-body .results-hydration-skeleton:not([hidden]) { display: grid; gap: 18px; }
+body.search-results-body .results-hydration-skeleton__layout { display: grid; grid-template-columns: 292px minmax(0, 1fr); gap: 22px; align-items: start; }
+body.search-results-body .results-hydration-skeleton__filters,
+body.search-results-body .results-hydration-skeleton__summary,
+body.search-results-body .results-hydration-skeleton__card { border-radius: var(--doke-skeleton-card-radius); }
+body.search-results-body .results-hydration-skeleton__filters { display: grid; gap: 16px; padding: 20px; }
+body.search-results-body .results-hydration-skeleton__eyebrow { inline-size: 82px; block-size: 11px; }
+body.search-results-body .results-hydration-skeleton__heading { inline-size: 58%; block-size: 22px; }
+body.search-results-body .results-hydration-skeleton__field { inline-size: 100%; block-size: 44px; border-radius: var(--doke-radius-control); }
+body.search-results-body .results-hydration-skeleton__filter-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-block-start: 4px; }
+body.search-results-body .results-hydration-skeleton__filter-button { block-size: 42px; border-radius: var(--doke-radius-control); }
+body.search-results-body .results-hydration-skeleton__content { display: grid; gap: 16px; min-inline-size: 0; }
+body.search-results-body .results-hydration-skeleton__summary { display: flex; justify-content: space-between; gap: 20px; align-items: center; padding: 20px; }
+body.search-results-body .results-hydration-skeleton__summary-copy { display: grid; gap: 9px; min-inline-size: 0; flex: 1; }
+body.search-results-body .results-hydration-skeleton__summary-title { inline-size: min(320px, 72%); block-size: 23px; }
+body.search-results-body .results-hydration-skeleton__summary-text { inline-size: min(440px, 92%); block-size: 13px; }
+body.search-results-body .results-hydration-skeleton__count { inline-size: 72px; block-size: 54px; border-radius: var(--doke-radius-card-sm); }
 body.search-results-body .results-hydration-skeleton__cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
-body.search-results-body .results-hydration-skeleton__card { display: grid; gap: 12px; padding: 12px; border-radius: var(--doke-skeleton-card-radius); }
-body.search-results-body .results-hydration-skeleton__media { inline-size: 100%; aspect-ratio: 4 / 3; border-radius: var(--doke-radius-card-sm); }
-body.search-results-body .results-hydration-skeleton__title { inline-size: 76%; block-size: 18px; border-radius: var(--doke-skeleton-line-radius-sm); }
-body.search-results-body .results-hydration-skeleton__text { inline-size: 92%; block-size: 13px; border-radius: var(--doke-skeleton-line-radius-sm); }
-body.search-results-body .results-hydration-skeleton__action { inline-size: 100%; block-size: 40px; border-radius: var(--doke-radius-control); }
+body.search-results-body .results-hydration-skeleton__card { display: grid; overflow: hidden; padding: 0; }
+body.search-results-body .results-hydration-skeleton__media { inline-size: 100%; aspect-ratio: 4 / 3; border-radius: 0; }
+body.search-results-body .results-hydration-skeleton__card-body { display: grid; gap: 10px; padding: 14px; }
+body.search-results-body .results-hydration-skeleton__badge { inline-size: 74px; block-size: 20px; border-radius: var(--doke-radius-pill); }
+body.search-results-body .results-hydration-skeleton__title { inline-size: 82%; block-size: 19px; }
+body.search-results-body .results-hydration-skeleton__text { inline-size: 94%; block-size: 13px; }
+body.search-results-body .results-hydration-skeleton__provider { display: flex; align-items: center; gap: 9px; }
+body.search-results-body .results-hydration-skeleton__avatar { inline-size: 30px; block-size: 30px; border-radius: 50%; flex: 0 0 auto; }
+body.search-results-body .results-hydration-skeleton__provider-copy { inline-size: 48%; block-size: 12px; }
+body.search-results-body .results-hydration-skeleton__price { inline-size: 42%; block-size: 22px; margin-block-start: 2px; }
 
-@media (max-width: 900px) {
+@media (max-width: 1000px) {
+  body.search-results-body .results-hydration-skeleton__layout { grid-template-columns: 240px minmax(0, 1fr); }
+  body.search-results-body .results-hydration-skeleton__cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  body.search-results-body .results-hydration-skeleton__card:nth-child(3) { display: none; }
+}
+@media (max-width: 760px) {
   body.search-results-body .results-hydration-skeleton__layout { grid-template-columns: 1fr; }
   body.search-results-body .results-hydration-skeleton__filters { display: none; }
-  body.search-results-body .results-hydration-skeleton__cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 608px) {
   body.search-results-body .results-hydration-skeleton { gap: 14px; }
-  body.search-results-body .results-hydration-skeleton__cards { grid-template-columns: 1fr; }
-  body.search-results-body .results-hydration-skeleton__card:nth-child(n + 3) { display: none; }
-  body.search-results-body .results-hydration-skeleton__scope { flex-wrap: nowrap; overflow: hidden; }
+  body.search-results-body .results-hydration-skeleton__summary { padding: 16px; }
+  body.search-results-body .results-hydration-skeleton__count { inline-size: 56px; block-size: 48px; }
+  body.search-results-body .results-hydration-skeleton__cards { display: flex; gap: 14px; overflow: hidden; }
+  body.search-results-body .results-hydration-skeleton__card { flex: 0 0 min(84vw, 330px); }
+  body.search-results-body .results-hydration-skeleton__card:nth-child(3) { display: grid; }
 }

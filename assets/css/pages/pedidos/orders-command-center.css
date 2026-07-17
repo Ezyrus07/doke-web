@@ -3612,6 +3612,12 @@ body.orders-page-shell .orders-card-skeleton__status-dot {
   animation-timing-function: ease-in-out;
 }
 
+/* The planner is professional-only. Before the persisted role is known,
+   avoid presenting an agenda skeleton to client or guest accounts. */
+html:not([data-orders-role="professional"]) body.orders-page-shell [data-orders-hydration-skeleton="planner"] {
+  display: none;
+}
+
 body.orders-page-shell [data-orders-hydration-skeleton][hidden],
 body.orders-page-shell [data-orders-hydration-ready][hidden],
 body.orders-page-shell [data-orders-hydration-count-skeleton][hidden],

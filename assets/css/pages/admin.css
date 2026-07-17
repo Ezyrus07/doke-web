@@ -600,61 +600,46 @@ body[data-page="admin"] {
 }
 
 /* Navigation lifecycle stage 04: administrative guard and hydration surfaces. */
-.admin-lifecycle-skeleton,
+.admin-access-pending,
 .admin-lifecycle-error {
   width: 100%;
 }
 
-.admin-lifecycle-skeleton {
+.admin-access-pending {
+  min-height: clamp(260px, 42vh, 420px);
   display: grid;
-  gap: 18px;
+  place-items: center;
+  padding: 24px;
 }
 
-.admin-lifecycle-skeleton__grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 14px;
-}
-
-.admin-lifecycle-skeleton__grid > span,
-.admin-lifecycle-skeleton__panel {
-  display: block;
-  overflow: hidden;
-  border: 0;
+.admin-access-pending__surface {
+  width: min(100%, 520px);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 22px;
+  border: 1px solid rgba(31, 95, 174, 0.10);
   border-radius: var(--doke-visual-radius-lg);
-  background: linear-gradient(100deg, #edf3f8 20%, #f8fafc 38%, #edf3f8 56%);
-  background-size: 220% 100%;
-  box-shadow: var(--admin-shadow-control);
-  animation: admin-lifecycle-shimmer 1.35s ease-in-out infinite;
+  background: var(--admin-surface);
+  box-shadow: var(--admin-shadow-surface);
 }
 
-.admin-lifecycle-skeleton__grid > span {
-  min-height: 82px;
-}
-
-.admin-lifecycle-skeleton__layout {
+.admin-access-pending__copy {
+  min-width: 0;
   display: grid;
-  grid-template-columns: minmax(0, 1.75fr) minmax(280px, 0.85fr);
-  gap: 16px;
-  align-items: start;
+  gap: 4px;
 }
 
-.admin-lifecycle-skeleton__main,
-.admin-lifecycle-skeleton__side {
-  display: grid;
-  gap: 16px;
+.admin-access-pending__copy strong {
+  color: var(--admin-text);
+  font-size: 0.98rem;
+  line-height: 1.35;
 }
 
-.admin-lifecycle-skeleton__panel {
-  min-height: 248px;
-}
-
-.admin-lifecycle-skeleton__panel--large {
-  min-height: 330px;
-}
-
-.admin-lifecycle-skeleton__panel--compact {
-  min-height: 180px;
+.admin-access-pending__copy span {
+  color: var(--admin-muted);
+  font-size: 0.86rem;
+  line-height: 1.55;
 }
 
 .admin-lifecycle-error {
@@ -674,53 +659,25 @@ body[data-page="admin"] {
   gap: 10px;
 }
 
-.admin-lifecycle-skeleton[hidden],
+.admin-access-pending[hidden],
 .admin-lifecycle-error[hidden] {
   display: none;
 }
 
-@keyframes admin-lifecycle-shimmer {
-  0% { background-position: 100% 0; }
-  100% { background-position: -120% 0; }
-}
-
-@media (max-width: 1040px) {
-  .admin-lifecycle-skeleton__grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .admin-lifecycle-skeleton__layout {
-    grid-template-columns: minmax(0, 1fr) 290px;
-  }
-}
-
-@media (max-width: 760px) {
-  .admin-lifecycle-skeleton__layout {
-    grid-template-columns: 1fr;
-  }
-
-  .admin-lifecycle-skeleton__panel--large,
-  .admin-lifecycle-skeleton__panel {
-    min-height: 220px;
-  }
-}
-
 @media (max-width: 520px) {
-  .admin-lifecycle-skeleton__grid {
-    grid-template-columns: 1fr;
+  .admin-access-pending {
+    min-height: 240px;
+    padding-inline: 0;
+  }
+
+  .admin-access-pending__surface {
+    align-items: flex-start;
+    padding: 18px;
   }
 
   .admin-lifecycle-error__actions,
   .admin-lifecycle-error__actions .doke-btn {
     width: 100%;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .admin-lifecycle-skeleton__grid > span,
-  .admin-lifecycle-skeleton__panel {
-    animation: none;
-    background-position: 50% 0;
   }
 }
 

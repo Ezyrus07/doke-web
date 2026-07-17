@@ -1,19 +1,20 @@
 # Contrato canônico de navegação e lifecycle — Doke Web
 
-Status: **ativo — Etapa 7 em andamento (lote 1 implementado)**  
-Escopo: navegação, primeiro paint, guards, hidratação, skeletons, histórico, scroll e feedback operacional.  
+Status: **ativo — Etapa 9; superfícies pending de guard/contexto implementadas no lote 2**
+Escopo: navegação, primeiro paint, guards, hidratação, skeletons, histórico, scroll e feedback operacional.
 Exclusão: nenhuma mudança runtime em `comunidade-interna.html` ou no CSS da Comunidade.
 
 ## 1. Invariável principal
 
 A aplicação nunca pode ficar sem uma superfície explícita. Em qualquer instante deve existir exatamente uma transição coerente entre:
 
-1. boot de documento;
-2. skeleton estrutural;
-3. conteúdo pronto;
-4. erro recuperável.
+1. boot de documento, apenas em entrada documental;
+2. conteúdo estático pronto ou conteúdo anterior preservado;
+3. superfície pending explícita quando a espera é de autenticação, papel ou contexto;
+4. skeleton estrutural quando existem dados ainda desconhecidos;
+5. conteúdo pronto, empty state ou erro recuperável.
 
-`boot oculto + skeleton oculto + conteúdo oculto + erro oculto` é estado inválido.
+`boot oculto + conteúdo estático/preservado ausente + pending oculto + skeleton oculto + conteúdo dinâmico oculto + erro oculto` é estado inválido.
 
 ## 2. Autoridades
 
@@ -21,7 +22,7 @@ A aplicação nunca pode ficar sem uma superfície explícita. Em qualquer insta
 |---|---|---|
 | Estado global de navegação e lifecycle | `assets/js/core/navigation-lifecycle.js` | Decide uma vez o modo de entrada e expõe estado observável de documento, rota, página e guard. |
 | Boot de documento | `Doke.navigationLifecycle.document` | `assets/js/core/document-preloader.js` é adapter visual; não decide readiness de dados ou guard. |
-| Lifecycle/hidratação | `Doke.pageLifecycle` | `assets/js/core/page-hydration.js` continua renderizando skeleton/ready/error e publica estados na fachada. |
+| Lifecycle/hidratação | `Doke.pageLifecycle` | `assets/js/core/page-hydration.js` renderiza pending/skeleton/ready/empty/error e publica estados na fachada. |
 | Navegação | `Doke.navigation.go` / `window.DokeNavigate` | `stable-shell-router.js` é adapter prioritário; `app.js` é fallback legado; navegação de documento é último recurso. |
 | Histórico e restore | `Doke.navigationLifecycle` | Uma única escuta de `popstate`; adapters recebem `skipHistory` e `restoreScroll`. |
 | Registro de rotas | `assets/js/core/navigation-registry.js` | Responsável apenas por metadados e seleção de superfície. |
@@ -61,25 +62,30 @@ A fachada também:
 - publica datasets de diagnóstico em `html` e `body`;
 - emite `doke:navigation-lifecycle-change` e eventos por domínio.
 
-**Estado final da Etapa 8:** guards profissionais, administrativos e de conta publicam `begin/allow/redirect/fail` na fachada; todas as navegações internas inventariadas usam a autoridade canônica. Adapters legados permanecem somente como compatibilidade para superfícies explicitamente excluídas.
+**Estado final da Etapa 9:** guards profissionais, administrativos e de conta publicam `begin/allow/redirect/fail` na fachada; rotas estáticas fazem commit direto; páginas de formulário protegidas ou dependentes de contexto usam pending explícito; skeleton permanece reservado a dados com geometria previsível. Adapters legados permanecem somente como compatibilidade para superfícies explicitamente excluídas.
 
 ## 3. Modos de entrada
 
 ### Hard load
 
-Abrange F5, URL direta, nova aba e link externo. Sequência permitida:
+Abrange F5, URL direta, nova aba e link externo. Sequências permitidas:
 
-`document boot condicional → shell estável → skeleton estrutural → conteúdo/empty/error`.
+- rota estática/editorial: `document boot condicional → shell estável + conteúdo estático pronto`;
+- rota protegida/de contexto: `document boot condicional → shell estável + pending explícito → conteúdo/error/redirect`;
+- rota dependente de dados: `document boot condicional → shell estável + skeleton estrutural → conteúdo/empty/error`.
 
-O boot não deve aguardar dados. Ele encerra quando o shell pode pintar e entrega imediatamente para o lifecycle da página.
+O boot não deve aguardar dados. Ele encerra quando o shell pode pintar. Conteúdo já presente e utilizável no HTML não pode ser ocultado para simular hidratação.
 
 ### Navegação interna
 
-Abrange links internos, sidebar, bottom navigation e botões contextuais. Sequência:
+Abrange links internos, sidebar, bottom navigation e botões contextuais. Sequências:
 
-`shell preservado → rota em pending → skeleton estrutural ou conteúdo anterior preservado → conteúdo/empty/error`.
+- rota estática/editorial: `shell preservado → preparação de assets → commit direto do conteúdo pronto`;
+- rota protegida/de contexto: `shell preservado → preparação de assets → commit direto do pending explícito → conteúdo/error/redirect`;
+- rota dependente de dados sem cache: `shell preservado → rota em pending → skeleton estrutural local → conteúdo/empty/error`;
+- rota dependente de dados com cache: `shell preservado → conteúdo anterior preservado → revalidação silenciosa → conteúdo atualizado`.
 
-Proibido: splash global, documento branco, remoção do shell ou reset de largura.
+Proibido: splash global, documento branco, remoção do shell, reset de largura ou skeleton genérico para mascarar bootstrap de JavaScript.
 
 ### Guard
 
@@ -116,16 +122,18 @@ Atribuições diretas a `location.href` em controllers são dívida de migraçã
 
 ## 6. Política de skeleton
 
-O skeleton representa geometria real e deve estar presente no HTML inicial quando necessário. Ele deve:
+Skeleton representa conteúdo assíncrono ainda desconhecido cuja geometria final já é previsível. Ele não representa carregamento de script, leitura síncrona de preferência, binding de listeners ou simples entrada em outro HTML.
 
-- aparecer no primeiro frame útil;
-- preservar largura, altura aproximada, colunas e densidade;
+Quando necessário, o skeleton deve:
+
+- aparecer no primeiro frame útil da região realmente dependente de dados;
+- preservar largura, altura aproximada, colunas e densidade do componente final;
 - ter `aria-hidden="true"`;
-- manter o boundary com `aria-busy="true"` durante hidratação;
+- manter somente o boundary correspondente com `aria-busy="true"` durante a hidratação;
 - desaparecer somente quando conteúdo, empty ou erro estiver pronto;
 - respeitar `prefers-reduced-motion`.
 
-Duração mínima não é sincronização. Qualquer anti-flash deve ser centralizado, curto e condicionado à percepção, nunca à lógica de negócio.
+Rotas estáticas/editoriais iniciam em `ready`, sem contrato no registro de hidratação e sem hydration barrier. Rotas protegidas/de contexto podem permanecer como hydration barriers, mas usam `pending` textual explícito em vez de geometria falsa. Duração mínima não é sincronização. Qualquer anti-flash deve ser centralizado, curto e condicionado à percepção, nunca à lógica de negócio.
 
 ## 7. Feedback operacional
 
@@ -139,7 +147,7 @@ Ações como publicar, salvar, pagar e solicitar saque usam estado pending no co
 2. enquanto o guard resolve, existe superfície pending visível;
 3. decisão negada usa replace;
 4. destino não mostra splash global em navegação proveniente do app;
-5. skeleton do destino aparece antes de qualquer conteúdo dependente de dados;
+5. pending explícito do destino aparece antes de qualquer conteúdo protegido ou dependente de contexto;
 6. erro de repository produz estado recuperável, não página vazia.
 
 ## 8.1. Contrato das superfícies transacionais
@@ -162,22 +170,40 @@ Regras obrigatórias:
 
 ## 8.2. Contrato das superfícies públicas e editoriais
 
-`resultados.html`, `detalhe-anuncio.html`, `novidades.html` e `ajuda.html` seguem autoridades diferentes sem compartilhar um loading genérico:
+`resultados.html`, `detalhe-anuncio.html`, `novidades.html` e `ajuda.html` não compartilham um loading genérico:
 
-- **resultados:** `loading estrutural → dados da busca → ready | empty | error`;
-- **detalhe do anúncio:** `loading estrutural → entidade válida → ready | empty | error`;
-- **novidades:** `loading estrutural → inicialização editorial → ready | error`;
-- **ajuda:** `loading estrutural → inicialização da central → ready | error`.
+- **resultados:** `loading estrutural de dados → busca válida → ready | empty | error`;
+- **detalhe do anúncio:** `loading estrutural de dados → entidade válida → ready | empty | error`;
+- **novidades:** `HTML editorial pronto → progressive enhancement síncrono`;
+- **ajuda:** `HTML editorial pronto → progressive enhancement síncrono`.
 
 Regras obrigatórias:
 
 1. resultados e detalhe não exibem conteúdo provisional antes de o controller publicar o payload;
-2. novidades e ajuda não usam delay artificial para simular carregamento;
-3. o stable shell aguarda a hydration barrier das quatro rotas;
-4. cada página exporta um initializer idempotente e limpa listeners globais ao sair da rota;
-5. drawer, filtros, modais e busca só são ativados após o DOM da rota estar montado;
-6. ausência de dependências ou falha de controller produz erro recuperável;
-7. skeletons representam a geometria real de desktop e mobile e respeitam `prefers-reduced-motion`.
+2. novidades e ajuda iniciam em `data-view-state="ready"` e `aria-busy="false"`;
+3. novidades e ajuda não possuem skeleton de página, contrato em `ROUTE_SKELETON_CONTRACTS` nem hydration barrier no stable shell;
+4. o stable shell prepara CSS e scripts das rotas estáticas antes do commit, mas não cria um estado visual intermediário falso;
+5. `page-hydration.js` permanece carregado antes do router também nas rotas estáticas, pois a página de origem precisa conseguir navegar para destinos dinâmicos;
+6. cada página exporta o initializer idempotente esperado pelo `ROUTE_INIT`;
+7. filtros, modais, busca e demais interações são progressive enhancement: o conteúdo editorial continua legível caso o initializer falhe;
+8. ausência de dependência interativa produz degradação controlada; falha de dados em resultados/detalhe produz erro recuperável.
+
+## 8.3. Contrato das superfícies protegidas e dependentes de contexto
+
+`configuracoes.html`, `orcamento.html`, `avaliacao-profissional.html`, `tornar-profissional.html` e `verificacao-profissional.html` não simulam listas ou cards enquanto autenticação, papel ou contexto são resolvidos.
+
+Sequência canônica:
+
+`pending explícito → guard/contexto válido → ready | error | redirect`.
+
+Regras obrigatórias:
+
+1. o pending descreve a decisão em andamento sem imitar conteúdo ainda inexistente;
+2. o conteúdo protegido permanece oculto até a autorização e o contexto serem válidos;
+3. essas rotas continuam como hydration barriers para impedir commit incompleto no stable shell;
+4. `skeletonMode: 'never'` é obrigatório enquanto não houver consulta de dados com geometria final previsível;
+5. falha produz estado recuperável com retry; negação obrigatória usa replace;
+6. nenhum timer artificial pode substituir sinais de DOM, auth, conta, pedido, profissional ou serviço.
 
 ## 9. Sequência de implementação
 
@@ -188,17 +214,19 @@ Regras obrigatórias:
 5. Etapa 5 — perfis e configurações — **concluída**;
 6. Etapa 6 — pedidos, mensagens e pagamento — **concluída**;
 7. Etapa 7 — demais páginas — **concluída (lotes 1 e 2)**;
-8. Etapa 8 — remoção de legado e auditoria final.
+8. Etapa 8 — remoção de legado e auditoria final — **concluída**;
+9. Etapa 9 — separar skeleton de dados e pending de guard/contexto — **em execução; lote 2 concluído**.
 
 Nenhuma etapa deve migrar todas as páginas de uma vez.
 
 
-## Política temporal final — Etapa 8
+## Política temporal final — Etapa 9
 
 `Doke.navigationLifecycle.timing` é a única autoridade de duração mínima para superfícies de navegação.
 
 - boot de documento: orçamento visual compartilhado de 180 ms;
-- decisão direct/skeleton da rota: limiar compartilhado de 150 ms;
+- rotas estáticas/editoriais ignoram qualquer limiar de skeleton e fazem commit direto após a preparação de assets;
+- decisão direct/pending/skeleton: rotas de guard/contexto fazem commit direto do pending; rotas de dados usam limiar compartilhado de 150 ms;
 - hidratação de página: duração solicitada pelo controller é calculada contra o mesmo ciclo, nunca somada ao boot;
 - `page-hydration.js` não controla nem oculta o splash global;
 - `document-preloader.js` é o único proprietário da superfície de boot do documento;

@@ -175,7 +175,9 @@
     if (!root) return null;
     return {
       root,
-      skeleton: root.querySelector('[data-post-service-guard-skeleton]'),
+      pending: root.querySelector('[data-post-service-access-pending]'),
+      pendingTitle: root.querySelector('[data-post-service-access-pending-title]'),
+      pendingMessage: root.querySelector('[data-post-service-access-pending-message]'),
       ready: [...root.querySelectorAll('[data-post-service-guard-ready]')],
       error: root.querySelector('[data-post-service-guard-error]'),
       errorMessage: root.querySelector('[data-post-service-guard-error-message]'),
@@ -192,9 +194,16 @@
 
     surface.root.dataset.viewState = pending ? 'loading' : failed ? 'error' : 'ready';
     surface.root.setAttribute('aria-busy', pending ? 'true' : 'false');
-    if (surface.skeleton) {
-      surface.skeleton.hidden = !pending;
-      surface.skeleton.setAttribute('aria-hidden', pending ? 'false' : 'true');
+    if (surface.pending) {
+      surface.pending.hidden = !pending;
+      surface.pending.setAttribute('aria-hidden', pending ? 'false' : 'true');
+    }
+    if (pending && surface.pendingTitle && surface.pendingMessage) {
+      const redirecting = state === 'redirecting';
+      surface.pendingTitle.textContent = redirecting ? 'Redirecionando com segurança' : 'Validando acesso profissional';
+      surface.pendingMessage.textContent = redirecting
+        ? 'Levando você para a área correta da sua conta.'
+        : 'Confirmando sua conta e permissão para publicar serviços.';
     }
     surface.ready.forEach((node) => {
       node.hidden = !allowed;

@@ -31,7 +31,9 @@
   var searchQuery = '';
   var toastTimer = null;
   var loadPromise = null;
-  var accessSkeleton = document.querySelector('[data-admin-access-skeleton]');
+  var accessPending = document.querySelector('[data-admin-access-pending]');
+  var accessPendingTitle = document.querySelector('[data-admin-access-pending-title]');
+  var accessPendingMessage = document.querySelector('[data-admin-access-pending-message]');
   var accessError = document.querySelector('[data-admin-access-error]');
   var accessErrorMessage = document.querySelector('[data-admin-access-error-message]');
   var accessRun = 0;
@@ -69,7 +71,9 @@
     verificationReviewDescription = document.querySelector('[data-admin-verification-review-description]');
     verificationReviewApprove = document.querySelector('[data-admin-verification-review-approve]');
     verificationReviewReject = document.querySelector('[data-admin-verification-review-reject]');
-    accessSkeleton = document.querySelector('[data-admin-access-skeleton]');
+    accessPending = document.querySelector('[data-admin-access-pending]');
+    accessPendingTitle = document.querySelector('[data-admin-access-pending-title]');
+    accessPendingMessage = document.querySelector('[data-admin-access-pending-message]');
     accessError = document.querySelector('[data-admin-access-error]');
     accessErrorMessage = document.querySelector('[data-admin-access-error-message]');
   }
@@ -82,7 +86,9 @@
       root.setAttribute('aria-busy', busy ? 'true' : 'false');
       root.dataset.adminAccess = next === 'ready' ? 'allowed' : next === 'blocked' ? 'blocked' : 'pending';
     }
-    if (accessSkeleton) accessSkeleton.hidden = !busy;
+    if (accessPending) accessPending.hidden = !busy;
+    if (accessPendingTitle) accessPendingTitle.textContent = next === 'loading' ? 'Preparando o painel administrativo' : next === 'redirecting' ? 'Redirecionando com segurança' : 'Validando acesso administrativo';
+    if (accessPendingMessage) accessPendingMessage.textContent = next === 'loading' ? 'Acesso confirmado. Carregando os dados operacionais.' : next === 'redirecting' ? 'Sua conta não possui acesso a esta área.' : 'Confirmando sua sessão e permissões de suporte.';
     if (dashboard) dashboard.hidden = next !== 'ready';
     if (locked) locked.hidden = next !== 'blocked';
     if (accessError) accessError.hidden = next !== 'error';

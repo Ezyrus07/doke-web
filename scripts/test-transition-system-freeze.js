@@ -76,15 +76,15 @@ function verifyPageBoundaries() {
     ['index.html', 'data-state-boundary="index"', 'data-home-hydration-skeleton'],
     ['meu-perfil.html', 'data-state-boundary="meu-perfil"', 'data-profile-hydration-skeleton'],
     ['perfil-cliente.html', 'data-state-boundary="perfil-cliente"', 'data-profile-hydration-skeleton'],
-    ['configuracoes.html', 'data-state-boundary="configuracoes"', 'data-settings-hydration-skeleton'],
-    ['tornar-profissional.html', 'data-state-boundary="tornar-profissional"', 'data-professional-onboarding-hydration-skeleton'],
-    ['verificacao-profissional.html', 'data-state-boundary="verificacao-profissional"', 'data-professional-verification-hydration-skeleton']
+    ['configuracoes.html', 'data-state-boundary="configuracoes"', 'data-settings-hydration-pending'],
+    ['tornar-profissional.html', 'data-state-boundary="tornar-profissional"', 'data-professional-onboarding-hydration-pending'],
+    ['verificacao-profissional.html', 'data-state-boundary="verificacao-profissional"', 'data-professional-verification-hydration-pending']
   ];
 
-  pages.forEach(([file, boundary, skeleton]) => {
+  pages.forEach(([file, boundary, loadingSurface]) => {
     const html = read(file);
     assert(html.includes(boundary), `${file} is missing its replaceable hydration boundary`);
-    assert(html.includes(skeleton), `${file} is missing its canonical skeleton`);
+    assert(html.includes(loadingSurface), `${file} is missing its canonical loading surface`);
     assert(html.includes('data-doke-document-preloader'), `${file} is missing the global document preloader`);
   });
 }
@@ -112,7 +112,7 @@ function main() {
 
   console.log('[transition-system-freeze] ok');
   console.log(`- executable gates passed: ${checks.length}`);
-  console.log('- priority route registry, history re-entry and page boundaries verified');
+  console.log('- priority route registry, history re-entry and canonical loading surfaces verified');
   console.log('- profile/onboarding persistence contracts included');
   console.log('- direct localStorage access in priority page controllers: 0');
 }

@@ -230,7 +230,8 @@ function createStorage() {
   assert(html.includes('data-professional-verification-loading'), 'O loading canônico de submissão deve existir.');
   assert(html.includes('doke-loading-spinner doke-loading-spinner--lg'), 'O loading deve reutilizar o spinner canônico do orçamento.');
   assert(html.includes('professional-verification-success-modal__dialog'), 'O sucesso deve usar uma superfície compacta e canônica.');
-  assert(page.includes('var minimumLoading'), 'O envio deve manter o feedback visível durante a operação.');
+  assert(!page.includes('var minimumLoading'), 'O envio não deve impor duração mínima artificial ao feedback.');
+  assert(page.includes('currentVerification = await service.submit({ payload: submissionPayload });'), 'O feedback deve durar exatamente a operação real de envio.');
   assert(html.includes('class="professional-verification-content" data-professional-verification-hydration-ready'), 'A hidratação deve revelar um wrapper neutro, não o formulário diretamente.');
   assert(!html.includes('data-professional-verification-form-layout data-professional-verification-hydration-ready'), 'O formulário não pode ser reaberto automaticamente pela hidratação.');
   assert(page.includes('formLayout.hidden = !editable'), 'A projeção do status deve controlar a visibilidade do formulário.');

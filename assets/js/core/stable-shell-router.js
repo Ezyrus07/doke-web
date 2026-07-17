@@ -3,7 +3,7 @@
 
   var Doke = window.Doke || (window.Doke = {});
   var lifecycle = window.DokeNavigationLifecycle || Doke.navigationLifecycle || null;
-  var ROUTER_VERSION = '20260714-route-deadlock-v1';
+  var ROUTER_VERSION = '20260716-static-route-policy-v1';
   var ROUTE_SETTLEMENT_TIMEOUT_MS = 9000;
 
   var SAFE_ROUTES = new Set([
@@ -53,8 +53,13 @@
     '/avaliacao-profissional.html',
     '/resultados.html',
     '/detalhe-anuncio.html',
-    '/novidades.html',
-    '/ajuda.html'
+    '/meu-perfil.html',
+    '/perfil-cliente.html',
+    '/perfil-profissional.html',
+    '/comunidade.html',
+    '/admin.html',
+    '/pagamento-profissional.html',
+    '/anunciar-servico.html'
   ]);
 
   var PROFILE_ACTIVE_PATHS = new Set([
@@ -885,6 +890,27 @@
     });
   }
 
+  var INTERNAL_DIRECT_HYDRATION_ROUTES = new Set([
+    '/index.html',
+    '/mensagens.html',
+    '/notificacoes.html',
+    '/pedidos.html',
+    '/carteira.html',
+    '/resultados.html',
+    '/detalhe-anuncio.html',
+    '/meu-perfil.html',
+    '/perfil-cliente.html',
+    '/perfil-profissional.html',
+    '/comunidade.html',
+    '/admin.html',
+    '/pagamento-profissional.html',
+    '/anunciar-servico.html'
+  ]);
+
+  function shouldCommitHydrationRouteDirect(path) {
+    return INTERNAL_DIRECT_HYDRATION_ROUTES.has(path);
+  }
+
   async function navigate(href, options) {
     options = options || {};
     var url = new URL(href, window.location.href);
@@ -957,7 +983,7 @@
       // Data-driven routes must never commit with both the skeleton and the
       // real surface hidden. Always mount their structural skeleton first;
       // the page hydration authority is responsible for replacing it.
-      if (hasSkeleton) {
+      if (hasSkeleton && !shouldCommitHydrationRouteDirect(path)) {
         visualMode = 'skeleton';
       } else {
         await assetsPromise;

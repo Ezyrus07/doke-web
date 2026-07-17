@@ -73,10 +73,14 @@ check(/runViewInitializer\(['"]post-service['"],\s*window\.DokeInitPostService\)
   'legacy-shell fallback deve reinicializar anunciar-servico.');
 check(/runViewInitializer\(['"]professional-verification['"],\s*window\.DokeInitProfessionalVerification\)/.test(legacyRouter),
   'legacy-shell fallback deve reinicializar verificacao-profissional.');
-check((verificationHtml.match(/doke-page-hydration-skeleton__field/g) || []).length >= 5,
-  'skeleton de verificacao-profissional deve representar a densidade real do formulário.');
-check(/skeletonMode:\s*['"]always['"]/.test(verificationPage) && /minDuration:\s*0/.test(verificationPage),
-  'destino deve usar skeleton estrutural sem duração mínima artificial.');
+check(/data-professional-verification-hydration-pending/.test(verificationHtml),
+  'verificacao-profissional deve expor pending explícito de conta/contexto.');
+check(!/data-professional-verification-hydration-skeleton/.test(verificationHtml),
+  'verificacao-profissional não deve simular o formulário com skeleton genérico.');
+check(/pendingSelectors:\s*['"]\[data-professional-verification-hydration-pending\]['"]/.test(verificationPage),
+  'controller deve registrar o pending explícito de verificação.');
+check(/skeletonMode:\s*['"]never['"]/.test(verificationPage) && /minDuration:\s*0/.test(verificationPage),
+  'destino deve evitar skeleton de bootstrap e duração mínima artificial.');
 check(verificationPage.indexOf('renderStatus(currentVerification);') < verificationPage.lastIndexOf('hydration && hydration.ready({ hasItems: true });'),
   'estado final da verificação deve ser renderizado antes de liberar o conteúdo.');
 

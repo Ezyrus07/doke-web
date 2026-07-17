@@ -1388,160 +1388,58 @@ body.payment-finish-modal-open {
   }
 }
 
-/* Structural hydration surface: mirrors the checkout grid without exposing mock data. */
-.payment-hydration-skeleton {
-  display: grid;
-  gap: 24px;
-  width: 100%;
-}
-
-.payment-hydration-skeleton__hero {
-  display: grid;
-  gap: 10px;
-}
-
-.payment-hydration-skeleton__title {
-  width: min(220px, 58vw);
-  height: 32px;
-  border-radius: 10px;
-}
-
-.payment-hydration-skeleton__description {
-  width: min(520px, 88vw);
-  height: 16px;
-  border-radius: 8px;
-}
-
-.payment-hydration-skeleton__layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(350px, 380px);
-  gap: 24px;
-  align-items: start;
-}
-
-.payment-hydration-skeleton__main {
-  display: grid;
-  gap: 20px;
-  min-width: 0;
-}
-
+/* Hard-load skeleton mirrors the checkout sections, methods and sticky summary. */
+.payment-hydration-skeleton:not([hidden]) { display: grid; gap: 24px; width: 100%; }
+.payment-hydration-skeleton__hero { display: grid; gap: 10px; }
+.payment-hydration-skeleton__title { width: min(220px, 58vw); height: 32px; border-radius: 10px; }
+.payment-hydration-skeleton__description { width: min(520px, 88vw); height: 16px; border-radius: 8px; }
+.payment-hydration-skeleton__layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(350px, 380px); gap: 24px; align-items: start; }
+.payment-hydration-skeleton__main { display: grid; gap: 20px; min-width: 0; }
 .payment-hydration-skeleton__card,
-.payment-hydration-skeleton__summary {
-  display: grid;
-  gap: 16px;
-  min-width: 0;
-  padding: 24px;
-  border: 1px solid var(--payment-border);
-  border-radius: var(--payment-radius);
-  background: var(--payment-surface);
-  box-shadow: var(--payment-shadow);
-}
-
-.payment-hydration-skeleton__card {
-  min-height: 390px;
-}
-
-.payment-hydration-skeleton__card--review {
-  min-height: 190px;
-}
-
-.payment-hydration-skeleton__summary {
-  min-height: 520px;
-}
-
-.payment-hydration-skeleton__heading {
-  width: min(260px, 72%);
-  height: 24px;
-  border-radius: 9px;
-}
-
-.payment-hydration-skeleton__copy {
-  width: min(420px, 88%);
-  height: 14px;
-  border-radius: 7px;
-}
-
-.payment-hydration-skeleton__methods {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.payment-hydration-skeleton__method {
-  width: 100%;
-  height: 82px;
-  border-radius: 14px;
-}
-
-.payment-hydration-skeleton__detail,
-.payment-hydration-skeleton__check,
-.payment-hydration-skeleton__provider,
-.payment-hydration-skeleton__total,
-.payment-hydration-skeleton__button {
-  width: 100%;
-  border-radius: 12px;
-}
-
-.payment-hydration-skeleton__detail {
-  height: 68px;
-}
-
-.payment-hydration-skeleton__check {
-  height: 76px;
-}
-
-.payment-hydration-skeleton__provider {
-  height: 64px;
-}
-
-.payment-hydration-skeleton__row {
-  width: 100%;
-  height: 18px;
-  border-radius: 8px;
-}
-
-.payment-hydration-skeleton__total {
-  height: 78px;
-}
-
-.payment-hydration-skeleton__button {
-  height: 48px;
-}
-
+.payment-hydration-skeleton__summary { display: grid; gap: 16px; min-width: 0; padding: 24px; border: 1px solid var(--payment-border); border-radius: var(--payment-radius); background: var(--payment-surface); box-shadow: var(--payment-shadow); }
+.payment-hydration-skeleton__card--method { min-height: 430px; }
+.payment-hydration-skeleton__card--review { min-height: 220px; }
+.payment-hydration-skeleton__summary { min-height: 560px; }
+.payment-hydration-skeleton__section-head { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; align-items: start; }
+.payment-hydration-skeleton__section-head > div { display: grid; gap: 8px; }
+.payment-hydration-skeleton__number { width: 34px; height: 34px; border-radius: 50%; }
+.payment-hydration-skeleton__heading { width: min(260px, 72%); height: 24px; border-radius: 9px; }
+.payment-hydration-skeleton__heading--summary { width: 78%; }
+.payment-hydration-skeleton__copy { width: min(420px, 88%); height: 14px; border-radius: 7px; }
+.payment-hydration-skeleton__methods { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.payment-hydration-skeleton__method { width: 100%; height: 82px; border-radius: 14px; }
+.payment-hydration-skeleton__detail { width: 100%; height: 68px; border-radius: 12px; }
+.payment-hydration-skeleton__points { width: 100%; height: 72px; border-radius: 12px; }
+.payment-hydration-skeleton__check { width: 100%; height: 76px; border-radius: 12px; }
+.payment-hydration-skeleton__security { width: 100%; height: 58px; border-radius: 12px; }
+.payment-hydration-skeleton__summary-heading { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.payment-hydration-skeleton__eyebrow { width: 88px; height: 11px; }
+.payment-hydration-skeleton__badge { width: 92px; height: 28px; border-radius: var(--doke-radius-pill); }
+.payment-hydration-skeleton__provider { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; align-items: center; padding-block: 6px; }
+.payment-hydration-skeleton__avatar { width: 48px; height: 48px; border-radius: 50%; }
+.payment-hydration-skeleton__provider > div { display: grid; gap: 8px; }
+.payment-hydration-skeleton__provider > div > :first-child { width: 72%; height: 15px; }
+.payment-hydration-skeleton__provider > div > :last-child { width: 54%; height: 12px; }
+.payment-hydration-skeleton__rows { display: grid; gap: 14px; padding-block: 8px; }
+.payment-hydration-skeleton__row { width: 100%; height: 18px; border-radius: 8px; }
+.payment-hydration-skeleton__total { width: 100%; height: 78px; border-radius: 12px; }
+.payment-hydration-skeleton__button { width: 100%; height: 48px; border-radius: 12px; }
+.payment-hydration-skeleton__microcopy { width: 72%; height: 12px; justify-self: center; }
+.payment-hydration-skeleton__links { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.payment-hydration-skeleton__links > span { height: 38px; border-radius: var(--doke-radius-control); }
 @media (max-width: 860px) {
-  .payment-hydration-skeleton__layout {
-    grid-template-columns: 1fr;
-  }
-
-  .payment-hydration-skeleton__summary {
-    min-height: 430px;
-  }
+  .payment-hydration-skeleton__layout { grid-template-columns: 1fr; }
+  .payment-hydration-skeleton__summary { min-height: 470px; }
 }
-
 @media (max-width: 560px) {
-  .payment-hydration-skeleton {
-    gap: 18px;
-  }
-
+  .payment-hydration-skeleton { gap: 18px; }
   .payment-hydration-skeleton__card,
-  .payment-hydration-skeleton__summary {
-    padding: 18px;
-  }
-
-  .payment-hydration-skeleton__methods {
-    grid-template-columns: 1fr;
-  }
-
-  .payment-hydration-skeleton__method {
-    height: 68px;
-  }
+  .payment-hydration-skeleton__summary { padding: 18px; }
+  .payment-hydration-skeleton__methods { grid-template-columns: 1fr; }
+  .payment-hydration-skeleton__method { height: 68px; }
+  .payment-hydration-skeleton__links { grid-template-columns: 1fr; }
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .payment-hydration-skeleton .doke-skeleton-line {
-    animation: none;
-  }
-}
+@media (prefers-reduced-motion: reduce) { .payment-hydration-skeleton .doke-skeleton-line { animation: none; } }
 
 /* Hydration state exclusivity: checkout surfaces must never overlap. */
 .payment-screen[data-page-hydration="hydrating"] :is(

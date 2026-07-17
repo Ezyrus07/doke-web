@@ -22,7 +22,8 @@
       skeletonSelectors: '[data-professional-profile-hydration-skeleton]',
       readySelectors: '[data-professional-profile-hydration-ready]',
       errorSelectors: '[data-state-error]',
-      skeletonMode: 'route-and-document',
+      skeletonMode: 'hard-load',
+      preserveReadyDuringHydration: true,
       maxDuration: 9000,
       hasItems: function () { return true; },
       onRetry: function () { window.DokeInitProfessionalProfile(); }

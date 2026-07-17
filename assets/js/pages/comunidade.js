@@ -59,12 +59,17 @@ window.DokeInitCommunity = function DokeInitCommunity() {
   const communitySkeleton = page.querySelector('[data-community-hydration-skeleton]');
   const incomingCommunityTransition = window.Doke?.communityTransition?.consume('listing');
   if (incomingCommunityTransition) page.dataset.communityTransition = 'from-room';
-  const visualHydration = window.Doke?.communityTransition?.createVisualHydration({
-    body: document.body,
-    preloader: documentPreloader,
-    skeleton: communitySkeleton,
-    isTransition: Boolean(incomingCommunityTransition)
-  }) || null;
+  const isDirectStableShellCommit = document.documentElement.dataset.dokeRouteVisualMode === 'direct'
+    && document.documentElement.dataset.dokeNavigationMode === 'stable-shell';
+  const visualHydration = isDirectStableShellCommit
+    ? null
+    : window.Doke?.communityTransition?.createVisualHydration({
+      body: document.body,
+      preloader: documentPreloader,
+      skeleton: communitySkeleton,
+      isTransition: Boolean(incomingCommunityTransition)
+    }) || null;
+  if (isDirectStableShellCommit && communitySkeleton) communitySkeleton.hidden = true;
   visualHydration?.start();
 
   const applyCommunityPageState = (nextState) => {
@@ -81,7 +86,7 @@ window.DokeInitCommunity = function DokeInitCommunity() {
   const setCommunityPageState = (state) => {
     const nextState = state === 'error' ? 'error' : state === 'hydrated' ? 'hydrated' : 'loading';
     if (nextState === 'loading') {
-      applyCommunityPageState(nextState);
+      if (!isDirectStableShellCommit) applyCommunityPageState(nextState);
       return;
     }
     if (visualHydration) {
