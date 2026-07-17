@@ -22,8 +22,9 @@
       skeletonSelectors: '[data-professional-profile-hydration-skeleton]',
       readySelectors: '[data-professional-profile-hydration-ready]',
       errorSelectors: '[data-state-error]',
-      skeletonMode: 'hard-load',
-      preserveReadyDuringHydration: true,
+      skeletonMode: 'always',
+      preserveReadyDuringHydration: false,
+      minDuration: 220,
       maxDuration: 9000,
       hasItems: function () { return true; },
       onRetry: function () { window.DokeInitProfessionalProfile(); }
@@ -77,6 +78,38 @@
     return professionalSurface;
   }
 
+  function bindEditAccessGuard(boundary) {
+    if (!boundary || boundary.dataset.professionalEditGuardBound === 'true') return;
+    boundary.dataset.professionalEditGuardBound = 'true';
+    boundary.addEventListener('click', function (event) {
+      var trigger = event.target && event.target.closest('[data-professional-edit-action]');
+      if (!trigger) return;
+
+      var access = Doke.services && Doke.services.professionalAccess;
+      var action = access && access.ACTIONS && access.ACTIONS.EDIT_PROFILE || 'edit_professional_profile';
+      if (!access || typeof access.can !== 'function') {
+        event.preventDefault();
+        return;
+      }
+
+      event.preventDefault();
+      access.can(action).then(function (result) {
+        if (!result || !result.allowed) {
+          return access.guardPage(action, {
+            guardName: 'professional-profile-edit',
+            source: 'perfil-profissional.html#edit',
+            hardRedirect: true
+          });
+        }
+        var target = trigger.getAttribute('href');
+        if (target && target.charAt(0) === '#') {
+          var destination = document.querySelector(target);
+          if (destination) destination.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }).catch(function () {});
+    });
+  }
+
   window.DokeInitProfessionalProfile = function DokeInitProfessionalProfile() {
     var boundary = document.querySelector('[data-state-boundary="perfil-profissional"]');
     if (!boundary) return Promise.resolve(null);
@@ -101,6 +134,7 @@
       });
     }).then(function (result) {
       if (!result || !result.allowed) return null;
+      bindEditAccessGuard(boundary);
       return ensureSurface().init();
     }).then(function (payload) {
       if (payload === null) return null;

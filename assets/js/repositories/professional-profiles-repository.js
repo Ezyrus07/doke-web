@@ -8,6 +8,8 @@
   var repositories = Doke.repositories || (Doke.repositories = {});
   var STORAGE_KEY = 'doke.professionalProfiles.v1';
   var LEGACY_APPLICATION_KEY = 'doke.professionalApplications.v1';
+  var DEMO_PROFESSIONAL_USER_ID = 'user_profissional_demo';
+  var DEMO_PROFESSIONAL_PROFILE_ID = 'professional_profile_user_profissional_demo';
 
   var STATUSES = Object.freeze({
     DRAFT: 'draft',
@@ -154,11 +156,42 @@
     root.localStorage.removeItem(LEGACY_APPLICATION_KEY);
   }
 
+  function ensureDemoProfessionalProfile(items) {
+    var list = Array.isArray(items) ? items.slice() : [];
+    var index = list.findIndex(function (item) {
+      return String(item && item.userId || '') === DEMO_PROFESSIONAL_USER_ID;
+    });
+    var current = index >= 0 ? list[index] : null;
+    var seeded = normalizeProfile(Object.assign({}, current || {}, {
+      id: current && current.id || DEMO_PROFESSIONAL_PROFILE_ID,
+      userId: DEMO_PROFESSIONAL_USER_ID,
+      status: STATUSES.ACTIVE,
+      currentStep: 2,
+      payload: Object.assign({
+        mainCategory: 'Pintura e acabamento',
+        specialties: 'Pintura residencial, acabamento e pequenos reparos',
+        shortBio: 'Profissional Doke especializado em pintura residencial.',
+        serviceRegion: 'Salvador e região',
+        experienceYears: '5+',
+        truthConfirmed: true,
+        termsAccepted: true
+      }, current && current.payload || {}),
+      createdAt: current && current.createdAt || '2026-01-01T12:00:00.000Z',
+      updatedAt: current && current.updatedAt || '2026-01-01T12:00:00.000Z',
+      savedAt: current && current.savedAt || '2026-01-01T12:00:00.000Z',
+      completedAt: current && current.completedAt || '2026-01-01T12:00:00.000Z',
+      verificationStatus: 'verified'
+    }));
+    if (index >= 0) list[index] = seeded;
+    else list.push(seeded);
+    return list;
+  }
+
   function readAll() {
     migrateLegacyApplications();
     var parsed = safeParse(root.localStorage.getItem(STORAGE_KEY), []);
-    if (!Array.isArray(parsed)) return [];
-    var normalized = parsed.map(normalizeProfile).filter(Boolean);
+    if (!Array.isArray(parsed)) parsed = [];
+    var normalized = ensureDemoProfessionalProfile(parsed.map(normalizeProfile).filter(Boolean));
     if (JSON.stringify(parsed) !== JSON.stringify(normalized)) writeAll(normalized);
     return normalized;
   }

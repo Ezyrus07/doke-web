@@ -13,6 +13,7 @@
   var current = null;
   var loadRun = 0;
   var eventsBound = false;
+  var decisionInFlight = false;
 
   function q(selector) {
     return document.querySelector(selector);
@@ -241,9 +242,19 @@
     else dialog.removeAttribute('open');
   }
 
-  function setDecisionBusy(busy) {
+  function setDecisionBusy(busy, kind) {
     var actions = q('[data-admin-review-actions]');
     if (actions) actions.setAttribute('aria-busy', busy ? 'true' : 'false');
+    var approveButton = q('[data-admin-review-approve]');
+    var rejectConfirmButton = q('[data-admin-review-reject-confirm]');
+    if (approveButton) {
+      if (!approveButton.dataset.idleLabel) approveButton.dataset.idleLabel = approveButton.textContent.trim();
+      approveButton.textContent = busy && kind === 'approved' ? 'Aprovando…' : approveButton.dataset.idleLabel;
+    }
+    if (rejectConfirmButton) {
+      if (!rejectConfirmButton.dataset.idleLabel) rejectConfirmButton.dataset.idleLabel = rejectConfirmButton.textContent.trim();
+      rejectConfirmButton.textContent = busy && kind === 'rejected' ? 'Rejeitando…' : rejectConfirmButton.dataset.idleLabel;
+    }
     [
       '[data-admin-review-approve]',
       '[data-admin-review-reject]',
@@ -282,19 +293,29 @@
     return navigate('admin.html', {
       replace: replace === true,
       source: replace ? 'admin-review-decision-complete' : 'admin-review-back'
+    }).catch(function () {
+      if (replace === true) window.location.replace('admin.html');
+      else window.location.assign('admin.html');
     });
   }
 
-  function handleDecision(promise, kind, errorMessage) {
-    setDecisionBusy(true);
-    return promise
+  function handleDecision(operation, kind, errorMessage) {
+    if (decisionInFlight) return Promise.resolve(null);
+    decisionInFlight = true;
+    setDecisionBusy(true, kind);
+    showToast(kind === 'approved' ? 'Aprovando e ativando o perfil…' : 'Registrando a rejeição…');
+    return Promise.resolve()
+      .then(function () { return operation(); })
       .then(function () { return showDecisionSuccess(kind); })
       .then(function () { return goToAdmin(true); })
       .catch(function (error) {
+        decisionInFlight = false;
         closeDecisionSuccess();
-        setDecisionBusy(false);
+        setDecisionBusy(false, kind);
         showToast(error && error.message ? error.message : errorMessage);
-      });
+        throw error;
+      })
+      .catch(function () { return null; });
   }
 
   function loadReview() {
@@ -397,7 +418,7 @@
           showToast('O serviço de aprovação não está disponível.');
           return;
         }
-        handleDecision(approveService.approve(current.id), 'approved', 'Falha ao aprovar.');
+        handleDecision(function () { return approveService.approve(current.id); }, 'approved', 'Falha ao aprovar.');
         return;
       }
 
@@ -415,7 +436,7 @@
           return;
         }
         closeDialog(q('[data-admin-review-reject-dialog]'));
-        handleDecision(rejectService.reject(current.id, reason), 'rejected', 'Falha ao rejeitar.');
+        handleDecision(function () { return rejectService.reject(current.id, reason); }, 'rejected', 'Falha ao rejeitar.');
       }
     });
 

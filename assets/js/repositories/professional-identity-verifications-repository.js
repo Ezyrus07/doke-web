@@ -7,6 +7,9 @@
   var repositories = Doke.repositories || (Doke.repositories = {});
   var root = window;
   var STORAGE_KEY = 'doke.professionalIdentityVerifications.v1';
+  var DEMO_PROFESSIONAL_USER_ID = 'user_profissional_demo';
+  var DEMO_PROFESSIONAL_PROFILE_ID = 'professional_profile_user_profissional_demo';
+  var DEMO_PROFESSIONAL_VERIFICATION_ID = 'professional_verification_user_profissional_demo';
   var DRAFT_STORAGE_KEY = 'doke.professionalIdentityVerificationDrafts.v1';
   var draftMemory = new Map();
   var submissionLocks = new Map();
@@ -188,10 +191,37 @@
     };
   }
 
+  function ensureDemoProfessionalVerification(items) {
+    var list = Array.isArray(items) ? items.slice() : [];
+    var index = list.findIndex(function (item) {
+      return String(item && item.userId || '') === DEMO_PROFESSIONAL_USER_ID;
+    });
+    var current = index >= 0 ? list[index] : null;
+    var seeded = normalizeVerification(Object.assign({}, current || {}, {
+      id: current && current.id || DEMO_PROFESSIONAL_VERIFICATION_ID,
+      userId: DEMO_PROFESSIONAL_USER_ID,
+      professionalProfileId: DEMO_PROFESSIONAL_PROFILE_ID,
+      status: STATUSES.VERIFIED,
+      currentStep: 3,
+      payload: current && current.payload || {},
+      rejectionReason: '',
+      reviewerId: current && current.reviewerId || 'user_suporte_demo',
+      createdAt: current && current.createdAt || '2026-01-01T12:00:00.000Z',
+      updatedAt: current && current.updatedAt || '2026-01-01T12:00:00.000Z',
+      savedAt: current && current.savedAt || '2026-01-01T12:00:00.000Z',
+      submittedAt: current && current.submittedAt || '2026-01-01T12:00:00.000Z',
+      reviewStartedAt: current && current.reviewStartedAt || '2026-01-01T12:05:00.000Z',
+      decidedAt: current && current.decidedAt || '2026-01-01T12:10:00.000Z'
+    }));
+    if (index >= 0) list[index] = seeded;
+    else list.push(seeded);
+    return list;
+  }
+
   function readAll() {
     var parsed = safeParse(root.localStorage.getItem(STORAGE_KEY), []);
-    if (!Array.isArray(parsed)) return [];
-    var normalized = parsed.map(normalizeVerification).filter(Boolean);
+    if (!Array.isArray(parsed)) parsed = [];
+    var normalized = ensureDemoProfessionalVerification(parsed.map(normalizeVerification).filter(Boolean));
     if (JSON.stringify(parsed) !== JSON.stringify(normalized)) writeAll(normalized);
     return normalized;
   }
