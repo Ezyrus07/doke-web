@@ -7,6 +7,20 @@
   var Doke = root.Doke || (root.Doke = {});
   var services = Doke.services || (Doke.services = {});
 
+  var STATUS = Object.freeze({
+    DRAFT: 'draft',
+    ACTIVE: 'active',
+    INACTIVE: 'inactive',
+    ARCHIVED: 'archived'
+  });
+
+  var ALLOWED_TRANSITIONS = Object.freeze({
+    draft: Object.freeze(['active', 'archived']),
+    active: Object.freeze(['inactive', 'archived']),
+    inactive: Object.freeze(['active', 'archived']),
+    archived: Object.freeze([])
+  });
+
   function getRepository() {
     return Doke.repositories && Doke.repositories.services;
   }
@@ -79,6 +93,41 @@
     return repository.list(Object.assign({}, filters || {}, { ownerId: professionalId }));
   }
 
+  function normalizeStatus(value) {
+    var status = normalizeText(value).toLowerCase();
+    return Object.prototype.hasOwnProperty.call(ALLOWED_TRANSITIONS, status) ? status : STATUS.ACTIVE;
+  }
+
+  function canTransition(fromStatus, toStatus) {
+    var from = normalizeStatus(fromStatus);
+    var to = normalizeStatus(toStatus);
+    return from === to || ALLOWED_TRANSITIONS[from].indexOf(to) !== -1;
+  }
+
+  function assertOwned(current, actor) {
+    var ownerId = String(current && (current.ownerId || current.professionalId || current.providerId) || '');
+    var actorId = String(actor && actor.id || '');
+    if (!ownerId || !actorId || ownerId !== actorId) throw new Error('Você não pode alterar este serviço.');
+    return current;
+  }
+
+  function transitionOwned(serviceId, nextStatus) {
+    var status = normalizeStatus(nextStatus);
+    return Promise.all([
+      Doke.services.professionalAccess.assert((Doke.services.professionalAccess.ACTIONS && Doke.services.professionalAccess.ACTIONS.PUBLISH_SERVICE) || 'publish_service'),
+      getById(serviceId)
+    ]).then(function (items) {
+      var accessResult = items[0];
+      var current = assertOwned(items[1], accessResult.user || currentUser());
+      var currentStatus = normalizeStatus(current.status);
+      if (!canTransition(currentStatus, status)) throw new Error('Transição de status inválida para este anúncio.');
+      if (currentStatus === status) return current;
+      var repository = assertRepository();
+      if (typeof repository.update !== 'function') throw new Error('Atualização de serviço indisponível.');
+      return repository.update(serviceId, { status: status, statusChangedAt: new Date().toISOString() });
+    });
+  }
+
   function updateOwned(serviceId, patch) {
     var access = Doke.services && Doke.services.professionalAccess;
     var action = access && access.ACTIONS && access.ACTIONS.PUBLISH_SERVICE || 'publish_service';
@@ -87,8 +136,11 @@
       var result = items[0];
       var current = items[1];
       if (!current) throw new Error('Serviço não encontrado.');
-      if (String(current.ownerId || current.professionalId || current.providerId || '') !== String(result.user && result.user.id || '')) {
-        throw new Error('Você não pode alterar este serviço.');
+      assertOwned(current, result.user || currentUser());
+      if (patch && Object.prototype.hasOwnProperty.call(patch, 'status')) {
+        var nextStatus = normalizeStatus(patch.status);
+        if (!canTransition(current.status, nextStatus)) throw new Error('Transição de status inválida para este anúncio.');
+        patch = Object.assign({}, patch, { status: nextStatus, statusChangedAt: new Date().toISOString() });
       }
       var repository = assertRepository();
       if (typeof repository.update !== 'function') throw new Error('Edição de serviço indisponível.');
@@ -96,9 +148,9 @@
     });
   }
 
-  function deactivateOwned(serviceId) {
-    return updateOwned(serviceId, { status: 'inactive' });
-  }
+  function deactivateOwned(serviceId) { return transitionOwned(serviceId, STATUS.INACTIVE); }
+  function reactivateOwned(serviceId) { return transitionOwned(serviceId, STATUS.ACTIVE); }
+  function archiveOwned(serviceId) { return transitionOwned(serviceId, STATUS.ARCHIVED); }
 
   function getDetailUrl(serviceOrId) {
     var serviceId = typeof serviceOrId === 'object' ? serviceOrId && serviceOrId.id : serviceOrId;
@@ -156,6 +208,11 @@
     listByProfessional: listByProfessional,
     updateOwned: updateOwned,
     deactivateOwned: deactivateOwned,
+    reactivateOwned: reactivateOwned,
+    archiveOwned: archiveOwned,
+    transitionOwned: transitionOwned,
+    canTransition: canTransition,
+    STATUS: STATUS,
     getFromUrl: getFromUrl,
     getDetailUrl: getDetailUrl,
     getBudgetUrl: getBudgetUrl,

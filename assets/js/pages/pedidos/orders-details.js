@@ -102,6 +102,7 @@
             <dl class="orders-detail-list">
               <div class="orders-detail-row"><dt data-detail-peer-label>Profissional</dt><dd data-detail-company></dd></div>
               <div class="orders-detail-row"><dt>Local</dt><dd data-detail-address></dd></div>
+              <div class="orders-detail-row" data-detail-schedule-row hidden><dt>Agenda do serviço</dt><dd data-detail-schedule></dd></div>
               <div class="orders-detail-row"><dt>Escopo</dt><dd data-detail-scope></dd></div>
               <div class="orders-detail-row"><dt>Orçamento</dt><dd data-detail-budget></dd></div>
               <div class="orders-detail-row"><dt>Pagamento</dt><dd data-detail-payment></dd></div>
@@ -489,6 +490,11 @@
     setText(layer, '[data-detail-peer-label]', peerLabel);
     setText(layer, '[data-detail-company]', order.company);
     setText(layer, '[data-detail-address]', order.address);
+    const scheduleRow = layer.querySelector('[data-detail-schedule-row]');
+    const schedule = Array.isArray(order.serviceSchedule) ? order.serviceSchedule : [];
+    const scheduleLabel = schedule.map((slot) => `${clean(slot.label || slot.day || 'Dia')} ${clean(slot.start)}–${clean(slot.end)}`).filter(Boolean).join(' • ');
+    if (scheduleRow) scheduleRow.hidden = !scheduleLabel;
+    setText(layer, '[data-detail-schedule]', scheduleLabel);
     setText(layer, '[data-detail-scope]', order.scope);
     setText(layer, '[data-detail-budget]', order.budget);
     setText(layer, '[data-detail-payment]', order.payment);

@@ -129,10 +129,11 @@
                       <h2 id="post-service-title">Serviço</h2>
                       <p>Defina o que será anunciado e como o cliente verá essa oferta na busca.</p>
                     </div>
+                    <p class="post-service-step-error" data-step-error="1" role="alert" aria-live="polite" hidden></p>
                     <div class="post-service-grid">
-                      <label class="post-service-field post-service-field--full doke-field"><span>Título do anúncio</span><input type="text" name="adTitle" placeholder="Ex.: Pintura residencial com acabamento fino" data-summary-source="title" class="doke-input"></label>
+                      <label class="post-service-field post-service-field--full doke-field"><span>Título do anúncio</span><input type="text" name="adTitle" required minlength="5" placeholder="Ex.: Pintura residencial com acabamento fino" data-summary-source="title" class="doke-input"></label>
                       <label class="post-service-field doke-field"><span>Categoria</span>
-                        <select class="doke-select" name="category" data-ui-select>
+                        <select class="doke-select" name="category" required data-ui-select>
                           <option value="" selected>Selecione a categoria</option>
                           <option value="Pintura">Pintura</option>
                           <option value="Elétrica">Elétrica</option>
@@ -145,9 +146,9 @@
                           <option value="Frete">Frete</option>
                         </select>
                       </label>
-                      <label class="post-service-field doke-field"><span>Subcategoria ou especialidade</span><input type="text" name="specialty" placeholder="Ex.: Pintura interna, instalação de chuveiro, diarista" class="doke-input"></label>
-                      <label class="post-service-field post-service-field--full doke-field"><span>Descrição curta</span><textarea name="shortDescription" maxlength="180" placeholder="Essa frase aparece nos cards de busca." data-count-source data-summary-source="short" class="doke-textarea"></textarea><small class="doke-form-hint"><span data-count-value>0</span>/180</small></label>
-                      <label class="post-service-field post-service-field--full doke-field"><span>Descrição completa</span><textarea class="post-service-textarea--large doke-textarea" name="fullDescription" placeholder="Explique o que está incluso, como funciona o atendimento e o que o cliente precisa informar."></textarea></label>
+                      <label class="post-service-field doke-field"><span>Subcategoria ou especialidade</span><input type="text" name="specialty" required minlength="2" placeholder="Ex.: Pintura interna, instalação de chuveiro, diarista" class="doke-input"></label>
+                      <label class="post-service-field post-service-field--full doke-field"><span>Descrição curta</span><textarea name="shortDescription" required minlength="20" maxlength="180" placeholder="Essa frase aparece nos cards de busca." data-count-source data-summary-source="short" class="doke-textarea"></textarea><small class="doke-form-hint"><span data-count-value>0</span>/180</small></label>
+                      <label class="post-service-field post-service-field--full doke-field"><span>Descrição completa</span><textarea class="post-service-textarea--large doke-textarea" name="fullDescription" required minlength="40" placeholder="Explique o que está incluso, como funciona o atendimento e o que o cliente precisa informar."></textarea></label>
                     </div>
                   </div>
 
@@ -156,6 +157,7 @@
                       <h2>Preço e atendimento</h2>
                       <p>Explique a regra de preço, região atendida e disponibilidade para reduzir dúvidas antes do contato.</p>
                     </div>
+                    <p class="post-service-step-error" data-step-error="2" role="alert" aria-live="polite" hidden></p>
                     <div class="post-service-segmented" role="group" aria-label="Tipo de preço">
                       <button class="post-service-segment is-active doke-segment-button" type="button" data-segment="priceType" data-value="A partir de" aria-pressed="true">A partir de</button>
                       <button class="post-service-segment doke-segment-button" type="button" data-segment="priceType" data-value="Preço fixo" aria-pressed="false">Preço fixo</button>
@@ -174,9 +176,9 @@
                           <option value="Por metro quadrado">Por metro quadrado</option>
                         </select>
                       </label>
-                      <label class="post-service-field post-service-field--full doke-field"><span>Região de atendimento</span><input type="text" name="serviceRegion" placeholder="Ex.: Belo Horizonte e região" data-summary-source="region" class="doke-input"></label>
+                      <label class="post-service-field post-service-field--full doke-field"><span>Região de atendimento</span><input type="text" name="serviceRegion" required minlength="3" placeholder="Ex.: Belo Horizonte e região" data-summary-source="region" class="doke-input"></label>
                       <label class="post-service-field doke-field"><span>Forma de atendimento</span>
-                        <select class="doke-select" name="serviceMode" data-ui-select>
+                        <select class="doke-select" name="serviceMode" required data-ui-select>
                           <option value="" selected>Selecione a forma</option>
                           <option value="Presencial">Presencial</option>
                           <option value="Online">Online</option>
@@ -232,13 +234,24 @@
                       <h2>Fotos e diferenciais</h2>
                       <p>Use fotos reais e diferenciais objetivos. Isso ajuda o cliente a confiar no anúncio.</p>
                     </div>
+                    <p class="post-service-step-error" data-step-error="3" role="alert" aria-live="polite" hidden></p>
                     <div class="post-service-upload-layout">
-                      <label class="post-service-upload-card post-service-upload-card--main"><input type="file" name="mainImage" accept="image/*"><span>Imagem principal do anúncio</span><small>Use uma foto clara do resultado ou do serviço em execução.</small></label>
+                      <label class="post-service-upload-card post-service-upload-card--main"><input type="file" name="mainImage" required accept="image/*"><span>Imagem principal do anúncio</span><small>Use uma foto clara do resultado ou do serviço em execução.</small></label>
                       <div class="post-service-upload-list" aria-label="Fotos extras">
                         <label class="post-service-upload-card"><input type="file" name="extraImageOne" accept="image/*"><span>Foto extra</span><small>Antes/depois, detalhe ou ambiente.</small></label>
                         <label class="post-service-upload-card"><input type="file" name="extraImageTwo" accept="image/*"><span>Foto extra</span><small>Mostre acabamento, equipe ou material.</small></label>
                       </div>
                     </div>
+                    <section class="post-service-existing-media" data-existing-service-media hidden aria-labelledby="existing-service-media-title">
+                      <div class="post-service-existing-media__head">
+                        <div>
+                          <h3 id="existing-service-media-title">Imagens atuais</h3>
+                          <p>Defina a principal, remova somente a imagem desejada ou envie uma substituta no campo correspondente.</p>
+                        </div>
+                        <span data-existing-service-media-count>0 imagens</span>
+                      </div>
+                      <div class="post-service-existing-media__grid" data-existing-service-media-list></div>
+                    </section>
                     <div class="post-service-section-head post-service-section-head--compact">
                       <h2>Diferenciais do serviço</h2>
                     </div>
@@ -251,7 +264,7 @@
                       <button class="post-service-check is-active doke-choice-button" type="button" aria-pressed="true" data-post-check data-value="Orçamento pelo chat"><span></span>Orçamento pelo chat</button>
                     </div>
                     <div class="post-service-grid post-service-grid--spaced">
-                      <label class="post-service-field post-service-field--full doke-field"><span>O que está incluso</span><textarea name="includedItems" placeholder="Ex.: Proteção do ambiente, mão de obra, limpeza básica ao final." class="doke-textarea"></textarea></label>
+                      <label class="post-service-field post-service-field--full doke-field"><span>O que está incluso</span><textarea name="includedItems" required minlength="10" placeholder="Ex.: Proteção do ambiente, mão de obra, limpeza básica ao final." class="doke-textarea"></textarea></label>
                       <label class="post-service-field post-service-field--full doke-field"><span>O que não está incluso <em>Opcional</em></span><textarea name="excludedItems" placeholder="Ex.: Materiais, deslocamento fora da região, peças de reposição." class="doke-textarea"></textarea></label>
                     </div>
                   </div>
@@ -261,6 +274,7 @@
                       <h2>Revisão e publicação</h2>
                       <p>Revise como o anúncio será exibido. Depois de publicar, você poderá editar ou desativar o serviço pelo perfil profissional.</p>
                     </div>
+                    <p class="post-service-step-error" data-step-error="4" role="alert" aria-live="polite" hidden></p>
                     <section class="post-service-review-preview" aria-label="Prévia do anúncio">
                       <div class="post-service-review-preview__media" data-review-media>
                         <span data-review-media-placeholder>Prévia da imagem principal</span>
@@ -314,10 +328,10 @@
 
             <div class="post-service-submit-state doke-overlay doke-overlay--feedback" data-submit-state hidden aria-live="polite" aria-modal="true" role="dialog">
               <div class="post-service-submit-state__card doke-overlay__surface doke-modal-surface doke-modal-surface--feedback">
-                <span class="post-service-submit-state__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m6 12 4 4 8-9"></path></svg></span>
-                <h2 class="doke-modal-title">Anúncio publicado</h2>
-                <p class="doke-modal-description">Seu serviço já está disponível no perfil profissional e nas superfícies públicas da Doke.</p>
-                <div class="post-service-submit-state__actions doke-overlay__actions post-service-submit-state__actions--single doke-modal-actions doke-modal-actions--single">
+                <span class="post-service-submit-state__icon" data-submit-state-icon aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m6 12 4 4 8-9"></path></svg></span>
+                <h2 class="doke-modal-title" data-submit-state-title>Anúncio publicado</h2>
+                <p class="doke-modal-description" data-submit-state-message>Seu serviço já está disponível no perfil profissional e nas superfícies públicas da Doke.</p>
+                <div class="post-service-submit-state__actions doke-overlay__actions post-service-submit-state__actions--single doke-modal-actions doke-modal-actions--single" data-submit-state-actions>
                   <a class="doke-btn doke-btn--primary" href="perfil.html?mode=owner&panel=services">Ver anúncio no perfil</a>
                 </div>
               </div>
@@ -351,10 +365,10 @@
   <script src="assets/js/repositories/professional-identity-verifications-repository.js?v=20260714-professional-access-v1" defer></script>
   <script src="assets/js/services/professional-access-service.js?v=20260714-navigation-stage03-v1" defer></script>
   <script src="assets/js/core/form-experience-core.js?v=20260712-form-core-v1" defer></script>
-  <script src="assets/js/repositories/services-repository.js?v=20260711-service-write-v1" defer></script>
-  <script src="assets/js/services/services-service.js?v=20260714-professional-access-v1" defer></script>
-  <script src="assets/js/pages/service-form-experience.js?v=20260717-service-flow-v2" defer></script>
-  <script src="assets/js/pages/anunciar-servico.js?v=20260717-service-flow-v2" defer></script>
+  <script src="assets/js/repositories/services-repository.js?v=20260717-media-archive-v1" defer></script>
+  <script src="assets/js/services/services-service.js?v=20260717-media-archive-v1" defer></script>
+  <script src="assets/js/pages/service-form-experience.js?v=20260717-media-archive-v1-20260717-service-edit-v1" defer></script>
+  <script src="assets/js/pages/anunciar-servico.js?v=20260717-media-archive-v1-20260717-service-edit-v1" defer></script>
   <script src="assets/js/services/mock-data-service.js?v=20260501-stage31-domain-services" defer></script>
   <script src="assets/js/services/profile-service.js?v=20260501-stage31-domain-services" defer></script>
   <script src="assets/js/services/search-service.js?v=20260501-stage31-domain-services" defer></script>

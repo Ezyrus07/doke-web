@@ -263,6 +263,39 @@
     }
   }
 
+  function getServiceImage(order) {
+    var snapshot = order && order.serviceSnapshot && typeof order.serviceSnapshot === 'object' ? order.serviceSnapshot : {};
+    var images = Array.isArray(order && order.serviceImages) ? order.serviceImages : [];
+    return String(order && order.serviceImage || images[0] || snapshot.image || '').trim();
+  }
+
+  function getServiceCategory(order) {
+    var snapshot = order && order.serviceSnapshot && typeof order.serviceSnapshot === 'object' ? order.serviceSnapshot : {};
+    return String(order && order.serviceCategory || snapshot.category || '').trim();
+  }
+
+  function getServiceSchedule(order) {
+    var snapshot = order && order.serviceSnapshot && typeof order.serviceSnapshot === 'object' ? order.serviceSnapshot : {};
+    var schedule = Array.isArray(order && order.serviceAvailabilitySchedule)
+      ? order.serviceAvailabilitySchedule
+      : Array.isArray(snapshot.availabilitySchedule) ? snapshot.availabilitySchedule : [];
+    return schedule.filter(function (slot) {
+      return slot && slot.start && slot.end;
+    }).slice(0, 2);
+  }
+
+  function formatServiceSchedule(order) {
+    var schedule = getServiceSchedule(order);
+    if (!schedule.length) return 'Agenda a combinar';
+    return schedule.map(function (slot) {
+      return String(slot.label || slot.day || 'Dia') + ' ' + String(slot.start) + '–' + String(slot.end);
+    }).join(' • ');
+  }
+
+  function getAttachmentsCount(order) {
+    return Array.isArray(order && order.attachments) ? order.attachments.length : 0;
+  }
+
   function getPrimaryActionLabel(order, professionalView) {
     var status = order.status || 'pending';
     var paymentStatus = normalizeStatusToken(order.paymentStatus || '');
@@ -379,6 +412,11 @@
     var provider = escapeHtml(peerNameRaw);
     var initials = escapeHtml(professionalView ? order.clientInitials || getInitials(peerNameRaw) : order.providerInitials || getInitials(peerNameRaw));
     var title = escapeHtml(formatCardTitle(order.serviceTitle || order.service || order.title || 'Serviço solicitado'));
+    var serviceImage = getServiceImage(order);
+    var serviceCategory = escapeHtml(getServiceCategory(order) || 'Serviço');
+    var serviceSchedule = escapeHtml(formatServiceSchedule(order));
+    var attachmentsCount = getAttachmentsCount(order);
+    var serviceHref = order.serviceId ? 'detalhe-anuncio.html?id=' + encodeURIComponent(order.serviceId) : '';
     var location = escapeHtml(formatCardLocation(order.location || order.locationTitle || 'Endereço a confirmar'));
     var cardBadge = escapeHtml(getCardBadgeLabel(order));
     var scope = escapeHtml(order.scope || order.details || order.description || 'Escopo enviado pelo orçamento');
@@ -428,6 +466,12 @@
     article.dataset.detailBudget = order.budget || order.detailBudget || 'A definir após resposta do profissional';
     article.dataset.detailPayment = order.payment || 'Pagamento a combinar';
     article.dataset.detailFlow = order.detailFlow || getDetailFlow(order, professionalView);
+    article.dataset.serviceId = order.serviceId || '';
+    article.dataset.serviceImage = serviceImage;
+    article.dataset.serviceCategory = getServiceCategory(order);
+    article.dataset.serviceSchedule = JSON.stringify(getServiceSchedule(order));
+    article.dataset.professionalId = order.professionalId || order.providerId || '';
+    article.dataset.professionalProfileId = order.professionalProfileId || '';
     article.dataset.viewerRole = professionalView ? 'professional' : 'client';
     article.dataset.peerRole = peerRole;
     article.dataset.peerRoleLabel = peerRoleLabel;
@@ -446,7 +490,17 @@
         <span class="order-card__smart-badge doke-badge">${cardBadge}</span>
       </div>
       <div class="order-card__body">
-        <h2>${title}</h2>
+        <div class="order-card__service">
+          ${serviceImage ? `<a class="order-card__service-media" href="${escapeHtml(serviceHref || '#')}" ${serviceHref ? '' : 'aria-disabled="true"'}><img src="${escapeHtml(serviceImage)}" alt="Imagem de ${title}"></a>` : `<span class="order-card__service-media order-card__service-media--empty" aria-hidden="true">${initials}</span>`}
+          <div class="order-card__service-copy">
+            <span class="order-card__category">${serviceCategory}</span>
+            <h2>${title}</h2>
+            <div class="order-card__facts" aria-label="Resumo do pedido">
+              <span>${serviceSchedule}</span>
+              ${attachmentsCount ? `<span>${attachmentsCount} ${attachmentsCount === 1 ? 'anexo' : 'anexos'}</span>` : ''}
+            </div>
+          </div>
+        </div>
         <div class="order-card__identity">
           <span class="order-card__avatar doke-avatar">${initials}</span>
           <span class="order-card__identity-copy">

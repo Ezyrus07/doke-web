@@ -417,11 +417,17 @@
       case 'detalhe-anuncio':
         return Promise.all([
           getById('services', { id: context.serviceId }),
-          list('workers', { limit: 4 }),
-          list('publications', { limit: 4 }),
-          list('reviews', { limit: 4 })
+          list('workers', { limit: 20 }),
+          list('publications', { limit: 20 }),
+          list('reviews', { limit: 20 })
         ]).then(function (values) {
-          return { service: values[0], workers: values[1], publications: values[2], reviews: values[3] };
+          var serviceId = String(context.serviceId || '');
+          function related(items) {
+            return (Array.isArray(items) ? items : []).filter(function (item) {
+              return String(item && (item.serviceId || item.service_id || item.listingId || item.adId) || '') === serviceId;
+            }).slice(0, 4);
+          }
+          return { service: values[0], workers: related(values[1]), publications: related(values[2]), reviews: related(values[3]) };
         });
       case 'pedidos':
         return list('orders', context.filters || context).then(function (orders) {

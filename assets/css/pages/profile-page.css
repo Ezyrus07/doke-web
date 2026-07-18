@@ -1121,11 +1121,26 @@ body:is([data-page="perfil"], [data-page="perfil-profissional"])[data-profile-co
 body:is([data-page="perfil"], [data-page="perfil-profissional"])[data-profile-contract="clean-v1"] .profile-service-card__placeholder {
   position: relative;
   z-index: 0;
+  display: grid;
+  place-items: center;
+  gap: 10px;
   max-width: 80%;
   color: var(--color-primary-strong, #184a76);
-  font-size: 0.88rem;
+  font-size: 0.78rem;
   font-weight: 800;
+  line-height: 1.25;
   text-align: center;
+}
+
+body:is([data-page="perfil"], [data-page="perfil-profissional"])[data-profile-contract="clean-v1"] .profile-service-card__placeholder svg {
+  width: 38px;
+  height: 38px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.72;
 }
 
 body:is([data-page="perfil"], [data-page="perfil-profissional"])[data-profile-contract="clean-v1"] .profile-service-card__summary {
@@ -1176,4 +1191,387 @@ body:is([data-page="perfil"], [data-page="perfil-profissional"])[data-profile-co
 
 body:is([data-page="perfil"], [data-page="perfil-profissional"])[data-profile-contract="clean-v1"] .profile-area__rail--ads .profile-service-card__actions {
   flex-wrap: nowrap;
+}
+
+/* Horizontal professional service cards for owner/public profile contexts. */
+body:is([data-page="perfil"], [data-page="perfil-profissional"])[data-profile-contract="clean-v1"] .profile-area__rail--ads {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+}
+
+body:is([data-page="perfil"], [data-page="perfil-profissional"])[data-profile-contract="clean-v1"] .profile-service-card--horizontal {
+  display: grid;
+  grid-template-columns: clamp(150px, 34%, 190px) minmax(0, 1fr);
+  min-height: 220px;
+  overflow: hidden;
+}
+
+body:is([data-page="perfil"], [data-page="perfil-profissional"])[data-profile-contract="clean-v1"] .profile-service-card--horizontal .profile-service-card__media {
+  height: 100%;
+  min-height: 220px;
+  border-radius: inherit 0 0 inherit;
+}
+
+body:is([data-page="perfil"], [data-page="perfil-profissional"])[data-profile-contract="clean-v1"] .profile-service-card--horizontal .doke-ad-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  min-width: 0;
+  padding: 18px;
+}
+
+body:is([data-page="perfil"], [data-page="perfil-profissional"])[data-profile-contract="clean-v1"] .profile-service-card--horizontal .doke-ad-card__category {
+  margin: 0;
+}
+
+body:is([data-page="perfil"], [data-page="perfil-profissional"])[data-profile-contract="clean-v1"] .profile-service-card--horizontal .doke-ad-card__title {
+  margin: 0;
+  font-size: clamp(1rem, 1.35vw, 1.18rem);
+  line-height: 1.2;
+}
+
+body:is([data-page="perfil"], [data-page="perfil-profissional"])[data-profile-contract="clean-v1"] .profile-service-card__performance {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  color: var(--color-text-muted, #667892);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+body:is([data-page="perfil"], [data-page="perfil-profissional"])[data-profile-contract="clean-v1"] .profile-service-card__rating {
+  color: var(--color-success-strong, #087f5b);
+}
+
+body:is([data-page="perfil"], [data-page="perfil-profissional"])[data-profile-contract="clean-v1"] .profile-service-card--horizontal .profile-service-card__summary {
+  display: -webkit-box;
+  min-height: 0;
+  margin: 0;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+body:is([data-page="perfil"], [data-page="perfil-profissional"])[data-profile-contract="clean-v1"] .profile-service-card--horizontal .doke-ad-card__tags {
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+
+body:is([data-page="perfil"], [data-page="perfil-profissional"])[data-profile-contract="clean-v1"] .profile-service-card--horizontal .doke-ad-card__location {
+  margin-top: auto;
+}
+
+body:is([data-page="perfil"], [data-page="perfil-profissional"])[data-profile-contract="clean-v1"] .profile-service-card--horizontal .doke-ad-card__footer {
+  gap: 10px;
+  margin-top: 4px;
+}
+
+@media (max-width: 1120px) {
+  body:is([data-page="perfil"], [data-page="perfil-profissional"])[data-profile-contract="clean-v1"] .profile-area__rail--ads {
+    grid-template-columns: 1fr;
+    grid-auto-flow: row;
+    overflow: visible;
+    padding: 0;
+  }
+}
+
+@media (max-width: 620px) {
+  body:is([data-page="perfil"], [data-page="perfil-profissional"])[data-profile-contract="clean-v1"] .profile-area__rail--ads,
+  body:is([data-page="perfil"], [data-page="perfil-profissional"])[data-profile-contract="clean-v1"] .profile-area__rail--ads > .doke-ad-card {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+  }
+
+  body:is([data-page="perfil"], [data-page="perfil-profissional"])[data-profile-contract="clean-v1"] .profile-service-card--horizontal {
+    grid-template-columns: 116px minmax(0, 1fr);
+    min-height: 190px;
+  }
+
+  body:is([data-page="perfil"], [data-page="perfil-profissional"])[data-profile-contract="clean-v1"] .profile-service-card--horizontal .profile-service-card__media {
+    min-height: 190px;
+  }
+
+  body:is([data-page="perfil"], [data-page="perfil-profissional"])[data-profile-contract="clean-v1"] .profile-service-card--horizontal .doke-ad-card__body {
+    gap: 7px;
+    padding: 14px;
+  }
+
+  body:is([data-page="perfil"], [data-page="perfil-profissional"])[data-profile-contract="clean-v1"] .profile-service-card--horizontal .profile-service-card__summary {
+    display: none;
+  }
+
+  body:is([data-page="perfil"], [data-page="perfil-profissional"])[data-profile-contract="clean-v1"] .profile-service-card--horizontal .doke-ad-card__location .doke-ad-card__avatar {
+    display: none;
+  }
+
+  body:is([data-page="perfil"], [data-page="perfil-profissional"])[data-profile-contract="clean-v1"] .profile-service-card--horizontal .doke-ad-card__footer {
+    align-items: flex-end;
+  }
+
+  body:is([data-page="perfil"], [data-page="perfil-profissional"])[data-profile-contract="clean-v1"] .profile-service-card--horizontal .profile-service-card__actions {
+    gap: 6px;
+  }
+}
+
+@media (max-width: 1120px) {
+  body:is([data-page="perfil"], [data-page="perfil-profissional"])[data-profile-contract="clean-v1"] .profile-area__rail--ads > .doke-ad-card {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+  }
+}
+
+
+/* Owner service lifecycle controls */
+body[data-page="perfil-profissional"] .profile-service-filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 0 0 16px;
+}
+body[data-page="perfil-profissional"] .profile-service-filters .doke-select {
+  width: auto;
+  min-width: 210px;
+  margin-left: auto;
+}
+body[data-page="perfil-profissional"] .profile-service-filters .doke-tab-pill.is-active {
+  background: var(--color-primary-soft, #e5f0f8);
+  color: var(--color-primary-strong, #184a76);
+}
+@media (max-width: 680px) {
+  body[data-page="perfil-profissional"] .profile-service-filters {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 4px;
+  }
+  body[data-page="perfil-profissional"] .profile-service-filters .doke-select {
+    min-width: 190px;
+    margin-left: 0;
+  }
+}
+
+/* Public profile service listing.
+   Card anatomy consumes the shared marketplace-card token gateway. */
+body[data-page="perfil"][data-profile-contract="clean-v1"] .profile-shell-content {
+  min-height: 0;
+  align-content: start;
+}
+
+body[data-page="perfil"][data-profile-contract="clean-v1"] .profile-feed,
+body[data-page="perfil"][data-profile-contract="clean-v1"] .profile-area--ads,
+body[data-page="perfil"][data-profile-contract="clean-v1"] .profile-area__rail--ads {
+  width: 100%;
+  min-width: 0;
+  align-content: start;
+}
+
+body[data-page="perfil"][data-profile-contract="clean-v1"] .profile-area__rail--ads {
+  grid-auto-flow: row;
+  grid-auto-columns: auto;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 18px;
+  overflow: visible;
+  padding: 0;
+}
+
+body[data-page="perfil"][data-profile-contract="clean-v1"] .profile-service-card--public {
+  --doke-ad-card-display: grid;
+  --doke-ad-card-flex-direction: row;
+  --doke-ad-card-height: 300px;
+  --doke-ad-card-min-height: 280px;
+  --doke-ad-card-max-height: none;
+  --doke-ad-media-height: 100%;
+  --doke-ad-body-height: auto;
+  --doke-ad-body-min-height: 0;
+  --doke-ad-body-max-height: none;
+  --doke-ad-padding: 20px;
+  --doke-ad-body-padding-bottom: 20px;
+  --doke-ad-footer-margin-top: auto;
+  --doke-ad-cta-min-width: 144px;
+  --doke-ad-title-font-size: clamp(1.12rem, 1rem + 0.55vw, 1.45rem);
+  --doke-ad-title-line-height: 1.2;
+  --doke-ad-title-white-space: normal;
+  grid-template-columns: minmax(280px, 32%) minmax(0, 1fr) minmax(230px, 28%);
+  width: 100%;
+  max-width: none;
+  margin: 0;
+}
+
+body[data-page="perfil"][data-profile-contract="clean-v1"] .profile-service-card--public .profile-service-card__media {
+  min-width: 0;
+  align-self: stretch;
+  background: var(--color-surface-subtle, #dfe8f0);
+}
+
+body[data-page="perfil"][data-profile-contract="clean-v1"] .profile-service-card--public .profile-service-card__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+body[data-page="perfil"][data-profile-contract="clean-v1"] .profile-service-card--public .doke-ad-card__body {
+  gap: 7px;
+  border-right: 1px solid var(--color-border-subtle, rgba(24, 75, 118, 0.10));
+}
+
+body[data-page="perfil"][data-profile-contract="clean-v1"] .profile-service-card--public .doke-ad-card__title {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+body[data-page="perfil"][data-profile-contract="clean-v1"] .profile-service-card--public .profile-service-card__summary {
+  display: -webkit-box;
+  min-height: 0;
+  margin: 2px 0 0;
+  overflow: hidden;
+  color: var(--color-text-muted, #637892);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+body[data-page="perfil"][data-profile-contract="clean-v1"] .profile-service-card--public .doke-ad-card__location {
+  display: flex;
+  margin: 0;
+}
+
+body[data-page="perfil"][data-profile-contract="clean-v1"] .profile-service-card--public .doke-ad-card__tags {
+  margin-bottom: 0;
+}
+
+body[data-page="perfil"][data-profile-contract="clean-v1"] .profile-service-card--public .doke-ad-card__footer {
+  align-items: end;
+  justify-content: space-between;
+  gap: 14px;
+  padding-top: 8px;
+}
+
+body[data-page="perfil"][data-profile-contract="clean-v1"] .profile-service-card__details {
+  display: grid;
+  align-content: center;
+  gap: 14px;
+  min-width: 0;
+  padding: 22px;
+  background: var(--color-surface-raised, #fff);
+}
+
+body[data-page="perfil"][data-profile-contract="clean-v1"] .profile-service-card__detail {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+body[data-page="perfil"][data-profile-contract="clean-v1"] .profile-service-card__detail-icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--doke-radius-control-lg, 12px);
+  color: var(--color-success-strong, #087f6b);
+  background: var(--color-success-soft, #e9f8f5);
+}
+
+body[data-page="perfil"][data-profile-contract="clean-v1"] .profile-service-card__detail-icon svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+body[data-page="perfil"][data-profile-contract="clean-v1"] .profile-service-card__detail-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+body[data-page="perfil"][data-profile-contract="clean-v1"] .profile-service-card__detail-copy strong {
+  color: var(--color-text-strong, #14395d);
+  font-size: 0.82rem;
+}
+
+body[data-page="perfil"][data-profile-contract="clean-v1"] .profile-service-card__detail-copy > span {
+  overflow-wrap: anywhere;
+  color: var(--color-text-muted, #637892);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+@media (max-width: 1080px) {
+  body[data-page="perfil"][data-profile-contract="clean-v1"] .profile-service-card--public {
+    --doke-ad-card-height: auto;
+    --doke-ad-card-min-height: 250px;
+    --doke-ad-padding: 22px;
+    --doke-ad-body-padding-bottom: 22px;
+    grid-template-columns: minmax(220px, 34%) minmax(0, 1fr);
+  }
+
+  body[data-page="perfil"][data-profile-contract="clean-v1"] .profile-service-card__details {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 16px 20px;
+    border-top: 1px solid var(--color-border-subtle, rgba(24, 75, 118, 0.10));
+  }
+}
+
+@media (max-width: 720px) {
+  body[data-page="perfil"][data-profile-contract="clean-v1"] .profile-service-card--public {
+    --doke-ad-card-min-height: 0;
+    --doke-ad-media-height: 178px;
+    --doke-ad-media-height-mobile: 178px;
+    --doke-ad-padding: 16px;
+    --doke-ad-padding-mobile: 16px;
+    --doke-ad-body-padding-bottom: 16px;
+    --doke-ad-cta-min-width: 0;
+    --doke-ad-title-font-size: 1.08rem;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  body[data-page="perfil"][data-profile-contract="clean-v1"] .profile-service-card--public .doke-ad-card__body {
+    gap: 7px;
+    border-right: 0;
+  }
+
+  body[data-page="perfil"][data-profile-contract="clean-v1"] .profile-service-card--public .doke-ad-card__footer {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 9px;
+  }
+
+  body[data-page="perfil"][data-profile-contract="clean-v1"] .profile-service-card--public .doke-ad-card__cta {
+    width: 100%;
+    max-width: none;
+  }
+
+  body[data-page="perfil"][data-profile-contract="clean-v1"] .profile-service-card__details {
+    grid-column: auto;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 14px 16px 16px;
+  }
+}
+
+@media (max-width: 420px) {
+  body[data-page="perfil"][data-profile-contract="clean-v1"] .profile-service-card__details {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+
+/* Profile pages choose density through component tokens; ad-card anatomy remains component-owned. */
+body:is([data-page="perfil"], [data-page="perfil-profissional"])[data-profile-contract="clean-v1"] .profile-service-card--horizontal {
+  --doke-ad-seller-margin: 1px 0 0;
+  --doke-ad-seller-name-size: 0.82rem;
+  --doke-ad-seller-avatar-size-mobile: 30px;
+  --doke-ad-seller-name-size-mobile: 0.76rem;
 }

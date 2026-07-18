@@ -41,40 +41,132 @@ const initBudgetPage = () => {
     .replace(/^-|-$/g, "");
 
   let selectedService = null;
-  let provider = pageRoot.dataset.budgetProvider || query.get("pro") || "Studio Aquarela";
+  let provider = pageRoot.dataset.budgetProvider || query.get("pro") || "";
   const explicitServiceLabel = normalizeBudgetLabel(pageRoot.dataset.budgetService || query.get("service") || query.get("servico") || "");
-  let service = explicitServiceLabel || "pintura residencial";
+  let service = explicitServiceLabel || "";
   let professionalId = requestedProfessionalId;
+  let professionalProfileId = "";
 
   const syncBudgetContext = () => {
     pageRoot.querySelectorAll("[data-budget-provider]").forEach((node) => {
-      node.textContent = provider;
+      node.textContent = provider || "o profissional selecionado";
     });
 
     pageRoot.querySelectorAll("[data-budget-service]").forEach((node) => {
-      node.textContent = formatTitleCase(service);
+      node.textContent = service ? formatTitleCase(service) : "o serviço selecionado";
     });
   };
 
+  const getServiceImages = (serviceItem) => {
+    if (!serviceItem) return [];
+    const images = Array.isArray(serviceItem.images) ? serviceItem.images.filter(Boolean) : [];
+    if (!images.length && serviceItem.image) images.push(serviceItem.image);
+    return images;
+  };
+
+  const getSchedule = (serviceItem) => {
+    return Array.isArray(serviceItem?.availabilitySchedule)
+      ? serviceItem.availabilitySchedule.filter((item) => item && item.day && item.start && item.end)
+      : [];
+  };
+
+  const renderServiceContext = (serviceItem) => {
+    const context = pageRoot.querySelector("[data-budget-service-context]");
+    if (!context || !serviceItem) return;
+
+    const image = context.querySelector("[data-budget-context-image]");
+    const fallback = context.querySelector("[data-budget-context-fallback]");
+    const title = context.querySelector("[data-budget-context-title]");
+    const providerNode = context.querySelector("[data-budget-context-provider]");
+    const price = context.querySelector("[data-budget-context-price]");
+    const region = context.querySelector("[data-budget-context-region]");
+    const schedule = context.querySelector("[data-budget-context-schedule]");
+    const detailLink = context.querySelector("[data-budget-context-detail]");
+    const images = getServiceImages(serviceItem);
+
+    if (image) {
+      image.hidden = !images[0];
+      if (images[0]) {
+        image.src = images[0];
+        image.alt = serviceItem.title || "Imagem do serviço";
+      } else {
+        image.removeAttribute("src");
+      }
+    }
+    if (fallback) {
+      fallback.hidden = Boolean(images[0]);
+      fallback.textContent = serviceItem.providerInitials || "DK";
+    }
+    if (title) title.textContent = serviceItem.title || serviceItem.category || "Serviço selecionado";
+    if (providerNode) providerNode.textContent = `Por ${serviceItem.providerName || "Profissional Doke"}`;
+    if (price) price.textContent = serviceItem.priceLabel || "Sob orçamento";
+    if (region) region.textContent = serviceItem.location || serviceItem.serviceRegion || "Região a confirmar";
+    if (detailLink) detailLink.href = `detalhe-anuncio.html?id=${encodeURIComponent(serviceItem.id || serviceId)}`;
+
+    if (schedule) {
+      const entries = getSchedule(serviceItem).slice(0, 3);
+      schedule.textContent = "";
+      entries.forEach((item) => {
+        const chip = document.createElement("span");
+        chip.textContent = `${item.label || item.day} ${item.start}–${item.end}`;
+        schedule.appendChild(chip);
+      });
+      schedule.hidden = !entries.length;
+    }
+
+    const exitLink = pageRoot.querySelector("[data-step-exit]");
+    if (exitLink) exitLink.href = `detalhe-anuncio.html?id=${encodeURIComponent(serviceItem.id || serviceId)}`;
+  };
+
+  const prefillServiceFields = (serviceItem) => {
+    if (!form || !serviceItem) return;
+    const categoryValue = serviceItem.category || serviceItem.catégory || serviceItem.title || "";
+    const categorySelect = form.querySelector('select[name="catégoria"]');
+    if (categorySelect && categoryValue) {
+      const optionExists = [...categorySelect.options].some((option) => option.value === categoryValue || option.textContent.trim().toLowerCase() === String(categoryValue).toLowerCase());
+      if (!optionExists) categorySelect.add(new Option(categoryValue, categoryValue), 1);
+      categorySelect.value = categoryValue;
+      categorySelect.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+
+    const budgetSelect = form.querySelector('select[name="orcamento_estimado"]');
+    const priceLabel = serviceItem.priceLabel || "A definir";
+    if (budgetSelect && priceLabel) {
+      const optionExists = [...budgetSelect.options].some((option) => option.value === priceLabel);
+      if (!optionExists) budgetSelect.add(new Option(priceLabel, priceLabel), 1);
+      budgetSelect.value = priceLabel;
+      budgetSelect.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+  };
+
   const hydrateServiceContext = () => {
-    if (!serviceId || !window.Doke?.services?.services?.getById) return Promise.resolve(null);
+    if (!serviceId) return Promise.reject(new Error("Serviço não informado. Abra o anúncio e solicite o orçamento novamente."));
+    if (!window.Doke?.services?.services?.getById) return Promise.reject(new Error("Serviço de anúncios indisponível."));
 
     return window.Doke.services.services.getById(serviceId).then((serviceItem) => {
-      if (!serviceItem) return null;
+      if (!serviceItem) throw new Error("Este anúncio não foi encontrado.");
+      if (String(serviceItem.status || "active").toLowerCase() !== "active") {
+        throw new Error("Este anúncio não está aceitando novos pedidos.");
+      }
+
       selectedService = serviceItem;
-      provider = serviceItem.providerName || serviceItem.professionalName || provider;
-      service = normalizeBudgetLabel(serviceItem.title || serviceItem.detailTitle || serviceItem.category || service);
-      professionalId = serviceItem.professionalId || serviceItem.providerId || professionalId;
+      provider = serviceItem.providerName || serviceItem.professionalName || "Profissional Doke";
+      service = normalizeBudgetLabel(serviceItem.title || serviceItem.detailTitle || serviceItem.category || "Serviço selecionado");
+      professionalId = serviceItem.professionalId || serviceItem.providerId || serviceItem.ownerId || professionalId;
+      professionalProfileId = serviceItem.professionalProfileId || serviceItem.profileId || "";
       syncBudgetContext();
+      renderServiceContext(serviceItem);
+      prefillServiceFields(serviceItem);
       document.dispatchEvent(new CustomEvent("doke:budget-service-context", {
         detail: {
           service: serviceItem,
           provider,
-          professionalId
+          professionalId,
+          professionalProfileId
         }
       }));
       return serviceItem;
-    }).catch(() => null);
+    });
   };
 
   const showSuccessScreen = (order) => {
@@ -210,7 +302,7 @@ const initBudgetPage = () => {
     const catégoryInput = form.querySelector('input[name="catégoria"]');
     const applyServiceCategory = () => {
       if (!service || !(selectedService || serviceId || explicitServiceLabel)) return;
-      const normalized = formatTitleCase(service);
+      const normalized = formatTitleCase(selectedService?.category || selectedService?.catégory || service);
       if (catégorySelect) {
         const hasOption = [...catégorySelect.options].some((option) => option.textContent.toLowerCase() === normalized.toLowerCase());
         if (!hasOption) {
@@ -513,7 +605,8 @@ const initBudgetPage = () => {
 
       const data = new FormData(form);
       const createdAt = new Date().toISOString();
-      const serviceName = data.get("catégoria") || service;
+      const requestCategory = data.get("catégoria") || selectedService?.category || selectedService?.catégory || "";
+      const serviceName = selectedService?.title || service || requestCategory;
       const ordersService = window.Doke?.services?.orders;
       const previousSubmitText = submitButton?.textContent || "Enviar solicitação";
       const restoreSubmitButton = () => {
@@ -546,12 +639,36 @@ const initBudgetPage = () => {
         provider,
         providerName: provider,
         providerInitials: selectedService?.providerInitials || selectedService?.avatar || "DK",
-        professionalId: professionalId || selectedService?.professionalId || selectedService?.providerId || `provider-${slugify(provider) || "doke"}`,
-        providerId: professionalId || selectedService?.providerId || selectedService?.professionalId || `provider-${slugify(provider) || "doke"}`,
-        serviceId: serviceId || selectedService?.id || `service-${slugify(serviceName) || "orcamento"}`,
+        professionalId: professionalId || selectedService?.professionalId || selectedService?.providerId || "",
+        providerId: professionalId || selectedService?.providerId || selectedService?.professionalId || "",
+        professionalProfileId: professionalProfileId || selectedService?.professionalProfileId || "",
+        serviceId: serviceId || selectedService?.id || "",
         service: serviceName,
         serviceTitle: serviceName,
         title: serviceName,
+        serviceImage: getServiceImages(selectedService)[0] || "",
+        serviceImages: getServiceImages(selectedService),
+        serviceCategory: requestCategory || selectedService?.category || selectedService?.catégory || "",
+        servicePriceMode: selectedService?.priceMode || "",
+        servicePrice: selectedService?.priceValue ?? selectedService?.price ?? null,
+        servicePriceLabel: selectedService?.priceLabel || "Sob orçamento",
+        serviceRegion: selectedService?.location || selectedService?.serviceRegion || "",
+        serviceAvailabilitySchedule: getSchedule(selectedService),
+        serviceIncludedItems: selectedService?.includedItems || "",
+        serviceExcludedItems: selectedService?.excludedItems || "",
+        serviceSnapshot: {
+          id: selectedService?.id || serviceId,
+          title: selectedService?.title || serviceName,
+          category: requestCategory || selectedService?.category || selectedService?.catégory || "",
+          providerId: professionalId || selectedService?.professionalId || selectedService?.providerId || "",
+          professionalProfileId: professionalProfileId || selectedService?.professionalProfileId || "",
+          providerName: provider,
+          priceMode: selectedService?.priceMode || "",
+          priceLabel: selectedService?.priceLabel || "Sob orçamento",
+          location: selectedService?.location || selectedService?.serviceRegion || "",
+          availabilitySchedule: getSchedule(selectedService),
+          image: getServiceImages(selectedService)[0] || ""
+        },
         requestType: data.get("tipo") || "Orçamento para execução",
         scope: data.get("escopo") || "Ambiente completo",
         location: summarizeAddress(savedLocation),
@@ -581,6 +698,10 @@ const initBudgetPage = () => {
       };
 
       try {
+        const latestService = await window.Doke?.services?.services?.getById?.(serviceId);
+        if (!latestService || String(latestService.status || "active").toLowerCase() !== "active") {
+          throw new Error("Este anúncio não está mais aceitando novos pedidos.");
+        }
         const savedOrder = ordersService?.create
           ? await ordersService.create(payload)
           : Object.assign({ id: `order-${Date.now()}` }, payload);

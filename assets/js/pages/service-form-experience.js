@@ -21,9 +21,73 @@
     if (instances.has(root)) return instances.get(root);
 
     const setState = core.createStateController({ boundary: root, bodyDatasetKey: 'serviceFormExperienceState' });
-    const store = core.createDraftStore({ prefix: 'doke.service-draft.v2' });
+    const params = new URLSearchParams(window.location.search || '');
+    const editId = String(params.get('edit') || params.get('serviceId') || '').trim();
+    const editMode = Boolean(editId && (params.get('mode') === 'edit' || params.has('edit')));
+    const store = core.createDraftStore({ prefix: editMode ? `doke.service-edit.${editId}.v1` : 'doke.service-draft.v2' });
     const mutations = core.createMutationGuard();
+
+
+    const existingMediaRoot = root.querySelector('[data-existing-service-media]');
+    const existingMediaList = root.querySelector('[data-existing-service-media-list]');
+    const existingMediaCount = root.querySelector('[data-existing-service-media-count]');
+
+    const syncExistingImageDataset = () => {
+      const primary = managedExistingImages[0] || '';
+      if (primary) root.dataset.existingServiceImage = primary;
+      else delete root.dataset.existingServiceImage;
+      root.dataset.existingServiceImagesCount = String(managedExistingImages.length);
+    };
+
+    const renderExistingMedia = () => {
+      syncExistingImageDataset();
+      if (existingMediaRoot) existingMediaRoot.hidden = !editMode || !managedExistingImages.length;
+      if (existingMediaCount) existingMediaCount.textContent = `${managedExistingImages.length} ${managedExistingImages.length === 1 ? 'imagem' : 'imagens'}`;
+      if (!existingMediaList) return;
+      existingMediaList.innerHTML = '';
+      managedExistingImages.forEach((url, index) => {
+        const item = document.createElement('article');
+        item.className = 'post-service-existing-media__item';
+        const image = document.createElement('img');
+        image.className = 'post-service-existing-media__image';
+        image.src = url;
+        image.alt = index === 0 ? 'Imagem principal atual do anúncio' : `Imagem extra ${index} do anúncio`;
+        const actions = document.createElement('div');
+        actions.className = 'post-service-existing-media__actions';
+        const label = document.createElement('span');
+        label.className = 'post-service-existing-media__label';
+        label.textContent = index === 0 ? 'Imagem principal' : `Imagem extra ${index}`;
+        const buttons = document.createElement('div');
+        buttons.className = 'post-service-existing-media__buttons';
+        if (index > 0) {
+          const primary = document.createElement('button');
+          primary.type = 'button';
+          primary.className = 'doke-btn doke-btn--ghost doke-btn--sm';
+          primary.dataset.existingMediaPrimary = String(index);
+          primary.textContent = 'Definir principal';
+          buttons.appendChild(primary);
+        }
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.className = 'doke-btn doke-btn--danger doke-btn--sm';
+        remove.dataset.existingMediaRemove = String(index);
+        remove.textContent = 'Remover';
+        buttons.appendChild(remove);
+        actions.appendChild(label);
+        actions.appendChild(buttons);
+        item.appendChild(image);
+        item.appendChild(actions);
+        existingMediaList.appendChild(item);
+      });
+      window.dispatchEvent(new CustomEvent('doke:service-media-changed', {
+        detail: { images: managedExistingImages.slice(), primary: managedExistingImages[0] || '' }
+      }));
+    };
     let publishCompleted = false;
+    let existingService = null;
+    let managedExistingImages = [];
+    let existingLoad = Promise.resolve(null);
+    root.dataset.serviceEditMode = editMode ? 'true' : 'false';
 
     const serialize = () => {
       const values = {};
@@ -145,7 +209,7 @@
         .filter(Boolean);
       const availabilitySchedule = collectAvailability();
       return {
-        id: `service_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        id: editMode ? editId : `service_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
         title: core.normalize(data.get('adTitle')),
         category: core.normalize(data.get('category')),
         specialty: core.normalize(data.get('specialty')),
@@ -165,8 +229,8 @@
         professionalId: core.normalize(currentUser?.id || currentUser?.userId),
         providerId: core.normalize(currentUser?.id || currentUser?.userId),
         providerName: core.normalize(currentUser?.name || currentUser?.displayName) || 'Profissional Doke',
-        status: 'active',
-        createdAt: new Date().toISOString()
+        status: existingService?.status || 'active',
+        createdAt: existingService?.createdAt || new Date().toISOString()
       };
     };
 
@@ -183,15 +247,29 @@
     };
 
     const attachImages = async (payload) => {
-      const main = form.elements.namedItem('mainImage')?.files?.[0] || null;
-      const extraOne = form.elements.namedItem('extraImageOne')?.files?.[0] || null;
-      const extraTwo = form.elements.namedItem('extraImageTwo')?.files?.[0] || null;
-      const images = (await Promise.all([prepareImage(main), prepareImage(extraOne), prepareImage(extraTwo)])).filter(Boolean);
-      return Object.assign(payload, { image: images[0] || '', images });
+      const files = [
+        form.elements.namedItem('mainImage')?.files?.[0] || null,
+        form.elements.namedItem('extraImageOne')?.files?.[0] || null,
+        form.elements.namedItem('extraImageTwo')?.files?.[0] || null
+      ];
+      const prepared = await Promise.all(files.map(prepareImage));
+      const images = managedExistingImages.slice(0, 3);
+      prepared.forEach((url, index) => {
+        if (!url) return;
+        images[index] = url;
+      });
+      const normalized = images.filter(Boolean).slice(0, 3);
+      if (!normalized.length) throw new Error('Adicione pelo menos uma imagem ao anúncio.');
+      return Object.assign(payload, { image: normalized[0], images: normalized });
     };
 
     const persist = async (payload) => {
-      if (typeof Doke.services?.services?.create === 'function') return Doke.services.services.create(payload);
+      const service = Doke.services?.services;
+      if (editMode) {
+        if (typeof service?.updateOwned !== 'function') throw new Error('A edição de serviços não está disponível nesta versão.');
+        return service.updateOwned(editId, payload);
+      }
+      if (typeof service?.create === 'function') return service.create(payload);
       throw new Error('A publicação de serviços ainda não está disponível nesta versão.');
     };
 
@@ -199,6 +277,9 @@
       publishCompleted = true;
       store.clear();
       form.reset();
+      existingService = null;
+      managedExistingImages = [];
+      renderExistingMedia();
       root.querySelectorAll('[data-availability-day]').forEach((checkbox) => syncAvailabilityRow(checkbox));
       root.querySelectorAll('[data-post-check]').forEach((button) => {
         const active = button.dataset.defaultActive === 'true';
@@ -222,6 +303,7 @@
       save();
       setState('submitting');
       try {
+        await existingLoad;
         const payload = await attachImages(createPayload());
         if (!payload.title || !payload.category || !payload.shortDescription) throw new Error('Preencha título, categoria e descrição curta antes de publicar.');
         if (!payload.location || !payload.serviceMode) throw new Error('Informe região e forma de atendimento.');
@@ -232,8 +314,8 @@
         const saved = await persist(payload);
         if (!saved?.id) throw new Error('O anúncio não foi confirmado pela fonte de dados.');
         reset();
-        core.invalidate({ domains: ['marketplace', 'profiles'], reason: 'service-created' });
-        window.dispatchEvent(new CustomEvent('doke:service-created', { detail: { service: saved } }));
+        core.invalidate({ domains: ['marketplace', 'profiles'], reason: editMode ? 'service-updated' : 'service-created' });
+        window.dispatchEvent(new CustomEvent(editMode ? 'doke:service-updated' : 'doke:service-created', { detail: { service: saved } }));
         setState('success');
         return saved;
       } catch (error) {
@@ -244,6 +326,67 @@
       }
     });
 
+    const setNamedValue = (name, value) => {
+      const fields = [...form.querySelectorAll(`[name="${CSS.escape(name)}"]`)];
+      fields.forEach((field) => {
+        if (field.type === 'radio') field.checked = String(field.value) === String(value);
+        else if (field.type !== 'file') field.value = value == null ? '' : String(value);
+        field.dispatchEvent(new Event('input', { bubbles: true }));
+        field.dispatchEvent(new Event('change', { bubbles: true }));
+      });
+    };
+
+    const populateExisting = (service) => {
+      existingService = service;
+      if (!service) throw new Error('Anúncio não encontrado.');
+      const user = Doke.session?.getCurrentUser?.() || {};
+      const ownerId = String(service.ownerId || service.professionalId || service.providerId || '');
+      if (!user.id || ownerId !== String(user.id)) throw new Error('Você não pode editar este anúncio.');
+      setNamedValue('adTitle', service.title);
+      setNamedValue('category', service.category);
+      setNamedValue('specialty', service.specialty);
+      setNamedValue('shortDescription', service.shortDescription);
+      setNamedValue('fullDescription', service.description);
+      setNamedValue('priceType', service.priceType || (service.priceLabel ? 'A partir de' : 'Sob orçamento'));
+      setNamedValue('initialPrice', service.priceLabel || service.priceValue || '');
+      setNamedValue('billingUnit', service.billingUnit || '');
+      setNamedValue('serviceRegion', service.serviceRegion || service.location || '');
+      setNamedValue('serviceMode', service.serviceMode || '');
+      setNamedValue('includedItems', service.includedItems || '');
+      setNamedValue('excludedItems', service.excludedItems || '');
+      const selectedTags = new Set(Array.isArray(service.tags) ? service.tags : []);
+      root.querySelectorAll('[data-post-check][data-value]').forEach((button) => {
+        const active = selectedTags.has(button.dataset.value);
+        button.classList.toggle('is-active', active);
+        button.setAttribute('aria-pressed', active ? 'true' : 'false');
+      });
+      const availability = Array.isArray(service.availabilitySchedule) ? service.availabilitySchedule : [];
+      root.querySelectorAll('[data-availability-day]').forEach((checkbox) => {
+        const entry = availability.find((item) => item.day === checkbox.value);
+        checkbox.checked = Boolean(entry);
+        const row = checkbox.closest('[data-availability-row]');
+        const times = row ? [...row.querySelectorAll('[data-availability-time]')] : [];
+        if (entry && times[0]) times[0].value = entry.start || '';
+        if (entry && times[1]) times[1].value = entry.end || '';
+        syncAvailabilityRow(checkbox);
+      });
+      managedExistingImages = Array.isArray(service.images)
+        ? service.images.filter(Boolean).slice(0, 3)
+        : (service.image ? [service.image] : []);
+      renderExistingMedia();
+      syncPriceMode();
+      window.dispatchEvent(new CustomEvent('doke:service-edit-loaded', { detail: { service, hasExistingImages: Boolean(managedExistingImages.length), images: managedExistingImages.slice() } }));
+      return service;
+    };
+
+    if (editMode) {
+      existingLoad = Promise.resolve().then(() => Doke.services?.services?.getById?.(editId)).then(populateExisting).catch((error) => {
+        setState('error', { error });
+        window.dispatchEvent(new CustomEvent('doke:service-edit-error', { detail: { error } }));
+        throw error;
+      });
+    }
+
     form.addEventListener('input', () => store.schedule(serialize, 180));
     form.addEventListener('change', (event) => {
       if (event.target.matches('[data-availability-day]')) syncAvailabilityRow(event.target);
@@ -251,6 +394,25 @@
       store.schedule(serialize, 180);
     });
     root.addEventListener('click', (event) => {
+      const primaryButton = event.target.closest('[data-existing-media-primary]');
+      if (primaryButton) {
+        const index = Number(primaryButton.dataset.existingMediaPrimary);
+        if (Number.isInteger(index) && index > 0 && managedExistingImages[index]) {
+          const selected = managedExistingImages.splice(index, 1)[0];
+          managedExistingImages.unshift(selected);
+          renderExistingMedia();
+        }
+        return;
+      }
+      const removeButton = event.target.closest('[data-existing-media-remove]');
+      if (removeButton) {
+        const index = Number(removeButton.dataset.existingMediaRemove);
+        if (Number.isInteger(index) && managedExistingImages[index]) {
+          managedExistingImages.splice(index, 1);
+          renderExistingMedia();
+        }
+        return;
+      }
       const applyButton = event.target.closest('[data-availability-apply]');
       if (applyButton) {
         try { applyAvailabilityTemplate(applyButton.dataset.availabilityApply); }
@@ -262,8 +424,9 @@
     window.addEventListener('beforeunload', save);
 
     root.querySelectorAll('[data-availability-day]').forEach((checkbox) => syncAvailabilityRow(checkbox));
-    const draft = restore();
+    const draft = editMode ? null : restore();
     syncPriceMode();
+    renderExistingMedia();
     setState('ready');
     const api = Object.freeze({
       submit,
@@ -272,7 +435,11 @@
       reset,
       getDraft: serialize,
       getAvailability: collectAvailability,
-      restoredStep: Number(draft?.step || 1) || 1
+      getManagedImages: () => managedExistingImages.slice(),
+      restoredStep: Number(draft?.step || 1) || 1,
+      editMode,
+      editId,
+      ready: existingLoad
     });
     instances.set(root, api);
     Doke.serviceFormExperience = api;

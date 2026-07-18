@@ -82,7 +82,7 @@
     if (!line) return;
 
     const link = document.createElement('a');
-    link.href = service.providerId ? `perfil.html?professionalId=${encodeURIComponent(service.providerId)}` : 'perfil.html';
+    link.href = service.providerId ? `perfil.html?id=${encodeURIComponent(service.providerId)}` : 'perfil.html';
     link.textContent = service.providerName || 'Profissional Doke';
 
     replaceChildrenText(line, ['Por ', link, ' · Dados mockados locais']);
@@ -91,9 +91,7 @@
   const updateStats = (root, service) => {
     const stats = root.querySelectorAll('.ad-detail-stats li .ad-detail-stat-copy strong');
     const values = [service.views, service.likes, service.messages, service.saves].map((value) => Number(value) || 0);
-    stats.forEach((node, index) => {
-      if (values[index]) node.textContent = String(values[index]);
-    });
+    stats.forEach((node, index) => { node.textContent = String(values[index] || 0); });
   };
 
   const updateDescription = (root, service) => {
@@ -152,6 +150,84 @@
     if (ratingStat) ratingStat.textContent = formatRating(service.rating);
   };
 
+  const splitItems = (value) => {
+    if (Array.isArray(value)) return value.map((item) => String(item || '').trim()).filter(Boolean);
+    return String(value || '').split(/\n|;|,/).map((item) => item.trim()).filter(Boolean);
+  };
+
+  const updateAvailability = (root, service) => {
+    const section = root.querySelector('[data-detail-availability-section]');
+    const list = root.querySelector('[data-detail-availability-list]');
+    if (!section || !list) return;
+    const schedule = Array.isArray(service.availabilitySchedule) ? service.availabilitySchedule.filter((item) => item && item.start && item.end) : [];
+    list.textContent = '';
+    schedule.forEach((item) => {
+      const row = document.createElement('div');
+      row.className = 'detail-availability-item';
+      const day = document.createElement('strong');
+      day.textContent = item.label || item.day || 'Dia';
+      const time = document.createElement('span');
+      time.textContent = `${item.start}–${item.end}`;
+      row.append(day, time);
+      list.appendChild(row);
+    });
+    section.hidden = schedule.length === 0;
+  };
+
+  const renderScopeList = (root, selector, cardSelector, items) => {
+    const list = root.querySelector(selector);
+    const card = root.querySelector(cardSelector);
+    if (!list || !card) return;
+    list.textContent = '';
+    items.forEach((text) => {
+      const item = document.createElement('li');
+      item.textContent = text;
+      list.appendChild(item);
+    });
+    card.hidden = items.length === 0;
+  };
+
+  const updateScope = (root, service) => {
+    const included = splitItems(service.includedItems || service.checklist);
+    const excluded = splitItems(service.excludedItems);
+    renderScopeList(root, '[data-detail-included-list]', '[data-detail-included-card]', included);
+    renderScopeList(root, '[data-detail-excluded-list]', '[data-detail-excluded-card]', excluded);
+    const section = root.querySelector('[data-detail-scope-section]');
+    if (section) section.hidden = included.length === 0 && excluded.length === 0;
+  };
+
+  const updateRelatedSections = (root, payload) => {
+    const reviews = Array.isArray(payload?.data?.reviews) ? payload.data.reviews : [];
+    const workers = Array.isArray(payload?.data?.workers) ? payload.data.workers : [];
+    const publications = Array.isArray(payload?.data?.publications) ? payload.data.publications : [];
+    const reviewSection = root.querySelector('[data-reviews-scope="service"]');
+    const workerSection = root.querySelector('[data-announcement-related="workers"]');
+    const publicationSection = root.querySelector('[data-announcement-related="publications"]');
+    if (reviewSection) reviewSection.hidden = reviews.length === 0 || Number(payload?.data?.service?.reviewsCount || 0) === 0;
+    if (workerSection) workerSection.hidden = workers.length === 0;
+    if (publicationSection) publicationSection.hidden = publications.length === 0;
+  };
+
+  const updateListingStatus = (root, service) => {
+    const status = String(service.status || 'active').toLowerCase();
+    const active = status === 'active';
+    const statusNode = root.querySelector('[data-detail-status-message]');
+    const budget = root.querySelector('[data-budget-cta]');
+    const message = root.querySelector('[data-detail-message-cta]');
+    if (statusNode) {
+      statusNode.hidden = active;
+      statusNode.textContent = status === 'archived'
+        ? 'Este anúncio foi arquivado e está disponível apenas para consulta.'
+        : 'Este anúncio está temporariamente inativo e não aceita novos pedidos.';
+    }
+    [budget, message].forEach((control) => {
+      if (!control) return;
+      control.hidden = !active;
+      control.setAttribute('aria-disabled', active ? 'false' : 'true');
+    });
+    root.dataset.listingStatus = status;
+  };
+
   const updateActionCard = (root, service) => {
     setText(root, '.ad-action-card__price', getPriceLabel(service));
     setText(root, '.ad-action-card__subtext', service.paymentLabel || 'Valor final após orçamento');
@@ -168,7 +244,7 @@
     }
 
     const meta = root.querySelectorAll('.ad-action-card__meta dd');
-    if (meta[0]) meta[0].textContent = service.responseTime || 'a combinar';
+    if (meta[0]) meta[0].textContent = service.responseTime || 'calculada pela Doke';
     if (meta[1]) meta[1].textContent = service.guarantee || service.specs?.Garantia || 'sob orçamento';
   };
 
@@ -190,10 +266,10 @@
     const summary = root.querySelectorAll('.provider-card__summary .provider-card__stat');
     if (summary[0]) summary[0].textContent = `${formatRating(service.rating)} avaliação`;
     if (summary[1]) summary[1].textContent = service.reviews || `${service.reviewsCount || 0} avaliações`;
-    if (summary[2]) summary[2].textContent = service.responseTime ? `Responde ${service.responseTime.replace(/^em\s+/i, '')}` : 'Resposta a combinar';
+    if (summary[2]) summary[2].textContent = service.responseTime ? `Responde ${service.responseTime.replace(/^em\s+/i, '')}` : 'Tempo de resposta ainda não calculado';
 
     const cta = root.querySelector('.provider-card__cta');
-    if (cta) cta.href = service.providerId ? `perfil.html?professionalId=${encodeURIComponent(service.providerId)}` : 'perfil.html';
+    if (cta) cta.href = service.providerId ? `perfil.html?id=${encodeURIComponent(service.providerId)}` : 'perfil.html';
   };
 
   const updateLocation = (root, service) => {
@@ -230,10 +306,15 @@
     setText(root, '.ad-detail-id', formatId(service.id));
     updateProviderLine(root, service);
     updateStats(root, service);
+    document.title = `Doke | ${service.title || 'Detalhe do serviço'}`;
     updateDescription(root, service);
     updateSpecs(root, service);
+    updateAvailability(root, service);
+    updateScope(root, service);
     updateReviews(root, service);
+    updateRelatedSections(root, payload);
     updateActionCard(root, service);
+    updateListingStatus(root, service);
     updateProviderCard(root, service);
     updateLocation(root, service);
     updateSimilarLinks(root, service);

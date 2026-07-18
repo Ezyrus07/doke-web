@@ -3,7 +3,8 @@
  * Responsibility: owner/editing affordances for perfil-profissional.html.
  * The visual anatomy is inherited from the clean public profile contract.
  */
-@import url("./profile-foundation.css?v=20260717-profile-media-frame-v3");
+@import url("./profile-foundation.css?v=20260718-owner-card-v5");
+@import url("../components/cards/profile-service-owner-card.css?v=20260718-owner-card-v13");
 
 /* First-paint authorization boundary.
  * The owner profile content must never override the native hidden contract
@@ -304,4 +305,258 @@ body[data-profile-mode="owner-edit"] .profile-owner-avatar-action.doke-icon-btn 
     right: 12px;
     bottom: 12px;
   }
+}
+
+/* Owner service management: section heading, compact controls and one primary creation CTA. */
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-management {
+  display: grid;
+  grid-template-columns: minmax(180px, auto) minmax(0, 1fr);
+  align-items: center;
+  gap: 18px;
+  min-width: 0;
+  margin-bottom: 16px;
+  padding: 18px 20px;
+  border: 1px solid rgba(24, 75, 118, 0.08);
+  border-radius: var(--card-radius-lg, 22px);
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 10px 26px rgba(24, 75, 118, 0.06);
+}
+
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-management__heading {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-management__heading h2 {
+  margin: 0;
+  color: var(--color-text, #102d4b);
+  font-size: 1.08rem;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+}
+
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-management__count {
+  color: #71839b;
+  font-size: 0.76rem;
+  font-weight: var(--doke-type-weight-emphasis, 700);
+  white-space: nowrap;
+}
+
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-management__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  min-width: 0;
+}
+
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-management .profile-service-filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+}
+
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-management .doke-select {
+  --doke-form-control-min-height: var(--control-height-sm, 40px);
+  --doke-form-control-padding-inline: 12px;
+  --doke-select-padding-end: 34px;
+  flex: 0 1 auto;
+  width: auto;
+  min-width: 126px;
+  max-width: 168px;
+  margin-left: 0;
+}
+
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-management__create {
+  flex: 0 0 auto;
+  min-height: var(--control-height-sm, 40px);
+  gap: 7px;
+  padding-inline: 15px;
+}
+
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-management__create > span {
+  font-size: 1.08rem;
+  line-height: 1;
+}
+
+@media (max-width: 840px) {
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-management {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-management__actions {
+    justify-content: space-between;
+  }
+}
+
+@media (max-width: 600px) {
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-management {
+    padding: 16px;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-management__actions {
+    flex-wrap: wrap;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-management .profile-service-filters {
+    order: 2;
+    width: 100%;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-management .doke-select {
+    flex: 1 1 0;
+    max-width: none;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-management__create {
+    margin-left: auto;
+  }
+}
+
+/* Owner service listing: informative management cards with one primary action. */
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-area__rail--ads {
+  grid-auto-flow: row;
+  grid-auto-columns: auto;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  overflow: visible;
+  padding: 0;
+}
+
+
+/* v6 — 2-up owner cards grid on desktop */
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-area__rail--ads {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+}
+
+@media (max-width: 1180px) {
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-area__rail--ads {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+
+/* Profile creation islands — shared section header surface for owner creation flows. */
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-owner-section-tools--island {
+  min-height: 82px;
+  margin-bottom: 16px;
+  padding: 18px 20px;
+  border: 1px solid rgba(24, 75, 118, 0.08);
+  border-radius: var(--card-radius-lg, 22px);
+  background: rgba(255, 255, 255, 0.84);
+  box-shadow: 0 10px 26px rgba(24, 75, 118, 0.06);
+}
+
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-owner-section-tools--island > span {
+  color: var(--color-text, #102d4b);
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-owner-section-tools--island .doke-btn--primary {
+  gap: 7px;
+}
+
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-owner-section-tools--island .doke-btn--primary > span {
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+/* The native selects are enhanced by doke-lite-select; size the canonical triggers, not browser arrows. */
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-management .profile-service-filters > [data-doke-select-root] {
+  flex: 0 1 auto;
+  width: auto;
+  min-width: 132px;
+  max-width: 176px;
+}
+
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-management .profile-service-filters .doke-select__trigger {
+  min-height: var(--control-height-sm, 40px);
+  padding-inline: 13px 11px;
+  border-radius: var(--control-radius-md, 14px);
+}
+
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-management .profile-service-filters .doke-select__chevron {
+  color: var(--color-primary-strong, #184a76);
+}
+
+@media (max-width: 760px) {
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-owner-section-tools--island {
+    min-height: 0;
+    padding: 16px;
+  }
+}
+
+@media (max-width: 600px) {
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-management .profile-service-filters > [data-doke-select-root] {
+    flex: 1 1 0;
+    width: 100%;
+    max-width: none;
+  }
+}
+
+
+/* v15 — custom select wrapper is structural; only its trigger is visible. */
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-management .profile-service-filters > [data-doke-select-root].doke-select {
+  min-height: 0;
+  height: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  background-image: none;
+  box-shadow: none;
+  appearance: none;
+}
+
+/* v16 — canonical section action buttons: readable variants and standard elevation */
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-owner-section-tools .profile-owner-mini-action {
+  min-height: var(--doke-btn-height-sm, 40px);
+  padding-inline: var(--btn-padding-x-sm, 14px);
+  border: 0;
+  border-radius: var(--btn-radius-sm, 12px);
+  opacity: 1;
+  visibility: visible;
+  font-weight: var(--control-font-weight, 700);
+}
+
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-owner-section-tools .profile-owner-mini-action.doke-btn--primary {
+  background: var(--gradient-button-primary, var(--color-primary, #2a5f90));
+  color: var(--color-white, #fff);
+  box-shadow: var(--shadow-action-primary);
+}
+
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-owner-section-tools .profile-owner-mini-action.doke-btn--ghost {
+  background: var(--doke-white-control-bg, #fff);
+  color: var(--color-primary-strong, #184a76);
+  box-shadow: var(--doke-white-control-shadow);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-owner-section-tools .profile-owner-mini-action.doke-btn--primary:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-action-primary-hover, var(--shadow-action-primary));
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-owner-section-tools .profile-owner-mini-action.doke-btn--ghost:hover {
+    transform: translateY(-1px);
+    background: var(--doke-white-control-bg, #fff);
+    box-shadow: var(--doke-white-control-shadow-hover);
+  }
+}
+
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-owner-section-tools .profile-owner-mini-action:focus-visible {
+  outline: 0;
+  box-shadow: var(--doke-white-control-shadow-focus);
+}
+
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-owner-section-tools .profile-owner-mini-action:is([disabled], [aria-disabled="true"]) {
+  opacity: 0.58;
+  box-shadow: none;
 }

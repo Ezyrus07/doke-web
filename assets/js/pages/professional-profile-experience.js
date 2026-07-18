@@ -95,7 +95,7 @@
     var user = Doke.session && typeof Doke.session.getCurrentUser === 'function' ? Doke.session.getCurrentUser() : null;
     var servicesApi = Doke.services && Doke.services.services;
     var servicesPromise = servicesApi && typeof servicesApi.listByProfessional === 'function'
-      ? Promise.resolve(servicesApi.listByProfessional(profileId, { status: 'active' }))
+      ? Promise.resolve(servicesApi.listByProfessional(profileId, { status: ['active', 'inactive', 'archived'], sort: 'updated_desc' }))
       : Promise.resolve([]);
 
     return Promise.all([profilePromise, professionalPromise, servicesPromise]).then(function (results) {

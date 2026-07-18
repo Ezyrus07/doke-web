@@ -1025,3 +1025,124 @@ body[data-page="anunciar-servico"] .post-service-submit-state__icon.is-pending::
     grid-template-columns: 1fr;
   }
 }
+
+/* Step validation contract: visible, focused and reversible errors. */
+body[data-page="anunciar-servico"] .post-service-step-error {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border: 1px solid rgba(180, 35, 24, 0.18);
+  border-radius: var(--doke-radius-control, 12px);
+  background: rgba(254, 243, 242, 0.84);
+  color: var(--color-danger, #b42318);
+  font-size: 0.86rem;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+body[data-page="anunciar-servico"] .post-service-step-error[hidden] {
+  display: none;
+}
+
+body[data-page="anunciar-servico"] :is(.doke-field, .post-service-upload-card, [data-availability-row]).has-error {
+  outline: 2px solid rgba(180, 35, 24, 0.28);
+  outline-offset: 3px;
+}
+
+body[data-page="anunciar-servico"] :is(input, select, textarea)[aria-invalid="true"] {
+  border-color: rgba(180, 35, 24, 0.52);
+}
+
+
+/* Existing service media manager: edit-mode composition only. */
+body[data-page="anunciar-servico"] .post-service-existing-media {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+  padding: 18px;
+  background: var(--color-surface-soft, #f3f7fb);
+  border-radius: var(--doke-radius-lg, 18px);
+}
+
+body[data-page="anunciar-servico"] .post-service-existing-media[hidden] {
+  display: none;
+}
+
+body[data-page="anunciar-servico"] .post-service-existing-media__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+body[data-page="anunciar-servico"] .post-service-existing-media__head :is(h3, p) {
+  margin: 0;
+}
+
+body[data-page="anunciar-servico"] .post-service-existing-media__head h3 {
+  color: var(--color-heading, #10233a);
+  font-size: 1rem;
+}
+
+body[data-page="anunciar-servico"] .post-service-existing-media__head p,
+body[data-page="anunciar-servico"] [data-existing-service-media-count] {
+  color: var(--color-text-muted, #64748b);
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+body[data-page="anunciar-servico"] [data-existing-service-media-count] {
+  flex: 0 0 auto;
+  font-weight: 750;
+}
+
+body[data-page="anunciar-servico"] .post-service-existing-media__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+body[data-page="anunciar-servico"] .post-service-existing-media__item {
+  display: grid;
+  grid-template-rows: 126px auto;
+  min-width: 0;
+  overflow: hidden;
+  background: var(--color-surface, #fff);
+  border-radius: var(--doke-radius-md, 14px);
+  box-shadow: var(--doke-clean-control-shadow, 0 10px 24px rgba(15, 39, 64, 0.08));
+}
+
+body[data-page="anunciar-servico"] .post-service-existing-media__image {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+body[data-page="anunciar-servico"] .post-service-existing-media__actions {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+}
+
+body[data-page="anunciar-servico"] .post-service-existing-media__label {
+  color: var(--color-primary-strong, #184a76);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+body[data-page="anunciar-servico"] .post-service-existing-media__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+@media (max-width: 760px) {
+  body[data-page="anunciar-servico"] .post-service-existing-media__grid {
+    grid-template-columns: 1fr;
+  }
+
+  body[data-page="anunciar-servico"] .post-service-existing-media__item {
+    grid-template-columns: 116px minmax(0, 1fr);
+    grid-template-rows: auto;
+  }
+}

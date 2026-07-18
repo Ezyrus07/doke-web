@@ -538,7 +538,7 @@
       group: hasOrderContext ? "orders" : conversation?.group || "contacts",
       orderId: conversation?.orderId || order.id || "",
       serviceId: conversation?.serviceId || order.serviceId || "",
-      order: {
+      order: Object.assign({}, order, {
         id: conversation?.orderId || order.id || "",
         clientId: conversation?.clientId || order.clientId || "",
         clientName: conversation?.clientName || order.clientName || "Cliente Doke",
@@ -547,10 +547,10 @@
         title: order.title || order.serviceTitle || conversation?.orderTitle || "Pedido de serviço",
         status: order.status || conversation?.status || "",
         statusLabel: order.statusLabel || conversation?.statusLabel || "Aguardando resposta",
-        budget: order.budget || conversation?.budget || "A definir",
-        category: order.category || conversation?.category || "Serviço",
-        location: order.location || conversation?.location || ""
-      },
+        budget: order.budget || order.servicePriceLabel || conversation?.budget || "A definir",
+        category: order.serviceCategory || order.category || conversation?.category || "Serviço",
+        location: order.location || order.serviceRegion || conversation?.location || ""
+      }),
       messages: (conversation?.messages || []).map((message) => normalizeLocalMessage(message, conversation))
     };
   };
@@ -1398,13 +1398,36 @@
               <span class="orders-detail-section__eyebrow">Visão geral</span>
               <dl class="orders-detail-list">
                 <div class="orders-detail-row"><dt data-detail-peer-label>Profissional</dt><dd data-detail-company></dd></div>
-                <div class="orders-detail-row"><dt>Local</dt><dd data-detail-address></dd></div>
+                <div class="orders-detail-row"><dt>Tipo de pedido</dt><dd data-detail-request-type></dd></div>
                 <div class="orders-detail-row"><dt>Escopo</dt><dd data-detail-scope></dd></div>
                 <div class="orders-detail-row"><dt>Orçamento</dt><dd data-detail-budget></dd></div>
                 <div class="orders-detail-row"><dt>Pagamento</dt><dd data-detail-payment></dd></div>
-                <div class="orders-detail-row"><dt>Prazo</dt><dd data-detail-deadline></dd></div>
+                <div class="orders-detail-row"><dt>Data e turno</dt><dd data-detail-deadline></dd></div>
                 <div class="orders-detail-row"><dt>Materiais</dt><dd data-detail-materials></dd></div>
               </dl>
+            </section>
+
+            <section class="orders-detail-section" data-detail-address-section>
+              <span class="orders-detail-section__eyebrow">Endereço do atendimento</span>
+              <div class="orders-detail-address" data-detail-address></div>
+            </section>
+
+            <section class="orders-detail-section" data-detail-triage-section>
+              <span class="orders-detail-section__eyebrow">Triagem enviada pelo cliente</span>
+              <dl class="orders-detail-list orders-detail-list--compact" data-detail-triage></dl>
+            </section>
+
+            <section class="orders-detail-section" data-detail-schedule-section>
+              <span class="orders-detail-section__eyebrow">Disponibilidade do anúncio</span>
+              <div class="orders-detail-schedule" data-detail-schedule></div>
+            </section>
+
+            <section class="orders-detail-section" data-detail-attachments-section>
+              <div class="orders-detail-section__heading">
+                <span class="orders-detail-section__eyebrow">Anexos do pedido</span>
+                <span class="orders-detail-section__counter" data-detail-attachments-count></span>
+              </div>
+              <div class="orders-detail-attachments" data-detail-attachments></div>
             </section>
 
             <section class="orders-detail-section">
@@ -1413,7 +1436,7 @@
             </section>
 
             <section class="orders-detail-section">
-              <span class="orders-detail-section__eyebrow">Etapas do pedido</span>
+              <span class="orders-detail-section__eyebrow">Histórico do pedido</span>
               <div class="orders-detail-timeline" data-detail-timeline></div>
             </section>
           </div>
@@ -1467,6 +1490,112 @@
           current: status === "in_progress"
         }
       ];
+    };
+
+    const formatOrderDetailDate = (value, fallback = "") => {
+      if (!value) return fallback;
+      const parsed = new Date(value);
+      if (Number.isNaN(parsed.getTime())) return String(value);
+      return new Intl.DateTimeFormat("pt-BR", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit"
+      }).format(parsed).replace(" de ", " ");
+    };
+
+    const getOrderAddressDetails = (order) => {
+      const raw = order?.locationDetails && typeof order.locationDetails === "object" ? order.locationDetails : {};
+      const street = raw.street || raw.logradouro || raw.address || "";
+      const number = raw.number || raw.numero || "";
+      const complement = raw.complement || raw.complemento || "";
+      const district = raw.district || raw.neighborhood || raw.bairro || "";
+      const city = raw.city || raw.cidade || "";
+      const state = raw.state || raw.uf || "";
+      const zip = raw.zip || raw.zipCode || raw.cep || "";
+      const firstLine = [street, number].filter(Boolean).join(", ");
+      const secondLine = [complement, district].filter(Boolean).join(" • ");
+      const thirdLine = [[city, state].filter(Boolean).join(" - "), zip].filter(Boolean).join(" • ");
+      const lines = [firstLine, secondLine, thirdLine].filter(Boolean);
+      if (!lines.length && order?.location) lines.push(String(order.location));
+      return lines;
+    };
+
+    const getOrderTriageItems = (order) => {
+      const triage = order?.triage && typeof order.triage === "object" ? order.triage : {};
+      return [
+        ["Imóvel", order?.property || order?.propertyType || ""],
+        ["Ambiente", order?.environment || order?.room || ""],
+        ["Ocupação", triage.ocupacao || triage.occupancy || ""],
+        ["Medidas", triage.medidas || triage.measurements || ""],
+        ["Urgência", order?.urgency || ""],
+        ["Observações", triage.observacoes || triage.notes || ""]
+      ].filter((item) => String(item[1] || "").trim());
+    };
+
+    const getOrderScheduleItems = (order) => {
+      const source = Array.isArray(order?.serviceAvailabilitySchedule)
+        ? order.serviceAvailabilitySchedule
+        : Array.isArray(order?.serviceSnapshot?.availabilitySchedule)
+          ? order.serviceSnapshot.availabilitySchedule
+          : [];
+      return source.map((item) => ({
+        day: item?.label || item?.dayLabel || item?.day || "Dia",
+        time: [item?.start, item?.end].filter(Boolean).join("–") || item?.time || "A combinar"
+      })).filter((item) => item.day || item.time);
+    };
+
+    const getOrderAttachmentItems = (order) => (Array.isArray(order?.attachments) ? order.attachments : [])
+      .filter(Boolean)
+      .map((attachment, index) => ({
+        name: attachment?.name || attachment?.filename || `Anexo ${index + 1}`,
+        type: attachment?.type || attachment?.mimeType || "",
+        size: Number(attachment?.size) || 0,
+        url: attachment?.url || attachment?.dataUrl || attachment?.preview || "",
+        previewable: Boolean(attachment?.previewable || attachment?.url || attachment?.dataUrl || attachment?.preview)
+      }));
+
+    const formatAttachmentSize = (size) => {
+      const value = Number(size) || 0;
+      if (!value) return "Arquivo anexado";
+      if (value < 1024) return `${value} B`;
+      if (value < 1024 * 1024) return `${Math.max(1, Math.round(value / 1024))} KB`;
+      return `${(value / (1024 * 1024)).toFixed(1).replace(".0", "")} MB`;
+    };
+
+    const getOrderStatusHistory = (status, order, charge) => {
+      const events = [];
+      const add = (label, value, note = "") => {
+        if (!value) return;
+        events.push({ label, date: formatOrderDetailDate(value, String(value)), note, timestamp: new Date(value).getTime() || 0, done: true, current: false });
+      };
+      add("Pedido criado", order?.createdAt, "Solicitação enviada pelo cliente");
+      add("Pedido aceito", order?.acceptedAt, "Conversa transacional liberada");
+      add("Proposta enviada", order?.proposalCreatedAt, order?.proposalAmount ? `Valor: ${order.proposalAmount}` : "");
+      add("Proposta aprovada", order?.proposalApprovedAt, "Atendimento autorizado pelo cliente");
+      add("Proposta recusada", order?.proposalRejectedAt, order?.proposalRejectionReason || "");
+      add("Cobrança enviada", order?.chargeCreatedAt || charge?.createdAt, charge?.amount || "");
+      add("Pagamento confirmado", order?.paidAt || charge?.paidAt, "Pagamento protegido pela Doke");
+      add("Conclusão solicitada", order?.completionRequestedAt, "Aguardando confirmação do cliente");
+      add("Serviço concluído", order?.completedAt, "Ciclo operacional concluído");
+      add("Pedido cancelado", order?.cancelledAt, order?.refusalReason || order?.cancellationReason || "");
+      const sorted = events.sort((a, b) => a.timestamp - b.timestamp);
+      if (!sorted.length) return getMessagesOrderTimeline(status, order, charge);
+      const currentLabel = {
+        pending: "Aguardando aceite do profissional",
+        accepted: "Aguardando proposta",
+        conversation: "Aguardando proposta",
+        responded: "Negociação em andamento",
+        quoted: "Aguardando decisão da proposta",
+        in_progress: "Atendimento em andamento",
+        completed: "Pedido concluído",
+        cancelled: "Fluxo encerrado"
+      }[status] || "Etapa atual";
+      if (!["completed", "cancelled"].includes(status)) {
+        sorted.push({ label: currentLabel, date: "Etapa atual", note: "", done: false, current: true });
+      }
+      return sorted;
     };
 
     const getMessagesOrderDetails = (conversation) => {
@@ -1607,17 +1736,22 @@
         riskLabel: config.riskLabel,
         riskTone: config.riskTone,
         address: location,
-        scope: order.scope || `Atendimento de ${category.toLowerCase()} acompanhado pela conversa.`,
+        addressLines: getOrderAddressDetails(order),
+        requestType: order.requestType || "Solicitação de orçamento",
+        scope: order.scope || order.details || order.description || `Atendimento de ${category.toLowerCase()} acompanhado pela conversa.`,
         budget,
         payment: order.payment || (charge?.amount ? `${charge.amount}${charge.installments ? ` · ${charge.installments}` : ""}` : "A combinar na proposta"),
-        deadline: order.timeline || order.deadline || (status === "in_progress" ? "Atendimento em andamento" : "Próxima atualização pela conversa"),
-        materials: order.materials || "A confirmar com o profissional",
+        deadline: [order.desiredDate || order.daté || "", order.shift || ""].filter(Boolean).join(" • ") || order.timeline || order.deadline || (status === "in_progress" ? "Atendimento em andamento" : "A combinar"),
+        materials: order.materials || order.serviceIncludedItems || order.serviceSnapshot?.includedItems || "A confirmar com o profissional",
+        triageItems: getOrderTriageItems(order),
+        scheduleItems: getOrderScheduleItems(order),
+        attachments: getOrderAttachmentItems(order),
         flow: config.flow,
         actionTitle: config.actionTitle,
         actionNote: config.actionNote,
         aiTitle: config.aiTitle,
         aiText: config.aiText,
-        timeline: getMessagesOrderTimeline(status, order, charge)
+        timeline: getOrderStatusHistory(status, order, charge)
       };
     };
 
@@ -1626,14 +1760,14 @@
       if (node) node.textContent = String(value || "").trim() || fallback;
     };
 
-    const renderMessagesOrderDetail = (layer, details) => {
+    const renderMessagesOrderDetail = (layer, details, conversation) => {
       setOrderDetailText(layer, "[data-detail-title]", details.title);
       setOrderDetailText(layer, "[data-detail-subtitle]", details.subtitle);
       setOrderDetailText(layer, "[data-detail-action-title]", details.actionTitle);
       setOrderDetailText(layer, "[data-detail-action-note]", details.actionNote);
       setOrderDetailText(layer, "[data-detail-peer-label]", details.peerLabel);
       setOrderDetailText(layer, "[data-detail-company]", details.peerName);
-      setOrderDetailText(layer, "[data-detail-address]", details.address);
+      setOrderDetailText(layer, "[data-detail-request-type]", details.requestType);
       setOrderDetailText(layer, "[data-detail-scope]", details.scope);
       setOrderDetailText(layer, "[data-detail-budget]", details.budget);
       setOrderDetailText(layer, "[data-detail-payment]", details.payment);
@@ -1650,6 +1784,49 @@
         action.dataset.status = details.status;
       }
       if (icon) icon.innerHTML = details.status === "completed" ? orderDetailIcons.check : orderDetailIcons.action;
+
+      const addressSection = layer.querySelector("[data-detail-address-section]");
+      const addressNode = layer.querySelector("[data-detail-address]");
+      if (addressSection && addressNode) {
+        const lines = Array.isArray(details.addressLines) ? details.addressLines : [];
+        addressSection.hidden = !lines.length;
+        addressNode.innerHTML = lines.map((line, index) => `<span${index === 0 ? ' class="orders-detail-address__primary"' : ""}>${escapeHtml(line)}</span>`).join("");
+      }
+
+      const triageSection = layer.querySelector("[data-detail-triage-section]");
+      const triageNode = layer.querySelector("[data-detail-triage]");
+      if (triageSection && triageNode) {
+        const items = Array.isArray(details.triageItems) ? details.triageItems : [];
+        triageSection.hidden = !items.length;
+        triageNode.innerHTML = items.map(([label, value]) => `<div class="orders-detail-row"><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`).join("");
+      }
+
+      const scheduleSection = layer.querySelector("[data-detail-schedule-section]");
+      const scheduleNode = layer.querySelector("[data-detail-schedule]");
+      if (scheduleSection && scheduleNode) {
+        const items = Array.isArray(details.scheduleItems) ? details.scheduleItems : [];
+        scheduleSection.hidden = !items.length;
+        scheduleNode.innerHTML = items.map((item) => `<span class="orders-detail-schedule__item"><strong>${escapeHtml(item.day)}</strong><span>${escapeHtml(item.time)}</span></span>`).join("");
+      }
+
+      const attachmentsSection = layer.querySelector("[data-detail-attachments-section]");
+      const attachmentsNode = layer.querySelector("[data-detail-attachments]");
+      const attachmentsCount = layer.querySelector("[data-detail-attachments-count]");
+      if (attachmentsSection && attachmentsNode) {
+        const attachments = Array.isArray(details.attachments) ? details.attachments : [];
+        attachmentsSection.hidden = !attachments.length;
+        if (attachmentsCount) attachmentsCount.textContent = attachments.length ? `${attachments.length} ${attachments.length === 1 ? "arquivo" : "arquivos"}` : "";
+        attachmentsNode.innerHTML = attachments.map((attachment, index) => {
+          const isImage = /^image\//i.test(attachment.type || "");
+          const preview = attachment.url && attachment.previewable && isImage
+            ? `<img src="${escapeHtml(attachment.url)}" alt="Prévia de ${escapeHtml(attachment.name)}">`
+            : `<span class="orders-detail-attachment__icon" aria-hidden="true">${escapeHtml((attachment.name.split(".").pop() || "ARQ").slice(0, 4).toUpperCase())}</span>`;
+          const content = `<span class="orders-detail-attachment__preview">${preview}</span><span class="orders-detail-attachment__copy"><strong>${escapeHtml(attachment.name)}</strong><span>${escapeHtml(formatAttachmentSize(attachment.size))}</span></span>`;
+          return attachment.url
+            ? `<a class="orders-detail-attachment" href="${escapeHtml(attachment.url)}" target="_blank" rel="noopener" aria-label="Abrir ${escapeHtml(attachment.name)}">${content}<span class="orders-detail-attachment__action">Abrir</span></a>`
+            : `<article class="orders-detail-attachment" aria-label="${escapeHtml(attachment.name)}">${content}<span class="orders-detail-attachment__action">Sem prévia</span></article>`;
+        }).join("");
+      }
 
       const statusbar = layer.querySelector("[data-detail-statusbar]");
       if (statusbar) {
@@ -1673,6 +1850,7 @@
             <div>
               <div class="orders-detail-timeline__title">${escapeHtml(step.label || "Etapa")}</div>
               <div class="orders-detail-timeline__date">${escapeHtml(step.date || (step.current ? "Etapa atual" : "Próxima etapa"))}</div>
+              ${step.note ? `<div class="orders-detail-timeline__note">${escapeHtml(step.note)}</div>` : ""}
             </div>
           </article>
         `).join("") + renderDisputeTimelineEvent(conversation);
@@ -1685,7 +1863,7 @@
       const layer = createMessagesOrderDetailLayer();
       const drawer = layer.querySelector(".orders-detail-drawer");
       activeOrderDetailTrigger = trigger || null;
-      renderMessagesOrderDetail(layer, getMessagesOrderDetails(conversation));
+      renderMessagesOrderDetail(layer, getMessagesOrderDetails(conversation), conversation);
       layer.hidden = false;
       layer.setAttribute("aria-hidden", "false");
       document.body.classList.add("orders-detail-open");
@@ -1750,6 +1928,27 @@
       if (text) text.textContent = "Responda por esta conversa até a análise ser concluída.";
     };
 
+    const formatOrderSchedule = (schedule) => {
+      const entries = Array.isArray(schedule) ? schedule : [];
+      return entries
+        .filter((entry) => entry && (entry.label || entry.day) && entry.start && entry.end)
+        .slice(0, 3)
+        .map((entry) => `${entry.label || entry.day} ${entry.start}–${entry.end}`)
+        .join(" • ");
+    };
+
+    const splitOrderItems = (value) => String(value || "")
+      .split(/[\n,;]+/)
+      .map((item) => item.trim())
+      .filter(Boolean);
+
+    const getOrderAttachmentCount = (order) => Array.isArray(order?.attachments) ? order.attachments.length : 0;
+
+    const getOrderImage = (order) => {
+      const images = Array.isArray(order?.serviceImages) ? order.serviceImages : [];
+      return order?.serviceImage || order?.serviceSnapshot?.image || images[0] || "";
+    };
+
     const renderLinkedOrderContext = (conversation) => {
       const order = conversation?.order || {};
       const professionalView = isProfessionalConversationView(conversation);
@@ -1773,6 +1972,17 @@
       const canQuote = canTransitionConversationOrder(conversation, 'quoted');
       const canApproveProposal = canTransitionConversationOrder(conversation, 'in_progress');
       const financialActionKind = getFinancialActionKind(conversation);
+      const schedule = formatOrderSchedule(order.serviceAvailabilitySchedule || order.serviceSnapshot?.availabilitySchedule);
+      const included = splitOrderItems(order.serviceIncludedItems).slice(0, 3);
+      const attachmentCount = getOrderAttachmentCount(order);
+      const serviceImage = getOrderImage(order);
+      const scope = order.scope || order.details || order.description || 'Escopo não informado';
+      const desiredDate = [order.desiredDate, order.shift].filter(Boolean).join(' • ');
+      const pendingNotice = orderStatus === 'pending'
+        ? (professionalView
+          ? 'Revise o pedido antes de aceitar. A conversa completa é liberada após o aceite.'
+          : 'Aguardando o profissional revisar e aceitar sua solicitação.')
+        : '';
       let primaryLabel = 'Aguardando aceite';
       let primaryClass = 'doke-btn--ghost';
       let primaryAttrs = 'aria-disabled="true" disabled';
@@ -1813,20 +2023,27 @@
           <span>Pedido vinculado</span>
           <strong class="doke-badge doke-order-card__status">${escapeHtml(statusLabel)}</strong>
         </div>
+        ${pendingNotice ? `<p class="messages-order-card__notice">${escapeHtml(pendingNotice)}</p>` : ``}
         ${disputePresentation ? `
         <div class="messages-dispute-notice" data-messages-dispute-state="${escapeHtml(disputePresentation.state)}">
           <strong>${escapeHtml(disputePresentation.title)}</strong>
           <span>${escapeHtml(disputePresentation.text)}</span>
         </div>` : ``}
         <div class="messages-order-card__body doke-order-card__body">
+          ${serviceImage ? `<div class="messages-order-card__media"><img src="${escapeHtml(serviceImage)}" alt="" loading="lazy" decoding="async"></div>` : ``}
           <div class="messages-order-card__copy">
+            <span class="messages-order-card__category">${escapeHtml(order.serviceCategory || order.category || 'Serviço')}</span>
             <h2 class="doke-order-card__title">${escapeHtml(order.title || 'Pedido de serviço')}</h2>
+            <p class="messages-order-card__scope">${escapeHtml(scope)}</p>
             <dl class="messages-order-card__facts">
               <div><dt>${escapeHtml(peerLabel)}</dt><dd>${escapeHtml(peerName)}</dd></div>
-              <div><dt>Estimativa</dt><dd>${escapeHtml(order.budget || 'A definir')}</dd></div>
-              <div><dt>Local</dt><dd>${escapeHtml(order.location || 'A combinar')}</dd></div>
-              <div><dt>Categoria</dt><dd>${escapeHtml(order.category || 'Serviço')}</dd></div>
+              <div><dt>Estimativa</dt><dd>${escapeHtml(order.budget || order.servicePriceLabel || 'A definir')}</dd></div>
+              <div><dt>Local</dt><dd>${escapeHtml(order.location || order.serviceRegion || 'A combinar')}</dd></div>
+              ${desiredDate ? `<div><dt>Data desejada</dt><dd>${escapeHtml(desiredDate)}</dd></div>` : ``}
+              ${schedule ? `<div class="messages-order-card__fact-wide"><dt>Agenda do anúncio</dt><dd>${escapeHtml(schedule)}</dd></div>` : ``}
+              <div><dt>Anexos</dt><dd>${attachmentCount ? `${attachmentCount} arquivo${attachmentCount === 1 ? '' : 's'}` : 'Nenhum'}</dd></div>
             </dl>
+            ${included.length ? `<div class="messages-order-card__included"><strong>Incluído no serviço</strong><span>${included.map(escapeHtml).join(' • ')}</span></div>` : ``}
           </div>
           <div class="messages-order-card__actions doke-order-card__actions">
             <button class="messages-order-card__button messages-order-card__button--ghost doke-btn doke-btn--ghost" type="button" data-messages-open-order-detail>Ver detalhes</button>

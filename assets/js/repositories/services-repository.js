@@ -127,7 +127,10 @@
     var category = normalizeSearch(filters.category || filters.categoria);
     var city = normalizeSearch(filters.city || filters.cidade);
     var state = normalizeSearch(filters.state || filters.estado);
-    var status = normalizeSearch(filters.status || 'active');
+    var hasStatusFilter = Object.prototype.hasOwnProperty.call(filters, 'status');
+    var status = hasStatusFilter ? filters.status : 'active';
+    var statuses = Array.isArray(status) ? status.map(normalizeSearch).filter(Boolean) : [normalizeSearch(status)].filter(Boolean);
+    var sort = normalizeSearch(filters.sort || 'updated_desc');
     var verified = filters.verified === true;
     var ownerId = normalizeText(filters.ownerId || filters.professionalId || filters.providerId);
     var professionalProfileId = normalizeText(filters.professionalProfileId || filters.profileId);
@@ -147,7 +150,7 @@
           Array.isArray(item.keywords) ? item.keywords.join(' ') : ''
         ].join(' '));
 
-        if (status && normalizeSearch(item.status) !== status) return false;
+        if (statuses.length && statuses.indexOf(normalizeSearch(item.status)) === -1) return false;
         if (query && text.indexOf(query) === -1) return false;
         if (category && normalizeSearch(item.category) !== category) return false;
         if (city && normalizeSearch(item.city) !== city) return false;
@@ -158,6 +161,14 @@
         return true;
       });
 
+      filtered.sort(function (a, b) {
+        var aTime = String(a.updatedAt || a.createdAt || '');
+        var bTime = String(b.updatedAt || b.createdAt || '');
+        if (sort === 'created_asc') return String(a.createdAt || '').localeCompare(String(b.createdAt || ''));
+        if (sort === 'created_desc') return String(b.createdAt || '').localeCompare(String(a.createdAt || ''));
+        if (sort === 'title_asc') return String(a.title || '').localeCompare(String(b.title || ''), 'pt-BR');
+        return bTime.localeCompare(aTime);
+      });
       return clone(limit > 0 ? filtered.slice(0, limit) : filtered);
     });
   }

@@ -27,7 +27,7 @@
   };
 
   const buildCardContext = (card) => {
-    const provider = card.dataset.adProvider || textOf(card, '.doke-ad-card__title');
+    const provider = card.dataset.adProvider || textOf(card, '.doke-ad-card__seller-name') || textOf(card, '.doke-ad-card__seller .doke-ad-card__title') || textOf(card, '.doke-ad-card__title');
     const category = card.dataset.adCategory || textOf(card, '.doke-ad-card__category');
     const locationText = card.dataset.adLocation || textOf(card, '.doke-ad-card__location-text span') || textOf(card, '.doke-ad-card__location');
     const firstTag = textOf(card, '.doke-ad-card__tags span');
@@ -79,6 +79,62 @@
     card.classList.remove('is-media-loading', 'is-media-ready');
   };
 
+  const ensureSellerIdentity = (card) => {
+    if (!card || card.querySelector('.doke-ad-card__seller')) return;
+    const body = card.querySelector('.doke-ad-card__body');
+    const title = body?.querySelector(':scope > .doke-ad-card__title');
+    const avatar = body?.querySelector('.doke-ad-card__location .doke-ad-card__avatar');
+    const provider = String(card.dataset.adProvider || '').trim();
+    if (!body || !title || !avatar) return;
+
+    const titleText = String(title.textContent || '').replace(/\s+/g, ' ').trim();
+    const titleRole = card.dataset.adTitleRole || (provider && provider !== titleText ? 'service' : 'provider');
+    const rating = body.querySelector(':scope > .doke-ad-card__rating');
+    const category = body.querySelector(':scope > .doke-ad-card__category');
+    const seller = document.createElement('div');
+    seller.className = 'doke-ad-card__seller' + (titleRole === 'provider' ? ' doke-ad-card__seller--primary' : '');
+    const copy = document.createElement('span');
+    copy.className = 'doke-ad-card__seller-copy';
+
+    const avatarUrl = String(card.dataset.adAvatar || '').trim();
+    if (avatarUrl && !avatar.querySelector('img')) {
+      avatar.classList.add('has-image');
+      avatar.replaceChildren();
+      const image = document.createElement('img');
+      image.className = 'doke-ad-card__avatar-image';
+      image.src = avatarUrl;
+      image.alt = '';
+      image.loading = 'lazy';
+      avatar.appendChild(image);
+    }
+
+    seller.appendChild(avatar);
+    if (titleRole === 'provider') {
+      title.classList.add('doke-ad-card__seller-name');
+      copy.appendChild(title);
+    } else {
+      const name = document.createElement('strong');
+      name.className = 'doke-ad-card__seller-name';
+      name.textContent = provider || 'Profissional Doke';
+      copy.appendChild(name);
+    }
+
+    if (rating) {
+      const meta = document.createElement('span');
+      meta.className = 'doke-ad-card__seller-meta';
+      meta.appendChild(rating);
+      copy.appendChild(meta);
+    }
+    seller.appendChild(copy);
+
+    const insertionPoint = titleRole === 'provider' ? category : title;
+    if (insertionPoint?.nextSibling) {
+      body.insertBefore(seller, insertionPoint.nextSibling);
+    } else {
+      body.appendChild(seller);
+    }
+  };
+
 
   const handleAdCardClick = (event) => {
     const card = event.target.closest('.doke-ad-card');
@@ -94,11 +150,12 @@
 
     const currentInteractive = event.target.closest('a, button, input, select, textarea, [role="button"]');
     const clickedCta = event.target.closest('.doke-ad-card__cta');
-    if (currentInteractive && !clickedCta) return;
+    const semanticCardControl = event.target.closest('.doke-ad-card__seller, .doke-ad-card__seller-name, .doke-ad-card__avatar, .doke-ad-card__rating, .doke-ad-card__location, .doke-ad-card__tags span');
+    if (currentInteractive && !clickedCta && !semanticCardControl) return;
 
     const context = buildCardContext(card);
 
-    if (event.target.closest('.doke-ad-card__title, .doke-ad-card__avatar')) {
+    if (event.target.closest('.doke-ad-card__seller, .doke-ad-card__seller-name, .doke-ad-card__avatar')) {
       event.preventDefault();
       go(withParams(PROFILE_PAGE, {
         provider: context.providerSlug,
@@ -148,7 +205,7 @@
 
   const handleAdCardKeydown = (event) => {
     if (event.key !== 'Enter' && event.key !== ' ') return;
-    const target = event.target.closest('.doke-ad-card__title, .doke-ad-card__avatar, .doke-ad-card__rating, .doke-ad-card__location, .doke-ad-card__tags span');
+    const target = event.target.closest('.doke-ad-card__seller, .doke-ad-card__seller-name, .doke-ad-card__avatar, .doke-ad-card__rating, .doke-ad-card__location, .doke-ad-card__tags span');
     if (!target) return;
     event.preventDefault();
     target.click?.();
@@ -160,20 +217,21 @@
       if (card.dataset.adInteractionsHydrated === '1') return;
       card.dataset.adInteractionsHydrated = '1';
 
+      ensureSellerIdentity(card);
       const context = buildCardContext(card);
       card.dataset.adSlug = context.ad;
       if (context.provider) card.dataset.adProvider = context.provider;
       if (context.category) card.dataset.adCategory = context.category;
       if (context.locationText) card.dataset.adLocation = context.locationText;
 
-      const title = card.querySelector('.doke-ad-card__title');
+      const seller = card.querySelector('.doke-ad-card__seller');
       const avatar = card.querySelector('.doke-ad-card__avatar');
       const rating = card.querySelector('.doke-ad-card__rating');
       const location = card.querySelector('.doke-ad-card__location');
       const favorite = card.querySelector('.doke-ad-card__favorite');
 
       [
-        [title, `Abrir perfil de ${context.provider || 'anunciante'}`],
+        [seller, `Abrir perfil de ${context.provider || 'anunciante'}`],
         [avatar, `Abrir perfil de ${context.provider || 'anunciante'}`],
         [rating, 'Ver avaliações do anúncio'],
         [location, 'Buscar anúncios nesta localização']

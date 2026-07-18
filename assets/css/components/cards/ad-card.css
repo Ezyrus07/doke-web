@@ -310,8 +310,7 @@
 }
 
 .doke-ad-card__location {
-  display: grid;
-  grid-template-columns: 38px minmax(0, 1fr);
+  display: flex;
   align-items: center;
   gap: 9px;
   min-width: 0;
@@ -708,8 +707,7 @@
   }
 
   .doke-ad-card__location {
-    display: grid;
-    grid-template-columns: var(--doke-ad-location-grid-mobile, 24px minmax(0, 1fr));
+    display: flex;
     align-items: center;
     gap: var(--doke-ad-location-gap-mobile, 5px);
     min-height: var(--doke-ad-avatar-size-mobile, 24px);
@@ -950,8 +948,7 @@
   }
 
   .doke-ad-card .doke-ad-card__location {
-    display: grid;
-    grid-template-columns: 24px minmax(0, 1fr);
+    display: flex;
     align-items: center;
     gap: 5px;
     margin: 0;
@@ -1213,8 +1210,7 @@
   }
 
   .doke-ad-card .doke-ad-card__location {
-    display: grid;
-    grid-template-columns: 24px minmax(0, 1fr);
+    display: flex;
     align-items: center;
     gap: 6px;
     min-height: 26px;
@@ -1350,8 +1346,8 @@
     font-size: 0.66rem;
   }
 
-  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__avatar,
-  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services .doke-ad-card__avatar {
+  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__location .doke-ad-card__avatar,
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services .doke-ad-card__location .doke-ad-card__avatar {
     display: none;
   }
 
@@ -1455,4 +1451,183 @@
 
 body[data-profile-mode="owner-edit"] .doke-ad-card__cta {
   background: #184a76;
+}
+
+
+/* Canonical advertiser identity.
+   The avatar belongs to the professional identity, never to the location row. */
+.doke-ad-card__seller {
+  display: grid;
+  grid-template-columns: var(--doke-ad-seller-avatar-size, 38px) minmax(0, 1fr);
+  align-items: center;
+  gap: var(--doke-ad-seller-gap, 10px);
+  min-width: 0;
+  margin: var(--doke-ad-seller-margin, 0 0 11px);
+  color: #082747;
+  cursor: pointer;
+}
+
+.doke-ad-card__seller-copy {
+  display: grid;
+  align-content: center;
+  gap: 3px;
+  min-width: 0;
+}
+
+.doke-ad-card__seller-name {
+  min-width: 0;
+  overflow: hidden;
+  color: #082747;
+  font-size: var(--doke-ad-seller-name-size, 0.9rem);
+  font-weight: 850;
+  line-height: 1.18;
+  letter-spacing: -0.025em;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.doke-ad-card__seller-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  min-width: 0;
+  color: #72839b;
+  font-size: var(--doke-ad-seller-meta-size, 0.72rem);
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.doke-ad-card__seller .doke-ad-card__rating {
+  min-height: 0;
+  margin: 0;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+.doke-ad-card__seller--primary {
+  margin-bottom: 10px;
+}
+
+.doke-ad-card__seller--primary .doke-ad-card__title {
+  margin: 0;
+  font-size: clamp(0.96rem, 1.05vw, 1.08rem);
+  line-height: 1.14;
+  letter-spacing: -0.035em;
+}
+
+.doke-ad-card__avatar {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  color: #184a76;
+  font-size: 0.66rem;
+  font-weight: 850;
+  line-height: 1;
+}
+
+.doke-ad-card__avatar.has-image,
+.doke-ad-card__avatar.has-initials {
+  background: #e7f0f6;
+}
+
+.doke-ad-card__avatar.has-image::before,
+.doke-ad-card__avatar.has-image::after,
+.doke-ad-card__avatar.has-initials::before,
+.doke-ad-card__avatar.has-initials::after {
+  content: none;
+}
+
+.doke-ad-card__seller .doke-ad-card__avatar {
+  width: var(--doke-ad-seller-avatar-size, 38px);
+  height: var(--doke-ad-seller-avatar-size, 38px);
+  min-width: var(--doke-ad-seller-avatar-size, 38px);
+  min-height: var(--doke-ad-seller-avatar-size, 38px);
+  max-width: var(--doke-ad-seller-avatar-size, 38px);
+  max-height: var(--doke-ad-seller-avatar-size, 38px);
+}
+
+.doke-ad-card__avatar-image {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  border-radius: inherit;
+}
+
+.doke-ad-card .doke-ad-card__location {
+  display: flex;
+  grid-template-columns: none;
+  min-height: 0;
+}
+
+.doke-ad-card__seller:is(:hover, :focus-visible) .doke-ad-card__seller-name {
+  color: var(--doke-interaction-text-secondary, #1769a6);
+}
+
+.doke-ad-card__seller:focus-visible {
+  outline: 3px solid rgba(15, 170, 149, 0.28);
+  outline-offset: 3px;
+  border-radius: var(--radius-sm);
+}
+
+@media (min-width: 761px) and (max-width: 900px) {
+  .doke-ad-card__seller {
+    --doke-ad-seller-avatar-size: var(--doke-ad-seller-avatar-size-tablet, 24px);
+    --doke-ad-seller-gap: var(--doke-ad-seller-gap-tablet, 6px);
+    --doke-ad-seller-margin: var(--doke-ad-seller-margin-tablet, 0);
+  }
+
+  .doke-ad-card__seller-name,
+  .doke-ad-card__seller--primary .doke-ad-card__title {
+    font-size: var(--doke-ad-seller-name-size-tablet, 0.76rem);
+  }
+
+  .doke-ad-card__seller-meta {
+    font-size: var(--doke-ad-seller-meta-size-tablet, 0.64rem);
+  }
+
+  .doke-ad-card > .doke-ad-card__body:has(.doke-ad-card__seller--primary) {
+    grid-template-rows: 10px minmax(34px, auto) 22px 26px 34px;
+  }
+
+  .doke-ad-card > .doke-ad-card__body:has(.doke-ad-card__seller:not(.doke-ad-card__seller--primary)) {
+    grid-template-rows: 10px 17px minmax(28px, auto) 22px 26px 34px;
+  }
+}
+
+@media (max-width: 760px) {
+  .doke-ad-card__seller {
+    --doke-ad-seller-avatar-size: var(--doke-ad-seller-avatar-size-mobile, var(--doke-ad-seller-avatar-size, 28px));
+    --doke-ad-seller-gap: var(--doke-ad-seller-gap-mobile, 7px);
+    --doke-ad-seller-margin: var(--doke-ad-seller-margin-mobile, 0);
+  }
+
+  .doke-ad-card__seller-name,
+  .doke-ad-card__seller--primary .doke-ad-card__title {
+    font-size: var(--doke-ad-seller-name-size-mobile, 0.78rem);
+    line-height: 1.08;
+  }
+
+  .doke-ad-card__seller-meta {
+    gap: 4px;
+    font-size: var(--doke-ad-seller-meta-size-mobile, 0.64rem);
+  }
+
+  .doke-ad-card__seller .doke-ad-card__avatar {
+    display: grid;
+  }
+
+  .doke-ad-card .doke-ad-card__location {
+    display: flex;
+    min-height: 0;
+  }
+}
+
+@media (max-width: 560px) {
+  body.home-index-shell .doke-ad-card__seller .doke-ad-card__avatar,
+  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__seller .doke-ad-card__avatar,
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services .doke-ad-card__seller .doke-ad-card__avatar {
+    display: grid;
+  }
 }

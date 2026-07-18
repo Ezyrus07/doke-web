@@ -568,8 +568,16 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
     const category = item.category || item.catégory || '';
     const mediaClass = String(item.mediaClass || '').replace(/service-card__media/g, 'doke-ad-card__media');
 
+    const providerName = item.providerName || item.professionalName || 'Profissional Doke';
+    const providerInitials = item.providerInitials || providerName.split(/\s+/).slice(0, 2).map((part) => part.charAt(0)).join('').toUpperCase() || 'DK';
+    const providerAvatar = item.providerAvatar || item.providerAvatarUrl || item.avatarUrl || '';
+    const avatarMarkup = providerAvatar
+      ? `<span class="doke-ad-card__avatar has-image" aria-hidden="true"><img class="doke-ad-card__avatar-image" src="${providerAvatar}" alt="" loading="lazy"></span>`
+      : `<span class="doke-ad-card__avatar has-initials ${item.avatarClass || ''}" aria-hidden="true">${providerInitials}</span>`;
+
     article.className = 'doke-ad-card doke-ad-card--featured doke-ad-card--results';
     if (item.id) article.dataset.serviceId = item.id;
+    article.dataset.adProvider = providerName;
     article.innerHTML = `
       <div class="doke-ad-card__media ${mediaClass}">
         <span class="doke-ad-card__badge ${item.badgeModifier || ''}">${item.badge || 'Em destaque'}</span>
@@ -582,10 +590,18 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
         <span class="doke-ad-card__category">${category}</span>
         <h3 class="doke-ad-card__title">${item.title || ''}</h3>
 
-        <div class="doke-ad-card__rating" aria-label="Avaliação ${rating} baseada em ${reviews}">
-          <span class="doke-ad-card__rating-star">★</span>
-          <strong>${rating}</strong>
-          <span>(${reviews})</span>
+        <div class="doke-ad-card__seller">
+          ${avatarMarkup}
+          <span class="doke-ad-card__seller-copy">
+            <strong class="doke-ad-card__seller-name">${providerName}</strong>
+            <span class="doke-ad-card__seller-meta">
+              <span class="doke-ad-card__rating" aria-label="Avaliação ${rating} baseada em ${reviews}">
+                <span class="doke-ad-card__rating-star">★</span>
+                <strong>${rating}</strong>
+                <span>(${reviews})</span>
+              </span>
+            </span>
+          </span>
         </div>
 
         <div class="doke-ad-card__tags" aria-label="Tags do anúncio">
@@ -593,7 +609,6 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
         </div>
 
         <div class="doke-ad-card__location">
-          <span class="doke-ad-card__avatar ${item.avatarClass || ''}" aria-hidden="true"></span>
           <span class="doke-ad-card__location-text"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7Zm0 9.7A2.7 2.7 0 1 1 12 6.3a2.7 2.7 0 0 1 0 5.4Z"></path></svg><span>${item.location || ''}</span></span>
         </div>
 

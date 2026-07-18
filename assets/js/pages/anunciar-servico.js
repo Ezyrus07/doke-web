@@ -29,10 +29,17 @@
       submitState.dataset.phase = phase;
       submitState.hidden = false;
       submitState.classList.add('is-visible');
-      if (submitStateTitle) submitStateTitle.textContent = isPending ? 'Publicando anúncio' : 'Anúncio publicado';
+      const editing = root.dataset.serviceEditMode === 'true';
+      if (submitStateTitle) submitStateTitle.textContent = isPending
+        ? (editing ? 'Salvando alterações' : 'Publicando anúncio')
+        : (editing ? 'Anúncio atualizado' : 'Anúncio publicado');
       if (submitStateMessage) submitStateMessage.textContent = isPending
-        ? 'Salvando as informações e preparando o serviço para aparecer no seu perfil.'
-        : 'Seu serviço já está disponível no perfil profissional e nas superfícies públicas da Doke.';
+        ? (editing
+          ? 'Atualizando as informações, imagens e disponibilidade do serviço.'
+          : 'Salvando as informações e preparando o serviço para aparecer no seu perfil.')
+        : (editing
+          ? 'As alterações já estão refletidas no perfil profissional e nas superfícies públicas da Doke.'
+          : 'Seu serviço já está disponível no perfil profissional e nas superfícies públicas da Doke.');
       if (submitStateActions) submitStateActions.hidden = isPending;
       if (submitStateIcon) submitStateIcon.classList.toggle('is-pending', isPending);
       if (!isPending) submitState?.querySelector('a, button')?.focus({ preventScroll: true });
@@ -48,6 +55,110 @@
     };
     const totalSteps = Math.max(1, panels.length);
     let currentStep = 1;
+    let highestValidatedStep = 0;
+
+    const applyEditPresentation = () => {
+      if (root.dataset.serviceEditMode !== 'true') return;
+      const title = root.querySelector('.doke-form-page-title');
+      const description = root.querySelector('.doke-form-page-description');
+      if (title) title.textContent = 'EDITAR SERVIÇO';
+      if (description) description.textContent = 'Atualize a oferta, disponibilidade, imagens e condições exibidas aos clientes.';
+      if (exitButton) {
+        exitButton.textContent = 'Cancelar edição';
+        exitButton.href = 'perfil-profissional.html#profile-ads';
+      }
+    };
+
+    const getStepPanel = (step) => root.querySelector(`[data-step-panel="${step}"]`);
+
+    const clearStepError = (step) => {
+      const panel = getStepPanel(step);
+      const message = root.querySelector(`[data-step-error="${step}"]`);
+      if (message) {
+        message.hidden = true;
+        message.textContent = '';
+      }
+      panel?.querySelectorAll('[aria-invalid="true"]').forEach((field) => field.removeAttribute('aria-invalid'));
+      panel?.querySelectorAll('.has-error').forEach((field) => field.classList.remove('has-error'));
+    };
+
+    const failStep = (step, message, field) => {
+      const error = root.querySelector(`[data-step-error="${step}"]`);
+      if (error) {
+        error.textContent = message;
+        error.hidden = false;
+      }
+      if (field) {
+        field.setAttribute('aria-invalid', 'true');
+        field.closest('.doke-field, .post-service-upload-card, [data-availability-row]')?.classList.add('has-error');
+        field.focus({ preventScroll: true });
+        field.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      } else {
+        error?.focus?.({ preventScroll: true });
+        error?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      }
+      return false;
+    };
+
+    const validateNativeFields = (step) => {
+      const panel = getStepPanel(step);
+      const fields = [...(panel?.querySelectorAll('input, select, textarea') || [])]
+        .filter((field) => !field.disabled && field.type !== 'hidden');
+      for (const field of fields) {
+        if (!field.checkValidity()) {
+          return failStep(step, field.validationMessage || 'Preencha os campos obrigatórios desta etapa.', field);
+        }
+      }
+      return true;
+    };
+
+    const validateStep = (step) => {
+      clearStepError(step);
+      if (!validateNativeFields(step)) return false;
+
+      if (step === 2) {
+        const priceType = root.querySelector('[name="priceType"]')?.value || '';
+        const price = root.querySelector('[name="initialPrice"]');
+        const billing = root.querySelector('[name="billingUnit"]');
+        if (priceType !== 'Sob orçamento' && !price?.value.trim()) return failStep(step, 'Informe o valor inicial ou selecione Sob orçamento.', price);
+        if (priceType !== 'Sob orçamento' && !billing?.value) return failStep(step, 'Selecione a unidade de cobrança.', billing);
+
+        const selectedDays = [...root.querySelectorAll('[data-availability-day]:checked')];
+        if (!selectedDays.length) return failStep(step, 'Selecione pelo menos um dia de disponibilidade.', root.querySelector('[data-availability-day]'));
+        for (const checkbox of selectedDays) {
+          const row = checkbox.closest('[data-availability-row]');
+          const times = [...(row?.querySelectorAll('[data-availability-time]') || [])];
+          if (!times[0]?.value || !times[1]?.value || times[0].value >= times[1].value) {
+            return failStep(step, 'Revise o horário: o fim precisa ser posterior ao início.', times[0] || checkbox);
+          }
+        }
+      }
+
+      if (step === 3) {
+        const mainImage = root.querySelector('[name="mainImage"]');
+        const hasExistingImage = Boolean(root.dataset.existingServiceImage);
+        if (!mainImage?.files?.length && !hasExistingImage) return failStep(step, 'Adicione uma imagem principal real do serviço.', mainImage);
+      }
+
+      if (step === 4) {
+        const confirmations = [...root.querySelectorAll('.post-service-confirm [data-post-check]')];
+        const unchecked = confirmations.find((button) => !button.classList.contains('is-active'));
+        if (unchecked) return failStep(step, 'Confirme as informações e aceite as regras para publicar.', unchecked);
+      }
+
+      highestValidatedStep = Math.max(highestValidatedStep, step);
+      return true;
+    };
+
+    const validateThrough = (targetStep) => {
+      for (let step = 1; step < targetStep; step += 1) {
+        if (!validateStep(step)) {
+          setStep(step);
+          return false;
+        }
+      }
+      return true;
+    };
 
     const setStep = (step) => {
       currentStep = Math.max(1, Math.min(totalSteps, step));
@@ -73,7 +184,8 @@
       });
 
       if (nextButton) {
-        const label = currentStep >= totalSteps ? 'Publicar anúncio' : 'Continuar';
+        const editing = root.dataset.serviceEditMode === 'true';
+        const label = currentStep >= totalSteps ? (editing ? 'Salvar alterações' : 'Publicar anúncio') : 'Continuar';
         const textNode = [...nextButton.childNodes].find((node) => node.nodeType === Node.TEXT_NODE);
         if (textNode) textNode.nodeValue = `${label} `;
       }
@@ -162,22 +274,27 @@
       const files = ['mainImage', 'extraImageOne', 'extraImageTwo']
         .map((name) => root.querySelector(`[name="${name}"]`)?.files?.[0] || null)
         .filter(Boolean);
-      if (reviewImages) reviewImages.textContent = files.length ? `${files.length} ${files.length === 1 ? 'imagem selecionada' : 'imagens selecionadas'}` : 'Nenhuma imagem selecionada';
+      const existingCount = Number(root.dataset.existingServiceImagesCount || 0) || 0;
+      const effectiveCount = Math.max(existingCount, files.length);
+      if (reviewImages) reviewImages.textContent = effectiveCount ? `${effectiveCount} ${effectiveCount === 1 ? 'imagem no anúncio' : 'imagens no anúncio'}` : 'Nenhuma imagem selecionada';
       if (reviewObjectUrl) {
         URL.revokeObjectURL(reviewObjectUrl);
         reviewObjectUrl = '';
       }
       const main = files[0];
+      const existingImage = root.dataset.existingServiceImage || '';
       if (reviewImage) {
-        reviewImage.hidden = !main;
+        reviewImage.hidden = !main && !existingImage;
         if (main) {
           reviewObjectUrl = URL.createObjectURL(main);
           reviewImage.src = reviewObjectUrl;
+        } else if (existingImage) {
+          reviewImage.src = existingImage;
         } else {
           reviewImage.removeAttribute('src');
         }
       }
-      if (reviewImagePlaceholder) reviewImagePlaceholder.hidden = Boolean(main);
+      if (reviewImagePlaceholder) reviewImagePlaceholder.hidden = Boolean(main || existingImage);
     }
 
     function updateReview() {
@@ -209,12 +326,15 @@
       source.addEventListener('change', updateReview);
     });
     root.querySelectorAll('[data-post-check]').forEach((button) => button.addEventListener('click', () => window.setTimeout(updateReview, 0)));
+    window.addEventListener('doke:service-media-changed', updateReview);
 
     nextButton?.addEventListener('click', () => {
       if (currentStep < totalSteps) {
+        if (!validateStep(currentStep)) return;
         setStep(currentStep + 1);
         root.querySelector('.post-service-form-card')?.scrollIntoView({ block: 'start', behavior: 'smooth' });
       } else {
+        if (!validateStep(currentStep)) return;
         updateReview();
         const experience = window.Doke?.serviceFormExperience;
         if (!experience?.submit) return;
@@ -237,7 +357,13 @@
     stepTargets.forEach((target) => {
       target.addEventListener('click', () => {
         const targetStep = Number(target.dataset.stepTarget);
-        if (Number.isFinite(targetStep)) setStep(targetStep);
+        if (!Number.isFinite(targetStep)) return;
+        if (targetStep <= currentStep) {
+          setStep(targetStep);
+          return;
+        }
+        if (!validateThrough(targetStep)) return;
+        setStep(targetStep);
       });
     });
 
@@ -253,6 +379,14 @@
       }
     });
 
+    window.addEventListener('doke:service-edit-loaded', () => {
+      root.dataset.serviceEditMode = 'true';
+      applyEditPresentation();
+      updateCount();
+      updateReview();
+      setStep(1);
+    });
+
     window.addEventListener('doke:service-form-reset', () => {
       currentStep = 1;
       updateCount();
@@ -260,9 +394,11 @@
       setStep(1);
     });
 
+    applyEditPresentation();
     updateCount();
     updateReview();
-    setStep(Number(window.Doke?.serviceFormExperience?.restoredStep || 1));
+    const restoredStep = Number(window.Doke?.serviceFormExperience?.restoredStep || 1);
+    setStep(restoredStep > 1 && validateThrough(restoredStep) ? restoredStep : 1);
   };
 
   const GUARD_TIMEOUT_MS = 6000;
@@ -422,6 +558,7 @@
       if (!formExperience) {
         throw new Error('O controller do formulário de serviço não foi registrado.');
       }
+      if (formExperience.ready) await formExperience.ready;
       mountPostService();
       const terminalState = await settleHydration(hydration, 'ready', { hasItems: true });
       if (terminalState !== 'ready') {

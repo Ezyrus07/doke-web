@@ -4112,3 +4112,53 @@ body[data-page="detalhe-anuncio"] .detail-tablet-shell__menu {
     border-bottom: 0;
   }
 }
+
+
+/* Real service detail: availability, scope and terminal listing status. */
+body[data-page="detalhe-anuncio"] .detail-availability-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+body[data-page="detalhe-anuncio"] .detail-availability-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-width: 0;
+  padding: 13px 15px;
+  border-radius: var(--doke-radius-control, 12px);
+  background: var(--color-surface-soft, #f4f7fb);
+}
+body[data-page="detalhe-anuncio"] .detail-availability-item strong { color: var(--color-heading, #10233a); }
+body[data-page="detalhe-anuncio"] .detail-availability-item span { color: var(--color-text-muted, #60738d); white-space: nowrap; }
+body[data-page="detalhe-anuncio"] .detail-scope-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+body[data-page="detalhe-anuncio"] .detail-scope-card {
+  min-width: 0;
+  padding: 18px;
+  border-radius: var(--doke-radius-card, 18px);
+  background: var(--color-surface-soft, #f4f7fb);
+}
+body[data-page="detalhe-anuncio"] .detail-scope-card h3 { margin: 0 0 12px; font-size: 1rem; }
+body[data-page="detalhe-anuncio"] .detail-checklist--excluded li::before { content: "–"; color: var(--color-danger, #b42318); }
+body[data-page="detalhe-anuncio"] .ad-action-card__status {
+  margin: 12px 0;
+  padding: 12px 14px;
+  border-radius: var(--doke-radius-control, 12px);
+  background: var(--color-warning-soft, #fff5db);
+  color: var(--color-warning-strong, #7a5200);
+  font-size: .86rem;
+  font-weight: 700;
+  line-height: 1.45;
+}
+body[data-page="detalhe-anuncio"] .ad-action-card__actions [aria-disabled="true"] {
+  pointer-events: none;
+  opacity: .52;
+}
+@media (max-width: 720px) {
+  body[data-page="detalhe-anuncio"] :is(.detail-availability-grid, .detail-scope-grid) { grid-template-columns: 1fr; }
+}
