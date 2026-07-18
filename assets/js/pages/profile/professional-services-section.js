@@ -4,6 +4,8 @@
   var Doke = window.Doke || (window.Doke = {});
   var ownerFilterState = { status: 'all', sort: 'updated_desc', services: [] };
   var ownerActionsBound = false;
+  var ownerSelectionState = { active: false, selected: new Set() };
+  var OWNER_LONG_PRESS_MS = 560;
 
   function clean(value) {
     return String(value == null ? '' : value).trim();
@@ -159,7 +161,8 @@
     if (!raw) return '';
     var date = new Date(raw);
     if (Number.isNaN(date.getTime())) return '';
-    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }).replace('.', '');
+    var months = ['jan.', 'fev.', 'mar.', 'abr.', 'mai.', 'jun.', 'jul.', 'ago.', 'set.', 'out.', 'nov.', 'dez.'];
+    return String(date.getDate()).padStart(2, '0') + ' ' + months[date.getMonth()] + ' ' + date.getFullYear();
   }
 
   function providerName(service) {
@@ -213,7 +216,7 @@
     return parts.map(function (part) { return part.charAt(0).toUpperCase(); }).join('') || 'DK';
   }
 
-  function createSeller(service) {
+  function createSeller(service, options) {
     var seller = document.createElement('div');
     seller.className = 'doke-ad-card__seller';
 
@@ -264,6 +267,12 @@
       var jobsItem = document.createElement('span');
       jobsItem.textContent = jobs + (jobs === 1 ? ' trabalho' : ' trabalhos');
       meta.appendChild(jobsItem);
+    }
+    if (!meta.childNodes.length && options && options.owner) {
+      var emptyMeta = document.createElement('span');
+      emptyMeta.className = 'profile-service-card__seller-empty-meta';
+      emptyMeta.textContent = 'Sem avaliações';
+      meta.appendChild(emptyMeta);
     }
     if (meta.childNodes.length) copy.appendChild(meta);
 
@@ -333,8 +342,6 @@
   }
 
   function createOwnerMenu(service) {
-    if (service.status === 'archived') return null;
-
     var wrapper = document.createElement('div');
     wrapper.className = 'profile-service-card__menu';
     wrapper.dataset.profileServiceMenu = '';
@@ -373,13 +380,18 @@
       href: 'anunciar-servico.html?mode=edit&edit=' + encodeURIComponent(service.id)
     }));
 
+    menu.appendChild(menuItem(service, {
+      label: 'Selecionar anúncio',
+      dataName: 'profileServiceSelect'
+    }));
+
     if (service.status === 'inactive') {
       menu.appendChild(menuItem(service, {
         label: 'Reativar anúncio',
         dataName: 'profileServiceReactivate',
         modifier: 'success'
       }));
-    } else {
+    } else if (service.status === 'active') {
       menu.appendChild(menuItem(service, {
         label: 'Desativar anúncio',
         dataName: 'profileServiceDeactivate',
@@ -387,11 +399,13 @@
       }));
     }
 
-    menu.appendChild(menuItem(service, {
-      label: 'Arquivar anúncio',
-      dataName: 'profileServiceArchive',
-      modifier: 'danger'
-    }));
+    if (service.status !== 'archived') {
+      menu.appendChild(menuItem(service, {
+        label: 'Arquivar anúncio',
+        dataName: 'profileServiceArchive',
+        modifier: 'danger'
+      }));
+    }
 
     wrapper.appendChild(trigger);
     wrapper.appendChild(menu);
@@ -405,16 +419,10 @@
 
     var insights = document.createElement('div');
     insights.className = 'profile-service-card__insights';
-    var insightsTitle = document.createElement('strong');
-    insightsTitle.className = 'profile-service-card__insights-title';
-    insightsTitle.textContent = 'Desempenho';
-    insights.appendChild(insightsTitle);
 
     var insightItems = [
       createOwnerInsight('Visualizações', formatCount(ownerViews(service)), 'M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Zm10 3.2A3.2 3.2 0 1 0 12 8.8a3.2 3.2 0 0 0 0 6.4Z', true),
       createOwnerInsight('Contatos', formatCount(ownerContacts(service)), 'M4 5h16v11H8l-4 3V5Z', true),
-      createOwnerInsight('Prazo médio', averageDeadlineLabel(service), 'M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm1 5v5.4l3.7 2.2-1 1.7L11 13.5V7Z', true),
-      createOwnerInsight('Garantia', guaranteeLabel(service), 'M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5Z', true),
       createOwnerInsight('Atualizado', updatedLabel(service), 'M4 4v5h5M20 20v-5h-5M5.6 17.8A8 8 0 0 0 19 12M18.4 6.2A8 8 0 0 0 5 12', true)
     ].filter(Boolean);
     insightItems.forEach(function (item) { insights.appendChild(item); });
@@ -452,11 +460,23 @@
   function createCard(service, options) {
     options = options || {};
     var article = document.createElement('article');
-    article.className = 'doke-ad-card profile-service-card profile-service-card--horizontal' + (options.owner ? ' profile-service-card--owner' : ' profile-service-card--public');
+    article.className = 'doke-ad-card profile-service-card profile-service-card--horizontal' + (options.owner ? ' profile-service-card--owner doke-ad-card--index-compact-parity' : ' profile-service-card--public');
     article.dataset.serviceId = clean(service.id);
     article.dataset.serviceStatus = clean(service.status || 'active');
     article.classList.add('is-status-' + clean(service.status || 'active'));
-    if (options.owner) article.dataset.profileServiceOwnerCard = '';
+    if (options.owner) {
+      article.dataset.profileServiceOwnerCard = '';
+      var selectionButton = document.createElement('button');
+      selectionButton.className = 'profile-service-card__selection doke-selection-check';
+      selectionButton.type = 'button';
+      selectionButton.dataset.profileServiceSelectionToggle = clean(service.id);
+      selectionButton.setAttribute('aria-label', 'Selecionar anúncio ' + (clean(service.title) || 'do serviço'));
+      selectionButton.setAttribute('aria-pressed', ownerSelectionState.selected.has(clean(service.id)) ? 'true' : 'false');
+      selectionButton.classList.toggle('is-selected', ownerSelectionState.selected.has(clean(service.id)));
+      selectionButton.appendChild(document.createElement('span'));
+      article.appendChild(selectionButton);
+      article.classList.toggle('is-selected', ownerSelectionState.selected.has(clean(service.id)));
+    }
 
     var media = document.createElement('div');
     media.className = 'doke-ad-card__media profile-service-card__media';
@@ -487,7 +507,8 @@
 
         var secondaryOverlay = document.createElement('span');
         secondaryOverlay.className = 'profile-service-card__media-more';
-        secondaryOverlay.textContent = '+' + String(images.length - 1);
+        var moreCount = images.length - 1;
+        secondaryOverlay.textContent = '+' + String(moreCount) + ' ' + (moreCount === 1 ? 'foto' : 'fotos');
         secondaryFrame.appendChild(secondaryOverlay);
         gallery.appendChild(secondaryFrame);
       }
@@ -528,7 +549,7 @@
     title.className = 'doke-ad-card__title';
     title.textContent = clean(service.title);
 
-    var seller = createSeller(service);
+    var seller = createSeller(service, options);
 
     var summary = document.createElement('p');
     summary.className = 'profile-service-card__summary';
@@ -560,20 +581,19 @@
     if (tagItems.length) body.appendChild(tags);
     if (locationLabel.textContent) body.appendChild(location);
 
-    if (!options.owner) {
-      var footer = document.createElement('div');
-      footer.className = 'doke-ad-card__footer';
-      var price = document.createElement('strong');
-      price.className = 'doke-ad-card__price';
-      price.textContent = money(service);
-      var cta = document.createElement('a');
-      cta.className = 'doke-ad-card__cta doke-btn doke-btn--success';
-      cta.href = service.href || ('detalhe-anuncio.html?id=' + encodeURIComponent(service.id));
-      cta.textContent = 'Ver anúncio';
-      footer.appendChild(price);
-      footer.appendChild(cta);
-      body.appendChild(footer);
-    }
+    var footer = document.createElement('div');
+    footer.className = 'doke-ad-card__footer' + (options.owner ? ' profile-service-card__compact-footer' : '');
+    var footerPrice = document.createElement('strong');
+    footerPrice.className = 'doke-ad-card__price';
+    footerPrice.textContent = money(service);
+    var footerCta = document.createElement('a');
+    footerCta.className = 'doke-ad-card__cta doke-btn doke-btn--success';
+    footerCta.href = service.href || ('detalhe-anuncio.html?id=' + encodeURIComponent(service.id));
+    footerCta.setAttribute('aria-label', 'Ver anúncio ' + (clean(service.title) || 'do serviço'));
+    footerCta.textContent = 'Ver anúncio';
+    footer.appendChild(footerPrice);
+    footer.appendChild(footerCta);
+    body.appendChild(footer);
 
     article.appendChild(media);
     article.appendChild(body);
@@ -645,6 +665,7 @@
         list.appendChild(createCard(service, { owner: options.owner === true }));
       });
       list.hidden = !services.length;
+      if (options.owner) updateOwnerSelectionUI(root);
     }
     if (empty) empty.hidden = Boolean(services.length);
     return services.length;
@@ -703,6 +724,96 @@
     }
   }
 
+  function ownerSelectionSection(root) {
+    return (root || document).querySelector('#profile-ads') || (root || document);
+  }
+
+  function updateOwnerSelectionUI(root) {
+    var scope = ownerSelectionSection(root);
+    var selectedCount = ownerSelectionState.selected.size;
+    ownerSelectionState.active = selectedCount > 0 || ownerSelectionState.active;
+    scope.classList.toggle('is-service-selection-mode', ownerSelectionState.active);
+    var bar = scope.querySelector('[data-profile-service-selection-bar]');
+    var count = scope.querySelector('[data-profile-service-selection-count]');
+    if (bar) bar.hidden = !ownerSelectionState.active;
+    if (count) count.textContent = selectedCount + (selectedCount === 1 ? ' selecionado' : ' selecionados');
+    scope.querySelectorAll('[data-profile-service-owner-card]').forEach(function (card) {
+      var id = clean(card.dataset.serviceId);
+      var selected = ownerSelectionState.selected.has(id);
+      card.classList.toggle('is-selected', selected);
+      var button = card.querySelector('[data-profile-service-selection-toggle]');
+      if (button) {
+        button.classList.toggle('is-selected', selected);
+        button.setAttribute('aria-pressed', selected ? 'true' : 'false');
+      }
+    });
+    var bulkArchive = scope.querySelector('[data-profile-service-bulk-archive]');
+    if (bulkArchive) bulkArchive.disabled = selectedCount === 0;
+  }
+
+  function setOwnerCardSelected(card, selected, root) {
+    if (!card) return;
+    var id = clean(card.dataset.serviceId);
+    if (!id) return;
+    ownerSelectionState.active = true;
+    if (selected) ownerSelectionState.selected.add(id);
+    else ownerSelectionState.selected.delete(id);
+    updateOwnerSelectionUI(root);
+  }
+
+  function cancelOwnerSelection(root) {
+    ownerSelectionState.selected.clear();
+    ownerSelectionState.active = false;
+    updateOwnerSelectionUI(root);
+  }
+
+  function openOwnerCardMenu(card, root) {
+    if (!card) return false;
+    var wrapper = card.querySelector('[data-profile-service-menu]');
+    if (!wrapper) return false;
+    setOwnerMenuOpen(wrapper, true, root);
+    return true;
+  }
+
+  function bindOwnerLongPress(root) {
+    var timer = 0;
+    var targetCard = null;
+    var startX = 0;
+    var startY = 0;
+
+    function clearLongPress() {
+      if (timer) window.clearTimeout(timer);
+      timer = 0;
+      targetCard = null;
+    }
+
+    root.addEventListener('pointerdown', function (event) {
+      if (event.pointerType !== 'touch' && event.pointerType !== 'pen') return;
+      if (event.target.closest('a, button, input, select, textarea, [role="menu"]')) return;
+      var card = event.target.closest('[data-profile-service-owner-card]');
+      if (!card) return;
+      targetCard = card;
+      startX = event.clientX;
+      startY = event.clientY;
+      timer = window.setTimeout(function () {
+        if (!targetCard) return;
+        openOwnerCardMenu(targetCard, root);
+        if (navigator.vibrate) navigator.vibrate(24);
+        targetCard.classList.add('is-long-pressed');
+        window.setTimeout(function () { targetCard && targetCard.classList.remove('is-long-pressed'); }, 180);
+        timer = 0;
+      }, OWNER_LONG_PRESS_MS);
+    }, { passive: true });
+
+    root.addEventListener('pointermove', function (event) {
+      if (!timer) return;
+      if (Math.abs(event.clientX - startX) > 10 || Math.abs(event.clientY - startY) > 10) clearLongPress();
+    }, { passive: true });
+    root.addEventListener('pointerup', clearLongPress, { passive: true });
+    root.addEventListener('pointercancel', clearLongPress, { passive: true });
+    root.addEventListener('scroll', clearLongPress, true);
+  }
+
   function bindOwnerActions(options) {
     options = options || {};
     var root = options.root || document;
@@ -710,6 +821,8 @@
     if ((root === document && ownerActionsBound) || (root.dataset && root.dataset.professionalServicesActionsBound === 'true')) return;
     if (root === document) ownerActionsBound = true;
     if (root.dataset) root.dataset.professionalServicesActionsBound = 'true';
+    bindOwnerLongPress(root);
+    updateOwnerSelectionUI(root);
 
     root.addEventListener('click', function (event) {
       var trigger = event.target.closest('[data-profile-service-menu-trigger]');
@@ -718,6 +831,58 @@
         event.stopPropagation();
         var wrapper = trigger.closest('[data-profile-service-menu]');
         setOwnerMenuOpen(wrapper, trigger.getAttribute('aria-expanded') !== 'true', root);
+        return;
+      }
+
+      var selectionToggle = event.target.closest('[data-profile-service-selection-toggle]');
+      if (selectionToggle) {
+        event.preventDefault();
+        event.stopPropagation();
+        var selectionCard = selectionToggle.closest('[data-profile-service-owner-card]');
+        setOwnerCardSelected(selectionCard, selectionToggle.getAttribute('aria-pressed') !== 'true', root);
+        return;
+      }
+
+      var selectMenuItem = event.target.closest('[data-profile-service-select]');
+      if (selectMenuItem) {
+        event.preventDefault();
+        closeOwnerMenus(root);
+        setOwnerCardSelected(selectMenuItem.closest('[data-profile-service-owner-card]'), true, root);
+        return;
+      }
+
+      var cancelSelection = event.target.closest('[data-profile-service-selection-cancel]');
+      if (cancelSelection) {
+        event.preventDefault();
+        cancelOwnerSelection(root);
+        return;
+      }
+
+      var bulkArchiveButton = event.target.closest('[data-profile-service-bulk-archive]');
+      if (bulkArchiveButton) {
+        event.preventDefault();
+        var selectedIds = Array.from(ownerSelectionState.selected);
+        var ownedService = Doke.services && Doke.services.services;
+        if (!selectedIds.length || !ownedService || typeof ownedService.archiveOwned !== 'function') return;
+        if (!window.confirm('Arquivar ' + selectedIds.length + (selectedIds.length === 1 ? ' anúncio selecionado?' : ' anúncios selecionados?'))) return;
+        bulkArchiveButton.disabled = true;
+        bulkArchiveButton.textContent = 'Arquivando...';
+        Promise.all(selectedIds.map(function (id) {
+          var source = ownerFilterState.services.find(function (item) { return clean(item.id) === id; });
+          if (source && source.status === 'archived') return Promise.resolve(source);
+          return Promise.resolve(ownedService.archiveOwned(id));
+        })).then(function (updatedItems) {
+          cancelOwnerSelection(root);
+          updatedItems.forEach(function (updated) {
+            window.dispatchEvent(new CustomEvent('doke:service-updated', { detail: { service: updated } }));
+            if (typeof options.onChanged === 'function') options.onChanged(updated);
+          });
+        }).catch(function (error) {
+          window.alert(error && error.message ? error.message : 'Não foi possível arquivar os anúncios selecionados.');
+        }).finally(function () {
+          bulkArchiveButton.disabled = false;
+          bulkArchiveButton.textContent = 'Arquivar selecionados';
+        });
         return;
       }
 
@@ -753,14 +918,16 @@
     root.addEventListener('contextmenu', function (event) {
       var card = event.target.closest('[data-profile-service-owner-card]');
       if (!card) return;
-      var wrapper = card.querySelector('[data-profile-service-menu]');
-      if (!wrapper) return;
       event.preventDefault();
-      setOwnerMenuOpen(wrapper, true, root);
+      openOwnerCardMenu(card, root);
     });
 
     root.addEventListener('keydown', function (event) {
       if (event.key !== 'Escape') return;
+      if (ownerSelectionState.active) {
+        cancelOwnerSelection(root);
+        return;
+      }
       var openTrigger = root.querySelector('[data-profile-service-menu-trigger][aria-expanded="true"]');
       closeOwnerMenus(root);
       if (openTrigger) openTrigger.focus();

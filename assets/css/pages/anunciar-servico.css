@@ -1146,3 +1146,65 @@ body[data-page="anunciar-servico"] .post-service-existing-media__buttons {
     grid-template-rows: auto;
   }
 }
+
+/* 2026-07-18 — billing select stability and canonical weekly availability controls. */
+body[data-page="anunciar-servico"] .post-service-field .ui-select {
+  width: 100%;
+}
+
+body[data-page="anunciar-servico"] .post-service-field .ui-select > .ui-select__native.doke-select {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  opacity: 0;
+  pointer-events: none;
+  appearance: none;
+  box-shadow: none;
+}
+
+body[data-page="anunciar-servico"] .post-service-field .ui-select__trigger {
+  position: relative;
+  z-index: 1;
+}
+
+body[data-page="anunciar-servico"] .post-service-availability__toolbar {
+  grid-template-columns: minmax(118px, 0.7fr) minmax(118px, 0.7fr) auto auto;
+  margin: 12px 0 10px;
+  padding: 12px;
+  background: rgba(244, 248, 252, 0.88);
+  box-shadow: var(--doke-white-control-shadow, 0 8px 22px rgba(24, 75, 118, 0.08));
+}
+
+body[data-page="anunciar-servico"] .post-service-availability__toolbar .doke-btn {
+  min-height: var(--control-height-sm, 40px);
+  white-space: nowrap;
+}
+
+body[data-page="anunciar-servico"] .post-service-availability__day .doke-checkbox {
+  flex: 0 0 auto;
+}
+
+body[data-page="anunciar-servico"] .post-service-availability__row.is-active {
+  background: #fff;
+  box-shadow: var(--doke-white-control-shadow, 0 8px 22px rgba(24, 75, 118, 0.08));
+}
+
+@media (max-width: 860px) {
+  body[data-page="anunciar-servico"] .post-service-availability__toolbar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  body[data-page="anunciar-servico"] .post-service-availability__toolbar {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  body[data-page="anunciar-servico"] .post-service-availability__toolbar .doke-btn {
+    grid-column: 1 / -1;
+  }
+}

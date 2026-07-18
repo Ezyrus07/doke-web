@@ -1027,3 +1027,1635 @@ body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-s
   background: linear-gradient(135deg, #149b8c, #087d73);
   color: #fff;
 }
+
+/* v14 — compact owner card with continuous media rail, lighter gallery overlay and tighter performance/footer */
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner {
+  overflow: hidden;
+}
+
+@media (min-width: 901px) {
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner {
+    grid-template-columns: minmax(220px, 248px) minmax(260px, 1fr) minmax(250px, 300px);
+    min-height: 0;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner .profile-service-card__media {
+    position: relative;
+    align-self: stretch;
+    min-height: 100%;
+    height: 100%;
+    background: #edf4f8;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__media-gallery {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    width: 100%;
+    height: 100%;
+    min-height: 100%;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__media-gallery.is-single {
+    grid-template-rows: minmax(0, 1fr);
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__media-gallery.has-gallery {
+    grid-template-rows: minmax(0, 1fr) 84px;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__media-primary,
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__media-secondary {
+    position: relative;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__media-gallery.has-gallery .profile-service-card__media-secondary {
+    min-height: 84px;
+    height: 84px;
+    border-top: 0;
+    background: #103251;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__secondary-image {
+    filter: blur(4px) saturate(0.94) brightness(0.78);
+    transform: scale(1.08);
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__media-secondary::after {
+    background: linear-gradient(180deg, rgba(11, 41, 66, 0.16), rgba(11, 41, 66, 0.44));
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__media-more {
+    padding: 0 14px;
+    font-size: 0.98rem;
+    font-weight: 800;
+    letter-spacing: 0;
+    text-transform: none;
+    text-align: center;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner .doke-ad-card__body {
+    gap: 6px;
+    padding: 18px 20px;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner .doke-ad-card__title {
+    font-size: clamp(1.12rem, 1rem + 0.28vw, 1.34rem);
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner .profile-service-card__summary {
+    font-size: 0.78rem;
+    line-height: 1.42;
+    -webkit-line-clamp: 2;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__owner-side {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+    padding: 16px 18px 18px;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__insights-title {
+    display: none;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__insights {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: start;
+    gap: 10px 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(24, 75, 118, 0.09);
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__insight,
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__insight:last-child:nth-child(2n) {
+    display: flex;
+    grid-template-columns: none;
+    align-items: flex-start;
+    gap: 8px;
+    min-width: 0;
+    grid-column: auto;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__insight-icon,
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__insight--compact .profile-service-card__insight-icon {
+    width: 18px;
+    height: 18px;
+    min-width: 18px;
+    margin-top: 2px;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__insight-icon svg,
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__insight--compact .profile-service-card__insight-icon svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__insight-copy {
+    display: grid;
+    gap: 1px;
+    min-width: 0;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__insight-copy > span {
+    font-size: 0.63rem;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__insight-copy strong {
+    font-size: 0.82rem;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__owner-controls {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 16px;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__menu {
+    position: absolute;
+    top: -2px;
+    right: 0;
+    z-index: 8;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__price-block {
+    justify-items: start;
+    align-self: end;
+    gap: 2px;
+    padding-top: 0;
+    text-align: left;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__price-block > span {
+    font-size: 0.69rem;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__price-block .doke-ad-card__price {
+    font-size: clamp(1.18rem, 1.04rem + 0.3vw, 1.48rem);
+    line-height: 1.05;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__view.doke-ad-card__cta {
+    min-width: 156px;
+    align-self: end;
+    justify-self: end;
+  }
+}
+
+@media (min-width: 901px) and (max-width: 1220px) {
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner {
+    grid-template-columns: minmax(200px, 220px) minmax(220px, 1fr) minmax(230px, 270px);
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__insights {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__view.doke-ad-card__cta {
+    min-width: 144px;
+  }
+}
+
+@media (max-width: 900px) {
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__media-more {
+    font-size: 0.92rem;
+    letter-spacing: 0;
+  }
+}
+
+/* v15 — authoritative 2-up owner-card layout. Replaces the accumulated horizontal-card adaptations. */
+@media (min-width: 1181px) {
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner {
+    display: grid;
+    grid-template-columns: 236px minmax(0, 1fr);
+    grid-template-rows: minmax(218px, auto) auto;
+    align-items: stretch;
+    min-height: 360px;
+    overflow: hidden;
+    border: 0;
+    border-radius: var(--card-radius-lg, 22px);
+    background: #fff;
+    box-shadow: 0 12px 30px rgba(24, 75, 118, 0.08);
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner .profile-service-card__media {
+    position: relative;
+    grid-column: 1;
+    grid-row: 1 / 3;
+    align-self: stretch;
+    width: 100%;
+    min-width: 0;
+    min-height: 100%;
+    height: 100%;
+    overflow: hidden;
+    border-radius: var(--card-radius-lg, 22px) 0 0 var(--card-radius-lg, 22px);
+    background: #eaf1f7;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__media-gallery {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__media-gallery.is-single {
+    grid-template-rows: minmax(0, 1fr);
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__media-gallery.has-gallery {
+    grid-template-rows: minmax(0, 1fr) 82px;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__media-primary,
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__media-secondary {
+    position: relative;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner .profile-service-card__image,
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner .profile-service-card__secondary-image {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__secondary-image {
+    filter: blur(3px) saturate(0.9) brightness(0.72);
+    transform: scale(1.06);
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__media-secondary::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(10, 40, 65, 0.28);
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__media-more {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    padding: 0 12px;
+    color: #fff;
+    font-size: 0.9rem;
+    font-weight: 800;
+    letter-spacing: 0;
+    text-align: center;
+    text-shadow: 0 3px 12px rgba(0, 0, 0, 0.35);
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner .doke-ad-card__body {
+    grid-column: 2;
+    grid-row: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    min-width: 0;
+    padding: 18px 20px 15px;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner .doke-ad-card__category {
+    font-size: 0.68rem;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner .doke-ad-card__title {
+    margin: 0;
+    font-size: 1.22rem;
+    line-height: 1.15;
+    -webkit-line-clamp: 2;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner .doke-ad-card__seller {
+    margin: 2px 0 0;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner .profile-service-card__summary {
+    margin: 2px 0 0;
+    font-size: 0.77rem;
+    line-height: 1.4;
+    -webkit-line-clamp: 2;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner .doke-ad-card__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 2px 0 0;
+    min-width: 0;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner .doke-ad-card__tags span {
+    max-width: 100%;
+    padding: 5px 8px;
+    overflow: hidden;
+    font-size: 0.65rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner .doke-ad-card__location {
+    display: flex;
+    margin: 4px 0 0;
+    min-width: 0;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner .doke-ad-card__location-text {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__owner-side {
+    grid-column: 2;
+    grid-row: 2;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+    min-width: 0;
+    padding: 13px 20px 17px;
+    border: 0;
+    border-top: 1px solid rgba(24, 75, 118, 0.09);
+    border-radius: 0 0 var(--card-radius-lg, 22px) 0;
+    background: linear-gradient(180deg, rgba(249, 252, 254, 0.72), #fff);
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__insights-title {
+    display: none;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__insights {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: start;
+    gap: 10px;
+    min-width: 0;
+    padding: 0 0 11px;
+    border-bottom: 1px solid rgba(24, 75, 118, 0.08);
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__insight,
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__insight:last-child:nth-child(2n) {
+    display: grid;
+    grid-template-columns: 17px minmax(0, 1fr);
+    align-items: start;
+    gap: 6px;
+    min-width: 0;
+    grid-column: auto;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__insight-icon,
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__insight--compact .profile-service-card__insight-icon {
+    width: 17px;
+    height: 17px;
+    min-width: 17px;
+    margin-top: 2px;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__insight-icon svg,
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__insight--compact .profile-service-card__insight-icon svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__insight-copy {
+    display: grid;
+    gap: 1px;
+    min-width: 0;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__insight-copy > span {
+    overflow: hidden;
+    font-size: 0.61rem;
+    line-height: 1.15;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__insight-copy strong {
+    overflow: hidden;
+    font-size: 0.78rem;
+    line-height: 1.2;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__owner-controls {
+    position: static;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 14px;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__menu {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 8;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__price-block {
+    display: grid;
+    justify-items: start;
+    align-self: end;
+    gap: 2px;
+    min-width: 0;
+    padding: 0;
+    text-align: left;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__price-block > span {
+    font-size: 0.66rem;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__price-block .doke-ad-card__price {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    color: var(--color-secondary, #168c7d);
+    font-size: 1.34rem;
+    line-height: 1.05;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__view.doke-ad-card__cta {
+    width: auto;
+    min-width: 150px;
+    min-height: 40px;
+    justify-self: end;
+    padding-inline: 18px;
+    white-space: nowrap;
+  }
+}
+
+@media (min-width: 1181px) and (max-width: 1360px) {
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner {
+    grid-template-columns: 210px minmax(0, 1fr);
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner .doke-ad-card__body,
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__owner-side {
+    padding-inline: 16px;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__view.doke-ad-card__cta {
+    min-width: 136px;
+    padding-inline: 14px;
+  }
+}
+
+/* v15 — simplified tablet/mobile owner card based on mobile "mais anúncios" density */
+@media (max-width: 1180px) {
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto auto;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner .profile-service-card__media {
+    grid-column: 1;
+    grid-row: 1;
+    min-height: 0;
+    border-radius: 0;
+    background: #edf4f8;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__media-gallery {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    height: auto;
+    min-height: 0;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__media-gallery.is-single {
+    grid-template-rows: minmax(0, 1fr);
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__media-gallery.has-gallery {
+    grid-template-rows: minmax(0, 1fr) 68px;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__media-primary {
+    min-height: 220px;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__media-gallery.has-gallery .profile-service-card__media-primary {
+    min-height: 206px;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__media-gallery.has-gallery .profile-service-card__media-secondary {
+    min-height: 68px;
+    height: 68px;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__media-more {
+    font-size: 0.88rem;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner .doke-ad-card__body {
+    grid-column: 1;
+    grid-row: 2;
+    padding: 14px 14px 10px;
+    gap: 6px;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner .doke-ad-card__category {
+    font-size: 0.64rem;
+    letter-spacing: 0.12em;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner .doke-ad-card__title {
+    font-size: 1.08rem;
+    line-height: 1.14;
+    -webkit-line-clamp: 2;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner .doke-ad-card__seller {
+    margin-top: 2px;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner .profile-service-card__summary {
+    display: none;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner .doke-ad-card__tags {
+    gap: 6px;
+    margin-top: 2px;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner .doke-ad-card__tags span:nth-child(n + 3) {
+    display: none;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner .doke-ad-card__tags span {
+    padding: 5px 8px;
+    font-size: 0.65rem;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner .doke-ad-card__location {
+    margin-top: 2px;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__owner-side {
+    grid-column: 1;
+    grid-row: 3;
+    gap: 0;
+    padding: 0 14px 14px;
+    border: 0;
+    background: transparent;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__insights,
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__insights-title {
+    display: none;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__owner-controls {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 12px;
+    padding-top: 6px;
+    border-top: 0;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__price-block {
+    gap: 1px;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__price-block > span {
+    font-size: 0.68rem;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__price-block .doke-ad-card__price {
+    font-size: 1.2rem;
+    white-space: nowrap;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__view.doke-ad-card__cta {
+    min-width: 132px;
+    min-height: 38px;
+    padding-inline: 16px;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__menu {
+    top: 10px;
+    right: 10px;
+  }
+}
+
+@media (max-width: 768px) {
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner .profile-service-card__media {
+    border-radius: 0;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__media-primary {
+    min-height: 188px;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__media-gallery.has-gallery .profile-service-card__media-primary {
+    min-height: 176px;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__media-gallery.has-gallery {
+    grid-template-rows: minmax(0, 1fr) 62px;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__media-gallery.has-gallery .profile-service-card__media-secondary {
+    min-height: 62px;
+    height: 62px;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner .doke-ad-card__body {
+    padding: 12px 12px 8px;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__owner-side {
+    padding: 0 12px 12px;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner .doke-ad-card__tags span:nth-child(n + 2) {
+    display: none;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__view.doke-ad-card__cta {
+    min-width: 124px;
+    min-height: 36px;
+  }
+}
+
+/* v26 — authoritative responsive modes based on the ads section's usable width.
+ * <=599: compact vertical, matching "mais anúncios" density.
+ * 600–899: compact horizontal tablet card.
+ * 900–1259: one detailed horizontal card per row.
+ * >=1260: two detailed cards per row.
+ */
+
+/* Mobile: compact vertical card. */
+@container owner-ads (max-width: 599px) {
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto auto;
+    min-height: 0;
+    overflow: hidden;
+    border-radius: 20px;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner .profile-service-card__media {
+    position: relative;
+    grid-column: 1;
+    grid-row: 1;
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    aspect-ratio: 16 / 9;
+    border-radius: 0;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__media-gallery,
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__media-gallery:is(.is-single, .has-gallery) {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__media-primary {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__media-gallery.has-gallery .profile-service-card__media-secondary {
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+    z-index: 3;
+    display: block;
+    width: auto;
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+    border: 0;
+    border-radius: 999px;
+    background: rgba(12, 42, 68, 0.82);
+    box-shadow: 0 5px 14px rgba(12, 42, 68, 0.22);
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__secondary-image,
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__media-secondary::after {
+    display: none;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__media-more {
+    position: static;
+    display: block;
+    padding: 6px 9px;
+    color: #fff;
+    font-size: 0.68rem;
+    line-height: 1;
+    text-shadow: none;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner .doke-ad-card__body {
+    grid-column: 1;
+    grid-row: 2;
+    gap: 5px;
+    padding: 12px 12px 7px;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner .doke-ad-card__category {
+    font-size: 0.62rem;
+    letter-spacing: 0.11em;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner .doke-ad-card__title {
+    font-size: 1rem;
+    line-height: 1.14;
+    -webkit-line-clamp: 2;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner .profile-service-card__summary,
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__insights,
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__insights-title {
+    display: none;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner .doke-ad-card__seller {
+    margin-top: 1px;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner .doke-ad-card__tags {
+    gap: 5px;
+    margin-top: 1px;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner .doke-ad-card__tags span:nth-child(n + 2) {
+    display: none;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner .doke-ad-card__tags span {
+    padding: 4px 7px;
+    font-size: 0.61rem;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner .doke-ad-card__location {
+    margin-top: 1px;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__owner-side {
+    grid-column: 1;
+    grid-row: 3;
+    display: block;
+    padding: 0 12px 12px;
+    border: 0;
+    background: transparent;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__owner-controls {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 10px;
+    padding: 4px 0 0;
+    border: 0;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__price-block {
+    gap: 1px;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__price-block > span {
+    font-size: 0.62rem;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__price-block .doke-ad-card__price {
+    font-size: 1.06rem;
+    white-space: nowrap;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__view.doke-ad-card__cta {
+    width: auto;
+    min-width: 112px;
+    min-height: 34px;
+    padding-inline: 13px;
+    font-size: 0.7rem;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__menu {
+    top: 9px;
+    right: 9px;
+  }
+}
+
+/* Tablet: compact horizontal card. */
+@container owner-ads (min-width: 600px) and (max-width: 899px) {
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner {
+    grid-template-columns: minmax(210px, 38%) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+    min-height: 220px;
+    overflow: hidden;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner .profile-service-card__media {
+    position: relative;
+    grid-column: 1;
+    grid-row: 1 / 3;
+    width: 100%;
+    height: 100%;
+    min-height: 220px;
+    border-radius: var(--card-radius-lg, 22px) 0 0 var(--card-radius-lg, 22px);
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__media-gallery,
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__media-gallery:is(.is-single, .has-gallery) {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__media-primary {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__media-gallery.has-gallery .profile-service-card__media-secondary {
+    position: absolute;
+    right: 12px;
+    bottom: 12px;
+    z-index: 3;
+    width: auto;
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+    border: 0;
+    border-radius: 999px;
+    background: rgba(12, 42, 68, 0.82);
+    box-shadow: 0 5px 14px rgba(12, 42, 68, 0.22);
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__secondary-image,
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__media-secondary::after {
+    display: none;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__media-more {
+    position: static;
+    display: block;
+    padding: 6px 10px;
+    font-size: 0.7rem;
+    line-height: 1;
+    text-shadow: none;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner .doke-ad-card__body {
+    grid-column: 2;
+    grid-row: 1;
+    gap: 6px;
+    padding: 16px 16px 8px;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner .profile-service-card__summary,
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__insights,
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__insights-title {
+    display: none;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner .doke-ad-card__tags span:nth-child(n + 3) {
+    display: none;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__owner-side {
+    grid-column: 2;
+    grid-row: 2;
+    display: block;
+    padding: 0 16px 16px;
+    border: 0;
+    background: transparent;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__owner-controls {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 12px;
+    padding-top: 5px;
+    border: 0;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__price-block .doke-ad-card__price {
+    font-size: 1.15rem;
+    white-space: nowrap;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__view.doke-ad-card__cta {
+    min-width: 126px;
+    min-height: 36px;
+    padding-inline: 14px;
+  }
+}
+
+/* Common desktop/notebook: one detailed horizontal card. */
+@container owner-ads (min-width: 900px) and (max-width: 1259px) {
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner {
+    grid-template-columns: minmax(230px, 260px) minmax(0, 1fr) minmax(280px, 320px);
+    grid-template-rows: minmax(230px, auto);
+    min-height: 230px;
+    overflow: hidden;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner .profile-service-card__media {
+    grid-column: 1;
+    grid-row: 1;
+    min-height: 230px;
+    height: 100%;
+    border-radius: var(--card-radius-lg, 22px) 0 0 var(--card-radius-lg, 22px);
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__media-gallery.has-gallery {
+    grid-template-rows: minmax(0, 1fr) 72px;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__media-gallery.has-gallery .profile-service-card__media-secondary {
+    min-height: 72px;
+    height: 72px;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner .doke-ad-card__body {
+    grid-column: 2;
+    grid-row: 1;
+    padding: 18px 20px;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__owner-side {
+    grid-column: 3;
+    grid-row: 1;
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) auto;
+    gap: 12px;
+    padding: 18px;
+    border: 0;
+    border-left: 1px solid rgba(24, 75, 118, 0.09);
+    border-radius: 0 var(--card-radius-lg, 22px) var(--card-radius-lg, 22px) 0;
+    background: linear-gradient(180deg, rgba(249, 252, 254, 0.8), #fff);
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__insights {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-content: center;
+    gap: 8px;
+    padding: 0 0 12px;
+    border-bottom: 1px solid rgba(24, 75, 118, 0.08);
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__insight,
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__insight:last-child:nth-child(2n) {
+    display: grid;
+    grid-template-columns: 18px minmax(0, 1fr);
+    gap: 8px;
+    grid-column: auto;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__insight-copy {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: baseline;
+    gap: 8px;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__insight-copy > span,
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__insight-copy strong {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: nowrap;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__owner-controls {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+    padding: 0;
+    border: 0;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__price-block {
+    justify-items: start;
+    text-align: left;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__view.doke-ad-card__cta {
+    width: 100%;
+    min-width: 0;
+    justify-self: stretch;
+  }
+}
+
+/* Wide content area: two detailed cards per row. */
+@container owner-ads (min-width: 1260px) {
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner {
+    grid-template-columns: minmax(210px, 42%) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner .profile-service-card__media {
+    grid-column: 1;
+    grid-row: 1 / 3;
+    min-height: 100%;
+    height: 100%;
+    border-radius: var(--card-radius-lg, 22px) 0 0 var(--card-radius-lg, 22px);
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__media-gallery.has-gallery {
+    grid-template-rows: minmax(0, 1fr) 82px;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__media-gallery.has-gallery .profile-service-card__media-secondary {
+    min-height: 82px;
+    height: 82px;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner .doke-ad-card__body {
+    grid-column: 2;
+    grid-row: 1;
+    padding: 18px 18px 12px;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__owner-side {
+    grid-column: 2;
+    grid-row: 2;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+    padding: 12px 18px 16px;
+    border: 0;
+    border-top: 1px solid rgba(24, 75, 118, 0.09);
+    border-radius: 0 0 var(--card-radius-lg, 22px) 0;
+    background: linear-gradient(180deg, rgba(249, 252, 254, 0.72), #fff);
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__insights {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 9px;
+    padding: 0 0 10px;
+    border-bottom: 1px solid rgba(24, 75, 118, 0.08);
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__owner-controls {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 12px;
+    padding: 0;
+    border: 0;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__price-block .doke-ad-card__price {
+    white-space: nowrap;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__view.doke-ad-card__cta {
+    min-width: 132px;
+  }
+}
+
+/* v30 — final compact owner-card parity with Index "Mais anúncios".
+ * The canonical ad-card keeps full ownership of content geometry. The owner
+ * variant only adds administrative status/menu and hides desktop analytics.
+ */
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"]
+  .profile-service-card--owner.doke-ad-card--index-compact-parity
+  .profile-service-card__compact-footer {
+  display: none;
+}
+
+@container owner-ads (max-width: 760px) {
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"]
+    .profile-service-card--owner.doke-ad-card--index-compact-parity {
+    --doke-ad-seller-avatar-size: 38px;
+    --doke-ad-seller-avatar-size-mobile: 38px;
+    --doke-ad-seller-gap: 7px;
+    --doke-ad-seller-gap-mobile: 7px;
+    --doke-ad-seller-margin: 0;
+    --doke-ad-seller-margin-mobile: 0;
+    --doke-ad-seller-name-size: 0.78rem;
+    --doke-ad-seller-name-size-mobile: 0.78rem;
+    --doke-ad-seller-meta-size: 0.64rem;
+    --doke-ad-seller-meta-size-mobile: 0.64rem;
+    display: grid;
+    grid-template-columns: clamp(118px, 33vw, 132px) minmax(0, 1fr);
+    grid-template-rows: minmax(0, auto);
+    align-items: stretch;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    min-height: 0;
+    overflow: hidden;
+    border-radius: var(--card-radius-lg, 22px);
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"]
+    .profile-service-card--owner.doke-ad-card--index-compact-parity
+    .profile-service-card__media {
+    position: relative;
+    grid-column: 1;
+    grid-row: 1;
+    align-self: stretch;
+    width: 100%;
+    height: auto;
+    min-height: 100%;
+    max-height: none;
+    overflow: hidden;
+    border-radius: var(--card-radius-lg, 22px) 0 0 var(--card-radius-lg, 22px);
+    background: #edf4f8;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"]
+    .profile-service-card--owner.doke-ad-card--index-compact-parity
+    .profile-service-card__media-gallery,
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"]
+    .profile-service-card--owner.doke-ad-card--index-compact-parity
+    .profile-service-card__media-gallery:is(.is-single, .has-gallery),
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"]
+    .profile-service-card--owner.doke-ad-card--index-compact-parity
+    .profile-service-card__media-primary {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"]
+    .profile-service-card--owner.doke-ad-card--index-compact-parity
+    .profile-service-card__image {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"]
+    .profile-service-card--owner.doke-ad-card--index-compact-parity
+    .profile-service-card__media-gallery.has-gallery
+    .profile-service-card__media-secondary {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    z-index: 3;
+    display: block;
+    width: auto;
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+    border: 0;
+    border-radius: var(--radius-pill, 999px);
+    background: rgba(12, 42, 68, 0.82);
+    box-shadow: 0 5px 14px rgba(12, 42, 68, 0.22);
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"]
+    .profile-service-card--owner.doke-ad-card--index-compact-parity
+    .profile-service-card__secondary-image,
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"]
+    .profile-service-card--owner.doke-ad-card--index-compact-parity
+    .profile-service-card__media-secondary::after {
+    display: none;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"]
+    .profile-service-card--owner.doke-ad-card--index-compact-parity
+    .profile-service-card__media-more {
+    position: static;
+    display: block;
+    padding: 5px 8px;
+    color: #fff;
+    font-size: 0.58rem;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: 0;
+    text-align: center;
+    text-shadow: none;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"]
+    .profile-service-card--owner.doke-ad-card--index-compact-parity
+    > .doke-ad-card__body {
+    grid-column: 2;
+    grid-row: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    min-width: 0;
+    min-height: 0;
+    height: auto;
+    padding: 14px 16px 16px;
+    overflow: visible;
+    box-sizing: border-box;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"]
+    .profile-service-card--owner.doke-ad-card--index-compact-parity
+    .doke-ad-card__category {
+    margin: 0;
+    color: #7a8ca4;
+    font-size: 0.58rem;
+    line-height: 1.08;
+    letter-spacing: 0.14em;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"]
+    .profile-service-card--owner.doke-ad-card--index-compact-parity
+    .doke-ad-card__title {
+    display: -webkit-box;
+    min-height: calc(1.08em * 2);
+    margin: 0;
+    overflow: hidden;
+    color: #082747;
+    font-size: 1rem;
+    line-height: 1.08;
+    letter-spacing: -0.035em;
+    text-overflow: ellipsis;
+    white-space: normal;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"]
+    .profile-service-card--owner.doke-ad-card--index-compact-parity
+    .doke-ad-card__seller {
+    display: grid;
+    grid-template-columns: 38px minmax(0, 1fr);
+    align-items: center;
+    gap: 7px;
+    min-width: 0;
+    min-height: 38px;
+    margin: 0;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"]
+    .profile-service-card--owner.doke-ad-card--index-compact-parity
+    .doke-ad-card__seller .doke-ad-card__avatar {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    min-height: 38px;
+    max-width: 38px;
+    max-height: 38px;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"]
+    .profile-service-card--owner.doke-ad-card--index-compact-parity
+    .doke-ad-card__seller-copy {
+    display: grid;
+    align-content: center;
+    gap: 3px;
+    min-width: 0;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"]
+    .profile-service-card--owner.doke-ad-card--index-compact-parity
+    .doke-ad-card__seller-name {
+    color: #082747;
+    font-size: 0.78rem;
+    line-height: 1.08;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"]
+    .profile-service-card--owner.doke-ad-card--index-compact-parity
+    .doke-ad-card__seller-meta {
+    display: flex;
+    min-height: 0.74rem;
+    margin: 0;
+    gap: 4px;
+    color: #72839b;
+    font-size: 0.64rem;
+    line-height: 1.15;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"]
+    .profile-service-card--owner.doke-ad-card--index-compact-parity
+    .profile-service-card__seller-empty-meta {
+    color: #72839b;
+    font-weight: 700;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"]
+    .profile-service-card--owner.doke-ad-card--index-compact-parity
+    :is(.profile-service-card__summary, .profile-service-card__insights, .profile-service-card__insights-title) {
+    display: none;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"]
+    .profile-service-card--owner.doke-ad-card--index-compact-parity
+    .doke-ad-card__tags {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 6px;
+    min-height: 18px;
+    margin: 0;
+    overflow: hidden;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"]
+    .profile-service-card--owner.doke-ad-card--index-compact-parity
+    .doke-ad-card__tags span {
+    display: inline-flex;
+    align-items: center;
+    min-height: 18px;
+    max-width: 100%;
+    padding-inline: 7px;
+    overflow: hidden;
+    font-size: 0.6rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"]
+    .profile-service-card--owner.doke-ad-card--index-compact-parity
+    .doke-ad-card__tags span:nth-child(n + 3) {
+    display: none;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"]
+    .profile-service-card--owner.doke-ad-card--index-compact-parity
+    .doke-ad-card__location {
+    display: block;
+    min-width: 0;
+    margin: 0;
+    overflow: hidden;
+    color: #72839b;
+    font-size: 0.66rem;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"]
+    .profile-service-card--owner.doke-ad-card--index-compact-parity
+    .doke-ad-card__location-text {
+    gap: 6px;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"]
+    .profile-service-card--owner.doke-ad-card--index-compact-parity
+    .doke-ad-card__location-text svg {
+    width: 14px;
+    height: 14px;
+    flex-basis: 14px;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"]
+    .profile-service-card--owner.doke-ad-card--index-compact-parity
+    .profile-service-card__compact-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: auto;
+    padding-top: 10px;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"]
+    .profile-service-card--owner.doke-ad-card--index-compact-parity
+    .profile-service-card__compact-footer .doke-ad-card__price {
+    flex: 0 1 auto;
+    max-width: calc(100% - 128px);
+    overflow: hidden;
+    color: #082747;
+    font-size: 0.98rem;
+    line-height: 1;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"]
+    .profile-service-card--owner.doke-ad-card--index-compact-parity
+    .profile-service-card__compact-footer .doke-ad-card__cta {
+    width: auto;
+    min-width: 116px;
+    max-width: none;
+    min-height: 34px;
+    padding-inline: 14px;
+    background: linear-gradient(135deg, #16a998, #078b7f);
+    color: #fff;
+    box-shadow: none;
+    font-size: 0.72rem;
+    white-space: nowrap;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"]
+    .profile-service-card--owner.doke-ad-card--index-compact-parity
+    .profile-service-card__owner-side {
+    position: absolute;
+    inset: 0;
+    z-index: 7;
+    display: block;
+    width: auto;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    pointer-events: none;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"]
+    .profile-service-card--owner.doke-ad-card--index-compact-parity
+    .profile-service-card__owner-controls {
+    display: block;
+    width: auto;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"]
+    .profile-service-card--owner.doke-ad-card--index-compact-parity
+    .profile-service-card__owner-controls > :is(.profile-service-card__price-block, .profile-service-card__view) {
+    display: none;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"]
+    .profile-service-card--owner.doke-ad-card--index-compact-parity
+    .profile-service-card__menu {
+    top: 8px;
+    right: 8px;
+    pointer-events: auto;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"]
+    .profile-service-card--owner.doke-ad-card--index-compact-parity
+    .profile-service-card__menu-trigger {
+    width: 30px;
+    height: 30px;
+    min-width: 30px;
+    min-height: 30px;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"]
+    .profile-service-card--owner.doke-ad-card--index-compact-parity
+    .profile-service-card__status {
+    top: 8px;
+    left: 8px;
+    min-height: 20px;
+    max-width: calc(100% - 44px);
+    padding-inline: 7px;
+    gap: 4px;
+    font-size: 0.55rem;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"]
+    .profile-service-card--owner.doke-ad-card--index-compact-parity
+    .profile-service-card__status::before {
+    width: 6px;
+    height: 6px;
+    flex-basis: 6px;
+  }
+}
+
+@media (max-width: 390px) {
+  @container owner-ads (max-width: 760px) {
+    body[data-page="perfil-profissional"][data-profile-mode="owner-edit"]
+      .profile-service-card--owner.doke-ad-card--index-compact-parity {
+      grid-template-columns: 112px minmax(0, 1fr);
+    }
+
+    body[data-page="perfil-profissional"][data-profile-mode="owner-edit"]
+      .profile-service-card--owner.doke-ad-card--index-compact-parity
+      > .doke-ad-card__body {
+      gap: 5px;
+      padding: 11px 12px;
+    }
+
+    body[data-page="perfil-profissional"][data-profile-mode="owner-edit"]
+      .profile-service-card--owner.doke-ad-card--index-compact-parity
+      .doke-ad-card__title {
+      font-size: 0.95rem;
+    }
+
+    body[data-page="perfil-profissional"][data-profile-mode="owner-edit"]
+      .profile-service-card--owner.doke-ad-card--index-compact-parity
+      .profile-service-card__compact-footer .doke-ad-card__cta {
+      min-width: 108px;
+      padding-inline: 12px;
+      font-size: 0.7rem;
+    }
+
+    body[data-page="perfil-profissional"][data-profile-mode="owner-edit"]
+      .profile-service-card--owner.doke-ad-card--index-compact-parity
+      .profile-service-card__compact-footer .doke-ad-card__price {
+      max-width: calc(100% - 120px);
+    }
+  }
+}
+
+/* v34 — owner card multi-selection and long-press feedback */
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__selection {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 12;
+  display: none;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.96);
+  color: var(--color-primary, #2a5f90);
+  box-shadow: var(--doke-white-control-shadow, 0 8px 22px rgba(24, 75, 118, 0.16));
+  cursor: pointer;
+}
+
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__selection > span {
+  width: 16px;
+  height: 16px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+}
+
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__selection.is-selected > span {
+  border-color: transparent;
+  background: var(--color-primary, #2a5f90);
+  box-shadow: inset 0 0 0 4px #fff;
+}
+
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] #profile-ads.is-service-selection-mode .profile-service-card__selection,
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner.is-selected .profile-service-card__selection {
+  display: grid;
+}
+
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] #profile-ads.is-service-selection-mode .profile-service-card__menu {
+  display: none;
+}
+
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner.is-selected {
+  box-shadow: 0 0 0 3px rgba(42, 95, 144, 0.18), 0 16px 38px rgba(24, 75, 118, 0.14);
+}
+
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner.is-long-pressed {
+  transform: scale(0.994);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] #profile-ads.is-service-selection-mode .profile-service-card--owner:hover .profile-service-card__selection {
+    display: grid;
+  }
+}
+
+@media (max-width: 760px) {
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__selection {
+    top: 8px;
+    right: 8px;
+    width: 30px;
+    height: 30px;
+    min-width: 30px;
+    min-height: 30px;
+  }
+}

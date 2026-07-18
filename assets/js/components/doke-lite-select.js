@@ -156,30 +156,61 @@
     if (!select || select.dataset.dokeLiteSelectReady === "true") return;
     if (select.multiple) return;
 
+    let root = select.closest("[data-doke-select-root]");
+    let trigger = root?.querySelector(":scope > .doke-select__trigger");
+
+    if (!root) {
+      root = document.createElement("div");
+      root.className = "doke-select";
+      root.dataset.dokeSelectRoot = "true";
+      select.parentNode.insertBefore(root, select);
+      root.appendChild(select);
+    } else {
+      root.classList.add("doke-select");
+      root.dataset.dokeSelectRoot = "true";
+    }
+
     select.dataset.dokeLiteSelectReady = "true";
     select.classList.add("doke-select__native");
+    select.classList.remove("doke-select");
 
-    const root = document.createElement("div");
-    root.className = "doke-select";
-    root.dataset.dokeSelectRoot = "true";
+    if (!trigger) {
+      trigger = document.createElement("button");
+      trigger.type = "button";
+      trigger.className = "doke-select__trigger";
+      trigger.innerHTML = `
+        <span class="doke-select__value" data-doke-select-label></span>
+        <span class="doke-select__chevron" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="m7 9 5 5 5-5"></path></svg>
+        </span>
+      `;
+      root.appendChild(trigger);
+    }
 
-    const trigger = document.createElement("button");
     trigger.type = "button";
-    trigger.className = "doke-select__trigger";
+    trigger.classList.add("doke-select__trigger");
     trigger.setAttribute("aria-haspopup", "listbox");
     trigger.setAttribute("aria-expanded", "false");
-    trigger.innerHTML = `
-      <span class="doke-select__value" data-doke-select-label></span>
-      <span class="doke-select__chevron" aria-hidden="true">
-        <svg viewBox="0 0 24 24"><path d="m7 9 5 5 5-5"></path></svg>
-      </span>
-    `;
 
-    select.parentNode.insertBefore(root, select);
-    root.appendChild(select);
-    root.appendChild(trigger);
+    if (!trigger.querySelector("[data-doke-select-label]")) {
+      const label = document.createElement("span");
+      label.className = "doke-select__value";
+      label.dataset.dokeSelectLabel = "";
+      trigger.prepend(label);
+    }
+
+    if (!trigger.querySelector(".doke-select__chevron")) {
+      const chevron = document.createElement("span");
+      chevron.className = "doke-select__chevron";
+      chevron.setAttribute("aria-hidden", "true");
+      chevron.innerHTML = '<svg viewBox="0 0 24 24"><path d="m7 9 5 5 5-5"></path></svg>';
+      trigger.appendChild(chevron);
+    }
 
     syncTrigger(select);
+
+    if (trigger.dataset.dokeLiteSelectBound === "true") return;
+    trigger.dataset.dokeLiteSelectBound = "true";
 
     trigger.addEventListener("click", () => {
       if (activeSelect === select) {

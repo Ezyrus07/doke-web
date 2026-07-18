@@ -1,0 +1,311 @@
+/* Doke Form Flow Comfort v1
+   Shared minimal experience for form-led pages.
+   Keeps page-specific fields intact while reducing cognitive load and improving completion comfort. */
+
+body:is(
+  [data-page="orcamento"],
+  [data-page="anunciar-servico"],
+  [data-page="tornar-profissional"],
+  [data-page="verificacao-profissional"],
+  [data-page="pagamento-profissional"],
+  [data-page="avaliacao-profissional"]
+) {
+  --doke-form-page-gap: clamp(18px, 2vw, 24px);
+  --doke-form-side-column: minmax(250px, 310px);
+  --form-page-card-padding: clamp(20px, 2vw, 26px);
+  --form-page-side-card-padding: 22px 20px;
+}
+
+body.doke-form-comfort-ready .doke-form-page-screen {
+  gap: clamp(18px, 2vw, 24px);
+}
+
+body.doke-form-comfort-ready .doke-form-page-top {
+  gap: 5px;
+}
+
+.doke-form-comfort-note {
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  align-items: center;
+  gap: 7px;
+  margin-top: 7px;
+  color: var(--color-text-muted, #627a99);
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.doke-form-comfort-note::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: var(--color-secondary, #168c7d);
+  box-shadow: 0 0 0 4px var(--color-secondary-soft, #e2f4f0);
+}
+
+body.doke-form-comfort-ready .doke-form-page-card,
+body.doke-form-comfort-ready .doke-form-page-side-card {
+  box-shadow: 0 14px 34px rgba(13, 47, 89, 0.055);
+}
+
+body.doke-form-comfort-ready .doke-flow-progress {
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+body.doke-form-comfort-ready .doke-flow-progress__track {
+  height: 5px;
+}
+
+body.doke-form-comfort-ready .doke-flow-progress__top {
+  font-size: 0.76rem;
+}
+
+body.doke-form-comfort-ready .doke-flow-steps {
+  gap: 8px;
+  margin-bottom: 22px;
+}
+
+body.doke-form-comfort-ready .doke-flow-step {
+  min-height: 58px;
+  gap: 9px;
+  padding: 9px 11px;
+  border-radius: 12px;
+  box-shadow: none;
+}
+
+body.doke-form-comfort-ready .doke-flow-step > span {
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+  font-size: 0.76rem;
+}
+
+body.doke-form-comfort-ready .doke-flow-step strong {
+  font-size: 0.8rem;
+}
+
+body.doke-form-comfort-ready .doke-flow-step small {
+  font-size: 0.68rem;
+}
+
+body.doke-form-comfort-ready .doke-flow-step.is-active {
+  border-color: rgba(42, 95, 144, 0.3);
+  background: rgba(248, 251, 255, 0.95);
+  box-shadow: 0 7px 18px rgba(24, 75, 118, 0.06);
+}
+
+body.doke-form-comfort-ready :is(
+  .post-service-panel__head,
+  .become-pro-section-head,
+  .budget-panel__head,
+  .verification-section__head,
+  .payment-section__head,
+  .review-section__head
+) {
+  margin-bottom: 16px;
+}
+
+body.doke-form-comfort-ready :is(
+  .post-service-panel__head,
+  .become-pro-section-head,
+  .budget-panel__head,
+  .verification-section__head,
+  .payment-section__head,
+  .review-section__head
+) h2 {
+  margin-bottom: 4px;
+  font-size: clamp(1.02rem, 1vw, 1.16rem);
+  letter-spacing: -0.02em;
+}
+
+body.doke-form-comfort-ready :is(
+  .post-service-panel__head,
+  .become-pro-section-head,
+  .budget-panel__head,
+  .verification-section__head,
+  .payment-section__head,
+  .review-section__head
+) p {
+  max-width: 660px;
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+body.doke-form-comfort-ready .doke-field {
+  gap: 6px;
+}
+
+body.doke-form-comfort-ready .doke-field > span:first-child,
+body.doke-form-comfort-ready label > span:first-child {
+  color: var(--color-text, #173b5d);
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+body.doke-form-comfort-ready :is(.doke-input, .doke-select, .doke-textarea) {
+  border-color: rgba(24, 75, 118, 0.09);
+  background: #fff;
+  box-shadow: 0 5px 14px rgba(24, 75, 118, 0.035);
+  transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+body.doke-form-comfort-ready :is(.doke-input, .doke-select, .doke-textarea):is(:hover, :focus, :focus-visible) {
+  border-color: rgba(42, 95, 144, 0.28);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(42, 95, 144, 0.07), 0 8px 20px rgba(24, 75, 118, 0.055);
+  outline: 0;
+}
+
+body.doke-form-comfort-ready .doke-textarea {
+  min-height: 88px;
+  resize: none;
+  overflow-y: hidden;
+  line-height: 1.5;
+}
+
+body.doke-form-comfort-ready .doke-textarea[data-form-comfort-long] {
+  min-height: 116px;
+}
+
+body.doke-form-comfort-ready .doke-form-hint,
+body.doke-form-comfort-ready :is(label, .doke-field) small {
+  color: #7a8ca5;
+  font-size: 0.68rem;
+}
+
+body.doke-form-comfort-ready .doke-choice-button {
+  min-height: 38px;
+  padding-inline: 13px;
+  border-color: rgba(24, 75, 118, 0.12);
+  background: #fff;
+  box-shadow: none;
+}
+
+body.doke-form-comfort-ready .doke-choice-button.is-active {
+  border-color: rgba(42, 95, 144, 0.36);
+  background: var(--color-primary-soft, #e8f1f8);
+  color: var(--color-primary-strong, #184a76);
+}
+
+.doke-form-required-progress {
+  color: var(--color-secondary-strong, #0f6f64);
+  white-space: nowrap;
+}
+
+body.doke-form-comfort-ready .doke-form-page-side-card {
+  border-color: rgba(24, 75, 118, 0.075);
+  background: rgba(255, 255, 255, 0.9);
+}
+
+body.doke-form-comfort-ready .doke-form-page-side-card :is(h2, h3, strong) {
+  letter-spacing: -0.02em;
+}
+
+body.doke-form-comfort-ready .doke-form-page-side-card :is(li, p, span) {
+  line-height: 1.45;
+}
+
+body.doke-form-comfort-ready .doke-form-actions {
+  position: sticky;
+  bottom: 12px;
+  z-index: 12;
+  margin-top: 18px;
+  padding: 10px;
+  border: 0;
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 14px 34px rgba(13, 47, 89, 0.12), 0 3px 10px rgba(13, 47, 89, 0.05);
+  backdrop-filter: blur(14px);
+}
+
+body.doke-form-comfort-ready .doke-form-actions :is(.doke-btn, .budget-button, .become-pro-btn, .post-service-btn) {
+  min-height: 42px;
+}
+
+body.doke-form-comfort-ready [data-form-comfort-complete="true"] :is(.doke-input, .doke-select, .doke-textarea) {
+  border-color: rgba(22, 140, 125, 0.18);
+}
+
+@media (max-width: 1180px) {
+  body.doke-form-comfort-ready .doke-form-page-side-card {
+    position: static;
+  }
+}
+
+@media (max-width: 760px) {
+  .doke-form-comfort-note {
+    font-size: 0.74rem;
+  }
+
+  body.doke-form-comfort-ready .doke-flow-steps {
+    display: flex;
+    gap: 7px;
+    overflow-x: auto;
+    padding-bottom: 3px;
+    scrollbar-width: none;
+  }
+
+  body.doke-form-comfort-ready .doke-flow-steps::-webkit-scrollbar {
+    display: none;
+  }
+
+  body.doke-form-comfort-ready .doke-flow-step {
+    min-width: 148px;
+    flex: 0 0 auto;
+  }
+
+  body.doke-form-comfort-ready .doke-form-actions {
+    bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+    margin-inline: -4px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.doke-form-comfort-ready :is(.doke-input, .doke-select, .doke-textarea) {
+    transition: none;
+  }
+}
+
+
+/* v19 — minimal information density for all form flows */
+.doke-form-comfort-note,
+.doke-form-required-progress {
+  display: none;
+}
+
+body.doke-form-comfort-ready .doke-flow-progress__top {
+  justify-content: flex-start;
+}
+
+body.doke-form-comfort-ready :is(
+  .post-service-panel__head,
+  .become-pro-section-head,
+  .budget-panel__head,
+  .verification-section__head,
+  .payment-section__head,
+  .review-section__head
+) {
+  margin-bottom: 12px;
+}
+
+body.doke-form-comfort-ready :is(
+  .post-service-panel__head,
+  .become-pro-section-head,
+  .budget-panel__head,
+  .verification-section__head,
+  .payment-section__head,
+  .review-section__head
+) p {
+  display: none;
+}
+
+
+/* v21 — remove redundant textual progress header and progress bar */
+body.doke-form-comfort-ready .doke-flow-progress {
+  display: none;
+}

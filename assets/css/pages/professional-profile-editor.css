@@ -3,8 +3,8 @@
  * Responsibility: owner/editing affordances for perfil-profissional.html.
  * The visual anatomy is inherited from the clean public profile contract.
  */
-@import url("./profile-foundation.css?v=20260718-owner-card-v5");
-@import url("../components/cards/profile-service-owner-card.css?v=20260718-owner-card-v13");
+@import url("./profile-foundation.css?v=20260718-header-unification-v1");
+@import url("../components/cards/profile-service-owner-card.css?v=20260718-owner-actions-v34");
 
 /* First-paint authorization boundary.
  * The owner profile content must never override the native hidden contract
@@ -559,4 +559,108 @@ body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-o
 body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-owner-section-tools .profile-owner-mini-action:is([disabled], [aria-disabled="true"]) {
   opacity: 0.58;
   box-shadow: none;
+}
+
+/* v26 — responsive owner-ad layout follows the actual content width, not only viewport width. */
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-area--ads {
+  container-name: owner-ads;
+  container-type: inline-size;
+}
+
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-area__rail--ads {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@container owner-ads (min-width: 1260px) {
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-area__rail--ads {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* v27 — tighter management island on narrow screens. */
+@media (max-width: 600px) {
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-management {
+    position: relative;
+    gap: 10px;
+    margin-bottom: 12px;
+    padding: 13px;
+    border-radius: 18px;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-management__heading {
+    min-height: 38px;
+    padding-right: 126px;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-management__actions {
+    display: block;
+    min-width: 0;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-management .profile-service-filters {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+    width: 100%;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-management__create {
+    position: absolute;
+    top: 13px;
+    right: 13px;
+    min-height: 36px;
+    padding-inline: 12px;
+    font-size: 0.72rem;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-management .profile-service-filters > [data-doke-select-root] {
+    min-width: 0;
+  }
+}
+
+/* v34 — bulk-selection command bar for owned ads */
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-selection-bar {
+  position: sticky;
+  top: calc(var(--app-header-height, 72px) + 10px);
+  z-index: 18;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border: 0;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 12px 32px rgba(24, 75, 118, 0.14);
+  backdrop-filter: blur(14px);
+}
+
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-selection-bar[hidden] {
+  display: none;
+}
+
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-selection-bar > strong {
+  color: var(--color-primary-strong, #184a76);
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-selection-bar__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+@media (max-width: 600px) {
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-selection-bar {
+    top: 10px;
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-selection-bar__actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
 }
