@@ -52,6 +52,59 @@
 
   const getUsersRepository = () => ns.repositories?.users || null;
   const getSessionStore = () => ns.session || Doke.session || null;
+  const getSupabaseClient = () => root.DokeSupabase && typeof root.DokeSupabase.getClient === 'function'
+    ? root.DokeSupabase.getClient()
+    : null;
+  const isSupabaseAuthRequired = () => {
+    const config = root.DOKE_SUPABASE_CONFIG || {};
+    return config.enabled !== false && Boolean(config.url) && Boolean(config.anonKey);
+  };
+  const roleFromMetadata = (user) => {
+    const value = String(user?.user_metadata?.role || user?.app_metadata?.role || 'client').trim().toLowerCase();
+    return ['client', 'professional', 'moderator', 'support', 'admin'].includes(value) ? value : 'client';
+  };
+  const publicUserFromSupabase = (user) => {
+    if (!user) return null;
+    const metadata = user.user_metadata || {};
+    const name = normalizeText(metadata.name || metadata.full_name || user.email || 'Conta Doke');
+    const role = roleFromMetadata(user);
+    const initials = name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part.charAt(0).toUpperCase()).join('') || 'DK';
+    return {
+      id: user.id,
+      name,
+      displayName: name,
+      email: normalizeEmail(user.email),
+      phone: normalizePhone(metadata.display_phone || metadata.phone || user.phone || ''),
+      role,
+      type: role,
+      handle: String(metadata.handle || '').trim().toLowerCase(),
+      initials,
+      avatarInitials: initials,
+      avatarUrl: metadata.avatar_url || metadata.avatarUrl || '',
+      avatar: metadata.avatar_url || metadata.avatarUrl || '',
+      accountStatus: metadata.account_status || 'active',
+      verified: Boolean(user.email_confirmed_at || user.confirmed_at),
+      createdAt: user.created_at || new Date().toISOString(),
+      publicProfileUrl: role === 'professional' ? 'perfil.html' : 'perfil-cliente.html',
+      ownerProfileUrl: role === 'professional' ? 'perfil-profissional.html' : 'meu-perfil.html'
+    };
+  };
+  const setSupabaseSession = (session, remember = true) => {
+    const user = publicUserFromSupabase(session?.user);
+    if (!user) throw new Error('Sessão Supabase inválida.');
+    const store = getSessionStore();
+    if (!store?.write) throw new Error('Session Store não foi carregado.');
+    return store.write({
+      provider: 'supabase',
+      token: session.access_token || '',
+      refreshToken: session.refresh_token || '',
+      remember,
+      user,
+      sessionStatus: 'active',
+      expiresAt: session.expires_at ? new Date(session.expires_at * 1000).toISOString() : '',
+      issuedAt: new Date().toISOString()
+    });
+  };
 
   const readQueryParam = (key) => {
     try {
@@ -596,65 +649,58 @@
   };
 
   const login = async ({ email, login: loginValue, password, remember = true } = {}) => {
-    await delay();
-
     const access = normalizeText(email || loginValue);
     const rawPassword = String(password || '');
+    if (!access || !rawPassword) throw new Error('Preencha o acesso e a senha para entrar.');
 
-    if (!access || !rawPassword) {
-      throw new Error('Preencha o acesso e a senha para entrar.');
-    }
-
-    if (canUseApiAuth()) {
-      const user = await apiLogin({ login: access, password: rawPassword, remember });
+    if (isSupabaseAuthRequired()) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error('O Supabase ainda não foi carregado. Recarregue a página e tente novamente.');
+      if (!isEmail(access)) throw new Error('Entre usando o e-mail cadastrado.');
+      const { data, error } = await client.auth.signInWithPassword({ email: normalizeEmail(access), password: rawPassword });
+      if (error) {
+        const message = String(error.message || '').toLowerCase();
+        if (message.includes('email not confirmed')) throw new Error('Confirme seu e-mail antes de entrar.');
+        throw new Error('Credenciais inválidas. Revise seu e-mail e senha.');
+      }
+      const stored = setSupabaseSession(data.session, remember);
       updateAccountSurfaces();
-      return user;
+      return stored.user;
     }
-
-    const repo = getUsersRepository();
-    if (!repo) throw new Error('Users Repository não foi carregado.');
-
-    const user = await repo.findByLogin(access);
-    const passwordHash = await repo.hashPassword(rawPassword);
-
-    if (!user || user.passwordHash !== passwordHash) {
-      throw new Error('Credenciais inválidas. Revise os dados e tente novamente.');
-    }
-
-    const session = setSessionForUser(user, { remember });
-    updateAccountSurfaces();
-    return session.user;
+    throw new Error('Autenticação real indisponível. O login local/demo está desativado.');
   };
 
   const register = async (payload = {}) => {
-    await delay();
+    const name = normalizeText(payload.name);
+    const email = normalizeEmail(payload.email);
+    const phone = normalizePhone(payload.phone);
+    const password = String(payload.password || '');
+    const handle = String(payload.handle || '').trim().toLowerCase();
+    if (name.length < 3) throw new Error('Informe um nome mais completo.');
+    if (!isEmail(email)) throw new Error('Digite um e-mail válido.');
+    if (password.length < 8) throw new Error('A senha precisa ter pelo menos 8 caracteres.');
 
-    const role = 'client';
-
-    if (canUseApiAuth()) {
-      const user = await apiRegister({ ...payload, role });
-      updateAccountSurfaces();
-      return user;
+    if (isSupabaseAuthRequired()) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error('O Supabase ainda não foi carregado. Recarregue a página e tente novamente.');
+      const { data, error } = await client.auth.signUp({
+        email,
+        password,
+        options: { data: { name, handle, role: 'client', ...(phone ? { display_phone: phone } : {}) } }
+      });
+      if (error) {
+        const message = String(error.message || '').toLowerCase();
+        if (message.includes('already registered') || message.includes('already been registered')) throw new Error('Já existe uma conta com esse e-mail.');
+        throw new Error(error.message || 'Não foi possível criar a conta.');
+      }
+      if (data.session) {
+        const stored = setSupabaseSession(data.session, true);
+        updateAccountSurfaces();
+        return { ...stored.user, pendingConfirmation: false };
+      }
+      return { ...publicUserFromSupabase(data.user), pendingConfirmation: true };
     }
-
-    const repo = getUsersRepository();
-    if (!repo) throw new Error('Users Repository não foi carregado.');
-
-    const user = await repo.create({
-      name: payload.name,
-      handle: payload.handle,
-      email: payload.email,
-      phone: payload.phone,
-      password: payload.password,
-      role
-    });
-
-    const session = setSessionForUser(user, { remember: true });
-    updateAccountSurfaces();
-    return {
-      ...session.user,
-      pendingConfirmation: false
-    };
+    throw new Error('Cadastro real indisponível. O cadastro local/demo está desativado.');
   };
 
 
@@ -672,23 +718,16 @@
   };
 
   const logout = async ({ redirect = false, redirectTo } = {}) => {
-    await delay(60);
-    const session = getSession();
-
-    if (session?.provider === AUTH_PROVIDER_VALUES.api && canUseApiAuth()) {
-      try {
-        await apiRequest('POST', AUTH_ENDPOINTS.logout, { refreshToken: session.refreshToken || '' });
-      } catch (error) {
-        console.warn?.('[DokeAuth] API logout failed; clearing local session.', error);
-      }
+    const client = getSupabaseClient();
+    if (client) {
+      try { await client.auth.signOut(); } catch (error) { console.warn?.('[DokeAuth] Supabase logout failed.', error); }
     }
-
     getSessionStore()?.clear?.();
-
-    if (redirect) {
-      root.location.assign(redirectTo || resolveUrlForCurrentPage(DEFAULT_LOGIN_URL));
-    }
-
+    try {
+      root.localStorage.removeItem('doke.auth.users.v1');
+      root.localStorage.removeItem('doke.auth.userProfiles.v1');
+    } catch {}
+    if (redirect) root.location.assign(redirectTo || resolveUrlForCurrentPage(DEFAULT_LOGIN_URL));
     return true;
   };
 

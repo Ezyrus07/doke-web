@@ -221,7 +221,7 @@
   function readAll() {
     var parsed = safeParse(root.localStorage.getItem(STORAGE_KEY), []);
     if (!Array.isArray(parsed)) parsed = [];
-    var normalized = ensureDemoProfessionalVerification(parsed.map(normalizeVerification).filter(Boolean));
+    var normalized = parsed.map(normalizeVerification).filter(Boolean).filter(function (item) { return String(item && item.userId || '') !== DEMO_PROFESSIONAL_USER_ID; });
     if (JSON.stringify(parsed) !== JSON.stringify(normalized)) writeAll(normalized);
     return normalized;
   }

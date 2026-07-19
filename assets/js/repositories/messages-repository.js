@@ -117,20 +117,41 @@
     };
   }
 
+  function normalizeMessageAttachments(items, conversationId) {
+    var attachmentRepository = Doke.repositories && Doke.repositories.attachments;
+    var sourceItems = (Array.isArray(items) ? items : []).map(function (item) {
+      if (!item || typeof item !== 'object') return item;
+      return Object.assign({}, item, {
+        source: 'conversation',
+        resourceId: item.resourceId || item.conversationId || conversationId || ''
+      });
+    });
+    if (attachmentRepository && typeof attachmentRepository.normalizeAll === 'function') {
+      return attachmentRepository.normalizeAll(sourceItems);
+    }
+    return sourceItems.slice(0, 8);
+  }
+
   function normalizeMessage(raw, conversation) {
     raw = raw || {};
     var createdAt = raw.createdAt || raw.creatédAt || nowIso();
     var senderId = raw.senderId || '';
     var currentUser = getSessionUser();
+    var conversationId = normalizeText(raw.conversationId || conversation && conversation.id);
+    var attachments = normalizeMessageAttachments(raw.attachments || (raw.attachment ? [raw.attachment] : []), conversationId);
+    var primaryAttachment = attachments[0] || null;
+    var resolvedType = raw.type || (primaryAttachment && /^image\//i.test(primaryAttachment.type || '') ? 'image' : primaryAttachment ? 'attachment' : 'text');
     return Object.assign({}, raw, {
       id: normalizeText(raw.id) || createMessageId(),
-      conversationId: normalizeText(raw.conversationId || conversation && conversation.id),
+      conversationId: conversationId,
       senderId: senderId,
       author: raw.author || (currentUser && senderId === currentUser.id ? 'Você' : conversation && conversation.peerName || 'Doke'),
       text: raw.text || raw.body || '',
       body: raw.body || raw.text || '',
-      type: raw.type || 'text',
-      attachments: Array.isArray(raw.attachments) ? raw.attachments : [],
+      type: resolvedType,
+      attachments: attachments,
+      attachment: primaryAttachment,
+      src: raw.src || primaryAttachment && primaryAttachment.url || '',
       read: raw.read === true,
       mine: raw.mine === true,
       createdAt: createdAt,
@@ -242,34 +263,286 @@
     return false;
   }
 
+  var PROVIDER_ATTRIBUTE = 'data-doke-messages-provider';
+  var REMOTE_CONVERSATIONS_TABLE = 'conversations';
+  var REMOTE_MESSAGES_TABLE = 'messages';
+  var supabaseClient = null;
+  var supabaseClientAttempted = false;
+  var lastRemoteError = null;
+
+  function isUuid(value) {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(normalizeText(value));
+  }
+
+  function setProviderState(provider) {
+    try { document.documentElement.setAttribute(PROVIDER_ATTRIBUTE, provider); } catch (error) {}
+  }
+
+  function warnRemote(error, context) {
+    lastRemoteError = error || new Error('Falha desconhecida nas mensagens remotas.');
+    setProviderState('local-fallback');
+    if (root.console && typeof root.console.warn === 'function') {
+      root.console.warn('[Doke messages repository] Supabase indisponível em ' + context + '. Usando fallback local.', error);
+    }
+  }
+
+  function getSupabaseClient() {
+    if (supabaseClientAttempted) return supabaseClient;
+    supabaseClientAttempted = true;
+    var config = root.DOKE_SUPABASE_CONFIG || {};
+    var sdk = root.supabase;
+    if (!config.enabled || config.messagesEnabled === false || !config.url || !config.anonKey || !sdk || typeof sdk.createClient !== 'function') {
+      setProviderState('local');
+      return null;
+    }
+    try {
+      supabaseClient = root.DokeSupabase && typeof root.DokeSupabase.getClient === 'function'
+        ? root.DokeSupabase.getClient()
+        : sdk.createClient(config.url, config.anonKey);
+      setProviderState('supabase');
+    } catch (error) {
+      warnRemote(error, 'bootstrap');
+      supabaseClient = null;
+    }
+    return supabaseClient;
+  }
+
+  function getCurrentSupabaseUser(client) {
+    if (!client || !client.auth || typeof client.auth.getSession !== 'function') return Promise.resolve(null);
+    return Promise.resolve(client.auth.getSession()).then(function (result) {
+      return result && result.data && result.data.session && result.data.session.user || null;
+    });
+  }
+
   function loadBase(options) {
     options = options || {};
-    if (Doke.mockData && typeof Doke.mockData.load === 'function') {
-      return Doke.mockData.load('messages', options);
-    }
+    if (Doke.mockData && typeof Doke.mockData.load === 'function') return Doke.mockData.load('messages', options);
+    return fetch(FALLBACK_URL, { cache: 'no-cache', credentials: 'same-origin' }).then(function (response) {
+      if (!response.ok) throw new Error('Não foi possível carregar mensagens mockadas.');
+      return response.json();
+    });
+  }
 
-    return fetch(FALLBACK_URL, { cache: 'no-cache', credentials: 'same-origin' })
-      .then(function (response) {
-        if (!response.ok) throw new Error('Não foi possível carregar mensagens mockadas.');
-        return response.json();
+  function loadLocal(options) {
+    options = options || {};
+    if (cache && !options.fresh) return Promise.resolve(clone(cache));
+    if (options.currentUser !== false) {
+      cache = mergeById(readLocal());
+      return Promise.resolve(clone(cache));
+    }
+    return loadBase(options).catch(function () { return []; }).then(function (base) {
+      cache = mergeById(Array.isArray(base) ? base : [], readLocal());
+      return clone(cache);
+    });
+  }
+
+  function resolveRemoteOrderId(client, orderId) {
+    var id = normalizeText(orderId);
+    if (!id) return Promise.resolve(null);
+    if (isUuid(id)) return Promise.resolve(id);
+    return client.from('orders').select('id').eq('external_id', id).maybeSingle().then(function (result) {
+      if (result.error) throw result.error;
+      return result.data && result.data.id || null;
+    });
+  }
+
+  function mapRemoteMessage(row, conversation) {
+    var metadata = row && row.metadata && typeof row.metadata === 'object' ? clone(row.metadata) : {};
+    return normalizeMessage(Object.assign({}, metadata, {
+      id: row.external_id || metadata.id || row.id,
+      remoteId: row.id,
+      conversationId: conversation.id,
+      senderId: row.sender_id,
+      body: row.body || metadata.body || '',
+      text: row.body || metadata.text || '',
+      type: row.message_type || metadata.type || 'text',
+      attachments: row.attachments || metadata.attachments || [],
+      read: Boolean(row.read_at) || row.status === 'read',
+      status: row.status,
+      createdAt: row.created_at
+    }), conversation);
+  }
+
+  function mapRemoteConversation(row, messageRows) {
+    var metadata = row && row.metadata && typeof row.metadata === 'object' ? clone(row.metadata) : {};
+    var base = Object.assign({}, metadata, {
+      id: row.external_id || metadata.id || row.id,
+      remoteId: row.id,
+      remoteOrderId: row.order_id || '',
+      clientId: row.client_id,
+      professionalId: row.professional_id,
+      participants: [row.client_id, row.professional_id].filter(Boolean),
+      archived: row.status === 'archived',
+      createdAt: row.created_at,
+      updatedAt: row.updated_at || row.last_message_at || row.created_at,
+      syncStatus: 'synced'
+    });
+    var normalized = normalizeConversation(base);
+    normalized.messages = (messageRows || []).map(function (message) { return mapRemoteMessage(message, normalized); });
+    var last = normalized.messages[normalized.messages.length - 1];
+    normalized.lastMessage = metadata.lastMessage || (last ? getMessagePreview(last) : normalized.lastMessage);
+    return normalizeConversation(normalized);
+  }
+
+  function hydrateConversationAttachmentUrls(conversation) {
+    var attachmentRepository = Doke.repositories && Doke.repositories.attachments;
+    if (!conversation || !attachmentRepository || typeof attachmentRepository.resolveUrls !== 'function') return Promise.resolve(conversation);
+    var messages = conversation.messages || [];
+    return Promise.all(messages.map(function (message) {
+      return attachmentRepository.resolveUrls(message.attachments || []).then(function (attachments) {
+        return normalizeMessage(Object.assign({}, message, {
+          attachments: attachments,
+          attachment: attachments[0] || null,
+          src: attachments[0] && attachments[0].url || message.src || ''
+        }), conversation);
+      }).catch(function () { return message; });
+    })).then(function (hydratedMessages) {
+      return normalizeConversation(Object.assign({}, conversation, { messages: hydratedMessages }));
+    });
+  }
+
+  function fetchRemoteConversations() {
+    var client = getSupabaseClient();
+    if (!client) return Promise.reject(new Error('Supabase client unavailable.'));
+    return getCurrentSupabaseUser(client).then(function (user) {
+      if (!user || !isUuid(user.id)) return [];
+      return client.from(REMOTE_CONVERSATIONS_TABLE).select('*').order('updated_at', { ascending: false }).then(function (result) {
+        if (result.error) throw result.error;
+        var rows = result.data || [];
+        var ids = rows.map(function (row) { return row.id; });
+        if (!ids.length) return [];
+        return client.from(REMOTE_MESSAGES_TABLE).select('*').in('conversation_id', ids).order('created_at', { ascending: true }).then(function (messagesResult) {
+          if (messagesResult.error) throw messagesResult.error;
+          var grouped = Object.create(null);
+          (messagesResult.data || []).forEach(function (message) {
+            (grouped[message.conversation_id] || (grouped[message.conversation_id] = [])).push(message);
+          });
+          setProviderState('supabase');
+          return Promise.all(rows.map(function (row) {
+            return hydrateConversationAttachmentUrls(mapRemoteConversation(row, grouped[row.id] || []));
+          }));
+        });
       });
+    });
+  }
+
+  function sanitizeConversationMetadata(conversation) {
+    var metadata = clone(normalizeConversation(conversation));
+    delete metadata.messages;
+    delete metadata.remoteId;
+    delete metadata.syncError;
+    return metadata;
+  }
+
+  function saveRemote(conversation) {
+    var client = getSupabaseClient();
+    if (!client) return Promise.reject(new Error('Supabase client unavailable.'));
+    return getCurrentSupabaseUser(client).then(function (user) {
+      if (!user || !isUuid(user.id)) throw new Error('Faça login com uma conta Supabase para sincronizar a conversa.');
+      var normalized = normalizeConversation(conversation);
+      if (!isUuid(normalized.clientId) || !isUuid(normalized.professionalId)) throw new Error('Cliente ou profissional ainda não possuem identidade Supabase válida.');
+      if (user.id !== normalized.clientId && user.id !== normalized.professionalId) throw new Error('Você não participa desta conversa.');
+      return resolveRemoteOrderId(client, normalized.orderId).then(function (remoteOrderId) {
+        var payload = {
+          external_id: normalized.id,
+          order_id: remoteOrderId,
+          client_id: normalized.clientId,
+          professional_id: normalized.professionalId,
+          status: normalized.archived ? 'archived' : 'active',
+          last_message_at: normalized.updatedAt || nowIso(),
+          metadata: sanitizeConversationMetadata(normalized),
+          updated_at: nowIso()
+        };
+        return client.from(REMOTE_CONVERSATIONS_TABLE).upsert(payload, { onConflict: 'external_id' }).select('*').single().then(function (result) {
+          if (result.error) throw result.error;
+          var remoteConversation = result.data;
+          var messages = normalized.messages || [];
+          return messages.reduce(function (chain, message) {
+            return chain.then(function () {
+              if (!isUuid(message.senderId)) return null;
+              var attachmentRepository = Doke.repositories && Doke.repositories.attachments;
+              var attachmentTask = attachmentRepository && typeof attachmentRepository.syncPendingConversation === 'function'
+                ? attachmentRepository.syncPendingConversation(normalized.id, message.attachments || [])
+                : Promise.resolve(message.attachments || []);
+              return attachmentTask.then(function (attachments) {
+                var normalizedMessage = normalizeMessage(Object.assign({}, message, {
+                  attachments: attachments,
+                  attachment: attachments[0] || null,
+                  src: attachments[0] && attachments[0].url || message.src || ''
+                }), normalized);
+                var persistedAttachments = attachmentRepository && typeof attachmentRepository.toPersistedMetadata === 'function'
+                  ? attachmentRepository.toPersistedMetadata(normalizedMessage.attachments || [])
+                  : normalizedMessage.attachments || [];
+                var persistedMetadata = clone(normalizedMessage);
+                persistedMetadata.attachments = persistedAttachments;
+                persistedMetadata.attachment = persistedAttachments[0] || null;
+                if (persistedAttachments[0] && persistedAttachments[0].path) persistedMetadata.src = '';
+                var messagePayload = {
+                  external_id: normalizedMessage.id,
+                  conversation_id: remoteConversation.id,
+                  sender_id: normalizedMessage.senderId,
+                  body: normalizedMessage.body || normalizedMessage.text || '',
+                  message_type: normalizedMessage.type || 'text',
+                  attachments: persistedAttachments,
+                  metadata: persistedMetadata,
+                  status: normalizedMessage.read ? 'read' : (normalizedMessage.status || 'sent'),
+                  read_at: normalizedMessage.read ? nowIso() : null,
+                  created_at: normalizedMessage.createdAt || nowIso()
+                };
+                return client.from(REMOTE_MESSAGES_TABLE).upsert(messagePayload, { onConflict: 'external_id' }).then(function (messageResult) {
+                  if (messageResult.error) throw messageResult.error;
+                });
+              });
+            });
+          }, Promise.resolve()).then(function () {
+            return fetchRemoteConversations().then(function (items) {
+              return items.find(function (item) { return item.id === normalized.id; }) || normalized;
+            });
+          });
+        });
+      });
+    });
+  }
+
+  function saveLocal(conversation, syncStatus) {
+    var normalized = normalizeConversation(Object.assign({}, conversation, { syncStatus: syncStatus || conversation.syncStatus || 'local' }));
+    var local = readLocal().filter(function (item) { return String(item.id) !== String(normalized.id); });
+    local.unshift(normalized);
+    writeLocal(local);
+    return Promise.resolve(clone(normalized));
+  }
+
+  function synchronizePending(items) {
+    if (!getSupabaseClient()) return Promise.resolve(items || []);
+    return getCurrentSupabaseUser(getSupabaseClient()).then(function (user) {
+      if (!user) return items || [];
+      var pending = (items || []).filter(function (item) {
+        return item && item.id && item.syncStatus !== 'synced' && (String(item.clientId) === user.id || String(item.professionalId) === user.id);
+      });
+      return pending.reduce(function (chain, item) {
+        return chain.then(function () {
+          return saveRemote(item).then(function (synced) { return saveLocal(synced, 'synced'); }).catch(function (error) { warnRemote(error, 'sincronização pendente'); });
+        });
+      }, Promise.resolve()).then(function () { return readLocal(); });
+    });
   }
 
   function load(options) {
     options = options || {};
     if (cache && !options.fresh) return Promise.resolve(clone(cache));
-
-    if (options.currentUser !== false) {
-      cache = mergeById(readLocal());
-      return Promise.resolve(clone(cache));
-    }
-
-    return loadBase(options)
-      .catch(function () { return []; })
-      .then(function (base) {
-        cache = mergeById(Array.isArray(base) ? base : [], readLocal());
+    if (!getSupabaseClient()) return loadLocal(options);
+    var local = readLocal();
+    return fetchRemoteConversations().then(function (remote) {
+      remote.forEach(function (item) { saveLocal(item, 'synced'); });
+      cache = mergeById(local, remote);
+      return synchronizePending(cache).then(function () {
+        cache = mergeById(readLocal(), remote);
         return clone(cache);
       });
+    }).catch(function (error) {
+      warnRemote(error, 'leitura');
+      return loadLocal(options);
+    });
   }
 
   function list(filters) {
@@ -299,196 +572,122 @@
   function getById(id) {
     var conversationId = normalizeText(id);
     if (!conversationId) return Promise.resolve(null);
-    return load({ currentUser: false }).then(function (items) {
+    return load({ currentUser: false, fresh: true }).then(function (items) {
       return clone((items || []).find(function (item) { return String(item.id) === conversationId; }) || null);
     });
   }
 
   function save(conversation) {
     var normalized = normalizeConversation(conversation);
-    var local = readLocal().filter(function (item) { return String(item.id) !== String(normalized.id); });
-    local.unshift(normalized);
-    writeLocal(local);
-    return Promise.resolve(clone(normalized));
+    return saveLocal(normalized, 'pending').then(function (localSaved) {
+      if (!getSupabaseClient()) return localSaved;
+      return saveRemote(localSaved).then(function (remoteSaved) { return saveLocal(remoteSaved, 'synced'); }).catch(function (error) {
+        warnRemote(error, 'gravação');
+        return saveLocal(Object.assign({}, localSaved, { syncStatus: 'pending', syncError: normalizeText(error && error.message) }), 'pending');
+      });
+    });
   }
 
   function createForOrder(order, options) {
-    order = order || {};
-    options = options || {};
-    var id = options.id || createConversationId(order);
+    order = order || {}; options = options || {};
+    var existing = readLocal().find(function (item) { return item.orderId && String(item.orderId) === String(order.id); });
+    if (existing) return Promise.resolve(clone(existing));
     var currentUser = getSessionUser();
     var professionalName = order.providerName || order.provider || order.professionalName || 'Profissional Doke';
     var clientName = order.clientName || currentUser && currentUser.name || 'Cliente Doke';
-    var clientInitials = order.clientInitials || currentUser && (currentUser.initials || currentUser.avatarInitials) || getInitials(clientName);
     var createdAt = nowIso();
-    var existing = readLocal().find(function (item) { return item.orderId && String(item.orderId) === String(order.id); });
-    if (existing) return Promise.resolve(clone(existing));
-
     return save({
-      id: id,
-      type: 'order',
-      orderId: order.id,
-      serviceId: order.serviceId,
-      clientId: order.clientId,
-      clientName: clientName,
-      clientInitials: clientInitials,
+      id: options.id || createConversationId(order), type: 'order', orderId: order.id, serviceId: order.serviceId,
+      clientId: order.clientId, clientName: clientName,
+      clientInitials: order.clientInitials || currentUser && (currentUser.initials || currentUser.avatarInitials) || getInitials(clientName),
       professionalId: order.professionalId || order.providerId,
       participants: [order.clientId, order.professionalId || order.providerId].filter(Boolean),
-      name: professionalName,
-      peerName: professionalName,
-      avatar: order.providerInitials || 'DK',
-      peerInitials: order.providerInitials || 'DK',
-      group: 'orders',
-      unread: currentUser && currentUser.id !== order.clientId ? 1 : 0,
-      unreadCount: currentUser && currentUser.id !== order.clientId ? 1 : 0,
-      order: Object.assign({}, order, {
-        status: order.status || 'pending',
-        statusLabel: order.statusLabel || 'Aguardando resposta'
-      }),
-      messages: [],
-      locked: true,
-      lastMessage: 'Pedido enviado. Aguardando aceite do profissional.',
-      lastSeen: 'Aguardando aceite do profissional',
-      createdAt: createdAt,
-      updatedAt: createdAt
+      name: professionalName, peerName: professionalName, avatar: order.providerInitials || 'DK', peerInitials: order.providerInitials || 'DK',
+      group: 'orders', unread: 0, unreadCount: 0,
+      order: Object.assign({}, order, { status: order.status || 'pending', statusLabel: order.statusLabel || 'Aguardando resposta' }),
+      messages: [], locked: true, lastMessage: 'Pedido enviado. Aguardando aceite do profissional.',
+      lastSeen: 'Aguardando aceite do profissional', createdAt: createdAt, updatedAt: createdAt
     });
   }
 
   function updateOrderContext(order, options) {
-    order = order || {};
-    options = options || {};
+    order = order || {}; options = options || {};
     var orderId = normalizeText(order.id || order.orderId || '');
     if (!orderId) return Promise.resolve(null);
-    var conversations = readLocal();
-    var index = conversations.findIndex(function (item) { return String(item.orderId || item.order && item.order.id) === String(orderId); });
-    if (index < 0) return Promise.resolve(null);
-
-    var conversation = conversations[index];
-    var status = order.status || options.status || conversation.status || conversation.order && conversation.order.status || 'pending';
-    var statusLabels = {
-      accepted: 'Pedido aceito',
-      conversation: 'Pedido aceito',
-      quoted: 'Proposta enviada',
-      in_progress: 'Em andamento',
-      completed: 'Concluído',
-      cancelled: 'Pedido recusado',
-      pending: 'Aguardando resposta'
-    };
-    var statusLabel = order.statusLabel || statusLabels[status] || 'Aguardando resposta';
-    var updatedAt = nowIso();
-    conversation.status = status;
-    conversation.statusLabel = statusLabel;
-    conversation.locked = !(status === 'accepted' || status === 'conversation' || status === 'responded' || status === 'quoted' || status === 'in_progress' || status === 'completed');
-    conversation.order = Object.assign({}, conversation.order || {}, order, {
-      status: status,
-      statusLabel: statusLabel,
-      refusalReason: options.reason || order.refusalReason || ''
+    return load({ fresh: true }).then(function (conversations) {
+      var conversation = (conversations || []).find(function (item) { return String(item.orderId || item.order && item.order.id) === orderId; });
+      if (!conversation) return null;
+      var status = order.status || options.status || conversation.status || conversation.order && conversation.order.status || 'pending';
+      var labels = { accepted:'Pedido aceito', conversation:'Pedido aceito', quoted:'Proposta enviada', in_progress:'Em andamento', completed:'Concluído', cancelled:'Pedido recusado', pending:'Aguardando resposta' };
+      conversation.status = status; conversation.statusLabel = order.statusLabel || labels[status] || 'Aguardando resposta';
+      conversation.locked = ['accepted','conversation','responded','quoted','in_progress','completed'].indexOf(status) === -1;
+      conversation.order = Object.assign({}, conversation.order || {}, order, { status: status, statusLabel: conversation.statusLabel, refusalReason: options.reason || order.refusalReason || '' });
+      var copy = { accepted:'Conversa liberada', conversation:'Conversa liberada', quoted:'Proposta enviada', in_progress:'Atendimento em andamento', completed:'Pedido concluído', cancelled:'Pedido recusado' };
+      conversation.lastSeen = copy[status] || 'Aguardando aceite do profissional';
+      conversation.lastMessage = copy[status] || conversation.lastMessage || 'Aguardando aceite do profissional';
+      conversation.updatedAt = nowIso();
+      return save(conversation);
     });
-    var flowCopy = {
-      accepted: 'Conversa liberada',
-      conversation: 'Conversa liberada',
-      quoted: 'Proposta enviada',
-      in_progress: 'Atendimento em andamento',
-      completed: 'Pedido concluído',
-      cancelled: 'Pedido recusado'
-    };
-    conversation.lastSeen = flowCopy[status] || 'Aguardando aceite do profissional';
-    conversation.lastMessage = flowCopy[status] || conversation.lastMessage || 'Aguardando aceite do profissional';
-    conversation.updatedAt = updatedAt;
-
-    conversations.splice(index, 1);
-    conversations.unshift(conversation);
-    writeLocal(conversations);
-    return Promise.resolve(clone(normalizeConversation(conversation)));
   }
 
   function addMessage(conversationId, message) {
     var id = normalizeText(conversationId);
-    var conversations = readLocal();
-    var index = conversations.findIndex(function (item) { return String(item.id) === id; });
-    if (index < 0) return Promise.resolve(null);
-    var conversation = conversations[index];
-    var createdAt = nowIso();
-    var normalizedMessage = normalizeMessage(Object.assign({}, message || {}, {
-      conversationId: id,
-      createdAt: (message && message.createdAt) || createdAt
-    }), conversation);
-    conversation.messages = (conversation.messages || []).concat(normalizedMessage);
-    conversation.lastMessage = normalizedMessage.text || normalizedMessage.body || conversation.lastMessage;
-    conversation.updatedAt = normalizedMessage.createdAt;
-    conversations.splice(index, 1);
-    conversations.unshift(conversation);
-    writeLocal(conversations);
-    return Promise.resolve(clone(normalizedMessage));
+    return getById(id).then(function (conversation) {
+      if (!conversation) return null;
+      var normalizedMessage = normalizeMessage(Object.assign({}, message || {}, { conversationId: id, createdAt: message && message.createdAt || nowIso() }), conversation);
+      conversation.messages = (conversation.messages || []).concat(normalizedMessage);
+      conversation.lastMessage = getMessagePreview(normalizedMessage) || conversation.lastMessage;
+      conversation.updatedAt = normalizedMessage.createdAt;
+      return save(conversation).then(function () { return clone(normalizedMessage); });
+    });
   }
 
   function getMessagePreview(message) {
     if (!message) return '';
     if (message.type === 'audio') return 'Áudio enviado';
     if (message.type === 'image') return 'Imagem enviada';
+    if (message.type === 'attachment') return message.attachment && message.attachment.name ? message.attachment.name : 'Arquivo enviado';
     if (message.type === 'proposal') return message.amount ? 'Proposta ' + message.amount : 'Proposta enviada';
     if (message.type === 'charge') return message.amount ? 'Cobrança ' + message.amount : 'Cobrança enviada';
     return normalizeText(message.text || message.body || '');
   }
 
   function removeMessage(conversationId, messageId) {
-    var id = normalizeText(conversationId);
-    var targetMessageId = normalizeText(messageId);
-    if (!id || !targetMessageId) return Promise.resolve(false);
-
-    var conversations = readLocal();
-    var index = conversations.findIndex(function (item) { return String(item.id) === id; });
-    if (index < 0) return Promise.resolve(false);
-
-    var conversation = conversations[index];
-    var messages = Array.isArray(conversation.messages) ? conversation.messages : [];
-    var nextMessages = messages.filter(function (message) {
-      return String(message && (message.id || message.messageId) || '') !== targetMessageId;
+    var id = normalizeText(conversationId), target = normalizeText(messageId);
+    if (!id || !target) return Promise.resolve(false);
+    return getById(id).then(function (conversation) {
+      if (!conversation) return false;
+      var before = conversation.messages || [];
+      conversation.messages = before.filter(function (message) { return String(message && (message.id || message.messageId) || '') !== target; });
+      if (conversation.messages.length === before.length) return false;
+      var last = conversation.messages[conversation.messages.length - 1];
+      conversation.lastMessage = getMessagePreview(last) || conversation.lastSeen || conversation.statusLabel || 'Conversa do pedido';
+      conversation.updatedAt = nowIso();
+      return save(conversation).then(function () {
+        var client = getSupabaseClient();
+        if (!client) return true;
+        return client.from(REMOTE_MESSAGES_TABLE).update({ status: 'removed', body: '', metadata: {} }).eq('external_id', target).then(function () { return true; });
+      });
     });
-    if (nextMessages.length === messages.length) return Promise.resolve(false);
-
-    conversation.messages = nextMessages;
-    var lastMessage = nextMessages.length ? nextMessages[nextMessages.length - 1] : null;
-    conversation.lastMessage = getMessagePreview(lastMessage) || conversation.lastSeen || conversation.statusLabel || 'Conversa do pedido';
-    conversation.updatedAt = nowIso();
-    conversations.splice(index, 1);
-    conversations.unshift(conversation);
-    writeLocal(conversations);
-    return Promise.resolve(true);
   }
 
   function markAsRead(conversationId) {
     var id = normalizeText(conversationId);
-    var conversations = readLocal();
-    var didChange = false;
-    conversations.forEach(function (conversation) {
-      if (String(conversation.id) !== id) return;
-      conversation.unread = 0;
-      conversation.unreadCount = 0;
-      (conversation.messages || []).forEach(function (message) { message.read = true; });
-      didChange = true;
+    return getById(id).then(function (conversation) {
+      if (!conversation) return false;
+      var user = getSessionUser() || {};
+      conversation.unread = 0; conversation.unreadCount = 0;
+      (conversation.messages || []).forEach(function (message) { if (String(message.senderId) !== String(user.id)) message.read = true; });
+      return save(conversation).then(function () { return true; });
     });
-    if (didChange) writeLocal(conversations);
-    return Promise.resolve(didChange);
   }
 
   repositories.messages = Object.freeze({
-    storageKey: STORAGE_KEY,
-    legacyStorageKey: LEGACY_STORAGE_KEY,
-    normalize: normalizeConversation,
-    normalizeMessage: normalizeMessage,
-    readLocal: readLocal,
-    writeLocal: writeLocal,
-    listLocal: listLocal,
-    load: load,
-    list: list,
-    getById: getById,
-    save: save,
-    createForOrder: createForOrder,
-    updateOrderContext: updateOrderContext,
-    addMessage: addMessage,
-    removeMessage: removeMessage,
-    markAsRead: markAsRead,
-    clearLocal: function () { writeLocal([]); }
+    storageKey: STORAGE_KEY, legacyStorageKey: LEGACY_STORAGE_KEY, normalize: normalizeConversation, normalizeMessage: normalizeMessage,
+    readLocal: readLocal, writeLocal: writeLocal, listLocal: listLocal, load: load, list: list, getById: getById, save: save,
+    createForOrder: createForOrder, updateOrderContext: updateOrderContext, addMessage: addMessage, removeMessage: removeMessage,
+    markAsRead: markAsRead, clearLocal: function () { writeLocal([]); }, syncPending: function () { return synchronizePending(readLocal()); },
+    getProviderStatus: function () { return Object.freeze({ provider: getSupabaseClient() ? 'supabase' : 'local', fallbackActive: Boolean(lastRemoteError), lastError: lastRemoteError ? normalizeText(lastRemoteError.message) : '' }); },
+    clearCache: function () { cache = null; }
   });
 })();

@@ -83,12 +83,27 @@ for (const snippet of [
   if (!authService.includes(snippet)) failures.push(`auth-service.js missing Sprint 12A auth API snippet: ${snippet}`);
 }
 
-for (const snippet of [
+for (const forbiddenSnippet of [
   'suporte@doke.local',
-  'isMockSupport',
-  "value === 'support'"
+  'pro@doke.local',
+  'cliente@doke.local'
 ]) {
-  if (!usersRepository.includes(snippet)) failures.push(`users-repository.js missing support mock snippet: ${snippet}`);
+  if (usersRepository.includes(forbiddenSnippet)) failures.push(`users-repository.js still contains demo auth identity: ${forbiddenSnippet}`);
+}
+for (const snippet of [
+  'DEMO_IDENTIFIERS',
+  'isDemoUser',
+  'const loadSeededUsers = async () => []'
+]) {
+  if (!usersRepository.includes(snippet)) failures.push(`users-repository.js missing real-only cleanup snippet: ${snippet}`);
+}
+for (const snippet of [
+  'isSupabaseAuthRequired',
+  'signInWithPassword',
+  'signUp',
+  'O login local/demo está desativado'
+]) {
+  if (!authService.includes(snippet)) failures.push(`auth-service.js missing Supabase-only auth snippet: ${snippet}`);
 }
 
 for (const snippet of [
@@ -126,5 +141,5 @@ if (failures.length) {
 }
 
 console.log('Auth real contract audit passed.');
-console.log('Auth provider default: mock');
-console.log('API auth is controlled by authProvider/apiBaseUrl/enableNetworkRequests.');
+console.log('Auth mode: Supabase-only when DOKE_SUPABASE_CONFIG is enabled.');
+console.log('Demo/local identities are disabled and purged.');

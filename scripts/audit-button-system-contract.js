@@ -51,6 +51,7 @@ const CANONICAL_TOKENS = new Set([
   'doke-chat-composer__send',
   'doke-favorite-button',
   'doke-popover',
+  'doke-select__trigger',
 ]);
 
 const OWNER_PREFIXES = [

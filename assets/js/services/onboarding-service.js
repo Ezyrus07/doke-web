@@ -55,11 +55,58 @@
     var user = currentUser();
     var profileService = services.profile;
     var auth = authService();
+    var source = payload || {};
     if (!user || !user.id) return Promise.reject(new Error('Sessão não encontrada para concluir o perfil.'));
+
+    var supabaseClient = window.DokeSupabase && typeof window.DokeSupabase.getClient === 'function'
+      ? window.DokeSupabase.getClient()
+      : null;
+    var sessionProvider = String(window.Doke?.session?.getSession?.()?.provider || '').toLowerCase();
+
+    if (sessionProvider === 'supabase' && supabaseClient) {
+      return supabaseClient.rpc('complete_account_onboarding', {
+        p_city: String(source.city || '').trim(),
+        p_state: String(source.state || '').trim().toUpperCase(),
+        p_postal_code: String(source.postalCode || '').replace(/\D/g, ''),
+        p_bio: String(source.bio || '').trim(),
+        p_interests: Array.isArray(source.interests)
+          ? source.interests
+          : String(source.interests || '').split(',').map(function (item) { return item.trim(); }).filter(Boolean)
+      }).then(function (result) {
+        if (result.error) throw result.error;
+        return supabaseClient.auth.updateUser({
+          data: {
+            city: String(source.city || '').trim(),
+            state: String(source.state || '').trim().toUpperCase(),
+            onboarding_status: 'completed'
+          }
+        }).catch(function () { return null; }).then(function () {
+          var current = currentUser() || user;
+          var nextUser = Object.assign({}, current, {
+            city: String(source.city || '').trim(),
+            state: String(source.state || '').trim().toUpperCase(),
+            bio: String(source.bio || '').trim(),
+            interests: Array.isArray(source.interests) ? source.interests : [],
+            onboardingStatus: 'completed',
+            onboardingCompletedAt: new Date().toISOString()
+          });
+          if (window.Doke?.session?.setCurrentUser) window.Doke.session.setCurrentUser(nextUser);
+          window.dispatchEvent(new CustomEvent('doke:onboarding-completed', { detail: { userId: user.id } }));
+          return { user: nextUser, profile: result.data || source };
+        });
+      }).catch(function (error) {
+        var message = String(error && error.message || '');
+        if (/function .*complete_account_onboarding.*does not exist|schema cache/i.test(message)) {
+          throw new Error('A migration 015 do onboarding ainda não foi aplicada no Supabase.');
+        }
+        throw error;
+      });
+    }
+
     if (!profileService || typeof profileService.updateCurrentProfile !== 'function') return Promise.reject(new Error('Serviço de perfil indisponível.'));
     if (!auth || typeof auth.updateCurrentUser !== 'function') return Promise.reject(new Error('Persistência da conta indisponível.'));
 
-    return profileService.updateCurrentProfile(payload || {})
+    return profileService.updateCurrentProfile(source)
       .then(function (profile) {
         if (!profile || !String(profile.city || '').trim() || !String(profile.state || '').trim()) {
           throw new Error('Informe cidade e estado para concluir o perfil.');

@@ -496,6 +496,17 @@
   const normalizeLocalMessage = (message, conversation) => {
     const currentUserId = getCurrentUserId();
     const mine = message?.mine === true || Boolean(currentUserId && message?.senderId && String(message.senderId) === String(currentUserId));
+    const attachmentRepository = window.Doke?.repositories?.attachments;
+    const rawAttachments = Array.isArray(message?.attachments)
+      ? message.attachments
+      : message?.attachment
+        ? [message.attachment]
+        : [];
+    const attachments = attachmentRepository?.normalizeAll
+      ? attachmentRepository.normalizeAll(rawAttachments)
+      : rawAttachments;
+    const attachment = attachments[0] || null;
+    const type = message?.type || (attachment && /^image\//i.test(attachment.type || "") ? "image" : attachment ? "attachment" : "text");
     return {
       id: message?.id || "",
       senderId: message?.senderId || message?.authorId || "",
@@ -506,8 +517,10 @@
       time: message?.time || "agora",
       text: message?.text || message?.body || "",
       mine,
-      type: message?.type || "text",
-      src: message?.src || "",
+      type,
+      attachments,
+      attachment,
+      src: attachment?.url || message?.src || "",
       duration: message?.duration || "",
       speed: message?.speed || "1x",
       amount: message?.amount || "",
@@ -647,6 +660,7 @@
     if (!message) return "";
     if (message.type === "audio") return "Áudio enviado";
     if (message.type === "image") return "Imagem enviada";
+    if (message.type === "attachment") return message.attachment?.name || message.attachments?.[0]?.name || "Arquivo enviado";
     const financialKind = getFinancialMessageKind(conversation, message);
     if (financialKind === "proposal") return `Proposta ${message.amount || "enviada"}`;
     if (financialKind === "charge") return `Cobrança ${message.amount || "enviada"}`;
@@ -774,6 +788,8 @@
       text: message.text || message.body || "",
       type: message.type || "text",
       src: message.src || "",
+      attachments: Array.isArray(message.attachments) ? message.attachments : [],
+      attachment: message.attachment || null,
       duration: message.duration || "",
       speed: message.speed || "1x",
       amount: message.amount || "",
@@ -1050,6 +1066,9 @@
     const audioCancelButton = root.querySelector("[data-messages-audio-cancel]");
     const imageDraft = root.querySelector("[data-messages-image-draft]");
     const imagePreview = root.querySelector("[data-messages-image-preview]");
+    const filePreview = root.querySelector("[data-messages-file-preview]");
+    const attachmentDraftTitle = root.querySelector("[data-messages-attachment-title]");
+    const attachmentDraftMeta = root.querySelector("[data-messages-attachment-meta]");
     const imageCancelButton = root.querySelector("[data-messages-image-cancel]");
     const lightbox = document.querySelector("[data-image-lightbox]");
     const lightboxImage = document.querySelector("[data-image-lightbox-image]");
@@ -1224,6 +1243,8 @@
     let audioDraftSeconds = 0;
     let audioDraftTimer = null;
     let imageDraftSrc = "";
+    let imageDraftFile = null;
+    let imageDraftObjectUrl = "";
     let messageContextIndex = -1;
     let activeThreadMessageIndex = -1;
     const advancedMessageFilter = { query: "", author: "all", period: "all", attachment: "all" };
@@ -1553,6 +1574,7 @@
         type: attachment?.type || attachment?.mimeType || "",
         size: Number(attachment?.size) || 0,
         url: attachment?.url || attachment?.dataUrl || attachment?.preview || "",
+        downloadUrl: attachment?.downloadUrl || attachment?.url || attachment?.dataUrl || attachment?.preview || "",
         previewable: Boolean(attachment?.previewable || attachment?.url || attachment?.dataUrl || attachment?.preview)
       }));
 
@@ -1562,6 +1584,43 @@
       if (value < 1024) return `${value} B`;
       if (value < 1024 * 1024) return `${Math.max(1, Math.round(value / 1024))} KB`;
       return `${(value / (1024 * 1024)).toFixed(1).replace(".0", "")} MB`;
+    };
+
+
+    const getPrimaryMessageAttachment = (message) => message?.attachment || message?.attachments?.[0] || null;
+
+    const renderMessageImageAttachment = (message) => {
+      const attachment = getPrimaryMessageAttachment(message);
+      const src = attachment?.url || message?.src || "";
+      const downloadUrl = attachment?.downloadUrl || src;
+      if (!src) {
+        return `<div class="message-bubble__attachment message-bubble__attachment--unavailable"><strong>${escapeHtml(attachment?.name || "Imagem")}</strong><span>Prévia indisponível</span></div>`;
+      }
+      return `
+        <div class="message-bubble__image">
+          <img src="${escapeHtml(src)}" alt="${escapeHtml(attachment?.name || "Imagem enviada na conversa")}" loading="lazy" decoding="async">
+        </div>
+        ${downloadUrl ? `<a class="message-bubble__attachment-download" href="${escapeHtml(downloadUrl)}" target="_blank" rel="noopener" download="${escapeHtml(attachment?.name || "imagem")}">Baixar imagem</a>` : ""}
+      `;
+    };
+
+    const renderMessageFileAttachment = (message) => {
+      const attachment = getPrimaryMessageAttachment(message);
+      if (!attachment) return `<p>${escapeHtml(message?.text || "Arquivo enviado")}</p>`;
+      const downloadUrl = attachment.downloadUrl || attachment.url || "";
+      const fileType = attachment.type === "application/pdf" ? "PDF" : "Arquivo";
+      return `
+        <div class="message-bubble__attachment">
+          <span class="message-bubble__attachment-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M7 3.5h7l4 4v13H7z"></path><path d="M14 3.5v4h4"></path><path d="M9.5 13h5"></path><path d="M9.5 16h5"></path></svg>
+          </span>
+          <span class="message-bubble__attachment-copy">
+            <strong>${escapeHtml(attachment.name || "Arquivo enviado")}</strong>
+            <span>${escapeHtml(`${fileType} • ${formatAttachmentSize(attachment.size)}`)}</span>
+          </span>
+          ${downloadUrl ? `<a class="message-bubble__attachment-action doke-btn doke-btn--ghost doke-btn--sm" href="${escapeHtml(downloadUrl)}" target="_blank" rel="noopener" download="${escapeHtml(attachment.name || "anexo")}">Baixar</a>` : `<span class="message-bubble__attachment-status">Indisponível</span>`}
+        </div>
+      `;
     };
 
     const getOrderStatusHistory = (status, order, charge) => {
@@ -1822,8 +1881,9 @@
             ? `<img src="${escapeHtml(attachment.url)}" alt="Prévia de ${escapeHtml(attachment.name)}">`
             : `<span class="orders-detail-attachment__icon" aria-hidden="true">${escapeHtml((attachment.name.split(".").pop() || "ARQ").slice(0, 4).toUpperCase())}</span>`;
           const content = `<span class="orders-detail-attachment__preview">${preview}</span><span class="orders-detail-attachment__copy"><strong>${escapeHtml(attachment.name)}</strong><span>${escapeHtml(formatAttachmentSize(attachment.size))}</span></span>`;
-          return attachment.url
-            ? `<a class="orders-detail-attachment" href="${escapeHtml(attachment.url)}" target="_blank" rel="noopener" aria-label="Abrir ${escapeHtml(attachment.name)}">${content}<span class="orders-detail-attachment__action">Abrir</span></a>`
+          const actionUrl = attachment.downloadUrl || attachment.url || "";
+          return actionUrl
+            ? `<a class="orders-detail-attachment" href="${escapeHtml(actionUrl)}" target="_blank" rel="noopener" download="${escapeHtml(attachment.name)}" aria-label="Baixar ${escapeHtml(attachment.name)}">${content}<span class="orders-detail-attachment__action">Baixar</span></a>`
             : `<article class="orders-detail-attachment" aria-label="${escapeHtml(attachment.name)}">${content}<span class="orders-detail-attachment__action">Sem prévia</span></article>`;
         }).join("");
       }
@@ -2598,7 +2658,8 @@
       if (query && !getMessageText(message).toLowerCase().includes(query)) return false;
       if (advancedMessageFilter.author === 'me' && !message.mine) return false;
       if (advancedMessageFilter.author === 'other' && message.mine) return false;
-      if (advancedMessageFilter.attachment !== 'all' && message.type !== advancedMessageFilter.attachment) return false;
+      const attachmentFilterType = advancedMessageFilter.attachment === 'file' ? 'attachment' : advancedMessageFilter.attachment;
+      if (attachmentFilterType !== 'all' && message.type !== attachmentFilterType) return false;
       if (advancedMessageFilter.period !== 'all' && message.createdAt) {
         const created = Date.parse(message.createdAt);
         if (created) {
@@ -2763,10 +2824,7 @@
                 <span>${message.duration || "00:00"}</span>
               </span>
               <button class="message-bubble__audio-speed doke-btn doke-btn--ghost doke-btn--sm" type="button" data-audio-speed>${message.speed || "1x"}</button>
-            </div>` : message.type === "image" ? `
-            <div class="message-bubble__image">
-              <img src="${message.src}" alt="Imagem enviada na conversa">
-            </div>` : `<p>${message.text}</p>`}
+            </div>` : message.type === "image" ? renderMessageImageAttachment(message) : message.type === "attachment" ? renderMessageFileAttachment(message) : `<p>${message.text}</p>`}
             ${message.editedAt ? `<span class="message-bubble__edited">editada</span>` : ""}
             ${renderMessageReactions(message, message.originalIndex)}
             ${renderMessageThreadLink(message, message.originalIndex)}
@@ -2870,7 +2928,16 @@
 
     const resetImageDraft = () => {
       imageDraftSrc = "";
-      if (imagePreview) imagePreview.src = "";
+      imageDraftFile = null;
+      if (imageDraftObjectUrl) URL.revokeObjectURL(imageDraftObjectUrl);
+      imageDraftObjectUrl = "";
+      if (imagePreview) {
+        imagePreview.src = "";
+        imagePreview.hidden = true;
+      }
+      filePreview?.setAttribute("hidden", "");
+      if (attachmentDraftTitle) attachmentDraftTitle.textContent = "Anexo pronto para envio";
+      if (attachmentDraftMeta) attachmentDraftMeta.textContent = "Preview do anexo";
       imageDraft?.setAttribute("hidden", "");
       updateComposerDraftState();
       if (imageInput) imageInput.value = "";
@@ -3936,7 +4003,7 @@
     });
 
 
-    composer?.addEventListener("submit", (event) => {
+    composer?.addEventListener("submit", async (event) => {
       event.preventDefault();
       const activeConversation = conversations[activeId];
       if (!activeConversation) {
@@ -3963,16 +4030,55 @@
         composerInput?.focus();
         return;
       }
-      if (imageDraftSrc) {
-        const imageMessage = { author: "Você", time: "agora", mine: true, type: "image", src: imageDraftSrc, replyTo: replyToMessage ? { author: replyToMessage.author, text: replyToMessage.text } : null };
-        conversations[activeId].messages.push(imageMessage);
-        persistConversationMessage(activeId, imageMessage);
-        publishConversationNotification(activeId, imageMessage, /(^|\s)@[\w.-]+/.test(String(imageMessage.text || '')) ? 'mention' : 'message');
-        renderThread(activeId, { scrollTo: "end" });
-        composer.reset();
-        clearReplyPreview();
-        resetImageDraft();
-        composerInput?.focus();
+      if (imageDraftFile) {
+        const attachmentRepository = window.Doke?.repositories?.attachments;
+        const messagesService = window.Doke?.services?.messages;
+        if (!attachmentRepository?.uploadConversationFiles || !messagesService?.sendMessage) {
+          showCopyToast("O serviço de anexos está indisponível. Recarregue a página e tente novamente.");
+          return;
+        }
+        if (sendButton) {
+          sendButton.disabled = true;
+          sendButton.setAttribute("aria-busy", "true");
+          sendButton.dataset.actionState = "loading";
+        }
+        try {
+          const uploadedAttachments = await attachmentRepository.uploadConversationFiles(activeId, [imageDraftFile], { maxFiles: 1 });
+          const attachment = uploadedAttachments[0];
+          if (!attachment) throw new Error("Não foi possível preparar o anexo.");
+          const messageType = /^image\//i.test(attachment.type || "") ? "image" : "attachment";
+          const messagePayload = {
+            author: "Você",
+            time: "agora",
+            mine: true,
+            type: messageType,
+            text: messageType === "attachment" ? attachment.name : "",
+            body: messageType === "attachment" ? attachment.name : "",
+            src: attachment.url || "",
+            attachments: uploadedAttachments,
+            attachment,
+            senderId: getCurrentUserId(),
+            deferSideEffects: true,
+            replyTo: replyToMessage ? { author: replyToMessage.author, text: replyToMessage.text } : null
+          };
+          const persistedMessage = await messagesService.sendMessage(activeId, messagePayload);
+          const imageMessage = normalizeLocalMessage(persistedMessage || messagePayload, activeConversation);
+          conversations[activeId].messages.push(imageMessage);
+          publishConversationNotification(activeId, imageMessage, 'message');
+          renderThread(activeId, { scrollTo: "end" });
+          composer.reset();
+          clearReplyPreview();
+          resetImageDraft();
+          composerInput?.focus();
+        } catch (error) {
+          showCopyToast(error?.message || "Não foi possível enviar o anexo.");
+        } finally {
+          if (sendButton) {
+            sendButton.disabled = false;
+            sendButton.setAttribute("aria-busy", "false");
+            sendButton.dataset.actionState = "idle";
+          }
+        }
         return;
       }
       if (!value) return;
@@ -4317,14 +4423,30 @@
     imageInput?.addEventListener("change", () => {
       if (!imageInput.files?.length) return;
       const file = imageInput.files[0];
-      const reader = new FileReader();
-      reader.onload = () => {
-        imageDraftSrc = String(reader.result || "");
-        if (imagePreview) imagePreview.src = imageDraftSrc;
-        imageDraft?.removeAttribute("hidden");
-        updateComposerDraftState();
-      };
-      reader.readAsDataURL(file);
+      const attachmentRepository = window.Doke?.repositories?.attachments;
+      try {
+        attachmentRepository?.validateFiles?.([file], { maxFiles: 1 });
+      } catch (error) {
+        showCopyToast(error?.message || "Este arquivo não pode ser enviado.");
+        resetImageDraft();
+        return;
+      }
+
+      imageDraftFile = file;
+      if (imageDraftObjectUrl) URL.revokeObjectURL(imageDraftObjectUrl);
+      imageDraftObjectUrl = URL.createObjectURL(file);
+      imageDraftSrc = /^image\//i.test(file.type || "") ? imageDraftObjectUrl : "";
+      const isImage = /^image\//i.test(file.type || "");
+      if (imagePreview) {
+        imagePreview.hidden = !isImage;
+        imagePreview.src = isImage ? imageDraftObjectUrl : "";
+        imagePreview.alt = file.name || "Preview do anexo";
+      }
+      if (filePreview) filePreview.hidden = isImage;
+      if (attachmentDraftTitle) attachmentDraftTitle.textContent = file.name || "Anexo pronto para envio";
+      if (attachmentDraftMeta) attachmentDraftMeta.textContent = `${file.type === "application/pdf" ? "PDF" : "Imagem"} • ${formatAttachmentSize(file.size)}`;
+      imageDraft?.removeAttribute("hidden");
+      updateComposerDraftState();
     });
 
     emojiButton?.addEventListener("click", () => {

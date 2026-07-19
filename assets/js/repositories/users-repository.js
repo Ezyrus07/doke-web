@@ -13,57 +13,7 @@
   const MOCK_USERS_URL_FROM_AUTH = '../assets/data/mock-users.json';
 
   const DEMO_PASSWORD_HASH = 'ef797c8118f02dfb649607dd5d3f8c7623048c9cfc7b91e5a14ee9c9b49e95ac';
-  const FALLBACK_USERS = Object.freeze([
-    {
-      id: 'user_cliente_demo',
-      name: 'Cliente Doke',
-      email: 'cliente@doke.local',
-      role: 'client',
-      type: 'client',
-      avatarInitials: 'CD',
-      initials: 'CD',
-      handle: 'cliente-demo',
-      city: 'Salvador',
-      state: 'BA',
-      points: 230,
-      verified: true,
-      passwordHash: DEMO_PASSWORD_HASH
-    },
-    {
-      id: 'user_profissional_demo',
-      name: 'Profissional Doke',
-      email: 'pro@doke.local',
-      role: 'professional',
-      type: 'professional',
-      avatarInitials: 'PD',
-      initials: 'PD',
-      handle: 'pro-demo',
-      city: 'Salvador',
-      state: 'BA',
-      points: 420,
-      verified: true,
-      profession: 'Pintor residencial',
-      passwordHash: DEMO_PASSWORD_HASH
-    }
-    ,
-    {
-      id: 'user_suporte_demo',
-      name: 'Suporte Doke',
-      email: 'suporte@doke.local',
-      role: 'support',
-      type: 'support',
-      avatarInitials: 'SD',
-      initials: 'SD',
-      handle: 'suporte-demo',
-      city: 'Salvador',
-      state: 'BA',
-      points: 0,
-      verified: true,
-      isMockSupport: true,
-      mockSupport: true,
-      passwordHash: DEMO_PASSWORD_HASH
-    }
-  ]);
+  const FALLBACK_USERS = Object.freeze([]);
 
   let seededUsersPromise = null;
 
@@ -78,7 +28,17 @@
   const PROFESSIONAL_PROFILES_STORAGE_KEY = 'doke.professionalProfiles.v1';
   const PROFESSIONAL_VERIFICATIONS_STORAGE_KEY = 'doke.professionalIdentityVerifications.v1';
 
-  const readLocalUsers = () => safeParse(window.localStorage.getItem(STORAGE_KEY), []);
+  const DEMO_IDENTIFIERS = new Set(['user_cliente_demo', 'user_profissional_demo', 'user_suporte_demo']);
+  const isDemoUser = (user) => {
+    const email = String(user?.email || '').trim().toLowerCase();
+    return DEMO_IDENTIFIERS.has(String(user?.id || '')) || email.endsWith('@doke.local') || email === 'client@doke' || email === 'pro@doke';
+  };
+  const readLocalUsers = () => {
+    const items = safeParse(window.localStorage.getItem(STORAGE_KEY), []);
+    const clean = Array.isArray(items) ? items.filter((user) => !isDemoUser(user)) : [];
+    if (JSON.stringify(items) !== JSON.stringify(clean)) window.localStorage.setItem(STORAGE_KEY, JSON.stringify(clean));
+    return clean;
+  };
   const readLegacyProfiles = () => safeParse(window.localStorage.getItem(LEGACY_PROFILE_STORAGE_KEY), {});
 
   const newestByTimestamp = (items) => items.slice().sort((a, b) => {
@@ -304,19 +264,7 @@
     ? MOCK_USERS_URL_FROM_AUTH
     : MOCK_USERS_URL;
 
-  const loadSeededUsers = async () => {
-    if (seededUsersPromise) return seededUsersPromise;
-
-    seededUsersPromise = fetch(getMockUrl(), { cache: 'no-store' })
-      .then((response) => {
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        return response.json();
-      })
-      .then((users) => Array.isArray(users) ? users.map(normalizeUser).filter(Boolean) : [])
-      .catch(() => FALLBACK_USERS.map(normalizeUser).filter(Boolean));
-
-    return seededUsersPromise;
-  };
+  const loadSeededUsers = async () => [];
 
   const list = async () => {
     const seeded = await loadSeededUsers();

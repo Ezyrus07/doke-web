@@ -1,16 +1,17 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-auth-guard="pending">
 <head>
  <meta charset="UTF-8">
  <meta name="viewport" content="width=device-width, initial-scale=1.0">
  <title>Doke | Mensagens</title>
-  <script src="assets/js/core/header-auth-surface-early.js?v=20260623-profile-mount-v1" defer></script>
+  <link rel="stylesheet" href="assets/css/core/auth-prepaint-guard.css?v=20260719-auth-prepaint-v1">
+  <script src="assets/js/core/header-auth-surface-early.js?v=20260718-real-auth-only-v1"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
    <script src="assets/js/core/shell-state-early.js?v=20260614-drawer-canonical-v2" defer></script>
   <link rel="stylesheet" href="assets/css/components/feedback/document-preloader.css?v=20260712-global-document-boot-v1">
-  <link rel="stylesheet" href="assets/css/pages/messaging-foundation.css?v=20260717-message-order-detail-v2">
+  <link rel="stylesheet" href="assets/css/pages/messaging-foundation.css?v=20260718-transaction-attachments-v1">
 
 
 <script>document.documentElement.classList.add("doke-mobile-shell-pending");</script>
@@ -317,16 +318,19 @@
          <button class="messages-audio-draft__cancel doke-composer-draft__cancel doke-btn doke-btn--ghost doke-btn--sm" type="button" data-messages-audio-cancel>Cancelar</button>
         </div>
         <div class="messages-image-draft doke-composer-draft doke-composer-draft--image" data-messages-image-draft hidden>
-         <img class="messages-image-draft__preview doke-composer-draft__image" data-messages-image-preview src="" alt="Preview da imagem anexada">
+         <img class="messages-image-draft__preview doke-composer-draft__image" data-messages-image-preview src="" alt="Preview do anexo" hidden>
+         <span class="messages-image-draft__file" data-messages-file-preview aria-hidden="true" hidden>
+          <svg viewBox="0 0 24 24"><path d="M7 3.5h7l4 4v13H7z"></path><path d="M14 3.5v4h4"></path><path d="M9.5 13h5"></path><path d="M9.5 16h5"></path></svg>
+         </span>
          <div class="messages-image-draft__meta doke-composer-draft__meta">
-          <strong>Imagem pronta para envio</strong>
-          <span>Preview do anexo</span>
+          <strong data-messages-attachment-title>Anexo pronto para envio</strong>
+          <span data-messages-attachment-meta>Preview do anexo</span>
          </div>
          <button class="messages-image-draft__cancel doke-composer-draft__cancel doke-btn doke-btn--ghost doke-btn--sm" type="button" data-messages-image-cancel>Cancelar</button>
         </div>
         <div class="messages-composer__tools doke-chat-composer__tools">
-         <label class="messages-composer__tool doke-chat-composer__tool doke-icon-btn doke-icon-btn--flat" aria-label="Anexar imagem">
-          <input type="file" accept="image/*" data-messages-image-input hidden>
+         <label class="messages-composer__tool doke-chat-composer__tool doke-icon-btn doke-icon-btn--flat" aria-label="Anexar imagem ou PDF">
+          <input type="file" accept="image/jpeg,image/png,image/webp,image/gif,application/pdf" data-messages-image-input hidden>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 12 4-4a3 3 0 1 1 4.2 4.2l-6.4 6.4a4.5 4.5 0 1 1-6.4-6.4L12 5.8"></path></svg>
          </label>
          <button class="messages-composer__tool doke-chat-composer__tool doke-icon-btn doke-icon-btn--flat" type="button" data-messages-audio aria-label="Gravar áudio"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="4.5" width="6" height="10" rx="3"></rect><path d="M7 11.5a5 5 0 0 0 10 0"></path><path d="M12 16.5v3"></path><path d="M9 19.5h6"></path></svg></button>
@@ -474,18 +478,22 @@
   <script src="assets/js/core/page-hydration.js?v=20260716-regional-hydration-v1" defer></script>
   <script src="assets/js/core/stable-shell-router.js?v=20260716-regional-hydration-v1" defer></script>
   <script src="assets/js/core/session.js?v=20260501-auth-session-v1" defer></script>
-  <script src="assets/js/services/account-access-service.js?v=20260714-transaction-lifecycle-v1" defer></script>
+  <script src="assets/js/services/account-access-service.js?v=20260719-auth-fast-guard-v1" defer></script>
 <script src="assets/js/components/media-lightbox.js?v=20260425-shared-media-lightbox-v1" defer></script>
-  <script src="assets/js/repositories/messages-repository.js?v=20260626-order-status-flow-v1" defer></script>
+  <script src="assets/js/repositories/messages-repository.js?v=20260719-singleton-client-v1" defer></script>
   <script src="assets/js/services/message-service.js?v=20260626-order-status-flow-v1" defer></script>
- <script src="assets/js/repositories/orders-repository.js?v=20260702-dispute-bridge-v1" defer></script>
+ <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+<script src="assets/js/core/supabase-config.js?v=20260719-singleton-client-v1" defer></script>
+<script src="assets/js/repositories/attachments-repository.js?v=20260719-singleton-client-v1" defer></script>
+<script src="assets/js/repositories/orders-repository.js?v=20260719-singleton-client-v1" defer></script>
   <script src="assets/js/repositories/wallet-repository.js?v=20260712-completion-release-v1" defer></script>
-  <script src="assets/js/services/orders-service.js?v=20260712-completion-release-v1" defer></script>
+  <script src="assets/js/repositories/finance-repository.js?v=20260719-singleton-client-v1" defer></script>
+  <script src="assets/js/services/orders-service.js?v=20260718-transaction-attachments-v1" defer></script>
  <script src="assets/js/components/decline-reason-dialog.js?v=20260625-flow-contract-v1" defer></script>
  <script src="assets/js/components/doke-lite-select.js?v=20260702-issue-report-select-v2" defer></script>
 <script src="assets/js/components/issue-report-dialog.js?v=20260702-issue-report-select-v2" defer></script>
    <script src="assets/js/components/message-author.js?v=20260711-message-author-v1" defer></script>
-<script src="assets/js/pages/mensagens.js?v=20260717-transactional-order-context-v1" defer></script>
+<script src="assets/js/pages/mensagens.js?v=20260718-transaction-attachments-v1" defer></script>
   <script src="assets/js/features/chat-realtime-presence.js?v=20260714-messages-startup-loop-v2" defer></script>
   <script src="assets/js/ui/responsive-interaction-guard.js?v=20260428-architecture" defer></script>
   <script src="assets/js/ui/mobile-drawer.js" defer></script>
@@ -501,9 +509,9 @@
   <script src="assets/js/services/search-service.js?v=20260512-cycle77-script-load-v1" defer></script>
   <script src="assets/js/services/order-service.js?v=20260512-cycle77-script-load-v1" defer></script>
   <script src="assets/js/services/community-service.js?v=20260512-cycle77-script-load-v1" defer></script>
-  <script src="assets/js/repositories/notifications-repository.js?v=20260622-notifications-events-v1" defer></script>
+  <script src="assets/js/repositories/notifications-repository.js?v=20260719-singleton-client-v1" defer></script>
 <script src="assets/js/services/notification-service.js?v=20260712-completion-release-v1" defer></script>
-  <script src="assets/js/services/wallet-service.js?v=20260712-completion-release-v1" defer></script>
+  <script src="assets/js/services/wallet-service.js?v=20260718-finance-supabase-v1" defer></script>
   <script src="assets/js/services/domain-data-service.js?v=20260512-cycle77-script-load-v1" defer></script>
   <script src="assets/js/state/state-contracts.js?v=20260512-cycle131-state-contracts" defer></script>
   <script src="assets/js/controllers/controller-data.js?v=20260512-cycle77-script-load-v1" defer></script>
@@ -515,7 +523,7 @@
   <script src="assets/js/controllers/mensagens-controller.js?v=20260512-cycle77-script-load-v1" defer></script>
   <script src="assets/js/controllers/controller-bootstrap.js?v=20260512-cycle77-script-load-v1" defer></script>
   <script src="assets/js/core/ipad-safari-scroll-guard.js?v=20260602-v1" defer></script>
-  <script src="assets/js/services/payment-service.js?v=20260712-completion-release-v1" defer></script>
+  <script src="assets/js/services/payment-service.js?v=20260718-finance-supabase-v1" defer></script>
  <script src="assets/js/features/in-app-notifications.js?v=20260712-quick-actions-v2" defer></script>
  <script src="assets/js/features/browser-notification-bridge.js?v=20260712-logic-stability-v1" defer></script>
  <script src="assets/js/features/community-runtime-stability.js?v=20260714-interaction-stability-v1" defer></script>

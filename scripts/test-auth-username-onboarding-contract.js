@@ -127,11 +127,7 @@ function createEventTarget() {
   await window.Doke.services.profile.updateCurrentSettings({ privacy: { publicProfile: false } });
   assert.strictEqual((await window.Doke.services.profile.getCurrentSettings()).privacy.publicProfile, false);
 
-  const legacyComplete = await repo.findById('user_cliente_demo');
-  session.setCurrentUser(legacyComplete);
-  const legacyState = await window.Doke.services.onboarding.resolveState();
-  assert(legacyState.profile, 'Conta antiga deve materializar o perfil base a partir do registro canônico.');
-  assert.strictEqual(legacyState.shouldShow, false, 'Conta antiga completa não deve receber onboarding.');
+  assert.strictEqual(await repo.findById('user_cliente_demo'), null, 'Contas demo antigas não podem ser materializadas.');
 
   const signupHtml = fs.readFileSync('auth/cadastro.html', 'utf8');
   const indexHtml = fs.readFileSync('index.html', 'utf8');

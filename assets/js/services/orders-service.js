@@ -1860,6 +1860,33 @@
     });
   }
 
+  function updateAttachments(orderId, attachments) {
+    var normalizedOrderId = normalizeText(orderId || '');
+    var actor = getCurrentUser() || {};
+    if (!normalizedOrderId) return Promise.reject(new Error('Pedido inválido para atualizar anexos.'));
+    var attachmentRepository = Doke.repositories && Doke.repositories.attachments;
+    var normalizedAttachments = attachmentRepository && typeof attachmentRepository.normalizeAll === 'function'
+      ? attachmentRepository.normalizeAll(attachments || [])
+      : (Array.isArray(attachments) ? attachments.slice(0, 8) : []);
+
+    return getById(normalizedOrderId).then(function (order) {
+      if (!order) throw new Error('Pedido não encontrado para atualizar anexos.');
+      assertOrderAccess(order, 'update_order_attachments', actor);
+      var updatedAt = nowIso();
+      return assertRepository().save(Object.assign({}, order, {
+        attachments: normalizedAttachments,
+        updatedAt: updatedAt
+      }));
+    }).then(function (saved) {
+      return updateLinkedConversation(saved, saved.status || 'pending', {}).then(function () {
+        document.dispatchEvent(new CustomEvent('doke:order-attachments-updated', {
+          detail: { order: saved, attachments: normalizedAttachments }
+        }));
+        return saved;
+      });
+    });
+  }
+
   function updateStatus(orderId, status, options) {
     return saveStatus(orderId, status || 'pending', null, options || {});
   }
@@ -1890,6 +1917,7 @@
     recordCompletionRequest: recordCompletionRequest,
     complete: complete,
     recordReview: recordReview,
+    updateAttachments: updateAttachments,
     updateStatus: updateStatus,
     stateMachine: Object.freeze({
       statuses: Object.freeze(['pending', 'accepted', 'quoted', 'in_progress', 'completed', 'cancelled']),

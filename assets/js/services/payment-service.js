@@ -73,13 +73,23 @@
     var status = boundary && typeof boundary.getDataProviderStatus === 'function'
       ? boundary.getDataProviderStatus()
       : null;
-    var activeProvider = status && status.activeProvider || 'mock';
+    var repository = getPaymentsRepository();
+    var repositoryStatus = repository && typeof repository.getProviderStatus === 'function'
+      ? repository.getProviderStatus()
+      : null;
+    var apiReady = Boolean(status && status.apiReady === true);
+    var apiActive = Boolean(status && status.activeProvider === 'api' && apiReady);
+    var activeProvider = apiActive
+      ? 'api'
+      : repositoryStatus && repositoryStatus.provider || 'mock';
     return Object.freeze({
       domain: 'payments',
       activeProvider: activeProvider,
-      apiReady: Boolean(status && status.apiReady === true),
-      paymentsApiActive: activeProvider === 'api' && Boolean(status && status.apiReady === true),
-      fallbackProvider: getPaymentsRepository() ? 'local-mock' : 'unavailable'
+      apiReady: apiReady,
+      paymentsApiActive: apiActive,
+      fallbackActive: Boolean(repositoryStatus && repositoryStatus.fallbackActive),
+      localFinancialSimulation: Boolean(repositoryStatus && repositoryStatus.localFinancialSimulation),
+      fallbackProvider: repository ? 'local-mock' : 'unavailable'
     });
   }
 

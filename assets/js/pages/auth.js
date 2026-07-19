@@ -133,16 +133,37 @@ function getPostAuthRedirect() {
   return next || "../index.html";
 }
 
-function navigateAuth(target, options = {}) {
-  const navigate = window.Doke?.navigation?.go || window.DokeNavigate;
-  if (typeof navigate !== 'function') {
-    throw new Error('Doke navigation lifecycle is unavailable.');
+function resolvePostAuthTarget() {
+  const fallback = new URL("../index.html", window.location.href);
+  let target;
+
+  try {
+    target = new URL(getPostAuthRedirect(), window.location.href);
+  } catch (error) {
+    return fallback.href;
   }
-  return navigate(target, Object.assign({ forceDocument: true, source: 'auth' }, options));
+
+  if (target.origin !== window.location.origin) return fallback.href;
+
+  const pathname = target.pathname.toLowerCase();
+  if (pathname.endsWith("/auth/login.html") ||
+      pathname.endsWith("/auth/cadastro.html") ||
+      pathname.endsWith("/auth/esqueci-senha.html")) {
+    return fallback.href;
+  }
+
+  return target.href;
 }
 
 function redirectAfterAuth() {
-  return navigateAuth(getPostAuthRedirect(), { source: 'auth-success' });
+  const target = resolvePostAuthTarget();
+  document.documentElement.dataset.authRedirecting = "true";
+
+  window.setTimeout(() => {
+    if (window.location.href !== target) window.location.replace(target);
+  }, 700);
+
+  window.location.replace(target);
 }
 
 function isStrongPassword(password) {
@@ -168,18 +189,21 @@ if (authService && loginForm) {
       return;
     }
 
+    let redirecting = false;
     try {
       setButtonLoading(submitButton, true, "Entrando...");
       setFeedback(feedback, "success", "Validando seu acesso...");
       const user = await authService.signIn({ login, password });
       window.DokeHeaderProfileMount?.mount?.();
       document.dispatchEvent(new CustomEvent("doke:auth-login-success", { detail: { user } }));
-      setFeedback(feedback, "success", `Acesso liberado. Bem-vindo, ${user.name}.`);
-      await redirectAfterAuth();
+      redirecting = true;
+      setButtonLoading(submitButton, true, "Redirecionando...");
+      setFeedback(feedback, "success", `Acesso liberado. Bem-vindo, ${user.name}. Redirecionando...`);
+      redirectAfterAuth();
     } catch (error) {
       setFeedback(feedback, "error", error.message);
     } finally {
-      setButtonLoading(submitButton, false, "Entrar");
+      if (!redirecting) setButtonLoading(submitButton, false, "Entrar");
     }
   });
 }
@@ -234,9 +258,10 @@ if (authService && signupForm) {
         confirmationPanel?.classList.remove("is-hidden");
       } else {
         confirmationPanel?.classList.add("is-hidden");
-        setFeedback(feedback, "success", `Conta criada com sucesso. Bem-vindo, ${user.name}.`);
+        setFeedback(feedback, "success", `Conta criada com sucesso. Bem-vindo, ${user.name}. Redirecionando...`);
         window.DokeHeaderProfileMount?.mount?.();
         document.dispatchEvent(new CustomEvent("doke:auth-login-success", { detail: { user } }));
+        setButtonLoading(submitButton, true, "Redirecionando...");
         redirectAfterAuth();
       }
     } catch (error) {

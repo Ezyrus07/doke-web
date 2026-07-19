@@ -124,6 +124,12 @@
   function list(resourceName, query) {
     query = query || {};
     var resource = getResourceName(resourceName);
+    if (resource === 'services') {
+      var servicesRepository = getServicesRepository();
+      if (servicesRepository && typeof servicesRepository.list === 'function') return servicesRepository.list(query);
+      return Promise.resolve([]);
+    }
+
     if (resource === 'conversations') {
       var messagesRepository = getMessagesRepository();
       if (messagesRepository && typeof messagesRepository.list === 'function') return messagesRepository.list(query);
@@ -144,6 +150,12 @@
     var id = payload && payload.id;
     if (!id) return Promise.resolve(null);
 
+    if (getResourceName(resourceName) === 'services') {
+      var servicesRepository = getServicesRepository();
+      if (servicesRepository && typeof servicesRepository.getById === 'function') return servicesRepository.getById(id);
+      return Promise.resolve(null);
+    }
+
     if (getResourceName(resourceName) === 'conversations') {
       var messagesRepository = getMessagesRepository();
       if (messagesRepository && typeof messagesRepository.getById === 'function') return messagesRepository.getById(id);
@@ -155,6 +167,10 @@
     });
   }
 
+
+  function getServicesRepository() {
+    return Doke.repositories && Doke.repositories.services || null;
+  }
   function getOrdersRepository() {
     return Doke.repositories && Doke.repositories.orders || null;
   }

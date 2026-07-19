@@ -21,9 +21,19 @@
     return window.DokeAuth && window.DokeAuth.service ? window.DokeAuth.service : null;
   }
 
-  function usesApiProvider() {
-    var auth = authService();
-    return auth && typeof auth.getActiveAuthProvider === 'function' && auth.getActiveAuthProvider() === 'api';
+  function getSupabaseClient() {
+    return window.DokeSupabase && typeof window.DokeSupabase.getClient === 'function'
+      ? window.DokeSupabase.getClient()
+      : null;
+  }
+
+  function usesSupabaseProvider() {
+    var session = Doke.session && typeof Doke.session.getSession === 'function'
+      ? Doke.session.getSession()
+      : null;
+    if (session && session.provider === 'supabase') return true;
+    var config = window.DOKE_SUPABASE_CONFIG || {};
+    return config.enabled !== false && Boolean(config.url) && Boolean(config.anonKey || config.publishableKey);
   }
 
   function normalizeText(value, maxLength) {
@@ -62,17 +72,17 @@
     return url;
   }
 
-  function prepareLocalImage(file) {
-    if (!file) return Promise.reject(new Error('Selecione uma imagem.'));
-    if (!/^image\/(?:png|jpeg|webp|gif)$/i.test(String(file.type || ''))) {
-      return Promise.reject(new Error('Use uma imagem PNG, JPG, WEBP ou GIF.'));
-    }
-    if (Number(file.size || 0) > 120 * 1024) {
-      return Promise.reject(new Error('A imagem deve ter no máximo 120 KB no modo local.'));
-    }
-    if (usesApiProvider()) {
-      return Promise.reject(new Error('Upload de imagem ainda não está habilitado no provider API.'));
-    }
+  function sanitizeFileName(value) {
+    return String(value || 'imagem')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9._-]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(-80) || 'imagem';
+  }
+
+  function readLocalImage(file) {
     return new Promise(function (resolve, reject) {
       var reader = new FileReader();
       reader.addEventListener('load', function () {
@@ -84,6 +94,59 @@
       }, { once: true });
       reader.readAsDataURL(file);
     });
+  }
+
+  function uploadProfileImage(file) {
+    var client = getSupabaseClient();
+    if (!client) return Promise.reject(new Error('Supabase indisponível para enviar a imagem.'));
+
+    return client.auth.getUser().then(function (response) {
+      if (response.error) throw response.error;
+      var authUser = response.data && response.data.user;
+      if (!authUser || !authUser.id) throw new Error('Sua sessão expirou. Entre novamente.');
+
+      var extension = String(file.name || '').split('.').pop().toLowerCase();
+      if (!/^(png|jpe?g|webp|gif)$/.test(extension)) {
+        extension = String(file.type || '').split('/').pop().replace('jpeg', 'jpg') || 'jpg';
+      }
+      var fileName = Date.now() + '-' + Math.random().toString(36).slice(2, 10) + '-' + sanitizeFileName(file.name || ('perfil.' + extension));
+      var objectPath = authUser.id + '/' + fileName;
+
+      return client.storage.from('profile-media').upload(objectPath, file, {
+        cacheControl: '3600',
+        contentType: file.type || 'image/jpeg',
+        upsert: false
+      }).then(function (uploadResponse) {
+        if (uploadResponse.error) {
+          var uploadMessage = String(uploadResponse.error.message || '');
+          if (/bucket.*not found|not found/i.test(uploadMessage)) {
+            throw new Error('O bucket profile-media ainda não foi criado. Execute a migration 017.');
+          }
+          throw new Error(uploadMessage || 'Não foi possível enviar a imagem.');
+        }
+        var publicResponse = client.storage.from('profile-media').getPublicUrl(objectPath);
+        var publicUrl = publicResponse && publicResponse.data ? publicResponse.data.publicUrl : '';
+        if (!publicUrl) throw new Error('Não foi possível gerar a URL pública da imagem.');
+        document.documentElement.setAttribute('data-doke-profile-media-provider', 'supabase');
+        return normalizeMediaUrl(publicUrl);
+      });
+    });
+  }
+
+  function prepareLocalImage(file) {
+    if (!file) return Promise.reject(new Error('Selecione uma imagem.'));
+    if (!/^image\/(?:png|jpeg|webp|gif)$/i.test(String(file.type || ''))) {
+      return Promise.reject(new Error('Use uma imagem PNG, JPG, WEBP ou GIF.'));
+    }
+    if (Number(file.size || 0) > 5 * 1024 * 1024) {
+      return Promise.reject(new Error('A imagem deve ter no máximo 5 MB.'));
+    }
+    if (usesSupabaseProvider()) return uploadProfileImage(file);
+    if (Number(file.size || 0) > 120 * 1024) {
+      return Promise.reject(new Error('A imagem deve ter no máximo 120 KB no modo local.'));
+    }
+    document.documentElement.setAttribute('data-doke-profile-media-provider', 'local');
+    return readLocalImage(file);
   }
 
   function normalizePatch(payload) {
@@ -126,7 +189,7 @@
   function getById(userId) {
     var id = String(userId || '').trim();
     var sessionUser = currentUser();
-    if (usesApiProvider() && sessionUser && String(sessionUser.id) === id) {
+    if (usesSupabaseProvider() && sessionUser && String(sessionUser.id) === id) {
       return Promise.resolve(sessionUser.profile || sessionUser);
     }
     var repository = usersRepository();
@@ -148,34 +211,89 @@
     var user = currentUser();
     var repository = usersRepository();
     if (!user || !user.id) return Promise.reject(new Error('Entre na sua conta para editar o perfil.'));
-    var auth = authService();
-    if (!usesApiProvider() && (!repository || typeof repository.updateCurrentProfile !== 'function')) {
-      return Promise.reject(new Error('Persistência do perfil indisponível.'));
-    }
 
     return getCurrentProfile().then(function (currentProfile) {
       var patch = normalizePatch(Object.assign({}, currentProfile || {}, {
         name: user.name,
         handle: user.handle
       }, payload || {}));
-      var availability = !usesApiProvider() && typeof repository.isHandleAvailable === 'function'
-        ? Promise.resolve(repository.isHandleAvailable(patch.handle, user.id))
-        : Promise.resolve(true);
 
-      return availability.then(function (available) {
-      if (!available) throw new Error('Esse usuário já está em uso. Escolha outro.');
-        if (usesApiProvider()) {
-          if (!auth || typeof auth.updateCurrentProfile !== 'function') throw new Error('Persistência do perfil indisponível.');
-          return auth.updateCurrentProfile(patch).then(function (profile) {
-            var apiUser = currentUser() || user;
-            return Object.assign({}, apiUser, { profile: profile || apiUser.profile || null });
+      if (usesSupabaseProvider()) {
+        var client = getSupabaseClient();
+        if (!client) throw new Error('Supabase indisponível para salvar o perfil.');
+
+        return client.rpc('update_account_profile', {
+          p_display_name: patch.name,
+          p_username: patch.handle,
+          p_city: patch.city,
+          p_state: patch.state,
+          p_bio: patch.bio,
+          p_interests: patch.interests,
+          p_avatar_url: patch.avatarUrl || '',
+          p_cover_url: patch.coverUrl || ''
+        }).then(function (response) {
+          if (response.error) {
+            var message = String(response.error.message || '');
+            if (/username|duplicate|unique/i.test(message)) throw new Error('Esse usuário já está em uso. Escolha outro.');
+            throw new Error(message || 'Não foi possível salvar o perfil.');
+          }
+
+          var result = response.data || {};
+          var nextProfile = {
+            id: result.profileId || (currentProfile && currentProfile.id) || user.id,
+            userId: user.id,
+            name: result.displayName || patch.name,
+            displayName: result.displayName || patch.name,
+            handle: result.username || patch.handle,
+            username: result.username || patch.handle,
+            city: result.city || patch.city,
+            state: result.state || patch.state,
+            bio: result.bio != null ? result.bio : patch.bio,
+            interests: Array.isArray(result.interests) ? result.interests : patch.interests,
+            avatarUrl: result.avatarUrl || patch.avatarUrl || (currentProfile && currentProfile.avatarUrl) || '',
+            coverUrl: result.coverUrl || patch.coverUrl || (currentProfile && currentProfile.coverUrl) || ''
+          };
+
+          return client.auth.updateUser({
+            data: {
+              name: nextProfile.name,
+              full_name: nextProfile.name,
+              handle: nextProfile.handle,
+              city: nextProfile.city,
+              state: nextProfile.state,
+              bio: nextProfile.bio,
+              interests: nextProfile.interests,
+              avatar_url: nextProfile.avatarUrl,
+              cover_url: nextProfile.coverUrl
+            }
+          }).catch(function () { return null; }).then(function () {
+            var nextUser = Object.assign({}, user, {
+              name: nextProfile.name,
+              displayName: nextProfile.name,
+              handle: nextProfile.handle,
+              avatarUrl: nextProfile.avatarUrl,
+              avatar: nextProfile.avatarUrl,
+              profile: nextProfile
+            });
+            if (Doke.session && typeof Doke.session.setCurrentUser === 'function') {
+              Doke.session.setCurrentUser(nextUser, { provider: 'supabase', remember: true });
+            }
+            return nextUser;
           });
-        }
-        return repository.updateCurrentProfile(user.id, patch, user);
-      });
+        });
+      }
+
+      if (!repository || typeof repository.updateCurrentProfile !== 'function') {
+        throw new Error('Persistência do perfil indisponível.');
+      }
+      return Promise.resolve(repository.isHandleAvailable ? repository.isHandleAvailable(patch.handle, user.id) : true)
+        .then(function (available) {
+          if (!available) throw new Error('Esse usuário já está em uso. Escolha outro.');
+          return repository.updateCurrentProfile(user.id, patch, user);
+        });
     }).then(function (updatedUser) {
       var nextUser = updatedUser || user;
-      if (!usesApiProvider() && Doke.session && typeof Doke.session.setCurrentUser === 'function') {
+      if (!usesSupabaseProvider() && Doke.session && typeof Doke.session.setCurrentUser === 'function') {
         Doke.session.setCurrentUser(nextUser);
       }
       window.dispatchEvent(new CustomEvent('doke:profile-updated', {
@@ -188,7 +306,7 @@
   function getCurrentSettings() {
     var user = currentUser();
     if (!user || !user.id) return Promise.resolve({});
-    if (usesApiProvider()) return Promise.resolve(user.settings || {});
+    if (usesSupabaseProvider()) return Promise.resolve(user.settings || {});
     var repository = usersRepository();
     if (!repository || typeof repository.getCurrentSettings !== 'function') return Promise.resolve(user.settings || {});
     return Promise.resolve(repository.getCurrentSettings(user.id));
@@ -198,7 +316,7 @@
     var user = currentUser();
     var auth = authService();
     if (!user || !user.id) return Promise.reject(new Error('Entre na sua conta para salvar as preferências.'));
-    if (usesApiProvider()) {
+    if (usesSupabaseProvider()) {
       if (!auth || typeof auth.updateCurrentUser !== 'function') return Promise.reject(new Error('Persistência das preferências indisponível.'));
       return auth.updateCurrentUser({ settings: settings || {} }).then(function (updatedUser) { return updatedUser.settings || {}; });
     }

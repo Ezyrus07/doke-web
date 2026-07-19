@@ -5,6 +5,75 @@
   var PAGE_NAME = 'index';
   var hydrationRoot = null;
   var hydration = null;
+  var HOME_DATA_TIMEOUT_MS = 6500;
+  var HOME_CATALOG_BOOT_TIMEOUT_MS = 5200;
+
+  function withTimeout(promise, timeoutMs, label) {
+    var timer = 0;
+    return Promise.race([
+      Promise.resolve(promise),
+      new Promise(function (_, reject) {
+        timer = window.setTimeout(function () {
+          reject(new Error((label || 'Operação') + ' excedeu o tempo limite.'));
+        }, Math.max(1000, Number(timeoutMs) || HOME_DATA_TIMEOUT_MS));
+      })
+    ]).finally(function () {
+      if (timer) window.clearTimeout(timer);
+    });
+  }
+
+  function waitForSupabaseBootstrap() {
+    var config = window.DOKE_SUPABASE_CONFIG || {};
+    if (!config.enabled || config.servicesEnabled === false) return Promise.resolve('disabled');
+    if (window.supabase && typeof window.supabase.createClient === 'function') return Promise.resolve('ready');
+
+    return new Promise(function (resolve) {
+      var settled = false;
+      var timer = 0;
+
+      function finish(state) {
+        if (settled) return;
+        settled = true;
+        if (timer) window.clearTimeout(timer);
+        document.removeEventListener('doke:supabase-sdk-ready', onReady);
+        document.removeEventListener('doke:supabase-sdk-unavailable', onUnavailable);
+        resolve(state);
+      }
+
+      function onReady() { finish('ready'); }
+      function onUnavailable() { finish('unavailable'); }
+
+      document.addEventListener('doke:supabase-sdk-ready', onReady, { once: true });
+      document.addEventListener('doke:supabase-sdk-unavailable', onUnavailable, { once: true });
+      timer = window.setTimeout(function () { finish('timeout'); }, HOME_CATALOG_BOOT_TIMEOUT_MS);
+    });
+  }
+
+  function loadAuthoritativeServices(context) {
+    var servicesApi = Doke.services && Doke.services.services;
+    if (!servicesApi || typeof servicesApi.list !== 'function') return Promise.resolve([]);
+
+    return waitForSupabaseBootstrap().then(function () {
+      var repository = Doke.repositories && Doke.repositories.services;
+      if (repository && typeof repository.clearCache === 'function') repository.clearCache();
+      return withTimeout(
+        servicesApi.list({ status: 'active', limit: context.serviceLimit, sort: 'updated_desc', fresh: true }),
+        HOME_CATALOG_BOOT_TIMEOUT_MS,
+        'Catálogo público de serviços'
+      );
+    }).then(function (services) {
+      return Array.isArray(services) ? services : [];
+    }).catch(function (error) {
+      console.warn('[Doke:index:authoritative-services]', error);
+      return [];
+    });
+  }
+
+  function loadSafeFallbackData(context) {
+    return loadAuthoritativeServices(context).then(function (services) {
+      return { services: services, workers: [], publications: [] };
+    });
+  }
 
   function getHydration(root) {
     if (!root || !window.DokePageHydration?.create) return null;
@@ -124,7 +193,7 @@
   function getHomeContext() {
     var params = new URLSearchParams(window.location.search || '');
     return {
-      serviceLimit: Number(params.get('serviceLimit') || 6),
+      serviceLimit: Number(params.get('serviceLimit') || 18),
       workerLimit: Number(params.get('workerLimit') || 6),
       publicationLimit: Number(params.get('publicationLimit') || 6)
     };
@@ -163,10 +232,21 @@
       setRegionState(root, kind, 'loading');
     });
 
-    return Doke.pageDataOrchestrator
-      .getPageData(PAGE_NAME, context, { maxAge: 45 * 1000 })
-      .then(function (payload) {
-        var data = normalizePayload(payload);
+    var orchestratedData = withTimeout(
+      Doke.pageDataOrchestrator.getPageData(PAGE_NAME, context, { maxAge: 45 * 1000 }),
+      HOME_DATA_TIMEOUT_MS,
+      'Carregamento da página inicial'
+    ).catch(function (error) {
+      console.warn('[Doke:index:data-timeout]', error);
+      return { services: [], workers: [], publications: [] };
+    });
+
+    var authoritativeServices = loadAuthoritativeServices(context);
+
+    return Promise.all([orchestratedData, authoritativeServices])
+      .then(function (values) {
+        var data = normalizePayload(values[0]);
+        if (Array.isArray(values[1])) data.services = values[1];
         var result = {
           page: PAGE_NAME,
           context: context,

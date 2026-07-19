@@ -451,49 +451,12 @@ const initBudgetPage = () => {
       });
     };
 
-    const readFileAsDataUrl = (file) => new Promise((resolve) => {
-      if (!file || !file.type?.startsWith("image/")) {
-        resolve(null);
-        return;
-      }
+    const getSelectedAttachmentFiles = () => [...(filesInput?.files || [])];
 
-      if (file.size > 250000) {
-        resolve({
-          name: file.name,
-          type: file.type,
-          size: file.size,
-          tooLarge: true
-        });
-        return;
-      }
-
-      const reader = new FileReader();
-      reader.addEventListener("load", () => {
-        resolve({
-          name: file.name,
-          type: file.type,
-          size: file.size,
-          url: String(reader.result || "")
-        });
-      });
-      reader.addEventListener("error", () => {
-        resolve({ name: file.name, type: file.type, size: file.size, error: true });
-      });
-      reader.readAsDataURL(file);
-    });
-
-    const readAttachments = async () => {
-      const files = [...(filesInput?.files || [])];
-      const mapped = await Promise.all(files.map(readFileAsDataUrl));
-      return mapped.filter(Boolean).map((file) => ({
-        name: file.name || "imagem-anexada",
-        type: file.type || "image/*",
-        size: Number(file.size) || 0,
-        url: file.url || "",
-        previewable: Boolean(file.url),
-        tooLarge: Boolean(file.tooLarge),
-        error: Boolean(file.error)
-      }));
+    const validateSelectedAttachments = (files) => {
+      const repository = window.Doke?.repositories?.attachments;
+      if (!files?.length || !repository?.validateFiles) return files || [];
+      return repository.validateFiles(files, { maxFiles: 8 });
     };
 
     const validatéStep = (index) => {
@@ -608,6 +571,15 @@ const initBudgetPage = () => {
       const requestCategory = data.get("catégoria") || selectedService?.category || selectedService?.catégory || "";
       const serviceName = selectedService?.title || service || requestCategory;
       const ordersService = window.Doke?.services?.orders;
+      const attachmentsRepository = window.Doke?.repositories?.attachments;
+      const attachmentFiles = getSelectedAttachmentFiles();
+      try {
+        validateSelectedAttachments(attachmentFiles);
+      } catch (error) {
+        form.dataset.submitState = "idle";
+        window.DokeToast?.error?.(error?.message || "Revise os anexos selecionados.");
+        return;
+      }
       const previousSubmitText = submitButton?.textContent || "Enviar solicitação";
       const restoreSubmitButton = () => {
         form.dataset.submitState = "idle";
@@ -632,8 +604,7 @@ const initBudgetPage = () => {
         submitButton.textContent = "Enviando...";
       }
 
-      const attachments = await readAttachments();
-      loadingScreen?.removeEventListener("cancel", preventLoadingDismiss);
+      const attachments = [];
 
       const payload = {
         provider,
@@ -656,18 +627,28 @@ const initBudgetPage = () => {
         serviceAvailabilitySchedule: getSchedule(selectedService),
         serviceIncludedItems: selectedService?.includedItems || "",
         serviceExcludedItems: selectedService?.excludedItems || "",
+        serviceMode: selectedService?.serviceMode || "",
+        serviceBillingUnit: selectedService?.billingUnit || "",
         serviceSnapshot: {
           id: selectedService?.id || serviceId,
           title: selectedService?.title || serviceName,
           category: requestCategory || selectedService?.category || selectedService?.catégory || "",
+          shortDescription: selectedService?.shortDescription || "",
           providerId: professionalId || selectedService?.professionalId || selectedService?.providerId || "",
           professionalProfileId: professionalProfileId || selectedService?.professionalProfileId || "",
           providerName: provider,
-          priceMode: selectedService?.priceMode || "",
+          providerInitials: selectedService?.providerInitials || selectedService?.avatar || "DK",
+          priceMode: selectedService?.priceMode || selectedService?.priceType || "",
+          priceValue: selectedService?.priceValue ?? selectedService?.price ?? null,
           priceLabel: selectedService?.priceLabel || "Sob orçamento",
+          billingUnit: selectedService?.billingUnit || "",
           location: selectedService?.location || selectedService?.serviceRegion || "",
+          serviceMode: selectedService?.serviceMode || "",
           availabilitySchedule: getSchedule(selectedService),
-          image: getServiceImages(selectedService)[0] || ""
+          includedItems: selectedService?.includedItems || "",
+          excludedItems: selectedService?.excludedItems || "",
+          image: getServiceImages(selectedService)[0] || "",
+          images: getServiceImages(selectedService)
         },
         requestType: data.get("tipo") || "Orçamento para execução",
         scope: data.get("escopo") || "Ambiente completo",
@@ -702,10 +683,21 @@ const initBudgetPage = () => {
         if (!latestService || String(latestService.status || "active").toLowerCase() !== "active") {
           throw new Error("Este anúncio não está mais aceitando novos pedidos.");
         }
-        const savedOrder = ordersService?.create
+        let savedOrder = ordersService?.create
           ? await ordersService.create(payload)
           : Object.assign({ id: `order-${Date.now()}` }, payload);
 
+        if (attachmentFiles.length) {
+          if (!attachmentsRepository?.uploadOrderFiles) {
+            throw new Error("O serviço de anexos não está disponível. Recarregue a página e tente novamente.");
+          }
+          const uploadedAttachments = await attachmentsRepository.uploadOrderFiles(savedOrder.id, attachmentFiles, { maxFiles: 8 });
+          savedOrder = ordersService?.updateAttachments
+            ? await ordersService.updateAttachments(savedOrder.id, uploadedAttachments)
+            : Object.assign({}, savedOrder, { attachments: uploadedAttachments });
+        }
+
+        loadingScreen?.removeEventListener("cancel", preventLoadingDismiss);
         safeSetStorage(window.sessionStorage, storageKey, savedOrder);
         safeSetStorage(window.sessionStorage, "doke.quoteOverlay", savedOrder);
         if (loadingFeedback?.close) {

@@ -14,6 +14,14 @@
   var MOCK_CLEANUP_KEY = 'doke.notifications.mock-cleanup.v1';
   var MOCK_NOTIFICATION_IDS = Object.freeze(['not_001', 'not_002']);
   var cache = null;
+  var PROVIDER_ATTRIBUTE = 'data-doke-notifications-provider';
+  var REMOTE_TABLE = 'notifications';
+  var REMOTE_CREATE_RPC = 'create_transaction_notification';
+  var supabaseClient = null;
+  var supabaseClientAttempted = false;
+  var lastRemoteError = null;
+  var realtimeChannel = null;
+  var realtimeUserId = '';
 
   function clone(value) {
     if (value == null) return value;
@@ -246,6 +254,276 @@
     return clone(normalized);
   }
 
+
+  function isUuid(value) {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(normalizeText(value));
+  }
+
+  function setProviderState(provider) {
+    try { document.documentElement.setAttribute(PROVIDER_ATTRIBUTE, provider); }
+    catch (error) { /* Non-browser contract tests may not expose documentElement. */ }
+  }
+
+  function warnRemote(error, context) {
+    lastRemoteError = error || new Error('Falha desconhecida nas notificações remotas.');
+    setProviderState('local-fallback');
+    if (root.console && typeof root.console.warn === 'function') {
+      root.console.warn('[Doke notifications repository] Supabase indisponível em ' + context + '. Usando fallback local.', error);
+    }
+  }
+
+  function getSupabaseClient() {
+    if (supabaseClientAttempted) return supabaseClient;
+    supabaseClientAttempted = true;
+
+    var config = root.DOKE_SUPABASE_CONFIG || {};
+    var sdk = root.supabase;
+    if (!config.enabled || config.notificationsEnabled === false || !config.url || !config.anonKey || !sdk || typeof sdk.createClient !== 'function') {
+      setProviderState('local');
+      return null;
+    }
+
+    try {
+      supabaseClient = root.DokeSupabase && typeof root.DokeSupabase.getClient === 'function'
+        ? root.DokeSupabase.getClient()
+        : sdk.createClient(config.url, config.anonKey);
+      setProviderState('supabase');
+    } catch (error) {
+      warnRemote(error, 'bootstrap');
+      supabaseClient = null;
+    }
+    return supabaseClient;
+  }
+
+  function getCurrentSupabaseUser(client) {
+    if (!client || !client.auth || typeof client.auth.getSession !== 'function') return Promise.resolve(null);
+    return Promise.resolve(client.auth.getSession()).then(function (result) {
+      return result && result.data && result.data.session && result.data.session.user || null;
+    });
+  }
+
+  function sanitizeRemoteData(notification) {
+    var metadata = clone(normalizeNotification(notification));
+    delete metadata.remoteId;
+    delete metadata.syncError;
+    delete metadata.syncStatus;
+    return metadata;
+  }
+
+  function mapRemoteRow(row) {
+    row = row || {};
+    var metadata = row.data && typeof row.data === 'object' ? clone(row.data) : {};
+    return normalizeNotification(Object.assign({}, metadata, {
+      id: row.external_id || metadata.id || row.id,
+      remoteId: row.id,
+      userId: row.user_id || metadata.userId || '',
+      actorId: row.actor_id || metadata.actorId || '',
+      type: row.type || metadata.type || 'system',
+      category: row.category || metadata.category || getCategory(row.type),
+      eventKey: row.event_key || metadata.eventKey || '',
+      title: row.title || metadata.title || 'Nova notificação',
+      body: row.body || metadata.body || '',
+      targetUrl: row.target_url || metadata.targetUrl || 'notificacoes.html',
+      actionLabel: row.action_label || metadata.actionLabel || getActionLabel(row.type),
+      orderId: metadata.orderId || '',
+      conversationId: metadata.conversationId || '',
+      serviceId: metadata.serviceId || '',
+      read: Boolean(row.read_at),
+      dismissed: Boolean(row.dismissed_at),
+      createdAt: row.created_at || metadata.createdAt || nowIso(),
+      updatedAt: row.updated_at || row.created_at || metadata.updatedAt || nowIso(),
+      syncStatus: 'synced',
+      syncError: ''
+    }));
+  }
+
+  function saveLocal(notification, syncStatus) {
+    var normalized = normalizeNotification(Object.assign({}, notification, {
+      syncStatus: syncStatus || notification && notification.syncStatus || 'local'
+    }));
+    var local = readLocal().filter(function (item) {
+      if (String(item.id) === String(normalized.id)) return false;
+      if (normalized.eventKey && item.eventKey && String(item.eventKey) === String(normalized.eventKey)) return false;
+      return true;
+    });
+    local.unshift(normalized);
+    writeLocal(local);
+    return clone(normalized);
+  }
+
+  function syncGlobalBadges(items) {
+    var center = root.DokeInAppNotifications;
+    if (center && typeof center.syncGlobalBadges === 'function') {
+      center.syncGlobalBadges((items || []).filter(function (item) { return item.dismissed !== true; }));
+    }
+  }
+
+  function dispatchCreated(notification, source) {
+    try {
+      document.dispatchEvent(new CustomEvent('doke:notification-created', {
+        detail: { notification: clone(notification), source: source || 'local' }
+      }));
+    } catch (error) { /* Event delivery is best-effort outside the browser. */ }
+
+    if (source === 'realtime' && root.DokeInAppNotifications && typeof root.DokeInAppNotifications.publish === 'function') {
+      root.DokeInAppNotifications.publish(clone(notification));
+    }
+  }
+
+  function dispatchUpdated(notification, source) {
+    try {
+      document.dispatchEvent(new CustomEvent('doke:notification-updated', {
+        detail: { notification: clone(notification), source: source || 'local' }
+      }));
+    } catch (error) { /* Event delivery is best-effort outside the browser. */ }
+  }
+
+  function stopRealtime() {
+    var client = supabaseClient;
+    if (realtimeChannel && client && typeof client.removeChannel === 'function') {
+      try { client.removeChannel(realtimeChannel); } catch (error) { /* Ignore teardown failures. */ }
+    }
+    realtimeChannel = null;
+    realtimeUserId = '';
+  }
+
+  function handleRealtimePayload(payload) {
+    var row = payload && (payload.new || payload.record);
+    if (!row) return;
+    var notification = mapRemoteRow(row);
+    saveLocal(notification, 'synced');
+    cache = null;
+    var eventType = normalizeText(payload && payload.eventType || '').toUpperCase();
+    if (eventType === 'INSERT') dispatchCreated(notification, 'realtime');
+    else dispatchUpdated(notification, 'realtime');
+    syncGlobalBadges(listLocal({ dismissed: false }));
+  }
+
+  function startRealtime(userId) {
+    var client = getSupabaseClient();
+    var normalizedUserId = normalizeText(userId);
+    if (!client || !isUuid(normalizedUserId) || typeof client.channel !== 'function') return null;
+    if (realtimeChannel && realtimeUserId === normalizedUserId) return realtimeChannel;
+
+    stopRealtime();
+    try {
+      realtimeChannel = client
+        .channel('doke-notifications-' + normalizedUserId)
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: REMOTE_TABLE,
+          filter: 'user_id=eq.' + normalizedUserId
+        }, handleRealtimePayload)
+        .subscribe(function (status) {
+          if (status === 'SUBSCRIBED') setProviderState('supabase');
+        });
+      realtimeUserId = normalizedUserId;
+    } catch (error) {
+      warnRemote(error, 'realtime');
+      realtimeChannel = null;
+      realtimeUserId = '';
+    }
+    return realtimeChannel;
+  }
+
+  function fetchRemoteNotifications() {
+    var client = getSupabaseClient();
+    if (!client) return Promise.reject(new Error('Supabase client unavailable.'));
+
+    return getCurrentSupabaseUser(client).then(function (user) {
+      if (!user || !isUuid(user.id)) return [];
+      startRealtime(user.id);
+      return client.from(REMOTE_TABLE).select('*').order('created_at', { ascending: false }).then(function (result) {
+        if (result.error) throw result.error;
+        setProviderState('supabase');
+        return (result.data || []).map(mapRemoteRow);
+      });
+    });
+  }
+
+  function saveRemote(notification) {
+    var client = getSupabaseClient();
+    if (!client) return Promise.reject(new Error('Supabase client unavailable.'));
+
+    return getCurrentSupabaseUser(client).then(function (user) {
+      if (!user || !isUuid(user.id)) throw new Error('Faça login com uma conta Supabase para sincronizar notificações.');
+      var normalized = normalizeNotification(notification);
+      if (!isUuid(normalized.userId)) throw new Error('O destinatário ainda não possui identidade Supabase válida.');
+
+      var params = {
+        p_external_id: normalized.id,
+        p_recipient_id: normalized.userId,
+        p_type: normalized.type || 'system',
+        p_category: normalized.category || getCategory(normalized.type),
+        p_title: normalized.title || 'Nova notificação',
+        p_body: normalized.body || '',
+        p_event_key: normalized.eventKey || null,
+        p_target_url: normalized.targetUrl || 'notificacoes.html',
+        p_action_label: normalized.actionLabel || getActionLabel(normalized.type),
+        p_order_external_id: normalized.orderId || null,
+        p_conversation_external_id: normalized.conversationId || null,
+        p_service_external_id: normalized.serviceId || null,
+        p_data: sanitizeRemoteData(normalized)
+      };
+
+      return client.rpc(REMOTE_CREATE_RPC, params).then(function (result) {
+        if (result.error) throw result.error;
+        var row = Array.isArray(result.data) ? result.data[0] : result.data;
+        if (!row) throw new Error('O Supabase não retornou a notificação persistida.');
+        setProviderState('supabase');
+        return mapRemoteRow(row);
+      });
+    });
+  }
+
+  function updateRemote(id, patch) {
+    var client = getSupabaseClient();
+    if (!client) return Promise.resolve(null);
+    var notificationId = normalizeText(id);
+    if (!notificationId) return Promise.resolve(null);
+
+    return getCurrentSupabaseUser(client).then(function (user) {
+      if (!user || !isUuid(user.id)) return null;
+      var payload = { updated_at: nowIso() };
+      if (patch && patch.read === true) payload.read_at = nowIso();
+      if (patch && patch.read === false) payload.read_at = null;
+      if (patch && patch.dismissed === true) {
+        payload.dismissed_at = nowIso();
+        payload.read_at = payload.read_at || nowIso();
+      }
+      if (patch && patch.dismissed === false) payload.dismissed_at = null;
+
+      return client.from(REMOTE_TABLE).update(payload).eq('external_id', notificationId).select('*').maybeSingle().then(function (result) {
+        if (result.error) throw result.error;
+        return result.data ? mapRemoteRow(result.data) : null;
+      });
+    });
+  }
+
+  function synchronizePending(items) {
+    var client = getSupabaseClient();
+    if (!client) return Promise.resolve(items || []);
+
+    return getCurrentSupabaseUser(client).then(function (user) {
+      if (!user || !isUuid(user.id)) return items || [];
+      var pending = (items || []).filter(function (item) {
+        if (!item || !item.id || item.syncStatus === 'synced' || !isUuid(item.userId)) return false;
+        return !item.actorId || String(item.actorId) === String(user.id);
+      });
+      return pending.reduce(function (chain, item) {
+        return chain.then(function () {
+          return saveRemote(item).then(function (synced) {
+            saveLocal(synced, 'synced');
+          }).catch(function (error) {
+            warnRemote(error, 'sincronização pendente');
+            saveLocal(Object.assign({}, item, { syncStatus: 'pending', syncError: normalizeText(error && error.message) }), 'pending');
+          });
+        });
+      }, Promise.resolve()).then(function () { return readLocal(); });
+    });
+  }
+
   function loadBase(options) {
     options = options || {};
     if (!isStaticDemoEnabled()) return Promise.resolve([]);
@@ -265,12 +543,34 @@
     options = options || {};
     if (cache && !options.fresh) return Promise.resolve(clone(cache));
 
-    return loadBase(options)
-      .catch(function () { return []; })
-      .then(function (base) {
-        cache = mergeById(Array.isArray(base) ? base : [], readLocal());
+    var local = readLocal();
+    var baseTask = loadBase(options).catch(function () { return []; });
+    if (!getSupabaseClient()) {
+      return baseTask.then(function (base) {
+        cache = mergeById(Array.isArray(base) ? base : [], local);
+        syncGlobalBadges(cache);
         return clone(cache);
       });
+    }
+
+    return Promise.all([baseTask, fetchRemoteNotifications()]).then(function (results) {
+      var base = Array.isArray(results[0]) ? results[0] : [];
+      var remote = Array.isArray(results[1]) ? results[1] : [];
+      remote.forEach(function (item) { saveLocal(item, 'synced'); });
+      cache = mergeById(base, local, remote);
+      return synchronizePending(cache).then(function () {
+        cache = mergeById(base, readLocal(), remote);
+        syncGlobalBadges(cache);
+        return clone(cache);
+      });
+    }).catch(function (error) {
+      warnRemote(error, 'leitura');
+      return baseTask.then(function (base) {
+        cache = mergeById(Array.isArray(base) ? base : [], readLocal());
+        syncGlobalBadges(cache);
+        return clone(cache);
+      });
+    });
   }
 
   function isDemoProfessional(user) {
@@ -345,18 +645,27 @@
   }
 
   function save(notification) {
-    var normalized = normalizeNotification(notification);
-    var local = readLocal().filter(function (item) {
-      if (String(item.id) === String(normalized.id)) return false;
-      if (normalized.eventKey && item.eventKey && String(item.eventKey) === String(normalized.eventKey)) return false;
-      return true;
-    });
-    local.unshift(normalized);
-    writeLocal(local);
-    document.dispatchEvent(new CustomEvent('doke:notification-created', { detail: { notification: clone(normalized) } }));
-    return Promise.resolve(clone(normalized));
-  }
+    var normalized = normalizeNotification(Object.assign({}, notification, {
+      syncStatus: notification && notification.syncStatus || 'pending'
+    }));
+    var localSaved = saveLocal(normalized, getSupabaseClient() ? 'pending' : 'local');
+    dispatchCreated(localSaved, 'local');
+    syncGlobalBadges(listLocal({ dismissed: false }));
 
+    if (!getSupabaseClient()) return Promise.resolve(clone(localSaved));
+    return saveRemote(localSaved).then(function (remoteSaved) {
+      var synced = saveLocal(remoteSaved, 'synced');
+      syncGlobalBadges(listLocal({ dismissed: false }));
+      return clone(synced);
+    }).catch(function (error) {
+      warnRemote(error, 'gravação');
+      var pending = saveLocal(Object.assign({}, localSaved, {
+        syncStatus: 'pending',
+        syncError: normalizeText(error && error.message)
+      }), 'pending');
+      return clone(pending);
+    });
+  }
 
   function getById(id) {
     var notificationId = normalizeText(id);
@@ -370,13 +679,15 @@
     payload = payload || {};
     var normalized = normalizeNotification(payload);
     if (normalized.eventKey) {
-      var existing = readLocal().find(function (item) { return item.eventKey && String(item.eventKey) === String(normalized.eventKey); });
-      if (existing) return Promise.resolve(clone(existing));
+      var existing = readLocal().find(function (item) {
+        return item.eventKey && String(item.eventKey) === String(normalized.eventKey);
+      });
+      if (existing && existing.syncStatus === 'synced') return Promise.resolve(clone(existing));
     }
 
     return save(Object.assign({}, payload, {
       id: payload.id || createNotificationId(),
-      read: payload && payload.read === true ? true : false,
+      read: payload && payload.read === true,
       dismissed: false,
       createdAt: payload && payload.createdAt || nowIso()
     }));
@@ -390,8 +701,22 @@
       changed = normalizeNotification(Object.assign({}, item, patch || {}, { updatedAt: nowIso() }));
       return changed;
     });
-    if (changed) writeLocal(local);
-    return Promise.resolve(clone(changed));
+    if (changed) {
+      writeLocal(local);
+      dispatchUpdated(changed, 'local');
+      syncGlobalBadges(listLocal({ dismissed: false }));
+    }
+    if (!changed || !getSupabaseClient()) return Promise.resolve(clone(changed));
+
+    return updateRemote(notificationId, patch || {}).then(function (remoteChanged) {
+      if (!remoteChanged) return clone(changed);
+      var synced = saveLocal(remoteChanged, 'synced');
+      syncGlobalBadges(listLocal({ dismissed: false }));
+      return clone(synced);
+    }).catch(function (error) {
+      warnRemote(error, 'atualização');
+      return clone(changed);
+    });
   }
 
   function markAsRead(id) {
@@ -414,8 +739,25 @@
       changed = true;
       return normalizeNotification(Object.assign({}, item, { read: true, updatedAt: nowIso() }));
     });
-    if (changed) writeLocal(local);
-    return Promise.resolve(changed);
+    if (changed) {
+      writeLocal(local);
+      syncGlobalBadges(listLocal({ dismissed: false }));
+    }
+
+    var client = getSupabaseClient();
+    if (!client) return Promise.resolve(changed);
+    return getCurrentSupabaseUser(client).then(function (remoteUser) {
+      if (!remoteUser || !isUuid(remoteUser.id)) return changed;
+      var query = client.from(REMOTE_TABLE).update({ read_at: nowIso(), updated_at: nowIso() }).is('read_at', null);
+      if (filters.category) query = query.eq('category', filters.category);
+      return query.then(function (result) {
+        if (result.error) throw result.error;
+        return changed;
+      });
+    }).catch(function (error) {
+      warnRemote(error, 'marcar todas como lidas');
+      return changed;
+    });
   }
 
   function unreadCount(userId) {
@@ -445,6 +787,35 @@
     unreadCount: unreadCount,
     isStaticDemoEnabled: isStaticDemoEnabled,
     cleanupLegacyStaticMocks: cleanupLegacyStaticMocks,
+    syncPending: function () { return synchronizePending(readLocal()); },
+    subscribe: function () {
+      var client = getSupabaseClient();
+      if (!client) return Promise.resolve(null);
+      return getCurrentSupabaseUser(client).then(function (user) { return user ? startRealtime(user.id) : null; });
+    },
+    getProviderStatus: function () {
+      return Object.freeze({
+        provider: getSupabaseClient() ? 'supabase' : 'local',
+        fallbackActive: Boolean(lastRemoteError),
+        lastError: lastRemoteError ? normalizeText(lastRemoteError.message) : '',
+        realtimeActive: Boolean(realtimeChannel)
+      });
+    },
+    clearCache: function () { cache = null; },
     clearLocal: function () { writeLocal([]); }
+  });
+
+  function bootstrapRemoteNotifications() {
+    if (!getSupabaseClient()) return;
+    load({ fresh: true }).catch(function (error) { warnRemote(error, 'bootstrap de notificações'); });
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bootstrapRemoteNotifications, { once: true });
+  else root.setTimeout(bootstrapRemoteNotifications, 0);
+
+  document.addEventListener('doke:auth-session-change', function () {
+    stopRealtime();
+    cache = null;
+    root.setTimeout(bootstrapRemoteNotifications, 0);
   });
 })();

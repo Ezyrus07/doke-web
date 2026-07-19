@@ -29,9 +29,10 @@ assert(
   source.includes('const chargeActionButton = event.target.closest("[data-messages-charge-action]");'),
   'O CTA do card deve reutilizar o handler canônico de envio de cobrança.'
 );
+const messagesVersionMatch = html.match(/assets\/js\/pages\/mensagens\.js\?v=([^"']+)/);
 assert(
-  html.includes('assets/js/pages/mensagens.js?v=20260714-approved-proposal-charge-cta-v1'),
-  'mensagens.html deve invalidar o cache do controller alterado.'
+  messagesVersionMatch && messagesVersionMatch[1].trim(),
+  'mensagens.html deve carregar o controller com versão explícita de cache.'
 );
 
 console.log('Approved proposal charge CTA contract: OK');

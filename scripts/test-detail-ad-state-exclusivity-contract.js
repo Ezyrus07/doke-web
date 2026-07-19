@@ -19,6 +19,10 @@ assert(controller.includes('revealReadyOnEmpty: false'), 'Detail hydration must 
 assert(css.includes('[data-state-boundary="detalhe-anuncio"] [hidden]'), 'Detail CSS must preserve hidden semantics inside the lifecycle boundary.');
 assert(css.includes('display: none;'), 'Detail hidden contract must explicitly remove hidden surfaces from layout.');
 assert(foundation.includes('20260714-detail-state-exclusivity-v1'), 'Detail hydration CSS cache version must be updated.');
-assert(html.includes('detalhe-anuncio-data-controller.js?v=20260714-detail-state-exclusivity-v1'), 'Detail controller cache version must be updated.');
+const controllerVersionMatch = html.match(/detalhe-anuncio-data-controller\.js\?v=([^"']+)/);
+const pageVersionMatch = html.match(/detalhe-anuncio\.js\?v=([^"']+)/);
+assert(controllerVersionMatch, 'Detail controller must be cache-versioned.');
+assert(pageVersionMatch, 'Detail page controller must be cache-versioned.');
+assert(controllerVersionMatch[1] === pageVersionMatch[1], 'Detail controllers must share the same active cache version.');
 
 console.log('Detail ad state exclusivity contract: PASS');

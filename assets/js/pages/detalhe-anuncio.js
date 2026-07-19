@@ -50,7 +50,7 @@
 
   const firstImage = (service) => {
     const images = Array.isArray(service?.images) && service.images.length ? service.images : [];
-    return images[0] || service?.image || 'assets/img/community/covers/renovation-photo.jpg';
+    return images[0] || service?.image || 'assets/img/doke-logo-lockup.png';
   };
 
   const updateGallery = (root, service) => {
@@ -85,7 +85,7 @@
     link.href = service.providerId ? `perfil.html?id=${encodeURIComponent(service.providerId)}` : 'perfil.html';
     link.textContent = service.providerName || 'Profissional Doke';
 
-    replaceChildrenText(line, ['Por ', link, ' · Dados mockados locais']);
+    replaceChildrenText(line, ['Por ', link]);
   };
 
   const updateStats = (root, service) => {
@@ -284,12 +284,27 @@
     }
   };
 
-  const updateSimilarLinks = (root, service) => {
-    var ids = ['svc-pintura-carlos', 'svc-eletrica-marcos', 'svc-limpeza-elaine', 'svc-encanador-bruno', 'svc-reforma-casa', 'svc-montagem-moveis'];
-    root.querySelectorAll('[data-similar-ads-grid] .doke-ad-card__cta').forEach((link, index) => {
-      var id = ids[index % ids.length];
-      if (id === service.id) id = ids[(index + 1) % ids.length];
-      link.href = `detalhe-anuncio.html?id=${encodeURIComponent(id)}`;
+  const updateSimilarServices = (root, service) => {
+    const grid = root.querySelector('[data-similar-ads-grid]');
+    const section = root.querySelector('[data-similar-services-section]');
+    const api = window.Doke?.services?.services;
+    if (!grid || !section || !api?.list || !window.Doke?.publicServiceCard?.create) {
+      if (section) section.hidden = true;
+      return Promise.resolve([]);
+    }
+    return api.list({ status: 'active', fresh: true }).then((items) => {
+      const related = (Array.isArray(items) ? items : [])
+        .filter((item) => item && item.id !== service.id)
+        .sort((a, b) => Number(b.category === service.category) - Number(a.category === service.category))
+        .slice(0, 4);
+      grid.textContent = '';
+      related.forEach((item) => grid.appendChild(window.Doke.publicServiceCard.create(item, { similar: true })));
+      section.hidden = related.length === 0;
+      return related;
+    }).catch(() => {
+      grid.textContent = '';
+      section.hidden = true;
+      return [];
     });
   };
 
@@ -317,7 +332,7 @@
     updateListingStatus(root, service);
     updateProviderCard(root, service);
     updateLocation(root, service);
-    updateSimilarLinks(root, service);
+    updateSimilarServices(root, service);
 
     root.dispatchEvent(new CustomEvent('doke:detail-ad-hydrated', {
       bubbles: true,

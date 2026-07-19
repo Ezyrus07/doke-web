@@ -40,6 +40,12 @@
     return Doke.repositories && Doke.repositories.wallet;
   }
 
+  function ensureRepositoryLoaded(options) {
+    var repository = getRepository();
+    if (!repository || typeof repository.load !== 'function') return Promise.resolve(repository);
+    return Promise.resolve(repository.load(options || {})).then(function () { return repository; });
+  }
+
   function getRepositoryBoundary() {
     return Doke.repositoryBoundary && typeof Doke.repositoryBoundary === 'object'
       ? Doke.repositoryBoundary
@@ -60,16 +66,25 @@
     var status = boundary && typeof boundary.getDataProviderStatus === 'function'
       ? boundary.getDataProviderStatus()
       : null;
-    var activeProvider = status && status.activeProvider || 'mock';
+    var repository = getRepository();
+    var repositoryStatus = repository && typeof repository.getProviderStatus === 'function'
+      ? repository.getProviderStatus()
+      : null;
     var apiReady = status ? status.apiReady === true : false;
+    var apiActive = Boolean(status && status.activeProvider === 'api' && apiReady);
+    var activeProvider = apiActive
+      ? 'api'
+      : repositoryStatus && repositoryStatus.provider || 'mock';
 
     return Object.freeze({
       domain: 'wallet',
       activeProvider: activeProvider,
       requestedProvider: status && status.requestedProvider || activeProvider,
       apiReady: apiReady,
-      walletApiActive: activeProvider === 'api' && apiReady,
-      fallbackProvider: getRepository() ? 'local-mock' : 'empty-local-mock'
+      walletApiActive: apiActive,
+      fallbackActive: Boolean(repositoryStatus && repositoryStatus.fallbackActive),
+      localFinancialSimulation: Boolean(repositoryStatus && repositoryStatus.localFinancialSimulation),
+      fallbackProvider: repository ? 'local-mock' : 'empty-local-mock'
     });
   }
 
@@ -245,11 +260,12 @@
       return walletBoundaryList('walletBankAccount', scopeWalletOptions(options)).then(normalizeBankAccountFromProvider);
     }
 
-    var repository = getRepository();
-    if (!repository || typeof repository.getBankAccount !== 'function') return Promise.resolve(null);
-    return repository.getBankAccount({
-      currentUser: options.currentUser !== false,
-      ownerId: options.ownerId || options.professionalId || options.userId || ''
+    return ensureRepositoryLoaded(options).then(function (repository) {
+      if (!repository || typeof repository.getBankAccount !== 'function') return null;
+      return repository.getBankAccount({
+        currentUser: options.currentUser !== false,
+        ownerId: options.ownerId || options.professionalId || options.userId || ''
+      });
     });
   }
 
@@ -285,46 +301,47 @@
       return walletBoundaryList('walletSummary', options).then(normalizeWalletFromProvider);
     }
 
-    var repository = getRepository();
-    var userScope = { currentUser: options.currentUser !== false };
-    var localTransactions = repository && typeof repository.listTransactions === 'function'
-      ? repository.listTransactions(userScope)
-      : [];
-    var localSummary = repository && typeof repository.getSummary === 'function'
-      ? repository.getSummary(userScope)
-      : { available: 0, pending: 0, income: 0, withdrawals: 0, fees: 0 };
-    var monthlyDashboard = repository && typeof repository.getMonthlyDashboard === 'function'
-      ? repository.getMonthlyDashboard(userScope)
-      : {
-        netIncome: localSummary.income || 0,
-        withdrawals: localSummary.withdrawals || 0,
-        fees: localSummary.fees || 0,
-        availableBalance: localSummary.available || 0,
-        heldBalance: localSummary.pending || 0,
-        processingWithdrawals: 0,
-        paidOrders: 0,
-        withdrawalsCount: 0,
-        ticketAverage: 0,
-        largestMovement: { amount: 0, title: 'Sem movimentações' },
-        chartSeries: { labels: ['—'], grossIncome: [0], netIncome: [0], withdrawals: [0], fees: [0], paidOrders: [0] }
-      };
-    var receivablesSchedule = repository && typeof repository.getReceivablesSchedule === 'function'
-      ? repository.getReceivablesSchedule(userScope)
-      : { next: null, items: [], scheduledNet: 0, releasedNet: 0, totalNet: 0, pendingCount: 0, releasedCount: 0, count: 0 };
+    return ensureRepositoryLoaded(options).then(function (repository) {
+      var userScope = { currentUser: options.currentUser !== false };
+      var localTransactions = repository && typeof repository.listTransactions === 'function'
+        ? repository.listTransactions(userScope)
+        : [];
+      var localSummary = repository && typeof repository.getSummary === 'function'
+        ? repository.getSummary(userScope)
+        : { available: 0, pending: 0, income: 0, withdrawals: 0, fees: 0 };
+      var monthlyDashboard = repository && typeof repository.getMonthlyDashboard === 'function'
+        ? repository.getMonthlyDashboard(userScope)
+        : {
+          netIncome: localSummary.income || 0,
+          withdrawals: localSummary.withdrawals || 0,
+          fees: localSummary.fees || 0,
+          availableBalance: localSummary.available || 0,
+          heldBalance: localSummary.pending || 0,
+          processingWithdrawals: 0,
+          paidOrders: 0,
+          withdrawalsCount: 0,
+          ticketAverage: 0,
+          largestMovement: { amount: 0, title: 'Sem movimentações' },
+          chartSeries: { labels: ['—'], grossIncome: [0], netIncome: [0], withdrawals: [0], fees: [0], paidOrders: [0] }
+        };
+      var receivablesSchedule = repository && typeof repository.getReceivablesSchedule === 'function'
+        ? repository.getReceivablesSchedule(userScope)
+        : { next: null, items: [], scheduledNet: 0, releasedNet: 0, totalNet: 0, pendingCount: 0, releasedCount: 0, count: 0 };
 
-    var wallet = createEmptyWallet();
-    wallet.availableBalance = roundCurrency(localSummary.available || 0);
-    wallet.pendingBalance = roundCurrency(localSummary.pending || 0);
-    wallet.monthlyIncome = roundCurrency(monthlyDashboard.netIncome || 0);
-    wallet.withdrawals = roundCurrency(monthlyDashboard.withdrawals || 0);
-    wallet.fees = roundCurrency(monthlyDashboard.fees || 0);
-    wallet.monthlyDashboard = monthlyDashboard;
-    wallet.localTransactions = localTransactions;
-    wallet.transactions = localTransactions;
-    wallet.receivablesSchedule = receivablesSchedule;
-    return getBankAccount({ currentUser: options.currentUser !== false }).then(function (account) {
-      wallet.bankAccount = account || null;
-      return wallet;
+      var wallet = createEmptyWallet();
+      wallet.availableBalance = roundCurrency(localSummary.available || 0);
+      wallet.pendingBalance = roundCurrency(localSummary.pending || 0);
+      wallet.monthlyIncome = roundCurrency(monthlyDashboard.netIncome || 0);
+      wallet.withdrawals = roundCurrency(monthlyDashboard.withdrawals || 0);
+      wallet.fees = roundCurrency(monthlyDashboard.fees || 0);
+      wallet.monthlyDashboard = monthlyDashboard;
+      wallet.localTransactions = localTransactions;
+      wallet.transactions = localTransactions;
+      wallet.receivablesSchedule = receivablesSchedule;
+      return getBankAccount({ currentUser: options.currentUser !== false }).then(function (account) {
+        wallet.bankAccount = account || null;
+        return wallet;
+      });
     });
   }
 
@@ -334,14 +351,13 @@
       return walletBoundaryList('walletTransactions', options).then(normalizeTransactionsFromProvider);
     }
 
-    var repository = getRepository();
-    var transactions = repository && typeof repository.listTransactions === 'function'
-      ? repository.listTransactions(options)
-      : [];
-    return Promise.resolve(Array.isArray(transactions) ? transactions : []);
+    return ensureRepositoryLoaded(options).then(function (repository) {
+      var transactions = repository && typeof repository.listTransactions === 'function'
+        ? repository.listTransactions(options)
+        : [];
+      return Array.isArray(transactions) ? transactions : [];
+    });
   }
-
-
 
   function listAuditEvents(options) {
     options = scopeWalletOptions(options || {});
@@ -351,12 +367,14 @@
       return walletBoundaryList('auditEvents', options, ['auditEvents', 'events']);
     }
 
-    var repository = getRepository();
-    var events = repository && typeof repository.listAuditEvents === 'function'
-      ? repository.listAuditEvents(options)
-      : [];
-    return Promise.resolve(Array.isArray(events) ? events : []);
+    return ensureRepositoryLoaded(options).then(function (repository) {
+      var events = repository && typeof repository.listAuditEvents === 'function'
+        ? repository.listAuditEvents(options)
+        : [];
+      return Array.isArray(events) ? events : [];
+    });
   }
+
   function getMonthlyDashboard(options) {
     options = scopeWalletOptions(options || {});
     if (shouldUseWalletApi()) {
@@ -365,25 +383,17 @@
       });
     }
 
-    var repository = getRepository();
-    var dashboard = repository && typeof repository.getMonthlyDashboard === 'function'
-      ? repository.getMonthlyDashboard(options)
-      : null;
-    return Promise.resolve(dashboard || {
-      period: 'current-month',
-      periodLabel: 'Mês atual',
-      grossIncome: 0,
-      netIncome: 0,
-      withdrawals: 0,
-      fees: 0,
-      availableBalance: 0,
-      heldBalance: 0,
-      processingWithdrawals: 0,
-      paidOrders: 0,
-      withdrawalsCount: 0,
-      ticketAverage: 0,
-      largestMovement: { amount: 0, title: 'Sem movimentações' },
-      chartSeries: { labels: ['—'], grossIncome: [0], netIncome: [0], withdrawals: [0], fees: [0], paidOrders: [0] }
+    return ensureRepositoryLoaded(options).then(function (repository) {
+      var dashboard = repository && typeof repository.getMonthlyDashboard === 'function'
+        ? repository.getMonthlyDashboard(options)
+        : null;
+      return dashboard || {
+        period: 'current-month', periodLabel: 'Mês atual', grossIncome: 0, netIncome: 0,
+        withdrawals: 0, fees: 0, availableBalance: 0, heldBalance: 0,
+        processingWithdrawals: 0, paidOrders: 0, withdrawalsCount: 0, ticketAverage: 0,
+        largestMovement: { amount: 0, title: 'Sem movimentações' },
+        chartSeries: { labels: ['—'], grossIncome: [0], netIncome: [0], withdrawals: [0], fees: [0], paidOrders: [0] }
+      };
     });
   }
 
@@ -393,11 +403,12 @@
       return walletBoundaryList('walletMonthlyHistory', scopeWalletOptions(options), ['history', 'items', 'months']);
     }
 
-    var repository = getRepository();
-    var history = repository && typeof repository.getMonthlyHistory === 'function'
-      ? repository.getMonthlyHistory(options)
-      : [];
-    return Promise.resolve(Array.isArray(history) ? history : []);
+    return ensureRepositoryLoaded(options).then(function (repository) {
+      var history = repository && typeof repository.getMonthlyHistory === 'function'
+        ? repository.getMonthlyHistory(options)
+        : [];
+      return Array.isArray(history) ? history : [];
+    });
   }
 
   function getReceivablesSchedule(options) {
@@ -408,11 +419,12 @@
       });
     }
 
-    var repository = getRepository();
-    var schedule = repository && typeof repository.getReceivablesSchedule === 'function'
-      ? repository.getReceivablesSchedule(options)
-      : null;
-    return Promise.resolve(schedule || { next: null, items: [], scheduledNet: 0, releasedNet: 0, totalNet: 0, pendingCount: 0, releasedCount: 0, count: 0 });
+    return ensureRepositoryLoaded(options).then(function (repository) {
+      var schedule = repository && typeof repository.getReceivablesSchedule === 'function'
+        ? repository.getReceivablesSchedule(options)
+        : null;
+      return schedule || { next: null, items: [], scheduledNet: 0, releasedNet: 0, totalNet: 0, pendingCount: 0, releasedCount: 0, count: 0 };
+    });
   }
 
   function createWalletNotification(transaction, payload) {
@@ -852,11 +864,12 @@
       return walletBoundaryList('disputes', scopeWalletOptions(options), ['disputes', 'items']);
     }
 
-    var repository = getRepository();
-    var disputes = repository && typeof repository.listDisputes === 'function'
-      ? repository.listDisputes(options)
-      : [];
-    return Promise.resolve(Array.isArray(disputes) ? disputes : []);
+    return ensureRepositoryLoaded(options).then(function (repository) {
+      var disputes = repository && typeof repository.listDisputes === 'function'
+        ? repository.listDisputes(options)
+        : [];
+      return Array.isArray(disputes) ? disputes : [];
+    });
   }
 
   function openDispute(payload) {

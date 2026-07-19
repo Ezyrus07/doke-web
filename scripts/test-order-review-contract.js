@@ -161,7 +161,10 @@ function assertSourceContracts() {
   assert(serviceSource.includes('function submitOrderReview(orderId, payload)'), 'Review service deve expor comando canônico.');
   assert(serviceSource.includes("document.dispatchEvent(new CustomEvent('doke:professional-reputation-updated'"), 'Review service deve publicar projeção de reputação.');
   assert(messagesSource.includes('conversation?.order?.reviewId || conversation?.order?.reviewedAt'), 'Chat deve remover oferta de avaliação usando estado canônico do pedido.');
-  assert(messagesSource.includes('document.addEventListener("doke:order-reviewed"'), 'Chat deve reidratar após avaliação.');
+  const directReviewListener = messagesSource.includes('document.addEventListener("doke:order-reviewed"');
+  const canonicalReviewListener = messagesSource.includes('"doke:order-reviewed"')
+    && messagesSource.includes('bindDocumentLifecycle(eventName, () => refreshAuthorizedConversationSurface');
+  assert(directReviewListener || canonicalReviewListener, 'Chat deve reidratar após avaliação.');
   assert(htmlSource.includes('assets/js/repositories/reviews-repository.js?v=20260712-canonical-review-v1'), 'Página deve carregar o repository de avaliações em acesso direto.');
   assert(htmlSource.includes('assets/js/services/review-service.js?v=20260712-canonical-review-v1'), 'Página deve carregar o review service em acesso direto.');
   assert(htmlSource.indexOf('assets/js/services/review-service.js') < htmlSource.indexOf('assets/js/pages/avaliacao-profissional.js'), 'Review service deve carregar antes do controller.');

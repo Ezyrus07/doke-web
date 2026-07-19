@@ -1,0 +1,16 @@
+/* Doke protected-route pre-paint guard
+ * Prevents owner-only HTML from being painted before authentication is resolved. */
+html[data-auth-guard="pending"],
+html[data-auth-guard="redirecting"] {
+  background: #edf4fb;
+}
+
+html[data-auth-guard="pending"] body,
+html[data-auth-guard="redirecting"] body {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+html[data-auth-guard="authorized"] body {
+  visibility: visible;
+}

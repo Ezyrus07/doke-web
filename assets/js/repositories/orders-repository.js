@@ -12,6 +12,11 @@
   var LEGACY_STORAGE_KEY = 'doke.orders';
   var FALLBACK_URL = 'assets/data/mock-orders.json';
   var cache = null;
+  var PROVIDER_ATTRIBUTE = 'data-doke-orders-provider';
+  var REMOTE_TABLE = 'orders';
+  var supabaseClient = null;
+  var supabaseClientAttempted = false;
+  var lastRemoteError = null;
 
   function clone(value) {
     if (value == null) return value;
@@ -49,25 +54,50 @@
 
   function normalizeAttachment(raw) {
     if (!raw) return null;
+    var attachmentRepository = Doke.repositories && Doke.repositories.attachments;
+    if (attachmentRepository && typeof attachmentRepository.normalize === 'function') {
+      return attachmentRepository.normalize(raw);
+    }
     if (typeof raw === 'string') {
       return {
+        id: '',
         name: raw,
         type: '',
         size: 0,
+        bucket: '',
+        path: '',
+        source: 'order',
+        resourceId: '',
+        uploadedBy: '',
+        createdAt: '',
         url: '',
-        previewable: false
+        dataUrl: '',
+        downloadUrl: '',
+        previewable: false,
+        syncStatus: 'local'
       };
     }
 
     if (typeof raw !== 'object') return null;
+    var url = compactDataUrl(raw.url || raw.dataUrl || raw.preview || '');
     return {
-      name: normalizeText(raw.name || raw.filename || 'anexo'),
-      type: normalizeText(raw.type || raw.mimeType || ''),
-      size: Number(raw.size) || 0,
-      url: compactDataUrl(raw.url || raw.dataUrl || raw.preview || ''),
-      previewable: Boolean(raw.previewable || raw.url || raw.dataUrl || raw.preview) && Boolean(compactDataUrl(raw.url || raw.dataUrl || raw.preview || '')),
+      id: normalizeText(raw.id || raw.attachmentId || ''),
+      name: normalizeText(raw.name || raw.filename || raw.originalName || 'anexo'),
+      type: normalizeText(raw.type || raw.mimeType || raw.contentType || ''),
+      size: Number(raw.size || raw.sizeBytes) || 0,
+      bucket: normalizeText(raw.bucket || ''),
+      path: normalizeText(raw.path || raw.storagePath || raw.objectPath || ''),
+      source: normalizeText(raw.source || raw.kind || 'order'),
+      resourceId: normalizeText(raw.resourceId || raw.orderId || ''),
+      uploadedBy: normalizeText(raw.uploadedBy || raw.uploaderId || ''),
+      createdAt: raw.createdAt || '',
+      url: url,
+      dataUrl: /^data:/i.test(url) ? url : compactDataUrl(raw.dataUrl || ''),
+      downloadUrl: normalizeText(raw.downloadUrl || ''),
+      previewable: Boolean(raw.previewable || url) && Boolean(url),
+      syncStatus: normalizeText(raw.syncStatus || '') || (raw.path ? 'synced' : 'local'),
       tooLarge: Boolean(raw.tooLarge),
-      error: Boolean(raw.error)
+      error: normalizeText(raw.error || '')
     };
   }
 
@@ -185,6 +215,16 @@
     var location = raw.location || raw.address || raw.detailAddress || '';
     var statusLabel = raw.statusLabel || getStatusLabel(status);
     var budgetLabel = raw.budget || raw.detailBudget || raw.budgetLabel || (raw.budgetAmount ? toCurrencyLabel(raw.budgetAmount) : 'A definir');
+    var serviceSnapshot = raw.serviceSnapshot && typeof raw.serviceSnapshot === 'object' ? clone(raw.serviceSnapshot) : null;
+    var snapshotImages = serviceSnapshot && Array.isArray(serviceSnapshot.images)
+      ? serviceSnapshot.images.filter(Boolean).slice(0, 3)
+      : [];
+    if (!snapshotImages.length && serviceSnapshot && serviceSnapshot.image) snapshotImages.push(serviceSnapshot.image);
+    var rawServiceImages = Array.isArray(raw.serviceImages) ? raw.serviceImages.filter(Boolean).slice(0, 3) : [];
+    var serviceImages = rawServiceImages.length ? rawServiceImages : snapshotImages;
+    var serviceAvailabilitySchedule = Array.isArray(raw.serviceAvailabilitySchedule)
+      ? raw.serviceAvailabilitySchedule
+      : (serviceSnapshot && Array.isArray(serviceSnapshot.availabilitySchedule) ? serviceSnapshot.availabilitySchedule : []);
 
     return Object.assign({}, raw, {
       id: normalizeText(raw.id) || makeId(),
@@ -195,17 +235,22 @@
       providerId: raw.providerId || raw.professionalId || '',
       professionalProfileId: raw.professionalProfileId || raw.profileId || '',
       serviceId: raw.serviceId || '',
-      serviceImage: raw.serviceImage || raw.serviceSnapshot && raw.serviceSnapshot.image || '',
-      serviceImages: Array.isArray(raw.serviceImages) ? raw.serviceImages.filter(Boolean).slice(0, 3) : [],
-      serviceCategory: raw.serviceCategory || raw.serviceSnapshot && raw.serviceSnapshot.category || '',
-      servicePriceMode: raw.servicePriceMode || raw.serviceSnapshot && raw.serviceSnapshot.priceMode || '',
-      servicePrice: raw.servicePrice == null ? null : Number(raw.servicePrice),
-      servicePriceLabel: raw.servicePriceLabel || raw.serviceSnapshot && raw.serviceSnapshot.priceLabel || '',
-      serviceRegion: raw.serviceRegion || raw.serviceSnapshot && raw.serviceSnapshot.location || '',
-      serviceAvailabilitySchedule: Array.isArray(raw.serviceAvailabilitySchedule) ? raw.serviceAvailabilitySchedule : [],
-      serviceIncludedItems: raw.serviceIncludedItems || '',
-      serviceExcludedItems: raw.serviceExcludedItems || '',
-      serviceSnapshot: raw.serviceSnapshot && typeof raw.serviceSnapshot === 'object' ? clone(raw.serviceSnapshot) : null,
+      serviceImage: raw.serviceImage || serviceImages[0] || '',
+      serviceImages: serviceImages,
+      serviceCategory: raw.serviceCategory || serviceSnapshot && serviceSnapshot.category || '',
+      servicePriceMode: raw.servicePriceMode || serviceSnapshot && serviceSnapshot.priceMode || '',
+      servicePrice: raw.servicePrice == null
+        ? (serviceSnapshot && serviceSnapshot.priceValue != null ? Number(serviceSnapshot.priceValue) : null)
+        : Number(raw.servicePrice),
+      servicePriceLabel: raw.servicePriceLabel || serviceSnapshot && serviceSnapshot.priceLabel || '',
+      serviceRegion: raw.serviceRegion || serviceSnapshot && serviceSnapshot.location || '',
+      serviceAvailabilitySchedule: serviceAvailabilitySchedule,
+      serviceIncludedItems: raw.serviceIncludedItems || serviceSnapshot && serviceSnapshot.includedItems || '',
+      serviceExcludedItems: raw.serviceExcludedItems || serviceSnapshot && serviceSnapshot.excludedItems || '',
+      serviceMode: raw.serviceMode || serviceSnapshot && serviceSnapshot.serviceMode || '',
+      serviceBillingUnit: raw.serviceBillingUnit || serviceSnapshot && serviceSnapshot.billingUnit || '',
+      serviceShortDescription: raw.serviceShortDescription || serviceSnapshot && serviceSnapshot.shortDescription || '',
+      serviceSnapshot: serviceSnapshot,
       title: raw.title || service,
       serviceTitle: service,
       service: service,
@@ -275,7 +320,7 @@
       });
   }
 
-  function load(options) {
+  function loadLocal(options) {
     options = options || {};
     if (cache && !options.fresh) return Promise.resolve(clone(cache));
 
@@ -302,6 +347,253 @@
     }
     if (user.role === 'client') return String(order.clientId) === String(user.id);
     return false;
+  }
+
+  function isUuid(value) {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(normalizeText(value));
+  }
+
+  function setProviderState(provider) {
+    try { document.documentElement.setAttribute(PROVIDER_ATTRIBUTE, provider); }
+    catch (error) { /* test environments may not expose documentElement */ }
+  }
+
+  function warnRemote(error, context) {
+    lastRemoteError = error || new Error('Falha desconhecida nos pedidos remotos.');
+    setProviderState('local-fallback');
+    if (root.console && typeof root.console.warn === 'function') {
+      root.console.warn('[Doke orders repository] Supabase indisponível em ' + context + '. Usando fallback local.', error);
+    }
+  }
+
+  function getSupabaseClient() {
+    if (supabaseClientAttempted) return supabaseClient;
+    supabaseClientAttempted = true;
+    var config = root.DOKE_SUPABASE_CONFIG || {};
+    var sdk = root.supabase;
+    if (!config.enabled || config.ordersEnabled === false || !config.url || !config.anonKey || !sdk || typeof sdk.createClient !== 'function') {
+      setProviderState('local');
+      return null;
+    }
+    try {
+      supabaseClient = root.DokeSupabase && typeof root.DokeSupabase.getClient === 'function'
+        ? root.DokeSupabase.getClient()
+        : sdk.createClient(config.url, config.anonKey);
+      setProviderState('supabase');
+    } catch (error) {
+      warnRemote(error, 'bootstrap');
+      supabaseClient = null;
+    }
+    return supabaseClient;
+  }
+
+  function getCurrentSupabaseUser(client) {
+    if (!client || !client.auth || typeof client.auth.getSession !== 'function') return Promise.resolve(null);
+    return Promise.resolve(client.auth.getSession()).then(function (result) {
+      return result && result.data && result.data.session && result.data.session.user || null;
+    });
+  }
+
+  function toRemoteStatus(value) {
+    var status = normalizeStatus(value);
+    if (status === 'pending') return 'requested';
+    if (status === 'quoted') return 'quoted';
+    if (status === 'accepted') return 'accepted';
+    if (status === 'in_progress') return 'in_progress';
+    if (status === 'completed') return 'completed';
+    if (status === 'cancelled') return 'cancelled';
+    if (status === 'disputed') return 'disputed';
+    return 'draft';
+  }
+
+  function mapRemoteRow(row) {
+    row = row || {};
+    var metadata = row.metadata && typeof row.metadata === 'object' ? clone(row.metadata) : {};
+    return normalizeOrder(Object.assign({}, metadata, {
+      id: row.external_id || metadata.id || row.id,
+      remoteId: row.id,
+      clientId: row.client_id,
+      professionalId: row.professional_id || metadata.professionalId,
+      providerId: row.professional_id || metadata.providerId,
+      remoteServiceId: row.service_id || '',
+      title: row.title || metadata.title,
+      description: row.description == null ? metadata.description : row.description,
+      status: row.status,
+      city: row.city || metadata.city,
+      state: row.state || metadata.state,
+      scheduledAt: row.scheduled_at || metadata.scheduledAt,
+      createdAt: row.created_at || metadata.createdAt,
+      updatedAt: row.updated_at || metadata.updatedAt,
+      syncStatus: 'synced',
+      syncedAt: new Date().toISOString()
+    }));
+  }
+
+  function hydrateAttachmentUrls(order) {
+    var attachmentRepository = Doke.repositories && Doke.repositories.attachments;
+    if (!order || !attachmentRepository || typeof attachmentRepository.resolveUrls !== 'function') return Promise.resolve(order);
+    return attachmentRepository.resolveUrls(order.attachments || []).then(function (attachments) {
+      return normalizeOrder(Object.assign({}, order, { attachments: attachments }));
+    }).catch(function () { return order; });
+  }
+
+  function fetchRemoteOrders() {
+    var client = getSupabaseClient();
+    if (!client) return Promise.reject(new Error('Supabase client unavailable.'));
+    return getCurrentSupabaseUser(client).then(function (user) {
+      if (!user || !isUuid(user.id)) return [];
+      return client.from(REMOTE_TABLE).select('*').order('created_at', { ascending: false }).then(function (result) {
+        if (result.error) throw result.error;
+        setProviderState('supabase');
+        return Promise.all((result.data || []).map(function (row) {
+          return hydrateAttachmentUrls(mapRemoteRow(row));
+        }));
+      });
+    });
+  }
+
+  function resolveRemoteServiceId(client, serviceId) {
+    var id = normalizeText(serviceId);
+    if (!id) return Promise.resolve(null);
+    if (isUuid(id)) return Promise.resolve(id);
+    return client.from('services').select('id').eq('external_id', id).maybeSingle().then(function (result) {
+      if (result.error) throw result.error;
+      return result.data && result.data.id || null;
+    });
+  }
+
+  function sanitizeMetadata(order) {
+    var metadata = clone(normalizeOrder(order));
+    var attachmentRepository = Doke.repositories && Doke.repositories.attachments;
+    if (attachmentRepository && typeof attachmentRepository.toPersistedMetadata === 'function') {
+      metadata.attachments = attachmentRepository.toPersistedMetadata(metadata.attachments || []);
+    }
+    delete metadata.remoteId;
+    delete metadata.syncError;
+    return metadata;
+  }
+
+  function saveRemote(order) {
+    var client = getSupabaseClient();
+    if (!client) return Promise.reject(new Error('Supabase client unavailable.'));
+    return getCurrentSupabaseUser(client).then(function (user) {
+      if (!user || !isUuid(user.id)) throw new Error('Faça login com uma conta Supabase para sincronizar o pedido.');
+      var normalized = normalizeOrder(order);
+      var clientId = normalizeText(normalized.clientId);
+      var professionalId = normalizeText(normalized.professionalId || normalized.providerId);
+      if (!isUuid(clientId) || !isUuid(professionalId)) throw new Error('Cliente ou profissional ainda não possuem identidade Supabase válida.');
+      if (user.id !== clientId && user.id !== professionalId) throw new Error('Você não participa deste pedido.');
+      return resolveRemoteServiceId(client, normalized.serviceId).then(function (remoteServiceId) {
+        var locationDetails = normalized.locationDetails || {};
+        var payload = {
+          external_id: normalized.id,
+          client_id: clientId,
+          professional_id: professionalId,
+          service_id: remoteServiceId,
+          title: normalized.serviceTitle || normalized.title || 'Serviço solicitado',
+          description: normalized.description || normalized.details || '',
+          status: toRemoteStatus(normalized.status),
+          city: normalized.city || locationDetails.city || '',
+          state: normalized.state || locationDetails.state || '',
+          scheduled_at: normalized.scheduledAt || null,
+          metadata: sanitizeMetadata(normalized),
+          updated_at: new Date().toISOString()
+        };
+        return client.from(REMOTE_TABLE).upsert(payload, { onConflict: 'external_id' }).select('*').single().then(function (result) {
+          if (result.error) throw result.error;
+          var attachmentRepository = Doke.repositories && Doke.repositories.attachments;
+          if (!attachmentRepository || typeof attachmentRepository.syncPendingOrder !== 'function') {
+            return hydrateAttachmentUrls(mapRemoteRow(result.data));
+          }
+          return attachmentRepository.syncPendingOrder(normalized.id, normalized.attachments || []).then(function (attachments) {
+            var hasChanges = JSON.stringify(attachments || []) !== JSON.stringify(normalized.attachments || []);
+            if (!hasChanges) return hydrateAttachmentUrls(mapRemoteRow(result.data));
+            var updatedOrder = normalizeOrder(Object.assign({}, normalized, { attachments: attachments }));
+            return client.from(REMOTE_TABLE).update({
+              metadata: sanitizeMetadata(updatedOrder),
+              updated_at: new Date().toISOString()
+            }).eq('id', result.data.id).select('*').single().then(function (updatedResult) {
+              if (updatedResult.error) throw updatedResult.error;
+              return hydrateAttachmentUrls(mapRemoteRow(updatedResult.data));
+            });
+          });
+        });
+      });
+    });
+  }
+
+  function synchronizePending(items) {
+    var client = getSupabaseClient();
+    if (!client) return Promise.resolve(items || []);
+    var pending = (items || []).filter(function (item) { return item && item.id && item.syncStatus !== 'synced'; });
+    if (!pending.length) return Promise.resolve(items || []);
+    return getCurrentSupabaseUser(client).then(function (user) {
+      if (!user) return items || [];
+      return pending.reduce(function (chain, item) {
+        return chain.then(function () {
+          if (String(item.clientId) !== String(user.id) && String(item.professionalId || item.providerId) !== String(user.id)) return null;
+          return saveRemote(item).then(function (synced) {
+            saveLocal(synced, 'synced');
+            return synced;
+          }).catch(function (error) {
+            warnRemote(error, 'sincronização pendente');
+            return null;
+          });
+        });
+      }, Promise.resolve()).then(function () { return readLocal(); });
+    });
+  }
+
+  function load(options) {
+    options = options || {};
+    if (cache && !options.fresh) return Promise.resolve(clone(cache));
+    var client = getSupabaseClient();
+    if (!client) return loadLocal(options);
+    var local = readLocal();
+    return fetchRemoteOrders().then(function (remote) {
+      remote.forEach(function (item) { saveLocal(item, 'synced'); });
+      cache = mergeById(local, remote);
+      return synchronizePending(cache).then(function () {
+        cache = mergeById(readLocal(), remote);
+        return clone(cache);
+      });
+    }).catch(function (error) {
+      warnRemote(error, 'leitura');
+      return loadLocal(options);
+    });
+  }
+
+  function save(order) {
+    var normalized = normalizeOrder(order);
+    var localSaved;
+    return saveLocal(normalized, 'pending').then(function (saved) {
+      localSaved = saved;
+      if (!getSupabaseClient()) return saved;
+      return saveRemote(saved).then(function (remoteSaved) {
+        return saveLocal(remoteSaved, 'synced');
+      }).catch(function (error) {
+        warnRemote(error, 'gravação');
+        return saveLocal(Object.assign({}, localSaved, {
+          syncStatus: 'pending',
+          syncError: normalizeText(error && error.message)
+        }), 'pending');
+      });
+    });
+  }
+
+  function remove(orderId) {
+    var id = normalizeText(orderId);
+    return removeLocal(id).then(function (removed) {
+      var client = getSupabaseClient();
+      if (!client || !id) return removed;
+      return client.from(REMOTE_TABLE).delete().eq('external_id', id).then(function (result) {
+        if (result.error) warnRemote(result.error, 'remoção');
+        return removed;
+      }).catch(function (error) {
+        warnRemote(error, 'remoção');
+        return removed;
+      });
+    });
   }
 
   function list(filters) {
@@ -342,15 +634,15 @@
     });
   }
 
-  function save(order) {
-    var normalized = normalizeOrder(order);
+  function saveLocal(order, syncStatus) {
+    var normalized = normalizeOrder(Object.assign({}, order, { syncStatus: syncStatus || order.syncStatus || 'local' }));
     var local = readLocal().filter(function (item) { return String(item.id) !== String(normalized.id); });
     local.unshift(normalized);
     writeLocal(local);
     return Promise.resolve(clone(normalized));
   }
 
-  function remove(orderId) {
+  function removeLocal(orderId) {
     var id = normalizeText(orderId);
     if (!id) return Promise.resolve(false);
     var next = readLocal().filter(function (item) { return String(item.id) !== id; });
@@ -371,6 +663,15 @@
     save: save,
     remove: remove,
     writeLocal: writeLocal,
-    clearLocal: function () { writeLocal([]); }
+    clearLocal: function () { writeLocal([]); },
+    syncPending: function () { return synchronizePending(readLocal()); },
+    getProviderStatus: function () {
+      return Object.freeze({
+        provider: getSupabaseClient() ? 'supabase' : 'local',
+        fallbackActive: Boolean(lastRemoteError),
+        lastError: lastRemoteError ? normalizeText(lastRemoteError.message) : ''
+      });
+    },
+    clearCache: function () { cache = null; }
   });
 })();

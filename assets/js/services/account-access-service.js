@@ -19,20 +19,30 @@
     return Doke.session || window.DokeAuth && window.DokeAuth.session || null;
   }
 
+
+  function readCachedUser() {
+    var keys = ['doke.auth.session.v1', 'doke.auth.session.v2', 'doke.auth.session'];
+    for (var index = 0; index < keys.length; index += 1) {
+      try {
+        var raw = window.localStorage.getItem(keys[index]);
+        var parsed = raw ? JSON.parse(raw) : null;
+        var user = parsed && (parsed.user || parsed.currentUser);
+        if (user && user.id) return user;
+      } catch (error) {}
+    }
+    return null;
+  }
+
   function getCurrentUser() {
     var session = sessionStore();
     if (!session || typeof session.getCurrentUser !== 'function') return null;
-    return session.getCurrentUser() || null;
+    return session.getCurrentUser() || readCachedUser() || null;
   }
 
   function resolveAccess() {
     return Promise.resolve().then(function () {
       var session = sessionStore();
-      if (!session || typeof session.getCurrentUser !== 'function') {
-        throw new Error('A sessão da conta ainda não está disponível.');
-      }
-
-      var user = getCurrentUser();
+      var user = getCurrentUser() || readCachedUser();
       return Object.freeze({
         allowed: Boolean(user),
         authenticated: Boolean(user),

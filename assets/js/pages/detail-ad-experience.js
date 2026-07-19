@@ -19,7 +19,7 @@
 
   function resolveServiceId(root) {
     var params = new URLSearchParams(window.location.search || '');
-    return String(params.get('id') || params.get('serviceId') || root && root.dataset.serviceId || 'service-reforma-banheiro-premium');
+    return String(params.get('id') || params.get('serviceId') || root && root.dataset.serviceId || '');
   }
 
   function setState(state, message) {

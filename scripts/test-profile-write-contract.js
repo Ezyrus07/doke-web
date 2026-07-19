@@ -56,7 +56,7 @@ vm.runInNewContext(serviceCode, context);
   const stableRouter = fs.readFileSync('assets/js/core/stable-shell-router.js', 'utf8');
   const clientExperience = fs.readFileSync('assets/js/pages/client-profile-experience.js', 'utf8');
 
-  assert(ownerHtml.includes('configuracoes.html?tab=profile'));
+  assert(ownerHtml.includes('data-client-edit-action') && ownerHtml.includes('data-client-profile-editor'), 'Perfil proprietário deve expor o editor canônico em modal.');
   assert(!ownerHtml.includes('Ver público'));
   assert(!ownerHtml.includes('Mais ações do perfil'));
   assert.strictEqual((ownerHtml.match(/data-profile-media-input=/g) || []).length, 2);

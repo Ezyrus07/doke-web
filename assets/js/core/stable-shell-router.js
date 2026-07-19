@@ -882,8 +882,8 @@
     if (path !== '/detalhe-anuncio.html') return Promise.resolve(null);
     var orchestrator = Doke.pageDataOrchestrator;
     if (!orchestrator || typeof orchestrator.getPageData !== 'function') return Promise.resolve(null);
-    var serviceId = url.searchParams.get('id') || url.searchParams.get('serviceId') || url.searchParams.get('servico')
-      || 'service-reforma-banheiro-premium';
+    var serviceId = url.searchParams.get('id') || url.searchParams.get('serviceId') || url.searchParams.get('servico') || '';
+    if (!serviceId) return Promise.resolve(null);
     return orchestrator.getPageData('detalhe-anuncio', { serviceId: serviceId }, { strategy: 'stale-while-revalidate' });
   }
 

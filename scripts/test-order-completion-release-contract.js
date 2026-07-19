@@ -158,7 +158,7 @@ function assertSourceContracts() {
   const ordersSource = fs.readFileSync(path.join(projectRoot, 'assets/js/services/orders-service.js'), 'utf8');
   const walletSource = fs.readFileSync(path.join(projectRoot, 'assets/js/services/wallet-service.js'), 'utf8');
 
-  assert(messagesHtml.includes('payment-service.js?v=20260712-completion-release-v1'), 'Mensagens deve carregar payment-service sem adicionar outro script.');
+  assert(/payment-service\.js\?v=20260718-finance-supabase-v1/.test(messagesHtml), 'Mensagens deve carregar a autoridade atual do payment-service sem duplicação.');
   assert(messagesSource.includes('paymentService.requestCompletion'), 'Chat deve delegar solicitação ao payment-service.');
   assert(messagesSource.includes('paymentService.confirmCompletion'), 'Chat deve delegar confirmação ao payment-service.');
   assert(!messagesSource.includes("updateOrderFromConversation('completed'"), 'Chat não pode concluir pedido por mutação genérica.');

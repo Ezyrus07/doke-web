@@ -37,6 +37,54 @@
     return window.DokeAuth && window.DokeAuth.service || null;
   }
 
+
+  function supabaseClient() {
+    try {
+      return window.DokeSupabase && typeof window.DokeSupabase.getClient === 'function'
+        ? window.DokeSupabase.getClient()
+        : null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function usesSupabaseProvider() {
+    var client = supabaseClient();
+    if (!client) return false;
+    var session = Doke.session && typeof Doke.session.getSession === 'function'
+      ? Doke.session.getSession()
+      : null;
+    return Boolean(session && session.provider === 'supabase') || Boolean(window.DOKE_SUPABASE_CONFIG);
+  }
+
+  function decideRemote(verificationId, decision, rejectionReason) {
+    var client = supabaseClient();
+    if (!client || typeof client.rpc !== 'function') {
+      return Promise.reject(new Error('Supabase indisponível para concluir a análise.'));
+    }
+    return client.rpc('decide_professional_identity_verification', {
+      p_verification_id: verificationId,
+      p_decision: decision,
+      p_rejection_reason: rejectionReason || null
+    }).then(function (result) {
+      if (result && result.error) throw result.error;
+      var data = result && result.data || {};
+      var normalized = {
+        id: data.publicVerificationId || data.verificationId || verificationId,
+        userId: data.userId || '',
+        status: data.status || (decision === 'approve' ? 'verified' : 'rejected'),
+        reviewerId: data.reviewerId || '',
+        decidedAt: data.decidedAt || new Date().toISOString(),
+        rejectionReason: rejectionReason || ''
+      };
+      window.dispatchEvent(new CustomEvent(
+        decision === 'approve' ? 'doke:professional-verification-approved' : 'doke:professional-verification-rejected',
+        { detail: { verification: normalized, remote: true } }
+      ));
+      return normalized;
+    });
+  }
+
   function currentUser() {
     return Doke.session && typeof Doke.session.getCurrentUser === 'function'
       ? Doke.session.getCurrentUser()
@@ -421,6 +469,7 @@
   }
 
   function approve(verificationId) {
+    if (usesSupabaseProvider()) return decideRemote(verificationId, 'approve', '');
     assertLocalProvider();
     var reviewer = requireReviewer();
     var repo = repository();
@@ -455,11 +504,12 @@
   }
 
   function reject(verificationId, reason) {
+    var message = normalizeText(reason, 500);
+    if (message.length < 10) return Promise.reject(validationError('Informe um motivo de rejeição com pelo menos 10 caracteres.', 'rejectionReason'));
+    if (usesSupabaseProvider()) return decideRemote(verificationId, 'reject', message);
     assertLocalProvider();
     var reviewer = requireReviewer();
     var repo = repository();
-    var message = normalizeText(reason, 500);
-    if (message.length < 10) return Promise.reject(validationError('Informe um motivo de rejeição com pelo menos 10 caracteres.', 'rejectionReason'));
     if (!repo) return Promise.reject(new Error('Persistência da verificação indisponível.'));
     return repo.getById(verificationId).then(function (current) {
       if (!current) throw new Error('Verificação de identidade não encontrada.');

@@ -133,6 +133,20 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
 
   const normalize = searchData.normalize || ((value = '') => String(value || '').toLowerCase());
   const servicePool = searchData.servicePool || [];
+  let publicServicesPromise = null;
+  const ensurePublicServices = (fresh = false) => {
+    const api = window.Doke?.services?.services;
+    if (!api?.list) return Promise.resolve(servicePool);
+    if (publicServicesPromise && !fresh) return publicServicesPromise;
+    publicServicesPromise = api.list({ status: 'active', fresh, sort: 'updated_desc' }).then((items) => {
+      servicePool.splice(0, servicePool.length, ...(Array.isArray(items) ? items : []));
+      return servicePool;
+    }).catch((error) => {
+      servicePool.splice(0, servicePool.length);
+      throw error;
+    });
+    return publicServicesPromise;
+  };
   const getServiceMatches = searchData.getServiceMatches || (() => []);
   const getUserMatches = searchData.getUserMatches || (() => []);
   const getShortVideoMatches = searchData.getShortVideoMatches || (() => []);
@@ -560,6 +574,7 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
   const formatCount = (value) => String(Math.max(0, Number(value) || 0));
 
   const createServiceCard = (item) => {
+    if (window.Doke?.publicServiceCard?.create) return window.Doke.publicServiceCard.create(item, { results: true });
     const article = document.createElement('article');
     const rating = (Number(item.rating) || 0).toFixed(1).replace('.', ',');
     const reviews = item.reviews || '0 avaliações';
@@ -971,14 +986,14 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
     refreshResultPreviews();
   };
 
-  const loadResults = () => {
+  const loadResults = (fresh = false) => {
     setResultsState('loading');
-    try {
+    return ensurePublicServices(fresh).then(() => {
       renderResults();
-    } catch (error) {
+    }).catch((error) => {
       failResultsHydration(error);
-      console.error('[resultados] Falha ao renderizar os resultados.', error);
-    }
+      console.error('[resultados] Falha ao carregar os anúncios públicos.', error);
+    });
   };
 
   const openCepModal = () => {
@@ -1291,6 +1306,10 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
       closeModal(null);
     }
   }, { signal });
+
+  const refreshPublicServices = () => { publicServicesPromise = null; loadResults(true); };
+  document.addEventListener('doke:service-created', refreshPublicServices, { signal });
+  document.addEventListener('doke:service-updated', refreshPublicServices, { signal });
 
   const cleanupResultsRouteState = () => window.DokeSearchResultsCleanup?.();
   document.addEventListener('doke:route-leaving', cleanupResultsRouteState, { signal });

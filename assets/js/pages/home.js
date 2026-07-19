@@ -6,8 +6,22 @@ function initAccountOnboarding(signal) {
   const feedback = form.querySelector('[data-account-onboarding-feedback]');
   const submitButton = form.querySelector('[data-account-onboarding-submit]');
   const skipButton = form.querySelector('[data-account-onboarding-skip]');
+  const lookupButton = form.querySelector('[data-account-onboarding-lookup]');
+  const changeButton = form.querySelector('[data-account-onboarding-change]');
+  const locationResult = form.querySelector('[data-account-onboarding-location]');
+  const cityLabel = form.querySelector('[data-account-onboarding-city]');
+  const stateLabel = form.querySelector('[data-account-onboarding-state]');
+  const postalInput = form.elements.postalCode;
   let submitting = false;
+  let lookingUp = false;
   let refreshVersion = 0;
+  let lookupVersion = 0;
+
+  const postalDigits = (value) => String(value || '').replace(/\D/g, '').slice(0, 8);
+  const formatPostalCode = (value) => {
+    const digits = postalDigits(value);
+    return digits.length > 5 ? `${digits.slice(0, 5)}-${digits.slice(5)}` : digits;
+  };
 
   const setFeedback = (message, tone = '') => {
     if (!feedback) return;
@@ -16,21 +30,47 @@ function initAccountOnboarding(signal) {
     feedback.dataset.tone = tone;
   };
 
+  const setLocation = (city, state) => {
+    const normalizedCity = String(city || '').trim();
+    const normalizedState = String(state || '').trim().toUpperCase().slice(0, 2);
+    form.elements.city.value = normalizedCity;
+    form.elements.state.value = normalizedState;
+    if (cityLabel) cityLabel.textContent = normalizedCity;
+    if (stateLabel) stateLabel.textContent = normalizedState;
+    if (locationResult) locationResult.hidden = !(normalizedCity && normalizedState);
+  };
+
+  const clearLocation = () => {
+    setLocation('', '');
+  };
+
   const setOpen = (open) => {
     const wasHidden = overlay.hidden;
     overlay.hidden = !open;
     overlay.setAttribute('aria-hidden', String(!open));
     document.body.classList.toggle('has-account-onboarding', open);
-    if (open && wasHidden) form.elements.city?.focus();
+    if (open && wasHidden) window.setTimeout(() => postalInput?.focus(), 30);
   };
 
-  const setBusy = (busy) => {
-    submitting = busy;
-    [submitButton, skipButton].forEach((button) => {
+  const syncBusyState = () => {
+    const busy = submitting || lookingUp;
+    [submitButton, skipButton, lookupButton].forEach((button) => {
       if (!button) return;
       button.disabled = busy;
       button.setAttribute('aria-busy', String(busy));
     });
+    if (postalInput) postalInput.readOnly = submitting;
+  };
+
+  const setBusy = (busy) => {
+    submitting = busy;
+    syncBusyState();
+  };
+
+  const setLookupBusy = (busy) => {
+    lookingUp = busy;
+    if (lookupButton) lookupButton.textContent = busy ? 'Buscando...' : 'Buscar CEP';
+    syncBusyState();
   };
 
   const populate = (state) => {
@@ -39,8 +79,8 @@ function initAccountOnboarding(signal) {
     const userId = String(user.id || '');
     if (overlay.dataset.onboardingUserId === userId) return;
     overlay.dataset.onboardingUserId = userId;
-    form.elements.city.value = profile.city || '';
-    form.elements.state.value = profile.state || '';
+    postalInput.value = '';
+    setLocation(profile.city || '', profile.state || '');
     form.elements.bio.value = profile.bio || '';
     form.elements.interests.value = Array.isArray(profile.interests) ? profile.interests.join(', ') : '';
   };
@@ -59,7 +99,50 @@ function initAccountOnboarding(signal) {
     }
   };
 
+  const lookupPostalCode = async ({ silent = false } = {}) => {
+    const cep = postalDigits(postalInput?.value);
+    if (cep.length !== 8) {
+      clearLocation();
+      if (!silent) setFeedback('Digite um CEP válido com 8 números.', 'error');
+      postalInput?.focus();
+      return false;
+    }
+
+    const version = ++lookupVersion;
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 5000);
+    setLookupBusy(true);
+    if (!silent) setFeedback('Buscando sua cidade...', 'progress');
+
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`, {
+        signal: controller.signal,
+        headers: { Accept: 'application/json' }
+      });
+      if (!response.ok) throw new Error('Não foi possível consultar o CEP.');
+      const result = await response.json();
+      if (result?.erro || !result?.localidade || !result?.uf) throw new Error('CEP não encontrado. Revise os números.');
+      if (version !== lookupVersion || signal.aborted) return false;
+      postalInput.value = formatPostalCode(cep);
+      setLocation(result.localidade, result.uf);
+      setFeedback('', '');
+      return true;
+    } catch (error) {
+      if (version !== lookupVersion || signal.aborted) return false;
+      clearLocation();
+      const message = error?.name === 'AbortError'
+        ? 'A consulta demorou mais que o esperado. Tente novamente.'
+        : error?.message || 'Não foi possível consultar o CEP.';
+      setFeedback(message, 'error');
+      return false;
+    } finally {
+      window.clearTimeout(timeoutId);
+      if (version === lookupVersion) setLookupBusy(false);
+    }
+  };
+
   const payloadFromForm = (withoutOptional = false) => ({
+    postalCode: postalDigits(postalInput?.value),
     city: String(form.elements.city?.value || '').trim(),
     state: String(form.elements.state?.value || '').trim().toUpperCase(),
     bio: withoutOptional ? '' : String(form.elements.bio?.value || '').trim(),
@@ -67,7 +150,12 @@ function initAccountOnboarding(signal) {
   });
 
   const complete = async (withoutOptional) => {
-    if (submitting || !form.reportValidity()) return;
+    if (submitting || lookingUp || !form.reportValidity()) return;
+    if (!String(form.elements.city?.value || '').trim() || !String(form.elements.state?.value || '').trim()) {
+      const resolved = await lookupPostalCode();
+      if (!resolved) return;
+    }
+
     const service = window.Doke?.services?.onboarding;
     if (!service?.complete) {
       setFeedback('Onboarding indisponível.', 'error');
@@ -87,6 +175,23 @@ function initAccountOnboarding(signal) {
     }
   };
 
+  postalInput?.addEventListener('input', () => {
+    postalInput.value = formatPostalCode(postalInput.value);
+    clearLocation();
+    setFeedback('', '');
+    if (postalDigits(postalInput.value).length === 8) lookupPostalCode({ silent: true });
+  }, { signal });
+  postalInput?.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter') return;
+    event.preventDefault();
+    lookupPostalCode();
+  }, { signal });
+  lookupButton?.addEventListener('click', () => lookupPostalCode(), { signal });
+  changeButton?.addEventListener('click', () => {
+    clearLocation();
+    postalInput?.focus();
+    postalInput?.select();
+  }, { signal });
   form.addEventListener('submit', (event) => {
     event.preventDefault();
     complete(false);
@@ -934,6 +1039,11 @@ const initMoreServicesProgressiveReveal = () => {
   const grid = document.querySelector("[data-more-services-grid]");
   if (!grid) return;
 
+  const previousController = grid.__dokeProgressiveRevealController;
+  previousController?.abort?.();
+  const revealController = new AbortController();
+  grid.__dokeProgressiveRevealController = revealController;
+  const revealSignal = revealController.signal;
   const cards = Array.from(grid.querySelectorAll(":scope > .doke-ad-card"));
   const loadHost = document.querySelector("[data-more-services-load-host]");
   const loadButton = document.querySelector("[data-more-services-load]");
@@ -956,10 +1066,12 @@ const initMoreServicesProgressiveReveal = () => {
   loadButton?.addEventListener("click", () => {
     visibleCount = Math.min(cards.length, visibleCount + step);
     syncCards();
-  }, { signal });
+  }, { signal: revealSignal });
 
   syncCards();
 };
+
+document.addEventListener("doke:home-services-rendered", initMoreServicesProgressiveReveal, { signal });
 
 const closeOrderFeedback = () => {
   if (!orderFeedback) return;
@@ -991,7 +1103,7 @@ orderFeedbackClose?.addEventListener("click", closeOrderFeedback);
 initMobileHomeDrawer();
 initHomeSearch();
 initHomeWorkers();
-initMoreServicesProgressiveReveal();
+Promise.resolve(window.Doke?.homePublicServices?.init?.()).finally(initMoreServicesProgressiveReveal);
 
 try {
   const shouldShowOrderFeedback = new URLSearchParams(window.location.search).get("quote") === "sent";
