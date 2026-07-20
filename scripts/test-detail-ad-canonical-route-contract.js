@@ -25,7 +25,7 @@ assert(repository.includes('fetchRemoteServiceById'), 'Services repository must 
 assert(repository.includes(".eq('external_id', id).maybeSingle()"), 'Repository must resolve public external ids.');
 assert(repository.includes(".eq('id', id).maybeSingle()"), 'Repository must resolve remote UUIDs when supplied.');
 assert(repository.includes('matchesServiceId'), 'Repository must reconcile local, external and remote ids.');
-assert(repository.includes("if (localMatch) return clone(localMatch);"), 'A locally published pending service must remain detail-readable when remote sync fails.');
+assert(repository.includes('resolveReadableLocalService') && repository.includes('canReadLocalService'), 'Local pending services must remain readable only to their owner when remote sync fails.');
 
 assert(controller.includes("if (!serviceId)"), 'Detail controller must handle missing route ids explicitly.');
 assert(controller.includes("emptyReason: normalized.service ? '' : (serviceId ? 'not-found' : 'missing-id')"), 'Detail controller must distinguish missing and unknown ids.');
@@ -37,8 +37,8 @@ assert(detailHtml.includes('data-detail-retry'), 'Detail page must expose a retr
 for (const [name, html] of [['index.html', indexHtml], ['resultados.html', resultsHtml]]) {
   assert(/ad-card-interactions\.js\?v=20260719-canonical-service-route-v1/.test(html), `${name} must bust the obsolete slug-routing script cache.`);
 }
-assert(/detalhe-anuncio-data-controller\.js\?v=20260719-budget-price-label-v1/.test(detailHtml), 'Detail data controller cache version must be current.');
-assert(/detalhe-anuncio\.js\?v=20260719-budget-price-label-v1/.test(detailHtml), 'Detail renderer cache version must match the data controller.');
+assert(/detalhe-anuncio-data-controller\.js\?v=20260720-moderation-flow-v1/.test(detailHtml), 'Detail data controller cache must align with the moderation renderer.');
+assert(/detalhe-anuncio\.js\?v=20260720-moderation-flow-v1/.test(detailHtml), 'Detail renderer cache must invalidate the pre-moderation script.');
 
 console.log('Detail ad canonical route static contract: PASS');
 
@@ -101,7 +101,7 @@ const createStorage = (initial = {}) => {
 const runRepositoryRuntime = async () => {
   const localId = 'service_local_123';
   const storage = createStorage({
-    'doke.services.local.v1': JSON.stringify([{ id: localId, title: 'Serviço local', status: 'active' }])
+    'doke.services.local.v1': JSON.stringify([{ id: localId, title: 'Serviço local', status: 'draft', moderationStatus: 'pending_review', ownerId: 'owner-123' }])
   });
   const context = {
     console,
@@ -118,7 +118,7 @@ const runRepositoryRuntime = async () => {
     String,
     RegExp,
     window: {
-      Doke: {},
+      Doke: { session: { getCurrentUser() { return { id: 'owner-123' }; } } },
       DOKE_SUPABASE_CONFIG: { enabled: false },
       localStorage: storage,
       location: { href: 'https://doke.local/detalhe-anuncio.html' },
@@ -133,7 +133,24 @@ const runRepositoryRuntime = async () => {
   context.window.window = context.window;
   vm.runInNewContext(repository, context, { filename: 'services-repository.js' });
   const local = await context.window.Doke.repositories.services.getById(localId);
-  assert(local && local.id === localId, 'Repository runtime must open a locally published service by its canonical id.');
+  assert(local && local.id === localId, 'Repository runtime must keep a pending local service readable to its owner.');
+
+  const visitorContext = {
+    console, URL, Blob, Uint8Array, Promise, JSON, Date, Math, Object, Array, Number, String, RegExp,
+    window: {
+      Doke: {},
+      DOKE_SUPABASE_CONFIG: { enabled: false },
+      localStorage: storage,
+      location: { href: 'https://doke.local/detalhe-anuncio.html' },
+      document: { documentElement: { setAttribute() {} }, addEventListener() {} },
+      console
+    }
+  };
+  visitorContext.document = visitorContext.window.document;
+  visitorContext.window.window = visitorContext.window;
+  vm.runInNewContext(repository, visitorContext, { filename: 'services-repository-visitor.js' });
+  const hiddenFromVisitor = await visitorContext.window.Doke.repositories.services.getById(localId);
+  assert(hiddenFromVisitor === null, 'Repository runtime must not expose a pending local service to a visitor.');
 
   const remoteExternalId = 'service_remote_123';
   const remoteUuid = '11111111-1111-4111-8111-111111111111';

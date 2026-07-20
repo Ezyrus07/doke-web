@@ -14,6 +14,16 @@
     ARCHIVED: 'archived'
   });
 
+  var MODERATION_STATUS = Object.freeze({
+    DRAFT: 'draft',
+    PENDING_REVIEW: 'pending_review',
+    PUBLISHED: 'published',
+    CHANGES_PENDING_REVIEW: 'changes_pending_review',
+    CHANGES_REQUIRED: 'changes_required',
+    REJECTED: 'rejected',
+    SUSPENDED: 'suspended'
+  });
+
   var ALLOWED_TRANSITIONS = Object.freeze({
     draft: Object.freeze(['active', 'archived']),
     active: Object.freeze(['inactive', 'archived']),
@@ -57,7 +67,8 @@
       : null;
   }
 
-  function create(payload) {
+  function submitForReview(payload, options) {
+    options = options || {};
     var access = Doke.services && Doke.services.professionalAccess;
     var action = access && access.ACTIONS && access.ACTIONS.PUBLISH_SERVICE || 'publish_service';
     if (!access || typeof access.assert !== 'function') {
@@ -65,7 +76,7 @@
     }
     return access.assert(action).then(function (result) {
       var repository = assertRepository();
-      if (typeof repository.save !== 'function') throw new Error('A publicação de serviços não está disponível.');
+      if (typeof repository.submitForReview !== 'function') throw new Error('O envio de serviços para análise não está disponível.');
       var actor = result.user || currentUser() || {};
       var professionalProfile = result.professionalProfile || {};
       var now = new Date().toISOString();
@@ -73,18 +84,29 @@
         ownerId: actor.id || '',
         professionalId: actor.id || '',
         providerId: actor.id || '',
-        professionalProfileId: professionalProfile.id || '',
+        professionalProfileId: professionalProfile.id || payload && payload.professionalProfileId || '',
         providerName: actor.name || actor.displayName || payload && payload.providerName || 'Profissional Doke',
         providerHandle: actor.handle || actor.username || payload && (payload.providerHandle || payload.providerUsername) || '',
         providerUsername: actor.handle || actor.username || payload && (payload.providerUsername || payload.providerHandle) || '',
         providerInitials: actor.initials || actor.avatarInitials || payload && payload.providerInitials || 'DK',
         verified: result.verification && result.verification.status === 'verified',
-        status: payload && payload.status === 'inactive' ? 'inactive' : 'active',
+        status: payload && payload.approvedVersionId ? payload.status || STATUS.ACTIVE : STATUS.DRAFT,
+        moderationStatus: payload && payload.approvedVersionId ? MODERATION_STATUS.CHANGES_PENDING_REVIEW : MODERATION_STATUS.PENDING_REVIEW,
         createdAt: payload && payload.createdAt || now,
         updatedAt: now
       });
-      return repository.save(service);
+      return repository.submitForReview(service, options);
     });
+  }
+
+  function create(payload) {
+    return submitForReview(payload, { editMode: false, changeClass: 'critical' });
+  }
+
+  function getOwnedReviewDraft(serviceId) {
+    var repository = assertRepository();
+    if (typeof repository.getOwnedReviewDraft !== 'function') return getById(serviceId);
+    return repository.getOwnedReviewDraft(serviceId);
   }
 
   function listByProfessional(professionalId, filters) {
@@ -206,7 +228,9 @@
     featured: featured,
     search: search,
     getById: getById,
+    getOwnedReviewDraft: getOwnedReviewDraft,
     create: create,
+    submitForReview: submitForReview,
     listByProfessional: listByProfessional,
     updateOwned: updateOwned,
     deactivateOwned: deactivateOwned,
@@ -215,6 +239,7 @@
     transitionOwned: transitionOwned,
     canTransition: canTransition,
     STATUS: STATUS,
+    MODERATION_STATUS: MODERATION_STATUS,
     getFromUrl: getFromUrl,
     getDetailUrl: getDetailUrl,
     getBudgetUrl: getBudgetUrl,

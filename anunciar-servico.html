@@ -12,7 +12,7 @@
   <script>document.documentElement.classList.add("doke-mobile-shell-pending");</script>
   <script src="assets/js/core/ipad-safari-early-guard.js?v=20260531-v3"></script>
 
-  <link rel="stylesheet" href="assets/css/pages/anunciar-servico-foundation.css?v=20260718-availability-tools-v1">
+  <link rel="stylesheet" href="assets/css/pages/anunciar-servico-foundation.css?v=20260720-moderation-flow-v1">
   <link rel="stylesheet" href="assets/css/components/feedback/document-preloader.css?v=20260712-global-document-boot-v1">
  <link rel="stylesheet" href="assets/css/components/ui-surface/close-button-authority.css?v=20260713-global-v1">
 </head>
@@ -92,7 +92,7 @@
 
             <header class="post-service-intro doke-form-page-top" data-post-service-guard-ready hidden>
               <h1 class="doke-form-page-title">ANUNCIAR SERVIÇO</h1>
-              <p class="doke-form-page-description">Publique uma oferta clara para clientes entenderem e contratarem.</p>
+              <p class="doke-form-page-description">Crie uma oferta clara e envie para análise antes de ela aparecer para os clientes.</p>
             </header>
 
             <div class="post-service-layout doke-form-page-grid" data-post-service-guard-ready hidden>
@@ -112,7 +112,11 @@
                   </button>
                   <button class="post-service-step doke-flow-step" type="button" data-step-target="4">
                     <span>4</span>
-                    <div><strong>Revisão</strong><small>Publicação</small></div>
+                    <div><strong>Orçamento</strong><small>Como receber pedidos</small></div>
+                  </button>
+                  <button class="post-service-step doke-flow-step" type="button" data-step-target="5">
+                    <span>5</span>
+                    <div><strong>Revisão</strong><small>Enviar para análise</small></div>
                   </button>
                 </nav>
 
@@ -262,14 +266,6 @@
                       <button class="post-service-check doke-choice-button" type="button" aria-pressed="false" data-post-check data-value="Atende emergência"><span></span>Atende emergência</button>
                       <button class="post-service-check is-active doke-choice-button" type="button" aria-pressed="true" data-post-check data-value="Orçamento pelo chat"><span></span>Orçamento pelo chat</button>
                     </div>
-                    <section class="quote-builder" data-quote-template-builder aria-labelledby="quote-builder-title">
-                      <input type="hidden" name="quoteTemplateJson" data-quote-template-json value='{"version":1,"status":"default","questions":[]}'>
-                      <div class="quote-builder__head"><div><h2 id="quote-builder-title">Perguntas para orçamento</h2><p>Personalize as informações que o cliente deve enviar. Use no máximo 10 perguntas objetivas.</p></div><button class="doke-btn doke-btn--secondary" type="button" data-quote-question-add>Adicionar pergunta</button></div>
-                      <p class="quote-builder__empty" data-quote-template-empty>O modelo padrão da Doke será usado. Adicione perguntas somente quando forem necessárias para calcular ou preparar o serviço.</p>
-                      <div class="quote-builder__list" data-quote-question-list></div>
-                      <aside class="quote-builder-preview" aria-label="Prévia das perguntas"><strong>Prévia para o cliente</strong><div data-quote-template-preview></div></aside>
-                    </section>
-
                     <div class="post-service-grid post-service-grid--spaced">
                       <label class="post-service-field post-service-field--full doke-field"><span>O que está incluso</span><textarea name="includedItems" required minlength="10" maxlength="500" placeholder="Ex.: Proteção do ambiente, mão de obra, limpeza básica ao final." data-count-source class="doke-textarea"></textarea><small class="doke-form-hint"><span data-count-value>0</span>/500</small></label>
                       <label class="post-service-field post-service-field--full doke-field"><span>O que não está incluso <em>Opcional</em></span><textarea name="excludedItems" maxlength="500" placeholder="Ex.: Materiais, deslocamento fora da região, peças de reposição." data-count-source class="doke-textarea"></textarea><small class="doke-form-hint"><span data-count-value>0</span>/500</small></label>
@@ -278,10 +274,66 @@
 
                   <div class="post-service-step-panel" data-step-panel="4" hidden>
                     <div class="post-service-section-head">
-                      <h2>Revisão e publicação</h2>
-                      <p>Revise como o anúncio será exibido. Depois de publicar, você poderá editar ou desativar o serviço pelo perfil profissional.</p>
+                      <h2>Formulário de orçamento</h2>
+                      <p>Defina como o cliente poderá solicitar este serviço. A Doke mantém os campos essenciais de segurança e contexto.</p>
                     </div>
                     <p class="post-service-step-error" data-step-error="4" role="alert" aria-live="polite" hidden></p>
+                    <input type="hidden" name="quoteMode" value="default" data-quote-mode-input>
+                    <div class="post-service-quote-modes" role="radiogroup" aria-label="Como receber solicitações de orçamento">
+                      <button class="post-service-quote-mode doke-choice-button is-active" type="button" role="radio" aria-checked="true" data-quote-mode-option="default">
+                        <span class="post-service-quote-mode__mark" aria-hidden="true"></span>
+                        <strong>Modelo recomendado pela Doke</strong>
+                        <small>Descrição do problema, data, local, anexos e observações. Mais rápido para começar.</small>
+                      </button>
+                      <button class="post-service-quote-mode doke-choice-button" type="button" role="radio" aria-checked="false" data-quote-mode-option="custom">
+                        <span class="post-service-quote-mode__mark" aria-hidden="true"></span>
+                        <strong>Personalizar formulário</strong>
+                        <small>Adicione perguntas específicas para entender o serviço antes de responder.</small>
+                      </button>
+                      <button class="post-service-quote-mode doke-choice-button" type="button" role="radio" aria-checked="false" data-quote-mode-option="disabled">
+                        <span class="post-service-quote-mode__mark" aria-hidden="true"></span>
+                        <strong>Não receber pedidos de orçamento</strong>
+                        <small>O anúncio mostrará somente a opção de conversar com o profissional.</small>
+                      </button>
+                    </div>
+
+                    <section class="post-service-quote-mode-panel" data-quote-mode-panel="default">
+                      <div class="post-service-quote-mode-summary">
+                        <div><strong>Formulário essencial da Doke</strong><p>Campos curtos e consistentes para o cliente explicar o que precisa.</p></div>
+                        <ul>
+                          <li>Descrição do problema</li>
+                          <li>Data e turno desejados</li>
+                          <li>Endereço ou região</li>
+                          <li>Fotos e referências</li>
+                          <li>Observações adicionais</li>
+                        </ul>
+                      </div>
+                    </section>
+
+                    <section class="post-service-quote-mode-panel" data-quote-mode-panel="custom" hidden>
+                      <section class="quote-builder" data-quote-template-builder aria-labelledby="quote-builder-title">
+                        <input type="hidden" name="quoteTemplateJson" data-quote-template-json value='{"version":1,"status":"default","questions":[]}'>
+                        <div class="quote-builder__head"><div><h2 id="quote-builder-title">Perguntas personalizadas</h2><p>Use perguntas objetivas. Formulários curtos tendem a receber mais respostas.</p></div><button class="doke-btn doke-btn--secondary" type="button" data-quote-question-add>Adicionar pergunta</button></div>
+                        <p class="quote-builder__empty" data-quote-template-empty>Adicione ao menos uma pergunta para usar o modo personalizado.</p>
+                        <div class="quote-builder__list" data-quote-question-list></div>
+                        <aside class="quote-builder-preview" aria-label="Prévia das perguntas"><strong>Prévia para o cliente</strong><div data-quote-template-preview></div></aside>
+                      </section>
+                    </section>
+
+                    <section class="post-service-quote-mode-panel" data-quote-mode-panel="disabled" hidden>
+                      <div class="post-service-quote-mode-summary post-service-quote-mode-summary--warning">
+                        <div><strong>Solicitações de orçamento desativadas</strong><p>O cliente não acessará o formulário de orçamento deste anúncio.</p></div>
+                        <p>Use esta opção apenas quando o serviço precisar começar por uma conversa. O botão “Conversar” continuará disponível para visitantes autenticados.</p>
+                      </div>
+                    </section>
+                  </div>
+
+                  <div class="post-service-step-panel" data-step-panel="5" hidden>
+                    <div class="post-service-section-head">
+                      <h2>Revisão e envio para análise</h2>
+                      <p>Revise a versão que será analisada. Anúncios novos não ficam públicos antes da aprovação.</p>
+                    </div>
+                    <p class="post-service-step-error" data-step-error="5" role="alert" aria-live="polite" hidden></p>
                     <section class="post-service-review-preview" aria-label="Prévia do anúncio">
                       <div class="post-service-review-preview__media" data-review-media>
                         <span data-review-media-placeholder>Prévia da imagem principal</span>
@@ -302,11 +354,12 @@
                       <div><dt>Disponibilidade</dt><dd data-review-availability>Nenhum horário informado</dd></div>
                       <div><dt>Fotos</dt><dd data-review-images>Nenhuma imagem selecionada</dd></div>
                       <div><dt>Diferenciais</dt><dd data-review-tags>Nenhum diferencial selecionado</dd></div>
-                      <div><dt>Publicação</dt><dd>O anúncio ficará público imediatamente e poderá ser editado ou desativado no seu perfil.</dd></div>
+                      <div><dt>Orçamento</dt><dd data-review-quote-mode>Modelo recomendado pela Doke</dd></div>
+                      <div><dt>Análise</dt><dd data-review-moderation-copy>O anúncio será enviado para análise antes de aparecer para os clientes.</dd></div>
                     </dl>
                     <div class="post-service-confirm">
                       <button class="post-service-confirm-check is-active doke-choice-button" type="button" aria-pressed="true" data-post-check><span></span>Confirmo que as informações do anúncio são verdadeiras e atualizadas.</button>
-                      <button class="post-service-confirm-check is-active doke-choice-button" type="button" aria-pressed="true" data-post-check><span></span>Aceito as regras de publicação da Doke.</button>
+                      <button class="post-service-confirm-check is-active doke-choice-button" type="button" aria-pressed="true" data-post-check><span></span>Aceito as regras de publicação e análise da Doke.</button>
                     </div>
                   </div>
 
@@ -328,18 +381,18 @@
                   <li><span><svg viewBox="0 0 24 24"><path d="m7 12 3 3 7-7"></path></svg></span><strong>O que está incluso</strong></li>
                   <li><span><svg viewBox="0 0 24 24"><path d="m7 12 3 3 7-7"></path></svg></span><strong>Diferenciais objetivos</strong></li>
                 </ul>
-                <div class="post-service-tip-badge">Anúncio público</div>
-                <p>Evite promessas genéricas. Quanto mais claro o escopo, melhor a qualidade dos pedidos recebidos.</p>
+                <div class="post-service-tip-badge">Revisão obrigatória</div>
+                <p>A versão enviada será analisada. Enquanto alterações relevantes aguardam aprovação, a última versão aprovada continua pública.</p>
               </aside>
             </div>
 
             <div class="post-service-submit-state doke-overlay doke-overlay--feedback" data-submit-state hidden aria-live="polite" aria-modal="true" role="dialog">
               <div class="post-service-submit-state__card doke-overlay__surface doke-modal-surface doke-modal-surface--feedback">
                 <span class="post-service-submit-state__icon" data-submit-state-icon aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m6 12 4 4 8-9"></path></svg></span>
-                <h2 class="doke-modal-title" data-submit-state-title>Anúncio publicado</h2>
-                <p class="doke-modal-description" data-submit-state-message>Seu serviço já está disponível no perfil profissional e nas superfícies públicas da Doke.</p>
+                <h2 class="doke-modal-title" data-submit-state-title>Anúncio enviado para análise</h2>
+                <p class="doke-modal-description" data-submit-state-message>A equipe da Doke analisará as informações antes de liberar a nova versão para os clientes.</p>
                 <div class="post-service-submit-state__actions doke-overlay__actions post-service-submit-state__actions--single doke-modal-actions doke-modal-actions--single" data-submit-state-actions>
-                  <a class="doke-btn doke-btn--primary" href="perfil.html?mode=owner&panel=services">Ver anúncio no perfil</a>
+                  <a class="doke-btn doke-btn--primary" href="perfil.html?mode=owner&panel=services">Acompanhar no perfil</a>
                 </div>
               </div>
             </div>
@@ -374,11 +427,11 @@
   <script src="assets/js/core/form-experience-core.js?v=20260712-form-core-v1" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="assets/js/core/supabase-config.js?v=20260719-singleton-client-v1" defer></script>
-  <script src="assets/js/repositories/services-repository.js?v=20260719-detail-id-resolution-v1" defer></script>
-  <script src="assets/js/services/services-service.js?v=20260717-media-archive-v1" defer></script>
-  <script src="assets/js/pages/service-quote-template-builder.js?v=20260719-budget-builder-v1" defer></script>
-  <script src="assets/js/pages/service-form-experience.js?v=20260719-budget-builder-v1" defer></script>
-  <script src="assets/js/pages/anunciar-servico.js?v=20260719-upload-submit-feedback-v1" defer></script>
+  <script src="assets/js/repositories/services-repository.js?v=20260720-moderation-flow-v1" defer></script>
+  <script src="assets/js/services/services-service.js?v=20260720-moderation-flow-v1" defer></script>
+  <script src="assets/js/pages/service-quote-template-builder.js?v=20260720-moderation-flow-v1" defer></script>
+  <script src="assets/js/pages/service-form-experience.js?v=20260720-moderation-flow-v1" defer></script>
+  <script src="assets/js/pages/anunciar-servico.js?v=20260720-moderation-flow-v1" defer></script>
   <script src="assets/js/services/mock-data-service.js?v=20260501-stage31-domain-services" defer></script>
   <script src="assets/js/services/profile-service.js?v=20260501-stage31-domain-services" defer></script>
   <script src="assets/js/services/search-service.js?v=20260501-stage31-domain-services" defer></script>

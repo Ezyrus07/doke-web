@@ -325,6 +325,38 @@
     return item;
   }
 
+  function moderationPresentation(service) {
+    var moderation = clean(service && (service.moderationStatus || service.moderation_status)).toLowerCase();
+    var publicStatus = clean(service && service.status).toLowerCase();
+    var map = {
+      draft: { key: 'draft', label: 'Rascunho', tone: 'neutral', message: 'Este anúncio ainda não foi enviado para análise.' },
+      pending_review: { key: 'pending-review', label: 'Em análise', tone: 'info', message: 'A Doke está analisando este anúncio antes da publicação.' },
+      changes_pending_review: { key: 'changes-pending-review', label: 'Alterações em análise', tone: 'info', message: 'A versão aprovada continua pública enquanto as alterações são revisadas.' },
+      changes_required: { key: 'changes-required', label: 'Ajustes solicitados', tone: 'warning', message: clean(service && service.reviewReason) || 'A equipe solicitou ajustes antes de aprovar esta versão.' },
+      rejected: { key: 'rejected', label: 'Não aprovado', tone: 'danger', message: clean(service && service.reviewReason) || 'Esta versão não foi aprovada. Revise o anúncio antes de reenviar.' },
+      suspended: { key: 'suspended', label: 'Suspenso', tone: 'danger', message: clean(service && service.reviewReason) || 'O anúncio foi suspenso pela plataforma.' },
+      published: { key: 'published', label: publicStatus === 'inactive' ? 'Inativo' : 'Publicado', tone: publicStatus === 'inactive' ? 'neutral' : 'success', message: '' }
+    };
+    if (publicStatus === 'archived') return { key: 'archived', label: 'Arquivado', tone: 'neutral', message: '' };
+    if (publicStatus === 'inactive' && moderation !== 'changes_pending_review') return { key: 'inactive', label: 'Inativo', tone: 'neutral', message: '' };
+    return map[moderation] || map.draft;
+  }
+
+  function createModerationNotice(service) {
+    var presentation = moderationPresentation(service);
+    if (!presentation.message || presentation.key === 'published') return null;
+    var notice = document.createElement('div');
+    notice.className = 'profile-service-card__moderation-notice profile-service-card__moderation-notice--' + presentation.tone;
+    notice.setAttribute('role', presentation.tone === 'danger' ? 'alert' : 'status');
+    var title = document.createElement('strong');
+    title.textContent = presentation.label;
+    var copy = document.createElement('span');
+    copy.textContent = presentation.message;
+    notice.appendChild(title);
+    notice.appendChild(copy);
+    return notice;
+  }
+
   function menuItem(service, config) {
     var item;
     if (config.href) {
@@ -385,13 +417,15 @@
       dataName: 'profileServiceSelect'
     }));
 
-    if (service.status === 'inactive') {
+    var moderation = moderationPresentation(service);
+    var canChangePublicStatus = ['published', 'changes-pending-review', 'inactive'].indexOf(moderation.key) !== -1;
+    if (canChangePublicStatus && service.status === 'inactive') {
       menu.appendChild(menuItem(service, {
         label: 'Reativar anúncio',
         dataName: 'profileServiceReactivate',
         modifier: 'success'
       }));
-    } else if (service.status === 'active') {
+    } else if (canChangePublicStatus && service.status === 'active') {
       menu.appendChild(menuItem(service, {
         label: 'Desativar anúncio',
         dataName: 'profileServiceDeactivate',
@@ -465,6 +499,9 @@
     article.dataset.serviceStatus = clean(service.status || 'active');
     article.classList.add('is-status-' + clean(service.status || 'active'));
     if (options.owner) {
+      var moderation = moderationPresentation(service);
+      article.dataset.serviceModerationStatus = moderation.key;
+      article.classList.add('is-moderation-' + moderation.key);
       article.dataset.profileServiceOwnerCard = '';
       var selectionButton = document.createElement('button');
       selectionButton.className = 'profile-service-card__selection doke-selection-check';
@@ -525,8 +562,9 @@
     }
 
     var status = document.createElement('span');
-    status.className = 'doke-ad-card__badge profile-service-card__status profile-service-card__status--' + clean(service.status || 'active');
-    status.textContent = service.status === 'archived' ? 'Arquivado' : (service.status === 'inactive' ? 'Inativo' : 'Publicado');
+    var statusPresentation = options.owner ? moderationPresentation(service) : moderationPresentation({ status: service.status, moderationStatus: 'published' });
+    status.className = 'doke-ad-card__badge profile-service-card__status profile-service-card__status--' + statusPresentation.tone;
+    status.textContent = statusPresentation.label;
     media.appendChild(status);
 
     if (!options.owner) {
@@ -578,6 +616,10 @@
     if (title.textContent) body.appendChild(title);
     body.appendChild(seller);
     if (summary.textContent) body.appendChild(summary);
+    if (options.owner) {
+      var moderationNotice = createModerationNotice(service);
+      if (moderationNotice) body.appendChild(moderationNotice);
+    }
     if (tagItems.length) body.appendChild(tags);
     if (locationLabel.textContent) body.appendChild(location);
 

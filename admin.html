@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet" />
   <script defer src="assets/js/core/shell-state-early.js?v=20260614-drawer-canonical-v2"></script>
-  <link href="assets/css/pages/admin-foundation.css?v=20260716-navigation-guard-v1" rel="stylesheet" />
+  <link href="assets/css/pages/admin-foundation.css?v=20260720-moderation-flow-v1" rel="stylesheet" />
   <script>document.documentElement.classList.add("doke-mobile-shell-pending");</script>
   <script defer src="assets/js/core/ipad-safari-early-guard.js?v=20260531-v3"></script>
   <link rel="stylesheet" href="assets/css/components/feedback/document-preloader.css?v=20260712-global-document-boot-v1">
@@ -39,7 +39,11 @@
               <input autocomplete="off" class="home-side-meta__search-input doke-input" id="admin-search-input" placeholder="Buscar no admin" type="search" data-admin-search />
             </form>
             <div aria-label="Atalhos administrativos" class="page-header-context" data-header-context role="toolbar">
-              <button class="page-header-context__action doke-btn is-view-active" data-admin-scroll-to="admin-verifications-title" type="button" aria-pressed="true">
+              <button class="page-header-context__action doke-btn is-view-active" data-admin-scroll-to="admin-service-reviews-title" type="button" aria-pressed="true">
+                <svg aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24"><path d="M5 4h14v16H5z"></path><path d="M8 8h8"></path><path d="M8 12h8"></path><path d="m9 16 2 2 4-4"></path></svg>
+                <span>Anúncios</span>
+              </button>
+              <button class="page-header-context__action doke-btn" data-admin-scroll-to="admin-verifications-title" type="button" aria-pressed="false">
                 <svg aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24"><path d="M12 3.5 18 6v5.2c0 4.4-2.6 7.3-6 9.3-3.4-2-6-4.9-6-9.3V6l6-2.5Z"></path><path d="M9 12h6"></path></svg>
                 <span>Verificações</span>
               </button>
@@ -114,6 +118,10 @@
             <div data-admin-dashboard data-admin-access-ready hidden>
               <section class="admin-grid" aria-label="Resumo administrativo">
                 <article class="admin-card">
+                  <span class="admin-card__icon admin-card__icon--info" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 4h14v16H5z"></path><path d="M8 8h8"></path><path d="M8 12h8"></path><path d="m9 16 2 2 4-4"></path></svg></span>
+                  <div class="admin-card__content"><strong class="admin-card__value" data-admin-stat="service-reviews">0</strong><span class="admin-card__label">Anúncios em análise</span><p class="admin-card__copy">Novos anúncios e versões aguardando decisão.</p></div>
+                </article>
+                <article class="admin-card">
                   <span class="admin-card__icon admin-card__icon--info" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3.5 18 6v5.2c0 4.4-2.6 7.3-6 9.3-3.4-2-6-4.9-6-9.3V6l6-2.5Z"></path><path d="M9 12h6"></path></svg></span>
                   <div class="admin-card__content"><strong class="admin-card__value" data-admin-stat="verifications">0</strong><span class="admin-card__label">Verificações pendentes</span><p class="admin-card__copy">Identidades aguardando análise.</p></div>
                 </article>
@@ -133,6 +141,17 @@
 
               <div class="admin-layout">
                 <div class="admin-main">
+                  <section class="admin-panel admin-panel--service-reviews" aria-labelledby="admin-service-reviews-title">
+                    <div class="admin-panel__header">
+                      <div>
+                        <span class="admin-panel__eyebrow">Qualidade do catálogo</span>
+                        <div class="admin-panel__title-row"><h2 class="admin-panel__title" id="admin-service-reviews-title">Anúncios aguardando análise</h2><strong class="admin-panel__count" data-admin-stat="service-reviews">0</strong></div>
+                        <p class="admin-panel__copy">Compare a nova versão, aprove o conteúdo ou explique quais ajustes o profissional deve fazer.</p>
+                      </div>
+                    </div>
+                    <div class="admin-service-review-list" data-admin-service-reviews aria-live="polite"></div>
+                  </section>
+
                   <section class="admin-panel" aria-labelledby="admin-verifications-title">
                     <div class="admin-panel__header">
                       <div>
@@ -272,6 +291,27 @@
     </section>
   </dialog>
 
+  <dialog class="doke-native-overlay admin-service-review-dialog" data-admin-service-review-dialog aria-labelledby="admin-service-review-dialog-title">
+    <section class="doke-modal-surface doke-modal-surface--form">
+      <header class="doke-modal-header">
+        <span class="doke-modal-eyebrow">Moderação de anúncio</span>
+        <h2 class="doke-modal-title" id="admin-service-review-dialog-title" data-admin-service-review-dialog-title>Solicitar ajustes no anúncio</h2>
+        <p class="doke-modal-description" data-admin-service-review-dialog-description>Explique o que o profissional precisa corrigir antes de reenviar.</p>
+        <button class="doke-close-button doke-icon-btn doke-icon-btn--flat" type="button" data-admin-service-review-dialog-close aria-label="Fechar">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6 6 18"></path></svg>
+        </button>
+      </header>
+      <div class="doke-modal-body">
+        <label class="doke-label" for="admin-service-review-reason">Motivo e orientação</label>
+        <textarea class="doke-textarea" id="admin-service-review-reason" data-admin-service-review-reason rows="5" minlength="10" maxlength="500" placeholder="Ex.: remova o telefone da imagem principal e descreva com mais clareza o que está incluído."></textarea>
+      </div>
+      <footer class="doke-modal-actions">
+        <button class="doke-btn doke-btn--ghost" type="button" data-admin-service-review-dialog-close>Cancelar</button>
+        <button class="doke-btn doke-btn--primary" type="button" data-admin-service-review-submit>Enviar solicitação</button>
+      </footer>
+    </section>
+  </dialog>
+
   <div class="admin-toast" data-admin-toast hidden></div>
 
   <script defer src="assets/js/core/runtime-config.js?v=20260531-stable-smooth-v1"></script>
@@ -293,6 +333,7 @@
   <script defer src="assets/js/core/stable-shell-router.js?v=20260714-route-deadlock-v1"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="assets/js/core/supabase-config.js?v=20260719-singleton-client-v1" defer></script>
+<script defer src="assets/js/repositories/service-moderation-repository.js?v=20260720-moderation-flow-v1"></script>
 <script defer src="assets/js/repositories/orders-repository.js?v=20260719-singleton-client-v1"></script>
   <script defer src="assets/js/repositories/messages-repository.js?v=20260719-singleton-client-v1"></script>
   <script defer src="assets/js/repositories/notifications-repository.js?v=20260719-live-sync-poll-v1"></script>
@@ -306,6 +347,7 @@
   <script defer src="assets/js/services/wallet-service.js?v=20260718-finance-supabase-v1"></script>
   <script defer src="assets/js/services/notification-service.js?v=20260501-stage31-domain-services"></script>
   <script defer src="assets/js/pages/admin-experience.js?v=20260714-admin-lifecycle-v1"></script>
+  <script defer src="assets/js/pages/admin-service-moderation.js?v=20260720-moderation-flow-v1"></script>
   <script defer src="assets/js/pages/admin.js?v=20260714-admin-clean-surface-v1"></script>
   <script defer src="assets/js/ui/responsive-interaction-guard.js?v=20260428-architecture"></script>
   <script defer src="assets/js/ui/mobile-drawer-standard.js?v=20260701-drawer-detail-contract-v1"></script>

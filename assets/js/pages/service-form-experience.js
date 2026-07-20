@@ -226,6 +226,9 @@
         includedItems: core.normalize(data.get('includedItems')),
         excludedItems: core.normalize(data.get('excludedItems')),
         tags: selectedChecks,
+        quoteMode: ['default', 'custom', 'disabled'].includes(core.normalize(data.get('quoteMode')).toLowerCase())
+          ? core.normalize(data.get('quoteMode')).toLowerCase()
+          : 'default',
         quoteTemplate: (() => {
           try {
             const parsed = JSON.parse(String(data.get('quoteTemplateJson') || '{}'));
@@ -240,7 +243,8 @@
         professionalId: core.normalize(currentUser?.id || currentUser?.userId),
         providerId: core.normalize(currentUser?.id || currentUser?.userId),
         providerName: core.normalize(currentUser?.name || currentUser?.displayName) || 'Profissional Doke',
-        status: existingService?.status || 'active',
+        status: existingService?.status || 'draft',
+        moderationStatus: existingService?.approvedVersionId ? 'changes_pending_review' : 'pending_review',
         createdAt: existingService?.createdAt || new Date().toISOString()
       };
     };
@@ -276,12 +280,14 @@
 
     const persist = async (payload) => {
       const service = Doke.services?.services;
-      if (editMode) {
-        if (typeof service?.updateOwned !== 'function') throw new Error('A edição de serviços não está disponível nesta versão.');
-        return service.updateOwned(editId, payload);
+      if (typeof service?.submitForReview !== 'function') {
+        throw new Error('O envio para análise não está disponível nesta versão.');
       }
-      if (typeof service?.create === 'function') return service.create(payload);
-      throw new Error('A publicação de serviços ainda não está disponível nesta versão.');
+      return service.submitForReview(payload, {
+        editMode,
+        serviceId: editMode ? editId : payload.id,
+        changeClass: editMode ? 'major' : 'critical'
+      });
     };
 
     const reset = () => {
@@ -315,19 +321,22 @@
       setState('submitting');
       try {
         await existingLoad;
-        window.DokeServiceQuoteTemplateBuilder?.validate?.();
+        const quoteMode = ['default', 'custom', 'disabled'].includes(String(form.elements.namedItem('quoteMode')?.value || '').toLowerCase())
+          ? String(form.elements.namedItem('quoteMode').value).toLowerCase()
+          : 'default';
+        if (quoteMode === 'custom') window.DokeServiceQuoteTemplateBuilder?.validate?.();
         const payload = await attachImages(createPayload());
-        if (!payload.title || !payload.category || !payload.shortDescription) throw new Error('Preencha título, categoria e descrição curta antes de publicar.');
+        if (!payload.title || !payload.category || !payload.shortDescription) throw new Error('Preencha título, categoria e descrição curta antes de enviar para análise.');
         if (!payload.location || !payload.serviceMode) throw new Error('Informe região e forma de atendimento.');
         if (payload.priceType !== 'Sob orçamento' && (!payload.priceLabel || !payload.billingUnit)) throw new Error('Informe o valor inicial e a unidade de cobrança.');
         if (!payload.availabilitySchedule.length) throw new Error('Selecione ao menos um dia e horário de disponibilidade.');
         const invalidTime = payload.availabilitySchedule.find((item) => !item.start || !item.end || item.start >= item.end);
         if (invalidTime) throw new Error(`Revise o horário de ${invalidTime.label}.`);
         const saved = await persist(payload);
-        if (!saved?.id) throw new Error('O anúncio não foi confirmado pela fonte de dados.');
+        if (!saved?.id) throw new Error('O envio para análise não foi confirmado pela fonte de dados.');
         reset();
-        core.invalidate({ domains: ['marketplace', 'profiles'], reason: editMode ? 'service-updated' : 'service-created' });
-        window.dispatchEvent(new CustomEvent(editMode ? 'doke:service-updated' : 'doke:service-created', { detail: { service: saved } }));
+        core.invalidate({ domains: ['marketplace', 'profiles'], reason: editMode ? 'service-review-resubmitted' : 'service-review-submitted' });
+        window.dispatchEvent(new CustomEvent('doke:service-review-submitted', { detail: { service: saved, editMode } }));
         setState('success');
         return saved;
       } catch (error) {
@@ -367,6 +376,10 @@
       setNamedValue('includedItems', service.includedItems || '');
       setNamedValue('excludedItems', service.excludedItems || '');
       const quoteTemplate = service.quoteTemplate || { version: service.quoteTemplateVersion || 1, questions: service.quoteQuestions || [] };
+      const quoteMode = ['default', 'custom', 'disabled'].includes(String(service.quoteMode || '').toLowerCase())
+        ? String(service.quoteMode).toLowerCase()
+        : (Array.isArray(quoteTemplate.questions) && quoteTemplate.questions.length ? 'custom' : 'default');
+      setNamedValue('quoteMode', quoteMode);
       setNamedValue('quoteTemplateJson', JSON.stringify(quoteTemplate));
       window.DokeServiceQuoteTemplateBuilder?.load?.(quoteTemplate);
       const selectedTags = new Set(Array.isArray(service.tags) ? service.tags : []);
@@ -395,7 +408,13 @@
     };
 
     if (editMode) {
-      existingLoad = Promise.resolve().then(() => Doke.services?.services?.getById?.(editId)).then(populateExisting).catch((error) => {
+      existingLoad = Promise.resolve().then(() => {
+        const services = Doke.services?.services;
+        if (typeof services?.getOwnedReviewDraft === 'function') {
+          return services.getOwnedReviewDraft(editId).then((draft) => draft || services.getById?.(editId));
+        }
+        return services?.getById?.(editId);
+      }).then(populateExisting).catch((error) => {
         setState('error', { error });
         window.dispatchEvent(new CustomEvent('doke:service-edit-error', { detail: { error } }));
         throw error;

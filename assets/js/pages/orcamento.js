@@ -135,6 +135,8 @@ const initBudgetPage = () => {
   };
 
   const getQuoteQuestions = (serviceItem) => {
+    const quoteMode = String(serviceItem?.quoteMode || "default").trim().toLowerCase();
+    if (quoteMode !== "custom") return [];
     const template = serviceItem?.quoteTemplate || serviceItem?.budgetTemplate || {};
     const candidates = serviceItem?.quoteQuestions
       || serviceItem?.budgetQuestions
@@ -337,8 +339,17 @@ const initBudgetPage = () => {
 
     return window.Doke.services.services.getById(serviceId).then((serviceItem) => {
       if (!serviceItem) throw new Error("Este anúncio não foi encontrado.");
-      if (String(serviceItem.status || "active").toLowerCase() !== "active") {
+      if (String(serviceItem.status || "draft").toLowerCase() !== "active") {
         throw new Error("Este anúncio não está aceitando novos pedidos.");
+      }
+      const moderationStatus = String(serviceItem.moderationStatus || "published").toLowerCase();
+      const hasApprovedVersion = Boolean(serviceItem.approvedVersionId || serviceItem.approved_version_id);
+      const approvedContentRemainsPublic = moderationStatus === "changes_required" && hasApprovedVersion;
+      if (!["published", "changes_pending_review"].includes(moderationStatus) && !approvedContentRemainsPublic) {
+        throw new Error("Este anúncio ainda não foi aprovado para receber pedidos.");
+      }
+      if (String(serviceItem.quoteMode || "default").toLowerCase() === "disabled") {
+        throw new Error("Este profissional recebe somente conversas neste anúncio. Volte ao anúncio e use o botão Conversar.");
       }
 
       selectedService = serviceItem;

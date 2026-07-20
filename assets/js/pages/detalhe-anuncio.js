@@ -32,7 +32,14 @@
   };
 
   const getOwnerStatusPresentation = (value) => {
-    const status = String(value || 'active').trim().toLowerCase();
+    const service = value && typeof value === 'object' ? value : { status: value };
+    const status = String(service.status || 'draft').trim().toLowerCase();
+    const moderation = String(service.moderationStatus || service.moderation_status || '').trim().toLowerCase();
+    if (moderation === 'pending_review') return { label: 'Em análise', tone: 'info', action: '', nextStatus: '' };
+    if (moderation === 'changes_pending_review') return { label: 'Alterações em análise', tone: 'info', action: status === 'active' ? 'Desativar anúncio' : '', nextStatus: status === 'active' ? 'inactive' : '' };
+    if (moderation === 'changes_required') return { label: 'Ajustes solicitados', tone: 'warning', action: '', nextStatus: '' };
+    if (moderation === 'rejected') return { label: 'Não aprovado', tone: 'danger', action: '', nextStatus: '' };
+    if (moderation === 'suspended') return { label: 'Suspenso', tone: 'danger', action: '', nextStatus: '' };
     if (status === 'inactive') return { label: 'Inativo', tone: 'warning', action: 'Reativar anúncio', nextStatus: 'active' };
     if (status === 'archived') return { label: 'Arquivado', tone: 'neutral', action: '', nextStatus: '' };
     if (status === 'draft') return { label: 'Rascunho', tone: 'neutral', action: '', nextStatus: '' };
@@ -314,31 +321,47 @@
   };
 
   const updateListingStatus = (root, service) => {
-    const status = String(service.status || 'active').toLowerCase();
+    const status = String(service.status || 'draft').toLowerCase();
+    const moderation = String(service.moderationStatus || '').toLowerCase();
     const active = status === 'active';
     const owner = root.dataset.viewerRelation === 'owner';
+    const quoteEnabled = String(service.quoteMode || 'default').toLowerCase() !== 'disabled';
     const statusNode = root.querySelector('[data-detail-status-message]');
     const visitorActions = root.querySelector('[data-detail-visitor-actions]');
     const budget = root.querySelector('[data-budget-cta]');
     const message = root.querySelector('[data-detail-message-cta]');
     if (statusNode) {
-      statusNode.hidden = active;
-      statusNode.textContent = status === 'archived'
-        ? 'Este anúncio foi arquivado e está disponível apenas para consulta.'
-        : 'Este anúncio está temporariamente inativo e não aceita novos pedidos.';
+      const hasMessage = !active || (owner && ['pending_review', 'changes_pending_review', 'changes_required', 'rejected'].includes(moderation));
+      statusNode.hidden = !hasMessage;
+      statusNode.textContent = moderation === 'pending_review'
+        ? 'Este anúncio está em análise e ainda não aparece para os clientes.'
+        : moderation === 'changes_pending_review'
+          ? 'As alterações estão em análise. A última versão aprovada continua pública.'
+          : moderation === 'changes_required'
+            ? `A Doke solicitou ajustes${service.reviewReason ? `: ${service.reviewReason}` : '.'}`
+            : moderation === 'rejected'
+              ? `Este anúncio não foi aprovado${service.reviewReason ? `: ${service.reviewReason}` : '.'}`
+              : status === 'archived'
+                ? 'Este anúncio foi arquivado e está disponível apenas para consulta.'
+                : 'Este anúncio está temporariamente inativo e não aceita novos pedidos.';
     }
     if (visitorActions) visitorActions.hidden = owner || !active;
-    [budget, message].forEach((control) => {
-      if (!control) return;
+    if (budget) {
+      const unavailable = owner || !active || !quoteEnabled;
+      budget.hidden = unavailable;
+      budget.setAttribute('aria-disabled', unavailable ? 'true' : 'false');
+    }
+    if (message) {
       const unavailable = owner || !active;
-      control.hidden = unavailable;
-      control.setAttribute('aria-disabled', unavailable ? 'true' : 'false');
-    });
+      message.hidden = unavailable;
+      message.setAttribute('aria-disabled', unavailable ? 'true' : 'false');
+    }
     root.dataset.listingStatus = status;
+    root.dataset.quoteMode = quoteEnabled ? String(service.quoteMode || 'default').toLowerCase() : 'disabled';
   };
 
   const updateOwnerDashboard = (root, service) => {
-    const status = getOwnerStatusPresentation(service?.status);
+    const status = getOwnerStatusPresentation(service);
     const sync = getOwnerSyncPresentation(service);
     const dashboard = root.querySelector('[data-detail-owner-dashboard]');
     const statusNode = root.querySelector('[data-detail-owner-status]');
@@ -348,9 +371,11 @@
     setText(root, '[data-detail-owner-status-label]', status.label);
     setText(root, '[data-detail-owner-sync]', sync.label);
     setText(root, '[data-detail-owner-price]', getPriceLabel(service));
-    setText(root, '[data-detail-owner-price-note]', service?.paymentLabel || (getPriceLabel(service) === 'Sob orçamento'
-      ? 'Valor definido após o cliente solicitar orçamento'
-      : 'Valor exibido aos clientes'));
+    setText(root, '[data-detail-owner-price-note]', service?.paymentLabel || (String(service?.quoteMode || 'default').toLowerCase() === 'disabled'
+      ? 'Solicitações de orçamento estão desativadas'
+      : getPriceLabel(service) === 'Sob orçamento'
+        ? 'Valor definido após o cliente solicitar orçamento'
+        : 'Valor exibido aos clientes'));
     setText(root, '[data-detail-owner-views]', formatCount(firstCount(
       service?.viewsCount,
       service?.viewCount,

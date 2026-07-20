@@ -31,15 +31,15 @@
       submitState.classList.add('is-visible');
       const editing = root.dataset.serviceEditMode === 'true';
       if (submitStateTitle) submitStateTitle.textContent = isPending
-        ? (editing ? 'Salvando alterações' : 'Publicando anúncio')
-        : (editing ? 'Anúncio atualizado' : 'Anúncio publicado');
+        ? (editing ? 'Enviando alterações para análise' : 'Enviando anúncio para análise')
+        : (editing ? 'Alterações enviadas para análise' : 'Anúncio enviado para análise');
       if (submitStateMessage) submitStateMessage.textContent = isPending
         ? (editing
-          ? 'Atualizando as informações, imagens e disponibilidade do serviço.'
-          : 'Salvando as informações e preparando o serviço para aparecer no seu perfil.')
+          ? 'Preparando uma nova versão sem substituir o anúncio atualmente aprovado.'
+          : 'Salvando a versão e enviando as informações para a fila de análise.')
         : (editing
-          ? 'As alterações já estão refletidas no perfil profissional e nas superfícies públicas da Doke.'
-          : 'Seu serviço já está disponível no perfil profissional e nas superfícies públicas da Doke.');
+          ? 'A versão pública anterior permanece disponível enquanto as alterações são analisadas.'
+          : 'Seu anúncio ficará visível para os clientes somente depois da aprovação.');
       if (submitStateActions) submitStateActions.hidden = isPending;
       if (submitStateIcon) submitStateIcon.classList.toggle('is-pending', isPending);
       if (!isPending) submitState?.querySelector('a, button')?.focus({ preventScroll: true });
@@ -58,6 +58,40 @@
     const ALLOWED_UPLOAD_TYPES = /^(?:image\/png|image\/jpeg|image\/webp|image\/gif)$/i;
     let currentStep = 1;
     let highestValidatedStep = 0;
+    const quoteModeInput = root.querySelector('[data-quote-mode-input]');
+    const quoteModeOptions = [...root.querySelectorAll('[data-quote-mode-option]')];
+    const quoteModePanels = [...root.querySelectorAll('[data-quote-mode-panel]')];
+
+    const normalizeQuoteMode = (value) => ['default', 'custom', 'disabled'].includes(String(value || '').trim().toLowerCase())
+      ? String(value).trim().toLowerCase()
+      : 'default';
+
+    const quoteModeLabel = (mode) => ({
+      default: 'Modelo recomendado pela Doke',
+      custom: 'Formulário personalizado',
+      disabled: 'Somente conversa — sem pedidos de orçamento'
+    })[normalizeQuoteMode(mode)];
+
+    const syncQuoteMode = (requestedMode, options = {}) => {
+      const mode = normalizeQuoteMode(requestedMode || quoteModeInput?.value);
+      if (quoteModeInput) quoteModeInput.value = mode;
+      root.dataset.quoteMode = mode;
+      quoteModeOptions.forEach((button) => {
+        const active = button.dataset.quoteModeOption === mode;
+        button.classList.toggle('is-active', active);
+        button.setAttribute('aria-checked', active ? 'true' : 'false');
+      });
+      quoteModePanels.forEach((panel) => {
+        const active = panel.dataset.quoteModePanel === mode;
+        panel.hidden = !active;
+        panel.setAttribute('aria-hidden', active ? 'false' : 'true');
+      });
+      if (options.emit !== false) {
+        quoteModeInput?.dispatchEvent(new Event('change', { bubbles: true }));
+        window.dispatchEvent(new CustomEvent('doke:service-quote-mode-changed', { detail: { mode } }));
+      }
+      return mode;
+    };
 
     const formatFileSize = (bytes) => {
       const value = Number(bytes || 0);
@@ -100,8 +134,8 @@
     };
 
     const showSubmissionError = (error) => {
-      const message = root.querySelector('[data-step-error="4"]');
-      const text = error?.message || 'Não foi possível publicar o anúncio. Revise os dados e tente novamente.';
+      const message = root.querySelector(`[data-step-error="${totalSteps}"]`);
+      const text = error?.message || 'Não foi possível enviar o anúncio para análise. Revise os dados e tente novamente.';
       if (message) {
         message.textContent = text;
         message.hidden = false;
@@ -117,7 +151,7 @@
       const title = root.querySelector('.doke-form-page-title');
       const description = root.querySelector('.doke-form-page-description');
       if (title) title.textContent = 'EDITAR SERVIÇO';
-      if (description) description.textContent = 'Atualize a oferta, disponibilidade, imagens e condições exibidas aos clientes.';
+      if (description) description.textContent = 'Crie uma nova versão para análise sem substituir imediatamente o anúncio aprovado.';
       if (exitButton) {
         exitButton.textContent = 'Cancelar edição';
         exitButton.href = 'perfil-profissional.html#profile-ads';
@@ -199,9 +233,21 @@
       }
 
       if (step === 4) {
+        const mode = syncQuoteMode(quoteModeInput?.value, { emit: false });
+        if (mode === 'custom') {
+          try {
+            const template = window.DokeServiceQuoteTemplateBuilder?.validate?.();
+            if (!template?.questions?.length) return failStep(step, 'Adicione pelo menos uma pergunta ou escolha o modelo recomendado da Doke.', root.querySelector('[data-quote-question-add]'));
+          } catch (error) {
+            return failStep(step, error?.message || 'Revise as perguntas personalizadas.', root.querySelector('[data-quote-template-builder]'));
+          }
+        }
+      }
+
+      if (step === 5) {
         const confirmations = [...root.querySelectorAll('.post-service-confirm [data-post-check]')];
         const unchecked = confirmations.find((button) => !button.classList.contains('is-active'));
-        if (unchecked) return failStep(step, 'Confirme as informações e aceite as regras para publicar.', unchecked);
+        if (unchecked) return failStep(step, 'Confirme as informações e aceite as regras para enviar para análise.', unchecked);
       }
 
       highestValidatedStep = Math.max(highestValidatedStep, step);
@@ -243,7 +289,7 @@
 
       if (nextButton) {
         const editing = root.dataset.serviceEditMode === 'true';
-        const label = currentStep >= totalSteps ? (editing ? 'Salvar alterações' : 'Publicar anúncio') : 'Continuar';
+        const label = currentStep >= totalSteps ? (editing ? 'Enviar alterações para análise' : 'Enviar para análise') : 'Continuar';
         const textNode = [...nextButton.childNodes].find((node) => node.nodeType === Node.TEXT_NODE);
         if (textNode) textNode.nodeValue = `${label} `;
       }
@@ -260,6 +306,13 @@
         exitButton.hidden = currentStep > 1;
       }
     };
+
+    quoteModeOptions.forEach((button) => {
+      button.addEventListener('click', () => {
+        syncQuoteMode(button.dataset.quoteModeOption);
+        updateReview();
+      });
+    });
 
     root.querySelectorAll('[data-segment]').forEach((button) => {
       if (!button.dataset.defaultActive) button.dataset.defaultActive = button.classList.contains('is-active') ? 'true' : 'false';
@@ -314,6 +367,8 @@
     const reviewAvailability = root.querySelector('[data-review-availability]');
     const reviewImages = root.querySelector('[data-review-images]');
     const reviewTags = root.querySelector('[data-review-tags]');
+    const reviewQuoteMode = root.querySelector('[data-review-quote-mode]');
+    const reviewModerationCopy = root.querySelector('[data-review-moderation-copy]');
     const reviewImage = root.querySelector('[data-review-image]');
     const reviewImagePlaceholder = root.querySelector('[data-review-media-placeholder]');
     let reviewObjectUrl = '';
@@ -377,12 +432,21 @@
       if (reviewMode) reviewMode.textContent = mode || 'Forma de atendimento não informada';
       if (reviewAvailability) reviewAvailability.textContent = formatAvailability();
       if (reviewTags) reviewTags.textContent = tags.length ? tags.join(', ') : 'Nenhum diferencial selecionado';
+      const quoteMode = normalizeQuoteMode(quoteModeInput?.value);
+      if (reviewQuoteMode) reviewQuoteMode.textContent = quoteModeLabel(quoteMode);
+      if (reviewModerationCopy) reviewModerationCopy.textContent = root.dataset.serviceEditMode === 'true'
+        ? 'A versão atualmente aprovada continua pública enquanto estas alterações são analisadas.'
+        : 'O anúncio será enviado para análise antes de aparecer para os clientes.';
       updateReviewImage();
     }
 
     sources.forEach((source) => {
       source.addEventListener('input', updateReview);
       source.addEventListener('change', updateReview);
+    });
+    quoteModeInput?.addEventListener('change', () => {
+      syncQuoteMode(quoteModeInput.value, { emit: false });
+      updateReview();
     });
     root.querySelectorAll('[name="category"], [name="serviceMode"], [data-availability-day], [data-availability-time], [name="mainImage"], [name="extraImageOne"], [name="extraImageTwo"]').forEach((source) => {
       source.addEventListener('input', updateReview);
@@ -407,10 +471,10 @@
         updateReview();
         const experience = window.Doke?.serviceFormExperience;
         if (!experience?.submit) {
-          showSubmissionError(new Error('O serviço de publicação não foi carregado. Atualize a página e tente novamente.'));
+          showSubmissionError(new Error('O serviço de análise não foi carregado. Atualize a página e tente novamente.'));
           return;
         }
-        clearStepError(4);
+        clearStepError(totalSteps);
         delete root.dataset.submitState;
         nextButton.disabled = true;
         showSubmitState('pending');
@@ -459,6 +523,7 @@
       applyEditPresentation();
       updateCharacterCounts();
       syncAllUploadCards();
+      syncQuoteMode(quoteModeInput?.value, { emit: false });
       updateReview();
       setStep(1);
     });
@@ -467,6 +532,7 @@
       currentStep = 1;
       updateCharacterCounts();
       syncAllUploadCards();
+      syncQuoteMode(quoteModeInput?.value, { emit: false });
       updateReview();
       setStep(1);
     });
@@ -474,6 +540,7 @@
     applyEditPresentation();
     updateCharacterCounts();
     syncAllUploadCards();
+    syncQuoteMode(quoteModeInput?.value, { emit: false });
     updateReview();
     const restoredStep = Number(window.Doke?.serviceFormExperience?.restoredStep || 1);
     setStep(restoredStep > 1 && validateThrough(restoredStep) ? restoredStep : 1);

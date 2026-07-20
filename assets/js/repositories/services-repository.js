@@ -15,6 +15,7 @@
   var REMOTE_MEDIA_BUCKET = 'service-media';
   var REMOTE_METRIC_EVENTS_TABLE = 'service_metric_events';
   var REMOTE_METRIC_TOTALS_VIEW = 'service_metric_totals';
+  var REMOTE_VERSIONS_TABLE = 'service_versions';
   var METRIC_VISITOR_STORAGE_KEY = 'doke.service-metrics.visitor.v1';
   var cache = null;
   var supabaseClient = null;
@@ -136,6 +137,59 @@
     return 'published';
   }
 
+  function normalizeModerationStatus(value, publicStatus) {
+    var status = normalizeSearch(value);
+    if (['draft', 'pending_review', 'published', 'changes_pending_review', 'changes_required', 'rejected', 'suspended'].indexOf(status) !== -1) return status;
+    return normalizeSearch(publicStatus) === 'published' || normalizeSearch(publicStatus) === 'active' ? 'published' : 'draft';
+  }
+
+  function isPubliclyVisible(service) {
+    service = service || {};
+    var status = normalizeSearch(service.status);
+    var moderation = normalizeModerationStatus(service.moderationStatus || service.moderation_status, status);
+    var approvedVersionId = normalizeText(service.approvedVersionId || service.approved_version_id);
+    var approvedContentRemainsPublic = moderation === 'changes_required' && approvedVersionId !== '';
+    return status === 'active' && (
+      ['published', 'changes_pending_review'].indexOf(moderation) !== -1 ||
+      approvedContentRemainsPublic
+    );
+  }
+
+  function getCachedCurrentUser() {
+    try {
+      return Doke.session && typeof Doke.session.getCurrentUser === 'function'
+        ? Doke.session.getCurrentUser()
+        : root.DokeAuth && root.DokeAuth.service && typeof root.DokeAuth.service.getCurrentUser === 'function'
+          ? root.DokeAuth.service.getCurrentUser()
+          : null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function canReadLocalService(service, user) {
+    if (!service) return false;
+    if (isPubliclyVisible(service)) return true;
+    var userId = normalizeText(user && user.id);
+    if (!userId) return false;
+    return [service.ownerId, service.professionalId, service.providerId]
+      .map(normalizeText)
+      .filter(Boolean)
+      .indexOf(userId) !== -1;
+  }
+
+  function resolveReadableLocalService(service, client) {
+    if (!service) return Promise.resolve(null);
+    var cachedUser = getCachedCurrentUser();
+    if (canReadLocalService(service, cachedUser)) return Promise.resolve(service);
+    if (!client) return Promise.resolve(null);
+    return getCurrentSupabaseUser(client).then(function (user) {
+      return canReadLocalService(service, user) ? service : null;
+    }).catch(function () {
+      return null;
+    });
+  }
+
   function toRemotePriceMode(value) {
     var mode = normalizeSearch(value);
     if (mode === 'fixed' || mode === 'preco_fixo' || mode === 'preço fixo') return 'fixed';
@@ -163,12 +217,31 @@
     var providerId = service.ownerId || service.professionalId || service.providerId || '';
     var professionalProfileId = normalizeText(service.professionalProfileId || service.profileId);
     var id = normalizeText(service.id || service.externalId || service.external_id);
+    var rawPublicStatus = toPublicStatus(service.status || 'draft');
+    var moderationStatus = normalizeModerationStatus(service.moderationStatus || service.moderation_status, rawPublicStatus);
+    var localOnlyLegacy = !service.moderationStatus && !service.moderation_status && normalizeSearch(service.syncStatus) !== 'synced';
+    var publicStatus = localOnlyLegacy && rawPublicStatus === 'active' ? 'draft' : rawPublicStatus;
+    if (localOnlyLegacy && moderationStatus === 'published') moderationStatus = 'draft';
+    var quoteMode = normalizeSearch(service.quoteMode || service.quote_mode);
+    if (['default', 'custom', 'disabled'].indexOf(quoteMode) === -1) {
+      var templateQuestions = service.quoteTemplate && Array.isArray(service.quoteTemplate.questions)
+        ? service.quoteTemplate.questions
+        : service.quoteQuestions;
+      quoteMode = Array.isArray(templateQuestions) && templateQuestions.length ? 'custom' : 'default';
+    }
 
     return Object.assign({}, service, {
       id: id,
       externalId: id,
       kind: service.kind || 'service',
-      status: toPublicStatus(service.status || 'active'),
+      status: publicStatus,
+      moderationStatus: moderationStatus,
+      approvedVersionId: normalizeText(service.approvedVersionId || service.approved_version_id),
+      pendingVersionId: normalizeText(service.pendingVersionId || service.pending_version_id),
+      reviewReason: normalizeText(service.reviewReason || service.review_reason),
+      reviewSubmittedAt: service.reviewSubmittedAt || service.review_submitted_at || '',
+      reviewedAt: service.reviewedAt || service.reviewed_at || '',
+      quoteMode: quoteMode,
       category: category,
       catégory: category,
       state: state,
@@ -253,6 +326,12 @@
       title: row.title || metadata.title,
       description: row.description || metadata.description,
       status: toPublicStatus(row.status),
+      moderationStatus: row.moderation_status || metadata.moderationStatus,
+      approvedVersionId: row.approved_version_id || metadata.approvedVersionId,
+      pendingVersionId: row.pending_version_id || metadata.pendingVersionId,
+      reviewReason: row.review_reason || metadata.reviewReason,
+      reviewSubmittedAt: row.review_submitted_at || metadata.reviewSubmittedAt,
+      reviewedAt: row.reviewed_at || metadata.reviewedAt,
       priceMode: row.price_mode || metadata.priceMode,
       priceValue: priceValue == null ? metadata.priceValue : priceValue,
       price: priceValue == null ? metadata.price : priceValue,
@@ -403,7 +482,7 @@
       price_mode: toRemotePriceMode(normalized.priceMode || normalized.pricingMode || normalized.priceType),
       price_cents: toPriceCents(normalized),
       currency: normalized.currency || 'BRL',
-      status: toRemoteStatus(normalized.status),
+      status: normalized.approvedVersionId ? toRemoteStatus(normalized.status) : 'draft',
       city: normalized.city || '',
       state: normalized.state || '',
       metadata: sanitizeMetadata(normalized),
@@ -468,6 +547,102 @@
     });
   }
 
+  function buildReviewSnapshot(service, userId, uploadedImages) {
+    var normalized = normalizeService(Object.assign({}, service, {
+      ownerId: userId,
+      professionalId: userId,
+      providerId: userId,
+      images: uploadedImages,
+      image: uploadedImages[0] || '',
+      remotePriceMode: toRemotePriceMode(service.priceMode || service.pricingMode || service.priceType),
+      priceValue: service.priceValue == null ? toPriceCents(service) == null ? null : toPriceCents(service) / 100 : service.priceValue,
+      updatedAt: new Date().toISOString()
+    }));
+    delete normalized.remoteId;
+    delete normalized.remote_id;
+    delete normalized.syncError;
+    delete normalized.syncStatus;
+    return normalized;
+  }
+
+  function submitForReview(service, options) {
+    options = options || {};
+    var client = getSupabaseClient();
+    if (!client) return Promise.reject(new Error('Conecte-se à internet para enviar o anúncio para análise. O rascunho continuará salvo neste dispositivo.'));
+    var normalized = normalizeService(service || {});
+    if (!normalized.id) return Promise.reject(new Error('Service id is required.'));
+
+    return getCurrentSupabaseUser(client).then(function (user) {
+      if (!user || !isUuid(user.id)) throw new Error('Faça login com sua conta profissional para enviar o anúncio para análise.');
+      return uploadServiceImages(client, user.id, normalized).then(function (uploadedImages) {
+        var snapshot = buildReviewSnapshot(normalized, user.id, uploadedImages);
+        return Promise.resolve(client.rpc('submit_service_for_review', {
+          p_external_id: normalized.id,
+          p_snapshot: snapshot,
+          p_change_class: normalizeSearch(options.changeClass || 'major') || 'major'
+        })).then(function (result) {
+          if (result.error) throw result.error;
+          var response = result.data || {};
+          var saved = normalizeService(Object.assign({}, snapshot, {
+            id: response.externalId || normalized.id,
+            externalId: response.externalId || normalized.id,
+            remoteId: response.serviceId || normalized.remoteId,
+            status: toPublicStatus(response.publicStatus || (normalized.approvedVersionId ? 'published' : 'draft')),
+            moderationStatus: response.moderationStatus || (normalized.approvedVersionId ? 'changes_pending_review' : 'pending_review'),
+            pendingVersionId: response.versionId || '',
+            approvedVersionId: normalized.approvedVersionId || '',
+            reviewSubmittedAt: response.submittedAt || new Date().toISOString(),
+            syncStatus: 'synced',
+            syncError: '',
+            syncedAt: new Date().toISOString()
+          }));
+          var localSaved = upsertLocal(saved, 'synced');
+          cache = null;
+          lastRemoteError = null;
+          setProviderState('supabase');
+          return clone(localSaved);
+        });
+      });
+    });
+  }
+
+  function getOwnedReviewDraft(serviceId) {
+    var id = normalizeText(serviceId);
+    var client = getSupabaseClient();
+    if (!id || !client) return Promise.resolve(null);
+    var select = '*, service_media(id,url,thumbnail_url,alt_text,sort_order,media_type)';
+    var query = client.from(REMOTE_TABLE).select(select);
+    query = isUuid(id) ? query.or('id.eq.' + id + ',external_id.eq.' + id) : query.eq('external_id', id);
+    return Promise.resolve(query.maybeSingle()).then(function (result) {
+      if (result.error) throw result.error;
+      var row = result.data;
+      if (!row) return null;
+      var mapped = mapRemoteRow(row);
+      if (!row.pending_version_id) return mapped;
+      return Promise.resolve(client.from(REMOTE_VERSIONS_TABLE)
+        .select('id,service_id,professional_id,version_number,review_status,snapshot,review_reason,submitted_at')
+        .eq('id', row.pending_version_id)
+        .maybeSingle()).then(function (versionResult) {
+          if (versionResult.error) throw versionResult.error;
+          var version = versionResult.data;
+          if (!version || !version.snapshot) return mapped;
+          return normalizeService(Object.assign({}, mapped, version.snapshot, {
+            id: mapped.id,
+            externalId: mapped.id,
+            remoteId: row.id,
+            moderationStatus: row.moderation_status,
+            approvedVersionId: row.approved_version_id,
+            pendingVersionId: row.pending_version_id,
+            reviewReason: version.review_reason || row.review_reason || '',
+            reviewSubmittedAt: version.submitted_at || row.review_submitted_at || '',
+            pendingVersionNumber: version.version_number,
+            pendingReviewStatus: version.review_status,
+            syncStatus: 'synced'
+          }));
+        });
+    });
+  }
+
   function synchronizePending(items) {
     var client = getSupabaseClient();
     if (!client) return Promise.resolve(items || []);
@@ -482,7 +657,11 @@
         return chain.then(function () {
           var ownerId = normalizeText(item.ownerId || item.professionalId || item.providerId);
           if (ownerId && ownerId !== user.id) return null;
-          return saveRemote(item).then(function (synced) {
+          var moderation = normalizeModerationStatus(item.moderationStatus, item.status);
+          var operation = ['pending_review', 'changes_pending_review', 'changes_required'].indexOf(moderation) !== -1
+            ? submitForReview(item, { changeClass: item.approvedVersionId ? 'major' : 'critical' })
+            : saveRemote(item);
+          return operation.then(function (synced) {
             upsertLocal(synced, 'synced');
             return synced;
           }).catch(function (error) {
@@ -534,6 +713,7 @@
     var ownerId = normalizeText(filters.ownerId || filters.professionalId || filters.providerId);
     var professionalProfileId = normalizeText(filters.professionalProfileId || filters.profileId);
     var limit = Number(filters.limit || filters.take || 0);
+    var ownerScoped = Boolean(ownerId || professionalProfileId || filters.includeOwned === true);
 
     return load(filters).then(function (items) {
       var filtered = (items || []).filter(function (item) {
@@ -551,6 +731,7 @@
           Array.isArray(item.keywords) ? item.keywords.join(' ') : ''
         ].join(' '));
 
+        if (!ownerScoped && !isPubliclyVisible(item)) return false;
         if (statuses.length && statuses.indexOf(normalizeSearch(item.status)) === -1) return false;
         if (query && text.indexOf(query) === -1) return false;
         if (category && normalizeSearch(item.category) !== category) return false;
@@ -582,17 +763,19 @@
       return matchesServiceId(item, id);
     }) || null;
     var client = getSupabaseClient();
-    if (!client) return Promise.resolve(clone(localMatch));
 
-    return fetchRemoteServiceById(id).then(function (remoteMatch) {
-      if (!remoteMatch) return clone(localMatch);
-      var saved = upsertLocal(remoteMatch, 'synced');
-      cache = null;
-      return clone(saved);
-    }).catch(function (error) {
-      warnRemote(error, 'leitura do detalhe');
-      if (localMatch) return clone(localMatch);
-      throw error;
+    return resolveReadableLocalService(localMatch, client).then(function (readableLocalMatch) {
+      if (!client) return clone(readableLocalMatch);
+      return fetchRemoteServiceById(id).then(function (remoteMatch) {
+        if (!remoteMatch) return clone(readableLocalMatch);
+        var saved = upsertLocal(remoteMatch, 'synced');
+        cache = null;
+        return clone(saved);
+      }).catch(function (error) {
+        warnRemote(error, 'leitura do detalhe');
+        if (readableLocalMatch) return clone(readableLocalMatch);
+        throw error;
+      });
     });
   }
 
@@ -824,6 +1007,8 @@
     getById: getById,
     listByProfessional: listByProfessional,
     save: save,
+    submitForReview: submitForReview,
+    getOwnedReviewDraft: getOwnedReviewDraft,
     update: update,
     deactivate: deactivate,
     syncPending: function () { return synchronizePending(readLocalServices()); },
