@@ -11,6 +11,7 @@ const HEADER_IMPORT_VERSION = 'layout/header.css?v=20260715-control-elevation-sc
 const pageContracts = {
   'admin.html': { variant: 'contextual', context: true },
   'admin-verificacao.html': { variant: 'contextual', context: true },
+  'admin-anuncio-revisao.html': { variant: 'contextual', context: true },
   'ajuda.html': { variant: 'standard', context: false },
   'anunciar-servico.html': { variant: 'standard', context: false },
   'avaliacao-profissional.html': { variant: 'contextual', context: true },

@@ -357,6 +357,69 @@
     return notice;
   }
 
+  function createModerationProgress(service) {
+    var presentation = moderationPresentation(service);
+    if (['pending-review', 'changes-pending-review'].indexOf(presentation.key) === -1) return null;
+
+    var wrapper = document.createElement('section');
+    wrapper.className = 'profile-service-card__review-progress';
+    wrapper.setAttribute('aria-label', 'Andamento da análise do anúncio');
+
+    var heading = document.createElement('div');
+    heading.className = 'profile-service-card__review-progress-heading';
+    var icon = document.createElement('span');
+    icon.className = 'profile-service-card__review-progress-lock';
+    icon.appendChild(svg('M7 10V7a5 5 0 0 1 10 0v3 M5 10h14v10H5Z'));
+    var copy = document.createElement('div');
+    var title = document.createElement('strong');
+    title.textContent = presentation.key === 'pending-review' ? 'Publicação bloqueada durante a análise' : 'Alterações bloqueadas durante a análise';
+    var description = document.createElement('span');
+    description.textContent = presentation.key === 'pending-review'
+      ? 'O anúncio só ficará disponível para clientes depois da aprovação.'
+      : 'A versão pública aprovada continua ativa até a decisão.';
+    copy.appendChild(title);
+    copy.appendChild(description);
+    heading.appendChild(icon);
+    heading.appendChild(copy);
+
+    var steps = document.createElement('ol');
+    steps.className = 'profile-service-card__review-steps';
+    [
+      { label: 'Enviado', state: 'done' },
+      { label: 'Em análise', state: 'current' },
+      { label: 'Decisão', state: 'upcoming' }
+    ].forEach(function (step, index) {
+      var item = document.createElement('li');
+      item.className = 'profile-service-card__review-step is-' + step.state;
+      if (step.state === 'current') item.setAttribute('aria-current', 'step');
+      var marker = document.createElement('span');
+      marker.className = 'profile-service-card__review-step-marker';
+      marker.textContent = step.state === 'done' ? '✓' : String(index + 1);
+      var label = document.createElement('span');
+      label.textContent = step.label;
+      item.appendChild(marker);
+      item.appendChild(label);
+      steps.appendChild(item);
+    });
+
+    wrapper.appendChild(heading);
+    wrapper.appendChild(steps);
+    return wrapper;
+  }
+
+  function createReviewLockOverlay(service) {
+    var presentation = moderationPresentation(service);
+    if (presentation.key !== 'pending-review') return null;
+    var overlay = document.createElement('div');
+    overlay.className = 'profile-service-card__review-lock-overlay';
+    overlay.setAttribute('aria-hidden', 'true');
+    var lock = document.createElement('span');
+    lock.className = 'profile-service-card__review-lock-icon';
+    lock.appendChild(svg('M7 10V7a5 5 0 0 1 10 0v3 M5 10h14v10H5Z'));
+    overlay.appendChild(lock);
+    return overlay;
+  }
+
   function menuItem(service, config) {
     var item;
     if (config.href) {
@@ -407,17 +470,25 @@
     menu.setAttribute('role', 'menu');
     menu.hidden = true;
 
-    menu.appendChild(menuItem(service, {
-      label: 'Editar anúncio',
-      href: 'anunciar-servico.html?mode=edit&edit=' + encodeURIComponent(service.id)
-    }));
+    var moderation = moderationPresentation(service);
+    if (moderation.key === 'pending-review') {
+      var lockedEdit = menuItem(service, { label: 'Edição bloqueada durante análise' });
+      lockedEdit.disabled = true;
+      lockedEdit.setAttribute('aria-disabled', 'true');
+      lockedEdit.classList.add('is-disabled');
+      menu.appendChild(lockedEdit);
+    } else {
+      menu.appendChild(menuItem(service, {
+        label: 'Editar anúncio',
+        href: 'anunciar-servico.html?mode=edit&edit=' + encodeURIComponent(service.id)
+      }));
+    }
 
     menu.appendChild(menuItem(service, {
       label: 'Selecionar anúncio',
       dataName: 'profileServiceSelect'
     }));
 
-    var moderation = moderationPresentation(service);
     var canChangePublicStatus = ['published', 'changes-pending-review', 'inactive'].indexOf(moderation.key) !== -1;
     if (canChangePublicStatus && service.status === 'inactive') {
       menu.appendChild(menuItem(service, {
@@ -478,11 +549,22 @@
     priceBlock.appendChild(priceCaption);
     priceBlock.appendChild(price);
 
-    var view = document.createElement('a');
-    view.className = 'profile-service-card__view doke-ad-card__cta doke-btn doke-btn--success';
-    view.href = service.href || ('detalhe-anuncio.html?id=' + encodeURIComponent(service.id));
-    view.setAttribute('aria-label', 'Ver anúncio ' + (clean(service.title) || 'do serviço'));
-    view.textContent = 'Ver anúncio';
+    var moderation = moderationPresentation(service);
+    var view;
+    if (moderation.key === 'pending-review') {
+      view = document.createElement('button');
+      view.type = 'button';
+      view.disabled = true;
+      view.className = 'profile-service-card__view doke-ad-card__cta doke-btn doke-btn--neutral is-review-locked';
+      view.setAttribute('aria-label', 'Anúncio bloqueado durante análise');
+      view.textContent = 'Aguardando análise';
+    } else {
+      view = document.createElement('a');
+      view.className = 'profile-service-card__view doke-ad-card__cta doke-btn doke-btn--success';
+      view.href = service.href || ('detalhe-anuncio.html?id=' + encodeURIComponent(service.id));
+      view.setAttribute('aria-label', 'Ver anúncio ' + (clean(service.title) || 'do serviço'));
+      view.textContent = 'Ver anúncio';
+    }
 
     controls.appendChild(priceBlock);
     controls.appendChild(view);
@@ -619,6 +701,8 @@
     if (options.owner) {
       var moderationNotice = createModerationNotice(service);
       if (moderationNotice) body.appendChild(moderationNotice);
+      var moderationProgress = createModerationProgress(service);
+      if (moderationProgress) body.appendChild(moderationProgress);
     }
     if (tagItems.length) body.appendChild(tags);
     if (locationLabel.textContent) body.appendChild(location);
@@ -628,11 +712,22 @@
     var footerPrice = document.createElement('strong');
     footerPrice.className = 'doke-ad-card__price';
     footerPrice.textContent = money(service);
-    var footerCta = document.createElement('a');
-    footerCta.className = 'doke-ad-card__cta doke-btn doke-btn--success';
-    footerCta.href = service.href || ('detalhe-anuncio.html?id=' + encodeURIComponent(service.id));
-    footerCta.setAttribute('aria-label', 'Ver anúncio ' + (clean(service.title) || 'do serviço'));
-    footerCta.textContent = 'Ver anúncio';
+    var compactModeration = options.owner ? moderationPresentation(service) : null;
+    var footerCta;
+    if (options.owner && compactModeration.key === 'pending-review') {
+      footerCta = document.createElement('button');
+      footerCta.type = 'button';
+      footerCta.disabled = true;
+      footerCta.className = 'doke-ad-card__cta doke-btn doke-btn--neutral is-review-locked';
+      footerCta.setAttribute('aria-label', 'Anúncio bloqueado durante análise');
+      footerCta.textContent = 'Em análise';
+    } else {
+      footerCta = document.createElement('a');
+      footerCta.className = 'doke-ad-card__cta doke-btn doke-btn--success';
+      footerCta.href = service.href || ('detalhe-anuncio.html?id=' + encodeURIComponent(service.id));
+      footerCta.setAttribute('aria-label', 'Ver anúncio ' + (clean(service.title) || 'do serviço'));
+      footerCta.textContent = 'Ver anúncio';
+    }
     footer.appendChild(footerPrice);
     footer.appendChild(footerCta);
     body.appendChild(footer);
@@ -642,6 +737,8 @@
 
     if (options.owner) {
       article.appendChild(createOwnerSide(service));
+      var reviewLockOverlay = createReviewLockOverlay(service);
+      if (reviewLockOverlay) article.appendChild(reviewLockOverlay);
     } else {
       var details = document.createElement('aside');
       details.className = 'profile-service-card__details';

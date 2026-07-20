@@ -1,37 +1,117 @@
 {
-  "name": "professional-quote-template-library",
-  "generatedAt": "2026-07-20",
-  "base": "doke-web-service-quote-template-catalog-cumulative.zip",
-  "summary": "Biblioteca pessoal para salvar, aplicar, renomear, atualizar e excluir formulários reutilizáveis, com persistência Supabase, isolamento por profissional, limite concorrente de 30 modelos e snapshots independentes nos anúncios.",
+  "name": "quote_template_conversion_metrics",
+  "base": "doke-web-admin-service-review-page-cumulative.zip",
+  "createdAt": "2026-07-20",
+  "summary": "Adds privacy-preserving, deduplicated conversion analytics for official, personal, customized and default quote forms, plus an owner-facing performance panel.",
   "databaseMigrations": [
-    "supabase/migrations/034_professional_quote_templates.sql",
-    "supabase/migrations/035_harden_professional_quote_templates.sql",
-    "supabase/migrations/036_fix_professional_quote_template_access_check.sql"
+    "039_quote_template_conversion_metrics.sql",
+    "040_align_quote_template_metric_identity.sql",
+    "041_index_quote_template_metric_foreign_keys.sql"
   ],
-  "changedFiles": [
-    "anunciar-servico.html",
-    "assets/css/pages/anunciar-servico.css",
-    "assets/js/pages/service-form-experience.js",
-    "assets/js/pages/service-quote-template-builder.js",
-    "assets/js/repositories/professional-quote-templates-repository.js",
-    "assets/js/services/professional-quote-templates-service.js",
-    "supabase/migrations/034_professional_quote_templates.sql",
-    "supabase/migrations/035_harden_professional_quote_templates.sql",
-    "supabase/migrations/036_fix_professional_quote_template_access_check.sql",
-    "scripts/test-professional-quote-template-library-contract.js",
-    "package.json",
-    "CHANGED-FILES.txt",
-    "PATCH-MANIFEST.json"
+  "events": [
+    "template_applied",
+    "quote_form_started",
+    "quote_form_progress",
+    "quote_form_completed",
+    "quote_request_submitted"
   ],
-  "capabilities": [
-    "save-current-form-as-personal-template",
-    "apply-personal-template",
-    "rename-personal-template",
-    "update-personal-template-copy",
-    "delete-template-without-mutating-existing-ads",
-    "owner-isolated-rls",
-    "verified-professional-write-authority",
-    "thirty-template-database-limit"
-  ],
-  "communityTouched": false
+  "privacy": {
+    "answerTextStored": false,
+    "storedSignals": [
+      "question identifiers",
+      "answered count",
+      "step index",
+      "duration",
+      "order reference after authenticated submission"
+    ],
+    "abandonmentWindowMinutes": 30
+  },
+  "validation": {
+    "supabaseTransactionRollbackTest": true,
+    "ownerTrafficExcluded": true,
+    "clientDashboardVisibilityRows": 0,
+    "temporaryTestDataRemaining": 0,
+    "responsiveViewports": [
+      "1366x900",
+      "820x1180",
+      "390x844"
+    ]
+  },
+  "files": [
+    {
+      "path": "anunciar-servico.html",
+      "sha256": "9c161b1db0967a82956088c4b7e2108002459d0bc97c6a580609c0c3f4ddd672",
+      "size": 47825
+    },
+    {
+      "path": "assets/css/components/quote-template-metrics.css",
+      "sha256": "d372ebf82663057f458f42974cf45b7880e3f5b81bf8179651cf4fd032ff0644",
+      "size": 5240
+    },
+    {
+      "path": "assets/css/pages/professional-profile-editor.css",
+      "sha256": "5d91dca787ec547a094cb14e69614f9e32cf5be0d78617eed11321a32cfea911",
+      "size": 10129
+    },
+    {
+      "path": "assets/js/pages/orcamento.js",
+      "sha256": "947ffc792985d4dacc19b013de99aa374b82e1dbea9cb3854caf3c7151db0568",
+      "size": 61228
+    },
+    {
+      "path": "assets/js/pages/profile/profile-quote-template-metrics.js",
+      "sha256": "d9a38c2949876432c8b19e59d82fb3e76188f791497c06f73f1950a7a2e8b838",
+      "size": 8762
+    },
+    {
+      "path": "assets/js/pages/service-quote-template-builder.js",
+      "sha256": "52278b83c6ac802195d83e455646fa3457827df560ccdca16ba47ae740920698",
+      "size": 50124
+    },
+    {
+      "path": "assets/js/repositories/quote-template-metrics-repository.js",
+      "sha256": "dbf170089062cce80f5fe9980b64fbaa94d7981f4d0d14a5215c6349ac2595ea",
+      "size": 10267
+    },
+    {
+      "path": "assets/js/services/quote-template-metrics-service.js",
+      "sha256": "e1c4f258855b9d88f9300bbc2a7c05baffc0b1abf54bd0e7c4d576c58272230a",
+      "size": 1540
+    },
+    {
+      "path": "orcamento.html",
+      "sha256": "a31bafba8fe1395e9a418a41bf111510c5a23eba56865ac076cde7f9412e93bc",
+      "size": 32014
+    },
+    {
+      "path": "package.json",
+      "sha256": "9510c5792bb153b72b9cb82761128d06e15ac12e311fabff2bc8409943e6235a",
+      "size": 93970
+    },
+    {
+      "path": "perfil-profissional.html",
+      "sha256": "020af5c308525760bc68501c2806d9ddef63b92d4729a412d08a15aa800f4382",
+      "size": 37571
+    },
+    {
+      "path": "scripts/test-quote-template-conversion-metrics-contract.js",
+      "sha256": "b3dcd8a8d26d1ee20bb0efe91eb3a8372da76cc4c8359e4dcd8ff8ec4ca18fc6",
+      "size": 7665
+    },
+    {
+      "path": "supabase/migrations/039_quote_template_conversion_metrics.sql",
+      "sha256": "9bf820ace2030b371e4bea114c0d9a5c2e3315349d6f6ad64201d5c14d38e2d1",
+      "size": 17725
+    },
+    {
+      "path": "supabase/migrations/040_align_quote_template_metric_identity.sql",
+      "sha256": "af54abc7d91e4141fe936e7af9ea9c38ad803655a2ccf7e3b5630cfb3e75e2a3",
+      "size": 9972
+    },
+    {
+      "path": "supabase/migrations/041_index_quote_template_metric_foreign_keys.sql",
+      "sha256": "99176c4c9b3d14709ea427b4d989eb11eb13a72084299909c05fb825b4a550a7",
+      "size": 546
+    }
+  ]
 }

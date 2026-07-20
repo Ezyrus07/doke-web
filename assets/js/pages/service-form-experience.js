@@ -37,6 +37,11 @@
       if (primary) root.dataset.existingServiceImage = primary;
       else delete root.dataset.existingServiceImage;
       root.dataset.existingServiceImagesCount = String(managedExistingImages.length);
+      const mainImageInput = root.querySelector('[data-main-service-image]');
+      if (mainImageInput) {
+        mainImageInput.required = !primary;
+        mainImageInput.setCustomValidity('');
+      }
     };
 
     const renderExistingMedia = () => {

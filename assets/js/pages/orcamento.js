@@ -47,6 +47,125 @@ const initBudgetPage = () => {
   let professionalId = requestedProfessionalId;
   let professionalProfileId = "";
 
+  const createMetricToken = (prefix) => {
+    let token = "";
+    try {
+      token = window.crypto?.randomUUID?.() || `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+    } catch {
+      token = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+    }
+    return `${prefix}:${token}`;
+  };
+
+  const quoteMetricStorageKey = `doke.quote-funnel:${serviceId || "unknown"}`;
+  const readQuoteMetricState = () => {
+    try {
+      const current = JSON.parse(window.sessionStorage.getItem(quoteMetricStorageKey) || "null");
+      if (current?.sessionKey && current?.visitorKey && current?.submitted !== true) return current;
+    } catch {
+      // sessionStorage can be unavailable; an in-memory session still records this visit.
+    }
+    const created = {
+      sessionKey: createMetricToken("quote-session"),
+      visitorKey: createMetricToken("quote-visitor"),
+      submitted: false
+    };
+    try { window.sessionStorage.setItem(quoteMetricStorageKey, JSON.stringify(created)); } catch {}
+    return created;
+  };
+  const quoteMetricState = readQuoteMetricState();
+  let quoteMetricStarted = false;
+  let quoteMetricCompleted = false;
+  let quoteMetricProgressTimer = 0;
+  let quoteMetricLastProgress = "";
+
+  const getQuoteMetricsService = () => window.Doke?.services?.quoteTemplateMetrics || null;
+  const answerHasValue = (answer) => Array.isArray(answer)
+    ? answer.length > 0
+    : String(answer ?? "").trim().length > 0;
+  const getQuoteProgress = () => {
+    const answered = collectCustomAnswers().filter((item) => answerHasValue(item.answer));
+    const last = answered[answered.length - 1] || null;
+    return {
+      answeredQuestionCount: answered.length,
+      lastQuestionId: last?.questionId || "",
+      lastQuestionLabel: last?.questionSnapshot?.label || ""
+    };
+  };
+  const quoteMetricEventKey = (type, suffix = "") => {
+    const normalizedSuffix = String(suffix || "").replace(/[^a-z0-9:_-]+/gi, "-").slice(0, 120);
+    return `${quoteMetricState.sessionKey}:${type}${normalizedSuffix ? `:${normalizedSuffix}` : ""}`.slice(0, 220);
+  };
+  const recordQuoteMetric = (eventType, detail = {}) => {
+    const metrics = getQuoteMetricsService();
+    if (!metrics?.recordFunnelEvent || !selectedService) return Promise.resolve({ recorded: false, reason: "metrics-unavailable" });
+    return metrics.recordFunnelEvent({
+      eventType,
+      serviceId: selectedService.remoteId || selectedService.remote_id || selectedService.id || serviceId,
+      serviceExternalId: selectedService.id || serviceId,
+      sessionKey: quoteMetricState.sessionKey,
+      visitorKey: quoteMetricState.visitorKey,
+      eventKey: detail.eventKey || quoteMetricEventKey(eventType),
+      stepIndex: detail.stepIndex || 0,
+      answeredQuestionCount: detail.answeredQuestionCount || 0,
+      lastQuestionId: detail.lastQuestionId || "",
+      lastQuestionLabel: detail.lastQuestionLabel || "",
+      orderId: detail.orderId || "",
+      orderExternalId: detail.orderExternalId || ""
+    }).catch((error) => {
+      window.console?.warn?.("[Doke quote metrics] Não foi possível registrar o funil do formulário.", error);
+      return { recorded: false, reason: "metric-error" };
+    });
+  };
+  const recordQuoteStarted = (stepIndex = 0) => {
+    if (quoteMetricStarted) return;
+    quoteMetricStarted = true;
+    const progress = getQuoteProgress();
+    recordQuoteMetric("started", {
+      ...progress,
+      stepIndex,
+      eventKey: quoteMetricEventKey("started")
+    });
+  };
+  const recordQuoteProgress = (stepIndex) => {
+    recordQuoteStarted(stepIndex);
+    const progress = getQuoteProgress();
+    const signature = `${stepIndex}:${progress.answeredQuestionCount}:${progress.lastQuestionId}`;
+    if (signature === quoteMetricLastProgress) return;
+    quoteMetricLastProgress = signature;
+    recordQuoteMetric("progress", {
+      ...progress,
+      stepIndex,
+      eventKey: quoteMetricEventKey("progress", signature)
+    });
+  };
+  const scheduleQuoteProgress = (stepIndex) => {
+    window.clearTimeout(quoteMetricProgressTimer);
+    quoteMetricProgressTimer = window.setTimeout(() => recordQuoteProgress(stepIndex), 650);
+  };
+  const recordQuoteCompleted = (stepIndex) => {
+    if (quoteMetricCompleted) return;
+    quoteMetricCompleted = true;
+    const progress = getQuoteProgress();
+    recordQuoteMetric("completed", {
+      ...progress,
+      stepIndex,
+      eventKey: quoteMetricEventKey("completed")
+    });
+  };
+  const recordQuoteSubmitted = (order) => {
+    const progress = getQuoteProgress();
+    quoteMetricState.submitted = true;
+    try { window.sessionStorage.removeItem(quoteMetricStorageKey); } catch {}
+    return recordQuoteMetric("submitted", {
+      ...progress,
+      stepIndex: 2,
+      orderId: order?.remoteId || "",
+      orderExternalId: order?.id || "",
+      eventKey: quoteMetricEventKey("submitted")
+    });
+  };
+
   const syncBudgetContext = () => {
     pageRoot.querySelectorAll("[data-budget-provider]").forEach((node) => {
       node.textContent = provider || "o profissional selecionado";
@@ -602,6 +721,7 @@ const initBudgetPage = () => {
 
     addressForm?.addEventListener("submit", (event) => {
       event.preventDefault();
+      recordQuoteStarted(currentStep);
       if (!addressForm.reportValidity()) return;
       const data = new FormData(addressForm);
       const payload = {
@@ -701,7 +821,11 @@ const initBudgetPage = () => {
       actions?.classList.toggle("has-back-action", currentStep > 0);
       if (nextButton) nextButton.hidden = currentStep === panels.length - 1;
       if (submitButton) submitButton.hidden = currentStep !== panels.length - 1;
-      if (currentStep === panels.length - 1) renderCustomAnswersReview();
+      if (currentStep > 0) recordQuoteProgress(currentStep);
+      if (currentStep === panels.length - 1) {
+        renderCustomAnswersReview();
+        recordQuoteCompleted(currentStep);
+      }
       const scrollTarget = pageRoot.closest(".detail-budget-modal__dialog") || pageRoot;
       if ("scrollTo" in scrollTarget) {
         scrollTarget.scrollTo({ top: 0, behavior: "smooth" });
@@ -709,17 +833,37 @@ const initBudgetPage = () => {
     };
 
     syncCount();
-    detailsInput?.addEventListener("input", syncCount);
-    filesInput?.addEventListener("change", syncFiles);
+    detailsInput?.addEventListener("input", () => {
+      syncCount();
+      recordQuoteStarted(currentStep);
+      scheduleQuoteProgress(currentStep);
+    });
+    filesInput?.addEventListener("change", () => {
+      syncFiles();
+      recordQuoteStarted(currentStep);
+      scheduleQuoteProgress(currentStep);
+    });
+    form.addEventListener("input", (event) => {
+      if (!event.target.closest?.("[data-budget-custom-question]")) return;
+      recordQuoteStarted(currentStep);
+      scheduleQuoteProgress(currentStep);
+    });
+    form.addEventListener("change", (event) => {
+      if (!event.target.closest?.("[data-budget-custom-question]")) return;
+      recordQuoteStarted(currentStep);
+      scheduleQuoteProgress(currentStep);
+    });
 
     choiceGroups.forEach((group) => {
       const input = group.parentElement?.querySelector("[data-choice-input]");
       const buttons = [...group.querySelectorAll("[data-choice-value]")];
       buttons.forEach((button) => {
         button.addEventListener("click", () => {
+          recordQuoteStarted(currentStep);
           buttons.forEach((item) => item.classList.remove("is-active"));
           button.classList.add("is-active");
           if (input) input.value = button.dataset.choiceValue || "";
+          scheduleQuoteProgress(currentStep);
         });
       });
     });
@@ -731,6 +875,7 @@ const initBudgetPage = () => {
     });
 
     nextButton?.addEventListener("click", () => {
+      recordQuoteStarted(currentStep);
       if (!validatéStep(currentStep)) return;
       goToStep(currentStep + 1);
     });
@@ -863,6 +1008,8 @@ const initBudgetPage = () => {
           observacoes: data.get("triagem_observacoes") || ""
         },
         quoteTemplateVersion: quoteTemplate.version || selectedService?.quoteTemplateVersion || null,
+        quoteFunnelSessionKey: quoteMetricState.sessionKey,
+        quoteTemplateIdentity: `${quoteTemplate.templateKind || "default"}:${quoteTemplate.personalTemplateId || quoteTemplate.templateId || "default"}:${quoteTemplate.source || "default"}`,
         quoteAnswers: customAnswers,
         quoteQuestionsSnapshot: customAnswers.map((item) => item.questionSnapshot),
         area: data.get("area") || "",
@@ -894,6 +1041,7 @@ const initBudgetPage = () => {
             : Object.assign({}, savedOrder, { attachments: uploadedAttachments });
         }
 
+        recordQuoteSubmitted(savedOrder);
         loadingScreen?.removeEventListener("cancel", preventLoadingDismiss);
         safeSetStorage(window.sessionStorage, storageKey, savedOrder);
         safeSetStorage(window.sessionStorage, "doke.quoteOverlay", savedOrder);

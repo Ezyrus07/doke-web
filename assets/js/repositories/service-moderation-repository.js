@@ -27,6 +27,18 @@
     });
   }
 
+  function getReviewDetail(versionId) {
+    var target = String(versionId || '').trim();
+    if (!target) return Promise.reject(new Error('A versão para análise não foi informada.'));
+    return listQueue().then(function (items) {
+      var match = items.find(function (item) {
+        return String(item && item.versionId || '').trim() === target;
+      });
+      if (!match) throw new Error('Esta versão não está mais aguardando análise.');
+      return match;
+    });
+  }
+
   function approve(versionId) {
     return getClient().rpc('approve_service_version', { p_version_id: versionId }).then(function (result) {
       return unwrap(result, 'Não foi possível aprovar o anúncio.');
@@ -53,6 +65,7 @@
 
   Doke.repositories.serviceModeration = Object.freeze({
     listQueue: listQueue,
+    getReviewDetail: getReviewDetail,
     approve: approve,
     requestChanges: requestChanges,
     reject: reject

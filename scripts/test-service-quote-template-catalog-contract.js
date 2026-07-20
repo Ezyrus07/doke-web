@@ -36,16 +36,16 @@ const check = (condition, message) => { if (!condition) failures.push(message); 
 check(Array.isArray(catalog), 'catálogo não foi exposto como coleção estruturada');
 check(catalog?.length === expectedCategories.length, `catálogo deveria possuir ${expectedCategories.length} modelos`);
 check(html.includes('data-quote-template-presets'), 'área de modelos prontos ausente');
-check(html.includes('data-quote-template-list') && html.includes('data-quote-template-search'), 'busca/lista de modelos ausente');
+check(!html.includes('data-quote-template-list') && !html.includes('data-quote-template-search'), 'a interface não deve exibir catálogo geral nem busca de categorias diferentes');
 check(html.includes('data-quote-template-recommendation'), 'recomendação baseada na categoria ausente');
 check(html.includes('data-quote-template-selection'), 'estado de modelo aplicado ausente');
 check(html.includes('data-quote-template-browser') && html.includes('data-quote-template-change'), 'catálogo não pode ser recolhido ou reaberto após aplicar um modelo');
 check(builderSource.includes('applyTemplateById') && builderSource.includes('recommendedTemplateId'), 'aplicação/recomendação do modelo ausente');
-check(builderSource.includes('catalogExpanded = false') && builderSource.includes('catalogExpanded = true'), 'estado recolhido/expandido do catálogo ausente');
+check(builderSource.includes('TEMPLATE_CATALOG.find') && builderSource.includes('normalizeText(template.category) === selectedCategory'), 'recomendação não está restrita à categoria selecionada');
 check(builderSource.includes("categoryField?.addEventListener('change', renderPresetCatalog)"), 'catálogo não reage à categoria do anúncio');
 check(formExperience.includes('templateId: core.normalize(parsed.templateId)') && formExperience.includes('templateLabel: core.normalize(parsed.templateLabel)'), 'metadados do modelo não entram no snapshot');
 check(pageController.includes('quoteModeReviewLabel') && pageController.includes('templateLabel'), 'revisão não identifica o modelo aplicado');
-check(css.includes('.quote-template-presets__grid') && css.includes('.quote-template-card.is-active'), 'contrato visual do catálogo ausente');
+check(css.includes('.quote-template-presets--focused') && css.includes('.quote-template-presets__recommendation--single'), 'contrato visual focado ausente');
 
 const ids = new Set();
 const categories = new Set();
@@ -84,4 +84,4 @@ if (failures.length) {
 
 console.log('[service-quote-template-catalog-contract] ok');
 console.log(`- ${catalog.length} categorias possuem modelos prontos validados`);
-console.log('- recomendação, busca, aplicação, personalização e snapshot estão conectados');
+console.log('- somente a recomendação da categoria, aplicação, personalização e snapshot estão conectados');

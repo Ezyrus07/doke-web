@@ -2713,3 +2713,192 @@ body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-s
     margin-top: 0;
   }
 }
+
+/* Review progress and visual lock */
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner.is-moderation-pending-review {
+  position: relative;
+  overflow: hidden;
+  border-color: rgba(42, 95, 144, 0.18);
+  box-shadow: 0 16px 38px rgba(24, 75, 118, 0.1);
+}
+
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner.is-moderation-pending-review > .profile-service-card__media,
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner.is-moderation-pending-review > .doke-ad-card__body,
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card--owner.is-moderation-pending-review > .profile-service-card__owner-side {
+  filter: grayscale(0.18) saturate(0.72);
+  opacity: 0.72;
+}
+
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__review-lock-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(245, 249, 253, 0.12), rgba(232, 240, 248, 0.34));
+  box-shadow: inset 0 0 0 1px rgba(42, 95, 144, 0.08);
+}
+
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__review-lock-icon {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.94);
+  color: var(--color-primary, #2a5f90);
+  box-shadow: 0 12px 28px rgba(24, 75, 118, 0.18);
+}
+
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__review-lock-icon svg {
+  width: 21px;
+  height: 21px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__review-progress {
+  position: relative;
+  z-index: 7;
+  display: grid;
+  gap: 12px;
+  margin-top: 5px;
+  padding: 13px 14px;
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 10px 26px rgba(24, 75, 118, 0.12);
+}
+
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__review-progress-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__review-progress-lock {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 11px;
+  background: rgba(42, 95, 144, 0.1);
+  color: var(--color-primary, #2a5f90);
+}
+
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__review-progress-lock svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__review-progress-heading > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__review-progress-heading strong {
+  color: #163f65;
+  font-size: 0.76rem;
+  font-weight: 850;
+}
+
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__review-progress-heading span {
+  color: #5c7690;
+  font-size: 0.68rem;
+  line-height: 1.4;
+}
+
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__review-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__review-step {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 5px;
+  color: #7990a6;
+  font-size: 0.64rem;
+  font-weight: 750;
+  text-align: center;
+}
+
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__review-step:not(:last-child)::after {
+  position: absolute;
+  top: 12px;
+  left: calc(50% + 15px);
+  width: calc(100% - 30px);
+  height: 2px;
+  content: "";
+  background: #dbe5ee;
+}
+
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__review-step.is-done:not(:last-child)::after {
+  background: #2a9d87;
+}
+
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__review-step-marker {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  background: #edf2f7;
+  color: #6c8298;
+  font-size: 0.66rem;
+  font-weight: 900;
+}
+
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__review-step.is-done .profile-service-card__review-step-marker {
+  background: #2a9d87;
+  color: #fff;
+}
+
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__review-step.is-current {
+  color: #174f7f;
+}
+
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__review-step.is-current .profile-service-card__review-step-marker {
+  background: var(--color-primary, #2a5f90);
+  color: #fff;
+  box-shadow: 0 0 0 4px rgba(42, 95, 144, 0.12);
+}
+
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__view.is-review-locked,
+body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__menu-item.is-disabled {
+  cursor: not-allowed;
+  opacity: 0.72;
+}
+
+@media (max-width: 760px) {
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__review-progress {
+    padding: 12px;
+  }
+
+  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-card__review-lock-icon {
+    top: 10px;
+    right: 10px;
+    width: 36px;
+    height: 36px;
+  }
+}

@@ -5,13 +5,7 @@
   var root = null;
   var list = null;
   var countNodes = [];
-  var dialog = null;
-  var dialogTitle = null;
-  var dialogDescription = null;
-  var reasonInput = null;
-  var submitButton = null;
-  var activeVersionId = '';
-  var activeAction = '';
+  var queueItems = [];
   var loadPromise = null;
   var observer = null;
 
@@ -122,9 +116,7 @@
 
     var actions = document.createElement('div');
     actions.className = 'admin-service-review__actions';
-    actions.appendChild(createButton('Solicitar ajustes', 'changes', 'doke-btn--ghost'));
-    actions.appendChild(createButton('Rejeitar', 'reject', 'doke-btn--danger'));
-    actions.appendChild(createButton('Aprovar', 'approve', 'doke-btn--primary'));
+    actions.appendChild(createButton('Analisar anúncio', 'details', 'doke-btn--primary'));
 
     card.appendChild(header);
     card.appendChild(meta);
@@ -135,9 +127,10 @@
 
   function render(items) {
     if (!list) return;
+    queueItems = Array.isArray(items) ? items : [];
     list.replaceChildren();
-    countNodes.forEach(function (node) { node.textContent = String(items.length); });
-    if (!items.length) {
+    countNodes.forEach(function (node) { node.textContent = String(queueItems.length); });
+    if (!queueItems.length) {
       var empty = document.createElement('div');
       empty.className = 'admin-service-review__empty';
       appendText(empty, 'strong', '', 'Nenhum anúncio aguardando análise');
@@ -145,7 +138,7 @@
       list.appendChild(empty);
       return;
     }
-    items.forEach(function (item) { list.appendChild(createCard(item)); });
+    queueItems.forEach(function (item) { list.appendChild(createCard(item)); });
   }
 
   function renderLoading() {
@@ -178,55 +171,19 @@
     return loadPromise;
   }
 
-  function closeDialog() {
-    if (dialog && dialog.open) dialog.close();
-    activeVersionId = '';
-    activeAction = '';
-    if (reasonInput) reasonInput.value = '';
+  function reviewDetailUrl(versionId) {
+    return 'admin-anuncio-revisao.html?version=' + encodeURIComponent(clean(versionId));
   }
 
-  function openReasonDialog(action, versionId) {
-    activeAction = action;
-    activeVersionId = versionId;
-    var requestingChanges = action === 'changes';
-    if (dialogTitle) dialogTitle.textContent = requestingChanges ? 'Solicitar ajustes no anúncio' : 'Rejeitar anúncio';
-    if (dialogDescription) dialogDescription.textContent = requestingChanges
-      ? 'Explique o que o profissional precisa corrigir antes de reenviar.'
-      : 'Informe claramente por que esta versão não pode ser aprovada.';
-    if (submitButton) {
-      submitButton.textContent = requestingChanges ? 'Enviar solicitação' : 'Confirmar rejeição';
-      submitButton.className = 'doke-btn ' + (requestingChanges ? 'doke-btn--primary' : 'doke-btn--danger');
+  function openReviewPage(versionId) {
+    var target = reviewDetailUrl(versionId);
+    if (typeof window.DokeNavigate === 'function') {
+      return Promise.resolve(window.DokeNavigate(target, { source: 'admin-service-review-queue' }));
     }
-    if (dialog && typeof dialog.showModal === 'function') dialog.showModal();
-    if (reasonInput) window.requestAnimationFrame(function () { reasonInput.focus(); });
+    window.location.assign(target);
+    return Promise.resolve();
   }
 
-  function setCardBusy(versionId, busy) {
-    var card = list && list.querySelector('[data-version-id="' + CSS.escape(versionId) + '"]');
-    if (!card) return;
-    card.querySelectorAll('button').forEach(function (button) {
-      button.disabled = busy;
-      if (busy) button.setAttribute('aria-busy', 'true');
-      else button.removeAttribute('aria-busy');
-    });
-  }
-
-  function resolve(action, versionId, reason) {
-    var repo = repository();
-    if (!repo) return Promise.reject(new Error('A autoridade de moderação não está disponível.'));
-    var operation;
-    if (action === 'approve') operation = repo.approve(versionId);
-    else if (action === 'changes') operation = repo.requestChanges(versionId, reason);
-    else operation = repo.reject(versionId, reason);
-
-    setCardBusy(versionId, true);
-    return Promise.resolve(operation).then(function () {
-      closeDialog();
-      showToast(action === 'approve' ? 'Anúncio aprovado e publicado.' : action === 'changes' ? 'Ajustes solicitados ao profissional.' : 'Versão rejeitada.');
-      document.dispatchEvent(new CustomEvent('doke:service-review-resolved', { detail: { versionId: versionId, action: action } }));
-      return load(true);
-    }).finally(function () { setCardBusy(versionId, false); });
-  }
 
   function bind() {
     document.addEventListener('click', function (event) {
@@ -237,31 +194,10 @@
         var versionId = clean(card && card.dataset.versionId);
         var action = clean(actionButton.dataset.adminServiceReviewAction);
         if (!versionId) return;
-        if (action === 'approve') {
-          resolve(action, versionId).catch(function (error) { showToast(error && error.message || 'Não foi possível aprovar o anúncio.'); });
-        } else {
-          openReasonDialog(action, versionId);
+        if (action === 'details') {
+          openReviewPage(versionId).catch(function (error) { showToast(error && error.message || 'Não foi possível abrir a análise.'); });
         }
         return;
-      }
-
-      if (event.target.closest('[data-admin-service-review-dialog-close]')) {
-        event.preventDefault();
-        closeDialog();
-        return;
-      }
-
-      if (event.target.closest('[data-admin-service-review-submit]')) {
-        event.preventDefault();
-        var reason = clean(reasonInput && reasonInput.value);
-        if (reason.length < 10) {
-          showToast('Informe um motivo com pelo menos 10 caracteres.');
-          if (reasonInput) reasonInput.focus();
-          return;
-        }
-        resolve(activeAction, activeVersionId, reason).catch(function (error) {
-          showToast(error && error.message || 'Não foi possível concluir a análise.');
-        });
       }
     });
 
@@ -283,11 +219,6 @@
     root = document.querySelector('[data-admin-service-reviews]');
     list = root;
     countNodes = Array.prototype.slice.call(document.querySelectorAll('[data-admin-stat="service-reviews"]'));
-    dialog = document.querySelector('[data-admin-service-review-dialog]');
-    dialogTitle = document.querySelector('[data-admin-service-review-dialog-title]');
-    dialogDescription = document.querySelector('[data-admin-service-review-dialog-description]');
-    reasonInput = document.querySelector('[data-admin-service-review-reason]');
-    submitButton = document.querySelector('[data-admin-service-review-submit]');
     if (!root) return;
     bind();
     observeDashboard();

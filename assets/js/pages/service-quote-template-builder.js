@@ -202,7 +202,7 @@
     const presetHost = root.querySelector('[data-quote-template-presets]');
     const presetList = root.querySelector('[data-quote-template-list]');
     const presetSearch = root.querySelector('[data-quote-template-search]');
-    const presetEmpty = root.querySelector('[data-quote-template-list-empty]');
+    const presetEmpty = root.querySelector('[data-quote-template-recommendation-empty]');
     const presetBrowser = root.querySelector('[data-quote-template-browser]');
     const recommendation = root.querySelector('[data-quote-template-recommendation]');
     const recommendationTitle = root.querySelector('[data-quote-template-recommendation-title]');
@@ -241,6 +241,27 @@
     let dialogTemplateId = '';
 
     const getPersonalService = () => window.Doke?.services?.professionalQuoteTemplates || null;
+    const getMetricsService = () => window.Doke?.services?.quoteTemplateMetrics || null;
+    const getEditingServiceId = () => {
+      const query = new URLSearchParams(window.location.search);
+      return query.get('edit') || query.get('id') || root.querySelector('[data-service-edit-id]')?.value || '';
+    };
+    const recordTemplateApplication = (template, kind) => {
+      const metrics = getMetricsService();
+      if (!metrics?.recordApplication || !template?.id) return;
+      metrics.recordApplication({
+        templateId: template.id,
+        templateKind: kind,
+        templateLabel: template.title || template.name || 'Modelo de formulário',
+        templateCategory: template.category || categoryField?.value || '',
+        questionCount: Array.isArray(template.questions)
+          ? template.questions.length
+          : (Array.isArray(template.template?.questions) ? template.template.questions.length : 0),
+        serviceExternalId: getEditingServiceId()
+      }).catch((error) => {
+        window.console?.warn?.('[Doke quote metrics] Não foi possível registrar a aplicação do modelo.', error);
+      });
+    };
     const getTemplateById = (templateId) => TEMPLATE_CATALOG.find((template) => template.id === templateId) || null;
     const getPersonalTemplateById = (templateId) => personalTemplates.find((template) => template.id === templateId) || null;
 
@@ -404,9 +425,7 @@
     };
 
     const renderPresetCatalog = () => {
-      if (!presetList) return;
       const selectedCategory = normalizeText(categoryField?.value);
-      const search = normalizeText(presetSearch?.value);
       const recommended = TEMPLATE_CATALOG.find((template) => normalizeText(template.category) === selectedCategory) || null;
       recommendedTemplateId = recommended?.id || '';
 
@@ -414,26 +433,8 @@
       if (recommendationTitle) recommendationTitle.textContent = recommended?.title || '';
       if (recommendationSummary) recommendationSummary.textContent = recommended?.summary || '';
       if (recommendationAction) recommendationAction.disabled = !recommended;
-
-      const filtered = TEMPLATE_CATALOG
-        .filter((template) => {
-          if (!search) return true;
-          const searchable = normalizeText([
-            template.category,
-            template.title,
-            template.summary,
-            ...template.questions.map((question) => question.label)
-          ].join(' '));
-          return searchable.includes(search);
-        })
-        .sort((first, second) => {
-          if (first.id === recommendedTemplateId) return -1;
-          if (second.id === recommendedTemplateId) return 1;
-          return first.title.localeCompare(second.title, 'pt-BR');
-        });
-
-      presetList.replaceChildren(...filtered.map((template) => createPresetCard(template, template.id === recommendedTemplateId)));
-      if (presetEmpty) presetEmpty.hidden = filtered.length > 0;
+      if (presetEmpty) presetEmpty.hidden = Boolean(recommended);
+      if (presetList) presetList.replaceChildren();
       renderPresetSelection();
     };
 
@@ -581,6 +582,7 @@
       presetCustomized = false;
       catalogExpanded = false;
       render();
+      if (options.track !== false) recordTemplateApplication(template, 'doke');
       host.scrollIntoView?.({ block: 'start', behavior: options.behavior || 'smooth' });
       return true;
     };
@@ -603,6 +605,7 @@
       presetCustomized = false;
       catalogExpanded = false;
       render();
+      if (options.track !== false) recordTemplateApplication(template, 'personal');
       host.scrollIntoView?.({ block: 'start', behavior: options.behavior || 'smooth' });
       return true;
     };
@@ -831,7 +834,7 @@
         catalogExpanded = true;
         renderPresetSelection();
         renderPresetCatalog();
-        presetHost.scrollIntoView?.({ block: 'start', behavior: 'smooth' });
+        recommendation?.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
         return;
       }
       if (event.target.closest('[data-quote-template-clear]')) clearTemplate();

@@ -34,6 +34,7 @@
     'carteira.html',
     'admin.html',
     'admin-verificacao.html',
+    'admin-anuncio-revisao.html',
     'meu-perfil.html',
     'orcamento.html',
     'anunciar-servico.html',
