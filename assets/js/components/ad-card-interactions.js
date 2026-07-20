@@ -26,6 +26,22 @@
     return String(node?.textContent || '').replace(/\s+/g, ' ').trim();
   };
 
+  const serviceIdFromHref = (href) => {
+    if (!href) return '';
+    try {
+      const url = new URL(href, window.location.href);
+      return String(url.searchParams.get('id') || url.searchParams.get('serviceId') || url.searchParams.get('servico') || '').trim();
+    } catch (error) {
+      return '';
+    }
+  };
+
+  const getCardServiceId = (card) => {
+    const direct = String(card?.dataset?.serviceId || '').trim();
+    if (direct) return direct;
+    return serviceIdFromHref(card?.querySelector?.('.doke-ad-card__cta[href]')?.getAttribute('href') || '');
+  };
+
   const buildCardContext = (card) => {
     const provider = card.dataset.adProvider || textOf(card, '.doke-ad-card__seller-name') || textOf(card, '.doke-ad-card__seller .doke-ad-card__title') || textOf(card, '.doke-ad-card__title');
     const category = card.dataset.adCategory || textOf(card, '.doke-ad-card__category');
@@ -40,6 +56,7 @@
       locationText,
       firstTag,
       ad,
+      serviceId: getCardServiceId(card),
       providerSlug: slugify(provider || 'anunciante')
     };
   };
@@ -53,6 +70,32 @@
     });
     if (hash) url.hash = hash.replace(/^#/, '');
     return `${url.pathname.split('/').pop()}${url.search}${url.hash}`;
+  };
+
+  const withHash = (href, hash) => {
+    const url = new URL(href, window.location.href);
+    url.hash = hash ? String(hash).replace(/^#/, '') : '';
+    return `${url.pathname.split('/').pop()}${url.search}${url.hash}`;
+  };
+
+  const resolveDetailHref = (card, context, hash) => {
+    const serviceId = String(context?.serviceId || getCardServiceId(card) || '').trim();
+    let href = '';
+
+    if (serviceId) {
+      const serviceApi = window.Doke?.services?.services;
+      href = typeof serviceApi?.getDetailUrl === 'function'
+        ? serviceApi.getDetailUrl(serviceId)
+        : withParams(DETAIL_PAGE, { id: serviceId });
+    } else {
+      const existing = card?.querySelector?.('.doke-ad-card__cta[href]')?.getAttribute('href') || '';
+      const existingId = serviceIdFromHref(existing);
+      if (existingId) href = withParams(DETAIL_PAGE, { id: existingId });
+      else if (existing && /detalhe-anuncio\.html/i.test(existing)) href = existing;
+      else href = withParams(DETAIL_PAGE, { anuncio: context?.ad || 'anuncio' });
+    }
+
+    return hash ? withHash(href, hash) : href;
   };
 
   const go = (href) => {
@@ -166,9 +209,7 @@
 
     if (event.target.closest('.doke-ad-card__rating')) {
       event.preventDefault();
-      go(withParams(DETAIL_PAGE, {
-        anuncio: context.ad
-      }, 'avaliacoes'));
+      go(resolveDetailHref(card, context, 'avaliacoes'));
       return;
     }
 
@@ -198,9 +239,7 @@
     }
 
     event.preventDefault();
-    go(withParams(DETAIL_PAGE, {
-      anuncio: context.ad
-    }));
+    go(resolveDetailHref(card, context));
   };
 
   const handleAdCardKeydown = (event) => {
@@ -256,8 +295,8 @@
       hydrateAdCardMedia(card);
 
       const cta = card.querySelector('.doke-ad-card__cta');
-      if (cta && cta.tagName === 'A') {
-        cta.href = withParams(DETAIL_PAGE, { anuncio: context.ad });
+      if (cta && cta.tagName === 'A' && context.serviceId) {
+        cta.href = resolveDetailHref(card, context);
       }
     });
   };
@@ -278,4 +317,11 @@
   });
 
   observer.observe(document.documentElement, { childList: true, subtree: true });
+
+  window.Doke = window.Doke || {};
+  window.Doke.adCardInteractions = Object.freeze({
+    hydrate: hydrateAdCards,
+    getCardServiceId,
+    resolveDetailHref
+  });
 })();

@@ -6,7 +6,9 @@
   var DEFAULT_SERVICE_ID = '';
 
   function getRoot() {
-    return document.querySelector('[data-state-boundary="detalhe-anuncio"], [data-detail-page-root], [data-page="detalhe-anuncio"]');
+    return document.querySelector('[data-state-boundary="detalhe-anuncio"]')
+      || document.querySelector('[data-detail-page-root]')
+      || document.querySelector('[data-page="detalhe-anuncio"]');
   }
 
   function getServiceId(root) {
@@ -33,6 +35,35 @@
     });
 
     (root || document).dispatchEvent(event);
+  }
+
+  function setNodeText(root, selector, value) {
+    var node = root && root.querySelector && root.querySelector(selector);
+    if (node && value) node.textContent = String(value);
+  }
+
+  function syncStateCopy(root, state, message) {
+    if (state === 'empty') {
+      setNodeText(root, '[data-detail-empty-title]', 'Anúncio não encontrado');
+      setNodeText(root, '[data-detail-empty-message]', message || 'O anúncio pode ter sido removido ou o link está incompleto.');
+    }
+    if (state === 'error') {
+      setNodeText(root, '[data-detail-error-title]', 'Não foi possível carregar o anúncio');
+      setNodeText(root, '[data-detail-error-message]', message || 'Verifique sua conexão e tente novamente.');
+    }
+  }
+
+  function bindRetry(root) {
+    var retry = root && root.querySelector && root.querySelector('[data-detail-retry]');
+    if (!retry || retry.dataset.detailRetryBound === 'true') return;
+    retry.dataset.detailRetryBound = 'true';
+    retry.addEventListener('click', function () {
+      if (typeof window.DokeNavigate === 'function') {
+        window.DokeNavigate(window.location.href, { replace: true, force: true });
+        return;
+      }
+      window.location.reload();
+    });
   }
 
   function setDataState(root, state, message) {
@@ -102,12 +133,17 @@
     var hydration = ensureHydration(root);
     var normalized = normalizePayload(payload);
     var state = normalized.service ? 'ready' : 'empty';
+    var emptyMessage = serviceId
+      ? 'Este anúncio não existe mais, foi removido ou não está disponível para esta conta.'
+      : 'O link do anúncio não contém um identificador válido.';
     var result = {
       page: PAGE_NAME,
       serviceId: serviceId,
       data: normalized,
-      source: source || 'repository'
+      source: source || 'repository',
+      emptyReason: normalized.service ? '' : (serviceId ? 'not-found' : 'missing-id')
     };
+    syncStateCopy(root, state, emptyMessage);
     setDataState(root, state);
     Doke.detailAdDataController.lastPayload = result;
     dispatch(root, 'doke:detail-ad-data-ready', result);
@@ -119,9 +155,15 @@
     options = options || {};
     var serviceId = getServiceId(root);
     var hydration = ensureHydration(root);
+    bindRetry(root);
+
+    if (!serviceId) {
+      return Promise.resolve(publishPayload(root, '', { service: null }, 'missing-route-id'));
+    }
 
     if (!hasDataDependencies()) {
       var dependencyError = new Error('As dependências do anúncio não foram carregadas.');
+      syncStateCopy(root, 'error', dependencyError.message);
       setDataState(root, 'error', dependencyError.message);
       hydration && hydration.error(dependencyError, { source: 'detail-dependencies' });
       return Promise.resolve({ page: PAGE_NAME, serviceId: serviceId, error: dependencyError.message });
@@ -143,6 +185,7 @@
           error: error && error.message ? error.message : 'Erro ao carregar dados do anúncio.'
         };
 
+        syncStateCopy(root, 'error', detail.error);
         setDataState(root, 'error', detail.error);
         dispatch(root, 'doke:detail-ad-data-error', detail);
         hydration && hydration.error(error, { source: 'detail-controller' });

@@ -97,14 +97,6 @@
 
             <div class="post-service-layout doke-form-page-grid" data-post-service-guard-ready hidden>
               <section class="post-service-form-card doke-form-page-card" aria-labelledby="post-service-title">
-                <div class="post-service-progress doke-flow-progress" aria-label="Progresso do anúncio">
-                  <div class="post-service-progress__top doke-flow-progress__top">
-                    <span data-step-progress-label>Etapa 1 de 4</span>
-                    
-                  </div>
-                  <div class="post-service-progress__track doke-flow-progress__track" aria-hidden="true"><span class="post-service-progress__fill doke-flow-progress__fill" data-step-progress-fill data-step-progress-value="25"></span></div>
-                </div>
-
                 <nav class="post-service-steps doke-flow-steps" aria-label="Etapas do anúncio">
                   <button class="post-service-step doke-flow-step is-active" type="button" data-step-target="1">
                     <span>1</span>
@@ -132,7 +124,7 @@
                     </div>
                     <p class="post-service-step-error" data-step-error="1" role="alert" aria-live="polite" hidden></p>
                     <div class="post-service-grid">
-                      <label class="post-service-field post-service-field--full doke-field"><span>Título do anúncio</span><input type="text" name="adTitle" required minlength="5" placeholder="Ex.: Pintura residencial com acabamento fino" data-summary-source="title" class="doke-input"></label>
+                      <label class="post-service-field post-service-field--full doke-field"><span>Título do anúncio</span><input type="text" name="adTitle" required minlength="5" maxlength="70" placeholder="Ex.: Pintura residencial com acabamento fino" data-count-source data-summary-source="title" class="doke-input"><small class="doke-form-hint"><span data-count-value>0</span>/70</small></label>
                       <label class="post-service-field doke-field"><span>Categoria</span>
                         <select class="doke-select" name="category" required data-ui-select>
                           <option value="" selected>Selecione a categoria</option>
@@ -147,9 +139,9 @@
                           <option value="Frete">Frete</option>
                         </select>
                       </label>
-                      <label class="post-service-field doke-field"><span>Subcategoria ou especialidade</span><input type="text" name="specialty" required minlength="2" placeholder="Ex.: Pintura interna, instalação de chuveiro, diarista" class="doke-input"></label>
+                      <label class="post-service-field doke-field"><span>Subcategoria ou especialidade</span><input type="text" name="specialty" required minlength="2" maxlength="60" placeholder="Ex.: Pintura interna, instalação de chuveiro, diarista" data-count-source class="doke-input"><small class="doke-form-hint"><span data-count-value>0</span>/60</small></label>
                       <label class="post-service-field post-service-field--full doke-field"><span>Descrição curta</span><textarea name="shortDescription" required minlength="20" maxlength="180" placeholder="Essa frase aparece nos cards de busca." data-count-source data-summary-source="short" class="doke-textarea"></textarea><small class="doke-form-hint"><span data-count-value>0</span>/180</small></label>
-                      <label class="post-service-field post-service-field--full doke-field"><span>Descrição completa</span><textarea class="post-service-textarea--large doke-textarea" name="fullDescription" required minlength="40" placeholder="Explique o que está incluso, como funciona o atendimento e o que o cliente precisa informar."></textarea></label>
+                      <label class="post-service-field post-service-field--full doke-field"><span>Descrição completa</span><textarea class="post-service-textarea--large doke-textarea" name="fullDescription" required minlength="40" maxlength="1200" placeholder="Explique o que está incluso, como funciona o atendimento e o que o cliente precisa informar." data-count-source></textarea><small class="doke-form-hint"><span data-count-value>0</span>/1200</small></label>
                     </div>
                   </div>
 
@@ -166,7 +158,7 @@
                       <input type="hidden" name="priceType" value="A partir de" data-summary-source="priceType">
                     </div>
                     <div class="post-service-grid">
-                      <label class="post-service-field post-service-field--currency doke-field"><span>Valor inicial</span><b>R$</b><input type="text" name="initialPrice" placeholder="Ex.: 150,00" data-summary-source="price" class="doke-input"></label>
+                      <label class="post-service-field post-service-field--currency doke-field"><span>Valor inicial</span><b>R$</b><input type="text" name="initialPrice" maxlength="14" inputmode="decimal" placeholder="Ex.: 150,00" data-summary-source="price" class="doke-input"></label>
                       <label class="post-service-field doke-field"><span>Unidade de cobrança</span>
                         <select class="doke-select" name="billingUnit" data-ui-select>
                           <option value="" selected>Selecione a unidade</option>
@@ -177,7 +169,7 @@
                           <option value="Por metro quadrado">Por metro quadrado</option>
                         </select>
                       </label>
-                      <label class="post-service-field post-service-field--full doke-field"><span>Região de atendimento</span><input type="text" name="serviceRegion" required minlength="3" placeholder="Ex.: Belo Horizonte e região" data-summary-source="region" class="doke-input"></label>
+                      <label class="post-service-field post-service-field--full doke-field"><span>Região de atendimento</span><input type="text" name="serviceRegion" required minlength="3" maxlength="80" placeholder="Ex.: Belo Horizonte e região" data-count-source data-summary-source="region" class="doke-input"><small class="doke-form-hint"><span data-count-value>0</span>/80</small></label>
                       <label class="post-service-field doke-field"><span>Forma de atendimento</span>
                         <select class="doke-select" name="serviceMode" required data-ui-select>
                           <option value="" selected>Selecione a forma</option>
@@ -243,10 +235,10 @@
                     </div>
                     <p class="post-service-step-error" data-step-error="3" role="alert" aria-live="polite" hidden></p>
                     <div class="post-service-upload-layout">
-                      <label class="post-service-upload-card post-service-upload-card--main"><input type="file" name="mainImage" required accept="image/*"><span>Imagem principal do anúncio</span><small>Use uma foto clara do resultado ou do serviço em execução.</small></label>
+                      <label class="post-service-upload-card post-service-upload-card--main" data-upload-card><input type="file" name="mainImage" required accept="image/png,image/jpeg,image/webp,image/gif" data-upload-input><span>Imagem principal do anúncio</span><small>Use uma foto clara do resultado ou do serviço em execução.</small><small class="post-service-upload-card__status" data-upload-status aria-live="polite">Selecionar imagem</small></label>
                       <div class="post-service-upload-list" aria-label="Fotos extras">
-                        <label class="post-service-upload-card"><input type="file" name="extraImageOne" accept="image/*"><span>Foto extra</span><small>Antes/depois, detalhe ou ambiente.</small></label>
-                        <label class="post-service-upload-card"><input type="file" name="extraImageTwo" accept="image/*"><span>Foto extra</span><small>Mostre acabamento, equipe ou material.</small></label>
+                        <label class="post-service-upload-card" data-upload-card><input type="file" name="extraImageOne" accept="image/png,image/jpeg,image/webp,image/gif" data-upload-input><span>Foto extra</span><small>Antes/depois, detalhe ou ambiente.</small><small class="post-service-upload-card__status" data-upload-status aria-live="polite">Selecionar imagem</small></label>
+                        <label class="post-service-upload-card" data-upload-card><input type="file" name="extraImageTwo" accept="image/png,image/jpeg,image/webp,image/gif" data-upload-input><span>Foto extra</span><small>Mostre acabamento, equipe ou material.</small><small class="post-service-upload-card__status" data-upload-status aria-live="polite">Selecionar imagem</small></label>
                       </div>
                     </div>
                     <section class="post-service-existing-media" data-existing-service-media hidden aria-labelledby="existing-service-media-title">
@@ -270,9 +262,17 @@
                       <button class="post-service-check doke-choice-button" type="button" aria-pressed="false" data-post-check data-value="Atende emergência"><span></span>Atende emergência</button>
                       <button class="post-service-check is-active doke-choice-button" type="button" aria-pressed="true" data-post-check data-value="Orçamento pelo chat"><span></span>Orçamento pelo chat</button>
                     </div>
+                    <section class="quote-builder" data-quote-template-builder aria-labelledby="quote-builder-title">
+                      <input type="hidden" name="quoteTemplateJson" data-quote-template-json value='{"version":1,"status":"default","questions":[]}'>
+                      <div class="quote-builder__head"><div><h2 id="quote-builder-title">Perguntas para orçamento</h2><p>Personalize as informações que o cliente deve enviar. Use no máximo 10 perguntas objetivas.</p></div><button class="doke-btn doke-btn--secondary" type="button" data-quote-question-add>Adicionar pergunta</button></div>
+                      <p class="quote-builder__empty" data-quote-template-empty>O modelo padrão da Doke será usado. Adicione perguntas somente quando forem necessárias para calcular ou preparar o serviço.</p>
+                      <div class="quote-builder__list" data-quote-question-list></div>
+                      <aside class="quote-builder-preview" aria-label="Prévia das perguntas"><strong>Prévia para o cliente</strong><div data-quote-template-preview></div></aside>
+                    </section>
+
                     <div class="post-service-grid post-service-grid--spaced">
-                      <label class="post-service-field post-service-field--full doke-field"><span>O que está incluso</span><textarea name="includedItems" required minlength="10" placeholder="Ex.: Proteção do ambiente, mão de obra, limpeza básica ao final." class="doke-textarea"></textarea></label>
-                      <label class="post-service-field post-service-field--full doke-field"><span>O que não está incluso <em>Opcional</em></span><textarea name="excludedItems" placeholder="Ex.: Materiais, deslocamento fora da região, peças de reposição." class="doke-textarea"></textarea></label>
+                      <label class="post-service-field post-service-field--full doke-field"><span>O que está incluso</span><textarea name="includedItems" required minlength="10" maxlength="500" placeholder="Ex.: Proteção do ambiente, mão de obra, limpeza básica ao final." data-count-source class="doke-textarea"></textarea><small class="doke-form-hint"><span data-count-value>0</span>/500</small></label>
+                      <label class="post-service-field post-service-field--full doke-field"><span>O que não está incluso <em>Opcional</em></span><textarea name="excludedItems" maxlength="500" placeholder="Ex.: Materiais, deslocamento fora da região, peças de reposição." data-count-source class="doke-textarea"></textarea><small class="doke-form-hint"><span data-count-value>0</span>/500</small></label>
                     </div>
                   </div>
 
@@ -354,7 +354,7 @@
 
   <script src="assets/js/core/navigation-registry.js?v=20260701-navigation-registry-v1" defer></script>
   <script src="assets/js/core/navigation-lifecycle.js?v=20260713-navigation-lifecycle-v1" defer></script>
-  <script src="assets/js/core/app.js?v=20260714-route-deadlock-v1" defer></script>
+  <script src="assets/js/core/app.js?v=20260719-notification-live-sync-v1" defer></script>
   <script src="assets/js/components/operational-event-toast.js?v=20260702-sidebar-quick-alert-flow-v1" defer></script>
   <script src="assets/js/core/page-hydration.js?v=20260717-professional-service-lifecycle-v1" defer></script>
   <script src="assets/js/core/stable-shell-router.js?v=20260717-professional-service-lifecycle-v1" defer></script>
@@ -370,21 +370,22 @@
   <script src="assets/js/services/auth-service.js?v=20260622-auth-surface-ready-v1" defer></script>
   <script src="assets/js/repositories/professional-profiles-repository.js?v=20260714-professional-access-v1" defer></script>
   <script src="assets/js/repositories/professional-identity-verifications-repository.js?v=20260714-professional-access-v1" defer></script>
-  <script src="assets/js/services/professional-access-service.js?v=20260714-navigation-stage03-v1" defer></script>
+  <script src="assets/js/services/professional-access-service.js?v=20260719-profile-loop-fix-v1" defer></script>
   <script src="assets/js/core/form-experience-core.js?v=20260712-form-core-v1" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="assets/js/core/supabase-config.js?v=20260719-singleton-client-v1" defer></script>
-  <script src="assets/js/repositories/services-repository.js?v=20260719-singleton-client-v1" defer></script>
+  <script src="assets/js/repositories/services-repository.js?v=20260719-detail-id-resolution-v1" defer></script>
   <script src="assets/js/services/services-service.js?v=20260717-media-archive-v1" defer></script>
-  <script src="assets/js/pages/service-form-experience.js?v=20260718-availability-tools-v1" defer></script>
-  <script src="assets/js/pages/anunciar-servico.js?v=20260717-media-archive-v1-20260717-service-edit-v1" defer></script>
+  <script src="assets/js/pages/service-quote-template-builder.js?v=20260719-budget-builder-v1" defer></script>
+  <script src="assets/js/pages/service-form-experience.js?v=20260719-budget-builder-v1" defer></script>
+  <script src="assets/js/pages/anunciar-servico.js?v=20260719-upload-submit-feedback-v1" defer></script>
   <script src="assets/js/services/mock-data-service.js?v=20260501-stage31-domain-services" defer></script>
   <script src="assets/js/services/profile-service.js?v=20260501-stage31-domain-services" defer></script>
   <script src="assets/js/services/search-service.js?v=20260501-stage31-domain-services" defer></script>
   <script src="assets/js/services/order-service.js?v=20260501-stage31-domain-services" defer></script>
   <script src="assets/js/services/message-service.js?v=20260501-stage31-domain-services" defer></script>
   <script src="assets/js/services/community-service.js?v=20260501-stage31-domain-services" defer></script>
-  <script src="assets/js/repositories/notifications-repository.js?v=20260719-singleton-client-v1" defer></script>
+  <script src="assets/js/repositories/notifications-repository.js?v=20260719-live-sync-poll-v1" defer></script>
   <script src="assets/js/services/notification-service.js?v=20260501-stage31-domain-services" defer></script>
   <script src="assets/js/services/wallet-service.js?v=20260702-wallet-release-on-completion-v1" defer></script>
   <script src="assets/js/services/domain-data-service.js?v=20260501-stage31-domain-services" defer></script>

@@ -149,13 +149,17 @@
     var user = currentUser();
     var logged = Boolean(user && user.id);
     var fullName = logged ? normalizeText(user.name || user.fullName || user.email || 'Usuário Doke') : 'Entrar na Doke';
+    var registry = window.DokeNavigationRegistry;
+    var profileHref = logged && registry && typeof registry.getOwnerProfileUrl === 'function'
+      ? registry.getOwnerProfileUrl(user)
+      : (logged ? (user.role === 'professional' ? 'perfil-profissional.html' : 'meu-perfil.html') : 'auth/login.html');
     return {
       logged: logged,
       fullName: fullName,
       name: logged ? firstName(fullName) : 'Entrar',
       role: logged ? (ROLE_LABELS[user.role] || user.roleLabel || 'Conta') : 'Conta Doke',
       initials: logged ? truncateText(user.initials || user.avatarInitials || getInitials(fullName), 3) : 'DK',
-      profileHref: logged ? (user.ownerProfileUrl || user.ownerUrl || (user.role === 'professional' ? 'perfil-profissional.html' : 'meu-perfil.html')) : 'auth/login.html',
+      profileHref: profileHref,
       actionHref: logged ? '' : 'auth/login.html',
       actionLabel: logged ? 'Sair' : 'Entrar',
       signature: [logged ? '1' : '0', fullName, user && user.role || '', user && (user.initials || user.avatarInitials) || ''].join('|')

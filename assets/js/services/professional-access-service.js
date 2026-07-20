@@ -24,6 +24,115 @@
       : null;
   }
 
+  function currentSession() {
+    return Doke.session && typeof Doke.session.getSession === 'function'
+      ? Doke.session.getSession()
+      : null;
+  }
+
+  function supabaseClient() {
+    try {
+      return root.DokeSupabase && typeof root.DokeSupabase.getClient === 'function'
+        ? root.DokeSupabase.getClient()
+        : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function hasConfiguredSupabase() {
+    var config = root.DOKE_SUPABASE_CONFIG || {};
+    return Boolean(
+      config.enabled !== false
+      && config.url
+      && (config.anonKey || config.publishableKey)
+      && supabaseClient()
+    );
+  }
+
+  function isUuid(value) {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value || '').trim());
+  }
+
+  function usesSupabaseProvider(actor) {
+    var session = currentSession();
+    var provider = String(session && session.provider || '').trim().toLowerCase();
+    if (provider === 'supabase') return true;
+
+    // O contrato legado normaliza provedores desconhecidos como `mock`, inclusive
+    // sessões reais do Supabase. Um usuário autenticado remoto mantém UUID e o
+    // cliente configurado, enquanto os usuários mock usam IDs sem formato UUID.
+    var user = actor || currentUser();
+    return hasConfiguredSupabase() && isUuid(user && user.id);
+  }
+
+  function mapRemoteProfessionalProfile(row) {
+    if (!row) return null;
+    return {
+      id: row.id || 'professional_profile_' + row.user_id,
+      userId: row.user_id,
+      status: row.setup_status || 'draft',
+      currentStep: Number(row.setup_current_step || 1),
+      payload: row.setup_payload || {},
+      verificationStatus: row.verification_status || 'not_started',
+      documentStatus: row.document_status || '',
+      createdAt: row.created_at || '',
+      updatedAt: row.updated_at || '',
+      completedAt: row.setup_completed_at || ''
+    };
+  }
+
+  function mapRemoteVerification(row) {
+    if (!row) return null;
+    return {
+      id: row.id || 'professional_verification_' + row.user_id,
+      userId: row.user_id,
+      professionalProfileId: row.professional_profile_id || '',
+      status: row.status || 'not_started',
+      documentStatus: row.document_status || '',
+      rejectionReason: row.rejection_reason || '',
+      createdAt: row.created_at || '',
+      updatedAt: row.updated_at || '',
+      decidedAt: row.decided_at || ''
+    };
+  }
+
+  function resolveRemoteContext(actor) {
+    var client = supabaseClient();
+    if (!client || typeof client.from !== 'function') {
+      return Promise.reject(new Error('Supabase indisponível para validar o acesso profissional.'));
+    }
+    return Promise.all([
+      client.from('professional_profiles').select('*').eq('user_id', actor.id).maybeSingle(),
+      client.from('professional_identity_verifications').select('*').eq('user_id', actor.id).maybeSingle()
+    ]).then(function (items) {
+      if (items[0] && items[0].error) throw items[0].error;
+      if (items[1] && items[1].error) throw items[1].error;
+      var profile = mapRemoteProfessionalProfile(items[0] && items[0].data);
+      var verification = mapRemoteVerification(items[1] && items[1].data);
+      var approved = Boolean(
+        profile
+        && verification
+        && profile.status === 'active'
+        && profile.verificationStatus === 'verified'
+        && profile.documentStatus === 'verified'
+        && verification.status === 'verified'
+      );
+      var canonicalUser = approved ? Object.assign({}, actor, {
+        role: 'professional',
+        type: 'professional',
+        professionalProfileId: profile.id,
+        publicProfileUrl: actor.publicProfileUrl || 'perfil.html',
+        ownerProfileUrl: 'perfil-profissional.html'
+      }) : actor;
+      return {
+        user: canonicalUser,
+        professionalProfile: profile,
+        verification: verification
+      };
+    });
+  }
+
   function profilesRepository() {
     return Doke.repositories && Doke.repositories.professionalProfiles;
   }
@@ -103,6 +212,8 @@
     if (!actor || !actor.id) {
       return Promise.resolve({ user: actor || null, professionalProfile: null, verification: null });
     }
+
+    if (usesSupabaseProvider(actor)) return resolveRemoteContext(actor);
 
     var profiles = profilesRepository();
     var verifications = verificationsRepository();
@@ -214,6 +325,18 @@
       if (result.allowed) {
         if (lifecycleApi && lifecycleApi.guard) lifecycleApi.guard.allow(guardId, { result: result });
         return result;
+      }
+
+      // Falha de leitura do contexto não representa mudança de estado da conta.
+      // Redirecionar nesse caso faz outra página consultar novamente e pode criar
+      // um ciclo entre perfil e verificação. Mantemos a rota e exibimos o erro.
+      if (result.reason === 'professional_access_context_unavailable') {
+        var contextError = result.error || new Error('Não foi possível validar o acesso profissional.');
+        if (lifecycleApi && lifecycleApi.guard) lifecycleApi.guard.fail(guardId, contextError, {
+          result: result,
+          reason: result.reason
+        });
+        throw contextError;
       }
 
       if (options.redirect === false) {

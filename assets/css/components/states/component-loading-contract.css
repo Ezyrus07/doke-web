@@ -461,3 +461,99 @@ html .doke-page-hydration-skeleton[hidden] {
     flex: 0 0 min(44vw, 170px);
   }
 }
+
+/* Home full-feed skeleton fidelity.
+   The hard-load skeleton reserves every remote section that becomes visible
+   after hydration: featured services, workers, publications, more services and
+   highlighted professionals. Static search and categories remain interactive. */
+:where(.doke-page-hydration-skeleton--home) .doke-page-hydration-skeleton__home-grid--publications,
+:where(.doke-page-hydration-skeleton--home) .doke-page-hydration-skeleton__home-grid--professionals {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+:where(.doke-page-hydration-skeleton--home) .doke-page-hydration-skeleton__home-publication-card,
+:where(.doke-page-hydration-skeleton--home) .doke-page-hydration-skeleton__home-professional-card {
+  display: grid;
+  min-inline-size: 0;
+  overflow: hidden;
+  border: 1px solid var(--doke-border-subtle, rgba(15, 23, 42, 0.08));
+  border-radius: var(--doke-radius-card, 16px);
+  background: var(--doke-surface, #fff);
+}
+
+:where(.doke-page-hydration-skeleton--home) .doke-page-hydration-skeleton__home-publication-media {
+  inline-size: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 0;
+}
+
+:where(.doke-page-hydration-skeleton--home) .doke-page-hydration-skeleton__home-publication-body {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+}
+
+:where(.doke-page-hydration-skeleton--home) .doke-page-hydration-skeleton__home-chips {
+  display: flex;
+  gap: 10px;
+  min-inline-size: 0;
+  overflow: hidden;
+}
+
+:where(.doke-page-hydration-skeleton--home) .doke-page-hydration-skeleton__home-chip {
+  flex: 0 0 112px;
+  block-size: 38px;
+  border-radius: var(--radius-pill, 999px);
+}
+
+:where(.doke-page-hydration-skeleton--home) .doke-page-hydration-skeleton__home-professional-card {
+  place-items: center;
+  gap: 12px;
+  min-block-size: 276px;
+  padding: 22px 18px 18px;
+}
+
+:where(.doke-page-hydration-skeleton--home) .doke-page-hydration-skeleton__home-professional-avatar {
+  inline-size: 104px;
+  block-size: 104px;
+  border-radius: 50%;
+}
+
+:where(.doke-page-hydration-skeleton--home) .doke-page-hydration-skeleton__home-professional-card .doke-page-hydration-skeleton__line {
+  inline-size: min(82%, 180px);
+}
+
+:where(.doke-page-hydration-skeleton--home) .doke-page-hydration-skeleton__home-professional-card .doke-page-hydration-skeleton__home-action {
+  inline-size: 100%;
+  margin-block-start: auto;
+}
+
+@media (max-width: 1080px) {
+  :where(.doke-page-hydration-skeleton--home) .doke-page-hydration-skeleton__home-grid--publications,
+  :where(.doke-page-hydration-skeleton--home) .doke-page-hydration-skeleton__home-grid--professionals {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  :where(.doke-page-hydration-skeleton--home) :is(
+    .doke-page-hydration-skeleton__home-publication-card,
+    .doke-page-hydration-skeleton__home-professional-card
+  ):nth-child(n + 4) {
+    display: none;
+  }
+}
+
+@media (max-width: 760px) {
+  :where(.doke-page-hydration-skeleton--home) .doke-page-hydration-skeleton__home-grid--publications,
+  :where(.doke-page-hydration-skeleton--home) .doke-page-hydration-skeleton__home-grid--professionals {
+    display: flex;
+    overflow: hidden;
+  }
+
+  :where(.doke-page-hydration-skeleton--home) .doke-page-hydration-skeleton__home-publication-card {
+    flex: 0 0 min(76vw, 280px);
+  }
+
+  :where(.doke-page-hydration-skeleton--home) .doke-page-hydration-skeleton__home-professional-card {
+    flex: 0 0 min(72vw, 260px);
+  }
+}

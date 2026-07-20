@@ -1,3 +1,4 @@
+
 /* Home page CSS manifest.
    Responsibility: index/home page composition only.
 
@@ -24,6 +25,11 @@
 /* Page-level feedback and close affordance dependencies.
    Kept in the page manifest so index.html has only the canonical three CSS entries. */
 @import url("../components/ui-surface/close-button-authority.css?v=20260713-global-v1");
+
+/* Onboarding must never paint before the remote account state is authoritative. */
+.account-onboarding:not([data-onboarding-visibility="open"]) {
+  display: none;
+}
 
 /* Account onboarding — CEP-first, one-minute completion. */
 .account-onboarding__surface {

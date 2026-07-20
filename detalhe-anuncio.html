@@ -12,7 +12,7 @@
 <script src="assets/js/core/shell-state-early.js?v=20260614-drawer-canonical-v2" defer></script>
 <script>document.documentElement.classList.add("doke-mobile-shell-pending");</script>
   <script src="assets/js/core/ipad-safari-early-guard.js?v=20260531-v3" defer></script>
-<link href="assets/css/pages/marketplace-detail-foundation.css?v=20260718-seller-identity-v1" rel="stylesheet"/>
+<link href="assets/css/pages/marketplace-detail-foundation.css?v=20260719-owner-actions-v1" rel="stylesheet"/>
   <link rel="stylesheet" href="assets/css/components/feedback/document-preloader.css?v=20260712-global-document-boot-v1">
  <link rel="stylesheet" href="assets/css/components/ui-surface/close-button-authority.css?v=20260713-global-v1">
 </head>
@@ -78,8 +78,16 @@
 <main aria-busy="true" class="page__content detalhe-anuncio-page" data-detail-controller-target="detalhe-anuncio-data-controller" data-detail-entity="service-ad" data-detail-layout-state="provisional-reset" data-detail-page="detalhe-anuncio" data-detail-page-root="" data-state-boundary="detalhe-anuncio" data-state-scope="detalhe-anuncio" data-view-state="loading">
 <div aria-live="polite" class="doke-state-region" data-state-region="" data-state-scope="detalhe-anuncio">
 <p data-state-loading="" hidden="" class="doke-loading-state">Carregando anúncio...</p>
-<p data-state-empty="" hidden="" class="doke-empty-state">Anúncio indisponível.</p>
-<p data-state-error="" hidden="" class="doke-error-state">Não foi possível carregar o anúncio.</p>
+<section data-state-empty="" hidden="" class="doke-empty-state" aria-labelledby="detail-empty-title">
+  <strong class="doke-state__title" id="detail-empty-title" data-detail-empty-title>Anúncio não encontrado</strong>
+  <p class="doke-state__description" data-detail-empty-message>O anúncio pode ter sido removido ou o link está incompleto.</p>
+  <a class="doke-btn doke-btn--secondary" href="resultados.html">Buscar outros serviços</a>
+</section>
+<section data-state-error="" hidden="" class="doke-error-state" aria-labelledby="detail-error-title">
+  <strong class="doke-state__title" id="detail-error-title" data-detail-error-title>Não foi possível carregar o anúncio</strong>
+  <p class="doke-state__description" data-detail-error-message>Verifique sua conexão e tente novamente.</p>
+  <button class="doke-btn doke-btn--secondary" type="button" data-detail-retry>Tentar novamente</button>
+</section>
 </div>
 <div aria-hidden="true" class="detail-data-boundary" data-detail-data-boundary="" hidden="">
 <span data-detail-service-id="" data-service-id=""></span>
@@ -480,10 +488,10 @@
 </main>
 <aside aria-label="Resumo e ações do anúncio" class="ad-detail-sidebar">
 <section class="detail-surface ad-action-card">
-<p class="ad-action-card__price">—</p>
-<p class="ad-action-card__subtext">Preço informado no anúncio</p>
-<div class="ad-action-card__status" data-detail-status-message hidden role="status"></div>
-<div class="ad-action-card__actions">
+<p class="ad-action-card__price" data-detail-visitor-only>—</p>
+<p class="ad-action-card__subtext" data-detail-visitor-only>Preço informado no anúncio</p>
+<div class="ad-action-card__status" data-detail-status-message data-detail-visitor-only hidden role="status"></div>
+<div class="ad-action-card__actions" data-detail-visitor-actions>
 <a class="detail-btn doke-btn doke-btn--primary" href="orcamento.html" data-budget-cta>
 <svg aria-hidden="true" viewbox="0 0 24 24"><path d="M7 5.5h10"></path><path d="M7 9.5h10"></path><path d="M7 13.5h6"></path><rect x="5" y="4" width="14" height="16" rx="2"></rect></svg>
                     Solicitar orçamento
@@ -493,13 +501,50 @@
                     Conversar
                   </a>
 </div>
-<dl aria-label="Resumo rápido do serviço" class="ad-action-card__meta">
+<dl aria-label="Resumo rápido do serviço" class="ad-action-card__meta" data-detail-visitor-only>
 <div><dt>Resposta</dt><dd>em até 12 min</dd></div>
 <div><dt>Garantia</dt><dd>12 meses</dd></div>
 </dl>
-<div class="ad-action-card__trust">
+<div class="ad-action-card__trust" data-detail-visitor-only>
 <svg aria-hidden="true" viewbox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><path d="m9 12 2 2 4-5"></path></svg>
 <span>Compra segura no Doke<br/><small>Seus dados ficam protegidos</small></span>
+</div>
+<div class="ad-action-card__owner-dashboard" data-detail-owner-dashboard hidden>
+  <header class="ad-action-card__owner-header">
+    <div>
+      <span class="ad-action-card__owner-eyebrow">Painel do anúncio</span>
+      <strong class="ad-action-card__owner-status" data-detail-owner-status data-status-tone="success">
+        <span class="ad-action-card__owner-status-dot" aria-hidden="true"></span>
+        <span data-detail-owner-status-label>Publicado</span>
+      </strong>
+    </div>
+    <span class="ad-action-card__owner-sync" data-detail-owner-sync>Sincronizado</span>
+  </header>
+  <div class="ad-action-card__owner-price">
+    <span>Preço configurado</span>
+    <strong data-detail-owner-price>—</strong>
+    <small data-detail-owner-price-note>Valor exibido aos clientes</small>
+  </div>
+  <dl class="ad-action-card__owner-metrics" aria-label="Desempenho do anúncio">
+    <div><dt>Visualizações</dt><dd data-detail-owner-views>0</dd></div>
+    <div><dt>Contatos</dt><dd data-detail-owner-contacts>0</dd></div>
+    <div><dt>Avaliações</dt><dd data-detail-owner-reviews>0</dd></div>
+    <div><dt>Atualizado</dt><dd data-detail-owner-updated>Hoje</dd></div>
+  </dl>
+  <div class="ad-action-card__actions ad-action-card__actions--owner" data-detail-owner-actions hidden>
+    <a class="detail-btn doke-btn doke-btn--primary" href="anunciar-servico.html" data-detail-owner-edit>
+      <svg aria-hidden="true" viewbox="0 0 24 24"><path d="M4 20h4l11-11a2.8 2.8 0 0 0-4-4L4 16v4Z"></path><path d="m13.5 6.5 4 4"></path></svg>
+      Editar anúncio
+    </a>
+    <a class="detail-btn doke-btn doke-btn--ghost" href="perfil-profissional.html#profile-ads" data-detail-owner-manage>
+      <svg aria-hidden="true" viewbox="0 0 24 24"><path d="M4 6h16"></path><path d="M4 12h16"></path><path d="M4 18h16"></path></svg>
+      Gerenciar anúncios
+    </a>
+    <button class="detail-btn doke-btn doke-btn--ghost ad-action-card__owner-status-toggle" type="button" data-detail-owner-status-toggle>
+      Desativar anúncio
+    </button>
+  </div>
+  <p class="ad-action-card__owner-note" data-detail-owner-note hidden role="status" aria-live="polite"></p>
 </div>
 </section>
 <section aria-labelledby="provider-card-title" class="detail-surface provider-card provider-card--compact">
@@ -586,14 +631,14 @@
 
 <script src="assets/js/core/navigation-registry.js?v=20260701-navigation-registry-v1" defer></script>
 <script src="assets/js/core/navigation-lifecycle.js?v=20260713-navigation-lifecycle-v1" defer></script>
-<script defer="" src="assets/js/core/app.js?v=20260714-route-deadlock-v1"></script>
+<script defer="" src="assets/js/core/app.js?v=20260719-notification-live-sync-v1"></script>
 <script src="assets/js/components/operational-event-toast.js?v=20260702-sidebar-quick-alert-flow-v1" defer></script>
 <script defer="" src="assets/js/core/page-hydration.js?v=20260628-stable-transition-v5"></script>
 <script defer="" src="assets/js/core/stable-shell-router.js?v=20260714-route-deadlock-v1"></script>
 <script defer="" src="assets/js/services/mock-data-boundary.js?v=20260622-services-data-v1"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="assets/js/core/supabase-config.js?v=20260719-singleton-client-v1" defer></script>
-<script defer="" src="assets/js/repositories/services-repository.js?v=20260719-singleton-client-v1"></script>
+<script defer="" src="assets/js/repositories/services-repository.js?v=20260719-detail-id-resolution-v1"></script>
 <script defer="" src="assets/js/services/services-service.js?v=20260717-real-service-detail-v1"></script>
 <script defer="" src="assets/js/services/repository-boundary.js"></script>
 <script defer="" src="assets/js/services/mock-repository-provider.js?v=20260717-real-service-detail-v1"></script>
@@ -602,9 +647,9 @@
 <script defer="" src="assets/js/pages/home/before-after.js?v=20260628-route-scroll-v1"></script>
 <script defer="" src="assets/js/pages/home/workers.js?v=20260628-route-scroll-v1"></script>
 <script defer="">document.addEventListener("DOMContentLoaded", function () { if (window.DokeHomeWorkers && typeof window.DokeHomeWorkers.hydratePreviewCards === "function") window.DokeHomeWorkers.hydratePreviewCards(); });</script>
-<script defer="" src="assets/js/components/public-service-card.js?v=20260718-public-catalog-v1"></script>
-<script defer="" src="assets/js/pages/detalhe-anuncio-data-controller.js?v=20260717-real-service-detail-v1"></script>
-<script defer="" src="assets/js/pages/detalhe-anuncio.js?v=20260717-real-service-detail-v1"></script>
+<script defer="" src="assets/js/components/public-service-card.js?v=20260719-provider-handle-footer-v1"></script>
+<script defer="" src="assets/js/pages/detalhe-anuncio-data-controller.js?v=20260719-budget-price-label-v1"></script>
+<script defer="" src="assets/js/pages/detalhe-anuncio.js?v=20260719-budget-price-label-v1"></script>
   <script src="assets/js/core/session.js?v=20260501-auth-session-v1" defer></script>
   <script src="assets/js/services/auth-service.js?v=20260622-auth-surface-ready-v1" defer></script>
 <script defer="" src="assets/js/components/media-lightbox.js"></script>

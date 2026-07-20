@@ -1,12 +1,9 @@
 /*
  * Doke Web - Client Profile
- * Responsibility: client public/editable profile variants only.
- * Inherits the clean profile anatomy and keeps the client profile intentionally simple.
+ * Responsibility: client-specific composition shared by public and owner surfaces.
+ * Shared profile anatomy and owner controls remain outside this page file.
  */
-@import url("./profile-foundation.css?v=20260717-horizontal-service-card-v1");
-@import url("../components/overlays/doke-modal-system.css?v=20260715-modal-clean-lote2");
-@import url("../components/overlays/modal-visual-contract.css?v=20260715-control-elevation-scope-v1");
-@import url("../components/forms/form-controls.css?v=20260715-control-elevation-scope-v1");
+@import url("./profile-foundation.css?v=20260719-profile-family-v1");
 
 body[data-client-profile-contract] .profile-hero__cover {
   background:
@@ -14,38 +11,6 @@ body[data-client-profile-contract] .profile-hero__cover {
     linear-gradient(135deg, rgba(42, 95, 144, 0.96) 0%, rgba(41, 143, 127, 0.9) 100%);
 }
 
-body[data-client-profile-contract] .profile-hero__cover-image {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  width: 100%;
-  height: 100%;
-  display: block;
-  object-fit: cover;
-}
-
-body[data-client-profile-contract] .profile-hero__cover-mark {
-  position: relative;
-  z-index: 1;
-}
-
-body[data-client-profile-contract] .profile-avatar__image {
-  width: 100%;
-  height: 100%;
-  display: block;
-  border-radius: inherit;
-  object-fit: cover;
-}
-
-body[data-client-profile-contract] .profile-hero__cover-image[hidden],
-body[data-client-profile-contract] .profile-avatar__image[hidden] {
-  display: none;
-}
-
-body[data-profile-mode="client-edit"] .profile-owner-cover-action,
-body[data-profile-mode="client-edit"] .profile-owner-avatar-action {
-  cursor: pointer;
-}
 
 body[data-profile-mode="client-edit"] .profile-media-feedback {
   grid-column: 3;
@@ -101,93 +66,6 @@ body[data-page="perfil"][data-profile-contract="clean-v1"][data-client-profile-c
 body[data-page="perfil"][data-profile-contract="clean-v1"][data-client-profile-contract]:has(#profile-about:target) #profile-about {
   display: grid;
 }
-
-body[data-profile-mode="client-edit"] .profile-hero__cover {
-  overflow: hidden;
-}
-
-body[data-profile-mode="client-edit"] :is(.profile-owner-cover-action, .profile-owner-avatar-action, .profile-owner-mini-action) {
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-body[data-profile-mode="client-edit"] .profile-owner-cover-action {
-  position: absolute;
-  left: clamp(16px, 2.4vw, 26px);
-  bottom: clamp(16px, 2vw, 22px);
-  z-index: 2;
-  padding: 0 14px;
-}
-
-body[data-profile-mode="client-edit"] .profile-avatar--editable {
-  overflow: visible;
-}
-
-body[data-profile-mode="client-edit"] .profile-avatar--editable > span {
-  pointer-events: none;
-}
-
-body[data-profile-mode="client-edit"] .profile-owner-avatar-action {
-  position: absolute;
-  left: 50%;
-  bottom: -14px;
-  z-index: 2;
-  padding-inline: 11px;
-  transform: translateX(-50%);
-  white-space: nowrap;
-}
-
-body[data-profile-mode="client-edit"] .profile-owner-badge {
-  background: #fff3cf;
-  color: #8a5a00;
-}
-
-body[data-profile-mode="client-edit"] .profile-owner-section-tools {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  min-width: 0;
-  margin-bottom: 4px;
-}
-
-body[data-profile-mode="client-edit"] .profile-owner-section-tools > span {
-  color: #5f7390;
-  font-size: 0.82rem;
-  font-weight: var(--doke-type-weight-emphasis, 700);
-}
-
-body[data-profile-mode="client-edit"] .profile-owner-section-tools > div {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-body[data-profile-mode="client-edit"] .profile-owner-mini-action {
-  padding-inline: 12px;
-}
-
-@media (max-width: 760px) {
-  body[data-profile-mode="client-edit"] .profile-owner-section-tools {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  body[data-profile-mode="client-edit"] .profile-owner-section-tools > div {
-    justify-content: flex-start;
-  }
-}
-
-@media (max-width: 520px) {
-  body[data-profile-mode="client-edit"] .profile-owner-cover-action {
-    left: 14px;
-    bottom: 14px;
-    padding-inline: 11px;
-  }
-}
-
 
 /* Professional journey projection on the owner profile. Shared surface, icon and button
    anatomy remain owned by the component system; this page owns only composition. */
@@ -261,53 +139,3 @@ body[data-profile-mode="client-edit"] .profile-professional-next__action {
 }
 
 
-/* Owner profile refinement: contain long identity names and mirror the professional
-   profile section anatomy without duplicating the shared component contract. */
-body[data-page="perfil"][data-profile-mode="client-edit"] .profile-heading h1 {
-  max-inline-size: clamp(260px, 56vw, 760px);
-  font-size: clamp(1.9rem, 3.2vw, 2.65rem);
-  line-height: 1.02;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-body[data-page="perfil"][data-profile-mode="client-edit"] .profile-owner-section-tools--island {
-  min-height: 82px;
-  margin-bottom: 16px;
-  padding: 18px 20px;
-  border: 1px solid rgba(24, 75, 118, 0.08);
-  border-radius: var(--card-radius-lg, 22px);
-  background: rgba(255, 255, 255, 0.84);
-  box-shadow: 0 10px 26px rgba(24, 75, 118, 0.06);
-}
-
-body[data-page="perfil"][data-profile-mode="client-edit"] .profile-owner-section-tools--island > span {
-  color: var(--color-text, #102d4b);
-  font-size: 1rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-}
-
-body[data-page="perfil"][data-profile-mode="client-edit"] .profile-owner-section-tools--island .doke-btn--primary {
-  gap: 7px;
-}
-
-body[data-page="perfil"][data-profile-mode="client-edit"] .profile-owner-section-tools--island .doke-btn--primary > span {
-  font-size: 1.05rem;
-  line-height: 1;
-}
-
-@media (max-width: 760px) {
-  body[data-page="perfil"][data-profile-mode="client-edit"] .profile-owner-section-tools--island {
-    min-height: 0;
-    padding: 16px;
-  }
-
-  body[data-page="perfil"][data-profile-mode="client-edit"] .profile-heading h1 {
-    max-inline-size: 100%;
-    font-size: clamp(1.7rem, 7vw, 2.2rem);
-    white-space: nowrap;
-    text-overflow: ellipsis;
-  }
-}

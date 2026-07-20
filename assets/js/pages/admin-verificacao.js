@@ -158,14 +158,28 @@
     }
 
     var blob = file.blob;
+    var signedUrl = String(file.signedUrl || file.url || '');
     var metadata = [
       file.fileName || file.name,
       file.type,
       file.size ? Math.round(file.size / 1024) + ' KB' : ''
     ].filter(Boolean).join(' · ');
 
+    if (!(blob instanceof Blob) && signedUrl) {
+      var remoteImage = String(file.type || '').indexOf('image/') === 0;
+      return [
+        '<article class="admin-review-evidence">',
+        '<strong>', escapeHtml(label), '</strong>',
+        '<span class="admin-review-evidence__meta">', escapeHtml(metadata), '</span>',
+        '<button class="admin-review-evidence__preview" type="button" data-review-file-url="', escapeHtml(signedUrl), '" data-review-file-type="', escapeHtml(file.type || ''), '" data-review-file-title="', escapeHtml(label), '">',
+        remoteImage ? '<img src="' + escapeHtml(signedUrl) + '" alt="' + escapeHtml(label) + '">' : '<span>Visualizar PDF</span>',
+        '</button>',
+        '<a class="doke-btn doke-btn--ghost" href="', escapeHtml(signedUrl), '" target="_blank" rel="noopener">Abrir arquivo</a>',
+        '</article>'
+      ].join('');
+    }
     if (!(blob instanceof Blob)) {
-      return '<article class="admin-review-evidence"><strong>' + escapeHtml(label) + '</strong><span class="admin-review-evidence__meta">' + escapeHtml(metadata || 'Arquivo legado indisponível') + '</span></article>';
+      return '<article class="admin-review-evidence"><strong>' + escapeHtml(label) + '</strong><span class="admin-review-evidence__meta">' + escapeHtml(metadata || 'Arquivo indisponível') + '</span></article>';
     }
 
     var url = URL.createObjectURL(blob);
@@ -204,11 +218,25 @@
 
     var files = [payload.documentFront, payload.documentBack, payload.selfieDocument, payload.proofOfAddress]
       .concat(business ? [payload.businessDocument] : []);
-    var fullEvidence = files.every(function (file) { return file && file.blob instanceof Blob; });
+    var persistedEvidence = files.every(function (file) {
+      return file && (file.path || file.storagePath || file.objectPath || file.blob instanceof Blob || file.signedUrl);
+    });
+    var reviewableEvidence = files.every(function (file) {
+      return file && (file.blob instanceof Blob || file.signedUrl);
+    });
+    var previewFailures = files.filter(function (file) {
+      return file && (file.path || file.storagePath || file.objectPath) && !(file.blob instanceof Blob) && !file.signedUrl;
+    });
     var notice = q('[data-admin-review-notice]');
-    notice.hidden = fullEvidence;
+    notice.hidden = persistedEvidence && reviewableEvidence;
     notice.className = 'admin-review-notice';
-    notice.textContent = fullEvidence ? '' : 'Este envio é anterior à persistência documental completa. Não aprove sem revisar os arquivos originais.';
+    if (!persistedEvidence) {
+      notice.textContent = 'Este envio não possui todos os caminhos dos arquivos no Storage. Solicite um novo envio antes de aprovar.';
+    } else if (!reviewableEvidence) {
+      notice.textContent = 'Os arquivos foram enviados corretamente, mas o suporte não conseguiu abrir ' + previewFailures.length + ' evidência(s). Revise as policies do bucket professional-verification-media e tente novamente.';
+    } else {
+      notice.textContent = '';
+    }
 
     q('[data-admin-review-evidence]').innerHTML = fileCard(payload.documentFront, 'Frente do documento')
       + fileCard(payload.documentBack, 'Verso do documento')
@@ -223,7 +251,7 @@
       '<div><dt>Última atualização</dt><dd>', escapeHtml(formatDate(verification.updatedAt)), '</dd></div>'
     ].join('');
 
-    q('[data-admin-review-approve]').hidden = verification.status !== 'under_review' || !fullEvidence;
+    q('[data-admin-review-approve]').hidden = verification.status !== 'under_review' || !reviewableEvidence;
     q('[data-admin-review-reject]').hidden = verification.status !== 'under_review';
     setSurface('ready');
     readyPage();

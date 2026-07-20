@@ -205,6 +205,30 @@
       return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'medium', timeStyle: 'short' }).format(date);
     }
 
+    function resolveProfileDestination(context) {
+      var registry = window.DokeNavigationRegistry;
+      if (!registry || typeof registry.resolveProfileDestination !== 'function') return null;
+      return registry.resolveProfileDestination(context || {});
+    }
+
+    function navigateToDestination(destination) {
+      if (!destination || !destination.href) return Promise.resolve(false);
+      if (destination.state !== 'professional_active' && destination.state !== 'onboarding_incomplete') {
+        return Promise.resolve(false);
+      }
+      var currentPage = String(window.location.pathname || '').split('/').pop() || '';
+      if (currentPage === destination.href) return Promise.resolve(false);
+      var navigate = window.Doke && window.Doke.navigation && window.Doke.navigation.go || window.DokeNavigate;
+      if (typeof navigate === 'function') {
+        return Promise.resolve(navigate(destination.href, {
+          replace: true,
+          source: 'verificacao-profissional-' + destination.state
+        })).then(function () { return true; });
+      }
+      window.location.replace(destination.href);
+      return Promise.resolve(true);
+    }
+
     function renderStatus(verification) {
       currentVerification = verification || null;
       var status = verification && verification.status || 'not_started';
@@ -372,14 +396,38 @@
     });
 
     resumeButton && resumeButton.addEventListener('click', async function () {
+      if (!service || typeof service.reopenRejected !== 'function' || resumeButton.disabled) return;
+      resumeButton.disabled = true;
+      resumeButton.setAttribute('aria-busy', 'true');
+      var originalLabel = resumeButton.textContent;
+      resumeButton.textContent = 'Preparando correção…';
       try {
         currentVerification = await service.reopenRejected();
         hydrate(currentVerification);
+        Array.from(form ? form.querySelectorAll('input[type="file"]') : []).forEach(function (input) {
+          delete input.dataset.persistedFileName;
+          delete input.dataset.persistedFileSize;
+          delete input.dataset.persistedFileType;
+          delete input._dokePersistedBlob;
+          input.value = '';
+          var card = input.closest('.professional-verification-upload-card');
+          var label = card && card.querySelector('[data-file-label]');
+          if (card) card.classList.remove('has-file');
+          if (label && label.dataset.defaultLabel) label.textContent = label.dataset.defaultLabel;
+        });
         syncConditionalFields();
-        maxReachedStep = Math.max(1, Number(currentVerification && currentVerification.currentStep || 1));
-        setStep(Math.min(maxReachedStep, 3), { skipSave: true });
+        maxReachedStep = 1;
+        setStep(1, { skipSave: true });
         renderStatus(currentVerification);
-      } catch (error) { handleError(error); }
+        showFeedback('Revise os dados e selecione novamente todos os documentos.', false);
+        if (formLayout && formLayout.scrollIntoView) formLayout.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      } catch (error) {
+        handleError(error);
+        resumeButton.disabled = false;
+      } finally {
+        resumeButton.removeAttribute('aria-busy');
+        resumeButton.textContent = originalLabel;
+      }
     });
 
     try {
@@ -387,6 +435,8 @@
       var context = await service.getContext();
       professionalProfile = context.professionalProfile;
       currentVerification = context.verification;
+      var destination = resolveProfileDestination(context);
+      if (await navigateToDestination(destination)) return;
       if (currentVerification) hydrate(currentVerification);
       else {
         var user = context.user || {};

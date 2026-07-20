@@ -1,0 +1,177 @@
+/*
+ * Doke Web - Profile Owner Controls
+ * Responsibility: shared owner-only controls for professional and client profiles.
+ * Page CSS may position owner sections, but must not redefine media controls,
+ * edit badges, section-tool anatomy or canonical action variants.
+ */
+
+:is(body[data-profile-mode="owner-edit"], body[data-profile-mode="client-edit"]) .profile-owner-avatar-stack {
+  position: relative;
+  z-index: 2;
+  display: block;
+  inline-size: fit-content;
+  min-inline-size: 0;
+}
+
+:is(body[data-profile-mode="owner-edit"], body[data-profile-mode="client-edit"]) .profile-avatar--editable {
+  overflow: hidden;
+}
+
+:is(body[data-profile-mode="owner-edit"], body[data-profile-mode="client-edit"]) .profile-avatar--editable > span {
+  pointer-events: none;
+}
+
+:is(body[data-profile-mode="owner-edit"], body[data-profile-mode="client-edit"]) :is(
+  .profile-owner-cover-action,
+  .profile-owner-avatar-action,
+  .profile-owner-mini-action
+) {
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+:is(body[data-profile-mode="owner-edit"], body[data-profile-mode="client-edit"]) .profile-owner-badge {
+  background: #fff3cf;
+  color: #8a5a00;
+}
+
+:is(body[data-profile-mode="owner-edit"], body[data-profile-mode="client-edit"]) :is(
+  .profile-owner-cover-action,
+  .profile-owner-avatar-action
+).doke-icon-btn {
+  inline-size: 38px;
+  block-size: 38px;
+  min-inline-size: 38px;
+  min-block-size: 38px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-full, 999px);
+  background: rgba(255, 255, 255, 0.96);
+  color: var(--color-primary-strong, #184a76);
+  box-shadow: var(--doke-white-control-shadow, 0 8px 20px rgba(16, 59, 99, 0.16));
+}
+
+:is(body[data-profile-mode="owner-edit"], body[data-profile-mode="client-edit"]) :is(
+  .profile-owner-cover-action,
+  .profile-owner-avatar-action
+).doke-icon-btn:is(:hover, :focus-visible) {
+  background: var(--color-surface, #fff);
+  color: var(--color-primary-strong, #184a76);
+}
+
+:is(body[data-profile-mode="owner-edit"], body[data-profile-mode="client-edit"]) :is(
+  .profile-owner-cover-action,
+  .profile-owner-avatar-action
+).doke-icon-btn:focus-visible {
+  outline: 0;
+  box-shadow: var(--doke-white-control-shadow-focus, 0 0 0 4px rgba(42, 95, 144, 0.18));
+}
+
+:is(body[data-profile-mode="owner-edit"], body[data-profile-mode="client-edit"]) :is(
+  .profile-owner-cover-action,
+  .profile-owner-avatar-action
+).doke-icon-btn svg {
+  inline-size: 18px;
+  block-size: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+:is(body[data-profile-mode="owner-edit"], body[data-profile-mode="client-edit"]) .profile-owner-cover-action.doke-icon-btn {
+  position: absolute;
+  right: clamp(14px, 2vw, 22px);
+  bottom: clamp(14px, 2vw, 22px);
+  z-index: 3;
+}
+
+:is(body[data-profile-mode="owner-edit"], body[data-profile-mode="client-edit"]) .profile-owner-avatar-action.doke-icon-btn {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  z-index: 3;
+}
+
+:is(body[data-profile-mode="owner-edit"], body[data-profile-mode="client-edit"]) .profile-owner-section-tools {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-inline-size: 0;
+  margin-block-end: 4px;
+}
+
+:is(body[data-profile-mode="owner-edit"], body[data-profile-mode="client-edit"]) .profile-owner-section-tools > span {
+  color: var(--color-text-soft, #5f7390);
+  font-size: 0.82rem;
+  font-weight: var(--doke-type-weight-emphasis, 700);
+}
+
+:is(body[data-profile-mode="owner-edit"], body[data-profile-mode="client-edit"]) .profile-owner-section-tools > div {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+:is(body[data-profile-mode="owner-edit"], body[data-profile-mode="client-edit"]) .profile-owner-section-tools--island {
+  min-block-size: 82px;
+  margin-block-end: 16px;
+  padding: 18px 20px;
+  border: 1px solid var(--doke-card-border, rgba(24, 75, 118, 0.10));
+  border-radius: var(--card-radius-lg, 22px);
+  background: rgba(255, 255, 255, 0.84);
+  box-shadow: 0 10px 26px rgba(24, 75, 118, 0.06);
+}
+
+:is(body[data-profile-mode="owner-edit"], body[data-profile-mode="client-edit"]) .profile-owner-section-tools--island > span {
+  color: var(--color-text, #102d4b);
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+:is(body[data-profile-mode="owner-edit"], body[data-profile-mode="client-edit"]) .profile-owner-section-tools--island .doke-btn--primary {
+  gap: 7px;
+}
+
+:is(body[data-profile-mode="owner-edit"], body[data-profile-mode="client-edit"]) .profile-owner-section-tools--island .doke-btn--primary > span {
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+@media (max-width: 760px) {
+  :is(body[data-profile-mode="owner-edit"], body[data-profile-mode="client-edit"]) .profile-owner-section-tools {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  :is(body[data-profile-mode="owner-edit"], body[data-profile-mode="client-edit"]) .profile-owner-section-tools > div {
+    justify-content: flex-start;
+  }
+
+  :is(body[data-profile-mode="owner-edit"], body[data-profile-mode="client-edit"]) .profile-owner-section-tools--island {
+    min-block-size: 0;
+    padding: 16px;
+  }
+}
+
+@media (max-width: 520px) {
+  :is(body[data-profile-mode="owner-edit"], body[data-profile-mode="client-edit"]) :is(
+    .profile-owner-cover-action,
+    .profile-owner-avatar-action
+  ).doke-icon-btn {
+    inline-size: 34px;
+    block-size: 34px;
+    min-inline-size: 34px;
+    min-block-size: 34px;
+  }
+
+  :is(body[data-profile-mode="owner-edit"], body[data-profile-mode="client-edit"]) .profile-owner-cover-action.doke-icon-btn {
+    right: 12px;
+    bottom: 12px;
+  }
+}

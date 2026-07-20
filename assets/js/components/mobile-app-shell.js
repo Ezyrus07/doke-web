@@ -115,7 +115,10 @@
   function ownerProfileHref() {
     var user = currentUser();
     if (!user || !user.id) return 'meu-perfil.html';
-    return user.ownerProfileUrl || user.ownerUrl || (user.role === 'professional' ? 'perfil-profissional.html' : 'meu-perfil.html');
+    if (NAVIGATION_REGISTRY && typeof NAVIGATION_REGISTRY.getOwnerProfileUrl === 'function') {
+      return NAVIGATION_REGISTRY.getOwnerProfileUrl(user);
+    }
+    return user.role === 'professional' ? 'perfil-profissional.html' : 'meu-perfil.html';
   }
 
   function accountState() {

@@ -41,7 +41,23 @@
   const iconFor = (payload) => ({ mentions: '@', reactions: '♥', events: '◷', messages: '●' }[typeGroup(payload)] || '!');
   const markAsRead = (id) => { const items=readCenter(); const item=items.find((entry)=>String(entry.id)===String(id)); if(item)item.read=true; writeCenter(items); return item||null; };
   const dismiss = (id) => { const items=readCenter(); const item=items.find((entry)=>String(entry.id)===String(id)); if(item)item.dismissed=true; writeCenter(items); return item||null; };
-  const syncGlobalBadges = (source=readCenter()) => { const count=source.filter((item)=>!item.read&&!item.dismissed&&isForCurrentUser(item)).length; document.querySelectorAll('[data-notifications-unread-count]').forEach((node)=>{node.textContent=String(count);node.hidden=count===0;}); document.querySelectorAll('a[href*="notificacoes.html"], button[data-header-nav="notificacoes.html"], [data-header-nav="notificacoes.html"]').forEach((trigger)=>{let badge=trigger.querySelector(':scope > [data-notifications-unread-count]');if(!badge){badge=document.createElement('span');badge.className='doke-global-notification-badge';badge.dataset.notificationsUnreadCount='';badge.setAttribute('aria-label','Notificações não lidas');trigger.appendChild(badge);}badge.textContent=count>99?'99+':String(count);badge.hidden=count===0;}); document.documentElement.style.setProperty('--doke-notifications-unread',String(count)); };
+  const syncGlobalBadges = (source=readCenter()) => {
+    const count = source.filter((item) => !item.read && !item.dismissed && isForCurrentUser(item)).length;
+
+    // A sidebar/header already expose the canonical blue notification counter.
+    // Remove the legacy red overlay instead of creating a second authority.
+    document.querySelectorAll('.doke-global-notification-badge').forEach((node) => node.remove());
+    document.querySelectorAll('[data-notifications-unread-count]').forEach((node) => {
+      if (node.classList.contains('doke-global-notification-badge')) {
+        node.remove();
+        return;
+      }
+      node.textContent = String(count);
+      node.hidden = count === 0;
+    });
+
+    document.documentElement.style.setProperty('--doke-notifications-unread', String(count));
+  };
   const openPayload = (payload) => { markAsRead(payload.id); const target=String(payload.targetUrl||'').trim(); if(target)window.location.href=target; };
   const playSound = (priority) => { if(priority==='silent'||!readPrefs().sound)return; try { const AudioContext=window.AudioContext||window.webkitAudioContext; if(!AudioContext)return; const ctx=new AudioContext(); const oscillator=ctx.createOscillator(); const gain=ctx.createGain(); oscillator.frequency.value=priority==='high'?760:620; gain.gain.setValueAtTime(.0001,ctx.currentTime); gain.gain.exponentialRampToValueAtTime(.045,ctx.currentTime+.015); gain.gain.exponentialRampToValueAtTime(.0001,ctx.currentTime+.14); oscillator.connect(gain).connect(ctx.destination); oscillator.start(); oscillator.stop(ctx.currentTime+.15); } catch(_error){} };
   const queueDigest = (payload) => { const queue=safeParse(localStorage.getItem(DIGEST_KEY),[]); const items=Array.isArray(queue)?queue:[]; items.push({id:payload.id,title:payload.title,type:typeGroup(payload),createdAt:payload.createdAt}); localStorage.setItem(DIGEST_KEY,JSON.stringify(items.slice(-100))); };

@@ -44,8 +44,16 @@ function initAccountOnboarding(signal) {
     setLocation('', '');
   };
 
+  const setPending = () => {
+    overlay.dataset.onboardingVisibility = 'pending';
+    overlay.hidden = true;
+    overlay.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('has-account-onboarding');
+  };
+
   const setOpen = (open) => {
     const wasHidden = overlay.hidden;
+    overlay.dataset.onboardingVisibility = open ? 'open' : 'closed';
     overlay.hidden = !open;
     overlay.setAttribute('aria-hidden', String(!open));
     document.body.classList.toggle('has-account-onboarding', open);
@@ -89,12 +97,14 @@ function initAccountOnboarding(signal) {
     const service = window.Doke?.services?.onboarding;
     if (!service?.resolveState || submitting) return;
     const version = ++refreshVersion;
+    setPending();
     try {
       const state = await service.resolveState();
       if (version !== refreshVersion || signal.aborted) return;
       if (state.shouldShow) populate(state);
       setOpen(Boolean(state.shouldShow));
     } catch (error) {
+      if (version === refreshVersion && !signal.aborted) setOpen(false);
       if (!signal.aborted) console.error('[Doke:onboarding:resolve]', error);
     }
   };

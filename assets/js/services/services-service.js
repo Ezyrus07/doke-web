@@ -75,6 +75,8 @@
         providerId: actor.id || '',
         professionalProfileId: professionalProfile.id || '',
         providerName: actor.name || actor.displayName || payload && payload.providerName || 'Profissional Doke',
+        providerHandle: actor.handle || actor.username || payload && (payload.providerHandle || payload.providerUsername) || '',
+        providerUsername: actor.handle || actor.username || payload && (payload.providerUsername || payload.providerHandle) || '',
         providerInitials: actor.initials || actor.avatarInitials || payload && payload.providerInitials || 'DK',
         verified: result.verification && result.verification.status === 'verified',
         status: payload && payload.status === 'inactive' ? 'inactive' : 'active',

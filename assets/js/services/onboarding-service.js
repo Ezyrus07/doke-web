@@ -28,6 +28,42 @@
     );
   }
 
+  function syncCompletedSession(user, remoteState) {
+    if (!user || !remoteState || remoteState.status !== 'completed') return user;
+    var nextUser = Object.assign({}, user, {
+      onboardingStatus: 'completed',
+      onboardingCompletedAt: remoteState.completedAt || user.onboardingCompletedAt || '',
+      city: remoteState.profile && remoteState.profile.city || user.city || '',
+      state: remoteState.profile && remoteState.profile.state || user.state || ''
+    });
+    if (window.Doke?.session?.setCurrentUser) window.Doke.session.setCurrentUser(nextUser);
+    return nextUser;
+  }
+
+  function resolveRemoteState(user) {
+    var client = window.DokeSupabase && typeof window.DokeSupabase.getClient === 'function'
+      ? window.DokeSupabase.getClient()
+      : null;
+    var provider = String(window.Doke?.session?.getSession?.()?.provider || '').toLowerCase();
+    if (provider !== 'supabase' || !client || !user || !user.id) return Promise.resolve(null);
+
+    return client.rpc('get_account_onboarding_state').then(function (result) {
+      if (result.error) throw result.error;
+      var data = result.data || {};
+      return {
+        status: VALID_STATUSES.includes(data.onboardingStatus) ? data.onboardingStatus : 'not_started',
+        completedAt: data.onboardingCompletedAt || '',
+        profile: data.profile || null
+      };
+    }).catch(function (error) {
+      var message = String(error && error.message || '');
+      if (/function .*get_account_onboarding_state.*does not exist|schema cache/i.test(message)) {
+        throw new Error('A migration 021 do estado de onboarding ainda não foi aplicada no Supabase.');
+      }
+      throw error;
+    });
+  }
+
   function resolveState() {
     var user = currentUser();
     var profileService = services.profile;
@@ -38,15 +74,23 @@
       return Promise.reject(new Error('Serviço de perfil indisponível.'));
     }
 
-    return Promise.resolve(profileService.getCurrentProfile()).then(function (profile) {
-      var status = normalizedStatus(user);
-      var legacyComplete = status !== 'completed' && hasCompleteBaseProfile(user, profile);
+    return Promise.all([
+      Promise.resolve(profileService.getCurrentProfile()),
+      resolveRemoteState(user)
+    ]).then(function (values) {
+      var profile = values[0] || null;
+      var remoteState = values[1];
+      var status = remoteState ? remoteState.status : normalizedStatus(user);
+      if (remoteState && remoteState.profile) profile = Object.assign({}, profile || {}, remoteState.profile);
+      var resolvedUser = syncCompletedSession(user, remoteState);
+      var legacyComplete = status !== 'completed' && hasCompleteBaseProfile(resolvedUser, profile);
+      var finalStatus = status === 'completed' || legacyComplete ? 'completed' : status;
       return {
         authenticated: true,
-        status: status === 'completed' || legacyComplete ? 'completed' : status,
-        shouldShow: status !== 'completed' && !legacyComplete,
-        user: user,
-        profile: profile || null
+        status: finalStatus,
+        shouldShow: finalStatus !== 'completed',
+        user: resolvedUser,
+        profile: profile
       };
     });
   }

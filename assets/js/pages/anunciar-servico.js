@@ -54,8 +54,63 @@
       if (submitStateIcon) submitStateIcon.classList.remove('is-pending');
     };
     const totalSteps = Math.max(1, panels.length);
+    const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
+    const ALLOWED_UPLOAD_TYPES = /^(?:image\/png|image\/jpeg|image\/webp|image\/gif)$/i;
     let currentStep = 1;
     let highestValidatedStep = 0;
+
+    const formatFileSize = (bytes) => {
+      const value = Number(bytes || 0);
+      if (!value) return '0 KB';
+      if (value < 1024 * 1024) return `${Math.max(1, Math.round(value / 1024))} KB`;
+      return `${(value / (1024 * 1024)).toFixed(1).replace('.0', '')} MB`;
+    };
+
+    const syncUploadCard = (input, options = {}) => {
+      if (!input) return true;
+      const card = input.closest('[data-upload-card], .post-service-upload-card');
+      const status = card?.querySelector('[data-upload-status]');
+      const file = input.files?.[0] || null;
+      card?.classList.remove('has-file');
+      if (!file) {
+        card?.classList.remove('has-error');
+        input.removeAttribute('aria-invalid');
+        if (status) status.textContent = 'Selecionar imagem';
+        return true;
+      }
+      let message = '';
+      if (!ALLOWED_UPLOAD_TYPES.test(String(file.type || ''))) message = 'Use PNG, JPG, WEBP ou GIF.';
+      else if (Number(file.size || 0) > MAX_UPLOAD_BYTES) message = 'A imagem deve ter no máximo 5 MB.';
+      if (message) {
+        card?.classList.add('has-error');
+        input.setAttribute('aria-invalid', 'true');
+        if (status) status.textContent = message;
+        if (options.clearInvalid !== false) input.value = '';
+        return false;
+      }
+      card?.classList.remove('has-error');
+      card?.classList.add('has-file');
+      input.removeAttribute('aria-invalid');
+      if (status) status.textContent = `${file.name} · ${formatFileSize(file.size)}`;
+      return true;
+    };
+
+    const syncAllUploadCards = () => {
+      root.querySelectorAll('[data-upload-input], .post-service-upload-card input[type="file"]').forEach((input) => syncUploadCard(input, { clearInvalid: false }));
+    };
+
+    const showSubmissionError = (error) => {
+      const message = root.querySelector('[data-step-error="4"]');
+      const text = error?.message || 'Não foi possível publicar o anúncio. Revise os dados e tente novamente.';
+      if (message) {
+        message.textContent = text;
+        message.hidden = false;
+        message.setAttribute('tabindex', '-1');
+        message.focus({ preventScroll: true });
+        message.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      }
+      root.dataset.submitState = 'error';
+    };
 
     const applyEditPresentation = () => {
       if (root.dataset.serviceEditMode !== 'true') return;
@@ -135,6 +190,9 @@
       }
 
       if (step === 3) {
+        const uploadInputs = [...root.querySelectorAll('[data-upload-input], .post-service-upload-card input[type="file"]')];
+        const invalidUpload = uploadInputs.find((input) => input.files?.length && !syncUploadCard(input));
+        if (invalidUpload) return failStep(step, 'Revise as imagens selecionadas antes de continuar.', invalidUpload);
         const mainImage = root.querySelector('[name="mainImage"]');
         const hasExistingImage = Boolean(root.dataset.existingServiceImage);
         if (!mainImage?.files?.length && !hasExistingImage) return failStep(step, 'Adicione uma imagem principal real do serviço.', mainImage);
@@ -231,14 +289,19 @@
       });
     });
 
-    const counterSource = root.querySelector('[data-count-source]');
-    const counterValue = root.querySelector('[data-count-value]');
-    const updateCount = () => {
-      if (counterValue && counterSource) counterValue.textContent = String(counterSource.value.length);
+    const counterSources = [...root.querySelectorAll('[data-count-source]')];
+    const updateCharacterCount = (source) => {
+      const counterValue = source.closest('.doke-field')?.querySelector('[data-count-value]');
+      if (!counterValue) return;
+      counterValue.textContent = String(source.value.length);
     };
-    counterSource?.addEventListener('input', () => {
-      updateCount();
-      updateReview();
+    const updateCharacterCounts = () => counterSources.forEach(updateCharacterCount);
+    counterSources.forEach((source) => {
+      source.addEventListener('input', () => {
+        updateCharacterCount(source);
+        updateReview();
+      });
+      source.addEventListener('change', () => updateCharacterCount(source));
     });
 
     const sources = [...root.querySelectorAll('[data-summary-source]')];
@@ -325,6 +388,12 @@
       source.addEventListener('input', updateReview);
       source.addEventListener('change', updateReview);
     });
+    root.querySelectorAll('[data-upload-input], .post-service-upload-card input[type="file"]').forEach((input) => {
+      input.addEventListener('change', () => {
+        syncUploadCard(input);
+        updateReview();
+      });
+    });
     root.querySelectorAll('[data-post-check]').forEach((button) => button.addEventListener('click', () => window.setTimeout(updateReview, 0)));
     window.addEventListener('doke:service-media-changed', updateReview);
 
@@ -337,7 +406,12 @@
         if (!validateStep(currentStep)) return;
         updateReview();
         const experience = window.Doke?.serviceFormExperience;
-        if (!experience?.submit) return;
+        if (!experience?.submit) {
+          showSubmissionError(new Error('O serviço de publicação não foi carregado. Atualize a página e tente novamente.'));
+          return;
+        }
+        clearStepError(4);
+        delete root.dataset.submitState;
         nextButton.disabled = true;
         showSubmitState('pending');
         experience.submit()
@@ -346,6 +420,7 @@
           })
           .catch((error) => {
             hideSubmitState();
+            showSubmissionError(error);
             window.dispatchEvent(new CustomEvent('doke:service-submit-error', { detail: { error } }));
           })
           .finally(() => {
@@ -382,20 +457,23 @@
     window.addEventListener('doke:service-edit-loaded', () => {
       root.dataset.serviceEditMode = 'true';
       applyEditPresentation();
-      updateCount();
+      updateCharacterCounts();
+      syncAllUploadCards();
       updateReview();
       setStep(1);
     });
 
     window.addEventListener('doke:service-form-reset', () => {
       currentStep = 1;
-      updateCount();
+      updateCharacterCounts();
+      syncAllUploadCards();
       updateReview();
       setStep(1);
     });
 
     applyEditPresentation();
-    updateCount();
+    updateCharacterCounts();
+    syncAllUploadCards();
     updateReview();
     const restoredStep = Number(window.Doke?.serviceFormExperience?.restoredStep || 1);
     setStep(restoredStep > 1 && validateThrough(restoredStep) ? restoredStep : 1);
@@ -554,6 +632,7 @@
         return redirectDeniedAccess(access, result, root, hydration);
       }
 
+      window.DokeInitServiceQuoteTemplateBuilder?.();
       const formExperience = window.DokeInitServiceForm?.();
       if (!formExperience) {
         throw new Error('O controller do formulário de serviço não foi registrado.');

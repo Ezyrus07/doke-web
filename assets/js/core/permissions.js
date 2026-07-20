@@ -401,6 +401,9 @@
     var verificationStatus = normalizeText(
       verification && verification.status || profile && profile.verificationStatus
     ).toLowerCase();
+    var documentStatus = normalizeText(
+      verification && verification.documentStatus || profile && profile.documentStatus
+    ).toLowerCase();
 
     var result = {
       action: normalizedAction,
@@ -411,7 +414,8 @@
       verification: verification,
       role: role,
       profileStatus: profileStatus,
-      verificationStatus: verificationStatus
+      verificationStatus: verificationStatus,
+      documentStatus: documentStatus
     };
 
     if (!user || !normalizeId(user.id || user.userId)) return result;
@@ -431,8 +435,13 @@
       result.reason = PROFESSIONAL_ACCESS_REASONS.VERIFICATION_REJECTED;
       return result;
     }
-    if (profileStatus !== 'active' || verificationStatus !== 'verified') {
-      result.reason = ['submitted', 'under_review'].indexOf(verificationStatus) >= 0
+    if (documentStatus === 'rejected') {
+      result.reason = PROFESSIONAL_ACCESS_REASONS.VERIFICATION_REJECTED;
+      return result;
+    }
+    if (profileStatus !== 'active' || verificationStatus !== 'verified' || (documentStatus && documentStatus !== 'verified')) {
+      result.reason = ['submitted', 'under_review', 'pending'].indexOf(verificationStatus) >= 0
+        || ['submitted', 'under_review', 'pending'].indexOf(documentStatus) >= 0
         ? PROFESSIONAL_ACCESS_REASONS.VERIFICATION_PENDING
         : PROFESSIONAL_ACCESS_REASONS.VERIFICATION_REQUIRED;
       return result;

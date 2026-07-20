@@ -17,11 +17,15 @@
   var PROVIDER_ATTRIBUTE = 'data-doke-notifications-provider';
   var REMOTE_TABLE = 'notifications';
   var REMOTE_CREATE_RPC = 'create_transaction_notification';
+  var REMOTE_UPDATE_RPC = 'update_own_notification_state';
   var supabaseClient = null;
   var supabaseClientAttempted = false;
   var lastRemoteError = null;
   var realtimeChannel = null;
   var realtimeUserId = '';
+  var remoteRefreshTimer = null;
+  var remoteRefreshInFlight = false;
+  var REMOTE_REFRESH_INTERVAL_MS = 8000;
 
   function clone(value) {
     if (value == null) return value;
@@ -378,6 +382,14 @@
     } catch (error) { /* Event delivery is best-effort outside the browser. */ }
   }
 
+  function dispatchSynced(items, source) {
+    try {
+      document.dispatchEvent(new CustomEvent('doke:notifications-synced', {
+        detail: { items: clone(items || []), source: source || 'remote' }
+      }));
+    } catch (error) { /* Event delivery is best-effort outside the browser. */ }
+  }
+
   function stopRealtime() {
     var client = supabaseClient;
     if (realtimeChannel && client && typeof client.removeChannel === 'function') {
@@ -494,9 +506,14 @@
       }
       if (patch && patch.dismissed === false) payload.dismissed_at = null;
 
-      return client.from(REMOTE_TABLE).update(payload).eq('external_id', notificationId).select('*').maybeSingle().then(function (result) {
+      return client.rpc(REMOTE_UPDATE_RPC, {
+        p_notification_ref: notificationId,
+        p_mark_read: patch && patch.read === true ? true : (patch && patch.read === false ? false : null),
+        p_dismiss: patch && patch.dismissed === true ? true : (patch && patch.dismissed === false ? false : null)
+      }).then(function (result) {
         if (result.error) throw result.error;
-        return result.data ? mapRemoteRow(result.data) : null;
+        var row = Array.isArray(result.data) ? result.data[0] : result.data;
+        return row ? mapRemoteRow(row) : null;
       });
     });
   }
@@ -549,6 +566,7 @@
       return baseTask.then(function (base) {
         cache = mergeById(Array.isArray(base) ? base : [], local);
         syncGlobalBadges(cache);
+        dispatchSynced(cache, 'remote');
         return clone(cache);
       });
     }
@@ -805,9 +823,29 @@
     clearLocal: function () { writeLocal([]); }
   });
 
+  function refreshRemoteNotifications(reason) {
+    if (remoteRefreshInFlight || !getSupabaseClient()) return Promise.resolve([]);
+    remoteRefreshInFlight = true;
+    cache = null;
+    return load({ fresh: true }).catch(function (error) {
+      warnRemote(error, reason || 'sincronização de notificações');
+      return [];
+    }).finally(function () {
+      remoteRefreshInFlight = false;
+    });
+  }
+
+  function startRemoteRefreshLoop() {
+    if (remoteRefreshTimer) root.clearInterval(remoteRefreshTimer);
+    remoteRefreshTimer = root.setInterval(function () {
+      if (document.visibilityState === 'visible') refreshRemoteNotifications('atualização periódica');
+    }, REMOTE_REFRESH_INTERVAL_MS);
+  }
+
   function bootstrapRemoteNotifications() {
     if (!getSupabaseClient()) return;
-    load({ fresh: true }).catch(function (error) { warnRemote(error, 'bootstrap de notificações'); });
+    refreshRemoteNotifications('bootstrap de notificações');
+    startRemoteRefreshLoop();
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bootstrapRemoteNotifications, { once: true });
@@ -817,5 +855,12 @@
     stopRealtime();
     cache = null;
     root.setTimeout(bootstrapRemoteNotifications, 0);
+  });
+
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible') refreshRemoteNotifications('retorno à aba');
+  });
+  root.addEventListener('focus', function () {
+    refreshRemoteNotifications('retorno ao navegador');
   });
 })();

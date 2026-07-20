@@ -438,19 +438,26 @@ const getOwnerProfileHref = (user = getCurrentSessionUser()) => {
 
   if (!user || !user.id) return OWNER_PROFILE_PATH.replace('/', '');
   const role = String(user.role || user.type || '').trim().toLowerCase();
-  return String(user.ownerProfileUrl || user.ownerUrl || (role === 'professional' ? 'perfil-profissional.html' : 'meu-perfil.html')).replace(/^\//, '');
+  return role === 'professional' ? 'perfil-profissional.html' : 'meu-perfil.html';
 };
 
-const isAccountProfileNavigationLink = (link) => {
-  if (!link || link.tagName !== 'A') return false;
-  const text = (link.textContent || '').trim().toLowerCase();
+const isAccountProfileNavigationTarget = (target) => {
+  if (!target) return false;
+  const text = (target.textContent || '').trim().toLowerCase();
+  const label = (target.getAttribute?.('aria-label') || '').trim().toLowerCase();
+  const explicitTarget = target.getAttribute?.('data-header-nav') || target.getAttribute?.('href') || '';
+  const targetPage = String(explicitTarget).split('?')[0].split('#')[0].split('/').pop()?.toLowerCase() || '';
   return (
-    link.classList.contains('nav-link--profile') ||
-    link.getAttribute('data-nav-id') === 'profile' ||
-    link.classList.contains('doke-mobile-bottom-nav__item--profile') ||
-    link.getAttribute('data-owner-profile-link') === 'true' ||
+    target.classList?.contains('nav-link--profile') ||
+    target.getAttribute?.('data-nav-id') === 'profile' ||
+    target.classList?.contains('bottom-nav__item--profile') ||
+    target.classList?.contains('doke-mobile-bottom-nav__item--profile') ||
+    target.getAttribute?.('data-owner-profile-link') === 'true' ||
+    targetPage === 'meu-perfil.html' ||
     text.includes('meu perfil') ||
-    text === 'perfil'
+    text === 'perfil' ||
+    label === 'abrir conta' ||
+    label === 'meu perfil'
   );
 };
 
@@ -471,12 +478,13 @@ const ensureOwnerProfileLinkLabel = (link) => {
 
 const syncOwnerProfileLinks = () => {
   const href = getOwnerProfileHref();
-  document.querySelectorAll('.nav-link--profile, [data-nav-id="profile"], .doke-mobile-bottom-nav__item--profile, .profile-dropdown__item, [data-owner-profile-link="true"]').forEach((link) => {
-    if (!isAccountProfileNavigationLink(link)) return;
-    link.setAttribute('href', href);
-    link.setAttribute('data-owner-profile-link', 'true');
-    ensureOwnerProfileLinkLabel(link);
-    warmInternalViewLink(link);
+  document.querySelectorAll('.nav-link--profile, [data-nav-id="profile"], .bottom-nav__item--profile, .doke-mobile-bottom-nav__item--profile, .profile-dropdown__item, [data-owner-profile-link="true"], a[href="meu-perfil.html"], [data-header-nav="meu-perfil.html"]').forEach((target) => {
+    if (!isAccountProfileNavigationTarget(target)) return;
+    if (target.tagName === 'A') target.setAttribute('href', href);
+    if (target.hasAttribute('data-header-nav')) target.setAttribute('data-header-nav', href);
+    target.setAttribute('data-owner-profile-link', 'true');
+    ensureOwnerProfileLinkLabel(target);
+    if (target.tagName === 'A') warmInternalViewLink(target);
   });
 };
 
@@ -1088,6 +1096,7 @@ const normalizeHeaderActionLabel = (value) =>
 
 const resolveHeaderActionHref = (trigger) => {
   if (!trigger) return "";
+  if (isAccountProfileNavigationTarget(trigger)) return getOwnerProfileHref();
   const explicitHref = trigger.getAttribute("data-header-nav") || trigger.getAttribute("href");
   if (explicitHref) return explicitHref;
 
@@ -2312,7 +2321,7 @@ if (!navigationLifecycle) {
 document.addEventListener("click", (event) => {
   if (!(event.target instanceof Element)) return;
   const link = event.target.closest('a[href]');
-  if (!isAccountProfileNavigationLink(link)) return;
+  if (!isAccountProfileNavigationTarget(link)) return;
   const href = getOwnerProfileHref();
   if (!href || link.getAttribute('href') === href) return;
   link.setAttribute('href', href);
@@ -2439,7 +2448,7 @@ document.addEventListener("keydown", (event) => {
 
 initializeCurrentView();
 
-['doke:notification-created', 'doke:notification-updated', 'doke:message-sent', 'doke:order-created', 'doke:order-status-changed', 'doke:auth-session-change', 'doke:auth-surface-ready'].forEach((eventName) => {
+['doke:notification-created', 'doke:notification-updated', 'doke:notifications-synced', 'doke:message-sent', 'doke:order-created', 'doke:order-status-changed', 'doke:auth-session-change', 'doke:auth-surface-ready'].forEach((eventName) => {
   document.addEventListener(eventName, () => {
     syncSidebarOperationalBadges();
     syncSidebarAdminLink();

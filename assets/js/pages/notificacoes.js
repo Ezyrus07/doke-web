@@ -92,8 +92,28 @@
     const getNotificationsService = () => window.Doke?.services?.notifications || null;
     let notificationsAccessAllowed = false;
     const navigateTo = (href, options = {}) => {
-      if (!href || typeof window.DokeNavigate !== 'function') return false;
-      window.DokeNavigate(href, Object.assign({ source: 'notifications-page' }, options));
+      const rawHref = String(href || '').trim();
+      if (!rawHref) return false;
+
+      let targetUrl;
+      try {
+        targetUrl = new URL(rawHref, window.location.href);
+      } catch (_error) {
+        return false;
+      }
+
+      if (targetUrl.origin !== window.location.origin) return false;
+
+      if (typeof window.DokeNavigate === 'function') {
+        try {
+          const navigation = window.DokeNavigate(targetUrl.href, Object.assign({ source: 'notifications-page' }, options));
+          if (navigation !== false) return true;
+        } catch (error) {
+          console.warn('[Doke][notificacoes] Falha no stable-shell; usando navegação documental.', error);
+        }
+      }
+
+      window.location.assign(targetUrl.href);
       return true;
     };
 
@@ -223,7 +243,7 @@
           ${banCountdownMarkup}
           ${notification.actionMessage ? `<p class="notification-card__action-status" data-status="${escapeHtml(notification.actionStatus || 'completed')}">${escapeHtml(notification.actionMessage)}</p>` : ''}
           <div class="notification-card__inline-actions">
-            <a class="notification-card__inline-action doke-btn doke-btn--link" href="${escapeHtml(notification.targetUrl || 'notificacoes.html')}">${escapeHtml(notification.actionLabel || 'Abrir')}</a>
+            <button class="notification-card__inline-action doke-btn doke-btn--link" type="button" data-notification-action data-notification-target="${escapeHtml(notification.targetUrl || 'notificacoes.html')}">${escapeHtml(notification.actionLabel || 'Abrir')}</button>
             <button class="notification-card__inline-action doke-btn doke-btn--link" type="button" data-mark-read${isRead ? ' disabled aria-disabled="true"' : ''}>${markReadLabel}</button>
             <button class="notification-card__inline-action notification-card__inline-action--danger doke-btn doke-btn--link" type="button" data-dismiss-notification>Dispensar</button>
           </div>
@@ -250,14 +270,22 @@
       });
     };
 
-    const setNotificationRead = (card) => {
+    const setNotificationRead = async (card) => {
       if (!card || !card.classList.contains('is-unread')) {
         syncReadControls(card);
-        return;
+        return true;
       }
 
       const id = card.dataset.notificationId || '';
-      if (id) { getNotificationsService()?.markAsRead?.(id); window.DokeInAppNotifications?.markAsRead?.(id); }
+      const service = getNotificationsService();
+      if (!id || !service || typeof service.markAsRead !== 'function') {
+        throw new Error('Serviço de notificações indisponível.');
+      }
+
+      const result = await service.markAsRead(id);
+      if (!result) throw new Error('A notificação não pôde ser marcada como lida.');
+
+      window.DokeInAppNotifications?.markAsRead?.(id);
       card.classList.remove('is-unread');
       const tokens = (card.dataset.catégory || card.dataset.category || '').split(/\s+/).filter((token) => token !== 'unread');
       card.dataset.catégory = tokens.join(' ');
@@ -266,6 +294,7 @@
       updatéUnread();
       updatéStats();
       applyFilter(currentFilter, currentTimeFilter);
+      return true;
     };
 
     const finalizeDismissNotification = (card) => {
@@ -399,6 +428,22 @@
         });
       });
 
+      card.querySelectorAll('[data-notification-action]').forEach((button) => {
+        button.addEventListener('click', async (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          const href = button.dataset.notificationTarget || 'notificacoes.html';
+          try {
+            await setNotificationRead(card);
+          } catch (error) {
+            console.error('[Doke][notificacoes] Falha ao persistir leitura antes da ação.', error);
+          } finally {
+            const target = new URL(href, window.location.href);
+            if (target.origin === window.location.origin) window.location.assign(target.href);
+          }
+        });
+      });
+
       card.addEventListener('click', (event) => {
         const target = event.target;
         if (!(target instanceof Element)) return;
@@ -412,8 +457,8 @@
         }
         const id = card.dataset.notificationId || '';
         if (id) { getNotificationsService()?.markAsRead?.(id); window.DokeInAppNotifications?.markAsRead?.(id); }
-        const primaryAction = card.querySelector('.notification-card__inline-actions a[href]');
-        const href = primaryAction?.getAttribute('href');
+        const primaryAction = card.querySelector('[data-notification-action]');
+        const href = primaryAction?.dataset.notificationTarget;
         if (href) navigateTo(href);
       });
     };
@@ -997,7 +1042,7 @@
       setNotificationRead(button.closest('.notification-card'));
     }));
 
-    const getPrimaryHref = (card) => card?.querySelector('.notification-card__inline-actions a[href]')?.getAttribute('href') || '';
+    const getPrimaryHref = (card) => card?.querySelector('[data-notification-action]')?.dataset.notificationTarget || '';
 
     const openSelectedCard = (preferredToken = '') => {
       const selected = selectedCards();
@@ -1040,8 +1085,8 @@
           return;
         }
 
-        const primaryAction = card.querySelector('.notification-card__inline-actions a[href]');
-        const href = primaryAction?.getAttribute('href');
+        const primaryAction = card.querySelector('[data-notification-action]');
+        const href = primaryAction?.dataset.notificationTarget;
         if (href) navigateTo(href);
       });
 

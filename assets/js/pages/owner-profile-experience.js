@@ -59,6 +59,50 @@
     if (card) card.hidden = true;
   }
 
+  function currentUser() {
+    try {
+      return Doke.session && typeof Doke.session.getCurrentUser === 'function'
+        ? Doke.session.getCurrentUser()
+        : window.DokeAuth && window.DokeAuth.service && typeof window.DokeAuth.service.getCurrentUser === 'function'
+          ? window.DokeAuth.service.getCurrentUser()
+          : null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function shouldKeepPersonalProfile() {
+    var params = new URLSearchParams(window.location.search || '');
+    return params.get('view') === 'personal' || params.get('personal') === '1';
+  }
+
+  function resolveProfileDestination(professionalProfile, verification) {
+    var registry = window.DokeNavigationRegistry;
+    if (registry && typeof registry.resolveProfileDestination === 'function') {
+      return registry.resolveProfileDestination({
+        user: currentUser(),
+        professionalProfile: professionalProfile || null,
+        verification: verification || null
+      });
+    }
+    return { state: 'personal_profile', href: 'meu-perfil.html', label: 'Meu perfil' };
+  }
+
+  function navigateToProfileDestination(destination) {
+    if (!destination || !destination.href || destination.href === 'meu-perfil.html' || shouldKeepPersonalProfile()) {
+      return Promise.resolve(false);
+    }
+    var navigate = Doke.navigation && Doke.navigation.go || window.DokeNavigate;
+    if (typeof navigate === 'function') {
+      return Promise.resolve(navigate(destination.href, {
+        replace: true,
+        source: 'meu-perfil-' + (destination.state || 'redirect')
+      })).then(function () { return true; });
+    }
+    window.location.replace(destination.href);
+    return Promise.resolve(true);
+  }
+
   function renderProfessionalNextStep(professionalProfile, verification) {
     var card = document.querySelector('[data-professional-next-step]');
     if (!card) return;
@@ -118,23 +162,31 @@
     return Promise.resolve().then(function () {
       return setupService.getCurrentProfileSetup();
     }).then(function (professionalProfile) {
-      if (!professionalProfile || professionalProfile.status === 'active') {
+      if (!professionalProfile) {
         hideProfessionalNextStep();
-        return null;
+        return { professionalProfile: null, verification: null, redirected: false };
       }
-      if (professionalProfile.status === 'draft' || !verificationService || typeof verificationService.getCurrentVerification !== 'function') {
-        renderProfessionalNextStep(professionalProfile, null);
-        return { professionalProfile: professionalProfile, verification: null };
-      }
-      return Promise.resolve().then(function () {
-        return verificationService.getCurrentVerification();
-      }).then(function (verification) {
-        renderProfessionalNextStep(professionalProfile, verification);
-        return { professionalProfile: professionalProfile, verification: verification || null };
+      var verificationPromise = professionalProfile.status !== 'draft'
+        && verificationService
+        && typeof verificationService.getCurrentVerification === 'function'
+        ? Promise.resolve().then(function () { return verificationService.getCurrentVerification(); }).catch(function () { return null; })
+        : Promise.resolve(null);
+
+      return verificationPromise.then(function (verification) {
+        var destination = resolveProfileDestination(professionalProfile, verification);
+        return navigateToProfileDestination(destination).then(function (redirected) {
+          if (redirected) {
+            hideProfessionalNextStep();
+            return { professionalProfile: professionalProfile, verification: verification || null, redirected: true, destination: destination };
+          }
+          if (professionalProfile.status === 'active') hideProfessionalNextStep();
+          else renderProfessionalNextStep(professionalProfile, verification);
+          return { professionalProfile: professionalProfile, verification: verification || null, redirected: false, destination: destination };
+        });
       });
     }).catch(function () {
       hideProfessionalNextStep();
-      return null;
+      return { professionalProfile: null, verification: null, redirected: false };
     });
   }
   function render(profile) {
@@ -142,7 +194,11 @@
     var name = text(profile.name) || 'Complete seu perfil';
     var handle = text(profile.handle);
     var place = location(profile);
-    set('[data-profile-name]', name);
+    if (Doke.profilePresentation && typeof Doke.profilePresentation.setDisplayName === 'function') {
+      Doke.profilePresentation.setDisplayName('[data-profile-name]', name, 'Complete seu perfil');
+    } else {
+      set('[data-profile-name]', name);
+    }
     set('[data-profile-meta]', [handle ? '@' + handle : '', place].filter(Boolean).join(' · '), 'Adicione identificador e localização');
     set('[data-profile-avatar-initials]', initials(profile.name));
     renderMedia(profile);
@@ -154,8 +210,13 @@
 
     var verified = document.querySelector('[data-profile-verified]');
     if (verified) verified.hidden = profile.verified !== true;
+    var profileId = profile.userId || profile.id || '';
     var boundary = document.querySelector('[data-state-boundary="meu-perfil"]');
-    if (boundary) boundary.dataset.profileId = profile.userId || profile.id || '';
+    if (boundary) boundary.dataset.profileId = profileId;
+    var publicLink = document.querySelector('[data-owner-public-profile-link]');
+    if (publicLink) publicLink.href = profileId
+      ? 'perfil-cliente.html?id=' + encodeURIComponent(profileId)
+      : 'perfil-cliente.html';
   }
 
   var latestProfile = null;
@@ -226,6 +287,14 @@
     var signal = ownerMediaController.signal;
     var service = Doke.services && Doke.services.profile;
 
+    document.querySelectorAll('[data-profile-media-trigger]').forEach(function (trigger) {
+      trigger.addEventListener('click', function () {
+        var kind = trigger.dataset.profileMediaTrigger;
+        var input = document.querySelector('[data-profile-media-input="' + kind + '"]');
+        if (input) input.click();
+      }, { signal: signal });
+    });
+
     document.querySelectorAll('[data-profile-media-input]').forEach(function (input) {
       input.addEventListener('change', function () {
         var file = input.files && input.files[0];
@@ -286,20 +355,19 @@
     }).then(function (accessResult) {
       if (!accessResult || !accessResult.allowed) return null;
 
-      var operation = ownerSurfaceInitialized
-        ? Doke.ownerProfileExperience.query({ force: true })
-        : Doke.ownerProfileExperience.init();
-      ownerSurfaceInitialized = true;
-
-      return Promise.all([
-        Promise.resolve(operation),
-        loadProfessionalNextStep()
-      ]);
+      return loadProfessionalNextStep().then(function (professionalState) {
+        if (professionalState && professionalState.redirected) return null;
+        var operation = ownerSurfaceInitialized
+          ? Doke.ownerProfileExperience.query({ force: true })
+          : Doke.ownerProfileExperience.init();
+        ownerSurfaceInitialized = true;
+        return Promise.resolve(operation);
+      });
     }).then(function (results) {
       if (!results) return null;
       hydration?.ready({ hasItems: true });
       ownerReadyBoundary = boundary;
-      ownerLastResult = results[0];
+      ownerLastResult = results;
       return ownerLastResult;
     }).catch(function (error) {
       hydration?.error(error, { source: 'owner-profile-controller' });

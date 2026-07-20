@@ -51,12 +51,51 @@
     const reviewBio = root.querySelector('[data-review-bio]');
     const totalSteps = Math.max(1, panels.length);
     const experience = window.Doke?.professionalOnboardingExperience;
+    const navigationRegistry = window.DokeNavigationRegistry;
 
     let currentStep = 1;
     let maxReachedStep = 1;
     let submitting = false;
     let currentProfile = null;
     let saveTimer = 0;
+
+    const currentUser = () => {
+      try {
+        return window.Doke?.session?.getCurrentUser?.() || window.DokeAuth?.service?.getCurrentUser?.() || null;
+      } catch (error) {
+        return null;
+      }
+    };
+
+    const resolveProfileDestination = (profile) => {
+      if (!navigationRegistry?.resolveProfileDestination) {
+        const role = String(currentUser()?.role || currentUser()?.type || '').toLowerCase();
+        return {
+          state: role === 'professional' ? 'professional_active' : 'personal_profile',
+          href: role === 'professional' ? 'perfil-profissional.html' : 'tornar-profissional.html',
+          label: role === 'professional' ? 'Gerenciar perfil' : 'Continuar perfil'
+        };
+      }
+      return navigationRegistry.resolveProfileDestination({
+        user: currentUser(),
+        professionalProfile: profile || null
+      });
+    };
+
+    const navigateToDestination = async (destination) => {
+      const redirectStates = ['professional_active', 'verification_pending', 'verification_rejected'];
+      if (!destination?.href || redirectStates.indexOf(destination.state) === -1) return false;
+      const navigate = window.Doke?.navigation?.go || window.DokeNavigate;
+      if (typeof navigate === 'function') {
+        await navigate(destination.href, {
+          replace: true,
+          source: `tornar-profissional-${destination.state || 'redirect'}`
+        });
+      } else {
+        window.location.replace(destination.href);
+      }
+      return true;
+    };
 
     const showFeedback = (message, error = false) => {
       if (!feedback) return;
@@ -187,7 +226,7 @@
       return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'medium', timeStyle: 'short' }).format(date);
     };
 
-    const renderProfile = (profile) => {
+    const renderProfile = (profile, destination = resolveProfileDestination(profile)) => {
       currentProfile = profile || null;
       const status = currentProfile?.status || 'draft';
       root.dataset.professionalProfileStatus = status;
@@ -196,13 +235,19 @@
       if (formLayout) formLayout.hidden = !isEditable;
       if (statusCard) statusCard.hidden = isEditable;
       if (verificationLink) {
-        verificationLink.hidden = status !== 'pending_verification';
-        const verificationStatus = String(currentProfile?.verificationStatus || 'not_started');
-        verificationLink.textContent = verificationStatus === 'rejected'
-          ? 'Corrigir verificação'
-          : (verificationStatus === 'submitted' || verificationStatus === 'under_review'
-            ? 'Acompanhar verificação'
-            : 'Iniciar verificação');
+        const verificationStatus = String(currentProfile?.verificationStatus || 'not_started').toLowerCase();
+        const documentStatus = String(currentProfile?.documentStatus || 'not_started').toLowerCase();
+        const verificationComplete = verificationStatus === 'verified' && documentStatus === 'verified';
+        const isActiveProfessional = destination?.state === 'professional_active' || verificationComplete;
+        verificationLink.hidden = isEditable;
+        verificationLink.href = isActiveProfessional ? 'perfil-profissional.html' : 'verificacao-profissional.html';
+        verificationLink.textContent = isActiveProfessional
+          ? 'Gerenciar perfil'
+          : (destination?.state === 'verification_rejected' || verificationStatus === 'rejected' || documentStatus === 'rejected'
+            ? 'Corrigir e reenviar'
+            : (verificationStatus === 'submitted' || verificationStatus === 'under_review' || documentStatus === 'submitted' || documentStatus === 'under_review' || destination?.state === 'verification_pending'
+              ? 'Acompanhar verificação'
+              : 'Iniciar verificação'));
       }
       if (isEditable) return;
 
@@ -367,6 +412,8 @@
 
     try {
       currentProfile = await experience?.load?.();
+      const destination = resolveProfileDestination(currentProfile);
+      if (await navigateToDestination(destination)) return;
       if (currentProfile?.status === 'draft') {
         experience?.hydrate?.(form, currentProfile);
         syncOtherCategoryField();
@@ -378,7 +425,7 @@
       setStep(Number(currentProfile?.currentStep || 1), { skipSave: true });
       experience?.setState?.('ready');
       hydration?.ready({ hasItems: true });
-      renderProfile(currentProfile);
+      renderProfile(currentProfile, destination);
     } catch (error) {
       experience?.setState?.('error', { error });
       hydration?.error(error);

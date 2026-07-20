@@ -4,6 +4,10 @@
   var Doke = window.Doke || (window.Doke = {});
   if (!Doke.profileExperienceCore) return;
 
+  var publicProfileInitialized = false;
+  var publicProfileHydrationBoundary = null;
+  var publicProfileHydration = null;
+
   function clean(value) {
     return String(value == null ? '' : value).trim();
   }
@@ -62,7 +66,11 @@
     var handle = clean(profile.handle);
     var place = [clean(profile.city), clean(profile.state)].filter(Boolean).join(', ');
 
-    setText('[data-public-professional-name]', name);
+    if (Doke.profilePresentation && typeof Doke.profilePresentation.setDisplayName === 'function') {
+      Doke.profilePresentation.setDisplayName('[data-public-professional-name]', name, 'Perfil profissional');
+    } else {
+      setText('[data-public-professional-name]', name);
+    }
     setText('[data-public-professional-meta]', [handle ? '@' + handle.replace(/^@+/, '') : '', place].filter(Boolean).join(' · '), 'Perfil profissional ativo');
     setText('[data-public-professional-about-title]', 'Sobre ' + name);
     setText('[data-public-professional-bio]', fields.shortBio || profile.bio, 'Apresentação ainda não informada.');
@@ -122,5 +130,46 @@
     }
   });
 
-  Doke.profileExperience.init().catch(function () {});
+  function ensurePublicProfileHydration() {
+    var boundary = document.querySelector('[data-state-boundary="perfil"]');
+    if (!boundary || !window.DokePageHydration || typeof window.DokePageHydration.create !== 'function') return null;
+    if (publicProfileHydrationBoundary === boundary && publicProfileHydration) return publicProfileHydration;
+
+    publicProfileHydrationBoundary = boundary;
+    publicProfileHydration = window.DokePageHydration.create({
+      page: 'perfil',
+      root: boundary,
+      skeletonSelectors: '[data-profile-hydration-skeleton]',
+      readySelectors: '[data-profile-hydration-ready]',
+      errorSelectors: '[data-state-error]',
+      skeletonMode: 'hard-load',
+      preserveReadyDuringHydration: true,
+      maxDuration: 8000,
+      hasItems: function () { return true; },
+      onRetry: function () { window.DokeInitProfile(); }
+    });
+    return publicProfileHydration;
+  }
+
+  window.DokeInitProfile = function DokeInitProfile() {
+    var boundary = document.querySelector('[data-state-boundary="perfil"]');
+    if (!boundary) return Promise.resolve(null);
+
+    var hydration = ensurePublicProfileHydration();
+    if (hydration && typeof hydration.start === 'function') hydration.start();
+    var operation = publicProfileInitialized
+      ? Doke.profileExperience.query({ force: true })
+      : Doke.profileExperience.init();
+    publicProfileInitialized = true;
+
+    return Promise.resolve(operation).then(function (result) {
+      if (hydration && typeof hydration.ready === 'function') hydration.ready({ hasItems: true });
+      return result;
+    }).catch(function (error) {
+      if (hydration && typeof hydration.error === 'function') hydration.error(error);
+      throw error;
+    });
+  };
+
+  Promise.resolve(window.DokeInitProfile()).catch(function () {});
 })();

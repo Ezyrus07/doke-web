@@ -6,6 +6,24 @@
   function initials(name) {
     return clean(name).split(/\s+/).filter(Boolean).slice(0, 2).map(function (part) { return part.charAt(0).toUpperCase(); }).join('') || 'DK';
   }
+  function normalizeHandle(value) {
+    var handle = clean(value).replace(/^@+/, '').replace(/\s+/g, '');
+    return handle ? '@' + handle : '';
+  }
+  function providerHandle(service) {
+    var direct = normalizeHandle(service && (service.providerHandle || service.providerUsername || service.professionalHandle || service.professionalUsername || service.handle || service.username));
+    if (direct) return direct;
+    var current = Doke.session && typeof Doke.session.getCurrentUser === 'function' ? Doke.session.getCurrentUser() : null;
+    var serviceOwnerId = clean(service && (service.providerId || service.professionalId || service.ownerId));
+    if (current && serviceOwnerId && clean(current.id) === serviceOwnerId) {
+      var currentHandle = normalizeHandle(current.handle || current.username);
+      if (currentHandle) return currentHandle;
+    }
+    var fallback = clean(service && (service.providerName || service.professionalName))
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase().replace(/[^a-z0-9]+/g, '').slice(0, 24);
+    return fallback ? '@' + fallback : '@profissional';
+  }
   function firstImage(service) {
     var images = Array.isArray(service && service.images) ? service.images.filter(Boolean) : [];
     return clean(images[0] || service && service.image);
@@ -46,7 +64,7 @@
     if (avatarUrl) { avatar.classList.add('has-image'); var ai=document.createElement('img'); ai.className='doke-ad-card__avatar-image'; ai.src=avatarUrl; ai.alt=''; ai.loading='lazy'; avatar.appendChild(ai); }
     else { avatar.classList.add('has-initials'); avatar.textContent=initials(service.providerName); }
     var sellerCopy=document.createElement('span'); sellerCopy.className='doke-ad-card__seller-copy';
-    var sellerName=document.createElement('strong'); sellerName.className='doke-ad-card__seller-name'; sellerName.textContent=clean(service.providerName || 'Profissional Doke'); sellerCopy.appendChild(sellerName);
+    var sellerName=document.createElement('strong'); sellerName.className='doke-ad-card__seller-name'; sellerName.textContent=providerHandle(service); sellerName.title=sellerName.textContent; sellerCopy.appendChild(sellerName);
     var reviews=Number(service.reviewsCount || 0), rating=Number(service.rating || 0);
     if (reviews>0 && rating>0) { var meta=document.createElement('span'); meta.className='doke-ad-card__seller-meta'; var rat=document.createElement('span'); rat.className='doke-ad-card__rating'; rat.textContent='★ '+rating.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+' ('+reviews+' avaliações)'; meta.appendChild(rat); sellerCopy.appendChild(meta); }
     seller.append(avatar,sellerCopy); body.appendChild(seller);

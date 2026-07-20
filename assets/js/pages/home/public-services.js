@@ -33,10 +33,13 @@
     if(scope.dataset.publicServicesBound!=='true'){
       scope.dataset.publicServicesBound='true';
       scope.addEventListener('doke:index-data-ready',function(event){render(event.detail && event.detail.data && event.detail.data.services);});
-      document.addEventListener('doke:supabase-sdk-ready',function(){refresh();},{signal:window.DokeHomePublicServicesAbort?.signal});
+      document.addEventListener('doke:supabase-sdk-ready',function(){
+        var current=Doke.indexDataController && Doke.indexDataController.lastPayload;
+        if(!current || !current.data) refresh();
+      },{signal:window.DokeHomePublicServicesAbort?.signal});
     }
     var last=Doke.indexDataController && Doke.indexDataController.lastPayload;
-    if(last && last.data) render(last.data.services);
+    if(last && last.data) return Promise.resolve(render(last.data.services));
     return refresh();
   }
   Doke.homePublicServices=Object.freeze({init:init,refresh:refresh,render:render});

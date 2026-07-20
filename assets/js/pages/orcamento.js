@@ -118,16 +118,208 @@ const initBudgetPage = () => {
     if (exitLink) exitLink.href = `detalhe-anuncio.html?id=${encodeURIComponent(serviceItem.id || serviceId)}`;
   };
 
+  const normalizeQuoteQuestionType = (value) => {
+    const type = String(value || "short_text").trim().toLowerCase().replace(/[\s-]+/g, "_");
+    const aliases = {
+      text: "short_text",
+      short: "short_text",
+      textarea: "long_text",
+      long: "long_text",
+      select: "single_choice",
+      radio: "single_choice",
+      multiselect: "multiple_choice",
+      checkbox: "multiple_choice",
+      boolean: "yes_no"
+    };
+    return aliases[type] || type;
+  };
+
+  const getQuoteQuestions = (serviceItem) => {
+    const template = serviceItem?.quoteTemplate || serviceItem?.budgetTemplate || {};
+    const candidates = serviceItem?.quoteQuestions
+      || serviceItem?.budgetQuestions
+      || template.questions
+      || [];
+    if (!Array.isArray(candidates)) return [];
+    return candidates.slice(0, 10).map((question, index) => {
+      const item = question && typeof question === "object" ? question : { label: String(question || "") };
+      const label = String(item.label || item.question || item.title || "").trim().slice(0, 120);
+      const id = slugify(item.id || item.key || label || `pergunta-${index + 1}`) || `pergunta-${index + 1}`;
+      const normalizedType = normalizeQuoteQuestionType(item.type);
+      const options = Array.isArray(item.options)
+        ? item.options.slice(0, 5).map((option) => {
+            if (option && typeof option === "object") {
+              return {
+                value: String(option.value || option.label || "").trim().slice(0, 80),
+                label: String(option.label || option.value || "").trim().slice(0, 80)
+              };
+            }
+            const value = String(option || "").trim().slice(0, 80);
+            return { value, label: value };
+          }).filter((option) => option.value)
+        : [];
+      const resolvedType = ["single_choice", "multiple_choice"].includes(normalizedType) && options.length === 0
+        ? "short_text"
+        : normalizedType;
+      const requestedMaxLength = Number(item.maxLength || item.max_length || item.validation?.maxLength);
+      const defaultMaxLength = resolvedType === "long_text" ? 1000 : 180;
+      const maxLength = Number.isFinite(requestedMaxLength)
+        ? Math.min(1000, Math.max(1, requestedMaxLength))
+        : defaultMaxLength;
+      return {
+        id,
+        type: resolvedType,
+        label,
+        helpText: String(item.helpText || item.help_text || item.description || "").trim().slice(0, 180),
+        required: item.required === true,
+        position: Number.isFinite(Number(item.position)) ? Number(item.position) : index,
+        options,
+        min: item.min ?? item.validation?.min ?? null,
+        max: item.max ?? item.validation?.max ?? null,
+        maxLength
+      };
+    }).filter((question) => question.label).sort((a, b) => a.position - b.position);
+  };
+
+  const appendQuestionCopy = (container, question) => {
+    const label = document.createElement(container.tagName === "FIELDSET" ? "legend" : "span");
+    label.className = "budget-custom-question__label";
+    label.textContent = question.required ? `${question.label} *` : question.label;
+    container.appendChild(label);
+    if (question.helpText) {
+      const help = document.createElement("small");
+      help.className = "budget-custom-question__help";
+      help.textContent = question.helpText;
+      container.appendChild(help);
+    }
+  };
+
+  const renderQuoteQuestion = (question, index) => {
+    const inputName = `quote_question_${question.id || index + 1}`;
+    const choiceType = ["single_choice", "multiple_choice", "yes_no"].includes(question.type);
+    const wrapper = document.createElement(choiceType ? "fieldset" : "label");
+    wrapper.className = `budget-custom-question budget-custom-question--${question.type}`;
+    wrapper.dataset.budgetCustomQuestion = "";
+    wrapper.dataset.questionId = question.id;
+    wrapper.dataset.questionType = question.type;
+    wrapper.dataset.questionLabel = question.label;
+    wrapper.dataset.questionRequired = String(question.required);
+    wrapper.dataset.questionPosition = String(question.position);
+    wrapper.dataset.questionHelpText = question.helpText || "";
+    wrapper.dataset.questionOptions = JSON.stringify(question.options || []);
+    appendQuestionCopy(wrapper, question);
+
+    if (choiceType) {
+      const choices = document.createElement("div");
+      choices.className = "budget-custom-question__choices";
+      const options = question.type === "yes_no"
+        ? [{ value: "Sim", label: "Sim" }, { value: "Não", label: "Não" }]
+        : question.options;
+      options.forEach((option, optionIndex) => {
+        const optionLabel = document.createElement("label");
+        optionLabel.className = "budget-custom-question__option";
+        const input = document.createElement("input");
+        input.className = "doke-checkbox";
+        input.type = question.type === "multiple_choice" ? "checkbox" : "radio";
+        input.name = inputName;
+        input.value = option.value;
+        if (question.required && question.type !== "multiple_choice" && optionIndex === 0) input.required = true;
+        const text = document.createElement("span");
+        text.textContent = option.label;
+        optionLabel.append(input, text);
+        choices.appendChild(optionLabel);
+      });
+      wrapper.appendChild(choices);
+      return wrapper;
+    }
+
+    const input = document.createElement(question.type === "long_text" ? "textarea" : "input");
+    input.name = inputName;
+    input.required = question.required;
+    input.className = question.type === "long_text" ? "doke-textarea" : "doke-input";
+    if (question.type === "number") {
+      input.type = "number";
+      if (question.min != null) input.min = String(question.min);
+      if (question.max != null) input.max = String(question.max);
+    } else if (question.type === "date") {
+      input.type = "date";
+    } else if (question.type !== "long_text") {
+      input.type = "text";
+      input.maxLength = question.maxLength;
+    } else {
+      input.maxLength = question.maxLength;
+      input.rows = 4;
+    }
+    wrapper.appendChild(input);
+    return wrapper;
+  };
+
+  const renderCustomQuestions = (serviceItem) => {
+    const region = pageRoot.querySelector("[data-budget-custom-questions]");
+    const list = pageRoot.querySelector("[data-budget-custom-question-list]");
+    if (!region || !list) return [];
+    const questions = getQuoteQuestions(serviceItem);
+    list.replaceChildren(...questions.map(renderQuoteQuestion));
+    region.hidden = questions.length === 0;
+    region.dataset.questionCount = String(questions.length);
+    return questions;
+  };
+
+  const collectCustomAnswers = () => [...form.querySelectorAll("[data-budget-custom-question]")].map((wrapper) => {
+    const controls = [...wrapper.querySelectorAll("input, textarea, select")];
+    const questionType = wrapper.dataset.questionType || "short_text";
+    let answer = "";
+    if (questionType === "multiple_choice") {
+      answer = controls.filter((control) => control.checked).map((control) => control.value);
+    } else if (["single_choice", "yes_no"].includes(questionType)) {
+      answer = controls.find((control) => control.checked)?.value || "";
+    } else {
+      answer = controls[0]?.value?.trim?.() || controls[0]?.value || "";
+    }
+    return {
+      questionId: wrapper.dataset.questionId || "",
+      questionSnapshot: {
+        id: wrapper.dataset.questionId || "",
+        type: questionType,
+        label: wrapper.dataset.questionLabel || "",
+        required: wrapper.dataset.questionRequired === "true",
+        position: Number(wrapper.dataset.questionPosition || 0),
+        helpText: wrapper.dataset.questionHelpText || "",
+        options: (() => {
+          try {
+            return JSON.parse(wrapper.dataset.questionOptions || "[]");
+          } catch {
+            return [];
+          }
+        })()
+      },
+      answer
+    };
+  });
+
+  const renderCustomAnswersReview = () => {
+    const region = pageRoot.querySelector("[data-budget-review-custom-answers]");
+    const list = pageRoot.querySelector("[data-budget-review-custom-answer-list]");
+    if (!region || !list || !form) return;
+    const answered = collectCustomAnswers().filter((item) => Array.isArray(item.answer) ? item.answer.length : String(item.answer || "").trim());
+    list.replaceChildren(...answered.map((item) => {
+      const row = document.createElement("article");
+      row.className = "budget-review-answers__item";
+      const label = document.createElement("span");
+      label.textContent = item.questionSnapshot.label;
+      const value = document.createElement("strong");
+      value.textContent = Array.isArray(item.answer) ? item.answer.join(", ") : String(item.answer);
+      row.append(label, value);
+      return row;
+    }));
+    region.hidden = answered.length === 0;
+  };
+
   const prefillServiceFields = (serviceItem) => {
     if (!form || !serviceItem) return;
     const categoryValue = serviceItem.category || serviceItem.catégory || serviceItem.title || "";
-    const categorySelect = form.querySelector('select[name="catégoria"]');
-    if (categorySelect && categoryValue) {
-      const optionExists = [...categorySelect.options].some((option) => option.value === categoryValue || option.textContent.trim().toLowerCase() === String(categoryValue).toLowerCase());
-      if (!optionExists) categorySelect.add(new Option(categoryValue, categoryValue), 1);
-      categorySelect.value = categoryValue;
-      categorySelect.dispatchEvent(new Event("change", { bubbles: true }));
-    }
+    const categoryInput = form.querySelector('[data-budget-service-category]');
+    if (categoryInput) categoryInput.value = categoryValue;
 
     const budgetSelect = form.querySelector('select[name="orcamento_estimado"]');
     const priceLabel = serviceItem.priceLabel || "A definir";
@@ -157,6 +349,7 @@ const initBudgetPage = () => {
       syncBudgetContext();
       renderServiceContext(serviceItem);
       prefillServiceFields(serviceItem);
+      renderCustomQuestions(serviceItem);
       document.dispatchEvent(new CustomEvent("doke:budget-service-context", {
         detail: {
           service: serviceItem,
@@ -283,37 +476,20 @@ const initBudgetPage = () => {
 
     const panels = [...form.querySelectorAll("[data-step-panel]")];
     const indicators = [...pageRoot.querySelectorAll("[data-step-target]")];
-    const progressLabel = pageRoot.querySelector("[data-step-progress-label]");
-    const progressName = pageRoot.querySelector("[data-step-progress-name]");
-    const progressFill = pageRoot.querySelector("[data-step-progress-fill]");
     const prevButton = form.querySelector("[data-step-prev]");
     const nextButton = form.querySelector("[data-step-next]");
     const submitButton = form.querySelector("[data-step-submit]");
     const exitButton = form.querySelector("[data-step-exit]");
     const actions = form.querySelector(".become-pro-actions");
-    const visualStepCount = Math.max(1, panels.length);
     let currentStep = 0;
+    const addressStepIndex = panels.findIndex((panel) => panel.contains(addressRequiredInput));
     let savedLocation = null;
     let lockedScrollY = 0;
 
-    const getNativeSelect = (name) => form.querySelector(`.ui-select__native[name="${name}"]`) || form.querySelector(`select[name="${name}"]`);
-
-    const catégorySelect = getNativeSelect("catégoria");
-    const catégoryInput = form.querySelector('input[name="catégoria"]');
+    const catégoryInput = form.querySelector('[data-budget-service-category]');
     const applyServiceCategory = () => {
       if (!service || !(selectedService || serviceId || explicitServiceLabel)) return;
       const normalized = formatTitleCase(selectedService?.category || selectedService?.catégory || service);
-      if (catégorySelect) {
-        const hasOption = [...catégorySelect.options].some((option) => option.textContent.toLowerCase() === normalized.toLowerCase());
-        if (!hasOption) {
-          const option = document.createElement("option");
-          option.value = normalized;
-          option.textContent = normalized;
-          catégorySelect.insertBefore(option, catégorySelect.firstChild.nextSibling || null);
-        }
-        catégorySelect.value = normalized;
-        catégorySelect.dispatchEvent(new Event("change", { bubbles: true }));
-      }
       if (catégoryInput) catégoryInput.value = normalized;
     };
     applyServiceCategory();
@@ -462,9 +638,21 @@ const initBudgetPage = () => {
     const validatéStep = (index) => {
       const panel = panels[index];
       if (!panel) return true;
-      if (index === panels.length - 1 && (!savedLocation || !addressRequiredInput?.value)) {
+      if (index === addressStepIndex && (!savedLocation || !addressRequiredInput?.value)) {
         openAddressModal();
         return false;
+      }
+      const requiredMultipleChoice = [...panel.querySelectorAll('[data-budget-custom-question][data-question-required="true"][data-question-type="multiple_choice"]')];
+      for (const question of requiredMultipleChoice) {
+        const inputs = [...question.querySelectorAll('input[type="checkbox"]')];
+        const firstInput = inputs[0];
+        if (!inputs.some((input) => input.checked)) {
+          firstInput?.setCustomValidity("Selecione pelo menos uma opção.");
+          firstInput?.reportValidity();
+          firstInput?.focus({ preventScroll: true });
+          return false;
+        }
+        firstInput?.setCustomValidity("");
       }
       const fields = [...panel.querySelectorAll("input, select, textarea")].filter((field) => {
         if (field.type === "hidden" || field.type === "file") return false;
@@ -497,19 +685,12 @@ const initBudgetPage = () => {
           bullet.textContent = isComplete ? "✓" : String(indicatorIndex + 1);
         }
       });
-      if (progressLabel) progressLabel.textContent = `Etapa ${currentStep + 1} de ${panels.length}`;
-      if (progressName) {
-        const activeIndicator = indicators[currentStep];
-        progressName.textContent = activeIndicator?.dataset.stepName || activeIndicator?.querySelector("strong")?.textContent || "";
-      }
-      if (progressFill) {
-        progressFill.dataset.stepProgressValue = String(Math.round(((currentStep + 1) / visualStepCount) * 100));
-      }
       if (prevButton) prevButton.hidden = currentStep === 0;
       if (exitButton) exitButton.hidden = currentStep !== 0;
       actions?.classList.toggle("has-back-action", currentStep > 0);
       if (nextButton) nextButton.hidden = currentStep === panels.length - 1;
       if (submitButton) submitButton.hidden = currentStep !== panels.length - 1;
+      if (currentStep === panels.length - 1) renderCustomAnswersReview();
       const scrollTarget = pageRoot.closest(".detail-budget-modal__dialog") || pageRoot;
       if ("scrollTo" in scrollTarget) {
         scrollTarget.scrollTo({ top: 0, behavior: "smooth" });
@@ -570,6 +751,8 @@ const initBudgetPage = () => {
       const createdAt = new Date().toISOString();
       const requestCategory = data.get("catégoria") || selectedService?.category || selectedService?.catégory || "";
       const serviceName = selectedService?.title || service || requestCategory;
+      const customAnswers = collectCustomAnswers();
+      const quoteTemplate = selectedService?.quoteTemplate || selectedService?.budgetTemplate || {};
       const ordersService = window.Doke?.services?.orders;
       const attachmentsRepository = window.Doke?.repositories?.attachments;
       const attachmentFiles = getSelectedAttachmentFiles();
@@ -668,6 +851,9 @@ const initBudgetPage = () => {
           medidas: data.get("triagem_medidas") || "",
           observacoes: data.get("triagem_observacoes") || ""
         },
+        quoteTemplateVersion: quoteTemplate.version || selectedService?.quoteTemplateVersion || null,
+        quoteAnswers: customAnswers,
+        quoteQuestionsSnapshot: customAnswers.map((item) => item.questionSnapshot),
         area: data.get("area") || "",
         attachments,
         status: "pending",

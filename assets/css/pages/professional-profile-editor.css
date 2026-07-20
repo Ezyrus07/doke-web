@@ -1,287 +1,20 @@
 /*
  * Doke Web - Professional Profile Editor
- * Responsibility: owner/editing affordances for perfil-profissional.html.
- * The visual anatomy is inherited from the clean public profile contract.
+ * Responsibility: professional-owner composition and service management only.
+ * Shared profile anatomy, owner controls and editor forms live in components/profile.
  */
-@import url("./profile-foundation.css?v=20260718-header-unification-v1");
+@import url("./profile-foundation.css?v=20260719-profile-family-v1");
+@import url("../components/profile/profile-owner-controls.css?v=20260719-profile-family-v1");
+@import url("../components/profile/profile-editor-form.css?v=20260719-profile-family-v1");
 @import url("../components/cards/profile-service-owner-card.css?v=20260718-owner-actions-v34");
 
-/* First-paint authorization boundary.
- * The owner profile content must never override the native hidden contract
- * before the asynchronous professional access guard resolves. */
+/* First-paint authorization boundary. */
 html body[data-page="perfil-profissional"][data-profile-mode="owner-edit"]
   [data-professional-profile-hydration-ready][hidden] {
   display: none;
 }
 
-
-body[data-profile-mode="owner-edit"] .profile-hero__cover {
-  overflow: hidden;
-}
-
-body[data-profile-mode="owner-edit"] :is(
-  .profile-owner-cover-action,
-  .profile-owner-avatar-action,
-  .profile-owner-mini-action
-).doke-btn--ghost {
-  border: 0;
-  background: rgba(255, 255, 255, 0.96);
-  color: var(--color-primary-strong, #184a76);
-  box-shadow: var(--profile-clean-micro-shadow);
-}
-
-body[data-profile-mode="owner-edit"] :is(
-  .profile-owner-cover-action,
-  .profile-owner-avatar-action,
-  .profile-owner-mini-action
-).doke-btn--ghost:is(:hover, :focus-visible) {
-  border: 0;
-  background: #fff;
-  box-shadow: var(--profile-clean-micro-shadow-hover);
-}
-
-body[data-profile-mode="owner-edit"] :is(
-  .profile-owner-cover-action,
-  .profile-owner-avatar-action,
-  .profile-owner-mini-action
-).doke-btn--ghost:focus-visible {
-  outline: 0;
-  box-shadow: var(--profile-clean-focus);
-}
-
-body[data-profile-mode="owner-edit"] .profile-owner-cover-action {
-  position: absolute;
-  left: clamp(16px, 2.4vw, 26px);
-  bottom: clamp(16px, 2vw, 22px);
-  z-index: 2;
-  padding: 0 14px;
-}
-
-body[data-profile-mode="owner-edit"] .profile-owner-avatar-stack {
-  position: relative;
-  z-index: 2;
-  display: grid;
-  justify-items: center;
-  align-self: end;
-  gap: 8px;
-  min-width: 0;
-}
-
-body[data-profile-mode="owner-edit"] .profile-avatar--editable {
-  overflow: hidden;
-}
-
-body[data-profile-mode="owner-edit"] .profile-avatar--editable > span {
-  pointer-events: none;
-}
-
-body[data-profile-mode="owner-edit"] .profile-owner-avatar-action {
-  position: static;
-  z-index: auto;
-  min-height: 30px;
-  padding: 0 11px;
-  transform: none;
-  white-space: nowrap;
-}
-
-body[data-profile-mode="owner-edit"] .profile-owner-badge {
-  background: #fff3cf;
-  color: #8a5a00;
-}
-
-body[data-profile-mode="owner-edit"] .profile-owner-section-tools {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  min-width: 0;
-  margin-bottom: 4px;
-}
-
-body[data-profile-mode="owner-edit"] .profile-owner-section-tools > span {
-  color: #5f7390;
-  font-size: 0.82rem;
-  font-weight: var(--doke-type-weight-emphasis, 700);
-}
-
-body[data-profile-mode="owner-edit"] .profile-owner-section-tools > div {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-@media (max-width: 760px) {
-  body[data-profile-mode="owner-edit"] .profile-owner-section-tools {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  body[data-profile-mode="owner-edit"] .profile-owner-section-tools > div {
-    justify-content: flex-start;
-  }
-}
-
-@media (max-width: 520px) {
-  body[data-profile-mode="owner-edit"] .profile-owner-cover-action {
-    left: 14px;
-    bottom: 14px;
-    min-height: 30px;
-    padding-inline: 11px;
-    font-size: 0.72rem;
-  }
-
-  body[data-profile-mode="owner-edit"] .profile-owner-avatar-action {
-    min-height: 28px;
-    font-size: 0.7rem;
-  }
-}
-
-
-/* Professional profile editor local action and tab surfaces. */
-body[data-page="perfil-profissional"] :is(.profile-owner-mini-action, .profile-tabs__item) { border: 0; }
-body[data-page="perfil-profissional"] .profile-owner-mini-action {
-  background: #fff;
-  box-shadow: var(--doke-clean-control-shadow);
-}
-
-
-/* Cover/avatar actions sit on media; they stay flat. Section tools remain standalone. */
-body[data-profile-mode="owner-edit"] :is(.profile-owner-cover-action, .profile-owner-avatar-action).doke-btn--ghost,
-body[data-profile-mode="owner-edit"] :is(.profile-owner-cover-action, .profile-owner-avatar-action).doke-btn--ghost:hover {
-  box-shadow: none;
-  transform: none;
-}
-body[data-profile-mode="owner-edit"] :is(.profile-owner-cover-action, .profile-owner-avatar-action).doke-btn--ghost:focus-visible {
-  box-shadow: var(--doke-white-control-shadow-focus);
-}
-
-/* Active professional profile editor. */
-body[data-page="perfil-profissional"] .profile-hero__cover-image,
-body[data-page="perfil-profissional"] .profile-avatar__image {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-body[data-page="perfil-profissional"] :is(.profile-hero__cover-image, .profile-avatar__image)[hidden] {
-  display: none;
-}
-
-body[data-page="perfil-profissional"] .professional-profile-editor-dialog__surface {
-  width: min(760px, calc(100vw - 32px));
-  max-height: min(860px, calc(100vh - 32px));
-  overflow: auto;
-}
-
-body[data-page="perfil-profissional"] .professional-profile-editor-dialog__eyebrow {
-  margin: 0 0 4px;
-  color: var(--color-primary-strong, #184a76);
-  font-size: 0.75rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-body[data-page="perfil-profissional"] .professional-profile-editor-form {
-  display: grid;
-  gap: 18px;
-}
-
-body[data-page="perfil-profissional"] .professional-profile-editor-form__grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
-}
-
-body[data-page="perfil-profissional"] .professional-profile-editor-form__field {
-  display: grid;
-  align-content: start;
-  gap: 7px;
-  min-width: 0;
-}
-
-body[data-page="perfil-profissional"] .professional-profile-editor-form__field--wide {
-  grid-column: 1 / -1;
-}
-
-body[data-page="perfil-profissional"] .professional-profile-editor-form__field small {
-  color: var(--doke-text-muted, #6b7f99);
-  font-size: 0.75rem;
-}
-
-body[data-page="perfil-profissional"] .professional-profile-editor-form__status {
-  min-height: 1.25rem;
-  margin: 0;
-  color: var(--doke-text-muted, #6b7f99);
-  font-size: 0.82rem;
-  font-weight: 600;
-}
-
-body[data-page="perfil-profissional"] .professional-profile-editor-form__status[data-state="error"] {
-  color: var(--color-danger, #b42318);
-}
-
-body[data-page="perfil-profissional"] .professional-profile-editor-form__status[data-state="success"] {
-  color: var(--color-success, #087f5b);
-}
-
-@media (max-width: 680px) {
-  body[data-page="perfil-profissional"] .professional-profile-editor-form__grid {
-    grid-template-columns: 1fr;
-  }
-
-  body[data-page="perfil-profissional"] .professional-profile-editor-form__field--wide {
-    grid-column: auto;
-  }
-}
-
-/* Compact media controls and mobile parity with the client owner profile. */
-body[data-profile-mode="owner-edit"] :is(.profile-owner-cover-action, .profile-owner-avatar-action).doke-icon-btn {
-  inline-size: 38px;
-  block-size: 38px;
-  min-inline-size: 38px;
-  min-block-size: 38px;
-  padding: 0;
-  border: 0;
-  border-radius: var(--radius-full, 999px);
-  background: rgba(255, 255, 255, 0.96);
-  color: var(--color-primary-strong, #184a76);
-  box-shadow: var(--doke-white-control-shadow, 0 8px 20px rgba(16, 59, 99, 0.16));
-}
-
-body[data-profile-mode="owner-edit"] :is(.profile-owner-cover-action, .profile-owner-avatar-action).doke-icon-btn svg {
-  inline-size: 18px;
-  block-size: 18px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.8;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-body[data-profile-mode="owner-edit"] .profile-owner-cover-action.doke-icon-btn {
-  left: auto;
-  right: clamp(14px, 2vw, 22px);
-  bottom: clamp(14px, 2vw, 22px);
-}
-
-body[data-profile-mode="owner-edit"] .profile-owner-avatar-stack {
-  position: relative;
-  display: block;
-  inline-size: fit-content;
-}
-
-body[data-profile-mode="owner-edit"] .profile-owner-avatar-action.doke-icon-btn {
-  position: absolute;
-  right: -2px;
-  bottom: -2px;
-  z-index: 3;
-  transform: none;
-}
-
+/* Professional-only responsive identity composition. */
 @media (max-width: 760px) {
   body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-owner-avatar-stack {
     justify-self: start;
@@ -290,20 +23,6 @@ body[data-profile-mode="owner-edit"] .profile-owner-avatar-action.doke-icon-btn 
 
   body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-hero__identity {
     gap: 10px;
-  }
-}
-
-@media (max-width: 520px) {
-  body[data-profile-mode="owner-edit"] :is(.profile-owner-cover-action, .profile-owner-avatar-action).doke-icon-btn {
-    inline-size: 34px;
-    block-size: 34px;
-    min-inline-size: 34px;
-    min-block-size: 34px;
-  }
-
-  body[data-profile-mode="owner-edit"] .profile-owner-cover-action.doke-icon-btn {
-    right: 12px;
-    bottom: 12px;
   }
 }
 
@@ -441,33 +160,6 @@ body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-a
 }
 
 
-/* Profile creation islands — shared section header surface for owner creation flows. */
-body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-owner-section-tools--island {
-  min-height: 82px;
-  margin-bottom: 16px;
-  padding: 18px 20px;
-  border: 1px solid rgba(24, 75, 118, 0.08);
-  border-radius: var(--card-radius-lg, 22px);
-  background: rgba(255, 255, 255, 0.84);
-  box-shadow: 0 10px 26px rgba(24, 75, 118, 0.06);
-}
-
-body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-owner-section-tools--island > span {
-  color: var(--color-text, #102d4b);
-  font-size: 1rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-}
-
-body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-owner-section-tools--island .doke-btn--primary {
-  gap: 7px;
-}
-
-body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-owner-section-tools--island .doke-btn--primary > span {
-  font-size: 1.05rem;
-  line-height: 1;
-}
-
 /* The native selects are enhanced by doke-lite-select; size the canonical triggers, not browser arrows. */
 body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-management .profile-service-filters > [data-doke-select-root] {
   flex: 0 1 auto;
@@ -486,12 +178,6 @@ body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-s
   color: var(--color-primary-strong, #184a76);
 }
 
-@media (max-width: 760px) {
-  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-owner-section-tools--island {
-    min-height: 0;
-    padding: 16px;
-  }
-}
 
 @media (max-width: 600px) {
   body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-management .profile-service-filters > [data-doke-select-root] {
@@ -513,52 +199,6 @@ body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-s
   background-image: none;
   box-shadow: none;
   appearance: none;
-}
-
-/* v16 — canonical section action buttons: readable variants and standard elevation */
-body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-owner-section-tools .profile-owner-mini-action {
-  min-height: var(--doke-btn-height-sm, 40px);
-  padding-inline: var(--btn-padding-x-sm, 14px);
-  border: 0;
-  border-radius: var(--btn-radius-sm, 12px);
-  opacity: 1;
-  visibility: visible;
-  font-weight: var(--control-font-weight, 700);
-}
-
-body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-owner-section-tools .profile-owner-mini-action.doke-btn--primary {
-  background: var(--gradient-button-primary, var(--color-primary, #2a5f90));
-  color: var(--color-white, #fff);
-  box-shadow: var(--shadow-action-primary);
-}
-
-body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-owner-section-tools .profile-owner-mini-action.doke-btn--ghost {
-  background: var(--doke-white-control-bg, #fff);
-  color: var(--color-primary-strong, #184a76);
-  box-shadow: var(--doke-white-control-shadow);
-}
-
-@media (hover: hover) and (pointer: fine) {
-  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-owner-section-tools .profile-owner-mini-action.doke-btn--primary:hover {
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-action-primary-hover, var(--shadow-action-primary));
-  }
-
-  body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-owner-section-tools .profile-owner-mini-action.doke-btn--ghost:hover {
-    transform: translateY(-1px);
-    background: var(--doke-white-control-bg, #fff);
-    box-shadow: var(--doke-white-control-shadow-hover);
-  }
-}
-
-body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-owner-section-tools .profile-owner-mini-action:focus-visible {
-  outline: 0;
-  box-shadow: var(--doke-white-control-shadow-focus);
-}
-
-body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-owner-section-tools .profile-owner-mini-action:is([disabled], [aria-disabled="true"]) {
-  opacity: 0.58;
-  box-shadow: none;
 }
 
 /* v26 — responsive owner-ad layout follows the actual content width, not only viewport width. */

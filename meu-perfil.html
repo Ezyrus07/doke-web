@@ -14,9 +14,10 @@
       rel="stylesheet"
     />
     <script src="assets/js/core/shell-state-early.js?v=20260614-drawer-canonical-v2"></script>
-    <link rel="stylesheet" href="assets/css/pages/client-profile.css?v=20260717-horizontal-service-card-v1" />
-    <link rel="stylesheet" href="assets/css/pages/client-profile-editor.css?v=20260717-horizontal-service-card-v1" />
+    <link rel="stylesheet" href="assets/css/pages/client-profile.css?v=20260719-profile-family-v1" />
+    <link rel="stylesheet" href="assets/css/pages/client-profile-editor.css?v=20260719-profile-family-v1" />
     <link rel="stylesheet" href="assets/css/components/feedback/document-preloader.css?v=20260712-global-document-boot-v1">
+    <link rel="stylesheet" href="assets/css/components/ui-surface/close-button-authority.css?v=20260713-global-v1">
 </head>
   <body data-page="perfil" data-profile-contract="clean-v1" data-client-profile-contract="owner-edit-v1" data-profile-mode="client-edit" class="doke-app-shell-page app-shell-page internal-shell-page profile-page-shell client-profile-shell doke-flow doke-profile-flow has-global-header">
   <section class="doke-document-preloader" data-doke-document-preloader data-profile-document-preloader aria-label="Carregando Doke" aria-hidden="false">
@@ -28,69 +29,93 @@
       <aside class="sidebar" data-shell-sidebar data-sidebar-contract="global-sidebar"></aside>
 
       <div class="page">
-        <header class="app-header home-side-meta" data-app-header data-header-contract="app-header" data-header-variant="standard" data-header-family="standard" aria-label="Atalhos e contexto">
+        <header class="app-header app-header--home home-side-meta" data-app-header data-header-contract="app-header" data-header-variant="standard" data-header-family="standard" aria-label="Atalhos e contexto">
           <div class="app-header__inner" data-header-inner>
-            <div class="home-side-meta__group home-side-meta__group--primary app-header__group app-header__group--primary" data-header-slot="primary">
-              <button class="home-side-meta__tablet-menu" type="button" data-mobile-home-menu-open aria-label="Abrir menu lateral" aria-expanded="false" aria-haspopup="dialog">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M4 7h16"></path>
-                  <path d="M4 12h16"></path>
-                  <path d="M4 17h16"></path>
-                </svg>
-              </button>
-              <button class="home-side-meta__search" type="button" aria-label="Buscar">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <circle cx="11" cy="11" r="5.75"></circle>
-                  <path d="m16 16 4 4"></path>
-                </svg>
-              </button>
-              <form class="home-side-meta__search-form" action="resultados.html" role="search" aria-label="Busca rápida">
-                <label class="home-side-meta__search-label doke-label" for="desktop-quick-search-profile">Buscar</label>
-                <input id="desktop-quick-search-profile" class="home-side-meta__search-input doke-input" type="text" name="q" placeholder="Buscar serviço" autocomplete="off">
-              </form>
-              <button class="home-side-meta__location" type="button" aria-label="Alterar localização">
-                <span class="home-side-meta__location-text" data-topbar-location-value data-location-fallback="Belo Horizonte, MG">Belo Horizonte, MG</span>
-                <span class="home-side-meta__caret" aria-hidden="true"></span>
-              </button>
-            </div>
-
-            <div class="home-side-meta__group home-side-meta__group--secondary app-header__group app-header__group--secondary" data-header-slot="actions">
-              <button class="home-side-meta__alert" type="button" aria-label="Novidades" data-header-nav="novidades.html">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M6 5.5h12v13H6z"></path>
-                  <path d="M9 9h6"></path>
-                  <path d="M9 12h6"></path>
-                  <path d="M9 15h4"></path>
-                </svg>
-              </button>
-              <button class="home-side-meta__alert" type="button" aria-label="Suporte" data-header-nav="ajuda.html">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M5 13.5V10l10-4v12l-10-4z"></path>
-                  <path d="M15 9.5h2.2A2.8 2.8 0 0 1 20 12.3v.4a2.8 2.8 0 0 1-2.8 2.8H15"></path>
-                  <path d="M7.5 14.5v2.2a1.8 1.8 0 0 0 1.8 1.8h1.2"></path>
-                </svg>
-              </button>
-              <button class="home-side-meta__alert" type="button" aria-label="Notificações" data-header-nav="notificacoes.html">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M12 4.75a4 4 0 0 0-4 4v2.1c0 .7-.24 1.38-.68 1.92L5.9 14.5h12.2l-1.42-1.73a3 3 0 0 1-.68-1.92v-2.1a4 4 0 0 0-4-4Z"></path>
-                  <path d="M10 17.2a2.3 2.3 0 0 0 4 0"></path>
-                </svg>
-              </button>
-              <div class="home-side-meta__profile-wrap">
-                <button class="home-side-meta__profile" type="button" data-header-nav="meu-perfil.html" aria-label="Abrir conta">
-                  <span class="home-side-meta__avatar doke-avatar" aria-hidden="true">DK</span>
-                  <span class="home-side-meta__identity">
-                    <strong>Entrar</strong>
-                    <span>Conta</span></span>
+                <div class="home-side-meta__group home-side-meta__group--primary app-header__group app-header__group--primary" data-header-slot="primary">
+                <button class="home-side-meta__tablet-menu" type="button" data-mobile-home-menu-open aria-label="Abrir menu lateral" aria-expanded="false" aria-haspopup="dialog">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M5 7h14"></path>
+                    <path d="M5 12h14"></path>
+                    <path d="M5 17h14"></path>
+                  </svg>
                 </button>
+                <button class="home-side-meta__search" type="button" aria-label="Buscar">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="11" cy="11" r="5.75"></circle>
+                    <path d="m16 16 4 4"></path>
+                  </svg>
+                </button>
+                <form class="home-side-meta__search-form" action="resultados.html" role="search" aria-label="Busca rápida">
+                  <label class="home-side-meta__search-label doke-label" for="desktop-quick-search-profile">Buscar</label>
+                  <input id="desktop-quick-search-profile" class="home-side-meta__search-input doke-input" type="text" name="q" placeholder="Buscar serviço" autocomplete="off">
+                </form>
+                <button class="home-side-meta__location" type="button" aria-label="Alterar localização">
+                  <span class="home-side-meta__location-text" data-topbar-location-value data-location-fallback="Belo Horizonte, MG">Belo Horizonte, MG</span>
+                  <span class="home-side-meta__caret" aria-hidden="true"></span>
+                </button>
+                </div>
+                <div class="home-side-meta__group home-side-meta__group--secondary app-header__group app-header__group--secondary" data-header-slot="actions">
+                <button class="home-side-meta__alert" type="button" aria-label="Novidades" data-header-nav="novidades.html">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M6 5.5h12v13H6z"></path>
+                    <path d="M9 9h6"></path>
+                    <path d="M9 12h6"></path>
+                    <path d="M9 15h4"></path>
+                  </svg>
+                </button>
+                <button class="home-side-meta__alert" type="button" aria-label="Suporte" data-header-nav="ajuda.html">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M5 13.5V10l10-4v12l-10-4z"></path>
+                    <path d="M15 9.5h2.2A2.8 2.8 0 0 1 20 12.3v.4a2.8 2.8 0 0 1-2.8 2.8H15"></path>
+                    <path d="M7.5 14.5v2.2a1.8 1.8 0 0 0 1.8 1.8h1.2"></path>
+                  </svg>
+                </button>
+                <button class="home-side-meta__alert" type="button" aria-label="Notificações" data-header-nav="notificacoes.html">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 4.75a4 4 0 0 0-4 4v2.1c0 .7-.24 1.38-.68 1.92L5.9 14.5h12.2l-1.42-1.73a3 3 0 0 1-.68-1.92v-2.1a4 4 0 0 0-4-4Z"></path>
+                    <path d="M10 17.2a2.3 2.3 0 0 0 4 0"></path>
+                  </svg>
+                </button>
+                <div class="home-side-meta__profile-wrap">
+                  <button class="home-side-meta__profile" type="button" data-mobile-home-menu-open data-home-profile-menu-toggle aria-label="Abrir menu da conta" aria-expanded="false" aria-haspopup="true">
+                    <span class="home-side-meta__avatar doke-avatar" data-mobile-home-menu-open role="button" tabindex="0">DK</span>
+                    <span class="home-side-meta__identity">
+                      <strong>Entrar</strong>
+                      <span>Conta Doke</span>
+                    </span>
+                  </button>
+                  <div class="profile-dropdown profile-dropdown--home profile-dropdown--home-main doke-popover doke-menu" data-home-profile-menu hidden>
+                    <div class="profile-dropdown__header doke-popover">Conta Doke</div>
+                    <div class="profile-dropdown__body doke-popover">
+                      <a class="profile-dropdown__item doke-popover" href="meu-perfil.html">
+                        <span class="profile-dropdown__icon doke-popover" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"></circle><path d="M5 19c1.2-3.2 3.7-4.8 7-4.8s5.8 1.6 7 4.8"></path></svg></span>
+                        <span>Perfil</span>
+                      </a>
+                    </div>
+                    <div class="profile-dropdown__footer doke-popover">
+                      <button class="profile-dropdown__item profile-dropdown__item--danger doke-popover" type="button" data-profile-logout>
+                        <span class="profile-dropdown__icon doke-popover" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M15 7.5V5.8A1.8 1.8 0 0 0 13.2 4H7.8A1.8 1.8 0 0 0 6 5.8v12.4A1.8 1.8 0 0 0 7.8 20h5.4a1.8 1.8 0 0 0 1.8-1.8v-1.7"></path><path d="M10 12h10"></path><path d="m17 8 3 4-3 4"></path></svg></span>
+                        <span>Sair</span>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="profile-dropdown profile-dropdown--home profile-dropdown--home-account doke-popover doke-menu" data-home-account-menu hidden>
+                    <div class="profile-dropdown__header doke-popover">Contas</div>
+                    <div class="profile-dropdown__body doke-popover">
+                      <button class="profile-dropdown__item doke-popover" type="button">
+                        <span class="profile-dropdown__icon doke-popover" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M13 4h6v6"></path><path d="M20 4 9 15"></path><path d="M11 6H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"></path></svg></span>
+                        <span>Adicionar conta</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                </div>
               </div>
-            </div>
-          </div>
         </header>
 
         <div class="page__content doke-page">
           <main id="doke-my-profile-rail-lock" class="page__content-inner container app-shell-page__workspace app-shell-page__workspace--clean profile-shell-content profile-page doke-page-shell doke-page-stack" aria-labelledby="profile-title" data-state-boundary="meu-perfil" data-state-scope="meu-perfil" data-view-state="loading" aria-busy="true">
-            <div class="doke-state-region" data-state-region data-state-scope="profile" aria-live="polite" hidden>
+            <div class="doke-state-region" data-state-region data-state-scope="meu-perfil" aria-live="polite" hidden>
               <p data-state-loading hidden class="doke-loading-state">Carregando perfil...</p>
               <p data-state-empty hidden class="doke-empty-state">As informações deste perfil ainda não estão disponíveis.</p>
               <p data-state-error hidden class="doke-error-state">Não foi possível carregar o perfil.</p>
@@ -123,11 +148,16 @@
               <div class="profile-hero__cover">
                 <img class="profile-hero__cover-image" data-profile-cover-image alt="" hidden />
                 <span class="profile-hero__cover-mark" aria-hidden="true">Doke</span>
-                <label class="profile-owner-cover-action doke-icon-btn" aria-label="Alterar imagem de capa"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M8.5 6.5 10 4.5h4l1.5 2H19a2 2 0 0 1 2 2v8.5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8.5a2 2 0 0 1 2-2h3.5Z"></path><circle cx="12" cy="12.5" r="3.5"></circle></svg><input class="sr-only" type="file" accept="image/png,image/jpeg,image/webp,image/gif" data-profile-media-input="cover" /></label>
+                <button class="profile-owner-cover-action doke-icon-btn" aria-label="Alterar imagem de capa" data-profile-media-trigger="cover" type="button"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M8.5 6.5 10 4.5h4l1.5 2H19a2 2 0 0 1 2 2v8.5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8.5a2 2 0 0 1 2-2h3.5Z"></path><circle cx="12" cy="12.5" r="3.5"></circle></svg></button>
+                <input class="sr-only" type="file" accept="image/png,image/jpeg,image/webp,image/gif" data-profile-media-input="cover" />
               </div>
 
               <div class="profile-hero__identity">
-                <div class="profile-avatar profile-avatar--editable" aria-label="Avatar do perfil"><img class="profile-avatar__image" data-profile-avatar-image alt="" hidden /><span data-profile-avatar-initials aria-hidden="true">DK</span><label class="profile-owner-avatar-action doke-icon-btn" aria-label="Alterar foto do perfil"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M8.5 6.5 10 4.5h4l1.5 2H19a2 2 0 0 1 2 2v8.5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8.5a2 2 0 0 1 2-2h3.5Z"></path><circle cx="12" cy="12.5" r="3.5"></circle></svg><input class="sr-only" type="file" accept="image/png,image/jpeg,image/webp,image/gif" data-profile-media-input="avatar" /></label></div>
+                <div class="profile-owner-avatar-stack">
+                  <div class="profile-avatar profile-avatar--editable" aria-label="Avatar do perfil"><img class="profile-avatar__image" data-profile-avatar-image alt="" hidden /><span data-profile-avatar-initials aria-hidden="true">DK</span></div>
+                  <button class="profile-owner-avatar-action doke-icon-btn" aria-label="Alterar foto do perfil" data-profile-media-trigger="avatar" type="button"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M8.5 6.5 10 4.5h4l1.5 2H19a2 2 0 0 1 2 2v8.5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8.5a2 2 0 0 1 2-2h3.5Z"></path><circle cx="12" cy="12.5" r="3.5"></circle></svg></button>
+                  <input class="sr-only" type="file" accept="image/png,image/jpeg,image/webp,image/gif" data-profile-media-input="avatar" />
+                </div>
 
                 <div class="profile-heading">
                   <p class="profile-heading__eyebrow">Meu perfil</p>
@@ -135,12 +165,20 @@
                   <p class="profile-heading__meta" data-profile-meta>Adicione identificador e localização</p>
                   <div class="profile-badges" aria-label="Selos do perfil">
                     <span class="doke-badge doke-badge--verified" data-profile-verified hidden>Identidade verificada</span>
-                    <span class="doke-badge profile-owner-badge">Editável</span>
+                    <span class="doke-badge profile-owner-badge">Modo edição</span>
                   </div>
                 </div>
 
-                <div class="profile-actions" aria-label="Ações do perfil">
+                <div class="profile-actions" aria-label="Ações do perfil cliente">
                   <button class="doke-btn doke-btn--primary profile-action" data-client-edit-action type="button">Editar perfil</button>
+                  <a class="doke-btn doke-btn--ghost profile-action" data-owner-public-profile-link href="perfil-cliente.html">Ver perfil público</a>
+                  <button class="doke-icon-btn profile-action-icon" type="button" aria-label="Mais ações do perfil cliente">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <circle cx="5" cy="12" r="1.5"></circle>
+                      <circle cx="12" cy="12" r="1.5"></circle>
+                      <circle cx="19" cy="12" r="1.5"></circle>
+                    </svg>
+                  </button>
                 </div>
                 <p class="profile-media-feedback" data-profile-media-feedback role="status" aria-live="polite" hidden></p>
               </div>
@@ -171,7 +209,7 @@
 
             <section class="profile-feed client-profile-feed" data-profile-hydration-ready hidden aria-label="Áreas do meu perfil">
               <section id="profile-achievements" class="profile-area profile-area--achievements doke-page-section" aria-label="Conquistas do cliente">
-                <div class="profile-owner-section-tools"><span>Conquistas</span><div><button class="profile-owner-mini-action doke-btn doke-btn--ghost doke-btn--sm" type="button">Adicionar conquista</button><button class="profile-owner-mini-action doke-btn doke-btn--ghost doke-btn--sm" type="button">Gerenciar</button></div></div>
+                <div class="profile-owner-section-tools profile-owner-section-tools--island"><span>Conquistas</span><div><button class="profile-owner-mini-action doke-btn doke-btn--ghost doke-btn--sm" type="button">Adicionar conquista</button><button class="profile-owner-mini-action doke-btn doke-btn--ghost doke-btn--sm" type="button">Gerenciar</button></div></div>
                 <div class="profile-chip-grid" aria-label="Conquistas do perfil">
                   <article class="profile-chip-card">
                     <span class="profile-chip-card__icon" aria-hidden="true">＋</span>
@@ -181,7 +219,7 @@
               </section>
 
               <section id="profile-about" class="profile-area profile-area--about doke-page-section" aria-label="Sobre o cliente">
-                <div class="profile-owner-section-tools"><span>Sobre</span><div><button class="profile-owner-mini-action doke-btn doke-btn--ghost doke-btn--sm" data-client-edit-action data-client-edit-focus="bio" type="button">Editar sobre</button><button class="profile-owner-mini-action doke-btn doke-btn--ghost doke-btn--sm" data-client-edit-action data-client-edit-focus="interests" type="button">Editar interesses</button></div></div>
+                <div class="profile-owner-section-tools profile-owner-section-tools--island"><span>Sobre</span><div><button class="profile-owner-mini-action doke-btn doke-btn--ghost doke-btn--sm" data-client-edit-action data-client-edit-focus="bio" type="button">Editar sobre</button><button class="profile-owner-mini-action doke-btn doke-btn--ghost doke-btn--sm" data-client-edit-action data-client-edit-focus="interests" type="button">Editar interesses</button></div></div>
                 <div class="profile-info-grid">
                   <article class="profile-surface-card profile-surface-card--about">
                     <h3 data-profile-about-title>Sobre você</h3>
@@ -206,27 +244,27 @@
       </div>
     </div>
 <dialog aria-labelledby="client-profile-editor-title" class="client-profile-editor-dialog doke-native-overlay" data-client-profile-editor>
-  <section class="client-profile-editor-dialog__surface doke-modal-surface doke-modal-surface--form doke-overlay__surface">
+  <section class="client-profile-editor-dialog__surface profile-editor-dialog__surface doke-modal-surface doke-modal-surface--form doke-overlay__surface">
     <header class="doke-modal-header doke-overlay__header">
       <div>
-        <p class="client-profile-editor-dialog__eyebrow">Perfil cliente</p>
+        <p class="client-profile-editor-dialog__eyebrow profile-editor-dialog__eyebrow">Perfil cliente</p>
         <h2 class="doke-modal-title doke-overlay__title" id="client-profile-editor-title">Editar perfil</h2>
         <p class="doke-modal-description doke-overlay__text">Atualize suas informações públicas na Doke.</p>
       </div>
       <button aria-label="Fechar edição" class="doke-close-button doke-icon-btn doke-icon-btn--flat" data-client-profile-editor-close type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
     </header>
-    <form class="client-profile-editor-form doke-overlay__body" data-client-profile-editor-form novalidate>
-      <div class="client-profile-editor-form__grid">
-        <label class="client-profile-editor-form__field"><span class="doke-label">Nome</span><input class="doke-input" data-client-editor-field="name" maxlength="80" required type="text"></label>
-        <label class="client-profile-editor-form__field"><span class="doke-label">Usuário</span><input class="doke-input" data-client-editor-field="handle" maxlength="30" required type="text"></label>
-        <label class="client-profile-editor-form__field"><span class="doke-label">Cidade</span><input class="doke-input" data-client-editor-field="city" maxlength="60" type="text"></label>
-        <label class="client-profile-editor-form__field"><span class="doke-label">Estado</span><input class="doke-input" data-client-editor-field="state" maxlength="2" placeholder="BA" type="text"></label>
-        <label class="client-profile-editor-form__field client-profile-editor-form__field--wide"><span class="doke-label">Interesses</span><input class="doke-input" data-client-editor-field="interests" maxlength="180" type="text"><small>Separe por vírgulas.</small></label>
-        <label class="client-profile-editor-form__field client-profile-editor-form__field--wide"><span class="doke-label">Sobre você</span><textarea class="doke-textarea" data-client-editor-field="bio" maxlength="500" minlength="10" rows="5"></textarea></label>
-        <label class="client-profile-editor-form__field"><span class="doke-label">Foto do perfil</span><input accept="image/png,image/jpeg,image/webp,image/gif" data-client-editor-file="avatar" type="file"><small>PNG, JPG, WEBP ou GIF; até 120 KB no modo local.</small></label>
-        <label class="client-profile-editor-form__field"><span class="doke-label">Imagem de capa</span><input accept="image/png,image/jpeg,image/webp,image/gif" data-client-editor-file="cover" type="file"><small>PNG, JPG, WEBP ou GIF; até 120 KB no modo local.</small></label>
+    <form class="client-profile-editor-form profile-editor-form doke-overlay__body" data-client-profile-editor-form novalidate>
+      <div class="client-profile-editor-form__grid profile-editor-form__grid">
+        <label class="client-profile-editor-form__field profile-editor-form__field"><span class="doke-label">Nome</span><input class="doke-input" data-client-editor-field="name" maxlength="80" required type="text"></label>
+        <label class="client-profile-editor-form__field profile-editor-form__field"><span class="doke-label">Usuário</span><input class="doke-input" data-client-editor-field="handle" maxlength="30" required type="text"></label>
+        <label class="client-profile-editor-form__field profile-editor-form__field"><span class="doke-label">Cidade</span><input class="doke-input" data-client-editor-field="city" maxlength="60" type="text"></label>
+        <label class="client-profile-editor-form__field profile-editor-form__field"><span class="doke-label">Estado</span><input class="doke-input" data-client-editor-field="state" maxlength="2" placeholder="BA" type="text"></label>
+        <label class="client-profile-editor-form__field client-profile-editor-form__field--wide profile-editor-form__field profile-editor-form__field--wide"><span class="doke-label">Interesses</span><input class="doke-input" data-client-editor-field="interests" maxlength="180" type="text"><small>Separe por vírgulas.</small></label>
+        <label class="client-profile-editor-form__field client-profile-editor-form__field--wide profile-editor-form__field profile-editor-form__field--wide"><span class="doke-label">Sobre você</span><textarea class="doke-textarea" data-client-editor-field="bio" maxlength="500" minlength="10" rows="5"></textarea></label>
+        <label class="client-profile-editor-form__field profile-editor-form__field"><span class="doke-label">Foto do perfil</span><input accept="image/png,image/jpeg,image/webp,image/gif" data-client-editor-file="avatar" type="file"><small>PNG, JPG, WEBP ou GIF; até 120 KB no modo local.</small></label>
+        <label class="client-profile-editor-form__field profile-editor-form__field"><span class="doke-label">Imagem de capa</span><input accept="image/png,image/jpeg,image/webp,image/gif" data-client-editor-file="cover" type="file"><small>PNG, JPG, WEBP ou GIF; até 120 KB no modo local.</small></label>
       </div>
-      <p aria-live="polite" class="client-profile-editor-form__status" data-client-profile-editor-status></p>
+      <p aria-live="polite" class="client-profile-editor-form__status profile-editor-form__status" data-client-profile-editor-status></p>
       <footer class="doke-modal-actions doke-overlay__actions">
         <button class="doke-btn doke-btn--ghost" data-client-profile-editor-close type="button">Cancelar</button>
         <button class="doke-btn doke-btn--primary" data-client-profile-editor-save type="submit">Salvar alterações</button>
@@ -243,7 +281,7 @@
 
     <script src="assets/js/core/navigation-registry.js?v=20260701-navigation-registry-v1"></script>
     <script src="assets/js/core/navigation-lifecycle.js?v=20260713-navigation-lifecycle-v1" defer></script>
-    <script src="assets/js/core/app.js?v=20260714-route-deadlock-v1" defer></script>
+    <script src="assets/js/core/app.js?v=20260719-notification-live-sync-v1" defer></script>
     <script src="assets/js/components/operational-event-toast.js?v=20260702-sidebar-quick-alert-flow-v1" defer></script>
     <script src="assets/js/core/page-hydration.js?v=20260717-professional-service-lifecycle-v1" defer></script>
     <script src="assets/js/core/stable-shell-router.js?v=20260717-professional-service-lifecycle-v1" defer></script>
@@ -279,8 +317,9 @@
     <script src="assets/js/controllers/controller-bootstrap.js?v=20260501-stage32-runtime-flags" defer></script>
     <script src="assets/js/core/experience-runtime.js?v=20260711-experience-runtime-v1" defer></script>
     <script src="assets/js/pages/profile/profile-experience-core.js?v=20260711-profile-core-v1" defer></script>
+    <script src="assets/js/pages/profile/profile-presentation.js?v=20260719-profile-family-v1" defer></script>
     <script src="assets/js/pages/profile/client-profile-editor.js?v=20260717-shared-client-profile-editor-v1" defer></script>
-    <script src="assets/js/pages/owner-profile-experience.js?v=20260714-profile-lifecycle-v1" defer></script>
+    <script src="assets/js/pages/owner-profile-experience.js?v=20260719-profile-family-v1" defer></script>
     <script src="assets/js/core/ipad-safari-scroll-guard.js?v=20260602-v1" defer></script>
     <script src="assets/js/core/document-preloader.js?v=20260712-global-document-boot-v1" defer></script>
 </body>

@@ -3,7 +3,6 @@
   var Doke = window.Doke || (window.Doke = {});
   if (!Doke.profileExperienceCore) return;
 
-  var latestProfile = null;
   var clientSurfaceInitialized = false;
   var clientHydrationBoundary = null;
   var clientHydration = null;
@@ -69,10 +68,10 @@
   function syncOwnerMode(profile) {
     var owner = isOwner(profile);
     if (document.body) {
-      document.body.dataset.profileMode = owner ? 'client-edit' : 'public-client';
-      document.body.dataset.clientProfileMode = owner ? 'owner-edit' : 'public';
+      document.body.dataset.profileMode = 'public-client';
+      document.body.dataset.clientProfileMode = owner ? 'owner-viewing-public' : 'public';
     }
-    document.querySelectorAll('[data-client-edit-action], [data-client-owner-badge], [data-client-owner-tools]').forEach(function (node) {
+    document.querySelectorAll('[data-client-owner-public-action]').forEach(function (node) {
       node.hidden = !owner;
     });
     document.querySelectorAll('[data-client-public-action]').forEach(function (node) {
@@ -81,10 +80,13 @@
   }
   function render(profile) {
     profile = profile || {};
-    latestProfile = profile;
     var name = clean(profile.name) || 'Perfil não preenchido';
     var place = [clean(profile.city), clean(profile.state)].filter(Boolean).join(', ');
-    set('[data-profile-name]', name);
+    if (Doke.profilePresentation && typeof Doke.profilePresentation.setDisplayName === 'function') {
+      Doke.profilePresentation.setDisplayName('[data-profile-name]', name, 'Perfil não preenchido');
+    } else {
+      set('[data-profile-name]', name);
+    }
     set('[data-profile-meta]', [profile.handle ? '@' + clean(profile.handle) : '', place].filter(Boolean).join(' · '), 'Informações públicas não preenchidas');
     set('[data-profile-avatar-initials]', initials(profile.name));
     renderMedia(profile);
@@ -142,14 +144,6 @@
 
   window.DokeInitClientProfile = function DokeInitClientProfile() {
     if (!document.querySelector('[data-state-boundary="perfil-cliente"]')) return Promise.resolve(null);
-    if (Doke.clientProfileEditor && typeof Doke.clientProfileEditor.register === 'function') {
-      Doke.clientProfileEditor.register({
-        getProfile: function () { return latestProfile; },
-        setProfile: function (profile) { latestProfile = profile || latestProfile; },
-        render: render,
-        canEdit: isOwner
-      });
-    }
     var hydration = ensureClientHydration();
     if (hydration && typeof hydration.start === 'function') hydration.start();
     var operation = clientSurfaceInitialized

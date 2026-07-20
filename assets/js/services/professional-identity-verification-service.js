@@ -57,6 +57,110 @@
     return Boolean(session && session.provider === 'supabase') || Boolean(window.DOKE_SUPABASE_CONFIG);
   }
 
+  function remoteRpc(name, args) {
+    var client = supabaseClient();
+    if (!client || typeof client.rpc !== 'function') return Promise.reject(new Error('Supabase indisponível para concluir esta ação.'));
+    return client.rpc(name, args || {}).then(function (result) {
+      if (result && result.error) throw result.error;
+      return result && result.data;
+    });
+  }
+
+  function mapRemoteVerification(row) {
+    if (!row) return null;
+    var payload = Object.assign({}, row.payload || {}, row.address || {}, row.documents || {});
+    payload.verificationType = row.verification_type || payload.verificationType || 'individual';
+    payload.legalName = row.legal_name || payload.legalName || '';
+    payload.taxIdLast4 = row.tax_id_last4 || '';
+    payload.birthDate = row.birth_date || payload.birthDate || '';
+    payload.representativeName = row.representative_name || payload.representativeName || '';
+    return {
+      id: row.id,
+      userId: row.user_id,
+      professionalProfileId: 'professional_profile_' + row.user_id,
+      status: row.status,
+      currentStep: Number(row.current_step || 1),
+      payload: payload,
+      rejectionReason: row.rejection_reason || '',
+      reviewerId: row.reviewer_id || '',
+      createdAt: row.created_at || '', updatedAt: row.updated_at || '', savedAt: row.updated_at || '',
+      submittedAt: row.submitted_at || '', reviewStartedAt: row.review_started_at || '', decidedAt: row.decided_at || ''
+    };
+  }
+
+  function uploadVerificationFiles(userId, payload) {
+    var client = supabaseClient();
+    if (!client || !client.storage) return Promise.reject(new Error('Storage do Supabase indisponível para enviar os documentos.'));
+    var fields = ['documentFront','documentBack','selfieDocument','proofOfAddress'];
+    if (payload.verificationType === 'business') fields.push('businessDocument');
+    var stamp = Date.now();
+    return Promise.all(fields.map(function (field) {
+      var file = payload[field];
+      if (!file || !(file.blob instanceof Blob)) throw validationError('Selecione novamente o arquivo para concluir o envio.', field);
+      var safeName = String(file.fileName || field).replace(/[^a-zA-Z0-9._-]+/g,'-').slice(-120);
+      var path = userId + '/' + stamp + '-' + field + '-' + safeName;
+      return client.storage.from('professional-verification-media').upload(path, file.blob, { contentType: file.type || file.blob.type || 'application/octet-stream', upsert: false }).then(function (result) {
+        if (result.error) throw result.error;
+        return [field, { path:path, fileName:file.fileName, size:file.size, type:file.type, bucket:'professional-verification-media' }];
+      });
+    })).then(function (pairs) { var docs={}; pairs.forEach(function(pair){docs[pair[0]]=pair[1];}); return docs; });
+  }
+
+  function hydrateRemoteDocumentUrls(verification) {
+    var client = supabaseClient();
+    if (!verification || !client || !client.storage) return Promise.resolve(verification);
+    var payload = Object.assign({}, verification.payload || {});
+    var fields = ['documentFront','documentBack','selfieDocument','proofOfAddress','businessDocument'];
+
+    return Promise.all(fields.map(function (field) {
+      var file = payload[field];
+      if (!file || typeof file !== 'object') return null;
+
+      var path = String(file.path || file.storagePath || file.objectPath || '').trim();
+      var bucket = String(file.bucket || 'professional-verification-media').trim();
+      if (!path) return null;
+
+      payload[field] = Object.assign({}, file, {
+        path: path,
+        bucket: bucket,
+        persisted: true,
+        previewState: 'loading'
+      });
+
+      return client.storage.from(bucket).createSignedUrl(path, 900).then(function (result) {
+        if (!result || result.error || !result.data || !result.data.signedUrl) {
+          throw result && result.error || new Error('SIGNED_URL_UNAVAILABLE');
+        }
+        payload[field] = Object.assign({}, payload[field], {
+          signedUrl: result.data.signedUrl,
+          previewState: 'ready',
+          previewError: ''
+        });
+        return true;
+      }).catch(function (signedUrlError) {
+        return client.storage.from(bucket).download(path).then(function (downloadResult) {
+          if (!downloadResult || downloadResult.error || !(downloadResult.data instanceof Blob)) {
+            throw downloadResult && downloadResult.error || signedUrlError;
+          }
+          payload[field] = Object.assign({}, payload[field], {
+            blob: downloadResult.data,
+            previewState: 'ready',
+            previewError: ''
+          });
+          return true;
+        }).catch(function (downloadError) {
+          payload[field] = Object.assign({}, payload[field], {
+            previewState: 'error',
+            previewError: String(downloadError && downloadError.message || signedUrlError && signedUrlError.message || 'Não foi possível abrir o arquivo.')
+          });
+          return false;
+        });
+      });
+    })).then(function () {
+      return Object.assign({}, verification, { payload: payload });
+    });
+  }
+
   function decideRemote(verificationId, decision, rejectionReason) {
     var client = supabaseClient();
     if (!client || typeof client.rpc !== 'function') {
@@ -268,38 +372,54 @@
   }
 
   function getCurrentVerification() {
-    assertLocalProvider();
+    if (!usesSupabaseProvider()) assertLocalProvider();
     var user = currentUser();
+    if (!user || !user.id) return Promise.resolve(null);
+    if (usesSupabaseProvider()) {
+      var client = supabaseClient();
+      return client.from('professional_identity_verifications').select('*').eq('user_id', user.id).maybeSingle().then(function(result){
+        if(result.error) throw result.error;
+        return hydrateRemoteDocumentUrls(mapRemoteVerification(result.data));
+      });
+    }
     var repo = repository();
-    if (!user || !user.id || !repo) return Promise.resolve(null);
+    if (!repo) return Promise.resolve(null);
     return repo.getByUserId(user.id).then(hydrateEvidence);
   }
 
   function getContext() {
-    assertLocalProvider();
     var user = requireOwner();
-    return Promise.all([requirePendingProfile(user.id), getCurrentVerification()]).then(function (items) {
-      return { user: user, professionalProfile: items[0], verification: items[1] };
-    });
+    if (usesSupabaseProvider()) {
+      var client = supabaseClient();
+      return Promise.all([
+        client.from('professional_profiles').select('*').eq('user_id',user.id).maybeSingle(),
+        getCurrentVerification()
+      ]).then(function(items){
+        if(items[0].error) throw items[0].error;
+        var row=items[0].data;
+        if(!row) throw new Error('Crie seu perfil profissional antes de iniciar a verificação.');
+        if(['pending_verification','active'].indexOf(row.setup_status)===-1) throw new Error('Seu perfil profissional não está pronto para verificação.');
+        return {user:user,professionalProfile:{id:row.id||('professional_profile_'+user.id),userId:user.id,status:row.setup_status,payload:row.setup_payload||{},verificationStatus:row.verification_status||'not_started',documentStatus:row.document_status||'not_started'},verification:items[1]};
+      });
+    }
+    return Promise.all([requirePendingProfile(user.id), getCurrentVerification()]).then(function(items){return {user:user,professionalProfile:items[0],verification:items[1]};});
   }
 
   function saveDraft(draft) {
-    assertLocalProvider();
     var user = requireOwner();
+    draft = draft || {};
+    if (usesSupabaseProvider()) {
+      var payload = normalizePayload(draft.payload || draft.fields || {});
+      var sanitized = Object.assign({}, payload);
+      delete sanitized.taxId;
+      ['documentFront','documentBack','selfieDocument','proofOfAddress','businessDocument'].forEach(function(k){ delete sanitized[k]; });
+      return remoteRpc('save_professional_verification_draft',{p_payload:sanitized,p_current_step:draft.currentStep||draft.step||1}).then(function(v){
+        window.dispatchEvent(new CustomEvent('doke:professional-verification-draft-saved',{detail:{verification:v,remote:true}}));return v;
+      });
+    }
     var repo = repository();
     if (!repo) return Promise.reject(new Error('Persistência da verificação indisponível.'));
-    draft = draft || {};
-    return requirePendingProfile(user.id).then(function (profile) {
-      return repo.saveDraft(user.id, profile.id, {
-        currentStep: draft.currentStep || draft.step || 1,
-        payload: normalizePayload(draft.payload || draft.fields || {})
-      });
-    }).then(function (verification) {
-      return syncProfileVerificationStatus(verification.professionalProfileId, 'not_started').then(function () {
-        window.dispatchEvent(new CustomEvent('doke:professional-verification-draft-saved', { detail: { verification: verification } }));
-        return verification;
-      });
-    });
+    return requirePendingProfile(user.id).then(function(profile){return repo.saveDraft(user.id,profile.id,{currentStep:draft.currentStep||draft.step||1,payload:normalizePayload(draft.payload||draft.fields||{})});}).then(function(verification){return syncProfileVerificationStatus(verification.professionalProfileId,'not_started').then(function(){return verification;});});
   }
 
   function validateBinaryEvidence(payload) {
@@ -320,71 +440,58 @@
   }
 
   function submit(draft) {
-    assertLocalProvider();
     var user = requireOwner();
-    var repo = repository();
-    if (!repo) return Promise.reject(new Error('Persistência da verificação indisponível.'));
     draft = draft || {};
-
-    return repo.getByUserId(user.id).then(function (current) {
-      if (current && current.status !== 'not_started') {
-        var error = new Error(
-          current.status === 'rejected'
-            ? 'Corrija a verificação rejeitada antes de enviar novamente.'
-            : 'Sua verificação já foi enviada e não pode ser reenviada neste momento.'
-        );
-        error.code = 'PROFESSIONAL_IDENTITY_VERIFICATION_SUBMISSION_LOCKED';
-        error.status = current.status;
-        throw error;
+    var rawPayload = draft.payload || draft.fields || {};
+    validateBinaryEvidence(rawPayload);
+    var payload = validateAll(rawPayload);
+    if (usesSupabaseProvider()) {
+      return uploadVerificationFiles(user.id,payload).then(function(documents){
+        var clean=Object.assign({},payload);
+        ['documentFront','documentBack','selfieDocument','proofOfAddress','businessDocument'].forEach(function(k){delete clean[k];});
+        return remoteRpc('submit_professional_identity_verification',{p_payload:clean,p_documents:documents});
+      }).then(function(v){window.dispatchEvent(new CustomEvent('doke:professional-verification-submitted',{detail:{verification:v,remote:true}}));return v;});
+    }
+    var repo=repository(); if(!repo)return Promise.reject(new Error('Persistência da verificação indisponível.'));
+    return repo.getByUserId(user.id).then(function(current){
+      if(current && current.status !== 'not_started') {
+        var locked = new Error('Sua verificação já foi enviada e não pode ser reenviada neste momento.');
+        locked.code = 'PROFESSIONAL_IDENTITY_VERIFICATION_SUBMISSION_LOCKED';
+        locked.status = current.status;
+        throw locked;
       }
-
-      var rawPayload = draft.payload || draft.fields || {};
-      validateBinaryEvidence(rawPayload);
-      var payload = validateAll(rawPayload);
-      return requirePendingProfile(user.id).then(function (profile) {
-        return repo.submit(user.id, profile.id, { payload: payload });
-      });
-    }).then(function (verification) {
-      return syncProfileVerificationStatus(verification.professionalProfileId, 'submitted').then(function () {
-        window.dispatchEvent(new CustomEvent('doke:professional-verification-submitted', { detail: { verification: verification } }));
-        return verification;
-      });
-    });
+      return requirePendingProfile(user.id).then(function(profile){return repo.submit(user.id,profile.id,{payload:payload});});
+    }).then(function(verification){return syncProfileVerificationStatus(verification.professionalProfileId,'submitted').then(function(){window.dispatchEvent(new CustomEvent('doke:professional-verification-submitted',{detail:{verification:verification}}));return verification;});});
   }
 
   function listForReview(filters) {
-    assertLocalProvider();
-    requireReviewer();
-    var repo = repository();
-    if (!repo || typeof repo.list !== 'function') return Promise.reject(new Error('Fila de verificações indisponível.'));
-    filters = filters || {};
-    return repo.list(filters).then(function (items) {
-      return (Array.isArray(items) ? items : []).filter(function (item) {
-        return ['submitted', 'under_review', 'verified', 'rejected'].indexOf(String(item && item.status || '')) >= 0;
+    requireReviewer(); filters=filters||{};
+    if(usesSupabaseProvider()){
+      return remoteRpc('list_professional_identity_verifications_for_admin',{
+        p_status: filters.status || null
+      }).then(function(rows){
+        return (Array.isArray(rows) ? rows : []).map(mapRemoteVerification);
       });
-    });
+    }
+    var repo=repository();if(!repo)return Promise.reject(new Error('Fila de verificações indisponível.'));return repo.list(filters);
   }
 
-
   function getReviewDetail(verificationId) {
-    assertLocalProvider();
     requireReviewer();
-    var repo = repository();
-    if (!repo || typeof repo.getById !== 'function') return Promise.reject(new Error('Verificação indisponível para análise.'));
-    return repo.getById(verificationId).then(function (verification) {
-      if (!verification) throw new Error('Verificação de identidade não encontrada.');
-      return hydrateEvidence(verification);
-    });
+    if(usesSupabaseProvider()){
+      return remoteRpc('get_professional_identity_verification_for_admin', {
+        p_verification_id: String(verificationId || '')
+      }).then(function (row) {
+        if (!row) throw new Error('Verificação de identidade não encontrada.');
+        return hydrateRemoteDocumentUrls(mapRemoteVerification(row));
+      });
+    }
+    var repo=repository();if(!repo)return Promise.reject(new Error('Verificação indisponível para análise.'));return repo.getById(verificationId).then(hydrateEvidence);
   }
 
   function startReview(verificationId) {
-    assertLocalProvider();
-    var reviewer = requireReviewer();
-    var repo = repository();
-    if (!repo) return Promise.reject(new Error('Persistência da verificação indisponível.'));
-    return repo.transition(verificationId, 'under_review', { reviewerId: reviewer.id }).then(function (verification) {
-      return syncProfileVerificationStatus(verification.professionalProfileId, 'under_review').then(function () { return verification; });
-    });
+    if(usesSupabaseProvider()) return remoteRpc('start_professional_identity_review',{p_verification_id:String(verificationId||'')}).then(function(v){return getReviewDetail(v.id||verificationId);});
+    var reviewer=requireReviewer();var repo=repository();if(!repo)return Promise.reject(new Error('Persistência da verificação indisponível.'));return repo.transition(verificationId,'under_review',{reviewerId:reviewer.id}).then(function(verification){return syncProfileVerificationStatus(verification.professionalProfileId,'under_review').then(function(){return verification;});});
   }
 
   function resolveProfessionalProfile(verification) {
@@ -529,6 +636,28 @@
   }
 
   function reopenRejected() {
+    if (usesSupabaseProvider()) {
+      return remoteRpc('reopen_own_professional_identity_verification').then(function (data) {
+        var verification = {
+          id: data && data.id || '',
+          userId: data && data.userId || '',
+          professionalProfileId: data && data.professionalProfileId || '',
+          status: data && data.status || 'not_started',
+          currentStep: Number(data && data.currentStep || 1),
+          payload: Object.assign({}, data && data.payload || {}),
+          rejectionReason: '',
+          reviewerId: '',
+          submittedAt: '',
+          reviewStartedAt: '',
+          decidedAt: '',
+          updatedAt: data && data.updatedAt || new Date().toISOString()
+        };
+        window.dispatchEvent(new CustomEvent('doke:professional-verification-reopened', {
+          detail: { verification: verification, remote: true }
+        }));
+        return verification;
+      });
+    }
     assertLocalProvider();
     var user = requireOwner();
     var repo = repository();

@@ -4162,3 +4162,309 @@ body[data-page="detalhe-anuncio"] .ad-action-card__actions [aria-disabled="true"
 @media (max-width: 720px) {
   body[data-page="detalhe-anuncio"] :is(.detail-availability-grid, .detail-scope-grid) { grid-template-columns: 1fr; }
 }
+
+/* User-authored content safety contract.
+   Service data may contain long words, URLs or legacy values created before the
+   current form limits. Keep every value inside its owning grid/card without
+   truncating the stored content or leaking into the sticky sidebar. */
+body[data-page="detalhe-anuncio"] :is(
+  .ad-detail-title-block,
+  .ad-detail-title-block > div,
+  .detail-section,
+  .detail-section__header,
+  .detail-section__header > div,
+  .detail-spec,
+  .detail-scope-card,
+  .detail-checklist,
+  .detail-checklist li,
+  .ad-action-card,
+  .ad-action-card__meta > div,
+  .provider-card,
+  .provider-card__identity,
+  .location-card
+) {
+  min-width: 0;
+}
+
+body[data-page="detalhe-anuncio"] :is(
+  #ad-detail-title,
+  .ad-detail-provider-line,
+  .ad-detail-provider-line a,
+  .detail-section h2,
+  .detail-section > p,
+  .detail-section__header + p,
+  .detail-checklist li,
+  .detail-spec strong,
+  .detail-scope-card h3,
+  .ad-action-card__price,
+  .ad-action-card__subtext,
+  .ad-action-card__meta strong,
+  .ad-action-card__status,
+  .provider-card h2,
+  .provider-card p,
+  .provider-card__summary strong,
+  .location-card h2,
+  .location-card p
+) {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+body[data-page="detalhe-anuncio"] .ad-detail-title-block > div {
+  flex: 1 1 auto;
+}
+
+body[data-page="detalhe-anuncio"] .detail-checklist li {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+body[data-page="detalhe-anuncio"] .detail-scope-card {
+  overflow: hidden;
+}
+
+/* Detail owner action contract.
+   The owner never receives customer conversion actions for their own service.
+   Management actions reuse the canonical action-card anatomy. */
+body[data-page="detalhe-anuncio"] .ad-action-card__actions--owner[hidden],
+body[data-page="detalhe-anuncio"] .ad-action-card__owner-note[hidden],
+body[data-page="detalhe-anuncio"] [data-detail-visitor-actions][hidden] {
+  display: none;
+}
+
+body[data-page="detalhe-anuncio"] .ad-action-card__owner-note {
+  margin: 14px 0 0;
+  padding: 12px 14px;
+  border-radius: var(--doke-radius-control, 12px);
+  background: var(--color-primary-soft, rgba(42, 95, 144, 0.08));
+  color: var(--color-primary-strong, #184a76);
+  font-size: 0.86rem;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+/* Owner management sidebar.
+   The public action card remains unchanged for visitors. When the authenticated
+   professional owns the service, this page-specific composition replaces the
+   conversion summary with status, performance and management controls. */
+body[data-page="detalhe-anuncio"] :is(
+  [data-detail-owner-dashboard][hidden],
+  [data-detail-owner-actions][hidden],
+  [data-detail-owner-status-toggle][hidden],
+  [data-detail-visitor-only][hidden],
+  [data-detail-visitor-actions][hidden]
+) {
+  display: none;
+}
+
+body[data-page="detalhe-anuncio"] .ad-action-card__owner-dashboard {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+body[data-page="detalhe-anuncio"] .ad-action-card__owner-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+body[data-page="detalhe-anuncio"] .ad-action-card__owner-header > div {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+body[data-page="detalhe-anuncio"] .ad-action-card__owner-eyebrow {
+  color: var(--color-text-muted, #70819a);
+  font-size: 0.72rem;
+  font-weight: var(--doke-type-weight-display);
+  letter-spacing: var(--doke-type-tracking-label);
+  text-transform: uppercase;
+}
+
+body[data-page="detalhe-anuncio"] .ad-action-card__owner-status,
+body[data-page="detalhe-anuncio"] .ad-action-card__owner-sync {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+body[data-page="detalhe-anuncio"] .ad-action-card__owner-status {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: var(--radius-pill);
+  background: var(--color-success-soft, rgba(41, 143, 127, 0.1));
+  color: var(--color-success-strong, #176f63);
+  font-size: 0.86rem;
+  font-weight: var(--doke-type-weight-display);
+}
+
+body[data-page="detalhe-anuncio"] .ad-action-card__owner-status[data-status-tone="warning"] {
+  background: var(--color-warning-soft, #fff5db);
+  color: var(--color-warning-strong, #7a5200);
+}
+
+body[data-page="detalhe-anuncio"] .ad-action-card__owner-status[data-status-tone="neutral"] {
+  background: var(--color-surface-soft, #f4f7fb);
+  color: var(--color-text-muted, #60738d);
+}
+
+body[data-page="detalhe-anuncio"] .ad-action-card__owner-status[data-status-tone="warning"] .ad-action-card__owner-status-dot {
+  box-shadow: 0 0 0 4px rgba(122, 82, 0, 0.12);
+}
+
+body[data-page="detalhe-anuncio"] .ad-action-card__owner-status[data-status-tone="neutral"] .ad-action-card__owner-status-dot {
+  box-shadow: 0 0 0 4px rgba(96, 115, 141, 0.12);
+}
+
+body[data-page="detalhe-anuncio"] .ad-action-card__owner-status-dot {
+  width: 9px;
+  height: 9px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 0 4px rgba(41, 143, 127, 0.13);
+}
+
+body[data-page="detalhe-anuncio"] .ad-action-card__owner-sync {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  padding: 0 10px;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-soft, #f4f7fb);
+  color: var(--color-text-muted, #60738d);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+body[data-page="detalhe-anuncio"] .ad-action-card__owner-sync[data-sync-tone="success"] {
+  background: var(--color-success-soft, rgba(41, 143, 127, 0.1));
+  color: var(--color-success-strong, #176f63);
+}
+
+body[data-page="detalhe-anuncio"] .ad-action-card__owner-sync[data-sync-tone="warning"] {
+  background: var(--color-warning-soft, #fff5db);
+  color: var(--color-warning-strong, #7a5200);
+}
+
+body[data-page="detalhe-anuncio"] .ad-action-card__owner-sync[data-sync-tone="danger"] {
+  background: var(--color-danger-soft, #fff0ef);
+  color: var(--color-danger, #b42318);
+}
+
+body[data-page="detalhe-anuncio"] .ad-action-card__owner-price {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 16px;
+  border-radius: var(--radius-base);
+  background: var(--color-surface-soft, #f4f7fb);
+}
+
+body[data-page="detalhe-anuncio"] .ad-action-card__owner-price > span,
+body[data-page="detalhe-anuncio"] .ad-action-card__owner-price > small {
+  color: var(--color-text-muted, #60738d);
+  font-weight: 700;
+}
+
+body[data-page="detalhe-anuncio"] .ad-action-card__owner-price > span {
+  font-size: 0.76rem;
+  letter-spacing: var(--doke-type-tracking-label);
+  text-transform: uppercase;
+}
+
+body[data-page="detalhe-anuncio"] .ad-action-card__owner-price > strong {
+  max-width: 100%;
+  color: var(--color-heading, #08234a);
+  font-size: clamp(1.55rem, 2.5vw, 2rem);
+  line-height: 1.1;
+  font-weight: var(--doke-type-weight-display);
+  overflow-wrap: anywhere;
+}
+
+body[data-page="detalhe-anuncio"] .ad-action-card__owner-price > small {
+  font-size: 0.76rem;
+  line-height: 1.4;
+}
+
+body[data-page="detalhe-anuncio"] .ad-action-card__owner-metrics {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+body[data-page="detalhe-anuncio"] .ad-action-card__owner-metrics > div {
+  min-width: 0;
+  padding: 12px;
+  border-radius: var(--radius-base);
+  background: rgba(248, 252, 255, 0.82);
+  box-shadow: var(--shadow-surface-xs, 0 5px 16px rgba(15, 45, 75, 0.045));
+}
+
+body[data-page="detalhe-anuncio"] .ad-action-card__owner-metrics :is(dt, dd) {
+  margin: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+body[data-page="detalhe-anuncio"] .ad-action-card__owner-metrics dt {
+  color: var(--color-text-muted, #70819a);
+  font-size: 0.68rem;
+  font-weight: var(--doke-type-weight-display);
+  letter-spacing: var(--doke-type-tracking-label);
+  text-transform: uppercase;
+}
+
+body[data-page="detalhe-anuncio"] .ad-action-card__owner-metrics dd {
+  margin-top: 5px;
+  color: var(--color-heading, #08234a);
+  font-size: 1rem;
+  font-weight: var(--doke-type-weight-display);
+}
+
+body[data-page="detalhe-anuncio"] .ad-action-card__actions--owner {
+  grid-column: auto;
+}
+
+body[data-page="detalhe-anuncio"] .ad-action-card__owner-status-toggle[aria-busy="true"] {
+  cursor: wait;
+  opacity: 0.66;
+}
+
+body[data-page="detalhe-anuncio"] .ad-action-card__owner-note {
+  margin: 0;
+}
+
+body[data-page="detalhe-anuncio"] .ad-action-card__owner-note[data-message-tone="success"] {
+  background: var(--color-success-soft, rgba(41, 143, 127, 0.1));
+  color: var(--color-success-strong, #176f63);
+}
+
+body[data-page="detalhe-anuncio"] .ad-action-card__owner-note[data-message-tone="danger"] {
+  background: var(--color-danger-soft, #fff0ef);
+  color: var(--color-danger, #b42318);
+}
+
+@media (max-width: 560px) {
+  body[data-page="detalhe-anuncio"] .ad-action-card__owner-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-action-card__owner-sync {
+    width: fit-content;
+  }
+}

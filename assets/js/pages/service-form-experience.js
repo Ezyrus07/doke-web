@@ -226,6 +226,17 @@
         includedItems: core.normalize(data.get('includedItems')),
         excludedItems: core.normalize(data.get('excludedItems')),
         tags: selectedChecks,
+        quoteTemplate: (() => {
+          try {
+            const parsed = JSON.parse(String(data.get('quoteTemplateJson') || '{}'));
+            const questions = Array.isArray(parsed.questions) ? parsed.questions.slice(0, 10) : [];
+            return { version: Number(parsed.version) || 1, status: questions.length ? 'active' : 'default', questions };
+          } catch (_) { return { version: 1, status: 'default', questions: [] }; }
+        })(),
+        quoteQuestions: (() => {
+          try { return (JSON.parse(String(data.get('quoteTemplateJson') || '{}')).questions || []).slice(0, 10); }
+          catch (_) { return []; }
+        })(),
         professionalId: core.normalize(currentUser?.id || currentUser?.userId),
         providerId: core.normalize(currentUser?.id || currentUser?.userId),
         providerName: core.normalize(currentUser?.name || currentUser?.displayName) || 'Profissional Doke',
@@ -237,7 +248,7 @@
     const prepareImage = (file) => {
       if (!file) return Promise.resolve('');
       if (!/^image\/(?:png|jpeg|webp|gif)$/i.test(String(file.type || ''))) return Promise.reject(new Error('Use imagens PNG, JPG, WEBP ou GIF.'));
-      if (Number(file.size || 0) > 420 * 1024) return Promise.reject(new Error('Cada imagem deve ter no máximo 420 KB no modo local.'));
+      if (Number(file.size || 0) > 5 * 1024 * 1024) return Promise.reject(new Error('Cada imagem deve ter no máximo 5 MB.'));
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.addEventListener('load', () => resolve(String(reader.result || '')), { once: true });
@@ -304,6 +315,7 @@
       setState('submitting');
       try {
         await existingLoad;
+        window.DokeServiceQuoteTemplateBuilder?.validate?.();
         const payload = await attachImages(createPayload());
         if (!payload.title || !payload.category || !payload.shortDescription) throw new Error('Preencha título, categoria e descrição curta antes de publicar.');
         if (!payload.location || !payload.serviceMode) throw new Error('Informe região e forma de atendimento.');
@@ -354,6 +366,9 @@
       setNamedValue('serviceMode', service.serviceMode || '');
       setNamedValue('includedItems', service.includedItems || '');
       setNamedValue('excludedItems', service.excludedItems || '');
+      const quoteTemplate = service.quoteTemplate || { version: service.quoteTemplateVersion || 1, questions: service.quoteQuestions || [] };
+      setNamedValue('quoteTemplateJson', JSON.stringify(quoteTemplate));
+      window.DokeServiceQuoteTemplateBuilder?.load?.(quoteTemplate);
       const selectedTags = new Set(Array.isArray(service.tags) ? service.tags : []);
       root.querySelectorAll('[data-post-check][data-value]').forEach((button) => {
         const active = selectedTags.has(button.dataset.value);

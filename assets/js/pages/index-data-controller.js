@@ -170,6 +170,12 @@
     };
   }
 
+  function renderServiceListsBeforeReveal(data) {
+    var renderer = Doke.homePublicServices && Doke.homePublicServices.render;
+    if (typeof renderer !== 'function') return 0;
+    return renderer(Array.isArray(data && data.services) ? data.services : []);
+  }
+
   function updateListHooks(root, data) {
     var sections = [
       { kind: 'featured-services', resource: 'services', items: data.services },
@@ -250,9 +256,11 @@
         var result = {
           page: PAGE_NAME,
           context: context,
-          data: data
+          data: data,
+          renderedServiceCount: renderedServiceCount
         };
 
+        var renderedServiceCount = renderServiceListsBeforeReveal(data);
         var hasItems = Boolean(data.services.length || data.workers.length || data.publications.length);
         setRootState(root, hasItems ? 'ready' : 'empty');
         if (Doke.experience && Doke.experience.states) Doke.experience.states.set(root, hasItems ? 'ready' : 'empty', { page: PAGE_NAME });
@@ -305,6 +313,7 @@
     var root = getRoot();
     if (!root) return;
     var data = normalizePayload(event.detail.data);
+    renderServiceListsBeforeReveal(data);
     setRootState(root, 'ready');
     if (Doke.experience && Doke.experience.states) Doke.experience.states.set(root, data.services.length || data.workers.length || data.publications.length ? 'ready' : 'empty', { page: PAGE_NAME, source: 'stale-while-revalidate' });
     ['featured-services', 'recommended-services', 'more-services', 'workers', 'publications'].forEach(function (kind) {

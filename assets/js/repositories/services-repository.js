@@ -13,6 +13,9 @@
   var REMOTE_TABLE = 'services';
   var REMOTE_MEDIA_TABLE = 'service_media';
   var REMOTE_MEDIA_BUCKET = 'service-media';
+  var REMOTE_METRIC_EVENTS_TABLE = 'service_metric_events';
+  var REMOTE_METRIC_TOTALS_VIEW = 'service_metric_totals';
+  var METRIC_VISITOR_STORAGE_KEY = 'doke.service-metrics.visitor.v1';
   var cache = null;
   var supabaseClient = null;
   var supabaseClientAttempted = false;
@@ -177,6 +180,8 @@
       professionalId: providerId,
       professionalProfileId: professionalProfileId,
       providerName: service.providerName || service.professionalName || 'Profissional Doke',
+      providerHandle: service.providerHandle || service.providerUsername || service.professionalHandle || service.professionalUsername || service.handle || service.username || '',
+      providerUsername: service.providerUsername || service.providerHandle || service.professionalUsername || service.professionalHandle || service.username || service.handle || '',
       providerInitials: service.providerInitials || service.avatar || 'DK',
       price: typeof price === 'number' ? price : service.priceValue || price,
       priceValue: service.priceValue || (typeof price === 'number' ? price : null),
@@ -200,6 +205,33 @@
     return Object.keys(map).map(function (id) { return map[id]; });
   }
 
+  function serviceIdentifiers(service) {
+    service = service || {};
+    var identifiers = [
+      service.id,
+      service.externalId,
+      service.external_id,
+      service.remoteId,
+      service.remote_id
+    ].map(normalizeText).filter(Boolean);
+
+    var href = normalizeText(service.href);
+    if (href) {
+      try {
+        var parsed = new URL(href, root.location && root.location.href || 'https://doke.local/');
+        identifiers.push(normalizeText(parsed.searchParams.get('id') || parsed.searchParams.get('serviceId') || parsed.searchParams.get('servico')));
+      } catch (error) {}
+    }
+
+    return identifiers.filter(Boolean);
+  }
+
+  function matchesServiceId(service, serviceId) {
+    var id = normalizeText(serviceId);
+    if (!id) return false;
+    return serviceIdentifiers(service).some(function (candidate) { return candidate === id; });
+  }
+
   function mapRemoteRow(row) {
     row = row || {};
     var metadata = row.metadata && typeof row.metadata === 'object' ? row.metadata : {};
@@ -211,7 +243,10 @@
 
     return normalizeService(Object.assign({}, metadata, {
       id: externalId,
+      externalId: externalId,
+      external_id: externalId,
       remoteId: row.id,
+      slug: row.slug || metadata.slug,
       ownerId: row.professional_id,
       professionalId: row.professional_id,
       providerId: row.professional_id,
@@ -248,8 +283,37 @@
       .then(function (result) {
         if (result.error) throw result.error;
         setProviderState('supabase');
+        lastRemoteError = null;
         return (result.data || []).map(mapRemoteRow);
       });
+  }
+
+  function fetchRemoteServiceById(serviceId) {
+    var id = normalizeText(serviceId);
+    var client = getSupabaseClient();
+    if (!id || !client) return Promise.resolve(null);
+
+    var select = '*, service_media(id,url,thumbnail_url,alt_text,sort_order,media_type)';
+    var byExternalId = function () {
+      return Promise.resolve(client.from(REMOTE_TABLE).select(select).eq('external_id', id).maybeSingle());
+    };
+    var byRemoteId = function () {
+      if (!isUuid(id)) return Promise.resolve({ data: null, error: null });
+      return Promise.resolve(client.from(REMOTE_TABLE).select(select).eq('id', id).maybeSingle());
+    };
+
+    return byExternalId().then(function (result) {
+      if (result.error) throw result.error;
+      if (result.data) return result.data;
+      return byRemoteId().then(function (remoteResult) {
+        if (remoteResult.error) throw remoteResult.error;
+        return remoteResult.data || null;
+      });
+    }).then(function (row) {
+      setProviderState('supabase');
+      lastRemoteError = null;
+      return row ? mapRemoteRow(row) : null;
+    });
   }
 
   function upsertLocal(service, syncStatus) {
@@ -390,9 +454,12 @@
           .then(function (result) {
             if (result.error) throw result.error;
             return syncMedia(client, result.data.id, normalized).then(function () {
+              lastRemoteError = null;
+              setProviderState('supabase');
               return Object.assign({}, normalized, {
                 remoteId: result.data.id,
                 syncStatus: 'synced',
+                syncError: '',
                 syncedAt: new Date().toISOString()
               });
             });
@@ -475,6 +542,8 @@
           item.detailTitle,
           item.category,
           item.providerName,
+          item.providerHandle,
+          item.providerUsername,
           item.location,
           item.city,
           item.state,
@@ -508,8 +577,22 @@
   function getById(serviceId) {
     var id = normalizeText(serviceId);
     if (!id) return Promise.resolve(null);
-    return load({ fresh: true }).then(function (items) {
-      return clone((items || []).find(function (item) { return String(item.id) === id; }) || null);
+
+    var localMatch = readLocalServices().map(normalizeService).find(function (item) {
+      return matchesServiceId(item, id);
+    }) || null;
+    var client = getSupabaseClient();
+    if (!client) return Promise.resolve(clone(localMatch));
+
+    return fetchRemoteServiceById(id).then(function (remoteMatch) {
+      if (!remoteMatch) return clone(localMatch);
+      var saved = upsertLocal(remoteMatch, 'synced');
+      cache = null;
+      return clone(saved);
+    }).catch(function (error) {
+      warnRemote(error, 'leitura do detalhe');
+      if (localMatch) return clone(localMatch);
+      throw error;
     });
   }
 
@@ -561,6 +644,162 @@
     return update(serviceId, { status: 'inactive' });
   }
 
+  function utcDateKey() {
+    return new Date().toISOString().slice(0, 10);
+  }
+
+  function createAnonymousVisitorKey() {
+    var token = '';
+    try {
+      token = root.crypto && typeof root.crypto.randomUUID === 'function'
+        ? root.crypto.randomUUID()
+        : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (character) {
+            var random = Math.floor(Math.random() * 16);
+            var value = character === 'x' ? random : (random & 3) | 8;
+            return value.toString(16);
+          });
+    } catch (error) {
+      token = String(Date.now()) + '-' + Math.random().toString(16).slice(2);
+    }
+    return 'anon:' + token;
+  }
+
+  function getMetricVisitorKey(user) {
+    if (user && isUuid(user.id)) return 'user:' + user.id;
+    try {
+      var stored = root.sessionStorage && root.sessionStorage.getItem(METRIC_VISITOR_STORAGE_KEY);
+      if (stored) return stored;
+      var created = createAnonymousVisitorKey();
+      if (root.sessionStorage) root.sessionStorage.setItem(METRIC_VISITOR_STORAGE_KEY, created);
+      return created;
+    } catch (error) {
+      return createAnonymousVisitorKey();
+    }
+  }
+
+  function resolveRemoteMetricService(client, service) {
+    service = normalizeService(service || {});
+    var remoteId = normalizeText(service.remoteId || service.remote_id);
+    if (isUuid(remoteId)) {
+      return Promise.resolve({
+        id: remoteId,
+        professional_id: normalizeText(service.ownerId || service.professionalId || service.providerId),
+        status: toRemoteStatus(service.status),
+        external_id: service.id
+      });
+    }
+
+    var externalId = normalizeText(service.id || service.externalId || service.external_id);
+    if (!externalId) return Promise.resolve(null);
+    return Promise.resolve(client.from(REMOTE_TABLE)
+      .select('id,professional_id,status,external_id')
+      .eq('external_id', externalId)
+      .maybeSingle()).then(function (result) {
+        if (result.error) throw result.error;
+        if (result.data) return result.data;
+        if (!isUuid(externalId)) return null;
+        return Promise.resolve(client.from(REMOTE_TABLE)
+          .select('id,professional_id,status,external_id')
+          .eq('id', externalId)
+          .maybeSingle()).then(function (remoteResult) {
+            if (remoteResult.error) throw remoteResult.error;
+            return remoteResult.data || null;
+          });
+      });
+  }
+
+  function resolveRemoteMetricServiceAfterSync(client, service) {
+    return resolveRemoteMetricService(client, service).then(function (row) {
+      if (row) return row;
+      var localId = normalizeText(service && (service.id || service.externalId || service.external_id));
+      var localMatch = readLocalServices().map(normalizeService).find(function (item) {
+        return localId && matchesServiceId(item, localId) && item.syncStatus !== 'synced';
+      });
+      if (!localMatch) return null;
+      return synchronizePending(readLocalServices()).then(function () {
+        return resolveRemoteMetricService(client, localMatch);
+      });
+    });
+  }
+
+  function recordServiceMetric(service, eventType) {
+    var type = normalizeSearch(eventType);
+    if (['view', 'budget', 'message'].indexOf(type) === -1) {
+      return Promise.reject(new Error('Tipo de métrica de serviço inválido.'));
+    }
+    var client = getSupabaseClient();
+    if (!client) return Promise.resolve({ recorded: false, reason: 'local-provider' });
+
+    return getCurrentSupabaseUser(client).then(function (user) {
+      return resolveRemoteMetricService(client, service).then(function (remoteService) {
+        if (!remoteService) return { recorded: false, reason: 'service-not-synced' };
+        if (user && normalizeText(user.id) === normalizeText(remoteService.professional_id)) {
+          return { recorded: false, reason: 'owner-view' };
+        }
+        if (type !== 'view' && (!user || !isUuid(user.id))) {
+          return { recorded: false, reason: 'authentication-required' };
+        }
+        var payload = {
+          service_id: remoteService.id,
+          event_type: type,
+          actor_id: user && isUuid(user.id) ? user.id : null,
+          visitor_key: getMetricVisitorKey(user),
+          occurred_on: utcDateKey()
+        };
+        return Promise.resolve(client.from(REMOTE_METRIC_EVENTS_TABLE).upsert(payload, {
+          onConflict: 'service_id,event_type,visitor_key,occurred_on',
+          ignoreDuplicates: true
+        })).then(function (result) {
+          if (result.error) throw result.error;
+          return { recorded: true, eventType: type, remoteServiceId: remoteService.id };
+        });
+      });
+    });
+  }
+
+  function getServiceMetricTotals(service) {
+    var empty = {
+      viewsCount: 0,
+      contactsCount: 0,
+      budgetCount: 0,
+      messageCount: 0,
+      remoteId: normalizeText(service && (service.remoteId || service.remote_id)),
+      source: 'local'
+    };
+    var client = getSupabaseClient();
+    if (!client) return Promise.resolve(empty);
+
+    return getCurrentSupabaseUser(client).then(function (user) {
+      return resolveRemoteMetricServiceAfterSync(client, service).then(function (remoteService) {
+        if (!remoteService || !user || normalizeText(user.id) !== normalizeText(remoteService.professional_id)) {
+          return empty;
+        }
+        return Promise.resolve(client.from(REMOTE_METRIC_TOTALS_VIEW)
+          .select('service_id,views_count,contacts_count,budget_count,message_count,last_event_at')
+          .eq('service_id', remoteService.id)
+          .maybeSingle()).then(function (result) {
+            if (result.error) throw result.error;
+            var row = result.data || {};
+            return {
+              viewsCount: Number(row.views_count || 0) || 0,
+              contactsCount: Number(row.contacts_count || 0) || 0,
+              budgetCount: Number(row.budget_count || 0) || 0,
+              messageCount: Number(row.message_count || 0) || 0,
+              lastEventAt: row.last_event_at || '',
+              remoteId: remoteService.id,
+              syncStatus: 'synced',
+              source: 'supabase'
+            };
+          });
+      });
+    }).catch(function (error) {
+      if (root.console && typeof root.console.warn === 'function') {
+        root.console.warn('[Doke service metrics] Não foi possível carregar as métricas do anúncio.', error);
+      }
+      return Object.assign({}, empty, { error: normalizeText(error && error.message) });
+    });
+  }
+
 
   if (root.document && typeof root.document.addEventListener === 'function') {
     root.document.addEventListener('doke:supabase-sdk-ready', function () {
@@ -596,5 +835,12 @@
       });
     },
     clearCache: function () { cache = null; }
+  });
+
+  repositories.serviceMetrics = Object.freeze({
+    recordView: function (service) { return recordServiceMetric(service, 'view'); },
+    recordBudgetContact: function (service) { return recordServiceMetric(service, 'budget'); },
+    recordMessageContact: function (service) { return recordServiceMetric(service, 'message'); },
+    getTotals: getServiceMetricTotals
   });
 })();

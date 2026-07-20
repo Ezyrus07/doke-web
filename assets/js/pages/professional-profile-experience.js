@@ -39,7 +39,11 @@
     var location = [city, state].filter(Boolean).join(', ');
     var meta = (handle ? '@' + handle.replace(/^@+/, '') : '') + (location ? (handle ? ' · ' : '') + location : '');
 
-    setText('[data-professional-name]', name);
+    if (Doke.profilePresentation && typeof Doke.profilePresentation.setDisplayName === 'function') {
+      Doke.profilePresentation.setDisplayName('[data-professional-name]', name, 'Perfil profissional');
+    } else {
+      setText('[data-professional-name]', name);
+    }
     setText('[data-professional-meta]', meta || 'Perfil profissional ativo');
     setText('[data-professional-avatar]', clean(userProfile.initials || sessionUser.initials) || initialsFromName(name));
     setText('[data-professional-bio]', clean(fields.shortBio || userProfile.bio) || 'Complete sua apresentação profissional para contar aos clientes o que você faz.');

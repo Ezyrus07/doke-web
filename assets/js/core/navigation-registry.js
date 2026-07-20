@@ -217,10 +217,85 @@
     return String((user && (user.role || user.type)) || '').trim().toLowerCase() === 'professional';
   }
 
-  function getOwnerProfileUrl(user) {
+  function normalizeState(value) {
+    return String(value == null ? '' : value).trim().toLowerCase();
+  }
+
+  function firstState() {
+    for (var index = 0; index < arguments.length; index += 1) {
+      var value = normalizeState(arguments[index]);
+      if (value) return value;
+    }
+    return '';
+  }
+
+  function resolveProfileDestination(input) {
+    var context = input && (input.user || input.professionalProfile || input.profile || input.verification)
+      ? input
+      : { user: input || null };
+    var user = context.user || currentUser();
+    var profile = context.professionalProfile || context.profile || null;
+    var verification = context.verification || null;
+    var role = normalizeState(user && (user.role || user.type));
+    var setupStatus = firstState(
+      profile && (profile.status || profile.setupStatus || profile.setup_status),
+      user && (user.professionalProfileStatus || user.professionalSetupStatus || user.setupStatus || user.setup_status)
+    );
+    var verificationStatus = firstState(
+      verification && verification.status,
+      profile && (profile.verificationStatus || profile.verification_status),
+      user && (user.professionalVerificationStatus || user.verificationStatus || user.verification_status)
+    );
+    var documentStatus = firstState(
+      verification && (verification.documentStatus || verification.document_status),
+      profile && (profile.documentStatus || profile.document_status),
+      user && (user.professionalDocumentStatus || user.documentStatus || user.document_status)
+    );
+    var hasProfessionalProfile = Boolean(profile) || Boolean(setupStatus);
+    var pendingStates = ['pending', 'pending_verification', 'submitted', 'under_review', 'in_review', 'reviewing'];
+    var incompleteStates = ['draft', 'incomplete', 'not_completed'];
+    var rejected = verificationStatus === 'rejected' || documentStatus === 'rejected';
+    var pending = pendingStates.indexOf(setupStatus) !== -1 || pendingStates.indexOf(verificationStatus) !== -1 || pendingStates.indexOf(documentStatus) !== -1;
+    var incomplete = incompleteStates.indexOf(setupStatus) !== -1;
+    var verificationRequired = ['not_started', 'required', 'missing'].indexOf(verificationStatus) !== -1
+      || ['not_started', 'required', 'missing'].indexOf(documentStatus) !== -1;
+    var setupActive = setupStatus === 'active';
+    var verified = verificationStatus === 'verified' && (!documentStatus || documentStatus === 'verified');
+    var professionalFallback = role === 'professional'
+      && !rejected
+      && !pending
+      && !incomplete
+      && !verificationRequired
+      && (!setupStatus || setupActive);
+
+    if (!user || !user.id) {
+      return { state: 'guest', href: 'meu-perfil.html', label: 'Meu perfil', user: user || null, professionalProfile: profile, verification: verification };
+    }
+    if (rejected) {
+      return { state: 'verification_rejected', href: 'verificacao-profissional.html', label: 'Corrigir e reenviar', user: user, professionalProfile: profile, verification: verification };
+    }
+    if (incomplete) {
+      return { state: 'onboarding_incomplete', href: 'tornar-profissional.html', label: 'Continuar perfil', user: user, professionalProfile: profile, verification: verification };
+    }
+    if (setupStatus === 'suspended') {
+      return { state: 'professional_suspended', href: 'meu-perfil.html', label: 'Meu perfil', user: user, professionalProfile: profile, verification: verification };
+    }
+    if (pending || verificationRequired || (hasProfessionalProfile && setupStatus && !setupActive)) {
+      return { state: 'verification_pending', href: 'verificacao-profissional.html', label: 'Acompanhar verificação', user: user, professionalProfile: profile, verification: verification };
+    }
+    // O resolver escolhe a rota; a autorização permanece no guard remoto da
+    // página. Um perfil canônico ativo/verificado deve vencer um role de sessão
+    // temporariamente desatualizado, evitando voltar ao onboarding.
+    if ((setupActive && verified) || professionalFallback) {
+      return { state: 'professional_active', href: 'perfil-profissional.html', label: 'Gerenciar perfil', user: user, professionalProfile: profile, verification: verification };
+    }
+    return { state: 'personal_profile', href: 'meu-perfil.html', label: 'Meu perfil', user: user, professionalProfile: profile, verification: verification };
+  }
+
+  function getOwnerProfileUrl(user, context) {
     var current = user || currentUser();
-    if (!current || !current.id) return 'meu-perfil.html';
-    return current.ownerProfileUrl || current.ownerUrl || (isProfessionalUser(current) ? 'perfil-profissional.html' : 'meu-perfil.html');
+    var destination = resolveProfileDestination(Object.assign({}, context || {}, { user: current }));
+    return destination.href;
   }
 
   function resolveItemForUser(item, user) {
@@ -264,7 +339,7 @@
   }
 
   window.DokeNavigationRegistry = {
-    version: '20260701-navigation-registry-v1',
+    version: '20260719-profile-destination-v1',
     normalizePath: normalizePath,
     pageName: pageName,
     getItemById: getItemById,
@@ -273,6 +348,7 @@
     isActive: isActive,
     getItemsForSurface: getItemsForSurface,
     getOwnerProfileUrl: getOwnerProfileUrl,
+    resolveProfileDestination: resolveProfileDestination,
     canAccessItem: canAccessItem,
     getInternalPaths: getInternalPaths,
     getPageConfig: getPageConfig
