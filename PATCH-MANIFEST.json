@@ -1,32 +1,37 @@
 {
-  "name": "service-quote-template-catalog",
+  "name": "professional-quote-template-library",
   "generatedAt": "2026-07-20",
-  "base": "doke-web-service-moderation-flow-cumulative.zip",
-  "summary": "Catálogo com nove modelos prontos de perguntas, recomendação por categoria, busca, aplicação segura, personalização e rastreio da origem no snapshot do anúncio.",
-  "databaseMigrations": [],
+  "base": "doke-web-service-quote-template-catalog-cumulative.zip",
+  "summary": "Biblioteca pessoal para salvar, aplicar, renomear, atualizar e excluir formulários reutilizáveis, com persistência Supabase, isolamento por profissional, limite concorrente de 30 modelos e snapshots independentes nos anúncios.",
+  "databaseMigrations": [
+    "supabase/migrations/034_professional_quote_templates.sql",
+    "supabase/migrations/035_harden_professional_quote_templates.sql",
+    "supabase/migrations/036_fix_professional_quote_template_access_check.sql"
+  ],
   "changedFiles": [
     "anunciar-servico.html",
-    "assets/css/pages/anunciar-servico-foundation.css",
     "assets/css/pages/anunciar-servico.css",
-    "assets/js/pages/anunciar-servico.js",
     "assets/js/pages/service-form-experience.js",
     "assets/js/pages/service-quote-template-builder.js",
+    "assets/js/repositories/professional-quote-templates-repository.js",
+    "assets/js/services/professional-quote-templates-service.js",
+    "supabase/migrations/034_professional_quote_templates.sql",
+    "supabase/migrations/035_harden_professional_quote_templates.sql",
+    "supabase/migrations/036_fix_professional_quote_template_access_check.sql",
+    "scripts/test-professional-quote-template-library-contract.js",
     "package.json",
-    "scripts/test-service-quote-template-builder-contract.js",
-    "scripts/test-service-quote-template-catalog-contract.js",
     "CHANGED-FILES.txt",
     "PATCH-MANIFEST.json"
   ],
-  "templateCategories": [
-    "Limpeza",
-    "Pintura",
-    "Elétrica",
-    "Encanador",
-    "Reformas",
-    "Tecnologia",
-    "Beleza",
-    "Aulas",
-    "Frete"
+  "capabilities": [
+    "save-current-form-as-personal-template",
+    "apply-personal-template",
+    "rename-personal-template",
+    "update-personal-template-copy",
+    "delete-template-without-mutating-existing-ads",
+    "owner-isolated-rls",
+    "verified-professional-write-authority",
+    "thirty-template-database-limit"
   ],
   "communityTouched": false
 }

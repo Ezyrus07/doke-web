@@ -12,7 +12,7 @@
   <script>document.documentElement.classList.add("doke-mobile-shell-pending");</script>
   <script src="assets/js/core/ipad-safari-early-guard.js?v=20260531-v3"></script>
 
-  <link rel="stylesheet" href="assets/css/pages/anunciar-servico-foundation.css?v=20260720-quote-template-catalog-v1">
+  <link rel="stylesheet" href="assets/css/pages/anunciar-servico-foundation.css?v=20260720-personal-quote-templates-v1">
   <link rel="stylesheet" href="assets/css/components/feedback/document-preloader.css?v=20260712-global-document-boot-v1">
  <link rel="stylesheet" href="assets/css/components/ui-surface/close-button-authority.css?v=20260713-global-v1">
 </head>
@@ -324,6 +324,24 @@
                           </label>
                         </div>
 
+                        <section class="quote-personal-templates" data-personal-quote-templates aria-labelledby="quote-personal-templates-title">
+                          <header class="quote-personal-templates__head">
+                            <div>
+                              <span class="quote-template-presets__eyebrow">Meus modelos</span>
+                              <h3 id="quote-personal-templates-title">Reutilize seus melhores formulários</h3>
+                              <p>Salve as perguntas atuais e aplique o mesmo formulário em outros anúncios sem afetar versões já publicadas.</p>
+                            </div>
+                            <button class="doke-btn doke-btn--secondary" type="button" data-personal-template-save disabled>Salvar modelo atual</button>
+                          </header>
+                          <p class="quote-personal-templates__state" data-personal-template-loading aria-live="polite">Carregando seus modelos…</p>
+                          <p class="quote-personal-templates__state quote-personal-templates__state--error" data-personal-template-error role="alert" hidden></p>
+                          <div class="quote-personal-templates__grid" data-personal-template-list hidden></div>
+                          <div class="quote-personal-templates__empty" data-personal-template-empty hidden>
+                            <strong>Você ainda não salvou nenhum modelo.</strong>
+                            <p>Monte as perguntas abaixo e use “Salvar modelo atual” para reutilizá-las em outros anúncios.</p>
+                          </div>
+                        </section>
+
                         <div class="quote-template-presets__browser" data-quote-template-browser>
                           <div class="quote-template-presets__recommendation" data-quote-template-recommendation hidden>
                             <div>
@@ -346,6 +364,7 @@
                           </div>
                           <div class="quote-template-presets__selection-actions">
                             <button class="doke-btn doke-btn--soft" type="button" data-quote-template-change>Trocar modelo</button>
+                            <button class="doke-btn doke-btn--secondary" type="button" data-personal-template-update hidden>Atualizar meu modelo</button>
                             <button class="doke-btn doke-btn--ghost" type="button" data-quote-template-clear>Começar do zero</button>
                           </div>
                         </div>
@@ -440,6 +459,27 @@
               </aside>
             </div>
 
+            <dialog class="quote-template-name-dialog doke-native-overlay" data-personal-template-dialog aria-labelledby="quote-template-name-dialog-title">
+              <form class="quote-template-name-dialog__surface doke-overlay__surface doke-modal-surface doke-modal-surface--compact" method="dialog" data-personal-template-form>
+                <header class="doke-overlay__header doke-modal-header">
+                  <span class="doke-modal-eyebrow">Modelo reutilizável</span>
+                  <h2 class="doke-modal-title" id="quote-template-name-dialog-title" data-personal-template-dialog-title>Salvar como meu modelo</h2>
+                  <p class="doke-modal-description" data-personal-template-dialog-description>Dê um nome fácil de reconhecer. O modelo ficará disponível somente para sua conta.</p>
+                </header>
+                <div class="doke-overlay__body doke-modal-body">
+                  <label class="doke-field">
+                    <span>Nome do modelo</span>
+                    <input class="doke-input" name="personalTemplateName" maxlength="60" autocomplete="off" placeholder="Ex.: Limpeza completa para apartamentos" data-personal-template-name required>
+                  </label>
+                  <p class="quote-template-name-dialog__error" data-personal-template-dialog-error role="alert" hidden></p>
+                </div>
+                <footer class="doke-overlay__actions doke-modal-actions">
+                  <button class="doke-btn doke-btn--ghost" type="button" data-personal-template-dialog-cancel>Cancelar</button>
+                  <button class="doke-btn doke-btn--primary" type="submit" data-personal-template-dialog-submit>Salvar modelo</button>
+                </footer>
+              </form>
+            </dialog>
+
             <div class="post-service-submit-state doke-overlay doke-overlay--feedback" data-submit-state hidden aria-live="polite" aria-modal="true" role="dialog">
               <div class="post-service-submit-state__card doke-overlay__surface doke-modal-surface doke-modal-surface--feedback">
                 <span class="post-service-submit-state__icon" data-submit-state-icon aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m6 12 4 4 8-9"></path></svg></span>
@@ -483,9 +523,11 @@
 <script src="assets/js/core/supabase-config.js?v=20260719-singleton-client-v1" defer></script>
   <script src="assets/js/repositories/services-repository.js?v=20260720-moderation-flow-v1" defer></script>
   <script src="assets/js/services/services-service.js?v=20260720-moderation-flow-v1" defer></script>
-  <script src="assets/js/pages/service-quote-template-builder.js?v=20260720-quote-template-catalog-v1" defer></script>
-  <script src="assets/js/pages/service-form-experience.js?v=20260720-quote-template-catalog-v1" defer></script>
-  <script src="assets/js/pages/anunciar-servico.js?v=20260720-quote-template-catalog-v1" defer></script>
+  <script src="assets/js/repositories/professional-quote-templates-repository.js?v=20260720-personal-quote-templates-v1" defer></script>
+  <script src="assets/js/services/professional-quote-templates-service.js?v=20260720-personal-quote-templates-v1" defer></script>
+  <script src="assets/js/pages/service-quote-template-builder.js?v=20260720-personal-quote-templates-v1" defer></script>
+  <script src="assets/js/pages/service-form-experience.js?v=20260720-personal-quote-templates-v1" defer></script>
+  <script src="assets/js/pages/anunciar-servico.js?v=20260720-personal-quote-templates-v1" defer></script>
   <script src="assets/js/services/mock-data-service.js?v=20260501-stage31-domain-services" defer></script>
   <script src="assets/js/services/profile-service.js?v=20260501-stage31-domain-services" defer></script>
   <script src="assets/js/services/search-service.js?v=20260501-stage31-domain-services" defer></script>

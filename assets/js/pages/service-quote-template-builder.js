@@ -213,13 +213,36 @@
     const selectionMeta = root.querySelector('[data-quote-template-selection-meta]');
     const categoryField = root.querySelector('[name="category"]');
 
+    const personalHost = root.querySelector('[data-personal-quote-templates]');
+    const personalList = root.querySelector('[data-personal-template-list]');
+    const personalLoading = root.querySelector('[data-personal-template-loading]');
+    const personalEmpty = root.querySelector('[data-personal-template-empty]');
+    const personalError = root.querySelector('[data-personal-template-error]');
+    const personalSave = root.querySelector('[data-personal-template-save]');
+    const personalUpdate = root.querySelector('[data-personal-template-update]');
+    const personalDialog = root.querySelector('[data-personal-template-dialog]');
+    const personalForm = root.querySelector('[data-personal-template-form]');
+    const personalName = root.querySelector('[data-personal-template-name]');
+    const personalDialogTitle = root.querySelector('[data-personal-template-dialog-title]');
+    const personalDialogDescription = root.querySelector('[data-personal-template-dialog-description]');
+    const personalDialogError = root.querySelector('[data-personal-template-dialog-error]');
+    const personalDialogSubmit = root.querySelector('[data-personal-template-dialog-submit]');
+    const personalDialogCancel = root.querySelector('[data-personal-template-dialog-cancel]');
+
     let questions = [];
-    let selectedPreset = { ...EMPTY_PRESET };
+    let selectedPreset = { ...EMPTY_PRESET, kind: '' };
     let presetCustomized = false;
     let recommendedTemplateId = '';
     let catalogExpanded = true;
+    let personalTemplates = [];
+    let personalState = 'loading';
+    let personalMutationPending = false;
+    let dialogMode = 'create';
+    let dialogTemplateId = '';
 
+    const getPersonalService = () => window.Doke?.services?.professionalQuoteTemplates || null;
     const getTemplateById = (templateId) => TEMPLATE_CATALOG.find((template) => template.id === templateId) || null;
+    const getPersonalTemplateById = (templateId) => personalTemplates.find((template) => template.id === templateId) || null;
 
     const markCustomized = () => {
       if (selectedPreset.id) presetCustomized = true;
@@ -234,11 +257,16 @@
         hash = Math.imul(hash, 16777619);
       }
       const hasQuestions = questions.length > 0;
+      let source = hasQuestions ? 'custom' : 'default';
+      if (selectedPreset.kind === 'personal') source = presetCustomized ? 'personal_template_customized' : 'personal_template';
+      else if (selectedPreset.kind === 'doke') source = presetCustomized ? 'preset_customized' : 'preset';
       const value = {
         version: hasQuestions ? `v_${(hash >>> 0).toString(36)}` : 1,
         status: hasQuestions ? 'active' : 'default',
-        source: selectedPreset.id ? (presetCustomized ? 'preset_customized' : 'preset') : (hasQuestions ? 'custom' : 'default'),
+        source,
+        templateKind: selectedPreset.kind || null,
         templateId: selectedPreset.id || null,
+        personalTemplateId: selectedPreset.kind === 'personal' ? selectedPreset.id : null,
         templateLabel: selectedPreset.title || null,
         templateCategory: selectedPreset.category || null,
         questions
@@ -250,6 +278,7 @@
       window.dispatchEvent(new CustomEvent('doke:service-quote-template-changed', {
         detail: {
           templateId: value.templateId,
+          templateKind: value.templateKind,
           templateLabel: value.templateLabel,
           source: value.source,
           questionCount: questions.length
@@ -257,6 +286,13 @@
       }));
       return value;
     };
+
+    const reusablePayload = () => ({
+      version: 1,
+      status: 'active',
+      source: 'personal_template',
+      questions: questions.slice(0, 10).map(normalizeQuestion)
+    });
 
     const optionFields = (question, index) => {
       if (!['single_choice', 'multiple_choice'].includes(question.type)) return '';
@@ -298,6 +334,8 @@
             ? 'Boa extensão: o cliente consegue fornecer contexto sem enfrentar um formulário longo.'
             : 'Escolha um modelo pronto ou adicione uma pergunta para começar.');
       }
+      if (personalSave) personalSave.disabled = !total || personalMutationPending;
+      if (personalUpdate) personalUpdate.disabled = !total || personalMutationPending;
     };
 
     const renderPresetSelection = () => {
@@ -306,12 +344,14 @@
       if (presetBrowser) presetBrowser.hidden = hasPreset && !catalogExpanded;
       if (selectionTitle) selectionTitle.textContent = selectedPreset.title || '';
       if (selectionMeta) {
+        const ownerLabel = selectedPreset.kind === 'personal' ? 'Seu modelo salvo' : 'Modelo da Doke';
         selectionMeta.textContent = hasPreset
-          ? `${questions.length} perguntas · ${presetCustomized ? 'Modelo personalizado por você' : 'Modelo original da Doke'}`
+          ? `${questions.length} perguntas · ${presetCustomized ? `${ownerLabel} personalizado neste anúncio` : ownerLabel}`
           : '';
       }
+      if (personalUpdate) personalUpdate.hidden = selectedPreset.kind !== 'personal';
       presetList?.querySelectorAll('[data-quote-template-card]').forEach((card) => {
-        const active = card.dataset.quoteTemplateCard === selectedPreset.id;
+        const active = selectedPreset.kind === 'doke' && card.dataset.quoteTemplateCard === selectedPreset.id;
         card.classList.toggle('is-active', active);
         card.setAttribute('aria-current', active ? 'true' : 'false');
         const action = card.querySelector('[data-quote-template-apply]');
@@ -356,7 +396,7 @@
       action.className = 'doke-btn doke-btn--soft';
       action.type = 'button';
       action.dataset.quoteTemplateApply = template.id;
-      action.textContent = selectedPreset.id === template.id ? 'Modelo aplicado' : 'Usar modelo';
+      action.textContent = selectedPreset.kind === 'doke' && selectedPreset.id === template.id ? 'Modelo aplicado' : 'Usar modelo';
       footer.append(time, action);
 
       card.append(top, title, summary, questionPreview, footer);
@@ -397,6 +437,75 @@
       renderPresetSelection();
     };
 
+    const setPersonalError = (message) => {
+      if (!personalError) return;
+      personalError.textContent = message || '';
+      personalError.hidden = !message;
+    };
+
+    const createPersonalCard = (template) => {
+      const card = document.createElement('article');
+      card.className = 'quote-personal-template-card';
+      card.dataset.personalTemplateCard = template.id;
+      const active = selectedPreset.kind === 'personal' && selectedPreset.id === template.id;
+      card.classList.toggle('is-active', active);
+      card.setAttribute('aria-current', active ? 'true' : 'false');
+
+      const head = document.createElement('div');
+      head.className = 'quote-personal-template-card__head';
+      const identity = document.createElement('div');
+      const eyebrow = document.createElement('span');
+      eyebrow.textContent = template.category || 'Sem categoria';
+      const title = document.createElement('h4');
+      title.textContent = template.name;
+      identity.append(eyebrow, title);
+      const badge = document.createElement('small');
+      badge.textContent = `${template.questionCount} ${template.questionCount === 1 ? 'pergunta' : 'perguntas'}`;
+      head.append(identity, badge);
+
+      const previewList = document.createElement('ul');
+      previewList.className = 'quote-personal-template-card__questions';
+      (template.template?.questions || []).slice(0, 3).forEach((question) => {
+        const item = document.createElement('li');
+        item.textContent = question.label;
+        previewList.appendChild(item);
+      });
+
+      const actions = document.createElement('footer');
+      actions.className = 'quote-personal-template-card__actions';
+      const use = document.createElement('button');
+      use.type = 'button';
+      use.className = 'doke-btn doke-btn--soft';
+      use.dataset.personalTemplateApply = template.id;
+      use.textContent = active ? 'Modelo aplicado' : 'Usar modelo';
+      const manage = document.createElement('div');
+      const rename = document.createElement('button');
+      rename.type = 'button';
+      rename.className = 'doke-btn doke-btn--ghost doke-btn--sm';
+      rename.dataset.personalTemplateRename = template.id;
+      rename.textContent = 'Renomear';
+      const remove = document.createElement('button');
+      remove.type = 'button';
+      remove.className = 'doke-btn doke-btn--danger doke-btn--sm';
+      remove.dataset.personalTemplateDelete = template.id;
+      remove.textContent = 'Excluir';
+      manage.append(rename, remove);
+      actions.append(use, manage);
+      card.append(head, previewList, actions);
+      return card;
+    };
+
+    const renderPersonalTemplates = () => {
+      if (!personalHost) return;
+      if (personalLoading) personalLoading.hidden = personalState !== 'loading';
+      if (personalList) personalList.hidden = personalState !== 'ready' || personalTemplates.length === 0;
+      if (personalEmpty) personalEmpty.hidden = personalState !== 'ready' || personalTemplates.length > 0;
+      if (personalList && personalState === 'ready') {
+        personalList.replaceChildren(...personalTemplates.map(createPersonalCard));
+      }
+      renderPresetSelection();
+    };
+
     const render = () => {
       if (list) {
         list.innerHTML = questions.map((question, index) => `<article class="quote-builder__question" data-question-index="${index}">
@@ -420,6 +529,7 @@
       renderPreview();
       renderQuality();
       renderPresetSelection();
+      renderPersonalTemplates();
       serialize();
     };
 
@@ -427,15 +537,21 @@
       const source = template?.questions || template || [];
       questions = Array.isArray(source) ? source.slice(0, 10).map(normalizeQuestion) : [];
       const catalogTemplate = getTemplateById(clamp(template?.templateId, 80));
-      selectedPreset = catalogTemplate
-        ? { id: catalogTemplate.id, title: catalogTemplate.title, category: catalogTemplate.category, summary: catalogTemplate.summary }
-        : {
-          id: clamp(template?.templateId, 80),
+      const isPersonal = template?.templateKind === 'personal'
+        || String(template?.source || '').startsWith('personal_template')
+        || Boolean(template?.personalTemplateId);
+      if (catalogTemplate && !isPersonal) {
+        selectedPreset = { id: catalogTemplate.id, title: catalogTemplate.title, category: catalogTemplate.category, summary: catalogTemplate.summary, kind: 'doke' };
+      } else {
+        selectedPreset = {
+          id: clamp(template?.personalTemplateId || template?.templateId, 80),
           title: clamp(template?.templateLabel, 120),
           category: clamp(template?.templateCategory, 80),
-          summary: ''
+          summary: '',
+          kind: isPersonal ? 'personal' : (template?.templateId ? 'doke' : '')
         };
-      presetCustomized = template?.source === 'preset_customized';
+      }
+      presetCustomized = ['preset_customized', 'personal_template_customized'].includes(template?.source);
       catalogExpanded = !selectedPreset.id;
       render();
       renderPresetCatalog();
@@ -459,7 +575,30 @@
         id: template.id,
         title: template.title,
         category: template.category,
-        summary: template.summary
+        summary: template.summary,
+        kind: 'doke'
+      };
+      presetCustomized = false;
+      catalogExpanded = false;
+      render();
+      host.scrollIntoView?.({ block: 'start', behavior: options.behavior || 'smooth' });
+      return true;
+    };
+
+    const applyPersonalTemplateById = (templateId, options = {}) => {
+      const template = getPersonalTemplateById(templateId);
+      if (!template) return false;
+      if (!options.force && !shouldReplaceQuestions(template.id)) return false;
+      questions = (template.template?.questions || []).map((question, index) => normalizeQuestion({
+        ...question,
+        id: `personal_${template.id}_${index}_${question.id || 'question'}`.slice(0, 80)
+      }, index));
+      selectedPreset = {
+        id: template.id,
+        title: template.name,
+        category: template.category,
+        summary: '',
+        kind: 'personal'
       };
       presetCustomized = false;
       catalogExpanded = false;
@@ -471,11 +610,164 @@
     const clearTemplate = (options = {}) => {
       if (!options.force && questions.length && typeof window.confirm === 'function' && !window.confirm('Remover todas as perguntas e começar do zero?')) return false;
       questions = [];
-      selectedPreset = { ...EMPTY_PRESET };
+      selectedPreset = { ...EMPTY_PRESET, kind: '' };
       presetCustomized = false;
       catalogExpanded = true;
       render();
       return true;
+    };
+
+    const closePersonalDialog = () => {
+      if (!personalDialog) return;
+      if (typeof personalDialog.close === 'function' && personalDialog.open) personalDialog.close();
+      else personalDialog.removeAttribute('open');
+      if (personalDialogError) {
+        personalDialogError.hidden = true;
+        personalDialogError.textContent = '';
+      }
+    };
+
+    const openPersonalDialog = (mode, templateId = '') => {
+      if (!personalDialog || !personalName) return;
+      dialogMode = mode;
+      dialogTemplateId = templateId;
+      const existing = getPersonalTemplateById(templateId);
+      if (mode === 'rename') {
+        if (personalDialogTitle) personalDialogTitle.textContent = 'Renomear meu modelo';
+        if (personalDialogDescription) personalDialogDescription.textContent = 'O novo nome aparecerá somente na sua biblioteca de modelos.';
+        if (personalDialogSubmit) personalDialogSubmit.textContent = 'Salvar nome';
+        personalName.value = existing?.name || '';
+      } else {
+        if (personalDialogTitle) personalDialogTitle.textContent = 'Salvar como meu modelo';
+        if (personalDialogDescription) personalDialogDescription.textContent = 'Dê um nome fácil de reconhecer. O modelo ficará disponível somente para sua conta.';
+        if (personalDialogSubmit) personalDialogSubmit.textContent = 'Salvar modelo';
+        personalName.value = selectedPreset.title
+          ? `${selectedPreset.title} personalizado`
+          : `${categoryField?.value || 'Meu formulário'} personalizado`;
+      }
+      if (personalDialogError) {
+        personalDialogError.hidden = true;
+        personalDialogError.textContent = '';
+      }
+      if (typeof personalDialog.showModal === 'function') personalDialog.showModal();
+      else personalDialog.setAttribute('open', '');
+      window.setTimeout(() => personalName.focus(), 0);
+    };
+
+    const setPersonalMutation = (pending) => {
+      personalMutationPending = pending;
+      if (personalDialogSubmit) personalDialogSubmit.disabled = pending;
+      renderQuality();
+    };
+
+    const loadPersonalTemplates = () => {
+      const service = getPersonalService();
+      if (!service?.list) {
+        personalState = 'error';
+        setPersonalError('Seus modelos não estão disponíveis nesta sessão. Atualize a página e tente novamente.');
+        renderPersonalTemplates();
+        return Promise.resolve([]);
+      }
+      personalState = 'loading';
+      setPersonalError('');
+      renderPersonalTemplates();
+      return service.list().then((items) => {
+        personalTemplates = Array.isArray(items) ? items : [];
+        personalState = 'ready';
+        const selected = selectedPreset.kind === 'personal' ? getPersonalTemplateById(selectedPreset.id) : null;
+        if (selected) {
+          selectedPreset.title = selected.name;
+          selectedPreset.category = selected.category;
+        }
+        renderPersonalTemplates();
+        return personalTemplates;
+      }).catch((error) => {
+        personalState = 'error';
+        setPersonalError(error?.message || 'Não foi possível carregar seus modelos.');
+        renderPersonalTemplates();
+        return [];
+      });
+    };
+
+    const saveCurrentAsPersonal = (name) => {
+      const service = getPersonalService();
+      if (!service?.create) return Promise.reject(new Error('O salvamento de modelos não está disponível.'));
+      return service.create({
+        name,
+        category: categoryField?.value || selectedPreset.category || '',
+        template: reusablePayload()
+      }).then((saved) => {
+        personalTemplates = [saved, ...personalTemplates.filter((item) => item.id !== saved.id)];
+        personalState = 'ready';
+        selectedPreset = { id: saved.id, title: saved.name, category: saved.category, summary: '', kind: 'personal' };
+        presetCustomized = false;
+        catalogExpanded = false;
+        render();
+        window.dispatchEvent(new CustomEvent('doke:personal-quote-templates-changed', { detail: { action: 'created', template: saved } }));
+        return saved;
+      });
+    };
+
+    const renamePersonal = (templateId, name) => {
+      const service = getPersonalService();
+      if (!service?.rename) return Promise.reject(new Error('A edição de modelos não está disponível.'));
+      return service.rename(templateId, name).then((saved) => {
+        personalTemplates = personalTemplates.map((item) => item.id === saved.id ? saved : item);
+        if (selectedPreset.kind === 'personal' && selectedPreset.id === saved.id) selectedPreset.title = saved.name;
+        render();
+        window.dispatchEvent(new CustomEvent('doke:personal-quote-templates-changed', { detail: { action: 'renamed', template: saved } }));
+        return saved;
+      });
+    };
+
+    const updateSelectedPersonal = () => {
+      const service = getPersonalService();
+      if (selectedPreset.kind !== 'personal' || !selectedPreset.id) return Promise.reject(new Error('Aplique um modelo pessoal antes de atualizá-lo.'));
+      if (!service?.updateTemplate) return Promise.reject(new Error('A atualização de modelos não está disponível.'));
+      setPersonalMutation(true);
+      setPersonalError('');
+      return service.updateTemplate(selectedPreset.id, {
+        category: categoryField?.value || selectedPreset.category || '',
+        template: reusablePayload()
+      }).then((saved) => {
+        personalTemplates = personalTemplates.map((item) => item.id === saved.id ? saved : item);
+        selectedPreset.title = saved.name;
+        selectedPreset.category = saved.category;
+        presetCustomized = false;
+        render();
+        window.dispatchEvent(new CustomEvent('doke:personal-quote-templates-changed', { detail: { action: 'updated', template: saved } }));
+        return saved;
+      }).catch((error) => {
+        setPersonalError(error?.message || 'Não foi possível atualizar o modelo.');
+        throw error;
+      }).finally(() => setPersonalMutation(false));
+    };
+
+    const deletePersonal = (templateId) => {
+      const template = getPersonalTemplateById(templateId);
+      if (!template) return Promise.resolve(false);
+      if (typeof window.confirm === 'function' && !window.confirm(`Excluir o modelo “${template.name}”? Os anúncios que já usam essas perguntas não serão alterados.`)) return Promise.resolve(false);
+      const service = getPersonalService();
+      if (!service?.remove) return Promise.reject(new Error('A exclusão de modelos não está disponível.'));
+      personalMutationPending = true;
+      setPersonalError('');
+      renderQuality();
+      return service.remove(templateId).then(() => {
+        personalTemplates = personalTemplates.filter((item) => item.id !== templateId);
+        if (selectedPreset.kind === 'personal' && selectedPreset.id === templateId) {
+          selectedPreset = { ...EMPTY_PRESET, kind: '' };
+          presetCustomized = false;
+        }
+        render();
+        window.dispatchEvent(new CustomEvent('doke:personal-quote-templates-changed', { detail: { action: 'deleted', templateId } }));
+        return true;
+      }).catch((error) => {
+        setPersonalError(error?.message || 'Não foi possível excluir o modelo.');
+        throw error;
+      }).finally(() => {
+        personalMutationPending = false;
+        renderQuality();
+      });
     };
 
     host.addEventListener('input', (event) => {
@@ -545,6 +837,57 @@
       if (event.target.closest('[data-quote-template-clear]')) clearTemplate();
     });
 
+    personalHost?.addEventListener('click', (event) => {
+      const applyAction = event.target.closest('[data-personal-template-apply]');
+      if (applyAction) {
+        applyPersonalTemplateById(applyAction.dataset.personalTemplateApply);
+        return;
+      }
+      const renameAction = event.target.closest('[data-personal-template-rename]');
+      if (renameAction) {
+        openPersonalDialog('rename', renameAction.dataset.personalTemplateRename);
+        return;
+      }
+      const deleteAction = event.target.closest('[data-personal-template-delete]');
+      if (deleteAction) {
+        deletePersonal(deleteAction.dataset.personalTemplateDelete).catch(() => {});
+        return;
+      }
+      if (event.target.closest('[data-personal-template-save]')) openPersonalDialog('create');
+    });
+
+    personalUpdate?.addEventListener('click', () => {
+      updateSelectedPersonal().catch(() => {});
+    });
+
+    personalDialogCancel?.addEventListener('click', closePersonalDialog);
+    personalDialog?.addEventListener('cancel', (event) => {
+      event.preventDefault();
+      closePersonalDialog();
+    });
+    personalForm?.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const name = clamp(personalName?.value, 60);
+      if (name.length < 3) {
+        if (personalDialogError) {
+          personalDialogError.textContent = 'Informe um nome com pelo menos 3 caracteres.';
+          personalDialogError.hidden = false;
+        }
+        personalName?.focus();
+        return;
+      }
+      setPersonalMutation(true);
+      const operation = dialogMode === 'rename'
+        ? renamePersonal(dialogTemplateId, name)
+        : saveCurrentAsPersonal(name);
+      operation.then(() => closePersonalDialog()).catch((error) => {
+        if (personalDialogError) {
+          personalDialogError.textContent = error?.message || 'Não foi possível salvar o modelo.';
+          personalDialogError.hidden = false;
+        }
+      }).finally(() => setPersonalMutation(false));
+    });
+
     presetSearch?.addEventListener('input', renderPresetCatalog);
     categoryField?.addEventListener('change', renderPresetCatalog);
 
@@ -553,6 +896,7 @@
     } catch (_) {
       load([]);
     }
+    loadPersonalTemplates();
 
     const validate = () => {
       const value = serialize();
@@ -570,8 +914,11 @@
       validate,
       load,
       applyTemplateById,
+      applyPersonalTemplateById,
       clearTemplate,
+      reloadPersonalTemplates: loadPersonalTemplates,
       getCatalog: () => TEMPLATE_CATALOG,
+      getPersonalTemplates: () => personalTemplates.map((template) => ({ ...template })),
       getSelectedTemplate: () => ({ ...selectedPreset, customized: presetCustomized })
     };
     window.DokeServiceQuoteTemplateBuilder = api;
