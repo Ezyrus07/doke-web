@@ -12,7 +12,7 @@
   <script>document.documentElement.classList.add("doke-mobile-shell-pending");</script>
   <script src="assets/js/core/ipad-safari-early-guard.js?v=20260531-v3"></script>
 
-  <link rel="stylesheet" href="assets/css/pages/anunciar-servico-foundation.css?v=20260720-moderation-flow-v1">
+  <link rel="stylesheet" href="assets/css/pages/anunciar-servico-foundation.css?v=20260720-quote-template-catalog-v1">
   <link rel="stylesheet" href="assets/css/components/feedback/document-preloader.css?v=20260712-global-document-boot-v1">
  <link rel="stylesheet" href="assets/css/components/ui-surface/close-button-authority.css?v=20260713-global-v1">
 </head>
@@ -311,12 +311,66 @@
                     </section>
 
                     <section class="post-service-quote-mode-panel" data-quote-mode-panel="custom" hidden>
+                      <section class="quote-template-presets" data-quote-template-presets aria-labelledby="quote-template-presets-title">
+                        <div class="quote-template-presets__head">
+                          <div>
+                            <span class="quote-template-presets__eyebrow">Modelos prontos da Doke</span>
+                            <h2 id="quote-template-presets-title">Comece com perguntas recomendadas</h2>
+                            <p>Escolha um modelo da sua categoria e personalize apenas o que fizer sentido para o serviço.</p>
+                          </div>
+                          <label class="quote-template-presets__search doke-field">
+                            <span>Buscar modelo</span>
+                            <input class="doke-input" type="search" placeholder="Ex.: limpeza, pintura, frete" data-quote-template-search>
+                          </label>
+                        </div>
+
+                        <div class="quote-template-presets__browser" data-quote-template-browser>
+                          <div class="quote-template-presets__recommendation" data-quote-template-recommendation hidden>
+                            <div>
+                              <span>Recomendado para a categoria selecionada</span>
+                              <strong data-quote-template-recommendation-title></strong>
+                              <p data-quote-template-recommendation-summary></p>
+                            </div>
+                            <button class="doke-btn doke-btn--primary" type="button" data-quote-template-use-recommended>Usar modelo recomendado</button>
+                          </div>
+
+                          <div class="quote-template-presets__grid" data-quote-template-list></div>
+                          <p class="quote-template-presets__empty" data-quote-template-list-empty hidden>Nenhum modelo corresponde à sua busca.</p>
+                        </div>
+
+                        <div class="quote-template-presets__selection" data-quote-template-selection hidden>
+                          <div>
+                            <span>Modelo aplicado</span>
+                            <strong data-quote-template-selection-title></strong>
+                            <small data-quote-template-selection-meta></small>
+                          </div>
+                          <div class="quote-template-presets__selection-actions">
+                            <button class="doke-btn doke-btn--soft" type="button" data-quote-template-change>Trocar modelo</button>
+                            <button class="doke-btn doke-btn--ghost" type="button" data-quote-template-clear>Começar do zero</button>
+                          </div>
+                        </div>
+                      </section>
+
                       <section class="quote-builder" data-quote-template-builder aria-labelledby="quote-builder-title">
-                        <input type="hidden" name="quoteTemplateJson" data-quote-template-json value='{"version":1,"status":"default","questions":[]}'>
-                        <div class="quote-builder__head"><div><h2 id="quote-builder-title">Perguntas personalizadas</h2><p>Use perguntas objetivas. Formulários curtos tendem a receber mais respostas.</p></div><button class="doke-btn doke-btn--secondary" type="button" data-quote-question-add>Adicionar pergunta</button></div>
-                        <p class="quote-builder__empty" data-quote-template-empty>Adicione ao menos uma pergunta para usar o modo personalizado.</p>
+                        <input type="hidden" name="quoteTemplateJson" data-quote-template-json value='{"version":1,"status":"default","source":"default","templateId":null,"questions":[]}'>
+                        <div class="quote-builder__head">
+                          <div>
+                            <h2 id="quote-builder-title">Edite as perguntas</h2>
+                            <p>Use perguntas objetivas e deixe somente o que ajuda a preparar o orçamento.</p>
+                          </div>
+                          <button class="doke-btn doke-btn--secondary" type="button" data-quote-question-add>Adicionar pergunta</button>
+                        </div>
+                        <div class="quote-builder__metrics" aria-live="polite">
+                          <span><strong data-quote-question-count>0</strong>/10 perguntas</span>
+                          <span data-quote-template-duration>Formulário ainda vazio</span>
+                        </div>
+                        <p class="quote-builder__advice" data-quote-template-advice data-tone="positive">Escolha um modelo pronto ou adicione uma pergunta para começar.</p>
+                        <p class="quote-builder__empty" data-quote-template-empty>Escolha um modelo pronto acima ou adicione sua primeira pergunta.</p>
                         <div class="quote-builder__list" data-quote-question-list></div>
-                        <aside class="quote-builder-preview" aria-label="Prévia das perguntas"><strong>Prévia para o cliente</strong><div data-quote-template-preview></div></aside>
+                        <aside class="quote-builder-preview" aria-label="Prévia das perguntas">
+                          <div class="quote-builder-preview__head"><strong>Prévia para o cliente</strong><small>Os campos essenciais da Doke continuam presentes.</small></div>
+                          <div data-quote-template-preview></div>
+                        </aside>
                       </section>
                     </section>
 
@@ -429,9 +483,9 @@
 <script src="assets/js/core/supabase-config.js?v=20260719-singleton-client-v1" defer></script>
   <script src="assets/js/repositories/services-repository.js?v=20260720-moderation-flow-v1" defer></script>
   <script src="assets/js/services/services-service.js?v=20260720-moderation-flow-v1" defer></script>
-  <script src="assets/js/pages/service-quote-template-builder.js?v=20260720-moderation-flow-v1" defer></script>
-  <script src="assets/js/pages/service-form-experience.js?v=20260720-moderation-flow-v1" defer></script>
-  <script src="assets/js/pages/anunciar-servico.js?v=20260720-moderation-flow-v1" defer></script>
+  <script src="assets/js/pages/service-quote-template-builder.js?v=20260720-quote-template-catalog-v1" defer></script>
+  <script src="assets/js/pages/service-form-experience.js?v=20260720-quote-template-catalog-v1" defer></script>
+  <script src="assets/js/pages/anunciar-servico.js?v=20260720-quote-template-catalog-v1" defer></script>
   <script src="assets/js/services/mock-data-service.js?v=20260501-stage31-domain-services" defer></script>
   <script src="assets/js/services/profile-service.js?v=20260501-stage31-domain-services" defer></script>
   <script src="assets/js/services/search-service.js?v=20260501-stage31-domain-services" defer></script>

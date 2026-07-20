@@ -233,8 +233,21 @@
           try {
             const parsed = JSON.parse(String(data.get('quoteTemplateJson') || '{}'));
             const questions = Array.isArray(parsed.questions) ? parsed.questions.slice(0, 10) : [];
-            return { version: Number(parsed.version) || 1, status: questions.length ? 'active' : 'default', questions };
-          } catch (_) { return { version: 1, status: 'default', questions: [] }; }
+            const source = ['default', 'custom', 'preset', 'preset_customized'].includes(String(parsed.source || '').toLowerCase())
+              ? String(parsed.source).toLowerCase()
+              : (questions.length ? 'custom' : 'default');
+            return {
+              version: parsed.version || 1,
+              status: questions.length ? 'active' : 'default',
+              source,
+              templateId: core.normalize(parsed.templateId) || null,
+              templateLabel: core.normalize(parsed.templateLabel) || null,
+              templateCategory: core.normalize(parsed.templateCategory) || null,
+              questions
+            };
+          } catch (_) {
+            return { version: 1, status: 'default', source: 'default', templateId: null, templateLabel: null, templateCategory: null, questions: [] };
+          }
         })(),
         quoteQuestions: (() => {
           try { return (JSON.parse(String(data.get('quoteTemplateJson') || '{}')).questions || []).slice(0, 10); }

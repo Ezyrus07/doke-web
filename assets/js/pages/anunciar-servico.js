@@ -59,6 +59,7 @@
     let currentStep = 1;
     let highestValidatedStep = 0;
     const quoteModeInput = root.querySelector('[data-quote-mode-input]');
+    const quoteTemplateInput = root.querySelector('[data-quote-template-json]');
     const quoteModeOptions = [...root.querySelectorAll('[data-quote-mode-option]')];
     const quoteModePanels = [...root.querySelectorAll('[data-quote-mode-panel]')];
 
@@ -71,6 +72,20 @@
       custom: 'Formulário personalizado',
       disabled: 'Somente conversa — sem pedidos de orçamento'
     })[normalizeQuoteMode(mode)];
+
+    const quoteModeReviewLabel = (mode) => {
+      const normalizedMode = normalizeQuoteMode(mode);
+      if (normalizedMode !== 'custom') return quoteModeLabel(normalizedMode);
+      try {
+        const template = JSON.parse(quoteTemplateInput?.value || '{}');
+        const questionCount = Array.isArray(template?.questions) ? template.questions.length : 0;
+        const templateLabel = String(template?.templateLabel || '').trim();
+        if (templateLabel) return `${templateLabel} · ${questionCount} ${questionCount === 1 ? 'pergunta' : 'perguntas'}`;
+        return questionCount ? `Formulário personalizado · ${questionCount} ${questionCount === 1 ? 'pergunta' : 'perguntas'}` : 'Formulário personalizado';
+      } catch (_) {
+        return 'Formulário personalizado';
+      }
+    };
 
     const syncQuoteMode = (requestedMode, options = {}) => {
       const mode = normalizeQuoteMode(requestedMode || quoteModeInput?.value);
@@ -433,7 +448,7 @@
       if (reviewAvailability) reviewAvailability.textContent = formatAvailability();
       if (reviewTags) reviewTags.textContent = tags.length ? tags.join(', ') : 'Nenhum diferencial selecionado';
       const quoteMode = normalizeQuoteMode(quoteModeInput?.value);
-      if (reviewQuoteMode) reviewQuoteMode.textContent = quoteModeLabel(quoteMode);
+      if (reviewQuoteMode) reviewQuoteMode.textContent = quoteModeReviewLabel(quoteMode);
       if (reviewModerationCopy) reviewModerationCopy.textContent = root.dataset.serviceEditMode === 'true'
         ? 'A versão atualmente aprovada continua pública enquanto estas alterações são analisadas.'
         : 'O anúncio será enviado para análise antes de aparecer para os clientes.';
@@ -448,6 +463,8 @@
       syncQuoteMode(quoteModeInput.value, { emit: false });
       updateReview();
     });
+    quoteTemplateInput?.addEventListener('input', updateReview);
+    window.addEventListener('doke:service-quote-template-changed', updateReview);
     root.querySelectorAll('[name="category"], [name="serviceMode"], [data-availability-day], [data-availability-time], [name="mainImage"], [name="extraImageOne"], [name="extraImageTwo"]').forEach((source) => {
       source.addEventListener('input', updateReview);
       source.addEventListener('change', updateReview);
