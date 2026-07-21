@@ -15,26 +15,58 @@
     var node = document.querySelector(selector);
     if (node) node.textContent = text(value) || fallback || '';
   }
+  var PROFILE_MEDIA_TIMEOUT = 3500;
+
+  function preloadImage(url, timeout) {
+    var source = text(url);
+    if (!source) return Promise.resolve({ ok: false, url: '' });
+
+    return new Promise(function (resolve) {
+      var settled = false;
+      var image = new Image();
+      var timer = window.setTimeout(function () {
+        finish(false);
+      }, Number(timeout || PROFILE_MEDIA_TIMEOUT));
+
+      function finish(ok) {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(timer);
+        image.onload = null;
+        image.onerror = null;
+        resolve({ ok: Boolean(ok), url: source });
+      }
+
+      image.onload = function () {
+        if (typeof image.decode === 'function') {
+          Promise.resolve(image.decode()).then(function () { finish(true); }).catch(function () { finish(true); });
+          return;
+        }
+        finish(true);
+      };
+      image.onerror = function () { finish(false); };
+      image.src = source;
+      if (image.complete && image.naturalWidth > 0) finish(true);
+    });
+  }
+
   function renderMedia(profile) {
+    var media = Doke.profileMediaReadiness;
     var avatarImage = document.querySelector('[data-profile-avatar-image]');
     var avatarInitials = document.querySelector('[data-profile-avatar-initials]');
     var coverImage = document.querySelector('[data-profile-cover-image]');
     var coverMark = document.querySelector('.profile-hero__cover-mark');
-    var avatarUrl = text(profile && profile.avatarUrl);
-    var coverUrl = text(profile && profile.coverUrl);
-
-    if (avatarImage) {
-      avatarImage.hidden = !avatarUrl;
-      if (avatarUrl) avatarImage.src = avatarUrl;
-      else avatarImage.removeAttribute('src');
-    }
-    if (avatarInitials) avatarInitials.hidden = Boolean(avatarUrl);
-    if (coverImage) {
-      coverImage.hidden = !coverUrl;
-      if (coverUrl) coverImage.src = coverUrl;
-      else coverImage.removeAttribute('src');
-    }
-    if (coverMark) coverMark.hidden = Boolean(coverUrl);
+    if (!media || typeof media.commit !== 'function') return Promise.resolve();
+    return media.commit({
+      avatarUrl: profile && profile.avatarUrl,
+      coverUrl: profile && profile.coverUrl,
+      avatarImage: avatarImage,
+      avatarFallback: avatarInitials,
+      coverImage: coverImage,
+      coverFallback: coverMark,
+      avatarAlt: 'Foto de ' + (text(profile && profile.name) || 'usuário'),
+      coverAlt: 'Capa do perfil de ' + (text(profile && profile.name) || 'usuário')
+    });
   }
   function renderInterests(profile) {
     var list = document.querySelector('[data-profile-interests]');
@@ -201,7 +233,7 @@
     }
     set('[data-profile-meta]', [handle ? '@' + handle : '', place].filter(Boolean).join(' · '), 'Adicione identificador e localização');
     set('[data-profile-avatar-initials]', initials(profile.name));
-    renderMedia(profile);
+    var mediaReady = renderMedia(profile);
     set('[data-profile-about-title]', profile.name ? 'Sobre ' + text(profile.name).split(' ')[0] : 'Sobre você');
     set('[data-profile-bio]', profile.bio, 'Adicione uma descrição para apresentar seu perfil.');
     set('[data-profile-location]', place, 'Não informada');
@@ -217,6 +249,7 @@
     if (publicLink) publicLink.href = profileId
       ? 'perfil-cliente.html?id=' + encodeURIComponent(profileId)
       : 'perfil-cliente.html';
+    return mediaReady;
   }
 
   var latestProfile = null;
@@ -234,8 +267,9 @@
       if (Doke.services && Doke.services.profile && typeof Doke.services.profile.getCurrentProfile === 'function') {
         return Promise.resolve(Doke.services.profile.getCurrentProfile()).then(function (profile) {
           latestProfile = profile || null;
-          render(latestProfile);
-          return { profile: latestProfile, source: 'profile-service' };
+          return Promise.resolve(render(latestProfile)).then(function () {
+            return { profile: latestProfile, source: 'profile-service' };
+          });
         });
       }
       return Promise.resolve({ profile: null, source: 'profile-service-unavailable' });
@@ -265,12 +299,29 @@
       skeletonSelectors: '[data-profile-hydration-skeleton]',
       readySelectors: '[data-profile-hydration-ready]',
       errorSelectors: '[data-state-error]',
-      skeletonMode: 'hard-load',
-      preserveReadyDuringHydration: true,
+      skeletonMode: 'route-and-document',
+      readyPolicy: 'after-skeleton',
+      preserveReadyDuringHydration: false,
       maxDuration: 8000,
       hasItems: function () { return true; }
     });
     return ownerHydration;
+  }
+
+
+  function confirmCurrentIdentity() {
+    var auth = window.DokeAuth && window.DokeAuth.service;
+    if (!auth || typeof auth.refreshApiSession !== 'function') return Promise.resolve(null);
+
+    var refresh = Promise.resolve().then(function () {
+      return auth.refreshApiSession({ silent: true });
+    }).catch(function () { return null; });
+
+    var timeout = new Promise(function (resolve) {
+      window.setTimeout(function () { resolve(null); }, 2500);
+    });
+
+    return Promise.race([refresh, timeout]);
   }
 
   function setMediaFeedback(message, isError) {
@@ -355,7 +406,9 @@
     }).then(function (accessResult) {
       if (!accessResult || !accessResult.allowed) return null;
 
-      return loadProfessionalNextStep().then(function (professionalState) {
+      return confirmCurrentIdentity().then(function () {
+        return loadProfessionalNextStep();
+      }).then(function (professionalState) {
         if (professionalState && professionalState.redirected) return null;
         var operation = ownerSurfaceInitialized
           ? Doke.ownerProfileExperience.query({ force: true })

@@ -33,25 +33,23 @@
     var role = normalizeRole(profile.role || profile.type || user.role || user.type);
     return profileId === String(user.id) && role === 'client';
   }
-  function renderMedia(profile) {
+  function renderMedia(profile, name) {
+    var media = Doke.profileMediaReadiness;
     var avatarImage = document.querySelector('[data-profile-avatar-image]');
     var avatarInitials = document.querySelector('[data-profile-avatar-initials]');
     var coverImage = document.querySelector('[data-profile-cover-image]');
     var coverMark = document.querySelector('.profile-hero__cover-mark');
-    var avatarUrl = clean(profile && profile.avatarUrl);
-    var coverUrl = clean(profile && profile.coverUrl);
-    if (avatarImage) {
-      avatarImage.hidden = !avatarUrl;
-      if (avatarUrl) avatarImage.src = avatarUrl;
-      else avatarImage.removeAttribute('src');
-    }
-    if (avatarInitials) avatarInitials.hidden = Boolean(avatarUrl);
-    if (coverImage) {
-      coverImage.hidden = !coverUrl;
-      if (coverUrl) coverImage.src = coverUrl;
-      else coverImage.removeAttribute('src');
-    }
-    if (coverMark) coverMark.hidden = Boolean(coverUrl);
+    if (!media || typeof media.commit !== 'function') return Promise.resolve();
+    return media.commit({
+      avatarUrl: profile && profile.avatarUrl,
+      coverUrl: profile && profile.coverUrl,
+      avatarImage: avatarImage,
+      avatarFallback: avatarInitials,
+      coverImage: coverImage,
+      coverFallback: coverMark,
+      avatarAlt: 'Foto de ' + (name || 'usuário'),
+      coverAlt: 'Capa do perfil de ' + (name || 'usuário')
+    });
   }
   function renderInterests(profile) {
     var list = document.querySelector('[data-profile-interests]');
@@ -89,7 +87,7 @@
     }
     set('[data-profile-meta]', [profile.handle ? '@' + clean(profile.handle) : '', place].filter(Boolean).join(' · '), 'Informações públicas não preenchidas');
     set('[data-profile-avatar-initials]', initials(profile.name));
-    renderMedia(profile);
+    var mediaReady = renderMedia(profile, name);
     set('[data-profile-about-title]', profile.name ? 'Sobre ' + clean(profile.name).split(' ')[0] : 'Sobre');
     set('[data-profile-bio]', profile.bio, 'Este usuário ainda não adicionou uma descrição.');
     set('[data-profile-location]', place, 'Não informada');
@@ -98,6 +96,7 @@
     var verified = document.querySelector('[data-profile-verified]');
     if (verified) verified.hidden = profile.verified !== true;
     syncOwnerMode(profile);
+    return mediaReady;
   }
 
   Doke.clientProfileExperience = Doke.profileExperienceCore.createSurface({
@@ -110,8 +109,9 @@
     load: function (profileId) {
       if (Doke.services && Doke.services.profile && typeof Doke.services.profile.getById === 'function') {
         return Promise.resolve(Doke.services.profile.getById(profileId)).then(function (profile) {
-          render(profile);
-          return { profile: profile || null };
+          return Promise.resolve(render(profile)).then(function () {
+            return { profile: profile || null };
+          });
         });
       }
       return Promise.resolve({ profile: null });
@@ -134,8 +134,9 @@
       skeletonSelectors: '[data-profile-hydration-skeleton]',
       readySelectors: '[data-profile-hydration-ready]',
       errorSelectors: '[data-state-error]',
-      skeletonMode: 'hard-load',
-      preserveReadyDuringHydration: true,
+      skeletonMode: 'route-and-document',
+      readyPolicy: 'after-skeleton',
+      preserveReadyDuringHydration: false,
       maxDuration: 8000,
       hasItems: function () { return true; }
     });

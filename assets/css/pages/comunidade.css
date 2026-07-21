@@ -4,7 +4,7 @@
  */
 @import url("./comunidade/base-and-discovery.css?v=20260715-residual-cleanup-v1");
 @import url("../patterns/community-request-modal.css?v=20260715-modal-clean-lote2");
-@import url("./comunidade/entry-create-modals.css?v=20260715-modal-clean-lote2");
+@import url("./comunidade/entry-create-modals.css?v=20260721-community-single-surface-v12");
 @import url("./comunidade/mobile-overflow-guard.css?v=20260426-community-split-v11");
 @import url("./comunidade/discovery-v2.css?v=20260426-community-split-v11");
 @import url("./comunidade/discovery-v3.css?v=20260426-community-split-v11");
@@ -14,3 +14,12 @@
 @import url("./comunidade/photo-discovery.css?v=20260710-community-entry-repair-v1");
 @import url("./comunidade/ban-state.css?v=20260711-ban-experience-v1");
 @import url("./comunidade/visual-hierarchy.css?v=20260715-visual-hierarchy-v1");
+
+/* Community membership visibility contract.
+   The "Continue de onde parou" section is conditional content and must remain
+   fully removed from layout while the current account has no owner/member
+   relationship with any community. Explicitly reinforce [hidden] because
+   section layout rules can otherwise override the browser default. */
+body[data-page="comunidade"] [data-community-local-section][hidden] {
+  display: none;
+}

@@ -145,3 +145,1264 @@ body[data-page="anunciar-servico"] .post-service-actions .doke-btn--ghost:hover 
 body[data-page="anunciar-servico"] .post-service-actions .doke-btn--ghost:focus-visible {
   box-shadow: var(--post-service-control-shadow-focus);
 }
+
+
+/* 20260721 — Form builder simplification, batch 2.
+   The page remains functionally complete, but secondary tools use progressive
+   disclosure and the question editor becomes the clear primary workspace. */
+body[data-page="anunciar-servico"] {
+  --post-service-section-gap: clamp(24px, 2.4vw, 34px);
+  --post-service-surface-shadow: 0 18px 46px rgba(15, 55, 92, 0.075);
+  --post-service-floating-shadow: 0 9px 24px rgba(15, 55, 92, 0.065);
+  --post-service-control-bg-soft: #f6f9fc;
+  --post-service-section-bg: #f4f8fb;
+  --post-service-section-bg-strong: #edf4fa;
+  --post-service-text-strong: #173b5d;
+  --post-service-text-muted: #6b8098;
+}
+
+body[data-page="anunciar-servico"] .post-service-intro {
+  max-width: 860px;
+  gap: 6px;
+}
+
+body[data-page="anunciar-servico"] .doke-form-page-title {
+  color: var(--post-service-blue-dark);
+  font-size: clamp(1.7rem, 2.5vw, 2.2rem);
+  letter-spacing: -0.045em;
+  text-transform: none;
+}
+
+body[data-page="anunciar-servico"] .doke-form-page-description {
+  max-width: 760px;
+  color: #607896;
+  font-size: clamp(.88rem, 1.1vw, .98rem);
+  line-height: 1.55;
+}
+
+body[data-page="anunciar-servico"] .post-service-layout.doke-form-page-grid {
+  grid-template-columns: minmax(0, 1fr) minmax(270px, 320px);
+  gap: clamp(22px, 2.4vw, 32px);
+  align-items: start;
+}
+
+body[data-page="anunciar-servico"] .post-service-form-card.doke-form-page-card,
+body[data-page="anunciar-servico"] .post-service-tips-card.doke-form-page-side-card {
+  border: 0;
+  background: rgba(255, 255, 255, .97);
+  box-shadow: var(--post-service-surface-shadow);
+}
+
+body[data-page="anunciar-servico"] .post-service-form-card.doke-form-page-card {
+  padding: clamp(22px, 2.5vw, 32px);
+}
+
+body[data-page="anunciar-servico"] .post-service-tips-card.doke-form-page-side-card {
+  position: sticky;
+  top: calc(var(--app-header-height, 72px) + 22px);
+  padding: 24px 22px;
+}
+
+/* Connected stepper: progress is communicated by state, not five cards. */
+body[data-page="anunciar-servico"] .post-service-steps.doke-flow-steps {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 5px;
+  margin: 0 0 clamp(24px, 2.6vw, 32px);
+  padding: 0;
+  overflow: visible;
+}
+
+body[data-page="anunciar-servico"] .post-service-steps.doke-flow-steps::before {
+  display: none;
+}
+
+body[data-page="anunciar-servico"] .post-service-step.doke-flow-step {
+  min-width: 0;
+  min-height: 58px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+  align-content: center;
+  gap: 5px;
+  padding: 7px 4px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  box-shadow: none;
+  text-align: center;
+  transform: none;
+}
+
+body[data-page="anunciar-servico"] .post-service-step.doke-flow-step:hover,
+body[data-page="anunciar-servico"] .post-service-step.doke-flow-step:is(.is-active, .is-complete) {
+  border: 0;
+  box-shadow: none;
+  transform: none;
+}
+
+body[data-page="anunciar-servico"] .post-service-step.doke-flow-step:hover {
+  background: rgba(243, 247, 251, .65);
+}
+
+body[data-page="anunciar-servico"] .post-service-step.doke-flow-step:is(.is-active, .is-complete) {
+  background: #f3f7fb;
+}
+
+body[data-page="anunciar-servico"] .post-service-step.doke-flow-step > span {
+  width: 28px;
+  height: 28px;
+  border: 3px solid #fff;
+  border-radius: 999px;
+  background: #edf2f7;
+  color: #617792;
+  box-shadow: 0 0 0 1px rgba(24, 75, 118, .06);
+  font-size: .72rem;
+}
+
+body[data-page="anunciar-servico"] .post-service-step.doke-flow-step > div {
+  width: 100%;
+  min-width: 0;
+}
+
+body[data-page="anunciar-servico"] .post-service-step.doke-flow-step.is-active > span {
+  background: var(--color-primary, #2a5f90);
+  color: #fff;
+  box-shadow: 0 7px 18px rgba(42, 95, 144, .2);
+}
+
+body[data-page="anunciar-servico"] .post-service-step.doke-flow-step.is-complete > span {
+  background: var(--color-secondary, #298f7f);
+  color: #fff;
+}
+
+body[data-page="anunciar-servico"] .post-service-step.doke-flow-step strong {
+  margin: 0;
+  color: #1c3f61;
+  font-size: .72rem;
+  line-height: 1.12;
+  white-space: normal;
+}
+
+body[data-page="anunciar-servico"] .post-service-step.doke-flow-step small {
+  display: none;
+}
+
+body[data-page="anunciar-servico"] .post-service-step-panel:not([hidden]) {
+  display: grid;
+  gap: clamp(22px, 2.2vw, 28px);
+}
+
+body[data-page="anunciar-servico"] .post-service-step-panel[hidden],
+body[data-page="anunciar-servico"] [data-quote-mode-panel][hidden],
+body[data-page="anunciar-servico"] [data-quote-template-recommendation][hidden],
+body[data-page="anunciar-servico"] [data-quote-template-selection][hidden],
+body[data-page="anunciar-servico"] [data-personal-template-list][hidden],
+body[data-page="anunciar-servico"] [data-personal-template-empty][hidden],
+body[data-page="anunciar-servico"] [data-personal-template-loading][hidden],
+body[data-page="anunciar-servico"] [data-personal-template-error][hidden] {
+  display: none;
+}
+
+body[data-page="anunciar-servico"] .post-service-section-head {
+  margin-bottom: 20px;
+}
+
+body[data-page="anunciar-servico"] .post-service-section-head h2 {
+  font-size: clamp(1.18rem, 1.6vw, 1.42rem);
+  letter-spacing: -0.035em;
+}
+
+body[data-page="anunciar-servico"] .post-service-section-head p {
+  display: block;
+  max-width: 720px;
+  margin-top: 7px;
+  color: #6e829b;
+  font-size: .84rem;
+}
+
+/* Controls are bounded only where interaction requires it. */
+body[data-page="anunciar-servico"] :is(.doke-input, .doke-select, .doke-textarea, .ui-select__trigger) {
+  border-color: transparent;
+  background: var(--post-service-control-bg-soft);
+  box-shadow: inset 0 0 0 1px rgba(24, 75, 118, .04);
+}
+
+body[data-page="anunciar-servico"] :is(.doke-input, .doke-select, .doke-textarea, .ui-select__trigger):hover {
+  border-color: transparent;
+  background: #f1f6fa;
+  box-shadow: inset 0 0 0 1px rgba(42, 95, 144, .1);
+}
+
+body[data-page="anunciar-servico"] :is(.doke-input, .doke-select, .doke-textarea, .ui-select__trigger):is(:focus, :focus-visible, [aria-expanded="true"]) {
+  border-color: rgba(42, 95, 144, .34);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(42, 95, 144, .08), 0 9px 24px rgba(24, 75, 118, .06);
+}
+
+/* Dynamic response-type selects consume the canonical custom-select behavior. */
+body[data-page="anunciar-servico"] .quote-builder__settings .ui-select {
+  width: 100%;
+  min-width: 0;
+  z-index: 1;
+}
+
+body[data-page="anunciar-servico"] .quote-builder__settings .ui-select.is-open {
+  z-index: 90;
+}
+
+body[data-page="anunciar-servico"] .quote-builder__settings .ui-select__trigger {
+  min-height: 52px;
+  padding-inline: 15px 17px;
+  border-radius: 14px;
+  background: var(--post-service-control-bg-soft);
+  color: var(--post-service-text-strong);
+  box-shadow: inset 0 0 0 1px rgba(24, 75, 118, .05);
+  font-size: .82rem;
+  font-weight: 700;
+  line-height: 1.2;
+  transform: none;
+}
+
+body[data-page="anunciar-servico"] .quote-builder__settings .ui-select__trigger:hover {
+  transform: none;
+}
+
+body[data-page="anunciar-servico"] .quote-builder__settings .ui-select__label {
+  display: block;
+  line-height: 1.25;
+}
+
+body[data-page="anunciar-servico"] .quote-builder__settings .ui-select__caret {
+  width: 16px;
+  height: 16px;
+  border: 0;
+  background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='m3.5 6 4.5 4 4.5-4' fill='none' stroke='%233b6284' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 16px 16px no-repeat;
+  transform: none;
+}
+
+body[data-page="anunciar-servico"] .quote-builder__settings .ui-select__caret::before,
+body[data-page="anunciar-servico"] .quote-builder__settings .ui-select__caret::after {
+  content: none;
+}
+
+body[data-page="anunciar-servico"] .quote-builder__settings .ui-select.is-open .ui-select__caret {
+  transform: none;
+}
+
+body[data-page="anunciar-servico"] .quote-builder__settings .ui-select__menu {
+  top: calc(100% + 6px);
+  z-index: 100;
+  max-height: 310px;
+  padding: 7px;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 18px 38px rgba(15, 55, 92, .16);
+}
+
+body[data-page="anunciar-servico"] .quote-builder__settings .ui-select__option {
+  min-height: 44px;
+  padding-inline: 13px;
+  border-radius: 10px;
+  color: var(--post-service-text-strong);
+  font-size: .82rem;
+  font-weight: 650;
+  line-height: 1.25;
+}
+
+body[data-page="anunciar-servico"] .quote-builder__settings .ui-select__option.is-selected {
+  background: var(--color-primary, #2a5f90);
+  color: #fff;
+}
+
+/* Mode selection is one compact control group. */
+body[data-page="anunciar-servico"] .post-service-quote-modes {
+  gap: 7px;
+  margin-bottom: 0;
+  padding: 7px;
+  border-radius: 18px;
+  background: #f2f6fa;
+}
+
+body[data-page="anunciar-servico"] .post-service-quote-mode {
+  min-height: 112px;
+  padding: 16px 15px;
+  border: 0;
+  border-radius: 13px;
+  background: transparent;
+  box-shadow: none;
+  transition: background-color 160ms ease, box-shadow 160ms ease;
+}
+
+body[data-page="anunciar-servico"] .post-service-quote-mode:hover {
+  background: rgba(255, 255, 255, .66);
+  box-shadow: none;
+  transform: none;
+}
+
+body[data-page="anunciar-servico"] .post-service-quote-mode.is-active {
+  background: #fff;
+  box-shadow: 0 7px 20px rgba(20, 60, 96, .07);
+}
+
+body[data-page="anunciar-servico"] .post-service-quote-mode:focus-visible {
+  box-shadow: 0 0 0 3px rgba(42, 95, 144, .14);
+}
+
+body[data-page="anunciar-servico"] [data-quote-mode-panel="custom"] {
+  display: grid;
+  gap: 18px;
+}
+
+/* Starter structure: one recommendation, personal library behind disclosure. */
+body[data-page="anunciar-servico"] .quote-template-presets,
+body[data-page="anunciar-servico"] .quote-template-presets--focused {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: clamp(18px, 2vw, 22px);
+  border: 0;
+  border-radius: 20px;
+  background: var(--post-service-section-bg);
+  box-shadow: none;
+}
+
+body[data-page="anunciar-servico"] .quote-template-presets__head {
+  padding: 0 2px;
+}
+
+body[data-page="anunciar-servico"] .quote-template-presets__head h2 {
+  margin-top: 3px;
+  font-size: clamp(1.08rem, 1.5vw, 1.28rem);
+  letter-spacing: -.025em;
+}
+
+body[data-page="anunciar-servico"] .quote-template-presets__head p {
+  max-width: 720px;
+  margin-top: 5px;
+  font-size: .82rem;
+  line-height: 1.5;
+}
+
+body[data-page="anunciar-servico"] .quote-template-presets__browser {
+  display: grid;
+  gap: 10px;
+}
+
+body[data-page="anunciar-servico"] .quote-template-presets__browser[hidden] {
+  display: none;
+}
+
+body[data-page="anunciar-servico"] .quote-template-presets__recommendation,
+body[data-page="anunciar-servico"] .quote-template-presets__recommendation--single,
+body[data-page="anunciar-servico"] .quote-template-presets__selection {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 16px 17px;
+  border: 0;
+  border-radius: 15px;
+  background: #fff;
+  box-shadow: 0 7px 20px rgba(15, 55, 92, .055);
+}
+
+body[data-page="anunciar-servico"] .quote-template-presets__recommendation-copy,
+body[data-page="anunciar-servico"] .quote-template-presets__selection > div:first-child {
+  min-width: 0;
+}
+
+body[data-page="anunciar-servico"] .quote-template-presets__recommendation span,
+body[data-page="anunciar-servico"] .quote-template-presets__selection span {
+  color: var(--color-secondary, #298f7f);
+  font-size: .67rem;
+  font-weight: 800;
+  letter-spacing: .055em;
+  text-transform: uppercase;
+}
+
+body[data-page="anunciar-servico"] .quote-template-presets__recommendation strong,
+body[data-page="anunciar-servico"] .quote-template-presets__selection strong {
+  display: block;
+  margin-top: 3px;
+  color: var(--post-service-text-strong);
+  font-size: .95rem;
+}
+
+body[data-page="anunciar-servico"] .quote-template-presets__recommendation p,
+body[data-page="anunciar-servico"] .quote-template-presets__selection small {
+  display: block;
+  margin-top: 3px;
+  color: var(--post-service-text-muted);
+  font-size: .78rem;
+  line-height: 1.45;
+}
+
+body[data-page="anunciar-servico"] .quote-template-presets__selection-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 7px;
+}
+
+body[data-page="anunciar-servico"] .quote-personal-templates-disclosure,
+body[data-page="anunciar-servico"] .quote-builder-preview {
+  border: 0;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: none;
+  overflow: clip;
+}
+
+body[data-page="anunciar-servico"] :is(.quote-personal-templates-disclosure__summary, .quote-builder-preview__head) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 66px;
+  padding: 14px 16px;
+  cursor: pointer;
+  list-style: none;
+}
+
+body[data-page="anunciar-servico"] :is(.quote-personal-templates-disclosure__summary, .quote-builder-preview__head, .quote-ai-supervision__toggle)::-webkit-details-marker {
+  display: none;
+}
+
+body[data-page="anunciar-servico"] :is(.quote-personal-templates-disclosure__copy, .quote-builder-preview__head > span:first-child, .quote-ai-supervision__toggle-copy) {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+body[data-page="anunciar-servico"] :is(.quote-personal-templates-disclosure__copy, .quote-builder-preview__head > span:first-child, .quote-ai-supervision__toggle-copy) > strong {
+  color: var(--post-service-text-strong);
+  font-size: .91rem;
+}
+
+body[data-page="anunciar-servico"] :is(.quote-personal-templates-disclosure__copy, .quote-builder-preview__head > span:first-child, .quote-ai-supervision__toggle-copy) > small {
+  color: var(--post-service-text-muted);
+  font-size: .75rem;
+  line-height: 1.4;
+}
+
+body[data-page="anunciar-servico"] .quote-disclosure-action {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--color-primary, #2a5f90);
+  font-size: .76rem;
+  font-weight: 800;
+}
+
+body[data-page="anunciar-servico"] .quote-disclosure-action::after {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg) translateY(-2px);
+  transition: transform 160ms ease;
+}
+
+body[data-page="anunciar-servico"] details[open] > summary .quote-disclosure-action::after {
+  transform: rotate(225deg) translate(-1px, -1px);
+}
+
+body[data-page="anunciar-servico"] .quote-personal-templates {
+  display: grid;
+  gap: 13px;
+  padding: 0 16px 16px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+body[data-page="anunciar-servico"] .quote-personal-templates__head {
+  align-items: center;
+  padding-top: 2px;
+}
+
+body[data-page="anunciar-servico"] .quote-personal-templates__head p {
+  max-width: 66ch;
+  margin: 0;
+  color: var(--post-service-text-muted);
+  font-size: .77rem;
+}
+
+body[data-page="anunciar-servico"] .quote-personal-templates__state,
+body[data-page="anunciar-servico"] .quote-personal-templates__empty {
+  padding: 13px 14px;
+  background: var(--post-service-section-bg);
+  box-shadow: none;
+}
+
+/* The editor is the single dominant workspace. */
+body[data-page="anunciar-servico"] .quote-builder {
+  display: grid;
+  gap: 16px;
+  margin: 0;
+  padding: clamp(18px, 2.2vw, 24px);
+  border: 0;
+  border-radius: 20px;
+  background: var(--post-service-section-bg);
+  box-shadow: none;
+}
+
+body[data-page="anunciar-servico"] .quote-builder__head {
+  align-items: center;
+}
+
+body[data-page="anunciar-servico"] .quote-builder__eyebrow {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--color-secondary, #298f7f);
+  font-size: .66rem;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+body[data-page="anunciar-servico"] .quote-builder__head h2 {
+  color: var(--post-service-text-strong);
+  font-size: clamp(1.14rem, 1.6vw, 1.34rem);
+  letter-spacing: -.03em;
+}
+
+body[data-page="anunciar-servico"] .quote-builder__head p {
+  max-width: 620px;
+  margin-top: 5px;
+  color: var(--post-service-text-muted);
+  font-size: .8rem;
+  line-height: 1.5;
+}
+
+body[data-page="anunciar-servico"] .quote-builder__status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 0 2px;
+}
+
+body[data-page="anunciar-servico"] .quote-builder__metrics {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0;
+  padding: 0;
+  background: transparent;
+}
+
+body[data-page="anunciar-servico"] .quote-builder__metrics span {
+  padding: 0;
+  background: transparent;
+  color: var(--post-service-text-muted);
+  font-size: .74rem;
+}
+
+body[data-page="anunciar-servico"] .quote-builder__metrics span + span::before {
+  content: "•";
+  margin-inline: 8px;
+  color: #9aabba;
+}
+
+body[data-page="anunciar-servico"] .quote-builder__metrics strong {
+  color: var(--post-service-text-strong);
+}
+
+body[data-page="anunciar-servico"] .quote-builder__advice {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--color-secondary, #298f7f);
+  font-size: .73rem;
+  font-weight: 700;
+  line-height: 1.4;
+  text-align: right;
+}
+
+body[data-page="anunciar-servico"] .quote-builder__advice[data-tone="warning"] {
+  background: transparent;
+  color: #9a651d;
+}
+
+body[data-page="anunciar-servico"] .quote-builder__empty {
+  padding: 18px;
+  border: 0;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .72);
+  color: var(--post-service-text-muted);
+  text-align: center;
+  box-shadow: none;
+}
+
+body[data-page="anunciar-servico"] .quote-builder__list {
+  display: grid;
+  gap: 12px;
+}
+
+body[data-page="anunciar-servico"] .quote-builder__question {
+  display: grid;
+  gap: 15px;
+  padding: clamp(17px, 2vw, 21px);
+  border: 0;
+  border-radius: 17px;
+  background: #fff;
+  box-shadow: var(--post-service-floating-shadow);
+  transition: box-shadow 160ms ease, transform 160ms ease;
+}
+
+body[data-page="anunciar-servico"] .quote-builder__question:focus-within {
+  box-shadow: 0 12px 30px rgba(15, 55, 92, .095);
+}
+
+body[data-page="anunciar-servico"] .quote-builder__question-head {
+  align-items: center;
+}
+
+body[data-page="anunciar-servico"] .quote-builder__question-identity {
+  display: grid;
+  gap: 2px;
+}
+
+body[data-page="anunciar-servico"] .quote-builder__question-identity strong {
+  color: var(--post-service-text-strong);
+  font-size: .93rem;
+}
+
+body[data-page="anunciar-servico"] .quote-builder__question-identity span {
+  display: inline-flex;
+  width: fit-content;
+  min-height: 27px;
+  align-items: center;
+  padding-inline: 10px;
+  border-radius: 999px;
+  background: #eef4fa;
+  color: var(--color-primary, #2a5f90);
+  font-size: .69rem;
+  font-weight: 750;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+body[data-page="anunciar-servico"] .quote-builder__actions {
+  display: flex;
+  gap: 4px;
+}
+
+body[data-page="anunciar-servico"] .quote-builder__action.doke-icon-btn {
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #6c8198;
+  box-shadow: none;
+  transform: none;
+}
+
+body[data-page="anunciar-servico"] .quote-builder__action.doke-icon-btn svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+body[data-page="anunciar-servico"] .quote-builder__action.doke-icon-btn:hover {
+  background: #eef4f8;
+  color: var(--color-primary, #2a5f90);
+  box-shadow: none;
+  transform: none;
+}
+
+body[data-page="anunciar-servico"] .quote-builder__action--danger.doke-icon-btn:hover {
+  background: rgba(181, 55, 55, .08);
+  color: #a23d3d;
+}
+
+body[data-page="anunciar-servico"] .quote-builder__grid {
+  gap: 13px;
+}
+
+body[data-page="anunciar-servico"] .quote-builder__settings {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(230px, .8fr);
+  gap: 13px;
+  align-items: stretch;
+}
+
+body[data-page="anunciar-servico"] .quote-builder__required {
+  display: flex;
+  min-width: 0;
+  min-height: 58px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 10px 13px;
+  overflow: visible;
+  border-radius: 13px;
+  background: var(--post-service-control-bg-soft);
+  cursor: pointer;
+}
+
+body[data-page="anunciar-servico"] .quote-builder__required-copy {
+  display: grid;
+  gap: 2px;
+}
+
+body[data-page="anunciar-servico"] .quote-builder__required-copy strong {
+  color: var(--post-service-text-strong);
+  font-size: .78rem;
+}
+
+body[data-page="anunciar-servico"] .quote-builder__required-copy small {
+  color: var(--post-service-text-muted);
+  font-size: .66rem;
+  line-height: 1.35;
+}
+
+body[data-page="anunciar-servico"] .quote-builder__required input {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+body[data-page="anunciar-servico"] .quote-builder__switch {
+  position: relative;
+  display: inline-block;
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  width: 42px;
+  min-width: 42px;
+  height: 24px;
+  min-height: 24px;
+  padding: 0;
+  overflow: visible;
+  border: 0;
+  border-radius: 999px;
+  background: #cbd6e0;
+  transition: background-color 160ms ease;
+}
+
+body[data-page="anunciar-servico"] .quote-builder__switch::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(21, 50, 78, .18);
+  transition: transform 160ms ease;
+}
+
+body[data-page="anunciar-servico"] .quote-builder__required input:checked + .quote-builder__switch {
+  background: var(--color-secondary, #298f7f);
+}
+
+body[data-page="anunciar-servico"] .quote-builder__required input:checked + .quote-builder__switch::after {
+  transform: translateX(18px);
+}
+
+body[data-page="anunciar-servico"] .quote-builder__required:has(input:focus-visible) {
+  box-shadow: 0 0 0 3px rgba(42, 95, 144, .1);
+}
+
+body[data-page="anunciar-servico"] .quote-builder__helper {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+body[data-page="anunciar-servico"] .quote-builder__helper > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--color-primary, #2a5f90);
+  font-size: .73rem;
+  font-weight: 750;
+  cursor: pointer;
+  list-style: none;
+}
+
+body[data-page="anunciar-servico"] .quote-builder__helper > summary::-webkit-details-marker {
+  display: none;
+}
+
+body[data-page="anunciar-servico"] .quote-builder__helper > summary::before {
+  content: "+";
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+  background: #edf4fa;
+  font-size: .85rem;
+}
+
+body[data-page="anunciar-servico"] .quote-builder__helper[open] > summary::before {
+  content: "−";
+}
+
+body[data-page="anunciar-servico"] .quote-builder__helper > summary span {
+  color: #8b9cad;
+  font-size: .65rem;
+  font-weight: 600;
+}
+
+body[data-page="anunciar-servico"] .quote-builder__helper > .doke-field {
+  margin-top: 10px;
+}
+
+body[data-page="anunciar-servico"] .quote-builder__options {
+  display: block;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+body[data-page="anunciar-servico"] .quote-builder__options > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 42px;
+  padding: 9px 11px;
+  border-radius: 11px;
+  background: var(--post-service-control-bg-soft);
+  color: var(--post-service-text-strong);
+  font-size: .75rem;
+  font-weight: 750;
+  cursor: pointer;
+  list-style: none;
+}
+
+body[data-page="anunciar-servico"] .quote-builder__options > summary::-webkit-details-marker {
+  display: none;
+}
+
+body[data-page="anunciar-servico"] .quote-builder__options > summary::after {
+  content: "+";
+  flex: 0 0 auto;
+  color: var(--color-primary, #2a5f90);
+  font-size: .95rem;
+}
+
+body[data-page="anunciar-servico"] .quote-builder__options[open] > summary::after {
+  content: "−";
+}
+
+body[data-page="anunciar-servico"] .quote-builder__options > summary small {
+  margin-left: auto;
+  color: var(--post-service-text-muted);
+  font-size: .66rem;
+  font-weight: 600;
+}
+
+body[data-page="anunciar-servico"] .quote-builder__options-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 9px;
+}
+
+body[data-page="anunciar-servico"] .quote-builder__options-grid .doke-input {
+  min-height: 42px;
+}
+
+/* Preview and AI are available on demand instead of competing with editing. */
+body[data-page="anunciar-servico"] .quote-builder-preview {
+  background: rgba(255, 255, 255, .78);
+}
+
+body[data-page="anunciar-servico"] .quote-builder-preview__content {
+  display: grid;
+  gap: 6px;
+  padding: 0 16px 15px;
+}
+
+body[data-page="anunciar-servico"] .quote-builder-preview__item {
+  border: 0;
+  padding: 9px 0;
+}
+
+body[data-page="anunciar-servico"] .quote-builder-preview__item + .quote-builder-preview__item {
+  box-shadow: inset 0 1px rgba(24, 75, 118, .055);
+}
+
+body[data-page="anunciar-servico"] .quote-ai-supervision {
+  margin: 2px 0 0;
+  padding: 0;
+  overflow: clip;
+  border: 0;
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(234, 244, 255, .98), rgba(246, 251, 255, .98));
+  box-shadow: 0 12px 30px rgba(28, 84, 137, .09);
+}
+
+body[data-page="anunciar-servico"] .quote-ai-supervision__toggle {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  min-height: 96px;
+  align-items: center;
+  gap: 14px;
+  padding: 17px 18px;
+}
+
+body[data-page="anunciar-servico"] .quote-ai-supervision__spark {
+  display: grid;
+  width: 46px;
+  height: 46px;
+  place-items: center;
+  border-radius: 15px;
+  background: rgba(255, 255, 255, .82);
+  color: #2566a8;
+  box-shadow: 0 8px 22px rgba(42, 95, 144, .10);
+}
+
+body[data-page="anunciar-servico"] .quote-ai-supervision__spark svg {
+  width: 25px;
+  height: 25px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+body[data-page="anunciar-servico"] .quote-ai-supervision__toggle-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+body[data-page="anunciar-servico"] .quote-ai-supervision__meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+body[data-page="anunciar-servico"] .quote-ai-supervision__eyebrow {
+  color: #52779c;
+  font-size: .65rem;
+  letter-spacing: .07em;
+}
+
+body[data-page="anunciar-servico"] .quote-ai-supervision__new {
+  display: inline-flex;
+  min-height: 22px;
+  align-items: center;
+  padding-inline: 8px;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--color-primary, #2a5f90);
+  font-size: .64rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+body[data-page="anunciar-servico"] .quote-ai-supervision__toggle-copy > strong {
+  color: var(--post-service-text-strong);
+  font-size: 1.02rem;
+  line-height: 1.2;
+}
+
+body[data-page="anunciar-servico"] .quote-ai-supervision__toggle-copy > small {
+  max-width: 58ch;
+  color: #637d98;
+  font-size: .75rem;
+  line-height: 1.45;
+}
+
+body[data-page="anunciar-servico"] .quote-ai-supervision .quote-disclosure-action {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding-inline: 14px;
+  border-radius: 12px;
+  background: var(--color-primary, #2a5f90);
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(42, 95, 144, .18);
+  font-size: .72rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+body[data-page="anunciar-servico"] .quote-ai-supervision .quote-disclosure-action svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+body[data-page="anunciar-servico"] .quote-ai-supervision[open] .quote-disclosure-action {
+  background: rgba(255, 255, 255, .78);
+  color: var(--color-primary, #2a5f90);
+  box-shadow: none;
+}
+
+body[data-page="anunciar-servico"] .quote-ai-supervision__body {
+  display: grid;
+  gap: 14px;
+  padding: 2px 18px 18px;
+}
+
+body[data-page="anunciar-servico"] .quote-ai-supervision__head {
+  align-items: center;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .72);
+}
+
+body[data-page="anunciar-servico"] .quote-ai-supervision__identity p {
+  max-width: 68ch;
+  margin: 0;
+  font-size: .77rem;
+}
+
+body[data-page="anunciar-servico"] .quote-ai-supervision__notice {
+  margin: 0;
+  font-size: .69rem;
+}
+
+/* Sticky actions retain a clear primary CTA without heavy outlines. */
+body[data-page="anunciar-servico"] .post-service-actions.doke-form-actions {
+  bottom: 16px;
+  gap: 12px;
+  margin-top: 24px;
+  padding: 9px;
+  border: 0;
+  border-radius: 17px;
+  background: rgba(255, 255, 255, .91);
+  box-shadow: 0 16px 42px rgba(13, 47, 89, .13);
+  backdrop-filter: blur(16px);
+}
+
+body[data-page="anunciar-servico"] .post-service-actions .doke-btn--ghost {
+  background: transparent;
+  color: #536c87;
+}
+
+body[data-page="anunciar-servico"] .post-service-actions .doke-btn--ghost:hover {
+  background: #f0f5f9;
+}
+
+@media (max-width: 1180px) {
+  body[data-page="anunciar-servico"] .post-service-layout.doke-form-page-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  body[data-page="anunciar-servico"] .post-service-tips-card.doke-form-page-side-card {
+    position: static;
+  }
+}
+
+@media (max-width: 820px) {
+  body[data-page="anunciar-servico"] .post-service-steps.doke-flow-steps {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 5px;
+    margin: 0 0 24px;
+    padding: 0;
+    overflow: visible;
+  }
+
+  body[data-page="anunciar-servico"] .post-service-steps.doke-flow-steps::before {
+    display: none;
+  }
+
+  body[data-page="anunciar-servico"] .post-service-step.doke-flow-step {
+    min-width: 0;
+    min-height: 58px;
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+    align-content: center;
+    gap: 5px;
+    padding: 7px 2px;
+    border-radius: 12px;
+    text-align: center;
+  }
+
+  body[data-page="anunciar-servico"] .post-service-step.doke-flow-step > span {
+    width: 28px;
+    height: 28px;
+    border-width: 3px;
+  }
+
+  body[data-page="anunciar-servico"] .post-service-step.doke-flow-step > div {
+    width: 100%;
+    min-width: 0;
+  }
+
+  body[data-page="anunciar-servico"] .post-service-step.doke-flow-step strong {
+    margin: 0;
+    font-size: 0.68rem;
+    line-height: 1.12;
+    white-space: normal;
+  }
+
+  body[data-page="anunciar-servico"] .post-service-step.doke-flow-step small {
+    display: none;
+  }
+
+  body[data-page="anunciar-servico"] .post-service-step.doke-flow-step.is-active {
+    background: #f3f7fb;
+  }
+
+  body[data-page="anunciar-servico"] .post-service-quote-modes {
+    grid-template-columns: 1fr;
+    padding: 7px;
+  }
+
+  body[data-page="anunciar-servico"] .post-service-quote-mode {
+    min-height: 0;
+  }
+
+  body[data-page="anunciar-servico"] .quote-template-presets__recommendation,
+  body[data-page="anunciar-servico"] .quote-template-presets__selection {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  body[data-page="anunciar-servico"] .quote-template-presets__selection-actions {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 760px) {
+  body[data-page="anunciar-servico"] .post-service-form-card.doke-form-page-card {
+    padding: 18px 16px 20px;
+  }
+
+  body[data-page="anunciar-servico"] .post-service-field > .doke-input[data-count-source] {
+    padding-inline-end: 64px;
+  }
+
+  body[data-page="anunciar-servico"] .post-service-field > .doke-textarea + .doke-form-hint {
+    position: static;
+    inset: auto;
+    justify-self: end;
+    margin-top: -3px;
+    padding-inline-end: 2px;
+  }
+
+  body[data-page="anunciar-servico"] .quote-template-presets,
+  body[data-page="anunciar-servico"] .quote-builder {
+    padding: 16px 14px;
+    border-radius: 18px;
+  }
+
+  body[data-page="anunciar-servico"] .quote-builder__head,
+  body[data-page="anunciar-servico"] .quote-builder__status-row,
+  body[data-page="anunciar-servico"] .quote-builder__question-head,
+  body[data-page="anunciar-servico"] .quote-personal-templates__head,
+  body[data-page="anunciar-servico"] .quote-ai-supervision__head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  body[data-page="anunciar-servico"] .quote-builder__status-row {
+    gap: 6px;
+  }
+
+  body[data-page="anunciar-servico"] .quote-builder__advice {
+    text-align: left;
+  }
+
+  body[data-page="anunciar-servico"] .quote-builder__question {
+    padding: 17px 14px;
+  }
+
+  body[data-page="anunciar-servico"] .quote-builder__settings,
+  body[data-page="anunciar-servico"] .quote-builder__options-grid {
+    grid-template-columns: 1fr;
+  }
+
+
+  body[data-page="anunciar-servico"] .quote-ai-supervision__toggle {
+    grid-template-columns: auto minmax(0, 1fr);
+    min-height: 0;
+    padding: 15px;
+  }
+
+  body[data-page="anunciar-servico"] .quote-ai-supervision .quote-disclosure-action {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  body[data-page="anunciar-servico"] .quote-builder__settings .ui-select__menu {
+    max-height: 250px;
+  }
+
+  body[data-page="anunciar-servico"] .quote-template-presets__recommendation .doke-btn,
+  body[data-page="anunciar-servico"] .quote-template-presets__selection .doke-btn,
+  body[data-page="anunciar-servico"] .quote-personal-templates__head .doke-btn,
+  body[data-page="anunciar-servico"] .quote-ai-supervision__head .doke-btn {
+    width: 100%;
+  }
+
+  body[data-page="anunciar-servico"] .post-service-actions.doke-form-actions {
+    bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+@media (max-width: 520px) {
+  body[data-page="anunciar-servico"] :is(.quote-personal-templates-disclosure__summary, .quote-builder-preview__head) {
+    align-items: flex-start;
+  }
+
+  body[data-page="anunciar-servico"] .quote-builder__actions {
+    gap: 2px;
+  }
+
+  body[data-page="anunciar-servico"] .quote-builder__action.doke-icon-btn {
+    width: 30px;
+    min-width: 30px;
+    height: 30px;
+    min-height: 30px;
+  }
+
+  body[data-page="anunciar-servico"] .post-service-step.doke-flow-step strong {
+    font-size: 0.64rem;
+    letter-spacing: -0.015em;
+  }
+}
+@media (max-width: 360px) {
+  body[data-page="anunciar-servico"] .post-service-steps.doke-flow-steps {
+    gap: 3px;
+  }
+
+  body[data-page="anunciar-servico"] .post-service-step.doke-flow-step strong {
+    font-size: 0.58rem;
+    letter-spacing: -0.025em;
+  }
+
+  body[data-page="anunciar-servico"] .post-service-step.doke-flow-step strong[data-compact-label] {
+    font-size: 0;
+  }
+
+  body[data-page="anunciar-servico"] .post-service-step.doke-flow-step strong[data-compact-label]::after {
+    content: attr(data-compact-label);
+    font-size: 0.58rem;
+  }
+}

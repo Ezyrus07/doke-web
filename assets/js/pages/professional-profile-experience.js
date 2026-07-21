@@ -57,18 +57,20 @@
     if (avatar) avatar.setAttribute('aria-label', 'Avatar de ' + name);
     var avatarImage = document.querySelector('[data-professional-avatar-image]');
     var avatarInitials = document.querySelector('[data-professional-avatar]');
-    if (avatarImage) {
-      avatarImage.hidden = !userProfile.avatarUrl;
-      avatarImage.src = userProfile.avatarUrl || '';
-      avatarImage.alt = userProfile.avatarUrl ? 'Foto de ' + name : '';
-    }
-    if (avatarInitials) avatarInitials.hidden = Boolean(userProfile.avatarUrl);
     var coverImage = document.querySelector('[data-professional-cover-image]');
-    if (coverImage) {
-      coverImage.hidden = !userProfile.coverUrl;
-      coverImage.src = userProfile.coverUrl || '';
-      coverImage.alt = userProfile.coverUrl ? 'Capa do perfil de ' + name : '';
-    }
+    var coverMark = document.querySelector('.profile-hero__cover-mark');
+    var mediaReady = Doke.profileMediaReadiness && typeof Doke.profileMediaReadiness.commit === 'function'
+      ? Doke.profileMediaReadiness.commit({
+          avatarUrl: userProfile.avatarUrl,
+          coverUrl: userProfile.coverUrl,
+          avatarImage: avatarImage,
+          avatarFallback: avatarInitials,
+          coverImage: coverImage,
+          coverFallback: coverMark,
+          avatarAlt: 'Foto de ' + name,
+          coverAlt: 'Capa do perfil de ' + name
+        })
+      : Promise.resolve();
     professionalEditorState.avatarUrl = clean(userProfile.avatarUrl);
     professionalEditorState.coverUrl = clean(userProfile.coverUrl);
     var verifiedBadge = document.querySelector('[data-professional-verified-badge]');
@@ -84,6 +86,7 @@
         countSelector: '[data-professional-services-count]'
       });
     }
+    return mediaReady;
   }
 
   function loadProfessionalContext(profileId) {
@@ -120,7 +123,8 @@
       skeletonSelectors: '[data-professional-profile-hydration-skeleton]',
       readySelectors: '[data-professional-profile-hydration-ready]',
       errorSelectors: '[data-state-error]',
-      skeletonMode: 'always',
+      skeletonMode: 'route-and-document',
+      readyPolicy: 'after-skeleton',
       preserveReadyDuringHydration: false,
       minDuration: 220,
       maxDuration: 9000,
@@ -459,14 +463,15 @@
       return ensureSurface().init();
     }).then(function (payload) {
       if (payload === null) return null;
-      renderProfessionalProfile(payload);
-      hydration?.ready({ hasItems: true });
+      return Promise.resolve(renderProfessionalProfile(payload)).then(function () {
+        hydration?.ready({ hasItems: true });
       professionalReadyBoundary = boundary;
       professionalLastPayload = payload;
       if (typeof window.DokeInitProfileReviews === 'function') {
         window.DokeInitProfileReviews();
       }
-      return professionalLastPayload;
+        return professionalLastPayload;
+      });
     }).catch(function (error) {
       hydration?.error(error, { source: 'professional-profile-controller' });
       throw error;

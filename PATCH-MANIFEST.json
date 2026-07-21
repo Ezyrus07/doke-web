@@ -1,138 +1,61 @@
 {
-  "name": "quote_template_smart_recommendations",
-  "base": "doke-web-service-moderation-audit-history-cumulative.zip",
+  "name": "form_builder_controls_and_ai_visibility_v5",
+  "base": "doke-web-formularios-lote1-v4-completo.zip",
   "createdAt": "2026-07-20",
-  "summary": "Turns privacy-safe quote-template metrics into explainable, advisory recommendations in the professional dashboard and the listing form builder, using owner-scoped category benchmarks, confidence levels, abandonment concentration and question-count comparisons.",
-  "databaseMigrations": [
-    "045_quote_template_smart_recommendations.sql"
+  "summary": "Replaces the browser-native dynamic response-type select with the canonical Doke custom select, stabilizes question badges and required toggles, and promotes the supervised AI assistant without changing business rules.",
+  "scope": {
+    "page": "anunciar-servico.html",
+    "step": "quote_form_customization",
+    "sharedFormContractMigrationStarted": false,
+    "businessLogicRemoved": false,
+    "aiStillSupervised": true,
+    "shellChanged": false,
+    "globalControlContractChanged": false
+  },
+  "visualChanges": [
+    "custom_response_type_select",
+    "stable_select_chevron",
+    "readable_question_type_badges",
+    "stable_required_toggle",
+    "ai_assistant_promoted_before_question_list",
+    "ai_assistant_highlight_card",
+    "mobile_no_horizontal_overflow"
   ],
-  "recommendationEngine": {
-    "deterministicBeforeGenerativeAI": true,
-    "advisoryOnly": true,
-    "automaticQuestionMutation": false,
-    "signals": [
-      "sample_size",
-      "question_count",
-      "completion_rate",
-      "submission_rate",
-      "review_to_submit_rate",
-      "abandonment_rate",
-      "dropoff_concentration",
-      "owner_category_benchmark"
-    ],
-    "recommendationCodes": [
-      "collect_more_data",
-      "investigate_dropoff_question",
-      "reduce_question_count",
-      "improve_completion",
-      "improve_review_to_submit",
-      "keep_current"
-    ],
-    "confidenceLevels": [
-      "low",
-      "medium",
-      "high"
-    ]
-  },
-  "surfaces": {
-    "professionalDashboard": true,
-    "listingFormBuilder": true,
-    "deepLinkToListingForm": true,
-    "clientBudgetFlowChanged": false,
-    "moderationChanged": false
-  },
   "validation": {
-    "disposableBenchmark": {
-      "formsStarted": 40,
-      "completionRate": 65,
-      "submissionRate": 45,
-      "recommendedQuestionCount": 5
-    },
-    "longForm": {
-      "questionCount": 8,
-      "submissionRate": 20,
-      "dropoffShare": 100,
-      "confidence": "medium",
-      "recommendations": [
-        "investigate_dropoff_question",
-        "reduce_question_count",
-        "improve_completion",
-        "improve_review_to_submit"
-      ]
-    },
-    "clientVisibleRecommendations": 0,
-    "clientVisibleBenchmarks": 0,
-    "disposableTestDataRemaining": 0,
-    "responsiveViewports": [
-      "1366x900",
-      "820x1180",
-      "390x844"
-    ],
+    "javascriptSyntax": true,
+    "staticContractsPassed": 6,
+    "isolatedDesktopRender": true,
+    "isolatedMobileRender": true,
+    "desktopViewport": "1100x1200",
+    "mobileViewport": "390x1000",
+    "customSelectHeight": 52,
+    "requiredToggleSize": "42x24",
     "horizontalOverflow": false,
-    "communityFilesChecked": 112,
-    "communityFilesChanged": 0,
-    "agentGovernanceKnownFailure": "index.html account-onboarding__change button"
+    "fullAuthenticatedShellVisualValidation": false,
+    "fullShellBlockReason": "ERR_BLOCKED_BY_ADMINISTRATOR",
+    "knownUnrelatedGovernanceFailure": "index.html account-onboarding__change",
+    "knownUnrelatedMissingFile": "supabase/functions/quote-template-ai/shared.ts"
   },
   "files": [
     {
       "path": "anunciar-servico.html",
-      "sha256": "532e771d7b118c2c691c20312c5f2248e06330dbd5c71889e1f6df553b42aa3b",
-      "size": 52125
+      "sha256": "da7982d3713833779379dd01b7cf76bb85a69e9d5215c2d9f704c319bc85138d",
+      "size": 57245
     },
     {
-      "path": "perfil-profissional.html",
-      "sha256": "39374e075790a7dd1df752a3728b467ac84f28b5c127b91e4ebba8f0cb2d517a",
-      "size": 38301
+      "path": "assets/css/pages/anunciar-servico-foundation.css",
+      "sha256": "c84d5ec5babe3e2cee9a46da1fea67353430fc151cf3fdc657bcd3a46a96f4f6",
+      "size": 1124
     },
     {
-      "path": "assets/css/components/quote-template-metrics.css",
-      "sha256": "0955770daa8fb7e350b407d96557ea0df4c3d6a92077d7a3c57dc60243f87427",
-      "size": 8162
-    },
-    {
-      "path": "assets/css/pages/anunciar-servico.css",
-      "sha256": "6c31d3c7bae148acde943309811d80f34b508569ed1a192bd86762774ea803b1",
-      "size": 57421
-    },
-    {
-      "path": "assets/css/pages/professional-profile-editor.css",
-      "sha256": "5217ea9128562766503e1e9370ed2f0f8b39892407de4a1967267dc4eaba772a",
-      "size": 10136
-    },
-    {
-      "path": "assets/js/pages/profile/profile-quote-template-metrics.js",
-      "sha256": "ed52e2010a8d1937f8dcbfb0899c29b8777729e3571041646b2083ebf402dbe5",
-      "size": 15335
+      "path": "assets/css/pages/anunciar-servico/visual-hierarchy.css",
+      "sha256": "7c2d1b99aa19de2f19c78b6ebefa8dfa1766ba5807a1896b8fd81288cf5384ef",
+      "size": 37153
     },
     {
       "path": "assets/js/pages/service-quote-template-builder.js",
-      "sha256": "7e92d6cd99801fd4b023ac50499f6ea1453117b830ec75eead07770743ba5857",
-      "size": 55448
-    },
-    {
-      "path": "assets/js/repositories/quote-template-metrics-repository.js",
-      "sha256": "0cba69d9df131e22170a3a90277fdd73771549167e1a4a0d534cbb175e26c20e",
-      "size": 14375
-    },
-    {
-      "path": "assets/js/services/quote-template-metrics-service.js",
-      "sha256": "e1c7603b9bde6e9b4797c6c819a23cace7d8940cee67dcc71867ba7ce6be239b",
-      "size": 4028
-    },
-    {
-      "path": "package.json",
-      "sha256": "68c4ba8a84ff81728be210903d31ddba45e8109dd89ec73413d0b18c6e4f4db9",
-      "size": 94348
-    },
-    {
-      "path": "scripts/test-quote-template-smart-recommendations-contract.js",
-      "sha256": "5c7d6faf56953f053feb0b35d1a7f285c9dc433190ce5f4bb10a9c2ba84e7064",
-      "size": 5865
-    },
-    {
-      "path": "supabase/migrations/045_quote_template_smart_recommendations.sql",
-      "sha256": "715eb69820e95b6a191191836f649f9d3d0e55ebe30f08b26b0c3dfc6c78d53a",
-      "size": 10283
+      "sha256": "2c4fc3e1f24b675f2859b674a2a23837d95ae301c11bf7e056e808588cb3b510",
+      "size": 58720
     }
   ]
 }

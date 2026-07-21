@@ -3,7 +3,7 @@
 
   var Doke = window.Doke || (window.Doke = {});
   var lifecycle = window.DokeNavigationLifecycle || Doke.navigationLifecycle || null;
-  var ROUTER_VERSION = '20260716-static-route-policy-v1';
+  var ROUTER_VERSION = '20260721-profile-atomic-route-v1';
   var ROUTE_SETTLEMENT_TIMEOUT_MS = 9000;
 
   var SAFE_ROUTES = new Set([
@@ -941,9 +941,6 @@
     '/carteira.html',
     '/resultados.html',
     '/detalhe-anuncio.html',
-    '/meu-perfil.html',
-    '/perfil-cliente.html',
-    '/perfil-profissional.html',
     '/comunidade.html',
     '/admin.html',
     '/admin-anuncio-revisao.html',

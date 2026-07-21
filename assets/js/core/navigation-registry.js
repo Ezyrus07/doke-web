@@ -82,7 +82,7 @@
       sidebarClass: 'profile',
       group: 'account',
       surfaces: ['desktop-sidebar', 'mobile-drawer', 'mobile-bottom'],
-      activePaths: ['/perfil.html', '/meu-perfil.html', '/perfil-cliente.html', '/perfil-profissional.html', '/tornar-profissional.html', '/verificacao-profissional.html', '/anunciar-servico.html']
+      activePaths: ['/perfil.html', '/meu-perfil.html', '/perfil-cliente.html', '/perfil-profissional.html', '/tornar-profissional.html', '/verificacao-profissional.html']
     },
     {
       id: 'wallet',

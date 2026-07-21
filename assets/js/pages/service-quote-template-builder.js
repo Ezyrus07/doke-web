@@ -246,6 +246,8 @@
     let dialogTemplateId = '';
     let smartGuidanceTimer = 0;
     let smartGuidanceRequest = 0;
+    let aiOptimizationRunId = '';
+
 
     const getPersonalService = () => window.Doke?.services?.professionalQuoteTemplates || null;
     const getMetricsService = () => window.Doke?.services?.quoteTemplateMetrics || null;
@@ -378,6 +380,11 @@
       let source = hasQuestions ? 'custom' : 'default';
       if (selectedPreset.kind === 'personal') source = presetCustomized ? 'personal_template_customized' : 'personal_template';
       else if (selectedPreset.kind === 'doke') source = presetCustomized ? 'preset_customized' : 'preset';
+      if (aiOptimizationRunId) {
+        if (selectedPreset.kind === 'personal') source = 'personal_template_ai_customized';
+        else if (selectedPreset.kind === 'doke') source = 'preset_ai_customized';
+        else source = 'custom_ai_optimized';
+      }
       const value = {
         version: hasQuestions ? `v_${(hash >>> 0).toString(36)}` : 1,
         status: hasQuestions ? 'active' : 'default',
@@ -387,6 +394,7 @@
         personalTemplateId: selectedPreset.kind === 'personal' ? selectedPreset.id : null,
         templateLabel: selectedPreset.title || null,
         templateCategory: selectedPreset.category || null,
+        aiOptimizationRunId: aiOptimizationRunId || null,
         questions
       };
       if (input) {
@@ -415,7 +423,14 @@
     const optionFields = (question, index) => {
       if (!['single_choice', 'multiple_choice'].includes(question.type)) return '';
       const values = [...question.options, '', '', '', '', ''].slice(0, 5);
-      return `<div class="quote-builder__options"><span>Opções</span>${values.map((value, optionIndex) => `<input class="doke-input" maxlength="80" data-question-option="${index}:${optionIndex}" value="${escapeAttribute(value)}" placeholder="Opção ${optionIndex + 1}">`).join('')}</div>`;
+      const filledCount = values.filter((value) => String(value || '').trim()).length;
+      const countLabel = filledCount
+        ? `${filledCount} ${filledCount === 1 ? 'opção cadastrada' : 'opções cadastradas'}`
+        : 'Adicione pelo menos duas opções';
+      return `<details class="quote-builder__options quote-builder__wide" ${filledCount < 2 ? 'open' : ''}>
+        <summary><span>Opções de resposta</span><small>${countLabel}</small></summary>
+        <div class="quote-builder__options-grid">${values.map((value, optionIndex) => `<input class="doke-input" maxlength="80" data-question-option="${index}:${optionIndex}" value="${escapeAttribute(value)}" placeholder="Opção ${optionIndex + 1}">`).join('')}</div>
+      </details>`;
     };
 
     const renderPreview = () => {
@@ -607,20 +622,36 @@
     const render = () => {
       if (list) {
         list.innerHTML = questions.map((question, index) => `<article class="quote-builder__question" data-question-index="${index}">
-          <div class="quote-builder__question-head"><strong>Pergunta ${index + 1}</strong><div class="quote-builder__actions">
-            <button type="button" class="doke-icon-btn" data-question-up="${index}" aria-label="Mover para cima">↑</button>
-            <button type="button" class="doke-icon-btn" data-question-down="${index}" aria-label="Mover para baixo">↓</button>
-            <button type="button" class="doke-icon-btn" data-question-duplicate="${index}" aria-label="Duplicar pergunta">⧉</button>
-            <button type="button" class="doke-icon-btn" data-question-remove="${index}" aria-label="Remover pergunta">×</button>
-          </div></div>
+          <div class="quote-builder__question-head">
+            <div class="quote-builder__question-identity">
+              <strong>Pergunta ${index + 1}</strong>
+              <span>${TYPE_LABELS[question.type]}</span>
+            </div>
+            <div class="quote-builder__actions" aria-label="Ações da pergunta ${index + 1}">
+              <button type="button" class="doke-icon-btn quote-builder__action" data-question-up="${index}" aria-label="Mover para cima" title="Mover para cima"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 14 5-5 5 5"/></svg></button>
+              <button type="button" class="doke-icon-btn quote-builder__action" data-question-down="${index}" aria-label="Mover para baixo" title="Mover para baixo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg></button>
+              <button type="button" class="doke-icon-btn quote-builder__action" data-question-duplicate="${index}" aria-label="Duplicar pergunta" title="Duplicar"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="10" height="10" rx="2"/><path d="M6 15H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v1"/></svg></button>
+              <button type="button" class="doke-icon-btn quote-builder__action quote-builder__action--danger" data-question-remove="${index}" aria-label="Remover pergunta" title="Remover"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13M10 11v5m4-5v5"/></svg></button>
+            </div>
+          </div>
           <div class="quote-builder__grid">
-            <label class="doke-field quote-builder__wide"><span>Pergunta</span><input class="doke-input" maxlength="120" data-question-label="${index}" value="${escapeAttribute(question.label)}" placeholder="Ex.: Quantos cômodos serão atendidos?"></label>
-            <label class="doke-field"><span>Tipo</span><select class="doke-select" data-question-type="${index}">${Object.entries(TYPE_LABELS).map(([value, label]) => `<option value="${value}" ${value === question.type ? 'selected' : ''}>${label}</option>`).join('')}</select></label>
-            <label class="doke-field"><span>Obrigatória</span><select class="doke-select" data-question-required="${index}"><option value="false" ${!question.required ? 'selected' : ''}>Não</option><option value="true" ${question.required ? 'selected' : ''}>Sim</option></select></label>
-            <label class="doke-field quote-builder__wide"><span>Texto auxiliar <em>Opcional</em></span><input class="doke-input" maxlength="180" data-question-help="${index}" value="${escapeAttribute(question.helpText)}" placeholder="Explique o que o cliente deve informar."></label>
+            <label class="doke-field quote-builder__wide"><span>Texto da pergunta</span><input class="doke-input" maxlength="120" data-question-label="${index}" value="${escapeAttribute(question.label)}" placeholder="Ex.: Quantos cômodos serão atendidos?"></label>
+            <div class="quote-builder__settings quote-builder__wide">
+              <label class="doke-field"><span>Tipo de resposta</span><select class="doke-select" data-ui-select data-question-type="${index}">${Object.entries(TYPE_LABELS).map(([value, label]) => `<option value="${value}" ${value === question.type ? 'selected' : ''}>${label}</option>`).join('')}</select></label>
+              <label class="quote-builder__required">
+                <span class="quote-builder__required-copy"><strong>Obrigatória</strong><small>O cliente precisa responder para continuar.</small></span>
+                <input type="checkbox" data-question-required="${index}" value="true" ${question.required ? 'checked' : ''}>
+                <span class="quote-builder__switch" aria-hidden="true"></span>
+              </label>
+            </div>
+            <details class="quote-builder__helper quote-builder__wide" ${question.helpText ? 'open' : ''}>
+              <summary>Adicionar orientação ao cliente <span>Opcional</span></summary>
+              <label class="doke-field"><span>Texto auxiliar</span><input class="doke-input" maxlength="180" data-question-help="${index}" value="${escapeAttribute(question.helpText)}" placeholder="Explique brevemente o que o cliente deve informar."></label>
+            </details>
             ${optionFields(question, index)}
           </div>
         </article>`).join('');
+        window.DokeUiSelect?.refresh?.(list);
       }
       if (empty) empty.hidden = questions.length > 0;
       if (add) add.disabled = questions.length >= 10;
@@ -650,7 +681,10 @@
           kind: isPersonal ? 'personal' : (template?.templateId ? 'doke' : '')
         };
       }
-      presetCustomized = ['preset_customized', 'personal_template_customized'].includes(template?.source);
+      const loadedSource = clamp(template?.source, 50);
+      const loadedFromAi = ['preset_ai_customized', 'personal_template_ai_customized', 'custom_ai_optimized'].includes(loadedSource);
+      presetCustomized = ['preset_customized', 'personal_template_customized'].includes(loadedSource) || loadedFromAi;
+      aiOptimizationRunId = loadedFromAi ? clamp(template?.aiOptimizationRunId, 80) : '';
       catalogExpanded = !selectedPreset.id;
       render();
       renderPresetCatalog();
@@ -678,6 +712,7 @@
         kind: 'doke'
       };
       presetCustomized = false;
+      aiOptimizationRunId = '';
       catalogExpanded = false;
       render();
       if (options.track !== false) recordTemplateApplication(template, 'doke');
@@ -701,6 +736,7 @@
         kind: 'personal'
       };
       presetCustomized = false;
+      aiOptimizationRunId = '';
       catalogExpanded = false;
       render();
       if (options.track !== false) recordTemplateApplication(template, 'personal');
@@ -713,6 +749,7 @@
       questions = [];
       selectedPreset = { ...EMPTY_PRESET, kind: '' };
       presetCustomized = false;
+      aiOptimizationRunId = '';
       catalogExpanded = true;
       render();
       return true;
@@ -876,7 +913,7 @@
       if (Number.isInteger(index) && questions[index]) {
         if (event.target.dataset.questionLabel != null) questions[index].label = clamp(event.target.value, 120);
         if (event.target.dataset.questionType != null) questions[index].type = event.target.value;
-        if (event.target.dataset.questionRequired != null) questions[index].required = event.target.value === 'true';
+        if (event.target.dataset.questionRequired != null) questions[index].required = event.target.type === 'checkbox' ? event.target.checked : event.target.value === 'true';
         if (event.target.dataset.questionHelp != null) questions[index].helpText = clamp(event.target.value, 180);
         markCustomized();
         serialize();
@@ -1000,6 +1037,18 @@
     }
     loadPersonalTemplates();
 
+    const applyAiOptimization = (nextQuestions, metadata = {}) => {
+      const source = Array.isArray(nextQuestions) ? nextQuestions : [];
+      const normalized = source.slice(0, 10).map(normalizeQuestion).filter((question) => question.label);
+      if (!normalized.length) throw new Error('A otimização não pode remover todas as perguntas.');
+      questions = normalized;
+      aiOptimizationRunId = clamp(metadata.runId, 80);
+      if (!aiOptimizationRunId) throw new Error('A análise de IA não foi identificada.');
+      if (selectedPreset.id) presetCustomized = true;
+      render();
+      return serialize();
+    };
+
     const validate = () => {
       const value = serialize();
       value.questions.forEach((question, index) => {
@@ -1018,6 +1067,7 @@
       applyTemplateById,
       applyPersonalTemplateById,
       clearTemplate,
+      applyAiOptimization,
       reloadPersonalTemplates: loadPersonalTemplates,
       getCatalog: () => TEMPLATE_CATALOG,
       getPersonalTemplates: () => personalTemplates.map((template) => ({ ...template })),

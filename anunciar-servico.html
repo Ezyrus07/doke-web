@@ -12,7 +12,7 @@
   <script>document.documentElement.classList.add("doke-mobile-shell-pending");</script>
   <script src="assets/js/core/ipad-safari-early-guard.js?v=20260531-v3"></script>
 
-  <link rel="stylesheet" href="assets/css/pages/anunciar-servico-foundation.css?v=20260720-quote-template-catalog-v1">
+  <link rel="stylesheet" href="assets/css/pages/anunciar-servico-foundation.css?v=20260721-form-stepper-compact-v1">
   <link rel="stylesheet" href="assets/css/components/feedback/document-preloader.css?v=20260712-global-document-boot-v1">
  <link rel="stylesheet" href="assets/css/components/ui-surface/close-button-authority.css?v=20260713-global-v1">
 </head>
@@ -112,7 +112,7 @@
                   </button>
                   <button class="post-service-step doke-flow-step" type="button" data-step-target="4">
                     <span>4</span>
-                    <div><strong>Orçamento</strong><small>Como receber pedidos</small></div>
+                    <div><strong data-compact-label="Orçam.">Orçamento</strong><small>Como receber pedidos</small></div>
                   </button>
                   <button class="post-service-step doke-flow-step" type="button" data-step-target="5">
                     <span>5</span>
@@ -313,70 +313,78 @@
                       <section class="quote-template-presets quote-template-presets--focused" data-quote-template-presets aria-labelledby="quote-template-presets-title">
                         <div class="quote-template-presets__head">
                           <div>
-                            <span class="quote-template-presets__eyebrow">Sugestão da Doke</span>
-                            <h2 id="quote-template-presets-title">Recomendado para este anúncio</h2>
-                            <p>A Doke mostra somente o modelo relacionado à categoria escolhida. Você pode usar a sugestão ou criar suas perguntas do zero.</p>
+                            <span class="quote-template-presets__eyebrow">Recomendado para este anúncio</span>
+                            <h2 id="quote-template-presets-title">Comece com uma estrutura pronta</h2>
+                            <p>Use a sugestão da categoria ou crie suas perguntas do zero. Você poderá ajustar tudo antes de continuar.</p>
                           </div>
                         </div>
 
-                        <section class="quote-personal-templates" data-personal-quote-templates aria-labelledby="quote-personal-templates-title">
-                          <header class="quote-personal-templates__head">
-                            <div>
-                              <span class="quote-template-presets__eyebrow">Meus modelos</span>
-                              <h3 id="quote-personal-templates-title">Reutilize seus melhores formulários</h3>
-                              <p>Salve as perguntas atuais e reaplique-as em outros anúncios. Modelos pessoais não alteram anúncios já enviados.</p>
-                            </div>
-                            <button class="doke-btn doke-btn--secondary" type="button" data-personal-template-save disabled>Salvar modelo atual</button>
-                          </header>
-                          <p class="quote-personal-templates__state" data-personal-template-loading aria-live="polite">Carregando seus modelos…</p>
-                          <p class="quote-personal-templates__state quote-personal-templates__state--error" data-personal-template-error role="alert" hidden></p>
-                          <div class="quote-personal-templates__grid" data-personal-template-list hidden></div>
-                          <div class="quote-personal-templates__empty" data-personal-template-empty hidden>
-                            <strong>Você ainda não salvou nenhum modelo.</strong>
-                            <p>Monte as perguntas abaixo e use “Salvar modelo atual” para reutilizá-las.</p>
-                          </div>
-                        </section>
-
                         <div class="quote-template-presets__browser" data-quote-template-browser>
                           <div class="quote-template-presets__recommendation quote-template-presets__recommendation--single" data-quote-template-recommendation hidden>
-                            <div>
-                              <span>Modelo da categoria selecionada</span>
+                            <div class="quote-template-presets__recommendation-copy">
+                              <span>Recomendado para sua categoria</span>
                               <strong data-quote-template-recommendation-title></strong>
                               <p data-quote-template-recommendation-summary></p>
                             </div>
-                            <button class="doke-btn doke-btn--primary" type="button" data-quote-template-use-recommended>Usar perguntas recomendadas</button>
+                            <button class="doke-btn doke-btn--primary" type="button" data-quote-template-use-recommended>Usar estrutura recomendada</button>
                           </div>
                           <p class="quote-template-presets__empty" data-quote-template-recommendation-empty hidden>Selecione uma categoria para receber uma sugestão compatível com este serviço.</p>
                         </div>
 
                         <div class="quote-template-presets__selection" data-quote-template-selection hidden>
                           <div>
-                            <span>Base atual</span>
+                            <span>Estrutura atual</span>
                             <strong data-quote-template-selection-title></strong>
                             <small data-quote-template-selection-meta></small>
                           </div>
                           <div class="quote-template-presets__selection-actions">
-                            <button class="doke-btn doke-btn--soft" type="button" data-quote-template-change>Ver recomendação</button>
-                            <button class="doke-btn doke-btn--secondary" type="button" data-personal-template-update hidden>Atualizar meu modelo</button>
-                            <button class="doke-btn doke-btn--ghost" type="button" data-quote-template-clear>Limpar perguntas</button>
+                            <button class="doke-btn doke-btn--soft" type="button" data-quote-template-change>Trocar modelo</button>
+                            <button class="doke-btn doke-btn--secondary" type="button" data-personal-template-update hidden>Atualizar modelo</button>
+                            <button class="doke-btn doke-btn--ghost" type="button" data-quote-template-clear>Começar do zero</button>
                           </div>
                         </div>
+
+                        <details class="quote-personal-templates-disclosure">
+                          <summary class="quote-personal-templates-disclosure__summary">
+                            <span class="quote-personal-templates-disclosure__copy">
+                              <strong id="quote-personal-templates-title">Meus modelos salvos</strong>
+                              <small>Reutilize uma estrutura criada anteriormente.</small>
+                            </span>
+                            <span class="quote-disclosure-action">Gerenciar</span>
+                          </summary>
+                          <section class="quote-personal-templates" data-personal-quote-templates aria-labelledby="quote-personal-templates-title">
+                            <header class="quote-personal-templates__head">
+                              <p>Salve a estrutura atual para reutilizá-la em outros anúncios sem alterar versões já publicadas.</p>
+                              <button class="doke-btn doke-btn--secondary" type="button" data-personal-template-save disabled>Salvar modelo atual</button>
+                            </header>
+                            <p class="quote-personal-templates__state" data-personal-template-loading aria-live="polite">Carregando seus modelos…</p>
+                            <p class="quote-personal-templates__state quote-personal-templates__state--error" data-personal-template-error role="alert" hidden></p>
+                            <div class="quote-personal-templates__grid" data-personal-template-list hidden></div>
+                            <div class="quote-personal-templates__empty" data-personal-template-empty hidden>
+                              <strong>Nenhum modelo salvo ainda.</strong>
+                              <p>Monte as perguntas abaixo e salve quando quiser reutilizar essa estrutura.</p>
+                            </div>
+                          </section>
+                        </details>
                       </section>
 
                       <section class="quote-builder" id="quote-template-builder" data-quote-template-builder aria-labelledby="quote-builder-title">
                         <input type="hidden" name="quoteTemplateJson" data-quote-template-json value='{"version":1,"status":"default","source":"default","templateId":null,"questions":[]}'>
                         <div class="quote-builder__head">
                           <div>
-                            <h2 id="quote-builder-title">Edite as perguntas</h2>
-                            <p>Use perguntas objetivas e deixe somente o que ajuda a preparar o orçamento.</p>
+                            <span class="quote-builder__eyebrow">Seu formulário</span>
+                            <h2 id="quote-builder-title">Defina as perguntas</h2>
+                            <p>Peça somente as informações necessárias para preparar um bom orçamento.</p>
                           </div>
                           <button class="doke-btn doke-btn--secondary" type="button" data-quote-question-add>Adicionar pergunta</button>
                         </div>
-                        <div class="quote-builder__metrics" aria-live="polite">
-                          <span><strong data-quote-question-count>0</strong>/10 perguntas</span>
-                          <span data-quote-template-duration>Formulário ainda vazio</span>
+                        <div class="quote-builder__status-row">
+                          <div class="quote-builder__metrics" aria-live="polite">
+                            <span><strong data-quote-question-count>0</strong>/10 perguntas</span>
+                            <span data-quote-template-duration>Formulário ainda vazio</span>
+                          </div>
+                          <p class="quote-builder__advice" data-quote-template-advice data-tone="positive">Escolha um modelo pronto ou adicione uma pergunta para começar.</p>
                         </div>
-                        <p class="quote-builder__advice" data-quote-template-advice data-tone="positive">Escolha um modelo pronto ou adicione uma pergunta para começar.</p>
                         <aside class="quote-builder-guidance" data-quote-smart-guidance hidden aria-live="polite">
                           <div class="quote-builder-guidance__icon" aria-hidden="true">✦</div>
                           <div class="quote-builder-guidance__copy">
@@ -386,13 +394,73 @@
                           </div>
                           <span class="quote-builder-guidance__confidence" data-quote-smart-guidance-confidence></span>
                         </aside>
-                        <p class="quote-builder__empty" data-quote-template-empty>Escolha um modelo pronto acima ou adicione sua primeira pergunta.</p>
+                      <details class="quote-ai-supervision" data-quote-ai-supervision aria-labelledby="quote-ai-supervision-title" aria-busy="false">
+                        <summary class="quote-ai-supervision__toggle">
+                          <span class="quote-ai-supervision__spark" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><path d="M12 3l1.5 4.3L18 9l-4.5 1.7L12 15l-1.5-4.3L6 9l4.5-1.7L12 3Z"></path><path d="m18.5 14 .8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2Z"></path></svg>
+                          </span>
+                          <span class="quote-ai-supervision__toggle-copy">
+                            <span class="quote-ai-supervision__meta">
+                              <span class="quote-ai-supervision__eyebrow">Assistente Doke</span>
+                              <span class="quote-ai-supervision__new">Novo</span>
+                            </span>
+                            <strong id="quote-ai-supervision-title">Sugestões com IA</strong>
+                            <small>Receba perguntas mais claras e relevantes para este serviço.</small>
+                          </span>
+                          <span class="quote-disclosure-action">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.3 3.7L17 8l-3.7 1.3L12 13l-1.3-3.7L7 8l3.7-1.3L12 3Z"></path><path d="m18.5 14 .7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7.7-2Z"></path></svg>
+                            <span>Gerar sugestões</span>
+                          </span>
+                        </summary>
+
+                        <div class="quote-ai-supervision__body">
+                          <header class="quote-ai-supervision__head">
+                            <div class="quote-ai-supervision__identity">
+                              <p>A Doke analisa somente as perguntas e métricas agregadas. Respostas de clientes, endereços e anexos não são enviados.</p>
+                            </div>
+                            <button class="doke-btn doke-btn--secondary" type="button" data-quote-ai-generate>Gerar sugestões com IA</button>
+                          </header>
+
+                          <p class="quote-ai-supervision__status" data-quote-ai-status role="status" aria-live="polite" hidden></p>
+
+                          <div class="quote-ai-supervision__result" data-quote-ai-result hidden>
+                            <div class="quote-ai-supervision__result-head">
+                              <div>
+                                <span class="quote-ai-supervision__eyebrow">Compare antes de aplicar</span>
+                                <p class="quote-ai-supervision__summary" data-quote-ai-summary></p>
+                              </div>
+                              <span class="quote-ai-supervision__engine" data-quote-ai-engine></span>
+                            </div>
+                            <div class="quote-ai-supervision__list" data-quote-ai-list></div>
+                            <div class="quote-ai-supervision__actions">
+                              <button class="doke-btn doke-btn--ghost" type="button" data-quote-ai-discard>Descartar</button>
+                              <button class="doke-btn doke-btn--primary" type="button" data-quote-ai-apply disabled>Aplicar selecionadas</button>
+                            </div>
+                          </div>
+
+                          <div class="quote-ai-supervision__applied" data-quote-ai-applied hidden>
+                            <p data-quote-ai-applied-copy></p>
+                            <button class="doke-btn doke-btn--ghost doke-btn--sm" type="button" data-quote-ai-undo hidden>Desfazer aplicação</button>
+                          </div>
+                          <p class="quote-ai-supervision__notice">Nenhuma sugestão é aplicada automaticamente. Revise tudo antes de continuar.</p>
+                        </div>
+                      </details>
+                        <p class="quote-builder__empty" data-quote-template-empty>Use o modelo recomendado ou adicione sua primeira pergunta.</p>
                         <div class="quote-builder__list" data-quote-question-list></div>
-                        <aside class="quote-builder-preview" aria-label="Prévia das perguntas">
-                          <div class="quote-builder-preview__head"><strong>Prévia para o cliente</strong><small>Os campos essenciais da Doke continuam presentes.</small></div>
-                          <div data-quote-template-preview></div>
-                        </aside>
+
+                        <details class="quote-builder-preview">
+                          <summary class="quote-builder-preview__head">
+                            <span>
+                              <strong>Prévia para o cliente</strong>
+                              <small>Veja como as perguntas serão apresentadas.</small>
+                            </span>
+                            <span class="quote-disclosure-action">Ver prévia</span>
+                          </summary>
+                          <div class="quote-builder-preview__content" data-quote-template-preview></div>
+                        </details>
                       </section>
+
+
                     </section>
 
                     <section class="post-service-quote-mode-panel" data-quote-mode-panel="disabled" hidden>
@@ -506,7 +574,7 @@
   <script src="assets/js/core/app.js?v=20260719-notification-live-sync-v1" defer></script>
   <script src="assets/js/components/operational-event-toast.js?v=20260702-sidebar-quick-alert-flow-v1" defer></script>
   <script src="assets/js/core/page-hydration.js?v=20260717-professional-service-lifecycle-v1" defer></script>
-  <script src="assets/js/core/stable-shell-router.js?v=20260717-professional-service-lifecycle-v1" defer></script>
+  <script src="assets/js/core/stable-shell-router.js?v=20260721-profile-atomic-route-v1" defer></script>
   <script src="assets/js/core/experience-runtime.js?v=20260711-experience-runtime-v1" defer></script>
   <script src="assets/js/components/help/help-drawer.js?v=20260518-help-drawer-v1" defer></script>
   <script src="assets/js/ui/mobile-drawer-standard.js?v=20260701-drawer-detail-contract-v1" defer></script>
@@ -529,8 +597,11 @@
   <script src="assets/js/services/services-service.js?v=20260720-moderation-flow-v1" defer></script>
   <script src="assets/js/repositories/professional-quote-templates-repository.js?v=20260720-personal-quote-templates-v1" defer></script>
   <script src="assets/js/services/professional-quote-templates-service.js?v=20260720-personal-quote-templates-v1" defer></script>
-  <script src="assets/js/pages/service-quote-template-builder.js?v=20260720-quote-template-smart-guidance-v1" defer></script>
-  <script src="assets/js/pages/service-form-experience.js?v=20260720-existing-media-v2" defer></script>
+  <script src="assets/js/repositories/quote-template-ai-repository.js?v=20260721-quote-template-ai-v1" defer></script>
+  <script src="assets/js/services/quote-template-ai-service.js?v=20260721-quote-template-ai-v1" defer></script>
+  <script src="assets/js/pages/service-quote-template-builder.js?v=20260721-form-builder-controls-v5" defer></script>
+  <script src="assets/js/pages/service-quote-template-ai.js?v=20260721-form-builder-controls-v5" defer></script>
+  <script src="assets/js/pages/service-form-experience.js?v=20260721-quote-template-ai-v1" defer></script>
   <script src="assets/js/pages/anunciar-servico.js?v=20260720-existing-media-v2" defer></script>
   <script src="assets/js/services/mock-data-service.js?v=20260501-stage31-domain-services" defer></script>
   <script src="assets/js/services/profile-service.js?v=20260501-stage31-domain-services" defer></script>

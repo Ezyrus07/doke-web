@@ -1,0 +1,135 @@
+/* form-stepper-compact.css
+   Canonical compact stepper for Doke multi-step forms.
+   Responsibility: visual anatomy only. Page scripts keep state/navigation ownership. */
+
+.doke-form-page-card > .doke-flow-steps,
+.doke-form-page-card .doke-flow-steps {
+  display: flex;
+  align-items: stretch;
+  gap: 5px;
+  width: 100%;
+  margin: 0 0 clamp(24px, 2.6vw, 32px);
+  padding: 0;
+  overflow: visible;
+}
+
+.doke-form-page-card .doke-flow-steps::before,
+.doke-form-page-card .doke-flow-steps::after {
+  display: none;
+  content: none;
+}
+
+.doke-form-page-card .doke-flow-step {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 58px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+  align-content: center;
+  gap: 5px;
+  padding: 7px 4px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  box-shadow: none;
+  color: inherit;
+  text-align: center;
+  transform: none;
+}
+
+.doke-form-page-card .doke-flow-step:hover {
+  border: 0;
+  background: rgba(243, 247, 251, 0.7);
+  box-shadow: none;
+  transform: none;
+}
+
+.doke-form-page-card .doke-flow-step:is(.is-active, .is-complete) {
+  border: 0;
+  background: #f3f7fb;
+  box-shadow: none;
+  transform: none;
+}
+
+.doke-form-page-card .doke-flow-step > span {
+  width: 28px;
+  min-width: 28px;
+  height: 28px;
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid #fff;
+  border-radius: 999px;
+  background: #edf2f7;
+  color: #617792;
+  box-shadow: 0 0 0 1px rgba(24, 75, 118, 0.06);
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.doke-form-page-card .doke-flow-step.is-active > span {
+  background: var(--color-primary, #2a5f90);
+  color: #fff;
+  box-shadow: 0 7px 18px rgba(42, 95, 144, 0.2);
+}
+
+.doke-form-page-card .doke-flow-step.is-complete > span {
+  background: var(--color-secondary, #298f7f);
+  color: #fff;
+}
+
+.doke-form-page-card .doke-flow-step > div {
+  width: 100%;
+  min-width: 0;
+}
+
+.doke-form-page-card .doke-flow-step strong {
+  display: block;
+  margin: 0;
+  color: #1c3f61;
+  font-size: 0.72rem;
+  font-weight: 750;
+  line-height: 1.12;
+  letter-spacing: -0.01em;
+  white-space: normal;
+}
+
+.doke-form-page-card .doke-flow-step small {
+  display: none;
+}
+
+@media (max-width: 430px) {
+  .doke-form-page-card .doke-flow-steps {
+    gap: 3px;
+    margin-bottom: 22px;
+  }
+
+  .doke-form-page-card .doke-flow-step {
+    min-height: 56px;
+    padding-inline: 2px;
+  }
+
+  .doke-form-page-card .doke-flow-step strong {
+    font-size: 0.64rem;
+    letter-spacing: -0.02em;
+  }
+}
+
+@media (max-width: 360px) {
+  .doke-form-page-card .doke-flow-step strong {
+    font-size: 0.58rem;
+    letter-spacing: -0.025em;
+  }
+
+  .doke-form-page-card .doke-flow-step strong[data-compact-label] {
+    font-size: 0;
+  }
+
+  .doke-form-page-card .doke-flow-step strong[data-compact-label]::after {
+    content: attr(data-compact-label);
+    font-size: 0.58rem;
+  }
+}

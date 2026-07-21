@@ -189,13 +189,20 @@
   function getById(userId) {
     var id = String(userId || '').trim();
     var sessionUser = currentUser();
-    if (usesSupabaseProvider() && sessionUser && String(sessionUser.id) === id) {
-      return Promise.resolve(sessionUser.profile || sessionUser);
-    }
+    var sessionFallback = sessionUser && String(sessionUser.id) === id
+      ? (sessionUser.profile || sessionUser)
+      : null;
     var repository = usersRepository();
-    if (!id || !repository || typeof repository.findById !== 'function') return Promise.resolve(null);
+
+    if (!id) return Promise.resolve(null);
+    if (!repository || typeof repository.findById !== 'function') {
+      return Promise.resolve(sessionFallback);
+    }
+
     return Promise.resolve(repository.findById(id)).then(function (user) {
-      return user ? (user.profile || user) : null;
+      return user ? (user.profile || user) : sessionFallback;
+    }).catch(function () {
+      return sessionFallback;
     });
   }
 

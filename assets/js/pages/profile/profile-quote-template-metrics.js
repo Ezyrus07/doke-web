@@ -58,9 +58,12 @@
       var map = {
         preset: 'Modelo da Doke',
         preset_customized: 'Modelo Doke personalizado',
+        preset_ai_customized: 'Modelo Doke otimizado com IA',
         personal_template: 'Modelo pessoal',
         personal_template_customized: 'Modelo pessoal personalizado',
+        personal_template_ai_customized: 'Modelo pessoal otimizado com IA',
         custom: 'Criado do zero',
+        custom_ai_optimized: 'Criado do zero e otimizado com IA',
         default: 'Formulário padrão'
       };
       return map[metric.templateSource] || 'Formulário';

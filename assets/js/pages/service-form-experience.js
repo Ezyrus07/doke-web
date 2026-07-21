@@ -243,7 +243,7 @@
           try {
             const parsed = JSON.parse(String(data.get('quoteTemplateJson') || '{}'));
             const questions = Array.isArray(parsed.questions) ? parsed.questions.slice(0, 10) : [];
-            const source = ['default', 'custom', 'preset', 'preset_customized', 'personal_template', 'personal_template_customized'].includes(String(parsed.source || '').toLowerCase())
+            const source = ['default', 'custom', 'preset', 'preset_customized', 'personal_template', 'personal_template_customized', 'preset_ai_customized', 'personal_template_ai_customized', 'custom_ai_optimized'].includes(String(parsed.source || '').toLowerCase())
               ? String(parsed.source).toLowerCase()
               : (questions.length ? 'custom' : 'default');
             return {
@@ -255,10 +255,11 @@
               personalTemplateId: core.normalize(parsed.personalTemplateId) || null,
               templateLabel: core.normalize(parsed.templateLabel) || null,
               templateCategory: core.normalize(parsed.templateCategory) || null,
+              aiOptimizationRunId: core.normalize(parsed.aiOptimizationRunId) || null,
               questions
             };
           } catch (_) {
-            return { version: 1, status: 'default', source: 'default', templateKind: null, templateId: null, personalTemplateId: null, templateLabel: null, templateCategory: null, questions: [] };
+            return { version: 1, status: 'default', source: 'default', templateKind: null, templateId: null, personalTemplateId: null, templateLabel: null, templateCategory: null, aiOptimizationRunId: null, questions: [] };
           }
         })(),
         quoteQuestions: (() => {

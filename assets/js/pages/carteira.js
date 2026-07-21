@@ -1101,7 +1101,6 @@
       setText(walletFields.withdrawals, formatCurrency(wallet.withdrawals || dashboard.withdrawals || 0));
       setText(walletFields.fees, formatCurrency(wallet.fees || dashboard.fees || 0));
       syncMonthlyDashboard(dashboard);
-      refreshAnalyticsDashboard();
       if (walletFields.balanceCopy) walletFields.balanceCopy.textContent = wallet.localTransactions?.length ? 'Saldo atualizado pelos pedidos concluídos' : 'Sem saldo liberado no momento';
       if (walletFields.heldCopy) walletFields.heldCopy.textContent = wallet.pendingBalance > 0 ? 'Liberado após confirmação' : 'Sem valores pendentes';
     };
@@ -1111,9 +1110,11 @@
       const service = getWalletService();
       const filters = getStatementFilters();
       const fallbackTransactions = Array.isArray(wallet.localTransactions) ? wallet.localTransactions : [];
-      const request = service?.listTransactions
-        ? service.listTransactions(filters)
-        : Promise.resolve(fallbackTransactions);
+      const request = !hasActiveStatementRefinement()
+        ? Promise.resolve(fallbackTransactions)
+        : service?.listTransactions
+          ? service.listTransactions(filters)
+          : Promise.resolve(fallbackTransactions);
 
       return request.then((statementTransactions) => {
         const flowTransactions = Array.isArray(statementTransactions) ? statementTransactions : fallbackTransactions;
@@ -1152,6 +1153,18 @@
       walletRefreshTimer = window.setTimeout(() => {
         loadWalletState();
       }, delay);
+    };
+
+    const scheduleDeferredAnalytics = () => {
+      const run = () => {
+        if (!walletAccessAllowed) return;
+        refreshAnalyticsDashboard();
+      };
+      if (typeof window.requestIdleCallback === 'function') {
+        window.requestIdleCallback(run, { timeout: 1800 });
+      } else {
+        window.setTimeout(run, 350);
+      }
     };
 
 
@@ -2266,6 +2279,7 @@
       if (!wallet) throw new Error('Não foi possível carregar a carteira.');
       setView(document.body.dataset.walletView || 'overview');
       hydration?.mark('wallet');
+      scheduleDeferredAnalytics();
       return true;
     }).catch((error) => {
       walletAccessAllowed = false;

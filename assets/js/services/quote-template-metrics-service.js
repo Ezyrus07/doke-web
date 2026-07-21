@@ -84,8 +84,9 @@
     var kind = normalize(context.templateKind);
     var id = String(context.templateId || '').trim();
     var source = normalize(context.source);
-    if (source === 'preset_customized') source = 'preset';
-    if (source === 'personal_template_customized') source = 'personal_template';
+    if (source === 'preset_customized' || source === 'preset_ai_customized') source = 'preset';
+    if (source === 'personal_template_customized' || source === 'personal_template_ai_customized') source = 'personal_template';
+    if (source === 'custom_ai_optimized') source = 'custom';
     if (!kind || !id || !source) return '';
     return kind + ':' + id + ':' + source;
   }

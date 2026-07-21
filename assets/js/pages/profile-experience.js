@@ -23,38 +23,22 @@
   }
 
   function renderMedia(profile, name) {
+    var media = Doke.profileMediaReadiness;
     var avatarImage = document.querySelector('[data-public-professional-avatar-image]');
-    var avatarInitials = document.querySelector('[data-public-professional-avatar]');
+    var avatarInitials = document.querySelector('[data-public-professional-avatar-initials]');
     var coverImage = document.querySelector('[data-public-professional-cover-image]');
     var coverMark = document.querySelector('.profile-hero__cover-mark');
-    var avatarUrl = clean(profile && profile.avatarUrl);
-    var coverUrl = clean(profile && profile.coverUrl);
-
-    if (avatarImage) {
-      avatarImage.hidden = !avatarUrl;
-      if (avatarUrl) {
-        avatarImage.src = avatarUrl;
-        avatarImage.alt = 'Foto de ' + name;
-      } else {
-        avatarImage.removeAttribute('src');
-        avatarImage.alt = '';
-      }
-    }
-    if (avatarInitials) {
-      avatarInitials.hidden = Boolean(avatarUrl);
-      avatarInitials.textContent = initials(name);
-    }
-    if (coverImage) {
-      coverImage.hidden = !coverUrl;
-      if (coverUrl) {
-        coverImage.src = coverUrl;
-        coverImage.alt = 'Capa do perfil de ' + name;
-      } else {
-        coverImage.removeAttribute('src');
-        coverImage.alt = '';
-      }
-    }
-    if (coverMark) coverMark.hidden = Boolean(coverUrl);
+    if (!media || typeof media.commit !== 'function') return Promise.resolve();
+    return media.commit({
+      avatarUrl: profile && profile.avatarUrl,
+      coverUrl: profile && profile.coverUrl,
+      avatarImage: avatarImage,
+      avatarFallback: avatarInitials,
+      coverImage: coverImage,
+      coverFallback: coverMark,
+      avatarAlt: 'Foto de ' + name,
+      coverAlt: 'Capa do perfil de ' + name
+    });
   }
 
   function render(payload) {
@@ -74,7 +58,7 @@
     setText('[data-public-professional-meta]', [handle ? '@' + handle.replace(/^@+/, '') : '', place].filter(Boolean).join(' · '), 'Perfil profissional ativo');
     setText('[data-public-professional-about-title]', 'Sobre ' + name);
     setText('[data-public-professional-bio]', fields.shortBio || profile.bio, 'Apresentação ainda não informada.');
-    renderMedia(profile, name);
+    var mediaReady = renderMedia(profile, name);
 
     var verified = document.querySelector('[data-public-professional-verified-badge]');
     if (verified) verified.hidden = professionalProfile.verificationStatus !== 'verified';
@@ -86,6 +70,7 @@
         countSelector: '[data-public-professional-services-count]'
       });
     }
+    return mediaReady;
   }
 
   function load(profileId) {
@@ -100,8 +85,7 @@
         : Promise.resolve([])
     ]).then(function (results) {
       var payload = { profile: results[0] || null, professionalProfile: results[1] || null, services: results[2] || [] };
-      render(payload);
-      return payload;
+      return Promise.resolve(render(payload)).then(function () { return payload; });
     });
   }
 
@@ -142,8 +126,9 @@
       skeletonSelectors: '[data-profile-hydration-skeleton]',
       readySelectors: '[data-profile-hydration-ready]',
       errorSelectors: '[data-state-error]',
-      skeletonMode: 'hard-load',
-      preserveReadyDuringHydration: true,
+      skeletonMode: 'route-and-document',
+      readyPolicy: 'after-skeleton',
+      preserveReadyDuringHydration: false,
       maxDuration: 8000,
       hasItems: function () { return true; },
       onRetry: function () { window.DokeInitProfile(); }

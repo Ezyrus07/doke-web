@@ -10,6 +10,8 @@
   var DEMO_PROFESSIONAL_ID = 'user_profissional_demo';
   var DOKE_FEE_RATE = 0.05;
   var disputeTasks = Object.create(null);
+  var REPOSITORY_CACHE_TTL_MS = 45000;
+  var repositoryLoadCache = { key: '', loadedAt: 0, promise: null };
 
   function normalizeText(value) {
     return String(value || '').replace(/\s+/g, ' ').trim();
@@ -40,10 +42,49 @@
     return Doke.repositories && Doke.repositories.wallet;
   }
 
+  function getRepositoryCacheKey(options) {
+    options = options || {};
+    var user = getCurrentUser() || {};
+    return [
+      normalizeText(user.id || ''),
+      options.currentUser === false ? 'all' : 'current',
+      normalizeText(options.ownerId || options.professionalId || options.userId || '')
+    ].join(':');
+  }
+
+  function invalidateRepositoryCache() {
+    repositoryLoadCache.key = '';
+    repositoryLoadCache.loadedAt = 0;
+    repositoryLoadCache.promise = null;
+  }
+
   function ensureRepositoryLoaded(options) {
+    options = options || {};
     var repository = getRepository();
     if (!repository || typeof repository.load !== 'function') return Promise.resolve(repository);
-    return Promise.resolve(repository.load(options || {})).then(function () { return repository; });
+
+    var cacheKey = getRepositoryCacheKey(options);
+    var now = Date.now();
+    var cacheIsFresh = repositoryLoadCache.key === cacheKey
+      && repositoryLoadCache.loadedAt > 0
+      && (now - repositoryLoadCache.loadedAt) < REPOSITORY_CACHE_TTL_MS;
+
+    if (options.fresh !== true && cacheIsFresh) return Promise.resolve(repository);
+    if (options.fresh !== true && repositoryLoadCache.promise && repositoryLoadCache.key === cacheKey) {
+      return repositoryLoadCache.promise;
+    }
+
+    repositoryLoadCache.key = cacheKey;
+    repositoryLoadCache.promise = Promise.resolve(repository.load(options)).then(function () {
+      repositoryLoadCache.loadedAt = Date.now();
+      repositoryLoadCache.promise = null;
+      return repository;
+    }).catch(function (error) {
+      invalidateRepositoryCache();
+      throw error;
+    });
+
+    return repositoryLoadCache.promise;
   }
 
   function getRepositoryBoundary() {
@@ -292,7 +333,7 @@
 
     var repository = getRepository();
     if (!repository || typeof repository.saveBankAccount !== 'function') return Promise.reject(new Error('Carteira indisponível.'));
-    return repository.saveBankAccount(accountPayload);
+    return repository.saveBankAccount(accountPayload).then(function (result) { invalidateRepositoryCache(); return result; });
   }
 
   function getWallet(options) {
@@ -338,8 +379,11 @@
       wallet.localTransactions = localTransactions;
       wallet.transactions = localTransactions;
       wallet.receivablesSchedule = receivablesSchedule;
-      return getBankAccount({ currentUser: options.currentUser !== false }).then(function (account) {
-        wallet.bankAccount = account || null;
+      var account = repository && typeof repository.getBankAccount === 'function'
+        ? repository.getBankAccount(userScope)
+        : null;
+      return Promise.resolve(account).then(function (resolvedAccount) {
+        wallet.bankAccount = resolvedAccount || null;
         return wallet;
       });
     });
@@ -1114,6 +1158,7 @@
     var repository = getRepository();
     if (!repository || typeof repository.requestWithdraw !== 'function') return Promise.reject(new Error('Carteira indisponível.'));
     return repository.requestWithdraw(withdrawPayload).then(function (result) {
+      invalidateRepositoryCache();
       if (!result || !result.transaction) return result;
       return createWithdrawNotification(result.transaction).then(function () { return result; });
     });
@@ -1136,6 +1181,7 @@
 
     var repository = getRepository();
     if (!repository || typeof repository.completeWithdraw !== 'function') return Promise.reject(new Error('Carteira indisponível.'));
+    invalidateRepositoryCache();
     return repository.completeWithdraw({
       transactionId: withdrawPayload.transactionId,
       ownerId: withdrawPayload.ownerId
@@ -1162,6 +1208,7 @@
     var repository = getRepository();
     if (!repository || typeof repository.resolveWithdraw !== 'function') return Promise.reject(new Error('Carteira indisponível.'));
     return repository.resolveWithdraw(payload).then(function (result) {
+      invalidateRepositoryCache();
       if (!result || !result.transaction || !result.updated) return result;
       var notifier = result.action === 'declined' ? createWithdrawDeclinedNotification : createWithdrawCompletedNotification;
       return notifier(result.transaction).then(function () { return result; });
