@@ -1,117 +1,138 @@
 {
-  "name": "quote_template_conversion_metrics",
-  "base": "doke-web-admin-service-review-page-cumulative.zip",
+  "name": "quote_template_smart_recommendations",
+  "base": "doke-web-service-moderation-audit-history-cumulative.zip",
   "createdAt": "2026-07-20",
-  "summary": "Adds privacy-preserving, deduplicated conversion analytics for official, personal, customized and default quote forms, plus an owner-facing performance panel.",
+  "summary": "Turns privacy-safe quote-template metrics into explainable, advisory recommendations in the professional dashboard and the listing form builder, using owner-scoped category benchmarks, confidence levels, abandonment concentration and question-count comparisons.",
   "databaseMigrations": [
-    "039_quote_template_conversion_metrics.sql",
-    "040_align_quote_template_metric_identity.sql",
-    "041_index_quote_template_metric_foreign_keys.sql"
+    "045_quote_template_smart_recommendations.sql"
   ],
-  "events": [
-    "template_applied",
-    "quote_form_started",
-    "quote_form_progress",
-    "quote_form_completed",
-    "quote_request_submitted"
-  ],
-  "privacy": {
-    "answerTextStored": false,
-    "storedSignals": [
-      "question identifiers",
-      "answered count",
-      "step index",
-      "duration",
-      "order reference after authenticated submission"
+  "recommendationEngine": {
+    "deterministicBeforeGenerativeAI": true,
+    "advisoryOnly": true,
+    "automaticQuestionMutation": false,
+    "signals": [
+      "sample_size",
+      "question_count",
+      "completion_rate",
+      "submission_rate",
+      "review_to_submit_rate",
+      "abandonment_rate",
+      "dropoff_concentration",
+      "owner_category_benchmark"
     ],
-    "abandonmentWindowMinutes": 30
+    "recommendationCodes": [
+      "collect_more_data",
+      "investigate_dropoff_question",
+      "reduce_question_count",
+      "improve_completion",
+      "improve_review_to_submit",
+      "keep_current"
+    ],
+    "confidenceLevels": [
+      "low",
+      "medium",
+      "high"
+    ]
+  },
+  "surfaces": {
+    "professionalDashboard": true,
+    "listingFormBuilder": true,
+    "deepLinkToListingForm": true,
+    "clientBudgetFlowChanged": false,
+    "moderationChanged": false
   },
   "validation": {
-    "supabaseTransactionRollbackTest": true,
-    "ownerTrafficExcluded": true,
-    "clientDashboardVisibilityRows": 0,
-    "temporaryTestDataRemaining": 0,
+    "disposableBenchmark": {
+      "formsStarted": 40,
+      "completionRate": 65,
+      "submissionRate": 45,
+      "recommendedQuestionCount": 5
+    },
+    "longForm": {
+      "questionCount": 8,
+      "submissionRate": 20,
+      "dropoffShare": 100,
+      "confidence": "medium",
+      "recommendations": [
+        "investigate_dropoff_question",
+        "reduce_question_count",
+        "improve_completion",
+        "improve_review_to_submit"
+      ]
+    },
+    "clientVisibleRecommendations": 0,
+    "clientVisibleBenchmarks": 0,
+    "disposableTestDataRemaining": 0,
     "responsiveViewports": [
       "1366x900",
       "820x1180",
       "390x844"
-    ]
+    ],
+    "horizontalOverflow": false,
+    "communityFilesChecked": 112,
+    "communityFilesChanged": 0,
+    "agentGovernanceKnownFailure": "index.html account-onboarding__change button"
   },
   "files": [
     {
       "path": "anunciar-servico.html",
-      "sha256": "9c161b1db0967a82956088c4b7e2108002459d0bc97c6a580609c0c3f4ddd672",
-      "size": 47825
-    },
-    {
-      "path": "assets/css/components/quote-template-metrics.css",
-      "sha256": "d372ebf82663057f458f42974cf45b7880e3f5b81bf8179651cf4fd032ff0644",
-      "size": 5240
-    },
-    {
-      "path": "assets/css/pages/professional-profile-editor.css",
-      "sha256": "5d91dca787ec547a094cb14e69614f9e32cf5be0d78617eed11321a32cfea911",
-      "size": 10129
-    },
-    {
-      "path": "assets/js/pages/orcamento.js",
-      "sha256": "947ffc792985d4dacc19b013de99aa374b82e1dbea9cb3854caf3c7151db0568",
-      "size": 61228
-    },
-    {
-      "path": "assets/js/pages/profile/profile-quote-template-metrics.js",
-      "sha256": "d9a38c2949876432c8b19e59d82fb3e76188f791497c06f73f1950a7a2e8b838",
-      "size": 8762
-    },
-    {
-      "path": "assets/js/pages/service-quote-template-builder.js",
-      "sha256": "52278b83c6ac802195d83e455646fa3457827df560ccdca16ba47ae740920698",
-      "size": 50124
-    },
-    {
-      "path": "assets/js/repositories/quote-template-metrics-repository.js",
-      "sha256": "dbf170089062cce80f5fe9980b64fbaa94d7981f4d0d14a5215c6349ac2595ea",
-      "size": 10267
-    },
-    {
-      "path": "assets/js/services/quote-template-metrics-service.js",
-      "sha256": "e1c4f258855b9d88f9300bbc2a7c05baffc0b1abf54bd0e7c4d576c58272230a",
-      "size": 1540
-    },
-    {
-      "path": "orcamento.html",
-      "sha256": "a31bafba8fe1395e9a418a41bf111510c5a23eba56865ac076cde7f9412e93bc",
-      "size": 32014
-    },
-    {
-      "path": "package.json",
-      "sha256": "9510c5792bb153b72b9cb82761128d06e15ac12e311fabff2bc8409943e6235a",
-      "size": 93970
+      "sha256": "532e771d7b118c2c691c20312c5f2248e06330dbd5c71889e1f6df553b42aa3b",
+      "size": 52125
     },
     {
       "path": "perfil-profissional.html",
-      "sha256": "020af5c308525760bc68501c2806d9ddef63b92d4729a412d08a15aa800f4382",
-      "size": 37571
+      "sha256": "39374e075790a7dd1df752a3728b467ac84f28b5c127b91e4ebba8f0cb2d517a",
+      "size": 38301
     },
     {
-      "path": "scripts/test-quote-template-conversion-metrics-contract.js",
-      "sha256": "b3dcd8a8d26d1ee20bb0efe91eb3a8372da76cc4c8359e4dcd8ff8ec4ca18fc6",
-      "size": 7665
+      "path": "assets/css/components/quote-template-metrics.css",
+      "sha256": "0955770daa8fb7e350b407d96557ea0df4c3d6a92077d7a3c57dc60243f87427",
+      "size": 8162
     },
     {
-      "path": "supabase/migrations/039_quote_template_conversion_metrics.sql",
-      "sha256": "9bf820ace2030b371e4bea114c0d9a5c2e3315349d6f6ad64201d5c14d38e2d1",
-      "size": 17725
+      "path": "assets/css/pages/anunciar-servico.css",
+      "sha256": "6c31d3c7bae148acde943309811d80f34b508569ed1a192bd86762774ea803b1",
+      "size": 57421
     },
     {
-      "path": "supabase/migrations/040_align_quote_template_metric_identity.sql",
-      "sha256": "af54abc7d91e4141fe936e7af9ea9c38ad803655a2ccf7e3b5630cfb3e75e2a3",
-      "size": 9972
+      "path": "assets/css/pages/professional-profile-editor.css",
+      "sha256": "5217ea9128562766503e1e9370ed2f0f8b39892407de4a1967267dc4eaba772a",
+      "size": 10136
     },
     {
-      "path": "supabase/migrations/041_index_quote_template_metric_foreign_keys.sql",
-      "sha256": "99176c4c9b3d14709ea427b4d989eb11eb13a72084299909c05fb825b4a550a7",
-      "size": 546
+      "path": "assets/js/pages/profile/profile-quote-template-metrics.js",
+      "sha256": "ed52e2010a8d1937f8dcbfb0899c29b8777729e3571041646b2083ebf402dbe5",
+      "size": 15335
+    },
+    {
+      "path": "assets/js/pages/service-quote-template-builder.js",
+      "sha256": "7e92d6cd99801fd4b023ac50499f6ea1453117b830ec75eead07770743ba5857",
+      "size": 55448
+    },
+    {
+      "path": "assets/js/repositories/quote-template-metrics-repository.js",
+      "sha256": "0cba69d9df131e22170a3a90277fdd73771549167e1a4a0d534cbb175e26c20e",
+      "size": 14375
+    },
+    {
+      "path": "assets/js/services/quote-template-metrics-service.js",
+      "sha256": "e1c7603b9bde6e9b4797c6c819a23cace7d8940cee67dcc71867ba7ce6be239b",
+      "size": 4028
+    },
+    {
+      "path": "package.json",
+      "sha256": "68c4ba8a84ff81728be210903d31ddba45e8109dd89ec73413d0b18c6e4f4db9",
+      "size": 94348
+    },
+    {
+      "path": "scripts/test-quote-template-smart-recommendations-contract.js",
+      "sha256": "5c7d6faf56953f053feb0b35d1a7f285c9dc433190ce5f4bb10a9c2ba84e7064",
+      "size": 5865
+    },
+    {
+      "path": "supabase/migrations/045_quote_template_smart_recommendations.sql",
+      "sha256": "715eb69820e95b6a191191836f649f9d3d0e55ebe30f08b26b0c3dfc6c78d53a",
+      "size": 10283
     }
   ]
 }

@@ -199,6 +199,11 @@
     const count = host.querySelector('[data-quote-question-count]');
     const duration = host.querySelector('[data-quote-template-duration]');
     const advice = host.querySelector('[data-quote-template-advice]');
+    const smartGuidance = host.querySelector('[data-quote-smart-guidance]');
+    const smartGuidanceLabel = host.querySelector('[data-quote-smart-guidance-label]');
+    const smartGuidanceTitle = host.querySelector('[data-quote-smart-guidance-title]');
+    const smartGuidanceBody = host.querySelector('[data-quote-smart-guidance-body]');
+    const smartGuidanceConfidence = host.querySelector('[data-quote-smart-guidance-confidence]');
     const presetHost = root.querySelector('[data-quote-template-presets]');
     const presetList = root.querySelector('[data-quote-template-list]');
     const presetSearch = root.querySelector('[data-quote-template-search]');
@@ -239,6 +244,8 @@
     let personalMutationPending = false;
     let dialogMode = 'create';
     let dialogTemplateId = '';
+    let smartGuidanceTimer = 0;
+    let smartGuidanceRequest = 0;
 
     const getPersonalService = () => window.Doke?.services?.professionalQuoteTemplates || null;
     const getMetricsService = () => window.Doke?.services?.quoteTemplateMetrics || null;
@@ -262,6 +269,96 @@
         window.console?.warn?.('[Doke quote metrics] Não foi possível registrar a aplicação do modelo.', error);
       });
     };
+    const smartCopy = (item) => {
+      const copies = {
+        collect_more_data: {
+          title: 'Aguarde uma amostra maior',
+          body: `Há ${item.formsStarted || 0} início(s) registrados. Use pelo menos 10 antes de alterar o formulário com base na taxa.`
+        },
+        investigate_dropoff_question: {
+          title: 'Revise uma pergunta com saídas concentradas',
+          body: `“${item.topDropoffQuestionLabel || 'Pergunta não identificada'}” aparece como último ponto em ${item.topDropoffCount || 0} abandono(s). Considere simplificar, tornar opcional ou mover para o final.`
+        },
+        reduce_question_count: {
+          title: 'Considere reduzir perguntas',
+          body: `Este formulário possui ${questions.length}. Seus formulários mais eficientes desta categoria usam cerca de ${item.recommendedQuestionCount || 6}.`
+        },
+        improve_completion: {
+          title: 'Facilite a conclusão',
+          body: `Sua conclusão está em ${item.completionRate || 0}%, abaixo da referência de ${item.benchmarkCompletionRate || 0}%. Evite perguntas repetidas e obrigatórias sem necessidade.`
+        },
+        improve_review_to_submit: {
+          title: 'Reduza dúvidas antes do envio',
+          body: `Apenas ${item.completedToSubmissionRate || 0}% de quem chega à revisão envia o pedido. Torne as perguntas e o escopo mais claros.`
+        },
+        keep_current: {
+          title: 'Mantenha a estrutura atual',
+          body: `A conversão de ${item.submissionRate || 0}% está igual ou acima da referência dos seus formulários da categoria.`
+        }
+      };
+      return copies[item?.code] || null;
+    };
+
+    const setSmartGuidance = (item, fallback) => {
+      if (!smartGuidance) return;
+      const copy = item ? smartCopy(item) : fallback;
+      smartGuidance.hidden = !copy;
+      if (!copy) return;
+      smartGuidance.dataset.tone = item?.tone || fallback?.tone || 'neutral';
+      if (smartGuidanceLabel) smartGuidanceLabel.textContent = item ? 'Sugestão baseada nos seus dados' : 'Referência da categoria';
+      if (smartGuidanceTitle) smartGuidanceTitle.textContent = copy.title || '';
+      if (smartGuidanceBody) smartGuidanceBody.textContent = copy.body || '';
+      if (smartGuidanceConfidence) {
+        const confidence = item?.confidence;
+        smartGuidanceConfidence.textContent = confidence === 'high'
+          ? 'Alta confiança'
+          : confidence === 'medium'
+            ? 'Confiança média'
+            : (item ? 'Amostra inicial' : 'Referência inicial');
+      }
+    };
+
+    const refreshSmartGuidance = () => {
+      window.clearTimeout(smartGuidanceTimer);
+      smartGuidanceTimer = window.setTimeout(() => {
+        const service = getMetricsService();
+        if (!service?.getBuilderGuidance || !smartGuidance) return;
+        const source = selectedPreset.kind === 'personal'
+          ? (presetCustomized ? 'personal_template_customized' : 'personal_template')
+          : selectedPreset.kind === 'doke'
+            ? (presetCustomized ? 'preset_customized' : 'preset')
+            : (questions.length ? 'custom' : 'default');
+        const requestId = ++smartGuidanceRequest;
+        service.getBuilderGuidance({
+          templateKind: selectedPreset.kind || (questions.length ? 'custom' : 'default'),
+          templateId: selectedPreset.id || '',
+          source,
+          category: categoryField?.value || selectedPreset.category || '',
+          questionCount: questions.length
+        }).then((result) => {
+          if (requestId !== smartGuidanceRequest) return;
+          const recommendation = Array.isArray(result?.recommendations)
+            ? result.recommendations.slice().sort((a, b) => a.priority - b.priority)[0]
+            : null;
+          if (recommendation) {
+            setSmartGuidance(recommendation);
+            return;
+          }
+          const benchmark = result?.benchmark;
+          if (benchmark && benchmark.formsStarted >= 10 && questions.length) {
+            const recommended = benchmark.recommendedQuestionCount || 6;
+            setSmartGuidance(null, {
+              tone: questions.length > recommended ? 'warning' : 'positive',
+              title: questions.length > recommended ? 'Seu formulário está acima da referência' : 'Quantidade alinhada à categoria',
+              body: `Seus formulários de ${benchmark.templateCategory || 'esta categoria'} com melhor desempenho usam cerca de ${recommended} pergunta(s). A referência atual de envio é ${benchmark.submissionRate || 0}%.`
+            });
+            return;
+          }
+          setSmartGuidance(null, null);
+        }).catch(() => setSmartGuidance(null, null));
+      }, 280);
+    };
+
     const getTemplateById = (templateId) => TEMPLATE_CATALOG.find((template) => template.id === templateId) || null;
     const getPersonalTemplateById = (templateId) => personalTemplates.find((template) => template.id === templateId) || null;
 
@@ -532,6 +629,7 @@
       renderPresetSelection();
       renderPersonalTemplates();
       serialize();
+      refreshSmartGuidance();
     };
 
     const load = (template) => {
@@ -893,6 +991,7 @@
 
     presetSearch?.addEventListener('input', renderPresetCatalog);
     categoryField?.addEventListener('change', renderPresetCatalog);
+    categoryField?.addEventListener('change', refreshSmartGuidance);
 
     try {
       load(JSON.parse(input?.value || '{}'));

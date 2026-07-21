@@ -465,6 +465,20 @@
     });
     quoteTemplateInput?.addEventListener('input', updateReview);
     window.addEventListener('doke:service-quote-template-changed', updateReview);
+    window.addEventListener('doke:service-media-changed', (event) => {
+      const images = Array.isArray(event.detail?.images) ? event.detail.images : [];
+      const mainImage = root.querySelector('[data-main-service-image], [name="mainImage"]');
+      // A obrigatoriedade do upload pertence ao service-form-experience, que sabe
+      // quando a hidratação das imagens atuais terminou. Aqui apenas removemos o
+      // erro visual quando já existe ao menos uma imagem válida.
+      if (mainImage && images.length) {
+        mainImage.setCustomValidity('');
+        mainImage.removeAttribute('aria-invalid');
+        mainImage.closest('[data-upload-card], .post-service-upload-card')?.classList.remove('has-error');
+        clearStepError(3);
+      }
+      updateReview();
+    });
     root.querySelectorAll('[name="category"], [name="serviceMode"], [data-availability-day], [data-availability-time], [name="mainImage"], [name="extraImageOne"], [name="extraImageTwo"]').forEach((source) => {
       source.addEventListener('input', updateReview);
       source.addEventListener('change', updateReview);

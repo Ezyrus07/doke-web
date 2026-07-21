@@ -90,6 +90,14 @@
 .admin-ad-review__decision-card header { margin-bottom: 14px; }
 .admin-ad-review__decision-card header span { color: #298f7f; font-size: .7rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
 .admin-ad-review__decision-card h2 { margin: 4px 0 0; color: #173b5d; font-size: 1.05rem; }
+.admin-ad-review__impact { display: grid; gap: 7px; margin: 0 0 14px; padding: 14px; border-radius: 16px; background: rgba(42,95,144,.07); }
+.admin-ad-review__impact strong { color: #234f78; font-size: .78rem; }
+.admin-ad-review__impact p { margin: 0; color: #5f748b; font-size: .72rem; line-height: 1.5; }
+.admin-ad-review__impact ul { display: grid; gap: 5px; margin: 2px 0 0; padding-left: 18px; color: #526b82; font-size: .69rem; }
+.admin-ad-review__impact[data-tone="critical"] { background: rgba(180,35,43,.075); }
+.admin-ad-review__impact[data-tone="critical"] strong { color: #9f2630; }
+.admin-ad-review__impact[data-tone="minor"] { background: rgba(19,143,124,.08); }
+.admin-ad-review__impact[data-tone="minor"] strong { color: #087f67; }
 .admin-ad-review__decision-card dl { display: grid; margin: 0; }
 .admin-ad-review__decision-card dl div { display: flex; justify-content: space-between; gap: 14px; padding: 11px 0; box-shadow: inset 0 -1px rgba(24,75,118,.055); }
 .admin-ad-review__decision-card dl div:last-child { box-shadow: none; }
@@ -123,4 +131,228 @@
   .admin-ad-review__actions .doke-btn:last-child { grid-column: 1/-1; }
   .admin-ad-review__section-nav { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; }
   .admin-ad-review__section-link { flex: 0 0 auto; }
+}
+
+.admin-ad-review__actions[hidden] {
+  display: none;
+}
+
+.admin-ad-review__decision-reason {
+  padding-top: 8px;
+  border-top: 1px solid rgba(24, 75, 118, 0.08);
+  color: #405f79;
+  font-weight: 600;
+}
+
+.admin-ad-review__versions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 9px;
+}
+
+.admin-ad-review__version-card {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  padding: 12px 13px;
+  border: 1px solid rgba(24, 75, 118, 0.08);
+  border-radius: 14px;
+  background: #f7f9fc;
+}
+
+.admin-ad-review__version-card[data-current="true"] {
+  border-color: rgba(42, 95, 144, 0.28);
+  background: rgba(42, 95, 144, 0.08);
+}
+
+.admin-ad-review__version-card[data-tone="success"] {
+  box-shadow: inset 3px 0 #298f7f;
+}
+
+.admin-ad-review__version-card[data-tone="danger"] {
+  box-shadow: inset 3px 0 #b4232b;
+}
+
+.admin-ad-review__version-card[data-tone="warning"] {
+  box-shadow: inset 3px 0 #c77d10;
+}
+
+.admin-ad-review__version-card strong {
+  color: #173b5d;
+  font-size: 0.78rem;
+}
+
+.admin-ad-review__version-card span {
+  color: #526b82;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.admin-ad-review__version-card small {
+  color: #7a899c;
+  font-size: 0.64rem;
+}
+
+.admin-ad-review__timeline {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.admin-ad-review__timeline-item {
+  position: relative;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 12px;
+  padding: 0 0 18px;
+}
+
+.admin-ad-review__timeline-item::before {
+  content: "";
+  position: absolute;
+  top: 20px;
+  bottom: 0;
+  left: 8px;
+  width: 2px;
+  background: rgba(24, 75, 118, 0.1);
+}
+
+.admin-ad-review__timeline-item:last-child {
+  padding-bottom: 0;
+}
+
+.admin-ad-review__timeline-item:last-child::before {
+  display: none;
+}
+
+.admin-ad-review__timeline-marker {
+  position: relative;
+  z-index: 1;
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  border: 4px solid #fff;
+  border-radius: 50%;
+  background: #2a5f90;
+  box-shadow: 0 0 0 1px rgba(42, 95, 144, 0.18);
+}
+
+.admin-ad-review__timeline-item[data-tone="success"] .admin-ad-review__timeline-marker {
+  background: #298f7f;
+}
+
+.admin-ad-review__timeline-item[data-tone="warning"] .admin-ad-review__timeline-marker {
+  background: #c77d10;
+}
+
+.admin-ad-review__timeline-item[data-tone="danger"] .admin-ad-review__timeline-marker {
+  background: #b4232b;
+}
+
+.admin-ad-review__timeline-body {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  padding: 13px 14px;
+  border: 1px solid rgba(24, 75, 118, 0.08);
+  border-radius: 15px;
+  background: #f7f9fc;
+}
+
+.admin-ad-review__timeline-item[data-current="true"] .admin-ad-review__timeline-body {
+  border-color: rgba(42, 95, 144, 0.22);
+  background: rgba(42, 95, 144, 0.065);
+}
+
+.admin-ad-review__timeline-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.admin-ad-review__timeline-top > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.admin-ad-review__timeline-top strong {
+  color: #173b5d;
+  font-size: 0.8rem;
+}
+
+.admin-ad-review__timeline-top span,
+.admin-ad-review__timeline-top time,
+.admin-ad-review__timeline-meta {
+  color: #74879d;
+  font-size: 0.67rem;
+}
+
+.admin-ad-review__timeline-top time {
+  flex: 0 0 auto;
+  text-align: right;
+}
+
+.admin-ad-review__timeline-meta,
+.admin-ad-review__timeline-reason {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.admin-ad-review__timeline-reason {
+  color: #405f79;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.admin-ad-review__timeline-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.admin-ad-review__timeline-badges span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 25px;
+  padding: 0 9px;
+  border-radius: 999px;
+  background: #fff;
+  color: #526b82;
+  font-size: 0.62rem;
+  font-weight: 700;
+}
+
+.admin-ad-review__timeline-empty {
+  display: grid;
+  gap: 4px;
+  padding: 16px;
+  border-radius: 15px;
+  background: #f7f9fc;
+}
+
+.admin-ad-review__timeline-empty strong {
+  color: #173b5d;
+}
+
+.admin-ad-review__timeline-empty span {
+  color: #74879d;
+  font-size: 0.72rem;
+}
+
+@media (max-width: 720px) {
+  .admin-ad-review__versions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-ad-review__timeline-top {
+    display: grid;
+  }
+
+  .admin-ad-review__timeline-top time {
+    text-align: left;
+  }
 }

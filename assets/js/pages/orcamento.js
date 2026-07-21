@@ -436,20 +436,29 @@ const initBudgetPage = () => {
     region.hidden = answered.length === 0;
   };
 
+  const syncQuoteFormPresentation = (serviceItem) => {
+    const quoteMode = String(serviceItem?.quoteMode || "default").trim().toLowerCase();
+    pageRoot.dataset.quoteMode = quoteMode;
+    const title = pageRoot.querySelector("[data-budget-details-title]");
+    const description = pageRoot.querySelector("[data-budget-details-description]");
+    const customCopy = pageRoot.querySelector("[data-budget-custom-questions-copy]");
+    if (quoteMode === "custom") {
+      if (title) title.textContent = "Responda ao profissional";
+      if (description) description.textContent = "Descreva o que precisa e responda às perguntas criadas para este anúncio.";
+      if (customCopy) customCopy.textContent = "Somente as perguntas definidas pelo profissional aparecem aqui.";
+    } else {
+      if (title) title.textContent = "Conte o que você precisa";
+      if (description) description.textContent = "Descreva o problema ou resultado esperado. A Doke solicitará apenas prazo, endereço e anexos opcionais.";
+      if (customCopy) customCopy.textContent = "Responda às perguntas configuradas para este anúncio.";
+    }
+  };
+
   const prefillServiceFields = (serviceItem) => {
     if (!form || !serviceItem) return;
     const categoryValue = serviceItem.category || serviceItem.catégory || serviceItem.title || "";
     const categoryInput = form.querySelector('[data-budget-service-category]');
     if (categoryInput) categoryInput.value = categoryValue;
-
-    const budgetSelect = form.querySelector('select[name="orcamento_estimado"]');
-    const priceLabel = serviceItem.priceLabel || "A definir";
-    if (budgetSelect && priceLabel) {
-      const optionExists = [...budgetSelect.options].some((option) => option.value === priceLabel);
-      if (!optionExists) budgetSelect.add(new Option(priceLabel, priceLabel), 1);
-      budgetSelect.value = priceLabel;
-      budgetSelect.dispatchEvent(new Event("change", { bubbles: true }));
-    }
+    syncQuoteFormPresentation(serviceItem);
   };
 
   const hydrateServiceContext = () => {
@@ -989,30 +998,26 @@ const initBudgetPage = () => {
           image: getServiceImages(selectedService)[0] || "",
           images: getServiceImages(selectedService)
         },
-        requestType: data.get("tipo") || "Orçamento para execução",
-        scope: data.get("escopo") || "Ambiente completo",
+        requestType: "Solicitação de orçamento",
+        scope: "Definido pela descrição e pelas respostas do cliente",
         location: summarizeAddress(savedLocation),
         locationTitle: savedLocation?.titulo || "Endereço salvo",
         locationDetails: savedLocation || {},
-        property: data.get("imovel") || "Não informado",
+        property: "Não solicitado",
         urgency: data.get("urgencia") || "Sem pressa",
         desiredDate: data.get("data") || "",
         daté: data.get("data") || "",
-        shift: data.get("turno") || "Flexível",
-        budget: data.get("orcamento_estimado") || selectedService?.priceLabel || "A definir",
+        shift: "Flexível",
+        budget: selectedService?.priceLabel || "A definir",
         details: data.get("detalhes") || "",
         description: data.get("detalhes") || "",
-        triage: {
-          ocupacao: data.get("triagem_ocupacao") || "",
-          medidas: data.get("triagem_medidas") || "",
-          observacoes: data.get("triagem_observacoes") || ""
-        },
+        triage: {},
         quoteTemplateVersion: quoteTemplate.version || selectedService?.quoteTemplateVersion || null,
         quoteFunnelSessionKey: quoteMetricState.sessionKey,
         quoteTemplateIdentity: `${quoteTemplate.templateKind || "default"}:${quoteTemplate.personalTemplateId || quoteTemplate.templateId || "default"}:${quoteTemplate.source || "default"}`,
         quoteAnswers: customAnswers,
         quoteQuestionsSnapshot: customAnswers.map((item) => item.questionSnapshot),
-        area: data.get("area") || "",
+        area: "",
         attachments,
         status: "pending",
         statusLabel: "Aguardando resposta",

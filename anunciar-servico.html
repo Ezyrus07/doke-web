@@ -239,7 +239,7 @@
                     </div>
                     <p class="post-service-step-error" data-step-error="3" role="alert" aria-live="polite" hidden></p>
                     <div class="post-service-upload-layout">
-                      <label class="post-service-upload-card post-service-upload-card--main" data-upload-card><input type="file" name="mainImage" required accept="image/png,image/jpeg,image/webp,image/gif" data-upload-input><span>Imagem principal do anúncio</span><small>Use uma foto clara do resultado ou do serviço em execução.</small><small class="post-service-upload-card__status" data-upload-status aria-live="polite">Selecionar imagem</small></label>
+                      <label class="post-service-upload-card post-service-upload-card--main" data-upload-card><input type="file" name="mainImage" accept="image/png,image/jpeg,image/webp,image/gif" data-upload-input data-main-service-image><span>Imagem principal do anúncio</span><small>Use uma foto clara do resultado ou do serviço em execução.</small><small class="post-service-upload-card__status" data-upload-status aria-live="polite">Selecionar imagem</small></label>
                       <div class="post-service-upload-list" aria-label="Fotos extras">
                         <label class="post-service-upload-card" data-upload-card><input type="file" name="extraImageOne" accept="image/png,image/jpeg,image/webp,image/gif" data-upload-input><span>Foto extra</span><small>Antes/depois, detalhe ou ambiente.</small><small class="post-service-upload-card__status" data-upload-status aria-live="polite">Selecionar imagem</small></label>
                         <label class="post-service-upload-card" data-upload-card><input type="file" name="extraImageTwo" accept="image/png,image/jpeg,image/webp,image/gif" data-upload-input><span>Foto extra</span><small>Mostre acabamento, equipe ou material.</small><small class="post-service-upload-card__status" data-upload-status aria-live="polite">Selecionar imagem</small></label>
@@ -302,56 +302,68 @@
                         <div><strong>Formulário essencial da Doke</strong><p>Campos curtos e consistentes para o cliente explicar o que precisa.</p></div>
                         <ul>
                           <li>Descrição do problema</li>
-                          <li>Data e turno desejados</li>
-                          <li>Endereço ou região</li>
-                          <li>Fotos e referências</li>
-                          <li>Observações adicionais</li>
+                          <li>Urgência e data opcional</li>
+                          <li>Endereço do atendimento</li>
+                          <li>Fotos e referências opcionais</li>
                         </ul>
                       </div>
                     </section>
 
                     <section class="post-service-quote-mode-panel" data-quote-mode-panel="custom" hidden>
-                      <section class="quote-template-presets" data-quote-template-presets aria-labelledby="quote-template-presets-title">
+                      <section class="quote-template-presets quote-template-presets--focused" data-quote-template-presets aria-labelledby="quote-template-presets-title">
                         <div class="quote-template-presets__head">
                           <div>
-                            <span class="quote-template-presets__eyebrow">Modelos prontos da Doke</span>
-                            <h2 id="quote-template-presets-title">Comece com perguntas recomendadas</h2>
-                            <p>Escolha um modelo da sua categoria e personalize apenas o que fizer sentido para o serviço.</p>
+                            <span class="quote-template-presets__eyebrow">Sugestão da Doke</span>
+                            <h2 id="quote-template-presets-title">Recomendado para este anúncio</h2>
+                            <p>A Doke mostra somente o modelo relacionado à categoria escolhida. Você pode usar a sugestão ou criar suas perguntas do zero.</p>
                           </div>
-                          <label class="quote-template-presets__search doke-field">
-                            <span>Buscar modelo</span>
-                            <input class="doke-input" type="search" placeholder="Ex.: limpeza, pintura, frete" data-quote-template-search>
-                          </label>
                         </div>
 
-                        <div class="quote-template-presets__browser" data-quote-template-browser>
-                          <div class="quote-template-presets__recommendation" data-quote-template-recommendation hidden>
+                        <section class="quote-personal-templates" data-personal-quote-templates aria-labelledby="quote-personal-templates-title">
+                          <header class="quote-personal-templates__head">
                             <div>
-                              <span>Recomendado para a categoria selecionada</span>
+                              <span class="quote-template-presets__eyebrow">Meus modelos</span>
+                              <h3 id="quote-personal-templates-title">Reutilize seus melhores formulários</h3>
+                              <p>Salve as perguntas atuais e reaplique-as em outros anúncios. Modelos pessoais não alteram anúncios já enviados.</p>
+                            </div>
+                            <button class="doke-btn doke-btn--secondary" type="button" data-personal-template-save disabled>Salvar modelo atual</button>
+                          </header>
+                          <p class="quote-personal-templates__state" data-personal-template-loading aria-live="polite">Carregando seus modelos…</p>
+                          <p class="quote-personal-templates__state quote-personal-templates__state--error" data-personal-template-error role="alert" hidden></p>
+                          <div class="quote-personal-templates__grid" data-personal-template-list hidden></div>
+                          <div class="quote-personal-templates__empty" data-personal-template-empty hidden>
+                            <strong>Você ainda não salvou nenhum modelo.</strong>
+                            <p>Monte as perguntas abaixo e use “Salvar modelo atual” para reutilizá-las.</p>
+                          </div>
+                        </section>
+
+                        <div class="quote-template-presets__browser" data-quote-template-browser>
+                          <div class="quote-template-presets__recommendation quote-template-presets__recommendation--single" data-quote-template-recommendation hidden>
+                            <div>
+                              <span>Modelo da categoria selecionada</span>
                               <strong data-quote-template-recommendation-title></strong>
                               <p data-quote-template-recommendation-summary></p>
                             </div>
-                            <button class="doke-btn doke-btn--primary" type="button" data-quote-template-use-recommended>Usar modelo recomendado</button>
+                            <button class="doke-btn doke-btn--primary" type="button" data-quote-template-use-recommended>Usar perguntas recomendadas</button>
                           </div>
-
-                          <div class="quote-template-presets__grid" data-quote-template-list></div>
-                          <p class="quote-template-presets__empty" data-quote-template-list-empty hidden>Nenhum modelo corresponde à sua busca.</p>
+                          <p class="quote-template-presets__empty" data-quote-template-recommendation-empty hidden>Selecione uma categoria para receber uma sugestão compatível com este serviço.</p>
                         </div>
 
                         <div class="quote-template-presets__selection" data-quote-template-selection hidden>
                           <div>
-                            <span>Modelo aplicado</span>
+                            <span>Base atual</span>
                             <strong data-quote-template-selection-title></strong>
                             <small data-quote-template-selection-meta></small>
                           </div>
                           <div class="quote-template-presets__selection-actions">
-                            <button class="doke-btn doke-btn--soft" type="button" data-quote-template-change>Trocar modelo</button>
-                            <button class="doke-btn doke-btn--ghost" type="button" data-quote-template-clear>Começar do zero</button>
+                            <button class="doke-btn doke-btn--soft" type="button" data-quote-template-change>Ver recomendação</button>
+                            <button class="doke-btn doke-btn--secondary" type="button" data-personal-template-update hidden>Atualizar meu modelo</button>
+                            <button class="doke-btn doke-btn--ghost" type="button" data-quote-template-clear>Limpar perguntas</button>
                           </div>
                         </div>
                       </section>
 
-                      <section class="quote-builder" data-quote-template-builder aria-labelledby="quote-builder-title">
+                      <section class="quote-builder" id="quote-template-builder" data-quote-template-builder aria-labelledby="quote-builder-title">
                         <input type="hidden" name="quoteTemplateJson" data-quote-template-json value='{"version":1,"status":"default","source":"default","templateId":null,"questions":[]}'>
                         <div class="quote-builder__head">
                           <div>
@@ -365,6 +377,15 @@
                           <span data-quote-template-duration>Formulário ainda vazio</span>
                         </div>
                         <p class="quote-builder__advice" data-quote-template-advice data-tone="positive">Escolha um modelo pronto ou adicione uma pergunta para começar.</p>
+                        <aside class="quote-builder-guidance" data-quote-smart-guidance hidden aria-live="polite">
+                          <div class="quote-builder-guidance__icon" aria-hidden="true">✦</div>
+                          <div class="quote-builder-guidance__copy">
+                            <span data-quote-smart-guidance-label>Sugestão baseada em dados</span>
+                            <strong data-quote-smart-guidance-title></strong>
+                            <p data-quote-smart-guidance-body></p>
+                          </div>
+                          <span class="quote-builder-guidance__confidence" data-quote-smart-guidance-confidence></span>
+                        </aside>
                         <p class="quote-builder__empty" data-quote-template-empty>Escolha um modelo pronto acima ou adicione sua primeira pergunta.</p>
                         <div class="quote-builder__list" data-quote-question-list></div>
                         <aside class="quote-builder-preview" aria-label="Prévia das perguntas">
@@ -440,6 +461,27 @@
               </aside>
             </div>
 
+            <dialog class="quote-template-name-dialog doke-native-overlay" data-personal-template-dialog aria-labelledby="quote-template-name-dialog-title">
+              <form class="quote-template-name-dialog__surface doke-overlay__surface doke-modal-surface doke-modal-surface--compact" method="dialog" data-personal-template-form>
+                <header class="doke-overlay__header doke-modal-header">
+                  <span class="doke-modal-eyebrow">Modelo reutilizável</span>
+                  <h2 class="doke-modal-title" id="quote-template-name-dialog-title" data-personal-template-dialog-title>Salvar como meu modelo</h2>
+                  <p class="doke-modal-description" data-personal-template-dialog-description>Dê um nome fácil de reconhecer. O modelo ficará disponível somente para sua conta.</p>
+                </header>
+                <div class="doke-overlay__body doke-modal-body">
+                  <label class="doke-field">
+                    <span>Nome do modelo</span>
+                    <input class="doke-input" name="personalTemplateName" maxlength="60" autocomplete="off" placeholder="Ex.: Limpeza completa para apartamentos" data-personal-template-name required>
+                  </label>
+                  <p class="quote-template-name-dialog__error" data-personal-template-dialog-error role="alert" hidden></p>
+                </div>
+                <footer class="doke-overlay__actions doke-modal-actions">
+                  <button class="doke-btn doke-btn--ghost" type="button" data-personal-template-dialog-cancel>Cancelar</button>
+                  <button class="doke-btn doke-btn--primary" type="submit" data-personal-template-dialog-submit>Salvar modelo</button>
+                </footer>
+              </form>
+            </dialog>
+
             <div class="post-service-submit-state doke-overlay doke-overlay--feedback" data-submit-state hidden aria-live="polite" aria-modal="true" role="dialog">
               <div class="post-service-submit-state__card doke-overlay__surface doke-modal-surface doke-modal-surface--feedback">
                 <span class="post-service-submit-state__icon" data-submit-state-icon aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m6 12 4 4 8-9"></path></svg></span>
@@ -481,13 +523,15 @@
   <script src="assets/js/core/form-experience-core.js?v=20260712-form-core-v1" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="assets/js/core/supabase-config.js?v=20260719-singleton-client-v1" defer></script>
-  <script src="assets/js/repositories/quote-template-metrics-repository.js?v=20260720-quote-template-metrics-v1" defer></script>
-  <script src="assets/js/services/quote-template-metrics-service.js?v=20260720-quote-template-metrics-v1" defer></script>
-  <script src="assets/js/repositories/services-repository.js?v=20260720-moderation-flow-v1" defer></script>
+  <script src="assets/js/repositories/quote-template-metrics-repository.js?v=20260720-quote-template-smart-guidance-v1" defer></script>
+  <script src="assets/js/services/quote-template-metrics-service.js?v=20260720-quote-template-smart-guidance-v1" defer></script>
+  <script src="assets/js/repositories/services-repository.js?v=20260720-auto-moderation-v1" defer></script>
   <script src="assets/js/services/services-service.js?v=20260720-moderation-flow-v1" defer></script>
-  <script src="assets/js/pages/service-quote-template-builder.js?v=20260720-quote-template-metrics-v1" defer></script>
-  <script src="assets/js/pages/service-form-experience.js?v=20260720-quote-template-catalog-v1" defer></script>
-  <script src="assets/js/pages/anunciar-servico.js?v=20260720-quote-template-catalog-v1" defer></script>
+  <script src="assets/js/repositories/professional-quote-templates-repository.js?v=20260720-personal-quote-templates-v1" defer></script>
+  <script src="assets/js/services/professional-quote-templates-service.js?v=20260720-personal-quote-templates-v1" defer></script>
+  <script src="assets/js/pages/service-quote-template-builder.js?v=20260720-quote-template-smart-guidance-v1" defer></script>
+  <script src="assets/js/pages/service-form-experience.js?v=20260720-existing-media-v2" defer></script>
+  <script src="assets/js/pages/anunciar-servico.js?v=20260720-existing-media-v2" defer></script>
   <script src="assets/js/services/mock-data-service.js?v=20260501-stage31-domain-services" defer></script>
   <script src="assets/js/services/profile-service.js?v=20260501-stage31-domain-services" defer></script>
   <script src="assets/js/services/search-service.js?v=20260501-stage31-domain-services" defer></script>

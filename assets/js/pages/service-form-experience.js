@@ -31,16 +31,21 @@
     const existingMediaRoot = root.querySelector('[data-existing-service-media]');
     const existingMediaList = root.querySelector('[data-existing-service-media-list]');
     const existingMediaCount = root.querySelector('[data-existing-service-media-count]');
+    let existingImagesResolved = !editMode;
 
     const syncExistingImageDataset = () => {
       const primary = managedExistingImages[0] || '';
       if (primary) root.dataset.existingServiceImage = primary;
       else delete root.dataset.existingServiceImage;
       root.dataset.existingServiceImagesCount = String(managedExistingImages.length);
-      const mainImageInput = root.querySelector('[data-main-service-image]');
+      const mainImageInput = root.querySelector('[data-main-service-image], [name="mainImage"]');
       if (mainImageInput) {
-        mainImageInput.required = !primary;
+        const mustUpload = existingImagesResolved && !primary;
+        mainImageInput.required = mustUpload;
+        mainImageInput.toggleAttribute('required', mustUpload);
         mainImageInput.setCustomValidity('');
+        mainImageInput.removeAttribute('aria-invalid');
+        mainImageInput.closest('[data-upload-card], .post-service-upload-card')?.classList.remove('has-error');
       }
     };
 
@@ -316,6 +321,7 @@
       form.reset();
       existingService = null;
       managedExistingImages = [];
+      existingImagesResolved = true;
       renderExistingMedia();
       root.querySelectorAll('[data-availability-day]').forEach((checkbox) => syncAvailabilityRow(checkbox));
       root.querySelectorAll('[data-post-check]').forEach((button) => {
@@ -421,6 +427,7 @@
       managedExistingImages = Array.isArray(service.images)
         ? service.images.filter(Boolean).slice(0, 3)
         : (service.image ? [service.image] : []);
+      existingImagesResolved = true;
       renderExistingMedia();
       syncPriceMode();
       window.dispatchEvent(new CustomEvent('doke:service-edit-loaded', { detail: { service, hasExistingImages: Boolean(managedExistingImages.length), images: managedExistingImages.slice() } }));
@@ -435,6 +442,8 @@
         }
         return services?.getById?.(editId);
       }).then(populateExisting).catch((error) => {
+        existingImagesResolved = true;
+        renderExistingMedia();
         setState('error', { error });
         window.dispatchEvent(new CustomEvent('doke:service-edit-error', { detail: { error } }));
         throw error;

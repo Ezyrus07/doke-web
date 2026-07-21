@@ -331,7 +331,9 @@
     var map = {
       draft: { key: 'draft', label: 'Rascunho', tone: 'neutral', message: 'Este anúncio ainda não foi enviado para análise.' },
       pending_review: { key: 'pending-review', label: 'Em análise', tone: 'info', message: 'A Doke está analisando este anúncio antes da publicação.' },
-      changes_pending_review: { key: 'changes-pending-review', label: 'Alterações em análise', tone: 'info', message: 'A versão aprovada continua pública enquanto as alterações são revisadas.' },
+      changes_pending_review: publicStatus === 'inactive'
+        ? { key: 'changes-pending-review', label: 'Alteração crítica em análise', tone: 'warning', message: 'O anúncio está temporariamente fora do ar até a decisão da moderação.' }
+        : { key: 'changes-pending-review', label: 'Alterações em análise', tone: 'info', message: 'A versão aprovada continua pública enquanto as alterações são revisadas.' },
       changes_required: { key: 'changes-required', label: 'Ajustes solicitados', tone: 'warning', message: clean(service && service.reviewReason) || 'A equipe solicitou ajustes antes de aprovar esta versão.' },
       rejected: { key: 'rejected', label: 'Não aprovado', tone: 'danger', message: clean(service && service.reviewReason) || 'Esta versão não foi aprovada. Revise o anúncio antes de reenviar.' },
       suspended: { key: 'suspended', label: 'Suspenso', tone: 'danger', message: clean(service && service.reviewReason) || 'O anúncio foi suspenso pela plataforma.' },
@@ -372,11 +374,18 @@
     icon.appendChild(svg('M7 10V7a5 5 0 0 1 10 0v3 M5 10h14v10H5Z'));
     var copy = document.createElement('div');
     var title = document.createElement('strong');
-    title.textContent = presentation.key === 'pending-review' ? 'Publicação bloqueada durante a análise' : 'Alterações bloqueadas durante a análise';
+    var criticalTakeDown = presentation.key === 'changes-pending-review' && clean(service && service.status).toLowerCase() === 'inactive';
+    title.textContent = presentation.key === 'pending-review'
+      ? 'Publicação bloqueada durante a análise'
+      : criticalTakeDown
+        ? 'Anúncio temporariamente fora do ar'
+        : 'Alterações bloqueadas durante a análise';
     var description = document.createElement('span');
     description.textContent = presentation.key === 'pending-review'
       ? 'O anúncio só ficará disponível para clientes depois da aprovação.'
-      : 'A versão pública aprovada continua ativa até a decisão.';
+      : criticalTakeDown
+        ? 'A alteração foi classificada como crítica. A versão pública volta após aprovação ou rejeição da nova versão.'
+        : 'A versão pública aprovada continua ativa até a decisão.';
     copy.appendChild(title);
     copy.appendChild(description);
     heading.appendChild(icon);

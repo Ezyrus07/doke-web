@@ -30,12 +30,18 @@
   function getReviewDetail(versionId) {
     var target = String(versionId || '').trim();
     if (!target) return Promise.reject(new Error('A versão para análise não foi informada.'));
-    return listQueue().then(function (items) {
-      var match = items.find(function (item) {
-        return String(item && item.versionId || '').trim() === target;
-      });
-      if (!match) throw new Error('Esta versão não está mais aguardando análise.');
-      return match;
+    return getClient().rpc('get_service_review_detail', { p_version_id: target }).then(function (result) {
+      return unwrap(result, 'Não foi possível carregar o histórico desta versão.');
+    });
+  }
+
+  function listAuditEvents(limit) {
+    var requested = Number(limit || 20);
+    if (!Number.isFinite(requested)) requested = 20;
+    requested = Math.max(1, Math.min(100, Math.round(requested)));
+    return getClient().rpc('list_service_moderation_audit', { p_limit: requested }).then(function (result) {
+      var data = unwrap(result, 'Não foi possível carregar a auditoria de anúncios.');
+      return Array.isArray(data) ? data : [];
     });
   }
 
@@ -66,6 +72,7 @@
   Doke.repositories.serviceModeration = Object.freeze({
     listQueue: listQueue,
     getReviewDetail: getReviewDetail,
+    listAuditEvents: listAuditEvents,
     approve: approve,
     requestChanges: requestChanges,
     reject: reject

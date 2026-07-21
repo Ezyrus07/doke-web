@@ -23,8 +23,8 @@ assert(/<header class="become-pro-intro doke-form-page-top">/.test(html), 'keep 
 assert(!html.includes('data-step-progress-label'), 'remove the redundant progress label');
 assert(!html.includes('data-step-progress-fill'), 'remove the redundant progress bar');
 assert(!html.includes('class="budget-progress '), 'remove the budget progress wrapper');
-assert(html.includes('<strong>Detalhes</strong><small>Sobre o serviço</small>'), 'rename step one');
-assert(html.includes('<strong>Data e local</strong><small>Quando e onde</small>'), 'rename step two');
+assert(html.includes('<strong>Detalhes</strong><small>Descrição e perguntas</small>'), 'keep step one focused on description and professional questions');
+assert(html.includes('<strong>Data e local</strong><small>Prazo, endereço e anexos</small>'), 'keep step two focused on scheduling, address and attachments');
 assert(html.includes('<strong>Revisão</strong><small>Conferir e enviar</small>'), 'rename step three');
 
 assert(!html.includes('Serviço principal'), 'remove the editable service selector label');

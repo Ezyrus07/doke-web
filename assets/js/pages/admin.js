@@ -182,6 +182,10 @@
     return Doke.repositories && Doke.repositories.notifications || null;
   }
 
+  function serviceModerationRepository() {
+    return Doke.repositories && Doke.repositories.serviceModeration || null;
+  }
+
   function listOrders() {
     var repository = ordersRepository();
     if (!repository) return [];
@@ -200,6 +204,14 @@
     var wallet = walletService();
     if (!wallet || typeof wallet.listAuditEvents !== 'function') return Promise.resolve([]);
     return Promise.resolve(wallet.listAuditEvents({ currentUser: false })).then(function (items) {
+      return Array.isArray(items) ? items : [];
+    });
+  }
+
+  function listServiceModerationEvents() {
+    var repository = serviceModerationRepository();
+    if (!repository || typeof repository.listAuditEvents !== 'function') return Promise.resolve([]);
+    return Promise.resolve(repository.listAuditEvents(20)).then(function (items) {
       return Array.isArray(items) ? items : [];
     });
   }
@@ -640,11 +652,40 @@
   }
 
 
-  function renderAudit(disputes, transactions, auditEvents) {
+  function moderationEventLabel(value) {
+    var labels = {
+      version_submitted: 'Versão enviada para análise',
+      version_resubmitted: 'Versão reenviada após ajustes',
+      version_approved: 'Anúncio aprovado',
+      changes_requested: 'Ajustes solicitados no anúncio',
+      version_rejected: 'Versão do anúncio rejeitada',
+      version_superseded: 'Versão substituída',
+      listing_paused: 'Anúncio retirado temporariamente',
+      listing_published: 'Anúncio publicado',
+      listing_restored: 'Versão pública restaurada',
+      listing_unpublished: 'Anúncio retirado do catálogo'
+    };
+    return labels[clean(value)] || clean(value).replace(/_/g, ' ');
+  }
+
+  function renderAudit(disputes, transactions, auditEvents, moderationEvents) {
     var list = document.querySelector('[data-admin-audit]');
     if (!list) return;
     var notifications = listNotifications();
     var events = [];
+    (moderationEvents || []).slice(0, 16).forEach(function (event) {
+      events.push({
+        title: moderationEventLabel(event.eventType),
+        body: [
+          event.serviceTitle || 'Anúncio Doke',
+          event.professionalName ? 'Profissional: ' + event.professionalName : '',
+          event.actorName ? 'Responsável: ' + event.actorName : '',
+          event.reason ? 'Motivo: ' + event.reason : ''
+        ].filter(Boolean).join(' · '),
+        date: event.occurredAt,
+        targetUrl: event.targetUrl
+      });
+    });
     (auditEvents || []).slice(0, 12).forEach(function (event) {
       events.push({
         title: event.title || 'Decisão administrativa',
@@ -799,7 +840,8 @@
       verifications: [],
       disputes: [],
       transactions: [],
-      auditEvents: []
+      auditEvents: [],
+      moderationEvents: []
     };
 
     function trackFailure(scope, error) {
@@ -841,7 +883,14 @@
       state.auditEvents = items;
       return items;
     }).catch(function (error) {
-      return trackFailure('auditoria', error);
+      return trackFailure('auditoria financeira', error);
+    });
+
+    var moderationAuditTask = listServiceModerationEvents().then(function (items) {
+      state.moderationEvents = items;
+      return items;
+    }).catch(function (error) {
+      return trackFailure('auditoria de anúncios', error);
     });
 
     var disputesRenderTask = Promise.all([disputesTask, transactionsTask]).then(function (result) {
@@ -849,8 +898,8 @@
       renderDisputes(result[0], result[1], orders);
     });
 
-    var auditRenderTask = Promise.all([disputesTask, transactionsTask, auditTask]).then(function (result) {
-      renderAudit(result[0], result[1], result[2]);
+    var auditRenderTask = Promise.all([disputesTask, transactionsTask, auditTask, moderationAuditTask]).then(function (result) {
+      renderAudit(result[0], result[1], result[2], result[3]);
     });
 
     loadPromise = Promise.all([
@@ -859,7 +908,7 @@
       disputesRenderTask,
       auditRenderTask
     ]).then(function () {
-      if (failures.length === 4) {
+      if (failures.length === 5) {
         var fatal = failures[0] && failures[0].error || new Error('Não foi possível carregar o admin.');
         if (runtime) runtime.fail(fatal);
         throw fatal;

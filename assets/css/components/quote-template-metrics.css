@@ -252,3 +252,144 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+.quote-template-insights {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(42, 95, 144, 0.07);
+  box-shadow: inset 0 0 0 1px rgba(24, 75, 118, 0.06);
+}
+
+.quote-template-insights[hidden] {
+  display: none;
+}
+
+.quote-template-insights__header,
+.quote-template-insight-card__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.quote-template-insights__header > div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.quote-template-insights__header h4,
+.quote-template-insight-card h5 {
+  margin: 0;
+  color: var(--color-heading, #102d4b);
+  line-height: 1.3;
+}
+
+.quote-template-insights__count,
+.quote-template-insight-card__confidence {
+  flex: 0 0 auto;
+  padding: 7px 10px;
+  border-radius: var(--radius-pill, 999px);
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--color-primary, #2a5f90);
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.quote-template-insights__intro {
+  margin: 0;
+  color: var(--color-text-muted, #627a99);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.quote-template-insights__list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.quote-template-insight-card {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-width: 0;
+  padding: 14px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 10px 24px rgba(24, 75, 118, 0.06);
+}
+
+.quote-template-insight-card[data-tone="warning"] {
+  box-shadow: inset 3px 0 0 #d59b3d, 0 10px 24px rgba(24, 75, 118, 0.06);
+}
+
+.quote-template-insight-card[data-tone="positive"] {
+  box-shadow: inset 3px 0 0 var(--color-secondary, #298f7f), 0 10px 24px rgba(24, 75, 118, 0.06);
+}
+
+.quote-template-insight-card__top > span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-primary, #2a5f90);
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.quote-template-insight-card h5 {
+  font-size: 0.9rem;
+}
+
+.quote-template-insight-card p,
+.quote-template-insight-card small {
+  margin: 0;
+  color: var(--color-text-muted, #627a99);
+  line-height: 1.5;
+}
+
+.quote-template-insight-card p {
+  font-size: 0.77rem;
+}
+
+.quote-template-insight-card small {
+  font-size: 0.7rem;
+}
+
+.quote-template-insight-card__action {
+  justify-self: start;
+  margin-top: 2px;
+}
+
+.quote-template-metric-row__insight[data-tone="warning"] {
+  color: #8c5a12;
+}
+
+.quote-template-metric-row__insight[data-tone="positive"] {
+  color: var(--color-secondary, #298f7f);
+}
+
+@media (max-width: 980px) {
+  .quote-template-insights__list {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .quote-template-insights {
+    padding: 13px;
+  }
+
+  .quote-template-insights__header,
+  .quote-template-insight-card__top {
+    align-items: flex-start;
+  }
+
+  .quote-template-insights__count,
+  .quote-template-insight-card__confidence {
+    font-size: 0.62rem;
+  }
+}

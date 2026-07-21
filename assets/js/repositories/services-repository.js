@@ -592,6 +592,10 @@
             pendingVersionId: response.versionId || '',
             approvedVersionId: normalized.approvedVersionId || '',
             reviewSubmittedAt: response.submittedAt || new Date().toISOString(),
+            pendingChangeClass: response.changeClass || '',
+            pendingVisibilityAction: response.visibilityAction || '',
+            pendingRiskFlags: Array.isArray(response.riskFlags) ? response.riskFlags : [],
+            pendingClassificationReasons: Array.isArray(response.classificationReasons) ? response.classificationReasons : [],
             syncStatus: 'synced',
             syncError: '',
             syncedAt: new Date().toISOString()
@@ -620,7 +624,7 @@
       var mapped = mapRemoteRow(row);
       if (!row.pending_version_id) return mapped;
       return Promise.resolve(client.from(REMOTE_VERSIONS_TABLE)
-        .select('id,service_id,professional_id,version_number,review_status,snapshot,review_reason,submitted_at')
+        .select('id,service_id,professional_id,version_number,review_status,snapshot,review_reason,submitted_at,change_class,visibility_action,risk_flags,classification_reasons')
         .eq('id', row.pending_version_id)
         .maybeSingle()).then(function (versionResult) {
           if (versionResult.error) throw versionResult.error;
@@ -637,6 +641,10 @@
             reviewSubmittedAt: version.submitted_at || row.review_submitted_at || '',
             pendingVersionNumber: version.version_number,
             pendingReviewStatus: version.review_status,
+            pendingChangeClass: version.change_class || '',
+            pendingVisibilityAction: version.visibility_action || '',
+            pendingRiskFlags: Array.isArray(version.risk_flags) ? version.risk_flags : [],
+            pendingClassificationReasons: Array.isArray(version.classification_reasons) ? version.classification_reasons : [],
             syncStatus: 'synced'
           }));
         });

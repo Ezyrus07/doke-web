@@ -14,6 +14,8 @@ const ownerCards = read('assets/js/pages/profile/professional-services-section.j
 const adminHtml = read('admin.html');
 const adminRepo = read('assets/js/repositories/service-moderation-repository.js');
 const adminPage = read('assets/js/pages/admin-service-moderation.js');
+const reviewHtml = read('admin-anuncio-revisao.html');
+const reviewPage = read('assets/js/pages/admin-anuncio-revisao.js');
 const migration = read('supabase/migrations/032_service_listing_moderation.sql');
 const hardening = read('supabase/migrations/033_harden_service_moderation_permissions.sql');
 
@@ -30,9 +32,9 @@ const checks = [
   [detail.includes("quoteMode || 'default').toLowerCase() !== 'disabled'"), 'detalhe não remove orçamento quando desativado'],
   [budget.includes('recebe somente conversas neste anúncio') && budget.includes('changes_pending_review'), 'orçamento não bloqueia modo desativado/moderação'],
   [ownerCards.includes('Alterações em análise') && ownerCards.includes('Ajustes solicitados'), 'perfil owner não exibe estados de moderação'],
-  [adminHtml.includes('data-admin-service-reviews') && adminHtml.includes('data-admin-service-review-dialog'), 'fila administrativa ausente'],
+  [adminHtml.includes('data-admin-service-reviews') && adminPage.includes('admin-anuncio-revisao.html?version='), 'fila administrativa ou navegação para revisão dedicada ausente'],
   [adminRepo.includes("rpc('list_service_review_queue'") && adminRepo.includes("rpc('approve_service_version'"), 'repositório administrativo incompleto'],
-  [adminPage.includes('requestChanges') && adminPage.includes('reject') && adminPage.includes('approve'), 'decisões administrativas incompletas'],
+  [reviewHtml.includes('data-admin-ad-review-action="changes"') && reviewHtml.includes('data-admin-ad-review-action="reject"') && reviewHtml.includes('data-admin-ad-review-action="approve"') && reviewPage.includes('repo.requestChanges') && reviewPage.includes('repo.reject') && reviewPage.includes('repo.approve'), 'decisões administrativas incompletas na página dedicada'],
   [migration.includes('create table if not exists public.service_versions'), 'tabela de versões ausente'],
   [migration.includes('trg_protect_service_moderation_state'), 'proteção contra publicação direta ausente'],
   [migration.includes('approved_version_id') && migration.includes('pending_version_id'), 'ponte aprovada/pendente ausente'],

@@ -8,7 +8,7 @@ const migration = fs.readFileSync(path.join(root, 'supabase/migrations/031_servi
 const required = [
   [html.includes('data-quote-template-builder'), 'builder ausente no HTML'],
   [html.includes('data-quote-question-add'), 'ação adicionar ausente'],
-  [html.includes('data-quote-template-presets') && html.includes('data-quote-template-list'), 'catálogo de modelos prontos ausente'],
+  [html.includes('data-quote-template-presets') && html.includes('data-quote-template-recommendation'), 'recomendação de modelo pronto ausente'],
   [builder.includes('DokeServiceQuoteTemplateCatalog') && builder.includes('applyTemplateById'), 'autoridade de modelos prontos ausente'],
   [builder.includes('questions.length >= 10'), 'limite de 10 perguntas ausente'],
   [builder.includes('data-question-up') && builder.includes('data-question-down'), 'reordenação ausente'],

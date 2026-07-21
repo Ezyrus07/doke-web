@@ -123,11 +123,11 @@
 <nav aria-label="Etapas do orçamento" class="budget-steps doke-flow-steps become-pro-steps">
 <button class="budget-step doke-flow-step is-active become-pro-step" data-step-target="0" type="button">
 <span class="budget-progress-step__bullet">1</span>
-<div><strong>Detalhes</strong><small>Sobre o serviço</small></div>
+<div><strong>Detalhes</strong><small>Descrição e perguntas</small></div>
 </button>
 <button class="budget-step doke-flow-step become-pro-step" data-step-target="1" type="button">
 <span class="budget-progress-step__bullet">2</span>
-<div><strong>Data e local</strong><small>Quando e onde</small></div>
+<div><strong>Data e local</strong><small>Prazo, endereço e anexos</small></div>
 </button>
 <button class="budget-step doke-flow-step become-pro-step" data-step-target="2" type="button">
 <span class="budget-progress-step__bullet">3</span>
@@ -137,128 +137,55 @@
 <form action="#" autocomplete="off" class="become-pro-form" data-budget-form="">
 <section aria-labelledby="budget-step-service-title" class="budget-panel is-active become-pro-step-panel" data-step-panel="servico">
 <div class="budget-panel__head become-pro-section-head">
-<h2 id="budget-step-service-title">Detalhes do serviço</h2>
-<p>O serviço já está vinculado ao anúncio. Informe apenas os detalhes necessários para o profissional preparar a proposta.</p>
+<h2 id="budget-step-service-title" data-budget-details-title>Conte o que você precisa</h2>
+<p data-budget-details-description>Descreva o problema ou resultado esperado. Quando houver perguntas do profissional, responda somente o que for necessário.</p>
 </div>
 <input data-budget-service-category name="catégoria" type="hidden" value=""/>
-<div class="budget-grid budget-grid--single become-pro-grid">
-<label class="budget-field become-pro-field doke-field"><span>Tipo de solicitação</span>
-<select data-ui-select="" name="tipo" required="" class="doke-select">
-<option value="">Selecione o tipo</option>
-<option value="Orçamento para execução">Orçamento para execução</option>
-<option value="Visita técnica">Visita técnica</option>
-<option value="Consultoria antes da obra">Consultoria antes da obra</option>
-</select>
-</label>
-</div>
-<div class="budget-choices-wrap">
-<span>Escopo</span>
-<input data-choice-input="" name="escopo" type="hidden" value="Ambiente completo"/>
-<div aria-label="Escopo do serviço" class="budget-choices" data-choice-group="">
-<button class="budget-choice is-active doke-choice-button" data-choice-value="Ambiente completo" type="button">Ambiente completo</button>
-<button class="budget-choice doke-choice-button" data-choice-value="Parede específica" type="button">Parede específica</button>
-<button class="budget-choice doke-choice-button" data-choice-value="Imóvel inteiro" type="button">Imóvel inteiro</button>
-<button class="budget-choice doke-choice-button" data-choice-value="Retoque ou reparo" type="button">Retoque ou reparo</button>
-</div>
-</div>
-<div class="budget-grid budget-grid--3 budget-grid--compact become-pro-grid">
-<label class="budget-field become-pro-field doke-field"><span>Imóvel</span>
-<select data-ui-select="" name="imovel" required="" class="doke-select">
-<option value="">Selecione o imóvel</option>
-<option value="Apartamento">Apartamento</option>
-<option value="Casa">Casa</option>
-<option value="Sala comercial">Sala comercial</option>
-<option value="Condomínio">Condomínio</option>
-</select>
-</label>
-<label class="budget-field become-pro-field doke-field"><span>Ambiente</span><input name="ambiente" required="" type="text" / class="doke-input"></label>
-<label class="budget-field become-pro-field doke-field"><span>Área aproximada</span><input name="area" type="text" / class="doke-input"></label>
-</div>
 <section class="budget-custom-questions" data-budget-custom-questions hidden aria-labelledby="budget-custom-questions-title">
 <header class="budget-custom-questions__head">
 <div>
 <span class="budget-custom-questions__eyebrow">Perguntas do profissional</span>
 <h3 id="budget-custom-questions-title">Informações específicas para este serviço</h3>
 </div>
-<p>Estas perguntas foram configuradas pelo profissional para preparar um orçamento mais preciso.</p>
+<p data-budget-custom-questions-copy>Responda às perguntas configuradas para este anúncio.</p>
 </header>
 <div class="budget-custom-questions__list" data-budget-custom-question-list></div>
 </section>
-<label class="budget-field budget-grid--compact become-pro-field become-pro-field--full doke-field"><span>Detalhes do pedido</span><textarea data-details-input="" maxlength="500" name="detalhes" required="" class="doke-textarea"></textarea><small class="doke-form-hint"><span data-details-count="">0</span>/500</small></label>
+<label class="budget-field budget-grid--compact become-pro-field become-pro-field--full doke-field"><span>Descreva o serviço que você precisa</span><textarea data-details-input maxlength="1000" minlength="20" name="detalhes" required class="doke-textarea" placeholder="Explique o problema, o resultado esperado e qualquer detalhe importante."></textarea><small class="doke-form-hint"><span data-details-count>0</span>/1000</small></label>
 </section>
 <section aria-labelledby="budget-step-schedule-title" class="budget-panel become-pro-step-panel" data-step-panel="prazo" hidden="">
 <div class="budget-panel__head become-pro-section-head">
 <h2 id="budget-step-schedule-title">Data e local</h2>
-<p>Informe quando deseja realizar o serviço e confirme o endereço do atendimento.</p>
+<p>Informe o prazo desejado, confirme o endereço e anexe referências somente quando ajudarem.</p>
 </div>
-<div class="budget-choices-wrap">
+<div class="budget-choices-wrap budget-choices-wrap--compact">
 <span>Urgência</span>
-<input data-choice-input="" name="urgencia" type="hidden" value="Esta semana"/>
-<div aria-label="Urgência do orçamento" class="budget-choices" data-choice-group="">
+<input data-choice-input name="urgencia" type="hidden" value="Sem pressa"/>
+<div aria-label="Urgência do orçamento" class="budget-choices" data-choice-group>
 <button class="budget-choice doke-choice-button" data-choice-value="Hoje ou amanhã" type="button">Hoje ou amanhã</button>
-<button class="budget-choice is-active doke-choice-button" data-choice-value="Esta semana" type="button">Esta semana</button>
-<button class="budget-choice doke-choice-button" data-choice-value="Sem pressa" type="button">Sem pressa</button>
+<button class="budget-choice doke-choice-button" data-choice-value="Esta semana" type="button">Esta semana</button>
+<button class="budget-choice is-active doke-choice-button" data-choice-value="Sem pressa" type="button">Sem pressa</button>
 </div>
 </div>
-<div class="budget-grid budget-grid--3 budget-grid--compact become-pro-grid">
-<label class="budget-field become-pro-field doke-field"><span>Data desejada</span><input name="data" type="date"/ class="doke-input"></label>
-<label class="budget-field become-pro-field doke-field"><span>Turno</span>
-<select data-ui-select="" name="turno" class="doke-select">
-<option value="">Selecione o turno</option>
-<option value="Flexível">Flexível</option>
-<option value="Manhã">Manhã</option>
-<option value="Tarde">Tarde</option>
-<option value="Noite">Noite</option>
-</select>
-</label>
-<label class="budget-field become-pro-field doke-field"><span>Orçamento estimado</span>
-<select data-ui-select="" name="orcamento_estimado" class="doke-select">
-<option value="">Selecione o orçamento</option>
-<option value="A definir">A definir</option>
-<option value="Até R$ 500">Até R$ 500</option>
-<option value="R$ 500 a R$ 1.500">R$ 500 a R$ 1.500</option>
-<option value="Acima de R$ 1.500">Acima de R$ 1.500</option>
-</select>
-</label>
+<div class="budget-grid budget-grid--single budget-grid--compact become-pro-grid">
+<label class="budget-field become-pro-field doke-field"><span>Data desejada <small>(opcional)</small></span><input name="data" type="date" class="doke-input"></label>
 </div>
-<input data-address-required="" name="endereco" type="hidden"/>
+<input data-address-required name="endereco" type="hidden"/>
 <article aria-live="polite" class="budget-address-card">
 <div class="budget-address-card__head">
 <div>
-<span class="budget-address-card__eyebrow">Endereço salvo</span>
-<strong data-address-title="">Você ainda não adicionou um endereço</strong>
-<p data-address-summary=""></p>
+<span class="budget-address-card__eyebrow">Endereço do atendimento</span>
+<strong data-address-title>Você ainda não adicionou um endereço</strong>
+<p data-address-summary></p>
 </div>
-<button class="budget-button doke-btn doke-btn--ghost doke-btn--sm" data-open-address-modal="" type="button">Alterar endereço</button>
+<button class="budget-button doke-btn doke-btn--ghost doke-btn--sm" data-open-address-modal type="button">Adicionar ou alterar</button>
 </div>
-<div class="budget-address-card__meta" data-address-meta="">
-<span data-address-line=""></span>
+<div class="budget-address-card__meta" data-address-meta>
+<span data-address-line></span>
 </div>
 </article>
-<div class="budget-triage">
-<div class="budget-triage__head"><strong>Referência rápida</strong><span>Esses dados ajudam o profissional a responder com mais precisão.</span></div>
-<div class="budget-grid budget-grid--3 become-pro-grid">
-<label class="budget-field become-pro-field doke-field"><span>O imóvel está ocupado?</span>
-<select data-ui-select="" name="triagem_ocupacao" class="doke-select">
-<option value="">Selecione a ocupação</option>
-<option value="Sim, morando no local">Sim, morando no local</option>
-<option value="Não, imóvel vazio">Não, imóvel vazio</option>
-<option value="Uso comercial">Uso comercial</option>
-</select>
-</label>
-<label class="budget-field become-pro-field doke-field"><span>Medidas confirmadas?</span>
-<select data-ui-select="" name="triagem_medidas" class="doke-select">
-<option value="">Selecione as medidas</option>
-<option value="Aproximadas">Aproximadas</option>
-<option value="Confirmadas">Confirmadas</option>
-<option value="Preciso de ajuda para medir">Preciso de ajuda para medir</option>
-</select>
-</label>
-<label class="budget-field become-pro-field doke-field"><span>Observação</span><input name="triagem_observacoes" type="text" / class="doke-input"></label>
-</div>
-</div>
-<label class="budget-upload budget-grid--compact become-pro-upload-card"><span>Anexos ou referências</span><small>Fotos, inspiração de cor ou vídeo curto.</small><input accept="image/*,video/*,.pdf" multiple="" name="anexos" type="file"/></label>
-<div class="budget-files" data-files-list="" hidden=""></div>
+<label class="budget-upload budget-grid--compact become-pro-upload-card"><span>Anexos ou referências <small>(opcional)</small></span><small>Fotos, vídeo curto ou PDF que ajudem o profissional a entender o pedido.</small><input accept="image/*,video/*,.pdf" multiple name="anexos" type="file"></label>
+<div class="budget-files" data-files-list hidden></div>
 </section>
 <section aria-labelledby="budget-step-review-title" class="budget-panel become-pro-step-panel" data-step-panel="revisao" hidden="">
 <div class="budget-panel__head become-pro-section-head">
@@ -285,7 +212,7 @@
 </footer>
 </form>
 </section>
-<aside aria-label="Orientações para um bom pedido" class="become-pro-benefits-card doke-form-page-side-card"><h2>Para receber uma boa resposta</h2><ul><li><span><svg viewBox="0 0 24 24"><path d="m7 12 3 3 7-7"></path></svg></span><div><strong>Escopo claro</strong><p>Explique o serviço, o ambiente e o tamanho aproximado.</p></div></li><li><span><svg viewBox="0 0 24 24"><path d="m7 12 3 3 7-7"></path></svg></span><div><strong>Prazo definido</strong><p>Informe urgência, data desejada e melhor turno.</p></div></li><li><span><svg viewBox="0 0 24 24"><path d="m7 12 3 3 7-7"></path></svg></span><div><strong>Endereço confirmado</strong><p>Mantenha o local do atendimento salvo antes do envio.</p></div></li><li><span><svg viewBox="0 0 24 24"><path d="m7 12 3 3 7-7"></path></svg></span><div><strong>Referências úteis</strong><p>Anexe fotos, vídeos ou inspirações quando ajudarem.</p></div></li><li><span><svg viewBox="0 0 24 24"><path d="m7 12 3 3 7-7"></path></svg></span><div><strong>Resumo privado</strong><p>Seu pedido vai direto para o profissional escolhido.</p></div></li><li><span><svg viewBox="0 0 24 24"><path d="m7 12 3 3 7-7"></path></svg></span><div><strong data-budget-provider="">o profissional selecionado</strong><p>Pedido de <span data-budget-service="">o serviço selecionado</span> em Salvador BA.</p></div></li></ul></aside>
+<aside aria-label="Orientações para um bom pedido" class="become-pro-benefits-card doke-form-page-side-card"><h2>Para receber uma boa resposta</h2><ul><li><span><svg viewBox="0 0 24 24"><path d="m7 12 3 3 7-7"></path></svg></span><div><strong>Escopo claro</strong><p>Descreva o problema e responda apenas às perguntas necessárias.</p></div></li><li><span><svg viewBox="0 0 24 24"><path d="m7 12 3 3 7-7"></path></svg></span><div><strong>Prazo definido</strong><p>Informe a urgência e uma data desejada quando já souber.</p></div></li><li><span><svg viewBox="0 0 24 24"><path d="m7 12 3 3 7-7"></path></svg></span><div><strong>Endereço confirmado</strong><p>Mantenha o local do atendimento salvo antes do envio.</p></div></li><li><span><svg viewBox="0 0 24 24"><path d="m7 12 3 3 7-7"></path></svg></span><div><strong>Referências úteis</strong><p>Anexe fotos, vídeos ou inspirações quando ajudarem.</p></div></li><li><span><svg viewBox="0 0 24 24"><path d="m7 12 3 3 7-7"></path></svg></span><div><strong>Resumo privado</strong><p>Seu pedido vai direto para o profissional escolhido.</p></div></li><li><span><svg viewBox="0 0 24 24"><path d="m7 12 3 3 7-7"></path></svg></span><div><strong data-budget-provider="">o profissional selecionado</strong><p>Pedido de <span data-budget-service="">o serviço selecionado</span> em Salvador BA.</p></div></li></ul></aside>
 </div>
 
 <dialog aria-describedby="budget-loading-description" aria-labelledby="budget-loading-title" class="budget-submission-overlay doke-submission-feedback doke-native-overlay" data-budget-loading data-submission-feedback data-submission-feedback-title="Enviando solicitação" data-submission-feedback-message="Está quase lá..." hidden>
@@ -386,7 +313,7 @@
 <script src="assets/js/core/supabase-config.js?v=20260719-singleton-client-v1" defer></script>
 <script defer src="assets/js/repositories/quote-template-metrics-repository.js?v=20260720-quote-template-metrics-v1"></script>
 <script defer src="assets/js/services/quote-template-metrics-service.js?v=20260720-quote-template-metrics-v1"></script>
-<script defer="" src="assets/js/repositories/services-repository.js?v=20260720-moderation-flow-v1"></script>
+<script defer="" src="assets/js/repositories/services-repository.js?v=20260720-auto-moderation-v1"></script>
 <script defer="" src="assets/js/services/services-service.js?v=20260720-moderation-flow-v1"></script>
 <script defer="" src="assets/js/services/search-service.js?v=20260501-stage31-domain-services"></script>
 <script defer="" src="assets/js/services/order-service.js?v=20260622-budget-order-flow-v1"></script>
@@ -412,7 +339,7 @@
 <script defer="" src="assets/js/core/experience-runtime.js?v=20260711-experience-runtime-v1"></script>
 <script defer src="assets/js/core/form-experience-core.js?v=20260712-form-core-v1"></script>
 <script defer="" src="assets/js/pages/budget-form-experience.js?v=20260711-budget-draft-v1"></script>
-<script defer src="assets/js/pages/orcamento.js?v=20260720-quote-template-metrics-v1"></script>
+<script defer src="assets/js/pages/orcamento.js?v=20260720-minimal-custom-budget-v1"></script>
 <script defer="" src="assets/js/dev/flow-state-tools.js?v=20260622-flow-contract-v1"></script>
   <script src="assets/js/core/document-preloader.js?v=20260712-global-document-boot-v1" defer></script>
   <script defer src="assets/js/components/forms/form-flow-comfort.js?v=20260718-form-comfort-v1"></script>

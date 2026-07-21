@@ -8,6 +8,8 @@
   var FUNNEL_EVENTS_TABLE = 'quote_template_funnel_events';
   var METRICS_VIEW = 'quote_template_conversion_metrics';
   var DROPOFF_VIEW = 'quote_template_question_dropoff';
+  var RECOMMENDATIONS_VIEW = 'quote_template_smart_recommendations';
+  var BENCHMARKS_VIEW = 'quote_template_category_benchmarks';
 
   function text(value, maxLength) {
     return String(value || '').trim().slice(0, maxLength || 200);
@@ -193,6 +195,8 @@
       completionRate: Number(row.completion_rate || 0) || 0,
       submissionRate: Number(row.submission_rate || 0) || 0,
       completedToSubmissionRate: Number(row.completed_to_submission_rate || 0) || 0,
+      questionCount: Number(row.question_count || 0) || 0,
+      sampleServiceExternalId: text(row.sample_service_external_id, 180),
       lastActivityAt: row.last_activity_at || ''
     };
   }
@@ -208,6 +212,60 @@
       lastQuestionId: text(row.last_question_id, 100),
       lastQuestionLabel: text(row.last_question_label, 140) || 'Pergunta não identificada',
       abandonmentCount: Number(row.abandonment_count || 0) || 0
+    };
+  }
+
+
+  function mapRecommendation(row) {
+    row = row || {};
+    return {
+      professionalId: text(row.professional_id, 80),
+      templateIdentity: text(row.template_identity, 240),
+      templateId: text(row.template_id, 180),
+      templateKind: text(row.template_kind, 30),
+      templateSource: text(row.template_source, 50),
+      templateLabel: text(row.template_label, 140) || 'Formulário',
+      templateCategory: text(row.template_category, 100),
+      sampleServiceExternalId: text(row.sample_service_external_id, 180),
+      questionCount: Number(row.question_count || 0) || 0,
+      applicationsCount: Number(row.applications_count || 0) || 0,
+      formsStarted: Number(row.forms_started || 0) || 0,
+      formsCompleted: Number(row.forms_completed || 0) || 0,
+      requestsSubmitted: Number(row.requests_submitted || 0) || 0,
+      abandonedCount: Number(row.abandoned_count || 0) || 0,
+      completionRate: Number(row.completion_rate || 0) || 0,
+      submissionRate: Number(row.submission_rate || 0) || 0,
+      completedToSubmissionRate: Number(row.completed_to_submission_rate || 0) || 0,
+      abandonmentRate: Number(row.abandonment_rate || 0) || 0,
+      benchmarkCompletionRate: Number(row.benchmark_completion_rate || 0) || 0,
+      benchmarkSubmissionRate: Number(row.benchmark_submission_rate || 0) || 0,
+      recommendedQuestionCount: Number(row.recommended_question_count || 0) || 0,
+      topDropoffQuestionId: text(row.top_dropoff_question_id, 100),
+      topDropoffQuestionLabel: text(row.top_dropoff_question_label, 140),
+      topDropoffCount: Number(row.top_dropoff_count || 0) || 0,
+      topDropoffShare: Number(row.top_dropoff_share || 0) || 0,
+      confidence: text(row.confidence, 20) || 'low',
+      code: text(row.recommendation_code, 80),
+      priority: Number(row.priority || 5) || 5,
+      tone: text(row.tone, 20) || 'neutral',
+      lastActivityAt: row.last_activity_at || ''
+    };
+  }
+
+  function mapBenchmark(row) {
+    row = row || {};
+    return {
+      professionalId: text(row.professional_id, 80),
+      templateCategory: text(row.template_category, 100),
+      formsStarted: Number(row.forms_started || 0) || 0,
+      formsCompleted: Number(row.forms_completed || 0) || 0,
+      requestsSubmitted: Number(row.requests_submitted || 0) || 0,
+      templateCount: Number(row.template_count || 0) || 0,
+      qualifiedTemplateCount: Number(row.qualified_template_count || 0) || 0,
+      completionRate: Number(row.completion_rate || 0) || 0,
+      submissionRate: Number(row.submission_rate || 0) || 0,
+      avgQuestionCount: Number(row.avg_question_count || 0) || 0,
+      recommendedQuestionCount: Number(row.recommended_question_count || 0) || 0
     };
   }
 
@@ -238,11 +296,41 @@
     });
   }
 
+
+  function listOwnerRecommendations() {
+    var client = getClient();
+    return getRequiredUser(client).then(function (user) {
+      return Promise.resolve(client.from(RECOMMENDATIONS_VIEW)
+        .select('*')
+        .eq('professional_id', user.id)
+        .order('priority', { ascending: true })
+        .order('forms_started', { ascending: false })
+        .limit(100));
+    }).then(function (result) {
+      return (unwrap(result, 'Não foi possível carregar as sugestões dos formulários.') || []).map(mapRecommendation);
+    });
+  }
+
+  function listOwnerBenchmarks() {
+    var client = getClient();
+    return getRequiredUser(client).then(function (user) {
+      return Promise.resolve(client.from(BENCHMARKS_VIEW)
+        .select('*')
+        .eq('professional_id', user.id)
+        .order('forms_started', { ascending: false })
+        .limit(50));
+    }).then(function (result) {
+      return (unwrap(result, 'Não foi possível carregar as referências de conversão.') || []).map(mapBenchmark);
+    });
+  }
+
   Doke.repositories.quoteTemplateMetrics = Object.freeze({
     recordApplication: recordApplication,
     recordFunnelEvent: recordFunnelEvent,
     listOwnerMetrics: listOwnerMetrics,
     listOwnerDropoff: listOwnerDropoff,
+    listOwnerRecommendations: listOwnerRecommendations,
+    listOwnerBenchmarks: listOwnerBenchmarks,
     makeKey: makeKey
   });
 })(window);

@@ -11,7 +11,7 @@ const css = read('assets/css/pages/anunciar-servico.css');
 const failures = [];
 const check = (value, message) => { if (!value) failures.push(message); };
 check(html.includes('data-main-service-image'), 'input principal não possui autoridade explícita');
-check(form.includes("mainImageInput.required = !primary"), 'imagem existente não desativa required nativo');
+check(form.includes('const mustUpload = existingImagesResolved && !primary'), 'imagem existente ou hidratação pendente não controla required corretamente');
 check(form.includes("root.dataset.existingServiceImage = primary"), 'imagem atual não é exposta para validação/revisão');
 check(!html.includes('data-quote-template-search') && !html.includes('data-quote-template-list'), 'catálogo geral ainda aparece na interface');
 check(builder.includes("normalizeText(template.category) === selectedCategory"), 'modelo recomendado não está filtrado pela categoria');
