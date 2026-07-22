@@ -24,8 +24,8 @@ assert(css.includes('var(--color-secondary, #298f7f)'), 'estado preenchido não 
 assert(pageJs.includes('const MAX_UPLOAD_BYTES = 5 * 1024 * 1024'), 'limite imediato de 5 MB ausente');
 assert(formJs.includes('5 * 1024 * 1024'), 'limite de persistência de 5 MB ausente');
 assert(pageJs.includes('showSubmissionError(error)'), 'erro de publicação não é exibido na página');
-assert(pageJs.includes("data-step-error=\"4\""), 'feedback de erro não usa a etapa de revisão');
-assert(pageJs.includes('O serviço de publicação não foi carregado'), 'controller indisponível ainda pode falhar silenciosamente');
+assert(pageJs.includes('`[data-step-error="${totalSteps}"]`'), 'feedback de erro não usa a etapa final de revisão');
+assert(pageJs.includes('O serviço de análise não foi carregado'), 'controller de análise indisponível ainda pode falhar silenciosamente');
 
 console.log('[test:post-service-upload-submit-contract] ok');
 console.log('- 3 cards de upload com estado visual e status acessível');

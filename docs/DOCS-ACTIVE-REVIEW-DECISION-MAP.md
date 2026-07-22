@@ -7,7 +7,7 @@ Este relatório classifica a documentação atual sem mover nem apagar arquivos.
 | Grupo | Quantidade | Ação recomendada |
 |---|---:|---|
 | Promover para contrato ativo | 10 | Manter em `docs/` e consolidar no índice ativo |
-| Manter em revisão | 163 | Revisar antes de mover; pode conter contexto útil de páginas ainda em evolução |
+| Manter em revisão | 165 | Revisar antes de mover; pode conter contexto útil de páginas ainda em evolução |
 | Candidato a arquivo histórico | 11 | Mover em lote controlado para `docs/archive/` depois de validação |
 | Relatórios/índices gerados | 1 | Manter como evidência ou mover para `docs/reports/` futuramente |
 

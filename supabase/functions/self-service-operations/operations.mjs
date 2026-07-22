@@ -1,0 +1,41 @@
+export const ALLOWED_ACTIONS = Object.freeze(new Set([
+  'get_account_onboarding_state',
+  'complete_account_onboarding',
+  'update_account_profile',
+  'create_transaction_notification',
+  'update_own_notification_state',
+  'save_professional_profile_setup',
+  'save_professional_verification_draft',
+  'reopen_own_professional_identity_verification',
+  'list_service_moderation_history',
+  'submit_service_for_review',
+  'save_wallet_bank_account',
+  'request_wallet_withdrawal',
+  'open_wallet_dispute',
+  'respond_wallet_dispute',
+]));
+
+export function normalizeAction(value) {
+  const action = String(value || '').trim().toLowerCase();
+  return ALLOWED_ACTIONS.has(action) ? action : '';
+}
+
+export function normalizePayload(value) {
+  return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+}
+
+export function normalizeOperationError(error) {
+  const code = String(error?.code || '').trim();
+  const message = String(error?.message || error || '').trim();
+  const match = message.match(/\b(DOKE_[A-Z0-9_]+|AUTH_REQUIRED|SERVICE_[A-Z0-9_]+|VERIFICATION_[A-Z0-9_]+|PROFESSIONAL_[A-Z0-9_]+)\b/);
+  return match?.[1] || code || 'DOKE_SELF_SERVICE_OPERATION_FAILED';
+}
+
+export function statusForOperationError(code) {
+  if (/AUTH_REQUIRED|ACTOR_NOT_FOUND/.test(code)) return 401;
+  if (/FORBIDDEN|REQUIRED|ACCOUNT_NOT_ACTIVE|OPERATOR_REQUIRED|OWNERSHIP/.test(code)) return 403;
+  if (/NOT_FOUND/.test(code)) return 404;
+  if (/CONFLICT|TAKEN|IDEMPOTENCY/.test(code)) return 409;
+  if (/INVALID|TOO_LONG|PAYLOAD|AMOUNT|BALANCE|REASON/.test(code)) return 422;
+  return 400;
+}

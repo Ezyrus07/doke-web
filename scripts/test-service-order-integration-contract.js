@@ -13,7 +13,7 @@ const projectRoot = path.resolve(__dirname, '..');
 const storage = Object.create(null);
 const listeners = Object.create(null);
 let currentUser = {
-  id: 'user_profissional_demo',
+  id: '11111111-1111-4111-8111-111111111111',
   name: 'Profissional Doke',
   role: 'professional',
   initials: 'PD',
@@ -40,6 +40,11 @@ const context = {
   Promise,
   setTimeout,
   clearTimeout,
+  setInterval: () => 0,
+  clearInterval: () => {},
+  Blob,
+  Uint8Array,
+  atob,
   URLSearchParams,
   encodeURIComponent,
   fetch: () => Promise.resolve({ ok: true, json: () => Promise.resolve([]) }),
@@ -53,6 +58,7 @@ const context = {
     this.detail = options && options.detail;
   },
   document: {
+    readyState: 'loading',
     addEventListener: (type, callback) => {
       if (!listeners[type]) listeners[type] = [];
       listeners[type].push(callback);
@@ -67,6 +73,98 @@ const context = {
   }
 };
 context.window = context;
+
+const remoteServiceId = '44444444-4444-4444-8444-444444444444';
+const remoteRows = new Map();
+
+function createQuery(table) {
+  let mode = 'select';
+  let payload = null;
+  let filters = [];
+  const query = {
+    select() { return this; },
+    eq(column, value) { filters.push([column, String(value)]); return this; },
+    delete() { mode = 'delete'; return this; },
+    insert(rows) { mode = 'insert'; payload = rows; return this; },
+    upsert(row) { mode = 'upsert'; payload = row; return this; },
+    single() { return this.execute(true); },
+    maybeSingle() { return this.execute(true, true); },
+    execute(single = false, maybe = false) {
+      if (table === 'services') {
+        if (mode === 'upsert') {
+          const row = { ...payload, id: remoteServiceId, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), service_media: [] };
+          remoteRows.set(String(row.external_id), row);
+          return Promise.resolve({ data: row, error: null });
+        }
+        const rows = Array.from(remoteRows.values());
+        const filtered = filters.reduce((items, [column, value]) => items.filter((item) => String(item[column] || '') === value), rows);
+        return Promise.resolve({ data: single ? (filtered[0] || null) : filtered, error: null });
+      }
+      if (table === 'service_media') return Promise.resolve({ data: mode === 'insert' ? (payload || []) : [], error: null });
+      return Promise.resolve({ data: single || maybe ? null : [], error: null });
+    },
+    then(resolve, reject) { return this.execute(false).then(resolve, reject); }
+  };
+  return query;
+}
+
+const fakeSupabaseClient = {
+  auth: {
+    getSession: () => Promise.resolve({ data: { session: { user: currentUser } }, error: null })
+  },
+  storage: {
+    from: () => ({
+      upload: (objectPath) => Promise.resolve({ data: { path: objectPath }, error: null }),
+      getPublicUrl: (objectPath) => ({ data: { publicUrl: `https://storage.example.test/${objectPath}` } })
+    })
+  },
+  from: (table) => createQuery(table)
+};
+
+context.DOKE_SUPABASE_CONFIG = {
+  enabled: true,
+  servicesEnabled: true,
+  ordersEnabled: false,
+  messagesEnabled: false,
+  notificationsEnabled: false,
+  url: 'https://staging.example.test',
+  anonKey: 'public-test-key'
+};
+context.supabase = { createClient: () => fakeSupabaseClient };
+context.DokeSupabase = {
+  getClient: () => fakeSupabaseClient,
+  invokeSelfService: (operation, args = {}) => {
+    assert(operation === 'submit_service_for_review', 'Somente o dispatcher de revisão pode publicar serviços neste contrato.');
+    const snapshot = args.p_snapshot || {};
+    const existing = remoteRows.get(String(args.p_external_id || ''));
+    const publicStatus = existing ? (existing.status || 'published') : 'draft';
+    const row = {
+      id: remoteServiceId,
+      external_id: String(args.p_external_id || snapshot.id || ''),
+      professional_id: currentUser.id,
+      title: snapshot.title,
+      status: publicStatus,
+      moderation_status: existing ? 'changes_pending_review' : 'pending_review',
+      metadata: snapshot,
+      service_media: (snapshot.images || []).map((url, index) => ({ url, sort_order: index }))
+    };
+    remoteRows.set(row.external_id, row);
+    return Promise.resolve({
+      serviceId: remoteServiceId,
+      externalId: row.external_id,
+      versionId: '55555555-5555-4555-8555-555555555555',
+      versionNumber: existing ? 2 : 1,
+      moderationStatus: existing ? 'changes_pending_review' : 'pending_review',
+      publicStatus,
+      submittedAt: new Date().toISOString(),
+      changeClass: args.p_change_class || 'critical',
+      visibilityAction: 'keep_public',
+      riskFlags: [],
+      classificationReasons: []
+    });
+  }
+};
+
 context.Doke.session = { getCurrentUser: () => currentUser };
 context.Doke.services = {
   professionalAccess: {
@@ -133,18 +231,27 @@ async function main() {
     images: ['data:image/png;base64,c2VydmljZQ==']
   };
 
-  const service = await Doke.services.services.create(servicePayload);
-  assert(service.status === 'active', 'Serviço publicado deve nascer ativo.');
-  assert(service.ownerId === currentUser.id && service.professionalProfileId === 'profile_profissional_demo', 'Serviço deve preservar proprietário e perfil profissional.');
+  const submittedService = await Doke.services.services.create(servicePayload);
+  assert(submittedService.status === 'draft', 'Serviço novo deve permanecer fora do catálogo enquanto aguarda análise.');
+  assert(submittedService.moderationStatus === 'pending_review', 'Serviço novo deve registrar revisão pendente.');
+  assert(submittedService.ownerId === currentUser.id && submittedService.professionalProfileId === 'profile_profissional_demo', 'Serviço deve preservar proprietário e perfil profissional.');
 
-  const publicServices = await Doke.services.services.list({});
+  const service = await Doke.repositories.services.save(Object.assign({}, submittedService, {
+    status: 'active',
+    moderationStatus: 'published',
+    approvedVersionId: '66666666-6666-4666-8666-666666666666',
+    pendingVersionId: ''
+  }));
+  assert(service.status === 'active', 'Após aprovação, o serviço deve entrar no catálogo como ativo.');
+
+  const publicServices = await Doke.services.services.list({ fresh: true });
   assert(publicServices.some((item) => item.id === service.id), 'Serviço ativo deve aparecer na descoberta pública.');
   assert(Doke.services.services.getDetailUrl(service) === 'detalhe-anuncio.html?id=' + encodeURIComponent(service.id), 'URL de detalhe deve preservar serviceId.');
   const budgetUrl = Doke.services.services.getBudgetUrl(service);
   assert(budgetUrl.includes('serviceId=' + encodeURIComponent(service.id)), 'URL de orçamento deve preservar serviceId.');
   assert(budgetUrl.includes('professionalId=' + encodeURIComponent(service.professionalId)), 'URL de orçamento deve preservar professionalId.');
 
-  setUser({ id: 'client_marketplace_stabilization', name: 'Cliente Doke', role: 'client', initials: 'CD' });
+  setUser({ id: '22222222-2222-4222-8222-222222222222', name: 'Cliente Doke', role: 'client', initials: 'CD' });
   const order = await Doke.services.orders.create({
     serviceId: service.id,
     professionalId: service.professionalId,
@@ -198,13 +305,13 @@ async function main() {
   const reloadedOrder = await Doke.services.orders.getById(order.id);
   assert(reloadedOrder && reloadedOrder.serviceSnapshot && reloadedOrder.serviceSnapshot.title === service.title, 'Snapshot deve sobreviver à leitura do repository.');
 
-  setUser({ id: 'professional_unrelated', name: 'Outro profissional', role: 'professional', initials: 'OP' });
+  setUser({ id: '33333333-3333-4333-8333-333333333333', name: 'Outro profissional', role: 'professional', initials: 'OP' });
   await assertRejects(
     Doke.services.services.updateOwned(service.id, { title: 'Alteração indevida' }),
     'Profissional sem propriedade não pode editar o anúncio.'
   );
 
-  setUser({ id: 'user_profissional_demo', name: 'Profissional Doke', role: 'professional', initials: 'PD' });
+  setUser({ id: '11111111-1111-4111-8111-111111111111', name: 'Profissional Doke', role: 'professional', initials: 'PD' });
   await Doke.services.services.updateOwned(service.id, {
     title: 'Montagem de móveis atualizada',
     priceLabel: 'R$ 220',
@@ -213,7 +320,7 @@ async function main() {
   const editedService = await Doke.services.services.getById(service.id);
   assert(editedService.title === 'Montagem de móveis atualizada', 'Edição deve atualizar o anúncio.');
 
-  setUser({ id: 'client_marketplace_stabilization', name: 'Cliente Doke', role: 'client', initials: 'CD' });
+  setUser({ id: '22222222-2222-4222-8222-222222222222', name: 'Cliente Doke', role: 'client', initials: 'CD' });
   const immutableOrder = await Doke.services.orders.getById(order.id);
   assert(immutableOrder.serviceTitle === service.title, 'Edição do anúncio não pode alterar o título histórico do pedido.');
   assert(immutableOrder.serviceSnapshot.priceLabel === 'R$ 180', 'Edição do anúncio não pode alterar o preço histórico do pedido.');
@@ -221,10 +328,11 @@ async function main() {
 
   setUser({ id: 'user_profissional_demo', name: 'Profissional Doke', role: 'professional', initials: 'PD' });
   const accepted = await Doke.services.orders.accept(order.id);
-  assert(accepted.status === 'accepted', 'Profissional vinculado deve aceitar o pedido.');
+  assert(accepted.status === 'accepted', 'Profissional operacional vinculado deve aceitar o pedido local roteado.');
   conversation = getConversationByOrder(order.id);
   assert(conversation && conversation.locked === false && conversation.status === 'accepted', 'Aceite deve destravar a conversa vinculada.');
 
+  setUser({ id: '11111111-1111-4111-8111-111111111111', name: 'Profissional Doke', role: 'professional', initials: 'PD' });
   await Doke.services.services.deactivateOwned(service.id);
   assert((await Doke.services.services.list({})).every((item) => item.id !== service.id), 'Serviço inativo não deve permanecer na descoberta pública.');
   const ownerInactive = await Doke.services.services.listByProfessional(currentUser.id, { status: ['inactive'] });
@@ -240,7 +348,7 @@ async function main() {
     'Serviço arquivado não pode ser reativado pela transição atual.'
   );
 
-  setUser({ id: 'client_marketplace_stabilization', name: 'Cliente Doke', role: 'client', initials: 'CD' });
+  setUser({ id: '22222222-2222-4222-8222-222222222222', name: 'Cliente Doke', role: 'client', initials: 'CD' });
   const orderAfterArchive = await Doke.services.orders.getById(order.id);
   assert(orderAfterArchive && orderAfterArchive.status === 'accepted', 'Arquivamento do anúncio não pode apagar ou invalidar pedido existente.');
 

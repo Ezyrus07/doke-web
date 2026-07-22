@@ -479,9 +479,8 @@
         p_data: sanitizeRemoteData(normalized)
       };
 
-      return client.rpc(REMOTE_CREATE_RPC, params).then(function (result) {
-        if (result.error) throw result.error;
-        var row = Array.isArray(result.data) ? result.data[0] : result.data;
+      return root.DokeSupabase.invokeSelfService(REMOTE_CREATE_RPC, params).then(function (data) {
+        var row = Array.isArray(data) ? data[0] : data;
         if (!row) throw new Error('O Supabase não retornou a notificação persistida.');
         setProviderState('supabase');
         return mapRemoteRow(row);
@@ -506,13 +505,12 @@
       }
       if (patch && patch.dismissed === false) payload.dismissed_at = null;
 
-      return client.rpc(REMOTE_UPDATE_RPC, {
+      return root.DokeSupabase.invokeSelfService(REMOTE_UPDATE_RPC, {
         p_notification_ref: notificationId,
         p_mark_read: patch && patch.read === true ? true : (patch && patch.read === false ? false : null),
         p_dismiss: patch && patch.dismissed === true ? true : (patch && patch.dismissed === false ? false : null)
-      }).then(function (result) {
-        if (result.error) throw result.error;
-        var row = Array.isArray(result.data) ? result.data[0] : result.data;
+      }).then(function (data) {
+        var row = Array.isArray(data) ? data[0] : data;
         return row ? mapRemoteRow(row) : null;
       });
     });
@@ -860,7 +858,9 @@
   document.addEventListener('visibilitychange', function () {
     if (document.visibilityState === 'visible') refreshRemoteNotifications('retorno à aba');
   });
-  root.addEventListener('focus', function () {
-    refreshRemoteNotifications('retorno ao navegador');
-  });
+  if (typeof root.addEventListener === 'function') {
+    root.addEventListener('focus', function () {
+      refreshRemoteNotifications('retorno ao navegador');
+    });
+  }
 })();

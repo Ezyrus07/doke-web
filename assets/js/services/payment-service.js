@@ -64,6 +64,17 @@
     return services.notifications;
   }
 
+  function getFinanceRepository() {
+    return Doke.financeRepository && typeof Doke.financeRepository === 'object'
+      ? Doke.financeRepository
+      : null;
+  }
+
+  function shouldUseFinanceSandbox() {
+    var finance = getFinanceRepository();
+    return Boolean(finance && typeof finance.isSandboxEnabled === 'function' && finance.isSandboxEnabled());
+  }
+
   function getBoundary() {
     return Doke.repositoryBoundary && typeof Doke.repositoryBoundary === 'object' ? Doke.repositoryBoundary : null;
   }
@@ -79,16 +90,19 @@
       : null;
     var apiReady = Boolean(status && status.apiReady === true);
     var apiActive = Boolean(status && status.activeProvider === 'api' && apiReady);
+    var sandboxActive = shouldUseFinanceSandbox();
     var activeProvider = apiActive
       ? 'api'
-      : repositoryStatus && repositoryStatus.provider || 'mock';
+      : sandboxActive ? 'supabase-sandbox' : repositoryStatus && repositoryStatus.provider || 'mock';
     return Object.freeze({
       domain: 'payments',
       activeProvider: activeProvider,
       apiReady: apiReady,
       paymentsApiActive: apiActive,
+      financeSandboxActive: sandboxActive,
       fallbackActive: Boolean(repositoryStatus && repositoryStatus.fallbackActive),
       localFinancialSimulation: Boolean(repositoryStatus && repositoryStatus.localFinancialSimulation),
+      sandboxFinancialSimulation: sandboxActive,
       fallbackProvider: repository ? 'local-mock' : 'unavailable'
     });
   }
@@ -423,10 +437,113 @@
     });
   }
 
+  function confirmSandboxPaymentFlow(orderId, payload) {
+    payload = payload || {};
+    var repository = getPaymentsRepository();
+    var orders = getOrdersService();
+    var finance = getFinanceRepository();
+    var actor = getCurrentUser() || {};
+    if (!repository || !orders || !finance || typeof finance.confirmSandboxPayment !== 'function') {
+      return Promise.reject(new Error('Sandbox financeiro do staging indisponível.'));
+    }
+    if (!actor.id || actor.role !== 'client') return Promise.reject(new Error('Use a conta do cliente para confirmar o pagamento.'));
+
+    return orders.getById(orderId).then(function (order) {
+      if (!order) throw new Error('Pedido não encontrado.');
+      if (String(order.clientId || '') !== String(actor.id)) throw new Error('Somente o cliente vinculado pode pagar esta cobrança.');
+      if (normalizeText(order.status).toLowerCase() !== 'in_progress') throw new Error('O pagamento só pode ser confirmado durante a execução do pedido.');
+      if (!order.proposalApprovedAt) throw new Error('A proposta precisa estar aprovada antes do pagamento.');
+      if (!normalizeText(order.chargeMessageId || '')) throw new Error('O pedido ainda não possui uma cobrança válida.');
+      return findConversation(order, payload).then(function (conversation) {
+        var charge = findCharge(conversation, order, payload.messageId || payload.chargeMessageId || '');
+        if (!charge) throw new Error('Cobrança válida não encontrada.');
+        if (String(charge.id || charge.messageId || '') !== String(order.chargeMessageId || '')) {
+          throw new Error('A cobrança informada não é a cobrança canônica do pedido.');
+        }
+        var amounts = validatePaymentAmounts(order, charge, payload);
+        var identity = buildPaymentIdentity(repository, order, conversation, charge, actor);
+        return finance.confirmSandboxPayment({
+          orderId: order.id,
+          conversationId: conversation.id,
+          messageId: charge.id || charge.messageId || '',
+          chargeMessageId: charge.id || charge.messageId || '',
+          paymentId: identity.id,
+          eventKey: identity.eventKey,
+          transactionId: 'sandbox_wallet_tx_' + identity.id,
+          grossAmountCents: Math.round(amounts.grossAmount * 100),
+          chargedAmountCents: Math.round(amounts.chargedAmount * 100),
+          discountAmountCents: Math.round(amounts.discountAmount * 100),
+          method: normalizeText(payload.method || payload.paymentMethod || 'Pix') || 'Pix'
+        });
+      });
+    }).then(function (result) {
+      document.dispatchEvent(new CustomEvent('doke:payment-confirmed', { detail: clone(result) }));
+      return result;
+    });
+  }
+
+  function requestSandboxCompletionFlow(orderId, payload) {
+    payload = payload || {};
+    var orders = getOrdersService();
+    var finance = getFinanceRepository();
+    var actor = getCurrentUser() || {};
+    if (!orders || !finance || typeof finance.requestSandboxCompletion !== 'function') {
+      return Promise.reject(new Error('Sandbox financeiro do staging indisponível.'));
+    }
+    if (!actor.id || actor.role !== 'professional') return Promise.reject(new Error('Use a conta profissional para solicitar a conclusão.'));
+    return orders.getById(orderId).then(function (order) {
+      if (!order) throw new Error('Pedido não encontrado.');
+      if (!isProfessionalForOrder(actor, order)) throw new Error('Somente o profissional vinculado pode solicitar a conclusão.');
+      return findConversation(order, payload).then(function (conversation) {
+        return finance.requestSandboxCompletion({
+          orderId: order.id,
+          conversationId: conversation.id,
+          messageId: order.chargeMessageId || '',
+          chargeMessageId: order.chargeMessageId || '',
+          requestedAt: payload.completionRequestedAt || nowIso(),
+          note: normalizeText(payload.note || payload.completionNote || '')
+        });
+      });
+    }).then(function (result) {
+      document.dispatchEvent(new CustomEvent('doke:completion-requested', { detail: clone(result) }));
+      return result;
+    });
+  }
+
+  function releaseSandboxCompletionFlow(orderId, payload) {
+    payload = payload || {};
+    var orders = getOrdersService();
+    var finance = getFinanceRepository();
+    var actor = getCurrentUser() || {};
+    if (!orders || !finance || typeof finance.releaseSandboxPayment !== 'function') {
+      return Promise.reject(new Error('Sandbox financeiro do staging indisponível.'));
+    }
+    if (!actor.id || actor.role !== 'client') return Promise.reject(new Error('Use a conta do cliente para confirmar a conclusão.'));
+    return orders.getById(orderId).then(function (order) {
+      if (!order) throw new Error('Pedido não encontrado.');
+      if (String(order.clientId || '') !== String(actor.id)) throw new Error('Somente o cliente vinculado pode confirmar a conclusão.');
+      return findConversation(order, payload).then(function (conversation) {
+        return finance.releaseSandboxPayment({
+          orderId: order.id,
+          conversationId: conversation.id,
+          messageId: order.chargeMessageId || '',
+          chargeMessageId: order.chargeMessageId || '',
+          releasedAt: payload.releasedAt || nowIso(),
+          note: normalizeText(payload.note || payload.completionNote || '')
+        });
+      });
+    }).then(function (result) {
+      document.dispatchEvent(new CustomEvent('doke:payment-released', { detail: clone(result) }));
+      return result;
+    });
+  }
+
   function confirmChargePayment(orderId, payload) {
     var normalizedOrderId = normalizeText(orderId);
     payload = payload || {};
     if (!normalizedOrderId) return Promise.reject(new Error('Pedido inválido para pagamento.'));
+
+    if (shouldUseFinanceSandbox()) return confirmSandboxPaymentFlow(normalizedOrderId, payload);
 
     if (shouldUsePaymentsApi()) {
       var boundary = getBoundary();
@@ -623,6 +740,7 @@
     var normalizedOrderId = normalizeText(orderId);
     payload = payload || {};
     if (!normalizedOrderId) return Promise.reject(new Error('Pedido inválido para solicitação de conclusão.'));
+    if (shouldUseFinanceSandbox()) return requestSandboxCompletionFlow(normalizedOrderId, payload);
     if (shouldUsePaymentsApi()) {
       var boundary = getBoundary();
       var actor = getCurrentUser() || {};
@@ -785,6 +903,7 @@
     var normalizedOrderId = normalizeText(orderId);
     payload = payload || {};
     if (!normalizedOrderId) return Promise.reject(new Error('Pedido inválido para confirmação da conclusão.'));
+    if (shouldUseFinanceSandbox()) return releaseSandboxCompletionFlow(normalizedOrderId, payload);
     if (shouldUsePaymentsApi()) {
       var boundary = getBoundary();
       var actor = getCurrentUser() || {};

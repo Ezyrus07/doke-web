@@ -229,7 +229,7 @@
         var client = getSupabaseClient();
         if (!client) throw new Error('Supabase indisponível para salvar o perfil.');
 
-        return client.rpc('update_account_profile', {
+        return window.DokeSupabase.invokeSelfService('update_account_profile', {
           p_display_name: patch.name,
           p_username: patch.handle,
           p_city: patch.city,
@@ -238,14 +238,8 @@
           p_interests: patch.interests,
           p_avatar_url: patch.avatarUrl || '',
           p_cover_url: patch.coverUrl || ''
-        }).then(function (response) {
-          if (response.error) {
-            var message = String(response.error.message || '');
-            if (/username|duplicate|unique/i.test(message)) throw new Error('Esse usuário já está em uso. Escolha outro.');
-            throw new Error(message || 'Não foi possível salvar o perfil.');
-          }
-
-          var result = response.data || {};
+        }).then(function (result) {
+          result = result || {};
           var nextProfile = {
             id: result.profileId || (currentProfile && currentProfile.id) || user.id,
             userId: user.id,

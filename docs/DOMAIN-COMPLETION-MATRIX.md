@@ -6,8 +6,8 @@ Este é o mapa operacional obrigatório para concluir a lógica da Doke. Ele cru
 
 - Domínios/programas mapeados: **23**.
 - Fluxos críticos mapeados: **15**.
-- Maturidade média atual: **2.43/6**.
-- Bloqueadores críticos explícitos: **24**.
+- Maturidade média atual: **2.70/6**.
+- Bloqueadores críticos explícitos: **16**.
 - Domínios prontos para produção: **0**.
 - Runtime padrão: dados **mock**, auth **mock**, rede **desativada**.
 
@@ -15,23 +15,23 @@ A leitura correta é: a Doke possui fundações e canários avançados, especial
 
 ## Snapshot real do staging
 
-Observado em `2026-07-22T14:53:54.077565Z` no projeto `zwkczgewzbsorbrjuzpb`.
+Observado em `2026-07-22T16:49:57.949946Z` no projeto `zwkczgewzbsorbrjuzpb`.
 
 | Indicador | Valor |
 | --- | ---: |
 | Tabelas públicas | 45 |
-| Tabelas públicas sem RLS | 11 |
+| Tabelas públicas sem RLS | 0 |
 | Tabelas com RLS sem policies | 0 |
-| Funções SECURITY DEFINER | 109 |
-| SECURITY DEFINER executáveis por anon | 18 |
-| SECURITY DEFINER executáveis por authenticated | 33 |
+| Funções SECURITY DEFINER | undefined |
+| SECURITY DEFINER executáveis por anon | undefined |
+| SECURITY DEFINER executáveis por authenticated | undefined |
 | Tabelas no Realtime | 1 |
-| Edge Functions ativas | 4 |
+| Edge Functions ativas | 6 |
 | Crons operacionais ativos | 5 |
 
 ### Dívida de RLS que bloqueia produção
 
-`audit_logs`, `availability_slots`, `budgets`, `communities`, `community_members`, `community_posts`, `favorites`, `message_attachments`, `reports`, `reviews`, `service_categories`.
+.
 
 RLS habilitado, mas sem policy: .
 
@@ -41,9 +41,9 @@ RLS habilitado, mas sem policy: .
 | ---: | --- | ---: |
 | 0 | not started | 1 |
 | 1 | foundation only | 3 |
-| 2 | local functional | 8 |
+| 2 | local functional | 5 |
 | 3 | staging canary or hybrid | 7 |
-| 4 | staging operational | 4 |
+| 4 | staging operational | 7 |
 | 5 | private beta ready | 0 |
 | 6 | production ready | 0 |
 
@@ -52,22 +52,22 @@ RLS habilitado, mas sem policy: .
 | Ordem | ID | Domínio | Maturidade | UI atual | Autoridade server-side | Evidência | Segurança | Produção |
 | ---: | --- | --- | ---: | --- | --- | --- | --- | --- |
 | 1 | GOV-001 | Governança, arquitetura e comando central | 4/6 | hybrid | canonical | staging operational | partial | candidate |
-| 2 | SEC-001 | Segurança, RLS, grants e autoridade dos dados | 2/6 | hybrid | partial | staging canary | blocked | blocked |
+| 2 | SEC-001 | Segurança, RLS, grants e autoridade dos dados | 4/6 | hybrid | canonical | staging operational | partial | blocked |
 | 3 | AUTH-001 | Autenticação, sessão e identidade | 3/6 | hybrid | partial | staging canary | blocked | blocked |
 | 4 | PROF-001 | Perfis, onboarding profissional e KYC | 4/6 | hybrid | partial | staging canary | blocked | blocked |
-| 5 | CAT-001 | Catálogo, publicação e moderação de serviços | 3/6 | hybrid | partial | staging canary | partial | blocked |
+| 5 | CAT-001 | Catálogo, publicação e moderação de serviços | 4/6 | hybrid | canonical | staging operational | partial | blocked |
 | 6 | SEARCH-001 | Busca, descoberta, favoritos e ranking | 2/6 | hybrid | contract only | local e2e | blocked | blocked |
 | 7 | ORD-001 | Orçamentos, propostas e ciclo de pedidos | 4/6 | hybrid | canonical | staging operational | partial | blocked |
 | 8 | SCHED-001 | Agenda, disponibilidade e execução do serviço | 1/6 | local | none | static contract | blocked | blocked |
-| 9 | MSG-001 | Mensagens, conversas, presença e anexos | 3/6 | hybrid | partial | staging canary | blocked | blocked |
+| 9 | MSG-001 | Mensagens, conversas, presença e anexos | 3/6 | hybrid | partial | staging canary | partial | blocked |
 | 10 | NTF-001 | Notificações, e-mail e push | 3/6 | hybrid | partial | staging canary | blocked | blocked |
 | 11 | PAY-001 | Pagamentos, cobrança, escrow e webhooks | 2/6 | local | contract only | local e2e | blocked | blocked |
 | 12 | WAL-001 | Carteira, recebíveis, saldo e saques | 3/6 | hybrid | partial | staging canary | blocked | blocked |
 | 13 | DSP-001 | Cancelamentos, reembolsos, disputas e chargebacks | 2/6 | hybrid | partial | staging canary | blocked | blocked |
-| 14 | REP-001 | Avaliações, reputação e recompra | 2/6 | local | partial | static contract | blocked | blocked |
-| 15 | COM-001 | Comunidades, membros e moderação social | 2/6 | local | contract only | local e2e | blocked | blocked |
+| 14 | REP-001 | Avaliações, reputação e recompra | 3/6 | hybrid | partial | staging canary | partial | blocked |
+| 15 | COM-001 | Comunidades, membros e moderação social | 3/6 | hybrid | partial | staging canary | partial | blocked |
 | 16 | CONTENT-001 | Workers, publicações, mídia e feed social | 2/6 | local | contract only | local e2e | blocked | blocked |
-| 17 | ADM-001 | Administração, suporte e moderação | 3/6 | hybrid | partial | staging canary | blocked | blocked |
+| 17 | ADM-001 | Administração, suporte e moderação | 4/6 | hybrid | canonical | staging operational | partial | blocked |
 | 18 | REL-001 | Observabilidade, incidentes, SLOs e proteção de mudanças | 4/6 | remote | canonical | staging operational | passed | candidate |
 | 19 | ANA-001 | Analytics, funil e economia do marketplace | 2/6 | hybrid | partial | local e2e | partial | blocked |
 | 20 | LEGAL-001 | Jurídico, privacidade, confiança e políticas comerciais | 1/6 | local | none | absent | blocked | blocked |
@@ -101,19 +101,19 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 | ID | Fluxo | Estado | Owner | Etapas | Bloqueadores |
 | --- | --- | --- | --- | --- | --- |
-| FLOW-01 | Descoberta pública | hybrid | SEARCH-001 | home → search → results → service_detail | SEARCH-B02, CAT-B01 |
+| FLOW-01 | Descoberta pública | hybrid | SEARCH-001 | home → search → results → service_detail | SEARCH-B02 |
 | FLOW-02 | Cadastro, login e onboarding | staging canary | AUTH-001 | register → verify_contact → session → profile_materialization → onboarding | AUTH-B02, AUTH-B04 |
 | FLOW-03 | Tornar-se profissional e KYC | staging canary | PROF-001 | profile_setup → document_upload → submit → admin_review → decision → role_activation | PROF-B03, PROF-B04 |
-| FLOW-04 | Publicar serviço | hybrid | CAT-001 | draft → media → quote_template → submit_review → moderation → publish → edit_version | CAT-B01, CAT-B02, CAT-B03 |
+| FLOW-04 | Publicar serviço | hybrid | CAT-001 | draft → media → quote_template → submit_review → moderation → publish → edit_version | CAT-B03 |
 | FLOW-05 | Solicitar orçamento e criar pedido | staging operational | ORD-001 | service_snapshot → questionnaire → request → outbox_event → professional_notification | ORD-B01, ORD-B02 |
 | FLOW-06 | Aceite, proposta e agenda | hybrid | ORD-001 | accept → proposal → client_approval → schedule_hold → confirmation | SCHED-B02, SCHED-B03, ORD-B04 |
-| FLOW-07 | Conversa transacional | hybrid | MSG-001 | conversation → message → attachment → read_state → realtime → notification | MSG-B01, MSG-B02, MSG-B03 |
+| FLOW-07 | Conversa transacional | hybrid | MSG-001 | conversation → message → attachment → read_state → realtime → notification | MSG-B02, MSG-B03 |
 | FLOW-08 | Pagamento, retenção e liberação | blocked | PAY-001 | charge → provider_checkout → signed_webhook → ledger → receivable → release | PAY-B01, PAY-B03, PAY-B04 |
 | FLOW-09 | Cancelamento, reembolso e disputa | blocked | DSP-001 | eligibility → cancel → refund → dispute → evidence → decision → appeal | DSP-B01, DSP-B03 |
 | FLOW-10 | Carteira e saque | hybrid | WAL-001 | pending_balance → available_balance → bank_account → withdraw_request → approval → provider_transfer → reconciliation | WAL-B02, WAL-B03 |
-| FLOW-11 | Avaliação e recompra | local | REP-001 | eligibility → review → moderation → reputation → rehire | REP-B01, REP-B02, REP-B03 |
-| FLOW-12 | Comunidade e conteúdo | local | COM-001 | discover → join_or_request → role → post_or_message → report → sanction → appeal | COM-B01, COM-B02, COM-B03, COM-B04 |
-| FLOW-13 | Operação administrativa | hybrid | ADM-001 | queue → case → decision → audit → dual_control → notification | ADM-B01, ADM-B02, ADM-B03 |
+| FLOW-11 | Avaliação e recompra | local | REP-001 | eligibility → review → moderation → reputation → rehire | REP-B02, REP-B03 |
+| FLOW-12 | Comunidade e conteúdo | hybrid | COM-001 | discover → join_or_request → role → post_or_message → report → sanction → appeal | COM-B02, COM-B03, COM-B04 |
+| FLOW-13 | Operação administrativa | staging canary | ADM-001 | queue → case → decision → audit → dual_control → notification | ADM-B03 |
 | FLOW-14 | Incidente e proteção de mudança | staging operational | REL-001 | health → alert → acknowledge → runbook → recovery → post_incident → error_budget → change_gate | REL-B01, REL-B02 |
 | FLOW-15 | Beta fechado e lançamento | blocked | BETA-001 | security_gate → legal_gate → real_e2e → operator_rehearsal → go_no_go → regional_beta → scale_review | BETA-B01, BETA-B02, BETA-B03 |
 
@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 1455 arquivos no escopo; 247 referências a localStorage; 102 a sessionStorage; 911 referências mock; 211 referências de rede/Supabase; 85 marcadores de implementação pendente.
+**Evidência estática observada:** 1467 arquivos no escopo; 247 referências a localStorage; 102 a sessionStorage; 911 referências mock; 213 referências de rede/Supabase; 85 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -149,13 +149,13 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Objetivo:** Close exposed database and RPC surfaces before expanding real writes or onboarding external users.
 
-**Estado:** maturidade 2/6; UI hybrid; servidor partial; staging staging canary; segurança blocked; produção blocked.
+**Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção blocked.
 
-**Evidência estática observada:** 121 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 0 referências mock; 5 referências de rede/Supabase; 9 marcadores de implementação pendente.
+**Evidência estática observada:** 151 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 0 referências mock; 5 referências de rede/Supabase; 9 marcadores de implementação pendente.
 
 **Tabelas/autoridades de dados:** `users`, `user_profiles`, `client_profiles`, `audit_logs`, `availability_slots`, `budgets`, `communities`, `community_members`, `community_posts`, `favorites`, `message_attachments`, `reports`, `reviews`, `service_categories`, `verification_events`.
 
-**Edge Functions:** `financial-operations`.
+**Edge Functions:** `financial-operations`, `service-moderation-operations`, `self-service-operations`.
 
 **Evidências:**
 - Private operational tables are not readable by anon or authenticated.
@@ -167,7 +167,6 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - Reviewer queue, detail, claim and decision operations moved behind the JWT-protected professional-verification-operations Edge Function.
 - KYC evidence paths are owner-scoped, private and immutable while submitted, under review or verified.
 - Professional promotion updates public.users and app_metadata without persisting role claims in user_metadata.
-- Current staging snapshot contains 45 public tables and 26 private tables; the RLS-disabled public set fell from 13 to 11 after closing client_profiles and verification_events.
 - client_profiles is now a private server-owned metrics authority: authenticated users read only their own row and cannot insert, update or delete directly.
 - client_profile_public_summaries exposes only completed order count, aggregate rating, review count and update time; no contact, KYC, risk or administrative fields are present.
 - Client metrics are recalculated from completed orders and published reviews through private SECURITY DEFINER functions with pg_catalog search_path and revoked browser execution.
@@ -177,19 +176,32 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - Four self-service financial RPCs remain explicitly authenticated and revalidate active canonical roles from public.users; forged JWT metadata cannot elevate financial authority.
 - Support/admin financial decisions now pass through financial-operations version 1 with verify_jwt enabled and service-role-only internal RPCs that revalidate the canonical actor.
 - Twenty-six remote financial persona and mutation canaries passed in one rolled-back transaction, including withdrawal idempotency, dispute lifecycle, direct-DML denial and operator separation.
-- Public anon-executable SECURITY DEFINER advisor findings fell from 18 to 2; the broader catalog count is 5 because three private trigger functions inherit EXECUTE but are not Data API endpoints. Authenticated SECURITY DEFINER execution fell to 24, including four intentional financial self-service RPCs.
+- All 45 public tables now have RLS enabled; the security advisor reports zero rls_disabled_in_public findings.
+- Notifications are authenticated-only with recipient RLS, column-scoped state updates, safe search_path and immutable idempotency context.
+- audit_logs, categories, favorites, availability, reviews, budgets, message attachments, reports and community tables now use explicit least-privilege grants and persona RLS.
+- service-media no longer exposes a broad storage listing policy; owner operations are folder- and identity-scoped while public object delivery remains bucket-native.
+- Community ownership is canonical through communities.owner_id plus an owner-membership trigger; self-elevation and owner-row downgrade/deletion are denied.
+- The public client summary RPC now runs as SECURITY INVOKER and remains readable through the RLS-protected public projection.
+- Six privileged service-moderation operations moved behind service-moderation-operations v1 with verify_jwt enabled and service-role-only wrappers.
+- Foreign-key coverage, RLS initplan and duplicate permissive-policy advisor findings were eliminated without removing low-usage indexes from an empty staging dataset.
+- Eighty-one remote persona and mutation assertions passed with rollback across notifications, public data, communities, moderation, catalog ownership, messaging and RLS regression.
+- No existing service quote template has a professional_id that diverges from its canonical service owner.
+- All fourteen authenticated SECURITY DEFINER self-service RPCs are no longer executable by anon or authenticated; they are server-only and retain pg_catalog search_path.
+- The JWT-protected self-service-operations Edge Function derives the actor from auth.getUser and invokes a service-role-only dispatcher; actor identity is never accepted from the request body.
+- The dispatcher reconstructs auth.uid for the existing hardened domain implementations and rejects operations outside a fourteen-action allowlist.
+- Five new remote dispatcher assertions passed with rollback; the cumulative SEC-001 remote assertion count is 121.
+- The Supabase security advisor now reports only leaked-password protection disabled; authenticated SECURITY DEFINER warnings were eliminated.
+- Twenty-two focused local validation groups passed with zero new failures; two unrelated failures were reproduced unchanged in the pristine baseline.
 
 **Bloqueadores:**
-- **SEC-B01 · CRITICAL · rls:** 11 public tables have RLS disabled. _(Fase 1)_
-- **SEC-B03 · CRITICAL · rpc_grants:** 2 public SECURITY DEFINER Data API functions remain executable by anon and 24 functions by authenticated; finance/idempotency are closed, leaving notification and moderation contracts to review. _(Fase 1)_
-- **SEC-B04 · HIGH · storage:** service-media is public with broad listing risk; transaction-attachments has no mapped object policies in the snapshot. _(Fase 1)_
 - **SEC-B05 · HIGH · auth:** Leaked password protection is disabled in Supabase Auth. _(Fase 1)_
+- **SEC-B07 · MEDIUM · platform_defaults:** Supabase platform-owned supabase_admin default ACLs cannot be changed by the project migration role; new objects require a post-migration grant audit. _(Fase 1)_
 
 **Próximas ações:**
-- Close the two remaining anon-executable notification SECURITY DEFINER RPCs and verify their realtime caller contract.
-- Apply RLS and negative persona tests to the remaining exposed public tables in small domain batches, beginning with audit_logs.
-- Review remaining authenticated moderation SECURITY DEFINER functions and convert generic grants into explicit caller contracts.
-- Harden storage policies, password protection, CORS, CSP and rate limits.
+- Enable leaked-password protection in Supabase Auth through the dashboard or an authorized Management API.
+- Run browser-authenticated HTTP evidence for self-service-operations and the signed Storage lifecycle from an environment with DNS access.
+- Run the post-migration grant/RLS audit for every new public object because platform-owned default ACLs are outside the project migration role.
+- Harden CSP, CORS, abuse rate limits and browser E2E before beta.
 
 **Gate de saída:**
 - No public table requiring protection remains without RLS and policies.
@@ -240,7 +252,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor partial; staging staging canary; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 19 arquivos no escopo; 8 referências a localStorage; 2 a sessionStorage; 7 referências mock; 23 referências de rede/Supabase; 1 marcadores de implementação pendente.
+**Evidência estática observada:** 19 arquivos no escopo; 8 referências a localStorage; 2 a sessionStorage; 7 referências mock; 21 referências de rede/Supabase; 1 marcadores de implementação pendente.
 
 **Páginas:** `meu-perfil.html`, `perfil.html`, `perfil-cliente.html`, `perfil-profissional.html`, `tornar-profissional.html`, `verificacao-profissional.html`, `admin-verificacao.html`.
 
@@ -280,31 +292,32 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Objetivo:** Make service creation, versioning, moderation, publication and edits server-authoritative.
 
-**Estado:** maturidade 3/6; UI hybrid; servidor partial; staging staging canary; segurança partial; produção blocked.
+**Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção blocked.
 
-**Evidência estática observada:** 16 arquivos no escopo; 6 referências a localStorage; 4 a sessionStorage; 0 referências mock; 30 referências de rede/Supabase; 0 marcadores de implementação pendente.
+**Evidência estática observada:** 16 arquivos no escopo; 6 referências a localStorage; 4 a sessionStorage; 0 referências mock; 24 referências de rede/Supabase; 0 marcadores de implementação pendente.
 
 **Páginas:** `anunciar-servico.html`, `detalhe-anuncio.html`, `admin-anuncio-revisao.html`, `index.html`, `resultados.html`.
 
 **Tabelas/autoridades de dados:** `services`, `service_versions`, `service_media`, `service_categories`, `service_moderation_events`, `service_quote_templates`, `service_quote_questions`.
 
-**Edge Functions:** `quote-template-ai`.
+**Edge Functions:** `quote-template-ai`, `service-moderation-operations`.
 
 **Evidências:**
 - Supabase service repository, version moderation and admin review exist.
 - AI template generation is isolated behind an Edge Function.
 - Services repository retains localStorage and sessionStorage fallback paths.
+- service_categories is RLS-protected and public reads expose active rows only.
+- service-media listing policy is closed and owner storage mutations are identity-scoped.
+- Admin/moderator review actions execute through a JWT-protected Edge Function; direct privileged RPCs are no longer browser-callable.
+- Template writes require canonical professional role and ownership of the linked service; staging has zero ownership mismatches.
 
 **Bloqueadores:**
-- **CAT-B01 · CRITICAL · rls:** service_categories has RLS disabled. _(Fase 1)_
-- **CAT-B02 · HIGH · storage:** Public service-media listing policy is broader than required. _(Fase 1)_
 - **CAT-B03 · HIGH · authority_split:** Local service drafts and remote published versions coexist without a final production promotion contract. _(Fase 4)_
 - **CAT-B04 · MEDIUM · versioning:** Historical orders need immutable service snapshots across all creation paths. _(Fase 4)_
 
 **Próximas ações:**
-- Secure categories and media.
-- Make remote draft/version workflow canonical.
-- Guarantee immutable service snapshot on order creation.
+- Make remote draft/version workflow canonical and remove production local fallback.
+- Guarantee immutable service snapshot on every order creation path.
 - Complete pause, archive and safe edit flows.
 
 **Gate de saída:**
@@ -419,7 +432,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Objetivo:** Provide durable multi-device conversations tied to orders with authorized attachments and realtime delivery.
 
-**Estado:** maturidade 3/6; UI hybrid; servidor partial; staging staging canary; segurança blocked; produção blocked.
+**Estado:** maturidade 3/6; UI hybrid; servidor partial; staging staging canary; segurança partial; produção blocked.
 
 **Evidência estática observada:** 7 arquivos no escopo; 9 referências a localStorage; 0 a sessionStorage; 5 referências mock; 49 referências de rede/Supabase; 3 marcadores de implementação pendente.
 
@@ -431,15 +444,16 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - Backend handlers and staging multi-domain messaging flow exist.
 - Messages repository uses remote tables but retains localStorage and mock fallbacks.
 - Only notifications is currently published to Supabase Realtime.
+- message_attachments now has participant/sender RLS and least-privilege grants; anon access and cross-participant deletion are denied.
+- Conversation and message participant policies passed regression canaries after initplan optimization.
 
 **Bloqueadores:**
-- **MSG-B01 · CRITICAL · rls:** message_attachments has RLS disabled. _(Fase 1)_
 - **MSG-B02 · CRITICAL · realtime:** messages and conversations are not in the realtime publication. _(Fase 7)_
 - **MSG-B03 · HIGH · authority_split:** Local conversation/message fallback can diverge across devices. _(Fase 7)_
 - **MSG-B04 · HIGH · storage:** Transaction attachment bucket policies are not mapped in the current staging snapshot. _(Fase 1)_
 
 **Próximas ações:**
-- Secure attachment metadata and storage objects.
+- Map and secure the transaction attachment object bucket.
 - Enable scoped realtime for conversation participants.
 - Remove production localStorage authority and add offline/retry semantics.
 
@@ -455,7 +469,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI hybrid; servidor partial; staging staging canary; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 6 arquivos no escopo; 22 referências a localStorage; 0 a sessionStorage; 7 referências mock; 14 referências de rede/Supabase; 2 marcadores de implementação pendente.
+**Evidência estática observada:** 6 arquivos no escopo; 22 referências a localStorage; 0 a sessionStorage; 7 referências mock; 12 referências de rede/Supabase; 2 marcadores de implementação pendente.
 
 **Páginas:** `notificacoes.html`.
 
@@ -487,7 +501,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 2/6; UI local; servidor contract only; staging local e2e; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 6 arquivos no escopo; 1 referências a localStorage; 0 a sessionStorage; 2 referências mock; 42 referências de rede/Supabase; 2 marcadores de implementação pendente.
+**Evidência estática observada:** 6 arquivos no escopo; 1 referências a localStorage; 0 a sessionStorage; 2 referências mock; 41 referências de rede/Supabase; 2 marcadores de implementação pendente.
 
 **Páginas:** `pagamento-profissional.html`, `mensagens.html`, `pedidos.html`.
 
@@ -524,7 +538,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI hybrid; servidor partial; staging staging canary; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 6 arquivos no escopo; 11 referências a localStorage; 0 a sessionStorage; 6 referências mock; 58 referências de rede/Supabase; 4 marcadores de implementação pendente.
+**Evidência estática observada:** 6 arquivos no escopo; 11 referências a localStorage; 0 a sessionStorage; 6 referências mock; 57 referências de rede/Supabase; 4 marcadores de implementação pendente.
 
 **Páginas:** `carteira.html`, `admin.html`.
 
@@ -561,7 +575,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 2/6; UI hybrid; servidor partial; staging staging canary; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 5 arquivos no escopo; 10 referências a localStorage; 0 a sessionStorage; 4 referências mock; 38 referências de rede/Supabase; 4 marcadores de implementação pendente.
+**Evidência estática observada:** 5 arquivos no escopo; 10 referências a localStorage; 0 a sessionStorage; 4 referências mock; 37 referências de rede/Supabase; 4 marcadores de implementação pendente.
 
 **Páginas:** `pedidos.html`, `mensagens.html`, `carteira.html`, `admin.html`.
 
@@ -596,7 +610,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Objetivo:** Create trustworthy reputation from eligible completed orders and keep repeat hiring inside Doke.
 
-**Estado:** maturidade 2/6; UI local; servidor partial; staging static contract; segurança blocked; produção blocked.
+**Estado:** maturidade 3/6; UI hybrid; servidor partial; staging staging canary; segurança partial; produção blocked.
 
 **Evidência estática observada:** 4 arquivos no escopo; 4 referências a localStorage; 0 a sessionStorage; 2 referências mock; 7 referências de rede/Supabase; 0 marcadores de implementação pendente.
 
@@ -607,16 +621,16 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 **Evidências:**
 - Review contracts and UI exist.
 - Reviews repository is localStorage-first and reviews has RLS disabled.
+- reviews now exposes published rows publicly and permits insertion only by the opposite participant of a completed order; self-review and open-order review canaries are denied.
 
 **Bloqueadores:**
-- **REP-B01 · CRITICAL · rls:** reviews has RLS disabled. _(Fase 1)_
 - **REP-B02 · CRITICAL · eligibility:** Remote one-review-per-completed-order constraint and moderation are not proven. _(Fase 10)_
 - **REP-B03 · HIGH · reputation_model:** Canonical reputation, fraud resistance and dispute impact model are undefined. _(Fase 10)_
 - **REP-B04 · MEDIUM · retention:** Rehire and loyalty economics are not implemented. _(Fase 10)_
 
 **Próximas ações:**
-- Secure reviews and implement eligibility constraints.
-- Define reputation aggregation and moderation.
+- Prove one-review-per-order uniqueness and moderation lifecycle.
+- Define canonical reputation aggregation, fraud resistance and dispute impact.
 - Implement rehire flow before points/cashback.
 
 **Gate de saída:**
@@ -629,7 +643,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Objetivo:** Move community membership, roles, posts, chat and sanctions from local browser authority to secure remote state.
 
-**Estado:** maturidade 2/6; UI local; servidor contract only; staging local e2e; segurança blocked; produção blocked.
+**Estado:** maturidade 3/6; UI hybrid; servidor partial; staging staging canary; segurança partial; produção blocked.
 
 **Evidência estática observada:** 7 arquivos no escopo; 56 referências a localStorage; 24 a sessionStorage; 4 referências mock; 6 referências de rede/Supabase; 0 marcadores de implementação pendente.
 
@@ -640,17 +654,18 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 **Evidências:**
 - Rich local community logic and local runtime domain contracts exist.
 - Backend communities module is empty and all three core community tables have RLS disabled.
+- Public/private discovery, membership, role management and posts now have server-side RLS with canonical owner membership and 18 rollback canaries.
+- Members cannot self-assign moderator/owner, nonmembers cannot read or post in private communities, and owners cannot delete or downgrade the canonical owner row.
 
 **Bloqueadores:**
-- **COM-B01 · CRITICAL · rls:** communities, community_members and community_posts have RLS disabled. _(Fase 1)_
 - **COM-B02 · CRITICAL · server_authority:** Membership, roles, bans, invitations and posts are not server-canonical. _(Fase 11)_
 - **COM-B03 · HIGH · realtime:** No community realtime publication or scalable channel policy is active. _(Fase 11)_
 - **COM-B04 · HIGH · moderation:** Content reports, sanctions, appeals and media moderation are incomplete. _(Fase 12)_
 
 **Próximas ações:**
-- Design community RLS by visibility, membership and role.
-- Implement backend membership transactions and audit.
-- Add scoped realtime and content moderation.
+- Implement server-canonical invitations, join requests, bans and appeals.
+- Add scoped realtime and scalable channel policy.
+- Complete content reports, sanctions and media moderation.
 
 **Gate de saída:**
 - Community state survives device changes and refreshes.
@@ -694,30 +709,29 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Objetivo:** Let operators manage users, KYC, services, orders, payments, disputes and content without direct database edits.
 
-**Estado:** maturidade 3/6; UI hybrid; servidor partial; staging staging canary; segurança blocked; produção blocked.
+**Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção blocked.
 
-**Evidência estática observada:** 9 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 7 referências mock; 7 referências de rede/Supabase; 6 marcadores de implementação pendente.
+**Evidência estática observada:** 9 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 7 referências mock; 2 referências de rede/Supabase; 6 marcadores de implementação pendente.
 
 **Páginas:** `admin.html`, `admin-verificacao.html`, `admin-anuncio-revisao.html`, `admin-pedidos-operacao.html`.
 
 **Tabelas/autoridades de dados:** `admin_audit_events`, `audit_logs`, `reports`, `verification_events`, `service_moderation_events`.
 
-**Edge Functions:** `order-event-operations`.
+**Edge Functions:** `order-event-operations`, `professional-verification-operations`, `financial-operations`, `service-moderation-operations`.
 
 **Evidências:**
 - Order operations, verification and service moderation admin surfaces exist.
 - Generic support case management and unified audit authority are incomplete.
+- audit_logs and reports now have operator RLS and least-privilege grants.
+- Service moderation decisions moved behind service-moderation-operations with canonical admin/moderator validation and eight operator separation canaries.
 
 **Bloqueadores:**
-- **ADM-B01 · CRITICAL · rls:** audit_logs, reports and verification_events have RLS disabled; admin_audit_events grants require review. _(Fase 1)_
-- **ADM-B02 · CRITICAL · rpc_grants:** Several admin/KYC/service moderation functions are executable by broad roles. _(Fase 1)_
 - **ADM-B03 · HIGH · backoffice_scope:** Users, payments, disputes, communities, content and support tickets are not unified in one operator workflow. _(Fase 13)_
 - **ADM-B04 · HIGH · dual_control:** High-risk financial actions need dual approval and separation of duties. _(Fase 13)_
 
 **Próximas ações:**
-- Secure admin data and RPCs.
-- Create unified case/audit model.
-- Add dual-control for financial and identity actions.
+- Create unified case/audit model across users, payments, disputes, communities and content.
+- Add dual-control for high-risk financial and identity actions.
 - Implement support queues, notes, SLAs and appeals.
 
 **Gate de saída:**
@@ -799,7 +813,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 1/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 407 arquivos no escopo; 89 referências a localStorage; 27 a sessionStorage; 444 referências mock; 9 referências de rede/Supabase; 28 marcadores de implementação pendente.
+**Evidência estática observada:** 410 arquivos no escopo; 89 referências a localStorage; 27 a sessionStorage; 444 referências mock; 10 referências de rede/Supabase; 28 marcadores de implementação pendente.
 
 **Evidências:**
 - The master plan identifies legal, privacy and commercial decisions as mandatory.
@@ -828,7 +842,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI hybrid; servidor partial; staging local e2e; segurança partial; produção blocked.
 
-**Evidência estática observada:** 833 arquivos no escopo; 254 referências a localStorage; 74 a sessionStorage; 269 referências mock; 258 referências de rede/Supabase; 9 marcadores de implementação pendente.
+**Evidência estática observada:** 833 arquivos no escopo; 254 referências a localStorage; 74 a sessionStorage; 269 referências mock; 245 referências de rede/Supabase; 9 marcadores de implementação pendente.
 
 **Páginas:** `index.html`, `resultados.html`, `detalhe-anuncio.html`, `pedidos.html`, `mensagens.html`, `notificacoes.html`, `carteira.html`, `perfil.html`, `comunidade.html`.
 
@@ -859,7 +873,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2675 arquivos no escopo; 518 referências a localStorage; 179 a sessionStorage; 1267 referências mock; 578 referências de rede/Supabase; 140 marcadores de implementação pendente.
+**Evidência estática observada:** 2736 arquivos no escopo; 518 referências a localStorage; 179 a sessionStorage; 1269 referências mock; 575 referências de rede/Supabase; 140 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
@@ -920,4 +934,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-07-22T15:35:00-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-07-22T15:30:00-03:00._

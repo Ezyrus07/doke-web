@@ -22,6 +22,8 @@
   var DISPUTES_TABLE = 'payment_disputes';
   var AUDIT_TABLE = 'admin_audit_events';
   var FINANCIAL_OPERATIONS_FUNCTION = 'financial-operations';
+  var FINANCE_SANDBOX_FUNCTION = 'staging-finance-sandbox';
+  var FINANCE_SANDBOX_PROJECT_REF = 'zwkczgewzbsorbrjuzpb';
 
   var supabaseClient = null;
   var supabaseClientAttempted = false;
@@ -470,15 +472,119 @@
 
   function callRpc(name, params) {
     var client = getSupabaseClient();
-    if (!client) return Promise.reject(new Error('Supabase client unavailable.'));
+    var api = root.DokeSupabase;
+    if (!client || !api || typeof api.invokeSelfService !== 'function') {
+      return Promise.reject(new Error('Autoridade self-service financeira indisponível.'));
+    }
     return getCurrentSupabaseUser(client).then(function (user) {
       if (!user || !isUuid(user.id)) throw new Error('Faça login com uma conta Supabase para usar a carteira compartilhada.');
-      return client.rpc(name, params || {}).then(function (result) {
-        if (result.error) throw result.error;
+      return api.invokeSelfService(name, params || {}).then(function (data) {
         setProviderState('supabase');
-        return result.data;
+        return data;
       });
     });
+  }
+
+  function isFinanceSandboxEnabled() {
+    var config = root.DOKE_SUPABASE_CONFIG || {};
+    var url = normalizeText(config.url || '');
+    return Boolean(
+      config.enabled !== false
+      && config.financeSandboxEnabled === true
+      && url.indexOf(FINANCE_SANDBOX_PROJECT_REF + '.supabase.co') !== -1
+      && getSupabaseClient()
+    );
+  }
+
+  function callFinanceSandbox(action, payload) {
+    var client = getSupabaseClient();
+    var config = root.DOKE_SUPABASE_CONFIG || {};
+    var functionName = normalizeText(config.financeSandboxFunction || FINANCE_SANDBOX_FUNCTION) || FINANCE_SANDBOX_FUNCTION;
+    if (!isFinanceSandboxEnabled() || !client || !client.functions || typeof client.functions.invoke !== 'function') {
+      return Promise.reject(financialServerAuthorityError('usar sandbox financeiro fora do staging'));
+    }
+    return getCurrentSupabaseUser(client).then(function (user) {
+      if (!user || !isUuid(user.id)) throw new Error('Faça login para usar o sandbox financeiro do staging.');
+      return client.functions.invoke(functionName, {
+        body: { action: normalizeText(action).toLowerCase(), payload: payload || {} }
+      }).then(function (result) {
+        if (result.error) throw result.error;
+        if (result.data && result.data.error) {
+          var error = new Error(result.data.error);
+          error.code = result.data.error;
+          throw error;
+        }
+        setProviderState('supabase-sandbox');
+        return result.data || {};
+      });
+    });
+  }
+
+  function refreshSandboxState(orderId, conversationId) {
+    var orders = Doke.repositories && Doke.repositories.orders;
+    var messages = Doke.repositories && Doke.repositories.messages;
+    if (orders && typeof orders.clearCache === 'function') orders.clearCache();
+    if (messages && typeof messages.clearCache === 'function') messages.clearCache();
+    var tasks = [loadPayments({ fresh: true }), loadWallet({ fresh: true })];
+    tasks.push(orders && typeof orders.getById === 'function' ? orders.getById(orderId) : Promise.resolve(null));
+    tasks.push(messages && typeof messages.getById === 'function' && conversationId ? messages.getById(conversationId) : Promise.resolve(null));
+    return Promise.all(tasks).then(function (values) {
+      var payment = (values[0] || []).find(function (item) { return String(item.orderId || '') === String(orderId || ''); }) || null;
+      var wallet = values[1] || localWallet.readWallet();
+      var order = values[2] || null;
+      var conversation = values[3] || null;
+      var chargeMessageId = normalizeText(order && (order.chargeMessageId || order.paymentMessageId) || payment && payment.chargeMessageId || '');
+      var charge = conversation && Array.isArray(conversation.messages)
+        ? conversation.messages.find(function (item) { return String(item.id || item.messageId || '') === chargeMessageId; }) || null
+        : null;
+      var walletTransaction = payment && (wallet.transactions || []).find(function (item) {
+        return String(item.id || '') === String(payment.walletTransactionId || '')
+          || String(item.paymentId || '') === String(payment.id || '');
+      }) || null;
+      return {
+        payment: payment,
+        order: order,
+        conversation: conversation,
+        charge: charge,
+        wallet: wallet,
+        walletTransaction: walletTransaction
+      };
+    });
+  }
+
+  function runSandboxOperation(action, payload) {
+    payload = payload || {};
+    var orderId = normalizeText(payload.orderId || '');
+    var conversationId = normalizeText(payload.conversationId || '');
+    return callFinanceSandbox(action, payload).then(function (remote) {
+      if (remote && remote.payment) {
+        var payment = mapRemotePayment(remote.payment);
+        localPayments.writeLocal(upsertBy(localPayments.readLocal(), payment, function (item) {
+          return normalizeText(item && (item.eventKey || item.id));
+        }));
+      }
+      if (remote && remote.transaction) upsertLocalTransaction(mapRemoteTransaction(remote.transaction));
+      return refreshSandboxState(orderId, conversationId).then(function (state) {
+        return Object.assign({
+          remote: clone(remote),
+          sandbox: true,
+          authority: 'staging_sandbox',
+          idempotent: remote && remote.updated === false
+        }, state);
+      });
+    });
+  }
+
+  function confirmSandboxPayment(payload) {
+    return runSandboxOperation('hold_payment', payload);
+  }
+
+  function requestSandboxCompletion(payload) {
+    return runSandboxOperation('request_completion', payload);
+  }
+
+  function releaseSandboxPayment(payload) {
+    return runSandboxOperation('release_payment', payload);
   }
 
   function callFinancialOperations(action, payload) {
@@ -724,7 +830,18 @@
   Doke.financeRepository = Object.freeze({
     loadWallet: loadWallet,
     loadPayments: loadPayments,
-    getProviderStatus: walletFacade.getProviderStatus
+    isSandboxEnabled: isFinanceSandboxEnabled,
+    confirmSandboxPayment: confirmSandboxPayment,
+    requestSandboxCompletion: requestSandboxCompletion,
+    releaseSandboxPayment: releaseSandboxPayment,
+    getProviderStatus: function () {
+      var status = walletFacade.getProviderStatus();
+      return Object.freeze(Object.assign({}, status, {
+        provider: isFinanceSandboxEnabled() ? 'supabase-sandbox' : status.provider,
+        sandboxActive: isFinanceSandboxEnabled(),
+        sandboxFinancialSimulation: isFinanceSandboxEnabled()
+      }));
+    }
   });
 
   getSupabaseClient();

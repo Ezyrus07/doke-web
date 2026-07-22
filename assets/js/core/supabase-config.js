@@ -7,6 +7,8 @@ window.DOKE_SUPABASE_CONFIG = {
   notificationsEnabled: true,
   walletEnabled: true,
   paymentsEnabled: true,
+  financeSandboxEnabled: true,
+  financeSandboxFunction: "staging-finance-sandbox",
   url: "https://zwkczgewzbsorbrjuzpb.supabase.co",
   anonKey:
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp3a2N6Z2V3emJzb3Jicmp1enBiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMxNzgyNzgsImV4cCI6MjA5ODc1NDI3OH0.oeT4BrezoxBJbGLet_6_JI49UyTuFUVSkYaI34DrbaA",
@@ -18,6 +20,7 @@ window.DOKE_SUPABASE_CONFIG = {
   var root = window;
   var sharedClient = null;
   var sharedSignature = "";
+  var SELF_SERVICE_FUNCTION = "self-service-operations";
 
   function getConfig() {
     return root.DOKE_SUPABASE_CONFIG || {};
@@ -67,10 +70,30 @@ window.DOKE_SUPABASE_CONFIG = {
     root.DOKE_SUPABASE_CLIENT = null;
   }
 
+  function invokeSelfService(action, params) {
+    var client = getClient();
+    if (!client || !client.functions || typeof client.functions.invoke !== "function") {
+      return Promise.reject(new Error("Autoridade self-service do Supabase indisponível."));
+    }
+    return Promise.resolve(client.functions.invoke(SELF_SERVICE_FUNCTION, {
+      body: { action: String(action || ""), params: params || {} },
+    })).then(function (result) {
+      if (result && result.error) throw result.error;
+      var data = result && result.data;
+      if (data && data.error) {
+        var error = new Error(data.error);
+        error.code = data.error;
+        throw error;
+      }
+      return data == null ? {} : data;
+    });
+  }
+
   root.DokeSupabase = Object.freeze({
     getClient: getClient,
     resetClient: resetClient,
     getConfig: getConfig,
+    invokeSelfService: invokeSelfService,
   });
 
   document.addEventListener("doke:supabase-sdk-ready", getClient);

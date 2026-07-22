@@ -58,12 +58,9 @@
   }
 
   function remoteRpc(name, args) {
-    var client = supabaseClient();
-    if (!client || typeof client.rpc !== 'function') return Promise.reject(new Error('Supabase indisponível para concluir esta ação.'));
-    return client.rpc(name, args || {}).then(function (result) {
-      if (result && result.error) throw result.error;
-      return result && result.data;
-    });
+    var api = window.DokeSupabase;
+    if (!api || typeof api.invokeSelfService !== 'function') return Promise.reject(new Error('Autoridade self-service indisponível para concluir esta ação.'));
+    return api.invokeSelfService(name, args || {});
   }
 
   function remoteVerificationOperation(action, payload) {

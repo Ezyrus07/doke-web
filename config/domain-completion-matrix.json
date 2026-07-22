@@ -1,6 +1,6 @@
 {
-  "version": "1.2.0",
-  "updatedAt": "2026-07-22T15:35:00-03:00",
+  "version": "1.3.1",
+  "updatedAt": "2026-07-22T15:30:00-03:00",
   "title": "Doke Domain Completion Matrix",
   "purpose": "Single source of truth for domain maturity, data authority, staging evidence, blockers, dependencies and mandatory completion order.",
   "maturityScale": {
@@ -154,11 +154,11 @@
       "name": "Segurança, RLS, grants e autoridade dos dados",
       "wave": "A",
       "priority": 2,
-      "maturity": 2,
+      "maturity": 4,
       "userFacingAuthority": "hybrid",
-      "serverAuthority": "partial",
-      "stagingEvidence": "staging_canary",
-      "securityGate": "blocked",
+      "serverAuthority": "canonical",
+      "stagingEvidence": "staging_operational",
+      "securityGate": "partial",
       "productionGate": "blocked",
       "objective": "Close exposed database and RPC surfaces before expanding real writes or onboarding external users.",
       "pages": [],
@@ -201,7 +201,43 @@
         "supabase/functions/financial-operations/operations.mjs",
         "scripts/test-financial-rpc-authority-contract.js",
         "scripts/test-financial-operations-edge-runtime.mjs",
-        "docs/SECURITY-FINANCIAL-RPC-AUTHORITY.md"
+        "docs/SECURITY-FINANCIAL-RPC-AUTHORITY.md",
+        "supabase/migrations/110_notification_authority.sql",
+        "supabase/migrations/111_audit_log_authority.sql",
+        "supabase/migrations/112_catalog_favorites_authority.sql",
+        "supabase/migrations/113_availability_reviews_authority.sql",
+        "supabase/migrations/114_messaging_reports_authority.sql",
+        "supabase/migrations/115_budget_authority.sql",
+        "supabase/migrations/116_community_authority.sql",
+        "supabase/migrations/117_service_media_storage_authority.sql",
+        "supabase/migrations/118_public_data_default_authority.sql",
+        "supabase/migrations/119_public_policy_role_separation.sql",
+        "supabase/migrations/120_community_owner_membership_invariant.sql",
+        "supabase/migrations/121_client_profile_public_summary_invoker.sql",
+        "supabase/migrations/122_service_moderation_operator_authority.sql",
+        "supabase/migrations/123_foreign_key_index_coverage.sql",
+        "supabase/migrations/124_rls_initplan_optimization.sql",
+        "supabase/migrations/125_rls_policy_consolidation.sql",
+        "supabase/migrations/126_service_quote_template_owner_authority.sql",
+        "supabase/migrations/127_idempotency_server_only_policy.sql",
+        "supabase/tests/010_public_data_authority_validation.sql",
+        "supabase/tests/011_service_moderation_operator_authority_validation.sql",
+        "supabase/functions/service-moderation-operations/index.ts",
+        "scripts/test-notification-authority-contract.js",
+        "scripts/test-public-data-authority-contract.js",
+        "scripts/test-service-media-storage-authority-contract.js",
+        "scripts/test-service-moderation-operator-authority-contract.js",
+        "scripts/test-service-moderation-operations-runtime.mjs",
+        "scripts/test-service-quote-template-owner-authority-contract.js",
+        "docs/operations/SUPABASE-ADMIN-DEFAULT-PRIVILEGES.md",
+        "supabase/migrations/135_self_service_operation_dispatcher.sql",
+        "supabase/migrations/136_self_service_direct_rpc_lockdown.sql",
+        "supabase/functions/self-service-operations/index.ts",
+        "supabase/functions/self-service-operations/operations.mjs",
+        "supabase/functions/self-service-operations/import_map.json",
+        "scripts/test-self-service-edge-authority-contract.js",
+        "scripts/test-self-service-operations-edge-runtime.mjs",
+        "docs/SECURITY-SELF-SERVICE-EDGE-AUTHORITY.md"
       ],
       "scanRoots": [
         "supabase/migrations",
@@ -228,7 +264,9 @@
         "verification_events"
       ],
       "edgeFunctions": [
-        "financial-operations"
+        "financial-operations",
+        "service-moderation-operations",
+        "self-service-operations"
       ],
       "crons": [],
       "tests": [
@@ -242,7 +280,15 @@
         "test:client-profile-authority-runtime",
         "test:financial-rpc-authority-contract",
         "test:financial-operations-edge-runtime",
-        "test:finance-supabase-repository-contract"
+        "test:finance-supabase-repository-contract",
+        "test:notification-authority-contract",
+        "test:public-data-authority-contract",
+        "test:service-media-storage-authority-contract",
+        "test:service-moderation-operator-authority-contract",
+        "test:service-moderation-operations-runtime",
+        "test:service-quote-template-owner-authority-contract",
+        "test:self-service-edge-authority-contract",
+        "test:self-service-operations-edge-runtime"
       ],
       "evidence": [
         "Private operational tables are not readable by anon or authenticated.",
@@ -254,7 +300,6 @@
         "Reviewer queue, detail, claim and decision operations moved behind the JWT-protected professional-verification-operations Edge Function.",
         "KYC evidence paths are owner-scoped, private and immutable while submitted, under review or verified.",
         "Professional promotion updates public.users and app_metadata without persisting role claims in user_metadata.",
-        "Current staging snapshot contains 45 public tables and 26 private tables; the RLS-disabled public set fell from 13 to 11 after closing client_profiles and verification_events.",
         "client_profiles is now a private server-owned metrics authority: authenticated users read only their own row and cannot insert, update or delete directly.",
         "client_profile_public_summaries exposes only completed order count, aggregate rating, review count and update time; no contact, KYC, risk or administrative fields are present.",
         "Client metrics are recalculated from completed orders and published reviews through private SECURITY DEFINER functions with pg_catalog search_path and revoked browser execution.",
@@ -264,43 +309,44 @@
         "Four self-service financial RPCs remain explicitly authenticated and revalidate active canonical roles from public.users; forged JWT metadata cannot elevate financial authority.",
         "Support/admin financial decisions now pass through financial-operations version 1 with verify_jwt enabled and service-role-only internal RPCs that revalidate the canonical actor.",
         "Twenty-six remote financial persona and mutation canaries passed in one rolled-back transaction, including withdrawal idempotency, dispute lifecycle, direct-DML denial and operator separation.",
-        "Public anon-executable SECURITY DEFINER advisor findings fell from 18 to 2; the broader catalog count is 5 because three private trigger functions inherit EXECUTE but are not Data API endpoints. Authenticated SECURITY DEFINER execution fell to 24, including four intentional financial self-service RPCs."
+        "All 45 public tables now have RLS enabled; the security advisor reports zero rls_disabled_in_public findings.",
+        "Notifications are authenticated-only with recipient RLS, column-scoped state updates, safe search_path and immutable idempotency context.",
+        "audit_logs, categories, favorites, availability, reviews, budgets, message attachments, reports and community tables now use explicit least-privilege grants and persona RLS.",
+        "service-media no longer exposes a broad storage listing policy; owner operations are folder- and identity-scoped while public object delivery remains bucket-native.",
+        "Community ownership is canonical through communities.owner_id plus an owner-membership trigger; self-elevation and owner-row downgrade/deletion are denied.",
+        "The public client summary RPC now runs as SECURITY INVOKER and remains readable through the RLS-protected public projection.",
+        "Six privileged service-moderation operations moved behind service-moderation-operations v1 with verify_jwt enabled and service-role-only wrappers.",
+        "Foreign-key coverage, RLS initplan and duplicate permissive-policy advisor findings were eliminated without removing low-usage indexes from an empty staging dataset.",
+        "Eighty-one remote persona and mutation assertions passed with rollback across notifications, public data, communities, moderation, catalog ownership, messaging and RLS regression.",
+        "No existing service quote template has a professional_id that diverges from its canonical service owner.",
+        "All fourteen authenticated SECURITY DEFINER self-service RPCs are no longer executable by anon or authenticated; they are server-only and retain pg_catalog search_path.",
+        "The JWT-protected self-service-operations Edge Function derives the actor from auth.getUser and invokes a service-role-only dispatcher; actor identity is never accepted from the request body.",
+        "The dispatcher reconstructs auth.uid for the existing hardened domain implementations and rejects operations outside a fourteen-action allowlist.",
+        "Five new remote dispatcher assertions passed with rollback; the cumulative SEC-001 remote assertion count is 121.",
+        "The Supabase security advisor now reports only leaked-password protection disabled; authenticated SECURITY DEFINER warnings were eliminated.",
+        "Twenty-two focused local validation groups passed with zero new failures; two unrelated failures were reproduced unchanged in the pristine baseline."
       ],
       "blockers": [
-        {
-          "id": "SEC-B01",
-          "severity": "critical",
-          "category": "rls",
-          "description": "11 public tables have RLS disabled.",
-          "targetPhase": "Fase 1"
-        },
-        {
-          "id": "SEC-B03",
-          "severity": "critical",
-          "category": "rpc_grants",
-          "description": "2 public SECURITY DEFINER Data API functions remain executable by anon and 24 functions by authenticated; finance/idempotency are closed, leaving notification and moderation contracts to review.",
-          "targetPhase": "Fase 1"
-        },
-        {
-          "id": "SEC-B04",
-          "severity": "high",
-          "category": "storage",
-          "description": "service-media is public with broad listing risk; transaction-attachments has no mapped object policies in the snapshot.",
-          "targetPhase": "Fase 1"
-        },
         {
           "id": "SEC-B05",
           "severity": "high",
           "category": "auth",
           "description": "Leaked password protection is disabled in Supabase Auth.",
           "targetPhase": "Fase 1"
+        },
+        {
+          "id": "SEC-B07",
+          "severity": "medium",
+          "category": "platform_defaults",
+          "description": "Supabase platform-owned supabase_admin default ACLs cannot be changed by the project migration role; new objects require a post-migration grant audit.",
+          "targetPhase": "Fase 1"
         }
       ],
       "nextActions": [
-        "Close the two remaining anon-executable notification SECURITY DEFINER RPCs and verify their realtime caller contract.",
-        "Apply RLS and negative persona tests to the remaining exposed public tables in small domain batches, beginning with audit_logs.",
-        "Review remaining authenticated moderation SECURITY DEFINER functions and convert generic grants into explicit caller contracts.",
-        "Harden storage policies, password protection, CORS, CSP and rate limits."
+        "Enable leaked-password protection in Supabase Auth through the dashboard or an authorized Management API.",
+        "Run browser-authenticated HTTP evidence for self-service-operations and the signed Storage lifecycle from an environment with DNS access.",
+        "Run the post-migration grant/RLS audit for every new public object because platform-owned default ACLs are outside the project migration role.",
+        "Harden CSP, CORS, abuse rate limits and browser E2E before beta."
       ],
       "exitCriteria": [
         "No public table requiring protection remains without RLS and policies.",
@@ -544,10 +590,10 @@
       "name": "Catálogo, publicação e moderação de serviços",
       "wave": "B",
       "priority": 5,
-      "maturity": 3,
+      "maturity": 4,
       "userFacingAuthority": "hybrid",
-      "serverAuthority": "partial",
-      "stagingEvidence": "staging_canary",
+      "serverAuthority": "canonical",
+      "stagingEvidence": "staging_operational",
       "securityGate": "partial",
       "productionGate": "blocked",
       "objective": "Make service creation, versioning, moderation, publication and edits server-authoritative.",
@@ -584,35 +630,29 @@
         "service_quote_questions"
       ],
       "edgeFunctions": [
-        "quote-template-ai"
+        "quote-template-ai",
+        "service-moderation-operations"
       ],
       "crons": [],
       "tests": [
         "test:public-service-catalog-contract",
         "test:services-supabase-repository-contract",
         "test:service-moderation-flow-contract",
-        "test:admin-service-review-page-contract"
+        "test:admin-service-review-page-contract",
+        "test:service-moderation-operator-authority-contract",
+        "test:service-moderation-operations-runtime",
+        "test:service-quote-template-owner-authority-contract"
       ],
       "evidence": [
         "Supabase service repository, version moderation and admin review exist.",
         "AI template generation is isolated behind an Edge Function.",
-        "Services repository retains localStorage and sessionStorage fallback paths."
+        "Services repository retains localStorage and sessionStorage fallback paths.",
+        "service_categories is RLS-protected and public reads expose active rows only.",
+        "service-media listing policy is closed and owner storage mutations are identity-scoped.",
+        "Admin/moderator review actions execute through a JWT-protected Edge Function; direct privileged RPCs are no longer browser-callable.",
+        "Template writes require canonical professional role and ownership of the linked service; staging has zero ownership mismatches."
       ],
       "blockers": [
-        {
-          "id": "CAT-B01",
-          "severity": "critical",
-          "category": "rls",
-          "description": "service_categories has RLS disabled.",
-          "targetPhase": "Fase 1"
-        },
-        {
-          "id": "CAT-B02",
-          "severity": "high",
-          "category": "storage",
-          "description": "Public service-media listing policy is broader than required.",
-          "targetPhase": "Fase 1"
-        },
         {
           "id": "CAT-B03",
           "severity": "high",
@@ -629,9 +669,8 @@
         }
       ],
       "nextActions": [
-        "Secure categories and media.",
-        "Make remote draft/version workflow canonical.",
-        "Guarantee immutable service snapshot on order creation.",
+        "Make remote draft/version workflow canonical and remove production local fallback.",
+        "Guarantee immutable service snapshot on every order creation path.",
         "Complete pause, archive and safe edit flows."
       ],
       "exitCriteria": [
@@ -937,7 +976,7 @@
       "userFacingAuthority": "hybrid",
       "serverAuthority": "partial",
       "stagingEvidence": "staging_canary",
-      "securityGate": "blocked",
+      "securityGate": "partial",
       "productionGate": "blocked",
       "objective": "Provide durable multi-device conversations tied to orders with authorized attachments and realtime delivery.",
       "pages": [
@@ -977,16 +1016,11 @@
       "evidence": [
         "Backend handlers and staging multi-domain messaging flow exist.",
         "Messages repository uses remote tables but retains localStorage and mock fallbacks.",
-        "Only notifications is currently published to Supabase Realtime."
+        "Only notifications is currently published to Supabase Realtime.",
+        "message_attachments now has participant/sender RLS and least-privilege grants; anon access and cross-participant deletion are denied.",
+        "Conversation and message participant policies passed regression canaries after initplan optimization."
       ],
       "blockers": [
-        {
-          "id": "MSG-B01",
-          "severity": "critical",
-          "category": "rls",
-          "description": "message_attachments has RLS disabled.",
-          "targetPhase": "Fase 1"
-        },
         {
           "id": "MSG-B02",
           "severity": "critical",
@@ -1010,7 +1044,7 @@
         }
       ],
       "nextActions": [
-        "Secure attachment metadata and storage objects.",
+        "Map and secure the transaction attachment object bucket.",
         "Enable scoped realtime for conversation participants.",
         "Remove production localStorage authority and add offline/retry semantics."
       ],
@@ -1424,11 +1458,11 @@
       "name": "Avaliações, reputação e recompra",
       "wave": "B",
       "priority": 14,
-      "maturity": 2,
-      "userFacingAuthority": "local",
+      "maturity": 3,
+      "userFacingAuthority": "hybrid",
       "serverAuthority": "partial",
-      "stagingEvidence": "static_contract",
-      "securityGate": "blocked",
+      "stagingEvidence": "staging_canary",
+      "securityGate": "partial",
       "productionGate": "blocked",
       "objective": "Create trustworthy reputation from eligible completed orders and keep repeat hiring inside Doke.",
       "pages": [
@@ -1458,20 +1492,15 @@
       "crons": [],
       "tests": [
         "test:order-review-contract",
-        "test:profile-family-contract"
+        "test:profile-family-contract",
+        "test:public-data-authority-contract"
       ],
       "evidence": [
         "Review contracts and UI exist.",
-        "Reviews repository is localStorage-first and reviews has RLS disabled."
+        "Reviews repository is localStorage-first and reviews has RLS disabled.",
+        "reviews now exposes published rows publicly and permits insertion only by the opposite participant of a completed order; self-review and open-order review canaries are denied."
       ],
       "blockers": [
-        {
-          "id": "REP-B01",
-          "severity": "critical",
-          "category": "rls",
-          "description": "reviews has RLS disabled.",
-          "targetPhase": "Fase 1"
-        },
         {
           "id": "REP-B02",
           "severity": "critical",
@@ -1495,8 +1524,8 @@
         }
       ],
       "nextActions": [
-        "Secure reviews and implement eligibility constraints.",
-        "Define reputation aggregation and moderation.",
+        "Prove one-review-per-order uniqueness and moderation lifecycle.",
+        "Define canonical reputation aggregation, fraud resistance and dispute impact.",
         "Implement rehire flow before points/cashback."
       ],
       "exitCriteria": [
@@ -1516,11 +1545,11 @@
       "name": "Comunidades, membros e moderação social",
       "wave": "C",
       "priority": 15,
-      "maturity": 2,
-      "userFacingAuthority": "local",
-      "serverAuthority": "contract_only",
-      "stagingEvidence": "local_e2e",
-      "securityGate": "blocked",
+      "maturity": 3,
+      "userFacingAuthority": "hybrid",
+      "serverAuthority": "partial",
+      "stagingEvidence": "staging_canary",
+      "securityGate": "partial",
       "productionGate": "blocked",
       "objective": "Move community membership, roles, posts, chat and sanctions from local browser authority to secure remote state.",
       "pages": [
@@ -1552,20 +1581,16 @@
       "tests": [
         "test:community-domain-infrastructure",
         "test:community-domain-transactions",
-        "test:community-member-discipline-runtime-contract"
+        "test:community-member-discipline-runtime-contract",
+        "test:public-data-authority-contract"
       ],
       "evidence": [
         "Rich local community logic and local runtime domain contracts exist.",
-        "Backend communities module is empty and all three core community tables have RLS disabled."
+        "Backend communities module is empty and all three core community tables have RLS disabled.",
+        "Public/private discovery, membership, role management and posts now have server-side RLS with canonical owner membership and 18 rollback canaries.",
+        "Members cannot self-assign moderator/owner, nonmembers cannot read or post in private communities, and owners cannot delete or downgrade the canonical owner row."
       ],
       "blockers": [
-        {
-          "id": "COM-B01",
-          "severity": "critical",
-          "category": "rls",
-          "description": "communities, community_members and community_posts have RLS disabled.",
-          "targetPhase": "Fase 1"
-        },
         {
           "id": "COM-B02",
           "severity": "critical",
@@ -1589,9 +1614,9 @@
         }
       ],
       "nextActions": [
-        "Design community RLS by visibility, membership and role.",
-        "Implement backend membership transactions and audit.",
-        "Add scoped realtime and content moderation."
+        "Implement server-canonical invitations, join requests, bans and appeals.",
+        "Add scoped realtime and scalable channel policy.",
+        "Complete content reports, sanctions and media moderation."
       ],
       "exitCriteria": [
         "Community state survives device changes and refreshes.",
@@ -1697,11 +1722,11 @@
       "name": "Administração, suporte e moderação",
       "wave": "C",
       "priority": 17,
-      "maturity": 3,
+      "maturity": 4,
       "userFacingAuthority": "hybrid",
-      "serverAuthority": "partial",
-      "stagingEvidence": "staging_canary",
-      "securityGate": "blocked",
+      "serverAuthority": "canonical",
+      "stagingEvidence": "staging_operational",
+      "securityGate": "partial",
       "productionGate": "blocked",
       "objective": "Let operators manage users, KYC, services, orders, payments, disputes and content without direct database edits.",
       "pages": [
@@ -1731,34 +1756,28 @@
         "service_moderation_events"
       ],
       "edgeFunctions": [
-        "order-event-operations"
+        "order-event-operations",
+        "professional-verification-operations",
+        "financial-operations",
+        "service-moderation-operations"
       ],
       "crons": [],
       "tests": [
         "test:admin-navigation-lifecycle-contract",
         "test:admin-professional-verification-contract",
         "test:admin-service-review-page-contract",
-        "test:order-event-operations-contract"
+        "test:order-event-operations-contract",
+        "test:service-moderation-operator-authority-contract",
+        "test:service-moderation-operations-runtime",
+        "test:public-data-authority-contract"
       ],
       "evidence": [
         "Order operations, verification and service moderation admin surfaces exist.",
-        "Generic support case management and unified audit authority are incomplete."
+        "Generic support case management and unified audit authority are incomplete.",
+        "audit_logs and reports now have operator RLS and least-privilege grants.",
+        "Service moderation decisions moved behind service-moderation-operations with canonical admin/moderator validation and eight operator separation canaries."
       ],
       "blockers": [
-        {
-          "id": "ADM-B01",
-          "severity": "critical",
-          "category": "rls",
-          "description": "audit_logs, reports and verification_events have RLS disabled; admin_audit_events grants require review.",
-          "targetPhase": "Fase 1"
-        },
-        {
-          "id": "ADM-B02",
-          "severity": "critical",
-          "category": "rpc_grants",
-          "description": "Several admin/KYC/service moderation functions are executable by broad roles.",
-          "targetPhase": "Fase 1"
-        },
         {
           "id": "ADM-B03",
           "severity": "high",
@@ -1775,9 +1794,8 @@
         }
       ],
       "nextActions": [
-        "Secure admin data and RPCs.",
-        "Create unified case/audit model.",
-        "Add dual-control for financial and identity actions.",
+        "Create unified case/audit model across users, payments, disputes, communities and content.",
+        "Add dual-control for high-risk financial and identity actions.",
         "Implement support queues, notes, SLAs and appeals."
       ],
       "exitCriteria": [
@@ -2302,8 +2320,7 @@
       "status": "hybrid",
       "owner": "SEARCH-001",
       "blockers": [
-        "SEARCH-B02",
-        "CAT-B01"
+        "SEARCH-B02"
       ]
     },
     {
@@ -2356,8 +2373,6 @@
       "status": "hybrid",
       "owner": "CAT-001",
       "blockers": [
-        "CAT-B01",
-        "CAT-B02",
         "CAT-B03"
       ]
     },
@@ -2410,7 +2425,6 @@
       "status": "hybrid",
       "owner": "MSG-001",
       "blockers": [
-        "MSG-B01",
         "MSG-B02",
         "MSG-B03"
       ]
@@ -2485,7 +2499,6 @@
       "status": "local",
       "owner": "REP-001",
       "blockers": [
-        "REP-B01",
         "REP-B02",
         "REP-B03"
       ]
@@ -2502,10 +2515,9 @@
         "sanction",
         "appeal"
       ],
-      "status": "local",
+      "status": "hybrid",
       "owner": "COM-001",
       "blockers": [
-        "COM-B01",
         "COM-B02",
         "COM-B03",
         "COM-B04"
@@ -2522,11 +2534,9 @@
         "dual_control",
         "notification"
       ],
-      "status": "hybrid",
+      "status": "staging_canary",
       "owner": "ADM-001",
       "blockers": [
-        "ADM-B01",
-        "ADM-B02",
         "ADM-B03"
       ]
     },

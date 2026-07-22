@@ -12,6 +12,54 @@ function createStorage() {
   };
 }
 
+
+function installSelfServiceHarness(targetWindow, getSessionUser) {
+  const toRemoteRow = (profile) => profile ? {
+    id: profile.id,
+    user_id: profile.userId,
+    setup_status: profile.status,
+    setup_current_step: profile.currentStep,
+    setup_payload: profile.payload,
+    verification_status: profile.verificationStatus,
+    document_status: profile.documentStatus || 'unverified',
+    created_at: profile.createdAt,
+    updated_at: profile.updatedAt,
+    setup_completed_at: profile.completedAt || null
+  } : null;
+
+  const getRepository = () => targetWindow.Doke.repositories.professionalProfiles;
+  const client = {
+    from(table) {
+      assert.strictEqual(table, 'professional_profiles');
+      let requestedUserId = '';
+      return {
+        select() { return this; },
+        eq(column, value) {
+          assert.strictEqual(column, 'user_id');
+          requestedUserId = String(value || '');
+          return this;
+        },
+        maybeSingle() {
+          return getRepository().getByUserId(requestedUserId).then((profile) => ({ data: toRemoteRow(profile), error: null }));
+        }
+      };
+    }
+  };
+
+  targetWindow.DokeSupabase = {
+    getClient: () => client,
+    invokeSelfService: (operation, args = {}) => {
+      assert.strictEqual(operation, 'save_professional_profile_setup');
+      const user = getSessionUser();
+      const setup = { currentStep: args.p_current_step, payload: args.p_payload };
+      const request = args.p_complete
+        ? getRepository().completeSetup(user.id, setup)
+        : getRepository().saveDraft(user.id, setup);
+      return Promise.resolve(request);
+    }
+  };
+}
+
 (async () => {
   const storage = createStorage();
   const events = [];
@@ -27,6 +75,7 @@ function createStorage() {
     dispatchEvent: (event) => events.push(event)
   };
   window.window = window;
+  installSelfServiceHarness(window, () => sessionUser);
 
   const context = {
     window,
@@ -115,6 +164,7 @@ function createStorage() {
     dispatchEvent: () => {}
   };
   reloadWindow.window = reloadWindow;
+  installSelfServiceHarness(reloadWindow, () => sessionUser);
   const reloadContext = { window: reloadWindow, console, Date, Map, CustomEvent: context.CustomEvent };
   files.forEach((file) => vm.runInNewContext(fs.readFileSync(file, 'utf8'), reloadContext, { filename: `reload:${file}` }));
   const reloaded = await reloadWindow.Doke.services.professionalProfileSetup.getCurrentProfileSetup();
@@ -143,7 +193,8 @@ function createStorage() {
 
   sessionUser = { id: 'client_profile_setup', role: 'client', type: 'client' };
   window.DokeAuth = { service: { getActiveAuthProvider: () => 'api' } };
-  assert.throws(() => service.getCurrentProfileSetup(), /provider API/);
+  const providerSafeProfile = await service.getCurrentProfileSetup();
+  assert.strictEqual(providerSafeProfile.id, created.id, 'Trocar o provider de autenticação não pode contornar o gateway self-service.');
   delete window.DokeAuth;
 
   const html = fs.readFileSync('tornar-profissional.html', 'utf8');

@@ -47,9 +47,8 @@
     var provider = String(window.Doke?.session?.getSession?.()?.provider || '').toLowerCase();
     if (provider !== 'supabase' || !client || !user || !user.id) return Promise.resolve(null);
 
-    return client.rpc('get_account_onboarding_state').then(function (result) {
-      if (result.error) throw result.error;
-      var data = result.data || {};
+    return window.DokeSupabase.invokeSelfService('get_account_onboarding_state', {}).then(function (data) {
+      data = data || {};
       return {
         status: VALID_STATUSES.includes(data.onboardingStatus) ? data.onboardingStatus : 'not_started',
         completedAt: data.onboardingCompletedAt || '',
@@ -108,7 +107,7 @@
     var sessionProvider = String(window.Doke?.session?.getSession?.()?.provider || '').toLowerCase();
 
     if (sessionProvider === 'supabase' && supabaseClient) {
-      return supabaseClient.rpc('complete_account_onboarding', {
+      return window.DokeSupabase.invokeSelfService('complete_account_onboarding', {
         p_city: String(source.city || '').trim(),
         p_state: String(source.state || '').trim().toUpperCase(),
         p_postal_code: String(source.postalCode || '').replace(/\D/g, ''),
@@ -117,7 +116,6 @@
           ? source.interests
           : String(source.interests || '').split(',').map(function (item) { return item.trim(); }).filter(Boolean)
       }).then(function (result) {
-        if (result.error) throw result.error;
         return supabaseClient.auth.updateUser({
           data: {
             city: String(source.city || '').trim(),
@@ -136,7 +134,7 @@
           });
           if (window.Doke?.session?.setCurrentUser) window.Doke.session.setCurrentUser(nextUser);
           window.dispatchEvent(new CustomEvent('doke:onboarding-completed', { detail: { userId: user.id } }));
-          return { user: nextUser, profile: result.data || source };
+          return { user: nextUser, profile: result || source };
         });
       }).catch(function (error) {
         var message = String(error && error.message || '');

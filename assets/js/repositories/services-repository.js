@@ -576,13 +576,12 @@
       if (!user || !isUuid(user.id)) throw new Error('Faça login com sua conta profissional para enviar o anúncio para análise.');
       return uploadServiceImages(client, user.id, normalized).then(function (uploadedImages) {
         var snapshot = buildReviewSnapshot(normalized, user.id, uploadedImages);
-        return Promise.resolve(client.rpc('submit_service_for_review', {
+        return Promise.resolve(root.DokeSupabase.invokeSelfService('submit_service_for_review', {
           p_external_id: normalized.id,
           p_snapshot: snapshot,
           p_change_class: normalizeSearch(options.changeClass || 'major') || 'major'
-        })).then(function (result) {
-          if (result.error) throw result.error;
-          var response = result.data || {};
+        })).then(function (response) {
+          response = response || {};
           var saved = normalizeService(Object.assign({}, snapshot, {
             id: response.externalId || normalized.id,
             externalId: response.externalId || normalized.id,
