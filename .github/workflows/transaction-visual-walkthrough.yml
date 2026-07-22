@@ -1,0 +1,43 @@
+name: Doke Transaction Visual Walkthrough
+
+on:
+  push:
+    branches: [ agent/visual-transaction-walkthrough ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: doke-transaction-walkthrough-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  walkthrough:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Execute transaction walkthrough
+        run: node node_modules/@playwright/test/cli.js test tests/visual/transaction-walkthrough.spec.js --project=chromium --reporter=list,json
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_NAME: reports/generated/transaction-walkthrough/playwright-results.json
+      - name: Upload visual evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: doke-transaction-visual-walkthrough
+          path: |
+            reports/generated/transaction-walkthrough/
+            playwright-report/
+            test-results/
+          if-no-files-found: warn
+          retention-days: 14
