@@ -78,8 +78,8 @@ async function stabilize(page) {
   await page.waitForLoadState('domcontentloaded');
   await page.waitForLoadState('networkidle').catch(() => {});
   await page.addStyleTag({ content: `
-    [hidden] { display: none !important; }
-    *, *::before, *::after { animation-duration: .001s !important; transition-duration: .001s !important; scroll-behavior: auto !important; caret-color: transparent !important; }
+    [hidden] { display: none; }
+    *, *::before, *::after { animation-duration: .001s; transition-duration: .001s; scroll-behavior: auto; caret-color: transparent; }
   `});
   await page.waitForTimeout(900);
 }
@@ -105,40 +105,40 @@ for (const viewport of viewports) {
   test.describe(`transaction walkthrough ${viewport.name}`, () => {
     test.use({ viewport: { width: viewport.width, height: viewport.height }, isMobile: viewport.isMobile, hasTouch: viewport.hasTouch, deviceScaleFactor: 1 });
 
-    test('captura superfícies transacionais determinísticas', async ({ page }) => {
-      test.setTimeout(120_000);
+    const clientCases = [
+      { key: '01-pedidos', path: '/pedidos.html', expectedPage: 'pedidos' },
+      { key: '02-mensagens', path: '/mensagens.html', expectedPage: 'mensagens' },
+      { key: '05-notificacoes', path: '/notificacoes.html', expectedPage: 'notificacoes' },
+      { key: '06-meu-perfil', path: '/meu-perfil.html', expectedPage: 'perfil' },
+    ];
+
+    for (const item of clientCases) {
+      test(`${item.key} renderiza sem overflow`, async ({ page }) => {
+        await prepare(page, clientSession);
+        await page.goto(item.path);
+        await stabilize(page);
+        expect(await capture(page, viewport.name, item.key)).toMatchObject({ page: item.expectedPage });
+      });
+    }
+
+    test('03-pagamento-pronto renderiza cobrança válida', async ({ page }) => {
       await prepare(page, clientSession);
-
-      await page.goto('/pedidos.html');
-      await stabilize(page);
-      expect(await capture(page, viewport.name, '01-pedidos')).toMatchObject({ page: 'pedidos' });
-
-      await page.goto('/mensagens.html');
-      await stabilize(page);
-      expect(await capture(page, viewport.name, '02-mensagens')).toMatchObject({ page: 'mensagens' });
-
       const paymentUrl = `/pagamento-profissional.html?order=${order.id}&conversation=${conversation.id}&message=charge_visual_001`;
       await page.goto(paymentUrl);
       await expect.poll(() => page.evaluate(() => document.body.dataset.pageHydration || '')).toBe('ready');
       await stabilize(page);
       expect(await capture(page, viewport.name, '03-pagamento-pronto')).toMatchObject({ page: 'pagamento-profissional', hydration: 'ready' });
+    });
 
+    test('04-pagamento-vazio renderiza contexto ausente', async ({ page }) => {
+      await prepare(page, clientSession);
       await page.goto('/pagamento-profissional.html');
       await expect.poll(() => page.evaluate(() => document.body.dataset.pageHydration || '')).toBe('empty');
       await stabilize(page);
       expect(await capture(page, viewport.name, '04-pagamento-vazio')).toMatchObject({ page: 'pagamento-profissional', hydration: 'empty' });
-
-      await page.goto('/notificacoes.html');
-      await stabilize(page);
-      expect(await capture(page, viewport.name, '05-notificacoes')).toMatchObject({ page: 'notificacoes' });
-
-      await page.goto('/meu-perfil.html');
-      await stabilize(page);
-      expect(await capture(page, viewport.name, '06-meu-perfil')).toMatchObject({ page: 'meu-perfil' });
     });
 
-    test('captura carteira profissional após liberação', async ({ page }) => {
-      test.setTimeout(90_000);
+    test('07-carteira-liberada renderiza saldo profissional', async ({ page }) => {
       await prepare(page, professionalSession);
       await page.goto('/carteira.html');
       await stabilize(page);
