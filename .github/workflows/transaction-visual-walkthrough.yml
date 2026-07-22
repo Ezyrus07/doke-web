@@ -28,10 +28,19 @@ jobs:
         run: npm ci
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
+      - name: Prepare evidence directory
+        run: |
+          mkdir -p reports/generated/transaction-walkthrough
+          printf '{"runId":"%s","sha":"%s","ref":"%s"}\n' "$GITHUB_RUN_ID" "$GITHUB_SHA" "$GITHUB_REF" > reports/generated/transaction-walkthrough/run-metadata.json
       - name: Execute transaction walkthrough
-        run: node node_modules/@playwright/test/cli.js test tests/visual/transaction-walkthrough.spec.js --project=chromium --reporter=list,json
+        shell: bash
+        run: |
+          set +e
+          node node_modules/@playwright/test/cli.js test tests/visual/transaction-walkthrough.spec.js --project=chromium 2>&1 | tee reports/generated/transaction-walkthrough/console.log
+          code=${PIPESTATUS[0]}
+          exit "$code"
         env:
-          PLAYWRIGHT_JSON_OUTPUT_NAME: reports/generated/transaction-walkthrough/playwright-results.json
+          DOKE_TRANSACTION_WALKTHROUGH_OUTPUT: reports/generated/transaction-walkthrough
       - name: Upload visual evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -39,7 +48,8 @@ jobs:
           name: doke-transaction-visual-walkthrough
           path: |
             reports/generated/transaction-walkthrough/
-            playwright-report/
+            reports/generated/playwright-results.json
+            reports/generated/playwright-html/
             test-results/
-          if-no-files-found: warn
+          if-no-files-found: error
           retention-days: 14
