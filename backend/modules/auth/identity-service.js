@@ -9,12 +9,12 @@ function normalizeRole(role) {
 
 function normalizeUser(row, authUser) {
   const source = row || {};
-  const metadata = authUser && authUser.user_metadata || {};
+  const appMetadata = authUser && authUser.app_metadata || {};
   const id = source.id || authUser && authUser.id || '';
   return Object.freeze({
     id,
     email: source.email || authUser && authUser.email || '',
-    role: normalizeRole(source.role || metadata.role),
+    role: normalizeRole(source.role || appMetadata.role),
     status: source.status || 'active',
     accountStatus: source.status || 'active',
     onboardingStatus: source.onboarding_status || 'not_started',

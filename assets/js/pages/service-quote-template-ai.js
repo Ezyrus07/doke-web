@@ -12,6 +12,12 @@
     add: 'Adicionar'
   });
 
+  var CONFIDENCE_LABELS = Object.freeze({
+    low: 'baixa',
+    medium: 'média',
+    high: 'alta'
+  });
+
   var TYPE_LABELS = Object.freeze({
     short_text: 'Resposta curta',
     long_text: 'Resposta longa',
@@ -21,6 +27,36 @@
     number: 'Número',
     date: 'Data'
   });
+
+
+  var PROVIDER_UNAVAILABLE_CODES = Object.freeze({
+    OPENAI_KEY_NOT_CONFIGURED: true,
+    OPENAI_BILLING_QUOTA: true,
+    OPENAI_RATE_LIMIT: true,
+    OPENAI_AUTH_INVALID: true,
+    OPENAI_ACCESS_DENIED: true,
+    OPENAI_REQUEST_INVALID: true,
+    OPENAI_TIMEOUT: true,
+    OPENAI_UNAVAILABLE: true,
+    OPENAI_FAILED: true
+  });
+
+  function fallbackStatusMessage(code, hasSuggestions) {
+    code = text(code, 80).toUpperCase();
+    if (PROVIDER_UNAVAILABLE_CODES[code]) {
+      return hasSuggestions
+        ? 'A IA generativa está temporariamente indisponível. A Doke exibiu somente sugestões determinísticas seguras.'
+        : 'A IA generativa está temporariamente indisponível e a análise por regras não encontrou uma mudança segura para sugerir agora.';
+    }
+    if (code === 'OPENAI_NO_VALID_SUGGESTIONS' || code === 'OPENAI_EMPTY_OUTPUT' || code === 'OPENAI_INVALID_OUTPUT') {
+      return hasSuggestions
+        ? 'A IA generativa não retornou sugestões válidas. A Doke exibiu somente sugestões determinísticas seguras.'
+        : 'A análise foi concluída, mas não encontrou uma mudança segura e relevante para sugerir agora.';
+    }
+    return hasSuggestions
+      ? 'A Doke exibiu somente sugestões determinísticas seguras.'
+      : 'A análise não encontrou uma mudança segura e relevante para sugerir agora.';
+  }
 
   function text(value, maxLength) {
     return String(value || '').trim().slice(0, maxLength || 200);
@@ -230,7 +266,7 @@
       identity.appendChild(createText('small', '', ACTION_LABELS[suggestion.action] || 'Melhoria'));
       choice.appendChild(identity);
       head.appendChild(choice);
-      head.appendChild(createText('span', 'quote-ai-suggestion__confidence', 'Confiança ' + (suggestion.confidence || 'média')));
+      head.appendChild(createText('span', 'quote-ai-suggestion__confidence', 'Confiança ' + (CONFIDENCE_LABELS[suggestion.confidence] || 'média')));
       card.appendChild(head);
 
       var comparison = document.createElement('div');
@@ -268,8 +304,9 @@
       if (applied) applied.hidden = true;
       if (undoButton) undoButton.hidden = true;
       refreshApplyState();
+      host.dataset.fallbackCode = run.fallbackReason || '';
       if (run.engine !== 'openai') {
-        setStatus('A IA generativa não respondeu com uma saída válida; a Doke exibiu apenas sugestões determinísticas seguras.', 'warning');
+        setStatus(fallbackStatusMessage(run.fallbackReason, run.suggestions.length > 0), 'warning');
       } else {
         setStatus('Nenhuma sugestão está pré-selecionada. Compare antes e depois e escolha somente as mudanças úteis.', 'neutral');
       }
@@ -282,6 +319,7 @@
       if (list) list.replaceChildren();
       if (result) result.hidden = true;
       if (applyButton) applyButton.disabled = true;
+      host.dataset.fallbackCode = '';
       if (message) setStatus(message, 'neutral');
       else setStatus('', 'neutral');
     }
@@ -341,7 +379,8 @@
         if (result) result.hidden = true;
         if (applied) {
           applied.hidden = false;
-          applied.querySelector('[data-quote-ai-applied-copy]').textContent = selected.length + ' sugestão(ões) aplicada(s). Revise as perguntas antes de enviar o anúncio para moderação.';
+          var appliedLabel = selected.length === 1 ? '1 sugestão aplicada' : selected.length + ' sugestões aplicadas';
+          applied.querySelector('[data-quote-ai-applied-copy]').textContent = appliedLabel + '. Revise as perguntas antes de enviar o anúncio para moderação.';
         }
         if (undoButton) undoButton.hidden = false;
         setStatus('As alterações foram aplicadas somente após sua confirmação.', 'success');

@@ -1,19 +1,15 @@
 'use strict';
 
+const {
+  ORDER_STATUSES,
+  normalizeStatus,
+  assertTransition
+} = require('./order-state-machine');
+
 const ORDER_SELECT = 'id,client_id,professional_id,service_id,title,description,status,city,state,scheduled_at,created_at,updated_at';
 const BUDGET_SELECT = 'id,order_id,professional_id,amount_cents,currency,description,status,valid_until,created_at,updated_at';
 
-const PUBLIC_ORDER_STATUSES = Object.freeze([
-  'draft',
-  'requested',
-  'quoted',
-  'accepted',
-  'scheduled',
-  'in_progress',
-  'completed',
-  'cancelled',
-  'disputed'
-]);
+const PUBLIC_ORDER_STATUSES = ORDER_STATUSES;
 
 const FRONTEND_STATUS_BY_BACKEND = Object.freeze({
   draft: 'draft',
@@ -153,7 +149,6 @@ async function createOrder(context, actor) {
     .maybeSingle();
   if (response && response.error) throw response.error;
   const order = response && response.data;
-  await recordOrderStatusHistory(supabase, order && order.id, null, 'requested', safeActor.id, 'Pedido criado pelo cliente.').catch(() => null);
   return { order: normalizeOrder(order), status: 'created' };
 }
 
@@ -161,7 +156,7 @@ async function acceptOrder(context, actor, orderId) {
   const supabase = requireSupabase(context);
   const order = await readOrderRow(supabase, orderId);
   assertProfessionalOrderAccess(order, actor);
-  return transitionOrder(supabase, order, actor, 'accepted', 'Pedido aceito pelo profissional.');
+  return transitionOrder(supabase, order, actor, 'accepted', 'Pedido aceito pelo profissional.', 'accept');
 }
 
 async function declineOrder(context, actor, orderId) {
@@ -169,7 +164,7 @@ async function declineOrder(context, actor, orderId) {
   const order = await readOrderRow(supabase, orderId);
   assertProfessionalOrderAccess(order, actor);
   const note = sanitizeText(context.body && (context.body.reason || context.body.note) || 'Pedido recusado pelo profissional.', 500);
-  return transitionOrder(supabase, order, actor, 'cancelled', note);
+  return transitionOrder(supabase, order, actor, 'cancelled', note, 'decline');
 }
 
 async function sendQuote(context, actor, orderId) {
@@ -193,7 +188,7 @@ async function sendQuote(context, actor, orderId) {
     .select(BUDGET_SELECT)
     .maybeSingle();
   if (budgetResponse && budgetResponse.error) throw budgetResponse.error;
-  const update = await transitionOrder(supabase, order, actor, 'quoted', 'Orçamento enviado pelo profissional.');
+  const update = await transitionOrder(supabase, order, actor, 'quoted', 'Orçamento enviado pelo profissional.', 'quote');
   return { ...update, budget: normalizeBudget(budgetResponse && budgetResponse.data) };
 }
 
@@ -202,7 +197,7 @@ async function sendCharge(context, actor, orderId) {
   const order = await readOrderRow(supabase, orderId);
   assertProfessionalOrderAccess(order, actor);
   const note = sanitizeText(context.body && (context.body.note || context.body.description) || 'Cobrança enviada pelo profissional.', 800);
-  const update = await transitionOrder(supabase, order, actor, 'quoted', note);
+  const update = await transitionOrder(supabase, order, actor, 'quoted', note, 'charge');
   return { ...update, charge: { orderId: order.id, status: 'sent', note } };
 }
 
@@ -210,14 +205,14 @@ async function startOrder(context, actor, orderId) {
   const supabase = requireSupabase(context);
   const order = await readOrderRow(supabase, orderId);
   assertProfessionalOrderAccess(order, actor);
-  return transitionOrder(supabase, order, actor, 'in_progress', 'Atendimento iniciado pelo profissional.');
+  return transitionOrder(supabase, order, actor, 'in_progress', 'Atendimento iniciado pelo profissional.', 'start');
 }
 
 async function completeOrder(context, actor, orderId) {
   const supabase = requireSupabase(context);
   const order = await readOrderRow(supabase, orderId);
   assertProfessionalOrderAccess(order, actor);
-  return transitionOrder(supabase, order, actor, 'completed', 'Atendimento concluído pelo profissional.');
+  return transitionOrder(supabase, order, actor, 'completed', 'Atendimento concluído pelo profissional.', 'complete');
 }
 
 async function updateOrderStatus(context, actor, orderId) {
@@ -226,7 +221,7 @@ async function updateOrderStatus(context, actor, orderId) {
   const order = await readOrderRow(supabase, orderId);
   const nextStatus = normalizeBackendStatus(context.body && (context.body.status || context.body.nextStatus));
   const note = sanitizeText(context.body && (context.body.note || context.body.reason) || `Status atualizado para ${nextStatus}.`, 800);
-  return transitionOrder(supabase, order, actor, nextStatus, note);
+  return transitionOrder(supabase, order, actor, nextStatus, note, 'updateStatus');
 }
 
 async function readOrderRow(supabase, orderId) {
@@ -265,33 +260,50 @@ async function readServiceRow(supabase, serviceId) {
   return response && response.data || null;
 }
 
-async function transitionOrder(supabase, order, actor, nextStatus, note) {
+async function transitionOrder(supabase, order, actor, nextStatus, note, action) {
   const backendStatus = normalizeBackendStatus(nextStatus);
-  const oldStatus = order && order.status || null;
-  const response = await supabase
-    .from('orders')
-    .update({ status: backendStatus, updated_at: new Date().toISOString() })
-    .eq('id', order.id)
-    .select(ORDER_SELECT)
-    .maybeSingle();
-  if (response && response.error) throw response.error;
-  await recordOrderStatusHistory(supabase, order.id, oldStatus, backendStatus, actor && actor.id, note).catch(() => null);
-  return { order: normalizeOrder(response && response.data), status: backendStatus, previousStatus: oldStatus };
+  const oldStatus = normalizeBackendStatus(order && order.status || '');
+  assertTransition({
+    currentStatus: oldStatus,
+    nextStatus: backendStatus,
+    actorRole: actor && actor.role,
+    action: action || 'updateStatus'
+  });
+  if (!supabase || typeof supabase.rpc !== 'function') {
+    throw unavailable('Supabase RPC support is required for transactional order transitions.');
+  }
+
+  const response = await supabase.rpc('transition_order_status', {
+    p_order_id: order.id,
+    p_expected_status: oldStatus,
+    p_next_status: backendStatus,
+    p_action: action || 'updateStatus',
+    p_note: sanitizeText(note || '', 800) || null
+  });
+  if (response && response.error) throw mapOrderDatabaseError(response.error);
+  const row = normalizeRpcOrderRow(response && response.data);
+  if (!row) throw conflict('Order changed while this transition was being processed.');
+  return { order: normalizeOrder(row), status: backendStatus, previousStatus: oldStatus };
 }
 
-async function recordOrderStatusHistory(supabase, orderId, oldStatus, newStatus, actorId, note) {
-  if (!supabase || !orderId) return null;
-  const response = await supabase
-    .from('order_status_history')
-    .insert({
-      order_id: orderId,
-      old_status: oldStatus || null,
-      new_status: newStatus,
-      actor_id: actorId || null,
-      note: sanitizeText(note || '', 800) || null
-    });
-  if (response && response.error) throw response.error;
-  return response && response.data || null;
+function normalizeRpcOrderRow(value) {
+  if (Array.isArray(value)) return value[0] || null;
+  return value && typeof value === 'object' ? value : null;
+}
+
+function mapOrderDatabaseError(error) {
+  const source = error || {};
+  const message = String(source.message || source.details || '');
+  if (message.includes('DOKE_ORDER_CONFLICT') || source.code === '40001') {
+    return conflict('Order changed while this transition was being processed.');
+  }
+  if (message.includes('DOKE_ORDER_TRANSITION_INVALID')) {
+    const mapped = conflict('Order transition is not allowed.');
+    mapped.code = 'DOKE_ORDER_TRANSITION_INVALID';
+    mapped.details = source.details || null;
+    return mapped;
+  }
+  return error;
 }
 
 function assertOrderAccess(order, actor) {
@@ -310,30 +322,7 @@ function assertProfessionalOrderAccess(order, actor) {
 }
 
 function normalizeBackendStatus(value) {
-  const raw = String(value || '').trim().toLowerCase();
-  const mapped = {
-    pending: 'requested',
-    request: 'requested',
-    requested: 'requested',
-    quote: 'quoted',
-    quoted: 'quoted',
-    accepted: 'accepted',
-    scheduled: 'scheduled',
-    in_progress: 'in_progress',
-    progress: 'in_progress',
-    completed: 'completed',
-    complete: 'completed',
-    cancelled: 'cancelled',
-    canceled: 'cancelled',
-    dispute: 'disputed',
-    disputed: 'disputed',
-    under_review: 'disputed',
-    released: 'completed',
-    refunded: 'cancelled',
-    draft: 'draft'
-  }[raw] || raw;
-  if (!PUBLIC_ORDER_STATUSES.includes(mapped)) throw badRequest(`Invalid order status: ${value || ''}`);
-  return mapped;
+  return normalizeStatus(value);
 }
 
 function sanitizeText(value, maxLength) {
@@ -390,6 +379,13 @@ function notFound(message) {
   const error = new Error(message || 'Not found.');
   error.code = 'DOKE_NOT_FOUND';
   error.status = 404;
+  return error;
+}
+
+function conflict(message) {
+  const error = new Error(message || 'Order transition conflict.');
+  error.code = 'DOKE_ORDER_CONFLICT';
+  error.status = 409;
   return error;
 }
 

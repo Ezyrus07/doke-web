@@ -1,0 +1,2509 @@
+{
+  "version": "1.1.0",
+  "updatedAt": "2026-07-22T11:50:57Z",
+  "title": "Doke Domain Completion Matrix",
+  "purpose": "Single source of truth for domain maturity, data authority, staging evidence, blockers, dependencies and mandatory completion order.",
+  "maturityScale": {
+    "0": "not_started",
+    "1": "foundation_only",
+    "2": "local_functional",
+    "3": "staging_canary_or_hybrid",
+    "4": "staging_operational",
+    "5": "private_beta_ready",
+    "6": "production_ready"
+  },
+  "allowed": {
+    "userFacingAuthority": [
+      "mock",
+      "local",
+      "hybrid",
+      "remote"
+    ],
+    "serverAuthority": [
+      "none",
+      "contract_only",
+      "partial",
+      "canonical"
+    ],
+    "stagingEvidence": [
+      "absent",
+      "static_contract",
+      "local_e2e",
+      "staging_canary",
+      "staging_operational"
+    ],
+    "securityGate": [
+      "blocked",
+      "partial",
+      "passed"
+    ],
+    "productionGate": [
+      "blocked",
+      "candidate",
+      "ready"
+    ],
+    "severity": [
+      "critical",
+      "high",
+      "medium",
+      "low"
+    ]
+  },
+  "runtimeBaseline": {
+    "dataProvider": "mock",
+    "authProvider": "mock",
+    "enableNetworkRequests": false,
+    "mockDataControllers": true,
+    "source": "assets/js/config/runtime-flags.js and assets/js/core/runtime-config.js"
+  },
+  "completionGate": [
+    "business_rules",
+    "data_model",
+    "server_authority",
+    "idempotency_and_concurrency",
+    "permission_tests",
+    "ui_states",
+    "audit_and_observability",
+    "contract_integration_and_e2e_tests",
+    "responsive_and_accessible",
+    "rollback_and_documentation"
+  ],
+  "mandatorySequence": [
+    "SEC-001",
+    "AUTH-001",
+    "PROF-001",
+    "CAT-001",
+    "SEARCH-001",
+    "ORD-001",
+    "MSG-001",
+    "PAY-001",
+    "WAL-001",
+    "DSP-001",
+    "REP-001",
+    "COM-001",
+    "ADM-001",
+    "ANA-001",
+    "WEB-001",
+    "APP-001",
+    "BETA-001"
+  ],
+  "domains": [
+    {
+      "id": "GOV-001",
+      "name": "Governança, arquitetura e comando central",
+      "wave": "A",
+      "priority": 1,
+      "maturity": 4,
+      "userFacingAuthority": "hybrid",
+      "serverAuthority": "canonical",
+      "stagingEvidence": "staging_operational",
+      "securityGate": "partial",
+      "productionGate": "candidate",
+      "objective": "Manter uma única base oficial, contratos vivos, gates verificáveis e rastreabilidade de mudanças.",
+      "pages": [],
+      "requiredPaths": [
+        "AGENTS.md",
+        "PROJECT-RULES.md",
+        "docs/DOKE_AGENT_CONSTITUTION.md",
+        "docs/DOKE-PLANO-MESTRE-CONCLUSAO-PLATAFORMA.md",
+        "docs/ACTIVE-CONTRACTS-INDEX.md",
+        "package.json"
+      ],
+      "scanRoots": [
+        "docs",
+        "scripts",
+        "reports/generated"
+      ],
+      "tables": [],
+      "edgeFunctions": [],
+      "crons": [],
+      "tests": [
+        "audit:agent-governance",
+        "audit:active-contracts-index",
+        "audit:docs-registry-governance",
+        "test:order-error-budget-change-protection-contract"
+      ],
+      "evidence": [
+        "The machine-readable domain completion matrix and generated living document are active and drift-audited.",
+        "Error budgets and change protection are active in staging.",
+        "Cumulative ZIP and changed-only delivery workflow exists."
+      ],
+      "blockers": [
+        {
+          "id": "GOV-B02",
+          "severity": "medium",
+          "category": "quality_gate",
+          "description": "Global governance audit is blocked by the pre-existing noncanonical Home button account-onboarding__change.",
+          "targetPhase": "Fase 0"
+        }
+      ],
+      "nextActions": [
+        "Keep this matrix synchronized after every domain, migration, grant, realtime, storage or Edge Function change.",
+        "Resolve the Home button governance failure.",
+        "Define release provenance and authorized migration-origin policy."
+      ],
+      "exitCriteria": [
+        "Every active page, critical flow, data table and server action is mapped.",
+        "Matrix audit passes without drift.",
+        "Release and migration origin policy is documented and enforced."
+      ],
+      "dependencies": []
+    },
+    {
+      "id": "SEC-001",
+      "name": "Segurança, RLS, grants e autoridade dos dados",
+      "wave": "A",
+      "priority": 2,
+      "maturity": 2,
+      "userFacingAuthority": "hybrid",
+      "serverAuthority": "partial",
+      "stagingEvidence": "staging_canary",
+      "securityGate": "blocked",
+      "productionGate": "blocked",
+      "objective": "Close exposed database and RPC surfaces before expanding real writes or onboarding external users.",
+      "pages": [],
+      "requiredPaths": [
+        "supabase/policies/001_rls_foundation.sql",
+        "supabase/tests/001_rls_matrix_validation.sql",
+        "scripts/audit-security-permission-contract.js",
+        "supabase/migrations/093_identity_table_rls_authority.sql",
+        "supabase/migrations/094_identity_role_materialization_authority.sql",
+        "supabase/migrations/095_identity_rpc_authority_hardening.sql",
+        "supabase/migrations/096_identity_helper_invoker_hardening.sql",
+        "supabase/tests/006_identity_rls_authority_validation.sql",
+        "scripts/test-identity-rls-authority-contract.js",
+        "scripts/test-identity-role-authority-runtime.js",
+        "docs/SECURITY-IDENTITY-AUTHORITY.md",
+        "supabase/migrations/097_professional_kyc_table_authority.sql",
+        "supabase/migrations/098_professional_kyc_storage_authority.sql",
+        "supabase/migrations/099_professional_kyc_self_service_authority.sql",
+        "supabase/migrations/100_professional_kyc_reviewer_authority.sql",
+        "supabase/migrations/101_professional_kyc_final_permissions.sql",
+        "supabase/tests/007_professional_kyc_authority_validation.sql",
+        "supabase/functions/professional-verification-operations/index.ts",
+        "scripts/test-professional-kyc-authority-contract.js",
+        "scripts/test-professional-kyc-edge-runtime.mjs",
+        "docs/SECURITY-PROFESSIONAL-KYC-AUTHORITY.md"
+      ],
+      "scanRoots": [
+        "supabase/migrations",
+        "supabase/policies",
+        "supabase/tests",
+        "backend/shared/security",
+        "backend/shared/auth"
+      ],
+      "tables": [
+        "users",
+        "user_profiles",
+        "client_profiles",
+        "audit_logs",
+        "availability_slots",
+        "budgets",
+        "communities",
+        "community_members",
+        "community_posts",
+        "favorites",
+        "message_attachments",
+        "reports",
+        "reviews",
+        "service_categories",
+        "verification_events"
+      ],
+      "edgeFunctions": [],
+      "crons": [],
+      "tests": [
+        "audit:security-permission-contract",
+        "audit:supabase-backend-readiness",
+        "test:identity-rls-authority-contract",
+        "test:identity-role-authority-runtime",
+        "test:professional-kyc-authority-contract",
+        "test:professional-kyc-edge-runtime"
+      ],
+      "evidence": [
+        "Private operational tables are not readable by anon or authenticated.",
+        "Current staging snapshot contains 44 public tables and 24 private tables.",
+        "users now exposes only the authenticated caller own account row; anon has no table access.",
+        "user_profiles is explicitly public-read and has no browser DML grants.",
+        "Forged user_metadata role claims are ignored, stripped and replaced by app_metadata projected from public.users.",
+        "Identity and KYC RPCs are no longer executable by anon; client attempts against admin verification RPCs return ADMIN_REQUIRED.",
+        "Anon SECURITY DEFINER exposure fell from 36 to 18 and authenticated exposure from 45 to 38 after identity hardening.",
+        "professional_profiles, professional_identity_verifications and verification_events now expose read-only owner/reviewer RLS with no browser DML grants.",
+        "Reviewer queue, detail, claim and decision operations moved behind the JWT-protected professional-verification-operations Edge Function.",
+        "KYC evidence paths are owner-scoped, private and immutable while submitted, under review or verified.",
+        "Professional promotion updates public.users and app_metadata without persisting role claims in user_metadata."
+      ],
+      "blockers": [
+        {
+          "id": "SEC-B01",
+          "severity": "critical",
+          "category": "rls",
+          "description": "13 public tables have RLS disabled.",
+          "targetPhase": "Fase 1"
+        },
+        {
+          "id": "SEC-B03",
+          "severity": "critical",
+          "category": "rpc_grants",
+          "description": "18 SECURITY DEFINER functions remain executable by anon and 38 by authenticated outside the closed identity batch, concentrated in finance, idempotency, notifications and moderation.",
+          "targetPhase": "Fase 1"
+        },
+        {
+          "id": "SEC-B04",
+          "severity": "high",
+          "category": "storage",
+          "description": "service-media is public with broad listing risk; transaction-attachments has no mapped object policies in the snapshot.",
+          "targetPhase": "Fase 1"
+        },
+        {
+          "id": "SEC-B05",
+          "severity": "high",
+          "category": "auth",
+          "description": "Leaked password protection is disabled in Supabase Auth.",
+          "targetPhase": "Fase 1"
+        }
+      ],
+      "nextActions": [
+        "Close client_profiles and the remaining exposed profile-adjacent authorities.",
+        "Revoke or redesign remaining privileged finance, idempotency, notification and moderation RPC grants.",
+        "Apply RLS and negative persona tests to the remaining exposed public tables in small domain batches.",
+        "Harden storage policies, password protection, CORS, CSP and rate limits."
+      ],
+      "exitCriteria": [
+        "No public table requiring protection remains without RLS and policies.",
+        "No internal SECURITY DEFINER RPC is callable by anon or generic authenticated users.",
+        "Negative tests pass for client, professional, support, moderator and admin.",
+        "Security advisors have no unresolved critical errors attributable to the core surface."
+      ],
+      "dependencies": [
+        "GOV-001"
+      ]
+    },
+    {
+      "id": "AUTH-001",
+      "name": "Autenticação, sessão e identidade",
+      "wave": "A",
+      "priority": 3,
+      "maturity": 3,
+      "userFacingAuthority": "hybrid",
+      "serverAuthority": "partial",
+      "stagingEvidence": "staging_canary",
+      "securityGate": "blocked",
+      "productionGate": "blocked",
+      "objective": "Provide one real identity and session authority across every page and device.",
+      "pages": [
+        "auth/login.html",
+        "auth/cadastro.html",
+        "auth/esqueci-senha.html"
+      ],
+      "requiredPaths": [
+        "assets/js/core/session.js",
+        "assets/js/core/auth-service.js",
+        "assets/js/services/auth-service.js",
+        "backend/modules/auth/identity-service.js",
+        "backend/modules/auth/route-handlers.js",
+        "supabase/migrations/001_identity_profiles.sql",
+        "supabase/migrations/093_identity_table_rls_authority.sql",
+        "supabase/migrations/094_identity_role_materialization_authority.sql",
+        "supabase/migrations/095_identity_rpc_authority_hardening.sql",
+        "supabase/migrations/096_identity_helper_invoker_hardening.sql",
+        "docs/SECURITY-IDENTITY-AUTHORITY.md"
+      ],
+      "scanRoots": [
+        "auth",
+        "assets/js/core/session.js",
+        "assets/js/core/auth-service.js",
+        "assets/js/services/auth-service.js",
+        "backend/modules/auth",
+        "assets/js/repositories/users-repository.js"
+      ],
+      "tables": [
+        "users",
+        "user_profiles",
+        "client_profiles",
+        "professional_profiles"
+      ],
+      "edgeFunctions": [],
+      "crons": [],
+      "tests": [
+        "test:real-auth-only-contract",
+        "audit:auth-session",
+        "audit:backend-real-complete-readiness-gate",
+        "test:identity-rls-authority-contract",
+        "test:identity-role-authority-runtime"
+      ],
+      "evidence": [
+        "Real-auth-only contract passes.",
+        "Local and staging multi-domain E2E reports cover login and session.",
+        "Default runtime still requests mock auth unless a controlled canary is enabled.",
+        "users and user_profiles now have explicit policies and browser writes only through controlled self-service RPCs.",
+        "public.users is the database authority for role/status and auth.app_metadata is a server-controlled projection.",
+        "New accounts always materialize as client regardless of user_metadata role claims."
+      ],
+      "blockers": [
+        {
+          "id": "AUTH-B02",
+          "severity": "high",
+          "category": "runtime_authority",
+          "description": "Runtime defaults remain mock and localStorage overrides can alter providers.",
+          "targetPhase": "Fase 3"
+        },
+        {
+          "id": "AUTH-B04",
+          "severity": "medium",
+          "category": "account_security",
+          "description": "Device/session management, contact verification and global logout are incomplete.",
+          "targetPhase": "Fase 3"
+        }
+      ],
+      "nextActions": [
+        "Promote real auth as the only production provider after controlled route-by-route canaries.",
+        "Implement verified contact, session/device management, token refresh and global logout.",
+        "Finish client/professional profile and KYC row security before enabling external users."
+      ],
+      "exitCriteria": [
+        "All protected pages derive identity from one remote session.",
+        "No production route silently falls back to mock identity.",
+        "Cross-account negative tests pass.",
+        "Session refresh, recovery and logout are E2E validated."
+      ],
+      "dependencies": [
+        "SEC-001"
+      ]
+    },
+    {
+      "id": "PROF-001",
+      "name": "Perfis, onboarding profissional e KYC",
+      "wave": "A",
+      "priority": 4,
+      "maturity": 4,
+      "userFacingAuthority": "hybrid",
+      "serverAuthority": "partial",
+      "stagingEvidence": "staging_canary",
+      "securityGate": "blocked",
+      "productionGate": "blocked",
+      "objective": "Materialize trustworthy client and professional profiles, verification evidence and role transitions.",
+      "pages": [
+        "meu-perfil.html",
+        "perfil.html",
+        "perfil-cliente.html",
+        "perfil-profissional.html",
+        "tornar-profissional.html",
+        "verificacao-profissional.html",
+        "admin-verificacao.html"
+      ],
+      "requiredPaths": [
+        "assets/js/repositories/professional-profiles-repository.js",
+        "assets/js/repositories/professional-identity-verifications-repository.js",
+        "assets/js/services/professional-identity-verification-service.js",
+        "supabase/migrations/008_professional_identity_verification.sql",
+        "supabase/migrations/018_professional_verification_admin_decision.sql",
+        "supabase/migrations/097_professional_kyc_table_authority.sql",
+        "supabase/migrations/098_professional_kyc_storage_authority.sql",
+        "supabase/migrations/099_professional_kyc_self_service_authority.sql",
+        "supabase/migrations/100_professional_kyc_reviewer_authority.sql",
+        "supabase/migrations/101_professional_kyc_final_permissions.sql",
+        "supabase/functions/professional-verification-operations/index.ts",
+        "docs/SECURITY-PROFESSIONAL-KYC-AUTHORITY.md"
+      ],
+      "scanRoots": [
+        "assets/js/pages/profile",
+        "assets/js/pages/tornar-profissional.js",
+        "assets/js/pages/verificacao-profissional.js",
+        "assets/js/repositories/professional-",
+        "assets/js/services/professional-",
+        "backend/modules/professionals"
+      ],
+      "tables": [
+        "client_profiles",
+        "professional_profiles",
+        "professional_identity_verifications",
+        "verification_events"
+      ],
+      "edgeFunctions": [
+        "professional-verification-operations"
+      ],
+      "crons": [],
+      "tests": [
+        "test:professional-profile-setup-contract",
+        "test:professional-identity-verification-contract",
+        "test:admin-professional-verification-contract",
+        "test:profile-family-contract",
+        "test:professional-kyc-authority-contract",
+        "test:professional-kyc-edge-runtime"
+      ],
+      "evidence": [
+        "Professional verification and admin decision contracts exist.",
+        "Private verification media bucket exists.",
+        "Draft repositories still use localStorage/sessionStorage and IndexedDB evidence.",
+        "KYC RPCs are no longer executable by anon; client attempts against admin list/decision operations are denied by server role checks.",
+        "Professional KYC draft, submission, review, rejection, reopening and approval are server-authoritative in staging.",
+        "Binary evidence uses database-generated locked upload intents, signed upload tokens and one-time server-side consumption.",
+        "Reviewer operations require an independently authenticated admin/moderator Edge Function context.",
+        "Role promotion is atomic, idempotent and synchronized through public.users to app_metadata."
+      ],
+      "blockers": [
+        {
+          "id": "PROF-B01",
+          "severity": "critical",
+          "category": "rls",
+          "description": "client_profiles remains without RLS; professional profile and KYC authorities are closed.",
+          "targetPhase": "Fase 1"
+        },
+        {
+          "id": "PROF-B03",
+          "severity": "high",
+          "category": "authority_split",
+          "description": "Draft, evidence and active profile state remain split between local browser storage and Supabase.",
+          "targetPhase": "Fase 3"
+        },
+        {
+          "id": "PROF-B04",
+          "severity": "high",
+          "category": "external_policy",
+          "description": "Final KYC rules, document retention and legal verification provider are not approved.",
+          "targetPhase": "Fase 2"
+        },
+        {
+          "id": "PROF-B05",
+          "severity": "high",
+          "category": "storage_policy",
+          "description": "Legacy owner-prefix Storage write policies remain because storage.objects is owned by the managed supabase_storage_admin role; the new signed-intent submission flow no longer trusts them.",
+          "targetPhase": "Fase 1"
+        }
+      ],
+      "nextActions": [
+        "Close client_profiles and define its private/public projection boundary.",
+        "Remove legacy owner-prefix KYC Storage policies through the managed Storage policy authority and add upload cleanup/retention.",
+        "Define KYC policy, retention, rejection and appeal rules."
+      ],
+      "exitCriteria": [
+        "A professional can complete, submit, be reviewed and receive a decision across devices.",
+        "Documents are private and access-audited.",
+        "Role promotion is server-authoritative and idempotent.",
+        "Rejected applications can be corrected and resubmitted safely."
+      ],
+      "dependencies": [
+        "SEC-001",
+        "AUTH-001",
+        "LEGAL-001"
+      ]
+    },
+    {
+      "id": "CAT-001",
+      "name": "Catálogo, publicação e moderação de serviços",
+      "wave": "B",
+      "priority": 5,
+      "maturity": 3,
+      "userFacingAuthority": "hybrid",
+      "serverAuthority": "partial",
+      "stagingEvidence": "staging_canary",
+      "securityGate": "partial",
+      "productionGate": "blocked",
+      "objective": "Make service creation, versioning, moderation, publication and edits server-authoritative.",
+      "pages": [
+        "anunciar-servico.html",
+        "detalhe-anuncio.html",
+        "admin-anuncio-revisao.html",
+        "index.html",
+        "resultados.html"
+      ],
+      "requiredPaths": [
+        "assets/js/repositories/services-repository.js",
+        "assets/js/repositories/service-moderation-repository.js",
+        "assets/js/pages/anunciar-servico.js",
+        "assets/js/pages/home/public-services.js",
+        "supabase/migrations/009_service_catalog_shared_runtime.sql",
+        "supabase/migrations/032_service_listing_moderation.sql"
+      ],
+      "scanRoots": [
+        "assets/js/repositories/services-repository.js",
+        "assets/js/repositories/service-moderation-repository.js",
+        "assets/js/pages/anunciar-servico.js",
+        "assets/js/pages/home",
+        "assets/js/pages/detalhe-anuncio",
+        "supabase/migrations/030_service_catalog_sync_metrics.sql"
+      ],
+      "tables": [
+        "services",
+        "service_versions",
+        "service_media",
+        "service_categories",
+        "service_moderation_events",
+        "service_quote_templates",
+        "service_quote_questions"
+      ],
+      "edgeFunctions": [
+        "quote-template-ai"
+      ],
+      "crons": [],
+      "tests": [
+        "test:public-service-catalog-contract",
+        "test:services-supabase-repository-contract",
+        "test:service-moderation-flow-contract",
+        "test:admin-service-review-page-contract"
+      ],
+      "evidence": [
+        "Supabase service repository, version moderation and admin review exist.",
+        "AI template generation is isolated behind an Edge Function.",
+        "Services repository retains localStorage and sessionStorage fallback paths."
+      ],
+      "blockers": [
+        {
+          "id": "CAT-B01",
+          "severity": "critical",
+          "category": "rls",
+          "description": "service_categories has RLS disabled.",
+          "targetPhase": "Fase 1"
+        },
+        {
+          "id": "CAT-B02",
+          "severity": "high",
+          "category": "storage",
+          "description": "Public service-media listing policy is broader than required.",
+          "targetPhase": "Fase 1"
+        },
+        {
+          "id": "CAT-B03",
+          "severity": "high",
+          "category": "authority_split",
+          "description": "Local service drafts and remote published versions coexist without a final production promotion contract.",
+          "targetPhase": "Fase 4"
+        },
+        {
+          "id": "CAT-B04",
+          "severity": "medium",
+          "category": "versioning",
+          "description": "Historical orders need immutable service snapshots across all creation paths.",
+          "targetPhase": "Fase 4"
+        }
+      ],
+      "nextActions": [
+        "Secure categories and media.",
+        "Make remote draft/version workflow canonical.",
+        "Guarantee immutable service snapshot on order creation.",
+        "Complete pause, archive and safe edit flows."
+      ],
+      "exitCriteria": [
+        "Create, submit, moderate, publish, edit, pause and archive work remotely.",
+        "Public catalog shows only approved eligible versions.",
+        "Media upload validation and deletion are server-enforced.",
+        "Order snapshots are immutable."
+      ],
+      "dependencies": [
+        "SEC-001",
+        "AUTH-001",
+        "PROF-001"
+      ]
+    },
+    {
+      "id": "SEARCH-001",
+      "name": "Busca, descoberta, favoritos e ranking",
+      "wave": "B",
+      "priority": 6,
+      "maturity": 2,
+      "userFacingAuthority": "hybrid",
+      "serverAuthority": "contract_only",
+      "stagingEvidence": "local_e2e",
+      "securityGate": "blocked",
+      "productionGate": "blocked",
+      "objective": "Return eligible services and professionals with scalable server-side filtering, ranking and pagination.",
+      "pages": [
+        "index.html",
+        "resultados.html",
+        "detalhe-anuncio.html"
+      ],
+      "requiredPaths": [
+        "assets/js/services/search-service.js",
+        "assets/js/pages/search-data.js",
+        "assets/js/pages/search-results.js",
+        "assets/js/controllers/resultados-controller.js"
+      ],
+      "scanRoots": [
+        "assets/js/pages/home/search.js",
+        "assets/js/pages/search-data.js",
+        "assets/js/pages/search-results.js",
+        "assets/js/services/search-service.js",
+        "assets/js/repositories/listings-repository.js"
+      ],
+      "tables": [
+        "services",
+        "service_categories",
+        "favorites",
+        "service_metric_events"
+      ],
+      "edgeFunctions": [],
+      "crons": [],
+      "tests": [
+        "test:public-service-catalog-contract",
+        "test:home-service-render-before-reveal-contract",
+        "test:results-hydration-state-authority"
+      ],
+      "evidence": [
+        "Search and product-beta local runtime contracts pass.",
+        "No dedicated production search/indexing service is canonical.",
+        "favorites has RLS disabled."
+      ],
+      "blockers": [
+        {
+          "id": "SEARCH-B01",
+          "severity": "critical",
+          "category": "rls",
+          "description": "favorites has RLS disabled.",
+          "targetPhase": "Fase 1"
+        },
+        {
+          "id": "SEARCH-B02",
+          "severity": "high",
+          "category": "server_search",
+          "description": "Filtering, ranking, geospatial eligibility and pagination remain predominantly frontend/local contracts.",
+          "targetPhase": "Fase 5"
+        },
+        {
+          "id": "SEARCH-B03",
+          "severity": "medium",
+          "category": "analytics",
+          "description": "Ranking signals and anti-manipulation controls are incomplete.",
+          "targetPhase": "Fase 15"
+        }
+      ],
+      "nextActions": [
+        "Secure favorites.",
+        "Define server-side search DTO, pagination and geographic eligibility.",
+        "Implement ranking baseline and conversion instrumentation."
+      ],
+      "exitCriteria": [
+        "Search is server-paginated and bounded.",
+        "Filters and location produce deterministic eligible results.",
+        "Favorites persist per identity.",
+        "Ranking has documented signals, monitoring and rollback."
+      ],
+      "dependencies": [
+        "SEC-001",
+        "CAT-001",
+        "ANA-001"
+      ]
+    },
+    {
+      "id": "ORD-001",
+      "name": "Orçamentos, propostas e ciclo de pedidos",
+      "wave": "B",
+      "priority": 7,
+      "maturity": 4,
+      "userFacingAuthority": "hybrid",
+      "serverAuthority": "canonical",
+      "stagingEvidence": "staging_operational",
+      "securityGate": "partial",
+      "productionGate": "blocked",
+      "objective": "Operate the complete order state machine with one server authority and reliable event delivery.",
+      "pages": [
+        "orcamento.html",
+        "pedidos.html",
+        "mensagens.html",
+        "pagamento-profissional.html",
+        "admin-pedidos-operacao.html"
+      ],
+      "requiredPaths": [
+        "backend/modules/orders/order-state-machine.js",
+        "backend/modules/orders/orders-service.js",
+        "assets/js/repositories/orders-repository.js",
+        "supabase/migrations/051_order_state_machine.sql",
+        "supabase/migrations/053_order_transaction_events.sql",
+        "supabase/functions/order-event-worker/index.ts"
+      ],
+      "scanRoots": [
+        "backend/modules/orders",
+        "assets/js/pages/pedidos",
+        "assets/js/repositories/orders-repository.js",
+        "assets/js/services/orders-service.js",
+        "supabase/migrations/051_order_state_machine.sql",
+        "supabase/migrations/053_order_transaction_events.sql"
+      ],
+      "tables": [
+        "orders",
+        "budgets",
+        "order_status_history",
+        "private.order_domain_events",
+        "private.order_event_delivery_attempts"
+      ],
+      "edgeFunctions": [
+        "order-event-worker",
+        "order-event-operations"
+      ],
+      "crons": [
+        "doke-order-event-worker",
+        "doke-order-operational-alerts",
+        "doke-order-incident-escalation",
+        "doke-order-change-protection"
+      ],
+      "tests": [
+        "test:order-state-machine-contract",
+        "test:order-state-machine-runtime",
+        "test:order-transaction-events-contract",
+        "test:order-event-worker-contract",
+        "test:order-event-operations-contract"
+      ],
+      "evidence": [
+        "Canonical state machine, transaction events, outbox worker and operational controls are active in staging.",
+        "Backend real local and staging E2E reports cover order writes.",
+        "Browser orders repository still has localStorage/mock fallback and production defaults remain mock."
+      ],
+      "blockers": [
+        {
+          "id": "ORD-B01",
+          "severity": "critical",
+          "category": "rls",
+          "description": "budgets has RLS disabled and orders grants require full persona revalidation.",
+          "targetPhase": "Fase 1"
+        },
+        {
+          "id": "ORD-B02",
+          "severity": "high",
+          "category": "frontend_activation",
+          "description": "Default product flow still uses mock/local provider unless controlled canaries are enabled.",
+          "targetPhase": "Fase 6"
+        },
+        {
+          "id": "ORD-B03",
+          "severity": "high",
+          "category": "financial_dependency",
+          "description": "Payment authority is not connected to a real PSP webhook lifecycle.",
+          "targetPhase": "Fase 8"
+        },
+        {
+          "id": "ORD-B04",
+          "severity": "medium",
+          "category": "scheduling",
+          "description": "Order scheduling and availability are not server-canonical.",
+          "targetPhase": "Fase 6"
+        }
+      ],
+      "nextActions": [
+        "Secure budgets and retest order policies.",
+        "Promote real order reads/writes behind controlled rollout.",
+        "Connect order transitions to messaging, scheduling and payment authorities."
+      ],
+      "exitCriteria": [
+        "Two real accounts complete request, accept, proposal, approval, start and completion across devices.",
+        "Repeated actions are idempotent.",
+        "All state changes emit durable events.",
+        "Mock order authority is removed from production paths."
+      ],
+      "dependencies": [
+        "SEC-001",
+        "AUTH-001",
+        "CAT-001",
+        "SCHED-001",
+        "MSG-001",
+        "PAY-001"
+      ]
+    },
+    {
+      "id": "SCHED-001",
+      "name": "Agenda, disponibilidade e execução do serviço",
+      "wave": "B",
+      "priority": 8,
+      "maturity": 1,
+      "userFacingAuthority": "local",
+      "serverAuthority": "none",
+      "stagingEvidence": "static_contract",
+      "securityGate": "blocked",
+      "productionGate": "blocked",
+      "objective": "Prevent double booking and make availability, confirmation and rescheduling server-authoritative.",
+      "pages": [
+        "anunciar-servico.html",
+        "pedidos.html",
+        "orcamento.html"
+      ],
+      "requiredPaths": [
+        "backend/modules/scheduling/.gitkeep",
+        "supabase/migrations/002_marketplace_core.sql"
+      ],
+      "scanRoots": [
+        "assets/js/pages/pedidos",
+        "assets/js/pages/anunciar-servico.js",
+        "backend/modules/scheduling",
+        "supabase/migrations/002_marketplace_core.sql"
+      ],
+      "tables": [
+        "availability_slots",
+        "orders"
+      ],
+      "edgeFunctions": [],
+      "crons": [],
+      "tests": [
+        "test:order-transaction-cycle-contract"
+      ],
+      "evidence": [
+        "Availability schema exists, but no implemented scheduling backend module exists.",
+        "availability_slots has RLS disabled."
+      ],
+      "blockers": [
+        {
+          "id": "SCHED-B01",
+          "severity": "critical",
+          "category": "rls",
+          "description": "availability_slots has RLS disabled.",
+          "targetPhase": "Fase 1"
+        },
+        {
+          "id": "SCHED-B02",
+          "severity": "critical",
+          "category": "server_authority",
+          "description": "No canonical scheduling service handles holds, conflicts, rescheduling or timezone rules.",
+          "targetPhase": "Fase 6"
+        },
+        {
+          "id": "SCHED-B03",
+          "severity": "high",
+          "category": "concurrency",
+          "description": "No database-level anti-double-booking contract is proven.",
+          "targetPhase": "Fase 6"
+        }
+      ],
+      "nextActions": [
+        "Design availability and booking-hold model.",
+        "Implement conflict constraints and timezone policy.",
+        "Connect accepted proposals to schedule confirmation and reminders."
+      ],
+      "exitCriteria": [
+        "Concurrent booking attempts cannot reserve the same slot.",
+        "Reschedule/cancel rules are audited.",
+        "Agenda reflects remote state across devices.",
+        "Timezone and daylight rules are documented and tested."
+      ],
+      "dependencies": [
+        "SEC-001",
+        "AUTH-001",
+        "ORD-001"
+      ]
+    },
+    {
+      "id": "MSG-001",
+      "name": "Mensagens, conversas, presença e anexos",
+      "wave": "B",
+      "priority": 9,
+      "maturity": 3,
+      "userFacingAuthority": "hybrid",
+      "serverAuthority": "partial",
+      "stagingEvidence": "staging_canary",
+      "securityGate": "blocked",
+      "productionGate": "blocked",
+      "objective": "Provide durable multi-device conversations tied to orders with authorized attachments and realtime delivery.",
+      "pages": [
+        "mensagens.html",
+        "pedidos.html",
+        "comunidade-interna.html"
+      ],
+      "requiredPaths": [
+        "backend/modules/messaging/messaging-service.js",
+        "assets/js/repositories/messages-repository.js",
+        "assets/js/repositories/attachments-repository.js",
+        "assets/js/features/chat-realtime-presence.js",
+        "supabase/migrations/011_messages_shared_runtime.sql",
+        "supabase/migrations/012_transaction_attachments_storage.sql"
+      ],
+      "scanRoots": [
+        "backend/modules/messaging",
+        "assets/js/pages/mensagens.js",
+        "assets/js/pages/messages-experience.js",
+        "assets/js/repositories/messages-repository.js",
+        "assets/js/repositories/attachments-repository.js",
+        "assets/js/features/chat-realtime-presence.js"
+      ],
+      "tables": [
+        "conversations",
+        "messages",
+        "message_attachments"
+      ],
+      "edgeFunctions": [],
+      "crons": [],
+      "tests": [
+        "test:messages-supabase-repository-contract",
+        "test:attachments-supabase-repository-contract",
+        "test:messages-interaction-stability-contract",
+        "test:messages-startup-hydration-stability-contract"
+      ],
+      "evidence": [
+        "Backend handlers and staging multi-domain messaging flow exist.",
+        "Messages repository uses remote tables but retains localStorage and mock fallbacks.",
+        "Only notifications is currently published to Supabase Realtime."
+      ],
+      "blockers": [
+        {
+          "id": "MSG-B01",
+          "severity": "critical",
+          "category": "rls",
+          "description": "message_attachments has RLS disabled.",
+          "targetPhase": "Fase 1"
+        },
+        {
+          "id": "MSG-B02",
+          "severity": "critical",
+          "category": "realtime",
+          "description": "messages and conversations are not in the realtime publication.",
+          "targetPhase": "Fase 7"
+        },
+        {
+          "id": "MSG-B03",
+          "severity": "high",
+          "category": "authority_split",
+          "description": "Local conversation/message fallback can diverge across devices.",
+          "targetPhase": "Fase 7"
+        },
+        {
+          "id": "MSG-B04",
+          "severity": "high",
+          "category": "storage",
+          "description": "Transaction attachment bucket policies are not mapped in the current staging snapshot.",
+          "targetPhase": "Fase 1"
+        }
+      ],
+      "nextActions": [
+        "Secure attachment metadata and storage objects.",
+        "Enable scoped realtime for conversation participants.",
+        "Remove production localStorage authority and add offline/retry semantics."
+      ],
+      "exitCriteria": [
+        "Two devices exchange messages without refresh.",
+        "Unauthorized users cannot list conversations or attachment URLs.",
+        "Read state is durable.",
+        "Retries do not duplicate messages or typed transaction cards."
+      ],
+      "dependencies": [
+        "SEC-001",
+        "AUTH-001",
+        "ORD-001"
+      ]
+    },
+    {
+      "id": "NTF-001",
+      "name": "Notificações, e-mail e push",
+      "wave": "B",
+      "priority": 10,
+      "maturity": 3,
+      "userFacingAuthority": "hybrid",
+      "serverAuthority": "partial",
+      "stagingEvidence": "staging_canary",
+      "securityGate": "blocked",
+      "productionGate": "blocked",
+      "objective": "Deliver idempotent, prioritized notifications with reliable deep links across channels.",
+      "pages": [
+        "notificacoes.html"
+      ],
+      "requiredPaths": [
+        "backend/modules/notifications/notifications-service.js",
+        "assets/js/repositories/notifications-repository.js",
+        "assets/js/features/in-app-notifications.js",
+        "assets/js/features/browser-notification-bridge.js",
+        "supabase/migrations/013_transaction_notifications_shared_runtime.sql"
+      ],
+      "scanRoots": [
+        "backend/modules/notifications",
+        "assets/js/pages/notificacoes.js",
+        "assets/js/repositories/notifications-repository.js",
+        "assets/js/features/in-app-notifications.js",
+        "assets/js/features/browser-notification-bridge.js"
+      ],
+      "tables": [
+        "notifications"
+      ],
+      "edgeFunctions": [],
+      "crons": [],
+      "tests": [
+        "test:notifications-supabase-repository-contract",
+        "audit:staging-runtime-readiness"
+      ],
+      "evidence": [
+        "notifications is the only current Supabase Realtime publication table.",
+        "Backend and repository contracts exist; localStorage fallback remains."
+      ],
+      "blockers": [
+        {
+          "id": "NTF-B01",
+          "severity": "critical",
+          "category": "rpc_grants",
+          "description": "create_transaction_notification and update_own_notification_state are executable by anon/authenticated.",
+          "targetPhase": "Fase 1"
+        },
+        {
+          "id": "NTF-B02",
+          "severity": "high",
+          "category": "channel_delivery",
+          "description": "Push and transactional e-mail providers are not production-integrated.",
+          "targetPhase": "Fase 7"
+        },
+        {
+          "id": "NTF-B03",
+          "severity": "medium",
+          "category": "authority_split",
+          "description": "Local and remote notification stores can diverge.",
+          "targetPhase": "Fase 7"
+        }
+      ],
+      "nextActions": [
+        "Harden notification RPCs.",
+        "Make remote notification state canonical.",
+        "Add push/e-mail routing, preferences, retry and delivery receipts."
+      ],
+      "exitCriteria": [
+        "In-app notifications update in realtime.",
+        "Every event key is deduplicated.",
+        "Push/e-mail respect user preferences and quiet hours.",
+        "Deep links resolve to authorized destinations."
+      ],
+      "dependencies": [
+        "SEC-001",
+        "AUTH-001",
+        "ORD-001",
+        "MSG-001"
+      ]
+    },
+    {
+      "id": "PAY-001",
+      "name": "Pagamentos, cobrança, escrow e webhooks",
+      "wave": "B",
+      "priority": 11,
+      "maturity": 2,
+      "userFacingAuthority": "local",
+      "serverAuthority": "contract_only",
+      "stagingEvidence": "local_e2e",
+      "securityGate": "blocked",
+      "productionGate": "blocked",
+      "objective": "Use a real payment service provider as the authority for charges, refunds and webhook-confirmed state.",
+      "pages": [
+        "pagamento-profissional.html",
+        "mensagens.html",
+        "pedidos.html"
+      ],
+      "requiredPaths": [
+        "assets/js/services/payment-service.js",
+        "assets/js/repositories/finance-repository.js",
+        "backend/modules/wallet/wallet-service.js",
+        "docs/FINANCIAL-FLOW-CONTRACT.md",
+        "supabase/migrations/014_finance_wallet_shared_runtime.sql"
+      ],
+      "scanRoots": [
+        "assets/js/pages/pagamento-profissional.js",
+        "assets/js/services/payment-service.js",
+        "assets/js/repositories/finance-repository.js",
+        "backend/modules/wallet",
+        "supabase/migrations/014_finance_wallet_shared_runtime.sql"
+      ],
+      "tables": [
+        "payments",
+        "transactions",
+        "receipts",
+        "wallet_receivables"
+      ],
+      "edgeFunctions": [],
+      "crons": [],
+      "tests": [
+        "test:order-charge-creation-contract",
+        "test:order-payment-hold-contract",
+        "test:finance-supabase-repository-contract",
+        "test:order-transaction-cycle-contract"
+      ],
+      "evidence": [
+        "Financial contracts, ledger-like tables and local beta-launch E2E exist.",
+        "No real PSP, signed webhook, reconciliation job or production card tokenization is connected."
+      ],
+      "blockers": [
+        {
+          "id": "PAY-B01",
+          "severity": "critical",
+          "category": "external_provider",
+          "description": "No PSP integration or signed webhook authority exists.",
+          "targetPhase": "Fase 8"
+        },
+        {
+          "id": "PAY-B02",
+          "severity": "critical",
+          "category": "rpc_grants",
+          "description": "Payment, receivable and finance RPCs are executable by anon/authenticated.",
+          "targetPhase": "Fase 1"
+        },
+        {
+          "id": "PAY-B03",
+          "severity": "critical",
+          "category": "legal_compliance",
+          "description": "Commercial, tax, escrow and refund rules are not legally approved.",
+          "targetPhase": "Fase 2"
+        },
+        {
+          "id": "PAY-B04",
+          "severity": "high",
+          "category": "reconciliation",
+          "description": "No provider reconciliation or mismatch queue is operational.",
+          "targetPhase": "Fase 8"
+        }
+      ],
+      "nextActions": [
+        "Select PSP after legal/accounting review.",
+        "Design signed webhook ingestion and idempotency.",
+        "Make provider events the only payment authority.",
+        "Build reconciliation, refund and failure recovery."
+      ],
+      "exitCriteria": [
+        "No card data is stored by Doke.",
+        "Repeated webhooks do not duplicate ledger effects.",
+        "Provider and Doke states reconcile automatically.",
+        "Refunds and payment failures are E2E tested."
+      ],
+      "dependencies": [
+        "SEC-001",
+        "AUTH-001",
+        "LEGAL-001",
+        "ORD-001"
+      ]
+    },
+    {
+      "id": "WAL-001",
+      "name": "Carteira, recebíveis, saldo e saques",
+      "wave": "B",
+      "priority": 12,
+      "maturity": 3,
+      "userFacingAuthority": "hybrid",
+      "serverAuthority": "partial",
+      "stagingEvidence": "staging_canary",
+      "securityGate": "blocked",
+      "productionGate": "blocked",
+      "objective": "Maintain a reconciled professional balance and safe withdrawal lifecycle.",
+      "pages": [
+        "carteira.html",
+        "admin.html"
+      ],
+      "requiredPaths": [
+        "backend/modules/wallet/wallet-service.js",
+        "backend/modules/wallet/route-handlers.js",
+        "assets/js/repositories/finance-repository.js",
+        "assets/js/repositories/wallet-repository.js",
+        "supabase/migrations/005_wallet_runtime_foundation.sql",
+        "supabase/migrations/014_finance_wallet_shared_runtime.sql"
+      ],
+      "scanRoots": [
+        "backend/modules/wallet",
+        "assets/js/pages/carteira.js",
+        "assets/js/pages/wallet-experience.js",
+        "assets/js/repositories/finance-repository.js",
+        "assets/js/repositories/wallet-repository.js"
+      ],
+      "tables": [
+        "wallets",
+        "wallet_bank_accounts",
+        "wallet_receivables",
+        "transactions",
+        "withdrawals",
+        "receipts"
+      ],
+      "edgeFunctions": [],
+      "crons": [],
+      "tests": [
+        "test:finance-supabase-repository-contract",
+        "audit:wallet-api-contract",
+        "test:order-completion-release-contract"
+      ],
+      "evidence": [
+        "Backend routes and staging multi-domain wallet flows exist.",
+        "Frontend wallet repository remains localStorage-heavy and real settlement is absent."
+      ],
+      "blockers": [
+        {
+          "id": "WAL-B01",
+          "severity": "critical",
+          "category": "rpc_grants",
+          "description": "Bank account, withdrawal and receivable RPCs are broadly executable.",
+          "targetPhase": "Fase 1"
+        },
+        {
+          "id": "WAL-B02",
+          "severity": "critical",
+          "category": "payment_dependency",
+          "description": "Balances cannot be production-authoritative before PSP and reconciliation are complete.",
+          "targetPhase": "Fase 8"
+        },
+        {
+          "id": "WAL-B03",
+          "severity": "high",
+          "category": "sensitive_data",
+          "description": "Bank account data needs encryption, masking, retention and support-access policy.",
+          "targetPhase": "Fase 1"
+        },
+        {
+          "id": "WAL-B04",
+          "severity": "high",
+          "category": "authority_split",
+          "description": "Local wallet projection and remote finance repository coexist.",
+          "targetPhase": "Fase 8"
+        }
+      ],
+      "nextActions": [
+        "Harden finance RPCs and bank data.",
+        "Connect webhook-confirmed ledger entries.",
+        "Implement withdrawal provider flow and reconciliation.",
+        "Remove local wallet authority from production."
+      ],
+      "exitCriteria": [
+        "Balance is derived from immutable ledger entries.",
+        "Withdrawals are idempotent and auditable.",
+        "Bank details are protected and masked.",
+        "Provider settlement and internal totals reconcile."
+      ],
+      "dependencies": [
+        "SEC-001",
+        "PAY-001",
+        "ORD-001"
+      ]
+    },
+    {
+      "id": "DSP-001",
+      "name": "Cancelamentos, reembolsos, disputas e chargebacks",
+      "wave": "B",
+      "priority": 13,
+      "maturity": 2,
+      "userFacingAuthority": "hybrid",
+      "serverAuthority": "partial",
+      "stagingEvidence": "local_e2e",
+      "securityGate": "blocked",
+      "productionGate": "blocked",
+      "objective": "Resolve transaction failures and conflicts through explicit policies and audited state machines.",
+      "pages": [
+        "pedidos.html",
+        "mensagens.html",
+        "carteira.html",
+        "admin.html"
+      ],
+      "requiredPaths": [
+        "backend/modules/wallet/wallet-service.js",
+        "assets/js/repositories/finance-repository.js",
+        "docs/FINANCIAL-FLOW-CONTRACT.md"
+      ],
+      "scanRoots": [
+        "backend/modules/wallet",
+        "backend/modules/admin",
+        "assets/js/repositories/finance-repository.js",
+        "assets/js/repositories/wallet-repository.js"
+      ],
+      "tables": [
+        "payment_disputes",
+        "dispute_events",
+        "payments",
+        "transactions",
+        "receipts"
+      ],
+      "edgeFunctions": [],
+      "crons": [],
+      "tests": [
+        "test:order-cancellation-dispute-contract",
+        "test:finance-supabase-repository-contract"
+      ],
+      "evidence": [
+        "Open/respond/release/refund contracts and audit routes exist.",
+        "Real chargeback/provider dispute integration is absent."
+      ],
+      "blockers": [
+        {
+          "id": "DSP-B01",
+          "severity": "critical",
+          "category": "legal_policy",
+          "description": "Cancellation, refund, evidence and appeal policies are not approved.",
+          "targetPhase": "Fase 2"
+        },
+        {
+          "id": "DSP-B02",
+          "severity": "critical",
+          "category": "rpc_grants",
+          "description": "Dispute resolution RPCs are executable by anon/authenticated.",
+          "targetPhase": "Fase 1"
+        },
+        {
+          "id": "DSP-B03",
+          "severity": "high",
+          "category": "provider_integration",
+          "description": "Chargebacks and provider dispute webhooks are not integrated.",
+          "targetPhase": "Fase 9"
+        },
+        {
+          "id": "DSP-B04",
+          "severity": "high",
+          "category": "support_workflow",
+          "description": "General case management, evidence deadlines and escalation queues are incomplete.",
+          "targetPhase": "Fase 13"
+        }
+      ],
+      "nextActions": [
+        "Approve dispute policy and state machine.",
+        "Secure RPCs.",
+        "Integrate provider chargebacks and evidence submission.",
+        "Build operator queue and appeal audit."
+      ],
+      "exitCriteria": [
+        "Every cancellation stage has deterministic financial effects.",
+        "Participants see authorized evidence and deadlines.",
+        "Support decisions are audited and reversible by policy.",
+        "Provider chargeback states reconcile."
+      ],
+      "dependencies": [
+        "LEGAL-001",
+        "SEC-001",
+        "PAY-001",
+        "WAL-001",
+        "ADM-001"
+      ]
+    },
+    {
+      "id": "REP-001",
+      "name": "Avaliações, reputação e recompra",
+      "wave": "B",
+      "priority": 14,
+      "maturity": 2,
+      "userFacingAuthority": "local",
+      "serverAuthority": "partial",
+      "stagingEvidence": "static_contract",
+      "securityGate": "blocked",
+      "productionGate": "blocked",
+      "objective": "Create trustworthy reputation from eligible completed orders and keep repeat hiring inside Doke.",
+      "pages": [
+        "avaliacao-profissional.html",
+        "perfil.html",
+        "perfil-profissional.html",
+        "perfil-cliente.html"
+      ],
+      "requiredPaths": [
+        "assets/js/repositories/reviews-repository.js",
+        "assets/js/services/review-service.js",
+        "assets/js/pages/avaliacao-profissional.js",
+        "supabase/migrations/002_marketplace_core.sql"
+      ],
+      "scanRoots": [
+        "assets/js/repositories/reviews-repository.js",
+        "assets/js/services/review-service.js",
+        "assets/js/pages/avaliacao-profissional.js",
+        "assets/js/pages/profile-reviews.js"
+      ],
+      "tables": [
+        "reviews",
+        "orders",
+        "professional_profiles"
+      ],
+      "edgeFunctions": [],
+      "crons": [],
+      "tests": [
+        "test:order-review-contract",
+        "test:profile-family-contract"
+      ],
+      "evidence": [
+        "Review contracts and UI exist.",
+        "Reviews repository is localStorage-first and reviews has RLS disabled."
+      ],
+      "blockers": [
+        {
+          "id": "REP-B01",
+          "severity": "critical",
+          "category": "rls",
+          "description": "reviews has RLS disabled.",
+          "targetPhase": "Fase 1"
+        },
+        {
+          "id": "REP-B02",
+          "severity": "critical",
+          "category": "eligibility",
+          "description": "Remote one-review-per-completed-order constraint and moderation are not proven.",
+          "targetPhase": "Fase 10"
+        },
+        {
+          "id": "REP-B03",
+          "severity": "high",
+          "category": "reputation_model",
+          "description": "Canonical reputation, fraud resistance and dispute impact model are undefined.",
+          "targetPhase": "Fase 10"
+        },
+        {
+          "id": "REP-B04",
+          "severity": "medium",
+          "category": "retention",
+          "description": "Rehire and loyalty economics are not implemented.",
+          "targetPhase": "Fase 10"
+        }
+      ],
+      "nextActions": [
+        "Secure reviews and implement eligibility constraints.",
+        "Define reputation aggregation and moderation.",
+        "Implement rehire flow before points/cashback."
+      ],
+      "exitCriteria": [
+        "Only eligible participants review once per completed order.",
+        "Moderation and appeals are auditable.",
+        "Ratings are recalculated server-side.",
+        "Repeat service flow remains linked to Doke transaction history."
+      ],
+      "dependencies": [
+        "SEC-001",
+        "ORD-001",
+        "DSP-001"
+      ]
+    },
+    {
+      "id": "COM-001",
+      "name": "Comunidades, membros e moderação social",
+      "wave": "C",
+      "priority": 15,
+      "maturity": 2,
+      "userFacingAuthority": "local",
+      "serverAuthority": "contract_only",
+      "stagingEvidence": "local_e2e",
+      "securityGate": "blocked",
+      "productionGate": "blocked",
+      "objective": "Move community membership, roles, posts, chat and sanctions from local browser authority to secure remote state.",
+      "pages": [
+        "comunidade.html",
+        "comunidade-interna.html"
+      ],
+      "requiredPaths": [
+        "assets/js/features/community/community-domain.js",
+        "assets/js/repositories/community-repository.js",
+        "assets/js/services/community-service.js",
+        "backend/modules/communities/.gitkeep",
+        "supabase/migrations/003_communication_finance_community.sql"
+      ],
+      "scanRoots": [
+        "assets/js/features/community",
+        "assets/js/pages/comunidade.js",
+        "assets/js/pages/comunidade-interna.js",
+        "assets/js/repositories/community-repository.js",
+        "assets/js/services/community-service.js",
+        "backend/modules/communities"
+      ],
+      "tables": [
+        "communities",
+        "community_members",
+        "community_posts"
+      ],
+      "edgeFunctions": [],
+      "crons": [],
+      "tests": [
+        "test:community-domain-infrastructure",
+        "test:community-domain-transactions",
+        "test:community-member-discipline-runtime-contract"
+      ],
+      "evidence": [
+        "Rich local community logic and local runtime domain contracts exist.",
+        "Backend communities module is empty and all three core community tables have RLS disabled."
+      ],
+      "blockers": [
+        {
+          "id": "COM-B01",
+          "severity": "critical",
+          "category": "rls",
+          "description": "communities, community_members and community_posts have RLS disabled.",
+          "targetPhase": "Fase 1"
+        },
+        {
+          "id": "COM-B02",
+          "severity": "critical",
+          "category": "server_authority",
+          "description": "Membership, roles, bans, invitations and posts are not server-canonical.",
+          "targetPhase": "Fase 11"
+        },
+        {
+          "id": "COM-B03",
+          "severity": "high",
+          "category": "realtime",
+          "description": "No community realtime publication or scalable channel policy is active.",
+          "targetPhase": "Fase 11"
+        },
+        {
+          "id": "COM-B04",
+          "severity": "high",
+          "category": "moderation",
+          "description": "Content reports, sanctions, appeals and media moderation are incomplete.",
+          "targetPhase": "Fase 12"
+        }
+      ],
+      "nextActions": [
+        "Design community RLS by visibility, membership and role.",
+        "Implement backend membership transactions and audit.",
+        "Add scoped realtime and content moderation."
+      ],
+      "exitCriteria": [
+        "Community state survives device changes and refreshes.",
+        "Private communities are not enumerable.",
+        "Role and ban actions are server-audited.",
+        "Posts/messages support moderation, rate limits and appeals."
+      ],
+      "dependencies": [
+        "SEC-001",
+        "AUTH-001",
+        "ADM-001"
+      ]
+    },
+    {
+      "id": "CONTENT-001",
+      "name": "Workers, publicações, mídia e feed social",
+      "wave": "C",
+      "priority": 16,
+      "maturity": 2,
+      "userFacingAuthority": "local",
+      "serverAuthority": "contract_only",
+      "stagingEvidence": "local_e2e",
+      "securityGate": "blocked",
+      "productionGate": "blocked",
+      "objective": "Provide remotely persisted, moderated and observable social content without weakening marketplace trust.",
+      "pages": [
+        "index.html",
+        "novidades.html",
+        "perfil.html",
+        "comunidade-interna.html"
+      ],
+      "requiredPaths": [
+        "assets/js/repositories/posts-repository.js",
+        "assets/js/repositories/workers-repository.js",
+        "assets/js/services/posts-service.js",
+        "assets/js/services/workers-service.js"
+      ],
+      "scanRoots": [
+        "assets/js/pages/home/workers.js",
+        "assets/js/pages/novidades.js",
+        "assets/js/repositories/posts-repository.js",
+        "assets/js/repositories/workers-repository.js",
+        "assets/js/services/posts-service.js",
+        "assets/js/services/workers-service.js"
+      ],
+      "tables": [
+        "community_posts",
+        "reports"
+      ],
+      "edgeFunctions": [],
+      "crons": [],
+      "tests": [
+        "audit:domain-expansion-readiness-gate",
+        "audit:beta-closed-product-readiness-gate"
+      ],
+      "evidence": [
+        "Publication/media/moderation contracts pass in local runtime.",
+        "No canonical remote Workers/publications schema and service boundary is complete."
+      ],
+      "blockers": [
+        {
+          "id": "CONTENT-B01",
+          "severity": "critical",
+          "category": "rls",
+          "description": "community_posts and reports have RLS disabled.",
+          "targetPhase": "Fase 1"
+        },
+        {
+          "id": "CONTENT-B02",
+          "severity": "high",
+          "category": "data_model",
+          "description": "Workers, before/after and generic publications lack a finalized remote model.",
+          "targetPhase": "Fase 12"
+        },
+        {
+          "id": "CONTENT-B03",
+          "severity": "high",
+          "category": "media_pipeline",
+          "description": "Video/image processing, limits, moderation and CDN lifecycle are incomplete.",
+          "targetPhase": "Fase 12"
+        }
+      ],
+      "nextActions": [
+        "Finalize content entity boundaries.",
+        "Implement remote upload and moderation pipeline.",
+        "Add feed pagination, abuse controls and deletion/retention policy."
+      ],
+      "exitCriteria": [
+        "Content is remotely persisted and paginated.",
+        "Uploads are validated and moderated.",
+        "Delete, report and appeal flows are auditable.",
+        "Feed ranking cannot bypass marketplace safety policies."
+      ],
+      "dependencies": [
+        "SEC-001",
+        "AUTH-001",
+        "ADM-001",
+        "LEGAL-001"
+      ]
+    },
+    {
+      "id": "ADM-001",
+      "name": "Administração, suporte e moderação",
+      "wave": "C",
+      "priority": 17,
+      "maturity": 3,
+      "userFacingAuthority": "hybrid",
+      "serverAuthority": "partial",
+      "stagingEvidence": "staging_canary",
+      "securityGate": "blocked",
+      "productionGate": "blocked",
+      "objective": "Let operators manage users, KYC, services, orders, payments, disputes and content without direct database edits.",
+      "pages": [
+        "admin.html",
+        "admin-verificacao.html",
+        "admin-anuncio-revisao.html",
+        "admin-pedidos-operacao.html"
+      ],
+      "requiredPaths": [
+        "backend/modules/admin/route-handlers.js",
+        "assets/js/pages/admin.js",
+        "assets/js/pages/admin-order-operations.js",
+        "assets/js/pages/admin-service-moderation.js",
+        "assets/js/pages/admin-verificacao.js"
+      ],
+      "scanRoots": [
+        "backend/modules/admin",
+        "assets/js/pages/admin",
+        "assets/js/repositories/order-event-operations-repository.js",
+        "assets/js/repositories/service-moderation-repository.js"
+      ],
+      "tables": [
+        "admin_audit_events",
+        "audit_logs",
+        "reports",
+        "verification_events",
+        "service_moderation_events"
+      ],
+      "edgeFunctions": [
+        "order-event-operations"
+      ],
+      "crons": [],
+      "tests": [
+        "test:admin-navigation-lifecycle-contract",
+        "test:admin-professional-verification-contract",
+        "test:admin-service-review-page-contract",
+        "test:order-event-operations-contract"
+      ],
+      "evidence": [
+        "Order operations, verification and service moderation admin surfaces exist.",
+        "Generic support case management and unified audit authority are incomplete."
+      ],
+      "blockers": [
+        {
+          "id": "ADM-B01",
+          "severity": "critical",
+          "category": "rls",
+          "description": "audit_logs, reports and verification_events have RLS disabled; admin_audit_events grants require review.",
+          "targetPhase": "Fase 1"
+        },
+        {
+          "id": "ADM-B02",
+          "severity": "critical",
+          "category": "rpc_grants",
+          "description": "Several admin/KYC/service moderation functions are executable by broad roles.",
+          "targetPhase": "Fase 1"
+        },
+        {
+          "id": "ADM-B03",
+          "severity": "high",
+          "category": "backoffice_scope",
+          "description": "Users, payments, disputes, communities, content and support tickets are not unified in one operator workflow.",
+          "targetPhase": "Fase 13"
+        },
+        {
+          "id": "ADM-B04",
+          "severity": "high",
+          "category": "dual_control",
+          "description": "High-risk financial actions need dual approval and separation of duties.",
+          "targetPhase": "Fase 13"
+        }
+      ],
+      "nextActions": [
+        "Secure admin data and RPCs.",
+        "Create unified case/audit model.",
+        "Add dual-control for financial and identity actions.",
+        "Implement support queues, notes, SLAs and appeals."
+      ],
+      "exitCriteria": [
+        "Operators can resolve supported cases without SQL access.",
+        "Every action records actor, reason, before/after and correlation ID.",
+        "Sensitive actions require explicit approval rules.",
+        "Support access is least-privilege and time-bounded."
+      ],
+      "dependencies": [
+        "SEC-001",
+        "AUTH-001"
+      ]
+    },
+    {
+      "id": "REL-001",
+      "name": "Observabilidade, incidentes, SLOs e proteção de mudanças",
+      "wave": "C",
+      "priority": 18,
+      "maturity": 4,
+      "userFacingAuthority": "remote",
+      "serverAuthority": "canonical",
+      "stagingEvidence": "staging_operational",
+      "securityGate": "passed",
+      "productionGate": "candidate",
+      "objective": "Detect, respond to and prevent order-domain degradation while governing risky changes.",
+      "pages": [
+        "admin-pedidos-operacao.html"
+      ],
+      "requiredPaths": [
+        "assets/js/repositories/order-event-operations-repository.js",
+        "assets/js/pages/admin-order-operations.js",
+        "supabase/functions/order-event-operations/index.ts",
+        "supabase/migrations/062_order_operational_alerts.sql",
+        "supabase/migrations/087_order_operational_error_budget_schema.sql"
+      ],
+      "scanRoots": [
+        "supabase/migrations/054_order_event_worker.sql",
+        "supabase/migrations/062_order_operational_alerts.sql",
+        "supabase/migrations/066_order_operational_incident_schema.sql",
+        "supabase/migrations/074_order_operational_remediation_runbooks.sql",
+        "supabase/migrations/076_order_operational_post_incident_schema.sql",
+        "supabase/migrations/087_order_operational_error_budget_schema.sql",
+        "supabase/functions/order-event-operations"
+      ],
+      "tables": [
+        "private.order_event_worker_runs",
+        "private.order_operational_alerts",
+        "private.order_operational_incident_cycles",
+        "private.order_operational_slo_reports",
+        "private.order_operational_changes"
+      ],
+      "edgeFunctions": [
+        "order-event-worker",
+        "order-event-operations"
+      ],
+      "crons": [
+        "doke-order-event-worker",
+        "doke-order-operational-alerts",
+        "doke-order-incident-escalation",
+        "doke-order-slo-daily-report",
+        "doke-order-change-protection"
+      ],
+      "tests": [
+        "test:order-event-worker-contract",
+        "test:order-event-operations-contract",
+        "test:order-operational-alerts-contract",
+        "test:order-incident-escalation-contract",
+        "test:order-operational-runbooks-contract",
+        "test:order-post-incident-slo-contract",
+        "test:order-error-budget-change-protection-contract"
+      ],
+      "evidence": [
+        "Five operational crons are active.",
+        "Order event operations Edge Function v8 is active with JWT.",
+        "Private operational tables are not readable by anon/authenticated.",
+        "Change decision ledger is immutable."
+      ],
+      "blockers": [
+        {
+          "id": "REL-B01",
+          "severity": "high",
+          "category": "scope",
+          "description": "Reliability controls cover orders deeply but not auth, messaging, payments, community and search to the same standard.",
+          "targetPhase": "Fase 14"
+        },
+        {
+          "id": "REL-B02",
+          "severity": "medium",
+          "category": "deployment_integration",
+          "description": "CI/CD pipelines are not yet required to consume the change gate.",
+          "targetPhase": "Fase 14"
+        },
+        {
+          "id": "REL-B03",
+          "severity": "medium",
+          "category": "telemetry",
+          "description": "Production-grade centralized logs, tracing and alert delivery providers are not connected.",
+          "targetPhase": "Fase 14"
+        }
+      ],
+      "nextActions": [
+        "Keep current order controls stable.",
+        "Extend health/SLO patterns to critical domains after their server authority is complete.",
+        "Integrate change gate into CI/CD and deployment metadata."
+      ],
+      "exitCriteria": [
+        "Every critical domain has SLOs and actionable alerts.",
+        "Deploys and migrations consume the gate automatically.",
+        "Tracing links user request, event, worker and provider webhook.",
+        "Restore and rollback drills are periodic."
+      ],
+      "dependencies": [
+        "GOV-001"
+      ]
+    },
+    {
+      "id": "ANA-001",
+      "name": "Analytics, funil e economia do marketplace",
+      "wave": "C",
+      "priority": 19,
+      "maturity": 2,
+      "userFacingAuthority": "hybrid",
+      "serverAuthority": "partial",
+      "stagingEvidence": "local_e2e",
+      "securityGate": "partial",
+      "productionGate": "blocked",
+      "objective": "Measure liquidity, conversion, retention, GMV and unit economics using trustworthy events.",
+      "pages": [],
+      "requiredPaths": [
+        "assets/js/repositories/quote-template-metrics-repository.js",
+        "supabase/migrations/039_quote_template_conversion_metrics.sql",
+        "supabase/migrations/030_service_catalog_sync_metrics.sql"
+      ],
+      "scanRoots": [
+        "assets/js/repositories/quote-template-metrics-repository.js",
+        "assets/js/pages/profile/profile-quote-template-metrics.js",
+        "supabase/migrations/039_quote_template_conversion_metrics.sql",
+        "supabase/migrations/030_service_catalog_sync_metrics.sql",
+        "backend/shared/observability"
+      ],
+      "tables": [
+        "service_metric_events",
+        "quote_template_application_events",
+        "quote_template_funnel_events",
+        "private.order_metric_events"
+      ],
+      "edgeFunctions": [],
+      "crons": [],
+      "tests": [
+        "test:quote-template-conversion-metrics-contract",
+        "test:service-metrics-sync-contract"
+      ],
+      "evidence": [
+        "Service and quote-template metric events exist.",
+        "No complete canonical funnel from acquisition through repeat transaction exists."
+      ],
+      "blockers": [
+        {
+          "id": "ANA-B01",
+          "severity": "high",
+          "category": "event_model",
+          "description": "Product event taxonomy, identity stitching and consent rules are incomplete.",
+          "targetPhase": "Fase 15"
+        },
+        {
+          "id": "ANA-B02",
+          "severity": "high",
+          "category": "business_metrics",
+          "description": "GMV, take rate, liquidity, retention, CAC and LTV are not consolidated.",
+          "targetPhase": "Fase 15"
+        },
+        {
+          "id": "ANA-B03",
+          "severity": "medium",
+          "category": "data_quality",
+          "description": "No metric reconciliation or late-event policy is defined.",
+          "targetPhase": "Fase 15"
+        }
+      ],
+      "nextActions": [
+        "Define canonical marketplace event taxonomy.",
+        "Build server-side funnel and marketplace health projections.",
+        "Add data quality checks and privacy controls."
+      ],
+      "exitCriteria": [
+        "Core funnel metrics reconcile with transactional tables.",
+        "Liquidity and retention are segmented by region/category.",
+        "Event duplication and identity changes are handled.",
+        "Metrics have owners and alert thresholds."
+      ],
+      "dependencies": [
+        "LEGAL-001",
+        "AUTH-001",
+        "CAT-001",
+        "ORD-001",
+        "PAY-001"
+      ]
+    },
+    {
+      "id": "LEGAL-001",
+      "name": "Jurídico, privacidade, confiança e políticas comerciais",
+      "wave": "A",
+      "priority": 20,
+      "maturity": 1,
+      "userFacingAuthority": "local",
+      "serverAuthority": "none",
+      "stagingEvidence": "absent",
+      "securityGate": "blocked",
+      "productionGate": "blocked",
+      "objective": "Translate approved commercial and legal rules into enforceable product contracts.",
+      "pages": [],
+      "requiredPaths": [
+        "docs/DOKE-PLANO-MESTRE-CONCLUSAO-PLATAFORMA.md"
+      ],
+      "scanRoots": [
+        "docs"
+      ],
+      "tables": [],
+      "edgeFunctions": [],
+      "crons": [],
+      "tests": [],
+      "evidence": [
+        "The master plan identifies legal, privacy and commercial decisions as mandatory.",
+        "No approved legal policy package is present as an executable product authority."
+      ],
+      "blockers": [
+        {
+          "id": "LEGAL-B01",
+          "severity": "critical",
+          "category": "legal",
+          "description": "Terms, Privacy Policy, Community Policy and marketplace intermediary role are not approved.",
+          "targetPhase": "Fase 2"
+        },
+        {
+          "id": "LEGAL-B02",
+          "severity": "critical",
+          "category": "financial_policy",
+          "description": "Fees, refunds, escrow, taxation, receipts and chargeback responsibility are undefined legally.",
+          "targetPhase": "Fase 2"
+        },
+        {
+          "id": "LEGAL-B03",
+          "severity": "high",
+          "category": "privacy",
+          "description": "Consent, export, deletion, retention and anonymization flows are incomplete.",
+          "targetPhase": "Fase 2"
+        },
+        {
+          "id": "LEGAL-B04",
+          "severity": "high",
+          "category": "trust_safety",
+          "description": "Restricted categories, minors, sanctions and appeals need approved policy.",
+          "targetPhase": "Fase 2"
+        }
+      ],
+      "nextActions": [
+        "Engage legal/accounting specialists.",
+        "Approve commercial and trust policies before real money.",
+        "Map LGPD data lifecycle and user rights into technical requirements."
+      ],
+      "exitCriteria": [
+        "Approved policies exist for every critical code rule.",
+        "LGPD rights are implemented and tested.",
+        "Payment and dispute policies align with PSP and accounting.",
+        "Content/category rules are enforceable and appealable."
+      ],
+      "dependencies": [
+        "GOV-001"
+      ]
+    },
+    {
+      "id": "WEB-001",
+      "name": "Fechamento do web, acessibilidade e performance",
+      "wave": "D",
+      "priority": 21,
+      "maturity": 3,
+      "userFacingAuthority": "hybrid",
+      "serverAuthority": "partial",
+      "stagingEvidence": "local_e2e",
+      "securityGate": "partial",
+      "productionGate": "blocked",
+      "objective": "Remove production mocks, stabilize all page states and meet browser quality gates.",
+      "pages": [
+        "index.html",
+        "resultados.html",
+        "detalhe-anuncio.html",
+        "pedidos.html",
+        "mensagens.html",
+        "notificacoes.html",
+        "carteira.html",
+        "perfil.html",
+        "comunidade.html"
+      ],
+      "requiredPaths": [
+        "docs/VALIDATION.md",
+        "playwright.config.js",
+        "tests/e2e",
+        "tests/visual"
+      ],
+      "scanRoots": [
+        "assets/js",
+        "assets/css",
+        "tests/e2e",
+        "tests/visual",
+        "scripts/audit-frontend-contracts.js"
+      ],
+      "tables": [],
+      "edgeFunctions": [],
+      "crons": [],
+      "tests": [
+        "audit:frontend:strict",
+        "test:e2e",
+        "test:visual",
+        "audit:agent-governance"
+      ],
+      "evidence": [
+        "Extensive visual, lifecycle and responsive contracts exist.",
+        "Global audit is still blocked by one pre-existing Home button contract failure.",
+        "Runtime defaults remain mock/network-disabled."
+      ],
+      "blockers": [
+        {
+          "id": "WEB-B01",
+          "severity": "high",
+          "category": "runtime_cleanup",
+          "description": "Production paths still include mocks, localStorage fallbacks and provider query overrides.",
+          "targetPhase": "Fase 16"
+        },
+        {
+          "id": "WEB-B02",
+          "severity": "medium",
+          "category": "governance",
+          "description": "Home Alterar CEP button violates canonical button contract.",
+          "targetPhase": "Fase 0"
+        },
+        {
+          "id": "WEB-B03",
+          "severity": "high",
+          "category": "quality",
+          "description": "Full real-data browser E2E and accessibility evidence is not consolidated for every core flow.",
+          "targetPhase": "Fase 16"
+        }
+      ],
+      "nextActions": [
+        "Complete domain authorities before removing fallbacks.",
+        "Resolve known governance failure.",
+        "Run real-data Playwright, accessibility, Lighthouse and browser compatibility gates."
+      ],
+      "exitCriteria": [
+        "No production mock fallback exists in critical flows.",
+        "All pages expose loading, empty, error, offline and retry states.",
+        "Target viewports and accessibility gates pass.",
+        "Performance budgets and browser support are documented."
+      ],
+      "dependencies": [
+        "SEC-001",
+        "AUTH-001",
+        "CAT-001",
+        "ORD-001",
+        "MSG-001",
+        "PAY-001",
+        "COM-001"
+      ]
+    },
+    {
+      "id": "APP-001",
+      "name": "Aplicativos Android e iOS",
+      "wave": "D",
+      "priority": 22,
+      "maturity": 0,
+      "userFacingAuthority": "local",
+      "serverAuthority": "none",
+      "stagingEvidence": "absent",
+      "securityGate": "blocked",
+      "productionGate": "blocked",
+      "objective": "Ship mobile apps using the same versioned backend authority as web.",
+      "pages": [],
+      "requiredPaths": [],
+      "scanRoots": [
+        "."
+      ],
+      "tables": [],
+      "edgeFunctions": [],
+      "crons": [],
+      "tests": [],
+      "evidence": [
+        "The repository contains responsive web and mobile shell work, but no native/cross-platform app project."
+      ],
+      "blockers": [
+        {
+          "id": "APP-B01",
+          "severity": "high",
+          "category": "implementation",
+          "description": "No Android/iOS application codebase, signing pipeline or store configuration exists.",
+          "targetPhase": "Fase 17"
+        },
+        {
+          "id": "APP-B02",
+          "severity": "high",
+          "category": "backend_dependency",
+          "description": "Versioned production API and push/deep-link contracts must be stable first.",
+          "targetPhase": "Fase 17"
+        }
+      ],
+      "nextActions": [
+        "Select mobile architecture after core API stabilizes.",
+        "Define push, deep links, secure storage, offline and telemetry contracts.",
+        "Create signed build and store review pipeline."
+      ],
+      "exitCriteria": [
+        "Android and iOS builds pass device testing.",
+        "Auth, payments, messages and deep links use the same server rules as web.",
+        "Crash, performance and release telemetry are operational.",
+        "Store policies and privacy disclosures are approved."
+      ],
+      "dependencies": [
+        "WEB-001",
+        "SEC-001",
+        "AUTH-001",
+        "MSG-001",
+        "PAY-001"
+      ]
+    },
+    {
+      "id": "BETA-001",
+      "name": "Beta fechado, operação regional e lançamento",
+      "wave": "D",
+      "priority": 23,
+      "maturity": 1,
+      "userFacingAuthority": "local",
+      "serverAuthority": "contract_only",
+      "stagingEvidence": "static_contract",
+      "securityGate": "blocked",
+      "productionGate": "blocked",
+      "objective": "Operate a controlled regional beta with real users, support, limits, evidence and go/no-go decisions.",
+      "pages": [],
+      "requiredPaths": [
+        "docs/DOKE-PLANO-MESTRE-CONCLUSAO-PLATAFORMA.md",
+        "docs/BETA-CLOSED-LAUNCH-READINESS-RUNBOOK.md",
+        "docs/PRIVATE-BETA-GO-LIVE-RUNBOOK.md"
+      ],
+      "scanRoots": [
+        "docs/BETA",
+        "docs/PRIVATE-BETA",
+        "scripts/validate-beta",
+        "reports/generated"
+      ],
+      "tables": [],
+      "edgeFunctions": [],
+      "crons": [],
+      "tests": [
+        "audit:beta-closed-backend-real-readiness-gate",
+        "audit:beta-closed-product-readiness-gate",
+        "validate:beta-closed-launch:readiness-gate:dry-run"
+      ],
+      "evidence": [
+        "Backend, product and launch readiness validators and static audits now exist.",
+        "No real closed-beta cohort, operator rehearsal or go/no-go evidence exists yet."
+      ],
+      "blockers": [
+        {
+          "id": "BETA-B01",
+          "severity": "critical",
+          "category": "core_dependencies",
+          "description": "Security, payments, messaging realtime, community authority and legal gates are incomplete.",
+          "targetPhase": "Fase 18"
+        },
+        {
+          "id": "BETA-B02",
+          "severity": "high",
+          "category": "real_evidence",
+          "description": "No supervised real-user beta evidence exists.",
+          "targetPhase": "Fase 18"
+        },
+        {
+          "id": "BETA-B03",
+          "severity": "high",
+          "category": "operations",
+          "description": "Support staffing, incident rota, category/region scope and financial limits are not finalized.",
+          "targetPhase": "Fase 18"
+        }
+      ],
+      "nextActions": [
+        "Do not schedule beta until mandatory dependencies pass.",
+        "Start with one region and selected categories.",
+        "Define support, limits, fraud review and rollback playbook."
+      ],
+      "exitCriteria": [
+        "Go/no-go gate has real evidence and named approvers.",
+        "Core flows complete with real accounts and controlled money.",
+        "Support and incident response meet SLA.",
+        "Expansion is driven by liquidity and retention metrics."
+      ],
+      "dependencies": [
+        "SEC-001",
+        "LEGAL-001",
+        "AUTH-001",
+        "CAT-001",
+        "SEARCH-001",
+        "ORD-001",
+        "MSG-001",
+        "PAY-001",
+        "WAL-001",
+        "DSP-001",
+        "REP-001",
+        "ADM-001",
+        "REL-001",
+        "WEB-001"
+      ]
+    }
+  ],
+  "criticalFlows": [
+    {
+      "id": "FLOW-01",
+      "name": "Descoberta pública",
+      "steps": [
+        "home",
+        "search",
+        "results",
+        "service_detail"
+      ],
+      "status": "hybrid",
+      "owner": "SEARCH-001",
+      "blockers": [
+        "SEARCH-B02",
+        "CAT-B01"
+      ]
+    },
+    {
+      "id": "FLOW-02",
+      "name": "Cadastro, login e onboarding",
+      "steps": [
+        "register",
+        "verify_contact",
+        "session",
+        "profile_materialization",
+        "onboarding"
+      ],
+      "status": "staging_canary",
+      "owner": "AUTH-001",
+      "blockers": [
+        "AUTH-B02",
+        "AUTH-B04"
+      ]
+    },
+    {
+      "id": "FLOW-03",
+      "name": "Tornar-se profissional e KYC",
+      "steps": [
+        "profile_setup",
+        "document_upload",
+        "submit",
+        "admin_review",
+        "decision",
+        "role_activation"
+      ],
+      "status": "staging_canary",
+      "owner": "PROF-001",
+      "blockers": [
+        "PROF-B01",
+        "PROF-B03",
+        "PROF-B04"
+      ]
+    },
+    {
+      "id": "FLOW-04",
+      "name": "Publicar serviço",
+      "steps": [
+        "draft",
+        "media",
+        "quote_template",
+        "submit_review",
+        "moderation",
+        "publish",
+        "edit_version"
+      ],
+      "status": "hybrid",
+      "owner": "CAT-001",
+      "blockers": [
+        "CAT-B01",
+        "CAT-B02",
+        "CAT-B03"
+      ]
+    },
+    {
+      "id": "FLOW-05",
+      "name": "Solicitar orçamento e criar pedido",
+      "steps": [
+        "service_snapshot",
+        "questionnaire",
+        "request",
+        "outbox_event",
+        "professional_notification"
+      ],
+      "status": "staging_operational",
+      "owner": "ORD-001",
+      "blockers": [
+        "ORD-B01",
+        "ORD-B02"
+      ]
+    },
+    {
+      "id": "FLOW-06",
+      "name": "Aceite, proposta e agenda",
+      "steps": [
+        "accept",
+        "proposal",
+        "client_approval",
+        "schedule_hold",
+        "confirmation"
+      ],
+      "status": "hybrid",
+      "owner": "ORD-001",
+      "blockers": [
+        "SCHED-B02",
+        "SCHED-B03",
+        "ORD-B04"
+      ]
+    },
+    {
+      "id": "FLOW-07",
+      "name": "Conversa transacional",
+      "steps": [
+        "conversation",
+        "message",
+        "attachment",
+        "read_state",
+        "realtime",
+        "notification"
+      ],
+      "status": "hybrid",
+      "owner": "MSG-001",
+      "blockers": [
+        "MSG-B01",
+        "MSG-B02",
+        "MSG-B03"
+      ]
+    },
+    {
+      "id": "FLOW-08",
+      "name": "Pagamento, retenção e liberação",
+      "steps": [
+        "charge",
+        "provider_checkout",
+        "signed_webhook",
+        "ledger",
+        "receivable",
+        "release"
+      ],
+      "status": "blocked",
+      "owner": "PAY-001",
+      "blockers": [
+        "PAY-B01",
+        "PAY-B02",
+        "PAY-B03",
+        "PAY-B04"
+      ]
+    },
+    {
+      "id": "FLOW-09",
+      "name": "Cancelamento, reembolso e disputa",
+      "steps": [
+        "eligibility",
+        "cancel",
+        "refund",
+        "dispute",
+        "evidence",
+        "decision",
+        "appeal"
+      ],
+      "status": "blocked",
+      "owner": "DSP-001",
+      "blockers": [
+        "DSP-B01",
+        "DSP-B02",
+        "DSP-B03"
+      ]
+    },
+    {
+      "id": "FLOW-10",
+      "name": "Carteira e saque",
+      "steps": [
+        "pending_balance",
+        "available_balance",
+        "bank_account",
+        "withdraw_request",
+        "approval",
+        "provider_transfer",
+        "reconciliation"
+      ],
+      "status": "hybrid",
+      "owner": "WAL-001",
+      "blockers": [
+        "WAL-B01",
+        "WAL-B02",
+        "WAL-B03"
+      ]
+    },
+    {
+      "id": "FLOW-11",
+      "name": "Avaliação e recompra",
+      "steps": [
+        "eligibility",
+        "review",
+        "moderation",
+        "reputation",
+        "rehire"
+      ],
+      "status": "local",
+      "owner": "REP-001",
+      "blockers": [
+        "REP-B01",
+        "REP-B02",
+        "REP-B03"
+      ]
+    },
+    {
+      "id": "FLOW-12",
+      "name": "Comunidade e conteúdo",
+      "steps": [
+        "discover",
+        "join_or_request",
+        "role",
+        "post_or_message",
+        "report",
+        "sanction",
+        "appeal"
+      ],
+      "status": "local",
+      "owner": "COM-001",
+      "blockers": [
+        "COM-B01",
+        "COM-B02",
+        "COM-B03",
+        "COM-B04"
+      ]
+    },
+    {
+      "id": "FLOW-13",
+      "name": "Operação administrativa",
+      "steps": [
+        "queue",
+        "case",
+        "decision",
+        "audit",
+        "dual_control",
+        "notification"
+      ],
+      "status": "hybrid",
+      "owner": "ADM-001",
+      "blockers": [
+        "ADM-B01",
+        "ADM-B02",
+        "ADM-B03"
+      ]
+    },
+    {
+      "id": "FLOW-14",
+      "name": "Incidente e proteção de mudança",
+      "steps": [
+        "health",
+        "alert",
+        "acknowledge",
+        "runbook",
+        "recovery",
+        "post_incident",
+        "error_budget",
+        "change_gate"
+      ],
+      "status": "staging_operational",
+      "owner": "REL-001",
+      "blockers": [
+        "REL-B01",
+        "REL-B02"
+      ]
+    },
+    {
+      "id": "FLOW-15",
+      "name": "Beta fechado e lançamento",
+      "steps": [
+        "security_gate",
+        "legal_gate",
+        "real_e2e",
+        "operator_rehearsal",
+        "go_no_go",
+        "regional_beta",
+        "scale_review"
+      ],
+      "status": "blocked",
+      "owner": "BETA-001",
+      "blockers": [
+        "BETA-B01",
+        "BETA-B02",
+        "BETA-B03"
+      ]
+    }
+  ]
+}

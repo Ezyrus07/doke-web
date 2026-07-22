@@ -21,6 +21,11 @@ function requireSnippet(file, snippet) {
   if (!content.includes(snippet)) failures.push(`${file} missing snippet: ${snippet}`);
 }
 
+function forbidSnippet(file, snippet) {
+  const content = read(file);
+  if (content.includes(snippet)) failures.push(`${file} contains forbidden legacy snippet: ${snippet}`);
+}
+
 function requireJs(file) {
   try {
     return require(path.join(root, file));
@@ -59,11 +64,19 @@ const orderHandlers = read('backend/modules/orders/route-handlers.js');
   'updateOrderStatus',
   "from('orders')",
   "from('budgets')",
-  "from('order_status_history')",
+  "supabase.rpc('transition_order_status'",
+  'p_expected_status: oldStatus',
   'assertOrderAccess',
   'assertProfessionalOrderAccess',
   'normalizeBackendStatus'
 ].forEach((snippet) => requireSnippet('backend/modules/orders/orders-service.js', snippet));
+
+
+forbidSnippet('backend/modules/orders/orders-service.js', "from('order_status_history')");
+forbidSnippet('backend/modules/orders/orders-service.js', 'recordOrderStatusHistory(');
+requireSnippet('supabase/migrations/053_order_transaction_events.sql', 'private.order_domain_events');
+requireSnippet('supabase/migrations/053_order_transaction_events.sql', 'trg_orders_domain_events');
+requireSnippet('supabase/migrations/053_order_transaction_events.sql', 'public.claim_order_domain_events');
 
 const registry = requireJs('backend/shared/http/route-registry.js');
 const loader = requireJs('backend/shared/http/module-route-loader.js');

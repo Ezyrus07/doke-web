@@ -1,5 +1,19 @@
 # Validação frontend Doke
 
+
+## Matriz de conclusão dos domínios
+
+A matriz é um contrato gerado e deve permanecer sem drift:
+
+```bash
+npm run write:domain-completion-matrix  # somente ao atualizar a autoridade ou o snapshot
+npm run audit:domain-completion-matrix  # obrigatório em todo lote de domínio
+```
+
+O comando de escrita atualiza `docs/DOMAIN-COMPLETION-MATRIX.md` e `reports/generated/domain-completion-matrix-report.json`. O comando de auditoria falha quando paths, scripts, dependências, IDs, blockers ou artefatos gerados divergem.
+
+Atualizar `docs/validation/domain-completion-staging-snapshot.json` após migrations, grants, policies, Realtime, Storage, Edge Functions ou crons relevantes.
+
 ## Validação mínima por patch
 
 ```bash
@@ -1600,3 +1614,37 @@ powershell -ExecutionPolicy Bypass -File tools/private-beta-execution-bridge.win
 ```
 
 Expected local status without real evidence: `private_beta_execution_bridge_ready_with_env_blockers`, `private_beta_operating_dashboard_no_go`, and `private_beta_strategy_decision_no_go`.
+
+## SEC-001 identity authority batch
+
+```bash
+npm run test:identity-rls-authority-contract
+npm run test:identity-role-authority-runtime
+npm run test:real-auth-only-contract
+npm run audit:identity-profile-contract
+npm run audit:security-permission-contract
+npm run audit:auth-session
+```
+
+Remote validation must additionally prove:
+
+- `anon` cannot read or mutate `public.users`;
+- an authenticated caller sees exactly one account row, their own;
+- public profiles remain readable but browser DML is revoked;
+- forged `raw_user_meta_data.role` does not change `public.users.role` or `raw_app_meta_data.role`;
+- ordinary clients receive `ADMIN_REQUIRED` from administrative KYC RPCs;
+- all test mutations are rolled back.
+
+
+## SEC-001 professional KYC authority batch
+
+```bash
+npm run test:professional-kyc-authority-contract
+npm run test:professional-kyc-edge-runtime
+npm run test:professional-profile-setup-contract
+npm run test:professional-identity-verification-contract
+npm run test:admin-professional-verification-contract
+npm run audit:domain-completion-matrix
+```
+
+Remote validation must confirm owner/reviewer RLS, no direct browser DML, a private KYC bucket with four canonical policies, service-role-only reviewer RPCs and role promotion without user-editable authorization metadata.

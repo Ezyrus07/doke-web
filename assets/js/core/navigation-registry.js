@@ -82,7 +82,7 @@
       sidebarClass: 'profile',
       group: 'account',
       surfaces: ['desktop-sidebar', 'mobile-drawer', 'mobile-bottom'],
-      activePaths: ['/perfil.html', '/meu-perfil.html', '/perfil-cliente.html', '/perfil-profissional.html', '/tornar-profissional.html', '/verificacao-profissional.html']
+      activePaths: ['/perfil.html', '/meu-perfil.html', '/perfil-cliente.html', '/perfil-profissional.html', '/tornar-profissional.html', '/verificacao-profissional.html', '/anunciar-servico.html']
     },
     {
       id: 'wallet',
@@ -106,7 +106,7 @@
       sidebarClass: 'admin',
       group: 'account',
       surfaces: ['desktop-sidebar'],
-      activePaths: ['/admin.html'],
+      activePaths: ['/admin.html', '/admin-verificacao.html', '/admin-anuncio-revisao.html', '/admin-pedidos-operacao.html'],
       access: { roles: ['admin', 'support'], flags: ['isMockSupport', 'mockSupport'] }
     },
     {
@@ -145,6 +145,7 @@
     'admin.html': { key: 'admin', search: false, title: 'Admin', compactSearchButton: true, hideSearchBar: true, hideLocation: true, bottomNav: false },
     'admin-verificacao.html': { key: 'admin-verificacao', search: false, title: 'Análise de identidade', compactSearchButton: true, hideSearchBar: true, hideLocation: true, bottomNav: false },
     'admin-anuncio-revisao.html': { key: 'admin-anuncio-revisao', search: false, title: 'Revisão de anúncio', compactSearchButton: true, hideSearchBar: true, hideLocation: true, bottomNav: false },
+    'admin-pedidos-operacao.html': { key: 'admin-pedidos-operacao', search: false, title: 'Operação de pedidos', compactSearchButton: true, hideSearchBar: true, hideLocation: true, bottomNav: false },
     'configuracoes.html': { key: 'configuracoes', search: false, title: 'Configurações', compactSearchButton: true, hideSearchBar: true, hideLocation: true },
     'ajuda.html': { key: 'ajuda', search: false, title: 'Ajuda', compactSearchButton: true, hideSearchBar: true, hideLocation: true },
     'tornar-profissional.html': { key: 'tornar-profissional', search: false, title: 'Tornar-se profissional', compactSearchButton: true, hideSearchBar: true, hideLocation: true },

@@ -24,6 +24,7 @@
     'admin.html': { key: 'admin', active: '', search: false, title: 'Admin', compactSearchButton: true, hideSearchBar: true, hideLocation: true, bottomNav: false },
     'admin-verificacao.html': { key: 'admin-verificacao', active: '', search: false, title: 'Análise de identidade', compactSearchButton: true, hideSearchBar: true, hideLocation: true, bottomNav: false },
     'admin-anuncio-revisao.html': { key: 'admin-anuncio-revisao', active: '', search: false, title: 'Revisão de anúncio', compactSearchButton: true, hideSearchBar: true, hideLocation: true, bottomNav: false },
+    'admin-pedidos-operacao.html': { key: 'admin-pedidos-operacao', active: '', search: false, title: 'Operação de pedidos', compactSearchButton: true, hideSearchBar: true, hideLocation: true, bottomNav: false },
     'notificacoes.html': { key: 'notificacoes', active: '', search: false, title: 'Notificações', bottomNav: false },
     'novidades.html': { key: 'novidades', active: 'notifications', search: false, title: 'Novidades', bottomNav: false },
     'ajuda.html': { key: 'ajuda', active: 'settings', search: false, title: 'Ajuda', compactSearchButton: true, hideSearchBar: true, hideLocation: true },

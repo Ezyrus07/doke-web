@@ -1,6 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "@supabase/supabase-js";
-import { callOpenAI } from "./openai.ts";
+import { callOpenAI, normalizeOpenAIError } from "./openai.ts";
 import { rulesSuggestions } from "./recommendations.ts";
 import {
   ALLOWED_TEMPLATE_SOURCES,
@@ -260,7 +260,7 @@ const handleGenerate = async (
         fallbackReason = "OPENAI_NO_VALID_SUGGESTIONS";
       }
     } catch (error) {
-      fallbackReason = text(error instanceof Error ? error.message : error, 180) || "OPENAI_FAILED";
+      fallbackReason = normalizeOpenAIError(error);
     }
   } else {
     fallbackReason = "OPENAI_KEY_NOT_CONFIGURED";

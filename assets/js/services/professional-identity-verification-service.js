@@ -66,6 +66,25 @@
     });
   }
 
+  function remoteVerificationOperation(action, payload) {
+    var client = supabaseClient();
+    if (!client || !client.functions || typeof client.functions.invoke !== 'function') {
+      return Promise.reject(new Error('Operação remota de verificação indisponível.'));
+    }
+    return client.functions.invoke('professional-verification-operations', {
+      body: Object.assign({ action: action }, payload || {})
+    }).then(function (result) {
+      if (result && result.error) throw result.error;
+      var data = result && result.data;
+      if (data && data.error) {
+        var error = new Error(data.error);
+        error.code = data.error;
+        throw error;
+      }
+      return data;
+    });
+  }
+
   function mapRemoteVerification(row) {
     if (!row) return null;
     var payload = Object.assign({}, row.payload || {}, row.address || {}, row.documents || {});
@@ -93,17 +112,41 @@
     if (!client || !client.storage) return Promise.reject(new Error('Storage do Supabase indisponível para enviar os documentos.'));
     var fields = ['documentFront','documentBack','selfieDocument','proofOfAddress'];
     if (payload.verificationType === 'business') fields.push('businessDocument');
-    var stamp = Date.now();
-    return Promise.all(fields.map(function (field) {
+    var descriptors = fields.map(function (field) {
       var file = payload[field];
       if (!file || !(file.blob instanceof Blob)) throw validationError('Selecione novamente o arquivo para concluir o envio.', field);
-      var safeName = String(file.fileName || field).replace(/[^a-zA-Z0-9._-]+/g,'-').slice(-120);
-      var path = userId + '/' + stamp + '-' + field + '-' + safeName;
-      return client.storage.from('professional-verification-media').upload(path, file.blob, { contentType: file.type || file.blob.type || 'application/octet-stream', upsert: false }).then(function (result) {
-        if (result.error) throw result.error;
-        return [field, { path:path, fileName:file.fileName, size:file.size, type:file.type, bucket:'professional-verification-media' }];
+      return {
+        field: field,
+        fileName: String(file.fileName || field).slice(0, 180),
+        size: Number(file.size || file.blob.size || 0),
+        type: String(file.type || file.blob.type || 'application/octet-stream').toLowerCase()
+      };
+    });
+
+    return remoteVerificationOperation('prepare_uploads', {
+      verificationType: payload.verificationType || 'individual',
+      files: descriptors
+    }).then(function (intent) {
+      var uploads = intent && intent.uploads;
+      if (!intent || !intent.intentId || !Array.isArray(uploads) || uploads.length !== fields.length) {
+        throw new Error('Não foi possível preparar os documentos para envio seguro.');
+      }
+      return Promise.all(uploads.map(function (upload) {
+        var source = payload[upload.field];
+        if (!source || !(source.blob instanceof Blob) || !upload.path || !upload.token) {
+          throw new Error('Manifesto de upload inválido.');
+        }
+        return client.storage.from(upload.bucket || 'professional-verification-media')
+          .uploadToSignedUrl(upload.path, upload.token, source.blob, {
+            contentType: upload.type || source.type || source.blob.type || 'application/octet-stream'
+          }).then(function (result) {
+            if (result && result.error) throw result.error;
+            return true;
+          });
+      })).then(function () {
+        return { intentId: intent.intentId };
       });
-    })).then(function (pairs) { var docs={}; pairs.forEach(function(pair){docs[pair[0]]=pair[1];}); return docs; });
+    });
   }
 
   function hydrateRemoteDocumentUrls(verification) {
@@ -166,13 +209,12 @@
     if (!client || typeof client.rpc !== 'function') {
       return Promise.reject(new Error('Supabase indisponível para concluir a análise.'));
     }
-    return client.rpc('decide_professional_identity_verification', {
-      p_verification_id: verificationId,
-      p_decision: decision,
-      p_rejection_reason: rejectionReason || null
-    }).then(function (result) {
-      if (result && result.error) throw result.error;
-      var data = result && result.data || {};
+    return remoteVerificationOperation('decide', {
+      verificationId: verificationId,
+      decision: decision,
+      rejectionReason: rejectionReason || null
+    }).then(function (data) {
+      data = data || {};
       var normalized = {
         id: data.publicVerificationId || data.verificationId || verificationId,
         userId: data.userId || '',
@@ -446,10 +488,10 @@
     validateBinaryEvidence(rawPayload);
     var payload = validateAll(rawPayload);
     if (usesSupabaseProvider()) {
-      return uploadVerificationFiles(user.id,payload).then(function(documents){
+      return uploadVerificationFiles(user.id,payload).then(function(upload){
         var clean=Object.assign({},payload);
         ['documentFront','documentBack','selfieDocument','proofOfAddress','businessDocument'].forEach(function(k){delete clean[k];});
-        return remoteRpc('submit_professional_identity_verification',{p_payload:clean,p_documents:documents});
+        return remoteVerificationOperation('submit',{uploadIntentId:upload.intentId,payload:clean});
       }).then(function(v){window.dispatchEvent(new CustomEvent('doke:professional-verification-submitted',{detail:{verification:v,remote:true}}));return v;});
     }
     var repo=repository(); if(!repo)return Promise.reject(new Error('Persistência da verificação indisponível.'));
@@ -467,9 +509,11 @@
   function listForReview(filters) {
     requireReviewer(); filters=filters||{};
     if(usesSupabaseProvider()){
-      return remoteRpc('list_professional_identity_verifications_for_admin',{
-        p_status: filters.status || null
-      }).then(function(rows){
+      return remoteVerificationOperation('list', {
+        status: filters.status || null,
+        limit: filters.limit || 100
+      }).then(function(result){
+        var rows = result && result.items;
         return (Array.isArray(rows) ? rows : []).map(mapRemoteVerification);
       });
     }
@@ -479,9 +523,10 @@
   function getReviewDetail(verificationId) {
     requireReviewer();
     if(usesSupabaseProvider()){
-      return remoteRpc('get_professional_identity_verification_for_admin', {
-        p_verification_id: String(verificationId || '')
-      }).then(function (row) {
+      return remoteVerificationOperation('detail', {
+        verificationId: String(verificationId || '')
+      }).then(function (result) {
+        var row = result && result.item;
         if (!row) throw new Error('Verificação de identidade não encontrada.');
         return hydrateRemoteDocumentUrls(mapRemoteVerification(row));
       });
@@ -490,7 +535,7 @@
   }
 
   function startReview(verificationId) {
-    if(usesSupabaseProvider()) return remoteRpc('start_professional_identity_review',{p_verification_id:String(verificationId||'')}).then(function(v){return getReviewDetail(v.id||verificationId);});
+    if(usesSupabaseProvider()) return remoteVerificationOperation('start', { verificationId: String(verificationId || '') }).then(function(v){return getReviewDetail(v.id||verificationId);});
     var reviewer=requireReviewer();var repo=repository();if(!repo)return Promise.reject(new Error('Persistência da verificação indisponível.'));return repo.transition(verificationId,'under_review',{reviewerId:reviewer.id}).then(function(verification){return syncProfileVerificationStatus(verification.professionalProfileId,'under_review').then(function(){return verification;});});
   }
 

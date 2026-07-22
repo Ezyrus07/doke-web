@@ -802,3 +802,133 @@ Known operational events are mapped centrally. Examples:
 - New operational events must be added to the central event map before page-specific listener lists are created.
 - Invalidation marks cached data stale; it does not delete persisted repository data.
 - Community invalidation remains isolated until the Community workstream is integrated.
+
+## Order lifecycle authority
+
+Order status mutations are now governed by an explicit state machine instead of accepting arbitrary status strings.
+
+- Backend authority: `backend/modules/orders/order-state-machine.js`.
+- Runtime integration: `backend/modules/orders/orders-service.js` validates the action, actor role, current state, and target state before writing.
+- Concurrency: every status mutation uses `public.transition_order_status(...)` with `p_expected_status`, so two concurrent actions cannot silently overwrite each other.
+- Database defense: `supabase/migrations/051_order_state_machine.sql` installs a `BEFORE UPDATE` trigger that rejects invalid lifecycle edges and prevents authenticated participants from rewriting order ownership identifiers.
+- Compatibility: the existing frontend flow remains a supported subset (`pending/requested → accepted → quoted → in_progress → completed`, with controlled cancellation/dispute edges).
+- Terminal behavior: `cancelled` cannot be reopened; `completed` can only move to `disputed`; an internal operator may resolve a dispute to `completed` or `cancelled`.
+
+
+## Order transactional event authority
+
+Every accepted order lifecycle transition now produces one canonical domain event inside the same Postgres transaction.
+
+### Canonical event
+
+- Storage authority: `private.order_domain_events`.
+- Identity: deterministic `order:<order_id>:v<sequence>` keys.
+- Ordering: monotonic sequence per order with a unique `(order_id, sequence_no)` constraint.
+- Payload: actor, action, previous/next status, participant identifiers and occurrence time.
+- Invalidation: event-owned cache tags for Orders, Messages/Conversation and Notifications.
+
+### Atomic projections
+
+`private.project_order_domain_event()` projects the canonical event before the transaction commits:
+
+- `public.order_status_history`: one idempotent history row per event;
+- `public.conversations`: metadata/cache version update when a conversation already exists;
+- `public.notifications`: recipient-scoped, event-key-deduplicated notifications;
+- `private.order_metric_events`: one analytics projection per canonical event.
+
+A projection failure rolls back the order transition. The backend must never restore a best-effort `insert` into `order_status_history` after updating the order.
+
+### Transition RPC
+
+`public.transition_order_status(...)` is the canonical mutation boundary. It:
+
+- receives the previously observed status;
+- stores action/note in transaction-local context;
+- performs the optimistic update;
+- delegates authorization and lifecycle validation to `trg_orders_state_machine`;
+- delegates event/projection creation to `trg_orders_domain_events`.
+
+### External delivery outbox
+
+External consumers use service-role-only RPCs:
+
+- `claim_order_domain_events(limit)`;
+- `complete_order_domain_event(event_key)`;
+- `fail_order_domain_event(event_key, error_code, retry_after_seconds)`.
+
+Claims use `FOR UPDATE SKIP LOCKED`, enabling multiple workers without duplicate delivery. `anon` and `authenticated` cannot call these RPCs or read private event/metric tables.
+
+## Order event worker authority
+
+The transactional order outbox is now consumed by the server-side Edge Function `order-event-worker`.
+
+### Invocation and authentication
+
+- `pg_cron` evaluates the outbox every minute through `private.invoke_order_event_worker_if_needed()`.
+- The Edge Function is invoked only when a `ready` or retryable `failed` event is available.
+- Built-in Edge JWT verification is disabled for this internal service endpoint; a 256-bit random worker token is generated inside Postgres, stored plaintext only in Supabase Vault and compared by SHA-256 through a service-role-only RPC.
+- `anon` and `authenticated` cannot validate the worker token, claim events, complete deliveries or record failures.
+
+### Delivery semantics
+
+- Claims use `FOR UPDATE SKIP LOCKED` and are bound to an observable worker-run identifier.
+- Delivery is at-least-once. Downstream integrations must deduplicate by the deterministic `event_key` sent as the event ID.
+- Retry uses exponential backoff, capped at one hour.
+- Claims stuck in `processing` are recovered after five minutes.
+- Events move to `dead_letter` after their configured maximum number of attempts.
+- Every attempt records status, stable internal error code, worker run and sanitized result metadata.
+
+### Internal projections
+
+A successful delivery increments each event-owned cache tag in `private.cache_tag_versions`. This gives server consumers a monotonic version for:
+
+- the individual order;
+- the client's order collection;
+- the professional's order collection;
+- the order-linked conversation.
+
+The optional external webhook is disabled by default. When unconfigured, delivery completes internally with `webhook.status = skipped` and creates no dependency on another provider. When configured later, the envelope includes the deterministic event ID and may be signed with HMAC-SHA256.
+
+### Operational tables
+
+- `private.order_event_worker_runs`: invocation-level observability;
+- `private.order_event_delivery_attempts`: per-event attempt history;
+- `private.cache_tag_versions`: monotonic invalidation versions;
+- `private.order_event_worker_credentials`: token hash only; plaintext remains in Vault.
+
+### Deployment artifacts
+
+- `supabase/functions/order-event-worker/index.ts`;
+- `supabase/functions/order-event-worker/worker.mjs`;
+- `supabase/functions/order-event-worker/deno.json`;
+- `supabase/migrations/054_order_event_worker.sql`;
+- `supabase/migrations/055_order_event_worker_indexes.sql`.
+
+
+## Change protection authority
+
+- Error budgets are calculated server-side from canonical health evaluations, worker runs and incident-cycle telemetry.
+- The supported windows are `1h`, `6h`, `24h` and `30d`; metrics with insufficient samples remain `no_data` and do not fabricate compliance.
+- Change decisions are authoritative in Postgres and use the closed values `allow`, `approval_required` and `hard_block`.
+- The browser may register, approve and document a change only through `order-event-operations`; it never reads private tables or calls privileged RPCs directly.
+- Administrative overrides are temporary, reasoned, state-bounded and cannot bypass a `hard_block`.
+- Pipelines must consume the protected service-role gate before starting a registered change.
+- Recovery re-evaluates pending changes automatically; incident correlation is evidence for investigation, not proof of causation.
+
+## Identity and public profile authority
+
+- `public.users` is the canonical account authority for role, status and onboarding state.
+- An authenticated user may select only their own `public.users` row; `anon` cannot read the table and neither browser role has direct DML grants.
+- `public.user_profiles` is intentionally public-readable, while all browser writes pass through validated self-service RPCs.
+- New Auth accounts are materialized by `private.materialize_auth_account(uuid)` and always start as `client`.
+- Authorization keys in `raw_user_meta_data` are ignored and removed. `raw_app_meta_data.role/account_status` is a server-controlled projection of `public.users`.
+- Identity and KYC RPCs are no longer executable by `anon`; administrative verification RPCs retain server-side role checks and deny ordinary clients.
+- `current_user_role()` and the operator helpers use `SECURITY INVOKER`, so role lookups remain subject to the own-account RLS policy.
+
+Deployment artifacts:
+
+- `supabase/migrations/093_identity_table_rls_authority.sql`;
+- `supabase/migrations/094_identity_role_materialization_authority.sql`;
+- `supabase/migrations/095_identity_rpc_authority_hardening.sql`;
+- `supabase/migrations/096_identity_helper_invoker_hardening.sql`;
+- `supabase/tests/006_identity_rls_authority_validation.sql`.

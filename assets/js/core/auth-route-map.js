@@ -35,6 +35,7 @@
     'admin.html',
     'admin-verificacao.html',
     'admin-anuncio-revisao.html',
+    'admin-pedidos-operacao.html',
     'meu-perfil.html',
     'orcamento.html',
     'anunciar-servico.html',

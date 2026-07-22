@@ -60,12 +60,13 @@
     return config.enabled !== false && Boolean(config.url) && Boolean(config.anonKey);
   };
   const roleFromMetadata = (user) => {
-    const value = String(user?.user_metadata?.role || user?.app_metadata?.role || 'client').trim().toLowerCase();
+    const value = String(user?.app_metadata?.role || 'client').trim().toLowerCase();
     return ['client', 'professional', 'moderator', 'support', 'admin'].includes(value) ? value : 'client';
   };
   const publicUserFromSupabase = (user) => {
     if (!user) return null;
     const metadata = user.user_metadata || {};
+    const appMetadata = user.app_metadata || {};
     const name = normalizeText(metadata.name || metadata.full_name || user.email || 'Conta Doke');
     const role = roleFromMetadata(user);
     const initials = name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part.charAt(0).toUpperCase()).join('') || 'DK';
@@ -82,7 +83,7 @@
       avatarInitials: initials,
       avatarUrl: metadata.avatar_url || metadata.avatarUrl || '',
       avatar: metadata.avatar_url || metadata.avatarUrl || '',
-      accountStatus: metadata.account_status || 'active',
+      accountStatus: appMetadata.account_status || 'active',
       verified: Boolean(user.email_confirmed_at || user.confirmed_at),
       createdAt: user.created_at || new Date().toISOString(),
       publicProfileUrl: role === 'professional' ? 'perfil.html' : 'perfil-cliente.html',
@@ -686,7 +687,7 @@
       const { data, error } = await client.auth.signUp({
         email,
         password,
-        options: { data: { name, handle, role: 'client', ...(phone ? { display_phone: phone } : {}) } }
+        options: { data: { name, handle, ...(phone ? { display_phone: phone } : {}) } }
       });
       if (error) {
         const message = String(error.message || '').toLowerCase();

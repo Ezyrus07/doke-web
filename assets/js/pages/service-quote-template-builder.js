@@ -368,7 +368,7 @@
       if (selectedPreset.id) presetCustomized = true;
     };
 
-    const serialize = () => {
+    const serialize = (options = {}) => {
       questions = questions.slice(0, 10).map(normalizeQuestion);
       const signature = JSON.stringify(questions);
       let hash = 2166136261;
@@ -397,19 +397,22 @@
         aiOptimizationRunId: aiOptimizationRunId || null,
         questions
       };
+      const emit = options.emit !== false;
       if (input) {
         input.value = JSON.stringify(value);
-        input.dispatchEvent(new Event('input', { bubbles: true }));
+        if (emit) input.dispatchEvent(new Event('input', { bubbles: true }));
       }
-      window.dispatchEvent(new CustomEvent('doke:service-quote-template-changed', {
-        detail: {
-          templateId: value.templateId,
-          templateKind: value.templateKind,
-          templateLabel: value.templateLabel,
-          source: value.source,
-          questionCount: questions.length
-        }
-      }));
+      if (emit) {
+        window.dispatchEvent(new CustomEvent('doke:service-quote-template-changed', {
+          detail: {
+            templateId: value.templateId,
+            templateKind: value.templateKind,
+            templateLabel: value.templateLabel,
+            source: value.source,
+            questionCount: questions.length
+          }
+        }));
+      }
       return value;
     };
 
@@ -1061,7 +1064,7 @@
     };
 
     const api = {
-      getValue: serialize,
+      getValue: () => serialize({ emit: false }),
       validate,
       load,
       applyTemplateById,

@@ -12,7 +12,9 @@ Before making changes, read and follow these authority documents:
 6. `docs/DESIGN-SYSTEM-GUIDE.md`
 7. `docs/PAGE-ASSET-AUTHORITY-MATRIX.md`
 8. `docs/BASELINE-VISUAL-APPROVED.md`
-9. Relevant validation docs under `docs/validation/`
+9. `docs/DOKE-PLANO-MESTRE-CONCLUSAO-PLATAFORMA.md`
+10. `docs/DOMAIN-COMPLETION-MATRIX.md`
+11. Relevant validation docs under `docs/validation/`
 
 Core rules:
 
@@ -27,6 +29,7 @@ Core rules:
 Minimum validation for patches:
 
 ```bash
+npm run audit:domain-completion-matrix
 npm run audit:agent-governance
 node --check <changed-js-files>
 git diff --check

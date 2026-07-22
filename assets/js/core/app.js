@@ -836,7 +836,7 @@ const updateSidebarActiveState = (pathOverride = null) => {
     communities: path === "/comunidade.html" || path === "/comunidade-interna.html",
     profile: path === INTERNAL_PROFILE_PATH || path === "/meu-perfil.html" || path === "/perfil-cliente.html" || path === "/perfil-profissional.html" || path === "/tornar-profissional.html" || path === "/verificacao-profissional.html" || path === "/anunciar-servico.html",
     wallet: path === "/carteira.html",
-    admin: path === "/admin.html",
+    admin: path === "/admin.html" || path === "/admin-verificacao.html" || path === "/admin-anuncio-revisao.html" || path === "/admin-pedidos-operacao.html",
     settings: path === "/configuracoes.html" || path === "/ajuda.html"
   };
   const isActive = (id) => registryActiveId ? registryActiveId === id : Boolean(fallbackState[id]);
@@ -1157,6 +1157,7 @@ const INTERNAL_VIEW_STYLE_HINTS = {
   "/ajuda.html": ["assets/css/pages/ajuda-foundation.css"],
   "/carteira.html": ["assets/css/pages/carteira-foundation.css"],
   "/admin.html": ["assets/css/pages/admin-foundation.css"],
+  "/admin-pedidos-operacao.html": ["assets/css/pages/admin-foundation.css", "assets/css/pages/admin-order-operations.css"],
   "/comunidade.html": [
     "assets/css/pages/comunidade-foundation.css",
     "assets/css/pages/comunidade-ui-foundation.css",
@@ -1192,6 +1193,7 @@ const INTERNAL_VIEW_SCRIPT_HINTS = {
   "/ajuda.html": ["assets/js/pages/ajuda.js"],
   "/carteira.html": ["assets/js/pages/carteira.js"],
   "/admin.html": ["assets/js/pages/admin.js"],
+  "/admin-pedidos-operacao.html": ["assets/js/repositories/order-event-operations-repository.js", "assets/js/pages/admin-order-operations.js"],
   "/comunidade.html": ["assets/js/pages/comunidade.js"],
   "/comunidade-interna.html": ["assets/js/pages/comunidade-interna.js"],
   "/perfil.html": ["assets/js/controllers/perfil-controller.js"],

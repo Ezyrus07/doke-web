@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-auth-guard="pending">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Doke | Operação de pedidos</title>
+  <link rel="stylesheet" href="assets/css/core/auth-prepaint-guard.css?v=20260719-auth-prepaint-v1">
+  <script src="assets/js/core/header-auth-surface-early.js?v=20260718-real-auth-only-v1"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet" />
+  <script defer src="assets/js/core/shell-state-early.js?v=20260614-drawer-canonical-v2"></script>
+  <link href="assets/css/pages/admin-foundation.css?v=20260720-moderation-flow-v1" rel="stylesheet" />
+  <link href="assets/css/pages/admin-order-operations.css?v=20260722-error-budget-v1" rel="stylesheet" />
+  <script>document.documentElement.classList.add("doke-mobile-shell-pending");</script>
+  <script defer src="assets/js/core/ipad-safari-early-guard.js?v=20260531-v3"></script>
+  <link rel="stylesheet" href="assets/css/components/feedback/document-preloader.css?v=20260712-global-document-boot-v1">
+  <link rel="stylesheet" href="assets/css/components/ui-surface/close-button-authority.css?v=20260713-global-v1">
+</head>
+<body class="doke-app-shell-page app-shell-page internal-shell-page admin-page-shell doke-flow has-global-header" data-page="admin" data-admin-view="order-operations">
+  <section class="doke-document-preloader" data-doke-document-preloader aria-label="Carregando Doke" aria-hidden="false">
+    <div class="doke-document-preloader__mark">
+      <img class="doke-document-preloader__logo" src="assets/img/doke-logo-lockup.png" alt="Doke" decoding="async">
+    </div>
+  </section>
+
+  <div class="app-shell" data-shell-contract="app-shell">
+    <aside class="sidebar" data-shell-sidebar data-sidebar-contract="global-sidebar"></aside>
+    <div class="page">
+      <header aria-label="Operação interna dos pedidos" class="app-header app-header--admin home-side-meta" data-app-header data-header-contract="app-header" data-header-variant="contextual" data-header-family="contextual">
+        <div class="app-header__inner" data-header-inner>
+          <div class="home-side-meta__group home-side-meta__group--primary app-header__group app-header__group--primary" data-header-slot="primary">
+            <button aria-expanded="false" aria-haspopup="dialog" aria-label="Abrir menu lateral" class="home-side-meta__tablet-menu" data-mobile-home-menu-open type="button">
+              <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 7h16"></path><path d="M4 12h16"></path><path d="M4 17h16"></path></svg>
+            </button>
+            <button aria-label="Buscar eventos" class="home-side-meta__search" type="button">
+              <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="11" cy="11" r="5.75"></circle><path d="m16 16 4 4"></path></svg>
+            </button>
+            <form aria-label="Buscar eventos operacionais" class="home-side-meta__search-form" role="search">
+              <label class="home-side-meta__search-label doke-label" for="admin-order-ops-search">Buscar</label>
+              <input autocomplete="off" class="home-side-meta__search-input doke-input" id="admin-order-ops-search" placeholder="Evento, pedido ou erro" type="search" data-admin-ops-search />
+            </form>
+            <div aria-label="Ações operacionais" class="page-header-context" data-header-context role="toolbar">
+              <button class="page-header-context__action doke-btn" data-admin-ops-back type="button">
+                <svg aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24"><path d="m15 6-6 6 6 6"></path></svg>
+                <span>Admin</span>
+              </button>
+              <button class="page-header-context__action doke-btn" data-admin-ops-refresh type="button">
+                <svg aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7"></path><path d="M20 5v6h-6"></path></svg>
+                <span>Atualizar</span>
+              </button>
+              <button class="page-header-context__action doke-btn is-view-active" data-admin-ops-run-now type="button">
+                <svg aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24"><path d="m8 5 11 7-11 7V5Z"></path></svg>
+                <span>Executar agora</span>
+              </button>
+            </div>
+          </div>
+          <div class="home-side-meta__group home-side-meta__group--secondary app-header__group app-header__group--secondary" data-header-slot="actions">
+            <button aria-label="Pedidos" class="home-side-meta__alert" data-header-nav="pedidos.html" type="button">
+              <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M6 5.5h12v13H6z"></path><path d="M9 9h6"></path><path d="M9 12h6"></path><path d="M9 15h4"></path></svg>
+            </button>
+            <button aria-label="Admin" class="home-side-meta__alert" data-header-nav="admin.html" type="button">
+              <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3.5 18 6v5.2c0 4.4-2.6 7.3-6 9.3-3.4-2-6-4.9-6-9.3V6l6-2.5Z"></path><path d="M9.5 12.5 11.2 14l3.3-4"></path></svg>
+            </button>
+            <div class="home-side-meta__profile-wrap">
+              <button aria-expanded="false" aria-haspopup="true" aria-label="Abrir menu da conta" class="home-side-meta__profile" data-home-profile-menu-toggle type="button">
+                <span class="home-side-meta__avatar doke-avatar">DK</span>
+                <span class="home-side-meta__identity"><strong>Entrar</strong><span>Conta</span></span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main class="page__content doke-page">
+        <div class="page__content-inner container app-shell-page__workspace app-shell-page__workspace--clean admin-shell-content doke-page-shell doke-page-stack">
+          <section class="admin-page doke-page-section" aria-label="Operação de eventos de pedidos" data-admin-ops-root data-state-boundary="admin-order-operations" data-view-state="guard-pending" aria-busy="true">
+            <section class="admin-access-pending doke-state-region--pending" data-admin-ops-pending role="status" aria-live="polite">
+              <div class="admin-access-pending__surface">
+                <span class="doke-loading-spinner doke-loading-spinner--sm" aria-hidden="true"></span>
+                <div class="admin-access-pending__copy">
+                  <strong data-admin-ops-pending-title>Validando acesso operacional</strong>
+                  <span data-admin-ops-pending-message>Confirmando sua sessão e as permissões de suporte.</span>
+                </div>
+              </div>
+            </section>
+
+            <section class="admin-lifecycle-error" data-admin-ops-error role="alert" tabindex="-1" hidden>
+              <span class="admin-locked__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M12 4 20 19H4L12 4Z"></path><path d="M12 9v4"></path><path d="M12 16h.01"></path></svg>
+              </span>
+              <h1 class="admin-locked__title">Não foi possível carregar a operação</h1>
+              <p class="admin-locked__copy" data-admin-ops-error-message>Nenhum dado privado do worker foi exibido.</p>
+              <div class="admin-lifecycle-error__actions">
+                <button class="doke-btn doke-btn--primary" data-admin-ops-retry type="button">Tentar novamente</button>
+                <button class="doke-btn doke-btn--ghost" data-admin-ops-back type="button">Voltar ao admin</button>
+              </div>
+            </section>
+
+            <div data-admin-ops-content hidden>
+              <section class="admin-ops-hero" aria-labelledby="admin-order-ops-title">
+                <div class="admin-ops-hero__copy">
+                  <span class="admin-ops-hero__eyebrow">Infraestrutura transacional</span>
+                  <h1 class="admin-ops-hero__title" id="admin-order-ops-title">Operação de pedidos</h1>
+                  <p class="admin-ops-hero__description" data-admin-ops-health-message>Monitoramento do worker, retries e entregas dos eventos de pedidos.</p>
+                  <p class="admin-ops-hero__updated" data-admin-ops-updated>Atualização ainda não concluída.</p>
+                </div>
+                <div class="admin-ops-health" data-admin-ops-health data-status="idle">
+                  <span class="admin-ops-health__dot" aria-hidden="true"></span>
+                  <span data-admin-ops-health-label>Sem eventos</span>
+                </div>
+              </section>
+
+              <section class="admin-grid admin-ops-grid" aria-label="Resumo operacional">
+                <article class="admin-card">
+                  <span class="admin-card__icon admin-card__icon--info" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3.5 18 6v5.2c0 4.4-2.6 7.3-6 9.3-3.4-2-6-4.9-6-9.3V6l6-2.5Z"></path><path d="M9.5 12.5 11.2 14l3.3-4"></path></svg></span>
+                  <div class="admin-card__content"><strong class="admin-card__value" data-admin-ops-stat="health">—</strong><span class="admin-card__label">Saúde do worker</span><p class="admin-card__copy">Cron, fila e execução mais recente.</p></div>
+                </article>
+                <article class="admin-card">
+                  <span class="admin-card__icon admin-card__icon--info" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 4h14v16H5z"></path><path d="M8 8h8"></path><path d="M8 12h8"></path><path d="M8 16h5"></path></svg></span>
+                  <div class="admin-card__content"><strong class="admin-card__value" data-admin-ops-stat="ready">0</strong><span class="admin-card__label">Prontos</span><p class="admin-card__copy">Eventos aguardando consumo.</p></div>
+                </article>
+                <article class="admin-card">
+                  <span class="admin-card__icon admin-card__icon--warning" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7"></path><path d="M20 5v6h-6"></path></svg></span>
+                  <div class="admin-card__content"><strong class="admin-card__value" data-admin-ops-stat="failed">0</strong><span class="admin-card__label">Em retry</span><p class="admin-card__copy">Falhas com nova tentativa prevista.</p></div>
+                </article>
+                <article class="admin-card">
+                  <span class="admin-card__icon admin-card__icon--warning" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 4 20 19H4L12 4Z"></path><path d="M12 9v4"></path><path d="M12 16h.01"></path></svg></span>
+                  <div class="admin-card__content"><strong class="admin-card__value" data-admin-ops-stat="dead-letter">0</strong><span class="admin-card__label">Dead-letters</span><p class="admin-card__copy">Eventos que exigem inspeção manual.</p></div>
+                </article>
+                <article class="admin-card">
+                  <span class="admin-card__icon admin-card__icon--warning" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path><path d="M10 21h4"></path></svg></span>
+                  <div class="admin-card__content"><strong class="admin-card__value" data-admin-ops-stat="active-alerts">0</strong><span class="admin-card__label">Alertas ativos</span><p class="admin-card__copy">Incidentes deduplicados e dentro da janela de silêncio.</p></div>
+                </article>
+                <article class="admin-card">
+                  <span class="admin-card__icon admin-card__icon--success" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 19V9"></path><path d="M12 19V5"></path><path d="M19 19v-7"></path></svg></span>
+                  <div class="admin-card__content"><strong class="admin-card__value" data-admin-ops-stat="success-rate">—</strong><span class="admin-card__label">Sucesso em 24 h</span><p class="admin-card__copy">Eventos concluídos por claim.</p></div>
+                </article>
+              </section>
+
+              <div class="admin-layout admin-ops-layout">
+                <div class="admin-main">
+                  <section class="admin-panel" aria-labelledby="admin-ops-queue-title">
+                    <div class="admin-panel__header">
+                      <div>
+                        <span class="admin-panel__eyebrow">Fila transacional</span>
+                        <div class="admin-panel__title-row"><h2 class="admin-panel__title" id="admin-ops-queue-title">Eventos que exigem acompanhamento</h2><strong class="admin-panel__count" data-admin-ops-event-count>0</strong></div>
+                        <p class="admin-panel__copy">Eventos concluídos não aparecem nesta fila. Retry e dead-letter podem ser reprocessados com justificativa.</p>
+                      </div>
+                      <div class="admin-ops-panel-actions">
+                        <span class="admin-ops-realtime-note">Atualização automática a cada minuto</span>
+                      </div>
+                    </div>
+                    <div class="admin-ops-filter-bar">
+                      <div class="admin-ops-filters" aria-label="Filtrar fila" role="group">
+                        <button class="doke-btn admin-ops-filter" data-admin-ops-filter="all" aria-pressed="true" type="button">Todos</button>
+                        <button class="doke-btn admin-ops-filter" data-admin-ops-filter="ready" aria-pressed="false" type="button">Prontos</button>
+                        <button class="doke-btn admin-ops-filter" data-admin-ops-filter="failed" aria-pressed="false" type="button">Retry</button>
+                        <button class="doke-btn admin-ops-filter" data-admin-ops-filter="processing" aria-pressed="false" type="button">Processando</button>
+                        <button class="doke-btn admin-ops-filter" data-admin-ops-filter="dead_letter" aria-pressed="false" type="button">Dead-letter</button>
+                      </div>
+                      <input class="doke-input admin-ops-search" aria-label="Filtrar eventos por texto" placeholder="Filtrar nesta fila" type="search" data-admin-ops-search />
+                    </div>
+                    <div class="admin-table-wrap">
+                      <table class="admin-table admin-ops-table">
+                        <thead><tr><th>Evento</th><th>Pedido</th><th>Entrega</th><th>Tentativas</th><th>Momento</th><th>Ação</th></tr></thead>
+                        <tbody data-admin-ops-events></tbody>
+                      </table>
+                    </div>
+                  </section>
+
+                  <section class="admin-panel" aria-labelledby="admin-ops-runs-title">
+                    <div class="admin-panel__header">
+                      <div>
+                        <span class="admin-panel__eyebrow">Execuções</span>
+                        <h2 class="admin-panel__title" id="admin-ops-runs-title">Últimas rodadas do worker</h2>
+                        <p class="admin-panel__copy">Volume processado, resultado e duração de cada invocação.</p>
+                      </div>
+                    </div>
+                    <div class="admin-table-wrap">
+                      <table class="admin-table admin-ops-table">
+                        <thead><tr><th>Início</th><th>Status</th><th>Claims</th><th>Concluídos</th><th>Falhas</th><th>Dead-letter</th><th>Duração</th></tr></thead>
+                        <tbody data-admin-ops-runs></tbody>
+                      </table>
+                    </div>
+                  </section>
+
+                  <section class="admin-panel" aria-labelledby="admin-ops-completed-title">
+                    <div class="admin-panel__header">
+                      <div>
+                        <span class="admin-panel__eyebrow">Latência</span>
+                        <h2 class="admin-panel__title" id="admin-ops-completed-title">Entregas concluídas recentemente</h2>
+                        <p class="admin-panel__copy">Tempo entre a criação do evento e a confirmação de entrega pelo worker.</p>
+                      </div>
+                    </div>
+                    <div class="admin-table-wrap">
+                      <table class="admin-table admin-ops-table">
+                        <thead><tr><th>Evento</th><th>Pedido</th><th>Latência</th><th>Concluído em</th></tr></thead>
+                        <tbody data-admin-ops-completed></tbody>
+                      </table>
+                    </div>
+                  </section>
+
+
+                  <section class="admin-panel admin-ops-change-panel" aria-labelledby="admin-ops-change-title">
+                    <div class="admin-panel__header">
+                      <div>
+                        <span class="admin-panel__eyebrow">Proteção de mudanças</span>
+                        <div class="admin-panel__title-row"><h2 class="admin-panel__title" id="admin-ops-change-title">Error budget e gate de confiabilidade</h2><strong class="admin-panel__count" data-admin-ops-change-state>—</strong></div>
+                        <p class="admin-panel__copy">Deploys, migrations e configurações são avaliados pelo orçamento de erro antes da execução.</p>
+                      </div>
+                      <div class="admin-ops-panel-actions">
+                        <button class="doke-btn doke-btn--secondary doke-btn--sm" type="button" data-admin-ops-change-register>Registrar mudança</button>
+                      </div>
+                    </div>
+                    <div class="admin-ops-change-summary" data-admin-ops-change-summary></div>
+                    <div class="admin-ops-budget-windows" data-admin-ops-budget-windows></div>
+                    <div class="admin-ops-change-list" data-admin-ops-changes></div>
+                    <div class="admin-ops-change-decisions" data-admin-ops-change-decisions></div>
+                  </section>
+
+                  <section class="admin-panel admin-ops-slo-panel" aria-labelledby="admin-ops-slo-title">
+                    <div class="admin-panel__header">
+                      <div>
+                        <span class="admin-panel__eyebrow">Objetivos operacionais</span>
+                        <div class="admin-panel__title-row"><h2 class="admin-panel__title" id="admin-ops-slo-title">SLOs dos últimos 30 dias</h2><strong class="admin-panel__count" data-admin-ops-slo-status>—</strong></div>
+                        <p class="admin-panel__copy">Disponibilidade, tempo para assumir, tempo para recuperar e disciplina pós-incidente.</p>
+                      </div>
+                    </div>
+                    <div class="admin-ops-slo-grid" data-admin-ops-slo></div>
+                    <div class="admin-ops-slo-report" data-admin-ops-slo-report></div>
+                  </section>
+
+                  <section class="admin-panel" aria-labelledby="admin-ops-post-incident-title">
+                    <div class="admin-panel__header">
+                      <div>
+                        <span class="admin-panel__eyebrow">Aprendizado operacional</span>
+                        <div class="admin-panel__title-row"><h2 class="admin-panel__title" id="admin-ops-post-incident-title">Análises pós-incidente</h2><strong class="admin-panel__count" data-admin-ops-post-incident-count>0</strong></div>
+                        <p class="admin-panel__copy">Causa raiz, impacto, prevenção de recorrência e responsáveis pelas ações corretivas.</p>
+                      </div>
+                    </div>
+                    <div class="admin-ops-post-incident-list" data-admin-ops-post-incidents></div>
+                  </section>
+                </div>
+
+                <aside class="admin-side admin-ops-side" aria-label="Diagnóstico operacional">
+                  <section class="admin-panel" aria-labelledby="admin-ops-health-title">
+                    <div class="admin-panel__header">
+                      <div>
+                        <span class="admin-panel__eyebrow">Diagnóstico</span>
+                        <h2 class="admin-panel__title" id="admin-ops-health-title">Saúde detalhada</h2>
+                      </div>
+                    </div>
+                    <div class="admin-ops-summary-list" data-admin-ops-health-details></div>
+                  </section>
+
+                  <section class="admin-panel" aria-labelledby="admin-ops-alerts-title">
+                    <div class="admin-panel__header">
+                      <div>
+                        <span class="admin-panel__eyebrow">Incidentes automáticos</span>
+                        <div class="admin-panel__title-row"><h2 class="admin-panel__title" id="admin-ops-alerts-title">Alertas ativos</h2><strong class="admin-panel__count" data-admin-ops-alert-count>0</strong></div>
+                        <p class="admin-panel__copy">Alertas com responsável, prazo operacional, histórico e escalonamento automático.</p>
+                      </div>
+                    </div>
+                    <div class="admin-ops-alert-list" data-admin-ops-alerts></div>
+                  </section>
+
+                  <section class="admin-panel" aria-labelledby="admin-ops-errors-title">
+                    <div class="admin-panel__header">
+                      <div>
+                        <span class="admin-panel__eyebrow">Falhas ativas</span>
+                        <h2 class="admin-panel__title" id="admin-ops-errors-title">Códigos de erro</h2>
+                      </div>
+                    </div>
+                    <div class="admin-ops-error-list" data-admin-ops-errors></div>
+                  </section>
+
+                  <section class="admin-panel" aria-labelledby="admin-ops-cache-title">
+                    <div class="admin-panel__header">
+                      <div>
+                        <span class="admin-panel__eyebrow">Invalidação</span>
+                        <h2 class="admin-panel__title" id="admin-ops-cache-title">Tags de cache</h2>
+                      </div>
+                    </div>
+                    <div class="admin-ops-cache-list" data-admin-ops-cache-tags></div>
+                  </section>
+
+
+
+                  <section class="admin-panel" aria-labelledby="admin-ops-prevention-title">
+                    <div class="admin-panel__header">
+                      <div>
+                        <span class="admin-panel__eyebrow">Prevenção</span>
+                        <div class="admin-panel__title-row"><h2 class="admin-panel__title" id="admin-ops-prevention-title">Ações preventivas</h2><strong class="admin-panel__count" data-admin-ops-prevention-count>0</strong></div>
+                      </div>
+                    </div>
+                    <div class="admin-ops-prevention-list" data-admin-ops-prevention-actions></div>
+                  </section>
+
+                  <section class="admin-panel" aria-labelledby="admin-ops-actions-title">
+                    <div class="admin-panel__header">
+                      <div>
+                        <span class="admin-panel__eyebrow">Auditoria humana</span>
+                        <h2 class="admin-panel__title" id="admin-ops-actions-title">Ações recentes</h2>
+                      </div>
+                    </div>
+                    <div class="admin-ops-action-list" data-admin-ops-actions></div>
+                  </section>
+                </aside>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <dialog class="doke-native-overlay admin-ops-dialog" data-admin-ops-requeue-dialog aria-labelledby="admin-ops-requeue-title">
+    <section class="doke-modal-surface doke-modal-surface--form doke-overlay__surface">
+      <header class="doke-modal-header doke-overlay__header">
+        <div>
+          <span class="doke-modal-eyebrow">Reprocessamento controlado</span>
+          <h2 class="doke-modal-title" id="admin-ops-requeue-title">Recolocar evento na fila</h2>
+          <p class="doke-modal-description">A justificativa será registrada com o operador e o estado anterior do evento.</p>
+        </div>
+        <button class="doke-close-button doke-icon-btn doke-icon-btn--flat" type="button" data-admin-ops-requeue-close aria-label="Fechar">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6 6 18"></path></svg>
+        </button>
+      </header>
+      <div class="doke-modal-body doke-overlay__body">
+        <div class="admin-ops-dialog__event"><span>Evento</span><strong data-admin-ops-requeue-event>Não informado</strong></div>
+        <label class="doke-label" for="admin-ops-requeue-note">Motivo do reprocessamento</label>
+        <textarea class="doke-textarea" id="admin-ops-requeue-note" data-admin-ops-requeue-note rows="4" minlength="10" maxlength="500" placeholder="Ex.: integração externa normalizada; reprocessar após validação dos dados."></textarea>
+      </div>
+      <footer class="doke-modal-actions doke-overlay__actions">
+        <button class="doke-btn doke-btn--ghost" type="button" data-admin-ops-requeue-close>Cancelar</button>
+        <button class="doke-btn doke-btn--primary" type="button" data-admin-ops-requeue-submit>Reprocessar evento</button>
+      </footer>
+    </section>
+  </dialog>
+
+  <dialog class="doke-native-overlay admin-ops-dialog" data-admin-ops-incident-dialog aria-labelledby="admin-ops-incident-title">
+    <section class="doke-modal-surface doke-modal-surface--form doke-overlay__surface">
+      <header class="doke-modal-header doke-overlay__header">
+        <div>
+          <span class="doke-modal-eyebrow">Fluxo operacional</span>
+          <h2 class="doke-modal-title" id="admin-ops-incident-title" data-admin-ops-incident-title>Gerenciar incidente</h2>
+          <p class="doke-modal-description">A ação ficará registrada no histórico do ciclo atual.</p>
+        </div>
+        <button class="doke-close-button doke-icon-btn doke-icon-btn--flat" type="button" data-admin-ops-incident-close aria-label="Fechar">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6 6 18"></path></svg>
+        </button>
+      </header>
+      <div class="doke-modal-body doke-overlay__body">
+        <div class="admin-ops-dialog__event"><span>Incidente</span><strong data-admin-ops-incident-subject>Não informado</strong></div>
+        <div data-admin-ops-incident-assignee-wrap hidden>
+          <label class="doke-label" for="admin-ops-incident-assignee">Responsável</label>
+          <select class="doke-select" id="admin-ops-incident-assignee" data-admin-ops-incident-assignee></select>
+        </div>
+        <label class="doke-label" for="admin-ops-incident-note">Observação operacional</label>
+        <textarea class="doke-textarea" id="admin-ops-incident-note" data-admin-ops-incident-note rows="4" minlength="5" maxlength="500" placeholder="Ex.: assumindo análise do dead-letter e validando o erro de integração."></textarea>
+      </div>
+      <footer class="doke-modal-actions doke-overlay__actions">
+        <button class="doke-btn doke-btn--ghost" type="button" data-admin-ops-incident-close>Cancelar</button>
+        <button class="doke-btn doke-btn--primary" type="button" data-admin-ops-incident-submit>Registrar</button>
+      </footer>
+    </section>
+  </dialog>
+
+  <dialog class="doke-native-overlay admin-ops-dialog admin-ops-runbook-dialog" data-admin-ops-runbook-dialog aria-labelledby="admin-ops-runbook-title">
+    <section class="doke-modal-surface doke-modal-surface--form doke-overlay__surface">
+      <header class="doke-modal-header doke-overlay__header">
+        <div>
+          <span class="doke-modal-eyebrow">Remediação operacional segura</span>
+          <h2 class="doke-modal-title" id="admin-ops-runbook-title" data-admin-ops-runbook-title>Preparar runbook</h2>
+          <p class="doke-modal-description">A prévia expira em dez minutos e nenhuma ação é executada antes da confirmação.</p>
+        </div>
+        <button class="doke-close-button doke-icon-btn doke-icon-btn--flat" type="button" data-admin-ops-runbook-close aria-label="Fechar">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6 6 18"></path></svg>
+        </button>
+      </header>
+      <div class="doke-modal-body doke-overlay__body admin-ops-runbook-body">
+        <div class="admin-ops-dialog__event"><span>Incidente</span><strong data-admin-ops-runbook-subject>Não informado</strong></div>
+        <div class="admin-ops-runbook-state" data-admin-ops-runbook-state role="status">Preparando diagnóstico e impacto...</div>
+        <section class="admin-ops-runbook-overview" data-admin-ops-runbook-overview hidden>
+          <div class="admin-ops-runbook-heading">
+            <div>
+              <strong data-admin-ops-runbook-name>Runbook</strong>
+              <p data-admin-ops-runbook-summary></p>
+            </div>
+            <span class="admin-ops-runbook-risk" data-admin-ops-runbook-risk>Risco</span>
+          </div>
+          <ol class="admin-ops-runbook-steps" data-admin-ops-runbook-steps></ol>
+          <div class="admin-ops-runbook-impact" data-admin-ops-runbook-impact></div>
+        </section>
+        <div data-admin-ops-runbook-event-wrap hidden>
+          <label class="doke-label" for="admin-ops-runbook-event">Evento elegível</label>
+          <select class="doke-select" id="admin-ops-runbook-event" data-admin-ops-runbook-event></select>
+        </div>
+        <div class="admin-ops-runbook-confirmation" data-admin-ops-runbook-confirmation-wrap hidden>
+          <span>Frase exigida</span>
+          <code data-admin-ops-runbook-phrase>EXECUTAR CÓDIGO</code>
+        </div>
+        <label class="doke-label" for="admin-ops-runbook-confirmation">Confirmação</label>
+        <input class="doke-input" id="admin-ops-runbook-confirmation" data-admin-ops-runbook-confirmation autocomplete="off" placeholder="Digite a frase exibida acima" />
+        <label class="doke-label" for="admin-ops-runbook-note">Justificativa operacional</label>
+        <textarea class="doke-textarea" id="admin-ops-runbook-note" data-admin-ops-runbook-note rows="4" minlength="10" maxlength="500" placeholder="Ex.: causa externa validada e impacto revisado antes da remediação."></textarea>
+        <p class="admin-ops-runbook-guard" data-admin-ops-runbook-guard hidden></p>
+      </div>
+      <footer class="doke-modal-actions doke-overlay__actions">
+        <button class="doke-btn doke-btn--ghost" type="button" data-admin-ops-runbook-close>Cancelar</button>
+        <button class="doke-btn doke-btn--primary" type="button" data-admin-ops-runbook-submit disabled>Executar runbook</button>
+      </footer>
+    </section>
+  </dialog>
+
+
+
+  <dialog class="doke-native-overlay admin-ops-dialog admin-ops-post-incident-dialog" data-admin-ops-post-incident-dialog aria-labelledby="admin-ops-post-incident-dialog-title">
+    <section class="doke-modal-surface doke-modal-surface--form doke-overlay__surface">
+      <header class="doke-modal-header doke-overlay__header">
+        <div>
+          <span class="doke-modal-eyebrow">Aprendizado operacional</span>
+          <h2 class="doke-modal-title" id="admin-ops-post-incident-dialog-title" data-admin-ops-post-incident-dialog-title>Análise pós-incidente</h2>
+        </div>
+        <button class="doke-close-button doke-icon-btn doke-icon-btn--flat" type="button" data-admin-ops-post-incident-close aria-label="Fechar">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m6 6 12 12"></path><path d="M18 6 6 18"></path></svg>
+        </button>
+      </header>
+      <div class="doke-modal-body doke-overlay__body admin-ops-post-incident-body">
+        <div class="admin-ops-dialog__event"><span>Incidente</span><strong data-admin-ops-post-incident-subject>Não informado</strong></div>
+        <div class="admin-ops-post-incident-metrics" data-admin-ops-post-incident-metrics></div>
+
+        <label class="doke-label" for="admin-ops-root-cause-category">Categoria da causa raiz</label>
+        <select class="doke-select" id="admin-ops-root-cause-category" data-admin-ops-root-cause-category>
+          <option value="unknown">Ainda não determinada</option>
+          <option value="code">Código</option>
+          <option value="dependency">Dependência externa</option>
+          <option value="data">Dados</option>
+          <option value="configuration">Configuração</option>
+          <option value="capacity">Capacidade</option>
+          <option value="process">Processo</option>
+          <option value="human">Ação humana</option>
+        </select>
+
+        <label class="doke-label" for="admin-ops-impact-summary">Impacto observado</label>
+        <textarea class="doke-textarea" id="admin-ops-impact-summary" data-admin-ops-impact-summary rows="3" maxlength="2000" placeholder="Quem ou o que foi afetado, por quanto tempo e com qual consequência."></textarea>
+
+        <label class="doke-label" for="admin-ops-root-cause">Causa raiz</label>
+        <textarea class="doke-textarea" id="admin-ops-root-cause" data-admin-ops-root-cause rows="4" maxlength="4000" placeholder="Explique o mecanismo técnico que produziu o incidente."></textarea>
+
+        <label class="doke-label" for="admin-ops-contributing-factors">Fatores contribuintes</label>
+        <textarea class="doke-textarea" id="admin-ops-contributing-factors" data-admin-ops-contributing-factors rows="3" maxlength="2400" placeholder="Um fator por linha."></textarea>
+
+        <label class="doke-label" for="admin-ops-detection-assessment">Avaliação da detecção</label>
+        <textarea class="doke-textarea" id="admin-ops-detection-assessment" data-admin-ops-detection-assessment rows="3" maxlength="2000" placeholder="O alerta foi rápido e preciso? O que poderia detectar antes?"></textarea>
+
+        <label class="doke-label" for="admin-ops-prevention-summary">Prevenção de recorrência</label>
+        <textarea class="doke-textarea" id="admin-ops-prevention-summary" data-admin-ops-prevention-summary rows="3" maxlength="3000" placeholder="Mudanças estruturais necessárias para impedir repetição."></textarea>
+
+        <label class="doke-label" for="admin-ops-lessons-learned">Aprendizados</label>
+        <textarea class="doke-textarea" id="admin-ops-lessons-learned" data-admin-ops-lessons-learned rows="3" maxlength="2000" placeholder="O que a equipe deve repetir ou mudar daqui para frente."></textarea>
+
+        <section class="admin-ops-prevention-editor" aria-labelledby="admin-ops-prevention-editor-title">
+          <div class="admin-ops-prevention-editor__header">
+            <div><strong id="admin-ops-prevention-editor-title">Plano preventivo</strong><span>Ao menos uma ação é obrigatória para concluir.</span></div>
+          </div>
+          <div class="admin-ops-prevention-editor__list" data-admin-ops-post-incident-actions></div>
+          <div class="admin-ops-prevention-editor__form">
+            <input class="doke-input" data-admin-ops-prevention-title maxlength="500" placeholder="Nova ação preventiva" />
+            <select class="doke-select" data-admin-ops-prevention-owner aria-label="Responsável pela ação"></select>
+            <input class="doke-input" data-admin-ops-prevention-due type="date" required aria-label="Prazo da ação" />
+            <button class="doke-btn doke-btn--secondary" type="button" data-admin-ops-prevention-create>Adicionar ação</button>
+          </div>
+        </section>
+        <p class="admin-ops-post-incident-guard" data-admin-ops-post-incident-guard hidden></p>
+      </div>
+      <footer class="doke-modal-actions doke-overlay__actions">
+        <button class="doke-btn doke-btn--ghost" type="button" data-admin-ops-post-incident-close>Cancelar</button>
+        <button class="doke-btn doke-btn--secondary" type="button" data-admin-ops-post-incident-save>Salvar rascunho</button>
+        <button class="doke-btn doke-btn--primary" type="button" data-admin-ops-post-incident-complete>Concluir análise</button>
+      </footer>
+    </section>
+  </dialog>
+
+
+  <dialog class="doke-native-overlay admin-ops-dialog admin-ops-change-dialog" data-admin-ops-change-dialog aria-labelledby="admin-ops-change-dialog-title">
+    <section class="doke-modal-surface doke-modal-surface--form doke-overlay__surface">
+      <header class="doke-modal-header doke-overlay__header">
+        <div>
+          <span class="doke-modal-eyebrow">Gate de confiabilidade</span>
+          <h2 class="doke-modal-title" id="admin-ops-change-dialog-title">Registrar mudança</h2>
+        </div>
+        <button class="doke-close-button doke-icon-btn doke-icon-btn--flat" type="button" data-admin-ops-change-close aria-label="Fechar">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m6 6 12 12"></path><path d="M18 6 6 18"></path></svg>
+        </button>
+      </header>
+      <div class="doke-modal-body doke-overlay__body admin-ops-change-body">
+        <label class="doke-label" for="admin-ops-change-key">Chave única</label>
+        <input class="doke-input" id="admin-ops-change-key" data-admin-ops-change-key maxlength="180" placeholder="deploy:web:2026-07-22.1" />
+        <div class="admin-ops-change-form-grid">
+          <div><label class="doke-label" for="admin-ops-change-type">Tipo</label><select class="doke-select" id="admin-ops-change-type" data-admin-ops-change-type><option value="deploy">Deploy</option><option value="migration">Migration</option><option value="edge_function">Edge Function</option><option value="configuration">Configuração</option><option value="feature_flag">Feature flag</option><option value="manual">Manual</option></select></div>
+          <div><label class="doke-label" for="admin-ops-change-risk">Risco</label><select class="doke-select" id="admin-ops-change-risk" data-admin-ops-change-risk><option value="low">Baixo</option><option value="medium">Médio</option><option value="high">Alto</option><option value="critical">Crítico</option></select></div>
+        </div>
+        <label class="doke-label" for="admin-ops-change-name">Título</label>
+        <input class="doke-input" id="admin-ops-change-name" data-admin-ops-change-name maxlength="300" placeholder="Publicar nova versão do fluxo de pedidos" />
+        <label class="doke-label" for="admin-ops-change-reference">Referência</label>
+        <input class="doke-input" id="admin-ops-change-reference" data-admin-ops-change-reference maxlength="500" placeholder="commit, migration ou release" />
+        <label class="doke-label" for="admin-ops-change-description">Descrição</label>
+        <textarea class="doke-textarea" id="admin-ops-change-description" data-admin-ops-change-description rows="4" maxlength="2000" placeholder="Escopo, impacto esperado e estratégia de rollback."></textarea>
+      </div>
+      <footer class="doke-modal-actions doke-overlay__actions">
+        <button class="doke-btn doke-btn--ghost" type="button" data-admin-ops-change-close>Cancelar</button>
+        <button class="doke-btn doke-btn--primary" type="button" data-admin-ops-change-submit>Registrar e avaliar</button>
+      </footer>
+    </section>
+  </dialog>
+
+  <dialog class="doke-native-overlay admin-ops-dialog admin-ops-change-action-dialog" data-admin-ops-change-action-dialog aria-labelledby="admin-ops-change-action-title">
+    <section class="doke-modal-surface doke-modal-surface--form doke-overlay__surface">
+      <header class="doke-modal-header doke-overlay__header">
+        <div>
+          <span class="doke-modal-eyebrow">Decisão operacional</span>
+          <h2 class="doke-modal-title" id="admin-ops-change-action-title" data-admin-ops-change-action-title>Gerenciar mudança</h2>
+        </div>
+        <button class="doke-close-button doke-icon-btn doke-icon-btn--flat" type="button" data-admin-ops-change-action-close aria-label="Fechar">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m6 6 12 12"></path><path d="M18 6 6 18"></path></svg>
+        </button>
+      </header>
+      <div class="doke-modal-body doke-overlay__body admin-ops-change-body">
+        <div class="admin-ops-dialog__event"><span>Mudança</span><strong data-admin-ops-change-action-subject>Não informada</strong></div>
+        <div class="admin-ops-change-action-state" data-admin-ops-change-action-state></div>
+        <div data-admin-ops-change-approval-fields hidden>
+          <label class="doke-label" for="admin-ops-change-approval-minutes">Validade da aprovação</label>
+          <select class="doke-select" id="admin-ops-change-approval-minutes" data-admin-ops-change-approval-minutes><option value="30">30 minutos</option><option value="60" selected>60 minutos</option><option value="90">90 minutos</option><option value="120">120 minutos</option></select>
+          <label class="doke-label" for="admin-ops-change-approval-reason">Justificativa administrativa</label>
+          <textarea class="doke-textarea" id="admin-ops-change-approval-reason" data-admin-ops-change-approval-reason rows="4" minlength="20" maxlength="1000" placeholder="Explique por que o risco é aceitável e como o rollback será executado."></textarea>
+        </div>
+        <div data-admin-ops-change-start-fields hidden>
+          <div class="admin-ops-runbook-confirmation"><span>Frase exigida</span><code data-admin-ops-change-confirmation-phrase>LIBERAR mudança</code></div>
+          <label class="doke-label" for="admin-ops-change-confirmation">Confirmação</label>
+          <input class="doke-input" id="admin-ops-change-confirmation" data-admin-ops-change-confirmation autocomplete="off" />
+          <label class="doke-label" for="admin-ops-change-execution-reference">Referência de execução</label>
+          <input class="doke-input" id="admin-ops-change-execution-reference" data-admin-ops-change-execution-reference maxlength="500" placeholder="pipeline, release ou migration run" />
+        </div>
+        <div data-admin-ops-change-complete-fields hidden>
+          <label class="doke-label" for="admin-ops-change-outcome">Resultado</label>
+          <select class="doke-select" id="admin-ops-change-outcome" data-admin-ops-change-outcome><option value="completed">Concluída</option><option value="failed">Falhou</option><option value="cancelled">Cancelada</option></select>
+          <label class="doke-label" for="admin-ops-change-completion-note">Resultado e verificação</label>
+          <textarea class="doke-textarea" id="admin-ops-change-completion-note" data-admin-ops-change-completion-note rows="4" minlength="10" maxlength="2000" placeholder="Registre o resultado, métricas verificadas e eventual rollback."></textarea>
+        </div>
+        <p class="admin-ops-post-incident-guard" data-admin-ops-change-action-guard hidden></p>
+      </div>
+      <footer class="doke-modal-actions doke-overlay__actions">
+        <button class="doke-btn doke-btn--ghost" type="button" data-admin-ops-change-action-close>Cancelar</button>
+        <button class="doke-btn doke-btn--primary" type="button" data-admin-ops-change-action-submit>Confirmar</button>
+      </footer>
+    </section>
+  </dialog>
+
+  <div class="admin-toast" data-admin-ops-toast hidden></div>
+
+  <script defer src="assets/js/core/runtime-config.js?v=20260531-stable-smooth-v1"></script>
+  <script defer src="assets/js/core/experience-runtime.js?v=20260712-admin-experience-v1"></script>
+  <script defer src="assets/js/services/repository-boundary.js?v=20260703-orders-api-provider-v1"></script>
+  <script defer src="assets/js/services/mock-repository-provider.js?v=20260703-orders-api-provider-v1"></script>
+  <script defer src="assets/js/services/api-repository-provider.js?v=20260703-orders-api-provider-v1"></script>
+  <script defer src="assets/js/core/feature-flags.js?v=20260501-stage32-runtime-flags"></script>
+  <script defer src="assets/js/core/rollout-guard.js?v=20260501-stage32-runtime-flags"></script>
+  <script defer src="assets/js/core/navigation-registry.js?v=20260721-order-operations-v1"></script>
+  <script defer src="assets/js/core/navigation-lifecycle.js?v=20260713-navigation-lifecycle-v1"></script>
+  <script defer src="assets/js/core/app-state.js?v=20260501-auth-session-v1"></script>
+  <script defer src="assets/js/core/permissions.js?v=20260501-auth-session-v1"></script>
+  <script defer src="assets/js/core/session.js?v=20260501-auth-session-v1"></script>
+  <script defer src="assets/js/services/auth-service.js?v=20260622-auth-surface-ready-v1"></script>
+  <script defer src="assets/js/services/admin-access-service.js?v=20260714-admin-lifecycle-v1"></script>
+  <script defer src="assets/js/core/app.js?v=20260721-order-operations-v1"></script>
+  <script defer src="assets/js/components/operational-event-toast.js?v=20260702-sidebar-quick-alert-flow-v1"></script>
+  <script defer src="assets/js/core/stable-shell-router.js?v=20260721-order-operations-v1"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+  <script src="assets/js/core/supabase-config.js?v=20260719-singleton-client-v1" defer></script>
+  <script defer src="assets/js/repositories/order-event-operations-repository.js?v=20260722-error-budget-v1"></script>
+  <script defer src="assets/js/pages/admin-order-operations.js?v=20260722-error-budget-v1"></script>
+  <script defer src="assets/js/ui/responsive-interaction-guard.js?v=20260428-architecture"></script>
+  <script defer src="assets/js/ui/mobile-drawer-standard.js?v=20260701-drawer-detail-contract-v1"></script>
+  <script defer src="assets/js/ui/mobile-interaction-standard.js?v=20260428-v1"></script>
+  <script defer src="assets/js/ui/mobile-overlay-system.js?v=20260428-v1"></script>
+  <script defer src="assets/js/components/mobile-app-shell.js?v=20260721-order-operations-v1"></script>
+  <script defer src="assets/js/core/ipad-safari-scroll-guard.js?v=20260602-v1"></script>
+  <script defer src="assets/js/core/document-preloader.js?v=20260712-global-document-boot-v1"></script>
+</body>
+</html>

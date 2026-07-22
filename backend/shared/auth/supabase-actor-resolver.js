@@ -21,7 +21,7 @@ function toGuestActor() {
 
 function toActor(authUser, appUser) {
   if (!authUser || !authUser.id) return toGuestActor();
-  const role = normalizeRole(appUser && appUser.role || authUser.user_metadata && authUser.user_metadata.role || 'client');
+  const role = normalizeRole(appUser && appUser.role || authUser.app_metadata && authUser.app_metadata.role || 'client');
   return Object.freeze({
     id: authUser.id,
     email: authUser.email || appUser && appUser.email || '',

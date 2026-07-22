@@ -14,6 +14,7 @@
     '/admin.html',
     '/admin-verificacao.html',
     '/admin-anuncio-revisao.html',
+    '/admin-pedidos-operacao.html',
     '/comunidade-interna.html',
     '/comunidade.html',
     '/configuracoes.html',
@@ -62,6 +63,7 @@
     '/admin.html',
     '/admin-verificacao.html',
     '/admin-anuncio-revisao.html',
+    '/admin-pedidos-operacao.html',
     '/pagamento-profissional.html',
     '/anunciar-servico.html'
   ]);
@@ -90,6 +92,7 @@
     '/admin.html': ['DokeInitAdmin'],
     '/admin-verificacao.html': ['DokeInitAdminVerification'],
     '/admin-anuncio-revisao.html': ['DokeInitAdminAdReview'],
+    '/admin-pedidos-operacao.html': ['DokeInitAdminOrderOperations'],
     '/comunidade.html': ['DokeInitCommunity'],
     '/comunidade-interna.html': [],
     '/perfil.html': ['DokeInitProfile'],
@@ -778,7 +781,7 @@
       '.nav-link--communities': normalized === '/comunidade.html' || normalized === '/comunidade-interna.html',
       '.nav-link--profile': PROFILE_ACTIVE_PATHS.has(normalized),
       '.nav-link--wallet': normalized === '/carteira.html',
-      '.nav-link--admin': normalized === '/admin.html' || normalized === '/admin-verificacao.html' || normalized === '/admin-anuncio-revisao.html',
+      '.nav-link--admin': normalized === '/admin.html' || normalized === '/admin-verificacao.html' || normalized === '/admin-anuncio-revisao.html' || normalized === '/admin-pedidos-operacao.html',
       '.nav-link--settings': normalized === '/configuracoes.html'
     };
 
@@ -944,6 +947,7 @@
     '/comunidade.html',
     '/admin.html',
     '/admin-anuncio-revisao.html',
+    '/admin-pedidos-operacao.html',
     '/pagamento-profissional.html',
     '/anunciar-servico.html'
   ]);

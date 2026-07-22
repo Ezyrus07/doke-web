@@ -23,6 +23,8 @@ Este arquivo é o ponto de entrada para agentes humanos, ChatGPT, Codex e qualqu
 - `docs/AUTH-INTEGRATION-CONTRACT.md`: sessão, roles, permissões e transição para autenticação real.
 - `docs/BACKEND-INTEGRATION-PLAN.md`: plano seguro de migração para API/Supabase.
 - `docs/VALIDATION.md`: comandos e matriz mínima de validação.
+- `docs/DOKE-PLANO-MESTRE-CONCLUSAO-PLATAFORMA.md`: plano mestre de conclusão da plataforma, dependências e ordem obrigatória de execução.
+- `docs/DOMAIN-COMPLETION-MATRIX.md`: estado verificável dos domínios, fluxos críticos, autoridades de dados, bloqueadores e gates de saída. É gerado por `config/domain-completion-matrix.json`; não editar manualmente.
 
 ## Regra de precedência
 
@@ -528,3 +530,28 @@ These contracts convert workstation evidence into explicit visual, quality, stag
 - `reports/generated/private-beta-operating-dashboard.md` summarizes GO/NO-GO evidence areas.
 - `reports/generated/private-beta-short-task-list.md` collapses the current NO-GO into the shortest actionable task list.
 - `DOKE_PRIVATE_BETA_STRATEGY=mock-first|real-backend-first` is required before inviting users.
+
+## Operação de pedidos — runbooks de remediação segura
+
+- `docs/ORDER-OPERATIONAL-REMEDIATION-RUNBOOK.md` é a autoridade do catálogo fechado, prévia, aprovação, execução e verificação.
+- `private.order_operational_runbook_executions` preserva a auditoria das prévias e execuções.
+- `npm run test:order-operational-runbooks-contract` bloqueia ações arbitrárias, exposição de credenciais e execução sem confirmação.
+
+## Operação de pedidos — pós-incidente e SLOs
+
+- `docs/ORDER-OPERATIONAL-POST-INCIDENT-SLO.md` define ciclo, requisitos de conclusão, plano preventivo e metas.
+- `private.order_operational_incident_cycles` preserva MTTA, MTTR, severidade e duração por ciclo.
+- `private.order_operational_post_incident_reviews` e `private.order_operational_prevention_actions` são as autoridades do aprendizado e da prevenção.
+- `private.order_operational_slo_reports` mantém snapshots diários de 7 e 30 dias.
+- `npm run test:order-post-incident-slo-contract` protege permissões, anatomia do painel e contratos mínimos de qualidade.
+
+## SEC-001 — identidade, RLS e autoridade de papéis
+
+- `docs/SECURITY-IDENTITY-AUTHORITY.md` define a separação entre conta privada, perfil público e projeção de papel no token.
+- `npm run test:identity-rls-authority-contract` bloqueia regressões em policies, grants, funções privadas e metadata autoritativa.
+- `npm run test:identity-role-authority-runtime` prova que `user_metadata.role` é ignorado e que banco/app metadata permanecem autoritativos.
+- `supabase/tests/006_identity_rls_authority_validation.sql` é o teste SQL de persona para `anon` e `authenticated`.
+
+## SEC-001 — Professional KYC authority
+
+- `docs/SECURITY-PROFESSIONAL-KYC-AUTHORITY.md` define RLS, Storage privado, RPCs do candidato e operações administrativas de KYC via Edge Function.
