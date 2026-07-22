@@ -21,6 +21,7 @@
   var BANK_ACCOUNTS_TABLE = 'wallet_bank_accounts';
   var DISPUTES_TABLE = 'payment_disputes';
   var AUDIT_TABLE = 'admin_audit_events';
+  var FINANCIAL_OPERATIONS_FUNCTION = 'financial-operations';
 
   var supabaseClient = null;
   var supabaseClientAttempted = false;
@@ -480,6 +481,38 @@
     });
   }
 
+  function callFinancialOperations(action, payload) {
+    var client = getSupabaseClient();
+    if (!client || !client.functions || typeof client.functions.invoke !== 'function') {
+      return Promise.reject(new Error('Autoridade operacional financeira indisponível.'));
+    }
+    return getCurrentSupabaseUser(client).then(function (user) {
+      if (!user || !isUuid(user.id)) throw new Error('Faça login para executar esta operação financeira.');
+      return client.functions.invoke(FINANCIAL_OPERATIONS_FUNCTION, {
+        body: Object.assign({ action: action }, payload || {})
+      }).then(function (result) {
+        if (result.error) throw result.error;
+        if (result.data && result.data.error) {
+          var error = new Error(result.data.error);
+          error.code = result.data.error;
+          throw error;
+        }
+        setProviderState('supabase');
+        return result.data || {};
+      });
+    });
+  }
+
+  function financialServerAuthorityError(operation) {
+    var error = new Error('A operação financeira "' + operation + '" exige autoridade do servidor e confirmação do provedor de pagamento.');
+    error.code = 'DOKE_FINANCIAL_SERVER_AUTHORITY_REQUIRED';
+    return error;
+  }
+
+  function shouldFailClosed(error) {
+    return Boolean(error && error.code === 'DOKE_FINANCIAL_SERVER_AUTHORITY_REQUIRED');
+  }
+
   function saveBankAccount(payload) {
     payload = payload || {};
     return callRpc('save_wallet_bank_account', {
@@ -506,33 +539,13 @@
   }
 
   function registerReceivable(payload) {
-    payload = payload || {};
-    var normalized = localWallet.normalizeTransaction(Object.assign({}, payload, { type: 'receivable', status: 'held' }));
-    return callRpc('register_order_receivable', {
-      p_external_id: normalized.id,
-      p_event_key: normalized.eventKey,
-      p_payment_external_id: normalizeText(payload.paymentId || normalized.paymentId),
-      p_order_external_id: normalizeText(payload.orderId || normalized.orderId),
-      p_conversation_external_id: normalizeText(payload.conversationId || normalized.conversationId),
-      p_message_external_id: normalizeText(payload.messageId || normalized.messageId),
-      p_metadata: sanitizeMetadata(normalized)
-    }).then(function (data) {
-      var transaction = upsertLocalTransaction(mapRemoteTransaction(data && data.transaction));
-      return { transaction: clone(transaction), created: Boolean(data && data.created), updated: false, wallet: localWallet.readWallet() };
-    }).catch(function (error) { return fallbackWalletAction('registerReceivable', payload, error); });
+    if (!getSupabaseClient()) return Promise.resolve(localWallet.registerReceivable(payload || {}));
+    return Promise.reject(financialServerAuthorityError('materializar recebível'));
   }
 
   function releaseHeldReceivable(payload) {
-    payload = payload || {};
-    return callRpc('release_order_receivable', {
-      p_transaction_external_id: normalizeText(payload.transactionId || payload.walletTransactionId || payload.id),
-      p_payment_external_id: normalizeText(payload.paymentId),
-      p_order_external_id: normalizeText(payload.orderId),
-      p_released_at: payload.releasedAt || nowIso()
-    }).then(function (data) {
-      var transaction = upsertLocalTransaction(mapRemoteTransaction(data && data.transaction));
-      return { transaction: clone(transaction), created: false, updated: Boolean(data && data.updated), wallet: localWallet.readWallet() };
-    }).catch(function (error) { return fallbackWalletAction('releaseHeldReceivable', payload, error); });
+    if (!getSupabaseClient()) return Promise.resolve(localWallet.releaseHeldReceivable(payload || {}));
+    return Promise.reject(financialServerAuthorityError('liberar recebível'));
   }
 
   function requestWithdraw(payload) {
@@ -555,10 +568,10 @@
   function resolveWithdraw(payload) {
     payload = payload || {};
     var action = normalizeText(payload.action || payload.status || 'approve').toLowerCase();
-    return callRpc('resolve_wallet_withdrawal', {
-      p_transaction_external_id: normalizeText(payload.transactionId || payload.id),
-      p_action: action,
-      p_reason: normalizeText(payload.reason || payload.adminReason || '')
+    return callFinancialOperations('resolve_withdrawal', {
+      transactionId: normalizeText(payload.transactionId || payload.id),
+      resolution: action,
+      reason: normalizeText(payload.reason || payload.adminReason || '')
     }).then(function (data) {
       var transaction = upsertLocalTransaction(mapRemoteTransaction(data && data.transaction));
       document.dispatchEvent(new CustomEvent('doke:wallet-withdraw-resolved', { detail: { transaction: clone(transaction), action: data && data.action } }));
@@ -603,10 +616,10 @@
 
   function resolveDispute(payload) {
     payload = payload || {};
-    return callRpc('resolve_wallet_dispute', {
-      p_dispute_external_id: normalizeText(payload.disputeId || payload.id),
-      p_resolution: normalizeText(payload.resolution || payload.action),
-      p_reason: normalizeText(payload.reason || payload.adminReason || '')
+    return callFinancialOperations('resolve_dispute', {
+      disputeId: normalizeText(payload.disputeId || payload.id),
+      resolution: normalizeText(payload.resolution || payload.action),
+      reason: normalizeText(payload.reason || payload.adminReason || '')
     }).then(function (data) {
       var dispute = upsertLocalDispute(mapRemoteDispute(data && data.dispute));
       var transaction = upsertLocalTransaction(mapRemoteTransaction(data && data.transaction));
@@ -632,19 +645,11 @@
         return remote;
       });
     }
-    return callRpc('record_order_payment', {
-      p_external_id: normalized.id,
-      p_event_key: normalized.eventKey,
-      p_order_external_id: normalized.orderId,
-      p_conversation_external_id: normalized.conversationId || '',
-      p_message_external_id: normalized.messageId || normalized.chargeMessageId || '',
-      p_gross_amount_cents: toCents(normalized.grossAmount),
-      p_charged_amount_cents: toCents(normalized.chargedAmount || normalized.amount),
-      p_discount_amount_cents: toCents(normalized.discountAmount),
-      p_method: normalized.method || '',
-      p_status: status || 'processing',
-      p_metadata: sanitizeMetadata(normalized)
-    }).then(mapRemotePayment);
+    if (getSupabaseClient()) return Promise.reject(financialServerAuthorityError('materializar pagamento'));
+    return Promise.resolve(localPayments.normalize(Object.assign({}, normalized, {
+      syncStatus: 'local-simulation',
+      financialAuthority: 'local'
+    })));
   }
 
   function savePayment(payment) {
@@ -658,6 +663,7 @@
       document.dispatchEvent(new CustomEvent(previous ? 'doke:payment-updated' : 'doke:payment-created', { detail: { payment: clone(remotePayment), previous: clone(previous) } }));
       return { payment: clone(remotePayment), created: !previous, updated: Boolean(previous) };
     }).catch(function (error) {
+      if (shouldFailClosed(error)) throw error;
       warnRemote(error, 'gravação do pagamento');
       return localPayments.save(Object.assign({}, normalized, { syncStatus: 'local-simulation', financialAuthority: 'local' }));
     });

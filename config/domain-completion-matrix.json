@@ -1,6 +1,6 @@
 {
-  "version": "1.1.0",
-  "updatedAt": "2026-07-22T11:50:57Z",
+  "version": "1.2.0",
+  "updatedAt": "2026-07-22T15:35:00-03:00",
   "title": "Doke Domain Completion Matrix",
   "purpose": "Single source of truth for domain maturity, data authority, staging evidence, blockers, dependencies and mandatory completion order.",
   "maturityScale": {
@@ -183,7 +183,25 @@
         "supabase/functions/professional-verification-operations/index.ts",
         "scripts/test-professional-kyc-authority-contract.js",
         "scripts/test-professional-kyc-edge-runtime.mjs",
-        "docs/SECURITY-PROFESSIONAL-KYC-AUTHORITY.md"
+        "docs/SECURITY-PROFESSIONAL-KYC-AUTHORITY.md",
+        "supabase/migrations/102_client_profile_table_authority.sql",
+        "supabase/migrations/103_client_profile_metrics_authority.sql",
+        "supabase/migrations/104_client_profile_permission_contract.sql",
+        "supabase/migrations/105_client_profile_consistency_hardening.sql",
+        "supabase/tests/008_client_profile_authority_validation.sql",
+        "scripts/test-client-profile-authority-contract.js",
+        "scripts/test-client-profile-authority-runtime.js",
+        "docs/SECURITY-CLIENT-PROFILE-AUTHORITY.md",
+        "supabase/migrations/106_financial_table_permission_authority.sql",
+        "supabase/migrations/107_financial_rpc_authority.sql",
+        "supabase/migrations/108_financial_operator_authority.sql",
+        "supabase/migrations/109_financial_final_permissions.sql",
+        "supabase/tests/009_financial_rpc_authority_validation.sql",
+        "supabase/functions/financial-operations/index.ts",
+        "supabase/functions/financial-operations/operations.mjs",
+        "scripts/test-financial-rpc-authority-contract.js",
+        "scripts/test-financial-operations-edge-runtime.mjs",
+        "docs/SECURITY-FINANCIAL-RPC-AUTHORITY.md"
       ],
       "scanRoots": [
         "supabase/migrations",
@@ -209,7 +227,9 @@
         "service_categories",
         "verification_events"
       ],
-      "edgeFunctions": [],
+      "edgeFunctions": [
+        "financial-operations"
+      ],
       "crons": [],
       "tests": [
         "audit:security-permission-contract",
@@ -217,34 +237,48 @@
         "test:identity-rls-authority-contract",
         "test:identity-role-authority-runtime",
         "test:professional-kyc-authority-contract",
-        "test:professional-kyc-edge-runtime"
+        "test:professional-kyc-edge-runtime",
+        "test:client-profile-authority-contract",
+        "test:client-profile-authority-runtime",
+        "test:financial-rpc-authority-contract",
+        "test:financial-operations-edge-runtime",
+        "test:finance-supabase-repository-contract"
       ],
       "evidence": [
         "Private operational tables are not readable by anon or authenticated.",
-        "Current staging snapshot contains 44 public tables and 24 private tables.",
         "users now exposes only the authenticated caller own account row; anon has no table access.",
         "user_profiles is explicitly public-read and has no browser DML grants.",
         "Forged user_metadata role claims are ignored, stripped and replaced by app_metadata projected from public.users.",
         "Identity and KYC RPCs are no longer executable by anon; client attempts against admin verification RPCs return ADMIN_REQUIRED.",
-        "Anon SECURITY DEFINER exposure fell from 36 to 18 and authenticated exposure from 45 to 38 after identity hardening.",
         "professional_profiles, professional_identity_verifications and verification_events now expose read-only owner/reviewer RLS with no browser DML grants.",
         "Reviewer queue, detail, claim and decision operations moved behind the JWT-protected professional-verification-operations Edge Function.",
         "KYC evidence paths are owner-scoped, private and immutable while submitted, under review or verified.",
-        "Professional promotion updates public.users and app_metadata without persisting role claims in user_metadata."
+        "Professional promotion updates public.users and app_metadata without persisting role claims in user_metadata.",
+        "Current staging snapshot contains 45 public tables and 26 private tables; the RLS-disabled public set fell from 13 to 11 after closing client_profiles and verification_events.",
+        "client_profiles is now a private server-owned metrics authority: authenticated users read only their own row and cannot insert, update or delete directly.",
+        "client_profile_public_summaries exposes only completed order count, aggregate rating, review count and update time; no contact, KYC, risk or administrative fields are present.",
+        "Client metrics are recalculated from completed orders and published reviews through private SECURITY DEFINER functions with pg_catalog search_path and revoked browser execution.",
+        "Fourteen remote persona canaries passed under rollback, including anon denial, cross-account denial, forged metadata resistance, service-role reconciliation, suspension cleanup and deletion consistency.",
+        "Financial authority tables now expose no anon grants; authenticated sessions receive SELECT-only participant projections and service_role receives CRUD without TRUNCATE, REFERENCES or TRIGGER.",
+        "Legacy idempotency, payment materialization, receivable creation/release and direct operator-resolution RPCs are no longer executable by public, anon, authenticated or service_role.",
+        "Four self-service financial RPCs remain explicitly authenticated and revalidate active canonical roles from public.users; forged JWT metadata cannot elevate financial authority.",
+        "Support/admin financial decisions now pass through financial-operations version 1 with verify_jwt enabled and service-role-only internal RPCs that revalidate the canonical actor.",
+        "Twenty-six remote financial persona and mutation canaries passed in one rolled-back transaction, including withdrawal idempotency, dispute lifecycle, direct-DML denial and operator separation.",
+        "Public anon-executable SECURITY DEFINER advisor findings fell from 18 to 2; the broader catalog count is 5 because three private trigger functions inherit EXECUTE but are not Data API endpoints. Authenticated SECURITY DEFINER execution fell to 24, including four intentional financial self-service RPCs."
       ],
       "blockers": [
         {
           "id": "SEC-B01",
           "severity": "critical",
           "category": "rls",
-          "description": "13 public tables have RLS disabled.",
+          "description": "11 public tables have RLS disabled.",
           "targetPhase": "Fase 1"
         },
         {
           "id": "SEC-B03",
           "severity": "critical",
           "category": "rpc_grants",
-          "description": "18 SECURITY DEFINER functions remain executable by anon and 38 by authenticated outside the closed identity batch, concentrated in finance, idempotency, notifications and moderation.",
+          "description": "2 public SECURITY DEFINER Data API functions remain executable by anon and 24 functions by authenticated; finance/idempotency are closed, leaving notification and moderation contracts to review.",
           "targetPhase": "Fase 1"
         },
         {
@@ -263,9 +297,9 @@
         }
       ],
       "nextActions": [
-        "Close client_profiles and the remaining exposed profile-adjacent authorities.",
-        "Revoke or redesign remaining privileged finance, idempotency, notification and moderation RPC grants.",
-        "Apply RLS and negative persona tests to the remaining exposed public tables in small domain batches.",
+        "Close the two remaining anon-executable notification SECURITY DEFINER RPCs and verify their realtime caller contract.",
+        "Apply RLS and negative persona tests to the remaining exposed public tables in small domain batches, beginning with audit_logs.",
+        "Review remaining authenticated moderation SECURITY DEFINER functions and convert generic grants into explicit caller contracts.",
         "Harden storage policies, password protection, CORS, CSP and rate limits."
       ],
       "exitCriteria": [
@@ -306,7 +340,15 @@
         "supabase/migrations/094_identity_role_materialization_authority.sql",
         "supabase/migrations/095_identity_rpc_authority_hardening.sql",
         "supabase/migrations/096_identity_helper_invoker_hardening.sql",
-        "docs/SECURITY-IDENTITY-AUTHORITY.md"
+        "docs/SECURITY-IDENTITY-AUTHORITY.md",
+        "supabase/migrations/102_client_profile_table_authority.sql",
+        "supabase/migrations/103_client_profile_metrics_authority.sql",
+        "supabase/migrations/104_client_profile_permission_contract.sql",
+        "supabase/migrations/105_client_profile_consistency_hardening.sql",
+        "supabase/tests/008_client_profile_authority_validation.sql",
+        "scripts/test-client-profile-authority-contract.js",
+        "scripts/test-client-profile-authority-runtime.js",
+        "docs/SECURITY-CLIENT-PROFILE-AUTHORITY.md"
       ],
       "scanRoots": [
         "auth",
@@ -329,7 +371,9 @@
         "audit:auth-session",
         "audit:backend-real-complete-readiness-gate",
         "test:identity-rls-authority-contract",
-        "test:identity-role-authority-runtime"
+        "test:identity-role-authority-runtime",
+        "test:client-profile-authority-contract",
+        "test:client-profile-authority-runtime"
       ],
       "evidence": [
         "Real-auth-only contract passes.",
@@ -337,7 +381,9 @@
         "Default runtime still requests mock auth unless a controlled canary is enabled.",
         "users and user_profiles now have explicit policies and browser writes only through controlled self-service RPCs.",
         "public.users is the database authority for role/status and auth.app_metadata is a server-controlled projection.",
-        "New accounts always materialize as client regardless of user_metadata role claims."
+        "New accounts always materialize as client regardless of user_metadata role claims.",
+        "client_profiles is owner-readable and server-writable only; client reputation exposed to public profiles comes from a separate aggregate-only projection.",
+        "Forged JWT user_metadata/app_metadata role values do not expand client profile visibility beyond the authenticated caller own row."
       ],
       "blockers": [
         {
@@ -358,7 +404,7 @@
       "nextActions": [
         "Promote real auth as the only production provider after controlled route-by-route canaries.",
         "Implement verified contact, session/device management, token refresh and global logout.",
-        "Finish client/professional profile and KYC row security before enabling external users."
+        "Remove remaining browser-storage identity/profile fallbacks before enabling external users."
       ],
       "exitCriteria": [
         "All protected pages derive identity from one remote session.",
@@ -403,7 +449,15 @@
         "supabase/migrations/100_professional_kyc_reviewer_authority.sql",
         "supabase/migrations/101_professional_kyc_final_permissions.sql",
         "supabase/functions/professional-verification-operations/index.ts",
-        "docs/SECURITY-PROFESSIONAL-KYC-AUTHORITY.md"
+        "docs/SECURITY-PROFESSIONAL-KYC-AUTHORITY.md",
+        "supabase/migrations/102_client_profile_table_authority.sql",
+        "supabase/migrations/103_client_profile_metrics_authority.sql",
+        "supabase/migrations/104_client_profile_permission_contract.sql",
+        "supabase/migrations/105_client_profile_consistency_hardening.sql",
+        "supabase/tests/008_client_profile_authority_validation.sql",
+        "scripts/test-client-profile-authority-contract.js",
+        "scripts/test-client-profile-authority-runtime.js",
+        "docs/SECURITY-CLIENT-PROFILE-AUTHORITY.md"
       ],
       "scanRoots": [
         "assets/js/pages/profile",
@@ -429,7 +483,9 @@
         "test:admin-professional-verification-contract",
         "test:profile-family-contract",
         "test:professional-kyc-authority-contract",
-        "test:professional-kyc-edge-runtime"
+        "test:professional-kyc-edge-runtime",
+        "test:client-profile-authority-contract",
+        "test:client-profile-authority-runtime"
       ],
       "evidence": [
         "Professional verification and admin decision contracts exist.",
@@ -439,16 +495,11 @@
         "Professional KYC draft, submission, review, rejection, reopening and approval are server-authoritative in staging.",
         "Binary evidence uses database-generated locked upload intents, signed upload tokens and one-time server-side consumption.",
         "Reviewer operations require an independently authenticated admin/moderator Edge Function context.",
-        "Role promotion is atomic, idempotent and synchronized through public.users to app_metadata."
+        "Role promotion is atomic, idempotent and synchronized through public.users to app_metadata.",
+        "Client operational metrics and public reputation are now separated into private client_profiles and aggregate-only client_profile_public_summaries authorities.",
+        "Client, professional and admin personas cannot use role metadata to obtain cross-account client metric access; service-owned updates keep the public summary synchronized."
       ],
       "blockers": [
-        {
-          "id": "PROF-B01",
-          "severity": "critical",
-          "category": "rls",
-          "description": "client_profiles remains without RLS; professional profile and KYC authorities are closed.",
-          "targetPhase": "Fase 1"
-        },
         {
           "id": "PROF-B03",
           "severity": "high",
@@ -472,8 +523,8 @@
         }
       ],
       "nextActions": [
-        "Close client_profiles and define its private/public projection boundary.",
         "Remove legacy owner-prefix KYC Storage policies through the managed Storage policy authority and add upload cleanup/retention.",
+        "Replace remaining localStorage/sessionStorage and IndexedDB profile/KYC draft authority with remote cross-device state.",
         "Define KYC policy, retention, rejection and appeal rules."
       ],
       "exitCriteria": [
@@ -1080,7 +1131,14 @@
         "assets/js/repositories/finance-repository.js",
         "backend/modules/wallet/wallet-service.js",
         "docs/FINANCIAL-FLOW-CONTRACT.md",
-        "supabase/migrations/014_finance_wallet_shared_runtime.sql"
+        "supabase/migrations/014_finance_wallet_shared_runtime.sql",
+        "supabase/migrations/106_financial_table_permission_authority.sql",
+        "supabase/migrations/107_financial_rpc_authority.sql",
+        "supabase/migrations/108_financial_operator_authority.sql",
+        "supabase/migrations/109_financial_final_permissions.sql",
+        "supabase/functions/financial-operations/index.ts",
+        "docs/SECURITY-FINANCIAL-RPC-AUTHORITY.md",
+        "supabase/tests/009_financial_rpc_authority_validation.sql"
       ],
       "scanRoots": [
         "assets/js/pages/pagamento-profissional.js",
@@ -1095,17 +1153,23 @@
         "receipts",
         "wallet_receivables"
       ],
-      "edgeFunctions": [],
+      "edgeFunctions": [
+        "financial-operations"
+      ],
       "crons": [],
       "tests": [
         "test:order-charge-creation-contract",
         "test:order-payment-hold-contract",
         "test:finance-supabase-repository-contract",
-        "test:order-transaction-cycle-contract"
+        "test:order-transaction-cycle-contract",
+        "test:financial-rpc-authority-contract",
+        "test:financial-operations-edge-runtime"
       ],
       "evidence": [
         "Financial contracts, ledger-like tables and local beta-launch E2E exist.",
-        "No real PSP, signed webhook, reconciliation job or production card tokenization is connected."
+        "No real PSP, signed webhook, reconciliation job or production card tokenization is connected.",
+        "Browser sessions can no longer create payment rows, receivables or escrow releases through legacy RPCs; remote payment materialization now fails closed until signed PSP authority exists.",
+        "Payment, transaction, receipt and receivable tables are authenticated read-only projections with participant RLS and no anon grants."
       ],
       "blockers": [
         {
@@ -1114,13 +1178,6 @@
           "category": "external_provider",
           "description": "No PSP integration or signed webhook authority exists.",
           "targetPhase": "Fase 8"
-        },
-        {
-          "id": "PAY-B02",
-          "severity": "critical",
-          "category": "rpc_grants",
-          "description": "Payment, receivable and finance RPCs are executable by anon/authenticated.",
-          "targetPhase": "Fase 1"
         },
         {
           "id": "PAY-B03",
@@ -1139,8 +1196,8 @@
       ],
       "nextActions": [
         "Select PSP after legal/accounting review.",
-        "Design signed webhook ingestion and idempotency.",
-        "Make provider events the only payment authority.",
+        "Design signed webhook ingestion using the locked server-side idempotency store.",
+        "Make verified provider events the only payment, receivable and escrow authority.",
         "Build reconciliation, refund and failure recovery."
       ],
       "exitCriteria": [
@@ -1178,7 +1235,14 @@
         "assets/js/repositories/finance-repository.js",
         "assets/js/repositories/wallet-repository.js",
         "supabase/migrations/005_wallet_runtime_foundation.sql",
-        "supabase/migrations/014_finance_wallet_shared_runtime.sql"
+        "supabase/migrations/014_finance_wallet_shared_runtime.sql",
+        "supabase/migrations/106_financial_table_permission_authority.sql",
+        "supabase/migrations/107_financial_rpc_authority.sql",
+        "supabase/migrations/108_financial_operator_authority.sql",
+        "supabase/migrations/109_financial_final_permissions.sql",
+        "supabase/functions/financial-operations/index.ts",
+        "docs/SECURITY-FINANCIAL-RPC-AUTHORITY.md",
+        "supabase/tests/009_financial_rpc_authority_validation.sql"
       ],
       "scanRoots": [
         "backend/modules/wallet",
@@ -1195,25 +1259,24 @@
         "withdrawals",
         "receipts"
       ],
-      "edgeFunctions": [],
+      "edgeFunctions": [
+        "financial-operations"
+      ],
       "crons": [],
       "tests": [
         "test:finance-supabase-repository-contract",
         "audit:wallet-api-contract",
-        "test:order-completion-release-contract"
+        "test:order-completion-release-contract",
+        "test:financial-rpc-authority-contract",
+        "test:financial-operations-edge-runtime"
       ],
       "evidence": [
         "Backend routes and staging multi-domain wallet flows exist.",
-        "Frontend wallet repository remains localStorage-heavy and real settlement is absent."
+        "Frontend wallet repository remains localStorage-heavy and real settlement is absent.",
+        "Bank account and withdrawal writes are controlled by role-validated RPCs; support/admin decisions use a JWT-protected Edge Function and service-role-only internal RPCs.",
+        "Withdrawal creation is atomic and idempotent, direct table DML is denied, and remote canaries proved balance reservation and canonical operator validation."
       ],
       "blockers": [
-        {
-          "id": "WAL-B01",
-          "severity": "critical",
-          "category": "rpc_grants",
-          "description": "Bank account, withdrawal and receivable RPCs are broadly executable.",
-          "targetPhase": "Fase 1"
-        },
         {
           "id": "WAL-B02",
           "severity": "critical",
@@ -1237,9 +1300,9 @@
         }
       ],
       "nextActions": [
-        "Harden finance RPCs and bank data.",
+        "Encrypt or tokenize bank-account fields and define masking, retention and operator-access policy.",
         "Connect webhook-confirmed ledger entries.",
-        "Implement withdrawal provider flow and reconciliation.",
+        "Implement withdrawal provider transfer and reconciliation.",
         "Remove local wallet authority from production."
       ],
       "exitCriteria": [
@@ -1262,7 +1325,7 @@
       "maturity": 2,
       "userFacingAuthority": "hybrid",
       "serverAuthority": "partial",
-      "stagingEvidence": "local_e2e",
+      "stagingEvidence": "staging_canary",
       "securityGate": "blocked",
       "productionGate": "blocked",
       "objective": "Resolve transaction failures and conflicts through explicit policies and audited state machines.",
@@ -1275,7 +1338,14 @@
       "requiredPaths": [
         "backend/modules/wallet/wallet-service.js",
         "assets/js/repositories/finance-repository.js",
-        "docs/FINANCIAL-FLOW-CONTRACT.md"
+        "docs/FINANCIAL-FLOW-CONTRACT.md",
+        "supabase/migrations/106_financial_table_permission_authority.sql",
+        "supabase/migrations/107_financial_rpc_authority.sql",
+        "supabase/migrations/108_financial_operator_authority.sql",
+        "supabase/migrations/109_financial_final_permissions.sql",
+        "supabase/functions/financial-operations/index.ts",
+        "docs/SECURITY-FINANCIAL-RPC-AUTHORITY.md",
+        "supabase/tests/009_financial_rpc_authority_validation.sql"
       ],
       "scanRoots": [
         "backend/modules/wallet",
@@ -1290,15 +1360,21 @@
         "transactions",
         "receipts"
       ],
-      "edgeFunctions": [],
+      "edgeFunctions": [
+        "financial-operations"
+      ],
       "crons": [],
       "tests": [
         "test:order-cancellation-dispute-contract",
-        "test:finance-supabase-repository-contract"
+        "test:finance-supabase-repository-contract",
+        "test:financial-rpc-authority-contract",
+        "test:financial-operations-edge-runtime"
       ],
       "evidence": [
         "Open/respond/release/refund contracts and audit routes exist.",
-        "Real chargeback/provider dispute integration is absent."
+        "Real chargeback/provider dispute integration is absent.",
+        "Client dispute opening and professional response remain authenticated self-service operations with linked-order validation.",
+        "Refund/release decisions are service-role-only behind financial-operations, revalidate an active support/admin actor and write audit events; positive and negative staging canaries passed under rollback."
       ],
       "blockers": [
         {
@@ -1307,13 +1383,6 @@
           "category": "legal_policy",
           "description": "Cancellation, refund, evidence and appeal policies are not approved.",
           "targetPhase": "Fase 2"
-        },
-        {
-          "id": "DSP-B02",
-          "severity": "critical",
-          "category": "rpc_grants",
-          "description": "Dispute resolution RPCs are executable by anon/authenticated.",
-          "targetPhase": "Fase 1"
         },
         {
           "id": "DSP-B03",
@@ -1331,10 +1400,10 @@
         }
       ],
       "nextActions": [
-        "Approve dispute policy and state machine.",
-        "Secure RPCs.",
+        "Approve cancellation, evidence, appeal and refund policy.",
         "Integrate provider chargebacks and evidence submission.",
-        "Build operator queue and appeal audit."
+        "Build the general operator queue, deadlines and appeal audit.",
+        "Reconcile provider dispute states with Doke decisions."
       ],
       "exitCriteria": [
         "Every cancellation stage has deterministic financial effects.",
@@ -2268,7 +2337,6 @@
       "status": "staging_canary",
       "owner": "PROF-001",
       "blockers": [
-        "PROF-B01",
         "PROF-B03",
         "PROF-B04"
       ]
@@ -2362,7 +2430,6 @@
       "owner": "PAY-001",
       "blockers": [
         "PAY-B01",
-        "PAY-B02",
         "PAY-B03",
         "PAY-B04"
       ]
@@ -2383,7 +2450,6 @@
       "owner": "DSP-001",
       "blockers": [
         "DSP-B01",
-        "DSP-B02",
         "DSP-B03"
       ]
     },
@@ -2402,7 +2468,6 @@
       "status": "hybrid",
       "owner": "WAL-001",
       "blockers": [
-        "WAL-B01",
         "WAL-B02",
         "WAL-B03"
       ]

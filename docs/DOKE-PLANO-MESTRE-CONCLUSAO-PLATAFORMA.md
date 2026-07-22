@@ -1027,3 +1027,4 @@ Este Plano Mestre passa a orientar todos os próximos passos.
 ## Progresso SEC-001
 
 - [x] Autoridade profissional/KYC: tabelas read-only por RLS, documentos privados e revisão via Edge Function autenticada.
+- [x] Autoridade do cliente: `client_profiles` privado e server-owned, projeção pública agregada, grants mínimos e canários negativos por persona.

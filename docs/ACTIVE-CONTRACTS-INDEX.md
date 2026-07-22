@@ -555,3 +555,10 @@ These contracts convert workstation evidence into explicit visual, quality, stag
 ## SEC-001 — Professional KYC authority
 
 - `docs/SECURITY-PROFESSIONAL-KYC-AUTHORITY.md` define RLS, Storage privado, RPCs do candidato e operações administrativas de KYC via Edge Function.
+
+## SEC-001 — Client profile authority
+
+- `docs/SECURITY-CLIENT-PROFILE-AUTHORITY.md` define `client_profiles` como métricas privadas server-owned e `client_profile_public_summaries` como projeção pública agregada.
+- `npm run test:client-profile-authority-contract` bloqueia regressões em RLS, grants, funções privadas, projeção pública e histórico local de migrations.
+- `npm run test:client-profile-authority-runtime` valida a normalização da identidade sem confiar em metadata forjada.
+- `supabase/tests/008_client_profile_authority_validation.sql` contém os canários transacionais por persona e termina com `ROLLBACK`.

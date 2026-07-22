@@ -1,0 +1,96 @@
+{
+  "schemaVersion": "1.0.0",
+  "generatedAt": "2026-07-22T15:45:00Z",
+  "lot": "SEC-001 financial RPC and table authority",
+  "local": {
+    "passedGroups": 19,
+    "failedGroups": 0,
+    "log": "reports/financial-rpc-authority/local-validation.log",
+    "groups": [
+      "audit-domain",
+      "financial-contract",
+      "financial-edge",
+      "finance-repository",
+      "wallet-api",
+      "runtime-idempotency",
+      "security-permission",
+      "supabase-readiness",
+      "auth-session",
+      "auth-real",
+      "real-auth-only",
+      "identity-profile",
+      "identity-rls",
+      "identity-role",
+      "professional-kyc-contract",
+      "professional-kyc-edge",
+      "client-profile-contract",
+      "client-profile-runtime",
+      "secrets-checklist"
+    ],
+    "javascriptSyntax": {
+      "checked": 1018,
+      "passed": true,
+      "evidence": "reports/financial-rpc-authority/js-syntax-validation.json"
+    },
+    "privateSecretLiteralScan": {
+      "passed": true,
+      "findings": 0,
+      "ignoredDocumentedPlaceholders": 4,
+      "evidence": "reports/financial-rpc-authority/private-secret-literal-scan.json"
+    }
+  },
+  "remote": {
+    "canariesPassed": 26,
+    "canariesFailed": 0,
+    "rollback": true,
+    "edgeFunctionActive": true,
+    "edgeFunctionVerifyJwt": true
+  },
+  "domainMatrix": {
+    "domains": 23,
+    "criticalFlows": 15,
+    "averageMaturity": 2.43,
+    "criticalBlockersBefore": 27,
+    "criticalBlockersAfter": 24,
+    "removed": [
+      "PAY-B02",
+      "WAL-B01",
+      "DSP-B02"
+    ]
+  },
+  "nonRegression": {
+    "communityPaths": 184,
+    "communityChanged": 0,
+    "communityByteIdentical": true,
+    "htmlChanged": 0,
+    "cssChanged": 0,
+    "packageLockChanged": false,
+    "productionCssImportantBefore": 11724,
+    "productionCssImportantAfter": 11724,
+    "visualValidation": "Not run because no HTML or CSS file changed; byte comparison is the applicable evidence."
+  },
+  "preExistingFailures": {
+    "financeOrderDomainTests": {
+      "workFailed": 6,
+      "pristineFailed": 6,
+      "sameRootCauses": true,
+      "workLog": "reports/financial-rpc-authority/domain-validation.log",
+      "pristineLog": "reports/financial-rpc-authority/pristine-domain-validation.log",
+      "causes": [
+        "VM test stub lacks root.addEventListener in notifications-repository.js",
+        "hidden contextual state occupies layout in an existing payment/messages test"
+      ]
+    },
+    "documentationAudits": {
+      "docsActiveReview": "PASS in work and pristine",
+      "activeContractsIndex": "FAIL in work and pristine with the same missing legacy docs/sections",
+      "docsPrimaryIndex": "FAIL in work and pristine with docs/README.md and docs/DOCS-REGISTRY.md missing"
+    }
+  },
+  "limitations": [
+    "A chamada HTTP direta da Edge Function não foi executada porque o ambiente de container não resolveu o DNS do endpoint Supabase.",
+    "A função foi validada como ACTIVE/verify_jwt=true no remoto, e seus helpers/runtime passaram localmente.",
+    "Nenhum PSP, webhook assinado, conciliação ou processamento monetário real foi criado neste lote.",
+    "Materialização remota de pagamento e recebível permanece fail-closed até existir autoridade do provedor."
+  ]
+}

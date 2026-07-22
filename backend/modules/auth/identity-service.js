@@ -58,7 +58,7 @@ function normalizeProfile(profileRow, user, professionalRow, clientRow) {
     documentStatus: professional.document_status || '',
     serviceRadiusKm: professional.service_radius_km || null,
     rating: Number(professional.average_rating || client.average_rating || 0),
-    reviewsCount: Number(professional.reviews_count || 0),
+    reviewsCount: Number(professional.reviews_count || client.reviews_count || 0),
     completedOrdersCount: Number(professional.completed_orders_count || 0),
     ordersCount: Number(client.orders_count || 0),
     publicUrl,
@@ -102,7 +102,7 @@ async function readClientRow(supabase, userId) {
   if (!supabase || !userId || typeof supabase.from !== 'function') return null;
   return maybeSingle(supabase
     .from('client_profiles')
-    .select('user_id,orders_count,average_rating,updated_at')
+    .select('user_id,orders_count,average_rating,reviews_count,updated_at')
     .eq('user_id', userId));
 }
 

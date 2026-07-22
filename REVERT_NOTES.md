@@ -1,16 +1,13 @@
-# Reversão — SEC-001 autoridade profissional e KYC
+# Revert notes — SEC-001 financial RPC authority
 
-A reversão deve ocorrer por migration corretiva; migrations aplicadas não devem ser removidas do histórico.
+A reversão não deve restaurar grants amplos nem `EXECUTE` para `PUBLIC`.
 
-Ordem de contenção:
+Em caso de regressão funcional:
 
-1. manter RLS nas três tabelas de KYC;
-2. manter o bucket privado;
-3. se a Edge Function falhar, corrigir a função sem reabrir DML direto ao navegador;
-4. não restaurar a RPC antiga de submissão direta;
-5. não gravar `role` ou `account_role` em `raw_user_meta_data`;
-6. preservar os objetos reais e o histórico de verificação;
-7. intents preparados podem ser marcados como `cancelled`/`expired` sem apagar documentos;
-8. em emergência, o `service_role` pode reparar estados após auditoria.
+1. mantenha `anon` sem grants financeiros;
+2. mantenha as RPCs legadas de dinheiro e idempotência fora da Data API;
+3. desative temporariamente a chamada da Edge Function no frontend, preservando o fail-closed;
+4. reverta apenas a função/RPC afetada por uma migration aditiva e auditável;
+5. execute novamente os 26 canários com rollback.
 
-Para desativação operacional imediata, despublique `professional-verification-operations` e mantenha o KYC somente para leitura até a correção. Nenhuma reversão visual se aplica: HTML e CSS não foram alterados.
+Não reaplique migrations antigas e não restaure `TRUNCATE`, `REFERENCES` ou `TRIGGER` para papéis de API.

@@ -1648,3 +1648,19 @@ npm run audit:domain-completion-matrix
 ```
 
 Remote validation must confirm owner/reviewer RLS, no direct browser DML, a private KYC bucket with four canonical policies, service-role-only reviewer RPCs and role promotion without user-editable authorization metadata.
+
+
+## SEC-001 client profile authority batch
+
+```bash
+npm run test:client-profile-authority-contract
+npm run test:client-profile-authority-runtime
+npm run test:identity-rls-authority-contract
+npm run test:identity-role-authority-runtime
+npm run audit:auth-session
+npm run audit:security-permission-contract
+npm run audit:supabase-backend-readiness
+npm run audit:domain-completion-matrix
+```
+
+A validação remota deve provar: `anon` sem leitura/escrita privada; proprietário limitado à própria linha; profissional e operador sem leitura transversal pelo Data API; nenhuma mutação direta de métricas; `service_role` limitado a CRUD e reconciliação; projeção pública apenas com agregados; suspensão e exclusão removendo a projeção; funções internas sem `EXECUTE` para navegador; metadata forjada sem efeito; e todas as mutações de canário sob `ROLLBACK`.
