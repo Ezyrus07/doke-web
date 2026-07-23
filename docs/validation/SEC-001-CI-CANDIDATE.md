@@ -72,3 +72,7 @@ Continuar dentro de SEC-001. Recuperar a linhagem autoritativa das migrations 11
 ## Rollback
 
 Reverter o commit do candidato restaura em conjunto workflows, partição E2E, harness visual, auditorias e correção de lifecycle. Não restaurar os workflows temporários ou payloads do PR #5.
+
+## Complemento de recuperação de linhagem
+
+A entrega local subsequente recuperou, com verificação SHA-256 contra a evidência histórica, as migrations `110–134`, os testes associados e `service-moderation-operations`. O detalhe está em `docs/validation/SEC-001-LINEAGE-RECOVERY.md`. Os contratos específicos passaram 10/10, a lane E2E bloqueante passou 23/23 e os guards estruturais passaram 105/105. O bloqueador `SEC-B08` só pode ser encerrado após commit Git revisado e repetição dos gates no SHA resultante; nenhuma alteração foi aplicada ao staging nesta recuperação.
