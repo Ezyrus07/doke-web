@@ -1,6 +1,6 @@
 {
-  "version": "1.3.2",
-  "updatedAt": "2026-07-23T10:29:46-03:00",
+  "version": "1.3.3",
+  "updatedAt": "2026-07-23T18:00:00-03:00",
   "title": "Doke Domain Completion Matrix",
   "purpose": "Single source of truth for domain maturity, data authority, staging evidence, blockers, dependencies and mandatory completion order.",
   "maturityScale": {
@@ -209,7 +209,49 @@
         "supabase/functions/self-service-operations/import_map.json",
         "scripts/test-self-service-edge-authority-contract.js",
         "scripts/test-self-service-operations-edge-runtime.mjs",
-        "docs/SECURITY-SELF-SERVICE-EDGE-AUTHORITY.md"
+        "docs/SECURITY-SELF-SERVICE-EDGE-AUTHORITY.md",
+        "supabase/migrations/110_notification_authority.sql",
+        "supabase/migrations/111_audit_log_authority.sql",
+        "supabase/migrations/112_catalog_favorites_authority.sql",
+        "supabase/migrations/113_availability_reviews_authority.sql",
+        "supabase/migrations/114_messaging_reports_authority.sql",
+        "supabase/migrations/115_budget_authority.sql",
+        "supabase/migrations/116_community_authority.sql",
+        "supabase/migrations/117_service_media_storage_authority.sql",
+        "supabase/migrations/118_public_data_default_authority.sql",
+        "supabase/migrations/119_public_policy_role_separation.sql",
+        "supabase/migrations/120_community_owner_membership_invariant.sql",
+        "supabase/migrations/121_client_profile_public_summary_invoker.sql",
+        "supabase/migrations/122_service_moderation_operator_authority.sql",
+        "supabase/migrations/123_foreign_key_index_coverage.sql",
+        "supabase/migrations/124_rls_initplan_optimization.sql",
+        "supabase/migrations/125_rls_policy_consolidation.sql",
+        "supabase/migrations/126_service_quote_template_owner_authority.sql",
+        "supabase/migrations/127_idempotency_server_only_policy.sql",
+        "supabase/migrations/128_public_structural_privilege_cleanup.sql",
+        "supabase/migrations/129_public_grant_policy_alignment.sql",
+        "supabase/migrations/130_self_service_function_search_path_hardening.sql",
+        "supabase/migrations/131_public_quote_catalog_grant_restore.sql",
+        "supabase/migrations/132_transaction_attachment_storage_authority.sql",
+        "supabase/migrations/133_transaction_attachment_helper_runtime_fix.sql",
+        "supabase/migrations/134_transaction_attachment_folder_depth_fix.sql",
+        "supabase/tests/010_public_data_authority_validation.sql",
+        "supabase/tests/011_service_moderation_operator_authority_validation.sql",
+        "supabase/tests/012_transaction_attachment_storage_authority_validation.sql",
+        "supabase/functions/service-moderation-operations/index.ts",
+        "supabase/functions/service-moderation-operations/operations.mjs",
+        "supabase/functions/service-moderation-operations/import_map.json",
+        "scripts/test-notification-authority-contract.js",
+        "scripts/test-public-data-authority-contract.js",
+        "scripts/test-service-media-storage-authority-contract.js",
+        "scripts/test-service-moderation-operator-authority-contract.js",
+        "scripts/test-service-moderation-operations-runtime.mjs",
+        "scripts/test-service-quote-template-owner-authority-contract.js",
+        "scripts/test-self-service-search-path-authority-contract.js",
+        "scripts/test-attachments-supabase-repository-contract.js",
+        "scripts/test-notifications-supabase-repository-contract.js",
+        "docs/operations/SUPABASE-ADMIN-DEFAULT-PRIVILEGES.md",
+        "docs/validation/SEC-001-MIGRATION-LINEAGE-RECOVERY.md"
       ],
       "scanRoots": [
         "supabase/migrations",
@@ -254,7 +296,14 @@
         "test:financial-operations-edge-runtime",
         "test:finance-supabase-repository-contract",
         "test:self-service-edge-authority-contract",
-        "test:self-service-operations-edge-runtime"
+        "test:self-service-operations-edge-runtime",
+        "test:notification-authority-contract",
+        "test:public-data-authority-contract",
+        "test:service-media-storage-authority-contract",
+        "test:service-moderation-operator-authority-contract",
+        "test:service-moderation-operations-runtime",
+        "test:service-quote-template-owner-authority-contract",
+        "test:self-service-search-path-authority-contract"
       ],
       "evidence": [
         "Private operational tables are not readable by anon or authenticated.",
@@ -290,14 +339,15 @@
         "The dispatcher reconstructs auth.uid for the existing hardened domain implementations and rejects operations outside a fourteen-action allowlist.",
         "Five new remote dispatcher assertions passed with rollback; the cumulative SEC-001 remote assertion count is 121.",
         "The Supabase security advisor now reports only leaked-password protection disabled; authenticated SECURITY DEFINER warnings were eliminated.",
-        "Twenty-two focused local validation groups passed with zero new failures; two unrelated failures were reproduced unchanged in the pristine baseline."
+        "Twenty-two focused local validation groups passed with zero new failures; two unrelated failures were reproduced unchanged in the pristine baseline.",
+        "Migrations 110-134, their contract tests and service-moderation-operations source were recovered into Git from the prior official cumulative delivery and matched its versioned SHA-256 manifest byte-for-byte."
       ],
       "blockers": [
         {
           "id": "SEC-B08",
           "severity": "critical",
-          "category": "source_lineage",
-          "description": "Staging contains the effects attributed to migrations 110-127, but those migrations, their contract tests and the service-moderation Edge Function source are absent from every reachable and unreachable Git commit inspected; the database lineage is not reproducible from the repository.",
+          "category": "migration_reconciliation",
+          "description": "The missing Git source lineage was recovered with prior-delivery checksums, but migrations 110-134 and the deployed service-moderation-operations function still require read-only reconciliation against the remote migration registry and deployed runtime before any replay or promotion.",
           "targetPhase": "Fase 1"
         },
         {
@@ -316,7 +366,7 @@
         }
       ],
       "nextActions": [
-        "Recover the authoritative source lineage for applied migrations 110-127 and the deployed service-moderation-operations function through a reviewed Git commit; do not reconstruct it from CI payloads or ZIPs.",
+        "Reconcile migrations 110-134 and service-moderation-operations against the remote registry and deployed runtime; classify every item as applied-equivalent, divergent or absent, without replaying migrations.",
         "Enable leaked-password protection in Supabase Auth through the dashboard or an authorized Management API.",
         "Run browser-authenticated HTTP evidence for self-service-operations and the signed Storage lifecycle from an environment with DNS access.",
         "Run the post-migration grant/RLS audit for every new public object because platform-owned default ACLs are outside the project migration role.",

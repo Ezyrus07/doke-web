@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 856 arquivos no escopo; 147 referências a localStorage; 28 a sessionStorage; 555 referências mock; 122 referências de rede/Supabase; 33 marcadores de implementação pendente.
+**Evidência estática observada:** 864 arquivos no escopo; 147 referências a localStorage; 28 a sessionStorage; 555 referências mock; 123 referências de rede/Supabase; 33 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -151,7 +151,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção blocked.
 
-**Evidência estática observada:** 133 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 0 referências mock; 5 referências de rede/Supabase; 9 marcadores de implementação pendente.
+**Evidência estática observada:** 161 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 0 referências mock; 5 referências de rede/Supabase; 9 marcadores de implementação pendente.
 
 **Tabelas/autoridades de dados:** `users`, `user_profiles`, `client_profiles`, `audit_logs`, `availability_slots`, `budgets`, `communities`, `community_members`, `community_posts`, `favorites`, `message_attachments`, `reports`, `reviews`, `service_categories`, `verification_events`.
 
@@ -192,14 +192,15 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - Five new remote dispatcher assertions passed with rollback; the cumulative SEC-001 remote assertion count is 121.
 - The Supabase security advisor now reports only leaked-password protection disabled; authenticated SECURITY DEFINER warnings were eliminated.
 - Twenty-two focused local validation groups passed with zero new failures; two unrelated failures were reproduced unchanged in the pristine baseline.
+- Migrations 110-134, their contract tests and service-moderation-operations source were recovered into Git from the prior official cumulative delivery and matched its versioned SHA-256 manifest byte-for-byte.
 
 **Bloqueadores:**
-- **SEC-B08 · CRITICAL · source_lineage:** Staging contains the effects attributed to migrations 110-127, but those migrations, their contract tests and the service-moderation Edge Function source are absent from every reachable and unreachable Git commit inspected; the database lineage is not reproducible from the repository. _(Fase 1)_
+- **SEC-B08 · CRITICAL · migration_reconciliation:** The missing Git source lineage was recovered with prior-delivery checksums, but migrations 110-134 and the deployed service-moderation-operations function still require read-only reconciliation against the remote migration registry and deployed runtime before any replay or promotion. _(Fase 1)_
 - **SEC-B05 · HIGH · auth:** Leaked password protection is disabled in Supabase Auth. _(Fase 1)_
 - **SEC-B07 · MEDIUM · platform_defaults:** Supabase platform-owned supabase_admin default ACLs cannot be changed by the project migration role; new objects require a post-migration grant audit. _(Fase 1)_
 
 **Próximas ações:**
-- Recover the authoritative source lineage for applied migrations 110-127 and the deployed service-moderation-operations function through a reviewed Git commit; do not reconstruct it from CI payloads or ZIPs.
+- Reconcile migrations 110-134 and service-moderation-operations against the remote registry and deployed runtime; classify every item as applied-equivalent, divergent or absent, without replaying migrations.
 - Enable leaked-password protection in Supabase Auth through the dashboard or an authorized Management API.
 - Run browser-authenticated HTTP evidence for self-service-operations and the signed Storage lifecycle from an environment with DNS access.
 - Run the post-migration grant/RLS audit for every new public object because platform-owned default ACLs are outside the project migration role.
@@ -296,7 +297,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção blocked.
 
-**Evidência estática observada:** 16 arquivos no escopo; 6 referências a localStorage; 4 a sessionStorage; 0 referências mock; 29 referências de rede/Supabase; 0 marcadores de implementação pendente.
+**Evidência estática observada:** 16 arquivos no escopo; 6 referências a localStorage; 4 a sessionStorage; 0 referências mock; 24 referências de rede/Supabase; 0 marcadores de implementação pendente.
 
 **Páginas:** `anunciar-servico.html`, `detalhe-anuncio.html`, `admin-anuncio-revisao.html`, `index.html`, `resultados.html`.
 
@@ -713,7 +714,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção blocked.
 
-**Evidência estática observada:** 9 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 7 referências mock; 7 referências de rede/Supabase; 6 marcadores de implementação pendente.
+**Evidência estática observada:** 9 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 7 referências mock; 2 referências de rede/Supabase; 6 marcadores de implementação pendente.
 
 **Páginas:** `admin.html`, `admin-verificacao.html`, `admin-anuncio-revisao.html`, `admin-pedidos-operacao.html`.
 
@@ -815,7 +816,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 1/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 186 arquivos no escopo; 55 referências a localStorage; 1 a sessionStorage; 293 referências mock; 10 referências de rede/Supabase; 23 marcadores de implementação pendente.
+**Evidência estática observada:** 187 arquivos no escopo; 55 referências a localStorage; 1 a sessionStorage; 293 referências mock; 10 referências de rede/Supabase; 23 marcadores de implementação pendente.
 
 **Evidências:**
 - The master plan identifies legal, privacy and commercial decisions as mandatory.
@@ -844,7 +845,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI hybrid; servidor partial; staging local e2e; segurança partial; produção blocked.
 
-**Evidência estática observada:** 834 arquivos no escopo; 262 referências a localStorage; 74 a sessionStorage; 274 referências mock; 251 referências de rede/Supabase; 9 marcadores de implementação pendente.
+**Evidência estática observada:** 834 arquivos no escopo; 262 referências a localStorage; 74 a sessionStorage; 274 referências mock; 246 referências de rede/Supabase; 9 marcadores de implementação pendente.
 
 **Páginas:** `index.html`, `resultados.html`, `detalhe-anuncio.html`, `pedidos.html`, `mensagens.html`, `notificacoes.html`, `carteira.html`, `perfil.html`, `comunidade.html`.
 
@@ -875,7 +876,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 1995 arquivos no escopo; 423 referências a localStorage; 105 a sessionStorage; 913 referências mock; 488 referências de rede/Supabase; 87 marcadores de implementação pendente.
+**Evidência estática observada:** 2034 arquivos no escopo; 423 referências a localStorage; 105 a sessionStorage; 913 referências mock; 488 referências de rede/Supabase; 87 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
@@ -936,4 +937,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-07-23T10:29:46-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-07-23T18:00:00-03:00._
