@@ -28,16 +28,21 @@ jobs:
           import zlib
           from pathlib import Path
 
-          payload = ''.join(
+          def materialize(payload):
+              files = json.loads(zlib.decompress(base64.b64decode(payload)).decode('utf-8'))
+              for relative_path, encoded in files.items():
+                  target = Path(relative_path)
+                  target.parent.mkdir(parents=True, exist_ok=True)
+                  target.write_bytes(base64.b64decode(encoded))
+              return len(files)
+
+          base_payload = ''.join(
               Path(f'.github/quality-patch-parts/part-{index:02d}').read_text(encoding='ascii')
               for index in range(6)
           )
-          files = json.loads(zlib.decompress(base64.b64decode(payload)).decode('utf-8'))
-          for relative_path, encoded in files.items():
-              target = Path(relative_path)
-              target.parent.mkdir(parents=True, exist_ok=True)
-              target.write_bytes(base64.b64decode(encoded))
-          print(f'Materialized {len(files)} exact candidate files.')
+          base_count = materialize(base_payload)
+          visual_count = materialize(Path('.github/visual-harness-v2.b64').read_text(encoding='ascii'))
+          print(f'Materialized {base_count} base files and {visual_count} visual harness files.')
           '@
           [System.IO.File]::WriteAllText(
             (Join-Path $PWD 'materialize-candidate.py'),
@@ -70,18 +75,42 @@ jobs:
       - name: E2E smoke
         id: e2e
         continue-on-error: true
-        run: npm run test:e2e
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path reports/generated/quality-patch | Out-Null
+          npm run test:e2e 2>&1 | Tee-Object -FilePath reports/generated/quality-patch/e2e.log
+          $code = $LASTEXITCODE
+          if (Test-Path reports/generated/playwright-results.json) {
+            Copy-Item reports/generated/playwright-results.json reports/generated/quality-patch/e2e-results.json -Force
+          }
+          [System.IO.File]::WriteAllText(
+            (Join-Path $PWD 'reports/generated/quality-patch/e2e-exit-code.txt'),
+            [string]$code + [Environment]::NewLine,
+            [System.Text.UTF8Encoding]::new($false)
+          )
+          exit $code
 
-      - name: Visual regression guards
+      - name: Visual structural guards and evidence
         id: visual
         continue-on-error: true
-        run: npm run test:visual
+        shell: pwsh
+        run: |
+          npm run test:visual 2>&1 | Tee-Object -FilePath reports/generated/quality-patch/visual.log
+          $code = $LASTEXITCODE
+          if (Test-Path reports/generated/playwright-results.json) {
+            Copy-Item reports/generated/playwright-results.json reports/generated/quality-patch/visual-results.json -Force
+          }
+          [System.IO.File]::WriteAllText(
+            (Join-Path $PWD 'reports/generated/quality-patch/visual-exit-code.txt'),
+            [string]$code + [Environment]::NewLine,
+            [System.Text.UTF8Encoding]::new($false)
+          )
+          exit $code
 
       - name: Persist browser status
         if: always()
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force -Path reports/generated/quality-patch | Out-Null
           $status = @{
             e2e = '${{ steps.e2e.outcome }}'
             visual = '${{ steps.visual.outcome }}'
@@ -96,11 +125,10 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: doke-quality-gates-green-evidence
+          name: doke-quality-gates-green-evidence-v2
           path: |
             reports/generated/quality-patch/
             reports/generated/playwright-html/
-            reports/generated/playwright-results.json
             test-results/
             docs/validation/
           if-no-files-found: warn
