@@ -42,15 +42,20 @@ jobs:
           patch = zlib.decompress(base64.b64decode(encoded))
           Path('quality-candidate.patch').write_bytes(patch)
 
-          # These two duplicate entries were already removed directly in the
-          # ephemeral branch. Restore their exact CRLF baseline bytes in the
-          # runner so the baseline-to-candidate patch applies deterministically.
+          # Two duplicated inventory entries were removed directly in the
+          # ephemeral branch, and mobile-shell also received a temporary
+          # workflow trigger comment. Restore the exact CRLF baseline bytes so
+          # the baseline-to-candidate patch applies deterministically.
           for relative_path in (
               'tests/e2e/mobile-shell.spec.js',
               'tests/e2e/stage28-regression-guards.spec.js',
           ):
               path = Path(relative_path)
               source = path.read_bytes()
+              source = source.replace(
+                  b"\n\n// Temporary trigger after the authorized Windows workflow update.\n",
+                  b"\n",
+              )
               marker = b"  'comunidade.html',\n  'perfil.html',"
               restored = b"  'comunidade.html',\n  'comunidade.html',\n  'perfil.html',"
               if marker not in source:
