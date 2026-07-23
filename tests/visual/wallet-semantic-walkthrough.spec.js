@@ -2,6 +2,7 @@ const { test, expect } = require('@playwright/test');
 const fs = require('fs');
 const path = require('path');
 
+// Fixture usa UUID neutro para evitar normalização de IDs legados do mock.
 const outputRoot = process.env.DOKE_TRANSACTION_WALKTHROUGH_OUTPUT || path.join(process.cwd(), 'reports/generated/transaction-walkthrough');
 const viewports = [
   { name: 'desktop-1366', width: 1366, height: 768, isMobile: false, hasTouch: false },
