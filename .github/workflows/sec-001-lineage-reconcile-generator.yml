@@ -1,0 +1,152 @@
+name: SEC-001 lineage matrix generator
+
+on:
+  push:
+    branches: [recovery/sec-001-migration-lineage]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Reconcile recovered authority in package and matrix
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+
+          const packagePath = 'package.json';
+          const packageJson = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
+          Object.assign(packageJson.scripts, {
+            'test:notification-authority-contract': 'node scripts/test-notification-authority-contract.js',
+            'test:public-data-authority-contract': 'node scripts/test-public-data-authority-contract.js',
+            'test:service-media-storage-authority-contract': 'node scripts/test-service-media-storage-authority-contract.js',
+            'test:service-moderation-operator-authority-contract': 'node scripts/test-service-moderation-operator-authority-contract.js',
+            'test:service-moderation-operations-runtime': 'node scripts/test-service-moderation-operations-runtime.mjs',
+            'test:service-quote-template-owner-authority-contract': 'node scripts/test-service-quote-template-owner-authority-contract.js',
+            'test:self-service-search-path-authority-contract': 'node scripts/test-self-service-search-path-authority-contract.js'
+          });
+          fs.writeFileSync(packagePath, `${JSON.stringify(packageJson, null, 2)}\n`);
+
+          const matrixPath = 'config/domain-completion-matrix.json';
+          const matrix = JSON.parse(fs.readFileSync(matrixPath, 'utf8'));
+          matrix.version = '1.3.3';
+          matrix.updatedAt = '2026-07-23T18:00:00-03:00';
+          const security = matrix.domains.find((domain) => domain.id === 'SEC-001');
+          if (!security) throw new Error('SEC-001 domain not found');
+
+          const migrationPaths = Array.from({ length: 25 }, (_, index) => {
+            const number = 110 + index;
+            const names = {
+              110: 'notification_authority',
+              111: 'audit_log_authority',
+              112: 'catalog_favorites_authority',
+              113: 'availability_reviews_authority',
+              114: 'messaging_reports_authority',
+              115: 'budget_authority',
+              116: 'community_authority',
+              117: 'service_media_storage_authority',
+              118: 'public_data_default_authority',
+              119: 'public_policy_role_separation',
+              120: 'community_owner_membership_invariant',
+              121: 'client_profile_public_summary_invoker',
+              122: 'service_moderation_operator_authority',
+              123: 'foreign_key_index_coverage',
+              124: 'rls_initplan_optimization',
+              125: 'rls_policy_consolidation',
+              126: 'service_quote_template_owner_authority',
+              127: 'idempotency_server_only_policy',
+              128: 'public_structural_privilege_cleanup',
+              129: 'public_grant_policy_alignment',
+              130: 'self_service_function_search_path_hardening',
+              131: 'public_quote_catalog_grant_restore',
+              132: 'transaction_attachment_storage_authority',
+              133: 'transaction_attachment_helper_runtime_fix',
+              134: 'transaction_attachment_folder_depth_fix'
+            };
+            return `supabase/migrations/${number}_${names[number]}.sql`;
+          });
+          const recoveredPaths = [
+            ...migrationPaths,
+            'supabase/tests/010_public_data_authority_validation.sql',
+            'supabase/tests/011_service_moderation_operator_authority_validation.sql',
+            'supabase/tests/012_transaction_attachment_storage_authority_validation.sql',
+            'supabase/functions/service-moderation-operations/index.ts',
+            'supabase/functions/service-moderation-operations/operations.mjs',
+            'supabase/functions/service-moderation-operations/import_map.json',
+            'scripts/test-notification-authority-contract.js',
+            'scripts/test-public-data-authority-contract.js',
+            'scripts/test-service-media-storage-authority-contract.js',
+            'scripts/test-service-moderation-operator-authority-contract.js',
+            'scripts/test-service-moderation-operations-runtime.mjs',
+            'scripts/test-service-quote-template-owner-authority-contract.js',
+            'scripts/test-self-service-search-path-authority-contract.js',
+            'scripts/test-attachments-supabase-repository-contract.js',
+            'scripts/test-notifications-supabase-repository-contract.js',
+            'docs/operations/SUPABASE-ADMIN-DEFAULT-PRIVILEGES.md'
+          ];
+          security.requiredPaths = [...new Set([...security.requiredPaths, ...recoveredPaths])];
+
+          const recoveredTests = [
+            'test:notification-authority-contract',
+            'test:public-data-authority-contract',
+            'test:service-media-storage-authority-contract',
+            'test:service-moderation-operator-authority-contract',
+            'test:service-moderation-operations-runtime',
+            'test:service-quote-template-owner-authority-contract',
+            'test:self-service-search-path-authority-contract'
+          ];
+          security.tests = [...new Set([...security.tests, ...recoveredTests])];
+
+          const recoveryEvidence = 'Migrations 110-134, their contract tests and service-moderation-operations source were recovered into Git from the prior official cumulative delivery and matched its versioned SHA-256 manifest byte-for-byte.';
+          if (!security.evidence.includes(recoveryEvidence)) security.evidence.push(recoveryEvidence);
+
+          security.blockers = security.blockers.map((blocker) => blocker.id === 'SEC-B08' ? {
+            id: 'SEC-B08',
+            severity: 'critical',
+            category: 'migration_reconciliation',
+            description: 'The missing Git source lineage was recovered with prior-delivery checksums, but migrations 110-134 and the deployed service-moderation-operations function still require read-only reconciliation against the remote migration registry and deployed runtime before any replay or promotion.',
+            targetPhase: 'Fase 1'
+          } : blocker);
+
+          security.nextActions = security.nextActions.filter((action) => !action.startsWith('Recover the authoritative source lineage'));
+          security.nextActions.unshift('Reconcile migrations 110-134 and service-moderation-operations against the remote registry and deployed runtime; classify every item as applied-equivalent, divergent or absent, without replaying migrations.');
+
+          fs.writeFileSync(matrixPath, `${JSON.stringify(matrix, null, 2)}\n`);
+          NODE
+
+      - name: Generate and validate matrix
+        shell: bash
+        run: |
+          node scripts/audit-domain-completion-matrix.js --write
+          node scripts/audit-domain-completion-matrix.js
+          npm run test:notification-authority-contract
+          npm run test:public-data-authority-contract
+          npm run test:service-media-storage-authority-contract
+          npm run test:service-moderation-operator-authority-contract
+          npm run test:service-moderation-operations-runtime
+          npm run test:service-quote-template-owner-authority-contract
+          npm run test:self-service-search-path-authority-contract
+          git diff --check
+
+      - name: Upload reconciled source files
+        uses: actions/upload-artifact@v4
+        with:
+          name: sec-001-lineage-reconciled-source
+          path: |
+            package.json
+            config/domain-completion-matrix.json
+            docs/DOMAIN-COMPLETION-MATRIX.md
+          if-no-files-found: error
+          retention-days: 2
