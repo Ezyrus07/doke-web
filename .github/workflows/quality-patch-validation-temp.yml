@@ -68,7 +68,7 @@ jobs:
 
           for relative_path, expected_sha in expected.items():
               path = Path(relative_path)
-              source = path.read_bytes()
+              source = path.read_bytes().replace(b'\r\n', b'\n')
               source = source.replace(
                   b"\n\n// Temporary trigger after the authorized Windows workflow update.\n",
                   b"\n",
@@ -78,7 +78,7 @@ jobs:
               if marker not in source:
                   raise SystemExit(f'baseline marker missing: {relative_path}')
               source = source.replace(marker, restored, 1)
-              source = source.replace(b'\r\n', b'\n').replace(b'\n', b'\r\n')
+              source = source.replace(b'\n', b'\r\n')
               actual_sha = hashlib.sha256(source).hexdigest()
               if actual_sha != expected_sha:
                   raise SystemExit(f'baseline checksum mismatch for {relative_path}: {actual_sha}')
