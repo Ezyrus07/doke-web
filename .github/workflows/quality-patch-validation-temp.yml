@@ -14,7 +14,8 @@ concurrency:
 jobs:
   validate-patch:
     runs-on: windows-latest
-    timeout-minutes: 45
+    timeout-minutes: 35
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -28,21 +29,15 @@ jobs:
           import zlib
           from pathlib import Path
 
-          def materialize(payload):
-              files = json.loads(zlib.decompress(base64.b64decode(payload)).decode('utf-8'))
-              for relative_path, encoded in files.items():
-                  target = Path(relative_path)
-                  target.parent.mkdir(parents=True, exist_ok=True)
-                  target.write_bytes(base64.b64decode(encoded))
-              return len(files)
+          payload = Path('.github/quality-patch-payload.b64').read_text(encoding='ascii')
+          files = json.loads(zlib.decompress(base64.b64decode(payload)).decode('utf-8'))
 
-          base_payload = ''.join(
-              Path(f'.github/quality-patch-parts/part-{index:02d}').read_text(encoding='ascii')
-              for index in range(6)
-          )
-          base_count = materialize(base_payload)
-          visual_count = materialize(Path('.github/visual-harness-v2.b64').read_text(encoding='ascii'))
-          print(f'Materialized {base_count} base files and {visual_count} visual harness files.')
+          for relative_path, encoded in files.items():
+              target = Path(relative_path)
+              target.parent.mkdir(parents=True, exist_ok=True)
+              target.write_bytes(base64.b64decode(encoded))
+
+          print(f'Materialized {len(files)} exact candidate files.')
           '@
           [System.IO.File]::WriteAllText(
             (Join-Path $PWD 'materialize-candidate.py'),
@@ -72,71 +67,21 @@ jobs:
       - name: Install Chromium
         run: npx playwright install chromium
 
-      - name: E2E smoke
-        id: e2e
-        continue-on-error: true
-        shell: pwsh
-        run: |
-          New-Item -ItemType Directory -Force -Path reports/generated/quality-patch | Out-Null
-          npm run test:e2e 2>&1 | Tee-Object -FilePath reports/generated/quality-patch/e2e.log
-          $code = $LASTEXITCODE
-          if (Test-Path reports/generated/playwright-results.json) {
-            Copy-Item reports/generated/playwright-results.json reports/generated/quality-patch/e2e-results.json -Force
-          }
-          [System.IO.File]::WriteAllText(
-            (Join-Path $PWD 'reports/generated/quality-patch/e2e-exit-code.txt'),
-            [string]$code + [Environment]::NewLine,
-            [System.Text.UTF8Encoding]::new($false)
-          )
-          exit $code
+      - name: Blocking E2E lane
+        run: npm run test:e2e:ci
 
-      - name: Visual structural guards and evidence
-        id: visual
-        continue-on-error: true
-        shell: pwsh
-        run: |
-          npm run test:visual 2>&1 | Tee-Object -FilePath reports/generated/quality-patch/visual.log
-          $code = $LASTEXITCODE
-          if (Test-Path reports/generated/playwright-results.json) {
-            Copy-Item reports/generated/playwright-results.json reports/generated/quality-patch/visual-results.json -Force
-          }
-          [System.IO.File]::WriteAllText(
-            (Join-Path $PWD 'reports/generated/quality-patch/visual-exit-code.txt'),
-            [string]$code + [Environment]::NewLine,
-            [System.Text.UTF8Encoding]::new($false)
-          )
-          exit $code
-
-      - name: Persist browser status
-        if: always()
-        shell: pwsh
-        run: |
-          $status = @{
-            e2e = '${{ steps.e2e.outcome }}'
-            visual = '${{ steps.visual.outcome }}'
-          } | ConvertTo-Json
-          [System.IO.File]::WriteAllText(
-            (Join-Path $PWD 'reports/generated/quality-patch/browser-status.json'),
-            $status + [Environment]::NewLine,
-            [System.Text.UTF8Encoding]::new($false)
-          )
+      - name: Visual structural guards
+        run: npm run test:visual
 
       - name: Upload evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: doke-quality-gates-green-evidence-v2
+          name: doke-quality-gates-final-evidence
           path: |
-            reports/generated/quality-patch/
             reports/generated/playwright-html/
+            reports/generated/playwright-results.json
             test-results/
             docs/validation/
           if-no-files-found: warn
           retention-days: 14
-
-      - name: Enforce browser results
-        if: always() && (steps.e2e.outcome != 'success' || steps.visual.outcome != 'success')
-        shell: bash
-        run: |
-          echo "Browser gates failed: e2e=${{ steps.e2e.outcome }} visual=${{ steps.visual.outcome }}"
-          exit 1
