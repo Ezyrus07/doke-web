@@ -65,7 +65,7 @@ for (const viewport of viewports) {
 
       const health = await page.evaluate(() => ({
         page: document.body?.dataset.page || '',
-        available: document.querySelector('[data-wallet-balance-available]')?.textContent?.trim() || '',
+        available: (document.querySelector('[data-wallet-balance-available]')?.textContent?.trim() || '').replace(/\u00a0/g, ' '),
         walletProvider: document.documentElement.getAttribute('data-doke-wallet-provider') || '',
         horizontalOverflow: Math.max(document.documentElement.scrollWidth, document.body?.scrollWidth || 0) > document.documentElement.clientWidth + 1,
       }));
