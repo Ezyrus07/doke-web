@@ -10,13 +10,14 @@ const viewports = [
   { name: 'mobile-390', width: 390, height: 844, isMobile: true, hasTouch: true },
 ];
 
+const professionalId = 'user_visual_professional';
 const clientSession = {
   provider: 'mock', sessionStatus: 'active', accountStatus: 'active',
   user: { id: 'visual-client', role: 'client', type: 'client', name: 'Gabriel Cliente', email: 'visual-client@example.test', accountStatus: 'active' },
 };
 const professionalSession = {
   provider: 'mock', sessionStatus: 'active', accountStatus: 'active',
-  user: { id: 'visual-professional', role: 'professional', type: 'professional', name: 'Marina Profissional', email: 'visual-professional@example.test', accountStatus: 'active' },
+  user: { id: professionalId, role: 'professional', type: 'professional', name: 'Marina Profissional', email: 'visual-professional@example.test', accountStatus: 'active' },
 };
 
 const order = {
@@ -39,14 +40,16 @@ const notifications = [
   { id: 'notification_visual_002', userId: 'visual-professional', type: 'order', title: 'Proposta enviada', message: 'Sua proposta foi enviada ao cliente.', read: false, createdAt: '2026-07-22T18:10:00.000Z', orderId: order.id },
 ];
 const wallet = {
-  userId: 'visual-professional', availableBalance: 95, pendingBalance: 0, heldBalance: 0,
-  balanceAvailable: 95, balancePending: 0, balanceHeld: 0,
-  transactions: [
-    { id: 'transaction_visual_001', type: 'credit', kind: 'service_payment', status: 'available', amount: 95, grossAmount: 100, feeAmount: 5, description: 'Pagamento liberado — Pintura residencial completa', orderId: order.id, conversationId: conversation.id, createdAt: '2026-07-22T18:30:00.000Z' },
-  ],
-  localTransactions: [
-    { id: 'transaction_visual_001', type: 'credit', kind: 'service_payment', status: 'available', amount: 95, grossAmount: 100, feeAmount: 5, description: 'Pagamento liberado — Pintura residencial completa', orderId: order.id, conversationId: conversation.id, createdAt: '2026-07-22T18:30:00.000Z' },
-  ],
+  version: 1,
+  currency: 'BRL',
+  transactions: [{
+    id: 'transaction_visual_001', type: 'receivable', kind: 'service_payment', status: 'available',
+    professionalId, userId: professionalId, amount: 95, netAmount: 95, grossAmount: 100, feeAmount: 5,
+    title: 'Pagamento liberado', description: 'Pagamento liberado — Pintura residencial completa',
+    orderId: order.id, conversationId: conversation.id,
+    createdAt: '2026-07-22T18:30:00.000Z', availableAt: '2026-07-22T18:30:00.000Z',
+  }],
+  bankAccounts: [], disputes: [], auditEvents: [], updatedAt: '2026-07-22T18:30:00.000Z',
 };
 
 function seedFixture(payload) {
@@ -140,8 +143,11 @@ for (const viewport of viewports) {
 
     test('07-carteira-liberada renderiza saldo profissional', async ({ page }) => {
       await prepare(page, professionalSession);
+      await page.route('https://cdn.jsdelivr.net/npm/@supabase/**', route => route.abort());
       await page.goto('/carteira.html');
       await stabilize(page);
+      await expect(page.locator('[data-wallet-balance-available]')).toContainText('R$ 95,00');
+      await expect(page.locator('body')).toContainText('Pagamento liberado');
       expect(await capture(page, viewport.name, '07-carteira-liberada')).toMatchObject({ page: 'carteira' });
     });
   });
