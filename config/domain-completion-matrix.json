@@ -1,6 +1,6 @@
 {
-  "version": "1.3.1",
-  "updatedAt": "2026-07-22T15:30:00-03:00",
+  "version": "1.3.2",
+  "updatedAt": "2026-07-23T10:29:46-03:00",
   "title": "Doke Domain Completion Matrix",
   "purpose": "Single source of truth for domain maturity, data authority, staging evidence, blockers, dependencies and mandatory completion order.",
   "maturityScale": {
@@ -202,34 +202,6 @@
         "scripts/test-financial-rpc-authority-contract.js",
         "scripts/test-financial-operations-edge-runtime.mjs",
         "docs/SECURITY-FINANCIAL-RPC-AUTHORITY.md",
-        "supabase/migrations/110_notification_authority.sql",
-        "supabase/migrations/111_audit_log_authority.sql",
-        "supabase/migrations/112_catalog_favorites_authority.sql",
-        "supabase/migrations/113_availability_reviews_authority.sql",
-        "supabase/migrations/114_messaging_reports_authority.sql",
-        "supabase/migrations/115_budget_authority.sql",
-        "supabase/migrations/116_community_authority.sql",
-        "supabase/migrations/117_service_media_storage_authority.sql",
-        "supabase/migrations/118_public_data_default_authority.sql",
-        "supabase/migrations/119_public_policy_role_separation.sql",
-        "supabase/migrations/120_community_owner_membership_invariant.sql",
-        "supabase/migrations/121_client_profile_public_summary_invoker.sql",
-        "supabase/migrations/122_service_moderation_operator_authority.sql",
-        "supabase/migrations/123_foreign_key_index_coverage.sql",
-        "supabase/migrations/124_rls_initplan_optimization.sql",
-        "supabase/migrations/125_rls_policy_consolidation.sql",
-        "supabase/migrations/126_service_quote_template_owner_authority.sql",
-        "supabase/migrations/127_idempotency_server_only_policy.sql",
-        "supabase/tests/010_public_data_authority_validation.sql",
-        "supabase/tests/011_service_moderation_operator_authority_validation.sql",
-        "supabase/functions/service-moderation-operations/index.ts",
-        "scripts/test-notification-authority-contract.js",
-        "scripts/test-public-data-authority-contract.js",
-        "scripts/test-service-media-storage-authority-contract.js",
-        "scripts/test-service-moderation-operator-authority-contract.js",
-        "scripts/test-service-moderation-operations-runtime.mjs",
-        "scripts/test-service-quote-template-owner-authority-contract.js",
-        "docs/operations/SUPABASE-ADMIN-DEFAULT-PRIVILEGES.md",
         "supabase/migrations/135_self_service_operation_dispatcher.sql",
         "supabase/migrations/136_self_service_direct_rpc_lockdown.sql",
         "supabase/functions/self-service-operations/index.ts",
@@ -281,12 +253,6 @@
         "test:financial-rpc-authority-contract",
         "test:financial-operations-edge-runtime",
         "test:finance-supabase-repository-contract",
-        "test:notification-authority-contract",
-        "test:public-data-authority-contract",
-        "test:service-media-storage-authority-contract",
-        "test:service-moderation-operator-authority-contract",
-        "test:service-moderation-operations-runtime",
-        "test:service-quote-template-owner-authority-contract",
         "test:self-service-edge-authority-contract",
         "test:self-service-operations-edge-runtime"
       ],
@@ -328,6 +294,13 @@
       ],
       "blockers": [
         {
+          "id": "SEC-B08",
+          "severity": "critical",
+          "category": "source_lineage",
+          "description": "Staging contains the effects attributed to migrations 110-127, but those migrations, their contract tests and the service-moderation Edge Function source are absent from every reachable and unreachable Git commit inspected; the database lineage is not reproducible from the repository.",
+          "targetPhase": "Fase 1"
+        },
+        {
           "id": "SEC-B05",
           "severity": "high",
           "category": "auth",
@@ -343,6 +316,7 @@
         }
       ],
       "nextActions": [
+        "Recover the authoritative source lineage for applied migrations 110-127 and the deployed service-moderation-operations function through a reviewed Git commit; do not reconstruct it from CI payloads or ZIPs.",
         "Enable leaked-password protection in Supabase Auth through the dashboard or an authorized Management API.",
         "Run browser-authenticated HTTP evidence for self-service-operations and the signed Storage lifecycle from an environment with DNS access.",
         "Run the post-migration grant/RLS audit for every new public object because platform-owned default ACLs are outside the project migration role.",
@@ -638,10 +612,7 @@
         "test:public-service-catalog-contract",
         "test:services-supabase-repository-contract",
         "test:service-moderation-flow-contract",
-        "test:admin-service-review-page-contract",
-        "test:service-moderation-operator-authority-contract",
-        "test:service-moderation-operations-runtime",
-        "test:service-quote-template-owner-authority-contract"
+        "test:admin-service-review-page-contract"
       ],
       "evidence": [
         "Supabase service repository, version moderation and admin review exist.",
@@ -1492,8 +1463,7 @@
       "crons": [],
       "tests": [
         "test:order-review-contract",
-        "test:profile-family-contract",
-        "test:public-data-authority-contract"
+        "test:profile-family-contract"
       ],
       "evidence": [
         "Review contracts and UI exist.",
@@ -1581,8 +1551,7 @@
       "tests": [
         "test:community-domain-infrastructure",
         "test:community-domain-transactions",
-        "test:community-member-discipline-runtime-contract",
-        "test:public-data-authority-contract"
+        "test:community-member-discipline-runtime-contract"
       ],
       "evidence": [
         "Rich local community logic and local runtime domain contracts exist.",
@@ -1766,10 +1735,7 @@
         "test:admin-navigation-lifecycle-contract",
         "test:admin-professional-verification-contract",
         "test:admin-service-review-page-contract",
-        "test:order-event-operations-contract",
-        "test:service-moderation-operator-authority-contract",
-        "test:service-moderation-operations-runtime",
-        "test:public-data-authority-contract"
+        "test:order-event-operations-contract"
       ],
       "evidence": [
         "Order operations, verification and service moderation admin surfaces exist.",

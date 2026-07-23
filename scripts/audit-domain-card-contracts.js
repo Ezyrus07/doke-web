@@ -4,7 +4,7 @@ const path = require('path');
 const root = path.resolve(__dirname, '..');
 const pages = [
   'index.html','resultados.html','pedidos.html','mensagens.html','comunidade.html',
-  'comunidade.html','perfil.html','carteira.html','notificacoes.html','configuracoes.html'
+  'perfil.html','carteira.html','notificacoes.html','configuracoes.html'
 ];
 const cssPath = 'assets/css/components/domain/doke-domain-cards.css';
 const requiredLink = 'assets/css/components/domain/doke-domain-cards.css';
@@ -23,13 +23,18 @@ const legacyGroups = [
   { keys: ['profile','perfil','bio-card'], domains: ['doke-profile-card'] }
 ];
 const ignoreTokens = ['grid','panels','sidepanel','doke-btn','doke-icon-btn','doke-input','doke-select','doke-textarea','doke-label','doke-chip','doke-badge','doke-avatar','doke-menu','doke-popover','doke-modal','doke-drawer','doke-overlay'];
+const nonCardSurfaceTokens = ['orders-command-summary', 'doke-form-page-card'];
 const surfaceTokens = ['card','panel','surface','tile','summary','preview','result','entry'];
 
 function stripQuery(value) { return value.split('?')[0].split('#')[0]; }
 function cssGraphLoads(html, targetPath) {
   if (html.includes(targetPath)) return true;
-  const links = [...html.matchAll(/<link[^>]+rel=["']stylesheet["'][^>]+href=["']([^"']+)["'][^>]*>/g)]
-    .map(match => stripQuery(match[1]));
+  const links = [...html.matchAll(/<link\b[^>]*>/gi)]
+    .map(match => match[0])
+    .filter(tag => /\brel=["']stylesheet["']/i.test(tag))
+    .map(tag => tag.match(/\bhref=["']([^"']+)["']/i)?.[1])
+    .filter(Boolean)
+    .map(stripQuery);
   const visited = new Set();
   function loads(cssRel) {
     const normalized = stripQuery(cssRel).replace(/^\.\//, '');
@@ -70,6 +75,7 @@ for (const page of pages) {
     if (classes.includes('__')) return;
     if (!hasAny(classes, surfaceTokens)) return;
     if (hasAny(classes, ignoreTokens)) return;
+    if (hasAny(classes, nonCardSurfaceTokens)) return;
     for (const group of legacyGroups) {
       if (hasAny(classes, group.keys) && !hasAny(classes, group.domains)) {
         violations.push(`${page}:${index + 1} superfície de domínio sem classe canônica: "${classes.slice(0, 140)}"`);

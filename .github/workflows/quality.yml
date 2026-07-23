@@ -2,9 +2,9 @@ name: Doke Quality Gates
 
 on:
   pull_request:
-    branches: [ MAIN, main, master ]
+    branches: [MAIN, main, master]
   push:
-    branches: [ MAIN, main, master ]
+    branches: [MAIN, main, master]
   workflow_dispatch:
 
 permissions:
@@ -16,18 +16,18 @@ concurrency:
 
 jobs:
   static-audits:
-    name: Static architecture audits
+    name: Static architecture and partition audits
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 25
 
     steps:
-      - name: Checkout
+      - name: Checkout candidate tree
         uses: actions/checkout@v4
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - name: Install dependencies
@@ -39,38 +39,90 @@ jobs:
       - name: Run quality pipeline audit
         run: npm run audit:quality-pipeline
 
-  playwright-regression:
-    name: Playwright smoke + visual guards
+      - name: Run governed repository audits
+        run: |
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          npm run audit:unused-asset-candidates
+          npm run audit:duplicate-assets
+
+      - name: Audit E2E lane partition
+        run: npm run audit:e2e-lanes
+
+      - name: Verify clean patch formatting
+        run: git diff --check
+
+  blocking-e2e:
+    name: Blocking deterministic E2E lane
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     needs: static-audits
 
     steps:
-      - name: Checkout
+      - name: Checkout candidate tree
         uses: actions/checkout@v4
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Install Playwright browsers
+      - name: Install Chromium
         run: npx playwright install --with-deps chromium
 
-      - name: Run E2E smoke tests
-        run: npm run test:e2e -- --project=chromium
+      - name: Run blocking E2E lane
+        run: npm run test:e2e:blocking
 
-      - name: Run visual regression guards
-        run: npm run test:visual -- --project=chromium
-
-      - name: Upload Playwright report on failure
-        if: failure()
+      - name: Upload blocking E2E evidence
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report
-          path: playwright-report/
+          name: doke-blocking-e2e-${{ github.sha }}
+          path: |
+            reports/generated/e2e-blocking-lane-summary.json
+            reports/generated/playwright-html/
+            reports/generated/playwright-results.json
+            test-results/
+          if-no-files-found: warn
+          retention-days: 14
+
+  visual-structural:
+    name: 105 visual structural guards
+    runs-on: windows-latest
+    timeout-minutes: 40
+    needs: static-audits
+
+    steps:
+      - name: Checkout candidate tree
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chromium
+        run: npx playwright install chromium
+
+      - name: Run 105 visual structural guards
+        run: npm run test:visual:structural
+
+      - name: Upload visual structural evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: doke-visual-structural-${{ github.sha }}
+          path: |
+            reports/generated/playwright-html/
+            reports/generated/playwright-results.json
+            test-results/
+          if-no-files-found: warn
           retention-days: 14

@@ -1,0 +1,170 @@
+{
+  "observedAt": "2026-07-23T13:29:46.102113+00:00",
+  "projectRef": "zwkczgewzbsorbrjuzpb",
+  "readOnlyEvidence": true,
+  "tableSummary": {
+    "publicTotal": 45,
+    "publicRlsDisabled": 0,
+    "publicRlsNoPolicies": 0
+  },
+  "rlsDisabledTables": [],
+  "rlsEnabledNoPolicies": [],
+  "securityDefinerSummary": {
+    "total": 134,
+    "anonExecutable": 0,
+    "authenticatedExecutable": 7,
+    "rawAnonExecuteGrants": 3,
+    "rawAuthenticatedExecuteGrants": 7
+  },
+  "securityDefinerEvidence": [
+    {
+      "schema": "private",
+      "name": "audit_order_operational_incident_lifecycle",
+      "anonSchemaUsage": false,
+      "anonExecuteGrant": true,
+      "authenticatedSchemaUsage": true,
+      "authenticatedExecuteGrant": true
+    },
+    {
+      "schema": "private",
+      "name": "can_access_transaction_attachment",
+      "anonSchemaUsage": false,
+      "anonExecuteGrant": false,
+      "authenticatedSchemaUsage": true,
+      "authenticatedExecuteGrant": true
+    },
+    {
+      "schema": "private",
+      "name": "is_active_verified_professional",
+      "anonSchemaUsage": false,
+      "anonExecuteGrant": false,
+      "authenticatedSchemaUsage": true,
+      "authenticatedExecuteGrant": true
+    },
+    {
+      "schema": "private",
+      "name": "is_community_manager",
+      "anonSchemaUsage": false,
+      "anonExecuteGrant": false,
+      "authenticatedSchemaUsage": true,
+      "authenticatedExecuteGrant": true
+    },
+    {
+      "schema": "private",
+      "name": "is_community_member",
+      "anonSchemaUsage": false,
+      "anonExecuteGrant": false,
+      "authenticatedSchemaUsage": true,
+      "authenticatedExecuteGrant": true
+    },
+    {
+      "schema": "private",
+      "name": "materialize_order_operational_postmortem",
+      "anonSchemaUsage": false,
+      "anonExecuteGrant": true,
+      "authenticatedSchemaUsage": true,
+      "authenticatedExecuteGrant": true
+    },
+    {
+      "schema": "private",
+      "name": "prepare_order_operational_incident",
+      "anonSchemaUsage": false,
+      "anonExecuteGrant": true,
+      "authenticatedSchemaUsage": true,
+      "authenticatedExecuteGrant": true
+    }
+  ],
+  "realtimeTables": [
+    "public.notifications"
+  ],
+  "edgeFunctions": [
+    {
+      "slug": "quote-template-ai",
+      "version": 6,
+      "status": "ACTIVE",
+      "verifyJwt": true
+    },
+    {
+      "slug": "order-event-worker",
+      "version": 9,
+      "status": "ACTIVE",
+      "verifyJwt": false
+    },
+    {
+      "slug": "order-event-operations",
+      "version": 8,
+      "status": "ACTIVE",
+      "verifyJwt": true
+    },
+    {
+      "slug": "professional-verification-operations",
+      "version": 1,
+      "status": "ACTIVE",
+      "verifyJwt": true
+    },
+    {
+      "slug": "financial-operations",
+      "version": 1,
+      "status": "ACTIVE",
+      "verifyJwt": true
+    },
+    {
+      "slug": "service-moderation-operations",
+      "version": 2,
+      "status": "ACTIVE",
+      "verifyJwt": true
+    },
+    {
+      "slug": "self-service-operations",
+      "version": 3,
+      "status": "ACTIVE",
+      "verifyJwt": true
+    },
+    {
+      "slug": "staging-finance-sandbox",
+      "version": 1,
+      "status": "ACTIVE",
+      "verifyJwt": true
+    }
+  ],
+  "cronJobs": [
+    {
+      "jobId": 1,
+      "name": "doke-order-event-worker",
+      "schedule": "* * * * *",
+      "active": true
+    },
+    {
+      "jobId": 2,
+      "name": "doke-order-operational-alerts",
+      "schedule": "*/5 * * * *",
+      "active": true
+    },
+    {
+      "jobId": 3,
+      "name": "doke-order-incident-escalation",
+      "schedule": "*/5 * * * *",
+      "active": true
+    },
+    {
+      "jobId": 4,
+      "name": "doke-order-slo-daily-report",
+      "schedule": "15 3 * * *",
+      "active": true
+    },
+    {
+      "jobId": 6,
+      "name": "doke-order-change-protection",
+      "schedule": "*/5 * * * *",
+      "active": true
+    }
+  ],
+  "securityAdvisors": [
+    {
+      "name": "auth_leaked_password_protection",
+      "level": "WARN",
+      "title": "Leaked Password Protection Disabled",
+      "remediation": "https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection"
+    }
+  ]
+}

@@ -7,7 +7,7 @@ Este é o mapa operacional obrigatório para concluir a lógica da Doke. Ele cru
 - Domínios/programas mapeados: **23**.
 - Fluxos críticos mapeados: **15**.
 - Maturidade média atual: **2.70/6**.
-- Bloqueadores críticos explícitos: **16**.
+- Bloqueadores críticos explícitos: **17**.
 - Domínios prontos para produção: **0**.
 - Runtime padrão: dados **mock**, auth **mock**, rede **desativada**.
 
@@ -15,18 +15,18 @@ A leitura correta é: a Doke possui fundações e canários avançados, especial
 
 ## Snapshot real do staging
 
-Observado em `2026-07-22T16:49:57.949946Z` no projeto `zwkczgewzbsorbrjuzpb`.
+Observado em `2026-07-23T13:29:46.102113+00:00` no projeto `zwkczgewzbsorbrjuzpb`.
 
 | Indicador | Valor |
 | --- | ---: |
 | Tabelas públicas | 45 |
 | Tabelas públicas sem RLS | 0 |
 | Tabelas com RLS sem policies | 0 |
-| Funções SECURITY DEFINER | undefined |
-| SECURITY DEFINER executáveis por anon | undefined |
-| SECURITY DEFINER executáveis por authenticated | undefined |
+| Funções SECURITY DEFINER | 134 |
+| SECURITY DEFINER executáveis por anon | 0 |
+| SECURITY DEFINER executáveis por authenticated | 7 |
 | Tabelas no Realtime | 1 |
-| Edge Functions ativas | 6 |
+| Edge Functions ativas | 8 |
 | Crons operacionais ativos | 5 |
 
 ### Dívida de RLS que bloqueia produção
@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 1467 arquivos no escopo; 247 referências a localStorage; 102 a sessionStorage; 911 referências mock; 213 referências de rede/Supabase; 85 marcadores de implementação pendente.
+**Evidência estática observada:** 1036 arquivos no escopo; 255 referências a localStorage; 242 a sessionStorage; 714 referências mock; 257 referências de rede/Supabase; 89 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -151,7 +151,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção blocked.
 
-**Evidência estática observada:** 151 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 0 referências mock; 5 referências de rede/Supabase; 9 marcadores de implementação pendente.
+**Evidência estática observada:** 133 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 0 referências mock; 5 referências de rede/Supabase; 9 marcadores de implementação pendente.
 
 **Tabelas/autoridades de dados:** `users`, `user_profiles`, `client_profiles`, `audit_logs`, `availability_slots`, `budgets`, `communities`, `community_members`, `community_posts`, `favorites`, `message_attachments`, `reports`, `reviews`, `service_categories`, `verification_events`.
 
@@ -194,10 +194,12 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - Twenty-two focused local validation groups passed with zero new failures; two unrelated failures were reproduced unchanged in the pristine baseline.
 
 **Bloqueadores:**
+- **SEC-B08 · CRITICAL · source_lineage:** Staging contains the effects attributed to migrations 110-127, but those migrations, their contract tests and the service-moderation Edge Function source are absent from every reachable and unreachable Git commit inspected; the database lineage is not reproducible from the repository. _(Fase 1)_
 - **SEC-B05 · HIGH · auth:** Leaked password protection is disabled in Supabase Auth. _(Fase 1)_
 - **SEC-B07 · MEDIUM · platform_defaults:** Supabase platform-owned supabase_admin default ACLs cannot be changed by the project migration role; new objects require a post-migration grant audit. _(Fase 1)_
 
 **Próximas ações:**
+- Recover the authoritative source lineage for applied migrations 110-127 and the deployed service-moderation-operations function through a reviewed Git commit; do not reconstruct it from CI payloads or ZIPs.
 - Enable leaked-password protection in Supabase Auth through the dashboard or an authorized Management API.
 - Run browser-authenticated HTTP evidence for self-service-operations and the signed Storage lifecycle from an environment with DNS access.
 - Run the post-migration grant/RLS audit for every new public object because platform-owned default ACLs are outside the project migration role.
@@ -294,7 +296,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção blocked.
 
-**Evidência estática observada:** 16 arquivos no escopo; 6 referências a localStorage; 4 a sessionStorage; 0 referências mock; 24 referências de rede/Supabase; 0 marcadores de implementação pendente.
+**Evidência estática observada:** 16 arquivos no escopo; 6 referências a localStorage; 4 a sessionStorage; 0 referências mock; 29 referências de rede/Supabase; 0 marcadores de implementação pendente.
 
 **Páginas:** `anunciar-servico.html`, `detalhe-anuncio.html`, `admin-anuncio-revisao.html`, `index.html`, `resultados.html`.
 
@@ -501,7 +503,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 2/6; UI local; servidor contract only; staging local e2e; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 6 arquivos no escopo; 1 referências a localStorage; 0 a sessionStorage; 2 referências mock; 41 referências de rede/Supabase; 2 marcadores de implementação pendente.
+**Evidência estática observada:** 6 arquivos no escopo; 1 referências a localStorage; 0 a sessionStorage; 2 referências mock; 42 referências de rede/Supabase; 2 marcadores de implementação pendente.
 
 **Páginas:** `pagamento-profissional.html`, `mensagens.html`, `pedidos.html`.
 
@@ -538,7 +540,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI hybrid; servidor partial; staging staging canary; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 6 arquivos no escopo; 11 referências a localStorage; 0 a sessionStorage; 6 referências mock; 57 referências de rede/Supabase; 4 marcadores de implementação pendente.
+**Evidência estática observada:** 6 arquivos no escopo; 11 referências a localStorage; 0 a sessionStorage; 6 referências mock; 58 referências de rede/Supabase; 4 marcadores de implementação pendente.
 
 **Páginas:** `carteira.html`, `admin.html`.
 
@@ -575,7 +577,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 2/6; UI hybrid; servidor partial; staging staging canary; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 5 arquivos no escopo; 10 referências a localStorage; 0 a sessionStorage; 4 referências mock; 37 referências de rede/Supabase; 4 marcadores de implementação pendente.
+**Evidência estática observada:** 5 arquivos no escopo; 10 referências a localStorage; 0 a sessionStorage; 4 referências mock; 38 referências de rede/Supabase; 4 marcadores de implementação pendente.
 
 **Páginas:** `pedidos.html`, `mensagens.html`, `carteira.html`, `admin.html`.
 
@@ -711,7 +713,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção blocked.
 
-**Evidência estática observada:** 9 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 7 referências mock; 2 referências de rede/Supabase; 6 marcadores de implementação pendente.
+**Evidência estática observada:** 9 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 7 referências mock; 7 referências de rede/Supabase; 6 marcadores de implementação pendente.
 
 **Páginas:** `admin.html`, `admin-verificacao.html`, `admin-anuncio-revisao.html`, `admin-pedidos-operacao.html`.
 
@@ -813,7 +815,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 1/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 410 arquivos no escopo; 89 referências a localStorage; 27 a sessionStorage; 444 referências mock; 10 referências de rede/Supabase; 28 marcadores de implementação pendente.
+**Evidência estática observada:** 262 arquivos no escopo; 89 referências a localStorage; 27 a sessionStorage; 329 referências mock; 10 referências de rede/Supabase; 28 marcadores de implementação pendente.
 
 **Evidências:**
 - The master plan identifies legal, privacy and commercial decisions as mandatory.
@@ -842,7 +844,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI hybrid; servidor partial; staging local e2e; segurança partial; produção blocked.
 
-**Evidência estática observada:** 833 arquivos no escopo; 254 referências a localStorage; 74 a sessionStorage; 269 referências mock; 245 referências de rede/Supabase; 9 marcadores de implementação pendente.
+**Evidência estática observada:** 834 arquivos no escopo; 262 referências a localStorage; 74 a sessionStorage; 274 referências mock; 251 referências de rede/Supabase; 9 marcadores de implementação pendente.
 
 **Páginas:** `index.html`, `resultados.html`, `detalhe-anuncio.html`, `pedidos.html`, `mensagens.html`, `notificacoes.html`, `carteira.html`, `perfil.html`, `comunidade.html`.
 
@@ -873,7 +875,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2736 arquivos no escopo; 518 referências a localStorage; 179 a sessionStorage; 1269 referências mock; 575 referências de rede/Supabase; 140 marcadores de implementação pendente.
+**Evidência estática observada:** 2175 arquivos no escopo; 531 referências a localStorage; 319 a sessionStorage; 1072 referências mock; 623 referências de rede/Supabase; 143 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
@@ -899,7 +901,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 1/6; UI local; servidor contract only; staging static contract; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 424 arquivos no escopo; 69 referências a localStorage; 48 a sessionStorage; 222 referências mock; 95 referências de rede/Supabase; 47 marcadores de implementação pendente.
+**Evidência estática observada:** 143 arquivos no escopo; 77 referências a localStorage; 188 a sessionStorage; 140 referências mock; 138 referências de rede/Supabase; 51 marcadores de implementação pendente.
 
 **Evidências:**
 - Backend, product and launch readiness validators and static audits now exist.
@@ -934,4 +936,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-07-22T15:30:00-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-07-23T10:29:46-03:00._

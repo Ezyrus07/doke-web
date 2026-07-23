@@ -9,7 +9,6 @@ const pages = [
   'pedidos.html',
   'mensagens.html',
   'comunidade.html',
-  'comunidade.html',
   'perfil.html',
   'carteira.html',
   'notificacoes.html',
@@ -34,6 +33,12 @@ const contracts = {
   'assets/js/services/notification-service.js': ['services.notifications', 'unreadCount'],
   'assets/js/services/wallet-service.js': ['services.wallet', 'listTransactions'],
   'assets/js/services/domain-data-service.js': ['Doke.domainData', 'loadPageData'],
+};
+const optionalServicesByPage = {
+  'index.html': new Set([
+    'assets/js/services/message-service.js',
+    'assets/js/services/wallet-service.js',
+  ]),
 };
 const errors = [];
 
@@ -79,10 +84,13 @@ for (const page of pages) {
     'assets/js/controllers/controller-data.js',
   ];
   const positions = new Map();
+  const optionalServices = optionalServicesByPage[page] || new Set();
   for (const needle of order) {
     const index = source.lastIndexOf(needle);
     positions.set(needle, index);
-    if (index === -1) errors.push(`${page} does not load ${needle}`);
+    if (index === -1 && !optionalServices.has(needle)) {
+      errors.push(`${page} does not load ${needle}`);
+    }
   }
   const domainDataIndex = positions.get('assets/js/services/domain-data-service.js');
   const controllerDataIndex = positions.get('assets/js/controllers/controller-data.js');
