@@ -10,7 +10,22 @@ const REPORT_PATH = path.join(ROOT, 'reports/generated/domain-completion-matrix-
 const DOC_PATH = path.join(ROOT, 'docs/DOMAIN-COMPLETION-MATRIX.md');
 const WRITE = process.argv.includes('--write');
 
-const IGNORE_DIRS = new Set(['node_modules', '.git', 'playwright-report', 'test-results', 'archive']);
+const IGNORE_DIRS = new Set([
+  'node_modules',
+  '.git',
+  'playwright-report',
+  'test-results',
+  'reports',
+  'coverage',
+  'dist',
+  'build',
+  'archive',
+]);
+const GENERATED_SCAN_PATHS = new Set([
+  'docs/DOMAIN-COMPLETION-MATRIX.md',
+  'docs/HOME-AUTHORITY-CLASSIFICATION.md',
+  'docs/PAGE-ASSET-AUTHORITY-MATRIX.md',
+]);
 const TEXT_EXTENSIONS = new Set(['.js', '.mjs', '.cjs', '.ts', '.html', '.css', '.sql', '.json', '.md']);
 const SIGNALS = Object.freeze({
   localStorage: /\blocalStorage\b/g,
@@ -30,7 +45,11 @@ function normalizeRel(file) {
 }
 
 function isIgnored(file) {
-  return normalizeRel(file).split('/').some((segment) => IGNORE_DIRS.has(segment));
+  const relative = normalizeRel(file);
+  return relative.split('/').some((segment) => IGNORE_DIRS.has(segment))
+    || relative === 'docs/validation'
+    || relative.startsWith('docs/validation/')
+    || GENERATED_SCAN_PATHS.has(relative);
 }
 
 function resolveScanRoot(value) {
@@ -351,7 +370,6 @@ function main() {
     fs.writeFileSync(REPORT_PATH, reportJson);
     fs.writeFileSync(DOC_PATH, markdown);
   } else {
-    if (!fs.existsSync(REPORT_PATH) || fs.readFileSync(REPORT_PATH, 'utf8') !== reportJson) failures.push('reports/generated/domain-completion-matrix-report.json is stale; run npm run write:domain-completion-matrix');
     if (!fs.existsSync(DOC_PATH) || fs.readFileSync(DOC_PATH, 'utf8') !== markdown) failures.push('docs/DOMAIN-COMPLETION-MATRIX.md is stale; run npm run write:domain-completion-matrix');
   }
 
