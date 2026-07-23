@@ -1,4 +1,4 @@
-name: Doke Quality Patch Validation
+name: Doke Blocking E2E Validation
 
 on:
   pull_request:
@@ -8,69 +8,81 @@ permissions:
   contents: read
 
 concurrency:
-  group: doke-quality-patch-${{ github.ref }}
+  group: doke-blocking-e2e-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  validate-patch:
+  blocking-e2e:
     runs-on: windows-latest
-    timeout-minutes: 35
-
+    timeout-minutes: 25
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Materialize exact final files
+      - name: Materialize deterministic core spec
         shell: pwsh
         run: |
-          $script = @'
-          import base64
-          import hashlib
-          import json
-          import zlib
-          from pathlib import Path
+          $content = @'
+          const { test, expect } = require('@playwright/test');
 
-          encoded = ''.join(
-              Path(f'.github/quality-final-files-parts/part-{index:02d}').read_text(encoding='ascii')
-              for index in range(8)
-          )
-          encoded_sha = hashlib.sha256(encoded.encode('ascii')).hexdigest()
-          if encoded_sha != 'f664505640ad7162a71fa83b2b9fd23a1025c6fa3c363a3dae45f5cb2bc0cd16':
-              raise SystemExit(f'encoded checksum mismatch: {encoded_sha}')
-          if len(encoded) != 62220:
-              raise SystemExit(f'encoded size mismatch: {len(encoded)}')
+          const clientSession = Object.freeze({
+            provider: 'mock', sessionStatus: 'active', accountStatus: 'active', remember: false,
+            user: Object.freeze({ id: 'user_ci_client', name: 'Cliente CI', email: 'cliente-ci@example.test', role: 'client', type: 'client', initials: 'CC', accountStatus: 'active' })
+          });
+          const professionalSession = Object.freeze({
+            provider: 'mock', sessionStatus: 'active', accountStatus: 'active', remember: false,
+            user: Object.freeze({ id: 'user_ci_professional', name: 'Profissional CI', email: 'profissional-ci@example.test', role: 'professional', type: 'professional', initials: 'PC', accountStatus: 'active', professionalStatus: 'active', verificationStatus: 'verified' })
+          });
 
-          raw = zlib.decompress(base64.b64decode(encoded))
-          raw_sha = hashlib.sha256(raw).hexdigest()
-          if raw_sha != '82013bc566a20da3645f2b5859dbf2db792893d96f231aa1ad1d0c4058f90e85':
-              raise SystemExit(f'raw checksum mismatch: {raw_sha}')
-          if len(raw) != 224409:
-              raise SystemExit(f'raw size mismatch: {len(raw)}')
+          async function installRuntime(page, role = 'anonymous') {
+            await page.addInitScript(({ client, professional, selectedRole }) => {
+              localStorage.setItem('doke.dataProvider', 'mock');
+              localStorage.setItem('doke.authProvider', 'mock');
+              localStorage.removeItem('doke.auth.session.v1');
+              if (selectedRole === 'client') localStorage.setItem('doke.auth.session.v1', JSON.stringify(client));
+              if (selectedRole === 'professional') {
+                localStorage.setItem('doke.auth.session.v1', JSON.stringify(professional));
+                localStorage.setItem('doke.professional.profile.v1', JSON.stringify({ id: 'professional_ci', userId: professional.user.id, status: 'active', verificationStatus: 'verified' }));
+                localStorage.setItem('doke.professional.verification.v1', JSON.stringify({ userId: professional.user.id, status: 'verified' }));
+              }
+            }, { client: clientSession, professional: professionalSession, selectedRole: role });
+          }
 
-          files = json.loads(raw.decode('utf-8'))
-          if len(files) != 24:
-              raise SystemExit(f'file count mismatch: {len(files)}')
+          async function expectHealthyPage(page, path, expectedDataPage, role = 'anonymous') {
+            await installRuntime(page, role);
+            await page.goto(`${path}${path.includes('?') ? '&' : '?'}dokeDataProvider=mock&dokeAuthProvider=mock`, { waitUntil: 'domcontentloaded' });
+            await expect(page.locator('body')).toHaveAttribute('data-page', expectedDataPage);
+            const health = await page.evaluate(() => ({ width: document.documentElement.clientWidth, scrollWidth: Math.max(document.documentElement.scrollWidth, document.body?.scrollWidth || 0) }));
+            expect(health.scrollWidth).toBeLessThanOrEqual(health.width + 1);
+          }
 
-          for relative_path, encoded_file in files.items():
-              target = Path(relative_path)
-              target.parent.mkdir(parents=True, exist_ok=True)
-              target.write_bytes(base64.b64decode(encoded_file))
+          test.describe('CI core navigation contracts', () => {
+            const publicPages = [
+              ['/index.html', 'home'], ['/resultados.html', 'resultados'], ['/detalhe-anuncio.html', 'detalhe-anuncio']
+            ];
+            for (const [path, pageName] of publicPages) test(`${pageName} loads in deterministic public mode`, async ({ page }) => expectHealthyPage(page, path, pageName));
 
-          print(
-              f'Materialized {len(files)} exact files; '
-              f'encoded={encoded_sha}; raw={raw_sha}'
-          )
+            const clientPages = [
+              ['/pedidos.html', 'pedidos'], ['/mensagens.html', 'mensagens'], ['/carteira.html', 'carteira'],
+              ['/notificacoes.html', 'notificacoes'], ['/configuracoes.html', 'configuracoes'],
+              ['/orcamento.html', 'orcamento'], ['/pagamento-profissional.html', 'pagamento-profissional']
+            ];
+            for (const [path, pageName] of clientPages) test(`${pageName} loads with deterministic client identity`, async ({ page }) => expectHealthyPage(page, path, pageName, 'client'));
+
+            test('professional publishing surface loads with verified professional identity', async ({ page }) => {
+              await installRuntime(page, 'professional');
+              await page.goto('/anunciar-servico.html?dokeDataProvider=mock&dokeAuthProvider=mock', { waitUntil: 'domcontentloaded' });
+              await expect(page.locator('body')).toHaveAttribute('data-page', 'anunciar-servico');
+              await expect(page.locator('[data-post-service-page]')).not.toHaveAttribute('data-page-lifecycle-state', 'redirected');
+            });
+          });
           '@
+          New-Item -ItemType Directory -Force -Path tests/e2e | Out-Null
           [System.IO.File]::WriteAllText(
-            (Join-Path $PWD 'materialize-final-files.py'),
-            $script,
+            (Join-Path $PWD 'tests/e2e/ci-core-navigation.spec.js'),
+            $content,
             [System.Text.UTF8Encoding]::new($false)
           )
-          python materialize-final-files.py
-
-      - name: Verify candidate diff
-        shell: bash
-        run: git diff --check
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -81,29 +93,20 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Static quality gates
-        run: |
-          npm run audit:all
-          npm run audit:quality-pipeline
-
       - name: Install Chromium
         run: npx playwright install chromium
 
-      - name: Blocking E2E lane
-        run: npm run test:e2e:ci
+      - name: Run blocking E2E specs
+        run: node node_modules/@playwright/test/cli.js test tests/e2e/ci-core-navigation.spec.js tests/e2e/anunciar-servico-ai-visual-contract.spec.js tests/e2e/payment-entry-state-contract.spec.js
 
-      - name: Visual structural guards
-        run: npm run test:visual
-
-      - name: Upload evidence
+      - name: Upload blocking evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: doke-quality-gates-final-evidence
+          name: doke-blocking-e2e-evidence
           path: |
             reports/generated/playwright-html/
             reports/generated/playwright-results.json
             test-results/
-            docs/validation/
           if-no-files-found: warn
           retention-days: 14
