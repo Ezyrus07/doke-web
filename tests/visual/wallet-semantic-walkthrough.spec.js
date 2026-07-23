@@ -56,6 +56,7 @@ for (const viewport of viewports) {
     test('carteira materializa R$ 95,00 liberados', async ({ page }) => {
       await page.route('https://fonts.googleapis.com/**', route => route.fulfill({ status: 200, contentType: 'text/css', body: '' }));
       await page.route('https://fonts.gstatic.com/**', route => route.abort());
+      await page.route('https://cdn.jsdelivr.net/npm/@supabase/**', route => route.abort());
       await page.addInitScript(seedWallet, { professionalId, transaction });
       await page.goto('/carteira.html');
       await page.waitForLoadState('networkidle').catch(() => {});
@@ -65,9 +66,11 @@ for (const viewport of viewports) {
       const health = await page.evaluate(() => ({
         page: document.body?.dataset.page || '',
         available: document.querySelector('[data-wallet-balance-available]')?.textContent?.trim() || '',
+        walletProvider: document.documentElement.getAttribute('data-doke-wallet-provider') || '',
         horizontalOverflow: Math.max(document.documentElement.scrollWidth, document.body?.scrollWidth || 0) > document.documentElement.clientWidth + 1,
       }));
       expect(health).toMatchObject({ page: 'carteira', available: 'R$ 95,00', horizontalOverflow: false });
+      expect(['local', 'local-fallback']).toContain(health.walletProvider);
 
       const dir = path.join(outputRoot, viewport.name);
       fs.mkdirSync(dir, { recursive: true });
