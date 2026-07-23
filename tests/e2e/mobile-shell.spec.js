@@ -22,3 +22,5 @@ test.describe('Mobile App Shell', () => {
     });
   }
 });
+
+// Temporary branch trigger for the Windows visual validation workflow.
