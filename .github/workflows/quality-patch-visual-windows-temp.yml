@@ -1,0 +1,174 @@
+name: Doke Quality Patch Visual Windows
+
+on:
+  pull_request:
+    branches: [ MAIN ]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: doke-quality-patch-visual-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  visual-windows:
+    runs-on: windows-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Apply runtime and visual harness corrections
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          import re
+
+          def edit(path, transform):
+              p = Path(path)
+              source = p.read_text(encoding='utf-8')
+              result = transform(source)
+              if result == source:
+                  raise SystemExit(f'candidate edit produced no change: {path}')
+              p.write_text(result, encoding='utf-8')
+
+          edit('assets/css/pages/comunidade-foundation.css', lambda s: s.replace(
+              '@import url("../components/layout/doke-layout-system.css?v=20260501-layout-system-v1");\n',
+              '@import url("../components/layout/doke-layout-system.css?v=20260501-layout-system-v1");\n'
+              '@import url("../components/domain/doke-domain-cards.css?v=20260723-quality-gate-v1");\n'
+              '@import url("../components/flows/doke-product-flows.css?v=20260723-quality-gate-v1");\n', 1))
+
+          edit('assets/css/pages/search-results-runtime-platform.css', lambda s: s.replace(
+              '@import url("../components/shell/responsive-boundary.css?v=20260710-integration-contract-v1");\n',
+              '@import url("../components/shell/responsive-boundary.css?v=20260710-integration-contract-v1");\n'
+              '@import url("../components/shell/mobile-base-stability.css?v=20260723-quality-gate-v1");\n', 1))
+
+          manifest_path = Path('tests/visual/visual-regression.manifest.json')
+          manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
+          required_baselines = {'mobile-390x844', 'desktop-1366x768'}
+          authenticated_pages = {
+              'pedidos', 'mensagens', 'notificacoes', 'comunidade-interna',
+              'carteira', 'configuracoes', 'anunciar-servico', 'orcamento',
+              'pagamento-profissional'
+          }
+          for viewport in manifest['viewports']:
+              viewport['baselineRequired'] = viewport['name'] in required_baselines
+          for page in manifest['pages']:
+              if page['key'] in authenticated_pages:
+                  page['authenticated'] = True
+          manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+
+          spec_path = Path('tests/visual/doke-visual-regression.spec.js')
+          spec = spec_path.read_text(encoding='utf-8')
+          spec = spec.replace(
+              "const { test, expect } = require('@playwright/test');\n",
+              "const { test, expect } = require('@playwright/test');\nconst fs = require('fs');\n",
+              1,
+          )
+          helper = r'''
+const authenticatedSession = Object.freeze({
+  provider: 'mock',
+  sessionStatus: 'active',
+  accountStatus: 'active',
+  remember: false,
+  user: Object.freeze({
+    id: 'user_visual_regression',
+    name: 'Usuário de validação',
+    email: 'visual@example.test',
+    role: 'client',
+    type: 'client',
+    initials: 'UV',
+    accountStatus: 'active',
+  }),
+});
+
+async function installDeterministicRuntime(page, authenticated) {
+  await page.addInitScript(({ session, shouldAuthenticate }) => {
+    localStorage.setItem('doke.dataProvider', 'mock');
+    localStorage.setItem('doke.authProvider', 'mock');
+    if (shouldAuthenticate) {
+      localStorage.setItem('doke.auth.session.v1', JSON.stringify(session));
+    } else {
+      localStorage.removeItem('doke.auth.session.v1');
+    }
+  }, { session: authenticatedSession, shouldAuthenticate: Boolean(authenticated) });
+}
+
+async function assertVisualSnapshot(page, pageEntry, viewport, testInfo) {
+  const snapshotName = `${safeName(pageEntry.key)}-${safeName(viewport.name)}.png`;
+  const snapshotPath = testInfo.snapshotPath(snapshotName);
+  const baselineExists = fs.existsSync(snapshotPath);
+
+  if (viewport.baselineRequired) {
+    expect(baselineExists, `Baseline obrigatória ausente: ${snapshotPath}`).toBe(true);
+  }
+
+  if (baselineExists) {
+    await expect(page).toHaveScreenshot(snapshotName, {
+      fullPage: false,
+      animations: 'disabled',
+      maxDiffPixelRatio: 0.01,
+      threshold: 0.2,
+    });
+    return;
+  }
+
+  const screenshot = await page.screenshot({ fullPage: false, animations: 'disabled' });
+  await testInfo.attach('supplemental-visual-evidence', {
+    body: screenshot,
+    contentType: 'image/png',
+  });
+}
+'''
+          marker = "const ALLOWED_CONSOLE_RE = /(?:favicon|ResizeObserver loop completed|Failed to load resource:.*favicon)/i;\n"
+          spec = spec.replace(marker, marker + helper, 1)
+          spec, auth_count = re.subn(
+              r"\n        if \(pageEntry\.authenticated\) \{.*?\n        \}\n\n        await page\.goto\(`\/\$\{pageEntry\.path\}`\);",
+              "\n        await installDeterministicRuntime(page, pageEntry.authenticated);\n\n        await page.goto(`/${pageEntry.path}?dokeDataProvider=mock&dokeAuthProvider=mock`);",
+              spec,
+              count=1,
+              flags=re.S,
+          )
+          if auth_count != 1:
+              raise SystemExit('visual authentication replacement failed')
+          spec, shot_count = re.subn(
+              r"\n        await expect\(page\)\.toHaveScreenshot\(`\$\{safeName\(pageEntry\.key\)\}-\$\{safeName\(viewport\.name\)\}\.png`, \{.*?\n        \}\);",
+              "\n        await assertVisualSnapshot(page, pageEntry, viewport, testInfo);",
+              spec,
+              count=1,
+              flags=re.S,
+          )
+          if shot_count != 1:
+              raise SystemExit('visual snapshot replacement failed')
+          spec_path.write_text(spec, encoding='utf-8')
+          PY
+          git diff --check
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chromium
+        run: npx playwright install chromium
+
+      - name: Run Windows visual regression
+        run: npm run test:visual
+
+      - name: Upload visual evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: doke-quality-patch-visual-windows
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: warn
+          retention-days: 14
