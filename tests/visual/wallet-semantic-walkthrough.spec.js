@@ -2,7 +2,7 @@ const { test, expect } = require('@playwright/test');
 const fs = require('fs');
 const path = require('path');
 
-// Fixture usa UUID neutro para evitar normalização de IDs legados do mock.
+// O provider mock preserva identidades locais no formato user_*.
 const outputRoot = process.env.DOKE_TRANSACTION_WALKTHROUGH_OUTPUT || path.join(process.cwd(), 'reports/generated/transaction-walkthrough');
 const viewports = [
   { name: 'desktop-1366', width: 1366, height: 768, isMobile: false, hasTouch: false },
@@ -10,7 +10,7 @@ const viewports = [
   { name: 'mobile-390', width: 390, height: 844, isMobile: true, hasTouch: true },
 ];
 
-const professionalId = 'f7a716d7-b0b1-46b7-ae9e-4656118d8125';
+const professionalId = 'user_visual_professional';
 const transaction = {
   id: 'transaction_visual_001',
   type: 'receivable',
