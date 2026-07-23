@@ -20,24 +20,44 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Materialize exact candidate files
+      - name: Materialize exact candidate patch
         shell: pwsh
         run: |
           $script = @'
           import base64
-          import json
+          import hashlib
           import zlib
           from pathlib import Path
 
-          payload = Path('.github/quality-patch-payload.b64').read_text(encoding='ascii')
-          files = json.loads(zlib.decompress(base64.b64decode(payload)).decode('utf-8'))
+          parts = [
+              Path(f'.github/quality-source-patch-parts/part-{index:02d}').read_text(encoding='ascii')
+              for index in range(6)
+          ]
+          encoded = ''.join(parts)
+          expected = 'ebd062ec4c675cad407dcfefe9833df46cbe2f977f80680f58e7cdedbf832908'
+          actual = hashlib.sha256(encoded.encode('ascii')).hexdigest()
+          if actual != expected:
+              raise SystemExit(f'candidate patch checksum mismatch: {actual}')
 
-          for relative_path, encoded in files.items():
-              target = Path(relative_path)
-              target.parent.mkdir(parents=True, exist_ok=True)
-              target.write_bytes(base64.b64decode(encoded))
+          patch = zlib.decompress(base64.b64decode(encoded))
+          Path('quality-candidate.patch').write_bytes(patch)
 
-          print(f'Materialized {len(files)} exact candidate files.')
+          # These two duplicate entries were already removed directly in the
+          # ephemeral branch. Restore the baseline line only in the runner so
+          # the complete baseline-to-candidate patch applies deterministically.
+          for relative_path in (
+              'tests/e2e/mobile-shell.spec.js',
+              'tests/e2e/stage28-regression-guards.spec.js',
+          ):
+              path = Path(relative_path)
+              source = path.read_text(encoding='utf-8')
+              marker = "  'comunidade.html',\n  'perfil.html',"
+              restored = "  'comunidade.html',\n  'comunidade.html',\n  'perfil.html',"
+              if marker not in source:
+                  raise SystemExit(f'baseline marker missing: {relative_path}')
+              path.write_text(source.replace(marker, restored, 1), encoding='utf-8')
+
+          print(f'Verified candidate patch: {len(patch)} bytes; sha256={actual}')
           '@
           [System.IO.File]::WriteAllText(
             (Join-Path $PWD 'materialize-candidate.py'),
@@ -45,6 +65,8 @@ jobs:
             [System.Text.UTF8Encoding]::new($false)
           )
           python materialize-candidate.py
+          git apply --check quality-candidate.patch
+          git apply quality-candidate.patch
 
       - name: Verify candidate diff
         shell: bash
