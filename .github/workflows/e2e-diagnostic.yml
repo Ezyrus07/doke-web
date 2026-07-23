@@ -1,0 +1,54 @@
+name: Doke Diagnostic E2E (non-blocking)
+
+on:
+  pull_request:
+    branches: [MAIN, main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: doke-diagnostic-e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  diagnostic-e2e:
+    name: Diagnostic E2E report (non-blocking)
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    steps:
+      - name: Checkout candidate tree
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Audit E2E lane partition
+        run: npm run audit:e2e-lanes
+
+      - name: Run diagnostic lane and publish explicit result
+        run: npm run test:e2e:diagnostic:ci
+
+      - name: Upload diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: doke-diagnostic-e2e-${{ github.sha }}
+          path: |
+            reports/generated/e2e-diagnostic-lane-summary.json
+            reports/generated/playwright-html/
+            reports/generated/playwright-results.json
+            test-results/
+          if-no-files-found: warn
+          retention-days: 14

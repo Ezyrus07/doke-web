@@ -8,7 +8,6 @@ const pages = [
   'pedidos.html',
   'mensagens.html',
   'comunidade.html',
-  'comunidade.html',
   'perfil.html',
   'carteira.html',
   'notificacoes.html',
@@ -31,8 +30,12 @@ const requiredCssTokens = [
 function stripQuery(value) { return value.split('?')[0].split('#')[0]; }
 function cssGraphLoads(html, targetPath) {
   if (html.includes(targetPath)) return true;
-  const links = [...html.matchAll(/<link[^>]+rel=["']stylesheet["'][^>]+href=["']([^"']+)["'][^>]*>/g)]
-    .map(match => stripQuery(match[1]));
+  const links = [...html.matchAll(/<link\b[^>]*>/gi)]
+    .map(match => match[0])
+    .filter(tag => /\brel=["']stylesheet["']/i.test(tag))
+    .map(tag => tag.match(/\bhref=["']([^"']+)["']/i)?.[1])
+    .filter(Boolean)
+    .map(stripQuery);
   const visited = new Set();
   function loads(cssRel) {
     const normalized = stripQuery(cssRel).replace(/^\.\//, '');

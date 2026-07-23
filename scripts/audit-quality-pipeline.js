@@ -14,18 +14,26 @@ const requiredFiles = [
 const requiredScripts = [
   'audit:all',
   'audit:quality-pipeline',
+  'audit:edge-function-source-closure',
+  'audit:e2e-lanes',
   'quality:ci',
   'test:e2e',
+  'test:e2e:blocking',
+  'test:e2e:diagnostic',
+  'test:e2e:diagnostic:ci',
   'test:visual',
+  'test:visual:structural',
   'visual:qa',
 ];
 
 const workflowRequiredSnippets = [
   'npm run audit:all',
+  'npm run test:platform-default-acl-contract',
   'npm run audit:quality-pipeline',
+  'npm run audit:e2e-lanes',
   'npx playwright install',
-  'npm run test:e2e',
-  'npm run test:visual',
+  'npm run test:e2e:blocking',
+  'npm run test:visual:structural',
 ];
 
 let errors = [];

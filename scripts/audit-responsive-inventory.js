@@ -4,16 +4,24 @@ const path = require('path');
 const { getLoadedCssAssets } = require('./lib/css-assets');
 
 const root = path.resolve(__dirname, '..');
+const desktopContracts = [
+  'assets/css/components/shell/app-shell.css',
+  'assets/css/layout/header.css',
+  'assets/css/components/shell/desktop-base-stability.css',
+];
+const mobileContracts = [
+  'assets/css/components/shell/mobile-app-shell.css',
+];
 const pages = [
-  { file: 'index.html', page: 'home', flow: 'doke-search-flow', desktop: ['desktop-shell.css', 'desktop-sidebar.css', 'desktop-topbar.css', 'desktop-search.css'], mobile: ['mobile-app-shell.css'] },
-  { file: 'resultados.html', page: 'resultados', flow: 'doke-search-flow', desktop: ['desktop-shell.css', 'desktop-sidebar.css', 'desktop-topbar.css', 'desktop-search.css'], mobile: ['mobile-app-shell.css'] },
-  { file: 'pedidos.html', page: 'pedidos', flow: 'doke-order-flow', desktop: ['desktop-shell.css', 'desktop-sidebar.css', 'desktop-topbar.css'], mobile: ['mobile-app-shell.css'] },
-  { file: 'mensagens.html', page: 'mensagens', flow: 'doke-message-flow', desktop: ['desktop-shell.css', 'desktop-sidebar.css', 'desktop-topbar.css'], mobile: ['mobile-app-shell.css'] },
-  { file: 'comunidade.html', page: 'comunidade', flow: 'doke-community-flow', desktop: ['desktop-shell.css', 'desktop-sidebar.css', 'desktop-topbar.css'], mobile: ['mobile-app-shell.css'] },
-  { file: 'perfil.html', page: 'perfil', flow: 'doke-profile-flow', desktop: ['desktop-shell.css', 'desktop-sidebar.css', 'desktop-topbar.css'], mobile: ['mobile-app-shell.css'] },
-  { file: 'carteira.html', page: 'carteira', flow: 'doke-wallet-flow', desktop: ['desktop-shell.css', 'desktop-sidebar.css', 'desktop-topbar.css'], mobile: ['mobile-app-shell.css'] },
-  { file: 'notificacoes.html', page: 'notificacoes', flow: 'doke-settings-flow', desktop: ['desktop-shell.css', 'desktop-sidebar.css', 'desktop-topbar.css'], mobile: ['mobile-app-shell.css'] },
-  { file: 'configuracoes.html', page: 'configuracoes', flow: 'doke-settings-flow', desktop: ['desktop-shell.css', 'desktop-sidebar.css', 'desktop-topbar.css'], mobile: ['mobile-app-shell.css'] }
+  { file: 'index.html', page: 'home', flow: 'doke-search-flow', desktop: desktopContracts, mobile: mobileContracts },
+  { file: 'resultados.html', page: 'resultados', flow: 'doke-search-flow', desktop: desktopContracts, mobile: mobileContracts },
+  { file: 'pedidos.html', page: 'pedidos', flow: 'doke-order-flow', desktop: desktopContracts, mobile: mobileContracts },
+  { file: 'mensagens.html', page: 'mensagens', flow: 'doke-message-flow', desktop: desktopContracts, mobile: mobileContracts },
+  { file: 'comunidade.html', page: 'comunidade', flow: 'doke-community-flow', desktop: desktopContracts, mobile: mobileContracts },
+  { file: 'perfil.html', page: 'perfil', flow: 'doke-profile-flow', desktop: desktopContracts, mobile: mobileContracts },
+  { file: 'carteira.html', page: 'carteira', flow: 'doke-wallet-flow', desktop: desktopContracts, mobile: mobileContracts },
+  { file: 'notificacoes.html', page: 'notificacoes', flow: 'doke-settings-flow', desktop: desktopContracts, mobile: mobileContracts },
+  { file: 'configuracoes.html', page: 'configuracoes', flow: 'doke-settings-flow', desktop: desktopContracts, mobile: mobileContracts }
 ];
 
 const requiredSharedCss = [
@@ -65,8 +73,8 @@ for (const page of pages) {
   const scripts = [...html.matchAll(/<script[^>]+src=["']([^"']+\.js[^"']*)["'][^>]*>/gi)].map((m) => m[1]);
   const loadedCssSet = new Set(cssLinks);
   const missingSharedCss = requiredSharedCss.filter((href) => !loadedCssSet.has(href));
-  const missingDesktopCss = page.desktop.filter((name) => !cssLinks.some((href) => href.endsWith('/' + name)));
-  const missingMobileCss = page.mobile.filter((name) => !cssLinks.some((href) => href.endsWith('/' + name)));
+  const missingDesktopCss = page.desktop.filter((asset) => !loadedCssSet.has(asset));
+  const missingMobileCss = page.mobile.filter((asset) => !loadedCssSet.has(asset));
   const missingSharedJs = requiredSharedJs.filter((src) => !html.includes(src));
   const forbiddenLoaded = forbiddenLegacyCss.filter((name) => cssLinks.some((href) => href.endsWith('/' + name)));
 

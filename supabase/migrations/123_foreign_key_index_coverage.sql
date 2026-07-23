@@ -1,0 +1,52 @@
+begin;
+
+create index if not exists idx_fk_order_domain_events_actor_id_d2f0e3e9 on private.order_domain_events (actor_id);
+create index if not exists idx_fk_order_metric_events_client_id_9694eb4b on private.order_metric_events (client_id);
+create index if not exists idx_fk_order_metric_events_order_id_19efad71 on private.order_metric_events (order_id);
+create index if not exists idx_fk_admin_audit_events_actor_id_163dc154 on public.admin_audit_events (actor_id);
+create index if not exists idx_fk_admin_audit_events_idempotency_key_4b57696b on public.admin_audit_events (idempotency_key);
+create index if not exists idx_fk_conversations_professional_id_495e92d8 on public.conversations (professional_id);
+create index if not exists idx_fk_dispute_events_actor_id_9f09c3ba on public.dispute_events (actor_id);
+create index if not exists idx_fk_messages_sender_id_f2c43aea on public.messages (sender_id);
+create index if not exists idx_fk_notifications_actor_id_b122cf5a on public.notifications (actor_id);
+create index if not exists idx_fk_notifications_service_id_78ccd91b on public.notifications (service_id);
+create index if not exists idx_fk_order_status_history_actor_id_4278d412 on public.order_status_history (actor_id);
+create index if not exists idx_fk_order_status_history_event_id_21059ba0 on public.order_status_history (event_id);
+create index if not exists idx_fk_payment_disputes_conversation_id_473d7dea on public.payment_disputes (conversation_id);
+create index if not exists idx_fk_payment_disputes_message_id_1cd08bd3 on public.payment_disputes (message_id);
+create index if not exists idx_fk_payment_disputes_opened_by_9846cb51 on public.payment_disputes (opened_by);
+create index if not exists idx_fk_payment_disputes_payment_id_b05fb5ec on public.payment_disputes (payment_id);
+create index if not exists idx_fk_payment_disputes_professional_id_e78a3227 on public.payment_disputes (professional_id);
+create index if not exists idx_fk_payment_disputes_receipt_id_f756e4b9 on public.payment_disputes (receipt_id);
+create index if not exists idx_fk_payment_disputes_resolved_by_9690b1ef on public.payment_disputes (resolved_by);
+create index if not exists idx_fk_payment_disputes_transaction_id_df8a5139 on public.payment_disputes (transaction_id);
+create index if not exists idx_fk_payments_conversation_id_fc8915ea on public.payments (conversation_id);
+create index if not exists idx_fk_payments_message_id_39a333fd on public.payments (message_id);
+create index if not exists idx_fk_payments_professional_id_75e7d36d on public.payments (professional_id);
+create index if not exists idx_fk_receipts_order_id_2479b6ed on public.receipts (order_id);
+create index if not exists idx_fk_service_media_service_id_d162fb7d on public.service_media (service_id);
+create index if not exists idx_fk_service_quote_templates_professional_id_7ee96311 on public.service_quote_templates (professional_id);
+create index if not exists idx_fk_service_versions_reviewed_by_ec504c95 on public.service_versions (reviewed_by);
+create index if not exists idx_fk_services_approved_version_id_0c884d99 on public.services (approved_version_id);
+create index if not exists idx_fk_services_category_id_9c4b4c46 on public.services (category_id);
+create index if not exists idx_fk_services_pending_version_id_0d8292ab on public.services (pending_version_id);
+create index if not exists idx_fk_transactions_client_id_f402ca23 on public.transactions (client_id);
+create index if not exists idx_fk_transactions_conversation_id_cd7036ae on public.transactions (conversation_id);
+create index if not exists idx_fk_transactions_message_id_cb3e785d on public.transactions (message_id);
+create index if not exists idx_fk_transactions_order_id_bfda61c3 on public.transactions (order_id);
+create index if not exists idx_fk_transactions_professional_id_99198b69 on public.transactions (professional_id);
+create index if not exists idx_fk_transactions_service_id_cf5845a2 on public.transactions (service_id);
+create index if not exists idx_fk_wallet_receivables_client_id_3429623b on public.wallet_receivables (client_id);
+create index if not exists idx_fk_wallet_receivables_order_id_d2ec66f3 on public.wallet_receivables (order_id);
+create index if not exists idx_fk_wallet_receivables_payment_id_40835080 on public.wallet_receivables (payment_id);
+create index if not exists idx_fk_wallet_receivables_transaction_id_7215132c on public.wallet_receivables (transaction_id);
+create index if not exists idx_fk_withdrawals_decided_by_7e01d0ab on public.withdrawals (decided_by);
+create index if not exists idx_fk_withdrawals_idempotency_key_235cc937 on public.withdrawals (idempotency_key);
+create index if not exists idx_fk_withdrawals_receipt_id_be7f3785 on public.withdrawals (receipt_id);
+create index if not exists idx_fk_withdrawals_requested_by_1a7702a1 on public.withdrawals (requested_by);
+create index if not exists idx_fk_withdrawals_transaction_id_438ca09e on public.withdrawals (transaction_id);
+
+-- This index is byte-for-byte equivalent to idx_service_moderation_events_professional_time.
+drop index if exists public.idx_service_moderation_events_owner_time;
+
+commit;

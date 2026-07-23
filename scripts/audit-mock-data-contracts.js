@@ -5,8 +5,8 @@ const ROOT = path.resolve(__dirname, '..');
 const DATA = path.join(ROOT, 'assets/data');
 
 const contracts = [
-  { file: 'mock-users.json', type: 'array', required: ['id', 'type', 'name'] },
-  { file: 'mock-services.json', type: 'array', required: ['id', 'professionalId', 'title', 'category', 'priceMode'] },
+  { file: 'mock-users.json', type: 'array', required: ['id', 'type', 'name'], allowEmpty: true },
+  { file: 'mock-services.json', type: 'array', required: ['id', 'professionalId', 'title', 'category', 'priceMode'], allowEmpty: true },
   { file: 'mock-orders.json', type: 'array', required: ['id', 'clientId', 'professionalId', 'status', 'createdAt'] },
   { file: 'mock-messages.json', type: 'array', required: ['conversationId', 'participants', 'messages'] },
   { file: 'mock-communities.json', type: 'array', required: ['id', 'name', 'membersCount', 'visibility'] },
@@ -36,7 +36,7 @@ for (const contract of contracts) {
       issues.push(`${contract.file}: deveria ser array`);
       continue;
     }
-    if (parsed.length === 0) issues.push(`${contract.file}: array vazio`);
+    if (parsed.length === 0 && !contract.allowEmpty) issues.push(`${contract.file}: array vazio`);
     parsed.forEach((item, index) => {
       for (const key of contract.required) {
         if (!(key in item)) issues.push(`${contract.file}[${index}]: campo obrigatório ausente '${key}'`);

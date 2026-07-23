@@ -55,6 +55,7 @@ const CANONICAL_TOKENS = new Set([
 ]);
 
 const OWNER_PREFIXES = [
+  'account-onboarding__',
   'home-side-meta__',
   'app-header__',
   'topbar-',

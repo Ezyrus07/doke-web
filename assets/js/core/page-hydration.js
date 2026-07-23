@@ -267,6 +267,8 @@
     let lastHasItems = false;
     let lastError = null;
 
+    const ownsCurrentDocument = () => root === document.body || Boolean(root && root.isConnected);
+
     const readHasItems = (fallback = false) => {
       if (typeof options.hasItems === 'function') {
         try {
@@ -290,6 +292,7 @@
           : nextState;
         root.setAttribute('aria-busy', String(nextState === 'hydrating'));
       }
+      if (!ownsCurrentDocument()) return;
       if (document.documentElement) {
         document.documentElement.dataset.pageHydration = nextState;
         document.documentElement.dataset.pageHydrationSkeleton = useSkeleton ? 'on' : 'off';
