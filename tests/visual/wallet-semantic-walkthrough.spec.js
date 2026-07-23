@@ -9,7 +9,7 @@ const viewports = [
   { name: 'mobile-390', width: 390, height: 844, isMobile: true, hasTouch: true },
 ];
 
-const professionalId = 'visual-professional';
+const professionalId = 'f7a716d7-b0b1-46b7-ae9e-4656118d8125';
 const transaction = {
   id: 'transaction_visual_001',
   type: 'receivable',
