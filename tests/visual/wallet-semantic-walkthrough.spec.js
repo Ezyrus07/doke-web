@@ -74,8 +74,8 @@ for (const viewport of viewports) {
 
       const dir = path.join(outputRoot, viewport.name);
       fs.mkdirSync(dir, { recursive: true });
-      fs.writeFileSync(path.join(dir, '07-carteira-liberada.json'), JSON.stringify(health, null, 2));
-      await page.screenshot({ path: path.join(dir, '07-carteira-liberada.png'), fullPage: true, animations: 'disabled' });
+      fs.writeFileSync(path.join(dir, '08-carteira-semantic.json'), JSON.stringify(health, null, 2));
+      await page.screenshot({ path: path.join(dir, '08-carteira-semantic.png'), fullPage: true, animations: 'disabled' });
     });
   });
 }
