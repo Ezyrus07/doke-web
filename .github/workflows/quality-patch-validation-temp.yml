@@ -160,10 +160,32 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: E2E smoke
-        run: npm run test:e2e
+        shell: bash
+        run: |
+          mkdir -p reports/generated/quality-patch
+          set +e
+          npm run test:e2e 2>&1 | tee reports/generated/quality-patch/e2e.log
+          echo "${PIPESTATUS[0]}" > reports/generated/quality-patch/e2e.exit
+          exit 0
 
       - name: Visual regression guards
-        run: npm run test:visual
+        shell: bash
+        run: |
+          set +e
+          npm run test:visual 2>&1 | tee reports/generated/quality-patch/visual.log
+          echo "${PIPESTATUS[0]}" > reports/generated/quality-patch/visual.exit
+          exit 0
+
+      - name: Enforce browser results
+        shell: bash
+        run: |
+          e2e="$(cat reports/generated/quality-patch/e2e.exit)"
+          visual="$(cat reports/generated/quality-patch/visual.exit)"
+          printf '{"e2e":%s,"visual":%s}\n' "$e2e" "$visual" > reports/generated/quality-patch/browser-status.json
+          if [ "$e2e" -ne 0 ] || [ "$visual" -ne 0 ]; then
+            echo "Browser gates failed: e2e=$e2e visual=$visual"
+            exit 1
+          fi
 
       - name: Upload evidence
         if: always()
@@ -171,6 +193,7 @@ jobs:
         with:
           name: doke-quality-gates-green-evidence
           path: |
+            reports/generated/quality-patch/
             playwright-report/
             test-results/
             docs/validation/
