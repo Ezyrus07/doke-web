@@ -209,7 +209,14 @@
         "supabase/functions/self-service-operations/import_map.json",
         "scripts/test-self-service-edge-authority-contract.js",
         "scripts/test-self-service-operations-edge-runtime.mjs",
-        "docs/SECURITY-SELF-SERVICE-EDGE-AUTHORITY.md"
+        "docs/SECURITY-SELF-SERVICE-EDGE-AUTHORITY.md",
+        "supabase/tests/013_platform_default_acl_validation.sql",
+        "scripts/test-platform-default-acl-contract.js",
+        "scripts/audit-edge-function-source-closure.js",
+        "supabase/functions/quote-template-ai/shared.ts",
+        "supabase/functions/quote-template-ai/recommendations.ts",
+        "docs/validation/SEC-001-STAGING-RECONCILIATION.md",
+        "docs/validation/SEC-001-STAGING-RECONCILIATION.json"
       ],
       "scanRoots": [
         "supabase/migrations",
@@ -261,7 +268,9 @@
         "test:service-moderation-operator-authority-contract",
         "test:service-moderation-operations-runtime",
         "test:service-quote-template-owner-authority-contract",
-        "test:self-service-search-path-authority-contract"
+        "test:self-service-search-path-authority-contract",
+        "test:platform-default-acl-contract",
+        "audit:edge-function-source-closure"
       ],
       "evidence": [
         "Private operational tables are not readable by anon or authenticated.",
@@ -298,16 +307,12 @@
         "Five new remote dispatcher assertions passed with rollback; the cumulative SEC-001 remote assertion count is 121.",
         "The Supabase security advisor now reports only leaked-password protection disabled; authenticated SECURITY DEFINER warnings were eliminated.",
         "Twenty-two focused local validation groups passed with zero new failures; two unrelated failures were reproduced unchanged in the pristine baseline.",
-        "Source files for migrations 110-134, the service-moderation-operations Edge Function, SQL validations and contract tests were recovered byte-for-byte from the prior validated public-data-authority delivery; the published SHA-256 manifest was verified. This recovery is packaged for review but is not Git-authoritative until committed and validated in CI."
+        "Source files for migrations 110-134, the service-moderation-operations Edge Function, SQL validations and contract tests were recovered byte-for-byte from the prior validated public-data-authority delivery; the published SHA-256 manifest was verified. This recovery is packaged for review but is not Git-authoritative until committed and validated in CI.",
+        "SEC-B08 was closed after the checksum-proven migrations 110-134 and service-moderation sources were committed at d0ae2657, the GitHub quality gates passed on that SHA, and the matching migration names plus service-moderation-operations v2 were observed read-only in staging.",
+        "The platform-default ACL validation passed remotely: 45 public tables, zero without RLS, zero without policies, zero supabase_admin-owned public relations or sequences, and zero browser sequence grants. SEC-B07 is now an operational post-creation control rather than an existing-object exposure.",
+        "The deployed quote-template-ai v6 contained shared.ts and recommendations.ts that were absent from Git; both sources were recovered from the active deployment and audit:edge-function-source-closure now fails on missing or boundary-escaping relative imports."
       ],
       "blockers": [
-        {
-          "id": "SEC-B08",
-          "severity": "critical",
-          "category": "source_lineage",
-          "description": "The missing source lineage was recovered with checksum provenance into the current candidate, including migrations 110-134, tests and service-moderation-operations. The blocker remains until these exact files are committed through a reviewed Git commit and the CI/staging evidence is repeated from that SHA.",
-          "targetPhase": "Fase 1"
-        },
         {
           "id": "SEC-B05",
           "severity": "high",
@@ -316,19 +321,19 @@
           "targetPhase": "Fase 1"
         },
         {
-          "id": "SEC-B07",
-          "severity": "medium",
-          "category": "platform_defaults",
-          "description": "Supabase platform-owned supabase_admin default ACLs cannot be changed by the project migration role; new objects require a post-migration grant audit.",
+          "id": "SEC-B09",
+          "severity": "high",
+          "category": "edge_http_boundary",
+          "description": "Seven Edge Functions still use wildcard CORS; only quote-template-ai has explicit application rate limiting and body-size enforcement, and authenticated HTTP/browser persona evidence is incomplete.",
           "targetPhase": "Fase 1"
         }
       ],
       "nextActions": [
-        "Commit the checksum-verified recovered lineage (migrations 110-134, tests and service-moderation-operations) in a reviewed Git commit, then rerun CI and read-only staging reconciliation from the resulting SHA.",
+        "Publish the recovered quote-template-ai sources and Edge Function source-closure audit in the reviewed PR, then rerun the deterministic CI gates on the resulting SHA.",
         "Enable leaked-password protection in Supabase Auth through the dashboard or an authorized Management API.",
-        "Run browser-authenticated HTTP evidence for self-service-operations and the signed Storage lifecycle from an environment with DNS access.",
-        "Run the post-migration grant/RLS audit for every new public object because platform-owned default ACLs are outside the project migration role.",
-        "Harden CSP, CORS, abuse rate limits and browser E2E before beta."
+        "Define a canonical Edge Function HTTP boundary with an origin allowlist, preflight contract, payload limits and rate limits per action/persona; do not deploy until local and CI contracts pass.",
+        "Run browser-authenticated HTTP evidence for self-service-operations, service moderation and the signed Storage lifecycle.",
+        "Run supabase/tests/013_platform_default_acl_validation.sql after any migration or platform feature creates a public object."
       ],
       "exitCriteria": [
         "No public table requiring protection remains without RLS and policies.",

@@ -7,7 +7,7 @@ Este é o mapa operacional obrigatório para concluir a lógica da Doke. Ele cru
 - Domínios/programas mapeados: **23**.
 - Fluxos críticos mapeados: **15**.
 - Maturidade média atual: **2.70/6**.
-- Bloqueadores críticos explícitos: **17**.
+- Bloqueadores críticos explícitos: **16**.
 - Domínios prontos para produção: **0**.
 - Runtime padrão: dados **mock**, auth **mock**, rede **desativada**.
 
@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 864 arquivos no escopo; 147 referências a localStorage; 28 a sessionStorage; 555 referências mock; 123 referências de rede/Supabase; 33 marcadores de implementação pendente.
+**Evidência estática observada:** 866 arquivos no escopo; 147 referências a localStorage; 28 a sessionStorage; 555 referências mock; 123 referências de rede/Supabase; 33 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -151,7 +151,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção blocked.
 
-**Evidência estática observada:** 161 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 0 referências mock; 5 referências de rede/Supabase; 9 marcadores de implementação pendente.
+**Evidência estática observada:** 162 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 0 referências mock; 5 referências de rede/Supabase; 9 marcadores de implementação pendente.
 
 **Tabelas/autoridades de dados:** `users`, `user_profiles`, `client_profiles`, `audit_logs`, `availability_slots`, `budgets`, `communities`, `community_members`, `community_posts`, `favorites`, `message_attachments`, `reports`, `reviews`, `service_categories`, `verification_events`.
 
@@ -193,18 +193,20 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - The Supabase security advisor now reports only leaked-password protection disabled; authenticated SECURITY DEFINER warnings were eliminated.
 - Twenty-two focused local validation groups passed with zero new failures; two unrelated failures were reproduced unchanged in the pristine baseline.
 - Source files for migrations 110-134, the service-moderation-operations Edge Function, SQL validations and contract tests were recovered byte-for-byte from the prior validated public-data-authority delivery; the published SHA-256 manifest was verified. This recovery is packaged for review but is not Git-authoritative until committed and validated in CI.
+- SEC-B08 was closed after the checksum-proven migrations 110-134 and service-moderation sources were committed at d0ae2657, the GitHub quality gates passed on that SHA, and the matching migration names plus service-moderation-operations v2 were observed read-only in staging.
+- The platform-default ACL validation passed remotely: 45 public tables, zero without RLS, zero without policies, zero supabase_admin-owned public relations or sequences, and zero browser sequence grants. SEC-B07 is now an operational post-creation control rather than an existing-object exposure.
+- The deployed quote-template-ai v6 contained shared.ts and recommendations.ts that were absent from Git; both sources were recovered from the active deployment and audit:edge-function-source-closure now fails on missing or boundary-escaping relative imports.
 
 **Bloqueadores:**
-- **SEC-B08 · CRITICAL · source_lineage:** The missing source lineage was recovered with checksum provenance into the current candidate, including migrations 110-134, tests and service-moderation-operations. The blocker remains until these exact files are committed through a reviewed Git commit and the CI/staging evidence is repeated from that SHA. _(Fase 1)_
 - **SEC-B05 · HIGH · auth:** Leaked password protection is disabled in Supabase Auth. _(Fase 1)_
-- **SEC-B07 · MEDIUM · platform_defaults:** Supabase platform-owned supabase_admin default ACLs cannot be changed by the project migration role; new objects require a post-migration grant audit. _(Fase 1)_
+- **SEC-B09 · HIGH · edge_http_boundary:** Seven Edge Functions still use wildcard CORS; only quote-template-ai has explicit application rate limiting and body-size enforcement, and authenticated HTTP/browser persona evidence is incomplete. _(Fase 1)_
 
 **Próximas ações:**
-- Commit the checksum-verified recovered lineage (migrations 110-134, tests and service-moderation-operations) in a reviewed Git commit, then rerun CI and read-only staging reconciliation from the resulting SHA.
+- Publish the recovered quote-template-ai sources and Edge Function source-closure audit in the reviewed PR, then rerun the deterministic CI gates on the resulting SHA.
 - Enable leaked-password protection in Supabase Auth through the dashboard or an authorized Management API.
-- Run browser-authenticated HTTP evidence for self-service-operations and the signed Storage lifecycle from an environment with DNS access.
-- Run the post-migration grant/RLS audit for every new public object because platform-owned default ACLs are outside the project migration role.
-- Harden CSP, CORS, abuse rate limits and browser E2E before beta.
+- Define a canonical Edge Function HTTP boundary with an origin allowlist, preflight contract, payload limits and rate limits per action/persona; do not deploy until local and CI contracts pass.
+- Run browser-authenticated HTTP evidence for self-service-operations, service moderation and the signed Storage lifecycle.
+- Run supabase/tests/013_platform_default_acl_validation.sql after any migration or platform feature creates a public object.
 
 **Gate de saída:**
 - No public table requiring protection remains without RLS and policies.
@@ -876,7 +878,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2037 arquivos no escopo; 423 referências a localStorage; 105 a sessionStorage; 913 referências mock; 488 referências de rede/Supabase; 87 marcadores de implementação pendente.
+**Evidência estática observada:** 2042 arquivos no escopo; 423 referências a localStorage; 105 a sessionStorage; 913 referências mock; 488 referências de rede/Supabase; 87 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.

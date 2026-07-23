@@ -76,3 +76,11 @@ Reverter o commit do candidato restaura em conjunto workflows, partição E2E, h
 ## Complemento de recuperação de linhagem
 
 A entrega local subsequente recuperou, com verificação SHA-256 contra a evidência histórica, as migrations `110–134`, os testes associados e `service-moderation-operations`. O detalhe está em `docs/validation/SEC-001-LINEAGE-RECOVERY.md`. Os contratos específicos passaram 10/10, a lane E2E bloqueante passou 23/23 e os guards estruturais passaram 105/105. O bloqueador `SEC-B08` só pode ser encerrado após commit Git revisado e repetição dos gates no SHA resultante; nenhuma alteração foi aplicada ao staging nesta recuperação.
+## Reconciliação read-only subsequente
+
+A reconciliação executada em 23 de julho de 2026 confirmou no staging todos os nomes correspondentes às migrations locais `110–144`, `service-moderation-operations` ativo na versão 2 com JWT obrigatório e o gate de ACL atual com 45 tabelas públicas, zero sem RLS/policies, zero objetos públicos pertencentes a `supabase_admin` e zero grants de sequência para browser. Com isso, `SEC-B08` foi encerrado e `SEC-B07` passou a ser um controle operacional versionado em `supabase/tests/013_platform_default_acl_validation.sql`.
+
+A mesma inspeção encontrou dois módulos de `quote-template-ai` presentes no deployment e ausentes do Git (`shared.ts` e `recommendations.ts`). Eles foram recuperados da versão remota ativa e cobertos por `audit:edge-function-source-closure`. O relatório completo está em `docs/validation/SEC-001-STAGING-RECONCILIATION.md`.
+
+Permanecem abertos `SEC-B05` e `SEC-B09`; não avançar para `AUTH-001`.
+

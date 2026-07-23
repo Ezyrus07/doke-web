@@ -1,0 +1,90 @@
+{
+  "observedAt": "2026-07-23T22:45:00Z",
+  "projectRef": "zwkczgewzbsorbrjuzpb",
+  "readOnlyEvidence": true,
+  "gitAuthority": {
+    "branch": "codex/sec-001-ci-candidate",
+    "headSha": "d0ae26570a6292c4195117e06be79efa6a622a49",
+    "pullRequest": 6,
+    "qualityWorkflow": "completed/success",
+    "blockingE2E": "23/23",
+    "visualStructural": "105/105"
+  },
+  "migrationHistory": {
+    "firstRecoveredName": "notification_authority",
+    "lastObservedName": "staging_finance_sandbox_release_notification_fix",
+    "recoveredNamesPresent": true,
+    "continuousLocalSequence": "109 -> 110-134 -> 135-144",
+    "notes": [
+      "The remote migration registry uses timestamp versions rather than local ordinal filenames.",
+      "All migration names corresponding to local files 110-144 were observed in staging.",
+      "self_service_function_search_path_hardening is registered twice remotely with idempotent source history already documented."
+    ]
+  },
+  "publicDataSurface": {
+    "publicTables": 45,
+    "tablesWithoutRls": 0,
+    "tablesWithoutPolicies": 0,
+    "supabaseAdminOwnedPublicTables": 0,
+    "browserSequenceGrants": 0
+  },
+  "securityDefinerSurface": {
+    "totalNonSystem": 134,
+    "rawAnonExecuteGrants": 3,
+    "rawAuthenticatedExecuteGrants": 7,
+    "effectiveAnonExecute": 0,
+    "effectiveAuthenticatedExecute": 7,
+    "effectiveAuthenticatedScope": "private helper schema; not an exposed public Data API RPC surface"
+  },
+  "defaultPrivileges": {
+    "postgres": {
+      "tables": "postgres and service_role only",
+      "sequences": "postgres and service_role only",
+      "functions": "postgres and service_role only",
+      "status": "fail-closed for anon and authenticated"
+    },
+    "supabase_admin": {
+      "tables": "broad platform-owned defaults include anon and authenticated",
+      "sequences": "broad platform-owned defaults include anon and authenticated",
+      "functions": "broad platform-owned defaults include anon and authenticated",
+      "status": "cannot be altered by the project migration role; requires post-creation audit"
+    }
+  },
+  "edgeFunctions": {
+    "active": 8,
+    "serviceModerationOperations": {
+      "version": 2,
+      "status": "ACTIVE",
+      "verifyJwt": true
+    },
+    "sourceClosureFinding": {
+      "function": "quote-template-ai",
+      "missingFromGit": [
+        "supabase/functions/quote-template-ai/shared.ts",
+        "supabase/functions/quote-template-ai/recommendations.ts"
+      ],
+      "remoteVersion": 6,
+      "remoteVerifyJwt": true,
+      "localRecoveryStatus": "recovered from the deployed source and covered by audit:edge-function-source-closure"
+    }
+  },
+  "securityAdvisor": [
+    {
+      "name": "auth_leaked_password_protection",
+      "level": "WARN",
+      "title": "Leaked Password Protection Disabled"
+    }
+  ],
+  "corsAndAbuseInventory": {
+    "wildcardCorsFunctions": 7,
+    "functionsWithExplicitApplicationRateLimit": 1,
+    "functionsWithExplicitBodySizeLimit": 1,
+    "status": "open hardening scope; no remote function was changed during this read-only reconciliation"
+  },
+  "decisions": {
+    "SEC-B08": "closed by checksum-proven source recovery, Git commit d0ae2657, green CI and read-only staging name/function reconciliation",
+    "SEC-B07": "current-state audit passed; retained as a mandatory operational control for future platform-owned objects rather than an existing-object exposure",
+    "SEC-B05": "open; requires enabling leaked-password protection in Supabase Auth",
+    "AUTH-001": "blocked until the remaining SEC-001 gates are closed"
+  }
+}

@@ -17,6 +17,7 @@ npm run audit:domain-completion-matrix
 npm run audit:agent-governance
 npm run audit:unused-asset-candidates
 npm run audit:duplicate-assets
+npm run audit:edge-function-source-closure
 npm run audit:e2e-lanes
 npm run test:e2e:blocking
 npm run test:visual:structural
@@ -45,6 +46,18 @@ No CI, `npm run test:e2e:diagnostic:ci` sempre publica o resultado real e o rela
 - nenhum spec pertence às duas lanes;
 - exclusões têm justificativa, owner e critério de retorno;
 - a classificação é versionada e aparece no diff.
+
+## Closure de fontes das Edge Functions
+
+`npm run audit:edge-function-source-closure` percorre todas as fontes em `supabase/functions`, exige `index.ts` em cada função e falha quando um import relativo não existe ou escapa do diretório da própria função. Esse gate evita deployments que não podem ser reproduzidos pela árvore Git.
+
+Para mudanças de migrations, grants ou recursos da plataforma, execute também:
+
+```bash
+npm run test:platform-default-acl-contract
+```
+
+A validação remota correspondente está em `supabase/tests/013_platform_default_acl_validation.sql` e deve ser repetida após qualquer criação de objeto público.
 
 ## Evidência e aceite
 
