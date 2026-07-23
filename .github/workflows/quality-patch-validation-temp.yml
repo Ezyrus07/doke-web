@@ -20,84 +20,57 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Verify candidate payload
+      - name: Materialize exact final files
         shell: pwsh
         run: |
           $script = @'
           import base64
           import hashlib
+          import json
           import zlib
           from pathlib import Path
 
           encoded = ''.join(
-              Path(f'.github/quality-source-patch-parts/part-{index:02d}').read_text(encoding='ascii')
-              for index in range(6)
+              Path(f'.github/quality-final-files-parts/part-{index:02d}').read_text(encoding='ascii')
+              for index in range(8)
           )
           encoded_sha = hashlib.sha256(encoded.encode('ascii')).hexdigest()
-          if encoded_sha != 'ebd062ec4c675cad407dcfefe9833df46cbe2f977f80680f58e7cdedbf832908':
+          if encoded_sha != 'f664505640ad7162a71fa83b2b9fd23a1025c6fa3c363a3dae45f5cb2bc0cd16':
               raise SystemExit(f'encoded checksum mismatch: {encoded_sha}')
+          if len(encoded) != 62220:
+              raise SystemExit(f'encoded size mismatch: {len(encoded)}')
 
-          patch = zlib.decompress(base64.b64decode(encoded))
-          patch_sha = hashlib.sha256(patch).hexdigest()
-          if patch_sha != 'e9699d8abdf5fb1d09c7ffc1f709cfaab51e04abb33707622d16300bfbfcef73':
-              raise SystemExit(f'patch checksum mismatch: {patch_sha}')
-          if len(patch) != 60068:
-              raise SystemExit(f'patch size mismatch: {len(patch)}')
+          raw = zlib.decompress(base64.b64decode(encoded))
+          raw_sha = hashlib.sha256(raw).hexdigest()
+          if raw_sha != '82013bc566a20da3645f2b5859dbf2db792893d96f231aa1ad1d0c4058f90e85':
+              raise SystemExit(f'raw checksum mismatch: {raw_sha}')
+          if len(raw) != 224409:
+              raise SystemExit(f'raw size mismatch: {len(raw)}')
 
-          Path('quality-candidate.patch').write_bytes(patch)
-          print(f'Payload verified: encoded={encoded_sha}; patch={patch_sha}; bytes={len(patch)}')
+          files = json.loads(raw.decode('utf-8'))
+          if len(files) != 24:
+              raise SystemExit(f'file count mismatch: {len(files)}')
+
+          for relative_path, encoded_file in files.items():
+              target = Path(relative_path)
+              target.parent.mkdir(parents=True, exist_ok=True)
+              target.write_bytes(base64.b64decode(encoded_file))
+
+          print(
+              f'Materialized {len(files)} exact files; '
+              f'encoded={encoded_sha}; raw={raw_sha}'
+          )
           '@
           [System.IO.File]::WriteAllText(
-            (Join-Path $PWD 'verify-payload.py'),
+            (Join-Path $PWD 'materialize-final-files.py'),
             $script,
             [System.Text.UTF8Encoding]::new($false)
           )
-          python verify-payload.py
+          python materialize-final-files.py
 
-      - name: Restore exact test baseline
-        shell: pwsh
-        run: |
-          $script = @'
-          import hashlib
-          from pathlib import Path
-
-          expected = {
-              'tests/e2e/mobile-shell.spec.js': '13279f2572a6899c0063c5ca048e7a2dd20a848434d8696350834b56879b3a10',
-              'tests/e2e/stage28-regression-guards.spec.js': '7281e946322f8216fb7751d8b8ddfd205d41abf62f2feddd98d8459a3ede20e8',
-          }
-
-          for relative_path, expected_sha in expected.items():
-              path = Path(relative_path)
-              source = path.read_bytes().replace(b'\r\n', b'\n')
-              source = source.replace(
-                  b"\n\n// Temporary trigger after the authorized Windows workflow update.\n",
-                  b"\n",
-              )
-              marker = b"  'comunidade.html',\n  'perfil.html',"
-              restored = b"  'comunidade.html',\n  'comunidade.html',\n  'perfil.html',"
-              if marker not in source:
-                  raise SystemExit(f'baseline marker missing: {relative_path}')
-              source = source.replace(marker, restored, 1)
-              source = source.replace(b'\n', b'\r\n')
-              actual_sha = hashlib.sha256(source).hexdigest()
-              if actual_sha != expected_sha:
-                  raise SystemExit(f'baseline checksum mismatch for {relative_path}: {actual_sha}')
-              path.write_bytes(source)
-              print(f'Baseline restored: {relative_path} {actual_sha}')
-          '@
-          [System.IO.File]::WriteAllText(
-            (Join-Path $PWD 'restore-baseline.py'),
-            $script,
-            [System.Text.UTF8Encoding]::new($false)
-          )
-          python restore-baseline.py
-
-      - name: Apply exact candidate patch
+      - name: Verify candidate diff
         shell: bash
-        run: |
-          git apply --check quality-candidate.patch
-          git apply quality-candidate.patch
-          git diff --check
+        run: git diff --check
 
       - name: Setup Node
         uses: actions/setup-node@v4
