@@ -43,19 +43,21 @@ jobs:
           Path('quality-candidate.patch').write_bytes(patch)
 
           # These two duplicate entries were already removed directly in the
-          # ephemeral branch. Restore the baseline line only in the runner so
-          # the complete baseline-to-candidate patch applies deterministically.
+          # ephemeral branch. Restore their exact CRLF baseline bytes in the
+          # runner so the baseline-to-candidate patch applies deterministically.
           for relative_path in (
               'tests/e2e/mobile-shell.spec.js',
               'tests/e2e/stage28-regression-guards.spec.js',
           ):
               path = Path(relative_path)
-              source = path.read_text(encoding='utf-8')
-              marker = "  'comunidade.html',\n  'perfil.html',"
-              restored = "  'comunidade.html',\n  'comunidade.html',\n  'perfil.html',"
+              source = path.read_bytes()
+              marker = b"  'comunidade.html',\n  'perfil.html',"
+              restored = b"  'comunidade.html',\n  'comunidade.html',\n  'perfil.html',"
               if marker not in source:
                   raise SystemExit(f'baseline marker missing: {relative_path}')
-              path.write_text(source.replace(marker, restored, 1), encoding='utf-8')
+              source = source.replace(marker, restored, 1)
+              source = source.replace(b'\r\n', b'\n').replace(b'\n', b'\r\n')
+              path.write_bytes(source)
 
           print(f'Verified candidate patch: {len(patch)} bytes; sha256={actual}')
           '@
