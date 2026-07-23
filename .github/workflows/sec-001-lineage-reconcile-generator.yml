@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   generate:
@@ -15,6 +15,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: recovery/sec-001-migration-lineage
 
       - uses: actions/setup-node@v4
         with:
@@ -46,37 +48,36 @@ jobs:
           const security = matrix.domains.find((domain) => domain.id === 'SEC-001');
           if (!security) throw new Error('SEC-001 domain not found');
 
-          const migrationPaths = Array.from({ length: 25 }, (_, index) => {
-            const number = 110 + index;
-            const names = {
-              110: 'notification_authority',
-              111: 'audit_log_authority',
-              112: 'catalog_favorites_authority',
-              113: 'availability_reviews_authority',
-              114: 'messaging_reports_authority',
-              115: 'budget_authority',
-              116: 'community_authority',
-              117: 'service_media_storage_authority',
-              118: 'public_data_default_authority',
-              119: 'public_policy_role_separation',
-              120: 'community_owner_membership_invariant',
-              121: 'client_profile_public_summary_invoker',
-              122: 'service_moderation_operator_authority',
-              123: 'foreign_key_index_coverage',
-              124: 'rls_initplan_optimization',
-              125: 'rls_policy_consolidation',
-              126: 'service_quote_template_owner_authority',
-              127: 'idempotency_server_only_policy',
-              128: 'public_structural_privilege_cleanup',
-              129: 'public_grant_policy_alignment',
-              130: 'self_service_function_search_path_hardening',
-              131: 'public_quote_catalog_grant_restore',
-              132: 'transaction_attachment_storage_authority',
-              133: 'transaction_attachment_helper_runtime_fix',
-              134: 'transaction_attachment_folder_depth_fix'
-            };
-            return `supabase/migrations/${number}_${names[number]}.sql`;
-          });
+          const migrationNames = {
+            110: 'notification_authority',
+            111: 'audit_log_authority',
+            112: 'catalog_favorites_authority',
+            113: 'availability_reviews_authority',
+            114: 'messaging_reports_authority',
+            115: 'budget_authority',
+            116: 'community_authority',
+            117: 'service_media_storage_authority',
+            118: 'public_data_default_authority',
+            119: 'public_policy_role_separation',
+            120: 'community_owner_membership_invariant',
+            121: 'client_profile_public_summary_invoker',
+            122: 'service_moderation_operator_authority',
+            123: 'foreign_key_index_coverage',
+            124: 'rls_initplan_optimization',
+            125: 'rls_policy_consolidation',
+            126: 'service_quote_template_owner_authority',
+            127: 'idempotency_server_only_policy',
+            128: 'public_structural_privilege_cleanup',
+            129: 'public_grant_policy_alignment',
+            130: 'self_service_function_search_path_hardening',
+            131: 'public_quote_catalog_grant_restore',
+            132: 'transaction_attachment_storage_authority',
+            133: 'transaction_attachment_helper_runtime_fix',
+            134: 'transaction_attachment_folder_depth_fix'
+          };
+          const migrationPaths = Object.entries(migrationNames).map(([number, name]) =>
+            `supabase/migrations/${number}_${name}.sql`
+          );
           const recoveredPaths = [
             ...migrationPaths,
             'supabase/tests/010_public_data_authority_validation.sql',
@@ -94,7 +95,8 @@ jobs:
             'scripts/test-self-service-search-path-authority-contract.js',
             'scripts/test-attachments-supabase-repository-contract.js',
             'scripts/test-notifications-supabase-repository-contract.js',
-            'docs/operations/SUPABASE-ADMIN-DEFAULT-PRIVILEGES.md'
+            'docs/operations/SUPABASE-ADMIN-DEFAULT-PRIVILEGES.md',
+            'docs/validation/SEC-001-MIGRATION-LINEAGE-RECOVERY.md'
           ];
           security.requiredPaths = [...new Set([...security.requiredPaths, ...recoveredPaths])];
 
@@ -140,13 +142,12 @@ jobs:
           npm run test:self-service-search-path-authority-contract
           git diff --check
 
-      - name: Upload reconciled source files
-        uses: actions/upload-artifact@v4
-        with:
-          name: sec-001-lineage-reconciled-source
-          path: |
-            package.json
-            config/domain-completion-matrix.json
-            docs/DOMAIN-COMPLETION-MATRIX.md
-          if-no-files-found: error
-          retention-days: 2
+      - name: Commit reconciled authority and remove generator
+        shell: bash
+        run: |
+          git config user.name "doke-ci"
+          git config user.email "doke-ci@users.noreply.github.com"
+          git rm .github/workflows/sec-001-lineage-reconcile-generator.yml
+          git add package.json config/domain-completion-matrix.json docs/DOMAIN-COMPLETION-MATRIX.md
+          git commit -m "Reconcile recovered SEC-001 authority matrix"
+          git push origin HEAD:recovery/sec-001-migration-lineage
