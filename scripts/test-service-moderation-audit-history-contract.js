@@ -31,8 +31,8 @@ check(migration.includes('get_service_review_detail'), 'RPC histórica da versã
 check(migration.includes('list_service_moderation_audit'), 'RPC de eventos recentes ausente');
 check(migration.includes("revoke insert, update, delete"), 'eventos não estão protegidos contra mutação direta');
 
-check(repository.includes("rpc('get_service_review_detail'"), 'repositório ainda depende somente da fila pendente');
-check(repository.includes("rpc('list_service_moderation_audit'"), 'repositório não expõe auditoria recente');
+check(repository.includes("invoke('detail'") && repository.includes("FUNCTION_NAME = 'service-moderation-operations'"), 'repositório não carrega detalhes pela Edge Function administrativa');
+check(repository.includes("invoke('audit'"), 'repositório não expõe auditoria recente pela Edge Function');
 check(reviewHtml.includes('data-admin-ad-review-decision-title'), 'card de decisão não representa modo histórico');
 check(reviewJs.includes('historySection'), 'página de revisão não renderiza histórico');
 check(reviewJs.includes('versionsOverview'), 'página não apresenta a linha de versões');

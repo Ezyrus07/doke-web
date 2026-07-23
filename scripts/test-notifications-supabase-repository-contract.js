@@ -20,7 +20,7 @@ assert(repository.includes("filter: 'user_id=eq.'"), 'Realtime subscription must
 assert(repository.includes('updateRemote'), 'Read and dismiss states must persist remotely.');
 assert(config.includes('notificationsEnabled: true'), 'Supabase notifications feature flag must be enabled.');
 assert(notificationsPage.includes('@supabase/supabase-js@2'), 'Notifications page must load the Supabase SDK.');
-assert(notificationsPage.includes('supabase-config.js?v=20260718-notifications-backend-v1'), 'Notifications page must load the current config.');
+assert(/assets\/js\/core\/supabase-config\.js\?v=[A-Za-z0-9._-]+/.test(notificationsPage), 'Notifications page must load a versioned Supabase config.');
 
 assert(migration.includes('notifications_recipient_select'), 'Recipient-only SELECT RLS is required.');
 assert(migration.includes('notifications_recipient_update'), 'Recipient-only UPDATE RLS is required.');
@@ -47,7 +47,7 @@ assert.strictEqual(
   'resultados.html'
 ].forEach((file) => {
   const html = fs.readFileSync(file, 'utf8');
-  assert(html.includes('notifications-repository.js?v=20260718-notifications-supabase-v1'), `${file} must bootstrap the shared notifications repository.`);
+  assert(/assets\/js\/repositories\/notifications-repository\.js\?v=[A-Za-z0-9._-]+/.test(html), `${file} must bootstrap a versioned shared notifications repository.`);
 });
 
 console.log('Notifications Supabase repository contract: PASS');

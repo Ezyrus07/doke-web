@@ -5,7 +5,12 @@ const assert = require('assert');
 const vm = require('vm');
 
 const repository = fs.readFileSync('assets/js/repositories/attachments-repository.js', 'utf8');
-const migration = fs.readFileSync('supabase/migrations/012_transaction_attachments_storage.sql', 'utf8');
+const migration = [
+  'supabase/migrations/012_transaction_attachments_storage.sql',
+  'supabase/migrations/132_transaction_attachment_storage_authority.sql',
+  'supabase/migrations/133_transaction_attachment_helper_runtime_fix.sql',
+  'supabase/migrations/134_transaction_attachment_folder_depth_fix.sql'
+].map((file) => fs.readFileSync(file, 'utf8')).join('\n');
 const config = fs.readFileSync('assets/js/core/supabase-config.js', 'utf8');
 const budget = fs.readFileSync('assets/js/pages/orcamento.js', 'utf8');
 const messages = fs.readFileSync('assets/js/pages/mensagens.js', 'utf8');
@@ -24,9 +29,14 @@ assert(repository.includes('syncPendingOrder'), 'Pending local order attachments
 assert(repository.includes('syncPendingConversation'), 'Pending local message attachments must support later sync.');
 assert(config.includes('attachmentsEnabled: true'), 'Supabase attachment feature flag must be enabled.');
 assert(migration.includes("'transaction-attachments'"), 'Private Storage bucket migration is required.');
-assert(migration.includes('can_access_transaction_attachment'), 'Participant access helper is required.');
+assert(migration.includes('private.can_access_transaction_attachment'), 'Private participant access helper is required.');
+assert(migration.includes('set search_path = pg_catalog'), 'Attachment authority helper must pin search_path.');
+assert(migration.includes("account_status is distinct from 'active'"), 'Attachment access must require an active account.');
+assert(migration.includes('array_length(parts, 1), 0) < 3'), 'Attachment path depth must match storage.foldername semantics.');
 assert(migration.includes('transaction_attachments_participant_select'), 'Participant read policy is required.');
-assert(migration.includes('(storage.foldername(name))[3] = auth.uid()::text'), 'Uploader path ownership is required.');
+assert(/\(storage\.foldername\(name\)\)\[3\] = \(select auth\.uid\(\)\)::text/.test(migration) || migration.includes('(storage.foldername(name))[3] = auth.uid()::text'), 'Uploader path ownership is required.');
+assert(migration.includes('owner_id = (select auth.uid())::text'), 'Update and delete must require Storage ownership.');
+assert(migration.includes('drop function if exists public.can_access_transaction_attachment(text)'), 'Legacy public helper must be removed.');
 assert(!migration.includes("public, true"), 'Transaction attachment bucket must not be public.');
 assert(budget.includes('uploadOrderFiles'), 'Budget flow must upload order files.');
 assert(messages.includes('uploadConversationFiles'), 'Chat flow must upload conversation files.');

@@ -4,6 +4,8 @@
   var Doke = root.Doke || (root.Doke = {});
   Doke.repositories = Doke.repositories || {};
 
+  var FUNCTION_NAME = 'service-moderation-operations';
+
   function getClient() {
     var client = root.DokeSupabase && typeof root.DokeSupabase.getClient === 'function'
       ? root.DokeSupabase.getClient()
@@ -20,18 +22,28 @@
     return result ? result.data : null;
   }
 
+  function invoke(action, payload, fallbackMessage) {
+    var client = getClient();
+    if (!client.functions || typeof client.functions.invoke !== 'function') {
+      return Promise.reject(new Error('A operação segura de moderação não está disponível.'));
+    }
+    var body = Object.assign({ action: action }, payload || {});
+    return client.functions.invoke(FUNCTION_NAME, { body: body }).then(function (result) {
+      return unwrap(result, fallbackMessage);
+    });
+  }
+
   function listQueue() {
-    return getClient().rpc('list_service_review_queue').then(function (result) {
-      var data = unwrap(result, 'Não foi possível carregar a fila de anúncios.');
-      return Array.isArray(data) ? data : [];
+    return invoke('list', null, 'Não foi possível carregar a fila de anúncios.').then(function (data) {
+      return data && Array.isArray(data.items) ? data.items : [];
     });
   }
 
   function getReviewDetail(versionId) {
     var target = String(versionId || '').trim();
     if (!target) return Promise.reject(new Error('A versão para análise não foi informada.'));
-    return getClient().rpc('get_service_review_detail', { p_version_id: target }).then(function (result) {
-      return unwrap(result, 'Não foi possível carregar o histórico desta versão.');
+    return invoke('detail', { versionId: target }, 'Não foi possível carregar o histórico desta versão.').then(function (data) {
+      return data ? data.item : null;
     });
   }
 
@@ -39,34 +51,27 @@
     var requested = Number(limit || 20);
     if (!Number.isFinite(requested)) requested = 20;
     requested = Math.max(1, Math.min(100, Math.round(requested)));
-    return getClient().rpc('list_service_moderation_audit', { p_limit: requested }).then(function (result) {
-      var data = unwrap(result, 'Não foi possível carregar a auditoria de anúncios.');
-      return Array.isArray(data) ? data : [];
+    return invoke('audit', { limit: requested }, 'Não foi possível carregar a auditoria de anúncios.').then(function (data) {
+      return data && Array.isArray(data.items) ? data.items : [];
     });
   }
 
   function approve(versionId) {
-    return getClient().rpc('approve_service_version', { p_version_id: versionId }).then(function (result) {
-      return unwrap(result, 'Não foi possível aprovar o anúncio.');
-    });
+    return invoke('approve', { versionId: versionId }, 'Não foi possível aprovar o anúncio.');
   }
 
   function requestChanges(versionId, reason) {
-    return getClient().rpc('request_service_version_changes', {
-      p_version_id: versionId,
-      p_reason: reason
-    }).then(function (result) {
-      return unwrap(result, 'Não foi possível solicitar ajustes.');
-    });
+    return invoke('request_changes', {
+      versionId: versionId,
+      reason: reason
+    }, 'Não foi possível solicitar ajustes.');
   }
 
   function reject(versionId, reason) {
-    return getClient().rpc('reject_service_version', {
-      p_version_id: versionId,
-      p_reason: reason
-    }).then(function (result) {
-      return unwrap(result, 'Não foi possível rejeitar o anúncio.');
-    });
+    return invoke('reject', {
+      versionId: versionId,
+      reason: reason
+    }, 'Não foi possível rejeitar o anúncio.');
   }
 
   Doke.repositories.serviceModeration = Object.freeze({
