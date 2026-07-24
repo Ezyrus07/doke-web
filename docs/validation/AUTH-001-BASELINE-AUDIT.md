@@ -4,7 +4,7 @@
 
 - **Branch:** `auth/auth-001-baseline-audit`
 - **Base:** `MAIN@1412a4c3aac60c5392ebbca466f1ecd1a8aa1428`
-- **Status:** `IN PROGRESS — baseline documentado, runtime ainda não alterado`
+- **Status:** `AUTH-A01 implementado; CI final pendente; runtime ainda não alterado`
 - **Ambiente alterado:** nenhum projeto Supabase; nenhum deploy; nenhuma configuração Auth.
 
 ## Objetivo
@@ -131,10 +131,18 @@ Ainda faltam contratos de runtime para:
 
 ### AUTH-A01 — Freeze da autoridade e testes de baseline
 
-- criar inventário executável dos consumidores de auth;
-- provar que o serviço legado não é carregado;
-- adicionar testes para o comportamento atual antes da refatoração;
-- manter todas as rotas em estado atual durante o freeze.
+**Estado:** implementado, aguardando o CI final do PR.
+
+O gate foi incorporado a `scripts/audit-auth-session-contracts.js`, que já participa do Quality Gates. Ele agora:
+
+- inventaria todos os HTMLs ativos na raiz e em `auth/`;
+- falha se qualquer página carregar `assets/js/core/auth-service.js`;
+- exige `assets/js/core/session.js` antes de `assets/js/services/auth-service.js` em todo consumidor canônico;
+- exige nas páginas de autenticação a ordem Supabase config → sessão → repositório de usuários → serviço canônico → controlador da página;
+- verifica a superfície pública canônica exposta em `window.DokeAuth`;
+- fixa a identidade do arquivo legado analisado para impedir que ele mude silenciosamente de função.
+
+Nenhum redirect, login, cadastro, recovery, token ou sessão foi alterado neste sublote.
 
 ### AUTH-A02 — Sessão canônica Supabase
 
@@ -197,4 +205,4 @@ AUTH-001 só poderá ser marcado como concluído quando:
 
 ## Próximo sublote
 
-Executar `AUTH-A01`: criar o gate de autoridade ativa, congelar o comportamento existente e provar por CI quais arquivos e páginas realmente participam da autenticação antes de remover ou alterar qualquer implementação.
+Após o CI final confirmar o freeze, executar `AUTH-A02`: substituir a cópia local de tokens por uma ponte canônica de sessão Supabase, mantendo no estado Doke somente identidade pública sanitizada.
