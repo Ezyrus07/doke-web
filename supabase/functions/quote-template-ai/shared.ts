@@ -2,12 +2,6 @@ export const MAX_QUESTIONS = 10;
 export const MAX_SUGGESTIONS = 8;
 export const MAX_BODY_BYTES = 48_000;
 
-export const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
-
 export const ALLOWED_TYPES = new Set([
   "short_text",
   "long_text",
@@ -40,11 +34,6 @@ export const ALLOWED_TEMPLATE_SOURCES = new Set([
   "personal_template_customized",
   "personal_template_ai_customized",
 ]);
-
-export const jsonResponse = (status: number, payload: unknown) => new Response(JSON.stringify(payload), {
-  status,
-  headers: { ...corsHeaders, "Content-Type": "application/json; charset=utf-8" },
-});
 
 export const text = (value: unknown, max = 200) => String(value ?? "").trim().slice(0, max);
 
