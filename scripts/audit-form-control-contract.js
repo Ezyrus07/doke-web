@@ -112,7 +112,11 @@ for (const token of [
 }
 
 for (const [file, required] of Object.entries({
-  'auth/esqueci-senha.html': ['auth-choice__input doke-radio'],
+  'auth/esqueci-senha.html': [
+    'class="doke-input" id="recovery-email" type="email"',
+    'class="doke-input" id="reset-password" type="password"',
+    'class="doke-input" id="reset-password-confirmation" type="password"',
+  ],
   'avaliacao-profissional.html': ['class="doke-textarea"'],
   'carteira.html': ['class="doke-input" data-wallet-withdraw-amount'],
   'comunidade.html': ['id="community-action-code-input"', 'class="doke-input"', 'class="doke-textarea"'],
