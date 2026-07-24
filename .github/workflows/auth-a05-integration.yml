@@ -1,0 +1,108 @@
+name: Doke AUTH-A05 Integration
+
+on:
+  pull_request:
+    branches: [MAIN, main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: doke-auth-a05-integration-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  auth-a05-integration:
+    name: Apply and validate AUTH-A05 integration
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Apply AUTH-A05 canonical integration
+        shell: python
+        run: |
+          from pathlib import Path
+
+          def replace_once(path, old, new, label):
+              text = path.read_text(encoding='utf-8')
+              if text.count(old) != 1:
+                  raise SystemExit(f'{label}: expected exactly one match, found {text.count(old)}')
+              path.write_text(text.replace(old, new), encoding='utf-8')
+
+          auth = Path('assets/js/services/auth-service.js')
+          text = auth.read_text(encoding='utf-8')
+          recovery_key = "  const RECOVERY_KEY = 'doke.auth.recovery.v1';\n"
+          if text.count(recovery_key) != 1:
+              raise SystemExit('Expected one legacy recovery key declaration')
+          text = text.replace(recovery_key, '')
+          start_marker = '  const generateRecoveryCode ='
+          end_marker = '  const getCurrentPathForNext ='
+          start = text.find(start_marker)
+          end = text.find(end_marker, start)
+          if start < 0 or end < 0:
+              raise SystemExit('Could not locate legacy recovery implementation boundaries')
+          replacement = """  const requestRecovery = async (payload = {}) => {
+            const authority = ns.passwordAuthority;
+            if (!authority || typeof authority.requestPasswordRecovery !== 'function') {
+              throw new Error('A autoridade real de recuperação de senha não foi carregada.');
+            }
+            return authority.requestPasswordRecovery(payload);
+          };
+
+          const resetPassword = async (payload = {}) => {
+            const authority = ns.passwordAuthority;
+            if (!authority || typeof authority.completePasswordRecovery !== 'function') {
+              throw new Error('A autoridade real de redefinição de senha não foi carregada.');
+            }
+            return authority.completePasswordRecovery(payload);
+          };
+
+"""
+          auth.write_text(text[:start] + replacement + text[end:], encoding='utf-8')
+
+          settings = Path('configuracoes.html')
+          replace_once(settings, '  <link rel="stylesheet" href="assets/css/pages/configuracoes-foundation.css?v=20260716-static-shadow-clean-v1">\n', '  <link rel="stylesheet" href="assets/css/pages/configuracoes-foundation.css?v=20260716-static-shadow-clean-v1">\n  <link rel="stylesheet" href="assets/css/components/auth/password-dialog.css?v=20260724-auth-a05-v1">\n', 'settings password CSS')
+          replace_once(settings, '                          <div><h2>Senha</h2><p>Última alteração há 42 dias. Use uma senha forte e exclusiva.</p></div>\n                          <button class="settings-action settings-action--secondary doke-btn doke-btn--ghost" type="button">Alterar senha</button>', '                          <div><h2>Senha</h2><p>Confirme sua senha atual para alterar a credencial e encerrar outras sessões.</p></div>\n                          <button class="settings-action settings-action--secondary doke-btn doke-btn--ghost" type="button" data-settings-change-password>Alterar senha</button>', 'settings password action')
+          replace_once(settings, '    <script src="assets/js/core/session.js?v=20260501-auth-session-v1" defer></script>\n', '    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>\n    <script src="assets/js/core/supabase-config.js?v=20260718-real-auth-only-v1" defer></script>\n    <script src="assets/js/core/session.js?v=20260501-auth-session-v1" defer></script>\n', 'settings Supabase authority order')
+          replace_once(settings, '    <script src="assets/js/services/auth-service.js?v=20260622-auth-surface-ready-v1" defer></script>\n', '    <script src="assets/js/services/auth-service.js?v=20260622-auth-surface-ready-v1" defer></script>\n    <script src="assets/js/services/auth-password-authority.js?v=20260724-auth-a05-v1" defer></script>\n', 'settings password authority')
+          replace_once(settings, '    <script src="assets/js/pages/configuracoes.js?v=20260714-profile-lifecycle-v1" defer></script>\n', '    <script src="assets/js/pages/configuracoes.js?v=20260714-profile-lifecycle-v1" defer></script>\n    <script src="assets/js/pages/settings-password.js?v=20260724-auth-a05-v1" defer></script>\n', 'settings password controller')
+
+          audit = Path('scripts/audit-auth-session-contracts.js')
+          replace_once(audit, "const AUTH_A04_RUNTIME_TEST = 'scripts/test-auth-registration-username-runtime.js';\n", "const AUTH_A04_RUNTIME_TEST = 'scripts/test-auth-registration-username-runtime.js';\nconst PASSWORD_AUTHORITY = 'assets/js/services/auth-password-authority.js';\nconst AUTH_PASSWORD_PAGE_CONTROLLER = 'assets/js/pages/auth-password-pages.js';\nconst SETTINGS_PASSWORD_CONTROLLER = 'assets/js/pages/settings-password.js';\nconst AUTH_RECOVERY_BOOT = 'assets/js/core/auth-recovery-state-early.js';\nconst AUTH_A05_RUNTIME_TEST = 'scripts/test-auth-password-recovery-runtime.js';\nconst AUTH_RESET_PAGE = 'auth/redefinir-senha.html';\n", 'AUTH-A05 audit constants')
+          replace_once(audit, '  AUTH_A04_VALIDATION,\n  AUTH_A04_RUNTIME_TEST\n];', '  AUTH_A04_VALIDATION,\n  AUTH_A04_RUNTIME_TEST,\n  PASSWORD_AUTHORITY,\n  AUTH_PASSWORD_PAGE_CONTROLLER,\n  SETTINGS_PASSWORD_CONTROLLER,\n  AUTH_RECOVERY_BOOT,\n  AUTH_A05_RUNTIME_TEST,\n  AUTH_RESET_PAGE\n];', 'AUTH-A05 required files')
+          replace_once(audit, "const authPages = [\n  'auth/login.html',\n  'auth/cadastro.html',\n  'auth/esqueci-senha.html'\n];", "const authPages = [\n  'auth/login.html',\n  'auth/cadastro.html'\n];\n\nconst passwordPages = [\n  'auth/esqueci-senha.html',\n  AUTH_RESET_PAGE\n];", 'password page classification')
+          replace_once(audit, "}\n\nconst signupSources = readScriptSources(read('auth/cadastro.html'), 'auth/cadastro.html');", "}\n\nfor (const page of passwordPages) {\n  const html = read(page);\n  const sources = readScriptSources(html, page);\n  if (!sources.some((source) => source.includes('@supabase/supabase-js@2'))) errors.push(`${page} does not load Supabase JS v2`);\n  assertOrdered(sources, [SUPABASE_CONFIG, SESSION_STORE, USERS_REPOSITORY, CANONICAL_AUTH_SERVICE, PASSWORD_AUTHORITY, AUTH_PASSWORD_PAGE_CONTROLLER], page);\n}\n\nconst resetSources = readScriptSources(read(AUTH_RESET_PAGE), AUTH_RESET_PAGE);\nif (!resetSources.includes(AUTH_RECOVERY_BOOT) || resetSources.indexOf(AUTH_RECOVERY_BOOT) > resetSources.indexOf(SUPABASE_CONFIG)) errors.push(`${AUTH_RESET_PAGE} must capture the token-free recovery marker before Supabase initializes`);\n\nconst signupSources = readScriptSources(read('auth/cadastro.html'), 'auth/cadastro.html');", 'password page ordering audit')
+          replace_once(audit, 'const migrationSource = read(AUTH_A04_MIGRATION);', "const passwordAuthoritySource = read(PASSWORD_AUTHORITY);\nfor (const token of [\"version: 'AUTH-A05'\", 'resetPasswordForEmail', \"event === 'PASSWORD_RECOVERY'\", 'client.auth.updateUser', 'reauthenticateWithPassword', \"scope: 'others'\", 'ns.passwordAuthority = api;']) {\n  if (!passwordAuthoritySource.includes(token)) errors.push(`${PASSWORD_AUTHORITY} missing password authority token: ${token}`);\n}\nfor (const forbidden of ['localStorage.setItem', 'sessionStorage.setItem', 'doke.auth.recovery.v1', 'generateRecoveryCode', 'debugCode', 'service_role']) {\n  if (passwordAuthoritySource.includes(forbidden)) errors.push(`${PASSWORD_AUTHORITY} contains forbidden recovery persistence or credential token: ${forbidden}`);\n}\nconst recoveryHtml = read('auth/esqueci-senha.html');\nfor (const forbidden of ['recovery-method', 'recovery-code', 'data-recovery-reset', 'Por telefone']) {\n  if (recoveryHtml.includes(forbidden)) errors.push(`auth/esqueci-senha.html still exposes unsupported local or phone recovery token: ${forbidden}`);\n}\nif (!recoveryHtml.includes('data-auth-password-recovery')) errors.push('auth/esqueci-senha.html is missing the canonical recovery form');\nconst resetHtml = read(AUTH_RESET_PAGE);\nif (!resetHtml.includes('data-auth-password-reset')) errors.push(`${AUTH_RESET_PAGE} is missing the canonical reset form`);\nconst settingsHtml = read('configuracoes.html');\nfor (const token of [PASSWORD_AUTHORITY, SETTINGS_PASSWORD_CONTROLLER, 'assets/css/components/auth/password-dialog.css', 'data-settings-change-password', SUPABASE_CONFIG]) {\n  if (!settingsHtml.includes(token)) errors.push(`configuracoes.html missing AUTH-A05 settings token: ${token}`);\n}\nfor (const forbidden of ['doke.auth.recovery.v1', 'generateRecoveryCode', 'debugCode']) {\n  if (canonicalSource.includes(forbidden)) errors.push(`${CANONICAL_AUTH_SERVICE} still contains legacy recovery authority token: ${forbidden}`);\n}\n\nconst migrationSource = read(AUTH_A04_MIGRATION);", 'password authority audit')
+          replace_once(audit, "execFileSync(process.execPath, [path.join(root, AUTH_A04_RUNTIME_TEST)], {\n  cwd: root,\n  stdio: 'inherit'\n});\n\nconsole.log('Auth/session contract audit passed.');", "execFileSync(process.execPath, [path.join(root, AUTH_A04_RUNTIME_TEST)], {\n  cwd: root,\n  stdio: 'inherit'\n});\n\nexecFileSync(process.execPath, [path.join(root, AUTH_A05_RUNTIME_TEST)], {\n  cwd: root,\n  stdio: 'inherit'\n});\n\nconsole.log('Auth/session contract audit passed.');", 'AUTH-A05 runtime gate')
+          replace_once(audit, "console.log('AUTH-A04 registration authority: enforced');\nconsole.log('Dormant legacy consumers: 0');", "console.log('AUTH-A04 registration authority: enforced');\nconsole.log('AUTH-A05 password authority: enforced');\nconsole.log('Dormant legacy consumers: 0');", 'AUTH-A05 audit summary')
+
+      - name: Validate AUTH-A05 runtime and contracts
+        run: npm run audit:auth-session
+
+      - name: Regenerate governed domain matrix
+        run: npm run write:domain-completion-matrix
+
+      - name: Publish validated AUTH-A05 integration
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/js/services/auth-service.js configuracoes.html scripts/audit-auth-session-contracts.js docs/DOMAIN-COMPLETION-MATRIX.md
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Integrate AUTH-A05 password authority"
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
