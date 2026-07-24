@@ -11,7 +11,9 @@ const SOURCE_EXTENSIONS = new Set(['.ts', '.js', '.mjs', '.cjs']);
 const IMPORT_PATTERN = /(?:\bfrom\s*|\bimport\s*)["'](\.\.?\/[^"']+)["']/g;
 const HARDENED_FUNCTIONS = [
   'financial-operations',
+  'order-event-operations',
   'professional-verification-operations',
+  'quote-template-ai',
   'self-service-operations',
   'service-moderation-operations',
   'staging-finance-sandbox',
