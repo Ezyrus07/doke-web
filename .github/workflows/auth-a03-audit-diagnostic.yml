@@ -45,16 +45,42 @@ jobs:
       - name: Remove temporary integration files
         run: git rm .github/workflows/auth-a03-audit-diagnostic.yml scripts/apply-auth-a03-page-bootstrap.mjs
 
-      - name: Validate AUTH-A03 and complete static suite
+      - name: Capture complete AUTH-A03 validation
+        shell: bash
         run: |
-          npm run audit:all
-          npm run audit:domain-completion-matrix
-          git diff --check
+          mkdir -p reports/generated
+          set +e
+          npm run audit:all > reports/generated/auth-a03-integration-validation.log 2>&1
+          audit_status=$?
+          npm run audit:domain-completion-matrix >> reports/generated/auth-a03-integration-validation.log 2>&1
+          matrix_status=$?
+          git diff --check >> reports/generated/auth-a03-integration-validation.log 2>&1
+          diff_status=$?
+          status=0
+          if [ "$audit_status" -ne 0 ] || [ "$matrix_status" -ne 0 ] || [ "$diff_status" -ne 0 ]; then status=1; fi
+          echo "$status" > reports/generated/auth-a03-integration-exit-code.txt
+          tail -n 180 reports/generated/auth-a03-integration-validation.log
+          exit 0
+
+      - name: Upload complete validation output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: auth-a03-integration-validation-${{ github.sha }}
+          path: |
+            reports/generated/auth-a03-integration-validation.log
+            reports/generated/auth-a03-integration-exit-code.txt
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Require green validation
+        run: test "$(cat reports/generated/auth-a03-integration-exit-code.txt)" = "0"
 
       - name: Commit validated AUTH-A03 page integration
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
+          git reset reports/generated/auth-a03-integration-validation.log reports/generated/auth-a03-integration-exit-code.txt
           git commit -m "Complete AUTH-A03 private page guard integration"
           git push origin "HEAD:${{ github.head_ref }}"
