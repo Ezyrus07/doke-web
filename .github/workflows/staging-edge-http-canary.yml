@@ -1,6 +1,9 @@
 name: Doke Staging Edge HTTP Canary
 
 on:
+  push:
+    branches:
+      - auth/auth-001-baseline-audit
   pull_request:
     branches: [MAIN, main, master]
     paths:
@@ -11,20 +14,21 @@ permissions:
   contents: write
 
 concurrency:
-  group: doke-staging-edge-http-canary-${{ github.ref }}
+  group: doke-auth-a04-evidence-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   staging-edge-http-canary:
+    if: github.actor != 'github-actions[bot]'
     name: Close AUTH-A04 journal and governed evidence
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
     steps:
-      - name: Checkout PR head
+      - name: Checkout branch head
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.ref }}
+          ref: auth/auth-001-baseline-audit
           fetch-depth: 0
 
       - name: Setup Node
@@ -156,4 +160,4 @@ Execute `AUTH-A05`: replace the local recovery/reset flow with Supabase recovery
             exit 0
           fi
           git commit -m "Close AUTH-A04 journal and governed evidence"
-          git push origin HEAD:${{ github.event.pull_request.head.ref }}
+          git push origin HEAD:auth/auth-001-baseline-audit
