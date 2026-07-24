@@ -1,14 +1,15 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
- <meta charset="UTF-8">
- <meta name="viewport" content="width=device-width, initial-scale=1.0">
- <title>Doke | Recuperar acesso</title>
- <link rel="preconnect" href="https://fonts.googleapis.com">
- <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/css/pages/auth-foundation.css?v=20260715-lote24">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Doke | Recuperar acesso</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/pages/auth-foundation.css?v=20260724-auth-a05-v1">
   <link rel="stylesheet" href="../assets/css/components/feedback/document-preloader.css?v=20260712-global-document-boot-v1">
- <link rel="stylesheet" href="../assets/css/components/ui-surface/close-button-authority.css?v=20260713-global-v1">
+  <link rel="stylesheet" href="../assets/css/components/ui-surface/close-button-authority.css?v=20260713-global-v1">
 </head>
 <body class="auth-page auth-page--login">
   <section class="doke-document-preloader" data-doke-document-preloader aria-label="Carregando Doke" aria-hidden="false">
@@ -16,84 +17,44 @@
       <img class="doke-document-preloader__logo" src="../assets/img/doke-logo-lockup.png" alt="Doke" decoding="async">
     </div>
   </section>
- <main class="auth-shell">
-  <section class="auth-card">
-   <span class="auth-mark" aria-hidden="true"><img src="../assets/img/doke-logo-lockup.png" alt=""></span>
 
-   <header class="auth-copy">
-    <span class="auth-eyebrow">Recuperação</span>
-    <h1>Recuperar acesso</h1>
-    <p>Fluxo simples para reenviar código e redefinir a senha sem inventar interface desnecessária.</p>
-   </header>
+  <main class="auth-shell">
+    <section class="auth-card">
+      <span class="auth-mark" aria-hidden="true"><img src="../assets/img/doke-logo-lockup.png" alt=""></span>
 
-   <form class="auth-form" data-auth-recovery>
-    <div class="auth-recovery-options">
-     <label class="auth-choice">
-      <input class="auth-choice__input doke-radio" type="radio" name="recovery-method" value="email" checked>
-      <span class="auth-choice-card">
-       <strong>Por e-mail</strong>
-       <span>Envie um código para o endereço cadastrado.</span>
-      </span>
-     </label>
+      <header class="auth-copy">
+        <span class="auth-eyebrow">Recuperação segura</span>
+        <h1>Recuperar acesso</h1>
+        <p>Informe o e-mail da conta. A Doke enviará um link de uso único para você escolher uma nova senha.</p>
+      </header>
 
-     <label class="auth-choice">
-      <input class="auth-choice__input doke-radio" type="radio" name="recovery-method" value="phone">
-      <span class="auth-choice-card">
-       <strong>Por telefone</strong>
-       <span>Receba um código por SMS no número cadastrado.</span>
-      </span>
-     </label>
-    </div>
+      <form class="auth-form" data-auth-password-recovery>
+        <label class="auth-field" for="recovery-email">
+          <span>E-mail cadastrado</span>
+          <div class="auth-input">
+            <input class="doke-input" id="recovery-email" type="email" placeholder="voce@email.com" autocomplete="email" required>
+          </div>
+        </label>
 
-    <label class="auth-field">
-     <span data-recovery-contact-label>E-mail cadastrado</span>
-     <div class="auth-input">
-      <input class="doke-input" id="recovery-contact" type="text" placeholder="voce@email.com" autocomplete="username" data-phone-mask>
-     </div>
-    </label>
+        <div class="auth-feedback is-hidden" data-auth-feedback role="status" aria-live="polite"></div>
 
-    <div class="auth-feedback is-hidden" data-auth-feedback role="status" aria-live="polite"></div>
+        <p class="auth-note">Por segurança, a mensagem de confirmação é a mesma mesmo quando o e-mail não está cadastrado.</p>
 
-    <p class="auth-note">Use o mesmo contato da conta para localizar o acesso corretamente.</p>
+        <button class="auth-button doke-btn doke-btn--block doke-btn--primary" type="submit" data-auth-submit aria-busy="false">Enviar link seguro</button>
 
-    <button class="auth-button doke-btn doke-btn--block doke-btn--primary" type="submit" data-auth-submit>Enviar código</button>
-
-    <section class="auth-recovery-reset is-hidden" data-recovery-reset>
-     <label class="auth-field">
-      <span>Código recebido</span>
-      <div class="auth-input">
-       <input class="doke-input" id="recovery-code" type="text" inputmode="numeric" placeholder="Digite o código recebido">
-      </div>
-     </label>
-
-     <label class="auth-field">
-      <span>Nova senha</span>
-      <div class="auth-password">
-       <input class="doke-input" id="recovery-password" type="password" placeholder="Crie uma nova senha" autocomplete="new-password">
-       <button class="auth-password-toggle doke-icon-btn doke-icon-btn--flat" type="button" data-toggle-password="recovery-password" aria-label="Mostrar senha">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-         <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"></path>
-         <circle cx="12" cy="12" r="3"></circle>
-        </svg>
-       </button>
-      </div>
-     </label>
-
-     <button class="auth-button auth-button--secondary doke-btn doke-btn--block doke-btn--secondary" type="button" data-recovery-reset-submit>Redefinir senha</button>
+        <p class="auth-footer">Lembrou da senha? <a class="auth-switch-link" href="login.html">Voltar para entrar</a></p>
+      </form>
     </section>
-
-    <p class="auth-footer">Lembrou da senha? <a class="auth-switch-link" href="login.html">Voltar para entrar</a></p>
-   </form>
-  </section>
- </main>
+  </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
   <script src="../assets/js/core/supabase-config.js?v=20260718-real-auth-only-v1" defer></script>
   <script src="../assets/js/core/navigation-lifecycle.js?v=20260713-navigation-lifecycle-v1" defer></script>
- <script src="../assets/js/core/session.js" defer></script>
- <script src="../assets/js/repositories/users-repository.js?v=20260718-real-auth-only-v1" defer></script>
- <script src="../assets/js/services/auth-service.js?v=20260718-real-auth-only-v1" defer></script>
- <script src="../assets/js/pages/auth.js?v=20260719-auth-redirect-v1" defer></script>
+  <script src="../assets/js/core/session.js?v=20260724-auth-a02-v1" defer></script>
+  <script src="../assets/js/repositories/users-repository.js?v=20260718-real-auth-only-v1" defer></script>
+  <script src="../assets/js/services/auth-service.js?v=20260724-auth-a02-v1" defer></script>
+  <script src="../assets/js/services/auth-password-authority.js?v=20260724-auth-a05-v1" defer></script>
+  <script src="../assets/js/pages/auth-password-pages.js?v=20260724-auth-a05-v1" defer></script>
   <script src="../assets/js/ui/responsive-interaction-guard.js?v=20260428-architecture" defer></script>
   <script src="../assets/js/core/document-preloader.js?v=20260712-global-document-boot-v1" defer></script>
 </body>
