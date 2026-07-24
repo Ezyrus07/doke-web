@@ -15,7 +15,7 @@ const FUNCTIONS = Object.freeze([
 const ALLOWED_ORIGIN = 'https://ezyrus07.github.io';
 const DENIED_ORIGIN = 'https://attacker.invalid';
 const REPORT_PATH = path.resolve('reports/generated/staging-edge-http-canary.json');
-const REQUEST_TIMEOUT_MS = 25_000;
+const REQUEST_TIMEOUT_MS = 12_000;
 
 const extractClientConfig = async () => {
   const source = await readFile('assets/js/core/supabase-config.js', 'utf8');
@@ -80,128 +80,132 @@ const executeCase = async (results, functionName, caseName, operation) => {
   }
 };
 
+const runFunctionCanary = async ({ supabaseUrl, anonKey, oversizedBody, results }, functionName) => {
+  const endpoint = `${supabaseUrl}/functions/v1/${functionName}`;
+
+  await executeCase(results, functionName, 'allowed-preflight', async () => {
+    const snapshot = await request(endpoint, {
+      method: 'OPTIONS',
+      headers: {
+        apikey: anonKey,
+        origin: ALLOWED_ORIGIN,
+        'access-control-request-method': 'POST',
+        'access-control-request-headers': 'authorization, apikey, content-type, x-doke-request-id',
+      },
+    });
+    assert.equal(snapshot.status, 204);
+    requireFunctionSecurityHeaders(snapshot);
+    assert.match(requireHeader(snapshot, 'access-control-allow-methods'), /POST/);
+    assert.match(requireHeader(snapshot, 'vary'), /Origin/i);
+    return snapshot;
+  });
+
+  await executeCase(results, functionName, 'denied-preflight', async () => {
+    const snapshot = await request(endpoint, {
+      method: 'OPTIONS',
+      headers: {
+        apikey: anonKey,
+        origin: DENIED_ORIGIN,
+        'access-control-request-method': 'POST',
+        'access-control-request-headers': 'authorization, apikey, content-type',
+      },
+    });
+    assert.equal(snapshot.status, 403);
+    assert.equal(parseError(snapshot), 'DOKE_ORIGIN_NOT_ALLOWED');
+    assert.equal(snapshot.headers['access-control-allow-origin'] || '', '');
+    requireFunctionSecurityHeaders(snapshot, '');
+    return snapshot;
+  });
+
+  await executeCase(results, functionName, 'missing-jwt', async () => {
+    const snapshot = await request(endpoint, {
+      method: 'POST',
+      headers: {
+        apikey: anonKey,
+        origin: ALLOWED_ORIGIN,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({ action: 'canary' }),
+    });
+    assert.equal(snapshot.status, 401);
+    return snapshot;
+  });
+
+  await executeCase(results, functionName, 'anon-token-has-no-user', async () => {
+    const snapshot = await request(endpoint, {
+      method: 'POST',
+      headers: {
+        apikey: anonKey,
+        authorization: `Bearer ${anonKey}`,
+        origin: ALLOWED_ORIGIN,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({ action: 'canary' }),
+    });
+    assert.equal(snapshot.status, 401);
+    requireFunctionSecurityHeaders(snapshot);
+    return snapshot;
+  });
+
+  await executeCase(results, functionName, 'invalid-json', async () => {
+    const snapshot = await request(endpoint, {
+      method: 'POST',
+      headers: {
+        apikey: anonKey,
+        authorization: `Bearer ${anonKey}`,
+        origin: ALLOWED_ORIGIN,
+        'content-type': 'application/json',
+      },
+      body: '{',
+    });
+    assert.equal(snapshot.status, 400);
+    assert.equal(parseError(snapshot), 'DOKE_INVALID_JSON');
+    requireFunctionSecurityHeaders(snapshot);
+    return snapshot;
+  });
+
+  await executeCase(results, functionName, 'unsupported-content-type', async () => {
+    const snapshot = await request(endpoint, {
+      method: 'POST',
+      headers: {
+        apikey: anonKey,
+        authorization: `Bearer ${anonKey}`,
+        origin: ALLOWED_ORIGIN,
+        'content-type': 'text/plain',
+      },
+      body: '{}',
+    });
+    assert.equal(snapshot.status, 415);
+    assert.equal(parseError(snapshot), 'DOKE_JSON_CONTENT_TYPE_REQUIRED');
+    requireFunctionSecurityHeaders(snapshot);
+    return snapshot;
+  });
+
+  await executeCase(results, functionName, 'oversized-payload', async () => {
+    const snapshot = await request(endpoint, {
+      method: 'POST',
+      headers: {
+        apikey: anonKey,
+        authorization: `Bearer ${anonKey}`,
+        origin: ALLOWED_ORIGIN,
+        'content-type': 'application/json',
+      },
+      body: oversizedBody,
+    });
+    assert.equal(snapshot.status, 413);
+    requireFunctionSecurityHeaders(snapshot);
+    return snapshot;
+  });
+};
+
 const run = async () => {
   const { url: supabaseUrl, anonKey } = await extractClientConfig();
   const results = [];
-  const oversizedBody = JSON.stringify({ payload: 'x'.repeat(1_100_000) });
+  const oversizedBody = JSON.stringify({ payload: 'x'.repeat(128_000) });
+  const context = { supabaseUrl, anonKey, oversizedBody, results };
 
-  for (const functionName of FUNCTIONS) {
-    const endpoint = `${supabaseUrl}/functions/v1/${functionName}`;
-
-    await executeCase(results, functionName, 'allowed-preflight', async () => {
-      const snapshot = await request(endpoint, {
-        method: 'OPTIONS',
-        headers: {
-          apikey: anonKey,
-          origin: ALLOWED_ORIGIN,
-          'access-control-request-method': 'POST',
-          'access-control-request-headers': 'authorization, apikey, content-type, x-doke-request-id',
-        },
-      });
-      assert.equal(snapshot.status, 204);
-      requireFunctionSecurityHeaders(snapshot);
-      assert.match(requireHeader(snapshot, 'access-control-allow-methods'), /POST/);
-      assert.match(requireHeader(snapshot, 'vary'), /Origin/i);
-      return snapshot;
-    });
-
-    await executeCase(results, functionName, 'denied-preflight', async () => {
-      const snapshot = await request(endpoint, {
-        method: 'OPTIONS',
-        headers: {
-          apikey: anonKey,
-          origin: DENIED_ORIGIN,
-          'access-control-request-method': 'POST',
-          'access-control-request-headers': 'authorization, apikey, content-type',
-        },
-      });
-      assert.equal(snapshot.status, 403);
-      assert.equal(parseError(snapshot), 'DOKE_ORIGIN_NOT_ALLOWED');
-      assert.equal(snapshot.headers['access-control-allow-origin'] || '', '');
-      requireFunctionSecurityHeaders(snapshot, '');
-      return snapshot;
-    });
-
-    await executeCase(results, functionName, 'missing-jwt', async () => {
-      const snapshot = await request(endpoint, {
-        method: 'POST',
-        headers: {
-          apikey: anonKey,
-          origin: ALLOWED_ORIGIN,
-          'content-type': 'application/json',
-        },
-        body: JSON.stringify({ action: 'canary' }),
-      });
-      assert.equal(snapshot.status, 401);
-      return snapshot;
-    });
-
-    await executeCase(results, functionName, 'anon-token-has-no-user', async () => {
-      const snapshot = await request(endpoint, {
-        method: 'POST',
-        headers: {
-          apikey: anonKey,
-          authorization: `Bearer ${anonKey}`,
-          origin: ALLOWED_ORIGIN,
-          'content-type': 'application/json',
-        },
-        body: JSON.stringify({ action: 'canary' }),
-      });
-      assert.equal(snapshot.status, 401);
-      requireFunctionSecurityHeaders(snapshot);
-      return snapshot;
-    });
-
-    await executeCase(results, functionName, 'invalid-json', async () => {
-      const snapshot = await request(endpoint, {
-        method: 'POST',
-        headers: {
-          apikey: anonKey,
-          authorization: `Bearer ${anonKey}`,
-          origin: ALLOWED_ORIGIN,
-          'content-type': 'application/json',
-        },
-        body: '{',
-      });
-      assert.equal(snapshot.status, 400);
-      assert.equal(parseError(snapshot), 'DOKE_INVALID_JSON');
-      requireFunctionSecurityHeaders(snapshot);
-      return snapshot;
-    });
-
-    await executeCase(results, functionName, 'unsupported-content-type', async () => {
-      const snapshot = await request(endpoint, {
-        method: 'POST',
-        headers: {
-          apikey: anonKey,
-          authorization: `Bearer ${anonKey}`,
-          origin: ALLOWED_ORIGIN,
-          'content-type': 'text/plain',
-        },
-        body: '{}',
-      });
-      assert.equal(snapshot.status, 415);
-      assert.equal(parseError(snapshot), 'DOKE_JSON_CONTENT_TYPE_REQUIRED');
-      requireFunctionSecurityHeaders(snapshot);
-      return snapshot;
-    });
-
-    await executeCase(results, functionName, 'oversized-payload', async () => {
-      const snapshot = await request(endpoint, {
-        method: 'POST',
-        headers: {
-          apikey: anonKey,
-          authorization: `Bearer ${anonKey}`,
-          origin: ALLOWED_ORIGIN,
-          'content-type': 'application/json',
-        },
-        body: oversizedBody,
-      });
-      assert.equal(snapshot.status, 413);
-      requireFunctionSecurityHeaders(snapshot);
-      return snapshot;
-    });
-  }
+  await Promise.all(FUNCTIONS.map((functionName) => runFunctionCanary(context, functionName)));
+  results.sort((left, right) => `${left.functionName}:${left.caseName}`.localeCompare(`${right.functionName}:${right.caseName}`));
 
   const failures = results.filter((item) => !item.passed);
   const report = {
