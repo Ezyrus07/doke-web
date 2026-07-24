@@ -50,7 +50,6 @@
     "runtimeTest": "scripts/test-auth-registration-username-runtime.js",
     "sqlValidation": "supabase/tests/015_auth_registration_username_authority_validation.sql",
     "validatedRuntimeHead": "b4bf7873b516ca4b78f7ca1da4cf0fb38babad9d",
-    "journalHead": "1877c12bbbe0f096f1eb55d926f336ffde3fdfd2",
     "qualityGates": {
       "runNumber": 293,
       "conclusion": "success"
@@ -66,11 +65,22 @@
     }
   },
   "publicSignupCanary": {
-    "usernameRpcReached": true,
     "signupEndpointReached": true,
+    "postSignupAssertionsReached": false,
     "accountPersisted": false,
     "confirmationDeliveryValidated": false,
-    "providerResult": "429_over_email_send_rate_limit",
+    "attempts": [
+      {
+        "workflowRunNumber": 81,
+        "domain": "example.test",
+        "result": "400_email_address_invalid"
+      },
+      {
+        "workflowRunNumber": 82,
+        "domain": "example.com",
+        "result": "429_over_email_send_rate_limit"
+      }
+    ],
     "classification": "EXTERNAL_SMTP_RATE_LIMIT",
     "trackedAs": "MAIL-001"
   },
