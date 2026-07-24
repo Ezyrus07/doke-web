@@ -117,6 +117,13 @@
     (document.head || document.documentElement).appendChild(link);
   }
 
+  async function ensureAuthSessionAuthority() {
+    await loadScript(assetUrl('assets/js/services/auth-session-authority.js'), function () {
+      return Boolean(auth.sessionAuthority && auth.sessionAuthority.version === 'AUTH-A06');
+    }, 'session-authority');
+    return auth.sessionAuthority || null;
+  }
+
   async function ensureSettingsPasswordAuthority() {
     if (pageName() !== 'configuracoes') return null;
 
@@ -172,6 +179,7 @@
     }
 
     try {
+      await ensureAuthSessionAuthority();
       await ensureSettingsPasswordAuthority();
       await ensureAuthRouteGuard();
     } catch (error) {
@@ -184,6 +192,7 @@
     document.dispatchEvent(new CustomEvent('doke:page-bootstrap-ready', {
       detail: {
         authGuardReady: Boolean(auth.guard),
+        sessionAuthorityReady: Boolean(auth.sessionAuthority),
         passwordAuthorityReady: Boolean(auth.passwordAuthority)
       }
     }));
@@ -192,6 +201,7 @@
   Doke.pageBootstrap = Object.freeze({
     bootstrap: bootstrap,
     ensureAuthRouteGuard: ensureAuthRouteGuard,
+    ensureAuthSessionAuthority: ensureAuthSessionAuthority,
     ensureSettingsPasswordAuthority: ensureSettingsPasswordAuthority
   });
 
