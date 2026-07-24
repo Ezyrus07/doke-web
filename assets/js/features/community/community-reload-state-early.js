@@ -1,8 +1,15 @@
 (function () {
   'use strict';
 
-  document.documentElement.dataset.authGuard = 'pending';
-  document.documentElement.dataset.authGuardMode = 'enforce';
+  function currentPageName() {
+    var path = String(window.location.pathname || '').replace(/\\/g, '/');
+    return path.slice(path.lastIndexOf('/') + 1).toLowerCase() || 'comunidade.html';
+  }
+
+  if (currentPageName() === 'comunidade-interna.html') {
+    document.documentElement.dataset.authGuard = 'pending';
+    document.documentElement.dataset.authGuardMode = 'enforce';
+  }
 
   function isReloadNavigation() {
     try {

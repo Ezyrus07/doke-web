@@ -13,6 +13,7 @@
     'detalhe-anuncio.html',
     'perfil.html',
     'perfil-cliente.html',
+    'comunidade.html',
     'ajuda.html',
     'novidades.html'
   ]);
@@ -45,7 +46,6 @@
     'verificacao-profissional.html',
     'pagamento-profissional.html',
     'avaliacao-profissional.html',
-    'comunidade.html',
     'comunidade-interna.html'
   ]);
 
