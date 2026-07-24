@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Doke | Recuperar acesso</title>
+  <script src="../assets/js/core/auth-recovery-state-early.js?v=20260724-auth-a05-v1"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -19,7 +20,7 @@
   </section>
 
   <main class="auth-shell">
-    <section class="auth-card">
+    <section class="auth-card" data-auth-recovery-request-view>
       <span class="auth-mark" aria-hidden="true"><img src="../assets/img/doke-logo-lockup.png" alt=""></span>
 
       <header class="auth-copy">
@@ -43,6 +44,53 @@
         <button class="auth-button doke-btn doke-btn--block doke-btn--primary" type="submit" data-auth-submit aria-busy="false">Enviar link seguro</button>
 
         <p class="auth-footer">Lembrou da senha? <a class="auth-switch-link" href="login.html">Voltar para entrar</a></p>
+      </form>
+    </section>
+
+    <section class="auth-card" data-auth-recovery-reset-view hidden>
+      <span class="auth-mark" aria-hidden="true"><img src="../assets/img/doke-logo-lockup.png" alt=""></span>
+
+      <header class="auth-copy">
+        <span class="auth-eyebrow">Nova senha</span>
+        <h1>Redefinir senha</h1>
+        <p>Escolha uma senha forte. Os campos só são liberados quando o link de recuperação é validado pelo Supabase.</p>
+      </header>
+
+      <form class="auth-form" data-auth-password-reset>
+        <div class="auth-feedback" data-auth-feedback role="status" aria-live="polite">Validando seu link de recuperação...</div>
+
+        <div data-auth-reset-fields hidden>
+          <label class="auth-field" for="reset-password">
+            <span>Nova senha</span>
+            <div class="auth-password">
+              <input class="doke-input" id="reset-password" type="password" placeholder="Crie uma nova senha" autocomplete="new-password" required>
+              <button class="auth-password-toggle doke-icon-btn doke-icon-btn--flat" type="button" data-toggle-password="reset-password" aria-label="Mostrar senha">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+              </button>
+            </div>
+          </label>
+
+          <label class="auth-field" for="reset-password-confirmation">
+            <span>Confirmar nova senha</span>
+            <div class="auth-password">
+              <input class="doke-input" id="reset-password-confirmation" type="password" placeholder="Repita a nova senha" autocomplete="new-password" required>
+              <button class="auth-password-toggle doke-icon-btn doke-icon-btn--flat" type="button" data-toggle-password="reset-password-confirmation" aria-label="Mostrar senha">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+              </button>
+            </div>
+          </label>
+
+          <p class="auth-note">Use ao menos 8 caracteres, com letras maiúsculas e minúsculas, número e símbolo.</p>
+        </div>
+
+        <button class="auth-button doke-btn doke-btn--block doke-btn--primary" type="submit" data-auth-submit aria-busy="false" hidden>Salvar nova senha</button>
+
+        <section class="auth-recovery-reset" data-auth-reset-invalid hidden>
+          <p class="auth-note">O link pode ter expirado, já ter sido usado ou não pertencer a uma recuperação válida.</p>
+          <a class="auth-button auth-button--secondary doke-btn doke-btn--block doke-btn--secondary" href="esqueci-senha.html">Solicitar outro link</a>
+        </section>
+
+        <p class="auth-footer"><a class="auth-switch-link" href="login.html">Voltar para entrar</a></p>
       </form>
     </section>
   </main>
