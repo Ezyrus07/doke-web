@@ -78,6 +78,30 @@ Closure evidence:
 - Machine-readable evidence stored in `docs/validation/SEC-001-B09-STAGING-HTTP-CANARY.json`.
 - The private-table Security Advisor informational notice was reviewed and accepted as expected for a server-only authority with no direct API-role grants.
 
+## AUTH-001 — Real authentication, session and identity
+
+**Status:** `IN PROGRESS`
+
+Baseline evidence:
+
+- Branch `auth/auth-001-baseline-audit` was created from `MAIN@1412a4c3aac60c5392ebbca466f1ecd1a8aa1428`.
+- `docs/validation/AUTH-001-BASELINE-AUDIT.md` records the active authorities, blockers, architecture decisions, execution order and gates of exit.
+- `docs/validation/AUTH-001-BASELINE-AUDIT.json` stores the machine-readable baseline.
+- No authentication runtime, Supabase project, production environment or user account was changed during the baseline.
+
+Immediate blockers:
+
+- fragmented direct-Supabase/API/legacy authority;
+- access and refresh tokens duplicated in the Doke `localStorage` session snapshot;
+- no single global reconciliation path for refresh, revocation and logout;
+- private route guard defaults to `observe`;
+- recovery/reset is not aligned with the real login and registration path;
+- API register/recovery/reset handlers are not materialized;
+- phone and OAuth controls are exposed without proven providers;
+- username availability remains local rather than transactional and server-authoritative.
+
+Next sublot: `AUTH-A01 — authority freeze and baseline tests`.
+
 ## Next architectural domains after SEC-001
 
 These remain high-level roadmap items and must be decomposed before execution:
@@ -302,6 +326,56 @@ The leaked-password warning remains unresolved because activation is restricted 
 ### Next step
 
 Run final CI on PR #8, mark it ready for review when all checks are green, and do not merge without explicit approval.
+
+---
+
+## 2026-07-24 — PR #8 merged and AUTH-001 baseline opened
+
+**Scope:** PR #8 → `MAIN`; branch `auth/auth-001-baseline-audit`
+
+**Outcome:** `DONE` for the SEC-B09 merge; `IN PROGRESS` for AUTH-001
+
+### Context
+
+PR #8 completed the free-plan portion of SEC-001 and was squash-merged only after Quality Gates, Diagnostic E2E and the staging Edge HTTP canary passed. The next mandatory domain in the completion matrix is authentication, session and identity.
+
+### Merge evidence
+
+- PR #8 final head: `e4961c262754fc5befcdd8b04b105506edd7aaec`.
+- Squash merge commit in `MAIN`: `1412a4c3aac60c5392ebbca466f1ecd1a8aa1428`.
+- `SEC-B09`: closed as validated on staging.
+- `SEC-B05`: remains `BLOCKED` under `PAID-001`.
+
+### Baseline findings
+
+- The active frontend service is `assets/js/services/auth-service.js` with `assets/js/core/session.js` as the application snapshot authority.
+- A dormant legacy auth implementation remains at `assets/js/core/auth-service.js`.
+- Supabase direct auth and the controlled `/auth/*` provider coexist.
+- The Doke session snapshot duplicates access and refresh tokens in `localStorage`.
+- The route guard observes private routes by default instead of enforcing them.
+- Real login/cadastro and recovery/reset do not currently share one complete authority.
+- API register, recovery and reset routes are declared but not materialized by real handlers.
+- Phone, OAuth and username availability are not yet backed by proven real providers/transactional authority.
+
+### Decision
+
+Do not refactor auth immediately. First freeze the active authority, prove the loading graph and capture the current behavior in deterministic tests. This prevents removing a dormant file or changing session storage without knowing every consumer.
+
+### Evidence created
+
+- `docs/validation/AUTH-001-BASELINE-AUDIT.md`.
+- `docs/validation/AUTH-001-BASELINE-AUDIT.json`.
+
+### Risks and boundaries
+
+- No login, cadastro, recovery, route guard or session behavior changed in this baseline.
+- No Supabase Auth setting or database object changed.
+- No production environment changed.
+- `PAID-001` remains visible and unresolved.
+
+### Next step
+
+Execute `AUTH-A01`: add an executable authority/loading audit and regression tests for the current authentication behavior before beginning the canonical session refactor.
 
 ---
 
