@@ -1,0 +1,57 @@
+name: AUTH-A03 Audit Diagnostic
+
+on:
+  pull_request:
+    branches: [MAIN, main, master]
+    paths:
+      - '.github/workflows/auth-a03-audit-diagnostic.yml'
+      - 'assets/js/core/auth-route-map.js'
+      - 'assets/js/core/route-guard.js'
+      - 'assets/js/core/page-bootstrap.js'
+      - 'assets/js/features/community/community-reload-state-early.js'
+      - 'assets/css/core/auth-prepaint-guard.css'
+      - 'assets/css/components/feedback/document-preloader.css'
+      - 'scripts/audit-auth-session-contracts.js'
+      - 'scripts/test-auth-route-guard-runtime.js'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit-diagnostic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout candidate tree
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Capture complete audit output
+        shell: bash
+        run: |
+          mkdir -p reports/generated
+          set +e
+          npm run audit:all > reports/generated/auth-a03-audit.log 2>&1
+          status=$?
+          echo "$status" > reports/generated/auth-a03-audit-exit-code.txt
+          tail -n 160 reports/generated/auth-a03-audit.log
+          exit 0
+
+      - name: Upload diagnostic output
+        uses: actions/upload-artifact@v4
+        with:
+          name: auth-a03-audit-diagnostic-${{ github.sha }}
+          path: |
+            reports/generated/auth-a03-audit.log
+            reports/generated/auth-a03-audit-exit-code.txt
+          if-no-files-found: error
+          retention-days: 7
