@@ -1,6 +1,13 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "@supabase/supabase-js";
 import {
+  enforceActorRateLimit,
+  jsonResponse,
+  preflightResponse,
+  readJsonObject,
+  rejectDisallowedOrigin,
+} from "../_shared/http-security.ts";
+import {
   STAGING_PROJECT_REF,
   normalizeAction,
   normalizePayload,
@@ -10,27 +17,25 @@ import {
 } from "./operations.mjs";
 
 const FUNCTION_NAME = "staging-finance-sandbox";
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
-
-const jsonResponse = (status: number, payload: unknown) => new Response(JSON.stringify(payload), {
-  status,
-  headers: { ...corsHeaders, "Content-Type": "application/json; charset=utf-8" },
-});
+const MAX_BODY_BYTES = 64_000;
 
 Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
-  if (req.method !== "POST") return jsonResponse(405, { error: "METHOD_NOT_ALLOWED" });
+  if (req.method === "OPTIONS") return preflightResponse(req);
+  const originRejection = rejectDisallowedOrigin(req);
+  if (originRejection) return originRejection;
+  if (req.method !== "POST") return jsonResponse(req, 405, { error: "METHOD_NOT_ALLOWED" });
+
+  const bodyResult = await readJsonObject(req, MAX_BODY_BYTES);
+  if (!bodyResult.ok) return bodyResult.response;
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
   const publicKey = Deno.env.get("SUPABASE_PUBLISHABLE_KEY") || Deno.env.get("SUPABASE_ANON_KEY") || "";
   const secretKey = Deno.env.get("SUPABASE_SECRET_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
-  if (!supabaseUrl || !publicKey || !secretKey) return jsonResponse(503, { error: "SERVER_CONFIGURATION_MISSING" });
+  if (!supabaseUrl || !publicKey || !secretKey) {
+    return jsonResponse(req, 503, { error: "SERVER_CONFIGURATION_MISSING" });
+  }
   if (projectRefFromUrl(supabaseUrl) !== STAGING_PROJECT_REF) {
-    return jsonResponse(403, { error: "DOKE_FINANCE_SANDBOX_DISABLED" });
+    return jsonResponse(req, 403, { error: "DOKE_FINANCE_SANDBOX_DISABLED" });
   }
 
   const authorization = req.headers.get("Authorization") || "";
@@ -44,11 +49,25 @@ Deno.serve(async (req: Request) => {
 
   const { data: authData, error: authError } = await authClient.auth.getUser();
   const actor = authData?.user;
-  if (authError || !actor?.id) return jsonResponse(401, { error: "DOKE_FINANCE_SANDBOX_AUTH_REQUIRED" });
+  if (authError || !actor?.id) {
+    return jsonResponse(req, 401, { error: "DOKE_FINANCE_SANDBOX_AUTH_REQUIRED" });
+  }
 
-  const body = await req.json().catch(() => ({})) as Record<string, unknown>;
+  const body = bodyResult.value;
   const action = normalizeAction(body.action);
-  if (!action) return jsonResponse(400, { error: "DOKE_FINANCE_SANDBOX_ACTION_INVALID" });
+  if (!action) return jsonResponse(req, 400, { error: "DOKE_FINANCE_SANDBOX_ACTION_INVALID" });
+
+  const rateLimitResponse = await enforceActorRateLimit({
+    req,
+    client: serviceClient,
+    functionName: FUNCTION_NAME,
+    actorId: actor.id,
+    action,
+    limit: 30,
+    windowSeconds: 60,
+  });
+  if (rateLimitResponse) return rateLimitResponse;
+
   const payload = normalizePayload(body.payload);
 
   try {
@@ -58,11 +77,11 @@ Deno.serve(async (req: Request) => {
       p_payload: payload,
     });
     if (error) throw error;
-    return jsonResponse(200, data ?? {});
+    return jsonResponse(req, 200, data ?? {});
   } catch (error) {
     const code = normalizeSandboxError(error);
     console.error(JSON.stringify({ function: FUNCTION_NAME, action, code, actorId: actor.id }));
-    return jsonResponse(statusForSandboxError(code), { error: code });
+    return jsonResponse(req, statusForSandboxError(code), { error: code });
   }
 });
 

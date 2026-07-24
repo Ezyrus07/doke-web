@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-07-24T02:48:49.494Z",
+  "project": {
+    "name": "doke-web-staging",
+    "ref": "zwkczgewzbsorbrjuzpb"
+  },
+  "scope": "SEC-B09 authenticated browser-facing Edge Function HTTP boundary",
+  "sourceBranch": "sec/sec-001-b05-b09-hardening",
+  "workflowEvidence": {
+    "runId": 30062579169,
+    "mergeSha": "a7d8f32c3183e0f2bf086f4ecb4d210e18ab2fc6",
+    "artifactId": 8585061512,
+    "artifactName": "doke-staging-edge-http-canary-a7d8f32c3183e0f2bf086f4ecb4d210e18ab2fc6"
+  },
+  "deployedFunctions": [
+    { "name": "financial-operations", "version": 2, "status": "ACTIVE", "verifyJwt": true },
+    { "name": "professional-verification-operations", "version": 2, "status": "ACTIVE", "verifyJwt": true },
+    { "name": "self-service-operations", "version": 4, "status": "ACTIVE", "verifyJwt": true },
+    { "name": "service-moderation-operations", "version": 3, "status": "ACTIVE", "verifyJwt": true },
+    { "name": "staging-finance-sandbox", "version": 2, "status": "ACTIVE", "verifyJwt": true },
+    { "name": "order-event-operations", "version": 9, "status": "ACTIVE", "verifyJwt": true },
+    { "name": "quote-template-ai", "version": 7, "status": "ACTIVE", "verifyJwt": true }
+  ],
+  "httpCanary": {
+    "allowedOrigin": "https://ezyrus07.github.io",
+    "functionsTested": 7,
+    "casesPerFunction": 7,
+    "totalCases": 49,
+    "passedCases": 49,
+    "failedCases": 0,
+    "caseNames": [
+      "allowed-preflight",
+      "denied-preflight",
+      "missing-jwt",
+      "anon-token-has-no-user",
+      "invalid-json",
+      "unsupported-content-type",
+      "oversized-payload"
+    ],
+    "passed": true
+  },
+  "rateLimitEvidence": {
+    "source": "supabase/tests/014_edge_function_abuse_guard_validation.sql",
+    "stagingExecution": "passed_in_transaction_then_rolled_back",
+    "confirmed": [
+      "first_two_requests_allowed_at_limit_two",
+      "third_request_denied",
+      "remaining_zero",
+      "retry_after_returned",
+      "browser_roles_cannot_execute_internal_authority",
+      "service_role_can_execute_internal_authority"
+    ]
+  },
+  "securityAdvisor": {
+    "expectedInfo": "rls_enabled_no_policy_private_edge_function_rate_limit_buckets",
+    "rationale": "The private table is server-only, has RLS enabled, exposes no direct API-role table grants and is accessed only through the restricted service-role authority.",
+    "paidPlanBlocker": "auth_leaked_password_protection"
+  },
+  "closure": {
+    "SEC-B09": "DONE",
+    "SEC-B05": "BLOCKED_BY_SUPABASE_PRO_PLAN",
+    "passed": true
+  }
+}

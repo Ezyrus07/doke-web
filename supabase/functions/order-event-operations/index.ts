@@ -1,6 +1,13 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "@supabase/supabase-js";
 import {
+  enforceActorRateLimit,
+  jsonResponse,
+  preflightResponse,
+  readJsonObject,
+  rejectDisallowedOrigin,
+} from "../_shared/http-security.ts";
+import {
   normalizeAction,
   normalizeLimit,
   normalizeNote,
@@ -9,16 +16,7 @@ import {
 } from "./operations.mjs";
 
 const FUNCTION_NAME = "order-event-operations";
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
-
-const jsonResponse = (status: number, payload: unknown) => new Response(JSON.stringify(payload), {
-  status,
-  headers: { ...corsHeaders, "Content-Type": "application/json; charset=utf-8" },
-});
+const MAX_BODY_BYTES = 96_000;
 
 const text = (value: unknown, max = 180) => String(value ?? "").trim().slice(0, max);
 
@@ -39,7 +37,7 @@ const createContext = async (req: Request): Promise<OperatorContext | Response> 
     || "";
 
   if (!supabaseUrl || !publicKey || !secretKey) {
-    return jsonResponse(503, { error: "SERVER_CONFIGURATION_MISSING" });
+    return jsonResponse(req, 503, { error: "SERVER_CONFIGURATION_MISSING" });
   }
 
   const authorization = req.headers.get("Authorization") || "";
@@ -53,7 +51,7 @@ const createContext = async (req: Request): Promise<OperatorContext | Response> 
 
   const { data: authData, error: authError } = await authClient.auth.getUser();
   const user = authData?.user;
-  if (authError || !user?.id) return jsonResponse(401, { error: "DOKE_ORDER_OPS_AUTH_REQUIRED" });
+  if (authError || !user?.id) return jsonResponse(req, 401, { error: "DOKE_ORDER_OPS_AUTH_REQUIRED" });
 
   const { data: account, error: accountError } = await serviceClient
     .from("users")
@@ -63,7 +61,7 @@ const createContext = async (req: Request): Promise<OperatorContext | Response> 
 
   const role = text(account?.role, 20).toLowerCase();
   if (accountError || account?.status !== "active" || (role !== "support" && role !== "admin")) {
-    return jsonResponse(403, { error: "DOKE_ORDER_OPS_ROLE_REQUIRED" });
+    return jsonResponse(req, 403, { error: "DOKE_ORDER_OPS_ROLE_REQUIRED" });
   }
 
   return { userId: user.id, role: role as "support" | "admin", serviceClient };
@@ -89,7 +87,7 @@ const optionalRpc = async (
 
   const source = [error.code, error.message, error.details, error.hint]
     .map((item) => String(item || ""))
-    .join(" " )
+    .join(" ")
     .toUpperCase();
   if (source.includes("PGRST202") || source.includes("42883") || source.includes("COULD NOT FIND THE FUNCTION")) {
     return null;
@@ -97,15 +95,39 @@ const optionalRpc = async (
   throw error;
 };
 
+const ratePolicyForAction = (action: string) => {
+  if (action === "dashboard") return { limit: 120, windowSeconds: 60 };
+  if (["runbook_execute", "change_start", "change_complete", "requeue", "run_now"].includes(action)) {
+    return { limit: 10, windowSeconds: 60 };
+  }
+  return { limit: 30, windowSeconds: 60 };
+};
+
 Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
-  if (req.method !== "POST") return jsonResponse(405, { error: "METHOD_NOT_ALLOWED" });
+  if (req.method === "OPTIONS") return preflightResponse(req);
+  const originRejection = rejectDisallowedOrigin(req);
+  if (originRejection) return originRejection;
+  if (req.method !== "POST") return jsonResponse(req, 405, { error: "METHOD_NOT_ALLOWED" });
+
+  const bodyResult = await readJsonObject(req, MAX_BODY_BYTES);
+  if (bodyResult.ok === false) return bodyResult.response;
 
   const context = await createContext(req);
   if (context instanceof Response) return context;
 
-  const body = await req.json().catch(() => ({})) as Record<string, unknown>;
+  const body = bodyResult.value;
   const action = normalizeAction(body.action);
+  const policy = ratePolicyForAction(action);
+  const rateLimitResponse = await enforceActorRateLimit({
+    req,
+    client: context.serviceClient,
+    functionName: FUNCTION_NAME,
+    actorId: context.userId,
+    action,
+    limit: policy.limit,
+    windowSeconds: policy.windowSeconds,
+  });
+  if (rateLimitResponse) return rateLimitResponse;
 
   try {
     if (action === "dashboard") {
@@ -137,7 +159,7 @@ Deno.serve(async (req: Request) => {
           p_limit: normalizeLimit(body.changeLimit, 30, 10, 80),
         }),
       ]);
-      return jsonResponse(200, {
+      return jsonResponse(req, 200, {
         ...(dashboard && typeof dashboard === "object" ? dashboard : {}),
         operationalAlerts: operationalAlerts || {},
         operationalRunbooks: operationalRunbooks || {},
@@ -155,7 +177,7 @@ Deno.serve(async (req: Request) => {
         p_event_key: eventKey,
         p_note: note,
       });
-      return jsonResponse(200, result || {});
+      return jsonResponse(req, 200, result || {});
     }
 
     if (action === "incident_update") {
@@ -166,9 +188,8 @@ Deno.serve(async (req: Request) => {
         p_note: normalizeNote(body.note),
         p_assignee_id: text(body.assigneeId, 80) || null,
       });
-      return jsonResponse(200, result || {});
+      return jsonResponse(req, 200, result || {});
     }
-
 
     if (action === "postmortem_update") {
       const result = await rpc(context, "mutate_order_operational_postmortem_internal", {
@@ -180,7 +201,7 @@ Deno.serve(async (req: Request) => {
         p_prevention_action: text(body.preventionAction, 1200),
         p_complete: body.complete === true,
       });
-      return jsonResponse(200, result || {});
+      return jsonResponse(req, 200, result || {});
     }
 
     if (action === "runbook_preview") {
@@ -188,7 +209,7 @@ Deno.serve(async (req: Request) => {
         p_actor_id: context.userId,
         p_alert_id: text(body.alertId, 80) || null,
       });
-      return jsonResponse(200, result || {});
+      return jsonResponse(req, 200, result || {});
     }
 
     if (action === "runbook_execute") {
@@ -202,9 +223,9 @@ Deno.serve(async (req: Request) => {
       });
       if (result && typeof result === "object" && result.ok === false) {
         const code = text(result.errorCode, 120) || "DOKE_ORDER_RUNBOOK_EXECUTION_FAILED";
-        return jsonResponse(statusForError(code), { ...result, error: code });
+        return jsonResponse(req, statusForError(code), { ...result, error: code });
       }
-      return jsonResponse(200, result || {});
+      return jsonResponse(req, 200, result || {});
     }
 
     if (action === "post_incident_update") {
@@ -214,7 +235,7 @@ Deno.serve(async (req: Request) => {
         p_action: text(body.reviewAction, 40),
         p_payload: body.payload && typeof body.payload === "object" ? body.payload : {},
       });
-      return jsonResponse(200, result || {});
+      return jsonResponse(req, 200, result || {});
     }
 
     if (action === "prevention_action_update") {
@@ -225,7 +246,7 @@ Deno.serve(async (req: Request) => {
         p_action: text(body.preventionAction, 40),
         p_payload: body.payload && typeof body.payload === "object" ? body.payload : {},
       });
-      return jsonResponse(200, result || {});
+      return jsonResponse(req, 200, result || {});
     }
 
     if (action === "change_register") {
@@ -239,7 +260,7 @@ Deno.serve(async (req: Request) => {
         p_change_reference: text(body.changeReference, 500) || null,
         p_metadata: body.metadata && typeof body.metadata === "object" ? body.metadata : {},
       });
-      return jsonResponse(200, result || {});
+      return jsonResponse(req, 200, result || {});
     }
 
     if (action === "change_approve") {
@@ -249,7 +270,7 @@ Deno.serve(async (req: Request) => {
         p_reason: normalizeNote(body.reason, 1000),
         p_valid_minutes: normalizeLimit(body.validMinutes, 60, 15, 120),
       });
-      return jsonResponse(200, result || {});
+      return jsonResponse(req, 200, result || {});
     }
 
     if (action === "change_start") {
@@ -259,7 +280,7 @@ Deno.serve(async (req: Request) => {
         p_confirmation_text: text(body.confirmationText, 260),
         p_execution_reference: text(body.executionReference, 500) || null,
       });
-      return jsonResponse(200, result || {});
+      return jsonResponse(req, 200, result || {});
     }
 
     if (action === "change_complete") {
@@ -269,18 +290,18 @@ Deno.serve(async (req: Request) => {
         p_outcome: text(body.outcome, 40),
         p_note: normalizeNote(body.note, 2000),
       });
-      return jsonResponse(200, result || {});
+      return jsonResponse(req, 200, result || {});
     }
 
     const result = await rpc(context, "run_order_event_worker_now_internal", {
       p_actor_id: context.userId,
       p_note: normalizeNote(body.note),
     });
-    return jsonResponse(200, result || {});
+    return jsonResponse(req, 200, result || {});
   } catch (error) {
     const code = normalizeOperationsError(error);
     console.error(JSON.stringify({ function: FUNCTION_NAME, action, code }));
-    return jsonResponse(statusForError(code), { error: code });
+    return jsonResponse(req, statusForError(code), { error: code });
   }
 });
 

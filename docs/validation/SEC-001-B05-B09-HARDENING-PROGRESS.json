@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 2,
+  "branch": "sec/sec-001-b05-b09-hardening",
+  "base": "MAIN@0d79a43754193546d87030e101d0abce0feee36e",
+  "projectRef": "zwkczgewzbsorbrjuzpb",
+  "status": "sec_b09_done_sec_b05_paid_plan_blocked",
+  "hardenedFunctions": [
+    { "name": "self-service-operations", "version": 4, "status": "ACTIVE", "verifyJwt": true },
+    { "name": "financial-operations", "version": 2, "status": "ACTIVE", "verifyJwt": true },
+    { "name": "professional-verification-operations", "version": 2, "status": "ACTIVE", "verifyJwt": true },
+    { "name": "service-moderation-operations", "version": 3, "status": "ACTIVE", "verifyJwt": true },
+    { "name": "staging-finance-sandbox", "version": 2, "status": "ACTIVE", "verifyJwt": true },
+    { "name": "order-event-operations", "version": 9, "status": "ACTIVE", "verifyJwt": true },
+    { "name": "quote-template-ai", "version": 7, "status": "ACTIVE", "verifyJwt": true }
+  ],
+  "controls": [
+    "origin_allowlist",
+    "actual_body_byte_limit",
+    "json_object_validation",
+    "content_type_validation",
+    "defensive_response_headers",
+    "request_correlation_id",
+    "durable_actor_action_rate_limit",
+    "fail_closed_rate_limit_authority",
+    "action_sensitive_limits",
+    "preserved_ai_generation_quotas"
+  ],
+  "migration": {
+    "file": "145_edge_function_abuse_guard.sql",
+    "appliedToStaging": true
+  },
+  "validation": {
+    "sql": "014_edge_function_abuse_guard_validation.sql",
+    "sqlPassed": true,
+    "httpEvidence": "SEC-001-B09-STAGING-HTTP-CANARY.json",
+    "httpCases": 49,
+    "httpPassed": 49,
+    "httpFailed": 0
+  },
+  "supabaseMutated": true,
+  "edgeFunctionsDeployed": true,
+  "productionMutated": false,
+  "SEC-B05": "BLOCKED_BY_SUPABASE_PRO_PLAN_PAID_001",
+  "SEC-B09": "DONE",
+  "next": "final_pr_ci_then_ready_for_review"
+}
