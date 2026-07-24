@@ -2,7 +2,7 @@
 
 **Date:** 2026-07-24  
 **Branch:** `auth/auth-001-baseline-audit`  
-**Status:** `IN PROGRESS`
+**Status:** `IMPLEMENTED — FINAL CI PENDING`
 
 ## Objective
 
@@ -27,11 +27,13 @@ Replace the browser-local recovery code flow with one Supabase Auth authority fo
 
 - No recovery code is generated or stored by Doke.
 - No access token, refresh token, password or recovery token is copied to Doke storage.
-- A normal authenticated session with a forged `type=recovery` marker cannot authorize reset.
+- A normal authenticated session with a forged reset query cannot authorize password replacement.
 - Recovery URL credentials are removed from browser history after the Supabase session is established.
 - Recovery is email-only while no SMS provider is configured.
 - Recovery request feedback is generic and does not reveal whether an account exists.
 - Recovery completion ends the temporary recovery session and requires a new login.
+- The Settings flow reauthenticates with the current password before changing it.
+- Other authenticated sessions are revoked after a successful Settings password change.
 
 ## Implementation
 
@@ -40,30 +42,39 @@ Replace the browser-local recovery code flow with one Supabase Auth authority fo
 - `assets/js/pages/auth-password-pages.js`
 - `assets/js/pages/settings-password.js`
 - `assets/css/components/auth/password-dialog.css`
+- `assets/js/core/page-bootstrap.js`
 - `auth/esqueci-senha.html`
-- `auth/redefinir-senha.html`
-- `scripts/test-auth-password-recovery-runtime.js`
+- `tests/auth/test-auth-password-recovery-runtime.js`
 
-The canonical `assets/js/services/auth-service.js` delegates recovery and reset to the AUTH-A05 authority; its former local recovery record and generated code are removed from the active implementation.
+`auth/esqueci-senha.html` is the single canonical password surface. A normal visit displays the email request form. A legitimate Supabase recovery callback switches the same page to the new-password form. A reset intent without a valid credential-bearing recovery context fails closed and displays a controlled invalid-link state.
+
+The existing `scripts/test-auth-registration-username-runtime.js` invokes the AUTH-A05 test, so the password authority remains part of the mandatory `audit:auth-session` gate without adding a second package or workflow authority.
 
 ## External delivery boundary
 
-`MAIL-001` remains open. The code can request Supabase recovery email, but actual e-mail delivery cannot be marked as validated while the built-in SMTP quota is exhausted. A custom SMTP provider or a later controlled quota window is required before public beta.
+`MAIL-001` remains open. The implementation can request Supabase recovery email, but actual email delivery cannot be marked as validated while the built-in SMTP quota is exhausted. A custom SMTP provider or a later controlled quota window is required before public beta.
 
-## Validation pending
+## Validation completed before final CI
 
-- deterministic AUTH-A05 runtime test;
-- canonical auth/session audit;
-- Quality Gates;
-- Diagnostic E2E;
-- visual structural guards;
-- staging Edge HTTP canary;
+- deterministic AUTH-A05 runtime test: passed inside `audit:all`;
+- canonical auth/session audit: passed;
+- platform ACL and quality-pipeline audits: passed;
+- generated domain matrix: regenerated and validated by the official generator;
+- temporary diagnostic workflows: removed or restored to their canonical versions.
+
+## Final validation pending
+
+- Doke Quality Gates on the evidence head;
+- Diagnostic E2E on the evidence head;
+- visual structural guards on the evidence head;
+- staging Edge HTTP canary on the evidence head;
 - real recovery-email delivery canary under `MAIL-001`.
 
 ## Safety boundary
 
-- No production environment is changed.
-- No Auth setting is changed.
-- No existing user password is changed during deterministic tests.
+- No production environment was changed.
+- No Supabase Auth setting was changed.
+- No existing user password was changed during deterministic tests.
 - SMS recovery remains unavailable rather than simulated.
+- `MAIL-001` remains visible and unresolved.
 - `PAID-001` remains blocked by the Supabase plan.
