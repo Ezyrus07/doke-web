@@ -8,15 +8,18 @@ on:
       - 'scripts/validate-staging-edge-http-canary.mjs'
       - 'assets/js/core/supabase-config.js'
       - 'supabase/functions/**'
-      - 'supabase/migrations/145_edge_function_abuse_guard.sql'
-      - 'supabase/tests/014_edge_function_abuse_guard_validation.sql'
+      - 'supabase/migrations/**'
+      - 'supabase/tests/**'
+      - 'assets/js/services/auth-registration-authority.js'
+      - 'scripts/test-auth-registration-username-runtime.js'
+      - 'scripts/audit-auth-session-contracts.js'
+      - 'auth/cadastro.html'
       - 'docs/DOKE-ENGINEERING-JOURNAL.md'
-      - 'docs/validation/SEC-001-B05-B09-HARDENING-*'
-      - 'docs/validation/SEC-001-B09-STAGING-HTTP-CANARY.json'
+      - 'docs/validation/**'
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: doke-staging-edge-http-canary-${{ github.ref }}
@@ -24,18 +27,40 @@ concurrency:
 
 jobs:
   staging-edge-http-canary:
-    name: Seven-function staging HTTP boundary canary
+    name: Regenerate governed matrix and run staging canary
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
 
     steps:
-      - name: Checkout candidate tree
+      - name: Checkout PR head
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Regenerate governed domain matrix
+        run: npm run write:domain-completion-matrix
+
+      - name: Publish deterministic matrix only
+        run: |
+          if git diff --quiet -- docs/DOMAIN-COMPLETION-MATRIX.md; then
+            echo "Domain completion matrix is already current."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/DOMAIN-COMPLETION-MATRIX.md
+          git commit -m "Regenerate domain completion matrix for AUTH-A04"
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
 
       - name: Run staging Edge HTTP canary
         run: node scripts/validate-staging-edge-http-canary.mjs
