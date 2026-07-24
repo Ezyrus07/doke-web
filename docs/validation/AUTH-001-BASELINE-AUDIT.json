@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-07-24",
+  "branch": "auth/auth-001-baseline-audit",
+  "base": "MAIN@1412a4c3aac60c5392ebbca466f1ecd1a8aa1428",
+  "status": "IN_PROGRESS_BASELINE_DOCUMENTED",
+  "runtimeChanged": false,
+  "supabaseMutated": false,
+  "productionMutated": false,
+  "activeFrontendAuthority": {
+    "service": "assets/js/services/auth-service.js",
+    "sessionStore": "assets/js/core/session.js",
+    "runtimeConfig": "assets/js/core/runtime-config.js",
+    "routeMap": "assets/js/core/auth-route-map.js",
+    "routeGuard": "assets/js/core/route-guard.js"
+  },
+  "dormantLegacyAuthority": "assets/js/core/auth-service.js",
+  "backend": {
+    "routeRegistry": "backend/shared/http/route-registry.js",
+    "handlers": "backend/modules/auth/route-handlers.js",
+    "implemented": [
+      "auth.login",
+      "auth.session",
+      "auth.logout",
+      "users.current",
+      "users.updateCurrent",
+      "profiles.current",
+      "profiles.updateCurrent"
+    ],
+    "notMaterialized": [
+      "auth.register",
+      "auth.recovery",
+      "auth.resetPassword"
+    ]
+  },
+  "blockers": [
+    {
+      "id": "AUTH-B01",
+      "severity": "HIGH",
+      "title": "Fragmented authentication authority"
+    },
+    {
+      "id": "AUTH-B02",
+      "severity": "CRITICAL",
+      "title": "Application snapshot duplicates access and refresh tokens in localStorage"
+    },
+    {
+      "id": "AUTH-B03",
+      "severity": "HIGH",
+      "title": "No single global Supabase session reconciliation authority"
+    },
+    {
+      "id": "AUTH-B04",
+      "severity": "HIGH",
+      "title": "Private route guard defaults to observe instead of enforce"
+    },
+    {
+      "id": "AUTH-B05",
+      "severity": "CRITICAL",
+      "title": "Password recovery is not aligned with real login and registration"
+    },
+    {
+      "id": "AUTH-B06",
+      "severity": "HIGH",
+      "title": "API register, recovery and reset handlers are not materialized"
+    },
+    {
+      "id": "AUTH-B07",
+      "severity": "MEDIUM_HIGH",
+      "title": "Phone authentication is advertised without an operational provider"
+    },
+    {
+      "id": "AUTH-B08",
+      "severity": "HIGH",
+      "title": "Username availability has no transactional real authority"
+    },
+    {
+      "id": "AUTH-B09",
+      "severity": "MEDIUM",
+      "title": "OAuth controls have no proven operational flow"
+    },
+    {
+      "id": "AUTH-B10",
+      "severity": "HIGH",
+      "title": "Expired, revoked, suspended and unauthorized runtime states are incomplete"
+    }
+  ],
+  "executionOrder": [
+    "AUTH-A01_AUTHORITY_FREEZE_AND_BASELINE_TESTS",
+    "AUTH-A02_CANONICAL_SUPABASE_SESSION",
+    "AUTH-A03_ROUTE_GUARDS_AND_ACCESS_STATES",
+    "AUTH-A04_REAL_REGISTRATION_AND_USERNAME",
+    "AUTH-A05_RECOVERY_AND_PASSWORD_CHANGE",
+    "AUTH-A06_OPTIONAL_PROVIDERS",
+    "AUTH-A07_STAGING_CANARIES_AND_PROMOTION"
+  ],
+  "nextSublot": "AUTH-A01_AUTHORITY_FREEZE_AND_BASELINE_TESTS",
+  "paidDependency": {
+    "id": "PAID-001",
+    "status": "BLOCKED",
+    "title": "Supabase leaked-password protection"
+  }
+}
