@@ -4,6 +4,7 @@
 const assert = require('assert');
 const fs = require('fs');
 const vm = require('vm');
+const { execFileSync } = require('child_process');
 
 (async () => {
   let taken = false;
@@ -141,6 +142,11 @@ const vm = require('vm');
     confirmationStatePreserved: true,
     authorityUnavailableFailsClosed: true
   }));
+
+  execFileSync(process.execPath, ['scripts/test-auth-password-recovery-runtime.js'], {
+    cwd: process.cwd(),
+    stdio: 'inherit'
+  });
 })().catch((error) => {
   console.error(error);
   process.exit(1);
