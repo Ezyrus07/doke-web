@@ -59,8 +59,9 @@
   };
 
   const recoveryRedirectUrl = () => {
-    const target = new URL('redefinir-senha.html', root.location.href);
+    const target = new URL('esqueci-senha.html', root.location.href);
     target.search = '';
+    target.searchParams.set('mode', 'reset');
     target.hash = '';
     return target.href;
   };
