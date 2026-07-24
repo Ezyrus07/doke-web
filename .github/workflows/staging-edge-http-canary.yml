@@ -7,6 +7,7 @@ on:
       - '.github/workflows/staging-edge-http-canary.yml'
       - '.github/workflows/auth-a02-apply.yml'
       - 'scripts/apply-auth-a02.mjs'
+      - 'scripts/run-auth-a02-applicator.mjs'
       - 'scripts/validate-staging-edge-http-canary.mjs'
       - 'assets/js/core/supabase-config.js'
       - 'supabase/functions/**'
@@ -53,7 +54,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p reports/generated
-          if ! node scripts/apply-auth-a02.mjs > reports/generated/auth-a02-apply.log 2>&1; then
+          if ! node scripts/run-auth-a02-applicator.mjs > reports/generated/auth-a02-apply.log 2>&1; then
             cat reports/generated/auth-a02-apply.log
             exit 1
           fi
@@ -62,7 +63,7 @@ jobs:
       - name: Remove temporary applicators and restore trusted workflow
         shell: bash
         run: |
-          git rm .github/workflows/auth-a02-apply.yml scripts/apply-auth-a02.mjs
+          git rm .github/workflows/auth-a02-apply.yml scripts/apply-auth-a02.mjs scripts/run-auth-a02-applicator.mjs
           git checkout origin/MAIN -- .github/workflows/staging-edge-http-canary.yml
 
       - name: Regenerate governed matrix
@@ -80,7 +81,7 @@ jobs:
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
-          git config user.email "4189828+github-actions[bot]@users.noreply.github.com"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           if git diff --cached --quiet; then
             echo "AUTH-A02 tree already current."
