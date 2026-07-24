@@ -2,7 +2,7 @@
 
 ## Status
 
-`IMPLEMENTED_PENDING_FINAL_CI`
+`COMPLETED`
 
 ## Objective
 
@@ -11,14 +11,14 @@ Make `assets/js/core/route-guard.js` the only runtime component allowed to publi
 ## Implemented boundary
 
 - private routes default to `enforce`;
-- `perfil-profissional.html` is classified as a private owner route;
-- admin routes require an authenticated context with canonical admin access;
+- `perfil-profissional.html` is a private owner route;
+- admin routes require authenticated canonical admin access;
 - anonymous private navigation redirects to the same-origin login route with a preserved `next` path;
 - expired, revoked, suspended, disabled and forbidden contexts never reveal private content;
-- denied states render a controlled, accessible access surface;
+- denied states render a controlled and accessible access surface;
 - `page-bootstrap.js` loads the route map and guard on every active page in canonical order;
-- Community discovery and internal room pages enter the protected pre-paint state before body parsing;
-- public routes remain available;
+- community discovery remains public;
+- `comunidade-interna.html` enters the protected pre-paint state before body parsing;
 - auth-only routes redirect already-authenticated users to the app.
 
 ## Runtime states
@@ -33,21 +33,23 @@ Make `assets/js/core/route-guard.js` the only runtime component allowed to publi
 - `forbidden`
 - `error`
 
-The final decision is published through `html[data-auth-route-decision]`. Legacy early header logic may observe or provisionally mark session presence, but it cannot reveal protected content without the canonical `authorized` decision.
+The final decision is published through `html[data-auth-route-decision]`. Early session surfaces cannot reveal protected content without the canonical `authorized` decision.
 
-## Validation
+## Final validation
 
-- `scripts/audit-auth-session-contracts.js`
-- `scripts/test-auth-route-guard-runtime.js`
-- mandatory `audit:auth-session` Quality Gate
-- blocking deterministic E2E lane
-- visual structural guards
+Final runtime head: `2b99d686257dab0aa83ecb8e68391d656408b31f`.
+
+- Doke Quality Gates #272: success;
+- Doke Diagnostic E2E #67: success;
+- Doke Staging Edge HTTP Canary #46: success;
+- static architecture, ACL, governed matrix and patch checks: success;
+- blocking deterministic E2E lane: success;
+- 105 visual structural guards: success.
 
 ## Safety boundary
 
 - no Supabase project or Auth setting changed;
 - no database object or Edge Function changed;
-- no account or credential mutated;
 - no production environment changed;
 - registration, username authority, recovery and optional providers remain outside AUTH-A03;
 - PR remains draft.
