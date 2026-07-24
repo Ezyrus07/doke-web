@@ -44,8 +44,9 @@ jobs:
           const runId = process.env.AUTH_A04_RUN_ID;
           const suffix = `${runId}-${Date.now().toString(36)}`;
           const username = `a04_${suffix}`.toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 28);
-          const emailOne = `auth-a04-canary-${runId}-1@example.com`;
-          const emailTwo = `auth-a04-canary-${runId}-2@example.com`;
+          const mailboxSeed = `doke.auth.a04.${runId}.${Date.now().toString(36)}`;
+          const emailOne = `${mailboxSeed}.1@gmail.com`;
+          const emailTwo = `${mailboxSeed}.2@gmail.com`;
           const password = 'DokeA04!Canary2026';
           const headers = {
             apikey: anonKey,
