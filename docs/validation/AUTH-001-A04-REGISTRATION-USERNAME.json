@@ -1,0 +1,52 @@
+{
+  "id": "AUTH-A04",
+  "observedAt": "2026-07-24",
+  "branch": "auth/auth-001-baseline-audit",
+  "status": "IMPLEMENTED_PENDING_CI_AND_STAGING",
+  "runtimeChanged": true,
+  "supabaseMutated": false,
+  "productionMutated": false,
+  "authority": {
+    "registrationProvider": "supabase_auth_sign_up",
+    "accountMaterializer": "private.materialize_auth_account(uuid)",
+    "usernameStore": "public.user_profiles.username",
+    "availabilityRpc": "public.check_username_availability(text)",
+    "migration": "supabase/migrations/146_auth_registration_username_authority.sql"
+  },
+  "controls": {
+    "canonicalNormalization": true,
+    "caseInsensitiveAuthority": true,
+    "reservedUsernameBlocking": true,
+    "legacyInternalUsernamePreserved": true,
+    "usernameNotNull": true,
+    "transactionalSignupRaceRollback": true,
+    "silentSuffixAssignmentBlocked": true,
+    "browserReservationStore": false,
+    "browserCredentialPersistenceAdded": false,
+    "authorityUnavailableFailsClosed": true
+  },
+  "validation": {
+    "migrationRollbackDryRun": "passed",
+    "existingProfiles": 3,
+    "missingUsernames": 0,
+    "caseInsensitiveCollisions": 0,
+    "staticAudit": "scripts/audit-auth-registration-authority.js",
+    "runtimeTest": "scripts/test-auth-registration-username-runtime.js",
+    "sqlValidation": "supabase/tests/015_auth_registration_username_authority_validation.sql",
+    "qualityGate": "Validate AUTH-A04 registration authority"
+  },
+  "pending": [
+    "green_final_ci",
+    "apply_migration_146_to_staging",
+    "run_sql_validation_015_with_rollback",
+    "execute_real_staging_signup_canary",
+    "record_final_versions_and_evidence"
+  ],
+  "outOfScope": [
+    "password_recovery_and_reset",
+    "oauth_provider_activation",
+    "phone_authentication",
+    "post_registration_username_change",
+    "paid_leaked_password_protection"
+  ]
+}
