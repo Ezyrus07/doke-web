@@ -3,8 +3,8 @@
   "observedAt": "2026-07-24",
   "branch": "auth/auth-001-baseline-audit",
   "base": "MAIN@1412a4c3aac60c5392ebbca466f1ecd1a8aa1428",
-  "status": "AUTH_A02_IMPLEMENTED_PENDING_FINAL_CI",
-  "verificationCheckpoint": "connector_commit_triggering_final_ci_after_trusted_runner_validation",
+  "status": "AUTH_A02_DONE_AUTH_001_IN_PROGRESS",
+  "verificationCheckpoint": "final_ci_green_on_runtime_checkpoint",
   "runtimeChanged": true,
   "supabaseMutated": false,
   "productionMutated": false,
@@ -57,13 +57,13 @@
       "id": "AUTH-B02",
       "severity": "CRITICAL",
       "title": "Application snapshot duplicates access and refresh tokens in localStorage",
-      "implementationStatus": "MITIGATED_PENDING_FINAL_CI"
+      "implementationStatus": "RESOLVED_BY_AUTH_A02"
     },
     {
       "id": "AUTH-B03",
       "severity": "HIGH",
       "title": "No single global Supabase session reconciliation authority",
-      "implementationStatus": "MITIGATED_PENDING_FINAL_CI"
+      "implementationStatus": "RESOLVED_FOR_SUPABASE_BY_AUTH_A02"
     },
     {
       "id": "AUTH-B04",
@@ -117,7 +117,7 @@
     "title": "Supabase leaked-password protection"
   },
   "canonicalSession": {
-    "status": "IMPLEMENTED_PENDING_FINAL_CI",
+    "status": "DONE",
     "providerAuthority": "Supabase SDK or API httpOnly/volatile access token boundary",
     "persistedSnapshot": "public_identity_only",
     "sensitiveKeysRemoved": [
@@ -133,5 +133,21 @@
       "onAuthStateChange"
     ],
     "runtimeGate": "scripts/test-auth-canonical-session-runtime.js"
+  },
+  "finalCi": {
+    "runtimeCheckpointSha": "0f85e19020b914aae76c690c69911338408558d4",
+    "qualityGates": {
+      "runNumber": 262,
+      "conclusion": "success"
+    },
+    "diagnosticE2E": {
+      "runNumber": 57,
+      "conclusion": "success",
+      "blocking": false
+    },
+    "stagingEdgeHttpCanary": {
+      "runNumber": 36,
+      "conclusion": "success"
+    }
   }
 }
