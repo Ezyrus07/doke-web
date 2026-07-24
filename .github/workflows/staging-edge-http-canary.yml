@@ -50,7 +50,14 @@ jobs:
         run: node scripts/validate-staging-edge-http-canary.mjs
 
       - name: Apply AUTH-A02 transformation
-        run: node scripts/apply-auth-a02.mjs
+        shell: bash
+        run: |
+          mkdir -p reports/generated
+          if ! node scripts/apply-auth-a02.mjs > reports/generated/auth-a02-apply.log 2>&1; then
+            cat reports/generated/auth-a02-apply.log
+            exit 1
+          fi
+          cat reports/generated/auth-a02-apply.log
 
       - name: Remove temporary applicators and restore trusted workflow
         shell: bash
@@ -73,7 +80,7 @@ jobs:
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.email "4189828+github-actions[bot]@users.noreply.github.com"
           git add -A
           if git diff --cached --quiet; then
             echo "AUTH-A02 tree already current."
@@ -90,5 +97,6 @@ jobs:
           path: |
             reports/generated/staging-edge-http-canary.json
             reports/generated/domain-completion-matrix-report.json
+            reports/generated/auth-a02-apply.log
           if-no-files-found: warn
           retention-days: 30
