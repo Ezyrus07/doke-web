@@ -15,11 +15,13 @@ const replacements = new Map([
   ["errors.push(\\`${AUTH_DOMAIN_CONTRACT} does not recognize Supabase session provider\\`);", "errors.push('assets/js/contracts/auth-domain-contract.js does not recognize Supabase session provider');"],
   ["errors.push(\\`${ORDERS_SERVICE} does not resolve provider token through canonical auth authority\\`);", "errors.push('assets/js/services/orders-service.js does not resolve provider token through canonical auth authority');"],
   ["errors.push(\\`${ORDERS_SERVICE} still reads token from Doke session snapshot\\`);", "errors.push('assets/js/services/orders-service.js still reads token from Doke session snapshot');"],
-  ["errors.push(\\`${PROFESSIONAL_ACCESS_SERVICE} still copies refresh token into snapshot\\`);", "errors.push('assets/js/services/professional-access-service.js still copies refresh token into snapshot');"]
+  ["errors.push(\\`${PROFESSIONAL_ACCESS_SERVICE} still copies refresh token into snapshot\\`);", "errors.push('assets/js/services/professional-access-service.js still copies refresh token into snapshot');"],
+  ["- **Status:** \\`IN PROGRESS — baseline documentado, runtime ainda não alterado\\`", "- **Status:** \\`AUTH-A01 implementado; CI final pendente; runtime ainda não alterado\\`"],
+  ["Executar \\`AUTH-A02\\`: remover tokens do snapshot persistido, estabelecer uma ponte única entre Supabase e Session Store e validar refresh, revogação, logout e sincronização entre abas.", "Após o CI final confirmar o freeze, executar \\`AUTH-A02\\`: substituir a cópia local de tokens por uma ponte canônica de sessão Supabase, mantendo no estado Doke somente identidade pública sanitizada."]
 ]);
 
 for (const [search, replacement] of replacements) {
-  if (!source.includes(search)) throw new Error(`AUTH-A02 wrapper could not find interpolation: ${search}`);
+  if (!source.includes(search)) throw new Error(`AUTH-A02 wrapper could not find compatibility target: ${search}`);
   source = source.replace(search, replacement);
 }
 
