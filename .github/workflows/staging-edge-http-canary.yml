@@ -1,49 +1,50 @@
-name: Doke AUTH-A04 Journal Correction
+name: Doke Staging Edge HTTP Canary
 
 on:
   pull_request:
     branches: [MAIN, main, master]
     paths:
       - '.github/workflows/staging-edge-http-canary.yml'
+      - 'scripts/validate-staging-edge-http-canary.mjs'
+      - 'assets/js/core/supabase-config.js'
+      - 'supabase/functions/**'
+      - 'supabase/migrations/145_edge_function_abuse_guard.sql'
+      - 'supabase/tests/014_edge_function_abuse_guard_validation.sql'
+      - 'docs/DOKE-ENGINEERING-JOURNAL.md'
+      - 'docs/validation/SEC-001-B05-B09-HARDENING-*'
+      - 'docs/validation/SEC-001-B09-STAGING-HTTP-CANARY.json'
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
-  group: doke-auth-a04-journal-correction-${{ github.ref }}
+  group: doke-staging-edge-http-canary-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  correct-auth-a04-journal:
-    name: Correct public signup canary journal evidence
+  staging-edge-http-canary:
+    name: Seven-function staging HTTP boundary canary
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
 
     steps:
-      - name: Checkout PR head
+      - name: Checkout candidate tree
         uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          ref: ${{ github.event.pull_request.head.ref }}
-          fetch-depth: 0
+          node-version: 22
 
-      - name: Correct journal wording
-        shell: python
-        run: |
-          from pathlib import Path
+      - name: Run staging Edge HTTP canary
+        run: node scripts/validate-staging-edge-http-canary.mjs
 
-          path = Path('docs/DOKE-ENGINEERING-JOURNAL.md')
-          text = path.read_text(encoding='utf-8')
-          old = "The public `anon` canary reached the username RPC and the Supabase `/auth/v1/signup` endpoint. Documentation-domain addresses were rejected as invalid; a randomized Gmail address reached confirmation delivery but the built-in SMTP returned `429 over_email_send_rate_limit`. No test account was persisted."
-          new = "The public `anon` canary reached the Supabase `/auth/v1/signup` endpoint. An `example.test` address was rejected with `400 email_address_invalid`; an `example.com` address passed validation but the built-in SMTP returned `429 over_email_send_rate_limit` before account creation. No test account was persisted, and post-signup HTTP assertions were not reached."
-          if text.count(old) != 1:
-              raise SystemExit('Expected one outdated AUTH-A04 public canary journal sentence')
-          path.write_text(text.replace(old, new), encoding='utf-8')
-
-      - name: Publish journal correction only
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/DOKE-ENGINEERING-JOURNAL.md
-          git commit -m "Correct AUTH-A04 public canary journal evidence"
-          git push origin HEAD:${{ github.event.pull_request.head.ref }}
+      - name: Upload canary evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: doke-staging-edge-http-canary-${{ github.sha }}
+          path: reports/generated/staging-edge-http-canary.json
+          if-no-files-found: warn
+          retention-days: 30
