@@ -94,17 +94,16 @@ After validation:
 
 ## Public HTTP canary and SMTP boundary
 
-The public canary used only the frontend `anon` key. It successfully reached the username RPC checks before calling `/auth/v1/signup`.
+The public canary used only the frontend `anon` key and reached the real Supabase `/auth/v1/signup` endpoint.
 
-Three signup attempts were made while refining safe synthetic addresses:
+Two safe synthetic-address attempts were executed:
 
-- documentation domains were rejected as invalid addresses;
-- a valid, randomized Gmail address reached the confirmation-email stage;
-- Supabase then returned `429 over_email_send_rate_limit` because the built-in development SMTP hourly quota was exhausted.
+- `example.test` was rejected with `400 email_address_invalid` before account creation;
+- `example.com` passed address validation and reached the confirmation-email stage, where Supabase returned `429 over_email_send_rate_limit` because the built-in development SMTP quota was exhausted.
 
-No canary account was persisted in any attempt. This does not invalidate the transactional registration or username authority, which was proven against the real staging schema by SQL. It does mean that actual confirmation-email delivery remains unvalidated until the SMTP quota resets or a custom SMTP provider is configured.
+Neither attempt persisted an Auth user or profile. The post-signup HTTP assertions could not execute because the provider stopped the request at confirmation delivery. Username normalization, availability behavior, grants, materialization and rollback semantics were nevertheless proven against the real staging schema by SQL validation 015.
 
-That external delivery check is tracked separately as `MAIL-001` and must be completed before public beta. It is not presented as successful in this evidence.
+Confirmation-email delivery remains explicitly unvalidated until the SMTP quota resets or a custom SMTP provider is configured. This external delivery dependency is tracked separately as `MAIL-001` and is not presented as successful in this evidence.
 
 ## Safety boundary
 
