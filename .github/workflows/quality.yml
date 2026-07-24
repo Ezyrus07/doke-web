@@ -3,27 +3,26 @@ name: Doke Quality Gates
 on:
   pull_request:
     branches: [MAIN, main, master]
+  push:
+    branches: [MAIN, main, master]
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
-  group: doke-auth-a05-matrix-${{ github.ref }}
+  group: doke-quality-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  regenerate-auth-a05-matrix:
-    name: Regenerate AUTH-A05 governed matrix
+  static-audits:
+    name: Static architecture and partition audits
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
 
     steps:
-      - name: Checkout PR head
+      - name: Checkout candidate tree
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.ref }}
-          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -34,25 +33,99 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Generate canonical matrix
-        run: npm run write:domain-completion-matrix
+      - name: Run all static audits
+        run: npm run audit:all
 
-      - name: Validate generated matrix
-        run: npm run audit:domain-completion-matrix
+      - name: Validate platform ACL contract
+        run: npm run test:platform-default-acl-contract
 
-      - name: Restore canonical Quality Gates workflow
+      - name: Run quality pipeline audit
+        run: npm run audit:quality-pipeline
+
+      - name: Run governed repository audits
         run: |
-          git fetch origin MAIN
-          git checkout origin/MAIN -- .github/workflows/quality.yml
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          npm run audit:unused-asset-candidates
+          npm run audit:duplicate-assets
 
-      - name: Publish matrix and restored workflow
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/DOMAIN-COMPLETION-MATRIX.md .github/workflows/quality.yml
-          if git diff --cached --quiet; then
-            echo "Generated matrix already matches the repository."
-            exit 0
-          fi
-          git commit -m "Regenerate domain matrix for AUTH-A05"
-          git push origin HEAD:${{ github.event.pull_request.head.ref }}
+      - name: Audit E2E lane partition
+        run: npm run audit:e2e-lanes
+
+      - name: Verify clean patch formatting
+        run: git diff --check
+
+  blocking-e2e:
+    name: Blocking deterministic E2E lane
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: static-audits
+
+    steps:
+      - name: Checkout candidate tree
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run blocking E2E lane
+        run: npm run test:e2e:blocking
+
+      - name: Upload blocking E2E evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: doke-blocking-e2e-${{ github.sha }}
+          path: |
+            reports/generated/e2e-blocking-lane-summary.json
+            reports/generated/playwright-html/
+            reports/generated/playwright-results.json
+            test-results/
+          if-no-files-found: warn
+          retention-days: 14
+
+  visual-structural:
+    name: 105 visual structural guards
+    runs-on: windows-latest
+    timeout-minutes: 40
+    needs: static-audits
+
+    steps:
+      - name: Checkout candidate tree
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chromium
+        run: npx playwright install chromium
+
+      - name: Run 105 visual structural guards
+        run: npm run test:visual:structural
+
+      - name: Upload visual structural evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: doke-visual-structural-${{ github.sha }}
+          path: |
+            reports/generated/playwright-html/
+            reports/generated/playwright-results.json
+            test-results/
+          if-no-files-found: warn
+          retention-days: 14
