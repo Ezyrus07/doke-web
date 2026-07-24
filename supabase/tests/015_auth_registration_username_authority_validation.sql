@@ -34,9 +34,26 @@ begin
     raise exception 'AUTH_A04_AUTHENTICATED_RPC_GRANT_MISSING';
   end if;
 
-  if has_function_privilege('anon', 'private.enforce_requested_auth_username_doke()', 'EXECUTE')
-     or has_function_privilege('authenticated', 'private.enforce_requested_auth_username_doke()', 'EXECUTE') then
-    raise exception 'AUTH_A04_PRIVATE_TRIGGER_FUNCTION_EXPOSED';
+  if has_function_privilege('anon', 'private.materialize_auth_account(uuid)', 'EXECUTE')
+     or has_function_privilege('authenticated', 'private.materialize_auth_account(uuid)', 'EXECUTE') then
+    raise exception 'AUTH_A04_PRIVATE_MATERIALIZER_EXPOSED';
+  end if;
+
+  if not has_function_privilege('service_role', 'private.materialize_auth_account(uuid)', 'EXECUTE') then
+    raise exception 'AUTH_A04_SERVICE_ROLE_MATERIALIZER_GRANT_MISSING';
+  end if;
+
+  if not exists (
+    select 1
+    from pg_trigger t
+    join pg_class c on c.oid = t.tgrelid
+    join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'auth'
+      and c.relname = 'users'
+      and t.tgname = 'on_auth_user_created_doke'
+      and not t.tgisinternal
+  ) then
+    raise exception 'AUTH_A04_CANONICAL_AUTH_TRIGGER_MISSING';
   end if;
 end;
 $$;
