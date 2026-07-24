@@ -3,6 +3,11 @@
   'use strict';
 
   const auth = window.DokeAuth || {};
+  const boot = window.DOKE_AUTH_RECOVERY_BOOT || {};
+  const search = new URLSearchParams(window.location.search || '');
+  const resetIntent = boot.requested === true || search.get('mode') === 'reset';
+  const requestView = document.querySelector('[data-auth-recovery-request-view]');
+  const resetView = document.querySelector('[data-auth-recovery-reset-view]');
 
   const setFeedback = (element, tone, message) => {
     if (!element) return;
@@ -19,6 +24,19 @@
     button.setAttribute('aria-busy', String(loading));
     button.textContent = loading ? label : button.dataset.defaultLabel;
   };
+
+  const showRequestView = () => {
+    requestView?.removeAttribute('hidden');
+    resetView?.setAttribute('hidden', '');
+  };
+
+  const showResetView = () => {
+    requestView?.setAttribute('hidden', '');
+    resetView?.removeAttribute('hidden');
+  };
+
+  if (resetIntent) showResetView();
+  else showRequestView();
 
   document.querySelectorAll('[data-toggle-password]').forEach((button) => {
     button.addEventListener('click', () => {
@@ -60,15 +78,27 @@
   }
 
   const resetForm = document.querySelector('[data-auth-password-reset]');
-  if (resetForm) {
+  if (resetForm && resetIntent) {
     const feedback = resetForm.querySelector('[data-auth-feedback]');
     const submit = resetForm.querySelector('[data-auth-submit]');
     const passwordInput = document.getElementById('reset-password');
     const confirmationInput = document.getElementById('reset-password-confirmation');
     const fields = resetForm.querySelector('[data-auth-reset-fields]');
-    const invalidPanel = document.querySelector('[data-auth-reset-invalid]');
+    const invalidPanel = resetForm.querySelector('[data-auth-reset-invalid]');
+
+    const renderInvalid = (message) => {
+      fields?.setAttribute('hidden', '');
+      submit?.setAttribute('hidden', '');
+      invalidPanel?.removeAttribute('hidden');
+      setFeedback(feedback, 'error', message || 'Este link é inválido ou expirou. Solicite uma nova recuperação de senha.');
+    };
 
     const renderContext = async () => {
+      if (boot.requested !== true) {
+        renderInvalid();
+        return;
+      }
+
       setFeedback(feedback, 'success', 'Validando seu link de recuperação...');
       const context = await auth.initializePasswordRecovery();
       fields?.toggleAttribute('hidden', !context.active);
@@ -78,7 +108,7 @@
         setFeedback(feedback, '', '');
         passwordInput?.focus();
       } else {
-        setFeedback(feedback, 'error', 'Este link é inválido ou expirou. Solicite uma nova recuperação de senha.');
+        renderInvalid();
       }
     };
 
@@ -115,10 +145,7 @@
     });
 
     Promise.resolve(renderContext()).catch((error) => {
-      fields?.setAttribute('hidden', '');
-      submit?.setAttribute('hidden', '');
-      invalidPanel?.removeAttribute('hidden');
-      setFeedback(feedback, 'error', error?.message || 'Não foi possível validar o link de recuperação.');
+      renderInvalid(error?.message || 'Não foi possível validar o link de recuperação.');
     });
   }
 })();
