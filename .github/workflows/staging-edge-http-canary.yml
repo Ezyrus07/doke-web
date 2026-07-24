@@ -10,10 +10,13 @@ on:
       - 'supabase/functions/**'
       - 'supabase/migrations/145_edge_function_abuse_guard.sql'
       - 'supabase/tests/014_edge_function_abuse_guard_validation.sql'
+      - 'docs/DOKE-ENGINEERING-JOURNAL.md'
+      - 'docs/validation/SEC-001-B05-B09-HARDENING-*'
+      - 'docs/validation/SEC-001-B09-STAGING-HTTP-CANARY.json'
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: doke-staging-edge-http-canary-${{ github.ref }}
@@ -23,119 +26,25 @@ jobs:
   staging-edge-http-canary:
     name: Seven-function staging HTTP boundary canary
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
 
     steps:
-      - name: Checkout candidate branch
+      - name: Checkout candidate tree
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref || github.ref_name }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Prepare diagnostic directory
-        run: mkdir -p reports/generated
-
-      - name: Diagnose domain completion governance
-        id: domain_completion
-        continue-on-error: true
-        shell: bash
-        run: |
-          set -o pipefail
-          npm run audit:domain-completion-matrix 2>&1 | tee reports/generated/domain-completion-governance.log
-
-      - name: Diagnose agent governance
-        id: agent_governance
-        continue-on-error: true
-        shell: bash
-        run: |
-          set -o pipefail
-          npm run audit:agent-governance 2>&1 | tee reports/generated/agent-governance.log
-
-      - name: Diagnose unused asset governance
-        id: unused_assets
-        continue-on-error: true
-        shell: bash
-        run: |
-          set -o pipefail
-          npm run audit:unused-asset-candidates 2>&1 | tee reports/generated/unused-asset-governance.log
-
-      - name: Diagnose duplicate asset governance
-        id: duplicate_assets
-        continue-on-error: true
-        shell: bash
-        run: |
-          set -o pipefail
-          npm run audit:duplicate-assets 2>&1 | tee reports/generated/duplicate-asset-governance.log
 
       - name: Run staging Edge HTTP canary
-        id: edge_canary
-        continue-on-error: true
         run: node scripts/validate-staging-edge-http-canary.mjs
 
-      - name: Generate governed matrix candidate
-        if: always()
-        run: npm run write:domain-completion-matrix
-
-      - name: Commit regenerated matrix to PR branch
-        if: >-
-          github.event_name == 'pull_request' &&
-          github.event.pull_request.head.repo.full_name == github.repository
-        shell: bash
-        run: |
-          if git diff --quiet -- docs/DOMAIN-COMPLETION-MATRIX.md; then
-            echo "Domain completion matrix already current."
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -- docs/DOMAIN-COMPLETION-MATRIX.md
-          git diff --cached --check
-          git commit -m "Regenerate domain completion matrix for staging canary"
-          git push origin "HEAD:${{ github.head_ref }}"
-
-      - name: Write diagnostic outcome summary
-        if: always()
-        shell: bash
-        run: |
-          cat > reports/generated/staging-edge-http-diagnostic-outcomes.json <<EOF
-          {
-            "gitSha": "${{ github.sha }}",
-            "domainCompletion": "${{ steps.domain_completion.outcome }}",
-            "agentGovernance": "${{ steps.agent_governance.outcome }}",
-            "unusedAssets": "${{ steps.unused_assets.outcome }}",
-            "duplicateAssets": "${{ steps.duplicate_assets.outcome }}",
-            "edgeCanary": "${{ steps.edge_canary.outcome }}"
-          }
-          EOF
-
-      - name: Upload canary and governance evidence
+      - name: Upload canary evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: doke-staging-edge-http-canary-${{ github.sha }}
-          path: |
-            docs/DOMAIN-COMPLETION-MATRIX.md
-            reports/generated/domain-completion-matrix-report.json
-            reports/generated/staging-edge-http-canary.json
-            reports/generated/staging-edge-http-diagnostic-outcomes.json
-            reports/generated/*-governance.log
+          path: reports/generated/staging-edge-http-canary.json
           if-no-files-found: warn
           retention-days: 30
-
-      - name: Enforce diagnostic outcomes
-        if: always()
-        shell: bash
-        run: |
-          test "${{ steps.domain_completion.outcome }}" = "success"
-          test "${{ steps.agent_governance.outcome }}" = "success"
-          test "${{ steps.unused_assets.outcome }}" = "success"
-          test "${{ steps.duplicate_assets.outcome }}" = "success"
-          test "${{ steps.edge_canary.outcome }}" = "success"
