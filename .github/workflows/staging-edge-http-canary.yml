@@ -1,163 +1,50 @@
 name: Doke Staging Edge HTTP Canary
 
 on:
-  push:
-    branches:
-      - auth/auth-001-baseline-audit
   pull_request:
     branches: [MAIN, main, master]
     paths:
       - '.github/workflows/staging-edge-http-canary.yml'
+      - 'scripts/validate-staging-edge-http-canary.mjs'
+      - 'assets/js/core/supabase-config.js'
+      - 'supabase/functions/**'
+      - 'supabase/migrations/145_edge_function_abuse_guard.sql'
+      - 'supabase/tests/014_edge_function_abuse_guard_validation.sql'
+      - 'docs/DOKE-ENGINEERING-JOURNAL.md'
+      - 'docs/validation/SEC-001-B05-B09-HARDENING-*'
+      - 'docs/validation/SEC-001-B09-STAGING-HTTP-CANARY.json'
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
-  group: doke-auth-a04-evidence-${{ github.ref }}
+  group: doke-staging-edge-http-canary-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   staging-edge-http-canary:
-    if: github.actor != 'github-actions[bot]'
-    name: Close AUTH-A04 journal and governed evidence
+    name: Seven-function staging HTTP boundary canary
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
 
     steps:
-      - name: Checkout branch head
+      - name: Checkout candidate tree
         uses: actions/checkout@v4
-        with:
-          ref: auth/auth-001-baseline-audit
-          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Run staging Edge HTTP canary
+        run: node scripts/validate-staging-edge-http-canary.mjs
 
-      - name: Update cumulative engineering journal
-        shell: python
-        run: |
-          from pathlib import Path
-
-          journal = Path('docs/DOKE-ENGINEERING-JOURNAL.md')
-          text = journal.read_text(encoding='utf-8')
-
-          mail_entry = '''## MAIL-001 — Auth transactional e-mail provider and canaries
-
-**Status:** `BLOCKED`
-
-**Reason:** The Supabase built-in development SMTP quota returned `429 over_email_send_rate_limit` during the AUTH-A04 public signup canary. This quota is shared by signup, recovery and other Auth e-mail operations and is intentionally restrictive.
-
-**Required before public beta:**
-
-1. Configure a controlled custom SMTP provider or wait for a verified quota window.
-2. Re-run signup confirmation with a disposable project-owned test mailbox.
-3. Re-run password-recovery and e-mail-change canaries.
-4. Verify redirect URLs, templates, delivery, expiry and replay behavior.
-5. Delete synthetic identities and record delivery evidence.
-
-**Boundary:** AUTH-A04 database and username authority is complete. E-mail delivery itself is not claimed as validated.
-
-'''
-          marker = '## Future paid dependencies\n'
-          if '## MAIL-001 — Auth transactional e-mail provider and canaries' not in text:
-              if marker not in text:
-                  raise SystemExit('Future paid dependencies marker not found')
-              text = text.replace(marker, mail_entry + marker, 1)
-
-          text = text.replace(
-              '- username availability remains local rather than transactional and server-authoritative.',
-              '- username availability and transactional registration authority were resolved by AUTH-A04; confirmation-email delivery remains blocked under MAIL-001.'
-          )
-          text = text.replace(
-              'Next sublot: `AUTH-A01 — authority freeze and baseline tests`.',
-              'Next sublot: `AUTH-A05 — real password recovery, reset and reauthentication authority`.'
-          )
-
-          closure = '''## 2026-07-24 — AUTH-A04 registration and username authority closed
-
-**Scope:** PR #9, staging project `zwkczgewzbsorbrjuzpb`
-
-**Outcome:** `DONE` for AUTH-A04; `BLOCKED` for MAIL-001
-
-### Context
-
-Username availability was still a browser-local guess while Supabase Auth and the existing account materializer could independently assign a different handle during a collision. Registration needed one transactional authority before recovery and other identity flows could be trusted.
-
-### Implementation
-
-- Added migration `146_auth_registration_username_authority.sql`.
-- Added canonical normalization, reserved-name rules and public availability RPC.
-- Strengthened `private.materialize_auth_account(uuid)`, preserving the existing `on_auth_user_created_doke` trigger as the only Auth materialization entry point.
-- Added `assets/js/services/auth-registration-authority.js` between the canonical auth service and the signup controller.
-- Added deterministic runtime and rollback-based SQL validation.
-- Kept browser snapshots free of reservations, credentials and provider secrets.
-
-### Correction recorded
-
-The first migration candidate attempted to add a second trigger directly to the Supabase-owned `auth.users` table. The migration executor rejected it with `must be owner of relation users`, and the transaction left no partial objects. The corrected design reused the existing canonical materializer instead of bypassing ownership or adding a competing trigger.
-
-### Validation
-
-- Corrected migration dry-run: passed with rollback.
-- Quality Gates #293: success.
-- Diagnostic E2E #88: success.
-- Staging Edge HTTP Canary #67: success.
-- Migration `auth_registration_username_authority`: applied to staging.
-- SQL validation 015: passed with rollback.
-- Available, taken, reserved and signup-race behavior: proven transactionally.
-- RPC grants and private materializer isolation: confirmed.
-- Existing profiles after validation: 3.
-- Synthetic AUTH-A04 users remaining: 0.
-
-### Public signup canary
-
-The public `anon` canary reached the username RPC and the Supabase `/auth/v1/signup` endpoint. Documentation-domain addresses were rejected as invalid; a randomized Gmail address reached confirmation delivery but the built-in SMTP returned `429 over_email_send_rate_limit`. No test account was persisted.
-
-This is recorded as `MAIL-001`. It does not invalidate the username transaction authority, but confirmation-email delivery remains explicitly unvalidated until SMTP capacity is available.
-
-### Risks and boundaries
-
-- Production was not changed.
-- Existing users and usernames were preserved.
-- Recovery/reset, OAuth, phone authentication and post-registration username changes remain outside AUTH-A04.
-- `PAID-001` remains unresolved.
-
-### Next step
-
-Execute `AUTH-A05`: replace the local recovery/reset flow with Supabase recovery, secure update-password handling and reauthentication states, while keeping MAIL-001 visible for real delivery canaries.
-
----
-
-'''
-          template_marker = '# Entry template\n'
-          if '## 2026-07-24 — AUTH-A04 registration and username authority closed' not in text:
-              if template_marker not in text:
-                  raise SystemExit('Journal entry template marker not found')
-              text = text.replace(template_marker, closure + template_marker, 1)
-
-          journal.write_text(text, encoding='utf-8')
-
-      - name: Validate canonical auth authority
-        run: npm run audit:auth-session
-
-      - name: Regenerate governed domain matrix
-        run: npm run write:domain-completion-matrix
-
-      - name: Publish journal and matrix only
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/DOKE-ENGINEERING-JOURNAL.md docs/DOMAIN-COMPLETION-MATRIX.md
-          if git diff --cached --quiet; then
-            echo "AUTH-A04 journal and matrix are already current."
-            exit 0
-          fi
-          git commit -m "Close AUTH-A04 journal and governed evidence"
-          git push origin HEAD:auth/auth-001-baseline-audit
+      - name: Upload canary evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: doke-staging-edge-http-canary-${{ github.sha }}
+          path: reports/generated/staging-edge-http-canary.json
+          if-no-files-found: warn
+          retention-days: 30
