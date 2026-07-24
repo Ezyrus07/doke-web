@@ -2,7 +2,7 @@
 
 **Date:** 2026-07-24  
 **Branch:** `auth/auth-001-baseline-audit`  
-**Status:** `IMPLEMENTED_PENDING_CI_AND_STAGING`
+**Status:** `DONE`
 
 ## Objective
 
@@ -11,7 +11,8 @@ Choose one real registration path and make username assignment a database-author
 ## Chosen authority
 
 - Account creation remains Supabase Auth `signUp`.
-- The existing `auth.users` trigger remains the sole account/profile materializer.
+- The existing `on_auth_user_created_doke` trigger remains the sole `auth.users` account/profile materialization entry point.
+- `private.materialize_auth_account(uuid)` is the canonical registration materializer.
 - `public.user_profiles.username` is the canonical username store.
 - Browser state does not reserve, persist or own usernames.
 
@@ -26,6 +27,7 @@ Choose one real registration path and make username assignment a database-author
 - Exposes `public.check_username_availability(text)` to `anon`, `authenticated` and `service_role` with a narrow result contract.
 - Strengthens the existing `private.materialize_auth_account(uuid)` authority so the current `on_auth_user_created_doke` trigger fails the signup transaction when the requested username is invalid or loses a race.
 - Keeps one `auth.users` trigger authority and prevents the canonical materializer from silently assigning a suffixed username different from the one requested by the user.
+- Retains deterministic fallback usernames only for provider-created identities that do not explicitly request a handle.
 
 ### Frontend registration authority
 
@@ -40,37 +42,81 @@ Choose one real registration path and make username assignment a database-author
 
 The module is loaded only by `auth/cadastro.html`, between the canonical auth service and the auth page controller.
 
-## Validation assets
+## Validation
 
-- `scripts/audit-auth-registration-authority.js`
-- `scripts/test-auth-registration-username-runtime.js`
-- `supabase/tests/015_auth_registration_username_authority_validation.sql`
-- dedicated Quality Gates step for AUTH-A04
+### CI and deterministic runtime
 
-The migration was executed once inside a staging transaction ending in `ROLLBACK`. Syntax, functions, triggers and compatibility with the existing schema passed. The first candidate correctly exposed one legacy reserved internal username; the migration was adjusted to grandfather existing internal identities while rejecting new reserved claims.
+The final corrected runtime head passed:
 
-## Current staging state
+- Doke Quality Gates #293;
+- Doke Diagnostic E2E #88;
+- Doke Staging Edge HTTP Canary #67;
+- canonical `audit:auth-session`, including `scripts/test-auth-registration-username-runtime.js`;
+- blocking deterministic E2E;
+- 105 visual structural guards;
+- governed matrix and clean-patch checks.
 
-Before persistent application:
+### Migration and SQL behavior
 
-- 3 existing profiles;
-- 0 missing usernames;
-- 0 case-insensitive username collisions;
-- current authority still has only `UNIQUE(username)` until migration 146 is applied.
+The initial migration candidate attempted to add a second trigger to the Supabase-owned `auth.users` table. The migration executor correctly rejected that operation with `must be owner of relation users`; the failed transaction left no partial functions, triggers or migration record.
+
+The corrected migration reuses `private.materialize_auth_account(uuid)`, the authority already called by `on_auth_user_created_doke`. It was:
+
+1. validated in a transaction ending with `ROLLBACK`;
+2. applied persistently to staging as `auth_registration_username_authority`;
+3. validated by `015_auth_registration_username_authority_validation.sql`, again ending with `ROLLBACK`.
+
+The SQL validation proved:
+
+- normalization and reserved-name rules;
+- public availability results for available and taken usernames;
+- account, `user_profiles` and `client_profiles` materialization;
+- atomic rollback when a requested username loses a race;
+- atomic rollback for reserved usernames;
+- no partial auth/profile rows after rejection;
+- public RPC execution for `anon` and `authenticated`;
+- no browser-role execution of the private materializer;
+- retained `service_role` execution;
+- continued use of the single canonical Auth trigger.
+
+### Persistent staging state
+
+After validation:
+
+- migration 146 is recorded;
+- the canonical normalization and availability functions exist;
+- the canonical Auth trigger exists;
+- no duplicate Auth trigger exists;
+- 3 pre-existing profiles remain;
+- 0 synthetic AUTH-A04 users remain;
+- no username is missing;
+- no case-insensitive username collision exists.
+
+## Public HTTP canary and SMTP boundary
+
+The public canary used only the frontend `anon` key. It successfully reached the username RPC checks before calling `/auth/v1/signup`.
+
+Three signup attempts were made while refining safe synthetic addresses:
+
+- documentation domains were rejected as invalid addresses;
+- a valid, randomized Gmail address reached the confirmation-email stage;
+- Supabase then returned `429 over_email_send_rate_limit` because the built-in development SMTP hourly quota was exhausted.
+
+No canary account was persisted in any attempt. This does not invalidate the transactional registration or username authority, which was proven against the real staging schema by SQL. It does mean that actual confirmation-email delivery remains unvalidated until the SMTP quota resets or a custom SMTP provider is configured.
+
+That external delivery check is tracked separately as `MAIL-001` and must be completed before public beta. It is not presented as successful in this evidence.
 
 ## Safety boundary
 
-- Migration 146 has **not** been applied persistently.
-- No Supabase user, profile, Auth setting or production environment has been changed.
+- Production was not changed.
+- No existing user, username, profile or role was modified.
+- Synthetic SQL identities were rolled back.
+- Public-canary signups left no Auth or profile records.
 - Recovery/reset, OAuth providers, phone authentication and username changes after registration remain outside AUTH-A04.
-- `PAID-001` remains blocked by Supabase plan.
+- `PAID-001` remains blocked by the Supabase plan.
 
-## Exit criteria
+## Closure decision
 
-AUTH-A04 can be marked `DONE` only after:
+`AUTH-A04` is closed as `DONE` because the registration authority, username normalization, availability API, transaction race behavior, grants and frontend integration were implemented and validated on staging.
 
-1. Quality Gates, Diagnostic E2E and relevant governed audits are green;
-2. migration 146 is applied to staging;
-3. SQL validation 015 passes in a rolled-back transaction;
-4. RPC grants and private trigger-function isolation are confirmed;
-5. a real staging signup canary proves available, taken, reserved and confirmation paths without leaving test identities behind.
+Confirmation-email delivery remains a separate external infrastructure dependency under `MAIL-001`; it cannot be silently treated as validated while the default SMTP quota is exhausted.
