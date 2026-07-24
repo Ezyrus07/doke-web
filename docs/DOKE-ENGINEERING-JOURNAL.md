@@ -483,6 +483,67 @@ Execute `AUTH-A05`: replace the local recovery/reset flow with Supabase recovery
 
 ---
 
+## 2026-07-24 — AUTH-A05 password recovery and reauthentication authority closed
+
+**Scope:** PR #9, branch `auth/auth-001-baseline-audit`
+
+**Outcome:** `DONE` for AUTH-A05; `BLOCKED` for MAIL-001 and PAID-001
+
+### Context
+
+The previous password-recovery experience generated and accepted browser-local codes, which were not an authentication authority and could diverge from the real Supabase login identity. Password changes in Settings also needed explicit current-password verification and provider-controlled session revocation.
+
+### Decision
+
+Use Supabase Auth as the only credential authority. Keep Doke responsible only for controlled UI state, public identity snapshots and fail-closed navigation; never persist passwords, recovery credentials, access tokens or refresh tokens in Doke-owned storage.
+
+### Implementation
+
+- Replaced local recovery-code generation with `supabase.auth.resetPasswordForEmail`.
+- Accepted password reset only through a legitimate `PASSWORD_RECOVERY` context.
+- Used `supabase.auth.updateUser({ password })` to complete recovery.
+- Required `signInWithPassword` reauthentication before a Settings password change.
+- Revoked other sessions through `signOut({ scope: 'others' })` after an authenticated password change.
+- Consolidated request and completion in `auth/esqueci-senha.html`.
+- Added token-free early recovery-state handling, canonical authority service, page controllers, dialog styling and deterministic runtime coverage.
+- Added `docs/validation/AUTH-001-A05-PASSWORD-RECOVERY.md` and `docs/validation/AUTH-001-A05-PASSWORD-RECOVERY.json`.
+
+### Validation
+
+Runtime and visual-validation head: `1ccd40328596368703bbf2e507fcaef3c3bb908c`.
+
+- Doke Quality Gates #351: success.
+- Blocking deterministic E2E: success.
+- 105 visual structural guards: success.
+- Doke Diagnostic E2E #146: success.
+- Doke Staging Edge HTTP Canary #125: success.
+- Static audits, governance, matrix generation, form/button/modal contracts and `git diff --check`: success.
+
+### Closure-workflow correction
+
+A temporary workflow named `Close AUTH-A05 evidence and journal` replaced `.github/workflows/staging-edge-http-canary.yml` only to publish closure documentation. Its local restoration succeeded, but its publication step failed. The branch was inspected rather than assumed: the canonical `Doke Staging Edge HTTP Canary` workflow was confirmed restored on the current GitHub head before this entry was added. No additional temporary workflow was created.
+
+### Risks and boundaries
+
+- No production environment was changed.
+- No Supabase Auth setting, database object or user password was changed during this closure.
+- No persistent synthetic account was created.
+- SMS and OAuth remain unavailable rather than simulated.
+- Actual signup and recovery e-mail delivery remains unvalidated because the development SMTP returned `429 over_email_send_rate_limit`; this remains `MAIL-001`.
+- Leaked-password protection remains blocked by the Supabase Pro requirement under `PAID-001` / `SEC-B05`.
+- PR #9 remains a draft and must not be merged without explicit authorization.
+
+### Pending work
+
+- Revalidate the documentation-only closure head through the three canonical workflows.
+- Plan the next AUTH-001 sublot for provider-authoritative session/device lifecycle, logout scopes, refresh/revocation reconciliation, secure contact changes and removal of remaining browser identity fallbacks.
+
+### Next step
+
+Define `AUTH-A06` scope, affected files, Supabase impact, tests, canaries and risks before changing runtime code.
+
+---
+
 # Entry template
 
 ## YYYY-MM-DD — Title
