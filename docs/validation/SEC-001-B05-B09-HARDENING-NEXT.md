@@ -1,10 +1,22 @@
 # Next sublot
 
-1. Regenerate `docs/DOMAIN-COMPLETION-MATRIX.md` from the current branch and restore the governed CI gate.
-2. Review the complete seven-function source diff and the migration 145 privilege boundary.
-3. Apply migration 145 to staging and execute `supabase/tests/014_edge_function_abuse_guard_validation.sql` plus the platform ACL validation.
-4. Deploy the seven hardened browser-facing function bundles to staging without changing `order-event-worker`.
-5. Execute authenticated HTTP/browser canaries for CORS, oversized bodies, invalid JSON, unauthorized requests, allowed origins and action-specific rate limits.
-6. Reconcile deployed source/version metadata and retain rollback evidence.
-7. Enable leaked-password protection and repeat the Supabase Security Advisor plus leaked/strong-password canaries.
-8. Close SEC-B05 and SEC-B09 only after all evidence is attached to the draft PR.
+## Immediate PR action
+
+1. Run the final `Doke Quality Gates`, `Doke Diagnostic E2E` and `Doke Staging Edge HTTP Canary` checks on the evidence-complete branch.
+2. Confirm that the governed domain-completion matrix remains synchronized.
+3. Mark PR #8 ready for review only after every required check passes.
+4. Review the complete PR scope and merge only after explicit approval.
+
+## Deferred paid-plan item
+
+`SEC-B05` remains blocked by `PAID-001`: Supabase leaked-password protection requires Pro or above. Near launch:
+
+1. upgrade the Supabase plan;
+2. enable **Prevent use of leaked passwords**;
+3. repeat Security Advisor;
+4. verify rejection of a known compromised password;
+5. verify normal operation with a strong password.
+
+## Next architectural domain
+
+After PR #8 is merged, decompose and begin `AUTH-001` without claiming the paid leaked-password control as complete. The first AUTH sublot must cover real session authority, recovery, reauthentication, authorization boundaries and user-facing failure handling while preserving the existing paid-plan backlog.
