@@ -78,6 +78,10 @@ jobs:
         continue-on-error: true
         run: node scripts/validate-staging-edge-http-canary.mjs
 
+      - name: Generate governed matrix candidate
+        if: always()
+        run: npm run write:domain-completion-matrix
+
       - name: Write diagnostic outcome summary
         if: always()
         shell: bash
@@ -99,6 +103,8 @@ jobs:
         with:
           name: doke-staging-edge-http-canary-${{ github.sha }}
           path: |
+            docs/DOMAIN-COMPLETION-MATRIX.md
+            reports/generated/domain-completion-matrix-report.json
             reports/generated/staging-edge-http-canary.json
             reports/generated/staging-edge-http-diagnostic-outcomes.json
             reports/generated/*-governance.log
