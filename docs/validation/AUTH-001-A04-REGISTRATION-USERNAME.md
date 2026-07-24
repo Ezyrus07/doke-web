@@ -24,8 +24,8 @@ Choose one real registration path and make username assignment a database-author
 - Normalizes all future `user_profiles.username` writes through a private trigger.
 - Requires a non-null canonical username and validates its format.
 - Exposes `public.check_username_availability(text)` to `anon`, `authenticated` and `service_role` with a narrow result contract.
-- Adds a post-materialization `auth.users` trigger that fails the signup transaction when the requested username is invalid or loses a race.
-- Prevents the existing materializer from silently assigning a suffixed username different from the one requested by the user.
+- Strengthens the existing `private.materialize_auth_account(uuid)` authority so the current `on_auth_user_created_doke` trigger fails the signup transaction when the requested username is invalid or loses a race.
+- Keeps one `auth.users` trigger authority and prevents the canonical materializer from silently assigning a suffixed username different from the one requested by the user.
 
 ### Frontend registration authority
 

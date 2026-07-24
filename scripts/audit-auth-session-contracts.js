@@ -222,7 +222,7 @@ for (const token of [
   'public.is_valid_username',
   'public.check_username_availability',
   'trg_enforce_user_profile_username',
-  'zz_enforce_requested_auth_username_doke',
+  'private.materialize_auth_account',
   'DOKE_IDENTITY_USERNAME_TAKEN',
   'grant execute on function public.check_username_availability(text) to anon, authenticated, service_role'
 ]) {
