@@ -8,6 +8,7 @@ const { execFileSync } = require('child_process');
 
 const root = path.resolve(__dirname, '..');
 const CANONICAL_AUTH_SERVICE = 'assets/js/services/auth-service.js';
+const REGISTRATION_AUTHORITY = 'assets/js/services/auth-registration-authority.js';
 const LEGACY_AUTH_SERVICE = 'assets/js/core/auth-service.js';
 const SESSION_STORE = 'assets/js/core/session.js';
 const USERS_REPOSITORY = 'assets/js/repositories/users-repository.js';
@@ -21,15 +22,22 @@ const EARLY_AUTH_SURFACE = 'assets/js/core/header-auth-surface-early.js';
 const AUTH_PREPAINT_CSS = 'assets/css/core/auth-prepaint-guard.css';
 const DOCUMENT_PRELOADER_CSS = 'assets/css/components/feedback/document-preloader.css';
 const COMMUNITY_EARLY = 'assets/js/features/community/community-reload-state-early.js';
+const AUTH_A04_MIGRATION = 'supabase/migrations/146_auth_registration_username_authority.sql';
+const AUTH_A04_VALIDATION = 'supabase/tests/015_auth_registration_username_authority_validation.sql';
+const AUTH_A04_RUNTIME_TEST = 'scripts/test-auth-registration-username-runtime.js';
 
 const requiredFiles = [
   'assets/js/core/app-state.js',
   'assets/js/core/permissions.js',
   SESSION_STORE,
   CANONICAL_AUTH_SERVICE,
+  REGISTRATION_AUTHORITY,
   ROUTE_MAP,
   ROUTE_GUARD,
-  PAGE_BOOTSTRAP
+  PAGE_BOOTSTRAP,
+  AUTH_A04_MIGRATION,
+  AUTH_A04_VALIDATION,
+  AUTH_A04_RUNTIME_TEST
 ];
 
 const baselinePages = [
@@ -160,6 +168,23 @@ for (const page of authPages) {
   assertOrdered(sources, [SUPABASE_CONFIG, SESSION_STORE, USERS_REPOSITORY, CANONICAL_AUTH_SERVICE, AUTH_PAGE_CONTROLLER], page);
 }
 
+const signupSources = readScriptSources(read('auth/cadastro.html'), 'auth/cadastro.html');
+assertOrdered(signupSources, [
+  SUPABASE_CONFIG,
+  SESSION_STORE,
+  USERS_REPOSITORY,
+  CANONICAL_AUTH_SERVICE,
+  REGISTRATION_AUTHORITY,
+  AUTH_PAGE_CONTROLLER
+], 'auth/cadastro.html');
+
+for (const page of ['auth/login.html', 'auth/esqueci-senha.html']) {
+  const sources = readScriptSources(read(page), page);
+  if (sources.includes(REGISTRATION_AUTHORITY)) {
+    errors.push(`${page} must not load signup-only authority ${REGISTRATION_AUTHORITY}`);
+  }
+}
+
 const canonicalSource = read(CANONICAL_AUTH_SERVICE);
 for (const token of [
   'const api = Object.freeze({',
@@ -173,6 +198,41 @@ for (const token of [
   'refreshSupabaseSession'
 ]) {
   if (!canonicalSource.includes(token)) errors.push(`${CANONICAL_AUTH_SERVICE} is missing canonical authority token: ${token}`);
+}
+
+const registrationSource = read(REGISTRATION_AUTHORITY);
+for (const token of [
+  "version: 'AUTH-A04'",
+  "client.rpc('check_username_availability'",
+  'authority_unavailable',
+  'ns.registrationAuthority = api;',
+  'ns.checkUsernameAvailability = checkUsernameAvailability;',
+  'ns.register = register;'
+]) {
+  if (!registrationSource.includes(token)) errors.push(`${REGISTRATION_AUTHORITY} missing registration authority token: ${token}`);
+}
+for (const forbidden of ['localStorage.setItem', 'sessionStorage.setItem', 'access_token', 'refresh_token', 'service_role']) {
+  if (registrationSource.includes(forbidden)) errors.push(`${REGISTRATION_AUTHORITY} contains forbidden persistence or credential token: ${forbidden}`);
+}
+
+const migrationSource = read(AUTH_A04_MIGRATION);
+for (const token of [
+  'public.normalize_username',
+  'public.is_reserved_username',
+  'public.is_valid_username',
+  'public.check_username_availability',
+  'trg_enforce_user_profile_username',
+  'zz_enforce_requested_auth_username_doke',
+  'DOKE_IDENTITY_USERNAME_TAKEN',
+  'grant execute on function public.check_username_availability(text) to anon, authenticated, service_role'
+]) {
+  if (!migrationSource.includes(token)) errors.push(`${AUTH_A04_MIGRATION} missing authority token: ${token}`);
+}
+if (migrationSource.includes('grant all')) errors.push(`${AUTH_A04_MIGRATION} cannot grant broad privileges`);
+
+const authA04ValidationSource = read(AUTH_A04_VALIDATION);
+for (const token of ['begin;', 'AUTH_A04_SIGNUP_RACE_NOT_BLOCKED', 'AUTH_A04_RESERVED_SIGNUP_NOT_BLOCKED', 'rollback;']) {
+  if (!authA04ValidationSource.includes(token)) errors.push(`${AUTH_A04_VALIDATION} missing validation token: ${token}`);
 }
 
 const sessionSource = read(SESSION_STORE);
@@ -285,10 +345,16 @@ execFileSync(process.execPath, [path.join(root, 'scripts/test-auth-route-guard-r
   stdio: 'inherit'
 });
 
+execFileSync(process.execPath, [path.join(root, AUTH_A04_RUNTIME_TEST)], {
+  cwd: root,
+  stdio: 'inherit'
+});
+
 console.log('Auth/session contract audit passed.');
 console.log(`Checked files: ${requiredFiles.length}`);
 console.log(`Checked baseline pages: ${baselinePages.length}`);
 console.log(`Checked active HTML pages: ${activeHtmlFiles.length}`);
 console.log(`Canonical auth consumers: ${canonicalConsumerCount}`);
 console.log(`Protected routes: ${routes.PRIVATE_ROUTES.length}`);
+console.log('AUTH-A04 registration authority: enforced');
 console.log('Dormant legacy consumers: 0');
