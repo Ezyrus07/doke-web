@@ -36,6 +36,11 @@ jobs:
       - name: Run all static audits
         run: npm run audit:all
 
+      - name: Validate AUTH-A04 registration authority
+        run: |
+          node scripts/audit-auth-registration-authority.js
+          node scripts/test-auth-registration-username-runtime.js
+
       - name: Validate platform ACL contract
         run: npm run test:platform-default-acl-contract
 
