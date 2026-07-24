@@ -23,7 +23,7 @@ jobs:
   staging-edge-http-canary:
     name: Seven-function staging HTTP boundary canary
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
 
     steps:
       - name: Checkout candidate tree
@@ -33,6 +33,43 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Diagnose domain completion governance
+        id: domain_completion
+        continue-on-error: true
+        run: npm run audit:domain-completion-matrix
+
+      - name: Diagnose agent governance
+        id: agent_governance
+        continue-on-error: true
+        run: npm run audit:agent-governance
+
+      - name: Diagnose unused asset governance
+        id: unused_assets
+        continue-on-error: true
+        run: npm run audit:unused-asset-candidates
+
+      - name: Diagnose duplicate asset governance
+        id: duplicate_assets
+        continue-on-error: true
+        run: npm run audit:duplicate-assets
+
+      - name: Fail on governed audit drift
+        if: >-
+          steps.domain_completion.outcome != 'success' ||
+          steps.agent_governance.outcome != 'success' ||
+          steps.unused_assets.outcome != 'success' ||
+          steps.duplicate_assets.outcome != 'success'
+        run: |
+          echo "domain_completion=${{ steps.domain_completion.outcome }}"
+          echo "agent_governance=${{ steps.agent_governance.outcome }}"
+          echo "unused_assets=${{ steps.unused_assets.outcome }}"
+          echo "duplicate_assets=${{ steps.duplicate_assets.outcome }}"
+          exit 1
 
       - name: Run staging Edge HTTP canary
         run: node scripts/validate-staging-edge-http-canary.mjs
