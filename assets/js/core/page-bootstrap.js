@@ -27,29 +27,41 @@
     });
   }
 
-  function coreScriptUrl(fileName) {
+  function assetUrl(relativePath) {
     try {
-      if (bootstrapScriptUrl) return new URL(fileName, bootstrapScriptUrl).href;
-      return new URL('assets/js/core/' + fileName, document.baseURI).href;
+      if (bootstrapScriptUrl) {
+        var assetsRoot = new URL('../../../', bootstrapScriptUrl);
+        return new URL(String(relativePath || ''), assetsRoot).href;
+      }
+      return new URL(String(relativePath || ''), document.baseURI).href;
     } catch (error) {
-      return 'assets/js/core/' + fileName;
+      return String(relativePath || '');
     }
   }
 
-  function findScript(fileName) {
-    var suffix = '/assets/js/core/' + fileName;
+  function coreScriptUrl(fileName) {
+    return assetUrl('assets/js/core/' + fileName);
+  }
+
+  function findScriptByUrl(src) {
+    var expected = '';
+    try {
+      expected = new URL(src, document.baseURI).href;
+    } catch (error) {
+      expected = String(src || '');
+    }
     return Array.prototype.find.call(document.scripts || [], function (script) {
       try {
-        return new URL(script.src, document.baseURI).pathname.endsWith(suffix);
+        return new URL(script.src, document.baseURI).href === expected;
       } catch (error) {
-        return String(script.src || '').split('?')[0].endsWith('assets/js/core/' + fileName);
+        return String(script.src || '') === expected;
       }
     }) || null;
   }
 
-  function loadCoreScript(fileName, ready) {
+  function loadScript(src, ready, datasetValue) {
     if (typeof ready === 'function' && ready()) return Promise.resolve();
-    var existing = findScript(fileName);
+    var existing = findScriptByUrl(src);
 
     return new Promise(function (resolve, reject) {
       var script = existing || document.createElement('script');
@@ -62,27 +74,67 @@
       var fail = function () {
         if (settled) return;
         settled = true;
-        reject(new Error('Não foi possível carregar ' + fileName + '.'));
+        reject(new Error('Não foi possível carregar ' + src + '.'));
       };
 
       if (existing) {
-        if (typeof ready === 'function' && ready()) return finish();
+        if (typeof ready !== 'function' || ready()) return finish();
         existing.addEventListener('load', finish, { once: true });
         existing.addEventListener('error', fail, { once: true });
         root.setTimeout(function () {
-          if (typeof ready === 'function' && ready()) finish();
+          if (typeof ready !== 'function' || ready()) finish();
           else fail();
-        }, 1800);
+        }, 2200);
         return;
       }
 
-      script.src = coreScriptUrl(fileName);
+      script.src = src;
       script.async = false;
-      script.dataset.dokeAuthCore = fileName;
-      script.addEventListener('load', finish, { once: true });
+      if (datasetValue) script.dataset.dokeAuthCapability = datasetValue;
+      script.addEventListener('load', function () {
+        if (typeof ready !== 'function' || ready()) finish();
+        else fail();
+      }, { once: true });
       script.addEventListener('error', fail, { once: true });
       (document.head || document.documentElement).appendChild(script);
     });
+  }
+
+  function loadCoreScript(fileName, ready) {
+    return loadScript(coreScriptUrl(fileName), ready, fileName);
+  }
+
+  function ensureStyle(relativePath) {
+    var href = assetUrl(relativePath);
+    var exists = Array.prototype.some.call(document.styleSheets || [], function (sheet) {
+      return sheet && sheet.href === href;
+    }) || Boolean(document.querySelector('link[href="' + href + '"]'));
+    if (exists) return;
+    var link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = href;
+    link.dataset.dokeAuthCapability = 'settings-password-style';
+    (document.head || document.documentElement).appendChild(link);
+  }
+
+  async function ensureSettingsPasswordAuthority() {
+    if (pageName() !== 'configuracoes') return null;
+
+    ensureStyle('assets/css/components/auth/password-dialog.css');
+    await loadScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2', function () {
+      return Boolean(root.supabase && typeof root.supabase.createClient === 'function');
+    }, 'supabase-sdk');
+    await loadScript(assetUrl('assets/js/core/supabase-config.js'), function () {
+      return Boolean(root.DokeSupabase && typeof root.DokeSupabase.getClient === 'function');
+    }, 'supabase-config');
+    await loadScript(assetUrl('assets/js/services/auth-password-authority.js'), function () {
+      return auth.passwordAuthority && auth.passwordAuthority.version === 'AUTH-A05';
+    }, 'password-authority');
+    await loadScript(assetUrl('assets/js/pages/settings-password.js'), function () {
+      return Boolean(root.DokeSettingsPassword && typeof root.DokeSettingsPassword.bind === 'function');
+    }, 'settings-password');
+    root.DokeSettingsPassword.bind();
+    return auth.passwordAuthority;
   }
 
   async function ensureAuthRouteGuard() {
@@ -120,6 +172,7 @@
     }
 
     try {
+      await ensureSettingsPasswordAuthority();
       await ensureAuthRouteGuard();
     } catch (error) {
       failClosedAuthGuard(error);
@@ -129,13 +182,17 @@
     if (Doke.state) Doke.state.set('bootstrapped', true);
     document.documentElement.classList.add('doke-app-ready');
     document.dispatchEvent(new CustomEvent('doke:page-bootstrap-ready', {
-      detail: { authGuardReady: Boolean(auth.guard) }
+      detail: {
+        authGuardReady: Boolean(auth.guard),
+        passwordAuthorityReady: Boolean(auth.passwordAuthority)
+      }
     }));
   }
 
   Doke.pageBootstrap = Object.freeze({
     bootstrap: bootstrap,
-    ensureAuthRouteGuard: ensureAuthRouteGuard
+    ensureAuthRouteGuard: ensureAuthRouteGuard,
+    ensureSettingsPasswordAuthority: ensureSettingsPasswordAuthority
   });
 
   if (document.readyState === 'loading') {
