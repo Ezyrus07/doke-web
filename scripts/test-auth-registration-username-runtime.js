@@ -143,7 +143,7 @@ const { execFileSync } = require('child_process');
     authorityUnavailableFailsClosed: true
   }));
 
-  execFileSync(process.execPath, ['scripts/test-auth-password-recovery-runtime.js'], {
+  execFileSync(process.execPath, ['tests/auth/test-auth-password-recovery-runtime.js'], {
     cwd: process.cwd(),
     stdio: 'inherit'
   });
