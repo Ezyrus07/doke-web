@@ -57,33 +57,26 @@ Add every feature, infrastructure service, external API, monitoring tool, storag
 
 - Code changes are not required for the specific leaked-password protection toggle.
 - Dashboard activation is blocked by the Supabase plan.
+- The requirement remains tracked as `PAID-001` and cannot be presented as complete.
 - Broader password policy, reauthentication, recovery, and client error handling belong to `AUTH-001`.
 
 ## SEC-B09 — Authenticated Edge Function HTTP hardening
 
-**Status:** `IN PROGRESS`
+**Status:** `DONE`
 
-Completed:
+Closure evidence:
 
-- Shared HTTP security module created.
-- Explicit CORS allowlist behavior added.
-- Local development origins supported under controlled configuration.
-- Wildcard browser CORS removed from the seven authenticated browser-facing functions.
-- JSON content-type and object validation added.
-- Request-body size limits added.
-- Defensive response headers and request IDs added.
-- Durable authenticated actor rate limiting added through migration `145_edge_function_abuse_guard.sql`.
+- Shared HTTP security module applied to all seven authenticated browser-facing functions.
+- Explicit CORS allowlist and controlled local-development origins active.
+- Wildcard browser CORS removed.
+- JSON content-type, JSON object and actual request-byte validation active.
+- Defensive response headers and request IDs active.
+- Durable authenticated actor/action rate limiting applied through migration `145_edge_function_abuse_guard.sql`.
 - Migration applied to staging and validated with rollback-based behavioral SQL.
-- Seven browser-facing Edge Functions deployed to staging with JWT verification enabled.
-
-Still required before closure:
-
-1. Run consolidated HTTP canaries for allowed origin, denied origin, preflight, missing JWT, invalid JSON, unsupported content type, oversized payload, and rate-limit response.
-2. Record deployed function versions and canary evidence in repository validation documents.
-3. Update the PR description and progress artifacts to the real staging state.
-4. Re-run CI after evidence updates.
-5. Review the remaining Security Advisor informational notice for the private server-only rate-limit table and document why no browser policy is expected.
-6. Mark the PR ready only after the staging evidence is complete.
+- Seven functions deployed to staging with JWT verification enabled.
+- Real GitHub Actions HTTP canary passed 49 of 49 cases.
+- Machine-readable evidence stored in `docs/validation/SEC-001-B09-STAGING-HTTP-CANARY.json`.
+- The private-table Security Advisor informational notice was reviewed and accepted as expected for a server-only authority with no direct API-role grants.
 
 ## Next architectural domains after SEC-001
 
@@ -247,6 +240,68 @@ Supabase rejected the change and displayed that leaked-password protection throu
 ### Next step
 
 Finish the free-plan portion of `SEC-B09`, record final staging evidence, and keep `PAID-001` visible until the launch-readiness review.
+
+---
+
+## 2026-07-24 — SEC-B09 staging closure and paid-plan deferral
+
+**Scope:** PR #8, staging project `zwkczgewzbsorbrjuzpb`
+
+**Outcome:** `DONE` for `SEC-B09`; `BLOCKED` for `SEC-B05`
+
+### Context
+
+Deployment alone did not prove that the public HTTP boundary behaved correctly. A real network canary was required for all seven authenticated browser-facing functions without exposing service credentials or creating privileged test users.
+
+### Implementation
+
+- Added `scripts/validate-staging-edge-http-canary.mjs`.
+- Added a dedicated read-only GitHub Actions gate: `Doke Staging Edge HTTP Canary`.
+- The canary reads only the public client configuration already used by the frontend.
+- It does not use `service_role`, create users, change data or invoke privileged business operations.
+- The governed domain-completion matrix was regenerated after the new script and workflow entered the repository scope.
+
+### Validation
+
+The real staging canary executed seven cases against each of seven functions:
+
+- allowed preflight;
+- denied preflight;
+- missing JWT;
+- anon JWT without an authenticated user;
+- invalid JSON;
+- unsupported content type;
+- oversized payload.
+
+Result: **49 passed, 0 failed**.
+
+Rate-limit behavior was validated separately through `014_edge_function_abuse_guard_validation.sql`, which proved threshold enforcement, denial, remaining count, retry metadata and restricted execution privileges inside a rolled-back staging transaction.
+
+The complete machine-readable summary is recorded in `docs/validation/SEC-001-B09-STAGING-HTTP-CANARY.json`.
+
+### Security Advisor decision
+
+The `rls_enabled_no_policy` informational notice on the private bucket table is accepted as expected. The table intentionally exposes no direct browser/API-role access, so adding a browser policy would contradict the server-only design.
+
+The leaked-password warning remains unresolved because activation is restricted to Supabase Pro. It stays in `PAID-001` and does not convert into a false completion claim.
+
+### Risks and boundaries
+
+- No production Supabase project was changed.
+- `order-event-worker` remained outside this scope.
+- The canary does not prove authenticated business-role success paths; those belong to their domain-specific integration suites.
+- Public beta remains blocked until paid leaked-password protection is enabled or a formally accepted mitigation exists.
+
+### Decision
+
+- Close `SEC-B09` as implemented and validated on staging.
+- Keep `SEC-B05` blocked by plan.
+- Do not subscribe during active development only to remove one warning.
+- Finish the PR evidence and checks before beginning `AUTH-001`.
+
+### Next step
+
+Run final CI on PR #8, mark it ready for review when all checks are green, and do not merge without explicit approval.
 
 ---
 
