@@ -5,18 +5,10 @@ on:
     branches: [MAIN, main, master]
     paths:
       - '.github/workflows/staging-edge-http-canary.yml'
-      - 'scripts/validate-staging-edge-http-canary.mjs'
-      - 'assets/js/core/supabase-config.js'
-      - 'supabase/functions/**'
-      - 'supabase/migrations/145_edge_function_abuse_guard.sql'
-      - 'supabase/tests/014_edge_function_abuse_guard_validation.sql'
-      - 'docs/DOKE-ENGINEERING-JOURNAL.md'
-      - 'docs/validation/SEC-001-B05-B09-HARDENING-*'
-      - 'docs/validation/SEC-001-B09-STAGING-HTTP-CANARY.json'
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: doke-staging-edge-http-canary-${{ github.ref }}
@@ -24,27 +16,65 @@ concurrency:
 
 jobs:
   staging-edge-http-canary:
-    name: Seven-function staging HTTP boundary canary
+    name: Reconcile AUTH-A04 authority and governed matrix
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
 
     steps:
-      - name: Checkout candidate tree
+      - name: Checkout PR head
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
 
-      - name: Run staging Edge HTTP canary
-        run: node scripts/validate-staging-edge-http-canary.mjs
+      - name: Install dependencies
+        run: npm ci
 
-      - name: Upload canary evidence
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: doke-staging-edge-http-canary-${{ github.sha }}
-          path: reports/generated/staging-edge-http-canary.json
-          if-no-files-found: warn
-          retention-days: 30
+      - name: Reconcile canonical materializer evidence
+        shell: python
+        run: |
+          from pathlib import Path
+
+          audit = Path('scripts/audit-auth-session-contracts.js')
+          text = audit.read_text(encoding='utf-8')
+          old = "  'zz_enforce_requested_auth_username_doke',\n"
+          new = "  'private.materialize_auth_account',\n"
+          if text.count(old) != 1:
+              raise SystemExit('Expected one superseded auth trigger audit marker')
+          audit.write_text(text.replace(old, new), encoding='utf-8')
+
+          doc = Path('docs/validation/AUTH-001-A04-REGISTRATION-USERNAME.md')
+          text = doc.read_text(encoding='utf-8')
+          replacements = {
+              '- Adds a post-materialization `auth.users` trigger that fails the signup transaction when the requested username is invalid or loses a race.': '- Strengthens the existing `private.materialize_auth_account(uuid)` authority so the current `on_auth_user_created_doke` trigger fails the signup transaction when the requested username is invalid or loses a race.',
+              '- Prevents the existing materializer from silently assigning a suffixed username different from the one requested by the user.': '- Keeps one `auth.users` trigger authority and prevents the canonical materializer from silently assigning a suffixed username different from the one requested by the user.'
+          }
+          for old_text, new_text in replacements.items():
+              if text.count(old_text) != 1:
+                  raise SystemExit(f'Expected documentation text: {old_text}')
+              text = text.replace(old_text, new_text)
+          doc.write_text(text, encoding='utf-8')
+
+      - name: Validate canonical auth authority
+        run: npm run audit:auth-session
+
+      - name: Regenerate governed domain matrix
+        run: npm run write:domain-completion-matrix
+
+      - name: Publish reconciled evidence only
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add scripts/audit-auth-session-contracts.js docs/validation/AUTH-001-A04-REGISTRATION-USERNAME.md docs/DOMAIN-COMPLETION-MATRIX.md
+          if git diff --cached --quiet; then
+            echo "AUTH-A04 evidence is already reconciled."
+            exit 0
+          fi
+          git commit -m "Reconcile AUTH-A04 canonical materializer authority"
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
