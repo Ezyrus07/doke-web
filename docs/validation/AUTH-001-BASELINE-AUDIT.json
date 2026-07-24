@@ -3,7 +3,7 @@
   "observedAt": "2026-07-24",
   "branch": "auth/auth-001-baseline-audit",
   "base": "MAIN@1412a4c3aac60c5392ebbca466f1ecd1a8aa1428",
-  "status": "IN_PROGRESS_BASELINE_DOCUMENTED",
+  "status": "AUTH_A01_IMPLEMENTED_PENDING_FINAL_CI",
   "runtimeChanged": false,
   "supabaseMutated": false,
   "productionMutated": false,
@@ -15,6 +15,19 @@
     "routeGuard": "assets/js/core/route-guard.js"
   },
   "dormantLegacyAuthority": "assets/js/core/auth-service.js",
+  "authorityFreeze": {
+    "status": "IMPLEMENTED_PENDING_FINAL_CI",
+    "gate": "scripts/audit-auth-session-contracts.js",
+    "checks": [
+      "all active root and auth HTML pages are inventoried",
+      "no active HTML page loads assets/js/core/auth-service.js",
+      "canonical consumers load assets/js/core/session.js before assets/js/services/auth-service.js",
+      "auth pages load Supabase config, session, users repository, canonical auth service and page controller in canonical order",
+      "the canonical service retains its public DokeAuth authority surface",
+      "the dormant legacy file still matches the reviewed classification and cannot silently change identity"
+    ],
+    "runtimeBehaviorChanged": false
+  },
   "backend": {
     "routeRegistry": "backend/shared/http/route-registry.js",
     "handlers": "backend/modules/auth/route-handlers.js",
@@ -94,7 +107,7 @@
     "AUTH-A06_OPTIONAL_PROVIDERS",
     "AUTH-A07_STAGING_CANARIES_AND_PROMOTION"
   ],
-  "nextSublot": "AUTH-A01_AUTHORITY_FREEZE_AND_BASELINE_TESTS",
+  "nextSublot": "AUTH-A02_CANONICAL_SUPABASE_SESSION",
   "paidDependency": {
     "id": "PAID-001",
     "status": "BLOCKED",
