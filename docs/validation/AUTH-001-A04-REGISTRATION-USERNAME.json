@@ -2,16 +2,18 @@
   "id": "AUTH-A04",
   "observedAt": "2026-07-24",
   "branch": "auth/auth-001-baseline-audit",
-  "status": "IMPLEMENTED_PENDING_CI_AND_STAGING",
+  "status": "DONE",
   "runtimeChanged": true,
-  "supabaseMutated": false,
+  "supabaseMutated": true,
   "productionMutated": false,
   "authority": {
     "registrationProvider": "supabase_auth_sign_up",
+    "authTrigger": "on_auth_user_created_doke",
     "accountMaterializer": "private.materialize_auth_account(uuid)",
     "usernameStore": "public.user_profiles.username",
     "availabilityRpc": "public.check_username_availability(text)",
-    "migration": "supabase/migrations/146_auth_registration_username_authority.sql"
+    "migration": "supabase/migrations/146_auth_registration_username_authority.sql",
+    "migrationName": "auth_registration_username_authority"
   },
   "controls": {
     "canonicalNormalization": true,
@@ -21,32 +23,65 @@
     "usernameNotNull": true,
     "transactionalSignupRaceRollback": true,
     "silentSuffixAssignmentBlocked": true,
+    "singleAuthTriggerAuthority": true,
     "browserReservationStore": false,
     "browserCredentialPersistenceAdded": false,
     "authorityUnavailableFailsClosed": true
   },
   "validation": {
-    "migrationRollbackDryRun": "passed",
-    "existingProfiles": 3,
+    "initialSecondTriggerCandidate": {
+      "result": "rejected_and_fully_rolled_back",
+      "reason": "migration_executor_is_not_owner_of_supabase_auth_users"
+    },
+    "correctedMigrationRollbackDryRun": "passed",
+    "migrationAppliedToStaging": true,
+    "sqlValidation015": "passed_with_rollback",
+    "existingProfilesAfterValidation": 3,
+    "syntheticUsersAfterValidation": 0,
     "missingUsernames": 0,
     "caseInsensitiveCollisions": 0,
-    "staticAudit": "scripts/audit-auth-registration-authority.js",
+    "canonicalTriggerExists": true,
+    "duplicateTriggerExists": false,
+    "anonAvailabilityRpc": true,
+    "authenticatedAvailabilityRpc": true,
+    "browserCanExecutePrivateMaterializer": false,
+    "serviceRoleCanExecutePrivateMaterializer": true,
+    "staticAudit": "scripts/audit-auth-session-contracts.js",
     "runtimeTest": "scripts/test-auth-registration-username-runtime.js",
     "sqlValidation": "supabase/tests/015_auth_registration_username_authority_validation.sql",
-    "qualityGate": "Validate AUTH-A04 registration authority"
+    "finalCiHead": "b4bf7873b516ca4b78f7ca1da4cf0fb38babad9d",
+    "qualityGates": {
+      "runNumber": 293,
+      "conclusion": "success"
+    },
+    "diagnosticE2E": {
+      "runNumber": 88,
+      "conclusion": "success",
+      "blocking": false
+    },
+    "stagingEdgeHttpCanary": {
+      "runNumber": 67,
+      "conclusion": "success"
+    }
   },
-  "pending": [
-    "green_final_ci",
-    "apply_migration_146_to_staging",
-    "run_sql_validation_015_with_rollback",
-    "execute_real_staging_signup_canary",
-    "record_final_versions_and_evidence"
+  "publicSignupCanary": {
+    "usernameRpcReached": true,
+    "signupEndpointReached": true,
+    "accountPersisted": false,
+    "confirmationDeliveryValidated": false,
+    "providerResult": "429_over_email_send_rate_limit",
+    "classification": "EXTERNAL_SMTP_RATE_LIMIT",
+    "trackedAs": "MAIL-001"
+  },
+  "pending": [],
+  "externalDependencies": [
+    "MAIL-001_custom_smtp_or_quota_reset_for_confirmation_email_canary",
+    "PAID-001_leaked_password_protection"
   ],
   "outOfScope": [
     "password_recovery_and_reset",
     "oauth_provider_activation",
     "phone_authentication",
-    "post_registration_username_change",
-    "paid_leaked_password_protection"
+    "post_registration_username_change"
   ]
 }
