@@ -1,24 +1,32 @@
-name: Doke AUTH-A04 Staging Signup Canary
+name: Doke Staging Edge HTTP Canary
 
 on:
   pull_request:
     branches: [MAIN, main, master]
     paths:
       - '.github/workflows/staging-edge-http-canary.yml'
+      - 'scripts/validate-staging-edge-http-canary.mjs'
+      - 'assets/js/core/supabase-config.js'
+      - 'supabase/functions/**'
+      - 'supabase/migrations/145_edge_function_abuse_guard.sql'
+      - 'supabase/tests/014_edge_function_abuse_guard_validation.sql'
+      - 'docs/DOKE-ENGINEERING-JOURNAL.md'
+      - 'docs/validation/SEC-001-B05-B09-HARDENING-*'
+      - 'docs/validation/SEC-001-B09-STAGING-HTTP-CANARY.json'
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: doke-auth-a04-signup-canary-${{ github.ref }}
+  group: doke-staging-edge-http-canary-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  auth-a04-signup-canary:
-    name: Real staging registration and username authority
+  staging-edge-http-canary:
+    name: Seven-function staging HTTP boundary canary
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
 
     steps:
       - name: Checkout candidate tree
@@ -29,93 +37,14 @@ jobs:
         with:
           node-version: 22
 
-      - name: Run public Supabase signup canary
-        shell: bash
-        run: |
-          node --input-type=module <<'NODE'
-          import fs from 'node:fs';
-          import crypto from 'node:crypto';
+      - name: Run staging Edge HTTP canary
+        run: node scripts/validate-staging-edge-http-canary.mjs
 
-          const source = fs.readFileSync('assets/js/core/supabase-config.js', 'utf8');
-          const url = source.match(/url:\s*"([^"]+)"/)?.[1];
-          const anonKey = source.match(/anonKey:\s*\n\s*"([^"]+)"/)?.[1];
-          if (!url || !anonKey) throw new Error('Public Supabase staging configuration not found.');
-
-          const validEmail = 'auth-a04-canary@example.com';
-          const duplicateEmail = 'auth-a04-canary-duplicate@example.com';
-          const reservedEmail = 'auth-a04-canary-reserved@example.com';
-          const handle = 'autha04_canary';
-          const password = `Aa1!${crypto.randomBytes(24).toString('base64url')}`;
-
-          const request = async (path, body) => {
-            const response = await fetch(`${url}${path}`, {
-              method: 'POST',
-              headers: {
-                apikey: anonKey,
-                Authorization: `Bearer ${anonKey}`,
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify(body)
-            });
-            const text = await response.text();
-            let data = null;
-            try { data = text ? JSON.parse(text) : null; } catch { data = { raw: text }; }
-            return { response, data };
-          };
-
-          const valid = await request('/auth/v1/signup', {
-            email: validEmail,
-            password,
-            data: { name: 'AUTH A04 Canary', handle }
-          });
-          if (!valid.response.ok || !valid.data?.user?.id) {
-            throw new Error(`Valid signup failed (${valid.response.status}): ${JSON.stringify(valid.data)}`);
-          }
-
-          const userId = valid.data.user.id;
-          const profileResponse = await fetch(
-            `${url}/rest/v1/user_profiles?user_id=eq.${encodeURIComponent(userId)}&select=user_id,username,display_name`,
-            { headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}` } }
-          );
-          const profiles = await profileResponse.json();
-          if (!profileResponse.ok || !Array.isArray(profiles) || profiles.length !== 1 || profiles[0].username !== handle) {
-            throw new Error(`Profile materialization mismatch: ${JSON.stringify(profiles)}`);
-          }
-
-          const availability = await request('/rest/v1/rpc/check_username_availability', {
-            p_username: handle.toUpperCase()
-          });
-          const availabilityRow = Array.isArray(availability.data) ? availability.data[0] : availability.data;
-          if (!availability.response.ok || availabilityRow?.available !== false || availabilityRow?.reason !== 'taken') {
-            throw new Error(`Taken username was not reported: ${JSON.stringify(availability.data)}`);
-          }
-
-          const duplicate = await request('/auth/v1/signup', {
-            email: duplicateEmail,
-            password,
-            data: { name: 'AUTH A04 Duplicate', handle: handle.toUpperCase() }
-          });
-          if (duplicate.response.ok) {
-            throw new Error('Duplicate username signup unexpectedly succeeded.');
-          }
-
-          const reserved = await request('/auth/v1/signup', {
-            email: reservedEmail,
-            password,
-            data: { name: 'AUTH A04 Reserved', handle: 'ADMIN' }
-          });
-          if (reserved.response.ok) {
-            throw new Error('Reserved username signup unexpectedly succeeded.');
-          }
-
-          console.log(JSON.stringify({
-            authA04RealSignup: true,
-            userId,
-            email: validEmail,
-            username: handle,
-            profileMaterialized: true,
-            duplicateRejected: true,
-            reservedRejected: true,
-            privilegedCredentialUsed: false
-          }));
-          NODE
+      - name: Upload canary evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: doke-staging-edge-http-canary-${{ github.sha }}
+          path: reports/generated/staging-edge-http-canary.json
+          if-no-files-found: warn
+          retention-days: 30
