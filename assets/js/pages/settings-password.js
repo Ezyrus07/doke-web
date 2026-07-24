@@ -3,6 +3,7 @@
   'use strict';
 
   const DIALOG_ID = 'doke-password-change-dialog';
+  const eyeIcon = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
 
   const createDialog = () => {
     const existing = document.getElementById(DIALOG_ID);
@@ -30,7 +31,7 @@
             <span>Senha atual</span>
             <div class="doke-password-dialog__input-wrap">
               <input class="doke-input" id="settings-current-password" type="password" autocomplete="current-password" required>
-              <button class="doke-password-dialog__toggle doke-icon-btn doke-icon-btn--flat" type="button" data-password-toggle="settings-current-password" aria-label="Mostrar senha">👁</button>
+              <button class="doke-password-dialog__toggle doke-icon-btn doke-icon-btn--flat" type="button" data-password-toggle="settings-current-password" aria-label="Mostrar senha">${eyeIcon}</button>
             </div>
           </label>
 
@@ -38,7 +39,7 @@
             <span>Nova senha</span>
             <div class="doke-password-dialog__input-wrap">
               <input class="doke-input" id="settings-new-password" type="password" autocomplete="new-password" required>
-              <button class="doke-password-dialog__toggle doke-icon-btn doke-icon-btn--flat" type="button" data-password-toggle="settings-new-password" aria-label="Mostrar senha">👁</button>
+              <button class="doke-password-dialog__toggle doke-icon-btn doke-icon-btn--flat" type="button" data-password-toggle="settings-new-password" aria-label="Mostrar senha">${eyeIcon}</button>
             </div>
           </label>
 
@@ -46,7 +47,7 @@
             <span>Confirmar nova senha</span>
             <div class="doke-password-dialog__input-wrap">
               <input class="doke-input" id="settings-new-password-confirmation" type="password" autocomplete="new-password" required>
-              <button class="doke-password-dialog__toggle doke-icon-btn doke-icon-btn--flat" type="button" data-password-toggle="settings-new-password-confirmation" aria-label="Mostrar senha">👁</button>
+              <button class="doke-password-dialog__toggle doke-icon-btn doke-icon-btn--flat" type="button" data-password-toggle="settings-new-password-confirmation" aria-label="Mostrar senha">${eyeIcon}</button>
             </div>
           </label>
         </div>
@@ -151,8 +152,24 @@
     return dialog;
   };
 
+  const resolveTriggers = () => {
+    const direct = Array.from(document.querySelectorAll('[data-settings-change-password]'));
+    if (direct.length) return direct;
+
+    const securityPanel = document.querySelector('[data-settings-panel="security"]');
+    const passwordRow = Array.from(securityPanel?.querySelectorAll('.settings-list-item') || [])
+      .find((row) => row.querySelector('h2')?.textContent.trim().toLowerCase() === 'senha');
+    const button = passwordRow?.querySelector('button');
+    if (!button) return [];
+
+    button.dataset.settingsChangePassword = '';
+    const description = passwordRow.querySelector('p');
+    if (description) description.textContent = 'Confirme sua senha atual para alterar a credencial e encerrar outras sessões.';
+    return [button];
+  };
+
   const bind = () => {
-    document.querySelectorAll('[data-settings-change-password]').forEach((button) => {
+    resolveTriggers().forEach((button) => {
       if (button.dataset.passwordChangeBound === 'true') return;
       button.dataset.passwordChangeBound = 'true';
       button.addEventListener('click', () => {
@@ -163,6 +180,8 @@
       });
     });
   };
+
+  window.DokeSettingsPassword = Object.freeze({ bind, createDialog });
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bind, { once: true });
   else bind();
