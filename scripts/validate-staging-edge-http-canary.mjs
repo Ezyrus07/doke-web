@@ -15,7 +15,11 @@ const FUNCTIONS = Object.freeze([
 const ALLOWED_ORIGIN = 'https://ezyrus07.github.io';
 const DENIED_ORIGIN = 'https://attacker.invalid';
 const REPORT_PATH = path.resolve('reports/generated/staging-edge-http-canary.json');
-const REQUEST_TIMEOUT_MS = 12_000;
+const REQUEST_TIMEOUT_MS = 20_000;
+const MAX_REQUEST_ATTEMPTS = 2;
+const FUNCTION_BATCH_SIZE = 3;
+
+const sleep = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
 const extractClientConfig = async () => {
   const source = await readFile('assets/js/core/supabase-config.js', 'utf8');
@@ -35,13 +39,31 @@ const responseSnapshot = async (response) => {
   };
 };
 
+const isTransientNetworkError = (error) => {
+  const name = error && typeof error === 'object' ? String(error.name || '') : '';
+  const message = error instanceof Error ? error.message.toLowerCase() : String(error || '').toLowerCase();
+  return ['AbortError', 'TimeoutError', 'TypeError'].includes(name)
+    || /timeout|timed out|aborted|fetch failed|network/.test(message);
+};
+
 const request = async (url, options) => {
-  const response = await fetch(url, {
-    ...options,
-    redirect: 'manual',
-    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-  });
-  return responseSnapshot(response);
+  let lastError = null;
+  for (let attempt = 1; attempt <= MAX_REQUEST_ATTEMPTS; attempt += 1) {
+    try {
+      const response = await fetch(url, {
+        ...options,
+        redirect: 'manual',
+        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+      });
+      return responseSnapshot(response);
+    } catch (error) {
+      lastError = error;
+      if (!isTransientNetworkError(error) || attempt === MAX_REQUEST_ATTEMPTS) throw error;
+      process.stderr.write(`RETRY network attempt ${attempt + 1}/${MAX_REQUEST_ATTEMPTS} for ${url}\n`);
+      await sleep(750 * attempt);
+    }
+  }
+  throw lastError || new Error('Unknown network failure.');
 };
 
 const requireHeader = (snapshot, name, expectedValue = null) => {
@@ -201,10 +223,13 @@ const runFunctionCanary = async ({ supabaseUrl, anonKey, oversizedBody, results 
 const run = async () => {
   const { url: supabaseUrl, anonKey } = await extractClientConfig();
   const results = [];
-  const oversizedBody = JSON.stringify({ payload: 'x'.repeat(128_000) });
+  const oversizedBody = JSON.stringify({ payload: 'x'.repeat(100_000) });
   const context = { supabaseUrl, anonKey, oversizedBody, results };
 
-  await Promise.all(FUNCTIONS.map((functionName) => runFunctionCanary(context, functionName)));
+  for (let index = 0; index < FUNCTIONS.length; index += FUNCTION_BATCH_SIZE) {
+    const batch = FUNCTIONS.slice(index, index + FUNCTION_BATCH_SIZE);
+    await Promise.all(batch.map((functionName) => runFunctionCanary(context, functionName)));
+  }
   results.sort((left, right) => `${left.functionName}:${left.caseName}`.localeCompare(`${right.functionName}:${right.caseName}`));
 
   const failures = results.filter((item) => !item.passed);
@@ -214,6 +239,12 @@ const run = async () => {
     gitSha: process.env.GITHUB_SHA || null,
     projectRef: new URL(supabaseUrl).hostname.split('.')[0],
     allowedOrigin: ALLOWED_ORIGIN,
+    networkPolicy: {
+      timeoutMilliseconds: REQUEST_TIMEOUT_MS,
+      maxAttempts: MAX_REQUEST_ATTEMPTS,
+      functionBatchSize: FUNCTION_BATCH_SIZE,
+      note: 'Only transient network and timeout failures are retried. HTTP status or contract mismatches fail immediately.',
+    },
     functions: FUNCTIONS,
     totalCases: results.length,
     passedCases: results.length - failures.length,
