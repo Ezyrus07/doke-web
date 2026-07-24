@@ -5,14 +5,6 @@ on:
     branches: [MAIN, main, master]
     paths:
       - '.github/workflows/staging-edge-http-canary.yml'
-      - 'scripts/validate-staging-edge-http-canary.mjs'
-      - 'assets/js/core/supabase-config.js'
-      - 'supabase/functions/**'
-      - 'supabase/migrations/145_edge_function_abuse_guard.sql'
-      - 'supabase/tests/014_edge_function_abuse_guard_validation.sql'
-      - 'docs/DOKE-ENGINEERING-JOURNAL.md'
-      - 'docs/validation/SEC-001-B05-B09-HARDENING-*'
-      - 'docs/validation/SEC-001-B09-STAGING-HTTP-CANARY.json'
   workflow_dispatch:
 
 permissions:
@@ -24,9 +16,9 @@ concurrency:
 
 jobs:
   staging-edge-http-canary:
-    name: Seven-function staging HTTP boundary canary
+    name: AUTH-A04 public signup and username canary
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
 
     steps:
       - name: Checkout candidate tree
@@ -37,14 +29,106 @@ jobs:
         with:
           node-version: 22
 
-      - name: Run staging Edge HTTP canary
-        run: node scripts/validate-staging-edge-http-canary.mjs
+      - name: Run public signup canary
+        env:
+          AUTH_A04_RUN_ID: ${{ github.run_id }}
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
 
-      - name: Upload canary evidence
+          const source = fs.readFileSync('assets/js/core/supabase-config.js', 'utf8');
+          const url = source.match(/url:\s*"([^"]+)"/)?.[1];
+          const anonKey = source.match(/anonKey:\s*\n?\s*"([^"]+)"/)?.[1];
+          if (!url || !anonKey) throw new Error('Public Supabase configuration was not found.');
+
+          const runId = process.env.AUTH_A04_RUN_ID;
+          const suffix = `${runId}-${Date.now().toString(36)}`;
+          const username = `a04_${suffix}`.toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 28);
+          const emailOne = `auth-a04-canary-${runId}-1@example.test`;
+          const emailTwo = `auth-a04-canary-${runId}-2@example.test`;
+          const password = 'DokeA04!Canary2026';
+          const headers = {
+            apikey: anonKey,
+            authorization: `Bearer ${anonKey}`,
+            'content-type': 'application/json'
+          };
+
+          async function rpc(value) {
+            const response = await fetch(`${url}/rest/v1/rpc/check_username_availability`, {
+              method: 'POST', headers, body: JSON.stringify({ p_username: value })
+            });
+            const body = await response.json().catch(() => null);
+            if (!response.ok) throw new Error(`RPC ${response.status}: ${JSON.stringify(body)}`);
+            return Array.isArray(body) ? body[0] : body;
+          }
+
+          async function signup(email, handle) {
+            const response = await fetch(`${url}/auth/v1/signup`, {
+              method: 'POST', headers,
+              body: JSON.stringify({
+                email,
+                password,
+                data: { name: 'AUTH A04 Canary', handle }
+              })
+            });
+            const body = await response.json().catch(() => null);
+            return { ok: response.ok, status: response.status, body };
+          }
+
+          (async () => {
+            const before = await rpc(username.toUpperCase());
+            if (!before?.valid || !before?.available || before?.username !== username) {
+              throw new Error(`Available username contract failed: ${JSON.stringify(before)}`);
+            }
+
+            const reserved = await rpc('@Admin');
+            if (reserved?.available || reserved?.valid || reserved?.reason !== 'reserved') {
+              throw new Error(`Reserved username contract failed: ${JSON.stringify(reserved)}`);
+            }
+
+            const first = await signup(emailOne, username.toUpperCase());
+            if (!first.ok || !first.body?.user?.id) {
+              throw new Error(`First signup failed: ${first.status} ${JSON.stringify(first.body)}`);
+            }
+
+            const taken = await rpc(username.toUpperCase());
+            if (!taken?.valid || taken?.available || taken?.reason !== 'taken') {
+              throw new Error(`Taken username contract failed: ${JSON.stringify(taken)}`);
+            }
+
+            const duplicate = await signup(emailTwo, username);
+            if (duplicate.ok) {
+              throw new Error(`Duplicate signup unexpectedly succeeded: ${JSON.stringify(duplicate.body)}`);
+            }
+
+            const report = {
+              runId,
+              username,
+              emailOne,
+              emailTwo,
+              firstSignupStatus: first.status,
+              confirmationRequired: !first.body?.session,
+              duplicateSignupStatus: duplicate.status,
+              duplicateRejected: true,
+              availabilityBefore: before.reason,
+              availabilityAfter: taken.reason,
+              reservedRejected: true,
+              publicAnonOnly: true
+            };
+            fs.mkdirSync('reports/generated', { recursive: true });
+            fs.writeFileSync('reports/generated/auth-a04-signup-canary.json', JSON.stringify(report, null, 2));
+            console.log(JSON.stringify(report));
+          })().catch((error) => {
+            console.error(error);
+            process.exit(1);
+          });
+          NODE
+
+      - name: Upload AUTH-A04 canary evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: doke-staging-edge-http-canary-${{ github.sha }}
-          path: reports/generated/staging-edge-http-canary.json
+          name: doke-auth-a04-signup-${{ github.run_id }}
+          path: reports/generated/auth-a04-signup-canary.json
           if-no-files-found: warn
           retention-days: 30
