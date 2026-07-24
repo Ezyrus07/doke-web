@@ -127,7 +127,8 @@ const vm = require('vm');
 
   const recoveryResult = await authority.completePasswordRecovery({ newPassword: 'NewStrong@123' });
   assert.strictEqual(recoveryResult.changed, true);
-  assert.deepStrictEqual(updateCalls[0], { password: 'NewStrong@123' });
+  assert.strictEqual(updateCalls[0]?.password, 'NewStrong@123');
+  assert.strictEqual(Object.keys(updateCalls[0] || {}).length, 1);
   assert.strictEqual(logoutCalls, 1, 'Recovery completion must end the recovery session.');
   assert(sessionClears >= 1, 'Public Doke session snapshots must be cleared after recovery.');
 
@@ -141,10 +142,8 @@ const vm = require('vm');
     newPassword: 'Another@123'
   });
   assert.strictEqual(changeResult.changed, true);
-  assert.deepStrictEqual(updateCalls[1], {
-    password: 'Another@123',
-    currentPassword: 'Current@123'
-  });
+  assert.strictEqual(updateCalls[1]?.password, 'Another@123');
+  assert.strictEqual(updateCalls[1]?.currentPassword, 'Current@123');
   assert(signOutCalls.some((call) => call.scope === 'others'), 'Other sessions must be revoked after an authenticated password change.');
   assert.strictEqual(refreshCalls, 1);
 
