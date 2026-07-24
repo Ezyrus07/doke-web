@@ -43,6 +43,22 @@ This document is intentionally append-only in spirit: old entries should not be 
 
 **Launch rule:** this may remain blocked during development, but it must be resolved or formally mitigated before a public beta with real users.
 
+## MAIL-001 — Auth transactional e-mail provider and canaries
+
+**Status:** `BLOCKED`
+
+**Reason:** The Supabase built-in development SMTP quota returned `429 over_email_send_rate_limit` during the AUTH-A04 public signup canary. This quota is shared by signup, recovery and other Auth e-mail operations and is intentionally restrictive.
+
+**Required before public beta:**
+
+1. Configure a controlled custom SMTP provider or wait for a verified quota window.
+2. Re-run signup confirmation with a disposable project-owned test mailbox.
+3. Re-run password-recovery and e-mail-change canaries.
+4. Verify redirect URLs, templates, delivery, expiry and replay behavior.
+5. Delete synthetic identities and record delivery evidence.
+
+**Boundary:** AUTH-A04 database and username authority is complete. E-mail delivery itself is not claimed as validated.
+
 ## Future paid dependencies
 
 Add every feature, infrastructure service, external API, monitoring tool, storage tier, e-mail service, AI quota, app-store cost, or security control that cannot be completed on the current free plans. Each item must state the expected cost, why it is necessary, and the milestone at which payment becomes justified.
@@ -98,9 +114,9 @@ Immediate blockers:
 - recovery/reset is not aligned with the real login and registration path;
 - API register/recovery/reset handlers are not materialized;
 - phone and OAuth controls are exposed without proven providers;
-- username availability remains local rather than transactional and server-authoritative.
+- username availability and transactional registration authority were resolved by AUTH-A04; confirmation-email delivery remains blocked under MAIL-001.
 
-Next sublot: `AUTH-A01 — authority freeze and baseline tests`.
+Next sublot: `AUTH-A05 — real password recovery, reset and reauthentication authority`.
 
 ## Next architectural domains after SEC-001
 
@@ -409,6 +425,61 @@ The Supabase SDK already persisted and refreshed its cryptographic session, whil
 ### Next step
 
 Execute `AUTH-A03`: controlled route enforcement and explicit 401, 403, suspended, expired and revoked states.
+
+---
+
+## 2026-07-24 — AUTH-A04 registration and username authority closed
+
+**Scope:** PR #9, staging project `zwkczgewzbsorbrjuzpb`
+
+**Outcome:** `DONE` for AUTH-A04; `BLOCKED` for MAIL-001
+
+### Context
+
+Username availability was still a browser-local guess while Supabase Auth and the existing account materializer could independently assign a different handle during a collision. Registration needed one transactional authority before recovery and other identity flows could be trusted.
+
+### Implementation
+
+- Added migration `146_auth_registration_username_authority.sql`.
+- Added canonical normalization, reserved-name rules and public availability RPC.
+- Strengthened `private.materialize_auth_account(uuid)`, preserving the existing `on_auth_user_created_doke` trigger as the only Auth materialization entry point.
+- Added `assets/js/services/auth-registration-authority.js` between the canonical auth service and the signup controller.
+- Added deterministic runtime and rollback-based SQL validation.
+- Kept browser snapshots free of reservations, credentials and provider secrets.
+
+### Correction recorded
+
+The first migration candidate attempted to add a second trigger directly to the Supabase-owned `auth.users` table. The migration executor rejected it with `must be owner of relation users`, and the transaction left no partial objects. The corrected design reused the existing canonical materializer instead of bypassing ownership or adding a competing trigger.
+
+### Validation
+
+- Corrected migration dry-run: passed with rollback.
+- Quality Gates #293: success.
+- Diagnostic E2E #88: success.
+- Staging Edge HTTP Canary #67: success.
+- Migration `auth_registration_username_authority`: applied to staging.
+- SQL validation 015: passed with rollback.
+- Available, taken, reserved and signup-race behavior: proven transactionally.
+- RPC grants and private materializer isolation: confirmed.
+- Existing profiles after validation: 3.
+- Synthetic AUTH-A04 users remaining: 0.
+
+### Public signup canary
+
+The public `anon` canary reached the username RPC and the Supabase `/auth/v1/signup` endpoint. Documentation-domain addresses were rejected as invalid; a randomized Gmail address reached confirmation delivery but the built-in SMTP returned `429 over_email_send_rate_limit`. No test account was persisted.
+
+This is recorded as `MAIL-001`. It does not invalidate the username transaction authority, but confirmation-email delivery remains explicitly unvalidated until SMTP capacity is available.
+
+### Risks and boundaries
+
+- Production was not changed.
+- Existing users and usernames were preserved.
+- Recovery/reset, OAuth, phone authentication and post-registration username changes remain outside AUTH-A04.
+- `PAID-001` remains unresolved.
+
+### Next step
+
+Execute `AUTH-A05`: replace the local recovery/reset flow with Supabase recovery, secure update-password handling and reauthentication states, while keeping MAIL-001 visible for real delivery canaries.
 
 ---
 
