@@ -168,7 +168,7 @@
     state.active = false;
     publishState('completed');
     try {
-      if (baseLogout) await baseLogout({ redirect: false });
+      if (baseLogout) await baseLogout({ scope: 'global', redirect: false });
       else await client.auth.signOut({ scope: 'global' });
     } finally {
       ns.session?.clear?.();
