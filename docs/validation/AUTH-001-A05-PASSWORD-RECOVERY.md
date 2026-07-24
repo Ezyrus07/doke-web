@@ -2,7 +2,7 @@
 
 **Date:** 2026-07-24  
 **Branch:** `auth/auth-001-baseline-audit`  
-**Status:** `IMPLEMENTED — FINAL CI PENDING`
+**Status:** `DONE`
 
 ## Objective
 
@@ -62,13 +62,18 @@ The existing `scripts/test-auth-registration-username-runtime.js` invokes the AU
 - generated domain matrix: regenerated and validated by the official generator;
 - temporary diagnostic workflows: removed or restored to their canonical versions.
 
-## Final validation pending
+## Final validation
 
-- Doke Quality Gates on the evidence head;
-- Diagnostic E2E on the evidence head;
-- visual structural guards on the evidence head;
-- staging Edge HTTP canary on the evidence head;
-- real recovery-email delivery canary under `MAIL-001`.
+Runtime and visual-validation head: `1ccd40328596368703bbf2e507fcaef3c3bb908c`.
+
+- Doke Quality Gates #351: `success`;
+- blocking deterministic E2E: `success`;
+- 105 visual structural guards: `success`;
+- Doke Diagnostic E2E #146: `success`;
+- Doke Staging Edge HTTP Canary #125: `success`;
+- governed matrix, authentication runtime tests and clean-patch checks: `success`.
+
+Actual recovery-email delivery remains explicitly blocked under `MAIL-001`; it is not presented as validated.
 
 ## Safety boundary
 
