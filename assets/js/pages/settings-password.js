@@ -21,7 +21,7 @@
             <h2 class="doke-password-dialog__title" id="${DIALOG_ID}-title">Alterar senha</h2>
             <p class="doke-password-dialog__description">Confirme sua senha atual antes de definir uma nova.</p>
           </div>
-          <button class="doke-icon-btn doke-icon-btn--soft" type="button" data-password-dialog-close aria-label="Fechar">
+          <button class="doke-close-button doke-icon-btn doke-icon-btn--soft" type="button" data-password-dialog-close aria-label="Fechar">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17"></path></svg>
           </button>
         </header>
