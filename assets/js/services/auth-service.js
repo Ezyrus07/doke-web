@@ -39,6 +39,9 @@
     currentUser: AUTH_ENDPOINTS.currentUser,
     currentProfile: AUTH_ENDPOINTS.currentProfile
   });
+  let apiAccessToken = '';
+  let supabaseAuthSubscription = null;
+  let supabaseBootstrapPromise = null;
 
   const delay = (ms = DELAY_MS) => new Promise((resolve) => root.setTimeout(resolve, ms));
   const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
@@ -90,21 +93,63 @@
       ownerProfileUrl: role === 'professional' ? 'perfil-profissional.html' : 'meu-perfil.html'
     };
   };
+  const mergeSupabaseUserWithSnapshot = (user) => {
+    const publicUser = publicUserFromSupabase(user);
+    const currentUser = getSessionStore()?.getCurrentUser?.() || getSessionStore()?.getUser?.() || null;
+    if (!publicUser || !currentUser || String(currentUser.id || '') !== String(publicUser.id || '')) return publicUser;
+    return {
+      ...currentUser,
+      ...publicUser,
+      profile: currentUser.profile || publicUser.profile || null,
+      profiles: Array.isArray(currentUser.profiles) ? currentUser.profiles : [],
+      publicProfileUrl: currentUser.publicProfileUrl || publicUser.publicProfileUrl || '',
+      ownerProfileUrl: currentUser.ownerProfileUrl || publicUser.ownerProfileUrl || ''
+    };
+  };
+
   const setSupabaseSession = (session, remember = true) => {
-    const user = publicUserFromSupabase(session?.user);
+    const user = mergeSupabaseUserWithSnapshot(session?.user);
     if (!user) throw new Error('Sessão Supabase inválida.');
     const store = getSessionStore();
     if (!store?.write) throw new Error('Session Store não foi carregado.');
+    const current = store.getSession?.() || store.read?.() || null;
     return store.write({
       provider: 'supabase',
-      token: session.access_token || '',
-      refreshToken: session.refresh_token || '',
       remember,
       user,
+      accountStatus: user.accountStatus || 'active',
       sessionStatus: 'active',
       expiresAt: session.expires_at ? new Date(session.expires_at * 1000).toISOString() : '',
-      issuedAt: new Date().toISOString()
+      issuedAt: current?.issuedAt || new Date().toISOString()
     });
+  };
+
+  const readAccessTokenFromPayload = (payload) => {
+    const source = payload?.session || payload || {};
+    return String(source.token || source.accessToken || source.access_token || payload?.token || '').trim();
+  };
+
+  const setApiAccessTokenFromPayload = (payload) => {
+    apiAccessToken = readAccessTokenFromPayload(payload);
+    return apiAccessToken;
+  };
+
+  const clearApiAccessToken = () => {
+    apiAccessToken = '';
+  };
+
+  const getSupabaseAccessToken = async () => {
+    const client = getSupabaseClient();
+    if (!client?.auth || typeof client.auth.getSession !== 'function') return '';
+    const response = await client.auth.getSession();
+    if (response?.error) throw response.error;
+    return String(response?.data?.session?.access_token || '').trim();
+  };
+
+  const getAccessToken = async () => {
+    if (canUseApiAuth()) return apiAccessToken;
+    if (isSupabaseAuthRequired()) return getSupabaseAccessToken();
+    return '';
   };
 
   const readQueryParam = (key) => {
@@ -399,7 +444,6 @@
 
   const buildSession = (user, options = {}) => ({
     provider: options.provider || 'mock',
-    token: `mock-${Date.now()}`,
     remember: options.remember !== false,
     user: toPublicUser(user),
     sessionStatus: options.sessionStatus || 'active',
@@ -407,10 +451,7 @@
     issuedAt: new Date().toISOString()
   });
 
-  const getSessionToken = () => {
-    const session = getSessionStore()?.getSession?.() || getSessionStore()?.read?.() || null;
-    return session?.token || '';
-  };
+  const getSessionToken = async () => getAccessToken();
 
   const normalizeApiErrorMessage = (payload, fallback) => {
     const message = payload?.message || payload?.error?.message || payload?.error || fallback || 'Não foi possível concluir a autenticação.';
@@ -427,7 +468,7 @@
       Accept: 'application/json',
       'Content-Type': 'application/json'
     };
-    const token = getSessionToken();
+    const token = await getSessionToken();
     if (token) headers.Authorization = `Bearer ${token}`;
 
     const options = {
@@ -459,8 +500,6 @@
 
     return {
       provider: AUTH_PROVIDER_VALUES.api,
-      token: source.token || source.accessToken || source.access_token || payload?.token || '',
-      refreshToken: source.refreshToken || source.refresh_token || payload?.refreshToken || '',
       remember: options.remember !== false,
       user: publicUser,
       accountStatus: source.accountStatus || user.accountStatus || user.status || 'active',
@@ -473,6 +512,7 @@
   const setSessionFromApiPayload = (payload, options = {}) => {
     const session = normalizeApiSessionPayload(payload, options);
     if (!session) return null;
+    setApiAccessTokenFromPayload(payload);
     const store = getSessionStore();
     if (!store?.write) throw new Error('Session Store não foi carregado.');
     return store.write(session);
@@ -490,8 +530,6 @@
     return store.write({
       ...(currentSession || {}),
       provider: currentSession?.provider || AUTH_PROVIDER_VALUES.api,
-      token: currentSession?.token || '',
-      refreshToken: currentSession?.refreshToken || '',
       remember: currentSession?.remember !== false,
       accountStatus: currentSession?.accountStatus || nextUser.accountStatus || 'active',
       sessionStatus: currentSession?.sessionStatus || 'active',
@@ -563,6 +601,62 @@
       return getSession();
     }
   };
+
+  const reconcileSupabaseSession = (session) => {
+    const current = getSession();
+    if (session?.user) {
+      const stored = setSupabaseSession(session, current?.remember !== false);
+      updateAccountSurfaces();
+      return stored;
+    }
+    if (String(current?.provider || '').toLowerCase() === 'supabase') {
+      getSessionStore()?.clear?.();
+      updateAccountSurfaces();
+    }
+    return null;
+  };
+
+  const bindSupabaseAuthStateChange = (client) => {
+    if (supabaseAuthSubscription || !client?.auth || typeof client.auth.onAuthStateChange !== 'function') return supabaseAuthSubscription;
+    const response = client.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT' || !session) reconcileSupabaseSession(null);
+      else reconcileSupabaseSession(session);
+    });
+    supabaseAuthSubscription = response?.data?.subscription || response?.subscription || response || true;
+    return supabaseAuthSubscription;
+  };
+
+  const refreshSupabaseSession = async ({ silent = false } = {}) => {
+    if (!isSupabaseAuthRequired()) return getSession();
+    const client = getSupabaseClient();
+    if (!client?.auth || typeof client.auth.getSession !== 'function') return getSession();
+    try {
+      bindSupabaseAuthStateChange(client);
+      const response = await client.auth.getSession();
+      if (response?.error) throw response.error;
+      return reconcileSupabaseSession(response?.data?.session || null);
+    } catch (error) {
+      if (!silent) throw error;
+      return getSession();
+    }
+  };
+
+  const bootstrapSupabaseSessionBridge = ({ silent = true } = {}) => {
+    if (!isSupabaseAuthRequired()) return Promise.resolve(getSession());
+    const client = getSupabaseClient();
+    if (!client) return Promise.resolve(getSession());
+    bindSupabaseAuthStateChange(client);
+    if (!supabaseBootstrapPromise) {
+      supabaseBootstrapPromise = refreshSupabaseSession({ silent }).finally(() => {
+        supabaseBootstrapPromise = null;
+      });
+    }
+    return supabaseBootstrapPromise;
+  };
+
+  const refreshSession = (options = {}) => canUseApiAuth()
+    ? refreshApiSession(options)
+    : refreshSupabaseSession(options);
 
   const getCurrentIdentity = () => {
     const session = getSession();
@@ -719,10 +813,15 @@
   };
 
   const logout = async ({ redirect = false, redirectTo } = {}) => {
+    if (canUseApiAuth()) {
+      try { await apiRequest('POST', AUTH_ENDPOINTS.logout); }
+      catch (error) { console.warn?.('[DokeAuth] API logout failed.', error); }
+    }
     const client = getSupabaseClient();
     if (client) {
       try { await client.auth.signOut(); } catch (error) { console.warn?.('[DokeAuth] Supabase logout failed.', error); }
     }
+    clearApiAccessToken();
     getSessionStore()?.clear?.();
     try {
       root.localStorage.removeItem('doke.auth.users.v1');
@@ -999,6 +1098,11 @@
 
     if (canUseApiAuth()) {
       refreshApiSession({ silent: true }).then(() => updateAccountSurfaces());
+    } else if (isSupabaseAuthRequired()) {
+      bootstrapSupabaseSessionBridge({ silent: true }).then(() => updateAccountSurfaces());
+      document.addEventListener('doke:supabase-client-ready', () => {
+        bootstrapSupabaseSessionBridge({ silent: true }).then(() => updateAccountSurfaces());
+      });
     }
 
     root.setTimeout(updateAccountSurfaces, 0);
@@ -1014,8 +1118,11 @@
     getAuthIdentityCanaryStatus,
     configureAuthIdentityCanary,
     rollbackAuthIdentityCanary,
-    refreshSession: refreshApiSession,
+    refreshSession,
     refreshApiSession,
+    refreshSupabaseSession,
+    bootstrapSupabaseSessionBridge,
+    getAccessToken,
     refreshCurrentIdentity: fetchApiCurrentIdentity,
     getCurrentIdentity,
     updateCurrentUser,

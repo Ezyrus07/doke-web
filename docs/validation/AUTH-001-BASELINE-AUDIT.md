@@ -4,7 +4,7 @@
 
 - **Branch:** `auth/auth-001-baseline-audit`
 - **Base:** `MAIN@1412a4c3aac60c5392ebbca466f1ecd1a8aa1428`
-- **Status:** `AUTH-A01 implementado; CI final pendente; runtime ainda não alterado`
+- **Status:** `IN PROGRESS — AUTH-A01 concluído; AUTH-A02 implementado e em validação`
 - **Ambiente alterado:** nenhum projeto Supabase; nenhum deploy; nenhuma configuração Auth.
 
 ## Objetivo
@@ -203,6 +203,15 @@ AUTH-001 só poderá ser marcado como concluído quando:
 11. pendências de telefone/OAuth estiverem implementadas ou claramente desativadas;
 12. `PAID-001` continuar explicitamente visível até ser resolvido.
 
+## AUTH-A02 — implementação
+
+- O Session Store agora persiste somente um snapshot público e saneia automaticamente registros legados com segredos.
+- `supabase` passou a ser provider reconhecido pelo contrato de domínio.
+- O serviço canônico registra uma única assinatura `onAuthStateChange()` e reconcilia o bootstrap por `getSession()`.
+- `DokeAuth.getAccessToken()` consulta o provider ativo; nenhum consumidor precisa ler `session.token`.
+- O provider API mantém access token somente em memória durante o canary.
+- Um teste determinístico valida migração, refresh, logout e ausência de segredos no runtime e no armazenamento.
+
 ## Próximo sublote
 
-Após o CI final confirmar o freeze, executar `AUTH-A02`: substituir a cópia local de tokens por uma ponte canônica de sessão Supabase, mantendo no estado Doke somente identidade pública sanitizada.
+Executar `AUTH-A03`: promover os guards privados de forma controlada e implementar estados seguros de sessão ausente, expirada, revogada, suspensa e sem permissão.

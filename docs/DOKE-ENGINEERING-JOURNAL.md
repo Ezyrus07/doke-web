@@ -379,6 +379,39 @@ Execute `AUTH-A01`: add an executable authority/loading audit and regression tes
 
 ---
 
+## 2026-07-24 — AUTH-A02 canonical Supabase session
+
+**Scope:** PR #9, branch `auth/auth-001-baseline-audit`
+
+**Outcome:** `IN PROGRESS` pending final CI
+
+### Context
+
+The Supabase SDK already persisted and refreshed its cryptographic session, while the Doke Session Store duplicated access and refresh tokens in `doke.auth.session.v1`. This created a second secret store and allowed the visual identity snapshot to drift from the provider session.
+
+### Implementation
+
+- Removed provider secrets from the normalized Doke session DTO.
+- Added automatic sanitization for token-bearing legacy snapshots.
+- Recognized `supabase` as a first-class session provider.
+- Added one Supabase bridge using `getSession()` and `onAuthStateChange()`.
+- Added `DokeAuth.getAccessToken()` so consumers resolve tokens from the provider authority.
+- Kept API-canary access tokens volatile in memory only.
+- Updated orders canary and professional-access synchronization to stop reading/copying snapshot tokens.
+- Added a deterministic runtime gate for bootstrap, refresh, migration and sign-out.
+
+### Validation boundary
+
+- No Supabase project, Auth setting, database object or production environment was changed.
+- No user credentials were created or mutated.
+- Route enforcement, registration authority, recovery and optional providers remain outside this sublot.
+
+### Next step
+
+Execute `AUTH-A03`: controlled route enforcement and explicit 401, 403, suspended, expired and revoked states.
+
+---
+
 # Entry template
 
 ## YYYY-MM-DD — Title

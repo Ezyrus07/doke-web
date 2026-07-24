@@ -154,8 +154,6 @@
     var session = Doke.session.getSession && Doke.session.getSession();
     Doke.session.setCurrentUser(user, {
       provider: session && session.provider || 'mock',
-      token: session && session.token || '',
-      refreshToken: session && session.refreshToken || '',
       remember: session ? session.remember !== false : true,
       sessionStatus: session && session.sessionStatus || 'active',
       expiresAt: session && session.expiresAt || ''

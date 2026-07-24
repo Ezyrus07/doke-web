@@ -5,9 +5,6 @@ on:
     branches: [MAIN, main, master]
     paths:
       - '.github/workflows/staging-edge-http-canary.yml'
-      - '.github/workflows/auth-a02-apply.yml'
-      - 'scripts/apply-auth-a02.mjs'
-      - 'scripts/run-auth-a02-applicator.mjs'
       - 'scripts/validate-staging-edge-http-canary.mjs'
       - 'assets/js/core/supabase-config.js'
       - 'supabase/functions/**'
@@ -19,85 +16,35 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: doke-staging-edge-http-canary-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   staging-edge-http-canary:
-    name: AUTH-A02 apply and staging boundary canary
+    name: Seven-function staging HTTP boundary canary
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 15
 
     steps:
-      - name: Checkout candidate branch
+      - name: Checkout candidate tree
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref || github.ref_name }}
-          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Preserve staging Edge HTTP boundary evidence
+      - name: Run staging Edge HTTP canary
         run: node scripts/validate-staging-edge-http-canary.mjs
-
-      - name: Apply AUTH-A02 transformation
-        shell: bash
-        run: |
-          mkdir -p reports/generated
-          if ! node scripts/run-auth-a02-applicator.mjs > reports/generated/auth-a02-apply.log 2>&1; then
-            cat reports/generated/auth-a02-apply.log
-            exit 1
-          fi
-          cat reports/generated/auth-a02-apply.log
-
-      - name: Remove temporary applicators and restore trusted workflow
-        shell: bash
-        run: |
-          git rm .github/workflows/auth-a02-apply.yml scripts/apply-auth-a02.mjs scripts/run-auth-a02-applicator.mjs
-          git checkout origin/MAIN -- .github/workflows/staging-edge-http-canary.yml
-
-      - name: Regenerate governed matrix
-        run: npm run write:domain-completion-matrix
-
-      - name: Validate canonical session implementation
-        run: |
-          npm run audit:auth-session
-          npm run audit:auth-real-contract
-          npm run test:real-auth-only-contract
-          npm run audit:domain-completion-matrix
-          git diff --check
-
-      - name: Commit AUTH-A02 implementation
-        shell: bash
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          if git diff --cached --quiet; then
-            echo "AUTH-A02 tree already current."
-            exit 0
-          fi
-          git commit -m "Implement AUTH-A02 canonical Supabase session"
-          git push origin "HEAD:${{ github.head_ref }}"
 
       - name: Upload canary evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: doke-auth-a02-${{ github.sha }}
-          path: |
-            reports/generated/staging-edge-http-canary.json
-            reports/generated/domain-completion-matrix-report.json
-            reports/generated/auth-a02-apply.log
+          name: doke-staging-edge-http-canary-${{ github.sha }}
+          path: reports/generated/staging-edge-http-canary.json
           if-no-files-found: warn
           retention-days: 30

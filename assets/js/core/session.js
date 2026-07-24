@@ -1,6 +1,6 @@
-/* Doke Session Store
-   Responsibility: persist and broadcast the authenticated user/session.
-   Provider-agnostic, currently safe for mock auth and future Supabase/Firebase wiring. */
+/* Doke Session Snapshot Store
+   Responsibility: persist and broadcast sanitized public identity/session state.
+   Authentication secrets remain under the active provider authority and never enter this snapshot. */
 (function () {
   'use strict';
 
@@ -10,6 +10,7 @@
 
   const STORAGE_KEY = 'doke.auth.session.v1';
   const LEGACY_KEYS = Object.freeze(['doke.auth.session.v2', 'doke.auth.session']);
+  const SENSITIVE_SESSION_KEYS = Object.freeze(['token', 'accessToken', 'access_token', 'refreshToken', 'refresh_token']);
   const listeners = new Set();
 
   const safeParse = (value) => {
@@ -21,6 +22,13 @@
   };
 
   const nowIso = () => new Date().toISOString();
+
+  const normalizeSessionProvider = (provider) => {
+    const value = String(provider || '').trim().toLowerCase();
+    if (value === 'supabase') return 'supabase';
+    if (Doke.authDomainContract?.normalizeAuthProvider) return Doke.authDomainContract.normalizeAuthProvider(value);
+    return value === 'api' ? 'api' : 'mock';
+  };
 
   const normalizeRole = (role) => {
     if (Doke.authDomainContract?.normalizeRole) return Doke.authDomainContract.normalizeRole(role);
@@ -135,11 +143,7 @@
     if (!user) return null;
 
     return {
-      provider: Doke.authDomainContract?.normalizeAuthProvider
-        ? Doke.authDomainContract.normalizeAuthProvider(session.provider || session.authProvider || 'mock')
-        : session.provider || session.authProvider || 'mock',
-      token: session.token || `mock-${Date.now()}`,
-      refreshToken: session.refreshToken || '',
+      provider: normalizeSessionProvider(session.provider || session.authProvider || 'mock'),
       remember: session.remember !== false,
       user,
       accountStatus: normalizeAccountStatus(session.accountStatus || user.accountStatus),
@@ -152,13 +156,35 @@
 
   const readStored = (key) => safeParse(root.localStorage.getItem(key));
 
+  const withoutSensitiveFields = (session) => {
+    if (!session || typeof session !== 'object') return session;
+    const sanitized = { ...session };
+    SENSITIVE_SESSION_KEYS.forEach((key) => delete sanitized[key]);
+    return sanitized;
+  };
+
+  const readSanitizedFromKey = (key) => {
+    const raw = readStored(key);
+    const normalized = normalizeSession(raw);
+    if (!normalized) return null;
+    const sanitized = withoutSensitiveFields(normalized);
+    if (JSON.stringify(raw) !== JSON.stringify(sanitized)) {
+      root.localStorage.setItem(key, JSON.stringify(sanitized));
+    }
+    return sanitized;
+  };
+
   const read = () => {
-    const primary = normalizeSession(readStored(STORAGE_KEY));
+    const primary = readSanitizedFromKey(STORAGE_KEY);
     if (primary) return primary;
 
     for (const key of LEGACY_KEYS) {
-      const migrated = normalizeSession(readStored(key));
-      if (migrated) return migrated;
+      const migrated = readSanitizedFromKey(key);
+      if (migrated) {
+        root.localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
+        LEGACY_KEYS.forEach((legacyKey) => root.localStorage.removeItem(legacyKey));
+        return migrated;
+      }
     }
 
     return null;
@@ -242,8 +268,6 @@
 
   const setCurrentUser = (user, meta = {}) => write({
     provider: meta.provider || meta.authProvider || 'mock',
-    token: meta.token || `mock-${Date.now()}`,
-    refreshToken: meta.refreshToken || '',
     remember: meta.remember !== false,
     sessionStatus: meta.sessionStatus || 'active',
     expiresAt: meta.expiresAt || '',
@@ -316,6 +340,7 @@
   const api = Object.freeze({
     STORAGE_KEY,
     LEGACY_KEYS,
+    SENSITIVE_SESSION_KEYS,
     read,
     write,
     clear,
@@ -333,7 +358,8 @@
     subscribe,
     normalizeUser,
     normalizeProfile,
-    normalizeSession
+    normalizeSession,
+    normalizeSessionProvider
   });
 
   ns.session = api;

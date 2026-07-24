@@ -276,15 +276,18 @@
   }
 
   function getSessionToken() {
-    if (Doke.session && typeof Doke.session.getSession === 'function') {
-      var session = Doke.session.getSession();
-      if (session && session.token) return session.token;
+    if (root.DokeAuth && typeof root.DokeAuth.getAccessToken === 'function') {
+      return Promise.resolve(root.DokeAuth.getAccessToken()).catch(function () { return ''; });
     }
-    if (root.DokeAuth && typeof root.DokeAuth.getSession === 'function') {
-      var authSession = root.DokeAuth.getSession();
-      if (authSession && authSession.token) return authSession.token;
+    var client = root.DokeSupabase && typeof root.DokeSupabase.getClient === 'function'
+      ? root.DokeSupabase.getClient()
+      : null;
+    if (client && client.auth && typeof client.auth.getSession === 'function') {
+      return Promise.resolve(client.auth.getSession()).then(function (response) {
+        return response && response.data && response.data.session && response.data.session.access_token || '';
+      }).catch(function () { return ''; });
     }
-    return '';
+    return Promise.resolve('');
   }
 
   function extractIdempotencyKey(payload, options) {
@@ -321,19 +324,20 @@
     if (!status.active) return Promise.reject(new Error('Orders write API canary is not active: ' + status.blockers.join(' ')));
 
     var baseUrl = readOrdersApiBaseUrl(getRuntimeConfig());
-    var headers = {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-      'x-idempotency-key': idempotencyKey
-    };
-    var token = getSessionToken();
-    if (token) headers.Authorization = 'Bearer ' + token;
+    return getSessionToken().then(function (token) {
+      var headers = {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        'x-idempotency-key': idempotencyKey
+      };
+      if (token) headers.Authorization = 'Bearer ' + token;
 
-    return root.fetch(baseUrl + path, {
-      method: 'POST',
-      credentials: 'same-origin',
-      headers: headers,
-      body: JSON.stringify(stripCanaryPayloadMetadata(payload || {}))
+      return root.fetch(baseUrl + path, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: headers,
+        body: JSON.stringify(stripCanaryPayloadMetadata(payload || {}))
+      });
     }).then(function (response) {
       return response.json().catch(function () { return {}; }).then(function (body) {
         if (!response.ok) {

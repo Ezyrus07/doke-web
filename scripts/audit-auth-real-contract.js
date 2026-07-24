@@ -49,7 +49,8 @@ for (const snippet of [
   'accountStatus',
   'sessionStatus',
   'canAccessAdmin',
-  'refreshToken'
+  'SENSITIVE_SESSION_KEYS',
+  'normalizeSessionProvider'
 ]) {
   if (!session.includes(snippet)) failures.push(`session.js missing real-auth snippet: ${snippet}`);
 }
@@ -78,7 +79,10 @@ for (const snippet of [
   'apiRequest',
   'refreshApiSession',
   'Auth API blocked: apiBaseUrl is not configured',
-  'getActiveAuthProvider'
+  'getActiveAuthProvider',
+  'onAuthStateChange',
+  'getAccessToken',
+  'refreshSupabaseSession'
 ]) {
   if (!authService.includes(snippet)) failures.push(`auth-service.js missing Sprint 12A auth API snippet: ${snippet}`);
 }

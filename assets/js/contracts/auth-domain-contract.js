@@ -14,7 +14,8 @@
 
   var AUTH_PROVIDERS = Object.freeze({
     MOCK: 'mock',
-    API: 'api'
+    API: 'api',
+    SUPABASE: 'supabase'
   });
 
   var AUTH_STATUS = Object.freeze({
@@ -141,6 +142,7 @@
 
   function normalizeAuthProvider(provider) {
     var value = String(provider || '').trim().toLowerCase();
+    if (value === AUTH_PROVIDERS.SUPABASE) return AUTH_PROVIDERS.SUPABASE;
     return value === AUTH_PROVIDERS.API ? AUTH_PROVIDERS.API : AUTH_PROVIDERS.MOCK;
   }
 

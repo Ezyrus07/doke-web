@@ -81,9 +81,7 @@ Se qualquer condição faltar, `DokeAuth.getAuthProviderStatus().activeProvider`
 
 ```js
 {
-  provider: 'mock' | 'api',
-  token: 'string',
-  refreshToken: 'string',
+  provider: 'mock' | 'api' | 'supabase',
   remember: true,
   user: User,
   accountStatus: 'active' | 'pending_review' | 'pending_email' | 'suspended' | 'disabled',
@@ -277,3 +275,15 @@ npm run validate:auth-identity-canary:promotion-gate
 O gate mantém o contrato `authProvider='api'`, `dataProvider='mock'` e `enableNetworkRequests=true` somente para autenticação/identidade. Ele valida os gates locais de browser e rede local, lê opcionalmente o relatório real de `scripts/validate-auth-identity-canary.js` e bloqueia promoção estrita quando `DOKE_AUTH_IDENTITY_CANARY_REQUIRE_REAL_REPORT=1` está ativo.
 
 O único relatório aceito para liberar avanço manual deve conter resultados reais para client e professional em `/auth/login`, `/auth/session`, `/users/me` e `/profiles/me`, sem endpoints de domínio operacional.
+
+
+## AUTH-A02 — sessão canônica Supabase
+
+A sessão criptográfica deixou de ser duplicada no snapshot persistido pela Doke.
+
+- O Supabase SDK continua responsável por persistência, renovação e revogação em `doke.supabase.auth`.
+- `doke.auth.session.v1` contém apenas identidade pública, provider, status e metadados de renderização.
+- Snapshots legados com `token`, `accessToken`, `access_token`, `refreshToken` ou `refresh_token` são saneados automaticamente na primeira leitura.
+- `DokeAuth.getAccessToken()` consulta a autoridade ativa sem expor o segredo no Session Store.
+- `getSession()` e `onAuthStateChange()` alimentam uma única ponte de reconciliação para login, refresh, revogação e logout.
+- O provider API controlado mantém apenas access token volátil em memória; persistência durável exige cookie `httpOnly`.

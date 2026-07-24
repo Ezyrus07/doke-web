@@ -9,6 +9,9 @@ const SESSION_STORE = 'assets/js/core/session.js';
 const USERS_REPOSITORY = 'assets/js/repositories/users-repository.js';
 const AUTH_PAGE_CONTROLLER = 'assets/js/pages/auth.js';
 const SUPABASE_CONFIG = 'assets/js/core/supabase-config.js';
+const AUTH_DOMAIN_CONTRACT = 'assets/js/contracts/auth-domain-contract.js';
+const ORDERS_SERVICE = 'assets/js/services/orders-service.js';
+const PROFESSIONAL_ACCESS_SERVICE = 'assets/js/services/professional-access-service.js';
 
 const requiredFiles = [
   'assets/js/core/app-state.js',
@@ -149,6 +152,31 @@ for (const token of [
     errors.push(`${CANONICAL_AUTH_SERVICE} is missing canonical authority token: ${token}`);
   }
 }
+
+const sessionSource = fs.readFileSync(path.join(root, SESSION_STORE), 'utf8');
+for (const token of ['SENSITIVE_SESSION_KEYS', 'normalizeSessionProvider', "if (value === 'supabase') return 'supabase'"]) {
+  if (!sessionSource.includes(token)) errors.push('assets/js/core/session.js missing canonical sanitized-session token: ' + token);
+}
+for (const forbidden of ['token: session.token', 'refreshToken: session.refreshToken', 'token: meta.token', 'refreshToken: meta.refreshToken']) {
+  if (sessionSource.includes(forbidden)) errors.push('assets/js/core/session.js still persists secret field: ' + forbidden);
+}
+
+for (const token of ['onAuthStateChange', 'getAccessToken', 'refreshSupabaseSession', 'bootstrapSupabaseSessionBridge', 'apiAccessToken']) {
+  if (!canonicalSource.includes(token)) errors.push('assets/js/services/auth-service.js missing canonical session bridge token: ' + token);
+}
+for (const forbidden of ['token: session.access_token', 'refreshToken: session.refresh_token', 'return session?.token']) {
+  if (canonicalSource.includes(forbidden)) errors.push('assets/js/services/auth-service.js still duplicates provider secret: ' + forbidden);
+}
+
+const authDomainSource = fs.readFileSync(path.join(root, AUTH_DOMAIN_CONTRACT), 'utf8');
+if (!authDomainSource.includes("SUPABASE: 'supabase'")) errors.push('assets/js/contracts/auth-domain-contract.js does not recognize Supabase session provider');
+
+const ordersSource = fs.readFileSync(path.join(root, ORDERS_SERVICE), 'utf8');
+if (!ordersSource.includes('DokeAuth.getAccessToken')) errors.push('assets/js/services/orders-service.js does not resolve provider token through canonical auth authority');
+if (ordersSource.includes('session && session.token')) errors.push('assets/js/services/orders-service.js still reads token from Doke session snapshot');
+
+const professionalAccessSource = fs.readFileSync(path.join(root, PROFESSIONAL_ACCESS_SERVICE), 'utf8');
+if (professionalAccessSource.includes('refreshToken: session && session.refreshToken')) errors.push('assets/js/services/professional-access-service.js still copies refresh token into snapshot');
 
 const legacySource = fs.readFileSync(path.join(root, LEGACY_AUTH_SERVICE), 'utf8');
 if (!legacySource.includes('doke.auth.session.v2') || !legacySource.includes('doke.auth.users.v1')) {

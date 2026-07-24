@@ -3,9 +3,9 @@
   "observedAt": "2026-07-24",
   "branch": "auth/auth-001-baseline-audit",
   "base": "MAIN@1412a4c3aac60c5392ebbca466f1ecd1a8aa1428",
-  "status": "AUTH_A01_IMPLEMENTED_FINAL_CI_TRIGGERED",
+  "status": "AUTH_A02_IMPLEMENTED_PENDING_FINAL_CI",
   "verificationCheckpoint": "integration_commit_after_governed_matrix_regeneration",
-  "runtimeChanged": false,
+  "runtimeChanged": true,
   "supabaseMutated": false,
   "productionMutated": false,
   "activeFrontendAuthority": {
@@ -17,7 +17,7 @@
   },
   "dormantLegacyAuthority": "assets/js/core/auth-service.js",
   "authorityFreeze": {
-    "status": "IMPLEMENTED_PENDING_FINAL_CI",
+    "status": "DONE",
     "gate": "scripts/audit-auth-session-contracts.js",
     "checks": [
       "all active root and auth HTML pages are inventoried",
@@ -108,10 +108,28 @@
     "AUTH-A06_OPTIONAL_PROVIDERS",
     "AUTH-A07_STAGING_CANARIES_AND_PROMOTION"
   ],
-  "nextSublot": "AUTH-A02_CANONICAL_SUPABASE_SESSION",
+  "nextSublot": "AUTH-A03_ROUTE_GUARDS_AND_ACCESS_STATES",
   "paidDependency": {
     "id": "PAID-001",
     "status": "BLOCKED",
     "title": "Supabase leaked-password protection"
+  },
+  "canonicalSession": {
+    "status": "IMPLEMENTED_PENDING_FINAL_CI",
+    "providerAuthority": "Supabase SDK or API httpOnly/volatile access token boundary",
+    "persistedSnapshot": "public_identity_only",
+    "sensitiveKeysRemoved": [
+      "token",
+      "accessToken",
+      "access_token",
+      "refreshToken",
+      "refresh_token"
+    ],
+    "legacyMigration": "sanitize_on_read",
+    "reconciliation": [
+      "getSession",
+      "onAuthStateChange"
+    ],
+    "runtimeGate": "scripts/test-auth-canonical-session-runtime.js"
   }
 }
