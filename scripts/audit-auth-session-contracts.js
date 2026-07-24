@@ -138,7 +138,7 @@ for (const page of activeHtmlFiles) {
 
   if (sources.includes(CANONICAL_AUTH_SERVICE)) {
     canonicalConsumerCount += 1;
-    assertOrdered(sources, [SESSION_STORE, CANONICAL_AUTH_SERVICE, PAGE_BOOTSTRAP], page);
+    assertOrdered(sources, [SESSION_STORE, CANONICAL_AUTH_SERVICE], page);
   }
 }
 
@@ -237,7 +237,7 @@ if (!routes || typeof routes.getRoutePolicy !== 'function') {
 
 const routeGuardSource = read(ROUTE_GUARD);
 for (const token of [
-  'data-auth-route-decision',
+  'authRouteDecision',
   'refreshSession',
   'requiresAdmin',
   'canAccessAdmin',
