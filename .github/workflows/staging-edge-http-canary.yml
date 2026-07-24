@@ -1,0 +1,47 @@
+name: Doke Staging Edge HTTP Canary
+
+on:
+  pull_request:
+    branches: [MAIN, main, master]
+    paths:
+      - '.github/workflows/staging-edge-http-canary.yml'
+      - 'scripts/validate-staging-edge-http-canary.mjs'
+      - 'assets/js/core/supabase-config.js'
+      - 'supabase/functions/**'
+      - 'supabase/migrations/145_edge_function_abuse_guard.sql'
+      - 'supabase/tests/014_edge_function_abuse_guard_validation.sql'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: doke-staging-edge-http-canary-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  staging-edge-http-canary:
+    name: Seven-function staging HTTP boundary canary
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout candidate tree
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Run staging Edge HTTP canary
+        run: node scripts/validate-staging-edge-http-canary.mjs
+
+      - name: Upload canary evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: doke-staging-edge-http-canary-${{ github.sha }}
+          path: reports/generated/staging-edge-http-canary.json
+          if-no-files-found: warn
+          retention-days: 30
