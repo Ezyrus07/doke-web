@@ -1,16 +1,144 @@
-/* Doke protected-route pre-paint guard
- * Prevents owner-only HTML from being painted before authentication is resolved. */
-html[data-auth-guard="pending"],
-html[data-auth-guard="redirecting"] {
+/* Doke protected-route pre-paint and access-state contract.
+ * The early surface may mark a document as pending, but only route-guard.js
+ * may publish the final data-auth-route-decision. */
+html[data-auth-guard] {
   background: #edf4fb;
 }
 
 html[data-auth-guard="pending"] body,
-html[data-auth-guard="redirecting"] body {
+html[data-auth-guard="redirecting"] body,
+html[data-auth-guard="authorized"]:not([data-auth-route-decision="authorized"]) body {
   visibility: hidden;
   pointer-events: none;
 }
 
-html[data-auth-guard="authorized"] body {
+html[data-auth-route-decision="authorized"] body {
   visibility: visible;
+  pointer-events: auto;
+}
+
+html[data-auth-route-decision="expired"] body,
+html[data-auth-route-decision="revoked"] body,
+html[data-auth-route-decision="suspended"] body,
+html[data-auth-route-decision="disabled"] body,
+html[data-auth-route-decision="forbidden"] body,
+html[data-auth-route-decision="error"] body {
+  min-height: 100vh;
+  visibility: visible;
+  pointer-events: auto;
+  background: #edf4fb;
+}
+
+html[data-auth-route-decision="expired"] body > *:not(.doke-auth-access-state),
+html[data-auth-route-decision="revoked"] body > *:not(.doke-auth-access-state),
+html[data-auth-route-decision="suspended"] body > *:not(.doke-auth-access-state),
+html[data-auth-route-decision="disabled"] body > *:not(.doke-auth-access-state),
+html[data-auth-route-decision="forbidden"] body > *:not(.doke-auth-access-state),
+html[data-auth-route-decision="error"] body > *:not(.doke-auth-access-state) {
+  display: none;
+}
+
+.doke-auth-access-state {
+  position: fixed;
+  inset: 0;
+  z-index: 12000;
+  display: grid;
+  place-items: center;
+  overflow: auto;
+  padding: 24px;
+  background: #edf4fb;
+  color: #183b5d;
+}
+
+.doke-auth-access-state__card {
+  width: min(100%, 520px);
+  padding: clamp(28px, 5vw, 44px);
+  border: 1px solid rgba(24, 75, 118, 0.1);
+  border-radius: 28px;
+  background: #ffffff;
+  box-shadow: 0 24px 64px rgba(18, 55, 95, 0.12);
+  text-align: center;
+}
+
+.doke-auth-access-state__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  margin-bottom: 18px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: rgba(42, 95, 144, 0.09);
+  color: #2a5f90;
+  font: 600 0.78rem/1.2 Poppins, system-ui, sans-serif;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.doke-auth-access-state__title {
+  margin: 0;
+  color: #173b5d;
+  font: 700 clamp(1.5rem, 4vw, 2rem)/1.2 Poppins, system-ui, sans-serif;
+}
+
+.doke-auth-access-state__description {
+  max-width: 430px;
+  margin: 14px auto 0;
+  color: #58718a;
+  font: 400 0.98rem/1.65 Poppins, system-ui, sans-serif;
+}
+
+.doke-auth-access-state__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 28px;
+}
+
+.doke-auth-access-state__action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 10px 18px;
+  border-radius: 14px;
+  background: rgba(42, 95, 144, 0.08);
+  color: #2a5f90;
+  font: 600 0.9rem/1.2 Poppins, system-ui, sans-serif;
+  text-decoration: none;
+}
+
+.doke-auth-access-state__action--primary {
+  background: #2a5f90;
+  color: #ffffff;
+}
+
+.doke-auth-access-state__action:hover {
+  filter: brightness(0.97);
+}
+
+.doke-auth-access-state__action:focus-visible {
+  outline: 3px solid rgba(42, 95, 144, 0.24);
+  outline-offset: 3px;
+}
+
+@media (max-width: 560px) {
+  .doke-auth-access-state {
+    align-items: end;
+    padding: 16px;
+  }
+
+  .doke-auth-access-state__card {
+    width: 100%;
+    padding: 28px 22px;
+    border-radius: 24px;
+  }
+
+  .doke-auth-access-state__actions {
+    flex-direction: column;
+  }
+
+  .doke-auth-access-state__action {
+    width: 100%;
+  }
 }

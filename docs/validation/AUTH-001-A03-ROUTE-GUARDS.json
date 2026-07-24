@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-07-24",
+  "branch": "auth/auth-001-baseline-audit",
+  "base": "MAIN@1412a4c3aac60c5392ebbca466f1ecd1a8aa1428",
+  "status": "AUTH_A03_IMPLEMENTED_PENDING_FINAL_CI",
+  "runtimeChanged": true,
+  "supabaseMutated": false,
+  "productionMutated": false,
+  "canonicalAuthority": {
+    "routeMap": "assets/js/core/auth-route-map.js",
+    "routeGuard": "assets/js/core/route-guard.js",
+    "bootstrap": "assets/js/core/page-bootstrap.js",
+    "finalDecisionAttribute": "data-auth-route-decision"
+  },
+  "states": [
+    "pending",
+    "redirecting",
+    "authorized",
+    "expired",
+    "revoked",
+    "suspended",
+    "disabled",
+    "forbidden",
+    "error"
+  ],
+  "policies": {
+    "privateDefault": "enforce",
+    "adminRoutes": "requires canonical canAccessAdmin",
+    "anonymous": "same-origin login redirect with next",
+    "public": "authorized",
+    "failClosed": true
+  },
+  "prepaint": {
+    "standard": "assets/css/core/auth-prepaint-guard.css",
+    "communityEarly": "assets/js/features/community/community-reload-state-early.js",
+    "sharedImport": "assets/css/components/feedback/document-preloader.css"
+  },
+  "validation": {
+    "staticGate": "scripts/audit-auth-session-contracts.js",
+    "runtimeGate": "scripts/test-auth-route-guard-runtime.js"
+  },
+  "nextSublot": "AUTH-A04_REAL_REGISTRATION_AND_USERNAME"
+}

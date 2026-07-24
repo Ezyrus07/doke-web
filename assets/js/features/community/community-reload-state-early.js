@@ -1,6 +1,9 @@
 (function () {
   'use strict';
 
+  document.documentElement.dataset.authGuard = 'pending';
+  document.documentElement.dataset.authGuardMode = 'enforce';
+
   function isReloadNavigation() {
     try {
       var entries = window.performance && typeof window.performance.getEntriesByType === 'function'
