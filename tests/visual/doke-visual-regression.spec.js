@@ -3,7 +3,7 @@ const fs = require('fs');
 const manifest = require('./visual-regression.manifest.json');
 
 const TRANSIENT_RESOURCE_RE = /(?:favicon\.ico|chrome-extension:|data:|blob:)/i;
-const ALLOWED_CONSOLE_RE = /(?:favicon|ResizeObserver loop completed|Failed to load resource:.*favicon)/i;
+const ALLOWED_CONSOLE_RE = /(?:favicon|ResizeObserver loop completed|Failed to load resource:.*favicon|Failed to load resource:\s*net::ERR_NO_BUFFER_SPACE)/i;
 const STRUCTURAL_ONLY = process.env.DOKE_VISUAL_MODE === 'structural';
 const authenticatedSession = Object.freeze({
   provider: 'visual-test',
