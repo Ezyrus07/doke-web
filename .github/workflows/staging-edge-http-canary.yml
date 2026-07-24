@@ -38,47 +38,79 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Prepare diagnostic directory
+        run: mkdir -p reports/generated
+
       - name: Diagnose domain completion governance
         id: domain_completion
         continue-on-error: true
-        run: npm run audit:domain-completion-matrix
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run audit:domain-completion-matrix 2>&1 | tee reports/generated/domain-completion-governance.log
 
       - name: Diagnose agent governance
         id: agent_governance
         continue-on-error: true
-        run: npm run audit:agent-governance
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run audit:agent-governance 2>&1 | tee reports/generated/agent-governance.log
 
       - name: Diagnose unused asset governance
         id: unused_assets
         continue-on-error: true
-        run: npm run audit:unused-asset-candidates
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run audit:unused-asset-candidates 2>&1 | tee reports/generated/unused-asset-governance.log
 
       - name: Diagnose duplicate asset governance
         id: duplicate_assets
         continue-on-error: true
-        run: npm run audit:duplicate-assets
-
-      - name: Fail on governed audit drift
-        if: >-
-          steps.domain_completion.outcome != 'success' ||
-          steps.agent_governance.outcome != 'success' ||
-          steps.unused_assets.outcome != 'success' ||
-          steps.duplicate_assets.outcome != 'success'
+        shell: bash
         run: |
-          echo "domain_completion=${{ steps.domain_completion.outcome }}"
-          echo "agent_governance=${{ steps.agent_governance.outcome }}"
-          echo "unused_assets=${{ steps.unused_assets.outcome }}"
-          echo "duplicate_assets=${{ steps.duplicate_assets.outcome }}"
-          exit 1
+          set -o pipefail
+          npm run audit:duplicate-assets 2>&1 | tee reports/generated/duplicate-asset-governance.log
 
       - name: Run staging Edge HTTP canary
+        id: edge_canary
+        continue-on-error: true
         run: node scripts/validate-staging-edge-http-canary.mjs
 
-      - name: Upload canary evidence
+      - name: Write diagnostic outcome summary
+        if: always()
+        shell: bash
+        run: |
+          cat > reports/generated/staging-edge-http-diagnostic-outcomes.json <<EOF
+          {
+            "gitSha": "${{ github.sha }}",
+            "domainCompletion": "${{ steps.domain_completion.outcome }}",
+            "agentGovernance": "${{ steps.agent_governance.outcome }}",
+            "unusedAssets": "${{ steps.unused_assets.outcome }}",
+            "duplicateAssets": "${{ steps.duplicate_assets.outcome }}",
+            "edgeCanary": "${{ steps.edge_canary.outcome }}"
+          }
+          EOF
+
+      - name: Upload canary and governance evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: doke-staging-edge-http-canary-${{ github.sha }}
-          path: reports/generated/staging-edge-http-canary.json
+          path: |
+            reports/generated/staging-edge-http-canary.json
+            reports/generated/staging-edge-http-diagnostic-outcomes.json
+            reports/generated/*-governance.log
           if-no-files-found: warn
           retention-days: 30
+
+      - name: Enforce diagnostic outcomes
+        if: always()
+        shell: bash
+        run: |
+          test "${{ steps.domain_completion.outcome }}" = "success"
+          test "${{ steps.agent_governance.outcome }}" = "success"
+          test "${{ steps.unused_assets.outcome }}" = "success"
+          test "${{ steps.duplicate_assets.outcome }}" = "success"
+          test "${{ steps.edge_canary.outcome }}" = "success"
