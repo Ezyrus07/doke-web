@@ -466,7 +466,7 @@ The first migration candidate attempted to add a second trigger directly to the 
 
 ### Public signup canary
 
-The public `anon` canary reached the username RPC and the Supabase `/auth/v1/signup` endpoint. Documentation-domain addresses were rejected as invalid; a randomized Gmail address reached confirmation delivery but the built-in SMTP returned `429 over_email_send_rate_limit`. No test account was persisted.
+The public `anon` canary reached the Supabase `/auth/v1/signup` endpoint. An `example.test` address was rejected with `400 email_address_invalid`; an `example.com` address passed validation but the built-in SMTP returned `429 over_email_send_rate_limit` before account creation. No test account was persisted, and post-signup HTTP assertions were not reached.
 
 This is recorded as `MAIL-001`. It does not invalidate the username transaction authority, but confirmation-email delivery remains explicitly unvalidated until SMTP capacity is available.
 
