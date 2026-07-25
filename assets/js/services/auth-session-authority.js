@@ -213,23 +213,23 @@
   const resetPassword = (payload = {}) => requirePasswordAuthority().resetPassword(payload);
 
   const identityMutationError = () => {
-  const error = new Error('Alterações de identidade exigem uma autoridade remota dedicada.');
-  error.code = 'DOKE_AUTH_IDENTITY_MUTATION_REQUIRES_REMOTE_AUTHORITY';
-  return error;
-};
+    const error = new Error('Alterações de identidade exigem uma autoridade remota dedicada.');
+    error.code = 'DOKE_AUTH_IDENTITY_MUTATION_REQUIRES_REMOTE_AUTHORITY';
+    return error;
+  };
 
-const updateCurrentUser = async (patch = {}) => {
-  const source = patch && typeof patch === 'object' ? patch : {};
-  const keys = Object.keys(source);
-  if (keys.length === 1 && keys[0] === 'settings' && typeof baseService?.updateCurrentUser === 'function') {
-    return baseService.updateCurrentUser(source);
-  }
-  throw identityMutationError();
-};
+  const updateCurrentUser = async (patch = {}) => {
+    const source = patch && typeof patch === 'object' ? patch : {};
+    const keys = Object.keys(source);
+    if (keys.length === 1 && keys[0] === 'settings' && typeof baseService?.updateCurrentUser === 'function') {
+      return baseService.updateCurrentUser(source);
+    }
+    throw identityMutationError();
+  };
 
-const updateCurrentProfile = async () => {
-  throw identityMutationError();
-};
+  const updateCurrentProfile = async () => {
+    throw identityMutationError();
+  };
 
   const resolveLoginRedirect = () => {
     const inAuthFolder = root.location.pathname.includes('/auth/');
