@@ -8,7 +8,7 @@
   const ns = root.DokeAuth || (root.DokeAuth = {});
   const Doke = root.Doke || (root.Doke = {});
 
-  const AUTH_PROVIDER_VALUES = Object.freeze({ mock: 'mock', api: 'api' });
+  const AUTH_PROVIDER_VALUES = Object.freeze({ mock: 'mock', api: 'api', supabase: 'supabase' });
   const AUTH_ENDPOINTS = Object.freeze({
     login: '/auth/login',
     register: '/auth/register',
@@ -22,14 +22,6 @@
   const DEFAULT_LOGIN_URL = 'auth/login.html';
   const DEFAULT_APP_URL = 'index.html';
   const DELAY_MS = 120;
-  const AUTH_IDENTITY_CANARY_KEYS = Object.freeze({
-    enabled: 'doke.canary.authIdentity.enabled',
-    backup: 'doke.canary.authIdentity.backup.v1',
-    authProvider: 'doke.authProvider',
-    dataProvider: 'doke.dataProvider',
-    apiBaseUrl: 'doke.apiBaseUrl',
-    network: 'doke.flag.enableNetworkRequests'
-  });
   const CANARY_REQUIRED_ENDPOINTS = Object.freeze({
     login: AUTH_ENDPOINTS.login,
     session: AUTH_ENDPOINTS.session,
@@ -144,214 +136,59 @@
   };
 
   const getAccessToken = async () => {
-    if (canUseApiAuth()) return apiAccessToken;
     if (isSupabaseAuthRequired()) return getSupabaseAccessToken();
     return '';
   };
 
-  const readQueryParam = (key) => {
-    try {
-      return new URLSearchParams(root.location.search || '').get(key);
-    } catch {
-      return null;
-    }
-  };
-
-  const readStorage = (key) => {
-    try {
-      return root.localStorage.getItem(key);
-    } catch {
-      return null;
-    }
-  };
-
-  const normalizeBoolean = (value) => {
-    if (value === true || value === 'true' || value === '1' || value === 'on') return true;
-    if (value === false || value === 'false' || value === '0' || value === 'off') return false;
-    return undefined;
-  };
-
   const normalizeBaseUrl = (value) => String(value || '').trim().replace(/\/$/, '');
-  const normalizeProviderName = (value) => String(value || '').trim().toLowerCase() === AUTH_PROVIDER_VALUES.api
-    ? AUTH_PROVIDER_VALUES.api
-    : AUTH_PROVIDER_VALUES.mock;
 
-  const readAuthIdentityCanaryFlag = (windowConfig = {}) => {
-    const nestedCanary = windowConfig.canary && typeof windowConfig.canary === 'object'
-      ? windowConfig.canary.authIdentity
-      : undefined;
-    let value = windowConfig.authIdentityCanary;
-    if (value === undefined) value = nestedCanary;
-    if (value === undefined) value = readStorage(AUTH_IDENTITY_CANARY_KEYS.enabled);
-    const queryValue = readQueryParam('dokeAuthIdentityCanary');
-    if (queryValue !== null) value = queryValue;
-    return normalizeBoolean(value) === true;
-  };
-
-  const readDataProviderRequest = (windowConfig = {}) => {
-    if (readAuthIdentityCanaryFlag(windowConfig)) return AUTH_PROVIDER_VALUES.mock;
-    return normalizeProviderName(readQueryParam('dokeDataProvider') || windowConfig.dataProvider || windowConfig.dataSource || readStorage(AUTH_IDENTITY_CANARY_KEYS.dataProvider) || AUTH_PROVIDER_VALUES.mock);
-  };
-
-  const getRuntimeConfig = () => {
-    const hasCanaryOverride = readQueryParam('dokeAuthIdentityCanary') !== null || readStorage(AUTH_IDENTITY_CANARY_KEYS.enabled) !== null;
-    if (!hasCanaryOverride && Doke.runtimeConfig && typeof Doke.runtimeConfig === 'object') return Doke.runtimeConfig;
-
-    const windowConfig = root.DOKE_RUNTIME_CONFIG && typeof root.DOKE_RUNTIME_CONFIG === 'object'
-      ? root.DOKE_RUNTIME_CONFIG
-      : {};
-    const authIdentityCanary = readAuthIdentityCanaryFlag(windowConfig);
-    const authProvider = authIdentityCanary
-      ? AUTH_PROVIDER_VALUES.api
-      : readQueryParam('dokeAuthProvider') || windowConfig.authProvider || readStorage(AUTH_IDENTITY_CANARY_KEYS.authProvider) || AUTH_PROVIDER_VALUES.mock;
-    const apiBaseUrl = readQueryParam('dokeApiBaseUrl') || windowConfig.apiBaseUrl || readStorage(AUTH_IDENTITY_CANARY_KEYS.apiBaseUrl) || '';
-    const networkValue = readQueryParam('dokeEnableNetwork') ?? windowConfig.enableNetworkRequests ?? windowConfig.flags?.enableNetworkRequests ?? readStorage(AUTH_IDENTITY_CANARY_KEYS.network);
-    const enableNetworkRequests = normalizeBoolean(networkValue) === true;
-
-    return {
-      authProvider,
-      dataProvider: readDataProviderRequest(windowConfig),
-      authIdentityCanary,
-      apiBaseUrl: normalizeBaseUrl(apiBaseUrl),
-      flags: { enableNetworkRequests }
-    };
-  };
+  const getRuntimeConfig = () => Doke.runtimeConfig && typeof Doke.runtimeConfig === 'object'
+    ? Doke.runtimeConfig
+    : Object.freeze({
+        authProvider: AUTH_PROVIDER_VALUES.supabase,
+        requestedAuthProvider: AUTH_PROVIDER_VALUES.supabase,
+        defaultAuthProvider: AUTH_PROVIDER_VALUES.supabase,
+        dataProvider: AUTH_PROVIDER_VALUES.mock,
+        authIdentityCanary: false,
+        apiBaseUrl: '',
+        flags: Object.freeze({ enableNetworkRequests: false })
+      });
 
   const getRuntimeFlags = () => {
     const config = getRuntimeConfig();
     return config.flags && typeof config.flags === 'object' ? config.flags : {};
   };
-  const normalizeAuthProvider = (provider) => {
-    if (Doke.authDomainContract?.normalizeAuthProvider) return Doke.authDomainContract.normalizeAuthProvider(provider);
-    return String(provider || '').trim().toLowerCase() === AUTH_PROVIDER_VALUES.api ? AUTH_PROVIDER_VALUES.api : AUTH_PROVIDER_VALUES.mock;
-  };
-  const getRequestedAuthProvider = () => normalizeAuthProvider(getRuntimeConfig().authProvider || AUTH_PROVIDER_VALUES.mock);
+
+  const getRequestedAuthProvider = () => AUTH_PROVIDER_VALUES.supabase;
   const getApiBaseUrl = () => normalizeBaseUrl(getRuntimeConfig().apiBaseUrl || '');
   const isNetworkEnabled = () => getRuntimeFlags().enableNetworkRequests === true;
-  const getAuthProviderBlockReason = (provider = getRequestedAuthProvider()) => {
-    const normalized = normalizeAuthProvider(provider);
-    if (normalized !== AUTH_PROVIDER_VALUES.api) return '';
-    if (!getApiBaseUrl()) return 'apiBaseUrl is not configured.';
-    if (!isNetworkEnabled()) return 'enableNetworkRequests flag is disabled.';
-    if (typeof root.fetch !== 'function') return 'window.fetch is not available.';
-    return '';
-  };
-  const canUseApiAuth = () => getRequestedAuthProvider() === AUTH_PROVIDER_VALUES.api && !getAuthProviderBlockReason(AUTH_PROVIDER_VALUES.api);
-  const getAuthProviderStatus = () => {
-    const requestedProvider = getRequestedAuthProvider();
-    const blockReason = getAuthProviderBlockReason(requestedProvider);
-    const apiReady = requestedProvider === AUTH_PROVIDER_VALUES.api && !blockReason;
+  const getAuthProviderBlockReason = () => '';
+  const canUseApiAuth = () => false;
 
-    return Object.freeze({
-      activeProvider: apiReady ? AUTH_PROVIDER_VALUES.api : AUTH_PROVIDER_VALUES.mock,
-      requestedProvider,
-      implementationStatus: apiReady ? 'api_active' : 'mock_active',
-      apiBaseUrlConfigured: Boolean(getApiBaseUrl()),
-      networkEnabled: isNetworkEnabled(),
-      apiReady,
-      blockReason,
-      endpoints: AUTH_ENDPOINTS,
-      note: apiReady
-        ? 'Sprint 12A auth API provider is active. Sprint 25 auth/identity API canary keeps dataProvider mock.'
-        : 'Mock auth remains active until apiBaseUrl and enableNetworkRequests are configured.'
-    });
-  };
-
-  const readCanaryBackup = () => {
-    try {
-      const raw = readStorage(AUTH_IDENTITY_CANARY_KEYS.backup);
-      return raw ? JSON.parse(raw) : null;
-    } catch {
-      return null;
-    }
-  };
-
-  const writeStorageValue = (key, value) => {
-    if (value === null || value === undefined) {
-      root.localStorage.removeItem(key);
-      return;
-    }
-    root.localStorage.setItem(key, String(value));
-  };
-
-  const createCanaryBackup = () => ({
-    createdAt: new Date().toISOString(),
-    values: {
-      [AUTH_IDENTITY_CANARY_KEYS.enabled]: readStorage(AUTH_IDENTITY_CANARY_KEYS.enabled),
-      [AUTH_IDENTITY_CANARY_KEYS.authProvider]: readStorage(AUTH_IDENTITY_CANARY_KEYS.authProvider),
-      [AUTH_IDENTITY_CANARY_KEYS.dataProvider]: readStorage(AUTH_IDENTITY_CANARY_KEYS.dataProvider),
-      [AUTH_IDENTITY_CANARY_KEYS.apiBaseUrl]: readStorage(AUTH_IDENTITY_CANARY_KEYS.apiBaseUrl),
-      [AUTH_IDENTITY_CANARY_KEYS.network]: readStorage(AUTH_IDENTITY_CANARY_KEYS.network)
-    }
+  const getAuthProviderStatus = () => Object.freeze({
+    activeProvider: AUTH_PROVIDER_VALUES.supabase,
+    requestedProvider: AUTH_PROVIDER_VALUES.supabase,
+    implementationStatus: 'supabase_active',
+    apiBaseUrlConfigured: Boolean(getApiBaseUrl()),
+    networkEnabled: isNetworkEnabled(),
+    apiReady: false,
+    blockReason: '',
+    endpoints: AUTH_ENDPOINTS,
+    note: 'Supabase Auth is the only active browser authentication authority. The legacy /auth/* adapter is diagnostic-only and cannot be selected by browser state.'
   });
 
-  const restoreCanaryBackup = (backup) => {
-    const values = backup?.values || {};
-    Object.keys(values).forEach((key) => writeStorageValue(key, values[key]));
-    root.localStorage.removeItem(AUTH_IDENTITY_CANARY_KEYS.backup);
-  };
-
-  const getAuthIdentityCanaryStatus = () => {
-    const config = getRuntimeConfig();
-    const providerStatus = getAuthProviderStatus();
-    const dataProvider = readDataProviderRequest(config);
-    const canaryRequested = config.authIdentityCanary === true || readAuthIdentityCanaryFlag(config);
-    const blockers = [];
-
-    if (!canaryRequested) blockers.push('authIdentityCanary is not enabled.');
-    if (providerStatus.requestedProvider !== AUTH_PROVIDER_VALUES.api) blockers.push('authProvider is not api.');
-    if (dataProvider !== AUTH_PROVIDER_VALUES.mock) blockers.push('dataProvider must remain mock during auth/identity canary.');
-    if (!providerStatus.apiBaseUrlConfigured) blockers.push('apiBaseUrl is not configured.');
-    if (!providerStatus.networkEnabled) blockers.push('enableNetworkRequests flag is disabled.');
-    if (providerStatus.blockReason) blockers.push(providerStatus.blockReason);
-
-    return Object.freeze({
-      canaryRequested,
-      active: canaryRequested && providerStatus.apiReady && dataProvider === AUTH_PROVIDER_VALUES.mock,
-      authProvider: providerStatus.activeProvider,
-      requestedAuthProvider: providerStatus.requestedProvider,
-      dataProvider,
-      apiBaseUrlConfigured: providerStatus.apiBaseUrlConfigured,
-      networkEnabled: providerStatus.networkEnabled,
-      rollbackAvailable: Boolean(readCanaryBackup()),
-      endpoints: CANARY_REQUIRED_ENDPOINTS,
-      blockers: Array.from(new Set(blockers.filter(Boolean)))
-    });
-  };
-
-  const configureAuthIdentityCanary = ({ apiBaseUrl, preservePrevious = true } = {}) => {
-    const baseUrl = normalizeBaseUrl(apiBaseUrl || getApiBaseUrl());
-    if (!baseUrl) throw new Error('Informe apiBaseUrl para ativar o canary de auth/identity.');
-
-    if (preservePrevious && !readCanaryBackup()) {
-      root.localStorage.setItem(AUTH_IDENTITY_CANARY_KEYS.backup, JSON.stringify(createCanaryBackup()));
-    }
-
-    writeStorageValue(AUTH_IDENTITY_CANARY_KEYS.enabled, 'true');
-    writeStorageValue(AUTH_IDENTITY_CANARY_KEYS.authProvider, AUTH_PROVIDER_VALUES.api);
-    writeStorageValue(AUTH_IDENTITY_CANARY_KEYS.dataProvider, AUTH_PROVIDER_VALUES.mock);
-    writeStorageValue(AUTH_IDENTITY_CANARY_KEYS.apiBaseUrl, baseUrl);
-    writeStorageValue(AUTH_IDENTITY_CANARY_KEYS.network, 'true');
-
-    return getAuthIdentityCanaryStatus();
-  };
-
-  const rollbackAuthIdentityCanary = () => {
-    const backup = readCanaryBackup();
-    if (backup) {
-      restoreCanaryBackup(backup);
-    } else {
-      [
-        AUTH_IDENTITY_CANARY_KEYS.enabled,
-        AUTH_IDENTITY_CANARY_KEYS.authProvider,
-        AUTH_IDENTITY_CANARY_KEYS.dataProvider,
-        AUTH_IDENTITY_CANARY_KEYS.apiBaseUrl,
-        AUTH_IDENTITY_CANARY_KEYS.network
-      ].forEach((key) => root.localStorage.removeItem(key));
-    }
-
-    return getAuthIdentityCanaryStatus();
-  };
+  const getAuthIdentityCanaryStatus = () => Object.freeze({
+    canaryRequested: false,
+    active: false,
+    authProvider: AUTH_PROVIDER_VALUES.supabase,
+    requestedAuthProvider: AUTH_PROVIDER_VALUES.supabase,
+    dataProvider: getRuntimeConfig().dataProvider || AUTH_PROVIDER_VALUES.mock,
+    apiBaseUrlConfigured: Boolean(getApiBaseUrl()),
+    networkEnabled: isNetworkEnabled(),
+    rollbackAvailable: false,
+    endpoints: CANARY_REQUIRED_ENDPOINTS,
+    blockers: Object.freeze(['Browser-controlled auth provider canaries are retired. Use the CLI-only diagnostic harness.'])
+  });
 
   const toPublicUser = (user) => {
     const repo = getUsersRepository();
@@ -634,9 +471,7 @@
     return supabaseBootstrapPromise;
   };
 
-  const refreshSession = (options = {}) => canUseApiAuth()
-    ? refreshApiSession(options)
-    : refreshSupabaseSession(options);
+  const refreshSession = (options = {}) => refreshSupabaseSession(options);
 
   const getCurrentIdentity = () => {
     const session = getSession();
@@ -647,7 +482,7 @@
       profiles: user?.profiles || [],
       publicProfileUrl: user?.publicProfileUrl || user?.profile?.publicUrl || '',
       ownerProfileUrl: user?.ownerProfileUrl || user?.profile?.ownerUrl || '',
-      provider: session?.provider || 'mock'
+      provider: session?.provider || AUTH_PROVIDER_VALUES.supabase
     });
   };
 
@@ -707,7 +542,7 @@
     user: getCurrentUser(),
     role: getCurrentUser()?.role || 'guest',
     permissions: [],
-    provider: 'mock',
+    provider: AUTH_PROVIDER_VALUES.supabase,
     accountStatus: getCurrentUser()?.accountStatus || 'active',
     sessionStatus: getCurrentUser() ? 'active' : 'anonymous',
     canAccessAdmin: false,
@@ -780,10 +615,6 @@
 
 
   const logout = async ({ redirect = false, redirectTo } = {}) => {
-    if (canUseApiAuth()) {
-      try { await apiRequest('POST', AUTH_ENDPOINTS.logout); }
-      catch (error) { console.warn?.('[DokeAuth] API logout failed.', error); }
-    }
     const client = getSupabaseClient();
     if (client) {
       try { await client.auth.signOut(); } catch (error) { console.warn?.('[DokeAuth] Supabase logout failed.', error); }
@@ -957,9 +788,7 @@
       updateAccountSurfaces();
     });
 
-    if (canUseApiAuth()) {
-      refreshApiSession({ silent: true }).then(() => updateAccountSurfaces());
-    } else if (isSupabaseAuthRequired()) {
+    if (isSupabaseAuthRequired()) {
       bootstrapSupabaseSessionBridge({ silent: true }).then(() => updateAccountSurfaces());
       document.addEventListener('doke:supabase-client-ready', () => {
         bootstrapSupabaseSessionBridge({ silent: true }).then(() => updateAccountSurfaces());
@@ -972,13 +801,11 @@
   };
 
   const api = Object.freeze({
-    provider: 'mock',
-    authProvider: 'mock',
+    provider: AUTH_PROVIDER_VALUES.supabase,
+    authProvider: AUTH_PROVIDER_VALUES.supabase,
     getActiveAuthProvider: () => getAuthProviderStatus().activeProvider,
     getAuthProviderStatus,
     getAuthIdentityCanaryStatus,
-    configureAuthIdentityCanary,
-    rollbackAuthIdentityCanary,
     refreshSession,
     refreshApiSession,
     refreshSupabaseSession,

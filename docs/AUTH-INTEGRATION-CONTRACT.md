@@ -1,83 +1,44 @@
 # Auth Integration Contract
 
-Este contrato define a transição segura da autenticação mock/localStorage para autenticação real futura sem quebrar o fluxo atual do Doke.
+Este contrato define a autoridade canônica de autenticação, sessão, identidade pública e compatibilidade histórica da Doke.
 
-## Escopo da Sprint 11C
+## Autoridade atual
 
-A Sprint 11C não ligou backend real de autenticação. Ela fechou o contrato de sessão, roles, permissões, status e provider de auth para que a Sprint 12A pudesse conectar API/Supabase sem reescrever páginas.
+Supabase Auth é a única autoridade ativa de autenticação no navegador.
 
-## Escopo da Sprint 12A
+- login, cadastro, recuperação, refresh e logout usam o SDK do Supabase;
+- o snapshot `doke.auth.session.v1` contém apenas identidade pública e estado de renderização;
+- query string, `localStorage` e `window.DOKE_RUNTIME_CONFIG.authProvider` não escolhem mais provider de autenticação;
+- o antigo adapter `/auth/*` permanece apenas como compatibilidade histórica e diagnóstico CLI-only;
+- páginas e renderers não chamam endpoints de autenticação diretamente.
 
-A Sprint 12A liga o provider `api` de autenticação em modo controlado. O provider padrão continua `mock`; auth real só é usado quando `Doke.runtimeConfig.authProvider === 'api'`, `apiBaseUrl` existe e `enableNetworkRequests === true`. Pedidos, mensagens, carteira, notificações e admin continuam em mock/localStorage.
+`DokeAuth.getAuthProviderStatus()` deve retornar `activeProvider: 'supabase'` e `requestedProvider: 'supabase'` em qualquer ambiente do navegador.
+
+## Histórico Sprint 11C–12A
+
+As Sprints 11C e 12A criaram o contrato de provider mock/API necessário para a transição inicial. Esse mecanismo não é mais autoridade ativa. AUTH-A09 aposentou a seleção de provider por estado gravável no navegador sem apagar os adapters históricos antes de uma auditoria de remoção dedicada.
 
 ## Fonte de verdade atual
 
-- `assets/js/core/session.js`: autoridade runtime da sessão atual.
-- `assets/js/services/auth-service.js`: regras de login/cadastro/recuperação mock.
-- `assets/js/repositories/users-repository.js`: usuários mock e usuários locais criados.
-- `assets/js/core/permissions.js`: permissões por role.
-- `assets/js/contracts/auth-domain-contract.js`: contrato de domínio para auth real futura.
+- `assets/js/services/auth-service.js`: fachada pública e ponte da sessão Supabase;
+- `assets/js/core/session.js`: snapshot público normalizado, sem tokens;
+- `assets/js/services/auth-session-authority.js`: refresh e escopos de logout;
+- `assets/js/services/auth-registration-authority.js`: cadastro e username;
+- `assets/js/services/auth-password-authority.js`: recuperação, reset e reautenticação;
+- `assets/js/core/permissions.js`: permissões por role;
+- `assets/js/contracts/auth-domain-contract.js`: roles, providers históricos e status.
 
 ## Provider de autenticação
 
-O provider ativo continua sendo `mock` por padrão.
+`supabase` é fixo como provider ativo do browser. Os valores históricos `mock` e `api` podem aparecer em snapshots de teste ou contratos de migração, mas não podem ser selecionados por usuário, query string ou storage.
 
-O provider `api` pode ser solicitado por configuração e agora executa chamadas reais de auth somente quando a configuração de rede está completa.
+`DokeAuth.getAuthIdentityCanaryStatus()` permanece somente como superfície de diagnóstico e informa que o browser canary foi aposentado. As operações mutáveis `configureAuthIdentityCanary` e `rollbackAuthIdentityCanary` não fazem mais parte da API pública.
 
-```js
-Doke.runtimeConfig.authProvider // "mock" | "api"
-DokeAuth.getAuthProviderStatus()
-```
+## Diagnóstico do adapter histórico
 
-`api` só fica pronto para implementação quando:
+O smoke de `/auth/login`, `/auth/session`, `/users/me` e `/profiles/me` continua disponível exclusivamente por scripts Node com variáveis de ambiente explícitas. Ele não altera o provider ativo do site e não persiste configuração no navegador.
 
-1. `Doke.runtimeConfig.apiBaseUrl` existe.
-2. `Doke.runtimeConfig.flags.enableNetworkRequests === true`.
-3. os endpoints oficiais de auth estão disponíveis.
-4. o contrato de sessão abaixo é preservado.
-
-
-## Endpoints oficiais de auth — Sprint 12A
-
-| Ação | Método | Endpoint | Observação |
-|---|---:|---|---|
-| login | POST | `/auth/login` | aceita `login`, `email`, `phone`, `password`, `remember` |
-| cadastro | POST | `/auth/register` | aceita `name`, `email`, `phone`, `password`, `role` |
-| sessão atual | GET | `/auth/session` | usa cookie httpOnly ou `Authorization: Bearer <token>` |
-| logout | POST | `/auth/logout` | limpa sessão real; frontend limpa sessão local mesmo se a API falhar |
-| recuperação | POST | `/auth/recovery` | solicita código/link para e-mail ou telefone |
-| redefinir senha | POST | `/auth/reset-password` | valida código e define nova senha |
-
-O serviço público continua sendo `DokeAuth`. As páginas de auth não chamam `fetch()` diretamente.
-
-```js
-DokeAuth.getAuthProviderStatus();
-DokeAuth.refreshSession();
-DokeAuth.signIn({ login, password });
-DokeAuth.register({ name, email, password, role });
-```
-
-### Ativação controlada
-
-```html
-<script>
-  window.DOKE_RUNTIME_CONFIG = {
-    authProvider: 'api',
-    apiBaseUrl: 'https://api.doke.example',
-    flags: { enableNetworkRequests: true }
-  };
-</script>
-```
-
-ou em teste local:
-
-```txt
-auth/login.html?dokeAuthProvider=api&dokeApiBaseUrl=https://api.doke.example&dokeEnableNetwork=1
-```
-
-Se qualquer condição faltar, `DokeAuth.getAuthProviderStatus().activeProvider` permanece `mock`.
-
-## Session DTO oficial
+## Session DTO oficial## Session DTO oficial
 
 ```js
 {
@@ -167,14 +128,15 @@ Rotas privadas continuam classificadas por `assets/js/core/auth-route-map.js`. A
 
 ## Critério de aceite
 
-- Mock continua funcionando.
-- Cliente/profissional não veem admin.
-- Suporte/admin mock veem admin.
+- Supabase é o único provider ativo no navegador.
+- Cliente/profissional não acessam admin.
+- Suporte/admin dependem de role canônica e políticas server-side.
 - `Doke.session.getAuthContext()` retorna contexto completo.
-- `DokeAuth.getAuthProviderStatus()` informa se o provider ativo é `mock` ou `api`.
-- Nenhum HTML visual é alterado.
+- `DokeAuth.getAuthProviderStatus()` retorna `supabase_active`.
+- Nenhum controle de browser escolhe `mock` ou `api` para autenticação.
+- Tokens não entram no snapshot público da Doke.
 
-## Sprint 12B — usuários e perfis reais em modo controlado
+## Sprint 12B — usuários e perfis reais em modo controlado## Sprint 12B — usuários e perfis reais em modo controlado
 
 A Sprint 12B conecta identidade e perfil ao contrato de auth real sem migrar pedidos, mensagens, carteira, notificações ou financeiro.
 
@@ -196,13 +158,12 @@ A Sprint 12B conecta identidade e perfil ao contrato de auth real sem migrar ped
 
 ### Regras
 
-- `mock` continua sendo o comportamento padrão.
-- As chamadas reais só ocorrem quando `authProvider === 'api'`, `apiBaseUrl` existe e `enableNetworkRequests === true`.
-- Login/cadastro tentam enriquecer a sessão com `/users/me` e `/profiles/me`, mas falha de perfil não derruba o login.
-- Perfil público e perfil owner são derivados de `user.role` e `user.profile`, não de HTML estático.
-- Pages e renderers continuam proibidos de chamar `fetch()` diretamente.
+- Supabase Auth é a autoridade da credencial e da sessão.
+- Os endpoints históricos `/users/me` e `/profiles/me` não são selecionáveis como provider ativo pelo navegador.
+- Atualizações de identidade exigem uma autoridade remota dedicada; páginas e renderers continuam proibidos de chamar `fetch()` diretamente.
+- Perfil público e perfil owner são derivados de role e perfil canônicos, não de HTML estático.
 
-### DTO de identidade
+### DTO de identidade### DTO de identidade
 
 ```js
 {
@@ -222,62 +183,19 @@ A Sprint 12B conecta identidade e perfil ao contrato de auth real sem migrar ped
 - API de perfil fica bloqueada sem configuração de rede.
 - Mock/localStorage continua funcionando sem backend.
 
-## Sprint 25 — auth/identity canary no frontend
+## Sprints 25–28 — canary histórico aposentado
 
-A Sprint 25 adiciona o auth/identity canary para validar API real de autenticação e identidade no frontend sem migrar dados operacionais.
+O antigo canary de browser permitia persistir `authProvider=api`, URL e flag de rede em `localStorage`. AUTH-A09 aposentou essa ativação porque ela criava uma autoridade concorrente escolhida pelo cliente.
 
-Contrato obrigatório do canary:
+O validador histórico permanece como diagnóstico CLI-only:
 
-```txt
-authProvider=api
-dataProvider=mock
-enableNetworkRequests=true
-```
+`npm run validate:auth-identity-canary:dry-run`
 
-Superfícies autorizadas:
+`npm run validate:auth-identity-canary`
 
-- `DokeAuth.configureAuthIdentityCanary({ apiBaseUrl })` ativa o canary de forma persistida e salva backup dos providers anteriores.
-- `DokeAuth.getAuthIdentityCanaryStatus()` expõe bloqueios, provider ativo e endpoints exigidos.
-- `DokeAuth.rollbackAuthIdentityCanary()` restaura mock/valores anteriores rapidamente.
-- `npm run validate:auth-identity-canary:dry-run` valida contrato sem rede.
-- `npm run validate:auth-identity-canary` roda smoke real de `/auth/login`, `/auth/session`, `/users/me` e `/profiles/me`.
+A execução real exige ambiente local/staging explícito, credenciais de teste e `DOKE_AUTH_IDENTITY_CANARY_ALLOW_NETWORK=1`. Ela nunca muda o provider ativo do frontend.
 
-Durante o auth/identity canary, `dataProvider` deve permanecer `mock`; pedidos, mensagens, notificações, carteira, disputas, recibos e admin continuam fora da API do frontend.
-
-## Sprint 26 — Auth/identity canary browser runtime gate
-
-O contrato de autenticação real ganhou uma proteção adicional no frontend: `DokeAuth.configureAuthIdentityCanary()` só persiste o canary se o `apiBaseUrl` tiver marcador local/staging ou receber `targetMarker: 'local' | 'staging'`. Alvos com aparência de produção são bloqueados antes de alterar `localStorage`.
-
-O gate `npm run validate:auth-identity-canary:browser-runtime` executa `runtime-config.js`, `session.js` e `auth-service.js` em um runtime de navegador simulado. Ele valida estado padrão em mock, bloqueio de alvo perigoso, ativação segura, login com fetch fake restrito a auth/identity e rollback restaurando o estado anterior. Esse gate não substitui `validate:auth-identity-canary` real em staging; ele impede regressão local do contrato antes de usar rede.
-
-## Sprint 27 — Auth/identity local network canary
-
-A autenticação real agora possui um gate local de rede antes de staging externo:
-
-```bash
-npm run audit:auth-identity-canary-local-runtime
-npm run validate:auth-identity-canary:local-runtime
-```
-
-Esse gate sobe um servidor local em `127.0.0.1` e executa o mesmo smoke real `scripts/validate-auth-identity-canary.js`. O contrato permanece `authProvider=api`, `dataProvider=mock` e `enableNetworkRequests=true`, com chamadas limitadas a `/auth/login`, `/auth/session`, `/users/me` e `/profiles/me`.
-
-O gate local não substitui staging real; ele bloqueia regressões de contrato antes do uso de credenciais e URL reais.
-
-## Sprint 28 — Auth/identity promotion gate
-
-A promoção do canary Auth/Identity agora possui um gate explícito:
-
-```bash
-npm run audit:auth-identity-canary-promotion-gate
-npm run validate:auth-identity-canary:promotion-gate
-```
-
-O gate mantém o contrato `authProvider='api'`, `dataProvider='mock'` e `enableNetworkRequests=true` somente para autenticação/identidade. Ele valida os gates locais de browser e rede local, lê opcionalmente o relatório real de `scripts/validate-auth-identity-canary.js` e bloqueia promoção estrita quando `DOKE_AUTH_IDENTITY_CANARY_REQUIRE_REAL_REPORT=1` está ativo.
-
-O único relatório aceito para liberar avanço manual deve conter resultados reais para client e professional em `/auth/login`, `/auth/session`, `/users/me` e `/profiles/me`, sem endpoints de domínio operacional.
-
-
-## AUTH-A02 — sessão canônica Supabase
+## AUTH-A02 — sessão canônica Supabase## AUTH-A02 — sessão canônica Supabase
 
 A sessão criptográfica deixou de ser duplicada no snapshot persistido pela Doke.
 
@@ -287,3 +205,8 @@ A sessão criptográfica deixou de ser duplicada no snapshot persistido pela Dok
 - `DokeAuth.getAccessToken()` consulta a autoridade ativa sem expor o segredo no Session Store.
 - `getSession()` e `onAuthStateChange()` alimentam uma única ponte de reconciliação para login, refresh, revogação e logout.
 - O provider API controlado mantém apenas access token volátil em memória; persistência durável exige cookie `httpOnly`.
+
+
+## AUTH-A09 — autoridade fixa de provider
+
+AUTH-A09 removeu `doke.authProvider`, `dokeAuthProvider`, `dokeAuthIdentityCanary` e as APIs públicas de ativação/rollback do canary. O runtime ignora pedidos de provider em storage, query string e configuração de janela; refresh, token resolution e bootstrap usam Supabase.

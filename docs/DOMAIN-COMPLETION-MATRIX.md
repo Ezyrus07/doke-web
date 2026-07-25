@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 872 arquivos no escopo; 157 referências a localStorage; 31 a sessionStorage; 555 referências mock; 128 referências de rede/Supabase; 33 marcadores de implementação pendente.
+**Evidência estática observada:** 873 arquivos no escopo; 164 referências a localStorage; 31 a sessionStorage; 563 referências mock; 128 referências de rede/Supabase; 31 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -220,7 +220,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI hybrid; servidor partial; staging staging canary; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 9 arquivos no escopo; 23 referências a localStorage; 0 a sessionStorage; 34 referências mock; 12 referências de rede/Supabase; 3 marcadores de implementação pendente.
+**Evidência estática observada:** 9 arquivos no escopo; 17 referências a localStorage; 0 a sessionStorage; 19 referências mock; 11 referências de rede/Supabase; 3 marcadores de implementação pendente.
 
 **Páginas:** `auth/login.html`, `auth/cadastro.html`, `auth/esqueci-senha.html`.
 
@@ -818,7 +818,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 1/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 189 arquivos no escopo; 57 referências a localStorage; 1 a sessionStorage; 293 referências mock; 10 referências de rede/Supabase; 23 marcadores de implementação pendente.
+**Evidência estática observada:** 189 arquivos no escopo; 56 referências a localStorage; 1 a sessionStorage; 266 referências mock; 9 referências de rede/Supabase; 21 marcadores de implementação pendente.
 
 **Evidências:**
 - The master plan identifies legal, privacy and commercial decisions as mandatory.
@@ -847,7 +847,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI hybrid; servidor partial; staging local e2e; segurança partial; produção blocked.
 
-**Evidência estática observada:** 841 arquivos no escopo; 259 referências a localStorage; 73 a sessionStorage; 269 referências mock; 247 referências de rede/Supabase; 9 marcadores de implementação pendente.
+**Evidência estática observada:** 841 arquivos no escopo; 252 referências a localStorage; 73 a sessionStorage; 248 referências mock; 246 referências de rede/Supabase; 9 marcadores de implementação pendente.
 
 **Páginas:** `index.html`, `resultados.html`, `detalhe-anuncio.html`, `pedidos.html`, `mensagens.html`, `notificacoes.html`, `carteira.html`, `perfil.html`, `comunidade.html`.
 
@@ -878,7 +878,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2062 arquivos no escopo; 433 referências a localStorage; 109 a sessionStorage; 908 referências mock; 496 referências de rede/Supabase; 87 marcadores de implementação pendente.
+**Evidência estática observada:** 2064 arquivos no escopo; 435 referências a localStorage; 109 a sessionStorage; 895 referências mock; 495 referências de rede/Supabase; 85 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.

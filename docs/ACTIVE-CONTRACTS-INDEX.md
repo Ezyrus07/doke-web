@@ -42,7 +42,7 @@ Documentos de fase, relatórios gerados e arquivos em `reports/` não são fonte
 
 Não criar novo documento permanente para cada etapa. Primeiro atualizar um contrato vivo existente. Só criar documento novo quando a responsabilidade não couber em nenhum contrato atual.
 
-- `docs/AUTH-INTEGRATION-CONTRACT.md`: atualizado na Sprint 12A com provider API controlado para login/cadastro/sessão/logout.
+- `docs/AUTH-INTEGRATION-CONTRACT.md`: Supabase Auth é a autoridade ativa; o adapter API histórico é diagnóstico CLI-only e não é selecionável no navegador.
 
 ## Sprint 12B
 
@@ -176,7 +176,7 @@ Não criar novo documento permanente para cada etapa. Primeiro atualizar um cont
 - `npm run audit:supabase-staging-validation-runbook`: validates Sprint 24 orchestration without touching visual/frontend.
 - `npm run validate:supabase-staging:dry-run`, `npm run validate:supabase-staging:plan`, `npm run validate:supabase-staging`: preferred commands for the Sprint 24 gate.
 
-The existing mock frontend remains the active user-facing provider until a real local/staging pass is complete and Sprint 25 starts a scoped auth/identity canary.
+Supabase Auth is the active user-facing authentication provider. Historical auth/identity API validation remains isolated in CLI-only local/staging diagnostics.
 
 ## Sprint 25 — auth/identity canary
 

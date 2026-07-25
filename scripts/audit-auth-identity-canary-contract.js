@@ -10,10 +10,22 @@ const failures = [];
 function read(file) {
   const filePath = path.join(root, file);
   if (!fs.existsSync(filePath)) {
-    failures.push(`Missing file: ${file}`);
+    failures.push('Missing file: ' + file);
     return '';
   }
   return fs.readFileSync(filePath, 'utf8');
+}
+
+function expect(content, label, snippets) {
+  for (const snippet of snippets) {
+    if (!content.includes(snippet)) failures.push(label + ' missing snippet: ' + snippet);
+  }
+}
+
+function forbid(content, label, snippets) {
+  for (const snippet of snippets) {
+    if (content.includes(snippet)) failures.push(label + ' contains retired browser canary snippet: ' + snippet);
+  }
 }
 
 const runtimeConfig = read('assets/js/core/runtime-config.js');
@@ -21,29 +33,30 @@ const authService = read('assets/js/services/auth-service.js');
 const validator = read('scripts/validate-auth-identity-canary.js');
 const runbook = read('docs/AUTH-IDENTITY-CANARY-RUNBOOK.md');
 const authDoc = read('docs/AUTH-INTEGRATION-CONTRACT.md');
-const validationDoc = read('docs/VALIDATION.md');
-const backendPlan = read('docs/BACKEND-INTEGRATION-PLAN.md');
-const activeContracts = read('docs/ACTIVE-CONTRACTS-INDEX.md');
 const packageJson = read('package.json');
 
 expect(runtimeConfig, 'runtime-config', [
-  'authIdentityCanary',
+  "SUPABASE: 'supabase'",
+  'authIdentityCanary: false',
+  'requestedAuthProvider: authProvider'
+]);
+forbid(runtimeConfig, 'runtime-config', [
   'dokeAuthIdentityCanary',
-  'forcedDataProvider',
-  'requestedDataProvider',
-  'requestedAuthProvider',
-  "authIdentityCanaryStorageKey: CANARY_STORAGE_KEYS.authIdentityEnabled"
+  'dokeAuthProvider',
+  'doke.authProvider',
+  'doke.canary.authIdentity.enabled'
 ]);
 
 expect(authService, 'auth-service', [
-  'AUTH_IDENTITY_CANARY_KEYS',
-  'CANARY_REQUIRED_ENDPOINTS',
   'getAuthIdentityCanaryStatus',
-  'configureAuthIdentityCanary',
-  'rollbackAuthIdentityCanary',
-  "writeStorageValue(AUTH_IDENTITY_CANARY_KEYS.dataProvider, AUTH_PROVIDER_VALUES.mock)",
-  "writeStorageValue(AUTH_IDENTITY_CANARY_KEYS.authProvider, AUTH_PROVIDER_VALUES.api)",
-  "writeStorageValue(AUTH_IDENTITY_CANARY_KEYS.network, 'true')"
+  'Browser-controlled auth provider canaries are retired',
+  'const canUseApiAuth = () => false'
+]);
+forbid(authService, 'auth-service', [
+  'AUTH_IDENTITY_CANARY_KEYS',
+  'configureAuthIdentityCanary,',
+  'rollbackAuthIdentityCanary,',
+  'doke.authProvider'
 ]);
 
 expect(validator, 'validate-auth-identity-canary', [
@@ -59,23 +72,19 @@ expect(validator, 'validate-auth-identity-canary', [
 ]);
 
 expect(runbook, 'AUTH-IDENTITY-CANARY-RUNBOOK', [
-  'authProvider=api',
-  'dataProvider=mock',
+  'CLI-only',
+  'browser canary foi aposentado',
+  'validate:auth-identity-canary:dry-run',
+  'DOKE_AUTH_IDENTITY_CANARY_ALLOW_NETWORK=1'
+]);
+forbid(runbook, 'AUTH-IDENTITY-CANARY-RUNBOOK', [
   'DokeAuth.configureAuthIdentityCanary',
   'DokeAuth.rollbackAuthIdentityCanary',
-  'validate:auth-identity-canary',
-  'Sprint 25'
+  'dokeAuthProvider=api',
+  'doke.canary.authIdentity.enabled'
 ]);
 
-for (const [label, content] of [
-  ['AUTH-INTEGRATION-CONTRACT', authDoc],
-  ['VALIDATION', validationDoc],
-  ['BACKEND-INTEGRATION-PLAN', backendPlan],
-  ['ACTIVE-CONTRACTS-INDEX', activeContracts]
-]) {
-  if (!content.includes('Sprint 25')) failures.push(`${label} missing Sprint 25 canary reference.`);
-  if (!content.includes('auth/identity canary')) failures.push(`${label} missing auth/identity canary wording.`);
-}
+expect(authDoc, 'AUTH-INTEGRATION-CONTRACT', ['AUTH-A09', 'diagnóstico CLI-only']);
 
 try {
   const parsed = JSON.parse(packageJson);
@@ -90,20 +99,14 @@ try {
     failures.push('package.json missing validate:auth-identity-canary script.');
   }
 } catch (error) {
-  failures.push(`package.json is invalid JSON: ${error.message}`);
+  failures.push('package.json is invalid JSON: ' + error.message);
 }
 
 if (failures.length) {
-  console.error('Auth/identity canary contract audit failed:');
-  failures.forEach((failure) => console.error(`- ${failure}`));
+  console.error('Auth/identity diagnostic contract audit failed:');
+  failures.forEach((failure) => console.error('- ' + failure));
   process.exit(1);
 }
 
-console.log('Auth/identity canary contract audit passed.');
-console.log('Frontend canary contract: authProvider=api, dataProvider=mock, rollback available.');
-
-function expect(content, label, snippets) {
-  for (const snippet of snippets) {
-    if (!content.includes(snippet)) failures.push(`${label} missing snippet: ${snippet}`);
-  }
-}
+console.log('Auth/identity diagnostic contract audit passed.');
+console.log('Browser provider mutation is retired; legacy API verification is CLI-only.');

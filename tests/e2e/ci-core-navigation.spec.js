@@ -19,7 +19,6 @@ const clientSession = Object.freeze({
 async function installRuntime(page, role = 'anonymous') {
   await page.addInitScript(({ session, selectedRole }) => {
     localStorage.setItem('doke.dataProvider', 'mock');
-    localStorage.setItem('doke.authProvider', 'mock');
     localStorage.removeItem('doke.auth.session.v1');
     if (selectedRole === 'client') {
       localStorage.setItem('doke.auth.session.v1', JSON.stringify(session));
@@ -30,7 +29,7 @@ async function installRuntime(page, role = 'anonymous') {
 async function expectHealthyPage(page, pagePath, expectedDataPage, role = 'anonymous') {
   await installRuntime(page, role);
   await page.goto(
-    `${pagePath}${pagePath.includes('?') ? '&' : '?'}dokeDataProvider=mock&dokeAuthProvider=mock`,
+    `${pagePath}${pagePath.includes('?') ? '&' : '?'}dokeDataProvider=mock`,
     { waitUntil: 'domcontentloaded' },
   );
   await expect(page.locator('body')).toHaveAttribute('data-page', expectedDataPage);

@@ -22,12 +22,10 @@
   });
 
   var AUTH_PROVIDER_VALUES = Object.freeze({
-    MOCK: 'mock',
-    API: 'api'
+    SUPABASE: 'supabase'
   });
 
   var CANARY_STORAGE_KEYS = Object.freeze({
-    authIdentityEnabled: 'doke.canary.authIdentity.enabled',
     ordersWriteEnabled: 'doke.canary.ordersWrite.enabled',
     betaLaunchEnabled: 'doke.canary.betaLaunch.enabled'
   });
@@ -62,7 +60,7 @@
       : {};
   }
 
-  function normalizeProvider(value) {
+  function normalizeDataProvider(value) {
     var provider = String(value || '').trim().toLowerCase();
     return provider === DATA_PROVIDER_VALUES.API ? DATA_PROVIDER_VALUES.API : DATA_PROVIDER_VALUES.MOCK;
   }
@@ -96,26 +94,7 @@
     var params = queryParams();
     var provider = windowConfig.dataProvider || windowConfig.dataSource || readStorage('doke.dataProvider') || 'mock';
     if (params.has('dokeDataProvider')) provider = params.get('dokeDataProvider');
-    return normalizeProvider(provider);
-  }
-
-  function resolveAuthProvider(windowConfig) {
-    var params = queryParams();
-    var provider = windowConfig.authProvider || readStorage('doke.authProvider') || 'mock';
-    if (params.has('dokeAuthProvider')) provider = params.get('dokeAuthProvider');
-    return normalizeProvider(provider);
-  }
-
-  function resolveAuthIdentityCanary(windowConfig) {
-    var params = queryParams();
-    var nestedCanary = windowConfig.canary && typeof windowConfig.canary === 'object'
-      ? windowConfig.canary.authIdentity
-      : undefined;
-    var value = windowConfig.authIdentityCanary;
-    if (value === undefined) value = nestedCanary;
-    if (value === undefined) value = readStorage(CANARY_STORAGE_KEYS.authIdentityEnabled);
-    if (params.has('dokeAuthIdentityCanary')) value = params.get('dokeAuthIdentityCanary');
-    return normalizeBoolean(value) === true;
+    return normalizeDataProvider(provider);
   }
 
   function resolveOrdersWriteCanary(windowConfig) {
@@ -185,33 +164,30 @@
   }
 
   var windowConfig = readWindowConfig();
+  var environment = windowConfig.environment || readEnvironment();
   var flags = mergeFlags(DEFAULT_FLAGS, windowConfig.flags || {});
   flags.enableNetworkRequests = resolveNetworkFlag(windowConfig, flags);
-  var authIdentityCanary = resolveAuthIdentityCanary(windowConfig);
   var ordersWriteCanary = resolveOrdersWriteCanary(windowConfig);
   var betaLaunchCanary = resolveBetaLaunchCanary(windowConfig);
   var betaLaunchDomains = resolveBetaLaunchDomains(windowConfig);
   var requestedDataProvider = resolveDataProvider(windowConfig);
-  var requestedAuthProvider = resolveAuthProvider(windowConfig);
   var ordersProvider = resolveOrdersProvider(windowConfig, ordersWriteCanary);
   var orderWriteActivation = resolveOrderWriteActivation(windowConfig, ordersWriteCanary);
-  // Baseline audit contract preserved: dataProvider: resolveDataProvider(windowConfig)
-  var dataProvider = authIdentityCanary || ordersWriteCanary || betaLaunchCanary ? DATA_PROVIDER_VALUES.MOCK : requestedDataProvider;
-  // Baseline audit contract preserved: authProvider: resolveAuthProvider(windowConfig)
-  var authProvider = authIdentityCanary ? AUTH_PROVIDER_VALUES.API : requestedAuthProvider;
+  var dataProvider = ordersWriteCanary || betaLaunchCanary ? DATA_PROVIDER_VALUES.MOCK : requestedDataProvider;
+  var authProvider = AUTH_PROVIDER_VALUES.SUPABASE;
 
   Doke.runtimeConfig = Object.freeze({
-    version: '20260704-beta-launch-frontend-activation-v1',
-    environment: windowConfig.environment || readEnvironment(),
+    version: '20260725-auth-provider-authority-v1',
+    environment: environment,
     flags: flags,
     dataProvider: dataProvider,
     requestedDataProvider: requestedDataProvider,
     defaultDataProvider: DATA_PROVIDER_VALUES.MOCK,
     authProvider: authProvider,
-    requestedAuthProvider: requestedAuthProvider,
-    defaultAuthProvider: AUTH_PROVIDER_VALUES.MOCK,
+    requestedAuthProvider: authProvider,
+    defaultAuthProvider: AUTH_PROVIDER_VALUES.SUPABASE,
     apiBaseUrl: resolveApiBaseUrl(windowConfig),
-    authIdentityCanary: authIdentityCanary,
+    authIdentityCanary: false,
     ordersProvider: ordersProvider,
     defaultOrdersProvider: ORDERS_PROVIDER_VALUES.MOCK,
     orderWriteActivation: orderWriteActivation,
@@ -221,9 +197,9 @@
     betaLaunchCanary: betaLaunchCanary,
     betaLaunchDomains: betaLaunchCanary ? betaLaunchDomains : [],
     canary: Object.freeze({
-      authIdentity: authIdentityCanary,
+      authIdentity: false,
       ordersWrite: ordersWriteCanary,
-      forcedDataProvider: authIdentityCanary || ordersWriteCanary || betaLaunchCanary ? DATA_PROVIDER_VALUES.MOCK : '',
+      forcedDataProvider: ordersWriteCanary || betaLaunchCanary ? DATA_PROVIDER_VALUES.MOCK : '',
       authProvider: authProvider,
       ordersProvider: ordersProvider,
       orderWriteActivation: orderWriteActivation,
@@ -240,19 +216,15 @@
     disableQueryPrefix: 'dokeDisable.',
     localStoragePrefix: 'doke.flag.',
     dataProviderQueryParam: 'dokeDataProvider',
-    authProviderQueryParam: 'dokeAuthProvider',
     apiBaseUrlQueryParam: 'dokeApiBaseUrl',
     enableNetworkQueryParam: 'dokeEnableNetwork',
-    authIdentityCanaryQueryParam: 'dokeAuthIdentityCanary',
     ordersWriteCanaryQueryParam: 'dokeOrdersWriteCanary',
     ordersProviderQueryParam: 'dokeOrdersProvider',
     orderWriteActivationQueryParam: 'dokeOrderWriteActivation',
     betaLaunchCanaryQueryParam: 'dokeBetaLaunchCanary',
     betaLaunchDomainsQueryParam: 'dokeBetaLaunchDomains',
     dataProviderStorageKey: 'doke.dataProvider',
-    authProviderStorageKey: 'doke.authProvider',
     apiBaseUrlStorageKey: 'doke.apiBaseUrl',
-    authIdentityCanaryStorageKey: CANARY_STORAGE_KEYS.authIdentityEnabled,
     ordersWriteCanaryStorageKey: CANARY_STORAGE_KEYS.ordersWriteEnabled,
     ordersProviderStorageKey: 'doke.ordersProvider',
     orderWriteActivationStorageKey: 'doke.orderWriteActivation',
