@@ -2,7 +2,7 @@
 
 ## Status
 
-Implemented; pending canonical CI validation.
+DONE — implemented and validated on the canonical branch head.
 
 ## Root cause
 
@@ -37,3 +37,17 @@ Supabase Auth is the only active browser authentication authority. Historical AP
 - scripts/audit-auth-identity-canary-contract.js;
 - blocking E2E and visual structural guards;
 - deterministic domain matrix and git diff check.
+## Final validation
+
+Canonical validation head: `8ff0fedb57a4ec945b4ab4906193f2d195a31271`.
+
+- Doke Quality Gates #442: success;
+- static architecture and partition audits: success;
+- canonical auth/session runtime and AUTH-A09 provider-authority runtime: success;
+- blocking deterministic E2E lane: success;
+- 105 visual structural guards: success;
+- deterministic domain matrix, governance, asset and lane audits: success;
+- Doke Staging Edge HTTP Canary #216: success;
+- `git diff --check`: success.
+
+Doke Diagnostic E2E #237 was still running at mandatory closure and is explicitly non-blocking; no success claim is made for it.
