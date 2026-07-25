@@ -544,6 +544,66 @@ Define `AUTH-A06` scope, affected files, Supabase impact, tests, canaries and ri
 
 ---
 
+## 2026-07-24 — AUTH-A06 provider-authoritative session lifecycle closed
+
+**Scope:** PR #9, branch `auth/auth-001-baseline-audit`
+
+**Outcome:** `DONE` for AUTH-A06; `PLANNED / BLOCKED` for AUTH-A07 under MAIL-001
+
+### Context
+
+Logout, refresh and identity fallbacks still had ambiguous ownership after the canonical Supabase session was introduced. A generic logout could revoke a broader session scope than the interface communicated, refresh did not force the provider operation, and dormant browser-local recovery and identity paths remained physically reachable inside the canonical service boundary.
+
+### Decision
+
+Use one explicit Supabase session lifecycle authority. Default logout must affect only the current device, broader revocation must be a deliberate operation, provider failures must fail visibly, and browser-local recovery or identity mutation must not remain as a fallback.
+
+### Implementation
+
+- Added `assets/js/services/auth-session-authority.js` as the lifecycle authority.
+- Added explicit `local`, `others` and `global` logout operations.
+- Made current-device/local logout the default user action.
+- Added explicit `supabase.auth.refreshSession()` reconciliation.
+- Added distinct Settings actions for the current session, other sessions and all sessions.
+- Required confirmation for global logout.
+- Removed local recovery-code generation, `debugCode` and local password mutation from `auth-service.js`.
+- Removed local username-availability fallback and storage-based compatibility guards.
+- Blocked identity/profile mutation through the Auth facade without a dedicated remote authority.
+- Removed the legacy auth controller from the canonical recovery page.
+- Added deterministic AUTH-A06 runtime coverage and permanent named CI audit steps.
+- Added `docs/validation/AUTH-001-A06-SESSION-LIFECYCLE.md` and JSON evidence.
+
+### Validation
+
+Runtime and visual-validation head: `9715531da1caf052e2c15b2f7462cc0ce86e1156`.
+
+- Doke Quality Gates #401: success.
+- Blocking deterministic E2E: success.
+- 105 visual structural guards: success.
+- Doke Diagnostic E2E #196: success.
+- Doke Staging Edge HTTP Canary #175: success.
+- Static architecture audits, auth/session runtime, deterministic matrix, governance, asset audits and `git diff --check`: success.
+
+### Risks and boundaries
+
+- No production environment, Supabase migration or Auth configuration was changed.
+- No existing user credential, contact, profile or role was changed.
+- No persistent synthetic account was created.
+- A per-device session inventory was not fabricated because no verified client contract exists for it.
+- `MAIL-001` remains open for real signup, recovery and e-mail-change delivery canaries.
+- `PAID-001 / SEC-B05` remains blocked by plan.
+- PR #9 remains draft and must not be merged without explicit authorization.
+
+### AUTH-A07 planning result
+
+`docs/validation/AUTH-001-A07-CONTACT-CHANGE-PLAN.md` defines the secure contact-change authority, file ownership, deterministic tests, real staging canary and exit criteria. Runtime implementation is intentionally blocked until controlled transactional e-mail delivery can be validated.
+
+### Next step
+
+Continue AUTH-001 with the next sublot that is not dependent on MAIL-001, or resolve MAIL-001 before implementing AUTH-A07. Do not create a simulated e-mail or phone verification path.
+
+---
+
 # Entry template
 
 ## YYYY-MM-DD — Title
