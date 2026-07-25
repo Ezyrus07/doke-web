@@ -27,7 +27,29 @@ const requiredScripts = [
 ];
 
 const workflowRequiredSnippets = [
-  'npm run audit:all',
+  'npm run audit:frontend:strict',
+  'npm run audit:ui',
+  'npm run audit:domain',
+  'npm run audit:layout',
+  'npm run audit:flows',
+  'npm run audit:bridge',
+  'npm run audit:routes',
+  'npm run audit:mocks',
+  'npm run audit:architecture',
+  'npm run audit:backend-data',
+  'npm run audit:edge-function-source-closure',
+  'node scripts/audit-auth-session-contracts.js',
+  'node scripts/test-auth-canonical-session-runtime.js',
+  'npm run audit:desktop-shell',
+  'npm run audit:js-foundation',
+  'npm run audit:visual-baseline',
+  'npm run audit:controller-mocks',
+  'npm run audit:domain-services',
+  'npm run audit:runtime-flags',
+  'npm run audit:responsive-inventory',
+  'npm run audit:responsive-boundaries',
+  'npm run audit:desktop-base',
+  'npm run audit:mobile-base',
   'npm run test:platform-default-acl-contract',
   'npm run audit:quality-pipeline',
   'npm run audit:e2e-lanes',
@@ -76,3 +98,4 @@ if (errors.length) {
 console.log('Quality pipeline audit passed.');
 console.log(`Files checked: ${requiredFiles.length}`);
 console.log(`Scripts checked: ${requiredScripts.length}`);
+console.log(`Workflow audit steps checked: ${workflowRequiredSnippets.length}`);
