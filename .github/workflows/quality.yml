@@ -45,6 +45,21 @@ jobs:
       - name: Validate domain completion matrix
         run: npm run audit:domain-completion-matrix
 
+      - name: Generate stale domain matrix evidence
+        if: failure()
+        run: node scripts/audit-domain-completion-matrix.js --write
+
+      - name: Upload stale domain matrix evidence
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: doke-domain-matrix-drift-${{ github.sha }}
+          path: |
+            docs/DOMAIN-COMPLETION-MATRIX.md
+            reports/generated/domain-completion-matrix-report.json
+          if-no-files-found: error
+          retention-days: 7
+
       - name: Run agent governance audits
         run: npm run audit:agent-governance
 
