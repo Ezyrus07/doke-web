@@ -2,7 +2,7 @@
 
 ## Status
 
-Implemented; pending canonical CI validation.
+DONE — implemented and validated on the canonical branch head.
 
 ## Root cause
 
@@ -30,3 +30,18 @@ Delete the unreachable browser adapter rather than preserve dormant authority-sh
 - no SMTP, SMS or OAuth provider enabled;
 - generic domain repository providers remain outside this sublot;
 - PR #9 remains draft.
+
+## Final validation
+
+Canonical validation head: `b72d3fa414cf91563c13ef73e9f9d241c0b4ce77`.
+
+- Doke Quality Gates #464: success;
+- static architecture and partition audits: success;
+- canonical auth/session runtime and AUTH-A10 dead-adapter runtime: success;
+- blocking deterministic E2E lane: success;
+- 105 visual structural guards: success;
+- deterministic domain matrix, governance, asset and E2E-lane audits: success;
+- Doke Staging Edge HTTP Canary #238: success;
+- `git diff --check`: success.
+
+Doke Diagnostic E2E #259 was still running at mandatory closure and is explicitly non-blocking; no success claim is made for it.

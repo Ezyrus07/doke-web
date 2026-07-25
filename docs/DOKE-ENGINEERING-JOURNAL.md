@@ -710,6 +710,60 @@ Plan AUTH-A10 to remove unreachable browser `/auth/*` adapter code and remaining
 
 ---
 
+## 2026-07-25 — AUTH-A10 unreachable browser auth adapter physically removed
+
+**Scope:** PR #9, branch `auth/auth-001-baseline-audit`
+
+**Outcome:** `DONE` for AUTH-A10; `BLOCKED` for MAIL-001 and PAID-001
+
+### Context
+
+AUTH-A09 fixed Supabase as the only browser authentication authority, but `assets/js/services/auth-service.js` still retained unreachable `/auth/*` endpoints, request helpers, a volatile API token, provider-status facades and a no-op `refreshApiSession` compatibility path. Dormant authority-shaped code increased regression risk even though it could no longer be selected.
+
+### Decision
+
+Delete the historical browser adapter physically. Preserve only the standalone CLI diagnostic and public compatibility methods with proven active consumers.
+
+### Implementation
+
+- Removed browser constants and helpers for `/auth/login`, `/auth/register`, `/auth/session` and `/auth/logout`.
+- Removed the volatile API token and API request/session normalization helpers.
+- Removed `refreshApiSession`, `refreshCurrentIdentity`, `getAuthProviderStatus` and `getAuthIdentityCanaryStatus` from the public facade.
+- Migrated owner-profile identity confirmation to canonical `refreshSession({ silent: true })`.
+- Preserved `getActiveAuthProvider()` as a constant Supabase compatibility surface because it has an active verification-service consumer.
+- Preserved the CLI-only Auth/Identity diagnostic outside browser runtime.
+- Added deterministic source/runtime coverage and strengthened the AUTH-A09 regression test to require the retired facades to be absent.
+- Corrected active contracts and runbooks that still described the browser canary as active.
+
+### Validation
+
+Canonical validation head: `b72d3fa414cf91563c13ef73e9f9d241c0b4ce77`.
+
+- Doke Quality Gates #464: success.
+- Static architecture and partition audits: success.
+- Canonical auth/session runtime and AUTH-A10 dead-adapter runtime: success.
+- Blocking deterministic E2E lane: success.
+- 105 visual structural guards: success.
+- Doke Staging Edge HTTP Canary #238: success.
+- Deterministic matrix, governance, asset, E2E-lane and `git diff --check` audits: success.
+- Doke Diagnostic E2E #259 remained in progress at mandatory closure and is non-blocking; no success claim was made.
+
+### Risks and boundaries
+
+- No production environment or Supabase configuration was changed.
+- No account, credential, session, contact, profile or role was changed.
+- No SMTP, SMS or OAuth provider was enabled.
+- Generic domain repository providers remain outside this auth-only sublot.
+- Local/mock-shaped profile mutation helpers remain a separate authority concern and were not silently rewritten in A10.
+- `MAIL-001` and `PAID-001 / SEC-B05` remain open.
+- PR #9 remains draft and must not be merged without explicit authorization.
+
+### Next step
+
+Plan AUTH-A11 to separate profile/public-identity mutation from authentication authority, eliminating local mock session rewrites without conflating the work with blocked verified contact changes in AUTH-A07.
+
+---
+
 # Entry template
 
 ## YYYY-MM-DD — Title
