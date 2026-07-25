@@ -310,7 +310,15 @@ jobs:
         run: |
           set -euo pipefail
           expected=$'assets/js/core/runtime-config.js\nassets/js/services/auth-service.js\ndocs/ACTIVE-CONTRACTS-INDEX.md\ndocs/AUTH-IDENTITY-CANARY-RUNBOOK.md\ndocs/AUTH-INTEGRATION-CONTRACT.md\ndocs/DOMAIN-COMPLETION-MATRIX.md\ndocs/validation/AUTH-001-A09-PROVIDER-AUTHORITY.json\ndocs/validation/AUTH-001-A09-PROVIDER-AUTHORITY.md\nscripts/audit-auth-identity-canary-contract.js\nscripts/audit-auth-real-contract.js\nscripts/test-auth-canonical-session-runtime.js\ntests/auth/test-auth-provider-authority-runtime.js\ntests/e2e/ci-core-navigation.spec.js'
-          actual="$(git diff --name-only | sort)"
+          actual="$(
+            {
+              git diff --name-only
+              git ls-files --others --exclude-standard
+              test -f docs/validation/AUTH-001-A09-PROVIDER-AUTHORITY.json && echo docs/validation/AUTH-001-A09-PROVIDER-AUTHORITY.json
+            } | sort -u
+          )"
+          printf 'Expected AUTH-A09 files:\n%s\n' "$expected"
+          printf 'Actual AUTH-A09 files:\n%s\n' "$actual"
           test "$actual" = "$expected"
 
       - name: Publish AUTH-A09 files
@@ -319,7 +327,7 @@ jobs:
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add \
+          git add -f \
             assets/js/core/runtime-config.js \
             assets/js/services/auth-service.js \
             docs/ACTIVE-CONTRACTS-INDEX.md \
