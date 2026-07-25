@@ -1,0 +1,77 @@
+name: Doke Deterministic Domain Matrix Sync
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - MAIN
+      - main
+      - master
+      - 'auth/**'
+      - 'sec/**'
+      - 'domain/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: doke-domain-matrix-sync-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  synchronize:
+    name: Synchronize generated domain matrix
+    if: >-
+      ${{ github.event_name == 'workflow_dispatch' ||
+          startsWith(github.event.head_commit.message, 'Request deterministic matrix sync') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout current branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 1
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate and validate deterministic matrix
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/audit-domain-completion-matrix.js --write
+          node scripts/audit-domain-completion-matrix.js
+          git diff --check
+
+          actual="$(git diff --name-only | sort)"
+          if [ -z "$actual" ]; then
+            echo 'Domain matrix is already synchronized.'
+            exit 0
+          fi
+
+          test "$actual" = 'docs/DOMAIN-COMPLETION-MATRIX.md'
+
+      - name: Publish generated document
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- docs/DOMAIN-COMPLETION-MATRIX.md; then
+            echo 'Nothing to publish.'
+            exit 0
+          fi
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add docs/DOMAIN-COMPLETION-MATRIX.md
+          git commit -m 'Synchronize deterministic domain matrix'
+          git push origin HEAD:${{ github.ref_name }}
