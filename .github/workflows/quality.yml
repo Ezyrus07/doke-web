@@ -42,12 +42,17 @@ jobs:
       - name: Run quality pipeline audit
         run: npm run audit:quality-pipeline
 
-      - name: Run governed repository audits
-        run: |
-          npm run audit:domain-completion-matrix
-          npm run audit:agent-governance
-          npm run audit:unused-asset-candidates
-          npm run audit:duplicate-assets
+      - name: Validate domain completion matrix
+        run: npm run audit:domain-completion-matrix
+
+      - name: Run agent governance audits
+        run: npm run audit:agent-governance
+
+      - name: Audit unused asset candidates
+        run: npm run audit:unused-asset-candidates
+
+      - name: Audit duplicate assets
+        run: npm run audit:duplicate-assets
 
       - name: Audit E2E lane partition
         run: npm run audit:e2e-lanes
