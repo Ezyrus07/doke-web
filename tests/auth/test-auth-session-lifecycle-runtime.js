@@ -11,6 +11,7 @@ const authDomainSource = fs.readFileSync(path.join(root, 'assets/js/contracts/au
 const sessionSource = fs.readFileSync(path.join(root, 'assets/js/core/session.js'), 'utf8');
 const authServiceSource = fs.readFileSync(path.join(root, 'assets/js/services/auth-service.js'), 'utf8');
 const sessionAuthoritySource = fs.readFileSync(path.join(root, 'assets/js/services/auth-session-authority.js'), 'utf8');
+const settingsSecuritySource = fs.readFileSync(path.join(root, 'assets/js/pages/settings-password.js'), 'utf8');
 
 class MemoryStorage {
   constructor(initial = {}) { this.data = new Map(Object.entries(initial)); }
@@ -135,6 +136,20 @@ async function expectCode(operation, expectedCode) {
   assert.strictEqual(received.code, expectedCode);
 }
 
+function assertSettingsSessionContract() {
+  for (const token of [
+    'signOutCurrentDevice',
+    'signOutOtherSessions',
+    'signOutAllSessions',
+    'Sair deste dispositivo',
+    'Encerrar outras sessões',
+    'Encerrar todas as sessões?',
+    'Tokens de acesso já emitidos podem permanecer válidos até a expiração definida pelo provedor.'
+  ]) {
+    assert(settingsSecuritySource.includes(token), `Settings session contract is missing: ${token}`);
+  }
+}
+
 async function main() {
   let authListener = null;
   let refreshCount = 0;
@@ -237,10 +252,13 @@ async function main() {
   assert.strictEqual(signOutScopes.at(-1), 'global');
   assert.strictEqual(runtime.window.Doke.session.getSession(), null, 'Global logout did not clear the current snapshot.');
 
+  assertSettingsSessionContract();
+
   console.log('AUTH-A06 session lifecycle runtime test passed.');
   console.log('- provider refresh is explicit');
   console.log('- logout scopes local, others and global are explicit');
   console.log('- default user logout is current-device/local');
+  console.log('- Settings exposes explicit current, other and global session actions');
   console.log('- legacy browser recovery and session keys are removed');
   console.log('- Doke public snapshots remain free of provider credentials');
 }
