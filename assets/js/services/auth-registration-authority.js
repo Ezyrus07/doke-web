@@ -11,9 +11,6 @@
   if (ns.registrationAuthority?.version === 'AUTH-A04') return;
 
   const baseRegister = typeof ns.register === 'function' ? ns.register.bind(ns) : null;
-  const baseCheckUsernameAvailability = typeof ns.checkUsernameAvailability === 'function'
-    ? ns.checkUsernameAvailability.bind(ns)
-    : null;
 
   const RESERVED_USERNAMES = Object.freeze([
     'admin', 'administrador', 'doke', 'suporte', 'support',
@@ -47,7 +44,9 @@
   const getSupabaseConfig = () => root.DOKE_SUPABASE_CONFIG || {};
   const isSupabaseConfigured = () => {
     const config = getSupabaseConfig();
-    return config.enabled !== false && Boolean(config.url) && Boolean(config.anonKey);
+    return config.enabled !== false
+      && Boolean(config.url)
+      && Boolean(config.anonKey || config.publishableKey);
   };
   const getSupabaseClient = () => root.DokeSupabase && typeof root.DokeSupabase.getClient === 'function'
     ? root.DokeSupabase.getClient()
@@ -84,19 +83,22 @@
     };
   };
 
+  const authorityUnavailableResult = (local) => ({
+    ...local,
+    available: false,
+    reasonCode: 'authority_unavailable',
+    reason: reasonMessage('authority_unavailable'),
+    authority: 'supabase'
+  });
+
   const checkUsernameAvailability = async (value) => {
     const local = localValidationResult(value);
     if (!local.valid) return local;
 
-    if (!isSupabaseConfigured()) {
-      if (baseCheckUsernameAvailability) return baseCheckUsernameAvailability(local.username);
-      return { ...local, reasonCode: 'authority_unavailable', reason: reasonMessage('authority_unavailable') };
-    }
+    if (!isSupabaseConfigured()) return authorityUnavailableResult(local);
 
     const client = getSupabaseClient();
-    if (!client || typeof client.rpc !== 'function') {
-      return { ...local, reasonCode: 'authority_unavailable', reason: reasonMessage('authority_unavailable') };
-    }
+    if (!client || typeof client.rpc !== 'function') return authorityUnavailableResult(local);
 
     try {
       const { data, error } = await client.rpc('check_username_availability', {
@@ -106,13 +108,7 @@
       return normalizeRpcResult(data, local.username);
     } catch (error) {
       console.warn?.('[DokeAuth] Username authority unavailable.', error);
-      return {
-        ...local,
-        available: false,
-        reasonCode: 'authority_unavailable',
-        reason: reasonMessage('authority_unavailable'),
-        authority: 'supabase'
-      };
+      return authorityUnavailableResult(local);
     }
   };
 
@@ -154,8 +150,16 @@
   ns.registrationAuthority = api;
   ns.checkUsernameAvailability = checkUsernameAvailability;
   ns.register = register;
+  if (ns.service) {
+    ns.service = Object.freeze({
+      ...ns.service,
+      checkUsernameAvailability,
+      register,
+      registrationAuthority: api
+    });
+  }
 
   document.dispatchEvent(new CustomEvent('doke:auth-registration-authority-ready', {
-    detail: { version: api.version, provider: isSupabaseConfigured() ? 'supabase' : 'fallback' }
+    detail: { version: api.version, provider: isSupabaseConfigured() ? 'supabase' : 'unavailable' }
   }));
 })();
