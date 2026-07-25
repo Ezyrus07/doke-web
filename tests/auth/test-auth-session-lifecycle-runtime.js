@@ -12,6 +12,9 @@ const sessionSource = fs.readFileSync(path.join(root, 'assets/js/core/session.js
 const authServiceSource = fs.readFileSync(path.join(root, 'assets/js/services/auth-service.js'), 'utf8');
 const sessionAuthoritySource = fs.readFileSync(path.join(root, 'assets/js/services/auth-session-authority.js'), 'utf8');
 const settingsSecuritySource = fs.readFileSync(path.join(root, 'assets/js/pages/settings-password.js'), 'utf8');
+const compatibilityGuardSource = fs.readFileSync(path.join(root, 'assets/js/core/auth.js'), 'utf8');
+const registrationAuthoritySource = fs.readFileSync(path.join(root, 'assets/js/services/auth-registration-authority.js'), 'utf8');
+const recoveryPageSource = fs.readFileSync(path.join(root, 'auth/esqueci-senha.html'), 'utf8');
 
 class MemoryStorage {
   constructor(initial = {}) { this.data = new Map(Object.entries(initial)); }
@@ -150,6 +153,25 @@ function assertSettingsSessionContract() {
   }
 }
 
+function assertFallbackEliminationContract() {
+  for (const forbidden of ['localStorage', 'sessionStorage', 'doke.auth.session', 'protectedPages']) {
+    assert(!compatibilityGuardSource.includes(forbidden), `Compatibility guard still contains ${forbidden}.`);
+  }
+  assert(compatibilityGuardSource.includes("authority: 'DokeAuth.service'"));
+  assert(compatibilityGuardSource.includes('getCurrentUser'));
+  assert(compatibilityGuardSource.includes('getSession'));
+
+  assert(!registrationAuthoritySource.includes('baseCheckUsernameAvailability'));
+  assert(!registrationAuthoritySource.includes('return baseCheckUsernameAvailability'));
+  assert(registrationAuthoritySource.includes('authorityUnavailableResult'));
+  assert(registrationAuthoritySource.includes('registrationAuthority: api'));
+  assert(registrationAuthoritySource.includes('ns.service = Object.freeze'));
+
+  assert(!recoveryPageSource.includes('assets/js/pages/auth.js'));
+  assert(recoveryPageSource.includes('assets/js/pages/auth-password-pages.js'));
+  assert(recoveryPageSource.includes('assets/js/services/auth-session-authority.js'));
+}
+
 async function main() {
   let authListener = null;
   let refreshCount = 0;
@@ -253,12 +275,16 @@ async function main() {
   assert.strictEqual(runtime.window.Doke.session.getSession(), null, 'Global logout did not clear the current snapshot.');
 
   assertSettingsSessionContract();
+  assertFallbackEliminationContract();
 
   console.log('AUTH-A06 session lifecycle runtime test passed.');
   console.log('- provider refresh is explicit');
   console.log('- logout scopes local, others and global are explicit');
   console.log('- default user logout is current-device/local');
   console.log('- Settings exposes explicit current, other and global session actions');
+  console.log('- storage-based compatibility guard was replaced by canonical session delegation');
+  console.log('- registration username checks fail closed without Supabase authority');
+  console.log('- canonical recovery no longer loads the legacy auth page controller');
   console.log('- legacy browser recovery and session keys are removed');
   console.log('- Doke public snapshots remain free of provider credentials');
 }
