@@ -5,6 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const assert = require('assert');
+const { execFileSync } = require('child_process');
 
 const root = process.cwd();
 const authDomainSource = fs.readFileSync(path.join(root, 'assets/js/contracts/auth-domain-contract.js'), 'utf8');
@@ -184,6 +185,11 @@ async function main() {
   authListener('SIGNED_OUT', null);
   await flush();
   assert.strictEqual(runtime.window.Doke.session.getSession(), null, 'Signed-out provider session did not clear public snapshot');
+
+  execFileSync(process.execPath, [path.join(root, 'tests/auth/test-auth-session-lifecycle-runtime.js')], {
+    cwd: root,
+    stdio: 'inherit'
+  });
 
   console.log('Canonical auth session runtime test passed.');
   console.log('- provider secrets are absent from Doke runtime and persisted snapshots');
