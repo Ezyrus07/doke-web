@@ -191,12 +191,18 @@ async function main() {
     stdio: 'inherit'
   });
 
+  execFileSync(process.execPath, [path.join(root, 'scripts/test-real-auth-only-contract.js')], {
+    cwd: root,
+    stdio: 'inherit'
+  });
+
   console.log('Canonical auth session runtime test passed.');
   console.log('- provider secrets are absent from Doke runtime and persisted snapshots');
   console.log('- legacy token-bearing snapshots are sanitized on read');
   console.log('- Supabase getSession/onAuthStateChange reconcile one public snapshot');
   console.log('- access tokens are resolved from the active provider authority');
   console.log('- SIGNED_OUT clears the public identity snapshot');
+  console.log('- retired local authority and unsupported provider surfaces are blocked');
 }
 
 main().catch((error) => {
