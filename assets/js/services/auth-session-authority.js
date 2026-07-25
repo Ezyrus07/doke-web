@@ -212,6 +212,25 @@
   const requestRecovery = (payload = {}) => requirePasswordAuthority().requestRecovery(payload);
   const resetPassword = (payload = {}) => requirePasswordAuthority().resetPassword(payload);
 
+  const identityMutationError = () => {
+  const error = new Error('Alterações de identidade exigem uma autoridade remota dedicada.');
+  error.code = 'DOKE_AUTH_IDENTITY_MUTATION_REQUIRES_REMOTE_AUTHORITY';
+  return error;
+};
+
+const updateCurrentUser = async (patch = {}) => {
+  const source = patch && typeof patch === 'object' ? patch : {};
+  const keys = Object.keys(source);
+  if (keys.length === 1 && keys[0] === 'settings' && typeof baseService?.updateCurrentUser === 'function') {
+    return baseService.updateCurrentUser(source);
+  }
+  throw identityMutationError();
+};
+
+const updateCurrentProfile = async () => {
+  throw identityMutationError();
+};
+
   const resolveLoginRedirect = () => {
     const inAuthFolder = root.location.pathname.includes('/auth/');
     const loginPath = inAuthFolder ? 'login.html' : 'auth/login.html';
@@ -298,6 +317,8 @@
     signOutAllSessions,
     requestRecovery,
     resetPassword,
+    updateCurrentUser,
+    updateCurrentProfile,
     getPublicState,
     dispose
   });
@@ -313,6 +334,8 @@
       signOut: logout,
       requestRecovery,
       resetPassword,
+      updateCurrentUser,
+      updateCurrentProfile,
       sessionAuthority: api
     });
     ns.service = facade;
@@ -322,6 +345,8 @@
     ns.signOut = logout;
     ns.requestRecovery = requestRecovery;
     ns.resetPassword = resetPassword;
+    ns.updateCurrentUser = updateCurrentUser;
+    ns.updateCurrentProfile = updateCurrentProfile;
     bindLogoutCapture();
     initialize();
     document.dispatchEvent(new CustomEvent('doke:auth-session-authority-ready', {

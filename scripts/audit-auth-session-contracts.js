@@ -245,7 +245,10 @@ for (const token of [
   'signOutCurrentDevice',
   'signOutOtherSessions',
   'signOutAllSessions',
-  'ns.service = facade;'
+  'ns.service = facade;',
+  'DOKE_AUTH_IDENTITY_MUTATION_REQUIRES_REMOTE_AUTHORITY',
+  'updateCurrentUser',
+  'updateCurrentProfile'
 ]) {
   if (!sessionAuthoritySource.includes(token)) errors.push(`${SESSION_AUTHORITY} missing session authority token: ${token}`);
 }
@@ -288,6 +291,16 @@ if (migrationSource.includes('grant all')) errors.push(`${AUTH_A04_MIGRATION} ca
 const authA04ValidationSource = read(AUTH_A04_VALIDATION);
 for (const token of ['begin;', 'AUTH_A04_SIGNUP_RACE_NOT_BLOCKED', 'AUTH_A04_RESERVED_SIGNUP_NOT_BLOCKED', 'rollback;']) {
   if (!authA04ValidationSource.includes(token)) errors.push(`${AUTH_A04_VALIDATION} missing validation token: ${token}`);
+}
+
+for (const forbidden of [
+  'RECOVERY_KEY',
+  'generateRecoveryCode',
+  'debugCode',
+  'updatePassword(recovery.userId',
+  'const checkUsernameAvailability = async'
+]) {
+  if (canonicalSource.includes(forbidden)) errors.push(`${CANONICAL_AUTH_SERVICE} still contains browser identity fallback token: ${forbidden}`);
 }
 
 const sessionSource = read(SESSION_STORE);

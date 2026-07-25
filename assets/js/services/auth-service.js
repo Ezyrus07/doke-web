@@ -1,5 +1,5 @@
 /* Doke Auth Service
-   Responsibility: rules for local/mock login, registration, logout and recovery.
+   Responsibility: provider orchestration for login, registration, session and public identity.
    Provider boundary: pages call this service; repository can later switch to backend. */
 (function () {
   'use strict';
@@ -8,15 +8,12 @@
   const ns = root.DokeAuth || (root.DokeAuth = {});
   const Doke = root.Doke || (root.Doke = {});
 
-  const RECOVERY_KEY = 'doke.auth.recovery.v1';
   const AUTH_PROVIDER_VALUES = Object.freeze({ mock: 'mock', api: 'api' });
   const AUTH_ENDPOINTS = Object.freeze({
     login: '/auth/login',
     register: '/auth/register',
     logout: '/auth/logout',
     session: '/auth/session',
-    recovery: '/auth/recovery',
-    resetPassword: '/auth/reset-password',
     currentUser: '/users/me',
     currentProfile: '/profiles/me',
     updateCurrentUser: '/users/me',
@@ -354,23 +351,6 @@
     }
 
     return getAuthIdentityCanaryStatus();
-  };
-
-  const readJson = (key, fallback) => {
-    try {
-      const raw = root.localStorage.getItem(key);
-      return raw ? JSON.parse(raw) : fallback;
-    } catch {
-      return fallback;
-    }
-  };
-
-  const writeJson = (key, value) => {
-    if (!value) {
-      root.localStorage.removeItem(key);
-      return;
-    }
-    root.localStorage.setItem(key, JSON.stringify(value));
   };
 
   const toPublicUser = (user) => {
@@ -799,19 +779,6 @@
   };
 
 
-  const checkUsernameAvailability = async (value) => {
-    const repo = getUsersRepository();
-    if (!repo || typeof repo.isHandleAvailable !== 'function') {
-      return { available: false, reason: 'Verificação de usuário indisponível.' };
-    }
-    const handle = typeof repo.normalizeHandle === 'function' ? repo.normalizeHandle(value) : String(value || '').trim().toLowerCase();
-    if (!repo.isValidHandle?.(handle)) {
-      return { available: false, handle, reason: 'Use de 3 a 30 caracteres: letras, números, ponto ou underline.' };
-    }
-    const available = await repo.isHandleAvailable(handle);
-    return { available, handle, reason: available ? '' : 'Esse usuário já está em uso.' };
-  };
-
   const logout = async ({ redirect = false, redirectTo } = {}) => {
     if (canUseApiAuth()) {
       try { await apiRequest('POST', AUTH_ENDPOINTS.logout); }
@@ -833,112 +800,6 @@
 
   const signOut = logout;
   const signIn = (payload) => login(payload);
-
-  const maskEmail = (value) => {
-    const [local, domain] = normalizeEmail(value).split('@');
-    if (!local || !domain) return value;
-    return `${local.slice(0, 2)}***@${domain}`;
-  };
-
-  const maskPhone = (value) => {
-    const digits = normalizePhone(value);
-    if (!digits) return value;
-    return `(${digits.slice(0, 2)}) *****-${digits.slice(-4)}`;
-  };
-
-  const generateRecoveryCode = () => String(Math.floor(100000 + Math.random() * 900000));
-
-  const requestRecovery = async ({ method = 'email', contact } = {}) => {
-    await delay();
-
-    const recoveryMethod = method === 'phone' ? 'phone' : 'email';
-    const access = normalizeText(contact);
-
-    if (recoveryMethod === 'email' && !isEmail(access)) {
-      throw new Error('Digite um e-mail válido para recuperar o acesso.');
-    }
-
-    if (recoveryMethod === 'phone' && !isPhone(access)) {
-      throw new Error('Digite um telefone válido com DDD.');
-    }
-
-    if (canUseApiAuth()) {
-      const payload = await apiRequest('POST', AUTH_ENDPOINTS.recovery, {
-        method: recoveryMethod,
-        contact: recoveryMethod === 'email' ? normalizeEmail(access) : normalizePhone(access)
-      });
-      return {
-        method: payload?.method || recoveryMethod,
-        maskedContact: payload?.maskedContact || payload?.masked_contact || access,
-        debugCode: payload?.debugCode
-      };
-    }
-
-    const repo = getUsersRepository();
-    if (!repo) throw new Error('Users Repository não foi carregado.');
-
-    const user = await repo.findByLogin(access);
-    if (!user) throw new Error('Não encontramos uma conta com esse dado.');
-
-    const code = generateRecoveryCode();
-    const recovery = {
-      userId: user.id,
-      method: recoveryMethod,
-      contact: recoveryMethod === 'email' ? user.email : user.phone,
-      code,
-      expiresAt: Date.now() + 10 * 60 * 1000
-    };
-
-    writeJson(RECOVERY_KEY, recovery);
-
-    return {
-      method: recoveryMethod,
-      maskedContact: recoveryMethod === 'email' ? maskEmail(user.email) : maskPhone(user.phone),
-      debugCode: code
-    };
-  };
-
-  const resetPassword = async ({ method = 'email', contact, code, nextPassword } = {}) => {
-    await delay();
-
-    const recoveryMethod = method === 'phone' ? 'phone' : 'email';
-    const normalizedContact = recoveryMethod === 'email' ? normalizeEmail(contact) : normalizePhone(contact);
-    const normalizedCode = normalizeText(code);
-    const nextPasswordValue = String(nextPassword || '');
-
-    if (nextPasswordValue.length < 8) {
-      throw new Error('A nova senha precisa ter pelo menos 8 caracteres.');
-    }
-
-    if (canUseApiAuth()) {
-      const payload = await apiRequest('POST', AUTH_ENDPOINTS.resetPassword, {
-        method: recoveryMethod,
-        contact: normalizedContact,
-        code: normalizedCode,
-        nextPassword: nextPasswordValue
-      });
-      return toPublicUser(payload?.user || payload?.currentUser || payload);
-    }
-
-    const repo = getUsersRepository();
-    if (!repo) throw new Error('Users Repository não foi carregado.');
-
-    const recovery = readJson(RECOVERY_KEY, null);
-    if (!recovery) throw new Error('Solicite um código antes de redefinir a senha.');
-
-    if (recovery.method !== recoveryMethod || recovery.contact !== normalizedContact || recovery.code !== normalizedCode) {
-      throw new Error('Código ou contato inválidos.');
-    }
-
-    if (Date.now() > recovery.expiresAt) {
-      writeJson(RECOVERY_KEY, null);
-      throw new Error('O código expirou. Solicite outro.');
-    }
-
-    const user = await repo.updatePassword(recovery.userId, nextPasswordValue);
-    writeJson(RECOVERY_KEY, null);
-    return toPublicUser(user);
-  };
 
   const getCurrentPathForNext = () => {
     const path = root.location.pathname.split('/').pop() || 'index.html';
@@ -1131,11 +992,8 @@
     login,
     signIn,
     register,
-    checkUsernameAvailability,
     logout,
     signOut,
-    requestRecovery,
-    resetPassword,
     getSession,
     getCurrentUser,
     isAuthenticated,

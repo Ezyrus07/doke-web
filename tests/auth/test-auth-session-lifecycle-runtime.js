@@ -167,6 +167,24 @@ function assertFallbackEliminationContract() {
   assert(registrationAuthoritySource.includes('registrationAuthority: api'));
   assert(registrationAuthoritySource.includes('ns.service = Object.freeze'));
 
+  for (const forbidden of [
+  'RECOVERY_KEY',
+  'generateRecoveryCode',
+  'debugCode',
+  'updatePassword(recovery.userId',
+  'const checkUsernameAvailability = async'
+]) {
+  assert(!authServiceSource.includes(forbidden), `Canonical auth service still contains ${forbidden}.`);
+}
+for (const token of [
+  'DOKE_AUTH_IDENTITY_MUTATION_REQUIRES_REMOTE_AUTHORITY',
+  "keys.length === 1 && keys[0] === 'settings'",
+  'updateCurrentUser',
+  'updateCurrentProfile'
+]) {
+  assert(sessionAuthoritySource.includes(token), `Session authority is missing identity guard token: ${token}`);
+}
+
   assert(!recoveryPageSource.includes('assets/js/pages/auth.js'));
   assert(recoveryPageSource.includes('assets/js/pages/auth-password-pages.js'));
   assert(recoveryPageSource.includes('assets/js/services/auth-session-authority.js'));
@@ -248,6 +266,15 @@ async function main() {
   );
   assert.strictEqual(storage.getItem('doke.auth.recovery.v1'), null, 'Legacy recovery state was recreated.');
 
+
+await expectCode(
+  () => runtime.window.DokeAuth.service.updateCurrentUser({ email: 'forbidden@staging.example' }),
+  'DOKE_AUTH_IDENTITY_MUTATION_REQUIRES_REMOTE_AUTHORITY'
+);
+await expectCode(
+  () => runtime.window.DokeAuth.service.updateCurrentProfile({ handle: 'forbidden-change' }),
+  'DOKE_AUTH_IDENTITY_MUTATION_REQUIRES_REMOTE_AUTHORITY'
+);
   await authority.signOutOtherSessions();
   assert.strictEqual(signOutScopes.at(-1), 'others');
   assert(runtime.window.Doke.session.getSession()?.user, 'Current session was cleared by others scope.');
