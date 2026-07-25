@@ -252,8 +252,44 @@ jobs:
         with:
           node-version: 22
 
+      - name: Prepare corrected AUTH-A09 codemod copy
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          source = Path('scripts/apply-auth-a09-provider-authority.js').read_text(encoding='utf-8')
+          source = source.replace(
+              "  '  const CANARY_REQUIRED_ENDPOINTS = Object.freeze({',\n  'legacy auth canary keys'",
+              "  '',\n  'legacy auth canary keys'",
+              1,
+          )
+          source = source.replace(
+              "  providerAuthorityBlock + '  const toPublicUser = (user) => {',\n  'provider authority block'",
+              "  providerAuthorityBlock,\n  'provider authority block'",
+              1,
+          )
+          Path('/tmp/apply-auth-a09-provider-authority.js').write_text(source, encoding='utf-8')
+          PY
+
       - name: Apply AUTH-A09 migration
-        run: node scripts/apply-auth-a09-provider-authority.js
+        shell: bash
+        run: |
+          set +e
+          mkdir -p reports/generated
+          node --trace-uncaught /tmp/apply-auth-a09-provider-authority.js > reports/generated/auth-a09-apply.log 2>&1
+          code=$?
+          cat reports/generated/auth-a09-apply.log
+          exit "$code"
+
+      - name: Upload AUTH-A09 apply diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: doke-auth-a09-apply-${{ github.sha }}
+          path: reports/generated/auth-a09-apply.log
+          if-no-files-found: error
+          retention-days: 7
 
       - name: Validate AUTH-A09 authority
         run: |
