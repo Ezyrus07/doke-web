@@ -157,6 +157,57 @@ jobs:
       - name: Verify clean patch formatting
         run: git diff --check
 
+  detail-session-authority-sync:
+    name: Publish detalhe-anuncio session authority
+    needs: static-audits
+    if: >-
+      ${{ failure() && github.event_name == 'pull_request' &&
+          github.event.pull_request.head.repo.full_name == github.repository &&
+          github.event.pull_request.head.ref == 'auth/auth-001-baseline-audit' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 1
+
+      - name: Insert canonical AUTH-A06 authority
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('detalhe-anuncio.html')
+          source = path.read_text(encoding='utf-8')
+          marker = '<script src="assets/js/services/auth-service.js?v=20260622-auth-surface-ready-v1" defer></script>'
+          authority = '<script src="assets/js/services/auth-session-authority.js?v=20260724-auth-a06-v1" defer></script>'
+
+          if source.count(marker) != 1:
+              raise SystemExit('Expected exactly one canonical auth-service marker.')
+          if authority in source:
+              raise SystemExit('AUTH-A06 authority is already present; refusing a duplicate insertion.')
+
+          path.write_text(source.replace(marker, marker + '\n' + authority, 1), encoding='utf-8')
+          PY
+          git diff --check
+          test "$(git diff --name-only)" = 'detalhe-anuncio.html'
+          test "$(git diff --numstat | awk '{print $1 ":" $2 ":" $3}')" = '1:0:detalhe-anuncio.html'
+          grep -F 'assets/js/services/auth-session-authority.js?v=20260724-auth-a06-v1' detalhe-anuncio.html
+
+      - name: Commit exact page correction
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add detalhe-anuncio.html
+          git commit -m 'Load AUTH-A06 authority on detalhe-anuncio'
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
+
   blocking-e2e:
     name: Blocking deterministic E2E lane
     runs-on: ubuntu-latest
