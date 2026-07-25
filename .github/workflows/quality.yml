@@ -18,7 +18,7 @@ jobs:
   static-audits:
     name: Static architecture and partition audits
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
 
     steps:
       - name: Checkout candidate tree
@@ -33,8 +33,71 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run all static audits
-        run: npm run audit:all
+      - name: Audit frontend contracts
+        run: npm run audit:frontend:strict
+
+      - name: Audit canonical UI
+        run: npm run audit:ui
+
+      - name: Audit domain cards
+        run: npm run audit:domain
+
+      - name: Audit layout contracts
+        run: npm run audit:layout
+
+      - name: Audit product flows
+        run: npm run audit:flows
+
+      - name: Audit legacy bridge scope
+        run: npm run audit:bridge
+
+      - name: Audit page route map
+        run: npm run audit:routes
+
+      - name: Audit mock data contracts
+        run: npm run audit:mocks
+
+      - name: Audit project architecture
+        run: npm run audit:architecture
+
+      - name: Audit backend data contracts
+        run: npm run audit:backend-data
+
+      - name: Audit Edge Function source closure
+        run: npm run audit:edge-function-source-closure
+
+      - name: Audit auth and session contracts
+        run: npm run audit:auth-session
+
+      - name: Audit desktop shell contracts
+        run: npm run audit:desktop-shell
+
+      - name: Audit JavaScript foundation
+        run: npm run audit:js-foundation
+
+      - name: Audit visual baseline
+        run: npm run audit:visual-baseline
+
+      - name: Audit controller mock wiring
+        run: npm run audit:controller-mocks
+
+      - name: Audit domain services
+        run: npm run audit:domain-services
+
+      - name: Audit runtime flags
+        run: npm run audit:runtime-flags
+
+      - name: Audit responsive inventory
+        run: npm run audit:responsive-inventory
+
+      - name: Audit responsive boundaries
+        run: npm run audit:responsive-boundaries
+
+      - name: Audit desktop base stability
+        run: npm run audit:desktop-base
+
+      - name: Audit mobile base stability
+        run: npm run audit:mobile-base
 
       - name: Validate platform ACL contract
         run: npm run test:platform-default-acl-contract
