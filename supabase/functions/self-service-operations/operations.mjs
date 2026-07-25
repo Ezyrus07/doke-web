@@ -1,7 +1,9 @@
 export const ALLOWED_ACTIONS = Object.freeze(new Set([
+  'get_account_identity_state',
   'get_account_onboarding_state',
   'complete_account_onboarding',
   'update_account_profile',
+  'update_account_settings',
   'create_transaction_notification',
   'update_own_notification_state',
   'save_professional_profile_setup',
@@ -33,9 +35,9 @@ export function normalizeOperationError(error) {
 
 export function statusForOperationError(code) {
   if (/AUTH_REQUIRED|ACTOR_NOT_FOUND/.test(code)) return 401;
-  if (/FORBIDDEN|REQUIRED|ACCOUNT_NOT_ACTIVE|OPERATOR_REQUIRED|OWNERSHIP/.test(code)) return 403;
+  if (/FORBIDDEN|REQUIRED|ACCOUNT_NOT_ACTIVE|OPERATOR_REQUIRED|OWNERSHIP|SUBJECT_MISMATCH/.test(code)) return 403;
   if (/NOT_FOUND/.test(code)) return 404;
   if (/CONFLICT|TAKEN|IDEMPOTENCY/.test(code)) return 409;
-  if (/INVALID|TOO_LONG|PAYLOAD|AMOUNT|BALANCE|REASON/.test(code)) return 422;
+  if (/INVALID|TOO_LONG|TOO_LARGE|PAYLOAD|AMOUNT|BALANCE|REASON|SECTION/.test(code)) return 422;
   return 400;
 }
