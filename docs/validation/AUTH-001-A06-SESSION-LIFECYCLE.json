@@ -1,7 +1,9 @@
 {
   "id": "AUTH-A06",
-  "status": "IN_PROGRESS",
+  "observedAt": "2026-07-24",
+  "status": "DONE",
   "branch": "auth/auth-001-baseline-audit",
+  "runtimeChanged": true,
   "productionMutated": false,
   "supabaseMutated": false,
   "persistentSyntheticAccountCreated": false,
@@ -12,32 +14,83 @@
     "currentDeviceLogout": "supabase.auth.signOut_scope_local",
     "otherSessionsLogout": "supabase.auth.signOut_scope_others",
     "globalLogout": "supabase.auth.signOut_scope_global",
-    "publicSnapshot": "doke.auth.session.v1"
+    "publicSnapshot": "doke.auth.session.v1",
+    "frontendAuthority": "assets/js/services/auth-session-authority.js"
   },
   "controls": {
     "defaultLogoutScope": "local",
     "logoutScopesExplicit": true,
     "providerRefreshExplicit": true,
+    "globalLogoutRequiresConfirmation": true,
+    "otherSessionsPreserveCurrentSession": true,
+    "remoteLogoutFailureReported": true,
+    "revokedOrExpiredRefreshFailsClosed": true,
     "dokePersistsProviderSecrets": false,
     "legacyRecoveryKeyRemoved": true,
     "legacySessionKeyRemoved": true,
-    "legacyRecoveryFacadeBlocked": true,
-    "remoteLogoutFailureReported": true,
+    "localRecoveryImplementationRemoved": true,
+    "localUsernameFallbackRemoved": true,
+    "storageBasedCompatibilityGuardRemoved": true,
+    "identityMutationWithoutRemoteAuthorityBlocked": true,
+    "legacyRecoveryControllerRemovedFromCanonicalPage": true,
     "deviceInventoryFabricated": false
   },
   "implementation": {
     "sessionAuthority": "assets/js/services/auth-session-authority.js",
+    "authService": "assets/js/services/auth-service.js",
+    "registrationAuthority": "assets/js/services/auth-registration-authority.js",
+    "passwordAuthority": "assets/js/services/auth-password-authority.js",
+    "settingsController": "assets/js/pages/settings-password.js",
+    "compatibilityGuard": "assets/js/core/auth.js",
     "bootstrap": "assets/js/core/page-bootstrap.js",
     "login": "auth/login.html",
     "registration": "auth/cadastro.html",
     "passwordRecovery": "auth/esqueci-senha.html",
-    "passwordAuthority": "assets/js/services/auth-password-authority.js",
-    "blockingRuntimeTest": "scripts/test-auth-canonical-session-runtime.js"
+    "detailPage": "detalhe-anuncio.html",
+    "runtimeTest": "tests/auth/test-auth-session-lifecycle-runtime.js",
+    "blockingRuntimeChain": "scripts/test-auth-canonical-session-runtime.js",
+    "staticAudit": "scripts/audit-auth-session-contracts.js",
+    "validationDocument": "docs/validation/AUTH-001-A06-SESSION-LIFECYCLE.md"
+  },
+  "validation": {
+    "validatedRuntimeHead": "9715531da1caf052e2c15b2f7462cc0ce86e1156",
+    "qualityGates": {
+      "runNumber": 401,
+      "conclusion": "success"
+    },
+    "diagnosticE2E": {
+      "runNumber": 196,
+      "conclusion": "success",
+      "blocking": false
+    },
+    "stagingEdgeHttpCanary": {
+      "runNumber": 175,
+      "conclusion": "success"
+    },
+    "blockingDeterministicE2E": "success",
+    "visualStructuralGuards": {
+      "count": 105,
+      "conclusion": "success"
+    },
+    "staticAudits": "success",
+    "authSessionRuntime": "success",
+    "domainCompletionMatrix": "success",
+    "governance": "success",
+    "assetAudits": "success",
+    "gitDiffCheck": "success"
   },
   "externalDependencies": [
-    "MAIL-001_transactional_auth_email_delivery",
+    "MAIL-001_transactional_auth_email_delivery_and_contact_change_canary",
     "PAID-001_leaked_password_protection"
   ],
+  "safety": {
+    "existingUserPasswordChanged": false,
+    "existingUserContactChanged": false,
+    "existingUserProfileOrRoleChanged": false,
+    "syntheticPersistentAccountCreated": false,
+    "smsOrOauthEnabled": false,
+    "productionChanged": false
+  },
   "outOfScope": [
     "production_changes",
     "individual_device_inventory",
