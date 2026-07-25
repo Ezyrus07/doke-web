@@ -157,6 +157,109 @@ jobs:
       - name: Verify clean patch formatting
         run: git diff --check
 
+  a06-finalize-generated-docs:
+    name: Finalize AUTH-A06 generated evidence
+    needs: static-audits
+    if: >-
+      ${{ failure() && github.event_name == 'pull_request' &&
+          github.event.pull_request.head.repo.full_name == github.repository &&
+          github.event.pull_request.head.ref == 'auth/auth-001-baseline-audit' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 1
+
+      - name: Download deterministic matrix evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: doke-domain-matrix-drift-${{ github.sha }}
+          path: matrix-evidence
+
+      - name: Normalize source and publish generated matrix
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          authority_path = Path('assets/js/services/auth-session-authority.js')
+          authority = authority_path.read_text(encoding='utf-8')
+          old = """  const identityMutationError = () => {
+          const error = new Error('Alterações de identidade exigem uma autoridade remota dedicada.');
+          error.code = 'DOKE_AUTH_IDENTITY_MUTATION_REQUIRES_REMOTE_AUTHORITY';
+          return error;
+        };
+
+        const updateCurrentUser = async (patch = {}) => {
+          const source = patch && typeof patch === 'object' ? patch : {};
+          const keys = Object.keys(source);
+          if (keys.length === 1 && keys[0] === 'settings' && typeof baseService?.updateCurrentUser === 'function') {
+            return baseService.updateCurrentUser(source);
+          }
+          throw identityMutationError();
+        };
+
+        const updateCurrentProfile = async () => {
+          throw identityMutationError();
+        };
+
+          """
+          normalized = """  const identityMutationError = () => {
+            const error = new Error('Alterações de identidade exigem uma autoridade remota dedicada.');
+            error.code = 'DOKE_AUTH_IDENTITY_MUTATION_REQUIRES_REMOTE_AUTHORITY';
+            return error;
+          };
+
+          const updateCurrentUser = async (patch = {}) => {
+            const source = patch && typeof patch === 'object' ? patch : {};
+            const keys = Object.keys(source);
+            if (keys.length === 1 && keys[0] === 'settings' && typeof baseService?.updateCurrentUser === 'function') {
+              return baseService.updateCurrentUser(source);
+            }
+            throw identityMutationError();
+          };
+
+          const updateCurrentProfile = async () => {
+            throw identityMutationError();
+          };
+
+          """
+          if old in authority:
+              authority = authority.replace(old, normalized, 1)
+          elif normalized not in authority:
+              raise SystemExit('AUTH-A06 identity guard block does not match the expected source.')
+          authority_path.write_text(authority, encoding='utf-8')
+
+          generated = Path('matrix-evidence/docs/DOMAIN-COMPLETION-MATRIX.md')
+          if not generated.is_file():
+              raise SystemExit('Generated domain matrix artifact is missing.')
+          Path('docs/DOMAIN-COMPLETION-MATRIX.md').write_text(generated.read_text(encoding='utf-8'), encoding='utf-8')
+          PY
+
+          git diff --check
+          node --check assets/js/services/auth-session-authority.js
+          node scripts/audit-auth-session-contracts.js
+          node scripts/test-auth-canonical-session-runtime.js
+
+          expected=$'assets/js/services/auth-session-authority.js\ndocs/DOMAIN-COMPLETION-MATRIX.md'
+          actual="$(git diff --name-only | sort)"
+          if [ -z "$actual" ]; then
+            echo 'AUTH-A06 generated evidence is already synchronized.'
+            exit 0
+          fi
+          test "$actual" = "$expected"
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add assets/js/services/auth-session-authority.js docs/DOMAIN-COMPLETION-MATRIX.md
+          git commit -m 'Finalize AUTH-A06 source formatting and matrix'
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
+
   blocking-e2e:
     name: Blocking deterministic E2E lane
     runs-on: ubuntu-latest
