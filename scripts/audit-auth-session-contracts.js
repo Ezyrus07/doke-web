@@ -8,11 +8,14 @@ const { execFileSync } = require('child_process');
 
 const root = path.resolve(__dirname, '..');
 const CANONICAL_AUTH_SERVICE = 'assets/js/services/auth-service.js';
+const SESSION_AUTHORITY = 'assets/js/services/auth-session-authority.js';
 const REGISTRATION_AUTHORITY = 'assets/js/services/auth-registration-authority.js';
+const PASSWORD_AUTHORITY = 'assets/js/services/auth-password-authority.js';
 const LEGACY_AUTH_SERVICE = 'assets/js/core/auth-service.js';
 const SESSION_STORE = 'assets/js/core/session.js';
 const USERS_REPOSITORY = 'assets/js/repositories/users-repository.js';
 const AUTH_PAGE_CONTROLLER = 'assets/js/pages/auth.js';
+const PASSWORD_PAGE_CONTROLLER = 'assets/js/pages/auth-password-pages.js';
 const SUPABASE_CONFIG = 'assets/js/core/supabase-config.js';
 const AUTH_DOMAIN_CONTRACT = 'assets/js/contracts/auth-domain-contract.js';
 const ROUTE_MAP = 'assets/js/core/auth-route-map.js';
@@ -31,7 +34,10 @@ const requiredFiles = [
   'assets/js/core/permissions.js',
   SESSION_STORE,
   CANONICAL_AUTH_SERVICE,
+  SESSION_AUTHORITY,
   REGISTRATION_AUTHORITY,
+  PASSWORD_AUTHORITY,
+  PASSWORD_PAGE_CONTROLLER,
   ROUTE_MAP,
   ROUTE_GUARD,
   PAGE_BOOTSTRAP,
@@ -147,6 +153,11 @@ for (const page of activeHtmlFiles) {
   if (sources.includes(CANONICAL_AUTH_SERVICE)) {
     canonicalConsumerCount += 1;
     assertOrdered(sources, [SESSION_STORE, CANONICAL_AUTH_SERVICE], page);
+    const loadsDirectSessionAuthority = sources.includes(SESSION_AUTHORITY);
+    const loadsBootstrapAuthority = sources.includes(PAGE_BOOTSTRAP);
+    if (!loadsDirectSessionAuthority && !loadsBootstrapAuthority) {
+      errors.push(`${page} loads ${CANONICAL_AUTH_SERVICE} without ${SESSION_AUTHORITY} or ${PAGE_BOOTSTRAP}`);
+    }
   }
 }
 
@@ -165,7 +176,30 @@ for (const page of authPages) {
   if (!sources.some((source) => source.includes('@supabase/supabase-js@2'))) {
     errors.push(`${page} does not load Supabase JS v2`);
   }
-  assertOrdered(sources, [SUPABASE_CONFIG, SESSION_STORE, USERS_REPOSITORY, CANONICAL_AUTH_SERVICE, AUTH_PAGE_CONTROLLER], page);
+
+  if (page === 'auth/esqueci-senha.html') {
+    assertOrdered(sources, [
+      SUPABASE_CONFIG,
+      SESSION_STORE,
+      USERS_REPOSITORY,
+      CANONICAL_AUTH_SERVICE,
+      SESSION_AUTHORITY,
+      PASSWORD_AUTHORITY,
+      PASSWORD_PAGE_CONTROLLER
+    ], page);
+    if (sources.includes(AUTH_PAGE_CONTROLLER)) {
+      errors.push(`${page} must not load legacy multi-purpose controller ${AUTH_PAGE_CONTROLLER}`);
+    }
+  } else {
+    assertOrdered(sources, [
+      SUPABASE_CONFIG,
+      SESSION_STORE,
+      USERS_REPOSITORY,
+      CANONICAL_AUTH_SERVICE,
+      SESSION_AUTHORITY,
+      AUTH_PAGE_CONTROLLER
+    ], page);
+  }
 }
 
 const signupSources = readScriptSources(read('auth/cadastro.html'), 'auth/cadastro.html');
@@ -174,6 +208,7 @@ assertOrdered(signupSources, [
   SESSION_STORE,
   USERS_REPOSITORY,
   CANONICAL_AUTH_SERVICE,
+  SESSION_AUTHORITY,
   REGISTRATION_AUTHORITY,
   AUTH_PAGE_CONTROLLER
 ], 'auth/cadastro.html');
@@ -200,19 +235,39 @@ for (const token of [
   if (!canonicalSource.includes(token)) errors.push(`${CANONICAL_AUTH_SERVICE} is missing canonical authority token: ${token}`);
 }
 
+const sessionAuthoritySource = read(SESSION_AUTHORITY);
+for (const token of [
+  "const VERSION = 'AUTH-A06'",
+  'client.auth.refreshSession()',
+  "local: 'local'",
+  "others: 'others'",
+  "global: 'global'",
+  'signOutCurrentDevice',
+  'signOutOtherSessions',
+  'signOutAllSessions',
+  'ns.service = facade;'
+]) {
+  if (!sessionAuthoritySource.includes(token)) errors.push(`${SESSION_AUTHORITY} missing session authority token: ${token}`);
+}
+for (const forbidden of ['localStorage.setItem', 'sessionStorage.setItem', 'access_token:', 'refresh_token:']) {
+  if (sessionAuthoritySource.includes(forbidden)) errors.push(`${SESSION_AUTHORITY} contains forbidden persistence token: ${forbidden}`);
+}
+
 const registrationSource = read(REGISTRATION_AUTHORITY);
 for (const token of [
   "version: 'AUTH-A04'",
   "client.rpc('check_username_availability'",
   'authority_unavailable',
+  'authorityUnavailableResult',
   'ns.registrationAuthority = api;',
   'ns.checkUsernameAvailability = checkUsernameAvailability;',
-  'ns.register = register;'
+  'ns.register = register;',
+  'registrationAuthority: api'
 ]) {
   if (!registrationSource.includes(token)) errors.push(`${REGISTRATION_AUTHORITY} missing registration authority token: ${token}`);
 }
-for (const forbidden of ['localStorage.setItem', 'sessionStorage.setItem', 'access_token', 'refresh_token', 'service_role']) {
-  if (registrationSource.includes(forbidden)) errors.push(`${REGISTRATION_AUTHORITY} contains forbidden persistence or credential token: ${forbidden}`);
+for (const forbidden of ['baseCheckUsernameAvailability', 'localStorage.setItem', 'sessionStorage.setItem', 'access_token', 'refresh_token', 'service_role']) {
+  if (registrationSource.includes(forbidden)) errors.push(`${REGISTRATION_AUTHORITY} contains forbidden fallback, persistence or credential token: ${forbidden}`);
 }
 
 const migrationSource = read(AUTH_A04_MIGRATION);
@@ -314,8 +369,15 @@ if (routeGuardSource.includes("return htmlMode || bodyMode || 'observe'")) {
 }
 
 const pageBootstrapSource = read(PAGE_BOOTSTRAP);
-for (const token of ['ensureAuthRouteGuard', 'auth-route-map.js', 'route-guard.js', 'failClosedAuthGuard']) {
-  if (!pageBootstrapSource.includes(token)) errors.push(`${PAGE_BOOTSTRAP} missing canonical guard bootstrap token: ${token}`);
+for (const token of [
+  'ensureAuthRouteGuard',
+  'ensureAuthSessionAuthority',
+  'auth-session-authority.js',
+  'auth-route-map.js',
+  'route-guard.js',
+  'failClosedAuthGuard'
+]) {
+  if (!pageBootstrapSource.includes(token)) errors.push(`${PAGE_BOOTSTRAP} missing canonical auth bootstrap token: ${token}`);
 }
 
 const authPrepaintSource = read(AUTH_PREPAINT_CSS);
@@ -357,4 +419,6 @@ console.log(`Checked active HTML pages: ${activeHtmlFiles.length}`);
 console.log(`Canonical auth consumers: ${canonicalConsumerCount}`);
 console.log(`Protected routes: ${routes.PRIVATE_ROUTES.length}`);
 console.log('AUTH-A04 registration authority: enforced');
+console.log('AUTH-A05 password authority: enforced');
+console.log('AUTH-A06 session authority and per-route controllers: enforced');
 console.log('Dormant legacy consumers: 0');
