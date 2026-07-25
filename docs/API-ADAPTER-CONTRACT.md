@@ -188,41 +188,20 @@ Fetches internos de shell, rotas estáticas, dados mockados ou serviços públic
 
 A Sprint 11B não troca nenhum fluxo para API real; ela cria o interruptor seguro para a Sprint 12.
 
-## Auth provider boundary
+## Auth authority boundary — current state
 
-Autenticação não deve ser tratada como repository genérico. O repository provider controla dados de domínio; auth precisa de contrato próprio por envolver sessão, token, refresh, expiração e permissões.
+Autenticação não usa o repository provider genérico. Supabase Auth é a única autoridade ativa no navegador.
 
-A Sprint 11C define:
+O adapter histórico que chamava `/auth/login`, `/auth/register`, `/auth/session` e `/auth/logout` foi removido de `assets/js/services/auth-service.js` no AUTH-A10. Esses endpoints permanecem apenas no runtime server-side e no diagnóstico CLI controlado; não são uma opção de provider selecionável pelo browser.
 
-- `Doke.runtimeConfig.authProvider`: `mock` ou `api`.
-- `DokeAuth.getAuthProviderStatus()`: status do provider de auth.
-- `Doke.session.getAuthContext()`: contexto normalizado de sessão/role/permissões.
+O contrato público preservado é:
 
-O provider ativo de auth continua `mock` por padrão. A Sprint 12A implementa `api` em modo controlado, preservando `docs/AUTH-INTEGRATION-CONTRACT.md` e sem migrar domínios financeiros.
+- `DokeAuth.getActiveAuthProvider() === 'supabase'`;
+- `DokeAuth.refreshSession()` para reconciliação canônica;
+- `DokeAuth.getAccessToken()` resolvendo o token diretamente do Supabase;
+- login, cadastro e logout usando o SDK Supabase.
 
-
-## Auth API provider — Sprint 12A
-
-Auth não passa pelo `repositoryBoundary`, porque envolve sessão, token, refresh, expiração e permissões. A fronteira autorizada é `assets/js/services/auth-service.js`.
-
-### Endpoints
-
-| Ação | Método | Endpoint |
-|---|---:|---|
-| Login | POST | `/auth/login` |
-| Cadastro | POST | `/auth/register` |
-| Sessão atual | GET | `/auth/session` |
-| Logout | POST | `/auth/logout` |
-| Recuperação | POST | `/auth/recovery` |
-| Redefinição | POST | `/auth/reset-password` |
-
-### Regras
-
-- `mock` continua padrão.
-- `api` só executa rede com `apiBaseUrl` + `enableNetworkRequests`.
-- Resposta de login/cadastro deve retornar `user` ou `session.user`.
-- Tokens ficam no Session Store; renderers não leem token.
-- Se API de logout falhar, sessão local ainda é limpa.
+Provider `mock/api` neste documento continua válido somente para dados de domínio atrás de `repositoryBoundary`, nunca para autenticação.
 
 ## Sprint 12B — resources de usuários e perfis
 

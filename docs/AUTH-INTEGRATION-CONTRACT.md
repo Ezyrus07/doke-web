@@ -210,3 +210,13 @@ A sessão criptográfica deixou de ser duplicada no snapshot persistido pela Dok
 ## AUTH-A09 — autoridade fixa de provider
 
 AUTH-A09 removeu `doke.authProvider`, `dokeAuthProvider`, `dokeAuthIdentityCanary` e as APIs públicas de ativação/rollback do canary. O runtime ignora pedidos de provider em storage, query string e configuração de janela; refresh, token resolution e bootstrap usam Supabase.
+
+
+## AUTH-A10 — remoção física do adapter browser /auth/*
+
+- `assets/js/services/auth-service.js` não contém endpoints, request helpers, token temporário ou branches do provider API histórico.
+- `DokeAuth.refreshApiSession`, `refreshCurrentIdentity`, `getAuthProviderStatus` e `getAuthIdentityCanaryStatus` foram removidos da fachada pública porque não possuíam consumidores válidos após a migração.
+- O único consumidor de página foi migrado para `DokeAuth.refreshSession()`.
+- `DokeAuth.getActiveAuthProvider()` permanece como compatibilidade pública e retorna sempre `supabase`.
+- O diagnóstico de `/auth/*` permanece exclusivamente em `scripts/validate-auth-identity-canary.js`; ele não é carregado pelo navegador.
+- Nenhuma configuração, usuário ou sessão do Supabase foi alterada neste sublote.

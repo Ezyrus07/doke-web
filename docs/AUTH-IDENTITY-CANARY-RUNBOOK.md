@@ -61,3 +61,15 @@ Não há rollback de browser porque nenhum estado de provider é escrito. Para i
 ## Histórico
 
 As Sprints 25–28 criaram o canary original. Seus detalhes permanecem no histórico Git; este runbook substitui a ativação manual por um diagnóstico isolado e reproduzível.
+
+
+## AUTH-A10 — isolamento físico do diagnóstico
+
+O frontend não contém mais adapter para `/auth/login`, `/auth/register`, `/auth/session` ou `/auth/logout`. O validador CLI é o único proprietário desses endpoints para fins de diagnóstico local/staging.
+
+Consequências operacionais:
+
+- nenhuma query string, chave de storage ou API pública do browser ativa esse diagnóstico;
+- o smoke CLI não publica token no snapshot da Doke;
+- falha do diagnóstico não altera a autoridade Supabase do navegador;
+- remover ou alterar o CLI exige preservar os gates de isolamento e não reintroduzir chamadas `fetch` em `auth-service.js`.

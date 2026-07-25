@@ -155,14 +155,15 @@ async function main() {
   vm.runInContext(authServiceSource, sandbox, { filename: 'auth-service.js' });
   await flush();
 
-  const status = window.DokeAuth.getAuthProviderStatus();
-  assert.strictEqual(status.activeProvider, 'supabase');
-  assert.strictEqual(status.requestedProvider, 'supabase');
-  assert.strictEqual(status.implementationStatus, 'supabase_active');
   assert.strictEqual(window.DokeAuth.getActiveAuthProvider(), 'supabase');
-  assert.strictEqual(typeof window.DokeAuth.configureAuthIdentityCanary, 'undefined');
-  assert.strictEqual(typeof window.DokeAuth.rollbackAuthIdentityCanary, 'undefined');
-  assert.strictEqual(window.DokeAuth.getAuthIdentityCanaryStatus().active, false);
+  for (const retiredFacade of [
+    'getAuthProviderStatus',
+    'getAuthIdentityCanaryStatus',
+    'configureAuthIdentityCanary',
+    'rollbackAuthIdentityCanary'
+  ]) {
+    assert.strictEqual(typeof window.DokeAuth[retiredFacade], 'undefined', retiredFacade + ' remains exposed');
+  }
   const beforeRefresh = getSessionCalls;
   await window.DokeAuth.refreshSession({ silent: false });
   assert(getSessionCalls > beforeRefresh, 'refreshSession did not use Supabase');
@@ -179,7 +180,7 @@ async function main() {
   console.log('AUTH-A09 provider authority runtime test passed.');
   console.log('- browser storage, query and window auth-provider requests cannot replace Supabase');
   console.log('- refresh and token resolution use the Supabase provider authority');
-  console.log('- browser canary mutation APIs are retired');
+  console.log('- browser provider status and canary mutation facades are retired');
   console.log('- legacy /auth/* adapter is not called by active browser auth');
 }
 

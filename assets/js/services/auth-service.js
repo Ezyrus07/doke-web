@@ -8,27 +8,10 @@
   const ns = root.DokeAuth || (root.DokeAuth = {});
   const Doke = root.Doke || (root.Doke = {});
 
-  const AUTH_PROVIDER_VALUES = Object.freeze({ mock: 'mock', api: 'api', supabase: 'supabase' });
-  const AUTH_ENDPOINTS = Object.freeze({
-    login: '/auth/login',
-    register: '/auth/register',
-    logout: '/auth/logout',
-    session: '/auth/session',
-    currentUser: '/users/me',
-    currentProfile: '/profiles/me',
-    updateCurrentUser: '/users/me',
-    updateCurrentProfile: '/profiles/me'
-  });
+  const AUTH_PROVIDER_VALUES = Object.freeze({ supabase: 'supabase' });
   const DEFAULT_LOGIN_URL = 'auth/login.html';
   const DEFAULT_APP_URL = 'index.html';
   const DELAY_MS = 120;
-  const CANARY_REQUIRED_ENDPOINTS = Object.freeze({
-    login: AUTH_ENDPOINTS.login,
-    session: AUTH_ENDPOINTS.session,
-    currentUser: AUTH_ENDPOINTS.currentUser,
-    currentProfile: AUTH_ENDPOINTS.currentProfile
-  });
-  let apiAccessToken = '';
   let supabaseAuthSubscription = null;
   let supabaseBootstrapPromise = null;
 
@@ -113,20 +96,6 @@
     });
   };
 
-  const readAccessTokenFromPayload = (payload) => {
-    const source = payload?.session || payload || {};
-    return String(source.token || source.accessToken || source.access_token || payload?.token || '').trim();
-  };
-
-  const setApiAccessTokenFromPayload = (payload) => {
-    apiAccessToken = readAccessTokenFromPayload(payload);
-    return apiAccessToken;
-  };
-
-  const clearApiAccessToken = () => {
-    apiAccessToken = '';
-  };
-
   const getSupabaseAccessToken = async () => {
     const client = getSupabaseClient();
     if (!client?.auth || typeof client.auth.getSession !== 'function') return '';
@@ -139,56 +108,6 @@
     if (isSupabaseAuthRequired()) return getSupabaseAccessToken();
     return '';
   };
-
-  const normalizeBaseUrl = (value) => String(value || '').trim().replace(/\/$/, '');
-
-  const getRuntimeConfig = () => Doke.runtimeConfig && typeof Doke.runtimeConfig === 'object'
-    ? Doke.runtimeConfig
-    : Object.freeze({
-        authProvider: AUTH_PROVIDER_VALUES.supabase,
-        requestedAuthProvider: AUTH_PROVIDER_VALUES.supabase,
-        defaultAuthProvider: AUTH_PROVIDER_VALUES.supabase,
-        dataProvider: AUTH_PROVIDER_VALUES.mock,
-        authIdentityCanary: false,
-        apiBaseUrl: '',
-        flags: Object.freeze({ enableNetworkRequests: false })
-      });
-
-  const getRuntimeFlags = () => {
-    const config = getRuntimeConfig();
-    return config.flags && typeof config.flags === 'object' ? config.flags : {};
-  };
-
-  const getRequestedAuthProvider = () => AUTH_PROVIDER_VALUES.supabase;
-  const getApiBaseUrl = () => normalizeBaseUrl(getRuntimeConfig().apiBaseUrl || '');
-  const isNetworkEnabled = () => getRuntimeFlags().enableNetworkRequests === true;
-  const getAuthProviderBlockReason = () => '';
-  const canUseApiAuth = () => false;
-
-  const getAuthProviderStatus = () => Object.freeze({
-    activeProvider: AUTH_PROVIDER_VALUES.supabase,
-    requestedProvider: AUTH_PROVIDER_VALUES.supabase,
-    implementationStatus: 'supabase_active',
-    apiBaseUrlConfigured: Boolean(getApiBaseUrl()),
-    networkEnabled: isNetworkEnabled(),
-    apiReady: false,
-    blockReason: '',
-    endpoints: AUTH_ENDPOINTS,
-    note: 'Supabase Auth is the only active browser authentication authority. The legacy /auth/* adapter is diagnostic-only and cannot be selected by browser state.'
-  });
-
-  const getAuthIdentityCanaryStatus = () => Object.freeze({
-    canaryRequested: false,
-    active: false,
-    authProvider: AUTH_PROVIDER_VALUES.supabase,
-    requestedAuthProvider: AUTH_PROVIDER_VALUES.supabase,
-    dataProvider: getRuntimeConfig().dataProvider || AUTH_PROVIDER_VALUES.mock,
-    apiBaseUrlConfigured: Boolean(getApiBaseUrl()),
-    networkEnabled: isNetworkEnabled(),
-    rollbackAvailable: false,
-    endpoints: CANARY_REQUIRED_ENDPOINTS,
-    blockers: Object.freeze(['Browser-controlled auth provider canaries are retired. Use the CLI-only diagnostic harness.'])
-  });
 
   const toPublicUser = (user) => {
     const repo = getUsersRepository();
@@ -234,31 +153,6 @@
     };
   };
 
-  const mergeUserWithProfile = (user, profile) => {
-    const publicUser = toPublicUser(user);
-    const normalizedProfile = normalizeProfilePayload(profile, publicUser);
-    if (!publicUser || !normalizedProfile) return publicUser;
-    return {
-      ...publicUser,
-      providerProfileId: publicUser.providerProfileId || normalizedProfile.id || '',
-      profileKind: normalizedProfile.type || publicUser.role || publicUser.type || 'client',
-      profile: normalizedProfile,
-      profiles: Array.isArray(publicUser.profiles) ? publicUser.profiles : [normalizedProfile],
-      handle: publicUser.handle || normalizedProfile.handle || '',
-      avatarUrl: normalizedProfile.avatarUrl || publicUser.avatarUrl || '',
-      avatar: normalizedProfile.avatarUrl || publicUser.avatar || '',
-      avatarInitials: publicUser.avatarInitials || normalizedProfile.avatarInitials || '',
-      initials: publicUser.initials || normalizedProfile.initials || '',
-      city: publicUser.city || normalizedProfile.city || '',
-      state: publicUser.state || normalizedProfile.state || '',
-      bio: publicUser.bio || normalizedProfile.bio || '',
-      coverUrl: normalizedProfile.coverUrl || publicUser.coverUrl || '',
-      profession: publicUser.profession || normalizedProfile.profession || normalizedProfile.headline || '',
-      publicProfileUrl: publicUser.publicProfileUrl || normalizedProfile.publicUrl || (publicUser.role === 'professional' ? 'perfil.html' : 'perfil-cliente.html'),
-      ownerProfileUrl: publicUser.ownerProfileUrl || normalizedProfile.ownerUrl || (publicUser.role === 'professional' ? 'perfil-profissional.html' : 'meu-perfil.html')
-    };
-  };
-
   const buildSession = (user, options = {}) => ({
     provider: options.provider || 'mock',
     remember: options.remember !== false,
@@ -267,157 +161,6 @@
     expiresAt: options.expiresAt || '',
     issuedAt: new Date().toISOString()
   });
-
-  const getSessionToken = async () => getAccessToken();
-
-  const normalizeApiErrorMessage = (payload, fallback) => {
-    const message = payload?.message || payload?.error?.message || payload?.error || fallback || 'Não foi possível concluir a autenticação.';
-    return String(message || '').trim();
-  };
-
-  const apiRequest = async (method, path, body) => {
-    const baseUrl = getApiBaseUrl();
-    if (!baseUrl) throw new Error('Auth API blocked: apiBaseUrl is not configured.');
-    if (!isNetworkEnabled()) throw new Error('Auth API blocked: enableNetworkRequests flag is disabled.');
-    if (typeof root.fetch !== 'function') throw new Error('Auth API requires window.fetch.');
-
-    const headers = {
-      Accept: 'application/json',
-      'Content-Type': 'application/json'
-    };
-    const token = await getSessionToken();
-    if (token) headers.Authorization = `Bearer ${token}`;
-
-    const options = {
-      method,
-      credentials: 'include',
-      headers
-    };
-
-    if (body !== undefined) options.body = JSON.stringify(body);
-
-    const response = await root.fetch(`${baseUrl}${path}`, options);
-    const contentType = response.headers?.get?.('content-type') || '';
-    const payload = contentType.includes('application/json') ? await response.json().catch(() => null) : null;
-
-    if (!response.ok) {
-      throw new Error(normalizeApiErrorMessage(payload, `Auth API request failed: ${response.status}`));
-    }
-
-    return payload;
-  };
-
-  const normalizeApiSessionPayload = (payload, options = {}) => {
-    const source = payload?.session || payload || {};
-    const user = source.user || payload?.user || payload?.currentUser || null;
-    if (!user) return null;
-
-    const profilePayload = source.profile || payload?.profile || payload?.currentProfile || user.profile || null;
-    const publicUser = profilePayload ? mergeUserWithProfile(user, profilePayload) : toPublicUser(user);
-
-    return {
-      provider: AUTH_PROVIDER_VALUES.api,
-      remember: options.remember !== false,
-      user: publicUser,
-      accountStatus: source.accountStatus || user.accountStatus || user.status || 'active',
-      sessionStatus: source.sessionStatus || source.status || 'active',
-      expiresAt: source.expiresAt || source.expires_at || payload?.expiresAt || '',
-      issuedAt: source.issuedAt || source.createdAt || new Date().toISOString()
-    };
-  };
-
-  const setSessionFromApiPayload = (payload, options = {}) => {
-    const session = normalizeApiSessionPayload(payload, options);
-    if (!session) return null;
-    setApiAccessTokenFromPayload(payload);
-    const store = getSessionStore();
-    if (!store?.write) throw new Error('Session Store não foi carregado.');
-    return store.write(session);
-  };
-
-
-  const applyCurrentIdentity = (userPayload, profilePayload) => {
-    const currentSession = getSession();
-    const currentUser = currentSession?.user || null;
-    const nextUser = mergeUserWithProfile(userPayload || currentUser, profilePayload || userPayload?.profile || currentUser?.profile);
-    if (!nextUser) return currentSession;
-
-    const store = getSessionStore();
-    if (!store?.write) throw new Error('Session Store não foi carregado.');
-    return store.write({
-      ...(currentSession || {}),
-      provider: currentSession?.provider || AUTH_PROVIDER_VALUES.api,
-      remember: currentSession?.remember !== false,
-      accountStatus: currentSession?.accountStatus || nextUser.accountStatus || 'active',
-      sessionStatus: currentSession?.sessionStatus || 'active',
-      expiresAt: currentSession?.expiresAt || '',
-      user: nextUser
-    });
-  };
-
-  const fetchApiCurrentIdentity = async ({ silent = false } = {}) => {
-    if (!canUseApiAuth()) return getSession();
-    try {
-      const [userPayload, profilePayload] = await Promise.all([
-        apiRequest('GET', AUTH_ENDPOINTS.currentUser),
-        apiRequest('GET', AUTH_ENDPOINTS.currentProfile).catch((error) => {
-          if (!silent) throw error;
-          return null;
-        })
-      ]);
-      return applyCurrentIdentity(userPayload?.user || userPayload?.currentUser || userPayload, profilePayload?.profile || profilePayload?.currentProfile || profilePayload);
-    } catch (error) {
-      if (!silent) throw error;
-      return getSession();
-    }
-  };
-
-  const apiLogin = async ({ login: loginValue, email, password, remember = true } = {}) => {
-    const access = normalizeText(email || loginValue);
-    const rawPassword = String(password || '');
-    const payload = await apiRequest('POST', AUTH_ENDPOINTS.login, {
-      login: access,
-      email: isEmail(access) ? normalizeEmail(access) : undefined,
-      phone: isPhone(access) ? normalizePhone(access) : undefined,
-      password: rawPassword,
-      remember
-    });
-    const session = setSessionFromApiPayload(payload, { remember });
-    if (!session?.user) throw new Error('Auth API não retornou usuário de sessão.');
-    const identitySession = await fetchApiCurrentIdentity({ silent: true });
-    return identitySession?.user || session.user;
-  };
-
-  const apiRegister = async (payload = {}) => {
-    const response = await apiRequest('POST', AUTH_ENDPOINTS.register, {
-      name: normalizeText(payload.name),
-      handle: normalizeText(payload.handle).toLowerCase(),
-      email: normalizeEmail(payload.email),
-      phone: normalizePhone(payload.phone),
-      password: String(payload.password || ''),
-      role: 'client'
-    });
-    const session = setSessionFromApiPayload(response, { remember: true });
-    const identitySession = await fetchApiCurrentIdentity({ silent: true });
-    const user = identitySession?.user || session?.user || toPublicUser(response?.user);
-    if (!user) throw new Error('Auth API não retornou usuário cadastrado.');
-    return {
-      ...user,
-      pendingConfirmation: response?.pendingConfirmation === true || response?.requiresEmailConfirmation === true
-    };
-  };
-
-  const refreshApiSession = async ({ silent = false } = {}) => {
-    if (!canUseApiAuth()) return getSession();
-    try {
-      const payload = await apiRequest('GET', AUTH_ENDPOINTS.session);
-      const session = setSessionFromApiPayload(payload, { remember: true });
-      return await fetchApiCurrentIdentity({ silent: true }) || session;
-    } catch (error) {
-      if (!silent) throw error;
-      return getSession();
-    }
-  };
 
   const reconcileSupabaseSession = (session) => {
     const current = getSession();
@@ -488,12 +231,6 @@
 
   const updateCurrentUser = async (patch = {}) => {
     await delay(60);
-    if (canUseApiAuth()) {
-      const payload = await apiRequest('PATCH', AUTH_ENDPOINTS.updateCurrentUser, patch);
-      const session = applyCurrentIdentity(payload?.user || payload?.currentUser || payload, payload?.profile || payload?.currentProfile);
-      updateAccountSurfaces();
-      return session?.user || null;
-    }
 
     const repo = getUsersRepository();
     const currentUser = getCurrentUser();
@@ -511,12 +248,6 @@
 
   const updateCurrentProfile = async (patch = {}) => {
     await delay(60);
-    if (canUseApiAuth()) {
-      const payload = await apiRequest('PATCH', AUTH_ENDPOINTS.updateCurrentProfile, patch);
-      const session = applyCurrentIdentity(payload?.user || payload?.currentUser || getCurrentUser(), payload?.profile || payload?.currentProfile || payload);
-      updateAccountSurfaces();
-      return session?.user?.profile || null;
-    }
 
     const repo = getUsersRepository();
     const currentUser = getCurrentUser();
@@ -619,7 +350,6 @@
     if (client) {
       try { await client.auth.signOut(); } catch (error) { console.warn?.('[DokeAuth] Supabase logout failed.', error); }
     }
-    clearApiAccessToken();
     getSessionStore()?.clear?.();
     try {
       root.localStorage.removeItem('doke.auth.users.v1');
@@ -803,15 +533,11 @@
   const api = Object.freeze({
     provider: AUTH_PROVIDER_VALUES.supabase,
     authProvider: AUTH_PROVIDER_VALUES.supabase,
-    getActiveAuthProvider: () => getAuthProviderStatus().activeProvider,
-    getAuthProviderStatus,
-    getAuthIdentityCanaryStatus,
+    getActiveAuthProvider: () => AUTH_PROVIDER_VALUES.supabase,
     refreshSession,
-    refreshApiSession,
     refreshSupabaseSession,
     bootstrapSupabaseSessionBridge,
     getAccessToken,
-    refreshCurrentIdentity: fetchApiCurrentIdentity,
     getCurrentIdentity,
     updateCurrentUser,
     updateCurrentProfile,

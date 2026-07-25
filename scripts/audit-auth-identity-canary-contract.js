@@ -48,15 +48,24 @@ forbid(runtimeConfig, 'runtime-config', [
 ]);
 
 expect(authService, 'auth-service', [
-  'getAuthIdentityCanaryStatus',
-  'Browser-controlled auth provider canaries are retired',
-  'const canUseApiAuth = () => false'
+  "const AUTH_PROVIDER_VALUES = Object.freeze({ supabase: 'supabase' })",
+  'getActiveAuthProvider: () => AUTH_PROVIDER_VALUES.supabase',
+  'refreshSupabaseSession'
 ]);
 forbid(authService, 'auth-service', [
-  'AUTH_IDENTITY_CANARY_KEYS',
-  'configureAuthIdentityCanary,',
-  'rollbackAuthIdentityCanary,',
-  'doke.authProvider'
+  'AUTH_ENDPOINTS',
+  'CANARY_REQUIRED_ENDPOINTS',
+  'apiAccessToken',
+  'apiRequest',
+  'refreshApiSession',
+  'refreshCurrentIdentity',
+  'getAuthProviderStatus',
+  'getAuthIdentityCanaryStatus',
+  'canUseApiAuth',
+  "'/auth/login'",
+  "'/auth/register'",
+  "'/auth/logout'",
+  "'/auth/session'"
 ]);
 
 expect(validator, 'validate-auth-identity-canary', [
@@ -109,4 +118,4 @@ if (failures.length) {
 }
 
 console.log('Auth/identity diagnostic contract audit passed.');
-console.log('Browser provider mutation is retired; legacy API verification is CLI-only.');
+console.log('Browser provider mutation and browser /auth/* adapter code are retired; legacy verification is CLI-only.');

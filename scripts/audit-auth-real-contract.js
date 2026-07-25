@@ -34,6 +34,7 @@ const session = read('assets/js/core/session.js');
 const permissions = read('assets/js/core/permissions.js');
 const authService = read('assets/js/services/auth-service.js');
 const providerRuntimeTest = read('tests/auth/test-auth-provider-authority-runtime.js');
+const deadAdapterRuntimeTest = read('tests/auth/test-auth-dead-adapter-retirement-runtime.js');
 const usersRepository = read('assets/js/repositories/users-repository.js');
 const authDoc = read('docs/AUTH-INTEGRATION-CONTRACT.md');
 const backendPlan = read('docs/BACKEND-INTEGRATION-PLAN.md');
@@ -83,11 +84,8 @@ expect(permissions, 'permissions.js', [
 ]);
 
 expect(authService, 'auth-service.js', [
-  'getAuthProviderStatus',
-  "const getRequestedAuthProvider = () => AUTH_PROVIDER_VALUES.supabase",
-  'const canUseApiAuth = () => false',
-  "implementationStatus: 'supabase_active'",
-  'Supabase Auth is the only active browser authentication authority',
+  "const AUTH_PROVIDER_VALUES = Object.freeze({ supabase: 'supabase' })",
+  'getActiveAuthProvider: () => AUTH_PROVIDER_VALUES.supabase',
   'signInWithPassword',
   'signUp',
   'onAuthStateChange',
@@ -96,18 +94,41 @@ expect(authService, 'auth-service.js', [
   'O login local/demo está desativado'
 ]);
 forbid(authService, 'auth-service.js', [
-  'AUTH_IDENTITY_CANARY_KEYS',
-  'dokeAuthProvider',
-  'doke.authProvider',
-  'doke.canary.authIdentity.enabled',
-  'configureAuthIdentityCanary,',
-  'rollbackAuthIdentityCanary,'
+  'AUTH_ENDPOINTS',
+  'CANARY_REQUIRED_ENDPOINTS',
+  'apiAccessToken',
+  'readAccessTokenFromPayload',
+  'setApiAccessTokenFromPayload',
+  'clearApiAccessToken',
+  'normalizeApiErrorMessage',
+  'apiRequest',
+  'normalizeApiSessionPayload',
+  'setSessionFromApiPayload',
+  'fetchApiCurrentIdentity',
+  'apiLogin',
+  'apiRegister',
+  'refreshApiSession',
+  'refreshCurrentIdentity',
+  'getAuthProviderStatus',
+  'getAuthIdentityCanaryStatus',
+  'canUseApiAuth',
+  'AUTH_PROVIDER_VALUES.api',
+  'AUTH_PROVIDER_VALUES.mock',
+  "'/auth/login'",
+  "'/auth/register'",
+  "'/auth/logout'",
+  "'/auth/session'"
 ]);
 
 expect(providerRuntimeTest, 'AUTH-A09 runtime test', [
   'Browser-selected legacy auth API was called',
   "assert.strictEqual(production.authProvider, 'supabase')",
   "assert.strictEqual(fetchCalls, 0"
+]);
+expect(deadAdapterRuntimeTest, 'AUTH-A10 dead adapter runtime test', [
+  'getActiveAuthProvider',
+  'refreshApiSession',
+  'Browser auth adapter retirement runtime test passed.'
 ]);
 
 for (const forbiddenSnippet of ['suporte@doke.local', 'pro@doke.local', 'cliente@doke.local']) {
@@ -142,4 +163,4 @@ if (failures.length) {
 
 console.log('Auth real contract audit passed.');
 console.log('Active browser authority: Supabase Auth only.');
-console.log('Browser-controlled mock/API provider selection is retired.');
+console.log('Browser-controlled provider selection and the unreachable /auth/* adapter are retired.');

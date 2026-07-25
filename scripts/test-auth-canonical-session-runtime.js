@@ -201,6 +201,11 @@ async function main() {
     stdio: 'inherit'
   });
 
+  execFileSync(process.execPath, [path.join(root, 'tests/auth/test-auth-dead-adapter-retirement-runtime.js')], {
+    cwd: root,
+    stdio: 'inherit'
+  });
+
   console.log('Canonical auth session runtime test passed.');
   console.log('- provider secrets are absent from Doke runtime and persisted snapshots');
   console.log('- legacy token-bearing snapshots are sanitized on read');
@@ -209,6 +214,7 @@ async function main() {
   console.log('- SIGNED_OUT clears the public identity snapshot');
   console.log('- retired local authority and unsupported provider surfaces are blocked');
   console.log('- browser-controlled provider selection cannot replace Supabase');
+  console.log('- unreachable browser /auth/* adapter code is absent from the public auth facade');
 }
 
 main().catch((error) => {

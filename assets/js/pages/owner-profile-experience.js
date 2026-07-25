@@ -311,10 +311,10 @@
 
   function confirmCurrentIdentity() {
     var auth = window.DokeAuth && window.DokeAuth.service;
-    if (!auth || typeof auth.refreshApiSession !== 'function') return Promise.resolve(null);
+    if (!auth || typeof auth.refreshSession !== 'function') return Promise.resolve(null);
 
     var refresh = Promise.resolve().then(function () {
-      return auth.refreshApiSession({ silent: true });
+      return auth.refreshSession({ silent: true });
     }).catch(function () { return null; });
 
     var timeout = new Promise(function (resolve) {

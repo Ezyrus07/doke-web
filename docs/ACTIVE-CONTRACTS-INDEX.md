@@ -178,31 +178,24 @@ Não criar novo documento permanente para cada etapa. Primeiro atualizar um cont
 
 Supabase Auth is the active user-facing authentication provider. Historical auth/identity API validation remains isolated in CLI-only local/staging diagnostics.
 
-## Sprint 25 — auth/identity canary
+## Sprints 25–26 — browser auth canary retired
 
-Contrato ativo: `docs/AUTH-IDENTITY-CANARY-RUNBOOK.md`.
+O canário Auth/Identity de navegador foi aposentado. `assets/js/core/runtime-config.js` não aceita seleção de provider de autenticação, e `assets/js/services/auth-service.js` não contém adapter `/auth/*`, ativação, rollback ou status de canário.
 
-Arquivos de autoridade:
+Autoridades atuais:
 
-- `assets/js/core/runtime-config.js` — reconhece `dokeAuthIdentityCanary`, força `dataProvider=mock` durante o canary e expõe metadados de provider solicitado.
-- `assets/js/services/auth-service.js` — expõe `DokeAuth.configureAuthIdentityCanary`, `DokeAuth.getAuthIdentityCanaryStatus` e `DokeAuth.rollbackAuthIdentityCanary`.
-- `scripts/validate-auth-identity-canary.js` — smoke real apenas de `/auth/login`, `/auth/session`, `/users/me` e `/profiles/me`.
-- `scripts/audit-auth-identity-canary-contract.js` — gate estático do contrato.
+- Supabase Auth: única autoridade de autenticação do navegador;
+- `scripts/validate-auth-identity-canary.js`: diagnóstico CLI-only de endpoints históricos em alvo local/staging controlado;
+- `scripts/audit-auth-identity-canary-contract.js`: garante que o diagnóstico CLI permaneça isolado do runtime do browser;
+- `tests/auth/test-auth-dead-adapter-retirement-runtime.js`: impede a restauração do adapter no frontend.
 
-Comandos:
+Comandos CLI preservados:
 
 ```bash
 npm run audit:auth-identity-canary-contract
 npm run validate:auth-identity-canary:dry-run
 npm run validate:auth-identity-canary
 ```
-
-## Sprint 26 active contract — Auth/identity canary browser runtime gate
-
-- `assets/js/services/auth-service.js` bloqueia ativação de canary Auth/Identity para alvo com aparência de produção e exige marcador local/staging ou `targetMarker` explícito.
-- `scripts/validate-auth-identity-canary-browser-runtime.js` valida o contrato de navegador sem rede real: default mock, bloqueio de alvo perigoso, ativação segura, chamadas restritas a auth/identity e rollback.
-- Gate obrigatório antes de teste manual no navegador: `npm run validate:auth-identity-canary:browser-runtime`.
-- O restante do produto permanece em `dataProvider=mock`; canary de outros domínios continua proibido até o canary Auth/Identity real passar em staging/local.
 
 ## Sprint 27 active contract — Auth/identity local network canary
 
