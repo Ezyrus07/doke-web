@@ -1,4 +1,4 @@
-# Temporary AUTH-A08 closure mode; restore the canonical matrix-only workflow afterward.
+# Bot-generated document commits require a follow-up CI run on a user-authored head.
 name: Doke Deterministic Domain Matrix Sync
 
 on:
@@ -21,7 +21,7 @@ concurrency:
 
 jobs:
   synchronize:
-    name: Synchronize AUTH-A08 journal and domain matrix
+    name: Synchronize generated domain matrix
     if: >-
       ${{ github.event_name == 'workflow_dispatch' ||
           startsWith(github.event.head_commit.message, 'Request deterministic matrix sync') }}
@@ -46,79 +46,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Append AUTH-A08 journal entry
-        shell: bash
-        run: |
-          set -euo pipefail
-          python - <<'PY'
-          from pathlib import Path
-
-          path = Path('docs/DOKE-ENGINEERING-JOURNAL.md')
-          content = path.read_text(encoding='utf-8')
-          marker = '## 2026-07-25 — AUTH-A08 legacy authority and unavailable providers retired'
-          if marker in content:
-              raise SystemExit(0)
-
-          anchor = '\n---\n\n# Entry template\n'
-          if anchor not in content:
-              raise SystemExit('Engineering Journal entry-template anchor is missing.')
-
-          entry = r'''
-
-## 2026-07-25 — AUTH-A08 legacy authority and unavailable providers retired
-
-**Scope:** PR #9, branch `auth/auth-001-baseline-audit`
-
-**Outcome:** `DONE` for AUTH-A08; `BLOCKED` for optional providers without real configuration
-
-### Context
-
-The active pages no longer loaded the old browser authentication service, but the file still contained a complete second authority that could be restored by a stale import. Login also advertised phone access, while login and signup exposed Google, Facebook and Apple controls without configured provider flows.
-
-### Decision
-
-Keep the historical path as a non-executable tombstone, expose e-mail as the only canonical login identifier, remove unavailable OAuth controls and make this contract part of the mandatory auth/session runtime gate.
-
-### Implementation
-
-- Replaced `assets/js/core/auth-service.js` with the `AUTH-A08_RETIRED_AUTHORITY` tombstone.
-- Removed all executable credential, registration, recovery, storage and API-publication behavior from that path.
-- Preserved only historical legacy identifiers for migration and audit traceability.
-- Made `auth/login.html` e-mail-only and removed phone-login language and hooks.
-- Removed Google, Facebook and Apple controls from login and signup.
-- Strengthened `scripts/test-real-auth-only-contract.js`.
-- Added the real-auth-only contract to `scripts/test-auth-canonical-session-runtime.js`.
-- Added a restricted deterministic matrix synchronization workflow.
-- Added Markdown and JSON closure evidence under `docs/validation/`.
-
-### Validation
-
-Runtime and visual-validation head: `cae8fa312116ef2a2fa38507068e24067842a8d5`.
-
-- Doke Quality Gates #414: success.
-- Blocking deterministic E2E: success.
-- 105 visual structural guards: success.
-- Doke Staging Edge HTTP Canary #188: success.
-- Static audits, auth/session runtime, real-auth-only contract, matrix, governance, asset audits and `git diff --check`: success.
-- Diagnostic E2E #209 was non-blocking and still executing when mandatory closure gates completed; no success claim was made for it.
-
-### Risks and boundaries
-
-- No production environment, authentication provider configuration or database object was changed.
-- No existing account, credential, contact, profile or role was changed.
-- No SMS or OAuth provider was enabled.
-- Inactive social-auth CSS and a dormant phone-mask helper remain candidates for a dedicated dead-code/controller cleanup audit; they do not expose active controls.
-- `MAIL-001` and `PAID-001 / SEC-B05` remain open.
-- PR #9 remains draft and must not be merged without explicit authorization.
-
-### Next step
-
-Plan `AUTH-A09` around `AUTH-B02`: remove browser-controlled provider selection and promote remote authentication as the only production authority through controlled route-by-route canaries.
-'''
-          content = content.replace(anchor, '\n---\n' + entry + '\n---\n\n# Entry template\n', 1)
-          path.write_text(content, encoding='utf-8')
-          PY
-
       - name: Generate and validate deterministic matrix
         shell: bash
         run: |
@@ -127,16 +54,25 @@ Plan `AUTH-A09` around `AUTH-B02`: remove browser-controlled provider selection 
           node scripts/audit-domain-completion-matrix.js
           git diff --check
 
-          expected=$'docs/DOKE-ENGINEERING-JOURNAL.md\ndocs/DOMAIN-COMPLETION-MATRIX.md'
           actual="$(git diff --name-only | sort)"
-          test "$actual" = "$expected"
+          if [ -z "$actual" ]; then
+            echo 'Domain matrix is already synchronized.'
+            exit 0
+          fi
 
-      - name: Publish generated closure documents
+          test "$actual" = 'docs/DOMAIN-COMPLETION-MATRIX.md'
+
+      - name: Publish generated document
         shell: bash
         run: |
           set -euo pipefail
+          if git diff --quiet -- docs/DOMAIN-COMPLETION-MATRIX.md; then
+            echo 'Nothing to publish.'
+            exit 0
+          fi
+
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add docs/DOKE-ENGINEERING-JOURNAL.md docs/DOMAIN-COMPLETION-MATRIX.md
-          git commit -m 'Record AUTH-A08 closure evidence'
+          git add docs/DOMAIN-COMPLETION-MATRIX.md
+          git commit -m 'Synchronize deterministic domain matrix'
           git push origin HEAD:${{ github.ref_name }}
