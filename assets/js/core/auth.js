@@ -1,21 +1,23 @@
-(function(){
-  const protectedPages = new Set([]);
-  const current = window.location.pathname.split('/').pop();
-  const SESSION_KEY = 'doke.auth.session';
+/* Doke AUTH-A06 compatibility guard.
+   Responsibility: preserve the historical DokeAuthGuard.hasSession surface while
+   delegating the decision to the canonical auth/session authority. */
+(function () {
+  'use strict';
 
-  function hasSession(){
+  const getAuthService = () => window.DokeAuth?.service || window.DokeAuth || null;
+
+  const hasSession = () => {
+    const service = getAuthService();
     try {
-      return Boolean(localStorage.getItem(SESSION_KEY) || sessionStorage.getItem(SESSION_KEY));
-    } catch (_) {
+      return Boolean(service?.getCurrentUser?.() || service?.getSession?.()?.user);
+    } catch {
       return false;
     }
-  }
-
-  if (protectedPages.has(current) && !hasSession()) {
-    document.documentElement.classList.add('auth-guard-pending');
-  }
-
-  window.DokeAuthGuard = {
-    hasSession
   };
+
+  window.DokeAuthGuard = Object.freeze({
+    version: 'AUTH-A06-COMPAT',
+    authority: 'DokeAuth.service',
+    hasSession
+  });
 })();
