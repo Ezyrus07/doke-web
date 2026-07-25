@@ -1,0 +1,100 @@
+name: Apply AUTH-A10 Dead Adapter Retirement
+
+on:
+  push:
+    branches:
+      - 'auth/**'
+
+permissions:
+  contents: read
+
+jobs:
+  apply:
+    name: Apply and validate AUTH-A10
+    if: startsWith(github.event.head_commit.message, 'Request AUTH-A10')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout current branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Apply AUTH-A10 codemod
+        run: node scripts/apply-auth-a10-retirement.js
+
+      - name: Validate JavaScript syntax
+        run: |
+          node --check assets/js/services/auth-service.js
+          node --check assets/js/pages/owner-profile-experience.js
+          node --check scripts/audit-auth-real-contract.js
+          node --check scripts/audit-auth-identity-canary-contract.js
+          node --check scripts/test-auth-canonical-session-runtime.js
+          node --check tests/auth/test-auth-dead-adapter-retirement-runtime.js
+
+      - name: Run AUTH-A10 mandatory gates
+        run: |
+          node scripts/test-auth-canonical-session-runtime.js
+          node scripts/audit-auth-real-contract.js
+          node scripts/audit-auth-identity-canary-contract.js
+          git diff --check
+
+      - name: Verify exact AUTH-A10 diff
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add -N \
+            assets/js/services/auth-service.js \
+            assets/js/pages/owner-profile-experience.js \
+            scripts/audit-auth-real-contract.js \
+            scripts/audit-auth-identity-canary-contract.js \
+            scripts/test-auth-canonical-session-runtime.js \
+            tests/auth/test-auth-dead-adapter-retirement-runtime.js \
+            docs/AUTH-INTEGRATION-CONTRACT.md \
+            docs/AUTH-IDENTITY-CANARY-RUNBOOK.md \
+            docs/API-ADAPTER-CONTRACT.md \
+            docs/ACTIVE-CONTRACTS-INDEX.md \
+            docs/validation/AUTH-001-A10-DEAD-ADAPTER-RETIREMENT.md
+          git add -N -f docs/validation/AUTH-001-A10-DEAD-ADAPTER-RETIREMENT.json
+          expected=$'assets/js/pages/owner-profile-experience.js\nassets/js/services/auth-service.js\ndocs/ACTIVE-CONTRACTS-INDEX.md\ndocs/API-ADAPTER-CONTRACT.md\ndocs/AUTH-IDENTITY-CANARY-RUNBOOK.md\ndocs/AUTH-INTEGRATION-CONTRACT.md\ndocs/validation/AUTH-001-A10-DEAD-ADAPTER-RETIREMENT.json\ndocs/validation/AUTH-001-A10-DEAD-ADAPTER-RETIREMENT.md\nscripts/audit-auth-identity-canary-contract.js\nscripts/audit-auth-real-contract.js\nscripts/test-auth-canonical-session-runtime.js\ntests/auth/test-auth-dead-adapter-retirement-runtime.js'
+          actual="$(git diff --name-only | sort)"
+          printf 'Expected files:\n%s\n' "$expected"
+          printf 'Actual files:\n%s\n' "$actual"
+          test "$actual" = "$expected"
+
+      - name: Publish AUTH-A10 implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            assets/js/services/auth-service.js \
+            assets/js/pages/owner-profile-experience.js \
+            scripts/audit-auth-real-contract.js \
+            scripts/audit-auth-identity-canary-contract.js \
+            scripts/test-auth-canonical-session-runtime.js \
+            tests/auth/test-auth-dead-adapter-retirement-runtime.js \
+            docs/AUTH-INTEGRATION-CONTRACT.md \
+            docs/AUTH-IDENTITY-CANARY-RUNBOOK.md \
+            docs/API-ADAPTER-CONTRACT.md \
+            docs/ACTIVE-CONTRACTS-INDEX.md \
+            docs/validation/AUTH-001-A10-DEAD-ADAPTER-RETIREMENT.md
+          git add -f docs/validation/AUTH-001-A10-DEAD-ADAPTER-RETIREMENT.json
+          git commit -m 'Retire unreachable browser auth API adapter'
+          git fetch origin "${GITHUB_REF_NAME}"
+          git rebase "origin/${GITHUB_REF_NAME}"
+          git push origin HEAD:"${GITHUB_REF_NAME}"
