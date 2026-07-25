@@ -66,8 +66,11 @@ jobs:
       - name: Audit Edge Function source closure
         run: npm run audit:edge-function-source-closure
 
-      - name: Audit auth and session contracts
-        run: npm run audit:auth-session
+      - name: Audit auth session structure
+        run: node scripts/audit-auth-session-contracts.js
+
+      - name: Test canonical auth session runtime
+        run: node scripts/test-auth-canonical-session-runtime.js
 
       - name: Audit desktop shell contracts
         run: npm run audit:desktop-shell
