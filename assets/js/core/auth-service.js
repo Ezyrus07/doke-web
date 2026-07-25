@@ -15,5 +15,5 @@
  * - doke.auth.recovery.v1
  *
  * Intentionally contains no executable JavaScript, storage access, provider client,
- * credential flow, recovery flow or window.DokeAuth publication.
+ * credential flow, recovery flow or public authentication API publication.
  */
