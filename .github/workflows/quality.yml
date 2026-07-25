@@ -270,7 +270,9 @@ jobs:
 
       - name: Apply AUTH-A10 codemod
         if: steps.gate.outputs.should_apply == 'true'
-        run: node scripts/apply-auth-a10-retirement.js
+        run: |
+          node scripts/apply-auth-a10-retirement.js
+          node scripts/patch-auth-a10-a09-test.js
 
       - name: Validate AUTH-A10 implementation
         if: steps.gate.outputs.should_apply == 'true'
@@ -280,6 +282,7 @@ jobs:
           node --check scripts/audit-auth-real-contract.js
           node --check scripts/audit-auth-identity-canary-contract.js
           node --check scripts/test-auth-canonical-session-runtime.js
+          node --check tests/auth/test-auth-provider-authority-runtime.js
           node --check tests/auth/test-auth-dead-adapter-retirement-runtime.js
           node scripts/test-auth-canonical-session-runtime.js
           node scripts/audit-auth-real-contract.js
@@ -297,6 +300,7 @@ jobs:
             scripts/audit-auth-real-contract.js \
             scripts/audit-auth-identity-canary-contract.js \
             scripts/test-auth-canonical-session-runtime.js \
+            tests/auth/test-auth-provider-authority-runtime.js \
             tests/auth/test-auth-dead-adapter-retirement-runtime.js \
             docs/AUTH-INTEGRATION-CONTRACT.md \
             docs/AUTH-IDENTITY-CANARY-RUNBOOK.md \
@@ -304,7 +308,7 @@ jobs:
             docs/ACTIVE-CONTRACTS-INDEX.md \
             docs/validation/AUTH-001-A10-DEAD-ADAPTER-RETIREMENT.md
           git add -N -f docs/validation/AUTH-001-A10-DEAD-ADAPTER-RETIREMENT.json
-          expected=$'assets/js/pages/owner-profile-experience.js\nassets/js/services/auth-service.js\ndocs/ACTIVE-CONTRACTS-INDEX.md\ndocs/API-ADAPTER-CONTRACT.md\ndocs/AUTH-IDENTITY-CANARY-RUNBOOK.md\ndocs/AUTH-INTEGRATION-CONTRACT.md\ndocs/validation/AUTH-001-A10-DEAD-ADAPTER-RETIREMENT.json\ndocs/validation/AUTH-001-A10-DEAD-ADAPTER-RETIREMENT.md\nscripts/audit-auth-identity-canary-contract.js\nscripts/audit-auth-real-contract.js\nscripts/test-auth-canonical-session-runtime.js\ntests/auth/test-auth-dead-adapter-retirement-runtime.js'
+          expected=$'assets/js/pages/owner-profile-experience.js\nassets/js/services/auth-service.js\ndocs/ACTIVE-CONTRACTS-INDEX.md\ndocs/API-ADAPTER-CONTRACT.md\ndocs/AUTH-IDENTITY-CANARY-RUNBOOK.md\ndocs/AUTH-INTEGRATION-CONTRACT.md\ndocs/validation/AUTH-001-A10-DEAD-ADAPTER-RETIREMENT.json\ndocs/validation/AUTH-001-A10-DEAD-ADAPTER-RETIREMENT.md\nscripts/audit-auth-identity-canary-contract.js\nscripts/audit-auth-real-contract.js\nscripts/test-auth-canonical-session-runtime.js\ntests/auth/test-auth-dead-adapter-retirement-runtime.js\ntests/auth/test-auth-provider-authority-runtime.js'
           actual="$(git diff --name-only | sort)"
           printf 'Expected files:\n%s\n' "$expected"
           printf 'Actual files:\n%s\n' "$actual"
@@ -323,6 +327,7 @@ jobs:
             scripts/audit-auth-real-contract.js \
             scripts/audit-auth-identity-canary-contract.js \
             scripts/test-auth-canonical-session-runtime.js \
+            tests/auth/test-auth-provider-authority-runtime.js \
             tests/auth/test-auth-dead-adapter-retirement-runtime.js \
             docs/AUTH-INTEGRATION-CONTRACT.md \
             docs/AUTH-IDENTITY-CANARY-RUNBOOK.md \
