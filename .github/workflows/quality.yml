@@ -157,59 +157,6 @@ jobs:
       - name: Verify clean patch formatting
         run: git diff --check
 
-  canonicalize-quality-and-matrix:
-    name: Restore canonical Quality Gates and matrix
-    if: >-
-      ${{ github.event_name == 'pull_request' &&
-          github.event.pull_request.head.repo.full_name == github.repository &&
-          github.event.pull_request.head.ref == 'auth/auth-001-baseline-audit' }}
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Checkout PR branch
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.ref }}
-          fetch-depth: 1
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      - name: Remove this job and regenerate the canonical matrix
-        shell: bash
-        run: |
-          set -euo pipefail
-          python - <<'PY'
-          from pathlib import Path
-
-          path = Path('.github/workflows/quality.yml')
-          source = path.read_text(encoding='utf-8')
-          start_marker = '\n  canonicalize-quality-and-matrix:\n'
-          end_marker = '\n  blocking-e2e:\n'
-          if source.count(start_marker) != 1 or source.count(end_marker) != 1:
-              raise SystemExit('Canonicalizer workflow boundaries are not unique.')
-          start = source.index(start_marker)
-          end = source.index(end_marker, start)
-          path.write_text(source[:start] + source[end:], encoding='utf-8')
-          PY
-
-          node scripts/audit-domain-completion-matrix.js --write
-          git diff --check
-          git status --short
-
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add .github/workflows/quality.yml docs/DOMAIN-COMPLETION-MATRIX.md
-          if git diff --cached --quiet; then
-            echo 'Canonical workflow and matrix already match.'
-            exit 0
-          fi
-          git commit -m 'Restore canonical Quality Gates and AUTH-A06 matrix'
-          git push origin HEAD:${{ github.event.pull_request.head.ref }}
-
   blocking-e2e:
     name: Blocking deterministic E2E lane
     runs-on: ubuntu-latest
