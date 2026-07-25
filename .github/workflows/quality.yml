@@ -75,41 +75,6 @@ jobs:
       - name: Verify clean patch formatting
         run: git diff --check
 
-  matrix-sync:
-    name: Publish deterministic domain matrix
-    needs: static-audits
-    if: >-
-      ${{ failure() && github.event_name == 'pull_request' &&
-          github.event.pull_request.head.repo.full_name == github.repository &&
-          github.event.pull_request.head.ref == 'auth/auth-001-baseline-audit' }}
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Download generated matrix evidence
-        uses: actions/download-artifact@v4
-        with:
-          name: doke-domain-matrix-drift-${{ github.sha }}
-          path: matrix-evidence
-
-      - name: Publish generated living document to PR branch
-        env:
-          GH_TOKEN: ${{ github.token }}
-          HEAD_REF: ${{ github.event.pull_request.head.ref }}
-          REPOSITORY: ${{ github.repository }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          document='matrix-evidence/docs/DOMAIN-COMPLETION-MATRIX.md'
-          test -f "$document"
-          current_sha="$(gh api "repos/${REPOSITORY}/contents/docs/DOMAIN-COMPLETION-MATRIX.md?ref=${HEAD_REF}" --jq '.sha')"
-          encoded="$(base64 -w 0 "$document")"
-          gh api --method PUT "repos/${REPOSITORY}/contents/docs/DOMAIN-COMPLETION-MATRIX.md" \
-            -f message='Sync deterministic domain completion matrix for AUTH-A06' \
-            -f content="$encoded" \
-            -f sha="$current_sha" \
-            -f branch="$HEAD_REF" >/dev/null
-
   blocking-e2e:
     name: Blocking deterministic E2E lane
     runs-on: ubuntu-latest
