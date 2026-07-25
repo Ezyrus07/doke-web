@@ -157,11 +157,10 @@ jobs:
       - name: Verify clean patch formatting
         run: git diff --check
 
-  matrix-sync:
-    name: Publish AUTH-A06 deterministic matrix
-    needs: static-audits
+  canonicalize-quality-and-matrix:
+    name: Restore canonical Quality Gates and matrix
     if: >-
-      ${{ failure() && github.event_name == 'pull_request' &&
+      ${{ github.event_name == 'pull_request' &&
           github.event.pull_request.head.repo.full_name == github.repository &&
           github.event.pull_request.head.ref == 'auth/auth-001-baseline-audit' }}
     runs-on: ubuntu-latest
@@ -174,61 +173,50 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 1
 
-      - name: Download generated matrix evidence
-        uses: actions/download-artifact@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          name: doke-domain-matrix-drift-${{ github.sha }}
-          path: matrix-evidence
+          node-version: 22
 
-      - name: Publish generated matrix and normalize AUTH-A06 source
+      - name: Remove this job and regenerate the canonical matrix
         shell: bash
         run: |
           set -euo pipefail
           python - <<'PY'
           from pathlib import Path
 
-          authority_path = Path('assets/js/services/auth-session-authority.js')
-          lines = authority_path.read_text(encoding='utf-8').splitlines(keepends=True)
-          start_line = '  const identityMutationError = () => {\n'
-          end_line = '  const resolveLoginRedirect = () => {\n'
-          if start_line not in lines or end_line not in lines:
-              raise SystemExit('AUTH-A06 identity guard boundaries are missing.')
-          start = lines.index(start_line)
-          end = lines.index(end_line)
-          if start >= end:
-              raise SystemExit('AUTH-A06 identity guard boundaries are invalid.')
-          if lines[start + 1].startswith('  const error'):
-              for index in range(start + 1, end):
-                  if lines[index].strip():
-                      lines[index] = '  ' + lines[index]
-          elif not lines[start + 1].startswith('    const error'):
-              raise SystemExit('AUTH-A06 identity guard indentation is unexpected.')
-          authority_path.write_text(''.join(lines), encoding='utf-8')
-
-          generated = Path('matrix-evidence/docs/DOMAIN-COMPLETION-MATRIX.md')
-          if not generated.is_file():
-              raise SystemExit('Generated domain matrix artifact is missing.')
-          target = Path('docs/DOMAIN-COMPLETION-MATRIX.md')
-          target.write_text(generated.read_text(encoding='utf-8'), encoding='utf-8')
+          path = Path('.github/workflows/quality.yml')
+          source = path.read_text(encoding='utf-8')
+          start_marker = '\n  canonicalize-quality-and-matrix:\n'
+          end_marker = '\n  blocking-e2e:\n'
+          if source.count(start_marker) != 1 or source.count(end_marker) != 1:
+              raise SystemExit('Canonicalizer workflow boundaries are not unique.')
+          start = source.index(start_marker)
+          end = source.index(end_marker, start)
+          path.write_text(source[:start] + source[end:], encoding='utf-8')
           PY
 
-          git diff --check
-          node --check assets/js/services/auth-session-authority.js
+          node scripts/audit-domain-completion-matrix.js --write
+          node scripts/audit-domain-completion-matrix.js
+          node scripts/audit-quality-pipeline.js
           node scripts/audit-auth-session-contracts.js
           node scripts/test-auth-canonical-session-runtime.js
+          git diff --check
 
-          expected=$'assets/js/services/auth-session-authority.js\ndocs/DOMAIN-COMPLETION-MATRIX.md'
+          test "$(grep -c 'canonicalize-quality-and-matrix' .github/workflows/quality.yml || true)" = '0'
           actual="$(git diff --name-only | sort)"
-          if [ -z "$actual" ]; then
-            echo 'AUTH-A06 matrix and source are already synchronized.'
-            exit 0
-          fi
-          test "$actual" = "$expected"
+          while IFS= read -r file; do
+            case "$file" in
+              .github/workflows/quality.yml|docs/DOMAIN-COMPLETION-MATRIX.md) ;;
+              *) echo "Unexpected changed file: $file" >&2; exit 1 ;;
+            esac
+          done <<< "$actual"
+          grep -Fx '.github/workflows/quality.yml' <<< "$actual"
 
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add assets/js/services/auth-session-authority.js docs/DOMAIN-COMPLETION-MATRIX.md
-          git commit -m 'Synchronize AUTH-A06 matrix and source formatting'
+          git add .github/workflows/quality.yml docs/DOMAIN-COMPLETION-MATRIX.md
+          git commit -m 'Restore canonical Quality Gates and AUTH-A06 matrix'
           git push origin HEAD:${{ github.event.pull_request.head.ref }}
 
   blocking-e2e:
