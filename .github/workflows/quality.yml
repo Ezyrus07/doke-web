@@ -231,3 +231,70 @@ jobs:
             test-results/
           if-no-files-found: warn
           retention-days: 14
+
+  publish-auth-a09:
+    name: Publish AUTH-A09 provider authority
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'auth/auth-001-baseline-audit'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 1
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Apply AUTH-A09 migration
+        run: node scripts/apply-auth-a09-provider-authority.js
+
+      - name: Validate AUTH-A09 authority
+        run: |
+          node tests/auth/test-auth-provider-authority-runtime.js
+          node scripts/test-auth-canonical-session-runtime.js
+          node scripts/audit-auth-real-contract.js
+          node scripts/audit-auth-identity-canary-contract.js
+
+      - name: Regenerate deterministic matrix
+        run: |
+          node scripts/audit-domain-completion-matrix.js --write
+          node scripts/audit-domain-completion-matrix.js
+          git diff --check
+
+      - name: Verify exact AUTH-A09 diff
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected=$'assets/js/core/runtime-config.js\nassets/js/services/auth-service.js\ndocs/ACTIVE-CONTRACTS-INDEX.md\ndocs/AUTH-IDENTITY-CANARY-RUNBOOK.md\ndocs/AUTH-INTEGRATION-CONTRACT.md\ndocs/DOMAIN-COMPLETION-MATRIX.md\ndocs/validation/AUTH-001-A09-PROVIDER-AUTHORITY.json\ndocs/validation/AUTH-001-A09-PROVIDER-AUTHORITY.md\nscripts/audit-auth-identity-canary-contract.js\nscripts/audit-auth-real-contract.js\nscripts/test-auth-canonical-session-runtime.js\ntests/auth/test-auth-provider-authority-runtime.js\ntests/e2e/ci-core-navigation.spec.js'
+          actual="$(git diff --name-only | sort)"
+          test "$actual" = "$expected"
+
+      - name: Publish AUTH-A09 files
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            assets/js/core/runtime-config.js \
+            assets/js/services/auth-service.js \
+            docs/ACTIVE-CONTRACTS-INDEX.md \
+            docs/AUTH-IDENTITY-CANARY-RUNBOOK.md \
+            docs/AUTH-INTEGRATION-CONTRACT.md \
+            docs/DOMAIN-COMPLETION-MATRIX.md \
+            docs/validation/AUTH-001-A09-PROVIDER-AUTHORITY.json \
+            docs/validation/AUTH-001-A09-PROVIDER-AUTHORITY.md \
+            scripts/audit-auth-identity-canary-contract.js \
+            scripts/audit-auth-real-contract.js \
+            scripts/test-auth-canonical-session-runtime.js \
+            tests/auth/test-auth-provider-authority-runtime.js \
+            tests/e2e/ci-core-navigation.spec.js
+          git commit -m 'Implement AUTH-A09 provider authority'
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
