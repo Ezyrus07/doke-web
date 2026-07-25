@@ -1,48 +1,53 @@
 # Auth Integration Contract
 
-Este contrato define a autoridade canônica de autenticação, sessão, identidade pública e compatibilidade histórica da Doke.
+Este contrato define as autoridades canônicas de autenticação, sessão e identidade pública da Doke no estado atual do PR #9.
 
-## Autoridade atual
+## Estado atual
 
 Supabase Auth é a única autoridade ativa de autenticação no navegador.
 
-- login, cadastro, recuperação, refresh e logout usam o SDK do Supabase;
-- o snapshot `doke.auth.session.v1` contém apenas identidade pública e estado de renderização;
-- query string, `localStorage` e `window.DOKE_RUNTIME_CONFIG.authProvider` não escolhem mais provider de autenticação;
-- o antigo adapter `/auth/*` permanece apenas como compatibilidade histórica e diagnóstico CLI-only;
-- páginas e renderers não chamam endpoints de autenticação diretamente.
+- login, cadastro, recuperação, refresh, reautenticação e logout usam o SDK do Supabase;
+- `doke.auth.session.v1` contém somente identidade pública e estado de renderização, nunca access token ou refresh token;
+- query string, `localStorage` e configuração de janela não podem escolher outro provider de autenticação;
+- páginas e renderers não chamam endpoints de autenticação diretamente;
+- o adapter browser `/auth/*` foi removido fisicamente no AUTH-A10.
 
-`DokeAuth.getAuthProviderStatus()` deve retornar `activeProvider: 'supabase'` e `requestedProvider: 'supabase'` em qualquer ambiente do navegador.
+## Fontes de verdade
 
-## Histórico Sprint 11C–12A
-
-As Sprints 11C e 12A criaram o contrato de provider mock/API necessário para a transição inicial. Esse mecanismo não é mais autoridade ativa. AUTH-A09 aposentou a seleção de provider por estado gravável no navegador sem apagar os adapters históricos antes de uma auditoria de remoção dedicada.
-
-## Fonte de verdade atual
-
-- `assets/js/services/auth-service.js`: fachada pública e ponte da sessão Supabase;
-- `assets/js/core/session.js`: snapshot público normalizado, sem tokens;
-- `assets/js/services/auth-session-authority.js`: refresh e escopos de logout;
-- `assets/js/services/auth-registration-authority.js`: cadastro e username;
+- `assets/js/services/auth-service.js`: fachada pública de autenticação e ponte da sessão Supabase;
+- `assets/js/core/session.js`: snapshot público normalizado e contexto de acesso;
+- `assets/js/services/auth-session-authority.js`: refresh explícito e escopos de logout;
+- `assets/js/services/auth-registration-authority.js`: cadastro e autoridade de username;
 - `assets/js/services/auth-password-authority.js`: recuperação, reset e reautenticação;
-- `assets/js/core/permissions.js`: permissões por role;
-- `assets/js/contracts/auth-domain-contract.js`: roles, providers históricos e status.
+- `assets/js/services/profile-service.js`: leitura e mutação de perfil público;
+- `public.update_account_profile(...)`, chamada por `self-service-operations`: autoridade remota atual para perfil público;
+- `assets/js/core/permissions.js`: permissões derivadas de role;
+- `assets/js/contracts/auth-domain-contract.js`: roles e estados de conta/sessão.
 
 ## Provider de autenticação
 
-`supabase` é fixo como provider ativo do browser. Os valores históricos `mock` e `api` podem aparecer em snapshots de teste ou contratos de migração, mas não podem ser selecionados por usuário, query string ou storage.
+O provider ativo do browser é sempre `supabase`.
 
-`DokeAuth.getAuthIdentityCanaryStatus()` permanece somente como superfície de diagnóstico e informa que o browser canary foi aposentado. As operações mutáveis `configureAuthIdentityCanary` e `rollbackAuthIdentityCanary` não fazem mais parte da API pública.
+`DokeAuth.getActiveAuthProvider()` permanece apenas como compatibilidade pública e retorna `supabase`. As antigas fachadas `getAuthProviderStatus`, `getAuthIdentityCanaryStatus`, `configureAuthIdentityCanary`, `rollbackAuthIdentityCanary`, `refreshApiSession` e `refreshCurrentIdentity` não fazem parte da API pública atual.
 
-## Diagnóstico do adapter histórico
+## Diagnóstico histórico CLI-only
 
-O smoke de `/auth/login`, `/auth/session`, `/users/me` e `/profiles/me` continua disponível exclusivamente por scripts Node com variáveis de ambiente explícitas. Ele não altera o provider ativo do site e não persiste configuração no navegador.
+O smoke histórico de `/auth/login`, `/auth/session`, `/users/me` e `/profiles/me` permanece exclusivamente em scripts Node com variáveis de ambiente explícitas. Esse diagnóstico CLI-only não é carregado pelo navegador, não muda o provider ativo e não grava configuração no cliente.
 
-## Session DTO oficial## Session DTO oficial
+Comandos preservados:
+
+```text
+npm run validate:auth-identity-canary:dry-run
+npm run validate:auth-identity-canary
+```
+
+A execução com rede exige ambiente local/staging explícito, credenciais descartáveis e `DOKE_AUTH_IDENTITY_CANARY_ALLOW_NETWORK=1`.
+
+## Session DTO oficial
 
 ```js
 {
-  provider: 'mock' | 'api' | 'supabase',
+  provider: 'supabase',
   remember: true,
   user: User,
   accountStatus: 'active' | 'pending_review' | 'pending_email' | 'suspended' | 'disabled',
@@ -53,7 +58,9 @@ O smoke de `/auth/login`, `/auth/session`, `/users/me` e `/profiles/me` continua
 }
 ```
 
-## User DTO oficial
+O SDK do Supabase é responsável pela sessão criptográfica. O snapshot da Doke não persiste `token`, `accessToken`, `access_token`, `refreshToken` ou `refresh_token`.
+
+## User DTO público
 
 ```js
 {
@@ -69,154 +76,67 @@ O smoke de `/auth/login`, `/auth/session`, `/users/me` e `/profiles/me` continua
   city: 'string',
   state: 'string',
   accountStatus: 'active',
-  providerProfileId: 'string',
-  isMockSupport: false,
-  mockSupport: false
+  providerProfileId: 'string'
 }
 ```
 
-## Roles e permissões
+E-mail e telefone podem ser exibidos no contexto privado da conta, mas sua alteração verificada pertence ao AUTH-A07 e não pode ser simulada por mutação local.
 
-| Role | Uso | Observação |
-|---|---|---|
-| `guest` | leitura pública | sem sessão |
-| `client` | pedidos, pagamento, contestação, avaliação | não acessa admin |
-| `professional` | aceitar pedido, cobrança, carteira, saque | não acessa admin |
-| `moderator` | conteúdo e denúncias | não decide financeiro por padrão |
-| `support` | suporte financeiro e contestações | acessa admin operacional |
-| `admin` | plataforma e financeiro crítico | acesso total |
+## Identidade e perfil
 
-Acesso ao painel admin é permitido apenas quando:
+Supabase Auth é autoridade de credencial e sessão. `public.users` e `public.user_profiles`, protegidos por autoridade server-side, são a fonte de verdade de conta, onboarding e perfil público.
 
-```js
-role === 'admin' ||
-role === 'support' ||
-isMockSupport === true ||
-mockSupport === true
-```
+A mutação de perfil usa `self-service-operations` com a ação `update_account_profile`. A função remota atualiza `public.user_profiles` e sincroniza os metadados públicos correspondentes em `auth.users`.
 
-## Eventos de autenticação
+Após uma mutação remota bem-sucedida, o navegador deve reconciliar a sessão a partir do provider. Reescrever manualmente o usuário da sessão com `provider: 'mock'` não é um resultado válido para uma conta Supabase.
 
-- `auth_registered`.
-- `auth_login_succeeded`.
-- `auth_login_failed`.
-- `auth_session_refreshed`.
-- `auth_logout`.
-- `auth_password_recovery_requested`.
-- `auth_password_reset`.
-- `auth_role_changed`.
+### Débito controlado para AUTH-A11
 
-Esses eventos devem virar `AuditEvent` real quando afetarem permissão, suporte ou dados sensíveis.
+`auth-service.js` ainda expõe `updateCurrentUser` e `updateCurrentProfile` com caminhos locais herdados, enquanto `profile-service.js` e `onboarding-service.js` ainda possuem reescritas manuais do snapshot após operações remotas. Essas superfícies são compatibilidade transitória, não autoridade canônica, e serão removidas ou redirecionadas no AUTH-A11.
+
+Preferências de conta não devem ser persistidas por uma falsa atualização de autenticação. Caso precisem de persistência remota, devem receber uma operação server-side própria sobre `public.users.settings`.
+
+## Roles e autorização
+
+O frontend pode ocultar ações, mas autorização final pertence ao backend/RLS.
+
+- `client`: pedidos, pagamento, contestação e avaliação;
+- `professional`: operações profissionais autorizadas;
+- `moderator`: moderação de conteúdo;
+- `support`: suporte operacional permitido;
+- `admin`: operações administrativas autorizadas.
+
+Acesso administrativo depende de role canônica e políticas server-side. Dados financeiros nunca podem confiar apenas no estado do frontend.
 
 ## Rotas restritas
 
-Rotas privadas continuam classificadas por `assets/js/core/auth-route-map.js`. A Sprint 11C não altera comportamento de redirect para evitar regressão visual, mas define que a Sprint 12A deve tratar:
+As rotas privadas são classificadas por `assets/js/core/auth-route-map.js`.
 
-- sessão ausente → login com `next`.
-- sessão expirada → tentar refresh; se falhar, login.
-- conta suspensa/desabilitada → estado bloqueado.
-- role sem permissão → estado 403 amigável.
+- sessão ausente: redirecionar para login preservando `next`;
+- sessão expirada ou revogada: falhar fechado e tentar somente o refresh canônico permitido;
+- conta suspensa ou desabilitada: exibir estado bloqueado;
+- role sem permissão: exibir estado 403 sem liberar conteúdo privado.
 
-## Regras para backend real
+## Sprint 12B — registro histórico
 
-- Login/cadastro nunca devem ser chamados direto por página.
-- Auth real entra por `assets/js/services/auth-service.js`, não por HTML.
-- Token não deve ser lido por renderers.
-- Frontend pode esconder ações, mas autorização final é backend/RLS.
-- Admin/suporte sempre precisa de auditoria.
-- Dados financeiros não podem confiar apenas na role do frontend.
-
-## Critério de aceite
-
-- Supabase é o único provider ativo no navegador.
-- Cliente/profissional não acessam admin.
-- Suporte/admin dependem de role canônica e políticas server-side.
-- `Doke.session.getAuthContext()` retorna contexto completo.
-- `DokeAuth.getAuthProviderStatus()` retorna `supabase_active`.
-- Nenhum controle de browser escolhe `mock` ou `api` para autenticação.
-- Tokens não entram no snapshot público da Doke.
-
-## Sprint 12B — usuários e perfis reais em modo controlado## Sprint 12B — usuários e perfis reais em modo controlado
-
-A Sprint 12B conecta identidade e perfil ao contrato de auth real sem migrar pedidos, mensagens, carteira, notificações ou financeiro.
-
-### Fonte de verdade adicionada
-
-- `assets/js/core/session.js` preserva `user.profile`, `user.profiles`, `publicProfileUrl` e `ownerProfileUrl` dentro da sessão normalizada.
-- `assets/js/services/auth-service.js` passa a expor `DokeAuth.getCurrentIdentity()`, `DokeAuth.refreshCurrentIdentity()`, `DokeAuth.updateCurrentUser()` e `DokeAuth.updateCurrentProfile()`.
-- `assets/js/repositories/users-repository.js` mantém atualização mock/local de usuário e perfil próprio para desenvolvimento.
-- `assets/js/contracts/identity-profile-contract.js` documenta o DTO runtime de identidade/perfil.
-
-### Endpoints oficiais de identidade/perfil
-
-| Ação | Método | Endpoint | Observação |
-|---|---:|---|---|
-| usuário atual | GET | `/users/me` | retorna o User DTO privado da sessão |
-| atualizar usuário atual | PATCH | `/users/me` | edita dados privados/conta |
-| perfil atual | GET | `/profiles/me` | retorna o perfil público vinculado ao usuário atual |
-| atualizar perfil atual | PATCH | `/profiles/me` | edita perfil público/owner |
-
-### Regras
-
-- Supabase Auth é a autoridade da credencial e da sessão.
-- Os endpoints históricos `/users/me` e `/profiles/me` não são selecionáveis como provider ativo pelo navegador.
-- Atualizações de identidade exigem uma autoridade remota dedicada; páginas e renderers continuam proibidos de chamar `fetch()` diretamente.
-- Perfil público e perfil owner são derivados de role e perfil canônicos, não de HTML estático.
-
-### DTO de identidade### DTO de identidade
-
-```js
-{
-  user: User,
-  profile: Profile,
-  profiles: Profile[],
-  publicProfileUrl: 'perfil.html | perfil-cliente.html',
-  ownerProfileUrl: 'perfil-profissional.html | meu-perfil.html',
-  provider: 'mock | api'
-}
-```
-
-### Critério de aceite
-
-- `DokeAuth.getCurrentIdentity()` retorna usuário e perfil quando há sessão.
-- `Doke.session.getAuthContext()` inclui `profile`, `profiles`, `publicProfileUrl` e `ownerProfileUrl`.
-- API de perfil fica bloqueada sem configuração de rede.
-- Mock/localStorage continua funcionando sem backend.
-
-## Sprints 25–28 — canary histórico aposentado
-
-O antigo canary de browser permitia persistir `authProvider=api`, URL e flag de rede em `localStorage`. AUTH-A09 aposentou essa ativação porque ela criava uma autoridade concorrente escolhida pelo cliente.
-
-O validador histórico permanece como diagnóstico CLI-only:
-
-`npm run validate:auth-identity-canary:dry-run`
-
-`npm run validate:auth-identity-canary`
-
-A execução real exige ambiente local/staging explícito, credenciais de teste e `DOKE_AUTH_IDENTITY_CANARY_ALLOW_NETWORK=1`. Ela nunca muda o provider ativo do frontend.
-
-## AUTH-A02 — sessão canônica Supabase## AUTH-A02 — sessão canônica Supabase
-
-A sessão criptográfica deixou de ser duplicada no snapshot persistido pela Doke.
-
-- O Supabase SDK continua responsável por persistência, renovação e revogação em `doke.supabase.auth`.
-- `doke.auth.session.v1` contém apenas identidade pública, provider, status e metadados de renderização.
-- Snapshots legados com `token`, `accessToken`, `access_token`, `refreshToken` ou `refresh_token` são saneados automaticamente na primeira leitura.
-- `DokeAuth.getAccessToken()` consulta a autoridade ativa sem expor o segredo no Session Store.
-- `getSession()` e `onAuthStateChange()` alimentam uma única ponte de reconciliação para login, refresh, revogação e logout.
-- O provider API controlado mantém apenas access token volátil em memória; persistência durável exige cookie `httpOnly`.
-
+A Sprint 12B introduziu os contratos de identidade/perfil e os endpoints históricos `/users/me` e `/profiles/me` durante a transição de mock/API. Esses endpoints não são mais um provider selecionável no navegador. O valor histórico desta seção é documentar a origem dos DTOs; a autoridade ativa atual é Supabase mais as operações self-service autorizadas.
 
 ## AUTH-A09 — autoridade fixa de provider
 
-AUTH-A09 removeu `doke.authProvider`, `dokeAuthProvider`, `dokeAuthIdentityCanary` e as APIs públicas de ativação/rollback do canary. O runtime ignora pedidos de provider em storage, query string e configuração de janela; refresh, token resolution e bootstrap usam Supabase.
+AUTH-A09 removeu `doke.authProvider`, `dokeAuthProvider`, `dokeAuthIdentityCanary` e as APIs públicas de ativação/rollback do canary. Refresh, resolução de token e bootstrap usam Supabase.
 
+## AUTH-A10 — remoção física do adapter browser `/auth/*`
 
-## AUTH-A10 — remoção física do adapter browser /auth/*
+AUTH-A10 removeu endpoints, request helpers, token API temporário e branches do provider API de `assets/js/services/auth-service.js`. O único consumidor de página do refresh histórico foi migrado para `DokeAuth.refreshSession()`.
 
-- `assets/js/services/auth-service.js` não contém endpoints, request helpers, token temporário ou branches do provider API histórico.
-- `DokeAuth.refreshApiSession`, `refreshCurrentIdentity`, `getAuthProviderStatus` e `getAuthIdentityCanaryStatus` foram removidos da fachada pública porque não possuíam consumidores válidos após a migração.
-- O único consumidor de página foi migrado para `DokeAuth.refreshSession()`.
-- `DokeAuth.getActiveAuthProvider()` permanece como compatibilidade pública e retorna sempre `supabase`.
-- O diagnóstico de `/auth/*` permanece exclusivamente em `scripts/validate-auth-identity-canary.js`; ele não é carregado pelo navegador.
-- Nenhuma configuração, usuário ou sessão do Supabase foi alterada neste sublote.
+## Critérios de aceite atuais
+
+- Supabase Auth é o único provider ativo no navegador;
+- `DokeAuth.getActiveAuthProvider()` retorna `supabase`;
+- nenhuma superfície pública ativa seleciona `mock` ou `api` para autenticação;
+- nenhum token do provider entra no snapshot público da Doke;
+- o adapter `/auth/*` não existe no runtime do browser;
+- o diagnóstico histórico permanece CLI-only;
+- alterações verificadas de e-mail/telefone continuam bloqueadas até o AUTH-A07 e MAIL-001;
+- mutações de perfil/identidade pública não podem declarar sucesso apenas por reescrever o snapshot local;
+- PR #9 permanece draft e não deve ser mesclado sem autorização explícita.
