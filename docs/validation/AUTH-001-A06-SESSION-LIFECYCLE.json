@@ -1,0 +1,50 @@
+{
+  "id": "AUTH-A06",
+  "status": "IN_PROGRESS",
+  "branch": "auth/auth-001-baseline-audit",
+  "productionMutated": false,
+  "supabaseMutated": false,
+  "persistentSyntheticAccountCreated": false,
+  "existingUserCredentialChanged": false,
+  "authority": {
+    "provider": "supabase",
+    "refresh": "supabase.auth.refreshSession",
+    "currentDeviceLogout": "supabase.auth.signOut_scope_local",
+    "otherSessionsLogout": "supabase.auth.signOut_scope_others",
+    "globalLogout": "supabase.auth.signOut_scope_global",
+    "publicSnapshot": "doke.auth.session.v1"
+  },
+  "controls": {
+    "defaultLogoutScope": "local",
+    "logoutScopesExplicit": true,
+    "providerRefreshExplicit": true,
+    "dokePersistsProviderSecrets": false,
+    "legacyRecoveryKeyRemoved": true,
+    "legacySessionKeyRemoved": true,
+    "legacyRecoveryFacadeBlocked": true,
+    "remoteLogoutFailureReported": true,
+    "deviceInventoryFabricated": false
+  },
+  "implementation": {
+    "sessionAuthority": "assets/js/services/auth-session-authority.js",
+    "bootstrap": "assets/js/core/page-bootstrap.js",
+    "login": "auth/login.html",
+    "registration": "auth/cadastro.html",
+    "passwordRecovery": "auth/esqueci-senha.html",
+    "passwordAuthority": "assets/js/services/auth-password-authority.js",
+    "blockingRuntimeTest": "scripts/test-auth-canonical-session-runtime.js"
+  },
+  "externalDependencies": [
+    "MAIL-001_transactional_auth_email_delivery",
+    "PAID-001_leaked_password_protection"
+  ],
+  "outOfScope": [
+    "production_changes",
+    "individual_device_inventory",
+    "direct_auth_sessions_exposure",
+    "secure_email_change",
+    "secure_phone_change",
+    "sms_provider_activation",
+    "oauth_provider_activation"
+  ]
+}
