@@ -1,0 +1,76 @@
+name: AUTH-A09 Diff Diagnostic
+
+on:
+  pull_request:
+    branches: [MAIN, main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.ref == 'auth/auth-001-baseline-audit'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: auth/auth-001-baseline-audit
+          fetch-depth: 1
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Prepare corrected codemod copy
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          source = Path('scripts/apply-auth-a09-provider-authority.js').read_text(encoding='utf-8')
+          source = source.replace(r'\\`', r'\`')
+          source = source.replace(
+              "  '  const CANARY_REQUIRED_ENDPOINTS = Object.freeze({',\n  'legacy auth canary keys'",
+              "  '',\n  'legacy auth canary keys'",
+              1,
+          )
+          source = source.replace(
+              "  providerAuthorityBlock + '  const toPublicUser = (user) => {',\n  'provider authority block'",
+              "  providerAuthorityBlock,\n  'provider authority block'",
+              1,
+          )
+          Path('/tmp/apply-auth-a09-provider-authority.js').write_text(source, encoding='utf-8')
+          PY
+
+      - name: Generate AUTH-A09 candidate
+        run: |
+          node /tmp/apply-auth-a09-provider-authority.js
+          node scripts/audit-domain-completion-matrix.js --write
+          node scripts/audit-domain-completion-matrix.js
+
+      - name: Capture generated diff
+        shell: bash
+        run: |
+          mkdir -p reports/generated
+          {
+            echo 'CHANGED TRACKED FILES'
+            git diff --name-only | sort
+            echo
+            echo 'UNTRACKED FILES'
+            git ls-files --others --exclude-standard | sort
+            echo
+            echo 'DIFF STAT'
+            git diff --stat
+          } | tee reports/generated/auth-a09-generated-diff.txt
+
+      - name: Upload generated diff
+        uses: actions/upload-artifact@v4
+        with:
+          name: doke-auth-a09-generated-diff-${{ github.sha }}
+          path: reports/generated/auth-a09-generated-diff.txt
+          if-no-files-found: error
+          retention-days: 7
