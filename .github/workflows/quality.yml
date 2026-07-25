@@ -69,6 +69,22 @@ jobs:
       - name: Audit auth session structure
         run: node scripts/audit-auth-session-contracts.js
 
+      - name: Capture auth session audit failure
+        if: failure()
+        shell: bash
+        run: |
+          mkdir -p reports/generated
+          node scripts/audit-auth-session-contracts.js > reports/generated/auth-session-audit-failure.log 2>&1 || true
+
+      - name: Upload auth session audit failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: doke-auth-session-audit-failure-${{ github.sha }}
+          path: reports/generated/auth-session-audit-failure.log
+          if-no-files-found: error
+          retention-days: 7
+
       - name: Test canonical auth session runtime
         run: node scripts/test-auth-canonical-session-runtime.js
 
