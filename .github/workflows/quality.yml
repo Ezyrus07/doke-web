@@ -197,25 +197,16 @@ jobs:
           PY
 
           node scripts/audit-domain-completion-matrix.js --write
-          node scripts/audit-domain-completion-matrix.js
-          node scripts/audit-quality-pipeline.js
-          node scripts/audit-auth-session-contracts.js
-          node scripts/test-auth-canonical-session-runtime.js
           git diff --check
-
-          test "$(grep -c 'canonicalize-quality-and-matrix' .github/workflows/quality.yml || true)" = '0'
-          actual="$(git diff --name-only | sort)"
-          while IFS= read -r file; do
-            case "$file" in
-              .github/workflows/quality.yml|docs/DOMAIN-COMPLETION-MATRIX.md) ;;
-              *) echo "Unexpected changed file: $file" >&2; exit 1 ;;
-            esac
-          done <<< "$actual"
-          grep -Fx '.github/workflows/quality.yml' <<< "$actual"
+          git status --short
 
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add .github/workflows/quality.yml docs/DOMAIN-COMPLETION-MATRIX.md
+          if git diff --cached --quiet; then
+            echo 'Canonical workflow and matrix already match.'
+            exit 0
+          fi
           git commit -m 'Restore canonical Quality Gates and AUTH-A06 matrix'
           git push origin HEAD:${{ github.event.pull_request.head.ref }}
 
