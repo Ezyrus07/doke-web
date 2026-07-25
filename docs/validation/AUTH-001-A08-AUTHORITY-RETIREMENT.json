@@ -1,0 +1,94 @@
+{
+  "id": "AUTH-A08",
+  "observedAt": "2026-07-25",
+  "status": "DONE",
+  "branch": "auth/auth-001-baseline-audit",
+  "runtimeChanged": true,
+  "productionMutated": false,
+  "supabaseMutated": false,
+  "persistentSyntheticAccountCreated": false,
+  "existingUserCredentialChanged": false,
+  "objective": "retire dormant browser-local authentication authority and expose only operational authentication providers",
+  "controls": {
+    "legacyAuthorityExecutable": false,
+    "legacyPathTombstoned": true,
+    "canonicalLoginIdentifier": "email",
+    "phoneLoginAdvertised": false,
+    "googleControlAdvertised": false,
+    "facebookControlAdvertised": false,
+    "appleControlAdvertised": false,
+    "oauthProviderEnabled": false,
+    "smsProviderEnabled": false,
+    "realAuthOnlyContractBlocking": true,
+    "matrixSyncDiffRestricted": true
+  },
+  "implementation": {
+    "retiredAuthority": "assets/js/core/auth-service.js",
+    "loginPage": "auth/login.html",
+    "signupPage": "auth/cadastro.html",
+    "realAuthOnlyContract": "scripts/test-real-auth-only-contract.js",
+    "blockingAuthRuntime": "scripts/test-auth-canonical-session-runtime.js",
+    "matrixSyncWorkflow": ".github/workflows/deterministic-domain-matrix-sync.yml",
+    "validationDocument": "docs/validation/AUTH-001-A08-AUTHORITY-RETIREMENT.md"
+  },
+  "tombstone": {
+    "marker": "AUTH-A08_RETIRED_AUTHORITY",
+    "executableIifePresent": false,
+    "browserStorageAccessPresent": false,
+    "providerClientPresent": false,
+    "publicAuthApiPublicationPresent": false,
+    "credentialFlowPresent": false,
+    "recoveryFlowPresent": false,
+    "historicalMarkersRetained": [
+      "doke.auth.session.v2",
+      "doke.auth.users.v1",
+      "doke.auth.recovery.v1"
+    ]
+  },
+  "validation": {
+    "validatedRuntimeHead": "cae8fa312116ef2a2fa38507068e24067842a8d5",
+    "qualityGates": {
+      "runNumber": 414,
+      "conclusion": "success"
+    },
+    "stagingEdgeHttpCanary": {
+      "runNumber": 188,
+      "conclusion": "success"
+    },
+    "blockingDeterministicE2E": "success",
+    "visualStructuralGuards": {
+      "count": 105,
+      "conclusion": "success"
+    },
+    "staticAudits": "success",
+    "authSessionRuntime": "success",
+    "realAuthOnlyContract": "success",
+    "domainCompletionMatrix": "success",
+    "governance": "success",
+    "assetAudits": "success",
+    "gitDiffCheck": "success",
+    "diagnosticE2E": {
+      "runNumber": 209,
+      "blocking": false,
+      "statusAtMandatoryClosure": "in_progress",
+      "successClaimed": false
+    }
+  },
+  "residualCleanup": [
+    "inactive_auth_social_css_requires_dead_selector_audit",
+    "dormant_applyPhoneMask_helper_requires_controller_cleanup_regression_suite"
+  ],
+  "externalDependencies": [
+    "MAIL-001_transactional_auth_email_delivery_and_contact_change_canary",
+    "PAID-001_leaked_password_protection"
+  ],
+  "safety": {
+    "productionChanged": false,
+    "supabaseConfigurationChanged": false,
+    "databaseMigrationApplied": false,
+    "existingUserContactChanged": false,
+    "existingUserProfileOrRoleChanged": false,
+    "syntheticPersistentAccountCreated": false,
+    "smsOrOauthEnabled": false
+  }
+}
