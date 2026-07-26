@@ -31,7 +31,19 @@ jobs:
         run: npm ci
 
       - name: Apply AUTH-A13 codemod
-        run: node scripts/tmp-auth-a13-codemod.js
+        shell: bash
+        run: |
+          set -o pipefail
+          node scripts/tmp-auth-a13-codemod.js 2>&1 | tee auth-a13-codemod.log
+
+      - name: Upload codemod failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: auth-a13-codemod-failure-${{ github.sha }}
+          path: auth-a13-codemod.log
+          if-no-files-found: error
+          retention-days: 7
 
       - name: Audit AUTH-A13 closure
         run: npm run audit:auth-domain-closure
