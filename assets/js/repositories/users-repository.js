@@ -9,8 +9,6 @@
 
   const STORAGE_KEY = 'doke.auth.users.v1';
   const LEGACY_PROFILE_STORAGE_KEY = 'doke.auth.userProfiles.v1';
-  const PROFESSIONAL_PROFILES_STORAGE_KEY = 'doke.professionalProfiles.v1';
-  const PROFESSIONAL_VERIFICATIONS_STORAGE_KEY = 'doke.professionalIdentityVerifications.v1';
 
   const safeParse = (value, fallback) => {
     try {
@@ -48,56 +46,6 @@
   };
 
   const readLegacyProfiles = () => safeParse(window.localStorage.getItem(LEGACY_PROFILE_STORAGE_KEY), {});
-
-  const newestByTimestamp = (items) => items.slice().sort((a, b) => {
-    const aTime = String(a?.updatedAt || a?.submittedAt || a?.createdAt || '');
-    const bTime = String(b?.updatedAt || b?.submittedAt || b?.createdAt || '');
-    return bTime.localeCompare(aTime);
-  })[0] || null;
-
-  const reconcileProfessionalUser = (user) => {
-    if (!user || !user.id || user.role === 'support' || user.role === 'admin') return user;
-    const profiles = safeParse(window.localStorage.getItem(PROFESSIONAL_PROFILES_STORAGE_KEY), []);
-    const verifications = safeParse(window.localStorage.getItem(PROFESSIONAL_VERIFICATIONS_STORAGE_KEY), []);
-    if (!Array.isArray(profiles) || !Array.isArray(verifications)) return user;
-
-    const profileCandidates = profiles.filter((item) => String(item?.userId || item?.ownerId || '') === String(user.id));
-    const verificationCandidates = verifications.filter((item) => String(item?.userId || '') === String(user.id));
-    const profile = newestByTimestamp(profileCandidates);
-    const verification = newestByTimestamp(verificationCandidates);
-    const verificationStatus = String(verification?.status || '').toLowerCase();
-    if (!profile || verificationStatus !== 'verified') return user;
-
-    const profileStatus = String(profile.status || '').toLowerCase();
-    if (profileStatus === 'draft' || profileStatus === 'suspended') return user;
-
-    let repairedProfile = profile;
-    if (profileStatus === 'pending_verification' || String(profile.verificationStatus || '').toLowerCase() !== 'verified') {
-      const now = new Date().toISOString();
-      repairedProfile = {
-        ...profile,
-        status: profileStatus === 'pending_verification' ? 'active' : profile.status,
-        verificationStatus: 'verified',
-        updatedAt: now,
-        completedAt: profile.completedAt || now
-      };
-      const profileIndex = profiles.findIndex((item) => String(item?.id || '') === String(profile.id || ''));
-      if (profileIndex >= 0) {
-        profiles[profileIndex] = repairedProfile;
-        window.localStorage.setItem(PROFESSIONAL_PROFILES_STORAGE_KEY, JSON.stringify(profiles));
-      }
-    }
-
-    if (String(repairedProfile.status || '').toLowerCase() !== 'active') return user;
-    return normalizeUser({
-      ...user,
-      role: 'professional',
-      type: 'professional',
-      professionalProfileId: repairedProfile.id,
-      publicProfileUrl: 'perfil.html',
-      ownerProfileUrl: 'perfil-profissional.html'
-    });
-  };
 
   const writeLocalUsers = (users) => {
     const safeUsers = Array.isArray(users) ? users.map(withoutCredentials) : [];
@@ -274,20 +222,7 @@
       byEmail.set(key, user);
     });
 
-    const reconciled = Array.from(byEmail.values()).map(reconcileProfessionalUser);
-    const localById = new Map(local.map((user) => [String(user.id), user]));
-    let localChanged = false;
-    reconciled.forEach((user) => {
-      const previous = localById.get(String(user.id));
-      if (!previous || previous.role !== user.role || previous.professionalProfileId !== user.professionalProfileId) {
-        if (previous || user.role === 'professional') {
-          localById.set(String(user.id), user);
-          localChanged = true;
-        }
-      }
-    });
-    if (localChanged) writeLocalUsers(Array.from(localById.values()));
-    return reconciled;
+    return Array.from(byEmail.values());
   };
 
   const findByLogin = async (login) => {
@@ -328,65 +263,6 @@
     return user && user.settings && typeof user.settings === 'object' ? user.settings : {};
   };
 
-  const LOCAL_PROFESSIONAL_FIXTURE_FIELDS = Object.freeze([
-    'role',
-    'type',
-    'professionalProfileId',
-    'publicProfileUrl',
-    'ownerProfileUrl'
-  ]);
-
-  const isUuid = (value) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value || '').trim());
-
-  const fixtureMutationError = (message, code) => {
-    const error = new Error(message);
-    error.code = code;
-    return error;
-  };
-
-  const updateProfessionalFixtureUser = async (userId, patch) => {
-    const id = String(userId || '').trim();
-    if (!id || isUuid(id)) {
-      throw fixtureMutationError('Contas Supabase não podem entrar na mutação local de fixture profissional.', 'DOKE_LOCAL_FIXTURE_MUTATION_FORBIDDEN');
-    }
-
-    const input = patch && typeof patch === 'object' && !Array.isArray(patch) ? patch : {};
-    const unsupported = Object.keys(input).filter((key) => !LOCAL_PROFESSIONAL_FIXTURE_FIELDS.includes(key));
-    if (unsupported.length) {
-      throw fixtureMutationError('A fixture profissional recebeu campos fora da fronteira permitida.', 'DOKE_LOCAL_FIXTURE_PATCH_FORBIDDEN');
-    }
-    if (normalizeRole(input.role) !== 'professional' || normalizeRole(input.type) !== 'professional') {
-      throw fixtureMutationError('A fixture local só pode materializar o estado profissional explícito.', 'DOKE_LOCAL_FIXTURE_ROLE_FORBIDDEN');
-    }
-
-    const professionalProfileId = String(input.professionalProfileId || '').trim();
-    if (!professionalProfileId) {
-      throw fixtureMutationError('A fixture profissional exige professionalProfileId.', 'DOKE_LOCAL_FIXTURE_PROFILE_REQUIRED');
-    }
-
-    const localUsers = readLocalUsers().map(normalizeUser).filter(Boolean);
-    const index = localUsers.findIndex((user) => String(user.id) === id);
-    if (index < 0) {
-      throw fixtureMutationError('Fixture local não encontrada para atualização profissional.', 'DOKE_LOCAL_FIXTURE_NOT_FOUND');
-    }
-
-    const current = localUsers[index];
-    const nextUser = normalizeUser({
-      ...current,
-      role: 'professional',
-      type: 'professional',
-      professionalProfileId,
-      publicProfileUrl: String(input.publicProfileUrl || current.publicProfileUrl || 'perfil.html'),
-      ownerProfileUrl: String(input.ownerProfileUrl || current.ownerProfileUrl || 'perfil-profissional.html'),
-      id,
-      updatedAt: new Date().toISOString()
-    });
-
-    localUsers[index] = nextUser;
-    writeLocalUsers(localUsers);
-    return nextUser;
-  };
-
   repositories.users = Object.freeze({
     STORAGE_KEY,
     LEGACY_PROFILE_STORAGE_KEY,
@@ -396,7 +272,6 @@
     findByHandle,
     isHandleAvailable,
     getCurrentSettings,
-    updateProfessionalFixtureUser,
     isEmail,
     normalizeEmail,
     normalizePhone,

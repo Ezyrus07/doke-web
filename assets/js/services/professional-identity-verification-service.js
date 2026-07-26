@@ -26,18 +26,6 @@
     return Doke.repositories && Doke.repositories.professionalProfiles || null;
   }
 
-  function usersRepository() {
-    if (window.DokeAuth && window.DokeAuth.repositories && window.DokeAuth.repositories.users) {
-      return window.DokeAuth.repositories.users;
-    }
-    return Doke.repositories && Doke.repositories.users || null;
-  }
-
-  function authService() {
-    return window.DokeAuth && window.DokeAuth.service || null;
-  }
-
-
   function supabaseClient() {
     try {
       return window.DokeSupabase && typeof window.DokeSupabase.getClient === 'function'
@@ -50,11 +38,19 @@
 
   function usesSupabaseProvider() {
     var client = supabaseClient();
-    if (!client) return false;
-    var session = Doke.session && typeof Doke.session.getSession === 'function'
-      ? Doke.session.getSession()
-      : null;
-    return Boolean(session && session.provider === 'supabase') || Boolean(window.DOKE_SUPABASE_CONFIG);
+    var session = Doke.session && typeof Doke.session.getSession === 'function' ? Doke.session.getSession() : null;
+    return Boolean(client && session && String(session.provider || '').toLowerCase() === 'supabase');
+  }
+
+  function reviewAuthorityUnavailable() {
+    var error = new Error('Autoridade server-side de revisão profissional indisponível.');
+    error.code = 'DOKE_PROFESSIONAL_REVIEW_AUTHORITY_UNAVAILABLE';
+    return error;
+  }
+
+  function assertRemoteReviewerAuthority() {
+    requireReviewer();
+    if (!usesSupabaseProvider()) throw reviewAuthorityUnavailable();
   }
 
   function remoteRpc(name, args) {
@@ -202,27 +198,29 @@
   }
 
   function decideRemote(verificationId, decision, rejectionReason) {
-    var client = supabaseClient();
-    if (!client || typeof client.rpc !== 'function') {
-      return Promise.reject(new Error('Supabase indisponível para concluir a análise.'));
-    }
     return remoteVerificationOperation('decide', {
       verificationId: verificationId,
       decision: decision,
       rejectionReason: rejectionReason || null
     }).then(function (data) {
       data = data || {};
+      if (decision === 'approve' && (data.status !== 'verified' || data.role !== 'professional')) {
+        var incomplete = new Error('O servidor não confirmou a promoção profissional.');
+        incomplete.code = 'DOKE_PROFESSIONAL_ROLE_RECONCILIATION_INCOMPLETE';
+        throw incomplete;
+      }
       var normalized = {
         id: data.publicVerificationId || data.verificationId || verificationId,
         userId: data.userId || '',
         status: data.status || (decision === 'approve' ? 'verified' : 'rejected'),
+        role: data.role || '',
         reviewerId: data.reviewerId || '',
         decidedAt: data.decidedAt || new Date().toISOString(),
         rejectionReason: rejectionReason || ''
       };
       window.dispatchEvent(new CustomEvent(
         decision === 'approve' ? 'doke:professional-verification-approved' : 'doke:professional-verification-rejected',
-        { detail: { verification: normalized, remote: true } }
+        { detail: { verification: normalized, role: normalized.role, remote: true, reconciled: true } }
       ));
       return normalized;
     });
@@ -232,15 +230,6 @@
     return Doke.session && typeof Doke.session.getCurrentUser === 'function'
       ? Doke.session.getCurrentUser()
       : null;
-  }
-
-  function usesApiProvider() {
-    var auth = authService();
-    return Boolean(auth && typeof auth.getActiveAuthProvider === 'function' && auth.getActiveAuthProvider() === 'api');
-  }
-
-  function assertLocalProvider() {
-    if (usesApiProvider()) throw new Error('A verificação profissional ainda não está conectada ao provider API.');
   }
 
   function normalizeText(value, maxLength) {
@@ -377,7 +366,7 @@
   function requireReviewer() {
     var user = currentUser();
     var role = String(user && (user.role || user.type) || '').toLowerCase();
-    if (!user || ['support', 'admin'].indexOf(role) === -1) throw new Error('Somente suporte ou administração pode analisar verificações.');
+    if (!user || ['admin', 'moderator'].indexOf(role) === -1) throw new Error('Somente suporte ou administração pode analisar verificações.');
     return user;
   }
 
@@ -411,7 +400,6 @@
   }
 
   function getCurrentVerification() {
-    if (!usesSupabaseProvider()) assertLocalProvider();
     var user = currentUser();
     if (!user || !user.id) return Promise.resolve(null);
     if (usesSupabaseProvider()) {
@@ -504,177 +492,37 @@
   }
 
   function listForReview(filters) {
-    requireReviewer(); filters=filters||{};
-    if(usesSupabaseProvider()){
-      return remoteVerificationOperation('list', {
-        status: filters.status || null,
-        limit: filters.limit || 100
-      }).then(function(result){
-        var rows = result && result.items;
-        return (Array.isArray(rows) ? rows : []).map(mapRemoteVerification);
-      });
-    }
-    var repo=repository();if(!repo)return Promise.reject(new Error('Fila de verificações indisponível.'));return repo.list(filters);
+    assertRemoteReviewerAuthority();
+    filters = filters || {};
+    return remoteVerificationOperation('list', { status: filters.status || null, limit: filters.limit || 100 })
+      .then(function (result) { return (Array.isArray(result && result.items) ? result.items : []).map(mapRemoteVerification); });
   }
 
   function getReviewDetail(verificationId) {
-    requireReviewer();
-    if(usesSupabaseProvider()){
-      return remoteVerificationOperation('detail', {
-        verificationId: String(verificationId || '')
-      }).then(function (result) {
-        var row = result && result.item;
-        if (!row) throw new Error('Verificação de identidade não encontrada.');
-        return hydrateRemoteDocumentUrls(mapRemoteVerification(row));
-      });
-    }
-    var repo=repository();if(!repo)return Promise.reject(new Error('Verificação indisponível para análise.'));return repo.getById(verificationId).then(hydrateEvidence);
+    assertRemoteReviewerAuthority();
+    return remoteVerificationOperation('detail', { verificationId: String(verificationId || '') }).then(function (result) {
+      var row = result && result.item;
+      if (!row) throw new Error('Verificação de identidade não encontrada.');
+      return hydrateRemoteDocumentUrls(mapRemoteVerification(row));
+    });
   }
 
   function startReview(verificationId) {
-    if(usesSupabaseProvider()) return remoteVerificationOperation('start', { verificationId: String(verificationId || '') }).then(function(v){return getReviewDetail(v.id||verificationId);});
-    var reviewer=requireReviewer();var repo=repository();if(!repo)return Promise.reject(new Error('Persistência da verificação indisponível.'));return repo.transition(verificationId,'under_review',{reviewerId:reviewer.id}).then(function(verification){return syncProfileVerificationStatus(verification.professionalProfileId,'under_review').then(function(){return verification;});});
-  }
-
-  function resolveProfessionalProfile(verification) {
-    var profiles = profileRepository();
-    if (!profiles) return Promise.reject(new Error('Perfil profissional indisponível para ativação.'));
-    if (verification && verification.professionalProfileId && typeof profiles.getById === 'function') {
-      return profiles.getById(verification.professionalProfileId).then(function (profile) {
-        if (profile) return profile;
-        return typeof profiles.getByUserId === 'function' ? profiles.getByUserId(verification.userId) : null;
-      });
-    }
-    return typeof profiles.getByUserId === 'function'
-      ? profiles.getByUserId(verification && verification.userId)
-      : Promise.resolve(null);
-  }
-
-  function syncTargetSession(user) {
-    var sessionUser = currentUser();
-    if (!sessionUser || String(sessionUser.id) !== String(user && user.id)) return;
-    if (!Doke.session || typeof Doke.session.setCurrentUser !== 'function') return;
-    var session = Doke.session.getSession && Doke.session.getSession();
-    Doke.session.setCurrentUser(user, {
-      provider: session && session.provider || 'mock',
-      token: session && session.token || '',
-      refreshToken: session && session.refreshToken || '',
-      remember: session ? session.remember !== false : true,
-      sessionStatus: session && session.sessionStatus || 'active',
-      expiresAt: session && session.expiresAt || ''
-    });
-  }
-
-  function activateProfessional(verification) {
-    var profiles = profileRepository();
-    var users = usersRepository();
-    if (!profiles || !users) return Promise.reject(new Error('Ativação profissional indisponível.'));
-
-    return resolveProfessionalProfile(verification).then(function (currentProfile) {
-      if (!currentProfile) throw new Error('Perfil profissional vinculado à verificação não foi encontrado.');
-      if (currentProfile.status !== 'active' && currentProfile.status !== 'pending_verification') {
-        throw new Error('O perfil profissional não está pronto para ativação.');
-      }
-
-      var activateProfile = Promise.resolve(currentProfile);
-      if (currentProfile.verificationStatus !== 'verified') {
-        activateProfile = profiles.setVerificationStatus(currentProfile.id, 'verified');
-      }
-      return activateProfile.then(function (profileWithVerification) {
-        if (profileWithVerification.status === 'active') return profileWithVerification;
-        if (verification.professionalProfileId && String(profileWithVerification.id) === String(verification.professionalProfileId)) {
-          return profiles.transition(verification.professionalProfileId, 'active');
-        }
-        return profiles.transition(profileWithVerification.id, 'active');
-      });
-    }).then(function (professionalProfile) {
-      return users.updateProfessionalFixtureUser(verification.userId, {
-        role: 'professional',
-        type: 'professional',
-        professionalProfileId: professionalProfile.id,
-        publicProfileUrl: 'perfil.html',
-        ownerProfileUrl: 'perfil-profissional.html'
-      }).then(function (user) {
-        syncTargetSession(user);
-        var confirmedProfilePromise = typeof profiles.getById === 'function'
-          ? profiles.getById(professionalProfile.id)
-          : Promise.resolve(professionalProfile);
-        var confirmedUserPromise = typeof users.findById === 'function'
-          ? users.findById(user.id)
-          : Promise.resolve(user);
-        return Promise.all([confirmedProfilePromise, confirmedUserPromise]).then(function (items) {
-          var confirmedProfile = items[0] || professionalProfile;
-          var confirmedUser = items[1] || user;
-          if (!confirmedProfile || confirmedProfile.status !== 'active' || confirmedProfile.verificationStatus !== 'verified') {
-            throw new Error('A ativação do perfil profissional não foi confirmada.');
-          }
-          if (!confirmedUser || confirmedUser.role !== 'professional') {
-            throw new Error('A promoção da conta para profissional não foi confirmada.');
-          }
-          return { professionalProfile: confirmedProfile, user: confirmedUser };
-        });
-      });
-    });
+    assertRemoteReviewerAuthority();
+    return remoteVerificationOperation('start', { verificationId: String(verificationId || '') })
+      .then(function (value) { return getReviewDetail(value.id || verificationId); });
   }
 
   function approve(verificationId) {
-    if (usesSupabaseProvider()) return decideRemote(verificationId, 'approve', '');
-    assertLocalProvider();
-    var reviewer = requireReviewer();
-    var repo = repository();
-    if (!repo) return Promise.reject(new Error('Persistência da verificação indisponível.'));
-
-    return repo.getById(verificationId).then(function (current) {
-      if (!current) throw new Error('Verificação de identidade não encontrada.');
-      var ensureReview = current.status === 'submitted'
-        ? repo.transition(current.id, 'under_review', { reviewerId: reviewer.id })
-        : Promise.resolve(current);
-
-      return ensureReview.then(function (reviewing) {
-        return activateProfessional(reviewing).then(function (activation) {
-          if (reviewing.status === 'verified') {
-            return { verification: reviewing, activation: activation };
-          }
-          return repo.transition(reviewing.id, 'verified', { reviewerId: reviewer.id }).then(function (verified) {
-            return { verification: verified, activation: activation };
-          });
-        });
-      });
-    }).then(function (result) {
-      window.dispatchEvent(new CustomEvent('doke:professional-verification-approved', {
-        detail: {
-          verification: result.verification,
-          professionalProfile: result.activation.professionalProfile,
-          user: result.activation.user
-        }
-      }));
-      return result.verification;
-    });
+    assertRemoteReviewerAuthority();
+    return decideRemote(verificationId, 'approve', '');
   }
 
   function reject(verificationId, reason) {
     var message = normalizeText(reason, 500);
     if (message.length < 10) return Promise.reject(validationError('Informe um motivo de rejeição com pelo menos 10 caracteres.', 'rejectionReason'));
-    if (usesSupabaseProvider()) return decideRemote(verificationId, 'reject', message);
-    assertLocalProvider();
-    var reviewer = requireReviewer();
-    var repo = repository();
-    if (!repo) return Promise.reject(new Error('Persistência da verificação indisponível.'));
-    return repo.getById(verificationId).then(function (current) {
-      if (!current) throw new Error('Verificação de identidade não encontrada.');
-      if (current.status === 'rejected') return current;
-      var ensureReview = current.status === 'submitted'
-        ? repo.transition(current.id, 'under_review', { reviewerId: reviewer.id })
-        : Promise.resolve(current);
-      return ensureReview.then(function (reviewing) {
-        return repo.transition(reviewing.id, 'rejected', { reviewerId: reviewer.id, reason: message });
-      });
-    }).then(function (verification) {
-      return syncProfileVerificationStatus(verification.professionalProfileId, 'rejected').then(function () {
-        window.dispatchEvent(new CustomEvent('doke:professional-verification-rejected', { detail: { verification: verification } }));
-        return verification;
-      });
-    });
+    assertRemoteReviewerAuthority();
+    return decideRemote(verificationId, 'reject', message);
   }
 
   function reopenRejected() {
@@ -700,7 +548,6 @@
         return verification;
       });
     }
-    assertLocalProvider();
     var user = requireOwner();
     var repo = repository();
     if (!repo) return Promise.reject(new Error('Persistência da verificação indisponível.'));

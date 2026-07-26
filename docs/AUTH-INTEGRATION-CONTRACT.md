@@ -143,7 +143,7 @@ O contrato `identity-profile-contract.js` está em `AUTH-A12B.3` e declara:
 - `manualOnboardingSessionRewrite: 'retired'`;
 - `professionalFixtureMutationBoundary: 'isolated-pending-A12C'`.
 
-A única mutação local ainda exportada é `updateProfessionalFixtureUser`, explicitamente limitada a fixtures não UUID e pendente de retirada no AUTH-A12C. Ela nunca é fallback aceitável para falha do Supabase.
+O repositório local de usuários não exporta mutações. Fixtures locais são somente leitura e não podem derivar ou persistir role profissional.
 
 ## Roles e autorização
 

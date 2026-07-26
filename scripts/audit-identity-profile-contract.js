@@ -272,7 +272,7 @@ expect(source.localMutationRuntime, files.localMutationRuntime, [
 ]);
 expect(source.onboardingAuthorityRuntime, files.onboardingAuthorityRuntime, [
   'DOKE_ONBOARDING_AUTHORITY_UNAVAILABLE',
-  'local completion inference is absent'
+  'completion is exclusively server-authoritative'
 ]);
 expect(source.professionalAuthorityRuntime, files.professionalAuthorityRuntime, [
   'AUTH-A12C professional authority retirement runtime passed.',

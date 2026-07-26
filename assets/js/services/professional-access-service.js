@@ -40,30 +40,19 @@
     }
   }
 
-  function hasConfiguredSupabase() {
-    var config = root.DOKE_SUPABASE_CONFIG || {};
-    return Boolean(
-      config.enabled !== false
-      && config.url
-      && (config.anonKey || config.publishableKey)
-      && supabaseClient()
-    );
+  function usesSupabaseProvider() {
+    var session = currentSession();
+    return String(session && session.provider || '').trim().toLowerCase() === 'supabase';
   }
 
   function isUuid(value) {
     return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value || '').trim());
   }
 
-  function usesSupabaseProvider(actor) {
-    var session = currentSession();
-    var provider = String(session && session.provider || '').trim().toLowerCase();
-    if (provider === 'supabase') return true;
-
-    // O contrato legado normaliza provedores desconhecidos como `mock`, inclusive
-    // sessões reais do Supabase. Um usuário autenticado remoto mantém UUID e o
-    // cliente configurado, enquanto os usuários mock usam IDs sem formato UUID.
-    var user = actor || currentUser();
-    return hasConfiguredSupabase() && isUuid(user && user.id);
+  function professionalAuthorityUnavailable() {
+    var error = new Error('Autoridade server-side de acesso profissional indisponível.');
+    error.code = 'DOKE_PROFESSIONAL_AUTHORITY_UNAVAILABLE';
+    return error;
   }
 
   function mapRemoteProfessionalProfile(row) {
@@ -99,37 +88,29 @@
 
   function resolveRemoteContext(actor) {
     var client = supabaseClient();
-    if (!client || typeof client.from !== 'function') {
-      return Promise.reject(new Error('Supabase indisponível para validar o acesso profissional.'));
-    }
+    if (!client || typeof client.from !== 'function') return Promise.reject(professionalAuthorityUnavailable());
     return Promise.all([
+      client.from('users').select('id,role,status').eq('id', actor.id).maybeSingle(),
       client.from('professional_profiles').select('*').eq('user_id', actor.id).maybeSingle(),
       client.from('professional_identity_verifications').select('*').eq('user_id', actor.id).maybeSingle()
     ]).then(function (items) {
       if (items[0] && items[0].error) throw items[0].error;
       if (items[1] && items[1].error) throw items[1].error;
-      var profile = mapRemoteProfessionalProfile(items[0] && items[0].data);
-      var verification = mapRemoteVerification(items[1] && items[1].data);
-      var approved = Boolean(
-        profile
-        && verification
-        && profile.status === 'active'
-        && profile.verificationStatus === 'verified'
-        && profile.documentStatus === 'verified'
-        && verification.status === 'verified'
-      );
-      var canonicalUser = approved ? Object.assign({}, actor, {
-        role: 'professional',
-        type: 'professional',
-        professionalProfileId: profile.id,
-        publicProfileUrl: actor.publicProfileUrl || 'perfil.html',
-        ownerProfileUrl: 'perfil-profissional.html'
-      }) : actor;
-      return {
-        user: canonicalUser,
-        professionalProfile: profile,
-        verification: verification
-      };
+      if (items[2] && items[2].error) throw items[2].error;
+      var account = items[0] && items[0].data;
+      if (!account || String(account.id || '') !== String(actor.id)) return Promise.reject(professionalAuthorityUnavailable());
+      var profile = mapRemoteProfessionalProfile(items[1] && items[1].data);
+      var verification = mapRemoteVerification(items[2] && items[2].data);
+      var accountRole = String(account.role || 'client').trim().toLowerCase();
+      var canonicalUser = Object.freeze(Object.assign({}, actor, {
+        role: accountRole,
+        type: accountRole,
+        accountStatus: account.status || actor.accountStatus || 'active',
+        professionalProfileId: accountRole === 'professional' && profile ? profile.id : actor.professionalProfileId || '',
+        publicProfileUrl: accountRole === 'professional' ? (actor.publicProfileUrl || 'perfil.html') : actor.publicProfileUrl,
+        ownerProfileUrl: accountRole === 'professional' ? 'perfil-profissional.html' : actor.ownerProfileUrl
+      }));
+      return { user: canonicalUser, professionalProfile: profile, verification: verification };
     });
   }
 
@@ -141,77 +122,14 @@
     return Doke.repositories && Doke.repositories.professionalIdentityVerifications;
   }
 
-  function usersRepository() {
-    return root.DokeAuth && root.DokeAuth.repositories && root.DokeAuth.repositories.users
-      ? root.DokeAuth.repositories.users
-      : null;
-  }
-
-  function syncCurrentSession(user) {
-    var sessionUser = currentUser();
-    if (!sessionUser || String(sessionUser.id) !== String(user && user.id)) return;
-    if (!Doke.session || typeof Doke.session.setCurrentUser !== 'function') return;
-    var session = Doke.session.getSession && Doke.session.getSession();
-    Doke.session.setCurrentUser(user, {
-      provider: session && session.provider || 'mock',
-      remember: session ? session.remember !== false : true,
-      sessionStatus: session && session.sessionStatus || 'active',
-      expiresAt: session && session.expiresAt || ''
-    });
-  }
-
-  function reconcileVerifiedProfessionalState(context) {
-    var actor = context && context.user;
-    var profile = context && context.professionalProfile;
-    var verification = context && context.verification;
-    if (!actor || !actor.id || !profile || !verification || verification.status !== 'verified') {
-      return Promise.resolve(context);
-    }
-    if (profile.status === 'suspended') return Promise.resolve(context);
-
-    var profiles = profilesRepository();
-    var users = usersRepository();
-    if (!profiles || !users) return Promise.resolve(context);
-
-    var profilePromise = Promise.resolve(profile);
-    if (profile.verificationStatus !== 'verified' && typeof profiles.setVerificationStatus === 'function') {
-      profilePromise = profiles.setVerificationStatus(profile.id, 'verified');
-    }
-
-    return profilePromise.then(function (nextProfile) {
-      if (nextProfile.status === 'pending_verification' && typeof profiles.transition === 'function') {
-        return profiles.transition(nextProfile.id, 'active');
-      }
-      return nextProfile;
-    }).then(function (nextProfile) {
-      if (nextProfile.status !== 'active') return context;
-      if (actor.role === 'professional' && actor.professionalProfileId === nextProfile.id) {
-        return Object.assign({}, context, { professionalProfile: nextProfile });
-      }
-      if (typeof users.updateProfessionalFixtureUser !== 'function') return context;
-      return users.updateProfessionalFixtureUser(actor.id, {
-        role: 'professional',
-        type: 'professional',
-        professionalProfileId: nextProfile.id,
-        publicProfileUrl: 'perfil.html',
-        ownerProfileUrl: 'perfil-profissional.html'
-      }).then(function (nextUser) {
-        syncCurrentSession(nextUser);
-        return { user: nextUser, professionalProfile: nextProfile, verification: verification };
-      });
-    }).catch(function (error) {
-      console.warn && console.warn('[Doke] Falha ao reconciliar ativação profissional.', error);
-      return context;
-    });
-  }
-
   function resolveContext(user) {
     var actor = user || currentUser();
     if (!actor || !actor.id) {
       return Promise.resolve({ user: actor || null, professionalProfile: null, verification: null });
     }
 
-    if (usesSupabaseProvider(actor)) return resolveRemoteContext(actor);
+    if (usesSupabaseProvider()) return resolveRemoteContext(actor);
+    if (isUuid(actor.id)) return Promise.reject(professionalAuthorityUnavailable());
 
     var profiles = profilesRepository();
     var verifications = verificationsRepository();
@@ -223,11 +141,7 @@
       : Promise.resolve(null);
 
     return Promise.all([profilePromise, verificationPromise]).then(function (items) {
-      return reconcileVerifiedProfessionalState({
-        user: actor,
-        professionalProfile: items[0] || null,
-        verification: items[1] || null
-      });
+      return { user: actor, professionalProfile: items[0] || null, verification: items[1] || null };
     });
   }
 

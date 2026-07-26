@@ -167,3 +167,11 @@ O corte foi aceito porque o head validado provou simultaneamente:
 6. matriz determinística sincronizada;
 7. Quality Gates, E2E bloqueante, 105 guards, staging canary e Diagnostic concluídos com sucesso;
 8. nenhum workflow, codemod, hook ou diagnóstico temporário remanescente.
+
+## AUTH-A12C — autoridade profissional server-only (em validação)
+
+- `public.users.role` é a única fonte de role profissional;
+- `professional-verification-operations` e `decide_professional_identity_verification_internal` são a autoridade de decisão;
+- `updateProfessionalFixtureUser`, promoção durante leitura e reescritas de sessão foram retirados;
+- fixtures locais preexistentes permanecem somente leitura;
+- nenhuma migration, Edge deploy ou alteração de staging foi necessária.

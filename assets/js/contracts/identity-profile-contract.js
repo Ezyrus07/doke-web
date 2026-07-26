@@ -35,7 +35,10 @@
     localProfileMutationAuthority: 'retired',
     localOnboardingMutationAuthority: 'retired',
     manualOnboardingSessionRewrite: 'retired',
-    professionalFixtureMutationBoundary: 'isolated-pending-A12C'
+    professionalRoleAuthority: 'server-only',
+    professionalReviewerAuthority: 'professional-verification-operations',
+    professionalFixtureMutationBoundary: 'retired',
+    manualProfessionalSessionRewrite: 'retired'
   });
 
   function normalizeProfileType(type) {
@@ -110,7 +113,7 @@
   }
 
   Doke.identityProfileContract = Object.freeze({
-    version: 'AUTH-A12B.3',
+    version: 'AUTH-A12C',
     profileTypes: PROFILE_TYPES,
     profileStatus: PROFILE_STATUS,
     actions: SELF_SERVICE_ACTIONS,
