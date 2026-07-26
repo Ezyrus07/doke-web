@@ -3,6 +3,8 @@
 
   var Doke = window.Doke || (window.Doke = {});
   var services = Doke.services || (Doke.services = {});
+  var canonicalProfileCache = null;
+  var canonicalProfileUserId = '';
 
   function usersRepository() {
     return window.DokeAuth && window.DokeAuth.repositories
@@ -25,6 +27,15 @@
     return window.DokeSupabase && typeof window.DokeSupabase.getClient === 'function'
       ? window.DokeSupabase.getClient()
       : null;
+  }
+
+  function invokeSelfService(action, params) {
+    if (!window.DokeSupabase || typeof window.DokeSupabase.invokeSelfService !== 'function') {
+      var unavailable = new Error('Autoridade de perfil do Supabase indisponível.');
+      unavailable.code = 'DOKE_PROFILE_AUTHORITY_UNAVAILABLE';
+      return Promise.reject(unavailable);
+    }
+    return window.DokeSupabase.invokeSelfService(action, params || {});
   }
 
   function usesSupabaseProvider() {
@@ -173,6 +184,74 @@
     };
   }
 
+  function reconciliationError(message, code) {
+    var error = new Error(message);
+    error.code = code;
+    return error;
+  }
+
+  function normalizeCanonicalProfile(identityState, user) {
+    var state = identityState && typeof identityState === 'object' ? identityState : {};
+    var profile = state.profile && typeof state.profile === 'object' ? state.profile : null;
+    var expectedUserId = String(user && user.id || '');
+    var stateUserId = String(state.userId || '');
+    var profileUserId = String(profile && (profile.userId || profile.profileId) || '');
+
+    if (!expectedUserId || !profile) {
+      throw reconciliationError('O servidor não devolveu um perfil canônico válido.', 'DOKE_PROFILE_RECONCILIATION_INVALID');
+    }
+    if ((stateUserId && stateUserId !== expectedUserId) || (profileUserId && profileUserId !== expectedUserId)) {
+      throw reconciliationError('O perfil devolvido não pertence à sessão atual.', 'DOKE_PROFILE_RECONCILIATION_SUBJECT_MISMATCH');
+    }
+
+    var name = normalizeText(profile.displayName || profile.name || user.name, 80);
+    var handle = normalizeHandle(profile.username || profile.handle || user.handle);
+    if (name.length < 3 || !/^[a-z0-9](?:[a-z0-9._]{1,28}[a-z0-9])?$/.test(handle)) {
+      throw reconciliationError('O servidor devolveu uma identidade pública inválida.', 'DOKE_PROFILE_RECONCILIATION_INVALID');
+    }
+
+    return Object.freeze({
+      id: profile.profileId || profile.userId || expectedUserId,
+      userId: profile.userId || expectedUserId,
+      role: user.role || user.type || 'client',
+      type: user.type || user.role || 'client',
+      name: name,
+      displayName: name,
+      handle: handle,
+      username: handle,
+      city: normalizeText(profile.city, 60),
+      state: normalizeText(profile.state, 2).toUpperCase(),
+      bio: normalizeText(profile.bio, 500),
+      interests: normalizeInterests(profile.interests),
+      avatarUrl: normalizeMediaUrl(profile.avatarUrl),
+      coverUrl: normalizeMediaUrl(profile.coverUrl),
+      updatedAt: profile.updatedAt || ''
+    });
+  }
+
+  function cacheCanonicalProfile(profile, userId) {
+    canonicalProfileCache = profile || null;
+    canonicalProfileUserId = profile ? String(userId || profile.userId || '') : '';
+    return canonicalProfileCache;
+  }
+
+  function getCachedProfile(user) {
+    if (!user || String(user.id || '') !== canonicalProfileUserId) return null;
+    return canonicalProfileCache;
+  }
+
+  function dispatchProfileEvent(type, user, profile) {
+    window.dispatchEvent(new CustomEvent(type, {
+      detail: {
+        userId: user.id,
+        profileId: profile && profile.id,
+        profile: profile || null,
+        source: 'server',
+        reconciled: true
+      }
+    }));
+  }
+
   function list(filters) {
     filters = filters || {};
     var repository = usersRepository();
@@ -189,12 +268,14 @@
   function getById(userId) {
     var id = String(userId || '').trim();
     var sessionUser = currentUser();
-    var sessionFallback = sessionUser && String(sessionUser.id) === id
+    var cachedProfile = sessionUser && String(sessionUser.id) === id ? getCachedProfile(sessionUser) : null;
+    var sessionFallback = cachedProfile || (sessionUser && String(sessionUser.id) === id
       ? (sessionUser.profile || sessionUser)
-      : null;
+      : null);
     var repository = usersRepository();
 
     if (!id) return Promise.resolve(null);
+    if (cachedProfile) return Promise.resolve(cachedProfile);
     if (!repository || typeof repository.findById !== 'function') {
       return Promise.resolve(sessionFallback);
     }
@@ -209,8 +290,23 @@
   function getCurrentProfile() {
     var user = currentUser();
     if (!user || !user.id) return Promise.resolve(null);
+    var cachedProfile = getCachedProfile(user);
+    if (cachedProfile) return Promise.resolve(cachedProfile);
     return getById(user.id).then(function (profile) {
       return profile || user.profile || user;
+    });
+  }
+
+  function refreshCurrentProfile() {
+    var user = currentUser();
+    if (!user || !user.id) return Promise.reject(new Error('Entre na sua conta para atualizar o perfil.'));
+    if (!usesSupabaseProvider()) return getCurrentProfile();
+
+    return invokeSelfService('get_account_identity_state', {}).then(function (identityState) {
+      var profile = normalizeCanonicalProfile(identityState, user);
+      cacheCanonicalProfile(profile, user.id);
+      dispatchProfileEvent('doke:profile-reconciled', user, profile);
+      return profile;
     });
   }
 
@@ -226,10 +322,7 @@
       }, payload || {}));
 
       if (usesSupabaseProvider()) {
-        var client = getSupabaseClient();
-        if (!client) throw new Error('Supabase indisponível para salvar o perfil.');
-
-        return window.DokeSupabase.invokeSelfService('update_account_profile', {
+        return invokeSelfService('update_account_profile_reconciled', {
           p_display_name: patch.name,
           p_username: patch.handle,
           p_city: patch.city,
@@ -238,49 +331,11 @@
           p_interests: patch.interests,
           p_avatar_url: patch.avatarUrl || '',
           p_cover_url: patch.coverUrl || ''
-        }).then(function (result) {
-          result = result || {};
-          var nextProfile = {
-            id: result.profileId || (currentProfile && currentProfile.id) || user.id,
-            userId: user.id,
-            name: result.displayName || patch.name,
-            displayName: result.displayName || patch.name,
-            handle: result.username || patch.handle,
-            username: result.username || patch.handle,
-            city: result.city || patch.city,
-            state: result.state || patch.state,
-            bio: result.bio != null ? result.bio : patch.bio,
-            interests: Array.isArray(result.interests) ? result.interests : patch.interests,
-            avatarUrl: result.avatarUrl || patch.avatarUrl || (currentProfile && currentProfile.avatarUrl) || '',
-            coverUrl: result.coverUrl || patch.coverUrl || (currentProfile && currentProfile.coverUrl) || ''
-          };
-
-          return client.auth.updateUser({
-            data: {
-              name: nextProfile.name,
-              full_name: nextProfile.name,
-              handle: nextProfile.handle,
-              city: nextProfile.city,
-              state: nextProfile.state,
-              bio: nextProfile.bio,
-              interests: nextProfile.interests,
-              avatar_url: nextProfile.avatarUrl,
-              cover_url: nextProfile.coverUrl
-            }
-          }).catch(function () { return null; }).then(function () {
-            var nextUser = Object.assign({}, user, {
-              name: nextProfile.name,
-              displayName: nextProfile.name,
-              handle: nextProfile.handle,
-              avatarUrl: nextProfile.avatarUrl,
-              avatar: nextProfile.avatarUrl,
-              profile: nextProfile
-            });
-            if (Doke.session && typeof Doke.session.setCurrentUser === 'function') {
-              Doke.session.setCurrentUser(nextUser, { provider: 'supabase', remember: true });
-            }
-            return nextUser;
-          });
+        }).then(function (identityState) {
+          var nextProfile = normalizeCanonicalProfile(identityState, user);
+          cacheCanonicalProfile(nextProfile, user.id);
+          dispatchProfileEvent('doke:profile-updated', user, nextProfile);
+          return nextProfile;
         });
       }
 
@@ -291,16 +346,17 @@
         .then(function (available) {
           if (!available) throw new Error('Esse usuário já está em uso. Escolha outro.');
           return repository.updateCurrentProfile(user.id, patch, user);
+        }).then(function (updatedUser) {
+          var nextUser = updatedUser || user;
+          if (Doke.session && typeof Doke.session.setCurrentUser === 'function') {
+            Doke.session.setCurrentUser(nextUser);
+          }
+          var nextProfile = nextUser.profile || nextUser;
+          window.dispatchEvent(new CustomEvent('doke:profile-updated', {
+            detail: { userId: user.id, profileId: nextProfile && nextProfile.id, profile: nextProfile || null, source: 'local', reconciled: false }
+          }));
+          return nextProfile;
         });
-    }).then(function (updatedUser) {
-      var nextUser = updatedUser || user;
-      if (!usesSupabaseProvider() && Doke.session && typeof Doke.session.setCurrentUser === 'function') {
-        Doke.session.setCurrentUser(nextUser);
-      }
-      window.dispatchEvent(new CustomEvent('doke:profile-updated', {
-        detail: { userId: user.id, profileId: nextUser.profile && nextUser.profile.id, profile: nextUser.profile || null }
-      }));
-      return nextUser.profile || nextUser;
     });
   }
 
@@ -333,6 +389,7 @@
     list: list,
     getById: getById,
     getCurrentProfile: getCurrentProfile,
+    refreshCurrentProfile: refreshCurrentProfile,
     updateCurrentProfile: updateCurrentProfile,
     getCurrentSettings: getCurrentSettings,
     updateCurrentSettings: updateCurrentSettings,
