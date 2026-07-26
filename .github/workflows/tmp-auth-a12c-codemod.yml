@@ -49,28 +49,8 @@ jobs:
       - name: Test cumulative local mutation retirement
         run: node tests/auth/test-auth-local-profile-mutation-retirement-runtime.js
 
-      - name: Test professional static retirement
-        run: node tests/auth/test-auth-professional-authority-retirement-runtime.js static
-
-      - name: Test professional fixture reads
-        run: node tests/auth/test-auth-professional-authority-retirement-runtime.js users
-
-      - name: Capture access diagnostic scenarios
-        run: |
-          node scripts/tmp-auth-a12c-access-diagnostic.js remote
-          node scripts/tmp-auth-a12c-access-diagnostic.js conflict
-          node scripts/tmp-auth-a12c-access-diagnostic.js provider
-          node scripts/tmp-auth-a12c-access-diagnostic.js local
-
-      - name: Validate access diagnostic scenarios
-        run: |
-          node -e "for (const name of ['remote','conflict','provider','local']) { const report=require('./reports/generated/tmp-auth-a12c-access-'+name+'.json'); if (!report.ok) { console.error(report); process.exit(1); } }"
-
-      - name: Test professional server-role access
-        run: node tests/auth/test-auth-professional-authority-retirement-runtime.js access
-
-      - name: Test professional remote reviewer
-        run: node tests/auth/test-auth-professional-authority-retirement-runtime.js reviewer
+      - name: Test professional authority retirement
+        run: node tests/auth/test-auth-professional-authority-retirement-runtime.js
 
       - name: Validate identity authority audit
         run: node scripts/audit-identity-profile-contract.js
@@ -78,63 +58,17 @@ jobs:
       - name: Validate patch formatting
         run: git diff --check
 
-      - name: Remove temporary execution files
-        run: rm -f scripts/tmp-auth-a12c-codemod.js scripts/tmp-auth-a12c-access-diagnostic.js .github/workflows/tmp-auth-a12c-codemod.yml reports/generated/tmp-auth-a12c-*.json
-
-      - name: Prepare implementation commit
+      - name: Remove temporary scripts and restore canonical workflows
         run: |
-          mkdir -p reports/generated
+          rm -f scripts/tmp-auth-a12c-codemod.js scripts/tmp-auth-a12c-access-diagnostic.js reports/generated/tmp-auth-a12c-*.json
+          git restore .github/workflows/quality.yml
+
+      - name: Publish implementation without workflow changes
+        run: |
+          set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git status --short > reports/generated/tmp-auth-a12c-git-status-before.txt
-          set +e
-          git add -A > reports/generated/tmp-auth-a12c-git-add.log 2>&1
-          add_status=$?
-          git diff --cached --name-status > reports/generated/tmp-auth-a12c-git-staged.txt 2>&1
-          git diff --cached --check > reports/generated/tmp-auth-a12c-git-cached-check.log 2>&1
-          check_status=$?
-          git commit -m 'Retire local professional identity authority' > reports/generated/tmp-auth-a12c-git-commit.log 2>&1
-          commit_status=$?
-          printf '%s\n' "$add_status" > reports/generated/tmp-auth-a12c-git-add.status
-          printf '%s\n' "$check_status" > reports/generated/tmp-auth-a12c-git-cached-check.status
-          printf '%s\n' "$commit_status" > reports/generated/tmp-auth-a12c-git-commit.status
-          exit 0
-
-      - name: Upload implementation commit diagnostics
-        uses: actions/upload-artifact@v4
-        with:
-          name: tmp-auth-a12c-git-commit-${{ github.sha }}
-          path: reports/generated/tmp-auth-a12c-git-*
-          if-no-files-found: error
-          retention-days: 1
-
-      - name: Validate implementation commit
-        run: |
-          cat reports/generated/tmp-auth-a12c-git-add.log
-          cat reports/generated/tmp-auth-a12c-git-cached-check.log
-          cat reports/generated/tmp-auth-a12c-git-commit.log
-          test "$(cat reports/generated/tmp-auth-a12c-git-add.status)" = '0'
-          test "$(cat reports/generated/tmp-auth-a12c-git-cached-check.status)" = '0'
-          test "$(cat reports/generated/tmp-auth-a12c-git-commit.status)" = '0'
-
-      - name: Capture implementation push
-        run: |
-          set +e
-          git push origin HEAD:${{ github.event.pull_request.head.ref }} > reports/generated/tmp-auth-a12c-git-push.log 2>&1
-          status=$?
-          printf '%s\n' "$status" > reports/generated/tmp-auth-a12c-git-push.status
-          exit 0
-
-      - name: Upload implementation push diagnostics
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: tmp-auth-a12c-git-push-${{ github.sha }}
-          path: reports/generated/tmp-auth-a12c-git-push.*
-          if-no-files-found: error
-          retention-days: 1
-
-      - name: Validate implementation push
-        run: |
-          cat reports/generated/tmp-auth-a12c-git-push.log
-          test "$(cat reports/generated/tmp-auth-a12c-git-push.status)" = '0'
+          git add -A assets/js scripts tests package.json docs
+          git diff --cached --check
+          git commit -m 'Retire local professional identity authority'
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
