@@ -1,6 +1,8 @@
 name: AUTH-A11 Authenticated Edge Canary
 
 on:
+  pull_request:
+    branches: [MAIN]
   push:
     branches:
       - 'auth/**'
@@ -10,7 +12,9 @@ permissions:
 
 jobs:
   canary:
-    if: startsWith(github.event.head_commit.message, 'Run AUTH-A11 authenticated edge canary')
+    if: >-
+      ${{ github.event_name == 'pull_request' ||
+          startsWith(github.event.head_commit.message, 'Run AUTH-A11 authenticated edge canary') }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
