@@ -11,14 +11,38 @@
       : null;
   }
 
-  function authService() {
-    return window.DokeAuth && window.DokeAuth.service ? window.DokeAuth.service : null;
+  function usersRepository() {
+    return window.DokeAuth && window.DokeAuth.repositories
+      ? window.DokeAuth.repositories.users || null
+      : null;
+  }
+
+  function sessionProvider() {
+    return String(window.Doke?.session?.getSession?.()?.provider || '').toLowerCase();
+  }
+
+  function usesSupabaseProvider() {
+    return sessionProvider() === 'supabase';
   }
 
   function normalizedStatus(user) {
     return user && VALID_STATUSES.includes(user.onboardingStatus)
       ? user.onboardingStatus
       : 'not_started';
+  }
+
+  function normalizeInterests(value) {
+    var source = Array.isArray(value)
+      ? value
+      : String(value || '').split(',');
+    var seen = new Set();
+    return source.map(function (item) { return String(item || '').trim(); })
+      .filter(function (item) {
+        var key = item.toLowerCase();
+        if (!item || seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      }).slice(0, 8);
   }
 
   function hasCompleteBaseProfile(user, profile) {
@@ -28,36 +52,82 @@
     );
   }
 
-  function syncCompletedSession(user, remoteState) {
-    if (!user || !remoteState || remoteState.status !== 'completed') return user;
-    var nextUser = Object.assign({}, user, {
-      onboardingStatus: 'completed',
-      onboardingCompletedAt: remoteState.completedAt || user.onboardingCompletedAt || '',
-      city: remoteState.profile && remoteState.profile.city || user.city || '',
-      state: remoteState.profile && remoteState.profile.state || user.state || ''
+  function reconciliationError(message, code) {
+    var error = new Error(message);
+    error.code = code;
+    return error;
+  }
+
+  function normalizeCanonicalOnboarding(identityState, user) {
+    var state = identityState && typeof identityState === 'object' ? identityState : {};
+    var profile = state.profile && typeof state.profile === 'object' ? state.profile : null;
+    var expectedUserId = String(user && user.id || '');
+    var stateUserId = String(state.userId || '');
+    var profileUserId = String(profile && (profile.userId || profile.profileId) || '');
+    var status = VALID_STATUSES.includes(state.onboardingStatus)
+      ? state.onboardingStatus
+      : 'not_started';
+
+    if (!expectedUserId || !profile) {
+      throw reconciliationError('O servidor não devolveu um estado canônico de onboarding válido.', 'DOKE_ONBOARDING_RECONCILIATION_INVALID');
+    }
+    if ((stateUserId && stateUserId !== expectedUserId) || (profileUserId && profileUserId !== expectedUserId)) {
+      throw reconciliationError('O onboarding devolvido não pertence à sessão atual.', 'DOKE_ONBOARDING_RECONCILIATION_SUBJECT_MISMATCH');
+    }
+
+    return Object.freeze({
+      status: status,
+      completedAt: state.onboardingCompletedAt || '',
+      profile: Object.freeze({
+        id: profile.profileId || profile.userId || expectedUserId,
+        userId: profile.userId || expectedUserId,
+        name: String(profile.displayName || profile.name || user.name || '').trim(),
+        displayName: String(profile.displayName || profile.name || user.name || '').trim(),
+        handle: String(profile.username || profile.handle || user.handle || '').trim().toLowerCase(),
+        username: String(profile.username || profile.handle || user.handle || '').trim().toLowerCase(),
+        city: String(profile.city || '').trim(),
+        state: String(profile.state || '').trim().toUpperCase(),
+        bio: String(profile.bio || '').trim(),
+        interests: normalizeInterests(profile.interests),
+        avatarUrl: String(profile.avatarUrl || '').trim(),
+        coverUrl: String(profile.coverUrl || '').trim(),
+        updatedAt: profile.updatedAt || ''
+      })
     });
-    if (window.Doke?.session?.setCurrentUser) window.Doke.session.setCurrentUser(nextUser);
-    return nextUser;
+  }
+
+  function resolvedUser(user, remoteState) {
+    if (!remoteState) return user;
+    return Object.freeze(Object.assign({}, user, {
+      onboardingStatus: remoteState.status,
+      onboardingCompletedAt: remoteState.completedAt || user.onboardingCompletedAt || '',
+      city: remoteState.profile.city || user.city || '',
+      state: remoteState.profile.state || user.state || '',
+      bio: remoteState.profile.bio || '',
+      interests: remoteState.profile.interests || [],
+      profile: remoteState.profile
+    }));
+  }
+
+  function invokeSelfService(action, params) {
+    if (!window.DokeSupabase || typeof window.DokeSupabase.invokeSelfService !== 'function') {
+      return Promise.reject(new Error('Autoridade remota de onboarding indisponível.'));
+    }
+    return window.DokeSupabase.invokeSelfService(action, params || {});
   }
 
   function resolveRemoteState(user) {
     var client = window.DokeSupabase && typeof window.DokeSupabase.getClient === 'function'
       ? window.DokeSupabase.getClient()
       : null;
-    var provider = String(window.Doke?.session?.getSession?.()?.provider || '').toLowerCase();
-    if (provider !== 'supabase' || !client || !user || !user.id) return Promise.resolve(null);
+    if (!usesSupabaseProvider() || !client || !user || !user.id) return Promise.resolve(null);
 
-    return window.DokeSupabase.invokeSelfService('get_account_onboarding_state', {}).then(function (data) {
-      data = data || {};
-      return {
-        status: VALID_STATUSES.includes(data.onboardingStatus) ? data.onboardingStatus : 'not_started',
-        completedAt: data.onboardingCompletedAt || '',
-        profile: data.profile || null
-      };
+    return invokeSelfService('get_account_identity_state', {}).then(function (data) {
+      return normalizeCanonicalOnboarding(data, user);
     }).catch(function (error) {
       var message = String(error && error.message || '');
-      if (/function .*get_account_onboarding_state.*does not exist|schema cache/i.test(message)) {
-        throw new Error('A migration 021 do estado de onboarding ainda não foi aplicada no Supabase.');
+      if (/function .*get_account_identity_state.*does not exist|schema cache/i.test(message)) {
+        throw new Error('A migration 147 da reconciliação de identidade ainda não foi aplicada no Supabase.');
       }
       throw error;
     });
@@ -80,15 +150,18 @@
       var profile = values[0] || null;
       var remoteState = values[1];
       var status = remoteState ? remoteState.status : normalizedStatus(user);
-      if (remoteState && remoteState.profile) profile = Object.assign({}, profile || {}, remoteState.profile);
-      var resolvedUser = syncCompletedSession(user, remoteState);
-      var legacyComplete = status !== 'completed' && hasCompleteBaseProfile(resolvedUser, profile);
-      var finalStatus = status === 'completed' || legacyComplete ? 'completed' : status;
+      var nextUser = resolvedUser(user, remoteState);
+      if (remoteState) profile = remoteState.profile;
+
+      if (!remoteState && status !== 'completed' && hasCompleteBaseProfile(nextUser, profile)) {
+        status = 'completed';
+      }
+
       return {
         authenticated: true,
-        status: finalStatus,
-        shouldShow: finalStatus !== 'completed',
-        user: resolvedUser,
+        status: status,
+        shouldShow: status !== 'completed',
+        user: nextUser,
         profile: profile
       };
     });
@@ -97,77 +170,84 @@
   function complete(payload) {
     var user = currentUser();
     var profileService = services.profile;
-    var auth = authService();
+    var repository = usersRepository();
     var source = payload || {};
+    var normalizedPayload = {
+      city: String(source.city || '').trim(),
+      state: String(source.state || '').trim().toUpperCase(),
+      postalCode: String(source.postalCode || '').replace(/\D/g, ''),
+      bio: String(source.bio || '').trim(),
+      interests: normalizeInterests(source.interests)
+    };
+
     if (!user || !user.id) return Promise.reject(new Error('Sessão não encontrada para concluir o perfil.'));
 
-    var supabaseClient = window.DokeSupabase && typeof window.DokeSupabase.getClient === 'function'
-      ? window.DokeSupabase.getClient()
-      : null;
-    var sessionProvider = String(window.Doke?.session?.getSession?.()?.provider || '').toLowerCase();
-
-    if (sessionProvider === 'supabase' && supabaseClient) {
-      return window.DokeSupabase.invokeSelfService('complete_account_onboarding', {
-        p_city: String(source.city || '').trim(),
-        p_state: String(source.state || '').trim().toUpperCase(),
-        p_postal_code: String(source.postalCode || '').replace(/\D/g, ''),
-        p_bio: String(source.bio || '').trim(),
-        p_interests: Array.isArray(source.interests)
-          ? source.interests
-          : String(source.interests || '').split(',').map(function (item) { return item.trim(); }).filter(Boolean)
-      }).then(function (result) {
-        return supabaseClient.auth.updateUser({
-          data: {
-            city: String(source.city || '').trim(),
-            state: String(source.state || '').trim().toUpperCase(),
-            onboarding_status: 'completed'
+    if (usesSupabaseProvider()) {
+      return invokeSelfService('complete_account_onboarding_reconciled', {
+        p_city: normalizedPayload.city,
+        p_state: normalizedPayload.state,
+        p_postal_code: normalizedPayload.postalCode,
+        p_bio: normalizedPayload.bio,
+        p_interests: normalizedPayload.interests
+      }).then(function (identityState) {
+        var remoteState = normalizeCanonicalOnboarding(identityState, user);
+        if (remoteState.status !== 'completed' || !remoteState.profile.city || !remoteState.profile.state) {
+          throw reconciliationError('O servidor não confirmou a conclusão do onboarding.', 'DOKE_ONBOARDING_RECONCILIATION_INCOMPLETE');
+        }
+        var nextUser = resolvedUser(user, remoteState);
+        window.dispatchEvent(new CustomEvent('doke:onboarding-completed', {
+          detail: {
+            userId: user.id,
+            status: remoteState.status,
+            profile: remoteState.profile,
+            source: 'server',
+            reconciled: true
           }
-        }).catch(function () { return null; }).then(function () {
-          var current = currentUser() || user;
-          var nextUser = Object.assign({}, current, {
-            city: String(source.city || '').trim(),
-            state: String(source.state || '').trim().toUpperCase(),
-            bio: String(source.bio || '').trim(),
-            interests: Array.isArray(source.interests) ? source.interests : [],
-            onboardingStatus: 'completed',
-            onboardingCompletedAt: new Date().toISOString()
-          });
-          if (window.Doke?.session?.setCurrentUser) window.Doke.session.setCurrentUser(nextUser);
-          window.dispatchEvent(new CustomEvent('doke:onboarding-completed', { detail: { userId: user.id } }));
-          return { user: nextUser, profile: result || source };
-        });
+        }));
+        return { user: nextUser, profile: remoteState.profile };
       }).catch(function (error) {
         var message = String(error && error.message || '');
-        if (/function .*complete_account_onboarding.*does not exist|schema cache/i.test(message)) {
-          throw new Error('A migration 015 do onboarding ainda não foi aplicada no Supabase.');
+        if (/function .*complete_account_onboarding_reconciled.*does not exist|schema cache/i.test(message)) {
+          throw new Error('A migration 147 da reconciliação de onboarding ainda não foi aplicada no Supabase.');
         }
         throw error;
       });
     }
 
-    if (!profileService || typeof profileService.updateCurrentProfile !== 'function') return Promise.reject(new Error('Serviço de perfil indisponível.'));
-    if (!auth || typeof auth.updateCurrentUser !== 'function') return Promise.reject(new Error('Persistência da conta indisponível.'));
+    if (!profileService || typeof profileService.updateCurrentProfile !== 'function') {
+      return Promise.reject(new Error('Serviço de perfil indisponível.'));
+    }
+    if (!repository || typeof repository.updateCurrentUser !== 'function') {
+      return Promise.reject(new Error('Persistência local da conta indisponível.'));
+    }
 
-    return profileService.updateCurrentProfile(source)
+    return profileService.updateCurrentProfile(normalizedPayload)
       .then(function (profile) {
         if (!profile || !String(profile.city || '').trim() || !String(profile.state || '').trim()) {
           throw new Error('Informe cidade e estado para concluir o perfil.');
         }
-        return auth.updateCurrentUser({
+        return repository.updateCurrentUser(user.id, {
           onboardingStatus: 'completed',
           onboardingCompletedAt: new Date().toISOString()
         }).then(function (updatedUser) {
+          if (Doke.session && typeof Doke.session.setCurrentUser === 'function') Doke.session.setCurrentUser(updatedUser);
           window.dispatchEvent(new CustomEvent('doke:onboarding-completed', {
-            detail: { userId: updatedUser && updatedUser.id || user.id }
+            detail: {
+              userId: updatedUser && updatedUser.id || user.id,
+              status: 'completed',
+              profile: updatedUser && updatedUser.profile || profile,
+              source: 'local',
+              reconciled: false
+            }
           }));
-          return { user: updatedUser || currentUser(), profile: profile };
+          return { user: updatedUser || currentUser(), profile: updatedUser && updatedUser.profile || profile };
         });
       });
   }
 
   function skipOptional(payload) {
     payload = payload || {};
-    return complete({ city: payload.city, state: payload.state, bio: '', interests: [] });
+    return complete({ city: payload.city, state: payload.state, postalCode: payload.postalCode, bio: '', interests: [] });
   }
 
   function getStatus() {
