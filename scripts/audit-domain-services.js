@@ -17,6 +17,7 @@ const pages = [
 ];
 const serviceFiles = [
   'assets/js/services/profile-service.js',
+  'assets/js/services/onboarding-service.js',
   'assets/js/services/search-service.js',
   'assets/js/services/order-service.js',
   'assets/js/services/message-service.js',
@@ -27,6 +28,7 @@ const serviceFiles = [
 ];
 const contracts = {
   'assets/js/services/profile-service.js': ['services.profile', 'getCurrentProfile', 'refreshCurrentProfile', 'refreshCurrentSettings'],
+  'assets/js/services/onboarding-service.js': ['services.onboarding', 'complete_account_onboarding_reconciled', 'get_account_identity_state'],
   'assets/js/services/search-service.js': ['services.search', 'fromLocationSearch'],
   'assets/js/services/order-service.js': ['services.orders', 'summary'],
   'assets/js/services/message-service.js': ['services.messages', 'listConversations'],
@@ -119,6 +121,10 @@ execFileSync(process.execPath, [path.join(root, 'tests/auth/test-auth-profile-re
   stdio: 'inherit'
 });
 execFileSync(process.execPath, [path.join(root, 'tests/auth/test-auth-settings-reconciliation-runtime.js')], {
+  cwd: root,
+  stdio: 'inherit'
+});
+execFileSync(process.execPath, [path.join(root, 'tests/auth/test-auth-onboarding-reconciliation-runtime.js')], {
   cwd: root,
   stdio: 'inherit'
 });
