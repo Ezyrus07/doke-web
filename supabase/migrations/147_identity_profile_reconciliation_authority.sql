@@ -184,6 +184,19 @@ begin
     when 'get_account_identity_state' then
       v_result := public.get_account_identity_state();
 
+    when 'update_account_profile_reconciled' then
+      perform public.update_account_profile(
+        p_display_name := v_payload ->> 'p_display_name',
+        p_username := v_payload ->> 'p_username',
+        p_city := coalesce(v_payload ->> 'p_city', ''),
+        p_state := coalesce(v_payload ->> 'p_state', ''),
+        p_bio := coalesce(v_payload ->> 'p_bio', ''),
+        p_interests := coalesce(v_payload -> 'p_interests', '[]'::jsonb),
+        p_avatar_url := coalesce(v_payload ->> 'p_avatar_url', ''),
+        p_cover_url := coalesce(v_payload ->> 'p_cover_url', '')
+      );
+      v_result := public.get_account_identity_state();
+
     when 'update_account_settings' then
       v_result := public.update_account_settings(
         p_settings := coalesce(v_payload -> 'p_settings', '{}'::jsonb)
@@ -211,4 +224,4 @@ comment on function public.get_account_identity_state() is
 comment on function public.update_account_settings(jsonb) is
   'AUTH-A11 narrow settings mutation; contact, credential, role and account status fields are excluded.';
 comment on function public.execute_self_service_operation_internal(uuid, text, jsonb) is
-  'AUTH-A11 wrapper over the existing self-service dispatcher with identity snapshot and settings authority.';
+  'AUTH-A11 atomic profile reconciliation plus identity snapshot and narrow settings authority.';
