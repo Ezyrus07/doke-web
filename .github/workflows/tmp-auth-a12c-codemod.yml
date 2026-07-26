@@ -30,12 +30,20 @@ jobs:
           node scripts/tmp-auth-a12c-codemod.js
           node - <<'NODE'
           const fs = require('fs');
-          const file = 'assets/js/services/professional-access-service.js';
-          let source = fs.readFileSync(file, 'utf8');
+
+          const accessFile = 'assets/js/services/professional-access-service.js';
+          let accessSource = fs.readFileSync(accessFile, 'utf8');
           const duplicate = "    });\n    });\n  }\n\n  function evaluate";
-          if (!source.includes(duplicate)) throw new Error('Expected nested resolveContext closure was not found.');
-          source = source.replace(duplicate, "    });\n  }\n\n  function evaluate");
-          fs.writeFileSync(file, source);
+          if (!accessSource.includes(duplicate)) throw new Error('Expected nested resolveContext closure was not found.');
+          accessSource = accessSource.replace(duplicate, "    });\n  }\n\n  function evaluate");
+          fs.writeFileSync(accessFile, accessSource);
+
+          const auditFile = 'scripts/audit-identity-profile-contract.js';
+          let auditSource = fs.readFileSync(auditFile, 'utf8');
+          const staleMarker = "'local completion inference is absent'";
+          if (!auditSource.includes(staleMarker)) throw new Error('Stale onboarding audit marker was not found.');
+          auditSource = auditSource.replace(staleMarker, "'completion is exclusively server-authoritative'");
+          fs.writeFileSync(auditFile, auditSource);
           NODE
 
       - name: Test cumulative local mutation retirement
