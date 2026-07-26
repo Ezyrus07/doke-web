@@ -36,6 +36,26 @@ jobs:
           set -o pipefail
           node scripts/tmp-auth-a13-codemod.js 2>&1 | tee auth-a13-codemod.log
 
+      - name: Normalize generated text
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const files = [
+            'assets/js/config/runtime-flags.js',
+            'config/domain-completion-matrix.json',
+            'package.json',
+            'docs/AUTH-INTEGRATION-CONTRACT.md',
+            'docs/DOKE-ENGINEERING-JOURNAL.md',
+            'docs/DOMAIN-COMPLETION-MATRIX.md'
+          ];
+          for (const file of files) {
+            const source = fs.readFileSync(file, 'utf8');
+            const normalized = source.replace(/[ \t]+$/gm, '').replace(/\s*$/, '\n');
+            fs.writeFileSync(file, normalized);
+          }
+          NODE
+
       - name: Upload codemod failure
         if: failure()
         uses: actions/upload-artifact@v4
