@@ -1,6 +1,6 @@
 {
-  "version": "1.3.2",
-  "updatedAt": "2026-07-23T10:29:46-03:00",
+  "version": "1.3.3",
+  "updatedAt": "2026-07-26T20:10:00-03:00",
   "title": "Doke Domain Completion Matrix",
   "purpose": "Single source of truth for domain maturity, data authority, staging evidence, blockers, dependencies and mandatory completion order.",
   "maturityScale": {
@@ -51,10 +51,10 @@
   },
   "runtimeBaseline": {
     "dataProvider": "mock",
-    "authProvider": "mock",
+    "authProvider": "supabase",
     "enableNetworkRequests": false,
     "mockDataControllers": true,
-    "source": "assets/js/config/runtime-flags.js and assets/js/core/runtime-config.js"
+    "source": "assets/js/core/runtime-config.js for auth; assets/js/config/runtime-flags.js for legacy data flags"
   },
   "completionGate": [
     "business_rules",
@@ -350,104 +350,134 @@
       "name": "Autenticação, sessão e identidade",
       "wave": "A",
       "priority": 3,
-      "maturity": 3,
-      "userFacingAuthority": "hybrid",
-      "serverAuthority": "partial",
-      "stagingEvidence": "staging_canary",
-      "securityGate": "blocked",
+      "maturity": 4,
+      "userFacingAuthority": "remote",
+      "serverAuthority": "canonical",
+      "stagingEvidence": "staging_operational",
+      "securityGate": "partial",
       "productionGate": "blocked",
-      "objective": "Provide one real identity and session authority across every page and device.",
+      "objective": "Provide one Supabase-owned identity and session authority across every page while keeping externally blocked contact and paid security controls explicit.",
       "pages": [
         "auth/login.html",
         "auth/cadastro.html",
         "auth/esqueci-senha.html"
       ],
       "requiredPaths": [
+        "assets/js/config/runtime-flags.js",
+        "assets/js/core/runtime-config.js",
         "assets/js/core/session.js",
-        "assets/js/core/auth-service.js",
         "assets/js/services/auth-service.js",
-        "backend/modules/auth/identity-service.js",
-        "backend/modules/auth/route-handlers.js",
-        "supabase/migrations/001_identity_profiles.sql",
+        "assets/js/services/auth-session-authority.js",
+        "assets/js/services/auth-registration-authority.js",
+        "assets/js/services/auth-password-authority.js",
+        "assets/js/services/profile-service.js",
+        "assets/js/services/onboarding-service.js",
+        "assets/js/services/professional-access-service.js",
+        "assets/js/services/professional-identity-verification-service.js",
+        "assets/js/contracts/identity-profile-contract.js",
+        "assets/js/repositories/users-repository.js",
         "supabase/migrations/093_identity_table_rls_authority.sql",
         "supabase/migrations/094_identity_role_materialization_authority.sql",
         "supabase/migrations/095_identity_rpc_authority_hardening.sql",
         "supabase/migrations/096_identity_helper_invoker_hardening.sql",
-        "docs/SECURITY-IDENTITY-AUTHORITY.md",
-        "supabase/migrations/102_client_profile_table_authority.sql",
-        "supabase/migrations/103_client_profile_metrics_authority.sql",
-        "supabase/migrations/104_client_profile_permission_contract.sql",
-        "supabase/migrations/105_client_profile_consistency_hardening.sql",
-        "supabase/tests/008_client_profile_authority_validation.sql",
-        "scripts/test-client-profile-authority-contract.js",
-        "scripts/test-client-profile-authority-runtime.js",
-        "docs/SECURITY-CLIENT-PROFILE-AUTHORITY.md"
+        "supabase/migrations/146_auth_registration_username_authority.sql",
+        "supabase/migrations/147_identity_profile_reconciliation_authority.sql",
+        "supabase/tests/015_auth_registration_username_authority_validation.sql",
+        "supabase/tests/016_identity_profile_reconciliation_authority_validation.sql",
+        "scripts/audit-auth-domain-closure.js",
+        "docs/validation/AUTH-001-A07-CONTACT-CHANGE-PLAN.md",
+        "docs/validation/AUTH-001-A12-LOCAL-IDENTITY-AUTHORITY.json",
+        "docs/validation/AUTH-001-A13-DOMAIN-CLOSURE.md",
+        "docs/validation/AUTH-001-A13-DOMAIN-CLOSURE.json"
       ],
       "scanRoots": [
         "auth",
+        "assets/js/config/runtime-flags.js",
+        "assets/js/core/runtime-config.js",
         "assets/js/core/session.js",
-        "assets/js/core/auth-service.js",
-        "assets/js/services/auth-service.js",
-        "backend/modules/auth",
-        "assets/js/repositories/users-repository.js"
+        "assets/js/services/auth-",
+        "assets/js/services/profile-service.js",
+        "assets/js/services/onboarding-service.js",
+        "assets/js/services/professional-",
+        "assets/js/contracts/identity-profile-contract.js",
+        "assets/js/repositories/users-repository.js",
+        "tests/auth",
+        "backend/modules/auth"
       ],
       "tables": [
         "users",
         "user_profiles",
         "client_profiles",
-        "professional_profiles"
+        "professional_profiles",
+        "professional_identity_verifications"
       ],
-      "edgeFunctions": [],
+      "edgeFunctions": [
+        "self-service-operations",
+        "professional-verification-operations"
+      ],
       "crons": [],
       "tests": [
         "test:real-auth-only-contract",
         "audit:auth-session",
-        "audit:backend-real-complete-readiness-gate",
+        "audit:identity-profile-contract",
+        "test:auth-local-profile-mutation-retirement",
+        "test:auth-onboarding-authority-retirement",
+        "test:auth-professional-authority-retirement",
+        "audit:auth-domain-closure",
         "test:identity-rls-authority-contract",
         "test:identity-role-authority-runtime",
         "test:client-profile-authority-contract",
         "test:client-profile-authority-runtime"
       ],
       "evidence": [
-        "Real-auth-only contract passes.",
-        "Local and staging multi-domain E2E reports cover login and session.",
-        "Default runtime still requests mock auth unless a controlled canary is enabled.",
-        "users and user_profiles now have explicit policies and browser writes only through controlled self-service RPCs.",
-        "public.users is the database authority for role/status and auth.app_metadata is a server-controlled projection.",
-        "New accounts always materialize as client regardless of user_metadata role claims.",
-        "client_profiles is owner-readable and server-writable only; client reputation exposed to public profiles comes from a separate aggregate-only projection.",
-        "Forged JWT user_metadata/app_metadata role values do not expand client profile visibility beyond the authenticated caller own row."
+        "Supabase is the only active browser authentication provider; provider selection by query, window config or localStorage is retired.",
+        "AUTH-A03 through AUTH-A06 validate fail-closed route guards, registration, recovery, refresh, reauthentication and logout.",
+        "AUTH-A08 through AUTH-A10 physically retire local/mock browser auth and the historical /auth adapter.",
+        "AUTH-A11 reconciles profile, settings and onboarding through server-side self-service operations.",
+        "AUTH-A12 retires all remaining local credential, identity, onboarding and professional role/reviewer mutation authority.",
+        "AUTH-A13 reconciles the machine-readable matrix and adds a permanent domain-closure regression audit.",
+        "Quality, blocking E2E, 105 visual guards, staging Edge canary and Diagnostic have validated the Supabase-only runtime."
       ],
       "blockers": [
         {
-          "id": "AUTH-B02",
+          "id": "AUTH-EXT-MAIL-001",
           "severity": "high",
-          "category": "runtime_authority",
-          "description": "Runtime defaults remain mock and localStorage overrides can alter providers.",
-          "targetPhase": "Fase 3"
+          "category": "external_mail_provider",
+          "description": "Verified e-mail change and real transactional e-mail canaries remain blocked until MAIL-001 provider, redirect and deliverability configuration are approved.",
+          "targetPhase": "Pre-launch"
         },
         {
-          "id": "AUTH-B04",
+          "id": "AUTH-EXT-SMS-001",
           "severity": "medium",
-          "category": "account_security",
-          "description": "Device/session management, contact verification and global logout are incomplete.",
-          "targetPhase": "Fase 3"
+          "category": "external_sms_provider",
+          "description": "Verified phone change remains intentionally unavailable until an SMS provider and cost policy are configured.",
+          "targetPhase": "Pre-launch"
+        },
+        {
+          "id": "AUTH-EXT-PAID-001",
+          "severity": "high",
+          "category": "paid_plan_security",
+          "description": "Supabase leaked-password protection requires a paid plan and remains tracked by PAID-001 / SEC-B05.",
+          "targetPhase": "Pre-launch"
         }
       ],
       "nextActions": [
-        "Promote real auth as the only production provider after controlled route-by-route canaries.",
-        "Implement verified contact, session/device management, token refresh and global logout.",
-        "Remove remaining browser-storage identity/profile fallbacks before enabling external users."
+        "Proceed with PROF-001 as the next core engineering domain without declaring AUTH-001 production-ready.",
+        "Execute AUTH-A07 only after MAIL-001 has controlled mailboxes, redirect policy and deliverability capacity.",
+        "Keep phone change unavailable until an SMS provider and cost policy are approved.",
+        "Enable and validate leaked-password protection after the Supabase plan upgrade."
       ],
       "exitCriteria": [
-        "All protected pages derive identity from one remote session.",
-        "No production route silently falls back to mock identity.",
-        "Cross-account negative tests pass.",
-        "Session refresh, recovery and logout are E2E validated."
+        "All protected pages derive identity from the canonical Supabase session.",
+        "No browser route can select or fall back to mock/local authentication.",
+        "Session refresh, recovery, reauthentication and logout remain E2E validated.",
+        "No access token or refresh token enters the Doke public session snapshot.",
+        "External e-mail, SMS and paid-plan blockers remain explicit until real provider evidence closes them."
       ],
       "dependencies": [
         "SEC-001"
-      ]
+      ],
+      "completionDisposition": "core_done_external_blocked"
     },
     {
       "id": "PROF-001",
@@ -2314,10 +2344,7 @@
       ],
       "status": "staging_canary",
       "owner": "AUTH-001",
-      "blockers": [
-        "AUTH-B02",
-        "AUTH-B04"
-      ]
+      "blockers": []
     },
     {
       "id": "FLOW-03",

@@ -107,3 +107,40 @@ O runtime ainda possuía autoridade local residual para identidade profissional:
 - AUTH-A07 / MAIL-001;
 - mudança de telefone sem provider SMS;
 - PAID-001 / SEC-B05.
+
+---
+
+# 2026-07-26 — AUTH-A13 / reconciliação de encerramento do AUTH-001
+
+**Status:** `VALIDATION PENDING`
+
+**Branch:** `auth/auth-001-baseline-audit`
+
+**Pull Request:** `#9`
+
+## Problema
+
+A matriz machine-readable ainda classificava autenticação como mock/híbrida e mantinha blockers históricos já encerrados, embora o runtime ativo estivesse Supabase-only.
+
+## Decisão
+
+- classificar o núcleo AUTH como `core_done_external_blocked`;
+- atualizar a matriz para autoridade remota/canônica e staging operacional;
+- separar dependências externas de e-mail, SMS e plano pago;
+- impedir regressão da matriz ou dos runtime flags para provider mock;
+- permitir handoff técnico a PROF-001 sem declarar AUTH production-ready.
+
+## Implementação planejada neste lote
+
+- reconciliar `runtime-flags.js`;
+- atualizar `config/domain-completion-matrix.json`;
+- criar evidência AUTH-A13;
+- criar audit permanente do fechamento do domínio;
+- regenerar a matriz determinística;
+- manter produção, staging, contas e providers inalterados.
+
+## Blockers externos preservados
+
+- `AUTH-EXT-MAIL-001`;
+- `AUTH-EXT-SMS-001`;
+- `AUTH-EXT-PAID-001`.

@@ -6,10 +6,10 @@ Este é o mapa operacional obrigatório para concluir a lógica da Doke. Ele cru
 
 - Domínios/programas mapeados: **23**.
 - Fluxos críticos mapeados: **15**.
-- Maturidade média atual: **2.70/6**.
+- Maturidade média atual: **2.74/6**.
 - Bloqueadores críticos explícitos: **16**.
 - Domínios prontos para produção: **0**.
-- Runtime padrão: dados **mock**, auth **mock**, rede **desativada**.
+- Runtime padrão: dados **mock**, auth **supabase**, rede **desativada**.
 
 A leitura correta é: a Doke possui fundações e canários avançados, especialmente em pedidos e operação, mas o produto público ainda é **híbrido/mock por padrão** e a superfície de segurança bloqueia promoção para produção.
 
@@ -42,8 +42,8 @@ RLS habilitado, mas sem policy: .
 | 0 | not started | 1 |
 | 1 | foundation only | 3 |
 | 2 | local functional | 5 |
-| 3 | staging canary or hybrid | 7 |
-| 4 | staging operational | 7 |
+| 3 | staging canary or hybrid | 6 |
+| 4 | staging operational | 8 |
 | 5 | private beta ready | 0 |
 | 6 | production ready | 0 |
 
@@ -53,7 +53,7 @@ RLS habilitado, mas sem policy: .
 | ---: | --- | --- | ---: | --- | --- | --- | --- | --- |
 | 1 | GOV-001 | Governança, arquitetura e comando central | 4/6 | hybrid | canonical | staging operational | partial | candidate |
 | 2 | SEC-001 | Segurança, RLS, grants e autoridade dos dados | 4/6 | hybrid | canonical | staging operational | partial | blocked |
-| 3 | AUTH-001 | Autenticação, sessão e identidade | 3/6 | hybrid | partial | staging canary | blocked | blocked |
+| 3 | AUTH-001 | Autenticação, sessão e identidade | 4/6 | remote | canonical | staging operational | partial | blocked |
 | 4 | PROF-001 | Perfis, onboarding profissional e KYC | 4/6 | hybrid | partial | staging canary | blocked | blocked |
 | 5 | CAT-001 | Catálogo, publicação e moderação de serviços | 4/6 | hybrid | canonical | staging operational | partial | blocked |
 | 6 | SEARCH-001 | Busca, descoberta, favoritos e ranking | 2/6 | hybrid | contract only | local e2e | blocked | blocked |
@@ -102,7 +102,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 | ID | Fluxo | Estado | Owner | Etapas | Bloqueadores |
 | --- | --- | --- | --- | --- | --- |
 | FLOW-01 | Descoberta pública | hybrid | SEARCH-001 | home → search → results → service_detail | SEARCH-B02 |
-| FLOW-02 | Cadastro, login e onboarding | staging canary | AUTH-001 | register → verify_contact → session → profile_materialization → onboarding | AUTH-B02, AUTH-B04 |
+| FLOW-02 | Cadastro, login e onboarding | staging canary | AUTH-001 | register → verify_contact → session → profile_materialization → onboarding |  |
 | FLOW-03 | Tornar-se profissional e KYC | staging canary | PROF-001 | profile_setup → document_upload → submit → admin_review → decision → role_activation | PROF-B03, PROF-B04 |
 | FLOW-04 | Publicar serviço | hybrid | CAT-001 | draft → media → quote_template → submit_review → moderation → publish → edit_version | CAT-B03 |
 | FLOW-05 | Solicitar orçamento e criar pedido | staging operational | ORD-001 | service_snapshot → questionnaire → request → outbox_event → professional_notification | ORD-B01, ORD-B02 |
@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 873 arquivos no escopo; 156 referências a localStorage; 31 a sessionStorage; 518 referências mock; 127 referências de rede/Supabase; 30 marcadores de implementação pendente.
+**Evidência estática observada:** 875 arquivos no escopo; 157 referências a localStorage; 31 a sessionStorage; 537 referências mock; 128 referências de rede/Supabase; 30 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -216,40 +216,44 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 ### AUTH-001 — Autenticação, sessão e identidade
 
-**Objetivo:** Provide one real identity and session authority across every page and device.
+**Objetivo:** Provide one Supabase-owned identity and session authority across every page while keeping externally blocked contact and paid security controls explicit.
 
-**Estado:** maturidade 3/6; UI hybrid; servidor partial; staging staging canary; segurança blocked; produção blocked.
+**Estado:** maturidade 4/6; UI remote; servidor canonical; staging staging operational; segurança partial; produção blocked.
 
-**Evidência estática observada:** 9 arquivos no escopo; 14 referências a localStorage; 0 a sessionStorage; 5 referências mock; 8 referências de rede/Supabase; 3 marcadores de implementação pendente.
+**Evidência estática observada:** 32 arquivos no escopo; 33 referências a localStorage; 2 a sessionStorage; 28 referências mock; 24 referências de rede/Supabase; 3 marcadores de implementação pendente.
 
 **Páginas:** `auth/login.html`, `auth/cadastro.html`, `auth/esqueci-senha.html`.
 
-**Tabelas/autoridades de dados:** `users`, `user_profiles`, `client_profiles`, `professional_profiles`.
+**Tabelas/autoridades de dados:** `users`, `user_profiles`, `client_profiles`, `professional_profiles`, `professional_identity_verifications`.
+
+**Edge Functions:** `self-service-operations`, `professional-verification-operations`.
 
 **Evidências:**
-- Real-auth-only contract passes.
-- Local and staging multi-domain E2E reports cover login and session.
-- Default runtime still requests mock auth unless a controlled canary is enabled.
-- users and user_profiles now have explicit policies and browser writes only through controlled self-service RPCs.
-- public.users is the database authority for role/status and auth.app_metadata is a server-controlled projection.
-- New accounts always materialize as client regardless of user_metadata role claims.
-- client_profiles is owner-readable and server-writable only; client reputation exposed to public profiles comes from a separate aggregate-only projection.
-- Forged JWT user_metadata/app_metadata role values do not expand client profile visibility beyond the authenticated caller own row.
+- Supabase is the only active browser authentication provider; provider selection by query, window config or localStorage is retired.
+- AUTH-A03 through AUTH-A06 validate fail-closed route guards, registration, recovery, refresh, reauthentication and logout.
+- AUTH-A08 through AUTH-A10 physically retire local/mock browser auth and the historical /auth adapter.
+- AUTH-A11 reconciles profile, settings and onboarding through server-side self-service operations.
+- AUTH-A12 retires all remaining local credential, identity, onboarding and professional role/reviewer mutation authority.
+- AUTH-A13 reconciles the machine-readable matrix and adds a permanent domain-closure regression audit.
+- Quality, blocking E2E, 105 visual guards, staging Edge canary and Diagnostic have validated the Supabase-only runtime.
 
 **Bloqueadores:**
-- **AUTH-B02 · HIGH · runtime_authority:** Runtime defaults remain mock and localStorage overrides can alter providers. _(Fase 3)_
-- **AUTH-B04 · MEDIUM · account_security:** Device/session management, contact verification and global logout are incomplete. _(Fase 3)_
+- **AUTH-EXT-MAIL-001 · HIGH · external_mail_provider:** Verified e-mail change and real transactional e-mail canaries remain blocked until MAIL-001 provider, redirect and deliverability configuration are approved. _(Pre-launch)_
+- **AUTH-EXT-SMS-001 · MEDIUM · external_sms_provider:** Verified phone change remains intentionally unavailable until an SMS provider and cost policy are configured. _(Pre-launch)_
+- **AUTH-EXT-PAID-001 · HIGH · paid_plan_security:** Supabase leaked-password protection requires a paid plan and remains tracked by PAID-001 / SEC-B05. _(Pre-launch)_
 
 **Próximas ações:**
-- Promote real auth as the only production provider after controlled route-by-route canaries.
-- Implement verified contact, session/device management, token refresh and global logout.
-- Remove remaining browser-storage identity/profile fallbacks before enabling external users.
+- Proceed with PROF-001 as the next core engineering domain without declaring AUTH-001 production-ready.
+- Execute AUTH-A07 only after MAIL-001 has controlled mailboxes, redirect policy and deliverability capacity.
+- Keep phone change unavailable until an SMS provider and cost policy are approved.
+- Enable and validate leaked-password protection after the Supabase plan upgrade.
 
 **Gate de saída:**
-- All protected pages derive identity from one remote session.
-- No production route silently falls back to mock identity.
-- Cross-account negative tests pass.
-- Session refresh, recovery and logout are E2E validated.
+- All protected pages derive identity from the canonical Supabase session.
+- No browser route can select or fall back to mock/local authentication.
+- Session refresh, recovery, reauthentication and logout remain E2E validated.
+- No access token or refresh token enters the Doke public session snapshot.
+- External e-mail, SMS and paid-plan blockers remain explicit until real provider evidence closes them.
 
 ### PROF-001 — Perfis, onboarding profissional e KYC
 
@@ -818,7 +822,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 1/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 189 arquivos no escopo; 52 referências a localStorage; 1 a sessionStorage; 255 referências mock; 8 referências de rede/Supabase; 20 marcadores de implementação pendente.
+**Evidência estática observada:** 189 arquivos no escopo; 52 referências a localStorage; 1 a sessionStorage; 258 referências mock; 8 referências de rede/Supabase; 20 marcadores de implementação pendente.
 
 **Evidências:**
 - The master plan identifies legal, privacy and commercial decisions as mandatory.
@@ -847,7 +851,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI hybrid; servidor partial; staging local e2e; segurança partial; produção blocked.
 
-**Evidência estática observada:** 841 arquivos no escopo; 249 referências a localStorage; 73 a sessionStorage; 229 referências mock; 244 referências de rede/Supabase; 9 marcadores de implementação pendente.
+**Evidência estática observada:** 841 arquivos no escopo; 249 referências a localStorage; 73 a sessionStorage; 228 referências mock; 244 referências de rede/Supabase; 9 marcadores de implementação pendente.
 
 **Páginas:** `index.html`, `resultados.html`, `detalhe-anuncio.html`, `pedidos.html`, `mensagens.html`, `notificacoes.html`, `carteira.html`, `perfil.html`, `comunidade.html`.
 
@@ -878,7 +882,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2073 arquivos no escopo; 435 referências a localStorage; 109 a sessionStorage; 834 referências mock; 494 referências de rede/Supabase; 84 marcadores de implementação pendente.
+**Evidência estática observada:** 2075 arquivos no escopo; 436 referências a localStorage; 109 a sessionStorage; 850 referências mock; 495 referências de rede/Supabase; 84 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
@@ -939,4 +943,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-07-23T10:29:46-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-07-26T20:10:00-03:00._

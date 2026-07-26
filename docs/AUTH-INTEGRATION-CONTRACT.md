@@ -226,3 +226,18 @@ As rotas privadas são classificadas por `assets/js/core/auth-route-map.js`.
 - nenhuma sessão é reescrita manualmente por esses fluxos;
 - alterações verificadas de e-mail e telefone continuam bloqueadas pelo AUTH-A07/MAIL-001;
 - PR #9 permanece draft e não deve ser mesclado sem autorização explícita.
+
+## AUTH-A13 — reconciliação de encerramento do domínio
+
+O núcleo técnico de `AUTH-001` está classificado como `core_done_external_blocked`.
+
+- Supabase permanece o único provider ativo de autenticação no navegador;
+- AUTH-001 usa autoridade de UI `remote`, servidor `canonical` e evidência `staging_operational`;
+- `AUTH-B02` foi encerrado porque seleção/fallback mock foi fisicamente retirada;
+- a parte técnica de sessão de `AUTH-B04` foi encerrada por AUTH-A05/A06;
+- mudanças verificadas de contato foram separadas em blockers externos próprios;
+- a proteção contra senhas vazadas permanece um blocker de plano pago.
+
+Essa classificação não promove o domínio para produção. `AUTH-EXT-MAIL-001`, `AUTH-EXT-SMS-001` e `AUTH-EXT-PAID-001` continuam obrigatórios antes do lançamento.
+
+O gate permanente é `npm run audit:auth-domain-closure`.

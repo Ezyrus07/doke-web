@@ -3,7 +3,7 @@ export const runtimeFlags = Object.freeze({
   enableNetworkRequests: false,
   enableDataReadyControllers: false,
   dataProvider: 'mock',
-  authProvider: 'mock'
+  authProvider: 'supabase'
 });
 
 export function getRuntimeFlags(overrides = {}) {
