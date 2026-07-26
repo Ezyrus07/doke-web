@@ -1,22 +1,21 @@
-# One-shot journal checkpoint; canonical matrix workflow is restored immediately after publication.
+# One-shot PR journal checkpoint; canonical matrix workflow is restored immediately after publication.
 name: Doke Deterministic Domain Matrix Sync
 
 on:
-  push:
-    branches:
-      - 'auth/**'
+  pull_request:
+    branches: [MAIN, main, master]
 
 permissions:
   contents: read
 
 concurrency:
-  group: doke-domain-matrix-sync-${{ github.ref }}
+  group: doke-domain-matrix-sync-${{ github.event.pull_request.head.ref }}
   cancel-in-progress: false
 
 jobs:
   synchronize:
     name: Record AUTH-A12B.2 engineering journal closure
-    if: startsWith(github.event.head_commit.message, 'Append AUTH-A12B.2 journal')
+    if: github.event.pull_request.head.ref == 'auth/auth-001-baseline-audit'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -26,7 +25,7 @@ jobs:
       - name: Checkout current branch
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 1
 
       - name: Append journal entry
@@ -113,4 +112,4 @@ EOF
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add docs/DOKE-ENGINEERING-JOURNAL.md
           git commit -m 'Record AUTH-A12B.2 engineering journal closure'
-          git push origin HEAD:${{ github.ref_name }}
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
