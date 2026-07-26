@@ -199,6 +199,7 @@ const files = {
   profileWriteTest: 'scripts/test-profile-write-contract.js',
   onboardingTest: 'scripts/test-auth-username-onboarding-contract.js',
   localMutationRuntime: 'tests/auth/test-auth-local-profile-mutation-retirement-runtime.js',
+  onboardingAuthorityRuntime: 'tests/auth/test-auth-onboarding-local-authority-retirement-runtime.js',
   authContract: 'docs/AUTH-INTEGRATION-CONTRACT.md',
   evidence: 'docs/validation/AUTH-001-A12-LOCAL-IDENTITY-AUTHORITY.md',
   evidenceJson: 'docs/validation/AUTH-001-A12-LOCAL-IDENTITY-AUTHORITY.json',
@@ -217,7 +218,7 @@ const source = Object.fromEntries(
 const evidenceJson = readJson(files.evidenceJson);
 
 expect(source.identityContract, files.identityContract, [
-  "version: 'AUTH-A12B.2'",
+  "version: 'AUTH-A12B.3'",
   "GET_IDENTITY_STATE: 'get_account_identity_state'",
   "UPDATE_CURRENT_PROFILE: 'update_account_profile_reconciled'",
   "UPDATE_CURRENT_SETTINGS: 'update_account_settings'",
@@ -225,6 +226,8 @@ expect(source.identityContract, files.identityContract, [
   "browserProvider: 'supabase'",
   "localCredentialAuthority: 'retired'",
   "localProfileMutationAuthority: 'retired'",
+  "localOnboardingMutationAuthority: 'retired'",
+  "manualOnboardingSessionRewrite: 'retired'",
   "professionalFixtureMutationBoundary: 'isolated-pending-A12C'",
   "provider: 'supabase'"
 ]);
@@ -268,9 +271,16 @@ forbid(source.profileService, files.profileService, [
 expect(source.onboardingService, files.onboardingService, [
   "invokeSelfService('get_account_identity_state'",
   "invokeSelfService('complete_account_onboarding_reconciled'",
-  'normalizeCanonicalOnboarding'
+  'normalizeCanonicalOnboarding',
+  'DOKE_ONBOARDING_AUTHORITY_UNAVAILABLE'
 ]);
 forbid(source.onboardingService, files.onboardingService, [
+  'function usersRepository()',
+  'repository.updateCurrentUser',
+  'Doke.session.setCurrentUser',
+  "source: 'local'",
+  'reconciled: false',
+  'hasCompleteBaseProfile',
   'auth.updateCurrentUser',
   'supabaseClient.auth.updateUser',
   'client.auth.updateUser'
@@ -318,22 +328,29 @@ expect(source.localMutationRuntime, files.localMutationRuntime, [
   'profile service called a local mutation fallback',
   'profile service rewrote the public session'
 ]);
+expect(source.onboardingAuthorityRuntime, files.onboardingAuthorityRuntime, [
+  'AUTH-A12B.3 onboarding local authority retirement runtime passed.',
+  'DOKE_ONBOARDING_AUTHORITY_UNAVAILABLE',
+  'provider and client absence fail closed',
+  'remote failures do not mutate session, user or completion events'
+]);
 
 expect(source.authContract, files.authContract, [
   'Supabase Auth é a única autoridade ativa de autenticação no navegador',
-  'AUTH-A12B.2',
-  'mutações locais genéricas de conta, perfil e configurações foram retiradas',
+  'AUTH-A12B.3',
+  'mutação local de onboarding, inferência local de conclusão e reescrita manual de sessão foram retiradas',
+  '`DOKE_ONBOARDING_AUTHORITY_UNAVAILABLE`',
   '`updateProfessionalFixtureUser`'
 ]);
 expect(source.evidence, files.evidence, [
-  '`AUTH-A12B.2` estão `DONE`',
-  'Head de implementação e validação:',
-  '3866fbea076deba2328f9077a2d582b3a2c5033b',
-  'Doke Quality Gates #620',
-  'Doke Staging Edge HTTP Canary #394',
-  'Doke Diagnostic E2E #415',
-  '`AUTH-A12B.3` — onboarding e sessão',
-  'Nenhuma migration no AUTH-A12B.2',
+  '`AUTH-A12B.3` estão `DONE`',
+  'AUTH-A12B.3 — onboarding local e reescrita de sessão retirados',
+  '049821a2264cd6fb9fd136cbc0b3c993055cfc32',
+  'Doke Quality Gates #648',
+  'Doke Staging Edge HTTP Canary #422',
+  'Doke Diagnostic E2E #443',
+  'AUTH-A12C — superfícies profissionais',
+  'Nenhuma migration no AUTH-A12B.3',
   'Produção não foi alterada'
 ]);
 
@@ -341,22 +358,27 @@ const phases = evidenceJson.phases || {};
 equal(phases['AUTH-A12A']?.status, 'done', 'AUTH-A12A evidence status');
 equal(phases['AUTH-A12B.1']?.status, 'done', 'AUTH-A12B.1 evidence status');
 equal(phases['AUTH-A12B.2']?.status, 'done', 'AUTH-A12B.2 evidence status');
+equal(phases['AUTH-A12B.3']?.status, 'done', 'AUTH-A12B.3 evidence status');
 equal(
-  phases['AUTH-A12B.2']?.implementationHead,
-  '3866fbea076deba2328f9077a2d582b3a2c5033b',
-  'AUTH-A12B.2 implementation head'
+  phases['AUTH-A12B.3']?.implementationHead,
+  '049821a2264cd6fb9fd136cbc0b3c993055cfc32',
+  'AUTH-A12B.3 implementation head'
 );
-equal(phases['AUTH-A12B.3']?.status, 'planned', 'AUTH-A12B.3 evidence status');
+equal(phases['AUTH-A12C']?.status, 'planned', 'AUTH-A12C evidence status');
 equal(evidenceJson.activeBrowserAuthority?.identityProvider, 'supabase', 'active identity provider');
 equal(evidenceJson.activeBrowserAuthority?.localCredentialAuthority, 'retired', 'local credential authority');
 equal(evidenceJson.activeBrowserAuthority?.localProfileMutationAuthority, 'retired', 'local profile authority');
+equal(evidenceJson.activeBrowserAuthority?.localOnboardingMutationAuthority, 'retired', 'local onboarding authority');
+equal(evidenceJson.activeBrowserAuthority?.manualOnboardingSessionRewrite, 'retired', 'manual onboarding session rewrite');
 equal(evidenceJson.inventoriedLocalMutationExports, ['updateProfessionalFixtureUser'], 'remaining local mutation debt');
-equal(evidenceJson.validation?.qualityRunNumber, 620, 'AUTH-A12B.2 Quality run');
-equal(evidenceJson.validation?.quality, 'success', 'AUTH-A12B.2 Quality result');
-equal(evidenceJson.validation?.stagingEdgeCanaryRunNumber, 394, 'AUTH-A12B.2 canary run');
-equal(evidenceJson.validation?.stagingEdgeCanary, 'success', 'AUTH-A12B.2 canary result');
-equal(evidenceJson.validation?.diagnosticRunNumber, 415, 'AUTH-A12B.2 Diagnostic run');
-equal(evidenceJson.validation?.diagnostic, 'success', 'AUTH-A12B.2 Diagnostic result');
+equal(evidenceJson.validation?.validatedHead, '049821a2264cd6fb9fd136cbc0b3c993055cfc32', 'AUTH-A12B.3 validated head');
+equal(evidenceJson.validation?.qualityRunNumber, 648, 'AUTH-A12B.3 Quality run');
+equal(evidenceJson.validation?.quality, 'success', 'AUTH-A12B.3 Quality result');
+equal(evidenceJson.validation?.onboardingLocalAuthorityRetirementRuntime, 'success', 'AUTH-A12B.3 onboarding runtime');
+equal(evidenceJson.validation?.stagingEdgeCanaryRunNumber, 422, 'AUTH-A12B.3 canary run');
+equal(evidenceJson.validation?.stagingEdgeCanary, 'success', 'AUTH-A12B.3 canary result');
+equal(evidenceJson.validation?.diagnosticRunNumber, 443, 'AUTH-A12B.3 Diagnostic run');
+equal(evidenceJson.validation?.diagnostic, 'success', 'AUTH-A12B.3 Diagnostic result');
 equal(evidenceJson.safety?.migrationApplied, false, 'migration safety boundary');
 equal(evidenceJson.safety?.edgeFunctionDeployed, false, 'Edge deployment safety boundary');
 equal(evidenceJson.safety?.stagingChanged, false, 'staging safety boundary');
@@ -388,9 +410,10 @@ async function main() {
   console.log('[identity-profile-contract] OK');
   console.log('- active browser identity provider: supabase');
   console.log('- active mutation transport: self-service-operations');
-  console.log('- retired local credential and generic profile mutation authorities');
+  console.log('- retired local credential, profile and onboarding mutation authorities');
+  console.log('- retired manual onboarding session rewrites and local completion inference');
   console.log(`- isolated local mutation exports pending AUTH-A12C: ${mutationExports.join(', ')}`);
-  console.log('- AUTH-A12B.2 final evidence is structurally reconciled');
+  console.log('- AUTH-A12B.3 final evidence is structurally reconciled');
   console.log('- historical /users/me and /profiles/me remain CLI-only');
 }
 
