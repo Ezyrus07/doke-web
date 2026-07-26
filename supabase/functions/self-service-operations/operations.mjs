@@ -2,6 +2,7 @@ export const ALLOWED_ACTIONS = Object.freeze(new Set([
   'get_account_identity_state',
   'get_account_onboarding_state',
   'complete_account_onboarding',
+  'complete_account_onboarding_reconciled',
   'update_account_profile',
   'update_account_profile_reconciled',
   'update_account_settings',
