@@ -28,12 +28,17 @@ jobs:
       - name: Apply controlled codemod
         run: node scripts/tmp-auth-a12c-codemod.js
 
-      - name: Validate patch
-        run: |
-          node tests/auth/test-auth-local-profile-mutation-retirement-runtime.js
-          node tests/auth/test-auth-professional-authority-retirement-runtime.js
-          node scripts/audit-identity-profile-contract.js
-          git diff --check
+      - name: Test cumulative local mutation retirement
+        run: node tests/auth/test-auth-local-profile-mutation-retirement-runtime.js
+
+      - name: Test professional authority retirement
+        run: node tests/auth/test-auth-professional-authority-retirement-runtime.js
+
+      - name: Audit identity authority
+        run: node scripts/audit-identity-profile-contract.js
+
+      - name: Validate patch formatting
+        run: git diff --check
 
       - name: Publish implementation
         run: |
