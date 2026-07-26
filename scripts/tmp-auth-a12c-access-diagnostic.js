@@ -3,9 +3,8 @@
 const assert=require('assert');const fs=require('fs');const vm=require('vm');
 const source=fs.readFileSync('assets/js/services/professional-access-service.js','utf8');
 function CE(type,o={}){this.type=type;this.detail=o.detail;}
-async function main(){
- const scenario=process.argv[2];
- let provider='supabase',accountRole='professional',sessionMutations=0;
+async function execute(scenario){
+ let provider='supabase',accountRole='professional',sessionMutations=0,result=null;
  const actor={id:'00000000-0000-4000-8000-000000000071',role:'client',type:'client'};
  const rows={
   users:()=>({id:actor.id,role:accountRole,status:'active'}),
@@ -17,12 +16,19 @@ async function main(){
  const document={documentElement:{dataset:{}},dispatchEvent(){}};
  vm.runInNewContext(source,{window,document,console,Promise,Object,Array,String,Number,Boolean,JSON,Math,RegExp,Error,CustomEvent:CE,encodeURIComponent},{filename:'professional-access-service.js'});
  const service=window.Doke.services.professionalAccess;
- if(scenario==='remote'){const r=await service.resolveContext();assert.strictEqual(r.user.role,'professional');assert(queries.includes('users'));}
- else if(scenario==='conflict'){accountRole='client';const r=await service.resolveContext();assert.strictEqual(r.user.role,'client');}
+ if(scenario==='remote'){result=await service.resolveContext();assert.strictEqual(result.user.role,'professional');assert(queries.includes('users'));}
+ else if(scenario==='conflict'){accountRole='client';result=await service.resolveContext();assert.strictEqual(result.user.role,'client');}
  else if(scenario==='provider'){provider='mock';await assert.rejects(service.resolveContext(),e=>e&&e.code==='DOKE_PROFESSIONAL_AUTHORITY_UNAVAILABLE');}
- else if(scenario==='local'){provider='mock';const r=await service.resolveContext({id:'local-client',role:'client',type:'client'});assert.strictEqual(r.user.role,'client');}
+ else if(scenario==='local'){provider='mock';result=await service.resolveContext({id:'local-client',role:'client',type:'client'});assert.strictEqual(result.user.role,'client');}
  else throw new Error('unknown scenario '+scenario);
  assert.strictEqual(sessionMutations,0);
- console.log('AUTH-A12C access diagnostic passed:',scenario);
+ return {ok:true,scenario,queries,sessionMutations,result};
 }
-main().catch(e=>{console.error('AUTH-A12C access diagnostic failed:',process.argv[2]);console.error(e&&e.stack||e);process.exit(1)});
+(async()=>{
+ const scenario=process.argv[2];let report;
+ try{report=await execute(scenario);}catch(error){report={ok:false,scenario,error:{name:error&&error.name||'',code:error&&error.code||'',message:error&&error.message||'',stack:error&&error.stack||''}};}
+ fs.mkdirSync('reports/generated',{recursive:true});
+ const file='reports/generated/tmp-auth-a12c-access-'+scenario+'.json';
+ fs.writeFileSync(file,JSON.stringify(report,null,2)+'\n');
+ console.log(JSON.stringify(report));
+})().catch(error=>{console.error(error&&error.stack||error);process.exit(1)});
