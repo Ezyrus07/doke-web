@@ -56,11 +56,14 @@ jobs:
           npm run test:auth-onboarding-authority-retirement
           npm run test:auth-professional-authority-retirement
 
-      - name: Validate runtime and deterministic matrix
-        run: |
-          npm run audit:runtime-flags
-          npm run audit:domain-completion-matrix
-          git diff --check
+      - name: Audit runtime flags
+        run: npm run audit:runtime-flags
+
+      - name: Audit deterministic matrix
+        run: npm run audit:domain-completion-matrix
+
+      - name: Validate patch formatting
+        run: git diff --check
 
       - name: Remove temporary codemod
         run: rm scripts/tmp-auth-a13-codemod.js
