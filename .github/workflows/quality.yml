@@ -231,3 +231,55 @@ jobs:
             test-results/
           if-no-files-found: warn
           retention-days: 14
+
+  auth-a11-journal-append:
+    name: Append AUTH-A11 closure Journal entry
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 1
+
+      - name: Append closure entry once
+        env:
+          JOURNAL_ENTRY_BASE64: IyMgMjAyNi0wNy0yNiDigJQgQVVUSC1BMTEgcHJvdmlkZXItcmVjb25jaWxlZCBpZGVudGl0eSBhdXRob3JpdHkgY2xvc2VkCgoqKlNjb3BlOioqIFBSICM5LCBicmFuY2ggYGF1dGgvYXV0aC0wMDEtYmFzZWxpbmUtYXVkaXRgLCBzdGFnaW5nIGB6d2tjemdld3pic29yYnJqdXpwYmAKCioqT3V0Y29tZToqKiBgRE9ORWAgZm9yIEFVVEgtQTExOyBgQkxPQ0tFRGAgZm9yIEFVVEgtQTA3IHVuZGVyIE1BSUwtMDAxIGFuZCBmb3IgUEFJRC0wMDEgLyBTRUMtQjA1CgojIyMgQ29udGV4dCBhbmQgZGVjaXNpb24KClByb2ZpbGUsIHNldHRpbmdzIGFuZCBvbmJvYXJkaW5nIG11dGF0aW9ucyBzdGlsbCBjcm9zc2VkIHRoZSBhdXRoZW50aWNhdGlvbiBib3VuZGFyeSBhbmQgY291bGQgZHVwbGljYXRlIHByb3ZpZGVyIG1ldGFkYXRhIG9yIHJld3JpdGUgdGhlIHB1YmxpYyBzZXNzaW9uIHNuYXBzaG90LiBTdXBhYmFzZSBBdXRoIHJlbWFpbnMgdGhlIGNyZWRlbnRpYWwvc2Vzc2lvbiBhdXRob3JpdHk7IHB1YmxpYyBpZGVudGl0eSBtdXRhdGlvbnMgbm93IHVzZSBuYXJyb3cgc2VydmVyLXNpZGUgc2VsZi1zZXJ2aWNlIG9wZXJhdGlvbnMgYW5kIGNhbm9uaWNhbCBzZXJ2ZXIgcmVzcG9uc2VzLgoKIyMjIEltcGxlbWVudGF0aW9uCgotIFJlbW92ZWQgYERva2VBdXRoLnVwZGF0ZUN1cnJlbnRVc2VyYCBhbmQgYERva2VBdXRoLnVwZGF0ZUN1cnJlbnRQcm9maWxlYC4KLSBBZGRlZCBgdXBkYXRlX2FjY291bnRfcHJvZmlsZV9yZWNvbmNpbGVkYCwgYHVwZGF0ZV9hY2NvdW50X3NldHRpbmdzYCwgYGNvbXBsZXRlX2FjY291bnRfb25ib2FyZGluZ19yZWNvbmNpbGVkYCBhbmQgY2Fub25pY2FsIGlkZW50aXR5IHJlYWRzLgotIFJlbW92ZWQgYnJvd3NlciBgc3VwYWJhc2UuYXV0aC51cGRhdGVVc2VyKC4uLilgIG1ldGFkYXRhIGR1cGxpY2F0aW9uIGFuZCBtYW51YWwgU3VwYWJhc2Ugc2Vzc2lvbiB3cml0ZXMgZnJvbSBwcm9maWxlL29uYm9hcmRpbmcgZmxvd3MuCi0gQWRkZWQgcGVybWFuZW50IHByb2ZpbGUsIHNldHRpbmdzIGFuZCBvbmJvYXJkaW5nIHJlY29uY2lsaWF0aW9uIHJ1bnRpbWVzLgotIEFwcGxpZWQgbWlncmF0aW9uIDE0NyB0byBzdGFnaW5nIGFzIHZlcnNpb24gYDIwMjYwNzI2MTQxNzU1YC4KLSBEZXBsb3llZCBgc2VsZi1zZXJ2aWNlLW9wZXJhdGlvbnNgIHY1IHdpdGggYHZlcmlmeV9qd3QgPSB0cnVlYC4KCiMjIyBWYWxpZGF0aW9uCgotIEhlYWQgYGU1MzQxZjVmOTA2M2RkZjM2YzFjMzUwOTcxYzY1NjhlNDYyNWY2MmJgIHBhc3NlZCBRdWFsaXR5IEdhdGVzICM1NDQsIGJsb2NraW5nIEUyRSwgMTA1IHZpc3VhbCBndWFyZHMsIEVkZ2UgSFRUUCBDYW5hcnkgIzMxOCBhbmQgRGlhZ25vc3RpYyBFMkUgIzMzOS4KLSBTUUwgdmFsaWRhdGlvbiAwMTYgcGFzc2VkIHdpdGggdHJhbnNhY3Rpb24gcm9sbGJhY2sgYW5kIHplcm8gcmVzaWR1YWwgc3ludGhldGljIHJvd3MuCi0gQXV0aGVudGljYXRlZCBwdWJsaWMtRWRnZSBjYW5hcnkgcnVuIGAzMDIwNjMwOTA0N2AsIGZpbmFsIGpvYiBgODk4MDUyNTAzOTJgLCBwYXNzZWQgcHJvZmlsZSwgc2V0dGluZ3MsIG9uYm9hcmRpbmcgYW5kIGZpbmFsIGlkZW50aXR5IHJlY29uY2lsaWF0aW9uLgotIFByb3RlY3RlZCBlLW1haWwsIHJvbGUgYW5kIGFjY291bnQgc3RhdHVzIHJlbWFpbmVkIHVuY2hhbmdlZDsgcmVqZWN0ZWQgc2V0dGluZ3Mga2V5cyB3ZXJlIG5vdCBwZXJzaXN0ZWQuCi0gVGhlIGRpc3Bvc2FibGUgaWRlbnRpdHkgd2FzIGRlbGV0ZWQ7IHJlbWFpbmluZyByb3dzIGluIGBhdXRoLnVzZXJzYCwgYGF1dGguaWRlbnRpdGllc2AsIGBwdWJsaWMudXNlcnNgIGFuZCBgcHVibGljLnVzZXJfcHJvZmlsZXNgIHdlcmUgYWxsIHplcm8uCi0gTm8gbmV3IEFVVEgtQTExLXNwZWNpZmljIFNlY3VyaXR5IEFkdmlzb3IgaXNzdWUgd2FzIGludHJvZHVjZWQuCgojIyMgUmlza3MgYW5kIGJvdW5kYXJpZXMKCi0gUHJvZHVjdGlvbiBhbmQgcmVhbCB1c2VycyB3ZXJlIG5vdCBjaGFuZ2VkLgotIE5vIHBlcnNpc3RlbnQgc3ludGhldGljIGlkZW50aXR5IHJlbWFpbnMuCi0gTm8gU01UUCwgU01TLCBPQXV0aCBvciBwYWlkIGNvbmZpZ3VyYXRpb24gd2FzIGVuYWJsZWQuCi0gYE1BSUwtMDAxYCBhbmQgYFBBSUQtMDAxIC8gU0VDLUIwNWAgcmVtYWluIG9wZW4uCi0gUFIgIzkgcmVtYWlucyBkcmFmdCBhbmQgbXVzdCBub3QgYmUgbWVyZ2VkIHdpdGhvdXQgZXhwbGljaXQgYXV0aG9yaXphdGlvbi4KCiMjIyBOZXh0IHN0ZXAKCkF1ZGl0IGFuZCByZWNvbmNpbGUgcmVtYWluaW5nIGlkZW50aXR5L3Byb2ZpbGUgY29udHJhY3RzIGFuZCBkb3JtYW50IGxvY2FsIHJlcG9zaXRvcnkgc3VyZmFjZXMgYmVmb3JlIGNob29zaW5nIHRoZSBuZXh0IHVuYmxvY2tlZCBBVVRILTAwMSBpbXBsZW1lbnRhdGlvbiBzdWJsb3QuIEFVVEgtQTA3IHN0YXlzIGJsb2NrZWQgd2hpbGUgTUFJTC0wMDEgaXMgdW5yZXNvbHZlZC4KCi0tLQoK
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import base64
+          import os
+          from pathlib import Path
+          path = Path('docs/DOKE-ENGINEERING-JOURNAL.md')
+          text = path.read_text(encoding='utf-8')
+          title = '## 2026-07-26 — AUTH-A11 provider-reconciled identity authority closed'
+          marker = '# Entry template'
+          if title not in text:
+              if text.count(marker) != 1:
+                  raise SystemExit('Journal template marker is missing or ambiguous.')
+              entry = base64.b64decode(os.environ['JOURNAL_ENTRY_BASE64']).decode('utf-8')
+              path.write_text(text.replace(marker, entry + marker), encoding='utf-8')
+          PY
+          git diff --check
+          changes="$(git diff --name-only)"
+          test -z "$changes" || test "$changes" = 'docs/DOKE-ENGINEERING-JOURNAL.md'
+
+      - name: Publish Journal entry
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- docs/DOKE-ENGINEERING-JOURNAL.md; then
+            echo 'Nothing to publish.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add docs/DOKE-ENGINEERING-JOURNAL.md
+          git commit -m 'Record AUTH-A11 staging closure in engineering journal'
+          git push origin HEAD:${{ github.head_ref }}
