@@ -65,14 +65,6 @@ function createEventTarget() {
 
   const repo = window.DokeAuth.repositories.users;
   const session = window.Doke.session;
-  window.DokeAuth.service = {
-    getActiveAuthProvider: () => 'mock',
-    updateCurrentUser: async (patch) => {
-      const updated = await repo.updateCurrentUser(session.getCurrentUser().id, patch);
-      session.setCurrentUser(updated);
-      return session.getCurrentUser();
-    }
-  };
 
   assert.strictEqual(repo.isValidHandle('gabriel.antonio'), true);
   assert.strictEqual(repo.isValidHandle('admin'), false);
@@ -135,6 +127,7 @@ function createEventTarget() {
   const homePage = fs.readFileSync('assets/js/pages/home.js', 'utf8');
   const identityService = fs.readFileSync('backend/modules/auth/identity-service.js', 'utf8');
   const authService = fs.readFileSync('assets/js/services/auth-service.js', 'utf8');
+  const onboardingService = fs.readFileSync('assets/js/services/onboarding-service.js', 'utf8');
   const migration = fs.readFileSync('supabase/migrations/007_account_profile_base.sql', 'utf8');
   assert(!signupHtml.includes('data-account-onboarding'));
   assert(!signupHtml.includes('data-auth-onboarding'));
@@ -147,7 +140,10 @@ function createEventTarget() {
     assert(identityService.includes(field), `Backend API deve mapear ${field}.`);
     assert(migration.includes(field), `Schema deve persistir ${field}.`);
   });
-  assert(authService.includes('interests: Array.isArray(source.interests)'));
+  assert(!authService.includes('updateCurrentUser'));
+  assert(onboardingService.includes('complete_account_onboarding_reconciled'));
+  assert(!onboardingService.includes('auth.updateCurrentUser'));
+  assert(!onboardingService.includes('supabaseClient.auth.updateUser'));
 
   console.log(JSON.stringify({
     uniqueUsername: true,
@@ -157,7 +153,8 @@ function createEventTarget() {
     onboardingPersists: true,
     singleProfilePersistence: true,
     settingsUseRepository: true,
-    apiProviderContract: true,
+    authMutationFacadeRetired: true,
+    reconciledOnboardingAuthority: true,
     userSwitchCovered: true
   }));
 })().catch((error) => {
