@@ -11,12 +11,6 @@
       : null;
   }
 
-  function usersRepository() {
-    return window.DokeAuth && window.DokeAuth.repositories
-      ? window.DokeAuth.repositories.users || null
-      : null;
-  }
-
   function sessionProvider() {
     return String(window.Doke?.session?.getSession?.()?.provider || '').toLowerCase();
   }
@@ -45,17 +39,17 @@
       }).slice(0, 8);
   }
 
-  function hasCompleteBaseProfile(user, profile) {
-    return Boolean(
-      user && user.handle &&
-      profile && String(profile.city || '').trim() && String(profile.state || '').trim()
-    );
-  }
-
   function reconciliationError(message, code) {
     var error = new Error(message);
     error.code = code;
     return error;
+  }
+
+  function authorityUnavailable() {
+    return reconciliationError(
+      'Autoridade server-side de onboarding indisponível.',
+      'DOKE_ONBOARDING_AUTHORITY_UNAVAILABLE'
+    );
   }
 
   function normalizeCanonicalOnboarding(identityState, user) {
@@ -111,7 +105,7 @@
 
   function invokeSelfService(action, params) {
     if (!window.DokeSupabase || typeof window.DokeSupabase.invokeSelfService !== 'function') {
-      return Promise.reject(new Error('Autoridade remota de onboarding indisponível.'));
+      return Promise.reject(authorityUnavailable());
     }
     return window.DokeSupabase.invokeSelfService(action, params || {});
   }
@@ -120,7 +114,8 @@
     var client = window.DokeSupabase && typeof window.DokeSupabase.getClient === 'function'
       ? window.DokeSupabase.getClient()
       : null;
-    if (!usesSupabaseProvider() || !client || !user || !user.id) return Promise.resolve(null);
+    if (!user || !user.id) return Promise.resolve(null);
+    if (!usesSupabaseProvider() || !client) return Promise.reject(authorityUnavailable());
 
     return invokeSelfService('get_account_identity_state', {}).then(function (data) {
       return normalizeCanonicalOnboarding(data, user);
@@ -147,30 +142,21 @@
       Promise.resolve(profileService.getCurrentProfile()),
       resolveRemoteState(user)
     ]).then(function (values) {
-      var profile = values[0] || null;
       var remoteState = values[1];
-      var status = remoteState ? remoteState.status : normalizedStatus(user);
       var nextUser = resolvedUser(user, remoteState);
-      if (remoteState) profile = remoteState.profile;
-
-      if (!remoteState && status !== 'completed' && hasCompleteBaseProfile(nextUser, profile)) {
-        status = 'completed';
-      }
 
       return {
         authenticated: true,
-        status: status,
-        shouldShow: status !== 'completed',
+        status: remoteState.status,
+        shouldShow: remoteState.status !== 'completed',
         user: nextUser,
-        profile: profile
+        profile: remoteState.profile
       };
     });
   }
 
   function complete(payload) {
     var user = currentUser();
-    var profileService = services.profile;
-    var repository = usersRepository();
     var source = payload || {};
     var normalizedPayload = {
       city: String(source.city || '').trim(),
@@ -181,68 +167,37 @@
     };
 
     if (!user || !user.id) return Promise.reject(new Error('Sessão não encontrada para concluir o perfil.'));
+    if (!usesSupabaseProvider()) return Promise.reject(authorityUnavailable());
 
-    if (usesSupabaseProvider()) {
-      return invokeSelfService('complete_account_onboarding_reconciled', {
-        p_city: normalizedPayload.city,
-        p_state: normalizedPayload.state,
-        p_postal_code: normalizedPayload.postalCode,
-        p_bio: normalizedPayload.bio,
-        p_interests: normalizedPayload.interests
-      }).then(function (identityState) {
-        var remoteState = normalizeCanonicalOnboarding(identityState, user);
-        if (remoteState.status !== 'completed' || !remoteState.profile.city || !remoteState.profile.state) {
-          throw reconciliationError('O servidor não confirmou a conclusão do onboarding.', 'DOKE_ONBOARDING_RECONCILIATION_INCOMPLETE');
+    return invokeSelfService('complete_account_onboarding_reconciled', {
+      p_city: normalizedPayload.city,
+      p_state: normalizedPayload.state,
+      p_postal_code: normalizedPayload.postalCode,
+      p_bio: normalizedPayload.bio,
+      p_interests: normalizedPayload.interests
+    }).then(function (identityState) {
+      var remoteState = normalizeCanonicalOnboarding(identityState, user);
+      if (remoteState.status !== 'completed' || !remoteState.profile.city || !remoteState.profile.state) {
+        throw reconciliationError('O servidor não confirmou a conclusão do onboarding.', 'DOKE_ONBOARDING_RECONCILIATION_INCOMPLETE');
+      }
+      var nextUser = resolvedUser(user, remoteState);
+      window.dispatchEvent(new CustomEvent('doke:onboarding-completed', {
+        detail: {
+          userId: user.id,
+          status: remoteState.status,
+          profile: remoteState.profile,
+          source: 'server',
+          reconciled: true
         }
-        var nextUser = resolvedUser(user, remoteState);
-        window.dispatchEvent(new CustomEvent('doke:onboarding-completed', {
-          detail: {
-            userId: user.id,
-            status: remoteState.status,
-            profile: remoteState.profile,
-            source: 'server',
-            reconciled: true
-          }
-        }));
-        return { user: nextUser, profile: remoteState.profile };
-      }).catch(function (error) {
-        var message = String(error && error.message || '');
-        if (/function .*complete_account_onboarding_reconciled.*does not exist|schema cache/i.test(message)) {
-          throw new Error('A migration 147 da reconciliação de onboarding ainda não foi aplicada no Supabase.');
-        }
-        throw error;
-      });
-    }
-
-    if (!profileService || typeof profileService.updateCurrentProfile !== 'function') {
-      return Promise.reject(new Error('Serviço de perfil indisponível.'));
-    }
-    if (!repository || typeof repository.updateCurrentUser !== 'function') {
-      return Promise.reject(new Error('Persistência local da conta indisponível.'));
-    }
-
-    return profileService.updateCurrentProfile(normalizedPayload)
-      .then(function (profile) {
-        if (!profile || !String(profile.city || '').trim() || !String(profile.state || '').trim()) {
-          throw new Error('Informe cidade e estado para concluir o perfil.');
-        }
-        return repository.updateCurrentUser(user.id, {
-          onboardingStatus: 'completed',
-          onboardingCompletedAt: new Date().toISOString()
-        }).then(function (updatedUser) {
-          if (Doke.session && typeof Doke.session.setCurrentUser === 'function') Doke.session.setCurrentUser(updatedUser);
-          window.dispatchEvent(new CustomEvent('doke:onboarding-completed', {
-            detail: {
-              userId: updatedUser && updatedUser.id || user.id,
-              status: 'completed',
-              profile: updatedUser && updatedUser.profile || profile,
-              source: 'local',
-              reconciled: false
-            }
-          }));
-          return { user: updatedUser || currentUser(), profile: updatedUser && updatedUser.profile || profile };
-        });
-      });
+      }));
+      return { user: nextUser, profile: remoteState.profile };
+    }).catch(function (error) {
+      var message = String(error && error.message || '');
+      if (/function .*complete_account_onboarding_reconciled.*does not exist|schema cache/i.test(message)) {
+        throw new Error('A migration 147 da reconciliação de onboarding ainda não foi aplicada no Supabase.');
+      }
+      throw error;
+    });
   }
 
   function skipOptional(payload) {
