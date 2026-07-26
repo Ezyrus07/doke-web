@@ -26,7 +26,17 @@ jobs:
           node-version: 22
 
       - name: Apply controlled codemod
-        run: node scripts/tmp-auth-a12c-codemod.js
+        run: |
+          node scripts/tmp-auth-a12c-codemod.js
+          node - <<'NODE'
+          const fs = require('fs');
+          const file = 'assets/js/services/professional-access-service.js';
+          let source = fs.readFileSync(file, 'utf8');
+          const duplicate = "    });\n    });\n  }\n\n  function evaluate";
+          if (!source.includes(duplicate)) throw new Error('Expected nested resolveContext closure was not found.');
+          source = source.replace(duplicate, "    });\n  }\n\n  function evaluate");
+          fs.writeFileSync(file, source);
+          NODE
 
       - name: Test cumulative local mutation retirement
         run: node tests/auth/test-auth-local-profile-mutation-retirement-runtime.js
