@@ -2,7 +2,7 @@
 
 ## Status
 
-`IN PROGRESS` — `AUTH-A12A` reconcilia contratos e testes. `AUTH-A12B` e `AUTH-A12C` permanecem pendentes antes do encerramento do sublote.
+`IN PROGRESS` — `AUTH-A12A` está `DONE`. `AUTH-A12B` e `AUTH-A12C` permanecem pendentes antes do encerramento do AUTH-A12.
 
 ## Objetivo
 
@@ -52,18 +52,46 @@ Também permanecem consumidores locais em:
 
 Essas superfícies são dívida controlada. Elas não são fallback válido quando Supabase, Edge Function ou rede falham.
 
-## Decisão de implementação
+## Implementação concluída no AUTH-A12A
 
-### `AUTH-A12A` — contrato e testes
-
-- substituir endpoints históricos no contrato runtime pelas ações:
+- O contrato runtime passou a declarar somente as autoridades atuais:
   - `get_account_identity_state`;
   - `update_account_profile_reconciled`;
   - `update_account_settings`;
-  - `complete_account_onboarding_reconciled`;
-- fixar `supabase` como provider da identidade normalizada;
-- reescrever os testes de perfil, cadastro e onboarding para usar autoridades provider/server simuladas, sem usuário ou senha local persistente;
-- transformar o audit em inventário executável da dívida restante.
+  - `complete_account_onboarding_reconciled`.
+- `supabase` passou a ser o único provider da identidade normalizada no contrato do navegador.
+- `/users/me` e `/profiles/me` foram preservados somente como endpoints históricos de diagnóstico CLI-only.
+- O audit foi transformado em inventário executável da dívida local restante.
+- Os testes de perfil, cadastro, username e onboarding passaram a usar autoridades provider/server simuladas, sem usuário local, password hash ou reescrita manual da sessão.
+- O índice de contratos ativos foi reconciliado com a autoridade atual.
+- Os três gates do AUTH-A12A foram adicionados permanentemente ao `Doke Quality Gates`.
+
+## Validação AUTH-A12A
+
+Head de implementação validado:
+
+`790962f61ecd637246a6d103d08134522c790d9d`
+
+Doke Quality Gates #590:
+
+- auditorias estáticas e arquiteturais: sucesso;
+- canonical auth/session runtime: sucesso;
+- audit de autoridade de identidade/perfil: sucesso;
+- contrato de perfil reconciliado: sucesso;
+- contrato de cadastro, username e onboarding: sucesso;
+- matriz determinística: sucesso;
+- governança, assets, partição E2E e `git diff --check`: sucesso;
+- E2E bloqueante: sucesso;
+- 105 guards visuais: sucesso.
+
+Validação paralela:
+
+- Doke Staging Edge HTTP Canary #364: sucesso;
+- Doke Diagnostic E2E #385 permanecia em execução na captura da evidência e é não bloqueante; nenhum sucesso foi atribuído a ele.
+
+Nenhuma migration, função Edge, configuração Auth ou dado de staging foi alterado pelo AUTH-A12A.
+
+## Próximas fases
 
 ### `AUTH-A12B` — conta, perfil e onboarding
 
@@ -78,7 +106,7 @@ Essas superfícies são dívida controlada. Elas não são fallback válido quan
 - preservar os repositórios locais de domínio apenas para testes explícitos e isolados, caso ainda necessários;
 - garantir que aprovação profissional remota reconcilie role e estado somente a partir do servidor.
 
-## Validação exigida
+## Validação exigida para o AUTH-A12 completo
 
 - `npm run audit:identity-profile-contract`;
 - `node scripts/test-profile-write-contract.js`;
@@ -104,6 +132,6 @@ Essas superfícies são dívida controlada. Elas não são fallback válido quan
 - `PAID-001 / SEC-B05` continua aberto.
 - PR #9 permanece draft e não deve ser mesclado sem autorização explícita.
 
-## Próximo passo após AUTH-A12A
+## Próximo passo
 
 Executar `AUTH-A12B` em cortes pequenos: primeiro credenciais locais, depois perfil/configurações, por fim onboarding. Cada corte deve provar consumidores, compatibilidade visual e ausência de fallback silencioso antes da remoção.
