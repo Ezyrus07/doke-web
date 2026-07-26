@@ -2,16 +2,25 @@
   "domain": "AUTH-001",
   "sublot": "AUTH-A12",
   "status": "in_progress",
-  "scope": "retire residual browser-local identity mutation authority while preserving proven read-only mock data",
+  "scope": "retire residual browser-local identity mutation authority while preserving proven read-only local data",
   "phases": {
     "AUTH-A12A": {
       "status": "done",
       "goal": "reconcile runtime contract and executable tests with Supabase/self-service authority",
-      "implementationHead": "790962f61ecd637246a6d103d08134522c790d9d"
+      "implementationHead": "790962f61ecd637246a6d103d08134522c790d9d",
+      "evidenceHead": "ca839b72dfca2753c5f9568051637bf34d2e991f"
     },
-    "AUTH-A12B": {
+    "AUTH-A12B.1": {
+      "status": "implemented_pending_ci",
+      "goal": "retire local account creation, password hashing and password update authority"
+    },
+    "AUTH-A12B.2": {
       "status": "planned",
-      "goal": "retire local credential, account, profile, settings and onboarding mutations"
+      "goal": "retire local account, profile and settings mutations"
+    },
+    "AUTH-A12B.3": {
+      "status": "planned",
+      "goal": "retire residual local onboarding mutation and manual session rewrites"
     },
     "AUTH-A12C": {
       "status": "planned",
@@ -22,6 +31,7 @@
     "authentication": "Supabase Auth",
     "identityProvider": "supabase",
     "transport": "self-service-operations",
+    "localCredentialAuthority": "retired",
     "actions": [
       "get_account_identity_state",
       "update_account_profile_reconciled",
@@ -29,17 +39,24 @@
       "complete_account_onboarding_reconciled"
     ]
   },
-  "inventoriedLocalMutationExports": [
+  "retiredLocalCredentialExports": [
     "create",
     "hashPassword",
-    "updateCurrentUser",
-    "updateCurrentProfile",
-    "updateCurrentSettings",
     "updatePassword"
   ],
-  "knownLocalConsumers": [
-    "assets/js/services/profile-service.js",
-    "assets/js/services/onboarding-service.js",
+  "inventoriedLocalMutationExports": [
+    "updateCurrentUser",
+    "updateCurrentProfile",
+    "updateCurrentSettings"
+  ],
+  "credentialStorageSanitization": {
+    "storageKey": "doke.auth.users.v1",
+    "removedFields": [
+      "password",
+      "passwordHash"
+    ]
+  },
+  "knownLocalConsumersPendingReconciliation": [
     "assets/js/services/professional-access-service.js",
     "assets/js/services/professional-identity-verification-service.js"
   ],
@@ -49,20 +66,25 @@
     "/users/me",
     "/profiles/me"
   ],
-  "validation": {
-    "qualityRunNumber": 590,
-    "staticAudits": "success",
-    "canonicalAuthRuntime": "success",
-    "identityProfileAuthorityAudit": "success",
-    "providerReconciledProfileContract": "success",
-    "registrationOnboardingAuthorityContract": "success",
-    "domainMatrix": "success",
+  "previousValidation": {
+    "evidenceHead": "ca839b72dfca2753c5f9568051637bf34d2e991f",
+    "qualityRunNumber": 592,
+    "quality": "success",
     "blockingE2E": "success",
     "visualStructuralGuards": "success",
-    "stagingEdgeCanaryRunNumber": 364,
+    "stagingEdgeCanaryRunNumber": 366,
     "stagingEdgeCanary": "success",
-    "diagnosticRunNumber": 385,
-    "diagnostic": "in_progress_non_blocking_at_evidence_capture"
+    "diagnosticRunNumber": 387,
+    "diagnostic": "success"
+  },
+  "currentValidation": {
+    "status": "pending_new_head",
+    "domainMatrix": "pending",
+    "quality": "pending",
+    "blockingE2E": "pending",
+    "visualStructuralGuards": "pending",
+    "stagingEdgeCanary": "pending",
+    "diagnostic": "pending_when_available"
   },
   "safety": {
     "migrationApplied": false,
