@@ -3,6 +3,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const vm = require('vm');
 
 const root = process.cwd();
 const failures = [];
@@ -40,6 +41,103 @@ function exportedRepositoryNames(source) {
     .filter((line) => /^[A-Za-z_$][\w$]*$/.test(line));
 }
 
+async function validateRepositoryRuntime(source, label) {
+  const storage = new Map([
+    ['doke.auth.users.v1', JSON.stringify([
+      {
+        id: 'legacy-local-user',
+        name: 'Legacy Local User',
+        email: 'legacy@example.test',
+        handle: 'legacy.local',
+        password: 'retired-password',
+        passwordHash: 'retired-hash'
+      },
+      {
+        id: 'user_cliente_demo',
+        name: 'Demo User',
+        email: 'client@doke',
+        passwordHash: 'demo-hash'
+      }
+    ])],
+    ['doke.auth.userProfiles.v1', '{}'],
+    ['doke.professionalProfiles.v1', '[]'],
+    ['doke.professionalIdentityVerifications.v1', '[]']
+  ]);
+
+  const localStorage = {
+    getItem(key) {
+      return storage.has(String(key)) ? storage.get(String(key)) : null;
+    },
+    setItem(key, value) {
+      storage.set(String(key), String(value));
+    },
+    removeItem(key) {
+      storage.delete(String(key));
+    }
+  };
+
+  const window = {
+    DokeAuth: {},
+    localStorage,
+    crypto: { randomUUID: () => 'runtime-id' }
+  };
+
+  try {
+    vm.runInNewContext(source, {
+      window,
+      console,
+      Date,
+      Map,
+      Set,
+      Object,
+      Array,
+      String,
+      Number,
+      Boolean,
+      JSON,
+      Math,
+      RegExp,
+      Promise
+    }, { filename: label });
+
+    const repository = window.DokeAuth?.repositories?.users;
+    if (!repository) {
+      failures.push(`${label} did not publish the users repository`);
+      return;
+    }
+
+    for (const retired of ['create', 'hashPassword', 'updatePassword']) {
+      if (Object.prototype.hasOwnProperty.call(repository, retired)) {
+        failures.push(`${label} still exports retired local credential authority: ${retired}`);
+      }
+    }
+
+    for (const retained of ['list', 'findById', 'findByHandle', 'toPublicUser']) {
+      if (typeof repository[retained] !== 'function') {
+        failures.push(`${label} missing retained read-only compatibility API: ${retained}`);
+      }
+    }
+
+    const users = await repository.list();
+    if (users.length !== 1 || users[0].id !== 'legacy-local-user') {
+      failures.push(`${label} did not preserve the non-demo local read fixture boundary`);
+    }
+    if (users.some((user) => 'password' in user || 'passwordHash' in user)) {
+      failures.push(`${label} returned retired local credential fields`);
+    }
+
+    const persisted = JSON.parse(localStorage.getItem('doke.auth.users.v1') || '[]');
+    if (persisted.some((user) => 'password' in user || 'passwordHash' in user)) {
+      failures.push(`${label} did not purge retired local credential fields from storage`);
+    }
+    if (persisted.some((user) => String(user.id) === 'user_cliente_demo')) {
+      failures.push(`${label} did not preserve demo-account cleanup`);
+    }
+  } catch (error) {
+    failures.push(`${label} runtime validation failed: ${error?.stack || error}`);
+  }
+}
+
 const files = {
   identityContract: 'assets/js/contracts/identity-profile-contract.js',
   authService: 'assets/js/services/auth-service.js',
@@ -61,7 +159,7 @@ const files = {
 const source = Object.fromEntries(Object.entries(files).map(([key, file]) => [key, read(file)]));
 
 expect(source.identityContract, files.identityContract, [
-  "version: 'AUTH-A12A'",
+  "version: 'AUTH-A12B.1'",
   "GET_IDENTITY_STATE: 'get_account_identity_state'",
   "UPDATE_CURRENT_PROFILE: 'update_account_profile_reconciled'",
   "UPDATE_CURRENT_SETTINGS: 'update_account_settings'",
@@ -120,29 +218,34 @@ forbid(source.onboardingService, files.onboardingService, [
 ]);
 
 const repositoryExports = exportedRepositoryNames(source.usersRepository);
-const mutationExports = repositoryExports.filter((name) => (
-  name === 'create'
-  || name === 'hashPassword'
-  || name.startsWith('update')
-)).sort();
+const mutationExports = repositoryExports.filter((name) => name.startsWith('update')).sort();
 const expectedDebt = [
-  'create',
-  'hashPassword',
   'updateCurrentProfile',
   'updateCurrentSettings',
-  'updateCurrentUser',
-  'updatePassword'
+  'updateCurrentUser'
 ].sort();
 if (JSON.stringify(mutationExports) !== JSON.stringify(expectedDebt)) {
   failures.push(`unexpected users-repository mutation export inventory: ${JSON.stringify(mutationExports)}`);
 }
 expect(source.usersRepository, files.usersRepository, [
+  'Authentication, registration and password authority belong exclusively to Supabase Auth.',
   'const STORAGE_KEY',
   'const LEGACY_PROFILE_STORAGE_KEY',
+  'const withoutCredentials',
   'const loadSeededUsers = async () => []',
   'findById',
   'findByHandle',
   'toPublicUser'
+]);
+forbid(source.usersRepository, files.usersRepository, [
+  'const create =',
+  'const hashPassword =',
+  'const updatePassword =',
+  'passwordHash: await',
+  'return `plain:${value}`',
+  '\n    create,',
+  '\n    hashPassword,',
+  '\n    updatePassword,'
 ]);
 
 expect(source.profileWriteTest, files.profileWriteTest, [
@@ -184,16 +287,19 @@ forbid(source.authContract, files.authContract, [
 
 expect(source.plan, files.plan, [
   '`AUTH-A12A`',
-  '`AUTH-A12B`',
+  '`AUTH-A12B.1`',
+  '`AUTH-A12B.2`',
   '`AUTH-A12C`',
   '`updateCurrentUser`',
-  '`updatePassword`',
+  'credenciais locais removidas',
   'Nenhuma migration',
   'Produção não foi alterada'
 ]);
 expect(source.planJson, files.planJson, [
   '"sublot": "AUTH-A12"',
   '"status": "in_progress"',
+  '"AUTH-A12B.1"',
+  '"status": "implemented_pending_ci"',
   '"productionChanged": false'
 ]);
 
@@ -208,14 +314,25 @@ expect(source.profileRuntime, files.profileRuntime, ['update_account_profile_rec
 expect(source.settingsRuntime, files.settingsRuntime, ['update_account_settings']);
 expect(source.onboardingRuntime, files.onboardingRuntime, ['complete_account_onboarding_reconciled']);
 
-if (failures.length) {
-  console.error('[identity-profile-contract] failed');
-  failures.forEach((failure) => console.error(`- ${failure}`));
-  process.exit(1);
+async function main() {
+  await validateRepositoryRuntime(source.usersRepository, files.usersRepository);
+
+  if (failures.length) {
+    console.error('[identity-profile-contract] failed');
+    failures.forEach((failure) => console.error(`- ${failure}`));
+    process.exit(1);
+  }
+
+  console.log('[identity-profile-contract] OK');
+  console.log('- active browser identity provider: supabase');
+  console.log('- active mutation transport: self-service-operations');
+  console.log('- retired local credential authority: create, hashPassword, updatePassword');
+  console.log(`- inventoried local mutation exports pending retirement: ${mutationExports.join(', ')}`);
+  console.log('- historical /users/me and /profiles/me remain CLI-only and outside the browser contract');
 }
 
-console.log('[identity-profile-contract] OK');
-console.log('- active browser identity provider: supabase');
-console.log('- active mutation transport: self-service-operations');
-console.log(`- inventoried local mutation exports pending retirement: ${mutationExports.join(', ')}`);
-console.log('- historical /users/me and /profiles/me remain CLI-only and outside the browser contract');
+main().catch((error) => {
+  console.error('[identity-profile-contract] failed');
+  console.error(error?.stack || error);
+  process.exit(1);
+});
