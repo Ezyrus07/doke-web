@@ -88,6 +88,15 @@ jobs:
       - name: Test canonical auth session runtime
         run: node scripts/test-auth-canonical-session-runtime.js
 
+      - name: Audit identity profile authority
+        run: npm run audit:identity-profile-contract
+
+      - name: Test provider-reconciled profile contract
+        run: node scripts/test-profile-write-contract.js
+
+      - name: Test registration and onboarding authority contract
+        run: node scripts/test-auth-username-onboarding-contract.js
+
       - name: Audit desktop shell contracts
         run: npm run audit:desktop-shell
 
