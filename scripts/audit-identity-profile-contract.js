@@ -278,7 +278,8 @@ expect(source.authContract, files.authContract, [
   'update_account_profile_reconciled',
   'update_account_settings',
   'complete_account_onboarding_reconciled',
-  'AUTH-A12'
+  'AUTH-A12B.1',
+  'credenciais locais foram retiradas'
 ]);
 forbid(source.authContract, files.authContract, [
   '### Débito controlado para AUTH-A11',
@@ -292,6 +293,8 @@ expect(source.plan, files.plan, [
   '`AUTH-A12C`',
   '`updateCurrentUser`',
   'credenciais locais removidas',
+  'Doke Quality Gates #601',
+  'Doke Diagnostic E2E #396',
   'Nenhuma migration',
   'Produção não foi alterada'
 ]);
@@ -299,7 +302,10 @@ expect(source.planJson, files.planJson, [
   '"sublot": "AUTH-A12"',
   '"status": "in_progress"',
   '"AUTH-A12B.1"',
-  '"status": "implemented_pending_ci"',
+  '"status": "done"',
+  '"implementationHead": "7caf2dea2d3fafa25d80b50ba3c62047e8609332"',
+  '"qualityRunNumber": 601',
+  '"diagnosticRunNumber": 396',
   '"productionChanged": false'
 ]);
 
