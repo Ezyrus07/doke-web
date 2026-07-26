@@ -100,6 +100,32 @@ begin
 
   select public.execute_self_service_operation_internal(
     v_user_id,
+    'complete_account_onboarding_reconciled',
+    jsonb_build_object(
+      'p_city', 'Feira de Santana',
+      'p_state', 'BA',
+      'p_postal_code', '40200000',
+      'p_bio', 'Onboarding reconciled by server authority',
+      'p_interests', jsonb_build_array('Tecnologia', 'Serviços')
+    )
+  ) into v_identity;
+
+  if v_identity ->> 'userId' <> v_user_id::text
+     or v_identity -> 'profile' ->> 'userId' <> v_user_id::text then
+    raise exception 'AUTH_A11_RECONCILED_ONBOARDING_SUBJECT_MISMATCH';
+  end if;
+  if v_identity ->> 'onboardingStatus' <> 'completed'
+     or coalesce(v_identity ->> 'onboardingCompletedAt', '') = '' then
+    raise exception 'AUTH_A11_RECONCILED_ONBOARDING_STATUS_MISMATCH';
+  end if;
+  if v_identity -> 'profile' ->> 'city' <> 'Feira de Santana'
+     or v_identity -> 'profile' ->> 'state' <> 'BA'
+     or v_identity -> 'profile' ->> 'bio' <> 'Onboarding reconciled by server authority' then
+    raise exception 'AUTH_A11_RECONCILED_ONBOARDING_PROFILE_MISMATCH';
+  end if;
+
+  select public.execute_self_service_operation_internal(
+    v_user_id,
     'update_account_settings',
     jsonb_build_object(
       'p_settings', jsonb_build_object(
@@ -115,7 +141,7 @@ begin
   if coalesce((v_settings -> 'settings' -> 'notifications' ->> 'messages')::boolean, true) then
     raise exception 'AUTH_A11_ALLOWED_SETTINGS_NOT_UPDATED';
   end if;
-  if coalesce(v_settings -> 'settings' ->> 'postalCode', '') <> '40100000' then
+  if coalesce(v_settings -> 'settings' ->> 'postalCode', '') <> '40200000' then
     raise exception 'AUTH_A11_SYSTEM_SETTING_NOT_PRESERVED';
   end if;
   if (v_settings -> 'settings') ? 'account'
@@ -145,7 +171,10 @@ begin
   if v_identity -> 'profile' ->> 'username' <> v_updated_handle then
     raise exception 'AUTH_A11_PROFILE_SNAPSHOT_MISMATCH';
   end if;
-  if coalesce(v_identity -> 'settings' ->> 'postalCode', '') <> '40100000' then
+  if v_identity ->> 'onboardingStatus' <> 'completed' then
+    raise exception 'AUTH_A11_ONBOARDING_SNAPSHOT_MISMATCH';
+  end if;
+  if coalesce(v_identity -> 'settings' ->> 'postalCode', '') <> '40200000' then
     raise exception 'AUTH_A11_IDENTITY_SETTINGS_MISMATCH';
   end if;
 
