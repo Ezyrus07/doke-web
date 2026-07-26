@@ -1,0 +1,64 @@
+{
+  "domain": "AUTH-001",
+  "sublot": "AUTH-A12",
+  "status": "in_progress",
+  "scope": "retire residual browser-local identity mutation authority while preserving proven read-only mock data",
+  "phases": {
+    "AUTH-A12A": {
+      "status": "implementation_in_progress",
+      "goal": "reconcile runtime contract and executable tests with Supabase/self-service authority"
+    },
+    "AUTH-A12B": {
+      "status": "planned",
+      "goal": "retire local credential, account, profile, settings and onboarding mutations"
+    },
+    "AUTH-A12C": {
+      "status": "planned",
+      "goal": "retire local professional role promotion and session rewrites"
+    }
+  },
+  "activeBrowserAuthority": {
+    "authentication": "Supabase Auth",
+    "identityProvider": "supabase",
+    "transport": "self-service-operations",
+    "actions": [
+      "get_account_identity_state",
+      "update_account_profile_reconciled",
+      "update_account_settings",
+      "complete_account_onboarding_reconciled"
+    ]
+  },
+  "inventoriedLocalMutationExports": [
+    "create",
+    "hashPassword",
+    "updateCurrentUser",
+    "updateCurrentProfile",
+    "updateCurrentSettings",
+    "updatePassword"
+  ],
+  "knownLocalConsumers": [
+    "assets/js/services/profile-service.js",
+    "assets/js/services/onboarding-service.js",
+    "assets/js/services/professional-access-service.js",
+    "assets/js/services/professional-identity-verification-service.js"
+  ],
+  "historicalCliOnlyEndpoints": [
+    "/auth/login",
+    "/auth/session",
+    "/users/me",
+    "/profiles/me"
+  ],
+  "safety": {
+    "migrationApplied": false,
+    "edgeFunctionDeployed": false,
+    "stagingChanged": false,
+    "productionChanged": false,
+    "realAccountChanged": false,
+    "persistentSyntheticAccountCreated": false,
+    "prMerged": false
+  },
+  "blockersPreserved": [
+    "MAIL-001",
+    "PAID-001 / SEC-B05"
+  ]
+}
