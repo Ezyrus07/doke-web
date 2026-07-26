@@ -134,7 +134,7 @@ Essa fronteira não é fallback quando Supabase, Edge Function ou rede falham.
 - criado runtime permanente `tests/auth/test-auth-local-profile-mutation-retirement-runtime.js`;
 - adicionado gate permanente `Test local profile mutation retirement` ao workflow canônico `Doke Quality Gates`;
 - matriz determinística sincronizada;
-- codemod, workflow e diagnóstico temporários removidos após o uso.
+- codemods, workflows, gatilhos e diagnósticos temporários foram removidos após o uso.
 
 ### Testes permanentes
 
@@ -216,4 +216,4 @@ O corte foi aceito porque o head validado provou simultaneamente:
 4. fixture profissional temporária estreita, sem criação de usuário e bloqueada para UUID;
 5. matriz determinística sincronizada;
 6. Quality Gates, E2E bloqueante, 105 guards, staging canary e Diagnostic concluídos com sucesso;
-7. nenhum workflow, codemod, hook ou diagnóstico temporário remanescente.
+7. nenhum workflow, codemod, hook, gatilho ou diagnóstico temporário remanescente.
