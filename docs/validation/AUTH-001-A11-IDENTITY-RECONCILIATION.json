@@ -1,9 +1,9 @@
 {
   "domain": "AUTH-001",
   "sublot": "AUTH-A11",
-  "status": "in_progress",
+  "status": "done",
   "scope": "provider-reconciled profile, settings and onboarding mutation authority",
-  "implementationHead": "b100d26f6e0f67801a711725426195b4b22a846d",
+  "implementationHead": "e5341f5f9063ddf36c1c350971c6568e4625f62b",
   "authorities": {
     "authentication": "Supabase Auth",
     "publicProfile": "update_account_profile_reconciled + get_account_identity_state",
@@ -23,35 +23,75 @@
     "tests/auth/test-auth-settings-reconciliation-runtime.js",
     "tests/auth/test-auth-onboarding-reconciliation-runtime.js"
   ],
-  "sqlValidation": "supabase/tests/016_identity_profile_reconciliation_authority_validation.sql",
-  "qualityRun": {
-    "runNumber": 539,
-    "functionalAndAuthorityAudits": "success",
-    "domainMatrix": "stale_pending_regeneration"
+  "qualityValidation": {
+    "head": "e5341f5f9063ddf36c1c350971c6568e4625f62b",
+    "qualityGatesRunNumber": 544,
+    "blockingE2E": "success",
+    "visualStructuralGuards": "success",
+    "stagingEdgeHttpCanaryRunNumber": 318,
+    "diagnosticE2ERunNumber": 339,
+    "domainMatrix": "success",
+    "governance": "success",
+    "diffCheck": "success"
   },
   "staging": {
-    "migration147Applied": false,
-    "edgeFunctionDeployed": false,
-    "authenticatedCanaryExecuted": false
+    "projectName": "doke-web-staging",
+    "projectRef": "zwkczgewzbsorbrjuzpb",
+    "migration": {
+      "repositoryFile": "supabase/migrations/147_identity_profile_reconciliation_authority.sql",
+      "name": "identity_profile_reconciliation_authority",
+      "version": "20260726141755",
+      "applied": true
+    },
+    "sqlValidation": {
+      "file": "supabase/tests/016_identity_profile_reconciliation_authority_validation.sql",
+      "transactionRolledBack": true,
+      "result": "success",
+      "syntheticRowsAfterRollback": 0
+    },
+    "edgeFunction": {
+      "name": "self-service-operations",
+      "version": 5,
+      "status": "ACTIVE",
+      "verifyJwt": true,
+      "sourceDigest": "6f7056c907ba6366b6a5dcd4d2e1f33a203d0c3edcbb7562ec05ef628c24bfd8"
+    },
+    "authenticatedCanary": {
+      "workflow": "AUTH-A11 Authenticated Edge Canary",
+      "runId": 30206309047,
+      "finalJobId": 89805250392,
+      "result": "success",
+      "testedActions": [
+        "get_account_identity_state",
+        "update_account_profile_reconciled",
+        "update_account_settings",
+        "complete_account_onboarding_reconciled"
+      ],
+      "authenticatedSubjectMatched": true,
+      "profileReconciled": true,
+      "protectedSettingsFiltered": true,
+      "protectedIdentityPreserved": true,
+      "onboardingReconciled": true,
+      "finalIdentityConsistent": true
+    },
+    "syntheticCleanup": {
+      "authUsersRemaining": 0,
+      "authIdentitiesRemaining": 0,
+      "publicUsersRemaining": 0,
+      "publicProfilesRemaining": 0
+    }
   },
   "safety": {
     "productionChanged": false,
     "realAccountChanged": false,
     "persistentSyntheticAccountCreated": false,
     "providerConfigurationChanged": false,
+    "paidConfigurationChanged": false,
     "prMerged": false
   },
   "blockersPreserved": [
     "MAIL-001",
     "PAID-001 / SEC-B05"
   ],
-  "remainingExitCriteria": [
-    "apply migration 147 to staging",
-    "run SQL validation 016 with rollback",
-    "deploy self-service-operations to staging",
-    "run authenticated disposable staging canaries",
-    "remove synthetic identities and data",
-    "update journal and PR closure evidence",
-    "pass canonical closure CI"
-  ]
+  "temporaryWorkflowRemoved": true
 }
