@@ -117,42 +117,6 @@
     return publicUser;
   };
 
-  const normalizeProfilePayload = (payload, user) => {
-    const source = payload?.profile || payload?.currentProfile || payload?.professionalProfile || payload?.clientProfile || payload;
-    if (!source || typeof source !== 'object') return null;
-    const role = Doke.authDomainContract?.normalizeRole
-      ? Doke.authDomainContract.normalizeRole(source.role || source.type || user?.role || user?.type)
-      : String(source.role || source.type || user?.role || 'client');
-    const name = normalizeText(source.name || source.displayName || user?.name || 'Perfil Doke');
-    return {
-      id: source.id || source.profileId || source.providerProfileId || user?.providerProfileId || user?.id || '',
-      userId: source.userId || source.ownerId || user?.id || '',
-      role,
-      type: source.type || role,
-      name,
-      handle: source.handle || user?.handle || '',
-      avatar: source.avatar || source.avatarUrl || user?.avatar || user?.avatarUrl || '',
-      avatarUrl: source.avatarUrl || source.avatar || user?.avatarUrl || user?.avatar || '',
-      avatarInitials: source.avatarInitials || source.initials || user?.avatarInitials || user?.initials || '',
-      initials: source.initials || source.avatarInitials || user?.initials || user?.avatarInitials || '',
-      coverUrl: source.coverUrl || source.cover || user?.coverUrl || '',
-      headline: source.headline || source.profession || user?.profession || '',
-      profession: source.profession || source.headline || user?.profession || '',
-      bio: source.bio || user?.bio || '',
-      interests: Array.isArray(source.interests) ? source.interests.slice(0, 8) : [],
-      city: source.city || user?.city || '',
-      state: source.state || user?.state || '',
-      location: source.location || [source.city || user?.city, source.state || user?.state].filter(Boolean).join(', '),
-      rating: Number.isFinite(Number(source.rating)) ? Number(source.rating) : Number.isFinite(Number(user?.rating)) ? Number(user.rating) : 0,
-      verified: source.verified === true || user?.verified === true,
-      metrics: source.metrics && typeof source.metrics === 'object' ? source.metrics : {},
-      publicUrl: source.publicUrl || source.publicProfileUrl || '',
-      ownerUrl: source.ownerUrl || source.ownerProfileUrl || '',
-      createdAt: source.createdAt || source.created_at || user?.createdAt || '',
-      updatedAt: source.updatedAt || ''
-    };
-  };
-
   const buildSession = (user, options = {}) => ({
     provider: options.provider || 'mock',
     remember: options.remember !== false,
@@ -230,6 +194,14 @@
   };
 
   const updateCurrentUser = async (patch = {}) => {
+    const source = patch && typeof patch === 'object' ? patch : {};
+    const keys = Object.keys(source);
+    if (keys.length !== 1 || keys[0] !== 'settings') {
+      const error = new Error('Alterações de identidade exigem uma autoridade remota dedicada.');
+      error.code = 'DOKE_AUTH_IDENTITY_MUTATION_REQUIRES_REMOTE_AUTHORITY';
+      throw error;
+    }
+    patch = source;
     await delay(60);
 
     const repo = getUsersRepository();
@@ -244,24 +216,6 @@
     const session = setSessionForUser({ ...(currentUser || {}), ...patch }, { provider: 'mock', remember: true });
     updateAccountSurfaces();
     return session.user;
-  };
-
-  const updateCurrentProfile = async (patch = {}) => {
-    await delay(60);
-
-    const repo = getUsersRepository();
-    const currentUser = getCurrentUser();
-    if (repo?.updateCurrentProfile && currentUser?.id) {
-      const user = await repo.updateCurrentProfile(currentUser.id, patch);
-      const session = setSessionForUser(user, { provider: 'mock', remember: true });
-      updateAccountSurfaces();
-      return session.user?.profile || null;
-    }
-
-    const nextProfile = normalizeProfilePayload({ ...(currentUser?.profile || {}), ...patch }, currentUser);
-    const session = setSessionForUser({ ...(currentUser || {}), profile: nextProfile }, { provider: 'mock', remember: true });
-    updateAccountSurfaces();
-    return session.user?.profile || null;
   };
 
   const getSession = () => getSessionStore()?.getSession?.() || getSessionStore()?.read?.() || null;
@@ -540,7 +494,6 @@
     getAccessToken,
     getCurrentIdentity,
     updateCurrentUser,
-    updateCurrentProfile,
     getAuthContext,
     login,
     signIn,

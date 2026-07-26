@@ -227,9 +227,6 @@
     throw identityMutationError();
   };
 
-  const updateCurrentProfile = async () => {
-    throw identityMutationError();
-  };
 
   const resolveLoginRedirect = () => {
     const inAuthFolder = root.location.pathname.includes('/auth/');
@@ -318,7 +315,6 @@
     requestRecovery,
     resetPassword,
     updateCurrentUser,
-    updateCurrentProfile,
     getPublicState,
     dispose
   });
@@ -335,7 +331,6 @@
       requestRecovery,
       resetPassword,
       updateCurrentUser,
-      updateCurrentProfile,
       sessionAuthority: api
     });
     ns.service = facade;
@@ -346,7 +341,7 @@
     ns.requestRecovery = requestRecovery;
     ns.resetPassword = resetPassword;
     ns.updateCurrentUser = updateCurrentUser;
-    ns.updateCurrentProfile = updateCurrentProfile;
+    delete ns.updateCurrentProfile;
     bindLogoutCapture();
     initialize();
     document.dispatchEvent(new CustomEvent('doke:auth-session-authority-ready', {

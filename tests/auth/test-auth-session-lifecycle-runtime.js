@@ -179,11 +179,15 @@ function assertFallbackEliminationContract() {
 for (const token of [
   'DOKE_AUTH_IDENTITY_MUTATION_REQUIRES_REMOTE_AUTHORITY',
   "keys.length === 1 && keys[0] === 'settings'",
-  'updateCurrentUser',
-  'updateCurrentProfile'
+  'updateCurrentUser'
 ]) {
   assert(sessionAuthoritySource.includes(token), `Session authority is missing identity guard token: ${token}`);
 }
+
+  assert(authServiceSource.includes("keys.length !== 1 || keys[0] !== 'settings'"), 'Canonical auth service is missing the settings-only mutation guard.');
+  assert(!authServiceSource.includes('updateCurrentProfile'), 'Canonical auth service still exposes updateCurrentProfile.');
+  assert(!sessionAuthoritySource.includes('const updateCurrentProfile'), 'Session authority still implements updateCurrentProfile.');
+  assert(!sessionAuthoritySource.includes('updateCurrentProfile,'), 'Session authority still publishes updateCurrentProfile.');
 
   assert(!recoveryPageSource.includes('assets/js/pages/auth.js'));
   assert(recoveryPageSource.includes('assets/js/pages/auth-password-pages.js'));
@@ -271,9 +275,15 @@ await expectCode(
   () => runtime.window.DokeAuth.service.updateCurrentUser({ email: 'forbidden@staging.example' }),
   'DOKE_AUTH_IDENTITY_MUTATION_REQUIRES_REMOTE_AUTHORITY'
 );
-await expectCode(
-  () => runtime.window.DokeAuth.service.updateCurrentProfile({ handle: 'forbidden-change' }),
-  'DOKE_AUTH_IDENTITY_MUTATION_REQUIRES_REMOTE_AUTHORITY'
+assert.strictEqual(
+  typeof runtime.window.DokeAuth.service.updateCurrentProfile,
+  'undefined',
+  'Retired profile mutation facade remains on DokeAuth.service.'
+);
+assert.strictEqual(
+  typeof runtime.window.DokeAuth.updateCurrentProfile,
+  'undefined',
+  'Retired profile mutation facade remains on DokeAuth.'
 );
   await authority.signOutOtherSessions();
   assert.strictEqual(signOutScopes.at(-1), 'others');
