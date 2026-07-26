@@ -841,3 +841,61 @@ Concrete unfinished items.
 ### Next step
 
 The single next logical action.
+---
+
+## 2026-07-26 — AUTH-A12B.2 generic local profile mutation authority retired
+
+**Scope:** PR #9, branch `auth/auth-001-baseline-audit`
+
+**Outcome:** `DONE` for AUTH-A12B.2; `PLANNED` for AUTH-A12B.3 and AUTH-A12C
+
+### Context
+
+The browser users repository still exposed generic account, profile and settings mutation methods. `profile-service.js` also retained local profile/settings fallbacks and manually rewrote the Doke public session. Professional local flows consumed the same generic user mutation method, but their role-promotion semantics belong to AUTH-A12C.
+
+### Decision
+
+Remove generic browser-local mutation authority immediately. Keep professional compatibility only behind one explicit, narrow fixture boundary that cannot accept UUID/Supabase subjects and must be removed in AUTH-A12C. Remote authority failure must fail closed instead of materializing local identity state.
+
+### Implementation
+
+- Removed `updateCurrentUser`, `updateCurrentProfile` and `updateCurrentSettings` from `users-repository.js`.
+- Removed local profile/settings mutation fallbacks and manual `Doke.session` rewrites from `profile-service.js`.
+- Required `self-service-operations` for profile and settings mutations.
+- Added `updateProfessionalFixtureUser` as an isolated temporary fixture boundary.
+- Restricted the fixture patch to professional role/profile routing fields.
+- Blocked empty IDs, UUID/Supabase subjects, unsupported fields and missing fixtures.
+- Added `tests/auth/test-auth-local-profile-mutation-retirement-runtime.js`.
+- Added the runtime permanently to the canonical Doke Quality Gates.
+- Updated the AUTH integration contract and AUTH-A12 Markdown/JSON evidence.
+- Synchronized the deterministic domain matrix.
+- Removed all temporary codemod, workflow and diagnostic surfaces after use.
+
+### Validation
+
+Validated head: `3866fbea076deba2328f9077a2d582b3a2c5033b`.
+
+- Doke Quality Gates #620: success.
+- AUTH-A12B.2 local profile mutation retirement runtime: success.
+- Blocking deterministic E2E: success.
+- 105 visual structural guards: success.
+- Doke Staging Edge HTTP Canary #394: success.
+- Doke Diagnostic E2E #415: success.
+- Deterministic matrix, governance, asset audits, E2E partition and `git diff --check`: success.
+
+### Supabase and production boundary
+
+- No migration was applied.
+- No Edge Function was deployed.
+- No staging configuration or data was changed.
+- No real or persistent synthetic account was modified.
+- Production was not changed.
+- PR #9 remains draft and unmerged.
+
+### Remaining risk
+
+`updateProfessionalFixtureUser` is not a production identity authority. It remains a temporary compatibility boundary for local professional fixtures and must be removed or moved outside active runtime loading in AUTH-A12C.
+
+### Next step
+
+Execute AUTH-A12B.3: audit and retire residual local onboarding mutation and manual session rewrites while preserving server-side reconciliation as the only active authority.
