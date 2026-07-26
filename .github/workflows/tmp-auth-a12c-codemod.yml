@@ -1,23 +1,23 @@
 name: Temporary AUTH-A12C Codemod
 
 on:
-  push:
-    branches:
-      - 'auth/auth-001-baseline-audit'
+  pull_request:
+    branches: [MAIN, main, master]
+    types: [synchronize]
 
 permissions:
   contents: write
 
 jobs:
   codemod:
-    if: startsWith(github.event.head_commit.message, 'Run AUTH-A12C codemod')
+    if: github.actor != 'github-actions[bot]' && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - name: Checkout branch
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 1
 
       - name: Setup Node
@@ -42,4 +42,4 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add assets/js scripts tests package.json .github/workflows/quality.yml docs
           git commit -m 'Retire local professional identity authority'
-          git push origin HEAD:${{ github.ref_name }}
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
