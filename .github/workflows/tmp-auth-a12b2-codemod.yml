@@ -41,7 +41,20 @@ jobs:
         run: node --check scripts/tmp-auth-a12b2-codemod.js
 
       - name: Apply controlled codemod
-        run: node scripts/tmp-auth-a12b2-codemod.js
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p reports/generated
+          node scripts/tmp-auth-a12b2-codemod.js 2>&1 | tee reports/generated/auth-a12b2-codemod.log
+
+      - name: Upload codemod failure detail
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: auth-a12b2-codemod-failure-${{ github.sha }}
+          path: reports/generated/auth-a12b2-codemod.log
+          if-no-files-found: error
+          retention-days: 3
 
       - name: Run AUTH-A12B.2 targeted gates
         run: |
@@ -55,6 +68,7 @@ jobs:
         run: |
           rm scripts/tmp-auth-a12b2-codemod.js
           rm .github/workflows/tmp-auth-a12b2-codemod.yml
+          rm -f reports/generated/auth-a12b2-codemod.log
 
       - name: Publish controlled implementation
         run: |
