@@ -11,7 +11,8 @@ Supabase Auth é a única autoridade ativa de autenticação no navegador.
 - query string, `localStorage` e configuração de janela não podem escolher outro provider de autenticação;
 - páginas e renderers não chamam endpoints de autenticação diretamente;
 - o adapter browser `/auth/*` foi removido fisicamente no AUTH-A10;
-- perfil, configurações e onboarding usam operações self-service server-side reconciliadas desde o AUTH-A11.
+- perfil, configurações e onboarding usam operações self-service server-side reconciliadas desde o AUTH-A11;
+- criação de conta, hash e atualização de senha locais foram retirados do repositório do navegador no AUTH-A12B.1.
 
 ## Fontes de verdade
 
@@ -113,15 +114,17 @@ A migration 147 e o SQL 016 são a evidência server-side. Os runtimes permanent
 
 ## AUTH-A12 — retirada da autoridade local residual
 
-O AUTH-A12 separa leitura local de demonstração de mutação de identidade. `users-repository.js` ainda contém funções históricas de criação, senha, perfil, configurações e role que não são autoridades válidas para uma conta Supabase.
+O AUTH-A12 separa leitura local histórica de mutação de identidade. As credenciais locais foram retiradas no AUTH-A12B.1: `users-repository.js` não cria contas, não calcula hash, não atualiza senha e remove `password` e `passwordHash` dos registros locais lidos ou persistidos.
 
-A execução foi dividida para reduzir risco:
+A execução permanece dividida para reduzir risco:
 
-- `AUTH-A12A`: corrigir o contrato runtime e substituir testes que ainda validavam a autoridade local;
-- `AUTH-A12B`: retirar mutações locais de conta/perfil/onboarding, preservando apenas leituras locais comprovadamente necessárias;
-- `AUTH-A12C`: retirar promoção de role e reescrita de sessão dos fallbacks locais dos fluxos profissionais.
+- `AUTH-A12A` — concluído: contrato runtime e testes reconciliados com Supabase e `self-service-operations`;
+- `AUTH-A12B.1` — concluído: `create`, `hashPassword` e `updatePassword` retirados, com sanitização de credenciais históricas;
+- `AUTH-A12B.2` — pendente: retirar `updateCurrentUser`, `updateCurrentProfile` e `updateCurrentSettings` do repositório local;
+- `AUTH-A12B.3` — pendente: retirar mutação local residual de onboarding e reescritas manuais de sessão;
+- `AUTH-A12C` — pendente: retirar promoção local de role e reescrita de sessão dos fluxos profissionais.
 
-Enquanto A12B e A12C não terminarem, essas superfícies permanecem dívida inventariada, nunca fallback aceitável para falha do Supabase.
+As mutações ainda inventariadas permanecem dívida controlada, nunca fallback aceitável para falha do Supabase.
 
 ## Roles e autorização
 
@@ -166,5 +169,6 @@ AUTH-A10 removeu endpoints, request helpers, token API temporário e branches do
 - o diagnóstico histórico permanece CLI-only;
 - alterações verificadas de e-mail/telefone continuam bloqueadas até o AUTH-A07 e MAIL-001;
 - perfil, configurações e onboarding usam respostas server-side reconciliadas;
+- o repositório local não expõe criação, hash ou atualização de senha e não conserva campos de credencial;
 - mutações locais inventariadas não podem assumir autoridade quando o Supabase está indisponível;
 - PR #9 permanece draft e não deve ser mesclado sem autorização explícita.
