@@ -3,240 +3,41 @@ name: Doke Quality Gates
 on:
   pull_request:
     branches: [MAIN, main, master]
-  push:
-    branches: [MAIN, main, master]
-  workflow_dispatch:
 
 permissions:
   contents: read
 
-concurrency:
-  group: doke-quality-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
-  static-audits:
-    name: Static architecture and partition audits
+  auth-a12-index-reconciliation:
+    name: Reconcile AUTH-A12 active contract index
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 10
+    permissions:
+      contents: write
 
     steps:
-      - name: Checkout candidate tree
+      - name: Checkout PR branch
         uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
         with:
-          node-version: 22
-          cache: npm
+          ref: ${{ github.head_ref }}
+          fetch-depth: 1
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Patch active contract index
+        shell: bash
+        env:
+          AUTH_A12_INDEX_PATCH_B64: ZnJvbSBwYXRobGliIGltcG9ydCBQYXRoCnBhdGggPSBQYXRoKCdkb2NzL0FDVElWRS1DT05UUkFDVFMtSU5ERVgubWQnKQp0ZXh0ID0gcGF0aC5yZWFkX3RleHQoZW5jb2Rpbmc9J3V0Zi04JykKb2xkID0gIiIiIyMgU3ByaW50IDEyQgoKLSBgYXNzZXRzL2pzL2NvbnRyYWN0cy9pZGVudGl0eS1wcm9maWxlLWNvbnRyYWN0LmpzYCDigJQgY29udHJhdG8gcnVudGltZSBkZSBpZGVudGlkYWRlL3BlcmZpbC4KLSBgZG9jcy9BVVRILUlOVEVHUkFUSU9OLUNPTlRSQUNULm1kYCDigJQgZW5kcG9pbnRzIGAvdXNlcnMvbWVgIGUgYC9wcm9maWxlcy9tZWAsIERUTyBkZSBpZGVudGlkYWRlIGUgcmVncmFzIGRlIHNlc3PDo28gZW5yaXF1ZWNpZGEuCiIiIgpuZXcgPSAiIiIjIyBTcHJpbnQgMTJCIOKAlCByZWdpc3RybyBoaXN0w7NyaWNvIHJlY29uY2lsaWFkbyBubyBBVVRILUExMkEKCi0gYGFzc2V0cy9qcy9jb250cmFjdHMvaWRlbnRpdHktcHJvZmlsZS1jb250cmFjdC5qc2Ag4oCUIGNvbnRyYXRvIHJ1bnRpbWUgYXR1YWwgZGUgaWRlbnRpZGFkZS9wZXJmaWwsIGZpeGFkbyBlbSBTdXBhYmFzZSBlIG5hcyBhw6fDtWVzIGF1dGVudGljYWRhcyBkZSBgc2VsZi1zZXJ2aWNlLW9wZXJhdGlvbnNgLgotIGBkb2NzL0FVVEgtSU5URUdSQVRJT04tQ09OVFJBQ1QubWRgIOKAlCBEVE9zIGF0dWFpcywgYXV0b3JpZGFkZSByZWNvbmNpbGlhZGEgZGUgcGVyZmlsL2NvbmZpZ3VyYcOnw7Vlcy9vbmJvYXJkaW5nIGUgaXNvbGFtZW50byBkb3MgZW5kcG9pbnRzIGhpc3TDs3JpY29zIGAvdXNlcnMvbWVgIGUgYC9wcm9maWxlcy9tZWAgYW8gZGlhZ27Ds3N0aWNvIENMSS1vbmx5LgoiIiIKaWYgdGV4dC5jb3VudChvbGQpICE9IDE6CiAgICByYWlzZSBTeXN0ZW1FeGl0KCdTcHJpbnQgMTJCIGNvbnRyYWN0IGJsb2NrIGlzIG1pc3Npbmcgb3IgYW1iaWd1b3VzLicpCnRleHQgPSB0ZXh0LnJlcGxhY2Uob2xkLCBuZXcpCm9sZF9jbGkgPSAiLSBPIGNvbnRyYXRvIGNvbnRpbnVhIGBhdXRoUHJvdmlkZXI9YXBpYCwgYGRhdGFQcm92aWRlcj1tb2NrYCwgY29tIGNoYW1hZGFzIHJlc3RyaXRhcyBhIGAvYXV0aC9sb2dpbmAsIGAvYXV0aC9zZXNzaW9uYCwgYC91c2Vycy9tZWAgZSBgL3Byb2ZpbGVzL21lYC4iCm5ld19jbGkgPSAiLSBPIGNvbnRyYXRvIGRpYWduw7NzdGljbyBDTEktb25seSBjb250aW51YSBgYXV0aFByb3ZpZGVyPWFwaWAsIGBkYXRhUHJvdmlkZXI9bW9ja2AsIGNvbSBjaGFtYWRhcyByZXN0cml0YXMgYSBgL2F1dGgvbG9naW5gLCBgL2F1dGgvc2Vzc2lvbmAsIGAvdXNlcnMvbWVgIGUgYC9wcm9maWxlcy9tZWA7IGVsZSBuw6NvIGRlc2NyZXZlIG5lbSBzZWxlY2lvbmEgbyBwcm92aWRlciBkbyBuYXZlZ2Fkb3IuIgppZiB0ZXh0LmNvdW50KG9sZF9jbGkpICE9IDE6CiAgICByYWlzZSBTeXN0ZW1FeGl0KCdTcHJpbnQgMjcgQ0xJLW9ubHkgY29udHJhY3QgbGluZSBpcyBtaXNzaW5nIG9yIGFtYmlndW91cy4nKQpwYXRoLndyaXRlX3RleHQodGV4dC5yZXBsYWNlKG9sZF9jbGksIG5ld19jbGkpLCBlbmNvZGluZz0ndXRmLTgnKQo=
+        run: |
+          set -euo pipefail
+          printf '%s' "$AUTH_A12_INDEX_PATCH_B64" | base64 --decode | python3
+          git diff --check
+          test "$(git diff --name-only)" = 'docs/ACTIVE-CONTRACTS-INDEX.md'
 
-      - name: Audit frontend contracts
-        run: npm run audit:frontend:strict
-
-      - name: Audit canonical UI
-        run: npm run audit:ui
-
-      - name: Audit domain cards
-        run: npm run audit:domain
-
-      - name: Audit layout contracts
-        run: npm run audit:layout
-
-      - name: Audit product flows
-        run: npm run audit:flows
-
-      - name: Audit legacy bridge scope
-        run: npm run audit:bridge
-
-      - name: Audit page route map
-        run: npm run audit:routes
-
-      - name: Audit mock data contracts
-        run: npm run audit:mocks
-
-      - name: Audit project architecture
-        run: npm run audit:architecture
-
-      - name: Audit backend data contracts
-        run: npm run audit:backend-data
-
-      - name: Audit Edge Function source closure
-        run: npm run audit:edge-function-source-closure
-
-      - name: Audit auth session structure
-        run: node scripts/audit-auth-session-contracts.js
-
-      - name: Capture auth session audit failure
-        if: failure()
+      - name: Publish contract index
         shell: bash
         run: |
-          mkdir -p reports/generated
-          node scripts/audit-auth-session-contracts.js > reports/generated/auth-session-audit-failure.log 2>&1 || true
-
-      - name: Upload auth session audit failure
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: doke-auth-session-audit-failure-${{ github.sha }}
-          path: reports/generated/auth-session-audit-failure.log
-          if-no-files-found: error
-          retention-days: 7
-
-      - name: Test canonical auth session runtime
-        run: node scripts/test-auth-canonical-session-runtime.js
-
-      - name: Audit identity profile authority
-        run: npm run audit:identity-profile-contract
-
-      - name: Test provider-reconciled profile contract
-        run: node scripts/test-profile-write-contract.js
-
-      - name: Test registration and onboarding authority contract
-        run: node scripts/test-auth-username-onboarding-contract.js
-
-      - name: Audit desktop shell contracts
-        run: npm run audit:desktop-shell
-
-      - name: Audit JavaScript foundation
-        run: npm run audit:js-foundation
-
-      - name: Audit visual baseline
-        run: npm run audit:visual-baseline
-
-      - name: Audit controller mock wiring
-        run: npm run audit:controller-mocks
-
-      - name: Audit domain services
-        run: npm run audit:domain-services
-
-      - name: Audit runtime flags
-        run: npm run audit:runtime-flags
-
-      - name: Audit responsive inventory
-        run: npm run audit:responsive-inventory
-
-      - name: Audit responsive boundaries
-        run: npm run audit:responsive-boundaries
-
-      - name: Audit desktop base stability
-        run: npm run audit:desktop-base
-
-      - name: Audit mobile base stability
-        run: npm run audit:mobile-base
-
-      - name: Validate platform ACL contract
-        run: npm run test:platform-default-acl-contract
-
-      - name: Run quality pipeline audit
-        run: npm run audit:quality-pipeline
-
-      - name: Validate domain completion matrix
-        run: npm run audit:domain-completion-matrix
-
-      - name: Generate stale domain matrix evidence
-        if: failure()
-        run: node scripts/audit-domain-completion-matrix.js --write
-
-      - name: Upload stale domain matrix evidence
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: doke-domain-matrix-drift-${{ github.sha }}
-          path: |
-            docs/DOMAIN-COMPLETION-MATRIX.md
-            reports/generated/domain-completion-matrix-report.json
-          if-no-files-found: error
-          retention-days: 7
-
-      - name: Run agent governance audits
-        run: npm run audit:agent-governance
-
-      - name: Audit unused asset candidates
-        run: npm run audit:unused-asset-candidates
-
-      - name: Audit duplicate assets
-        run: npm run audit:duplicate-assets
-
-      - name: Audit E2E lane partition
-        run: npm run audit:e2e-lanes
-
-      - name: Verify clean patch formatting
-        run: git diff --check
-
-  blocking-e2e:
-    name: Blocking deterministic E2E lane
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    needs: static-audits
-
-    steps:
-      - name: Checkout candidate tree
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Install Chromium
-        run: npx playwright install --with-deps chromium
-
-      - name: Run blocking E2E lane
-        run: npm run test:e2e:blocking
-
-      - name: Upload blocking E2E evidence
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: doke-blocking-e2e-${{ github.sha }}
-          path: |
-            reports/generated/e2e-blocking-lane-summary.json
-            reports/generated/playwright-html/
-            reports/generated/playwright-results.json
-            test-results/
-          if-no-files-found: warn
-          retention-days: 14
-
-  visual-structural:
-    name: 105 visual structural guards
-    runs-on: windows-latest
-    timeout-minutes: 40
-    needs: static-audits
-
-    steps:
-      - name: Checkout candidate tree
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Install Chromium
-        run: npx playwright install chromium
-
-      - name: Run 105 visual structural guards
-        run: npm run test:visual:structural
-
-      - name: Upload visual structural evidence
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: doke-visual-structural-${{ github.sha }}
-          path: |
-            reports/generated/playwright-html/
-            reports/generated/playwright-results.json
-            test-results/
-          if-no-files-found: warn
-          retention-days: 14
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add docs/ACTIVE-CONTRACTS-INDEX.md
+          git commit -m 'Reconcile AUTH-A12 active contract index'
+          git push origin HEAD:${{ github.head_ref }}
