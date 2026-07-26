@@ -2,7 +2,7 @@
 
 ## Status
 
-`IN PROGRESS` — `AUTH-A12A` está `DONE`. `AUTH-A12B.1` foi implementado e aguarda validação do head remoto. `AUTH-A12B.2`, `AUTH-A12B.3` e `AUTH-A12C` permanecem pendentes.
+`IN PROGRESS` — `AUTH-A12A` e `AUTH-A12B.1` estão `DONE`. `AUTH-A12B.2`, `AUTH-A12B.3` e `AUTH-A12C` permanecem pendentes antes do encerramento do AUTH-A12.
 
 ## Objetivo
 
@@ -37,7 +37,7 @@ Validação final desse head:
 
 Nenhuma migration, função Edge, configuração Auth ou dado de staging foi alterado pelo AUTH-A12A.
 
-## AUTH-A12B.1 — credenciais locais
+## AUTH-A12B.1 — credenciais locais removidas
 
 ### Causa-raiz
 
@@ -47,17 +47,15 @@ Nenhuma migration, função Edge, configuração Auth ou dado de staging foi alt
 - `hashPassword`;
 - `updatePassword`.
 
-Essas superfícies permitiam criar conta, calcular hash e redefinir senha em `doke.auth.users.v1`, apesar de Supabase Auth já ser a única autoridade de credenciais. O repositório também podia conservar campos históricos `password` e `passwordHash` ao ler/escrever fixtures locais.
+Essas superfícies permitiam criar conta, calcular hash e redefinir senha em `doke.auth.users.v1`, apesar de Supabase Auth já ser a única autoridade de credenciais. O repositório também podia conservar campos históricos `password` e `passwordHash` ao ler ou escrever dados locais.
 
 ### Implementação
 
-As credenciais locais removidas do runtime abrangem:
-
 - removidos os exports e implementações `create`, `hashPassword` e `updatePassword`;
 - removido o fallback de hash em texto simples;
-- removida a descrição do repositório como camada de mock authentication;
+- removida a descrição do repositório como camada de autenticação mock;
 - adicionada sanitização defensiva que elimina `password` e `passwordHash` de objetos normalizados e de `doke.auth.users.v1`;
-- preservadas APIs de leitura/normalização comprovadamente necessárias;
+- preservadas APIs de leitura e normalização comprovadamente necessárias;
 - preservadas temporariamente, como dívida inventariada para o próximo corte:
   - `updateCurrentUser`;
   - `updateCurrentProfile`;
@@ -67,7 +65,7 @@ O contrato `identity-profile-contract.js` passou para `AUTH-A12B.1` e declara `l
 
 ### Gate permanente
 
-`scripts/audit-identity-profile-contract.js` agora valida estaticamente e em runtime:
+`scripts/audit-identity-profile-contract.js` valida estaticamente e em runtime:
 
 - ausência de `create`, `hashPassword` e `updatePassword` no source e nos exports;
 - manutenção das APIs locais de leitura;
@@ -75,22 +73,34 @@ O contrato `identity-profile-contract.js` passou para `AUTH-A12B.1` e declara `l
 - preservação da limpeza de contas demo locais;
 - inventário exato das três mutações locais restantes.
 
-O gate já pertence ao workflow canônico `Doke Quality Gates`; nenhum workflow temporário foi criado.
+`scripts/test-real-auth-only-contract.js` foi reconciliado para proteger a nova fronteira credential-free em vez de exigir o marcador histórico `FALLBACK_USERS`.
 
-### Validação pendente
+Os gates pertencem ao workflow canônico `Doke Quality Gates`; nenhum workflow temporário foi criado.
 
-No momento desta implementação, os pipelines do novo head ainda não foram concluídos. Não há declaração antecipada de sucesso.
+## Validação AUTH-A12B.1
 
-Validação exigida:
+Head de implementação validado:
 
-- `npm run audit:identity-profile-contract`;
-- testes permanentes de perfil, configurações, onboarding, sessão, cadastro e senha Supabase;
-- matriz determinística sincronizada;
-- Doke Quality Gates;
-- E2E bloqueante;
-- 105 guards visuais;
-- Doke Staging Edge HTTP Canary;
-- Doke Diagnostic E2E, quando disponível.
+`7caf2dea2d3fafa25d80b50ba3c62047e8609332`
+
+Doke Quality Gates #601:
+
+- auditorias estáticas e arquiteturais: sucesso;
+- canonical auth/session runtime: sucesso;
+- audit de autoridade de identidade/perfil: sucesso;
+- contrato de perfil reconciliado: sucesso;
+- contrato de cadastro, username e onboarding: sucesso;
+- matriz determinística: sucesso;
+- governança, assets, partição E2E e `git diff --check`: sucesso;
+- E2E bloqueante: sucesso;
+- 105 guards visuais: sucesso.
+
+Validação paralela:
+
+- Doke Staging Edge HTTP Canary #375: sucesso;
+- Doke Diagnostic E2E #396: sucesso.
+
+A primeira tentativa do Quality Gates, #600, falhou porque `scripts/test-real-auth-only-contract.js` ainda exigia `FALLBACK_USERS`. O gate foi corrigido para validar ausência de autoridade local de credenciais; nenhuma implementação histórica foi restaurada.
 
 ## Próximas fases
 
@@ -99,7 +109,7 @@ Validação exigida:
 - confirmar consumidores reais de `updateCurrentUser`, `updateCurrentProfile` e `updateCurrentSettings`;
 - retirar essas mutações do repositório de runtime;
 - garantir que perfil/configurações Supabase falhem fechado sem fallback local;
-- preservar somente leitura/normalização local comprovada.
+- preservar somente leitura e normalização local comprovada.
 
 ### `AUTH-A12B.3` — onboarding e sessão
 
@@ -132,11 +142,11 @@ Validação exigida:
 
 ## Critério de aceite do AUTH-A12B.1
 
-O corte só pode ser declarado concluído quando o head final provar simultaneamente:
+O corte foi aceito porque o head de implementação provou simultaneamente:
 
-1. nenhum export ou implementação local de cadastro/hash/redefinição de senha;
-2. nenhuma persistência de `password` ou `passwordHash` no repositório local;
+1. nenhum export ou implementação local de cadastro, hash ou redefinição de senha;
+2. nenhuma persistência de `password` ou `passwordHash` pelo repositório local;
 3. APIs de leitura necessárias preservadas;
 4. matriz determinística sincronizada;
-5. Quality Gates, E2E bloqueante, 105 guards e staging canary concluídos com sucesso;
+5. Quality Gates, E2E bloqueante, 105 guards, staging canary e Diagnostic concluídos com sucesso;
 6. nenhum workflow, diagnóstico, codemod ou gatilho temporário remanescente.
