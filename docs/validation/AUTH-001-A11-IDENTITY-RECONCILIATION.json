@@ -1,0 +1,57 @@
+{
+  "domain": "AUTH-001",
+  "sublot": "AUTH-A11",
+  "status": "in_progress",
+  "scope": "provider-reconciled profile, settings and onboarding mutation authority",
+  "implementationHead": "b100d26f6e0f67801a711725426195b4b22a846d",
+  "authorities": {
+    "authentication": "Supabase Auth",
+    "publicProfile": "update_account_profile_reconciled + get_account_identity_state",
+    "settings": "update_account_settings",
+    "onboarding": "complete_account_onboarding_reconciled + get_account_identity_state"
+  },
+  "retiredSurfaces": [
+    "DokeAuth.updateCurrentUser",
+    "DokeAuth.service.updateCurrentUser",
+    "DokeAuth.updateCurrentProfile",
+    "DokeAuth.service.updateCurrentProfile",
+    "onboarding auth.updateCurrentUser",
+    "onboarding supabase.auth.updateUser metadata duplication"
+  ],
+  "runtimeTests": [
+    "tests/auth/test-auth-profile-reconciliation-runtime.js",
+    "tests/auth/test-auth-settings-reconciliation-runtime.js",
+    "tests/auth/test-auth-onboarding-reconciliation-runtime.js"
+  ],
+  "sqlValidation": "supabase/tests/016_identity_profile_reconciliation_authority_validation.sql",
+  "qualityRun": {
+    "runNumber": 539,
+    "functionalAndAuthorityAudits": "success",
+    "domainMatrix": "stale_pending_regeneration"
+  },
+  "staging": {
+    "migration147Applied": false,
+    "edgeFunctionDeployed": false,
+    "authenticatedCanaryExecuted": false
+  },
+  "safety": {
+    "productionChanged": false,
+    "realAccountChanged": false,
+    "persistentSyntheticAccountCreated": false,
+    "providerConfigurationChanged": false,
+    "prMerged": false
+  },
+  "blockersPreserved": [
+    "MAIL-001",
+    "PAID-001 / SEC-B05"
+  ],
+  "remainingExitCriteria": [
+    "apply migration 147 to staging",
+    "run SQL validation 016 with rollback",
+    "deploy self-service-operations to staging",
+    "run authenticated disposable staging canaries",
+    "remove synthetic identities and data",
+    "update journal and PR closure evidence",
+    "pass canonical closure CI"
+  ]
+}
