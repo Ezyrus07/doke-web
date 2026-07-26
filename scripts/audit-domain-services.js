@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 const fs = require('fs');
 const path = require('path');
+const { execFileSync } = require('child_process');
 
 const root = path.resolve(__dirname, '..');
 const pages = [
@@ -25,7 +26,7 @@ const serviceFiles = [
   'assets/js/services/domain-data-service.js',
 ];
 const contracts = {
-  'assets/js/services/profile-service.js': ['services.profile', 'getCurrentProfile'],
+  'assets/js/services/profile-service.js': ['services.profile', 'getCurrentProfile', 'refreshCurrentProfile'],
   'assets/js/services/search-service.js': ['services.search', 'fromLocationSearch'],
   'assets/js/services/order-service.js': ['services.orders', 'summary'],
   'assets/js/services/message-service.js': ['services.messages', 'listConversations'],
@@ -108,6 +109,15 @@ if (errors.length) {
   errors.forEach((error) => console.error(`- ${error}`));
   process.exit(1);
 }
+
+execFileSync(process.execPath, [path.join(root, 'scripts/audit-auth-profile-reconciliation-contract.js')], {
+  cwd: root,
+  stdio: 'inherit'
+});
+execFileSync(process.execPath, [path.join(root, 'tests/auth/test-auth-profile-reconciliation-runtime.js')], {
+  cwd: root,
+  stdio: 'inherit'
+});
 
 console.log('Domain services audit passed.');
 console.log(`Pages checked: ${pages.length}`);
