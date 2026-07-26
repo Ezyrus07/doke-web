@@ -245,6 +245,7 @@ jobs:
         with:
           ref: ${{ github.head_ref }}
           fetch-depth: 1
+          show-progress: false
 
       - name: Detect pending settings slice
         id: detect
@@ -256,20 +257,9 @@ jobs:
             echo 'pending=false' >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Setup Node
-        if: steps.detect.outputs.pending == 'true'
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-
-      - name: Install dependencies
-        if: steps.detect.outputs.pending == 'true'
-        run: npm ci
-
       - name: Apply AUTH-A11 settings slice
         if: steps.detect.outputs.pending == 'true'
-        run: node scripts/apply-auth-a11-settings-slice.js
+        run: node scripts/run-auth-a11-settings-slice.js
 
       - name: Validate settings authority
         if: steps.detect.outputs.pending == 'true'
