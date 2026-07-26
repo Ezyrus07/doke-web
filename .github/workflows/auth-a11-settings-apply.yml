@@ -1,0 +1,100 @@
+name: AUTH-A11 Settings Authority Apply
+
+on:
+  push:
+    branches:
+      - 'auth/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: auth-a11-settings-apply-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    if: startsWith(github.event.head_commit.message, 'Run AUTH-A11 settings authority')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 1
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Apply AUTH-A11 settings slice
+        run: node scripts/apply-auth-a11-settings-slice.js
+
+      - name: Validate syntax and contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check assets/js/services/profile-service.js
+          node --check assets/js/services/auth-service.js
+          node --check assets/js/services/auth-session-authority.js
+          node --check tests/auth/test-auth-session-lifecycle-runtime.js
+          node --check tests/auth/test-auth-settings-reconciliation-runtime.js
+          node --check scripts/audit-auth-session-contracts.js
+          node --check scripts/audit-auth-profile-reconciliation-contract.js
+          node --check scripts/audit-domain-services.js
+          node tests/auth/test-auth-session-lifecycle-runtime.js
+          node tests/auth/test-auth-profile-reconciliation-runtime.js
+          node tests/auth/test-auth-settings-reconciliation-runtime.js
+          node scripts/audit-auth-session-contracts.js
+          node scripts/audit-auth-profile-reconciliation-contract.js
+          node scripts/audit-domain-services.js
+          node scripts/audit-domain-completion-matrix.js --write
+          node scripts/audit-domain-completion-matrix.js
+          git diff --check
+
+      - name: Enforce exact output scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual="$(git status --short | sed -E 's/^.. //' | sort)"
+          expected="$(cat <<'EOF'
+          assets/js/services/auth-service.js
+          assets/js/services/auth-session-authority.js
+          assets/js/services/profile-service.js
+          docs/DOMAIN-COMPLETION-MATRIX.md
+          scripts/audit-auth-profile-reconciliation-contract.js
+          scripts/audit-auth-session-contracts.js
+          scripts/audit-domain-services.js
+          tests/auth/test-auth-session-lifecycle-runtime.js
+          tests/auth/test-auth-settings-reconciliation-runtime.js
+          EOF
+          )"
+          test "$actual" = "$expected"
+
+      - name: Publish validated settings authority
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            assets/js/services/auth-service.js \
+            assets/js/services/auth-session-authority.js \
+            assets/js/services/profile-service.js \
+            docs/DOMAIN-COMPLETION-MATRIX.md \
+            scripts/audit-auth-profile-reconciliation-contract.js \
+            scripts/audit-auth-session-contracts.js \
+            scripts/audit-domain-services.js \
+            tests/auth/test-auth-session-lifecycle-runtime.js \
+            tests/auth/test-auth-settings-reconciliation-runtime.js
+          git commit -m 'Implement AUTH-A11 settings reconciliation authority'
+          git push origin HEAD:${{ github.ref_name }}
