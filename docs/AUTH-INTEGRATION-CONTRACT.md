@@ -8,38 +8,42 @@ Supabase Auth é a única autoridade ativa de autenticação no navegador.
 
 - login, cadastro, recuperação, refresh, reautenticação e logout usam o SDK do Supabase;
 - `doke.auth.session.v1` contém somente identidade pública e estado de renderização, nunca access token ou refresh token;
-- query string, `localStorage` e configuração de janela não podem escolher outro provider de autenticação;
-- páginas e renderers não chamam endpoints de autenticação diretamente;
+- query string, `localStorage` e configuração de janela não podem escolher outro provider;
 - o adapter browser `/auth/*` foi removido fisicamente no AUTH-A10;
-- perfil, configurações e onboarding usam operações self-service server-side reconciliadas desde o AUTH-A11;
+- perfil, configurações e onboarding usam operações server-side reconciliadas;
 - criação de conta, hash e atualização de senha locais foram retirados no AUTH-A12B.1;
 - mutações locais genéricas de conta, perfil e configurações foram retiradas no AUTH-A12B.2;
-- mutação local de onboarding, inferência local de conclusão e reescrita manual de sessão foram retiradas no AUTH-A12B.3.
+- conclusão e inferência local de onboarding foram retiradas no AUTH-A12B.3;
+- promoção local de role profissional, decisões administrativas locais e reescritas profissionais de sessão foram retiradas no AUTH-A12C.
 
 ## Fontes de verdade
 
-- `assets/js/services/auth-service.js`: fachada pública de autenticação e ponte da sessão Supabase;
-- `assets/js/core/session.js`: snapshot público normalizado e contexto de acesso;
-- `assets/js/services/auth-session-authority.js`: refresh explícito e escopos de logout;
-- `assets/js/services/auth-registration-authority.js`: cadastro e autoridade de username;
-- `assets/js/services/auth-password-authority.js`: recuperação, reset e reautenticação;
-- `assets/js/services/profile-service.js`: leitura e mutação reconciliada de perfil e configurações;
-- `assets/js/services/onboarding-service.js`: leitura e conclusão reconciliada do onboarding;
-- `assets/js/contracts/identity-profile-contract.js`: ações e autoridades atuais de identidade/perfil no navegador;
-- `public.users` e `public.user_profiles`: fonte de verdade de conta, preferências, onboarding e perfil público;
-- `self-service-operations`: transporte autenticado das operações de identidade pública;
-- `assets/js/core/permissions.js`: permissões derivadas de role;
-- `assets/js/contracts/auth-domain-contract.js`: roles e estados de conta/sessão.
+- Supabase Auth: autenticação e sessão criptográfica;
+- `public.users`: conta, status e role canônica;
+- `public.user_profiles`: perfil público;
+- `self-service-operations`: identidade, perfil, configurações e onboarding;
+- `professional-verification-operations`: revisão administrativa da identidade profissional;
+- `decide_professional_identity_verification_internal`: transação server-side que decide a verificação e promove o role profissional;
+- `assets/js/core/session.js`: snapshot público token-free;
+- `assets/js/core/permissions.js`: permissões derivadas da role canônica;
+- `assets/js/contracts/identity-profile-contract.js`: contrato atual `AUTH-A12C`.
 
 ## Provider de autenticação
 
 O provider ativo do browser é sempre `supabase`.
 
-`DokeAuth.getActiveAuthProvider()` permanece apenas como compatibilidade pública e retorna `supabase`. As antigas fachadas `getAuthProviderStatus`, `getAuthIdentityCanaryStatus`, `configureAuthIdentityCanary`, `rollbackAuthIdentityCanary`, `refreshApiSession`, `refreshCurrentIdentity`, `updateCurrentUser` e `updateCurrentProfile` não fazem parte da API pública atual.
+`DokeAuth.getActiveAuthProvider()` permanece apenas como compatibilidade pública e retorna `supabase`. Nenhuma superfície ativa seleciona `mock` ou `api` para autenticação.
 
 ## Diagnóstico histórico CLI-only
 
-O smoke histórico de `/auth/login`, `/auth/session`, `/users/me` e `/profiles/me` permanece exclusivamente em scripts Node com variáveis de ambiente explícitas. Esse diagnóstico CLI-only não é carregado pelo navegador, não muda o provider ativo e não grava configuração no cliente.
+O smoke histórico de `/auth/login`, `/auth/session`, `/users/me` e `/profiles/me` permanece exclusivamente em scripts Node com variáveis de ambiente explícitas.
+
+Esses endpoints:
+
+- não são carregados pelo navegador;
+- não alteram o provider ativo;
+- não gravam configuração no cliente;
+- não constituem fallback de produção.
 
 Comandos preservados:
 
@@ -48,7 +52,7 @@ npm run validate:auth-identity-canary:dry-run
 npm run validate:auth-identity-canary
 ```
 
-A execução com rede exige ambiente local/staging explícito, credenciais descartáveis e `DOKE_AUTH_IDENTITY_CANARY_ALLOW_NETWORK=1`.
+A execução com rede exige ambiente local ou staging explícito, credenciais descartáveis e `DOKE_AUTH_IDENTITY_CANARY_ALLOW_NETWORK=1`.
 
 ## Session DTO oficial
 
@@ -91,35 +95,75 @@ E-mail e telefone podem ser exibidos no contexto privado da conta, mas sua alter
 
 ## Identidade, perfil, configurações e onboarding
 
-Supabase Auth é autoridade de credencial e sessão. `public.users` e `public.user_profiles`, protegidos por autoridade server-side, são a fonte de verdade de conta, onboarding, preferências e perfil público.
+A API canônica usa:
 
-A API canônica do browser usa `self-service-operations`:
+- `get_account_identity_state`;
+- `update_account_profile_reconciled`;
+- `update_account_settings`;
+- `complete_account_onboarding_reconciled`.
 
-- `get_account_identity_state`: leitura canônica de identidade, perfil, configurações e onboarding;
-- `update_account_profile_reconciled`: mutação de perfil seguida da resposta canônica do mesmo sujeito;
-- `update_account_settings`: mutação restrita às seções permitidas de preferências;
-- `complete_account_onboarding_reconciled`: conclusão do onboarding seguida da resposta canônica do mesmo sujeito.
-
-Ações bem-sucedidas consomem a resposta do servidor e atualizam apenas caches de domínio. Elas não duplicam metadados com `supabase.auth.updateUser()` e não reescrevem manualmente o snapshot público da sessão.
+Ações bem-sucedidas consomem a resposta canônica do servidor. Elas não duplicam identidade via `supabase.auth.updateUser()` e não reescrevem manualmente o snapshot público da sessão.
 
 Falha remota, payload inválido, sujeito divergente ou resposta incompleta devem preservar o snapshot anterior e falhar fechado.
 
-Para usuários autenticados, onboarding não pode:
+Onboarding autenticado não pode:
 
 - concluir por repositório local;
 - gravar `onboardingStatus` ou `onboardingCompletedAt` no navegador;
 - chamar `Doke.session.setCurrentUser()`;
 - emitir evento de conclusão local;
-- inferir conclusão apenas por cidade e estado já preenchidos;
-- continuar quando provider, cliente Supabase ou `self-service-operations` estiverem indisponíveis.
+- inferir conclusão por cidade e estado;
+- continuar sem provider Supabase, cliente ou transporte server-side.
 
 A ausência dessa autoridade produz `DOKE_ONBOARDING_AUTHORITY_UNAVAILABLE`.
 
-## AUTH-A11 — reconciliação server-side concluída
+## Identidade e role profissional
 
-AUTH-A11 removeu as fachadas de mutação de identidade do Auth, implantou as operações reconciliadas no staging e validou perfil, configurações e onboarding por uma identidade descartável autenticada através da Edge Function pública.
+`public.users.role` é a única fonte de role profissional.
 
-A migration 147 e o SQL 016 são a evidência server-side. Os runtimes permanentes estão em:
+O navegador não pode:
+
+- promover um usuário porque documentos estão verificados;
+- gravar role profissional em fixture local;
+- alterar role durante uma operação de leitura;
+- reescrever a sessão após aprovação;
+- decidir aprovação ou rejeição por repositórios locais.
+
+`professional-access-service.js` consulta:
+
+- `public.users`;
+- `professional_profiles`;
+- `professional_identity_verifications`.
+
+A role do contexto é copiada exclusivamente de `public.users.role`. Divergência entre role e documentos nunca promove o usuário.
+
+UUID sem provider Supabase falha fechado com `DOKE_PROFESSIONAL_AUTHORITY_UNAVAILABLE`. Fixtures locais não UUID, quando necessárias, são somente leitura.
+
+## Revisão profissional
+
+`listForReview`, `getReviewDetail`, `startReview`, `approve` e `reject` usam exclusivamente `professional-verification-operations`.
+
+A decisão server-side é executada por `decide_professional_identity_verification_internal`, que atualiza transacionalmente:
+
+- verificação;
+- perfil profissional;
+- `public.users.role`;
+- metadados protegidos.
+
+Aprovação só é aceita pelo navegador quando a resposta confirma simultaneamente:
+
+```text
+status = verified
+role = professional
+```
+
+Resposta incompleta falha com `DOKE_PROFESSIONAL_ROLE_RECONCILIATION_INCOMPLETE`. Ausência de reviewer remoto autorizado falha com `DOKE_PROFESSIONAL_REVIEW_AUTHORITY_UNAVAILABLE`.
+
+## AUTH-A11 — reconciliação server-side
+
+AUTH-A11 implantou as operações reconciliadas de identidade, perfil, configurações e onboarding. A migration 147 e o SQL 016 permanecem como evidência server-side.
+
+Runtimes permanentes:
 
 - `tests/auth/test-auth-profile-reconciliation-runtime.js`;
 - `tests/auth/test-auth-settings-reconciliation-runtime.js`;
@@ -127,71 +171,58 @@ A migration 147 e o SQL 016 são a evidência server-side. Os runtimes permanent
 
 ## AUTH-A12 — retirada da autoridade local residual
 
-O AUTH-A12 separa leitura local histórica de mutação de identidade.
+`AUTH-A12` está concluído:
 
-- `AUTH-A12A` — concluído: contrato runtime e testes reconciliados com Supabase e `self-service-operations`;
-- `AUTH-A12B.1` — concluído: `create`, `hashPassword` e `updatePassword` retirados, com sanitização de credenciais históricas;
-- `AUTH-A12B.2` — concluído: mutações genéricas de conta, perfil e configurações retiradas; fixture profissional isolada;
-- `AUTH-A12B.3` — concluído: mutação local de onboarding, inferência local de conclusão e reescrita manual da sessão retiradas;
-- `AUTH-A12C` — pendente: retirar promoção local de role e reescrita de sessão dos fluxos profissionais.
+- `AUTH-A12A`: contrato runtime e testes reconciliados;
+- `AUTH-A12B.1`: credenciais locais retiradas;
+- `AUTH-A12B.2`: mutações genéricas locais retiradas;
+- `AUTH-A12B.3`: onboarding local retirado;
+- `AUTH-A12C`: autoridade profissional local retirada.
 
-O contrato `identity-profile-contract.js` está em `AUTH-A12B.3` e declara:
+O contrato `identity-profile-contract.js` está em `AUTH-A12C` e declara:
 
 - `localCredentialAuthority: 'retired'`;
 - `localProfileMutationAuthority: 'retired'`;
 - `localOnboardingMutationAuthority: 'retired'`;
-- `manualOnboardingSessionRewrite: 'retired'`;
-- `professionalFixtureMutationBoundary: 'isolated-pending-A12C'`.
+- `professionalRoleAuthority: 'server-only'`;
+- `professionalReviewerAuthority: 'professional-verification-operations'`;
+- `professionalFixtureMutationBoundary: 'retired'`;
+- `manualProfessionalSessionRewrite: 'retired'`.
 
-O repositório local de usuários não exporta mutações. Fixtures locais são somente leitura e não podem derivar ou persistir role profissional.
+O repositório local de usuários não exporta mutações. Fixtures históricas são somente leitura e não podem derivar ou persistir role profissional.
 
 ## Roles e autorização
 
-O frontend pode ocultar ações, mas autorização final pertence ao backend/RLS.
+O frontend pode ocultar ações, mas autorização final pertence ao backend e às políticas RLS.
 
 - `client`: pedidos, pagamento, contestação e avaliação;
 - `professional`: operações profissionais autorizadas;
-- `moderator`: moderação de conteúdo;
-- `support`: suporte operacional permitido;
+- `moderator`: moderação permitida;
+- `support`: suporte operacional;
 - `admin`: operações administrativas autorizadas.
 
-Acesso administrativo depende de role canônica e políticas server-side. Dados financeiros nunca podem confiar apenas no estado do frontend.
+Acesso administrativo depende de role canônica. Dados financeiros e decisões de identidade nunca podem confiar apenas no frontend.
 
 ## Rotas restritas
 
 As rotas privadas são classificadas por `assets/js/core/auth-route-map.js`.
 
 - sessão ausente: redirecionar para login preservando `next`;
-- sessão expirada ou revogada: falhar fechado e tentar somente o refresh canônico permitido;
+- sessão expirada ou revogada: falhar fechado e tentar somente o refresh canônico;
 - conta suspensa ou desabilitada: exibir estado bloqueado;
 - role sem permissão: exibir estado 403 sem liberar conteúdo privado.
-
-## Sprint 12B — registro histórico
-
-A Sprint 12B introduziu os DTOs de identidade/perfil e os endpoints históricos `/users/me` e `/profiles/me` durante a transição de mock/API. Esses endpoints não são transportes ativos do navegador. Seu uso atual é exclusivamente diagnóstico CLI-only.
-
-## AUTH-A09 — autoridade fixa de provider
-
-AUTH-A09 removeu `doke.authProvider`, `dokeAuthProvider`, `dokeAuthIdentityCanary` e as APIs públicas de ativação/rollback do canary. Refresh, resolução de token e bootstrap usam Supabase.
-
-## AUTH-A10 — remoção física do adapter browser `/auth/*`
-
-AUTH-A10 removeu endpoints, request helpers, token API temporário e branches do provider API de `assets/js/services/auth-service.js`. O único consumidor de página do refresh histórico foi migrado para `DokeAuth.refreshSession()`.
 
 ## Critérios de aceite atuais
 
 - Supabase Auth é o único provider ativo no navegador;
-- `DokeAuth.getActiveAuthProvider()` retorna `supabase`;
-- nenhuma superfície pública ativa seleciona `mock` ou `api` para autenticação;
 - nenhum token do provider entra no snapshot público da Doke;
 - o adapter `/auth/*` não existe no runtime do browser;
-- o diagnóstico histórico permanece CLI-only;
-- alterações verificadas de e-mail/telefone continuam bloqueadas até o AUTH-A07 e MAIL-001;
+- diagnóstico histórico permanece CLI-only;
 - perfil, configurações e onboarding usam respostas server-side reconciliadas;
-- o repositório local não expõe criação, hash ou atualização de senha e não conserva campos de credencial;
-- o repositório local não expõe `updateCurrentUser`, `updateCurrentProfile` ou `updateCurrentSettings`;
-- perfil e configurações falham fechado sem `self-service-operations`;
-- onboarding autenticado falha fechado sem Supabase e não possui conclusão ou inferência local;
-- onboarding não reescreve manualmente o snapshot público da sessão;
-- mutações locais inventariadas não podem assumir autoridade quando o Supabase está indisponível;
+- o repositório local não expõe criação, senha ou qualquer método `update*` de identidade;
+- onboarding autenticado falha fechado sem autoridade server-side;
+- `public.users.role` é a única fonte de role profissional;
+- decisões administrativas profissionais são remotas;
+- nenhuma sessão é reescrita manualmente por esses fluxos;
+- alterações verificadas de e-mail e telefone continuam bloqueadas pelo AUTH-A07/MAIL-001;
 - PR #9 permanece draft e não deve ser mesclado sem autorização explícita.
