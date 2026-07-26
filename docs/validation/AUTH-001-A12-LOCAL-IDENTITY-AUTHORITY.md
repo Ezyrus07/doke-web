@@ -2,124 +2,149 @@
 
 ## Status
 
-`IN PROGRESS` — `AUTH-A12A`, `AUTH-A12B.1`, `AUTH-A12B.2` e `AUTH-A12B.3` estão `DONE`. Somente `AUTH-A12C` permanece pendente antes do encerramento do AUTH-A12.
+`DONE` — `AUTH-A12A`, `AUTH-A12B.1`, `AUTH-A12B.2`, `AUTH-A12B.3` e `AUTH-A12C` foram implementados e validados.
+
+O AUTH-A12 retirou do runtime ativo do navegador qualquer autoridade local de credencial, perfil, configurações, onboarding, promoção de role profissional ou decisão administrativa de verificação.
 
 ## Objetivo
 
 Separar definitivamente:
 
-- autenticação, sessão, credenciais, role e identidade privada, cuja autoridade é Supabase/server-side;
-- leitura local de dados históricos e fixtures, preservada apenas quando comprovadamente necessária;
-- mutações locais históricas, que nunca podem funcionar como fallback de uma conta Supabase.
+- autenticação e sessão criptográfica, cuja autoridade é Supabase Auth;
+- conta, role, onboarding e perfil, cuja autoridade é server-side;
+- leitura local histórica de fixtures, preservada somente quando necessária para transições e testes visuais;
+- mutações locais históricas, que nunca podem operar como fallback de uma conta Supabase.
 
-## Fases concluídas anteriormente
+## Fases concluídas
 
-### AUTH-A12A — verdade contratual
+### AUTH-A12A — contrato runtime reconciliado
 
-O contrato runtime, as auditorias e os testes foram reconciliados com:
+Foram fixados:
 
-- `get_account_identity_state`;
-- `update_account_profile_reconciled`;
-- `update_account_settings`;
-- `complete_account_onboarding_reconciled`;
-- provider único do navegador: `supabase`.
+- provider único do navegador: `supabase`;
+- transporte de identidade: `self-service-operations`;
+- operações canônicas `get_account_identity_state`, `update_account_profile_reconciled`, `update_account_settings` e `complete_account_onboarding_reconciled`;
+- `/users/me` e `/profiles/me` somente como diagnóstico CLI histórico.
 
-Head final de evidência: `ca839b72dfca2753c5f9568051637bf34d2e991f`.
+### AUTH-A12B.1 — credenciais locais retiradas
 
-### AUTH-A12B.1 — credenciais locais removidas
-
-Foram retirados `create`, `hashPassword` e `updatePassword`, além do fallback de hash em texto simples. A leitura e a persistência locais eliminam `password` e `passwordHash`.
+Foram removidos `create`, `hashPassword` e `updatePassword`. A leitura e a persistência de `doke.auth.users.v1` eliminam `password` e `passwordHash`.
 
 Head validado: `7caf2dea2d3fafa25d80b50ba3c62047e8609332`.
 
-- Doke Quality Gates #601: sucesso;
-- Doke Staging Edge HTTP Canary #375: sucesso;
-- Doke Diagnostic E2E #396: sucesso.
+### AUTH-A12B.2 — mutações genéricas retiradas
 
-### AUTH-A12B.2 — mutações genéricas locais removidas
+Foram removidos:
 
-Foram retirados `updateCurrentUser`, `updateCurrentProfile` e `updateCurrentSettings`, bem como os fallbacks locais de perfil/configurações e suas reescritas manuais de sessão.
-
-A única mutação local ainda inventariada é `updateProfessionalFixtureUser`, limitada a fixtures não UUID e destinada à retirada no AUTH-A12C.
+- `updateCurrentUser`;
+- `updateCurrentProfile`;
+- `updateCurrentSettings`;
+- fallbacks locais de perfil e configurações;
+- reescritas manuais de sessão nesses fluxos.
 
 Head validado: `3866fbea076deba2328f9077a2d582b3a2c5033b`.
 
-- Doke Quality Gates #620: sucesso;
-- Doke Staging Edge HTTP Canary #394: sucesso;
-- Doke Diagnostic E2E #415: sucesso.
+### AUTH-A12B.3 — onboarding local retirado
 
-## AUTH-A12B.3 — onboarding local e reescrita de sessão retirados
+Foram removidos:
+
+- conclusão local de onboarding;
+- gravação local de `onboardingStatus` e `onboardingCompletedAt`;
+- `Doke.session.setCurrentUser(...)` no onboarding;
+- evento `source: 'local'`;
+- inferência de conclusão por cidade e estado.
+
+Usuário autenticado sem provider, cliente Supabase ou transporte canônico falha fechado com `DOKE_ONBOARDING_AUTHORITY_UNAVAILABLE`.
+
+Head validado: `049821a2264cd6fb9fd136cbc0b3c993055cfc32`.
+
+## AUTH-A12C — autoridade profissional server-only
 
 ### Causa-raiz
 
-`assets/js/services/onboarding-service.js` ainda continha fisicamente um caminho não Supabase que:
+Três superfícies ainda permitiam decisões locais sobre identidade profissional:
 
-- obtinha o repositório local de usuários;
-- chamava `repository.updateCurrentUser(...)`;
-- materializava `onboardingStatus: 'completed'` no navegador;
-- gravava `onboardingCompletedAt` com o relógio local;
-- executava `Doke.session.setCurrentUser(...)`;
-- emitia `doke:onboarding-completed` com `source: 'local'` e `reconciled: false`.
+1. `users-repository.js` exportava `updateProfessionalFixtureUser` e promovia fixtures durante uma operação de leitura;
+2. `professional-access-service.js` podia derivar role profissional pelo estado dos documentos, persistir a promoção local e reescrever a sessão;
+3. `professional-identity-verification-service.js` possuía decisões administrativas locais de fila, início, aprovação e rejeição, além de sincronização manual da sessão do usuário aprovado.
 
-O mesmo serviço também podia inferir conclusão apenas porque cidade e estado já estavam presentes no perfil local. Isso criava uma segunda autoridade de onboarding e contradizia o repositório atual, que já não expõe `updateCurrentUser`.
+A migration 100 já continha a autoridade correta: `decide_professional_identity_verification_internal` atualiza transacionalmente a verificação, o perfil profissional, `public.users.role` e metadados protegidos, retornando o role canônico.
 
 ### Decisão arquitetural
 
-`complete_account_onboarding_reconciled` é a única autoridade de conclusão. `get_account_identity_state` é a única autoridade para resolver o estado autenticado de onboarding.
-
-Para usuário autenticado:
-
-- provider diferente de `supabase` falha fechado;
-- cliente Supabase ausente falha fechado;
-- transporte `self-service-operations` ausente falha fechado;
-- erro remoto, sujeito divergente ou resposta incompleta não altera sessão, usuário ou eventos;
-- cidade/estado locais não podem inferir conclusão.
-
-O erro canônico de ausência de autoridade é `DOKE_ONBOARDING_AUTHORITY_UNAVAILABLE`.
+- `public.users.role` é a única fonte de role profissional;
+- documentos verificados não podem promover role no navegador;
+- `professional-verification-operations` é a única superfície de revisão administrativa no browser;
+- aprovação só é aceita quando o servidor devolve `status: 'verified'` e `role: 'professional'`;
+- fixtures profissionais já materializadas podem ser lidas, mas nunca alteradas ou promovidas por uma leitura;
+- nenhuma sessão pública pode ser reescrita manualmente pelos fluxos profissionais.
 
 ### Implementação
 
-- removida a função `usersRepository()` de `onboarding-service.js`;
-- removido o caminho local de conclusão;
-- removidas chamadas a `repository.updateCurrentUser`;
-- removida qualquer chamada a `Doke.session.setCurrentUser` no onboarding;
-- removidos evento local e marcador `reconciled: false`;
-- removida a inferência `hasCompleteBaseProfile`;
-- `resolveState()` agora exige estado canônico remoto para usuários autenticados;
-- `complete()` agora exige provider Supabase e usa somente `complete_account_onboarding_reconciled`;
-- preservado o comportamento anônimo explícito sem chamada remota;
-- criado runtime permanente `tests/auth/test-auth-onboarding-local-authority-retirement-runtime.js`;
-- adicionado gate permanente `Test onboarding local authority retirement` ao workflow canônico `Doke Quality Gates`;
-- contrato `identity-profile-contract.js` atualizado para `AUTH-A12B.3`;
+#### `assets/js/repositories/users-repository.js`
+
+- removido `updateProfessionalFixtureUser`;
+- removido `reconcileProfessionalUser`;
+- removida promoção profissional durante `list()`;
+- inventário de exports locais de mutação reduzido a `[]`;
+- preservadas sanitização de credenciais e APIs de leitura.
+
+#### `assets/js/services/professional-access-service.js`
+
+- contexto Supabase consulta `public.users`, `professional_profiles` e `professional_identity_verifications`;
+- role é copiado exclusivamente de `public.users.role`;
+- divergência entre role e documentos não promove o usuário;
+- UUID sem provider Supabase falha fechado com `DOKE_PROFESSIONAL_AUTHORITY_UNAVAILABLE`;
+- fixture local não UUID permanece somente leitura;
+- removidas promoção local e reescrita de sessão.
+
+#### `assets/js/services/professional-identity-verification-service.js`
+
+- `listForReview`, `getReviewDetail`, `startReview`, `approve` e `reject` exigem reviewer autorizado e provider Supabase;
+- operações administrativas usam `professional-verification-operations`;
+- aprovação incompleta falha com `DOKE_PROFESSIONAL_ROLE_RECONCILIATION_INCOMPLETE`;
+- ausência da autoridade remota falha com `DOKE_PROFESSIONAL_REVIEW_AUTHORITY_UNAVAILABLE`;
+- removidas ativação local, mutações de fixtures e sincronização manual da sessão.
+
+#### Contrato e gates
+
+- `identity-profile-contract.js` atualizado para `AUTH-A12C`;
+- `professionalRoleAuthority: 'server-only'`;
+- `professionalFixtureMutationBoundary: 'retired'`;
+- `manualProfessionalSessionRewrite: 'retired'`;
+- criado `tests/auth/test-auth-professional-authority-retirement-runtime.js`;
+- runtime cumulativo de mutações locais atualizado;
+- audit de identidade ampliado;
+- gate permanente `Test professional authority retirement` incluído no Quality canônico;
 - matriz determinística sincronizada.
 
-### Teste permanente
+### Testes permanentes
 
-O runtime AUTH-A12B.3 prova:
+O runtime AUTH-A12C prova:
 
-1. ausência física das superfícies locais aposentadas;
-2. sucesso exclusivamente server-side, com evento `source: 'server'` e `reconciled: true`;
-3. nenhuma reescrita do snapshot público da sessão no sucesso;
-4. falha remota sem mutação de sessão, usuário ou eventos;
-5. provider não Supabase falhando fechado sem chamar o transporte remoto;
-6. cliente Supabase ausente falhando fechado;
-7. ausência de inferência local de conclusão em `resolveState()`.
+1. nenhum export local `update*` no repositório de usuários;
+2. leitura de fixture não promove role nem altera perfis/verificações;
+3. fixture profissional previamente materializada continua legível;
+4. contexto Supabase consome `public.users.role`;
+5. documentos verificados não sobrepõem role `client` do servidor;
+6. nenhuma reescrita manual da sessão;
+7. reviewer não Supabase falha fechado;
+8. aprovação exige confirmação server-side de `verified + professional`;
+9. repositórios locais de perfil/verificação não são chamados por decisões administrativas.
 
-### Validação da implementação
+## Validação AUTH-A12C
 
-Head de implementação e validação:
+Head de implementação validado:
 
-`049821a2264cd6fb9fd136cbc0b3c993055cfc32`
+`ab7872c805634b00750cc2bac761686a1cc23f3e`
 
-Doke Quality Gates #648:
+Doke Quality Gates #679:
 
 - auditorias estáticas e arquiteturais: sucesso;
-- canonical auth/session runtime: sucesso;
-- audit de autoridade de identidade/perfil: sucesso;
-- runtime de retirada das mutações locais de perfil: sucesso;
-- contrato de perfil reconciliado: sucesso;
-- contrato de cadastro, username e onboarding: sucesso;
-- runtime de retirada da autoridade local de onboarding: sucesso;
+- sessão canônica: sucesso;
+- audit AUTH-A12: sucesso;
+- runtimes de perfil e onboarding: sucesso;
+- runtime AUTH-A12C: sucesso;
 - matriz determinística: sucesso;
 - governança, assets, partição E2E e `git diff --check`: sucesso;
 - E2E bloqueante: sucesso;
@@ -127,51 +152,36 @@ Doke Quality Gates #648:
 
 Validação paralela:
 
-- Doke Staging Edge HTTP Canary #422: sucesso;
-- Doke Diagnostic E2E #443: sucesso.
-
-## Próxima fase
-
-### AUTH-A12C — superfícies profissionais
-
-- retirar promoção local de role em acesso e verificação profissional;
-- retirar reescritas manuais de sessão nesses fluxos;
-- remover `updateProfessionalFixtureUser` do runtime ativo ou mover fixtures para uma fronteira exclusiva de testes;
-- garantir que aprovação profissional reconcilie role e estado exclusivamente a partir do servidor.
+- Doke Staging Edge HTTP Canary #453: sucesso;
+- Doke Diagnostic E2E #474: sucesso.
 
 ## Supabase e produção
 
-- Nenhuma migration no AUTH-A12B.3.
-- Nenhum deploy de Edge Function no AUTH-A12B.3.
-- Nenhuma configuração ou dado de staging foi alterado.
-- Nenhuma conta real ou sintética persistente foi modificada.
-- Produção não foi alterada.
+- Nenhuma migration foi criada ou aplicada no AUTH-A12C;
+- nenhuma Edge Function foi implantada;
+- nenhuma configuração ou dado de staging foi alterado;
+- nenhuma conta real ou sintética persistente foi modificada;
+- produção não foi alterada;
+- nenhum SMS, OAuth ou recurso pago foi habilitado;
 - PR #9 permanece draft e não deve ser mesclado sem autorização explícita.
 
-## Limites e riscos remanescentes
+## Critério de aceite do AUTH-A12
 
-- `updateProfessionalFixtureUser` continua sendo dívida controlada para o AUTH-A12C e não é autoridade válida de produção.
-- `professional-access-service.js` e `professional-identity-verification-service.js` ainda precisam ser reconciliados no corte profissional.
-- AUTH-A07 continua bloqueado por `MAIL-001`.
-- `PAID-001 / SEC-B05` continua aberto.
+O AUTH-A12 foi encerrado porque o head validado provou simultaneamente:
 
-## Critério de aceite do AUTH-A12B.3
+1. zero autoridade local de credencial;
+2. zero autoridade local genérica de conta, perfil e configurações;
+3. zero autoridade local de conclusão de onboarding;
+4. zero promoção local de role profissional;
+5. zero decisão administrativa profissional local;
+6. zero reescrita manual de sessão nesses fluxos;
+7. inventário de mutações locais do repositório igual a `[]`;
+8. fixtures históricas limitadas a leitura e sanitização;
+9. Quality, E2E bloqueante, 105 guards, Canary e Diagnostic concluídos com sucesso;
+10. nenhum workflow, codemod, hook ou diagnóstico temporário remanescente.
 
-O corte foi aceito porque o head validado provou simultaneamente:
+## Bloqueios preservados fora do AUTH-A12
 
-1. nenhuma conclusão local de onboarding;
-2. nenhuma reescrita manual de sessão no onboarding;
-3. nenhuma inferência local de conclusão;
-4. `complete_account_onboarding_reconciled` como única mutação ativa;
-5. falha fechada quando a autoridade remota não está disponível;
-6. matriz determinística sincronizada;
-7. Quality Gates, E2E bloqueante, 105 guards, staging canary e Diagnostic concluídos com sucesso;
-8. nenhum workflow, codemod, hook ou diagnóstico temporário remanescente.
-
-## AUTH-A12C — autoridade profissional server-only (em validação)
-
-- `public.users.role` é a única fonte de role profissional;
-- `professional-verification-operations` e `decide_professional_identity_verification_internal` são a autoridade de decisão;
-- `updateProfessionalFixtureUser`, promoção durante leitura e reescritas de sessão foram retirados;
-- fixtures locais preexistentes permanecem somente leitura;
-- nenhuma migration, Edge deploy ou alteração de staging foi necessária.
+- AUTH-A07 continua bloqueado por `MAIL-001` para alteração verificada de e-mail e canários transacionais reais;
+- mudança de telefone permanece indisponível sem provider SMS;
+- `PAID-001 / SEC-B05` continua bloqueado pelo plano atual do Supabase.
