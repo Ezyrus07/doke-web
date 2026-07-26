@@ -44,10 +44,10 @@ Não criar novo documento permanente para cada etapa. Primeiro atualizar um cont
 
 - `docs/AUTH-INTEGRATION-CONTRACT.md`: Supabase Auth é a autoridade ativa; o adapter API histórico é diagnóstico CLI-only e não é selecionável no navegador.
 
-## Sprint 12B
+## Sprint 12B — registro histórico reconciliado no AUTH-A12A
 
-- `assets/js/contracts/identity-profile-contract.js` — contrato runtime de identidade/perfil.
-- `docs/AUTH-INTEGRATION-CONTRACT.md` — endpoints `/users/me` e `/profiles/me`, DTO de identidade e regras de sessão enriquecida.
+- `assets/js/contracts/identity-profile-contract.js` — contrato runtime atual de identidade/perfil, fixado em Supabase e nas ações autenticadas de `self-service-operations`.
+- `docs/AUTH-INTEGRATION-CONTRACT.md` — DTOs atuais, autoridade reconciliada de perfil/configurações/onboarding e isolamento dos endpoints históricos `/users/me` e `/profiles/me` ao diagnóstico CLI-only.
 
 
 ## Sprint 12C
@@ -203,7 +203,7 @@ npm run validate:auth-identity-canary
 - `scripts/validate-auth-identity-canary-local-runtime.js` executa o mesmo smoke real `scripts/validate-auth-identity-canary.js` contra `127.0.0.1`.
 - `scripts/audit-auth-identity-canary-local-runtime.js` garante que o gate local, os docs e os comandos do `package.json` continuam registrados.
 - Comando obrigatório antes do staging real: `npm run validate:auth-identity-canary:local-runtime`.
-- O contrato continua `authProvider=api`, `dataProvider=mock`, com chamadas restritas a `/auth/login`, `/auth/session`, `/users/me` e `/profiles/me`.
+- O contrato diagnóstico CLI-only continua `authProvider=api`, `dataProvider=mock`, com chamadas restritas a `/auth/login`, `/auth/session`, `/users/me` e `/profiles/me`; ele não descreve nem seleciona o provider do navegador.
 
 ## Sprint 28 active contract — Auth/identity promotion gate
 
