@@ -1,21 +1,23 @@
-# Second push intentionally triggers the already-registered temporary workflow.
+# Temporary PR-triggered codemod. The implementation commit deletes this file.
 name: TEMP AUTH-A12B.2 Controlled Codemod
 
 on:
-  push:
+  pull_request:
     branches:
-      - 'auth/auth-001-baseline-audit'
+      - MAIN
+      - main
+      - master
 
 permissions:
   contents: write
 
 concurrency:
-  group: tmp-auth-a12b2-codemod-${{ github.ref }}
+  group: tmp-auth-a12b2-codemod-${{ github.event.pull_request.head.ref }}
   cancel-in-progress: false
 
 jobs:
   apply:
-    if: startsWith(github.event.head_commit.message, 'Run AUTH-A12B.2 controlled codemod')
+    if: github.event.pull_request.head.ref == 'auth/auth-001-baseline-audit'
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -23,7 +25,7 @@ jobs:
       - name: Checkout AUTH branch
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 1
 
       - name: Setup Node
@@ -62,4 +64,4 @@ jobs:
           git add -A
           test -n "$(git status --short)"
           git commit -m 'Implement AUTH-A12B.2 local profile mutation retirement'
-          git push origin HEAD:${{ github.ref_name }}
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
