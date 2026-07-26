@@ -1,6 +1,6 @@
 /* Doke Users Repository
-   Responsibility: read seeded mock users and locally-created users.
-   This is the only data access layer for mock authentication. */
+   Responsibility: read and normalize legacy local profile fixtures that remain required by UI transitions.
+   Authentication, registration and password authority belong exclusively to Supabase Auth. */
 (function () {
   'use strict';
 
@@ -9,13 +9,8 @@
 
   const STORAGE_KEY = 'doke.auth.users.v1';
   const LEGACY_PROFILE_STORAGE_KEY = 'doke.auth.userProfiles.v1';
-  const MOCK_USERS_URL = 'assets/data/mock-users.json';
-  const MOCK_USERS_URL_FROM_AUTH = '../assets/data/mock-users.json';
-
-  const DEMO_PASSWORD_HASH = 'ef797c8118f02dfb649607dd5d3f8c7623048c9cfc7b91e5a14ee9c9b49e95ac';
-  const FALLBACK_USERS = Object.freeze([]);
-
-  let seededUsersPromise = null;
+  const PROFESSIONAL_PROFILES_STORAGE_KEY = 'doke.professionalProfiles.v1';
+  const PROFESSIONAL_VERIFICATIONS_STORAGE_KEY = 'doke.professionalIdentityVerifications.v1';
 
   const safeParse = (value, fallback) => {
     try {
@@ -25,20 +20,33 @@
     }
   };
 
-  const PROFESSIONAL_PROFILES_STORAGE_KEY = 'doke.professionalProfiles.v1';
-  const PROFESSIONAL_VERIFICATIONS_STORAGE_KEY = 'doke.professionalIdentityVerifications.v1';
+  const withoutCredentials = (user) => {
+    if (!user || typeof user !== 'object') return user;
+    const {
+      password,
+      passwordHash,
+      ...safeUser
+    } = user;
+    return safeUser;
+  };
 
   const DEMO_IDENTIFIERS = new Set(['user_cliente_demo', 'user_profissional_demo', 'user_suporte_demo']);
   const isDemoUser = (user) => {
     const email = String(user?.email || '').trim().toLowerCase();
     return DEMO_IDENTIFIERS.has(String(user?.id || '')) || email.endsWith('@doke.local') || email === 'client@doke' || email === 'pro@doke';
   };
+
   const readLocalUsers = () => {
     const items = safeParse(window.localStorage.getItem(STORAGE_KEY), []);
-    const clean = Array.isArray(items) ? items.filter((user) => !isDemoUser(user)) : [];
-    if (JSON.stringify(items) !== JSON.stringify(clean)) window.localStorage.setItem(STORAGE_KEY, JSON.stringify(clean));
+    const clean = Array.isArray(items)
+      ? items.filter((user) => !isDemoUser(user)).map(withoutCredentials)
+      : [];
+    if (JSON.stringify(items) !== JSON.stringify(clean)) {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(clean));
+    }
     return clean;
   };
+
   const readLegacyProfiles = () => safeParse(window.localStorage.getItem(LEGACY_PROFILE_STORAGE_KEY), {});
 
   const newestByTimestamp = (items) => items.slice().sort((a, b) => {
@@ -92,7 +100,8 @@
   };
 
   const writeLocalUsers = (users) => {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.isArray(users) ? users : []));
+    const safeUsers = Array.isArray(users) ? users.map(withoutCredentials) : [];
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(safeUsers));
   };
 
   const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
@@ -143,20 +152,6 @@
     return `${prefix}_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
   };
 
-  const hashPassword = async (password) => {
-    const value = String(password || '');
-    if (window.crypto?.subtle && window.TextEncoder) {
-      const payload = new TextEncoder().encode(value);
-      const buffer = await window.crypto.subtle.digest('SHA-256', payload);
-      return Array.from(new Uint8Array(buffer))
-        .map((byte) => byte.toString(16).padStart(2, '0'))
-        .join('');
-    }
-
-    // Fallback is intentionally only for local mock auth in older browsers/file mode.
-    return `plain:${value}`;
-  };
-
   const normalizeProfile = (profile, user) => {
     if (!profile || typeof profile !== 'object') return null;
     const role = normalizeRole(profile.role || profile.type || user?.role || user?.type);
@@ -191,8 +186,9 @@
     };
   };
 
-  const normalizeUser = (user) => {
-    if (!user || typeof user !== 'object') return null;
+  const normalizeUser = (rawUser) => {
+    if (!rawUser || typeof rawUser !== 'object') return null;
+    const user = withoutCredentials(rawUser);
     const role = normalizeRole(user.role || user.type);
     const name = normalizeText(user.name || user.displayName || user.email || 'Usuário Doke');
     const initials = user.initials || user.avatarInitials || getInitials(name);
@@ -247,22 +243,7 @@
     };
   };
 
-  const toPublicUser = (user) => {
-    const normalized = normalizeUser(user);
-    if (!normalized) return null;
-
-    const {
-      password,
-      passwordHash,
-      ...publicUser
-    } = normalized;
-
-    return publicUser;
-  };
-
-  const getMockUrl = () => window.location.pathname.includes('/auth/')
-    ? MOCK_USERS_URL_FROM_AUTH
-    : MOCK_USERS_URL;
+  const toPublicUser = (user) => withoutCredentials(normalizeUser(user));
 
   const loadSeededUsers = async () => [];
 
@@ -287,7 +268,6 @@
     }
 
     const byEmail = new Map();
-
     seeded.concat(local).forEach((user) => {
       const key = user.email || user.id;
       if (!key) return;
@@ -342,53 +322,6 @@
     const existing = await findByHandle(handle);
     return !existing || String(existing.id) === String(exceptUserId || '');
   };
-
-  const create = async (payload) => {
-    const name = normalizeText(payload.name);
-    const email = normalizeEmail(payload.email);
-    const phone = normalizePhone(payload.phone);
-    const role = 'client';
-    const handle = normalizeHandle(payload.handle);
-    const password = String(payload.password || '');
-
-    if (name.length < 3) throw new Error('Informe um nome mais completo.');
-    if (!isValidHandle(handle)) throw new Error('Escolha um usuário válido com 3 a 30 caracteres.');
-    if (!isEmail(email)) throw new Error('Digite um e-mail válido.');
-    if (password.length < 8) throw new Error('A senha precisa ter pelo menos 8 caracteres.');
-
-    const users = await list();
-    if (users.some((user) => user.email === email)) {
-      throw new Error('Já existe uma conta com esse e-mail.');
-    }
-
-    if (users.some((user) => normalizeHandle(user.handle || user.profile?.handle) === handle)) {
-      throw new Error('Esse usuário já está em uso. Escolha outro.');
-    }
-
-    if (phone && users.some((user) => user.phone === phone)) {
-      throw new Error('Já existe uma conta com esse telefone.');
-    }
-
-    const user = normalizeUser({
-      id: generateId(role === 'professional' ? 'pro' : 'user'),
-      name,
-      email,
-      phone,
-      role,
-      type: role,
-      handle,
-      onboardingStatus: 'in_progress',
-      passwordHash: await hashPassword(password),
-      createdAt: new Date().toISOString()
-    });
-
-    const localUsers = readLocalUsers().map(normalizeUser).filter(Boolean);
-    localUsers.push(user);
-    writeLocalUsers(localUsers);
-
-    return user;
-  };
-
 
   const updateCurrentUser = async (userId, patch) => {
     const id = String(userId || '').trim();
@@ -447,29 +380,6 @@
     settings: settings && typeof settings === 'object' ? settings : {}
   });
 
-  const updatePassword = async (userId, password) => {
-    const localUsers = readLocalUsers().map(normalizeUser).filter(Boolean);
-    const index = localUsers.findIndex((user) => user.id === userId);
-
-    if (index === -1) {
-      const seeded = await findById(userId);
-      if (!seeded) throw new Error('Conta não encontrada para redefinição.');
-
-      localUsers.push({
-        ...seeded,
-        passwordHash: await hashPassword(password),
-        updatedAt: new Date().toISOString()
-      });
-      writeLocalUsers(localUsers);
-      return localUsers[localUsers.length - 1];
-    }
-
-    localUsers[index].passwordHash = await hashPassword(password);
-    localUsers[index].updatedAt = new Date().toISOString();
-    writeLocalUsers(localUsers);
-    return localUsers[index];
-  };
-
   repositories.users = Object.freeze({
     STORAGE_KEY,
     LEGACY_PROFILE_STORAGE_KEY,
@@ -478,13 +388,10 @@
     findById,
     findByHandle,
     isHandleAvailable,
-    create,
     updateCurrentUser,
     updateCurrentProfile,
     getCurrentSettings,
     updateCurrentSettings,
-    updatePassword,
-    hashPassword,
     isEmail,
     normalizeEmail,
     normalizePhone,
