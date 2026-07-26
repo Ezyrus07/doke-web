@@ -40,8 +40,25 @@ for (const marker of ['doke.auth.session.v2', 'doke.auth.users.v1', 'doke.auth.r
   if (!legacy.includes(marker)) failures.push(`retired auth tombstone is missing documented legacy marker: ${marker}`);
 }
 
-for (const token of ['const FALLBACK_USERS = Object.freeze([])', 'const loadSeededUsers = async () => []', 'DEMO_IDENTIFIERS']) {
+for (const token of [
+  'Authentication, registration and password authority belong exclusively to Supabase Auth.',
+  'const withoutCredentials',
+  'const loadSeededUsers = async () => []',
+  'DEMO_IDENTIFIERS'
+]) {
   if (!users.includes(token)) failures.push(`users-repository missing ${token}`);
+}
+for (const forbidden of [
+  'const create =',
+  'const hashPassword =',
+  'const updatePassword =',
+  'passwordHash: await',
+  'return `plain:${value}`',
+  '\n    create,',
+  '\n    hashPassword,',
+  '\n    updatePassword,'
+]) {
+  if (users.includes(forbidden)) failures.push(`users-repository still contains retired local credential authority: ${forbidden.trim()}`);
 }
 for (const token of ['purgeLegacyDemoAuth', 'isDemoIdentity']) {
   if (!header.includes(token)) failures.push(`header early auth missing ${token}`);
@@ -71,5 +88,6 @@ if (failures.length) {
 
 console.log('Real auth only contract passed.');
 console.log('- dormant browser authority is a non-executable tombstone');
+console.log('- local user data is read-only and credential-free');
 console.log('- login is email-only');
 console.log('- unconfigured OAuth controls are absent from login and signup');
