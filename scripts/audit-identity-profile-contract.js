@@ -17,6 +17,15 @@ function read(file) {
   return fs.readFileSync(full, 'utf8');
 }
 
+function readJson(file) {
+  try {
+    return JSON.parse(read(file));
+  } catch (error) {
+    failures.push(`${file} is not valid JSON: ${error.message}`);
+    return {};
+  }
+}
+
 function expect(content, label, snippets) {
   for (const snippet of snippets) {
     if (!content.includes(snippet)) failures.push(`${label} missing required term: ${snippet}`);
@@ -26,6 +35,12 @@ function expect(content, label, snippets) {
 function forbid(content, label, snippets) {
   for (const snippet of snippets) {
     if (content.includes(snippet)) failures.push(`${label} contains retired term: ${snippet}`);
+  }
+}
+
+function equal(actual, expected, label) {
+  if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+    failures.push(`${label}: expected ${JSON.stringify(expected)}, received ${JSON.stringify(actual)}`);
   }
 }
 
@@ -45,10 +60,12 @@ async function validateRepositoryRuntime(source, label) {
   const storage = new Map([
     ['doke.auth.users.v1', JSON.stringify([
       {
-        id: 'legacy-local-user',
-        name: 'Legacy Local User',
-        email: 'legacy@example.test',
-        handle: 'legacy.local',
+        id: 'fixture-user-1',
+        name: 'Fixture User',
+        email: 'fixture@example.test',
+        handle: 'fixture.user',
+        role: 'client',
+        type: 'client',
         password: 'retired-password',
         passwordHash: 'retired-hash'
       },
@@ -106,33 +123,64 @@ async function validateRepositoryRuntime(source, label) {
       return;
     }
 
-    for (const retired of ['create', 'hashPassword', 'updatePassword', 'updateCurrentUser', 'updateCurrentProfile', 'updateCurrentSettings']) {
-      if (Object.prototype.hasOwnProperty.call(repository, retired)) {
-        failures.push(`${label} still exports retired local credential authority: ${retired}`);
+    const retired = [
+      'create',
+      'hashPassword',
+      'updatePassword',
+      'updateCurrentUser',
+      'updateCurrentProfile',
+      'updateCurrentSettings'
+    ];
+    for (const name of retired) {
+      if (Object.prototype.hasOwnProperty.call(repository, name)) {
+        failures.push(`${label} still exports retired local authority: ${name}`);
       }
     }
 
-    for (const retained of ['list', 'findById', 'findByHandle', 'toPublicUser']) {
-      if (typeof repository[retained] !== 'function') {
-        failures.push(`${label} missing retained read-only compatibility API: ${retained}`);
+    for (const name of ['list', 'findById', 'findByHandle', 'toPublicUser']) {
+      if (typeof repository[name] !== 'function') {
+        failures.push(`${label} missing retained read-only API: ${name}`);
       }
     }
-
     if (typeof repository.updateProfessionalFixtureUser !== 'function') {
-      failures.push(`${label} missing isolated professional fixture mutation boundary`);
+      failures.push(`${label} missing isolated professional fixture boundary`);
+      return;
     }
 
     const users = await repository.list();
-    if (users.length !== 1 || users[0].id !== 'legacy-local-user') {
-      failures.push(`${label} did not preserve the non-demo local read fixture boundary`);
+    if (users.length !== 1 || users[0].id !== 'fixture-user-1') {
+      failures.push(`${label} did not preserve the non-demo fixture read boundary`);
     }
     if (users.some((user) => 'password' in user || 'passwordHash' in user)) {
-      failures.push(`${label} returned retired local credential fields`);
+      failures.push(`${label} returned retired credential fields`);
+    }
+
+    try {
+      await repository.updateProfessionalFixtureUser(
+        '00000000-0000-4000-8000-000000000001',
+        { role: 'professional', type: 'professional', professionalProfileId: 'profile-1' }
+      );
+      failures.push(`${label} allowed a UUID/Supabase subject into the local fixture boundary`);
+    } catch (error) {
+      if (error?.code !== 'DOKE_LOCAL_FIXTURE_MUTATION_FORBIDDEN') {
+        failures.push(`${label} returned unexpected UUID fixture error: ${error?.code || error?.message}`);
+      }
+    }
+
+    const updated = await repository.updateProfessionalFixtureUser('fixture-user-1', {
+      role: 'professional',
+      type: 'professional',
+      professionalProfileId: 'profile-1',
+      publicProfileUrl: 'perfil.html',
+      ownerProfileUrl: 'perfil-profissional.html'
+    });
+    if (updated?.role !== 'professional' || updated?.professionalProfileId !== 'profile-1') {
+      failures.push(`${label} did not preserve the narrow professional fixture contract`);
     }
 
     const persisted = JSON.parse(localStorage.getItem('doke.auth.users.v1') || '[]');
     if (persisted.some((user) => 'password' in user || 'passwordHash' in user)) {
-      failures.push(`${label} did not purge retired local credential fields from storage`);
+      failures.push(`${label} did not purge retired credential fields from storage`);
     }
     if (persisted.some((user) => String(user.id) === 'user_cliente_demo')) {
       failures.push(`${label} did not preserve demo-account cleanup`);
@@ -150,9 +198,10 @@ const files = {
   usersRepository: 'assets/js/repositories/users-repository.js',
   profileWriteTest: 'scripts/test-profile-write-contract.js',
   onboardingTest: 'scripts/test-auth-username-onboarding-contract.js',
+  localMutationRuntime: 'tests/auth/test-auth-local-profile-mutation-retirement-runtime.js',
   authContract: 'docs/AUTH-INTEGRATION-CONTRACT.md',
-  plan: 'docs/validation/AUTH-001-A12-LOCAL-IDENTITY-AUTHORITY.md',
-  planJson: 'docs/validation/AUTH-001-A12-LOCAL-IDENTITY-AUTHORITY.json',
+  evidence: 'docs/validation/AUTH-001-A12-LOCAL-IDENTITY-AUTHORITY.md',
+  evidenceJson: 'docs/validation/AUTH-001-A12-LOCAL-IDENTITY-AUTHORITY.json',
   migration147: 'supabase/migrations/147_identity_profile_reconciliation_authority.sql',
   sql016: 'supabase/tests/016_identity_profile_reconciliation_authority_validation.sql',
   profileRuntime: 'tests/auth/test-auth-profile-reconciliation-runtime.js',
@@ -160,7 +209,12 @@ const files = {
   onboardingRuntime: 'tests/auth/test-auth-onboarding-reconciliation-runtime.js'
 };
 
-const source = Object.fromEntries(Object.entries(files).map(([key, file]) => [key, read(file)]));
+const source = Object.fromEntries(
+  Object.entries(files)
+    .filter(([key]) => key !== 'evidenceJson')
+    .map(([key, file]) => [key, read(file)])
+);
+const evidenceJson = readJson(files.evidenceJson);
 
 expect(source.identityContract, files.identityContract, [
   "version: 'AUTH-A12B.2'",
@@ -169,19 +223,16 @@ expect(source.identityContract, files.identityContract, [
   "UPDATE_CURRENT_SETTINGS: 'update_account_settings'",
   "COMPLETE_ONBOARDING: 'complete_account_onboarding_reconciled'",
   "browserProvider: 'supabase'",
+  "localCredentialAuthority: 'retired'",
   "localProfileMutationAuthority: 'retired'",
   "professionalFixtureMutationBoundary: 'isolated-pending-A12C'",
-  "provider: 'supabase'",
-  'authorities: AUTHORITIES'
+  "provider: 'supabase'"
 ]);
 forbid(source.identityContract, files.identityContract, [
   "currentUser: '/users/me'",
   "currentProfile: '/profiles/me'",
-  "updateCurrentUser: '/users/me'",
-  "updateCurrentProfile: '/profiles/me'",
   "provider || 'mock'",
-  "provider: 'mock'",
-  'endpoints: ENDPOINTS'
+  "provider: 'mock'"
 ]);
 
 expect(source.authService, files.authService, [
@@ -203,14 +254,12 @@ expect(source.profileService, files.profileService, [
   "invokeSelfService('get_account_identity_state'",
   "invokeSelfService('update_account_profile_reconciled'",
   "invokeSelfService('update_account_settings'",
-  'normalizeCanonicalProfile',
-  'normalizeCanonicalSettings'
+  'DOKE_PROFILE_AUTHORITY_UNAVAILABLE',
+  'DOKE_SETTINGS_AUTHORITY_UNAVAILABLE'
 ]);
 forbid(source.profileService, files.profileService, [
   'client.auth.updateUser',
   'supabaseClient.auth.updateUser',
-  '.catch(function () { return null; })'
-,
   'repository.updateCurrentProfile',
   'repository.updateCurrentSettings',
   'Doke.session.setCurrentUser'
@@ -229,32 +278,19 @@ forbid(source.onboardingService, files.onboardingService, [
 
 const repositoryExports = exportedRepositoryNames(source.usersRepository);
 const mutationExports = repositoryExports.filter((name) => name.startsWith('update')).sort();
-const expectedDebt = ['updateProfessionalFixtureUser'];
-if (JSON.stringify(mutationExports) !== JSON.stringify(expectedDebt)) {
-  failures.push(`unexpected users-repository mutation export inventory: ${JSON.stringify(mutationExports)}`);
-}
+equal(mutationExports, ['updateProfessionalFixtureUser'], 'users-repository mutation inventory');
 expect(source.usersRepository, files.usersRepository, [
   'Authentication, registration and password authority belong exclusively to Supabase Auth.',
-  'const STORAGE_KEY',
-  'const LEGACY_PROFILE_STORAGE_KEY',
   'const withoutCredentials',
-  'const loadSeededUsers = async () => []',
   'const updateProfessionalFixtureUser = async',
   'DOKE_LOCAL_FIXTURE_MUTATION_FORBIDDEN',
-  'findById',
-  'findByHandle',
-  'toPublicUser'
+  'DOKE_LOCAL_FIXTURE_PATCH_FORBIDDEN',
+  'DOKE_LOCAL_FIXTURE_NOT_FOUND'
 ]);
 forbid(source.usersRepository, files.usersRepository, [
   'const create =',
   'const hashPassword =',
   'const updatePassword =',
-  'passwordHash: await',
-  'return `plain:${value}`',
-  '\n    create,',
-  '\n    hashPassword,',
-  '\n    updatePassword,'
-,
   'const updateCurrentUser =',
   'const updateCurrentProfile =',
   'const updateCurrentSettings =',
@@ -269,64 +305,65 @@ expect(source.profileWriteTest, files.profileWriteTest, [
   "assert.strictEqual(successEvent.detail.source, 'server')",
   'assert.strictEqual(successEvent.detail.reconciled, true)'
 ]);
-forbid(source.profileWriteTest, files.profileWriteTest, [
-  'repositories: { users:',
-  "getActiveAuthProvider: () => 'mock'",
-  'updateCurrentProfile: async (id, patch)'
-]);
-
 expect(source.onboardingTest, files.onboardingTest, [
   'check_username_availability',
   'complete_account_onboarding_reconciled',
   'Unexpected session mutation',
   "assert.strictEqual(availability.authority, 'supabase')"
 ]);
-forbid(source.onboardingTest, files.onboardingTest, [
-  'repo.create(',
-  'session.setCurrentUser(',
-  "password: 'Senha@123'",
-  'doke.auth.users.v1'
+expect(source.localMutationRuntime, files.localMutationRuntime, [
+  'DOKE_LOCAL_FIXTURE_MUTATION_FORBIDDEN',
+  'DOKE_PROFILE_AUTHORITY_UNAVAILABLE',
+  'DOKE_SETTINGS_AUTHORITY_UNAVAILABLE',
+  'profile service called a local mutation fallback',
+  'profile service rewrote the public session'
 ]);
 
 expect(source.authContract, files.authContract, [
   'Supabase Auth é a única autoridade ativa de autenticação no navegador',
-  'update_account_profile_reconciled',
-  'update_account_settings',
-  'complete_account_onboarding_reconciled',
   'AUTH-A12B.2',
-  'mutações locais genéricas de conta, perfil e configurações foram retiradas'
+  'mutações locais genéricas de conta, perfil e configurações foram retiradas',
+  '`updateProfessionalFixtureUser`'
 ]);
-forbid(source.authContract, files.authContract, [
-  '### Débito controlado para AUTH-A11',
-  'auth-service.js` ainda expõe `updateCurrentUser`'
-]);
-
-expect(source.plan, files.plan, [
-  '`AUTH-A12A`',
-  '`AUTH-A12B.1`',
-  '`AUTH-A12B.2`',
-  'implementação em validação',
-  '`updateProfessionalFixtureUser`',
-  '`AUTH-A12C`',
-  '`updateCurrentUser`',
-  'credenciais locais removidas',
-  'Doke Quality Gates #601',
-  'Doke Diagnostic E2E #396',
-  'Nenhuma migration',
+expect(source.evidence, files.evidence, [
+  '`AUTH-A12B.2` estão `DONE`',
+  'Head de implementação e validação:',
+  '3866fbea076deba2328f9077a2d582b3a2c5033b',
+  'Doke Quality Gates #620',
+  'Doke Staging Edge HTTP Canary #394',
+  'Doke Diagnostic E2E #415',
+  '`AUTH-A12B.3` — onboarding e sessão',
+  'Nenhuma migration no AUTH-A12B.2',
   'Produção não foi alterada'
 ]);
-expect(source.planJson, files.planJson, [
-  '"sublot": "AUTH-A12"',
-  '"status": "in_progress"',
-  '"AUTH-A12B.1"',
-  '"AUTH-A12B.2"',
-  '"status": "implementation_in_progress"',
-  '"status": "done"',
-  '"implementationHead": "7caf2dea2d3fafa25d80b50ba3c62047e8609332"',
-  '"qualityRunNumber": 601',
-  '"diagnosticRunNumber": 396',
-  '"productionChanged": false'
-]);
+
+const phases = evidenceJson.phases || {};
+equal(phases['AUTH-A12A']?.status, 'done', 'AUTH-A12A evidence status');
+equal(phases['AUTH-A12B.1']?.status, 'done', 'AUTH-A12B.1 evidence status');
+equal(phases['AUTH-A12B.2']?.status, 'done', 'AUTH-A12B.2 evidence status');
+equal(
+  phases['AUTH-A12B.2']?.implementationHead,
+  '3866fbea076deba2328f9077a2d582b3a2c5033b',
+  'AUTH-A12B.2 implementation head'
+);
+equal(phases['AUTH-A12B.3']?.status, 'planned', 'AUTH-A12B.3 evidence status');
+equal(evidenceJson.activeBrowserAuthority?.identityProvider, 'supabase', 'active identity provider');
+equal(evidenceJson.activeBrowserAuthority?.localCredentialAuthority, 'retired', 'local credential authority');
+equal(evidenceJson.activeBrowserAuthority?.localProfileMutationAuthority, 'retired', 'local profile authority');
+equal(evidenceJson.inventoriedLocalMutationExports, ['updateProfessionalFixtureUser'], 'remaining local mutation debt');
+equal(evidenceJson.validation?.qualityRunNumber, 620, 'AUTH-A12B.2 Quality run');
+equal(evidenceJson.validation?.quality, 'success', 'AUTH-A12B.2 Quality result');
+equal(evidenceJson.validation?.stagingEdgeCanaryRunNumber, 394, 'AUTH-A12B.2 canary run');
+equal(evidenceJson.validation?.stagingEdgeCanary, 'success', 'AUTH-A12B.2 canary result');
+equal(evidenceJson.validation?.diagnosticRunNumber, 415, 'AUTH-A12B.2 Diagnostic run');
+equal(evidenceJson.validation?.diagnostic, 'success', 'AUTH-A12B.2 Diagnostic result');
+equal(evidenceJson.safety?.migrationApplied, false, 'migration safety boundary');
+equal(evidenceJson.safety?.edgeFunctionDeployed, false, 'Edge deployment safety boundary');
+equal(evidenceJson.safety?.stagingChanged, false, 'staging safety boundary');
+equal(evidenceJson.safety?.productionChanged, false, 'production safety boundary');
+equal(evidenceJson.safety?.temporaryWorkflowRemaining, false, 'temporary workflow cleanup');
+equal(evidenceJson.safety?.temporaryCodemodRemaining, false, 'temporary codemod cleanup');
+equal(evidenceJson.safety?.prMerged, false, 'PR merge safety boundary');
 
 expect(source.migration147, files.migration147, [
   'get_account_identity_state',
@@ -351,9 +388,10 @@ async function main() {
   console.log('[identity-profile-contract] OK');
   console.log('- active browser identity provider: supabase');
   console.log('- active mutation transport: self-service-operations');
-  console.log('- retired local credential authority: create, hashPassword, updatePassword');
+  console.log('- retired local credential and generic profile mutation authorities');
   console.log(`- isolated local mutation exports pending AUTH-A12C: ${mutationExports.join(', ')}`);
-  console.log('- historical /users/me and /profiles/me remain CLI-only and outside the browser contract');
+  console.log('- AUTH-A12B.2 final evidence is structurally reconciled');
+  console.log('- historical /users/me and /profiles/me remain CLI-only');
 }
 
 main().catch((error) => {
