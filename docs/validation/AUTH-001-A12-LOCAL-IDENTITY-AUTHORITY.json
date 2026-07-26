@@ -26,8 +26,8 @@
       "implementationHead": "049821a2264cd6fb9fd136cbc0b3c993055cfc32"
     },
     "AUTH-A12C": {
-      "status": "planned",
-      "goal": "retire local professional role promotion and session rewrites"
+      "status": "implementation_in_progress",
+      "goal": "retire local professional role promotion, browser-local reviewer authority and professional session rewrites"
     }
   },
   "activeBrowserAuthority": {
@@ -38,12 +38,16 @@
     "localProfileMutationAuthority": "retired",
     "localOnboardingMutationAuthority": "retired",
     "manualOnboardingSessionRewrite": "retired",
-    "professionalFixtureMutationBoundary": "isolated-pending-A12C",
+    "professionalRoleAuthority": "server-only",
+    "professionalReviewerAuthority": "professional-verification-operations",
+    "professionalFixtureMutationBoundary": "retired",
+    "manualProfessionalSessionRewrite": "retired",
     "actions": [
       "get_account_identity_state",
       "update_account_profile_reconciled",
       "update_account_settings",
-      "complete_account_onboarding_reconciled"
+      "complete_account_onboarding_reconciled",
+      "professional-verification-operations:decide"
     ]
   },
   "retiredLocalCredentialExports": [
@@ -63,9 +67,16 @@
     "local completion event",
     "complete profile inference"
   ],
-  "inventoriedLocalMutationExports": [
-    "updateProfessionalFixtureUser"
+  "retiredLocalProfessionalSurfaces": [
+    "updateProfessionalFixtureUser",
+    "reconcileProfessionalUser",
+    "reconcileVerifiedProfessionalState",
+    "activateProfessional",
+    "syncCurrentSession",
+    "syncTargetSession",
+    "browser-local reviewer approval"
   ],
+  "inventoriedLocalMutationExports": [],
   "credentialStorageSanitization": {
     "storageKey": "doke.auth.users.v1",
     "removedFields": [
@@ -73,23 +84,14 @@
       "passwordHash"
     ]
   },
-  "professionalFixtureBoundary": {
-    "blocksUuidSubjects": true,
-    "allowedFields": [
-      "role",
-      "type",
-      "professionalProfileId",
-      "publicProfileUrl",
-      "ownerProfileUrl"
-    ],
-    "createsMissingUsers": false,
-    "validAuthFallback": false,
-    "removalTarget": "AUTH-A12C"
+  "professionalAuthorityBoundary": {
+    "roleSource": "public.users.role",
+    "reviewDecisionSource": "decide_professional_identity_verification_internal",
+    "browserMayDeriveRoleFromDocuments": false,
+    "browserMayRewriteSession": false,
+    "localFixtureReadsMayMutate": false
   },
-  "knownLocalConsumersPendingReconciliation": [
-    "assets/js/services/professional-access-service.js",
-    "assets/js/services/professional-identity-verification-service.js"
-  ],
+  "knownLocalConsumersPendingReconciliation": [],
   "historicalCliOnlyEndpoints": [
     "/auth/login",
     "/auth/session",
@@ -107,6 +109,7 @@
     "providerReconciledProfileContract": "success",
     "registrationOnboardingAuthorityContract": "success",
     "onboardingLocalAuthorityRetirementRuntime": "success",
+    "professionalAuthorityRetirementRuntime": "pending",
     "domainMatrix": "success",
     "blockingE2E": "success",
     "visualStructuralGuards": "success",
@@ -138,8 +141,8 @@
     "productionChanged": false,
     "realAccountChanged": false,
     "persistentSyntheticAccountCreated": false,
-    "temporaryWorkflowRemaining": false,
-    "temporaryCodemodRemaining": false,
+    "temporaryWorkflowRemaining": true,
+    "temporaryCodemodRemaining": true,
     "prMerged": false
   },
   "blockersPreserved": [
