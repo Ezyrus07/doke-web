@@ -72,14 +72,33 @@ jobs:
       - name: Test professional remote reviewer
         run: node tests/auth/test-auth-professional-authority-retirement-runtime.js reviewer
 
-      - name: Audit identity authority
-        run: node scripts/audit-identity-profile-contract.js
+      - name: Capture identity authority audit
+        run: |
+          mkdir -p reports/generated
+          set +e
+          node scripts/audit-identity-profile-contract.js > reports/generated/tmp-auth-a12c-identity-audit.log 2>&1
+          status=$?
+          echo "$status" > reports/generated/tmp-auth-a12c-identity-audit.status
+          exit 0
+
+      - name: Upload identity authority audit
+        uses: actions/upload-artifact@v4
+        with:
+          name: tmp-auth-a12c-identity-audit-${{ github.sha }}
+          path: reports/generated/tmp-auth-a12c-identity-audit.*
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Validate identity authority audit
+        run: |
+          cat reports/generated/tmp-auth-a12c-identity-audit.log
+          test "$(cat reports/generated/tmp-auth-a12c-identity-audit.status)" = '0'
 
       - name: Validate patch formatting
         run: git diff --check
 
       - name: Remove temporary execution files
-        run: rm -f scripts/tmp-auth-a12c-codemod.js scripts/tmp-auth-a12c-access-diagnostic.js .github/workflows/tmp-auth-a12c-codemod.yml reports/generated/tmp-auth-a12c-access-*.json
+        run: rm -f scripts/tmp-auth-a12c-codemod.js scripts/tmp-auth-a12c-access-diagnostic.js .github/workflows/tmp-auth-a12c-codemod.yml reports/generated/tmp-auth-a12c-*.json reports/generated/tmp-auth-a12c-identity-audit.*
 
       - name: Publish implementation
         run: |
