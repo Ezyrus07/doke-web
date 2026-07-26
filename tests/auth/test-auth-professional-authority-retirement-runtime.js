@@ -23,6 +23,17 @@ function customEvent(type, options = {}) {
   this.detail = options.detail;
 }
 
+function assertStaticRetirement() {
+  assert(!usersSource.includes('updateProfessionalFixtureUser'));
+  assert(!usersSource.includes('reconcileProfessionalUser'));
+  assert(!accessSource.includes('Doke.session.setCurrentUser'));
+  assert(!accessSource.includes('updateProfessionalFixtureUser'));
+  assert(!verificationSource.includes('Doke.session.setCurrentUser'));
+  assert(!verificationSource.includes('updateProfessionalFixtureUser'));
+  assert(!verificationSource.includes("provider || 'mock'"));
+  assert(!verificationSource.includes('refreshToken'));
+}
+
 async function assertUsersRepositoryIsReadOnly() {
   const initialProfiles = JSON.stringify([{
     id: 'profile-client-fixture',
@@ -53,7 +64,7 @@ async function assertUsersRepositoryIsReadOnly() {
 
   const repository = window.DokeAuth.repositories.users;
   const mutationExports = Object.keys(repository).filter((name) => name.startsWith('update'));
-  assert.deepStrictEqual(mutationExports, [], 'users repository still exports a local mutation');
+  assert.deepStrictEqual(Array.from(mutationExports), [], 'users repository still exports a local mutation');
   assert.strictEqual(Object.prototype.hasOwnProperty.call(repository, 'updateProfessionalFixtureUser'), false);
 
   const users = await repository.list();
@@ -80,12 +91,8 @@ async function assertProfessionalAccessUsesServerRole() {
 
   const rows = {
     users: () => ({ id: actor.id, role: accountRole, status: 'active' }),
-    professional_profiles: () => ({
-      id: 'profile-remote', user_id: actor.id, setup_status: 'active', verification_status: 'verified', document_status: 'verified'
-    }),
-    professional_identity_verifications: () => ({
-      id: 'verification-remote', user_id: actor.id, professional_profile_id: 'profile-remote', status: 'verified', document_status: 'verified'
-    })
+    professional_profiles: () => ({ id: 'profile-remote', user_id: actor.id, setup_status: 'active', verification_status: 'verified', document_status: 'verified' }),
+    professional_identity_verifications: () => ({ id: 'verification-remote', user_id: actor.id, professional_profile_id: 'profile-remote', status: 'verified', document_status: 'verified' })
   };
   const client = {
     from(table) {
@@ -102,10 +109,7 @@ async function assertProfessionalAccessUsesServerRole() {
   const window = {
     Doke: {
       services: {},
-      repositories: {
-        professionalProfiles: localProfiles,
-        professionalIdentityVerifications: localVerifications
-      },
+      repositories: { professionalProfiles: localProfiles, professionalIdentityVerifications: localVerifications },
       permissions: {
         PROFESSIONAL_ACTIONS: { ACCESS_PROFILE: 'access_professional_profile' },
         evaluateProfessionalAccess(action, context) {
@@ -139,10 +143,7 @@ async function assertProfessionalAccessUsesServerRole() {
   assert.strictEqual(conflicting.user.role, 'client', 'verified documents overrode the server account role');
 
   provider = 'mock';
-  await assert.rejects(
-    service.resolveContext(),
-    (error) => error && error.code === 'DOKE_PROFESSIONAL_AUTHORITY_UNAVAILABLE'
-  );
+  await assert.rejects(service.resolveContext(), (error) => error && error.code === 'DOKE_PROFESSIONAL_AUTHORITY_UNAVAILABLE');
 
   const localActor = { id: 'local-client', role: 'client', type: 'client' };
   const localContext = await service.resolveContext(localActor);
@@ -180,10 +181,7 @@ async function assertReviewerAuthorityIsRemoteOnly() {
     Doke: {
       services: {},
       repositories: {
-        professionalIdentityVerifications: {
-          statuses: {},
-          transition() { localMutationCalls += 1; return Promise.resolve(null); }
-        },
+        professionalIdentityVerifications: { statuses: {}, transition() { localMutationCalls += 1; return Promise.resolve(null); } },
         professionalProfiles: {
           transition() { localMutationCalls += 1; return Promise.resolve(null); },
           setVerificationStatus() { localMutationCalls += 1; return Promise.resolve(null); }
@@ -195,10 +193,7 @@ async function assertReviewerAuthorityIsRemoteOnly() {
         setCurrentUser() { localMutationCalls += 1; }
       }
     },
-    DokeSupabase: {
-      getClient() { return client; },
-      invokeSelfService() { return Promise.reject(new Error('not used')); }
-    },
+    DokeSupabase: { getClient() { return client; }, invokeSelfService() { return Promise.reject(new Error('not used')); } },
     dispatchEvent(event) { events.push(event); return true; }
   };
   window.window = window;
@@ -214,10 +209,7 @@ async function assertReviewerAuthorityIsRemoteOnly() {
   assert.strictEqual(localMutationCalls, 0);
 
   responseRole = '';
-  await assert.rejects(
-    service.approve('verification-1'),
-    (error) => error && error.code === 'DOKE_PROFESSIONAL_ROLE_RECONCILIATION_INCOMPLETE'
-  );
+  await assert.rejects(service.approve('verification-1'), (error) => error && error.code === 'DOKE_PROFESSIONAL_ROLE_RECONCILIATION_INCOMPLETE');
   assert.strictEqual(localMutationCalls, 0);
 
   provider = 'mock';
@@ -229,23 +221,32 @@ async function assertReviewerAuthorityIsRemoteOnly() {
 }
 
 async function main() {
-  assert(!usersSource.includes('updateProfessionalFixtureUser'));
-  assert(!usersSource.includes('reconcileProfessionalUser'));
-  assert(!accessSource.includes('Doke.session.setCurrentUser'));
-  assert(!accessSource.includes('updateProfessionalFixtureUser'));
-  assert(!verificationSource.includes('Doke.session.setCurrentUser'));
-  assert(!verificationSource.includes('updateProfessionalFixtureUser'));
-  assert(!verificationSource.includes("provider || 'mock'"));
-  assert(!verificationSource.includes('refreshToken'));
+  const lane = String(process.argv[2] || 'all').toLowerCase();
+  if (!['all', 'static', 'users', 'access', 'reviewer'].includes(lane)) throw new Error('Unknown AUTH-A12C runtime lane: ' + lane);
 
-  await assertUsersRepositoryIsReadOnly();
-  await assertProfessionalAccessUsesServerRole();
-  await assertReviewerAuthorityIsRemoteOnly();
+  if (lane === 'all' || lane === 'static') {
+    assertStaticRetirement();
+    console.log('AUTH-A12C static professional authority retirement passed.');
+  }
+  if (lane === 'all' || lane === 'users') {
+    await assertUsersRepositoryIsReadOnly();
+    console.log('AUTH-A12C read-only user fixture lane passed.');
+  }
+  if (lane === 'all' || lane === 'access') {
+    await assertProfessionalAccessUsesServerRole();
+    console.log('AUTH-A12C server-role access lane passed.');
+  }
+  if (lane === 'all' || lane === 'reviewer') {
+    await assertReviewerAuthorityIsRemoteOnly();
+    console.log('AUTH-A12C remote reviewer lane passed.');
+  }
 
-  console.log('AUTH-A12C professional authority retirement runtime passed.');
-  console.log('- local user fixtures are read-only and cannot self-promote during reads');
-  console.log('- professional access consumes the canonical public.users role without session rewrites');
-  console.log('- reviewer decisions are remote-only and require server-confirmed professional role');
+  if (lane === 'all') {
+    console.log('AUTH-A12C professional authority retirement runtime passed.');
+    console.log('- local user fixtures are read-only and cannot self-promote during reads');
+    console.log('- professional access consumes the canonical public.users role without session rewrites');
+    console.log('- reviewer decisions are remote-only and require server-confirmed professional role');
+  }
 }
 
 main().catch((error) => {
