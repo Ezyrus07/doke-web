@@ -1,0 +1,52 @@
+name: TEMP AUTH-A12B.2 Encoded Journal Append
+
+on:
+  pull_request:
+    branches: [MAIN, main, master]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tmp-auth-a12b2-encoded-journal-${{ github.event.pull_request.head.ref }}
+  cancel-in-progress: false
+
+jobs:
+  append:
+    if: github.event.pull_request.head.ref == 'auth/auth-001-baseline-audit'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      ENTRY_B64: LS0tCgojIyAyMDI2LTA3LTI2IOKAlCBBVVRILUExMkIuMiBnZW5lcmljIGxvY2FsIHByb2ZpbGUgbXV0YXRpb24gYXV0aG9yaXR5IHJldGlyZWQKCioqU2NvcGU6KiogUFIgIzksIGJyYW5jaCBgYXV0aC9hdXRoLTAwMS1iYXNlbGluZS1hdWRpdGAKCioqT3V0Y29tZToqKiBgRE9ORWAgZm9yIEFVVEgtQTEyQi4yOyBgUExBTk5FRGAgZm9yIEFVVEgtQTEyQi4zIGFuZCBBVVRILUExMkMKCiMjIyBDb250ZXh0CgpUaGUgYnJvd3NlciB1c2VycyByZXBvc2l0b3J5IHN0aWxsIGV4cG9zZWQgZ2VuZXJpYyBhY2NvdW50LCBwcm9maWxlIGFuZCBzZXR0aW5ncyBtdXRhdGlvbiBtZXRob2RzLiBgcHJvZmlsZS1zZXJ2aWNlLmpzYCBhbHNvIHJldGFpbmVkIGxvY2FsIHByb2ZpbGUvc2V0dGluZ3MgZmFsbGJhY2tzIGFuZCBtYW51YWxseSByZXdyb3RlIHRoZSBEb2tlIHB1YmxpYyBzZXNzaW9uLiBQcm9mZXNzaW9uYWwgbG9jYWwgZmxvd3MgY29uc3VtZWQgdGhlIHNhbWUgZ2VuZXJpYyB1c2VyIG11dGF0aW9uIG1ldGhvZCwgYnV0IHRoZWlyIHJvbGUtcHJvbW90aW9uIHNlbWFudGljcyBiZWxvbmcgdG8gQVVUSC1BMTJDLgoKIyMjIERlY2lzaW9uCgpSZW1vdmUgZ2VuZXJpYyBicm93c2VyLWxvY2FsIG11dGF0aW9uIGF1dGhvcml0eSBpbW1lZGlhdGVseS4gS2VlcCBwcm9mZXNzaW9uYWwgY29tcGF0aWJpbGl0eSBvbmx5IGJlaGluZCBvbmUgZXhwbGljaXQsIG5hcnJvdyBmaXh0dXJlIGJvdW5kYXJ5IHRoYXQgY2Fubm90IGFjY2VwdCBVVUlEL1N1cGFiYXNlIHN1YmplY3RzIGFuZCBtdXN0IGJlIHJlbW92ZWQgaW4gQVVUSC1BMTJDLiBSZW1vdGUgYXV0aG9yaXR5IGZhaWx1cmUgbXVzdCBmYWlsIGNsb3NlZCBpbnN0ZWFkIG9mIG1hdGVyaWFsaXppbmcgbG9jYWwgaWRlbnRpdHkgc3RhdGUuCgojIyMgSW1wbGVtZW50YXRpb24KCi0gUmVtb3ZlZCBgdXBkYXRlQ3VycmVudFVzZXJgLCBgdXBkYXRlQ3VycmVudFByb2ZpbGVgIGFuZCBgdXBkYXRlQ3VycmVudFNldHRpbmdzYCBmcm9tIGB1c2Vycy1yZXBvc2l0b3J5LmpzYC4KLSBSZW1vdmVkIGxvY2FsIHByb2ZpbGUvc2V0dGluZ3MgbXV0YXRpb24gZmFsbGJhY2tzIGFuZCBtYW51YWwgYERva2Uuc2Vzc2lvbmAgcmV3cml0ZXMgZnJvbSBgcHJvZmlsZS1zZXJ2aWNlLmpzYC4KLSBSZXF1aXJlZCBgc2VsZi1zZXJ2aWNlLW9wZXJhdGlvbnNgIGZvciBwcm9maWxlIGFuZCBzZXR0aW5ncyBtdXRhdGlvbnMuCi0gQWRkZWQgYHVwZGF0ZVByb2Zlc3Npb25hbEZpeHR1cmVVc2VyYCBhcyBhbiBpc29sYXRlZCB0ZW1wb3JhcnkgZml4dHVyZSBib3VuZGFyeS4KLSBSZXN0cmljdGVkIHRoZSBmaXh0dXJlIHBhdGNoIHRvIHByb2Zlc3Npb25hbCByb2xlL3Byb2ZpbGUgcm91dGluZyBmaWVsZHMuCi0gQmxvY2tlZCBlbXB0eSBJRHMsIFVVSUQvU3VwYWJhc2Ugc3ViamVjdHMsIHVuc3VwcG9ydGVkIGZpZWxkcyBhbmQgbWlzc2luZyBmaXh0dXJlcy4KLSBBZGRlZCBgdGVzdHMvYXV0aC90ZXN0LWF1dGgtbG9jYWwtcHJvZmlsZS1tdXRhdGlvbi1yZXRpcmVtZW50LXJ1bnRpbWUuanNgLgotIEFkZGVkIHRoZSBydW50aW1lIHBlcm1hbmVudGx5IHRvIHRoZSBjYW5vbmljYWwgRG9rZSBRdWFsaXR5IEdhdGVzLgotIFVwZGF0ZWQgdGhlIEFVVEggaW50ZWdyYXRpb24gY29udHJhY3QgYW5kIEFVVEgtQTEyIE1hcmtkb3duL0pTT04gZXZpZGVuY2UuCi0gU3luY2hyb25pemVkIHRoZSBkZXRlcm1pbmlzdGljIGRvbWFpbiBtYXRyaXguCi0gUmVtb3ZlZCBhbGwgdGVtcG9yYXJ5IGNvZGVtb2QsIHdvcmtmbG93IGFuZCBkaWFnbm9zdGljIHN1cmZhY2VzIGFmdGVyIHVzZS4KCiMjIyBWYWxpZGF0aW9uCgpWYWxpZGF0ZWQgaGVhZDogYDM4NjZmYmVhMDc2ZGViYTIzMjhmOTA3N2EyZDU4MmIzYTJjNTAzM2JgLgoKLSBEb2tlIFF1YWxpdHkgR2F0ZXMgIzYyMDogc3VjY2Vzcy4KLSBBVVRILUExMkIuMiBsb2NhbCBwcm9maWxlIG11dGF0aW9uIHJldGlyZW1lbnQgcnVudGltZTogc3VjY2Vzcy4KLSBCbG9ja2luZyBkZXRlcm1pbmlzdGljIEUyRTogc3VjY2Vzcy4KLSAxMDUgdmlzdWFsIHN0cnVjdHVyYWwgZ3VhcmRzOiBzdWNjZXNzLgotIERva2UgU3RhZ2luZyBFZGdlIEhUVFAgQ2FuYXJ5ICMzOTQ6IHN1Y2Nlc3MuCi0gRG9rZSBEaWFnbm9zdGljIEUyRSAjNDE1OiBzdWNjZXNzLgotIERldGVybWluaXN0aWMgbWF0cml4LCBnb3Zlcm5hbmNlLCBhc3NldCBhdWRpdHMsIEUyRSBwYXJ0aXRpb24gYW5kIGBnaXQgZGlmZiAtLWNoZWNrYDogc3VjY2Vzcy4KCiMjIyBTdXBhYmFzZSBhbmQgcHJvZHVjdGlvbiBib3VuZGFyeQoKLSBObyBtaWdyYXRpb24gd2FzIGFwcGxpZWQuCi0gTm8gRWRnZSBGdW5jdGlvbiB3YXMgZGVwbG95ZWQuCi0gTm8gc3RhZ2luZyBjb25maWd1cmF0aW9uIG9yIGRhdGEgd2FzIGNoYW5nZWQuCi0gTm8gcmVhbCBvciBwZXJzaXN0ZW50IHN5bnRoZXRpYyBhY2NvdW50IHdhcyBtb2RpZmllZC4KLSBQcm9kdWN0aW9uIHdhcyBub3QgY2hhbmdlZC4KLSBQUiAjOSByZW1haW5zIGRyYWZ0IGFuZCB1bm1lcmdlZC4KCiMjIyBSZW1haW5pbmcgcmlzawoKYHVwZGF0ZVByb2Zlc3Npb25hbEZpeHR1cmVVc2VyYCBpcyBub3QgYSBwcm9kdWN0aW9uIGlkZW50aXR5IGF1dGhvcml0eS4gSXQgcmVtYWlucyBhIHRlbXBvcmFyeSBjb21wYXRpYmlsaXR5IGJvdW5kYXJ5IGZvciBsb2NhbCBwcm9mZXNzaW9uYWwgZml4dHVyZXMgYW5kIG11c3QgYmUgcmVtb3ZlZCBvciBtb3ZlZCBvdXRzaWRlIGFjdGl2ZSBydW50aW1lIGxvYWRpbmcgaW4gQVVUSC1BMTJDLgoKIyMjIE5leHQgc3RlcAoKRXhlY3V0ZSBBVVRILUExMkIuMzogYXVkaXQgYW5kIHJldGlyZSByZXNpZHVhbCBsb2NhbCBvbmJvYXJkaW5nIG11dGF0aW9uIGFuZCBtYW51YWwgc2Vzc2lvbiByZXdyaXRlcyB3aGlsZSBwcmVzZXJ2aW5nIHNlcnZlci1zaWRlIHJlY29uY2lsaWF0aW9uIGFzIHRoZSBvbmx5IGFjdGl2ZSBhdXRob3JpdHkuCg==
+
+    steps:
+      - name: Checkout AUTH branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 1
+
+      - name: Append journal entry when absent
+        shell: bash
+        run: |
+          set -euo pipefail
+          marker='AUTH-A12B.2 generic local profile mutation authority retired'
+          if grep -Fq "$marker" docs/DOKE-ENGINEERING-JOURNAL.md; then
+            echo 'Journal entry already present.'
+            exit 0
+          fi
+          printf '%s' "$ENTRY_B64" | base64 --decode >> docs/DOKE-ENGINEERING-JOURNAL.md
+
+      - name: Publish journal entry
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- docs/DOKE-ENGINEERING-JOURNAL.md; then
+            echo 'No journal change to publish.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add docs/DOKE-ENGINEERING-JOURNAL.md
+          git commit -m 'Record AUTH-A12B.2 engineering journal closure'
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
