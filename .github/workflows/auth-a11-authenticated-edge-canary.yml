@@ -1,0 +1,173 @@
+name: AUTH-A11 Authenticated Edge Canary
+
+on:
+  push:
+    branches:
+      - 'auth/**'
+
+permissions:
+  contents: read
+
+jobs:
+  canary:
+    if: startsWith(github.event.head_commit.message, 'Run AUTH-A11 authenticated edge canary')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout candidate tree
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Run authenticated AUTH-A11 canary
+        env:
+          SUPABASE_URL: https://zwkczgewzbsorbrjuzpb.supabase.co
+          SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp3a2N6Z2V3emJzb3Jicmp1enBiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMxNzgyNzgsImV4cCI6MjA5ODc1NDI3OH0.oeT4BrezoxBJbGLet_6_JI49UyTuFUVSkYaI34DrbaA
+          CANARY_USER_ID: 779cd6cb-f4e8-4c7f-a6d3-54f6f4dee5fd
+          CANARY_EMAIL: auth-a11-edge-cda3e74bf54c4f18a0532118fcbcae0d@example.test
+          CANARY_HANDLE: autha11edgeu_339b7b4f25
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p reports/generated
+          node <<'NODE'
+          const fs = require('fs');
+          const assert = require('assert');
+
+          const base = process.env.SUPABASE_URL;
+          const apiKey = process.env.SUPABASE_ANON_KEY;
+          const userId = process.env.CANARY_USER_ID;
+          const email = process.env.CANARY_EMAIL;
+          const password = 'AuthA11Edge' + userId.replace(/-/g, '');
+          const handle = process.env.CANARY_HANDLE;
+
+          async function jsonRequest(url, options) {
+            const response = await fetch(url, options);
+            const text = await response.text();
+            let body = {};
+            try { body = text ? JSON.parse(text) : {}; } catch { body = { raw: text }; }
+            if (!response.ok) {
+              throw new Error(`${response.status} ${url}: ${JSON.stringify(body)}`);
+            }
+            return body;
+          }
+
+          async function main() {
+            const token = await jsonRequest(`${base}/auth/v1/token?grant_type=password`, {
+              method: 'POST',
+              headers: { apikey: apiKey, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email, password })
+            });
+            assert(token.access_token, 'Password grant did not return an access token.');
+            assert.strictEqual(token.user?.id, userId, 'Authenticated subject mismatch.');
+
+            async function invoke(action, params = {}) {
+              return jsonRequest(`${base}/functions/v1/self-service-operations`, {
+                method: 'POST',
+                headers: {
+                  apikey: apiKey,
+                  Authorization: `Bearer ${token.access_token}`,
+                  Origin: 'https://ezyrus07.github.io',
+                  'Content-Type': 'application/json',
+                  'X-Doke-Request-Id': `auth-a11-${action}`
+                },
+                body: JSON.stringify({ action, params })
+              });
+            }
+
+            const initial = await invoke('get_account_identity_state');
+            assert.strictEqual(initial.userId, userId);
+            assert.strictEqual(initial.profile?.userId, userId);
+
+            const profile = await invoke('update_account_profile_reconciled', {
+              p_display_name: 'AUTH A11 Edge Reconciled',
+              p_username: handle,
+              p_city: 'Salvador',
+              p_state: 'BA',
+              p_bio: 'Authenticated Edge profile reconciliation',
+              p_interests: ['Tecnologia', 'Empreendedorismo'],
+              p_avatar_url: 'https://example.test/auth-a11-avatar.png',
+              p_cover_url: 'https://example.test/auth-a11-cover.png'
+            });
+            assert.strictEqual(profile.userId, userId);
+            assert.strictEqual(profile.profile?.userId, userId);
+            assert.strictEqual(profile.profile?.username, handle);
+            assert.strictEqual(profile.profile?.city, 'Salvador');
+
+            const settings = await invoke('update_account_settings', {
+              p_settings: {
+                notifications: { messages: false },
+                privacy: { publicProfile: false },
+                account: { email: 'forbidden@example.test' },
+                role: 'admin',
+                accountStatus: 'disabled'
+              }
+            });
+            assert.strictEqual(settings.userId, userId);
+            assert.strictEqual(settings.settings?.notifications?.messages, false);
+            assert.strictEqual(settings.settings?.privacy?.publicProfile, false);
+            assert(!Object.prototype.hasOwnProperty.call(settings.settings || {}, 'account'));
+            assert(!Object.prototype.hasOwnProperty.call(settings.settings || {}, 'role'));
+            assert(!Object.prototype.hasOwnProperty.call(settings.settings || {}, 'accountStatus'));
+
+            const onboarding = await invoke('complete_account_onboarding_reconciled', {
+              p_city: 'Feira de Santana',
+              p_state: 'BA',
+              p_postal_code: '40200000',
+              p_bio: 'Authenticated Edge onboarding reconciliation',
+              p_interests: ['Tecnologia', 'Serviços']
+            });
+            assert.strictEqual(onboarding.userId, userId);
+            assert.strictEqual(onboarding.profile?.userId, userId);
+            assert.strictEqual(onboarding.onboardingStatus, 'completed');
+            assert(onboarding.onboardingCompletedAt);
+            assert.strictEqual(onboarding.profile?.city, 'Feira de Santana');
+
+            const finalState = await invoke('get_account_identity_state');
+            assert.strictEqual(finalState.userId, userId);
+            assert.strictEqual(finalState.profile?.username, handle);
+            assert.strictEqual(finalState.onboardingStatus, 'completed');
+            assert.strictEqual(finalState.settings?.notifications?.messages, false);
+
+            const evidence = {
+              status: 'passed',
+              projectRef: 'zwkczgewzbsorbrjuzpb',
+              edgeFunction: 'self-service-operations',
+              testedActions: [
+                'get_account_identity_state',
+                'update_account_profile_reconciled',
+                'update_account_settings',
+                'complete_account_onboarding_reconciled'
+              ],
+              assertions: {
+                authenticatedSubjectMatched: true,
+                profileReconciled: true,
+                protectedSettingsFiltered: true,
+                onboardingReconciled: true,
+                finalIdentityConsistent: true
+              },
+              credentialsPersisted: false,
+              tokenPersisted: false
+            };
+            fs.writeFileSync('reports/generated/auth-a11-authenticated-edge-canary.json', JSON.stringify(evidence, null, 2) + '\n');
+            console.log(JSON.stringify(evidence));
+          }
+
+          main().catch((error) => {
+            console.error(error && error.stack || error);
+            process.exit(1);
+          });
+          NODE
+
+      - name: Upload canary evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: auth-a11-authenticated-edge-canary-${{ github.sha }}
+          path: reports/generated/auth-a11-authenticated-edge-canary.json
+          if-no-files-found: warn
+          retention-days: 7
