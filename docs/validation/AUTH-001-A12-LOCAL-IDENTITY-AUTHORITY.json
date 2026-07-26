@@ -16,8 +16,9 @@
       "implementationHead": "7caf2dea2d3fafa25d80b50ba3c62047e8609332"
     },
     "AUTH-A12B.2": {
-      "status": "implementation_in_progress",
-      "goal": "retire generic local account, profile and settings mutations while isolating professional fixtures"
+      "status": "done",
+      "goal": "retire generic local account, profile and settings mutations while isolating professional fixtures",
+      "implementationHead": "3866fbea076deba2328f9077a2d582b3a2c5033b"
     },
     "AUTH-A12B.3": {
       "status": "planned",
@@ -33,19 +34,24 @@
     "identityProvider": "supabase",
     "transport": "self-service-operations",
     "localCredentialAuthority": "retired",
+    "localProfileMutationAuthority": "retired",
+    "professionalFixtureMutationBoundary": "isolated-pending-A12C",
     "actions": [
       "get_account_identity_state",
       "update_account_profile_reconciled",
       "update_account_settings",
       "complete_account_onboarding_reconciled"
-    ],
-    "localProfileMutationAuthority": "retired",
-    "professionalFixtureMutationBoundary": "isolated-pending-A12C"
+    ]
   },
   "retiredLocalCredentialExports": [
     "create",
     "hashPassword",
     "updatePassword"
+  ],
+  "retiredLocalProfileMutationExports": [
+    "updateCurrentUser",
+    "updateCurrentProfile",
+    "updateCurrentSettings"
   ],
   "inventoriedLocalMutationExports": [
     "updateProfessionalFixtureUser"
@@ -56,6 +62,19 @@
       "password",
       "passwordHash"
     ]
+  },
+  "professionalFixtureBoundary": {
+    "blocksUuidSubjects": true,
+    "allowedFields": [
+      "role",
+      "type",
+      "professionalProfileId",
+      "publicProfileUrl",
+      "ownerProfileUrl"
+    ],
+    "createsMissingUsers": false,
+    "validAuthFallback": false,
+    "removalTarget": "AUTH-A12C"
   },
   "knownLocalConsumersPendingReconciliation": [
     "assets/js/services/professional-access-service.js",
@@ -68,23 +87,32 @@
     "/profiles/me"
   ],
   "validation": {
-    "validatedHead": "7caf2dea2d3fafa25d80b50ba3c62047e8609332",
-    "qualityRunNumber": 601,
+    "validatedHead": "3866fbea076deba2328f9077a2d582b3a2c5033b",
+    "qualityRunNumber": 620,
     "quality": "success",
     "staticAudits": "success",
     "canonicalAuthRuntime": "success",
     "identityProfileAuthorityAudit": "success",
+    "localProfileMutationRetirementRuntime": "success",
     "providerReconciledProfileContract": "success",
     "registrationOnboardingAuthorityContract": "success",
     "domainMatrix": "success",
     "blockingE2E": "success",
     "visualStructuralGuards": "success",
-    "stagingEdgeCanaryRunNumber": 375,
+    "stagingEdgeCanaryRunNumber": 394,
     "stagingEdgeCanary": "success",
-    "diagnosticRunNumber": 396,
+    "diagnosticRunNumber": 415,
     "diagnostic": "success",
-    "supersededFailedQualityRunNumber": 600,
-    "supersededFailureCause": "real-auth-only contract still required retired FALLBACK_USERS marker"
+    "previousPhaseValidation": {
+      "AUTH-A12B.1": {
+        "validatedHead": "7caf2dea2d3fafa25d80b50ba3c62047e8609332",
+        "qualityRunNumber": 601,
+        "stagingEdgeCanaryRunNumber": 375,
+        "diagnosticRunNumber": 396,
+        "supersededFailedQualityRunNumber": 600,
+        "supersededFailureCause": "real-auth-only contract still required retired FALLBACK_USERS marker"
+      }
+    }
   },
   "safety": {
     "migrationApplied": false,
@@ -93,27 +121,12 @@
     "productionChanged": false,
     "realAccountChanged": false,
     "persistentSyntheticAccountCreated": false,
+    "temporaryWorkflowRemaining": false,
+    "temporaryCodemodRemaining": false,
     "prMerged": false
   },
   "blockersPreserved": [
     "MAIL-001",
     "PAID-001 / SEC-B05"
-  ],
-  "retiredLocalProfileMutationExports": [
-    "updateCurrentUser",
-    "updateCurrentProfile",
-    "updateCurrentSettings"
-  ],
-  "professionalFixtureBoundary": {
-    "blocksUuidSubjects": true,
-    "allowedFields": [
-      "role",
-      "type",
-      "professionalProfileId",
-      "publicProfileUrl",
-      "ownerProfileUrl"
-    ],
-    "createsMissingUsers": false,
-    "removalTarget": "AUTH-A12C"
-  }
+  ]
 }
