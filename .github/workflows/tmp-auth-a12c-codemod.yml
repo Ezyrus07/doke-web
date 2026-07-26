@@ -31,8 +31,17 @@ jobs:
       - name: Test cumulative local mutation retirement
         run: node tests/auth/test-auth-local-profile-mutation-retirement-runtime.js
 
-      - name: Test professional authority retirement
-        run: node tests/auth/test-auth-professional-authority-retirement-runtime.js
+      - name: Test professional static retirement
+        run: node tests/auth/test-auth-professional-authority-retirement-runtime.js static
+
+      - name: Test professional fixture reads
+        run: node tests/auth/test-auth-professional-authority-retirement-runtime.js users
+
+      - name: Test professional server-role access
+        run: node tests/auth/test-auth-professional-authority-retirement-runtime.js access
+
+      - name: Test professional remote reviewer
+        run: node tests/auth/test-auth-professional-authority-retirement-runtime.js reviewer
 
       - name: Audit identity authority
         run: node scripts/audit-identity-profile-contract.js
