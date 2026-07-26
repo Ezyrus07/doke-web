@@ -588,7 +588,7 @@
         return profiles.transition(profileWithVerification.id, 'active');
       });
     }).then(function (professionalProfile) {
-      return users.updateCurrentUser(verification.userId, {
+      return users.updateProfessionalFixtureUser(verification.userId, {
         role: 'professional',
         type: 'professional',
         professionalProfileId: professionalProfile.id,

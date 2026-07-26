@@ -323,62 +323,69 @@
     return !existing || String(existing.id) === String(exceptUserId || '');
   };
 
-  const updateCurrentUser = async (userId, patch) => {
-    const id = String(userId || '').trim();
-    if (!id) throw new Error('Usuário atual não encontrado para atualização.');
-    const current = await findById(id);
-    if (!current) throw new Error('Conta não encontrada para atualização.');
-
-    const localUsers = readLocalUsers().map(normalizeUser).filter(Boolean);
-    const index = localUsers.findIndex((user) => user.id === id);
-    const nextUser = normalizeUser({
-      ...current,
-      ...(patch || {}),
-      id,
-      updatedAt: new Date().toISOString()
-    });
-
-    if (index >= 0) localUsers[index] = nextUser;
-    else localUsers.push(nextUser);
-    writeLocalUsers(localUsers);
-    return nextUser;
-  };
-
-  const updateCurrentProfile = async (userId, patch, sessionUser) => {
-    const id = String(userId || '').trim();
-    if (!id) throw new Error('Usuário atual não encontrado para atualizar perfil.');
-    const current = await findById(id) || normalizeUser({ ...(sessionUser || {}), id });
-    if (!current) throw new Error('Conta não encontrada para atualizar perfil.');
-
-    const nextHandle = normalizeHandle(patch?.handle || current.handle || current.profile?.handle);
-    if (!isValidHandle(nextHandle)) throw new Error('Escolha um usuário válido com 3 a 30 caracteres.');
-    if (!await isHandleAvailable(nextHandle, id)) throw new Error('Esse usuário já está em uso. Escolha outro.');
-
-    const nextName = normalizeText(patch?.name || current.name);
-    const nextProfile = normalizeProfile({
-      ...(current.profile || {}),
-      ...(patch || {}),
-      userId: id,
-      name: nextName,
-      handle: nextHandle,
-      updatedAt: new Date().toISOString()
-    }, current);
-
-    return updateCurrentUser(id, {
-      name: nextName,
-      handle: nextHandle,
-      profile: nextProfile
-    });
-  };
-
   const getCurrentSettings = async (userId) => {
     const user = await findById(String(userId || '').trim());
     return user && user.settings && typeof user.settings === 'object' ? user.settings : {};
   };
 
-  const updateCurrentSettings = async (userId, settings) => updateCurrentUser(userId, {
-    settings: settings && typeof settings === 'object' ? settings : {}
-  });
+  const LOCAL_PROFESSIONAL_FIXTURE_FIELDS = Object.freeze([
+    'role',
+    'type',
+    'professionalProfileId',
+    'publicProfileUrl',
+    'ownerProfileUrl'
+  ]);
+
+  const isUuid = (value) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value || '').trim());
+
+  const fixtureMutationError = (message, code) => {
+    const error = new Error(message);
+    error.code = code;
+    return error;
+  };
+
+  const updateProfessionalFixtureUser = async (userId, patch) => {
+    const id = String(userId || '').trim();
+    if (!id || isUuid(id)) {
+      throw fixtureMutationError('Contas Supabase não podem entrar na mutação local de fixture profissional.', 'DOKE_LOCAL_FIXTURE_MUTATION_FORBIDDEN');
+    }
+
+    const input = patch && typeof patch === 'object' && !Array.isArray(patch) ? patch : {};
+    const unsupported = Object.keys(input).filter((key) => !LOCAL_PROFESSIONAL_FIXTURE_FIELDS.includes(key));
+    if (unsupported.length) {
+      throw fixtureMutationError('A fixture profissional recebeu campos fora da fronteira permitida.', 'DOKE_LOCAL_FIXTURE_PATCH_FORBIDDEN');
+    }
+    if (normalizeRole(input.role) !== 'professional' || normalizeRole(input.type) !== 'professional') {
+      throw fixtureMutationError('A fixture local só pode materializar o estado profissional explícito.', 'DOKE_LOCAL_FIXTURE_ROLE_FORBIDDEN');
+    }
+
+    const professionalProfileId = String(input.professionalProfileId || '').trim();
+    if (!professionalProfileId) {
+      throw fixtureMutationError('A fixture profissional exige professionalProfileId.', 'DOKE_LOCAL_FIXTURE_PROFILE_REQUIRED');
+    }
+
+    const localUsers = readLocalUsers().map(normalizeUser).filter(Boolean);
+    const index = localUsers.findIndex((user) => String(user.id) === id);
+    if (index < 0) {
+      throw fixtureMutationError('Fixture local não encontrada para atualização profissional.', 'DOKE_LOCAL_FIXTURE_NOT_FOUND');
+    }
+
+    const current = localUsers[index];
+    const nextUser = normalizeUser({
+      ...current,
+      role: 'professional',
+      type: 'professional',
+      professionalProfileId,
+      publicProfileUrl: String(input.publicProfileUrl || current.publicProfileUrl || 'perfil.html'),
+      ownerProfileUrl: String(input.ownerProfileUrl || current.ownerProfileUrl || 'perfil-profissional.html'),
+      id,
+      updatedAt: new Date().toISOString()
+    });
+
+    localUsers[index] = nextUser;
+    writeLocalUsers(localUsers);
+    return nextUser;
+  };
 
   repositories.users = Object.freeze({
     STORAGE_KEY,
@@ -388,10 +395,8 @@
     findById,
     findByHandle,
     isHandleAvailable,
-    updateCurrentUser,
-    updateCurrentProfile,
     getCurrentSettings,
-    updateCurrentSettings,
+    updateProfessionalFixtureUser,
     isEmail,
     normalizeEmail,
     normalizePhone,

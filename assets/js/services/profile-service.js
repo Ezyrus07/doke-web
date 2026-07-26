@@ -349,8 +349,10 @@
 
   function updateCurrentProfile(payload) {
     var user = currentUser();
-    var repository = usersRepository();
     if (!user || !user.id) return Promise.reject(new Error('Entre na sua conta para editar o perfil.'));
+    if (!usesSupabaseProvider()) {
+      return Promise.reject(reconciliationError('Autoridade server-side de perfil indisponível.', 'DOKE_PROFILE_AUTHORITY_UNAVAILABLE'));
+    }
 
     return getCurrentProfile().then(function (currentProfile) {
       var patch = normalizePatch(Object.assign({}, currentProfile || {}, {
@@ -358,42 +360,21 @@
         handle: user.handle
       }, payload || {}));
 
-      if (usesSupabaseProvider()) {
-        return invokeSelfService('update_account_profile_reconciled', {
-          p_display_name: patch.name,
-          p_username: patch.handle,
-          p_city: patch.city,
-          p_state: patch.state,
-          p_bio: patch.bio,
-          p_interests: patch.interests,
-          p_avatar_url: patch.avatarUrl || '',
-          p_cover_url: patch.coverUrl || ''
-        }).then(function (identityState) {
-          var nextProfile = normalizeCanonicalProfile(identityState, user);
-          cacheCanonicalProfile(nextProfile, user.id);
-          dispatchProfileEvent('doke:profile-updated', user, nextProfile);
-          return nextProfile;
-        });
-      }
-
-      if (!repository || typeof repository.updateCurrentProfile !== 'function') {
-        throw new Error('Persistência do perfil indisponível.');
-      }
-      return Promise.resolve(repository.isHandleAvailable ? repository.isHandleAvailable(patch.handle, user.id) : true)
-        .then(function (available) {
-          if (!available) throw new Error('Esse usuário já está em uso. Escolha outro.');
-          return repository.updateCurrentProfile(user.id, patch, user);
-        }).then(function (updatedUser) {
-          var nextUser = updatedUser || user;
-          if (Doke.session && typeof Doke.session.setCurrentUser === 'function') {
-            Doke.session.setCurrentUser(nextUser);
-          }
-          var nextProfile = nextUser.profile || nextUser;
-          window.dispatchEvent(new CustomEvent('doke:profile-updated', {
-            detail: { userId: user.id, profileId: nextProfile && nextProfile.id, profile: nextProfile || null, source: 'local', reconciled: false }
-          }));
-          return nextProfile;
-        });
+      return invokeSelfService('update_account_profile_reconciled', {
+        p_display_name: patch.name,
+        p_username: patch.handle,
+        p_city: patch.city,
+        p_state: patch.state,
+        p_bio: patch.bio,
+        p_interests: patch.interests,
+        p_avatar_url: patch.avatarUrl || '',
+        p_cover_url: patch.coverUrl || ''
+      }).then(function (identityState) {
+        var nextProfile = normalizeCanonicalProfile(identityState, user);
+        cacheCanonicalProfile(nextProfile, user.id);
+        dispatchProfileEvent('doke:profile-updated', user, nextProfile);
+        return nextProfile;
+      });
     });
   }
 
@@ -424,19 +405,14 @@
   function updateCurrentSettings(settings) {
     var user = currentUser();
     if (!user || !user.id) return Promise.reject(new Error('Entre na sua conta para salvar as preferências.'));
-    if (usesSupabaseProvider()) {
-      return invokeSelfService('update_account_settings', { p_settings: settings || {} }).then(function (identityState) {
-        var nextSettings = normalizeCanonicalSettings(identityState, user);
-        cacheCanonicalSettings(nextSettings, user.id);
-        dispatchSettingsEvent('doke:settings-updated', user, nextSettings);
-        return nextSettings;
-      });
+    if (!usesSupabaseProvider()) {
+      return Promise.reject(reconciliationError('Autoridade server-side de configurações indisponível.', 'DOKE_SETTINGS_AUTHORITY_UNAVAILABLE'));
     }
-    var repository = usersRepository();
-    if (!repository || typeof repository.updateCurrentSettings !== 'function') return Promise.reject(new Error('Persistência das preferências indisponível.'));
-    return repository.updateCurrentSettings(user.id, settings || {}).then(function (updatedUser) {
-      if (Doke.session && typeof Doke.session.setCurrentUser === 'function') Doke.session.setCurrentUser(updatedUser);
-      return updatedUser.settings || {};
+    return invokeSelfService('update_account_settings', { p_settings: settings || {} }).then(function (identityState) {
+      var nextSettings = normalizeCanonicalSettings(identityState, user);
+      cacheCanonicalSettings(nextSettings, user.id);
+      dispatchSettingsEvent('doke:settings-updated', user, nextSettings);
+      return nextSettings;
     });
   }
 

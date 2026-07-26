@@ -12,7 +12,8 @@ Supabase Auth é a única autoridade ativa de autenticação no navegador.
 - páginas e renderers não chamam endpoints de autenticação diretamente;
 - o adapter browser `/auth/*` foi removido fisicamente no AUTH-A10;
 - perfil, configurações e onboarding usam operações self-service server-side reconciliadas desde o AUTH-A11;
-- criação de conta, hash e atualização de senha locais foram retirados do repositório do navegador no AUTH-A12B.1.
+- criação de conta, hash e atualização de senha locais foram retirados do repositório do navegador no AUTH-A12B.1;
+- mutações locais genéricas de conta, perfil e configurações foram retiradas no AUTH-A12B.2.
 
 ## Fontes de verdade
 
@@ -120,11 +121,11 @@ A execução permanece dividida para reduzir risco:
 
 - `AUTH-A12A` — concluído: contrato runtime e testes reconciliados com Supabase e `self-service-operations`;
 - `AUTH-A12B.1` — concluído: `create`, `hashPassword` e `updatePassword` retirados, com sanitização de credenciais históricas;
-- `AUTH-A12B.2` — pendente: retirar `updateCurrentUser`, `updateCurrentProfile` e `updateCurrentSettings` do repositório local;
+- `AUTH-A12B.2` — implementação em validação: mutações genéricas retiradas; fixture profissional isolada em `updateProfessionalFixtureUser` até o AUTH-A12C;
 - `AUTH-A12B.3` — pendente: retirar mutação local residual de onboarding e reescritas manuais de sessão;
 - `AUTH-A12C` — pendente: retirar promoção local de role e reescrita de sessão dos fluxos profissionais.
 
-As mutações ainda inventariadas permanecem dívida controlada, nunca fallback aceitável para falha do Supabase.
+A única mutação local ainda exportada é `updateProfessionalFixtureUser`, explicitamente limitada a fixtures não UUID e pendente de retirada no AUTH-A12C. Ela nunca é fallback aceitável para falha do Supabase.
 
 ## Roles e autorização
 
@@ -170,5 +171,7 @@ AUTH-A10 removeu endpoints, request helpers, token API temporário e branches do
 - alterações verificadas de e-mail/telefone continuam bloqueadas até o AUTH-A07 e MAIL-001;
 - perfil, configurações e onboarding usam respostas server-side reconciliadas;
 - o repositório local não expõe criação, hash ou atualização de senha e não conserva campos de credencial;
+- o repositório local não expõe `updateCurrentUser`, `updateCurrentProfile` ou `updateCurrentSettings`;
+- perfil e configurações falham fechado sem a autoridade `self-service-operations`;
 - mutações locais inventariadas não podem assumir autoridade quando o Supabase está indisponível;
 - PR #9 permanece draft e não deve ser mesclado sem autorização explícita.

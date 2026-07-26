@@ -31,7 +31,9 @@
     publicProfile: 'public.user_profiles',
     browserTransport: 'self-service-operations',
     browserProvider: 'supabase',
-    localCredentialAuthority: 'retired'
+    localCredentialAuthority: 'retired',
+    localProfileMutationAuthority: 'retired',
+    professionalFixtureMutationBoundary: 'isolated-pending-A12C'
   });
 
   function normalizeProfileType(type) {
@@ -106,7 +108,7 @@
   }
 
   Doke.identityProfileContract = Object.freeze({
-    version: 'AUTH-A12B.1',
+    version: 'AUTH-A12B.2',
     profileTypes: PROFILE_TYPES,
     profileStatus: PROFILE_STATUS,
     actions: SELF_SERVICE_ACTIONS,

@@ -2,7 +2,7 @@
 
 ## Status
 
-`IN PROGRESS` — `AUTH-A12A` e `AUTH-A12B.1` estão `DONE`. `AUTH-A12B.2`, `AUTH-A12B.3` e `AUTH-A12C` permanecem pendentes antes do encerramento do AUTH-A12.
+`IN PROGRESS` — `AUTH-A12A` e `AUTH-A12B.1` estão `DONE`. `AUTH-A12B.2` está com implementação em validação. `AUTH-A12B.3` e `AUTH-A12C` permanecem pendentes.
 
 ## Objetivo
 
@@ -102,14 +102,31 @@ Validação paralela:
 
 A primeira tentativa do Quality Gates, #600, falhou porque `scripts/test-real-auth-only-contract.js` ainda exigia `FALLBACK_USERS`. O gate foi corrigido para validar ausência de autoridade local de credenciais; nenhuma implementação histórica foi restaurada.
 
+## AUTH-A12B.2 — implementação em validação
+
+### Causa-raiz
+
+`profile-service.js` ainda mantinha fallback local de mutação para perfil e configurações, com reescrita manual de `Doke.session`. O repositório ainda expunha `updateCurrentUser`, `updateCurrentProfile` e `updateCurrentSettings`.
+
+A auditoria confirmou que `updateCurrentUser` era consumido apenas pelos caminhos locais profissionais reservados ao AUTH-A12C. Para evitar regressão, a API genérica foi retirada e substituída por `updateProfessionalFixtureUser`, uma fronteira temporária e estreita que:
+
+- rejeita IDs UUID/Supabase;
+- rejeita campos fora da promoção profissional de fixture;
+- não cria usuários inexistentes;
+- não altera perfil, configurações, credenciais ou onboarding;
+- permanece inventariada para remoção no AUTH-A12C.
+
+### Implementação
+
+- removidos `updateCurrentUser`, `updateCurrentProfile` e `updateCurrentSettings` do repositório;
+- removidos os fallbacks locais e as reescritas manuais de sessão de perfil/configurações;
+- mutações de perfil/configurações agora exigem `self-service-operations` e falham fechado;
+- consumidores profissionais locais migrados apenas para o nome explícito de fixture, sem alterar ainda a lógica profissional;
+- criado runtime permanente `tests/auth/test-auth-local-profile-mutation-retirement-runtime.js`;
+- gate adicionado ao workflow canônico de Quality Gates;
+- nenhuma migration, deploy ou alteração de staging/produção.
+
 ## Próximas fases
-
-### `AUTH-A12B.2` — perfil e configurações locais
-
-- confirmar consumidores reais de `updateCurrentUser`, `updateCurrentProfile` e `updateCurrentSettings`;
-- retirar essas mutações do repositório de runtime;
-- garantir que perfil/configurações Supabase falhem fechado sem fallback local;
-- preservar somente leitura e normalização local comprovada.
 
 ### `AUTH-A12B.3` — onboarding e sessão
 

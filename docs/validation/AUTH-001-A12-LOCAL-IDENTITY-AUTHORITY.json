@@ -16,8 +16,8 @@
       "implementationHead": "7caf2dea2d3fafa25d80b50ba3c62047e8609332"
     },
     "AUTH-A12B.2": {
-      "status": "planned",
-      "goal": "retire local account, profile and settings mutations"
+      "status": "implementation_in_progress",
+      "goal": "retire generic local account, profile and settings mutations while isolating professional fixtures"
     },
     "AUTH-A12B.3": {
       "status": "planned",
@@ -38,7 +38,9 @@
       "update_account_profile_reconciled",
       "update_account_settings",
       "complete_account_onboarding_reconciled"
-    ]
+    ],
+    "localProfileMutationAuthority": "retired",
+    "professionalFixtureMutationBoundary": "isolated-pending-A12C"
   },
   "retiredLocalCredentialExports": [
     "create",
@@ -46,9 +48,7 @@
     "updatePassword"
   ],
   "inventoriedLocalMutationExports": [
-    "updateCurrentUser",
-    "updateCurrentProfile",
-    "updateCurrentSettings"
+    "updateProfessionalFixtureUser"
   ],
   "credentialStorageSanitization": {
     "storageKey": "doke.auth.users.v1",
@@ -98,5 +98,22 @@
   "blockersPreserved": [
     "MAIL-001",
     "PAID-001 / SEC-B05"
-  ]
+  ],
+  "retiredLocalProfileMutationExports": [
+    "updateCurrentUser",
+    "updateCurrentProfile",
+    "updateCurrentSettings"
+  ],
+  "professionalFixtureBoundary": {
+    "blocksUuidSubjects": true,
+    "allowedFields": [
+      "role",
+      "type",
+      "professionalProfileId",
+      "publicProfileUrl",
+      "ownerProfileUrl"
+    ],
+    "createsMissingUsers": false,
+    "removalTarget": "AUTH-A12C"
+  }
 }

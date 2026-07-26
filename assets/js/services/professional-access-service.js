@@ -188,8 +188,8 @@
       if (actor.role === 'professional' && actor.professionalProfileId === nextProfile.id) {
         return Object.assign({}, context, { professionalProfile: nextProfile });
       }
-      if (typeof users.updateCurrentUser !== 'function') return context;
-      return users.updateCurrentUser(actor.id, {
+      if (typeof users.updateProfessionalFixtureUser !== 'function') return context;
+      return users.updateProfessionalFixtureUser(actor.id, {
         role: 'professional',
         type: 'professional',
         professionalProfileId: nextProfile.id,

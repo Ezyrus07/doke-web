@@ -106,7 +106,7 @@ async function validateRepositoryRuntime(source, label) {
       return;
     }
 
-    for (const retired of ['create', 'hashPassword', 'updatePassword']) {
+    for (const retired of ['create', 'hashPassword', 'updatePassword', 'updateCurrentUser', 'updateCurrentProfile', 'updateCurrentSettings']) {
       if (Object.prototype.hasOwnProperty.call(repository, retired)) {
         failures.push(`${label} still exports retired local credential authority: ${retired}`);
       }
@@ -116,6 +116,10 @@ async function validateRepositoryRuntime(source, label) {
       if (typeof repository[retained] !== 'function') {
         failures.push(`${label} missing retained read-only compatibility API: ${retained}`);
       }
+    }
+
+    if (typeof repository.updateProfessionalFixtureUser !== 'function') {
+      failures.push(`${label} missing isolated professional fixture mutation boundary`);
     }
 
     const users = await repository.list();
@@ -159,12 +163,14 @@ const files = {
 const source = Object.fromEntries(Object.entries(files).map(([key, file]) => [key, read(file)]));
 
 expect(source.identityContract, files.identityContract, [
-  "version: 'AUTH-A12B.1'",
+  "version: 'AUTH-A12B.2'",
   "GET_IDENTITY_STATE: 'get_account_identity_state'",
   "UPDATE_CURRENT_PROFILE: 'update_account_profile_reconciled'",
   "UPDATE_CURRENT_SETTINGS: 'update_account_settings'",
   "COMPLETE_ONBOARDING: 'complete_account_onboarding_reconciled'",
   "browserProvider: 'supabase'",
+  "localProfileMutationAuthority: 'retired'",
+  "professionalFixtureMutationBoundary: 'isolated-pending-A12C'",
   "provider: 'supabase'",
   'authorities: AUTHORITIES'
 ]);
@@ -204,6 +210,10 @@ forbid(source.profileService, files.profileService, [
   'client.auth.updateUser',
   'supabaseClient.auth.updateUser',
   '.catch(function () { return null; })'
+,
+  'repository.updateCurrentProfile',
+  'repository.updateCurrentSettings',
+  'Doke.session.setCurrentUser'
 ]);
 
 expect(source.onboardingService, files.onboardingService, [
@@ -219,11 +229,7 @@ forbid(source.onboardingService, files.onboardingService, [
 
 const repositoryExports = exportedRepositoryNames(source.usersRepository);
 const mutationExports = repositoryExports.filter((name) => name.startsWith('update')).sort();
-const expectedDebt = [
-  'updateCurrentProfile',
-  'updateCurrentSettings',
-  'updateCurrentUser'
-].sort();
+const expectedDebt = ['updateProfessionalFixtureUser'];
 if (JSON.stringify(mutationExports) !== JSON.stringify(expectedDebt)) {
   failures.push(`unexpected users-repository mutation export inventory: ${JSON.stringify(mutationExports)}`);
 }
@@ -233,6 +239,8 @@ expect(source.usersRepository, files.usersRepository, [
   'const LEGACY_PROFILE_STORAGE_KEY',
   'const withoutCredentials',
   'const loadSeededUsers = async () => []',
+  'const updateProfessionalFixtureUser = async',
+  'DOKE_LOCAL_FIXTURE_MUTATION_FORBIDDEN',
   'findById',
   'findByHandle',
   'toPublicUser'
@@ -246,6 +254,13 @@ forbid(source.usersRepository, files.usersRepository, [
   '\n    create,',
   '\n    hashPassword,',
   '\n    updatePassword,'
+,
+  'const updateCurrentUser =',
+  'const updateCurrentProfile =',
+  'const updateCurrentSettings =',
+  '\n    updateCurrentUser,',
+  '\n    updateCurrentProfile,',
+  '\n    updateCurrentSettings,'
 ]);
 
 expect(source.profileWriteTest, files.profileWriteTest, [
@@ -278,8 +293,8 @@ expect(source.authContract, files.authContract, [
   'update_account_profile_reconciled',
   'update_account_settings',
   'complete_account_onboarding_reconciled',
-  'AUTH-A12B.1',
-  'credenciais locais foram retiradas'
+  'AUTH-A12B.2',
+  'mutações locais genéricas de conta, perfil e configurações foram retiradas'
 ]);
 forbid(source.authContract, files.authContract, [
   '### Débito controlado para AUTH-A11',
@@ -290,6 +305,8 @@ expect(source.plan, files.plan, [
   '`AUTH-A12A`',
   '`AUTH-A12B.1`',
   '`AUTH-A12B.2`',
+  'implementação em validação',
+  '`updateProfessionalFixtureUser`',
   '`AUTH-A12C`',
   '`updateCurrentUser`',
   'credenciais locais removidas',
@@ -302,6 +319,8 @@ expect(source.planJson, files.planJson, [
   '"sublot": "AUTH-A12"',
   '"status": "in_progress"',
   '"AUTH-A12B.1"',
+  '"AUTH-A12B.2"',
+  '"status": "implementation_in_progress"',
   '"status": "done"',
   '"implementationHead": "7caf2dea2d3fafa25d80b50ba3c62047e8609332"',
   '"qualityRunNumber": 601',
@@ -333,7 +352,7 @@ async function main() {
   console.log('- active browser identity provider: supabase');
   console.log('- active mutation transport: self-service-operations');
   console.log('- retired local credential authority: create, hashPassword, updatePassword');
-  console.log(`- inventoried local mutation exports pending retirement: ${mutationExports.join(', ')}`);
+  console.log(`- isolated local mutation exports pending AUTH-A12C: ${mutationExports.join(', ')}`);
   console.log('- historical /users/me and /profiles/me remain CLI-only and outside the browser contract');
 }
 
