@@ -1,7 +1,7 @@
--- AUTH-A11: provider-reconciled profile and public-identity authority.
--- Adds a canonical identity snapshot and a narrow settings mutation behind the
--- JWT-verified self-service Edge Function. No contact, credential, role or
--- account-status field is mutable through this migration.
+-- AUTH-A11: provider-reconciled profile, onboarding and public-identity authority.
+-- Adds a canonical identity snapshot and narrow profile/settings/onboarding mutations
+-- behind the JWT-verified self-service Edge Function. No contact, credential, role
+-- or account-status field is mutable through this migration.
 
 create or replace function public.get_account_identity_state()
 returns jsonb
@@ -184,6 +184,16 @@ begin
     when 'get_account_identity_state' then
       v_result := public.get_account_identity_state();
 
+    when 'complete_account_onboarding_reconciled' then
+      perform public.complete_account_onboarding(
+        p_city := coalesce(v_payload ->> 'p_city', ''),
+        p_state := coalesce(v_payload ->> 'p_state', ''),
+        p_postal_code := nullif(v_payload ->> 'p_postal_code', ''),
+        p_bio := coalesce(v_payload ->> 'p_bio', ''),
+        p_interests := coalesce(v_payload -> 'p_interests', '[]'::jsonb)
+      );
+      v_result := public.get_account_identity_state();
+
     when 'update_account_profile_reconciled' then
       perform public.update_account_profile(
         p_display_name := v_payload ->> 'p_display_name',
@@ -220,8 +230,8 @@ grant execute on function public.execute_self_service_operation_internal(uuid, t
   to service_role;
 
 comment on function public.get_account_identity_state() is
-  'AUTH-A11 canonical identity/profile/settings snapshot for the authenticated actor.';
+  'AUTH-A11 canonical identity/profile/settings/onboarding snapshot for the authenticated actor.';
 comment on function public.update_account_settings(jsonb) is
   'AUTH-A11 narrow settings mutation; contact, credential, role and account status fields are excluded.';
 comment on function public.execute_self_service_operation_internal(uuid, text, jsonb) is
-  'AUTH-A11 atomic profile reconciliation plus identity snapshot and narrow settings authority.';
+  'AUTH-A11 atomic onboarding/profile reconciliation plus identity snapshot and narrow settings authority.';
