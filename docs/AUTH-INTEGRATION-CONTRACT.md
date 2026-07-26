@@ -12,8 +12,9 @@ Supabase Auth é a única autoridade ativa de autenticação no navegador.
 - páginas e renderers não chamam endpoints de autenticação diretamente;
 - o adapter browser `/auth/*` foi removido fisicamente no AUTH-A10;
 - perfil, configurações e onboarding usam operações self-service server-side reconciliadas desde o AUTH-A11;
-- criação de conta, hash e atualização de senha locais foram retirados do repositório do navegador no AUTH-A12B.1;
-- mutações locais genéricas de conta, perfil e configurações foram retiradas no AUTH-A12B.2.
+- criação de conta, hash e atualização de senha locais foram retirados no AUTH-A12B.1;
+- mutações locais genéricas de conta, perfil e configurações foram retiradas no AUTH-A12B.2;
+- mutação local de onboarding, inferência local de conclusão e reescrita manual de sessão foram retiradas no AUTH-A12B.3.
 
 ## Fontes de verdade
 
@@ -24,7 +25,7 @@ Supabase Auth é a única autoridade ativa de autenticação no navegador.
 - `assets/js/services/auth-password-authority.js`: recuperação, reset e reautenticação;
 - `assets/js/services/profile-service.js`: leitura e mutação reconciliada de perfil e configurações;
 - `assets/js/services/onboarding-service.js`: leitura e conclusão reconciliada do onboarding;
-- `assets/js/contracts/identity-profile-contract.js`: ações e DTOs atuais de identidade/perfil no navegador;
+- `assets/js/contracts/identity-profile-contract.js`: ações e autoridades atuais de identidade/perfil no navegador;
 - `public.users` e `public.user_profiles`: fonte de verdade de conta, preferências, onboarding e perfil público;
 - `self-service-operations`: transporte autenticado das operações de identidade pública;
 - `assets/js/core/permissions.js`: permissões derivadas de role;
@@ -103,6 +104,17 @@ Ações bem-sucedidas consomem a resposta do servidor e atualizam apenas caches 
 
 Falha remota, payload inválido, sujeito divergente ou resposta incompleta devem preservar o snapshot anterior e falhar fechado.
 
+Para usuários autenticados, onboarding não pode:
+
+- concluir por repositório local;
+- gravar `onboardingStatus` ou `onboardingCompletedAt` no navegador;
+- chamar `Doke.session.setCurrentUser()`;
+- emitir evento de conclusão local;
+- inferir conclusão apenas por cidade e estado já preenchidos;
+- continuar quando provider, cliente Supabase ou `self-service-operations` estiverem indisponíveis.
+
+A ausência dessa autoridade produz `DOKE_ONBOARDING_AUTHORITY_UNAVAILABLE`.
+
 ## AUTH-A11 — reconciliação server-side concluída
 
 AUTH-A11 removeu as fachadas de mutação de identidade do Auth, implantou as operações reconciliadas no staging e validou perfil, configurações e onboarding por uma identidade descartável autenticada através da Edge Function pública.
@@ -115,15 +127,21 @@ A migration 147 e o SQL 016 são a evidência server-side. Os runtimes permanent
 
 ## AUTH-A12 — retirada da autoridade local residual
 
-O AUTH-A12 separa leitura local histórica de mutação de identidade. As credenciais locais foram retiradas no AUTH-A12B.1: `users-repository.js` não cria contas, não calcula hash, não atualiza senha e remove `password` e `passwordHash` dos registros locais lidos ou persistidos.
-
-A execução permanece dividida para reduzir risco:
+O AUTH-A12 separa leitura local histórica de mutação de identidade.
 
 - `AUTH-A12A` — concluído: contrato runtime e testes reconciliados com Supabase e `self-service-operations`;
 - `AUTH-A12B.1` — concluído: `create`, `hashPassword` e `updatePassword` retirados, com sanitização de credenciais históricas;
-- `AUTH-A12B.2` — implementação em validação: mutações genéricas retiradas; fixture profissional isolada em `updateProfessionalFixtureUser` até o AUTH-A12C;
-- `AUTH-A12B.3` — pendente: retirar mutação local residual de onboarding e reescritas manuais de sessão;
+- `AUTH-A12B.2` — concluído: mutações genéricas de conta, perfil e configurações retiradas; fixture profissional isolada;
+- `AUTH-A12B.3` — concluído: mutação local de onboarding, inferência local de conclusão e reescrita manual da sessão retiradas;
 - `AUTH-A12C` — pendente: retirar promoção local de role e reescrita de sessão dos fluxos profissionais.
+
+O contrato `identity-profile-contract.js` está em `AUTH-A12B.3` e declara:
+
+- `localCredentialAuthority: 'retired'`;
+- `localProfileMutationAuthority: 'retired'`;
+- `localOnboardingMutationAuthority: 'retired'`;
+- `manualOnboardingSessionRewrite: 'retired'`;
+- `professionalFixtureMutationBoundary: 'isolated-pending-A12C'`.
 
 A única mutação local ainda exportada é `updateProfessionalFixtureUser`, explicitamente limitada a fixtures não UUID e pendente de retirada no AUTH-A12C. Ela nunca é fallback aceitável para falha do Supabase.
 
@@ -150,7 +168,7 @@ As rotas privadas são classificadas por `assets/js/core/auth-route-map.js`.
 
 ## Sprint 12B — registro histórico
 
-A Sprint 12B introduziu os DTOs de identidade/perfil e os endpoints históricos `/users/me` e `/profiles/me` durante a transição de mock/API. Esses endpoints não são transportes ativos do navegador. Seu uso atual é exclusivamente diagnóstico CLI-only; o contrato runtime foi reconciliado no AUTH-A12A para representar Supabase e `self-service-operations`.
+A Sprint 12B introduziu os DTOs de identidade/perfil e os endpoints históricos `/users/me` e `/profiles/me` durante a transição de mock/API. Esses endpoints não são transportes ativos do navegador. Seu uso atual é exclusivamente diagnóstico CLI-only.
 
 ## AUTH-A09 — autoridade fixa de provider
 
@@ -172,6 +190,8 @@ AUTH-A10 removeu endpoints, request helpers, token API temporário e branches do
 - perfil, configurações e onboarding usam respostas server-side reconciliadas;
 - o repositório local não expõe criação, hash ou atualização de senha e não conserva campos de credencial;
 - o repositório local não expõe `updateCurrentUser`, `updateCurrentProfile` ou `updateCurrentSettings`;
-- perfil e configurações falham fechado sem a autoridade `self-service-operations`;
+- perfil e configurações falham fechado sem `self-service-operations`;
+- onboarding autenticado falha fechado sem Supabase e não possui conclusão ou inferência local;
+- onboarding não reescreve manualmente o snapshot público da sessão;
 - mutações locais inventariadas não podem assumir autoridade quando o Supabase está indisponível;
 - PR #9 permanece draft e não deve ser mesclado sem autorização explícita.
