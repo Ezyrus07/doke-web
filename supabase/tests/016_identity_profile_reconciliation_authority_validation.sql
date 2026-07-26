@@ -8,11 +8,13 @@ declare
   v_user_id uuid := gen_random_uuid();
   v_email text := 'auth-a11-' || replace(gen_random_uuid()::text, '-', '') || '@example.test';
   v_handle text := 'autha11_' || left(replace(gen_random_uuid()::text, '-', ''), 12);
+  v_updated_handle text := 'autha11u_' || left(replace(gen_random_uuid()::text, '-', ''), 11);
   v_identity jsonb;
   v_settings jsonb;
   v_email_after text;
   v_role_after text;
   v_status_after text;
+  v_metadata_handle text;
 begin
   if has_function_privilege('anon', 'public.get_account_identity_state()', 'EXECUTE')
      or has_function_privilege('authenticated', 'public.get_account_identity_state()', 'EXECUTE') then
@@ -63,6 +65,41 @@ begin
 
   select public.execute_self_service_operation_internal(
     v_user_id,
+    'update_account_profile_reconciled',
+    jsonb_build_object(
+      'p_display_name', 'AUTH A11 Reconciled',
+      'p_username', v_updated_handle,
+      'p_city', 'Salvador',
+      'p_state', 'BA',
+      'p_bio', 'Canonical profile reconciliation',
+      'p_interests', jsonb_build_array('Tecnologia', 'Empreendedorismo'),
+      'p_avatar_url', 'https://example.test/avatar.png',
+      'p_cover_url', 'https://example.test/cover.png'
+    )
+  ) into v_identity;
+
+  if v_identity ->> 'userId' <> v_user_id::text
+     or v_identity -> 'profile' ->> 'userId' <> v_user_id::text then
+    raise exception 'AUTH_A11_RECONCILED_PROFILE_SUBJECT_MISMATCH';
+  end if;
+  if v_identity -> 'profile' ->> 'username' <> v_updated_handle
+     or v_identity -> 'profile' ->> 'displayName' <> 'AUTH A11 Reconciled'
+     or v_identity -> 'profile' ->> 'city' <> 'Salvador'
+     or v_identity -> 'profile' ->> 'state' <> 'BA' then
+    raise exception 'AUTH_A11_RECONCILED_PROFILE_SNAPSHOT_MISMATCH';
+  end if;
+
+  select raw_user_meta_data ->> 'handle'
+  into v_metadata_handle
+  from auth.users
+  where id = v_user_id;
+
+  if v_metadata_handle <> v_updated_handle then
+    raise exception 'AUTH_A11_PROVIDER_METADATA_NOT_RECONCILED';
+  end if;
+
+  select public.execute_self_service_operation_internal(
+    v_user_id,
     'update_account_settings',
     jsonb_build_object(
       'p_settings', jsonb_build_object(
@@ -105,7 +142,7 @@ begin
   if v_identity ->> 'userId' <> v_user_id::text then
     raise exception 'AUTH_A11_IDENTITY_SUBJECT_MISMATCH';
   end if;
-  if v_identity -> 'profile' ->> 'username' <> v_handle then
+  if v_identity -> 'profile' ->> 'username' <> v_updated_handle then
     raise exception 'AUTH_A11_PROFILE_SNAPSHOT_MISMATCH';
   end if;
   if coalesce(v_identity -> 'settings' ->> 'postalCode', '') <> '40100000' then
