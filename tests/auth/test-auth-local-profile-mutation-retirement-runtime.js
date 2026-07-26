@@ -31,8 +31,17 @@ function loadUsersRepository() {
       passwordHash: 'retired'
     }]),
     'doke.auth.userProfiles.v1': '{}',
-    'doke.professionalProfiles.v1': '[]',
-    'doke.professionalIdentityVerifications.v1': '[]'
+    'doke.professionalProfiles.v1': JSON.stringify([{
+      id: 'profile-1',
+      userId: 'fixture-user-1',
+      status: 'active',
+      verificationStatus: 'verified'
+    }]),
+    'doke.professionalIdentityVerifications.v1': JSON.stringify([{
+      id: 'verification-1',
+      userId: 'fixture-user-1',
+      status: 'verified'
+    }])
   });
   const window = { DokeAuth: {}, localStorage, crypto: { randomUUID: () => 'runtime-id' } };
   vm.runInNewContext(usersSource, { window, console, Date, Map, Set, Object, Array, String, Number, Boolean, JSON, Math, RegExp, Promise }, { filename: 'users-repository.js' });
@@ -41,37 +50,23 @@ function loadUsersRepository() {
 
 async function assertRepositoryBoundary() {
   const { repository, localStorage } = loadUsersRepository();
-  for (const retired of ['updateCurrentUser', 'updateCurrentProfile', 'updateCurrentSettings']) {
+  for (const retired of [
+    'updateCurrentUser',
+    'updateCurrentProfile',
+    'updateCurrentSettings',
+    'updateProfessionalFixtureUser'
+  ]) {
     assert.strictEqual(Object.prototype.hasOwnProperty.call(repository, retired), false, retired + ' must be physically absent');
   }
-  assert.strictEqual(typeof repository.updateProfessionalFixtureUser, 'function');
+  assert.deepStrictEqual(Object.keys(repository).filter((name) => name.startsWith('update')), []);
 
-  await assert.rejects(
-    repository.updateProfessionalFixtureUser('00000000-0000-4000-8000-000000000001', { role: 'professional', type: 'professional', professionalProfileId: 'profile-1' }),
-    (error) => error && error.code === 'DOKE_LOCAL_FIXTURE_MUTATION_FORBIDDEN'
-  );
-  await assert.rejects(
-    repository.updateProfessionalFixtureUser('fixture-user-1', { name: 'Forbidden', role: 'professional', type: 'professional', professionalProfileId: 'profile-1' }),
-    (error) => error && error.code === 'DOKE_LOCAL_FIXTURE_PATCH_FORBIDDEN'
-  );
-  await assert.rejects(
-    repository.updateProfessionalFixtureUser('missing-fixture', { role: 'professional', type: 'professional', professionalProfileId: 'profile-1' }),
-    (error) => error && error.code === 'DOKE_LOCAL_FIXTURE_NOT_FOUND'
-  );
-
-  const updated = await repository.updateProfessionalFixtureUser('fixture-user-1', {
-    role: 'professional',
-    type: 'professional',
-    professionalProfileId: 'profile-1',
-    publicProfileUrl: 'perfil.html',
-    ownerProfileUrl: 'perfil-profissional.html'
-  });
-  assert.strictEqual(updated.role, 'professional');
-  assert.strictEqual(updated.professionalProfileId, 'profile-1');
+  const users = await repository.list();
+  assert.strictEqual(users.length, 1);
+  assert.strictEqual(users[0].role, 'client', 'read-only fixture data promoted the user');
 
   const persisted = JSON.parse(localStorage.getItem('doke.auth.users.v1'));
   assert.strictEqual(persisted.length, 1);
-  assert.strictEqual(persisted[0].role, 'professional');
+  assert.strictEqual(persisted[0].role, 'client');
   assert.strictEqual('password' in persisted[0], false);
   assert.strictEqual('passwordHash' in persisted[0], false);
 }
@@ -136,7 +131,7 @@ async function assertProfileServiceFailsClosed() {
   );
   await assert.rejects(
     window.Doke.services.profile.updateCurrentSettings({ theme: 'dark' }),
-    (error) => error && error.code === 'DOKE_PROFILE_AUTHORITY_UNAVAILABLE' || error && error.code === 'DOKE_SETTINGS_AUTHORITY_UNAVAILABLE'
+    (error) => error && (error.code === 'DOKE_PROFILE_AUTHORITY_UNAVAILABLE' || error.code === 'DOKE_SETTINGS_AUTHORITY_UNAVAILABLE')
   );
   assert.strictEqual(repositoryMutationCalls, 0, 'profile service called a local mutation fallback');
   assert.strictEqual(sessionMutationCalls, 0, 'profile service rewrote the public session');
@@ -146,23 +141,23 @@ async function main() {
   assert(!profileSource.includes('repository.updateCurrentProfile'));
   assert(!profileSource.includes('repository.updateCurrentSettings'));
   assert(!profileSource.includes('Doke.session.setCurrentUser'));
-  assert(professionalAccessSource.includes('updateProfessionalFixtureUser'));
-  assert(!professionalAccessSource.includes('updateCurrentUser'));
-  assert(professionalVerificationSource.includes('updateProfessionalFixtureUser'));
-  assert(!professionalVerificationSource.includes('updateCurrentUser'));
+  assert(!professionalAccessSource.includes('updateProfessionalFixtureUser'));
+  assert(!professionalAccessSource.includes('Doke.session.setCurrentUser'));
+  assert(!professionalVerificationSource.includes('updateProfessionalFixtureUser'));
+  assert(!professionalVerificationSource.includes('Doke.session.setCurrentUser'));
 
   await assertRepositoryBoundary();
   await assertProfileServiceFailsClosed();
 
-  console.log('AUTH-A12B.2 local profile mutation retirement runtime passed.');
-  console.log('- generic local account/profile/settings mutation APIs are absent');
+  console.log('AUTH-A12C cumulative local identity mutation retirement runtime passed.');
+  console.log('- generic and professional local identity mutation APIs are absent');
+  console.log('- local fixture reads cannot promote account role');
   console.log('- Supabase profile/settings mutations fail closed without self-service authority');
   console.log('- public session snapshots are not manually rewritten');
-  console.log('- professional fixture mutation is explicit, narrow and blocks UUID subjects');
 }
 
 main().catch((error) => {
-  console.error('AUTH-A12B.2 local profile mutation retirement runtime failed:');
+  console.error('AUTH-A12C cumulative local identity mutation retirement runtime failed:');
   console.error(error && error.stack || error);
   process.exit(1);
 });
