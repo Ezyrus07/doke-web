@@ -176,15 +176,12 @@ function assertFallbackEliminationContract() {
 ]) {
   assert(!authServiceSource.includes(forbidden), `Canonical auth service still contains ${forbidden}.`);
 }
-for (const token of [
-  'DOKE_AUTH_IDENTITY_MUTATION_REQUIRES_REMOTE_AUTHORITY',
-  "keys.length === 1 && keys[0] === 'settings'",
-  'updateCurrentUser'
-]) {
-  assert(sessionAuthoritySource.includes(token), `Session authority is missing identity guard token: ${token}`);
+for (const retired of ['updateCurrentUser', 'updateCurrentProfile']) {
+  assert(!authServiceSource.includes(retired), `Canonical auth service still exposes retired mutation facade: ${retired}.`);
+  assert(!sessionAuthoritySource.includes('const ' + retired), `Session authority still implements retired mutation facade: ${retired}.`);
+  assert(!sessionAuthoritySource.includes(retired + ','), `Session authority still publishes retired mutation facade: ${retired}.`);
 }
-
-  assert(authServiceSource.includes("keys.length !== 1 || keys[0] !== 'settings'"), 'Canonical auth service is missing the settings-only mutation guard.');
+  assert(sessionAuthoritySource.includes('delete ns.updateCurrentUser;'), 'Session authority does not actively retire updateCurrentUser.');
   assert(!authServiceSource.includes('updateCurrentProfile'), 'Canonical auth service still exposes updateCurrentProfile.');
   assert(!sessionAuthoritySource.includes('const updateCurrentProfile'), 'Session authority still implements updateCurrentProfile.');
   assert(!sessionAuthoritySource.includes('updateCurrentProfile,'), 'Session authority still publishes updateCurrentProfile.');
@@ -271,9 +268,15 @@ async function main() {
   assert.strictEqual(storage.getItem('doke.auth.recovery.v1'), null, 'Legacy recovery state was recreated.');
 
 
-await expectCode(
-  () => runtime.window.DokeAuth.service.updateCurrentUser({ email: 'forbidden@staging.example' }),
-  'DOKE_AUTH_IDENTITY_MUTATION_REQUIRES_REMOTE_AUTHORITY'
+assert.strictEqual(
+  typeof runtime.window.DokeAuth.service.updateCurrentUser,
+  'undefined',
+  'Retired user mutation facade remains on DokeAuth.service.'
+);
+assert.strictEqual(
+  typeof runtime.window.DokeAuth.updateCurrentUser,
+  'undefined',
+  'Retired user mutation facade remains on DokeAuth.'
 );
 assert.strictEqual(
   typeof runtime.window.DokeAuth.service.updateCurrentProfile,

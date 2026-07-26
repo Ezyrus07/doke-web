@@ -26,7 +26,7 @@ const serviceFiles = [
   'assets/js/services/domain-data-service.js',
 ];
 const contracts = {
-  'assets/js/services/profile-service.js': ['services.profile', 'getCurrentProfile', 'refreshCurrentProfile'],
+  'assets/js/services/profile-service.js': ['services.profile', 'getCurrentProfile', 'refreshCurrentProfile', 'refreshCurrentSettings'],
   'assets/js/services/search-service.js': ['services.search', 'fromLocationSearch'],
   'assets/js/services/order-service.js': ['services.orders', 'summary'],
   'assets/js/services/message-service.js': ['services.messages', 'listConversations'],
@@ -115,6 +115,10 @@ execFileSync(process.execPath, [path.join(root, 'scripts/audit-auth-profile-reco
   stdio: 'inherit'
 });
 execFileSync(process.execPath, [path.join(root, 'tests/auth/test-auth-profile-reconciliation-runtime.js')], {
+  cwd: root,
+  stdio: 'inherit'
+});
+execFileSync(process.execPath, [path.join(root, 'tests/auth/test-auth-settings-reconciliation-runtime.js')], {
   cwd: root,
   stdio: 'inherit'
 });

@@ -245,17 +245,16 @@ for (const token of [
   'signOutCurrentDevice',
   'signOutOtherSessions',
   'signOutAllSessions',
-  'ns.service = facade;',
-  'DOKE_AUTH_IDENTITY_MUTATION_REQUIRES_REMOTE_AUTHORITY',
-  'updateCurrentUser'
+  'ns.service = facade;'
 ]) {
   if (!sessionAuthoritySource.includes(token)) errors.push(`${SESSION_AUTHORITY} missing session authority token: ${token}`);
 }
-for (const retired of ['updateCurrentProfile']) {
+for (const retired of ['updateCurrentProfile', 'updateCurrentUser']) {
   if (canonicalSource.includes(retired)) errors.push(`${CANONICAL_AUTH_SERVICE} still exposes retired profile mutation facade: ${retired}`);
   if (sessionAuthoritySource.includes(retired + ',')) errors.push(`${SESSION_AUTHORITY} still publishes retired profile mutation facade: ${retired}`);
   if (sessionAuthoritySource.includes('const ' + retired)) errors.push(`${SESSION_AUTHORITY} still implements retired profile mutation facade: ${retired}`);
 }
+if (!sessionAuthoritySource.includes('delete ns.updateCurrentUser;')) errors.push(`${SESSION_AUTHORITY} does not actively retire updateCurrentUser`);
 for (const forbidden of ['localStorage.setItem', 'sessionStorage.setItem', 'access_token:', 'refresh_token:']) {
   if (sessionAuthoritySource.includes(forbidden)) errors.push(`${SESSION_AUTHORITY} contains forbidden persistence token: ${forbidden}`);
 }

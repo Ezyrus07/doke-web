@@ -11,11 +11,9 @@
   const AUTH_PROVIDER_VALUES = Object.freeze({ supabase: 'supabase' });
   const DEFAULT_LOGIN_URL = 'auth/login.html';
   const DEFAULT_APP_URL = 'index.html';
-  const DELAY_MS = 120;
   let supabaseAuthSubscription = null;
   let supabaseBootstrapPromise = null;
 
-  const delay = (ms = DELAY_MS) => new Promise((resolve) => root.setTimeout(resolve, ms));
   const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
   const normalizePhone = (value) => String(value || '').replace(/\D/g, '');
   const normalizeText = (value) => String(value || '').trim().replace(/\s+/g, ' ');
@@ -25,7 +23,6 @@
     return digits.length >= 10 && digits.length <= 13;
   };
 
-  const getUsersRepository = () => ns.repositories?.users || null;
   const getSessionStore = () => ns.session || Doke.session || null;
   const getSupabaseClient = () => root.DokeSupabase && typeof root.DokeSupabase.getClient === 'function'
     ? root.DokeSupabase.getClient()
@@ -109,23 +106,6 @@
     return '';
   };
 
-  const toPublicUser = (user) => {
-    const repo = getUsersRepository();
-    if (repo?.toPublicUser) return repo.toPublicUser(user);
-    if (!user) return null;
-    const { password, passwordHash, ...publicUser } = user;
-    return publicUser;
-  };
-
-  const buildSession = (user, options = {}) => ({
-    provider: options.provider || 'mock',
-    remember: options.remember !== false,
-    user: toPublicUser(user),
-    sessionStatus: options.sessionStatus || 'active',
-    expiresAt: options.expiresAt || '',
-    issuedAt: new Date().toISOString()
-  });
-
   const reconcileSupabaseSession = (session) => {
     const current = getSession();
     if (session?.user) {
@@ -193,31 +173,6 @@
     });
   };
 
-  const updateCurrentUser = async (patch = {}) => {
-    const source = patch && typeof patch === 'object' ? patch : {};
-    const keys = Object.keys(source);
-    if (keys.length !== 1 || keys[0] !== 'settings') {
-      const error = new Error('Alterações de identidade exigem uma autoridade remota dedicada.');
-      error.code = 'DOKE_AUTH_IDENTITY_MUTATION_REQUIRES_REMOTE_AUTHORITY';
-      throw error;
-    }
-    patch = source;
-    await delay(60);
-
-    const repo = getUsersRepository();
-    const currentUser = getCurrentUser();
-    if (repo?.updateCurrentUser && currentUser?.id) {
-      const user = await repo.updateCurrentUser(currentUser.id, patch);
-      const session = setSessionForUser(user, { provider: 'mock', remember: true });
-      updateAccountSurfaces();
-      return session.user;
-    }
-
-    const session = setSessionForUser({ ...(currentUser || {}), ...patch }, { provider: 'mock', remember: true });
-    updateAccountSurfaces();
-    return session.user;
-  };
-
   const getSession = () => getSessionStore()?.getSession?.() || getSessionStore()?.read?.() || null;
   const getCurrentUser = () => getSessionStore()?.getCurrentUser?.() || getSessionStore()?.getUser?.() || null;
   const isAuthenticated = () => Boolean(getCurrentUser());
@@ -235,13 +190,6 @@
     isSupport: false
   });
   const onAuthChange = (listener) => getSessionStore()?.subscribe?.(listener) || (() => {});
-
-  const setSessionForUser = (user, options = {}) => {
-    const session = buildSession(user, options);
-    const store = getSessionStore();
-    if (!store?.write) throw new Error('Session Store não foi carregado.');
-    return store.write(session);
-  };
 
   const login = async ({ email, login: loginValue, password, remember = true } = {}) => {
     const access = normalizeText(email || loginValue);
@@ -493,7 +441,6 @@
     bootstrapSupabaseSessionBridge,
     getAccessToken,
     getCurrentIdentity,
-    updateCurrentUser,
     getAuthContext,
     login,
     signIn,

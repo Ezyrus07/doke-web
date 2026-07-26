@@ -5,6 +5,8 @@
   var services = Doke.services || (Doke.services = {});
   var canonicalProfileCache = null;
   var canonicalProfileUserId = '';
+  var canonicalSettingsCache = null;
+  var canonicalSettingsUserId = '';
 
   function usersRepository() {
     return window.DokeAuth && window.DokeAuth.repositories
@@ -19,9 +21,6 @@
     return null;
   }
 
-  function authService() {
-    return window.DokeAuth && window.DokeAuth.service ? window.DokeAuth.service : null;
-  }
 
   function getSupabaseClient() {
     return window.DokeSupabase && typeof window.DokeSupabase.getClient === 'function'
@@ -252,6 +251,44 @@
     }));
   }
 
+  function normalizeCanonicalSettings(identityState, user) {
+    var state = identityState && typeof identityState === 'object' ? identityState : {};
+    var expectedUserId = String(user && user.id || '');
+    var stateUserId = String(state.userId || '');
+    var settings = state.settings;
+
+    if (!expectedUserId || !settings || typeof settings !== 'object' || Array.isArray(settings)) {
+      throw reconciliationError('O servidor não devolveu configurações canônicas válidas.', 'DOKE_SETTINGS_RECONCILIATION_INVALID');
+    }
+    if (stateUserId && stateUserId !== expectedUserId) {
+      throw reconciliationError('As configurações devolvidas não pertencem à sessão atual.', 'DOKE_SETTINGS_RECONCILIATION_SUBJECT_MISMATCH');
+    }
+
+    return Object.freeze(Object.assign({}, settings));
+  }
+
+  function cacheCanonicalSettings(settings, userId) {
+    canonicalSettingsCache = settings || null;
+    canonicalSettingsUserId = settings ? String(userId || '') : '';
+    return canonicalSettingsCache;
+  }
+
+  function getCachedSettings(user) {
+    if (!user || String(user.id || '') !== canonicalSettingsUserId) return null;
+    return canonicalSettingsCache;
+  }
+
+  function dispatchSettingsEvent(type, user, settings) {
+    window.dispatchEvent(new CustomEvent(type, {
+      detail: {
+        userId: user.id,
+        settings: settings || {},
+        source: 'server',
+        reconciled: true
+      }
+    }));
+  }
+
   function list(filters) {
     filters = filters || {};
     var repository = usersRepository();
@@ -363,19 +400,37 @@
   function getCurrentSettings() {
     var user = currentUser();
     if (!user || !user.id) return Promise.resolve({});
+    var cachedSettings = getCachedSettings(user);
+    if (cachedSettings) return Promise.resolve(cachedSettings);
     if (usesSupabaseProvider()) return Promise.resolve(user.settings || {});
     var repository = usersRepository();
     if (!repository || typeof repository.getCurrentSettings !== 'function') return Promise.resolve(user.settings || {});
     return Promise.resolve(repository.getCurrentSettings(user.id));
   }
 
+  function refreshCurrentSettings() {
+    var user = currentUser();
+    if (!user || !user.id) return Promise.reject(new Error('Entre na sua conta para atualizar as preferências.'));
+    if (!usesSupabaseProvider()) return getCurrentSettings();
+
+    return invokeSelfService('get_account_identity_state', {}).then(function (identityState) {
+      var settings = normalizeCanonicalSettings(identityState, user);
+      cacheCanonicalSettings(settings, user.id);
+      dispatchSettingsEvent('doke:settings-reconciled', user, settings);
+      return settings;
+    });
+  }
+
   function updateCurrentSettings(settings) {
     var user = currentUser();
-    var auth = authService();
     if (!user || !user.id) return Promise.reject(new Error('Entre na sua conta para salvar as preferências.'));
     if (usesSupabaseProvider()) {
-      if (!auth || typeof auth.updateCurrentUser !== 'function') return Promise.reject(new Error('Persistência das preferências indisponível.'));
-      return auth.updateCurrentUser({ settings: settings || {} }).then(function (updatedUser) { return updatedUser.settings || {}; });
+      return invokeSelfService('update_account_settings', { p_settings: settings || {} }).then(function (identityState) {
+        var nextSettings = normalizeCanonicalSettings(identityState, user);
+        cacheCanonicalSettings(nextSettings, user.id);
+        dispatchSettingsEvent('doke:settings-updated', user, nextSettings);
+        return nextSettings;
+      });
     }
     var repository = usersRepository();
     if (!repository || typeof repository.updateCurrentSettings !== 'function') return Promise.reject(new Error('Persistência das preferências indisponível.'));
@@ -392,6 +447,7 @@
     refreshCurrentProfile: refreshCurrentProfile,
     updateCurrentProfile: updateCurrentProfile,
     getCurrentSettings: getCurrentSettings,
+    refreshCurrentSettings: refreshCurrentSettings,
     updateCurrentSettings: updateCurrentSettings,
     prepareLocalImage: prepareLocalImage,
     normalizePatch: normalizePatch
