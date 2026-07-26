@@ -21,8 +21,9 @@
       "implementationHead": "3866fbea076deba2328f9077a2d582b3a2c5033b"
     },
     "AUTH-A12B.3": {
-      "status": "planned",
-      "goal": "retire residual local onboarding mutation and manual session rewrites"
+      "status": "done",
+      "goal": "retire residual local onboarding mutation, local completion inference and manual session rewrites",
+      "implementationHead": "049821a2264cd6fb9fd136cbc0b3c993055cfc32"
     },
     "AUTH-A12C": {
       "status": "planned",
@@ -35,6 +36,8 @@
     "transport": "self-service-operations",
     "localCredentialAuthority": "retired",
     "localProfileMutationAuthority": "retired",
+    "localOnboardingMutationAuthority": "retired",
+    "manualOnboardingSessionRewrite": "retired",
     "professionalFixtureMutationBoundary": "isolated-pending-A12C",
     "actions": [
       "get_account_identity_state",
@@ -52,6 +55,13 @@
     "updateCurrentUser",
     "updateCurrentProfile",
     "updateCurrentSettings"
+  ],
+  "retiredLocalOnboardingSurfaces": [
+    "usersRepository",
+    "repository.updateCurrentUser",
+    "Doke.session.setCurrentUser",
+    "local completion event",
+    "complete profile inference"
   ],
   "inventoriedLocalMutationExports": [
     "updateProfessionalFixtureUser"
@@ -87,8 +97,8 @@
     "/profiles/me"
   ],
   "validation": {
-    "validatedHead": "3866fbea076deba2328f9077a2d582b3a2c5033b",
-    "qualityRunNumber": 620,
+    "validatedHead": "049821a2264cd6fb9fd136cbc0b3c993055cfc32",
+    "qualityRunNumber": 648,
     "quality": "success",
     "staticAudits": "success",
     "canonicalAuthRuntime": "success",
@@ -96,14 +106,21 @@
     "localProfileMutationRetirementRuntime": "success",
     "providerReconciledProfileContract": "success",
     "registrationOnboardingAuthorityContract": "success",
+    "onboardingLocalAuthorityRetirementRuntime": "success",
     "domainMatrix": "success",
     "blockingE2E": "success",
     "visualStructuralGuards": "success",
-    "stagingEdgeCanaryRunNumber": 394,
+    "stagingEdgeCanaryRunNumber": 422,
     "stagingEdgeCanary": "success",
-    "diagnosticRunNumber": 415,
+    "diagnosticRunNumber": 443,
     "diagnostic": "success",
     "previousPhaseValidation": {
+      "AUTH-A12B.2": {
+        "validatedHead": "3866fbea076deba2328f9077a2d582b3a2c5033b",
+        "qualityRunNumber": 620,
+        "stagingEdgeCanaryRunNumber": 394,
+        "diagnosticRunNumber": 415
+      },
       "AUTH-A12B.1": {
         "validatedHead": "7caf2dea2d3fafa25d80b50ba3c62047e8609332",
         "qualityRunNumber": 601,
