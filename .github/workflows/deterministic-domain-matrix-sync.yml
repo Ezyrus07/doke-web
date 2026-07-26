@@ -1,4 +1,4 @@
-# Temporary AUTH-A12A reconciliation bridge is materialized; execute the restricted document update.
+# AUTH-A12A contract truth is ready for deterministic matrix synchronization.
 name: Doke Deterministic Domain Matrix Sync
 
 on:
@@ -21,10 +21,10 @@ concurrency:
 
 jobs:
   synchronize:
-    name: Reconcile AUTH-A12 contracts and matrix
+    name: Synchronize generated domain matrix
     if: >-
       ${{ github.event_name == 'workflow_dispatch' ||
-          startsWith(github.event.head_commit.message, 'Request AUTH-A12 contract reconciliation') }}
+          startsWith(github.event.head_commit.message, 'Request deterministic matrix sync') }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -46,34 +46,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Reconcile active identity contract index
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          from pathlib import Path
-          path = Path('docs/ACTIVE-CONTRACTS-INDEX.md')
-          text = path.read_text(encoding='utf-8')
-          old = """## Sprint 12B
-
-- `assets/js/contracts/identity-profile-contract.js` — contrato runtime de identidade/perfil.
-- `docs/AUTH-INTEGRATION-CONTRACT.md` — endpoints `/users/me` e `/profiles/me`, DTO de identidade e regras de sessão enriquecida.
-"""
-          new = """## Sprint 12B — registro histórico reconciliado no AUTH-A12A
-
-- `assets/js/contracts/identity-profile-contract.js` — contrato runtime atual de identidade/perfil, fixado em Supabase e nas ações autenticadas de `self-service-operations`.
-- `docs/AUTH-INTEGRATION-CONTRACT.md` — DTOs atuais, autoridade reconciliada de perfil/configurações/onboarding e isolamento dos endpoints históricos `/users/me` e `/profiles/me` ao diagnóstico CLI-only.
-"""
-          if text.count(old) != 1:
-              raise SystemExit('Sprint 12B contract block is missing or ambiguous.')
-          text = text.replace(old, new)
-          old_cli = "- O contrato continua `authProvider=api`, `dataProvider=mock`, com chamadas restritas a `/auth/login`, `/auth/session`, `/users/me` e `/profiles/me`."
-          new_cli = "- O contrato diagnóstico CLI-only continua `authProvider=api`, `dataProvider=mock`, com chamadas restritas a `/auth/login`, `/auth/session`, `/users/me` e `/profiles/me`; ele não descreve nem seleciona o provider do navegador."
-          if text.count(old_cli) != 1:
-              raise SystemExit('Sprint 27 CLI-only contract line is missing or ambiguous.')
-          path.write_text(text.replace(old_cli, new_cli), encoding='utf-8')
-          PY
-
       - name: Generate and validate deterministic matrix
         shell: bash
         run: |
@@ -83,15 +55,24 @@ jobs:
           git diff --check
 
           actual="$(git diff --name-only | sort)"
-          expected="$(printf '%s\n' 'docs/ACTIVE-CONTRACTS-INDEX.md' 'docs/DOMAIN-COMPLETION-MATRIX.md')"
-          test "$actual" = "$expected"
+          if [ -z "$actual" ]; then
+            echo 'Domain matrix is already synchronized.'
+            exit 0
+          fi
 
-      - name: Publish reconciled documents
+          test "$actual" = 'docs/DOMAIN-COMPLETION-MATRIX.md'
+
+      - name: Publish generated document
         shell: bash
         run: |
           set -euo pipefail
+          if git diff --quiet -- docs/DOMAIN-COMPLETION-MATRIX.md; then
+            echo 'Nothing to publish.'
+            exit 0
+          fi
+
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add docs/ACTIVE-CONTRACTS-INDEX.md docs/DOMAIN-COMPLETION-MATRIX.md
-          git commit -m 'Reconcile AUTH-A12 active contracts and matrix'
+          git add docs/DOMAIN-COMPLETION-MATRIX.md
+          git commit -m 'Synchronize deterministic domain matrix'
           git push origin HEAD:${{ github.ref_name }}
