@@ -33,6 +33,8 @@
     browserProvider: 'supabase',
     localCredentialAuthority: 'retired',
     localProfileMutationAuthority: 'retired',
+    localOnboardingMutationAuthority: 'retired',
+    manualOnboardingSessionRewrite: 'retired',
     professionalFixtureMutationBoundary: 'isolated-pending-A12C'
   });
 
@@ -108,7 +110,7 @@
   }
 
   Doke.identityProfileContract = Object.freeze({
-    version: 'AUTH-A12B.2',
+    version: 'AUTH-A12B.3',
     profileTypes: PROFILE_TYPES,
     profileStatus: PROFILE_STATUS,
     actions: SELF_SERVICE_ACTIONS,
