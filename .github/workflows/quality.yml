@@ -240,3 +240,76 @@ jobs:
             test-results/
           if-no-files-found: warn
           retention-days: 14
+
+  auth-a12-document-reconciliation:
+    name: Reconcile AUTH-A12 documents and restore workflows
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout PR branch with history
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Restore workflows and reconcile active contract index
+        shell: bash
+        run: |
+          set -euo pipefail
+          git show HEAD^:.github/workflows/quality.yml > .github/workflows/quality.yml
+          git show a58e65382215cf24c7d22b12e1a50569afd0f12c:.github/workflows/deterministic-domain-matrix-sync.yml > .github/workflows/deterministic-domain-matrix-sync.yml
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('docs/ACTIVE-CONTRACTS-INDEX.md')
+          text = path.read_text(encoding='utf-8')
+          old = """## Sprint 12B
+
+- `assets/js/contracts/identity-profile-contract.js` — contrato runtime de identidade/perfil.
+- `docs/AUTH-INTEGRATION-CONTRACT.md` — endpoints `/users/me` e `/profiles/me`, DTO de identidade e regras de sessão enriquecida.
+"""
+          new = """## Sprint 12B — registro histórico reconciliado no AUTH-A12A
+
+- `assets/js/contracts/identity-profile-contract.js` — contrato runtime atual de identidade/perfil, fixado em Supabase e nas ações autenticadas de `self-service-operations`.
+- `docs/AUTH-INTEGRATION-CONTRACT.md` — DTOs atuais, autoridade reconciliada de perfil/configurações/onboarding e isolamento dos endpoints históricos `/users/me` e `/profiles/me` ao diagnóstico CLI-only.
+"""
+          if old in text:
+              text = text.replace(old, new)
+          elif new not in text:
+              raise SystemExit('Sprint 12B contract block is missing or ambiguous.')
+          old_cli = "- O contrato continua `authProvider=api`, `dataProvider=mock`, com chamadas restritas a `/auth/login`, `/auth/session`, `/users/me` e `/profiles/me`."
+          new_cli = "- O contrato diagnóstico CLI-only continua `authProvider=api`, `dataProvider=mock`, com chamadas restritas a `/auth/login`, `/auth/session`, `/users/me` e `/profiles/me`; ele não descreve nem seleciona o provider do navegador."
+          if old_cli in text:
+              text = text.replace(old_cli, new_cli)
+          elif new_cli not in text:
+              raise SystemExit('Sprint 27 CLI-only contract line is missing or ambiguous.')
+          path.write_text(text, encoding='utf-8')
+          PY
+          node scripts/audit-domain-completion-matrix.js --write
+          node scripts/audit-domain-completion-matrix.js
+          git diff --check
+
+          actual="$(git diff --name-only | sort)"
+          expected="$(printf '%s\n' '.github/workflows/deterministic-domain-matrix-sync.yml' '.github/workflows/quality.yml' 'docs/ACTIVE-CONTRACTS-INDEX.md' 'docs/DOMAIN-COMPLETION-MATRIX.md')"
+          test "$actual" = "$expected"
+
+      - name: Publish restored canonical state
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .github/workflows/quality.yml .github/workflows/deterministic-domain-matrix-sync.yml docs/ACTIVE-CONTRACTS-INDEX.md docs/DOMAIN-COMPLETION-MATRIX.md
+          git commit -m 'Finalize AUTH-A12A contracts and deterministic matrix'
+          git push origin HEAD:${{ github.head_ref }}
