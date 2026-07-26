@@ -1,4 +1,4 @@
-# Temporary PR-triggered codemod. The implementation commit deletes this file.
+# Temporary PR-triggered codemod. Connector cleanup follows the implementation commit.
 name: TEMP AUTH-A12B.2 Controlled Codemod
 
 on:
@@ -84,10 +84,11 @@ jobs:
           node scripts/test-auth-username-onboarding-contract.js
           git diff --check
 
-      - name: Remove temporary execution surfaces
+      - name: Exclude workflow-controlled surfaces from bot commit
         run: |
-          rm scripts/tmp-auth-a12b2-codemod.js
-          rm .github/workflows/tmp-auth-a12b2-codemod.yml
+          git restore scripts/tmp-auth-a12b2-codemod.js
+          git restore .github/workflows/tmp-auth-a12b2-codemod.yml
+          git restore .github/workflows/quality.yml
           rm -f reports/generated/auth-a12b2-codemod.log
 
       - name: Publish controlled implementation
