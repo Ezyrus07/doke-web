@@ -1,6 +1,6 @@
 {
-  "version": "1.3.6",
-  "updatedAt": "2026-07-27T14:36:00-03:00",
+  "version": "1.3.7",
+  "updatedAt": "2026-07-27T16:50:00-03:00",
   "title": "Doke Domain Completion Matrix",
   "purpose": "Single source of truth for domain maturity, data authority, staging evidence, blockers, dependencies and mandatory completion order.",
   "maturityScale": {
@@ -607,7 +607,7 @@
       "wave": "B",
       "priority": 5,
       "maturity": 4,
-      "userFacingAuthority": "hybrid",
+      "userFacingAuthority": "remote",
       "serverAuthority": "canonical",
       "stagingEvidence": "staging_operational",
       "securityGate": "partial",
@@ -633,7 +633,15 @@
         "scripts/audit-service-catalog-authority-retirement.js",
         "scripts/test-service-catalog-authority-retirement-runtime.js",
         "docs/validation/CAT-001-A02-SERVICE-AUTHORITY-RETIREMENT.json",
-        "docs/validation/CAT-001-A02-SERVICE-AUTHORITY-RETIREMENT.md"
+        "docs/validation/CAT-001-A02-SERVICE-AUTHORITY-RETIREMENT.md",
+        "assets/js/services/services-service.js",
+        "supabase/functions/self-service-operations/operations.mjs",
+        "supabase/migrations/149_service_lifecycle_authority.sql",
+        "supabase/tests/018_service_lifecycle_authority_validation.sql",
+        "scripts/audit-service-lifecycle-authority.js",
+        "scripts/test-service-lifecycle-authority-runtime.js",
+        "docs/validation/CAT-001-A03-SERVICE-LIFECYCLE-AUTHORITY.json",
+        "docs/validation/CAT-001-A03-SERVICE-LIFECYCLE-AUTHORITY.md"
       ],
       "scanRoots": [
         "assets/js/repositories/services-repository.js",
@@ -654,7 +662,8 @@
       ],
       "edgeFunctions": [
         "quote-template-ai",
-        "service-moderation-operations"
+        "service-moderation-operations",
+        "self-service-operations"
       ],
       "crons": [],
       "tests": [
@@ -671,14 +680,15 @@
         "Admin/moderator review actions execute through a JWT-protected Edge Function; direct privileged RPCs are no longer browser-callable.",
         "Template writes require canonical professional role and ownership of the linked service; staging has zero ownership mismatches.",
         "CAT-A01 preserves the historical authority baseline and remains a cumulative regression gate.",
-        "CAT-A02 retires doke.services.local.v1: real and UUID subjects fail closed, while non-UUID fixtures remain runtime-only memory."
+        "CAT-A02 retires doke.services.local.v1: real and UUID subjects fail closed, while non-UUID fixtures remain runtime-only memory.",
+        "CAT-A03 routes approved-content edits through versioned review, routes pause/reactivate/archive through an owner-only self-service operation, and revokes generic browser writes to services."
       ],
       "blockers": [
         {
           "id": "CAT-B03",
           "severity": "high",
-          "category": "authority_split",
-          "description": "Owner edit, pause, reactivate and archive still route through generic repository saves without explicit server operations or a final lifecycle contract.",
+          "category": "lifecycle_cleanup",
+          "description": "Service-media replacement, superseded-object cleanup and abandoned-draft cleanup still need one server-owned lifecycle with retention and retry evidence.",
           "targetPhase": "Fase 4"
         },
         {
@@ -690,7 +700,7 @@
         }
       ],
       "nextActions": [
-        "Move owner edit, pause, reactivate and archive to explicit server operations without bypassing versioned moderation.",
+        "Deploy and validate CAT-A03 lifecycle authority in staging before marking the sublot done.",
         "Close service-media replacement and abandoned-draft cleanup lifecycle.",
         "Guarantee immutable service snapshot on every order creation path."
       ],
