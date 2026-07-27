@@ -2,7 +2,7 @@
 
 ## Status
 
-`BASELINE FROZEN — VALIDATION PENDING`
+`BASELINE FROZEN — DONE`
 
 ## Objetivo
 
@@ -50,7 +50,7 @@ O comportamento congelado é:
 6. `getById` pode devolver um serviço local legível pelo owner;
 7. editar, pausar, reativar e arquivar passam por `repository.update` e herdam essa autoridade híbrida.
 
-Esse desenho é adequado apenas como compatibilidade histórica. Para sujeitos Supabase ou UUID, ele mantém uma segunda verdade persistente no navegador e não pode ser considerado produção-ready.
+Esse desenho é adequado apenas como compatibilidade histórica. Para sujeitos Supabase ou UUID, ele mantém uma segunda verdade persistente no navegador e não pode ser considerado production-ready.
 
 ## Distinção importante
 
@@ -84,17 +84,43 @@ Todos os caminhos que criam pedidos precisam guardar uma fotografia imutável do
 4. **CAT-B04:** garantir snapshots imutáveis em todos os caminhos de criação de pedido;
 5. **CAT-A05:** reconciliar matriz, documentação e encerramento do domínio.
 
+## Matriz determinística
+
+O reconciliador controlado:
+
+- adicionou o audit e as duas evidências CAT-A01 aos `requiredPaths` de CAT-001;
+- preservou maturidade 4, UI híbrida, servidor canônico, staging operacional, segurança parcial e produção bloqueada;
+- preservou os blockers CAT-B03 e CAT-B04;
+- regenerou `docs/DOMAIN-COMPLETION-MATRIX.md` pelo gerador canônico;
+- removeu o próprio workflow no mesmo commit.
+
+**Head da reconciliação:** `34c3b0809052218c91de960e93fb6d2820bb766d`.
+
+## Evidência de validação
+
+**Candidate head validado:** `043e3862414fd06e5b24aa3d96a8e6bd72c223f4`
+
+- audit CAT-A01: sucesso;
+- audits cumulativos AUTH e PROF: sucesso;
+- matriz determinística: sucesso;
+- governança, assets, partição E2E e `git diff --check`: sucesso;
+- Doke Quality Gates #879: sucesso;
+- E2E bloqueante: sucesso;
+- 105 guards visuais: sucesso;
+- Doke Staging Edge HTTP Canary #646: sucesso;
+- Doke Diagnostic E2E #666: sucesso.
+
 ## Controle do PR
 
 - Pull Request: `#12`;
 - branch: `cat/cat-001-baseline-audit`;
 - base empilhada pretendida: `prof/prof-001-baseline-audit`;
-- base temporária de validação: `MAIN`;
-- head anterior ao disparo de validação: `adab0028c8dddf1fc057575873e0cf75f5ea1315`;
+- `MAIN` foi usado somente como base temporária de validação canônica;
 - o PR deve permanecer draft e não pode ser mesclado sem autorização explícita.
 
 ## Segurança operacional
 
+- nenhuma implementação funcional alterada;
 - nenhuma migration aplicada;
 - nenhuma Edge Function implantada;
 - staging não alterado;
@@ -102,6 +128,7 @@ Todos os caminhos que criam pedidos precisam guardar uma fotografia imutável do
 - nenhuma conta real modificada;
 - nenhuma conta sintética persistente criada;
 - nenhum SMS, OAuth ou recurso pago habilitado;
+- nenhum workflow ou codemod temporário permanece;
 - PR #11 permanece separado, aberto, draft e não mesclado.
 
 ## Próximo trabalho
