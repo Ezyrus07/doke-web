@@ -112,13 +112,43 @@ const evidence = JSON.parse(read(files.evidenceJson));
 assert(evidence.domain === 'PROF-001' && evidence.sublot === 'PROF-A03', 'PROF-A03 evidence identity is invalid');
 assert(['implementation_in_progress', 'validation_pending', 'done'].includes(evidence.status), 'PROF-A03 evidence status is invalid');
 assert(evidence.safety && evidence.safety.productionChanged === false, 'PROF-A03 cannot claim a production change');
-assert(evidence.safety && evidence.safety.stagingChanged === false, 'PROF-A03 cannot claim a staging change before deployment');
-assert(evidence.safety && evidence.safety.migrationApplied === false, 'PROF-A03 cannot claim migration application before staging validation');
-assert(evidence.safety && evidence.safety.edgeFunctionDeployed === false, 'PROF-A03 cannot claim Edge deployment before deployment');
+assert(evidence.safety && evidence.safety.realAccountChanged === false, 'PROF-A03 cannot claim a real-account change');
+assert(evidence.safety && evidence.safety.persistentSyntheticAccountCreated === false, 'PROF-A03 validation cannot leave a synthetic account');
+
+const stagingValidated = evidence.validation && evidence.validation.stagingValidation === 'success';
+if (stagingValidated) {
+  assert(evidence.status === 'validation_pending' || evidence.status === 'done', 'validated staging evidence requires validation_pending or done status');
+  assert(evidence.safety.stagingChanged === true, 'validated staging evidence must acknowledge the staging change');
+  assert(evidence.safety.migrationApplied === true, 'validated staging evidence must acknowledge the migration');
+  assert(evidence.safety.edgeFunctionDeployed === true, 'validated staging evidence must acknowledge the Edge deployment');
+  assert(evidence.staging && evidence.staging.projectId === 'zwkczgewzbsorbrjuzpb', 'staging project evidence is missing');
+  assert(evidence.staging && evidence.staging.migrationName === 'professional_profile_reconciliation_authority', 'staging migration name is inconsistent');
+  assert(evidence.staging && evidence.staging.migrationVersion === '20260727110417', 'staging migration version is inconsistent');
+  assert(evidence.staging && evidence.staging.edgeFunction === 'self-service-operations', 'staging Edge Function evidence is missing');
+  assert(evidence.staging && evidence.staging.edgeFunctionVersion === 6, 'staging Edge Function version is inconsistent');
+  assert(evidence.staging && evidence.staging.verifyJwt === true, 'staging Edge Function must remain JWT verified');
+  assert(evidence.staging && evidence.staging.syntheticAuthUsersAfterValidation === 0, 'staging validation left a synthetic auth user');
+  assert(evidence.staging && evidence.staging.syntheticPublicUsersAfterValidation === 0, 'staging validation left a synthetic public user');
+  assert(evidence.validation.sqlValidation === 'success_with_rollback', 'staging SQL rollback evidence is missing');
+  assert(evidence.validation.directBrowserGrant === 'denied', 'browser-role ACL evidence is missing');
+  assert(evidence.validation.serviceRoleExecute === 'allowed', 'service-role ACL evidence is missing');
+} else {
+  assert(evidence.safety && evidence.safety.stagingChanged === false, 'unvalidated evidence cannot claim a staging change');
+  assert(evidence.safety && evidence.safety.migrationApplied === false, 'unvalidated evidence cannot claim migration application');
+  assert(evidence.safety && evidence.safety.edgeFunctionDeployed === false, 'unvalidated evidence cannot claim Edge deployment');
+}
+
+if (evidence.status === 'done') {
+  assert(evidence.validation && evidence.validation.finalEvidence === 'success', 'DONE requires final evidence success');
+  assert(evidence.validation && evidence.validation.finalQualityRunNumber > 0, 'DONE requires final Quality evidence');
+  assert(evidence.validation && evidence.validation.finalCanaryRunNumber > 0, 'DONE requires final Canary evidence');
+  assert(evidence.validation && evidence.validation.finalDiagnosticRunNumber > 0, 'DONE requires final Diagnostic evidence');
+}
 
 if (!process.exitCode) {
   console.log('[PROF-A03] active professional editor now crosses one atomic server operation.');
   console.log('[PROF-A03] base identity and professional payload reconcile from canonical server state.');
   console.log('[PROF-A03] browser roles cannot directly execute the privileged database mutation.');
   console.log('[PROF-A03] PROF-A02 final documentary evidence is consistent.');
+  if (stagingValidated) console.log('[PROF-A03] staging migration, JWT-verified Edge v6 and rollback validation are evidenced.');
 }
