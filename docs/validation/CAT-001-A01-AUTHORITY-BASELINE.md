@@ -84,6 +84,15 @@ Todos os caminhos que criam pedidos precisam guardar uma fotografia imutável do
 4. **CAT-B04:** garantir snapshots imutáveis em todos os caminhos de criação de pedido;
 5. **CAT-A05:** reconciliar matriz, documentação e encerramento do domínio.
 
+## Controle do PR
+
+- Pull Request: `#12`;
+- branch: `cat/cat-001-baseline-audit`;
+- base empilhada pretendida: `prof/prof-001-baseline-audit`;
+- base temporária de validação: `MAIN`;
+- head anterior ao disparo de validação: `adab0028c8dddf1fc057575873e0cf75f5ea1315`;
+- o PR deve permanecer draft e não pode ser mesclado sem autorização explícita.
+
 ## Segurança operacional
 
 - nenhuma migration aplicada;
