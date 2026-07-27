@@ -26,15 +26,25 @@ jobs:
           ref: cat/cat-001-baseline-audit
           fetch-depth: 0
 
-      - name: Finalize documentary evidence
+      - name: Generate evidence and remove finalizer
         run: |
           node scripts/finalize-cat-a02-evidence.js
           git rm scripts/finalize-cat-a02-evidence.js
-          git show 22c684a8bc5183476c69361e571447da78fbfa6f:.github/workflows/quality.yml > .github/workflows/quality.yml
-          node scripts/audit-service-catalog-authority-baseline.js
-          node scripts/audit-service-catalog-authority-retirement.js
-          node scripts/audit-domain-completion-matrix.js
-          git diff --check
+
+      - name: Restore canonical Quality in worktree
+        run: git show 22c684a8bc5183476c69361e571447da78fbfa6f:.github/workflows/quality.yml > .github/workflows/quality.yml
+
+      - name: Validate cumulative CAT-A01
+        run: node scripts/audit-service-catalog-authority-baseline.js
+
+      - name: Validate CAT-A02 completion
+        run: node scripts/audit-service-catalog-authority-retirement.js
+
+      - name: Validate deterministic matrix
+        run: node scripts/audit-domain-completion-matrix.js
+
+      - name: Validate patch formatting
+        run: git diff --check
 
       - name: Publish documentary closure
         shell: bash
