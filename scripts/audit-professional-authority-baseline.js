@@ -25,11 +25,14 @@ const files = {
   verificationService: 'assets/js/services/professional-identity-verification-service.js',
   evidenceMarkdown: 'docs/validation/PROF-001-A01-AUTHORITY-BASELINE.md',
   evidenceJson: 'docs/validation/PROF-001-A01-AUTHORITY-BASELINE.json',
-  a02EvidenceJson: 'docs/validation/PROF-001-A02-PROFILE-AUTHORITY-RETIREMENT.json'
+  a02EvidenceJson: 'docs/validation/PROF-001-A02-PROFILE-AUTHORITY-RETIREMENT.json',
+  a04EvidenceJson: 'docs/validation/PROF-001-A04-KYC-DRAFT-AUTHORITY-RETIREMENT.json'
 };
 
 Object.entries(files).forEach(([key, file]) => {
-  if (key !== 'a02EvidenceJson') assert(exists(file), `required file missing: ${file}`);
+  if (!['a02EvidenceJson', 'a04EvidenceJson'].includes(key)) {
+    assert(exists(file), `required file missing: ${file}`);
+  }
 });
 
 const matrix = JSON.parse(read(files.matrix));
@@ -102,27 +105,53 @@ if (a02Started) {
   });
 }
 
-const residualLocalAuthorities = [
-  {
-    file: files.verificationRepository,
-    storage: ['localStorage', 'sessionStorage', 'doke.professionalIdentityVerifications.v1', 'doke.professionalIdentityVerificationDrafts.v1'],
-    mutations: ['saveDraft', 'submit', 'transition']
-  },
-  {
-    file: files.evidenceRepository,
-    storage: ['indexedDB', 'doke-professional-verification-evidence-v1'],
-    mutations: ['save', 'remove']
-  }
-];
-
-for (const authority of residualLocalAuthorities) {
-  const source = read(authority.file);
-  authority.storage.forEach((marker) => assert(source.includes(marker), `${authority.file} no longer matches frozen storage marker ${marker}; reconcile the next PROF sublot`));
-  authority.mutations.forEach((marker) => assert(
-    source.includes(`${marker}: ${marker}`) || source.includes(`function ${marker}(`),
-    `${authority.file} mutation surface changed without a controlled sublot: ${marker}`
+const a04Started = exists(files.a04EvidenceJson);
+const verificationRepository = read(files.verificationRepository);
+if (a04Started) {
+  const a04 = JSON.parse(read(files.a04EvidenceJson));
+  assert(a04.domain === 'PROF-001' && a04.sublot === 'PROF-A04', 'PROF-A04 evidence identity is invalid');
+  assert(
+    ['implementation_in_progress', 'validation_pending', 'done'].includes(a04.status),
+    'PROF-A04 evidence status is invalid'
+  );
+  [
+    "authority: 'supabase-service-or-fixture-memory'",
+    'DOKE_PROFESSIONAL_VERIFICATION_AUTHORITY_UNAVAILABLE',
+    'fixtureRecords = new Map()',
+    'fixtureDrafts = new Map()'
+  ].forEach((marker) => assert(verificationRepository.includes(marker), `PROF-A04 verification repository marker missing: ${marker}`));
+  [
+    'localStorage',
+    'sessionStorage',
+    'indexedDB',
+    'doke.professionalIdentityVerifications.v1',
+    'doke.professionalIdentityVerificationDrafts.v1'
+  ].forEach((marker) => assert(!verificationRepository.includes(marker), `PROF-A04 retired KYC draft marker remains: ${marker}`));
+} else {
+  [
+    'localStorage',
+    'sessionStorage',
+    'doke.professionalIdentityVerifications.v1',
+    'doke.professionalIdentityVerificationDrafts.v1'
+  ].forEach((marker) => assert(
+    verificationRepository.includes(marker),
+    `${files.verificationRepository} no longer matches frozen storage marker ${marker}; reconcile PROF-A04`
   ));
 }
+['saveDraft', 'submit', 'transition'].forEach((marker) => assert(
+  verificationRepository.includes(`${marker}: ${marker}`) || verificationRepository.includes(`function ${marker}(`),
+  `${files.verificationRepository} mutation surface changed without a controlled sublot: ${marker}`
+));
+
+const evidenceRepository = read(files.evidenceRepository);
+['indexedDB', 'doke-professional-verification-evidence-v1'].forEach((marker) => assert(
+  evidenceRepository.includes(marker),
+  `${files.evidenceRepository} no longer matches frozen storage marker ${marker}; reconcile PROF-B03-KYC-EVIDENCE`
+));
+['save', 'remove'].forEach((marker) => assert(
+  evidenceRepository.includes(`${marker}: ${marker}`) || evidenceRepository.includes(`function ${marker}(`),
+  `${files.evidenceRepository} mutation surface changed without a controlled sublot: ${marker}`
+));
 
 function walk(dir) {
   const absolute = path.join(root, dir);
@@ -176,8 +205,8 @@ for (const [scriptName, expected] of Object.entries(expectedLoads)) {
 
 const storageKeyOwners = {
   'doke.professionalProfiles.v1': a02Started ? [] : [files.profileRepository],
-  'doke.professionalIdentityVerifications.v1': [files.verificationRepository],
-  'doke.professionalIdentityVerificationDrafts.v1': [files.verificationRepository],
+  'doke.professionalIdentityVerifications.v1': a04Started ? [] : [files.verificationRepository],
+  'doke.professionalIdentityVerificationDrafts.v1': a04Started ? [] : [files.verificationRepository],
   'doke-professional-verification-evidence-v1': [files.evidenceRepository]
 };
 const assetScripts = walk('assets/js').filter((file) => file.endsWith('.js'));
@@ -196,5 +225,6 @@ assert(evidence.stagingChanged === false, 'PROF-A01 evidence cannot claim a stag
 if (!process.exitCode) {
   console.log('[PROF-A01] professional authority baseline remains traceable.');
   console.log(`[PROF-A01] profile browser persistence retired: ${a02Started ? 'yes' : 'no'}`);
-  console.log('[PROF-A01] residual local targets: KYC draft and binary evidence repositories.');
+  console.log(`[PROF-A01] KYC record and draft browser persistence retired: ${a04Started ? 'yes' : 'no'}`);
+  console.log('[PROF-A01] residual local target: KYC binary evidence repository.');
 }
