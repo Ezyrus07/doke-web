@@ -2,7 +2,7 @@
 
 ## Status
 
-`IMPLEMENTATION IN PROGRESS`
+`DONE`
 
 ## Objetivo
 
@@ -41,12 +41,26 @@ A edição de campos profissionais ativos não possui uma operação server-side
 
 Campos básicos de identidade continuam pertencendo ao serviço canônico de perfil, mas a transação combinada do editor não é executada parcialmente.
 
+## Regressão visual detectada e corrigida
+
+A retirada da chave `doke.professionalProfiles.v1` expôs que o harness visual ainda dependia dessa autoridade aposentada para liberar `anunciar-servico.html`.
+
+A primeira correção removeu o seed de perfil profissional do `localStorage` e passou a usar o perfil demo em memória. Os guards então revelaram um segundo limite: o prepaint guard remove corretamente sessões ligadas aos IDs demo para impedir autenticação local legada.
+
+A solução final ficou restrita ao teste:
+
+- o harness preserva temporariamente somente `doke.auth.session.v1` durante o prepaint de `anunciar-servico.html`;
+- o comportamento nativo de `Storage.prototype.removeItem` é restaurado no `DOMContentLoaded`;
+- nenhuma exceção foi adicionada ao código de produção;
+- o audit PROF-A02 falha se o harness voltar a semear as chaves profissionais aposentadas ou deixar de restaurar o comportamento nativo do Storage.
+
 ## Arquivos
 
 - `assets/js/repositories/professional-profiles-repository.js`
 - `scripts/audit-professional-authority-baseline.js`
 - `scripts/audit-professional-profile-authority-retirement.js`
 - `scripts/test-professional-profile-authority-retirement-runtime.js`
+- `tests/visual/doke-visual-regression.spec.js`
 - `.github/workflows/quality.yml`
 - `docs/validation/PROF-001-A02-PROFILE-AUTHORITY-RETIREMENT.md`
 - `docs/validation/PROF-001-A02-PROFILE-AUTHORITY-RETIREMENT.json`
@@ -65,6 +79,24 @@ O runtime dedicado comprova:
 4. edição ativa e transições falhando fechado;
 5. fixtures funcionando apenas em memória.
 
+## Validação
+
+Checkpoint validado:
+
+`35d8773e0f4c8b60949de64e0883299acba12704`
+
+- Doke Quality Gates #754: sucesso;
+- audit PROF-A01 cumulativo: sucesso;
+- audit PROF-A02: sucesso;
+- runtime PROF-A02: sucesso;
+- contratos AUTH cumulativos: sucesso;
+- matriz determinística: sucesso;
+- governança, assets, partição E2E e `git diff --check`: sucesso;
+- E2E bloqueante: sucesso;
+- 105 guards visuais: sucesso;
+- Doke Staging Edge HTTP Canary #527: sucesso;
+- Doke Diagnostic E2E #547: sucesso.
+
 ## Blockers restantes
 
 - rascunho KYC em `localStorage/sessionStorage`;
@@ -73,8 +105,16 @@ O runtime dedicado comprova:
 - política legal de KYC e retenção;
 - remoção das políticas legadas administradas pelo Supabase Storage.
 
+## Próximo sublote
+
+`PROF-A03` deve criar uma operação server-side reconciliada para edição dos campos profissionais ativos antes de reabilitar a persistência do editor.
+
 ## Segurança
 
 - nenhuma conta real modificada;
+- nenhuma migration aplicada;
+- nenhuma Edge Function implantada;
+- staging e produção não alterados;
 - nenhuma configuração paga, SMS ou OAuth habilitada;
+- nenhum workflow ou codemod temporário permanece;
 - PR #11 permanece aberto, draft e não mesclado.
