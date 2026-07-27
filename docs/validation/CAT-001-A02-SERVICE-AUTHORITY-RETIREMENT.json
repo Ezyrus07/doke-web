@@ -1,0 +1,53 @@
+{
+  "domain": "CAT-001",
+  "sublot": "CAT-A02",
+  "status": "implementation_pending",
+  "objective": "Retire browser-persistent service authority for Supabase sessions and UUID subjects while preserving non-UUID fixtures in runtime-only memory.",
+  "branch": "cat/cat-001-baseline-audit",
+  "baseHead": "6d164daad6f055ced86f3e3e61efcc8b35627c15",
+  "authority": {
+    "realCatalog": "supabase_services_and_versioned_moderation",
+    "browserPersistentAuthority": "retirement_pending",
+    "fixtureCompatibility": "memory_only_pending",
+    "remoteFailureMode": "fail_closed_pending",
+    "retiredStorageKey": "doke.services.local.v1"
+  },
+  "plannedBehavior": [
+    "localStorage is never read or written by the service repository",
+    "configured Supabase reads do not fall back to browser fixtures",
+    "Supabase or UUID-owned saves reject when remote authority is unavailable",
+    "non-UUID fixtures can save and read only within the current runtime",
+    "a fresh runtime cannot recover fixture services",
+    "review submission returns the canonical server snapshot without browser persistence",
+    "pending background promotion is removed"
+  ],
+  "validation": {
+    "staticAudit": "pending",
+    "runtimeRetirement": "pending",
+    "cumulativeCatA01": "pending",
+    "repositoryContract": "pending",
+    "detailRouteContract": "pending",
+    "deterministicMatrix": "pending",
+    "quality": "pending",
+    "blockingE2E": "pending",
+    "visualStructuralGuards": "pending",
+    "stagingCanary": "pending",
+    "diagnostic": "pending",
+    "finalEvidence": "pending"
+  },
+  "safety": {
+    "migrationApplied": false,
+    "edgeFunctionDeployed": false,
+    "stagingChanged": false,
+    "productionChanged": false,
+    "realAccountChanged": false,
+    "persistentSyntheticAccountCreated": false,
+    "temporaryWorkflowRemaining": false,
+    "temporaryCodemodRemaining": false,
+    "smsEnabled": false,
+    "oauthEnabled": false,
+    "paidConfigurationEnabled": false,
+    "prMerged": false
+  },
+  "nextControlledWork": "Transform services-repository.js and reconcile contracts without broadening into CAT-A03 lifecycle RPC work."
+}
