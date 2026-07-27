@@ -1,0 +1,100 @@
+name: PROF-B03 Matrix Reconciliation
+
+on:
+  push:
+    branches:
+      - 'prof/**'
+
+permissions:
+  contents: write
+
+jobs:
+  reconcile:
+    if: github.event.head_commit.message == 'Request PROF-B03 matrix reconciliation'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout candidate branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Reconcile PROF-001 authority and blockers
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const file = 'config/domain-completion-matrix.json';
+          const matrix = JSON.parse(fs.readFileSync(file, 'utf8'));
+          const prof = matrix.domains.find((domain) => domain.id === 'PROF-001');
+          if (!prof) throw new Error('PROF-001 not found');
+
+          matrix.version = '1.3.4';
+          matrix.updatedAt = '2026-07-27T11:20:00-03:00';
+          prof.userFacingAuthority = 'remote';
+          prof.serverAuthority = 'canonical';
+          prof.stagingEvidence = 'staging_operational';
+          prof.securityGate = 'blocked';
+          prof.productionGate = 'blocked';
+
+          const requiredPaths = [
+            'assets/js/repositories/professional-verification-evidence-repository.js',
+            'scripts/audit-professional-authority-baseline.js',
+            'scripts/audit-professional-verification-draft-authority-retirement.js',
+            'scripts/test-professional-verification-draft-authority-retirement-runtime.js',
+            'scripts/audit-professional-verification-evidence-authority-retirement.js',
+            'scripts/test-professional-verification-evidence-authority-retirement-runtime.js',
+            'docs/validation/PROF-001-A04-KYC-DRAFT-AUTHORITY-RETIREMENT.json',
+            'docs/validation/PROF-001-B03-KYC-EVIDENCE-AUTHORITY-RETIREMENT.json'
+          ];
+          for (const item of requiredPaths) {
+            if (!prof.requiredPaths.includes(item)) prof.requiredPaths.push(item);
+          }
+
+          const tests = [
+            'audit:professional-authority-baseline',
+            'audit:professional-verification-draft-authority-retirement',
+            'test:professional-verification-draft-authority-retirement-runtime',
+            'audit:professional-verification-evidence-authority-retirement',
+            'test:professional-verification-evidence-authority-retirement-runtime'
+          ];
+          for (const item of tests) {
+            if (!prof.tests.includes(item)) prof.tests.push(item);
+          }
+
+          prof.evidence = [
+            'Professional profile setup, active edits, KYC records, drafts and binary evidence are server-authoritative for Supabase sessions.',
+            'Browser-persistent professional profile, KYC record, KYC draft and IndexedDB evidence authorities are retired; non-UUID fixtures are memory-only.',
+            'KYC RPCs are not executable by anon; applicant and reviewer operations pass through authenticated server boundaries.',
+            'Professional KYC draft, signed-intent upload, submission, review, rejection, reopening and approval are operational in staging.',
+            'Binary evidence uses database-generated locked upload intents, signed upload tokens and one-time server-side consumption.',
+            'Reviewer operations require an independently authenticated admin/moderator Edge Function context.',
+            'Role promotion is atomic, idempotent and synchronized through public.users to app_metadata.',
+            'Client operational metrics and public reputation remain separated into private and aggregate-only authorities.'
+          ];
+
+          prof.blockers = prof.blockers.filter((blocker) => blocker.id !== 'PROF-B03');
+          prof.nextActions = [
+            'Remove legacy owner-prefix KYC Storage policies through the managed Storage policy authority and add upload cleanup/retention.',
+            'Define final KYC policy, document retention, rejection, appeal and legal verification provider rules.',
+            'Keep PROF-A02, PROF-A03, PROF-A04 and PROF-B03 retirement gates cumulative while resolving external blockers.'
+          ];
+
+          fs.writeFileSync(file, JSON.stringify(matrix, null, 2) + '\n');
+          NODE
+
+      - name: Regenerate deterministic matrix document
+        run: node scripts/audit-domain-completion-matrix.js --write
+
+      - name: Remove temporary reconciler and publish canonical matrix
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/prof-b03-matrix-reconciliation.yml
+          git add config/domain-completion-matrix.json docs/DOMAIN-COMPLETION-MATRIX.md
+          git commit -m "Reconcile PROF-B03 domain authority"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
