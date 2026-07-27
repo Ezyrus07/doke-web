@@ -6,7 +6,7 @@
   "baseHead": "f67186da35264faa726ad2858a9a8ec092bf668b",
   "branch": "prof/prof-001-baseline-audit",
   "implementationHead": "1af691987cc592bc09757d68bd54181a6d01bfd8",
-  "validationCandidateHead": "7a29ceb160ac47ad64ba1ffaf9e11314d6b4c2a0",
+  "validatedCodeHead": "45b0daa1ffdb4c199c1b896b67b7c1d32c861767",
   "validationMode": "canonical_MAIN_stack_validation_then_restore_stacked_base",
   "authority": {
     "operation": "self-service-operations/update_professional_profile_reconciled",
@@ -26,16 +26,39 @@
     ],
     "localFallback": false
   },
+  "staging": {
+    "projectId": "zwkczgewzbsorbrjuzpb",
+    "projectName": "doke-web-staging",
+    "migrationName": "professional_profile_reconciliation_authority",
+    "migrationVersion": "20260727110417",
+    "edgeFunction": "self-service-operations",
+    "edgeFunctionVersion": 6,
+    "edgeFunctionStatus": "ACTIVE",
+    "verifyJwt": true,
+    "sqlValidation": "transaction_rolled_back",
+    "syntheticAuthUsersAfterValidation": 0,
+    "syntheticPublicUsersAfterValidation": 0,
+    "httpProbe": "not_executed_local_dns_resolution_unavailable"
+  },
   "validation": {
     "staticAudit": "success",
     "runtimeReconciliation": "success",
-    "sqlValidation": "pending_staging_migration",
-    "qualityRunNumber": 780,
-    "quality": "matrix_synchronized_final_revalidation_pending",
-    "blockingE2E": "pending",
-    "visualStructuralGuards": "pending",
-    "stagingCanary": "pending",
-    "diagnostic": "pending"
+    "qualityRunNumber": 785,
+    "quality": "success",
+    "blockingE2E": "success",
+    "visualStructuralGuards": "success",
+    "preDeploymentCanaryRunNumber": 558,
+    "preDeploymentCanary": "success",
+    "diagnosticRunNumber": 578,
+    "diagnostic": "success",
+    "sqlValidation": "success_with_rollback",
+    "directBrowserGrant": "denied",
+    "serviceRoleExecute": "allowed",
+    "stagingValidation": "success",
+    "finalQualityRunNumber": 0,
+    "finalCanaryRunNumber": 0,
+    "finalDiagnosticRunNumber": 0,
+    "finalEvidence": "pending"
   },
   "remainingBlockers": [
     {
@@ -60,9 +83,9 @@
     }
   ],
   "safety": {
-    "migrationApplied": false,
-    "edgeFunctionDeployed": false,
-    "stagingChanged": false,
+    "migrationApplied": true,
+    "edgeFunctionDeployed": true,
+    "stagingChanged": true,
     "productionChanged": false,
     "realAccountChanged": false,
     "persistentSyntheticAccountCreated": false,
@@ -70,5 +93,5 @@
     "temporaryCodemodRemaining": false,
     "prMerged": false
   },
-  "nextControlledSublot": "After staging validation, PROF-A04 must retire browser-local KYC draft authority without mixing binary-evidence storage changes."
+  "nextControlledSublot": "After final evidence closure, PROF-A04 must retire browser-local KYC draft authority without mixing binary-evidence storage changes."
 }
