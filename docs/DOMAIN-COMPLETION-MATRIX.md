@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 884 arquivos no escopo; 192 referências a localStorage; 52 a sessionStorage; 530 referências mock; 129 referências de rede/Supabase; 30 marcadores de implementação pendente.
+**Evidência estática observada:** 887 arquivos no escopo; 209 referências a localStorage; 58 a sessionStorage; 530 referências mock; 131 referências de rede/Supabase; 30 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -300,7 +300,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção blocked.
 
-**Evidência estática observada:** 16 arquivos no escopo; 6 referências a localStorage; 4 a sessionStorage; 0 referências mock; 24 referências de rede/Supabase; 0 marcadores de implementação pendente.
+**Evidência estática observada:** 16 arquivos no escopo; 2 referências a localStorage; 4 a sessionStorage; 0 referências mock; 24 referências de rede/Supabase; 0 marcadores de implementação pendente.
 
 **Páginas:** `anunciar-servico.html`, `detalhe-anuncio.html`, `admin-anuncio-revisao.html`, `index.html`, `resultados.html`.
 
@@ -311,21 +311,21 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 **Evidências:**
 - Supabase service repository, version moderation and admin review exist.
 - AI template generation is isolated behind an Edge Function.
-- Services repository retains localStorage and sessionStorage fallback paths.
 - service_categories is RLS-protected and public reads expose active rows only.
 - service-media listing policy is closed and owner storage mutations are identity-scoped.
 - Admin/moderator review actions execute through a JWT-protected Edge Function; direct privileged RPCs are no longer browser-callable.
 - Template writes require canonical professional role and ownership of the linked service; staging has zero ownership mismatches.
-- CAT-A01 freezes the hybrid browser/remote service authority boundary and adds a permanent regression audit before CAT-B03 retirement.
+- CAT-A01 preserves the historical authority baseline and remains a cumulative regression gate.
+- CAT-A02 retires doke.services.local.v1: real and UUID subjects fail closed, while non-UUID fixtures remain runtime-only memory.
 
 **Bloqueadores:**
-- **CAT-B03 · HIGH · authority_split:** Local service drafts and remote published versions coexist without a final production promotion contract. _(Fase 4)_
+- **CAT-B03 · HIGH · authority_split:** Owner edit, pause, reactivate and archive still route through generic repository saves without explicit server operations or a final lifecycle contract. _(Fase 4)_
 - **CAT-B04 · MEDIUM · versioning:** Historical orders need immutable service snapshots across all creation paths. _(Fase 4)_
 
 **Próximas ações:**
-- Make remote draft/version workflow canonical and remove production local fallback.
+- Move owner edit, pause, reactivate and archive to explicit server operations without bypassing versioned moderation.
+- Close service-media replacement and abandoned-draft cleanup lifecycle.
 - Guarantee immutable service snapshot on every order creation path.
-- Complete pause, archive and safe edit flows.
 
 **Gate de saída:**
 - Create, submit, moderate, publish, edit, pause and archive work remotely.
@@ -849,7 +849,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI hybrid; servidor partial; staging local e2e; segurança partial; produção blocked.
 
-**Evidência estática observada:** 841 arquivos no escopo; 239 referências a localStorage; 71 a sessionStorage; 225 referências mock; 249 referências de rede/Supabase; 9 marcadores de implementação pendente.
+**Evidência estática observada:** 841 arquivos no escopo; 235 referências a localStorage; 71 a sessionStorage; 225 referências mock; 249 referências de rede/Supabase; 9 marcadores de implementação pendente.
 
 **Páginas:** `index.html`, `resultados.html`, `detalhe-anuncio.html`, `pedidos.html`, `mensagens.html`, `notificacoes.html`, `carteira.html`, `perfil.html`, `comunidade.html`.
 
@@ -880,7 +880,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2086 arquivos no escopo; 459 referências a localStorage; 126 a sessionStorage; 840 referências mock; 501 referências de rede/Supabase; 84 marcadores de implementação pendente.
+**Evidência estática observada:** 2089 arquivos no escopo; 471 referências a localStorage; 131 a sessionStorage; 840 referências mock; 503 referências de rede/Supabase; 84 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
@@ -941,4 +941,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-07-27T13:05:00-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-07-27T14:36:00-03:00._
