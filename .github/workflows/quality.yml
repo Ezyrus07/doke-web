@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   static-audits:
-    name: Finalize CAT-A03 evidence, journal and matrix
+    name: Finalize CAT-A03 evidence and journal
     if: github.event_name == 'pull_request' && github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -97,7 +97,7 @@ Após o CAT-A02 retirar a persistência local, edição e ciclo de vida ainda te
 - criado runtime permanente CAT-A03;
 - criado teste SQL transacional 018;
 - audits cumulativos CAT-A01/CAT-A02 foram reconciliados;
-- matriz determinística evoluída para 1.3.8 e \`CAT-B03\` encerrado após validação de staging.
+- matriz determinística 1.3.7 reconciliada, preservando \`CAT-B03\` e \`CAT-B04\`.
 
 ## Staging
 
@@ -122,7 +122,7 @@ Projeto \`doke-web-staging\` (\`zwkczgewzbsorbrjuzpb\`):
 - audit cumulativo CAT-A01: sucesso;
 - audit e runtime CAT-A02: sucesso;
 - audit e runtime CAT-A03: sucesso;
-- matriz determinística: sucesso;
+- matriz determinística 1.3.7: sucesso;
 - E2E bloqueante: sucesso;
 - 105 guards visuais: sucesso;
 - Doke Staging Edge HTTP Canary #714: sucesso;
@@ -136,12 +136,12 @@ Projeto \`doke-web-staging\` (\`zwkczgewzbsorbrjuzpb\`):
 - nenhuma conta sintética persistente criada;
 - nenhum SMS, OAuth ou recurso pago habilitado;
 - nenhuma autoridade local aposentada foi reaberta;
-- nenhuma ferramenta temporária deve permanecer após o fechamento;
+- nenhuma ferramenta temporária permanece após o fechamento;
 - PR permanece draft, aberto e não mesclado.
 
 ## Pendências preservadas
 
-- \`CAT-A04\`: ciclo de substituição e limpeza de mídia e rascunhos abandonados;
+- \`CAT-B03 / CAT-A04\`: ciclo de substituição e limpeza de mídia, objetos superseded e rascunhos abandonados;
 - \`CAT-B04\`: snapshot imutável de serviço em todos os caminhos de criação de pedido;
 - produção permanece bloqueada.
 `);
@@ -150,58 +150,13 @@ Projeto \`doke-web-staging\` (\`zwkczgewzbsorbrjuzpb\`):
           let journal = fs.readFileSync(journalPath, 'utf8').trimEnd();
           const heading = '# 2026-07-27 — CAT-A03 / autoridade server-side de edição e ciclo de vida';
           if (!journal.includes(heading)) {
-            journal += `\n\n---\n\n${heading}\n\n**Status:** \`DONE\`\n\n**Branch:** \`cat/cat-001-baseline-audit\`\n\n**Pull Request:** \`#12\`\n\n## Problema\n\nEdição, pausa, reativação e arquivamento ainda eram validados no navegador e terminavam em uma mutação genérica de \`public.services\`, mesmo após a retirada da persistência local no CAT-A02.\n\n## Decisão\n\n- conteúdo aprovado só muda por nova versão submetida à moderação;\n- ciclo de vida do owner usa uma função server-side explícita;\n- ator vem do JWT validado pela Edge Function;\n- browser não recebe grant direto para função privilegiada nem para mutações de tabela;\n- operações históricas do dispatcher permanecem delegadas à autoridade anterior.\n\n## Implementação\n\n- migration \`149_service_lifecycle_authority.sql\`;\n- função \`transition_owned_service_lifecycle\`;\n- wrapper do dispatcher com delegação pré-CAT-A03;\n- allowlist da Edge Function atualizada;\n- edição roteada para \`submit_service_for_review\`;\n- pausa, reativação e arquivamento roteados para a nova operação;\n- mutação remota genérica aposentada;\n- runtime, audit e teste SQL permanentes;\n- matriz determinística 1.3.8 reconciliada e \`CAT-B03\` encerrado.\n\n## Staging\n\n- migration \`20260727195302_service_lifecycle_authority\` aplicada;\n- Edge Function \`self-service-operations\` versão 7, \`ACTIVE\`, JWT obrigatório;\n- teste SQL 018 passou com \`ROLLBACK\`;\n- grants e ACLs confirmados;\n- nenhuma conta ou entidade sintética persistente criada.\n\n## Validação\n\n**Head:** \`9a71d700f8f6b5237c97fadc87a292ed5c475ea8\`\n\n- Quality #992: sucesso;\n- E2E bloqueante: sucesso;\n- 105 guards visuais: sucesso;\n- Canary #714: sucesso;\n- Diagnostic #736: sucesso.\n\n## Segurança operacional\n\n- produção não alterada;\n- nenhuma conta real modificada;\n- nenhum SMS, OAuth ou recurso pago habilitado;\n- nenhum fallback local reaberto;\n- PR permanece draft e não mesclado.\n\n## Próximo sublote\n\n\`CAT-A04\`: fechar substituição e limpeza de mídia, objetos superseded e rascunhos abandonados.\n`;
+            journal += `\n\n---\n\n${heading}\n\n**Status:** \`DONE\`\n\n**Branch:** \`cat/cat-001-baseline-audit\`\n\n**Pull Request:** \`#12\`\n\n## Problema\n\nEdição, pausa, reativação e arquivamento ainda eram validados no navegador e terminavam em uma mutação genérica de \`public.services\`, mesmo após a retirada da persistência local no CAT-A02.\n\n## Decisão\n\n- conteúdo aprovado só muda por nova versão submetida à moderação;\n- ciclo de vida do owner usa uma função server-side explícita;\n- ator vem do JWT validado pela Edge Function;\n- browser não recebe grant direto para função privilegiada nem para mutações de tabela;\n- operações históricas do dispatcher permanecem delegadas à autoridade anterior.\n\n## Implementação\n\n- migration \`149_service_lifecycle_authority.sql\`;\n- função \`transition_owned_service_lifecycle\`;\n- wrapper do dispatcher com delegação pré-CAT-A03;\n- allowlist da Edge Function atualizada;\n- edição roteada para \`submit_service_for_review\`;\n- pausa, reativação e arquivamento roteados para a nova operação;\n- mutação remota genérica aposentada;\n- runtime, audit e teste SQL permanentes;\n- matriz determinística 1.3.7 reconciliada, com \`CAT-B03\` e \`CAT-B04\` preservados.\n\n## Staging\n\n- migration \`20260727195302_service_lifecycle_authority\` aplicada;\n- Edge Function \`self-service-operations\` versão 7, \`ACTIVE\`, JWT obrigatório;\n- teste SQL 018 passou com \`ROLLBACK\`;\n- grants e ACLs confirmados;\n- nenhuma conta ou entidade sintética persistente criada.\n\n## Validação\n\n**Head:** \`9a71d700f8f6b5237c97fadc87a292ed5c475ea8\`\n\n- Quality #992: sucesso;\n- E2E bloqueante: sucesso;\n- 105 guards visuais: sucesso;\n- Canary #714: sucesso;\n- Diagnostic #736: sucesso.\n\n## Segurança operacional\n\n- produção não alterada;\n- nenhuma conta real modificada;\n- nenhum SMS, OAuth ou recurso pago habilitado;\n- nenhum fallback local reaberto;\n- PR permanece draft e não mesclado.\n\n## Próximo sublote\n\n\`CAT-A04\`: fechar substituição e limpeza de mídia, objetos superseded e rascunhos abandonados.\n`;
           }
           fs.writeFileSync(journalPath, journal + '\n');
           NODE
 
-      - name: Reconcile CAT-A03 matrix closure
-        run: |
-          node - <<'NODE'
-          const fs = require('fs');
-          const matrixPath = 'config/domain-completion-matrix.json';
-          const matrix = JSON.parse(fs.readFileSync(matrixPath, 'utf8'));
-          matrix.version = '1.3.8';
-          matrix.updatedAt = '2026-07-27T17:15:00-03:00';
-
-          const removeClosedBlocker = (value) => {
-            if (Array.isArray(value)) {
-              value.forEach(removeClosedBlocker);
-              return;
-            }
-            if (!value || typeof value !== 'object') return;
-            for (const [key, child] of Object.entries(value)) {
-              if (key === 'blockers' && Array.isArray(child)) {
-                value[key] = child.filter((item) => item && item.id !== 'CAT-B03');
-              } else {
-                removeClosedBlocker(child);
-              }
-            }
-          };
-          removeClosedBlocker(matrix);
-
-          const cat = matrix.domains.find((domain) => domain.id === 'CAT-001');
-          if (!cat) throw new Error('CAT-001 matrix domain missing');
-          if (!cat.blockers.some((item) => item.id === 'CAT-B04')) {
-            throw new Error('CAT-B04 must remain open after CAT-A03');
-          }
-          if (cat.blockers.some((item) => item.id === 'CAT-B03')) {
-            throw new Error('CAT-B03 was not removed');
-          }
-
-          const finalEvidence = 'CAT-A03 is complete: migration 20260727195302 and self-service-operations v7 are active in staging; SQL 018, Quality #992, blocking E2E, 105 guards, Canary #714 and Diagnostic #736 succeeded.';
-          if (!cat.evidence.includes(finalEvidence)) cat.evidence.push(finalEvidence);
-          cat.nextActions = [
-            'Close service-media replacement, superseded-object cleanup and abandoned-draft cleanup lifecycle.',
-            'Guarantee immutable service snapshots on every order creation path.',
-            'Reconcile CAT-001 final matrix and domain closure evidence.'
-          ];
-
-          fs.writeFileSync(matrixPath, JSON.stringify(matrix, null, 2) + '\n');
-          NODE
-
       - name: Restore canonical Quality in worktree
-        run: git show HEAD^:.github/workflows/quality.yml > .github/workflows/quality.yml
+        run: git show 9a71d700f8f6b5237c97fadc87a292ed5c475ea8:.github/workflows/quality.yml > .github/workflows/quality.yml
 
       - name: Regenerate deterministic matrix
         run: node scripts/audit-domain-completion-matrix.js --write
@@ -218,10 +173,9 @@ Projeto \`doke-web-staging\` (\`zwkczgewzbsorbrjuzpb\`):
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add config/domain-completion-matrix.json
           git add docs/validation/CAT-001-A03-SERVICE-LIFECYCLE-AUTHORITY.json
           git add docs/validation/CAT-001-A03-SERVICE-LIFECYCLE-AUTHORITY.md
           git add docs/DOKE-ENGINEERING-JOURNAL.md
           git add docs/DOMAIN-COMPLETION-MATRIX.md
-          git commit -m "Finalize CAT-A03 evidence and matrix"
+          git commit -m "Finalize CAT-A03 evidence"
           git push origin HEAD:cat/cat-001-baseline-audit
