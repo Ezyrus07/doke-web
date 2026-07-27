@@ -4,7 +4,11 @@ on:
   pull_request:
     branches: [MAIN, main, master]
   push:
-    branches: [MAIN, main, master]
+    branches:
+      - MAIN
+      - main
+      - master
+      - 'prof/**'
   workflow_dispatch:
 
 permissions:
@@ -108,6 +112,9 @@ jobs:
 
       - name: Audit AUTH-001 domain closure
         run: npm run audit:auth-domain-closure
+
+      - name: Audit PROF-001 authority baseline
+        run: node scripts/audit-professional-authority-baseline.js
 
       - name: Audit desktop shell contracts
         run: npm run audit:desktop-shell
