@@ -1,0 +1,92 @@
+{
+  "domain": "PROF-001",
+  "sublot": "PROF-A01",
+  "status": "baseline_frozen",
+  "objective": "Freeze the exact split between remote Supabase professional authority and residual browser-local profile, KYC draft and binary evidence persistence before controlled retirement.",
+  "baseHead": "6de6083ee4d012ca0567d7cb9bd461fa1869e9a4",
+  "branch": "prof/prof-001-baseline-audit",
+  "authority": {
+    "professionalProfileSetup": "supabase_self_service",
+    "professionalKycSubmission": "supabase_edge_and_storage_signed_intent",
+    "professionalKycReview": "supabase_edge_reviewer_authority",
+    "professionalRolePromotion": "server_only",
+    "residualLocalAuthority": [
+      {
+        "path": "assets/js/repositories/professional-profiles-repository.js",
+        "storage": ["localStorage"],
+        "mutations": ["saveDraft", "completeSetup", "updateActiveProfile", "setVerificationStatus", "transition"]
+      },
+      {
+        "path": "assets/js/repositories/professional-identity-verifications-repository.js",
+        "storage": ["localStorage", "sessionStorage"],
+        "mutations": ["saveDraft", "submit", "transition"]
+      },
+      {
+        "path": "assets/js/repositories/professional-verification-evidence-repository.js",
+        "storage": ["IndexedDB"],
+        "mutations": ["save", "remove"]
+      }
+    ]
+  },
+  "scriptLoading": {
+    "professionalProfilesRepository": [
+      "admin-verificacao.html",
+      "admin.html",
+      "anunciar-servico.html",
+      "meu-perfil.html",
+      "perfil-profissional.html",
+      "perfil.html",
+      "tornar-profissional.html",
+      "verificacao-profissional.html"
+    ],
+    "professionalIdentityVerificationsRepository": [
+      "admin-verificacao.html",
+      "admin.html",
+      "anunciar-servico.html",
+      "meu-perfil.html",
+      "perfil-profissional.html",
+      "verificacao-profissional.html"
+    ],
+    "professionalVerificationEvidenceRepository": [
+      "admin-verificacao.html",
+      "admin.html",
+      "verificacao-profissional.html"
+    ]
+  },
+  "blockers": [
+    {
+      "id": "PROF-B03",
+      "status": "active",
+      "classification": "executable_core",
+      "reason": "Profile/KYC draft state and binary evidence still have browser-local mutation authority."
+    },
+    {
+      "id": "PROF-B04",
+      "status": "blocked_external",
+      "classification": "legal_policy",
+      "reason": "Final KYC rules, retention and legal verification provider are not approved."
+    },
+    {
+      "id": "PROF-B05",
+      "status": "blocked_managed_storage",
+      "classification": "managed_policy",
+      "reason": "Legacy owner-prefix Storage policies require managed Supabase Storage policy authority for removal."
+    }
+  ],
+  "validation": {
+    "baselineAudit": "pending",
+    "quality": "pending",
+    "blockingE2E": "pending",
+    "visualStructuralGuards": "pending",
+    "stagingCanary": "pending",
+    "diagnostic": "pending"
+  },
+  "migrationApplied": false,
+  "edgeFunctionDeployed": false,
+  "stagingChanged": false,
+  "productionChanged": false,
+  "realAccountChanged": false,
+  "persistentSyntheticAccountCreated": false,
+  "prMerged": false,
+  "nextControlledSublot": "PROF-A02 must retire or isolate the browser-local professional profile repository from active Supabase pages before changing KYC binary evidence persistence."
+}
