@@ -24,10 +24,11 @@ const files = {
   visualTest: 'tests/visual/doke-visual-regression.spec.js',
   baselineEvidence: 'docs/validation/PROF-001-A01-AUTHORITY-BASELINE.json',
   evidenceMarkdown: 'docs/validation/PROF-001-A02-PROFILE-AUTHORITY-RETIREMENT.md',
-  evidenceJson: 'docs/validation/PROF-001-A02-PROFILE-AUTHORITY-RETIREMENT.json'
+  evidenceJson: 'docs/validation/PROF-001-A02-PROFILE-AUTHORITY-RETIREMENT.json',
+  a03Migration: 'supabase/migrations/148_professional_profile_reconciliation_authority.sql'
 };
 
-Object.values(files).forEach((file) => assert(exists(file), `required file missing: ${file}`));
+Object.values(files).filter((file) => file !== files.a03Migration).forEach((file) => assert(exists(file), `required file missing: ${file}`));
 
 const matrix = JSON.parse(read(files.matrix));
 const prof = (matrix.domains || []).find((domain) => domain.id === 'PROF-001');
@@ -61,7 +62,13 @@ const repository = read(files.repository);
 ].forEach((marker) => assert(!repository.includes(marker), `retired browser authority marker remains in professional profile repository: ${marker}`));
 
 const profileService = read(files.profileService);
-assert(profileService.includes('repo.updateActiveProfile'), 'professional profile service must cross the guarded repository boundary before base profile mutation');
+if (exists(files.a03Migration)) {
+  assert(profileService.includes("invokeSelfService('update_professional_profile_reconciled'"), 'PROF-A03 atomic professional operation is missing');
+  assert(!profileService.includes('repo.updateActiveProfile'), 'PROF-A03 cannot restore professional repository mutation authority');
+  assert(!profileService.includes('base.updateCurrentProfile'), 'PROF-A03 cannot coordinate split base-profile mutation in the browser');
+} else {
+  assert(profileService.includes('repo.updateActiveProfile'), 'professional profile service must cross the guarded repository boundary before base profile mutation');
+}
 assert(!profileService.includes('localStorage'), 'professional profile service must not write localStorage');
 assert(!profileService.includes('sessionStorage'), 'professional profile service must not write sessionStorage');
 
@@ -110,5 +117,7 @@ if (!process.exitCode) {
   console.log('[PROF-A02] Supabase setup reads/writes are canonical; fixture compatibility is memory-only.');
   console.log('[PROF-A02] visual fixtures no longer seed retired professional profile storage.');
   console.log('[PROF-A02] visual demo-session preservation is test-only and restores native Storage behavior.');
-  console.log('[PROF-A02] active professional field edits fail closed pending a dedicated server operation.');
+  console.log(exists(files.a03Migration)
+    ? '[PROF-A02] active edits advanced to the PROF-A03 atomic server boundary without restoring browser authority.'
+    : '[PROF-A02] active professional field edits fail closed pending a dedicated server operation.');
 }
