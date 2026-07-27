@@ -2,7 +2,7 @@
 
 ## Status
 
-`IMPLEMENTED — VALIDATION PENDING`
+`DONE`
 
 ## Objetivo
 
@@ -76,3 +76,24 @@ CAT-A03 continuará responsável por transformar edição, pausa, reativação e
 - nenhuma conta real modificada;
 - nenhum SMS, OAuth ou recurso pago habilitado;
 - nenhuma autoridade local aposentada foi reaberta.
+
+
+## Validação concluída
+
+**Head validado:** `0bf9c9971ebd70336cd7b5b3f05fe57ccec8b92f`
+
+- audit CAT-A01 cumulativo: sucesso;
+- audit CAT-A02: sucesso;
+- runtime CAT-A02: sucesso;
+- contrato Supabase do repositório: sucesso;
+- contrato canônico da rota de detalhe: sucesso;
+- matriz determinística 1.3.6: sucesso;
+- Doke Quality Gates #938: sucesso;
+- E2E bloqueante: sucesso;
+- 105 guards visuais: sucesso;
+- Doke Staging Edge HTTP Canary #676: sucesso;
+- Doke Diagnostic E2E #696: sucesso.
+
+## Próximo sublote
+
+`CAT-A03`: mover edição, pausa, reativação e arquivamento do owner para operações server-side explícitas, sem contornar a moderação versionada.

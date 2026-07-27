@@ -539,3 +539,73 @@ O repositório gravava localmente antes da mutação remota, devolvia uma cópia
 ## Próximo sublote
 
 `CAT-A02`: retirar a autoridade persistente de `doke.services.local.v1` para sessões Supabase e sujeitos UUID, preservando fixtures não UUID somente em memória e mantendo a moderação versionada canônica.
+
+---
+
+# 2026-07-27 — CAT-A02 / retirada da autoridade persistente de serviços
+
+**Status:** `DONE`
+
+**Branch:** `cat/cat-001-baseline-audit`
+
+**Pull Request:** `#12`
+
+## Problema
+
+O catálogo público e a moderação versionada já possuíam autoridade remota, mas `services-repository.js` ainda mantinha uma segunda autoridade persistente em `doke.services.local.v1`. O browser gravava antes da mutação remota, devolvia cópias pendentes após falhas e tentava sincronizá-las posteriormente. Edição, pausa, reativação e arquivamento herdavam essa fronteira híbrida.
+
+## Decisão
+
+- `services`, `service_media` e `service_versions` permanecem as autoridades reais do catálogo;
+- sessões Supabase e sujeitos UUID devem falhar fechado quando a autoridade remota estiver indisponível;
+- fixtures não UUID podem existir somente em memória durante o runtime atual;
+- nenhuma fixture pode mascarar uma leitura remota configurada;
+- CAT-A03 permanece separado para operações explícitas de edição e ciclo de vida.
+
+## Implementação
+
+- removidos `localStorage`, `doke.services.local.v1` e a sincronização posterior de pendências;
+- criada autoridade `supabase-or-fixture-memory`;
+- fixtures não UUID passaram para memória volátil;
+- criado erro `DOKE_SERVICE_AUTHORITY_UNAVAILABLE`;
+- leituras e gravações reais passaram a falhar fechado;
+- submissão para análise devolve o snapshot canônico sem persistência no navegador;
+- contratos do repositório e da rota de detalhe foram reconciliados;
+- criados audit e runtime permanentes CAT-A02;
+- CAT-A01 passou a funcionar como gate cumulativo;
+- matriz determinística 1.3.6 reconciliada sem remover CAT-B03 ou CAT-B04;
+- Quality canônico passou a executar audit e runtime CAT-A02;
+- workflows, codemods e relatórios temporários foram removidos.
+
+## Validação
+
+**Head validado:** `0bf9c9971ebd70336cd7b5b3f05fe57ccec8b92f`
+
+- audit CAT-A01 cumulativo: sucesso;
+- audit CAT-A02 e runtime CAT-A02: sucesso;
+- contratos de repositório e detalhe: sucesso;
+- matriz determinística: sucesso;
+- Doke Quality Gates #938: sucesso;
+- E2E bloqueante: sucesso;
+- 105 guards visuais: sucesso;
+- Doke Staging Edge HTTP Canary #676: sucesso;
+- Doke Diagnostic E2E #696: sucesso.
+
+## Segurança operacional
+
+- nenhuma migration aplicada;
+- nenhuma Edge Function implantada;
+- staging não alterado;
+- produção não alterada;
+- nenhuma conta real ou sintética persistente modificada;
+- nenhum SMS, OAuth ou recurso pago habilitado;
+- nenhuma autoridade local aposentada foi reaberta;
+- nenhuma ferramenta temporária permanece;
+- PR permanece draft, aberto e não mesclado.
+
+## Pendências preservadas
+
+- `CAT-A03`: operações server-side explícitas para edição, pausa, reativação e arquivamento;
+- `CAT-A04`: ciclo de limpeza de mídia e rascunhos abandonados;
+- `CAT-B04`: snapshots imutáveis de serviço em todos os caminhos de criação de pedidos;
+- produção permanece bloqueada.
