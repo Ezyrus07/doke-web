@@ -50,6 +50,10 @@ jobs:
           set -o pipefail
           npm run audit:agent-governance 2>&1 | tee reports/generated/frontend-agent-governance.log
 
+      - name: Preserve current domain matrix
+        if: always()
+        run: cp docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-before.md
+
       - name: Generate deterministic domain matrix candidate
         if: always()
         run: npm run write:domain-completion-matrix
@@ -63,6 +67,7 @@ jobs:
             reports/generated/frontend-structural-gates-report.json
             reports/generated/frontend-agent-governance.log
             reports/generated/domain-completion-matrix-report.json
+            reports/generated/domain-completion-matrix-before.md
             docs/DOMAIN-COMPLETION-MATRIX.md
           if-no-files-found: error
           retention-days: 14
