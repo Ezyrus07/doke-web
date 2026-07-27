@@ -32,34 +32,14 @@ jobs:
           node scripts/audit-domain-completion-matrix.js --write
           node scripts/audit-domain-completion-matrix.js
 
-      - name: Restore canonical Quality and publish clean reconciliation
-        id: publish
+      - name: Publish matrix reconciliation without workflow mutation
         shell: bash
         run: |
-          set +e
-          {
-            set -x
-            git show 5cf21510ae7ee55fb8feb0f0600fc015d99d1112:.github/workflows/quality.yml > .github/workflows/quality.yml
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git rm scripts/reconcile-cat-a02-domain-matrix.js
-            git add config/domain-completion-matrix.json
-            git add docs/DOMAIN-COMPLETION-MATRIX.md
-            git add -f reports/generated/domain-completion-matrix-report.json
-            git add .github/workflows/quality.yml
-            git status --short
-            git commit -m "Reconcile CAT-A02 domain matrix"
-            git push origin "HEAD:cat/cat-001-baseline-audit"
-          } > cat-a02-matrix-publish.log 2>&1
-          status=$?
-          cat cat-a02-matrix-publish.log
-          exit $status
-
-      - name: Upload CAT-A02 publication diagnostics
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: cat-a02-matrix-publication-diagnostics-${{ github.sha }}
-          path: cat-a02-matrix-publish.log
-          if-no-files-found: error
-          retention-days: 7
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm scripts/reconcile-cat-a02-domain-matrix.js
+          git add config/domain-completion-matrix.json
+          git add docs/DOMAIN-COMPLETION-MATRIX.md
+          git add -f reports/generated/domain-completion-matrix-report.json
+          git commit -m "Reconcile CAT-A02 domain matrix"
+          git push origin "HEAD:cat/cat-001-baseline-audit"
