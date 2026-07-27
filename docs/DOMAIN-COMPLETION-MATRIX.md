@@ -318,13 +318,14 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - CAT-A01 preserves the historical authority baseline and remains a cumulative regression gate.
 - CAT-A02 retires doke.services.local.v1: real and UUID subjects fail closed, while non-UUID fixtures remain runtime-only memory.
 - CAT-A03 routes approved-content edits through versioned review, routes pause/reactivate/archive through an owner-only self-service operation, and revokes generic browser writes to services.
+- CAT-A03 code candidate routes owner content edits through versioned review and pause, reactivate and archive through an explicit owner-only server operation; staging application remains pending.
 
 **Bloqueadores:**
-- **CAT-B03 · HIGH · lifecycle_cleanup:** Service-media replacement, superseded-object cleanup and abandoned-draft cleanup still need one server-owned lifecycle with retention and retry evidence. _(Fase 4)_
+- **CAT-B03 · HIGH · lifecycle_cleanup:** CAT-A03 code and permanent gates exist, but migration 149 and the self-service lifecycle allowlist still require controlled staging application and SQL validation. _(Fase 4)_
 - **CAT-B04 · MEDIUM · versioning:** Historical orders need immutable service snapshots across all creation paths. _(Fase 4)_
 
 **Próximas ações:**
-- Deploy and validate CAT-A03 lifecycle authority in staging before marking the sublot done.
+- Apply migration 149 and the self-service lifecycle allowlist to staging, then validate SQL contract 018 with rollback.
 - Close service-media replacement and abandoned-draft cleanup lifecycle.
 - Guarantee immutable service snapshot on every order creation path.
 
