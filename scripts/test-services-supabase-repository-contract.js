@@ -30,13 +30,13 @@ function assert(condition, message) {
   "REMOTE_MEDIA_TABLE = 'service_media'",
   'fetchRemoteServices',
   'saveRemote',
-  'synchronizePending',
-  "syncStatus: 'pending'",
+  "AUTHORITY = 'supabase-or-fixture-memory'",
+  'DOKE_SERVICE_AUTHORITY_UNAVAILABLE',
   "syncStatus: 'synced'",
   "upsert(payload, { onConflict: 'external_id' })"
 ].forEach((token) => assert(source.includes(token), `Repository missing remote contract: ${token}`));
 
-const storage = new Map();
+const storageAccess = { reads: 0, writes: 0, removes: 0 };
 const remoteRow = {
   id: 'd98dc31e-2677-45a3-a16f-17b777a7ca98',
   external_id: 'service_shared_001',
@@ -53,10 +53,6 @@ const remoteRow = {
   created_at: '2026-07-18T12:00:00.000Z',
   updated_at: '2026-07-18T12:00:00.000Z'
 };
-
-function resolved(value) {
-  return { then(resolve) { return Promise.resolve(value).then(resolve); } };
-}
 
 function createClient() {
   return {
@@ -105,13 +101,20 @@ const context = {
   String,
   Number,
   Math,
+  RegExp,
+  URL,
+  Blob,
+  Uint8Array,
   encodeURIComponent,
+  decodeURIComponent,
   window: null,
-  document: { documentElement: { setAttribute() {} } },
+  document: { documentElement: { setAttribute() {} }, addEventListener() {} },
   localStorage: {
-    getItem(key) { return storage.has(key) ? storage.get(key) : null; },
-    setItem(key, value) { storage.set(key, value); }
+    getItem() { storageAccess.reads += 1; throw new Error('localStorage must not be accessed by the service repository.'); },
+    setItem() { storageAccess.writes += 1; throw new Error('localStorage must not be accessed by the service repository.'); },
+    removeItem() { storageAccess.removes += 1; throw new Error('localStorage must not be accessed by the service repository.'); }
   },
+  sessionStorage: { getItem() { return null; }, setItem() {} },
   DOKE_SUPABASE_CONFIG: { enabled: true, url: 'https://example.supabase.co', anonKey: 'anon' },
   supabase: { createClient }
 };
@@ -137,7 +140,10 @@ vm.runInContext(source, context, { filename: repositoryPath });
     images: ['data:image/png;base64,AAA']
   });
   assert(saved.syncStatus === 'synced', 'Authenticated remote save must finish as synced.');
+  assert(repository.authority === 'supabase-or-fixture-memory', 'Repository must expose the retired authority contract.');
   assert(repository.getProviderStatus().provider === 'supabase', 'Supabase must be reported as active provider.');
+  assert(repository.getProviderStatus().fallbackActive === false, 'Repository must never report a browser fallback.');
+  assert(storageAccess.reads === 0 && storageAccess.writes === 0 && storageAccess.removes === 0, 'localStorage must not be accessed by the service repository.');
   console.log('PASS services Supabase repository contract');
 })().catch((error) => {
   console.error(error.stack || error.message || error);
