@@ -50,6 +50,10 @@ jobs:
           set -o pipefail
           npm run audit:agent-governance 2>&1 | tee reports/generated/frontend-agent-governance.log
 
+      - name: Generate deterministic domain matrix candidate
+        if: always()
+        run: npm run write:domain-completion-matrix
+
       - name: Upload structural gate evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -58,5 +62,7 @@ jobs:
           path: |
             reports/generated/frontend-structural-gates-report.json
             reports/generated/frontend-agent-governance.log
+            reports/generated/domain-completion-matrix-report.json
+            docs/DOMAIN-COMPLETION-MATRIX.md
           if-no-files-found: error
           retention-days: 14
