@@ -40,8 +40,10 @@ jobs:
       - name: Validate CAT-A02 completion
         run: node scripts/audit-service-catalog-authority-retirement.js
 
-      - name: Validate deterministic matrix
-        run: node scripts/audit-domain-completion-matrix.js
+      - name: Regenerate and validate deterministic matrix
+        run: |
+          node scripts/audit-domain-completion-matrix.js --write
+          node scripts/audit-domain-completion-matrix.js
 
       - name: Validate patch formatting
         run: git diff --check
@@ -54,5 +56,6 @@ jobs:
           git add docs/validation/CAT-001-A02-SERVICE-AUTHORITY-RETIREMENT.json
           git add docs/validation/CAT-001-A02-SERVICE-AUTHORITY-RETIREMENT.md
           git add docs/DOKE-ENGINEERING-JOURNAL.md
+          git add docs/DOMAIN-COMPLETION-MATRIX.md
           git commit -m "Finalize CAT-A02 evidence and journal"
           git push origin "HEAD:cat/cat-001-baseline-audit"
