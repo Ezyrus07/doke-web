@@ -2,7 +2,7 @@
 
 ## Status
 
-`STAGING VALIDATED — FINAL EVIDENCE PENDING`
+`DONE — STAGING VALIDATED`
 
 ## Objetivo
 
@@ -92,6 +92,22 @@ Projeto: `doke-web-staging` (`zwkczgewzbsorbrjuzpb`).
 
 Uma tentativa de probe HTTP pelo ambiente local não foi registrada como validação porque o host Supabase não pôde ser resolvido nesse ambiente. Nenhum sucesso foi inferido desse teste não executado.
 
+## Validação de fechamento pós-deployment
+
+Head: `87ecbcb4d7f0f030c96c50b246f4820dbd764354`
+
+- Doke Quality Gates #793: sucesso;
+- audit PROF-A01 cumulativo: sucesso;
+- audit PROF-A02 cumulativo: sucesso;
+- audit estrutural PROF-A03: sucesso;
+- runtime PROF-A03: sucesso;
+- matriz determinística: sucesso;
+- governança, assets, partição E2E e `git diff --check`: sucesso;
+- E2E bloqueante: sucesso;
+- 105 guards visuais: sucesso;
+- Doke Staging Edge HTTP Canary #566: sucesso após o deployment;
+- Doke Diagnostic E2E #586: sucesso.
+
 ## Validação permanente
 
 - audit estrutural PROF-A03;
@@ -120,8 +136,9 @@ Uma tentativa de probe HTTP pelo ambiente local não foi registrada como valida�
 - nenhuma conta real modificada;
 - nenhuma conta sintética persistente criada;
 - nenhum SMS, OAuth ou recurso pago habilitado;
+- nenhum workflow ou codemod temporário permanece;
 - PR #11 permanece aberto, draft e não mesclado.
 
-## Próxima condição de fechamento
+## Próximo sublote controlado
 
-Os commits de evidência e o deployment de staging devem passar pela rodada final de Quality, E2E bloqueante, 105 guards, Canary e Diagnostic antes de o PROF-A03 receber status `DONE`.
+`PROF-A04` deve retirar a autoridade local do rascunho KYC em `professional-identity-verifications-repository.js`, sem misturar a retirada das evidências binárias do IndexedDB.
