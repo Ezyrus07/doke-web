@@ -82,12 +82,16 @@ const visualTest = read(files.visualTest);
 [
   "const professionalProfileId = 'professional_profile_user_profissional_demo'",
   "const professionalUserId = 'user_profissional_demo'",
-  "provider: 'visual-test'"
+  "provider: 'visual-test'",
+  'preserveVisualProfessionalSession',
+  'Storage.prototype.removeItem = preserveVisualProfessionalSession',
+  'Storage.prototype.removeItem = nativeRemoveItem'
 ].forEach((marker) => assert(visualTest.includes(marker), `visual fixture boundary marker missing: ${marker}`));
 [
   "localStorage.setItem('doke.professionalProfiles.v1'",
-  "localStorage.setItem('doke.professionalApplications.v1'"
-].forEach((marker) => assert(!visualTest.includes(marker), `visual harness revived retired professional profile storage: ${marker}`));
+  "localStorage.setItem('doke.professionalApplications.v1'",
+  "localStorage.setItem('doke.professionalIdentityVerifications.v1'"
+].forEach((marker) => assert(!visualTest.includes(marker), `visual harness revived retired professional storage: ${marker}`));
 
 const baseline = JSON.parse(read(files.baselineEvidence));
 assert(baseline.domain === 'PROF-001' && baseline.sublot === 'PROF-A01', 'PROF-A01 evidence identity is invalid');
@@ -105,5 +109,6 @@ if (!process.exitCode) {
   console.log('[PROF-A02] browser-persistent professional profile authority is retired.');
   console.log('[PROF-A02] Supabase setup reads/writes are canonical; fixture compatibility is memory-only.');
   console.log('[PROF-A02] visual fixtures no longer seed retired professional profile storage.');
+  console.log('[PROF-A02] visual demo-session preservation is test-only and restores native Storage behavior.');
   console.log('[PROF-A02] active professional field edits fail closed pending a dedicated server operation.');
 }
