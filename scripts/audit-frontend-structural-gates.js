@@ -204,12 +204,15 @@ function auditManifestPurity() {
 
 function auditStorageOwnership() {
   const approvedPrefixes = config.storage?.approvedOwnerPrefixes || [];
+  const approvedFiles = new Set(config.storage?.approvedOwnerFiles || []);
+  const ignoredPrefixes = config.storage?.ignoredPrefixes || [];
   for (const file of jsFiles) {
+    if (ignoredPrefixes.some((prefix) => file.startsWith(prefix))) continue;
     const source = readText(file);
     const localCount = (source.match(/\blocalStorage\b/g) || []).length;
     const sessionCount = (source.match(/\bsessionStorage\b/g) || []).length;
     if (!localCount && !sessionCount) continue;
-    if (approvedPrefixes.some((prefix) => file.startsWith(prefix))) continue;
+    if (approvedFiles.has(file) || approvedPrefixes.some((prefix) => file.startsWith(prefix))) continue;
     findings.storageOwnership.push({
       fingerprint: fingerprint('storage-owner', [file]), file,
       localStorageReferences: localCount, sessionStorageReferences: sessionCount,
@@ -270,7 +273,7 @@ function auditBreakpointParity() {
     const source = readText(file);
     const values = new Set();
     for (const match of source.matchAll(/(?:max-width|min-width|maxWidth|minWidth)\s*[:=,(]\s*["'`]?\s*(\d{3,4})/g)) values.add(Number(match[1]));
-    for (const match of source.matchAll(/matchMedia\(\s+["'`][^"'`]*(?:max-width|min-width)\s*:\s*(\d{3,4})px/g)) values.add(Number(match[1]));
+    for (const match of source.matchAll(/matchMedia\(\s*["'`][^"'`]*(?:max-width|min-width)\s*:\s*(\d{3,4})px/g)) values.add(Number(match[1]));
     for (const match of source.matchAll(/(?:innerWidth|clientWidth)\s*(?:<=|>=|<|>)\s*(\d{3,4})/g)) values.add(Number(match[1]));
     for (const value of sortedUnique(Array.from(values))) {
       if (isKnownBreakpoint(file, value)) continue;
