@@ -23,7 +23,7 @@ on:
       - ".github/workflows/frontend-structural-gates.yml"
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   structural-gates:
@@ -32,8 +32,10 @@ jobs:
     timeout-minutes: 15
 
     steps:
-      - name: Checkout candidate tree
+      - name: Checkout candidate branch
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -46,13 +48,22 @@ jobs:
       - name: Run canonical token authority gate
         run: node scripts/audit-token-authority.js
 
-      - name: Generate deterministic domain matrix candidate
+      - name: Refresh deterministic domain matrix
+        run: npm run write:domain-completion-matrix
+
+      - name: Commit deterministic domain matrix
+        if: github.event_name == 'pull_request'
         shell: bash
         run: |
-          cp docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-current.md
-          npm run write:domain-completion-matrix
-          cp docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-candidate.md
-          diff -u reports/generated/domain-completion-matrix-current.md reports/generated/domain-completion-matrix-candidate.md > reports/generated/domain-completion-matrix.diff || true
+          if git diff --quiet -- docs/DOMAIN-COMPLETION-MATRIX.md; then
+            echo "Domain matrix is already current."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/DOMAIN-COMPLETION-MATRIX.md
+          git commit -m "FE-T01: refresh domain completion matrix"
+          git push origin HEAD:${GITHUB_HEAD_REF}
 
       - name: Upload structural gate reports
         if: always()
@@ -62,8 +73,5 @@ jobs:
           path: |
             reports/generated/frontend-structural-gates-report.json
             reports/generated/token-authority-report.json
-            reports/generated/domain-completion-matrix-current.md
-            reports/generated/domain-completion-matrix-candidate.md
-            reports/generated/domain-completion-matrix.diff
           if-no-files-found: error
           retention-days: 14
