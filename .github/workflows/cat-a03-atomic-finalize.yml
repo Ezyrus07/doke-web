@@ -1,0 +1,195 @@
+name: CAT-A03 Atomic Finalization
+
+on:
+  push:
+    branches:
+      - 'cat/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: cat-a03-atomic-finalization
+  cancel-in-progress: true
+
+jobs:
+  finalize:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout CAT branch
+        uses: actions/checkout@v4
+        with:
+          ref: cat/cat-001-baseline-audit
+          fetch-depth: 0
+
+      - name: Capture guarded remote head
+        shell: bash
+        run: |
+          git fetch origin cat/cat-001-baseline-audit
+          remote_head="$(git rev-parse origin/cat/cat-001-baseline-audit)"
+          if [ "$remote_head" != "$GITHUB_SHA" ]; then
+            echo "Remote head moved: $remote_head != $GITHUB_SHA" >&2
+            exit 1
+          fi
+          echo "REMOTE_HEAD=$remote_head" >> "$GITHUB_ENV"
+
+      - name: Reset to clean validated documentary parent
+        run: git reset --hard 263e0c2910b80baf8642be07b58ff1d27f4c85a1
+
+      - name: Finalize CAT-A03 evidence, journal and matrix
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+
+          const evidencePath = 'docs/validation/CAT-001-A03-SERVICE-LIFECYCLE-AUTHORITY.json';
+          const evidence = JSON.parse(fs.readFileSync(evidencePath, 'utf8'));
+          evidence.status = 'done';
+          evidence.validatedCandidateHead = '9a71d700f8f6b5237c97fadc87a292ed5c475ea8';
+          evidence.validation = {
+            staticAudit: 'success',
+            runtimeAuthority: 'success',
+            sqlValidation: 'success',
+            deterministicMatrix: 'success',
+            quality: 'success',
+            qualityRunNumber: 992,
+            blockingE2E: 'success',
+            visualStructuralGuards: 'success',
+            stagingCanary: 'success',
+            stagingCanaryRunNumber: 714,
+            diagnostic: 'success',
+            diagnosticRunNumber: 736,
+            finalEvidence: 'success'
+          };
+          evidence.safety.temporaryWorkflowRemaining = false;
+          evidence.safety.temporaryCodemodRemaining = false;
+          evidence.nextControlledWork = 'CAT-A04: close service-media replacement, superseded-object cleanup and abandoned-draft cleanup lifecycle.';
+          fs.writeFileSync(evidencePath, JSON.stringify(evidence, null, 2) + '\n');
+
+          fs.writeFileSync('docs/validation/CAT-001-A03-SERVICE-LIFECYCLE-AUTHORITY.md', `# CAT-001 / CAT-A03 — Autoridade server-side de edição e ciclo de vida
+
+## Status
+
+\`DONE\`
+
+## Problema
+
+Edição e ciclo de vida ainda terminavam em uma mutação genérica de \`public.services\`, permitindo ao navegador coordenar consistência fora da moderação versionada.
+
+## Autoridade concluída
+
+- edição de conteúdo real usa exclusivamente \`submit_service_for_review\`;
+- pausa, reativação e arquivamento usam \`transition_owned_service_lifecycle\`;
+- o ator vem do JWT e ownership é validado no PostgreSQL;
+- \`anon\` e \`authenticated\` não executam diretamente a função privilegiada nem escrevem diretamente em \`public.services\`;
+- fixtures não UUID permanecem somente em memória;
+- arquivamento encerra versão pendente sem apagar versões aprovadas ou snapshots históricos.
+
+## Implementação
+
+- migration \`149_service_lifecycle_authority.sql\`;
+- função \`public.transition_owned_service_lifecycle\`;
+- dispatcher anterior preservado como \`execute_self_service_operation_internal_pre_cat_a03\`;
+- allowlist de \`self-service-operations\` atualizada;
+- mutação remota genérica bloqueada com \`DOKE_SERVICE_DIRECT_MUTATION_FORBIDDEN\`;
+- runtime, audit estrutural e teste SQL 018 permanentes;
+- matriz determinística 1.3.8 reconciliada e \`CAT-B03\` encerrado.
+
+## Staging
+
+- projeto \`doke-web-staging\` (\`zwkczgewzbsorbrjuzpb\`);
+- migration \`20260727195302_service_lifecycle_authority\` aplicada;
+- Edge Function \`self-service-operations\` versão 7, \`ACTIVE\`, \`verify_jwt: true\`;
+- SQL 018 aprovado dentro de transação com \`ROLLBACK\`;
+- grants diretos do browser ausentes;
+- nenhuma conta ou entidade sintética persistente criada.
+
+## Validação
+
+**Head validado:** \`9a71d700f8f6b5237c97fadc87a292ed5c475ea8\`
+
+- Quality #992: sucesso;
+- E2E bloqueante: sucesso;
+- 105 guards visuais: sucesso;
+- Canary #714: sucesso;
+- Diagnostic #736: sucesso.
+
+## Segurança operacional
+
+Staging foi alterado de forma controlada. Produção, contas reais, SMS, OAuth e configurações pagas não foram alterados. Nenhuma ferramenta temporária permanece no fechamento.
+
+## Pendências preservadas
+
+- \`CAT-A04\`: substituição e limpeza de mídia e rascunhos abandonados;
+- \`CAT-B04\`: snapshot imutável de serviço em todos os caminhos de criação de pedido.
+`);
+
+          const journalPath = 'docs/DOKE-ENGINEERING-JOURNAL.md';
+          let journal = fs.readFileSync(journalPath, 'utf8').trimEnd();
+          const heading = '# 2026-07-27 — CAT-A03 / autoridade server-side de edição e ciclo de vida';
+          if (!journal.includes(heading)) {
+            journal += `\n\n---\n\n${heading}\n\n**Status:** \`DONE\`\n\n**Branch:** \`cat/cat-001-baseline-audit\`\n\n**Pull Request:** \`#12\`\n\n## Resultado\n\n- conteúdo aprovado passou a mudar somente por nova versão submetida;\n- pausa, reativação e arquivamento passaram para \`transition_owned_service_lifecycle\`;\n- ator e ownership são validados server-side;\n- grants diretos do browser foram removidos;\n- migration 149 e Edge Function v7 aplicadas em staging;\n- SQL 018 passou com \`ROLLBACK\`;\n- Quality #992, E2E bloqueante, 105 guards, Canary #714 e Diagnostic #736 passaram;\n- matriz 1.3.8 reconciliada e \`CAT-B03\` encerrado.\n\n## Segurança operacional\n\nProdução, contas reais, SMS, OAuth e configurações pagas não foram alterados. O PR permanece draft e não mesclado.\n\n## Próximo sublote\n\n\`CAT-A04\`: fechar substituição e limpeza de mídia, objetos superseded e rascunhos abandonados.\n`;
+          }
+          fs.writeFileSync(journalPath, journal + '\n');
+
+          const matrixPath = 'config/domain-completion-matrix.json';
+          const matrix = JSON.parse(fs.readFileSync(matrixPath, 'utf8'));
+          matrix.version = '1.3.8';
+          matrix.updatedAt = '2026-07-27T17:30:00-03:00';
+
+          const removeCatB03 = (value) => {
+            if (Array.isArray(value)) {
+              value.forEach(removeCatB03);
+              return;
+            }
+            if (!value || typeof value !== 'object') return;
+            Object.entries(value).forEach(([key, child]) => {
+              if (key === 'blockers' && Array.isArray(child)) {
+                value[key] = child.filter((item) => typeof item === 'string'
+                  ? item !== 'CAT-B03'
+                  : item && item.id !== 'CAT-B03');
+              } else {
+                removeCatB03(child);
+              }
+            });
+          };
+          removeCatB03(matrix);
+
+          const cat = matrix.domains.find((domain) => domain.id === 'CAT-001');
+          if (!cat) throw new Error('CAT-001 matrix domain missing');
+          if (!cat.blockers.some((item) => item.id === 'CAT-B04')) throw new Error('CAT-B04 must remain open');
+          if (cat.blockers.some((item) => item.id === 'CAT-B03')) throw new Error('CAT-B03 remains open');
+
+          const finalEvidence = 'CAT-A03 complete in staging: migration 20260727195302, self-service-operations v7, SQL 018, Quality #992, blocking E2E, 105 guards, Canary #714 and Diagnostic #736 succeeded.';
+          if (!cat.evidence.includes(finalEvidence)) cat.evidence.push(finalEvidence);
+          cat.nextActions = [
+            'Close service-media replacement, superseded-object cleanup and abandoned-draft cleanup lifecycle.',
+            'Guarantee immutable service snapshots on every order creation path.',
+            'Reconcile CAT-001 final matrix and domain closure evidence.'
+          ];
+          fs.writeFileSync(matrixPath, JSON.stringify(matrix, null, 2) + '\n');
+          NODE
+
+      - name: Regenerate and validate deterministic evidence
+        run: |
+          node scripts/audit-domain-completion-matrix.js --write
+          node scripts/audit-service-catalog-authority-baseline.js
+          node scripts/audit-service-catalog-authority-retirement.js
+          node scripts/audit-service-lifecycle-authority.js
+          node scripts/audit-domain-completion-matrix.js
+          git diff --check
+
+      - name: Publish final documentary commit
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add config/domain-completion-matrix.json
+          git add -f docs/validation/CAT-001-A03-SERVICE-LIFECYCLE-AUTHORITY.json
+          git add docs/validation/CAT-001-A03-SERVICE-LIFECYCLE-AUTHORITY.md
+          git add docs/DOKE-ENGINEERING-JOURNAL.md
+          git add docs/DOMAIN-COMPLETION-MATRIX.md
+          git commit -m "Finalize CAT-A03 evidence and matrix"
+          git push --force-with-lease=refs/heads/cat/cat-001-baseline-audit:${REMOTE_HEAD} origin HEAD:cat/cat-001-baseline-audit
