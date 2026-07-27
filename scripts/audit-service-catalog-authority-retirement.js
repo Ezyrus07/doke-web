@@ -23,6 +23,7 @@ const files = {
   detailContract: 'scripts/test-detail-ad-canonical-route-contract.js',
   evidenceJson: 'docs/validation/CAT-001-A02-SERVICE-AUTHORITY-RETIREMENT.json',
   evidenceMarkdown: 'docs/validation/CAT-001-A02-SERVICE-AUTHORITY-RETIREMENT.md',
+  journal: 'docs/DOKE-ENGINEERING-JOURNAL.md',
   quality: '.github/workflows/quality.yml'
 };
 
@@ -43,7 +44,7 @@ const repository = read(files.repository);
   "setProviderState('fixture-memory')",
   "throw createAuthorityUnavailableError('gravação', error)",
   "throw createAuthorityUnavailableError('leitura', error)",
-  "authority: AUTHORITY",
+  'authority: AUTHORITY',
   "provider: getSupabaseClient() ? 'supabase' : 'fixture-memory'",
   'fallbackActive: false'
 ].forEach((marker) => assert(repository.includes(marker), `retirement marker missing: ${marker}`));
@@ -81,7 +82,7 @@ const runtime = read(files.runtime);
 [
   'localStorage read is forbidden',
   'A fresh runtime must not recover fixture services.',
-  "DOKE_SERVICE_AUTHORITY_UNAVAILABLE",
+  'DOKE_SERVICE_AUTHORITY_UNAVAILABLE',
   'Configured remote catalog read must reject instead of returning a browser fallback.',
   "provider === 'fixture-memory'"
 ].forEach((marker) => assert(runtime.includes(marker), `runtime assertion missing: ${marker}`));
@@ -89,7 +90,7 @@ const runtime = read(files.runtime);
 const repositoryContract = read(files.repositoryContract);
 [
   "AUTHORITY = 'supabase-or-fixture-memory'",
-  "DOKE_SERVICE_AUTHORITY_UNAVAILABLE",
+  'DOKE_SERVICE_AUTHORITY_UNAVAILABLE',
   'Authenticated remote save must finish as synced.',
   'localStorage must not be accessed by the service repository.'
 ].forEach((marker) => assert(repositoryContract.includes(marker), `repository contract not reconciled: ${marker}`));
@@ -110,7 +111,7 @@ const baselineAudit = read(files.baselineAudit);
   'catA02Retired',
   "browserPersistentAuthority === 'retired'",
   "AUTHORITY = 'supabase-or-fixture-memory'",
-  "same(localAuthorityOwners, catA02Retired ? [] : [files.repository])"
+  'same(localAuthorityOwners, catA02Retired ? [] : [files.repository])'
 ].forEach((marker) => assert(baselineAudit.includes(marker), `CAT-A01 cumulative reconciliation missing: ${marker}`));
 
 const quality = read(files.quality);
@@ -164,6 +165,10 @@ if (evidence.status === 'done') {
   assert(evidence.safety.temporaryWorkflowRemaining === false, 'completed CAT-A02 cannot leave a temporary workflow');
   assert(evidence.safety.temporaryCodemodRemaining === false, 'completed CAT-A02 cannot leave a temporary codemod');
   assert(evidenceMarkdown.includes('DONE'), 'completed CAT-A02 human evidence must be marked DONE');
+  assert(
+    read(files.journal).includes('# 2026-07-27 — CAT-A02 / retirada da autoridade persistente de serviços'),
+    'completed CAT-A02 evidence requires the engineering journal entry'
+  );
 }
 
 if (!process.exitCode) {
