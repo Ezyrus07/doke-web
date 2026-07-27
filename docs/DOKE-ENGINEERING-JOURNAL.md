@@ -389,3 +389,78 @@ O serviço de verificação profissional já utilizava o Supabase para leitura, 
 - `PROF-B03-KYC-EVIDENCE`: retirar a autoridade IndexedDB de evidências binárias;
 - `PROF-B04`: política legal, retenção, recurso e provedor KYC;
 - `PROF-B05`: aposentadoria das políticas legadas administradas pelo Supabase Storage.
+
+---
+
+# 2026-07-27 — PROF-B03-KYC-EVIDENCE / retirada da autoridade IndexedDB
+
+**Status:** `DONE`
+
+**Branch:** `prof/prof-001-baseline-audit`
+
+**Pull Request:** `#11`
+
+## Problema
+
+O fluxo real já enviava evidências KYC para o bucket privado `professional-verification-media` por intents assinados, mas `professional-verification-evidence-repository.js` ainda persistia blobs em IndexedDB no banco `doke-professional-verification-evidence-v1`. Essa persistência sobrevivia entre sessões e mantinha uma autoridade binária paralela no navegador.
+
+## Decisão
+
+- Supabase Storage permanece a única autoridade real de evidências binárias;
+- `prepare_uploads`, `uploadToSignedUrl` e `submit_professional_identity_verification_internal` preservam a fronteira canônica;
+- sessões Supabase e sujeitos UUID falham fechado no repositório fixture;
+- fixtures não UUID preservam blobs somente em memória durante o runtime atual;
+- nenhuma cópia, recuperação ou máscara local é permitida para evidência real.
+
+## Implementação
+
+- removidos IndexedDB, object store e o banco `doke-professional-verification-evidence-v1`;
+- criado `Map` volátil para compatibilidade fixture;
+- preservadas as superfícies `save`, `getByVerificationId` e `remove`;
+- criado erro `DOKE_PROFESSIONAL_VERIFICATION_EVIDENCE_AUTHORITY_UNAVAILABLE`;
+- criado runtime permanente PROF-B03;
+- criado audit estrutural PROF-B03;
+- adicionados gates PROF-B03 ao Quality canônico;
+- audits cumulativos PROF-A01 e PROF-A02 foram reconciliados;
+- matriz determinística passou a classificar PROF-001 como `remote/canonical`;
+- blocker `PROF-B03` foi retirado de PROF-001 e FLOW-03;
+- o reconciliador temporário da matriz se removeu no próprio commit.
+
+## Validação
+
+**Head validado:** `5098b8f689086143ecaae0a2d807e04d13357ca3`
+
+- audit cumulativo PROF-A01: sucesso;
+- audit e runtime PROF-A02: sucesso;
+- audit e runtime PROF-A03: sucesso;
+- audit e runtime PROF-A04: sucesso;
+- audit e runtime PROF-B03: sucesso;
+- matriz determinística: sucesso;
+- Doke Quality Gates #855: sucesso;
+- E2E bloqueante: sucesso;
+- 105 guards visuais: sucesso;
+- Doke Staging Edge HTTP Canary #628: sucesso;
+- Doke Diagnostic E2E #648: sucesso.
+
+## Supabase
+
+- nenhuma migration necessária ou aplicada;
+- nenhuma Edge Function implantada;
+- staging não alterado;
+- produção não alterada;
+- autoridade remota já existente foi preservada sem mudança operacional.
+
+## Segurança operacional
+
+- nenhuma conta real modificada;
+- nenhuma conta sintética persistente criada;
+- nenhum SMS, OAuth ou recurso pago habilitado;
+- nenhuma autoridade local aposentada foi reaberta;
+- nenhuma ferramenta temporária permanece após o commit documental;
+- PR permanece draft, aberto e não mesclado.
+
+## Pendências preservadas
+
+- `PROF-B04`: definir política legal KYC, retenção, rejeição, recurso e provedor;
+- `PROF-B05`: retirar políticas legadas owner-prefix pelo mecanismo gerenciado do Supabase Storage;
+- produção permanece bloqueada.
