@@ -24,16 +24,19 @@ const files = {
   profileService: 'assets/js/services/professional-profile-setup-service.js',
   verificationService: 'assets/js/services/professional-identity-verification-service.js',
   evidenceMarkdown: 'docs/validation/PROF-001-A01-AUTHORITY-BASELINE.md',
-  evidenceJson: 'docs/validation/PROF-001-A01-AUTHORITY-BASELINE.json'
+  evidenceJson: 'docs/validation/PROF-001-A01-AUTHORITY-BASELINE.json',
+  a02EvidenceJson: 'docs/validation/PROF-001-A02-PROFILE-AUTHORITY-RETIREMENT.json'
 };
 
-Object.values(files).forEach((file) => assert(exists(file), `required file missing: ${file}`));
+Object.entries(files).forEach(([key, file]) => {
+  if (key !== 'a02EvidenceJson') assert(exists(file), `required file missing: ${file}`);
+});
 
 const matrix = JSON.parse(read(files.matrix));
 const prof = (matrix.domains || []).find((domain) => domain.id === 'PROF-001');
 assert(Boolean(prof), 'PROF-001 is missing from the domain completion matrix');
-assert(prof && prof.userFacingAuthority === 'hybrid', 'PROF-001 user-facing authority must remain explicitly hybrid during PROF-A01');
-assert(prof && prof.serverAuthority === 'partial', 'PROF-001 server authority must remain explicitly partial during PROF-A01');
+assert(prof && prof.userFacingAuthority === 'hybrid', 'PROF-001 user-facing authority must remain hybrid while PROF-B03 is open');
+assert(prof && prof.serverAuthority === 'partial', 'PROF-001 server authority must remain partial while PROF-B03 is open');
 assert(prof && prof.productionGate === 'blocked', 'PROF-001 production gate must remain blocked');
 assert(
   same((prof && prof.blockers || []).map((blocker) => blocker.id).sort(), ['PROF-B03', 'PROF-B04', 'PROF-B05']),
@@ -55,7 +58,7 @@ assert(!profileService.includes('indexedDB'), 'active professional profile setup
 const verificationService = read(files.verificationService);
 [
   "String(session.provider || '').toLowerCase() === 'supabase'",
-  "save_professional_verification_draft",
+  'save_professional_verification_draft',
   "remoteVerificationOperation('submit'",
   "remoteVerificationOperation('list'",
   "remoteVerificationOperation('detail'",
@@ -65,12 +68,41 @@ const verificationService = read(files.verificationService);
   "from('professional_identity_verifications')"
 ].forEach((marker) => assert(verificationService.includes(marker), `remote professional verification authority marker missing: ${marker}`));
 
-const localAuthorities = [
-  {
-    file: files.profileRepository,
-    storage: ['localStorage', 'doke.professionalProfiles.v1'],
-    mutations: ['saveDraft', 'completeSetup', 'updateActiveProfile', 'setVerificationStatus', 'transition']
-  },
+const a02Started = exists(files.a02EvidenceJson);
+const profileRepository = read(files.profileRepository);
+if (a02Started) {
+  const a02 = JSON.parse(read(files.a02EvidenceJson));
+  assert(a02.domain === 'PROF-001' && a02.sublot === 'PROF-A02', 'PROF-A02 evidence identity is invalid');
+  assert(
+    ['implementation_in_progress', 'validation_pending', 'done'].includes(a02.status),
+    'PROF-A02 evidence status is invalid'
+  );
+  [
+    "authority: 'supabase-or-fixture-memory'",
+    "invokeSelfService('save_professional_profile_setup'",
+    "from('professional_profiles')",
+    'DOKE_PROFESSIONAL_PROFILE_EDIT_AUTHORITY_UNAVAILABLE'
+  ].forEach((marker) => assert(profileRepository.includes(marker), `PROF-A02 profile repository marker missing: ${marker}`));
+  [
+    'localStorage',
+    'sessionStorage',
+    'indexedDB',
+    'doke.professionalProfiles.v1',
+    'doke.professionalApplications.v1'
+  ].forEach((marker) => assert(!profileRepository.includes(marker), `PROF-A02 retired profile marker remains: ${marker}`));
+} else {
+  ['localStorage', 'doke.professionalProfiles.v1'].forEach((marker) => {
+    assert(profileRepository.includes(marker), `profile baseline storage marker missing before PROF-A02: ${marker}`);
+  });
+  ['saveDraft', 'completeSetup', 'updateActiveProfile', 'setVerificationStatus', 'transition'].forEach((marker) => {
+    assert(
+      profileRepository.includes(`${marker}: ${marker}`) || profileRepository.includes(`function ${marker}(`),
+      `profile repository mutation surface changed before PROF-A02: ${marker}`
+    );
+  });
+}
+
+const residualLocalAuthorities = [
   {
     file: files.verificationRepository,
     storage: ['localStorage', 'sessionStorage', 'doke.professionalIdentityVerifications.v1', 'doke.professionalIdentityVerificationDrafts.v1'],
@@ -83,10 +115,13 @@ const localAuthorities = [
   }
 ];
 
-for (const authority of localAuthorities) {
+for (const authority of residualLocalAuthorities) {
   const source = read(authority.file);
-  authority.storage.forEach((marker) => assert(source.includes(marker), `${authority.file} no longer matches frozen storage marker ${marker}; reconcile PROF-A01 before proceeding`));
-  authority.mutations.forEach((marker) => assert(source.includes(`${marker}: ${marker}`) || source.includes(`function ${marker}(`), `${authority.file} mutation surface changed: ${marker}`));
+  authority.storage.forEach((marker) => assert(source.includes(marker), `${authority.file} no longer matches frozen storage marker ${marker}; reconcile the next PROF sublot`));
+  authority.mutations.forEach((marker) => assert(
+    source.includes(`${marker}: ${marker}`) || source.includes(`function ${marker}(`),
+    `${authority.file} mutation surface changed without a controlled sublot: ${marker}`
+  ));
 }
 
 function walk(dir) {
@@ -140,7 +175,7 @@ for (const [scriptName, expected] of Object.entries(expectedLoads)) {
 }
 
 const storageKeyOwners = {
-  'doke.professionalProfiles.v1': [files.profileRepository],
+  'doke.professionalProfiles.v1': a02Started ? [] : [files.profileRepository],
   'doke.professionalIdentityVerifications.v1': [files.verificationRepository],
   'doke.professionalIdentityVerificationDrafts.v1': [files.verificationRepository],
   'doke-professional-verification-evidence-v1': [files.evidenceRepository]
@@ -148,18 +183,18 @@ const storageKeyOwners = {
 const assetScripts = walk('assets/js').filter((file) => file.endsWith('.js'));
 for (const [storageKey, expectedOwners] of Object.entries(storageKeyOwners)) {
   const actualOwners = assetScripts.filter((file) => read(file).includes(storageKey)).sort();
-  assert(same(actualOwners, expectedOwners.slice().sort()), `${storageKey} authority escaped its frozen owner: ${JSON.stringify(actualOwners)}`);
+  assert(same(actualOwners, expectedOwners.slice().sort()), `${storageKey} authority escaped its controlled owner: ${JSON.stringify(actualOwners)}`);
 }
 
 const evidence = JSON.parse(read(files.evidenceJson));
 assert(evidence.domain === 'PROF-001' && evidence.sublot === 'PROF-A01', 'PROF-A01 JSON evidence identity is invalid');
-assert(evidence.status === 'baseline_frozen', 'PROF-A01 evidence must remain baseline_frozen until the next controlled sublot');
+assert(evidence.status === 'baseline_frozen', 'PROF-A01 evidence must remain baseline_frozen');
+assert(evidence.validationStatus === 'done', 'PROF-A01 validation must remain done');
 assert(evidence.productionChanged === false, 'PROF-A01 evidence cannot claim a production change');
 assert(evidence.stagingChanged === false, 'PROF-A01 evidence cannot claim a staging change');
 
 if (!process.exitCode) {
-  console.log('[PROF-A01] professional authority baseline is frozen.');
-  console.log(`[PROF-A01] local authorities: ${localAuthorities.map((item) => item.file).join(', ')}`);
-  console.log(`[PROF-A01] active script-loading surfaces: ${Object.values(expectedLoads).reduce((sum, pages) => sum + pages.length, 0)}`);
-  console.log('[PROF-A01] next controlled target: retire PROF-B03 browser-local profile/KYC persistence without weakening remote Supabase authority.');
+  console.log('[PROF-A01] professional authority baseline remains traceable.');
+  console.log(`[PROF-A01] profile browser persistence retired: ${a02Started ? 'yes' : 'no'}`);
+  console.log('[PROF-A01] residual local targets: KYC draft and binary evidence repositories.');
 }
