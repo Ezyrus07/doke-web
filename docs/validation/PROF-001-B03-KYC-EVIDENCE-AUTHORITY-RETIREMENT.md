@@ -2,7 +2,7 @@
 
 ## Status
 
-`VALIDATION PENDING`
+`DONE`
 
 ## Objetivo
 
@@ -67,7 +67,7 @@ Staging e produção permanecem inalterados neste sublote.
 
 ## Runtime permanente
 
-O runtime dedicado deve comprovar:
+O runtime dedicado comprovou:
 
 1. sessões Supabase rejeitam todas as operações do repositório local;
 2. IDs UUID não podem ser persistidos mesmo em provider fixture;
@@ -77,17 +77,33 @@ O runtime dedicado deve comprovar:
 
 ## Matriz de domínio
 
-Ao concluir o sublote:
+Após a conclusão do sublote:
 
-- `PROF-B03` deixa de ser blocker ativo;
-- a UI profissional pode ser classificada como `remote`;
-- a autoridade server-side pode ser classificada como `canonical`;
+- `PROF-B03` deixou de ser blocker ativo;
+- a UI profissional está classificada como `remote`;
+- a autoridade server-side está classificada como `canonical`;
 - permanecem somente `PROF-B04` e `PROF-B05`;
 - produção continua bloqueada.
 
 Modo de validação: `canonical_MAIN_stack_validation_then_restore_stacked_base`.
 
-Um reconciliador controlado e autocontido foi adicionado apenas para atualizar atomicamente `PROF-001`, regenerar a matriz Markdown pelo gerador canônico e remover o próprio workflow no mesmo commit. A validação não poderá avançar enquanto esse arquivo temporário permanecer na branch.
+O reconciliador controlado da matriz atualizou atomicamente `PROF-001`, regenerou a matriz Markdown pelo gerador canônico e removeu o próprio workflow no mesmo commit.
+
+## Evidência de validação
+
+**Candidate head validado:** `5098b8f689086143ecaae0a2d807e04d13357ca3`
+
+- audit cumulativo PROF-A01: sucesso;
+- audit e runtime PROF-A02: sucesso;
+- audit e runtime PROF-A03: sucesso;
+- audit e runtime PROF-A04: sucesso;
+- audit e runtime PROF-B03: sucesso;
+- matriz determinística: sucesso;
+- Doke Quality Gates #855: sucesso;
+- E2E bloqueante: sucesso;
+- 105 guards visuais: sucesso;
+- Doke Staging Edge HTTP Canary #628: sucesso;
+- Doke Diagnostic E2E #648: sucesso.
 
 ## Segurança operacional
 
@@ -98,4 +114,11 @@ Um reconciliador controlado e autocontido foi adicionado apenas para atualizar a
 - nenhuma conta real modificada;
 - nenhuma conta sintética persistente criada;
 - nenhum SMS, OAuth ou recurso pago habilitado;
+- nenhuma autoridade local aposentada foi reaberta;
 - PR #11 permanece aberto, draft e não mesclado.
+
+## Pendências preservadas
+
+- `PROF-B04`: política legal KYC, retenção, rejeição, recurso e provedor;
+- `PROF-B05`: retirada das políticas legadas owner-prefix pelo mecanismo gerenciado do Supabase Storage;
+- produção permanece bloqueada.
