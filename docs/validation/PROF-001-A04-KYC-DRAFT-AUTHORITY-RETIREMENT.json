@@ -1,0 +1,79 @@
+{
+  "domain": "PROF-001",
+  "sublot": "PROF-A04",
+  "status": "implementation_in_progress",
+  "objective": "Retire browser-persistent KYC record and draft authority while preserving Supabase-owned reads, draft saves and submissions and fixture-only in-memory compatibility.",
+  "branch": "prof/prof-001-baseline-audit",
+  "baseHead": "6de6083ee4d012ca0567d7cb9bd461fa1869e9a4",
+  "previousValidatedHead": "e1edba5ec671dc8e8a4e937241e43c158befe871",
+  "implementationHead": "e3bf6544bc9def641fde42e65592fd8d3017184b",
+  "authority": {
+    "supabaseRead": "public.professional_identity_verifications",
+    "supabaseDraftWrite": "self-service-operations/save_professional_verification_draft",
+    "supabaseSubmission": "professional-verification-operations/submit",
+    "browserPersistentRecordAuthority": "retired",
+    "browserPersistentDraftAuthority": "retired",
+    "fixtureCompatibility": "memory_only",
+    "remoteFailureMode": "fail_closed"
+  },
+  "retired": {
+    "storageKeys": [
+      "doke.professionalIdentityVerifications.v1",
+      "doke.professionalIdentityVerificationDrafts.v1"
+    ],
+    "storageApis": [
+      "localStorage",
+      "sessionStorage"
+    ]
+  },
+  "preserved": {
+    "fixtureFunctions": [
+      "list",
+      "getById",
+      "getByUserId",
+      "saveDraft",
+      "submit",
+      "transition"
+    ],
+    "fixturePersistence": "memory_only"
+  },
+  "remainingBlockers": [
+    {
+      "id": "PROF-B03-KYC-EVIDENCE",
+      "status": "active",
+      "reason": "professional-verification-evidence-repository.js still owns IndexedDB binary evidence and is intentionally outside PROF-A04."
+    },
+    {
+      "id": "PROF-B04",
+      "status": "blocked_external",
+      "reason": "Final KYC rules, retention, appeals and legal verification provider remain unapproved."
+    },
+    {
+      "id": "PROF-B05",
+      "status": "blocked_managed_storage",
+      "reason": "Legacy owner-prefix Storage policies still require managed Supabase Storage authority for retirement."
+    }
+  ],
+  "validation": {
+    "staticAudit": "pending",
+    "runtimeRetirement": "pending",
+    "quality": "pending",
+    "blockingE2E": "pending",
+    "visualStructuralGuards": "pending",
+    "stagingCanary": "pending",
+    "diagnostic": "pending"
+  },
+  "safety": {
+    "migrationApplied": false,
+    "edgeFunctionDeployed": false,
+    "stagingChanged": false,
+    "productionChanged": false,
+    "realAccountChanged": false,
+    "persistentSyntheticAccountCreated": false,
+    "smsEnabled": false,
+    "oauthEnabled": false,
+    "paidConfigurationEnabled": false,
+    "prMerged": false
+  },
+  "nextControlledSublot": "Retire IndexedDB binary-evidence authority only after PROF-A04 is fully validated."
+}
