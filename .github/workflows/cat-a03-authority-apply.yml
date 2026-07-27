@@ -33,9 +33,14 @@ jobs:
           const fs = require('fs');
           const file = 'scripts/audit-service-catalog-authority-retirement.js';
           let source = fs.readFileSync(file, 'utf8');
-          const retired = "  'Authenticated remote save must finish as synced.',\n";
-          if (!source.includes(retired)) throw new Error('CAT-A02 historical remote-save marker not found');
-          source = source.replace(retired, "  'DOKE_SERVICE_DIRECT_MUTATION_FORBIDDEN',\n");
+          const replacements = [
+            ["  'Authenticated remote save must finish as synced.',\n", "  'DOKE_SERVICE_DIRECT_MUTATION_FORBIDDEN',\n"],
+            ["  \"throw createAuthorityUnavailableError('gravação', error)\",\n", "  \"createDirectMutationForbiddenError('gravação direta')\",\n"]
+          ];
+          replacements.forEach(([retired, current]) => {
+            if (!source.includes(retired)) throw new Error('CAT-A02 historical marker not found: ' + retired.trim());
+            source = source.replace(retired, current);
+          });
           fs.writeFileSync(file, source);
           NODE
 
