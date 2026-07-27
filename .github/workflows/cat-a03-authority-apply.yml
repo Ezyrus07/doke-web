@@ -56,19 +56,7 @@ jobs:
           NODE
 
       - name: Validate cumulative CAT-A02 authority
-        run: |
-          mkdir -p reports/generated
-          set -o pipefail
-          node scripts/audit-service-catalog-authority-retirement.js 2>&1 | tee reports/generated/cat-a02-cumulative-audit.log
-
-      - name: Upload CAT-A02 audit diagnostic
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: cat-a02-cumulative-audit-${{ github.sha }}
-          path: reports/generated/cat-a02-cumulative-audit.log
-          if-no-files-found: error
-          retention-days: 7
+        run: node scripts/audit-service-catalog-authority-retirement.js
 
       - name: Validate CAT-A03 structural authority
         run: node scripts/audit-service-lifecycle-authority.js
@@ -80,7 +68,19 @@ jobs:
         run: node scripts/test-services-supabase-repository-contract.js
 
       - name: Validate service-order integration
-        run: node scripts/test-service-order-integration-contract.js
+        run: |
+          mkdir -p reports/generated
+          set -o pipefail
+          node scripts/test-service-order-integration-contract.js 2>&1 | tee reports/generated/cat-a03-service-order-integration.log
+
+      - name: Upload CAT-A03 integration diagnostic
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cat-a03-service-order-integration-${{ github.sha }}
+          path: reports/generated/cat-a03-service-order-integration.log
+          if-no-files-found: error
+          retention-days: 7
 
       - name: Validate patch formatting
         run: git diff --check
