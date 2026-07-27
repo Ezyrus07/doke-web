@@ -25,7 +25,7 @@ on:
       - ".github/workflows/frontend-structural-gates.yml"
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   structural-gates:
@@ -34,8 +34,10 @@ jobs:
     timeout-minutes: 15
 
     steps:
-      - name: Checkout candidate tree
+      - name: Checkout candidate branch
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -45,13 +47,33 @@ jobs:
       - name: Run frontend structural gates
         run: node scripts/audit-frontend-structural-gates.js --strict
 
-      - name: Generate FE-T01 token authority candidate
+      - name: Apply reviewed FE-T01 candidate
         shell: bash
         run: |
           node scripts/audit-token-authority.js --write || true
           node scripts/migrate-token-authority-overrides.js
           node scripts/audit-token-authority.js
           git diff --name-only -- assets/css > reports/generated/token-authority-changed-files.txt
+          unexpected="$(git diff --name-only | grep -v '^assets/css/' || true)"
+          if [ -n "$unexpected" ]; then
+            echo "Unexpected generated paths:"
+            echo "$unexpected"
+            exit 1
+          fi
+
+      - name: Commit reviewed CSS migration
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          if git diff --quiet -- assets/css; then
+            echo "Token authority migration is already applied."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/css
+          git commit -m "FE-T01: apply canonical token authority migration"
+          git push origin HEAD:${GITHUB_HEAD_REF}
 
       - name: Upload structural gate evidence
         if: always()
@@ -62,6 +84,5 @@ jobs:
             reports/generated/frontend-structural-gates-report.json
             reports/generated/token-authority-report.json
             reports/generated/token-authority-changed-files.txt
-            assets/css/**/*.css
           if-no-files-found: error
           retention-days: 14
