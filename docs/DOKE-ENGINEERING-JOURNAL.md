@@ -144,3 +144,83 @@ A matriz machine-readable ainda classificava autenticação como mock/híbrida e
 - `AUTH-EXT-MAIL-001`;
 - `AUTH-EXT-SMS-001`;
 - `AUTH-EXT-PAID-001`.
+
+---
+
+# 2026-07-27 — PROF-A02 / retirada da persistência local do perfil profissional
+
+**Status:** `DONE`
+
+**Branch:** `prof/prof-001-baseline-audit`
+
+**Pull Request:** `#11`
+
+## Problema
+
+O setup profissional já possuía autoridade Supabase, mas `professional-profiles-repository.js` continuava gravando rascunhos, conclusão, edição ativa e transições no navegador. Páginas Supabase ativas podiam observar ou produzir um perfil diferente do estado canônico do servidor.
+
+## Decisão
+
+- `public.professional_profiles` é a autoridade de leitura para sujeitos Supabase;
+- `save_professional_profile_setup` é a autoridade de rascunho e conclusão;
+- fixtures não UUID permanecem somente em memória;
+- edição ativa e transições sem operação server-side falham fechado;
+- nenhuma funcionalidade local insegura é mantida apenas para preservar aparência de funcionamento.
+
+## Implementação
+
+- removidas as chaves `doke.professionalProfiles.v1` e `doke.professionalApplications.v1` do repositório ativo;
+- removidos acessos a `localStorage`, `sessionStorage` e IndexedDB da autoridade de perfil profissional;
+- leituras remotas passam por `professional_profiles`;
+- rascunho e conclusão passam por `save_professional_profile_setup`;
+- sujeito da mutação deve coincidir com a sessão atual;
+- edição ativa retorna `DOKE_PROFESSIONAL_PROFILE_EDIT_AUTHORITY_UNAVAILABLE`;
+- transições retornam `DOKE_PROFESSIONAL_PROFILE_SERVER_TRANSITION_REQUIRED`;
+- criado runtime permanente PROF-A02;
+- criados audit e evidências permanentes;
+- adicionados gates PROF-A02 ao Quality canônico;
+- matriz determinística sincronizada.
+
+## Regressão visual encontrada
+
+O harness visual ainda dependia das chaves profissionais aposentadas. Após remover o seed local, `anunciar-servico.html` foi redirecionado primeiro para onboarding e depois para login porque o prepaint guard remove corretamente sessões com IDs demo.
+
+A correção permaneceu restrita ao teste:
+
+- nenhuma chave de perfil ou verificação profissional voltou ao storage;
+- o harness preserva temporariamente apenas a sessão fixture durante o prepaint;
+- `Storage.prototype.removeItem` é restaurado no `DOMContentLoaded`;
+- o audit falha se o teste reintroduzir as chaves aposentadas ou deixar de restaurar o comportamento nativo.
+
+## Validação
+
+**Head validado:** `35d8773e0f4c8b60949de64e0883299acba12704`
+
+- Doke Quality Gates #754: sucesso;
+- audit PROF-A01 cumulativo: sucesso;
+- audit PROF-A02: sucesso;
+- runtime PROF-A02: sucesso;
+- matriz determinística: sucesso;
+- governança, assets, partição E2E e `git diff --check`: sucesso;
+- E2E bloqueante: sucesso;
+- 105 guards visuais: sucesso;
+- Doke Staging Edge HTTP Canary #527: sucesso;
+- Doke Diagnostic E2E #547: sucesso.
+
+## Segurança operacional
+
+- nenhuma migration aplicada;
+- nenhuma Edge Function implantada;
+- nenhuma alteração de staging ou produção;
+- nenhuma conta real ou sintética persistente modificada;
+- nenhum SMS, OAuth ou recurso pago habilitado;
+- nenhum workflow ou codemod temporário permanece;
+- PR permanece draft, aberto e não mesclado.
+
+## Pendências preservadas
+
+- `PROF-A03`: operação server-side reconciliada para edição ativa;
+- rascunho KYC ainda local em `professional-identity-verifications-repository.js`;
+- evidências binárias ainda no IndexedDB;
+- `PROF-B04`: política legal e retenção;
+- `PROF-B05`: políticas legadas administradas pelo Supabase Storage.
