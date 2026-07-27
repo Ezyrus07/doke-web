@@ -1,0 +1,71 @@
+{
+  "domain": "PROF-001",
+  "sublot": "PROF-A03",
+  "status": "implementation_in_progress",
+  "objective": "Replace split browser-orchestrated active professional profile edits with one atomic server-side operation that reconciles the base identity and professional payload.",
+  "baseHead": "f67186da35264faa726ad2858a9a8ec092bf668b",
+  "branch": "prof/prof-001-baseline-audit",
+  "implementationHead": "pending",
+  "authority": {
+    "operation": "self-service-operations/update_professional_profile_reconciled",
+    "databaseFunction": "public.update_professional_profile_reconciled",
+    "dispatcher": "public.execute_self_service_operation_internal",
+    "baseProfileMutation": "public.update_account_profile",
+    "professionalProfileMutation": "public.professional_profiles",
+    "browserDirectDatabaseGrant": "denied",
+    "transactionBoundary": "single_postgres_transaction",
+    "response": "canonical_profile_and_professional_profile_snapshot"
+  },
+  "retired": {
+    "splitMutations": [
+      "professionalProfiles.updateActiveProfile",
+      "profile.updateCurrentProfile",
+      "browser rollback of professional payload"
+    ],
+    "localFallback": false
+  },
+  "validation": {
+    "staticAudit": "pending",
+    "runtimeReconciliation": "pending",
+    "sqlValidation": "pending_staging_migration",
+    "quality": "pending",
+    "blockingE2E": "pending",
+    "visualStructuralGuards": "pending",
+    "stagingCanary": "pending",
+    "diagnostic": "pending"
+  },
+  "remainingBlockers": [
+    {
+      "id": "PROF-B03-KYC-DRAFT",
+      "status": "active",
+      "reason": "professional-identity-verifications-repository.js still owns localStorage/sessionStorage draft state."
+    },
+    {
+      "id": "PROF-B03-KYC-EVIDENCE",
+      "status": "active",
+      "reason": "professional-verification-evidence-repository.js still owns IndexedDB binary evidence."
+    },
+    {
+      "id": "PROF-B04",
+      "status": "blocked_external",
+      "reason": "Final KYC rules, retention and legal verification provider are not approved."
+    },
+    {
+      "id": "PROF-B05",
+      "status": "blocked_managed_storage",
+      "reason": "Legacy owner-prefix Storage policies require managed Supabase Storage policy authority for removal."
+    }
+  ],
+  "safety": {
+    "migrationApplied": false,
+    "edgeFunctionDeployed": false,
+    "stagingChanged": false,
+    "productionChanged": false,
+    "realAccountChanged": false,
+    "persistentSyntheticAccountCreated": false,
+    "temporaryWorkflowRemaining": false,
+    "temporaryCodemodRemaining": false,
+    "prMerged": false
+  },
+  "nextControlledSublot": "After staging validation, PROF-A04 must retire browser-local KYC draft authority without mixing binary-evidence storage changes."
+}
