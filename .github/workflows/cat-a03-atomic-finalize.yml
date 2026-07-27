@@ -1,6 +1,8 @@
 name: CAT-A03 Atomic Finalization
 
 on:
+  pull_request:
+    branches: [MAIN]
   push:
     branches:
       - 'cat/**'
@@ -10,7 +12,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: cat-a03-atomic-finalization-v3
+  group: cat-a03-atomic-finalization-v4
   cancel-in-progress: true
 
 jobs:
@@ -27,11 +29,13 @@ jobs:
 
       - name: Verify guarded remote head
         shell: bash
+        env:
+          EXPECTED_HEAD: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
         run: |
           git fetch origin cat/cat-001-baseline-audit
           remote_head="$(git rev-parse origin/cat/cat-001-baseline-audit)"
-          if [ "$remote_head" != "$GITHUB_SHA" ]; then
-            echo "Remote head moved: $remote_head != $GITHUB_SHA" >&2
+          if [ "$remote_head" != "$EXPECTED_HEAD" ]; then
+            echo "Remote head moved: $remote_head != $EXPECTED_HEAD" >&2
             exit 1
           fi
 
@@ -132,7 +136,8 @@ Staging foi alterado de forma controlada. Produção, contas reais, SMS, OAuth e
           let journal = fs.readFileSync(journalPath, 'utf8').trimEnd();
           const heading = '# 2026-07-27 — CAT-A03 / autoridade server-side de edição e ciclo de vida';
           if (!journal.includes(heading)) {
-            journal += `\n\n---\n\n${heading}\n\n**Status:** \`DONE\`\n\n**Branch:** \`cat/cat-001-baseline-audit\`\n\n**Pull Request:** \`#12\`\n\n## Resultado\n\n- conteúdo aprovado passou a mudar somente por nova versão submetida;\n- pausa, reativação e arquivamento passaram para \`transition_owned_service_lifecycle\`;\n- ator e ownership são validados server-side;\n- grants diretos do browser foram removidos;\n- migration 149 e Edge Function v7 aplicadas em staging;\n- SQL 018 passou com \`ROLLBACK\`;\n- Quality #992, E2E bloqueante, 105 guards, Canary #714 e Diagnostic #736 passaram;\n- matriz 1.3.8 reconciliada e \`CAT-B03\` encerrado.\n\n## Segurança operacional\n\nProdução, contas reais, SMS, OAuth e configurações pagas não foram alterados. O PR permanece draft e não mesclado.\n\n## Próximo sublote\n\n\`CAT-A04\`: fechar substituição e limpeza de mídia, objetos superseded e rascunhos abandonados.\n`;
+            journal += `\n\n---\n\n${heading}\n\n**Status:** \`DONE\`\n\n**Branch:** \`cat/cat-001-baseline-audit\`\n\n**Pull Request:** \`#12\`\n\n## Resultado\n\n- conteúdo aprovado passou a mudar somente por nova versão submetida;\n- pausa, reativação e arquivamento passaram para \`transition_owned_service_lifecycle\`;\n- ator e ownership são validados server-side;\n- grants diretos do browser foram removidos;\n- migration 149 e Edge Function v7 aplicadas em staging;\n- SQL 018 passou com \`ROLLBACK\`;
+- Quality #992, E2E bloqueante, 105 guards, Canary #714 e Diagnostic #736 passaram;\n- matriz 1.3.8 reconciliada e \`CAT-B03\` encerrado.\n\n## Segurança operacional\n\nProdução, contas reais, SMS, OAuth e configurações pagas não foram alterados. O PR permanece draft e não mesclado.\n\n## Próximo sublote\n\n\`CAT-A04\`: fechar substituição e limpeza de mídia, objetos superseded e rascunhos abandonados.\n`;
           }
           fs.writeFileSync(journalPath, journal + '\n');
 
