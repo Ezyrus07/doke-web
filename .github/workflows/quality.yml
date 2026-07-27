@@ -9,6 +9,7 @@ on:
       - main
       - master
       - 'prof/**'
+      - 'cat/**'
   workflow_dispatch:
 
 permissions:
@@ -139,6 +140,9 @@ jobs:
 
       - name: Test PROF-B03 KYC evidence authority retirement runtime
         run: node scripts/test-professional-verification-evidence-authority-retirement-runtime.js
+
+      - name: Audit CAT-A01 service catalog authority baseline
+        run: node scripts/audit-service-catalog-authority-baseline.js
 
       - name: Audit desktop shell contracts
         run: npm run audit:desktop-shell
