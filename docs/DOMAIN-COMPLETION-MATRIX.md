@@ -54,7 +54,7 @@ RLS habilitado, mas sem policy: .
 | 1 | GOV-001 | Governança, arquitetura e comando central | 4/6 | hybrid | canonical | staging operational | partial | candidate |
 | 2 | SEC-001 | Segurança, RLS, grants e autoridade dos dados | 4/6 | hybrid | canonical | staging operational | partial | blocked |
 | 3 | AUTH-001 | Autenticação, sessão e identidade | 4/6 | remote | canonical | staging operational | partial | blocked |
-| 4 | PROF-001 | Perfis, onboarding profissional e KYC | 4/6 | hybrid | partial | staging canary | blocked | blocked |
+| 4 | PROF-001 | Perfis, onboarding profissional e KYC | 4/6 | remote | canonical | staging operational | blocked | blocked |
 | 5 | CAT-001 | Catálogo, publicação e moderação de serviços | 4/6 | hybrid | canonical | staging operational | partial | blocked |
 | 6 | SEARCH-001 | Busca, descoberta, favoritos e ranking | 2/6 | hybrid | contract only | local e2e | blocked | blocked |
 | 7 | ORD-001 | Orçamentos, propostas e ciclo de pedidos | 4/6 | hybrid | canonical | staging operational | partial | blocked |
@@ -103,7 +103,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 | --- | --- | --- | --- | --- | --- |
 | FLOW-01 | Descoberta pública | hybrid | SEARCH-001 | home → search → results → service_detail | SEARCH-B02 |
 | FLOW-02 | Cadastro, login e onboarding | staging canary | AUTH-001 | register → verify_contact → session → profile_materialization → onboarding |  |
-| FLOW-03 | Tornar-se profissional e KYC | staging canary | PROF-001 | profile_setup → document_upload → submit → admin_review → decision → role_activation | PROF-B03, PROF-B04 |
+| FLOW-03 | Tornar-se profissional e KYC | staging operational | PROF-001 | profile_setup → document_upload → submit → admin_review → decision → role_activation | PROF-B04, PROF-B05 |
 | FLOW-04 | Publicar serviço | hybrid | CAT-001 | draft → media → quote_template → submit_review → moderation → publish → edit_version | CAT-B03 |
 | FLOW-05 | Solicitar orçamento e criar pedido | staging operational | ORD-001 | service_snapshot → questionnaire → request → outbox_event → professional_notification | ORD-B01, ORD-B02 |
 | FLOW-06 | Aceite, proposta e agenda | hybrid | ORD-001 | accept → proposal → client_approval → schedule_hold → confirmation | SCHED-B02, SCHED-B03, ORD-B04 |
@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 881 arquivos no escopo; 190 referências a localStorage; 52 a sessionStorage; 530 referências mock; 127 referências de rede/Supabase; 30 marcadores de implementação pendente.
+**Evidência estática observada:** 883 arquivos no escopo; 190 referências a localStorage; 52 a sessionStorage; 530 referências mock; 127 referências de rede/Supabase; 30 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -259,9 +259,9 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Objetivo:** Materialize trustworthy client and professional profiles, verification evidence and role transitions.
 
-**Estado:** maturidade 4/6; UI hybrid; servidor partial; staging staging canary; segurança blocked; produção blocked.
+**Estado:** maturidade 4/6; UI remote; servidor canonical; staging staging operational; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 19 arquivos no escopo; 1 referências a localStorage; 0 a sessionStorage; 1 referências mock; 27 referências de rede/Supabase; 1 marcadores de implementação pendente.
+**Evidência estática observada:** 19 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 0 referências mock; 27 referências de rede/Supabase; 1 marcadores de implementação pendente.
 
 **Páginas:** `meu-perfil.html`, `perfil.html`, `perfil-cliente.html`, `perfil-profissional.html`, `tornar-profissional.html`, `verificacao-profissional.html`, `admin-verificacao.html`.
 
@@ -270,26 +270,23 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 **Edge Functions:** `professional-verification-operations`.
 
 **Evidências:**
-- Professional verification and admin decision contracts exist.
-- Private verification media bucket exists.
-- Draft repositories still use localStorage/sessionStorage and IndexedDB evidence.
-- KYC RPCs are no longer executable by anon; client attempts against admin list/decision operations are denied by server role checks.
-- Professional KYC draft, submission, review, rejection, reopening and approval are server-authoritative in staging.
+- Professional profile setup, active edits, KYC records, drafts and binary evidence are server-authoritative for Supabase sessions.
+- Browser-persistent professional profile, KYC record, KYC draft and IndexedDB evidence authorities are retired; non-UUID fixtures are memory-only.
+- KYC RPCs are not executable by anon; applicant and reviewer operations pass through authenticated server boundaries.
+- Professional KYC draft, signed-intent upload, submission, review, rejection, reopening and approval are operational in staging.
 - Binary evidence uses database-generated locked upload intents, signed upload tokens and one-time server-side consumption.
 - Reviewer operations require an independently authenticated admin/moderator Edge Function context.
 - Role promotion is atomic, idempotent and synchronized through public.users to app_metadata.
-- Client operational metrics and public reputation are now separated into private client_profiles and aggregate-only client_profile_public_summaries authorities.
-- Client, professional and admin personas cannot use role metadata to obtain cross-account client metric access; service-owned updates keep the public summary synchronized.
+- Client operational metrics and public reputation remain separated into private and aggregate-only authorities.
 
 **Bloqueadores:**
-- **PROF-B03 · HIGH · authority_split:** Draft, evidence and active profile state remain split between local browser storage and Supabase. _(Fase 3)_
 - **PROF-B04 · HIGH · external_policy:** Final KYC rules, document retention and legal verification provider are not approved. _(Fase 2)_
 - **PROF-B05 · HIGH · storage_policy:** Legacy owner-prefix Storage write policies remain because storage.objects is owned by the managed supabase_storage_admin role; the new signed-intent submission flow no longer trusts them. _(Fase 1)_
 
 **Próximas ações:**
 - Remove legacy owner-prefix KYC Storage policies through the managed Storage policy authority and add upload cleanup/retention.
-- Replace remaining localStorage/sessionStorage and IndexedDB profile/KYC draft authority with remote cross-device state.
-- Define KYC policy, retention, rejection and appeal rules.
+- Define final KYC policy, document retention, rejection, appeal and legal verification provider rules.
+- Keep PROF-A02, PROF-A03, PROF-A04 and PROF-B03 retirement gates cumulative while resolving external blockers.
 
 **Gate de saída:**
 - A professional can complete, submit, be reviewed and receive a decision across devices.
@@ -851,7 +848,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI hybrid; servidor partial; staging local e2e; segurança partial; produção blocked.
 
-**Evidência estática observada:** 841 arquivos no escopo; 240 referências a localStorage; 71 a sessionStorage; 226 referências mock; 249 referências de rede/Supabase; 9 marcadores de implementação pendente.
+**Evidência estática observada:** 841 arquivos no escopo; 239 referências a localStorage; 71 a sessionStorage; 225 referências mock; 249 referências de rede/Supabase; 9 marcadores de implementação pendente.
 
 **Páginas:** `index.html`, `resultados.html`, `detalhe-anuncio.html`, `pedidos.html`, `mensagens.html`, `notificacoes.html`, `carteira.html`, `perfil.html`, `comunidade.html`.
 
@@ -882,7 +879,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2083 arquivos no escopo; 460 referências a localStorage; 128 a sessionStorage; 841 referências mock; 499 referências de rede/Supabase; 84 marcadores de implementação pendente.
+**Evidência estática observada:** 2085 arquivos no escopo; 457 referências a localStorage; 126 a sessionStorage; 840 referências mock; 499 referências de rede/Supabase; 84 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
@@ -943,4 +940,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-07-26T20:10:00-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-07-27T11:20:00-03:00._

@@ -1,6 +1,6 @@
 {
-  "version": "1.3.3",
-  "updatedAt": "2026-07-26T20:10:00-03:00",
+  "version": "1.3.4",
+  "updatedAt": "2026-07-27T11:20:00-03:00",
   "title": "Doke Domain Completion Matrix",
   "purpose": "Single source of truth for domain maturity, data authority, staging evidence, blockers, dependencies and mandatory completion order.",
   "maturityScale": {
@@ -485,9 +485,9 @@
       "wave": "A",
       "priority": 4,
       "maturity": 4,
-      "userFacingAuthority": "hybrid",
-      "serverAuthority": "partial",
-      "stagingEvidence": "staging_canary",
+      "userFacingAuthority": "remote",
+      "serverAuthority": "canonical",
+      "stagingEvidence": "staging_operational",
       "securityGate": "blocked",
       "productionGate": "blocked",
       "objective": "Materialize trustworthy client and professional profiles, verification evidence and role transitions.",
@@ -520,7 +520,15 @@
         "supabase/tests/008_client_profile_authority_validation.sql",
         "scripts/test-client-profile-authority-contract.js",
         "scripts/test-client-profile-authority-runtime.js",
-        "docs/SECURITY-CLIENT-PROFILE-AUTHORITY.md"
+        "docs/SECURITY-CLIENT-PROFILE-AUTHORITY.md",
+        "assets/js/repositories/professional-verification-evidence-repository.js",
+        "scripts/audit-professional-authority-baseline.js",
+        "scripts/audit-professional-verification-draft-authority-retirement.js",
+        "scripts/test-professional-verification-draft-authority-retirement-runtime.js",
+        "scripts/audit-professional-verification-evidence-authority-retirement.js",
+        "scripts/test-professional-verification-evidence-authority-retirement-runtime.js",
+        "docs/validation/PROF-001-A04-KYC-DRAFT-AUTHORITY-RETIREMENT.json",
+        "docs/validation/PROF-001-B03-KYC-EVIDENCE-AUTHORITY-RETIREMENT.json"
       ],
       "scanRoots": [
         "assets/js/pages/profile",
@@ -551,25 +559,16 @@
         "test:client-profile-authority-runtime"
       ],
       "evidence": [
-        "Professional verification and admin decision contracts exist.",
-        "Private verification media bucket exists.",
-        "Draft repositories still use localStorage/sessionStorage and IndexedDB evidence.",
-        "KYC RPCs are no longer executable by anon; client attempts against admin list/decision operations are denied by server role checks.",
-        "Professional KYC draft, submission, review, rejection, reopening and approval are server-authoritative in staging.",
+        "Professional profile setup, active edits, KYC records, drafts and binary evidence are server-authoritative for Supabase sessions.",
+        "Browser-persistent professional profile, KYC record, KYC draft and IndexedDB evidence authorities are retired; non-UUID fixtures are memory-only.",
+        "KYC RPCs are not executable by anon; applicant and reviewer operations pass through authenticated server boundaries.",
+        "Professional KYC draft, signed-intent upload, submission, review, rejection, reopening and approval are operational in staging.",
         "Binary evidence uses database-generated locked upload intents, signed upload tokens and one-time server-side consumption.",
         "Reviewer operations require an independently authenticated admin/moderator Edge Function context.",
         "Role promotion is atomic, idempotent and synchronized through public.users to app_metadata.",
-        "Client operational metrics and public reputation are now separated into private client_profiles and aggregate-only client_profile_public_summaries authorities.",
-        "Client, professional and admin personas cannot use role metadata to obtain cross-account client metric access; service-owned updates keep the public summary synchronized."
+        "Client operational metrics and public reputation remain separated into private and aggregate-only authorities."
       ],
       "blockers": [
-        {
-          "id": "PROF-B03",
-          "severity": "high",
-          "category": "authority_split",
-          "description": "Draft, evidence and active profile state remain split between local browser storage and Supabase.",
-          "targetPhase": "Fase 3"
-        },
         {
           "id": "PROF-B04",
           "severity": "high",
@@ -587,8 +586,8 @@
       ],
       "nextActions": [
         "Remove legacy owner-prefix KYC Storage policies through the managed Storage policy authority and add upload cleanup/retention.",
-        "Replace remaining localStorage/sessionStorage and IndexedDB profile/KYC draft authority with remote cross-device state.",
-        "Define KYC policy, retention, rejection and appeal rules."
+        "Define final KYC policy, document retention, rejection, appeal and legal verification provider rules.",
+        "Keep PROF-A02, PROF-A03, PROF-A04 and PROF-B03 retirement gates cumulative while resolving external blockers."
       ],
       "exitCriteria": [
         "A professional can complete, submit, be reviewed and receive a decision across devices.",
@@ -2357,11 +2356,11 @@
         "decision",
         "role_activation"
       ],
-      "status": "staging_canary",
+      "status": "staging_operational",
       "owner": "PROF-001",
       "blockers": [
-        "PROF-B03",
-        "PROF-B04"
+        "PROF-B04",
+        "PROF-B05"
       ]
     },
     {
