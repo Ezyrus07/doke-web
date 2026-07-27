@@ -9,12 +9,12 @@ permissions:
   contents: write
 
 concurrency:
-  group: cat-a03-quality-finalizer-v2
+  group: cat-a03-quality-finalizer-v3
   cancel-in-progress: true
 
 jobs:
   static-audits:
-    name: Finalize CAT-A03 documentary closure
+    name: Publish CAT-A03 documentary closure
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -34,13 +34,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Restore canonical machinery
+      - name: Restore canonical matrix generator
         shell: bash
         run: |
           set -euo pipefail
-          git show 9a71d700f8f6b5237c97fadc87a292ed5c475ea8:.github/workflows/quality.yml > .github/workflows/quality.yml
           git show 9a71d700f8f6b5237c97fadc87a292ed5c475ea8:scripts/audit-domain-completion-matrix.js > scripts/audit-domain-completion-matrix.js
-          rm -f .github/workflows/cat-a03-atomic-finalize.yml
 
       - name: Finalize evidence, journal and matrix
         run: |
@@ -106,7 +104,7 @@ jobs:
             '',
             '## Segurança operacional',
             '',
-            'Produção, contas reais, SMS, OAuth e configurações pagas não foram alterados. Nenhuma ferramenta temporária permanece.',
+            'Produção, contas reais, SMS, OAuth e configurações pagas não foram alterados. Nenhuma ferramenta temporária permanece no fechamento.',
             '',
             '## Pendências preservadas',
             '',
@@ -121,32 +119,19 @@ jobs:
           const heading = '# 2026-07-27 — CAT-A03 / autoridade server-side de edição e ciclo de vida';
           if (!journal.includes(heading)) {
             const journalLines = [
-              '',
-              '',
-              '---',
-              '',
-              heading,
-              '',
-              '**Status:** `DONE`',
-              '',
-              '**Branch:** `cat/cat-001-baseline-audit`',
-              '',
-              '**Pull Request:** `#12`',
-              '',
-              '## Resultado',
-              '',
+              '', '', '---', '', heading, '',
+              '**Status:** `DONE`', '',
+              '**Branch:** `cat/cat-001-baseline-audit`', '',
+              '**Pull Request:** `#12`', '',
+              '## Resultado', '',
               '- conteúdo aprovado passou a mudar somente por nova versão submetida;',
               '- pausa, reativação e arquivamento passaram para `transition_owned_service_lifecycle`;',
               '- migration 149 e Edge Function v7 foram aplicadas em staging;',
               '- SQL 018, Quality #992, E2E bloqueante, 105 guards, Canary #714 e Diagnostic #736 passaram;',
-              '- matriz 1.3.8 reconciliada e `CAT-B03` encerrado.',
-              '',
-              '## Segurança operacional',
-              '',
-              'Produção, contas reais, SMS, OAuth e configurações pagas não foram alterados. O PR permanece draft e não mesclado.',
-              '',
-              '## Próximo sublote',
-              '',
+              '- matriz 1.3.8 reconciliada e `CAT-B03` encerrado.', '',
+              '## Segurança operacional', '',
+              'Produção, contas reais, SMS, OAuth e configurações pagas não foram alterados. O PR permanece draft e não mesclado.', '',
+              '## Próximo sublote', '',
               '`CAT-A04`: fechar substituição e limpeza de mídia, objetos superseded e rascunhos abandonados.'
             ];
             journal += journalLines.join('\n');
@@ -156,7 +141,7 @@ jobs:
           const matrixPath = 'config/domain-completion-matrix.json';
           const matrix = JSON.parse(fs.readFileSync(matrixPath, 'utf8'));
           matrix.version = '1.3.8';
-          matrix.updatedAt = '2026-07-27T19:00:00-03:00';
+          matrix.updatedAt = '2026-07-27T19:15:00-03:00';
           const removeClosed = (value) => {
             if (Array.isArray(value)) {
               value.forEach(removeClosed);
@@ -197,12 +182,12 @@ jobs:
           node scripts/audit-domain-completion-matrix.js
           git diff --check
 
-      - name: Publish final documentary commit
+      - name: Publish documentary files
         shell: bash
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -A -- .github/workflows/quality.yml .github/workflows/cat-a03-atomic-finalize.yml scripts/audit-domain-completion-matrix.js config/domain-completion-matrix.json docs/validation/CAT-001-A03-SERVICE-LIFECYCLE-AUTHORITY.json docs/validation/CAT-001-A03-SERVICE-LIFECYCLE-AUTHORITY.md docs/DOKE-ENGINEERING-JOURNAL.md docs/DOMAIN-COMPLETION-MATRIX.md
+          git add -A -- scripts/audit-domain-completion-matrix.js config/domain-completion-matrix.json docs/validation/CAT-001-A03-SERVICE-LIFECYCLE-AUTHORITY.json docs/validation/CAT-001-A03-SERVICE-LIFECYCLE-AUTHORITY.md docs/DOKE-ENGINEERING-JOURNAL.md docs/DOMAIN-COMPLETION-MATRIX.md
           git commit -m 'Finalize CAT-A03 evidence and matrix'
           git push origin HEAD:cat/cat-001-baseline-audit
