@@ -316,3 +316,69 @@ Projeto `doke-web-staging` (`zwkczgewzbsorbrjuzpb`):
 - retirar evidências binárias KYC do IndexedDB em sublote separado;
 - `PROF-B04`: política legal e retenção;
 - `PROF-B05`: políticas legadas administradas pelo Supabase Storage.
+
+---
+
+# 2026-07-27 — PROF-A04 / retirada da autoridade local de registros e rascunhos KYC
+
+**Status:** `IN PROGRESS — VALIDATION PENDING`
+
+**Branch:** `prof/prof-001-baseline-audit`
+
+**Pull Request:** `#11`
+
+## Problema
+
+O serviço de verificação profissional já utilizava o Supabase para leitura, rascunho e submissão de sujeitos reais, mas `professional-identity-verifications-repository.js` ainda persistia registros em `localStorage` e rascunhos em `sessionStorage`. Essa segunda autoridade podia divergir do estado canônico do servidor.
+
+## Decisão
+
+- `public.professional_identity_verifications` permanece a autoridade de leitura para sessões Supabase;
+- `save_professional_verification_draft` permanece a autoridade de rascunho;
+- `professional-verification-operations/submit` permanece a autoridade de submissão;
+- sujeitos Supabase ou UUID falham fechado no repositório fixture;
+- fixtures não UUID preservam somente estado volátil em memória;
+- a retirada das evidências binárias IndexedDB permanece separada em `PROF-B03-KYC-EVIDENCE`.
+
+## Implementação
+
+- aposentadas as chaves `doke.professionalIdentityVerifications.v1` e `doke.professionalIdentityVerificationDrafts.v1`;
+- removidos acessos do repositório a `localStorage`, `sessionStorage` e IndexedDB;
+- registros, rascunhos e locks de fixture passaram para `Map` em memória;
+- criado runtime permanente PROF-A04;
+- criado audit estrutural PROF-A04;
+- adicionados gates PROF-A04 ao Quality canônico;
+- criadas evidências JSON e Markdown;
+- audit cumulativo PROF-A01 evoluído para reconhecer a retirada controlada sem apagar o baseline histórico.
+
+## Validação em andamento
+
+**Primeiro candidato:** `537bd970d7a313f30243a98c0073d869f610e42f`
+
+- Doke Staging Edge HTTP Canary #587: sucesso;
+- Doke Quality Gates #814: falhou no audit cumulativo PROF-A01 porque o contrato ainda exigia as chaves aposentadas;
+- a falha foi diagnosticada como contrato cumulativo desatualizado, não como reabertura de autoridade local;
+- correção publicada em `839a11ad3214696952ecbcded911577d7b26348f`;
+- novo ciclo canônico ainda pendente.
+
+## Supabase
+
+- nenhuma migration necessária;
+- nenhuma Edge Function implantada;
+- staging não alterado;
+- produção não alterada.
+
+## Segurança operacional
+
+- nenhuma conta real modificada;
+- nenhuma conta sintética persistente criada;
+- nenhum SMS, OAuth ou recurso pago habilitado;
+- nenhum fallback local reaberto;
+- PR permanece draft, aberto e não mesclado.
+
+## Pendências preservadas
+
+- concluir Quality, E2E bloqueante, 105 guards, Canary e Diagnostic no mesmo head;
+- sincronizar a matriz determinística caso exista drift;
+- restaurar o PR para a base `auth/auth-001-baseline-audit` após a validação;
+- manter `PROF-B03-KYC-EVIDENCE`, `PROF-B04` e `PROF-B05` explícitos.
