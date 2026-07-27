@@ -1,0 +1,51 @@
+name: Doke Frontend Structural Gates
+
+on:
+  pull_request:
+    paths:
+      - "*.html"
+      - "assets/css/**"
+      - "assets/js/**"
+      - "scripts/audit-frontend-structural-gates.js"
+      - "config/frontend-structural-gates.json"
+      - ".github/workflows/frontend-structural-gates.yml"
+  push:
+    branches:
+      - MAIN
+    paths:
+      - "*.html"
+      - "assets/css/**"
+      - "assets/js/**"
+      - "scripts/audit-frontend-structural-gates.js"
+      - "config/frontend-structural-gates.json"
+      - ".github/workflows/frontend-structural-gates.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  structural-gates:
+    name: Baseline-aware frontend architecture
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout candidate tree
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Run frontend structural gates
+        run: node scripts/audit-frontend-structural-gates.js --strict
+
+      - name: Upload structural gate report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-structural-gates-${{ github.sha }}
+          path: reports/generated/frontend-structural-gates-report.json
+          if-no-files-found: error
+          retention-days: 14
