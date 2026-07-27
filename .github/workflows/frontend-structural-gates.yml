@@ -7,6 +7,7 @@ on:
       - "assets/css/**"
       - "assets/js/**"
       - "scripts/audit-frontend-structural-gates.js"
+      - "scripts/audit-token-authority.js"
       - "config/frontend-structural-gates.json"
       - ".github/workflows/frontend-structural-gates.yml"
   push:
@@ -17,6 +18,7 @@ on:
       - "assets/css/**"
       - "assets/js/**"
       - "scripts/audit-frontend-structural-gates.js"
+      - "scripts/audit-token-authority.js"
       - "config/frontend-structural-gates.json"
       - ".github/workflows/frontend-structural-gates.yml"
 
@@ -27,7 +29,7 @@ jobs:
   structural-gates:
     name: Baseline-aware frontend architecture
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 15
 
     steps:
       - name: Checkout candidate tree
@@ -41,11 +43,24 @@ jobs:
       - name: Run frontend structural gates
         run: node scripts/audit-frontend-structural-gates.js --strict
 
-      - name: Upload structural gate report
+      - name: Generate FE-T01 token authority candidate
+        run: node scripts/audit-token-authority.js --write
+
+      - name: Validate generated token authority
+        run: node scripts/audit-token-authority.js
+
+      - name: Upload structural gate evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: frontend-structural-gates-${{ github.sha }}
-          path: reports/generated/frontend-structural-gates-report.json
+          path: |
+            reports/generated/frontend-structural-gates-report.json
+            reports/generated/token-authority-report.json
+            assets/css/core/tokens.css
+            assets/css/components/shell/app-shell.css
+            assets/css/components/buttons.css
+            assets/css/components/ui-surface/tokens.css
+            assets/css/**/*.css
           if-no-files-found: error
           retention-days: 14
