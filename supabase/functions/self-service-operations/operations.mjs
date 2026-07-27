@@ -14,6 +14,7 @@ export const ALLOWED_ACTIONS = Object.freeze(new Set([
   'reopen_own_professional_identity_verification',
   'list_service_moderation_history',
   'submit_service_for_review',
+  'transition_owned_service_lifecycle',
   'save_wallet_bank_account',
   'request_wallet_withdrawal',
   'open_wallet_dispute',

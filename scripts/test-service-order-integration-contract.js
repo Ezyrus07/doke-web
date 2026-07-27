@@ -134,33 +134,34 @@ context.supabase = { createClient: () => fakeSupabaseClient };
 context.DokeSupabase = {
   getClient: () => fakeSupabaseClient,
   invokeSelfService: (operation, args = {}) => {
-    assert(operation === 'submit_service_for_review', 'Somente o dispatcher de revisão pode publicar serviços neste contrato.');
+    if (operation === 'transition_owned_service_lifecycle') {
+      const row = remoteRows.get(String(args.p_service_ref || ''));
+      assert(row, 'Lifecycle operation requires an existing service.');
+      if (args.p_action === 'pause') row.status = 'paused';
+      else if (args.p_action === 'reactivate') row.status = 'published';
+      else if (args.p_action === 'archive') { row.status = 'archived'; row.pending_version_id = null; }
+      else throw new Error('Unexpected lifecycle action: ' + args.p_action);
+      row.updated_at = new Date().toISOString();
+      return Promise.resolve({ serviceId: row.id, externalId: row.external_id, publicStatus: row.status, moderationStatus: row.moderation_status, action: args.p_action, changed: true });
+    }
+    assert(operation === 'submit_service_for_review', 'Unexpected self-service operation: ' + operation);
     const snapshot = args.p_snapshot || {};
     const existing = remoteRows.get(String(args.p_external_id || ''));
     const publicStatus = existing ? (existing.status || 'published') : 'draft';
-    const row = {
-      id: remoteServiceId,
-      external_id: String(args.p_external_id || snapshot.id || ''),
-      professional_id: currentUser.id,
-      title: snapshot.title,
-      status: publicStatus,
-      moderation_status: existing ? 'changes_pending_review' : 'pending_review',
-      metadata: snapshot,
-      service_media: (snapshot.images || []).map((url, index) => ({ url, sort_order: index }))
-    };
-    remoteRows.set(row.external_id, row);
+    if (!existing) {
+      remoteRows.set(String(args.p_external_id || snapshot.id || ''), {
+        id: remoteServiceId, external_id: String(args.p_external_id || snapshot.id || ''), professional_id: currentUser.id,
+        title: snapshot.title, status: 'draft', moderation_status: 'pending_review', approved_version_id: null,
+        pending_version_id: '55555555-5555-4555-8555-555555555555', metadata: snapshot,
+        service_media: (snapshot.images || []).map((url, index) => ({ url, sort_order: index }))
+      });
+    }
     return Promise.resolve({
-      serviceId: remoteServiceId,
-      externalId: row.external_id,
-      versionId: '55555555-5555-4555-8555-555555555555',
-      versionNumber: existing ? 2 : 1,
-      moderationStatus: existing ? 'changes_pending_review' : 'pending_review',
-      publicStatus,
-      submittedAt: new Date().toISOString(),
-      changeClass: args.p_change_class || 'critical',
-      visibilityAction: 'keep_public',
-      riskFlags: [],
-      classificationReasons: []
+      serviceId: remoteServiceId, externalId: String(args.p_external_id || snapshot.id || ''),
+      versionId: '55555555-5555-4555-8555-555555555555', versionNumber: existing ? 2 : 1,
+      moderationStatus: existing ? 'changes_pending_review' : 'pending_review', publicStatus,
+      submittedAt: new Date().toISOString(), changeClass: args.p_change_class || 'critical',
+      visibilityAction: 'keep_public', riskFlags: [], classificationReasons: []
     });
   }
 };
@@ -236,12 +237,14 @@ async function main() {
   assert(submittedService.moderationStatus === 'pending_review', 'Serviço novo deve registrar revisão pendente.');
   assert(submittedService.ownerId === currentUser.id && submittedService.professionalProfileId === 'profile_profissional_demo', 'Serviço deve preservar proprietário e perfil profissional.');
 
-  const service = await Doke.repositories.services.save(Object.assign({}, submittedService, {
-    status: 'active',
-    moderationStatus: 'published',
-    approvedVersionId: '66666666-6666-4666-8666-666666666666',
-    pendingVersionId: ''
-  }));
+  const approvedRow = remoteRows.get(submittedService.id);
+  approvedRow.status = 'published';
+  approvedRow.moderation_status = 'published';
+  approvedRow.approved_version_id = '66666666-6666-4666-8666-666666666666';
+  approvedRow.pending_version_id = null;
+  approvedRow.updated_at = new Date().toISOString();
+  Doke.repositories.services.clearCache();
+  const service = await Doke.services.services.getById(submittedService.id);
   assert(service.status === 'active', 'Após aprovação, o serviço deve entrar no catálogo como ativo.');
 
   const publicServices = await Doke.services.services.list({ fresh: true });
@@ -312,13 +315,15 @@ async function main() {
   );
 
   setUser({ id: '11111111-1111-4111-8111-111111111111', name: 'Profissional Doke', role: 'professional', initials: 'PD' });
-  await Doke.services.services.updateOwned(service.id, {
+  const editedCandidate = await Doke.services.services.updateOwned(service.id, {
     title: 'Montagem de móveis atualizada',
     priceLabel: 'R$ 220',
     availabilitySchedule: [{ day: 'friday', label: 'Sexta', start: '09:00', end: '17:00' }]
   });
+  assert(editedCandidate.title === 'Montagem de móveis atualizada', 'Edição deve produzir o candidato versionado.');
+  assert(editedCandidate.moderationStatus === 'changes_pending_review', 'Edição aprovada deve entrar em análise sem substituir a versão pública.');
   const editedService = await Doke.services.services.getById(service.id);
-  assert(editedService.title === 'Montagem de móveis atualizada', 'Edição deve atualizar o anúncio.');
+  assert(editedService.title === service.title, 'Versão pública aprovada deve permanecer imutável durante a análise.');
 
   setUser({ id: '22222222-2222-4222-8222-222222222222', name: 'Cliente Doke', role: 'client', initials: 'CD' });
   const immutableOrder = await Doke.services.orders.getById(order.id);

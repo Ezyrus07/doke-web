@@ -116,6 +116,12 @@
     return error;
   }
 
+  function createDirectMutationForbiddenError(context) {
+    var error = new Error('Mutação direta do catálogo bloqueada em ' + context + '. Use a operação server-side correspondente.');
+    error.code = 'DOKE_SERVICE_DIRECT_MUTATION_FORBIDDEN';
+    return error;
+  }
+
   function isRemoteSubject(service, user) {
     service = service || {};
     return [
@@ -508,41 +514,6 @@
     });
   }
 
-  function saveRemote(service) {
-    var client = getSupabaseClient();
-    if (!client) return Promise.reject(createAuthorityUnavailableError('gravação'));
-
-    return getCurrentSupabaseUser(client).then(function (user) {
-      if (!user || !isUuid(user.id)) throw createAuthorityUnavailableError('gravação autenticada');
-      var normalized = normalizeService(Object.assign({}, service, {
-        ownerId: user.id,
-        professionalId: user.id,
-        providerId: user.id
-      }));
-      return uploadServiceImages(client, user.id, normalized).then(function (uploadedImages) {
-        normalized = normalizeService(Object.assign({}, normalized, { images: uploadedImages }));
-        var payload = buildRemotePayload(normalized, user.id);
-        return client.from(REMOTE_TABLE)
-          .upsert(payload, { onConflict: 'external_id' })
-          .select('*')
-          .single()
-          .then(function (result) {
-            if (result.error) throw result.error;
-            return syncMedia(client, result.data.id, normalized).then(function () {
-              lastRemoteError = null;
-              setProviderState('supabase');
-              return Object.assign({}, normalized, {
-                remoteId: result.data.id,
-                syncStatus: 'synced',
-                syncError: '',
-                syncedAt: new Date().toISOString()
-              });
-            });
-          });
-      });
-    });
-  }
-
   function buildReviewSnapshot(service, userId, uploadedImages) {
     var normalized = normalizeService(Object.assign({}, service, {
       ownerId: userId,
@@ -604,6 +575,40 @@
           return clone(saved);
         });
       });
+    });
+  }
+
+  function transitionOwnedLifecycle(serviceId, action) {
+    var id = normalizeText(serviceId);
+    var operation = normalizeSearch(action);
+    if (!id) return Promise.reject(new Error('Service id is required.'));
+    if (['pause', 'reactivate', 'archive'].indexOf(operation) === -1) {
+      return Promise.reject(new Error('Ação de ciclo de vida inválida.'));
+    }
+    var client = getSupabaseClient();
+    if (!client || !root.DokeSupabase || typeof root.DokeSupabase.invokeSelfService !== 'function') {
+      return Promise.reject(createAuthorityUnavailableError('ciclo de vida'));
+    }
+    return getCurrentSupabaseUser(client).then(function (user) {
+      if (!user || !isUuid(user.id)) throw createAuthorityUnavailableError('ciclo de vida autenticado');
+      return Promise.resolve(root.DokeSupabase.invokeSelfService('transition_owned_service_lifecycle', {
+        p_service_ref: id,
+        p_action: operation
+      }));
+    }).then(function (response) {
+      response = response || {};
+      var canonicalId = normalizeText(response.externalId || response.serviceId || id);
+      cache = null;
+      lastRemoteError = null;
+      setProviderState('supabase');
+      return fetchRemoteServiceById(canonicalId).then(function (service) {
+        if (!service) throw new Error('Serviço canônico não encontrado após a transição.');
+        return clone(service);
+      });
+    }).catch(function (error) {
+      warnRemote(error, 'ciclo de vida');
+      if (error && error.code) throw error;
+      throw createAuthorityUnavailableError('ciclo de vida', error);
     });
   }
 
@@ -760,13 +765,7 @@
       return Promise.resolve(clone(upsertFixture(normalized)));
     }
 
-    return saveRemote(normalized).then(function (remoteSaved) {
-      cache = null;
-      return clone(remoteSaved);
-    }).catch(function (error) {
-      warnRemote(error, 'gravação');
-      throw createAuthorityUnavailableError('gravação', error);
-    });
+    return Promise.reject(createDirectMutationForbiddenError('gravação direta'));
   }
 
   function listByProfessional(professionalId, filters) {
@@ -781,6 +780,7 @@
   function update(serviceId, patch) {
     var id = normalizeText(serviceId);
     if (!id) return Promise.reject(new Error('Service id is required.'));
+    if (getSupabaseClient()) return Promise.reject(createDirectMutationForbiddenError('edição direta'));
     return getById(id).then(function (current) {
       if (!current) throw new Error('Serviço não encontrado.');
       var next = normalizeService(Object.assign({}, current, patch || {}, {
@@ -792,7 +792,9 @@
   }
 
   function deactivate(serviceId) {
-    return update(serviceId, { status: 'inactive' });
+    return getSupabaseClient()
+      ? transitionOwnedLifecycle(serviceId, 'pause')
+      : update(serviceId, { status: 'inactive' });
   }
 
   function utcDateKey() {
@@ -966,6 +968,7 @@
     save: save,
     submitForReview: submitForReview,
     getOwnedReviewDraft: getOwnedReviewDraft,
+    transitionOwnedLifecycle: transitionOwnedLifecycle,
     update: update,
     deactivate: deactivate,
     getProviderStatus: function () {

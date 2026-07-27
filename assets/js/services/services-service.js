@@ -49,6 +49,16 @@
     return normalizeText(value).toLowerCase();
   }
 
+  function isUuid(value) {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(normalizeText(value));
+  }
+
+  function isRemoteService(service) {
+    service = service || {};
+    return [service.id, service.remoteId, service.remote_id, service.ownerId, service.professionalId, service.providerId]
+      .some(isUuid);
+  }
+
   function list(filters) {
     return assertRepository().list(filters || {});
   }
@@ -135,6 +145,13 @@
     return current;
   }
 
+  function lifecycleActionForStatus(status) {
+    if (status === STATUS.INACTIVE) return 'pause';
+    if (status === STATUS.ACTIVE) return 'reactivate';
+    if (status === STATUS.ARCHIVED) return 'archive';
+    return '';
+  }
+
   function transitionOwned(serviceId, nextStatus) {
     var status = normalizeStatus(nextStatus);
     return Promise.all([
@@ -147,7 +164,13 @@
       if (!canTransition(currentStatus, status)) throw new Error('Transição de status inválida para este anúncio.');
       if (currentStatus === status) return current;
       var repository = assertRepository();
-      if (typeof repository.update !== 'function') throw new Error('Atualização de serviço indisponível.');
+      var action = lifecycleActionForStatus(status);
+      if (!action) throw new Error('Ação de ciclo de vida indisponível.');
+      if (isRemoteService(current)) {
+        if (typeof repository.transitionOwnedLifecycle !== 'function') throw new Error('Autoridade server-side de ciclo de vida indisponível.');
+        return repository.transitionOwnedLifecycle(serviceId, action);
+      }
+      if (typeof repository.update !== 'function') throw new Error('Atualização de fixture indisponível.');
       return repository.update(serviceId, { status: status, statusChangedAt: new Date().toISOString() });
     });
   }
@@ -156,19 +179,42 @@
     var access = Doke.services && Doke.services.professionalAccess;
     var action = access && access.ACTIONS && access.ACTIONS.PUBLISH_SERVICE || 'publish_service';
     if (!access || typeof access.assert !== 'function') return Promise.reject(new Error('A autoridade de acesso profissional não foi carregada.'));
+    patch = patch || {};
     return Promise.all([access.assert(action), getById(serviceId)]).then(function (items) {
       var result = items[0];
       var current = items[1];
       if (!current) throw new Error('Serviço não encontrado.');
       assertOwned(current, result.user || currentUser());
-      if (patch && Object.prototype.hasOwnProperty.call(patch, 'status')) {
-        var nextStatus = normalizeStatus(patch.status);
-        if (!canTransition(current.status, nextStatus)) throw new Error('Transição de status inválida para este anúncio.');
-        patch = Object.assign({}, patch, { status: nextStatus, statusChangedAt: new Date().toISOString() });
+
+      if (Object.prototype.hasOwnProperty.call(patch, 'status')) {
+        var contentKeys = Object.keys(patch).filter(function (key) { return key !== 'status' && key !== 'statusChangedAt'; });
+        if (contentKeys.length) {
+          var splitError = new Error('Edição de conteúdo e transição de status devem ser operações separadas.');
+          splitError.code = 'DOKE_SERVICE_MUTATION_SPLIT_REQUIRED';
+          throw splitError;
+        }
+        return transitionOwned(serviceId, patch.status);
       }
+
+      if (normalizeStatus(current.status) === STATUS.ARCHIVED) {
+        var archivedError = new Error('Serviço arquivado não pode ser editado.');
+        archivedError.code = 'DOKE_SERVICE_ARCHIVED';
+        throw archivedError;
+      }
+
       var repository = assertRepository();
-      if (typeof repository.update !== 'function') throw new Error('Edição de serviço indisponível.');
-      return repository.update(serviceId, patch || {});
+      if (!isRemoteService(current)) {
+        if (typeof repository.update !== 'function') throw new Error('Edição de fixture indisponível.');
+        return repository.update(serviceId, patch);
+      }
+      if (typeof repository.submitForReview !== 'function') throw new Error('Autoridade versionada de edição indisponível.');
+      var candidate = Object.assign({}, current, patch, {
+        id: current.id || serviceId,
+        externalId: current.externalId || current.id || serviceId,
+        status: current.status,
+        updatedAt: new Date().toISOString()
+      });
+      return repository.submitForReview(candidate, { editMode: true, changeClass: 'major' });
     });
   }
 

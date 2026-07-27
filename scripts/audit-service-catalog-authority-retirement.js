@@ -42,7 +42,7 @@ const repository = read(files.repository);
   "error.code = 'DOKE_SERVICE_AUTHORITY_UNAVAILABLE'",
   "setProviderState('remote-unavailable')",
   "setProviderState('fixture-memory')",
-  "throw createAuthorityUnavailableError('gravação', error)",
+  "createDirectMutationForbiddenError('gravação direta')",
   "throw createAuthorityUnavailableError('leitura', error)",
   'authority: AUTHORITY',
   "provider: getSupabaseClient() ? 'supabase' : 'fixture-memory'",
@@ -71,7 +71,6 @@ const repository = read(files.repository);
   "REMOTE_VERSIONS_TABLE = 'service_versions'",
   'fetchRemoteServices',
   'fetchRemoteServiceById',
-  'saveRemote',
   "invokeSelfService('submit_service_for_review'",
   'getOwnedReviewDraft',
   'isPubliclyVisible',
@@ -91,7 +90,7 @@ const repositoryContract = read(files.repositoryContract);
 [
   "AUTHORITY = 'supabase-or-fixture-memory'",
   'DOKE_SERVICE_AUTHORITY_UNAVAILABLE',
-  'Authenticated remote save must finish as synced.',
+  'DOKE_SERVICE_DIRECT_MUTATION_FORBIDDEN',
   'localStorage must not be accessed by the service repository.'
 ].forEach((marker) => assert(repositoryContract.includes(marker), `repository contract not reconciled: ${marker}`));
 assert(!repositoryContract.includes('synchronizePending'), 'repository contract still requires pending browser synchronization');
