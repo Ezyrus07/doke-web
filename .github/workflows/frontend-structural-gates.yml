@@ -8,6 +8,7 @@ on:
       - "assets/js/**"
       - "scripts/audit-frontend-structural-gates.js"
       - "scripts/audit-token-authority.js"
+      - "scripts/migrate-token-authority-overrides.js"
       - "config/frontend-structural-gates.json"
       - ".github/workflows/frontend-structural-gates.yml"
   push:
@@ -19,6 +20,7 @@ on:
       - "assets/js/**"
       - "scripts/audit-frontend-structural-gates.js"
       - "scripts/audit-token-authority.js"
+      - "scripts/migrate-token-authority-overrides.js"
       - "config/frontend-structural-gates.json"
       - ".github/workflows/frontend-structural-gates.yml"
 
@@ -44,10 +46,12 @@ jobs:
         run: node scripts/audit-frontend-structural-gates.js --strict
 
       - name: Generate FE-T01 token authority candidate
-        run: node scripts/audit-token-authority.js --write
-
-      - name: Validate generated token authority
-        run: node scripts/audit-token-authority.js
+        shell: bash
+        run: |
+          node scripts/audit-token-authority.js --write || true
+          node scripts/migrate-token-authority-overrides.js
+          node scripts/audit-token-authority.js
+          git diff --name-only -- assets/css > reports/generated/token-authority-changed-files.txt
 
       - name: Upload structural gate evidence
         if: always()
@@ -57,10 +61,7 @@ jobs:
           path: |
             reports/generated/frontend-structural-gates-report.json
             reports/generated/token-authority-report.json
-            assets/css/core/tokens.css
-            assets/css/components/shell/app-shell.css
-            assets/css/components/buttons.css
-            assets/css/components/ui-surface/tokens.css
+            reports/generated/token-authority-changed-files.txt
             assets/css/**/*.css
           if-no-files-found: error
           retention-days: 14
