@@ -1,22 +1,26 @@
 name: PROF-B03 Journal Append
 
 on:
-  pull_request:
+  push:
     branches:
-      - MAIN
+      - prof/prof-001-baseline-audit
 
 permissions:
   contents: write
 
+concurrency:
+  group: prof-b03-journal-append
+  cancel-in-progress: false
+
 jobs:
   append:
-    if: github.event.pull_request.head.ref == 'prof/prof-001-baseline-audit'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout candidate branch
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.ref }}
+          ref: prof/prof-001-baseline-audit
           fetch-depth: 0
 
       - name: Append validated PROF-B03 journal entry
@@ -106,12 +110,10 @@ JOURNAL
 
       - name: Remove temporary appender and publish journal
         shell: bash
-        env:
-          HEAD_REF: ${{ github.event.pull_request.head.ref }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git rm .github/workflows/prof-b03-journal-append.yml
           git add docs/DOKE-ENGINEERING-JOURNAL.md
           git commit -m "Record PROF-B03 engineering journal"
-          git push origin "HEAD:${HEAD_REF}"
+          git push origin "HEAD:prof/prof-001-baseline-audit"
