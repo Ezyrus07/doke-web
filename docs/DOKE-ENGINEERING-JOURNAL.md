@@ -321,7 +321,7 @@ Projeto `doke-web-staging` (`zwkczgewzbsorbrjuzpb`):
 
 # 2026-07-27 — PROF-A04 / retirada da autoridade local de registros e rascunhos KYC
 
-**Status:** `IN PROGRESS — VALIDATION PENDING`
+**Status:** `DONE`
 
 **Branch:** `prof/prof-001-baseline-audit`
 
@@ -349,21 +349,28 @@ O serviço de verificação profissional já utilizava o Supabase para leitura, 
 - criado audit estrutural PROF-A04;
 - adicionados gates PROF-A04 ao Quality canônico;
 - criadas evidências JSON e Markdown;
-- audit cumulativo PROF-A01 evoluído para reconhecer a retirada controlada sem apagar o baseline histórico.
+- audit cumulativo PROF-A01 evoluído para reconhecer a retirada controlada sem apagar o baseline histórico;
+- matriz determinística sincronizada pelo workflow canônico;
+- criado gate que impede evidência `done` com qualquer validação pendente.
 
-## Validação em andamento
+## Validação
 
-**Primeiro candidato:** `537bd970d7a313f30243a98c0073d869f610e42f`
+**Head validado:** `41b0a57fab27720bc82aaa28b50ee0eecfe1748e`
 
-- Doke Staging Edge HTTP Canary #587: sucesso;
-- Doke Quality Gates #814: falhou no audit cumulativo PROF-A01 porque o contrato ainda exigia as chaves aposentadas;
-- a falha foi diagnosticada como contrato cumulativo desatualizado, não como reabertura de autoridade local;
-- correção publicada em `839a11ad3214696952ecbcded911577d7b26348f`;
-- novo ciclo canônico ainda pendente.
+- audit cumulativo PROF-A01: sucesso;
+- audit PROF-A02 e runtime PROF-A02: sucesso;
+- audit PROF-A03 e runtime PROF-A03: sucesso;
+- audit PROF-A04 e runtime PROF-A04: sucesso;
+- matriz determinística: sucesso;
+- Doke Quality Gates #823: sucesso;
+- E2E bloqueante: sucesso;
+- 105 guards visuais: sucesso;
+- Doke Staging Edge HTTP Canary #596: sucesso;
+- Doke Diagnostic E2E #616: sucesso.
 
 ## Supabase
 
-- nenhuma migration necessária;
+- nenhuma migration necessária ou aplicada;
 - nenhuma Edge Function implantada;
 - staging não alterado;
 - produção não alterada.
@@ -374,11 +381,11 @@ O serviço de verificação profissional já utilizava o Supabase para leitura, 
 - nenhuma conta sintética persistente criada;
 - nenhum SMS, OAuth ou recurso pago habilitado;
 - nenhum fallback local reaberto;
+- nenhuma ferramenta temporária permaneceu;
 - PR permanece draft, aberto e não mesclado.
 
 ## Pendências preservadas
 
-- concluir Quality, E2E bloqueante, 105 guards, Canary e Diagnostic no mesmo head;
-- sincronizar a matriz determinística caso exista drift;
-- restaurar o PR para a base `auth/auth-001-baseline-audit` após a validação;
-- manter `PROF-B03-KYC-EVIDENCE`, `PROF-B04` e `PROF-B05` explícitos.
+- `PROF-B03-KYC-EVIDENCE`: retirar a autoridade IndexedDB de evidências binárias;
+- `PROF-B04`: política legal, retenção, recurso e provedor KYC;
+- `PROF-B05`: aposentadoria das políticas legadas administradas pelo Supabase Storage.
