@@ -224,3 +224,95 @@ A correção permaneceu restrita ao teste:
 - evidências binárias ainda no IndexedDB;
 - `PROF-B04`: política legal e retenção;
 - `PROF-B05`: políticas legadas administradas pelo Supabase Storage.
+
+---
+
+# 2026-07-27 — PROF-A03 / reconciliação atômica do perfil profissional ativo
+
+**Status:** `DONE`
+
+**Branch:** `prof/prof-001-baseline-audit`
+
+**Pull Request:** `#11`
+
+## Problema
+
+O editor profissional ainda coordenava duas mutações separadas no navegador: primeiro o payload profissional, depois o perfil-base. Se a segunda falhasse, o browser tentava reverter a primeira. Esse desenho não era atomicamente confiável e mantinha o cliente como coordenador de consistência.
+
+## Decisão
+
+- uma única operação `update_professional_profile_reconciled` deve possuir toda a edição ativa;
+- identidade pública e payload profissional devem ser atualizados na mesma transação PostgreSQL;
+- o ator deve vir do JWT verificado pela Edge Function;
+- `anon` e `authenticated` não recebem grant direto para a função privilegiada;
+- status, role, verificação, documento e métricas permanecem fora do payload editável;
+- nenhum fallback local é permitido.
+
+## Implementação
+
+- adicionada a action ao allowlist de `self-service-operations`;
+- criada migration `148_professional_profile_reconciliation_authority.sql`;
+- criada `public.update_professional_profile_reconciled`;
+- evoluído o dispatcher `public.execute_self_service_operation_internal` sem romper operações anteriores;
+- `public.update_account_profile` e `public.professional_profiles` passam a ser atualizados na mesma transação;
+- resposta devolve snapshots canônicos dos dois perfis;
+- `professional-profile-service.js` passou a executar uma única mutação e reconciliar o cache-base;
+- removidas do editor as chamadas a `professionalProfiles.updateActiveProfile`, `profile.updateCurrentProfile` e o rollback local;
+- adicionados audit estrutural, runtime Node e teste SQL transacional permanentes;
+- gates PROF-A03 adicionados ao Quality canônico;
+- evidência PROF-A02 final reconciliada;
+- matriz determinística sincronizada.
+
+## Validação do código
+
+**Head:** `45b0daa1ffdb4c199c1b896b67b7c1d32c861767`
+
+- Doke Quality Gates #785: sucesso;
+- audit PROF-A03: sucesso;
+- runtime PROF-A03: sucesso;
+- E2E bloqueante: sucesso;
+- 105 guards visuais: sucesso;
+- Doke Staging Edge HTTP Canary #558: sucesso;
+- Doke Diagnostic E2E #578: sucesso.
+
+## Staging
+
+Projeto `doke-web-staging` (`zwkczgewzbsorbrjuzpb`):
+
+- migration `professional_profile_reconciliation_authority` aplicada;
+- versão registrada `20260727110417`;
+- teste SQL 017 executado com sucesso dentro de transação e encerrado com `ROLLBACK`;
+- função privilegiada presente;
+- `service_role` com execução permitida;
+- `anon` e `authenticated` sem execução direta;
+- zero usuários sintéticos remanescentes após o teste;
+- Edge Function `self-service-operations` implantada como versão 6;
+- função `ACTIVE` e `verify_jwt: true`;
+- action PROF-A03 confirmada no bundle implantado.
+
+## Validação pós-deployment
+
+**Head:** `87ecbcb4d7f0f030c96c50b246f4820dbd764354`
+
+- Doke Quality Gates #793: sucesso;
+- E2E bloqueante: sucesso;
+- 105 guards visuais: sucesso;
+- Doke Staging Edge HTTP Canary #566: sucesso;
+- Doke Diagnostic E2E #586: sucesso.
+
+## Segurança operacional
+
+- staging alterado de forma controlada;
+- produção não alterada;
+- nenhuma conta real modificada;
+- nenhuma conta sintética persistente criada;
+- nenhum SMS, OAuth ou recurso pago habilitado;
+- nenhum workflow ou codemod temporário permanece;
+- PR permanece draft, aberto e não mesclado.
+
+## Pendências preservadas
+
+- `PROF-A04`: retirar o rascunho KYC de `localStorage/sessionStorage`;
+- retirar evidências binárias KYC do IndexedDB em sublote separado;
+- `PROF-B04`: política legal e retenção;
+- `PROF-B05`: políticas legadas administradas pelo Supabase Storage.
