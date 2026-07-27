@@ -67,6 +67,8 @@ O runtime dedicado comprova:
 
 ## Validação atual
 
+Modo: `canonical_MAIN_stack_validation_then_restore_stacked_base`.
+
 Checkpoint de implementação do repositório:
 
 `e3bf6544bc9def641fde42e65592fd8d3017184b`
