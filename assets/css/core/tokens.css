@@ -72,8 +72,15 @@
   --color-heading: #10233a;
   --color-heading-soft: #16395d;
 
-  --color-primary: #245f96;
-  --color-primary-rgb: 36, 95, 150;
+  /* Public brand authority. Legacy aliases resolve here and must not be redefined downstream. */
+  --doke-color-primary: #2a5f90;
+  --doke-color-primary-rgb: 42, 95, 144;
+  --doke-color-secondary: #298f7f;
+  --doke-color-secondary-rgb: 41, 143, 127;
+  --doke-color-surface: var(--color-surface);
+
+  --color-primary: var(--doke-color-primary);
+  --color-primary-rgb: var(--doke-color-primary-rgb);
   --color-primary-strong: #184a76;
   --color-primary-deep: #103b63;
   --color-primary-bright: var(--color-primary);
@@ -82,10 +89,10 @@
   --color-primary-border: rgba(var(--color-primary-rgb), 0.20);
   --color-primary-ring: rgba(var(--color-primary-rgb), 0.28);
 
-  --color-secondary: #168c7d;
+  --color-secondary: var(--doke-color-secondary);
   --color-secondary-strong: #0f6f64;
   --color-secondary-soft: #e2f4f0;
-  --color-secondary-border: rgba(22, 140, 125, 0.30);
+  --color-secondary-border: rgba(var(--doke-color-secondary-rgb), 0.30);
   --border-color-secondary: var(--color-secondary-border);
 
   --color-accent: #7c3aed;
@@ -111,7 +118,8 @@
 
   /* Soft surface line system: inspired by app-like cards that separate layers
      with near-invisible hairlines and subtle elevation instead of hard outlines. */
-  --surface-border-subtle: rgba(36, 88, 135, 0.095);
+  --doke-card-border: rgba(24, 75, 118, 0.10);
+  --surface-border-subtle: var(--doke-card-border);
   --surface-border-soft: rgba(36, 88, 135, 0.12);
   --surface-border: rgba(36, 88, 135, 0.14);
   --surface-border-strong: rgba(36, 88, 135, 0.20);
@@ -135,12 +143,12 @@
   --border-focus: var(--border-width) var(--border-style) var(--border-color-focus);
 
   /* Soft/tinted control outlines ----------------------------------------- */
-  --control-outline-same-surface: rgba(24, 75, 118, 0.10);
+  --control-outline-same-surface: var(--doke-card-border);
   --control-outline-soft-primary: rgba(var(--color-primary-rgb), 0.12);
   --control-outline-soft-primary-hover: rgba(var(--color-primary-rgb), 0.18);
   --control-outline-soft-primary-active: rgba(var(--color-primary-rgb), 0.24);
-  --control-outline-soft-secondary: rgba(22, 140, 125, 0.14);
-  --control-outline-soft-secondary-hover: rgba(22, 140, 125, 0.20);
+  --control-outline-soft-secondary: rgba(var(--doke-color-secondary-rgb), 0.14);
+  --control-outline-soft-secondary-hover: rgba(var(--doke-color-secondary-rgb), 0.20);
   --control-outline-soft-warning: rgba(245, 158, 11, 0.14);
   --control-outline-soft-warning-hover: rgba(245, 158, 11, 0.22);
   --control-outline-soft-danger: rgba(220, 38, 38, 0.14);
@@ -149,8 +157,8 @@
 
   --control-bg-soft-primary: rgba(var(--color-primary-rgb), 0.08);
   --control-bg-soft-primary-hover: rgba(var(--color-primary-rgb), 0.11);
-  --control-bg-soft-secondary: rgba(22, 140, 125, 0.09);
-  --control-bg-soft-secondary-hover: rgba(22, 140, 125, 0.12);
+  --control-bg-soft-secondary: rgba(var(--doke-color-secondary-rgb), 0.09);
+  --control-bg-soft-secondary-hover: rgba(var(--doke-color-secondary-rgb), 0.12);
   --control-bg-soft-warning: rgba(245, 158, 11, 0.10);
   --control-bg-soft-danger: rgba(220, 38, 38, 0.09);
   --control-bg-same-surface: rgba(255, 255, 255, 0.94);
@@ -214,9 +222,10 @@
 
   /* Gradients ----------------------------------------------------------- */
   --gradient-brand: linear-gradient(180deg, #2a6fa9 0%, var(--color-primary-strong) 100%);
-  --gradient-button-primary: linear-gradient(135deg, #2a6fa9 0%, var(--color-primary-deep) 100%);
-  --gradient-button-secondary: linear-gradient(135deg, #149b8a 0%, var(--color-secondary-strong) 100%);
-  --gradient-button-primary-angle: linear-gradient(135deg, #2a6fa9 0%, var(--color-primary-deep) 100%);
+  /* Deprecated compatibility aliases: solid values prevent legacy consumers from restoring gradients. */
+  --gradient-button-primary: var(--color-primary);
+  --gradient-button-secondary: var(--color-secondary);
+  --gradient-button-primary-angle: var(--color-primary);
   --gradient-surface: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.88));
   --gradient-avatar: linear-gradient(135deg, #1767ad 0%, #209886 100%);
 
@@ -236,6 +245,7 @@
   /* Shadows ------------------------------------------------------------- */
   --shadow-xs: 0 2px 8px rgba(15, 45, 75, 0.03);
   --shadow-sm: 0 6px 18px rgba(15, 45, 75, 0.045);
+  --doke-shadow-soft: var(--shadow-sm);
   --shadow-md: 0 10px 26px rgba(31, 68, 110, 0.065);
   --shadow-lg: 0 16px 38px rgba(31, 68, 110, 0.085);
   --shadow-xl: 0 22px 58px rgba(15, 23, 42, 0.11);
@@ -492,6 +502,7 @@
   /* Public Doke radius families: stable knobs for site-wide visual changes. */
   --doke-radius-control-sm: var(--radius-control-sm);
   --doke-radius-control: var(--radius-control);
+  --doke-radius-surface: var(--radius-surface);
   --doke-radius-control-comfortable: var(--radius-control-comfortable);
   --doke-radius-control-lg: var(--radius-control-lg);
   --doke-radius-action-item: var(--radius-action-item);
@@ -512,6 +523,7 @@
   --space-2: 8px;
   --space-3: 12px;
   --space-4: 16px;
+  --doke-space-base: var(--space-4);
   --space-5: 20px;
   --space-6: 24px;
   --space-7: 28px;
