@@ -2,7 +2,7 @@
 
 ## Status
 
-`BASELINE FROZEN`
+`DONE — BASELINE FROZEN`
 
 ## Objetivo
 
@@ -120,6 +120,24 @@ As políticas legadas de escrita por prefixo de owner permanecem sob a autoridad
 5. `PROF-B03`, `PROF-B04` ou `PROF-B05` forem removidos sem evidência correspondente;
 6. a evidência machine-readable deixar de refletir o baseline congelado.
 
+O gate foi incorporado ao Quality canônico como `Audit PROF-001 authority baseline`.
+
+## Validação de implementação
+
+Checkpoint validado:
+
+`eca5fd82a49805e7f37e2c8e89cf3ee5aa505d59`
+
+- Doke Quality Gates #715: sucesso;
+- audit PROF-A01: sucesso;
+- contratos AUTH cumulativos: sucesso;
+- matriz determinística: sucesso;
+- governança, assets, partição E2E e `git diff --check`: sucesso;
+- E2E bloqueante: sucesso;
+- 105 guards visuais: sucesso;
+- Doke Staging Edge HTTP Canary #488: sucesso;
+- Doke Diagnostic E2E #508: sucesso.
+
 ## Supabase
 
 - nenhuma migration aplicada;
@@ -127,6 +145,12 @@ As políticas legadas de escrita por prefixo de owner permanecem sob a autoridad
 - nenhum bucket ou policy alterado;
 - nenhum dado de staging ou produção modificado;
 - nenhuma conta real ou sintética persistente criada.
+
+## Decisão de encerramento
+
+`PROF-A01` está concluído como baseline, não como retirada da autoridade local.
+
+A classificação `hybrid` / `partial` e os blockers `PROF-B03`, `PROF-B04` e `PROF-B05` permanecem verdadeiros. O lote apenas impede que essa divisão aumente ou mude silenciosamente antes da correção controlada.
 
 ## Próximo sublote
 
