@@ -1,14 +1,14 @@
 /* Doke Services Repository
    Responsibility: canonical persistence boundary for service listings.
-   Production path: Supabase (shared across users/devices).
-   Development fallback: localStorage, with best-effort remote synchronization. */
+   Real authority: Supabase catalog and versioned moderation.
+   Fixture compatibility: non-UUID services held only in runtime memory. */
 (function () {
   'use strict';
 
   var root = window;
   var Doke = root.Doke || (root.Doke = {});
   var repositories = Doke.repositories || (Doke.repositories = {});
-  var STORAGE_KEY = 'doke.services.local.v1';
+  var AUTHORITY = 'supabase-or-fixture-memory';
   var PROVIDER_ATTRIBUTE = 'data-doke-services-provider';
   var REMOTE_TABLE = 'services';
   var REMOTE_MEDIA_TABLE = 'service_media';
@@ -16,11 +16,12 @@
   var REMOTE_METRIC_EVENTS_TABLE = 'service_metric_events';
   var REMOTE_METRIC_TOTALS_VIEW = 'service_metric_totals';
   var REMOTE_VERSIONS_TABLE = 'service_versions';
-  var METRIC_VISITOR_STORAGE_KEY = 'doke.service-metrics.visitor.v1';
+  var METRIC_VISITOR_SESSION_KEY = 'doke.service-metrics.visitor.v1';
   var cache = null;
   var supabaseClient = null;
   var supabaseClientAttempted = false;
   var lastRemoteError = null;
+  var fixtureServices = [];
 
   function clone(value) {
     if (value == null) return value;
@@ -63,9 +64,9 @@
 
   function warnRemote(error, context) {
     lastRemoteError = error || new Error('Falha desconhecida no catálogo remoto.');
-    setProviderState('local-fallback');
+    setProviderState('remote-unavailable');
     if (root.console && typeof root.console.warn === 'function') {
-      root.console.warn('[Doke services repository] Supabase indisponível em ' + context + '. Usando fallback local.', error);
+      root.console.warn('[Doke services repository] Supabase indisponível em ' + context + '. A operação falhou fechado.', error);
     }
   }
 
@@ -76,15 +77,12 @@
     var sdk = root.supabase;
     if (!config.enabled || config.servicesEnabled === false || !config.url || !config.anonKey) {
       supabaseClientAttempted = true;
-      setProviderState('local');
+      setProviderState('fixture-memory');
       return null;
     }
 
-    // The SDK is loaded asynchronously so a slow CDN can never hold the home
-    // skeleton hostage. Do not permanently lock the repository in local mode;
-    // retry after the SDK-ready lifecycle event.
     if (!sdk || typeof sdk.createClient !== 'function') {
-      setProviderState('local');
+      setProviderState('remote-loading');
       return null;
     }
     if (supabaseClientAttempted) return supabaseClient;
@@ -102,22 +100,33 @@
     return supabaseClient;
   }
 
-  function readLocalServices() {
-    try {
-      var raw = root.localStorage.getItem(STORAGE_KEY);
-      var parsed = raw ? JSON.parse(raw) : [];
-      return Array.isArray(parsed) ? parsed : [];
-    } catch (error) {
-      return [];
-    }
+  function readFixtureServices() {
+    return fixtureServices.map(clone);
   }
 
-  function writeLocalServices(items) {
-    try {
-      root.localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.isArray(items) ? items : []));
-    } catch (error) {
-      // localStorage can be unavailable in restricted contexts; repository remains readable.
-    }
+  function writeFixtureServices(items) {
+    fixtureServices = (Array.isArray(items) ? items : []).map(clone);
+  }
+
+  function createAuthorityUnavailableError(context, cause) {
+    var suffix = cause && cause.message ? ': ' + normalizeText(cause.message) : '';
+    var error = new Error('Autoridade remota do catálogo indisponível em ' + context + suffix);
+    error.code = 'DOKE_SERVICE_AUTHORITY_UNAVAILABLE';
+    if (cause) error.cause = cause;
+    return error;
+  }
+
+  function isRemoteSubject(service, user) {
+    service = service || {};
+    return [
+      user && user.id,
+      service.id,
+      service.remoteId,
+      service.remote_id,
+      service.ownerId,
+      service.professionalId,
+      service.providerId
+    ].map(normalizeText).filter(Boolean).some(isUuid);
   }
 
   function toPublicStatus(value) {
@@ -167,7 +176,7 @@
     }
   }
 
-  function canReadLocalService(service, user) {
+  function canReadFixtureService(service, user) {
     if (!service) return false;
     if (isPubliclyVisible(service)) return true;
     var userId = normalizeText(user && user.id);
@@ -178,16 +187,9 @@
       .indexOf(userId) !== -1;
   }
 
-  function resolveReadableLocalService(service, client) {
+  function resolveReadableFixtureService(service) {
     if (!service) return Promise.resolve(null);
-    var cachedUser = getCachedCurrentUser();
-    if (canReadLocalService(service, cachedUser)) return Promise.resolve(service);
-    if (!client) return Promise.resolve(null);
-    return getCurrentSupabaseUser(client).then(function (user) {
-      return canReadLocalService(service, user) ? service : null;
-    }).catch(function () {
-      return null;
-    });
+    return Promise.resolve(canReadFixtureService(service, getCachedCurrentUser()) ? service : null);
   }
 
   function toRemotePriceMode(value) {
@@ -219,9 +221,13 @@
     var id = normalizeText(service.id || service.externalId || service.external_id);
     var rawPublicStatus = toPublicStatus(service.status || 'draft');
     var moderationStatus = normalizeModerationStatus(service.moderationStatus || service.moderation_status, rawPublicStatus);
-    var localOnlyLegacy = !service.moderationStatus && !service.moderation_status && normalizeSearch(service.syncStatus) !== 'synced';
-    var publicStatus = localOnlyLegacy && rawPublicStatus === 'active' ? 'draft' : rawPublicStatus;
-    if (localOnlyLegacy && moderationStatus === 'published') moderationStatus = 'draft';
+    var fixtureOnly = normalizeSearch(service.syncStatus) === 'fixture-memory';
+    var publicStatus = fixtureOnly && rawPublicStatus === 'active' && !service.moderationStatus && !service.moderation_status
+      ? 'draft'
+      : rawPublicStatus;
+    if (fixtureOnly && moderationStatus === 'published' && !service.moderationStatus && !service.moderation_status) {
+      moderationStatus = 'draft';
+    }
     var quoteMode = normalizeSearch(service.quoteMode || service.quote_mode);
     if (['default', 'custom', 'disabled'].indexOf(quoteMode) === -1) {
       var templateQuestions = service.quoteTemplate && Array.isArray(service.quoteTemplate.questions)
@@ -266,16 +272,6 @@
       keywords: Array.isArray(service.keywords) ? service.keywords : [],
       images: Array.isArray(service.images) ? service.images : (service.image ? [service.image] : [])
     });
-  }
-
-  function mergeById(primary, secondary) {
-    var map = Object.create(null);
-    (primary || []).concat(secondary || []).forEach(function (item) {
-      var normalized = normalizeService(item);
-      if (!normalized.id) return;
-      map[normalized.id] = Object.assign({}, map[normalized.id] || {}, normalized);
-    });
-    return Object.keys(map).map(function (id) { return map[id]; });
   }
 
   function serviceIdentifiers(service) {
@@ -354,7 +350,7 @@
 
   function fetchRemoteServices() {
     var client = getSupabaseClient();
-    if (!client) return Promise.reject(new Error('Supabase client unavailable.'));
+    if (!client) return Promise.reject(createAuthorityUnavailableError('leitura'));
 
     return Promise.resolve(client
       .from(REMOTE_TABLE)
@@ -395,21 +391,21 @@
     });
   }
 
-  function upsertLocal(service, syncStatus) {
+  function upsertFixture(service) {
     var normalized = normalizeService(Object.assign({}, service, {
-      syncStatus: syncStatus || service.syncStatus || 'local',
+      syncStatus: 'fixture-memory',
       updatedAt: service.updatedAt || new Date().toISOString()
     }));
-    var local = readLocalServices().filter(function (item) { return String(item.id) !== String(normalized.id); });
-    local.push(normalized);
-    writeLocalServices(local);
+    var fixtures = readFixtureServices().filter(function (item) { return String(item.id) !== String(normalized.id); });
+    fixtures.push(normalized);
+    writeFixtureServices(fixtures);
     cache = null;
     return normalized;
   }
 
-  function removeLocal(serviceId) {
+  function removeFixture(serviceId) {
     var id = normalizeText(serviceId);
-    writeLocalServices(readLocalServices().filter(function (item) { return String(item.id) !== id; }));
+    writeFixtureServices(readFixtureServices().filter(function (item) { return String(item.id) !== id; }));
     cache = null;
   }
 
@@ -514,10 +510,10 @@
 
   function saveRemote(service) {
     var client = getSupabaseClient();
-    if (!client) return Promise.reject(new Error('Supabase client unavailable.'));
+    if (!client) return Promise.reject(createAuthorityUnavailableError('gravação'));
 
     return getCurrentSupabaseUser(client).then(function (user) {
-      if (!user || !isUuid(user.id)) throw new Error('Faça login com uma conta Supabase para publicar o anúncio no catálogo compartilhado.');
+      if (!user || !isUuid(user.id)) throw createAuthorityUnavailableError('gravação autenticada');
       var normalized = normalizeService(Object.assign({}, service, {
         ownerId: user.id,
         professionalId: user.id,
@@ -568,12 +564,15 @@
   function submitForReview(service, options) {
     options = options || {};
     var client = getSupabaseClient();
-    if (!client) return Promise.reject(new Error('Conecte-se à internet para enviar o anúncio para análise. O rascunho continuará salvo neste dispositivo.'));
+    if (!client) return Promise.reject(createAuthorityUnavailableError('submissão para análise'));
     var normalized = normalizeService(service || {});
     if (!normalized.id) return Promise.reject(new Error('Service id is required.'));
+    if (!root.DokeSupabase || typeof root.DokeSupabase.invokeSelfService !== 'function') {
+      return Promise.reject(createAuthorityUnavailableError('submissão para análise'));
+    }
 
     return getCurrentSupabaseUser(client).then(function (user) {
-      if (!user || !isUuid(user.id)) throw new Error('Faça login com sua conta profissional para enviar o anúncio para análise.');
+      if (!user || !isUuid(user.id)) throw createAuthorityUnavailableError('submissão autenticada');
       return uploadServiceImages(client, user.id, normalized).then(function (uploadedImages) {
         var snapshot = buildReviewSnapshot(normalized, user.id, uploadedImages);
         return Promise.resolve(root.DokeSupabase.invokeSelfService('submit_service_for_review', {
@@ -599,11 +598,10 @@
             syncError: '',
             syncedAt: new Date().toISOString()
           }));
-          var localSaved = upsertLocal(saved, 'synced');
           cache = null;
           lastRemoteError = null;
           setProviderState('supabase');
-          return clone(localSaved);
+          return clone(saved);
         });
       });
     });
@@ -647,36 +645,9 @@
             syncStatus: 'synced'
           }));
         });
-    });
-  }
-
-  function synchronizePending(items) {
-    var client = getSupabaseClient();
-    if (!client) return Promise.resolve(items || []);
-    var pending = (items || []).filter(function (item) {
-      return item && item.id && item.syncStatus !== 'synced';
-    });
-    if (!pending.length) return Promise.resolve(items || []);
-
-    return getCurrentSupabaseUser(client).then(function (user) {
-      if (!user) return items || [];
-      return pending.reduce(function (chain, item) {
-        return chain.then(function () {
-          var ownerId = normalizeText(item.ownerId || item.professionalId || item.providerId);
-          if (ownerId && ownerId !== user.id) return null;
-          var moderation = normalizeModerationStatus(item.moderationStatus, item.status);
-          var operation = ['pending_review', 'changes_pending_review', 'changes_required'].indexOf(moderation) !== -1
-            ? submitForReview(item, { changeClass: item.approvedVersionId ? 'major' : 'critical' })
-            : saveRemote(item);
-          return operation.then(function (synced) {
-            upsertLocal(synced, 'synced');
-            return synced;
-          }).catch(function (error) {
-            warnRemote(error, 'sincronização pendente');
-            return null;
-          });
-        });
-      }, Promise.resolve()).then(function () { return readLocalServices(); });
+    }).catch(function (error) {
+      warnRemote(error, 'leitura do rascunho de revisão');
+      throw createAuthorityUnavailableError('leitura do rascunho de revisão', error);
     });
   }
 
@@ -684,25 +655,19 @@
     options = options || {};
     if (cache && !options.fresh) return Promise.resolve(clone(cache));
 
-    var local = readLocalServices().map(normalizeService);
     var client = getSupabaseClient();
     if (!client) {
-      cache = mergeById([], local);
+      cache = readFixtureServices().map(normalizeService);
       return Promise.resolve(clone(cache));
     }
 
     return fetchRemoteServices().then(function (remote) {
-      var merged = mergeById(local, remote); // Remote rows win over stale local copies.
-      cache = merged;
-      remote.forEach(function (item) { upsertLocal(item, 'synced'); });
-      return synchronizePending(merged).then(function () {
-        cache = mergeById(readLocalServices(), remote);
-        return clone(cache);
-      });
+      cache = remote.map(normalizeService);
+      return clone(cache);
     }).catch(function (error) {
       warnRemote(error, 'leitura');
-      cache = mergeById([], local);
-      return clone(cache);
+      cache = null;
+      throw createAuthorityUnavailableError('leitura', error);
     });
   }
 
@@ -766,23 +731,19 @@
     var id = normalizeText(serviceId);
     if (!id) return Promise.resolve(null);
 
-    var localMatch = readLocalServices().map(normalizeService).find(function (item) {
-      return matchesServiceId(item, id);
-    }) || null;
     var client = getSupabaseClient();
+    if (!client) {
+      var fixtureMatch = readFixtureServices().map(normalizeService).find(function (item) {
+        return matchesServiceId(item, id);
+      }) || null;
+      return resolveReadableFixtureService(fixtureMatch).then(clone);
+    }
 
-    return resolveReadableLocalService(localMatch, client).then(function (readableLocalMatch) {
-      if (!client) return clone(readableLocalMatch);
-      return fetchRemoteServiceById(id).then(function (remoteMatch) {
-        if (!remoteMatch) return clone(readableLocalMatch);
-        var saved = upsertLocal(remoteMatch, 'synced');
-        cache = null;
-        return clone(saved);
-      }).catch(function (error) {
-        warnRemote(error, 'leitura do detalhe');
-        if (readableLocalMatch) return clone(readableLocalMatch);
-        throw error;
-      });
+    return fetchRemoteServiceById(id).then(function (remoteMatch) {
+      return clone(remoteMatch);
+    }).catch(function (error) {
+      warnRemote(error, 'leitura do detalhe');
+      throw createAuthorityUnavailableError('leitura do detalhe', error);
     });
   }
 
@@ -790,21 +751,21 @@
     var normalized = normalizeService(service);
     if (!normalized.id) throw new Error('Service id is required.');
 
-    var localSaved = upsertLocal(normalized, 'pending');
     var client = getSupabaseClient();
-    if (!client) return Promise.resolve(clone(localSaved));
+    var cachedUser = getCachedCurrentUser();
+    if (!client) {
+      if (isRemoteSubject(normalized, cachedUser)) {
+        return Promise.reject(createAuthorityUnavailableError('gravação'));
+      }
+      return Promise.resolve(clone(upsertFixture(normalized)));
+    }
 
-    return saveRemote(localSaved).then(function (remoteSaved) {
-      var finalSaved = upsertLocal(remoteSaved, 'synced');
+    return saveRemote(normalized).then(function (remoteSaved) {
       cache = null;
-      return clone(finalSaved);
+      return clone(remoteSaved);
     }).catch(function (error) {
       warnRemote(error, 'gravação');
-      var fallback = upsertLocal(Object.assign({}, localSaved, {
-        syncStatus: 'pending',
-        syncError: normalizeText(error && error.message)
-      }), 'pending');
-      return clone(fallback);
+      throw createAuthorityUnavailableError('gravação', error);
     });
   }
 
@@ -857,10 +818,10 @@
   function getMetricVisitorKey(user) {
     if (user && isUuid(user.id)) return 'user:' + user.id;
     try {
-      var stored = root.sessionStorage && root.sessionStorage.getItem(METRIC_VISITOR_STORAGE_KEY);
+      var stored = root.sessionStorage && root.sessionStorage.getItem(METRIC_VISITOR_SESSION_KEY);
       if (stored) return stored;
       var created = createAnonymousVisitorKey();
-      if (root.sessionStorage) root.sessionStorage.setItem(METRIC_VISITOR_STORAGE_KEY, created);
+      if (root.sessionStorage) root.sessionStorage.setItem(METRIC_VISITOR_SESSION_KEY, created);
       return created;
     } catch (error) {
       return createAnonymousVisitorKey();
@@ -899,17 +860,7 @@
   }
 
   function resolveRemoteMetricServiceAfterSync(client, service) {
-    return resolveRemoteMetricService(client, service).then(function (row) {
-      if (row) return row;
-      var localId = normalizeText(service && (service.id || service.externalId || service.external_id));
-      var localMatch = readLocalServices().map(normalizeService).find(function (item) {
-        return localId && matchesServiceId(item, localId) && item.syncStatus !== 'synced';
-      });
-      if (!localMatch) return null;
-      return synchronizePending(readLocalServices()).then(function () {
-        return resolveRemoteMetricService(client, localMatch);
-      });
-    });
+    return resolveRemoteMetricService(client, service);
   }
 
   function recordServiceMetric(service, eventType) {
@@ -918,7 +869,7 @@
       return Promise.reject(new Error('Tipo de métrica de serviço inválido.'));
     }
     var client = getSupabaseClient();
-    if (!client) return Promise.resolve({ recorded: false, reason: 'local-provider' });
+    if (!client) return Promise.resolve({ recorded: false, reason: 'fixture-provider' });
 
     return getCurrentSupabaseUser(client).then(function (user) {
       return resolveRemoteMetricService(client, service).then(function (remoteService) {
@@ -954,7 +905,7 @@
       budgetCount: 0,
       messageCount: 0,
       remoteId: normalizeText(service && (service.remoteId || service.remote_id)),
-      source: 'local'
+      source: 'fixture-memory'
     };
     var client = getSupabaseClient();
     if (!client) return Promise.resolve(empty);
@@ -990,7 +941,6 @@
     });
   }
 
-
   if (root.document && typeof root.document.addEventListener === 'function') {
     root.document.addEventListener('doke:supabase-sdk-ready', function () {
       supabaseClientAttempted = false;
@@ -1007,7 +957,7 @@
   }
 
   repositories.services = Object.freeze({
-    storageKey: STORAGE_KEY,
+    authority: AUTHORITY,
     normalize: normalizeService,
     load: load,
     list: list,
@@ -1018,15 +968,16 @@
     getOwnedReviewDraft: getOwnedReviewDraft,
     update: update,
     deactivate: deactivate,
-    syncPending: function () { return synchronizePending(readLocalServices()); },
     getProviderStatus: function () {
       return Object.freeze({
-        provider: getSupabaseClient() ? 'supabase' : 'local',
-        fallbackActive: Boolean(lastRemoteError),
+        provider: getSupabaseClient() ? 'supabase' : 'fixture-memory',
+        fallbackActive: false,
+        remoteUnavailable: Boolean(lastRemoteError),
         lastError: lastRemoteError ? normalizeText(lastRemoteError.message) : ''
       });
     },
-    clearCache: function () { cache = null; }
+    clearCache: function () { cache = null; },
+    clearFixtures: function () { fixtureServices = []; cache = null; }
   });
 
   repositories.serviceMetrics = Object.freeze({
