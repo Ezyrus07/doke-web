@@ -74,6 +74,22 @@ async function installDeterministicRuntime(page, pageEntry) {
 
   await page.addInitScript(({ pageKey, session, professionalSessionFixture, community }) => {
     const activeSession = pageKey === 'anunciar-servico' ? professionalSessionFixture : session;
+
+    if (pageKey === 'anunciar-servico') {
+      const protectedSessionKey = 'doke.auth.session.v1';
+      const nativeRemoveItem = Storage.prototype.removeItem;
+      const preserveVisualProfessionalSession = function preserveVisualProfessionalSession(key) {
+        if (String(key || '') === protectedSessionKey) return;
+        return nativeRemoveItem.call(this, key);
+      };
+      Storage.prototype.removeItem = preserveVisualProfessionalSession;
+      document.addEventListener('DOMContentLoaded', () => {
+        if (Storage.prototype.removeItem === preserveVisualProfessionalSession) {
+          Storage.prototype.removeItem = nativeRemoveItem;
+        }
+      }, { once: true });
+    }
+
     localStorage.setItem('doke.auth.session.v1', JSON.stringify(activeSession));
 
     if (pageKey === 'comunidade-interna') {
