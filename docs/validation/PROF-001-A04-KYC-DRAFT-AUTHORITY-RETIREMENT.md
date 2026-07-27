@@ -77,17 +77,26 @@ Checkpoint do runtime permanente:
 
 `d093d34496ce0677c2248c023a92ed5a03a99050`
 
-Ainda pendentes no mesmo head de fechamento:
+Candidato `f867f0a496c0b8ee1308855e214df9e07ea326be`:
 
-- audit estrutural PROF-A04;
-- runtime PROF-A04;
-- contratos cumulativos PROF-A01, PROF-A02 e PROF-A03;
+- audit cumulativo PROF-A01: sucesso;
+- audit PROF-A02: sucesso;
+- runtime PROF-A02: sucesso;
+- audit PROF-A03: sucesso;
+- runtime PROF-A03: sucesso;
+- audit estrutural PROF-A04: sucesso;
+- runtime PROF-A04: sucesso;
+- contratos gerais até o gate da matriz: sucesso;
+- matriz determinística: drift detectado;
+- sincronização solicitada exclusivamente pelo workflow canônico.
+
+Após a sincronização, ainda devem passar no mesmo head final:
+
 - Doke Quality Gates;
 - E2E bloqueante;
 - 105 guards visuais;
 - Canary;
-- Diagnostic;
-- sincronização da matriz determinística, caso o gate indique drift.
+- Diagnostic.
 
 ## Segurança operacional
 
