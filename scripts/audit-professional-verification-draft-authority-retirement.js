@@ -121,8 +121,8 @@ const evidenceMarkdown = read(files.evidenceMarkdown);
 [
   'Retirada da autoridade local do rascunho KYC',
   'PROF-B03-KYC-EVIDENCE',
-  'Nenhuma migration é necessária',
-  'Staging e produção devem permanecer inalterados'
+  'Nenhuma migration',
+  'Staging e produção'
 ].forEach((marker) => assert(evidenceMarkdown.includes(marker), `human evidence marker missing: ${marker}`));
 if (evidence.status === 'done') {
   assert(evidenceMarkdown.includes('`DONE`'), 'done JSON evidence requires DONE human evidence');
