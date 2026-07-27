@@ -1,0 +1,47 @@
+{
+  "domain": "CAT-001",
+  "sublot": "CAT-A04",
+  "status": "baseline_frozen",
+  "objective": "Close service-media replacement, superseded-object cleanup and abandoned-draft cleanup lifecycle without reopening browser authority.",
+  "branch": "cat/cat-001-baseline-audit",
+  "baseHead": "035305f2d80364ccd21f1ab52b29cc1d314693f5",
+  "currentAuthority": {
+    "storageSelect": "authenticated owner policy",
+    "storageInsert": "authenticated professional owner-path policy",
+    "storageUpdate": "authenticated owner policy",
+    "storageDelete": "authenticated owner policy",
+    "catalogMediaRead": "public.service_media joined from services repository",
+    "replacementTransaction": "missing",
+    "supersededObjectState": "missing",
+    "abandonedDraftExpiry": "missing",
+    "referenceSafeCleanup": "missing"
+  },
+  "risks": [
+    "Browser can update or delete owner storage objects without a server transaction that also reconciles service_media and service_versions.",
+    "A replaced object has no canonical superseded state or retention window.",
+    "Abandoned draft media has no explicit expiry authority.",
+    "Cleanup cannot prove that an object is unreferenced by approved, pending or historical service versions before deletion."
+  ],
+  "requiredClosure": [
+    "Introduce explicit server-side media lifecycle operations behind JWT-verified Edge authority.",
+    "Separate upload reservation from promotion into an approved or pending service version.",
+    "Track active, pending, superseded and cleanup-eligible media states canonically.",
+    "Remove direct browser UPDATE and DELETE authority for service-media objects.",
+    "Guarantee reference-safe cleanup across services, service_media and service_versions.",
+    "Add deterministic runtime, structural and SQL validation gates.",
+    "Validate only in staging before documentary closure."
+  ],
+  "safety": {
+    "stagingChanged": false,
+    "productionChanged": false,
+    "realAccountChanged": false,
+    "persistentSyntheticAccountCreated": false,
+    "temporaryWorkflowRemaining": false,
+    "temporaryCodemodRemaining": false,
+    "smsEnabled": false,
+    "oauthEnabled": false,
+    "paidConfigurationEnabled": false,
+    "prMerged": false
+  },
+  "nextControlledWork": "Design the canonical media lifecycle schema and server operations, then implement the smallest reversible candidate without touching production."
+}
