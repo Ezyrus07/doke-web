@@ -1,0 +1,97 @@
+{
+  "domain": "PROF-001",
+  "sublot": "PROF-A02",
+  "status": "implementation_in_progress",
+  "objective": "Retire browser-persistent professional profile authority while preserving Supabase-owned setup reads and writes and fixture-only in-memory compatibility.",
+  "baseHead": "4093cfb1f540615a8db43734beb32d90ceabae85",
+  "branch": "prof/prof-001-baseline-audit",
+  "implementationHead": "",
+  "authority": {
+    "supabaseProfileRead": "public.professional_profiles",
+    "supabaseProfileSetupWrite": "self-service-operations/save_professional_profile_setup",
+    "browserPersistentProfileAuthority": "retired",
+    "fixtureCompatibility": "memory_only",
+    "activeProfessionalEdit": "fail_closed_pending_server_operation",
+    "profileLifecycleTransitions": "server_only"
+  },
+  "retired": {
+    "storageKeys": [
+      "doke.professionalProfiles.v1",
+      "doke.professionalApplications.v1"
+    ],
+    "storageApis": [
+      "localStorage"
+    ],
+    "remoteUnsafeMutations": [
+      "updateActiveProfile",
+      "setVerificationStatus",
+      "transition"
+    ]
+  },
+  "preserved": {
+    "remoteSetup": [
+      "saveDraft",
+      "completeSetup",
+      "getByUserId",
+      "list"
+    ],
+    "fixtureFunctions": [
+      "saveDraft",
+      "completeSetup",
+      "updateActiveProfile",
+      "setVerificationStatus",
+      "transition"
+    ]
+  },
+  "remainingBlockers": [
+    {
+      "id": "PROF-B03-KYC-DRAFT",
+      "status": "active",
+      "reason": "professional-identity-verifications-repository.js still owns localStorage/sessionStorage draft state."
+    },
+    {
+      "id": "PROF-B03-KYC-EVIDENCE",
+      "status": "active",
+      "reason": "professional-verification-evidence-repository.js still owns IndexedDB binary evidence."
+    },
+    {
+      "id": "PROF-A03-ACTIVE-EDIT",
+      "status": "required",
+      "reason": "Active professional field editing needs a dedicated server-side reconciled operation before it can be re-enabled."
+    },
+    {
+      "id": "PROF-B04",
+      "status": "blocked_external",
+      "reason": "Final KYC rules, retention and legal verification provider are not approved."
+    },
+    {
+      "id": "PROF-B05",
+      "status": "blocked_managed_storage",
+      "reason": "Legacy owner-prefix Storage policies require managed Supabase Storage policy authority for removal."
+    }
+  ],
+  "validation": {
+    "staticAudit": "pending",
+    "runtimeRetirement": "pending",
+    "qualityRunNumber": null,
+    "quality": "pending",
+    "blockingE2E": "pending",
+    "visualStructuralGuards": "pending",
+    "stagingCanaryRunNumber": null,
+    "stagingCanary": "pending",
+    "diagnosticRunNumber": null,
+    "diagnostic": "pending"
+  },
+  "safety": {
+    "migrationApplied": false,
+    "edgeFunctionDeployed": false,
+    "stagingChanged": false,
+    "productionChanged": false,
+    "realAccountChanged": false,
+    "persistentSyntheticAccountCreated": false,
+    "temporaryWorkflowRemaining": false,
+    "temporaryCodemodRemaining": false,
+    "prMerged": false
+  },
+  "nextControlledSublot": "PROF-A03 must add a server-side reconciled active professional profile update before the editor can persist professional fields again."
+}
