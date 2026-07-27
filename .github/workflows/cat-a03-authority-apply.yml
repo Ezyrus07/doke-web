@@ -27,14 +27,23 @@ jobs:
       - name: Apply CAT-A03 authority implementation
         run: node scripts/execute-cat-a03-authority.js
 
-      - name: Validate CAT-A03 focused contracts
-        run: |
-          node scripts/audit-service-catalog-authority-retirement.js
-          node scripts/audit-service-lifecycle-authority.js
-          node scripts/test-service-lifecycle-authority-runtime.js
-          node scripts/test-services-supabase-repository-contract.js
-          node scripts/test-service-order-integration-contract.js
-          git diff --check
+      - name: Validate cumulative CAT-A02 authority
+        run: node scripts/audit-service-catalog-authority-retirement.js
+
+      - name: Validate CAT-A03 structural authority
+        run: node scripts/audit-service-lifecycle-authority.js
+
+      - name: Validate CAT-A03 runtime authority
+        run: node scripts/test-service-lifecycle-authority-runtime.js
+
+      - name: Validate Supabase repository boundary
+        run: node scripts/test-services-supabase-repository-contract.js
+
+      - name: Validate service-order integration
+        run: node scripts/test-service-order-integration-contract.js
+
+      - name: Validate patch formatting
+        run: git diff --check
 
       - name: Publish CAT-A03 implementation
         run: |
@@ -52,6 +61,5 @@ jobs:
           git add scripts/test-service-order-integration-contract.js
           git add docs/validation/CAT-001-A03-SERVICE-LIFECYCLE-AUTHORITY.json
           git add docs/validation/CAT-001-A03-SERVICE-LIFECYCLE-AUTHORITY.md
-          git add .github/workflows/quality.yml
           git commit -m "Implement CAT-A03 service lifecycle authority"
           git push origin HEAD:cat/cat-001-baseline-audit
