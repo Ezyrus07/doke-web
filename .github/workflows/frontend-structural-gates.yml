@@ -21,19 +21,17 @@ on:
       - ".github/workflows/frontend-structural-gates.yml"
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   structural-gates:
     name: Baseline-aware frontend architecture
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 10
 
     steps:
-      - name: Checkout candidate branch
+      - name: Checkout candidate tree
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref || github.ref_name }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -43,47 +41,11 @@ jobs:
       - name: Run frontend structural gates
         run: node scripts/audit-frontend-structural-gates.js --strict
 
-      - name: Capture governed audit diagnostics
-        if: always()
-        continue-on-error: true
-        shell: bash
-        run: |
-          mkdir -p reports/generated
-          set -o pipefail
-          npm run audit:agent-governance 2>&1 | tee reports/generated/frontend-agent-governance.log
-
-      - name: Preserve current domain matrix
-        if: always()
-        run: cp docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-before.md
-
-      - name: Generate deterministic domain matrix candidate
-        if: always()
-        run: npm run write:domain-completion-matrix
-
-      - name: Commit deterministic domain matrix
-        if: github.event_name == 'pull_request'
-        shell: bash
-        run: |
-          if git diff --quiet -- docs/DOMAIN-COMPLETION-MATRIX.md; then
-            echo "Domain matrix is already current."
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/DOMAIN-COMPLETION-MATRIX.md
-          git commit -m "FE-G01: refresh domain completion matrix"
-          git push origin HEAD:${GITHUB_HEAD_REF}
-
-      - name: Upload structural gate evidence
+      - name: Upload structural gate report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: frontend-structural-gates-${{ github.sha }}
-          path: |
-            reports/generated/frontend-structural-gates-report.json
-            reports/generated/frontend-agent-governance.log
-            reports/generated/domain-completion-matrix-report.json
-            reports/generated/domain-completion-matrix-before.md
-            docs/DOMAIN-COMPLETION-MATRIX.md
+          path: reports/generated/frontend-structural-gates-report.json
           if-no-files-found: error
           retention-days: 14
