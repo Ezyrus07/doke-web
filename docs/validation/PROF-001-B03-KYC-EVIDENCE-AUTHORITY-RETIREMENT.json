@@ -1,0 +1,66 @@
+{
+  "domain": "PROF-001",
+  "sublot": "PROF-B03-KYC-EVIDENCE",
+  "status": "implementation_in_progress",
+  "objective": "Retire IndexedDB as browser-persistent KYC binary-evidence authority while preserving Supabase Storage as the only real evidence authority and fixture evidence as runtime-only memory.",
+  "branch": "prof/prof-001-baseline-audit",
+  "baseHead": "6de6083ee4d012ca0567d7cb9bd461fa1869e9a4",
+  "previousValidatedHead": "709ed9c5aeac732e70824feea3df8dd68b5fa3b0",
+  "implementationHead": "4791ce0f545df0805a823c30a1284996d047a0d7",
+  "runtimeHead": "627cdfb219f1e3c6633990193f70eb663aabf3fd",
+  "authority": {
+    "realBinaryEvidence": "supabase_storage_professional-verification-media",
+    "uploadPreparation": "professional-verification-operations/prepare_uploads",
+    "uploadTransport": "uploadToSignedUrl",
+    "submissionConsumption": "submit_professional_identity_verification_internal",
+    "browserPersistentEvidenceAuthority": "retired",
+    "fixtureCompatibility": "memory_only",
+    "remoteFailureMode": "fail_closed"
+  },
+  "retired": {
+    "databaseName": "doke-professional-verification-evidence-v1",
+    "storageApi": "IndexedDB"
+  },
+  "remainingBlockers": [
+    {
+      "id": "PROF-B04",
+      "status": "blocked_external",
+      "reason": "Final KYC rules, retention, rejection, appeal and legal verification provider remain unapproved."
+    },
+    {
+      "id": "PROF-B05",
+      "status": "blocked_managed_storage",
+      "reason": "Legacy owner-prefix Storage policies still require managed Supabase Storage authority for retirement."
+    }
+  ],
+  "validation": {
+    "staticAudit": "pending",
+    "runtimeRetirement": "pending",
+    "cumulativeProfA01": "pending",
+    "cumulativeProfA02": "pending",
+    "cumulativeProfA03": "pending",
+    "cumulativeProfA04": "pending",
+    "deterministicMatrix": "pending",
+    "quality": "pending",
+    "blockingE2E": "pending",
+    "visualStructuralGuards": "pending",
+    "stagingCanary": "pending",
+    "diagnostic": "pending",
+    "finalEvidence": "pending"
+  },
+  "safety": {
+    "migrationApplied": false,
+    "edgeFunctionDeployed": false,
+    "stagingChanged": false,
+    "productionChanged": false,
+    "realAccountChanged": false,
+    "persistentSyntheticAccountCreated": false,
+    "temporaryWorkflowRemaining": false,
+    "temporaryCodemodRemaining": false,
+    "smsEnabled": false,
+    "oauthEnabled": false,
+    "paidConfigurationEnabled": false,
+    "prMerged": false
+  },
+  "nextControlledWork": "Resolve PROF-B04 and PROF-B05 without reopening browser-owned KYC authority."
+}
