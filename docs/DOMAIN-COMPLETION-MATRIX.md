@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 883 arquivos no escopo; 190 referências a localStorage; 52 a sessionStorage; 530 referências mock; 127 referências de rede/Supabase; 30 marcadores de implementação pendente.
+**Evidência estática observada:** 884 arquivos no escopo; 192 referências a localStorage; 52 a sessionStorage; 530 referências mock; 129 referências de rede/Supabase; 30 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -316,6 +316,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - service-media listing policy is closed and owner storage mutations are identity-scoped.
 - Admin/moderator review actions execute through a JWT-protected Edge Function; direct privileged RPCs are no longer browser-callable.
 - Template writes require canonical professional role and ownership of the linked service; staging has zero ownership mismatches.
+- CAT-A01 freezes the hybrid browser/remote service authority boundary and adds a permanent regression audit before CAT-B03 retirement.
 
 **Bloqueadores:**
 - **CAT-B03 · HIGH · authority_split:** Local service drafts and remote published versions coexist without a final production promotion contract. _(Fase 4)_
@@ -879,7 +880,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2085 arquivos no escopo; 457 referências a localStorage; 126 a sessionStorage; 840 referências mock; 499 referências de rede/Supabase; 84 marcadores de implementação pendente.
+**Evidência estática observada:** 2086 arquivos no escopo; 459 referências a localStorage; 126 a sessionStorage; 840 referências mock; 501 referências de rede/Supabase; 84 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
@@ -940,4 +941,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-07-27T11:20:00-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-07-27T13:05:00-03:00._

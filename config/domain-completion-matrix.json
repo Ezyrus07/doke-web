@@ -1,6 +1,6 @@
 {
-  "version": "1.3.4",
-  "updatedAt": "2026-07-27T11:20:00-03:00",
+  "version": "1.3.5",
+  "updatedAt": "2026-07-27T13:05:00-03:00",
   "title": "Doke Domain Completion Matrix",
   "purpose": "Single source of truth for domain maturity, data authority, staging evidence, blockers, dependencies and mandatory completion order.",
   "maturityScale": {
@@ -626,7 +626,10 @@
         "assets/js/pages/anunciar-servico.js",
         "assets/js/pages/home/public-services.js",
         "supabase/migrations/009_service_catalog_shared_runtime.sql",
-        "supabase/migrations/032_service_listing_moderation.sql"
+        "supabase/migrations/032_service_listing_moderation.sql",
+        "scripts/audit-service-catalog-authority-baseline.js",
+        "docs/validation/CAT-001-A01-AUTHORITY-BASELINE.json",
+        "docs/validation/CAT-001-A01-AUTHORITY-BASELINE.md"
       ],
       "scanRoots": [
         "assets/js/repositories/services-repository.js",
@@ -663,7 +666,8 @@
         "service_categories is RLS-protected and public reads expose active rows only.",
         "service-media listing policy is closed and owner storage mutations are identity-scoped.",
         "Admin/moderator review actions execute through a JWT-protected Edge Function; direct privileged RPCs are no longer browser-callable.",
-        "Template writes require canonical professional role and ownership of the linked service; staging has zero ownership mismatches."
+        "Template writes require canonical professional role and ownership of the linked service; staging has zero ownership mismatches.",
+        "CAT-A01 freezes the hybrid browser/remote service authority boundary and adds a permanent regression audit before CAT-B03 retirement."
       ],
       "blockers": [
         {
