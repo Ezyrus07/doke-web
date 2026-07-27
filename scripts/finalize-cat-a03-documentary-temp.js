@@ -1,0 +1,133 @@
+#!/usr/bin/env node
+'use strict';
+
+const fs = require('fs');
+
+const evidencePath = 'docs/validation/CAT-001-A03-SERVICE-LIFECYCLE-AUTHORITY.json';
+const evidence = JSON.parse(fs.readFileSync(evidencePath, 'utf8'));
+delete evidence.documentaryFinalizerTrigger;
+evidence.status = 'done';
+evidence.validatedCandidateHead = '9a71d700f8f6b5237c97fadc87a292ed5c475ea8';
+evidence.validation = {
+  staticAudit: 'success',
+  runtimeAuthority: 'success',
+  sqlValidation: 'success',
+  deterministicMatrix: 'success',
+  quality: 'success',
+  qualityRunNumber: 992,
+  blockingE2E: 'success',
+  visualStructuralGuards: 'success',
+  stagingCanary: 'success',
+  stagingCanaryRunNumber: 714,
+  diagnostic: 'success',
+  diagnosticRunNumber: 736,
+  finalEvidence: 'success'
+};
+evidence.safety.temporaryWorkflowRemaining = false;
+evidence.safety.temporaryCodemodRemaining = false;
+evidence.nextControlledWork = 'CAT-A04: close service-media replacement, superseded-object cleanup and abandoned-draft cleanup lifecycle.';
+fs.writeFileSync(evidencePath, JSON.stringify(evidence, null, 2) + '\n');
+
+const mdLines = [
+  '# CAT-001 / CAT-A03 — Autoridade server-side de edição e ciclo de vida',
+  '',
+  '## Status',
+  '',
+  '`DONE`',
+  '',
+  '## Resultado',
+  '',
+  '- edição de conteúdo real usa exclusivamente `submit_service_for_review`;',
+  '- pausa, reativação e arquivamento usam `transition_owned_service_lifecycle`;',
+  '- ator e ownership são validados server-side;',
+  '- `anon` e `authenticated` não executam a função privilegiada nem escrevem diretamente em `public.services`;',
+  '- fixtures não UUID permanecem somente em memória;',
+  '- arquivamento preserva versões aprovadas e snapshots históricos.',
+  '',
+  '## Staging',
+  '',
+  '- migration `20260727195302_service_lifecycle_authority` aplicada em `doke-web-staging`;',
+  '- `self-service-operations` versão 7, `ACTIVE`, `verify_jwt: true`;',
+  '- SQL 018 aprovado com `ROLLBACK`;',
+  '- nenhuma conta ou entidade sintética persistente criada.',
+  '',
+  '## Validação',
+  '',
+  '**Head técnico validado:** `9a71d700f8f6b5237c97fadc87a292ed5c475ea8`',
+  '',
+  '- Quality #992: sucesso;',
+  '- E2E bloqueante: sucesso;',
+  '- 105 guards visuais: sucesso;',
+  '- Canary #714: sucesso;',
+  '- Diagnostic #736: sucesso.',
+  '',
+  '## Segurança operacional',
+  '',
+  'Produção, contas reais, SMS, OAuth e configurações pagas não foram alterados. Nenhuma ferramenta temporária permanece no fechamento.',
+  '',
+  '## Pendências preservadas',
+  '',
+  '- `CAT-A04`: substituição e limpeza de mídia e rascunhos abandonados;',
+  '- `CAT-B04`: snapshot imutável de serviço em todos os caminhos de criação de pedido.',
+  ''
+];
+fs.writeFileSync('docs/validation/CAT-001-A03-SERVICE-LIFECYCLE-AUTHORITY.md', mdLines.join('\n'));
+
+const journalPath = 'docs/DOKE-ENGINEERING-JOURNAL.md';
+let journal = fs.readFileSync(journalPath, 'utf8').trimEnd();
+const heading = '# 2026-07-27 — CAT-A03 / autoridade server-side de edição e ciclo de vida';
+if (!journal.includes(heading)) {
+  const journalLines = [
+    '', '', '---', '', heading, '',
+    '**Status:** `DONE`', '',
+    '**Branch:** `cat/cat-001-baseline-audit`', '',
+    '**Pull Request:** `#12`', '',
+    '## Resultado', '',
+    '- conteúdo aprovado passou a mudar somente por nova versão submetida;',
+    '- pausa, reativação e arquivamento passaram para `transition_owned_service_lifecycle`;',
+    '- migration 149 e Edge Function v7 foram aplicadas em staging;',
+    '- SQL 018, Quality #992, E2E bloqueante, 105 guards, Canary #714 e Diagnostic #736 passaram;',
+    '- matriz 1.3.8 reconciliada e `CAT-B03` encerrado.', '',
+    '## Segurança operacional', '',
+    'Produção, contas reais, SMS, OAuth e configurações pagas não foram alterados. O PR permanece draft e não mesclado.', '',
+    '## Próximo sublote', '',
+    '`CAT-A04`: fechar substituição e limpeza de mídia, objetos superseded e rascunhos abandonados.'
+  ];
+  journal += journalLines.join('\n');
+}
+fs.writeFileSync(journalPath, journal + '\n');
+
+const matrixPath = 'config/domain-completion-matrix.json';
+const matrix = JSON.parse(fs.readFileSync(matrixPath, 'utf8'));
+matrix.version = '1.3.8';
+matrix.updatedAt = '2026-07-27T19:30:00-03:00';
+const removeClosed = (value) => {
+  if (Array.isArray(value)) {
+    value.forEach(removeClosed);
+    return;
+  }
+  if (!value || typeof value !== 'object') return;
+  for (const [key, child] of Object.entries(value)) {
+    if (key === 'blockers' && Array.isArray(child)) {
+      value[key] = child.filter((item) => typeof item === 'string' ? item !== 'CAT-B03' : item && item.id !== 'CAT-B03');
+    } else {
+      removeClosed(child);
+    }
+  }
+};
+removeClosed(matrix);
+const cat = matrix.domains.find((domain) => domain.id === 'CAT-001');
+if (!cat) throw new Error('CAT-001 matrix domain missing');
+const blockerId = (item) => typeof item === 'string' ? item : item && item.id;
+if (!cat.blockers.some((item) => blockerId(item) === 'CAT-B04')) throw new Error('CAT-B04 must remain open');
+if (cat.blockers.some((item) => blockerId(item) === 'CAT-B03')) throw new Error('CAT-B03 remains open');
+const finalEvidence = 'CAT-A03 complete in staging: migration 20260727195302, self-service-operations v7, SQL 018, Quality #992, blocking E2E, 105 guards, Canary #714 and Diagnostic #736 succeeded.';
+if (!cat.evidence.includes(finalEvidence)) cat.evidence.push(finalEvidence);
+cat.nextActions = [
+  'Close service-media replacement, superseded-object cleanup and abandoned-draft cleanup lifecycle.',
+  'Guarantee immutable service snapshots on every order creation path.',
+  'Reconcile CAT-001 final matrix and domain closure evidence.'
+];
+fs.writeFileSync(matrixPath, JSON.stringify(matrix, null, 2) + '\n');
+
+fs.unlinkSync(__filename);
