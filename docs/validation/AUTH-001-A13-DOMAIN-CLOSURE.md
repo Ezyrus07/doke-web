@@ -2,7 +2,7 @@
 
 ## Status
 
-`VALIDATION PENDING`
+`DONE`
 
 **Disposição canônica:** `core_done_external_blocked`.
 
@@ -63,8 +63,10 @@ A proteção de senhas vazadas do Supabase exige plano pago. O código não pode
 - testes e evidências atuais adicionados à matriz;
 - criado `scripts/audit-auth-domain-closure.js`;
 - criados scripts npm permanentes para os runtimes de onboarding, autoridade profissional e fechamento do domínio;
+- criado o gate permanente `Audit AUTH-001 domain closure` no Quality;
 - matriz Markdown regenerada deterministicamente;
-- contrato e diário técnico reconciliados.
+- contrato e diário técnico reconciliados;
+- workflow e codemod temporários removidos.
 
 ## Gate permanente
 
@@ -79,13 +81,30 @@ O audit AUTH-A13 falha se:
 7. provider mock reaparecer no contrato de identidade;
 8. a evidência AUTH-A12 deixar de estar concluída.
 
+## Validação da implementação
+
+Head validado:
+
+`8e05435d8f0abad79db410d6abc564f907d8f913`
+
+- Doke Quality Gates #703: sucesso;
+- audit AUTH-001 domain closure: sucesso;
+- sessão canônica e audit de autoridade de identidade: sucesso;
+- runtimes de retirada das autoridades locais de perfil, onboarding e profissional: sucesso;
+- runtime flags e matriz determinística: sucesso;
+- governança, assets, partição E2E e `git diff --check`: sucesso;
+- E2E bloqueante: sucesso;
+- 105 guards visuais: sucesso;
+- Doke Staging Edge HTTP Canary #477: sucesso;
+- Doke Diagnostic E2E #498: sucesso.
+
 ## Supabase
 
-Nenhuma migration é necessária.
+Nenhuma migration foi aplicada.
 
-Nenhuma Edge Function é criada ou implantada.
+Nenhuma Edge Function foi criada ou implantada.
 
-Nenhuma configuração, dado, conta ou provider de staging/produção é alterado.
+Nenhuma configuração, dado, conta ou provider de staging/produção foi alterado.
 
 ## Próximo handoff
 
@@ -97,4 +116,5 @@ Nenhuma configuração, dado, conta ou provider de staging/produção é alterad
 - staging não alterado;
 - nenhuma conta real modificada;
 - nenhum SMS, OAuth ou recurso pago habilitado;
+- nenhum workflow, codemod, hook ou diagnóstico temporário remanescente;
 - PR #9 permanece aberto, draft e não mesclado.
