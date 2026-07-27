@@ -44,6 +44,17 @@ jobs:
           fs.writeFileSync(file, source);
           NODE
 
+      - name: Reconcile repository test assertions
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const file = 'scripts/test-services-supabase-repository-contract.js';
+          let source = fs.readFileSync(file, 'utf8');
+          source = source.replace("const fs = require('fs');\n", "const nodeAssert = require('assert');\nconst fs = require('fs');\n");
+          source = source.replace('  await assert.rejects(\n', '  await nodeAssert.rejects(\n');
+          fs.writeFileSync(file, source);
+          NODE
+
       - name: Validate cumulative CAT-A02 authority
         run: |
           mkdir -p reports/generated
