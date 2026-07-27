@@ -1,19 +1,19 @@
 {
   "domain": "CAT-001",
   "sublot": "CAT-A02",
-  "status": "implementation_pending",
+  "status": "validation_pending",
   "objective": "Retire browser-persistent service authority for Supabase sessions and UUID subjects while preserving non-UUID fixtures in runtime-only memory.",
   "branch": "cat/cat-001-baseline-audit",
   "baseHead": "6d164daad6f055ced86f3e3e61efcc8b35627c15",
-  "transformationTriggerHead": "98045a8c126430961bf0b6b63bff6305bd33b68d",
+  "implementationHead": "97644a8fb8c6a099210dc2382444af9200107d47",
   "authority": {
     "realCatalog": "supabase_services_and_versioned_moderation",
-    "browserPersistentAuthority": "retirement_pending",
-    "fixtureCompatibility": "memory_only_pending",
-    "remoteFailureMode": "fail_closed_pending",
+    "browserPersistentAuthority": "retired",
+    "fixtureCompatibility": "memory_only",
+    "remoteFailureMode": "fail_closed",
     "retiredStorageKey": "doke.services.local.v1"
   },
-  "plannedBehavior": [
+  "implementedBehavior": [
     "localStorage is never read or written by the service repository",
     "configured Supabase reads do not fall back to browser fixtures",
     "Supabase or UUID-owned saves reject when remote authority is unavailable",
@@ -43,12 +43,12 @@
     "productionChanged": false,
     "realAccountChanged": false,
     "persistentSyntheticAccountCreated": false,
-    "temporaryWorkflowRemaining": true,
-    "temporaryCodemodRemaining": true,
+    "temporaryWorkflowRemaining": false,
+    "temporaryCodemodRemaining": false,
     "smsEnabled": false,
     "oauthEnabled": false,
     "paidConfigurationEnabled": false,
     "prMerged": false
   },
-  "nextControlledWork": "Transform services-repository.js and reconcile contracts without broadening into CAT-A03 lifecycle RPC work."
+  "nextControlledWork": "Validate CAT-A02 on one clean head, reconcile the deterministic matrix, and keep CAT-A03 lifecycle operations separate."
 }
