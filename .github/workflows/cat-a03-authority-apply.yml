@@ -44,15 +44,23 @@ jobs:
           fs.writeFileSync(file, source);
           NODE
 
-      - name: Reconcile repository test assertions
+      - name: Reconcile generated test harnesses
         run: |
           node - <<'NODE'
           const fs = require('fs');
-          const file = 'scripts/test-services-supabase-repository-contract.js';
-          let source = fs.readFileSync(file, 'utf8');
-          source = source.replace("const fs = require('fs');\n", "const nodeAssert = require('assert');\nconst fs = require('fs');\n");
-          source = source.replace('  await assert.rejects(\n', '  await nodeAssert.rejects(\n');
-          fs.writeFileSync(file, source);
+
+          const repositoryFile = 'scripts/test-services-supabase-repository-contract.js';
+          let repositorySource = fs.readFileSync(repositoryFile, 'utf8');
+          repositorySource = repositorySource.replace("const fs = require('fs');\n", "const nodeAssert = require('assert');\nconst fs = require('fs');\n");
+          repositorySource = repositorySource.replace('  await assert.rejects(\n', '  await nodeAssert.rejects(\n');
+          fs.writeFileSync(repositoryFile, repositorySource);
+
+          const integrationFile = 'scripts/test-service-order-integration-contract.js';
+          let integrationSource = fs.readFileSync(integrationFile, 'utf8');
+          const duplicated = 'context.Doke.session  }\n};\n\ncontext.Doke.session =';
+          if (!integrationSource.includes(duplicated)) throw new Error('CAT-A03 duplicated integration delimiter not found');
+          integrationSource = integrationSource.replace(duplicated, 'context.Doke.session =');
+          fs.writeFileSync(integrationFile, integrationSource);
           NODE
 
       - name: Validate cumulative CAT-A02 authority
