@@ -91,6 +91,32 @@ assert(evidence.safety.productionChanged === false, 'PROF-A04 cannot change prod
 assert(evidence.safety.realAccountChanged === false, 'PROF-A04 cannot change real accounts');
 assert(evidence.remainingBlockers.some((item) => item.id === 'PROF-B03-KYC-EVIDENCE'), 'IndexedDB evidence blocker must remain explicit');
 
+if (evidence.status === 'done') {
+  const requiredSuccessFields = [
+    'staticAudit',
+    'runtimeRetirement',
+    'cumulativeProfA01',
+    'cumulativeProfA02',
+    'cumulativeProfA03',
+    'deterministicMatrix',
+    'quality',
+    'blockingE2E',
+    'visualStructuralGuards',
+    'stagingCanary',
+    'diagnostic',
+    'finalEvidence'
+  ];
+  requiredSuccessFields.forEach((field) => {
+    assert(
+      evidence.validation && evidence.validation[field] === 'success',
+      `PROF-A04 cannot be done while validation.${field} is not success`
+    );
+  });
+  assert(Number.isInteger(evidence.validation.qualityRunNumber), 'done evidence requires qualityRunNumber');
+  assert(Number.isInteger(evidence.validation.stagingCanaryRunNumber), 'done evidence requires stagingCanaryRunNumber');
+  assert(Number.isInteger(evidence.validation.diagnosticRunNumber), 'done evidence requires diagnosticRunNumber');
+}
+
 const evidenceMarkdown = read(files.evidenceMarkdown);
 [
   'Retirada da autoridade local do rascunho KYC',
@@ -98,6 +124,9 @@ const evidenceMarkdown = read(files.evidenceMarkdown);
   'Nenhuma migration é necessária',
   'Staging e produção devem permanecer inalterados'
 ].forEach((marker) => assert(evidenceMarkdown.includes(marker), `human evidence marker missing: ${marker}`));
+if (evidence.status === 'done') {
+  assert(evidenceMarkdown.includes('`DONE`'), 'done JSON evidence requires DONE human evidence');
+}
 
 if (!process.exitCode) {
   console.log('[PROF-A04] browser-persistent KYC record and draft authority is retired.');
