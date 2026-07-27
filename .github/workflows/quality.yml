@@ -3,6 +3,9 @@ name: Doke Quality Gates
 on:
   pull_request:
     branches: [MAIN, main, master]
+  push:
+    branches:
+      - 'cat/**'
   workflow_dispatch:
 
 permissions:
@@ -15,7 +18,7 @@ concurrency:
 jobs:
   static-audits:
     name: Finalize CAT-A03 evidence and journal
-    if: github.event_name == 'pull_request' && github.actor != 'github-actions[bot]'
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
