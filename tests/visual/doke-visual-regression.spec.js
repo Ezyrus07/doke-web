@@ -20,8 +20,8 @@ const authenticatedSession = Object.freeze({
   issuedAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
 });
-const professionalProfileId = 'professional_profile_visual';
-const professionalUserId = 'visual-professional-user';
+const professionalProfileId = 'professional_profile_user_profissional_demo';
+const professionalUserId = 'user_profissional_demo';
 const visualCommunity = Object.freeze({
   id: 'visual-community',
   title: 'Comunidade Visual',
@@ -75,44 +75,6 @@ async function installDeterministicRuntime(page, pageEntry) {
   await page.addInitScript(({ pageKey, session, professionalSessionFixture, community }) => {
     const activeSession = pageKey === 'anunciar-servico' ? professionalSessionFixture : session;
     localStorage.setItem('doke.auth.session.v1', JSON.stringify(activeSession));
-
-    if (pageKey === 'anunciar-servico') {
-      const timestamp = '2026-01-01T00:00:00.000Z';
-      localStorage.setItem('doke.professionalProfiles.v1', JSON.stringify([{
-        id: 'professional_profile_visual',
-        userId: 'visual-professional-user',
-        status: 'active',
-        currentStep: 2,
-        payload: {
-          mainCategory: 'Serviços gerais',
-          specialties: 'Validação visual',
-          shortBio: 'Perfil determinístico do contrato visual.',
-          serviceRegion: 'Salvador e região',
-          experienceYears: '5+',
-          truthConfirmed: true,
-          termsAccepted: true,
-        },
-        verificationStatus: 'verified',
-        createdAt: timestamp,
-        updatedAt: timestamp,
-        savedAt: timestamp,
-        completedAt: timestamp,
-      }]));
-      localStorage.setItem('doke.professionalIdentityVerifications.v1', JSON.stringify([{
-        id: 'professional_verification_visual',
-        userId: 'visual-professional-user',
-        professionalProfileId: 'professional_profile_visual',
-        status: 'verified',
-        currentStep: 3,
-        payload: {},
-        createdAt: timestamp,
-        updatedAt: timestamp,
-        savedAt: timestamp,
-        submittedAt: timestamp,
-        reviewStartedAt: timestamp,
-        decidedAt: timestamp,
-      }]));
-    }
 
     if (pageKey === 'comunidade-interna') {
       localStorage.setItem('doke.communities.local.v1', JSON.stringify([community]));
