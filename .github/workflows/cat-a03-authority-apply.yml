@@ -27,6 +27,18 @@ jobs:
       - name: Apply CAT-A03 authority implementation
         run: node scripts/execute-cat-a03-authority.js
 
+      - name: Reconcile cumulative CAT-A02 contract
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const file = 'scripts/audit-service-catalog-authority-retirement.js';
+          let source = fs.readFileSync(file, 'utf8');
+          const retired = "  'Authenticated remote save must finish as synced.',\n";
+          if (!source.includes(retired)) throw new Error('CAT-A02 historical remote-save marker not found');
+          source = source.replace(retired, "  'DOKE_SERVICE_DIRECT_MUTATION_FORBIDDEN',\n");
+          fs.writeFileSync(file, source);
+          NODE
+
       - name: Validate cumulative CAT-A02 authority
         run: node scripts/audit-service-catalog-authority-retirement.js
 
