@@ -29,6 +29,7 @@ const files = {
   moderationTest: 'scripts/test-service-moderation-flow-contract.js',
   evidenceJson: 'docs/validation/CAT-001-A01-AUTHORITY-BASELINE.json',
   evidenceMarkdown: 'docs/validation/CAT-001-A01-AUTHORITY-BASELINE.md',
+  journal: 'docs/DOKE-ENGINEERING-JOURNAL.md',
   quality: '.github/workflows/quality.yml'
 };
 
@@ -160,6 +161,31 @@ const evidenceMarkdown = read(files.evidenceMarkdown);
   'CAT-B04',
   'CAT-A02'
 ].forEach((marker) => assert(evidenceMarkdown.includes(marker), `human evidence marker missing: ${marker}`));
+
+if (evidence.validationStatus === 'done') {
+  const requiredSuccess = [
+    'staticAudit',
+    'quality',
+    'blockingE2E',
+    'visualStructuralGuards',
+    'stagingCanary',
+    'diagnostic',
+    'finalEvidence'
+  ];
+  requiredSuccess.forEach((field) => {
+    assert(evidence.validation && evidence.validation[field] === 'success', `completed CAT-A01 evidence requires validation.${field}=success`);
+  });
+  ['qualityRunNumber', 'stagingCanaryRunNumber', 'diagnosticRunNumber'].forEach((field) => {
+    assert(Number.isInteger(evidence.validation && evidence.validation[field]), `completed CAT-A01 evidence requires integer validation.${field}`);
+  });
+  assert(/^[0-9a-f]{40}$/i.test(String(evidence.validatedCandidateHead || '')), 'completed CAT-A01 evidence requires a full validatedCandidateHead');
+  assert(evidence.safety && evidence.safety.temporaryWorkflowRemaining === false, 'completed CAT-A01 evidence cannot leave a temporary workflow');
+  assert(evidenceMarkdown.includes('BASELINE FROZEN — DONE'), 'completed CAT-A01 human evidence must be marked DONE');
+  assert(
+    read(files.journal).includes('# 2026-07-27 — CAT-A01 / baseline de autoridade do catálogo'),
+    'completed CAT-A01 evidence requires the engineering journal entry'
+  );
+}
 
 function walk(dir) {
   const absolute = path.join(root, dir);
