@@ -1,0 +1,56 @@
+name: CAT-A02 Authority Retirement
+
+on:
+  push:
+    branches:
+      - cat/cat-001-baseline-audit
+
+permissions:
+  contents: write
+
+concurrency:
+  group: cat-a02-authority-retirement
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout CAT candidate
+        uses: actions/checkout@v4
+        with:
+          ref: cat/cat-001-baseline-audit
+          fetch-depth: 0
+
+      - name: Apply CAT-A02 codemod
+        run: node scripts/codemod-cat-a02-service-authority.js
+
+      - name: Validate CAT-A02 transformation
+        run: |
+          node scripts/audit-service-catalog-authority-baseline.js
+          node scripts/audit-service-catalog-authority-retirement.js
+          node scripts/test-service-catalog-authority-retirement-runtime.js
+          node scripts/test-services-supabase-repository-contract.js
+          node scripts/test-detail-ad-canonical-route-contract.js
+          git diff --check
+
+      - name: Remove temporary tools and publish
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/cat-a02-authority-retirement.yml
+          git rm scripts/codemod-cat-a02-service-authority.js
+          git add assets/js/repositories/services-repository.js
+          git add scripts/test-services-supabase-repository-contract.js
+          git add scripts/test-detail-ad-canonical-route-contract.js
+          git add scripts/audit-service-catalog-authority-baseline.js
+          git add scripts/audit-service-catalog-authority-retirement.js
+          git add scripts/test-service-catalog-authority-retirement-runtime.js
+          git add docs/validation/CAT-001-A02-SERVICE-AUTHORITY-RETIREMENT.json
+          git add docs/validation/CAT-001-A02-SERVICE-AUTHORITY-RETIREMENT.md
+          git add .github/workflows/quality.yml
+          git commit -m "Retire browser-persistent service authority"
+          git push origin "HEAD:cat/cat-001-baseline-audit"
