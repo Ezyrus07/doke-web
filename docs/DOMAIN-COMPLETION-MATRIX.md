@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 869 arquivos no escopo; 147 referências a localStorage; 28 a sessionStorage; 555 referências mock; 124 referências de rede/Supabase; 33 marcadores de implementação pendente.
+**Evidência estática observada:** 871 arquivos no escopo; 148 referências a localStorage; 29 a sessionStorage; 555 referências mock; 130 referências de rede/Supabase; 33 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -818,7 +818,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 1/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 189 arquivos no escopo; 55 referências a localStorage; 1 a sessionStorage; 293 referências mock; 10 referências de rede/Supabase; 23 marcadores de implementação pendente.
+**Evidência estática observada:** 190 arquivos no escopo; 56 referências a localStorage; 2 a sessionStorage; 293 referências mock; 10 referências de rede/Supabase; 23 marcadores de implementação pendente.
 
 **Evidências:**
 - The master plan identifies legal, privacy and commercial decisions as mandatory.
@@ -878,7 +878,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2048 arquivos no escopo; 423 referências a localStorage; 105 a sessionStorage; 913 referências mock; 490 referências de rede/Supabase; 87 marcadores de implementação pendente.
+**Evidência estática observada:** 2051 arquivos no escopo; 424 referências a localStorage; 106 a sessionStorage; 913 referências mock; 496 referências de rede/Supabase; 87 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
