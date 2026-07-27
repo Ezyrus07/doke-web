@@ -2,7 +2,7 @@
 
 ## Status
 
-`IMPLEMENTATION IN PROGRESS`
+`VALIDATION PENDING`
 
 ## Objetivo
 
@@ -84,6 +84,10 @@ Ao concluir o sublote:
 - a autoridade server-side pode ser classificada como `canonical`;
 - permanecem somente `PROF-B04` e `PROF-B05`;
 - produção continua bloqueada.
+
+Modo de validação: `canonical_MAIN_stack_validation_then_restore_stacked_base`.
+
+Um reconciliador controlado e autocontido foi adicionado apenas para atualizar atomicamente `PROF-001`, regenerar a matriz Markdown pelo gerador canônico e remover o próprio workflow no mesmo commit. A validação não poderá avançar enquanto esse arquivo temporário permanecer na branch.
 
 ## Segurança operacional
 
