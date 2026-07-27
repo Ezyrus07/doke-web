@@ -29,24 +29,37 @@ const files = {
   moderationTest: 'scripts/test-service-moderation-flow-contract.js',
   evidenceJson: 'docs/validation/CAT-001-A01-AUTHORITY-BASELINE.json',
   evidenceMarkdown: 'docs/validation/CAT-001-A01-AUTHORITY-BASELINE.md',
+  catA02EvidenceJson: 'docs/validation/CAT-001-A02-SERVICE-AUTHORITY-RETIREMENT.json',
   journal: 'docs/DOKE-ENGINEERING-JOURNAL.md',
   quality: '.github/workflows/quality.yml'
 };
 
-Object.values(files).forEach((file) => assert(exists(file), `required file missing: ${file}`));
+Object.entries(files)
+  .filter(([name]) => name !== 'catA02EvidenceJson')
+  .forEach(([, file]) => assert(exists(file), `required file missing: ${file}`));
+
+const catA02Evidence = exists(files.catA02EvidenceJson)
+  ? JSON.parse(read(files.catA02EvidenceJson))
+  : null;
+const catA02Retired = Boolean(
+  catA02Evidence &&
+  catA02Evidence.authority &&
+  catA02Evidence.authority.browserPersistentAuthority === 'retired'
+);
 
 const matrix = JSON.parse(read(files.matrix));
 const cat = (matrix.domains || []).find((domain) => domain.id === 'CAT-001');
 assert(Boolean(cat), 'CAT-001 is missing from the domain completion matrix');
 assert(cat && cat.maturity === 4, 'CAT-001 maturity must remain staging_operational baseline level 4');
-assert(cat && cat.userFacingAuthority === 'hybrid', 'CAT-001 user-facing authority must remain hybrid before CAT-B03 retirement');
+assert(cat && ['hybrid', 'remote'].includes(cat.userFacingAuthority), 'CAT-001 user-facing authority must remain controlled');
 assert(cat && cat.serverAuthority === 'canonical', 'CAT-001 server authority must remain canonical');
 assert(cat && cat.stagingEvidence === 'staging_operational', 'CAT-001 staging evidence must remain operational');
 assert(cat && cat.securityGate === 'partial', 'CAT-001 security gate must remain partial while blockers are open');
 assert(cat && cat.productionGate === 'blocked', 'CAT-001 production gate must remain blocked');
+const blockerIds = (cat && cat.blockers || []).map((blocker) => blocker.id).sort();
 assert(
-  same((cat && cat.blockers || []).map((blocker) => blocker.id).sort(), ['CAT-B03', 'CAT-B04']),
-  'CAT-001 blocker set changed without a controlled sublot'
+  same(blockerIds, ['CAT-B03', 'CAT-B04']) || same(blockerIds, ['CAT-B04']),
+  'CAT-001 blocker set changed outside the controlled CAT-A02 reconciliation'
 );
 assert(
   same((cat && cat.dependencies || []).slice().sort(), ['AUTH-001', 'PROF-001', 'SEC-001']),
@@ -55,15 +68,6 @@ assert(
 
 const repository = read(files.repository);
 [
-  "var STORAGE_KEY = 'doke.services.local.v1'",
-  'root.localStorage.getItem(STORAGE_KEY)',
-  'root.localStorage.setItem(STORAGE_KEY',
-  "setProviderState('local-fallback')",
-  "upsertLocal(normalized, 'pending')",
-  'return clone(fallback)',
-  'mergeById(local, remote)',
-  'synchronizePending(merged)',
-  'resolveReadableLocalService',
   "REMOTE_TABLE = 'services'",
   "REMOTE_MEDIA_TABLE = 'service_media'",
   "REMOTE_VERSIONS_TABLE = 'service_versions'",
@@ -72,6 +76,40 @@ const repository = read(files.repository);
   'isPubliclyVisible',
   'approvedContentRemainsPublic'
 ].forEach((marker) => assert(repository.includes(marker), `catalog authority marker missing: ${marker}`));
+
+if (catA02Retired) {
+  [
+    "AUTHORITY = 'supabase-or-fixture-memory'",
+    'fixtureServices',
+    'readFixtureServices',
+    'upsertFixture',
+    "createAuthorityUnavailableError",
+    "setProviderState('remote-unavailable')",
+    "provider: getSupabaseClient() ? 'supabase' : 'fixture-memory'"
+  ].forEach((marker) => assert(repository.includes(marker), `post-CAT-A02 authority marker missing: ${marker}`));
+  [
+    'doke.services.local.v1',
+    'root.localStorage',
+    'synchronizePending',
+    'local-fallback',
+    'upsertLocal',
+    'readLocalServices',
+    'writeLocalServices',
+    'resolveReadableLocalService'
+  ].forEach((marker) => assert(!repository.includes(marker), `retired CAT-A02 marker remains executable: ${marker}`));
+} else {
+  [
+    "var STORAGE_KEY = 'doke.services.local.v1'",
+    'root.localStorage.getItem(STORAGE_KEY)',
+    'root.localStorage.setItem(STORAGE_KEY',
+    "setProviderState('local-fallback')",
+    "upsertLocal(normalized, 'pending')",
+    'return clone(fallback)',
+    'mergeById(local, remote)',
+    'synchronizePending(merged)',
+    'resolveReadableLocalService'
+  ].forEach((marker) => assert(repository.includes(marker), `catalog authority marker missing: ${marker}`));
+}
 
 [
   'function load(',
@@ -148,7 +186,7 @@ assert(evidence.domain === 'CAT-001' && evidence.sublot === 'CAT-A01', 'CAT-A01 
 assert(evidence.status === 'baseline_frozen', 'CAT-A01 evidence must remain baseline_frozen');
 assert(['pending', 'done'].includes(evidence.validationStatus), 'CAT-A01 validation status is invalid');
 assert(evidence.authority && evidence.authority.browserStorageKey === 'doke.services.local.v1', 'browser storage key is not documented');
-assert(evidence.authority && evidence.authority.ownerDraftAndLifecycle === 'hybrid_browser_and_remote', 'hybrid owner authority is not documented');
+assert(evidence.authority && evidence.authority.ownerDraftAndLifecycle === 'hybrid_browser_and_remote', 'historical hybrid owner authority is not documented');
 assert(evidence.safety && evidence.safety.implementationChanged === false, 'CAT-A01 cannot claim an implementation change');
 assert(evidence.safety && evidence.safety.stagingChanged === false, 'CAT-A01 cannot change staging');
 assert(evidence.safety && evidence.safety.productionChanged === false, 'CAT-A01 cannot change production');
@@ -199,8 +237,8 @@ function walk(dir) {
 const assetScripts = walk('assets/js').filter((file) => file.endsWith('.js'));
 const localAuthorityOwners = assetScripts.filter((file) => read(file).includes('doke.services.local.v1')).sort();
 assert(
-  same(localAuthorityOwners, [files.repository]),
-  `service browser authority escaped its controlled owner: ${JSON.stringify(localAuthorityOwners)}`
+  same(localAuthorityOwners, catA02Retired ? [] : [files.repository]),
+  `service browser authority escaped its controlled lifecycle: ${JSON.stringify(localAuthorityOwners)}`
 );
 
 const htmlFiles = fs.readdirSync(root, { withFileTypes: true })
@@ -222,6 +260,6 @@ assert(same(htmlFiles, expectedHtmlFiles), `services repository loading surface 
 if (!process.exitCode) {
   console.log('[CAT-A01] service catalog authority baseline remains traceable.');
   console.log('[CAT-A01] public catalog and moderation: remote/server canonical.');
-  console.log('[CAT-A01] owner drafts and lifecycle: hybrid browser/remote.');
-  console.log('[CAT-A01] remaining blockers: CAT-B03, CAT-B04.');
+  console.log(`[CAT-A01] browser service authority: ${catA02Retired ? 'retired by CAT-A02' : 'hybrid browser/remote baseline'}.`);
+  console.log(`[CAT-A01] remaining blockers: ${blockerIds.join(', ')}.`);
 }
