@@ -1,5 +1,5 @@
 /* Doke Professional Profile Service
-   Responsibility: authorized editing and synchronization of active professional profiles. */
+   Responsibility: atomic server-authorized editing and reconciliation of active professional profiles. */
 (function () {
   'use strict';
 
@@ -22,6 +22,15 @@
 
   function profileService() {
     return services.profile || null;
+  }
+
+  function invokeSelfService(action, params) {
+    if (!window.DokeSupabase || typeof window.DokeSupabase.invokeSelfService !== 'function') {
+      var unavailable = new Error('Autoridade server-side do perfil profissional indisponível.');
+      unavailable.code = 'DOKE_PROFESSIONAL_PROFILE_AUTHORITY_UNAVAILABLE';
+      return Promise.reject(unavailable);
+    }
+    return window.DokeSupabase.invokeSelfService(action, params || {});
   }
 
   function clean(value, maxLength) {
@@ -53,6 +62,48 @@
     };
   }
 
+  function normalizeServerProfile(profile, user) {
+    profile = profile && typeof profile === 'object' ? profile : {};
+    return Object.freeze({
+      id: profile.profileId || profile.userId || user.id,
+      userId: profile.userId || user.id,
+      name: clean(profile.displayName || profile.name || user.name, 80),
+      displayName: clean(profile.displayName || profile.name || user.name, 80),
+      handle: clean(profile.username || profile.handle || user.handle, 30),
+      username: clean(profile.username || profile.handle || user.handle, 30),
+      city: clean(profile.city, 60),
+      state: clean(profile.state, 2).toUpperCase(),
+      bio: clean(profile.bio, 500),
+      interests: Array.isArray(profile.interests) ? profile.interests.slice(0, 8) : [],
+      avatarUrl: clean(profile.avatarUrl, 180000),
+      coverUrl: clean(profile.coverUrl, 180000),
+      updatedAt: profile.updatedAt || ''
+    });
+  }
+
+  function normalizeReconciledResult(result, user, repo) {
+    result = result && typeof result === 'object' ? result : {};
+    if (String(result.userId || '') !== String(user.id)) {
+      var mismatch = new Error('O servidor devolveu um perfil profissional de outro usuário.');
+      mismatch.code = 'DOKE_PROFESSIONAL_PROFILE_RECONCILIATION_SUBJECT_MISMATCH';
+      throw mismatch;
+    }
+
+    var professionalProfile = repo && typeof repo.normalize === 'function'
+      ? repo.normalize(result.professionalProfile)
+      : result.professionalProfile;
+    if (!professionalProfile || professionalProfile.status !== 'active') {
+      var invalid = new Error('O servidor não devolveu um perfil profissional ativo válido.');
+      invalid.code = 'DOKE_PROFESSIONAL_PROFILE_RECONCILIATION_INVALID';
+      throw invalid;
+    }
+
+    return {
+      profile: normalizeServerProfile(result.profile, user),
+      professionalProfile: professionalProfile
+    };
+  }
+
   function getCurrent() {
     var user = currentUser();
     var repo = professionalRepository();
@@ -75,8 +126,8 @@
     var base = profileService();
     if (!user || !user.id) return Promise.reject(new Error('Entre na sua conta para editar o perfil.'));
     if (!access || typeof access.assert !== 'function') return Promise.reject(new Error('Validação de acesso profissional indisponível.'));
-    if (!repo || typeof repo.updateActiveProfile !== 'function') return Promise.reject(new Error('Persistência profissional indisponível.'));
-    if (!base || typeof base.updateCurrentProfile !== 'function') return Promise.reject(new Error('Persistência do perfil base indisponível.'));
+    if (!repo || typeof repo.normalize !== 'function') return Promise.reject(new Error('Reconciliação profissional indisponível.'));
+    if (!base || typeof base.refreshCurrentProfile !== 'function') return Promise.reject(new Error('Reconciliação do perfil base indisponível.'));
 
     var action = access.ACTIONS && access.ACTIONS.EDIT_PROFILE || 'edit_professional_profile';
     var professionalPatch = normalizeProfessionalPatch(payload);
@@ -91,24 +142,32 @@
       coverUrl: clean(payload.coverUrl, 180000)
     };
 
-    var previousProfessionalProfile = null;
     return access.assert(action).then(function () {
-      return repo.getByUserId(user.id);
-    }).then(function (currentProfessionalProfile) {
-      previousProfessionalProfile = currentProfessionalProfile;
-      return repo.updateActiveProfile(user.id, { payload: professionalPatch });
-    }).then(function (professionalProfile) {
-      return base.updateCurrentProfile(basePatch).then(function (profile) {
-        var detail = { userId: user.id, profile: profile, professionalProfile: professionalProfile };
+      return invokeSelfService('update_professional_profile_reconciled', {
+        p_display_name: basePatch.name,
+        p_username: basePatch.handle,
+        p_city: basePatch.city,
+        p_state: basePatch.state,
+        p_bio: basePatch.bio,
+        p_interests: Array.isArray(basePatch.interests)
+          ? basePatch.interests
+          : String(basePatch.interests || '').split(',').map(function (item) { return clean(item, 40); }).filter(Boolean).slice(0, 8),
+        p_avatar_url: basePatch.avatarUrl || '',
+        p_cover_url: basePatch.coverUrl || '',
+        p_professional_payload: professionalPatch
+      });
+    }).then(function (result) {
+      var reconciled = normalizeReconciledResult(result, user, repo);
+      return base.refreshCurrentProfile().then(function (profile) {
+        var detail = {
+          userId: user.id,
+          profile: profile || reconciled.profile,
+          professionalProfile: reconciled.professionalProfile,
+          source: 'server',
+          reconciled: true
+        };
         window.dispatchEvent(new CustomEvent('doke:professional-profile-updated', { detail: detail }));
         return detail;
-      }).catch(function (error) {
-        if (!previousProfessionalProfile) throw error;
-        return repo.updateActiveProfile(user.id, { payload: previousProfessionalProfile.payload || {} }).then(function () {
-          throw error;
-        }, function () {
-          throw error;
-        });
       });
     });
   }
@@ -116,6 +175,7 @@
   services.professionalProfile = Object.freeze({
     getCurrent: getCurrent,
     update: update,
-    normalizeProfessionalPatch: normalizeProfessionalPatch
+    normalizeProfessionalPatch: normalizeProfessionalPatch,
+    normalizeReconciledResult: normalizeReconciledResult
   });
 })();
