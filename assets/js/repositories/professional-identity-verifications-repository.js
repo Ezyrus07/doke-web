@@ -1,18 +1,13 @@
 /* Doke Professional Identity Verifications Repository
-   Responsibility: local/mock persistence for professional identity verification records. */
+   Responsibility: fixture-only in-memory compatibility. Supabase subjects use the canonical service. */
 (function () {
   'use strict';
 
   var Doke = window.Doke || (window.Doke = {});
   var repositories = Doke.repositories || (Doke.repositories = {});
-  var root = window;
-  var STORAGE_KEY = 'doke.professionalIdentityVerifications.v1';
-  var DEMO_PROFESSIONAL_USER_ID = 'user_profissional_demo';
-  var DEMO_PROFESSIONAL_PROFILE_ID = 'professional_profile_user_profissional_demo';
-  var DEMO_PROFESSIONAL_VERIFICATION_ID = 'professional_verification_user_profissional_demo';
-  var DRAFT_STORAGE_KEY = 'doke.professionalIdentityVerificationDrafts.v1';
-  var draftMemory = new Map();
-  var submissionLocks = new Map();
+  var DEMO_USER_ID = 'user_profissional_demo';
+  var DEMO_PROFILE_ID = 'professional_profile_user_profissional_demo';
+  var DEMO_VERIFICATION_ID = 'professional_verification_user_profissional_demo';
 
   var STATUSES = Object.freeze({
     NOT_STARTED: 'not_started',
@@ -30,15 +25,14 @@
     verified: Object.freeze([])
   });
 
+  var fixtureRecords = new Map();
+  var fixtureDrafts = new Map();
+  var submissionLocks = new Map();
+
   function clone(value) {
     if (value == null) return value;
     try { return JSON.parse(JSON.stringify(value)); }
     catch (_) { return value; }
-  }
-
-  function safeParse(value, fallback) {
-    try { return value ? JSON.parse(value) : fallback; }
-    catch (_) { return fallback; }
   }
 
   function normalizeText(value, maxLength) {
@@ -58,14 +52,17 @@
       fileName: fileName,
       size: Math.max(0, Number(value.size || 0) || 0),
       type: normalizeText(value.type, 100),
-      blob: typeof Blob !== 'undefined' && value.blob instanceof Blob ? value.blob : typeof Blob !== 'undefined' && value.file instanceof Blob ? value.file : null
+      blob: typeof Blob !== 'undefined' && value.blob instanceof Blob
+        ? value.blob
+        : typeof Blob !== 'undefined' && value.file instanceof Blob ? value.file : null
     };
   }
 
   function normalizePayload(payload) {
     payload = payload && typeof payload === 'object' ? payload : {};
-    var verificationType = String(payload.verificationType || 'individual').toLowerCase();
-    if (verificationType !== 'business') verificationType = 'individual';
+    var verificationType = String(payload.verificationType || 'individual').toLowerCase() === 'business'
+      ? 'business'
+      : 'individual';
     return {
       verificationType: verificationType,
       legalName: normalizeText(payload.legalName, 120),
@@ -93,12 +90,7 @@
 
   function sanitizeFile(value, slot) {
     var file = normalizeFile(value);
-    if (!file) return null;
-    return {
-      fileName: slot,
-      size: file.size,
-      type: file.type
-    };
+    return file ? { fileName: slot, size: file.size, type: file.type } : null;
   }
 
   function sanitizePayloadForPersistence(payload) {
@@ -119,52 +111,13 @@
     };
   }
 
-  function readDrafts() {
-    var store = root.sessionStorage;
-    if (!store || typeof store.getItem !== 'function') return new Map(draftMemory);
-    var parsed = safeParse(store.getItem(DRAFT_STORAGE_KEY), {});
-    return new Map(Object.entries(parsed && typeof parsed === 'object' ? parsed : {}));
-  }
-
-  function writeDrafts(drafts) {
-    draftMemory = new Map(drafts);
-    var store = root.sessionStorage;
-    if (!store || typeof store.setItem !== 'function') return;
-    var value = {};
-    drafts.forEach(function (payload, userId) { value[userId] = payload; });
-    store.setItem(DRAFT_STORAGE_KEY, JSON.stringify(value));
-  }
-
-  function getDraft(userId) {
-    return clone(readDrafts().get(String(userId || '')) || null);
-  }
-
-  function setDraft(userId, payload) {
-    var drafts = readDrafts();
-    drafts.set(String(userId), normalizePayload(payload));
-    writeDrafts(drafts);
-  }
-
-  function removeDraft(userId) {
-    var drafts = readDrafts();
-    drafts.delete(String(userId || ''));
-    writeDrafts(drafts);
-  }
-
-  function mergeDraft(record) {
-    if (!record || record.status !== STATUSES.NOT_STARTED) return record;
-    var draft = getDraft(record.userId);
-    return draft ? Object.assign({}, record, { payload: draft }) : record;
-  }
-
   function normalizeStatus(value) {
     var status = String(value || '').trim().toLowerCase();
     return Object.values(STATUSES).indexOf(status) >= 0 ? status : STATUSES.NOT_STARTED;
   }
 
   function deterministicId(userId) {
-    var safe = normalizeText(userId).replace(/[^a-zA-Z0-9_-]/g, '_');
-    return 'professional_verification_' + (safe || Date.now());
+    return 'professional_verification_' + normalizeText(userId).replace(/[^a-zA-Z0-9_-]/g, '_');
   }
 
   function normalizeVerification(record) {
@@ -191,215 +144,186 @@
     };
   }
 
-  function ensureDemoProfessionalVerification(items) {
-    var list = Array.isArray(items) ? items.slice() : [];
-    var index = list.findIndex(function (item) {
-      return String(item && item.userId || '') === DEMO_PROFESSIONAL_USER_ID;
-    });
-    var current = index >= 0 ? list[index] : null;
-    var seeded = normalizeVerification(Object.assign({}, current || {}, {
-      id: current && current.id || DEMO_PROFESSIONAL_VERIFICATION_ID,
-      userId: DEMO_PROFESSIONAL_USER_ID,
-      professionalProfileId: DEMO_PROFESSIONAL_PROFILE_ID,
+  function sessionProvider() {
+    var session = Doke.session && typeof Doke.session.getSession === 'function' ? Doke.session.getSession() : null;
+    return String(session && session.provider || '').trim().toLowerCase();
+  }
+
+  function isUuid(value) {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value || '').trim());
+  }
+
+  function isRemoteSubject(userId) {
+    return sessionProvider() === 'supabase' || isUuid(userId);
+  }
+
+  function remoteAuthorityUnavailable() {
+    var error = new Error('Autoridade server-side da verificação profissional indisponível.');
+    error.code = 'DOKE_PROFESSIONAL_VERIFICATION_AUTHORITY_UNAVAILABLE';
+    return error;
+  }
+
+  function seedFixture() {
+    if (fixtureRecords.has(DEMO_USER_ID)) return;
+    fixtureRecords.set(DEMO_USER_ID, normalizeVerification({
+      id: DEMO_VERIFICATION_ID,
+      userId: DEMO_USER_ID,
+      professionalProfileId: DEMO_PROFILE_ID,
       status: STATUSES.VERIFIED,
       currentStep: 3,
-      payload: current && current.payload || {},
-      rejectionReason: '',
-      reviewerId: current && current.reviewerId || 'user_suporte_demo',
-      createdAt: current && current.createdAt || '2026-01-01T12:00:00.000Z',
-      updatedAt: current && current.updatedAt || '2026-01-01T12:00:00.000Z',
-      savedAt: current && current.savedAt || '2026-01-01T12:00:00.000Z',
-      submittedAt: current && current.submittedAt || '2026-01-01T12:00:00.000Z',
-      reviewStartedAt: current && current.reviewStartedAt || '2026-01-01T12:05:00.000Z',
-      decidedAt: current && current.decidedAt || '2026-01-01T12:10:00.000Z'
+      payload: {},
+      reviewerId: 'user_suporte_demo',
+      createdAt: '2026-01-01T12:00:00.000Z',
+      updatedAt: '2026-01-01T12:10:00.000Z',
+      savedAt: '2026-01-01T12:10:00.000Z',
+      submittedAt: '2026-01-01T12:00:00.000Z',
+      reviewStartedAt: '2026-01-01T12:05:00.000Z',
+      decidedAt: '2026-01-01T12:10:00.000Z'
     }));
-    if (index >= 0) list[index] = seeded;
-    else list.push(seeded);
-    return list;
   }
 
-  function readAll() {
-    var parsed = safeParse(root.localStorage.getItem(STORAGE_KEY), []);
-    if (!Array.isArray(parsed)) parsed = [];
-    var normalized = parsed.map(normalizeVerification).filter(Boolean).filter(function (item) { return String(item && item.userId || '') !== DEMO_PROFESSIONAL_USER_ID; });
-    if (JSON.stringify(parsed) !== JSON.stringify(normalized)) writeAll(normalized);
-    return normalized;
+  function mergeDraft(record) {
+    if (!record || record.status !== STATUSES.NOT_STARTED) return record;
+    var draft = fixtureDrafts.get(record.userId);
+    return draft ? Object.assign({}, record, { payload: clone(draft) }) : record;
   }
 
-  function writeAll(items) {
-    root.localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.isArray(items) ? items : []));
-  }
-
-  function persist(record) {
-    var normalized = normalizeVerification(record);
-    if (!normalized) throw new Error('A verificação precisa estar vinculada ao usuário e ao perfil profissional.');
-    var items = readAll();
-    var index = items.findIndex(function (item) {
-      return item.id === normalized.id || item.userId === normalized.userId;
-    });
-    if (index >= 0) items[index] = normalized;
-    else items.push(normalized);
-    writeAll(items);
-    return clone(normalized);
-  }
-
-  function list(filters) {
+  function fixtureList(filters) {
+    seedFixture();
     filters = filters || {};
-    var items = readAll().filter(function (item) {
+    return clone(Array.from(fixtureRecords.values()).filter(function (item) {
       if (filters.userId && String(item.userId) !== String(filters.userId)) return false;
       if (filters.professionalProfileId && String(item.professionalProfileId) !== String(filters.professionalProfileId)) return false;
       if (filters.status && String(item.status) !== String(filters.status)) return false;
       return true;
-    });
-    items.sort(function (a, b) { return String(b.updatedAt || '').localeCompare(String(a.updatedAt || '')); });
-    return Promise.resolve(clone(items));
+    }).sort(function (a, b) { return String(b.updatedAt || '').localeCompare(String(a.updatedAt || '')); }));
   }
 
-  function getById(verificationId) {
-    var id = normalizeText(verificationId);
-    if (!id) return Promise.resolve(null);
-    var record = readAll().find(function (item) { return item.id === id; }) || null;
-    return Promise.resolve(clone(mergeDraft(record)));
+  function list(filters) {
+    filters = filters || {};
+    if (isRemoteSubject(filters.userId)) return Promise.reject(remoteAuthorityUnavailable());
+    return Promise.resolve(fixtureList(filters));
   }
 
   function getByUserId(userId) {
     var id = normalizeText(userId);
     if (!id) return Promise.resolve(null);
-    var record = readAll().find(function (item) { return item.userId === id; }) || null;
+    if (isRemoteSubject(id)) return Promise.reject(remoteAuthorityUnavailable());
+    seedFixture();
+    return Promise.resolve(clone(mergeDraft(fixtureRecords.get(id) || null)));
+  }
+
+  function getById(verificationId) {
+    var id = normalizeText(verificationId);
+    if (!id) return Promise.resolve(null);
+    seedFixture();
+    var record = Array.from(fixtureRecords.values()).find(function (item) { return item.id === id; }) || null;
+    if (record && isRemoteSubject(record.userId)) return Promise.reject(remoteAuthorityUnavailable());
     return Promise.resolve(clone(mergeDraft(record)));
+  }
+
+  function persistFixture(record) {
+    var normalized = normalizeVerification(record);
+    if (!normalized) throw new Error('A verificação precisa estar vinculada ao usuário e ao perfil profissional.');
+    if (isRemoteSubject(normalized.userId)) throw remoteAuthorityUnavailable();
+    fixtureRecords.set(normalized.userId, normalized);
+    return clone(normalized);
   }
 
   function saveDraft(userId, professionalProfileId, draft) {
     var ownerId = normalizeText(userId);
     var profileId = normalizeText(professionalProfileId);
     if (!ownerId || !profileId) return Promise.reject(new Error('Perfil profissional não identificado para salvar a verificação.'));
+    if (isRemoteSubject(ownerId)) return Promise.reject(remoteAuthorityUnavailable());
     draft = draft || {};
-
     return getByUserId(ownerId).then(function (current) {
       if (current && [STATUSES.SUBMITTED, STATUSES.UNDER_REVIEW, STATUSES.VERIFIED].indexOf(current.status) >= 0) {
         throw new Error('A verificação enviada não pode ser alterada neste momento.');
       }
       var now = new Date().toISOString();
       var rawPayload = normalizePayload(draft.payload || draft.fields || current && current.payload || {});
-      setDraft(ownerId, rawPayload);
-      var persisted = persist(Object.assign({}, current || {}, {
+      fixtureDrafts.set(ownerId, rawPayload);
+      return mergeDraft(persistFixture(Object.assign({}, current || {}, {
         id: current && current.id || deterministicId(ownerId),
         userId: ownerId,
         professionalProfileId: profileId,
         status: STATUSES.NOT_STARTED,
         currentStep: draft.currentStep || current && current.currentStep || 1,
         payload: rawPayload,
-        rejectionReason: '',
-        reviewerId: '',
         createdAt: current && current.createdAt || now,
         updatedAt: now,
-        savedAt: now,
-        submittedAt: '',
-        reviewStartedAt: '',
-        decidedAt: ''
-      }));
-      return mergeDraft(persisted);
+        savedAt: now
+      })));
     });
   }
 
-  function submitUnlocked(userId, professionalProfileId, submission) {
+  function submit(userId, professionalProfileId, submission) {
     var ownerId = normalizeText(userId);
     var profileId = normalizeText(professionalProfileId);
     if (!ownerId || !profileId) return Promise.reject(new Error('Perfil profissional não identificado para enviar a verificação.'));
-    submission = submission || {};
-
-    return getByUserId(ownerId).then(function (current) {
-      var latest = readAll().find(function (item) { return item.userId === ownerId; }) || current;
-      if (latest && latest.status !== STATUSES.NOT_STARTED) {
-        var error = new Error(
-          latest.status === STATUSES.REJECTED
-            ? 'A verificação rejeitada precisa ser reaberta antes de um novo envio.'
-            : 'A verificação já foi enviada e não pode ser reenviada neste momento.'
-        );
-        error.code = 'PROFESSIONAL_IDENTITY_VERIFICATION_SUBMISSION_LOCKED';
-        error.status = latest.status;
-        throw error;
-      }
-      current = latest || current;
+    if (isRemoteSubject(ownerId)) return Promise.reject(remoteAuthorityUnavailable());
+    if (submissionLocks.has(ownerId)) {
+      var locked = new Error('A verificação já foi enviada ou está sendo processada.');
+      locked.code = 'PROFESSIONAL_IDENTITY_VERIFICATION_SUBMISSION_LOCKED';
+      return Promise.reject(locked);
+    }
+    var operation = getByUserId(ownerId).then(function (current) {
+      if (current && current.status !== STATUSES.NOT_STARTED) throw new Error('A verificação não pode ser reenviada neste momento.');
       var now = new Date().toISOString();
-      var verificationId = current && current.id || deterministicId(ownerId);
-      var rawPayload = submission.payload || submission.fields || current && current.payload || {};
+      var rawPayload = submission && (submission.payload || submission.fields) || current && current.payload || {};
       var evidence = repositories.professionalVerificationEvidence;
+      var verificationId = current && current.id || deterministicId(ownerId);
       var saveEvidence = evidence && typeof evidence.save === 'function'
         ? evidence.save(verificationId, ownerId, rawPayload)
         : Promise.resolve(null);
       return saveEvidence.then(function () {
-        removeDraft(ownerId);
-        return persist(Object.assign({}, current || {}, {
+        fixtureDrafts.delete(ownerId);
+        return persistFixture(Object.assign({}, current || {}, {
           id: verificationId,
           userId: ownerId,
           professionalProfileId: profileId,
           status: STATUSES.SUBMITTED,
           currentStep: 3,
           payload: rawPayload,
-          rejectionReason: '',
-          reviewerId: '',
           createdAt: current && current.createdAt || now,
           updatedAt: now,
           savedAt: now,
-          submittedAt: current && current.submittedAt || now,
-          reviewStartedAt: '',
-          decidedAt: ''
+          submittedAt: current && current.submittedAt || now
         }));
       });
-    });
-  }
-
-
-  function submit(userId, professionalProfileId, submission) {
-    var ownerId = normalizeText(userId);
-    if (!ownerId) return Promise.reject(new Error('Perfil profissional não identificado para enviar a verificação.'));
-    if (submissionLocks.has(ownerId)) {
-      var lockedError = new Error('A verificação já foi enviada ou está sendo processada e não pode ser reenviada.');
-      lockedError.code = 'PROFESSIONAL_IDENTITY_VERIFICATION_SUBMISSION_LOCKED';
-      return Promise.reject(lockedError);
-    }
-    var operation = Promise.resolve().then(function () {
-      return submitUnlocked(userId, professionalProfileId, submission);
-    }).finally(function () {
-      submissionLocks.delete(ownerId);
-    });
+    }).finally(function () { submissionLocks.delete(ownerId); });
     submissionLocks.set(ownerId, operation);
     return operation;
   }
 
   function transition(verificationId, nextStatus, meta) {
-    var target = normalizeStatus(nextStatus);
     meta = meta || {};
     return getById(verificationId).then(function (current) {
       if (!current) throw new Error('Verificação de identidade não encontrada.');
+      if (isRemoteSubject(current.userId)) throw remoteAuthorityUnavailable();
+      var target = normalizeStatus(nextStatus);
       if (current.status === target) return current;
       var allowed = TRANSITIONS[current.status] || [];
       if (allowed.indexOf(target) === -1) throw new Error('Transição inválida de ' + current.status + ' para ' + target + '.');
       var now = new Date().toISOString();
-      var patch = {
-        status: target,
-        updatedAt: now,
-        reviewerId: normalizeText(meta.reviewerId || current.reviewerId, 120)
-      };
+      var patch = { status: target, updatedAt: now, reviewerId: normalizeText(meta.reviewerId || current.reviewerId, 120) };
       if (target === STATUSES.UNDER_REVIEW) patch.reviewStartedAt = current.reviewStartedAt || now;
       if (target === STATUSES.VERIFIED || target === STATUSES.REJECTED) patch.decidedAt = current.decidedAt || now;
       if (target === STATUSES.REJECTED) patch.rejectionReason = normalizeText(meta.reason, 500);
       if (target === STATUSES.NOT_STARTED) {
+        fixtureDrafts.set(current.userId, current.payload || {});
         patch.rejectionReason = '';
         patch.reviewerId = '';
         patch.reviewStartedAt = '';
         patch.decidedAt = '';
         patch.submittedAt = '';
-        setDraft(current.userId, current.payload || {});
       }
-      return mergeDraft(persist(Object.assign({}, current, patch)));
+      return mergeDraft(persistFixture(Object.assign({}, current, patch)));
     });
   }
 
   repositories.professionalIdentityVerifications = Object.freeze({
-    storageKey: STORAGE_KEY,
-    draftStorageKey: DRAFT_STORAGE_KEY,
+    authority: 'supabase-service-or-fixture-memory',
     statuses: STATUSES,
     transitions: TRANSITIONS,
     normalize: normalizeVerification,
