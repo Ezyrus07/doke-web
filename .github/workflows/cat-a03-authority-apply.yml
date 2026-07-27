@@ -95,19 +95,34 @@ jobs:
 
       - name: Publish CAT-A03 implementation
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add assets/js/repositories/services-repository.js
-          git add assets/js/services/services-service.js
-          git add supabase/functions/self-service-operations/operations.mjs
-          git add supabase/migrations/149_service_lifecycle_authority.sql
-          git add supabase/tests/018_service_lifecycle_authority_validation.sql
-          git add scripts/audit-service-catalog-authority-retirement.js
-          git add scripts/audit-service-lifecycle-authority.js
-          git add scripts/test-service-lifecycle-authority-runtime.js
-          git add scripts/test-services-supabase-repository-contract.js
-          git add scripts/test-service-order-integration-contract.js
-          git add docs/validation/CAT-001-A03-SERVICE-LIFECYCLE-AUTHORITY.json
-          git add docs/validation/CAT-001-A03-SERVICE-LIFECYCLE-AUTHORITY.md
-          git commit -m "Implement CAT-A03 service lifecycle authority"
-          git push origin HEAD:cat/cat-001-baseline-audit
+          mkdir -p reports/generated
+          set -o pipefail
+          {
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add assets/js/repositories/services-repository.js
+            git add assets/js/services/services-service.js
+            git add supabase/functions/self-service-operations/operations.mjs
+            git add supabase/migrations/149_service_lifecycle_authority.sql
+            git add supabase/tests/018_service_lifecycle_authority_validation.sql
+            git add scripts/audit-service-catalog-authority-retirement.js
+            git add scripts/audit-service-lifecycle-authority.js
+            git add scripts/test-service-lifecycle-authority-runtime.js
+            git add scripts/test-services-supabase-repository-contract.js
+            git add scripts/test-service-order-integration-contract.js
+            git add docs/validation/CAT-001-A03-SERVICE-LIFECYCLE-AUTHORITY.json
+            git add docs/validation/CAT-001-A03-SERVICE-LIFECYCLE-AUTHORITY.md
+            git commit -m "Implement CAT-A03 service lifecycle authority"
+            git fetch origin cat/cat-001-baseline-audit
+            git rebase origin/cat/cat-001-baseline-audit
+            git push origin HEAD:cat/cat-001-baseline-audit
+          } 2>&1 | tee reports/generated/cat-a03-publish.log
+
+      - name: Upload CAT-A03 publication diagnostic
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cat-a03-publication-${{ github.sha }}
+          path: reports/generated/cat-a03-publish.log
+          if-no-files-found: warn
+          retention-days: 7
