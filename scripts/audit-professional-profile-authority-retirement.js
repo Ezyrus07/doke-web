@@ -25,19 +25,28 @@ const files = {
   baselineEvidence: 'docs/validation/PROF-001-A01-AUTHORITY-BASELINE.json',
   evidenceMarkdown: 'docs/validation/PROF-001-A02-PROFILE-AUTHORITY-RETIREMENT.md',
   evidenceJson: 'docs/validation/PROF-001-A02-PROFILE-AUTHORITY-RETIREMENT.json',
-  a03Migration: 'supabase/migrations/148_professional_profile_reconciliation_authority.sql'
+  a03Migration: 'supabase/migrations/148_professional_profile_reconciliation_authority.sql',
+  b03EvidenceJson: 'docs/validation/PROF-001-B03-KYC-EVIDENCE-AUTHORITY-RETIREMENT.json'
 };
 
-Object.values(files).filter((file) => file !== files.a03Migration).forEach((file) => assert(exists(file), `required file missing: ${file}`));
+Object.values(files)
+  .filter((file) => file !== files.a03Migration && file !== files.b03EvidenceJson)
+  .forEach((file) => assert(exists(file), `required file missing: ${file}`));
 
+const b03Started = exists(files.b03EvidenceJson);
 const matrix = JSON.parse(read(files.matrix));
 const prof = (matrix.domains || []).find((domain) => domain.id === 'PROF-001');
+const hasB03Blocker = (prof && prof.blockers || []).some((blocker) => blocker.id === 'PROF-B03');
 assert(Boolean(prof), 'PROF-001 is missing from the domain completion matrix');
 assert(prof && prof.productionGate === 'blocked', 'PROF-001 production gate must remain blocked');
-assert(
-  (prof && prof.blockers || []).some((blocker) => blocker.id === 'PROF-B03'),
-  'PROF-B03 must remain explicit until KYC draft and binary evidence browser authority are also retired'
-);
+if (b03Started) {
+  const b03 = JSON.parse(read(files.b03EvidenceJson));
+  assert(b03.domain === 'PROF-001' && b03.sublot === 'PROF-B03-KYC-EVIDENCE', 'PROF-B03 evidence identity is invalid');
+  assert(['implementation_in_progress', 'validation_pending', 'done'].includes(b03.status), 'PROF-B03 evidence status is invalid');
+  assert(!hasB03Blocker, 'retired PROF-B03 blocker remains active after controlled KYC evidence retirement');
+} else {
+  assert(hasB03Blocker, 'PROF-B03 must remain explicit until KYC draft and binary evidence browser authority are retired');
+}
 
 const repository = read(files.repository);
 [
@@ -120,4 +129,5 @@ if (!process.exitCode) {
   console.log(exists(files.a03Migration)
     ? '[PROF-A02] active edits advanced to the PROF-A03 atomic server boundary without restoring browser authority.'
     : '[PROF-A02] active professional field edits fail closed pending a dedicated server operation.');
+  console.log(`[PROF-A02] PROF-B03 KYC evidence retirement started: ${b03Started ? 'yes' : 'no'}.`);
 }
