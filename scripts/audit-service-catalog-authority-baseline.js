@@ -30,12 +30,13 @@ const files = {
   evidenceJson: 'docs/validation/CAT-001-A01-AUTHORITY-BASELINE.json',
   evidenceMarkdown: 'docs/validation/CAT-001-A01-AUTHORITY-BASELINE.md',
   catA02EvidenceJson: 'docs/validation/CAT-001-A02-SERVICE-AUTHORITY-RETIREMENT.json',
+  catA03EvidenceJson: 'docs/validation/CAT-001-A03-SERVICE-LIFECYCLE-AUTHORITY.json',
   journal: 'docs/DOKE-ENGINEERING-JOURNAL.md',
   quality: '.github/workflows/quality.yml'
 };
 
 Object.entries(files)
-  .filter(([name]) => name !== 'catA02EvidenceJson')
+  .filter(([name]) => !['catA02EvidenceJson', 'catA03EvidenceJson'].includes(name))
   .forEach(([, file]) => assert(exists(file), `required file missing: ${file}`));
 
 const catA02Evidence = exists(files.catA02EvidenceJson)
@@ -45,6 +46,16 @@ const catA02Retired = Boolean(
   catA02Evidence &&
   catA02Evidence.authority &&
   catA02Evidence.authority.browserPersistentAuthority === 'retired'
+);
+const catA03Evidence = exists(files.catA03EvidenceJson)
+  ? JSON.parse(read(files.catA03EvidenceJson))
+  : null;
+const catA03Reconciled = Boolean(
+  catA03Evidence &&
+  catA03Evidence.authority &&
+  catA03Evidence.authority.contentEdit === 'submit_service_for_review' &&
+  catA03Evidence.authority.lifecycle === 'transition_owned_service_lifecycle' &&
+  catA03Evidence.authority.browserDirectServicesWrite === 'revoked'
 );
 
 const matrix = JSON.parse(read(files.matrix));
@@ -59,7 +70,7 @@ assert(cat && cat.productionGate === 'blocked', 'CAT-001 production gate must re
 const blockerIds = (cat && cat.blockers || []).map((blocker) => blocker.id).sort();
 assert(
   same(blockerIds, ['CAT-B03', 'CAT-B04']) || same(blockerIds, ['CAT-B04']),
-  'CAT-001 blocker set changed outside the controlled CAT-A02 reconciliation'
+  'CAT-001 blocker set changed outside the controlled CAT reconciliation'
 );
 assert(
   same((cat && cat.dependencies || []).slice().sort(), ['AUTH-001', 'PROF-001', 'SEC-001']),
@@ -83,7 +94,7 @@ if (catA02Retired) {
     'fixtureServices',
     'readFixtureServices',
     'upsertFixture',
-    "createAuthorityUnavailableError",
+    'createAuthorityUnavailableError',
     "setProviderState('remote-unavailable')",
     "provider: getSupabaseClient() ? 'supabase' : 'fixture-memory'"
   ].forEach((marker) => assert(repository.includes(marker), `post-CAT-A02 authority marker missing: ${marker}`));
@@ -128,11 +139,28 @@ const service = read(files.service);
   'return repository.submitForReview(service, options)',
   'function transitionOwned(',
   'function updateOwned(',
-  'return repository.update(serviceId, patch || {})',
   'function deactivateOwned(',
   'function reactivateOwned(',
   'function archiveOwned('
 ].forEach((marker) => assert(service.includes(marker), `service lifecycle marker missing: ${marker}`));
+
+if (catA03Reconciled) {
+  [
+    'repository.submitForReview(candidate',
+    'repository.transitionOwnedLifecycle',
+    'DOKE_SERVICE_MUTATION_SPLIT_REQUIRED',
+    'DOKE_SERVICE_ARCHIVED'
+  ].forEach((marker) => assert(service.includes(marker), `post-CAT-A03 lifecycle marker missing: ${marker}`));
+  assert(!service.includes('return repository.update(serviceId, patch || {})'), 'CAT-A03 cannot retain generic remote edit routing');
+  [
+    "invokeSelfService('transition_owned_service_lifecycle'",
+    'DOKE_SERVICE_DIRECT_MUTATION_FORBIDDEN',
+    'transitionOwnedLifecycle: transitionOwnedLifecycle'
+  ].forEach((marker) => assert(repository.includes(marker), `post-CAT-A03 repository marker missing: ${marker}`));
+  assert(!repository.includes('function saveRemote(service)'), 'CAT-A03 cannot retain direct remote save authority');
+} else {
+  assert(service.includes('return repository.update(serviceId, patch || {})'), 'pre-CAT-A03 generic lifecycle marker missing');
+}
 
 const moderationRepository = read(files.moderationRepository);
 [
@@ -261,5 +289,6 @@ if (!process.exitCode) {
   console.log('[CAT-A01] service catalog authority baseline remains traceable.');
   console.log('[CAT-A01] public catalog and moderation: remote/server canonical.');
   console.log(`[CAT-A01] browser service authority: ${catA02Retired ? 'retired by CAT-A02' : 'hybrid browser/remote baseline'}.`);
+  console.log(`[CAT-A01] owner lifecycle authority: ${catA03Reconciled ? 'server-side via CAT-A03' : 'pre-CAT-A03 generic repository path'}.`);
   console.log(`[CAT-A01] remaining blockers: ${blockerIds.join(', ')}.`);
 }
