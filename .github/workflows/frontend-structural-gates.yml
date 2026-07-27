@@ -46,10 +46,13 @@ jobs:
       - name: Run canonical token authority gate
         run: node scripts/audit-token-authority.js
 
-      - name: Capture governed audit diagnostics
+      - name: Generate deterministic domain matrix candidate
         shell: bash
         run: |
-          npm run audit:agent-governance > reports/generated/agent-governance.log 2>&1 || true
+          cp docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-current.md
+          npm run write:domain-completion-matrix
+          cp docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-candidate.md
+          diff -u reports/generated/domain-completion-matrix-current.md reports/generated/domain-completion-matrix-candidate.md > reports/generated/domain-completion-matrix.diff || true
 
       - name: Upload structural gate reports
         if: always()
@@ -59,6 +62,8 @@ jobs:
           path: |
             reports/generated/frontend-structural-gates-report.json
             reports/generated/token-authority-report.json
-            reports/generated/agent-governance.log
+            reports/generated/domain-completion-matrix-current.md
+            reports/generated/domain-completion-matrix-candidate.md
+            reports/generated/domain-completion-matrix.diff
           if-no-files-found: error
           retention-days: 14
