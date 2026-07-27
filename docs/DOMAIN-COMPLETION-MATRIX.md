@@ -104,7 +104,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 | FLOW-01 | Descoberta pública | hybrid | SEARCH-001 | home → search → results → service_detail | SEARCH-B02 |
 | FLOW-02 | Cadastro, login e onboarding | staging canary | AUTH-001 | register → verify_contact → session → profile_materialization → onboarding |  |
 | FLOW-03 | Tornar-se profissional e KYC | staging operational | PROF-001 | profile_setup → document_upload → submit → admin_review → decision → role_activation | PROF-B04, PROF-B05 |
-| FLOW-04 | Publicar serviço | hybrid | CAT-001 | draft → media → quote_template → submit_review → moderation → publish → edit_version | CAT-B03 |
+| FLOW-04 | Publicar serviço | hybrid | CAT-001 | draft → media → quote_template → submit_review → moderation → publish → edit_version |  |
 | FLOW-05 | Solicitar orçamento e criar pedido | staging operational | ORD-001 | service_snapshot → questionnaire → request → outbox_event → professional_notification | ORD-B01, ORD-B02 |
 | FLOW-06 | Aceite, proposta e agenda | hybrid | ORD-001 | accept → proposal → client_approval → schedule_hold → confirmation | SCHED-B02, SCHED-B03, ORD-B04 |
 | FLOW-07 | Conversa transacional | hybrid | MSG-001 | conversation → message → attachment → read_state → realtime → notification | MSG-B02, MSG-B03 |
@@ -319,15 +319,15 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - CAT-A02 retires doke.services.local.v1: real and UUID subjects fail closed, while non-UUID fixtures remain runtime-only memory.
 - CAT-A03 routes approved-content edits through versioned review, routes pause/reactivate/archive through an owner-only self-service operation, and revokes generic browser writes to services.
 - CAT-A03 code candidate routes owner content edits through versioned review and pause, reactivate and archive through an explicit owner-only server operation; staging application remains pending.
+- CAT-A03 complete in staging: migration 20260727195302, self-service-operations v7, SQL 018, Quality #992, blocking E2E, 105 guards, Canary #714 and Diagnostic #736 succeeded.
 
 **Bloqueadores:**
-- **CAT-B03 · HIGH · lifecycle_cleanup:** CAT-A03 code and permanent gates exist, but migration 149 and the self-service lifecycle allowlist still require controlled staging application and SQL validation. _(Fase 4)_
 - **CAT-B04 · MEDIUM · versioning:** Historical orders need immutable service snapshots across all creation paths. _(Fase 4)_
 
 **Próximas ações:**
-- Apply migration 149 and the self-service lifecycle allowlist to staging, then validate SQL contract 018 with rollback.
-- Close service-media replacement and abandoned-draft cleanup lifecycle.
-- Guarantee immutable service snapshot on every order creation path.
+- Close service-media replacement, superseded-object cleanup and abandoned-draft cleanup lifecycle.
+- Guarantee immutable service snapshots on every order creation path.
+- Reconcile CAT-001 final matrix and domain closure evidence.
 
 **Gate de saída:**
 - Create, submit, moderate, publish, edit, pause and archive work remotely.
@@ -943,4 +943,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-07-27T16:50:00-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-07-27T19:30:00-03:00._

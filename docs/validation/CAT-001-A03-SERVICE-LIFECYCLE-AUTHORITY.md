@@ -2,41 +2,39 @@
 
 ## Status
 
-`IMPLEMENTED — VALIDATION PENDING`
+`DONE`
 
-## Problema
-
-A retirada do armazenamento persistente do CAT-A02 eliminou a cópia local, mas o domínio ainda validava propriedade e transições no navegador e terminava em uma mutação genérica de `services`. Esse caminho podia atualizar conteúdo aprovado sem produzir uma nova `service_version` e permitia que pausa, reativação e arquivamento dependessem de um `upsert` amplo do cliente.
-
-## Decisão
+## Resultado
 
 - edição de conteúdo real usa exclusivamente `submit_service_for_review`;
 - pausa, reativação e arquivamento usam `transition_owned_service_lifecycle`;
-- a Edge Function deriva o ator do JWT e o dispatcher service-role recompõe o contexto autenticado;
-- funções privilegiadas não recebem grant direto para `anon` ou `authenticated`;
-- `authenticated` perde `INSERT`, `UPDATE` e `DELETE` diretos em `public.services`;
-- fixtures não UUID continuam somente em memória;
-- arquivamento cancela versão pendente sem apagar versões aprovadas nem pedidos históricos.
+- ator e ownership são validados server-side;
+- `anon` e `authenticated` não executam a função privilegiada nem escrevem diretamente em `public.services`;
+- fixtures não UUID permanecem somente em memória;
+- arquivamento preserva versões aprovadas e snapshots históricos.
 
-## Implementação
+## Staging
 
-- migration `149_service_lifecycle_authority.sql`;
-- action adicionada ao allowlist de `self-service-operations`;
-- serviço de domínio separa edição de conteúdo e transição de status;
-- repositório rejeita gravação remota genérica com `DOKE_SERVICE_DIRECT_MUTATION_FORBIDDEN`;
-- runtime permanente CAT-A03;
-- teste SQL transacional de ACL e dispatcher;
-- audit estrutural permanente;
-- gates adicionados ao Quality canônico.
+- migration `20260727195302_service_lifecycle_authority` aplicada em `doke-web-staging`;
+- `self-service-operations` versão 7, `ACTIVE`, `verify_jwt: true`;
+- SQL 018 aprovado com `ROLLBACK`;
+- nenhuma conta ou entidade sintética persistente criada.
+
+## Validação
+
+**Head técnico validado:** `9a71d700f8f6b5237c97fadc87a292ed5c475ea8`
+
+- Quality #992: sucesso;
+- E2E bloqueante: sucesso;
+- 105 guards visuais: sucesso;
+- Canary #714: sucesso;
+- Diagnostic #736: sucesso.
 
 ## Segurança operacional
 
-- produção não alterada;
-- staging ainda não alterado nesta evidência inicial;
-- nenhuma conta real modificada;
-- nenhum SMS, OAuth ou recurso pago habilitado;
-- PR permanece draft e não mesclado.
+Produção, contas reais, SMS, OAuth e configurações pagas não foram alterados. Nenhuma ferramenta temporária permanece no fechamento.
 
-## Próxima validação
+## Pendências preservadas
 
-Executar Quality, reconciliar a matriz determinística, aplicar migration e Edge Function somente em staging e executar o teste SQL com `ROLLBACK`.
+- `CAT-A04`: substituição e limpeza de mídia e rascunhos abandonados;
+- `CAT-B04`: snapshot imutável de serviço em todos os caminhos de criação de pedido.

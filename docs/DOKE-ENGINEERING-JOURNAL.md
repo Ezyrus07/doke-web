@@ -609,3 +609,29 @@ O catálogo público e a moderação versionada já possuíam autoridade remota,
 - `CAT-A04`: ciclo de limpeza de mídia e rascunhos abandonados;
 - `CAT-B04`: snapshots imutáveis de serviço em todos os caminhos de criação de pedidos;
 - produção permanece bloqueada.
+
+---
+
+# 2026-07-27 — CAT-A03 / autoridade server-side de edição e ciclo de vida
+
+**Status:** `DONE`
+
+**Branch:** `cat/cat-001-baseline-audit`
+
+**Pull Request:** `#12`
+
+## Resultado
+
+- conteúdo aprovado passou a mudar somente por nova versão submetida;
+- pausa, reativação e arquivamento passaram para `transition_owned_service_lifecycle`;
+- migration 149 e Edge Function v7 foram aplicadas em staging;
+- SQL 018, Quality #992, E2E bloqueante, 105 guards, Canary #714 e Diagnostic #736 passaram;
+- matriz 1.3.8 reconciliada e `CAT-B03` encerrado.
+
+## Segurança operacional
+
+Produção, contas reais, SMS, OAuth e configurações pagas não foram alterados. O PR permanece draft e não mesclado.
+
+## Próximo sublote
+
+`CAT-A04`: fechar substituição e limpeza de mídia, objetos superseded e rascunhos abandonados.
