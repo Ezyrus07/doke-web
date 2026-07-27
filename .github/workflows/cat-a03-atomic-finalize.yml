@@ -10,7 +10,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: cat-a03-atomic-finalization-v2
+  group: cat-a03-atomic-finalization-v3
   cancel-in-progress: true
 
 jobs:
@@ -25,7 +25,7 @@ jobs:
           ref: cat/cat-001-baseline-audit
           fetch-depth: 0
 
-      - name: Capture guarded remote head
+      - name: Verify guarded remote head
         shell: bash
         run: |
           git fetch origin cat/cat-001-baseline-audit
@@ -34,10 +34,12 @@ jobs:
             echo "Remote head moved: $remote_head != $GITHUB_SHA" >&2
             exit 1
           fi
-          echo "REMOTE_HEAD=$remote_head" >> "$GITHUB_ENV"
 
-      - name: Reset to clean validated documentary parent
-        run: git reset --hard 263e0c2910b80baf8642be07b58ff1d27f4c85a1
+      - name: Remove temporary machinery
+        shell: bash
+        run: |
+          git show 263e0c2910b80baf8642be07b58ff1d27f4c85a1:scripts/audit-domain-completion-matrix.js > scripts/audit-domain-completion-matrix.js
+          rm -f .github/workflows/cat-a03-atomic-finalize.yml
 
       - name: Finalize CAT-A03 evidence, journal and matrix
         run: |
@@ -186,10 +188,12 @@ Staging foi alterado de forma controlada. Produção, contas reais, SMS, OAuth e
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/workflows/cat-a03-atomic-finalize.yml
+          git add scripts/audit-domain-completion-matrix.js
           git add config/domain-completion-matrix.json
           git add -f docs/validation/CAT-001-A03-SERVICE-LIFECYCLE-AUTHORITY.json
           git add docs/validation/CAT-001-A03-SERVICE-LIFECYCLE-AUTHORITY.md
           git add docs/DOKE-ENGINEERING-JOURNAL.md
           git add docs/DOMAIN-COMPLETION-MATRIX.md
           git commit -m "Finalize CAT-A03 evidence and matrix"
-          git push --force-with-lease=refs/heads/cat/cat-001-baseline-audit:${REMOTE_HEAD} origin HEAD:cat/cat-001-baseline-audit
+          git push origin HEAD:cat/cat-001-baseline-audit
