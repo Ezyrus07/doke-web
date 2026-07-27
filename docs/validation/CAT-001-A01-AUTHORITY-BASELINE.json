@@ -1,0 +1,83 @@
+{
+  "domain": "CAT-001",
+  "sublot": "CAT-A01",
+  "status": "baseline_frozen",
+  "validationStatus": "pending",
+  "objective": "Freeze the executable service-catalog authority split before retiring browser-owned drafts and lifecycle mutations.",
+  "branch": "cat/cat-001-baseline-audit",
+  "baseBranch": "prof/prof-001-baseline-audit",
+  "baseHead": "b47dbb144304c07325a6a80987b28e4a254360e8",
+  "authority": {
+    "publicCatalog": "remote_approved_versions",
+    "reviewSubmission": "self_service_edge_gateway",
+    "moderationDecision": "service_moderation_edge_canonical",
+    "ownerDraftAndLifecycle": "hybrid_browser_and_remote",
+    "browserPersistence": "localStorage",
+    "browserStorageKey": "doke.services.local.v1",
+    "remoteTables": [
+      "services",
+      "service_versions",
+      "service_media",
+      "service_categories",
+      "service_moderation_events",
+      "service_quote_templates",
+      "service_quote_questions"
+    ],
+    "edgeFunctions": [
+      "self-service-operations",
+      "service-moderation-operations",
+      "quote-template-ai"
+    ]
+  },
+  "frozenFindings": [
+    "services-repository writes every save to localStorage before attempting the remote mutation",
+    "remote write failure returns a pending local copy instead of failing closed",
+    "load merges local drafts with remote rows and attempts background synchronization",
+    "getById can return an owner-readable local service when remote authority is absent or fails",
+    "owner pause, reactivate, archive and edit operations route through repository.update and inherit the hybrid save boundary",
+    "review submission and administrative moderation already use authenticated server boundaries",
+    "public visibility is restricted to approved or safely preserved approved versions"
+  ],
+  "blockers": [
+    {
+      "id": "CAT-B03",
+      "status": "open",
+      "reason": "Local service drafts and remote published versions coexist without a final promotion contract."
+    },
+    {
+      "id": "CAT-B04",
+      "status": "open",
+      "reason": "Historical orders need immutable service snapshots across every creation path."
+    }
+  ],
+  "plannedSequence": [
+    "CAT-A02 retire browser-persistent service authority for Supabase or UUID subjects",
+    "CAT-A03 make owner edit, pause, reactivate and archive server-authoritative",
+    "CAT-A04 close media and draft cleanup lifecycle",
+    "CAT-B04 guarantee immutable service snapshots across order creation paths",
+    "CAT-A05 reconcile matrix and domain closure evidence"
+  ],
+  "validation": {
+    "staticAudit": "pending",
+    "quality": "pending",
+    "blockingE2E": "pending",
+    "visualStructuralGuards": "pending",
+    "stagingCanary": "pending",
+    "diagnostic": "pending",
+    "finalEvidence": "pending"
+  },
+  "safety": {
+    "implementationChanged": false,
+    "migrationApplied": false,
+    "edgeFunctionDeployed": false,
+    "stagingChanged": false,
+    "productionChanged": false,
+    "realAccountChanged": false,
+    "persistentSyntheticAccountCreated": false,
+    "smsEnabled": false,
+    "oauthEnabled": false,
+    "paidConfigurationEnabled": false,
+    "parentPrMerged": false
+  },
+  "nextControlledWork": "Retire browser-persistent service draft authority without weakening the existing versioned moderation flow."
+}
