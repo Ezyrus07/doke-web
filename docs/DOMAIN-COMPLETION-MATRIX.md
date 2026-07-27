@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 877 arquivos no escopo; 175 referências a localStorage; 38 a sessionStorage; 530 referências mock; 127 referências de rede/Supabase; 30 marcadores de implementação pendente.
+**Evidência estática observada:** 877 arquivos no escopo; 176 referências a localStorage; 38 a sessionStorage; 530 referências mock; 127 referências de rede/Supabase; 30 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -882,7 +882,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2077 arquivos no escopo; 447 referências a localStorage; 116 a sessionStorage; 842 referências mock; 497 referências de rede/Supabase; 84 marcadores de implementação pendente.
+**Evidência estática observada:** 2077 arquivos no escopo; 448 referências a localStorage; 116 a sessionStorage; 842 referências mock; 497 referências de rede/Supabase; 84 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
