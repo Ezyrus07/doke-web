@@ -24,8 +24,10 @@ assert(interactions.includes("cta.href = resolveDetailHref(card, context)"), 'Dy
 assert(repository.includes('fetchRemoteServiceById'), 'Services repository must support targeted remote detail reads.');
 assert(repository.includes(".eq('external_id', id).maybeSingle()"), 'Repository must resolve public external ids.');
 assert(repository.includes(".eq('id', id).maybeSingle()"), 'Repository must resolve remote UUIDs when supplied.');
-assert(repository.includes('matchesServiceId'), 'Repository must reconcile local, external and remote ids.');
-assert(repository.includes('resolveReadableLocalService') && repository.includes('canReadLocalService'), 'Local pending services must remain readable only to their owner when remote sync fails.');
+assert(repository.includes('matchesServiceId'), 'Repository must reconcile fixture, external and remote ids.');
+assert(repository.includes('resolveReadableFixtureService') && repository.includes('canReadFixtureService'), 'Fixture services must remain owner-readable only in the current runtime.');
+assert(repository.includes("AUTHORITY = 'supabase-or-fixture-memory'"), 'Repository must expose fixture-memory authority.');
+assert(!repository.includes('doke.services.local.v1') && !repository.includes('localStorage'), 'Repository must not expose browser-persistent service authority.');
 
 assert(controller.includes("if (!serviceId)"), 'Detail controller must handle missing route ids explicitly.');
 assert(controller.includes("emptyReason: normalized.service ? '' : (serviceId ? 'not-found' : 'missing-id')"), 'Detail controller must distinguish missing and unknown ids.');
@@ -41,7 +43,6 @@ assert(/detalhe-anuncio-data-controller\.js\?v=20260720-moderation-flow-v1/.test
 assert(/detalhe-anuncio\.js\?v=20260720-moderation-flow-v1/.test(detailHtml), 'Detail renderer cache must invalidate the pre-moderation script.');
 
 console.log('Detail ad canonical route static contract: PASS');
-
 
 const runInteractionsRuntime = () => {
   const assigned = [];
@@ -89,20 +90,15 @@ const runInteractionsRuntime = () => {
   assert(api.getCardServiceId(hrefOnlyCard) === 'service_123', 'Runtime resolver must recover the service id from an existing CTA href.');
 };
 
-const createStorage = (initial = {}) => {
-  const state = new Map(Object.entries(initial));
-  return {
-    getItem(key) { return state.has(key) ? state.get(key) : null; },
-    setItem(key, value) { state.set(key, String(value)); },
-    removeItem(key) { state.delete(key); }
-  };
-};
+const createStorage = () => ({
+  getItem() { throw new Error('Persistent service storage must not be read.'); },
+  setItem() { throw new Error('Persistent service storage must not be written.'); },
+  removeItem() { throw new Error('Persistent service storage must not be removed.'); }
+});
 
 const runRepositoryRuntime = async () => {
   const localId = 'service_local_123';
-  const storage = createStorage({
-    'doke.services.local.v1': JSON.stringify([{ id: localId, title: 'Serviço local', status: 'draft', moderationStatus: 'pending_review', ownerId: 'owner-123' }])
-  });
+  const storage = createStorage();
   const context = {
     console,
     URL,
@@ -117,10 +113,13 @@ const runRepositoryRuntime = async () => {
     Number,
     String,
     RegExp,
+    encodeURIComponent,
+    decodeURIComponent,
     window: {
       Doke: { session: { getCurrentUser() { return { id: 'owner-123' }; } } },
       DOKE_SUPABASE_CONFIG: { enabled: false },
       localStorage: storage,
+      sessionStorage: { getItem() { return null; }, setItem() {} },
       location: { href: 'https://doke.local/detalhe-anuncio.html' },
       document: {
         documentElement: { setAttribute() {} },
@@ -132,15 +131,20 @@ const runRepositoryRuntime = async () => {
   context.document = context.window.document;
   context.window.window = context.window;
   vm.runInNewContext(repository, context, { filename: 'services-repository.js' });
-  const local = await context.window.Doke.repositories.services.getById(localId);
-  assert(local && local.id === localId, 'Repository runtime must keep a pending local service readable to its owner.');
+  const fixtureRepository = context.window.Doke.repositories.services;
+  assert(fixtureRepository.getProviderStatus().provider === 'fixture-memory', 'Fixture runtime must report fixture-memory provider.');
+  await fixtureRepository.save({ id: localId, title: 'Serviço local', status: 'draft', moderationStatus: 'pending_review', ownerId: 'owner-123' });
+  const local = await fixtureRepository.getById(localId);
+  assert(local && local.id === localId, 'Fixture service must remain readable to its owner in the same runtime.');
 
   const visitorContext = {
     console, URL, Blob, Uint8Array, Promise, JSON, Date, Math, Object, Array, Number, String, RegExp,
+    encodeURIComponent, decodeURIComponent,
     window: {
       Doke: {},
       DOKE_SUPABASE_CONFIG: { enabled: false },
       localStorage: storage,
+      sessionStorage: { getItem() { return null; }, setItem() {} },
       location: { href: 'https://doke.local/detalhe-anuncio.html' },
       document: { documentElement: { setAttribute() {} }, addEventListener() {} },
       console
@@ -150,7 +154,7 @@ const runRepositoryRuntime = async () => {
   visitorContext.window.window = visitorContext.window;
   vm.runInNewContext(repository, visitorContext, { filename: 'services-repository-visitor.js' });
   const hiddenFromVisitor = await visitorContext.window.Doke.repositories.services.getById(localId);
-  assert(hiddenFromVisitor === null, 'Repository runtime must not expose a pending local service to a visitor.');
+  assert(hiddenFromVisitor === null, 'A separate runtime must not recover the fixture service.');
 
   const remoteExternalId = 'service_remote_123';
   const remoteUuid = '11111111-1111-4111-8111-111111111111';
@@ -163,7 +167,6 @@ const runRepositoryRuntime = async () => {
     metadata: {},
     service_media: []
   };
-  const remoteStorage = createStorage();
   const client = {
     from(table) {
       assert(table === 'services', 'Targeted detail read must query the services table.');
@@ -200,11 +203,14 @@ const runRepositoryRuntime = async () => {
     Number,
     String,
     RegExp,
+    encodeURIComponent,
+    decodeURIComponent,
     window: {
       Doke: { DokeSupabase: null },
       DOKE_SUPABASE_CONFIG: { enabled: true, servicesEnabled: true, url: 'https://example.supabase.co', anonKey: 'anon' },
       supabase: { createClient() { return client; } },
-      localStorage: remoteStorage,
+      localStorage: storage,
+      sessionStorage: { getItem() { return null; }, setItem() {} },
       location: { href: 'https://doke.local/detalhe-anuncio.html' },
       document: {
         documentElement: { setAttribute() {} },
