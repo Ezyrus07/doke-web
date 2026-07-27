@@ -8,6 +8,12 @@
 
 Retirar `doke.services.local.v1` como autoridade persistente de anúncios para sessões Supabase e sujeitos UUID, mantendo fixtures não UUID somente em memória durante o runtime atual.
 
+## Contrato de autoridade
+
+- fixtures não UUID: `memory-only`;
+- sessões Supabase e sujeitos UUID: `fail closed` quando a autoridade remota estiver indisponível;
+- nenhuma persistência ou fallback de catálogo no navegador.
+
 ## Fronteira preservada
 
 CAT-A02 não redesenha o catálogo nem cria novas operações administrativas.
