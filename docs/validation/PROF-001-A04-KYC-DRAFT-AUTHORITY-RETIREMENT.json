@@ -1,19 +1,22 @@
 {
   "domain": "PROF-001",
   "sublot": "PROF-A04",
-  "status": "implementation_in_progress",
-  "objective": "Retire browser-persistent KYC record and draft authority while preserving Supabase-owned reads, draft saves and submissions and fixture-only in-memory compatibility.",
+  "status": "validation_pending",
+  "objective": "Retire browser-persistent KYC record and draft authority while preserving Supabase-owned reads, draft saves and submissions and fixture-only in-memory record compatibility.",
   "branch": "prof/prof-001-baseline-audit",
   "baseHead": "6de6083ee4d012ca0567d7cb9bd461fa1869e9a4",
   "previousValidatedHead": "e1edba5ec671dc8e8a4e937241e43c158befe871",
   "implementationHead": "e3bf6544bc9def641fde42e65592fd8d3017184b",
+  "runtimeHead": "d093d34496ce0677c2248c023a92ed5a03a99050",
+  "qualityGateHead": "7527c34081611c24746fba94e3b0d6cb36321413",
   "authority": {
     "supabaseRead": "public.professional_identity_verifications",
     "supabaseDraftWrite": "self-service-operations/save_professional_verification_draft",
     "supabaseSubmission": "professional-verification-operations/submit",
     "browserPersistentRecordAuthority": "retired",
     "browserPersistentDraftAuthority": "retired",
-    "fixtureCompatibility": "memory_only",
+    "fixtureCompatibility": "record_and_draft_memory_only",
+    "binaryEvidenceBoundary": "PROF-B03-KYC-EVIDENCE",
     "remoteFailureMode": "fail_closed"
   },
   "retired": {
@@ -35,7 +38,8 @@
       "submit",
       "transition"
     ],
-    "fixturePersistence": "memory_only"
+    "fixtureRecordAndDraftPersistence": "memory_only",
+    "binaryEvidencePersistence": "separate_blocker_not_modified"
   },
   "remainingBlockers": [
     {
@@ -61,7 +65,8 @@
     "blockingE2E": "pending",
     "visualStructuralGuards": "pending",
     "stagingCanary": "pending",
-    "diagnostic": "pending"
+    "diagnostic": "pending",
+    "finalEvidence": "pending"
   },
   "safety": {
     "migrationApplied": false,
@@ -70,10 +75,12 @@
     "productionChanged": false,
     "realAccountChanged": false,
     "persistentSyntheticAccountCreated": false,
+    "temporaryWorkflowRemaining": false,
+    "temporaryCodemodRemaining": false,
     "smsEnabled": false,
     "oauthEnabled": false,
     "paidConfigurationEnabled": false,
     "prMerged": false
   },
-  "nextControlledSublot": "Retire IndexedDB binary-evidence authority only after PROF-A04 is fully validated."
+  "nextControlledSublot": "Retire IndexedDB binary-evidence authority only after PROF-A04 is fully validated on one canonical head."
 }
