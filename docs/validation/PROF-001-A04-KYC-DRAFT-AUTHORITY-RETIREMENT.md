@@ -2,7 +2,7 @@
 
 ## Status
 
-`VALIDATION PENDING`
+`DONE`
 
 ## Objetivo
 
@@ -10,14 +10,14 @@ Remover a autoridade persistente do navegador sobre registros e rascunhos de ver
 
 ## Causa-raiz
 
-`professional-identity-verifications-repository.js` ainda mantinha duas autoridades paralelas:
+`professional-identity-verifications-repository.js` mantinha duas autoridades paralelas:
 
 - registros de verificação em `localStorage` pela chave `doke.professionalIdentityVerifications.v1`;
 - rascunhos KYC em `sessionStorage` pela chave `doke.professionalIdentityVerificationDrafts.v1`.
 
 Mesmo com o serviço ativo já lendo `public.professional_identity_verifications`, salvando rascunhos por `save_professional_verification_draft` e enviando verificações por `professional-verification-operations`, o repositório local ainda podia representar um estado diferente do servidor.
 
-## Autoridade implementada
+## Autoridade final
 
 ### Sessões Supabase
 
@@ -42,22 +42,24 @@ O PROF-A04 não remove, migra ou mascara essa dependência. A fronteira de evid�
 ## Arquivos
 
 - `assets/js/repositories/professional-identity-verifications-repository.js`
+- `scripts/audit-professional-authority-baseline.js`
 - `scripts/audit-professional-verification-draft-authority-retirement.js`
 - `scripts/test-professional-verification-draft-authority-retirement-runtime.js`
 - `.github/workflows/quality.yml`
+- `docs/DOMAIN-COMPLETION-MATRIX.md`
 - `docs/validation/PROF-001-A04-KYC-DRAFT-AUTHORITY-RETIREMENT.json`
 - `docs/validation/PROF-001-A04-KYC-DRAFT-AUTHORITY-RETIREMENT.md`
 - `docs/DOKE-ENGINEERING-JOURNAL.md`
 
 ## Supabase
 
-Nenhuma migration é necessária para este sublote. Nenhuma Edge Function precisa ser implantada porque as operações remotas canônicas já existiam antes da retirada da autoridade local.
+Nenhuma migration foi necessária. Nenhuma Edge Function foi implantada porque as operações remotas canônicas já existiam antes da retirada da autoridade local.
 
-Staging e produção devem permanecer inalterados durante o PROF-A04.
+Staging e produção permaneceram inalterados durante o PROF-A04.
 
 ## Runtime permanente
 
-O runtime dedicado comprova:
+O runtime dedicado comprovou:
 
 1. sujeitos Supabase não podem usar `list`, `getByUserId`, `saveDraft`, `submit` ou transições do repositório fixture;
 2. o caminho Supabase não toca `localStorage`, `sessionStorage` ou a fronteira local de evidência;
@@ -65,19 +67,13 @@ O runtime dedicado comprova:
 4. registros fixture não sobrevivem à criação de um novo runtime;
 5. a submissão fixture mantém explícita a fronteira separada de evidência binária.
 
-## Validação atual
+## Validação
 
-Modo: `canonical_MAIN_stack_validation_then_restore_stacked_base`.
+Modo: `canonical_MAIN_stack_validation_completed_then_restore_stacked_base`.
 
-Checkpoint de implementação do repositório:
+Candidato validado:
 
-`e3bf6544bc9def641fde42e65592fd8d3017184b`
-
-Checkpoint do runtime permanente:
-
-`d093d34496ce0677c2248c023a92ed5a03a99050`
-
-Candidato `f867f0a496c0b8ee1308855e214df9e07ea326be`:
+`41b0a57fab27720bc82aaa28b50ee0eecfe1748e`
 
 - audit cumulativo PROF-A01: sucesso;
 - audit PROF-A02: sucesso;
@@ -86,17 +82,14 @@ Candidato `f867f0a496c0b8ee1308855e214df9e07ea326be`:
 - runtime PROF-A03: sucesso;
 - audit estrutural PROF-A04: sucesso;
 - runtime PROF-A04: sucesso;
-- contratos gerais até o gate da matriz: sucesso;
-- matriz determinística: drift detectado;
-- sincronização solicitada exclusivamente pelo workflow canônico.
+- matriz determinística: sucesso;
+- Doke Quality Gates #823: sucesso;
+- E2E bloqueante: sucesso;
+- 105 guards visuais: sucesso;
+- Doke Staging Edge HTTP Canary #596: sucesso;
+- Doke Diagnostic E2E #616: sucesso.
 
-Após a sincronização, ainda devem passar no mesmo head final:
-
-- Doke Quality Gates;
-- E2E bloqueante;
-- 105 guards visuais;
-- Canary;
-- Diagnostic.
+A evidência final possui gate permanente: um sublote marcado como `done` falha no Quality caso qualquer contrato de validação permaneça diferente de `success` ou os números dos runs finais estejam ausentes.
 
 ## Segurança operacional
 
@@ -107,8 +100,9 @@ Após a sincronização, ainda devem passar no mesmo head final:
 - nenhuma conta real modificada;
 - nenhuma conta sintética persistente criada;
 - nenhum SMS, OAuth ou recurso pago habilitado;
+- nenhuma autoridade local aposentada foi reaberta;
 - PR #11 permanece aberto, draft e não mesclado.
 
 ## Próximo sublote controlado
 
-`PROF-B03-KYC-EVIDENCE` poderá retirar a autoridade IndexedDB somente depois de o PROF-A04 estar validado no mesmo head e declarado `DONE`.
+`PROF-B03-KYC-EVIDENCE` poderá retirar a autoridade IndexedDB, preservando todos os gates do PROF-A04.
