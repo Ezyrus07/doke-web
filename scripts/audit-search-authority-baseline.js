@@ -19,15 +19,38 @@ const files = {
   favoritesMigration: 'supabase/migrations/112_catalog_favorites_authority.sql',
   evidenceJson: 'docs/validation/SEARCH-001-A01-AUTHORITY-BASELINE.json',
   evidenceMarkdown: 'docs/validation/SEARCH-001-A01-AUTHORITY-BASELINE.md',
-  workflow: '.github/workflows/search-authority-baseline.yml'
+  workflow: '.github/workflows/search-authority-baseline.yml',
+  a02EvidenceJson: 'docs/validation/SEARCH-001-A02-FAVORITES-AUTHORITY-RETIREMENT.json',
+  favoritesRepository: 'assets/js/repositories/favorites-repository.js',
+  favoritesService: 'assets/js/services/favorites-service.js',
+  detailController: 'assets/js/pages/detalhe-anuncio-data-controller.js'
 };
 
-Object.values(files).forEach((file) => assert(exists(file), `required file missing: ${file}`));
+[
+  files.matrix,
+  files.searchService,
+  files.searchData,
+  files.searchResults,
+  files.detailExperience,
+  files.favoritesMigration,
+  files.evidenceJson,
+  files.evidenceMarkdown,
+  files.workflow
+].forEach((file) => assert(exists(file), `required file missing: ${file}`));
 if (errors.length) {
   console.error('[SEARCH-A01] Required baseline files are missing:');
   errors.forEach((error) => console.error(`- ${error}`));
   process.exit(1);
 }
+
+const a02Evidence = exists(files.a02EvidenceJson) ? JSON.parse(read(files.a02EvidenceJson)) : null;
+const favoritesAuthorityRetired = Boolean(
+  a02Evidence &&
+  ['CANDIDATE_VALIDATED_CI_PENDING', 'COMPLETE'].includes(a02Evidence.status) &&
+  a02Evidence.authority &&
+  a02Evidence.authority.browserPersistentAuthority === 'retired' &&
+  a02Evidence.authority.real === 'public.favorites'
+);
 
 const matrix = JSON.parse(read(files.matrix));
 const searchDomain = (matrix.domains || []).find((domain) => domain.id === 'SEARCH-001');
@@ -77,14 +100,44 @@ const searchResults = read(files.searchResults);
 ].forEach((marker) => assert(searchResults.includes(marker), `search results baseline marker missing: ${marker}`));
 
 const detailExperience = read(files.detailExperience);
-[
-  "FAVORITES_KEY_PREFIX = 'doke.service-favorites.v1:'",
-  'localStorage.getItem(favoriteStorageKey())',
-  'localStorage.setItem(favoriteStorageKey(), JSON.stringify(ids))',
-  'function toggleFavorite(button)'
-].forEach((marker) => assert(detailExperience.includes(marker), `favorite browser-authority marker missing: ${marker}`));
-assert(!detailExperience.includes(".from('favorites')"), 'baseline unexpectedly contains a remote favorites mutation in detail-ad experience');
-assert(!detailExperience.includes('.from("favorites")'), 'baseline unexpectedly contains a remote favorites mutation in detail-ad experience');
+if (favoritesAuthorityRetired) {
+  [files.favoritesRepository, files.favoritesService, files.detailController].forEach((file) => {
+    assert(exists(file), `post-SEARCH-A02 authority file missing: ${file}`);
+  });
+  [
+    'Doke.services && Doke.services.favorites',
+    'favoritesService().isFavorite(normalizedServiceId)',
+    'favoritesService().toggle(serviceId)',
+    'DOKE_FAVORITES_AUTH_REQUIRED'
+  ].forEach((marker) => assert(detailExperience.includes(marker), `post-SEARCH-A02 experience marker missing: ${marker}`));
+  ['localStorage', 'sessionStorage', 'FAVORITES_KEY_PREFIX', 'doke.service-favorites.v1'].forEach((marker) => {
+    assert(!detailExperience.includes(marker), `retired favorite browser authority returned: ${marker}`);
+  });
+
+  const favoritesRepository = read(files.favoritesRepository);
+  [
+    "AUTHORITY = 'supabase-or-fixture-memory'",
+    "REMOTE_TABLE = 'favorites'",
+    "error.code = 'DOKE_FAVORITES_AUTHORITY_UNAVAILABLE'",
+    'fixtureFavoritesByUser = new Map()'
+  ].forEach((marker) => assert(favoritesRepository.includes(marker), `post-SEARCH-A02 repository marker missing: ${marker}`));
+  assert(!favoritesRepository.includes('localStorage'), 'favorites repository cannot reopen browser persistence');
+
+  const detailController = read(files.detailController);
+  const repositoryIndex = detailController.indexOf("key: 'favorites-repository'");
+  const serviceIndex = detailController.indexOf("key: 'favorites-service'");
+  const experienceIndex = detailController.indexOf("key: 'detail-ad-experience'");
+  assert(repositoryIndex !== -1 && serviceIndex > repositoryIndex && experienceIndex > serviceIndex, 'favorite module load order changed');
+} else {
+  [
+    "FAVORITES_KEY_PREFIX = 'doke.service-favorites.v1:'",
+    'localStorage.getItem(favoriteStorageKey())',
+    'localStorage.setItem(favoriteStorageKey(), JSON.stringify(ids))',
+    'function toggleFavorite(button)'
+  ].forEach((marker) => assert(detailExperience.includes(marker), `favorite browser-authority marker missing: ${marker}`));
+}
+assert(!detailExperience.includes(".from('favorites')"), 'detail experience must not call favorites table directly');
+assert(!detailExperience.includes('.from("favorites")'), 'detail experience must not call favorites table directly');
 
 const favoritesMigration = read(files.favoritesMigration);
 [
@@ -102,11 +155,11 @@ assert(['pending', 'done'].includes(evidence.validationStatus), 'SEARCH-A01 vali
 assert(evidence.authority && evidence.authority.serviceFiltering === 'browser', 'browser service filtering authority is not documented');
 assert(evidence.authority && evidence.authority.serviceRanking === 'browser_heuristic', 'browser ranking authority is not documented');
 assert(evidence.authority && evidence.authority.pagination === 'fixed_client_slice', 'fixed client pagination boundary is not documented');
-assert(evidence.authority && evidence.authority.favorites === 'browser_local_storage', 'browser favorites authority is not documented');
+assert(evidence.authority && evidence.authority.favorites === 'browser_local_storage', 'historical browser favorites authority is not documented');
 assert(evidence.staging && evidence.staging.favoritesRlsEnabled === true, 'staging favorites RLS evidence must remain explicit');
 assert(evidence.staging && evidence.staging.favoritesPolicyCount === 3, 'staging favorites policy count must remain explicit');
 assert(evidence.matrixDrift && evidence.matrixDrift.searchB01DescriptionIsStale === true, 'SEARCH-B01 matrix drift must remain documented until reconciliation');
-assert(evidence.safety && evidence.safety.implementationChanged === false, 'SEARCH-A01 cannot claim a product implementation change');
+assert(evidence.safety && evidence.safety.implementationChanged === false, 'SEARCH-A01 cannot claim an implementation change');
 assert(evidence.safety && evidence.safety.stagingChanged === false, 'SEARCH-A01 cannot change staging');
 assert(evidence.safety && evidence.safety.productionChanged === false, 'SEARCH-A01 cannot change production');
 
@@ -133,7 +186,9 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('[SEARCH-A01] Search authority baseline is frozen.');
+console.log('[SEARCH-A01] Search authority baseline is frozen and cumulative.');
 console.log('[SEARCH-A01] Remote catalog reads coexist with browser filtering, ranking, fixed slicing and static non-service pools.');
-console.log('[SEARCH-A01] Favorites schema is RLS-protected in staging, but the product path remains browser-local.');
-console.log('[SEARCH-A01] Production and staging were not changed.');
+console.log(favoritesAuthorityRetired
+  ? '[SEARCH-A01] Historical browser favorites authority is documented and its controlled SEARCH-A02 retirement is preserved.'
+  : '[SEARCH-A01] Favorites schema is RLS-protected in staging, but the product path remains browser-local.');
+console.log('[SEARCH-A01] Production and staging were not changed by the baseline.');
