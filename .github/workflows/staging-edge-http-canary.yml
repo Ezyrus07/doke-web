@@ -100,14 +100,14 @@ jobs:
           fs.writeFileSync(matrixPath, JSON.stringify(matrix, null, 2) + '\n');
           NODE
 
-      - name: Regenerate deterministic matrix artifacts
-        run: npm run write:domain-completion-matrix
-
       - name: Remove one-time machinery
         shell: bash
         run: |
           git show 09e77e5236d2bc0c820d73768f0161f326adeefe:.github/workflows/staging-edge-http-canary.yml > .github/workflows/staging-edge-http-canary.yml
           rm scripts/cat-a05-finalize-once.js
+
+      - name: Regenerate deterministic matrix artifacts from clean tree
+        run: npm run write:domain-completion-matrix
 
       - name: Audit CAT-A01 cumulative baseline
         run: node scripts/audit-service-catalog-authority-baseline.js
@@ -131,7 +131,7 @@ jobs:
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.email "41898218+github-actions[bot]@users.noreply.github.com"
           git add -A
           git commit -m "Finalize CAT-001 domain reconciliation"
           git push origin HEAD:cat/cat-001-baseline-audit
