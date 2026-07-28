@@ -1,0 +1,72 @@
+{
+  "schemaVersion": "1.0.0",
+  "domain": "SEARCH-001",
+  "sublot": "SEARCH-A06",
+  "status": "BASELINE_FROZEN",
+  "title": "Server-controlled ranking and observability baseline",
+  "recordedAt": "2026-07-28T15:05:00-03:00",
+  "baseHead": "f542abac7ac0d4fc3df7e4003e15307c1e738379",
+  "staging": {
+    "project": "doke-web-staging",
+    "readOnlyInspection": true,
+    "serviceMetricEventsRows": 0,
+    "serviceMetricTotalsRows": 0,
+    "reviewsRows": 0,
+    "availabilitySlotsRows": 0
+  },
+  "signalClassification": {
+    "eligibleForInitialRanking": [
+      "text_relevance",
+      "exact_geographic_eligibility",
+      "published_order_backed_review_quality",
+      "future_available_slot_presence",
+      "bounded_recency"
+    ],
+    "observabilityOnly": [
+      "views_count",
+      "contacts_count",
+      "budget_count",
+      "message_count"
+    ],
+    "forbiddenUntilHardened": [
+      "raw_browser_view_count",
+      "unbounded_click_through_rate",
+      "self_generated_engagement",
+      "owner_activity_volume",
+      "paid_boost_without_explicit_product_policy"
+    ]
+  },
+  "riskFindings": [
+    "service_metric_events accepts browser-originated view events and staging has no representative event volume.",
+    "service_metric_totals is an aggregate relation and cannot be treated as a browser write authority.",
+    "reviews are trustworthy only when published and tied to completed orders.",
+    "availability is provider-controlled and must be capped to prevent slot-spam ranking inflation.",
+    "recency must be bounded so republishing cannot permanently dominate results."
+  ],
+  "targetContract": {
+    "rankingAuthority": "server_only",
+    "configurationVersioned": true,
+    "scoreBreakdownPublic": false,
+    "cursorStableWithinVersion": true,
+    "rollbackRequired": true,
+    "productionActivation": false
+  },
+  "matrix": {
+    "maturityPreserved": 3,
+    "serverAuthorityPreserved": "partial",
+    "stagingEvidencePreserved": "staging_canary",
+    "securityGatePreserved": "blocked",
+    "productionGatePreserved": "blocked",
+    "searchB03": "preserved"
+  },
+  "safety": {
+    "stagingChanged": false,
+    "productionChanged": false,
+    "realAccountsChanged": false,
+    "realServicesChanged": false,
+    "metricsChanged": false,
+    "prMerged": false,
+    "prReadyForReview": false
+  },
+  "nextControlledStep": "SEARCH-A07 — version the ranking formula, cap every behavioral signal, add anti-manipulation constraints and validate deterministic rollback in staging."
+}
