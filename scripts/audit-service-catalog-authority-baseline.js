@@ -80,7 +80,7 @@ assert(cat && cat.securityGate === 'partial', 'CAT-001 security gate must remain
 assert(cat && cat.productionGate === 'blocked', 'CAT-001 production gate must remain blocked');
 const blockerIds = (cat && cat.blockers || []).map((blocker) => blocker.id).sort();
 assert(
-  same(blockerIds, ['CAT-B03', 'CAT-B04']) || same(blockerIds, ['CAT-B04']),
+  same(blockerIds, ['CAT-B03', 'CAT-B04']) || same(blockerIds, ['CAT-B04']) || same(blockerIds, []),
   'CAT-001 blocker set changed outside the controlled CAT reconciliation'
 );
 assert(

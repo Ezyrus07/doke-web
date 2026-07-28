@@ -635,3 +635,39 @@ Produção, contas reais, SMS, OAuth e configurações pagas não foram alterado
 ## Próximo sublote
 
 `CAT-A04`: fechar substituição e limpeza de mídia, objetos superseded e rascunhos abandonados.
+
+# 2026-07-28 — CAT-A04 / fechamento do ciclo de mídia
+
+Immutable signed upload reservations, one-time consumption and reference-safe server cleanup were finalized.
+
+- validated head: `09e77e5236d2bc0c820d73768f0161f326adeefe`;
+- Quality #1237 / run `30357055694`: success;
+- blocking E2E job `90267805123`: success;
+- 105 visual structural guards job `90267805237`: success;
+- Canary #806 / run `30357055735`: success;
+- Diagnostic #901 / run `30357055726`: success;
+- production unchanged; PR #12 and parent PR #11 remain draft, open and unmerged.
+
+# 2026-07-28 — CAT-B04 / snapshot imutável de serviço em pedidos
+
+Order creation now freezes the approved service version, canonical professional identity and historical snapshot across remote insertion paths.
+
+- validated head: `09e77e5236d2bc0c820d73768f0161f326adeefe`;
+- Quality #1237 / run `30357055694`: success;
+- blocking E2E job `90267805123`: success;
+- 105 visual structural guards job `90267805237`: success;
+- Canary #806 / run `30357055735`: success;
+- Diagnostic #901 / run `30357055726`: success;
+- production unchanged; PR #12 and parent PR #11 remain draft, open and unmerged.
+
+# 2026-07-28 — CAT-A05 / reconciliação final do CAT-001
+
+CAT-001 was reconciled at maturity 4. Only CAT-B04 was removed; security remains partial and production remains blocked. SEARCH-001 is the next mandatory domain.
+
+- validated head: `09e77e5236d2bc0c820d73768f0161f326adeefe`;
+- Quality #1237 / run `30357055694`: success;
+- blocking E2E job `90267805123`: success;
+- 105 visual structural guards job `90267805237`: success;
+- Canary #806 / run `30357055735`: success;
+- Diagnostic #901 / run `30357055726`: success;
+- production unchanged; PR #12 and parent PR #11 remain draft, open and unmerged.

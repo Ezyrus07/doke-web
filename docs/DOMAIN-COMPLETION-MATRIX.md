@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 888 arquivos no escopo; 209 referências a localStorage; 57 a sessionStorage; 530 referências mock; 130 referências de rede/Supabase; 30 marcadores de implementação pendente.
+**Evidência estática observada:** 898 arquivos no escopo; 212 referências a localStorage; 60 a sessionStorage; 530 referências mock; 131 referências de rede/Supabase; 30 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -151,7 +151,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção blocked.
 
-**Evidência estática observada:** 172 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 0 referências mock; 5 referências de rede/Supabase; 9 marcadores de implementação pendente.
+**Evidência estática observada:** 183 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 0 referências mock; 5 referências de rede/Supabase; 9 marcadores de implementação pendente.
 
 **Tabelas/autoridades de dados:** `users`, `user_profiles`, `client_profiles`, `audit_logs`, `availability_slots`, `budgets`, `communities`, `community_members`, `community_posts`, `favorites`, `message_attachments`, `reports`, `reviews`, `service_categories`, `verification_events`.
 
@@ -320,14 +320,17 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - CAT-A03 routes approved-content edits through versioned review, routes pause/reactivate/archive through an owner-only self-service operation, and revokes generic browser writes to services.
 - CAT-A03 code candidate routes owner content edits through versioned review and pause, reactivate and archive through an explicit owner-only server operation; staging application remains pending.
 - CAT-A03 complete in staging: migration 20260727195302, self-service-operations v7, SQL 018, Quality #992, blocking E2E, 105 guards, Canary #714 and Diagnostic #736 succeeded.
+- CAT-A04 complete: immutable signed uploads and reference-safe cleanup validated on 09e77e5236d2bc0c820d73768f0161f326adeefe.
+- CAT-B04 complete: approved service versions and historical order snapshots are immutable on 09e77e5236d2bc0c820d73768f0161f326adeefe.
+- CAT-A05 complete: Quality #1237, blocking E2E, 105 guards, Canary #806 and Diagnostic #901 converged on one stable head.
 
 **Bloqueadores:**
-- **CAT-B04 · MEDIUM · versioning:** Historical orders need immutable service snapshots across all creation paths. _(Fase 4)_
+- Nenhum.
 
 **Próximas ações:**
-- Close service-media replacement, superseded-object cleanup and abandoned-draft cleanup lifecycle.
-- Guarantee immutable service snapshots on every order creation path.
-- Reconcile CAT-001 final matrix and domain closure evidence.
+- Proceed with SEARCH-001 as the next mandatory engineering domain.
+- Keep all CAT-001 authority and lifecycle audits cumulative in Quality.
+- Keep production blocked until the global security and launch gates are satisfied.
 
 **Gate de saída:**
 - Create, submit, moderate, publish, edit, pause and archive work remotely.
@@ -851,7 +854,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI hybrid; servidor partial; staging local e2e; segurança partial; produção blocked.
 
-**Evidência estática observada:** 841 arquivos no escopo; 235 referências a localStorage; 71 a sessionStorage; 225 referências mock; 248 referências de rede/Supabase; 9 marcadores de implementação pendente.
+**Evidência estática observada:** 842 arquivos no escopo; 235 referências a localStorage; 71 a sessionStorage; 225 referências mock; 249 referências de rede/Supabase; 9 marcadores de implementação pendente.
 
 **Páginas:** `index.html`, `resultados.html`, `detalhe-anuncio.html`, `pedidos.html`, `mensagens.html`, `notificacoes.html`, `carteira.html`, `perfil.html`, `comunidade.html`.
 
@@ -882,7 +885,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2092 arquivos no escopo; 471 referências a localStorage; 130 a sessionStorage; 840 referências mock; 501 referências de rede/Supabase; 84 marcadores de implementação pendente.
+**Evidência estática observada:** 2115 arquivos no escopo; 474 referências a localStorage; 133 a sessionStorage; 840 referências mock; 506 referências de rede/Supabase; 84 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
@@ -943,4 +946,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-07-27T19:30:00-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-07-28T09:20:00-03:00._

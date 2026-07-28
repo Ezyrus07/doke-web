@@ -2,7 +2,7 @@
   "schemaVersion": "1.0.0",
   "domain": "CAT-001",
   "sublot": "CAT-A05",
-  "status": "RECONCILIATION_CANDIDATE_CI_PENDING",
+  "status": "COMPLETE",
   "title": "CAT-001 final reconciliation and domain-closure candidate",
   "recordedAt": "2026-07-28T07:15:00-03:00",
   "headBeforeCandidate": "659d74c37cc30a8073fa69f58165742f559cf8d5",
@@ -28,10 +28,25 @@
     "catA01": "complete",
     "catA02": "complete",
     "catA03": "complete",
-    "catA04": "technically_complete_ci_pending",
-    "catB04": "candidate_validated_ci_pending",
-    "stagingMigrations": [149, 150, 151, 152, 153, 154, 155, 156, 157],
-    "sqlValidations": [18, 19, 20, 21],
+    "catA04": "complete",
+    "catB04": "complete",
+    "stagingMigrations": [
+      149,
+      150,
+      151,
+      152,
+      153,
+      154,
+      155,
+      156,
+      157
+    ],
+    "sqlValidations": [
+      18,
+      19,
+      20,
+      21
+    ],
     "persistentSyntheticEntitiesRemaining": 0
   },
   "matrixContract": {
@@ -39,17 +54,47 @@
     "serverAuthority": "canonical",
     "stagingEvidence": "staging_operational",
     "productionGate": "blocked",
-    "catB04BlockerMustRemain": true,
-    "removalCondition": "Quality, blocking E2E, 105 visual structural guards, Canary and Diagnostic must succeed on one stable final head."
+    "catB04BlockerMustRemain": false,
+    "removalCondition": "Satisfied by Quality #1237, blocking E2E, 105 visual guards, Canary #806 and Diagnostic #901 on one stable head."
   },
   "ci": {
-    "quality": "pending_observable_result",
-    "blockingE2e": "pending_observable_result",
-    "visualStructuralGuards": "pending_observable_result",
-    "canary": "pending_observable_result",
-    "diagnostic": "pending_observable_result",
-    "connectorWorkflowRunsOnPreviousHead": 0,
-    "connectorCommitStatusesOnPreviousHead": 0
+    "quality": {
+      "status": "success",
+      "runId": 30357055694,
+      "runNumber": 1237,
+      "head": "09e77e5236d2bc0c820d73768f0161f326adeefe",
+      "url": "https://github.com/Ezyrus07/doke-web/actions/runs/30357055694"
+    },
+    "blockingE2e": {
+      "status": "success",
+      "runId": 30357055694,
+      "runNumber": 1237,
+      "jobId": 90267805123,
+      "head": "09e77e5236d2bc0c820d73768f0161f326adeefe",
+      "url": "https://github.com/Ezyrus07/doke-web/actions/runs/30357055694/job/90267805123"
+    },
+    "visualStructuralGuards": {
+      "status": "success",
+      "runId": 30357055694,
+      "runNumber": 1237,
+      "jobId": 90267805237,
+      "head": "09e77e5236d2bc0c820d73768f0161f326adeefe",
+      "url": "https://github.com/Ezyrus07/doke-web/actions/runs/30357055694/job/90267805237"
+    },
+    "canary": {
+      "status": "success",
+      "runId": 30357055735,
+      "runNumber": 806,
+      "head": "09e77e5236d2bc0c820d73768f0161f326adeefe",
+      "url": "https://github.com/Ezyrus07/doke-web/actions/runs/30357055735"
+    },
+    "diagnostic": {
+      "status": "success",
+      "runId": 30357055726,
+      "runNumber": 901,
+      "head": "09e77e5236d2bc0c820d73768f0161f326adeefe",
+      "url": "https://github.com/Ezyrus07/doke-web/actions/runs/30357055726"
+    }
   },
   "safety": {
     "productionChanged": false,
@@ -63,10 +108,11 @@
     "parentPrMerged": false
   },
   "remaining": [
-    "Observe all five canonical lanes on the final stable head.",
-    "Only after those lanes pass, update the engineering journal with final validated heads and run identifiers.",
-    "Only after those lanes pass, remove CAT-B04 from the matrix and regenerate the deterministic human-readable matrix.",
-    "Update the PR description with CAT-A04, CAT-B04 and CAT-A05 final evidence without marking it ready or merging it."
+    "Keep all CAT-001 authority and lifecycle audits cumulative in Quality.",
+    "Proceed with SEARCH-001 as the next mandatory engineering domain.",
+    "Keep production blocked until the global security and launch gates are satisfied."
   ],
-  "nextControlledStep": "Register this audit in the canonical Quality pipeline, observe the final lanes, and perform the final matrix/journal transition only with verifiable CI evidence."
+  "nextControlledStep": "Proceed with SEARCH-001 while preserving CAT-001 regression gates and blocked production.",
+  "completedAt": "2026-07-28T09:20:00-03:00",
+  "validatedHead": "09e77e5236d2bc0c820d73768f0161f326adeefe"
 }
