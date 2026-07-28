@@ -1,0 +1,58 @@
+name: Doke SEARCH-A01 Authority Baseline
+
+on:
+  pull_request:
+    branches:
+      - 'cat/**'
+    paths:
+      - '.github/workflows/search-authority-baseline.yml'
+      - 'scripts/audit-search-authority-baseline.js'
+      - 'assets/js/services/search-service.js'
+      - 'assets/js/pages/search-data.js'
+      - 'assets/js/pages/search-results.js'
+      - 'assets/js/pages/detail-ad-experience.js'
+      - 'supabase/migrations/112_catalog_favorites_authority.sql'
+      - 'config/domain-completion-matrix.json'
+      - 'docs/validation/SEARCH-001-A01-AUTHORITY-BASELINE.*'
+  push:
+    branches:
+      - 'search/**'
+    paths:
+      - '.github/workflows/search-authority-baseline.yml'
+      - 'scripts/audit-search-authority-baseline.js'
+      - 'assets/js/services/search-service.js'
+      - 'assets/js/pages/search-data.js'
+      - 'assets/js/pages/search-results.js'
+      - 'assets/js/pages/detail-ad-experience.js'
+      - 'supabase/migrations/112_catalog_favorites_authority.sql'
+      - 'config/domain-completion-matrix.json'
+      - 'docs/validation/SEARCH-001-A01-AUTHORITY-BASELINE.*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: doke-search-a01-baseline-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  search-authority-baseline:
+    name: SEARCH-A01 authority baseline audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout candidate tree
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Audit SEARCH-A01 authority baseline
+        run: node scripts/audit-search-authority-baseline.js
+
+      - name: Verify clean patch formatting
+        run: git diff --check
