@@ -1,31 +1,38 @@
 name: Doke SEARCH Domain Matrix Sync
 
 on:
-  push:
+  pull_request:
     branches:
+      - 'cat/**'
       - 'search/**'
     paths:
       - '.github/workflows/search-domain-matrix-sync.yml'
+      - 'docs/validation/SEARCH-001-A06-RANKING-SIGNAL-BASELINE.json'
+      - 'scripts/audit-search-ranking-signal-baseline.js'
+      - '.github/workflows/search-ranking-signal-baseline.yml'
   workflow_dispatch:
 
 permissions:
   contents: write
 
 concurrency:
-  group: doke-search-domain-matrix-sync-${{ github.ref }}
+  group: doke-search-domain-matrix-sync-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: false
 
 jobs:
   sync-domain-matrix:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
     name: Regenerate deterministic domain matrix
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      TARGET_BRANCH: ${{ github.head_ref || github.ref_name }}
 
     steps:
       - name: Checkout SEARCH branch
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref_name }}
+          ref: ${{ env.TARGET_BRANCH }}
           fetch-depth: 0
 
       - name: Setup Node
@@ -57,4 +64,4 @@ jobs:
             exit 0
           fi
           git commit -m "Synchronize SEARCH domain matrix artifact"
-          git push origin HEAD:${{ github.ref_name }}
+          git push origin HEAD:${TARGET_BRANCH}
