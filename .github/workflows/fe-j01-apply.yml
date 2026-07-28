@@ -26,7 +26,10 @@ jobs:
           node-version: 24
 
       - name: Apply FE-J01 codemod
-        run: node scripts/fe-j01-apply.js
+        shell: bash
+        run: |
+          set -o pipefail
+          node scripts/fe-j01-apply.js 2>&1 | tee fe-j01-codemod.log
 
       - name: Validate ownership audit
         run: node scripts/audit-navigation-registry-ownership.js
@@ -52,3 +55,12 @@ jobs:
           fi
           git commit -m "FE-J01: centralize route metadata in navigation registry"
           git push origin HEAD:${GITHUB_HEAD_REF}
+
+      - name: Upload codemod diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fe-j01-codemod-${{ github.sha }}
+          path: fe-j01-codemod.log
+          if-no-files-found: warn
+          retention-days: 3
