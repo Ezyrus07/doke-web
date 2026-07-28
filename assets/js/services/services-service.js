@@ -6,6 +6,7 @@
   var root = window;
   var Doke = root.Doke || (root.Doke = {});
   var services = Doke.services || (Doke.services = {});
+  var mediaUploadServicePromise = null;
 
   var STATUS = Object.freeze({
     DRAFT: 'draft',
@@ -59,6 +60,79 @@
       .some(isUuid);
   }
 
+  function usesRemoteAuthority(repository, service) {
+    if (isRemoteService(service)) return true;
+    if (!repository || typeof repository.getProviderStatus !== 'function') return false;
+    try {
+      return repository.getProviderStatus().provider === 'supabase';
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function getMediaUploadService() {
+    return Doke.services && Doke.services.serviceMediaUploads || null;
+  }
+
+  function ensureMediaUploadService() {
+    var current = getMediaUploadService();
+    if (current && typeof current.submitForReview === 'function') return Promise.resolve(current);
+    if (mediaUploadServicePromise) return mediaUploadServicePromise;
+    if (!root.document || typeof root.document.createElement !== 'function') {
+      return Promise.reject(new Error('A autoridade de upload assinado de mídia não foi carregada.'));
+    }
+
+    mediaUploadServicePromise = new Promise(function (resolve, reject) {
+      var existing = root.document.querySelector && root.document.querySelector('script[data-doke-service-media-upload-authority]');
+      var script = existing || root.document.createElement('script');
+      var settled = false;
+      var complete = function () {
+        if (settled) return;
+        settled = true;
+        var authority = getMediaUploadService();
+        if (!authority || typeof authority.submitForReview !== 'function') {
+          mediaUploadServicePromise = null;
+          reject(new Error('A autoridade de upload assinado de mídia não ficou disponível.'));
+          return;
+        }
+        resolve(authority);
+      };
+      var fail = function () {
+        if (settled) return;
+        settled = true;
+        mediaUploadServicePromise = null;
+        reject(new Error('Não foi possível carregar a autoridade de upload assinado de mídia.'));
+      };
+
+      script.addEventListener('load', complete, { once: true });
+      script.addEventListener('error', fail, { once: true });
+      if (!existing) {
+        script.src = 'assets/js/services/service-media-upload-service.js';
+        script.async = true;
+        script.setAttribute('data-doke-service-media-upload-authority', 'true');
+        (root.document.head || root.document.documentElement).appendChild(script);
+      } else {
+        root.setTimeout(function () {
+          if (getMediaUploadService()) complete();
+          else fail();
+        }, 0);
+      }
+    });
+    return mediaUploadServicePromise;
+  }
+
+  function submitThroughCanonicalAuthority(repository, service, options) {
+    if (!usesRemoteAuthority(repository, service)) {
+      if (typeof repository.submitForReview !== 'function') {
+        return Promise.reject(new Error('O envio de serviços para análise não está disponível.'));
+      }
+      return repository.submitForReview(service, options || {});
+    }
+    return ensureMediaUploadService().then(function (authority) {
+      return authority.submitForReview(service, options || {}, repository);
+    });
+  }
+
   function list(filters) {
     return assertRepository().list(filters || {});
   }
@@ -86,7 +160,6 @@
     }
     return access.assert(action).then(function (result) {
       var repository = assertRepository();
-      if (typeof repository.submitForReview !== 'function') throw new Error('O envio de serviços para análise não está disponível.');
       var actor = result.user || currentUser() || {};
       var professionalProfile = result.professionalProfile || {};
       var now = new Date().toISOString();
@@ -105,7 +178,7 @@
         createdAt: payload && payload.createdAt || now,
         updatedAt: now
       });
-      return repository.submitForReview(service, options);
+      return submitThroughCanonicalAuthority(repository, service, options);
     });
   }
 
@@ -207,14 +280,13 @@
         if (typeof repository.update !== 'function') throw new Error('Edição de fixture indisponível.');
         return repository.update(serviceId, patch);
       }
-      if (typeof repository.submitForReview !== 'function') throw new Error('Autoridade versionada de edição indisponível.');
       var candidate = Object.assign({}, current, patch, {
         id: current.id || serviceId,
         externalId: current.externalId || current.id || serviceId,
         status: current.status,
         updatedAt: new Date().toISOString()
       });
-      return repository.submitForReview(candidate, { editMode: true, changeClass: 'major' });
+      return submitThroughCanonicalAuthority(repository, candidate, { editMode: true, changeClass: 'major' });
     });
   }
 
