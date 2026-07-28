@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 const fs = require('fs');
 const path = require('path');
+const { spawnSync } = require('child_process');
 
 const root = process.cwd();
 const requiredFiles = [
@@ -9,6 +10,7 @@ const requiredFiles = [
   'docs/QUALITY-GATES.md',
   'docs/STAGE29-CI-QUALITY-GATES.md',
   'package.json',
+  'scripts/audit-service-media-lifecycle-baseline.js',
 ];
 
 const requiredScripts = [
@@ -58,6 +60,10 @@ const workflowRequiredSnippets = [
   'npm run test:visual:structural',
 ];
 
+const supplementalAudits = [
+  'scripts/audit-service-media-lifecycle-baseline.js',
+];
+
 let errors = [];
 
 for (const file of requiredFiles) {
@@ -89,6 +95,20 @@ if (fs.existsSync(workflowPath)) {
   }
 }
 
+for (const auditFile of supplementalAudits) {
+  const absolutePath = path.join(root, auditFile);
+  if (!fs.existsSync(absolutePath)) continue;
+  const result = spawnSync(process.execPath, [absolutePath], {
+    cwd: root,
+    stdio: 'inherit',
+  });
+  if (result.error) {
+    errors.push(`Supplemental audit could not start: ${auditFile}: ${result.error.message}`);
+  } else if (result.status !== 0) {
+    errors.push(`Supplemental audit failed: ${auditFile}`);
+  }
+}
+
 if (errors.length) {
   console.error('Quality pipeline audit failed:');
   for (const error of errors) console.error(`- ${error}`);
@@ -99,3 +119,4 @@ console.log('Quality pipeline audit passed.');
 console.log(`Files checked: ${requiredFiles.length}`);
 console.log(`Scripts checked: ${requiredScripts.length}`);
 console.log(`Workflow audit steps checked: ${workflowRequiredSnippets.length}`);
+console.log(`Supplemental audits executed: ${supplementalAudits.length}`);
