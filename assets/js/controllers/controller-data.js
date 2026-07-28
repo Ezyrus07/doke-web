@@ -5,7 +5,7 @@
 
   var pageResources = Object.freeze({
     index: ['services', 'communities', 'notifications'],
-    resultados: ['services', 'users'],
+    resultados: [],
     pedidos: ['orders'],
     mensagens: ['messages', 'users'],
     comunidade: ['communities'],
@@ -65,7 +65,7 @@
 
     writeState(pageName, {
       ready: true,
-      mode: 'mock-data-bound',
+      mode: pageName === 'resultados' ? 'canonical-search-owned' : 'mock-data-bound',
       dataStatus: resources.length ? 'loading' : 'idle',
       resources: resources
     });
