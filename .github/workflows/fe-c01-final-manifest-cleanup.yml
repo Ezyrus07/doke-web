@@ -71,10 +71,36 @@ jobs:
           PY
 
       - name: Validate focused structural contracts
+        shell: bash
         run: |
-          node scripts/audit-frontend-structural-gates.js --strict
-          node scripts/audit-token-authority.js
-          git diff --check
+          mkdir -p /tmp/fe-c01-diagnostics
+          set +e
+          node scripts/audit-frontend-structural-gates.js --strict > /tmp/fe-c01-diagnostics/structural.log 2>&1
+          structural_status=$?
+          node scripts/audit-token-authority.js > /tmp/fe-c01-diagnostics/token.log 2>&1
+          token_status=$?
+          git diff --check > /tmp/fe-c01-diagnostics/diff-check.log 2>&1
+          diff_status=$?
+          printf 'structural=%s\ntoken=%s\ndiff=%s\n' "$structural_status" "$token_status" "$diff_status" > /tmp/fe-c01-diagnostics/status.txt
+          cat /tmp/fe-c01-diagnostics/status.txt
+          cat /tmp/fe-c01-diagnostics/structural.log
+          cat /tmp/fe-c01-diagnostics/token.log
+          cat /tmp/fe-c01-diagnostics/diff-check.log
+          if [ "$structural_status" -ne 0 ] || [ "$token_status" -ne 0 ] || [ "$diff_status" -ne 0 ]; then
+            exit 1
+          fi
+
+      - name: Upload focused diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fe-c01-final-cleanup-diagnostics-${{ github.sha }}
+          path: |
+            /tmp/fe-c01-diagnostics
+            reports/generated/frontend-structural-gates-report.json
+            reports/generated/token-authority-report.json
+          if-no-files-found: warn
+          retention-days: 7
 
       - name: Commit validated cleanup
         shell: bash
