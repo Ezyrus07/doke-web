@@ -6,8 +6,25 @@ const {
   assertTransition
 } = require('./order-state-machine');
 
-const ORDER_SELECT = 'id,client_id,professional_id,service_id,title,description,status,city,state,scheduled_at,created_at,updated_at';
+const ORDER_SELECT = [
+  'id',
+  'client_id',
+  'professional_id',
+  'service_id',
+  'service_version_id',
+  'service_snapshot',
+  'title',
+  'description',
+  'status',
+  'city',
+  'state',
+  'scheduled_at',
+  'metadata',
+  'created_at',
+  'updated_at'
+].join(',');
 const BUDGET_SELECT = 'id,order_id,professional_id,amount_cents,currency,description,status,valid_until,created_at,updated_at';
+const SERVICE_SELECT = 'id,external_id,professional_id,status,moderation_status,approved_version_id';
 
 const PUBLIC_ORDER_STATUSES = ORDER_STATUSES;
 
@@ -50,8 +67,23 @@ function requireActor(actor) {
   return actor;
 }
 
+function cloneJson(value) {
+  if (!value || typeof value !== 'object') return value || null;
+  try {
+    return JSON.parse(JSON.stringify(value));
+  } catch (error) {
+    return value;
+  }
+}
+
 function normalizeOrder(row, options) {
   const source = row || {};
+  const metadata = source.metadata && typeof source.metadata === 'object' ? source.metadata : {};
+  const serviceSnapshot = source.service_snapshot && typeof source.service_snapshot === 'object'
+    ? source.service_snapshot
+    : metadata.serviceSnapshot && typeof metadata.serviceSnapshot === 'object'
+      ? metadata.serviceSnapshot
+      : null;
   const budget = options && options.budget || null;
   const amountCents = budget && Number.isFinite(Number(budget.amount_cents)) ? Number(budget.amount_cents) : null;
   return Object.freeze({
@@ -59,6 +91,8 @@ function normalizeOrder(row, options) {
     clientId: source.client_id || source.clientId || '',
     professionalId: source.professional_id || source.professionalId || '',
     serviceId: source.service_id || source.serviceId || '',
+    serviceVersionId: source.service_version_id || source.serviceVersionId || metadata.serviceVersionId || '',
+    serviceSnapshot: cloneJson(serviceSnapshot),
     title: source.title || '',
     description: source.description || '',
     status: FRONTEND_STATUS_BY_BACKEND[source.status] || source.status || 'pending',
@@ -67,6 +101,7 @@ function normalizeOrder(row, options) {
     state: source.state || '',
     location: [source.city, source.state].filter(Boolean).join(', '),
     scheduledAt: source.scheduled_at || source.scheduledAt || '',
+    metadata: cloneJson(metadata) || {},
     createdAt: source.created_at || source.createdAt || '',
     updatedAt: source.updated_at || source.updatedAt || '',
     amountCents,
@@ -99,8 +134,7 @@ async function listOrders(context, actor) {
     if (safeActor.role === 'professional') query = query.eq('professional_id', safeActor.id);
   }
   if (context.query && context.query.status) {
-    const backendStatus = normalizeBackendStatus(context.query.status);
-    query = query.eq('status', backendStatus);
+    query = query.eq('status', normalizeBackendStatus(context.query.status));
   }
   if (typeof query.order === 'function') query = query.order('updated_at', { ascending: false });
   const limit = readLimit(context.query && context.query.limit);
@@ -123,32 +157,47 @@ async function createOrder(context, actor) {
   const supabase = requireSupabase(context);
   const safeActor = requireActor(actor);
   const body = context.body || {};
+  const serviceRef = sanitizeReference(body.serviceId || body.service_id);
+  if (!serviceRef) throw badRequest('Service id is required.');
+
+  const service = await readServiceRow(supabase, serviceRef);
+  if (!service) throw notFound('Service not found.');
+  if (!isOrderEligibleService(service)) {
+    const error = conflict('Service is not eligible to receive new orders.');
+    error.code = 'DOKE_ORDER_SERVICE_NOT_ELIGIBLE';
+    throw error;
+  }
+  if (String(service.professional_id) === String(safeActor.id)) {
+    const error = forbidden('You cannot request your own service.');
+    error.code = 'DOKE_ORDER_OWN_SERVICE_FORBIDDEN';
+    throw error;
+  }
+
   const title = sanitizeText(body.title || body.serviceTitle || body.summary, 140);
   if (!title) throw badRequest('Order title is required.');
-  let serviceId = sanitizeNullableUuid(body.serviceId || body.service_id);
-  let professionalId = sanitizeNullableUuid(body.professionalId || body.professional_id || body.providerId || body.provider_id);
-  if (serviceId && !professionalId) {
-    const service = await readServiceRow(supabase, serviceId).catch(() => null);
-    professionalId = service && service.professional_id || '';
-  }
+
+  const metadata = sanitizeOrderMetadata(body);
   const payload = {
     client_id: safeActor.id,
-    professional_id: professionalId || null,
-    service_id: serviceId || null,
+    professional_id: service.professional_id,
+    service_id: service.id,
     title,
     description: sanitizeText(body.description || body.details || '', 4000),
     status: 'requested',
-    city: sanitizeText(body.city || '', 80) || null,
-    state: sanitizeText(body.state || '', 40) || null,
-    scheduled_at: body.scheduledAt || body.scheduled_at || null
+    city: sanitizeText(body.city || metadata.city || '', 80) || null,
+    state: sanitizeText(body.state || metadata.state || '', 40) || null,
+    scheduled_at: body.scheduledAt || body.scheduled_at || null,
+    metadata
   };
+
   const response = await supabase
     .from('orders')
     .insert(payload)
     .select(ORDER_SELECT)
     .maybeSingle();
-  if (response && response.error) throw response.error;
+  if (response && response.error) throw mapOrderDatabaseError(response.error);
   const order = response && response.data;
+  if (!order) throw conflict('Order creation did not return a canonical row.');
   return { order: normalizeOrder(order), status: 'created' };
 }
 
@@ -225,13 +274,11 @@ async function updateOrderStatus(context, actor, orderId) {
 }
 
 async function readOrderRow(supabase, orderId) {
-  const id = sanitizeNullableUuid(orderId);
+  const id = sanitizeReference(orderId);
   if (!id) throw badRequest('Order id is required.');
-  const response = await supabase
-    .from('orders')
-    .select(ORDER_SELECT)
-    .eq('id', id)
-    .maybeSingle();
+  let query = supabase.from('orders').select(ORDER_SELECT);
+  query = isUuid(id) ? query.eq('id', id) : query.eq('external_id', id);
+  const response = await query.maybeSingle();
   if (response && response.error) throw response.error;
   if (!response || !response.data) throw notFound('Order not found.');
   return response.data;
@@ -250,14 +297,36 @@ async function readLatestBudget(supabase, orderId) {
   return rows[0] || null;
 }
 
-async function readServiceRow(supabase, serviceId) {
-  const response = await supabase
-    .from('services')
-    .select('id,professional_id,status')
-    .eq('id', serviceId)
-    .maybeSingle();
+async function readServiceRow(supabase, serviceRef) {
+  const reference = sanitizeReference(serviceRef);
+  if (!reference) return null;
+  let query = supabase.from('services').select(SERVICE_SELECT);
+  query = isUuid(reference) ? query.eq('id', reference) : query.eq('external_id', reference);
+  const response = await query.maybeSingle();
   if (response && response.error) throw response.error;
   return response && response.data || null;
+}
+
+function isOrderEligibleService(service) {
+  if (!service || service.status !== 'published' || !service.approved_version_id) return false;
+  return ['published', 'changes_pending_review', 'changes_required'].includes(String(service.moderation_status || '').toLowerCase());
+}
+
+function sanitizeOrderMetadata(body) {
+  const source = body && body.metadata && typeof body.metadata === 'object'
+    ? body.metadata
+    : body && typeof body === 'object'
+      ? body
+      : {};
+  const metadata = cloneJson(source) || {};
+  delete metadata.serviceSnapshot;
+  delete metadata.service_snapshot;
+  delete metadata.serviceVersionId;
+  delete metadata.service_version_id;
+  delete metadata.serviceSnapshotAuthority;
+  delete metadata.professionalId;
+  delete metadata.providerId;
+  return metadata;
 }
 
 async function transitionOrder(supabase, order, actor, nextStatus, note, action) {
@@ -303,6 +372,21 @@ function mapOrderDatabaseError(error) {
     mapped.details = source.details || null;
     return mapped;
   }
+  if (message.includes('DOKE_ORDER_SERVICE_SNAPSHOT_IMMUTABLE')) {
+    const mapped = conflict('The service snapshot attached to this order is immutable.');
+    mapped.code = 'DOKE_ORDER_SERVICE_SNAPSHOT_IMMUTABLE';
+    return mapped;
+  }
+  if (message.includes('DOKE_ORDER_SERVICE_NOT_ELIGIBLE')) {
+    const mapped = conflict('Service is not eligible to receive new orders.');
+    mapped.code = 'DOKE_ORDER_SERVICE_NOT_ELIGIBLE';
+    return mapped;
+  }
+  if (message.includes('DOKE_ORDER_OWN_SERVICE_FORBIDDEN')) {
+    const mapped = forbidden('You cannot request your own service.');
+    mapped.code = 'DOKE_ORDER_OWN_SERVICE_FORBIDDEN';
+    return mapped;
+  }
   return error;
 }
 
@@ -331,9 +415,12 @@ function sanitizeText(value, maxLength) {
   return text.length > limit ? text.slice(0, limit) : text;
 }
 
-function sanitizeNullableUuid(value) {
-  const text = String(value || '').trim();
-  return text || '';
+function sanitizeReference(value) {
+  return String(value || '').trim();
+}
+
+function isUuid(value) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(sanitizeReference(value));
 }
 
 function normalizeAmountCents(value) {
