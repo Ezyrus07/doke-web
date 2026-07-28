@@ -13,6 +13,7 @@ export const ALLOWED_ACTIONS = Object.freeze(new Set([
   'save_professional_verification_draft',
   'reopen_own_professional_identity_verification',
   'list_service_moderation_history',
+  'prepare_service_media_uploads',
   'submit_service_for_review',
   'transition_owned_service_lifecycle',
   'save_wallet_bank_account',
@@ -41,7 +42,7 @@ export function statusForOperationError(code) {
   if (/AUTH_REQUIRED|ACTOR_NOT_FOUND/.test(code)) return 401;
   if (/FORBIDDEN|REQUIRED|ACCOUNT_NOT_ACTIVE|OPERATOR_REQUIRED|OWNERSHIP|SUBJECT_MISMATCH/.test(code)) return 403;
   if (/NOT_FOUND/.test(code)) return 404;
-  if (/CONFLICT|TAKEN|IDEMPOTENCY/.test(code)) return 409;
+  if (/CONFLICT|TAKEN|IDEMPOTENCY|NOT_PREPARED|EXPIRED/.test(code)) return 409;
   if (/INVALID|TOO_LONG|TOO_LARGE|PAYLOAD|AMOUNT|BALANCE|REASON|SECTION|FIELD/.test(code)) return 422;
   return 400;
 }
