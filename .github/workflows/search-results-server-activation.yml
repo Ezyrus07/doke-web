@@ -67,7 +67,25 @@ jobs:
         run: node scripts/test-service-favorites-controller-runtime.js
 
       - name: Audit cumulative SEARCH-A04 server contract
-        run: node scripts/audit-search-server-contract.js
+        id: audit_a04
+        continue-on-error: true
+        shell: bash
+        run: |
+          mkdir -p .search-a05-diagnostics
+          node scripts/audit-search-server-contract.js > .search-a05-diagnostics/search-a04-audit.txt 2>&1
+
+      - name: Upload SEARCH-A04 audit diagnostic
+        if: steps.audit_a04.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: search-a04-audit-diagnostic-${{ github.sha }}
+          retention-days: 1
+          if-no-files-found: error
+          path: .search-a05-diagnostics/search-a04-audit.txt
+
+      - name: Stop after SEARCH-A04 audit failure
+        if: steps.audit_a04.outcome == 'failure'
+        run: exit 1
 
       - name: Audit cumulative SEARCH-A04 approved snapshot authority
         run: node scripts/audit-search-approved-snapshot-authority.js
