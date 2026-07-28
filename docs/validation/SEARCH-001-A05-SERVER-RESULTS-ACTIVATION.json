@@ -1,11 +1,12 @@
 {
-  "schemaVersion": "1.0.0",
+  "schemaVersion": "1.1.0",
   "domain": "SEARCH-001",
   "sublot": "SEARCH-A05",
-  "status": "CANDIDATE_IMPLEMENTATION_PENDING",
+  "status": "CANDIDATE_VALIDATION_RUNNING",
   "title": "Atomic activation of canonical server-side service results",
-  "recordedAt": "2026-07-28T13:58:00-03:00",
+  "recordedAt": "2026-07-28T14:12:00-03:00",
   "baseHead": "87af864759643c9eec50873defcc22de86882387",
+  "integratedHead": "e9be5c20fc0d755036d4b6c5fe879cfc0c269874",
   "preconditions": {
     "searchA04Complete": true,
     "stagingRpcValidated": true,
@@ -47,11 +48,30 @@
     "loadedCount": "current_accumulated_server_rows",
     "favoritesHydration": "shared_canonical_snapshot"
   },
+  "implementation": {
+    "repositoryLoadedBeforeService": true,
+    "serviceLoadedBeforeSurface": true,
+    "surfaceLoadedBeforeCoordinator": true,
+    "searchServiceLoadedOnce": true,
+    "fullCatalogDownloadRetired": true,
+    "browserServiceFilteringRetired": true,
+    "browserRelatedServiceFallbackRetired": true,
+    "fixedSixCardSliceRetired": true,
+    "cursorContinuationActivated": true,
+    "remoteFailureFallbackUsed": false,
+    "nonServicePoolsPreserved": true
+  },
   "validation": {
     "surfaceRuntime": "scripts/test-search-results-server-surface-runtime.js",
     "activationAudit": "scripts/audit-search-results-server-activation.js",
     "dedicatedWorkflow": ".github/workflows/search-results-server-activation.yml",
-    "status": "pending"
+    "oneTimeApplicatorRun": 7,
+    "oneTimeApplicatorRunId": 30381603609,
+    "applicator": "success",
+    "surfaceRuntimeDuringApplication": "success",
+    "retiredAuthorityVerification": "success",
+    "cleanPatchFormatting": "success",
+    "status": "running"
   },
   "matrix": {
     "maturityPreserved": 2,
@@ -71,15 +91,17 @@
     "persistentSyntheticEntitiesCreated": false,
     "paidConfigChanged": false,
     "smsOrOauthChanged": false,
+    "temporaryApplicatorRemaining": true,
+    "temporaryDiagnosticRemaining": true,
     "prMerged": false,
     "prReadyForReview": false
   },
   "remaining": [
-    "Integrate repository, service and server results surface in resultados.html.",
-    "Retire full-catalog download, browser service filtering, related-service fallback and fixed six-card slicing.",
-    "Add and validate cursor continuation.",
-    "Keep non-service discovery pools unchanged.",
-    "Reconcile SEARCH-B02 only after final CI and staging browser validation."
+    "Remove the one-time applicator and diagnostic evidence.",
+    "Validate the permanent A01-A05 workflows on one clean head.",
+    "Run blocking E2E, 105 visual structural guards and Diagnostic on the clean head.",
+    "Validate the resultados browser journey against the staging RPC.",
+    "Reconcile SEARCH-B02 only after all final UI and E2E evidence is green."
   ],
-  "nextControlledStep": "Apply the atomic resultados.html/search-results.js integration, validate runtime and browser journeys, then decide SEARCH-B02 reconciliation."
+  "nextControlledStep": "Remove temporary application machinery, validate the clean candidate, then execute controlled browser validation against staging before SEARCH-B02 reconciliation."
 }
