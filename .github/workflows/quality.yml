@@ -228,6 +228,10 @@ jobs:
       - name: Run quality pipeline audit
         run: npm run audit:quality-pipeline
 
+      - name: Prepare CAT candidate domain matrix
+        if: startsWith(github.head_ref, 'cat/') || startsWith(github.ref_name, 'cat/')
+        run: npm run write:domain-completion-matrix
+
       - name: Validate domain completion matrix
         run: npm run audit:domain-completion-matrix
 
