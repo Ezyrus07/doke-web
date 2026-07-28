@@ -1,9 +1,7 @@
 name: FE-J01 Document Handoff Fix
 
 on:
-  push:
-    branches:
-      - frontend/fe-j01-navigation-registry
+  pull_request:
     paths:
       - "assets/js/dev/fe-j01-document-handoff-trigger.txt"
 
@@ -18,7 +16,7 @@ jobs:
       - name: Checkout candidate branch
         uses: actions/checkout@v4
         with:
-          ref: frontend/fe-j01-navigation-registry
+          ref: ${{ github.head_ref }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -67,4 +65,4 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add assets/js/core/navigation-lifecycle.js scripts/test-navigation-lifecycle-core-contract.js
           git commit -m "FE-J01: stabilize native navigation handoff"
-          git push origin HEAD:frontend/fe-j01-navigation-registry
+          git push origin HEAD:${GITHUB_HEAD_REF}
