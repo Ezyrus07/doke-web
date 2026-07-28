@@ -8,6 +8,7 @@ const root = path.resolve(__dirname, '..');
 const errors = [];
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 const exists = (file) => fs.existsSync(path.join(root, file));
+const same = (actual, expected) => JSON.stringify(actual) === JSON.stringify(expected);
 const assert = (condition, message) => { if (!condition) errors.push(message); };
 
 const files = {
@@ -21,15 +22,36 @@ const files = {
   runtime: 'scripts/test-favorites-authority-retirement-runtime.js',
   evidenceJson: 'docs/validation/SEARCH-001-A02-FAVORITES-AUTHORITY-RETIREMENT.json',
   evidenceMarkdown: 'docs/validation/SEARCH-001-A02-FAVORITES-AUTHORITY-RETIREMENT.md',
+  a03EvidenceJson: 'docs/validation/SEARCH-001-A03-FAVORITES-SURFACES.json',
   workflow: '.github/workflows/search-favorites-authority.yml'
 };
 
-Object.values(files).forEach((file) => assert(exists(file), `required file missing: ${file}`));
+[
+  files.matrix,
+  files.repository,
+  files.service,
+  files.experience,
+  files.controller,
+  files.detailHtml,
+  files.migration,
+  files.runtime,
+  files.evidenceJson,
+  files.evidenceMarkdown,
+  files.workflow
+].forEach((file) => assert(exists(file), `required file missing: ${file}`));
 if (errors.length) {
   console.error('[SEARCH-A02] Required files are missing:');
   errors.forEach((error) => console.error(`- ${error}`));
   process.exit(1);
 }
+
+const a03Evidence = exists(files.a03EvidenceJson) ? JSON.parse(read(files.a03EvidenceJson)) : null;
+const searchB01Reconciled = Boolean(
+  a03Evidence &&
+  a03Evidence.status === 'COMPLETE' &&
+  a03Evidence.matrix &&
+  a03Evidence.matrix.searchB01 === 'reconciled_removed'
+);
 
 const matrix = JSON.parse(read(files.matrix));
 const search = (matrix.domains || []).find((domain) => domain.id === 'SEARCH-001');
@@ -40,7 +62,10 @@ assert(search && search.serverAuthority === 'contract_only', 'SEARCH-001 server 
 assert(search && search.securityGate === 'blocked', 'SEARCH-001 security gate must remain blocked');
 assert(search && search.productionGate === 'blocked', 'SEARCH-001 production gate must remain blocked');
 const blockers = (search && search.blockers || []).map((blocker) => blocker.id).sort();
-assert(JSON.stringify(blockers) === JSON.stringify(['SEARCH-B01', 'SEARCH-B02', 'SEARCH-B03']), 'SEARCH blockers cannot be removed before controlled matrix reconciliation');
+assert(
+  same(blockers, searchB01Reconciled ? ['SEARCH-B02', 'SEARCH-B03'] : ['SEARCH-B01', 'SEARCH-B02', 'SEARCH-B03']),
+  'SEARCH blockers changed outside controlled matrix reconciliation'
+);
 
 const repository = read(files.repository);
 [
@@ -96,10 +121,12 @@ assert(!experience.includes('.from("favorites")'), 'page experience must not byp
 const controller = read(files.controller);
 const repositoryIndex = controller.indexOf("key: 'favorites-repository'");
 const serviceIndex = controller.indexOf("key: 'favorites-service'");
+const surfaceControllerIndex = controller.indexOf("key: 'service-favorites-controller'");
 const experienceIndex = controller.indexOf("key: 'detail-ad-experience'");
 assert(repositoryIndex !== -1, 'detail controller must load favorites repository');
 assert(serviceIndex > repositoryIndex, 'favorites service must load after repository');
-assert(experienceIndex > serviceIndex, 'detail experience must load after favorites service');
+assert(!searchB01Reconciled || surfaceControllerIndex > serviceIndex, 'shared favorites controller must load after service');
+assert(experienceIndex > (searchB01Reconciled ? surfaceControllerIndex : serviceIndex), 'detail experience load order is invalid');
 [
   'function ensureScript(module)',
   'function ensureFavoritesAuthority()',
@@ -179,4 +206,7 @@ if (errors.length) {
 console.log('[SEARCH-A02] Browser-persistent favorites authority is retired.');
 console.log('[SEARCH-A02] Supabase/UUID flows use public.favorites and fail closed.');
 console.log('[SEARCH-A02] Non-UUID fixtures remain current-runtime memory only.');
+console.log(searchB01Reconciled
+  ? '[SEARCH-A02] SEARCH-B01 reconciliation preserves A02 as the canonical persistence foundation.'
+  : '[SEARCH-A02] SEARCH-B01 remains open until every governed favorite surface is canonical.');
 console.log('[SEARCH-A02] Production, staging data and real favorites were not changed.');
