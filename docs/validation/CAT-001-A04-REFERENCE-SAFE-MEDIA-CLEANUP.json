@@ -1,0 +1,113 @@
+{
+  "domain": "CAT-001",
+  "sublot": "CAT-A04",
+  "candidate": "reference-safe-media-cleanup",
+  "status": "candidate_validated",
+  "predecessorHead": "99b9198d3abcd0c6846606d34d328bfa29775624",
+  "objective": "Classify superseded service media, expire abandoned upload intents and delete only proven-unreferenced Storage objects through a controlled server operation.",
+  "rootCause": {
+    "summary": "Immutable upload reservation prevented mutable browser-owned objects, but consumed media did not follow service-version review status and expired uploads had no canonical claim, reference proof, Storage API deletion or retry lifecycle.",
+    "historicalSnapshotConstraint": "Media referenced by any immutable service version must remain stored even when that version is superseded.",
+    "sqlDeletionForbidden": true
+  },
+  "authority": {
+    "operator": "active admin or moderator authenticated through service-moderation-operations",
+    "referenceProof": [
+      "public.service_media URLs",
+      "all public.service_versions snapshot images and mediaAssets",
+      "public.services metadata images and mediaAssets",
+      "other non-deleted ledger retained_url and canonical_url references"
+    ],
+    "claim": "PostgreSQL FOR UPDATE SKIP LOCKED",
+    "physicalDeletion": "Supabase Storage API remove",
+    "completion": "service-role-only PostgreSQL result reconciliation",
+    "signedUploadSafetyWindow": "2 hours 15 minutes from intent creation",
+    "supersededRetention": "minimum 30 days and still requires zero references",
+    "staleClaimRecovery": "15 minutes",
+    "failedDeleteRetry": "1 hour, maximum 5 claims",
+    "automaticScheduleEnabled": false
+  },
+  "changes": {
+    "migration": "supabase/migrations/155_service_media_reference_safe_cleanup_authority.sql",
+    "edgeFiles": [
+      "supabase/functions/service-moderation-operations/index.ts",
+      "supabase/functions/service-moderation-operations/operations.mjs",
+      "supabase/functions/service-moderation-operations/media-cleanup.mjs"
+    ],
+    "gates": [
+      "scripts/audit-service-media-cleanup-authority.js",
+      "scripts/test-service-media-cleanup-authority-runtime.js",
+      "supabase/tests/020_service_media_reference_safe_cleanup_validation.sql",
+      "scripts/audit-quality-pipeline.js"
+    ],
+    "states": [
+      "prepared",
+      "consumed",
+      "superseded",
+      "cleanup_eligible",
+      "cleanup_claimed",
+      "delete_failed",
+      "deleted"
+    ],
+    "newForeignKeyIndexes": [
+      "idx_service_media_upload_intents_service_id",
+      "idx_service_media_upload_intents_service_version_id",
+      "idx_service_media_upload_items_actor_id",
+      "idx_service_media_upload_items_service_id",
+      "idx_service_media_upload_items_cleanup_claimed_by"
+    ]
+  },
+  "staging": {
+    "project": "doke-web-staging",
+    "projectRef": "zwkczgewzbsorbrjuzpb",
+    "migrationVersion": "20260728011433",
+    "migrationName": "service_media_reference_safe_cleanup_authority",
+    "edgeFunction": "service-moderation-operations",
+    "edgeVersion": 4,
+    "edgeStatus": "ACTIVE",
+    "verifyJwt": true,
+    "ledgerIntents": 0,
+    "ledgerItems": 0,
+    "storageObjectsBefore": 3,
+    "storageObjectsAfter": 3,
+    "catalogRowsBefore": 3,
+    "catalogRowsAfter": 3,
+    "objectsDeletedDuringValidation": 0
+  },
+  "validation": {
+    "migrationDryRunRollback": "success",
+    "runtimeIsolated": "success",
+    "sql020Rollback": "success",
+    "referenceProof": "success",
+    "triggerInstalled": true,
+    "browserRpcExecuteDenied": true,
+    "serviceRoleRpcExecuteGranted": true,
+    "securityAdvisorNewCatA04Findings": 0,
+    "performanceAdvisorUnindexedNewForeignKeys": 0,
+    "qualityFull": "not_confirmed_on_final_head",
+    "blockingE2E": "not_confirmed_on_final_head",
+    "visualStructural105": "not_confirmed_on_final_head",
+    "canary": "not_confirmed_on_final_head",
+    "diagnostic": "not_confirmed_on_final_head"
+  },
+  "safety": {
+    "productionChanged": false,
+    "realAccountChanged": false,
+    "realUserDataChanged": false,
+    "persistentSyntheticEntityCreated": false,
+    "persistentTestIntentCreated": false,
+    "persistentTestObjectCreated": false,
+    "smsEnabled": false,
+    "oauthEnabled": false,
+    "paidConfigurationEnabled": false,
+    "prMerged": false,
+    "prMarkedReady": false
+  },
+  "remaining": [
+    "Remove the now-dead direct upload helper from services-repository.js after regression validation.",
+    "Run and confirm the complete Quality, blocking E2E, 105 visual guards, Canary and Diagnostic lanes on one stable head.",
+    "Reconcile CAT-A04 final evidence, engineering journal and domain completion matrix.",
+    "Decide whether automatic scheduling is required after the controlled operation proves stable."
+  ],
+  "nextControlledWork": "Close CAT-A04 documentally and remove dead direct-upload code without changing the validated server authority."
+}
