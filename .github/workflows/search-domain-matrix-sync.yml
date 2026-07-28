@@ -1,31 +1,36 @@
 name: Doke SEARCH Domain Matrix Sync
 
 on:
-  push:
+  pull_request:
     branches:
+      - 'cat/**'
       - 'search/**'
     paths:
       - '.github/workflows/search-domain-matrix-sync.yml'
+      - 'scripts/search-a05-reconcile-once.js'
   workflow_dispatch:
 
 permissions:
   contents: write
 
 concurrency:
-  group: doke-search-domain-matrix-sync-${{ github.ref }}
+  group: doke-search-domain-matrix-sync-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: false
 
 jobs:
   sync-domain-matrix:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
     name: Reconcile SEARCH-A05 and regenerate matrix
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      TARGET_BRANCH: ${{ github.head_ref || github.ref_name }}
 
     steps:
       - name: Checkout SEARCH branch
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref_name }}
+          ref: ${{ env.TARGET_BRANCH }}
           fetch-depth: 0
 
       - name: Setup Node
@@ -73,4 +78,4 @@ jobs:
           git add config/domain-completion-matrix.json docs/DOMAIN-COMPLETION-MATRIX.md docs/validation/SEARCH-001-A04-SERVER-SEARCH-CONTRACT.json docs/validation/SEARCH-001-A05-SERVER-RESULTS-ACTIVATION.json scripts/audit-search-authority-baseline.js scripts/audit-search-server-contract.js
           git add -u scripts/search-a05-reconcile-once.js
           git commit -m "Reconcile SEARCH-B02 after server search activation"
-          git push origin HEAD:${{ github.ref_name }}
+          git push origin HEAD:${TARGET_BRANCH}
