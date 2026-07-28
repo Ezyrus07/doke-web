@@ -254,12 +254,12 @@ async function runtimeContract() {
   assert.strictEqual(storage.has('doke.navigationIntent'), false, 'structured intent must be cleared after successful settlement');
 
   const documentNavigationResult = api.navigation.go('https://doke.test/pagamento-profissional.html', {
-    source: 'test-document-navigation',
-    forceDocument: true
-  });
-  assert.strictEqual(documentNavigationResult, true, 'document navigation must acknowledge synchronously');
-  assert.strictEqual(assigned.length, 0, 'document navigation must not destroy the caller context synchronously');
-  await new Promise((resolve) => setTimeout(resolve, 0));
+  source: 'test-document-navigation',
+  forceDocument: true
+});
+assert.strictEqual(documentNavigationResult, true, 'document navigation must acknowledge synchronously');
+assert.strictEqual(assigned.length, 0, 'document navigation must not destroy the caller context synchronously');
+await new Promise((resolve) => setTimeout(resolve, 0));
   assert.deepStrictEqual(assigned.at(-1), {
     method: 'assign',
     value: 'https://doke.test/pagamento-profissional.html'

@@ -606,22 +606,21 @@
   }
 
   function documentNavigate(url, options) {
-    var id = routeBegin({
-      from: window.location.href,
-      to: url.href,
-      source: options.source || 'document-fallback',
-      replace: options.replace === true,
-      restore: options.restoreScroll === true,
-      adapter: 'document'
-    });
-    routeCommit(id, { adapter: 'document' });
-    window.setTimeout(function () {
-      if (options.replace === true) window.location.replace(url.href);
-      else window.location.assign(url.href);
-    }, 0);
-    return true;
-  }
-
+  var id = routeBegin({
+    from: window.location.href,
+    to: url.href,
+    source: options.source || 'document-fallback',
+    replace: options.replace === true,
+    restore: options.restoreScroll === true,
+    adapter: 'document'
+  });
+  routeCommit(id, { adapter: 'document' });
+  window.setTimeout(function () {
+    if (options.replace === true) window.location.replace(url.href);
+    else window.location.assign(url.href);
+  }, 0);
+  return true;
+}
   function go(href, options) {
     options = Object.assign({
       replace: false,
@@ -692,44 +691,43 @@
   }
 
   function runGuard(options) {
-    options = options || {};
-    if (typeof options.check !== 'function') {
-      return Promise.reject(new TypeError('Guard check must be a function.'));
-    }
-    var id = guardBegin({ name: options.name || 'guard', source: options.source || normalizePath() });
-    return Promise.resolve()
-      .then(function () { return options.check(); })
-      .then(function (result) {
-        var allowed = typeof options.allowed === 'function' ? options.allowed(result) : Boolean(result);
-        if (allowed) {
-          guardAllow(id, { result: result });
-          return { allowed: true, result: result, guardId: id };
-        }
-        var target = typeof options.redirect === 'function' ? options.redirect(result) : options.redirect;
-        if (!target) throw new Error('Guard negado sem destino seguro.');
-        guardRedirect(id, target, { result: result });
-        return Promise.resolve(go(target, {
-          replace: true,
-          source: 'guard',
-          forceDocument: options.forceDocument === true
-        })).then(function () {
-          return { allowed: false, result: result, guardId: id, redirect: normalizeUrl(target).href };
-        });
-      })
-      .catch(function (error) {
-        guardFail(id, error, { source: options.source || normalizePath() });
-        if (!options.fallback) throw error;
-        guardRedirect(id, options.fallback, { fallback: true });
-        return Promise.resolve(go(options.fallback, {
-          replace: true,
-          source: 'guard-fallback',
-          forceDocument: options.forceDocument === true
-        })).then(function () {
-          return { allowed: false, error: error, guardId: id, redirect: normalizeUrl(options.fallback).href };
-        });
-      });
+  options = options || {};
+  if (typeof options.check !== 'function') {
+    return Promise.reject(new TypeError('Guard check must be a function.'));
   }
-
+  var id = guardBegin({ name: options.name || 'guard', source: options.source || normalizePath() });
+  return Promise.resolve()
+    .then(function () { return options.check(); })
+    .then(function (result) {
+      var allowed = typeof options.allowed === 'function' ? options.allowed(result) : Boolean(result);
+      if (allowed) {
+        guardAllow(id, { result: result });
+        return { allowed: true, result: result, guardId: id };
+      }
+      var target = typeof options.redirect === 'function' ? options.redirect(result) : options.redirect;
+      if (!target) throw new Error('Guard negado sem destino seguro.');
+      guardRedirect(id, target, { result: result });
+      return Promise.resolve(go(target, {
+        replace: true,
+        source: 'guard',
+        forceDocument: options.forceDocument === true
+      })).then(function () {
+        return { allowed: false, result: result, guardId: id, redirect: normalizeUrl(target).href };
+      });
+    })
+    .catch(function (error) {
+      guardFail(id, error, { source: options.source || normalizePath() });
+      if (!options.fallback) throw error;
+      guardRedirect(id, options.fallback, { fallback: true });
+      return Promise.resolve(go(options.fallback, {
+        replace: true,
+        source: 'guard-fallback',
+        forceDocument: options.forceDocument === true
+      })).then(function () {
+        return { allowed: false, error: error, guardId: id, redirect: normalizeUrl(options.fallback).href };
+      });
+    });
+}
   function bindPopstate() {
     if (popstateBound) return;
     popstateBound = true;
