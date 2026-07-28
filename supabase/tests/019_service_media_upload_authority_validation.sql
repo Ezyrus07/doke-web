@@ -6,6 +6,7 @@ begin;
 do $validation$
 declare
   v_dispatcher_definition text;
+  v_submit_definition text;
 begin
   if to_regclass('private.service_media_upload_intents') is null then
     raise exception 'CAT_A04_UPLOAD_INTENTS_MISSING';
@@ -30,6 +31,25 @@ begin
   into v_dispatcher_definition;
   if position('DOKE_SERVICE_MEDIA_UPLOAD_INTENT_REQUIRED' in v_dispatcher_definition) = 0 then
     raise exception 'CAT_A04_LEGACY_SUBMIT_LOCKDOWN_MISSING';
+  end if;
+
+  select pg_get_functiondef('public.submit_service_for_review_with_media_internal(uuid,text,jsonb,text,uuid,jsonb)'::regprocedure)
+  into v_submit_definition;
+  if position('v_item_count < 1 or v_item_count > 3' in v_submit_definition) = 0 then
+    raise exception 'CAT_A04_MEDIA_ITEM_COUNT_GUARD_MISSING';
+  end if;
+
+  if not exists (
+    select 1
+    from pg_constraint
+    where conrelid = 'private.service_media_upload_intents'::regclass
+      and conname = 'service_media_upload_intents_consumption_check'
+  ) then
+    raise exception 'CAT_A04_INTENT_CONSUMPTION_CONSTRAINT_MISSING';
+  end if;
+
+  if to_regclass('private.idx_service_media_upload_items_intent_status') is null then
+    raise exception 'CAT_A04_INTENT_STATUS_INDEX_MISSING';
   end if;
 
   if has_table_privilege('anon', 'public.service_media', 'INSERT')
