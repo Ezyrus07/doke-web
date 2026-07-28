@@ -97,7 +97,9 @@ begin
   );
 
   update public.services
-     set approved_version_id = v_version_one_id
+     set approved_version_id = v_version_one_id,
+         status = 'published',
+         moderation_status = 'published'
    where id = v_service_id;
 
   insert into public.orders (
@@ -163,7 +165,9 @@ begin
   update public.services
      set approved_version_id = v_version_two_id,
          title = 'Versão aprovada dois',
-         price_cents = 25000
+         price_cents = 25000,
+         status = 'published',
+         moderation_status = 'published'
    where id = v_service_id;
 
   select * into v_order from public.orders where id = v_order_one_id;
