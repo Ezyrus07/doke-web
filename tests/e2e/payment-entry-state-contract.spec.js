@@ -155,7 +155,16 @@ const expectReadyOnly = async (page) => {
 const navigateFromIndex = async (page, target) => {
   await page.goto('/index.html');
   await expect.poll(() => page.evaluate(() => typeof window.DokeNavigate)).toBe('function');
-  await page.evaluate((href) => window.DokeNavigate(href), target);
+
+  const expected = new URL(target, page.url());
+  const navigation = page.waitForURL((url) => (
+    url.pathname === expected.pathname && url.search === expected.search
+  ));
+
+  await page.evaluate((href) => {
+    window.setTimeout(() => window.DokeNavigate(href), 0);
+  }, target);
+  await navigation;
 };
 
 for (const viewport of viewports) {
