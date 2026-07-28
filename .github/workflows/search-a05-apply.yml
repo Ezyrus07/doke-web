@@ -1,0 +1,65 @@
+name: Doke SEARCH-A05 Apply Once
+
+on:
+  pull_request:
+    branches:
+      - 'cat/**'
+      - 'search/**'
+    paths:
+      - '.github/workflows/search-a05-apply.yml'
+      - 'scripts/search-a05-apply-once.py'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: doke-search-a05-apply-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  apply-search-a05:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      TARGET_BRANCH: ${{ github.head_ref || github.ref_name }}
+    steps:
+      - name: Checkout SEARCH branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TARGET_BRANCH }}
+          fetch-depth: 0
+
+      - name: Apply deterministic SEARCH-A05 integration
+        run: python scripts/search-a05-apply-once.py
+
+      - name: Test server results surface runtime
+        run: node scripts/test-search-results-server-surface-runtime.js
+
+      - name: Verify retired browser service authority
+        shell: bash
+        run: |
+          ! grep -F "const ensurePublicServices =" assets/js/pages/search-results.js
+          ! grep -F "const getServiceMatches =" assets/js/pages/search-results.js
+          ! grep -F "const getRelatedServices =" assets/js/pages/search-results.js
+          ! grep -F "const displayServices = [...exactServiceResults" assets/js/pages/search-results.js
+          grep -F "surface.render({" assets/js/pages/search-results.js
+          grep -F "surface.loadMore()" assets/js/pages/search-results.js
+          grep -F "data-results-load-more" resultados.html
+
+      - name: Verify clean patch formatting
+        run: git diff --check
+
+      - name: Commit SEARCH-A05 integration
+        shell: bash
+        run: |
+          if git diff --quiet -- assets/js/pages/search-results.js resultados.html assets/css/pages/search-results.css; then
+            echo "SEARCH-A05 integration already applied."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/js/pages/search-results.js resultados.html assets/css/pages/search-results.css
+          git commit -m "Activate canonical server-side service results"
+          git push origin HEAD:${TARGET_BRANCH}
