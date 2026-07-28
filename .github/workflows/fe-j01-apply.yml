@@ -46,7 +46,10 @@ jobs:
           node scripts/fe-j01-apply.js 2>&1 | tee fe-j01-codemod.log
 
       - name: Validate ownership audit
-        run: node scripts/audit-navigation-registry-ownership.js
+        shell: bash
+        run: |
+          set -o pipefail
+          node scripts/audit-navigation-registry-ownership.js 2>&1 | tee fe-j01-ownership.log
 
       - name: Commit controlled result
         shell: bash
@@ -75,6 +78,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: fe-j01-codemod-${{ github.sha }}
-          path: fe-j01-codemod.log
+          path: |
+            fe-j01-codemod.log
+            fe-j01-ownership.log
           if-no-files-found: warn
           retention-days: 3
