@@ -51,18 +51,35 @@ jobs:
       - name: Regenerate canonical matrix artifacts
         run: npm run write:domain-completion-matrix
 
-      - name: Audit cumulative SEARCH authority
-        run: |
-          node scripts/audit-search-authority-baseline.js
-          node scripts/audit-favorites-authority-retirement.js
-          node scripts/test-favorites-authority-retirement-runtime.js
-          node scripts/audit-service-favorites-surfaces.js
-          node scripts/test-service-favorites-controller-runtime.js
-          node scripts/audit-search-server-contract.js
-          node scripts/audit-search-approved-snapshot-authority.js
-          node scripts/test-search-server-contract-runtime.js
-          node scripts/audit-search-results-server-activation.js
-          node scripts/test-search-results-server-surface-runtime.js
+      - name: Audit SEARCH-A01 baseline
+        run: node scripts/audit-search-authority-baseline.js
+
+      - name: Audit SEARCH-A02 authority
+        run: node scripts/audit-favorites-authority-retirement.js
+
+      - name: Test SEARCH-A02 runtime
+        run: node scripts/test-favorites-authority-retirement-runtime.js
+
+      - name: Audit SEARCH-A03 surfaces
+        run: node scripts/audit-service-favorites-surfaces.js
+
+      - name: Test SEARCH-A03 runtime
+        run: node scripts/test-service-favorites-controller-runtime.js
+
+      - name: Audit SEARCH-A04 server contract
+        run: node scripts/audit-search-server-contract.js
+
+      - name: Audit SEARCH-A04 approved snapshot
+        run: node scripts/audit-search-approved-snapshot-authority.js
+
+      - name: Test SEARCH-A04 runtime
+        run: node scripts/test-search-server-contract-runtime.js
+
+      - name: Audit SEARCH-A05 activation
+        run: node scripts/audit-search-results-server-activation.js
+
+      - name: Test SEARCH-A05 runtime
+        run: node scripts/test-search-results-server-surface-runtime.js
 
       - name: Audit regenerated matrix
         run: npm run audit:domain-completion-matrix
