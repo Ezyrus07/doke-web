@@ -32,12 +32,31 @@ jobs:
           fetch-depth: 0
 
       - name: Apply deterministic SEARCH-A05 integration
-        run: python scripts/search-a05-apply-once.py
+        id: apply
+        continue-on-error: true
+        shell: bash
+        run: |
+          mkdir -p docs/validation
+          python scripts/search-a05-apply-once.py > docs/validation/SEARCH-A05-APPLY-DIAGNOSTIC.txt 2>&1
+
+      - name: Commit application diagnostic on failure
+        if: steps.apply.outcome == 'failure'
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git restore assets/js/pages/search-results.js resultados.html assets/css/pages/search-results.css || true
+          git add docs/validation/SEARCH-A05-APPLY-DIAGNOSTIC.txt
+          git commit -m "Record SEARCH-A05 integration diagnostic" || true
+          git push origin HEAD:${TARGET_BRANCH}
+          exit 1
 
       - name: Test server results surface runtime
+        if: steps.apply.outcome == 'success'
         run: node scripts/test-search-results-server-surface-runtime.js
 
       - name: Verify retired browser service authority
+        if: steps.apply.outcome == 'success'
         shell: bash
         run: |
           ! grep -F "const ensurePublicServices =" assets/js/pages/search-results.js
@@ -49,9 +68,11 @@ jobs:
           grep -F "data-results-load-more" resultados.html
 
       - name: Verify clean patch formatting
+        if: steps.apply.outcome == 'success'
         run: git diff --check
 
       - name: Commit SEARCH-A05 integration
+        if: steps.apply.outcome == 'success'
         shell: bash
         run: |
           if git diff --quiet -- assets/js/pages/search-results.js resultados.html assets/css/pages/search-results.css; then
@@ -60,6 +81,7 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          rm -f docs/validation/SEARCH-A05-APPLY-DIAGNOSTIC.txt
           git add assets/js/pages/search-results.js resultados.html assets/css/pages/search-results.css
           git commit -m "Activate canonical server-side service results"
           git push origin HEAD:${TARGET_BRANCH}
