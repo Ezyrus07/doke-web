@@ -24,18 +24,16 @@ jobs:
         with:
           node-version: 24
 
-      - name: Apply synchronous document acknowledgement
+      - name: Replace document navigation function
         shell: bash
         run: |
           python - <<'PY'
           from pathlib import Path
-
-          lifecycle_path = Path('assets/js/core/navigation-lifecycle.js')
-          lifecycle = lifecycle_path.read_text()
-
-          doc_start = lifecycle.index('  function documentNavigate(url, options) {')
-          doc_end = lifecycle.index('\n  function go(href, options) {', doc_start)
-          new_doc = """  function documentNavigate(url, options) {
+          path = Path('assets/js/core/navigation-lifecycle.js')
+          source = path.read_text()
+          start = source.index('  function documentNavigate(url, options) {')
+          end = source.index('\n  function go(href, options) {', start)
+          replacement = """  function documentNavigate(url, options) {
             var id = routeBegin({
               from: window.location.href,
               to: url.href,
@@ -52,11 +50,19 @@ jobs:
             return true;
           }
           """
-          lifecycle = lifecycle[:doc_start] + new_doc + lifecycle[doc_end + 1:]
+          path.write_text(source[:start] + replacement + source[end + 1:])
+          PY
 
-          guard_start = lifecycle.index('  function runGuard(options) {')
-          guard_end = lifecycle.index('\n  function bindPopstate() {', guard_start)
-          new_guard = """  function runGuard(options) {
+      - name: Replace guard navigation function
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('assets/js/core/navigation-lifecycle.js')
+          source = path.read_text()
+          start = source.index('  function runGuard(options) {')
+          end = source.index('\n  function bindPopstate() {', start)
+          replacement = """  function runGuard(options) {
             options = options || {};
             if (typeof options.check !== 'function') {
               return Promise.reject(new TypeError('Guard check must be a function.'));
@@ -95,14 +101,23 @@ jobs:
               });
           }
           """
-          lifecycle = lifecycle[:guard_start] + new_guard + lifecycle[guard_end + 1:]
-          lifecycle_path.write_text(lifecycle)
+          path.write_text(source[:start] + replacement + source[end + 1:])
+          PY
 
-          test_path = Path('scripts/test-navigation-lifecycle-core-contract.js')
-          test = test_path.read_text()
-          test_start = test.index("  const documentNavigation = api.navigation.go('https://doke.test/pagamento-profissional.html'")
-          test_end = test.index('  assert.deepStrictEqual(assigned.at(-1), {', test_start)
-          new_test = """  const documentNavigationResult = api.navigation.go('https://doke.test/pagamento-profissional.html', {
+      - name: Replace document navigation test block
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('scripts/test-navigation-lifecycle-core-contract.js')
+          source = path.read_text()
+          old_marker = "  const documentNavigation = api.navigation.go('https://doke.test/pagamento-profissional.html'"
+          new_marker = "  const documentNavigationResult = api.navigation.go('https://doke.test/pagamento-profissional.html'"
+          start = source.find(old_marker)
+          if start < 0:
+              start = source.index(new_marker)
+          end = source.index('  assert.deepStrictEqual(assigned.at(-1), {', start)
+          replacement = """  const documentNavigationResult = api.navigation.go('https://doke.test/pagamento-profissional.html', {
             source: 'test-document-navigation',
             forceDocument: true
           });
@@ -110,7 +125,7 @@ jobs:
           assert.strictEqual(assigned.length, 0, 'document navigation must not destroy the caller context synchronously');
           await new Promise((resolve) => setTimeout(resolve, 0));
           """
-          test_path.write_text(test[:test_start] + new_test + test[test_end:])
+          path.write_text(source[:start] + replacement + source[end:])
           PY
 
       - name: Validate focused contracts
