@@ -8,7 +8,20 @@
   var Doke = root.Doke || (root.Doke = {});
   var catalog = [];
   var catalogPromise = null;
+  var catalogAuthorityPromise = null;
   var renderPromise = null;
+  var CATALOG_MODULES = [
+    {
+      key: 'services-repository',
+      src: 'assets/js/repositories/services-repository.js?v=20260720-moderation-flow-v1',
+      ready: function () { return Boolean(Doke.repositories && Doke.repositories.services); }
+    },
+    {
+      key: 'services-service',
+      src: 'assets/js/services/services-service.js?v=20260720-moderation-flow-v1',
+      ready: function () { return Boolean(Doke.services && Doke.services.services); }
+    }
+  ];
 
   function nodes() {
     return {
@@ -32,6 +45,45 @@
       if (message) ui.error.textContent = message;
     }
     if (ui.grid) ui.grid.hidden = state !== 'ready';
+  }
+
+  function ensureScript(module) {
+    if (module.ready()) return Promise.resolve();
+    var selector = 'script[data-doke-module="' + module.key + '"]';
+    var existing = document.querySelector(selector);
+    if (existing && existing.__dokeModulePromise) return existing.__dokeModulePromise;
+    var script = existing || document.createElement('script');
+    script.async = false;
+    script.src = module.src;
+    script.dataset.dokeModule = module.key;
+    script.__dokeModulePromise = new Promise(function (resolve, reject) {
+      function complete() {
+        if (module.ready()) return resolve();
+        var error = new Error('Módulo de catálogo não registrou a autoridade esperada: ' + module.key);
+        error.code = 'DOKE_FAVORITES_CATALOG_MODULE_INVALID';
+        reject(error);
+      }
+      function fail() {
+        var error = new Error('Não foi possível carregar o módulo de catálogo: ' + module.key);
+        error.code = 'DOKE_FAVORITES_CATALOG_MODULE_LOAD_FAILED';
+        reject(error);
+      }
+      script.addEventListener('load', complete, { once: true });
+      script.addEventListener('error', fail, { once: true });
+    });
+    if (!existing) document.head.appendChild(script);
+    return script.__dokeModulePromise;
+  }
+
+  function ensureCatalogAuthority() {
+    if (catalogAuthorityPromise) return catalogAuthorityPromise;
+    catalogAuthorityPromise = CATALOG_MODULES.reduce(function (chain, module) {
+      return chain.then(function () { return ensureScript(module); });
+    }, Promise.resolve()).catch(function (error) {
+      catalogAuthorityPromise = null;
+      throw error;
+    });
+    return catalogAuthorityPromise;
   }
 
   function servicesApi() {
@@ -58,7 +110,10 @@
     options = options || {};
     if (catalog.length && !options.force) return Promise.resolve(catalog.slice());
     if (catalogPromise && !options.force) return catalogPromise;
-    catalogPromise = Promise.resolve(servicesApi().list({ status: 'active', fresh: Boolean(options.force), sort: 'updated_desc' }))
+    catalogPromise = ensureCatalogAuthority()
+      .then(function () {
+        return servicesApi().list({ status: 'active', fresh: Boolean(options.force), sort: 'updated_desc' });
+      })
       .then(function (items) {
         catalog = (Array.isArray(items) ? items : []).filter(function (item) {
           return String(item && item.status || 'active').toLowerCase() === 'active';
@@ -126,6 +181,7 @@
     boot: boot,
     render: render,
     ensureCatalog: ensureCatalog,
+    ensureCatalogAuthority: ensureCatalogAuthority,
     getCatalogSnapshot: function () { return catalog.slice(); }
   });
 
