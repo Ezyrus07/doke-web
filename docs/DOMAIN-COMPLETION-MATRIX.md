@@ -6,7 +6,7 @@ Este é o mapa operacional obrigatório para concluir a lógica da Doke. Ele cru
 
 - Domínios/programas mapeados: **23**.
 - Fluxos críticos mapeados: **15**.
-- Maturidade média atual: **2.74/6**.
+- Maturidade média atual: **2.78/6**.
 - Bloqueadores críticos explícitos: **15**.
 - Domínios prontos para produção: **0**.
 - Runtime padrão: dados **mock**, auth **supabase**, rede **desativada**.
@@ -41,8 +41,8 @@ RLS habilitado, mas sem policy: .
 | ---: | --- | ---: |
 | 0 | not started | 1 |
 | 1 | foundation only | 3 |
-| 2 | local functional | 5 |
-| 3 | staging canary or hybrid | 6 |
+| 2 | local functional | 4 |
+| 3 | staging canary or hybrid | 7 |
 | 4 | staging operational | 8 |
 | 5 | private beta ready | 0 |
 | 6 | production ready | 0 |
@@ -56,7 +56,7 @@ RLS habilitado, mas sem policy: .
 | 3 | AUTH-001 | Autenticação, sessão e identidade | 4/6 | remote | canonical | staging operational | partial | blocked |
 | 4 | PROF-001 | Perfis, onboarding profissional e KYC | 4/6 | remote | canonical | staging operational | blocked | blocked |
 | 5 | CAT-001 | Catálogo, publicação e moderação de serviços | 4/6 | remote | canonical | staging operational | partial | blocked |
-| 6 | SEARCH-001 | Busca, descoberta, favoritos e ranking | 2/6 | hybrid | contract only | local e2e | blocked | blocked |
+| 6 | SEARCH-001 | Busca, descoberta, favoritos e ranking | 3/6 | hybrid | partial | staging canary | blocked | blocked |
 | 7 | ORD-001 | Orçamentos, propostas e ciclo de pedidos | 4/6 | hybrid | canonical | staging operational | partial | blocked |
 | 8 | SCHED-001 | Agenda, disponibilidade e execução do serviço | 1/6 | local | none | static contract | blocked | blocked |
 | 9 | MSG-001 | Mensagens, conversas, presença e anexos | 3/6 | hybrid | partial | staging canary | partial | blocked |
@@ -101,7 +101,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 | ID | Fluxo | Estado | Owner | Etapas | Bloqueadores |
 | --- | --- | --- | --- | --- | --- |
-| FLOW-01 | Descoberta pública | hybrid | SEARCH-001 | home → search → results → service_detail | SEARCH-B02 |
+| FLOW-01 | Descoberta pública | hybrid | SEARCH-001 | home → search → results → service_detail |  |
 | FLOW-02 | Cadastro, login e onboarding | staging canary | AUTH-001 | register → verify_contact → session → profile_materialization → onboarding |  |
 | FLOW-03 | Tornar-se profissional e KYC | staging operational | PROF-001 | profile_setup → document_upload → submit → admin_review → decision → role_activation | PROF-B04, PROF-B05 |
 | FLOW-04 | Publicar serviço | hybrid | CAT-001 | draft → media → quote_template → submit_review → moderation → publish → edit_version |  |
@@ -342,7 +342,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Objetivo:** Return eligible services and professionals with scalable server-side filtering, ranking and pagination.
 
-**Estado:** maturidade 2/6; UI hybrid; servidor contract only; staging local e2e; segurança blocked; produção blocked.
+**Estado:** maturidade 3/6; UI hybrid; servidor partial; staging staging canary; segurança blocked; produção blocked.
 
 **Evidência estática observada:** 5 arquivos no escopo; 2 referências a localStorage; 0 a sessionStorage; 3 referências mock; 0 referências de rede/Supabase; 0 marcadores de implementação pendente.
 
@@ -357,14 +357,16 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - SEARCH-A03 technical head 23006e49f8903480f4c791fec5196504f0c60a8e passed dedicated authority/runtime gates, Quality #1294, blocking E2E, 105 structural guards and Diagnostic #958.
 - No dedicated canonical server-side search and indexing contract exists yet.
 - Read-only staging inspection confirmed public.favorites RLS enabled with three owner-scoped SELECT, INSERT and DELETE policies.
+- SEARCH-A04 installed the bounded public search RPC in staging with approved-snapshot indexing, exact geographic eligibility and transactional SQL validation.
+- SEARCH-A05 activated canonical server-side service results with opaque cursor pagination, fail-closed errors and no full-catalog browser fallback.
+- SEARCH-A05 head 0dad31462c8fa4561501865b8dd730d452f87f08 passed A01-A05, staging browser RPC validation, Quality #1369, blocking E2E, 105 guards and Diagnostic #1033.
 
 **Bloqueadores:**
-- **SEARCH-B02 · HIGH · server_search:** Filtering, ranking, geospatial eligibility and pagination remain predominantly frontend/local contracts. _(Fase 5)_
 - **SEARCH-B03 · MEDIUM · analytics:** Ranking signals and anti-manipulation controls are incomplete. _(Fase 15)_
 
 **Próximas ações:**
-- Define and implement a bounded server-side search DTO with cursor pagination and deterministic geographic eligibility.
-- Move ranking signals to a documented server-controlled baseline with conversion instrumentation, monitoring and rollback.
+- Define and validate server-controlled ranking signals, anti-manipulation rules, conversion instrumentation, monitoring and rollback for SEARCH-B03.
+- Keep static users, Workers, publications, suggestions and browser-local search history explicitly governed until their own controlled sublots.
 
 **Gate de saída:**
 - Search is server-paginated and bounded.
@@ -947,4 +949,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-07-28T12:06:00-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-07-28T14:48:00-03:00._

@@ -192,14 +192,15 @@ const runtime = read(files.runtime);
 const matrix = JSON.parse(read(files.matrix));
 const searchDomain = (matrix.domains || []).find((domain) => domain.id === 'SEARCH-001');
 assert(Boolean(searchDomain), 'SEARCH-001 is missing from the domain matrix');
-assert(searchDomain && searchDomain.maturity === 2, 'SEARCH-A04 cannot advance maturity before controlled A05 reconciliation');
-assert(searchDomain && searchDomain.userFacingAuthority === 'hybrid', 'SEARCH-A04/A05 candidate must preserve hybrid user-facing authority');
-assert(searchDomain && searchDomain.serverAuthority === 'contract_only', 'matrix server authority must remain contract_only until A05 reconciliation');
-assert(searchDomain && searchDomain.stagingEvidence === 'local_e2e', 'matrix staging evidence must remain local_e2e until A05 reconciliation');
+const searchB02Reconciled = Boolean(a05Evidence && a05Evidence.status === 'COMPLETE' && a05Evidence.matrix && a05Evidence.matrix.searchB02 === 'reconciled_removed');
+assert(searchDomain && searchDomain.maturity === (searchB02Reconciled ? 3 : 2), 'SEARCH maturity changed outside controlled A05 reconciliation');
+assert(searchDomain && searchDomain.userFacingAuthority === 'hybrid', 'SEARCH user-facing authority must remain hybrid');
+assert(searchDomain && searchDomain.serverAuthority === (searchB02Reconciled ? 'partial' : 'contract_only'), 'SEARCH server authority changed outside controlled A05 reconciliation');
+assert(searchDomain && searchDomain.stagingEvidence === (searchB02Reconciled ? 'staging_canary' : 'local_e2e'), 'SEARCH staging evidence changed outside controlled A05 reconciliation');
 assert(searchDomain && searchDomain.securityGate === 'blocked', 'SEARCH security gate must remain blocked');
 assert(searchDomain && searchDomain.productionGate === 'blocked', 'SEARCH production gate must remain blocked');
 const blockers = (searchDomain && searchDomain.blockers || []).map((blocker) => blocker.id).sort();
-assert(same(blockers, ['SEARCH-B02', 'SEARCH-B03']), 'SEARCH-A04/A05 candidate cannot remove SEARCH-B02 or SEARCH-B03');
+assert(same(blockers, searchB02Reconciled ? ['SEARCH-B03'] : ['SEARCH-B02', 'SEARCH-B03']), 'SEARCH blocker set changed outside controlled A05 reconciliation');
 
 const a03Evidence = JSON.parse(read(files.a03Evidence));
 assert(a03Evidence.status === 'COMPLETE', 'SEARCH-A03 must remain complete');
@@ -213,7 +214,7 @@ assert(evidence.authority && evidence.authority.rpc === 'public.search_public_se
 assert(evidence.requestDto && evidence.requestDto.pageSizeMaximum === 24, 'SEARCH-A04 page bound is not documented');
 assert(evidence.activation && evidence.activation.resultsRenderer === 'not_yet_activated', 'SEARCH-A04 historical rollout boundary is not documented');
 assert(
-  evidence.matrix && evidence.matrix.searchB02 === (stagingValidated ? 'preserved_until_SEARCH_A05_activation' : 'preserved_until_activation_and_staging_validation'),
+  evidence.matrix && ['preserved_until_SEARCH_A05_activation', 'preserved_until_activation_and_staging_validation', 'reconciled_removed_by_SEARCH_A05'].includes(evidence.matrix.searchB02),
   'SEARCH-B02 preservation is not documented in A04'
 );
 assert(evidence.safety && evidence.safety.migrationApplied === stagingValidated, 'SEARCH-A04 migration application evidence is inconsistent');

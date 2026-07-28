@@ -1,6 +1,6 @@
 {
-  "version": "1.3.11",
-  "updatedAt": "2026-07-28T12:06:00-03:00",
+  "version": "1.3.12",
+  "updatedAt": "2026-07-28T14:48:00-03:00",
   "title": "Doke Domain Completion Matrix",
   "purpose": "Single source of truth for domain maturity, data authority, staging evidence, blockers, dependencies and mandatory completion order.",
   "maturityScale": {
@@ -733,10 +733,10 @@
       "name": "Busca, descoberta, favoritos e ranking",
       "wave": "B",
       "priority": 6,
-      "maturity": 2,
+      "maturity": 3,
       "userFacingAuthority": "hybrid",
-      "serverAuthority": "contract_only",
-      "stagingEvidence": "local_e2e",
+      "serverAuthority": "partial",
+      "stagingEvidence": "staging_canary",
       "securityGate": "blocked",
       "productionGate": "blocked",
       "objective": "Return eligible services and professionals with scalable server-side filtering, ranking and pagination.",
@@ -777,16 +777,12 @@
         "SEARCH-A03 activates one owner-scoped favorite snapshot across home, results, detail and owner-profile favorite surfaces without per-card reads.",
         "SEARCH-A03 technical head 23006e49f8903480f4c791fec5196504f0c60a8e passed dedicated authority/runtime gates, Quality #1294, blocking E2E, 105 structural guards and Diagnostic #958.",
         "No dedicated canonical server-side search and indexing contract exists yet.",
-        "Read-only staging inspection confirmed public.favorites RLS enabled with three owner-scoped SELECT, INSERT and DELETE policies."
+        "Read-only staging inspection confirmed public.favorites RLS enabled with three owner-scoped SELECT, INSERT and DELETE policies.",
+        "SEARCH-A04 installed the bounded public search RPC in staging with approved-snapshot indexing, exact geographic eligibility and transactional SQL validation.",
+        "SEARCH-A05 activated canonical server-side service results with opaque cursor pagination, fail-closed errors and no full-catalog browser fallback.",
+        "SEARCH-A05 head 0dad31462c8fa4561501865b8dd730d452f87f08 passed A01-A05, staging browser RPC validation, Quality #1369, blocking E2E, 105 guards and Diagnostic #1033."
       ],
       "blockers": [
-        {
-          "id": "SEARCH-B02",
-          "severity": "high",
-          "category": "server_search",
-          "description": "Filtering, ranking, geospatial eligibility and pagination remain predominantly frontend/local contracts.",
-          "targetPhase": "Fase 5"
-        },
         {
           "id": "SEARCH-B03",
           "severity": "medium",
@@ -796,8 +792,8 @@
         }
       ],
       "nextActions": [
-        "Define and implement a bounded server-side search DTO with cursor pagination and deterministic geographic eligibility.",
-        "Move ranking signals to a documented server-controlled baseline with conversion instrumentation, monitoring and rollback."
+        "Define and validate server-controlled ranking signals, anti-manipulation rules, conversion instrumentation, monitoring and rollback for SEARCH-B03.",
+        "Keep static users, Workers, publications, suggestions and browser-local search history explicitly governed until their own controlled sublots."
       ],
       "exitCriteria": [
         "Search is server-paginated and bounded.",
@@ -2352,9 +2348,7 @@
       ],
       "status": "hybrid",
       "owner": "SEARCH-001",
-      "blockers": [
-        "SEARCH-B02"
-      ]
+      "blockers": []
     },
     {
       "id": "FLOW-02",

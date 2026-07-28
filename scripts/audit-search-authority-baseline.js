@@ -94,16 +94,19 @@ const serviceResultsActivated = Boolean(
 const matrix = JSON.parse(read(files.matrix));
 const searchDomain = (matrix.domains || []).find((domain) => domain.id === 'SEARCH-001');
 assert(Boolean(searchDomain), 'SEARCH-001 is missing from the domain completion matrix');
-assert(searchDomain && searchDomain.maturity === 2, 'SEARCH-001 maturity must remain local_functional level 2 until controlled reconciliation');
-assert(searchDomain && searchDomain.userFacingAuthority === 'hybrid', 'SEARCH-001 user-facing authority must remain hybrid during staged activation');
-assert(searchDomain && searchDomain.serverAuthority === 'contract_only', 'SEARCH-001 server authority must remain contract_only until SEARCH-A05 reconciliation');
-assert(searchDomain && searchDomain.stagingEvidence === 'local_e2e', 'SEARCH-001 staging evidence must remain local_e2e until SEARCH-A05 reconciliation');
+const searchB02Reconciled = Boolean(a05Evidence && a05Evidence.status === 'COMPLETE' && a05Evidence.matrix && a05Evidence.matrix.searchB02 === 'reconciled_removed');
+assert(searchDomain && searchDomain.maturity === (searchB02Reconciled ? 3 : 2), 'SEARCH-001 maturity changed outside controlled A05 reconciliation');
+assert(searchDomain && searchDomain.userFacingAuthority === 'hybrid', 'SEARCH-001 user-facing authority must remain hybrid');
+assert(searchDomain && searchDomain.serverAuthority === (searchB02Reconciled ? 'partial' : 'contract_only'), 'SEARCH-001 server authority changed outside controlled A05 reconciliation');
+assert(searchDomain && searchDomain.stagingEvidence === (searchB02Reconciled ? 'staging_canary' : 'local_e2e'), 'SEARCH-001 staging evidence changed outside controlled A05 reconciliation');
 assert(searchDomain && searchDomain.securityGate === 'blocked', 'SEARCH-001 security gate must remain blocked');
 assert(searchDomain && searchDomain.productionGate === 'blocked', 'SEARCH-001 production gate must remain blocked');
 const blockerIds = (searchDomain && searchDomain.blockers || []).map((blocker) => blocker.id).sort();
-const expectedBlockers = favoritesSurfacesComplete
-  ? ['SEARCH-B02', 'SEARCH-B03']
-  : ['SEARCH-B01', 'SEARCH-B02', 'SEARCH-B03'];
+const expectedBlockers = searchB02Reconciled
+  ? ['SEARCH-B03']
+  : favoritesSurfacesComplete
+    ? ['SEARCH-B02', 'SEARCH-B03']
+    : ['SEARCH-B01', 'SEARCH-B02', 'SEARCH-B03'];
 assert(same(blockerIds, expectedBlockers), 'SEARCH-001 blocker set changed outside controlled reconciliation');
 
 const searchService = read(files.searchService);

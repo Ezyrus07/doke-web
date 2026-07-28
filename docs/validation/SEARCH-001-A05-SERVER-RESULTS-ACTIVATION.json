@@ -2,9 +2,9 @@
   "schemaVersion": "1.1.1",
   "domain": "SEARCH-001",
   "sublot": "SEARCH-A05",
-  "status": "CANDIDATE_VALIDATION_RUNNING",
+  "status": "COMPLETE",
   "title": "Atomic activation of canonical server-side service results",
-  "recordedAt": "2026-07-28T14:18:00-03:00",
+  "recordedAt": "2026-07-28T14:48:00-03:00",
   "baseHead": "87af864759643c9eec50873defcc22de86882387",
   "integratedHead": "e9be5c20fc0d755036d4b6c5fe879cfc0c269874",
   "cleanCandidateHead": "2cd636845e2a7c1a9aa06764df35e0c6eb0d2a40",
@@ -65,7 +65,7 @@
   "validation": {
     "surfaceRuntime": "scripts/test-search-results-server-surface-runtime.js",
     "activationAudit": "scripts/audit-search-results-server-activation.js",
-    "dedicatedWorkflow": ".github/workflows/search-results-server-activation.yml",
+    "dedicatedWorkflow": "success",
     "oneTimeApplicatorRun": 7,
     "oneTimeApplicatorRunId": 30381603609,
     "applicator": "success",
@@ -73,7 +73,26 @@
     "retiredAuthorityVerification": "success",
     "cleanPatchFormatting": "success",
     "permanentWorkflowPresent": true,
-    "status": "running"
+    "status": "complete",
+    "cumulativeA01": "success",
+    "cumulativeA02": "success",
+    "cumulativeA03": "success",
+    "cumulativeA04": "success",
+    "dedicatedWorkflowRunNumber": 43,
+    "dedicatedWorkflowRunId": 30383798670,
+    "stagingBrowser": "success",
+    "stagingBrowserRunNumber": 15,
+    "stagingBrowserRunId": 30383798814,
+    "quality": "success",
+    "qualityRunNumber": 1369,
+    "qualityRunId": 30383798834,
+    "blockingE2E": "success",
+    "visualStructuralGuards": "success",
+    "diagnostic": "success",
+    "diagnosticRunNumber": 1033,
+    "diagnosticRunId": 30383799171,
+    "directCatalogRequests": 0,
+    "forcedRpcFailureFallbackUsed": false
   },
   "matrix": {
     "maturityPreserved": 2,
@@ -82,8 +101,15 @@
     "stagingEvidenceTarget": "staging_validated",
     "securityGatePreserved": "blocked",
     "productionGatePreserved": "blocked",
-    "searchB02": "eligible_for_reconciliation_after_final_UI_and_E2E_validation",
-    "searchB03": "preserved"
+    "searchB02": "reconciled_removed",
+    "searchB03": "preserved",
+    "version": "1.3.12",
+    "maturity": 3,
+    "userFacingAuthority": "hybrid",
+    "serverAuthority": "partial",
+    "stagingEvidence": "staging_canary",
+    "securityGate": "blocked",
+    "productionGate": "blocked"
   },
   "safety": {
     "stagingChangedByA05": false,
@@ -96,13 +122,13 @@
     "temporaryApplicatorRemaining": false,
     "temporaryDiagnosticRemaining": false,
     "prMerged": false,
-    "prReadyForReview": false
+    "prReadyForReview": false,
+    "temporaryReconcilerRemaining": false
   },
   "remaining": [
-    "Validate the permanent A01-A05 workflows on one clean head.",
-    "Run blocking E2E, 105 visual structural guards and Diagnostic on the clean head.",
-    "Validate the resultados browser journey against the staging RPC.",
-    "Reconcile SEARCH-B02 only after all final UI and E2E evidence is green."
+    "SEARCH-B03 remains: server-controlled ranking signals, anti-manipulation controls, conversion instrumentation, monitoring and rollback.",
+    "Static non-service discovery pools and browser-local search history remain explicitly outside the completed service-results authority."
   ],
-  "nextControlledStep": "Validate the permanent clean candidate, then execute controlled browser validation against staging before SEARCH-B02 reconciliation."
+  "nextControlledStep": "SEARCH-A06 — establish the server-controlled ranking baseline and observability contract for SEARCH-B03 without changing production.",
+  "validatedHead": "0dad31462c8fa4561501865b8dd730d452f87f08"
 }
