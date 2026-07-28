@@ -25,6 +25,20 @@ jobs:
         with:
           node-version: 24
 
+      - name: Repair codemod literal matcher
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('scripts/fe-j01-apply.js')
+          s = p.read_text()
+          bad = "stable = replaceOnce(stable, /var CORE_SCRIPT_RE = \\/assets\\\\\\/js\\\\\\/core\\\\\\/(\\?:runtime-config\\|feature-flags\\|rollout-guard\\|navigation-lifecycle\\|app\\|stable-shell-router\\|social-page-router\\)\\\\\\.js/, \"var CORE_SCRIPT_RE = /assets\\\\/js\\\\/core\\\\/(?:runtime-config|feature-flags|rollout-guard|navigation-registry|navigation-lifecycle|app|stable-shell-router|social-page-router)\\\\.js\", 'stable core script registry');"
+          good = "stable = replaceOnce(stable, 'var CORE_SCRIPT_RE = /assets\\\\/js\\\\/core\\\\/(?:runtime-config|feature-flags|rollout-guard|navigation-lifecycle|app|stable-shell-router|social-page-router)\\\\.js', 'var CORE_SCRIPT_RE = /assets\\\\/js\\\\/core\\\\/(?:runtime-config|feature-flags|rollout-guard|navigation-registry|navigation-lifecycle|app|stable-shell-router|social-page-router)\\\\.js', 'stable core script registry');"
+          if bad not in s:
+              raise SystemExit('invalid regex line not found')
+          p.write_text(s.replace(bad, good))
+          PY
+
       - name: Apply FE-J01 codemod
         shell: bash
         run: |
