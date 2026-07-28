@@ -7,7 +7,9 @@ on:
       - 'search/**'
     paths:
       - 'supabase/migrations/158_service_search_contract.sql'
+      - 'supabase/migrations/159_service_search_approved_snapshot_authority.sql'
       - 'supabase/tests/022_service_search_contract_validation.sql'
+      - 'supabase/tests/023_service_search_approved_snapshot_authority_validation.sql'
       - 'assets/js/repositories/search-repository.js'
       - 'assets/js/services/search-service.js'
       - 'assets/js/pages/search-results.js'
@@ -18,6 +20,7 @@ on:
       - 'scripts/audit-service-favorites-surfaces.js'
       - 'scripts/test-service-favorites-controller-runtime.js'
       - 'scripts/audit-search-server-contract.js'
+      - 'scripts/audit-search-approved-snapshot-authority.js'
       - 'scripts/test-search-server-contract-runtime.js'
       - 'docs/validation/SEARCH-001-A03-FAVORITES-SURFACES.json'
       - 'docs/validation/SEARCH-001-A04-SERVER-SEARCH-CONTRACT.json'
@@ -67,6 +70,9 @@ jobs:
 
       - name: Audit SEARCH-A04 server search contract
         run: node scripts/audit-search-server-contract.js
+
+      - name: Audit SEARCH-A04 approved snapshot authority
+        run: node scripts/audit-search-approved-snapshot-authority.js
 
       - name: Test SEARCH-A04 bounded runtime
         run: node scripts/test-search-server-contract-runtime.js
