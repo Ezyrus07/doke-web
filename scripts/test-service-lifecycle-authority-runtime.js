@@ -13,7 +13,9 @@ const source = fs.readFileSync(servicePath, 'utf8');
 const repositorySource = fs.readFileSync(repositoryPath, 'utf8');
 
 assert(source.includes('repository.transitionOwnedLifecycle'), 'CAT-A03 lifecycle routing marker missing');
-assert(source.includes('repository.submitForReview(candidate'), 'CAT-A03 versioned edit marker missing');
+assert(source.includes('function submitThroughCanonicalAuthority('), 'CAT-A04 canonical submission router missing');
+assert(source.includes('return authority.submitForReview(service, options || {}, repository)'), 'CAT-A04 signed submission marker missing');
+assert(!source.includes('repository.submitForReview(candidate'), 'pre-CAT-A04 versioned edit route remains');
 assert(!source.includes('return repository.update(serviceId, patch || {})'), 'generic remote edit route remains');
 assert(repositorySource.includes("invokeSelfService('transition_owned_service_lifecycle'"), 'repository lifecycle operation missing');
 assert(repositorySource.includes('DOKE_SERVICE_DIRECT_MUTATION_FORBIDDEN'), 'direct mutation fail-closed marker missing');
@@ -38,9 +40,9 @@ function createRuntime() {
 
   const repository = {
     getById() { return Promise.resolve(Object.assign({}, current)); },
-    submitForReview(candidate, options) {
-      calls.push(['submitForReview', candidate, options]);
-      return Promise.resolve(Object.assign({}, candidate, { moderationStatus: 'changes_pending_review' }));
+    submitForReview() {
+      calls.push(['legacyRepositorySubmitForReview']);
+      throw new Error('CAT-A04 forbids direct repository submission from the service layer.');
     },
     transitionOwnedLifecycle(id, action) {
       calls.push(['transitionOwnedLifecycle', id, action]);
@@ -56,11 +58,20 @@ function createRuntime() {
     list() { return Promise.resolve([Object.assign({}, current)]); }
   };
 
+  const serviceMediaUploads = {
+    submitForReview(candidate, options, selectedRepository) {
+      calls.push(['signedSubmitForReview', candidate, options, selectedRepository]);
+      assert.strictEqual(selectedRepository, repository, 'signed authority must receive the canonical repository adapter');
+      return Promise.resolve(Object.assign({}, candidate, { moderationStatus: 'changes_pending_review' }));
+    }
+  };
+
   const window = {
     Doke: {
       repositories: { services: repository },
       session: { getCurrentUser: () => actor },
       services: {
+        serviceMediaUploads,
         professionalAccess: {
           ACTIONS: { PUBLISH_SERVICE: 'publish_service' },
           assert() { return Promise.resolve({ user: actor }); }
@@ -81,7 +92,8 @@ function createRuntime() {
 
   const edited = await services.updateOwned('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', { title: 'Serviço em revisão' });
   assert.strictEqual(edited.moderationStatus, 'changes_pending_review');
-  assert.strictEqual(runtime.calls.filter((entry) => entry[0] === 'submitForReview').length, 1, 'edit must cross versioned review once');
+  assert.strictEqual(runtime.calls.filter((entry) => entry[0] === 'signedSubmitForReview').length, 1, 'edit must cross the signed CAT-A04 review authority once');
+  assert.strictEqual(runtime.calls.filter((entry) => entry[0] === 'legacyRepositorySubmitForReview').length, 0, 'edit cannot use the legacy repository submission route');
   assert.strictEqual(runtime.calls.filter((entry) => entry[0] === 'fixtureUpdate').length, 0, 'remote edit cannot use generic update');
 
   await services.deactivateOwned('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
@@ -102,7 +114,7 @@ function createRuntime() {
     /Você não pode alterar este serviço/
   );
 
-  console.log('[CAT-A03] content edits cross versioned moderation authority.');
+  console.log('[CAT-A03] content edits cross the CAT-A04 signed versioned moderation authority.');
   console.log('[CAT-A03] pause, reactivate and archive cross explicit lifecycle authority.');
   console.log('[CAT-A03] generic remote table mutation is fail-closed.');
 })().catch((error) => {
