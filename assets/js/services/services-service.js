@@ -121,12 +121,24 @@
     return mediaUploadServicePromise;
   }
 
+  function submitFixtureForReview(repository, service) {
+    if (!repository || typeof repository.save !== 'function') {
+      return Promise.reject(new Error('A autoridade de fixture do catálogo não está disponível.'));
+    }
+    var now = new Date().toISOString();
+    return Promise.resolve(repository.save(Object.assign({}, service || {}, {
+      status: STATUS.DRAFT,
+      moderationStatus: MODERATION_STATUS.PENDING_REVIEW,
+      syncStatus: 'fixture-memory',
+      pendingVersionId: '',
+      reviewSubmittedAt: now,
+      updatedAt: now
+    })));
+  }
+
   function submitThroughCanonicalAuthority(repository, service, options) {
     if (!usesRemoteAuthority(repository, service)) {
-      if (typeof repository.submitForReview !== 'function') {
-        return Promise.reject(new Error('O envio de serviços para análise não está disponível.'));
-      }
-      return repository.submitForReview(service, options || {});
+      return submitFixtureForReview(repository, service);
     }
     return ensureMediaUploadService().then(function (authority) {
       return authority.submitForReview(service, options || {}, repository);
