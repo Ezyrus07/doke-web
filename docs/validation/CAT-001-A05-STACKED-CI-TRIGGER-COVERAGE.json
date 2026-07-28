@@ -1,0 +1,44 @@
+{
+  "schemaVersion": "1.0.0",
+  "domain": "CAT-001",
+  "sublot": "CAT-A05",
+  "status": "TRIGGER_COVERAGE_CORRECTED_FINAL_CI_PENDING",
+  "title": "Stacked pull-request CI trigger coverage",
+  "recordedAt": "2026-07-28",
+  "rootCause": [
+    "The canonical workflows accepted pull_request events only when the pull request base was MAIN, main or master.",
+    "PR 12 is intentionally stacked on prof/prof-001-baseline-audit, so no pull_request workflow run was created for its heads.",
+    "Quality accepted push events for cat/**, but the connector used for run inspection returns only pull-request-triggered runs.",
+    "Canary and Diagnostic accepted push events for prof/** only, so CAT heads did not execute those lanes at all."
+  ],
+  "correction": {
+    "qualityPullRequestBases": ["MAIN", "main", "master", "auth/**", "prof/**", "cat/**"],
+    "qualityPushBranches": ["MAIN", "main", "master", "prof/**", "cat/**"],
+    "canaryPullRequestBases": ["MAIN", "main", "master", "auth/**", "prof/**", "cat/**"],
+    "canaryPushBranches": ["prof/**", "cat/**"],
+    "diagnosticPullRequestBases": ["MAIN", "main", "master", "auth/**", "prof/**", "cat/**"],
+    "diagnosticPushBranches": ["prof/**", "cat/**"],
+    "temporaryWorkflowCreated": false
+  },
+  "firstObservablePrRuns": {
+    "head": "4019c0a14f87f0a42e8e900d16bd20a3d6fbf1db",
+    "quality": {"runId": 30353193887, "runNumber": 1182, "initialStatus": "queued"},
+    "canary": {"runId": 30353193413, "runNumber": 760, "initialStatus": "queued"},
+    "diagnostic": {"runId": 30353193396, "runNumber": 846, "initialStatus": "pending"}
+  },
+  "permanentGate": "scripts/audit-stacked-ci-trigger-coverage.js",
+  "safety": {
+    "productionChanged": false,
+    "stagingChanged": false,
+    "realAccountsChanged": false,
+    "realOrdersChanged": false,
+    "paidConfigChanged": false,
+    "smsOrOauthChanged": false,
+    "prMerged": false,
+    "prReadyForReview": false
+  },
+  "remaining": [
+    "Run Quality, blocking E2E, 105 visual structural guards, Canary and Diagnostic on the final stable head.",
+    "Use only successful final-head run identifiers for CAT-A04, CAT-B04 and CAT-A05 closure evidence."
+  ]
+}
