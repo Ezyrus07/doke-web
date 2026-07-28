@@ -1,6 +1,6 @@
 export const normalizeAction = (value) => {
   const action = String(value || '').trim().toLowerCase();
-  return ['list', 'detail', 'audit', 'approve', 'request_changes', 'reject'].includes(action)
+  return ['list', 'detail', 'audit', 'approve', 'request_changes', 'reject', 'cleanup_media'].includes(action)
     ? action
     : 'list';
 };
@@ -24,6 +24,9 @@ export const normalizeModerationError = (error) => {
   const known = [
     'DOKE_SERVICE_MODERATION_AUTH_REQUIRED',
     'DOKE_SERVICE_MODERATION_OPERATOR_REQUIRED',
+    'DOKE_SERVICE_MEDIA_CLEANUP_RESULTS_INVALID',
+    'DOKE_SERVICE_MEDIA_CLEANUP_RESULT_INVALID',
+    'DOKE_SERVICE_MEDIA_STORAGE_DELETE_FAILED',
     'AUTH_REQUIRED',
     'ADMIN_REQUIRED',
     'SERVICE_VERSION_NOT_FOUND',
@@ -39,6 +42,7 @@ export const statusForModerationError = (code) => {
   if (['DOKE_SERVICE_MODERATION_OPERATOR_REQUIRED', 'ADMIN_REQUIRED'].includes(code)) return 403;
   if (['SERVICE_VERSION_NOT_FOUND', 'SERVICE_NOT_FOUND'].includes(code)) return 404;
   if (code === 'SERVICE_VERSION_NOT_PENDING') return 409;
-  if (code === 'REVIEW_REASON_INVALID') return 400;
+  if (['REVIEW_REASON_INVALID', 'DOKE_SERVICE_MEDIA_CLEANUP_RESULTS_INVALID', 'DOKE_SERVICE_MEDIA_CLEANUP_RESULT_INVALID'].includes(code)) return 400;
+  if (code === 'DOKE_SERVICE_MEDIA_STORAGE_DELETE_FAILED') return 502;
   return 500;
 };
