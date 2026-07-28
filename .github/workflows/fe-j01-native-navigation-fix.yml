@@ -76,7 +76,12 @@ jobs:
             await api.navigation.back('https://doke.test/index.html', { source: 'test-back' });"""
           if anchor not in test:
               raise SystemExit('navigation lifecycle test anchor not found')
-          test_path.write_text(test.replace(anchor, replacement, 1))
+          test = test.replace(anchor, replacement, 1)
+          old_final = "assert.strictEqual(assigned.length, 0, 'document fallback must not run while an adapter can handle the route');"
+          new_final = "assert.strictEqual(assigned.length, 1, 'adapter-backed routes must not add another document navigation');"
+          if old_final not in test:
+              raise SystemExit('navigation lifecycle final assignment assertion not found')
+          test_path.write_text(test.replace(old_final, new_final, 1))
           PY
 
       - name: Validate focused contracts
