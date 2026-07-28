@@ -1,0 +1,54 @@
+name: FE-J01 Controlled Apply
+
+on:
+  pull_request:
+    paths:
+      - "scripts/fe-j01-apply.js"
+      - "assets/js/dev/fe-j01-trigger.txt"
+      - ".github/workflows/fe-j01-apply.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout candidate branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Apply FE-J01 codemod
+        run: node scripts/fe-j01-apply.js
+
+      - name: Validate ownership audit
+        run: node scripts/audit-navigation-registry-ownership.js
+
+      - name: Commit controlled result
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/js/core/navigation-registry.js \
+            assets/js/core/stable-shell-router.js \
+            assets/js/core/social-page-router.js \
+            assets/js/core/app.js \
+            assets/js/components/mobile-app-shell.js \
+            assets/js/ui/mobile-drawer-standard.js \
+            config/frontend-structural-gates.json \
+            scripts/audit-navigation-registry-ownership.js \
+            docs/architecture/navigation-registry-ownership.md \
+            package.json
+          if git diff --cached --quiet; then
+            echo "No FE-J01 changes to commit."
+            exit 0
+          fi
+          git commit -m "FE-J01: centralize route metadata in navigation registry"
+          git push origin HEAD:${GITHUB_HEAD_REF}
