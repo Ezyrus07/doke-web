@@ -1,0 +1,89 @@
+name: FE-C01 Final Manifest Cleanup
+
+on:
+  pull_request:
+    paths:
+      - "assets/js/dev/fe-c01-final-cleanup-trigger.txt"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fe-c01-final-manifest-cleanup-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  cleanup:
+    if: github.event.pull_request.number == 18
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout candidate branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Separate final page composition from entrypoints
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          profile_path = Path('assets/css/pages/profile-page.css')
+          profile = profile_path.read_text(encoding='utf-8')
+          old_profile = ' * This manifest keeps the new profile independent from the removed legacy contracts.'
+          new_profile = ' * This stylesheet keeps the new profile independent from the removed legacy contracts.'
+          if old_profile in profile:
+              profile = profile.replace(old_profile, new_profile, 1)
+          elif new_profile not in profile:
+              raise SystemExit('profile ownership header not found')
+          profile_path.write_text(profile, encoding='utf-8')
+
+          search_path = Path('assets/css/pages/search-results.css')
+          search = search_path.read_text(encoding='utf-8')
+          marker = '/* Stage 06B — search results card composition by viewport.'
+          if marker not in search:
+              raise SystemExit('search results composition marker not found')
+          prefix, remainder = search.split(marker, 1)
+          composition_path = Path('assets/css/pages/results/page-composition.css')
+          composition_path.parent.mkdir(parents=True, exist_ok=True)
+          composition = (
+              '/* Search results page-owned composition extracted from the entrypoint by FE-C01. */\n\n'
+              + marker + remainder
+          )
+          composition_path.write_text(composition, encoding='utf-8')
+          search_entrypoint = (
+              prefix.rstrip()
+              + '\n@import url("./results/page-composition.css?v=20260728-fe-c01-manifest-purity-v1");\n'
+          )
+          search_path.write_text(search_entrypoint, encoding='utf-8')
+
+          config_path = Path('config/frontend-structural-gates.json')
+          config = json.loads(config_path.read_text(encoding='utf-8'))
+          config['baseline']['impureManifestFiles'] = []
+          config_path.write_text(json.dumps(config, indent=2) + '\n', encoding='utf-8')
+          PY
+
+      - name: Validate focused structural contracts
+        run: |
+          node scripts/audit-frontend-structural-gates.js --strict
+          node scripts/audit-token-authority.js
+          git diff --check
+
+      - name: Commit validated cleanup
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/css/pages/profile-page.css \
+                  assets/css/pages/search-results.css \
+                  assets/css/pages/results/page-composition.css \
+                  config/frontend-structural-gates.json
+          git commit -m "FE-C01: finish manifest purity cleanup"
+          git push origin HEAD:${{ github.head_ref }}
