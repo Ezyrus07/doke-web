@@ -11,6 +11,7 @@ const assert = (condition, message) => { if (!condition) fail(message); };
 
 const files = {
   migration: 'supabase/migrations/150_service_media_upload_authority.sql',
+  dispatcherLockdown: 'supabase/migrations/151_service_media_legacy_submit_lockdown.sql',
   edgeIndex: 'supabase/functions/self-service-operations/index.ts',
   edgeOperations: 'supabase/functions/self-service-operations/operations.mjs',
   mediaService: 'assets/js/services/service-media-upload-service.js',
@@ -44,6 +45,14 @@ assert(!/grant\s+(insert|update|delete)[\s\S]{0,120}service_media[\s\S]{0,80}(an
   'browser service_media DML must not be granted');
 assert(!/create\s+policy\s+service_media_bucket_owner_(insert|update|delete)/i.test(migration),
   'browser Storage mutation policies must not be recreated');
+
+const dispatcherLockdown = read(files.dispatcherLockdown);
+[
+  'execute_self_service_operation_internal_pre_cat_a04',
+  "v_operation = 'submit_service_for_review'",
+  'DOKE_SERVICE_MEDIA_UPLOAD_INTENT_REQUIRED',
+  'grant execute on function public.execute_self_service_operation_internal(uuid, text, jsonb)'
+].forEach((marker) => assert(dispatcherLockdown.includes(marker), 'dispatcher lockdown marker missing: ' + marker));
 
 const edgeIndex = read(files.edgeIndex);
 [
@@ -84,5 +93,6 @@ const servicesService = read(files.servicesService);
 if (!process.exitCode) {
   console.log('[CAT-A04-UPLOAD] immutable upload reservation authority is structurally present.');
   console.log('[CAT-A04-UPLOAD] browser Storage mutation and service_media DML are retired by migration.');
+  console.log('[CAT-A04-UPLOAD] legacy dispatcher submission fails closed without an upload intent.');
   console.log('[CAT-A04-UPLOAD] signed upload and atomic intent consumption gates are registered.');
 }
