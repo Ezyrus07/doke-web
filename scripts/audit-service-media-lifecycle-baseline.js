@@ -16,6 +16,7 @@ const files = {
   storageAuthority: 'supabase/migrations/117_service_media_storage_authority.sql',
   repository: 'assets/js/repositories/services-repository.js',
   qualityWorkflow: '.github/workflows/quality.yml',
+  qualityPipeline: 'scripts/audit-quality-pipeline.js',
   catA03: 'docs/validation/CAT-001-A03-SERVICE-LIFECYCLE-AUTHORITY.json',
   evidenceJson: 'docs/validation/CAT-001-A04-SERVICE-MEDIA-LIFECYCLE-BASELINE.json',
   evidenceMarkdown: 'docs/validation/CAT-001-A04-SERVICE-MEDIA-LIFECYCLE-BASELINE.md'
@@ -102,9 +103,12 @@ const evidenceMarkdown = read(files.evidenceMarkdown);
 ].forEach((marker) => assert(evidenceMarkdown.includes(marker), 'human baseline marker missing: ' + marker));
 
 const qualityWorkflow = read(files.qualityWorkflow);
+assert(qualityWorkflow.includes('npm run audit:quality-pipeline'), 'permanent Quality workflow must execute audit:quality-pipeline');
+
+const qualityPipeline = read(files.qualityPipeline);
 assert(
-  qualityWorkflow.includes('node scripts/audit-service-media-lifecycle-baseline.js'),
-  'CAT-A04 baseline audit must be wired into the permanent Quality workflow'
+  qualityPipeline.includes('scripts/audit-service-media-lifecycle-baseline.js'),
+  'CAT-A04 baseline audit must be registered in the permanent quality-pipeline aggregator'
 );
 
 if (!process.exitCode) {
