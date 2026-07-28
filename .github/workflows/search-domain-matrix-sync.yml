@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   sync-domain-matrix:
-    name: Regenerate deterministic domain matrix
+    name: Reconcile SEARCH-A03 and regenerate matrix
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -37,8 +37,19 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Reconcile validated SEARCH-A03
+        run: node scripts/search-a03-reconcile-once.js
+
       - name: Regenerate canonical matrix artifacts
         run: npm run write:domain-completion-matrix
+
+      - name: Audit cumulative SEARCH authority
+        run: |
+          node scripts/audit-search-authority-baseline.js
+          node scripts/audit-favorites-authority-retirement.js
+          node scripts/test-favorites-authority-retirement-runtime.js
+          node scripts/audit-service-favorites-surfaces.js
+          node scripts/test-service-favorites-controller-runtime.js
 
       - name: Audit regenerated matrix
         run: npm run audit:domain-completion-matrix
@@ -46,15 +57,15 @@ jobs:
       - name: Verify clean patch formatting
         run: git diff --check
 
-      - name: Commit deterministic artifact when changed
+      - name: Commit controlled SEARCH-A03 reconciliation
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/DOMAIN-COMPLETION-MATRIX.md
+          git add config/domain-completion-matrix.json docs/DOMAIN-COMPLETION-MATRIX.md docs/validation/SEARCH-001-A02-FAVORITES-AUTHORITY-RETIREMENT.json docs/validation/SEARCH-001-A03-FAVORITES-SURFACES.json
           if git diff --cached --quiet; then
-            echo "Domain matrix artifact already synchronized."
+            echo "SEARCH-A03 reconciliation already synchronized."
             exit 0
           fi
-          git commit -m "Synchronize SEARCH domain matrix artifact"
+          git commit -m "Reconcile SEARCH-B01 after canonical favorites"
           git push origin HEAD:${{ github.ref_name }}
