@@ -615,11 +615,9 @@
     adapter: 'document'
   });
   routeCommit(id, { adapter: 'document' });
-  window.setTimeout(function () {
-    if (options.replace === true) window.location.replace(url.href);
-    else window.location.assign(url.href);
-  }, 0);
-  return true;
+  if (options.replace === true) window.location.replace(url.href);
+  else window.location.assign(url.href);
+  return Promise.resolve(true);
 }
   function go(href, options) {
     options = Object.assign({
@@ -707,11 +705,11 @@
       var target = typeof options.redirect === 'function' ? options.redirect(result) : options.redirect;
       if (!target) throw new Error('Guard negado sem destino seguro.');
       guardRedirect(id, target, { result: result });
-      return Promise.resolve(go(target, {
+      return go(target, {
         replace: true,
         source: 'guard',
         forceDocument: options.forceDocument === true
-      })).then(function () {
+      }).then(function () {
         return { allowed: false, result: result, guardId: id, redirect: normalizeUrl(target).href };
       });
     })
@@ -719,11 +717,11 @@
       guardFail(id, error, { source: options.source || normalizePath() });
       if (!options.fallback) throw error;
       guardRedirect(id, options.fallback, { fallback: true });
-      return Promise.resolve(go(options.fallback, {
+      return go(options.fallback, {
         replace: true,
         source: 'guard-fallback',
         forceDocument: options.forceDocument === true
-      })).then(function () {
+      }).then(function () {
         return { allowed: false, error: error, guardId: id, redirect: normalizeUrl(options.fallback).href };
       });
     });
