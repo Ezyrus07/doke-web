@@ -1,0 +1,88 @@
+{
+  "schemaVersion": "1.0.0",
+  "domain": "CAT-001",
+  "sublot": "CAT-B04",
+  "status": "CANDIDATE_VALIDATED_CI_PENDING",
+  "title": "Immutable approved service snapshot authority for orders",
+  "recordedAt": "2026-07-28T02:35:00-03:00",
+  "rootCause": [
+    "The browser assembled serviceSnapshot while creating a quote request, but the backend persisted only service and participant identifiers plus basic order fields.",
+    "Direct Supabase order insertion could accept caller-selected professional identity and browser metadata without freezing the approved service version.",
+    "Historical orders could therefore lose the exact title, price, media and provider context that existed when the client requested the service."
+  ],
+  "authority": {
+    "databaseTrigger": "private.canonicalize_order_service_snapshot",
+    "trigger": "trg_orders_service_snapshot_authority",
+    "versionColumn": "public.orders.service_version_id",
+    "snapshotColumn": "public.orders.service_snapshot",
+    "snapshotSource": "public.service_versions.snapshot for public.services.approved_version_id",
+    "compatibilityProjection": "public.orders.metadata.serviceSnapshot",
+    "browserSnapshotTrusted": false,
+    "browserProfessionalTrusted": false,
+    "allRemoteInsertPathsCovered": true
+  },
+  "migrations": [
+    {
+      "file": "supabase/migrations/156_order_service_snapshot_authority.sql",
+      "stagingVersion": "20260728021551"
+    },
+    {
+      "file": "supabase/migrations/157_order_service_snapshot_coalesce_fix.sql",
+      "stagingVersion": "20260728022158",
+      "reason": "COALESCE is SQL syntax and cannot be qualified as pg_catalog.coalesce."
+    }
+  ],
+  "backend": {
+    "file": "backend/modules/orders/orders-service.js",
+    "serviceReference": "UUID or external_id",
+    "eligibleStatus": "published",
+    "eligibleModerationStatuses": ["published", "changes_pending_review", "changes_required"],
+    "approvedVersionRequired": true,
+    "ownServiceOrderBlocked": true,
+    "callerSnapshotFieldsRemoved": true,
+    "callerProfessionalFieldsIgnored": true
+  },
+  "validation": {
+    "sql": "supabase/tests/021_order_service_snapshot_authority_validation.sql",
+    "sqlResult": "passed_with_rollback",
+    "canonicalProfessionalOverride": "passed",
+    "approvedVersionFreeze": "passed",
+    "historicalVersionPreservationAfterNewApproval": "passed",
+    "dedicatedSnapshotTamperBlock": "passed",
+    "metadataProjectionTamperBlock": "passed",
+    "newOrderUsesNewApprovedVersion": "passed",
+    "ownServiceOrderBlock": "passed",
+    "runtimeContract": "registered_in_quality",
+    "fullCi": "pending"
+  },
+  "staging": {
+    "project": "doke-web-staging",
+    "projectRef": "zwkczgewzbsorbrjuzpb",
+    "ordersTotal": 0,
+    "snapshotColumns": 2,
+    "snapshotTriggerCount": 1,
+    "anonCanExecuteTriggerFunction": false,
+    "authenticatedCanExecuteTriggerFunction": false,
+    "qualifiedCoalesceRemaining": false,
+    "persistentSyntheticAuthUsers": 0,
+    "persistentSyntheticPublicUsers": 0,
+    "persistentSyntheticServices": 0,
+    "persistentSyntheticVersions": 0,
+    "persistentSyntheticOrders": 0
+  },
+  "safety": {
+    "productionChanged": false,
+    "realAccountsChanged": false,
+    "realOrdersChanged": false,
+    "persistentSyntheticEntitiesCreated": false,
+    "paidConfigChanged": false,
+    "smsOrOauthChanged": false,
+    "prMerged": false,
+    "prReadyForReview": false
+  },
+  "remaining": [
+    "Observe Quality, blocking E2E, 105 visual structural guards, Canary and Diagnostic on one stable head.",
+    "Reconcile the CAT-001 matrix and engineering journal only after CI convergence.",
+    "Keep CAT-A04 formally CI-pending until its lanes are also observable."
+  ]
+}
