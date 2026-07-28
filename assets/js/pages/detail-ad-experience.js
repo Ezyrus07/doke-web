@@ -1,37 +1,42 @@
 (function () {
   'use strict';
 
-  var Doke = window.Doke || (window.Doke = {});
+  var root = window;
+  var Doke = root.Doke || (root.Doke = {});
   var PAGE = 'detalhe-anuncio';
   var STALE_MS = 60000;
-  var FAVORITES_KEY_PREFIX = 'doke.service-favorites.v1:';
   var inFlightFavorite = new Map();
+  var unsubscribeAuth = null;
 
   function getRoot() {
     return document.querySelector('[data-detail-page-root], [data-state-boundary="detalhe-anuncio"]');
   }
 
-  function resolveUserId() {
-    var session = Doke.session;
-    var user = session && typeof session.getCurrentUser === 'function' ? session.getCurrentUser() : null;
-    return String(user && (user.id || user.userId || user.email) || 'guest');
+  function resolveServiceId(pageRoot) {
+    var params = new URLSearchParams(root.location.search || '');
+    return String(params.get('id') || params.get('serviceId') || pageRoot && pageRoot.dataset.serviceId || '').trim();
   }
 
-  function resolveServiceId(root) {
-    var params = new URLSearchParams(window.location.search || '');
-    return String(params.get('id') || params.get('serviceId') || root && root.dataset.serviceId || '');
+  function favoritesService() {
+    var service = Doke.services && Doke.services.favorites;
+    if (!service) {
+      var error = new Error('Serviço de favoritos não carregado.');
+      error.code = 'DOKE_FAVORITES_SERVICE_UNAVAILABLE';
+      throw error;
+    }
+    return service;
   }
 
   function setState(state, message) {
-    var root = getRoot();
-    if (!root) return;
-    root.dataset.viewState = state;
-    root.setAttribute('aria-busy', state === 'loading' || state === 'refreshing' ? 'true' : 'false');
+    var pageRoot = getRoot();
+    if (!pageRoot) return;
+    pageRoot.dataset.viewState = state;
+    pageRoot.setAttribute('aria-busy', state === 'loading' || state === 'refreshing' ? 'true' : 'false');
     document.body.dataset.detailAdExperienceState = state;
-    if (message) root.dataset.stateMessage = message;
-    else delete root.dataset.stateMessage;
+    if (message) pageRoot.dataset.stateMessage = message;
+    else delete pageRoot.dataset.stateMessage;
     if (Doke.experience && Doke.experience.states && typeof Doke.experience.states.set === 'function') {
-      Doke.experience.states.set(root, state, { message: message || '' });
+      Doke.experience.states.set(pageRoot, state, { message: message || '' });
     }
   }
 
@@ -41,57 +46,82 @@
     return invalidation.invalidateDomains(domains, { reason: reason || 'detail-ad' });
   }
 
-  function favoriteStorageKey() {
-    return FAVORITES_KEY_PREFIX + resolveUserId();
-  }
-
-  function readFavorites() {
-    try {
-      var parsed = JSON.parse(localStorage.getItem(favoriteStorageKey()) || '[]');
-      return Array.isArray(parsed) ? parsed.map(String) : [];
-    } catch (_) {
-      return [];
-    }
-  }
-
-  function writeFavorites(ids) {
-    localStorage.setItem(favoriteStorageKey(), JSON.stringify(ids));
-    var confirmed = JSON.parse(localStorage.getItem(favoriteStorageKey()) || '[]');
-    if (!Array.isArray(confirmed) || confirmed.length !== ids.length || confirmed.some(function (id, index) { return String(id) !== String(ids[index]); })) {
-      throw new Error('Não foi possível confirmar o favorito.');
-    }
-    return confirmed;
+  function updateFavoriteButtons(serviceId, active, options) {
+    options = options || {};
+    document.querySelectorAll('[data-favorite-toggle]').forEach(function (button) {
+      button.setAttribute('aria-pressed', String(Boolean(active)));
+      button.classList.toggle('is-active', Boolean(active));
+      button.setAttribute('aria-label', active ? 'Remover anúncio dos favoritos' : 'Salvar anúncio');
+      button.dataset.favoriteServiceId = String(serviceId || '');
+      button.dataset.favoriteState = options.state || (active ? 'active' : 'inactive');
+      if (options.message) button.title = options.message;
+      else button.removeAttribute('title');
+    });
+    return Boolean(active);
   }
 
   function syncFavoriteButtons(serviceId) {
-    var active = readFavorites().includes(String(serviceId));
-    document.querySelectorAll('[data-favorite-toggle]').forEach(function (button) {
-      button.setAttribute('aria-pressed', String(active));
-      button.classList.toggle('is-active', active);
-      button.setAttribute('aria-label', active ? 'Remover anúncio dos favoritos' : 'Salvar anúncio');
+    var normalizedServiceId = String(serviceId || '').trim();
+    if (!normalizedServiceId) {
+      updateFavoriteButtons('', false, { state: 'unavailable' });
+      return Promise.resolve(false);
+    }
+
+    return favoritesService().isFavorite(normalizedServiceId).then(function (active) {
+      return updateFavoriteButtons(normalizedServiceId, active, { state: 'ready' });
+    }).catch(function (error) {
+      if (error && error.code === 'DOKE_FAVORITES_AUTH_REQUIRED') {
+        return updateFavoriteButtons(normalizedServiceId, false, {
+          state: 'auth-required',
+          message: 'Entre para salvar este anúncio.'
+        });
+      }
+      updateFavoriteButtons(normalizedServiceId, false, {
+        state: 'error',
+        message: 'Favoritos indisponíveis no momento.'
+      });
+      document.dispatchEvent(new CustomEvent('doke:service-favorite-error', {
+        detail: {
+          serviceId: normalizedServiceId,
+          error: error && error.message ? error.message : 'Falha ao consultar favorito.'
+        }
+      }));
+      return false;
     });
-    return active;
+  }
+
+  function redirectToLogin(serviceId) {
+    document.dispatchEvent(new CustomEvent('doke:service-favorite-auth-required', {
+      detail: { serviceId: serviceId, returnUrl: root.location.href }
+    }));
+    if (root.location && typeof root.location.assign === 'function') {
+      root.location.assign('auth/login.html?next=' + encodeURIComponent(root.location.href));
+    }
   }
 
   function toggleFavorite(button) {
-    var root = getRoot();
-    var serviceId = resolveServiceId(root);
-    if (!serviceId || inFlightFavorite.has(serviceId)) return inFlightFavorite.get(serviceId) || Promise.resolve(false);
+    var pageRoot = getRoot();
+    var serviceId = resolveServiceId(pageRoot);
+    if (!serviceId || inFlightFavorite.has(serviceId)) {
+      return inFlightFavorite.get(serviceId) || Promise.resolve(false);
+    }
 
-    var before = readFavorites();
-    var wasActive = before.includes(serviceId);
-    var next = wasActive ? before.filter(function (id) { return id !== serviceId; }) : before.concat(serviceId);
-
+    var before = button.getAttribute('aria-pressed') === 'true';
     button.disabled = true;
     button.setAttribute('aria-busy', 'true');
-    button.setAttribute('aria-pressed', String(!wasActive));
-    button.classList.toggle('is-active', !wasActive);
+    button.dataset.favoriteState = 'saving';
 
-    var operation = Promise.resolve().then(function () {
-      writeFavorites(next);
-      syncFavoriteButtons(serviceId);
+    var operation;
+    try {
+      operation = favoritesService().toggle(serviceId);
+    } catch (error) {
+      operation = Promise.reject(error);
+    }
+
+    operation = Promise.resolve(operation).then(function (active) {
+      updateFavoriteButtons(serviceId, active, { state: 'ready' });
       document.dispatchEvent(new CustomEvent('doke:service-favorite-changed', {
-        detail: { serviceId: serviceId, isFavorite: !wasActive }
+        detail: { serviceId: serviceId, isFavorite: Boolean(active), authority: 'remote-or-fixture-memory' }
       }));
       if (!invalidateDomains(['marketplace'], 'service-favorite-changed')) {
         if (Doke.experience && Doke.experience.cache && typeof Doke.experience.cache.invalidatePrefix === 'function') {
@@ -100,13 +130,22 @@
         Doke.stableShellRouter && Doke.stableShellRouter.invalidate && Doke.stableShellRouter.invalidate('index.html');
         Doke.stableShellRouter && Doke.stableShellRouter.invalidate && Doke.stableShellRouter.invalidate('resultados.html');
       }
-      return !wasActive;
+      return Boolean(active);
     }).catch(function (error) {
-      try { writeFavorites(before); } catch (_) {}
-      syncFavoriteButtons(serviceId);
+      updateFavoriteButtons(serviceId, before, {
+        state: error && error.code === 'DOKE_FAVORITES_AUTH_REQUIRED' ? 'auth-required' : 'error',
+        message: error && error.code === 'DOKE_FAVORITES_AUTH_REQUIRED'
+          ? 'Entre para salvar este anúncio.'
+          : 'Não foi possível atualizar o favorito.'
+      });
       document.dispatchEvent(new CustomEvent('doke:service-favorite-error', {
-        detail: { serviceId: serviceId, error: error && error.message ? error.message : 'Falha ao salvar favorito.' }
+        detail: {
+          serviceId: serviceId,
+          code: error && error.code ? error.code : 'DOKE_FAVORITES_UNKNOWN_ERROR',
+          error: error && error.message ? error.message : 'Falha ao salvar favorito.'
+        }
       }));
+      if (error && error.code === 'DOKE_FAVORITES_AUTH_REQUIRED') redirectToLogin(serviceId);
       throw error;
     }).finally(function () {
       button.disabled = false;
@@ -128,7 +167,7 @@
         toggleFavorite(button).catch(function () {});
       });
     });
-    syncFavoriteButtons(resolveServiceId(getRoot()));
+    return syncFavoriteButtons(resolveServiceId(getRoot()));
   }
 
   function bindBudgetIntent() {
@@ -144,6 +183,19 @@
     });
   }
 
+  function bindAuthRefresh() {
+    if (unsubscribeAuth) return;
+    var subscribe = Doke.session && typeof Doke.session.subscribe === 'function'
+      ? Doke.session.subscribe.bind(Doke.session)
+      : root.DokeAuth && root.DokeAuth.service && typeof root.DokeAuth.service.onAuthChange === 'function'
+        ? root.DokeAuth.service.onAuthChange.bind(root.DokeAuth.service)
+        : null;
+    if (!subscribe) return;
+    unsubscribeAuth = subscribe(function () {
+      syncFavoriteButtons(resolveServiceId(getRoot()));
+    });
+  }
+
   function invalidate() {
     if (invalidateDomains(['detailAd'], 'detail-ad-refresh')) return;
     if (Doke.pageDataOrchestrator && typeof Doke.pageDataOrchestrator.invalidate === 'function') {
@@ -156,13 +208,14 @@
   }
 
   function boot() {
-    var root = getRoot();
-    if (!root || root.dataset.detailExperienceReady === 'true') return;
-    root.dataset.detailExperienceReady = 'true';
-    root.dataset.detailExperienceStaleMs = String(STALE_MS);
+    var pageRoot = getRoot();
+    if (!pageRoot || pageRoot.dataset.detailExperienceReady === 'true') return;
+    pageRoot.dataset.detailExperienceReady = 'true';
+    pageRoot.dataset.detailExperienceStaleMs = String(STALE_MS);
     setState('loading');
     bindFavoriteButtons();
     bindBudgetIntent();
+    bindAuthRefresh();
   }
 
   document.addEventListener('doke:detail-ad-data-ready', function (event) {
@@ -185,21 +238,22 @@
     document.addEventListener(name, invalidate);
   });
 
-  window.addEventListener('online', function () {
-    var root = getRoot();
-    if (!root) return;
+  root.addEventListener('online', function () {
+    var pageRoot = getRoot();
+    if (!pageRoot) return;
     invalidate();
+    syncFavoriteButtons(resolveServiceId(pageRoot));
     if (Doke.detailAdDataController && typeof Doke.detailAdDataController.load === 'function') {
-      Doke.detailAdDataController.load(root, { forceRefresh: true });
+      Doke.detailAdDataController.load(pageRoot, { forceRefresh: true });
     }
   });
 
-  Doke.detailAdExperience = {
+  Doke.detailAdExperience = Object.freeze({
     boot: boot,
     invalidate: invalidate,
     toggleFavorite: toggleFavorite,
     syncFavoriteButtons: syncFavoriteButtons
-  };
+  });
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
   else boot();
