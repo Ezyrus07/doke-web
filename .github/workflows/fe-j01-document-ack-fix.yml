@@ -28,7 +28,6 @@ jobs:
         shell: bash
         run: |
           python - <<'PY'
-          import re
           from pathlib import Path
 
           lifecycle_path = Path('assets/js/core/navigation-lifecycle.js')
@@ -36,59 +35,82 @@ jobs:
 
           doc_start = lifecycle.index('  function documentNavigate(url, options) {')
           doc_end = lifecycle.index('\n  function go(href, options) {', doc_start)
-          doc_block = lifecycle[doc_start:doc_end]
-          doc_pattern = re.compile(
-              r"return new Promise\(function \(resolve\) \{\s*"
-              r"resolve\(true\);\s*"
-              r"window\.setTimeout\(function \(\) \{\s*"
-              r"if \(options\.replace === true\) window\.location\.replace\(url\.href\);\s*"
-              r"else window\.location\.assign\(url\.href\);\s*"
-              r"\}, 64\);\s*"
-              r"\}\);"
-          )
-          new_doc = """window.setTimeout(function () {
-                if (options.replace === true) window.location.replace(url.href);
-                else window.location.assign(url.href);
-              }, 0);
-              return true;"""
-          doc_block, doc_count = doc_pattern.subn(new_doc, doc_block, count=1)
-          if doc_count != 1:
-              raise SystemExit(f'document navigation block matches: {doc_count}')
-          lifecycle = lifecycle[:doc_start] + doc_block + lifecycle[doc_end:]
+          new_doc = """  function documentNavigate(url, options) {
+            var id = routeBegin({
+              from: window.location.href,
+              to: url.href,
+              source: options.source || 'document-fallback',
+              replace: options.replace === true,
+              restore: options.restoreScroll === true,
+              adapter: 'document'
+            });
+            routeCommit(id, { adapter: 'document' });
+            window.setTimeout(function () {
+              if (options.replace === true) window.location.replace(url.href);
+              else window.location.assign(url.href);
+            }, 0);
+            return true;
+          }
+          """
+          lifecycle = lifecycle[:doc_start] + new_doc + lifecycle[doc_end + 1:]
 
           guard_start = lifecycle.index('  function runGuard(options) {')
           guard_end = lifecycle.index('\n  function bindPopstate() {', guard_start)
-          guard_block = lifecycle[guard_start:guard_end]
-          if guard_block.count('return go(') != 2 or guard_block.count('}).then(function () {') != 2:
-              raise SystemExit('guard navigation call shape changed')
-          guard_block = guard_block.replace('return go(', 'return Promise.resolve(go(', 2)
-          guard_block = guard_block.replace('}).then(function () {', '})).then(function () {', 2)
-          lifecycle = lifecycle[:guard_start] + guard_block + lifecycle[guard_end:]
+          new_guard = """  function runGuard(options) {
+            options = options || {};
+            if (typeof options.check !== 'function') {
+              return Promise.reject(new TypeError('Guard check must be a function.'));
+            }
+            var id = guardBegin({ name: options.name || 'guard', source: options.source || normalizePath() });
+            return Promise.resolve()
+              .then(function () { return options.check(); })
+              .then(function (result) {
+                var allowed = typeof options.allowed === 'function' ? options.allowed(result) : Boolean(result);
+                if (allowed) {
+                  guardAllow(id, { result: result });
+                  return { allowed: true, result: result, guardId: id };
+                }
+                var target = typeof options.redirect === 'function' ? options.redirect(result) : options.redirect;
+                if (!target) throw new Error('Guard negado sem destino seguro.');
+                guardRedirect(id, target, { result: result });
+                return Promise.resolve(go(target, {
+                  replace: true,
+                  source: 'guard',
+                  forceDocument: options.forceDocument === true
+                })).then(function () {
+                  return { allowed: false, result: result, guardId: id, redirect: normalizeUrl(target).href };
+                });
+              })
+              .catch(function (error) {
+                guardFail(id, error, { source: options.source || normalizePath() });
+                if (!options.fallback) throw error;
+                guardRedirect(id, options.fallback, { fallback: true });
+                return Promise.resolve(go(options.fallback, {
+                  replace: true,
+                  source: 'guard-fallback',
+                  forceDocument: options.forceDocument === true
+                })).then(function () {
+                  return { allowed: false, error: error, guardId: id, redirect: normalizeUrl(options.fallback).href };
+                });
+              });
+          }
+          """
+          lifecycle = lifecycle[:guard_start] + new_guard + lifecycle[guard_end + 1:]
           lifecycle_path.write_text(lifecycle)
 
           test_path = Path('scripts/test-navigation-lifecycle-core-contract.js')
           test = test_path.read_text()
-          test_pattern = re.compile(
-              r"const documentNavigation = api\.navigation\.go\('https://doke\.test/pagamento-profissional\.html', \{\s*"
-              r"source: 'test-document-navigation',\s*"
-              r"forceDocument: true\s*"
-              r"\}\);\s*"
-              r"assert\.strictEqual\(assigned\.length, 0, 'document navigation must not destroy the caller context synchronously'\);\s*"
-              r"await documentNavigation;\s*"
-              r"assert\.strictEqual\(assigned\.length, 0, 'document navigation must settle before the hard navigation task'\);\s*"
-              r"await new Promise\(\(resolve\) => setTimeout\(resolve, 80\)\);"
-          )
-          new_test = """const documentNavigationResult = api.navigation.go('https://doke.test/pagamento-profissional.html', {
-              source: 'test-document-navigation',
-              forceDocument: true
-            });
-            assert.strictEqual(documentNavigationResult, true, 'document navigation must acknowledge synchronously');
-            assert.strictEqual(assigned.length, 0, 'document navigation must not destroy the caller context synchronously');
-            await new Promise((resolve) => setTimeout(resolve, 0));"""
-          test, test_count = test_pattern.subn(new_test, test, count=1)
-          if test_count != 1:
-              raise SystemExit(f'document navigation test block matches: {test_count}')
-          test_path.write_text(test)
+          test_start = test.index("  const documentNavigation = api.navigation.go('https://doke.test/pagamento-profissional.html'")
+          test_end = test.index('  assert.deepStrictEqual(assigned.at(-1), {', test_start)
+          new_test = """  const documentNavigationResult = api.navigation.go('https://doke.test/pagamento-profissional.html', {
+            source: 'test-document-navigation',
+            forceDocument: true
+          });
+          assert.strictEqual(documentNavigationResult, true, 'document navigation must acknowledge synchronously');
+          assert.strictEqual(assigned.length, 0, 'document navigation must not destroy the caller context synchronously');
+          await new Promise((resolve) => setTimeout(resolve, 0));
+          """
+          test_path.write_text(test[:test_start] + new_test + test[test_end:])
           PY
 
       - name: Validate focused contracts
