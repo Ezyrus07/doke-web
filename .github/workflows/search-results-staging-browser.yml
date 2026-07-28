@@ -1,0 +1,64 @@
+name: Doke SEARCH-A05 Staging Browser
+
+on:
+  pull_request:
+    branches:
+      - 'cat/**'
+      - 'search/**'
+    paths:
+      - 'assets/js/repositories/search-repository.js'
+      - 'assets/js/services/search-service.js'
+      - 'assets/js/pages/search/server-results-surface.js'
+      - 'assets/js/pages/search-results.js'
+      - 'assets/css/pages/search-results.css'
+      - 'assets/js/core/supabase-config.js'
+      - 'resultados.html'
+      - 'tests/search/search-results-staging.spec.js'
+      - '.github/workflows/search-results-staging-browser.yml'
+  push:
+    branches:
+      - 'search/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: doke-search-a05-staging-browser-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  staging-browser:
+    name: SEARCH-A05 staging RPC browser journey
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout candidate tree
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run staging browser authority tests
+        run: node node_modules/@playwright/test/cli.js test tests/search/search-results-staging.spec.js --workers=1
+
+      - name: Upload staging browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: doke-search-a05-staging-browser-${{ github.sha }}
+          path: |
+            reports/generated/playwright-html/
+            reports/generated/playwright-results.json
+            test-results/
+          if-no-files-found: warn
+          retention-days: 7
