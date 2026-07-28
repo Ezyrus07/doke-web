@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 904 arquivos no escopo; 226 referências a localStorage; 66 a sessionStorage; 531 referências mock; 141 referências de rede/Supabase; 30 marcadores de implementação pendente.
+**Evidência estática observada:** 903 arquivos no escopo; 226 referências a localStorage; 66 a sessionStorage; 531 referências mock; 139 referências de rede/Supabase; 30 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -352,19 +352,17 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Evidências:**
 - Search and product-beta local runtime contracts pass.
-- No dedicated production search/indexing service is canonical.
-- favorites has RLS disabled.
 - SEARCH-A02 retired browser-persistent favorite authority and made public.favorites canonical for authenticated UUID subjects.
 - SEARCH-A03 activates one owner-scoped favorite snapshot across home, results, detail and owner-profile favorite surfaces without per-card reads.
 - SEARCH-A03 technical head 23006e49f8903480f4c791fec5196504f0c60a8e passed dedicated authority/runtime gates, Quality #1294, blocking E2E, 105 structural guards and Diagnostic #958.
+- No dedicated canonical server-side search and indexing contract exists yet.
+- Read-only staging inspection confirmed public.favorites RLS enabled with three owner-scoped SELECT, INSERT and DELETE policies.
 
 **Bloqueadores:**
 - **SEARCH-B02 · HIGH · server_search:** Filtering, ranking, geospatial eligibility and pagination remain predominantly frontend/local contracts. _(Fase 5)_
 - **SEARCH-B03 · MEDIUM · analytics:** Ranking signals and anti-manipulation controls are incomplete. _(Fase 15)_
 
 **Próximas ações:**
-- Define server-side search DTO, pagination and geographic eligibility.
-- Implement ranking baseline and conversion instrumentation.
 - Define and implement a bounded server-side search DTO with cursor pagination and deterministic geographic eligibility.
 - Move ranking signals to a documented server-controlled baseline with conversion instrumentation, monitoring and rollback.
 
@@ -888,7 +886,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2125 arquivos no escopo; 485 referências a localStorage; 139 a sessionStorage; 841 referências mock; 526 referências de rede/Supabase; 84 marcadores de implementação pendente.
+**Evidência estática observada:** 2124 arquivos no escopo; 485 referências a localStorage; 139 a sessionStorage; 841 referências mock; 524 referências de rede/Supabase; 84 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
@@ -949,4 +947,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-07-28T11:58:00-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-07-28T12:06:00-03:00._
