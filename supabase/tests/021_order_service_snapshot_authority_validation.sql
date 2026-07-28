@@ -96,11 +96,13 @@ begin
     'not_public_until_approved'
   );
 
+  perform set_config('doke.service_moderation_apply', 'on', true);
   update public.services
      set approved_version_id = v_version_one_id,
          status = 'published',
          moderation_status = 'published'
    where id = v_service_id;
+  perform set_config('doke.service_moderation_apply', 'off', true);
 
   insert into public.orders (
     id, client_id, professional_id, service_id, title, description, status, metadata
@@ -162,6 +164,7 @@ begin
      set review_status = 'superseded'
    where id = v_version_one_id;
 
+  perform set_config('doke.service_moderation_apply', 'on', true);
   update public.services
      set approved_version_id = v_version_two_id,
          title = 'Versão aprovada dois',
@@ -169,6 +172,7 @@ begin
          status = 'published',
          moderation_status = 'published'
    where id = v_service_id;
+  perform set_config('doke.service_moderation_apply', 'off', true);
 
   select * into v_order from public.orders where id = v_order_one_id;
   if v_order.service_version_id is distinct from v_version_one_id
