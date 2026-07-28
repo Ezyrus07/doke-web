@@ -106,14 +106,20 @@ const servicesService = read(files.servicesService);
 [
   'ensureMediaUploadService',
   'submitThroughCanonicalAuthority',
+  'submitFixtureForReview',
   'service-media-upload-service.js',
-  'authority.submitForReview'
+  'authority.submitForReview',
+  "syncStatus: 'fixture-memory'",
+  'repository.save('
 ].forEach((marker) => assert(servicesService.includes(marker), 'services routing marker missing: ' + marker));
+assert(!servicesService.includes('repository.submitForReview'),
+  'services layer must not expose the legacy repository submission route');
 
 if (!process.exitCode) {
   console.log('[CAT-A04-UPLOAD] immutable upload reservation authority is structurally present.');
   console.log('[CAT-A04-UPLOAD] browser Storage mutation and service_media DML are retired by migration.');
   console.log('[CAT-A04-UPLOAD] legacy dispatcher submission fails closed without an upload intent.');
+  console.log('[CAT-A04-UPLOAD] fixture submission is memory-only and cannot call the legacy repository media route.');
   console.log('[CAT-A04-UPLOAD] intent invariants, item-count guard and status lookup index are registered.');
   console.log('[CAT-A04-UPLOAD] signed upload and atomic intent consumption gates are registered.');
 }
