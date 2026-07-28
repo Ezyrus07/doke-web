@@ -48,9 +48,9 @@ const results = read(files.results);
   "resultsPagination: queryAny('[data-results-pagination]')",
   "resultsLoadMore: queryAny('[data-results-load-more]')",
   'window.Doke?.searchResultsServerSurface',
-  'surface.render({',
-  'surface.loadMore()',
-  'surface.cancel()',
+  'serverResultsSurface.render({',
+  'serverResultsSurface?.loadMore?.()',
+  'serverResultsSurface?.cancel?.()',
   "setResultsState('error')"
 ].forEach((marker) => assert(results.includes(marker), `results activation marker missing: ${marker}`));
 [
