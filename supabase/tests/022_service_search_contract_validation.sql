@@ -101,7 +101,12 @@ begin
     (v_professional_local, 'Profissional Local', 'search.a04.local', 'Salvador', 'BA'),
     (v_professional_second, 'Profissional Segundo', 'search.a04.second', 'Salvador', 'BA'),
     (v_professional_online, 'Profissional Online', 'search.a04.online', 'São Paulo', 'SP'),
-    (v_professional_nearby, 'Profissional Próximo', 'search.a04.nearby', 'Lauro de Freitas', 'BA');
+    (v_professional_nearby, 'Profissional Próximo', 'search.a04.nearby', 'Lauro de Freitas', 'BA')
+  on conflict (user_id) do update
+    set display_name = excluded.display_name,
+        username = excluded.username,
+        city = excluded.city,
+        state = excluded.state;
 
   insert into public.professional_profiles (
     user_id, headline, document_status, average_rating, reviews_count,
@@ -110,7 +115,15 @@ begin
     (v_professional_local, 'Eletricista residencial', 'verified', 4.9, 31, 20, 'active', 'verified'),
     (v_professional_second, 'Encanador residencial', 'verified', 4.7, 18, 12, 'active', 'verified'),
     (v_professional_online, 'Eletricista remoto', 'verified', 4.8, 22, 15, 'active', 'verified'),
-    (v_professional_nearby, 'Eletricista metropolitano', 'verified', 4.6, 9, 7, 'active', 'verified');
+    (v_professional_nearby, 'Eletricista metropolitano', 'verified', 4.6, 9, 7, 'active', 'verified')
+  on conflict (user_id) do update
+    set headline = excluded.headline,
+        document_status = excluded.document_status,
+        average_rating = excluded.average_rating,
+        reviews_count = excluded.reviews_count,
+        completed_orders_count = excluded.completed_orders_count,
+        setup_status = excluded.setup_status,
+        verification_status = excluded.verification_status;
 
   insert into public.service_categories (id, name, slug, is_active, sort_order)
   values (v_category_id, 'Eletricista', 'eletricista', true, 1);

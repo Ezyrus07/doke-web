@@ -62,7 +62,12 @@ begin
     'Profissional Snapshot Aprovado',
     'search.a04.approved.snapshot',
     'Salvador', 'BA'
-  );
+  )
+  on conflict (user_id) do update
+    set display_name = excluded.display_name,
+        username = excluded.username,
+        city = excluded.city,
+        state = excluded.state;
 
   insert into public.professional_profiles (
     user_id, headline, document_status, average_rating, reviews_count,
@@ -71,7 +76,15 @@ begin
     v_professional_id,
     'Especialista de snapshot aprovado',
     'verified', 4.9, 12, 8, 'active', 'verified'
-  );
+  )
+  on conflict (user_id) do update
+    set headline = excluded.headline,
+        document_status = excluded.document_status,
+        average_rating = excluded.average_rating,
+        reviews_count = excluded.reviews_count,
+        completed_orders_count = excluded.completed_orders_count,
+        setup_status = excluded.setup_status,
+        verification_status = excluded.verification_status;
 
   insert into public.service_categories (id, name, slug, is_active, sort_order)
   values (v_category_id, 'Autoridade Aprovada', 'autoridade-aprovada', true, 1);
