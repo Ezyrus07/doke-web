@@ -118,6 +118,73 @@ vm.runInContext(fs.readFileSync('assets/js/services/services-service.js', 'utf8'
 
 const image = 'data:image/png;base64,' + Buffer.from('canonical-image').toString('base64');
 
+const runFixtureRuntime = async () => {
+  let fixtureSaves = 0;
+  let fixtureLegacySubmissions = 0;
+  const fixtureActorId = 'fixture-professional-1';
+  const fixtureRepository = {
+    getProviderStatus() { return { provider: 'fixture-memory' }; },
+    submitForReview() {
+      fixtureLegacySubmissions += 1;
+      throw new Error('fixture must not call legacy submission');
+    },
+    save(service) {
+      fixtureSaves += 1;
+      return Promise.resolve(service);
+    },
+    list() { return Promise.resolve([]); },
+    getById() { return Promise.resolve(null); }
+  };
+  const fixtureContext = {
+    console,
+    Promise,
+    Blob,
+    Uint8Array,
+    URLSearchParams,
+    setTimeout,
+    clearTimeout,
+    atob,
+    window: null,
+    document: {
+      createElement() { throw new Error('fixture flow must not load media upload authority'); },
+      querySelector() { return null; },
+      head: { appendChild() {} },
+      documentElement: { appendChild() {} }
+    }
+  };
+  fixtureContext.window = fixtureContext;
+  fixtureContext.Doke = {
+    repositories: { services: fixtureRepository },
+    services: {
+      professionalAccess: {
+        ACTIONS: { PUBLISH_SERVICE: 'publish_service' },
+        assert() {
+          return Promise.resolve({
+            user: { id: fixtureActorId, name: 'Fixture Teste' },
+            professionalProfile: { id: 'fixture-profile-1' },
+            verification: { status: 'verified' }
+          });
+        }
+      }
+    },
+    session: { getCurrentUser() { return { id: fixtureActorId }; } }
+  };
+
+  vm.createContext(fixtureContext);
+  vm.runInContext(fs.readFileSync('assets/js/services/services-service.js', 'utf8'), fixtureContext);
+  const saved = await fixtureContext.Doke.services.services.create({
+    id: 'fixture-service-1',
+    title: 'Fixture local',
+    images: [image]
+  });
+
+  assert.equal(fixtureLegacySubmissions, 0, 'fixture executed legacy repository submission');
+  assert.equal(fixtureSaves, 1, 'fixture did not persist through memory repository save');
+  assert.equal(saved.syncStatus, 'fixture-memory');
+  assert.equal(saved.status, 'draft');
+  assert.equal(saved.moderationStatus, 'pending_review');
+};
+
 context.Doke.services.services.create({
   id: 'service-test-1',
   title: 'Serviço de teste válido',
@@ -126,7 +193,7 @@ context.Doke.services.services.create({
   description: 'Descrição completa suficientemente extensa para a submissão versionada do serviço de teste.',
   quoteMode: 'default',
   images: [image]
-}).then((saved) => {
+}).then(async (saved) => {
   assert.equal(directRepositorySubmissions, 0, 'legacy repository submission executed');
   assert.equal(actions.length, 2);
   assert.equal(actions[0].action, 'prepare_service_media_uploads');
@@ -143,7 +210,9 @@ context.Doke.services.services.create({
   assert.equal(submit.p_snapshot.image, '');
   assert.equal(saved.pendingVersionId, '22222222-2222-4222-8222-222222222222');
   assert.equal(saved.images.length, 1);
-  console.log('Service media signed upload authority runtime: PASS');
+
+  await runFixtureRuntime();
+  console.log('Service media signed upload and fixture isolation runtime: PASS');
 }).catch((error) => {
   console.error(error);
   process.exitCode = 1;
