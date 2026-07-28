@@ -15,6 +15,8 @@ const requiredFiles = [
   'scripts/test-service-media-upload-authority-runtime.js',
   'scripts/audit-service-media-cleanup-authority.js',
   'scripts/test-service-media-cleanup-authority-runtime.js',
+  'scripts/audit-order-service-snapshot-authority.js',
+  'scripts/test-order-service-snapshot-authority-runtime.js',
 ];
 
 const requiredScripts = [
@@ -70,6 +72,8 @@ const supplementalAudits = [
   'scripts/test-service-media-upload-authority-runtime.js',
   'scripts/audit-service-media-cleanup-authority.js',
   'scripts/test-service-media-cleanup-authority-runtime.js',
+  'scripts/audit-order-service-snapshot-authority.js',
+  'scripts/test-order-service-snapshot-authority-runtime.js',
 ];
 
 let errors = [];
