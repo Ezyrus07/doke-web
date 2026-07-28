@@ -1,0 +1,85 @@
+{
+  "schemaVersion": "1.0.0",
+  "domain": "SEARCH-001",
+  "sublot": "SEARCH-A05",
+  "status": "CANDIDATE_IMPLEMENTATION_PENDING",
+  "title": "Atomic activation of canonical server-side service results",
+  "recordedAt": "2026-07-28T13:58:00-03:00",
+  "baseHead": "87af864759643c9eec50873defcc22de86882387",
+  "preconditions": {
+    "searchA04Complete": true,
+    "stagingRpcValidated": true,
+    "approvedSnapshotAuthorityValidated": true,
+    "sqlTest022": "success",
+    "sqlTest023": "success",
+    "productionGate": "blocked"
+  },
+  "rootCause": [
+    "The validated server-side RPC was not loaded by resultados.html.",
+    "Service results still downloaded the full approved catalog and filtered, ranked and sliced it in the browser.",
+    "The page had no cursor continuation control and silently created related local fallback cards when exact results were absent."
+  ],
+  "targetAuthority": {
+    "repository": "assets/js/repositories/search-repository.js",
+    "service": "assets/js/services/search-service.js",
+    "surface": "assets/js/pages/search/server-results-surface.js",
+    "rpc": "public.search_public_services_v1(jsonb)",
+    "initialPageSize": 12,
+    "continuation": "opaque_server_cursor",
+    "remoteFailureMode": "fail_closed",
+    "localCatalogFallback": "forbidden_for_service_results",
+    "duplicateCursorRows": "discarded_by_service_identity"
+  },
+  "scope": {
+    "serviceResults": "canonical_server_activation",
+    "users": "static_pool_preserved",
+    "workers": "static_pool_preserved",
+    "publications": "static_pool_preserved",
+    "suggestions": "static_pool_preserved",
+    "searchHistory": "browser_local_preserved",
+    "ranking": "SEARCH_B03_preserved"
+  },
+  "ui": {
+    "loadMoreButton": "data-results-load-more",
+    "paginationContainer": "data-results-pagination",
+    "loadingState": "existing_results_state",
+    "errorState": "existing_hydration_error_boundary",
+    "loadedCount": "current_accumulated_server_rows",
+    "favoritesHydration": "shared_canonical_snapshot"
+  },
+  "validation": {
+    "surfaceRuntime": "scripts/test-search-results-server-surface-runtime.js",
+    "activationAudit": "scripts/audit-search-results-server-activation.js",
+    "dedicatedWorkflow": ".github/workflows/search-results-server-activation.yml",
+    "status": "pending"
+  },
+  "matrix": {
+    "maturityPreserved": 2,
+    "userFacingAuthorityTarget": "hybrid",
+    "serverAuthorityTarget": "partial",
+    "stagingEvidenceTarget": "staging_validated",
+    "securityGatePreserved": "blocked",
+    "productionGatePreserved": "blocked",
+    "searchB02": "eligible_for_reconciliation_after_final_UI_and_E2E_validation",
+    "searchB03": "preserved"
+  },
+  "safety": {
+    "stagingChangedByA05": false,
+    "productionChanged": false,
+    "realAccountsChanged": false,
+    "realServicesChanged": false,
+    "persistentSyntheticEntitiesCreated": false,
+    "paidConfigChanged": false,
+    "smsOrOauthChanged": false,
+    "prMerged": false,
+    "prReadyForReview": false
+  },
+  "remaining": [
+    "Integrate repository, service and server results surface in resultados.html.",
+    "Retire full-catalog download, browser service filtering, related-service fallback and fixed six-card slicing.",
+    "Add and validate cursor continuation.",
+    "Keep non-service discovery pools unchanged.",
+    "Reconcile SEARCH-B02 only after final CI and staging browser validation."
+  ],
+  "nextControlledStep": "Apply the atomic resultados.html/search-results.js integration, validate runtime and browser journeys, then decide SEARCH-B02 reconciliation."
+}
