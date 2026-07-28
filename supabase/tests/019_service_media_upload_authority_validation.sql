@@ -4,6 +4,8 @@
 begin;
 
 do $validation$
+declare
+  v_dispatcher_definition text;
 begin
   if to_regclass('private.service_media_upload_intents') is null then
     raise exception 'CAT_A04_UPLOAD_INTENTS_MISSING';
@@ -19,6 +21,15 @@ begin
   end if;
   if to_regprocedure('public.submit_service_for_review_with_media_internal(uuid,text,jsonb,text,uuid,jsonb)') is null then
     raise exception 'CAT_A04_SUBMIT_WITH_MEDIA_FUNCTION_MISSING';
+  end if;
+  if to_regprocedure('public.execute_self_service_operation_internal_pre_cat_a04(uuid,text,jsonb)') is null then
+    raise exception 'CAT_A04_PREVIOUS_DISPATCHER_MISSING';
+  end if;
+
+  select pg_get_functiondef('public.execute_self_service_operation_internal(uuid,text,jsonb)'::regprocedure)
+  into v_dispatcher_definition;
+  if position('DOKE_SERVICE_MEDIA_UPLOAD_INTENT_REQUIRED' in v_dispatcher_definition) = 0 then
+    raise exception 'CAT_A04_LEGACY_SUBMIT_LOCKDOWN_MISSING';
   end if;
 
   if has_table_privilege('anon', 'public.service_media', 'INSERT')
@@ -58,6 +69,11 @@ begin
       'authenticated',
       'public.submit_service_for_review_with_media_internal(uuid,text,jsonb,text,uuid,jsonb)',
       'EXECUTE'
+    )
+    or has_function_privilege(
+      'authenticated',
+      'public.execute_self_service_operation_internal(uuid,text,jsonb)',
+      'EXECUTE'
     ) then
     raise exception 'CAT_A04_BROWSER_INTERNAL_RPC_EXECUTE_REMAINS';
   end if;
@@ -75,6 +91,11 @@ begin
     or not has_function_privilege(
       'service_role',
       'public.submit_service_for_review_with_media_internal(uuid,text,jsonb,text,uuid,jsonb)',
+      'EXECUTE'
+    )
+    or not has_function_privilege(
+      'service_role',
+      'public.execute_self_service_operation_internal(uuid,text,jsonb)',
       'EXECUTE'
     ) then
     raise exception 'CAT_A04_SERVICE_ROLE_EXECUTE_MISSING';
