@@ -157,8 +157,8 @@ begin
     'major',
     'pending_review',
     jsonb_build_object(
-      'title', 'Pending Secret Needle',
-      'description', 'pendingsecretneedle must never affect public discovery',
+      'title', 'Replacement Approved Needle',
+      'description', 'pendingsecretneedle must never affect public discovery before approval',
       'category', 'Autoridade Aprovada',
       'categorySlug', 'autoridade-aprovada',
       'city', 'Salvador',
@@ -211,8 +211,7 @@ begin
 
   update public.service_versions
      set review_status = 'approved',
-         reviewed_at = now(),
-         snapshot = jsonb_set(snapshot, '{title}', '"Replacement Approved Needle"'::jsonb, true)
+         reviewed_at = now()
    where id = v_pending_version_id;
 
   perform set_config('doke.service_moderation_apply', 'on', true);
