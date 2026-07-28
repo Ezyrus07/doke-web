@@ -1,0 +1,72 @@
+{
+  "schemaVersion": "1.0.0",
+  "domain": "CAT-001",
+  "sublot": "CAT-A05",
+  "status": "RECONCILIATION_CANDIDATE_CI_PENDING",
+  "title": "CAT-001 final reconciliation and domain-closure candidate",
+  "recordedAt": "2026-07-28T07:15:00-03:00",
+  "headBeforeCandidate": "659d74c37cc30a8073fa69f58165742f559cf8d5",
+  "scope": [
+    "Reconcile the cumulative CAT-A01, CAT-A02, CAT-A03, CAT-A04 and CAT-B04 authority evidence.",
+    "Prevent CAT-001 from being marked closed before all final CI lanes converge on one stable head.",
+    "Preserve CAT-B04 in the matrix until immutable-order-snapshot evidence is confirmed by the canonical CI lanes.",
+    "Preserve productionGate=blocked and the draft/unmerged PR state."
+  ],
+  "authoritySummary": {
+    "publicCatalog": "remote approved services and service_media",
+    "serviceDraftAuthority": "Supabase or current-runtime non-UUID fixture memory",
+    "serviceEditAuthority": "versioned server-side review submission",
+    "serviceLifecycleAuthority": "server-side owner lifecycle operation",
+    "mediaUploadAuthority": "immutable signed upload reservation and one-time intent consumption",
+    "mediaCleanupAuthority": "reference-safe server-side claim and Storage API deletion",
+    "orderSnapshotAuthority": "PostgreSQL approved service version trigger",
+    "browserPersistentCatalogAuthority": false,
+    "browserSelectedOrderProfessionalTrusted": false,
+    "browserSubmittedOrderSnapshotTrusted": false
+  },
+  "evidence": {
+    "catA01": "complete",
+    "catA02": "complete",
+    "catA03": "complete",
+    "catA04": "technically_complete_ci_pending",
+    "catB04": "candidate_validated_ci_pending",
+    "stagingMigrations": [149, 150, 151, 152, 153, 154, 155, 156, 157],
+    "sqlValidations": [18, 19, 20, 21],
+    "persistentSyntheticEntitiesRemaining": 0
+  },
+  "matrixContract": {
+    "userFacingAuthority": "remote",
+    "serverAuthority": "canonical",
+    "stagingEvidence": "staging_operational",
+    "productionGate": "blocked",
+    "catB04BlockerMustRemain": true,
+    "removalCondition": "Quality, blocking E2E, 105 visual structural guards, Canary and Diagnostic must succeed on one stable final head."
+  },
+  "ci": {
+    "quality": "pending_observable_result",
+    "blockingE2e": "pending_observable_result",
+    "visualStructuralGuards": "pending_observable_result",
+    "canary": "pending_observable_result",
+    "diagnostic": "pending_observable_result",
+    "connectorWorkflowRunsOnPreviousHead": 0,
+    "connectorCommitStatusesOnPreviousHead": 0
+  },
+  "safety": {
+    "productionChanged": false,
+    "realAccountsChanged": false,
+    "realOrdersChanged": false,
+    "persistentSyntheticEntitiesCreated": false,
+    "paidConfigChanged": false,
+    "smsOrOauthChanged": false,
+    "prMerged": false,
+    "prReadyForReview": false,
+    "parentPrMerged": false
+  },
+  "remaining": [
+    "Observe all five canonical lanes on the final stable head.",
+    "Only after those lanes pass, update the engineering journal with final validated heads and run identifiers.",
+    "Only after those lanes pass, remove CAT-B04 from the matrix and regenerate the deterministic human-readable matrix.",
+    "Update the PR description with CAT-A04, CAT-B04 and CAT-A05 final evidence without marking it ready or merging it."
+  ],
+  "nextControlledStep": "Register this audit in the canonical Quality pipeline, observe the final lanes, and perform the final matrix/journal transition only with verifiable CI evidence."
+}
