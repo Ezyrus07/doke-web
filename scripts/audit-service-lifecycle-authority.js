@@ -17,6 +17,7 @@ const files = {
   service: 'assets/js/services/services-service.js',
   runtime: 'scripts/test-service-lifecycle-authority-runtime.js',
   catA02: 'docs/validation/CAT-001-A02-SERVICE-AUTHORITY-RETIREMENT.json',
+  catA04: 'docs/validation/CAT-001-A04-FINAL-CLOSURE-CANDIDATE.json',
   evidenceJson: 'docs/validation/CAT-001-A03-SERVICE-LIFECYCLE-AUTHORITY.json',
   evidenceMarkdown: 'docs/validation/CAT-001-A03-SERVICE-LIFECYCLE-AUTHORITY.md',
   quality: '.github/workflows/quality.yml'
@@ -52,13 +53,30 @@ const repository = read(files.repository);
   "upsert(payload, { onConflict: 'external_id' })"
 ].forEach((marker) => assert(!repository.includes(marker), 'direct catalog mutation remains: ' + marker));
 
+const catA04 = JSON.parse(read(files.catA04));
+const catA04Reconciled = Boolean(
+  ['TECHNICALLY_COMPLETE_CI_PENDING', 'COMPLETE'].includes(catA04.status) &&
+  catA04.closure &&
+  catA04.closure.legacyRepositorySubmissionReachableFromServiceLayer === false &&
+  catA04.closure.signedUploadRequiredForSupabase === true
+);
+
 const service = read(files.service);
 [
   'repository.transitionOwnedLifecycle',
-  'repository.submitForReview(candidate',
   'DOKE_SERVICE_MUTATION_SPLIT_REQUIRED',
   'DOKE_SERVICE_ARCHIVED'
 ].forEach((marker) => assert(service.includes(marker), 'service marker missing: ' + marker));
+if (catA04Reconciled) {
+  [
+    'function submitThroughCanonicalAuthority(',
+    'return authority.submitForReview(service, options || {}, repository)',
+    'return submitThroughCanonicalAuthority(repository, service, options)'
+  ].forEach((marker) => assert(service.includes(marker), 'post-CAT-A04 service marker missing: ' + marker));
+  assert(!service.includes('repository.submitForReview(candidate'), 'CAT-A04 cannot retain the pre-upload-authority review route');
+} else {
+  assert(service.includes('repository.submitForReview(candidate'), 'versioned review route missing');
+}
 assert(!service.includes('return repository.update(serviceId, patch || {})'), 'generic remote edit path remains');
 
 const runtime = read(files.runtime);
@@ -105,5 +123,6 @@ const quality = read(files.quality);
 if (!process.exitCode) {
   console.log('[CAT-A03] edits use versioned moderation instead of generic table updates.');
   console.log('[CAT-A03] lifecycle transitions use one owner-only server authority.');
+  console.log(`[CAT-A03] service submission uses ${catA04Reconciled ? 'CAT-A04 signed media authority' : 'the pre-CAT-A04 versioned review route'}.`);
   console.log('[CAT-A03] browser roles lost direct services write grants.');
 }
