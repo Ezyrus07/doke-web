@@ -1,0 +1,207 @@
+/* Home account onboarding composition extracted from the home manifest by FE-C01. */
+
+/* Onboarding must never paint before the remote account state is authoritative. */
+.account-onboarding:not([data-onboarding-visibility="open"]) {
+  display: none;
+}
+
+/* Account onboarding — CEP-first, one-minute completion. */
+.account-onboarding__surface {
+  width: min(620px, calc(100vw - 32px));
+  max-width: 620px;
+}
+
+.account-onboarding__header {
+  display: block;
+  padding-bottom: 18px;
+}
+
+.account-onboarding__header .doke-modal-title {
+  margin-top: 8px;
+  font-size: clamp(1.7rem, 4vw, 2.25rem);
+}
+
+.account-onboarding__header .doke-modal-description {
+  max-width: 48ch;
+  margin-top: 8px;
+}
+
+.account-onboarding__body {
+  display: block;
+}
+
+.account-onboarding__postal-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.account-onboarding__postal-field {
+  margin: 0;
+}
+
+.account-onboarding__postal-field .doke-input {
+  font-size: 1.05rem;
+  letter-spacing: 0.04em;
+}
+
+.account-onboarding__postal-action {
+  min-width: 126px;
+  height: 46px;
+  white-space: nowrap;
+}
+
+.account-onboarding__help {
+  display: block;
+  margin: 8px 0 0;
+  color: var(--text-muted, #6c7f94);
+  font-size: 0.78rem;
+}
+
+.account-onboarding__location {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  margin-top: 16px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--success, #148c78) 24%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--success, #148c78) 8%, white);
+}
+
+.account-onboarding__location[hidden] {
+  display: none;
+}
+
+.account-onboarding__location-icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--success, #148c78);
+  color: #fff;
+  font-weight: 800;
+}
+
+.account-onboarding__location strong,
+.account-onboarding__location small {
+  display: block;
+}
+
+.account-onboarding__location strong {
+  color: var(--text-strong, #0e2d4d);
+  font-size: 0.96rem;
+}
+
+.account-onboarding__location small {
+  margin-top: 2px;
+  color: var(--text-muted, #6c7f94);
+  font-weight: 700;
+}
+
+.account-onboarding__change {
+  border: 0;
+  background: transparent;
+  color: var(--brand-primary, #1f5f91);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.account-onboarding__optional {
+  margin-top: 18px;
+  border-top: 1px solid var(--border-subtle, #e1e9f1);
+}
+
+.account-onboarding__optional summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 2px 4px;
+  color: var(--text-strong, #0e2d4d);
+  font-weight: 700;
+  cursor: pointer;
+  list-style: none;
+}
+
+.account-onboarding__optional summary::-webkit-details-marker {
+  display: none;
+}
+
+.account-onboarding__optional summary::after {
+  content: '+';
+  font-size: 1.25rem;
+  line-height: 1;
+  color: var(--brand-primary, #1f5f91);
+}
+
+.account-onboarding__optional[open] summary::after {
+  content: '−';
+}
+
+.account-onboarding__optional summary span {
+  margin-left: auto;
+  color: var(--text-muted, #6c7f94);
+  font-size: 0.74rem;
+  font-weight: 600;
+}
+
+.account-onboarding__optional-fields {
+  display: grid;
+  gap: 14px;
+  padding-top: 14px;
+}
+
+.account-onboarding__optional-fields .doke-textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+
+.account-onboarding__feedback {
+  margin-top: 14px;
+}
+
+.account-onboarding__actions {
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+}
+
+@media (max-width: 620px) {
+  .account-onboarding__surface {
+    width: 100%;
+    max-width: none;
+    max-height: min(92dvh, 760px);
+    border-radius: 24px 24px 0 0;
+  }
+
+  .account-onboarding__postal-row {
+    grid-template-columns: 1fr;
+  }
+
+  .account-onboarding__postal-action {
+    width: 100%;
+  }
+
+  .account-onboarding__location {
+    grid-template-columns: 34px minmax(0, 1fr);
+  }
+
+  .account-onboarding__change {
+    grid-column: 2;
+    justify-self: start;
+    padding: 0;
+  }
+
+  .account-onboarding__actions {
+    display: flex;
+    flex-direction: column-reverse;
+  }
+
+  .account-onboarding__actions .doke-btn {
+    width: 100%;
+  }
+}
