@@ -9,6 +9,7 @@ const matrixPath = path.join(root, 'config/domain-completion-matrix.json');
 const a04Path = path.join(root, 'docs/validation/SEARCH-001-A04-SERVER-SEARCH-CONTRACT.json');
 const a05Path = path.join(root, 'docs/validation/SEARCH-001-A05-SERVER-RESULTS-ACTIVATION.json');
 const a01AuditPath = path.join(root, 'scripts/audit-search-authority-baseline.js');
+const a02AuditPath = path.join(root, 'scripts/audit-favorites-authority-retirement.js');
 const a04AuditPath = path.join(root, 'scripts/audit-search-server-contract.js');
 const validatedHead = '0dad31462c8fa4561501865b8dd730d452f87f08';
 const recordedAt = '2026-07-28T14:48:00-03:00';
@@ -131,14 +132,24 @@ a05.remaining = [
 a05.nextControlledStep = 'SEARCH-A06 — establish the server-controlled ranking baseline and observability contract for SEARCH-B03 without changing production.';
 
 replaceOnce(a01AuditPath,
-  "const serviceResultsActivated = Boolean(\n  serverContractValidated &&\n  a05Evidence &&\n  ['CANDIDATE_IMPLEMENTATION_PENDING', 'CANDIDATE_VALIDATION_RUNNING', 'COMPLETE'].includes(a05Evidence.status) &&",
-  "const serviceResultsActivated = Boolean(\n  serverContractValidated &&\n  a05Evidence &&\n  ['CANDIDATE_IMPLEMENTATION_PENDING', 'CANDIDATE_VALIDATION_RUNNING', 'COMPLETE'].includes(a05Evidence.status) &&");
-replaceOnce(a01AuditPath,
   "assert(searchDomain && searchDomain.maturity === 2, 'SEARCH-001 maturity must remain local_functional level 2 until controlled reconciliation');\nassert(searchDomain && searchDomain.userFacingAuthority === 'hybrid', 'SEARCH-001 user-facing authority must remain hybrid during staged activation');\nassert(searchDomain && searchDomain.serverAuthority === 'contract_only', 'SEARCH-001 server authority must remain contract_only until SEARCH-A05 reconciliation');\nassert(searchDomain && searchDomain.stagingEvidence === 'local_e2e', 'SEARCH-001 staging evidence must remain local_e2e until SEARCH-A05 reconciliation');",
   "const searchB02Reconciled = Boolean(a05Evidence && a05Evidence.status === 'COMPLETE' && a05Evidence.matrix && a05Evidence.matrix.searchB02 === 'reconciled_removed');\nassert(searchDomain && searchDomain.maturity === (searchB02Reconciled ? 3 : 2), 'SEARCH-001 maturity changed outside controlled A05 reconciliation');\nassert(searchDomain && searchDomain.userFacingAuthority === 'hybrid', 'SEARCH-001 user-facing authority must remain hybrid');\nassert(searchDomain && searchDomain.serverAuthority === (searchB02Reconciled ? 'partial' : 'contract_only'), 'SEARCH-001 server authority changed outside controlled A05 reconciliation');\nassert(searchDomain && searchDomain.stagingEvidence === (searchB02Reconciled ? 'staging_canary' : 'local_e2e'), 'SEARCH-001 staging evidence changed outside controlled A05 reconciliation');");
 replaceOnce(a01AuditPath,
   "const expectedBlockers = favoritesSurfacesComplete\n  ? ['SEARCH-B02', 'SEARCH-B03']\n  : ['SEARCH-B01', 'SEARCH-B02', 'SEARCH-B03'];",
   "const expectedBlockers = searchB02Reconciled\n  ? ['SEARCH-B03']\n  : favoritesSurfacesComplete\n    ? ['SEARCH-B02', 'SEARCH-B03']\n    : ['SEARCH-B01', 'SEARCH-B02', 'SEARCH-B03'];");
+
+replaceOnce(a02AuditPath,
+  "  a03EvidenceJson: 'docs/validation/SEARCH-001-A03-FAVORITES-SURFACES.json',\n  workflow: '.github/workflows/search-favorites-authority.yml'",
+  "  a03EvidenceJson: 'docs/validation/SEARCH-001-A03-FAVORITES-SURFACES.json',\n  a05EvidenceJson: 'docs/validation/SEARCH-001-A05-SERVER-RESULTS-ACTIVATION.json',\n  workflow: '.github/workflows/search-favorites-authority.yml'");
+replaceOnce(a02AuditPath,
+  "const matrix = JSON.parse(read(files.matrix));",
+  "const a05Evidence = exists(files.a05EvidenceJson) ? JSON.parse(read(files.a05EvidenceJson)) : null;\nconst searchB02Reconciled = Boolean(a05Evidence && a05Evidence.status === 'COMPLETE' && a05Evidence.matrix && a05Evidence.matrix.searchB02 === 'reconciled_removed');\n\nconst matrix = JSON.parse(read(files.matrix));");
+replaceOnce(a02AuditPath,
+  "assert(search && search.maturity === 2, 'SEARCH-001 maturity cannot advance before full domain reconciliation');\nassert(search && search.userFacingAuthority === 'hybrid', 'SEARCH-001 user-facing authority must remain hybrid during A02');\nassert(search && search.serverAuthority === 'contract_only', 'SEARCH-001 server authority must remain contract_only during A02');",
+  "assert(search && search.maturity === (searchB02Reconciled ? 3 : 2), 'SEARCH maturity changed outside controlled reconciliation');\nassert(search && search.userFacingAuthority === 'hybrid', 'SEARCH user-facing authority must remain hybrid');\nassert(search && search.serverAuthority === (searchB02Reconciled ? 'partial' : 'contract_only'), 'SEARCH server authority changed outside controlled reconciliation');");
+replaceOnce(a02AuditPath,
+  "  same(blockers, searchB01Reconciled ? ['SEARCH-B02', 'SEARCH-B03'] : ['SEARCH-B01', 'SEARCH-B02', 'SEARCH-B03']),",
+  "  same(blockers, searchB02Reconciled ? ['SEARCH-B03'] : searchB01Reconciled ? ['SEARCH-B02', 'SEARCH-B03'] : ['SEARCH-B01', 'SEARCH-B02', 'SEARCH-B03']),");
 
 replaceOnce(a04AuditPath,
   "assert(searchDomain && searchDomain.maturity === 2, 'SEARCH-A04 cannot advance maturity before controlled A05 reconciliation');\nassert(searchDomain && searchDomain.userFacingAuthority === 'hybrid', 'SEARCH-A04/A05 candidate must preserve hybrid user-facing authority');\nassert(searchDomain && searchDomain.serverAuthority === 'contract_only', 'matrix server authority must remain contract_only until A05 reconciliation');\nassert(searchDomain && searchDomain.stagingEvidence === 'local_e2e', 'matrix staging evidence must remain local_e2e until A05 reconciliation');",
