@@ -1,0 +1,65 @@
+{
+  "schemaVersion": "1.0.0",
+  "domain": "CAT-001",
+  "sublot": "CAT-A04",
+  "status": "TECHNICALLY_COMPLETE_CI_PENDING",
+  "title": "Service media lifecycle final closure candidate",
+  "recordedAt": "2026-07-28T01:40:00-03:00",
+  "rootCause": [
+    "The services repository still contained a complete legacy direct media upload and review submission implementation.",
+    "The legacy implementation could select predictable Storage paths, request upsert and mutate the service_media projection outside the signed upload intent authority.",
+    "Although database grants, Storage policies and the dispatcher already failed closed, the business service still exposed a repository submission branch for fixture mode."
+  ],
+  "closure": {
+    "remoteAuthority": "assets/js/services/service-media-upload-service.js",
+    "fixtureAuthority": "runtime-memory-only repository.save",
+    "legacyRepositorySubmissionReachableFromServiceLayer": false,
+    "signedUploadRequiredForSupabase": true,
+    "browserServiceMediaDml": false,
+    "browserStorageMutationPolicies": false,
+    "referenceSafeCleanupInstalled": true,
+    "productionChanged": false
+  },
+  "changes": [
+    "services-service routes all Supabase and UUID submissions exclusively through the signed upload authority.",
+    "Non-UUID fixtures are saved only through repository.save with fixture-memory state.",
+    "services-service no longer calls repository.submitForReview.",
+    "The structural audit rejects reintroduction of the legacy repository submission route.",
+    "The runtime covers both signed Supabase submission and fixture-memory submission and requires zero legacy repository submissions."
+  ],
+  "staging": {
+    "project": "doke-web-staging",
+    "projectRef": "zwkczgewzbsorbrjuzpb",
+    "uploadIntents": 0,
+    "uploadItems": 0,
+    "storageObjects": 3,
+    "catalogMediaRows": 3,
+    "cleanupEligible": 0,
+    "cleanupClaimed": 0,
+    "deleteFailed": 0,
+    "deleted": 0,
+    "authenticatedServiceMediaInsert": false,
+    "authenticatedServiceMediaUpdate": false,
+    "authenticatedServiceMediaDelete": false,
+    "browserStorageMutationPolicies": []
+  },
+  "validation": {
+    "structuralAuditRegisteredInQuality": true,
+    "runtimeRegisteredInQuality": true,
+    "sql019": "passed_with_rollback",
+    "sql020": "passed_with_rollback",
+    "stagingReadOnlyRecheck": "passed",
+    "quality": "not_observable_on_final_head",
+    "blockingE2e": "not_observable_on_final_head",
+    "visualStructuralGuards": "not_observable_on_final_head",
+    "canary": "not_observable_on_final_head",
+    "diagnostic": "not_observable_on_final_head"
+  },
+  "remainingRisks": [
+    "The dead legacy helper source still exists inside services-repository.js, but it is no longer reachable from the business service and all remote authorities fail closed.",
+    "The complete GitHub CI lanes must converge on one stable final head before CAT-A04 is declared closed.",
+    "The domain matrix and engineering journal remain for final reconciliation after CI evidence is available.",
+    "No destructive test was executed with a real or persistent synthetic entity."
+  ],
+  "nextControlledStep": "Confirm Quality, blocking E2E, 105 visual structural guards, Canary and Diagnostic on one stable head; then reconcile journal and matrix without changing production."
+}
