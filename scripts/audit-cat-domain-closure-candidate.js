@@ -42,39 +42,80 @@ const requiredFiles = [
 
 requiredFiles.forEach((file) => assert(exists(file), `Required CAT closure artifact missing: ${file}`));
 
+function validLane(lane, expectedHead) {
+  return Boolean(
+    lane &&
+    lane.status === 'success' &&
+    Number.isInteger(lane.runId) &&
+    Number.isInteger(lane.runNumber) &&
+    lane.head === expectedHead
+  );
+}
+
 if (!errors.length) {
   const a04 = readJson('docs/validation/CAT-001-A04-FINAL-CLOSURE-CANDIDATE.json');
   const b04 = readJson('docs/validation/CAT-001-B04-ORDER-SERVICE-SNAPSHOT-AUTHORITY.json');
   const a05 = readJson('docs/validation/CAT-001-A05-FINAL-RECONCILIATION-CANDIDATE.json');
   const matrix = readJson('config/domain-completion-matrix.json');
+  const journal = read('docs/DOKE-ENGINEERING-JOURNAL.md');
   const cat = (matrix.domains || []).find((domain) => domain && domain.id === 'CAT-001');
+  const blockers = cat && Array.isArray(cat.blockers) ? cat.blockers : [];
+  const hasCatB04 = blockers.some((blocker) => blocker && blocker.id === 'CAT-B04');
+  const pending = a04.status === 'TECHNICALLY_COMPLETE_CI_PENDING' &&
+    b04.status === 'CANDIDATE_VALIDATED_CI_PENDING' &&
+    a05.status === 'RECONCILIATION_CANDIDATE_CI_PENDING';
+  const complete = a04.status === 'COMPLETE' && b04.status === 'COMPLETE' && a05.status === 'COMPLETE';
 
-  assert(a04.status === 'TECHNICALLY_COMPLETE_CI_PENDING', 'CAT-A04 must remain technically complete and CI pending until final lanes converge.');
-  assert(b04.status === 'CANDIDATE_VALIDATED_CI_PENDING', 'CAT-B04 must remain candidate validated and CI pending until final lanes converge.');
-  assert(a05.status === 'RECONCILIATION_CANDIDATE_CI_PENDING', 'CAT-A05 must remain a CI-pending reconciliation candidate.');
-
-  assert(a04.validation && a04.validation.quality === 'not_observable_on_final_head', 'CAT-A04 Quality state must not be rewritten as passed without final-head evidence.');
-  assert(b04.validation && b04.validation.fullCi === 'pending', 'CAT-B04 full CI must remain pending without final-head evidence.');
-
+  assert(pending || complete, 'CAT-A04, CAT-B04 and CAT-A05 statuses must be consistently pending or complete.');
   assert(cat, 'CAT-001 domain entry is missing from the completion matrix.');
+
   if (cat) {
-    const blockers = Array.isArray(cat.blockers) ? cat.blockers : [];
     const nextActions = Array.isArray(cat.nextActions) ? cat.nextActions : [];
     const exitCriteria = Array.isArray(cat.exitCriteria) ? cat.exitCriteria : [];
-
+    assert(cat.maturity === 4, 'CAT-001 maturity must remain staging-operational level 4.');
     assert(cat.userFacingAuthority === 'remote', 'CAT-001 user-facing authority must remain remote.');
     assert(cat.serverAuthority === 'canonical', 'CAT-001 server authority must remain canonical.');
     assert(cat.stagingEvidence === 'staging_operational', 'CAT-001 staging evidence must remain operational.');
-    assert(cat.productionGate === 'blocked', 'CAT-001 production gate cannot advance before final closure evidence.');
-    assert(blockers.some((blocker) => blocker && blocker.id === 'CAT-B04'), 'CAT-B04 blocker must remain until the final CI lanes converge.');
-    assert(nextActions.some((item) => /immutable service snapshots/i.test(String(item))), 'CAT-001 next actions must still mention immutable service snapshots.');
+    assert(cat.securityGate === 'partial', 'CAT-001 security gate must remain partial.');
+    assert(cat.productionGate === 'blocked', 'CAT-001 production gate must remain blocked.');
     assert(exitCriteria.some((item) => /order snapshots are immutable/i.test(String(item))), 'CAT-001 exit criteria must require immutable order snapshots.');
+
+    if (pending) {
+      assert(hasCatB04, 'CAT-B04 blocker must remain until final CI lanes converge.');
+      assert(nextActions.some((item) => /immutable service snapshots/i.test(String(item))), 'Pending CAT-001 next actions must mention immutable service snapshots.');
+    }
+
+    if (complete) {
+      assert(!hasCatB04, 'CAT-B04 blocker must be removed after verified final closure.');
+      assert(nextActions.some((item) => /SEARCH-001/i.test(String(item))), 'Completed CAT-001 must hand off to SEARCH-001.');
+    }
   }
 
-  const laneNames = ['quality', 'blockingE2e', 'visualStructuralGuards', 'canary', 'diagnostic'];
-  laneNames.forEach((lane) => {
-    assert(a05.ci && a05.ci[lane] === 'pending_observable_result', `CAT-A05 lane ${lane} must remain pending until an observable final-head result exists.`);
-  });
+  if (pending) {
+    assert(a04.validation && a04.validation.quality === 'not_observable_on_final_head', 'Pending CAT-A04 must not claim Quality success.');
+    assert(b04.validation && b04.validation.fullCi === 'pending', 'Pending CAT-B04 full CI must remain pending.');
+    ['quality', 'blockingE2e', 'visualStructuralGuards', 'canary', 'diagnostic'].forEach((lane) => {
+      assert(a05.ci && a05.ci[lane] === 'pending_observable_result', `Pending CAT-A05 lane ${lane} must remain pending.`);
+    });
+  }
+
+  if (complete) {
+    const expectedHead = a05.validatedHead;
+    assert(/^[0-9a-f]{40}$/i.test(String(expectedHead || '')), 'Completed CAT-A05 requires a full validatedHead.');
+    assert(a04.validatedHead === expectedHead && b04.validatedHead === expectedHead, 'All completed CAT evidence must reference the same validated head.');
+    ['quality', 'blockingE2e', 'visualStructuralGuards', 'canary', 'diagnostic'].forEach((lane) => {
+      assert(validLane(a05.ci && a05.ci[lane], expectedHead), `Completed CAT-A05 lane ${lane} requires successful run evidence on the validated head.`);
+    });
+    assert(a04.validation && a04.validation.quality === 'success', 'Completed CAT-A04 requires Quality success.');
+    assert(a04.validation && a04.validation.blockingE2e === 'success', 'Completed CAT-A04 requires blocking E2E success.');
+    assert(a04.validation && a04.validation.visualStructuralGuards === 'success', 'Completed CAT-A04 requires visual guards success.');
+    assert(a04.validation && a04.validation.canary === 'success', 'Completed CAT-A04 requires Canary success.');
+    assert(a04.validation && a04.validation.diagnostic === 'success', 'Completed CAT-A04 requires Diagnostic success.');
+    assert(b04.validation && b04.validation.fullCi === 'success', 'Completed CAT-B04 requires full CI success.');
+    assert(journal.includes('# 2026-07-28 — CAT-A04 / fechamento do ciclo de mídia'), 'Completed CAT-A04 requires an append-only journal entry.');
+    assert(journal.includes('# 2026-07-28 — CAT-B04 / snapshot imutável de serviço em pedidos'), 'Completed CAT-B04 requires an append-only journal entry.');
+    assert(journal.includes('# 2026-07-28 — CAT-A05 / reconciliação final do CAT-001'), 'Completed CAT-A05 requires an append-only journal entry.');
+  }
 
   assert(a05.safety && a05.safety.productionChanged === false, 'CAT-A05 evidence must preserve production unchanged.');
   assert(a05.safety && a05.safety.prMerged === false, 'CAT-A05 evidence cannot claim the PR was merged.');
@@ -82,12 +123,11 @@ if (!errors.length) {
 }
 
 if (errors.length) {
-  console.error('[CAT-A05-CLOSURE] Reconciliation candidate audit failed:');
+  console.error('[CAT-A05-CLOSURE] Domain closure audit failed:');
   errors.forEach((error) => console.error(`- ${error}`));
   process.exit(1);
 }
 
-console.log('[CAT-A05-CLOSURE] All CAT-001 authority evidence is present.');
-console.log('[CAT-A05-CLOSURE] CAT-A04 and CAT-B04 remain explicitly CI pending.');
-console.log('[CAT-A05-CLOSURE] CAT-B04 blocker and blocked production gate are preserved.');
-console.log('[CAT-A05-CLOSURE] Premature domain closure is structurally prevented.');
+console.log('[CAT-A05-CLOSURE] All CAT-001 authority evidence is present and internally consistent.');
+console.log('[CAT-A05-CLOSURE] Pending and completed states are both fail-closed and evidence-gated.');
+console.log('[CAT-A05-CLOSURE] Maturity 4 and blocked production are preserved.');
