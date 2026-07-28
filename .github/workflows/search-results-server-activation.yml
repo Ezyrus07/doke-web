@@ -1,0 +1,85 @@
+name: Doke SEARCH-A05 Server Results Activation
+
+on:
+  pull_request:
+    branches:
+      - 'cat/**'
+      - 'search/**'
+    paths:
+      - 'assets/js/repositories/search-repository.js'
+      - 'assets/js/services/search-service.js'
+      - 'assets/js/pages/search/server-results-surface.js'
+      - 'assets/js/pages/search-results.js'
+      - 'assets/css/pages/search-results.css'
+      - 'resultados.html'
+      - 'supabase/migrations/158_service_search_contract.sql'
+      - 'supabase/migrations/159_service_search_approved_snapshot_authority.sql'
+      - 'supabase/tests/022_service_search_contract_validation.sql'
+      - 'supabase/tests/023_service_search_approved_snapshot_authority_validation.sql'
+      - 'scripts/audit-search-authority-baseline.js'
+      - 'scripts/audit-search-server-contract.js'
+      - 'scripts/audit-search-approved-snapshot-authority.js'
+      - 'scripts/test-search-server-contract-runtime.js'
+      - 'scripts/audit-search-results-server-activation.js'
+      - 'scripts/test-search-results-server-surface-runtime.js'
+      - 'docs/validation/SEARCH-001-A04-SERVER-SEARCH-CONTRACT.json'
+      - 'docs/validation/SEARCH-001-A05-SERVER-RESULTS-ACTIVATION.json'
+      - '.github/workflows/search-results-server-activation.yml'
+  push:
+    branches:
+      - 'search/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: doke-search-a05-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  search-a05:
+    name: SEARCH-A05 canonical server results activation
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout candidate tree
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Audit cumulative SEARCH-A01 baseline
+        run: node scripts/audit-search-authority-baseline.js
+
+      - name: Audit cumulative SEARCH-A02 favorites authority
+        run: node scripts/audit-favorites-authority-retirement.js
+
+      - name: Test cumulative SEARCH-A02 runtime
+        run: node scripts/test-favorites-authority-retirement-runtime.js
+
+      - name: Audit cumulative SEARCH-A03 favorites surfaces
+        run: node scripts/audit-service-favorites-surfaces.js
+
+      - name: Test cumulative SEARCH-A03 runtime
+        run: node scripts/test-service-favorites-controller-runtime.js
+
+      - name: Audit cumulative SEARCH-A04 server contract
+        run: node scripts/audit-search-server-contract.js
+
+      - name: Audit cumulative SEARCH-A04 approved snapshot authority
+        run: node scripts/audit-search-approved-snapshot-authority.js
+
+      - name: Test cumulative SEARCH-A04 runtime
+        run: node scripts/test-search-server-contract-runtime.js
+
+      - name: Audit SEARCH-A05 server results activation
+        run: node scripts/audit-search-results-server-activation.js
+
+      - name: Test SEARCH-A05 server results runtime
+        run: node scripts/test-search-results-server-surface-runtime.js
+
+      - name: Verify clean patch formatting
+        run: git diff --check
