@@ -1,0 +1,37 @@
+name: Doke SEARCH Staging SQL Package
+
+on:
+  pull_request:
+    branches:
+      - 'cat/**'
+      - 'search/**'
+    paths:
+      - '.github/workflows/search-staging-package.yml'
+      - 'supabase/migrations/158_service_search_contract.sql'
+      - 'supabase/migrations/159_service_search_approved_snapshot_authority.sql'
+      - 'supabase/tests/022_service_search_contract_validation.sql'
+      - 'supabase/tests/023_service_search_approved_snapshot_authority_validation.sql'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package-search-sql:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout candidate tree
+        uses: actions/checkout@v4
+
+      - name: Upload exact validated SQL package
+        uses: actions/upload-artifact@v4
+        with:
+          name: search-staging-sql-${{ github.sha }}
+          retention-days: 1
+          if-no-files-found: error
+          path: |
+            supabase/migrations/158_service_search_contract.sql
+            supabase/migrations/159_service_search_approved_snapshot_authority.sql
+            supabase/tests/022_service_search_contract_validation.sql
+            supabase/tests/023_service_search_approved_snapshot_authority_validation.sql
