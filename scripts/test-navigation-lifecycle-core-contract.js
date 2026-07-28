@@ -253,17 +253,16 @@ async function runtimeContract() {
   assert.strictEqual(storage.has('doke.internalRouteNavigation'), false, 'legacy internal marker must be cleared after successful settlement');
   assert.strictEqual(storage.has('doke.navigationIntent'), false, 'structured intent must be cleared after successful settlement');
 
-  const documentNavigationResult = api.navigation.go('https://doke.test/pagamento-profissional.html', {
+  const documentNavigation = api.navigation.go('https://doke.test/pagamento-profissional.html', {
   source: 'test-document-navigation',
   forceDocument: true
 });
-assert.strictEqual(documentNavigationResult, true, 'document navigation must acknowledge synchronously');
-assert.strictEqual(assigned.length, 0, 'document navigation must not destroy the caller context synchronously');
-await new Promise((resolve) => setTimeout(resolve, 0));
-  assert.deepStrictEqual(assigned.at(-1), {
-    method: 'assign',
-    value: 'https://doke.test/pagamento-profissional.html'
-  });
+assert.strictEqual(typeof documentNavigation?.then, 'function', 'document navigation must preserve the promise contract');
+assert.deepStrictEqual(assigned.at(-1), {
+  method: 'assign',
+  value: 'https://doke.test/pagamento-profissional.html'
+});
+await documentNavigation;
 
   await api.navigation.back('https://doke.test/index.html', { source: 'test-back' });
   const fallbackBackCall = calls.at(-1);
