@@ -1,10 +1,10 @@
 {
-  "schemaVersion": "1.1.0",
+  "schemaVersion": "1.2.0",
   "domain": "SEARCH-001",
   "sublot": "SEARCH-A04",
-  "status": "CANDIDATE_IMPLEMENTED_CI_PENDING",
+  "status": "COMPLETE",
   "title": "Bounded canonical server-side service search contract",
-  "recordedAt": "2026-07-28T13:18:00-03:00",
+  "recordedAt": "2026-07-28T13:42:00-03:00",
   "baseHead": "a7eb658ae868b78873acf70ba5687c1fe87660f1",
   "rootCause": [
     "public.services already had a search_vector column, but no trigger maintained it and no GIN search index existed.",
@@ -14,6 +14,7 @@
   ],
   "readOnlyStagingInspection": {
     "project": "doke-web-staging",
+    "projectRef": "zwkczgewzbsorbrjuzpb",
     "servicesRowsObserved": 1,
     "searchVectorColumnExists": true,
     "searchVectorNullRowsObserved": 1,
@@ -113,7 +114,48 @@
     "resultsRenderer": "not_yet_activated",
     "legacyBrowserFiltering": "preserved_until_SEARCH_A05",
     "legacyFixedSlice": "preserved_until_SEARCH_A05",
-    "reason": "Avoid partial rollout before candidate CI and controlled staging validation."
+    "reason": "Staging authority is validated, but UI activation remains an atomic SEARCH-A05 rollout."
+  },
+  "stagingValidation": {
+    "status": "success",
+    "baseMigrationVersion": "20260728162523",
+    "baseMigrationName": "service_search_contract",
+    "hardeningMigrationVersion": "20260728162607",
+    "hardeningMigrationName": "service_search_approved_snapshot_authority",
+    "transactionalSqlTest022": "success",
+    "transactionalSqlTest023": "success",
+    "fixturesRolledBack": true,
+    "fixtureAuthUsersRemaining": 0,
+    "fixturePublicUsersRemaining": 0,
+    "fixtureUserProfilesRemaining": 0,
+    "fixtureProfessionalProfilesRemaining": 0,
+    "fixtureServicesRemaining": 0,
+    "fixtureVersionsRemaining": 0,
+    "rpcExists": true,
+    "anonRpcExecute": true,
+    "authenticatedRpcExecute": true,
+    "anonPrivateFunctionExecute": false,
+    "authenticatedPrivateFunctionExecute": false,
+    "ginIndexExists": true,
+    "cursorIndexExists": true,
+    "realServiceSearchVectorPresent": true,
+    "realServiceVectorMatchesApprovedSnapshot": true,
+    "pendingVersionContentExcluded": true,
+    "publicSampleQuery": "limpeza",
+    "publicSampleResultCount": 1,
+    "rawOrPrivateFieldObserved": false
+  },
+  "advisors": {
+    "security": {
+      "newSearchFinding": "intentional_public_security_definer_rpc",
+      "decision": "accepted_for_public_discovery_with_allowlisted_dto_and_revoked_private_functions",
+      "unrelatedExistingFindingsPreserved": true
+    },
+    "performance": {
+      "newSearchIndexesReportedUnused": true,
+      "decision": "preserved_because_indexes_are_new_and_staging_has_one_service",
+      "removalDeferred": true
+    }
   },
   "validation": {
     "databaseCandidate": "supabase/migrations/158_service_search_contract.sql",
@@ -124,7 +166,7 @@
     "approvedSnapshotAudit": "scripts/audit-search-approved-snapshot-authority.js",
     "runtimeTest": "scripts/test-search-server-contract-runtime.js",
     "dedicatedWorkflow": ".github/workflows/search-server-contract.yml",
-    "status": "pending"
+    "status": "success"
   },
   "matrix": {
     "versionPreserved": "1.3.11",
@@ -135,16 +177,18 @@
     "securityGatePreserved": "blocked",
     "productionGatePreserved": "blocked",
     "searchB01": "reconciled_removed",
-    "searchB02": "preserved_until_activation_and_staging_validation",
+    "searchB02": "preserved_until_SEARCH_A05_activation",
     "searchB03": "preserved"
   },
   "safety": {
-    "migrationApplied": false,
-    "approvedSnapshotHardeningApplied": false,
-    "stagingChanged": false,
+    "migrationApplied": true,
+    "approvedSnapshotHardeningApplied": true,
+    "stagingChanged": true,
     "productionChanged": false,
     "realAccountsChanged": false,
-    "realServicesChanged": false,
+    "realServiceContentChanged": false,
+    "realServiceLifecycleChanged": false,
+    "realServiceSearchVectorMaterialized": true,
     "realSearchMetricsChanged": false,
     "persistentSyntheticEntitiesCreated": false,
     "paidConfigChanged": false,
@@ -153,11 +197,10 @@
     "prReadyForReview": false
   },
   "remaining": [
-    "Validate both search migrations, privileges and behavior through transactional SQL tests in controlled staging.",
-    "Confirm that pending service-version content cannot influence discovery before approval.",
-    "Activate queryPage in the results renderer only in SEARCH-A05 after the staging contract is stable.",
+    "Activate queryPage in the results renderer only in SEARCH-A05.",
     "Add UI cursor continuation and remove browser service filtering/fixed slicing in SEARCH-A05.",
+    "Preserve fail-closed behavior when the remote RPC is unavailable.",
     "Keep SEARCH-B03 open for server-controlled ranking, anti-manipulation and conversion instrumentation."
   ],
-  "nextControlledStep": "Validate the hardened A04 contract in CI, apply migrations 158 and 159 to staging, run SQL tests 022 and 023 transactionally, then execute SEARCH-A05 activation."
+  "nextControlledStep": "SEARCH-A05 — atomically activate the validated server-side queryPage contract in resultados.html, add cursor continuation and retire browser service filtering and fixed slicing without changing production."
 }
