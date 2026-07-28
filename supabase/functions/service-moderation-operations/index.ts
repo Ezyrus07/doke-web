@@ -14,6 +14,7 @@ import {
   normalizeText,
   statusForModerationError,
 } from "./operations.mjs";
+import { executeServiceMediaCleanup } from "./media-cleanup.mjs";
 
 const FUNCTION_NAME = "service-moderation-operations";
 const MAX_BODY_BYTES = 32_000;
@@ -62,6 +63,10 @@ const rpc = async (context: Context, name: string, params: Record<string, unknow
   return data;
 };
 
+const ratePolicyForAction = (action: string) => action === "cleanup_media"
+  ? { limit: 5, windowSeconds: 600 }
+  : { limit: 60, windowSeconds: 60 };
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return preflightResponse(req);
   const originRejection = rejectDisallowedOrigin(req);
@@ -75,6 +80,7 @@ Deno.serve(async (req: Request) => {
   if (context instanceof Response) return context;
   const body = bodyResult.value;
   const action = normalizeAction(body.action);
+  const policy = ratePolicyForAction(action);
 
   const rateLimitResponse = await enforceActorRateLimit({
     req,
@@ -82,8 +88,8 @@ Deno.serve(async (req: Request) => {
     functionName: FUNCTION_NAME,
     actorId: context.actorId,
     action: action || "reject",
-    limit: 60,
-    windowSeconds: 60,
+    limit: policy.limit,
+    windowSeconds: policy.windowSeconds,
   });
   if (rateLimitResponse) return rateLimitResponse;
 
@@ -105,6 +111,14 @@ Deno.serve(async (req: Request) => {
         p_limit: normalizeLimit(body.limit),
       });
       return jsonResponse(req, 200, { items: Array.isArray(result) ? result : [] });
+    }
+    if (action === "cleanup_media") {
+      const result = await executeServiceMediaCleanup({
+        context,
+        limit: normalizeLimit(body.limit, 20, 1, 100),
+        rpc,
+      });
+      return jsonResponse(req, 200, result);
     }
     if (action === "approve") {
       const result = await rpc(context, "approve_service_version_internal", {
