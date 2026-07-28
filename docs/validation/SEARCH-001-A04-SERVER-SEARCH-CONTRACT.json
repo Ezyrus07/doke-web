@@ -1,20 +1,22 @@
 {
-  "schemaVersion": "1.0.0",
+  "schemaVersion": "1.1.0",
   "domain": "SEARCH-001",
   "sublot": "SEARCH-A04",
   "status": "CANDIDATE_IMPLEMENTED_CI_PENDING",
   "title": "Bounded canonical server-side service search contract",
-  "recordedAt": "2026-07-28T12:42:00-03:00",
+  "recordedAt": "2026-07-28T13:18:00-03:00",
   "baseHead": "a7eb658ae868b78873acf70ba5687c1fe87660f1",
   "rootCause": [
     "public.services already had a search_vector column, but no trigger maintained it and no GIN search index existed.",
     "No canonical search RPC or server-side DTO existed.",
-    "The results page downloaded the approved catalog and performed filtering, geographic eligibility, ranking and fixed slicing in the browser."
+    "The results page downloaded the approved catalog and performed filtering, geographic eligibility, ranking and fixed slicing in the browser.",
+    "The initial candidate built search_vector from mutable public.services fields while the public response projected the approved service version; this could allow pending edits to influence discovery if those projections diverged."
   ],
   "readOnlyStagingInspection": {
     "project": "doke-web-staging",
     "servicesRowsObserved": 1,
     "searchVectorColumnExists": true,
+    "searchVectorNullRowsObserved": 1,
     "searchVectorTriggerObservedBeforeCandidate": false,
     "searchRpcObservedBeforeCandidate": false,
     "searchGinIndexObservedBeforeCandidate": false,
@@ -26,6 +28,7 @@
     ],
     "unaccentInstalled": true,
     "serviceMetricTotalsViewExists": true,
+    "approvedAndPendingVersionsObservedSeparately": true,
     "writesPerformed": false
   },
   "authority": {
@@ -38,6 +41,21 @@
     "remoteFailureMode": "fail_closed",
     "browserPersistentAuthority": "forbidden",
     "directFullCatalogDownloadForCanonicalQuery": "forbidden_after_activation"
+  },
+  "approvedSnapshotAuthority": {
+    "builder": "private.build_approved_service_search_vector(jsonb)",
+    "trigger": "private.refresh_service_search_vector()",
+    "triggerSource": "approved_service_version_snapshot",
+    "triggerColumns": [
+      "approved_version_id",
+      "status",
+      "moderation_status",
+      "professional_id"
+    ],
+    "pendingEditsSearchable": false,
+    "mutableServiceTitleOrDescriptionDrivesIndex": false,
+    "approvedVersionTransitionRefreshesIndex": true,
+    "supersededApprovedContentRemovedAfterTransition": true
   },
   "requestDto": {
     "allowlistedFields": [
@@ -80,7 +98,7 @@
     "missingLocation": "unrestricted_public_eligibility"
   },
   "searchDocument": {
-    "source": "canonical_service_fields_and_allowlisted_metadata",
+    "source": "current_approved_service_version_snapshot_only",
     "language": "portuguese",
     "accentNormalization": "extensions.unaccent",
     "weights": {
@@ -88,7 +106,7 @@
       "descriptionCategoryProviderTagsKeywords": "B",
       "cityStateNeighborhood": "C"
     },
-    "maintenance": "private_trigger",
+    "maintenance": "private_approved_version_trigger",
     "index": "partial_gin_published_approved"
   },
   "activation": {
@@ -99,8 +117,11 @@
   },
   "validation": {
     "databaseCandidate": "supabase/migrations/158_service_search_contract.sql",
+    "approvedSnapshotMigration": "supabase/migrations/159_service_search_approved_snapshot_authority.sql",
     "transactionalSqlTest": "supabase/tests/022_service_search_contract_validation.sql",
+    "approvedSnapshotSqlTest": "supabase/tests/023_service_search_approved_snapshot_authority_validation.sql",
     "structuralAudit": "scripts/audit-search-server-contract.js",
+    "approvedSnapshotAudit": "scripts/audit-search-approved-snapshot-authority.js",
     "runtimeTest": "scripts/test-search-server-contract-runtime.js",
     "dedicatedWorkflow": ".github/workflows/search-server-contract.yml",
     "status": "pending"
@@ -119,6 +140,7 @@
   },
   "safety": {
     "migrationApplied": false,
+    "approvedSnapshotHardeningApplied": false,
     "stagingChanged": false,
     "productionChanged": false,
     "realAccountsChanged": false,
@@ -131,11 +153,11 @@
     "prReadyForReview": false
   },
   "remaining": [
-    "Validate migration syntax, privileges and behavior through the transactional SQL test in controlled staging.",
-    "Validate the repository/service DTO and fail-closed behavior through CI.",
-    "Activate queryPage in the results renderer only in SEARCH-A05 after the contract is stable.",
+    "Validate both search migrations, privileges and behavior through transactional SQL tests in controlled staging.",
+    "Confirm that pending service-version content cannot influence discovery before approval.",
+    "Activate queryPage in the results renderer only in SEARCH-A05 after the staging contract is stable.",
     "Add UI cursor continuation and remove browser service filtering/fixed slicing in SEARCH-A05.",
     "Keep SEARCH-B03 open for server-controlled ranking, anti-manipulation and conversion instrumentation."
   ],
-  "nextControlledStep": "Validate the A04 contract without applying it to production; then execute SEARCH-A05 to activate server search and cursor pagination in resultados.html."
+  "nextControlledStep": "Validate the hardened A04 contract in CI, apply migrations 158 and 159 to staging, run SQL tests 022 and 023 transactionally, then execute SEARCH-A05 activation."
 }
