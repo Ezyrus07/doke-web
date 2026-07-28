@@ -1,0 +1,50 @@
+name: Doke SEARCH-A06 Ranking Signal Baseline
+
+on:
+  pull_request:
+    branches:
+      - 'cat/**'
+      - 'search/**'
+    paths:
+      - 'config/domain-completion-matrix.json'
+      - 'docs/validation/SEARCH-001-A06-RANKING-SIGNAL-BASELINE.json'
+      - 'scripts/audit-search-ranking-signal-baseline.js'
+      - '.github/workflows/search-ranking-signal-baseline.yml'
+  push:
+    branches:
+      - 'search/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: doke-search-a06-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  search-a06:
+    name: SEARCH-A06 ranking signal baseline
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout candidate tree
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Audit cumulative SEARCH-A01
+        run: node scripts/audit-search-authority-baseline.js
+      - name: Audit cumulative SEARCH-A02
+        run: node scripts/audit-favorites-authority-retirement.js
+      - name: Audit cumulative SEARCH-A03
+        run: node scripts/audit-service-favorites-surfaces.js
+      - name: Audit cumulative SEARCH-A04
+        run: node scripts/audit-search-server-contract.js
+      - name: Audit cumulative SEARCH-A05
+        run: node scripts/audit-search-results-server-activation.js
+      - name: Audit SEARCH-A06 ranking baseline
+        run: node scripts/audit-search-ranking-signal-baseline.js
+      - name: Verify clean patch formatting
+        run: git diff --check
