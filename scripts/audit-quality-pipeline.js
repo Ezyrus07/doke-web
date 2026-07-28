@@ -13,6 +13,8 @@ const requiredFiles = [
   'scripts/audit-service-media-lifecycle-baseline.js',
   'scripts/audit-service-media-upload-authority.js',
   'scripts/test-service-media-upload-authority-runtime.js',
+  'scripts/audit-service-media-cleanup-authority.js',
+  'scripts/test-service-media-cleanup-authority-runtime.js',
 ];
 
 const requiredScripts = [
@@ -66,6 +68,8 @@ const supplementalAudits = [
   'scripts/audit-service-media-lifecycle-baseline.js',
   'scripts/audit-service-media-upload-authority.js',
   'scripts/test-service-media-upload-authority-runtime.js',
+  'scripts/audit-service-media-cleanup-authority.js',
+  'scripts/test-service-media-cleanup-authority-runtime.js',
 ];
 
 let errors = [];
