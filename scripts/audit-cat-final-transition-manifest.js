@@ -21,6 +21,16 @@ const a05Path = 'docs/validation/CAT-001-A05-FINAL-RECONCILIATION-CANDIDATE.json
   assert(exists(file), `Required CAT final-transition artifact missing: ${file}`);
 });
 
+function validRun(run, expectedHead) {
+  return Boolean(
+    run &&
+    run.status === 'success' &&
+    Number.isInteger(run.runId) &&
+    Number.isInteger(run.runNumber) &&
+    run.head === expectedHead
+  );
+}
+
 if (!errors.length) {
   const manifest = readJson(manifestPath);
   const matrix = readJson(matrixPath);
@@ -31,27 +41,8 @@ if (!errors.length) {
 
   assert(manifest.schemaVersion === '1.0.0', 'CAT final-transition manifest schema must remain 1.0.0.');
   assert(manifest.domain === 'CAT-001' && manifest.sublot === 'CAT-A05', 'Transition manifest must belong to CAT-001 / CAT-A05.');
-  assert(manifest.status === 'PREPARED_CI_GATED_NOT_EXECUTED', 'Transition manifest cannot claim execution before final CI evidence exists.');
-  assert(manifest.safety && manifest.safety.manifestExecutesWrites === false, 'Transition manifest must remain non-executable.');
-
-  assert(cat, 'CAT-001 is missing from the domain completion matrix.');
-  if (cat) {
-    const source = manifest.sourceState || {};
-    const blockerIds = (cat.blockers || []).map((blocker) => blocker && blocker.id).filter(Boolean);
-
-    assert(matrix.version === source.matrixVersion, 'Transition manifest source matrix version is stale.');
-    assert(cat.maturity === source.maturity, 'Transition manifest source maturity is stale.');
-    assert(cat.userFacingAuthority === source.userFacingAuthority, 'Transition manifest source user-facing authority is stale.');
-    assert(cat.serverAuthority === source.serverAuthority, 'Transition manifest source server authority is stale.');
-    assert(cat.stagingEvidence === source.stagingEvidence, 'Transition manifest source staging evidence is stale.');
-    assert(cat.securityGate === source.securityGate, 'Transition manifest source security gate is stale.');
-    assert(cat.productionGate === source.productionGate, 'Transition manifest source production gate is stale.');
-    assert(JSON.stringify(blockerIds) === JSON.stringify(source.activeBlockers), 'Transition manifest source blockers are stale.');
-  }
-
-  assert(a04.status === 'TECHNICALLY_COMPLETE_CI_PENDING', 'CAT-A04 must remain CI pending before transition execution.');
-  assert(b04.status === 'CANDIDATE_VALIDATED_CI_PENDING', 'CAT-B04 must remain CI pending before transition execution.');
-  assert(a05.status === 'RECONCILIATION_CANDIDATE_CI_PENDING', 'CAT-A05 must remain CI pending before transition execution.');
+  assert(['PREPARED_CI_GATED_NOT_EXECUTED', 'EXECUTED_CI_VALIDATED'].includes(manifest.status), 'Transition manifest status is invalid.');
+  assert(manifest.safety && manifest.safety.manifestExecutesWrites === false, 'Transition manifest must remain non-executable documentation.');
 
   const prerequisites = manifest.executionPrerequisites || {};
   const requiredLanes = prerequisites.requiredLanes || [];
@@ -90,6 +81,36 @@ if (!errors.length) {
   assert(prohibited.some((item) => /Do not raise maturity above 4/i.test(String(item))), 'Manifest must prohibit maturity promotion from CI alone.');
   assert(prohibited.some((item) => /Do not change productionGate from blocked/i.test(String(item))), 'Manifest must prohibit production unblocking.');
   assert(prohibited.some((item) => /Do not merge PR 12 or parent PR 11/i.test(String(item))), 'Manifest must prohibit merging both stacked PRs.');
+
+  assert(cat, 'CAT-001 is missing from the domain completion matrix.');
+  if (cat) {
+    const blockerIds = (cat.blockers || []).map((blocker) => blocker && blocker.id).filter(Boolean);
+    assert(cat.maturity === preserve.maturity, 'CAT-001 maturity diverged from the permitted transition.');
+    assert(cat.userFacingAuthority === preserve.userFacingAuthority, 'CAT-001 user-facing authority diverged from the permitted transition.');
+    assert(cat.serverAuthority === preserve.serverAuthority, 'CAT-001 server authority diverged from the permitted transition.');
+    assert(cat.stagingEvidence === preserve.stagingEvidence, 'CAT-001 staging evidence diverged from the permitted transition.');
+    assert(cat.securityGate === preserve.securityGate, 'CAT-001 security gate diverged from the permitted transition.');
+    assert(cat.productionGate === preserve.productionGate, 'CAT-001 production gate diverged from the permitted transition.');
+
+    if (manifest.status === 'PREPARED_CI_GATED_NOT_EXECUTED') {
+      const source = manifest.sourceState || {};
+      assert(matrix.version === source.matrixVersion, 'Prepared transition source matrix version is stale.');
+      assert(JSON.stringify(blockerIds) === JSON.stringify(source.activeBlockers), 'Prepared transition source blockers are stale.');
+      assert(a04.status === 'TECHNICALLY_COMPLETE_CI_PENDING', 'Prepared transition requires CAT-A04 pending.');
+      assert(b04.status === 'CANDIDATE_VALIDATED_CI_PENDING', 'Prepared transition requires CAT-B04 pending.');
+      assert(a05.status === 'RECONCILIATION_CANDIDATE_CI_PENDING', 'Prepared transition requires CAT-A05 pending.');
+    }
+
+    if (manifest.status === 'EXECUTED_CI_VALIDATED') {
+      const execution = manifest.execution || {};
+      const head = execution.validatedHead;
+      assert(/^[0-9a-f]{40}$/i.test(String(head || '')), 'Executed transition requires a full validated head.');
+      assert(blockerIds.includes('CAT-B04') === false, 'Executed transition must remove CAT-B04 only after CI validation.');
+      assert(a04.status === 'COMPLETE' && b04.status === 'COMPLETE' && a05.status === 'COMPLETE', 'Executed transition requires all CAT closure evidence complete.');
+      expectedLanes.forEach((lane) => assert(validRun(execution.runs && execution.runs[lane], head), `Executed transition lane ${lane} requires successful immutable run evidence.`));
+      assert(a04.validatedHead === head && b04.validatedHead === head && a05.validatedHead === head, 'Executed transition evidence must share the validated head.');
+    }
+  }
 }
 
 if (errors.length) {
@@ -99,6 +120,5 @@ if (errors.length) {
 }
 
 console.log('[CAT-A05-TRANSITION] Final transition manifest is deterministic and current.');
-console.log('[CAT-A05-TRANSITION] Five successful lanes on one head remain mandatory.');
+console.log('[CAT-A05-TRANSITION] Prepared and executed states require the same five-lane boundary.');
 console.log('[CAT-A05-TRANSITION] Maturity 4, partial security and blocked production are preserved.');
-console.log('[CAT-A05-TRANSITION] No closure write has been executed.');
