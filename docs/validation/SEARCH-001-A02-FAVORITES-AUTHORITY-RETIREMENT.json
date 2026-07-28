@@ -1,0 +1,98 @@
+{
+  "schemaVersion": "1.0.0",
+  "domain": "SEARCH-001",
+  "sublot": "SEARCH-A02",
+  "status": "CANDIDATE_VALIDATED_CI_PENDING",
+  "title": "Favorites browser authority retirement",
+  "recordedAt": "2026-07-28T10:32:00-03:00",
+  "baseHead": "fe99d236567c34b9b2ac14a89b7e6d0cc159c872",
+  "rootCause": [
+    "The favorites table and owner-scoped RLS policies already existed in staging, but the product still persisted service identifiers in localStorage.",
+    "The detail page treated the browser as the durable source of truth and did not call public.favorites.",
+    "The legacy detail experience was not loaded through an explicit dependency chain, so favorite behavior could depend on accidental script availability."
+  ],
+  "authority": {
+    "real": "public.favorites",
+    "repository": "assets/js/repositories/favorites-repository.js",
+    "service": "assets/js/services/favorites-service.js",
+    "pageExperience": "assets/js/pages/detail-ad-experience.js",
+    "loader": "assets/js/pages/detalhe-anuncio-data-controller.js",
+    "fixture": "runtime_memory_only",
+    "browserPersistentAuthority": "retired",
+    "remoteFailureMode": "fail_closed",
+    "anonymousMutation": "authentication_required",
+    "moduleOrder": [
+      "favorites-repository",
+      "favorites-service",
+      "detail-ad-experience"
+    ],
+    "retiredStoragePrefix": "doke.service-favorites.v1:"
+  },
+  "behavior": {
+    "list": "owner-scoped remote SELECT or non-UUID runtime memory",
+    "isFavorite": "derived from canonical list",
+    "add": "remote INSERT or non-UUID runtime memory",
+    "remove": "owner-and-service-scoped remote DELETE or non-UUID runtime memory",
+    "toggle": "service orchestration over isFavorite/add/remove",
+    "duplicateInsert": "idempotent success for PostgreSQL 23505",
+    "authRequiredCode": "DOKE_FAVORITES_AUTH_REQUIRED",
+    "authorityUnavailableCode": "DOKE_FAVORITES_AUTHORITY_UNAVAILABLE",
+    "loginReturnPathPreserved": true
+  },
+  "staging": {
+    "project": "doke-web-staging",
+    "projectRef": "zwkczgewzbsorbrjuzpb",
+    "inspectionMode": "read_only",
+    "rlsEnabled": true,
+    "rlsForced": false,
+    "policyCount": 3,
+    "policies": [
+      "favorites_owner_select",
+      "favorites_owner_insert",
+      "favorites_owner_delete"
+    ],
+    "rowsObserved": 0,
+    "anonSelect": false,
+    "authenticatedSelect": true,
+    "authenticatedInsert": true,
+    "authenticatedDelete": true
+  },
+  "validation": {
+    "structuralAudit": "registered_in_dedicated_workflow",
+    "runtime": "registered_in_dedicated_workflow",
+    "fixtureMemory": "covered",
+    "remoteSelectInsertDelete": "covered_with_mock_client",
+    "anonymousMutation": "covered",
+    "remoteUnavailableFailClosed": "covered",
+    "localStorageAbsence": "covered",
+    "moduleLoadOrder": "covered",
+    "ci": "pending"
+  },
+  "matrix": {
+    "version": "1.3.9",
+    "blockerPreservedUntilReconciliation": "SEARCH-B01",
+    "blockerCurrentDescriptionIsStale": true,
+    "controlledFutureDescription": "Browser-persistent favorites authority must remain retired and public.favorites must be the canonical authenticated authority.",
+    "maturityPreserved": 2,
+    "productionGatePreserved": "blocked"
+  },
+  "safety": {
+    "stagingChanged": false,
+    "productionChanged": false,
+    "realAccountsChanged": false,
+    "realFavoritesChanged": false,
+    "persistentSyntheticEntitiesCreated": false,
+    "paidConfigChanged": false,
+    "smsOrOauthChanged": false,
+    "prMerged": false,
+    "prReadyForReview": false,
+    "parentPrMerged": false
+  },
+  "remaining": [
+    "Validate the candidate through the dedicated SEARCH-A02 workflow and cumulative repository quality gates.",
+    "Reconcile SEARCH-B01 in the deterministic matrix only after observable CI evidence exists.",
+    "Extend the canonical favorites service to every service card and favorites listing surface.",
+    "Proceed to server-side search DTO, bounded pagination and geographic eligibility after favorites closure."
+  ],
+  "nextControlledStep": "Validate SEARCH-A02 on one stable head, then reconcile SEARCH-B01 without changing SEARCH-001 maturity or the blocked production gate."
+}
