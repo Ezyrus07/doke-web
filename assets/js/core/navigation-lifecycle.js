@@ -620,7 +620,7 @@
       window.setTimeout(function () {
         if (options.replace === true) window.location.replace(url.href);
         else window.location.assign(url.href);
-      }, 0);
+      }, 64);
     });
   }
 

@@ -260,7 +260,7 @@ async function runtimeContract() {
   assert.strictEqual(assigned.length, 0, 'document navigation must not destroy the caller context synchronously');
   await documentNavigation;
   assert.strictEqual(assigned.length, 0, 'document navigation must settle before the hard navigation task');
-  await new Promise((resolve) => setTimeout(resolve, 0));
+  await new Promise((resolve) => setTimeout(resolve, 80));
   assert.deepStrictEqual(assigned.at(-1), {
     method: 'assign',
     value: 'https://doke.test/pagamento-profissional.html'
