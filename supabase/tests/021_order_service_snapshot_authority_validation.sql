@@ -241,12 +241,6 @@ begin
   if not v_own_service_blocked then
     raise exception 'Own-service order was not blocked';
   end if;
-
-  insert into public.orders (
-    client_id, professional_id, service_id, title, status, metadata
-  ) values (
-    v_client_id, null, null, 'Rascunho sem serviço', 'draft', '{}'::jsonb
-  );
 end;
 $$;
 
