@@ -31,59 +31,13 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: doke-search-a03-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  retire-profile-direct-catalog:
-    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    env:
-      TARGET_BRANCH: ${{ github.head_ref }}
-    steps:
-      - name: Checkout SEARCH branch
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ env.TARGET_BRANCH }}
-          fetch-depth: 0
-
-      - name: Remove direct profile catalog scripts
-        shell: bash
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          path = Path('meu-perfil.html')
-          text = path.read_text(encoding='utf-8')
-          markers = [
-            '    <script src="assets/js/repositories/services-repository.js?v=20260720-moderation-flow-v1" defer></script>\n',
-            '    <script src="assets/js/services/services-service.js?v=20260720-moderation-flow-v1" defer></script>\n'
-          ]
-          changed = False
-          for marker in markers:
-            if marker in text:
-              text = text.replace(marker, '', 1)
-              changed = True
-          if changed:
-            path.write_text(text, encoding='utf-8')
-          PY
-
-      - name: Commit profile boundary correction
-        shell: bash
-        run: |
-          if git diff --quiet -- meu-perfil.html; then
-            echo "Profile catalog boundary already corrected."
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add meu-perfil.html
-          git commit -m "Load profile favorites catalog through module boundary"
-          git push origin HEAD:${TARGET_BRANCH}
-
   search-a03:
     name: SEARCH-A03 canonical favorites surfaces
     runs-on: ubuntu-latest
