@@ -170,10 +170,13 @@ const syncProfessionalSettingsIdentity = () => {
   if (displayName) document.title = document.title.replace(/^[^|]+/, displayName + " ");
 };
 
-const REGISTERED_INTERNAL_VIEW_PATHS = Array.isArray(NAVIGATION_REGISTRY?.getInternalPaths?.()) ? NAVIGATION_REGISTRY.getInternalPaths() : [];
-const INTERNAL_VIEW_PATHS = new Set([...REGISTERED_INTERNAL_VIEW_PATHS, "/index.html", "/resultados.html", "/detalhe-anuncio.html", "/pedidos.html", "/mensagens.html", "/notificacoes.html", "/novidades.html", "/ajuda.html", "/carteira.html", "/admin.html", "/comunidade.html", "/comunidade-interna.html", "/pagamento-profissional.html", "/orcamento.html", "/avaliacao-profissional.html", "/anunciar-servico.html", "/meu-perfil.html", "/perfil-cliente.html", "/perfil-profissional.html", INTERNAL_PROFILE_PATH, "/configuracoes.html", "/tornar-profissional.html", "/verificacao-profissional.html", "/"]);
+const INTERNAL_VIEW_PATHS = new Set(Array.isArray(NAVIGATION_REGISTRY?.getInternalPaths?.())
+  ? NAVIGATION_REGISTRY.getInternalPaths()
+  : []);
 const MESSAGES_VIEW_PATH = "/mensagens.html";
-const SIDEBAR_PRIMARY_VIEWS = ["/index.html", "/pedidos.html", "/notificacoes.html", "/comunidade.html", INTERNAL_PROFILE_PATH, "/configuracoes.html"];
+const SIDEBAR_PRIMARY_VIEWS = Array.isArray(NAVIGATION_REGISTRY?.getPriorityWarmRoutes?.())
+  ? NAVIGATION_REGISTRY.getPriorityWarmRoutes()
+  : [];
 let sidebarViewsHinted = false;
 let sidebarQuickCountsSnapshot = null;
 let sidebarQuickPrioritySignature = null;
@@ -301,12 +304,8 @@ const shouldBypassShellSwap = (href) => {
     // Keep highly transactional/payment subflows on native navigation until their
     // lifecycle is fully normalized. The menu and main app views still use the
     // app-shell router, which removes the heavy reload feeling in daily use.
-    const nativeOnlyPaths = new Set([
-      "/pagamento-profissional.html",
-      "/perfil.html",
-    ]);
-
-    return nativeOnlyPaths.has(path);
+    if (!NAVIGATION_REGISTRY || typeof NAVIGATION_REGISTRY.isNativeOnlyRoute !== 'function') return true;
+    return NAVIGATION_REGISTRY.isNativeOnlyRoute(path);
   } catch {
     return true;
   }

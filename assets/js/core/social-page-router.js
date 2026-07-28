@@ -3,24 +3,8 @@
 
   var Doke = window.Doke || (window.Doke = {});
   var ROUTER_VERSION = '20260513-social-page-router-v1';
-  var SAFE_ROUTES = new Set([
-    '/index.html',
-    '/pedidos.html',
-    '/mensagens.html',
-    '/notificacoes.html',
-    '/comunidade.html',
-    '/comunidade-interna.html',
-    '/carteira.html',
-    '/perfil.html',
-    '/configuracoes.html',
-    '/resultados.html'
-  ]);
-  var NATIVE_ONLY_ROUTES = new Set([
-    '/detalhe-anuncio.html',
-    '/pagamento-profissional.html',
-    '/perfil.html',
-  ]);
-  var CORE_SCRIPT_RE = /\/assets\/js\/core\/(runtime-config|feature-flags|app|social-page-router)\.js(?:\?|$)/;
+  var NAVIGATION_REGISTRY = window.DokeNavigationRegistry || null;
+  var CORE_SCRIPT_RE = /\/assets\/js\/core\/(runtime-config|feature-flags|navigation-registry|app|social-page-router)\.js(?:\?|$)/;
   var routeCache = new Map();
   var navigationId = 0;
   var isNavigating = false;
@@ -37,6 +21,9 @@
   }
 
   function normalizePath(value) {
+    if (NAVIGATION_REGISTRY && typeof NAVIGATION_REGISTRY.normalizePath === 'function') {
+      return NAVIGATION_REGISTRY.normalizePath(value);
+    }
     var url = new URL(value || window.location.href, window.location.href);
     return url.pathname === '/' ? '/index.html' : url.pathname;
   }
@@ -47,7 +34,9 @@
       if (url.origin !== window.location.origin) return false;
       if (url.hash && url.pathname === window.location.pathname && url.search === window.location.search) return false;
       var path = normalizePath(url.href);
-      return SAFE_ROUTES.has(path) && !NATIVE_ONLY_ROUTES.has(path);
+      return Boolean(NAVIGATION_REGISTRY)
+        && NAVIGATION_REGISTRY.isSafeRoute(path, 'social-page')
+        && !NAVIGATION_REGISTRY.isNativeOnlyRoute(path);
     } catch (_) {
       return false;
     }
@@ -165,15 +154,18 @@
   }
 
   function updateActiveNavigation(path) {
+    var activeId = NAVIGATION_REGISTRY && typeof NAVIGATION_REGISTRY.getActiveId === 'function'
+      ? NAVIGATION_REGISTRY.getActiveId(path)
+      : '';
     document.querySelectorAll('.sidebar a[href], .bottom-nav a[href], .doke-bottom-nav a[href]').forEach(function (link) {
-      var linkPath = normalizePath(link.href);
-      var isActive = linkPath === path;
-      link.classList.toggle('is-active', isActive);
-      if (isActive) {
-        link.setAttribute('aria-current', 'page');
-      } else {
-        link.removeAttribute('aria-current');
+      var linkId = link.getAttribute('data-nav-id');
+      if (!linkId && NAVIGATION_REGISTRY && typeof NAVIGATION_REGISTRY.getActiveId === 'function') {
+        linkId = NAVIGATION_REGISTRY.getActiveId(normalizePath(link.href));
       }
+      var isActive = Boolean(activeId && linkId === activeId);
+      link.classList.toggle('is-active', isActive);
+      if (isActive) link.setAttribute('aria-current', 'page');
+      else link.removeAttribute('aria-current');
     });
   }
 

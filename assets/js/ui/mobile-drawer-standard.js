@@ -51,33 +51,6 @@
     return String(value || '').split('?')[0].split('#')[0].split('/').pop().toLowerCase() || 'index.html';
   }
 
-  var FALLBACK_ROUTE_GROUPS = {
-    '': 'home',
-    '/': 'home',
-    home: 'home',
-    index: 'home',
-    resultados: 'home',
-    'detalhe-anuncio': 'home',
-    pedidos: 'orders',
-    orcamento: 'orders',
-    'pagamento-profissional': 'orders',
-    'avaliacao-profissional': 'orders',
-    mensagens: 'messages',
-    notificacoes: 'notifications',
-    novidades: 'notifications',
-    comunidade: 'communities',
-    'comunidade-interna': 'communities',
-    configuracoes: 'settings',
-    ajuda: 'settings',
-    perfil: 'profile',
-    'meu-perfil': 'profile',
-    'perfil-cliente': 'profile',
-    'perfil-profissional': 'profile',
-    carteira: 'wallet',
-    'tornar-profissional': 'profile',
-    'anunciar-servico': 'profile'
-  };
-
   function routeGroup(path) {
     if (NAVIGATION_REGISTRY && typeof NAVIGATION_REGISTRY.getActiveId === 'function') {
       var registryActive = NAVIGATION_REGISTRY.getActiveId(path);
@@ -85,7 +58,7 @@
     }
     var current = cleanPath(path);
     var key = current.replace(/\.html$/i, '');
-    return FALLBACK_ROUTE_GROUPS[key] || key;
+    return key;
   }
 
   function currentRouteGroup() {

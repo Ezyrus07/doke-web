@@ -153,6 +153,36 @@
     'anunciar-servico.html': { key: 'anunciar-servico', search: false, title: 'Anunciar serviço', compactSearchButton: true, hideSearchBar: true, hideLocation: true }
   };
 
+  var ROUTE_METADATA = {
+    '/': { safe: true, hydrationBarrier: false, directHydration: false, initializers: [], warmPriority: false, socialPage: true },
+    '/index.html': { safe: true, hydrationBarrier: true, directHydration: true, initializers: ['DokeInitHome'], warmPriority: true, socialPage: true },
+    '/resultados.html': { safe: true, hydrationBarrier: true, directHydration: true, initializers: ['DokeInitSearchResults'], warmPriority: true, socialPage: true },
+    '/detalhe-anuncio.html': { safe: true, hydrationBarrier: true, directHydration: true, initializers: ['DokeInitDetailAd'], warmPriority: false, socialPage: false },
+    '/pedidos.html': { safe: true, hydrationBarrier: true, directHydration: true, initializers: ['DokeInitOrders'], warmPriority: true, socialPage: true },
+    '/orcamento.html': { safe: true, hydrationBarrier: true, directHydration: false, initializers: ['DokeInitBudget'], warmPriority: false, socialPage: false },
+    '/pagamento-profissional.html': { safe: true, nativeOnly: true, hydrationBarrier: true, directHydration: true, initializers: ['DokeInitPayment'], warmPriority: false, socialPage: false },
+    '/avaliacao-profissional.html': { safe: true, hydrationBarrier: true, directHydration: false, initializers: ['DokeInitReview'], warmPriority: false, socialPage: false },
+    '/mensagens.html': { safe: true, hydrationBarrier: true, directHydration: true, initializers: ['DokeInitMessages'], warmPriority: true, socialPage: true },
+    '/notificacoes.html': { safe: true, hydrationBarrier: true, directHydration: true, initializers: ['DokeInitNotifications'], warmPriority: true, socialPage: true },
+    '/novidades.html': { safe: true, hydrationBarrier: false, directHydration: false, initializers: ['DokeInitNewsPage'], warmPriority: false, socialPage: false },
+    '/comunidade.html': { safe: true, hydrationBarrier: true, directHydration: true, initializers: ['DokeInitCommunity'], warmPriority: true, socialPage: true },
+    '/comunidade-interna.html': { safe: true, hydrationBarrier: false, directHydration: false, initializers: [], warmPriority: false, socialPage: true },
+    '/perfil.html': { safe: true, nativeOnly: true, hydrationBarrier: false, directHydration: false, initializers: ['DokeInitProfile'], warmPriority: true, socialPage: false },
+    '/meu-perfil.html': { safe: true, hydrationBarrier: true, directHydration: false, initializers: ['DokeInitOwnerProfile'], warmPriority: false, socialPage: false },
+    '/perfil-cliente.html': { safe: true, hydrationBarrier: true, directHydration: false, initializers: ['DokeInitClientProfile'], warmPriority: false, socialPage: false },
+    '/perfil-profissional.html': { safe: true, hydrationBarrier: true, directHydration: false, initializers: ['DokeInitProfessionalProfile'], warmPriority: false, socialPage: false },
+    '/tornar-profissional.html': { safe: true, hydrationBarrier: true, directHydration: false, initializers: ['DokeInitBecomePro'], warmPriority: false, socialPage: false },
+    '/verificacao-profissional.html': { safe: true, hydrationBarrier: true, directHydration: false, initializers: ['DokeInitProfessionalVerification'], warmPriority: false, socialPage: false },
+    '/anunciar-servico.html': { safe: true, hydrationBarrier: true, directHydration: true, initializers: ['DokeInitPostService'], warmPriority: false, socialPage: false },
+    '/carteira.html': { safe: true, hydrationBarrier: true, directHydration: true, initializers: ['DokeInitWalletPage'], warmPriority: false, socialPage: true },
+    '/configuracoes.html': { safe: true, hydrationBarrier: true, directHydration: false, initializers: ['DokeInitSettings'], warmPriority: false, socialPage: true },
+    '/ajuda.html': { safe: true, hydrationBarrier: false, directHydration: false, initializers: ['DokeInitHelpCenter'], warmPriority: true, socialPage: false },
+    '/admin.html': { safe: true, hydrationBarrier: true, directHydration: true, initializers: ['DokeInitAdmin'], warmPriority: false, socialPage: false },
+    '/admin-verificacao.html': { safe: true, hydrationBarrier: true, directHydration: false, initializers: ['DokeInitAdminVerification'], warmPriority: false, socialPage: false },
+    '/admin-anuncio-revisao.html': { safe: true, hydrationBarrier: true, directHydration: true, initializers: ['DokeInitAdminAdReview'], warmPriority: false, socialPage: false },
+    '/admin-pedidos-operacao.html': { safe: true, hydrationBarrier: true, directHydration: true, initializers: ['DokeInitAdminOrderOperations'], warmPriority: false, socialPage: false }
+  };
+
   function clone(value) {
     return JSON.parse(JSON.stringify(value));
   }
@@ -319,18 +349,51 @@
     });
   }
 
+  function getRouteMetadata(value) {
+    var path = normalizePath(value);
+    var metadata = ROUTE_METADATA[path] || {};
+    return Object.assign({
+      path: path,
+      safe: false,
+      nativeOnly: false,
+      hydrationBarrier: false,
+      directHydration: false,
+      initializers: [],
+      warmPriority: false,
+      socialPage: false
+    }, clone(metadata));
+  }
+
+  function isSafeRoute(value, adapter) {
+    var metadata = getRouteMetadata(value);
+    if (adapter === 'social-page') return metadata.socialPage === true;
+    return metadata.safe === true;
+  }
+
+  function isNativeOnlyRoute(value) {
+    return getRouteMetadata(value).nativeOnly === true;
+  }
+
+  function requiresHydrationBarrier(value) {
+    return getRouteMetadata(value).hydrationBarrier === true;
+  }
+
+  function shouldCommitHydrationDirect(value) {
+    return getRouteMetadata(value).directHydration === true;
+  }
+
+  function getInitializers(value) {
+    return getRouteMetadata(value).initializers.slice();
+  }
+
+  function getPriorityWarmRoutes() {
+    return Object.keys(ROUTE_METADATA).filter(function (route) {
+      return ROUTE_METADATA[route].warmPriority === true;
+    });
+  }
+
   function getInternalPaths() {
-    var paths = ['/'];
-    NAV_ITEMS.forEach(function (item) {
-      item.activePaths.forEach(function (path) {
-        if (paths.indexOf(path) === -1) paths.push(path);
-      });
-    });
-    Object.keys(PAGE_CONFIGS).forEach(function (name) {
-      var path = name ? '/' + name : '/index.html';
-      if (paths.indexOf(path) === -1) paths.push(path);
-    });
-    return paths.slice();
+    return Object.keys(ROUTE_METADATA).slice();
   }
 
   function getPageConfig(value) {
@@ -341,7 +404,7 @@
   }
 
   window.DokeNavigationRegistry = {
-    version: '20260719-profile-destination-v1',
+    version: '20260728-route-authority-v1',
     normalizePath: normalizePath,
     pageName: pageName,
     getItemById: getItemById,
@@ -353,6 +416,13 @@
     resolveProfileDestination: resolveProfileDestination,
     canAccessItem: canAccessItem,
     getInternalPaths: getInternalPaths,
+    getRouteMetadata: getRouteMetadata,
+    isSafeRoute: isSafeRoute,
+    isNativeOnlyRoute: isNativeOnlyRoute,
+    requiresHydrationBarrier: requiresHydrationBarrier,
+    shouldCommitHydrationDirect: shouldCommitHydrationDirect,
+    getInitializers: getInitializers,
+    getPriorityWarmRoutes: getPriorityWarmRoutes,
     getPageConfig: getPageConfig
   };
 })();

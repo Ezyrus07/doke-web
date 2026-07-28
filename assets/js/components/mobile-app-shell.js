@@ -9,34 +9,6 @@
     return;
   }
 
-  var PAGE_CONFIG = {
-    'index.html': { key: 'home', active: 'home', search: true, title: 'Início' },
-    '': { key: 'home', active: 'home', search: true, title: 'Início' },
-    'resultados.html': { key: 'resultados', active: 'home', search: true, title: 'Resultados' },
-    'detalhe-anuncio.html': { key: 'detalhe-anuncio', active: 'home', search: false, title: 'Anúncio', compactSearchButton: true, hideSearchBar: true, hideLocation: true },
-    'pedidos.html': { key: 'pedidos', active: 'orders', search: false, title: 'Pedidos', hideSearchBar: true },
-    'mensagens.html': { key: 'mensagens', active: 'messages', search: false, title: 'Mensagens' },
-    'comunidade.html': { key: 'comunidade', active: 'communities', search: false, title: 'Comunidade' },
-    'comunidade-interna.html': { key: 'comunidade-interna', active: 'communities', search: false, title: 'Comunidade' },
-    'perfil.html': { key: 'perfil', active: 'profile', search: false, title: 'Perfil' },
-    'meu-perfil.html': { key: 'meu-perfil', active: 'profile', search: false, title: 'Meu perfil' },
-    'carteira.html': { key: 'carteira', active: 'wallet', search: false, title: 'Carteira', hideSearchBar: true, hideLocation: true },
-    'admin.html': { key: 'admin', active: '', search: false, title: 'Admin', compactSearchButton: true, hideSearchBar: true, hideLocation: true, bottomNav: false },
-    'admin-verificacao.html': { key: 'admin-verificacao', active: '', search: false, title: 'Análise de identidade', compactSearchButton: true, hideSearchBar: true, hideLocation: true, bottomNav: false },
-    'admin-anuncio-revisao.html': { key: 'admin-anuncio-revisao', active: '', search: false, title: 'Revisão de anúncio', compactSearchButton: true, hideSearchBar: true, hideLocation: true, bottomNav: false },
-    'admin-pedidos-operacao.html': { key: 'admin-pedidos-operacao', active: '', search: false, title: 'Operação de pedidos', compactSearchButton: true, hideSearchBar: true, hideLocation: true, bottomNav: false },
-    'notificacoes.html': { key: 'notificacoes', active: '', search: false, title: 'Notificações', bottomNav: false },
-    'novidades.html': { key: 'novidades', active: 'notifications', search: false, title: 'Novidades', bottomNav: false },
-    'ajuda.html': { key: 'ajuda', active: 'settings', search: false, title: 'Ajuda', compactSearchButton: true, hideSearchBar: true, hideLocation: true },
-    'configuracoes.html': { key: 'configuracoes', active: 'profile', search: false, title: 'Configurações', compactSearchButton: true, hideSearchBar: true, hideLocation: true },
-    'tornar-profissional.html': { key: 'tornar-profissional', active: 'profile', search: false, title: 'Tornar-se profissional', compactSearchButton: true, hideSearchBar: true, hideLocation: true },
-    'verificacao-profissional.html': { key: 'verificacao-profissional', active: 'profile', search: false, title: 'Verificação profissional', compactSearchButton: true, hideSearchBar: true, hideLocation: true },
-    'orcamento.html': { key: 'orcamento', active: 'orders', search: false, title: 'Orçamento' },
-    'anunciar-servico.html': { key: 'anunciar-servico', active: 'profile', search: false, title: 'Anunciar serviço', compactSearchButton: true, hideSearchBar: true, hideLocation: true },
-    'pagamento-profissional.html': { key: 'pagamento-profissional', active: 'orders', search: false, title: 'Pagamento', compactSearchButton: true, hideSearchBar: true, hideLocation: true },
-    'avaliacao-profissional.html': { key: 'avaliacao-profissional', active: 'orders', search: false, title: 'Avaliação', compactSearchButton: true, hideSearchBar: true, hideLocation: true }
-  };
-
   var ICONS = {
     bell: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4.75a4 4 0 0 0-4 4v2.1c0 .7-.24 1.38-.68 1.92L5.9 14.5h12.2l-1.42-1.73a3 3 0 0 1-.68-1.92v-2.1a4 4 0 0 0-4-4Z"></path><path d="M10 17.2a2.3 2.3 0 0 0 4 0"></path></svg>',
     back: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 6-6 6 6 6"></path></svg>',
@@ -162,7 +134,7 @@
       if (registryConfig && registryConfig.key) return registryConfig;
     }
     var fallbackKey = name.replace('.html', '');
-    return PAGE_CONFIG[name] || { key: fallbackKey, active: '', search: false, title: titleFromPageName(fallbackKey) };
+    return { key: fallbackKey, active: '', search: false, title: titleFromPageName(fallbackKey) };
   }
 
   function usesContextActions(cfg) {

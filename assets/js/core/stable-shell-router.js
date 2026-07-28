@@ -6,106 +6,14 @@
   var ROUTER_VERSION = '20260721-profile-atomic-route-v1';
   var ROUTE_SETTLEMENT_TIMEOUT_MS = 9000;
 
-  var SAFE_ROUTES = new Set([
-    '/ajuda.html',
-    '/anunciar-servico.html',
-    '/avaliacao-profissional.html',
-    '/carteira.html',
-    '/admin.html',
-    '/admin-verificacao.html',
-    '/admin-anuncio-revisao.html',
-    '/admin-pedidos-operacao.html',
-    '/comunidade-interna.html',
-    '/comunidade.html',
-    '/configuracoes.html',
-    '/detalhe-anuncio.html',
-    '/index.html',
-    '/mensagens.html',
-    '/notificacoes.html',
-    '/novidades.html',
-    '/orcamento.html',
-    '/pagamento-profissional.html',
-    '/pedidos.html',
-    '/perfil.html',
-    '/meu-perfil.html',
-    '/perfil-cliente.html',
-    '/perfil-profissional.html',
-    '/resultados.html',
-    '/tornar-profissional.html',
-    '/verificacao-profissional.html',
-    '/'
-  ]);
+  var NAVIGATION_REGISTRY = window.DokeNavigationRegistry || null;
 
-  var NATIVE_ONLY_ROUTES = new Set([
-    '/perfil.html'
-  ]);
-  var HYDRATION_BARRIER_ROUTES = new Set([
-    '/index.html',
-    '/meu-perfil.html',
-    '/perfil-cliente.html',
-    '/perfil-profissional.html',
-    '/configuracoes.html',
-    '/tornar-profissional.html',
-    '/verificacao-profissional.html',
-    '/pedidos.html',
-    '/mensagens.html',
-    '/pagamento-profissional.html',
-    '/notificacoes.html',
-    '/carteira.html',
-    '/orcamento.html',
-    '/avaliacao-profissional.html',
-    '/resultados.html',
-    '/detalhe-anuncio.html',
-    '/meu-perfil.html',
-    '/perfil-cliente.html',
-    '/perfil-profissional.html',
-    '/comunidade.html',
-    '/admin.html',
-    '/admin-verificacao.html',
-    '/admin-anuncio-revisao.html',
-    '/admin-pedidos-operacao.html',
-    '/pagamento-profissional.html',
-    '/anunciar-servico.html'
-  ]);
-
-  var PROFILE_ACTIVE_PATHS = new Set([
-    '/perfil.html',
-    '/meu-perfil.html',
-    '/perfil-cliente.html',
-    '/perfil-profissional.html',
-    '/tornar-profissional.html',
-    '/verificacao-profissional.html',
-    '/anunciar-servico.html'
-  ]);
-
-  var ROUTE_INIT = {
-    '/index.html': ['DokeInitHome'],
-    '/resultados.html': ['DokeInitSearchResults'],
-    '/detalhe-anuncio.html': ['DokeInitDetailAd'],
-    '/avaliacao-profissional.html': ['DokeInitReview'],
-    '/ajuda.html': ['DokeInitHelpCenter'],
-    '/novidades.html': ['DokeInitNewsPage'],
-    '/pedidos.html': ['DokeInitOrders'],
-    '/mensagens.html': ['DokeInitMessages'],
-    '/notificacoes.html': ['DokeInitNotifications'],
-    '/carteira.html': ['DokeInitWalletPage'],
-    '/admin.html': ['DokeInitAdmin'],
-    '/admin-verificacao.html': ['DokeInitAdminVerification'],
-    '/admin-anuncio-revisao.html': ['DokeInitAdminAdReview'],
-    '/admin-pedidos-operacao.html': ['DokeInitAdminOrderOperations'],
-    '/comunidade.html': ['DokeInitCommunity'],
-    '/comunidade-interna.html': [],
-    '/perfil.html': ['DokeInitProfile'],
-    '/meu-perfil.html': ['DokeInitOwnerProfile'],
-    '/perfil-cliente.html': ['DokeInitClientProfile'],
-    '/perfil-profissional.html': ['DokeInitProfessionalProfile'],
-    '/configuracoes.html': ['DokeInitSettings'],
-    '/orcamento.html': ['DokeInitBudget'],
-    '/pagamento-profissional.html': ['DokeInitPayment'],
-    '/tornar-profissional.html': ['DokeInitBecomePro'],
-    '/verificacao-profissional.html': ['DokeInitProfessionalVerification'],
-    '/anunciar-servico.html': ['DokeInitPostService']
-  };
+  function routeMetadata(value) {
+    if (!NAVIGATION_REGISTRY || typeof NAVIGATION_REGISTRY.getRouteMetadata !== 'function') {
+      return { safe: false, nativeOnly: true, hydrationBarrier: false, directHydration: false, initializers: [] };
+    }
+    return NAVIGATION_REGISTRY.getRouteMetadata(value);
+  }
 
   var PRESERVED_BODY_CLASSES = [
     'sidebar-collapsed',
@@ -177,7 +85,7 @@
     'width'
   ];
 
-  var CORE_SCRIPT_RE = /assets\/js\/core\/(?:runtime-config|feature-flags|rollout-guard|navigation-lifecycle|app|stable-shell-router|social-page-router)\.js(?:\?.*)?$/i;
+  var CORE_SCRIPT_RE = /assets\/js\/core\/(?:runtime-config|feature-flags|rollout-guard|navigation-registry|navigation-lifecycle|app|stable-shell-router|social-page-router)\.js(?:\?.*)?$/i;
   var routeCache = new Map();
   var routeWarmCache = new Map();
   var loadedScripts = new Set(Array.prototype.map.call(document.querySelectorAll('script[src]'), function (script) {
@@ -186,16 +94,9 @@
   var navigating = false;
   var navigationId = 0;
   var transitionLog = window.__dokeRouteTransitions || (window.__dokeRouteTransitions = []);
-  var PRIORITY_WARM_ROUTES = [
-    '/index.html',
-    '/perfil.html',
-    '/pedidos.html',
-    '/mensagens.html',
-    '/notificacoes.html',
-    '/comunidade.html',
-    '/resultados.html',
-    '/ajuda.html'
-  ];
+  var PRIORITY_WARM_ROUTES = NAVIGATION_REGISTRY && typeof NAVIGATION_REGISTRY.getPriorityWarmRoutes === 'function'
+    ? NAVIGATION_REGISTRY.getPriorityWarmRoutes()
+    : [];
 
   function isEnabled() {
     try {
@@ -332,7 +233,8 @@
       if (url.origin !== window.location.origin) return false;
       if (url.hash && url.pathname === window.location.pathname && url.search === window.location.search) return false;
       var path = currentPath(url.href);
-      return SAFE_ROUTES.has(path) && !NATIVE_ONLY_ROUTES.has(path);
+      var metadata = routeMetadata(path);
+      return metadata.safe === true && metadata.nativeOnly !== true;
     } catch (error) {
       return false;
     }
@@ -779,7 +681,7 @@
       '.nav-link--messages': normalized === '/mensagens.html',
       '.nav-link--notifications': normalized === '/notificacoes.html',
       '.nav-link--communities': normalized === '/comunidade.html' || normalized === '/comunidade-interna.html',
-      '.nav-link--profile': PROFILE_ACTIVE_PATHS.has(normalized),
+      '.nav-link--profile': NAVIGATION_REGISTRY && NAVIGATION_REGISTRY.getActiveId(normalized) === 'profile',
       '.nav-link--wallet': normalized === '/carteira.html',
       '.nav-link--admin': normalized === '/admin.html' || normalized === '/admin-verificacao.html' || normalized === '/admin-anuncio-revisao.html' || normalized === '/admin-pedidos-operacao.html',
       '.nav-link--settings': normalized === '/configuracoes.html'
@@ -800,7 +702,9 @@
   }
 
   function runInitializers(path) {
-    var names = ROUTE_INIT[path] || [];
+    var names = NAVIGATION_REGISTRY && typeof NAVIGATION_REGISTRY.getInitializers === 'function'
+      ? NAVIGATION_REGISTRY.getInitializers(path)
+      : [];
     names.forEach(function (name) {
       if (typeof window[name] !== 'function') return;
       try {
@@ -912,7 +816,7 @@
   }
 
   function waitForRouteSettlement(path) {
-    if (!HYDRATION_BARRIER_ROUTES.has(path)) return Promise.resolve('ready');
+    if (!routeMetadata(path).hydrationBarrier) return Promise.resolve('ready');
     var currentState = document.body && document.body.dataset.pageHydration;
     if (currentState === 'ready' || currentState === 'empty' || currentState === 'error') {
       return Promise.resolve(currentState);
@@ -936,24 +840,8 @@
     });
   }
 
-  var INTERNAL_DIRECT_HYDRATION_ROUTES = new Set([
-    '/index.html',
-    '/mensagens.html',
-    '/notificacoes.html',
-    '/pedidos.html',
-    '/carteira.html',
-    '/resultados.html',
-    '/detalhe-anuncio.html',
-    '/comunidade.html',
-    '/admin.html',
-    '/admin-anuncio-revisao.html',
-    '/admin-pedidos-operacao.html',
-    '/pagamento-profissional.html',
-    '/anunciar-servico.html'
-  ]);
-
   function shouldCommitHydrationRouteDirect(path) {
-    return INTERNAL_DIRECT_HYDRATION_ROUTES.has(path);
+    return routeMetadata(path).directHydration === true;
   }
 
   async function navigate(href, options) {
