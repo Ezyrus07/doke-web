@@ -615,9 +615,13 @@
       adapter: 'document'
     });
     routeCommit(id, { adapter: 'document' });
-    if (options.replace === true) window.location.replace(url.href);
-    else window.location.assign(url.href);
-    return Promise.resolve(true);
+    return new Promise(function (resolve) {
+      resolve(true);
+      window.setTimeout(function () {
+        if (options.replace === true) window.location.replace(url.href);
+        else window.location.assign(url.href);
+      }, 0);
+    });
   }
 
   function go(href, options) {

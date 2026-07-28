@@ -253,6 +253,18 @@ async function runtimeContract() {
   assert.strictEqual(storage.has('doke.internalRouteNavigation'), false, 'legacy internal marker must be cleared after successful settlement');
   assert.strictEqual(storage.has('doke.navigationIntent'), false, 'structured intent must be cleared after successful settlement');
 
+  const documentNavigation = api.navigation.go('https://doke.test/pagamento-profissional.html', {
+    source: 'test-document-navigation',
+    forceDocument: true
+  });
+  assert.strictEqual(assigned.length, 0, 'document navigation must not destroy the caller context synchronously');
+  await documentNavigation;
+  assert.strictEqual(assigned.length, 0, 'document navigation must settle before the hard navigation task');
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.deepStrictEqual(assigned.at(-1), {
+    method: 'assign',
+    value: 'https://doke.test/pagamento-profissional.html'
+  });
 
   await api.navigation.back('https://doke.test/index.html', { source: 'test-back' });
   const fallbackBackCall = calls.at(-1);
@@ -281,7 +293,7 @@ async function runtimeContract() {
   assert.strictEqual(popCall.options.skipHistory, true);
   assert.strictEqual(popCall.options.restoreScroll, true);
   assert.strictEqual(popCall.options.source, 'popstate');
-  assert.strictEqual(assigned.length, 0, 'document fallback must not run while an adapter can handle the route');
+  assert.strictEqual(assigned.length, 1, 'adapter-backed routes must not add another document navigation');
 }
 
 (async () => {
