@@ -133,12 +133,18 @@ jobs:
           node --check assets/js/core/navigation-lifecycle.js
           node scripts/test-navigation-lifecycle-core-contract.js
           node scripts/audit-navigation-registry-ownership.js
+          git diff --check
 
       - name: Commit focused acknowledgement
         shell: bash
         run: |
+          git status --short
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add assets/js/core/navigation-lifecycle.js scripts/test-navigation-lifecycle-core-contract.js
+          git diff --cached --stat
           git commit -m "FE-J01: acknowledge document navigation synchronously"
-          git push origin HEAD:${GITHUB_HEAD_REF}
+
+      - name: Push focused acknowledgement
+        shell: bash
+        run: git push origin HEAD:${GITHUB_HEAD_REF}
