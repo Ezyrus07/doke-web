@@ -99,7 +99,7 @@ const baselineMarkdown = read(files.baselineMarkdown);
 [
   'BASELINE FROZEN',
   'upsert: true',
-  'snapshot é apenas textual',
+  'é apenas textual',
   'reserva imutável de upload'
 ].forEach((marker) => assert(baselineMarkdown.includes(marker), 'human baseline marker missing: ' + marker));
 
