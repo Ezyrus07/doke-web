@@ -48,80 +48,77 @@
     else delete root.dataset.resultsRepositoryMessage;
   }
 
-
-  function hasDataDependencies() {
-    return Boolean(
-      Doke.pageDataOrchestrator &&
-      typeof Doke.pageDataOrchestrator.getPageData === 'function' &&
-      Doke.repositoryBoundary &&
-      typeof Doke.repositoryBoundary.getRegisteredProviders === 'function'
-    );
-  }
-
-  function normalizePayload(payload) {
-    var data = payload || {};
-    return {
-      services: Array.isArray(data.services) ? data.services : []
-    };
-  }
-
-  function updateNonVisualHooks(root, result) {
+  function updateNonVisualHooks(root, detail) {
+    detail = detail || {};
+    var count = Number(detail.loadedCount || 0);
+    var authority = String(detail.authority || 'public.search_public_services_v1');
     var grid = getResultsGrid(root);
+
     if (grid && grid.dataset) {
       grid.dataset.list = 'services';
-      grid.dataset.repositoryResultCount = String(result.data.services.length);
+      grid.dataset.repositoryResultCount = String(count);
+      grid.dataset.repositoryDataSource = authority;
+      grid.dataset.repositoryContractVersion = String(detail.contractVersion || '1.0.0');
     }
 
     var summary = root && root.querySelector && root.querySelector('[data-results-summary]');
     if (summary && summary.dataset) {
-      summary.dataset.repositoryResultCount = String(result.data.services.length);
-      summary.dataset.repositoryDataSource = 'repository-boundary';
+      summary.dataset.repositoryResultCount = String(count);
+      summary.dataset.repositoryDataSource = authority;
+      summary.dataset.repositoryHasNext = String(Boolean(detail.hasNext));
     }
   }
 
+  function onCanonicalPageRendered(event) {
+    var root = getRoot();
+    if (!root) return;
+    var detail = event && event.detail || {};
+    var count = Number(detail.loadedCount || 0);
+    var result = {
+      page: PAGE_NAME,
+      filters: getQueryFilters(),
+      authority: detail.authority || 'public.search_public_services_v1',
+      contractVersion: detail.contractVersion || '1.0.0',
+      count: count,
+      hasNext: Boolean(detail.hasNext),
+      append: Boolean(detail.append),
+      source: 'canonical-server-search-event'
+    };
+
+    setRepositoryState(root, count ? 'ready' : 'empty');
+    updateNonVisualHooks(root, detail);
+    Doke.resultadosDataController.lastPayload = result;
+    dispatch(root, 'doke:resultados-data-ready', result);
+  }
+
+  function onCanonicalSearchError(event) {
+    var root = getRoot();
+    if (!root) return;
+    var source = event && event.detail || {};
+    var detail = {
+      page: PAGE_NAME,
+      filters: getQueryFilters(),
+      authority: 'public.search_public_services_v1',
+      code: source.code || 'DOKE_SEARCH_QUERY_FAILED',
+      error: source.error || 'Erro ao consultar a busca canônica.',
+      fallbackUsed: Boolean(source.fallbackUsed)
+    };
+
+    setRepositoryState(root, navigator.onLine === false ? 'offline' : 'error', detail.error);
+    Doke.resultadosDataController.lastPayload = detail;
+    dispatch(root, 'doke:resultados-data-error', detail);
+  }
+
   function load(root) {
-    var filters = getQueryFilters();
-    if (!hasDataDependencies()) {
-      var dependencyError = new Error('As dependências de busca não foram carregadas.');
-      setRepositoryState(root, 'error', dependencyError.message);
-      return Promise.resolve({ page: PAGE_NAME, filters: filters, error: dependencyError.message });
-    }
-
-    var context = { filters: filters };
-    var cached = typeof Doke.pageDataOrchestrator.peekPageData === 'function'
-      ? Doke.pageDataOrchestrator.peekPageData(PAGE_NAME, context)
-      : null;
-    var initialState = cached ? 'refreshing' : 'loading';
-
-    setRepositoryState(root, initialState);
-
-    return Doke.pageDataOrchestrator
-      .getPageData(PAGE_NAME, context, { maxAge: 45 * 1000 })
-      .then(function (payload) {
-        var normalized = normalizePayload(payload);
-        var result = {
-          page: PAGE_NAME,
-          filters: filters,
-          data: normalized
-        };
-
-        setRepositoryState(root, normalized.services.length ? 'ready' : 'empty');
-        updateNonVisualHooks(root, result);
-        Doke.resultadosDataController.lastPayload = result;
-        dispatch(root, 'doke:resultados-data-ready', result);
-        return result;
-      })
-      .catch(function (error) {
-        var detail = {
-          page: PAGE_NAME,
-          filters: filters,
-          error: error && error.message ? error.message : 'Erro ao carregar dados dos resultados.'
-        };
-
-        setRepositoryState(root, navigator.onLine === false ? 'offline' : 'error', detail.error);
-        dispatch(root, 'doke:resultados-data-error', detail);
-        return detail;
-      });
+    root = root || getRoot();
+    if (!root) return Promise.resolve(null);
+    setRepositoryState(root, 'loading');
+    return Promise.resolve({
+      page: PAGE_NAME,
+      filters: getQueryFilters(),
+      authority: 'public.search_public_services_v1',
+      mode: 'passive-canonical-event-observer'
+    });
   }
 
   function boot() {
@@ -129,6 +126,7 @@
     if (!root) return Promise.resolve(null);
     if (root.__dokeResultsBootPromise) return root.__dokeResultsBootPromise;
     if (root.__dokeResultsBootComplete) return Promise.resolve(Doke.resultadosDataController.lastPayload);
+
     root.__dokeResultsBootPromise = load(root).then(function (result) {
       root.__dokeResultsBootComplete = true;
       return result;
@@ -140,6 +138,7 @@
 
   Doke.resultadosDataController = {
     page: PAGE_NAME,
+    mode: 'passive-canonical-event-observer',
     getRoot: getRoot,
     getQueryFilters: getQueryFilters,
     load: load,
@@ -147,17 +146,8 @@
     lastPayload: null
   };
 
-  document.addEventListener('doke:page-data-revalidated', function (event) {
-    if (!event.detail || event.detail.page !== PAGE_NAME) return;
-    var root = getRoot();
-    if (!root) return;
-    var normalized = normalizePayload(event.detail.data);
-    var result = { page: PAGE_NAME, filters: getQueryFilters(), data: normalized, source: 'stale-while-revalidate' };
-    setRepositoryState(root, normalized.services.length ? 'ready' : 'empty');
-    updateNonVisualHooks(root, result);
-    Doke.resultadosDataController.lastPayload = result;
-    dispatch(root, 'doke:resultados-data-ready', result);
-  });
+  document.addEventListener('doke:search-server-page-rendered', onCanonicalPageRendered);
+  document.addEventListener('doke:search-server-error', onCanonicalSearchError);
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', boot, { once: true });
