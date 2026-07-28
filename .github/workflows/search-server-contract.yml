@@ -1,0 +1,75 @@
+name: Doke SEARCH-A04 Server Search Contract
+
+on:
+  pull_request:
+    branches:
+      - 'cat/**'
+      - 'search/**'
+    paths:
+      - 'supabase/migrations/158_service_search_contract.sql'
+      - 'supabase/tests/022_service_search_contract_validation.sql'
+      - 'assets/js/repositories/search-repository.js'
+      - 'assets/js/services/search-service.js'
+      - 'assets/js/pages/search-results.js'
+      - 'resultados.html'
+      - 'scripts/audit-search-authority-baseline.js'
+      - 'scripts/audit-favorites-authority-retirement.js'
+      - 'scripts/test-favorites-authority-retirement-runtime.js'
+      - 'scripts/audit-service-favorites-surfaces.js'
+      - 'scripts/test-service-favorites-controller-runtime.js'
+      - 'scripts/audit-search-server-contract.js'
+      - 'scripts/test-search-server-contract-runtime.js'
+      - 'docs/validation/SEARCH-001-A03-FAVORITES-SURFACES.json'
+      - 'docs/validation/SEARCH-001-A04-SERVER-SEARCH-CONTRACT.json'
+      - 'config/domain-completion-matrix.json'
+      - '.github/workflows/search-server-contract.yml'
+  push:
+    branches:
+      - 'search/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: doke-search-a04-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  search-a04:
+    name: SEARCH-A04 bounded server search contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout candidate tree
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Audit cumulative SEARCH-A01 baseline
+        run: node scripts/audit-search-authority-baseline.js
+
+      - name: Audit cumulative SEARCH-A02 authority retirement
+        run: node scripts/audit-favorites-authority-retirement.js
+
+      - name: Test cumulative SEARCH-A02 runtime
+        run: node scripts/test-favorites-authority-retirement-runtime.js
+
+      - name: Audit cumulative SEARCH-A03 favorites surfaces
+        run: node scripts/audit-service-favorites-surfaces.js
+
+      - name: Test cumulative SEARCH-A03 runtime
+        run: node scripts/test-service-favorites-controller-runtime.js
+
+      - name: Audit SEARCH-A04 server search contract
+        run: node scripts/audit-search-server-contract.js
+
+      - name: Test SEARCH-A04 bounded runtime
+        run: node scripts/test-search-server-contract-runtime.js
+
+      - name: Verify clean patch formatting
+        run: git diff --check
