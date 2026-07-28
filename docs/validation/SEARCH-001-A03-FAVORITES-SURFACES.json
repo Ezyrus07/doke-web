@@ -1,0 +1,66 @@
+{
+  "schemaVersion": "1.0.0",
+  "domain": "SEARCH-001",
+  "sublot": "SEARCH-A03",
+  "status": "CANDIDATE_IMPLEMENTED_CI_PENDING",
+  "title": "Canonical favorites activation across service surfaces",
+  "recordedAt": "2026-07-28T11:15:00-03:00",
+  "baseHead": "d61fc3a0ecdd10eb6a68ce89a497356f1461a209",
+  "rootCause": [
+    "Service cards exposed heart buttons but ad-card-interactions still owned a local visual-only toggle.",
+    "A per-card isFavorite call would create an N+1 read pattern as result sets grow.",
+    "The owner profile had no canonical surface for listing saved services."
+  ],
+  "authority": {
+    "persistence": "public.favorites_via_favorites_service",
+    "controller": "assets/js/components/service-favorites-controller.js",
+    "initialRead": "one_owner_scoped_batch",
+    "cardMutation": "cached_snapshot_plus_direct_add_remove",
+    "crossTabSync": "BroadcastChannel",
+    "crossPageSync": "canonical_reload_per_page_identity",
+    "profileListing": "one_favorites_read_plus_one_approved_catalog_read",
+    "perCardRead": "forbidden",
+    "browserPersistentAuthority": "forbidden"
+  },
+  "surfaces": {
+    "homeCards": "canonical_controller",
+    "resultsCards": "canonical_controller",
+    "detailFavorite": "shared_controller_snapshot",
+    "ownerProfileFavorites": "canonical_listing",
+    "dynamicCards": "mutation_observer_snapshot_hydration"
+  },
+  "validation": {
+    "structuralAudit": "scripts/audit-service-favorites-surfaces.js",
+    "runtime": "scripts/test-service-favorites-controller-runtime.js",
+    "dedicatedWorkflow": ".github/workflows/search-favorites-surfaces.yml",
+    "cumulativeQuality": "registered",
+    "status": "pending"
+  },
+  "matrix": {
+    "maturityPreserved": 2,
+    "securityGatePreserved": "blocked",
+    "productionGatePreserved": "blocked",
+    "searchB01": "eligible_for_reconciliation_after_final_ci",
+    "searchB02": "preserved",
+    "searchB03": "preserved"
+  },
+  "safety": {
+    "stagingChanged": false,
+    "productionChanged": false,
+    "realAccountsChanged": false,
+    "realFavoritesChanged": false,
+    "persistentSyntheticEntitiesCreated": false,
+    "paidConfigChanged": false,
+    "smsOrOauthChanged": false,
+    "communityFilesChanged": false,
+    "prMerged": false,
+    "prReadyForReview": false
+  },
+  "remaining": [
+    "Apply deterministic integration patches to existing card, page and profile surfaces.",
+    "Validate one stable head through SEARCH-A01, SEARCH-A02, SEARCH-A03, Quality and Diagnostic.",
+    "Reconcile SEARCH-B01 only after the final head is green.",
+    "Continue with server-side bounded search, pagination, geographic eligibility and ranking integrity."
+  ],
+  "nextControlledStep": "Apply the A03 integration patch and validate the stable head without touching staging or production."
+}
