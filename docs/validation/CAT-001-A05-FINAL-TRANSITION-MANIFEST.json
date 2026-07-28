@@ -1,0 +1,114 @@
+{
+  "schemaVersion": "1.0.0",
+  "domain": "CAT-001",
+  "sublot": "CAT-A05",
+  "status": "PREPARED_CI_GATED_NOT_EXECUTED",
+  "title": "Deterministic CAT-001 final closure transition",
+  "recordedAt": "2026-07-28",
+  "sourceState": {
+    "matrixVersion": "1.3.8",
+    "maturity": 4,
+    "userFacingAuthority": "remote",
+    "serverAuthority": "canonical",
+    "stagingEvidence": "staging_operational",
+    "securityGate": "partial",
+    "productionGate": "blocked",
+    "activeBlockers": ["CAT-B04"],
+    "catA04Status": "TECHNICALLY_COMPLETE_CI_PENDING",
+    "catB04Status": "CANDIDATE_VALIDATED_CI_PENDING",
+    "catA05Status": "RECONCILIATION_CANDIDATE_CI_PENDING"
+  },
+  "executionPrerequisites": {
+    "oneStableHead": true,
+    "allLaneHeadsMustMatch": true,
+    "runIdentifiersRequired": true,
+    "runUrlsRequired": true,
+    "requiredLanes": [
+      "quality",
+      "blockingE2e",
+      "visualStructuralGuards",
+      "canary",
+      "diagnostic"
+    ],
+    "requiredConclusion": "success"
+  },
+  "permittedTransition": {
+    "evidenceStatuses": {
+      "CAT-A04": "COMPLETE",
+      "CAT-B04": "COMPLETE",
+      "CAT-A05": "COMPLETE"
+    },
+    "matrix": {
+      "removeBlockerIds": ["CAT-B04"],
+      "preserve": {
+        "maturity": 4,
+        "userFacingAuthority": "remote",
+        "serverAuthority": "canonical",
+        "stagingEvidence": "staging_operational",
+        "securityGate": "partial",
+        "productionGate": "blocked"
+      },
+      "requiredPathAdditions": [
+        "scripts/audit-service-media-upload-authority.js",
+        "scripts/test-service-media-upload-authority-runtime.js",
+        "scripts/audit-service-media-cleanup-authority.js",
+        "scripts/test-service-media-cleanup-authority-runtime.js",
+        "scripts/audit-order-service-snapshot-authority.js",
+        "scripts/test-order-service-snapshot-authority-runtime.js",
+        "scripts/audit-cat-domain-closure-candidate.js",
+        "scripts/audit-cat-final-transition-manifest.js",
+        "docs/validation/CAT-001-A04-FINAL-CLOSURE-CANDIDATE.json",
+        "docs/validation/CAT-001-B04-ORDER-SERVICE-SNAPSHOT-AUTHORITY.json",
+        "docs/validation/CAT-001-A05-FINAL-RECONCILIATION-CANDIDATE.json",
+        "docs/validation/CAT-001-A05-FINAL-TRANSITION-MANIFEST.json",
+        "supabase/migrations/150_service_media_upload_authority.sql",
+        "supabase/migrations/155_service_media_reference_safe_cleanup_authority.sql",
+        "supabase/migrations/156_order_service_snapshot_authority.sql",
+        "supabase/migrations/157_order_service_snapshot_coalesce_fix.sql",
+        "supabase/tests/019_service_media_upload_authority_validation.sql",
+        "supabase/tests/020_service_media_reference_safe_cleanup_validation.sql",
+        "supabase/tests/021_order_service_snapshot_authority_validation.sql"
+      ],
+      "nextActionsAfterClosure": [
+        "Proceed with SEARCH-001 as the next mandatory engineering domain.",
+        "Keep all CAT-001 authority and lifecycle audits cumulative in Quality.",
+        "Keep production blocked until the global security and launch gates are satisfied."
+      ],
+      "exitCriteriaMustRemain": [
+        "Create, submit, moderate, publish, edit, pause and archive work remotely.",
+        "Public catalog shows only approved eligible versions.",
+        "Media upload validation and deletion are server-enforced.",
+        "Order snapshots are immutable."
+      ]
+    },
+    "journal": {
+      "appendOnly": true,
+      "entries": ["CAT-A04", "CAT-B04", "CAT-A05"],
+      "validatedHeadAndRunIdentifiersRequired": true
+    },
+    "generatedArtifacts": [
+      "docs/DOMAIN-COMPLETION-MATRIX.md",
+      "reports/generated/domain-completion-matrix-report.json"
+    ]
+  },
+  "prohibitedTransition": [
+    "Do not execute without five successful lanes on one stable head.",
+    "Do not raise maturity above 4 solely because CI passed.",
+    "Do not change securityGate from partial in CAT-A05.",
+    "Do not change productionGate from blocked in CAT-A05.",
+    "Do not remove unrelated blockers from any domain or critical flow.",
+    "Do not rewrite historical engineering-journal entries.",
+    "Do not mark PR 12 ready for review.",
+    "Do not merge PR 12 or parent PR 11.",
+    "Do not change production, real accounts, paid configuration, SMS or OAuth."
+  ],
+  "safety": {
+    "manifestExecutesWrites": false,
+    "productionChanged": false,
+    "stagingChanged": false,
+    "realAccountsChanged": false,
+    "realOrdersChanged": false,
+    "prMerged": false,
+    "prReadyForReview": false
+  }
+}
