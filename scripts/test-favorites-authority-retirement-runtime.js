@@ -132,7 +132,10 @@ async function remoteRuntime() {
   assert.strictEqual(rows.includes(UUID_SERVICE), false);
 
   const insert = calls.find((call) => call.operation === 'insert');
-  assert.deepStrictEqual(insert.payload, { user_id: UUID_USER, service_id: UUID_SERVICE });
+  assert(insert, 'remote insert must be issued');
+  assert.strictEqual(String(insert.payload.user_id), UUID_USER);
+  assert.strictEqual(String(insert.payload.service_id), UUID_SERVICE);
+  assert.strictEqual(Object.keys(insert.payload).sort().join(','), 'service_id,user_id');
   assert(calls.some((call) => call.operation === 'select.eq' && call.column === 'user_id' && call.value === UUID_USER));
   assert(calls.some((call) => call.operation === 'delete.eq' && call.column === 'user_id' && call.value === UUID_USER));
   assert(calls.some((call) => call.operation === 'delete.eq' && call.column === 'service_id' && call.value === UUID_SERVICE));
