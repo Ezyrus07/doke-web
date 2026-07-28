@@ -45,6 +45,27 @@ jobs:
           set -o pipefail
           node scripts/fe-j01-apply.js 2>&1 | tee fe-j01-codemod.log
 
+      - name: Normalize generated audit source
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('scripts/audit-navigation-registry-ownership.js')
+          s = p.read_text()
+          broken = "+ '\n';"
+          if broken not in s:
+              s = s.replace("+ '\n\n';", "+ '\\n';")
+              s = s.replace("+ '\n';", "+ '\\n';")
+              s = s.replace("+ '\n\";", "+ '\\n';")
+          else:
+              s = s.replace(broken, "+ '\\n';")
+          # Repair the literal line break produced inside the quoted string.
+          s = s.replace("}, null, 2) + '\n');", "}, null, 2) + '\\n');")
+          s = s.replace("}, null, 2) + '\n\n');", "}, null, 2) + '\\n');")
+          p.write_text(s)
+          PY
+          node --check scripts/audit-navigation-registry-ownership.js
+
       - name: Validate ownership audit
         shell: bash
         run: |
