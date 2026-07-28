@@ -1,0 +1,70 @@
+name: Doke SEARCH-A03 Favorites Surfaces
+
+on:
+  pull_request:
+    branches:
+      - 'cat/**'
+      - 'search/**'
+    paths:
+      - 'assets/js/components/service-favorites-controller.js'
+      - 'assets/js/components/public-service-card.js'
+      - 'assets/js/components/ad-card-interactions.js'
+      - 'assets/js/repositories/favorites-repository.js'
+      - 'assets/js/services/favorites-service.js'
+      - 'assets/js/pages/detail-ad-experience.js'
+      - 'assets/js/pages/detalhe-anuncio-data-controller.js'
+      - 'assets/js/pages/profile/favorites-surface.js'
+      - 'assets/css/pages/client-profile.css'
+      - 'index.html'
+      - 'resultados.html'
+      - 'meu-perfil.html'
+      - 'scripts/audit-search-authority-baseline.js'
+      - 'scripts/audit-favorites-authority-retirement.js'
+      - 'scripts/test-favorites-authority-retirement-runtime.js'
+      - 'scripts/audit-service-favorites-surfaces.js'
+      - 'scripts/test-service-favorites-controller-runtime.js'
+      - 'docs/validation/SEARCH-001-A03-FAVORITES-SURFACES.json'
+      - '.github/workflows/search-favorites-surfaces.yml'
+  push:
+    branches:
+      - 'search/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: doke-search-a03-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  search-a03:
+    name: SEARCH-A03 canonical favorites surfaces
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout candidate tree
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Audit cumulative SEARCH-A01 baseline
+        run: node scripts/audit-search-authority-baseline.js
+
+      - name: Audit cumulative SEARCH-A02 authority retirement
+        run: node scripts/audit-favorites-authority-retirement.js
+
+      - name: Test cumulative SEARCH-A02 runtime
+        run: node scripts/test-favorites-authority-retirement-runtime.js
+
+      - name: Audit SEARCH-A03 favorites surfaces
+        run: node scripts/audit-service-favorites-surfaces.js
+
+      - name: Test SEARCH-A03 batched runtime
+        run: node scripts/test-service-favorites-controller-runtime.js
+
+      - name: Verify clean patch formatting
+        run: git diff --check
