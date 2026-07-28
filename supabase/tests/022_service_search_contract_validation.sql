@@ -89,7 +89,12 @@ begin
     (v_professional_local, 'search-a04-local@example.invalid', 'professional', 'active', 'completed'),
     (v_professional_second, 'search-a04-second@example.invalid', 'professional', 'active', 'completed'),
     (v_professional_online, 'search-a04-online@example.invalid', 'professional', 'active', 'completed'),
-    (v_professional_nearby, 'search-a04-nearby@example.invalid', 'professional', 'active', 'completed');
+    (v_professional_nearby, 'search-a04-nearby@example.invalid', 'professional', 'active', 'completed')
+  on conflict (id) do update
+    set email = excluded.email,
+        role = excluded.role,
+        status = excluded.status,
+        onboarding_status = excluded.onboarding_status;
 
   insert into public.user_profiles (user_id, display_name, username, city, state)
   values
@@ -124,9 +129,9 @@ begin
   if exists (
     select 1 from public.services
     where id in (v_service_local, v_service_second, v_service_online, v_service_nearby)
-      and search_vector is null
+      and search_vector is not null
   ) then
-    raise exception 'SEARCH-A04 trigger did not materialize search_vector';
+    raise exception 'SEARCH-A04 service without an approved version acquired a search_vector';
   end if;
 
   insert into public.service_versions (
@@ -151,6 +156,14 @@ begin
   moderation_status = 'published'
   where id in (v_service_local, v_service_second, v_service_online, v_service_nearby);
   perform set_config('doke.service_moderation_apply', 'off', true);
+
+  if exists (
+    select 1 from public.services
+    where id in (v_service_local, v_service_second, v_service_online, v_service_nearby)
+      and search_vector is null
+  ) then
+    raise exception 'SEARCH-A04 approved version transition did not materialize search_vector';
+  end if;
 
   select public.search_public_services_v1(jsonb_build_object(
     'query', 'eletricista',

@@ -49,7 +49,12 @@ begin
     v_professional_id,
     'search-a04-approved-snapshot@example.invalid',
     'professional', 'active', 'completed'
-  );
+  )
+  on conflict (id) do update
+    set email = excluded.email,
+        role = excluded.role,
+        status = excluded.status,
+        onboarding_status = excluded.onboarding_status;
 
   insert into public.user_profiles (user_id, display_name, username, city, state)
   values (
