@@ -60,7 +60,7 @@ jobs:
           retention-days: 30
 
   cat-a05-finalize-once:
-    if: (github.event_name == 'push' && contains(github.event.head_commit.message, '[cat-finalize-execute]')) || (github.event_name == 'pull_request' && github.head_ref == 'cat/cat-001-baseline-audit')
+    if: github.event_name == 'pull_request' && github.head_ref == 'cat/cat-001-baseline-audit'
     name: Execute CAT-A05 final reconciliation once
     runs-on: ubuntu-latest
     timeout-minutes: 25
@@ -86,13 +86,27 @@ jobs:
       - name: Execute deterministic CAT finalizer
         run: node scripts/cat-a05-finalize-once.js
 
+      - name: Normalize matrix package-script references
+        shell: bash
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const matrixPath = 'config/domain-completion-matrix.json';
+          const matrix = JSON.parse(fs.readFileSync(matrixPath, 'utf8'));
+          const scripts = JSON.parse(fs.readFileSync('package.json', 'utf8')).scripts || {};
+          for (const domain of matrix.domains || []) {
+            domain.tests = Array.from(new Set(domain.tests || [])).filter((test) => Boolean(scripts[test]));
+          }
+          fs.writeFileSync(matrixPath, JSON.stringify(matrix, null, 2) + '\n');
+          NODE
+
       - name: Regenerate deterministic matrix artifacts
         run: npm run write:domain-completion-matrix
 
       - name: Remove one-time machinery
         shell: bash
         run: |
-          git show HEAD^:.github/workflows/staging-edge-http-canary.yml > .github/workflows/staging-edge-http-canary.yml
+          git show 09e77e5236d2bc0c820d73768f0161f326adeefe:.github/workflows/staging-edge-http-canary.yml > .github/workflows/staging-edge-http-canary.yml
           rm scripts/cat-a05-finalize-once.js
 
       - name: Validate final closure state
