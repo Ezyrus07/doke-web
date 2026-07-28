@@ -1,0 +1,105 @@
+{
+  "domain": "CAT-001",
+  "sublot": "CAT-A04",
+  "candidate": "immutable_upload_reservation",
+  "status": "candidate_validated",
+  "validatedOn": "2026-07-27",
+  "objective": "Replace browser-owned mutable service-media writes with server-generated immutable upload reservations and signed upload tokens.",
+  "rootCause": {
+    "browserStorageMutation": "authenticated browser upload/update/delete authority",
+    "pathModel": "deterministic browser-selected path with upsert",
+    "versionReference": "public URL strings without canonical object identity",
+    "failureMode": "bytes behind historical version URLs could change and interrupted submissions could leave unmanaged objects"
+  },
+  "implementation": {
+    "uploadIntentTable": "private.service_media_upload_intents",
+    "uploadItemTable": "private.service_media_upload_items",
+    "objectPathAuthority": "server-generated pending/<actor>/<intent>/<ordinal>-<uuid>.<extension>",
+    "uploadMethod": "createSignedUploadUrl + uploadToSignedUrl",
+    "browserStorageUpsert": false,
+    "browserServiceMediaDml": false,
+    "browserStorageMutationPolicies": false,
+    "legacyDispatcherSubmission": "fails closed with DOKE_SERVICE_MEDIA_UPLOAD_INTENT_REQUIRED",
+    "intentConsumption": "atomic with submit_service_for_review",
+    "canonicalSnapshotFields": ["images", "image", "mediaAssets"],
+    "mediaCountGuard": "1..3"
+  },
+  "repositoryFiles": [
+    "assets/js/services/service-media-upload-service.js",
+    "assets/js/services/services-service.js",
+    "supabase/functions/self-service-operations/index.ts",
+    "supabase/functions/self-service-operations/operations.mjs",
+    "supabase/migrations/150_service_media_upload_authority.sql",
+    "supabase/migrations/151_service_media_legacy_submit_lockdown.sql",
+    "supabase/migrations/152_service_media_upload_intent_expiry_consistency_fix.sql",
+    "supabase/migrations/153_service_media_upload_items_order_integrity.sql",
+    "supabase/migrations/154_service_media_upload_intent_status_index_hardening.sql",
+    "scripts/audit-service-media-upload-authority.js",
+    "scripts/test-service-media-upload-authority-runtime.js",
+    "supabase/tests/019_service_media_upload_authority_validation.sql"
+  ],
+  "staging": {
+    "project": "doke-web-staging",
+    "projectRef": "zwkczgewzbsorbrjuzpb",
+    "migrations": [
+      {"version": "20260728004303", "name": "service_media_upload_authority"},
+      {"version": "20260728004424", "name": "service_media_legacy_submit_lockdown"},
+      {"version": "20260728004527", "name": "service_media_upload_intent_expiry_consistency_fix"},
+      {"version": "20260728004615", "name": "service_media_upload_items_order_integrity"},
+      {"version": "20260728004654", "name": "service_media_upload_intent_status_index_hardening"}
+    ],
+    "edgeFunction": {
+      "name": "self-service-operations",
+      "version": 8,
+      "status": "ACTIVE",
+      "verifyJwt": true
+    },
+    "intentRowsAfterValidation": 0,
+    "itemRowsAfterValidation": 0,
+    "browserServiceMediaPrivileges": {
+      "anonInsert": false,
+      "anonUpdate": false,
+      "anonDelete": false,
+      "authenticatedInsert": false,
+      "authenticatedUpdate": false,
+      "authenticatedDelete": false
+    },
+    "storageMutationPoliciesRemaining": [],
+    "dispatcherLocked": true,
+    "itemCountGuard": true
+  },
+  "validation": {
+    "migration150RollbackDryRun": "success",
+    "migration151RollbackDryRun": "success",
+    "runtimeSignedUploadAuthority": "success",
+    "sql019Final": "success_with_rollback",
+    "securityAdvisor": "no_new_CAT_A04_security_warning",
+    "performanceAdvisor": "four_new_unindexed_foreign_key_info_notices",
+    "fullQualityWorkflow": "pending",
+    "blockingE2E": "pending",
+    "visualStructural105": "pending",
+    "canary": "pending",
+    "diagnostic": "pending"
+  },
+  "remainingRisks": [
+    "Expired or interrupted signed uploads are recorded but physical Storage cleanup is not implemented yet.",
+    "Superseded asset retention and cleanup-eligible transitions are not implemented yet.",
+    "Reference-safe deletion through the Storage API is not implemented yet.",
+    "Four foreign-key columns in the new private tables still need dedicated covering indexes.",
+    "The legacy direct-upload helper remains in services-repository.js but is no longer an executable Supabase authority and fails closed at Storage, Edge and dispatcher boundaries.",
+    "No persistent real-account end-to-end upload was executed because the safety boundary forbids modifying real users or creating persistent synthetic entities."
+  ],
+  "safety": {
+    "productionChanged": false,
+    "realAccountChanged": false,
+    "persistentSyntheticEntityCreated": false,
+    "persistentUploadIntentCreated": false,
+    "persistentStorageObjectCreated": false,
+    "smsEnabled": false,
+    "oauthEnabled": false,
+    "paidConfigurationEnabled": false,
+    "prMerged": false,
+    "prMarkedReady": false
+  },
+  "nextControlledWork": "Implement superseded-state transitions, abandoned-intent expiry processing and reference-safe Storage API cleanup, including the four advisor-reported FK indexes."
+}
