@@ -24,11 +24,13 @@ def replace_between(path, start, end, replacement):
     end_index = text.find(end, start_index)
     if end_index == -1:
         raise RuntimeError(f'End marker missing in {path}: {end!r}')
-    file.write_text(text[:start_index] + replacement + text[end_index:], encoding='utf-8')
+    remainder_index = end_index + len(end) if replacement.endswith(end) else end_index
+    file.write_text(text[:start_index] + replacement + text[remainder_index:], encoding='utf-8')
     return True
 
 
 changed = []
+
 
 def patch(path, old, new):
     if replace_once(path, old, new):
@@ -51,7 +53,7 @@ section(
     results,
     "  const servicePool = searchData.servicePool || [];",
     "  const getUserMatches = searchData.getUserMatches || (() => []);",
-    "  const serverResultsSurface = window.Doke?.searchResultsServerSurface;\n"
+    "  const serverResultsSurface = window.Doke?.searchResultsServerSurface;\n  const getUserMatches = searchData.getUserMatches || (() => []);"
 )
 
 patch(
@@ -151,7 +153,7 @@ section(
     });
   };
 
-  const loadResults = (fresh = false) => {"
+  const loadResults = (fresh = false) => {"""
 )
 
 patch(
