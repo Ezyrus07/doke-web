@@ -11,11 +11,11 @@ const source = fs.readFileSync(
 );
 
 function element(name) {
-  return {
+  let text = '';
+  const node = {
     name,
     hidden: false,
     disabled: false,
-    textContent: '',
     dataset: {},
     attributes: new Map(),
     children: [],
@@ -23,9 +23,21 @@ function element(name) {
     getAttribute(key) { return this.attributes.get(key) || null; },
     appendChild(child) { this.children.push(child); return child; },
     get childCount() { return this.children.length; },
-    set innerHTML(value) { if (value === '') this.children = []; },
+    set innerHTML(value) {
+      if (value === '') this.children = [];
+    },
     get innerHTML() { return ''; }
   };
+  Object.defineProperty(node, 'textContent', {
+    enumerable: true,
+    configurable: false,
+    get() { return text; },
+    set(value) {
+      text = String(value == null ? '' : value);
+      if (text === '') node.children = [];
+    }
+  });
+  return node;
 }
 
 function createRuntime(options = {}) {
