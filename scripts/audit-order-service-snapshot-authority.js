@@ -12,6 +12,7 @@ const assert = (condition, message) => { if (!condition) fail(message); };
 
 const files = {
   migration: 'supabase/migrations/156_order_service_snapshot_authority.sql',
+  coalesceFix: 'supabase/migrations/157_order_service_snapshot_coalesce_fix.sql',
   sql: 'supabase/tests/021_order_service_snapshot_authority_validation.sql',
   backend: 'backend/modules/orders/orders-service.js',
   runtime: 'scripts/test-order-service-snapshot-authority-runtime.js'
@@ -43,9 +44,22 @@ const migration = read(files.migration);
   'revoke all on function private.canonicalize_order_service_snapshot() from public, anon, authenticated'
 ].forEach((marker) => assert(migration.includes(marker), 'migration marker missing: ' + marker));
 
-assert(!/new\.service_snapshot\s*:=\s*(new\.metadata|coalesce\(new\.metadata)/i.test(migration),
+const coalesceFix = read(files.coalesceFix);
+[
+  'create or replace function private.canonicalize_order_service_snapshot()',
+  "v_status text := pg_catalog.lower(coalesce(new.status, 'draft'))",
+  "coalesce(old.metadata, '{}'::jsonb)",
+  "coalesce(new.metadata, '{}'::jsonb)",
+  "coalesce(v_version.snapshot, '{}'::jsonb)",
+  "coalesce(new.created_at, pg_catalog.now())",
+  'revoke all on function private.canonicalize_order_service_snapshot() from public, anon, authenticated'
+].forEach((marker) => assert(coalesceFix.includes(marker), 'snapshot trigger repair marker missing: ' + marker));
+assert(!coalesceFix.includes('pg_catalog.coalesce'),
+  'COALESCE is SQL syntax and must never be schema-qualified');
+
+assert(!/new\.service_snapshot\s*:=\s*(new\.metadata|coalesce\(new\.metadata)/i.test(migration + '\n' + coalesceFix),
   'canonical snapshot cannot be copied from browser metadata');
-assert(!/delete\s+from\s+public\.service_versions/i.test(migration),
+assert(!/delete\s+from\s+public\.service_versions/i.test(migration + '\n' + coalesceFix),
   'snapshot authority cannot delete service versions');
 
 const backend = read(files.backend);
@@ -73,6 +87,8 @@ assert(!/(localStorage|sessionStorage|indexedDB)/.test(backend),
 
 const validation = read(files.sql);
 [
+  "set_config('doke.service_moderation_apply', 'on', true)",
+  "set_config('doke.service_moderation_apply', 'off', true)",
   'Canonical professional identity was not enforced',
   'Approved service version was not frozen',
   'Historical order snapshot changed after a new service version was approved',
@@ -84,6 +100,7 @@ const validation = read(files.sql);
 
 if (!process.exitCode) {
   console.log('[CAT-B04-SNAPSHOT] PostgreSQL approved-version snapshot authority is structurally present.');
+  console.log('[CAT-B04-SNAPSHOT] Applied trigger repair prohibits schema-qualified COALESCE regression.');
   console.log('[CAT-B04-SNAPSHOT] Backend resolves canonical service and professional identity.');
   console.log('[CAT-B04-SNAPSHOT] Browser snapshot and professional fields are stripped before remote insertion.');
   console.log('[CAT-B04-SNAPSHOT] Immutable dedicated and compatibility projections are gated.');
