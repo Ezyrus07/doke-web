@@ -2,10 +2,11 @@
   "schemaVersion": "1.0.0",
   "domain": "SEARCH-001",
   "sublot": "SEARCH-A03",
-  "status": "CANDIDATE_IMPLEMENTED_CI_PENDING",
+  "status": "CANDIDATE_VALIDATION_RUNNING",
   "title": "Canonical favorites activation across service surfaces",
   "recordedAt": "2026-07-28T11:15:00-03:00",
   "baseHead": "d61fc3a0ecdd10eb6a68ce89a497356f1461a209",
+  "integratedHead": "78d3823768b5d7586465db4d2166b9c60296d0f3",
   "rootCause": [
     "Service cards exposed heart buttons but ad-card-interactions still owned a local visual-only toggle.",
     "A per-card isFavorite call would create an N+1 read pattern as result sets grow.",
@@ -33,8 +34,8 @@
     "structuralAudit": "scripts/audit-service-favorites-surfaces.js",
     "runtime": "scripts/test-service-favorites-controller-runtime.js",
     "dedicatedWorkflow": ".github/workflows/search-favorites-surfaces.yml",
-    "cumulativeQuality": "registered",
-    "status": "pending"
+    "cumulativeQuality": "pull_request_quality_lane",
+    "status": "running"
   },
   "matrix": {
     "maturityPreserved": 2,
@@ -57,10 +58,9 @@
     "prReadyForReview": false
   },
   "remaining": [
-    "Apply deterministic integration patches to existing card, page and profile surfaces.",
     "Validate one stable head through SEARCH-A01, SEARCH-A02, SEARCH-A03, Quality and Diagnostic.",
     "Reconcile SEARCH-B01 only after the final head is green.",
     "Continue with server-side bounded search, pagination, geographic eligibility and ranking integrity."
   ],
-  "nextControlledStep": "Apply the A03 integration patch and validate the stable head without touching staging or production."
+  "nextControlledStep": "Validate the integrated head without touching staging or production, then reconcile SEARCH-B01 if every gate is green."
 }
