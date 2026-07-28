@@ -31,17 +31,19 @@ jobs:
 
           lifecycle_path = Path('assets/js/core/navigation-lifecycle.js')
           lifecycle = lifecycle_path.read_text()
-          old = """      window.setTimeout(function () {
-                if (options.replace === true) window.location.replace(url.href);
-                else window.location.assign(url.href);
-              }, 0);"""
-          new = """      window.setTimeout(function () {
-                if (options.replace === true) window.location.replace(url.href);
-                else window.location.assign(url.href);
-              }, 64);"""
-          if old not in lifecycle:
-              raise SystemExit('deferred document navigation block not found')
-          lifecycle_path.write_text(lifecycle.replace(old, new, 1))
+          old_tail = """      }, 0);
+            });
+          }
+
+          function go"""
+          new_tail = """      }, 64);
+            });
+          }
+
+          function go"""
+          if old_tail not in lifecycle:
+              raise SystemExit('document navigation timer tail not found')
+          lifecycle_path.write_text(lifecycle.replace(old_tail, new_tail, 1))
 
           test_path = Path('scripts/test-navigation-lifecycle-core-contract.js')
           test = test_path.read_text()
