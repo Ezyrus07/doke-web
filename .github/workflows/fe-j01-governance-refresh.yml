@@ -1,0 +1,38 @@
+name: FE-J01 Governance Refresh
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/fe-j01-governance-refresh.yml"
+      - "assets/js/dev/fe-j01-governance-trigger.txt"
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Refresh deterministic domain matrix
+        run: npm run write:domain-completion-matrix
+      - name: Validate governed repository audits
+        run: npm run audit:agent-governance
+      - name: Commit deterministic document
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/DOMAIN-COMPLETION-MATRIX.md
+          if git diff --cached --quiet; then
+            echo "Domain matrix already current."
+            exit 0
+          fi
+          git commit -m "FE-J01: refresh domain completion matrix"
+          git push origin HEAD:${GITHUB_HEAD_REF}
