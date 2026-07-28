@@ -27,11 +27,14 @@ The live recursive graph confirmed that the duplicate-path and divergent-version
 - `notificacoes.css` is import-only; its legacy tail moved intact to `notificacoes/legacy-tail.css`.
 - `search-results.css` is import-only; page-owned composition moved to `results/page-composition.css`.
 - `mensagens.css` and `profile-page.css` were correctly classified as page composition stylesheets rather than manifests.
+- Active Home desktop rail and category-density rules moved from the mixed `stable-desktop-rail.css` file to `home/desktop-rail.css`.
+- The Profile rule formerly stored in `stable-desktop-rail.css` was unreachable because Profile never imported that file; FE-C01 removed the dead fragment rather than activating an unvalidated visual change.
 
 ## Compatibility decisions
 
 - Extracted rules retain their original relative cascade position through explicit imports.
 - The Notifications legacy tail preserves the existing late `visual-hierarchy.css` reference after the media rule, so FE-C01 does not activate CSS that was previously inactive.
+- The Home rail owner changed path only; all active selectors and declaration values remain unchanged.
 - No selector, declaration value, business rule, Supabase behavior or production configuration was intentionally changed.
 
 ## Current structural result
@@ -42,7 +45,8 @@ The live recursive graph confirmed that the duplicate-path and divergent-version
 - missing CSS assets: **0**;
 - CSS import cycles: **0**;
 - structural gate: **passed**;
-- canonical token authority gate: **passed**.
+- canonical token authority gate: **passed**;
+- governed repository audits after the Home rail ownership split: **passed**.
 
 ## Acceptance criteria
 
@@ -50,8 +54,9 @@ The live recursive graph confirmed that the duplicate-path and divergent-version
 2. Duplicate-path and version-divergence baselines are empty.
 3. Every file retained as a manifest is import-only.
 4. Extracted visual rules keep their original cascade position.
-5. `index.html` remains the visual baseline.
-6. Static audits, governed repository audits, blocking E2E and 105 visual structural guards must remain green before the lot is counted as complete.
+5. Home and Profile do not share a mixed page-level rail owner.
+6. `index.html` remains the visual baseline.
+7. Static audits, governed repository audits, blocking E2E and 105 visual structural guards must remain green before the lot is counted as complete.
 
 ## Operational limits
 
