@@ -151,10 +151,11 @@ if (!implementationReconciled) {
 
   const cleanupAuthority = read(files.cleanupAuthority);
   [
-    'claim_service_media_cleanup_batch_internal',
-    'complete_service_media_cleanup_internal',
-    'fail_service_media_cleanup_internal',
-    'for update skip locked'
+    'prepare_service_media_cleanup_batch_internal',
+    'complete_service_media_cleanup_batch_internal',
+    "set status = 'delete_failed'",
+    'for update skip locked',
+    'DOKE_SERVICE_MEDIA_STORAGE_DELETE_FAILED'
   ].forEach((marker) => assert(cleanupAuthority.includes(marker), 'current reference-safe cleanup marker missing: ' + marker));
 }
 
