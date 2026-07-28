@@ -16,6 +16,9 @@ const files = {
   searchService: 'assets/js/services/search-service.js',
   searchData: 'assets/js/pages/search-data.js',
   searchResults: 'assets/js/pages/search-results.js',
+  resultsHtml: 'resultados.html',
+  searchRepository: 'assets/js/repositories/search-repository.js',
+  serverResultsSurface: 'assets/js/pages/search/server-results-surface.js',
   detailExperience: 'assets/js/pages/detail-ad-experience.js',
   favoritesMigration: 'supabase/migrations/112_catalog_favorites_authority.sql',
   evidenceJson: 'docs/validation/SEARCH-001-A01-AUTHORITY-BASELINE.json',
@@ -23,6 +26,8 @@ const files = {
   workflow: '.github/workflows/search-authority-baseline.yml',
   a02EvidenceJson: 'docs/validation/SEARCH-001-A02-FAVORITES-AUTHORITY-RETIREMENT.json',
   a03EvidenceJson: 'docs/validation/SEARCH-001-A03-FAVORITES-SURFACES.json',
+  a04EvidenceJson: 'docs/validation/SEARCH-001-A04-SERVER-SEARCH-CONTRACT.json',
+  a05EvidenceJson: 'docs/validation/SEARCH-001-A05-SERVER-RESULTS-ACTIVATION.json',
   favoritesRepository: 'assets/js/repositories/favorites-repository.js',
   favoritesService: 'assets/js/services/favorites-service.js',
   favoritesController: 'assets/js/components/service-favorites-controller.js',
@@ -64,14 +69,35 @@ const favoritesSurfacesComplete = Boolean(
   a03Evidence.matrix &&
   a03Evidence.matrix.searchB01 === 'reconciled_removed'
 );
+const a04Evidence = exists(files.a04EvidenceJson) ? JSON.parse(read(files.a04EvidenceJson)) : null;
+const serverContractValidated = Boolean(
+  a04Evidence &&
+  a04Evidence.status === 'COMPLETE' &&
+  a04Evidence.stagingValidation &&
+  a04Evidence.stagingValidation.status === 'success' &&
+  a04Evidence.authority &&
+  a04Evidence.authority.rpc === 'public.search_public_services_v1(jsonb)'
+);
+const a05Evidence = exists(files.a05EvidenceJson) ? JSON.parse(read(files.a05EvidenceJson)) : null;
+const searchResults = read(files.searchResults);
+const serviceResultsActivated = Boolean(
+  serverContractValidated &&
+  a05Evidence &&
+  ['CANDIDATE_IMPLEMENTATION_PENDING', 'CANDIDATE_VALIDATION_RUNNING', 'COMPLETE'].includes(a05Evidence.status) &&
+  exists(files.searchRepository) &&
+  exists(files.serverResultsSurface) &&
+  exists(files.resultsHtml) &&
+  searchResults.includes('serverResultsSurface.render({') &&
+  searchResults.includes('serverResultsSurface?.loadMore?.()')
+);
 
 const matrix = JSON.parse(read(files.matrix));
 const searchDomain = (matrix.domains || []).find((domain) => domain.id === 'SEARCH-001');
 assert(Boolean(searchDomain), 'SEARCH-001 is missing from the domain completion matrix');
-assert(searchDomain && searchDomain.maturity === 2, 'SEARCH-001 maturity must remain local_functional level 2 during baseline');
-assert(searchDomain && searchDomain.userFacingAuthority === 'hybrid', 'SEARCH-001 user-facing authority must remain hybrid during baseline');
-assert(searchDomain && searchDomain.serverAuthority === 'contract_only', 'SEARCH-001 server authority must remain contract_only during baseline');
-assert(searchDomain && searchDomain.stagingEvidence === 'local_e2e', 'SEARCH-001 staging evidence must remain local_e2e during baseline');
+assert(searchDomain && searchDomain.maturity === 2, 'SEARCH-001 maturity must remain local_functional level 2 until controlled reconciliation');
+assert(searchDomain && searchDomain.userFacingAuthority === 'hybrid', 'SEARCH-001 user-facing authority must remain hybrid during staged activation');
+assert(searchDomain && searchDomain.serverAuthority === 'contract_only', 'SEARCH-001 server authority must remain contract_only until SEARCH-A05 reconciliation');
+assert(searchDomain && searchDomain.stagingEvidence === 'local_e2e', 'SEARCH-001 staging evidence must remain local_e2e until SEARCH-A05 reconciliation');
 assert(searchDomain && searchDomain.securityGate === 'blocked', 'SEARCH-001 security gate must remain blocked');
 assert(searchDomain && searchDomain.productionGate === 'blocked', 'SEARCH-001 production gate must remain blocked');
 const blockerIds = (searchDomain && searchDomain.blockers || []).map((blocker) => blocker.id).sort();
@@ -88,8 +114,10 @@ const searchService = read(files.searchService);
   "var query = normalizeText(filters.query || filters.q)",
   "var category = normalizeText(filters.category)",
   "var city = normalizeText(filters.city)",
-  "return (items || []).filter(function (item)"
-].forEach((marker) => assert(searchService.includes(marker), `search service baseline marker missing: ${marker}`));
+  "return (items || []).filter(function (item)",
+  'function queryPage(request)',
+  'queryPage: queryPage'
+].forEach((marker) => assert(searchService.includes(marker), `search service cumulative marker missing: ${marker}`));
 
 const searchData = read(files.searchData);
 [
@@ -101,19 +129,51 @@ const searchData = read(files.searchData);
   'const beforeAfterPool = [',
   'const locationOptions = {',
   'const getServiceMatches = (query = "", filters = {}) =>'
-].forEach((marker) => assert(searchData.includes(marker), `search data baseline marker missing: ${marker}`));
+].forEach((marker) => assert(searchData.includes(marker), `search data historical marker missing: ${marker}`));
 
-const searchResults = read(files.searchResults);
-[
-  "api.list({ status: 'active', fresh, sort: 'updated_desc' })",
-  'const getRelatedServices = (query, filters, limit = 6) =>',
-  'score += Math.max(0, Math.round((Number(item.rating) || 0) * 2))',
-  '.sort((a, b) => b.score - a.score',
-  'displayUsers.slice(0, 6)',
-  'workerResults.slice(0, 8)',
-  'beforeAfterResults.slice(0, 8)',
-  'const displayServices = [...exactServiceResults, ...relatedServices].slice(0, 6)'
-].forEach((marker) => assert(searchResults.includes(marker), `search results baseline marker missing: ${marker}`));
+if (serviceResultsActivated) {
+  [
+    'const serverResultsSurface = window.Doke?.searchResultsServerSurface',
+    'serverResultsSurface.render({',
+    'serverResultsSurface?.loadMore?.()',
+    'displayUsers.slice(0, 6)',
+    'workerResults.slice(0, 8)',
+    'beforeAfterResults.slice(0, 8)'
+  ].forEach((marker) => assert(searchResults.includes(marker), `post-SEARCH-A05 results marker missing: ${marker}`));
+  [
+    "api.list({ status: 'active', fresh, sort: 'updated_desc' })",
+    'const getRelatedServices = (query, filters, limit = 6) =>',
+    'score += Math.max(0, Math.round((Number(item.rating) || 0) * 2))',
+    '.sort((a, b) => b.score - a.score',
+    'const displayServices = [...exactServiceResults, ...relatedServices].slice(0, 6)'
+  ].forEach((marker) => assert(!searchResults.includes(marker), `retired service-results authority returned: ${marker}`));
+
+  const resultsHtml = read(files.resultsHtml);
+  const repositoryIndex = resultsHtml.indexOf('assets/js/repositories/search-repository.js');
+  const serviceIndex = resultsHtml.indexOf('assets/js/services/search-service.js');
+  const surfaceIndex = resultsHtml.indexOf('assets/js/pages/search/server-results-surface.js');
+  const resultsIndex = resultsHtml.indexOf('assets/js/pages/search-results.js');
+  assert(repositoryIndex !== -1 && serviceIndex > repositoryIndex && surfaceIndex > serviceIndex && resultsIndex > surfaceIndex, 'SEARCH-A05 module load order is invalid');
+  assert(resultsHtml.includes('data-results-load-more'), 'SEARCH-A05 cursor continuation control is missing');
+
+  const repository = read(files.searchRepository);
+  assert(repository.includes("RPC_NAME = 'search_public_services_v1'"), 'SEARCH-A05 canonical RPC marker is missing');
+  assert(repository.includes("createError('DOKE_SEARCH_AUTHORITY_UNAVAILABLE'"), 'SEARCH-A05 repository must fail closed');
+  const surface = read(files.serverResultsSurface);
+  assert(surface.includes('searchApi().queryPage(request)'), 'SEARCH-A05 surface does not use queryPage');
+  assert(surface.includes('fallbackUsed: false'), 'SEARCH-A05 surface does not prove fail-closed behavior');
+} else {
+  [
+    "api.list({ status: 'active', fresh, sort: 'updated_desc' })",
+    'const getRelatedServices = (query, filters, limit = 6) =>',
+    'score += Math.max(0, Math.round((Number(item.rating) || 0) * 2))',
+    '.sort((a, b) => b.score - a.score',
+    'displayUsers.slice(0, 6)',
+    'workerResults.slice(0, 8)',
+    'beforeAfterResults.slice(0, 8)',
+    'const displayServices = [...exactServiceResults, ...relatedServices].slice(0, 6)'
+  ].forEach((marker) => assert(searchResults.includes(marker), `historical search-results marker missing: ${marker}`));
+}
 
 const detailExperience = read(files.detailExperience);
 if (favoritesAuthorityRetired) {
@@ -183,15 +243,15 @@ const evidence = JSON.parse(read(files.evidenceJson));
 assert(evidence.domain === 'SEARCH-001' && evidence.sublot === 'SEARCH-A01', 'SEARCH-A01 evidence identity is invalid');
 assert(evidence.status === 'baseline_frozen', 'SEARCH-A01 evidence status must remain baseline_frozen');
 assert(['pending', 'done'].includes(evidence.validationStatus), 'SEARCH-A01 validation status is invalid');
-assert(evidence.authority && evidence.authority.serviceFiltering === 'browser', 'browser service filtering authority is not documented');
-assert(evidence.authority && evidence.authority.serviceRanking === 'browser_heuristic', 'browser ranking authority is not documented');
-assert(evidence.authority && evidence.authority.pagination === 'fixed_client_slice', 'fixed client pagination boundary is not documented');
+assert(evidence.authority && evidence.authority.serviceFiltering === 'browser', 'historical browser service filtering authority is not documented');
+assert(evidence.authority && evidence.authority.serviceRanking === 'browser_heuristic', 'historical browser ranking authority is not documented');
+assert(evidence.authority && evidence.authority.pagination === 'fixed_client_slice', 'historical fixed client pagination boundary is not documented');
 assert(evidence.authority && evidence.authority.favorites === 'browser_local_storage', 'historical browser favorites authority is not documented');
 assert(evidence.staging && evidence.staging.favoritesRlsEnabled === true, 'staging favorites RLS evidence must remain explicit');
 assert(evidence.staging && evidence.staging.favoritesPolicyCount === 3, 'staging favorites policy count must remain explicit');
 assert(evidence.matrixDrift && evidence.matrixDrift.searchB01DescriptionIsStale === true, 'historical SEARCH-B01 matrix drift is not documented');
 assert(evidence.safety && evidence.safety.implementationChanged === false, 'SEARCH-A01 cannot claim an implementation change');
-assert(evidence.safety && evidence.safety.stagingChanged === false, 'SEARCH-A01 cannot change staging');
+assert(evidence.safety && evidence.safety.stagingChanged === false, 'SEARCH-A01 baseline cannot claim a staging write');
 assert(evidence.safety && evidence.safety.productionChanged === false, 'SEARCH-A01 cannot change production');
 
 const evidenceMarkdown = read(files.evidenceMarkdown);
@@ -217,11 +277,13 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('[SEARCH-A01] Search authority baseline is frozen and cumulative.');
-console.log('[SEARCH-A01] Remote catalog reads coexist with browser filtering, ranking, fixed slicing and static non-service pools.');
+console.log('[SEARCH-A01] Historical search authority baseline remains frozen and cumulative.');
+console.log(serviceResultsActivated
+  ? '[SEARCH-A01] Service results now use canonical server pagination; static non-service pools and local history remain explicitly preserved.'
+  : '[SEARCH-A01] Remote catalog reads still coexist with browser filtering, ranking, fixed slicing and static non-service pools.');
 console.log(favoritesSurfacesComplete
   ? '[SEARCH-A01] SEARCH-B01 was reconciled after canonical favorites reached every governed service surface.'
   : favoritesAuthorityRetired
     ? '[SEARCH-A01] Historical browser favorites authority is documented and its controlled SEARCH-A02 retirement is preserved.'
     : '[SEARCH-A01] Favorites schema is RLS-protected in staging, but the product path remains browser-local.');
-console.log('[SEARCH-A01] Production and staging were not changed by the baseline.');
+console.log('[SEARCH-A01] Production remains unchanged.');
