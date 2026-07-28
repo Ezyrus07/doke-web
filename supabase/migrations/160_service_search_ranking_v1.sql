@@ -323,8 +323,8 @@ declare
   v_review_signal numeric;
   v_availability_signal numeric;
   v_recency_signal numeric;
-  v_text_raw numeric := pg_catalog.greatest(coalesce(p_text_rank, 0), 0);
-  v_review_count integer := pg_catalog.greatest(coalesce(p_review_count, 0), 0);
+  v_text_raw numeric := greatest(coalesce(p_text_rank, 0), 0);
+  v_review_count integer := greatest(coalesce(p_review_count, 0), 0);
   v_review_sum numeric;
   v_prior_mean numeric;
   v_prior_weight integer;
@@ -351,14 +351,14 @@ begin
   v_recency_zero := (v_config ->> 'recencyZeroDays')::integer;
   v_precision := (v_config ->> 'scorePrecision')::integer;
 
-  v_text_signal := pg_catalog.least(1, v_text_raw / (1 + v_text_raw));
-  v_review_sum := pg_catalog.least(
-    pg_catalog.greatest(coalesce(p_review_sum, 0), 0),
+  v_text_signal := least(1, v_text_raw / (1 + v_text_raw));
+  v_review_sum := least(
+    greatest(coalesce(p_review_sum, 0), 0),
     v_review_count * 5
   );
-  v_review_signal := pg_catalog.least(
+  v_review_signal := least(
     1,
-    pg_catalog.greatest(
+    greatest(
       0,
       ((v_review_sum + (v_prior_mean * v_prior_weight)) / (v_review_count + v_prior_weight)) / 5
     )
@@ -368,9 +368,9 @@ begin
   if p_approved_at is null or p_as_of is null then
     v_recency_signal := 0;
   else
-    v_age_days := pg_catalog.greatest(
+    v_age_days := greatest(
       0,
-      pg_catalog.extract(epoch from (p_as_of - p_approved_at)) / 86400
+      extract(epoch from (p_as_of - p_approved_at)) / 86400
     );
     v_recency_signal := case
       when v_age_days <= v_recency_full then 1
@@ -385,7 +385,7 @@ begin
     + ((v_weights ->> 'availability')::numeric * v_availability_signal)
     + ((v_weights ->> 'recency')::numeric * v_recency_signal);
 
-  return pg_catalog.round(pg_catalog.least(1, pg_catalog.greatest(0, v_score)), v_precision);
+  return pg_catalog.round(least(1, greatest(0, v_score)), v_precision);
 end;
 $$;
 
