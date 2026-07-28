@@ -6,6 +6,8 @@ const { spawnSync } = require('child_process');
 const root = process.cwd();
 const requiredFiles = [
   '.github/workflows/quality.yml',
+  '.github/workflows/staging-edge-http-canary.yml',
+  '.github/workflows/e2e-diagnostic.yml',
   '.github/pull_request_template.md',
   'docs/QUALITY-GATES.md',
   'docs/STAGE29-CI-QUALITY-GATES.md',
@@ -19,9 +21,12 @@ const requiredFiles = [
   'scripts/test-order-service-snapshot-authority-runtime.js',
   'scripts/audit-cat-domain-closure-candidate.js',
   'scripts/audit-cat-final-transition-manifest.js',
+  'scripts/audit-stacked-ci-trigger-coverage.js',
   'docs/validation/CAT-001-A05-FINAL-RECONCILIATION-CANDIDATE.json',
   'docs/validation/CAT-001-A05-FINAL-RECONCILIATION-CANDIDATE.md',
   'docs/validation/CAT-001-A05-FINAL-TRANSITION-MANIFEST.json',
+  'docs/validation/CAT-001-A05-STACKED-CI-TRIGGER-COVERAGE.json',
+  'docs/validation/CAT-001-A05-STACKED-CI-TRIGGER-COVERAGE.md',
 ];
 
 const requiredScripts = [
@@ -81,6 +86,7 @@ const supplementalAudits = [
   'scripts/test-order-service-snapshot-authority-runtime.js',
   'scripts/audit-cat-domain-closure-candidate.js',
   'scripts/audit-cat-final-transition-manifest.js',
+  'scripts/audit-stacked-ci-trigger-coverage.js',
 ];
 
 let errors = [];
