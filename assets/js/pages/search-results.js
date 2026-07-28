@@ -52,6 +52,8 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
     cepInput: queryAny('[data-results-cep-input]'),
     loadingState: queryAny('[data-results-loading]'),
     resultsGrid: queryAny('[data-results-grid]'),
+    resultsPagination: queryAny('[data-results-pagination]'),
+    resultsLoadMore: queryAny('[data-results-load-more]'),
     resultsEmptyTitle: queryAny('[data-results-empty-title]'),
     resultsEmptyText: queryAny('[data-results-empty-text]'),
     resultsInlineEmpty: queryAny('[data-results-inline-empty]'),
@@ -132,22 +134,7 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
   };
 
   const normalize = searchData.normalize || ((value = '') => String(value || '').toLowerCase());
-  const servicePool = searchData.servicePool || [];
-  let publicServicesPromise = null;
-  const ensurePublicServices = (fresh = false) => {
-    const api = window.Doke?.services?.services;
-    if (!api?.list) return Promise.resolve(servicePool);
-    if (publicServicesPromise && !fresh) return publicServicesPromise;
-    publicServicesPromise = api.list({ status: 'active', fresh, sort: 'updated_desc' }).then((items) => {
-      servicePool.splice(0, servicePool.length, ...(Array.isArray(items) ? items : []));
-      return servicePool;
-    }).catch((error) => {
-      servicePool.splice(0, servicePool.length);
-      throw error;
-    });
-    return publicServicesPromise;
-  };
-  const getServiceMatches = searchData.getServiceMatches || (() => []);
+  const serverResultsSurface = window.Doke?.searchResultsServerSurface;
   const getUserMatches = searchData.getUserMatches || (() => []);
   const getShortVideoMatches = searchData.getShortVideoMatches || (() => []);
   const getBeforeAfterMatches = searchData.getBeforeAfterMatches || (() => []);
@@ -174,6 +161,7 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
     document.documentElement.classList.remove('results-filters-open', 'results-filters-open-from-home');
     previewController?.abort();
     previewController = null;
+    serverResultsSurface?.cancel?.();
     closeResultsSearchDropdown();
     closeModal(false);
     closeInlineCep(false);
@@ -767,57 +755,6 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
     return article;
   };
 
-  const getQueryTokens = (query = '') =>
-    normalize(query)
-      .split(/[^a-z0-9]+/i)
-      .map((token) => token.trim())
-      .filter((token) => token.length > 2);
-
-  const getRelatedServices = (query, filters, limit = 6) => {
-    const queryTokens = getQueryTokens(query);
-
-    const scored = servicePool
-      .filter((item) => {
-        if (filters.state && normalize(item.state || item.staté) !== normalize(filters.state)) return false;
-        if (filters.city && normalize(item.city) !== normalize(filters.city)) return false;
-        return true;
-      })
-      .map((item) => {
-        const itemText = normalize([
-          item.title,
-          item.category || item.catégory,
-          item.location,
-          item.region,
-          ...(item.tags || []),
-          ...(item.keywords || [])
-        ].join(' '));
-
-        let score = 0;
-        queryTokens.forEach((token) => {
-          if (itemText.includes(token)) score += 3;
-        });
-        if (filters.neighborhood && normalize(item.neighborhood) === normalize(filters.neighborhood)) score += 5;
-        if (filters.state && normalize(item.state || item.staté) === normalize(filters.state)) score += 2;
-        if (filters.categories.length && filters.categories.some((category) => itemText.includes(normalize(category)))) score += 3;
-        if (!queryTokens.length && filters.city && normalize(item.city) === normalize(filters.city)) score += 2;
-        score += Math.max(0, Math.round((Number(item.rating) || 0) * 2));
-        return { item, score };
-      })
-      .filter((entry) => entry.score > 0 || !queryTokens.length)
-      .sort((a, b) => b.score - a.score || (Number(b.item.rating) || 0) - (Number(a.item.rating) || 0))
-      .slice(0, limit)
-      .map((entry) => entry.item);
-
-    if (scored.length >= limit) return scored;
-
-    const fallback = servicePool
-      .filter((item) => !scored.some((existing) => existing.id === item.id))
-      .sort((a, b) => (Number(b.rating) || 0) - (Number(a.rating) || 0))
-      .slice(0, Math.max(0, limit - scored.length));
-
-    return [...scored, ...fallback];
-  };
-
   const renderActiveChips = (query, filters, count) => {
     if (!els.resultsActiveChips) return;
 
@@ -849,25 +786,6 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
     hide(els.resultsBeforeAfterSection, els.resultsBeforeAfterGrid);
   };
 
-  const renderEmptySuggestions = (query, filters) => {
-    const relatedServices = getRelatedServices(query, filters, 6);
-    const hasLocation = Boolean(filters.neighborhood || filters.city || filters.state);
-
-    if (els.resultsEmptyTitle) {
-      els.resultsEmptyTitle.textContent = query
-        ? `Não achamos um resultado exato para "${query}".`
-        : 'Nenhum anúncio encaixou nesses filtros.';
-    }
-
-    if (els.resultsEmptyText) {
-      els.resultsEmptyText.textContent = hasLocation
-        ? 'Separamos alternativas próximas da região escolhida para você não sair da busca de mãos vazias.'
-        : 'Separamos alternativas parecidas para você não sair da busca de mãos vazias.';
-    }
-
-    return relatedServices;
-  };
-
   const renderResults = () => {
     const query = String(params.get('q') || '').trim();
     const filters = getFilters();
@@ -876,24 +794,18 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
     window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
 
     const userResults = getUserMatches(query);
-    const exactServiceResults = getServiceMatches(query, {
-      catégories: filters.categories,
-      categories: filters.categories,
-      staté: filters.state,
-      state: filters.state,
-      city: filters.city,
-      neighborhood: filters.neighborhood,
-      guaranteed: filters.guaranteed,
-      emergency: filters.emergency,
-      online: filters.online,
-      availableToday: filters.availableToday,
-      minRating: filters.minRating
-    });
     const isUserSearch = filters.searchType === 'users';
     const isWorkerSearch = filters.searchType === 'workers';
     const isBeforeAfterSearch = filters.searchType === 'before-after';
 
     renderRelatedSections(query);
+
+    if (filters.searchType !== 'services') {
+      serverResultsSurface?.deactivate?.({
+        loadMoreButton: els.resultsLoadMore,
+        pagination: els.resultsPagination
+      });
+    }
 
     if (isUserSearch) {
       const displayUsers = query ? userResults : (searchData.userPool || []);
@@ -949,50 +861,45 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
       return;
     }
 
-    const relatedServices = exactServiceResults.length >= 6
-      ? []
-      : getRelatedServices(query, filters, 6).filter(
-          (item) => !exactServiceResults.some((exact) => exact.id === item.id)
-        );
-
-    const displayServices = [...exactServiceResults, ...relatedServices].slice(0, 6);
-
-    els.resultsGrid.innerHTML = '';
-    displayServices.forEach((item) => els.resultsGrid.appendChild(createServiceCard(item)));
-
-    if (els.resultsCount) els.resultsCount.textContent = formatCount(displayServices.length);
-    if (els.resultsTitle) els.resultsTitle.textContent = query ? `Resultados para "${query}"` : 'Resultados em destaque';
-    if (els.resultsDescription) {
-      els.resultsDescription.textContent = exactServiceResults.length
-        ? 'Ajuste os filtros laterais para refinar sem sair da busca.'
-        : 'Selecionamos anúncios relacionados para continuar a sua busca.';
-    }
-    renderActiveChips(query, filters, displayServices.length);
-
-    if (displayServices.length) {
-      // Related cards are still useful results. Do not show the inline
-      // "não encontrado" block when the grid has cards to offer.
-      if (els.resultsInlineEmpty) els.resultsInlineEmpty.hidden = true;
-      setResultsState('results');
-      settleResultsHydration();
-      refreshResultPreviews();
-      return;
+    if (!serverResultsSurface?.render) {
+      const error = new Error('Autoridade canônica de resultados não carregada.');
+      error.code = 'DOKE_SEARCH_AUTHORITY_UNAVAILABLE';
+      setResultsState('error');
+      failResultsHydration(error);
+      console.error('[resultados] Autoridade canônica de busca indisponível.', error);
+      return Promise.reject(error);
     }
 
-    renderEmptySuggestions(query, filters);
-    setResultsState('empty');
-    els.resultsGrid.hidden = false;
-    settleResultsHydration();
-    refreshResultPreviews();
+    return serverResultsSurface.render({
+      query,
+      filters,
+      grid: els.resultsGrid,
+      loadMoreButton: els.resultsLoadMore,
+      pagination: els.resultsPagination,
+      count: els.resultsCount,
+      title: els.resultsTitle,
+      description: els.resultsDescription,
+      inlineEmpty: els.resultsInlineEmpty,
+      createCard: createServiceCard,
+      setResultsState,
+      settleHydration: settleResultsHydration,
+      failHydration: failResultsHydration,
+      refreshPreviews: refreshResultPreviews,
+      renderActiveChips
+    }).catch((error) => {
+      console.error('[resultados] Falha ao consultar a busca canônica.', error);
+      return [];
+    });
   };
 
   const loadResults = (fresh = false) => {
+    void fresh;
     setResultsState('loading');
-    return ensurePublicServices(fresh).then(() => {
-      renderResults();
-    }).catch((error) => {
+    return Promise.resolve(renderResults()).catch((error) => {
+      setResultsState('error');
       failResultsHydration(error);
-      console.error('[resultados] Falha ao carregar os anúncios públicos.', error);
+      console.error('[resultados] Falha ao carregar os resultados.', error);
+      return [];
     });
   };
 
@@ -1074,7 +981,7 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
       uiSelectApi?.refresh(els.neighborhoodSelect);
     }
 
-    renderResults();
+    loadResults();
     return true;
   };
 
@@ -1269,7 +1176,7 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
 
   els.filtersForm.addEventListener('submit', (event) => {
     event.preventDefault();
-    renderResults();
+    loadResults();
     closeMobileFilters();
   }, { signal });
 
@@ -1283,13 +1190,13 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
       fillSelectOptions(els.neighborhoodSelect, neighborhoodsByCity[els.citySelect?.value || ''] || [], 'Qualquer bairro');
     }
 
-    renderResults();
+    loadResults();
   }, { signal });
 
   els.searchModeInputs.forEach((input) => {
     input.addEventListener('change', () => {
       params.set('type', getSearchMode());
-      renderResults();
+      loadResults();
     }, { signal });
   });
 
@@ -1307,7 +1214,13 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
     }
   }, { signal });
 
-  const refreshPublicServices = () => { publicServicesPromise = null; loadResults(true); };
+  els.resultsLoadMore?.addEventListener('click', () => {
+    serverResultsSurface?.loadMore?.().catch((error) => {
+      console.error('[resultados] Falha ao carregar a próxima página.', error);
+    });
+  }, { signal });
+
+  const refreshPublicServices = () => { loadResults(true); };
   document.addEventListener('doke:service-created', refreshPublicServices, { signal });
   document.addEventListener('doke:service-updated', refreshPublicServices, { signal });
 
