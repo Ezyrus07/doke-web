@@ -46,15 +46,15 @@ jobs:
       - name: Verify clean patch formatting
         run: git diff --check
 
-      - name: Commit deterministic artifacts when changed
+      - name: Commit deterministic artifact when changed
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add config/domain-completion-matrix.json docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json
+          git add docs/DOMAIN-COMPLETION-MATRIX.md
           if git diff --cached --quiet; then
-            echo "Domain matrix artifacts already synchronized."
+            echo "Domain matrix artifact already synchronized."
             exit 0
           fi
-          git commit -m "Synchronize SEARCH domain matrix artifacts"
+          git commit -m "Synchronize SEARCH domain matrix artifact"
           git push origin HEAD:${{ github.ref_name }}
