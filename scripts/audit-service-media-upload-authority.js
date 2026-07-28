@@ -12,6 +12,9 @@ const assert = (condition, message) => { if (!condition) fail(message); };
 const files = {
   migration: 'supabase/migrations/150_service_media_upload_authority.sql',
   dispatcherLockdown: 'supabase/migrations/151_service_media_legacy_submit_lockdown.sql',
+  consumptionInvariant: 'supabase/migrations/152_service_media_upload_intent_expiry_consistency_fix.sql',
+  itemIntegrity: 'supabase/migrations/153_service_media_upload_items_order_integrity.sql',
+  statusIndex: 'supabase/migrations/154_service_media_upload_intent_status_index_hardening.sql',
   edgeIndex: 'supabase/functions/self-service-operations/index.ts',
   edgeOperations: 'supabase/functions/self-service-operations/operations.mjs',
   mediaService: 'assets/js/services/service-media-upload-service.js',
@@ -54,6 +57,23 @@ const dispatcherLockdown = read(files.dispatcherLockdown);
   'grant execute on function public.execute_self_service_operation_internal(uuid, text, jsonb)'
 ].forEach((marker) => assert(dispatcherLockdown.includes(marker), 'dispatcher lockdown marker missing: ' + marker));
 
+const consumptionInvariant = read(files.consumptionInvariant);
+assert(consumptionInvariant.includes('service_media_upload_intents_consumption_check'),
+  'named upload-intent consumption invariant missing');
+assert(consumptionInvariant.includes("status <> 'consumed' and consumed_at is null"),
+  'non-consumed intent timestamp invariant missing');
+
+const itemIntegrity = read(files.itemIntegrity);
+[
+  'v_item_count integer',
+  'v_item_count < 1 or v_item_count > 3',
+  'jsonb_array_length(p_public_urls) <> v_item_count'
+].forEach((marker) => assert(itemIntegrity.includes(marker), 'item integrity marker missing: ' + marker));
+
+const statusIndex = read(files.statusIndex);
+assert(statusIndex.includes('idx_service_media_upload_items_intent_status'),
+  'intent status lookup index missing');
+
 const edgeIndex = read(files.edgeIndex);
 [
   'prepare_service_media_uploads',
@@ -94,5 +114,6 @@ if (!process.exitCode) {
   console.log('[CAT-A04-UPLOAD] immutable upload reservation authority is structurally present.');
   console.log('[CAT-A04-UPLOAD] browser Storage mutation and service_media DML are retired by migration.');
   console.log('[CAT-A04-UPLOAD] legacy dispatcher submission fails closed without an upload intent.');
+  console.log('[CAT-A04-UPLOAD] intent invariants, item-count guard and status lookup index are registered.');
   console.log('[CAT-A04-UPLOAD] signed upload and atomic intent consumption gates are registered.');
 }
