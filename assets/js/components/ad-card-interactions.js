@@ -6,7 +6,7 @@
  * - Reviews/rating -> detail page reviews section.
  * - Location -> search results filtered by location.
  * - Hashtag -> search results filtered by tag/query.
- * - Favorite -> local visual toggle only.
+ * - Favorite -> Canonical favorite controller backed by the favorites service.
  * - Remaining card area -> service detail page.
  */
 (function () {
@@ -103,10 +103,14 @@
   };
 
   const toggleFavorite = (button) => {
-    const isActive = !button.classList.contains('is-active');
-    button.classList.toggle('is-active', isActive);
-    button.setAttribute('aria-pressed', String(isActive));
-    button.setAttribute('aria-label', isActive ? 'Remover anúncio dos salvos' : 'Salvar anúncio');
+    const controller = window.Doke?.serviceFavoritesController;
+    if (!controller?.toggleButton) {
+      button.dataset.favoriteState = 'unavailable';
+      button.title = 'Favoritos indisponíveis no momento.';
+      document.dispatchEvent(new CustomEvent('doke:service-favorite-error', { detail: { code: 'DOKE_FAVORITES_CONTROLLER_UNAVAILABLE', operation: 'card-toggle' } }));
+      return Promise.resolve(false);
+    }
+    return controller.toggleButton(button, { source: 'ad-card' });
   };
 
   const hydrateAdCardMedia = (card) => {
@@ -187,7 +191,7 @@
     if (favorite) {
       event.preventDefault();
       event.stopPropagation();
-      toggleFavorite(favorite);
+      toggleFavorite(favorite).catch(() => {});
       return;
     }
 
@@ -289,7 +293,10 @@
       });
 
       if (favorite) {
+        favorite.dataset.serviceFavorite = '';
+        if (context.serviceId) favorite.dataset.favoriteServiceId = context.serviceId;
         favorite.setAttribute('aria-pressed', favorite.classList.contains('is-active') ? 'true' : 'false');
+        window.Doke?.serviceFavoritesController?.hydrate?.(card);
       }
 
       hydrateAdCardMedia(card);

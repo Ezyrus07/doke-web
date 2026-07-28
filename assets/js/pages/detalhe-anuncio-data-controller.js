@@ -16,8 +16,13 @@
       ready: function () { return Boolean(Doke.services && Doke.services.favorites); }
     },
     {
+      key: 'service-favorites-controller',
+      src: 'assets/js/components/service-favorites-controller.js?v=20260728-search-a03-v1',
+      ready: function () { return Boolean(Doke.serviceFavoritesController); }
+    },
+    {
       key: 'detail-ad-experience',
-      src: 'assets/js/pages/detail-ad-experience.js?v=20260728-search-a02-v1',
+      src: 'assets/js/pages/detail-ad-experience.js?v=20260728-search-a03-v1',
       ready: function () { return Boolean(Doke.detailAdExperience); }
     }
   ];

@@ -67,7 +67,11 @@
       return Promise.resolve(false);
     }
 
-    return favoritesService().isFavorite(normalizedServiceId).then(function (active) {
+    var controller = Doke.serviceFavoritesController;
+    var read = controller && typeof controller.ensureLoaded === 'function'
+      ? controller.ensureLoaded().then(function () { return controller.isFavorite(normalizedServiceId); })
+      : favoritesService().isFavorite(normalizedServiceId);
+    return read.then(function (active) {
       return updateFavoriteButtons(normalizedServiceId, active, { state: 'ready' });
     }).catch(function (error) {
       if (error && error.code === 'DOKE_FAVORITES_AUTH_REQUIRED') {
@@ -113,7 +117,10 @@
 
     var operation;
     try {
-      operation = favoritesService().toggle(serviceId);
+      var controller = Doke.serviceFavoritesController;
+      operation = controller && typeof controller.setFavorite === 'function'
+        ? controller.setFavorite(serviceId, !before, { source: 'detail-ad' })
+        : favoritesService().toggle(serviceId);
     } catch (error) {
       operation = Promise.reject(error);
     }
@@ -161,6 +168,8 @@
     document.querySelectorAll('[data-favorite-toggle]').forEach(function (button) {
       if (button.dataset.favoriteExperienceBound === 'true') return;
       button.dataset.favoriteExperienceBound = 'true';
+      button.dataset.serviceFavorite = '';
+      button.dataset.favoriteServiceId = resolveServiceId(getRoot());
       button.addEventListener('click', function (event) {
         event.preventDefault();
         event.stopPropagation();

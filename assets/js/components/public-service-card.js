@@ -52,7 +52,7 @@
     if (imageUrl) { var img=document.createElement('img'); img.src=imageUrl; img.alt='Imagem de '+clean(service.title || 'serviço'); img.loading='lazy'; media.appendChild(img); }
     else media.classList.add('is-empty');
     var badge=document.createElement('span'); badge.className='doke-ad-card__badge'; badge.textContent=clean(service.badge || 'Publicado'); media.appendChild(badge);
-    var favorite=document.createElement('button'); favorite.className='doke-ad-card__favorite doke-icon-btn doke-icon-btn--soft'; favorite.type='button'; favorite.setAttribute('aria-label','Salvar anúncio'); favorite.appendChild(svg('M20.8 5.9a5.1 5.1 0 0 0-7.2 0L12 7.5l-1.6-1.6a5.1 5.1 0 1 0-7.2 7.2L12 21l8.8-7.9a5.1 5.1 0 0 0 0-7.2Z')); media.appendChild(favorite);
+    var favorite=document.createElement('button'); favorite.className='doke-ad-card__favorite doke-icon-btn doke-icon-btn--soft'; favorite.type='button'; favorite.dataset.serviceFavorite = ''; if (service.id) favorite.dataset.favoriteServiceId = service.id; favorite.setAttribute('aria-pressed', 'false'); favorite.setAttribute('aria-label','Salvar anúncio'); favorite.appendChild(svg('M20.8 5.9a5.1 5.1 0 0 0-7.2 0L12 7.5l-1.6-1.6a5.1 5.1 0 1 0-7.2 7.2L12 21l8.8-7.9a5.1 5.1 0 0 0 0-7.2Z')); media.appendChild(favorite);
 
     var body=document.createElement('div'); body.className='doke-ad-card__body';
     var category=document.createElement('span'); category.className='doke-ad-card__category'; category.textContent=clean(service.category || 'Serviço'); body.appendChild(category);
