@@ -8,6 +8,7 @@ const root = path.resolve(__dirname, '..');
 const errors = [];
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 const exists = (file) => fs.existsSync(path.join(root, file));
+const same = (actual, expected) => JSON.stringify(actual) === JSON.stringify(expected);
 const assert = (condition, message) => { if (!condition) errors.push(message); };
 
 const files = {
@@ -21,8 +22,10 @@ const files = {
   evidenceMarkdown: 'docs/validation/SEARCH-001-A01-AUTHORITY-BASELINE.md',
   workflow: '.github/workflows/search-authority-baseline.yml',
   a02EvidenceJson: 'docs/validation/SEARCH-001-A02-FAVORITES-AUTHORITY-RETIREMENT.json',
+  a03EvidenceJson: 'docs/validation/SEARCH-001-A03-FAVORITES-SURFACES.json',
   favoritesRepository: 'assets/js/repositories/favorites-repository.js',
   favoritesService: 'assets/js/services/favorites-service.js',
+  favoritesController: 'assets/js/components/service-favorites-controller.js',
   detailController: 'assets/js/pages/detalhe-anuncio-data-controller.js'
 };
 
@@ -51,6 +54,16 @@ const favoritesAuthorityRetired = Boolean(
   a02Evidence.authority.browserPersistentAuthority === 'retired' &&
   a02Evidence.authority.real === 'public.favorites'
 );
+const a03Evidence = exists(files.a03EvidenceJson) ? JSON.parse(read(files.a03EvidenceJson)) : null;
+const favoritesSurfacesComplete = Boolean(
+  a03Evidence &&
+  a03Evidence.status === 'COMPLETE' &&
+  a03Evidence.authority &&
+  a03Evidence.authority.initialRead === 'one_owner_scoped_batch' &&
+  a03Evidence.authority.perCardRead === 'forbidden' &&
+  a03Evidence.matrix &&
+  a03Evidence.matrix.searchB01 === 'reconciled_removed'
+);
 
 const matrix = JSON.parse(read(files.matrix));
 const searchDomain = (matrix.domains || []).find((domain) => domain.id === 'SEARCH-001');
@@ -62,7 +75,10 @@ assert(searchDomain && searchDomain.stagingEvidence === 'local_e2e', 'SEARCH-001
 assert(searchDomain && searchDomain.securityGate === 'blocked', 'SEARCH-001 security gate must remain blocked');
 assert(searchDomain && searchDomain.productionGate === 'blocked', 'SEARCH-001 production gate must remain blocked');
 const blockerIds = (searchDomain && searchDomain.blockers || []).map((blocker) => blocker.id).sort();
-assert(JSON.stringify(blockerIds) === JSON.stringify(['SEARCH-B01', 'SEARCH-B02', 'SEARCH-B03']), 'SEARCH-001 blocker set changed outside controlled reconciliation');
+const expectedBlockers = favoritesSurfacesComplete
+  ? ['SEARCH-B02', 'SEARCH-B03']
+  : ['SEARCH-B01', 'SEARCH-B02', 'SEARCH-B03'];
+assert(same(blockerIds, expectedBlockers), 'SEARCH-001 blocker set changed outside controlled reconciliation');
 
 const searchService = read(files.searchService);
 [
@@ -126,8 +142,23 @@ if (favoritesAuthorityRetired) {
   const detailController = read(files.detailController);
   const repositoryIndex = detailController.indexOf("key: 'favorites-repository'");
   const serviceIndex = detailController.indexOf("key: 'favorites-service'");
+  const controllerIndex = detailController.indexOf("key: 'service-favorites-controller'");
   const experienceIndex = detailController.indexOf("key: 'detail-ad-experience'");
-  assert(repositoryIndex !== -1 && serviceIndex > repositoryIndex && experienceIndex > serviceIndex, 'favorite module load order changed');
+  assert(
+    repositoryIndex !== -1 &&
+    serviceIndex > repositoryIndex &&
+    (!favoritesSurfacesComplete || controllerIndex > serviceIndex) &&
+    experienceIndex > (favoritesSurfacesComplete ? controllerIndex : serviceIndex),
+    'favorite module load order changed'
+  );
+
+  if (favoritesSurfacesComplete) {
+    assert(exists(files.favoritesController), 'post-SEARCH-A03 favorites controller is missing');
+    const favoritesController = read(files.favoritesController);
+    assert((favoritesController.match(/service\(\)\.list\(\)/g) || []).length === 1, 'post-SEARCH-A03 controller must retain one list-read call site');
+    assert(!favoritesController.includes('.isFavorite('), 'post-SEARCH-A03 controller cannot add per-card favorite reads');
+    assert(!favoritesController.includes('localStorage'), 'post-SEARCH-A03 controller cannot reopen browser persistence');
+  }
 } else {
   [
     "FAVORITES_KEY_PREFIX = 'doke.service-favorites.v1:'",
@@ -158,7 +189,7 @@ assert(evidence.authority && evidence.authority.pagination === 'fixed_client_sli
 assert(evidence.authority && evidence.authority.favorites === 'browser_local_storage', 'historical browser favorites authority is not documented');
 assert(evidence.staging && evidence.staging.favoritesRlsEnabled === true, 'staging favorites RLS evidence must remain explicit');
 assert(evidence.staging && evidence.staging.favoritesPolicyCount === 3, 'staging favorites policy count must remain explicit');
-assert(evidence.matrixDrift && evidence.matrixDrift.searchB01DescriptionIsStale === true, 'SEARCH-B01 matrix drift must remain documented until reconciliation');
+assert(evidence.matrixDrift && evidence.matrixDrift.searchB01DescriptionIsStale === true, 'historical SEARCH-B01 matrix drift is not documented');
 assert(evidence.safety && evidence.safety.implementationChanged === false, 'SEARCH-A01 cannot claim an implementation change');
 assert(evidence.safety && evidence.safety.stagingChanged === false, 'SEARCH-A01 cannot change staging');
 assert(evidence.safety && evidence.safety.productionChanged === false, 'SEARCH-A01 cannot change production');
@@ -188,7 +219,9 @@ if (errors.length) {
 
 console.log('[SEARCH-A01] Search authority baseline is frozen and cumulative.');
 console.log('[SEARCH-A01] Remote catalog reads coexist with browser filtering, ranking, fixed slicing and static non-service pools.');
-console.log(favoritesAuthorityRetired
-  ? '[SEARCH-A01] Historical browser favorites authority is documented and its controlled SEARCH-A02 retirement is preserved.'
-  : '[SEARCH-A01] Favorites schema is RLS-protected in staging, but the product path remains browser-local.');
+console.log(favoritesSurfacesComplete
+  ? '[SEARCH-A01] SEARCH-B01 was reconciled after canonical favorites reached every governed service surface.'
+  : favoritesAuthorityRetired
+    ? '[SEARCH-A01] Historical browser favorites authority is documented and its controlled SEARCH-A02 retirement is preserved.'
+    : '[SEARCH-A01] Favorites schema is RLS-protected in staging, but the product path remains browser-local.');
 console.log('[SEARCH-A01] Production and staging were not changed by the baseline.');
