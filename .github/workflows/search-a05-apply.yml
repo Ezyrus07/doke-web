@@ -63,8 +63,8 @@ jobs:
           ! grep -F "const getServiceMatches =" assets/js/pages/search-results.js
           ! grep -F "const getRelatedServices =" assets/js/pages/search-results.js
           ! grep -F "const displayServices = [...exactServiceResults" assets/js/pages/search-results.js
-          grep -F "surface.render({" assets/js/pages/search-results.js
-          grep -F "surface.loadMore()" assets/js/pages/search-results.js
+          grep -F "serverResultsSurface.render({" assets/js/pages/search-results.js
+          grep -F "serverResultsSurface?.loadMore?.()" assets/js/pages/search-results.js
           grep -F "data-results-load-more" resultados.html
 
       - name: Verify clean patch formatting
@@ -83,5 +83,6 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           rm -f docs/validation/SEARCH-A05-APPLY-DIAGNOSTIC.txt
           git add assets/js/pages/search-results.js resultados.html assets/css/pages/search-results.css
+          git add -u docs/validation/SEARCH-A05-APPLY-DIAGNOSTIC.txt || true
           git commit -m "Activate canonical server-side service results"
           git push origin HEAD:${TARGET_BRANCH}
