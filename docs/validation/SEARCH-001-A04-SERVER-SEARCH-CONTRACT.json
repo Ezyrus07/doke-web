@@ -1,0 +1,141 @@
+{
+  "schemaVersion": "1.0.0",
+  "domain": "SEARCH-001",
+  "sublot": "SEARCH-A04",
+  "status": "CANDIDATE_IMPLEMENTED_CI_PENDING",
+  "title": "Bounded canonical server-side service search contract",
+  "recordedAt": "2026-07-28T12:42:00-03:00",
+  "baseHead": "a7eb658ae868b78873acf70ba5687c1fe87660f1",
+  "rootCause": [
+    "public.services already had a search_vector column, but no trigger maintained it and no GIN search index existed.",
+    "No canonical search RPC or server-side DTO existed.",
+    "The results page downloaded the approved catalog and performed filtering, geographic eligibility, ranking and fixed slicing in the browser."
+  ],
+  "readOnlyStagingInspection": {
+    "project": "doke-web-staging",
+    "servicesRowsObserved": 1,
+    "searchVectorColumnExists": true,
+    "searchVectorTriggerObservedBeforeCandidate": false,
+    "searchRpcObservedBeforeCandidate": false,
+    "searchGinIndexObservedBeforeCandidate": false,
+    "existingRelevantIndexes": [
+      "idx_services_city_state",
+      "idx_services_published_updated",
+      "idx_services_status_category",
+      "idx_services_external_id"
+    ],
+    "unaccentInstalled": true,
+    "serviceMetricTotalsViewExists": true,
+    "writesPerformed": false
+  },
+  "authority": {
+    "rpc": "public.search_public_services_v1(jsonb)",
+    "repository": "assets/js/repositories/search-repository.js",
+    "service": "assets/js/services/search-service.js",
+    "contractVersion": "1.0.0",
+    "remoteAuthority": "supabase_rpc",
+    "fixtureAuthority": "runtime_memory_only",
+    "remoteFailureMode": "fail_closed",
+    "browserPersistentAuthority": "forbidden",
+    "directFullCatalogDownloadForCanonicalQuery": "forbidden_after_activation"
+  },
+  "requestDto": {
+    "allowlistedFields": [
+      "query",
+      "categories",
+      "state",
+      "city",
+      "neighborhood",
+      "serviceMode",
+      "minRating",
+      "guaranteed",
+      "emergency",
+      "availableToday",
+      "pageSize",
+      "cursor"
+    ],
+    "queryMaxLength": 120,
+    "categoriesMaxCount": 10,
+    "pageSizeDefault": 12,
+    "pageSizeMaximum": 24,
+    "cursorMaximumLength": 512,
+    "minRatingRange": [0, 5],
+    "serviceModes": ["any", "local", "online"]
+  },
+  "responseDto": {
+    "publicSafeProjection": true,
+    "approvedPublishedOnly": true,
+    "rawMetadataExposed": false,
+    "emailExposed": false,
+    "searchVectorExposed": false,
+    "pagination": "opaque_updated_at_id_cursor",
+    "stableOrdering": "updated_at_desc_id_desc",
+    "maximumRowsPerPage": 24
+  },
+  "geographicEligibility": {
+    "local": "exact_state_city_neighborhood_when_supplied",
+    "online": "eligible_independent_of_requested_location",
+    "any": "exact_local_or_online",
+    "nearbyCityExpansion": "not_implemented_and_not_inferred",
+    "missingLocation": "unrestricted_public_eligibility"
+  },
+  "searchDocument": {
+    "source": "canonical_service_fields_and_allowlisted_metadata",
+    "language": "portuguese",
+    "accentNormalization": "extensions.unaccent",
+    "weights": {
+      "title": "A",
+      "descriptionCategoryProviderTagsKeywords": "B",
+      "cityStateNeighborhood": "C"
+    },
+    "maintenance": "private_trigger",
+    "index": "partial_gin_published_approved"
+  },
+  "activation": {
+    "resultsRenderer": "not_yet_activated",
+    "legacyBrowserFiltering": "preserved_until_SEARCH_A05",
+    "legacyFixedSlice": "preserved_until_SEARCH_A05",
+    "reason": "Avoid partial rollout before candidate CI and controlled staging validation."
+  },
+  "validation": {
+    "databaseCandidate": "supabase/migrations/158_service_search_contract.sql",
+    "transactionalSqlTest": "supabase/tests/022_service_search_contract_validation.sql",
+    "structuralAudit": "scripts/audit-search-server-contract.js",
+    "runtimeTest": "scripts/test-search-server-contract-runtime.js",
+    "dedicatedWorkflow": ".github/workflows/search-server-contract.yml",
+    "status": "pending"
+  },
+  "matrix": {
+    "versionPreserved": "1.3.11",
+    "maturityPreserved": 2,
+    "userFacingAuthorityPreserved": "hybrid",
+    "serverAuthorityPreserved": "contract_only",
+    "stagingEvidencePreserved": "local_e2e",
+    "securityGatePreserved": "blocked",
+    "productionGatePreserved": "blocked",
+    "searchB01": "reconciled_removed",
+    "searchB02": "preserved_until_activation_and_staging_validation",
+    "searchB03": "preserved"
+  },
+  "safety": {
+    "migrationApplied": false,
+    "stagingChanged": false,
+    "productionChanged": false,
+    "realAccountsChanged": false,
+    "realServicesChanged": false,
+    "realSearchMetricsChanged": false,
+    "persistentSyntheticEntitiesCreated": false,
+    "paidConfigChanged": false,
+    "smsOrOauthChanged": false,
+    "prMerged": false,
+    "prReadyForReview": false
+  },
+  "remaining": [
+    "Validate migration syntax, privileges and behavior through the transactional SQL test in controlled staging.",
+    "Validate the repository/service DTO and fail-closed behavior through CI.",
+    "Activate queryPage in the results renderer only in SEARCH-A05 after the contract is stable.",
+    "Add UI cursor continuation and remove browser service filtering/fixed slicing in SEARCH-A05.",
+    "Keep SEARCH-B03 open for server-controlled ranking, anti-manipulation and conversion instrumentation."
+  ],
+  "nextControlledStep": "Validate the A04 contract without applying it to production; then execute SEARCH-A05 to activate server search and cursor pagination in resultados.html."
+}
