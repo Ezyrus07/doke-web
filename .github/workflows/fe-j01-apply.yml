@@ -1,107 +1,13 @@
-name: FE-J01 Controlled Apply
+name: FE-J01 Apply Retired
 
 on:
-  pull_request:
-    paths:
-      - "scripts/fe-j01-apply.js"
-      - "assets/js/dev/fe-j01-trigger.txt"
-      - ".github/workflows/fe-j01-apply.yml"
+  workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  apply:
+  retired:
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
     steps:
-      - name: Checkout candidate branch
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref }}
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-
-      - name: Repair codemod literal matcher
-        shell: bash
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          p = Path('scripts/fe-j01-apply.js')
-          s = p.read_text()
-          bad = "stable = replaceOnce(stable, /var CORE_SCRIPT_RE = \\/assets\\\\\\/js\\\\\\/core\\\\\\/(\\?:runtime-config\\|feature-flags\\|rollout-guard\\|navigation-lifecycle\\|app\\|stable-shell-router\\|social-page-router\\)\\\\\\.js/, \"var CORE_SCRIPT_RE = /assets\\\\/js\\\\/core\\\\/(?:runtime-config|feature-flags|rollout-guard|navigation-registry|navigation-lifecycle|app|stable-shell-router|social-page-router)\\\\.js\", 'stable core script registry');"
-          good = "stable = replaceOnce(stable, 'var CORE_SCRIPT_RE = /assets\\\\/js\\\\/core\\\\/(?:runtime-config|feature-flags|rollout-guard|navigation-lifecycle|app|stable-shell-router|social-page-router)\\\\.js', 'var CORE_SCRIPT_RE = /assets\\\\/js\\\\/core\\\\/(?:runtime-config|feature-flags|rollout-guard|navigation-registry|navigation-lifecycle|app|stable-shell-router|social-page-router)\\\\.js', 'stable core script registry');"
-          if bad not in s:
-              raise SystemExit('invalid regex line not found')
-          p.write_text(s.replace(bad, good))
-          PY
-
-      - name: Apply FE-J01 codemod
-        shell: bash
-        run: |
-          set -o pipefail
-          node scripts/fe-j01-apply.js 2>&1 | tee fe-j01-codemod.log
-
-      - name: Normalize generated audit source
-        shell: bash
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          p = Path('scripts/audit-navigation-registry-ownership.js')
-          s = p.read_text()
-          s = s.replace("}, null, 2) + '\n');", "}, null, 2) + '\\n');")
-          s = s.replace("}, null, 2) + '\n\n');", "}, null, 2) + '\\n');")
-          for old, new in {
-              "'SAFE_ROUTES'": "'var SAFE_ROUTES'",
-              "'NATIVE_ONLY_ROUTES'": "'var NATIVE_ONLY_ROUTES'",
-              "'HYDRATION_BARRIER_ROUTES'": "'var HYDRATION_BARRIER_ROUTES'",
-              "'INTERNAL_DIRECT_HYDRATION_ROUTES'": "'var INTERNAL_DIRECT_HYDRATION_ROUTES'",
-              "'PROFILE_ACTIVE_PATHS'": "'var PROFILE_ACTIVE_PATHS'",
-              "'ROUTE_INIT'": "'var ROUTE_INIT'",
-          }.items():
-              s = s.replace(old, new)
-          p.write_text(s)
-          PY
-          node --check scripts/audit-navigation-registry-ownership.js
-
-      - name: Validate ownership audit
-        shell: bash
-        run: |
-          set -o pipefail
-          node scripts/audit-navigation-registry-ownership.js 2>&1 | tee fe-j01-ownership.log
-
-      - name: Commit controlled result
-        shell: bash
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add assets/js/core/navigation-registry.js \
-            assets/js/core/stable-shell-router.js \
-            assets/js/core/social-page-router.js \
-            assets/js/core/app.js \
-            assets/js/components/mobile-app-shell.js \
-            assets/js/ui/mobile-drawer-standard.js \
-            config/frontend-structural-gates.json \
-            scripts/audit-navigation-registry-ownership.js \
-            docs/architecture/navigation-registry-ownership.md \
-            package.json
-          if git diff --cached --quiet; then
-            echo "No FE-J01 changes to commit."
-            exit 0
-          fi
-          git commit -m "FE-J01: centralize route metadata in navigation registry"
-          git push origin HEAD:${GITHUB_HEAD_REF}
-
-      - name: Upload codemod diagnostics
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: fe-j01-codemod-${{ github.sha }}
-          path: |
-            fe-j01-codemod.log
-            fe-j01-ownership.log
-          if-no-files-found: warn
-          retention-days: 3
+      - run: echo "FE-J01 controlled apply workflow has been retired."
