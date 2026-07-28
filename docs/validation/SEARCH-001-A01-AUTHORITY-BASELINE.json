@@ -1,0 +1,98 @@
+{
+  "schemaVersion": "1.0.0",
+  "domain": "SEARCH-001",
+  "sublot": "SEARCH-A01",
+  "status": "baseline_frozen",
+  "validationStatus": "pending",
+  "title": "Search, discovery, favorites and ranking authority baseline",
+  "recordedAt": "2026-07-28T10:10:00-03:00",
+  "baseHead": "fe99d236567c34b9b2ac14a89b7e6d0cc159c872",
+  "rootCause": [
+    "The approved service catalog can be read from the remote services authority, but filtering, ranking, geographic eligibility and result limits are still executed in the browser.",
+    "User, Worker and publication search modes are backed by static browser pools rather than canonical server authorities.",
+    "Favorite rows have an RLS-protected schema in staging, but the product path persists favorite identifiers in localStorage and never calls public.favorites.",
+    "The domain matrix still describes favorites RLS as disabled, which no longer matches the observed staging schema."
+  ],
+  "authority": {
+    "approvedServiceSource": "remote_services_list_when_available",
+    "serviceFallback": "browser_mock_data_when_search_service_has_no_domain_service",
+    "serviceFiltering": "browser",
+    "serviceRanking": "browser_heuristic",
+    "pagination": "fixed_client_slice",
+    "userSearch": "static_browser_pool",
+    "workerSearch": "static_browser_pool",
+    "publicationSearch": "static_browser_pool",
+    "searchSuggestions": "static_browser_pool",
+    "searchHistory": "browser_local_storage",
+    "searchHistoryKey": "doke.search.history",
+    "favorites": "browser_local_storage",
+    "favoritesKeyPrefix": "doke.service-favorites.v1:",
+    "favoritesSchema": "remote_rls_ready_but_unused_by_product",
+    "geographicEligibility": "static_browser_options_and_exact_text_matching",
+    "serverSearchEndpoint": null,
+    "serverPaginationCursor": null,
+    "rankingTelemetryAuthority": null,
+    "antiManipulationAuthority": null
+  },
+  "fixedClientLimits": {
+    "services": 6,
+    "users": 6,
+    "workers": 8,
+    "publications": 8
+  },
+  "staging": {
+    "project": "doke-web-staging",
+    "projectRef": "zwkczgewzbsorbrjuzpb",
+    "favoritesRlsEnabled": true,
+    "favoritesRlsForced": false,
+    "favoritesPolicyCount": 3,
+    "favoritesPolicies": [
+      "favorites_owner_select",
+      "favorites_owner_insert",
+      "favorites_owner_delete"
+    ],
+    "favoritesRows": 0,
+    "anonSelect": false,
+    "authenticatedSelect": true,
+    "authenticatedInsert": true,
+    "authenticatedDelete": true,
+    "readOnlyInspection": true
+  },
+  "matrixDrift": {
+    "searchB01DescriptionIsStale": true,
+    "recordedDescription": "favorites has RLS disabled.",
+    "observedReality": "favorites has RLS enabled with three owner-scoped policies in staging.",
+    "controlledReclassification": "Retire browser-local favorites authority and activate the existing remote RLS-protected authority before removing or rewriting SEARCH-B01."
+  },
+  "blockers": [
+    {
+      "id": "SEARCH-B01",
+      "actualCategory": "frontend_authority_activation",
+      "actualProblem": "The product persists favorites in localStorage instead of public.favorites even though staging RLS is ready."
+    },
+    {
+      "id": "SEARCH-B02",
+      "actualCategory": "server_search",
+      "actualProblem": "Filtering, ranking, geographic eligibility and pagination remain browser-owned and unbounded by a server DTO."
+    },
+    {
+      "id": "SEARCH-B03",
+      "actualCategory": "ranking_integrity",
+      "actualProblem": "Ranking signals, conversion telemetry and anti-manipulation controls are incomplete."
+    }
+  ],
+  "safety": {
+    "implementationChanged": false,
+    "stagingChanged": false,
+    "productionChanged": false,
+    "realAccountsChanged": false,
+    "realFavoritesChanged": false,
+    "persistentSyntheticEntitiesCreated": false,
+    "paidConfigChanged": false,
+    "smsOrOauthChanged": false,
+    "parentPrMerged": false,
+    "currentPrMerged": false,
+    "currentPrReadyForReview": false
+  },
+  "nextControlledStep": "SEARCH-A02: introduce a canonical favorites repository/service over public.favorites, retire doke.service-favorites.v1 for Supabase and UUID subjects, preserve only explicit non-UUID fixture memory, and fail closed when remote authority is unavailable."
+}
