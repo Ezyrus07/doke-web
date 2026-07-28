@@ -13,6 +13,8 @@ const assert = (condition, message) => { if (!condition) errors.push(message); }
 const files = {
   html: 'resultados.html',
   results: 'assets/js/pages/search-results.js',
+  passiveController: 'assets/js/pages/resultados-data-controller.js',
+  controllerData: 'assets/js/controllers/controller-data.js',
   surface: 'assets/js/pages/search/server-results-surface.js',
   repository: 'assets/js/repositories/search-repository.js',
   service: 'assets/js/services/search-service.js',
@@ -20,7 +22,9 @@ const files = {
   runtime: 'scripts/test-search-results-server-surface-runtime.js',
   evidence: 'docs/validation/SEARCH-001-A05-SERVER-RESULTS-ACTIVATION.json',
   a04Evidence: 'docs/validation/SEARCH-001-A04-SERVER-SEARCH-CONTRACT.json',
-  workflow: '.github/workflows/search-results-server-activation.yml'
+  workflow: '.github/workflows/search-results-server-activation.yml',
+  browserWorkflow: '.github/workflows/search-results-staging-browser.yml',
+  browserTest: 'tests/search/search-results-staging.spec.js'
 };
 
 Object.values(files).forEach((file) => assert(exists(file), `required SEARCH-A05 file missing: ${file}`));
@@ -66,6 +70,27 @@ assert(results.includes("filters.searchType === 'users'"), 'static user search s
 assert(results.includes("filters.searchType === 'workers'"), 'static Worker search scope must remain available');
 assert(results.includes("filters.searchType === 'before-after'"), 'static publication search scope must remain available');
 
+const passiveController = read(files.passiveController);
+[
+  "mode: 'passive-canonical-event-observer'",
+  "document.addEventListener('doke:search-server-page-rendered'",
+  "document.addEventListener('doke:search-server-error'",
+  "authority: 'public.search_public_services_v1'",
+  "source: 'canonical-server-search-event'"
+].forEach((marker) => assert(passiveController.includes(marker), `passive resultados controller marker missing: ${marker}`));
+[
+  'pageDataOrchestrator',
+  'repositoryBoundary',
+  'getPageData(',
+  'peekPageData(',
+  'doke:page-data-revalidated'
+].forEach((marker) => assert(!passiveController.includes(marker), `legacy resultados data loader remains executable: ${marker}`));
+
+const controllerData = read(files.controllerData);
+assert(controllerData.includes('resultados: []'), 'generic controller resources must be empty for resultados');
+assert(controllerData.includes("mode: pageName === 'resultados' ? 'canonical-search-owned'"), 'generic controller must mark resultados as canonical-search-owned');
+assert(!controllerData.includes("resultados: ['services'"), 'generic controller reopened the full service catalog for resultados');
+
 const surface = read(files.surface);
 [
   'searchApi().queryPage(request)',
@@ -104,6 +129,15 @@ const runtime = read(files.runtime);
   'fallbackUsed, false'
 ].forEach((marker) => assert(runtime.includes(marker), `SEARCH-A05 runtime marker missing: ${marker}`));
 
+const browserTest = read(files.browserTest);
+[
+  "SEARCH_RPC_PATH = '/rest/v1/rpc/search_public_services_v1'",
+  "url.pathname === '/rest/v1/services'",
+  'expect(directCatalogRequests).toEqual([])',
+  'expect(error.fallbackUsed).toBe(false)',
+  "toHaveAttribute('data-results-state', 'error')"
+].forEach((marker) => assert(browserTest.includes(marker), `staging browser proof marker missing: ${marker}`));
+
 const a04Evidence = JSON.parse(read(files.a04Evidence));
 assert(a04Evidence.status === 'COMPLETE', 'SEARCH-A04 must be complete before activation');
 assert(a04Evidence.stagingValidation && a04Evidence.stagingValidation.status === 'success', 'SEARCH-A04 staging RPC must be validated before activation');
@@ -119,6 +153,8 @@ assert(evidence.safety && evidence.safety.productionChanged === false, 'SEARCH-A
 
 const workflow = read(files.workflow);
 [
+  'assets/js/pages/resultados-data-controller.js',
+  'assets/js/controllers/controller-data.js',
   'node scripts/audit-search-authority-baseline.js',
   'node scripts/audit-search-server-contract.js',
   'node scripts/audit-search-approved-snapshot-authority.js',
@@ -127,6 +163,14 @@ const workflow = read(files.workflow);
   'node scripts/test-search-results-server-surface-runtime.js'
 ].forEach((marker) => assert(workflow.includes(marker), `SEARCH-A05 workflow marker missing: ${marker}`));
 
+const browserWorkflow = read(files.browserWorkflow);
+[
+  'assets/js/pages/resultados-data-controller.js',
+  'assets/js/controllers/controller-data.js',
+  'tests/search/search-results-staging.spec.js',
+  'Run staging browser authority tests'
+].forEach((marker) => assert(browserWorkflow.includes(marker), `SEARCH-A05 browser workflow marker missing: ${marker}`));
+
 if (errors.length) {
   console.error('[SEARCH-A05] Server results activation audit failed:');
   errors.forEach((error) => console.error(`- ${error}`));
@@ -134,6 +178,6 @@ if (errors.length) {
 }
 
 console.log('[SEARCH-A05] Canonical server-side service results activation: PASS');
-console.log('[SEARCH-A05] Full-catalog browser filtering, related fallback and fixed six-card slicing are retired for service results.');
+console.log('[SEARCH-A05] Full-catalog browser filtering, related fallback, fixed slicing and parallel legacy catalog loaders are retired for service results.');
 console.log('[SEARCH-A05] Cursor continuation is canonical and remote failures remain fail-closed.');
 console.log('[SEARCH-A05] Static users, Workers, publications, suggestions and history remain explicitly out of this sublot.');
