@@ -25,6 +25,9 @@
     return Doke.mockData.load('services');
   }
 
+  // Legacy browser list remains executable until SEARCH-A05 activates queryPage
+  // in the results renderer. Keeping the boundary explicit prevents a partial
+  // rollout from silently changing current search behavior.
   function list(filters) {
     filters = filters || {};
     var query = normalizeText(filters.query || filters.q);
@@ -42,6 +45,32 @@
         return true;
       });
     });
+  }
+
+  function getSearchRepository() {
+    return Doke.repositories && Doke.repositories.search;
+  }
+
+  function assertSearchRepository() {
+    var repository = getSearchRepository();
+    if (!repository || typeof repository.queryPage !== 'function') {
+      var error = new Error('Autoridade canônica de busca não foi carregada.');
+      error.code = 'DOKE_SEARCH_AUTHORITY_UNAVAILABLE';
+      throw error;
+    }
+    return repository;
+  }
+
+  function queryPage(request) {
+    try {
+      return assertSearchRepository().queryPage(request || {});
+    } catch (error) {
+      return Promise.reject(error);
+    }
+  }
+
+  function normalizeRequest(request) {
+    return assertSearchRepository().normalizeRequest(request || {});
   }
 
   function featured(limit) {
@@ -66,10 +95,32 @@
     });
   }
 
+  function pageRequestFromLocationSearch() {
+    var params = new URLSearchParams(window.location.search || '');
+    return normalizeRequest({
+      query: params.get('q') || params.get('busca') || '',
+      categories: params.getAll('category').concat(params.getAll('categoria')),
+      state: params.get('state') || params.get('estado') || '',
+      city: params.get('city') || params.get('cidade') || '',
+      neighborhood: params.get('neighborhood') || params.get('bairro') || '',
+      serviceMode: params.get('online') === '1' ? 'online' : 'any',
+      minRating: Number(params.get('minRating') || 0),
+      guaranteed: params.get('guaranteed') === '1',
+      emergency: params.get('emergency') === '1',
+      availableToday: params.get('availableToday') === '1',
+      pageSize: Number(params.get('pageSize') || 12),
+      cursor: params.get('cursor') || ''
+    });
+  }
+
   services.search = Object.freeze({
     list: list,
+    queryPage: queryPage,
+    normalizeRequest: normalizeRequest,
     featured: featured,
     getById: getById,
-    fromLocationSearch: fromLocationSearch
+    fromLocationSearch: fromLocationSearch,
+    pageRequestFromLocationSearch: pageRequestFromLocationSearch,
+    getContract: function () { return assertSearchRepository().getContract(); }
   });
 })();
