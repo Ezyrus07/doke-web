@@ -5,32 +5,82 @@
   "objective": "Close service-media replacement, superseded-object cleanup and abandoned-draft cleanup lifecycle without reopening browser authority.",
   "branch": "cat/cat-001-baseline-audit",
   "baseHead": "035305f2d80364ccd21f1ab52b29cc1d314693f5",
+  "auditPredecessorHead": "7620390334bba5cdbfec9fc90e7029ba986ecdb9",
+  "rootCause": {
+    "summary": "The browser owns mutable Storage writes and owner-scoped public.service_media DML while service versions preserve only public URL strings, so object replacement, version promotion and cleanup do not share one canonical authority.",
+    "browserStoragePath": "<actor-uuid>/<service-ref>/<ordinal>.<extension>",
+    "storageUploadMode": "direct authenticated upload with upsert",
+    "versionMediaReference": "public URL strings embedded in service_versions.snapshot.images",
+    "catalogProjection": "approval deletes and rebuilds public.service_media from snapshot URL strings",
+    "atomicBoundary": "missing across upload reservation, Storage object, service version, catalog projection and cleanup"
+  },
   "currentAuthority": {
     "storageSelect": "authenticated owner policy",
     "storageInsert": "authenticated professional owner-path policy",
     "storageUpdate": "authenticated owner policy",
     "storageDelete": "authenticated owner policy",
+    "serviceMediaTableInsert": "owner RLS with browser-role table privilege",
+    "serviceMediaTableUpdate": "owner RLS with browser-role table privilege",
+    "serviceMediaTableDelete": "owner RLS with browser-role table privilege",
     "catalogMediaRead": "public.service_media joined from services repository",
+    "signedUploadIntent": "missing",
+    "browserChosenObjectPath": true,
+    "storageUpsert": true,
+    "immutableObjectPath": false,
     "replacementTransaction": "missing",
     "supersededObjectState": "missing",
     "abandonedDraftExpiry": "missing",
-    "referenceSafeCleanup": "missing"
+    "referenceSafeCleanup": "missing",
+    "cleanupJob": "missing"
+  },
+  "stagingObservation": {
+    "projectRef": "zwkczgewzbsorbrjuzpb",
+    "observedOn": "2026-07-27",
+    "storageObjects": 3,
+    "serviceMediaRows": 3,
+    "servicesWithMedia": 1,
+    "pendingVersions": 0,
+    "approvedVersions": 1,
+    "supersededVersions": 1,
+    "currentlyUnreferencedObjects": 0,
+    "interpretation": "The current staging sample is internally referenced, but no schema, operation or job guarantees that invariant after replacement or interrupted submission."
   },
   "risks": [
-    "Browser can update or delete owner storage objects without a server transaction that also reconciles service_media and service_versions.",
+    "Browser can overwrite a deterministic object path before the corresponding service version is accepted, changing bytes behind a URL preserved by historical snapshots.",
+    "Browser can update or delete owner Storage objects without a server transaction that also reconciles service_media and service_versions.",
+    "Browser-role DML remains available on public.service_media for owner rows, creating a second mutation path beside moderation approval.",
+    "A failed submit_service_for_review call after upload leaves an object without a consumed upload intent or deterministic cleanup authority.",
     "A replaced object has no canonical superseded state or retention window.",
-    "Abandoned draft media has no explicit expiry authority.",
     "Cleanup cannot prove that an object is unreferenced by approved, pending or historical service versions before deletion."
   ],
   "requiredClosure": [
-    "Introduce explicit server-side media lifecycle operations behind JWT-verified Edge authority.",
-    "Separate upload reservation from promotion into an approved or pending service version.",
-    "Track active, pending, superseded and cleanup-eligible media states canonically.",
-    "Remove direct browser UPDATE and DELETE authority for service-media objects.",
-    "Guarantee reference-safe cleanup across services, service_media and service_versions.",
-    "Add deterministic runtime, structural and SQL validation gates.",
-    "Validate only in staging before documentary closure."
+    "Introduce server-generated signed upload intents behind the JWT-verified self-service Edge authority.",
+    "Generate immutable unique object paths and prohibit browser-selected replacement paths and upsert.",
+    "Consume an upload intent when submitting a service version and persist canonical object identity instead of trusting arbitrary public URLs.",
+    "Remove direct browser INSERT, UPDATE and DELETE authority from public.service_media.",
+    "Remove direct browser Storage UPDATE and DELETE authority; retire direct INSERT after signed upload cutover.",
+    "Track prepared, consumed, active, superseded and cleanup-eligible media states canonically.",
+    "Project approved media into public.service_media only from canonical consumed assets.",
+    "Delete objects only through the Storage API after a reference-safe server check across services, service_media and every service_versions snapshot.",
+    "Expire abandoned upload intents deterministically and process cleanup through a permanent server worker or controlled operation.",
+    "Add deterministic runtime, structural and SQL validation gates and validate only in staging before documentary closure."
   ],
+  "smallestSafeCandidate": {
+    "name": "CAT-A04 implementation candidate 1 — immutable upload reservation",
+    "scope": [
+      "private upload-intent ledger",
+      "server-generated immutable object paths",
+      "signed upload token creation through self-service-operations",
+      "intent consumption during submit_service_for_review",
+      "retirement of direct browser service_media DML and Storage replacement/deletion"
+    ],
+    "deferredWithinCatA04": [
+      "superseded retention policy",
+      "reference-safe Storage API cleanup worker",
+      "abandoned-intent cleanup schedule",
+      "final CAT-A04 evidence and matrix reconciliation"
+    ]
+  },
   "safety": {
     "stagingChanged": false,
     "productionChanged": false,
@@ -43,5 +93,5 @@
     "paidConfigurationEnabled": false,
     "prMerged": false
   },
-  "nextControlledWork": "Design the canonical media lifecycle schema and server operations, then implement the smallest reversible candidate without touching production."
+  "nextControlledWork": "Implement the immutable upload-reservation candidate in repository code and a reversible staging migration, then validate before adding cleanup execution."
 }
