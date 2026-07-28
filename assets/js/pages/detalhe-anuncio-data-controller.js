@@ -4,6 +4,72 @@
   var Doke = window.Doke || (window.Doke = {});
   var PAGE_NAME = 'detalhe-anuncio';
   var DEFAULT_SERVICE_ID = '';
+  var FAVORITES_MODULES = [
+    {
+      key: 'favorites-repository',
+      src: 'assets/js/repositories/favorites-repository.js?v=20260728-search-a02-v1',
+      ready: function () { return Boolean(Doke.repositories && Doke.repositories.favorites); }
+    },
+    {
+      key: 'favorites-service',
+      src: 'assets/js/services/favorites-service.js?v=20260728-search-a02-v1',
+      ready: function () { return Boolean(Doke.services && Doke.services.favorites); }
+    },
+    {
+      key: 'detail-ad-experience',
+      src: 'assets/js/pages/detail-ad-experience.js?v=20260728-search-a02-v1',
+      ready: function () { return Boolean(Doke.detailAdExperience); }
+    }
+  ];
+  var favoritesAuthorityPromise = null;
+
+  function ensureScript(module) {
+    if (module.ready()) return Promise.resolve();
+
+    var selector = 'script[data-doke-module="' + module.key + '"]';
+    var existing = document.querySelector(selector);
+    if (existing && existing.__dokeModulePromise) return existing.__dokeModulePromise;
+
+    var script = existing || document.createElement('script');
+    script.async = false;
+    script.src = module.src;
+    script.dataset.dokeModule = module.key;
+
+    script.__dokeModulePromise = new Promise(function (resolve, reject) {
+      function complete() {
+        if (module.ready()) {
+          resolve();
+          return;
+        }
+        var error = new Error('Módulo obrigatório não registrou a autoridade esperada: ' + module.key);
+        error.code = 'DOKE_FAVORITES_MODULE_INVALID';
+        reject(error);
+      }
+
+      function fail() {
+        var error = new Error('Não foi possível carregar o módulo: ' + module.key);
+        error.code = 'DOKE_FAVORITES_MODULE_LOAD_FAILED';
+        reject(error);
+      }
+
+      script.addEventListener('load', complete, { once: true });
+      script.addEventListener('error', fail, { once: true });
+    });
+
+    if (!existing) document.head.appendChild(script);
+    return script.__dokeModulePromise;
+  }
+
+  function ensureFavoritesAuthority() {
+    if (favoritesAuthorityPromise) return favoritesAuthorityPromise;
+    favoritesAuthorityPromise = FAVORITES_MODULES.reduce(function (chain, module) {
+      return chain.then(function () { return ensureScript(module); });
+    }, Promise.resolve()).catch(function (error) {
+      favoritesAuthorityPromise = null;
+      throw error;
+    });
+    return favoritesAuthorityPromise;
+  }
 
   function getRoot() {
     return document.querySelector('[data-state-boundary="detalhe-anuncio"]')
@@ -103,7 +169,7 @@
           readySelectors: ['[data-detail-hydration-ready]'],
           skeletonMode: 'hard-load',
           readyPolicy: 'after-skeleton',
-      preserveReadyDuringHydration: true,
+          preserveReadyDuringHydration: true,
           revealReadyOnEmpty: false,
           waitFor: ['dom', 'detail'],
           minDuration: 0,
@@ -198,12 +264,29 @@
     if (!root) return Promise.resolve(null);
     if (root.__dokeDetailBootPromise) return root.__dokeDetailBootPromise;
     if (root.__dokeDetailBootComplete) return Promise.resolve(Doke.detailAdDataController.lastPayload);
-    root.__dokeDetailBootPromise = load(root).then(function (result) {
-      root.__dokeDetailBootComplete = true;
-      return result;
-    }).finally(function () {
-      root.__dokeDetailBootPromise = null;
-    });
+
+    root.__dokeDetailBootPromise = ensureFavoritesAuthority()
+      .catch(function (error) {
+        root.dataset.favoritesAuthorityState = 'unavailable';
+        document.dispatchEvent(new CustomEvent('doke:favorites-authority-error', {
+          detail: {
+            page: PAGE_NAME,
+            code: error && error.code ? error.code : 'DOKE_FAVORITES_MODULE_UNKNOWN',
+            error: error && error.message ? error.message : 'Falha ao carregar favoritos.'
+          }
+        }));
+        return null;
+      })
+      .then(function () {
+        return load(root);
+      })
+      .then(function (result) {
+        root.__dokeDetailBootComplete = true;
+        return result;
+      })
+      .finally(function () {
+        root.__dokeDetailBootPromise = null;
+      });
     return root.__dokeDetailBootPromise;
   }
 
@@ -211,6 +294,7 @@
     page: PAGE_NAME,
     getRoot: getRoot,
     getServiceId: getServiceId,
+    ensureFavoritesAuthority: ensureFavoritesAuthority,
     load: load,
     boot: boot,
     lastPayload: null
