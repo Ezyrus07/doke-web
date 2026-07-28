@@ -1,0 +1,106 @@
+{
+  "schemaVersion": "1.0.0",
+  "domain": "SEARCH-001",
+  "sublot": "SEARCH-A07",
+  "status": "CANDIDATE_IMPLEMENTED_CI_PENDING",
+  "title": "Immutable bounded ranking v1 and deterministic rollback contract",
+  "recordedAt": "2026-07-28T18:20:00-03:00",
+  "baseHead": "5084bede80bf9c6cccf689789783e62deb0c6fb8",
+  "ranking": {
+    "configurationAuthority": "private.service_search_ranking_versions",
+    "stateAuthority": "private.service_search_ranking_state",
+    "eventAuthority": "private.service_search_ranking_state_events",
+    "activeVersionAfterMigration": "search-rank-v0",
+    "candidateVersion": "search-rank-v1",
+    "candidateStrategy": "bounded_quality_v1",
+    "publicRpcChanged": false,
+    "scoreBreakdownPublic": false,
+    "scoreInterval": "0_to_1",
+    "scorePrecision": 8,
+    "weights": {
+      "textRelevance": 0.65,
+      "publishedOrderBackedReviewQuality": 0.2,
+      "futureAvailabilityPresence": 0.05,
+      "boundedApprovedVersionRecency": 0.1
+    },
+    "reviewSmoothing": {
+      "method": "bayesian_prior",
+      "priorMean": 4,
+      "priorWeight": 5
+    },
+    "availability": {
+      "mode": "binary_presence_only",
+      "windowDays": 14,
+      "maximumContribution": 0.05
+    },
+    "recency": {
+      "source": "approved_version_timestamp",
+      "fullCreditDays": 14,
+      "zeroCreditDays": 90,
+      "maximumContribution": 0.1
+    }
+  },
+  "antiManipulation": {
+    "behavioralMetricsInScore": false,
+    "rawViewsInScore": false,
+    "contactsInScore": false,
+    "budgetRequestsInScore": false,
+    "messagesInScore": false,
+    "availabilityCountInScore": false,
+    "ownerActivityInScore": false,
+    "paidBoostInScore": false,
+    "rankingVersionImmutable": true,
+    "invalidWeightsRejected": true
+  },
+  "rollback": {
+    "authority": "private.activate_service_search_ranking_version(text,text,text)",
+    "serviceRoleOnly": true,
+    "compareAndSwap": true,
+    "activationEventsAppendOnly": true,
+    "validatedPath": "search-rank-v0_to_search-rank-v1_to_search-rank-v0",
+    "transactionalSqlTest": "supabase/tests/024_service_search_ranking_v1_validation.sql"
+  },
+  "implementation": {
+    "migration": "supabase/migrations/160_service_search_ranking_v1.sql",
+    "audit": "scripts/audit-search-ranking-v1.js",
+    "runtime": "scripts/test-search-ranking-v1-runtime.js",
+    "workflow": ".github/workflows/search-ranking-v1.yml",
+    "temporaryApplicatorRemaining": false,
+    "temporaryWorkflowRemaining": false
+  },
+  "activationBoundary": {
+    "migrationAppliedToStaging": false,
+    "rankingV1Activated": false,
+    "publicSearchRpcIntegrated": false,
+    "rankCursorIntegrated": false,
+    "productionActivation": false,
+    "nextRequiredSublot": "SEARCH-A08"
+  },
+  "matrix": {
+    "maturityPreserved": 3,
+    "userFacingAuthorityPreserved": "hybrid",
+    "serverAuthorityPreserved": "partial",
+    "stagingEvidencePreserved": "staging_canary",
+    "securityGatePreserved": "blocked",
+    "productionGatePreserved": "blocked",
+    "searchB03": "preserved"
+  },
+  "safety": {
+    "stagingChanged": false,
+    "productionChanged": false,
+    "realAccountsChanged": false,
+    "realServicesChanged": false,
+    "reviewsChanged": false,
+    "availabilityChanged": false,
+    "metricsChanged": false,
+    "prMerged": false,
+    "prReadyForReview": false
+  },
+  "remaining": [
+    "Apply migration 160 only to staging and execute SQL test 024 with rollback.",
+    "Integrate the active ranking version into a versioned public search RPC with ranking-version and as-of cursor boundaries.",
+    "Add server-authoritative impression and conversion telemetry before behavioral signals can be evaluated.",
+    "Keep SEARCH-B03 open until ranking, monitoring and rollback are proven together on one clean head."
+  ],
+  "nextControlledStep": "SEARCH-A08 — validate migration 160 in staging, then integrate search-rank-v1 into a new public RPC and stable version-bound cursor without activating production."
+}
