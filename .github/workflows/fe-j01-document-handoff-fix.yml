@@ -10,6 +10,7 @@ permissions:
 
 jobs:
   fix:
+    if: github.event.pull_request.number == 16
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -31,27 +32,20 @@ jobs:
 
           lifecycle_path = Path('assets/js/core/navigation-lifecycle.js')
           lifecycle = lifecycle_path.read_text()
-          old_tail = """      }, 0);
-            });
-          }
-
-          function go"""
-          new_tail = """      }, 64);
-            });
-          }
-
-          function go"""
-          if old_tail not in lifecycle:
-              raise SystemExit('document navigation timer tail not found')
-          lifecycle_path.write_text(lifecycle.replace(old_tail, new_tail, 1))
+          start = lifecycle.index('  function documentNavigate(url, options) {')
+          end = lifecycle.index('\n  function go(href, options) {', start)
+          block = lifecycle[start:end]
+          if '}, 0);' not in block:
+              raise SystemExit('document navigation zero-delay timer not found inside documentNavigate')
+          lifecycle = lifecycle[:start] + block.replace('}, 0);', '}, 64);', 1) + lifecycle[end:]
+          lifecycle_path.write_text(lifecycle)
 
           test_path = Path('scripts/test-navigation-lifecycle-core-contract.js')
           test = test_path.read_text()
-          old_wait = "await new Promise((resolve) => setTimeout(resolve, 0));"
-          new_wait = "await new Promise((resolve) => setTimeout(resolve, 80));"
+          old_wait = 'await new Promise((resolve) => setTimeout(resolve, 0));'
           if old_wait not in test:
               raise SystemExit('document navigation handoff test wait not found')
-          test_path.write_text(test.replace(old_wait, new_wait, 1))
+          test_path.write_text(test.replace(old_wait, 'await new Promise((resolve) => setTimeout(resolve, 80));', 1))
           PY
 
       - name: Validate focused contracts
