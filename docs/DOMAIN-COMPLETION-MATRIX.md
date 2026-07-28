@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 906 arquivos no escopo; 229 referências a localStorage; 69 a sessionStorage; 532 referências mock; 147 referências de rede/Supabase; 30 marcadores de implementação pendente.
+**Evidência estática observada:** 908 arquivos no escopo; 231 referências a localStorage; 71 a sessionStorage; 533 referências mock; 149 referências de rede/Supabase; 30 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -855,7 +855,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI hybrid; servidor partial; staging local e2e; segurança partial; produção blocked.
 
-**Evidência estática observada:** 847 arquivos no escopo; 232 referências a localStorage; 71 a sessionStorage; 225 referências mock; 264 referências de rede/Supabase; 9 marcadores de implementação pendente.
+**Evidência estática observada:** 848 arquivos no escopo; 232 referências a localStorage; 71 a sessionStorage; 225 referências mock; 264 referências de rede/Supabase; 9 marcadores de implementação pendente.
 
 **Páginas:** `index.html`, `resultados.html`, `detalhe-anuncio.html`, `pedidos.html`, `mensagens.html`, `notificacoes.html`, `carteira.html`, `perfil.html`, `comunidade.html`.
 
@@ -886,7 +886,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2132 arquivos no escopo; 488 referências a localStorage; 142 a sessionStorage; 842 referências mock; 537 referências de rede/Supabase; 84 marcadores de implementação pendente.
+**Evidência estática observada:** 2135 arquivos no escopo; 490 referências a localStorage; 144 a sessionStorage; 843 referências mock; 539 referências de rede/Supabase; 84 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
