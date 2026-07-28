@@ -11,6 +11,8 @@ const requiredFiles = [
   'docs/STAGE29-CI-QUALITY-GATES.md',
   'package.json',
   'scripts/audit-service-media-lifecycle-baseline.js',
+  'scripts/audit-service-media-upload-authority.js',
+  'scripts/test-service-media-upload-authority-runtime.js',
 ];
 
 const requiredScripts = [
@@ -62,6 +64,8 @@ const workflowRequiredSnippets = [
 
 const supplementalAudits = [
   'scripts/audit-service-media-lifecycle-baseline.js',
+  'scripts/audit-service-media-upload-authority.js',
+  'scripts/test-service-media-upload-authority-runtime.js',
 ];
 
 let errors = [];
