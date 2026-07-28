@@ -31,12 +31,13 @@ const files = {
   evidenceMarkdown: 'docs/validation/CAT-001-A01-AUTHORITY-BASELINE.md',
   catA02EvidenceJson: 'docs/validation/CAT-001-A02-SERVICE-AUTHORITY-RETIREMENT.json',
   catA03EvidenceJson: 'docs/validation/CAT-001-A03-SERVICE-LIFECYCLE-AUTHORITY.json',
+  catA04EvidenceJson: 'docs/validation/CAT-001-A04-FINAL-CLOSURE-CANDIDATE.json',
   journal: 'docs/DOKE-ENGINEERING-JOURNAL.md',
   quality: '.github/workflows/quality.yml'
 };
 
 Object.entries(files)
-  .filter(([name]) => !['catA02EvidenceJson', 'catA03EvidenceJson'].includes(name))
+  .filter(([name]) => !['catA02EvidenceJson', 'catA03EvidenceJson', 'catA04EvidenceJson'].includes(name))
   .forEach(([, file]) => assert(exists(file), `required file missing: ${file}`));
 
 const catA02Evidence = exists(files.catA02EvidenceJson)
@@ -56,6 +57,16 @@ const catA03Reconciled = Boolean(
   catA03Evidence.authority.contentEdit === 'submit_service_for_review' &&
   catA03Evidence.authority.lifecycle === 'transition_owned_service_lifecycle' &&
   catA03Evidence.authority.browserDirectServicesWrite === 'revoked'
+);
+const catA04Evidence = exists(files.catA04EvidenceJson)
+  ? JSON.parse(read(files.catA04EvidenceJson))
+  : null;
+const catA04Reconciled = Boolean(
+  catA04Evidence &&
+  ['TECHNICALLY_COMPLETE_CI_PENDING', 'COMPLETE'].includes(catA04Evidence.status) &&
+  catA04Evidence.closure &&
+  catA04Evidence.closure.legacyRepositorySubmissionReachableFromServiceLayer === false &&
+  catA04Evidence.closure.signedUploadRequiredForSupabase === true
 );
 
 const matrix = JSON.parse(read(files.matrix));
@@ -136,7 +147,6 @@ if (catA02Retired) {
 const service = read(files.service);
 [
   'function submitForReview(',
-  'return repository.submitForReview(service, options)',
   'function transitionOwned(',
   'function updateOwned(',
   'function deactivateOwned(',
@@ -144,13 +154,29 @@ const service = read(files.service);
   'function archiveOwned('
 ].forEach((marker) => assert(service.includes(marker), `service lifecycle marker missing: ${marker}`));
 
+if (catA04Reconciled) {
+  [
+    'function submitThroughCanonicalAuthority(',
+    'function submitFixtureForReview(',
+    'return ensureMediaUploadService().then(function (authority)',
+    'return authority.submitForReview(service, options || {}, repository)',
+    'return submitThroughCanonicalAuthority(repository, service, options)'
+  ].forEach((marker) => assert(service.includes(marker), `post-CAT-A04 media authority marker missing: ${marker}`));
+  assert(!service.includes('return repository.submitForReview(service, options)'), 'CAT-A04 cannot restore direct repository submission from the service layer');
+  assert(!service.includes('repository.submitForReview(candidate'), 'CAT-A04 cannot retain the pre-upload-authority review route');
+} else {
+  assert(service.includes('return repository.submitForReview(service, options)'), 'pre-CAT-A04 repository submission marker missing');
+}
+
 if (catA03Reconciled) {
   [
-    'repository.submitForReview(candidate',
     'repository.transitionOwnedLifecycle',
     'DOKE_SERVICE_MUTATION_SPLIT_REQUIRED',
     'DOKE_SERVICE_ARCHIVED'
   ].forEach((marker) => assert(service.includes(marker), `post-CAT-A03 lifecycle marker missing: ${marker}`));
+  if (!catA04Reconciled) {
+    assert(service.includes('repository.submitForReview(candidate'), 'pre-CAT-A04 versioned review routing marker missing');
+  }
   assert(!service.includes('return repository.update(serviceId, patch || {})'), 'CAT-A03 cannot retain generic remote edit routing');
   [
     "invokeSelfService('transition_owned_service_lifecycle'",
@@ -290,5 +316,6 @@ if (!process.exitCode) {
   console.log('[CAT-A01] public catalog and moderation: remote/server canonical.');
   console.log(`[CAT-A01] browser service authority: ${catA02Retired ? 'retired by CAT-A02' : 'hybrid browser/remote baseline'}.`);
   console.log(`[CAT-A01] owner lifecycle authority: ${catA03Reconciled ? 'server-side via CAT-A03' : 'pre-CAT-A03 generic repository path'}.`);
+  console.log(`[CAT-A01] media submission authority: ${catA04Reconciled ? 'signed upload authority via CAT-A04' : 'pre-CAT-A04 repository route'}.`);
   console.log(`[CAT-A01] remaining blockers: ${blockerIds.join(', ')}.`);
 }
