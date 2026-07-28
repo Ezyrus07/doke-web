@@ -2,7 +2,7 @@
   "schemaVersion": "1.0.0",
   "domain": "SEARCH-001",
   "sublot": "SEARCH-A02",
-  "status": "CANDIDATE_VALIDATED_CI_PENDING",
+  "status": "COMPLETE",
   "title": "Favorites browser authority retirement",
   "recordedAt": "2026-07-28T10:32:00-03:00",
   "baseHead": "fe99d236567c34b9b2ac14a89b7e6d0cc159c872",
@@ -58,14 +58,14 @@
     "authenticatedDelete": true
   },
   "validation": {
-    "structuralAudit": "registered_in_dedicated_workflow",
-    "runtime": "registered_in_dedicated_workflow",
-    "fixtureMemory": "covered",
-    "remoteSelectInsertDelete": "covered_with_mock_client",
-    "anonymousMutation": "covered",
-    "remoteUnavailableFailClosed": "covered",
-    "localStorageAbsence": "covered",
-    "moduleLoadOrder": "covered",
+    "structuralAudit": "success",
+    "runtime": "success",
+    "fixtureMemory": "success",
+    "remoteSelectInsertDelete": "success",
+    "anonymousMutation": "success",
+    "remoteUnavailableFailClosed": "success",
+    "localStorageAbsence": "success",
+    "moduleLoadOrder": "success",
     "candidateHead": "bbd0fc74b6be2573b26f8d2f3911d0fb02db80cd",
     "dedicatedWorkflow": {
       "status": "success",
@@ -74,15 +74,20 @@
       "jobId": 90290311377
     },
     "matrixArtifactHead": "af547641dd8ccb1e7b6ffe23f034168602ce44e8",
-    "ci": "final_head_pending"
+    "ci": "success",
+    "workflowRunNumber": 9,
+    "workflowRunId": 30363959406,
+    "finalPreservationRunNumber": 33,
+    "finalPreservationRunId": 30369427709
   },
   "matrix": {
     "version": "1.3.9",
-    "blockerPreservedUntilReconciliation": "SEARCH-B01",
-    "blockerCurrentDescriptionIsStale": true,
+    "blockerPreservedUntilReconciliation": null,
+    "blockerCurrentDescriptionIsStale": false,
     "controlledFutureDescription": "Browser-persistent favorites authority must remain retired and public.favorites must be the canonical authenticated authority.",
     "maturityPreserved": 2,
-    "productionGatePreserved": "blocked"
+    "productionGatePreserved": "blocked",
+    "searchB01": "reconciled_removed_by_search_a03"
   },
   "safety": {
     "stagingChanged": false,
@@ -97,10 +102,9 @@
     "parentPrMerged": false
   },
   "remaining": [
-    "Validate the final documentary head through the dedicated SEARCH-A02 workflow and cumulative repository quality gates.",
-    "Reconcile SEARCH-B01 in the deterministic matrix only after observable final-head CI evidence exists.",
-    "Extend the canonical favorites service to every service card and favorites listing surface.",
-    "Proceed to server-side search DTO, bounded pagination and geographic eligibility after favorites closure."
+    "Preserve public.favorites as the authenticated persistence authority while SEARCH-B02 and SEARCH-B03 are executed.",
+    "Do not reintroduce browser-persistent favorite state or per-card favorite reads."
   ],
-  "nextControlledStep": "Validate SEARCH-A02 on one stable final head, then reconcile SEARCH-B01 without changing SEARCH-001 maturity or the blocked production gate."
+  "nextControlledStep": "Proceed through SEARCH-A03 closure into bounded server-side search, pagination, geographic eligibility and ranking integrity.",
+  "validatedCandidateHead": "d61fc3a0ecdd10eb6a68ce89a497356f1461a209"
 }

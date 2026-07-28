@@ -2,11 +2,11 @@
   "schemaVersion": "1.0.0",
   "domain": "SEARCH-001",
   "sublot": "SEARCH-A03",
-  "status": "CANDIDATE_VALIDATION_RUNNING",
+  "status": "COMPLETE",
   "title": "Canonical favorites activation across service surfaces",
-  "recordedAt": "2026-07-28T11:15:00-03:00",
+  "recordedAt": "2026-07-28T11:58:00-03:00",
   "baseHead": "d61fc3a0ecdd10eb6a68ce89a497356f1461a209",
-  "integratedHead": "78d3823768b5d7586465db4d2166b9c60296d0f3",
+  "integratedHead": "23006e49f8903480f4c791fec5196504f0c60a8e",
   "rootCause": [
     "Service cards exposed heart buttons but ad-card-interactions still owned a local visual-only toggle.",
     "A per-card isFavorite call would create an N+1 read pattern as result sets grow.",
@@ -31,17 +31,30 @@
     "dynamicCards": "mutation_observer_snapshot_hydration"
   },
   "validation": {
-    "structuralAudit": "scripts/audit-service-favorites-surfaces.js",
-    "runtime": "scripts/test-service-favorites-controller-runtime.js",
-    "dedicatedWorkflow": ".github/workflows/search-favorites-surfaces.yml",
+    "structuralAudit": "success",
+    "runtime": "success",
+    "dedicatedWorkflow": "success",
     "cumulativeQuality": "pull_request_quality_lane",
-    "status": "running"
+    "status": "complete",
+    "cumulativeA01": "success",
+    "cumulativeA02": "success",
+    "dedicatedWorkflowRunNumber": 34,
+    "dedicatedWorkflowRunId": 30369426024,
+    "quality": "success",
+    "qualityRunNumber": 1294,
+    "qualityRunId": 30369427561,
+    "blockingE2E": "success",
+    "visualStructuralGuards": "success",
+    "diagnostic": "success",
+    "diagnosticRunNumber": 958,
+    "diagnosticRunId": 30369425991,
+    "matrixAudit": "success"
   },
   "matrix": {
     "maturityPreserved": 2,
     "securityGatePreserved": "blocked",
     "productionGatePreserved": "blocked",
-    "searchB01": "eligible_for_reconciliation_after_final_ci",
+    "searchB01": "reconciled_removed",
     "searchB02": "preserved",
     "searchB03": "preserved"
   },
@@ -55,12 +68,15 @@
     "smsOrOauthChanged": false,
     "communityFilesChanged": false,
     "prMerged": false,
-    "prReadyForReview": false
+    "prReadyForReview": false,
+    "temporaryWorkflowRemaining": false,
+    "temporaryScriptRemaining": false
   },
   "remaining": [
-    "Validate one stable head through SEARCH-A01, SEARCH-A02, SEARCH-A03, Quality and Diagnostic.",
-    "Reconcile SEARCH-B01 only after the final head is green.",
-    "Continue with server-side bounded search, pagination, geographic eligibility and ranking integrity."
+    "SEARCH-B02 remains: move filtering, geographic eligibility and bounded cursor pagination to a canonical server-side search contract.",
+    "SEARCH-B03 remains: establish documented ranking signals, anti-manipulation controls, conversion instrumentation, monitoring and rollback.",
+    "Search history and non-service discovery pools remain browser-local/static until their controlled sublots."
   ],
-  "nextControlledStep": "Validate the integrated head without touching staging or production, then reconcile SEARCH-B01 if every gate is green."
+  "nextControlledStep": "SEARCH-A04 — define the canonical server-side search DTO, bounded cursor pagination and deterministic geographic eligibility without promoting production.",
+  "validatedTechnicalHead": "23006e49f8903480f4c791fec5196504f0c60a8e"
 }
