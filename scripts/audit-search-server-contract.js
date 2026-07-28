@@ -19,13 +19,27 @@ const files = {
   service: 'assets/js/services/search-service.js',
   results: 'assets/js/pages/search-results.js',
   resultsHtml: 'resultados.html',
+  serverSurface: 'assets/js/pages/search/server-results-surface.js',
   runtime: 'scripts/test-search-server-contract-runtime.js',
   evidence: 'docs/validation/SEARCH-001-A04-SERVER-SEARCH-CONTRACT.json',
   a03Evidence: 'docs/validation/SEARCH-001-A03-FAVORITES-SURFACES.json',
+  a05Evidence: 'docs/validation/SEARCH-001-A05-SERVER-RESULTS-ACTIVATION.json',
   workflow: '.github/workflows/search-server-contract.yml'
 };
 
-Object.values(files).forEach((file) => assert(exists(file), `required SEARCH-A04 file missing: ${file}`));
+[
+  files.matrix,
+  files.migration,
+  files.sqlTest,
+  files.repository,
+  files.service,
+  files.results,
+  files.resultsHtml,
+  files.runtime,
+  files.evidence,
+  files.a03Evidence,
+  files.workflow
+].forEach((file) => assert(exists(file), `required SEARCH-A04 file missing: ${file}`));
 if (errors.length) {
   console.error('[SEARCH-A04] Required files are missing:');
   errors.forEach((error) => console.error(`- ${error}`));
@@ -108,7 +122,6 @@ assert(!repository.includes("Doke.mockData.load('services')"), 'canonical search
 
 const service = read(files.service);
 [
-  'Legacy browser list remains executable until SEARCH-A05',
   'function list(filters)',
   'return loadServices().then(function (items)',
   'function queryPage(request)',
@@ -117,15 +130,51 @@ const service = read(files.service);
   'pageRequestFromLocationSearch: pageRequestFromLocationSearch'
 ].forEach((marker) => assert(service.includes(marker), `search service contract marker missing: ${marker}`));
 
+const a05Evidence = exists(files.a05Evidence) ? JSON.parse(read(files.a05Evidence)) : null;
 const results = read(files.results);
-[
-  'const getServiceMatches = searchData.getServiceMatches || (() => [])',
-  'const exactServiceResults = getServiceMatches(query, {',
-  'const displayServices = [...exactServiceResults, ...relatedServices].slice(0, 6)'
-].forEach((marker) => assert(results.includes(marker), `SEARCH-A04 rollout boundary marker missing: ${marker}`));
 const resultsHtml = read(files.resultsHtml);
-assert(!resultsHtml.includes('assets/js/repositories/search-repository.js'), 'SEARCH-A04 must not partially activate the new repository in resultados.html');
-assert(resultsHtml.includes('assets/js/services/search-service.js'), 'results page must retain the existing search service until SEARCH-A05');
+const resultsActivated = Boolean(
+  a05Evidence &&
+  ['CANDIDATE_IMPLEMENTATION_PENDING', 'CANDIDATE_VALIDATION_RUNNING', 'COMPLETE'].includes(a05Evidence.status) &&
+  exists(files.serverSurface) &&
+  results.includes('serverResultsSurface.render({') &&
+  resultsHtml.includes('assets/js/repositories/search-repository.js')
+);
+
+if (resultsActivated) {
+  [
+    'const serverResultsSurface = window.Doke?.searchResultsServerSurface',
+    'serverResultsSurface.render({',
+    'serverResultsSurface?.loadMore?.()',
+    "resultsPagination: queryAny('[data-results-pagination]')",
+    "resultsLoadMore: queryAny('[data-results-load-more]')"
+  ].forEach((marker) => assert(results.includes(marker), `post-SEARCH-A05 activation marker missing: ${marker}`));
+  [
+    'const getServiceMatches = searchData.getServiceMatches || (() => [])',
+    'const exactServiceResults = getServiceMatches(query, {',
+    'const displayServices = [...exactServiceResults, ...relatedServices].slice(0, 6)'
+  ].forEach((marker) => assert(!results.includes(marker), `retired A04 rollout-boundary marker remains: ${marker}`));
+
+  const repositoryIndex = resultsHtml.indexOf('assets/js/repositories/search-repository.js');
+  const serviceIndex = resultsHtml.indexOf('assets/js/services/search-service.js');
+  const surfaceIndex = resultsHtml.indexOf('assets/js/pages/search/server-results-surface.js');
+  const resultsIndex = resultsHtml.indexOf('assets/js/pages/search-results.js');
+  assert(repositoryIndex !== -1 && serviceIndex > repositoryIndex && surfaceIndex > serviceIndex && resultsIndex > surfaceIndex, 'post-SEARCH-A05 module order is invalid');
+  assert((resultsHtml.match(/assets\/js\/services\/search-service\.js/g) || []).length === 1, 'search service must load exactly once after activation');
+  assert(resultsHtml.includes('data-results-load-more'), 'post-SEARCH-A05 cursor control is missing');
+
+  const surface = read(files.serverSurface);
+  assert(surface.includes('searchApi().queryPage(request)'), 'post-SEARCH-A05 surface does not call queryPage');
+  assert(surface.includes('fallbackUsed: false'), 'post-SEARCH-A05 surface does not fail closed');
+} else {
+  [
+    'const getServiceMatches = searchData.getServiceMatches || (() => [])',
+    'const exactServiceResults = getServiceMatches(query, {',
+    'const displayServices = [...exactServiceResults, ...relatedServices].slice(0, 6)'
+  ].forEach((marker) => assert(results.includes(marker), `SEARCH-A04 rollout boundary marker missing: ${marker}`));
+  assert(!resultsHtml.includes('assets/js/repositories/search-repository.js'), 'SEARCH-A04 must not partially activate the new repository before A05');
+  assert(resultsHtml.includes('assets/js/services/search-service.js'), 'results page must retain the search service');
+}
 
 const runtime = read(files.runtime);
 [
@@ -143,14 +192,14 @@ const runtime = read(files.runtime);
 const matrix = JSON.parse(read(files.matrix));
 const searchDomain = (matrix.domains || []).find((domain) => domain.id === 'SEARCH-001');
 assert(Boolean(searchDomain), 'SEARCH-001 is missing from the domain matrix');
-assert(searchDomain && searchDomain.maturity === 2, 'SEARCH-A04 cannot advance maturity before UI activation');
-assert(searchDomain && searchDomain.userFacingAuthority === 'hybrid', 'SEARCH-A04 must preserve hybrid user-facing authority');
-assert(searchDomain && searchDomain.serverAuthority === 'contract_only', 'SEARCH-A04 must preserve contract_only server authority until SEARCH-A05');
-assert(searchDomain && searchDomain.stagingEvidence === 'local_e2e', 'SEARCH-A04 must preserve local_e2e matrix evidence until reconciliation');
-assert(searchDomain && searchDomain.securityGate === 'blocked', 'SEARCH-A04 must preserve the blocked security gate');
-assert(searchDomain && searchDomain.productionGate === 'blocked', 'SEARCH-A04 must preserve the blocked production gate');
+assert(searchDomain && searchDomain.maturity === 2, 'SEARCH-A04 cannot advance maturity before controlled A05 reconciliation');
+assert(searchDomain && searchDomain.userFacingAuthority === 'hybrid', 'SEARCH-A04/A05 candidate must preserve hybrid user-facing authority');
+assert(searchDomain && searchDomain.serverAuthority === 'contract_only', 'matrix server authority must remain contract_only until A05 reconciliation');
+assert(searchDomain && searchDomain.stagingEvidence === 'local_e2e', 'matrix staging evidence must remain local_e2e until A05 reconciliation');
+assert(searchDomain && searchDomain.securityGate === 'blocked', 'SEARCH security gate must remain blocked');
+assert(searchDomain && searchDomain.productionGate === 'blocked', 'SEARCH production gate must remain blocked');
 const blockers = (searchDomain && searchDomain.blockers || []).map((blocker) => blocker.id).sort();
-assert(same(blockers, ['SEARCH-B02', 'SEARCH-B03']), 'SEARCH-A04 cannot remove SEARCH-B02 or SEARCH-B03');
+assert(same(blockers, ['SEARCH-B02', 'SEARCH-B03']), 'SEARCH-A04/A05 candidate cannot remove SEARCH-B02 or SEARCH-B03');
 
 const a03Evidence = JSON.parse(read(files.a03Evidence));
 assert(a03Evidence.status === 'COMPLETE', 'SEARCH-A03 must remain complete');
@@ -162,10 +211,10 @@ assert(evidence.domain === 'SEARCH-001' && evidence.sublot === 'SEARCH-A04', 'SE
 assert(['CANDIDATE_IMPLEMENTED_CI_PENDING', 'COMPLETE'].includes(evidence.status), 'SEARCH-A04 evidence status is invalid');
 assert(evidence.authority && evidence.authority.rpc === 'public.search_public_services_v1(jsonb)', 'SEARCH-A04 RPC authority is not documented');
 assert(evidence.requestDto && evidence.requestDto.pageSizeMaximum === 24, 'SEARCH-A04 page bound is not documented');
-assert(evidence.activation && evidence.activation.resultsRenderer === 'not_yet_activated', 'SEARCH-A04 rollout boundary is not documented');
+assert(evidence.activation && evidence.activation.resultsRenderer === 'not_yet_activated', 'SEARCH-A04 historical rollout boundary is not documented');
 assert(
   evidence.matrix && evidence.matrix.searchB02 === (stagingValidated ? 'preserved_until_SEARCH_A05_activation' : 'preserved_until_activation_and_staging_validation'),
-  'SEARCH-B02 preservation is not documented'
+  'SEARCH-B02 preservation is not documented in A04'
 );
 assert(evidence.safety && evidence.safety.migrationApplied === stagingValidated, 'SEARCH-A04 migration application evidence is inconsistent');
 assert(evidence.safety && evidence.safety.approvedSnapshotHardeningApplied === stagingValidated, 'SEARCH-A04 hardening evidence is inconsistent');
@@ -202,7 +251,9 @@ if (errors.length) {
 
 console.log('[SEARCH-A04] Bounded server-side search DTO is versioned and structurally governed.');
 console.log('[SEARCH-A04] Approved publication, exact geography, allowlisted filters and cursor bounds are enforced.');
-console.log(stagingValidated
-  ? '[SEARCH-A04] Migrations and transactional SQL validations passed in staging; UI activation remains deferred to SEARCH-A05.'
-  : '[SEARCH-A04] Results renderer activation remains explicitly deferred pending controlled staging validation.');
+console.log(resultsActivated
+  ? '[SEARCH-A04] The validated contract is consumed by the SEARCH-A05 candidate while matrix reconciliation remains blocked.'
+  : stagingValidated
+    ? '[SEARCH-A04] Migrations and transactional SQL validations passed in staging; UI activation remains deferred to SEARCH-A05.'
+    : '[SEARCH-A04] Results renderer activation remains explicitly deferred pending controlled staging validation.');
 console.log('[SEARCH-A04] Production was not changed.');
