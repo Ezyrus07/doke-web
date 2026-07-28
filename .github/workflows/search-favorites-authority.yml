@@ -1,0 +1,72 @@
+name: Doke SEARCH-A02 Favorites Authority
+
+on:
+  pull_request:
+    branches:
+      - 'cat/**'
+    paths:
+      - '.github/workflows/search-favorites-authority.yml'
+      - 'scripts/audit-search-authority-baseline.js'
+      - 'scripts/audit-favorites-authority-retirement.js'
+      - 'scripts/test-favorites-authority-retirement-runtime.js'
+      - 'assets/js/repositories/favorites-repository.js'
+      - 'assets/js/services/favorites-service.js'
+      - 'assets/js/pages/detail-ad-experience.js'
+      - 'assets/js/pages/detalhe-anuncio-data-controller.js'
+      - 'detalhe-anuncio.html'
+      - 'supabase/migrations/112_catalog_favorites_authority.sql'
+      - 'config/domain-completion-matrix.json'
+      - 'docs/validation/SEARCH-001-A01-AUTHORITY-BASELINE.*'
+      - 'docs/validation/SEARCH-001-A02-FAVORITES-AUTHORITY-RETIREMENT.*'
+  push:
+    branches:
+      - 'search/**'
+    paths:
+      - '.github/workflows/search-favorites-authority.yml'
+      - 'scripts/audit-search-authority-baseline.js'
+      - 'scripts/audit-favorites-authority-retirement.js'
+      - 'scripts/test-favorites-authority-retirement-runtime.js'
+      - 'assets/js/repositories/favorites-repository.js'
+      - 'assets/js/services/favorites-service.js'
+      - 'assets/js/pages/detail-ad-experience.js'
+      - 'assets/js/pages/detalhe-anuncio-data-controller.js'
+      - 'detalhe-anuncio.html'
+      - 'supabase/migrations/112_catalog_favorites_authority.sql'
+      - 'config/domain-completion-matrix.json'
+      - 'docs/validation/SEARCH-001-A01-AUTHORITY-BASELINE.*'
+      - 'docs/validation/SEARCH-001-A02-FAVORITES-AUTHORITY-RETIREMENT.*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: doke-search-a02-favorites-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  favorites-authority:
+    name: SEARCH-A02 favorites authority retirement
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout candidate tree
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Audit cumulative SEARCH-A01 baseline
+        run: node scripts/audit-search-authority-baseline.js
+
+      - name: Audit SEARCH-A02 favorites authority retirement
+        run: node scripts/audit-favorites-authority-retirement.js
+
+      - name: Test SEARCH-A02 favorites authority runtime
+        run: node scripts/test-favorites-authority-retirement-runtime.js
+
+      - name: Verify clean patch formatting
+        run: git diff --check
