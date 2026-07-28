@@ -135,16 +135,49 @@ jobs:
           node scripts/audit-navigation-registry-ownership.js
           git diff --check
 
-      - name: Commit focused acknowledgement
+      - name: Publish validated files through Contents API
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          HEAD_REF: ${{ github.head_ref }}
         shell: bash
         run: |
-          git status --short
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add assets/js/core/navigation-lifecycle.js scripts/test-navigation-lifecycle-core-contract.js
-          git diff --cached --stat
-          git commit -m "FE-J01: acknowledge document navigation synchronously"
+          node <<'NODE'
+          const fs = require('fs');
+          const repo = process.env.GITHUB_REPOSITORY;
+          const branch = process.env.HEAD_REF;
+          const token = process.env.GITHUB_TOKEN;
+          const headers = {
+            Accept: 'application/vnd.github+json',
+            Authorization: `Bearer ${token}`,
+            'X-GitHub-Api-Version': '2022-11-28',
+            'Content-Type': 'application/json'
+          };
 
-      - name: Push focused acknowledgement
-        shell: bash
-        run: git push origin HEAD:${GITHUB_HEAD_REF}
+          async function publish(path, message) {
+            const endpoint = `https://api.github.com/repos/${repo}/contents/${path}`;
+            const currentResponse = await fetch(`${endpoint}?ref=${encodeURIComponent(branch)}`, { headers });
+            if (!currentResponse.ok) throw new Error(`fetch ${path}: ${currentResponse.status} ${await currentResponse.text()}`);
+            const current = await currentResponse.json();
+            const response = await fetch(endpoint, {
+              method: 'PUT',
+              headers,
+              body: JSON.stringify({
+                message,
+                content: fs.readFileSync(path).toString('base64'),
+                sha: current.sha,
+                branch
+              })
+            });
+            if (!response.ok) throw new Error(`publish ${path}: ${response.status} ${await response.text()}`);
+            const result = await response.json();
+            console.log(`${path}: ${result.commit.sha}`);
+          }
+
+          (async () => {
+            await publish('assets/js/core/navigation-lifecycle.js', 'FE-J01: acknowledge document navigation synchronously');
+            await publish('scripts/test-navigation-lifecycle-core-contract.js', 'FE-J01: cover synchronous document navigation acknowledgement');
+          })().catch((error) => {
+            console.error(error);
+            process.exit(1);
+          });
+          NODE
