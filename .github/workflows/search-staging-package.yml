@@ -7,6 +7,7 @@ on:
       - 'search/**'
     paths:
       - '.github/workflows/search-staging-package.yml'
+      - 'scripts/search-staging-test-fix-once.py'
       - 'supabase/migrations/158_service_search_contract.sql'
       - 'supabase/migrations/159_service_search_approved_snapshot_authority.sql'
       - 'supabase/tests/022_service_search_contract_validation.sql'
@@ -14,20 +15,46 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
+
+concurrency:
+  group: doke-search-staging-package-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
 
 jobs:
-  package-search-sql:
+  reconcile-and-package-search-sql:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    env:
+      TARGET_BRANCH: ${{ github.head_ref || github.ref_name }}
     steps:
-      - name: Checkout candidate tree
+      - name: Checkout SEARCH branch
         uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TARGET_BRANCH }}
+          fetch-depth: 0
 
-      - name: Upload exact validated SQL package
+      - name: Reconcile staging tests with approved-snapshot authority
+        run: python scripts/search-staging-test-fix-once.py
+
+      - name: Commit reconciled tests when changed
+        shell: bash
+        run: |
+          if git diff --quiet -- supabase/tests/022_service_search_contract_validation.sql supabase/tests/023_service_search_approved_snapshot_authority_validation.sql; then
+            echo "Search staging tests already reconciled."
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add supabase/tests/022_service_search_contract_validation.sql supabase/tests/023_service_search_approved_snapshot_authority_validation.sql
+            git commit -m "Reconcile SEARCH staging validation fixtures"
+            git push origin HEAD:${TARGET_BRANCH}
+          fi
+
+      - name: Upload exact reconciled SQL package
         uses: actions/upload-artifact@v4
         with:
-          name: search-staging-sql-${{ github.sha }}
+          name: search-staging-sql-reconciled-${{ github.sha }}
           retention-days: 1
           if-no-files-found: error
           path: |
