@@ -18,8 +18,10 @@ const requiredFiles = [
   'scripts/audit-order-service-snapshot-authority.js',
   'scripts/test-order-service-snapshot-authority-runtime.js',
   'scripts/audit-cat-domain-closure-candidate.js',
+  'scripts/audit-cat-final-transition-manifest.js',
   'docs/validation/CAT-001-A05-FINAL-RECONCILIATION-CANDIDATE.json',
   'docs/validation/CAT-001-A05-FINAL-RECONCILIATION-CANDIDATE.md',
+  'docs/validation/CAT-001-A05-FINAL-TRANSITION-MANIFEST.json',
 ];
 
 const requiredScripts = [
@@ -78,6 +80,7 @@ const supplementalAudits = [
   'scripts/audit-order-service-snapshot-authority.js',
   'scripts/test-order-service-snapshot-authority-runtime.js',
   'scripts/audit-cat-domain-closure-candidate.js',
+  'scripts/audit-cat-final-transition-manifest.js',
 ];
 
 let errors = [];
