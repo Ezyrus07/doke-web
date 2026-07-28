@@ -17,6 +17,9 @@ const requiredFiles = [
   'scripts/test-service-media-cleanup-authority-runtime.js',
   'scripts/audit-order-service-snapshot-authority.js',
   'scripts/test-order-service-snapshot-authority-runtime.js',
+  'scripts/audit-cat-domain-closure-candidate.js',
+  'docs/validation/CAT-001-A05-FINAL-RECONCILIATION-CANDIDATE.json',
+  'docs/validation/CAT-001-A05-FINAL-RECONCILIATION-CANDIDATE.md',
 ];
 
 const requiredScripts = [
@@ -74,6 +77,7 @@ const supplementalAudits = [
   'scripts/test-service-media-cleanup-authority-runtime.js',
   'scripts/audit-order-service-snapshot-authority.js',
   'scripts/test-order-service-snapshot-authority-runtime.js',
+  'scripts/audit-cat-domain-closure-candidate.js',
 ];
 
 let errors = [];
