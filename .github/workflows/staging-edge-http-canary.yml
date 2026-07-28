@@ -109,14 +109,23 @@ jobs:
           git show 09e77e5236d2bc0c820d73768f0161f326adeefe:.github/workflows/staging-edge-http-canary.yml > .github/workflows/staging-edge-http-canary.yml
           rm scripts/cat-a05-finalize-once.js
 
-      - name: Validate final closure state
-        run: |
-          node scripts/audit-service-catalog-authority-baseline.js
-          node scripts/audit-cat-domain-closure-candidate.js
-          node scripts/audit-cat-final-transition-manifest.js
-          npm run audit:domain-completion-matrix
-          npm run audit:quality-pipeline
-          git diff --check
+      - name: Audit CAT-A01 cumulative baseline
+        run: node scripts/audit-service-catalog-authority-baseline.js
+
+      - name: Audit CAT domain closure
+        run: node scripts/audit-cat-domain-closure-candidate.js
+
+      - name: Audit CAT transition manifest
+        run: node scripts/audit-cat-final-transition-manifest.js
+
+      - name: Audit deterministic domain matrix
+        run: npm run audit:domain-completion-matrix
+
+      - name: Audit canonical quality pipeline
+        run: npm run audit:quality-pipeline
+
+      - name: Verify clean patch formatting
+        run: git diff --check
 
       - name: Commit final CAT reconciliation
         shell: bash
