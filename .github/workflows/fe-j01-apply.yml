@@ -52,16 +52,17 @@ jobs:
           from pathlib import Path
           p = Path('scripts/audit-navigation-registry-ownership.js')
           s = p.read_text()
-          broken = "+ '\n';"
-          if broken not in s:
-              s = s.replace("+ '\n\n';", "+ '\\n';")
-              s = s.replace("+ '\n';", "+ '\\n';")
-              s = s.replace("+ '\n\";", "+ '\\n';")
-          else:
-              s = s.replace(broken, "+ '\\n';")
-          # Repair the literal line break produced inside the quoted string.
           s = s.replace("}, null, 2) + '\n');", "}, null, 2) + '\\n');")
           s = s.replace("}, null, 2) + '\n\n');", "}, null, 2) + '\\n');")
+          for old, new in {
+              "'SAFE_ROUTES'": "'var SAFE_ROUTES'",
+              "'NATIVE_ONLY_ROUTES'": "'var NATIVE_ONLY_ROUTES'",
+              "'HYDRATION_BARRIER_ROUTES'": "'var HYDRATION_BARRIER_ROUTES'",
+              "'INTERNAL_DIRECT_HYDRATION_ROUTES'": "'var INTERNAL_DIRECT_HYDRATION_ROUTES'",
+              "'PROFILE_ACTIVE_PATHS'": "'var PROFILE_ACTIVE_PATHS'",
+              "'ROUTE_INIT'": "'var ROUTE_INIT'",
+          }.items():
+              s = s.replace(old, new)
           p.write_text(s)
           PY
           node --check scripts/audit-navigation-registry-ownership.js
