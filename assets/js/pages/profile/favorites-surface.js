@@ -124,6 +124,13 @@
     return catalogPromise;
   }
 
+  function serviceIdentifiers(item) {
+    item = item || {};
+    return [item.serviceId, item.remoteId, item.remote_id, item.id, item.externalId, item.external_id]
+      .map(function (value) { return String(value || '').trim(); })
+      .filter(Boolean);
+  }
+
   function render(options) {
     options = options || {};
     var ui = nodes();
@@ -136,7 +143,9 @@
       ensureCatalog({ force: Boolean(options.forceCatalog) })
     ]).then(function (values) {
       var favoriteIds = values[0] instanceof Set ? values[0] : new Set(values[0] || []);
-      var services = values[1].filter(function (item) { return favoriteIds.has(String(item && item.id || '').trim()); });
+      var services = values[1].filter(function (item) {
+        return serviceIdentifiers(item).some(function (id) { return favoriteIds.has(id); });
+      });
       ui.grid.textContent = '';
       services.forEach(function (item) {
         if (Doke.publicServiceCard && typeof Doke.publicServiceCard.create === 'function') {
@@ -168,7 +177,7 @@
   }
 
   document.addEventListener('doke:service-favorite-changed', function () {
-    render();
+    render({ force: true });
   });
   document.addEventListener('doke:service-favorites-loaded', function () {
     render();
