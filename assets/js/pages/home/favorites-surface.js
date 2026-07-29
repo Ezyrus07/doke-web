@@ -46,7 +46,7 @@
       '    <h2 class="section-heading__title home-section-title" id="home-favorites-title">Seus favoritos</h2>',
       '    <p class="section-heading__description">Serviços que você salvou para consultar depois.</p>',
       '  </div>',
-      '  <a class="section-heading__link" href="meu-perfil.html#profile-favorites">Ver todos <span data-home-favorites-count>0</span></a>',
+      '  <a class="section-heading__link" href="meu-perfil.html#profile-favorites">Ver todos <span class="home-favorites__count" data-home-favorites-count aria-label="0 favoritos">0</span></a>',
       '</div>',
       '<div class="content-rail doke-scroll-rail">',
       '  <div class="service-grid service-grid--compact doke-grid" data-home-favorites-grid aria-label="Seus serviços favoritos"></div>',
@@ -118,7 +118,10 @@
     if (!currentUser()) {
       ui.section.hidden = true;
       ui.grid.textContent = '';
-      if (ui.count) ui.count.textContent = '0';
+      if (ui.count) {
+        ui.count.textContent = '0';
+        ui.count.setAttribute('aria-label', '0 favoritos');
+      }
       return Promise.resolve(0);
     }
 
@@ -136,10 +139,13 @@
       ui.grid.textContent = '';
       preview.forEach(function (item) {
         if (Doke.publicServiceCard && typeof Doke.publicServiceCard.create === 'function') {
-          ui.grid.appendChild(Doke.publicServiceCard.create(item));
+          ui.grid.appendChild(Doke.publicServiceCard.create(item, { favoritePreview: true }));
         }
       });
-      if (ui.count) ui.count.textContent = String(services.length);
+      if (ui.count) {
+        ui.count.textContent = String(services.length);
+        ui.count.setAttribute('aria-label', services.length + (services.length === 1 ? ' favorito' : ' favoritos'));
+      }
       ui.section.hidden = preview.length === 0;
       controller().hydrate(ui.grid);
       document.dispatchEvent(new CustomEvent('doke:home-favorites-rendered', {
