@@ -1,0 +1,175 @@
+{
+  "domain": "ORD-001",
+  "sublot": "ORD-A01",
+  "capturedAt": "2026-07-29T13:37:00-03:00",
+  "environment": "staging",
+  "projectRef": "zwkczgewzbsorbrjuzpb",
+  "readOnlyAudit": true,
+  "productionChanged": false,
+  "realRowsMutated": 0,
+  "repository": {
+    "baseBranch": "search/search-ux02-intent-favorites-clean",
+    "baseHead": "afadd991ca1b598ae71c0580a20d5560db4a696a",
+    "branch": "ord/ord-001-baseline-audit"
+  },
+  "matrixAtEntry": {
+    "version": "1.3.13",
+    "maturity": 4,
+    "userFacingAuthority": "hybrid",
+    "serverAuthority": "canonical",
+    "stagingEvidence": "staging_operational",
+    "securityGate": "partial",
+    "productionGate": "blocked"
+  },
+  "relations": [
+    {
+      "schema": "public",
+      "name": "orders",
+      "rowCount": 0,
+      "rlsEnabled": true,
+      "authenticatedPrivileges": ["SELECT", "INSERT", "UPDATE", "DELETE"],
+      "policies": [
+        "orders_participants_select",
+        "orders_client_insert",
+        "orders_participants_update",
+        "orders_client_delete_draft"
+      ]
+    },
+    {
+      "schema": "public",
+      "name": "budgets",
+      "rowCount": 0,
+      "rlsEnabled": true,
+      "authenticatedPrivileges": ["SELECT", "INSERT"],
+      "policies": [
+        "budgets_participants_select",
+        "budgets_professional_insert"
+      ]
+    },
+    {
+      "schema": "public",
+      "name": "order_status_history",
+      "rowCount": 0,
+      "rlsEnabled": true,
+      "authenticatedPrivileges": ["SELECT"],
+      "policies": ["order_status_history_participants_select"]
+    },
+    {
+      "schema": "private",
+      "name": "order_domain_events",
+      "rowCount": 0,
+      "rlsEnabled": false,
+      "browserPrivileges": [],
+      "serviceRolePrivileges": ["SELECT", "UPDATE"]
+    },
+    {
+      "schema": "private",
+      "name": "order_event_delivery_attempts",
+      "rowCount": 0,
+      "rlsEnabled": false,
+      "browserPrivileges": [],
+      "serviceRolePrivileges": ["SELECT"]
+    }
+  ],
+  "databaseAuthority": {
+    "stateMachineTrigger": "trg_orders_state_machine",
+    "serviceSnapshotTrigger": "trg_orders_service_snapshot_authority",
+    "domainEventTrigger": "trg_orders_domain_events",
+    "transitionRpc": "public.transition_order_status",
+    "transitionRpcAuthenticated": true,
+    "optimisticConcurrency": true,
+    "durableOutbox": true
+  },
+  "edgeFunctions": [
+    {
+      "slug": "order-event-worker",
+      "version": 9,
+      "status": "ACTIVE",
+      "verifyJwt": false,
+      "customAuth": "x-doke-worker-token validated by public.verify_order_event_worker_token"
+    },
+    {
+      "slug": "order-event-operations",
+      "version": 9,
+      "status": "ACTIVE",
+      "verifyJwt": true
+    }
+  ],
+  "crons": [
+    {"name": "doke-order-event-worker", "schedule": "* * * * *", "active": true},
+    {"name": "doke-order-operational-alerts", "schedule": "*/5 * * * *", "active": true},
+    {"name": "doke-order-incident-escalation", "schedule": "*/5 * * * *", "active": true},
+    {"name": "doke-order-change-protection", "schedule": "*/5 * * * *", "active": true},
+    {"name": "doke-order-slo-daily-report", "schedule": "15 3 * * *", "active": true}
+  ],
+  "frontendAuthority": {
+    "legacyService": "assets/js/services/order-service.js",
+    "businessService": "assets/js/services/orders-service.js",
+    "repository": "assets/js/repositories/orders-repository.js",
+    "providerDefault": "mock",
+    "localStorageAuthorityPresent": true,
+    "directBrowserTableDmlPresent": true,
+    "remoteWriteActivation": "controlled canary only",
+    "failover": "remote errors fall back to local/mock"
+  },
+  "findings": [
+    {
+      "id": "ORD-A01-F01",
+      "severity": "high",
+      "category": "matrix_drift",
+      "status": "confirmed",
+      "summary": "ORD-B01 is stale in part: budgets already has RLS and participant policies in staging, while orders still requires complete persona and mutation revalidation because authenticated table DML remains broad."
+    },
+    {
+      "id": "ORD-A01-F02",
+      "severity": "critical",
+      "category": "authority_split",
+      "status": "confirmed",
+      "summary": "The browser can persist orders locally, read mocks, write directly to public.orders and silently fall back after remote failures; the product authority is not single-source across devices."
+    },
+    {
+      "id": "ORD-A01-F03",
+      "severity": "high",
+      "category": "duplicate_service_authority",
+      "status": "confirmed",
+      "summary": "Both order-service.js and orders-service.js expose order-domain behavior, while the former remains mock-only."
+    },
+    {
+      "id": "ORD-A01-F04",
+      "severity": "high",
+      "category": "direct_browser_dml",
+      "status": "confirmed",
+      "summary": "Authenticated clients retain direct INSERT, UPDATE and DELETE paths on public.orders; database triggers constrain transitions but do not remove the duplicated browser write authority."
+    },
+    {
+      "id": "ORD-A01-F05",
+      "severity": "medium",
+      "category": "worker_auth",
+      "status": "needs_persona_validation",
+      "summary": "order-event-worker intentionally runs with verify_jwt disabled and custom token authentication; token lifecycle, replay resistance and cron-only invocation need a dedicated canary."
+    },
+    {
+      "id": "ORD-A01-F06",
+      "severity": "high",
+      "category": "routine_grants",
+      "status": "needs_reconciliation",
+      "summary": "Several private order operational SECURITY DEFINER helper routines still report PUBLIC execution grants and require classification as trigger-only or explicit revocation."
+    },
+    {
+      "id": "ORD-A01-F07",
+      "severity": "high",
+      "category": "financial_dependency",
+      "status": "open",
+      "summary": "The order lifecycle is not yet connected to a real PSP webhook authority; PAY-001 remains a hard dependency for production completion."
+    },
+    {
+      "id": "ORD-A01-F08",
+      "severity": "medium",
+      "category": "scheduling_dependency",
+      "status": "open",
+      "summary": "scheduled_at exists, but availability and anti-double-booking remain outside the canonical order authority and belong to SCHED-001."
+    }
+  ],
+  "nextSublot": "ORD-A02",
+  "nextSublotObjective": "Reconcile grants and persona permissions for orders, budgets, history and order operational routines before frontend activation."
+}
