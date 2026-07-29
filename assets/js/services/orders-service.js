@@ -421,19 +421,19 @@
   }
 
 
-function assertOrderCommandProviderAvailable(command) {
-  var status = getOrdersProviderStatus();
-  if (status.requestedProvider === 'api' && !status.ordersApiActive && !status.ordersWriteCanaryActive) {
-    var error = new Error('O servidor de pedidos está indisponível. Nenhuma alteração foi salva localmente.');
-    error.code = 'DOKE_ORDER_COMMAND_BOUNDARY_UNAVAILABLE';
-    error.command = command || 'order-command';
-    document.dispatchEvent(new CustomEvent('doke:order-command-failed', {
-      detail: { command: error.command, code: error.code, message: error.message }
-    }));
-    throw error;
+  function assertOrderCommandProviderAvailable(command) {
+    var status = getOrdersProviderStatus();
+    if (status.requestedProvider === 'api' && !status.ordersApiActive && !status.ordersWriteCanaryActive) {
+      var error = new Error('O servidor de pedidos está indisponível. Nenhuma alteração foi salva localmente.');
+      error.code = 'DOKE_ORDER_COMMAND_BOUNDARY_UNAVAILABLE';
+      error.command = command || 'order-command';
+      document.dispatchEvent(new CustomEvent('doke:order-command-failed', {
+        detail: { command: error.command, code: error.code, message: error.message }
+      }));
+      throw error;
+    }
+    return status;
   }
-  return status;
-}
 
   function normalizeOrderFromProvider(order) {
     if (!order) return order;
@@ -501,12 +501,17 @@ function assertOrderCommandProviderAvailable(command) {
     }
   }
 
+  function resolveOrderCapability(actor, order) {
+    if (!actor || !actor.id || !order) return '';
+    var role = normalizeText(actor.role || '').toLowerCase();
+    if (role === 'admin' || role === 'support') return role;
+    if (String(order.clientId || order.client_id || '') === String(actor.id)) return 'client';
+    if (String(order.professionalId || order.providerId || order.professional_id || '') === String(actor.id)) return 'professional';
+    return '';
+  }
+
   function canActorReadOrder(actor, order) {
-    if (!actor || !actor.id || !order) return false;
-    if (actor.role === 'admin' || actor.role === 'support') return true;
-    if (actor.role === 'professional') return canProfessionalActOnOrder(actor, order);
-    if (actor.role === 'client') return isOrderClient(actor, order);
-    return false;
+    return Boolean(resolveOrderCapability(actor, order));
   }
 
   function assertOrderAccess(order, action, actor) {
@@ -520,11 +525,14 @@ function assertOrderCommandProviderAvailable(command) {
   }
 
   function assertOrderTransitionAccess(actor, order, nextStatus) {
+    var currentActor = actor || getCurrentUser() || {};
+    var capability = resolveOrderCapability(currentActor, order || {});
+    var scopedActor = Object.assign({}, currentActor, { role: capability || currentActor.role || 'guest' });
     var security = getSecurity();
     if (security && typeof security.assertOrderTransition === 'function') {
-      return security.assertOrderTransition(actor || getCurrentUser() || {}, order || {}, nextStatus || 'pending');
+      return security.assertOrderTransition(scopedActor, order || {}, nextStatus || 'pending');
     }
-    return canActorTransition(actor, order, nextStatus);
+    return canActorTransition(scopedActor, order, nextStatus);
   }
 
   function scopeApiFilters(filters) {
@@ -650,7 +658,7 @@ function assertOrderCommandProviderAvailable(command) {
   function canTransition(order, nextStatus, actor) {
     var currentStatus = normalizeStatusToken(order && order.status || 'pending');
     var targetStatus = normalizeStatusToken(nextStatus);
-    var role = normalizeText(actor && actor.role || '').toLowerCase();
+    var role = resolveOrderCapability(actor || {}, order || {});
     if (!targetStatus || currentStatus === targetStatus) return false;
     var transitions = ORDER_TRANSITIONS[currentStatus] || {};
     if (!Array.isArray(transitions[targetStatus]) || transitions[targetStatus].indexOf(role) === -1) return false;
@@ -660,7 +668,7 @@ function assertOrderCommandProviderAvailable(command) {
   function assertCanonicalTransition(order, nextStatus, actor) {
     if (canTransition(order, nextStatus, actor)) return true;
     var currentStatus = normalizeStatusToken(order && order.status || 'pending');
-    var allowed = getAllowedTransitions(currentStatus, normalizeText(actor && actor.role || '').toLowerCase());
+    var allowed = getAllowedTransitions(currentStatus, resolveOrderCapability(actor || {}, order || {}));
     var detail = allowed.length ? ' Próximos estados permitidos: ' + allowed.join(', ') + '.' : '';
     throw new Error('Transição inválida de ' + currentStatus + ' para ' + normalizeStatusToken(nextStatus) + '.' + detail);
   }
@@ -897,14 +905,12 @@ function assertOrderCommandProviderAvailable(command) {
   }
 
   function canActorTransition(actor, order, nextStatus) {
-    if (!actor || !actor.id) return false;
-    if (actor.role === 'professional') {
-      if (!canProfessionalActOnOrder(actor, order)) return false;
+    var capability = resolveOrderCapability(actor, order);
+    if (capability === 'professional') {
       return ['accepted', 'quoted', 'in_progress', 'cancelled'].indexOf(normalizeStatusToken(nextStatus)) !== -1;
     }
-    if (actor.role === 'client') {
-      if (!isOrderClient(actor, order)) return false;
-      return ['in_progress', 'completed', 'cancelled'].indexOf(nextStatus) !== -1;
+    if (capability === 'client') {
+      return ['in_progress', 'completed', 'cancelled'].indexOf(normalizeStatusToken(nextStatus)) !== -1;
     }
     return false;
   }
@@ -955,17 +961,8 @@ function assertOrderCommandProviderAvailable(command) {
         actorRole: actor.role || 'guest'
       });
 
-      if (!['admin', 'support'].includes(String(actor.role || '').toLowerCase())) {
-        var roleAllowedStatuses = actor.role === 'professional'
-          ? ['accepted', 'conversation', 'quoted', 'in_progress', 'cancelled']
-          : actor.role === 'client'
-            ? ['in_progress', 'completed', 'cancelled']
-            : [];
-        if (roleAllowedStatuses.indexOf(normalizedStatus) === -1) {
-          auditSecurity('api_transition_denied', 'denied', { actor: actor, resourceId: orderId, reason: 'role_status_mismatch' });
-          throw new Error('Você não tem permissão para alterar este pedido.');
-        }
-      }
+      // The server derives client/professional capability from the order relationship.
+      // The browser must not deny a valid command based only on the account's primary role.
 
       return ordersBoundaryAction(getApiActionForStatus(normalizedStatus), apiPayload).then(function (saved) {
         document.dispatchEvent(new CustomEvent('doke:order-status-changed', {

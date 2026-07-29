@@ -130,10 +130,8 @@ async function listOrders(context, actor) {
   const safeActor = requireActor(actor);
   const supabase = chooseOrderSupabase(context, safeActor);
   let query = supabase.from('orders').select(ORDER_SELECT);
-  if (!isInternal(safeActor)) {
-    if (safeActor.role === 'client') query = query.eq('client_id', safeActor.id);
-    if (safeActor.role === 'professional') query = query.eq('professional_id', safeActor.id);
-  }
+  // Participant scoping is owned by RLS. Do not narrow by the account's
+  // primary role because a professional account may also be the client.
   if (context.query && context.query.status) {
     query = query.eq('status', normalizeBackendStatus(context.query.status));
   }
@@ -345,7 +343,7 @@ async function transitionOrder(supabase, order, actor, nextStatus, note, action)
   assertTransition({
     currentStatus: oldStatus,
     nextStatus: backendStatus,
-    actorRole: actor && actor.role,
+    actorRole: resolveOrderCapability(order, actor) || actor && actor.role,
     action: action || 'updateStatus'
   });
   if (!supabase || typeof supabase.rpc !== 'function') {
@@ -400,11 +398,16 @@ function mapOrderDatabaseError(error) {
   return error;
 }
 
-function assertOrderAccess(order, actor) {
+function resolveOrderCapability(order, actor) {
   const safeActor = requireActor(actor);
-  if (isInternal(safeActor)) return true;
-  if (safeActor.role === 'client' && order.client_id === safeActor.id) return true;
-  if (safeActor.role === 'professional' && order.professional_id === safeActor.id) return true;
+  if (isInternal(safeActor)) return String(safeActor.role || '').toLowerCase();
+  if (String(order && order.client_id || '') === String(safeActor.id)) return 'client';
+  if (String(order && order.professional_id || '') === String(safeActor.id)) return 'professional';
+  return '';
+}
+
+function assertOrderAccess(order, actor) {
+  if (resolveOrderCapability(order, actor)) return true;
   throw forbidden('Order is outside the current user scope.');
 }
 

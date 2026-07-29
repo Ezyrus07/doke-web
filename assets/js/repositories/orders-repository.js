@@ -474,22 +474,22 @@
   }
 
   function commandBoundaryError(operation) {
-  var error = new Error('Pedidos enviados devem usar o command boundary canônico.');
-  error.code = 'DOKE_ORDER_COMMAND_BOUNDARY_REQUIRED';
-  error.operation = operation || 'write';
-  return error;
-}
+    var error = new Error('Pedidos enviados devem usar o command boundary canônico.');
+    error.code = 'DOKE_ORDER_COMMAND_BOUNDARY_REQUIRED';
+    error.operation = operation || 'write';
+    return error;
+  }
 
-function saveRemote() {
-  return Promise.reject(commandBoundaryError('save'));
-}
+  function saveRemote() {
+    return Promise.reject(commandBoundaryError('save'));
+  }
 
-function synchronizePending(items) {
-  // Legacy pending snapshots are never replayed automatically. A remote
-  // failure must be surfaced by the command caller instead of becoming
-  // an eventual local success.
-  return Promise.resolve(items || []);
-}
+  function synchronizePending(items) {
+    // Legacy pending snapshots are never replayed automatically. A remote
+    // failure must be surfaced by the command caller instead of becoming
+    // an eventual local success.
+    return Promise.resolve(items || []);
+  }
 
   function load(options) {
     options = options || {};
@@ -497,41 +497,42 @@ function synchronizePending(items) {
     var client = getSupabaseClient();
     if (!client) return loadLocal(options);
     var localDrafts = readLocal().filter(function (item) {
-    return normalizeStatus(item && item.status) === 'draft' || item && item.syncStatus === 'local-draft';
-  });
-  return fetchRemoteOrders().then(function (remote) {
-    cache = mergeById(localDrafts, remote);
-    return clone(cache);
-  }).catch(function (error) {
-    warnRemote(error, 'leitura');
-    return loadLocal(options);
-  });
+      return normalizeStatus(item && item.status) === 'draft' || item && item.syncStatus === 'local-draft';
+    });
+    return fetchRemoteOrders().then(function (remote) {
+      cache = mergeById(localDrafts, remote);
+      return clone(cache);
+    }).catch(function (error) {
+      warnRemote(error, 'leitura');
+      return loadLocal(options);
+    });
   }
 
   function save(order) {
-  var normalized = normalizeOrder(order);
-  if (normalizeStatus(normalized.status) !== 'draft') {
-    return Promise.reject(commandBoundaryError('save'));
+    var normalized = normalizeOrder(order);
+    if (normalizeStatus(normalized.status) !== 'draft') {
+      return Promise.reject(commandBoundaryError('save'));
+    }
+    return saveLocal(normalized, 'local-draft');
   }
-  return saveLocal(normalized, 'local-draft');
-}
 
-function saveMock(order) {
-  return saveLocal(normalizeOrder(order), 'mock');
-}
+  function saveMock(order) {
+    return saveLocal(normalizeOrder(order), 'mock');
+  }
 
-function remove(orderId) {
-  var id = normalizeText(orderId);
-  var draft = readLocal().find(function (item) {
-    return String(item.id) === id && (normalizeStatus(item.status) === 'draft' || item.syncStatus === 'local-draft');
-  });
-  if (!draft) return Promise.reject(commandBoundaryError('remove'));
-  return removeLocal(id);
-}
+  function remove(orderId) {
+    var id = normalizeText(orderId);
+    var draft = readLocal().find(function (item) {
+      return String(item.id) === id && (normalizeStatus(item.status) === 'draft' || item.syncStatus === 'local-draft');
+    });
+    if (!draft) return Promise.reject(commandBoundaryError('remove'));
+    return removeLocal(id);
+  }
 
-function removeMock(orderId) {
-  return removeLocal(orderId);
-}
+  function removeMock(orderId) {
+    return removeLocal(orderId);
+  }
+
   function list(filters) {
     filters = filters || {};
     var status = normalizeText(filters.status || '');
