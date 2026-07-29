@@ -1,14 +1,14 @@
 {
-  "schemaVersion": "1.1.0",
+  "schemaVersion": "1.2.0",
   "domain": "SEARCH-001",
   "sublot": "SEARCH-A10",
   "title": "Controlled staging browser cutover to Edge search v2",
   "status": "COMPLETE_STAGING_BROWSER_CUTOVER",
-  "recordedAt": "2026-07-29T09:25:00-03:00",
+  "recordedAt": "2026-07-29T09:40:00-03:00",
   "repository": "Ezyrus07/doke-web",
   "branch": "search/search-001-baseline-audit",
   "base": "cat/cat-001-baseline-audit",
-  "validatedHead": "ec334ef70c71eb94bbc65952bc214bc62b4c8a6e",
+  "validatedHead": "850ecf872d8239ca2ccc127f67134711969db29a",
   "transport": {
     "active": "edge-v2",
     "edgeFunction": "search-public-services-v2",
@@ -38,40 +38,53 @@
     "localFallbackForbiddenWhenRemoteConfigured": true,
     "requestIdHeader": "x-doke-request-id"
   },
+  "e2eIsolation": {
+    "defaultPlaywrightRemoteServices": "disabled",
+    "liveSearchOptInEnvironment": "DOKE_PLAYWRIGHT_LIVE_SEARCH=1",
+    "serverEnvironment": "DOKE_E2E_DISABLE_REMOTE_SERVICES",
+    "implementation": [
+      "playwright.config.js",
+      "scripts/serve-static-site.js"
+    ],
+    "dedicatedBrowserWorkflowOptIn": true,
+    "blockingQualityGeneratedSearchObservations": false,
+    "reason": "General deterministic and visual E2E must not query the real staging search authority or pollute operational observability. Only the dedicated SEARCH-A10 browser journey opts into live search."
+  },
   "validation": {
     "dedicatedBrowserWorkflow": {
       "status": "success",
-      "runId": 30450849499,
-      "runNumber": 199,
-      "head": "ec334ef70c71eb94bbc65952bc214bc62b4c8a6e",
+      "runId": 30451824430,
+      "runNumber": 202,
+      "head": "850ecf872d8239ca2ccc127f67134711969db29a",
       "coverage": [
         "SEARCH-A01-through-A10 cumulative audits",
         "Edge v2 real staging browser path",
         "Edge v2 fail-closed behavior without RPC v1 fallback",
         "explicit real staging RPC v1 rollback",
-        "no direct browser services catalog reads"
+        "no direct browser services catalog reads",
+        "explicit live-search opt-in for the dedicated browser lane"
       ]
     },
     "qualityGates": {
       "status": "success",
-      "runId": 30450849059,
-      "runNumber": 1470,
-      "head": "ec334ef70c71eb94bbc65952bc214bc62b4c8a6e"
+      "runId": 30451825214,
+      "runNumber": 1473,
+      "head": "850ecf872d8239ca2ccc127f67134711969db29a"
     },
     "staticArchitectureAndPartitionAudits": "success",
     "blockingDeterministicE2E": "success",
     "visualStructuralGuards105": "success",
     "stagingEdgeHttpCanary": {
       "status": "success",
-      "runId": 30450850086,
-      "runNumber": 862,
-      "head": "ec334ef70c71eb94bbc65952bc214bc62b4c8a6e"
+      "runId": 30451824390,
+      "runNumber": 865,
+      "head": "850ecf872d8239ca2ccc127f67134711969db29a"
     },
     "diagnosticE2E": {
       "status": "in_progress_non_blocking_at_record_time",
-      "runId": 30450849733,
-      "runNumber": 1134,
-      "head": "ec334ef70c71eb94bbc65952bc214bc62b4c8a6e"
+      "runId": 30451824861,
+      "runNumber": 1137,
+      "head": "850ecf872d8239ca2ccc127f67134711969db29a"
     }
   },
   "stagingState": {
@@ -82,9 +95,10 @@
     "activeRankingVersion": "search-rank-v0",
     "rankingActivationEvents": 0,
     "identifiedBrowserCanaryRequestId": "a10a10a1-0000-4000-8000-000000000010",
-    "identifiedBrowserCanaryObservationsBeforeCleanup": 1,
+    "latestDedicatedRunCanaryObservationsBeforeCleanup": 1,
     "identifiedBrowserCanaryObservationsAfterCleanup": 0,
-    "otherOperationalObservationsAtReconciliation": 32,
+    "otherOperationalObservationsAtReconciliation": 37,
+    "latestOperationalObservationPrecedesIsolatedQualityRun": true,
     "unknownObservationsBulkDeleted": false,
     "persistentSyntheticSnapshots": 0,
     "searchCronCount": 0
@@ -106,7 +120,7 @@
   "blockerDisposition": {
     "blocker": "SEARCH-B03",
     "status": "preserved_for_dedicated_cumulative_governance_reconciliation",
-    "reason": "A10 proves the real browser path and rollback; SEARCH-A11 must reconcile all A01-A10 evidence and matrix governance before blocker removal or maturity promotion."
+    "reason": "A10 proves the real browser path, rollback, observability boundary and E2E isolation; SEARCH-A11 must reconcile all A01-A10 evidence and matrix governance before blocker removal or maturity promotion."
   },
   "nextControlledStep": "Execute SEARCH-A11 cumulative governance reconciliation, keeping search-rank-v0 active, ranking v1 inactive and production blocked."
 }
