@@ -36,10 +36,48 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
+
           lines = Path('.github/workflows/ord-001-a02-personas.yml').read_text(encoding='utf-8').splitlines()
           start = next(i for i, line in enumerate(lines) if "python - <<'PY'" in line) + 1
           end = next(i for i in range(start, len(lines)) if lines[i].strip() == 'PY')
           code = '\n'.join(line[10:] if line.startswith('          ') else line for line in lines[start:end]) + '\n'
+
+          def replace_labeled_call(text, label, replacement):
+              position = text.index(repr(label))
+              call_start = text.rfind('source = replace_once(', 0, position)
+              if call_start < 0:
+                  raise SystemExit(f'Cannot locate cleanup call: {label}')
+              cursor = call_start
+              depth = 0
+              quote = None
+              escaped = False
+              while cursor < len(text):
+                  char = text[cursor]
+                  if quote:
+                      if escaped:
+                          escaped = False
+                      elif char == '\\':
+                          escaped = True
+                      elif char == quote:
+                          quote = None
+                  else:
+                      if char in "'\"":
+                          quote = char
+                      elif char == '(':
+                          depth += 1
+                      elif char == ')':
+                          depth -= 1
+                          if depth == 0:
+                              cursor += 1
+                              break
+                  cursor += 1
+              return text[:call_start] + replacement + text[cursor:]
+
+          code = replace_labeled_call(
+              code,
+              'remove fixed-role API guard',
+              "guard_start = source.index(\"      if (!['admin', 'support'].includes(String(actor.role || '').toLowerCase())) {\", source.index('  function saveStatus('))\nguard_end = source.index('      return ordersBoundaryAction', guard_start)\nsource = source[:guard_start] + \"      // The server derives client/professional capability from the order relationship.\\n      // The browser must not deny a valid command based only on the account's primary role.\\n\\n\" + source[guard_end:]"
+          )
           Path('/tmp/align-ord-a03.py').write_text(code, encoding='utf-8')
           PY
           python /tmp/align-ord-a03.py
