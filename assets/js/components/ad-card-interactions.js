@@ -13,6 +13,10 @@
   const DETAIL_PAGE = 'detalhe-anuncio.html';
   const PROFILE_PAGE = 'perfil.html';
   const RESULTS_PAGE = 'resultados.html';
+  const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  const canonicalFavoriteIds = new Map();
+
+  const isUuid = (value) => UUID_PATTERN.test(String(value || '').trim());
 
   const slugify = (value) => String(value || '')
     .normalize('NFD')
@@ -41,6 +45,13 @@
     if (direct) return direct;
     return serviceIdFromHref(card?.querySelector?.('.doke-ad-card__cta[href]')?.getAttribute('href') || '');
   };
+
+  const canonicalIdFromService = (service) => [
+    service?.serviceId,
+    service?.remoteId,
+    service?.remote_id,
+    service?.id
+  ].map((value) => String(value || '').trim()).find(isUuid) || '';
 
   const buildCardContext = (card) => {
     const provider = card.dataset.adProvider || textOf(card, '.doke-ad-card__seller-name') || textOf(card, '.doke-ad-card__seller .doke-ad-card__title') || textOf(card, '.doke-ad-card__title');
@@ -102,14 +113,72 @@
     window.location.assign(href);
   };
 
-  const toggleFavorite = (button) => {
+  const dispatchFavoriteResolutionError = (button, error) => {
+    const normalized = error instanceof Error ? error : new Error('Não foi possível identificar este anúncio.');
+    if (!normalized.code) normalized.code = 'DOKE_FAVORITES_SERVICE_ID_UNAVAILABLE';
+    button.dataset.favoriteState = 'error';
+    button.title = normalized.message;
+    document.dispatchEvent(new CustomEvent('doke:service-favorite-error', {
+      detail: {
+        serviceId: String(button.dataset.favoriteServiceId || ''),
+        code: normalized.code,
+        error: normalized.message,
+        operation: 'resolve-service-id'
+      }
+    }));
+    return normalized;
+  };
+
+  const resolveCanonicalFavoriteId = async (button) => {
+    const card = button?.closest?.('.doke-ad-card');
+    const current = String(button?.dataset?.favoriteServiceId || getCardServiceId(card) || '').trim();
+    if (isUuid(current)) return current;
+    if (!current) throw dispatchFavoriteResolutionError(button, new Error('Anúncio sem identificador válido.'));
+
+    if (!canonicalFavoriteIds.has(current)) {
+      const serviceApi = window.Doke?.services?.services;
+      if (!serviceApi?.getById) {
+        const unavailable = new Error('Catálogo canônico indisponível para resolver o anúncio.');
+        unavailable.code = 'DOKE_FAVORITES_SERVICE_RESOLVER_UNAVAILABLE';
+        throw dispatchFavoriteResolutionError(button, unavailable);
+      }
+      canonicalFavoriteIds.set(current, Promise.resolve(serviceApi.getById(current)).then((service) => {
+        const canonicalId = canonicalIdFromService(service);
+        if (!canonicalId) {
+          const missing = new Error('O anúncio não possui identificador canônico para favoritos.');
+          missing.code = 'DOKE_FAVORITES_SERVICE_ID_UNAVAILABLE';
+          throw missing;
+        }
+        return canonicalId;
+      }).catch((error) => {
+        canonicalFavoriteIds.delete(current);
+        throw error;
+      }));
+    }
+
+    try {
+      const canonicalId = await canonicalFavoriteIds.get(current);
+      if (card) {
+        if (!card.dataset.publicServiceId && current !== canonicalId) card.dataset.publicServiceId = current;
+        card.dataset.serviceId = canonicalId;
+        const cta = card.querySelector('.doke-ad-card__cta[href]');
+        if (cta) cta.href = withParams(DETAIL_PAGE, { id: canonicalId });
+      }
+      button.dataset.favoriteServiceId = canonicalId;
+      return canonicalId;
+    } catch (error) {
+      throw dispatchFavoriteResolutionError(button, error);
+    }
+  };
+
+  const toggleFavorite = async (button) => {
     const controller = window.Doke?.serviceFavoritesController;
     if (!controller?.toggleButton) {
-      button.dataset.favoriteState = 'unavailable';
-      button.title = 'Favoritos indisponíveis no momento.';
-      document.dispatchEvent(new CustomEvent('doke:service-favorite-error', { detail: { code: 'DOKE_FAVORITES_CONTROLLER_UNAVAILABLE', operation: 'card-toggle' } }));
-      return Promise.resolve(false);
+      const error = new Error('Favoritos indisponíveis no momento.');
+      error.code = 'DOKE_FAVORITES_CONTROLLER_UNAVAILABLE';
+      throw dispatchFavoriteResolutionError(button, error);
     }
+    await resolveCanonicalFavoriteId(button);
     return controller.toggleButton(button, { source: 'ad-card' });
   };
 
@@ -182,7 +251,6 @@
     }
   };
 
-
   const handleAdCardClick = (event) => {
     const card = event.target.closest('.doke-ad-card');
     if (!card) return;
@@ -191,7 +259,7 @@
     if (favorite) {
       event.preventDefault();
       event.stopPropagation();
-      toggleFavorite(favorite).catch(() => {});
+      toggleFavorite(favorite).catch(() => false);
       return;
     }
 
@@ -238,9 +306,7 @@
       return;
     }
 
-    if (clickedCta) {
-      return;
-    }
+    if (clickedCta) return;
 
     event.preventDefault();
     go(resolveDetailHref(card, context));
@@ -329,6 +395,7 @@
   window.Doke.adCardInteractions = Object.freeze({
     hydrate: hydrateAdCards,
     getCardServiceId,
-    resolveDetailHref
+    resolveDetailHref,
+    resolveCanonicalFavoriteId
   });
 })();
