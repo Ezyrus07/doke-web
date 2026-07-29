@@ -37,7 +37,7 @@ const migration = read(files.migration);
   'create or replace function private.service_search_request_hash_v2(p_request jsonb)',
   'create or replace function private.encode_service_search_cursor_v2(p_payload jsonb)',
   'create or replace function private.decode_service_search_cursor_v2(p_cursor text)',
-  "extensions.hmac(",
+  'extensions.hmac(',
   "'sha256'",
   'create or replace function public.search_public_services_v2(p_request jsonb',
   'private.current_service_search_ranking_version()',
@@ -114,7 +114,7 @@ assert(a07.activationBoundary && a07.activationBoundary.publicSearchRpcIntegrate
 
 const a05 = JSON.parse(read(files.a05Evidence));
 assert(a05.status === 'COMPLETE', 'SEARCH-A05 browser activation must remain complete');
-assert(a05.targetAuthority && a05.targetAuthority.rpc === 'public.search_public_services_v1', 'SEARCH-A08 cannot silently move the browser from RPC v1');
+assert(a05.targetAuthority && a05.targetAuthority.rpc === 'public.search_public_services_v1(jsonb)', 'SEARCH-A08 cannot silently move the browser from RPC v1');
 
 const evidence = JSON.parse(read(files.evidence));
 assert(evidence.domain === 'SEARCH-001' && evidence.sublot === 'SEARCH-A08', 'SEARCH-A08 evidence identity is invalid');
