@@ -1,0 +1,52 @@
+name: Doke ORD-A02 Personas and Grants
+
+on:
+  pull_request:
+    paths:
+      - docs/ORD-001-AUTHORITY-BASELINE.md
+      - docs/ORD-001-PERSONAS-AND-GRANTS.md
+      - docs/validation/ORD-001-A01-BASELINE.json
+      - docs/validation/ORD-001-A02-PERSONAS.json
+      - scripts/audit-ord-001-a01-baseline.js
+      - scripts/audit-ord-001-a02-personas.js
+      - scripts/test-order-state-machine-contract.js
+      - scripts/test-order-state-machine-runtime.js
+      - scripts/test-order-transaction-events-contract.js
+      - scripts/test-order-event-worker-contract.js
+      - scripts/test-order-event-worker-runtime.mjs
+      - scripts/test-order-incident-escalation-contract.js
+      - scripts/test-order-operational-postmortems-contract.js
+      - supabase/functions/order-event-worker/**
+      - supabase/migrations/010_orders_shared_runtime.sql
+      - supabase/migrations/066_order_operational_incident_schema.sql
+      - supabase/migrations/076_order_operational_postmortems_slos.sql
+      - supabase/migrations/20260729190500_ord_a02_trigger_only_grants.sql
+      - .github/workflows/ord-001-a02-personas.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  personas-and-grants:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Validate cumulative ORD-A01 baseline
+        run: node scripts/audit-ord-001-a01-baseline.js
+      - name: Validate ORD-A02 personas and grants
+        run: node scripts/audit-ord-001-a02-personas.js
+      - name: Validate canonical order state and event contracts
+        run: |
+          node scripts/test-order-state-machine-contract.js
+          node scripts/test-order-state-machine-runtime.js
+          node scripts/test-order-transaction-events-contract.js
+          node scripts/test-order-event-worker-contract.js
+          node scripts/test-order-event-worker-runtime.mjs
+      - name: Validate incident trigger consumers
+        run: |
+          node scripts/test-order-incident-escalation-contract.js
+          node scripts/test-order-operational-postmortems-contract.js
