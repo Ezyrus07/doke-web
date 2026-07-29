@@ -33,7 +33,6 @@ jobs:
           for part in 00a 00b 01 02 03 04; do
             test -f ".search-a10-payload.part${part}"
           done
-          echo '2155d7645affe8c3525b7897d491cfe529724533  .search-a10-payload.part00a' | git hash-object --stdin >/dev/null
           test "$(git hash-object .search-a10-payload.part00a)" = '2155d7645affe8c3525b7897d491cfe529724533'
           test "$(git hash-object .search-a10-payload.part00b)" = '78efd8baa338fdaf4b601e25df6b3af1b8157af3'
           test "$(git hash-object .search-a10-payload.part01)" = '88473790781a83d31d9720712e6a926cc64738c2'
@@ -66,16 +65,26 @@ jobs:
           node scripts/test-search-browser-cutover-runtime.js
           git diff --check
 
-      - name: Publish clean SEARCH-A10 commit
+      - name: Publish non-workflow SEARCH-A10 candidate
         shell: bash
         env:
           TARGET_BRANCH: ${{ github.head_ref }}
         run: |
           set -euo pipefail
+          git restore --source=HEAD -- .github/workflows/search-results-staging-browser.yml
+          chmod 0644 assets/js/core/supabase-config.js
+          chmod 0644 assets/js/repositories/search-repository.js
+          chmod 0644 assets/js/pages/resultados-data-controller.js
+          chmod 0644 assets/js/pages/search/server-results-surface.js
+          chmod 0644 scripts/audit-search-results-server-activation.js
+          chmod 0644 scripts/audit-search-browser-cutover-v2.js
+          chmod 0644 scripts/test-search-browser-cutover-runtime.js
+          chmod 0644 tests/search/search-results-staging.spec.js
+          chmod 0644 docs/validation/SEARCH-001-A10-BROWSER-CUTOVER-V2.json
           rm -f .search-a10-payload.part00 .search-a10-payload.part00a .search-a10-payload.part00b
           rm -f .search-a10-payload.part01 .search-a10-payload.part02 .search-a10-payload.part03 .search-a10-payload.part04
-          rm -f .github/workflows/search-a10-apply.yml
           git add -A
+          git reset -- .github/workflows
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git commit -m 'Implement SEARCH-A10 controlled browser cutover'
