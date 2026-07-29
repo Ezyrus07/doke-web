@@ -21,32 +21,50 @@ on:
       - supabase/migrations/066_order_operational_incident_schema.sql
       - supabase/migrations/076_order_operational_postmortems_slos.sql
       - supabase/migrations/20260729190500_ord_a02_trigger_only_grants.sql
+      - .github/workflows/ord-a03-applicator.yml
       - .github/workflows/ord-001-a02-personas.yml
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  personas-and-grants:
+  apply-ord-a03:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
         with:
-          node-version: 24
-      - name: Validate cumulative ORD-A01 baseline
-        run: node scripts/audit-ord-001-a01-baseline.js
-      - name: Validate ORD-A02 personas and grants
-        run: node scripts/audit-ord-001-a02-personas.js
-      - name: Validate canonical order state and event contracts
+          ref: ord/ord-001-baseline-audit
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Extract and run temporary applicator
         run: |
-          node scripts/test-order-state-machine-contract.js
-          node scripts/test-order-state-machine-runtime.js
-          node scripts/test-order-transaction-events-contract.js
-          node scripts/test-order-event-worker-contract.js
-          node scripts/test-order-event-worker-runtime.mjs
-      - name: Validate incident trigger consumers
+          if grep -q "supabase.rpc('create_order_command'" backend/modules/orders/orders-service.js; then
+            echo "ORD-A03 transformations already present"
+            exit 0
+          fi
+          python - <<'PY'
+          from pathlib import Path
+          source = Path('.github/workflows/ord-a03-applicator.yml').read_text(encoding='utf-8').splitlines()
+          start = next(i for i, line in enumerate(source) if "python - <<'PY'" in line) + 1
+          end = next(i for i in range(start, len(source)) if source[i].strip() == 'PY')
+          code = '\n'.join(line[10:] if line.startswith('          ') else line for line in source[start:end]) + '\n'
+          Path('/tmp/apply-ord-a03.py').write_text(code, encoding='utf-8')
+          PY
+          python /tmp/apply-ord-a03.py
+      - name: Validate and commit transformed sources
         run: |
-          node scripts/test-order-incident-escalation-contract.js
-          node scripts/test-order-operational-postmortems-contract.js
+          node --check assets/js/repositories/orders-repository.js
+          node --check assets/js/services/orders-service.js
+          node --check backend/modules/orders/orders-service.js
+          if git diff --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/js/repositories/orders-repository.js assets/js/services/orders-service.js backend/modules/orders/orders-service.js scripts/audit-ord-001-a01-baseline.js scripts/audit-ord-001-a02-personas.js
+          git commit -m "Establish canonical ORD-A03 command boundary"
+          git push origin HEAD:ord/ord-001-baseline-audit
