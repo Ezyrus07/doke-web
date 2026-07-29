@@ -112,9 +112,24 @@ assert(evidence.safety.productionChanged === false && evidence.safety.browserRpc
 
 const matrix = JSON.parse(read('config/domain-completion-matrix.json'));
 const search = matrix.domains.find((domain) => domain.id === 'SEARCH-001');
-assert(search?.maturity === 3 && search?.userFacingAuthority === 'hybrid' && search?.serverAuthority === 'partial', 'SEARCH matrix authority changed');
-assert(search?.securityGate === 'blocked' && search?.productionGate === 'blocked', 'SEARCH gates changed');
-assert(JSON.stringify((search?.blockers || []).map((item) => item.id).sort()) === JSON.stringify(['SEARCH-B03']), 'SEARCH-B03 not preserved');
+const a11EvidencePath = 'docs/validation/SEARCH-001-A11-FINAL-RECONCILIATION.json';
+const a11Evidence = exists(a11EvidencePath) ? JSON.parse(read(a11EvidencePath)) : null;
+const searchA11Complete = Boolean(
+  a11Evidence &&
+  a11Evidence.status === 'COMPLETE_STAGING_GOVERNANCE_RECONCILIATION' &&
+  a11Evidence.closure &&
+  a11Evidence.closure['SEARCH-B03'] === 'reconciled_removed_by_SEARCH-A11'
+);
+assert(search?.userFacingAuthority === 'hybrid' && search?.productionGate === 'blocked', 'SEARCH stable authority boundary changed');
+if (searchA11Complete) {
+  assert(search?.maturity === 4 && search?.serverAuthority === 'canonical' && search?.stagingEvidence === 'staging_operational', 'SEARCH completed authority state is invalid');
+  assert(search?.securityGate === 'partial', 'SEARCH completed security gate must remain partial');
+  assert((search?.blockers || []).length === 0, 'SEARCH completed blocker set must be empty');
+} else {
+  assert(search?.maturity === 3 && search?.serverAuthority === 'partial' && search?.stagingEvidence === 'staging_canary', 'SEARCH pre-A11 authority changed');
+  assert(search?.securityGate === 'blocked', 'SEARCH pre-A11 security gate changed');
+  assert(JSON.stringify((search?.blockers || []).map((item) => item.id).sort()) === JSON.stringify(['SEARCH-B03']), 'SEARCH-B03 not preserved before A11');
+}
 assert(read('scripts/audit-edge-function-source-closure.js').includes("'search-public-services-v2'"), 'Edge closure audit missing new function');
 
 const workflow = read('.github/workflows/search-observability-v2.yml');
@@ -130,4 +145,6 @@ if (failures.length) {
   process.exit(1);
 }
 console.log('[SEARCH-A09] Server-authoritative search observability: PASS');
-console.log('[SEARCH-A09] Browser remains on RPC v1 and search-rank-v0 remains active.');
+console.log(searchA11Complete
+  ? '[SEARCH-A09] Edge v2 is active after A10, observability remains server-authoritative and search-rank-v0 remains active.'
+  : '[SEARCH-A09] Browser remains on RPC v1 and search-rank-v0 remains active.');

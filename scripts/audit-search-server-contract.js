@@ -191,16 +191,32 @@ const runtime = read(files.runtime);
 
 const matrix = JSON.parse(read(files.matrix));
 const searchDomain = (matrix.domains || []).find((domain) => domain.id === 'SEARCH-001');
+const a11EvidencePath = 'docs/validation/SEARCH-001-A11-FINAL-RECONCILIATION.json';
+const a11Evidence = exists(a11EvidencePath) ? JSON.parse(read(a11EvidencePath)) : null;
+const searchA11Complete = Boolean(
+  a11Evidence &&
+  a11Evidence.status === 'COMPLETE_STAGING_GOVERNANCE_RECONCILIATION' &&
+  a11Evidence.closure &&
+  a11Evidence.closure['SEARCH-B03'] === 'reconciled_removed_by_SEARCH-A11'
+);
 assert(Boolean(searchDomain), 'SEARCH-001 is missing from the domain matrix');
 const searchB02Reconciled = Boolean(a05Evidence && a05Evidence.status === 'COMPLETE' && a05Evidence.matrix && a05Evidence.matrix.searchB02 === 'reconciled_removed');
-assert(searchDomain && searchDomain.maturity === (searchB02Reconciled ? 3 : 2), 'SEARCH maturity changed outside controlled A05 reconciliation');
 assert(searchDomain && searchDomain.userFacingAuthority === 'hybrid', 'SEARCH user-facing authority must remain hybrid');
-assert(searchDomain && searchDomain.serverAuthority === (searchB02Reconciled ? 'partial' : 'contract_only'), 'SEARCH server authority changed outside controlled A05 reconciliation');
-assert(searchDomain && searchDomain.stagingEvidence === (searchB02Reconciled ? 'staging_canary' : 'local_e2e'), 'SEARCH staging evidence changed outside controlled A05 reconciliation');
-assert(searchDomain && searchDomain.securityGate === 'blocked', 'SEARCH security gate must remain blocked');
 assert(searchDomain && searchDomain.productionGate === 'blocked', 'SEARCH production gate must remain blocked');
 const blockers = (searchDomain && searchDomain.blockers || []).map((blocker) => blocker.id).sort();
-assert(same(blockers, searchB02Reconciled ? ['SEARCH-B03'] : ['SEARCH-B02', 'SEARCH-B03']), 'SEARCH blocker set changed outside controlled A05 reconciliation');
+if (searchA11Complete) {
+  assert(searchDomain.maturity === 4, 'SEARCH completed maturity must be staging-operational level 4');
+  assert(searchDomain.serverAuthority === 'canonical', 'SEARCH completed server authority must be canonical');
+  assert(searchDomain.stagingEvidence === 'staging_operational', 'SEARCH completed staging evidence must be operational');
+  assert(searchDomain.securityGate === 'partial', 'SEARCH completed security gate must remain partial');
+  assert(same(blockers, []), 'SEARCH completed blocker set must be empty');
+} else {
+  assert(searchDomain.maturity === (searchB02Reconciled ? 3 : 2), 'SEARCH maturity changed outside controlled A05 reconciliation');
+  assert(searchDomain.serverAuthority === (searchB02Reconciled ? 'partial' : 'contract_only'), 'SEARCH server authority changed outside controlled A05 reconciliation');
+  assert(searchDomain.stagingEvidence === (searchB02Reconciled ? 'staging_canary' : 'local_e2e'), 'SEARCH staging evidence changed outside controlled A05 reconciliation');
+  assert(searchDomain.securityGate === 'blocked', 'SEARCH security gate must remain blocked before A11');
+  assert(same(blockers, searchB02Reconciled ? ['SEARCH-B03'] : ['SEARCH-B02', 'SEARCH-B03']), 'SEARCH blocker set changed outside controlled A05 reconciliation');
+}
 
 const a03Evidence = JSON.parse(read(files.a03Evidence));
 assert(a03Evidence.status === 'COMPLETE', 'SEARCH-A03 must remain complete');
@@ -252,9 +268,11 @@ if (errors.length) {
 
 console.log('[SEARCH-A04] Bounded server-side search DTO is versioned and structurally governed.');
 console.log('[SEARCH-A04] Approved publication, exact geography, allowlisted filters and cursor bounds are enforced.');
-console.log(resultsActivated
-  ? '[SEARCH-A04] The validated contract is consumed by the SEARCH-A05 candidate while matrix reconciliation remains blocked.'
-  : stagingValidated
-    ? '[SEARCH-A04] Migrations and transactional SQL validations passed in staging; UI activation remains deferred to SEARCH-A05.'
-    : '[SEARCH-A04] Results renderer activation remains explicitly deferred pending controlled staging validation.');
+console.log(searchA11Complete
+  ? '[SEARCH-A04] The bounded contract remains preserved inside the completed SEARCH-A11 service-search authority.'
+  : resultsActivated
+    ? '[SEARCH-A04] The validated contract is consumed by the SEARCH-A05 candidate while matrix reconciliation remains blocked.'
+    : stagingValidated
+      ? '[SEARCH-A04] Migrations and transactional SQL validations passed in staging; UI activation remains deferred to SEARCH-A05.'
+      : '[SEARCH-A04] Results renderer activation remains explicitly deferred pending controlled staging validation.');
 console.log('[SEARCH-A04] Production was not changed.');

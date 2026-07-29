@@ -63,17 +63,33 @@ const searchB02Reconciled = Boolean(
 
 const matrix = JSON.parse(read(files.matrix));
 const search = (matrix.domains || []).find((domain) => domain.id === 'SEARCH-001');
+const a11EvidencePath = 'docs/validation/SEARCH-001-A11-FINAL-RECONCILIATION.json';
+const a11Evidence = exists(a11EvidencePath) ? JSON.parse(read(a11EvidencePath)) : null;
+const searchA11Complete = Boolean(
+  a11Evidence &&
+  a11Evidence.status === 'COMPLETE_STAGING_GOVERNANCE_RECONCILIATION' &&
+  a11Evidence.closure &&
+  a11Evidence.closure['SEARCH-B03'] === 'reconciled_removed_by_SEARCH-A11'
+);
 assert(Boolean(search), 'SEARCH-001 is missing from the domain completion matrix');
-assert(search && search.maturity === (searchB02Reconciled ? 3 : 2), 'SEARCH maturity changed outside controlled reconciliation');
 assert(search && search.userFacingAuthority === 'hybrid', 'SEARCH user-facing authority must remain hybrid');
-assert(search && search.serverAuthority === (searchB02Reconciled ? 'partial' : 'contract_only'), 'SEARCH server authority changed outside controlled reconciliation');
-assert(search && search.securityGate === 'blocked', 'SEARCH-001 security gate must remain blocked');
 assert(search && search.productionGate === 'blocked', 'SEARCH-001 production gate must remain blocked');
 const blockers = (search && search.blockers || []).map((blocker) => blocker.id).sort();
-assert(
-  same(blockers, searchB02Reconciled ? ['SEARCH-B03'] : searchB01Reconciled ? ['SEARCH-B02', 'SEARCH-B03'] : ['SEARCH-B01', 'SEARCH-B02', 'SEARCH-B03']),
-  'SEARCH blockers changed outside controlled matrix reconciliation'
-);
+if (searchA11Complete) {
+  assert(search.maturity === 4, 'SEARCH completed maturity must be staging-operational level 4');
+  assert(search.serverAuthority === 'canonical', 'SEARCH completed server authority must be canonical');
+  assert(search.stagingEvidence === 'staging_operational', 'SEARCH completed staging evidence must be operational');
+  assert(search.securityGate === 'partial', 'SEARCH completed security gate must remain partial');
+  assert(same(blockers, []), 'SEARCH completed blocker set must be empty');
+} else {
+  assert(search.maturity === (searchB02Reconciled ? 3 : 2), 'SEARCH maturity changed outside controlled reconciliation');
+  assert(search.serverAuthority === (searchB02Reconciled ? 'partial' : 'contract_only'), 'SEARCH server authority changed outside controlled reconciliation');
+  assert(search.securityGate === 'blocked', 'SEARCH-001 security gate must remain blocked before A11');
+  assert(
+    same(blockers, searchB02Reconciled ? ['SEARCH-B03'] : searchB01Reconciled ? ['SEARCH-B02', 'SEARCH-B03'] : ['SEARCH-B01', 'SEARCH-B02', 'SEARCH-B03']),
+    'SEARCH blockers changed outside controlled matrix reconciliation'
+  );
+}
 
 const repository = read(files.repository);
 [
@@ -214,9 +230,11 @@ if (errors.length) {
 console.log('[SEARCH-A02] Browser-persistent favorites authority is retired.');
 console.log('[SEARCH-A02] Supabase/UUID flows use public.favorites and fail closed.');
 console.log('[SEARCH-A02] Non-UUID fixtures remain current-runtime memory only.');
-console.log(searchB02Reconciled
-  ? '[SEARCH-A02] SEARCH-B02 reconciliation preserves favorites as the canonical identity-scoped persistence foundation.'
-  : searchB01Reconciled
-    ? '[SEARCH-A02] SEARCH-B01 reconciliation preserves A02 as the canonical persistence foundation.'
-    : '[SEARCH-A02] SEARCH-B01 remains open until every governed favorite surface is canonical.');
+console.log(searchA11Complete
+  ? '[SEARCH-A02] SEARCH-A11 closure preserves public.favorites as the canonical identity-scoped persistence authority.'
+  : searchB02Reconciled
+    ? '[SEARCH-A02] SEARCH-B02 reconciliation preserves favorites as the canonical identity-scoped persistence foundation.'
+    : searchB01Reconciled
+      ? '[SEARCH-A02] SEARCH-B01 reconciliation preserves A02 as the canonical persistence foundation.'
+      : '[SEARCH-A02] SEARCH-B01 remains open until every governed favorite surface is canonical.');
 console.log('[SEARCH-A02] Production, staging data and real favorites were not changed.');

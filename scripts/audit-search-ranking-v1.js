@@ -189,14 +189,30 @@ assert(evidence.safety.persistentSyntheticRowsCreated === false, 'SEARCH-A07 can
 
 const matrix = JSON.parse(read(files.matrix));
 const search = (matrix.domains || []).find((domain) => domain.id === 'SEARCH-001');
+const a11EvidencePath = 'docs/validation/SEARCH-001-A11-FINAL-RECONCILIATION.json';
+const a11Evidence = exists(a11EvidencePath) ? JSON.parse(read(a11EvidencePath)) : null;
+const searchA11Complete = Boolean(
+  a11Evidence &&
+  a11Evidence.status === 'COMPLETE_STAGING_GOVERNANCE_RECONCILIATION' &&
+  a11Evidence.closure &&
+  a11Evidence.closure['SEARCH-B03'] === 'reconciled_removed_by_SEARCH-A11'
+);
 assert(Boolean(search), 'SEARCH-001 is missing from the domain matrix');
-assert(search && search.maturity === 3, 'SEARCH-A07 cannot advance maturity before RPC ranking activation');
 assert(search && search.userFacingAuthority === 'hybrid', 'SEARCH-A07 must preserve hybrid user-facing authority');
-assert(search && search.serverAuthority === 'partial', 'SEARCH-A07 must preserve partial server authority');
-assert(search && search.stagingEvidence === 'staging_canary', 'SEARCH-A07 must preserve staging canary evidence');
-assert(search && search.securityGate === 'blocked', 'SEARCH-A07 security gate must remain blocked');
 assert(search && search.productionGate === 'blocked', 'SEARCH-A07 production gate must remain blocked');
-assert(same((search && search.blockers || []).map((item) => item.id).sort(), ['SEARCH-B03']), 'SEARCH-B03 must remain the only SEARCH blocker');
+if (searchA11Complete) {
+  assert(search.maturity === 4, 'SEARCH completed maturity must be staging-operational level 4');
+  assert(search.serverAuthority === 'canonical', 'SEARCH completed server authority must be canonical');
+  assert(search.stagingEvidence === 'staging_operational', 'SEARCH completed staging evidence must be operational');
+  assert(search.securityGate === 'partial', 'SEARCH completed security gate must remain partial');
+  assert(same((search.blockers || []).map((item) => item.id).sort(), []), 'SEARCH completed blocker set must be empty');
+} else {
+  assert(search.maturity === 3, 'SEARCH-A07 cannot advance maturity before A11 reconciliation');
+  assert(search.serverAuthority === 'partial', 'SEARCH-A07 must preserve partial server authority before A11');
+  assert(search.stagingEvidence === 'staging_canary', 'SEARCH-A07 must preserve staging canary evidence before A11');
+  assert(search.securityGate === 'blocked', 'SEARCH-A07 security gate must remain blocked before A11');
+  assert(same((search.blockers || []).map((item) => item.id).sort(), ['SEARCH-B03']), 'SEARCH-B03 must remain the only SEARCH blocker before A11');
+}
 
 const workflow = read(files.workflow);
 [
@@ -219,4 +235,6 @@ console.log('[SEARCH-A07] Immutable bounded ranking infrastructure is installed 
 console.log('[SEARCH-A07] Canonical search-rank-v1 is reconciled but remains inactive.');
 console.log('[SEARCH-A07] search-rank-v0 and legacy public ordering remain active.');
 console.log('[SEARCH-A07] Browser behavioral counters remain excluded from ranking.');
-console.log('[SEARCH-A07] Production remains unchanged and SEARCH-B03 remains open.');
+console.log(searchA11Complete
+  ? '[SEARCH-A07] Production remains unchanged; SEARCH-A11 reconciled SEARCH-B03 without activating ranking v1.'
+  : '[SEARCH-A07] Production remains unchanged and SEARCH-B03 remains open.');

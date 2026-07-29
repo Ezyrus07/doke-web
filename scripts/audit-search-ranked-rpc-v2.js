@@ -133,14 +133,30 @@ assert(evidence.safety && evidence.safety.browserRpcChanged === false, 'SEARCH-A
 
 const matrix = JSON.parse(read(files.matrix));
 const search = (matrix.domains || []).find((domain) => domain.id === 'SEARCH-001');
+const a11EvidencePath = 'docs/validation/SEARCH-001-A11-FINAL-RECONCILIATION.json';
+const a11Evidence = exists(a11EvidencePath) ? JSON.parse(read(a11EvidencePath)) : null;
+const searchA11Complete = Boolean(
+  a11Evidence &&
+  a11Evidence.status === 'COMPLETE_STAGING_GOVERNANCE_RECONCILIATION' &&
+  a11Evidence.closure &&
+  a11Evidence.closure['SEARCH-B03'] === 'reconciled_removed_by_SEARCH-A11'
+);
 assert(Boolean(search), 'SEARCH-001 is missing from the domain matrix');
-assert(search && search.maturity === 3, 'SEARCH-A08 cannot advance maturity before browser cutover and monitoring');
 assert(search && search.userFacingAuthority === 'hybrid', 'SEARCH-A08 must preserve hybrid user-facing authority');
-assert(search && search.serverAuthority === 'partial', 'SEARCH-A08 must preserve partial server authority');
-assert(search && search.stagingEvidence === 'staging_canary', 'SEARCH-A08 must preserve staging canary evidence');
-assert(search && search.securityGate === 'blocked', 'SEARCH-A08 security gate must remain blocked');
 assert(search && search.productionGate === 'blocked', 'SEARCH-A08 production gate must remain blocked');
-assert(same((search && search.blockers || []).map((item) => item.id).sort(), ['SEARCH-B03']), 'SEARCH-B03 must remain the only SEARCH blocker');
+if (searchA11Complete) {
+  assert(search.maturity === 4, 'SEARCH completed maturity must be staging-operational level 4');
+  assert(search.serverAuthority === 'canonical', 'SEARCH completed server authority must be canonical');
+  assert(search.stagingEvidence === 'staging_operational', 'SEARCH completed staging evidence must be operational');
+  assert(search.securityGate === 'partial', 'SEARCH completed security gate must remain partial');
+  assert(same((search.blockers || []).map((item) => item.id).sort(), []), 'SEARCH completed blocker set must be empty');
+} else {
+  assert(search.maturity === 3, 'SEARCH-A08 cannot advance maturity before A11 reconciliation');
+  assert(search.serverAuthority === 'partial', 'SEARCH-A08 must preserve partial server authority before A11');
+  assert(search.stagingEvidence === 'staging_canary', 'SEARCH-A08 must preserve staging canary evidence before A11');
+  assert(search.securityGate === 'blocked', 'SEARCH-A08 security gate must remain blocked before A11');
+  assert(same((search.blockers || []).map((item) => item.id).sort(), ['SEARCH-B03']), 'SEARCH-B03 must remain the only SEARCH blocker before A11');
+}
 
 const workflow = read(files.workflow);
 [
@@ -162,7 +178,9 @@ if (errors.length) {
 }
 
 console.log('[SEARCH-A08] Version-bound ranked search RPC v2: PASS');
-console.log('[SEARCH-A08] Browser remains on public.search_public_services_v1 while v2 is validated in staging.');
+console.log(searchA11Complete
+  ? '[SEARCH-A08] The v2 contract remains preserved after the controlled A10 browser cutover.'
+  : '[SEARCH-A08] Browser remains on public.search_public_services_v1 while v2 is validated in staging.');
 console.log('[SEARCH-A08] search-rank-v0 preserves legacy ordering; v1 uses bounded score/tiebreak/id.');
 console.log('[SEARCH-A08] HMAC cursor binds rankingVersion, asOf and normalized request.');
 console.log('[SEARCH-A08] Behavioral metrics and public score breakdown remain excluded.');
