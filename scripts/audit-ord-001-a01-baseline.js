@@ -67,10 +67,18 @@ assert.strictEqual(orderDomain.stagingEvidence, 'staging_operational');
 assert.strictEqual(orderDomain.securityGate, 'partial');
 assert.strictEqual(orderDomain.productionGate, 'blocked');
 
+const a03Closed = fs.existsSync(path.join(root, 'docs/validation/ORD-001-A03-COMMAND-BOUNDARY.json'));
 const blockerIds = new Set((orderDomain.blockers || []).map((blocker) => blocker.id));
-['ORD-B01', 'ORD-B02', 'ORD-B03', 'ORD-B04'].forEach((id) => {
-  assert(blockerIds.has(id), `Historical ORD blocker missing before reconciliation: ${id}`);
+['ORD-B02', 'ORD-B03', 'ORD-B04'].forEach((id) => {
+  assert(blockerIds.has(id), `Active ORD blocker missing: ${id}`);
 });
+if (a03Closed) {
+  const a03 = readJson('docs/validation/ORD-001-A03-COMMAND-BOUNDARY.json');
+  assert.strictEqual(a03.status, 'complete');
+  assert(!blockerIds.has('ORD-B01'), 'Resolved ORD-B01 must be removed after complete A03 evidence.');
+} else {
+  assert(blockerIds.has('ORD-B01'), 'Historical ORD-B01 must remain before A03 reconciliation.');
+}
 
 assert.strictEqual(evidence.domain, 'ORD-001');
 assert.strictEqual(evidence.sublot, 'ORD-A01');
@@ -121,20 +129,19 @@ const findingIds = new Set((evidence.findings || []).map((finding) => finding.id
 assert(legacyService.includes("Doke.mockData.load('orders')"), 'Legacy order service is no longer frozen as mock-only.');
 assert(legacyService.includes('services.orders = Object.freeze'), 'Legacy order service authority is not explicit.');
 
-const a03Closed = fs.existsSync(path.join(root, 'docs/validation/ORD-001-A03-COMMAND-BOUNDARY.json'));
 if (!a03Closed) {
-[
-  "var STORAGE_KEY = 'doke.orders.local.v1'",
-  "var LEGACY_STORAGE_KEY = 'doke.orders'",
-  "var FALLBACK_URL = 'assets/data/mock-orders.json'",
-  "var REMOTE_TABLE = 'orders'",
-  'root.localStorage.getItem',
-  'root.localStorage.setItem',
-  'client.from(REMOTE_TABLE).upsert',
-  "client.from(REMOTE_TABLE).delete()",
-  "setProviderState('local-fallback')",
-  "return loadLocal(options)"
-].forEach((snippet) => assert(repository.includes(snippet), `Orders repository baseline marker missing: ${snippet}`));
+  [
+    "var STORAGE_KEY = 'doke.orders.local.v1'",
+    "var LEGACY_STORAGE_KEY = 'doke.orders'",
+    "var FALLBACK_URL = 'assets/data/mock-orders.json'",
+    "var REMOTE_TABLE = 'orders'",
+    'root.localStorage.getItem',
+    'root.localStorage.setItem',
+    'client.from(REMOTE_TABLE).upsert',
+    "client.from(REMOTE_TABLE).delete()",
+    "setProviderState('local-fallback')",
+    "return loadLocal(options)"
+  ].forEach((snippet) => assert(repository.includes(snippet), `Orders repository baseline marker missing: ${snippet}`));
 } else {
   const a03 = readJson('docs/validation/ORD-001-A03-COMMAND-BOUNDARY.json');
   assert.strictEqual(a03.status, 'complete');
@@ -142,7 +149,6 @@ if (!a03Closed) {
   assert(!repository.includes('client.from(REMOTE_TABLE).upsert'));
   assert(!repository.includes("client.from(REMOTE_TABLE).delete()"));
 }
-
 
 [
   "var ORDERS_WRITE_CANARY_PROVIDER = 'api-write-canary-frontend-activation'",
