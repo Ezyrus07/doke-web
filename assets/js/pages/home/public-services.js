@@ -26,7 +26,7 @@
     var existing = document.querySelector('script[data-doke-home-favorites-module]');
     var script = existing || document.createElement('script');
     script.async = false;
-    script.src = 'assets/js/pages/home/favorites-surface.js?v=20260729-search-ux02-v2';
+    script.src = 'assets/js/pages/home/favorites-surface.js?v=20260729-search-ux02-v3';
     script.dataset.dokeHomeFavoritesModule = 'true';
 
     favoritesModulePromise = new Promise(function (resolve, reject) {
