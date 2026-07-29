@@ -6,7 +6,7 @@ Este é o mapa operacional obrigatório para concluir a lógica da Doke. Ele cru
 
 - Domínios/programas mapeados: **23**.
 - Fluxos críticos mapeados: **15**.
-- Maturidade média atual: **2.78/6**.
+- Maturidade média atual: **2.83/6**.
 - Bloqueadores críticos explícitos: **15**.
 - Domínios prontos para produção: **0**.
 - Runtime padrão: dados **mock**, auth **supabase**, rede **desativada**.
@@ -42,8 +42,8 @@ RLS habilitado, mas sem policy: .
 | 0 | not started | 1 |
 | 1 | foundation only | 3 |
 | 2 | local functional | 4 |
-| 3 | staging canary or hybrid | 7 |
-| 4 | staging operational | 8 |
+| 3 | staging canary or hybrid | 6 |
+| 4 | staging operational | 9 |
 | 5 | private beta ready | 0 |
 | 6 | production ready | 0 |
 
@@ -56,7 +56,7 @@ RLS habilitado, mas sem policy: .
 | 3 | AUTH-001 | Autenticação, sessão e identidade | 4/6 | remote | canonical | staging operational | partial | blocked |
 | 4 | PROF-001 | Perfis, onboarding profissional e KYC | 4/6 | remote | canonical | staging operational | blocked | blocked |
 | 5 | CAT-001 | Catálogo, publicação e moderação de serviços | 4/6 | remote | canonical | staging operational | partial | blocked |
-| 6 | SEARCH-001 | Busca, descoberta, favoritos e ranking | 3/6 | hybrid | partial | staging canary | blocked | blocked |
+| 6 | SEARCH-001 | Busca, descoberta, favoritos e ranking | 4/6 | hybrid | canonical | staging operational | partial | blocked |
 | 7 | ORD-001 | Orçamentos, propostas e ciclo de pedidos | 4/6 | hybrid | canonical | staging operational | partial | blocked |
 | 8 | SCHED-001 | Agenda, disponibilidade e execução do serviço | 1/6 | local | none | static contract | blocked | blocked |
 | 9 | MSG-001 | Mensagens, conversas, presença e anexos | 3/6 | hybrid | partial | staging canary | partial | blocked |
@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 916 arquivos no escopo; 231 referências a localStorage; 71 a sessionStorage; 533 referências mock; 156 referências de rede/Supabase; 30 marcadores de implementação pendente.
+**Evidência estática observada:** 918 arquivos no escopo; 233 referências a localStorage; 72 a sessionStorage; 533 referências mock; 159 referências de rede/Supabase; 30 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -342,7 +342,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Objetivo:** Return eligible services and professionals with scalable server-side filtering, ranking and pagination.
 
-**Estado:** maturidade 3/6; UI hybrid; servidor partial; staging staging canary; segurança blocked; produção blocked.
+**Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção blocked.
 
 **Evidência estática observada:** 5 arquivos no escopo; 2 referências a localStorage; 0 a sessionStorage; 3 referências mock; 0 referências de rede/Supabase; 0 marcadores de implementação pendente.
 
@@ -350,23 +350,25 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Tabelas/autoridades de dados:** `services`, `service_categories`, `favorites`, `service_metric_events`.
 
+**Edge Functions:** `search-public-services-v2`.
+
 **Evidências:**
-- Search and product-beta local runtime contracts pass.
-- SEARCH-A02 retired browser-persistent favorite authority and made public.favorites canonical for authenticated UUID subjects.
-- SEARCH-A03 activates one owner-scoped favorite snapshot across home, results, detail and owner-profile favorite surfaces without per-card reads.
-- SEARCH-A03 technical head 23006e49f8903480f4c791fec5196504f0c60a8e passed dedicated authority/runtime gates, Quality #1294, blocking E2E, 105 structural guards and Diagnostic #958.
-- No dedicated canonical server-side search and indexing contract exists yet.
-- Read-only staging inspection confirmed public.favorites RLS enabled with three owner-scoped SELECT, INSERT and DELETE policies.
-- SEARCH-A04 installed the bounded public search RPC in staging with approved-snapshot indexing, exact geographic eligibility and transactional SQL validation.
-- SEARCH-A05 activated canonical server-side service results with opaque cursor pagination, fail-closed errors and no full-catalog browser fallback.
-- SEARCH-A05 head 0dad31462c8fa4561501865b8dd730d452f87f08 passed A01-A05, staging browser RPC validation, Quality #1369, blocking E2E, 105 guards and Diagnostic #1033.
+- SEARCH-A01 through SEARCH-A03 established authority boundaries and canonical identity-scoped favorites across discovery surfaces.
+- SEARCH-A04 and SEARCH-A05 installed and activated bounded server-side filtering, approved-snapshot eligibility, opaque pagination and fail-closed result rendering.
+- SEARCH-A06 through SEARCH-A08 installed immutable ranking versions, bounded anti-manipulation signals, search-rank-v0 rollback and the version-bound public RPC v2 without exposing score internals.
+- SEARCH-A09 installed private server-authoritative latency, error, cursor, zero-result and ranking-version observability through the JWT-protected search-public-services-v2 Edge proxy.
+- SEARCH-A10 activated Edge v2 in the staging browser under search-rank-v0, proved no automatic fallback, proved deliberate RPC v1 rollback and prohibited direct browser catalog reads.
+- SEARCH-A10 deterministic browser canary #191 passed the complete A01-A10 chain with request identity a10a10a1-0000-4000-8000-000000000010.
+- Ranking v1 remains installed but inactive; behavioral metrics, paid boosts, contacts, messages, views and CTR remain excluded from active ranking authority.
+- Production remains blocked and no account, service, favorite, real metric, SMS, OAuth, paid integration or production configuration was changed.
 
 **Bloqueadores:**
-- **SEARCH-B03 · MEDIUM · analytics:** Ranking signals and anti-manipulation controls are incomplete. _(Fase 15)_
+- Nenhum.
 
 **Próximas ações:**
-- Define and validate server-controlled ranking signals, anti-manipulation rules, conversion instrumentation, monitoring and rollback for SEARCH-B03.
-- Keep static users, Workers, publications, suggestions and browser-local search history explicitly governed until their own controlled sublots.
+- Keep search-rank-v0 active until a separate explicitly authorized ranking-v1 activation sublot proves production-grade thresholds and rollback.
+- Keep workers, publications, suggestions and browser-local search history explicitly governed by their own controlled domains and sublots.
+- Keep production blocked until the global security, analytics and launch gates are satisfied.
 
 **Gate de saída:**
 - Search is server-paginated and bounded.
@@ -857,7 +859,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI hybrid; servidor partial; staging local e2e; segurança partial; produção blocked.
 
-**Evidência estática observada:** 848 arquivos no escopo; 232 referências a localStorage; 71 a sessionStorage; 225 referências mock; 264 referências de rede/Supabase; 9 marcadores de implementação pendente.
+**Evidência estática observada:** 848 arquivos no escopo; 232 referências a localStorage; 71 a sessionStorage; 225 referências mock; 265 referências de rede/Supabase; 9 marcadores de implementação pendente.
 
 **Páginas:** `index.html`, `resultados.html`, `detalhe-anuncio.html`, `pedidos.html`, `mensagens.html`, `notificacoes.html`, `carteira.html`, `perfil.html`, `comunidade.html`.
 
@@ -888,7 +890,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2160 arquivos no escopo; 490 referências a localStorage; 144 a sessionStorage; 843 referências mock; 550 referências de rede/Supabase; 84 marcadores de implementação pendente.
+**Evidência estática observada:** 2162 arquivos no escopo; 492 referências a localStorage; 145 a sessionStorage; 843 referências mock; 554 referências de rede/Supabase; 84 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
