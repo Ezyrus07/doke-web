@@ -1,0 +1,76 @@
+{
+  "domain": "SEARCH-001",
+  "sublot": "SEARCH-A10",
+  "title": "Controlled staging browser cutover to Edge search v2",
+  "status": "CANDIDATE_STAGING_VALIDATION",
+  "repository": "Ezyrus07/doke-web",
+  "branch": "search/search-001-baseline-audit",
+  "base": "cat/cat-001-baseline-audit",
+  "technicalHead": "e287f3e8c849d38d1763a67669b54d9897fb95d9",
+  "candidateHead": "3ffcb62be2549cc5f6c86749078bf9324a3b4968",
+  "transport": {
+    "active": "edge-v2",
+    "edgeFunction": "search-public-services-v2",
+    "edgeAuthority": "public.search_public_services_v2",
+    "edgeContractVersion": "2.0.0",
+    "rollback": "rpc-v1",
+    "rollbackRpc": "search_public_services_v1",
+    "rollbackAuthority": "public.search_public_services_v1",
+    "rollbackContractVersion": "1.0.0",
+    "automaticFallback": false,
+    "unknownTransportFailureMode": "fail_closed"
+  },
+  "ranking": {
+    "activeVersion": "search-rank-v0",
+    "expectedStrategy": "legacy_updated_at",
+    "v1Activated": false,
+    "browserScoreExposure": false
+  },
+  "browserAuthority": {
+    "surface": "resultados.html",
+    "repositoryBoundary": "assets/js/repositories/search-repository.js",
+    "serviceBoundary": "assets/js/services/search-service.js",
+    "uiSurface": "assets/js/pages/search/server-results-surface.js",
+    "directCatalogReadForbidden": true,
+    "localFallbackForbiddenWhenRemoteConfigured": true,
+    "requestIdHeader": "x-doke-request-id"
+  },
+  "validation": {
+    "staticAudit": "success",
+    "runtimeTransportTest": "success",
+    "stagingEdgeBrowser": "pending",
+    "stagingFailClosedBrowser": "pending",
+    "stagingRollbackBrowser": "pending",
+    "qualityGates": "pending",
+    "blockingE2E": "pending",
+    "visualStructuralGuards": "pending",
+    "diagnosticE2E": "pending"
+  },
+  "stagingState": {
+    "edgeFunctionVersion": 1,
+    "verifyJwt": true,
+    "activeRankingVersion": "search-rank-v0",
+    "rankingActivationEventsAdded": 0,
+    "persistentCanaryObservations": null,
+    "persistentSyntheticSnapshots": 0
+  },
+  "safety": {
+    "productionChanged": false,
+    "realDataMutated": false,
+    "accountsChanged": false,
+    "servicesChanged": false,
+    "favoritesChanged": false,
+    "paidIntegrationEnabled": false,
+    "smsEnabled": false,
+    "oauthEnabled": false,
+    "cronEnabled": false,
+    "pullRequestMerged": false,
+    "pullRequestReadyForReview": false
+  },
+  "blockerDisposition": {
+    "blocker": "SEARCH-B03",
+    "status": "preserved_until_browser_and_rollback_evidence_converge",
+    "removalCondition": "Edge v2 browser path, fail-closed behavior, explicit RPC v1 rollback, observability and final CI all pass on one stable head"
+  },
+  "nextControlledStep": "Converge staging browser evidence, prune the exact canary observation, reconcile SEARCH-B03 and prepare SEARCH-001 domain closure without changing production."
+}
