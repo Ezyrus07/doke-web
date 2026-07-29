@@ -1,23 +1,21 @@
 name: ORD-001 Matrix Regenerate Once
 
 on:
-  push:
-    branches:
-      - ord/ord-001-baseline-audit
+  pull_request:
     paths:
       - .github/workflows/ord-001-matrix-regenerate-once.yml
+      - docs/ORD-001-A05-CANARY-PREFLIGHT.md
+      - scripts/audit-ord-001-a05-canary-preflight.js
+  workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   regenerate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ord/ord-001-baseline-audit
-          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -32,17 +30,14 @@ jobs:
             printf 'Unexpected generated changes:\n%s\n' "$unexpected"
             exit 1
           fi
-      - name: Commit generated artifacts
-        shell: bash
-        run: |
-          if git diff --quiet -- docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json; then
-            echo 'Matrix artifacts already current.'
-            exit 0
-          fi
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json
-          git commit -m 'Regenerate domain completion matrix for ORD-A05 preflight'
-          git push origin HEAD:ord/ord-001-baseline-audit
+      - name: Upload generated matrix artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ord-a05-generated-matrix
+          path: |
+            docs/DOMAIN-COMPLETION-MATRIX.md
+            reports/generated/domain-completion-matrix-report.json
+          if-no-files-found: error
+          retention-days: 1
 
-# One-shot controlled applicator. Remove after the generated commit is confirmed.
+# One-shot read-only artifact generator. Remove after the generated files are committed.
