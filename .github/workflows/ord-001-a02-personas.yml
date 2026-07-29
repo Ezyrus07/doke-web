@@ -51,6 +51,10 @@ jobs:
           start = next(i for i, line in enumerate(source) if "python - <<'PY'" in line) + 1
           end = next(i for i in range(start, len(source)) if source[i].strip() == 'PY')
           code = '\n'.join(line[10:] if line.startswith('          ') else line for line in source[start:end]) + '\n'
+          code = code.replace(
+              "source = replace_once(source, old_load, new_load, 'repository load')",
+              "load_start = source.index('    var local = readLocal();', source.index('  function load(options) {'))\nload_end = source.index('  function save(order) {', load_start)\nsource = source[:load_start] + new_load + source[load_end:]"
+          )
           Path('/tmp/apply-ord-a03.py').write_text(code, encoding='utf-8')
           PY
           python /tmp/apply-ord-a03.py
