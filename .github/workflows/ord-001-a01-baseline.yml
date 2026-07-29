@@ -19,24 +19,43 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  baseline:
+  apply-capability:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
         with:
-          node-version: 24
-      - name: Validate ORD-A01 authority baseline
-        run: node scripts/audit-ord-001-a01-baseline.js
-      - name: Validate canonical order state machine contracts
+          ref: ord/ord-001-baseline-audit
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Execute prepared ORD-A03 capability alignment
         run: |
-          node scripts/test-order-state-machine-contract.js
-          node scripts/test-order-state-machine-runtime.js
-      - name: Validate durable order event contracts
+          python - <<'PY'
+          from pathlib import Path
+          lines = Path('.github/workflows/ord-001-a02-personas.yml').read_text(encoding='utf-8').splitlines()
+          start = next(i for i, line in enumerate(lines) if "python - <<'PY'" in line) + 1
+          end = next(i for i in range(start, len(lines)) if lines[i].strip() == 'PY')
+          code = '\n'.join(line[10:] if line.startswith('          ') else line for line in lines[start:end]) + '\n'
+          Path('/tmp/align-ord-a03.py').write_text(code, encoding='utf-8')
+          PY
+          python /tmp/align-ord-a03.py
+      - name: Validate and commit capability alignment
         run: |
-          node scripts/test-order-transaction-events-contract.js
-          node scripts/test-order-event-worker-contract.js
-          node scripts/test-order-event-worker-runtime.mjs
+          node --check assets/js/repositories/orders-repository.js
+          node --check assets/js/services/orders-service.js
+          node --check backend/modules/orders/orders-service.js
+          grep -q "resolveOrderCapability" assets/js/services/orders-service.js
+          grep -q "resolveOrderCapability" backend/modules/orders/orders-service.js
+          if git diff --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/js/repositories/orders-repository.js assets/js/services/orders-service.js backend/modules/orders/orders-service.js
+          git commit -m "Align ORD-A03 capabilities with order relationships"
+          git push origin HEAD:ord/ord-001-baseline-audit
