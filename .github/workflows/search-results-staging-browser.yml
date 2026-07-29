@@ -30,13 +30,46 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  scope:
+    name: Detect SEARCH-A10 code scope
+    runs-on: ubuntu-latest
+    outputs:
+      run_browser: ${{ steps.scope.outputs.run_browser }}
+    steps:
+      - name: Checkout candidate head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 2
+
+      - name: Detect latest-commit browser scope
+        id: scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo 'run_browser=true' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          changed="$(git diff --name-only HEAD^ HEAD)"
+          printf '%s\n' "$changed"
+          if printf '%s\n' "$changed" | grep -Eq '^(assets/js/core/supabase-config\.js|assets/js/repositories/search-repository\.js|assets/js/services/search-service\.js|assets/js/pages/search/server-results-surface\.js|assets/js/pages/search-results\.js|assets/js/pages/resultados-data-controller\.js|assets/js/controllers/controller-data\.js|assets/css/pages/search-results\.css|resultados\.html|scripts/audit-search-results-server-activation\.js|scripts/audit-search-browser-cutover-v2\.js|scripts/test-search-browser-cutover-runtime\.js|tests/search/search-results-staging\.spec\.js|\.github/workflows/search-results-staging-browser\.yml)$'; then
+            echo 'run_browser=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'run_browser=false' >> "$GITHUB_OUTPUT"
+          fi
+
   staging-browser-cutover:
     name: SEARCH-A10 Edge v2 and RPC v1 rollback browser journey
+    needs: scope
+    if: needs.scope.outputs.run_browser == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - name: Checkout candidate tree
+      - name: Checkout candidate head
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -114,7 +147,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: doke-search-a10-staging-browser-${{ github.sha }}
+          name: doke-search-a10-staging-browser-${{ github.event.pull_request.head.sha || github.sha }}
           path: |
             reports/generated/playwright-html/
             reports/generated/playwright-results.json
