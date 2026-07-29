@@ -101,6 +101,11 @@ jobs:
           )
           code = replace_labeled_call(
               code,
+              'provider assertion helper',
+              "provider_insert = source.index('  function normalizeOrderFromProvider(order) {')\nsource = source[:provider_insert] + provider_replacement[len(provider_anchor):] + '\\n' + source[provider_insert:]"
+          )
+          code = replace_labeled_call(
+              code,
               'create provider assertion',
               "create_start = source.index('  function create(payload) {')\ncreate_local = source.index('    var repository = assertRepository();', create_start)\nsource = source[:create_local] + \"    assertOrderCommandProviderAvailable('create');\\n\" + source[create_local:]"
           )
