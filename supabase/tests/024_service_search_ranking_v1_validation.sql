@@ -91,8 +91,8 @@ begin
     '2026-07-28T12:00:00Z'::timestamptz
   ) into v_with_availability;
 
-  if pg_catalog.abs((v_with_availability - v_without_availability) - 0.05) > 0.0000001 then
-    raise exception 'SEARCH-A07 availability signal is not binary and capped at five percent';
+  if pg_catalog.abs((v_with_availability - v_without_availability) - 0.07) > 0.0000001 then
+    raise exception 'SEARCH-A07 availability signal is not binary and capped at seven percent';
   end if;
 
   select private.compute_service_search_ranking_score(
@@ -117,8 +117,8 @@ begin
     '2026-07-28T12:00:00Z'::timestamptz
   ) into v_old_service;
 
-  if v_recent_day_one - v_old_service > 0.1000001 then
-    raise exception 'SEARCH-A07 recency contribution exceeds its ten-percent cap';
+  if v_recent_day_one - v_old_service > 0.0500001 then
+    raise exception 'SEARCH-A07 recency contribution exceeds its five-percent cap';
   end if;
 
   select private.compute_service_search_ranking_score(
@@ -147,10 +147,10 @@ begin
       'bounded_quality_v1',
       pg_catalog.jsonb_build_object(
         'weights', pg_catalog.jsonb_build_object('text', 2, 'reviews', 0, 'availability', 0, 'recency', 0),
-        'reviewPrior', pg_catalog.jsonb_build_object('mean', 4, 'weight', 5),
+        'reviewPrior', pg_catalog.jsonb_build_object('mean', 4.2, 'weight', 5),
         'availabilityWindowDays', 14,
         'recencyFullDays', 14,
-        'recencyZeroDays', 90,
+        'recencyZeroDays', 120,
         'behavioralSignalsEnabled', false,
         'scorePrecision', 8
       )
