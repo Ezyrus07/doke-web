@@ -1,11 +1,11 @@
 {
-  "schemaVersion": "1.2.0",
+  "schemaVersion": "1.2.1",
   "domain": "SEARCH-001",
   "sublot": "SEARCH-A07",
   "status": "COMPLETE_STAGING_INFRASTRUCTURE_INACTIVE",
   "title": "Immutable bounded ranking v1 and deterministic rollback contract",
-  "recordedAt": "2026-07-28T21:20:00-03:00",
-  "validatedCandidateHead": "43d4a7c15f3ee62320ca692e6efa319378cc926a",
+  "recordedAt": "2026-07-28T21:34:00-03:00",
+  "validatedCandidateHead": "f9801335cf76867f8beea3c02b4cfae3a173b709",
   "ranking": {
     "configurationAuthority": "private.service_search_ranking_versions",
     "stateAuthority": "private.service_search_ranking_state",
@@ -79,6 +79,12 @@
       "anonCanActivate": false,
       "authenticatedCanActivate": false,
       "serviceRoleCanActivate": true
+    },
+    "advisors": {
+      "rankingPrivateExposureDetected": false,
+      "rankingForeignKeysWithoutCoveringIndex": 3,
+      "rankingForeignKeyFindingLevel": "INFO",
+      "deferredTo": "SEARCH-B03 observability and scale hardening"
     }
   },
   "antiManipulation": {
@@ -149,6 +155,7 @@
     "Integrate the active ranking-version pointer into a new versioned public search RPC without activating search-rank-v1.",
     "Bind pagination cursors to rankingVersion and asOf so a page sequence cannot mix ranking states.",
     "Add server-authoritative impression and conversion telemetry before behavioral signals can be evaluated.",
+    "Add covering indexes for ranking-state foreign keys before activation history or observability volume becomes material.",
     "Keep SEARCH-B03 open until ranking activation, monitoring and rollback are proven together on one clean head."
   ],
   "nextControlledStep": "SEARCH-A08 — integrate the inactive ranking authority into a new public RPC and version-bound cursor in staging, while preserving search-rank-v0 and the blocked production gate."
