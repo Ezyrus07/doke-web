@@ -1,0 +1,27 @@
+name: Doke SEARCH-UX02 Intent and Favorites
+
+on:
+  pull_request:
+    paths:
+      - assets/js/components/public-service-card.js
+      - assets/js/components/ad-card-interactions.js
+      - assets/js/pages/search/server-results-surface.js
+      - supabase/migrations/20260729143000_service_search_intent_recovery_v1.sql
+      - supabase/migrations/20260729144500_service_search_intent_no_match_fix.sql
+      - scripts/test-search-ux02-runtime.js
+      - .github/workflows/search-ux02.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Validate SEARCH-UX02 runtime and migration contracts
+        run: node scripts/test-search-ux02-runtime.js
