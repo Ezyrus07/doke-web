@@ -671,3 +671,28 @@ CAT-001 was reconciled at maturity 4. Only CAT-B04 was removed; security remains
 - Canary #806 / run `30357055735`: success;
 - Diagnostic #901 / run `30357055726`: success;
 - production unchanged; PR #12 and parent PR #11 remain draft, open and unmerged.
+
+# 2026-07-29 — SEARCH-A11 / reconciliação final do SEARCH-001
+
+**Status:** `DONE`
+
+**Branch:** `search/search-001-baseline-audit`
+
+**Pull Request:** `#21`
+
+SEARCH-001 foi reconciliado como domínio operacional de staging para busca de serviços, favoritos e ranking governado. `SEARCH-B03` foi removido somente após a convergência dos contratos A01–A10.
+
+- head técnico validado: `850ecf872d8239ca2ccc127f67134711969db29a`;
+- Edge v2 é o transporte padrão e RPC v1 permanece rollback explícito;
+- `search-rank-v0` continua ativo e `search-rank-v1` permanece instalado e inativo;
+- sinais manipuláveis, CTR, views, contatos, mensagens e boost pago continuam fora do ranking;
+- telemetria futura de impressão, clique e conversão foi transferida para `ANA-001` e não pode entrar no ranking antes de ser server-authoritative e endurecida;
+- Quality #1473 / run `30451825214`: success;
+- Browser Cutover #202 / run `30451824430`: success;
+- Staging Edge HTTP Canary #865 / run `30451824390`: success;
+- blocking E2E e 105 guards visuais: success;
+- Diagnostic #1137 foi cancelado como lane não bloqueante;
+- maturity promovida para 4, autoridade server-side canônica, segurança parcial e produção bloqueada;
+- `ORD-001` é o próximo domínio obrigatório;
+- produção, contas, serviços, favoritos e dados reais permaneceram inalterados;
+- PR #21 permanece draft, aberto e não mesclado.

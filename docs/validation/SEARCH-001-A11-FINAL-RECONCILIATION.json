@@ -1,0 +1,182 @@
+{
+  "schemaVersion": "1.0.0",
+  "domain": "SEARCH-001",
+  "sublot": "SEARCH-A11",
+  "title": "Cumulative governance reconciliation and SEARCH-001 domain closure",
+  "status": "COMPLETE_STAGING_GOVERNANCE_RECONCILIATION",
+  "recordedAt": "2026-07-29T09:44:00-03:00",
+  "repository": "Ezyrus07/doke-web",
+  "branch": "search/search-001-baseline-audit",
+  "base": "cat/cat-001-baseline-audit",
+  "technicalHead": "850ecf872d8239ca2ccc127f67134711969db29a",
+  "governanceBaseHead": "d37965ccef2192910fa0293ac946a72cad129f85",
+  "authority": {
+    "serviceSearchTransport": "edge-v2",
+    "serviceSearchAuthority": "public.search_public_services_v2",
+    "serviceSearchContractVersion": "2.0.0",
+    "favoritesAuthority": "public.favorites",
+    "serverAuthority": "canonical_for_closed_service_search_and_favorites_scope",
+    "userFacingAuthority": "hybrid",
+    "nonServiceDiscoveryDisposition": "users_workers_publications_suggestions_and_browser_history_remain_explicitly_outside_the_closed_service_search_authority"
+  },
+  "ranking": {
+    "activeVersion": "search-rank-v0",
+    "activeStrategy": "legacy_updated_at",
+    "rankingV1Installed": true,
+    "rankingV1Activated": false,
+    "scoreBreakdownPublic": false,
+    "behavioralMetricsInActiveRanking": false,
+    "paidBoostInRanking": false,
+    "rollbackTransport": "rpc-v1",
+    "automaticTransportFallback": false,
+    "conversionTelemetryDisposition": "deferred_to_ANA_001_and_forbidden_from_ranking_until_server_authoritative_and_non_manipulable"
+  },
+  "closure": {
+    "SEARCH-B01": "reconciled_removed_by_SEARCH-A03",
+    "SEARCH-B02": "reconciled_removed_by_SEARCH-A05",
+    "SEARCH-B03": "reconciled_removed_by_SEARCH-A11",
+    "searchB03Resolution": [
+      "Ranking signals are documented, bounded, immutable and server-controlled.",
+      "Browser-manipulable engagement and conversion counters are excluded from active and candidate ranking authority.",
+      "Latency, errors, cursor integrity, zero-result rate and ranking-version distribution are server-authoritatively observable.",
+      "Edge v2, fail-closed behavior and explicit RPC v1 rollback are proven through the real staging browser path.",
+      "General E2E is isolated from live staging search, so operational observability is not polluted by broad synthetic navigation.",
+      "Future impression, click and conversion instrumentation is governed by ANA-001 and cannot enter ranking until hardened."
+    ]
+  },
+  "matrix": {
+    "version": "1.3.13",
+    "maturity": 4,
+    "userFacingAuthority": "hybrid",
+    "serverAuthority": "canonical",
+    "stagingEvidence": "staging_operational",
+    "securityGate": "partial",
+    "productionGate": "blocked",
+    "blockers": []
+  },
+  "validation": {
+    "technicalHeadRuns": {
+      "searchA01": {
+        "status": "success",
+        "runId": 30451824442,
+        "runNumber": 225,
+        "head": "850ecf872d8239ca2ccc127f67134711969db29a"
+      },
+      "searchA02": {
+        "status": "success",
+        "runId": 30451823868,
+        "runNumber": 216,
+        "head": "850ecf872d8239ca2ccc127f67134711969db29a"
+      },
+      "searchA03": {
+        "status": "success",
+        "runId": 30451823897,
+        "runNumber": 370,
+        "head": "850ecf872d8239ca2ccc127f67134711969db29a"
+      },
+      "searchA04": {
+        "status": "success",
+        "runId": 30451823869,
+        "runNumber": 306,
+        "head": "850ecf872d8239ca2ccc127f67134711969db29a"
+      },
+      "searchA05": {
+        "status": "success",
+        "runId": 30451823946,
+        "runNumber": 240,
+        "head": "850ecf872d8239ca2ccc127f67134711969db29a"
+      },
+      "searchA06": {
+        "status": "success",
+        "runId": 30451824128,
+        "runNumber": 176,
+        "head": "850ecf872d8239ca2ccc127f67134711969db29a"
+      },
+      "searchA07": {
+        "status": "success",
+        "runId": 30451823989,
+        "runNumber": 133,
+        "head": "850ecf872d8239ca2ccc127f67134711969db29a"
+      },
+      "searchA08": {
+        "status": "success",
+        "runId": 30451824445,
+        "runNumber": 96,
+        "head": "850ecf872d8239ca2ccc127f67134711969db29a"
+      },
+      "searchA09": {
+        "status": "success",
+        "runId": 30451824473,
+        "runNumber": 79,
+        "head": "850ecf872d8239ca2ccc127f67134711969db29a"
+      },
+      "searchA10": {
+        "status": "success",
+        "runId": 30451824430,
+        "runNumber": 202,
+        "head": "850ecf872d8239ca2ccc127f67134711969db29a"
+      },
+      "quality": {
+        "status": "success",
+        "runId": 30451825214,
+        "runNumber": 1473,
+        "head": "850ecf872d8239ca2ccc127f67134711969db29a"
+      },
+      "stagingEdgeHttpCanary": {
+        "status": "success",
+        "runId": 30451824390,
+        "runNumber": 865,
+        "head": "850ecf872d8239ca2ccc127f67134711969db29a"
+      },
+      "diagnostic": {
+        "status": "cancelled_non_blocking",
+        "runId": 30451824861,
+        "runNumber": 1137,
+        "head": "850ecf872d8239ca2ccc127f67134711969db29a"
+      }
+    },
+    "blockingDeterministicE2E": "success",
+    "visualStructuralGuards105": "success",
+    "realStagingEdgeV2BrowserPath": "success",
+    "realStagingRpcV1Rollback": "success",
+    "edgeFailureWithoutAutomaticFallback": "success",
+    "directBrowserCatalogRead": "forbidden_and_absent",
+    "generalE2eLiveSearchIsolation": "success",
+    "permanentClosureAudit": "scripts/audit-search-domain-closure.js",
+    "permanentClosureWorkflow": ".github/workflows/search-domain-closure.yml"
+  },
+  "stagingState": {
+    "project": "doke-web-staging",
+    "projectRef": "zwkczgewzbsorbrjuzpb",
+    "edgeFunction": "search-public-services-v2",
+    "edgeFunctionVersion": 1,
+    "edgeFunctionStatus": "ACTIVE",
+    "verifyJwt": true,
+    "activeRankingVersion": "search-rank-v0",
+    "rankingActivationEvents": 0,
+    "identifiedA10CanaryObservationsRemaining": 0,
+    "persistentSyntheticSnapshots": 0,
+    "searchCronCount": 0
+  },
+  "safety": {
+    "productionChanged": false,
+    "realMarketplaceDataMutated": false,
+    "accountsChanged": false,
+    "servicesChanged": false,
+    "favoritesChanged": false,
+    "rankingV1Activated": false,
+    "paidIntegrationEnabled": false,
+    "smsEnabled": false,
+    "oauthEnabled": false,
+    "cronEnabled": false,
+    "pullRequestMerged": false,
+    "pullRequestReadyForReview": false,
+    "temporaryApplicatorRemainingAfterCleanup": false
+  },
+  "handoff": {
+    "nextMandatoryDomain": "ORD-001",
+    "productionRemainsBlocked": true,
+    "rankingV1RequiresSeparateExplicitAuthorization": true,
+    "analyticsDependency": "ANA-001"
+  }
+}
