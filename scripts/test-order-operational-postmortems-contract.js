@@ -19,10 +19,14 @@ assert(sql.includes('revoke all on function public.get_order_operational_slos_in
 assert(edge.includes('operationalSlos'));
 assert(edge.includes('postmortem_update'));
 assert(ops.includes('DOKE_ORDER_POSTMORTEM_COMPLETE_ADMIN_REQUIRED'));
-assert(repo.includes('updatePostmortem'));
-assert(page.includes('renderOperationalSlos'));
-assert(page.includes('submitPostmortem'));
-assert(html.includes('data-admin-ops-slo-summary'));
-assert(html.includes('data-admin-ops-postmortem-dialog'));
+
+// The current operator surface consolidated legacy postmortem editing into the
+// structured post-incident review command boundary. Keep this compatibility
+// contract aligned with the active repository/controller vocabulary.
+assert(repo.includes('updatePostIncident'));
+assert(page.includes('renderSlo'));
+assert(page.includes('submitPostIncident'));
+assert(html.includes('data-admin-ops-slo'));
+assert(html.includes('data-admin-ops-post-incident-dialog'));
 assert(!edge.includes('SUPABASE_SERVICE_ROLE_KEY ='));
 console.log('order operational postmortems contract: ok');
