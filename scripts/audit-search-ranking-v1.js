@@ -14,6 +14,7 @@ const same = (actual, expected) => JSON.stringify(actual) === JSON.stringify(exp
 const files = {
   matrix: 'config/domain-completion-matrix.json',
   migration: 'supabase/migrations/160_service_search_ranking_v1.sql',
+  reconciliation: 'supabase/migrations/161_service_search_ranking_v1_contract_reconciliation.sql',
   sqlTest: 'supabase/tests/024_service_search_ranking_v1_validation.sql',
   runtime: 'scripts/test-search-ranking-v1-runtime.js',
   evidence: 'docs/validation/SEARCH-001-A07-RANKING-V1.json',
@@ -74,6 +75,27 @@ const scoreSection = migration.slice(scoreStart, scoreEnd);
   assert(!scoreSection.includes(marker), `forbidden behavioral signal entered ranking score: ${marker}`);
 });
 
+const reconciliation = read(files.reconciliation);
+[
+  'DOKE_SEARCH_RANKING_RECONCILIATION_PREREQUISITE_MISSING',
+  'DOKE_SEARCH_RANKING_RECONCILIATION_UNEXPECTED_DRIFT',
+  'DOKE_SEARCH_RANKING_RECONCILIATION_NOT_PREACTIVATION',
+  'DOKE_SEARCH_RANKING_RECONCILIATION_IMMUTABILITY_TRIGGER_MISSING',
+  "'text', 0.65",
+  "'availability', 0.05",
+  "'recency', 0.10",
+  "'text', 0.68",
+  "'availability', 0.07",
+  "'recency', 0.05",
+  "'reviewPrior', pg_catalog.jsonb_build_object('mean', 4.2, 'weight', 5)",
+  "'recencyZeroDays', 120",
+  "v_active_version <> 'search-rank-v0' OR v_event_count <> 0",
+  'disable trigger trg_reject_service_search_ranking_version_mutation',
+  'enable trigger trg_reject_service_search_ranking_version_mutation'
+].forEach((marker) => assert(reconciliation.includes(marker), `ranking reconciliation marker missing: ${marker}`));
+assert(!reconciliation.includes('activate_service_search_ranking_version('), 'SEARCH-A07 reconciliation cannot activate the candidate ranking');
+assert(!reconciliation.includes('create or replace function public.search_public_services'), 'SEARCH-A07 reconciliation cannot change the public search RPC');
+
 const sqlTest = read(files.sqlTest);
 [
   'begin;',
@@ -119,9 +141,12 @@ assert(evidence.ranking && same(evidence.ranking.weights, {
 }), 'SEARCH-A07 documented weights diverge from the frozen contract');
 assert(evidence.ranking && evidence.ranking.reviewSmoothing && evidence.ranking.reviewSmoothing.priorMean === 4.2, 'SEARCH-A07 Bayesian prior mean diverges from the frozen contract');
 assert(evidence.ranking && evidence.ranking.recency && evidence.ranking.recency.zeroCreditDays === 120, 'SEARCH-A07 recency boundary diverges from the frozen contract');
+assert(evidence.stagingReconciliation && evidence.stagingReconciliation.required === true, 'SEARCH-A07 staging reconciliation requirement is not documented');
+assert(evidence.stagingReconciliation && evidence.stagingReconciliation.migration === files.reconciliation, 'SEARCH-A07 staging reconciliation migration is not documented');
+assert(evidence.stagingReconciliation && evidence.stagingReconciliation.activeVersionObserved === 'search-rank-v0', 'SEARCH-A07 reconciliation must preserve v0 as active');
+assert(evidence.stagingReconciliation && evidence.stagingReconciliation.activationEventsObserved === 0, 'SEARCH-A07 reconciliation must remain pre-activation');
 assert(evidence.antiManipulation && evidence.antiManipulation.behavioralMetricsInScore === false, 'SEARCH-A07 behavioral-metric exclusion is not documented');
 assert(evidence.rollback && evidence.rollback.compareAndSwap === true, 'SEARCH-A07 compare-and-swap rollback is not documented');
-assert(evidence.safety && evidence.safety.stagingChanged === false, 'SEARCH-A07 candidate cannot claim a staging write');
 assert(evidence.safety && evidence.safety.productionChanged === false, 'SEARCH-A07 cannot change production');
 
 const matrix = JSON.parse(read(files.matrix));
@@ -141,6 +166,7 @@ const workflow = read(files.workflow);
   'node scripts/audit-search-ranking-v1.js',
   'node scripts/test-search-ranking-v1-runtime.js',
   'supabase/migrations/160_service_search_ranking_v1.sql',
+  'supabase/migrations/161_service_search_ranking_v1_contract_reconciliation.sql',
   'supabase/tests/024_service_search_ranking_v1_validation.sql'
 ].forEach((marker) => assert(workflow.includes(marker), `SEARCH-A07 workflow marker missing: ${marker}`));
 
@@ -151,6 +177,7 @@ if (errors.length) {
 }
 
 console.log('[SEARCH-A07] Immutable ranking versions, bounded signals and rollback authority: PASS');
+console.log('[SEARCH-A07] Pre-activation staging contract drift has a guarded reconciliation migration.');
 console.log('[SEARCH-A07] search-rank-v0 remains active; search-rank-v1 is candidate-only.');
 console.log('[SEARCH-A07] Browser behavioral counters remain excluded from ranking.');
-console.log('[SEARCH-A07] Production and staging remain unchanged.');
+console.log('[SEARCH-A07] Production remains unchanged.');
