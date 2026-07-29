@@ -145,7 +145,7 @@ assert(legacyService.includes('services.orders = Object.freeze'), 'Legacy order 
   '.insert(payload)'
 ].forEach((snippet) => assert(backendService.includes(snippet), `Backend order authority marker missing: ${snippet}`));
 
-assert(stateMachine.includes('ORDER_TRANSITIONS'), 'Canonical order transition graph is missing.');
+assert(stateMachine.includes('const TRANSITIONS = Object.freeze({'), 'Canonical order transition graph is missing.');
 assert(stateMachine.includes('DOKE_ORDER_TRANSITION_INVALID'), 'Canonical transition conflict code is missing.');
 
 [
