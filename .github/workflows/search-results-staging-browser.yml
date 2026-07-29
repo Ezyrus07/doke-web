@@ -19,21 +19,14 @@ on:
       - 'scripts/audit-search-browser-cutover-v2.js'
       - 'scripts/test-search-browser-cutover-runtime.js'
       - 'tests/search/search-results-staging.spec.js'
-      - 'docs/validation/SEARCH-001-A09-OBSERVABILITY-V2.json'
-      - 'docs/validation/SEARCH-001-A10-BROWSER-CUTOVER-V2.json'
       - '.github/workflows/search-results-staging-browser.yml'
-      - 'config/domain-completion-matrix.json'
-      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
-  push:
-    branches:
-      - 'search/**'
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: doke-search-a10-browser-cutover-${{ github.ref }}
+  group: doke-search-a10-browser-cutover-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
