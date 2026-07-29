@@ -163,7 +163,7 @@ assert(operationsRepository.includes("invoke('dashboard'"));
 assert(operationsRepository.includes("invoke('requeue'"));
 
 [
-  'frontend ainda possui três autoridades concorrentes',
+  'O navegador ainda possui três autoridades concorrentes',
   'RLS ativa em staging',
   'ORD-A02 — permissões, grants e personas',
   'nenhuma linha real foi criada, alterada ou removida'
