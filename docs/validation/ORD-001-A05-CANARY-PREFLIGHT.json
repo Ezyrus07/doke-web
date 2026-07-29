@@ -1,0 +1,95 @@
+{
+  "domain": "ORD-001",
+  "sublot": "ORD-A05",
+  "artifact": "canary-preflight",
+  "observedAt": "2026-07-29T23:25:00Z",
+  "repository": {
+    "pullRequest": 25,
+    "branch": "ord/ord-001-baseline-audit",
+    "base": "search/search-ux02-intent-favorites-clean",
+    "observedHeadBeforePreflight": "49bb997fd999e4d6c87ccb14c806384a6c56fe67",
+    "open": true,
+    "draft": true,
+    "mergeable": true,
+    "merged": false
+  },
+  "validatedPredecessors": {
+    "ORD-A01": {
+      "status": "success",
+      "workflowRun": 30494306553
+    },
+    "ORD-A02": {
+      "status": "success",
+      "workflowRun": 30494305881
+    },
+    "ORD-A03": {
+      "status": "success",
+      "workflowRun": 30494305891
+    },
+    "ORD-A04": {
+      "status": "success",
+      "workflowRun": 30494305922
+    }
+  },
+  "staging": {
+    "projectRef": "zwkczgewzbsorbrjuzpb",
+    "orders": 0,
+    "budgets": 0,
+    "orderStatusHistory": 0,
+    "domainEvents": 0,
+    "deliveryAttempts": 0,
+    "rls": {
+      "orders": true,
+      "budgets": true,
+      "orderStatusHistory": true
+    },
+    "authenticatedDirectTablePrivileges": {
+      "orders": ["SELECT"],
+      "budgets": ["SELECT"],
+      "orderStatusHistory": ["SELECT"]
+    },
+    "authenticatedCommandFunctions": [
+      "public.create_order_command",
+      "public.submit_order_quote_command",
+      "public.transition_order_status"
+    ]
+  },
+  "canaryIdentityContract": {
+    "requiredRoles": [
+      "client",
+      "professional",
+      "support",
+      "admin"
+    ],
+    "dedicatedAccountsPresent": false,
+    "missingRoles": [
+      "client",
+      "professional",
+      "support",
+      "admin"
+    ],
+    "credentialsRead": false,
+    "accountsCreated": false,
+    "accountsModified": false
+  },
+  "decision": {
+    "status": "blocked_missing_dedicated_staging_canary_accounts",
+    "canExecuteMutations": false,
+    "reason": "The repository contract expects dedicated staging canary identities, but none of the four identities exists in the staging Auth project. Creating or modifying accounts is outside this controlled preflight.",
+    "nextAuthorizedStep": "Provision dedicated staging-only canary identities in a separately authorized step, then run the reversible two-session command canary with cleanup and postcondition checks."
+  },
+  "operationalSafety": {
+    "readOnlyInspection": true,
+    "databaseRowsCreated": false,
+    "databaseRowsUpdated": false,
+    "databaseRowsDeleted": false,
+    "authUsersChanged": false,
+    "productionChanged": false,
+    "oauthEnabled": false,
+    "smsEnabled": false,
+    "paidServiceEnabled": false,
+    "frontendWriteActivated": false,
+    "pullRequestMerged": false,
+    "pullRequestMarkedReady": false
+  }
+}
