@@ -17,6 +17,7 @@ on:
       - supabase/migrations/20260729143000_service_search_intent_recovery_v1.sql
       - supabase/migrations/20260729144500_service_search_intent_no_match_fix.sql
       - scripts/test-search-ux02-runtime.js
+      - scripts/test-profile-access-refresh-runtime.js
       - .github/workflows/search-ux02.yml
   workflow_dispatch:
 
@@ -32,4 +33,6 @@ jobs:
         with:
           node-version: 24
       - name: Validate SEARCH-UX02 runtime and migration contracts
-        run: node scripts/test-search-ux02-runtime.js
+        run: |
+          node scripts/test-search-ux02-runtime.js
+          node scripts/test-profile-access-refresh-runtime.js
