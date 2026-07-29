@@ -11,19 +11,22 @@ const surface = read('assets/js/pages/search/server-results-surface.js');
 const homePublicServices = read('assets/js/pages/home/public-services.js');
 const homeFavorites = read('assets/js/pages/home/favorites-surface.js');
 const profileFavorites = read('assets/js/pages/profile/favorites-surface.js');
+const accountAccess = read('assets/js/services/account-access-service.js');
 const homeManifest = read('assets/css/pages/home.css');
 const homeFavoritesCss = read('assets/css/pages/home/favorites.css');
 const favoriteActionCss = read('assets/css/components/actions/favorite-action.css');
 const migration = read('supabase/migrations/20260729143000_service_search_intent_recovery_v1.sql');
 const noMatchFix = read('supabase/migrations/20260729144500_service_search_intent_no_match_fix.sql');
 
-// Parse all changed browser files before checking their contracts.
-new vm.Script(card, { filename: 'public-service-card.js' });
-new vm.Script(interactions, { filename: 'ad-card-interactions.js' });
-new vm.Script(surface, { filename: 'server-results-surface.js' });
-new vm.Script(homePublicServices, { filename: 'home-public-services.js' });
-new vm.Script(homeFavorites, { filename: 'home-favorites-surface.js' });
-new vm.Script(profileFavorites, { filename: 'profile-favorites-surface.js' });
+[
+  [card, 'public-service-card.js'],
+  [interactions, 'ad-card-interactions.js'],
+  [surface, 'server-results-surface.js'],
+  [homePublicServices, 'home-public-services.js'],
+  [homeFavorites, 'home-favorites-surface.js'],
+  [profileFavorites, 'profile-favorites-surface.js'],
+  [accountAccess, 'account-access-service.js']
+].forEach(([source, filename]) => new vm.Script(source, { filename }));
 
 assert(
   card.includes('service.serviceId || service.remoteId || service.remote_id || service.id'),
@@ -40,29 +43,18 @@ assert(
   'Cards must paint the known canonical favorite state before hydration.'
 );
 assert(
-  card.includes("options.favoritePreview ? ' doke-ad-card--favorite-preview' : ''"),
-  'Home favorites must opt into a dedicated compact card modifier.'
+  interactions.includes('resolveCanonicalFavoriteId') &&
+    interactions.includes("operation: 'resolve-service-id'"),
+  'Legacy/public card identifiers must resolve observably before mutation.'
 );
+
 assert(
-  interactions.includes('resolveCanonicalFavoriteId'),
-  'Legacy/public card identifiers must resolve before favorite mutation.'
+  surface.includes("? 'Outros anúncios'") &&
+    surface.includes('queryWithEditorialFallback') &&
+    surface.includes("var fallbackRequest = buildRequest('', context.filters, '')"),
+  'Empty searches must use an explicit server-authoritative editorial fallback.'
 );
-assert(
-  interactions.includes("operation: 'resolve-service-id'"),
-  'Favorite identifier failures must be observable.'
-);
-assert(
-  surface.includes("? 'Outros anúncios'"),
-  'Empty direct searches must render an explicit recommendation heading.'
-);
-assert(
-  surface.includes('queryWithEditorialFallback'),
-  'Fallback recommendations must be requested through the search service.'
-);
-assert(
-  surface.includes("var fallbackRequest = buildRequest('', context.filters, '')"),
-  'Fallback must preserve filters and use an empty server-side catalog query.'
-);
+
 assert(
   homePublicServices.includes('ensureHomeFavoritesModule') &&
     homePublicServices.includes('assets/js/pages/home/favorites-surface.js'),
@@ -76,50 +68,59 @@ assert(
 );
 assert(
   homeFavorites.includes('canonicalIds(item)') &&
-    homeFavorites.includes('Doke.publicServiceCard.create(item, { favoritePreview: true })'),
-  'Home favorites must reconcile identifiers and render the compact card variant.'
+    homeFavorites.includes('Doke.publicServiceCard.create(item)') &&
+    !homeFavorites.includes('favoritePreview: true') &&
+    !homeFavorites.includes('service-grid--compact'),
+  'Home favorites must reuse the canonical card without a private anatomy or inherited service grid.'
 );
 assert(
   homeFavorites.includes('home-favorites__count') &&
     homeFavorites.includes("services.length === 1 ? ' favorito' : ' favoritos'"),
-  'The home favorites action must expose a separated accessible total.'
+  'The home favorites action must expose an accessible total.'
 );
 assert(
-  homeManifest.includes('./home/favorites.css?v=20260729-search-ux02-v1'),
-  'The home manifest must load the dedicated favorites composition.'
+  homeManifest.includes('./home/favorites.css?v=20260729-search-ux02-v2') &&
+    homeManifest.includes('.account-onboarding__actions') &&
+    homeManifest.includes('@media (max-width: 620px)') &&
+    homeManifest.trim().endsWith('}'),
+  'The complete home manifest must be preserved and load the current favorites composition.'
 );
 assert(
-  homeFavoritesCss.includes('grid-auto-flow: column') &&
-    homeFavoritesCss.includes('.doke-ad-card--favorite-preview') &&
-    homeFavoritesCss.includes('grid-auto-columns: minmax(292px, 340px)'),
-  'Home favorites must use a compact horizontal rail instead of a full-width card.'
+  homeFavoritesCss.includes('font-size: 0.9rem') &&
+    homeFavoritesCss.includes('letter-spacing: 0.14em') &&
+    homeFavoritesCss.includes('text-transform: uppercase') &&
+    homeFavoritesCss.includes('grid-template-columns: none') &&
+    homeFavoritesCss.includes('grid-auto-columns: minmax(292px, 340px)') &&
+    !homeFavoritesCss.includes('.doke-ad-card__body') &&
+    !homeFavoritesCss.includes('.doke-ad-card__media'),
+  'Favorites must follow the canonical home title and must not own advertisement card anatomy.'
 );
 assert(
   !favoriteActionCss.includes('dokeFavoritePop') &&
     !favoriteActionCss.includes('animation:'),
   'Favorite hydration must not replay a pop animation or create a blinking heart.'
 );
+
 assert(
   profileFavorites.includes('function ensurePlacement()') &&
     profileFavorites.includes('feed.appendChild(section)') &&
-    profileFavorites.includes('nav.appendChild(tab)'),
-  'Favorites must become the last profile tab and content area.'
+    profileFavorites.includes('nav.appendChild(tab)') &&
+    profileFavorites.includes('serviceIdentifiers(item)'),
+  'Favorites must remain the last profile tab and reconcile canonical/public identifiers.'
 );
 assert(
-  profileFavorites.includes('serviceIdentifiers(item)'),
-  'Profile favorites must reconcile canonical and public service identifiers.'
+  accountAccess.includes('function refreshCanonicalSession()') &&
+    accountAccess.includes("auth.refreshSession({ silent: true })") &&
+    accountAccess.includes('return refreshCanonicalSession().then(function ()') &&
+    accountAccess.includes("setGuardState('allowed')"),
+  'Owner guards must refresh the canonical session before denying access or leaving hydration pending.'
 );
+
 assert(
-  migration.includes('create extension if not exists pg_trgm with schema extensions'),
-  'Bounded typo recovery requires pg_trgm in the extensions schema.'
-);
-assert(
-  migration.includes('private.search_public_services_v2_core'),
-  'The closed v2 implementation must remain isolated as the core authority.'
-);
-assert(
-  migration.includes('prefix_synonym_or_typo_recovery'),
-  'The response must identify recovered intent.'
+  migration.includes('create extension if not exists pg_trgm with schema extensions') &&
+    migration.includes('private.search_public_services_v2_core') &&
+    migration.includes('prefix_synonym_or_typo_recovery'),
+  'Bounded intent recovery must preserve the closed search authority.'
 );
 assert(
   noMatchFix.includes("'mode', 'no_match'"),
@@ -191,9 +192,7 @@ async function validateFallbackRuntime() {
   };
   const sandbox = {
     window: { Doke },
-    document: {
-      dispatchEvent(event) { renderedEvents.push(event); }
-    },
+    document: { dispatchEvent(event) { renderedEvents.push(event); } },
     CustomEvent: class CustomEvent {
       constructor(name, init) { this.type = name; this.detail = init && init.detail; }
     },
