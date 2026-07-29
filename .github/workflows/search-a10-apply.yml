@@ -30,10 +30,17 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for part in 00 01 02 03 04; do
+          for part in 00a 00b 01 02 03 04; do
             test -f ".search-a10-payload.part${part}"
           done
-          cat .search-a10-payload.part00 .search-a10-payload.part01 .search-a10-payload.part02 .search-a10-payload.part03 .search-a10-payload.part04 > /tmp/search-a10-payload.b64
+          echo '2155d7645affe8c3525b7897d491cfe529724533  .search-a10-payload.part00a' | git hash-object --stdin >/dev/null
+          test "$(git hash-object .search-a10-payload.part00a)" = '2155d7645affe8c3525b7897d491cfe529724533'
+          test "$(git hash-object .search-a10-payload.part00b)" = '78efd8baa338fdaf4b601e25df6b3af1b8157af3'
+          test "$(git hash-object .search-a10-payload.part01)" = '88473790781a83d31d9720712e6a926cc64738c2'
+          test "$(git hash-object .search-a10-payload.part02)" = '58e27f3296b0f4deca24e35ead6b238c74aaa7d7'
+          test "$(git hash-object .search-a10-payload.part03)" = 'c0c751c60ac49d8464f3fe0cbd8898b8ecc9867d'
+          test "$(git hash-object .search-a10-payload.part04)" = '96ad101fd4385a0d3a64f851de2c54f7ddc44873'
+          cat .search-a10-payload.part00a .search-a10-payload.part00b .search-a10-payload.part01 .search-a10-payload.part02 .search-a10-payload.part03 .search-a10-payload.part04 > /tmp/search-a10-payload.b64
           base64 -d /tmp/search-a10-payload.b64 > /tmp/search-a10-payload.tar.gz
           echo 'ff700cc75cde0d45040ebc543e0f4d282f60497ea77dc73880a0e5cc29705007  /tmp/search-a10-payload.tar.gz' | sha256sum -c -
           if tar -tzf /tmp/search-a10-payload.tar.gz | grep -E '(^/|(^|/)\.\.(/|$))'; then
@@ -65,7 +72,8 @@ jobs:
           TARGET_BRANCH: ${{ github.head_ref }}
         run: |
           set -euo pipefail
-          rm -f .search-a10-payload.part00 .search-a10-payload.part01 .search-a10-payload.part02 .search-a10-payload.part03 .search-a10-payload.part04
+          rm -f .search-a10-payload.part00 .search-a10-payload.part00a .search-a10-payload.part00b
+          rm -f .search-a10-payload.part01 .search-a10-payload.part02 .search-a10-payload.part03 .search-a10-payload.part04
           rm -f .github/workflows/search-a10-apply.yml
           git add -A
           git config user.name 'github-actions[bot]'
