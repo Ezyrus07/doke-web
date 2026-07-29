@@ -1,0 +1,186 @@
+{
+  "domain": "ORD-001",
+  "sublot": "ORD-A02",
+  "capturedAt": "2026-07-29T15:04:00-03:00",
+  "environment": "staging",
+  "projectRef": "zwkczgewzbsorbrjuzpb",
+  "status": "complete_with_residual_blockers",
+  "productionChanged": false,
+  "realRowsMutated": 0,
+  "probeRowsRemaining": {
+    "orders": 0,
+    "services": 0,
+    "publicUsers": 0,
+    "authUsers": 0
+  },
+  "tables": {
+    "orders": {
+      "rlsEnabled": true,
+      "authenticatedPrivileges": ["SELECT", "INSERT", "UPDATE", "DELETE"],
+      "policies": [
+        "orders_participants_select",
+        "orders_client_insert",
+        "orders_participants_update",
+        "orders_client_delete_draft"
+      ]
+    },
+    "budgets": {
+      "rlsEnabled": true,
+      "authenticatedPrivileges": ["SELECT", "INSERT"],
+      "policies": ["budgets_participants_select", "budgets_professional_insert"]
+    },
+    "order_status_history": {
+      "rlsEnabled": true,
+      "authenticatedPrivileges": ["SELECT"],
+      "policies": ["order_status_history_participants_select"]
+    }
+  },
+  "personaProbe": {
+    "method": "synthetic users, services, approved versions, requested order and budget created inside a PL/pgSQL subtransaction intentionally rolled back by a caught exception",
+    "anon": {
+      "ordersSelect": "denied_42501",
+      "transitionOrderStatusExecute": false
+    },
+    "clientParticipant": {
+      "ordersVisible": 1,
+      "budgetsVisible": 1,
+      "historyVisible": 1,
+      "insertOwnRequestedOrder": "allowed",
+      "updateParticipantFields": "allowed",
+      "insertBudget": "denied_42501"
+    },
+    "professionalParticipant": {
+      "ordersVisible": 1,
+      "budgetsVisible": 1,
+      "historyVisible": 1,
+      "insertOwnBudget": "allowed",
+      "updateParticipantFields": "allowed",
+      "insertOrderActingAsClient": "allowed"
+    },
+    "thirdAuthenticatedUser": {
+      "ordersVisible": 0,
+      "budgetsVisible": 0,
+      "historyVisible": 0,
+      "foreignUpdateAffectedRows": 0,
+      "impersonatedClientInsert": "denied_42501"
+    },
+    "support": {
+      "ordersVisibleThroughPublicRls": 0,
+      "budgetsVisibleThroughPublicRls": 0,
+      "historyVisibleThroughPublicRls": 0,
+      "intendedOperationalPath": "JWT-protected order-event-operations Edge Function and service-role-only internal RPCs"
+    },
+    "admin": {
+      "ordersVisibleThroughPublicRls": 0,
+      "budgetsVisibleThroughPublicRls": 0,
+      "historyVisibleThroughPublicRls": 0,
+      "intendedOperationalPath": "JWT-protected order-event-operations Edge Function and service-role-only internal RPCs"
+    },
+    "serviceRole": {
+      "ordersVisible": 1,
+      "budgetsVisible": 2,
+      "historyVisible": 1
+    }
+  },
+  "grantHardening": {
+    "migration": "supabase/migrations/20260729190500_ord_a02_trigger_only_grants.sql",
+    "appliedToStaging": true,
+    "triggerOnlyFunctions": [
+      "private.prepare_order_operational_incident()",
+      "private.audit_order_operational_incident_lifecycle()",
+      "private.materialize_order_operational_postmortem()"
+    ],
+    "directExecuteAfterMigration": {
+      "PUBLIC": false,
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "triggersRemainEnabled": true
+  },
+  "workerAuth": {
+    "edgeFunction": "order-event-worker",
+    "version": 9,
+    "verifyJwt": false,
+    "method": "POST plus x-doke-worker-token validated by service-role-only public.verify_order_event_worker_token",
+    "nullTokenValid": false,
+    "invalidTokenValid": false,
+    "verifyFunctionExecute": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "cron": {
+      "name": "doke-order-event-worker",
+      "schedule": "* * * * *",
+      "command": "select private.invoke_order_event_worker_if_needed();",
+      "tokenSource": "Vault secret doke_order_event_worker_token"
+    },
+    "replayResistance": {
+      "nonce": false,
+      "timestampWindow": false,
+      "requestSignature": false,
+      "assessment": "Static bearer token authenticates possession but does not prevent replay. Event claims and idempotency reduce duplicate processing impact, but invocation replay remains a residual security blocker."
+    }
+  },
+  "findings": [
+    {
+      "id": "ORD-A02-F01",
+      "severity": "high",
+      "category": "dual_account_capability",
+      "status": "confirmed",
+      "summary": "A canonical professional account can create an order acting as the client when ordering another professional. This may be intentional marketplace behavior, but the role model must explicitly support dual capability instead of assuming mutually exclusive roles."
+    },
+    {
+      "id": "ORD-A02-F02",
+      "severity": "high",
+      "category": "draft_runtime_inconsistency",
+      "status": "confirmed",
+      "summary": "orders_client_delete_draft and the default draft status imply a remote draft lifecycle, but the domain event trigger rejects INSERT status draft with DOKE_ORDER_EVENT_TYPE_INVALID. Local fallback currently masks this server inconsistency."
+    },
+    {
+      "id": "ORD-A02-F03",
+      "severity": "medium",
+      "category": "operator_policy_ambiguity",
+      "status": "confirmed",
+      "summary": "budgets_participants_select mentions support/admin, but its nested orders lookup is still subject to participant-only orders RLS, so support/admin see zero rows through public tables. Operational access correctly remains internal, but the public policy expression is misleading."
+    },
+    {
+      "id": "ORD-A02-F04",
+      "severity": "medium",
+      "category": "worker_replay",
+      "status": "open",
+      "summary": "The worker bearer token is hashed at rest and rejected when absent or invalid, but requests have no nonce, timestamp window or signed invocation envelope."
+    },
+    {
+      "id": "ORD-A02-F05",
+      "severity": "high",
+      "category": "direct_browser_dml",
+      "status": "open",
+      "summary": "Authenticated participants still retain direct table DML. RLS and triggers constrain it, but the browser remains a competing write authority until ORD-A03 introduces a canonical command boundary."
+    },
+    {
+      "id": "ORD-A02-F06",
+      "severity": "resolved",
+      "category": "trigger_function_grants",
+      "status": "closed",
+      "summary": "Three trigger-only SECURITY DEFINER functions no longer inherit direct EXECUTE through PUBLIC or browser/service roles."
+    }
+  ],
+  "matrixDecision": {
+    "maturity": 4,
+    "userFacingAuthority": "hybrid",
+    "serverAuthority": "canonical",
+    "stagingEvidence": "staging_operational",
+    "securityGate": "partial",
+    "productionGate": "blocked",
+    "promotion": false,
+    "reason": "Persona security is proven and residual grants are closed, but browser DML, draft inconsistency and worker replay remain open."
+  },
+  "validation": {
+    "workflow": "Doke ORD-A02 Personas and Grants",
+    "runId": null,
+    "conclusion": "pending"
+  },
+  "nextSublot": "ORD-A03 — canonical order command boundary and removal of silent local write fallback"
+}
