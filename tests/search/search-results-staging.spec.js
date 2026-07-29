@@ -3,6 +3,7 @@ const { test, expect } = require('@playwright/test');
 const EDGE_PATH = '/functions/v1/search-public-services-v2';
 const ROLLBACK_RPC_PATH = '/rest/v1/rpc/search_public_services_v1';
 const STAGING_HOST = 'zwkczgewzbsorbrjuzpb.supabase.co';
+const CANARY_REQUEST_ID = 'a10a10a1-0000-4000-8000-000000000010';
 
 async function installSearchEventProbe(page) {
   await page.addInitScript(() => {
@@ -14,6 +15,15 @@ async function installSearchEventProbe(page) {
       window.__dokeSearchProbe.errors.push(event.detail || {});
     });
   });
+}
+
+async function installDeterministicRequestId(page) {
+  await page.addInitScript((requestId) => {
+    Object.defineProperty(window.crypto, 'randomUUID', {
+      configurable: true,
+      value: () => requestId
+    });
+  }, CANARY_REQUEST_ID);
 }
 
 function collectAuthorityRequests(page) {
@@ -46,6 +56,7 @@ async function forceRpcV1Rollback(page) {
 
 test.describe('SEARCH-A10 staging browser cutover', () => {
   test('renders service results through the real staging Edge v2 authority under rank v0', async ({ page }) => {
+    await installDeterministicRequestId(page);
     await installSearchEventProbe(page);
     const authorityRequests = collectAuthorityRequests(page);
 
@@ -65,7 +76,7 @@ test.describe('SEARCH-A10 staging browser cutover', () => {
     expect(requestBody).not.toHaveProperty('p_request');
 
     const requestId = edgeResponse.headers()['x-doke-request-id'];
-    expect(requestId).toMatch(/^[0-9a-f-]{36}$/i);
+    expect(requestId).toBe(CANARY_REQUEST_ID);
     console.log(`[SEARCH-A10-CANARY-REQUEST-ID] ${requestId}`);
 
     const payload = await edgeResponse.json();
