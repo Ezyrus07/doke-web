@@ -9,13 +9,15 @@
   var Doke = root.Doke || (root.Doke = {});
   var repositories = Doke.repositories || (Doke.repositories = {});
   var AUTHORITY = 'supabase-search-transport-or-fixture-memory';
+  var LEGACY_AUTHORITY = 'supabase-rpc-or-fixture-memory';
+  var CONTRACT_VERSION = '1.0.0';
   var TRANSPORT_EDGE_V2 = 'edge-v2';
   var TRANSPORT_RPC_V1 = 'rpc-v1';
   var RPC_NAME = 'search_public_services_v1';
   var EDGE_FUNCTION_NAME = 'search-public-services-v2';
   var CONTRACT_V1 = Object.freeze({
     authority: 'public.search_public_services_v1',
-    version: '1.0.0'
+    version: CONTRACT_VERSION
   });
   var CONTRACT_V2 = Object.freeze({
     authority: 'public.search_public_services_v2',
@@ -431,6 +433,7 @@
 
     return Object.freeze({
       authority: AUTHORITY,
+      legacyAuthority: LEGACY_AUTHORITY,
       transport: transport,
       rollbackTransport: rollbackTransport,
       expectedAuthority: remoteConfigured ? contract.authority : 'fixture-memory.search_public_services_v1',
