@@ -1,6 +1,6 @@
 {
-  "version": "1.3.15",
-  "updatedAt": "2026-07-29T18:27:00-03:00",
+  "version": "1.3.16",
+  "updatedAt": "2026-07-29T20:14:00-03:00",
   "title": "Doke Domain Completion Matrix",
   "purpose": "Single source of truth for domain maturity, data authority, staging evidence, blockers, dependencies and mandatory completion order.",
   "maturityScale": {
@@ -869,7 +869,12 @@
         "docs/ORD-001-READ-AUTHORITY.md",
         "docs/validation/ORD-001-A04-READ-AUTHORITY.json",
         "scripts/audit-ord-001-a04-read-authority.js",
-        "scripts/test-order-read-authority-runtime.js"
+        "scripts/test-order-read-authority-runtime.js",
+        "docs/ORD-001-COMMAND-ACTIVATION-CANARY.md",
+        "docs/validation/ORD-001-A05-COMMAND-ACTIVATION.json",
+        "scripts/audit-ord-001-a05-command-activation.js",
+        "scripts/test-order-command-activation-runtime.js",
+        "supabase/migrations/20260729223000_ord_a05_explicit_persona_precedence.sql"
       ],
       "scanRoots": [
         "backend/modules/orders",
@@ -907,7 +912,9 @@
         "audit:ord-001-a03-command-boundary",
         "test:order-command-boundary-runtime",
         "audit:ord-001-a04-read-authority",
-        "test:order-read-authority-runtime"
+        "test:order-read-authority-runtime",
+        "audit:ord-001-a05-command-activation",
+        "test:order-command-activation-runtime"
       ],
       "evidence": [
         "Canonical state machine, transaction events, outbox worker and operational controls are active in staging.",
@@ -917,14 +924,17 @@
         "Relationship-derived capability allows a professional account to act as the client when hiring another professional.",
         "ORD-A04 makes participant-scoped Supabase reads canonical outside local development and removes silent read fallback to submitted browser snapshots.",
         "The historical order-service.js is now a compatibility-only facade; orders-service.js is the single frontend business authority.",
-        "Latest participant-visible budgets are projected with remote orders so proposal state remains consistent across devices."
+        "Latest participant-visible budgets are projected with remote orders so proposal state remains consistent across devices.",
+        "ORD-A05 proved request, accept and quote across isolated client/professional personas in a rolled-back staging transaction, with third-party denial, optimistic conflict and zero residue.",
+        "The frontend write canary now requires the canonical bearer token before fetch and preserves idempotency for create, accept and quote actions.",
+        "The real two-account browser and UI settlement canary remains pending, so user-facing authority stays hybrid and ORD-B02 remains open."
       ],
       "blockers": [
         {
           "id": "ORD-B02",
           "severity": "high",
           "category": "frontend_activation",
-          "description": "Remote reads are canonical in staging and mock is local-development-only. Submitted commands still require controlled activation plus two-account cross-device E2E before the frontend activation blocker can close.",
+          "description": "Synthetic rolled-back client/professional/third-party canary and bearer-authenticated frontend runtimes passed. ORD-B02 remains until two authorized real accounts complete the browser cross-device command and UI settlement canary.",
           "targetPhase": "Fase 6"
         },
         {
@@ -943,7 +953,7 @@
         }
       ],
       "nextActions": [
-        "Run a two-account cross-device canary for request, accept and quote through the canonical command boundary.",
+        "Run ORD-A06 with two explicitly authorized test accounts in separate browser or device contexts and validate request, accept, quote, conflict and UI settlement.",
         "Harden worker invocation freshness and replay resistance.",
         "Connect order transitions to messaging, scheduling and payment authorities."
       ],

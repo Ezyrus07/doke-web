@@ -275,22 +275,53 @@
     return getOrdersWriteCanaryStatus().active === true;
   }
 
-  function getSessionToken() {
-    if (root.DokeAuth && typeof root.DokeAuth.getAccessToken === 'function') {
-      return Promise.resolve(root.DokeAuth.getAccessToken()).catch(function () { return ''; });
+  function normalizeSessionAccessToken(value) {
+  var session = value && value.data && value.data.session
+    ? value.data.session
+    : value && value.session
+      ? value.session
+      : value || {};
+  return normalizeText(session.access_token || session.accessToken || session.token || '');
+}
+
+function getSessionToken() {
+  var canonicalSession = Doke.session && typeof Doke.session.getSession === 'function'
+    ? Doke.session
+    : null;
+  var canonicalToken = Promise.resolve('');
+  if (canonicalSession) {
+    try {
+      canonicalToken = Promise.resolve(canonicalSession.getSession())
+        .then(normalizeSessionAccessToken)
+        .catch(function () { return ''; });
+    } catch (error) {
+      canonicalToken = Promise.resolve('');
     }
+  }
+
+  return canonicalToken.then(function (token) {
+    if (token) return token;
+    if (root.DokeAuth && typeof root.DokeAuth.getAccessToken === 'function') {
+      return Promise.resolve(root.DokeAuth.getAccessToken())
+        .then(function (value) { return normalizeText(value); })
+        .catch(function () { return ''; });
+    }
+    return '';
+  }).then(function (token) {
+    if (token) return token;
     var client = root.DokeSupabase && typeof root.DokeSupabase.getClient === 'function'
       ? root.DokeSupabase.getClient()
       : null;
     if (client && client.auth && typeof client.auth.getSession === 'function') {
-      return Promise.resolve(client.auth.getSession()).then(function (response) {
-        return response && response.data && response.data.session && response.data.session.access_token || '';
-      }).catch(function () { return ''; });
+      return Promise.resolve(client.auth.getSession())
+        .then(normalizeSessionAccessToken)
+        .catch(function () { return ''; });
     }
-    return Promise.resolve('');
-  }
+    return '';
+  });
+}
 
-  function extractIdempotencyKey(payload, options) {
+function extractIdempotencyKey(payload, options) {
     payload = payload || {};
     options = options || {};
     return normalizeText(options.idempotencyKey || options.idempotency_key || payload.idempotencyKey || payload.idempotency_key || '');
@@ -325,12 +356,25 @@
 
     var baseUrl = readOrdersApiBaseUrl(getRuntimeConfig());
     return getSessionToken().then(function (token) {
+      if (!token) {
+        var authError = new Error('A sessão autenticada é obrigatória para o canário de pedidos.');
+        authError.code = 'DOKE_ORDER_CANARY_AUTH_REQUIRED';
+        document.dispatchEvent(new CustomEvent('doke:order-command-failed', {
+          detail: {
+            command: path,
+            code: authError.code,
+            message: authError.message,
+            provider: ORDERS_WRITE_CANARY_PROVIDER
+          }
+        }));
+        throw authError;
+      }
       var headers = {
         Accept: 'application/json',
         'Content-Type': 'application/json',
         'x-idempotency-key': idempotencyKey
       };
-      if (token) headers.Authorization = 'Bearer ' + token;
+      headers.Authorization = 'Bearer ' + token;
 
       return root.fetch(baseUrl + path, {
         method: 'POST',
@@ -1558,6 +1602,7 @@
   function quote(orderId, payload) {
     payload = payload || {};
     return saveStatus(orderId, 'quoted', 'Proposta enviada', {
+      idempotencyKey: extractIdempotencyKey(payload),
       amount: normalizeText(payload.amount || payload.budget || ''),
       budget: normalizeText(payload.amount || payload.budget || ''),
       payment: payload.installments || 'Pagamento seguro pela Doke',
