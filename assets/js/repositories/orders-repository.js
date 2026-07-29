@@ -1,6 +1,6 @@
 /* Doke Orders Repository
-   Responsibility: local/mock persistence boundary for order entities.
-   Backend migration rule: pages/services must call this repository instead of localStorage directly. */
+   Responsibility: remote read mirror plus explicit browser-only draft/mock persistence.
+   Submitted orders and lifecycle commands belong exclusively to the server command boundary. */
 (function () {
   'use strict';
 
@@ -473,129 +473,65 @@
     return metadata;
   }
 
-  function saveRemote(order) {
-    var client = getSupabaseClient();
-    if (!client) return Promise.reject(new Error('Supabase client unavailable.'));
-    return getCurrentSupabaseUser(client).then(function (user) {
-      if (!user || !isUuid(user.id)) throw new Error('Faça login com uma conta Supabase para sincronizar o pedido.');
-      var normalized = normalizeOrder(order);
-      var clientId = normalizeText(normalized.clientId);
-      var professionalId = normalizeText(normalized.professionalId || normalized.providerId);
-      if (!isUuid(clientId) || !isUuid(professionalId)) throw new Error('Cliente ou profissional ainda não possuem identidade Supabase válida.');
-      if (user.id !== clientId && user.id !== professionalId) throw new Error('Você não participa deste pedido.');
-      return resolveRemoteServiceId(client, normalized.serviceId).then(function (remoteServiceId) {
-        var locationDetails = normalized.locationDetails || {};
-        var payload = {
-          external_id: normalized.id,
-          client_id: clientId,
-          professional_id: professionalId,
-          service_id: remoteServiceId,
-          title: normalized.serviceTitle || normalized.title || 'Serviço solicitado',
-          description: normalized.description || normalized.details || '',
-          status: toRemoteStatus(normalized.status),
-          city: normalized.city || locationDetails.city || '',
-          state: normalized.state || locationDetails.state || '',
-          scheduled_at: normalized.scheduledAt || null,
-          metadata: sanitizeMetadata(normalized),
-          updated_at: new Date().toISOString()
-        };
-        return client.from(REMOTE_TABLE).upsert(payload, { onConflict: 'external_id' }).select('*').single().then(function (result) {
-          if (result.error) throw result.error;
-          var attachmentRepository = Doke.repositories && Doke.repositories.attachments;
-          if (!attachmentRepository || typeof attachmentRepository.syncPendingOrder !== 'function') {
-            return hydrateAttachmentUrls(mapRemoteRow(result.data));
-          }
-          return attachmentRepository.syncPendingOrder(normalized.id, normalized.attachments || []).then(function (attachments) {
-            var hasChanges = JSON.stringify(attachments || []) !== JSON.stringify(normalized.attachments || []);
-            if (!hasChanges) return hydrateAttachmentUrls(mapRemoteRow(result.data));
-            var updatedOrder = normalizeOrder(Object.assign({}, normalized, { attachments: attachments }));
-            return client.from(REMOTE_TABLE).update({
-              metadata: sanitizeMetadata(updatedOrder),
-              updated_at: new Date().toISOString()
-            }).eq('id', result.data.id).select('*').single().then(function (updatedResult) {
-              if (updatedResult.error) throw updatedResult.error;
-              return hydrateAttachmentUrls(mapRemoteRow(updatedResult.data));
-            });
-          });
-        });
-      });
-    });
-  }
+  function commandBoundaryError(operation) {
+  var error = new Error('Pedidos enviados devem usar o command boundary canônico.');
+  error.code = 'DOKE_ORDER_COMMAND_BOUNDARY_REQUIRED';
+  error.operation = operation || 'write';
+  return error;
+}
 
-  function synchronizePending(items) {
-    var client = getSupabaseClient();
-    if (!client) return Promise.resolve(items || []);
-    var pending = (items || []).filter(function (item) { return item && item.id && item.syncStatus !== 'synced'; });
-    if (!pending.length) return Promise.resolve(items || []);
-    return getCurrentSupabaseUser(client).then(function (user) {
-      if (!user) return items || [];
-      return pending.reduce(function (chain, item) {
-        return chain.then(function () {
-          if (String(item.clientId) !== String(user.id) && String(item.professionalId || item.providerId) !== String(user.id)) return null;
-          return saveRemote(item).then(function (synced) {
-            saveLocal(synced, 'synced');
-            return synced;
-          }).catch(function (error) {
-            warnRemote(error, 'sincronização pendente');
-            return null;
-          });
-        });
-      }, Promise.resolve()).then(function () { return readLocal(); });
-    });
-  }
+function saveRemote() {
+  return Promise.reject(commandBoundaryError('save'));
+}
+
+function synchronizePending(items) {
+  // Legacy pending snapshots are never replayed automatically. A remote
+  // failure must be surfaced by the command caller instead of becoming
+  // an eventual local success.
+  return Promise.resolve(items || []);
+}
 
   function load(options) {
     options = options || {};
     if (cache && !options.fresh) return Promise.resolve(clone(cache));
     var client = getSupabaseClient();
     if (!client) return loadLocal(options);
-    var local = readLocal();
-    return fetchRemoteOrders().then(function (remote) {
-      remote.forEach(function (item) { saveLocal(item, 'synced'); });
-      cache = mergeById(local, remote);
-      return synchronizePending(cache).then(function () {
-        cache = mergeById(readLocal(), remote);
-        return clone(cache);
-      });
-    }).catch(function (error) {
-      warnRemote(error, 'leitura');
-      return loadLocal(options);
-    });
+    var localDrafts = readLocal().filter(function (item) {
+    return normalizeStatus(item && item.status) === 'draft' || item && item.syncStatus === 'local-draft';
+  });
+  return fetchRemoteOrders().then(function (remote) {
+    cache = mergeById(localDrafts, remote);
+    return clone(cache);
+  }).catch(function (error) {
+    warnRemote(error, 'leitura');
+    return loadLocal(options);
+  });
   }
 
   function save(order) {
-    var normalized = normalizeOrder(order);
-    var localSaved;
-    return saveLocal(normalized, 'pending').then(function (saved) {
-      localSaved = saved;
-      if (!getSupabaseClient()) return saved;
-      return saveRemote(saved).then(function (remoteSaved) {
-        return saveLocal(remoteSaved, 'synced');
-      }).catch(function (error) {
-        warnRemote(error, 'gravação');
-        return saveLocal(Object.assign({}, localSaved, {
-          syncStatus: 'pending',
-          syncError: normalizeText(error && error.message)
-        }), 'pending');
-      });
-    });
+  var normalized = normalizeOrder(order);
+  if (normalizeStatus(normalized.status) !== 'draft') {
+    return Promise.reject(commandBoundaryError('save'));
   }
+  return saveLocal(normalized, 'local-draft');
+}
 
-  function remove(orderId) {
-    var id = normalizeText(orderId);
-    return removeLocal(id).then(function (removed) {
-      var client = getSupabaseClient();
-      if (!client || !id) return removed;
-      return client.from(REMOTE_TABLE).delete().eq('external_id', id).then(function (result) {
-        if (result.error) warnRemote(result.error, 'remoção');
-        return removed;
-      }).catch(function (error) {
-        warnRemote(error, 'remoção');
-        return removed;
-      });
-    });
-  }
+function saveMock(order) {
+  return saveLocal(normalizeOrder(order), 'mock');
+}
 
+function remove(orderId) {
+  var id = normalizeText(orderId);
+  var draft = readLocal().find(function (item) {
+    return String(item.id) === id && (normalizeStatus(item.status) === 'draft' || item.syncStatus === 'local-draft');
+  });
+  if (!draft) return Promise.reject(commandBoundaryError('remove'));
+  return removeLocal(id);
+}
+
+function removeMock(orderId) {
+  return removeLocal(orderId);
+}
   function list(filters) {
     filters = filters || {};
     var status = normalizeText(filters.status || '');
@@ -661,7 +597,9 @@
     list: list,
     getById: getById,
     save: save,
+    saveMock: saveMock,
     remove: remove,
+    removeMock: removeMock,
     writeLocal: writeLocal,
     clearLocal: function () { writeLocal([]); },
     syncPending: function () { return synchronizePending(readLocal()); },

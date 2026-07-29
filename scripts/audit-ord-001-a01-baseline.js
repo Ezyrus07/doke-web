@@ -121,6 +121,8 @@ const findingIds = new Set((evidence.findings || []).map((finding) => finding.id
 assert(legacyService.includes("Doke.mockData.load('orders')"), 'Legacy order service is no longer frozen as mock-only.');
 assert(legacyService.includes('services.orders = Object.freeze'), 'Legacy order service authority is not explicit.');
 
+const a03Closed = fs.existsSync(path.join(root, 'docs/validation/ORD-001-A03-COMMAND-BOUNDARY.json'));
+if (!a03Closed) {
 [
   "var STORAGE_KEY = 'doke.orders.local.v1'",
   "var LEGACY_STORAGE_KEY = 'doke.orders'",
@@ -133,6 +135,14 @@ assert(legacyService.includes('services.orders = Object.freeze'), 'Legacy order 
   "setProviderState('local-fallback')",
   "return loadLocal(options)"
 ].forEach((snippet) => assert(repository.includes(snippet), `Orders repository baseline marker missing: ${snippet}`));
+} else {
+  const a03 = readJson('docs/validation/ORD-001-A03-COMMAND-BOUNDARY.json');
+  assert.strictEqual(a03.status, 'complete');
+  assert(repository.includes('DOKE_ORDER_COMMAND_BOUNDARY_REQUIRED'));
+  assert(!repository.includes('client.from(REMOTE_TABLE).upsert'));
+  assert(!repository.includes("client.from(REMOTE_TABLE).delete()"));
+}
+
 
 [
   "var ORDERS_WRITE_CANARY_PROVIDER = 'api-write-canary-frontend-activation'",
@@ -146,10 +156,15 @@ assert(legacyService.includes('services.orders = Object.freeze'), 'Legacy order 
   "require('./order-state-machine')",
   "supabase.rpc('transition_order_status'",
   'p_expected_status: oldStatus',
-  'Order changed while this transition was being processed.',
-  ".from('budgets')",
-  '.insert(payload)'
+  'Order changed while this transition was being processed.'
 ].forEach((snippet) => assert(backendService.includes(snippet), `Backend order authority marker missing: ${snippet}`));
+if (a03Closed) {
+  assert(backendService.includes("supabase.rpc('create_order_command'"));
+  assert(backendService.includes("supabase.rpc('submit_order_quote_command'"));
+} else {
+  assert(backendService.includes(".from('budgets')"));
+  assert(backendService.includes('.insert(payload)'));
+}
 
 assert(stateMachine.includes('const TRANSITIONS = Object.freeze({'), 'Canonical order transition graph is missing.');
 assert(stateMachine.includes('DOKE_ORDER_TRANSITION_INVALID'), 'Canonical transition conflict code is missing.');

@@ -8,6 +8,7 @@ const {
 
 const ORDER_SELECT = [
   'id',
+  'external_id',
   'client_id',
   'professional_id',
   'service_id',
@@ -177,26 +178,21 @@ async function createOrder(context, actor) {
   if (!title) throw badRequest('Order title is required.');
 
   const metadata = sanitizeOrderMetadata(body);
-  const payload = {
-    client_id: safeActor.id,
-    professional_id: service.professional_id,
-    service_id: service.id,
-    title,
-    description: sanitizeText(body.description || body.details || '', 4000),
-    status: 'requested',
-    city: sanitizeText(body.city || metadata.city || '', 80) || null,
-    state: sanitizeText(body.state || metadata.state || '', 40) || null,
-    scheduled_at: body.scheduledAt || body.scheduled_at || null,
-    metadata
-  };
-
-  const response = await supabase
-    .from('orders')
-    .insert(payload)
-    .select(ORDER_SELECT)
-    .maybeSingle();
+  if (typeof supabase.rpc !== 'function') {
+    throw unavailable('Supabase RPC support is required for canonical order creation.');
+  }
+  const response = await supabase.rpc('create_order_command', {
+    p_service_ref: serviceRef,
+    p_title: title,
+    p_description: sanitizeText(body.description || body.details || '', 4000) || null,
+    p_city: sanitizeText(body.city || metadata.city || '', 80) || null,
+    p_state: sanitizeText(body.state || metadata.state || '', 40) || null,
+    p_scheduled_at: body.scheduledAt || body.scheduled_at || null,
+    p_metadata: metadata,
+    p_external_id: sanitizeText(body.externalId || body.external_id || body.idempotencyKey || body.idempotency_key || '', 160) || null
+  });
   if (response && response.error) throw mapOrderDatabaseError(response.error);
-  const order = response && response.data;
+  const order = normalizeRpcOrderRow(response && response.data);
   if (!order) throw conflict('Order creation did not return a canonical row.');
   return { order: normalizeOrder(order), status: 'created' };
 }
@@ -231,14 +227,28 @@ async function sendQuote(context, actor, orderId) {
     status: 'sent',
     valid_until: body.validUntil || body.valid_until || null
   };
-  const budgetResponse = await supabase
-    .from('budgets')
-    .insert(payload)
-    .select(BUDGET_SELECT)
-    .maybeSingle();
-  if (budgetResponse && budgetResponse.error) throw budgetResponse.error;
-  const update = await transitionOrder(supabase, order, actor, 'quoted', 'Orçamento enviado pelo profissional.', 'quote');
-  return { ...update, budget: normalizeBudget(budgetResponse && budgetResponse.data) };
+  if (typeof supabase.rpc !== 'function') {
+    throw unavailable('Supabase RPC support is required for atomic quote submission.');
+  }
+  const quoteResponse = await supabase.rpc('submit_order_quote_command', {
+    p_order_id: order.id,
+    p_expected_status: normalizeBackendStatus(order.status),
+    p_amount_cents: payload.amount_cents,
+    p_currency: payload.currency,
+    p_description: payload.description,
+    p_valid_until: payload.valid_until
+  });
+  if (quoteResponse && quoteResponse.error) throw mapOrderDatabaseError(quoteResponse.error);
+  const result = quoteResponse && quoteResponse.data || {};
+  const orderRow = result.order || null;
+  const budgetRow = result.budget || null;
+  if (!orderRow || !budgetRow) throw conflict('Quote command did not return its canonical projections.');
+  return {
+    order: normalizeOrder(orderRow, { budget: budgetRow }),
+    status: 'quoted',
+    previousStatus: normalizeBackendStatus(order.status),
+    budget: normalizeBudget(budgetRow)
+  };
 }
 
 async function sendCharge(context, actor, orderId) {

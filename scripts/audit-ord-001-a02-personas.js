@@ -36,9 +36,18 @@ assert.strictEqual(personas.admin.ordersVisibleThroughPublicRls, 0);
 assert.strictEqual(personas.serviceRole.ordersVisible, 1);
 
 assert(orderPolicies.includes('orders_participants_select'));
-assert(orderPolicies.includes('orders_client_insert'));
-assert(orderPolicies.includes('orders_participants_update'));
-assert(orderPolicies.includes('orders_client_delete_draft'));
+const a03Closed = fs.existsSync('docs/validation/ORD-001-A03-COMMAND-BOUNDARY.json');
+if (!a03Closed) {
+  assert(orderPolicies.includes('orders_client_insert'));
+  assert(orderPolicies.includes('orders_participants_update'));
+  assert(orderPolicies.includes('orders_client_delete_draft'));
+} else {
+  const a03 = JSON.parse(read('docs/validation/ORD-001-A03-COMMAND-BOUNDARY.json'));
+  assert.strictEqual(a03.status, 'complete');
+  assert.strictEqual(a03.staging.authenticatedDirectDml.orders.insert, false);
+  assert.strictEqual(a03.staging.authenticatedDirectDml.orders.update, false);
+  assert.strictEqual(a03.staging.authenticatedDirectDml.orders.delete, false);
+}
 
 [
   'private.prepare_order_operational_incident()',

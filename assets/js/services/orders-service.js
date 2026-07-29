@@ -420,6 +420,21 @@
     return status.ordersApiActive === true;
   }
 
+
+function assertOrderCommandProviderAvailable(command) {
+  var status = getOrdersProviderStatus();
+  if (status.requestedProvider === 'api' && !status.ordersApiActive && !status.ordersWriteCanaryActive) {
+    var error = new Error('O servidor de pedidos está indisponível. Nenhuma alteração foi salva localmente.');
+    error.code = 'DOKE_ORDER_COMMAND_BOUNDARY_UNAVAILABLE';
+    error.command = command || 'order-command';
+    document.dispatchEvent(new CustomEvent('doke:order-command-failed', {
+      detail: { command: error.command, code: error.code, message: error.message }
+    }));
+    throw error;
+  }
+  return status;
+}
+
   function normalizeOrderFromProvider(order) {
     if (!order) return order;
     var repository = getRepository();
@@ -711,8 +726,8 @@
 
   function validateCreatePayload(payload, user) {
     if (!user || !user.id) throw new Error('Entre na sua conta para solicitar orçamento.');
-    if (user.role && user.role !== 'client') {
-      throw new Error('Use uma conta de cliente para solicitar orçamento.');
+    if (user.role && ['client', 'professional'].indexOf(user.role) === -1) {
+      throw new Error('Esta conta não possui capacidade de cliente para solicitar serviços.');
     }
     if (!normalizeText(payload.serviceId)) throw new Error('Serviço inválido. Abra o anúncio novamente.');
     if (!normalizeText(payload.professionalId || payload.providerId)) throw new Error('Profissional inválido. Abra o anúncio novamente.');
@@ -752,6 +767,7 @@
       });
     }
 
+    assertOrderCommandProviderAvailable('create');
     var repository = assertRepository();
     var createdAt = nowIso();
     var routedPayload = routeProfessionalForMock(payload);
@@ -770,7 +786,7 @@
       updatedAt: createdAt
     }));
 
-    return repository.save(order).then(function (saved) {
+    return repository.saveMock(order).then(function (saved) {
       var messagesService = services.messages;
       var conversationTask = messagesService && typeof messagesService.createConversationForOrder === 'function'
         ? messagesService.createConversationForOrder(saved).catch(function (error) {
@@ -963,6 +979,7 @@
       });
     }
 
+    assertOrderCommandProviderAvailable('transition:' + normalizeStatusToken(nextStatus || 'pending'));
     var repository = assertRepository();
     return repository.getById(orderId).then(function (order) {
       if (!order) throw new Error('Pedido não encontrado.');
@@ -1022,7 +1039,7 @@
         updatedAt: updatedAt
       });
 
-      return repository.save(updated).then(function (saved) {
+      return repository.saveMock(updated).then(function (saved) {
         return updateLinkedConversation(saved, nextStatus, options).then(function (conversation) {
           return notifyStatus(saved, nextStatus, Object.assign({}, options, {
             actor: actor,
@@ -1311,7 +1328,7 @@
       persistence = ordersBoundaryAction('charge', metadata);
     } else {
       var updated = Object.assign({}, order, metadata);
-      persistence = assertRepository().save(updated);
+      persistence = assertRepository().saveMock(updated);
     }
 
     return persistence.then(function (saved) {
@@ -1676,7 +1693,7 @@
         updatedAt: confirmedAt
       });
 
-      return assertRepository().save(updated).then(function (saved) {
+      return assertRepository().saveMock(updated).then(function (saved) {
         return updateLinkedConversation(saved, 'in_progress', {
           paymentStatus: 'held',
           paymentConfirmed: true,
@@ -1762,7 +1779,7 @@
         }));
       }
 
-      return assertRepository().save(Object.assign({}, order, metadata));
+      return assertRepository().saveMock(Object.assign({}, order, metadata));
     }).then(function (saved) {
       if (!saved) throw new Error('A solicitação de conclusão não pôde ser registrada.');
       return updateLinkedConversation(saved, saved.status || 'in_progress', {
@@ -1851,7 +1868,7 @@
       }
 
       var reviewedAt = normalizeText(payload.reviewedAt || '') || nowIso();
-      return assertRepository().save(Object.assign({}, order, {
+      return assertRepository().saveMock(Object.assign({}, order, {
         reviewedAt: reviewedAt,
         reviewedBy: actor.id,
         reviewId: payload.reviewId,
@@ -1877,7 +1894,7 @@
       if (!order) throw new Error('Pedido não encontrado para atualizar anexos.');
       assertOrderAccess(order, 'update_order_attachments', actor);
       var updatedAt = nowIso();
-      return assertRepository().save(Object.assign({}, order, {
+      return assertRepository().saveMock(Object.assign({}, order, {
         attachments: normalizedAttachments,
         updatedAt: updatedAt
       }));
