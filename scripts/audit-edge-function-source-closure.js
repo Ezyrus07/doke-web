@@ -14,6 +14,7 @@ const HARDENED_FUNCTIONS = [
   'order-event-operations',
   'professional-verification-operations',
   'quote-template-ai',
+  'search-public-services-v2',
   'self-service-operations',
   'service-moderation-operations',
   'staging-finance-sandbox',

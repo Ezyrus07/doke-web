@@ -1,0 +1,38 @@
+name: Doke SEARCH-A09 Staging HTTP Canary
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: doke-search-a09-staging-http-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  search-observability-staging-http:
+    name: Search observability staging HTTP canary
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout candidate tree
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Run SEARCH-A09 staging HTTP canary
+        run: node scripts/validate-search-observability-staging-http-canary.mjs
+
+      - name: Upload SEARCH-A09 HTTP evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: doke-search-a09-staging-http-${{ github.sha }}
+          path: reports/generated/search-observability-staging-http-canary.json
+          if-no-files-found: warn
+          retention-days: 30

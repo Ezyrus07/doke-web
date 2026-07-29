@@ -1,0 +1,112 @@
+name: Doke SEARCH-A09 Observability V2
+
+on:
+  pull_request:
+    branches:
+      - 'cat/**'
+      - 'search/**'
+    paths:
+      - 'supabase/migrations/163_service_search_observability_schema_v2.sql'
+      - 'supabase/migrations/164_service_search_observation_recorder_v2.sql'
+      - 'supabase/migrations/165_service_search_observability_calculator_v2.sql'
+      - 'supabase/migrations/166_service_search_observability_operations_v2.sql'
+      - 'supabase/tests/027_service_search_observability_v2_contract_validation.sql'
+      - 'supabase/tests/028_service_search_observation_recorder_v2_runtime_validation.sql'
+      - 'supabase/tests/029_service_search_observability_v2_monitoring_validation.sql'
+      - 'supabase/functions/search-public-services-v2/**'
+      - 'scripts/audit-search-observability-v2.js'
+      - 'scripts/test-search-observability-v2-runtime.mjs'
+      - 'scripts/validate-search-observability-staging-http-canary.mjs'
+      - 'scripts/audit-edge-function-source-closure.js'
+      - 'docs/validation/SEARCH-001-A09-OBSERVABILITY-V2.json'
+      - '.github/workflows/search-observability-v2.yml'
+      - '.github/workflows/search-observability-staging-http-canary.yml'
+      - 'supabase/migrations/162_service_search_ranked_rpc_v2.sql'
+      - 'supabase/tests/026_service_search_ranked_rpc_v2_validation.sql'
+      - 'docs/validation/SEARCH-001-A08-RANKED-RPC-V2.json'
+      - 'config/domain-completion-matrix.json'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+  push:
+    branches:
+      - 'search/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: doke-search-a09-observability-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  search-observability-v2:
+    name: Audit server-authoritative search observability
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout candidate tree
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Audit Edge Function source closure
+        run: node scripts/audit-edge-function-source-closure.js
+
+      - name: Audit SEARCH-A01 authority baseline
+        run: node scripts/audit-search-authority-baseline.js
+
+      - name: Audit SEARCH-A02 favorites authority
+        run: node scripts/audit-favorites-authority-retirement.js
+
+      - name: Test SEARCH-A02 favorites runtime
+        run: node scripts/test-favorites-authority-retirement-runtime.js
+
+      - name: Audit SEARCH-A03 favorite surfaces
+        run: node scripts/audit-service-favorites-surfaces.js
+
+      - name: Test SEARCH-A03 favorite surfaces runtime
+        run: node scripts/test-service-favorites-controller-runtime.js
+
+      - name: Audit SEARCH-A04 server search contract
+        run: node scripts/audit-search-server-contract.js
+
+      - name: Test SEARCH-A04 server contract runtime
+        run: node scripts/test-search-server-contract-runtime.js
+
+      - name: Audit SEARCH-A05 server results activation
+        run: node scripts/audit-search-results-server-activation.js
+
+      - name: Test SEARCH-A05 server results runtime
+        run: node scripts/test-search-results-server-surface-runtime.js
+
+      - name: Audit SEARCH-A06 ranking signal baseline
+        run: node scripts/audit-search-ranking-signal-baseline.js
+
+      - name: Audit SEARCH-A07 ranking v1 contract
+        run: node scripts/audit-search-ranking-v1.js
+
+      - name: Test SEARCH-A07 ranking v1 runtime
+        run: node scripts/test-search-ranking-v1-runtime.js
+
+      - name: Audit SEARCH-A08 ranked RPC v2 contract
+        run: node scripts/audit-search-ranked-rpc-v2.js
+
+      - name: Test SEARCH-A08 ranked RPC v2 runtime
+        run: node scripts/test-search-ranked-rpc-v2-runtime.js
+
+      - name: Audit SEARCH-A09 observability contract
+        run: node scripts/audit-search-observability-v2.js
+
+      - name: Test SEARCH-A09 observability runtime
+        run: node scripts/test-search-observability-v2-runtime.mjs
+
+      - name: Verify clean patch formatting
+        run: git diff --check

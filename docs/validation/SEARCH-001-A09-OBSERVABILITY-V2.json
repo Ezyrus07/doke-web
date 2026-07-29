@@ -1,0 +1,141 @@
+{
+  "schemaVersion": "1.0.0",
+  "domain": "SEARCH-001",
+  "sublot": "SEARCH-A09",
+  "status": "CANDIDATE_IMPLEMENTATION_PENDING_STAGING",
+  "title": "Server-authoritative search RPC v2 observability and staging Edge proxy",
+  "recordedAt": "2026-07-28T23:00:00-03:00",
+  "validatedCandidateHead": null,
+  "authority": {
+    "browserRpc": "public.search_public_services_v1(jsonb)",
+    "rankedRpc": "public.search_public_services_v2(jsonb)",
+    "candidateEdgeProxy": "search-public-services-v2",
+    "observationRecorder": "public.record_service_search_observation_v2(jsonb)",
+    "monitoringSnapshot": "public.get_service_search_observability_v2(integer)",
+    "browserCutover": false,
+    "activeRankingExpected": "search-rank-v0",
+    "existingRpcModified": false
+  },
+  "architecture": {
+    "errorTelemetryBoundary": "edge_proxy_separate_database_transaction",
+    "rpcExecutionRole": "caller_anon_or_authenticated",
+    "telemetryWriteRole": "service_role_only",
+    "telemetryFailureMode": "search_response_fail_open",
+    "rateLimitAuthority": "public.consume_edge_function_rate_limit_internal",
+    "anonymousRateLimitIdentity": "server_hmac_pseudonymous_uuid",
+    "verifyJwt": true,
+    "allowedOriginsEnforced": true
+  },
+  "observability": {
+    "latency": "rpc_execution_milliseconds",
+    "outcomes": [
+      "success",
+      "client_error",
+      "cursor_invalid",
+      "cursor_conflict",
+      "rate_limit",
+      "server_error"
+    ],
+    "latencyPercentiles": [
+      "p50",
+      "p95",
+      "p99"
+    ],
+    "zeroResultScope": "successful_first_pages_only",
+    "zeroResultEnforcement": "informational",
+    "rankingVersionDistribution": true,
+    "errorCodeDistribution": true,
+    "actorClassDistribution": true,
+    "persistedSnapshots": true,
+    "retentionAuthority": "service_role_only_no_cron_activated"
+  },
+  "privacy": {
+    "rawQueryStored": false,
+    "rawCursorStored": false,
+    "rawLocationStored": false,
+    "identityStored": false,
+    "networkAddressStored": false,
+    "rankingScoreStored": false,
+    "requestDimensionsOnly": [
+      "queryPresent",
+      "categoryCount",
+      "locationScope",
+      "serviceMode",
+      "pageSize",
+      "cursorPresent",
+      "firstPage"
+    ]
+  },
+  "ranking": {
+    "observabilitySignalsEnterRanking": false,
+    "viewsEnterRanking": false,
+    "clickThroughRateEntersRanking": false,
+    "contactsEnterRanking": false,
+    "messagesEnterRanking": false,
+    "paidBoostEntersRanking": false
+  },
+  "implementation": {
+    "edgeFunction": "supabase/functions/search-public-services-v2/index.ts",
+    "edgeOperations": "supabase/functions/search-public-services-v2/operations.mjs",
+    "audit": "scripts/audit-search-observability-v2.js",
+    "runtime": "scripts/test-search-observability-v2-runtime.mjs",
+    "httpCanary": "scripts/validate-search-observability-staging-http-canary.mjs",
+    "workflow": ".github/workflows/search-observability-v2.yml",
+    "httpWorkflow": ".github/workflows/search-observability-staging-http-canary.yml",
+    "migrations": [
+      "supabase/migrations/163_service_search_observability_schema_v2.sql",
+      "supabase/migrations/164_service_search_observation_recorder_v2.sql",
+      "supabase/migrations/165_service_search_observability_calculator_v2.sql",
+      "supabase/migrations/166_service_search_observability_operations_v2.sql"
+    ],
+    "sqlValidations": [
+      "supabase/tests/027_service_search_observability_v2_contract_validation.sql",
+      "supabase/tests/028_service_search_observation_recorder_v2_runtime_validation.sql",
+      "supabase/tests/029_service_search_observability_v2_monitoring_validation.sql"
+    ]
+  },
+  "staging": {
+    "project": "doke-web-staging",
+    "projectId": "zwkczgewzbsorbrjuzpb",
+    "migrationApplied": false,
+    "edgeFunctionDeployed": false,
+    "httpCanaryPassed": false,
+    "observationCanaryPassed": false,
+    "monitoringSnapshotPassed": false,
+    "activeVersionAfterValidation": "search-rank-v0",
+    "persistentRankingEventsExpected": 0,
+    "persistentSyntheticObservationsExpected": 0,
+    "sqlValidationsPassed": false
+  },
+  "matrix": {
+    "maturityPreserved": 3,
+    "userFacingAuthorityPreserved": "hybrid",
+    "serverAuthorityPreserved": "partial",
+    "stagingEvidencePreserved": "staging_canary",
+    "securityGatePreserved": "blocked",
+    "productionGatePreserved": "blocked",
+    "searchB03": "preserved"
+  },
+  "safety": {
+    "productionChanged": false,
+    "realAccountsChanged": false,
+    "realServicesChanged": false,
+    "favoritesChanged": false,
+    "serviceMetricsChanged": false,
+    "activeRankingChanged": false,
+    "browserRpcChanged": false,
+    "paidIntegrationActivated": false,
+    "cronActivated": false,
+    "prMerged": false,
+    "prReadyForReview": false
+  },
+  "remaining": [
+    "Validate migrations 163-166 and SQL 027-029 on one clean candidate head.",
+    "Apply migrations 163-166 only to staging after all static and runtime gates pass.",
+    "Deploy search-public-services-v2 only to staging with JWT verification enabled.",
+    "Run HTTP, observation, snapshot and rollback-state canaries.",
+    "Keep browser traffic on RPC v1 and search-rank-v0 active.",
+    "Prove controlled browser and ranking rollback before removing SEARCH-B03."
+  ],
+  "nextControlledStep": "Complete SEARCH-A09 staging deployment and canaries without changing browser traffic or active ranking."
+}
