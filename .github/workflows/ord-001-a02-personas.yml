@@ -55,6 +55,10 @@ jobs:
               "source = replace_once(source, old_load, new_load, 'repository load')",
               "load_start = source.index('    var local = readLocal();', source.index('  function load(options) {'))\nload_end = source.index('  function save(order) {', load_start)\nsource = source[:load_start] + new_load + source[load_end:]"
           )
+          code = code.replace(
+              "source = replace_once(source, old_write, new_write, 'repository writes')",
+              "write_start = source.index('  function save(order) {')\nwrite_end = source.index('  function list(filters) {', write_start)\nsource = source[:write_start] + new_write + source[write_end:]"
+          )
           Path('/tmp/apply-ord-a03.py').write_text(code, encoding='utf-8')
           PY
           python /tmp/apply-ord-a03.py
