@@ -16,6 +16,8 @@ const files = {
   service: 'assets/js/services/search-service.js',
   surface: 'assets/js/pages/search/server-results-surface.js',
   passiveController: 'assets/js/pages/resultados-data-controller.js',
+  playwrightConfig: 'playwright.config.js',
+  staticServer: 'scripts/serve-static-site.js',
   runtime: 'scripts/test-search-browser-cutover-runtime.js',
   browserTest: 'tests/search/search-results-staging.spec.js',
   workflow: '.github/workflows/search-results-staging-browser.yml',
@@ -53,7 +55,7 @@ const repository = read(files.repository);
   "rankingVersion: 'search-rank-v0'",
   "throw createError('DOKE_SEARCH_TRANSPORT_INVALID'",
   "throw createError('DOKE_SEARCH_ROLLBACK_INVALID'",
-  "transport === TRANSPORT_EDGE_V2",
+  'transport === TRANSPORT_EDGE_V2',
   '? queryEdgeV2(request)',
   ': queryRpcV1(request)'
 ].forEach((marker) => assert(repository.includes(marker), `repository cutover marker missing: ${marker}`));
@@ -86,23 +88,38 @@ const passiveController = read(files.passiveController);
   'transport: source.transport || currentTransport()'
 ].forEach((marker) => assert(passiveController.includes(marker), `passive controller transport marker missing: ${marker}`));
 
+const playwrightConfig = read(files.playwrightConfig);
+[
+  "process.env.DOKE_PLAYWRIGHT_LIVE_SEARCH === '1'",
+  "DOKE_E2E_DISABLE_REMOTE_SERVICES: liveSearch ? '0' : '1'",
+  'env: webServerEnv'
+].forEach((marker) => assert(playwrightConfig.includes(marker), `Playwright search isolation marker missing: ${marker}`));
+
+const staticServer = read(files.staticServer);
+[
+  "process.env.DOKE_E2E_DISABLE_REMOTE_SERVICES === '1'",
+  "const marker = '  servicesEnabled: true,'",
+  "source.replace(marker, '  servicesEnabled: false,')",
+  "headers['X-Doke-E2E-Remote-Services'] = 'disabled'"
+].forEach((marker) => assert(staticServer.includes(marker), `static-server search isolation marker missing: ${marker}`));
+
 const runtime = read(files.runtime);
 [
   "searchTransport: 'edge-v2'",
   "searchTransport: 'rpc-v1'",
-  "Edge failure must not auto-fallback to RPC v1",
-  "DOKE_SEARCH_TRANSPORT_INVALID",
-  "DOKE_SEARCH_ROLLBACK_INVALID",
-  "DOKE_SEARCH_RESPONSE_INVALID"
+  'Edge failure must not auto-fallback to RPC v1',
+  'DOKE_SEARCH_TRANSPORT_INVALID',
+  'DOKE_SEARCH_ROLLBACK_INVALID',
+  'DOKE_SEARCH_RESPONSE_INVALID'
 ].forEach((marker) => assert(runtime.includes(marker), `runtime proof marker missing: ${marker}`));
 
 const browserTest = read(files.browserTest);
 [
   "EDGE_PATH = '/functions/v1/search-public-services-v2'",
   "ROLLBACK_RPC_PATH = '/rest/v1/rpc/search_public_services_v1'",
-  "renders service results through the real staging Edge v2 authority under rank v0",
-  "fails closed when Edge v2 is unavailable and does not auto-fallback to RPC v1",
-  "rolls back deliberately to the real staging RPC v1 when configured",
+  'renders service results through the real staging Edge v2 authority under rank v0',
+  'fails closed when Edge v2 is unavailable and does not auto-fallback to RPC v1',
+  'rolls back deliberately to the real staging RPC v1 when configured',
   "expect(rendered.transport).toBe('edge-v2')",
   "expect(rendered.transport).toBe('rpc-v1')",
   'expect(authorityRequests.directCatalog).toEqual([])'
@@ -113,7 +130,8 @@ const workflow = read(files.workflow);
   'Doke SEARCH-A10 Browser Cutover V2',
   'node scripts/audit-search-browser-cutover-v2.js',
   'node scripts/test-search-browser-cutover-runtime.js',
-  'tests/search/search-results-staging.spec.js'
+  'tests/search/search-results-staging.spec.js',
+  "DOKE_PLAYWRIGHT_LIVE_SEARCH: '1'"
 ].forEach((marker) => assert(workflow.includes(marker), `workflow marker missing: ${marker}`));
 
 const prerequisite = JSON.parse(read(files.prerequisite));
@@ -128,7 +146,10 @@ assert(evidence.transport && evidence.transport.rollback === 'rpc-v1', 'A10 roll
 assert(evidence.transport && evidence.transport.automaticFallback === false, 'A10 automatic fallback must remain disabled');
 assert(evidence.ranking && evidence.ranking.activeVersion === 'search-rank-v0', 'A10 must preserve ranking v0');
 assert(evidence.safety && evidence.safety.productionChanged === false, 'A10 cannot change production');
-assert(evidence.safety && evidence.safety.realDataMutated === false, 'A10 cannot mutate real marketplace data');
+const realMarketplaceDataMutated = evidence.safety && Object.prototype.hasOwnProperty.call(evidence.safety, 'realMarketplaceDataMutated')
+  ? evidence.safety.realMarketplaceDataMutated
+  : evidence.safety && evidence.safety.realDataMutated;
+assert(realMarketplaceDataMutated === false, 'A10 cannot mutate real marketplace data');
 
 if (errors.length) {
   console.error('[SEARCH-A10] Browser cutover audit failed:');
@@ -137,4 +158,4 @@ if (errors.length) {
 }
 
 console.log('[SEARCH-A10] Browser Edge v2 cutover contract: PASS');
-console.log('[SEARCH-A10] Staging defaults to Edge v2, RPC v1 remains explicit rollback, and automatic fallback is forbidden.');
+console.log('[SEARCH-A10] Staging defaults to Edge v2, RPC v1 remains explicit rollback, automatic fallback is forbidden, and general E2E is isolated from live search.');
