@@ -1,0 +1,67 @@
+name: Doke SEARCH-A11 Closure Applicator
+
+on:
+  push:
+    branches:
+      - 'search/**'
+    paths:
+      - 'scripts/apply-search-a11-closure.js'
+      - '.github/workflows/search-a11-closure-applicator.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: doke-search-a11-closure-applicator-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    name: Apply SEARCH-A11 governance closure
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout SEARCH branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Apply controlled SEARCH-A11 reconciliation
+        run: node scripts/apply-search-a11-closure.js
+
+      - name: Regenerate canonical matrix document
+        run: npm run write:domain-completion-matrix
+
+      - name: Audit deterministic matrix
+        run: npm run audit:domain-completion-matrix
+
+      - name: Verify clean patch formatting
+        run: git diff --check
+
+      - name: Commit SEARCH-A11 closure artifacts
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            config/domain-completion-matrix.json \
+            docs/DOMAIN-COMPLETION-MATRIX.md \
+            docs/DOKE-ENGINEERING-JOURNAL.md \
+            docs/validation/SEARCH-001-A11-FINAL-RECONCILIATION.json
+          if git diff --cached --quiet; then
+            echo "SEARCH-A11 closure artifacts already applied."
+            exit 0
+          fi
+          git commit -m "Reconcile SEARCH-001 domain closure"
+          git push origin HEAD:${{ github.ref_name }}
