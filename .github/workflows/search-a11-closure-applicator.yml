@@ -7,6 +7,7 @@ on:
       - 'search/**'
     paths:
       - 'scripts/apply-search-a11-closure.js'
+      - 'scripts/audit-search-domain-closure.js'
       - '.github/workflows/search-a11-closure-applicator.yml'
   workflow_dispatch:
 
@@ -40,6 +41,24 @@ jobs:
 
       - name: Apply controlled SEARCH-A11 reconciliation
         run: node scripts/apply-search-a11-closure.js
+
+      - name: Normalize matrix test registry
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const file = 'config/domain-completion-matrix.json';
+          const matrix = JSON.parse(fs.readFileSync(file, 'utf8'));
+          const search = matrix.domains.find((domain) => domain.id === 'SEARCH-001');
+          if (!search) throw new Error('SEARCH-001 domain is missing.');
+          search.tests = [
+            'test:public-service-catalog-contract',
+            'test:home-service-render-before-reveal-contract',
+            'test:results-hydration-state-authority',
+            'audit:domain-completion-matrix'
+          ];
+          fs.writeFileSync(file, `${JSON.stringify(matrix, null, 2)}\n`, 'utf8');
+          NODE
 
       - name: Regenerate canonical matrix document
         run: npm run write:domain-completion-matrix
