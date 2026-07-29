@@ -395,44 +395,66 @@
 
   function getOrdersProviderStatus() {
     var boundary = getRepositoryBoundary();
-    var status = boundary && typeof boundary.getDataProviderStatus === 'function'
+    var boundaryStatus = boundary && typeof boundary.getDataProviderStatus === 'function'
       ? boundary.getDataProviderStatus()
       : null;
-    var activeProvider = status && status.activeProvider || 'mock';
-    var apiReady = status ? status.apiReady === true : false;
-
+    var config = getRuntimeConfig();
+    var environment = String(config.environment || '').toLowerCase();
+    var configuredProvider = String(config.ordersProvider || 'mock').trim().toLowerCase();
+    var activeBoundaryProvider = boundaryStatus && boundaryStatus.activeProvider || 'mock';
+    var apiReady = boundaryStatus ? boundaryStatus.apiReady === true : false;
+    var ordersApiActive = activeBoundaryProvider === 'api' && apiReady;
+    var ordersRemoteReadActive = configuredProvider === 'supabase-read';
+    var mockDevelopmentActive = config.ordersMockDevelopment === true
+      || (environment === 'local' && configuredProvider === 'mock');
     var writeCanaryStatus = getOrdersWriteCanaryStatus();
+    var activeProvider = writeCanaryStatus.active
+      ? writeCanaryStatus.ordersProvider
+      : ordersApiActive
+        ? 'api'
+        : ordersRemoteReadActive
+          ? 'supabase-read'
+          : mockDevelopmentActive
+            ? 'mock-development'
+            : 'blocked';
 
     return Object.freeze({
       domain: 'orders',
-      activeProvider: writeCanaryStatus.active ? writeCanaryStatus.ordersProvider : activeProvider,
-      requestedProvider: writeCanaryStatus.canaryRequested ? writeCanaryStatus.ordersProvider : status && status.requestedProvider || activeProvider,
+      activeProvider: activeProvider,
+      requestedProvider: String(config.requestedOrdersProvider || configuredProvider),
       apiReady: apiReady || writeCanaryStatus.active,
-      ordersApiActive: activeProvider === 'api' && apiReady,
+      ordersApiActive: ordersApiActive,
+      ordersRemoteReadActive: ordersRemoteReadActive,
+      mockDevelopmentActive: mockDevelopmentActive,
       ordersWriteCanaryActive: writeCanaryStatus.active,
       ordersWriteCanary: writeCanaryStatus,
-      fallbackProvider: 'local-mock'
+      fallbackProvider: mockDevelopmentActive ? 'mock-development' : 'none'
     });
   }
 
   function shouldUseOrdersApi() {
-    var status = getOrdersProviderStatus();
-    return status.ordersApiActive === true;
+    return getOrdersProviderStatus().ordersApiActive === true;
+  }
+
+  function shouldUseOrdersRemoteRead() {
+    return getOrdersProviderStatus().ordersRemoteReadActive === true;
+  }
+
+  function shouldUseOrdersMockDevelopment() {
+    return getOrdersProviderStatus().mockDevelopmentActive === true;
   }
 
 
   function assertOrderCommandProviderAvailable(command) {
     var status = getOrdersProviderStatus();
-    if (status.requestedProvider === 'api' && !status.ordersApiActive && !status.ordersWriteCanaryActive) {
-      var error = new Error('O servidor de pedidos está indisponível. Nenhuma alteração foi salva localmente.');
-      error.code = 'DOKE_ORDER_COMMAND_BOUNDARY_UNAVAILABLE';
-      error.command = command || 'order-command';
-      document.dispatchEvent(new CustomEvent('doke:order-command-failed', {
-        detail: { command: error.command, code: error.code, message: error.message }
-      }));
-      throw error;
-    }
-    return status;
+    if (status.ordersApiActive || status.ordersWriteCanaryActive || status.mockDevelopmentActive) return status;
+    var error = new Error('O servidor de pedidos está indisponível para alterações. Nenhuma mudança foi salva localmente.');
+    error.code = 'DOKE_ORDER_COMMAND_BOUNDARY_UNAVAILABLE';
+    error.command = command || 'order-command';
+    document.dispatchEvent(new CustomEvent('doke:order-command-failed', {
+      detail: { command: error.command, code: error.code, message: error.message }
+    }));
+    throw error;
   }
 
   function normalizeOrderFromProvider(order) {
@@ -835,7 +857,13 @@
     filters = filters || {};
     var actor = getCurrentUser() || {};
     var security = getSecurity();
-    if (shouldUseOrdersApi()) return ordersBoundaryList(filters);
+    var providerStatus = getOrdersProviderStatus();
+    if (providerStatus.ordersApiActive) return ordersBoundaryList(filters);
+    if (!providerStatus.ordersRemoteReadActive && !providerStatus.mockDevelopmentActive) {
+      var unavailable = new Error('A autoridade de leitura de pedidos não está disponível.');
+      unavailable.code = 'DOKE_ORDER_READ_AUTHORITY_UNAVAILABLE';
+      return Promise.reject(unavailable);
+    }
     if (filters.currentUser === false && !(security && typeof security.canAccessAdmin === 'function' && security.canAccessAdmin(actor))) {
       auditSecurity('list_all_denied', 'denied', { actor: actor, reason: 'currentUser_false_requires_admin' });
       return Promise.resolve([]);
@@ -862,13 +890,30 @@
     return list(Object.assign({}, filters || {}, { currentUser: true }));
   }
 
+  function summary(filters) {
+    return list(filters || {}).then(function (orders) {
+      return (orders || []).reduce(function (result, order) {
+        var status = normalizeStatusToken(order && order.status || 'pending');
+        result.total += 1;
+        result.byStatus[status] = (result.byStatus[status] || 0) + 1;
+        return result;
+      }, { total: 0, byStatus: {} });
+    });
+  }
+
   function getById(orderId) {
     var actor = getCurrentUser() || {};
-    if (shouldUseOrdersApi()) {
+    var providerStatus = getOrdersProviderStatus();
+    if (providerStatus.ordersApiActive) {
       return ordersBoundaryGetById(orderId).then(function (order) {
         if (order) assertOrderAccess(order, 'read_order', actor);
         return order;
       });
+    }
+    if (!providerStatus.ordersRemoteReadActive && !providerStatus.mockDevelopmentActive) {
+      var unavailable = new Error('A autoridade de leitura de pedidos não está disponível.');
+      unavailable.code = 'DOKE_ORDER_READ_AUTHORITY_UNAVAILABLE';
+      return Promise.reject(unavailable);
     }
     return assertRepository().getById(orderId).then(function (order) {
       if (order) assertOrderAccess(order, 'read_order', actor);
@@ -1910,7 +1955,8 @@
   }
 
   services.orders = Object.freeze({
-    provider: 'local-mock',
+    provider: 'canonical-orders-service',
+    isCanonicalOrderService: true,
     getOrdersProviderStatus: getOrdersProviderStatus,
     getOrdersWriteCanaryStatus: getOrdersWriteCanaryStatus,
     configureOrdersWriteCanary: configureOrdersWriteCanary,
@@ -1919,6 +1965,7 @@
     list: list,
     listLocal: listLocal,
     listForCurrentUser: listForCurrentUser,
+    summary: summary,
     getById: getById,
     accept: accept,
     decline: decline,
@@ -1947,4 +1994,8 @@
       getAllowedTransitions: getAllowedTransitions
     })
   });
+
+  document.dispatchEvent(new CustomEvent('doke:orders-service-ready', {
+    detail: { provider: getOrdersProviderStatus() }
+  }));
 })();

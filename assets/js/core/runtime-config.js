@@ -32,6 +32,7 @@
 
   var ORDERS_PROVIDER_VALUES = Object.freeze({
     MOCK: 'mock',
+    SUPABASE_READ: 'supabase-read',
     API_WRITE_CANARY: 'api-write-canary-frontend-activation'
   });
 
@@ -67,7 +68,9 @@
 
   function normalizeOrdersProvider(value) {
     var provider = String(value || '').trim().toLowerCase();
-    return provider === ORDERS_PROVIDER_VALUES.API_WRITE_CANARY ? ORDERS_PROVIDER_VALUES.API_WRITE_CANARY : ORDERS_PROVIDER_VALUES.MOCK;
+    if (provider === ORDERS_PROVIDER_VALUES.API_WRITE_CANARY) return ORDERS_PROVIDER_VALUES.API_WRITE_CANARY;
+    if (provider === ORDERS_PROVIDER_VALUES.SUPABASE_READ) return ORDERS_PROVIDER_VALUES.SUPABASE_READ;
+    return ORDERS_PROVIDER_VALUES.MOCK;
   }
 
   function normalizeBaseUrl(value) {
@@ -130,11 +133,20 @@
     return raw.map(function (item) { return String(item || '').trim().toLowerCase(); }).filter(Boolean);
   }
 
-  function resolveOrdersProvider(windowConfig, ordersWriteCanary) {
+  function resolveOrdersProvider(windowConfig, ordersWriteCanary, environment) {
     var params = queryParams();
-    var provider = windowConfig.ordersProvider || readStorage('doke.ordersProvider') || ORDERS_PROVIDER_VALUES.MOCK;
+    var defaultProvider = environment === 'local'
+      ? ORDERS_PROVIDER_VALUES.MOCK
+      : ORDERS_PROVIDER_VALUES.SUPABASE_READ;
+    var provider = windowConfig.ordersProvider || readStorage('doke.ordersProvider') || defaultProvider;
     if (params.has('dokeOrdersProvider')) provider = params.get('dokeOrdersProvider');
-    return ordersWriteCanary ? ORDERS_PROVIDER_VALUES.API_WRITE_CANARY : normalizeOrdersProvider(provider);
+    if (ordersWriteCanary) return ORDERS_PROVIDER_VALUES.API_WRITE_CANARY;
+    var normalized = normalizeOrdersProvider(provider);
+    // Mock authority is valid only on an explicit local development host.
+    if (normalized === ORDERS_PROVIDER_VALUES.MOCK && environment !== 'local') {
+      return ORDERS_PROVIDER_VALUES.SUPABASE_READ;
+    }
+    return normalized;
   }
 
   function resolveOrderWriteActivation(windowConfig, ordersWriteCanary) {
@@ -171,13 +183,15 @@
   var betaLaunchCanary = resolveBetaLaunchCanary(windowConfig);
   var betaLaunchDomains = resolveBetaLaunchDomains(windowConfig);
   var requestedDataProvider = resolveDataProvider(windowConfig);
-  var ordersProvider = resolveOrdersProvider(windowConfig, ordersWriteCanary);
+  var ordersProvider = resolveOrdersProvider(windowConfig, ordersWriteCanary, environment);
+  var ordersReadActivation = ordersProvider === ORDERS_PROVIDER_VALUES.SUPABASE_READ;
+  var ordersMockDevelopment = environment === 'local' && ordersProvider === ORDERS_PROVIDER_VALUES.MOCK;
   var orderWriteActivation = resolveOrderWriteActivation(windowConfig, ordersWriteCanary);
   var dataProvider = ordersWriteCanary || betaLaunchCanary ? DATA_PROVIDER_VALUES.MOCK : requestedDataProvider;
   var authProvider = AUTH_PROVIDER_VALUES.SUPABASE;
 
   Doke.runtimeConfig = Object.freeze({
-    version: '20260725-auth-provider-authority-v1',
+    version: '20260729-ord-a04-read-authority-v1',
     environment: environment,
     flags: flags,
     dataProvider: dataProvider,
@@ -189,7 +203,10 @@
     apiBaseUrl: resolveApiBaseUrl(windowConfig),
     authIdentityCanary: false,
     ordersProvider: ordersProvider,
-    defaultOrdersProvider: ORDERS_PROVIDER_VALUES.MOCK,
+    requestedOrdersProvider: ordersProvider,
+    defaultOrdersProvider: environment === 'local' ? ORDERS_PROVIDER_VALUES.MOCK : ORDERS_PROVIDER_VALUES.SUPABASE_READ,
+    ordersReadActivation: ordersReadActivation,
+    ordersMockDevelopment: ordersMockDevelopment,
     orderWriteActivation: orderWriteActivation,
     ordersWriteCanary: ordersWriteCanary,
     betaLaunchProvider: betaLaunchCanary ? BETA_LAUNCH_PROVIDER_VALUES.API_BETA_LAUNCH_CANARY : BETA_LAUNCH_PROVIDER_VALUES.MOCK,
@@ -202,6 +219,8 @@
       forcedDataProvider: ordersWriteCanary || betaLaunchCanary ? DATA_PROVIDER_VALUES.MOCK : '',
       authProvider: authProvider,
       ordersProvider: ordersProvider,
+      ordersRead: ordersReadActivation,
+      ordersMockDevelopment: ordersMockDevelopment,
       orderWriteActivation: orderWriteActivation,
       betaLaunch: betaLaunchCanary,
       betaLaunchProvider: betaLaunchCanary ? BETA_LAUNCH_PROVIDER_VALUES.API_BETA_LAUNCH_CANARY : BETA_LAUNCH_PROVIDER_VALUES.MOCK,

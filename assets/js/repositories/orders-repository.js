@@ -159,6 +159,41 @@
     }
   }
 
+  function getRuntimeConfig() {
+    return Doke.runtimeConfig && typeof Doke.runtimeConfig === 'object' ? Doke.runtimeConfig : {};
+  }
+
+  function getProviderPolicy() {
+    var config = getRuntimeConfig();
+    var environment = String(config.environment || '').toLowerCase();
+    var provider = String(config.ordersProvider || 'mock').trim().toLowerCase();
+    var remoteReadActive = provider === 'supabase-read';
+    var mockDevelopmentActive = config.ordersMockDevelopment === true
+      || (environment === 'local' && provider === 'mock');
+    return Object.freeze({
+      provider: provider,
+      environment: environment,
+      remoteReadActive: remoteReadActive,
+      mockDevelopmentActive: mockDevelopmentActive,
+      fallbackAllowed: false
+    });
+  }
+
+  function readAuthorityError(message) {
+    var error = new Error(message || 'A autoridade remota de leitura de pedidos está indisponível.');
+    error.code = 'DOKE_ORDER_READ_AUTHORITY_UNAVAILABLE';
+    return error;
+  }
+
+  function assertMockDevelopment(operation) {
+    var policy = getProviderPolicy();
+    if (policy.mockDevelopmentActive) return policy;
+    var error = new Error('Fixtures de pedidos só podem ser alteradas no modo local de desenvolvimento.');
+    error.code = 'DOKE_ORDER_MOCK_DEVELOPMENT_REQUIRED';
+    error.operation = operation || 'mock';
+    throw error;
+  }
+
   function normalizeStatus(value) {
     var status = normalizeText(value || '').toLowerCase();
     var aliases = {
@@ -359,27 +394,32 @@
   }
 
   function warnRemote(error, context) {
-    lastRemoteError = error || new Error('Falha desconhecida nos pedidos remotos.');
-    setProviderState('local-fallback');
-    if (root.console && typeof root.console.warn === 'function') {
-      root.console.warn('[Doke orders repository] Supabase indisponível em ' + context + '. Usando fallback local.', error);
+    lastRemoteError = error || readAuthorityError();
+    setProviderState('remote-error');
+    if (root.console && typeof root.console.error === 'function') {
+      root.console.error('[Doke orders repository] Falha na autoridade remota em ' + context + '.', error);
     }
   }
 
   function getSupabaseClient() {
+    var policy = getProviderPolicy();
+    if (!policy.remoteReadActive) {
+      setProviderState(policy.mockDevelopmentActive ? 'mock-development' : 'blocked');
+      return null;
+    }
     if (supabaseClientAttempted) return supabaseClient;
     supabaseClientAttempted = true;
     var config = root.DOKE_SUPABASE_CONFIG || {};
     var sdk = root.supabase;
     if (!config.enabled || config.ordersEnabled === false || !config.url || !config.anonKey || !sdk || typeof sdk.createClient !== 'function') {
-      setProviderState('local');
+      setProviderState('remote-unavailable');
       return null;
     }
     try {
       supabaseClient = root.DokeSupabase && typeof root.DokeSupabase.getClient === 'function'
         ? root.DokeSupabase.getClient()
         : sdk.createClient(config.url, config.anonKey);
-      setProviderState('supabase');
+      setProviderState('supabase-read');
     } catch (error) {
       warnRemote(error, 'bootstrap');
       supabaseClient = null;
@@ -406,9 +446,13 @@
     return 'draft';
   }
 
-  function mapRemoteRow(row) {
+  function mapRemoteRow(row, budgetRow) {
     row = row || {};
+    budgetRow = budgetRow || null;
     var metadata = row.metadata && typeof row.metadata === 'object' ? clone(row.metadata) : {};
+    var budgetAmount = budgetRow && Number.isFinite(Number(budgetRow.amount_cents))
+      ? Number(budgetRow.amount_cents) / 100
+      : Number(metadata.budgetAmount || 0);
     return normalizeOrder(Object.assign({}, metadata, {
       id: row.external_id || metadata.id || row.id,
       remoteId: row.id,
@@ -425,6 +469,9 @@
       createdAt: row.created_at || metadata.createdAt,
       updatedAt: row.updated_at || metadata.updatedAt,
       syncStatus: 'synced',
+      budgetAmount: budgetAmount || null,
+      budget: budgetAmount > 0 ? toCurrencyLabel(budgetAmount) : (metadata.budget || 'A definir'),
+      budgetRecord: budgetRow ? clone(budgetRow) : null,
       syncedAt: new Date().toISOString()
     }));
   }
@@ -437,17 +484,56 @@
     }).catch(function () { return order; });
   }
 
+  function fetchRemoteBudgetMap(client, orderIds) {
+    var ids = (orderIds || []).filter(Boolean);
+    if (!ids.length) return Promise.resolve(Object.create(null));
+    return client.from('budgets')
+      .select('id,order_id,professional_id,amount_cents,currency,description,status,valid_until,created_at,updated_at')
+      .in('order_id', ids)
+      .order('created_at', { ascending: false })
+      .then(function (result) {
+        if (result.error) throw result.error;
+        return (result.data || []).reduce(function (map, row) {
+          if (!map[row.order_id]) map[row.order_id] = row;
+          return map;
+        }, Object.create(null));
+      });
+  }
+
   function fetchRemoteOrders() {
     var client = getSupabaseClient();
-    if (!client) return Promise.reject(new Error('Supabase client unavailable.'));
+    if (!client) return Promise.reject(readAuthorityError('Cliente Supabase de pedidos indisponível.'));
     return getCurrentSupabaseUser(client).then(function (user) {
       if (!user || !isUuid(user.id)) return [];
       return client.from(REMOTE_TABLE).select('*').order('created_at', { ascending: false }).then(function (result) {
         if (result.error) throw result.error;
-        setProviderState('supabase');
-        return Promise.all((result.data || []).map(function (row) {
-          return hydrateAttachmentUrls(mapRemoteRow(row));
-        }));
+        var rows = result.data || [];
+        return fetchRemoteBudgetMap(client, rows.map(function (row) { return row.id; })).then(function (budgetMap) {
+          setProviderState('supabase-read');
+          return Promise.all(rows.map(function (row) {
+            return hydrateAttachmentUrls(mapRemoteRow(row, budgetMap[row.id] || null));
+          }));
+        });
+      });
+    });
+  }
+
+  function fetchRemoteOrderById(orderId) {
+    var client = getSupabaseClient();
+    var id = normalizeText(orderId);
+    if (!client) return Promise.reject(readAuthorityError('Cliente Supabase de pedidos indisponível.'));
+    if (!id) return Promise.resolve(null);
+    return getCurrentSupabaseUser(client).then(function (user) {
+      if (!user || !isUuid(user.id)) return null;
+      var query = client.from(REMOTE_TABLE).select('*');
+      query = isUuid(id) ? query.eq('id', id) : query.eq('external_id', id);
+      return query.maybeSingle().then(function (result) {
+        if (result.error) throw result.error;
+        if (!result.data) return null;
+        return fetchRemoteBudgetMap(client, [result.data.id]).then(function (budgetMap) {
+          setProviderState('supabase-read');
+          return hydrateAttachmentUrls(mapRemoteRow(result.data, budgetMap[result.data.id] || null));
+        });
       });
     });
   }
@@ -494,17 +580,21 @@
   function load(options) {
     options = options || {};
     if (cache && !options.fresh) return Promise.resolve(clone(cache));
+    var policy = getProviderPolicy();
+    if (policy.mockDevelopmentActive) return loadLocal(options);
+    if (!policy.remoteReadActive) return Promise.reject(readAuthorityError());
     var client = getSupabaseClient();
-    if (!client) return loadLocal(options);
+    if (!client) return Promise.reject(readAuthorityError('Cliente Supabase de pedidos indisponível.'));
     var localDrafts = readLocal().filter(function (item) {
       return normalizeStatus(item && item.status) === 'draft' || item && item.syncStatus === 'local-draft';
     });
     return fetchRemoteOrders().then(function (remote) {
+      lastRemoteError = null;
       cache = mergeById(localDrafts, remote);
       return clone(cache);
     }).catch(function (error) {
       warnRemote(error, 'leitura');
-      return loadLocal(options);
+      throw error;
     });
   }
 
@@ -517,6 +607,7 @@
   }
 
   function saveMock(order) {
+    assertMockDevelopment('saveMock');
     return saveLocal(normalizeOrder(order), 'mock');
   }
 
@@ -530,6 +621,7 @@
   }
 
   function removeMock(orderId) {
+    assertMockDevelopment('removeMock');
     return removeLocal(orderId);
   }
 
@@ -556,7 +648,13 @@
   function listLocal(filters) {
     filters = filters || {};
     var currentUser = filters.currentUser === false ? null : getSessionUser();
-    return clone(readLocal().filter(function (item) {
+    var policy = getProviderPolicy();
+    var source = readLocal().filter(function (item) {
+      return policy.mockDevelopmentActive
+        || normalizeStatus(item && item.status) === 'draft'
+        || item && item.syncStatus === 'local-draft';
+    });
+    return clone(source.filter(function (item) {
       if (filters.currentUser !== false && !matchesCurrentUser(item, currentUser)) return false;
       if (filters.status && item.status !== filters.status) return false;
       return true;
@@ -565,8 +663,11 @@
 
   function getById(orderId) {
     var id = normalizeText(orderId);
+    var policy = getProviderPolicy();
     if (!id) return Promise.resolve(null);
-    return load({ currentUser: false }).then(function (items) {
+    if (policy.remoteReadActive) return fetchRemoteOrderById(id);
+    if (!policy.mockDevelopmentActive) return Promise.reject(readAuthorityError());
+    return loadLocal({ currentUser: false }).then(function (items) {
       return clone((items || []).find(function (item) { return String(item.id) === id; }) || null);
     });
   }
@@ -605,9 +706,12 @@
     clearLocal: function () { writeLocal([]); },
     syncPending: function () { return synchronizePending(readLocal()); },
     getProviderStatus: function () {
+      var policy = getProviderPolicy();
       return Object.freeze({
-        provider: getSupabaseClient() ? 'supabase' : 'local',
-        fallbackActive: Boolean(lastRemoteError),
+        provider: policy.remoteReadActive ? 'supabase-read' : policy.mockDevelopmentActive ? 'mock-development' : 'blocked',
+        remoteReadActive: policy.remoteReadActive,
+        mockDevelopmentActive: policy.mockDevelopmentActive,
+        fallbackActive: false,
         lastError: lastRemoteError ? normalizeText(lastRemoteError.message) : ''
       });
     },

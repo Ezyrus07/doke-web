@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 928 arquivos no escopo; 240 referências a localStorage; 72 a sessionStorage; 548 referências mock; 174 referências de rede/Supabase; 32 marcadores de implementação pendente.
+**Evidência estática observada:** 931 arquivos no escopo; 242 referências a localStorage; 72 a sessionStorage; 554 referências mock; 175 referências de rede/Supabase; 32 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -220,7 +220,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI remote; servidor canonical; staging staging operational; segurança partial; produção blocked.
 
-**Evidência estática observada:** 32 arquivos no escopo; 33 referências a localStorage; 2 a sessionStorage; 28 referências mock; 24 referências de rede/Supabase; 3 marcadores de implementação pendente.
+**Evidência estática observada:** 32 arquivos no escopo; 33 referências a localStorage; 2 a sessionStorage; 31 referências mock; 24 referências de rede/Supabase; 3 marcadores de implementação pendente.
 
 **Páginas:** `auth/login.html`, `auth/cadastro.html`, `auth/esqueci-senha.html`.
 
@@ -387,7 +387,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção blocked.
 
-**Evidência estática observada:** 22 arquivos no escopo; 10 referências a localStorage; 0 a sessionStorage; 36 referências mock; 20 referências de rede/Supabase; 2 marcadores de implementação pendente.
+**Evidência estática observada:** 24 arquivos no escopo; 11 referências a localStorage; 0 a sessionStorage; 65 referências mock; 22 referências de rede/Supabase; 2 marcadores de implementação pendente.
 
 **Páginas:** `orcamento.html`, `pedidos.html`, `mensagens.html`, `pagamento-profissional.html`, `admin-pedidos-operacao.html`.
 
@@ -402,15 +402,17 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - ORD-A03 revoked authenticated direct DML on orders and budgets, made submitted creation and quote submission RPC-authoritative, preserved expected-state concurrency and proved zero-residue rollback canaries.
 - Browser drafts and mock fixtures remain explicit local-only paths; submitted write failures no longer become silent local success.
 - Relationship-derived capability allows a professional account to act as the client when hiring another professional.
+- ORD-A04 makes participant-scoped Supabase reads canonical outside local development and removes silent read fallback to submitted browser snapshots.
+- The historical order-service.js is now a compatibility-only facade; orders-service.js is the single frontend business authority.
+- Latest participant-visible budgets are projected with remote orders so proposal state remains consistent across devices.
 
 **Bloqueadores:**
-- **ORD-B02 · HIGH · frontend_activation:** Default product flow still uses mock/local provider unless controlled canaries are enabled. _(Fase 6)_
+- **ORD-B02 · HIGH · frontend_activation:** Remote reads are canonical in staging and mock is local-development-only. Submitted commands still require controlled activation plus two-account cross-device E2E before the frontend activation blocker can close. _(Fase 6)_
 - **ORD-B03 · HIGH · financial_dependency:** Payment authority is not connected to a real PSP webhook lifecycle. _(Fase 8)_
 - **ORD-B04 · MEDIUM · scheduling:** Order scheduling and availability are not server-canonical. _(Fase 6)_
 
 **Próximas ações:**
-- Promote real order reads and commands behind controlled rollout while preserving explicit mock-only development mode.
-- Retire duplicate frontend order services and remove legacy local read authority from production paths.
+- Run a two-account cross-device canary for request, accept and quote through the canonical command boundary.
 - Harden worker invocation freshness and replay resistance.
 - Connect order transitions to messaging, scheduling and payment authorities.
 
@@ -837,7 +839,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 1/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 192 arquivos no escopo; 60 referências a localStorage; 5 a sessionStorage; 262 referências mock; 8 referências de rede/Supabase; 22 marcadores de implementação pendente.
+**Evidência estática observada:** 193 arquivos no escopo; 61 referências a localStorage; 5 a sessionStorage; 266 referências mock; 8 referências de rede/Supabase; 22 marcadores de implementação pendente.
 
 **Evidências:**
 - The master plan identifies legal, privacy and commercial decisions as mandatory.
@@ -866,7 +868,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI hybrid; servidor partial; staging local e2e; segurança partial; produção blocked.
 
-**Evidência estática observada:** 851 arquivos no escopo; 231 referências a localStorage; 71 a sessionStorage; 226 referências mock; 263 referências de rede/Supabase; 9 marcadores de implementação pendente.
+**Evidência estática observada:** 851 arquivos no escopo; 231 referências a localStorage; 71 a sessionStorage; 234 referências mock; 265 referências de rede/Supabase; 9 marcadores de implementação pendente.
 
 **Páginas:** `index.html`, `resultados.html`, `detalhe-anuncio.html`, `pedidos.html`, `mensagens.html`, `notificacoes.html`, `carteira.html`, `perfil.html`, `comunidade.html`.
 
@@ -897,7 +899,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2180 arquivos no escopo; 497 referências a localStorage; 145 a sessionStorage; 859 referências mock; 567 referências de rede/Supabase; 86 marcadores de implementação pendente.
+**Evidência estática observada:** 2183 arquivos no escopo; 499 referências a localStorage; 145 a sessionStorage; 872 referências mock; 570 referências de rede/Supabase; 86 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
@@ -958,4 +960,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-07-29T20:30:00-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-07-29T18:27:00-03:00._

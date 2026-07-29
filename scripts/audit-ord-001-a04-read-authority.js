@@ -1,0 +1,18 @@
+'use strict';
+const assert = require('assert');
+const fs = require('fs');
+const read = (path) => fs.readFileSync(path, 'utf8');
+const matrix = JSON.parse(read('config/domain-completion-matrix.json'));
+const evidence = JSON.parse(read('docs/validation/ORD-001-A04-READ-AUTHORITY.json'));
+const ord = matrix.domains.find((domain) => domain.id === 'ORD-001');
+assert(ord, 'ORD-001 matrix entry is required.');
+assert(Number(matrix.version.split('.').pop()) >= 15, 'Matrix version must include ORD-A04.');
+assert(ord.requiredPaths.includes('docs/ORD-001-READ-AUTHORITY.md'));
+assert(ord.tests.includes('audit:ord-001-a04-read-authority'));
+assert(ord.tests.includes('test:order-read-authority-runtime'));
+const blocker = ord.blockers.find((item) => item.id === 'ORD-B02');
+assert(blocker && blocker.description.includes('Submitted commands'), 'ORD-B02 must describe the remaining command activation gap.');
+assert.strictEqual(evidence.authority.stagingReadProvider, 'supabase-read');
+assert.strictEqual(evidence.authority.silentReadFallback, false);
+assert.strictEqual(evidence.operationalSafety.productionChanged, false);
+console.log('ORD-A04 read authority audit passed.');
