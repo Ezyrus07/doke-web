@@ -1,11 +1,11 @@
 {
-  "schemaVersion": "1.0.0",
+  "schemaVersion": "1.1.0",
   "domain": "SEARCH-001",
   "sublot": "SEARCH-A08",
-  "status": "CANDIDATE_IMPLEMENTATION_PENDING_STAGING",
+  "status": "COMPLETE_STAGING_BACKEND_INACTIVE",
   "title": "Version-bound ranked search RPC v2 and tamper-evident cursor",
-  "recordedAt": "2026-07-28T22:00:00-03:00",
-  "validatedCandidateHead": null,
+  "recordedAt": "2026-07-28T22:36:00-03:00",
+  "validatedCandidateHead": "1f2990da8d240d330dcdf5bc64eb6e7f1498d00b",
   "authority": {
     "legacyPublicRpc": "public.search_public_services_v1(jsonb)",
     "candidatePublicRpc": "public.search_public_services_v2(jsonb)",
@@ -13,7 +13,8 @@
     "activeRankingPointer": "private.service_search_ranking_state",
     "activeVersionExpected": "search-rank-v0",
     "browserCutover": false,
-    "legacyRpcModified": false
+    "legacyRpcModified": false,
+    "legacyOrderingPreserved": true
   },
   "ranking": {
     "versionReadPerFirstPage": true,
@@ -31,7 +32,8 @@
     "behavioralMetricsInScore": false,
     "reviewSignal": "published_review_joined_to_completed_order_for_same_service_and_professional",
     "availabilitySignal": "binary_future_available_slot_presence",
-    "recencySource": "approved_service_version_timestamp"
+    "recencySource": "approved_service_version_timestamp",
+    "transactionalV1ComputationCanaryPassed": true
   },
   "cursor": {
     "version": 2,
@@ -52,36 +54,61 @@
     "crossVersionUseRejected": true,
     "crossRequestUseRejected": true,
     "tamperingRejected": true,
-    "privateSigningKeyBrowserReadable": false
+    "privateSigningKeyBrowserReadable": false,
+    "validPrivateKeyCount": 1
   },
   "implementation": {
     "migration": "supabase/migrations/162_service_search_ranked_rpc_v2.sql",
     "sqlValidation": "supabase/tests/026_service_search_ranked_rpc_v2_validation.sql",
     "audit": "scripts/audit-search-ranked-rpc-v2.js",
     "runtime": "scripts/test-search-ranked-rpc-v2-runtime.js",
-    "workflow": ".github/workflows/search-ranked-rpc-v2.yml"
+    "workflow": ".github/workflows/search-ranked-rpc-v2.yml",
+    "temporaryApplicatorRemaining": false,
+    "temporaryWorkflowRemaining": false
   },
   "indexes": {
     "rankingStateForeignKeyCoverage": 3,
     "publishedOrderBackedReviewLookup": true,
     "completedOrderServiceLookup": true,
-    "futureAvailabilityLookup": true
+    "futureAvailabilityLookup": true,
+    "installedIndexCount": 6,
+    "unusedImmediatelyAfterCreationExpected": true
   },
   "staging": {
     "project": "doke-web-staging",
     "projectId": "zwkczgewzbsorbrjuzpb",
-    "migrationApplied": false,
-    "sql026Passed": false,
-    "rpcCanaryPassed": false,
+    "migrationApplied": true,
+    "migrationVersion": "20260729013209",
+    "migrationName": "service_search_ranked_rpc_v2",
+    "transactionalCompilePassed": true,
+    "sql026Passed": true,
+    "rpcCanaryPassed": true,
+    "anonExecutionCanaryPassed": true,
+    "transactionalV1CanaryPassed": true,
     "activeVersionAfterValidation": "search-rank-v0",
-    "persistentActivationEventsExpected": 0,
-    "persistentSyntheticRowsExpected": 0
+    "persistentActivationEvents": 0,
+    "persistentSyntheticRows": 0,
+    "anonCanCallV2": true,
+    "authenticatedCanCallV2": true,
+    "anonCanSignCursor": false,
+    "authenticatedCanDecodeCursor": false,
+    "browserCanReadCursorKey": false
+  },
+  "advisors": {
+    "newPrivateExposureDetected": false,
+    "publicSecurityDefinerRpcWarningExpected": true,
+    "publicSecurityDefinerJustification": "Public allowlisted search DTO requires controlled reads from private ranking state while using a fixed pg_catalog search_path and explicit browser execute grants.",
+    "rankingForeignKeysWithoutCoveringIndex": 0,
+    "newIndexesWithoutUsageHistoryLevel": "INFO",
+    "productionAdvisorStateChanged": false
   },
   "rollback": {
     "rankingRollbackAuthority": "private.activate_service_search_ranking_version(text,text,text)",
     "cursorRejectsOldRankingVersionAfterPointerChange": true,
     "legacyRpcRemainsAvailable": true,
-    "frontendRemainsOnLegacyRpc": true
+    "frontendRemainsOnLegacyRpc": true,
+    "validatedPath": "search-rank-v0_to_transactional-search-rank-v1_to_search-rank-v0",
+    "persistentRollbackEvents": 0
   },
   "matrix": {
     "maturityPreserved": 3,
@@ -101,16 +128,16 @@
     "activeRankingChanged": false,
     "browserRpcChanged": false,
     "paidIntegrationActivated": false,
+    "persistentSyntheticRowsCreated": false,
     "temporaryWorkflowRemaining": false,
     "prMerged": false,
     "prReadyForReview": false
   },
   "remaining": [
-    "Validate the migration and SQL 026 on one clean candidate head.",
-    "Apply migration 162 only to staging after all gates pass.",
-    "Run direct v2 canaries under search-rank-v0 and transactional v1 rollback.",
-    "Keep the browser on RPC v1 until the v2 backend canary is complete.",
-    "Add server-authoritative impression and conversion telemetry, monitoring and operational rollback evidence before removing SEARCH-B03."
+    "Keep the browser on RPC v1 until a controlled frontend cutover sublot is approved.",
+    "Add server-authoritative impression and conversion telemetry without using browser-manipulable counters in ranking.",
+    "Add monitoring for latency, errors, cursor conflicts, zero-result rate and ranking-version distribution.",
+    "Prove operational rollback of the browser and RPC path before removing SEARCH-B03."
   ],
-  "nextControlledStep": "Complete SEARCH-A08 staging validation without changing the browser RPC or active ranking version."
+  "nextControlledStep": "SEARCH-A09 — add server-authoritative search observability and monitoring around RPC v2 while keeping search-rank-v0 and browser RPC v1 active."
 }
