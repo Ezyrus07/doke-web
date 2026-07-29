@@ -3,6 +3,7 @@
 
   var Doke = window.Doke || (window.Doke = {});
   var PAGE_NAME = 'resultados';
+  var QUERY_SKELETON_CARD_COUNT = 6;
 
   function getRoot() {
     return document.querySelector('[data-state-boundary="resultados"], [data-results-layout], [data-page="resultados"]');
@@ -11,6 +12,57 @@
   function getResultsGrid(root) {
     if (!root || !root.querySelector) return null;
     return root.querySelector('[data-results-grid]');
+  }
+
+  function createQuerySkeletonCard() {
+    return [
+      '<article class="results-query-skeleton__card doke-card" aria-hidden="true">',
+      '  <span class="results-query-skeleton__media doke-skeleton-line"></span>',
+      '  <div class="results-query-skeleton__body">',
+      '    <span class="results-query-skeleton__category doke-skeleton-line"></span>',
+      '    <span class="results-query-skeleton__title doke-skeleton-line"></span>',
+      '    <div class="results-query-skeleton__seller">',
+      '      <span class="results-query-skeleton__avatar doke-skeleton-line"></span>',
+      '      <span class="results-query-skeleton__seller-copy">',
+      '        <span class="results-query-skeleton__seller-name doke-skeleton-line"></span>',
+      '        <span class="results-query-skeleton__rating doke-skeleton-line"></span>',
+      '      </span>',
+      '    </div>',
+      '    <span class="results-query-skeleton__tags">',
+      '      <span class="results-query-skeleton__tag doke-skeleton-line"></span>',
+      '      <span class="results-query-skeleton__tag doke-skeleton-line"></span>',
+      '    </span>',
+      '    <span class="results-query-skeleton__location doke-skeleton-line"></span>',
+      '    <span class="results-query-skeleton__footer">',
+      '      <span class="results-query-skeleton__price doke-skeleton-line"></span>',
+      '      <span class="results-query-skeleton__button doke-skeleton-line"></span>',
+      '    </span>',
+      '  </div>',
+      '</article>'
+    ].join('');
+  }
+
+  function ensureQuerySkeleton(root) {
+    if (!root || !root.querySelector) return null;
+    var loading = root.querySelector('[data-results-loading]');
+    if (!loading || loading.dataset.querySkeletonReady === 'true') return loading;
+
+    var cards = '';
+    for (var index = 0; index < QUERY_SKELETON_CARD_COUNT; index += 1) {
+      cards += createQuerySkeletonCard();
+    }
+
+    loading.classList.add('results-loading--skeleton', 'results-query-skeleton');
+    loading.dataset.querySkeletonReady = 'true';
+    loading.setAttribute('aria-label', 'Carregando anúncios');
+    loading.innerHTML = [
+      '<span class="results-query-skeleton__status">Carregando anúncios...</span>',
+      '<div class="results-query-skeleton__grid" aria-hidden="true">',
+      cards,
+      '</div>'
+    ].join('');
+
+    return loading;
   }
 
   function getSearchContract() {
@@ -138,6 +190,7 @@
   function load(root) {
     root = root || getRoot();
     if (!root) return Promise.resolve(null);
+    ensureQuerySkeleton(root);
     setRepositoryState(root, 'loading');
     return Promise.resolve({
       page: PAGE_NAME,
@@ -152,6 +205,7 @@
   function boot() {
     var root = getRoot();
     if (!root) return Promise.resolve(null);
+    ensureQuerySkeleton(root);
     if (root.__dokeResultsBootPromise) return root.__dokeResultsBootPromise;
     if (root.__dokeResultsBootComplete) return Promise.resolve(Doke.resultadosDataController.lastPayload);
 
@@ -169,6 +223,7 @@
     mode: 'passive-canonical-event-observer',
     getRoot: getRoot,
     getQueryFilters: getQueryFilters,
+    ensureQuerySkeleton: ensureQuerySkeleton,
     load: load,
     boot: boot,
     lastPayload: null
