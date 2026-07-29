@@ -23,6 +23,17 @@
     }
   ];
 
+  function ensurePlacement() {
+    var section = document.querySelector('[data-profile-favorites-surface]');
+    var feed = section && section.closest('.profile-feed');
+    if (feed && feed.lastElementChild !== section) feed.appendChild(section);
+
+    var tab = document.querySelector('.profile-tabs [aria-controls="profile-favorites"]');
+    var nav = tab && tab.parentElement;
+    if (nav && nav.lastElementChild !== tab) nav.appendChild(tab);
+    return Boolean(section);
+  }
+
   function nodes() {
     return {
       section: document.querySelector('[data-profile-favorites-surface]'),
@@ -133,6 +144,7 @@
 
   function render(options) {
     options = options || {};
+    ensurePlacement();
     var ui = nodes();
     if (!ui.section || !ui.grid) return Promise.resolve(0);
     if (renderPromise && !options.force) return renderPromise;
@@ -172,7 +184,7 @@
   }
 
   function boot() {
-    if (!nodes().section) return;
+    if (!ensurePlacement()) return;
     render();
   }
 
@@ -189,6 +201,7 @@
   Doke.profileFavoritesSurface = Object.freeze({
     boot: boot,
     render: render,
+    ensurePlacement: ensurePlacement,
     ensureCatalog: ensureCatalog,
     ensureCatalogAuthority: ensureCatalogAuthority,
     getCatalogSnapshot: function () { return catalog.slice(); }
