@@ -1,0 +1,116 @@
+{
+  "schemaVersion": "1.0.0",
+  "domain": "SEARCH-001",
+  "sublot": "SEARCH-A08",
+  "status": "CANDIDATE_IMPLEMENTATION_PENDING_STAGING",
+  "title": "Version-bound ranked search RPC v2 and tamper-evident cursor",
+  "recordedAt": "2026-07-28T22:00:00-03:00",
+  "validatedCandidateHead": null,
+  "authority": {
+    "legacyPublicRpc": "public.search_public_services_v1(jsonb)",
+    "candidatePublicRpc": "public.search_public_services_v2(jsonb)",
+    "contractVersion": "2.0.0",
+    "activeRankingPointer": "private.service_search_ranking_state",
+    "activeVersionExpected": "search-rank-v0",
+    "browserCutover": false,
+    "legacyRpcModified": false
+  },
+  "ranking": {
+    "versionReadPerFirstPage": true,
+    "v0Ordering": [
+      "updated_at_desc",
+      "service_id_desc"
+    ],
+    "v1Ordering": [
+      "bounded_score_desc",
+      "approved_version_timestamp_desc",
+      "service_id_desc"
+    ],
+    "v1ScoreAuthority": "private.compute_service_search_ranking_score",
+    "scoreBreakdownPublic": false,
+    "behavioralMetricsInScore": false,
+    "reviewSignal": "published_review_joined_to_completed_order_for_same_service_and_professional",
+    "availabilitySignal": "binary_future_available_slot_presence",
+    "recencySource": "approved_service_version_timestamp"
+  },
+  "cursor": {
+    "version": 2,
+    "encoding": "base64_json_envelope",
+    "integrity": "hmac_sha256_private_server_key",
+    "payloadFields": [
+      "cursorVersion",
+      "rankingVersion",
+      "asOf",
+      "requestHash",
+      "score",
+      "tiebreakAt",
+      "id"
+    ],
+    "normalizedRequestBound": true,
+    "rankingVersionBound": true,
+    "asOfFrozenAcrossPages": true,
+    "crossVersionUseRejected": true,
+    "crossRequestUseRejected": true,
+    "tamperingRejected": true,
+    "privateSigningKeyBrowserReadable": false
+  },
+  "implementation": {
+    "migration": "supabase/migrations/162_service_search_ranked_rpc_v2.sql",
+    "sqlValidation": "supabase/tests/026_service_search_ranked_rpc_v2_validation.sql",
+    "audit": "scripts/audit-search-ranked-rpc-v2.js",
+    "runtime": "scripts/test-search-ranked-rpc-v2-runtime.js",
+    "workflow": ".github/workflows/search-ranked-rpc-v2.yml"
+  },
+  "indexes": {
+    "rankingStateForeignKeyCoverage": 3,
+    "publishedOrderBackedReviewLookup": true,
+    "completedOrderServiceLookup": true,
+    "futureAvailabilityLookup": true
+  },
+  "staging": {
+    "project": "doke-web-staging",
+    "projectId": "zwkczgewzbsorbrjuzpb",
+    "migrationApplied": false,
+    "sql026Passed": false,
+    "rpcCanaryPassed": false,
+    "activeVersionAfterValidation": "search-rank-v0",
+    "persistentActivationEventsExpected": 0,
+    "persistentSyntheticRowsExpected": 0
+  },
+  "rollback": {
+    "rankingRollbackAuthority": "private.activate_service_search_ranking_version(text,text,text)",
+    "cursorRejectsOldRankingVersionAfterPointerChange": true,
+    "legacyRpcRemainsAvailable": true,
+    "frontendRemainsOnLegacyRpc": true
+  },
+  "matrix": {
+    "maturityPreserved": 3,
+    "userFacingAuthorityPreserved": "hybrid",
+    "serverAuthorityPreserved": "partial",
+    "stagingEvidencePreserved": "staging_canary",
+    "securityGatePreserved": "blocked",
+    "productionGatePreserved": "blocked",
+    "searchB03": "preserved"
+  },
+  "safety": {
+    "productionChanged": false,
+    "realAccountsChanged": false,
+    "realServicesChanged": false,
+    "favoritesChanged": false,
+    "metricsChanged": false,
+    "activeRankingChanged": false,
+    "browserRpcChanged": false,
+    "paidIntegrationActivated": false,
+    "temporaryWorkflowRemaining": false,
+    "prMerged": false,
+    "prReadyForReview": false
+  },
+  "remaining": [
+    "Validate the migration and SQL 026 on one clean candidate head.",
+    "Apply migration 162 only to staging after all gates pass.",
+    "Run direct v2 canaries under search-rank-v0 and transactional v1 rollback.",
+    "Keep the browser on RPC v1 until the v2 backend canary is complete.",
+    "Add server-authoritative impression and conversion telemetry, monitoring and operational rollback evidence before removing SEARCH-B03."
+  ],
+  "nextControlledStep": "Complete SEARCH-A08 staging validation without changing the browser RPC or active ranking version."
+}
