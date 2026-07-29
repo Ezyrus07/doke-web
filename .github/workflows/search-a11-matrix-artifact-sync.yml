@@ -1,0 +1,62 @@
+name: Doke SEARCH-A11 Matrix Artifact Sync
+
+on:
+  pull_request:
+    branches:
+      - 'cat/**'
+      - 'search/**'
+    paths:
+      - '.github/workflows/search-a11-matrix-artifact-sync.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: doke-search-a11-matrix-artifact-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: Regenerate SEARCH-A11 matrix document
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout SEARCH branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Regenerate canonical matrix document
+        run: npm run write:domain-completion-matrix
+
+      - name: Validate deterministic matrix
+        run: npm run audit:domain-completion-matrix
+
+      - name: Verify clean patch formatting
+        run: git diff --check
+
+      - name: Commit regenerated document
+        shell: bash
+        env:
+          HEAD_REF: ${{ github.event.pull_request.head.ref || github.ref_name }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/DOMAIN-COMPLETION-MATRIX.md
+          if git diff --cached --quiet; then
+            echo "Domain matrix document already synchronized."
+            exit 0
+          fi
+          git commit -m "Synchronize SEARCH-A11 domain matrix document"
+          git push origin HEAD:"${HEAD_REF}"
