@@ -50,7 +50,34 @@
     "persistentAuthority": "public.favorites",
     "canonicalServiceId": "UUID from serviceId or remoteId",
     "rls": "owner scoped",
-    "realRowsMutatedDuringValidation": 0
+    "mutationOrdering": "controller snapshot updates before doke:service-favorite-changed",
+    "surfaces": {
+      "home": {
+        "moduleOwner": "assets/js/pages/home/favorites-surface.js",
+        "loaderOwner": "assets/js/pages/home/public-services.js",
+        "placement": "before professional showcase",
+        "visibility": "authenticated session with at least one approved saved service",
+        "previewLimit": 6,
+        "countMeaning": "total matched favorites"
+      },
+      "profile": {
+        "moduleOwner": "assets/js/pages/profile/favorites-surface.js",
+        "placement": "last tab and last content area",
+        "identifierReconciliation": [
+          "serviceId",
+          "remoteId",
+          "remote_id",
+          "id",
+          "externalId",
+          "external_id"
+        ]
+      }
+    },
+    "dedicatedWorkflowRun": 30465823434,
+    "dedicatedWorkflowConclusion": "success",
+    "realRowsMutatedDuringValidation": 0,
+    "manualAuthenticatedPersistenceCheckPending": true
   },
+  "temporaryApplicatorsPresent": false,
   "productionChanged": false
 }
