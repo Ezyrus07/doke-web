@@ -46,10 +46,13 @@
       '    <h2 class="section-heading__title home-section-title" id="home-favorites-title">Seus favoritos</h2>',
       '    <p class="section-heading__description">Serviços que você salvou para consultar depois.</p>',
       '  </div>',
-      '  <a class="section-heading__link" href="meu-perfil.html#profile-favorites">Ver todos <span class="home-favorites__count" data-home-favorites-count aria-label="0 favoritos">0</span></a>',
+      '  <a class="section-heading__link" href="meu-perfil.html#profile-favorites">',
+      '    <span>Ver todos</span>',
+      '    <span class="home-favorites__count" data-home-favorites-count aria-label="0 favoritos">0</span>',
+      '  </a>',
       '</div>',
-      '<div class="content-rail doke-scroll-rail">',
-      '  <div class="service-grid service-grid--compact doke-grid" data-home-favorites-grid aria-label="Seus serviços favoritos"></div>',
+      '<div class="home-favorites__rail doke-scroll-rail">',
+      '  <div class="home-favorites__grid" data-home-favorites-grid aria-label="Seus serviços favoritos"></div>',
       '</div>'
     ].join('');
 
@@ -139,7 +142,7 @@
       ui.grid.textContent = '';
       preview.forEach(function (item) {
         if (Doke.publicServiceCard && typeof Doke.publicServiceCard.create === 'function') {
-          ui.grid.appendChild(Doke.publicServiceCard.create(item, { favoritePreview: true }));
+          ui.grid.appendChild(Doke.publicServiceCard.create(item));
         }
       });
       if (ui.count) {
