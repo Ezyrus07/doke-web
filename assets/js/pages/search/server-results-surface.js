@@ -1,6 +1,7 @@
 /* Doke SEARCH Server Results Surface
    Responsibility: render canonical paginated service discovery from
-   Doke.services.search.queryPage without browser catalog filtering or fallback. */
+   Doke.services.search.queryPage. Empty direct searches may request an explicit
+   secondary catalog page, but no browser-side catalog filtering is allowed. */
 (function () {
   'use strict';
 
@@ -14,6 +15,7 @@
     items: [],
     nextCursor: '',
     hasNext: false,
+    mode: 'direct',
     loading: false,
     inFlight: null
   };
@@ -101,8 +103,10 @@
     document.dispatchEvent(new CustomEvent(name, { detail: detail || {} }));
   }
 
-  function applySuccess(context, response, append, epoch) {
+  function applySuccess(context, response, append, epoch, options) {
     if (epoch !== state.epoch) return state.items.slice();
+    options = options || {};
+    var fallback = options.fallback === true;
     var incoming = Array.isArray(response && response.items) ? response.items : [];
     var additions = append ? uniqueItems(state.items, incoming) : incoming;
     var contract = searchContract();
@@ -116,19 +120,25 @@
       context.grid.appendChild(context.createCard(item));
     });
     state.items = append ? state.items.concat(additions) : additions.slice();
+    state.mode = fallback ? 'fallback' : 'direct';
+    state.request = Object.assign({}, options.request || state.request || {});
     state.hasNext = Boolean(response && response.page && response.page.hasNext);
     state.nextCursor = normalizeText(response && response.page && response.page.nextCursor);
 
     if (context.count) context.count.textContent = String(state.items.length);
     if (context.title) {
-      context.title.textContent = context.query
-        ? 'Resultados para "' + context.query + '"'
-        : 'Resultados em destaque';
+      context.title.textContent = fallback
+        ? 'Outros anúncios'
+        : context.query
+          ? 'Resultados para "' + context.query + '"'
+          : 'Resultados em destaque';
     }
     if (context.description) {
-      context.description.textContent = state.items.length
-        ? (state.hasNext ? 'Resultados carregados do catálogo oficial. Há mais anúncios disponíveis.' : 'Resultados carregados do catálogo oficial.')
-        : 'Nenhum anúncio aprovado corresponde a esta busca.';
+      context.description.textContent = fallback
+        ? 'Nenhum anúncio correspondeu exatamente a "' + context.query + '". Veja outros serviços disponíveis no catálogo oficial.'
+        : state.items.length
+          ? (state.hasNext ? 'Resultados carregados do catálogo oficial. Há mais anúncios disponíveis.' : 'Resultados carregados do catálogo oficial.')
+          : 'Nenhum anúncio aprovado corresponde a esta busca.';
     }
     if (typeof context.renderActiveChips === 'function') {
       context.renderActiveChips(context.query, context.filters, state.items.length);
@@ -152,6 +162,7 @@
       receivedCount: incoming.length,
       addedCount: additions.length,
       hasNext: state.hasNext,
+      fallbackUsed: fallback,
       authority: response && response.authority || contract.expectedAuthority || 'search-authority-unavailable',
       contractVersion: response && response.contractVersion || contract.version || 'unknown',
       transport: contract.transport || 'unknown',
@@ -186,6 +197,22 @@
     throw error;
   }
 
+  function queryWithEditorialFallback(context, request, append) {
+    return searchApi().queryPage(request).then(function (response) {
+      var directItems = Array.isArray(response && response.items) ? response.items : [];
+      if (append || !normalizeText(context.query) || directItems.length) {
+        return { response: response, request: request, fallback: state.mode === 'fallback' };
+      }
+
+      var fallbackRequest = buildRequest('', context.filters, '');
+      return searchApi().queryPage(fallbackRequest).then(function (fallbackResponse) {
+        var fallbackItems = Array.isArray(fallbackResponse && fallbackResponse.items) ? fallbackResponse.items : [];
+        if (!fallbackItems.length) return { response: response, request: request, fallback: false };
+        return { response: fallbackResponse, request: fallbackRequest, fallback: true };
+      });
+    });
+  }
+
   function execute(context, append) {
     if (!context || !context.grid || typeof context.createCard !== 'function') {
       return Promise.reject(new Error('Contexto de resultados inválido.'));
@@ -193,7 +220,8 @@
     if (append && (!state.hasNext || !state.nextCursor)) return Promise.resolve(state.items.slice());
     if (state.loading && state.inFlight) return state.inFlight;
 
-    var request = buildRequest(context.query, context.filters, append ? state.nextCursor : '');
+    var query = append && state.mode === 'fallback' ? '' : context.query;
+    var request = buildRequest(query, context.filters, append ? state.nextCursor : '');
     var fingerprint = requestFingerprint(request);
     if (append && state.request && requestFingerprint(state.request) !== fingerprint) {
       return Promise.reject(new Error('O contexto da busca mudou antes da próxima página.'));
@@ -204,6 +232,7 @@
       state.context = context;
       state.request = request;
       state.items = [];
+      state.mode = 'direct';
       resetButton(context);
       context.setResultsState('loading');
     }
@@ -214,13 +243,15 @@
 
     var operation;
     try {
-      operation = searchApi().queryPage(request);
+      operation = queryWithEditorialFallback(context, request, append);
     } catch (error) {
       operation = Promise.reject(error);
     }
 
     state.inFlight = Promise.resolve(operation)
-      .then(function (response) { return applySuccess(context, response, append, epoch); })
+      .then(function (result) {
+        return applySuccess(context, result.response, append, epoch, result);
+      })
       .catch(function (error) { return applyFailure(context, error, append, epoch); })
       .finally(function () {
         if (epoch === state.epoch) {
@@ -248,6 +279,7 @@
     state.items = [];
     state.nextCursor = '';
     state.hasNext = false;
+    state.mode = 'direct';
     state.loading = false;
     state.inFlight = null;
   }
@@ -268,6 +300,7 @@
         items: state.items.slice(),
         nextCursor: state.nextCursor,
         hasNext: state.hasNext,
+        mode: state.mode,
         loading: state.loading,
         epoch: state.epoch
       };
