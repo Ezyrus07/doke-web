@@ -1,0 +1,140 @@
+name: Doke SEARCH-A11 Domain Closure
+
+on:
+  pull_request:
+    branches:
+      - 'cat/**'
+      - 'search/**'
+    paths:
+      - 'assets/js/core/supabase-config.js'
+      - 'assets/js/repositories/favorites-repository.js'
+      - 'assets/js/repositories/search-repository.js'
+      - 'assets/js/services/favorites-service.js'
+      - 'assets/js/services/search-service.js'
+      - 'assets/js/components/service-favorites-controller.js'
+      - 'assets/js/pages/search/**'
+      - 'assets/js/pages/resultados-data-controller.js'
+      - 'playwright.config.js'
+      - 'scripts/serve-static-site.js'
+      - 'scripts/audit-search-*.js'
+      - 'scripts/test-search-*.js'
+      - 'scripts/test-favorites-authority-retirement-runtime.js'
+      - 'scripts/test-service-favorites-controller-runtime.js'
+      - 'scripts/apply-search-a11-closure.js'
+      - 'supabase/functions/search-public-services-v2/**'
+      - 'supabase/migrations/158_service_search_contract.sql'
+      - 'supabase/migrations/159_service_search_approved_snapshot_authority.sql'
+      - 'supabase/migrations/160_service_search_ranking_v1.sql'
+      - 'supabase/migrations/161_service_search_ranking_v1_staging_reconciliation.sql'
+      - 'supabase/migrations/162_service_search_ranked_rpc_v2.sql'
+      - 'supabase/migrations/163_service_search_observability_schema_v2.sql'
+      - 'supabase/migrations/164_service_search_observation_recorder_v2.sql'
+      - 'supabase/migrations/165_service_search_observability_calculator_v2.sql'
+      - 'supabase/migrations/166_service_search_observability_operations_v2.sql'
+      - 'supabase/tests/022_service_search_contract_validation.sql'
+      - 'supabase/tests/023_service_search_approved_snapshot_authority_validation.sql'
+      - 'supabase/tests/024_service_search_ranking_v1_validation.sql'
+      - 'supabase/tests/025_service_search_ranking_v1_reconciliation_validation.sql'
+      - 'supabase/tests/026_service_search_ranked_rpc_v2_validation.sql'
+      - 'supabase/tests/027_service_search_observability_v2_contract_validation.sql'
+      - 'supabase/tests/028_service_search_observation_recorder_v2_runtime_validation.sql'
+      - 'supabase/tests/029_service_search_observability_v2_monitoring_validation.sql'
+      - 'config/domain-completion-matrix.json'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'docs/DOKE-ENGINEERING-JOURNAL.md'
+      - 'docs/validation/SEARCH-001-*'
+      - '.github/workflows/search-*.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: doke-search-a11-domain-closure-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  closure:
+    name: Reconcile SEARCH-A01 through SEARCH-A11
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout candidate head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Audit SEARCH-A01 authority baseline
+        run: node scripts/audit-search-authority-baseline.js
+
+      - name: Audit SEARCH-A02 favorites authority
+        run: node scripts/audit-favorites-authority-retirement.js
+
+      - name: Test SEARCH-A02 favorites runtime
+        run: node scripts/test-favorites-authority-retirement-runtime.js
+
+      - name: Audit SEARCH-A03 favorites surfaces
+        run: node scripts/audit-service-favorites-surfaces.js
+
+      - name: Test SEARCH-A03 favorites surfaces runtime
+        run: node scripts/test-service-favorites-controller-runtime.js
+
+      - name: Audit SEARCH-A04 server search contract
+        run: node scripts/audit-search-server-contract.js
+
+      - name: Audit SEARCH-A04 approved snapshot authority
+        run: node scripts/audit-search-approved-snapshot-authority.js
+
+      - name: Test SEARCH-A04 server contract runtime
+        run: node scripts/test-search-server-contract-runtime.js
+
+      - name: Audit SEARCH-A05 server results activation
+        run: node scripts/audit-search-results-server-activation.js
+
+      - name: Test SEARCH-A05 server results runtime
+        run: node scripts/test-search-results-server-surface-runtime.js
+
+      - name: Audit SEARCH-A06 ranking signal baseline
+        run: node scripts/audit-search-ranking-signal-baseline.js
+
+      - name: Audit SEARCH-A07 ranking v1
+        run: node scripts/audit-search-ranking-v1.js
+
+      - name: Test SEARCH-A07 ranking runtime
+        run: node scripts/test-search-ranking-v1-runtime.js
+
+      - name: Audit SEARCH-A08 ranked RPC v2
+        run: node scripts/audit-search-ranked-rpc-v2.js
+
+      - name: Test SEARCH-A08 ranked RPC runtime
+        run: node scripts/test-search-ranked-rpc-v2-runtime.js
+
+      - name: Audit SEARCH-A09 observability
+        run: node scripts/audit-search-observability-v2.js
+
+      - name: Test SEARCH-A09 observability runtime
+        run: node scripts/test-search-observability-v2-runtime.mjs
+
+      - name: Audit SEARCH-A10 browser cutover
+        run: node scripts/audit-search-browser-cutover-v2.js
+
+      - name: Test SEARCH-A10 transport runtime
+        run: node scripts/test-search-browser-cutover-runtime.js
+
+      - name: Audit SEARCH-A11 cumulative closure
+        run: node scripts/audit-search-domain-closure.js
+
+      - name: Validate deterministic domain matrix
+        run: npm run audit:domain-completion-matrix
+
+      - name: Verify clean patch formatting
+        run: git diff --check
