@@ -67,17 +67,27 @@ assert.strictEqual(orderDomain.stagingEvidence, 'staging_operational');
 assert.strictEqual(orderDomain.securityGate, 'partial');
 assert.strictEqual(orderDomain.productionGate, 'blocked');
 
-const a03Closed = fs.existsSync(path.join(root, 'docs/validation/ORD-001-A03-COMMAND-BOUNDARY.json'));
+const a03Path = 'docs/validation/ORD-001-A03-COMMAND-BOUNDARY.json';
+const a04Path = 'docs/validation/ORD-001-A04-READ-AUTHORITY.json';
+const a03Closed = fs.existsSync(path.join(root, a03Path));
+const a04Closed = fs.existsSync(path.join(root, a04Path));
 const blockerIds = new Set((orderDomain.blockers || []).map((blocker) => blocker.id));
 ['ORD-B02', 'ORD-B03', 'ORD-B04'].forEach((id) => {
   assert(blockerIds.has(id), `Active ORD blocker missing: ${id}`);
 });
 if (a03Closed) {
-  const a03 = readJson('docs/validation/ORD-001-A03-COMMAND-BOUNDARY.json');
+  const a03 = readJson(a03Path);
   assert.strictEqual(a03.status, 'complete');
   assert(!blockerIds.has('ORD-B01'), 'Resolved ORD-B01 must be removed after complete A03 evidence.');
 } else {
   assert(blockerIds.has('ORD-B01'), 'Historical ORD-B01 must remain before A03 reconciliation.');
+}
+if (a04Closed) {
+  const a04 = readJson(a04Path);
+  assert.strictEqual(a04.status, 'complete');
+  assert.strictEqual(a04.authority.legacyServiceRole, 'compatibility_facade_only');
+  assert.strictEqual(a04.authority.stagingReadProvider, 'supabase-read');
+  assert.strictEqual(a04.authority.silentReadFallback, false);
 }
 
 assert.strictEqual(evidence.domain, 'ORD-001');
@@ -126,8 +136,14 @@ const findingIds = new Set((evidence.findings || []).map((finding) => finding.id
 ['ORD-A01-F01', 'ORD-A01-F02', 'ORD-A01-F03', 'ORD-A01-F04', 'ORD-A01-F05', 'ORD-A01-F06', 'ORD-A01-F07', 'ORD-A01-F08']
   .forEach((id) => assert(findingIds.has(id), `ORD-A01 finding missing: ${id}`));
 
-assert(legacyService.includes("Doke.mockData.load('orders')"), 'Legacy order service is no longer frozen as mock-only.');
-assert(legacyService.includes('services.orders = Object.freeze'), 'Legacy order service authority is not explicit.');
+if (a04Closed) {
+  assert(!legacyService.includes("Doke.mockData.load('orders')"), 'ORD-A04 must retire mock reads from the legacy facade.');
+  assert(legacyService.includes('isLegacyOrderFacade: true'), 'ORD-A04 compatibility facade marker is missing.');
+  assert(legacyService.includes("provider: 'canonical-compatibility-facade'"), 'ORD-A04 legacy provider identity is missing.');
+} else {
+  assert(legacyService.includes("Doke.mockData.load('orders')"), 'Legacy order service is no longer frozen as mock-only.');
+  assert(legacyService.includes('services.orders = Object.freeze'), 'Legacy order service authority is not explicit.');
+}
 
 if (!a03Closed) {
   [
@@ -143,7 +159,7 @@ if (!a03Closed) {
     "return loadLocal(options)"
   ].forEach((snippet) => assert(repository.includes(snippet), `Orders repository baseline marker missing: ${snippet}`));
 } else {
-  const a03 = readJson('docs/validation/ORD-001-A03-COMMAND-BOUNDARY.json');
+  const a03 = readJson(a03Path);
   assert.strictEqual(a03.status, 'complete');
   assert(repository.includes('DOKE_ORDER_COMMAND_BOUNDARY_REQUIRED'));
   assert(!repository.includes('client.from(REMOTE_TABLE).upsert'));
@@ -200,6 +216,6 @@ console.log('[audit:ord-001-a01-baseline] ok');
 console.log('- matrix entry and sequence frozen');
 console.log('- staging RLS, Edge Functions and crons evidenced');
 console.log('- server state machine and durable event authority present');
-console.log('- browser mock/local/direct-DML authority split confirmed');
+console.log(a04Closed ? '- canonical read authority accepted through complete ORD-A04 evidence' : '- browser mock/local/direct-DML authority split confirmed');
 console.log('- successful dedicated validation evidence frozen');
 console.log('- no staging or production writes authorized by ORD-A01');
