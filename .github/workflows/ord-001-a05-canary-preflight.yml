@@ -1,0 +1,42 @@
+name: Doke ORD-A05 Canary Preflight
+
+on:
+  pull_request:
+    paths:
+      - backend/shared/testing/staging-e2e-scenarios.js
+      - docs/ORD-001-A05-CANARY-PREFLIGHT.md
+      - docs/validation/ORD-001-A05-CANARY-PREFLIGHT.json
+      - scripts/audit-ord-001-a05-canary-preflight.js
+      - scripts/execute-orders-write-canary-staging.js
+      - .github/workflows/ord-001-a01-baseline.yml
+      - .github/workflows/ord-001-a02-personas.yml
+      - .github/workflows/ord-001-a03-command-boundary.yml
+      - .github/workflows/ord-001-a04-read-authority.yml
+      - .github/workflows/ord-001-a05-canary-preflight.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Audit ORD-A05 read-only canary preflight
+        run: node scripts/audit-ord-001-a05-canary-preflight.js
+      - name: Preserve ORD-A01 authority baseline
+        run: node scripts/audit-ord-001-a01-baseline.js
+      - name: Preserve ORD-A02 personas and grants
+        run: node scripts/audit-ord-001-a02-personas.js
+      - name: Preserve ORD-A03 command boundary
+        run: node scripts/audit-ord-001-a03-command-boundary.js && node scripts/test-order-command-boundary-runtime.js
+      - name: Preserve ORD-A04 read authority
+        run: node scripts/audit-ord-001-a04-read-authority.js && node scripts/test-order-read-authority-runtime.js
+      - name: Preserve order state machine
+        run: node scripts/test-order-state-machine-runtime.js
+
+# Read-only gate. It must never provision identities, call staging endpoints or execute mutations.
