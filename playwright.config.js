@@ -1,6 +1,11 @@
 const { defineConfig } = require('@playwright/test');
 
 const executablePath = process.env.DOKE_PLAYWRIGHT_EXECUTABLE_PATH || '';
+const liveSearch = process.env.DOKE_PLAYWRIGHT_LIVE_SEARCH === '1';
+const webServerEnv = {
+  ...process.env,
+  DOKE_E2E_DISABLE_REMOTE_SERVICES: liveSearch ? '0' : '1',
+};
 
 module.exports = defineConfig({
   testDir: './tests',
@@ -29,5 +34,6 @@ module.exports = defineConfig({
     url: 'http://127.0.0.1:5500/index.html',
     reuseExistingServer: !process.env.CI,
     timeout: 10_000,
+    env: webServerEnv,
   },
 });

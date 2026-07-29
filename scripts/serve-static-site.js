@@ -4,7 +4,6 @@ const http = require('http');
 const path = require('path');
 
 const root = process.cwd();
-const args = new Set(process.argv.slice(2));
 const getArg = (name, fallback) => {
   const prefix = `${name}=`;
   const found = process.argv.slice(2).find((arg) => arg.startsWith(prefix));
@@ -13,6 +12,8 @@ const getArg = (name, fallback) => {
 
 const host = getArg('--host', '127.0.0.1');
 const port = Number(getArg('--port', process.env.PORT || '5500'));
+const disableRemoteServicesForE2e = process.env.DOKE_E2E_DISABLE_REMOTE_SERVICES === '1';
+const supabaseConfigPath = path.join(root, 'assets/js/core/supabase-config.js');
 
 const mimeTypes = {
   '.html': 'text/html; charset=utf-8',
@@ -49,6 +50,17 @@ function resolveRequestPath(urlPath) {
   return absolutePath;
 }
 
+function readE2eSafeFile(filePath) {
+  if (!disableRemoteServicesForE2e || filePath !== supabaseConfigPath) return null;
+
+  const source = fs.readFileSync(filePath, 'utf8');
+  const marker = '  servicesEnabled: true,';
+  if (!source.includes(marker)) {
+    throw new Error('Supabase servicesEnabled marker missing from E2E config isolation.');
+  }
+  return source.replace(marker, '  servicesEnabled: false,');
+}
+
 const server = http.createServer((request, response) => {
   const filePath = resolveRequestPath(request.url || '/');
 
@@ -59,10 +71,26 @@ const server = http.createServer((request, response) => {
   }
 
   const ext = path.extname(filePath).toLowerCase();
-  response.writeHead(200, {
+  const headers = {
     'Content-Type': mimeTypes[ext] || 'application/octet-stream',
     'Cache-Control': 'no-store',
-  });
+  };
+
+  try {
+    const isolatedSource = readE2eSafeFile(filePath);
+    if (isolatedSource !== null) {
+      headers['X-Doke-E2E-Remote-Services'] = 'disabled';
+      response.writeHead(200, headers);
+      response.end(isolatedSource);
+      return;
+    }
+  } catch (error) {
+    response.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
+    response.end(error instanceof Error ? error.message : 'E2E config isolation failed.');
+    return;
+  }
+
+  response.writeHead(200, headers);
   fs.createReadStream(filePath).pipe(response);
 });
 
