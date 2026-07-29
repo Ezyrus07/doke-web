@@ -1,0 +1,123 @@
+{
+  "domain": "ORD-001",
+  "sublot": "ORD-A05",
+  "status": "technical_canary_complete",
+  "environment": "staging",
+  "projectRef": "zwkczgewzbsorbrjuzpb",
+  "recordedAt": "2026-07-29T20:14:00-03:00",
+  "authority": {
+    "submittedCommands": "server_command_boundary",
+    "frontendWriteProvider": "api-write-canary-frontend-activation",
+    "frontendReadProvider": "supabase-read",
+    "explicitPersonaPrecedence": true,
+    "directBrowserDml": false,
+    "silentWriteFallback": false,
+    "bearerTokenRequiredBeforeFetch": true,
+    "idempotencyRequired": true
+  },
+  "stagingRollbackCanary": {
+    "syntheticPersonas": 3,
+    "realAccountsUsed": 0,
+    "clientCreateStatus": "requested",
+    "idempotentSameOrder": true,
+    "professionalReadCount": 1,
+    "professionalAcceptStatus": "accepted",
+    "professionalQuoteStatus": "quoted",
+    "quoteAmountCents": 12345,
+    "quoteCurrency": "BRL",
+    "clientCrossSessionStatus": "quoted",
+    "clientVisibleBudgetCount": 1,
+    "thirdPartyVisibleOrders": 0,
+    "thirdPartyVisibleBudgets": 0,
+    "thirdPartyVisibleHistory": 0,
+    "thirdPartyTransition": {
+      "blocked": true,
+      "sqlstate": "42501",
+      "code": "DOKE_ORDER_PARTICIPANT_REQUIRED"
+    },
+    "staleTransition": {
+      "blocked": true,
+      "sqlstate": "40001",
+      "code": "DOKE_ORDER_CONFLICT"
+    },
+    "directDml": {
+      "blocked": true,
+      "sqlstate": "42501"
+    },
+    "ownService": {
+      "blocked": true,
+      "sqlstate": "42501",
+      "code": "DOKE_ORDER_OWN_SERVICE_FORBIDDEN"
+    },
+    "anonymousCreate": {
+      "blocked": true,
+      "sqlstate": "42501"
+    },
+    "durableProjection": {
+      "orderStatus": "quoted",
+      "budgetCount": 1,
+      "historyCount": 3,
+      "eventCount": 3,
+      "metricCount": 3,
+      "notificationCount": 3,
+      "deliveryAttemptsBeforeRollback": 0
+    },
+    "zeroResidue": {
+      "authUsers": 0,
+      "publicUsers": 0,
+      "services": 0,
+      "serviceVersions": 0,
+      "orders": 0,
+      "budgets": 0,
+      "events": 0
+    }
+  },
+  "browserRuntime": {
+    "externalNetworkUsed": false,
+    "clientAndProfessionalContextsSeparated": true,
+    "clientToken": "asserted_not_recorded",
+    "professionalToken": "asserted_not_recorded",
+    "authorizationHeaderRequired": true,
+    "missingTokenOutcome": "DOKE_ORDER_CANARY_AUTH_REQUIRED",
+    "missingTokenFetchCount": 0,
+    "coveredActions": [
+      "create",
+      "accept",
+      "quote"
+    ],
+    "ordersNamespaceOnly": true
+  },
+  "migration": {
+    "path": "supabase/migrations/20260729223000_ord_a05_explicit_persona_precedence.sql",
+    "appliedToStaging": true,
+    "productionApplied": false
+  },
+  "matrix": {
+    "maturity": 4,
+    "userFacingAuthority": "hybrid",
+    "serverAuthority": "canonical",
+    "stagingEvidence": "staging_operational",
+    "securityGate": "partial",
+    "productionGate": "blocked",
+    "frontendActivationBlockerRemaining": true
+  },
+  "manualFollowup": {
+    "realTwoAccountBrowserCanary": "pending",
+    "uiSettlementValidation": "pending",
+    "blocker": "ORD-B02",
+    "nextSublot": "ORD-A06"
+  },
+  "validation": {
+    "gate": "Doke ORD-A05 Command Activation",
+    "headPolicy": "final pull request head",
+    "runReference": "recorded in pull request description",
+    "workflowConclusion": "required_success"
+  },
+  "operationalSafety": {
+    "realRowsMutatedDuringValidation": 0,
+    "syntheticRowsRemaining": 0,
+    "productionChanged": false,
+    "paidProvidersEnabled": false,
+    "mergeAuthorized": false
+  }
+}
