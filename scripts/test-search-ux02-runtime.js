@@ -11,6 +11,9 @@ const surface = read('assets/js/pages/search/server-results-surface.js');
 const homePublicServices = read('assets/js/pages/home/public-services.js');
 const homeFavorites = read('assets/js/pages/home/favorites-surface.js');
 const profileFavorites = read('assets/js/pages/profile/favorites-surface.js');
+const homeManifest = read('assets/css/pages/home.css');
+const homeFavoritesCss = read('assets/css/pages/home/favorites.css');
+const favoriteActionCss = read('assets/css/components/actions/favorite-action.css');
 const migration = read('supabase/migrations/20260729143000_service_search_intent_recovery_v1.sql');
 const noMatchFix = read('supabase/migrations/20260729144500_service_search_intent_no_match_fix.sql');
 
@@ -29,6 +32,16 @@ assert(
 assert(
   card.includes('favorite.dataset.favoriteServiceId = canonicalId'),
   'Favorite buttons must receive the canonical UUID.'
+);
+assert(
+  card.includes('function initialFavoriteState(serviceId)') &&
+    card.includes("favoriteState.active ? ' is-active' : ''") &&
+    card.includes("favorite.setAttribute('aria-pressed', String(favoriteState.active))"),
+  'Cards must paint the known canonical favorite state before hydration.'
+);
+assert(
+  card.includes("options.favoritePreview ? ' doke-ad-card--favorite-preview' : ''"),
+  'Home favorites must opt into a dedicated compact card modifier.'
 );
 assert(
   interactions.includes('resolveCanonicalFavoriteId'),
@@ -62,8 +75,29 @@ assert(
   'Home favorites must create a bounded preview before the professional showcase.'
 );
 assert(
-  homeFavorites.includes('canonicalIds(item)'),
-  'Home favorites must reconcile canonical and public service identifiers.'
+  homeFavorites.includes('canonicalIds(item)') &&
+    homeFavorites.includes('Doke.publicServiceCard.create(item, { favoritePreview: true })'),
+  'Home favorites must reconcile identifiers and render the compact card variant.'
+);
+assert(
+  homeFavorites.includes('home-favorites__count') &&
+    homeFavorites.includes("services.length === 1 ? ' favorito' : ' favoritos'"),
+  'The home favorites action must expose a separated accessible total.'
+);
+assert(
+  homeManifest.includes('./home/favorites.css?v=20260729-search-ux02-v1'),
+  'The home manifest must load the dedicated favorites composition.'
+);
+assert(
+  homeFavoritesCss.includes('grid-auto-flow: column') &&
+    homeFavoritesCss.includes('.doke-ad-card--favorite-preview') &&
+    homeFavoritesCss.includes('grid-auto-columns: minmax(292px, 340px)'),
+  'Home favorites must use a compact horizontal rail instead of a full-width card.'
+);
+assert(
+  !favoriteActionCss.includes('dokeFavoritePop') &&
+    !favoriteActionCss.includes('animation:'),
+  'Favorite hydration must not replay a pop animation or create a blinking heart.'
 );
 assert(
   profileFavorites.includes('function ensurePlacement()') &&
