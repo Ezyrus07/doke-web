@@ -1,0 +1,98 @@
+name: Doke SEARCH-A08 Ranked RPC V2
+
+on:
+  pull_request:
+    branches:
+      - 'cat/**'
+      - 'search/**'
+    paths:
+      - 'supabase/migrations/162_service_search_ranked_rpc_v2.sql'
+      - 'supabase/tests/026_service_search_ranked_rpc_v2_validation.sql'
+      - 'scripts/audit-search-ranked-rpc-v2.js'
+      - 'scripts/test-search-ranked-rpc-v2-runtime.js'
+      - 'docs/validation/SEARCH-001-A08-RANKED-RPC-V2.json'
+      - '.github/workflows/search-ranked-rpc-v2.yml'
+      - 'supabase/migrations/160_service_search_ranking_v1.sql'
+      - 'supabase/migrations/161_service_search_ranking_v1_staging_reconciliation.sql'
+      - 'docs/validation/SEARCH-001-A07-RANKING-V1.json'
+      - 'docs/validation/SEARCH-001-A05-SERVER-RESULTS-ACTIVATION.json'
+      - 'config/domain-completion-matrix.json'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+  push:
+    branches:
+      - 'search/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: doke-search-a08-ranked-rpc-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  search-ranked-rpc-v2:
+    name: Audit version-bound ranked RPC v2
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout candidate tree
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Audit SEARCH-A01 authority baseline
+        run: node scripts/audit-search-authority-baseline.js
+
+      - name: Audit SEARCH-A02 favorites authority
+        run: node scripts/audit-favorites-authority-retirement.js
+
+      - name: Test SEARCH-A02 favorites runtime
+        run: node scripts/test-favorites-authority-retirement-runtime.js
+
+      - name: Audit SEARCH-A03 favorite surfaces
+        run: node scripts/audit-service-favorites-surfaces.js
+
+      - name: Test SEARCH-A03 favorite surfaces runtime
+        run: node scripts/test-service-favorites-controller-runtime.js
+
+      - name: Audit SEARCH-A04 server search contract
+        run: node scripts/audit-search-server-contract.js
+
+      - name: Audit SEARCH-A04 approved snapshot authority
+        run: node scripts/audit-search-approved-snapshot-authority.js
+
+      - name: Test SEARCH-A04 server contract runtime
+        run: node scripts/test-search-server-contract-runtime.js
+
+      - name: Audit SEARCH-A05 server results activation
+        run: node scripts/audit-search-results-server-activation.js
+
+      - name: Test SEARCH-A05 server results runtime
+        run: node scripts/test-search-results-server-surface-runtime.js
+
+      - name: Audit SEARCH-A06 ranking signal baseline
+        run: node scripts/audit-search-ranking-signal-baseline.js
+
+      - name: Audit SEARCH-A07 ranking v1 contract
+        run: node scripts/audit-search-ranking-v1.js
+
+      - name: Test SEARCH-A07 ranking v1 runtime
+        run: node scripts/test-search-ranking-v1-runtime.js
+
+      - name: Audit SEARCH-A08 ranked RPC v2 contract
+        run: node scripts/audit-search-ranked-rpc-v2.js
+
+      - name: Test SEARCH-A08 ranked RPC v2 runtime
+        run: node scripts/test-search-ranked-rpc-v2-runtime.js
+
+      - name: Verify clean patch formatting
+        run: git diff --check
