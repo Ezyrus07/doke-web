@@ -79,7 +79,9 @@ begin
     raise exception 'SEARCH-A08 signed cursor did not round-trip exactly';
   end if;
 
-  v_tampered := pg_catalog.overlay(v_cursor placing case when pg_catalog.substr(v_cursor, 1, 1) = 'A' then 'B' else 'A' end from 1 for 1);
+  v_tampered := (
+    case when pg_catalog.substr(v_cursor, 1, 1) = 'A' then 'B' else 'A' end
+  ) || pg_catalog.substr(v_cursor, 2);
   begin
     perform private.decode_service_search_cursor_v2(v_tampered);
     raise exception 'SEARCH-A08 accepted a tampered cursor';
