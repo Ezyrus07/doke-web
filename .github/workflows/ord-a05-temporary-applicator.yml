@@ -1,0 +1,189 @@
+name: Temporary ORD-A05 Applicator
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/ord-a05-temporary-applicator.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Apply runtime and matrix changes
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          import pathlib
+          import re
+
+          service_path = pathlib.Path('assets/js/services/orders-service.js')
+          source = service_path.read_text(encoding='utf-8')
+
+          token_pattern = re.compile(r"  function getSessionToken\(\) \{.*?\n  \}\n\n  function extractIdempotencyKey", re.S)
+          token_replacement = r'''  function normalizeSessionAccessToken(value) {
+            var session = value && value.data && value.data.session
+              ? value.data.session
+              : value && value.session
+                ? value.session
+                : value || {};
+            return normalizeText(session.access_token || session.accessToken || session.token || '');
+          }
+
+          function getSessionToken() {
+            var canonicalSession = Doke.session && typeof Doke.session.getSession === 'function'
+              ? Doke.session
+              : null;
+            var canonicalToken = Promise.resolve('');
+            if (canonicalSession) {
+              try {
+                canonicalToken = Promise.resolve(canonicalSession.getSession())
+                  .then(normalizeSessionAccessToken)
+                  .catch(function () { return ''; });
+              } catch (error) {
+                canonicalToken = Promise.resolve('');
+              }
+            }
+
+            return canonicalToken.then(function (token) {
+              if (token) return token;
+              if (root.DokeAuth && typeof root.DokeAuth.getAccessToken === 'function') {
+                return Promise.resolve(root.DokeAuth.getAccessToken())
+                  .then(function (value) { return normalizeText(value); })
+                  .catch(function () { return ''; });
+              }
+              return '';
+            }).then(function (token) {
+              if (token) return token;
+              var client = root.DokeSupabase && typeof root.DokeSupabase.getClient === 'function'
+                ? root.DokeSupabase.getClient()
+                : null;
+              if (client && client.auth && typeof client.auth.getSession === 'function') {
+                return Promise.resolve(client.auth.getSession())
+                  .then(normalizeSessionAccessToken)
+                  .catch(function () { return ''; });
+              }
+              return '';
+            });
+          }
+
+          function extractIdempotencyKey'''
+          source, count = token_pattern.subn(token_replacement, source, count=1)
+          if count != 1:
+            raise SystemExit('Could not replace getSessionToken contract exactly once.')
+
+          request_old = """    return getSessionToken().then(function (token) {
+                var headers = {
+                  Accept: 'application/json',
+                  'Content-Type': 'application/json',
+                  'x-idempotency-key': idempotencyKey
+                };
+                if (token) headers.Authorization = 'Bearer ' + token;
+
+                return root.fetch(baseUrl + path, {"""
+          request_new = """    return getSessionToken().then(function (token) {
+                if (!token) {
+                  var authError = new Error('A sessão autenticada é obrigatória para o canário de pedidos.');
+                  authError.code = 'DOKE_ORDER_CANARY_AUTH_REQUIRED';
+                  document.dispatchEvent(new CustomEvent('doke:order-command-failed', {
+                    detail: {
+                      command: path,
+                      code: authError.code,
+                      message: authError.message,
+                      provider: ORDERS_WRITE_CANARY_PROVIDER
+                    }
+                  }));
+                  throw authError;
+                }
+                var headers = {
+                  Accept: 'application/json',
+                  'Content-Type': 'application/json',
+                  'x-idempotency-key': idempotencyKey
+                };
+                headers.Authorization = 'Bearer ' + token;
+
+                return root.fetch(baseUrl + path, {"""
+          if request_old not in source:
+            raise SystemExit('Could not find ordersWriteCanaryRequest authentication block.')
+          source = source.replace(request_old, request_new, 1)
+
+          quote_old = """    return saveStatus(orderId, 'quoted', 'Proposta enviada', {
+                amount: normalizeText(payload.amount || payload.budget || ''),"""
+          quote_new = """    return saveStatus(orderId, 'quoted', 'Proposta enviada', {
+                idempotencyKey: extractIdempotencyKey(payload),
+                amount: normalizeText(payload.amount || payload.budget || ''),"""
+          if quote_old not in source:
+            raise SystemExit('Could not find quote action block.')
+          source = source.replace(quote_old, quote_new, 1)
+          service_path.write_text(source, encoding='utf-8')
+
+          package_path = pathlib.Path('package.json')
+          package = json.loads(package_path.read_text(encoding='utf-8'))
+          package.setdefault('scripts', {})['audit:ord-001-a05-command-activation'] = 'node scripts/audit-ord-001-a05-command-activation.js'
+          package['scripts']['test:order-command-activation-runtime'] = 'node scripts/test-order-command-activation-runtime.js'
+          package_path.write_text(json.dumps(package, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+
+          matrix_path = pathlib.Path('config/domain-completion-matrix.json')
+          matrix = json.loads(matrix_path.read_text(encoding='utf-8'))
+          matrix['version'] = '1.3.16'
+          matrix['updatedAt'] = '2026-07-29T20:14:00-03:00'
+          ord_domain = next(domain for domain in matrix['domains'] if domain['id'] == 'ORD-001')
+
+          required = [
+            'docs/ORD-001-COMMAND-ACTIVATION-CANARY.md',
+            'docs/validation/ORD-001-A05-COMMAND-ACTIVATION.json',
+            'scripts/audit-ord-001-a05-command-activation.js',
+            'scripts/test-order-command-activation-runtime.js',
+            'supabase/migrations/20260729223000_ord_a05_explicit_persona_precedence.sql'
+          ]
+          for item in required:
+            if item not in ord_domain['requiredPaths']:
+              ord_domain['requiredPaths'].append(item)
+
+          tests = [
+            'audit:ord-001-a05-command-activation',
+            'test:order-command-activation-runtime'
+          ]
+          for item in tests:
+            if item not in ord_domain['tests']:
+              ord_domain['tests'].append(item)
+
+          evidence = [
+            'ORD-A05 proved request, accept and quote across isolated client/professional personas in a rolled-back staging transaction, with third-party denial, optimistic conflict and zero residue.',
+            'The frontend write canary now requires the canonical bearer token before fetch and preserves idempotency for create, accept and quote actions.',
+            'The real two-account browser and UI settlement canary remains pending, so user-facing authority stays hybrid and ORD-B02 remains open.'
+          ]
+          for item in evidence:
+            if item not in ord_domain['evidence']:
+              ord_domain['evidence'].append(item)
+
+          blocker = next(item for item in ord_domain['blockers'] if item['id'] == 'ORD-B02')
+          blocker['description'] = 'Synthetic rolled-back client/professional/third-party canary and bearer-authenticated frontend runtimes passed. ORD-B02 remains until two authorized real accounts complete the browser cross-device command and UI settlement canary.'
+          ord_domain['nextActions'] = [
+            'Run ORD-A06 with two explicitly authorized test accounts in separate browser or device contexts and validate request, accept, quote, conflict and UI settlement.',
+            'Harden worker invocation freshness and replay resistance.',
+            'Connect order transitions to messaging, scheduling and payment authorities.'
+          ]
+
+          matrix_path.write_text(json.dumps(matrix, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+          PY
+          node scripts/audit-domain-completion-matrix.js --write
+          git rm .github/workflows/ord-a05-temporary-applicator.yml
+          git add assets/js/services/orders-service.js package.json config/domain-completion-matrix.json docs/DOMAIN-COMPLETION-MATRIX.md
+          git add -f reports/generated/domain-completion-matrix-report.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Complete ORD-A05 runtime and matrix reconciliation"
+          git push origin HEAD:${{ github.event.pull_request.head.ref || github.ref_name }}
