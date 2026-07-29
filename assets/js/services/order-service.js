@@ -1,43 +1,50 @@
+/* Doke legacy order-service compatibility facade.
+   Responsibility: delegate old consumers to the canonical orders-service.
+   This file must never become a mock or persistence authority. */
 (function () {
   'use strict';
 
   var Doke = window.Doke || (window.Doke = {});
   var services = Doke.services || (Doke.services = {});
+  var facade = null;
 
-  function loadOrders() {
-    if (!Doke.mockData || typeof Doke.mockData.load !== 'function') return Promise.resolve([]);
-    return Doke.mockData.load('orders');
+  function canonicalService() {
+    var api = services.orders;
+    if (api && api !== facade && api.isCanonicalOrderService === true) return api;
+
+    var error = new Error('O serviço canônico de pedidos ainda não está disponível nesta página.');
+    error.code = 'DOKE_CANONICAL_ORDERS_SERVICE_UNAVAILABLE';
+    document.dispatchEvent(new CustomEvent('doke:orders-service-unavailable', {
+      detail: { code: error.code, source: 'order-service-compatibility-facade' }
+    }));
+    throw error;
   }
 
-  function list(filters) {
-    filters = filters || {};
-    return loadOrders().then(function (orders) {
-      return (orders || []).filter(function (order) {
-        if (filters.status && order.status !== filters.status) return false;
-        if (filters.clientId && order.clientId !== filters.clientId) return false;
-        if (filters.professionalId && order.professionalId !== filters.professionalId) return false;
-        return true;
-      });
-    });
+  function invoke(method, args) {
+    try {
+      var api = canonicalService();
+      if (typeof api[method] !== 'function') {
+        var unsupported = new Error('O serviço canônico de pedidos não implementa ' + method + '().');
+        unsupported.code = 'DOKE_CANONICAL_ORDERS_METHOD_UNAVAILABLE';
+        throw unsupported;
+      }
+      return Promise.resolve(api[method].apply(api, args || []));
+    } catch (error) {
+      return Promise.reject(error);
+    }
   }
 
-  function getById(orderId) {
-    return loadOrders().then(function (orders) {
-      return (orders || []).find(function (order) { return order.id === orderId; }) || null;
-    });
-  }
+  facade = Object.freeze({
+    provider: 'canonical-compatibility-facade',
+    isLegacyOrderFacade: true,
+    list: function (filters) { return invoke('list', [filters || {}]); },
+    listForCurrentUser: function (filters) { return invoke('listForCurrentUser', [filters || {}]); },
+    getById: function (orderId) { return invoke('getById', [orderId]); },
+    summary: function (filters) { return invoke('summary', [filters || {}]); },
+    create: function (payload) { return invoke('create', [payload || {}]); },
+    updateStatus: function (orderId, status, options) { return invoke('updateStatus', [orderId, status, options || {}]); }
+  });
 
-  function summary() {
-    return loadOrders().then(function (orders) {
-      return (orders || []).reduce(function (result, order) {
-        result.total += 1;
-        result.byStatus[order.status] = (result.byStatus[order.status] || 0) + 1;
-        return result;
-      }, { total: 0, byStatus: {} });
-    });
-  }
-
-  if (!services.orders || typeof services.orders.create !== 'function') {
-    services.orders = Object.freeze({ list: list, getById: getById, summary: summary });
-  }
+  if (!services.orders || services.orders.isLegacyOrderFacade === true) services.orders = facade;
+  services.order = facade;
 })();
