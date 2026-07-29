@@ -180,15 +180,15 @@ values
     'bounded_quality_v1',
     pg_catalog.jsonb_build_object(
       'weights', pg_catalog.jsonb_build_object(
-        'text', 0.65,
+        'text', 0.68,
         'reviews', 0.20,
-        'availability', 0.05,
-        'recency', 0.10
+        'availability', 0.07,
+        'recency', 0.05
       ),
-      'reviewPrior', pg_catalog.jsonb_build_object('mean', 4.0, 'weight', 5),
+      'reviewPrior', pg_catalog.jsonb_build_object('mean', 4.2, 'weight', 5),
       'availabilityWindowDays', 14,
       'recencyFullDays', 14,
-      'recencyZeroDays', 90,
+      'recencyZeroDays', 120,
       'behavioralSignalsEnabled', false,
       'scorePrecision', 8
     )
