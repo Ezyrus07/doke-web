@@ -3,332 +3,50 @@ name: Doke ORD-A02 Personas and Grants
 on:
   pull_request:
     paths:
-      - assets/js/repositories/orders-repository.js
-      - assets/js/services/orders-service.js
-      - backend/modules/orders/orders-service.js
+      - docs/ORD-001-AUTHORITY-BASELINE.md
+      - docs/ORD-001-PERSONAS-AND-GRANTS.md
+      - docs/validation/ORD-001-A01-BASELINE.json
+      - docs/validation/ORD-001-A02-PERSONAS.json
+      - scripts/audit-ord-001-a01-baseline.js
+      - scripts/audit-ord-001-a02-personas.js
+      - scripts/test-order-state-machine-contract.js
+      - scripts/test-order-state-machine-runtime.js
+      - scripts/test-order-transaction-events-contract.js
+      - scripts/test-order-event-worker-contract.js
+      - scripts/test-order-event-worker-runtime.mjs
+      - scripts/test-order-incident-escalation-contract.js
+      - scripts/test-order-operational-postmortems-contract.js
+      - supabase/functions/order-event-worker/**
+      - supabase/migrations/010_orders_shared_runtime.sql
+      - supabase/migrations/066_order_operational_incident_schema.sql
+      - supabase/migrations/076_order_operational_postmortems_slos.sql
+      - supabase/migrations/20260729190500_ord_a02_trigger_only_grants.sql
       - .github/workflows/ord-001-a02-personas.yml
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  align-ord-a03-capability:
+  personas-and-grants:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          ref: ord/ord-001-baseline-audit
-          fetch-depth: 0
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.13'
-      - name: Align relationship-derived capability and clean source formatting
+          node-version: 24
+      - name: Validate cumulative ORD-A01 baseline
+        run: node scripts/audit-ord-001-a01-baseline.js
+      - name: Validate ORD-A02 personas and grants
+        run: node scripts/audit-ord-001-a02-personas.js
+      - name: Validate canonical order state and event contracts
         run: |
-          python - <<'PY'
-          from pathlib import Path
-          import re
-
-          def read(path): return Path(path).read_text(encoding='utf-8')
-          def write(path, source): Path(path).write_text(source, encoding='utf-8')
-          def replace_once(source, old, new, label):
-              count = source.count(old)
-              if count != 1:
-                  raise SystemExit(f'{label}: expected one match, found {count}')
-              return source.replace(old, new, 1)
-
-          path = 'assets/js/repositories/orders-repository.js'
-          source = read(path)
-          source = replace_once(source, """  function commandBoundaryError(operation) {
-            var error = new Error('Pedidos enviados devem usar o command boundary canônico.');
-            error.code = 'DOKE_ORDER_COMMAND_BOUNDARY_REQUIRED';
-            error.operation = operation || 'write';
-            return error;
-          }
-
-          function saveRemote() {
-            return Promise.reject(commandBoundaryError('save'));
-          }
-
-          function synchronizePending(items) {
-            // Legacy pending snapshots are never replayed automatically. A remote
-            // failure must be surfaced by the command caller instead of becoming
-            // an eventual local success.
-            return Promise.resolve(items || []);
-          }
-""", """  function commandBoundaryError(operation) {
-    var error = new Error('Pedidos enviados devem usar o command boundary canônico.');
-    error.code = 'DOKE_ORDER_COMMAND_BOUNDARY_REQUIRED';
-    error.operation = operation || 'write';
-    return error;
-  }
-
-  function saveRemote() {
-    return Promise.reject(commandBoundaryError('save'));
-  }
-
-  function synchronizePending(items) {
-    // Legacy pending snapshots are never replayed automatically. A remote
-    // failure must be surfaced by the command caller instead of becoming
-    // an eventual local success.
-    return Promise.resolve(items || []);
-  }
-""", 'repository command formatting')
-          source = replace_once(source, """    var localDrafts = readLocal().filter(function (item) {
-              return normalizeStatus(item && item.status) === 'draft' || item && item.syncStatus === 'local-draft';
-            });
-            return fetchRemoteOrders().then(function (remote) {
-              cache = mergeById(localDrafts, remote);
-              return clone(cache);
-            }).catch(function (error) {
-              warnRemote(error, 'leitura');
-              return loadLocal(options);
-            });
-""", """    var localDrafts = readLocal().filter(function (item) {
-      return normalizeStatus(item && item.status) === 'draft' || item && item.syncStatus === 'local-draft';
-    });
-    return fetchRemoteOrders().then(function (remote) {
-      cache = mergeById(localDrafts, remote);
-      return clone(cache);
-    }).catch(function (error) {
-      warnRemote(error, 'leitura');
-      return loadLocal(options);
-    });
-""", 'repository load formatting')
-          source = replace_once(source, """  function save(order) {
-            var normalized = normalizeOrder(order);
-            if (normalizeStatus(normalized.status) !== 'draft') {
-              return Promise.reject(commandBoundaryError('save'));
-            }
-            return saveLocal(normalized, 'local-draft');
-          }
-
-          function saveMock(order) {
-            return saveLocal(normalizeOrder(order), 'mock');
-          }
-
-          function remove(orderId) {
-            var id = normalizeText(orderId);
-            var draft = readLocal().find(function (item) {
-              return String(item.id) === id && (normalizeStatus(item.status) === 'draft' || item.syncStatus === 'local-draft');
-            });
-            if (!draft) return Promise.reject(commandBoundaryError('remove'));
-            return removeLocal(id);
-          }
-
-          function removeMock(orderId) {
-            return removeLocal(orderId);
-          }
-""", """  function save(order) {
-    var normalized = normalizeOrder(order);
-    if (normalizeStatus(normalized.status) !== 'draft') {
-      return Promise.reject(commandBoundaryError('save'));
-    }
-    return saveLocal(normalized, 'local-draft');
-  }
-
-  function saveMock(order) {
-    return saveLocal(normalizeOrder(order), 'mock');
-  }
-
-  function remove(orderId) {
-    var id = normalizeText(orderId);
-    var draft = readLocal().find(function (item) {
-      return String(item.id) === id && (normalizeStatus(item.status) === 'draft' || item.syncStatus === 'local-draft');
-    });
-    if (!draft) return Promise.reject(commandBoundaryError('remove'));
-    return removeLocal(id);
-  }
-
-  function removeMock(orderId) {
-    return removeLocal(orderId);
-  }
-
-""", 'repository write formatting')
-          write(path, source)
-
-          path = 'assets/js/services/orders-service.js'
-          source = read(path)
-          source = replace_once(source, """
-          function assertOrderCommandProviderAvailable(command) {
-            var status = getOrdersProviderStatus();
-            if (status.requestedProvider === 'api' && !status.ordersApiActive && !status.ordersWriteCanaryActive) {
-              var error = new Error('O servidor de pedidos está indisponível. Nenhuma alteração foi salva localmente.');
-              error.code = 'DOKE_ORDER_COMMAND_BOUNDARY_UNAVAILABLE';
-              error.command = command || 'order-command';
-              document.dispatchEvent(new CustomEvent('doke:order-command-failed', {
-                detail: { command: error.command, code: error.code, message: error.message }
-              }));
-              throw error;
-            }
-            return status;
-          }
-""", """
-  function assertOrderCommandProviderAvailable(command) {
-    var status = getOrdersProviderStatus();
-    if (status.requestedProvider === 'api' && !status.ordersApiActive && !status.ordersWriteCanaryActive) {
-      var error = new Error('O servidor de pedidos está indisponível. Nenhuma alteração foi salva localmente.');
-      error.code = 'DOKE_ORDER_COMMAND_BOUNDARY_UNAVAILABLE';
-      error.command = command || 'order-command';
-      document.dispatchEvent(new CustomEvent('doke:order-command-failed', {
-        detail: { command: error.command, code: error.code, message: error.message }
-      }));
-      throw error;
-    }
-    return status;
-  }
-""", 'service provider formatting')
-          audit_anchor = """  function auditSecurity(action, result, metadata) {
-    var security = getSecurity();
-    if (security && typeof security.auditSecurityEvent === 'function') {
-      security.auditSecurityEvent(Object.assign({
-        type: 'orders_security',
-        action: action,
-        result: result,
-        resource: 'order'
-      }, metadata || {}));
-    }
-  }
-"""
-          capability = audit_anchor + """
-  function resolveOrderCapability(actor, order) {
-    if (!actor || !actor.id || !order) return '';
-    var role = normalizeText(actor.role || '').toLowerCase();
-    if (role === 'admin' || role === 'support') return role;
-    if (String(order.clientId || order.client_id || '') === String(actor.id)) return 'client';
-    if (String(order.professionalId || order.providerId || order.professional_id || '') === String(actor.id)) return 'professional';
-    return '';
-  }
-"""
-          source = replace_once(source, audit_anchor, capability, 'frontend capability helper')
-          source = replace_once(source, """  function canActorReadOrder(actor, order) {
-    if (!actor || !actor.id || !order) return false;
-    if (actor.role === 'admin' || actor.role === 'support') return true;
-    if (actor.role === 'professional') return canProfessionalActOnOrder(actor, order);
-    if (actor.role === 'client') return isOrderClient(actor, order);
-    return false;
-  }
-""", """  function canActorReadOrder(actor, order) {
-    return Boolean(resolveOrderCapability(actor, order));
-  }
-""", 'frontend read capability')
-          source = replace_once(source, """  function assertOrderTransitionAccess(actor, order, nextStatus) {
-    var security = getSecurity();
-    if (security && typeof security.assertOrderTransition === 'function') {
-      return security.assertOrderTransition(actor || getCurrentUser() || {}, order || {}, nextStatus || 'pending');
-    }
-    return canActorTransition(actor, order, nextStatus);
-  }
-""", """  function assertOrderTransitionAccess(actor, order, nextStatus) {
-    var currentActor = actor || getCurrentUser() || {};
-    var capability = resolveOrderCapability(currentActor, order || {});
-    var scopedActor = Object.assign({}, currentActor, { role: capability || currentActor.role || 'guest' });
-    var security = getSecurity();
-    if (security && typeof security.assertOrderTransition === 'function') {
-      return security.assertOrderTransition(scopedActor, order || {}, nextStatus || 'pending');
-    }
-    return canActorTransition(scopedActor, order, nextStatus);
-  }
-""", 'frontend transition assertion')
-          source = replace_once(source, """    var role = normalizeText(actor && actor.role || '').toLowerCase();
-    if (!targetStatus || currentStatus === targetStatus) return false;
-""", """    var role = resolveOrderCapability(actor || {}, order || {});
-    if (!targetStatus || currentStatus === targetStatus) return false;
-""", 'frontend transition role')
-          source = replace_once(source, """    var allowed = getAllowedTransitions(currentStatus, normalizeText(actor && actor.role || '').toLowerCase());
-""", """    var allowed = getAllowedTransitions(currentStatus, resolveOrderCapability(actor || {}, order || {}));
-""", 'frontend transition error capability')
-          source = replace_once(source, """  function canActorTransition(actor, order, nextStatus) {
-    if (!actor || !actor.id) return false;
-    if (actor.role === 'professional') {
-      if (!canProfessionalActOnOrder(actor, order)) return false;
-      return ['accepted', 'quoted', 'in_progress', 'cancelled'].indexOf(normalizeStatusToken(nextStatus)) !== -1;
-    }
-    if (actor.role === 'client') {
-      if (!isOrderClient(actor, order)) return false;
-      return ['in_progress', 'completed', 'cancelled'].indexOf(nextStatus) !== -1;
-    }
-    return false;
-  }
-""", """  function canActorTransition(actor, order, nextStatus) {
-    var capability = resolveOrderCapability(actor, order);
-    if (capability === 'professional') {
-      return ['accepted', 'quoted', 'in_progress', 'cancelled'].indexOf(normalizeStatusToken(nextStatus)) !== -1;
-    }
-    if (capability === 'client') {
-      return ['in_progress', 'completed', 'cancelled'].indexOf(normalizeStatusToken(nextStatus)) !== -1;
-    }
-    return false;
-  }
-""", 'frontend relationship transition')
-          api_guard = """      if (!['admin', 'support'].includes(String(actor.role || '').toLowerCase())) {
-        var roleAllowedStatuses = actor.role === 'professional'
-          ? ['accepted', 'conversation', 'quoted', 'in_progress', 'cancelled']
-          : actor.role === 'client'
-            ? ['in_progress', 'completed', 'cancelled']
-            : [];
-        if (roleAllowedStatuses.indexOf(normalizedStatus) === -1) {
-          auditSecurity('api_transition_denied', 'denied', { actor: actor, resourceId: orderId, reason: 'role_status_mismatch' });
-          throw new Error('Você não tem permissão para alterar este pedido.');
-        }
-      }
-
-"""
-          source = replace_once(source, api_guard, """      // The server derives client/professional capability from the order relationship.
-      // The browser must not deny a valid command based only on the account's primary role.
-
-""", 'remove fixed-role API guard')
-          write(path, source)
-
-          path = 'backend/modules/orders/orders-service.js'
-          source = read(path)
-          source = replace_once(source, """  if (!isInternal(safeActor)) {
-    if (safeActor.role === 'client') query = query.eq('client_id', safeActor.id);
-    if (safeActor.role === 'professional') query = query.eq('professional_id', safeActor.id);
-  }
-""", """  // Participant scoping is owned by RLS. Do not narrow by the account's
-  // primary role because a professional account may also be the client.
-""", 'backend list relationship scope')
-          backend_anchor = """function assertOrderAccess(order, actor) {
-  const safeActor = requireActor(actor);
-  if (isInternal(safeActor)) return true;
-  if (safeActor.role === 'client' && order.client_id === safeActor.id) return true;
-  if (safeActor.role === 'professional' && order.professional_id === safeActor.id) return true;
-  throw forbidden('Order is outside the current user scope.');
-}
-"""
-          backend_replacement = """function resolveOrderCapability(order, actor) {
-  const safeActor = requireActor(actor);
-  if (isInternal(safeActor)) return String(safeActor.role || '').toLowerCase();
-  if (String(order && order.client_id || '') === String(safeActor.id)) return 'client';
-  if (String(order && order.professional_id || '') === String(safeActor.id)) return 'professional';
-  return '';
-}
-
-function assertOrderAccess(order, actor) {
-  if (resolveOrderCapability(order, actor)) return true;
-  throw forbidden('Order is outside the current user scope.');
-}
-"""
-          source = replace_once(source, backend_anchor, backend_replacement, 'backend capability helper')
-          source = replace_once(source, """    actorRole: actor && actor.role,
-""", """    actorRole: resolveOrderCapability(order, actor) || actor && actor.role,
-""", 'backend transition capability')
-          write(path, source)
-          PY
-      - name: Validate and commit capability alignment
+          node scripts/test-order-state-machine-contract.js
+          node scripts/test-order-state-machine-runtime.js
+          node scripts/test-order-transaction-events-contract.js
+          node scripts/test-order-event-worker-contract.js
+          node scripts/test-order-event-worker-runtime.mjs
+      - name: Validate incident trigger consumers
         run: |
-          node --check assets/js/repositories/orders-repository.js
-          node --check assets/js/services/orders-service.js
-          node --check backend/modules/orders/orders-service.js
-          grep -q "resolveOrderCapability" assets/js/services/orders-service.js
-          grep -q "resolveOrderCapability" backend/modules/orders/orders-service.js
-          if git diff --quiet; then
-            echo "No changes to commit"
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add assets/js/repositories/orders-repository.js assets/js/services/orders-service.js backend/modules/orders/orders-service.js
-          git commit -m "Align ORD-A03 capabilities with order relationships"
-          git push origin HEAD:ord/ord-001-baseline-audit
+          node scripts/test-order-incident-escalation-contract.js
+          node scripts/test-order-operational-postmortems-contract.js
