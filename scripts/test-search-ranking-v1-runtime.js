@@ -19,10 +19,10 @@ const configs = Object.freeze({
     scorePrecision: 8
   }),
   'search-rank-v1': Object.freeze({
-    weights: Object.freeze({ text: 0.65, reviews: 0.20, availability: 0.05, recency: 0.10 }),
-    reviewPrior: Object.freeze({ mean: 4, weight: 5 }),
+    weights: Object.freeze({ text: 0.68, reviews: 0.20, availability: 0.07, recency: 0.05 }),
+    reviewPrior: Object.freeze({ mean: 4.2, weight: 5 }),
     recencyFullDays: 14,
-    recencyZeroDays: 90,
+    recencyZeroDays: 120,
     behavioralSignalsEnabled: false,
     scorePrecision: 8
   })
@@ -103,7 +103,7 @@ function assertBayesianSmoothing() {
 function assertAvailabilityCap() {
   const withoutAvailability = computeRankingScore('search-rank-v1', baseInput({ hasAvailableSlot: false }));
   const withAvailability = computeRankingScore('search-rank-v1', baseInput({ hasAvailableSlot: true }));
-  assert(Math.abs((withAvailability - withoutAvailability) - 0.05) < 1e-7, 'availability contribution must be exactly capped at 0.05');
+  assert(Math.abs((withAvailability - withoutAvailability) - 0.07) < 1e-7, 'availability contribution must be exactly capped at 0.07');
 }
 
 function assertRecencyCap() {
@@ -111,7 +111,7 @@ function assertRecencyCap() {
   const dayTen = computeRankingScore('search-rank-v1', baseInput({ approvedAt: new Date('2026-07-18T12:00:00Z') }));
   const old = computeRankingScore('search-rank-v1', baseInput({ approvedAt: new Date('2025-12-01T12:00:00Z') }));
   assert.strictEqual(dayOne, dayTen, 'fourteen-day recency full-credit window must be flat');
-  assert(dayOne - old <= 0.1000001, 'recency contribution cannot exceed 0.10');
+  assert(dayOne - old <= 0.0500001, 'recency contribution cannot exceed 0.05');
 }
 
 function assertWeightContract() {
