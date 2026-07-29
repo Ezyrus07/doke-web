@@ -1,0 +1,166 @@
+name: Apply canonical favorite surfaces once
+
+on:
+  pull_request:
+    branches:
+      - ux/search-results-skeleton
+    paths:
+      - .github/workflows/apply-favorite-surfaces-once.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.event.pull_request.head.ref == 'search/search-ux02-intent-favorites'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: search/search-ux02-intent-favorites
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Apply favorite surfaces
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          profile_path = Path('meu-perfil.html')
+          profile = profile_path.read_text(encoding='utf-8')
+
+          tabs_pattern = re.compile(
+              r'(\s*<nav class="profile-tabs client-profile-tabs" aria-label="Seções do perfil">)'
+              r'.*?'
+              r'(\s*</nav>)',
+              re.S,
+          )
+          tabs_replacement = '''
+              <nav class="profile-tabs client-profile-tabs" aria-label="Seções do perfil">
+                <a class="profile-tabs__item doke-tab-pill" href="#profile-achievements" aria-controls="profile-achievements">Conquistas</a>
+                <a class="profile-tabs__item doke-tab-pill" href="#profile-about" aria-controls="profile-about">Sobre</a>
+                <a class="profile-tabs__item doke-tab-pill" href="#profile-favorites" aria-controls="profile-favorites">Favoritos</a>
+              </nav>'''
+          profile, tabs_count = tabs_pattern.subn(tabs_replacement, profile, count=1)
+          if tabs_count != 1:
+              raise SystemExit('profile tabs were not reconciled')
+
+          favorite_pattern = re.compile(
+              r'\s*<section id="profile-favorites" class="profile-area profile-area--favorites doke-page-section"'
+              r'.*?</section>\s*',
+              re.S,
+          )
+          favorite_match = favorite_pattern.search(profile)
+          if not favorite_match:
+              raise SystemExit('profile favorites section not found')
+          favorite_block = favorite_match.group(0).strip()
+          profile = favorite_pattern.sub('\n', profile, count=1)
+
+          feed_close = '''              </section>
+            </section>
+          </main>'''
+          if feed_close not in profile:
+              raise SystemExit('profile feed closing marker not found')
+          profile = profile.replace(
+              feed_close,
+              '''              </section>
+
+              ''' + favorite_block + '''
+            </section>
+          </main>''',
+              1,
+          )
+          profile_path.write_text(profile, encoding='utf-8')
+
+          index_path = Path('index.html')
+          index = index_path.read_text(encoding='utf-8')
+          if 'data-home-favorites-surface' not in index:
+              home_anchor = '''
+
+          <section class="professional-showcase doke-page-section"'''
+              home_section = '''
+
+          <section class="home-favorites doke-page-section" data-home-favorites-surface hidden aria-labelledby="home-favorites-title">
+            <div class="section-heading section-heading--spread home-section-header">
+              <div>
+                <h2 class="section-heading__title home-section-title" id="home-favorites-title">Seus favoritos</h2>
+                <p class="section-heading__description">Serviços que você salvou para consultar depois.</p>
+              </div>
+              <a class="section-heading__link" href="meu-perfil.html#profile-favorites">Ver todos <span data-home-favorites-count>0</span></a>
+            </div>
+            <div class="content-rail doke-scroll-rail">
+              <div class="service-grid service-grid--compact doke-grid" data-home-favorites-grid aria-label="Seus serviços favoritos"></div>
+            </div>
+          </section>'''
+              if home_anchor not in index:
+                  raise SystemExit('home favorites insertion anchor not found')
+              index = index.replace(home_anchor, home_section + home_anchor, 1)
+
+          home_script = '  <script src="assets/js/pages/home/favorites-surface.js?v=20260729-search-ux02-v1"></script>'
+          if home_script not in index:
+              public_services_script = '  <script src="assets/js/pages/home/public-services.js?v=20260719-home-render-before-reveal-v1"></script>'
+              if public_services_script not in index:
+                  raise SystemExit('home public services script anchor not found')
+              index = index.replace(public_services_script, public_services_script + '\n' + home_script, 1)
+          index_path.write_text(index, encoding='utf-8')
+
+          test_path = Path('scripts/test-search-ux02-runtime.js')
+          test = test_path.read_text(encoding='utf-8')
+          if "const homeFavorites = read('assets/js/pages/home/favorites-surface.js');" not in test:
+              test = test.replace(
+                  "const surface = read('assets/js/pages/search/server-results-surface.js');",
+                  "const surface = read('assets/js/pages/search/server-results-surface.js');\nconst homeFavorites = read('assets/js/pages/home/favorites-surface.js');\nconst profileFavorites = read('assets/js/pages/profile/favorites-surface.js');\nconst indexHtml = read('index.html');\nconst profileHtml = read('meu-perfil.html');",
+                  1,
+              )
+              test = test.replace(
+                  "new vm.Script(surface, { filename: 'server-results-surface.js' });",
+                  "new vm.Script(surface, { filename: 'server-results-surface.js' });\nnew vm.Script(homeFavorites, { filename: 'home-favorites-surface.js' });\nnew vm.Script(profileFavorites, { filename: 'profile-favorites-surface.js' });",
+                  1,
+              )
+              assertions = '''
+assert(
+  homeFavorites.includes('canonicalIds(item)') && homeFavorites.includes('slice(0, 6)'),
+  'Home favorites must use canonical identifiers and remain a bounded preview.'
+);
+assert(
+  indexHtml.includes('data-home-favorites-surface') && indexHtml.includes('assets/js/pages/home/favorites-surface.js'),
+  'index.html must expose and load the authenticated favorites preview.'
+);
+assert(
+  profileFavorites.includes('serviceIdentifiers(item)'),
+  'Profile favorites must reconcile canonical and public identifiers.'
+);
+assert(
+  profileHtml.indexOf('href="#profile-favorites"') > profileHtml.indexOf('href="#profile-about"'),
+  'Favorites must be the last profile tab.'
+);
+assert(
+  profileHtml.lastIndexOf('id="profile-favorites"') > profileHtml.lastIndexOf('id="profile-about"'),
+  'Favorites must be the last profile content area.'
+);
+'''
+              test = test.replace(
+                  "console.log('SEARCH-UX02 runtime and migration contracts passed.');",
+                  assertions + "\nconsole.log('SEARCH-UX02 runtime and migration contracts passed.');",
+                  1,
+              )
+          test_path.write_text(test, encoding='utf-8')
+          PY
+
+      - name: Remove one-time applicator
+        run: rm .github/workflows/apply-favorite-surfaces-once.yml
+
+      - name: Validate SEARCH-UX02 contracts
+        run: node scripts/test-search-ux02-runtime.js
+
+      - name: Commit permanent changes
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add index.html meu-perfil.html scripts/test-search-ux02-runtime.js .github/workflows/apply-favorite-surfaces-once.yml
+          git commit -m "Complete favorite surfaces across home and profile"
+          git push origin HEAD:search/search-ux02-intent-favorites
