@@ -21,6 +21,11 @@ async function validateBrowserRepository() {
   const sandbox = {
     window: {
       Doke: {
+        runtimeConfig: {
+          environment: 'local',
+          ordersProvider: 'mock',
+          ordersMockDevelopment: true
+        },
         session: {
           getCurrentUser() {
             return { id: 'user-client', role: 'client' };
