@@ -7,18 +7,26 @@ on:
       - 'search/**'
     paths:
       - 'supabase/migrations/160_service_search_ranking_v1.sql'
-      - 'supabase/migrations/161_service_search_ranking_v1_contract_reconciliation.sql'
+      - 'supabase/migrations/161_service_search_ranking_v1_staging_reconciliation.sql'
       - 'supabase/tests/024_service_search_ranking_v1_validation.sql'
+      - 'supabase/tests/025_service_search_ranking_v1_reconciliation_validation.sql'
       - 'scripts/audit-search-ranking-v1.js'
       - 'scripts/test-search-ranking-v1-runtime.js'
       - 'docs/validation/SEARCH-001-A07-RANKING-V1.json'
       - '.github/workflows/search-ranking-v1.yml'
       - 'config/domain-completion-matrix.json'
       - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+  push:
+    branches:
+      - 'search/**'
   workflow_dispatch:
 
 permissions:
   contents: read
+
+concurrency:
+  group: doke-search-a07-ranking-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   search-ranking-v1:
