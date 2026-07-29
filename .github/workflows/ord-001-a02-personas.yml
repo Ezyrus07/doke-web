@@ -47,10 +47,12 @@ jobs:
           fi
           python - <<'PY'
           from pathlib import Path
+
           source = Path('.github/workflows/ord-a03-applicator.yml').read_text(encoding='utf-8').splitlines()
           start = next(i for i, line in enumerate(source) if "python - <<'PY'" in line) + 1
           end = next(i for i in range(start, len(source)) if source[i].strip() == 'PY')
           code = '\n'.join(line[10:] if line.startswith('          ') else line for line in source[start:end]) + '\n'
+
           code = code.replace(
               "source = replace_once(source, old_load, new_load, 'repository load')",
               "load_start = source.index('    var local = readLocal();', source.index('  function load(options) {'))\nload_end = source.index('  function save(order) {', load_start)\nsource = source[:load_start] + new_load + source[load_end:]"
@@ -59,6 +61,56 @@ jobs:
               "source = replace_once(source, old_write, new_write, 'repository writes')",
               "write_start = source.index('  function save(order) {')\nwrite_end = source.index('  function list(filters) {', write_start)\nsource = source[:write_start] + new_write + source[write_end:]"
           )
+
+          def replace_labeled_call(text, label, replacement):
+              marker = repr(label)
+              position = text.index(marker)
+              call_start = text.rfind('source = replace_once(', 0, position)
+              if call_start < 0:
+                  raise SystemExit(f'Cannot locate transformation call: {label}')
+              cursor = call_start
+              depth = 0
+              quote = None
+              escaped = False
+              while cursor < len(text):
+                  char = text[cursor]
+                  if quote:
+                      if escaped:
+                          escaped = False
+                      elif char == '\\':
+                          escaped = True
+                      elif char == quote:
+                          quote = None
+                  else:
+                      if char in "'\"":
+                          quote = char
+                      elif char == '(':
+                          depth += 1
+                      elif char == ')':
+                          depth -= 1
+                          if depth == 0:
+                              cursor += 1
+                              break
+                  cursor += 1
+              return text[:call_start] + replacement + text[cursor:]
+
+          code = replace_labeled_call(
+              code,
+              'dual client capability',
+              "source = source.replace(\n    \"    if (user.role && user.role !== 'client') {\\n      throw new Error('Use uma conta de cliente para solicitar orçamento.');\\n    }\",\n    \"    if (user.role && ['client', 'professional'].indexOf(user.role) === -1) {\\n      throw new Error('Esta conta não possui capacidade de cliente para solicitar serviços.');\\n    }\"\n)"
+          )
+          code = replace_labeled_call(
+              code,
+              'create provider assertion',
+              "create_start = source.index('  function create(payload) {')\ncreate_local = source.index('    var repository = assertRepository();', create_start)\nsource = source[:create_local] + \"    assertOrderCommandProviderAvailable('create');\\n\" + source[create_local:]"
+          )
+          code = replace_labeled_call(code, 'save status api anchor', "# API branch is already explicit; no rewrite required.")
+          code = replace_labeled_call(
+              code,
+              'save status local assertion',
+              "status_start = source.index('  function saveStatus(orderId, nextStatus, statusLabel, options) {')\nstatus_local = source.index('    var repository = assertRepository();', status_start)\nsource = source[:status_local] + \"    assertOrderCommandProviderAvailable('transition:' + normalizeStatusToken(nextStatus || 'pending'));\\n\" + source[status_local:]"
+          )
+
           Path('/tmp/apply-ord-a03.py').write_text(code, encoding='utf-8')
           PY
           python /tmp/apply-ord-a03.py
@@ -67,6 +119,8 @@ jobs:
           node --check assets/js/repositories/orders-repository.js
           node --check assets/js/services/orders-service.js
           node --check backend/modules/orders/orders-service.js
+          node --check scripts/audit-ord-001-a01-baseline.js
+          node --check scripts/audit-ord-001-a02-personas.js
           if git diff --quiet; then
             echo "No changes to commit"
             exit 0
