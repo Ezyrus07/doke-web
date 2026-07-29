@@ -1,0 +1,42 @@
+name: Doke ORD-A01 Authority Baseline
+
+on:
+  pull_request:
+    paths:
+      - docs/ORD-001-AUTHORITY-BASELINE.md
+      - docs/validation/ORD-001-A01-BASELINE.json
+      - scripts/audit-ord-001-a01-baseline.js
+      - assets/js/services/order-service.js
+      - assets/js/services/orders-service.js
+      - assets/js/repositories/orders-repository.js
+      - assets/js/repositories/order-event-operations-repository.js
+      - backend/modules/orders/**
+      - supabase/functions/order-event-worker/**
+      - supabase/functions/order-event-operations/**
+      - supabase/migrations/**
+      - config/domain-completion-matrix.json
+      - .github/workflows/ord-001-a01-baseline.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  baseline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Validate ORD-A01 authority baseline
+        run: node scripts/audit-ord-001-a01-baseline.js
+      - name: Validate canonical order state machine contracts
+        run: |
+          node scripts/test-order-state-machine-contract.js
+          node scripts/test-order-state-machine-runtime.js
+      - name: Validate durable order event contracts
+        run: |
+          node scripts/test-order-transaction-events-contract.js
+          node scripts/test-order-event-worker-contract.js
+          node scripts/test-order-event-worker-runtime.mjs
