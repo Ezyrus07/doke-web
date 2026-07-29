@@ -37,7 +37,7 @@ assert(
   'Empty direct searches must render an explicit recommendation heading.'
 );
 assert(
-  surface.includes("queryWithEditorialFallback"),
+  surface.includes('queryWithEditorialFallback'),
   'Fallback recommendations must be requested through the search service.'
 );
 assert(
@@ -65,4 +65,133 @@ assert(
   'Intent recovery must not introduce manipulable behavioral ranking signals.'
 );
 
-console.log('SEARCH-UX02 runtime and migration contracts passed.');
+function validateCanonicalCardIdRuntime() {
+  const sandbox = {
+    window: { Doke: {} },
+    document: {
+      addEventListener() {},
+      createElement() { return {}; },
+      createElementNS() { return { setAttribute() {}, appendChild() {} }; }
+    },
+    console,
+    Date,
+    Math
+  };
+  sandbox.window.window = sandbox.window;
+  vm.runInNewContext(card, sandbox, { filename: 'public-service-card.js' });
+
+  const uuid = 'c93c3f09-b3cb-4365-bd6e-d681e846c611';
+  const resolved = sandbox.window.Doke.publicServiceCard.canonicalServiceId({
+    id: 'service_public_id',
+    serviceId: uuid
+  });
+  assert.strictEqual(resolved, uuid, 'Card runtime must choose serviceId over the public external ID.');
+}
+
+async function validateFallbackRuntime() {
+  const requests = [];
+  const appended = [];
+  const renderedEvents = [];
+  const Doke = {
+    services: {
+      search: {
+        getContract() {
+          return {
+            expectedAuthority: 'public.search_public_services_v2',
+            version: '2.0.0',
+            transport: 'edge-v2'
+          };
+        },
+        queryPage(request) {
+          requests.push(JSON.parse(JSON.stringify(request)));
+          if (request.query) {
+            return Promise.resolve({
+              authority: 'public.search_public_services_v2',
+              contractVersion: '2.0.0',
+              ranking: { version: 'search-rank-v0' },
+              items: [],
+              page: { hasNext: false, nextCursor: null }
+            });
+          }
+          return Promise.resolve({
+            authority: 'public.search_public_services_v2',
+            contractVersion: '2.0.0',
+            ranking: { version: 'search-rank-v0' },
+            items: [{ serviceId: 'c93c3f09-b3cb-4365-bd6e-d681e846c611', title: 'Limpeza' }],
+            page: { hasNext: false, nextCursor: null }
+          });
+        }
+      }
+    }
+  };
+  const sandbox = {
+    window: { Doke },
+    document: {
+      dispatchEvent(event) { renderedEvents.push(event); }
+    },
+    CustomEvent: class CustomEvent {
+      constructor(name, init) { this.type = name; this.detail = init && init.detail; }
+    },
+    console,
+    Promise,
+    Set,
+    Object,
+    JSON,
+    String,
+    Number,
+    Boolean,
+    Array
+  };
+  sandbox.window.window = sandbox.window;
+  vm.runInNewContext(surface, sandbox, { filename: 'server-results-surface.js' });
+
+  const title = { textContent: '' };
+  const description = { textContent: '' };
+  const count = { textContent: '' };
+  const grid = {
+    hidden: false,
+    textContent: '',
+    appendChild(node) { appended.push(node); }
+  };
+  let visibleState = '';
+  const context = {
+    query: 'termo inexistente',
+    filters: {},
+    grid,
+    title,
+    description,
+    count,
+    inlineEmpty: { hidden: false },
+    createCard(item) { return { item }; },
+    setResultsState(state) { visibleState = state; },
+    settleHydration() {},
+    refreshPreviews() {},
+    renderActiveChips() {},
+    loadMoreButton: {
+      disabled: false,
+      hidden: false,
+      dataset: {},
+      setAttribute() {}
+    },
+    pagination: { hidden: false }
+  };
+
+  const result = await sandbox.window.Doke.searchResultsServerSurface.render(context);
+  assert.deepStrictEqual(requests.map((request) => request.query), ['termo inexistente', '']);
+  assert.strictEqual(result.length, 1, 'Fallback must return the server catalog page.');
+  assert.strictEqual(appended.length, 1, 'Fallback card must be rendered once.');
+  assert.strictEqual(title.textContent, 'Outros anúncios');
+  assert(description.textContent.includes('Nenhum anúncio correspondeu exatamente'));
+  assert.strictEqual(visibleState, 'results');
+  assert.strictEqual(sandbox.window.Doke.searchResultsServerSurface.getSnapshot().mode, 'fallback');
+  assert(renderedEvents.some((event) => event.type === 'doke:search-server-page-rendered' && event.detail.fallbackUsed === true));
+}
+
+(async () => {
+  validateCanonicalCardIdRuntime();
+  await validateFallbackRuntime();
+  console.log('SEARCH-UX02 runtime and migration contracts passed.');
+})().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});
