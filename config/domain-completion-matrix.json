@@ -733,11 +733,11 @@
       "name": "Busca, descoberta, favoritos e ranking",
       "wave": "B",
       "priority": 6,
-      "maturity": 4,
+      "maturity": 3,
       "userFacingAuthority": "hybrid",
-      "serverAuthority": "canonical",
-      "stagingEvidence": "staging_operational",
-      "securityGate": "partial",
+      "serverAuthority": "partial",
+      "stagingEvidence": "staging_canary",
+      "securityGate": "blocked",
       "productionGate": "blocked",
       "objective": "Return eligible services and professionals with scalable server-side filtering, ranking and pagination.",
       "pages": [
@@ -783,9 +783,18 @@
         "Ranking v1 remains installed but inactive; behavioral metrics, paid boosts, contacts, messages, views and CTR remain excluded from active ranking authority.",
         "Production remains blocked and no account, service, favorite, real metric, SMS, OAuth, paid integration or production configuration was changed."
       ],
-      "blockers": [],
+      "blockers": [
+        {
+          "id": "SEARCH-B03",
+          "severity": "medium",
+          "category": "analytics",
+          "description": "Ranking signals and anti-manipulation controls are technically implemented, but cumulative governance audits still require a dedicated closure reconciliation.",
+          "targetPhase": "Fase 15"
+        }
+      ],
       "nextActions": [
-        "Keep search-rank-v0 active until a separate explicitly authorized ranking-v1 activation sublot proves production-grade thresholds and rollback.",
+        "Execute SEARCH-A11 as a dedicated cumulative-governance reconciliation before removing SEARCH-B03 or promoting domain maturity.",
+        "Keep search-rank-v0 active; ranking v1 remains installed and inactive until a separately authorized activation sublot.",
         "Keep workers, publications, suggestions and browser-local search history explicitly governed by their own controlled domains and sublots.",
         "Keep production blocked until the global security, analytics and launch gates are satisfied."
       ],

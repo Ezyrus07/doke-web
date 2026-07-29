@@ -6,7 +6,7 @@ Este é o mapa operacional obrigatório para concluir a lógica da Doke. Ele cru
 
 - Domínios/programas mapeados: **23**.
 - Fluxos críticos mapeados: **15**.
-- Maturidade média atual: **2.83/6**.
+- Maturidade média atual: **2.78/6**.
 - Bloqueadores críticos explícitos: **15**.
 - Domínios prontos para produção: **0**.
 - Runtime padrão: dados **mock**, auth **supabase**, rede **desativada**.
@@ -42,8 +42,8 @@ RLS habilitado, mas sem policy: .
 | 0 | not started | 1 |
 | 1 | foundation only | 3 |
 | 2 | local functional | 4 |
-| 3 | staging canary or hybrid | 6 |
-| 4 | staging operational | 9 |
+| 3 | staging canary or hybrid | 7 |
+| 4 | staging operational | 8 |
 | 5 | private beta ready | 0 |
 | 6 | production ready | 0 |
 
@@ -56,7 +56,7 @@ RLS habilitado, mas sem policy: .
 | 3 | AUTH-001 | Autenticação, sessão e identidade | 4/6 | remote | canonical | staging operational | partial | blocked |
 | 4 | PROF-001 | Perfis, onboarding profissional e KYC | 4/6 | remote | canonical | staging operational | blocked | blocked |
 | 5 | CAT-001 | Catálogo, publicação e moderação de serviços | 4/6 | remote | canonical | staging operational | partial | blocked |
-| 6 | SEARCH-001 | Busca, descoberta, favoritos e ranking | 4/6 | hybrid | canonical | staging operational | partial | blocked |
+| 6 | SEARCH-001 | Busca, descoberta, favoritos e ranking | 3/6 | hybrid | partial | staging canary | blocked | blocked |
 | 7 | ORD-001 | Orçamentos, propostas e ciclo de pedidos | 4/6 | hybrid | canonical | staging operational | partial | blocked |
 | 8 | SCHED-001 | Agenda, disponibilidade e execução do serviço | 1/6 | local | none | static contract | blocked | blocked |
 | 9 | MSG-001 | Mensagens, conversas, presença e anexos | 3/6 | hybrid | partial | staging canary | partial | blocked |
@@ -342,7 +342,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Objetivo:** Return eligible services and professionals with scalable server-side filtering, ranking and pagination.
 
-**Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção blocked.
+**Estado:** maturidade 3/6; UI hybrid; servidor partial; staging staging canary; segurança blocked; produção blocked.
 
 **Evidência estática observada:** 5 arquivos no escopo; 2 referências a localStorage; 0 a sessionStorage; 3 referências mock; 0 referências de rede/Supabase; 0 marcadores de implementação pendente.
 
@@ -363,10 +363,11 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - Production remains blocked and no account, service, favorite, real metric, SMS, OAuth, paid integration or production configuration was changed.
 
 **Bloqueadores:**
-- Nenhum.
+- **SEARCH-B03 · MEDIUM · analytics:** Ranking signals and anti-manipulation controls are technically implemented, but cumulative governance audits still require a dedicated closure reconciliation. _(Fase 15)_
 
 **Próximas ações:**
-- Keep search-rank-v0 active until a separate explicitly authorized ranking-v1 activation sublot proves production-grade thresholds and rollback.
+- Execute SEARCH-A11 as a dedicated cumulative-governance reconciliation before removing SEARCH-B03 or promoting domain maturity.
+- Keep search-rank-v0 active; ranking v1 remains installed and inactive until a separately authorized activation sublot.
 - Keep workers, publications, suggestions and browser-local search history explicitly governed by their own controlled domains and sublots.
 - Keep production blocked until the global security, analytics and launch gates are satisfied.
 
