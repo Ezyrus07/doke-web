@@ -11,6 +11,8 @@
 
   if (Doke.services.accountAccess) return;
 
+  var ACCESS_REFRESH_TIMEOUT = 2500;
+
   function lifecycle() {
     return window.DokeNavigationLifecycle || Doke.navigationLifecycle || null;
   }
@@ -19,6 +21,14 @@
     return Doke.session || window.DokeAuth && window.DokeAuth.session || null;
   }
 
+  function authService() {
+    return window.DokeAuth && window.DokeAuth.service || null;
+  }
+
+  function setGuardState(state) {
+    if (document.documentElement) document.documentElement.dataset.authGuard = state;
+    if (document.body) document.body.dataset.authGuard = state;
+  }
 
   function readCachedUser() {
     var keys = ['doke.auth.session.v1', 'doke.auth.session.v2', 'doke.auth.session'];
@@ -35,19 +45,39 @@
 
   function getCurrentUser() {
     var session = sessionStore();
-    if (!session || typeof session.getCurrentUser !== 'function') return null;
+    if (!session || typeof session.getCurrentUser !== 'function') return readCachedUser() || null;
     return session.getCurrentUser() || readCachedUser() || null;
+  }
+
+  function refreshCanonicalSession() {
+    var auth = authService();
+    if (!auth || typeof auth.refreshSession !== 'function') return Promise.resolve(null);
+
+    var refresh = Promise.resolve()
+      .then(function () { return auth.refreshSession({ silent: true }); })
+      .catch(function () { return null; });
+    var timeout = new Promise(function (resolve) {
+      window.setTimeout(function () { resolve(null); }, ACCESS_REFRESH_TIMEOUT);
+    });
+    return Promise.race([refresh, timeout]);
+  }
+
+  function buildAccessResult(user) {
+    return Object.freeze({
+      allowed: Boolean(user),
+      authenticated: Boolean(user),
+      user: user || null,
+      reason: user ? 'allowed' : 'auth_required'
+    });
   }
 
   function resolveAccess() {
     return Promise.resolve().then(function () {
-      var session = sessionStore();
-      var user = getCurrentUser() || readCachedUser();
-      return Object.freeze({
-        allowed: Boolean(user),
-        authenticated: Boolean(user),
-        user: user,
-        reason: user ? 'allowed' : 'auth_required'
+      var immediateUser = getCurrentUser();
+      if (immediateUser) return buildAccessResult(immediateUser);
+
+      return refreshCanonicalSession().then(function () {
+        return buildAccessResult(getCurrentUser());
       });
     });
   }
@@ -87,8 +117,10 @@
         })
       : 0;
 
+    setGuardState('pending');
     return resolveAccess().then(function (result) {
       if (result.allowed) {
+        setGuardState('allowed');
         if (api && api.guard) api.guard.allow(guardId, { userId: result.user && result.user.id || '' });
         return result;
       }
@@ -99,13 +131,16 @@
       }
 
       if (options.redirect === false) {
+        setGuardState('denied');
         return Object.freeze(Object.assign({}, result, { target: target, redirecting: false }));
       }
 
+      setGuardState('redirecting');
       return navigate(target, { source: options.source || 'account-access-guard' }).then(function () {
         return Object.freeze(Object.assign({}, result, { target: target, redirecting: true }));
       });
     }).catch(function (error) {
+      setGuardState('error');
       if (api && api.guard) {
         api.guard.fail(guardId, error, { source: options.source || window.location.pathname });
       }
@@ -116,6 +151,7 @@
   Doke.services.accountAccess = Object.freeze({
     getCurrentUser: getCurrentUser,
     resolveAccess: resolveAccess,
+    refreshCanonicalSession: refreshCanonicalSession,
     guardPage: guardPage
   });
 }());
