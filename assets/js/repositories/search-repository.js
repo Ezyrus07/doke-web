@@ -1,16 +1,27 @@
 /* Doke Search Repository
    Responsibility: canonical bounded service discovery boundary.
-   Remote authority: public.search_public_services_v1.
-   Fixture compatibility: current-runtime services only, with the same DTO and cursor limits. */
+   Remote authority: allowlisted Edge v2 transport with explicit RPC v1 rollback.
+   Fixture compatibility: current-runtime services only when remote search is not configured. */
 (function () {
   'use strict';
 
   var root = window;
   var Doke = root.Doke || (root.Doke = {});
   var repositories = Doke.repositories || (Doke.repositories = {});
-  var AUTHORITY = 'supabase-rpc-or-fixture-memory';
+  var AUTHORITY = 'supabase-search-transport-or-fixture-memory';
+  var TRANSPORT_EDGE_V2 = 'edge-v2';
+  var TRANSPORT_RPC_V1 = 'rpc-v1';
   var RPC_NAME = 'search_public_services_v1';
-  var CONTRACT_VERSION = '1.0.0';
+  var EDGE_FUNCTION_NAME = 'search-public-services-v2';
+  var CONTRACT_V1 = Object.freeze({
+    authority: 'public.search_public_services_v1',
+    version: '1.0.0'
+  });
+  var CONTRACT_V2 = Object.freeze({
+    authority: 'public.search_public_services_v2',
+    version: '2.0.0',
+    rankingVersion: 'search-rank-v0'
+  });
   var MAX_PAGE_SIZE = 24;
   var DEFAULT_PAGE_SIZE = 12;
   var MAX_QUERY_LENGTH = 120;
@@ -19,6 +30,7 @@
     'query', 'categories', 'state', 'city', 'neighborhood', 'serviceMode',
     'minRating', 'guaranteed', 'emergency', 'availableToday', 'pageSize', 'cursor'
   ]);
+  var ALLOWED_TRANSPORTS = Object.freeze([TRANSPORT_EDGE_V2, TRANSPORT_RPC_V1]);
   var supabaseClient = null;
   var supabaseClientAttempted = false;
   var lastError = null;
@@ -135,8 +147,38 @@
     return supabaseClient;
   }
 
-  function validateResponse(response) {
-    if (!response || response.authority !== 'public.search_public_services_v1' || response.contractVersion !== CONTRACT_VERSION) {
+  function resolveTransport(config) {
+    var transport = normalizeSearch(config && config.searchTransport || TRANSPORT_RPC_V1);
+    if (ALLOWED_TRANSPORTS.indexOf(transport) === -1) {
+      throw createError('DOKE_SEARCH_TRANSPORT_INVALID', 'Transporte remoto de busca não permitido.');
+    }
+    return transport;
+  }
+
+  function resolveRollbackTransport(config) {
+    var rollback = normalizeSearch(config && config.searchRollbackTransport || TRANSPORT_RPC_V1);
+    if (rollback !== TRANSPORT_RPC_V1) {
+      throw createError('DOKE_SEARCH_ROLLBACK_INVALID', 'O rollback de busca deve apontar explicitamente para rpc-v1.');
+    }
+    return rollback;
+  }
+
+  function expectedContract(transport) {
+    return transport === TRANSPORT_EDGE_V2 ? CONTRACT_V2 : CONTRACT_V1;
+  }
+
+  function assertNoPrivateRankingPayload(response) {
+    var serialized = JSON.stringify(response || {});
+    ['rankScore', 'reviewSignal', 'availabilitySignal', 'recencySignal'].forEach(function (field) {
+      if (serialized.indexOf(field) !== -1) {
+        throw createError('DOKE_SEARCH_RESPONSE_INVALID', 'A resposta de busca expôs sinais privados de ranking.');
+      }
+    });
+  }
+
+  function validateResponse(response, transport) {
+    var contract = expectedContract(transport);
+    if (!response || response.authority !== contract.authority || response.contractVersion !== contract.version) {
       throw createError('DOKE_SEARCH_RESPONSE_INVALID', 'A autoridade de busca retornou um contrato incompatível.');
     }
     if (!Array.isArray(response.items) || !response.page || typeof response.page !== 'object') {
@@ -145,7 +187,10 @@
     if (response.items.length > MAX_PAGE_SIZE) {
       throw createError('DOKE_SEARCH_RESPONSE_INVALID', 'A autoridade de busca excedeu o limite da página.');
     }
-    return {
+
+    assertNoPrivateRankingPayload(response);
+
+    var normalized = {
       authority: response.authority,
       contractVersion: response.contractVersion,
       request: clone(response.request || {}),
@@ -156,22 +201,76 @@
         nextCursor: normalizeText(response.page.nextCursor) || null
       }
     };
+
+    if (transport === TRANSPORT_EDGE_V2) {
+      if (!response.ranking || response.ranking.version !== CONTRACT_V2.rankingVersion
+          || response.page.rankingVersion !== CONTRACT_V2.rankingVersion
+          || !normalizeText(response.page.asOf)) {
+        throw createError('DOKE_SEARCH_RESPONSE_INVALID', 'A busca v2 não preservou o ranking v0 e o cursor versionado.');
+      }
+      normalized.ranking = clone(response.ranking);
+      normalized.page.rankingVersion = response.page.rankingVersion;
+      normalized.page.asOf = response.page.asOf;
+    }
+
+    return normalized;
   }
 
-  function queryRemote(request) {
+  function handleRemoteFailure(error) {
+    lastError = error;
+    if (error && error.code && /^DOKE_/.test(error.code)) throw error;
+    throw createError('DOKE_SEARCH_AUTHORITY_UNAVAILABLE', 'A busca remota falhou fechado.', error);
+  }
+
+  function queryRpcV1(request) {
     var client = getSupabaseClient();
     if (!client || typeof client.rpc !== 'function') {
-      return Promise.reject(createError('DOKE_SEARCH_AUTHORITY_UNAVAILABLE', 'Autoridade remota de busca indisponível.'));
+      return Promise.reject(createError('DOKE_SEARCH_AUTHORITY_UNAVAILABLE', 'Autoridade RPC v1 indisponível.'));
     }
     return Promise.resolve(client.rpc(RPC_NAME, { p_request: request })).then(function (result) {
       if (result && result.error) throw result.error;
       lastError = null;
-      return validateResponse(result && result.data);
-    }).catch(function (error) {
-      lastError = error;
-      if (error && error.code && /^DOKE_SEARCH_/.test(error.code)) throw error;
-      throw createError('DOKE_SEARCH_AUTHORITY_UNAVAILABLE', 'A busca remota falhou fechado.', error);
+      return validateResponse(result && result.data, TRANSPORT_RPC_V1);
+    }).catch(handleRemoteFailure);
+  }
+
+  function createRequestId() {
+    return root.crypto && typeof root.crypto.randomUUID === 'function'
+      ? root.crypto.randomUUID()
+      : null;
+  }
+
+  function readEdgeError(error) {
+    var context = error && error.context;
+    if (!context || typeof context.json !== 'function') {
+      return Promise.resolve(createError('DOKE_SEARCH_AUTHORITY_UNAVAILABLE', 'A Edge Function de busca falhou.', error));
+    }
+    if (typeof context.clone === 'function') context = context.clone();
+    return Promise.resolve(context.json()).catch(function () { return null; }).then(function (payload) {
+      var code = payload && normalizeText(payload.error);
+      var normalized = createError(code || 'DOKE_SEARCH_AUTHORITY_UNAVAILABLE', 'A Edge Function de busca rejeitou a solicitação.', error);
+      if (payload && payload.requestId) normalized.requestId = normalizeText(payload.requestId);
+      return normalized;
     });
+  }
+
+  function queryEdgeV2(request) {
+    var client = getSupabaseClient();
+    if (!client || !client.functions || typeof client.functions.invoke !== 'function') {
+      return Promise.reject(createError('DOKE_SEARCH_AUTHORITY_UNAVAILABLE', 'Edge Function v2 de busca indisponível.'));
+    }
+
+    var requestId = createRequestId();
+    var options = { body: request };
+    if (requestId) options.headers = { 'x-doke-request-id': requestId };
+
+    return Promise.resolve(client.functions.invoke(EDGE_FUNCTION_NAME, options)).then(function (result) {
+      if (result && result.error) {
+        return readEdgeError(result.error).then(function (normalizedError) { throw normalizedError; });
+      }
+      lastError = null;
+      return validateResponse(result && result.data, TRANSPORT_EDGE_V2);
+    }).catch(handleRemoteFailure);
   }
 
   function encodeCursor(item) {
@@ -286,7 +385,7 @@
       var hasNext = pageRows.length > request.pageSize;
       return {
         authority: 'fixture-memory.search_public_services_v1',
-        contractVersion: CONTRACT_VERSION,
+        contractVersion: CONTRACT_V1.version,
         request: clone(request),
         items: visible,
         page: {
@@ -305,24 +404,51 @@
     } catch (error) {
       return Promise.reject(error);
     }
+
     var config = root.DOKE_SUPABASE_CONFIG || {};
     var remoteConfigured = Boolean(config.enabled && config.servicesEnabled !== false && config.url && config.anonKey);
-    return remoteConfigured ? queryRemote(request) : queryFixture(request);
+    if (!remoteConfigured) return queryFixture(request);
+
+    var transport;
+    try {
+      transport = resolveTransport(config);
+      resolveRollbackTransport(config);
+    } catch (error) {
+      return Promise.reject(error);
+    }
+
+    return transport === TRANSPORT_EDGE_V2
+      ? queryEdgeV2(request)
+      : queryRpcV1(request);
+  }
+
+  function getContract() {
+    var config = root.DOKE_SUPABASE_CONFIG || {};
+    var remoteConfigured = Boolean(config.enabled && config.servicesEnabled !== false && config.url && config.anonKey);
+    var transport = remoteConfigured ? resolveTransport(config) : 'fixture-memory';
+    var rollbackTransport = remoteConfigured ? resolveRollbackTransport(config) : TRANSPORT_RPC_V1;
+    var contract = remoteConfigured ? expectedContract(transport) : CONTRACT_V1;
+
+    return Object.freeze({
+      authority: AUTHORITY,
+      transport: transport,
+      rollbackTransport: rollbackTransport,
+      expectedAuthority: remoteConfigured ? contract.authority : 'fixture-memory.search_public_services_v1',
+      rpc: RPC_NAME,
+      edgeFunction: normalizeText(config.searchEdgeFunction) || EDGE_FUNCTION_NAME,
+      version: contract.version,
+      rankingVersion: transport === TRANSPORT_EDGE_V2 ? CONTRACT_V2.rankingVersion : null,
+      maxPageSize: MAX_PAGE_SIZE,
+      defaultPageSize: DEFAULT_PAGE_SIZE,
+      allowedFields: ALLOWED_FIELDS.slice(),
+      allowedTransports: ALLOWED_TRANSPORTS.slice()
+    });
   }
 
   repositories.search = Object.freeze({
     queryPage: queryPage,
     normalizeRequest: normalizeRequest,
     getLastError: function () { return lastError; },
-    getContract: function () {
-      return Object.freeze({
-        authority: AUTHORITY,
-        rpc: RPC_NAME,
-        version: CONTRACT_VERSION,
-        maxPageSize: MAX_PAGE_SIZE,
-        defaultPageSize: DEFAULT_PAGE_SIZE,
-        allowedFields: ALLOWED_FIELDS.slice()
-      });
-    }
+    getContract: getContract
   });
 })();

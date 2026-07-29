@@ -1,6 +1,9 @@
 window.DOKE_SUPABASE_CONFIG = {
   enabled: true,
   servicesEnabled: true,
+  searchTransport: "edge-v2",
+  searchRollbackTransport: "rpc-v1",
+  searchEdgeFunction: "search-public-services-v2",
   ordersEnabled: true,
   messagesEnabled: true,
   attachmentsEnabled: true,

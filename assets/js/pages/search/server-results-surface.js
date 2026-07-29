@@ -1,4 +1,4 @@
-/* Doke SEARCH-A05 Server Results Surface
+/* Doke SEARCH Server Results Surface
    Responsibility: render canonical paginated service discovery from
    Doke.services.search.queryPage without browser catalog filtering or fallback. */
 (function () {
@@ -30,6 +30,16 @@
       throw error;
     }
     return api;
+  }
+
+  function searchContract() {
+    var api = searchApi();
+    if (typeof api.getContract !== 'function') return {};
+    try {
+      return api.getContract() || {};
+    } catch (_error) {
+      return {};
+    }
   }
 
   function buildRequest(query, filters, cursor) {
@@ -95,6 +105,7 @@
     if (epoch !== state.epoch) return state.items.slice();
     var incoming = Array.isArray(response && response.items) ? response.items : [];
     var additions = append ? uniqueItems(state.items, incoming) : incoming;
+    var contract = searchContract();
 
     if (!append) {
       state.items = [];
@@ -141,14 +152,17 @@
       receivedCount: incoming.length,
       addedCount: additions.length,
       hasNext: state.hasNext,
-      authority: response && response.authority || 'public.search_public_services_v1',
-      contractVersion: response && response.contractVersion || '1.0.0'
+      authority: response && response.authority || contract.expectedAuthority || 'search-authority-unavailable',
+      contractVersion: response && response.contractVersion || contract.version || 'unknown',
+      transport: contract.transport || 'unknown',
+      rankingVersion: response && response.ranking && response.ranking.version || null
     });
     return state.items.slice();
   }
 
   function applyFailure(context, error, append, epoch) {
     if (epoch !== state.epoch) return [];
+    var contract = searchContract();
     state.hasNext = false;
     state.nextCursor = '';
     if (!append) {
@@ -165,6 +179,8 @@
       append: Boolean(append),
       code: error && error.code || 'DOKE_SEARCH_QUERY_FAILED',
       error: error && error.message || 'Falha na busca canônica.',
+      authority: contract.expectedAuthority || 'search-authority-unavailable',
+      transport: contract.transport || 'unknown',
       fallbackUsed: false
     });
     throw error;

@@ -64,7 +64,7 @@ const results = read(files.results);
   'const renderEmptySuggestions =',
   'const exactServiceResults = getServiceMatches',
   'const displayServices = [...exactServiceResults, ...relatedServices].slice(0, 6)',
-  'api.list({ status: \'active\', fresh, sort: \'updated_desc\' })'
+  "api.list({ status: 'active', fresh, sort: 'updated_desc' })"
 ].forEach((marker) => assert(!results.includes(marker), `retired browser service authority remains: ${marker}`));
 assert(results.includes("filters.searchType === 'users'"), 'static user search scope must remain available');
 assert(results.includes("filters.searchType === 'workers'"), 'static Worker search scope must remain available');
@@ -75,7 +75,8 @@ const passiveController = read(files.passiveController);
   "mode: 'passive-canonical-event-observer'",
   "document.addEventListener('doke:search-server-page-rendered'",
   "document.addEventListener('doke:search-server-error'",
-  "authority: 'public.search_public_services_v1'",
+  'function currentAuthority()',
+  'function currentTransport()',
   "source: 'canonical-server-search-event'"
 ].forEach((marker) => assert(passiveController.includes(marker), `passive resultados controller marker missing: ${marker}`));
 [
@@ -108,9 +109,16 @@ const surface = read(files.surface);
 });
 
 const repository = read(files.repository);
-assert(repository.includes("RPC_NAME = 'search_public_services_v1'"), 'canonical search RPC marker is missing');
-assert(repository.includes('client.rpc(RPC_NAME, { p_request: request })'), 'repository does not call the canonical RPC');
-assert(repository.includes("createError('DOKE_SEARCH_AUTHORITY_UNAVAILABLE'"), 'repository does not fail closed');
+[
+  "RPC_NAME = 'search_public_services_v1'",
+  "EDGE_FUNCTION_NAME = 'search-public-services-v2'",
+  'client.rpc(RPC_NAME, { p_request: request })',
+  'client.functions.invoke(EDGE_FUNCTION_NAME, options)',
+  "createError('DOKE_SEARCH_AUTHORITY_UNAVAILABLE'",
+  'function resolveTransport(config)',
+  'function resolveRollbackTransport(config)'
+].forEach((marker) => assert(repository.includes(marker), `canonical search repository marker missing: ${marker}`));
+assert(!repository.includes('localStorage'), 'search repository must not create browser-persistent authority');
 
 const service = read(files.service);
 assert(service.includes('function queryPage(request)'), 'search service queryPage boundary is missing');
@@ -131,9 +139,10 @@ const runtime = read(files.runtime);
 
 const browserTest = read(files.browserTest);
 [
-  "SEARCH_RPC_PATH = '/rest/v1/rpc/search_public_services_v1'",
+  "EDGE_PATH = '/functions/v1/search-public-services-v2'",
+  "ROLLBACK_RPC_PATH = '/rest/v1/rpc/search_public_services_v1'",
   "url.pathname === '/rest/v1/services'",
-  'expect(directCatalogRequests).toEqual([])',
+  'expect(authorityRequests.directCatalog).toEqual([])',
   'expect(error.fallbackUsed).toBe(false)',
   "toHaveAttribute('data-results-state', 'error')"
 ].forEach((marker) => assert(browserTest.includes(marker), `staging browser proof marker missing: ${marker}`));
@@ -148,7 +157,7 @@ assert(evidence.domain === 'SEARCH-001' && evidence.sublot === 'SEARCH-A05', 'SE
 assert(['CANDIDATE_IMPLEMENTATION_PENDING', 'CANDIDATE_VALIDATION_RUNNING', 'COMPLETE'].includes(evidence.status), 'SEARCH-A05 evidence status is invalid');
 assert(evidence.targetAuthority && evidence.targetAuthority.remoteFailureMode === 'fail_closed', 'A05 fail-closed mode is not documented');
 assert(evidence.targetAuthority && evidence.targetAuthority.localCatalogFallback === 'forbidden_for_service_results', 'A05 local fallback retirement is not documented');
-assert(evidence.scope && evidence.scope.ranking === 'SEARCH_B03_preserved', 'SEARCH-B03 preservation is not documented');
+assert(evidence.scope && evidence.scope.ranking === 'SEARCH_B03_preserved', 'SEARCH-B03 preservation is not documented historically');
 assert(evidence.safety && evidence.safety.productionChanged === false, 'SEARCH-A05 cannot change production');
 
 const workflow = read(files.workflow);
@@ -168,8 +177,8 @@ const browserWorkflow = read(files.browserWorkflow);
   'assets/js/pages/resultados-data-controller.js',
   'assets/js/controllers/controller-data.js',
   'tests/search/search-results-staging.spec.js',
-  'Run staging browser authority tests'
-].forEach((marker) => assert(browserWorkflow.includes(marker), `SEARCH-A05 browser workflow marker missing: ${marker}`));
+  'Run SEARCH-A10 staging browser authority tests'
+].forEach((marker) => assert(browserWorkflow.includes(marker), `browser workflow marker missing: ${marker}`));
 
 if (errors.length) {
   console.error('[SEARCH-A05] Server results activation audit failed:');
@@ -178,6 +187,5 @@ if (errors.length) {
 }
 
 console.log('[SEARCH-A05] Canonical server-side service results activation: PASS');
-console.log('[SEARCH-A05] Full-catalog browser filtering, related fallback, fixed slicing and parallel legacy catalog loaders are retired for service results.');
-console.log('[SEARCH-A05] Cursor continuation is canonical and remote failures remain fail-closed.');
-console.log('[SEARCH-A05] Static users, Workers, publications, suggestions and history remain explicitly out of this sublot.');
+console.log('[SEARCH-A05] Full-catalog browser filtering, related fallback, fixed slicing and parallel legacy catalog loaders remain retired.');
+console.log('[SEARCH-A05] Cursor continuation is canonical and every configured remote transport remains fail-closed.');

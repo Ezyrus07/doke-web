@@ -13,6 +13,28 @@
     return root.querySelector('[data-results-grid]');
   }
 
+  function getSearchContract() {
+    var service = Doke.services && Doke.services.search;
+    if (!service || typeof service.getContract !== 'function') return {};
+    try {
+      return service.getContract() || {};
+    } catch (_error) {
+      return {};
+    }
+  }
+
+  function currentAuthority() {
+    return String(getSearchContract().expectedAuthority || 'search-authority-unavailable');
+  }
+
+  function currentContractVersion() {
+    return String(getSearchContract().version || 'unknown');
+  }
+
+  function currentTransport() {
+    return String(getSearchContract().transport || 'unknown');
+  }
+
   function getQueryFilters() {
     var params = new URLSearchParams(window.location.search || '');
     var filters = {};
@@ -51,14 +73,15 @@
   function updateNonVisualHooks(root, detail) {
     detail = detail || {};
     var count = Number(detail.loadedCount || 0);
-    var authority = String(detail.authority || 'public.search_public_services_v1');
+    var authority = String(detail.authority || currentAuthority());
     var grid = getResultsGrid(root);
 
     if (grid && grid.dataset) {
       grid.dataset.list = 'services';
       grid.dataset.repositoryResultCount = String(count);
       grid.dataset.repositoryDataSource = authority;
-      grid.dataset.repositoryContractVersion = String(detail.contractVersion || '1.0.0');
+      grid.dataset.repositoryContractVersion = String(detail.contractVersion || currentContractVersion());
+      grid.dataset.repositoryTransport = String(detail.transport || currentTransport());
     }
 
     var summary = root && root.querySelector && root.querySelector('[data-results-summary]');
@@ -66,6 +89,7 @@
       summary.dataset.repositoryResultCount = String(count);
       summary.dataset.repositoryDataSource = authority;
       summary.dataset.repositoryHasNext = String(Boolean(detail.hasNext));
+      summary.dataset.repositoryTransport = String(detail.transport || currentTransport());
     }
   }
 
@@ -77,8 +101,9 @@
     var result = {
       page: PAGE_NAME,
       filters: getQueryFilters(),
-      authority: detail.authority || 'public.search_public_services_v1',
-      contractVersion: detail.contractVersion || '1.0.0',
+      authority: detail.authority || currentAuthority(),
+      contractVersion: detail.contractVersion || currentContractVersion(),
+      transport: detail.transport || currentTransport(),
       count: count,
       hasNext: Boolean(detail.hasNext),
       append: Boolean(detail.append),
@@ -98,7 +123,8 @@
     var detail = {
       page: PAGE_NAME,
       filters: getQueryFilters(),
-      authority: 'public.search_public_services_v1',
+      authority: source.authority || currentAuthority(),
+      transport: source.transport || currentTransport(),
       code: source.code || 'DOKE_SEARCH_QUERY_FAILED',
       error: source.error || 'Erro ao consultar a busca canônica.',
       fallbackUsed: Boolean(source.fallbackUsed)
@@ -116,7 +142,9 @@
     return Promise.resolve({
       page: PAGE_NAME,
       filters: getQueryFilters(),
-      authority: 'public.search_public_services_v1',
+      authority: currentAuthority(),
+      contractVersion: currentContractVersion(),
+      transport: currentTransport(),
       mode: 'passive-canonical-event-observer'
     });
   }
