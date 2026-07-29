@@ -8,6 +8,9 @@ const read = (path) => fs.readFileSync(path, 'utf8');
 const card = read('assets/js/components/public-service-card.js');
 const interactions = read('assets/js/components/ad-card-interactions.js');
 const surface = read('assets/js/pages/search/server-results-surface.js');
+const homePublicServices = read('assets/js/pages/home/public-services.js');
+const homeFavorites = read('assets/js/pages/home/favorites-surface.js');
+const profileFavorites = read('assets/js/pages/profile/favorites-surface.js');
 const migration = read('supabase/migrations/20260729143000_service_search_intent_recovery_v1.sql');
 const noMatchFix = read('supabase/migrations/20260729144500_service_search_intent_no_match_fix.sql');
 
@@ -15,6 +18,9 @@ const noMatchFix = read('supabase/migrations/20260729144500_service_search_inten
 new vm.Script(card, { filename: 'public-service-card.js' });
 new vm.Script(interactions, { filename: 'ad-card-interactions.js' });
 new vm.Script(surface, { filename: 'server-results-surface.js' });
+new vm.Script(homePublicServices, { filename: 'home-public-services.js' });
+new vm.Script(homeFavorites, { filename: 'home-favorites-surface.js' });
+new vm.Script(profileFavorites, { filename: 'profile-favorites-surface.js' });
 
 assert(
   card.includes('service.serviceId || service.remoteId || service.remote_id || service.id'),
@@ -43,6 +49,31 @@ assert(
 assert(
   surface.includes("var fallbackRequest = buildRequest('', context.filters, '')"),
   'Fallback must preserve filters and use an empty server-side catalog query.'
+);
+assert(
+  homePublicServices.includes('ensureHomeFavoritesModule') &&
+    homePublicServices.includes('assets/js/pages/home/favorites-surface.js'),
+  'The home services boundary must load the dedicated favorites surface.'
+);
+assert(
+  homeFavorites.includes('function ensureSurface()') &&
+    homeFavorites.includes("workspace.querySelector('.professional-showcase')") &&
+    homeFavorites.includes('services.slice(0, 6)'),
+  'Home favorites must create a bounded preview before the professional showcase.'
+);
+assert(
+  homeFavorites.includes('canonicalIds(item)'),
+  'Home favorites must reconcile canonical and public service identifiers.'
+);
+assert(
+  profileFavorites.includes('function ensurePlacement()') &&
+    profileFavorites.includes('feed.appendChild(section)') &&
+    profileFavorites.includes('nav.appendChild(tab)'),
+  'Favorites must become the last profile tab and content area.'
+);
+assert(
+  profileFavorites.includes('serviceIdentifiers(item)'),
+  'Profile favorites must reconcile canonical and public service identifiers.'
 );
 assert(
   migration.includes('create extension if not exists pg_trgm with schema extensions'),
