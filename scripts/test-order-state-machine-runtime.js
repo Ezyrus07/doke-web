@@ -49,7 +49,8 @@ function createSupabase(initialOrder, options) {
 
 function baseOrder(status) {
   return {
-    id: 'order-1',
+    id: '11111111-1111-4111-8111-111111111111',
+    external_id: 'order-1',
     client_id: 'client-1',
     professional_id: 'professional-1',
     service_id: 'service-1',
@@ -113,6 +114,7 @@ async function main() {
   }
 
   console.log('[test:order-state-machine-runtime] ok');
+  console.log('- external order reference resolves to the canonical UUID row');
   console.log('- positive lifecycle executed through transactional RPC');
   console.log('- invalid skip rejected before write');
   console.log('- stale status rejected with conflict');
