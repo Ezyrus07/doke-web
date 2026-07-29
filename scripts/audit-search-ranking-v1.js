@@ -39,10 +39,12 @@ const migration = read(files.migration);
   'DOKE_SEARCH_RANKING_VERSION_IMMUTABLE',
   "'search-rank-v0'",
   "'search-rank-v1'",
-  "'text', 0.65",
+  "'text', 0.68",
   "'reviews', 0.20",
-  "'availability', 0.05",
-  "'recency', 0.10",
+  "'availability', 0.07",
+  "'recency', 0.05",
+  "'reviewPrior', pg_catalog.jsonb_build_object('mean', 4.2, 'weight', 5)",
+  "'recencyZeroDays', 120",
   "'behavioralSignalsEnabled', false",
   "values (true, 'search-rank-v0')",
   'create or replace function private.current_service_search_ranking_version()',
@@ -77,8 +79,8 @@ const sqlTest = read(files.sqlTest);
   'begin;',
   'rollback;',
   'SEARCH-A07 Bayesian smoothing lets one perfect review dominate sustained quality',
-  'SEARCH-A07 availability signal is not binary and capped at five percent',
-  'SEARCH-A07 recency contribution exceeds its ten-percent cap',
+  'SEARCH-A07 availability signal is not binary and capped at seven percent',
+  'SEARCH-A07 recency contribution exceeds its five-percent cap',
   'SEARCH-A07 immutable ranking version accepted an update',
   'SEARCH-A07 accepted an invalid unbounded configuration',
   'SEARCH-A07 accepted a stale expected ranking version',
@@ -109,6 +111,14 @@ assert(['CANDIDATE_IMPLEMENTED_CI_PENDING', 'CANDIDATE_VALIDATED_CI_PENDING'].in
 assert(evidence.ranking && evidence.ranking.activeVersionAfterMigration === 'search-rank-v0', 'SEARCH-A07 must leave legacy ranking active');
 assert(evidence.ranking && evidence.ranking.candidateVersion === 'search-rank-v1', 'SEARCH-A07 candidate ranking version is not documented');
 assert(evidence.ranking && evidence.ranking.publicRpcChanged === false, 'SEARCH-A07 cannot claim public RPC activation');
+assert(evidence.ranking && same(evidence.ranking.weights, {
+  textRelevance: 0.68,
+  publishedOrderBackedReviewQuality: 0.2,
+  futureAvailabilityPresence: 0.07,
+  boundedApprovedVersionRecency: 0.05
+}), 'SEARCH-A07 documented weights diverge from the frozen contract');
+assert(evidence.ranking && evidence.ranking.reviewSmoothing && evidence.ranking.reviewSmoothing.priorMean === 4.2, 'SEARCH-A07 Bayesian prior mean diverges from the frozen contract');
+assert(evidence.ranking && evidence.ranking.recency && evidence.ranking.recency.zeroCreditDays === 120, 'SEARCH-A07 recency boundary diverges from the frozen contract');
 assert(evidence.antiManipulation && evidence.antiManipulation.behavioralMetricsInScore === false, 'SEARCH-A07 behavioral-metric exclusion is not documented');
 assert(evidence.rollback && evidence.rollback.compareAndSwap === true, 'SEARCH-A07 compare-and-swap rollback is not documented');
 assert(evidence.safety && evidence.safety.stagingChanged === false, 'SEARCH-A07 candidate cannot claim a staging write');
