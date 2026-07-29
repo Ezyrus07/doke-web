@@ -1,0 +1,121 @@
+{
+  "domain": "ORD-001",
+  "sublot": "ORD-A03",
+  "status": "complete",
+  "environment": "staging",
+  "projectRef": "zwkczgewzbsorbrjuzpb",
+  "recordedAt": "2026-07-29T20:15:00-03:00",
+  "authority": {
+    "submittedOrders": "server_command_boundary",
+    "drafts": "browser_local_only",
+    "remoteReads": "participant_scoped",
+    "directBrowserDml": "revoked",
+    "silentWriteFallback": false,
+    "optimisticConcurrency": "expected_status",
+    "eventProjection": "transactional_outbox"
+  },
+  "commands": {
+    "create": {
+      "function": "public.create_order_command",
+      "idempotency": "external_id",
+      "initialStatus": "requested",
+      "serviceEligibility": "published_approved_snapshot"
+    },
+    "transition": {
+      "function": "public.transition_order_status",
+      "capability": "derived_from_order_relationship",
+      "conflictCode": "40001"
+    },
+    "quote": {
+      "function": "public.submit_order_quote_command",
+      "atomic": true,
+      "writes": [
+        "public.budgets",
+        "public.orders",
+        "public.order_status_history",
+        "private.order_domain_events",
+        "private.order_metric_events",
+        "public.notifications"
+      ]
+    }
+  },
+  "staging": {
+    "authenticatedDirectDml": {
+      "orders": {
+        "select": true,
+        "insert": false,
+        "update": false,
+        "delete": false
+      },
+      "budgets": {
+        "select": true,
+        "insert": false,
+        "update": false,
+        "delete": false
+      }
+    },
+    "rpcExecute": {
+      "authenticated": {
+        "createOrder": true,
+        "transitionOrder": true,
+        "submitQuote": true
+      },
+      "anon": {
+        "createOrder": false
+      }
+    },
+    "rollbackProbe": {
+      "createdStatus": "requested",
+      "idempotentSameOrder": true,
+      "quotedStatus": "quoted",
+      "budgetAmountCents": 12345,
+      "staleConflict": true,
+      "eventCount": 2,
+      "historyCount": 2,
+      "budgetCount": 1,
+      "notificationCount": 2,
+      "remainingRows": {
+        "orders": 0,
+        "budgets": 0,
+        "events": 0
+      }
+    }
+  },
+  "browser": {
+    "repositoryDirectOrderDml": false,
+    "submittedWriteMethod": "backend_api_only",
+    "mockWriteMethod": "saveMock",
+    "draftWriteMethod": "save",
+    "pendingReplay": false,
+    "apiUnavailableOutcome": "explicit_error",
+    "professionalAccountClientCapability": true
+  },
+  "backend": {
+    "createUsesRpc": true,
+    "quoteUsesRpc": true,
+    "transitionUsesRpc": true,
+    "listScope": "rls_participant_relationship",
+    "accessScope": "relationship_derived"
+  },
+  "compatibility": {
+    "notificationProjectionSchema": "current",
+    "initialCompatibilityFailureRolledBack": true,
+    "temporaryApplicatorsPresent": false
+  },
+  "operationalSafety": {
+    "realRowsMutatedDuringValidation": 0,
+    "syntheticRowsRemaining": 0,
+    "productionChanged": false,
+    "paidProvidersEnabled": false,
+    "mergeAuthorized": false
+  },
+  "matrix": {
+    "maturity": 4,
+    "userFacingAuthority": "hybrid",
+    "serverAuthority": "canonical",
+    "stagingEvidence": "staging_operational",
+    "securityGate": "partial",
+    "productionGate": "blocked"
+  },
+  "nextSublot": "ORD-A04"
+}
