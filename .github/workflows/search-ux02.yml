@@ -6,22 +6,155 @@ on:
       - assets/js/components/public-service-card.js
       - assets/js/components/ad-card-interactions.js
       - assets/js/pages/search/server-results-surface.js
+      - assets/js/pages/home/favorites-surface.js
+      - assets/js/pages/profile/favorites-surface.js
+      - index.html
+      - meu-perfil.html
       - supabase/migrations/20260729143000_service_search_intent_recovery_v1.sql
       - supabase/migrations/20260729144500_service_search_intent_no_match_fix.sql
       - scripts/test-search-ux02-runtime.js
       - .github/workflows/search-ux02.yml
+      - .github/workflows/temporary-favorites-surface-sync.yml
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   contracts:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: search/search-ux02-intent-favorites
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 24
+      - name: Synchronize favorite surfaces once
+        if: hashFiles('.github/workflows/temporary-favorites-surface-sync.yml') != ''
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          profile = Path('meu-perfil.html')
+          text = profile.read_text(encoding='utf-8')
+          old_tabs = '''              <nav class="profile-tabs client-profile-tabs" aria-label="Seções do perfil">
+                <a class="profile-tabs__item doke-tab-pill" href="#profile-favorites" aria-controls="profile-favorites">Favoritos</a>
+                <a class="profile-tabs__item doke-tab-pill" href="#profile-achievements" aria-controls="profile-achievements">Conquistas</a>
+                <a class="profile-tabs__item doke-tab-pill" href="#profile-about" aria-controls="profile-about">Sobre</a>
+              </nav>'''
+          new_tabs = '''              <nav class="profile-tabs client-profile-tabs" aria-label="Seções do perfil">
+                <a class="profile-tabs__item doke-tab-pill" href="#profile-achievements" aria-controls="profile-achievements">Conquistas</a>
+                <a class="profile-tabs__item doke-tab-pill" href="#profile-about" aria-controls="profile-about">Sobre</a>
+                <a class="profile-tabs__item doke-tab-pill" href="#profile-favorites" aria-controls="profile-favorites">Favoritos</a>
+              </nav>'''
+          if old_tabs in text:
+              text = text.replace(old_tabs, new_tabs, 1)
+
+          favorite_block = '''              <section id="profile-favorites" class="profile-area profile-area--favorites doke-page-section" data-profile-favorites-surface data-favorites-state="loading" aria-label="Serviços favoritos">
+                <div class="profile-owner-section-tools profile-owner-section-tools--island"><span>Favoritos <strong data-profile-favorites-count>0</strong></span><a class="profile-owner-mini-action doke-btn doke-btn--ghost doke-btn--sm" href="resultados.html">Buscar serviços</a></div>
+                <p class="doke-loading-state" data-profile-favorites-loading>Carregando seus favoritos...</p>
+                <div class="profile-favorites-grid" data-profile-favorites-grid hidden></div>
+                <div class="profile-favorites-empty doke-empty-state" data-profile-favorites-empty hidden><strong>Nenhum serviço salvo</strong><p>Use o coração nos anúncios para reunir aqui os serviços que deseja acompanhar.</p><a class="doke-btn doke-btn--primary" href="resultados.html">Explorar serviços</a></div>
+                <p class="doke-error-state" data-profile-favorites-error hidden>Não foi possível carregar seus favoritos agora.</p>
+              </section>
+
+'''
+          if favorite_block in text:
+              text = text.replace(favorite_block, '', 1)
+              marker = '''              </section>
+            </section>
+          </main>'''
+              replacement = '''              </section>
+
+''' + favorite_block.rstrip() + '''
+            </section>
+          </main>'''
+              if marker not in text:
+                  raise SystemExit('profile feed marker missing')
+              text = text.replace(marker, replacement, 1)
+          profile.write_text(text, encoding='utf-8')
+
+          surface = Path('assets/js/pages/profile/favorites-surface.js')
+          text = surface.read_text(encoding='utf-8')
+          old = "      var services = values[1].filter(function (item) { return favoriteIds.has(String(item && item.id || '').trim()); });"
+          new = """      var services = values[1].filter(function (item) {
+        var identifiers = [item && item.serviceId, item && item.remoteId, item && item.remote_id, item && item.id, item && item.externalId, item && item.external_id]
+          .map(function (value) { return String(value || '').trim(); })
+          .filter(Boolean);
+        return identifiers.some(function (id) { return favoriteIds.has(id); });
+      });"""
+          if old in text:
+              text = text.replace(old, new, 1)
+          surface.write_text(text, encoding='utf-8')
+
+          index = Path('index.html')
+          text = index.read_text(encoding='utf-8')
+          if 'data-home-favorites-surface' not in text:
+              anchor = '\n\n          <section class="professional-showcase doke-page-section"'
+              section = '''
+
+          <section class="home-favorites doke-page-section" data-home-favorites-surface hidden aria-labelledby="home-favorites-title">
+            <div class="section-heading section-heading--spread home-section-header">
+              <div>
+                <h2 class="section-heading__title home-section-title" id="home-favorites-title">Seus favoritos</h2>
+                <p class="section-heading__description">Serviços que você salvou para consultar depois.</p>
+              </div>
+              <a class="section-heading__link" href="meu-perfil.html#profile-favorites">Ver todos <span data-home-favorites-count>0</span></a>
+            </div>
+            <div class="content-rail doke-scroll-rail">
+              <div class="service-grid service-grid--compact doke-grid" data-home-favorites-grid aria-label="Seus serviços favoritos"></div>
+            </div>
+          </section>'''
+              if anchor not in text:
+                  raise SystemExit('home insertion marker missing')
+              text = text.replace(anchor, section + anchor, 1)
+          script_anchor = '  <script src="assets/js/pages/home/public-services.js?v=20260719-home-render-before-reveal-v1"></script>'
+          script = '  <script src="assets/js/pages/home/favorites-surface.js?v=20260729-search-ux02-v1"></script>'
+          if script not in text:
+              text = text.replace(script_anchor, script_anchor + '\n' + script, 1)
+          index.write_text(text, encoding='utf-8')
+          PY
+          rm -f .github/workflows/temporary-favorites-surface-sync.yml
+          cat > .github/workflows/search-ux02.yml <<'YAML'
+          name: Doke SEARCH-UX02 Intent and Favorites
+
+          on:
+            pull_request:
+              paths:
+                - assets/js/components/public-service-card.js
+                - assets/js/components/ad-card-interactions.js
+                - assets/js/pages/search/server-results-surface.js
+                - assets/js/pages/home/favorites-surface.js
+                - assets/js/pages/profile/favorites-surface.js
+                - index.html
+                - meu-perfil.html
+                - supabase/migrations/20260729143000_service_search_intent_recovery_v1.sql
+                - supabase/migrations/20260729144500_service_search_intent_no_match_fix.sql
+                - scripts/test-search-ux02-runtime.js
+                - .github/workflows/search-ux02.yml
+            workflow_dispatch:
+
+          permissions:
+            contents: read
+
+          jobs:
+            contracts:
+              runs-on: ubuntu-latest
+              steps:
+                - uses: actions/checkout@v4
+                - uses: actions/setup-node@v4
+                  with:
+                    node-version: 24
+                - name: Validate SEARCH-UX02 runtime and migration contracts
+                  run: node scripts/test-search-ux02-runtime.js
+          YAML
+          sed -i 's/^          //' .github/workflows/search-ux02.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add index.html meu-perfil.html assets/js/pages/profile/favorites-surface.js .github/workflows/search-ux02.yml .github/workflows/temporary-favorites-surface-sync.yml
+          git commit -m "Synchronize favorite surfaces across home and profile"
+          git push origin HEAD:search/search-ux02-intent-favorites
       - name: Validate SEARCH-UX02 runtime and migration contracts
         run: node scripts/test-search-ux02-runtime.js
