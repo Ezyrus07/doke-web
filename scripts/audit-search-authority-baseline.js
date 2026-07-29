@@ -95,19 +95,35 @@ const matrix = JSON.parse(read(files.matrix));
 const searchDomain = (matrix.domains || []).find((domain) => domain.id === 'SEARCH-001');
 assert(Boolean(searchDomain), 'SEARCH-001 is missing from the domain completion matrix');
 const searchB02Reconciled = Boolean(a05Evidence && a05Evidence.status === 'COMPLETE' && a05Evidence.matrix && a05Evidence.matrix.searchB02 === 'reconciled_removed');
-assert(searchDomain && searchDomain.maturity === (searchB02Reconciled ? 3 : 2), 'SEARCH-001 maturity changed outside controlled A05 reconciliation');
+const a11EvidencePath = 'docs/validation/SEARCH-001-A11-FINAL-RECONCILIATION.json';
+const a11Evidence = exists(a11EvidencePath) ? JSON.parse(read(a11EvidencePath)) : null;
+const searchA11Complete = Boolean(
+  a11Evidence &&
+  a11Evidence.status === 'COMPLETE_STAGING_GOVERNANCE_RECONCILIATION' &&
+  a11Evidence.closure &&
+  a11Evidence.closure['SEARCH-B03'] === 'reconciled_removed_by_SEARCH-A11'
+);
 assert(searchDomain && searchDomain.userFacingAuthority === 'hybrid', 'SEARCH-001 user-facing authority must remain hybrid');
-assert(searchDomain && searchDomain.serverAuthority === (searchB02Reconciled ? 'partial' : 'contract_only'), 'SEARCH-001 server authority changed outside controlled A05 reconciliation');
-assert(searchDomain && searchDomain.stagingEvidence === (searchB02Reconciled ? 'staging_canary' : 'local_e2e'), 'SEARCH-001 staging evidence changed outside controlled A05 reconciliation');
-assert(searchDomain && searchDomain.securityGate === 'blocked', 'SEARCH-001 security gate must remain blocked');
 assert(searchDomain && searchDomain.productionGate === 'blocked', 'SEARCH-001 production gate must remain blocked');
 const blockerIds = (searchDomain && searchDomain.blockers || []).map((blocker) => blocker.id).sort();
-const expectedBlockers = searchB02Reconciled
-  ? ['SEARCH-B03']
-  : favoritesSurfacesComplete
-    ? ['SEARCH-B02', 'SEARCH-B03']
-    : ['SEARCH-B01', 'SEARCH-B02', 'SEARCH-B03'];
-assert(same(blockerIds, expectedBlockers), 'SEARCH-001 blocker set changed outside controlled reconciliation');
+if (searchA11Complete) {
+  assert(searchDomain.maturity === 4, 'SEARCH-001 completed maturity must be staging-operational level 4');
+  assert(searchDomain.serverAuthority === 'canonical', 'SEARCH-001 completed server authority must be canonical');
+  assert(searchDomain.stagingEvidence === 'staging_operational', 'SEARCH-001 completed staging evidence must be operational');
+  assert(searchDomain.securityGate === 'partial', 'SEARCH-001 completed security gate must remain partial');
+  assert(same(blockerIds, []), 'SEARCH-001 completed blocker set must be empty');
+} else {
+  assert(searchDomain && searchDomain.maturity === (searchB02Reconciled ? 3 : 2), 'SEARCH-001 maturity changed outside controlled A05 reconciliation');
+  assert(searchDomain && searchDomain.serverAuthority === (searchB02Reconciled ? 'partial' : 'contract_only'), 'SEARCH-001 server authority changed outside controlled A05 reconciliation');
+  assert(searchDomain && searchDomain.stagingEvidence === (searchB02Reconciled ? 'staging_canary' : 'local_e2e'), 'SEARCH-001 staging evidence changed outside controlled A05 reconciliation');
+  assert(searchDomain && searchDomain.securityGate === 'blocked', 'SEARCH-001 security gate must remain blocked before A11');
+  const expectedBlockers = searchB02Reconciled
+    ? ['SEARCH-B03']
+    : favoritesSurfacesComplete
+      ? ['SEARCH-B02', 'SEARCH-B03']
+      : ['SEARCH-B01', 'SEARCH-B02', 'SEARCH-B03'];
+  assert(same(blockerIds, expectedBlockers), 'SEARCH-001 blocker set changed outside controlled reconciliation');
+}
 
 const searchService = read(files.searchService);
 [
