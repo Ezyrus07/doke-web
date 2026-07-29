@@ -1,0 +1,26 @@
+{
+  "domain": "SEARCH-UX02",
+  "status": "baseline_frozen",
+  "baseBranch": "ux/search-results-skeleton",
+  "baseHead": "496a8ab93c13bf72fc292d1cd39faea6383d584b",
+  "scope": [
+    "prefix-aware service retrieval",
+    "accent-insensitive lexical matching",
+    "explicit fallback recommendations",
+    "canonical service identifiers in cards",
+    "observable favorite mutation failures"
+  ],
+  "findings": {
+    "partialQuery": "search_public_services_v2 uses websearch_to_tsquery without prefix expansion, so limp does not match limpeza",
+    "catalogParity": "staging contains an approved published Limpeza service eligible for discovery",
+    "favoriteIdentifier": "public-service-card prefers item.id, while search v2 returns the UUID in serviceId/remoteId and a public external identifier in id",
+    "favoriteFeedback": "card click errors are swallowed and provide no visible feedback"
+  },
+  "constraints": {
+    "production": "blocked",
+    "realDataMutation": false,
+    "localPersistentAuthority": false,
+    "manipulableRankingSignals": false,
+    "mergeWithoutAuthorization": false
+  }
+}
