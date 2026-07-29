@@ -1,0 +1,50 @@
+name: Doke ORD-A03 Command Boundary
+
+on:
+  pull_request:
+    paths:
+      - assets/js/repositories/orders-repository.js
+      - assets/js/services/orders-service.js
+      - backend/modules/orders/**
+      - docs/ORD-001-COMMAND-BOUNDARY.md
+      - docs/validation/ORD-001-A03-COMMAND-BOUNDARY.json
+      - scripts/audit-ord-001-a01-baseline.js
+      - scripts/audit-ord-001-a02-personas.js
+      - scripts/audit-ord-001-a03-command-boundary.js
+      - scripts/test-order-command-boundary-runtime.js
+      - scripts/test-order-state-machine-contract.js
+      - scripts/test-order-state-machine-runtime.js
+      - scripts/test-order-transaction-events-contract.js
+      - scripts/test-order-event-worker-contract.js
+      - scripts/test-order-event-worker-runtime.mjs
+      - supabase/migrations/20260729201000_ord_a03_order_command_boundary.sql
+      - supabase/migrations/20260729201500_ord_a03_order_event_projection_compatibility_fix.sql
+      - .github/workflows/ord-001-a03-command-boundary.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  command-boundary:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Validate cumulative ORD authority and personas
+        run: |
+          node scripts/audit-ord-001-a01-baseline.js
+          node scripts/audit-ord-001-a02-personas.js
+      - name: Validate ORD-A03 command boundary
+        run: |
+          node scripts/audit-ord-001-a03-command-boundary.js
+          node scripts/test-order-command-boundary-runtime.js
+      - name: Validate canonical state and durable events
+        run: |
+          node scripts/test-order-state-machine-contract.js
+          node scripts/test-order-state-machine-runtime.js
+          node scripts/test-order-transaction-events-contract.js
+          node scripts/test-order-event-worker-contract.js
+          node scripts/test-order-event-worker-runtime.mjs
