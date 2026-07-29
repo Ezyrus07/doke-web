@@ -1,0 +1,46 @@
+name: Doke ORD-A05 Command Activation
+
+on:
+  pull_request:
+    paths:
+      - assets/js/services/orders-service.js
+      - config/domain-completion-matrix.json
+      - docs/DOMAIN-COMPLETION-MATRIX.md
+      - docs/ORD-001-COMMAND-ACTIVATION-CANARY.md
+      - docs/validation/ORD-001-A05-COMMAND-ACTIVATION.json
+      - reports/generated/domain-completion-matrix-report.json
+      - scripts/audit-ord-001-a05-command-activation.js
+      - scripts/test-order-command-activation-runtime.js
+      - scripts/validate-orders-write-frontend-activation-runtime.js
+      - scripts/validate-orders-write-frontend-rollback-gate.js
+      - supabase/migrations/20260729223000_ord_a05_explicit_persona_precedence.sql
+      - .github/workflows/ord-001-a05-command-activation.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Audit ORD-A05 command activation
+        run: node scripts/audit-ord-001-a05-command-activation.js
+      - name: Test authenticated client and professional runtimes
+        run: node scripts/test-order-command-activation-runtime.js
+      - name: Preserve frontend activation and rollback contracts
+        run: node scripts/validate-orders-write-frontend-activation-runtime.js && node scripts/validate-orders-write-frontend-rollback-gate.js
+      - name: Preserve ORD-A04 read authority
+        run: node scripts/audit-ord-001-a04-read-authority.js && node scripts/test-order-read-authority-runtime.js
+      - name: Preserve ORD-A03 command boundary
+        run: node scripts/audit-ord-001-a03-command-boundary.js && node scripts/test-order-command-boundary-runtime.js
+      - name: Preserve order state machine
+        run: node scripts/test-order-state-machine-runtime.js
+      - name: Audit domain completion matrix
+        run: node scripts/audit-domain-completion-matrix.js
+
+# Permanent ORD-A05 gate: deterministic and read-only.
