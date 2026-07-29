@@ -1,6 +1,6 @@
 {
-  "version": "1.3.13",
-  "updatedAt": "2026-07-29T09:44:00-03:00",
+  "version": "1.3.14",
+  "updatedAt": "2026-07-29T20:30:00-03:00",
   "title": "Doke Domain Completion Matrix",
   "purpose": "Single source of truth for domain maturity, data authority, staging evidence, blockers, dependencies and mandatory completion order.",
   "maturityScale": {
@@ -856,7 +856,13 @@
         "assets/js/repositories/orders-repository.js",
         "supabase/migrations/051_order_state_machine.sql",
         "supabase/migrations/053_order_transaction_events.sql",
-        "supabase/functions/order-event-worker/index.ts"
+        "supabase/functions/order-event-worker/index.ts",
+        "docs/ORD-001-COMMAND-BOUNDARY.md",
+        "docs/validation/ORD-001-A03-COMMAND-BOUNDARY.json",
+        "scripts/audit-ord-001-a03-command-boundary.js",
+        "scripts/test-order-command-boundary-runtime.js",
+        "supabase/migrations/20260729201000_ord_a03_order_command_boundary.sql",
+        "supabase/migrations/20260729201500_ord_a03_order_event_projection_compatibility_fix.sql"
       ],
       "scanRoots": [
         "backend/modules/orders",
@@ -888,21 +894,18 @@
         "test:order-state-machine-runtime",
         "test:order-transaction-events-contract",
         "test:order-event-worker-contract",
-        "test:order-event-operations-contract"
+        "test:order-event-operations-contract",
+        "audit:ord-001-a03-command-boundary",
+        "test:order-command-boundary-runtime"
       ],
       "evidence": [
         "Canonical state machine, transaction events, outbox worker and operational controls are active in staging.",
         "Backend real local and staging E2E reports cover order writes.",
-        "Browser orders repository still has localStorage/mock fallback and production defaults remain mock."
+        "ORD-A03 revoked authenticated direct DML on orders and budgets, made submitted creation and quote submission RPC-authoritative, preserved expected-state concurrency and proved zero-residue rollback canaries.",
+        "Browser drafts and mock fixtures remain explicit local-only paths; submitted write failures no longer become silent local success.",
+        "Relationship-derived capability allows a professional account to act as the client when hiring another professional."
       ],
       "blockers": [
-        {
-          "id": "ORD-B01",
-          "severity": "critical",
-          "category": "rls",
-          "description": "budgets has RLS disabled and orders grants require full persona revalidation.",
-          "targetPhase": "Fase 1"
-        },
         {
           "id": "ORD-B02",
           "severity": "high",
@@ -926,8 +929,9 @@
         }
       ],
       "nextActions": [
-        "Secure budgets and retest order policies.",
-        "Promote real order reads/writes behind controlled rollout.",
+        "Promote real order reads and commands behind controlled rollout while preserving explicit mock-only development mode.",
+        "Retire duplicate frontend order services and remove legacy local read authority from production paths.",
+        "Harden worker invocation freshness and replay resistance.",
         "Connect order transitions to messaging, scheduling and payment authorities."
       ],
       "exitCriteria": [
@@ -2435,7 +2439,6 @@
       "status": "staging_operational",
       "owner": "ORD-001",
       "blockers": [
-        "ORD-B01",
         "ORD-B02"
       ]
     },

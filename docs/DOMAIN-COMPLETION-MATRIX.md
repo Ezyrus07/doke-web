@@ -7,7 +7,7 @@ Este é o mapa operacional obrigatório para concluir a lógica da Doke. Ele cru
 - Domínios/programas mapeados: **23**.
 - Fluxos críticos mapeados: **15**.
 - Maturidade média atual: **2.83/6**.
-- Bloqueadores críticos explícitos: **15**.
+- Bloqueadores críticos explícitos: **14**.
 - Domínios prontos para produção: **0**.
 - Runtime padrão: dados **mock**, auth **supabase**, rede **desativada**.
 
@@ -105,7 +105,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 | FLOW-02 | Cadastro, login e onboarding | staging canary | AUTH-001 | register → verify_contact → session → profile_materialization → onboarding |  |
 | FLOW-03 | Tornar-se profissional e KYC | staging operational | PROF-001 | profile_setup → document_upload → submit → admin_review → decision → role_activation | PROF-B04, PROF-B05 |
 | FLOW-04 | Publicar serviço | hybrid | CAT-001 | draft → media → quote_template → submit_review → moderation → publish → edit_version |  |
-| FLOW-05 | Solicitar orçamento e criar pedido | staging operational | ORD-001 | service_snapshot → questionnaire → request → outbox_event → professional_notification | ORD-B01, ORD-B02 |
+| FLOW-05 | Solicitar orçamento e criar pedido | staging operational | ORD-001 | service_snapshot → questionnaire → request → outbox_event → professional_notification | ORD-B02 |
 | FLOW-06 | Aceite, proposta e agenda | hybrid | ORD-001 | accept → proposal → client_approval → schedule_hold → confirmation | SCHED-B02, SCHED-B03, ORD-B04 |
 | FLOW-07 | Conversa transacional | hybrid | MSG-001 | conversation → message → attachment → read_state → realtime → notification | MSG-B02, MSG-B03 |
 | FLOW-08 | Pagamento, retenção e liberação | blocked | PAY-001 | charge → provider_checkout → signed_webhook → ledger → receivable → release | PAY-B01, PAY-B03, PAY-B04 |
@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 919 arquivos no escopo; 233 referências a localStorage; 72 a sessionStorage; 533 referências mock; 159 referências de rede/Supabase; 30 marcadores de implementação pendente.
+**Evidência estática observada:** 928 arquivos no escopo; 240 referências a localStorage; 72 a sessionStorage; 548 referências mock; 174 referências de rede/Supabase; 32 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -151,7 +151,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção blocked.
 
-**Evidência estática observada:** 200 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 0 referências mock; 5 referências de rede/Supabase; 9 marcadores de implementação pendente.
+**Evidência estática observada:** 205 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 0 referências mock; 5 referências de rede/Supabase; 9 marcadores de implementação pendente.
 
 **Tabelas/autoridades de dados:** `users`, `user_profiles`, `client_profiles`, `audit_logs`, `availability_slots`, `budgets`, `communities`, `community_members`, `community_posts`, `favorites`, `message_attachments`, `reports`, `reviews`, `service_categories`, `verification_events`.
 
@@ -300,7 +300,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI remote; servidor canonical; staging staging operational; segurança partial; produção blocked.
 
-**Evidência estática observada:** 16 arquivos no escopo; 2 referências a localStorage; 4 a sessionStorage; 0 referências mock; 23 referências de rede/Supabase; 0 marcadores de implementação pendente.
+**Evidência estática observada:** 17 arquivos no escopo; 2 referências a localStorage; 4 a sessionStorage; 0 referências mock; 24 referências de rede/Supabase; 0 marcadores de implementação pendente.
 
 **Páginas:** `anunciar-servico.html`, `detalhe-anuncio.html`, `admin-anuncio-revisao.html`, `index.html`, `resultados.html`.
 
@@ -344,7 +344,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção blocked.
 
-**Evidência estática observada:** 204 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 3 referências mock; 19 referências de rede/Supabase; 9 marcadores de implementação pendente.
+**Evidência estática observada:** 209 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 3 referências mock; 19 referências de rede/Supabase; 9 marcadores de implementação pendente.
 
 **Páginas:** `index.html`, `resultados.html`, `detalhe-anuncio.html`.
 
@@ -387,7 +387,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção blocked.
 
-**Evidência estática observada:** 22 arquivos no escopo; 11 referências a localStorage; 0 a sessionStorage; 35 referências mock; 23 referências de rede/Supabase; 2 marcadores de implementação pendente.
+**Evidência estática observada:** 22 arquivos no escopo; 10 referências a localStorage; 0 a sessionStorage; 36 referências mock; 20 referências de rede/Supabase; 2 marcadores de implementação pendente.
 
 **Páginas:** `orcamento.html`, `pedidos.html`, `mensagens.html`, `pagamento-profissional.html`, `admin-pedidos-operacao.html`.
 
@@ -399,17 +399,19 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 **Evidências:**
 - Canonical state machine, transaction events, outbox worker and operational controls are active in staging.
 - Backend real local and staging E2E reports cover order writes.
-- Browser orders repository still has localStorage/mock fallback and production defaults remain mock.
+- ORD-A03 revoked authenticated direct DML on orders and budgets, made submitted creation and quote submission RPC-authoritative, preserved expected-state concurrency and proved zero-residue rollback canaries.
+- Browser drafts and mock fixtures remain explicit local-only paths; submitted write failures no longer become silent local success.
+- Relationship-derived capability allows a professional account to act as the client when hiring another professional.
 
 **Bloqueadores:**
-- **ORD-B01 · CRITICAL · rls:** budgets has RLS disabled and orders grants require full persona revalidation. _(Fase 1)_
 - **ORD-B02 · HIGH · frontend_activation:** Default product flow still uses mock/local provider unless controlled canaries are enabled. _(Fase 6)_
 - **ORD-B03 · HIGH · financial_dependency:** Payment authority is not connected to a real PSP webhook lifecycle. _(Fase 8)_
 - **ORD-B04 · MEDIUM · scheduling:** Order scheduling and availability are not server-canonical. _(Fase 6)_
 
 **Próximas ações:**
-- Secure budgets and retest order policies.
-- Promote real order reads/writes behind controlled rollout.
+- Promote real order reads and commands behind controlled rollout while preserving explicit mock-only development mode.
+- Retire duplicate frontend order services and remove legacy local read authority from production paths.
+- Harden worker invocation freshness and replay resistance.
 - Connect order transitions to messaging, scheduling and payment authorities.
 
 **Gate de saída:**
@@ -835,7 +837,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 1/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 189 arquivos no escopo; 57 referências a localStorage; 5 a sessionStorage; 258 referências mock; 8 referências de rede/Supabase; 20 marcadores de implementação pendente.
+**Evidência estática observada:** 192 arquivos no escopo; 60 referências a localStorage; 5 a sessionStorage; 262 referências mock; 8 referências de rede/Supabase; 22 marcadores de implementação pendente.
 
 **Evidências:**
 - The master plan identifies legal, privacy and commercial decisions as mandatory.
@@ -864,7 +866,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI hybrid; servidor partial; staging local e2e; segurança partial; produção blocked.
 
-**Evidência estática observada:** 848 arquivos no escopo; 232 referências a localStorage; 71 a sessionStorage; 225 referências mock; 265 referências de rede/Supabase; 9 marcadores de implementação pendente.
+**Evidência estática observada:** 851 arquivos no escopo; 231 referências a localStorage; 71 a sessionStorage; 226 referências mock; 263 referências de rede/Supabase; 9 marcadores de implementação pendente.
 
 **Páginas:** `index.html`, `resultados.html`, `detalhe-anuncio.html`, `pedidos.html`, `mensagens.html`, `notificacoes.html`, `carteira.html`, `perfil.html`, `comunidade.html`.
 
@@ -895,7 +897,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2163 arquivos no escopo; 492 referências a localStorage; 145 a sessionStorage; 843 referências mock; 554 referências de rede/Supabase; 84 marcadores de implementação pendente.
+**Evidência estática observada:** 2180 arquivos no escopo; 497 referências a localStorage; 145 a sessionStorage; 859 referências mock; 567 referências de rede/Supabase; 86 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
@@ -956,4 +958,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-07-29T09:44:00-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-07-29T20:30:00-03:00._
