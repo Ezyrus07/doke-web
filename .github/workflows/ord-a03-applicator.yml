@@ -1,0 +1,380 @@
+name: Temporary ORD-A03 Applicator
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/ord-a03-applicator.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.event_name == 'workflow_dispatch' || github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ord/ord-001-baseline-audit
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Apply canonical order command boundary
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          def read(path):
+              return Path(path).read_text(encoding='utf-8')
+
+          def write(path, value):
+              Path(path).write_text(value, encoding='utf-8')
+
+          def replace_once(value, old, new, label):
+              count = value.count(old)
+              if count != 1:
+                  raise SystemExit(f'{label}: expected one match, found {count}')
+              return value.replace(old, new, 1)
+
+          # Browser repository: remote reads remain available, but submitted writes
+          # can no longer mutate public.orders directly or fall back silently.
+          path = 'assets/js/repositories/orders-repository.js'
+          source = read(path)
+          source = replace_once(
+              source,
+              "/* Doke Orders Repository\n   Responsibility: local/mock persistence boundary for order entities.\n   Backend migration rule: pages/services must call this repository instead of localStorage directly. */",
+              "/* Doke Orders Repository\n   Responsibility: remote read mirror plus explicit browser-only draft/mock persistence.\n   Submitted orders and lifecycle commands belong exclusively to the server command boundary. */",
+              'repository header'
+          )
+          start = source.index('  function saveRemote(order) {')
+          end = source.index('  function load(options) {', start)
+          replacement = """  function commandBoundaryError(operation) {
+            var error = new Error('Pedidos enviados devem usar o command boundary canônico.');
+            error.code = 'DOKE_ORDER_COMMAND_BOUNDARY_REQUIRED';
+            error.operation = operation || 'write';
+            return error;
+          }
+
+          function saveRemote() {
+            return Promise.reject(commandBoundaryError('save'));
+          }
+
+          function synchronizePending(items) {
+            // Legacy pending snapshots are never replayed automatically. A remote
+            // failure must be surfaced by the command caller instead of becoming
+            // an eventual local success.
+            return Promise.resolve(items || []);
+          }
+
+"""
+          source = source[:start] + replacement + source[end:]
+          old_load = """    var local = readLocal();
+            return fetchRemoteOrders().then(function (remote) {
+              remote.forEach(function (item) { saveLocal(item, 'synced'); });
+              cache = mergeById(local, remote);
+              return synchronizePending(cache).then(function () {
+                cache = mergeById(readLocal(), remote);
+                return clone(cache);
+              });
+            }).catch(function (error) {
+              warnRemote(error, 'leitura');
+              return loadLocal(options);
+            });"""
+          new_load = """    var localDrafts = readLocal().filter(function (item) {
+              return normalizeStatus(item && item.status) === 'draft' || item && item.syncStatus === 'local-draft';
+            });
+            return fetchRemoteOrders().then(function (remote) {
+              cache = mergeById(localDrafts, remote);
+              return clone(cache);
+            }).catch(function (error) {
+              warnRemote(error, 'leitura');
+              return loadLocal(options);
+            });"""
+          source = replace_once(source, old_load, new_load, 'repository load')
+          old_write = """  function save(order) {
+            var normalized = normalizeOrder(order);
+            var localSaved;
+            return saveLocal(normalized, 'pending').then(function (saved) {
+              localSaved = saved;
+              if (!getSupabaseClient()) return saved;
+              return saveRemote(saved).then(function (remoteSaved) {
+                return saveLocal(remoteSaved, 'synced');
+              }).catch(function (error) {
+                warnRemote(error, 'gravação');
+                return saveLocal(Object.assign({}, localSaved, {
+                  syncStatus: 'pending',
+                  syncError: normalizeText(error && error.message)
+                }), 'pending');
+              });
+            });
+          }
+
+          function remove(orderId) {
+            var id = normalizeText(orderId);
+            return removeLocal(id).then(function (removed) {
+              var client = getSupabaseClient();
+              if (!client || !id) return removed;
+              return client.from(REMOTE_TABLE).delete().eq('external_id', id).then(function (result) {
+                if (result.error) warnRemote(result.error, 'remoção');
+                return removed;
+              }).catch(function (error) {
+                warnRemote(error, 'remoção');
+                return removed;
+              });
+            });
+          }
+"""
+          new_write = """  function save(order) {
+            var normalized = normalizeOrder(order);
+            if (normalizeStatus(normalized.status) !== 'draft') {
+              return Promise.reject(commandBoundaryError('save'));
+            }
+            return saveLocal(normalized, 'local-draft');
+          }
+
+          function saveMock(order) {
+            return saveLocal(normalizeOrder(order), 'mock');
+          }
+
+          function remove(orderId) {
+            var id = normalizeText(orderId);
+            var draft = readLocal().find(function (item) {
+              return String(item.id) === id && (normalizeStatus(item.status) === 'draft' || item.syncStatus === 'local-draft');
+            });
+            if (!draft) return Promise.reject(commandBoundaryError('remove'));
+            return removeLocal(id);
+          }
+
+          function removeMock(orderId) {
+            return removeLocal(orderId);
+          }
+"""
+          source = replace_once(source, old_write, new_write, 'repository writes')
+          source = replace_once(
+              source,
+              "    save: save,\n    remove: remove,",
+              "    save: save,\n    saveMock: saveMock,\n    remove: remove,\n    removeMock: removeMock,",
+              'repository exports'
+          )
+          if '.upsert(' in source or ".from(REMOTE_TABLE).delete()" in source or ".from(REMOTE_TABLE).update(" in source:
+              raise SystemExit('Direct browser order DML remains after repository transformation.')
+          write(path, source)
+
+          # Frontend service: local persistence is now explicit mock behavior only.
+          path = 'assets/js/services/orders-service.js'
+          source = read(path)
+          source = source.replace('assertRepository().save(', 'assertRepository().saveMock(')
+          source = source.replace('repository.save(', 'repository.saveMock(')
+          source = replace_once(
+              source,
+              "    if (user.role && user.role !== 'client') throw new Error('Use uma conta de cliente para solicitar este serviço.');",
+              "    if (user.role && ['client', 'professional'].indexOf(user.role) === -1) throw new Error('Esta conta não possui capacidade de cliente para solicitar serviços.');",
+              'dual client capability'
+          )
+          provider_anchor = """  function shouldUseOrdersApi() {
+            var status = getOrdersProviderStatus();
+            return status.ordersApiActive === true;
+          }
+"""
+          provider_replacement = provider_anchor + """
+          function assertOrderCommandProviderAvailable(command) {
+            var status = getOrdersProviderStatus();
+            if (status.requestedProvider === 'api' && !status.ordersApiActive && !status.ordersWriteCanaryActive) {
+              var error = new Error('O servidor de pedidos está indisponível. Nenhuma alteração foi salva localmente.');
+              error.code = 'DOKE_ORDER_COMMAND_BOUNDARY_UNAVAILABLE';
+              error.command = command || 'order-command';
+              document.dispatchEvent(new CustomEvent('doke:order-command-failed', {
+                detail: { command: error.command, code: error.code, message: error.message }
+              }));
+              throw error;
+            }
+            return status;
+          }
+"""
+          source = replace_once(source, provider_anchor, provider_replacement, 'provider assertion helper')
+          source = replace_once(
+              source,
+              "    if (shouldUseOrdersApi()) return ordersBoundaryCreate(getApiCreatePayload(payload, user));\n\n    var createdAt = nowIso();",
+              "    if (shouldUseOrdersApi()) return ordersBoundaryCreate(getApiCreatePayload(payload, user));\n    assertOrderCommandProviderAvailable('create');\n\n    var createdAt = nowIso();",
+              'create provider assertion'
+          )
+          source = replace_once(
+              source,
+              "    if (shouldUseOrdersApi()) {\n      var actionName = getApiActionForStatus(status);",
+              "    if (shouldUseOrdersApi()) {\n      var actionName = getApiActionForStatus(status);",
+              'save status api anchor'
+          )
+          # Insert the assertion immediately before the local repository transition path.
+          source = replace_once(
+              source,
+              "    return assertRepository().getById(orderId).then(function (current) {",
+              "    assertOrderCommandProviderAvailable('transition:' + status);\n    return assertRepository().getById(orderId).then(function (current) {",
+              'save status local assertion'
+          )
+          if 'repository.save(' in source or 'assertRepository().save(' in source:
+              raise SystemExit('Implicit repository.save remains in orders service.')
+          if source.count('saveMock(') < 4:
+              raise SystemExit('Explicit mock write conversion did not cover the order service.')
+          write(path, source)
+
+          # Backend server: creation and quote submission now call atomic RPCs.
+          path = 'backend/modules/orders/orders-service.js'
+          source = read(path)
+          source = replace_once(source, "  'id',\n  'client_id',", "  'id',\n  'external_id',\n  'client_id',", 'backend order select')
+          old_create = """  const metadata = sanitizeOrderMetadata(body);
+            const payload = {
+              client_id: safeActor.id,
+              professional_id: service.professional_id,
+              service_id: service.id,
+              title,
+              description: sanitizeText(body.description || body.details || '', 4000),
+              status: 'requested',
+              city: sanitizeText(body.city || metadata.city || '', 80) || null,
+              state: sanitizeText(body.state || metadata.state || '', 40) || null,
+              scheduled_at: body.scheduledAt || body.scheduled_at || null,
+              metadata
+            };
+
+            const response = await supabase
+              .from('orders')
+              .insert(payload)
+              .select(ORDER_SELECT)
+              .maybeSingle();
+            if (response && response.error) throw mapOrderDatabaseError(response.error);
+            const order = response && response.data;
+            if (!order) throw conflict('Order creation did not return a canonical row.');
+            return { order: normalizeOrder(order), status: 'created' };"""
+          new_create = """  const metadata = sanitizeOrderMetadata(body);
+            if (typeof supabase.rpc !== 'function') {
+              throw unavailable('Supabase RPC support is required for canonical order creation.');
+            }
+            const response = await supabase.rpc('create_order_command', {
+              p_service_ref: serviceRef,
+              p_title: title,
+              p_description: sanitizeText(body.description || body.details || '', 4000) || null,
+              p_city: sanitizeText(body.city || metadata.city || '', 80) || null,
+              p_state: sanitizeText(body.state || metadata.state || '', 40) || null,
+              p_scheduled_at: body.scheduledAt || body.scheduled_at || null,
+              p_metadata: metadata,
+              p_external_id: sanitizeText(body.externalId || body.external_id || body.idempotencyKey || body.idempotency_key || '', 160) || null
+            });
+            if (response && response.error) throw mapOrderDatabaseError(response.error);
+            const order = normalizeRpcOrderRow(response && response.data);
+            if (!order) throw conflict('Order creation did not return a canonical row.');
+            return { order: normalizeOrder(order), status: 'created' };"""
+          source = replace_once(source, old_create, new_create, 'backend create RPC')
+          old_quote = """  const budgetResponse = await supabase
+              .from('budgets')
+              .insert(payload)
+              .select(BUDGET_SELECT)
+              .maybeSingle();
+            if (budgetResponse && budgetResponse.error) throw budgetResponse.error;
+            const update = await transitionOrder(supabase, order, actor, 'quoted', 'Orçamento enviado pelo profissional.', 'quote');
+            return { ...update, budget: normalizeBudget(budgetResponse && budgetResponse.data) };"""
+          new_quote = """  if (typeof supabase.rpc !== 'function') {
+              throw unavailable('Supabase RPC support is required for atomic quote submission.');
+            }
+            const quoteResponse = await supabase.rpc('submit_order_quote_command', {
+              p_order_id: order.id,
+              p_expected_status: normalizeBackendStatus(order.status),
+              p_amount_cents: payload.amount_cents,
+              p_currency: payload.currency,
+              p_description: payload.description,
+              p_valid_until: payload.valid_until
+            });
+            if (quoteResponse && quoteResponse.error) throw mapOrderDatabaseError(quoteResponse.error);
+            const result = quoteResponse && quoteResponse.data || {};
+            const orderRow = result.order || null;
+            const budgetRow = result.budget || null;
+            if (!orderRow || !budgetRow) throw conflict('Quote command did not return its canonical projections.');
+            return {
+              order: normalizeOrder(orderRow, { budget: budgetRow }),
+              status: 'quoted',
+              previousStatus: normalizeBackendStatus(order.status),
+              budget: normalizeBudget(budgetRow)
+            };"""
+          source = replace_once(source, old_quote, new_quote, 'backend quote RPC')
+          if ".from('orders')\n    .insert" in source or ".from('budgets')\n    .insert" in source:
+              raise SystemExit('Backend direct order/budget insert remains.')
+          write(path, source)
+
+          # Historical audits accept the original frozen state or the fully-evidenced
+          # A03 reconciliation, but never a partial mixture.
+          path = 'scripts/audit-ord-001-a01-baseline.js'
+          source = read(path)
+          marker_start = source.index("[\n  \"var STORAGE_KEY = 'doke.orders.local.v1'\"")
+          marker_end = source.index("\n\n[\n  \"var ORDERS_WRITE_CANARY_PROVIDER", marker_start)
+          marker_block = source[marker_start:marker_end]
+          replacement = """const a03Closed = fs.existsSync(path.join(root, 'docs/validation/ORD-001-A03-COMMAND-BOUNDARY.json'));
+          if (!a03Closed) {
+          """ + marker_block + """
+          } else {
+            const a03 = readJson('docs/validation/ORD-001-A03-COMMAND-BOUNDARY.json');
+            assert.strictEqual(a03.status, 'complete');
+            assert(repository.includes('DOKE_ORDER_COMMAND_BOUNDARY_REQUIRED'));
+            assert(!repository.includes('client.from(REMOTE_TABLE).upsert'));
+            assert(!repository.includes("client.from(REMOTE_TABLE).delete()"));
+          }
+          """
+          source = source[:marker_start] + replacement + source[marker_end:]
+          backend_markers = """[
+            "require('./order-state-machine')",
+            "supabase.rpc('transition_order_status'",
+            'p_expected_status: oldStatus',
+            'Order changed while this transition was being processed.',
+            ".from('budgets')",
+            '.insert(payload)'
+          ].forEach((snippet) => assert(backendService.includes(snippet), `Backend order authority marker missing: ${snippet}`));"""
+          backend_replacement = """[
+            "require('./order-state-machine')",
+            "supabase.rpc('transition_order_status'",
+            'p_expected_status: oldStatus',
+            'Order changed while this transition was being processed.'
+          ].forEach((snippet) => assert(backendService.includes(snippet), `Backend order authority marker missing: ${snippet}`));
+          if (a03Closed) {
+            assert(backendService.includes("supabase.rpc('create_order_command'"));
+            assert(backendService.includes("supabase.rpc('submit_order_quote_command'"));
+          } else {
+            assert(backendService.includes(".from('budgets')"));
+            assert(backendService.includes('.insert(payload)'));
+          }"""
+          source = replace_once(source, backend_markers, backend_replacement, 'A01 backend markers')
+          write(path, source)
+
+          path = 'scripts/audit-ord-001-a02-personas.js'
+          source = read(path)
+          source = replace_once(
+              source,
+              "assert(orderPolicies.includes('orders_client_insert'));\nassert(orderPolicies.includes('orders_participants_update'));\nassert(orderPolicies.includes('orders_client_delete_draft'));",
+              "const a03Closed = fs.existsSync('docs/validation/ORD-001-A03-COMMAND-BOUNDARY.json');\nif (!a03Closed) {\n  assert(orderPolicies.includes('orders_client_insert'));\n  assert(orderPolicies.includes('orders_participants_update'));\n  assert(orderPolicies.includes('orders_client_delete_draft'));\n} else {\n  const a03 = JSON.parse(read('docs/validation/ORD-001-A03-COMMAND-BOUNDARY.json'));\n  assert.strictEqual(a03.status, 'complete');\n  assert.strictEqual(a03.staging.authenticatedDirectDml.orders.insert, false);\n  assert.strictEqual(a03.staging.authenticatedDirectDml.orders.update, false);\n  assert.strictEqual(a03.staging.authenticatedDirectDml.orders.delete, false);\n}",
+              'A02 historical policies'
+          )
+          write(path, source)
+
+          print('ORD-A03 transformations applied successfully.')
+          PY
+      - name: Validate transformed sources
+        run: |
+          node --check assets/js/repositories/orders-repository.js
+          node --check assets/js/services/orders-service.js
+          node --check backend/modules/orders/orders-service.js
+          node --check scripts/audit-ord-001-a01-baseline.js
+          node --check scripts/audit-ord-001-a02-personas.js
+          ! grep -q "client.from(REMOTE_TABLE).upsert" assets/js/repositories/orders-repository.js
+          ! grep -q "client.from(REMOTE_TABLE).delete()" assets/js/repositories/orders-repository.js
+          grep -q "create_order_command" backend/modules/orders/orders-service.js
+          grep -q "submit_order_quote_command" backend/modules/orders/orders-service.js
+      - name: Commit transformed sources
+        run: |
+          if git diff --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/js/repositories/orders-repository.js assets/js/services/orders-service.js backend/modules/orders/orders-service.js scripts/audit-ord-001-a01-baseline.js scripts/audit-ord-001-a02-personas.js
+          git commit -m "Establish canonical ORD-A03 command boundary"
+          git push origin HEAD:ord/ord-001-baseline-audit
