@@ -1,0 +1,43 @@
+name: Apply ORD-A04 Read Authority
+
+on:
+  pull_request:
+    paths:
+      - scripts/apply-ord-a04-read-authority.py
+      - .github/workflows/ord-a04-apply.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ord-a04-apply-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Apply ORD-A04 changes
+        run: python scripts/apply-ord-a04-read-authority.py
+      - name: Validate generated contracts
+        run: |
+          node scripts/test-order-read-authority-runtime.js
+          node scripts/audit-ord-001-a04-read-authority.js
+          node scripts/audit-domain-completion-matrix.js
+      - name: Remove temporary applicator and commit
+        run: |
+          git rm .github/workflows/ord-a04-apply.yml scripts/apply-ord-a04-read-authority.py
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Complete ORD-A04 canonical read authority"
+          git push origin HEAD:${{ github.head_ref || github.ref_name }}
