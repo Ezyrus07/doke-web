@@ -9,6 +9,12 @@
   function publicServiceId(service) {
     return clean(service && (service.id || service.externalId || service.external_id));
   }
+  function initialFavoriteState(serviceId) {
+    var controller = Doke.serviceFavoritesController;
+    var loaded = Boolean(controller && typeof controller.getLoadedIdentity === 'function' && controller.getLoadedIdentity());
+    var active = Boolean(serviceId && controller && typeof controller.isFavorite === 'function' && controller.isFavorite(serviceId));
+    return { active: active, loaded: loaded };
+  }
   function initials(name) {
     return clean(name).split(/\s+/).filter(Boolean).slice(0, 2).map(function (part) { return part.charAt(0).toUpperCase(); }).join('') || 'DK';
   }
@@ -66,7 +72,10 @@
   function create(service, options) {
     service = service || {}; options = options || {};
     var article = document.createElement('article');
-    article.className = 'doke-ad-card doke-ad-card--featured' + (options.results ? ' doke-ad-card--results' : '') + (options.similar ? ' doke-ad-card--similar' : '');
+    article.className = 'doke-ad-card doke-ad-card--featured'
+      + (options.results ? ' doke-ad-card--results' : '')
+      + (options.similar ? ' doke-ad-card--similar' : '')
+      + (options.favoritePreview ? ' doke-ad-card--favorite-preview' : '');
     var canonicalId = canonicalServiceId(service);
     var publicId = publicServiceId(service);
     if (canonicalId) article.dataset.serviceId = canonicalId;
@@ -78,7 +87,17 @@
     if (imageUrl) { var img=document.createElement('img'); img.src=imageUrl; img.alt='Imagem de '+clean(service.title || 'serviço'); img.loading='lazy'; media.appendChild(img); }
     else media.classList.add('is-empty');
     var badge=document.createElement('span'); badge.className='doke-ad-card__badge'; badge.textContent=clean(service.badge || 'Publicado'); media.appendChild(badge);
-    var favorite=document.createElement('button'); favorite.className='doke-ad-card__favorite doke-icon-btn doke-icon-btn--soft'; favorite.type='button'; favorite.dataset.serviceFavorite = ''; if (canonicalId) favorite.dataset.favoriteServiceId = canonicalId; favorite.setAttribute('aria-pressed', 'false'); favorite.setAttribute('aria-label','Salvar anúncio'); favorite.appendChild(svg('M20.8 5.9a5.1 5.1 0 0 0-7.2 0L12 7.5l-1.6-1.6a5.1 5.1 0 1 0-7.2 7.2L12 21l8.8-7.9a5.1 5.1 0 0 0 0-7.2Z')); media.appendChild(favorite);
+    var favoriteState = initialFavoriteState(canonicalId);
+    var favorite=document.createElement('button');
+    favorite.className='doke-ad-card__favorite doke-icon-btn doke-icon-btn--soft' + (favoriteState.active ? ' is-active' : '');
+    favorite.type='button';
+    favorite.dataset.serviceFavorite = '';
+    favorite.dataset.favoriteState = favoriteState.loaded ? 'ready' : 'loading';
+    if (canonicalId) favorite.dataset.favoriteServiceId = canonicalId;
+    favorite.setAttribute('aria-pressed', String(favoriteState.active));
+    favorite.setAttribute('aria-label', favoriteState.active ? 'Remover anúncio dos favoritos' : 'Salvar anúncio');
+    favorite.appendChild(svg('M20.8 5.9a5.1 5.1 0 0 0-7.2 0L12 7.5l-1.6-1.6a5.1 5.1 0 1 0-7.2 7.2L12 21l8.8-7.9a5.1 5.1 0 0 0 0-7.2Z'));
+    media.appendChild(favorite);
 
     var body=document.createElement('div'); body.className='doke-ad-card__body';
     var category=document.createElement('span'); category.className='doke-ad-card__category'; category.textContent=clean(service.category || 'Serviço'); body.appendChild(category);
