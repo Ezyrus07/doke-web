@@ -1,0 +1,65 @@
+name: Temporary SEARCH-A10 applicator
+
+on:
+  push:
+    branches:
+      - 'search/search-001-baseline-audit'
+    paths:
+      - '.search-a10-payload.b64'
+      - '.github/workflows/search-a10-apply.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: doke-search-a10-applicator-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    if: ${{ hashFiles('.search-a10-payload.b64') != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout candidate branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify and extract controlled payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          base64 -d .search-a10-payload.b64 > /tmp/search-a10-payload.tar.gz
+          echo 'ff700cc75cde0d45040ebc543e0f4d282f60497ea77dc73880a0e5cc29705007  /tmp/search-a10-payload.tar.gz' | sha256sum -c -
+          if tar -tzf /tmp/search-a10-payload.tar.gz | grep -E '(^/|(^|/)\.\.(/|$))'; then
+            echo 'Unsafe payload path detected.' >&2
+            exit 1
+          fi
+          tar -xzf /tmp/search-a10-payload.tar.gz
+
+      - name: Validate SEARCH-A10 candidate
+        run: |
+          node --check assets/js/core/supabase-config.js
+          node --check assets/js/repositories/search-repository.js
+          node --check assets/js/pages/resultados-data-controller.js
+          node --check assets/js/pages/search/server-results-surface.js
+          node --check scripts/audit-search-results-server-activation.js
+          node --check scripts/audit-search-browser-cutover-v2.js
+          node --check scripts/test-search-browser-cutover-runtime.js
+          node --check tests/search/search-results-staging.spec.js
+          node scripts/audit-search-results-server-activation.js
+          node scripts/audit-search-browser-cutover-v2.js
+          node scripts/test-search-browser-cutover-runtime.js
+          git diff --check
+
+      - name: Publish clean SEARCH-A10 commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .search-a10-payload.b64 .github/workflows/search-a10-apply.yml
+          git add -A
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Implement SEARCH-A10 controlled browser cutover'
+          git push origin HEAD:${GITHUB_REF_NAME}
