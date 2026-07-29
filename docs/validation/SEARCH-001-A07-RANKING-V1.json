@@ -1,16 +1,16 @@
 {
-  "schemaVersion": "1.1.0",
+  "schemaVersion": "1.2.0",
   "domain": "SEARCH-001",
   "sublot": "SEARCH-A07",
-  "status": "CANDIDATE_IMPLEMENTED_CI_PENDING",
+  "status": "COMPLETE_STAGING_INFRASTRUCTURE_INACTIVE",
   "title": "Immutable bounded ranking v1 and deterministic rollback contract",
-  "recordedAt": "2026-07-28T21:10:00-03:00",
-  "baseHead": "cd73516ff1511c210fac065668bf11c37a602e0e",
+  "recordedAt": "2026-07-28T21:20:00-03:00",
+  "validatedCandidateHead": "43d4a7c15f3ee62320ca692e6efa319378cc926a",
   "ranking": {
     "configurationAuthority": "private.service_search_ranking_versions",
     "stateAuthority": "private.service_search_ranking_state",
     "eventAuthority": "private.service_search_ranking_state_events",
-    "activeVersionAfterMigration": "search-rank-v0",
+    "activeVersionAfterValidation": "search-rank-v0",
     "candidateVersion": "search-rank-v1",
     "candidateStrategy": "bounded_quality_v1",
     "publicRpcChanged": false,
@@ -40,25 +40,46 @@
       "maximumContribution": 0.05
     }
   },
-  "stagingReconciliation": {
-    "required": true,
-    "reason": "Migration 160 was materialized in staging before the final contract synchronization, while search-rank-v0 remained active and no activation event existed.",
-    "observedMigrationVersion": "20260729000300",
-    "observedCandidateWeights": {
-      "textRelevance": 0.65,
-      "publishedOrderBackedReviewQuality": 0.2,
-      "futureAvailabilityPresence": 0.05,
-      "boundedApprovedVersionRecency": 0.1
+  "staging": {
+    "project": "doke-web-staging",
+    "projectId": "zwkczgewzbsorbrjuzpb",
+    "baseMigration": {
+      "version": "20260729000300",
+      "name": "service_search_ranking_v1",
+      "source": "supabase/migrations/160_service_search_ranking_v1.sql"
     },
-    "observedPriorMean": 4,
-    "observedRecencyZeroDays": 90,
-    "activeVersionObserved": "search-rank-v0",
-    "activationEventsObserved": 0,
-    "migration": "supabase/migrations/161_service_search_ranking_v1_contract_reconciliation.sql",
-    "freshEnvironmentBehavior": "no_op_when_160_is_already_canonical",
-    "unexpectedDriftBehavior": "fail_closed",
-    "activationAllowed": false,
-    "productionApplied": false
+    "reconciliationMigration": {
+      "version": "20260729000859",
+      "name": "service_search_ranking_v1_staging_reconciliation",
+      "source": "supabase/migrations/161_service_search_ranking_v1_staging_reconciliation.sql",
+      "reason": "Migration 160 reached staging from an intermediate pre-activation candidate while search-rank-v0 remained active and no activation event existed.",
+      "canonicalContractReconciled": true
+    },
+    "observedIntermediateContract": {
+      "weights": {
+        "textRelevance": 0.65,
+        "publishedOrderBackedReviewQuality": 0.2,
+        "futureAvailabilityPresence": 0.05,
+        "boundedApprovedVersionRecency": 0.1
+      },
+      "priorMean": 4,
+      "recencyZeroDays": 90
+    },
+    "transactionalValidation": {
+      "sql024Passed": true,
+      "sql025Passed": true,
+      "rollbackUsed": true,
+      "activeVersionAfterTests": "search-rank-v0",
+      "persistentActivationEvents": 0,
+      "versionCount": 2,
+      "immutableTriggerRestored": true,
+      "legacyPublicOrderPreserved": true
+    },
+    "permissions": {
+      "anonCanActivate": false,
+      "authenticatedCanActivate": false,
+      "serviceRoleCanActivate": true
+    }
   },
   "antiManipulation": {
     "behavioralMetricsInScore": false,
@@ -78,20 +99,24 @@
     "compareAndSwap": true,
     "activationEventsAppendOnly": true,
     "validatedPath": "search-rank-v0_to_search-rank-v1_to_search-rank-v0",
-    "transactionalSqlTest": "supabase/tests/024_service_search_ranking_v1_validation.sql"
+    "transactionalSqlTests": [
+      "supabase/tests/024_service_search_ranking_v1_validation.sql",
+      "supabase/tests/025_service_search_ranking_v1_reconciliation_validation.sql"
+    ]
   },
   "implementation": {
     "migration": "supabase/migrations/160_service_search_ranking_v1.sql",
-    "reconciliationMigration": "supabase/migrations/161_service_search_ranking_v1_contract_reconciliation.sql",
+    "reconciliationMigration": "supabase/migrations/161_service_search_ranking_v1_staging_reconciliation.sql",
     "audit": "scripts/audit-search-ranking-v1.js",
     "runtime": "scripts/test-search-ranking-v1-runtime.js",
     "workflow": ".github/workflows/search-ranking-v1.yml",
     "temporaryApplicatorRemaining": false,
-    "temporaryWorkflowRemaining": false
+    "temporaryWorkflowRemaining": false,
+    "duplicateMigrationNumberRemaining": false
   },
   "activationBoundary": {
-    "migrationAppliedToStaging": true,
-    "canonicalContractReconciledInStaging": false,
+    "rankingInfrastructureAppliedToStaging": true,
+    "canonicalContractReconciledInStaging": true,
     "rankingV1Activated": false,
     "publicSearchRpcIntegrated": false,
     "rankCursorIntegrated": false,
@@ -108,7 +133,7 @@
     "searchB03": "preserved"
   },
   "safety": {
-    "stagingChanged": true,
+    "stagingSchemaChanged": true,
     "productionChanged": false,
     "realAccountsChanged": false,
     "realServicesChanged": false,
@@ -121,12 +146,10 @@
     "prReadyForReview": false
   },
   "remaining": [
-    "Pass all CI gates with migration 161 included.",
-    "Apply migration 161 only to staging and execute SQL test 024 with rollback.",
-    "Confirm search-rank-v0 remains active and the activation event table remains empty after transactional validation.",
-    "Integrate the active ranking version into a versioned public search RPC with ranking-version and as-of cursor boundaries.",
+    "Integrate the active ranking-version pointer into a new versioned public search RPC without activating search-rank-v1.",
+    "Bind pagination cursors to rankingVersion and asOf so a page sequence cannot mix ranking states.",
     "Add server-authoritative impression and conversion telemetry before behavioral signals can be evaluated.",
-    "Keep SEARCH-B03 open until ranking, monitoring and rollback are proven together on one clean head."
+    "Keep SEARCH-B03 open until ranking activation, monitoring and rollback are proven together on one clean head."
   ],
-  "nextControlledStep": "Validate migration 161 in CI, reconcile only staging, run SQL test 024 transactionally, then begin SEARCH-A08 without activating ranking v1."
+  "nextControlledStep": "SEARCH-A08 — integrate the inactive ranking authority into a new public RPC and version-bound cursor in staging, while preserving search-rank-v0 and the blocked production gate."
 }
