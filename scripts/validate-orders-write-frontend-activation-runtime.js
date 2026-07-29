@@ -18,7 +18,7 @@ const RUNTIME_FILES = Object.freeze([
 const report = {
   name: 'orders-write-frontend-activation-runtime',
   generatedAt: new Date().toISOString(),
-  objective: 'Validate manual frontend orders write activation with dataProvider locked to mock, idempotency headers and orders-domain isolation without external network.',
+  objective: 'Validate manual frontend orders write activation while canonical reads remain on supabase-read, submitted writes stay disabled by default, and the canary preserves idempotency and domain isolation without external network.',
   performsNetworkRequest: false,
   performsMutation: false,
   files: RUNTIME_FILES.slice(),
@@ -53,13 +53,13 @@ function validateDefaultState() {
   loadRuntime(browser);
   const config = browser.window.Doke.runtimeConfig;
   assertEqual(config.dataProvider, 'mock', 'Default dataProvider must remain mock.');
-  assertEqual(config.ordersProvider, 'mock', 'Default ordersProvider must remain mock.');
+  assertEqual(config.ordersProvider, 'supabase-read', 'Default ordersProvider must preserve ORD-A04 canonical remote reads.');
   assertEqual(config.orderWriteActivation, false, 'Default orderWriteActivation must remain false.');
 
   const status = browser.window.Doke.services.orders.getOrdersWriteCanaryStatus();
   assertEqual(status.active, false, 'Orders write canary must be inactive by default.');
   assert(status.blockers.includes('ordersWriteCanary is not enabled.'), 'Inactive canary must explain missing enabled flag.');
-  record('default_state.mock_locked');
+  record('default_state.remote_read_write_locked');
 }
 
 function validateUnsafeTargetBlock() {
@@ -82,7 +82,7 @@ async function validateManualActivationAndOrderMutation() {
   const browser = createBrowserRuntime({
     storage: {
       'doke.dataProvider': 'api',
-      'doke.ordersProvider': 'mock',
+      'doke.ordersProvider': 'supabase-read',
       'doke.orderWriteActivation': 'false',
       'doke.flag.enableNetworkRequests': 'false'
     },
