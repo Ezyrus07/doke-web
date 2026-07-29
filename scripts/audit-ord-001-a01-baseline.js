@@ -82,6 +82,12 @@ assert.strictEqual(evidence.realRowsMutated, 0);
 assert.strictEqual(evidence.matrixAtEntry.maturity, 4);
 assert.strictEqual(evidence.matrixAtEntry.productionGate, 'blocked');
 assert.strictEqual(evidence.nextSublot, 'ORD-A02');
+assert.strictEqual(evidence.validation.workflow, 'Doke ORD-A01 Authority Baseline');
+assert.strictEqual(evidence.validation.runId, 30473338428);
+assert.strictEqual(evidence.validation.runNumber, 3);
+assert.strictEqual(evidence.validation.conclusion, 'success');
+assert(Array.isArray(evidence.validation.checks) && evidence.validation.checks.length === 6);
+assert(String(evidence.validation.fixtureCorrection || '').includes('no product rule changed'));
 
 const relations = new Map((evidence.relations || []).map((relation) => [`${relation.schema}.${relation.name}`, relation]));
 ['public.orders', 'public.budgets', 'public.order_status_history', 'private.order_domain_events', 'private.order_event_delivery_attempts']
@@ -174,4 +180,5 @@ console.log('- matrix entry and sequence frozen');
 console.log('- staging RLS, Edge Functions and crons evidenced');
 console.log('- server state machine and durable event authority present');
 console.log('- browser mock/local/direct-DML authority split confirmed');
+console.log('- successful dedicated validation evidence frozen');
 console.log('- no staging or production writes authorized by ORD-A01');
