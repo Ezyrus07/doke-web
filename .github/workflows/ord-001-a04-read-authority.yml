@@ -1,0 +1,38 @@
+name: Doke ORD-A04 Read Authority
+
+on:
+  pull_request:
+    paths:
+      - assets/js/core/runtime-config.js
+      - assets/js/repositories/orders-repository.js
+      - assets/js/services/order-service.js
+      - assets/js/services/orders-service.js
+      - config/domain-completion-matrix.json
+      - docs/ORD-001-READ-AUTHORITY.md
+      - docs/validation/ORD-001-A04-READ-AUTHORITY.json
+      - scripts/audit-ord-001-a04-read-authority.js
+      - scripts/test-order-read-authority-runtime.js
+      - .github/workflows/ord-001-a04-read-authority.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Audit ORD-A04 read authority
+        run: node scripts/audit-ord-001-a04-read-authority.js
+      - name: Test ORD-A04 browser runtime
+        run: node scripts/test-order-read-authority-runtime.js
+      - name: Preserve ORD-A03 command boundary
+        run: node scripts/audit-ord-001-a03-command-boundary.js && node scripts/test-order-command-boundary-runtime.js
+      - name: Preserve order state machine
+        run: node scripts/test-order-state-machine-runtime.js
+      - name: Audit domain completion matrix
+        run: node scripts/audit-domain-completion-matrix.js
