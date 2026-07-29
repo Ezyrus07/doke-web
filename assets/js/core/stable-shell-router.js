@@ -942,7 +942,6 @@
     '/notificacoes.html',
     '/pedidos.html',
     '/carteira.html',
-    '/resultados.html',
     '/detalhe-anuncio.html',
     '/comunidade.html',
     '/admin.html',
