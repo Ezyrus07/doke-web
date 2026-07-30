@@ -26,6 +26,18 @@ jobs:
       - name: Apply and validate ORD-A07
         shell: bash
         run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('scripts/reconcile-ord-a07-request-freshness-once.py')
+          source = path.read_text(encoding='utf-8')
+          old = "    target.write_text(content, encoding='utf-8')\n"
+          new = "    if content.startswith('\\\\\\n'):\n        content = content[2:]\n    target.write_text(content, encoding='utf-8')\n"
+          if new not in source:
+              if old not in source:
+                  raise SystemExit('ORD-A07 write helper anchor missing')
+              source = source.replace(old, new, 1)
+              path.write_text(source, encoding='utf-8')
+          PY
           python scripts/reconcile-ord-a07-request-freshness-once.py
           rm -f scripts/ord-a07-trigger.txt
           node scripts/test-order-request-freshness-runtime.js
