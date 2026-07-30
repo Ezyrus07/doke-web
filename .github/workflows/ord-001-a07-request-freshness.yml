@@ -1,0 +1,48 @@
+name: Doke ORD-A07 Request Freshness
+
+on:
+  pull_request:
+    paths:
+      - 'backend/shared/security/request-freshness-contract.js'
+      - 'backend/shared/security/persistent-idempotency-store.js'
+      - 'backend/shared/http/create-action-handler.js'
+      - 'backend/shared/http/route-registry.js'
+      - 'backend/runtime/staging/node-http-server.js'
+      - 'assets/js/services/orders-service.js'
+      - 'scripts/test-order-request-freshness-runtime.js'
+      - 'scripts/audit-ord-001-a07-request-freshness.js'
+      - 'scripts/audit-ord-001-a06-authorization-envelope.js'
+      - 'docs/ORD-001-A07-REQUEST-FRESHNESS.md'
+      - 'docs/validation/ORD-001-A07-REQUEST-FRESHNESS.json'
+      - 'config/domain-completion-matrix.json'
+      - 'package.json'
+      - '.github/workflows/ord-001-a07-request-freshness.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Test request freshness runtime
+        run: node scripts/test-order-request-freshness-runtime.js
+      - name: Audit request freshness contract
+        run: node scripts/audit-ord-001-a07-request-freshness.js
+      - name: Preserve command boundary
+        run: node scripts/audit-ord-001-a03-command-boundary.js
+      - name: Preserve command activation
+        run: node scripts/audit-ord-001-a05-command-activation.js
+      - name: Preserve Playwright executor
+        run: node scripts/audit-ord-001-a06-playwright-executor.js
+      - name: Preserve authorization envelope
+        run: node scripts/audit-ord-001-a06-authorization-envelope.js
+      - name: Preserve cleanup boundary
+        run: node scripts/audit-ord-001-a06-cleanup-boundary.js
+      - name: Audit completion matrix
+        run: node scripts/audit-domain-completion-matrix.js
