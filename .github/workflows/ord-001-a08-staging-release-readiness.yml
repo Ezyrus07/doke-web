@@ -1,0 +1,45 @@
+name: Doke ORD-A08 Staging Release Readiness
+
+on:
+  pull_request:
+    paths:
+      - 'backend/runtime/staging/runtime-release-contract.js'
+      - 'backend/runtime/staging/node-http-server.js'
+      - 'backend/shared/security/request-freshness-contract.js'
+      - 'scripts/execute-ord-001-a08-staging-release-preflight.js'
+      - 'scripts/test-ord-001-a08-staging-release-runtime.js'
+      - 'scripts/audit-ord-001-a08-staging-release-readiness.js'
+      - 'docs/ORD-001-A08-STAGING-RELEASE-READINESS.md'
+      - 'docs/validation/ORD-001-A08-STAGING-RELEASE-READINESS.json'
+      - 'config/domain-completion-matrix.json'
+      - 'package.json'
+      - '.github/workflows/ord-001-a08-staging-release-readiness.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Test staging release runtime
+        run: node scripts/test-ord-001-a08-staging-release-runtime.js
+      - name: Audit staging release readiness
+        run: node scripts/audit-ord-001-a08-staging-release-readiness.js
+      - name: Prove preflight remains dry-run in CI
+        run: node scripts/execute-ord-001-a08-staging-release-preflight.js --dry-run
+      - name: Preserve request freshness runtime
+        run: node scripts/test-order-request-freshness-runtime.js
+      - name: Preserve request freshness contract
+        run: node scripts/audit-ord-001-a07-request-freshness.js
+      - name: Preserve authorization envelope
+        run: node scripts/audit-ord-001-a06-authorization-envelope.js
+      - name: Preserve cleanup boundary
+        run: node scripts/audit-ord-001-a06-cleanup-boundary.js
+      - name: Audit completion matrix
+        run: node scripts/audit-domain-completion-matrix.js
