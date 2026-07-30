@@ -1,0 +1,39 @@
+name: Doke ORD-A07B Staging Migration Application
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/migrations/20260730144324_ord_a07b_worker_invocation_nonce_ledger.sql'
+      - 'config/ord-001-a07b-staging-migration-application.json'
+      - 'docs/ORD-001-A07B-STAGING-MIGRATION-APPLICATION.md'
+      - 'docs/validation/ORD-001-A07B-STAGING-MIGRATION-APPLICATION.json'
+      - 'scripts/audit-ord-001-a07b-staging-migration-application.js'
+      - '.github/workflows/ord-001-a07b-staging-migration-application.yml'
+      - 'config/domain-completion-matrix.json'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'package.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Audit staging migration application evidence
+        run: node scripts/audit-ord-001-a07b-staging-migration-application.js
+      - name: Preserve application readiness contract
+        run: |
+          node scripts/test-ord-001-a07b-staging-migration-readiness.js
+          node scripts/audit-ord-001-a07b-staging-migration-readiness.js
+      - name: Preserve worker freshness contract
+        run: |
+          node scripts/test-order-event-worker-invocation-freshness.js
+          node scripts/audit-ord-001-a07b-worker-invocation-freshness.js
+      - name: Audit completion matrix
+        run: node scripts/audit-domain-completion-matrix.js
