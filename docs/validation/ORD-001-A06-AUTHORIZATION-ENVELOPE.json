@@ -1,0 +1,81 @@
+{
+  "domain": "ORD-001",
+  "sublot": "ORD-A06",
+  "status": "authorization_envelope_contract_complete_not_issued",
+  "environment": "staging",
+  "recordedAt": "2026-07-29T22:45:00-03:00",
+  "objective": "Require one short-lived, resource-bound authorization envelope before the real two-context visual settlement executor can pass check-env or execute.",
+  "contract": {
+    "version": "ord-a06-authorization-v1",
+    "manifestRequiredByExecutor": true,
+    "manifestDigestRequired": true,
+    "absolutePathRequired": true,
+    "outsideRepositoryRequired": true,
+    "rawCredentialsAllowed": false,
+    "rawResourceIdentifiersAllowed": false,
+    "ttlMinimumMinutes": 5,
+    "ttlMaximumMinutes": 120,
+    "productionAllowed": false,
+    "maxOrders": 1,
+    "cleanupRequired": true
+  },
+  "bindings": {
+    "runId": true,
+    "targetMarker": true,
+    "clientEmailSha256": true,
+    "professionalEmailSha256": true,
+    "serviceRefSha256": true,
+    "webBaseUrlSha256": true,
+    "apiBaseUrlSha256": true,
+    "supabaseUrlSha256": true
+  },
+  "preparer": {
+    "path": "scripts/prepare-ord-001-a06-authorization-envelope.js",
+    "modes": [
+      "dry-run",
+      "check-env",
+      "write"
+    ],
+    "explicitDecisionRequired": "I_EXPLICITLY_AUTHORIZE_ORD_A06_VISUAL_CANARY",
+    "writeFlagRequired": "DOKE_ORD_A06_WRITE_AUTHORIZATION=1",
+    "refusesOverwrite": true,
+    "writesOutsideRepository": true
+  },
+  "executor": {
+    "path": "scripts/execute-ord-001-a06-visual-settlement-playwright.js",
+    "authorizationManifestPathRequired": true,
+    "authorizationManifestSha256Required": true,
+    "checkEnvValidatesEnvelope": true,
+    "executeValidatesEnvelope": true
+  },
+  "currentExecution": {
+    "authorizationDecisionReceived": false,
+    "envelopeIssued": false,
+    "accountsUsed": 0,
+    "browserContextsOpened": 0,
+    "networkRequestsPerformed": false,
+    "mutationsPerformed": false,
+    "ordersCreated": 0,
+    "productionChanged": false
+  },
+  "privacy": {
+    "emailsRecorded": false,
+    "passwordsRecorded": false,
+    "userIdsRecorded": false,
+    "serviceIdsRecorded": false,
+    "urlsRecorded": false,
+    "tokensRecorded": false,
+    "serviceRoleRecorded": false,
+    "issuedManifestRecorded": false
+  },
+  "remainingBlockers": [
+    "explicit_operational_authorization_decision",
+    "authorization_envelope_issuance_outside_repository",
+    "client_and_professional_credentials_supplied_to_executor",
+    "service_role_secret_supplied_only_to_node_process",
+    "approved_staging_targets",
+    "successful_check_env",
+    "real_two_context_visual_canary"
+  ],
+  "nextAction": "After an explicit operational authorization decision, issue one short-lived envelope outside the repository, run check-env without network or mutations, and permit execute only if every binding passes."
+}
