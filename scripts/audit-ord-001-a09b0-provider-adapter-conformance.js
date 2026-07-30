@@ -45,13 +45,18 @@ assert.strictEqual(config.dryRunRequirements.commandsExecuted, 0);
 assert.strictEqual(config.dryRunRequirements.deploymentPerformed, false);
 assert.strictEqual(config.dryRunRequirements.productionChanged, false);
 Object.values(config.canonicalState).forEach((value) => assert.strictEqual(value, false));
-Object.entries(config.executionEvidence).forEach(([key, value]) => {
-  if (key.endsWith('Performed') || key.endsWith('Created') || key === 'productionChanged') {
-    assert.strictEqual(value, false, `Execution evidence must remain false: ${key}`);
-  } else {
-    assert.strictEqual(value, 0, `Execution evidence must remain zero: ${key}`);
-  }
-});
+
+[
+  'networkRequestsPerformed',
+  'mutationsPerformed',
+  'providerAccountsUsed'
+].forEach((key) => assert.strictEqual(config.executionEvidence[key], 0, `${key} must remain zero`));
+[
+  'providerManifestsCreated',
+  'deploymentPerformed',
+  'rollbackPerformed',
+  'productionChanged'
+].forEach((key) => assert.strictEqual(config.executionEvidence[key], false, `${key} must remain false`));
 
 assert.strictEqual(evidence.status, 'provider_adapter_conformance_complete_selection_pending_exact_phrase');
 assert.strictEqual(evidence.suite.providerNeutral, true);
@@ -68,6 +73,7 @@ assert.strictEqual(evidence.execution.mutationsPerformed, 0);
 assert.strictEqual(evidence.execution.providerAccountsUsed, 0);
 assert.strictEqual(evidence.execution.providerManifestsCreated, false);
 assert.strictEqual(evidence.execution.deploymentPerformed, false);
+assert.strictEqual(evidence.execution.rollbackPerformed, false);
 assert.strictEqual(evidence.execution.productionChanged, false);
 
 assert.strictEqual(firewall.currentCanonicalState.providerSelected, false);
