@@ -67,9 +67,9 @@ assert(!edge.includes('verifyFreshWorkerInvocation'), 'Edge activation must not 
 [
   'x-doke-worker-issued-at',
   'x-doke-worker-nonce',
-  'cinco minutos',
-  'trinta segundos',
-  'não importado pela Edge Function',
+  'maximum age: 5 minutes',
+  'accepted future clock skew: 30 seconds',
+  'not imported by the Edge Function yet',
   'zero database mutations',
   'no production change'
 ].forEach((fragment) => assert(docs.includes(fragment), `Documentation missing: ${fragment}`));
