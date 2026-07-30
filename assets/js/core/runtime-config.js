@@ -27,6 +27,7 @@
 
   var CANARY_STORAGE_KEYS = Object.freeze({
     ordersWriteEnabled: 'doke.canary.ordersWrite.enabled',
+    ordersWriteReadProvider: 'doke.canary.ordersWrite.readProvider',
     betaLaunchEnabled: 'doke.canary.betaLaunch.enabled'
   });
 
@@ -149,6 +150,29 @@
     return normalized;
   }
 
+  function resolveOrdersReadProvider(windowConfig, environment) {
+    var params = queryParams();
+    var defaultProvider = environment === 'local'
+      ? ORDERS_PROVIDER_VALUES.MOCK
+      : ORDERS_PROVIDER_VALUES.SUPABASE_READ;
+    var nestedCanary = windowConfig.canary && typeof windowConfig.canary === 'object'
+      ? windowConfig.canary.ordersReadProvider
+      : '';
+    var provider = windowConfig.ordersReadProvider
+      || nestedCanary
+      || readStorage(CANARY_STORAGE_KEYS.ordersWriteReadProvider)
+      || windowConfig.ordersProvider
+      || readStorage('doke.ordersProvider')
+      || defaultProvider;
+    if (params.has('dokeOrdersReadProvider')) provider = params.get('dokeOrdersReadProvider');
+    var normalized = normalizeOrdersProvider(provider);
+    if (normalized === ORDERS_PROVIDER_VALUES.API_WRITE_CANARY) normalized = defaultProvider;
+    if (normalized === ORDERS_PROVIDER_VALUES.MOCK && environment !== 'local') {
+      return ORDERS_PROVIDER_VALUES.SUPABASE_READ;
+    }
+    return normalized;
+  }
+
   function resolveOrderWriteActivation(windowConfig, ordersWriteCanary) {
     var params = queryParams();
     var value = windowConfig.orderWriteActivation;
@@ -184,14 +208,15 @@
   var betaLaunchDomains = resolveBetaLaunchDomains(windowConfig);
   var requestedDataProvider = resolveDataProvider(windowConfig);
   var ordersProvider = resolveOrdersProvider(windowConfig, ordersWriteCanary, environment);
-  var ordersReadActivation = ordersProvider === ORDERS_PROVIDER_VALUES.SUPABASE_READ;
-  var ordersMockDevelopment = environment === 'local' && ordersProvider === ORDERS_PROVIDER_VALUES.MOCK;
+  var ordersReadProvider = resolveOrdersReadProvider(windowConfig, environment);
+  var ordersReadActivation = ordersReadProvider === ORDERS_PROVIDER_VALUES.SUPABASE_READ;
+  var ordersMockDevelopment = environment === 'local' && ordersReadProvider === ORDERS_PROVIDER_VALUES.MOCK;
   var orderWriteActivation = resolveOrderWriteActivation(windowConfig, ordersWriteCanary);
   var dataProvider = ordersWriteCanary || betaLaunchCanary ? DATA_PROVIDER_VALUES.MOCK : requestedDataProvider;
   var authProvider = AUTH_PROVIDER_VALUES.SUPABASE;
 
   Doke.runtimeConfig = Object.freeze({
-    version: '20260729-ord-a04-read-authority-v1',
+    version: '20260729-ord-a06-visual-settlement-v1',
     environment: environment,
     flags: flags,
     dataProvider: dataProvider,
@@ -203,6 +228,7 @@
     apiBaseUrl: resolveApiBaseUrl(windowConfig),
     authIdentityCanary: false,
     ordersProvider: ordersProvider,
+    ordersReadProvider: ordersReadProvider,
     requestedOrdersProvider: ordersProvider,
     defaultOrdersProvider: environment === 'local' ? ORDERS_PROVIDER_VALUES.MOCK : ORDERS_PROVIDER_VALUES.SUPABASE_READ,
     ordersReadActivation: ordersReadActivation,
@@ -219,6 +245,7 @@
       forcedDataProvider: ordersWriteCanary || betaLaunchCanary ? DATA_PROVIDER_VALUES.MOCK : '',
       authProvider: authProvider,
       ordersProvider: ordersProvider,
+      ordersReadProvider: ordersReadProvider,
       ordersRead: ordersReadActivation,
       ordersMockDevelopment: ordersMockDevelopment,
       orderWriteActivation: orderWriteActivation,
@@ -239,6 +266,7 @@
     enableNetworkQueryParam: 'dokeEnableNetwork',
     ordersWriteCanaryQueryParam: 'dokeOrdersWriteCanary',
     ordersProviderQueryParam: 'dokeOrdersProvider',
+    ordersReadProviderQueryParam: 'dokeOrdersReadProvider',
     orderWriteActivationQueryParam: 'dokeOrderWriteActivation',
     betaLaunchCanaryQueryParam: 'dokeBetaLaunchCanary',
     betaLaunchDomainsQueryParam: 'dokeBetaLaunchDomains',
@@ -246,6 +274,7 @@
     apiBaseUrlStorageKey: 'doke.apiBaseUrl',
     ordersWriteCanaryStorageKey: CANARY_STORAGE_KEYS.ordersWriteEnabled,
     ordersProviderStorageKey: 'doke.ordersProvider',
+    ordersReadProviderStorageKey: CANARY_STORAGE_KEYS.ordersWriteReadProvider,
     orderWriteActivationStorageKey: 'doke.orderWriteActivation',
     betaLaunchCanaryStorageKey: CANARY_STORAGE_KEYS.betaLaunchEnabled,
     betaLaunchDomainsStorageKey: 'doke.canary.betaLaunch.domains'

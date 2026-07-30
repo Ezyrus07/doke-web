@@ -1,6 +1,6 @@
 {
-  "version": "1.3.16",
-  "updatedAt": "2026-07-29T20:14:00-03:00",
+  "version": "1.3.17",
+  "updatedAt": "2026-07-29T21:04:00-03:00",
   "title": "Doke Domain Completion Matrix",
   "purpose": "Single source of truth for domain maturity, data authority, staging evidence, blockers, dependencies and mandatory completion order.",
   "maturityScale": {
@@ -874,7 +874,12 @@
         "docs/validation/ORD-001-A05-COMMAND-ACTIVATION.json",
         "scripts/audit-ord-001-a05-command-activation.js",
         "scripts/test-order-command-activation-runtime.js",
-        "supabase/migrations/20260729223000_ord_a05_explicit_persona_precedence.sql"
+        "supabase/migrations/20260729223000_ord_a05_explicit_persona_precedence.sql",
+        "docs/ORD-001-A06-VISUAL-SETTLEMENT-PREFLIGHT.md",
+        "docs/validation/ORD-001-A06-VISUAL-SETTLEMENT-PREFLIGHT.json",
+        "scripts/audit-ord-001-a06-visual-settlement.js",
+        "scripts/test-order-visual-settlement-runtime.js",
+        ".github/workflows/ord-001-a06-visual-settlement.yml"
       ],
       "scanRoots": [
         "backend/modules/orders",
@@ -914,7 +919,9 @@
         "audit:ord-001-a04-read-authority",
         "test:order-read-authority-runtime",
         "audit:ord-001-a05-command-activation",
-        "test:order-command-activation-runtime"
+        "test:order-command-activation-runtime",
+        "audit:ord-001-a06-visual-settlement",
+        "test:order-visual-settlement-runtime"
       ],
       "evidence": [
         "Canonical state machine, transaction events, outbox worker and operational controls are active in staging.",
@@ -927,14 +934,18 @@
         "Latest participant-visible budgets are projected with remote orders so proposal state remains consistent across devices.",
         "ORD-A05 proved request, accept and quote across isolated client/professional personas in a rolled-back staging transaction, with third-party denial, optimistic conflict and zero residue.",
         "The frontend write canary now requires the canonical bearer token before fetch and preserves idempotency for create, accept and quote actions.",
-        "The real two-account browser and UI settlement canary remains pending, so user-facing authority stays hybrid and ORD-B02 remains open."
+        "The real two-account browser and UI settlement canary remains pending, so user-facing authority stays hybrid and ORD-B02 remains open.",
+        "ORD-A06 preflight found that command-canary activation and canonical order reads shared one provider field, preventing reliable read-after-write UI settlement.",
+        "The frontend now preserves supabase-read as the independent order read provider while api-write-canary-frontend-activation is used only for authenticated commands.",
+        "A deterministic two-context runtime proves requested, accepted and quoted states converge without shared storage or silent local fallback.",
+        "The real two-account Playwright canary remains blocked until two explicitly authorized accounts and a runId-scoped cleanup boundary are available."
       ],
       "blockers": [
         {
           "id": "ORD-B02",
           "severity": "high",
           "category": "frontend_activation",
-          "description": "Synthetic rolled-back client/professional/third-party canary and bearer-authenticated frontend runtimes passed. ORD-B02 remains until two authorized real accounts complete the browser cross-device command and UI settlement canary.",
+          "description": "Canonical reads and canary commands are now separated and deterministic cross-context settlement passes. ORD-B02 remains until two explicitly authorized staging accounts complete the real browser UI canary with runId-scoped cleanup.",
           "targetPhase": "Fase 6"
         },
         {
@@ -953,9 +964,10 @@
         }
       ],
       "nextActions": [
-        "Run ORD-A06 with two explicitly authorized test accounts in separate browser or device contexts and validate request, accept, quote, conflict and UI settlement.",
-        "Harden worker invocation freshness and replay resistance.",
-        "Connect order transitions to messaging, scheduling and payment authorities."
+        "Freeze a service-role-only cleanup boundary for ORD-A06 runId-tagged fixtures.",
+        "Obtain two explicitly authorized staging test accounts without changing real users.",
+        "Run the two-browser requested, accepted, quoted, conflict and UI settlement canary, then prove zero residue.",
+        "Harden worker invocation freshness and replay resistance."
       ],
       "exitCriteria": [
         "Two real accounts complete request, accept, proposal, approval, start and completion across devices.",

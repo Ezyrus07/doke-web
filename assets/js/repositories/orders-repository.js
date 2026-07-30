@@ -166,7 +166,7 @@
   function getProviderPolicy() {
     var config = getRuntimeConfig();
     var environment = String(config.environment || '').toLowerCase();
-    var provider = String(config.ordersProvider || 'mock').trim().toLowerCase();
+    var provider = String(config.ordersReadProvider || config.ordersProvider || 'mock').trim().toLowerCase();
     var remoteReadActive = provider === 'supabase-read';
     var mockDevelopmentActive = config.ordersMockDevelopment === true
       || (environment === 'local' && provider === 'mock');

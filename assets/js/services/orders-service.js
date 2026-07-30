@@ -11,6 +11,7 @@
     enabled: 'doke.canary.ordersWrite.enabled',
     backup: 'doke.canary.ordersWrite.backup.v1',
     ordersProvider: 'doke.ordersProvider',
+    readProvider: 'doke.canary.ordersWrite.readProvider',
     orderWriteActivation: 'doke.orderWriteActivation',
     apiBaseUrl: 'doke.apiBaseUrl',
     ordersApiBaseUrl: 'doke.canary.ordersWrite.apiBaseUrl',
@@ -94,6 +95,22 @@
     return String(config.ordersProvider || (config.canary && config.canary.ordersProvider) || readStorage(ORDERS_WRITE_CANARY_KEYS.ordersProvider) || 'mock').trim().toLowerCase();
   }
 
+  function resolveOrdersReadProvider(config) {
+    config = config || {};
+    var environment = String(config.environment || '').trim().toLowerCase();
+    var nested = config.canary && config.canary.ordersReadProvider;
+    var provider = String(
+      config.ordersReadProvider
+      || nested
+      || readStorage(ORDERS_WRITE_CANARY_KEYS.readProvider)
+      || config.defaultOrdersProvider
+      || (environment === 'local' ? 'mock' : 'supabase-read')
+    ).trim().toLowerCase();
+    if (provider === ORDERS_WRITE_CANARY_PROVIDER) provider = environment === 'local' ? 'mock' : 'supabase-read';
+    if (provider === 'mock' && environment !== 'local') return 'supabase-read';
+    return provider === 'supabase-read' ? 'supabase-read' : 'mock';
+  }
+
   function readOrdersApiBaseUrl(config) {
     return normalizeBaseUrl(
       readQueryParam('dokeOrdersWriteApiBaseUrl') ||
@@ -148,6 +165,7 @@
       values: {
         'doke.canary.ordersWrite.enabled': readStorage(ORDERS_WRITE_CANARY_KEYS.enabled),
         'doke.ordersProvider': readStorage(ORDERS_WRITE_CANARY_KEYS.ordersProvider),
+        'doke.canary.ordersWrite.readProvider': readStorage(ORDERS_WRITE_CANARY_KEYS.readProvider),
         'doke.orderWriteActivation': readStorage(ORDERS_WRITE_CANARY_KEYS.orderWriteActivation),
         'doke.apiBaseUrl': readStorage(ORDERS_WRITE_CANARY_KEYS.apiBaseUrl),
         'doke.canary.ordersWrite.apiBaseUrl': readStorage(ORDERS_WRITE_CANARY_KEYS.ordersApiBaseUrl),
@@ -179,17 +197,27 @@
     var flags = Object.assign({}, getRuntimeFlags(), {
       enableNetworkRequests: readNetworkEnabled(config)
     });
-    var ordersProvider = enabled ? ORDERS_WRITE_CANARY_PROVIDER : readOrdersProvider(config);
+    var ordersReadProvider = resolveOrdersReadProvider(config);
+    var restoredProvider = readOrdersProvider(config);
+    if (!enabled && restoredProvider === ORDERS_WRITE_CANARY_PROVIDER) restoredProvider = ordersReadProvider;
+    var ordersProvider = enabled ? ORDERS_WRITE_CANARY_PROVIDER : restoredProvider;
+    var ordersReadActivation = ordersReadProvider === 'supabase-read';
+    var ordersMockDevelopment = String(config.environment || '').toLowerCase() === 'local' && ordersReadProvider === 'mock';
     Doke.runtimeConfig = Object.freeze(Object.assign({}, config, {
       flags: flags,
       dataProvider: enabled ? 'mock' : (config.dataProvider || 'mock'),
       ordersProvider: ordersProvider,
+      ordersReadProvider: ordersReadProvider,
+      ordersReadActivation: ordersReadActivation,
+      ordersMockDevelopment: ordersMockDevelopment,
       orderWriteActivation: enabled && readOrderWriteActivation(config),
       ordersWriteCanary: enabled,
       apiBaseUrl: readOrdersApiBaseUrl(config) || config.apiBaseUrl || '',
       canary: Object.freeze(Object.assign({}, config.canary || {}, {
         ordersWrite: enabled,
         ordersProvider: ordersProvider,
+        ordersReadProvider: ordersReadProvider,
+        ordersRead: ordersReadActivation,
         forcedDataProvider: enabled ? 'mock' : (config.canary && config.canary.forcedDataProvider || ''),
         orderWriteActivation: enabled && readOrderWriteActivation(config)
       }))
@@ -201,6 +229,7 @@
     var canaryRequested = readOrdersWriteCanaryFlag(config);
     var orderWriteActivation = readOrderWriteActivation(config);
     var ordersProvider = readOrdersProvider(config);
+    var ordersReadProvider = resolveOrdersReadProvider(config);
     var apiBaseUrl = readOrdersApiBaseUrl(config);
     var networkEnabled = readNetworkEnabled(config);
     var dataProvider = String(config.dataProvider || readStorage(ORDERS_WRITE_CANARY_KEYS.dataProvider) || 'mock').trim().toLowerCase();
@@ -221,6 +250,7 @@
       active: blockers.length === 0,
       canaryRequested: canaryRequested,
       ordersProvider: ordersProvider,
+      ordersReadProvider: ordersReadProvider,
       dataProvider: dataProvider,
       orderWriteActivation: orderWriteActivation,
       apiBaseUrlConfigured: Boolean(apiBaseUrl),
@@ -243,6 +273,7 @@
     }
 
     writeStorageValue(ORDERS_WRITE_CANARY_KEYS.enabled, 'true');
+    writeStorageValue(ORDERS_WRITE_CANARY_KEYS.readProvider, resolveOrdersReadProvider(getRuntimeConfig()));
     writeStorageValue(ORDERS_WRITE_CANARY_KEYS.ordersProvider, ORDERS_WRITE_CANARY_PROVIDER);
     writeStorageValue(ORDERS_WRITE_CANARY_KEYS.orderWriteActivation, 'true');
     writeStorageValue(ORDERS_WRITE_CANARY_KEYS.dataProvider, 'mock');
@@ -262,7 +293,8 @@
     if (backup) restoreOrdersWriteCanaryBackup(backup);
     else {
       writeStorageValue(ORDERS_WRITE_CANARY_KEYS.enabled, null);
-      writeStorageValue(ORDERS_WRITE_CANARY_KEYS.ordersProvider, 'mock');
+      writeStorageValue(ORDERS_WRITE_CANARY_KEYS.ordersProvider, null);
+      writeStorageValue(ORDERS_WRITE_CANARY_KEYS.readProvider, null);
       writeStorageValue(ORDERS_WRITE_CANARY_KEYS.orderWriteActivation, null);
       writeStorageValue(ORDERS_WRITE_CANARY_KEYS.ordersApiBaseUrl, null);
       writeStorageValue(ORDERS_WRITE_CANARY_KEYS.marker, null);
@@ -445,12 +477,13 @@ function extractIdempotencyKey(payload, options) {
     var config = getRuntimeConfig();
     var environment = String(config.environment || '').toLowerCase();
     var configuredProvider = String(config.ordersProvider || 'mock').trim().toLowerCase();
+    var ordersReadProvider = resolveOrdersReadProvider(config);
     var activeBoundaryProvider = boundaryStatus && boundaryStatus.activeProvider || 'mock';
     var apiReady = boundaryStatus ? boundaryStatus.apiReady === true : false;
     var ordersApiActive = activeBoundaryProvider === 'api' && apiReady;
-    var ordersRemoteReadActive = configuredProvider === 'supabase-read';
+    var ordersRemoteReadActive = ordersReadProvider === 'supabase-read';
     var mockDevelopmentActive = config.ordersMockDevelopment === true
-      || (environment === 'local' && configuredProvider === 'mock');
+      || (environment === 'local' && ordersReadProvider === 'mock');
     var writeCanaryStatus = getOrdersWriteCanaryStatus();
     var activeProvider = writeCanaryStatus.active
       ? writeCanaryStatus.ordersProvider
@@ -466,6 +499,7 @@ function extractIdempotencyKey(payload, options) {
       domain: 'orders',
       activeProvider: activeProvider,
       requestedProvider: String(config.requestedOrdersProvider || configuredProvider),
+      readProvider: ordersReadProvider,
       apiReady: apiReady || writeCanaryStatus.active,
       ordersApiActive: ordersApiActive,
       ordersRemoteReadActive: ordersRemoteReadActive,
