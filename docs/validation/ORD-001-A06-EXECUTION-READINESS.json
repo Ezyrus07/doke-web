@@ -1,0 +1,90 @@
+{
+  "domain": "ORD-001",
+  "sublot": "ORD-A06",
+  "status": "candidate_capacity_found_authorization_blocked",
+  "environment": "staging",
+  "recordedAt": "2026-07-29T22:23:00-03:00",
+  "objective": "Determine whether staging already contains the minimum account and service capacity for the authorized two-context visual settlement canary without exposing PII or modifying data.",
+  "readOnlyInspection": {
+    "performed": true,
+    "accountsCreated": 0,
+    "accountsModified": 0,
+    "passwordsChanged": 0,
+    "ordersCreated": 0,
+    "servicesModified": 0,
+    "productionChanged": false
+  },
+  "capacity": {
+    "authUsers": 3,
+    "clientProfiles": 3,
+    "professionalProfiles": 1,
+    "publishedServices": 1,
+    "compatibleClientCandidates": 1,
+    "compatibleProfessionalCandidates": 1,
+    "compatibleDistinctPairs": 1,
+    "eligibleOwnedServiceCandidates": 1
+  },
+  "clientCandidate": {
+    "emailConfirmed": true,
+    "banned": false,
+    "hasSignedIn": true,
+    "hasClientProfile": true,
+    "hasProfessionalProfile": false,
+    "explicitlyAuthorizedForCanary": false,
+    "credentialsAvailableToExecutor": false
+  },
+  "professionalCandidate": {
+    "emailConfirmed": true,
+    "banned": false,
+    "hasSignedIn": true,
+    "hasClientProfile": true,
+    "hasProfessionalProfile": true,
+    "professionalSetupStatus": "active",
+    "professionalVerificationStatus": "verified",
+    "explicitlyAuthorizedForCanary": false,
+    "credentialsAvailableToExecutor": false
+  },
+  "serviceCandidate": {
+    "exists": true,
+    "status": "published",
+    "hasApprovedVersion": true,
+    "ownedByProfessionalCandidate": true,
+    "explicitlyAuthorizedForCanary": false,
+    "serviceReferenceAvailableToExecutor": false
+  },
+  "stagingResidue": {
+    "orders": 0,
+    "budgets": 0,
+    "orderStatusHistory": 0,
+    "domainEvents": 0,
+    "metricEvents": 0,
+    "deliveryAttempts": 0
+  },
+  "decision": {
+    "technicalCapacityAvailable": true,
+    "operationalAuthorizationAvailable": false,
+    "realExecutionAllowed": false,
+    "reason": "Existing capacity is not equivalent to permission. The candidate accounts and service must be explicitly authorized and their secrets supplied outside the repository before execution."
+  },
+  "remainingBlockers": [
+    "explicit_authorization_for_client_candidate",
+    "explicit_authorization_for_professional_candidate",
+    "explicit_authorization_for_owned_service_candidate",
+    "client_credentials_supplied_outside_repository",
+    "professional_credentials_supplied_outside_repository",
+    "approved_web_api_and_supabase_urls",
+    "service_role_secret_supplied_outside_browser",
+    "explicit_network_mutation_and_execution_flags"
+  ],
+  "privacy": {
+    "emailsRecorded": false,
+    "userIdsRecorded": false,
+    "serviceIdsRecorded": false,
+    "usernamesRecorded": false,
+    "displayNamesRecorded": false,
+    "credentialsRecorded": false,
+    "tokensRecorded": false,
+    "serviceRoleRecorded": false
+  },
+  "nextAction": "Obtain explicit authorization for the identified client, professional and owned published service; then supply credentials and approved endpoints only to the fail-closed executor environment."
+}
