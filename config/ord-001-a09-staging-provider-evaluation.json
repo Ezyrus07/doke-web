@@ -1,0 +1,130 @@
+{
+  "contractVersion": "ord-a09-staging-provider-evaluation-v1",
+  "domain": "ORD-001",
+  "sublot": "ORD-A09A",
+  "recordedAt": "2026-07-30T09:02:00-03:00",
+  "status": "recommendation_complete_selection_pending_explicit_decision",
+  "scope": "External provider evaluation for the platform-neutral ORD-A08 Node staging runtime.",
+  "decisionBoundary": {
+    "providerSelected": false,
+    "infrastructureCreated": false,
+    "billingAuthorized": false,
+    "secretsConfigured": false,
+    "deploymentPerformed": false,
+    "productionChanged": false,
+    "genericNextMeansSelection": false
+  },
+  "weights": {
+    "currentNodeRuntimeCompatibility": 25,
+    "operationalSimplicity": 20,
+    "deterministicDeployAndRollback": 20,
+    "stagingCostControl": 15,
+    "BrazilLatency": 10,
+    "Observability": 10
+  },
+  "candidates": [
+    {
+      "provider": "railway",
+      "rank": 1,
+      "weightedScore": 4.45,
+      "recommendation": "preferred_for_initial_staging",
+      "strengths": [
+        "Direct long-running Node service compatibility",
+        "Git-connected deployments and explicit healthcheck support",
+        "Public deployment API with logs, deploy and rollback operations",
+        "Low operational surface for a small team",
+        "Hobby subscription starts at USD 5 monthly and counts toward resource usage"
+      ],
+      "constraints": [
+        "No Brazil deployment region in the current official region list",
+        "Deployment healthcheck is an activation gate rather than continuous uptime monitoring",
+        "A paid Hobby plan is the practical minimum for persistent staging"
+      ],
+      "recommendedRegion": "us-east4-eqdc4a",
+      "regionLabel": "Virginia, USA",
+      "bindingStatus": "not_authorized"
+    },
+    {
+      "provider": "fly.io",
+      "rank": 2,
+      "weightedScore": 4.2,
+      "recommendation": "preferred_future_latency_candidate",
+      "strengths": [
+        "Native Sao Paulo region gru",
+        "Low-entry pay-as-you-go Machine pricing",
+        "Continuous health checks and canary or blue-green deployment strategies",
+        "Strong regional placement and runtime control"
+      ],
+      "constraints": [
+        "Requires more infrastructure ownership through fly.toml, image builds and Machine lifecycle",
+        "Credit card is required for new organizations",
+        "Rollback and release operation are more CLI and infrastructure intensive"
+      ],
+      "recommendedRegion": "gru",
+      "regionLabel": "Sao Paulo, Brazil",
+      "bindingStatus": "not_authorized"
+    },
+    {
+      "provider": "render",
+      "rank": 3,
+      "weightedScore": 3.95,
+      "recommendation": "acceptable_preview_alternative",
+      "strengths": [
+        "Native Node web services with Git deployments",
+        "Health checks, zero-downtime deploys and instant rollback",
+        "Free web service option for experimentation"
+      ],
+      "constraints": [
+        "No South America region in the current official region list",
+        "Free services spin down after fifteen idle minutes and may take about one minute to wake",
+        "HTTP request logs and response latency metrics require Pro or higher"
+      ],
+      "recommendedRegion": "virginia",
+      "regionLabel": "Virginia, USA",
+      "bindingStatus": "not_authorized"
+    },
+    {
+      "provider": "vercel",
+      "rank": 4,
+      "weightedScore": 3.8,
+      "recommendation": "defer_for_backend_staging",
+      "strengths": [
+        "Git-native deployment workflow and strong rollback tooling",
+        "Sao Paulo managed infrastructure region on Pro",
+        "Zero-configuration Node server deployment introduced in June 2026"
+      ],
+      "constraints": [
+        "General Node server support is recent compared with the other candidates",
+        "Sao Paulo regional compute is available only on Pro",
+        "The current Doke runtime and release contract map more directly to a persistent service platform"
+      ],
+      "recommendedRegion": "gru1",
+      "regionLabel": "Sao Paulo, Brazil",
+      "bindingStatus": "not_authorized"
+    }
+  ],
+  "recommendation": {
+    "provider": "railway",
+    "scope": "initial_external_staging_only",
+    "reason": "It minimizes operational complexity while supporting the existing Node entrypoint, health contract, Git deployments, server-side variables, logs and deterministic rollback APIs. Latency is acceptable for internal staging and can be reconsidered before production.",
+    "fallback": "fly.io",
+    "productionProviderDecisionDeferred": true,
+    "requiresExplicitSelectionPhrase": "I_EXPLICITLY_SELECT_RAILWAY_FOR_DOKE_STAGING"
+  },
+  "sources": [
+    "https://docs.railway.com/pricing",
+    "https://docs.railway.com/deployments/regions",
+    "https://docs.railway.com/deployments/healthchecks",
+    "https://docs.railway.com/integrations/api/manage-deployments",
+    "https://fly.io/docs/about/pricing/",
+    "https://fly.io/docs/reference/regions/",
+    "https://fly.io/docs/launch/deploy/",
+    "https://render.com/docs/web-services",
+    "https://render.com/docs/regions",
+    "https://render.com/docs/free",
+    "https://render.com/docs/platform-features-by-plan",
+    "https://vercel.com/changelog/deploy-node-servers-with-zero-configuration",
+    "https://vercel.com/docs/deployments/rollback-production-deployment",
+    "https://vercel.com/docs/pricing/regional-pricing/gru1"
+  ]
+}
