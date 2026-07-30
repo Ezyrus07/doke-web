@@ -1,0 +1,109 @@
+{
+  "domain": "ORD-001",
+  "sublot": "ORD-A06",
+  "status": "cleanup_boundary_complete_real_browser_canary_blocked",
+  "environment": "staging",
+  "projectRef": "zwkczgewzbsorbrjuzpb",
+  "recordedAt": "2026-07-29T21:31:00-03:00",
+  "authority": {
+    "function": "public.cleanup_order_canary_run(text)",
+    "securityDefiner": true,
+    "execute": {
+      "public": false,
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "explicitJwtRolePrecedence": true,
+    "administrativeFallbackOnlyWithoutExplicitClaim": true
+  },
+  "scope": {
+    "runIdPattern": "^ord-a06-[a-z0-9][a-z0-9-]{5,80}$",
+    "singleOrderMaximum": true,
+    "doubleMarkerRequired": true,
+    "metadata": {
+      "canaryDomain": "ORD-001",
+      "canarySublot": "ORD-A06",
+      "canaryScope": "visual-settlement"
+    },
+    "externalIdPrefixRequired": true,
+    "allowedStates": ["requested", "accepted", "quoted"],
+    "partialMarkerOutcome": "DOKE_ORDER_CANARY_MARKER_MISMATCH",
+    "ambiguousScopeOutcome": "DOKE_ORDER_CANARY_SCOPE_AMBIGUOUS"
+  },
+  "cleanup": {
+    "ownedProjections": [
+      "private.order_event_delivery_attempts",
+      "private.order_metric_events",
+      "private.order_domain_events",
+      "public.budgets",
+      "public.order_status_history",
+      "public.notifications",
+      "public.api_idempotency_keys",
+      "public.orders"
+    ],
+    "outOfScopeDependencyPolicy": "abort",
+    "outOfScopeDependencies": [
+      "public.conversations",
+      "public.payments",
+      "public.payment_disputes",
+      "public.transactions",
+      "public.receipts",
+      "public.wallet_receivables",
+      "public.reviews",
+      "public.quote_template_funnel_events",
+      "public.quote_template_funnel_sessions",
+      "private.order_event_operator_actions"
+    ],
+    "idempotentSecondCall": true,
+    "residueCheck": true
+  },
+  "stagingValidation": {
+    "transactionRolledBack": true,
+    "realRowsPersisted": 0,
+    "syntheticAuthUsersPersisted": 0,
+    "syntheticServicesPersisted": 0,
+    "syntheticOrdersPersisted": 0,
+    "validated": [
+      "service_role_only",
+      "explicit_role_precedence",
+      "double_marker_scope",
+      "requested_accepted_quoted_cleanup",
+      "control_order_survives",
+      "idempotent_second_cleanup",
+      "partial_marker_rejected",
+      "zero_residue"
+    ]
+  },
+  "defectFoundAndFixed": {
+    "classification": "explicit_identity_precedence",
+    "initialIssue": "An administrative session fallback could authorize cleanup even when the request carried an explicit authenticated JWT role.",
+    "fixMigration": "supabase/migrations/20260730004500_ord_a06_cleanup_explicit_role_precedence.sql",
+    "finalOutcome": "Explicit request role is evaluated first and authenticated requests are denied."
+  },
+  "migrations": [
+    {
+      "path": "supabase/migrations/20260730003500_ord_a06_canary_cleanup_boundary.sql",
+      "appliedToStaging": true
+    },
+    {
+      "path": "supabase/migrations/20260730004500_ord_a06_cleanup_explicit_role_precedence.sql",
+      "appliedToStaging": true
+    }
+  ],
+  "remainingBlockers": [
+    "two_explicitly_authorized_staging_test_accounts",
+    "approved_staging_or_preview_urls",
+    "real_playwright_two_session_execution",
+    "visual_optimistic_conflict_evidence"
+  ],
+  "operationalSafety": {
+    "accountsCreatedPermanently": 0,
+    "accountsModifiedPermanently": 0,
+    "realRowsMutated": 0,
+    "productionChanged": false,
+    "paidProvidersEnabled": false,
+    "rankingChanged": false,
+    "mergeAuthorized": false
+  }
+}
