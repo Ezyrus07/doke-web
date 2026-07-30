@@ -2,9 +2,16 @@
 'use strict';
 
 const assert = require('assert');
+const fs = require('fs');
+const path = require('path');
 const { createNodeHttpServer } = require('../backend/runtime/staging/node-http-server');
 const { createRuntimeReleaseDescriptor, RELEASE_CONTRACT_VERSION } = require('../backend/runtime/staging/runtime-release-contract');
-const { createPreflightConfig, executePreflight } = require('./execute-ord-001-a08-staging-release-preflight');
+const {
+  REPORT_PATH,
+  createPreflightConfig,
+  executePreflight,
+  writeReport
+} = require('./execute-ord-001-a08-staging-release-preflight');
 
 const releaseId = 'ord-a08-test-release-01';
 const rollbackReleaseId = 'ord-a08-test-rollback-00';
@@ -37,6 +44,7 @@ const server = createNodeHttpServer({
 });
 
 server.listen(0, '127.0.0.1', async () => {
+  const absoluteReportPath = path.resolve(REPORT_PATH);
   try {
     const address = server.address();
     const baseUrl = `http://127.0.0.1:${address.port}`;
@@ -65,9 +73,18 @@ server.listen(0, '127.0.0.1', async () => {
     assert.strictEqual(report.status, 'staging_release_read_only_preflight_passed');
     assert.strictEqual(report.networkRequests, 2);
     assert.strictEqual(report.mutations, 0);
+    assert(Object.isFrozen(report));
+
+    const writtenPath = writeReport(report);
+    assert.strictEqual(writtenPath, absoluteReportPath);
+    assert(fs.existsSync(absoluteReportPath));
+    const writtenReport = JSON.parse(fs.readFileSync(absoluteReportPath, 'utf8'));
+    assert.strictEqual(writtenReport.status, report.status);
+    assert.strictEqual(writtenReport.mutations, 0);
     assert.strictEqual(runtimeCalls, 0, 'Health and OPTIONS must not invoke the domain runtime.');
     console.log('ORD-A08 staging release runtime test passed.');
   } finally {
+    fs.rmSync(absoluteReportPath, { force: true });
     server.close();
   }
 });
