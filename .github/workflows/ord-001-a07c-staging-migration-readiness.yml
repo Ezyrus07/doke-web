@@ -1,0 +1,46 @@
+name: Doke ORD-A07C Staging Migration Readiness
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/migrations/20260730153500_ord_a07c_worker_invocation_headers.sql'
+      - 'config/ord-001-a07c-staging-migration-readiness.json'
+      - 'scripts/plan-ord-001-a07c-staging-migration.js'
+      - 'scripts/test-ord-001-a07c-staging-migration-readiness.js'
+      - 'scripts/audit-ord-001-a07c-staging-migration-readiness.js'
+      - 'docs/ORD-001-A07C-STAGING-MIGRATION-READINESS.md'
+      - 'docs/validation/ORD-001-A07C-STAGING-MIGRATION-READINESS.json'
+      - '.github/workflows/ord-001-a07c-staging-migration-readiness.yml'
+      - 'config/domain-completion-matrix.json'
+      - 'package.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Test staging readiness boundary
+        run: node scripts/test-ord-001-a07c-staging-migration-readiness.js
+      - name: Render immutable dry-run plan
+        run: node scripts/plan-ord-001-a07c-staging-migration.js --dry-run
+      - name: Audit staging readiness assets
+        run: node scripts/audit-ord-001-a07c-staging-migration-readiness.js
+      - name: Preserve worker header issuance contract
+        run: |
+          node scripts/test-ord-001-a07c-worker-invocation-headers.mjs
+          node scripts/audit-ord-001-a07c-worker-invocation-headers.js
+      - name: Preserve applied nonce ledger evidence
+        run: node scripts/audit-ord-001-a07b-staging-migration-application.js
+      - name: Preserve Edge freshness and replay gates
+        run: |
+          node scripts/test-ord-001-a07d-worker-invocation-gate.mjs
+          node scripts/test-ord-001-a07e-concurrent-replay-canary.mjs
+      - name: Audit completion matrix
+        run: node scripts/audit-domain-completion-matrix.js
