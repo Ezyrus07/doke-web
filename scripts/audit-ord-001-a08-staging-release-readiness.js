@@ -64,14 +64,18 @@ requireAll('preflight', preflight, [
   'staging_release_read_only_preflight_passed',
   'networkRequests: 2',
   'mutations: 0',
-  'DOKE_ORD_A08_ALLOW_NETWORK'
+  'DOKE_ORD_A08_ALLOW_NETWORK',
+  'Object.freeze({ ...report, reportPath: writeReport(report) })'
 ]);
 assert(!/method:\s*['"]POST['"]/.test(preflight), 'ORD-A08 preflight must never issue POST.');
 assert(!/SUPABASE_SERVICE_ROLE_KEY|password\s*=|Authorization:\s*['"]Bearer/.test(preflight), 'ORD-A08 preflight must not require credentials or service-role secrets.');
+assert(!preflight.includes('report.reportPath ='), 'ORD-A08 must not mutate the frozen preflight report.');
 requireAll('runtime test', test, [
   'DOKE_PRODUCTION_RUNTIME_BLOCKED',
   'runtimeCalls',
   'executePreflight',
+  'writeReport',
+  'Object.isFrozen(report)',
   'mutations, 0'
 ]);
 requireAll('docs', docs, [
