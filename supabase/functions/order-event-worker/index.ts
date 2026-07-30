@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "@supabase/supabase-js";
+import { assertFreshWorkerRequest } from "./invocation-gate.mjs";
 import {
   deliverOptionalWebhook,
   normalizeLimit,
@@ -14,12 +15,9 @@ const jsonResponse = (status: number, payload: unknown, headers: Record<string, 
 );
 
 const text = (value: unknown, max = 180) => String(value ?? "").trim().slice(0, max);
-const sourceValue = (value: unknown) => {
-  const source = text(value, 20).toLowerCase();
-  return ["cron", "manual", "test", "recovery"].includes(source) ? source : "manual";
-};
 
 type ServiceClient = ReturnType<typeof createClient>;
+type WorkerInvocationFailure = Error & { code?: string; status?: number };
 type ClaimedEvent = {
   event_id: string;
   event_key: string;
@@ -31,6 +29,13 @@ type ClaimedEvent = {
   delivery_attempts: number;
   max_delivery_attempts: number;
   created_at: string;
+};
+
+type InvocationNonceInput = {
+  nonce: string;
+  issuedAt: string;
+  issuedAtMs: number;
+  source: string;
 };
 
 const serviceClient = () => {
@@ -49,6 +54,23 @@ const authorize = async (client: ServiceClient, req: Request) => {
   if (!token) return false;
   const { data, error } = await client.rpc("verify_order_event_worker_token", { p_token: token });
   return !error && data === true;
+};
+
+const consumeInvocationNonce = async (client: ServiceClient, input: InvocationNonceInput) => {
+  const { data, error } = await client.rpc("consume_order_event_worker_invocation_nonce", {
+    p_nonce: input.nonce,
+    p_issued_at: input.issuedAt,
+    p_source: input.source,
+  });
+
+  if (error) {
+    const failure = new Error("consume_order_event_worker_invocation_nonce failed") as WorkerInvocationFailure;
+    failure.code = "DOKE_ORDER_EVENT_WORKER_NONCE_LEDGER_UNAVAILABLE";
+    failure.status = 428;
+    throw failure;
+  }
+
+  return data === true;
 };
 
 const completeEvent = async (
@@ -94,16 +116,36 @@ Deno.serve(async (req: Request) => {
   if (!client) return jsonResponse(503, { error: "SERVER_CONFIGURATION_MISSING" });
   if (!await authorize(client, req)) return jsonResponse(401, { error: "WORKER_AUTH_REQUIRED" });
 
+  let freshness;
+  try {
+    freshness = await assertFreshWorkerRequest(req.headers, {
+      defaultSource: "manual",
+      consumeNonce: (input: InvocationNonceInput) => consumeInvocationNonce(client, input),
+    });
+  } catch (error) {
+    const failure = error as WorkerInvocationFailure;
+    const code = text(failure.code, 100) || "DOKE_ORDER_EVENT_WORKER_FRESHNESS_REQUIRED";
+    const status = Number.isInteger(failure.status) && Number(failure.status) >= 400
+      ? Number(failure.status)
+      : 428;
+    return jsonResponse(status, { error: code });
+  }
+
   const body = await req.json().catch(() => ({})) as Record<string, unknown>;
   const limit = normalizeLimit(body.limit);
-  const source = sourceValue(body.source || req.headers.get("x-doke-worker-source"));
+  const source = freshness.source;
   const invocationId = text(req.headers.get("x-deno-execution-id"), 180) || crypto.randomUUID();
   const startedAt = Date.now();
 
   const { data: runId, error: beginError } = await client.rpc("begin_order_event_worker_run", {
     p_invocation_id: invocationId,
     p_source: source,
-    p_metadata: { function: FUNCTION_NAME, limit },
+    p_metadata: {
+      function: FUNCTION_NAME,
+      limit,
+      freshnessIssuedAt: freshness.issuedAt,
+      freshnessAgeMs: freshness.ageMs,
+    },
   });
   if (beginError || !runId) return jsonResponse(500, { error: "WORKER_RUN_START_FAILED" });
 
