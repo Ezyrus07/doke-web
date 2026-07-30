@@ -30,12 +30,22 @@ jobs:
           from pathlib import Path
           helper = Path('scripts/reconcile-ord-a08-staging-release-once.py')
           source = helper.read_text(encoding='utf-8')
-          old = r"  fs.writeFileSync(destination, JSON.stringify(report, null, 2) + '\n', 'utf8');"
-          new = r"  fs.writeFileSync(destination, JSON.stringify(report, null, 2) + '\\n', 'utf8');"
-          if new not in source:
-              if old not in source:
-                  raise SystemExit('ORD-A08 newline anchor missing')
-              helper.write_text(source.replace(old, new, 1), encoding='utf-8')
+          replacements = [
+              (
+                  r"  fs.writeFileSync(destination, JSON.stringify(report, null, 2) + '\n', 'utf8');",
+                  r"  fs.writeFileSync(destination, JSON.stringify(report, null, 2) + '\\n', 'utf8');"
+              ),
+              (
+                  r"  'permissions:\n  contents: read',",
+                  r"  'permissions:\\n  contents: read',"
+              )
+          ]
+          for old, new in replacements:
+              if new not in source:
+                  if old not in source:
+                      raise SystemExit(f'ORD-A08 escape anchor missing: {old}')
+                  source = source.replace(old, new, 1)
+          helper.write_text(source, encoding='utf-8')
           PY
           python scripts/reconcile-ord-a08-staging-release-once.py
           rm -f scripts/ord-a08-trigger.txt
