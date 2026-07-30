@@ -1,0 +1,46 @@
+name: Doke ORD-A07D Edge Function Freshness Wiring
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/functions/order-event-worker/index.ts'
+      - 'supabase/functions/order-event-worker/invocation-gate.mjs'
+      - 'supabase/functions/order-event-worker/invocation-headers.mjs'
+      - 'supabase/functions/order-event-worker/invocation-freshness.mjs'
+      - 'config/ord-001-a07d-edge-function-freshness-wiring.json'
+      - 'scripts/test-ord-001-a07d-worker-invocation-gate.mjs'
+      - 'scripts/audit-ord-001-a07d-edge-function-freshness-wiring.js'
+      - 'scripts/audit-ord-001-a07c-worker-invocation-headers.js'
+      - 'docs/ORD-001-A07D-EDGE-FUNCTION-FRESHNESS-WIRING.md'
+      - 'docs/validation/ORD-001-A07D-EDGE-FUNCTION-FRESHNESS-WIRING.json'
+      - 'config/domain-completion-matrix.json'
+      - '.github/workflows/ord-001-a07d-edge-function-freshness-wiring.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Test Edge Function freshness gate
+        run: node scripts/test-ord-001-a07d-worker-invocation-gate.mjs
+      - name: Audit Edge Function freshness wiring
+        run: node scripts/audit-ord-001-a07d-edge-function-freshness-wiring.js
+      - name: Preserve header issuance contract
+        run: |
+          node scripts/test-ord-001-a07c-worker-invocation-headers.mjs
+          node scripts/audit-ord-001-a07c-worker-invocation-headers.js
+      - name: Preserve nonce ledger and freshness contracts
+        run: |
+          node scripts/test-order-event-worker-invocation-freshness.js
+          node scripts/audit-ord-001-a07b-worker-invocation-freshness.js
+          node scripts/test-ord-001-a07b-staging-migration-readiness.js
+          node scripts/audit-ord-001-a07b-staging-migration-readiness.js
+      - name: Audit completion matrix
+        run: node scripts/audit-domain-completion-matrix.js
