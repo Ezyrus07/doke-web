@@ -1,0 +1,41 @@
+name: Doke ORD-A07B Staging Migration Readiness
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/migrations/20260730144324_ord_a07b_worker_invocation_nonce_ledger.sql'
+      - 'supabase/functions/order-event-worker/index.ts'
+      - 'config/ord-001-a07b-staging-migration-readiness.json'
+      - 'scripts/plan-ord-001-a07b-staging-migration.js'
+      - 'scripts/test-ord-001-a07b-staging-migration-readiness.js'
+      - 'scripts/audit-ord-001-a07b-staging-migration-readiness.js'
+      - 'docs/ORD-001-A07B-STAGING-MIGRATION-READINESS.md'
+      - 'docs/validation/ORD-001-A07B-STAGING-MIGRATION-READINESS.json'
+      - 'config/domain-completion-matrix.json'
+      - 'package.json'
+      - '.github/workflows/ord-001-a07b-staging-migration-readiness.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Test staging migration readiness
+        run: node scripts/test-ord-001-a07b-staging-migration-readiness.js
+      - name: Prove planner remains dry-run only
+        run: node scripts/plan-ord-001-a07b-staging-migration.js --dry-run
+      - name: Audit staging migration readiness
+        run: node scripts/audit-ord-001-a07b-staging-migration-readiness.js
+      - name: Preserve worker invocation freshness
+        run: |
+          node scripts/test-order-event-worker-invocation-freshness.js
+          node scripts/audit-ord-001-a07b-worker-invocation-freshness.js
+      - name: Audit completion matrix
+        run: node scripts/audit-domain-completion-matrix.js
