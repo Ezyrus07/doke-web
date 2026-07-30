@@ -1,0 +1,39 @@
+{
+  "domain": "ORD-001",
+  "sublot": "ORD-A07D",
+  "status": "edge_function_freshness_wired_locally_staging_release_unauthorized",
+  "recordedAt": "2026-07-30T13:02:00-03:00",
+  "ordering": [
+    "verify_worker_token",
+    "read_freshness_headers",
+    "validate_timestamp_and_nonce",
+    "consume_nonce_atomically",
+    "begin_worker_run",
+    "claim_order_events"
+  ],
+  "responses": {
+    "missingOrInvalidFreshness": { "status": 428, "code": "DOKE_ORDER_EVENT_WORKER_FRESHNESS_REQUIRED" },
+    "ledgerUnavailable": { "status": 428, "code": "DOKE_ORDER_EVENT_WORKER_NONCE_LEDGER_UNAVAILABLE" },
+    "replay": { "status": 409, "code": "DOKE_ORDER_EVENT_WORKER_REPLAY_REJECTED" }
+  },
+  "privacy": {
+    "noncePersistedInWorkerRunMetadata": false,
+    "issuedAtPersistedInWorkerRunMetadata": true,
+    "agePersistedInWorkerRunMetadata": true
+  },
+  "activation": {
+    "repositoryWiringComplete": true,
+    "ordA07bLedgerAppliedToStaging": false,
+    "ordA07cHeadersAppliedToStaging": false,
+    "edgeFunctionDeployed": false,
+    "remoteReplayCanaryExecuted": false
+  },
+  "execution": {
+    "stagingDatabaseMutationsPerformed": 0,
+    "migrationsAppliedToStaging": 0,
+    "cronJobsChanged": 0,
+    "edgeFunctionsDeployed": 0,
+    "ordersCreated": 0,
+    "productionChanged": false
+  }
+}
