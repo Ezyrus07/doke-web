@@ -204,8 +204,10 @@ async function main() {
     return;
   }
   const report = await executePreflight(config);
-  if (process.argv.includes('--write-report')) report.reportPath = writeReport(report);
-  console.log(JSON.stringify(report, null, 2));
+  const output = process.argv.includes('--write-report')
+    ? Object.freeze({ ...report, reportPath: writeReport(report) })
+    : report;
+  console.log(JSON.stringify(output, null, 2));
 }
 
 if (require.main === module) {
