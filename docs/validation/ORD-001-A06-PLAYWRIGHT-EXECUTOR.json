@@ -1,0 +1,128 @@
+{
+  "domain": "ORD-001",
+  "sublot": "ORD-A06",
+  "status": "executor_complete_real_execution_blocked",
+  "environment": "staging",
+  "projectRef": "zwkczgewzbsorbrjuzpb",
+  "recordedAt": "2026-07-29T21:55:00-03:00",
+  "objective": "Prepare a fail-closed two-account Playwright executor without default credentials, external execution or persistent fixtures.",
+  "executor": {
+    "path": "scripts/execute-ord-001-a06-visual-settlement-playwright.js",
+    "modes": [
+      "dry-run",
+      "check-env",
+      "execute",
+      "execute-with-report"
+    ],
+    "defaultCredentials": false,
+    "defaultUrls": false,
+    "defaultServiceRef": false,
+    "realExecutionAllowed": false,
+    "authorizationAcknowledgementRequired": "I_AUTHORIZE_ORD_A06_STAGING_TEST_ACCOUNTS",
+    "productionHostsRejected": true,
+    "explicitTargetMarkerRequired": true,
+    "serviceRoleExposedToBrowser": false
+  },
+  "browserContract": {
+    "contexts": 2,
+    "sharedStorage": false,
+    "loginSurface": "auth/login.html",
+    "ordersSurface": "pedidos.html",
+    "canonicalSession": "Doke.session",
+    "canonicalOrdersService": "Doke.services.orders",
+    "readProvider": "supabase-read",
+    "commandProvider": "api-write-canary-frontend-activation"
+  },
+  "scenario": [
+    "client_login",
+    "professional_login",
+    "client_create_requested",
+    "professional_visual_requested",
+    "concurrent_accept_one_success_one_conflict",
+    "client_visual_accepted",
+    "professional_quote_brl_123_45",
+    "client_visual_quoted",
+    "service_role_cleanup",
+    "second_cleanup_already_clean",
+    "browser_zero_residue"
+  ],
+  "runScope": {
+    "runIdPattern": "^ord-a06-[a-z0-9][a-z0-9-]{5,80}$",
+    "doubleMarker": true,
+    "externalId": "<runId>:order",
+    "metadata": {
+      "canaryDomain": "ORD-001",
+      "canarySublot": "ORD-A06",
+      "canaryScope": "visual-settlement",
+      "canaryRunId": "<runId>"
+    },
+    "idempotencyKeys": [
+      "<runId>:create",
+      "<runId>:accept-a",
+      "<runId>:accept-b",
+      "<runId>:quote"
+    ]
+  },
+  "cleanup": {
+    "function": "public.cleanup_order_canary_run(text)",
+    "caller": "node_process_only",
+    "firstExpectedStatus": "cleaned",
+    "secondExpectedStatus": "already_clean",
+    "finallyCleanupRequired": true,
+    "zeroResidueRequired": true
+  },
+  "evidence": {
+    "screenshots": [
+      "reports/generated/ord-a06/<runId>/professional-requested.png",
+      "reports/generated/ord-a06/<runId>/client-accepted.png",
+      "reports/generated/ord-a06/<runId>/client-quoted.png"
+    ],
+    "report": "reports/generated/ord-a06-playwright-executor-report.json",
+    "credentialsRecorded": false,
+    "tokensRecorded": false,
+    "serviceRoleRecorded": false
+  },
+  "currentExecution": {
+    "accountsUsed": 0,
+    "browserContextsOpened": 0,
+    "networkRequestsPerformed": false,
+    "mutationsPerformed": false,
+    "screenshotsCreated": 0,
+    "realRowsPersisted": 0
+  },
+  "requiredEnvironment": [
+    "DOKE_ENVIRONMENT",
+    "DOKE_ORD_A06_AUTHORIZATION_ACK",
+    "DOKE_ORD_A06_ALLOW_NETWORK",
+    "DOKE_ORD_A06_ALLOW_MUTATIONS",
+    "DOKE_ORD_A06_EXECUTE",
+    "DOKE_ORD_A06_WEB_BASE_URL",
+    "DOKE_ORD_A06_API_BASE_URL",
+    "DOKE_ORD_A06_SUPABASE_URL",
+    "DOKE_ORD_A06_SERVICE_ROLE_KEY",
+    "DOKE_ORD_A06_CLIENT_EMAIL",
+    "DOKE_ORD_A06_CLIENT_PASSWORD",
+    "DOKE_ORD_A06_PROFESSIONAL_EMAIL",
+    "DOKE_ORD_A06_PROFESSIONAL_PASSWORD",
+    "DOKE_ORD_A06_SERVICE_REF",
+    "DOKE_ORD_A06_RUN_ID",
+    "DOKE_ORD_A06_TARGET_MARKER"
+  ],
+  "remainingBlockers": [
+    "two_explicitly_authorized_staging_test_accounts",
+    "approved_staging_or_preview_urls",
+    "authorized_published_service_reference",
+    "explicit_network_mutation_and_execution_flags",
+    "real_two_context_playwright_execution",
+    "visual_optimistic_conflict_evidence"
+  ],
+  "operationalSafety": {
+    "accountsCreated": 0,
+    "accountsModified": 0,
+    "passwordsChanged": 0,
+    "productionChanged": false,
+    "paidProvidersEnabled": false,
+    "rankingChanged": false,
+    "mergeAuthorized": false
+  }
+}
