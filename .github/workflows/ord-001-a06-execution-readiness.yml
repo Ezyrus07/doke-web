@@ -1,0 +1,39 @@
+name: Doke ORD-A06 Execution Readiness
+
+on:
+  pull_request:
+    paths:
+      - 'docs/ORD-001-A06-EXECUTION-READINESS.md'
+      - 'docs/validation/ORD-001-A06-EXECUTION-READINESS.json'
+      - 'scripts/audit-ord-001-a06-execution-readiness.js'
+      - 'scripts/audit-ord-001-a06-playwright-executor.js'
+      - 'scripts/execute-ord-001-a06-visual-settlement-playwright.js'
+      - '.github/workflows/ord-001-a06-execution-readiness.yml'
+      - 'package.json'
+      - 'config/domain-completion-matrix.json'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Audit staging candidate capacity and authorization boundary
+        run: node scripts/audit-ord-001-a06-execution-readiness.js
+      - name: Preserve fail-closed executor contract
+        run: node scripts/audit-ord-001-a06-playwright-executor.js
+      - name: Prove real execution remains disabled in CI
+        run: node scripts/execute-ord-001-a06-visual-settlement-playwright.js --dry-run
+      - name: Preserve cleanup boundary
+        run: node scripts/audit-ord-001-a06-cleanup-boundary.js
+      - name: Preserve cross-session settlement runtime
+        run: node scripts/test-order-visual-settlement-runtime.js
+      - name: Audit completion matrix
+        run: node scripts/audit-domain-completion-matrix.js
