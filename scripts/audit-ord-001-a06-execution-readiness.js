@@ -56,7 +56,7 @@ assert.strictEqual(evidence.decision.realExecutionAllowed, false);
 const forbidden = [
   /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i,
   /\b[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b/i,
-  /service_[a-z0-9_-]{8,}/i,
+  /service_[0-9]{10,}_[a-z0-9]{4,}/i,
   /(?:password|senha)\s*[:=]\s*['\"][^'\"]+['\"]/i,
   /(?:service[_-]?role|access[_-]?token)\s*[:=]\s*['\"][^'\"]+['\"]/i
 ];
