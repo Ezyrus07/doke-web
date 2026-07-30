@@ -1,0 +1,71 @@
+name: ORD-A07B Nonce Ledger Reconcile Once
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/ord-001-a07b-nonce-ledger-reconcile-once.yml'
+      - 'supabase/migrations/20260730144324_ord_a07b_worker_invocation_nonce_ledger.sql'
+      - 'config/ord-001-a07b-worker-invocation-freshness.json'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  reconcile:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Reconcile ORD-A07B nonce ledger registry and matrix
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          matrix_path = Path('config/domain-completion-matrix.json')
+          matrix = json.loads(matrix_path.read_text(encoding='utf-8'))
+          matrix['version'] = '1.3.29'
+          matrix['updatedAt'] = '2026-07-30T11:50:00-03:00'
+          ord_domain = next(domain for domain in matrix['domains'] if domain['id'] == 'ORD-001')
+
+          migration = 'supabase/migrations/20260730144324_ord_a07b_worker_invocation_nonce_ledger.sql'
+          if migration not in ord_domain['requiredPaths']:
+              ord_domain['requiredPaths'].append(migration)
+
+          evidence = 'ORD-A07B nonce-ledger migration was generated through Supabase CLI 2.109.0 and validated on an isolated Postgres 17 service: first nonce consumption succeeds, duplicate/stale/future invocations fail, RLS is enabled, anon/authenticated execution is revoked and service_role execution is granted; the migration remains unapplied to staging and the Edge Function remains unwired.'
+          if evidence not in ord_domain['evidence']:
+              ord_domain['evidence'].append(evidence)
+
+          obsolete_actions = {
+              'Generate the ORD-A07B private nonce-ledger migration through the Supabase CLI, validate it locally, then apply and deploy only through the controlled staging release path before activating Edge freshness enforcement.',
+              'Harden worker invocation freshness and replay resistance.'
+          }
+          ord_domain['nextActions'] = [item for item in ord_domain['nextActions'] if item not in obsolete_actions]
+          next_action = 'Review and apply the generated ORD-A07B nonce-ledger migration through the controlled staging release path, verify grants and atomic duplicate rejection, then wire Cron headers and Edge freshness enforcement before any replay canary.'
+          if next_action not in ord_domain['nextActions']:
+              ord_domain['nextActions'].append(next_action)
+
+          matrix_path.write_text(json.dumps(matrix, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+          PY
+          node scripts/test-order-event-worker-invocation-freshness.js
+          node scripts/audit-ord-001-a07b-worker-invocation-freshness.js
+          node scripts/test-order-event-worker-contract.js
+          node scripts/audit-ord-001-a07-request-freshness.js
+          node scripts/audit-domain-completion-matrix.js --write
+          node scripts/audit-domain-completion-matrix.js
+          git add -A
+          git add -f reports/generated/domain-completion-matrix-report.json
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Register ORD-A07B nonce ledger migration evidence'
+          git pull --rebase origin ${{ github.event.pull_request.head.ref || github.ref_name }}
+          git push origin HEAD:${{ github.event.pull_request.head.ref || github.ref_name }}
