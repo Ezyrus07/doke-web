@@ -5,6 +5,7 @@ on:
     paths:
       - 'supabase/functions/order-event-worker/invocation-freshness.mjs'
       - 'supabase/functions/order-event-worker/index.ts'
+      - 'supabase/migrations/20260730144324_ord_a07b_worker_invocation_nonce_ledger.sql'
       - 'config/ord-001-a07b-worker-invocation-freshness.json'
       - 'scripts/test-order-event-worker-invocation-freshness.js'
       - 'scripts/audit-ord-001-a07b-worker-invocation-freshness.js'
@@ -21,6 +22,20 @@ permissions:
 jobs:
   contracts:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      PGPASSWORD: postgres
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -28,6 +43,66 @@ jobs:
           node-version: 24
       - name: Test worker invocation freshness
         run: node scripts/test-order-event-worker-invocation-freshness.js
+      - name: Validate nonce ledger migration on ephemeral Postgres 17
+        shell: bash
+        run: |
+          set -euo pipefail
+          migration_path='supabase/migrations/20260730144324_ord_a07b_worker_invocation_nonce_ledger.sql'
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 <<'SQL'
+          create schema if not exists private;
+          create schema if not exists extensions;
+          create extension if not exists pgcrypto with schema extensions;
+          do $$ begin
+            create role anon nologin;
+          exception when duplicate_object then null; end $$;
+          do $$ begin
+            create role authenticated nologin;
+          exception when duplicate_object then null; end $$;
+          do $$ begin
+            create role service_role nologin bypassrls;
+          exception when duplicate_object then null; end $$;
+          SQL
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 -f "$migration_path"
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 <<'SQL'
+          do $$
+          declare
+            v_nonce text := 'Nonce_For_ORD_A07B_1234567890';
+            v_first boolean;
+            v_second boolean;
+            v_expired boolean;
+            v_future boolean;
+            v_rls_enabled boolean;
+          begin
+            set local role service_role;
+            select public.consume_order_event_worker_invocation_nonce(v_nonce, clock_timestamp(), 'test') into v_first;
+            select public.consume_order_event_worker_invocation_nonce(v_nonce, clock_timestamp(), 'test') into v_second;
+            select public.consume_order_event_worker_invocation_nonce('Expired_Nonce_ORD_A07B_123456', clock_timestamp() - interval '6 minutes', 'test') into v_expired;
+            select public.consume_order_event_worker_invocation_nonce('Future_Nonce_ORD_A07B_12345678', clock_timestamp() + interval '31 seconds', 'test') into v_future;
+            reset role;
+
+            select c.relrowsecurity into v_rls_enabled
+            from pg_class c
+            join pg_namespace n on n.oid = c.relnamespace
+            where n.nspname = 'private'
+              and c.relname = 'order_event_worker_invocation_nonces';
+
+            if v_first is not true then raise exception 'first nonce consumption must succeed'; end if;
+            if v_second is not false then raise exception 'duplicate nonce consumption must fail'; end if;
+            if v_expired is not false then raise exception 'expired invocation must fail'; end if;
+            if v_future is not false then raise exception 'future invocation must fail'; end if;
+            if v_rls_enabled is not true then raise exception 'nonce ledger RLS must be enabled'; end if;
+            if has_function_privilege('anon', 'public.consume_order_event_worker_invocation_nonce(text,timestamptz,text)', 'EXECUTE') then
+              raise exception 'anon must not execute nonce consumer';
+            end if;
+            if has_function_privilege('authenticated', 'public.consume_order_event_worker_invocation_nonce(text,timestamptz,text)', 'EXECUTE') then
+              raise exception 'authenticated must not execute nonce consumer';
+            end if;
+            if not has_function_privilege('service_role', 'public.consume_order_event_worker_invocation_nonce(text,timestamptz,text)', 'EXECUTE') then
+              raise exception 'service_role must execute nonce consumer';
+            end if;
+          end;
+          $$;
+          SQL
       - name: Audit worker invocation freshness
         run: node scripts/audit-ord-001-a07b-worker-invocation-freshness.js
       - name: Preserve existing worker contract
