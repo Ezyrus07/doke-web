@@ -4,7 +4,11 @@
 
 `staging_cron_freshness_headers_applied_and_verified`
 
-The exact staging authorization phrase was received on 2026-07-30. Its scope was limited to applying the canonical ORD-A07C migration and performing read-only post-application verification.
+The exact staging authorization phrase was received on 2026-07-30:
+
+`I_EXPLICITLY_AUTHORIZE_ORD_A07C_WORKER_INVOCATION_HEADERS_MIGRATION_ON_DOKE_STAGING`
+
+Its scope was limited to applying the canonical ORD-A07C migration and performing read-only post-application verification.
 
 ## Applied migration
 
@@ -69,6 +73,8 @@ A07B ledger and consume RPC remain present.
 
 ## Still blocked
 
+The Edge Function was not deployed. The remote concurrent replay canary was not executed.
+
 This authorization did not permit:
 
 - Edge Function deployment;
@@ -76,3 +82,5 @@ This authorization did not permit:
 - Railway selection or deployment;
 - production changes;
 - pull request merge.
+
+Production remains blocked.
