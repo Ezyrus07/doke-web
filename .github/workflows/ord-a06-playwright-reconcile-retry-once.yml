@@ -54,14 +54,14 @@ jobs:
 
           replace_once(
               Path('scripts/audit-ord-001-a06-playwright-executor.js'),
-              """    /clientEmail\\s*:\\s*['\"][^'\"]+@[^'\"]+['\"]/,
-              /professionalEmail\\s*:\\s*['\"][^'\"]+@[^'\"]+['\"]/,
-              /clientPassword\\s*:\\s*['\"][^'\"]+['\"]/,
-              /professionalPassword\\s*:\\s*['\"][^'\"]+['\"]/,
-              /serviceRoleKey\\s*:\\s*['\"](?:ey|sb_|sk_|service_role)[^'\"]*['\"]/i""",
-              """    /clientEmail\\s*:\\s*['\"][^'\"]+@[^'\"]+['\"]/,
-              /professionalEmail\\s*:\\s*['\"][^'\"]+@[^'\"]+['\"]/,
-              /serviceRoleKey\\s*:\\s*['\"](?:ey|sb_|sk_|service_role)[^'\"]*['\"]/i""",
+              """    /clientEmail\s*:\s*['\"][^'\"]+@[^'\"]+['\"]/,
+              /professionalEmail\s*:\s*['\"][^'\"]+@[^'\"]+['\"]/,
+              /clientPassword\s*:\s*['\"][^'\"]+['\"]/,
+              /professionalPassword\s*:\s*['\"][^'\"]+['\"]/,
+              /serviceRoleKey\s*:\s*['\"](?:ey|sb_|sk_|service_role)[^'\"]*['\"]/i""",
+              """    /clientEmail\s*:\s*['\"][^'\"]+@[^'\"]+['\"]/,
+              /professionalEmail\s*:\s*['\"][^'\"]+@[^'\"]+['\"]/,
+              /serviceRoleKey\s*:\s*['\"](?:ey|sb_|sk_|service_role)[^'\"]*['\"]/i""",
               'auditor credential pattern'
           )
 
@@ -138,3 +138,4 @@ jobs:
           git push origin HEAD:${{ github.event.pull_request.head.ref || github.ref_name }}
 
 # One-shot retry. It removes both temporary workflows before matrix generation.
+# Triggered after the workflow became visible to GitHub Actions.
