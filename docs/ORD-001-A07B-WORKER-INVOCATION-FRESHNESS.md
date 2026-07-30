@@ -109,4 +109,6 @@ This step performed:
 - zero order creation;
 - no production change.
 
+Final permanent CI passed on head `5b6c0bc0f19d85ce4ab768b12307192dd5229484`, including the Postgres 17 migration validation and all inherited ORD/SEARCH gates.
+
 Supabase documents that Cron and `pg_net` can invoke Edge Functions and recommends Vault for protected invocation credentials. The existing worker follows that model; A07B adds replay resistance on top of it.
