@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 939 arquivos no escopo; 245 referências a localStorage; 75 a sessionStorage; 555 referências mock; 175 referências de rede/Supabase; 32 marcadores de implementação pendente.
+**Evidência estática observada:** 941 arquivos no escopo; 245 referências a localStorage; 75 a sessionStorage; 555 referências mock; 175 referências de rede/Supabase; 32 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -151,7 +151,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção blocked.
 
-**Evidência estática observada:** 206 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 0 referências mock; 5 referências de rede/Supabase; 9 marcadores de implementação pendente.
+**Evidência estática observada:** 208 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 0 referências mock; 5 referências de rede/Supabase; 9 marcadores de implementação pendente.
 
 **Tabelas/autoridades de dados:** `users`, `user_profiles`, `client_profiles`, `audit_logs`, `availability_slots`, `budgets`, `communities`, `community_members`, `community_posts`, `favorites`, `message_attachments`, `reports`, `reviews`, `service_categories`, `verification_events`.
 
@@ -344,7 +344,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção blocked.
 
-**Evidência estática observada:** 210 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 3 referências mock; 19 referências de rede/Supabase; 9 marcadores de implementação pendente.
+**Evidência estática observada:** 212 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 3 referências mock; 19 referências de rede/Supabase; 9 marcadores de implementação pendente.
 
 **Páginas:** `index.html`, `resultados.html`, `detalhe-anuncio.html`.
 
@@ -412,16 +412,19 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - The frontend now preserves supabase-read as the independent order read provider while api-write-canary-frontend-activation is used only for authenticated commands.
 - A deterministic two-context runtime proves requested, accepted and quoted states converge without shared storage or silent local fallback.
 - The real two-account Playwright canary remains blocked until two explicitly authorized accounts and a runId-scoped cleanup boundary are available.
+- ORD-A06 now has a service-role-only cleanup boundary that requires matching runId metadata and external_id markers and refuses ambiguous or partial scope.
+- The cleanup boundary aborts on messaging, payment, wallet, review, quote-funnel or manual operator dependencies instead of broadening deletion authority.
+- A rolled-back staging canary proved authenticated denial, explicit JWT role precedence, requested-to-quoted cleanup, control-order survival, idempotent re-execution and zero residue.
 
 **Bloqueadores:**
-- **ORD-B02 · HIGH · frontend_activation:** Canonical reads and canary commands are now separated and deterministic cross-context settlement passes. ORD-B02 remains until two explicitly authorized staging accounts complete the real browser UI canary with runId-scoped cleanup. _(Fase 6)_
+- **ORD-B02 · HIGH · frontend_activation:** Canonical reads, canary commands and deterministic cross-context settlement pass, and the service-role-only cleanup boundary is now staged. ORD-B02 remains until two explicitly authorized staging accounts complete the real browser UI canary. _(Fase 6)_
 - **ORD-B03 · HIGH · financial_dependency:** Payment authority is not connected to a real PSP webhook lifecycle. _(Fase 8)_
 - **ORD-B04 · MEDIUM · scheduling:** Order scheduling and availability are not server-canonical. _(Fase 6)_
 
 **Próximas ações:**
-- Freeze a service-role-only cleanup boundary for ORD-A06 runId-tagged fixtures.
 - Obtain two explicitly authorized staging test accounts without changing real users.
-- Run the two-browser requested, accepted, quoted, conflict and UI settlement canary, then prove zero residue.
+- Run the two-browser requested, accepted, quoted, optimistic-conflict and UI settlement canary using one ord-a06 runId.
+- Invoke the service-role cleanup boundary and prove zero residue after the real browser canary.
 - Harden worker invocation freshness and replay resistance.
 
 **Gate de saída:**
@@ -847,7 +850,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 1/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 196 arquivos no escopo; 62 referências a localStorage; 6 a sessionStorage; 267 referências mock; 8 referências de rede/Supabase; 22 marcadores de implementação pendente.
+**Evidência estática observada:** 197 arquivos no escopo; 62 referências a localStorage; 6 a sessionStorage; 267 referências mock; 8 referências de rede/Supabase; 22 marcadores de implementação pendente.
 
 **Evidências:**
 - The master plan identifies legal, privacy and commercial decisions as mandatory.
@@ -907,7 +910,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2192 arquivos no escopo; 502 referências a localStorage; 148 a sessionStorage; 878 referências mock; 570 referências de rede/Supabase; 86 marcadores de implementação pendente.
+**Evidência estática observada:** 2196 arquivos no escopo; 502 referências a localStorage; 148 a sessionStorage; 878 referências mock; 570 referências de rede/Supabase; 86 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
@@ -968,4 +971,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-07-29T21:04:00-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-07-29T21:31:00-03:00._
