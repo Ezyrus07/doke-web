@@ -24,7 +24,8 @@ jobs:
       - name: Reconcile ORD-A06 executor and self-remove
         shell: bash
         run: |
-          git rm .github/workflows/ord-a06-playwright-matrix-reconcile-once.yml .github/workflows/ord-a06-playwright-reconcile-retry-once.yml
+          git rm .github/workflows/ord-a06-playwright-reconcile-retry-once.yml
+          git rm .github/workflows/ord-a06-playwright-matrix-reconcile-once.yml 2>/dev/null || true
           python - <<'PY'
           import json
           from pathlib import Path
@@ -137,6 +138,5 @@ jobs:
           git pull --rebase origin ${{ github.event.pull_request.head.ref || github.ref_name }}
           git push origin HEAD:${{ github.event.pull_request.head.ref || github.ref_name }}
 
-# One-shot retry. It removes both temporary workflows before matrix generation.
-# Triggered after the workflow became visible to GitHub Actions.
-# Re-triggered after making the cleanup audit forward-compatible.
+# One-shot retry. It removes itself before matrix generation.
+# Removal is idempotent when earlier temporary workflows are already absent.
