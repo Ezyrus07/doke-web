@@ -3,6 +3,7 @@
 
 const http = require('http');
 const { createStagingApiRuntime } = require('./staging-api-runtime');
+const { assertRuntimeReleaseEnvironment, createRuntimeReleaseHeaders } = require('./runtime-release-contract');
 
 const DEFAULT_PORT = 8787;
 const DEFAULT_HOST = '127.0.0.1';
@@ -12,13 +13,16 @@ const ALLOWED_HEADERS = 'authorization,content-type,x-idempotency-key,x-request-
 
 function createNodeHttpServer(options) {
   const safeOptions = options && typeof options === 'object' ? options : {};
+  const runtimeEnv = safeOptions.env || process.env;
+  const releaseDescriptor = assertRuntimeReleaseEnvironment(runtimeEnv);
+  const releaseHeaders = createRuntimeReleaseHeaders(releaseDescriptor);
   let runtime = safeOptions.runtime || null;
 
   function getRuntime() {
     if (runtime) return runtime;
     const { createClient } = loadSupabaseClientFactory();
     runtime = createStagingApiRuntime({
-      env: safeOptions.env || process.env,
+      env: runtimeEnv,
       createClient
     });
     return runtime;
@@ -29,6 +33,7 @@ function createNodeHttpServer(options) {
 
     try {
       applyCorsHeaders(response, request.headers.origin);
+      Object.entries(releaseHeaders).forEach(([key, value]) => response.setHeader(key, value));
 
       if (request.method === 'OPTIONS') {
         sendJson(response, 204, null);
@@ -41,6 +46,8 @@ function createNodeHttpServer(options) {
           ok: true,
           service: 'doke-staging-api-runtime',
           runtime: 'node-http',
+          release: releaseDescriptor,
+          capabilities: { requestFreshness: releaseDescriptor.requestFreshness },
           requestId
         });
         return;
@@ -193,7 +200,7 @@ function readPort(env) {
 function startServer() {
   const port = readPort(process.env);
   const host = process.env.DOKE_STAGING_API_HOST || DEFAULT_HOST;
-  const server = createNodeHttpServer();
+  const server = createNodeHttpServer({ env: process.env });
 
   server.listen(port, host, () => {
     console.log(`[doke-staging-api-runtime] listening on http://${host}:${port}`);

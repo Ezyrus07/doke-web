@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 953 arquivos no escopo; 247 referências a localStorage; 77 a sessionStorage; 556 referências mock; 176 referências de rede/Supabase; 32 marcadores de implementação pendente.
+**Evidência estática observada:** 957 arquivos no escopo; 247 referências a localStorage; 77 a sessionStorage; 556 referências mock; 177 referências de rede/Supabase; 33 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -431,11 +431,16 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - The orders frontend emits per-request issued-at and nonce headers, while the staging Node runtime exposes only those explicit headers through CORS.
 - Existing persistent idempotency entries now enforce expires_at when read, preventing expired keys from being replayed or reused.
 - No browser shared secret or false request-signature claim was introduced; JWT, route authorization, RLS and idempotency remain independent controls.
+- ORD-A08 found no canonical external deployment provider and deliberately avoided inventing one.
+- The staging Node runtime now exposes a platform-neutral release identity, SHA-256 fingerprint, rollback readiness and ORD-A07 capability through a no-store health contract.
+- The release preflight is read-only and limited to GET /health plus OPTIONS /orders; CI runs only local tests, static audit and dry-run.
+- Production-like environments and targets are rejected independently by runtime startup and preflight target validation.
 
 **Bloqueadores:**
 - **ORD-B02 · HIGH · frontend_activation:** Canonical reads, canary commands, cleanup, deterministic settlement, readiness discovery and the fail-closed Playwright executor pass. A short-lived authorization envelope is now mandatory; ORD-B02 remains until explicit authorization is issued, check-env passes and the real two-context visual canary is executed. _(Fase 6)_
 - **ORD-B03 · HIGH · financial_dependency:** Payment authority is not connected to a real PSP webhook lifecycle. _(Fase 8)_
 - **ORD-B04 · MEDIUM · scheduling:** Order scheduling and availability are not server-canonical. _(Fase 6)_
+- **ORD-B05 · HIGH · staging_release:** ORD-A08 release identity and read-only preflight are complete, but no external staging release provider or provider-specific rollback command is formally bound and no deployment has been executed. _(Fase 6)_
 
 **Próximas ações:**
 - Receive an explicit operational authorization decision for the identified staging client, professional and professional-owned service.
@@ -445,6 +450,9 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - Harden worker invocation freshness and replay resistance.
 - Deploy the ORD-A07 request freshness contract only through the controlled staging release path and rerun the non-mutating preflight.
 - Retain explicit authorization as a separate prerequisite before the real two-context visual canary.
+- Select and formally bind one external staging release provider without changing production.
+- Define provider-specific release and rollback commands, then inject release ID, Git revision and rollback release ID server-side.
+- Deploy ORD-A08 through the controlled provider path and execute only the read-only GET/OPTIONS preflight before any authorized visual canary.
 
 **Gate de saída:**
 - Two real accounts complete request, accept, proposal, approval, start and completion across devices.
@@ -869,7 +877,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 1/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 201 arquivos no escopo; 64 referências a localStorage; 8 a sessionStorage; 268 referências mock; 8 referências de rede/Supabase; 22 marcadores de implementação pendente.
+**Evidência estática observada:** 202 arquivos no escopo; 64 referências a localStorage; 8 a sessionStorage; 268 referências mock; 8 referências de rede/Supabase; 23 marcadores de implementação pendente.
 
 **Evidências:**
 - The master plan identifies legal, privacy and commercial decisions as mandatory.
@@ -929,7 +937,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2209 arquivos no escopo; 504 referências a localStorage; 150 a sessionStorage; 879 referências mock; 571 referências de rede/Supabase; 86 marcadores de implementação pendente.
+**Evidência estática observada:** 2214 arquivos no escopo; 504 referências a localStorage; 150 a sessionStorage; 879 referências mock; 572 referências de rede/Supabase; 87 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
@@ -990,4 +998,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-07-30T08:02:00-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-07-30T08:36:00-03:00._

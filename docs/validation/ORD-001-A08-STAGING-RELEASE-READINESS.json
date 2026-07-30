@@ -1,0 +1,44 @@
+{
+  "domain": "ORD-001",
+  "sublot": "ORD-A08",
+  "status": "release_preflight_contract_complete_not_deployed",
+  "environment": "staging",
+  "recordedAt": "2026-07-30T08:36:00-03:00",
+  "objective": "Establish platform-neutral release identity, read-only deployment preflight and mandatory rollback binding before any staging promotion.",
+  "canonicalExternalProviderBound": false,
+  "runtime": {
+    "entrypoint": "npm run serve:staging-api-runtime",
+    "contractVersion": "ord-a08-staging-release-v1",
+    "healthEndpoint": "GET /health",
+    "productionAllowed": false,
+    "releaseIdentityRequired": true,
+    "rollbackIdentityRequired": true
+  },
+  "preflight": {
+    "allowedMethods": ["GET", "OPTIONS"],
+    "loginPerformed": false,
+    "credentialsRequired": false,
+    "serviceRoleRequired": false,
+    "mutationEndpointsAllowed": false,
+    "targetSafetyRequired": true
+  },
+  "rollback": {
+    "contractRequired": true,
+    "candidateMustDifferFromRollback": true,
+    "providerCommandBound": false
+  },
+  "deployedToStaging": false,
+  "networkRequestsPerformed": false,
+  "mutationsPerformed": false,
+  "accountsUsed": 0,
+  "ordersCreated": 0,
+  "productionChanged": false,
+  "remainingBlockers": [
+    "select_and_bind_external_staging_release_provider",
+    "define_provider_specific_release_and_rollback_commands",
+    "deploy_release_identity_contract_to_staging",
+    "execute_read_only_preflight_against_deployed_runtime",
+    "explicit_authorization_for_real_visual_canary"
+  ],
+  "nextAction": "Bind an explicit external staging provider and deterministic rollback command before any deployment attempt."
+}
