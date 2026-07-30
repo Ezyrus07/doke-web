@@ -28,15 +28,30 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
-          path = Path('scripts/reconcile-ord-a07-request-freshness-once.py')
-          source = path.read_text(encoding='utf-8')
+
+          helper = Path('scripts/reconcile-ord-a07-request-freshness-once.py')
+          source = helper.read_text(encoding='utf-8')
           old = "    target.write_text(content, encoding='utf-8')\n"
           new = "    if content.startswith('\\\\\\n'):\n        content = content[2:]\n    target.write_text(content, encoding='utf-8')\n"
           if new not in source:
               if old not in source:
                   raise SystemExit('ORD-A07 write helper anchor missing')
-              source = source.replace(old, new, 1)
-              path.write_text(source, encoding='utf-8')
+              helper.write_text(source.replace(old, new, 1), encoding='utf-8')
+
+          auditor = Path('scripts/audit-ord-001-a06-authorization-envelope.js')
+          audit_source = auditor.read_text(encoding='utf-8')
+          pinned = "assert.strictEqual(matrix.version, '1.3.21');"
+          compatible = "assert(compareVersions(matrix.version, '1.3.21') >= 0, `Matrix version ${matrix.version} predates the A06 authorization contract.`);"
+          if compatible not in audit_source:
+              if pinned not in audit_source:
+                  raise SystemExit('A06 matrix version assertion anchor missing')
+              audit_source = audit_source.replace(pinned, compatible, 1)
+              export_anchor = "function requireAll(label, source, tokens) {"
+              helper_function = "function compareVersions(left, right) {\n  const normalize = (value) => String(value || '').split('.').map((part) => Number(part) || 0);\n  const a = normalize(left);\n  const b = normalize(right);\n  const size = Math.max(a.length, b.length);\n  for (let index = 0; index < size; index += 1) {\n    const delta = (a[index] || 0) - (b[index] || 0);\n    if (delta) return delta > 0 ? 1 : -1;\n  }\n  return 0;\n}\n\n"
+              if export_anchor not in audit_source:
+                  raise SystemExit('A06 auditor helper anchor missing')
+              audit_source = audit_source.replace(export_anchor, helper_function + export_anchor, 1)
+              auditor.write_text(audit_source, encoding='utf-8')
           PY
           python scripts/reconcile-ord-a07-request-freshness-once.py
           rm -f scripts/ord-a07-trigger.txt
@@ -49,7 +64,7 @@ jobs:
           node scripts/audit-ord-001-a06-cleanup-boundary.js
           node scripts/audit-domain-completion-matrix.js --write
           node scripts/audit-domain-completion-matrix.js
-          git add backend/shared/security/request-freshness-contract.js backend/shared/security/persistent-idempotency-store.js backend/shared/http/create-action-handler.js backend/shared/http/route-registry.js backend/runtime/staging/node-http-server.js assets/js/services/orders-service.js scripts/test-order-request-freshness-runtime.js scripts/audit-ord-001-a07-request-freshness.js docs/ORD-001-A07-REQUEST-FRESHNESS.md docs/validation/ORD-001-A07-REQUEST-FRESHNESS.json package.json config/domain-completion-matrix.json docs/DOMAIN-COMPLETION-MATRIX.md scripts/reconcile-ord-a07-request-freshness-once.py scripts/ord-a07-trigger.txt
+          git add backend/shared/security/request-freshness-contract.js backend/shared/security/persistent-idempotency-store.js backend/shared/http/create-action-handler.js backend/shared/http/route-registry.js backend/runtime/staging/node-http-server.js assets/js/services/orders-service.js scripts/test-order-request-freshness-runtime.js scripts/audit-ord-001-a07-request-freshness.js scripts/audit-ord-001-a06-authorization-envelope.js docs/ORD-001-A07-REQUEST-FRESHNESS.md docs/validation/ORD-001-A07-REQUEST-FRESHNESS.json package.json config/domain-completion-matrix.json docs/DOMAIN-COMPLETION-MATRIX.md scripts/reconcile-ord-a07-request-freshness-once.py scripts/ord-a07-trigger.txt
           git add -f reports/generated/domain-completion-matrix-report.json
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
