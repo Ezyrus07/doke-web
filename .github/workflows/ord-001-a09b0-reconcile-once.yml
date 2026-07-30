@@ -32,6 +32,7 @@ jobs:
           package_path = Path('package.json')
           package = json.loads(package_path.read_text(encoding='utf-8'))
           scripts = package.setdefault('scripts', {})
+          scripts['audit:ord-001-a09a-staging-provider-evaluation'] = 'node scripts/audit-ord-001-a09a-staging-provider-evaluation.js'
           scripts['audit:ord-001-a09b0-provider-adapter-boundary'] = 'node scripts/audit-ord-001-a09b0-provider-adapter-boundary.js'
           scripts['test:ord-001-a09b0-provider-adapter-contract'] = 'node scripts/test-ord-001-a09b0-provider-adapter-contract.js'
           scripts['plan:ord-001-a09b0-provider-adapter:dry-run'] = 'node scripts/plan-ord-001-a09b0-provider-adapter.js --dry-run'
