@@ -1,0 +1,54 @@
+name: Doke ORD-A06 Cleanup Boundary
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/migrations/20260730003500_ord_a06_canary_cleanup_boundary.sql'
+      - 'supabase/migrations/20260730004500_ord_a06_cleanup_explicit_role_precedence.sql'
+      - 'docs/ORD-001-A06-CANARY-CLEANUP-BOUNDARY.md'
+      - 'docs/validation/ORD-001-A06-CANARY-CLEANUP-BOUNDARY.json'
+      - 'scripts/audit-ord-001-a06-cleanup-boundary.js'
+      - 'scripts/audit-ord-001-a06-visual-settlement.js'
+      - 'scripts/test-order-visual-settlement-runtime.js'
+      - 'assets/js/core/runtime-config.js'
+      - 'assets/js/repositories/orders-repository.js'
+      - 'assets/js/services/orders-service.js'
+      - 'config/domain-completion-matrix.json'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+      - 'package.json'
+      - '.github/workflows/ord-001-a06-cleanup-boundary.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Audit ORD-A06 cleanup boundary
+        run: npm run audit:ord-001-a06-cleanup-boundary
+      - name: Preserve ORD-A06 cross-session settlement
+        run: |
+          npm run audit:ord-001-a06-visual-settlement
+          npm run test:order-visual-settlement-runtime
+      - name: Preserve ORD-A05 command authority
+        run: |
+          npm run audit:ord-001-a05-command-activation
+          npm run test:order-command-activation-runtime
+      - name: Preserve ORD-A04 read authority
+        run: |
+          npm run audit:ord-001-a04-read-authority
+          npm run test:order-read-authority-runtime
+      - name: Preserve ORD-A03 command boundary
+        run: |
+          npm run audit:ord-001-a03-command-boundary
+          npm run test:order-command-boundary-runtime
+          npm run test:order-state-machine-runtime
+      - name: Audit completion matrix
+        run: npm run audit:domain-completion-matrix
