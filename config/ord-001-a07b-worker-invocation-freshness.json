@@ -1,9 +1,16 @@
 {
   "contractVersion": "ord-a07b-worker-invocation-freshness-v1",
-  "status": "freshness_contract_complete_activation_pending_nonce_ledger",
+  "status": "freshness_contract_and_nonce_ledger_migration_complete_activation_pending_staging",
   "domain": "ORD-001",
   "sublot": "ORD-A07B",
   "scope": "order-event-worker invocation freshness and replay resistance",
+  "migration": {
+    "path": "supabase/migrations/20260730144324_ord_a07b_worker_invocation_nonce_ledger.sql",
+    "generatedBySupabaseCli": true,
+    "supabaseCliVersion": "2.109.0",
+    "validatedOnPostgresMajor": 17,
+    "appliedToStaging": false
+  },
   "freshness": {
     "maxAgeMs": 300000,
     "futureSkewMs": 30000,
@@ -21,22 +28,25 @@
   ],
   "activationState": {
     "edgeFunctionWired": false,
-    "nonceLedgerMigrationCreated": false,
+    "nonceLedgerMigrationCreated": true,
+    "nonceLedgerValidatedOnEphemeralPostgres": true,
     "nonceLedgerAppliedToStaging": false,
     "cronHeadersUpdated": false,
     "remoteCanaryExecuted": false
   },
   "executionEvidence": {
-    "networkRequestsPerformed": 0,
-    "databaseMutationsPerformed": 0,
-    "migrationsApplied": 0,
+    "externalProviderRequestsPerformed": 0,
+    "stagingDatabaseMutationsPerformed": 0,
+    "migrationsAppliedToStaging": 0,
+    "ephemeralPostgresValidationRuns": 1,
     "edgeFunctionsDeployed": 0,
     "ordersCreated": 0,
     "productionChanged": false
   },
   "blockers": [
-    "supabase_cli_unavailable_for_official_migration_generation",
-    "atomic_nonce_ledger_required_before_edge_activation",
-    "staging_migration_and_deploy_require_controlled_release_path"
+    "controlled_staging_migration_application",
+    "cron_timestamp_and_nonce_headers",
+    "edge_function_freshness_activation",
+    "concurrent_replay_canary"
   ]
 }
