@@ -1,0 +1,118 @@
+{
+  "domain": "ORD-001",
+  "sublot": "ORD-A06",
+  "status": "preflight_complete_real_browser_canary_blocked",
+  "environment": "staging",
+  "projectRef": "zwkczgewzbsorbrjuzpb",
+  "recordedAt": "2026-07-29T21:04:00-03:00",
+  "objective": "Prepare a fail-closed two-account visual settlement canary without creating or changing accounts and without leaving persistent order fixtures.",
+  "stagingObservation": {
+    "readOnlyInspection": true,
+    "authUsersTotal": 3,
+    "historicalFixtureAccounts": {
+      "client": false,
+      "professional": false,
+      "support": false,
+      "admin": false
+    },
+    "profileAuthority": {
+      "base": "public.user_profiles",
+      "client": "public.client_profiles",
+      "professional": "public.professional_profiles",
+      "legacyPublicProfilesRelationExists": false
+    },
+    "eventAuthority": {
+      "domainEvents": "private.order_domain_events",
+      "deliveryAttempts": "private.order_event_delivery_attempts",
+      "legacyPublicDomainEventsRelationExists": false
+    },
+    "rowCounts": {
+      "orders": 0,
+      "budgets": 0,
+      "orderStatusHistory": 0,
+      "orderDomainEvents": 0,
+      "orderEventDeliveryAttempts": 0
+    }
+  },
+  "rootCause": {
+    "classification": "frontend_provider_responsibility_collision",
+    "description": "The A05 write canary replaces ordersProvider with api-write-canary-frontend-activation. The same field is also used to decide whether canonical Supabase reads are active, so read-after-write settlement can become unavailable while commands succeed.",
+    "currentReadFailure": "DOKE_ORDER_READ_AUTHORITY_UNAVAILABLE",
+    "requiredArchitecture": {
+      "ordersReadProvider": "supabase-read",
+      "ordersCommandProvider": "api-write-canary-frontend-activation",
+      "silentLocalFallback": false,
+      "directBrowserDml": false
+    }
+  },
+  "executionGate": {
+    "realBrowserExecutionAllowed": false,
+    "realAccountsUsed": 0,
+    "networkRequestsPerformed": false,
+    "mutationsPerformed": false,
+    "credentialsRecorded": false,
+    "historicalDefaultCredentialsAllowed": false,
+    "requiredAccounts": [
+      "explicitly_authorized_client_test_account",
+      "explicitly_authorized_professional_test_account"
+    ],
+    "requiredScope": [
+      "requested",
+      "accepted",
+      "quoted",
+      "optimistic_conflict",
+      "cross_session_ui_settlement",
+      "canary_fixture_cleanup"
+    ],
+    "excludedDomains": [
+      "PAY-001",
+      "SCHED-001",
+      "MSG-001",
+      "support_operations",
+      "administrative_operations"
+    ]
+  },
+  "requiredEnvironment": [
+    "DOKE_ENVIRONMENT",
+    "DOKE_ORD_A06_EXECUTE",
+    "DOKE_ORD_A06_ALLOW_NETWORK",
+    "DOKE_ORD_A06_ALLOW_MUTATIONS",
+    "DOKE_ORD_A06_WEB_BASE_URL",
+    "DOKE_ORD_A06_API_BASE_URL",
+    "DOKE_ORD_A06_CLIENT_EMAIL",
+    "DOKE_ORD_A06_CLIENT_PASSWORD",
+    "DOKE_ORD_A06_PROFESSIONAL_EMAIL",
+    "DOKE_ORD_A06_PROFESSIONAL_PASSWORD",
+    "DOKE_ORD_A06_RUN_ID"
+  ],
+  "blockers": [
+    {
+      "id": "ORD-A06-B01",
+      "description": "Two explicitly authorized staging test accounts are not available under the historical canary identities."
+    },
+    {
+      "id": "ORD-A06-B02",
+      "description": "Read and command providers must be separated before visual read-after-write settlement can be trusted."
+    },
+    {
+      "id": "ORD-A06-B03",
+      "description": "The cleanup boundary for runId-tagged browser canary fixtures must be frozen before real mutation execution."
+    }
+  ],
+  "nextActions": [
+    "Separate ordersReadProvider from the write canary command provider.",
+    "Prove read-after-write convergence in deterministic isolated browser runtimes.",
+    "Keep the real Playwright canary fail-closed until authorized accounts and cleanup authority exist."
+  ],
+  "operationalSafety": {
+    "accountsCreated": 0,
+    "accountsModified": 0,
+    "passwordsChanged": 0,
+    "realRowsMutated": 0,
+    "syntheticRowsRemaining": 0,
+    "productionChanged": false,
+    "paidProvidersEnabled": false,
+    "rankingChanged": false,
+    "mergeAuthorized": false
+  }
+}
