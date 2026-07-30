@@ -1,0 +1,70 @@
+{
+  "domain": "ORD-001",
+  "sublot": "ORD-A07C-READINESS",
+  "status": "staging_cron_header_migration_readiness_complete_application_unauthorized",
+  "recordedAt": "2026-07-30T16:37:00-03:00",
+  "migration": {
+    "path": "supabase/migrations/20260730153500_ord_a07c_worker_invocation_headers.sql",
+    "sha256": "542411c1bd1d7db26301eb403601ddfa22e3284b45c817442aa917a8adcbf16e",
+    "gitBlobSha": "5d5496cbbeaa9430bcb727cb961c2a64d6635f4b",
+    "appliedToStaging": false
+  },
+  "stagingReadOnlySnapshot": {
+    "a07bLedgerExists": true,
+    "a07bConsumeRpcExists": true,
+    "a07cMigrationRecorded": false,
+    "cronJobName": "doke-order-event-worker",
+    "cronJobActive": true,
+    "cronSchedule": "* * * * *",
+    "cronCommand": "select private.invoke_order_event_worker_if_needed();",
+    "cronFunctionHasIssuedAtHeader": false,
+    "cronFunctionHasNonceHeader": false,
+    "orders": 0,
+    "budgets": 0,
+    "history": 0,
+    "domainEvents": 0,
+    "metricEvents": 0,
+    "deliveryAttempts": 0
+  },
+  "verified": {
+    "canonicalHashLocked": true,
+    "functionOnlyMigration": true,
+    "cronScheduleMutationAbsent": true,
+    "cronCommandMutationAbsent": true,
+    "secretCreationAbsent": true,
+    "hardcodedProjectUrlAbsent": true,
+    "vaultSecretNamesPreserved": true,
+    "payloadLimitPreserved": true,
+    "timeoutPreserved": true,
+    "genericContinuationRejected": true,
+    "productionTargetRejected": true,
+    "executeModeUnavailable": true,
+    "dryRunAvailable": true,
+    "checkEnvAvailable": true
+  },
+  "authorization": {
+    "exactPhraseRequired": "I_EXPLICITLY_AUTHORIZE_ORD_A07C_WORKER_INVOCATION_HEADERS_MIGRATION_ON_DOKE_STAGING",
+    "applicationAuthorized": false,
+    "edgeFunctionDeployAuthorized": false,
+    "remoteCanaryAuthorized": false,
+    "railwayAuthorized": false,
+    "productionAuthorized": false,
+    "mergeAuthorized": false
+  },
+  "execution": {
+    "externalNetworkRequestsPerformed": 0,
+    "stagingDatabaseMutationsPerformed": 0,
+    "migrationsAppliedToStaging": 0,
+    "cronJobsChanged": 0,
+    "edgeFunctionsDeployed": 0,
+    "ordersCreated": 0,
+    "productionChanged": false
+  },
+  "remainingBlockers": [
+    "exact_a07c_staging_migration_authorization",
+    "controlled_a07c_staging_migration_application",
+    "post_application_cron_function_verification",
+    "controlled_edge_function_staging_deploy",
+    "remote_concurrent_replay_canary_authorization"
+  ]
+}
