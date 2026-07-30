@@ -1,6 +1,6 @@
 {
-  "version": "1.3.32",
-  "updatedAt": "2026-07-30T13:08:00-03:00",
+  "version": "1.3.33",
+  "updatedAt": "2026-07-30T13:32:00-03:00",
   "title": "Doke Domain Completion Matrix",
   "purpose": "Single source of truth for domain maturity, data authority, staging evidence, blockers, dependencies and mandatory completion order.",
   "maturityScale": {
@@ -975,7 +975,15 @@
         "scripts/audit-ord-001-a07d-edge-function-freshness-wiring.js",
         "docs/ORD-001-A07D-EDGE-FUNCTION-FRESHNESS-WIRING.md",
         "docs/validation/ORD-001-A07D-EDGE-FUNCTION-FRESHNESS-WIRING.json",
-        ".github/workflows/ord-001-a07d-edge-function-freshness-wiring.yml"
+        ".github/workflows/ord-001-a07d-edge-function-freshness-wiring.yml",
+        "scripts/lib/ord-a07e-concurrent-replay-canary.mjs",
+        "scripts/run-ord-001-a07e-concurrent-replay-canary.mjs",
+        "scripts/test-ord-001-a07e-concurrent-replay-canary.mjs",
+        "scripts/audit-ord-001-a07e-concurrent-replay-canary.js",
+        "config/ord-001-a07e-concurrent-replay-canary.json",
+        "docs/ORD-001-A07E-CONCURRENT-REPLAY-CANARY.md",
+        "docs/validation/ORD-001-A07E-CONCURRENT-REPLAY-CANARY.json",
+        ".github/workflows/ord-001-a07e-concurrent-replay-canary.yml"
       ],
       "scanRoots": [
         "backend/modules/orders",
@@ -1046,7 +1054,10 @@
         "test:ord-001-a07c-worker-invocation-headers",
         "audit:ord-001-a07c-worker-invocation-headers",
         "test:ord-001-a07d-edge-function-freshness-wiring",
-        "audit:ord-001-a07d-edge-function-freshness-wiring"
+        "audit:ord-001-a07d-edge-function-freshness-wiring",
+        "run:ord-001-a07e-concurrent-replay-canary",
+        "test:ord-001-a07e-concurrent-replay-canary",
+        "audit:ord-001-a07e-concurrent-replay-canary"
       ],
       "evidence": [
         "Canonical state machine, transaction events, outbox worker and operational controls are active in staging.",
@@ -1107,7 +1118,10 @@
         "ORD-A07D wires token verification, freshness validation and atomic nonce consumption before begin_order_event_worker_run in the repository Edge Function.",
         "Missing or invalid freshness fails with HTTP 428, unavailable ledger fails with HTTP 428, and replay fails with HTTP 409 before any worker run or event claim.",
         "The nonce is excluded from worker-run metadata and logs; only issued-at and calculated age are retained for diagnosis.",
-        "Repository wiring is complete while staging migrations, Cron changes, Edge Function deploy and production remain unauthorized."
+        "Repository wiring is complete while staging migrations, Cron changes, Edge Function deploy and production remain unauthorized.",
+        "ORD-A07E executes 32 concurrent local invocations with the same nonce and proves exactly one acceptance, 31 HTTP 409 replay rejections, one worker run and one event-claim path.",
+        "The ORD-A07E runner is local-only and rejects staging, remote, production, execute and deploy modes while performing zero network requests and zero mutations.",
+        "The local canary preserves ORD-A07B, ORD-A07C and ORD-A07D contracts but does not authorize or replace the remote staging replay canary."
       ],
       "blockers": [
         {
@@ -1158,7 +1172,8 @@
         "Review and apply the generated ORD-A07B nonce-ledger migration through the controlled staging release path, verify grants and atomic duplicate rejection, then wire Cron headers and Edge freshness enforcement before any replay canary.",
         "Apply the canonical ORD-A07B nonce ledger migration to staging only after exact authorization, then run read-only grant, RLS, atomicity and zero-drift verification.",
         "After the ORD-A07B ledger is applied and verified in staging, authorize the ORD-A07C Cron header migration separately, then wire Edge Function header reading and atomic nonce consumption before the worker run begins.",
-        "Apply and verify ORD-A07B under its exact staging authorization, then separately authorize ORD-A07C, deploy the repository-wired Edge Function through the controlled staging release, and run the concurrent replay canary."
+        "Apply and verify ORD-A07B under its exact staging authorization, then separately authorize ORD-A07C, deploy the repository-wired Edge Function through the controlled staging release, and run the concurrent replay canary.",
+        "Apply ORD-A07B only under its exact staging authorization, then separately authorize ORD-A07C, deploy the wired Edge Function through controlled staging release, and authorize the remote concurrent replay canary."
       ],
       "exitCriteria": [
         "Two real accounts complete request, accept, proposal, approval, start and completion across devices.",
