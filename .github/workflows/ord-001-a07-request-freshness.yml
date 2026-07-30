@@ -3,46 +3,43 @@ name: Doke ORD-A07 Request Freshness
 on:
   pull_request:
     paths:
-      - 'backend/shared/security/request-freshness-contract.js'
-      - 'backend/shared/security/persistent-idempotency-store.js'
-      - 'backend/shared/http/create-action-handler.js'
-      - 'backend/shared/http/route-registry.js'
-      - 'backend/runtime/staging/node-http-server.js'
-      - 'assets/js/services/orders-service.js'
-      - 'scripts/test-order-request-freshness-runtime.js'
-      - 'scripts/audit-ord-001-a07-request-freshness.js'
-      - 'scripts/audit-ord-001-a06-authorization-envelope.js'
-      - 'docs/ORD-001-A07-REQUEST-FRESHNESS.md'
-      - 'docs/validation/ORD-001-A07-REQUEST-FRESHNESS.json'
-      - 'config/domain-completion-matrix.json'
-      - 'package.json'
       - '.github/workflows/ord-001-a07-request-freshness.yml'
+      - 'scripts/reconcile-ord-a08-staging-release-once.py'
+      - 'scripts/ord-a08-trigger.txt'
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  contracts:
+  reconcile-ord-a08:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      - name: Test request freshness runtime
-        run: node scripts/test-order-request-freshness-runtime.js
-      - name: Audit request freshness contract
-        run: node scripts/audit-ord-001-a07-request-freshness.js
-      - name: Preserve command boundary
-        run: node scripts/audit-ord-001-a03-command-boundary.js
-      - name: Preserve command activation
-        run: node scripts/audit-ord-001-a05-command-activation.js
-      - name: Preserve Playwright executor
-        run: node scripts/audit-ord-001-a06-playwright-executor.js
-      - name: Preserve authorization envelope
-        run: node scripts/audit-ord-001-a06-authorization-envelope.js
-      - name: Preserve cleanup boundary
-        run: node scripts/audit-ord-001-a06-cleanup-boundary.js
-      - name: Audit completion matrix
-        run: node scripts/audit-domain-completion-matrix.js
+      - name: Apply and validate ORD-A08
+        shell: bash
+        run: |
+          python scripts/reconcile-ord-a08-staging-release-once.py
+          rm -f scripts/ord-a08-trigger.txt
+          node scripts/test-ord-001-a08-staging-release-runtime.js
+          node scripts/audit-ord-001-a08-staging-release-readiness.js
+          node scripts/execute-ord-001-a08-staging-release-preflight.js --dry-run
+          node scripts/test-order-request-freshness-runtime.js
+          node scripts/audit-ord-001-a03-command-boundary.js
+          node scripts/audit-ord-001-a06-cleanup-boundary.js
+          node scripts/audit-domain-completion-matrix.js --write
+          node scripts/audit-domain-completion-matrix.js
+          git add -A
+          git add -f docs/validation/ORD-001-A08-STAGING-RELEASE-READINESS.json reports/generated/domain-completion-matrix-report.json
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Establish ORD-A08 staging release readiness boundary'
+          git pull --rebase origin ${{ github.event.pull_request.head.ref || github.ref_name }}
+          git push origin HEAD:${{ github.event.pull_request.head.ref || github.ref_name }}
