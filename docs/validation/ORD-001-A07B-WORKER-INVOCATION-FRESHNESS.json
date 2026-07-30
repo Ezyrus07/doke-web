@@ -1,18 +1,34 @@
 {
   "domain": "ORD-001",
   "sublot": "ORD-A07B",
-  "status": "worker_invocation_freshness_contract_complete_activation_pending",
-  "recordedAt": "2026-07-30T11:19:00-03:00",
+  "status": "worker_invocation_nonce_ledger_migration_validated_activation_pending",
+  "recordedAt": "2026-07-30T11:43:00-03:00",
   "securityModel": {
     "workerTokenRemainsIndependent": true,
     "timestampRequired": true,
     "nonceRequired": true,
     "atomicNonceConsumptionRequired": true,
     "replayRejected": true,
+    "nonceStoredAsSha256Digest": true,
+    "securityInvokerRpc": true,
     "maxAgeMs": 300000,
     "futureSkewMs": 30000
   },
-  "tests": {
+  "migration": {
+    "path": "supabase/migrations/20260730144324_ord_a07b_worker_invocation_nonce_ledger.sql",
+    "generatedBySupabaseCli": true,
+    "supabaseCliVersion": "2.109.0",
+    "validatedOnPostgresMajor": 17,
+    "firstNonceAccepted": true,
+    "duplicateNonceRejected": true,
+    "expiredTimestampRejected": true,
+    "futureTimestampRejected": true,
+    "anonExecuteRevoked": true,
+    "authenticatedExecuteRevoked": true,
+    "serviceRoleExecuteGranted": true,
+    "appliedToStaging": false
+  },
+  "runtimeTests": {
     "missingTimestampRejected": true,
     "invalidTimestampRejected": true,
     "missingNonceRejected": true,
@@ -26,24 +42,23 @@
   },
   "activation": {
     "edgeFunctionWired": false,
-    "nonceLedgerMigrationCreated": false,
+    "nonceLedgerMigrationCreated": true,
     "nonceLedgerAppliedToStaging": false,
     "cronHeadersUpdated": false,
     "edgeFunctionDeployed": false,
     "remoteCanaryExecuted": false
   },
   "execution": {
-    "networkRequestsPerformed": 0,
-    "databaseMutationsPerformed": 0,
-    "migrationsApplied": 0,
+    "externalProviderRequestsPerformed": 0,
+    "stagingDatabaseMutationsPerformed": 0,
+    "migrationsAppliedToStaging": 0,
+    "ephemeralPostgresValidationRuns": 1,
     "edgeFunctionsDeployed": 0,
     "ordersCreated": 0,
     "productionChanged": false
   },
   "remainingBlockers": [
-    "official_supabase_cli_migration_generation",
-    "private_nonce_ledger",
-    "service_role_only_atomic_nonce_consume_rpc",
+    "controlled_staging_migration_application",
     "cron_timestamp_and_nonce_headers",
     "edge_function_activation",
     "controlled_staging_release",
