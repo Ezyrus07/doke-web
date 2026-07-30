@@ -1,0 +1,76 @@
+{
+  "domain": "ORD-001",
+  "sublot": "ORD-A07C-APPLICATION",
+  "status": "staging_cron_freshness_headers_applied_and_verified",
+  "recordedAt": "2026-07-30T17:44:00-03:00",
+  "authorization": {
+    "exactPhraseReceived": true,
+    "scopeLimitedToA07CMigrationAndVerification": true,
+    "edgeFunctionDeployAuthorized": false,
+    "remoteCanaryAuthorized": false,
+    "productionAuthorized": false,
+    "mergeAuthorized": false
+  },
+  "migration": {
+    "repositoryPath": "supabase/migrations/20260730153500_ord_a07c_worker_invocation_headers.sql",
+    "repositorySha256": "542411c1bd1d7db26301eb403601ddfa22e3284b45c817442aa917a8adcbf16e",
+    "repositoryGitBlobSha": "5d5496cbbeaa9430bcb727cb961c2a64d6635f4b",
+    "appliedName": "ord_a07c_worker_invocation_headers",
+    "supabaseRecordedVersion": "20260730204044",
+    "applied": true
+  },
+  "preflight": {
+    "a07bLedgerExists": true,
+    "a07bConsumeRpcExists": true,
+    "a07cRecorded": false,
+    "cronJobActive": true,
+    "cronSchedule": "* * * * *",
+    "cronCommand": "select private.invoke_order_event_worker_if_needed();",
+    "cronFunctionHasIssuedAtHeader": false,
+    "cronFunctionHasNonceHeader": false,
+    "orders": 0,
+    "budgets": 0,
+    "history": 0,
+    "domainEvents": 0,
+    "metricEvents": 0,
+    "deliveryAttempts": 0
+  },
+  "postApplication": {
+    "a07cRecorded": true,
+    "issuedAtHeaderPresent": true,
+    "nonceHeaderPresent": true,
+    "tokenHeaderPreserved": true,
+    "sourceHeaderPreserved": true,
+    "vaultProjectUrlPreserved": true,
+    "vaultWorkerTokenPreserved": true,
+    "payloadLimit25Preserved": true,
+    "timeout30000Preserved": true,
+    "cronJobActive": true,
+    "cronSchedule": "* * * * *",
+    "cronCommand": "select private.invoke_order_event_worker_if_needed();",
+    "functionOwner": "postgres",
+    "functionSecurityDefiner": true,
+    "acl": "{postgres=X/postgres}",
+    "publicCanExecute": false,
+    "anonCanExecute": false,
+    "authenticatedCanExecute": false,
+    "serviceRoleCanExecute": false,
+    "postgresCanExecute": true,
+    "a07bLedgerExists": true,
+    "a07bConsumeRpcExists": true
+  },
+  "finalStagingSnapshot": {
+    "orders": 0,
+    "budgets": 0,
+    "history": 0,
+    "domainEvents": 0,
+    "metricEvents": 0,
+    "deliveryAttempts": 0
+  },
+  "remainingBlockers": [
+    "controlled_edge_function_staging_deploy",
+    "remote_concurrent_replay_canary_authorization",
+    "production_changes",
+    "pull_request_merge"
+  ]
+}
