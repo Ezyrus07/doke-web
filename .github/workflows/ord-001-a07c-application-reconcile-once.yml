@@ -1,0 +1,91 @@
+name: ORD-A07C Application Reconcile Once
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/ord-001-a07c-application-reconcile-once.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  reconcile:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Reconcile ORD-A07C application registry and matrix
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('fs');
+
+          const packagePath = 'package.json';
+          const packageJson = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
+          packageJson.scripts['audit:ord-001-a07c-staging-migration-application'] =
+            'node scripts/audit-ord-001-a07c-staging-migration-application.js';
+          fs.writeFileSync(packagePath, JSON.stringify(packageJson, null, 2) + '\n');
+
+          const matrixPath = 'config/domain-completion-matrix.json';
+          const matrix = JSON.parse(fs.readFileSync(matrixPath, 'utf8'));
+          matrix.version = '1.3.36';
+          matrix.updatedAt = '2026-07-30T18:19:00-03:00';
+          const ord = matrix.domains.find((domain) => domain.id === 'ORD-001');
+          if (!ord) throw new Error('ORD-001 domain not found');
+
+          const appendUnique = (array, values) => {
+            for (const value of values) if (!array.includes(value)) array.push(value);
+          };
+
+          appendUnique(ord.requiredPaths, [
+            'config/ord-001-a07c-staging-migration-application.json',
+            'docs/ORD-001-A07C-STAGING-MIGRATION-APPLICATION.md',
+            'docs/validation/ORD-001-A07C-STAGING-MIGRATION-APPLICATION.json',
+            'scripts/audit-ord-001-a07c-staging-migration-application.js',
+            '.github/workflows/ord-001-a07c-staging-migration-application.yml'
+          ]);
+          appendUnique(ord.tests, [
+            'audit:ord-001-a07c-staging-migration-application'
+          ]);
+          appendUnique(ord.evidence, [
+            'ORD-A07C was explicitly authorized and applied to Doke staging as ord_a07c_worker_invocation_headers; Supabase recorded execution version 20260730204044 without manual migration-history edits.',
+            'The staging Cron invocation function now emits issued-at and nonce headers while preserving its * * * * * schedule, canonical command, Vault secret names, endpoint, source, limit 25, timeout 30000 and A07B ledger authority.',
+            'The private Cron entrypoint remains SECURITY DEFINER owned and executable only by postgres; public, anon, authenticated and service_role remain denied, and all order-domain counts stayed zero.',
+            'No Edge Function was deployed, no remote replay canary ran, and Railway, production and merge remain blocked.'
+          ]);
+          ord.nextActions = ord.nextActions.filter((action) =>
+            !/apply ord-a07c|a07c.*migration.*staging|exact.*a07c.*authorization/i.test(action)
+          );
+          appendUnique(ord.nextActions, [
+            'Prepare a separate exact-authorization gate for controlled order-event-worker Edge Function deployment to staging; after deployment verification, require another independent authorization for the remote concurrent replay canary.'
+          ]);
+
+          fs.writeFileSync(matrixPath, JSON.stringify(matrix, null, 2) + '\n');
+          NODE
+
+          node scripts/audit-ord-001-a07c-staging-migration-application.js
+          node scripts/test-ord-001-a07c-staging-migration-readiness.js
+          node scripts/audit-ord-001-a07c-staging-migration-readiness.js
+          node scripts/test-ord-001-a07c-worker-invocation-headers.mjs
+          node scripts/audit-ord-001-a07c-worker-invocation-headers.js
+          node scripts/audit-ord-001-a07b-staging-migration-application.js
+          node scripts/audit-ord-001-a07d-edge-function-freshness-wiring.js
+          node scripts/audit-ord-001-a07e-concurrent-replay-canary.js
+          node scripts/audit-domain-completion-matrix.js --write
+          node scripts/audit-domain-completion-matrix.js
+
+          git add package.json config/domain-completion-matrix.json docs/DOMAIN-COMPLETION-MATRIX.md
+          git add -f reports/generated/domain-completion-matrix-report.json
+          git config user.name 'github-actions[bot]'
+          git config user.email '4189826+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Reconcile ORD-A07C staging application evidence' || exit 0
+          git pull --rebase origin ${{ github.event.pull_request.head.ref || github.ref_name }}
+          git push origin HEAD:${{ github.event.pull_request.head.ref || github.ref_name }}
