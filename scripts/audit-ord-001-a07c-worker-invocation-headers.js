@@ -78,7 +78,7 @@ function main() {
     failures.push('Edge Function activation must remain pending in ORD-A07C');
   }
 
-  if (!includesAll(docs, ['ORD-A07C', '24 bytes', 'base64url', 'activation remains pending'])) {
+  if (!includesAll(docs.toLowerCase(), ['ord-a07c', '24 bytes', 'base64url', 'activation remains pending'])) {
     failures.push('ORD-A07C documentation is incomplete');
   }
   if (evidence.status !== config.status || evidence.migration.sha256 !== actualHash) {
