@@ -1,0 +1,38 @@
+name: Doke ORD-A09A Staging Provider Evaluation
+
+on:
+  pull_request:
+    paths:
+      - 'config/ord-001-a09-staging-provider-evaluation.json'
+      - 'docs/ORD-001-A09A-STAGING-PROVIDER-EVALUATION.md'
+      - 'docs/validation/ORD-001-A09A-STAGING-PROVIDER-EVALUATION.json'
+      - 'scripts/audit-ord-001-a09a-staging-provider-evaluation.js'
+      - '.github/workflows/ord-001-a09a-staging-provider-evaluation.yml'
+      - 'backend/runtime/staging/runtime-release-contract.js'
+      - 'scripts/execute-ord-001-a08-staging-release-preflight.js'
+      - 'config/domain-completion-matrix.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Audit provider evaluation boundary
+        run: node scripts/audit-ord-001-a09a-staging-provider-evaluation.js
+      - name: Preserve staging release readiness
+        run: node scripts/audit-ord-001-a08-staging-release-readiness.js
+      - name: Preserve request freshness
+        run: node scripts/audit-ord-001-a07-request-freshness.js
+      - name: Preserve authorization envelope
+        run: node scripts/audit-ord-001-a06-authorization-envelope.js
+      - name: Preserve cleanup boundary
+        run: node scripts/audit-ord-001-a06-cleanup-boundary.js
+      - name: Audit completion matrix
+        run: node scripts/audit-domain-completion-matrix.js
