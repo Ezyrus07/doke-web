@@ -34,6 +34,39 @@ The admission order is mandatory:
 
 The nonce ledger remains authoritative even inside the five-minute window. The time window limits the usefulness of old captured requests after nonce-ledger retention expires.
 
+## Migration now available
+
+The migration was generated through Supabase CLI `2.109.0`:
+
+`supabase/migrations/20260730144324_ord_a07b_worker_invocation_nonce_ledger.sql`
+
+It creates:
+
+- private table `private.order_event_worker_invocation_nonces`;
+- SHA-256 nonce storage instead of plaintext nonce storage;
+- row-level security as defense in depth;
+- bounded expiration metadata and cleanup;
+- `public.consume_order_event_worker_invocation_nonce(text, timestamptz, text)`;
+- `SECURITY INVOKER` execution;
+- explicit revocation from `public`, `anon` and `authenticated`;
+- explicit execution and required schema/table privileges for `service_role`.
+
+The atomic insert uses the nonce digest as the primary key and `ON CONFLICT DO NOTHING`. Therefore, exactly one concurrent consumer can receive `true`; later consumers receive `false`.
+
+## Validation
+
+The migration was applied only to an ephemeral Postgres 17 service in GitHub Actions. The validation proved:
+
+- the first valid nonce is accepted;
+- the same nonce is rejected on reuse;
+- timestamps older than five minutes are rejected;
+- timestamps over thirty seconds in the future are rejected;
+- `anon` cannot execute the RPC;
+- `authenticated` cannot execute the RPC;
+- `service_role` can execute the RPC.
+
+No connected Supabase project was modified during generation or validation.
+
 ## Fail-closed behavior
 
 The runtime contract rejects:
@@ -51,27 +84,27 @@ Replay rejection uses `DOKE_ORDER_EVENT_WORKER_REPLAY_REJECTED` with HTTP 409. M
 
 ## Deliberate non-activation
 
-The module is **not imported by the Edge Function yet**. Activation before an atomic Postgres nonce ledger would either break Cron or create a false security claim.
+The module is **not imported by the Edge Function yet**. The migration is also **not applied to staging**. Activation before the ledger exists remotely would either break Cron or create a false security claim.
 
 The next controlled implementation must:
 
-1. generate a migration through the Supabase CLI;
-2. create a private nonce ledger with uniqueness and bounded retention;
-3. add a service-role-only atomic consume RPC;
-4. update the Cron invocation to send issued-at and nonce headers;
-5. wire the Edge Function to consume the nonce before `begin_order_event_worker_run`;
-6. test duplicate, stale, future and concurrent invocations;
-7. deploy only through the controlled staging release path.
+1. apply the reviewed migration through the controlled staging path;
+2. verify grants, RLS and atomic duplicate rejection on staging;
+3. update the Cron invocation to send issued-at and nonce headers;
+4. wire the Edge Function to consume the nonce before `begin_order_event_worker_run`;
+5. test duplicate, stale, future and concurrent invocations;
+6. deploy only through the controlled staging release path.
 
 ## Current evidence
 
 This step performed:
 
-- zero network requests;
-- zero database mutations;
-- zero migrations;
+- one isolated Postgres 17 validation run;
+- zero external provider requests;
+- zero staging database mutations;
+- zero migrations applied to staging;
 - zero Edge Function deployments;
 - zero order creation;
 - no production change.
 
-Supabase currently documents that Cron and `pg_net` can invoke Edge Functions and recommends Vault for protected invocation credentials. The existing worker follows that model; A07B adds replay resistance on top of it.
+Supabase documents that Cron and `pg_net` can invoke Edge Functions and recommends Vault for protected invocation credentials. The existing worker follows that model; A07B adds replay resistance on top of it.
