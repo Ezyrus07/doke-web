@@ -1,0 +1,54 @@
+{
+  "domain": "ORD-001",
+  "sublot": "ORD-A09A",
+  "status": "recommendation_complete_selection_pending_explicit_decision",
+  "environment": "staging",
+  "recordedAt": "2026-07-30T09:02:00-03:00",
+  "objective": "Evaluate external providers for the ORD-A08 Node staging runtime without creating infrastructure, authorizing billing, configuring secrets or deploying.",
+  "evaluatedProviders": [
+    "railway",
+    "fly.io",
+    "render",
+    "vercel"
+  ],
+  "recommendation": {
+    "provider": "railway",
+    "scope": "initial_external_staging_only",
+    "fallback": "fly.io",
+    "selectionAuthorized": false,
+    "requiredDecision": "I_EXPLICITLY_SELECT_RAILWAY_FOR_DOKE_STAGING"
+  },
+  "decisionBoundary": {
+    "genericNextMeansSelection": false,
+    "providerBound": false,
+    "providerAccountCreated": false,
+    "billingAuthorized": false,
+    "paidPlanEnabled": false,
+    "secretsConfigured": false,
+    "domainCreated": false,
+    "networkRequestsPerformed": false,
+    "deploymentPerformed": false,
+    "rollbackPerformed": false,
+    "accountsUsed": 0,
+    "mutationsPerformed": false,
+    "productionChanged": false
+  },
+  "rationale": [
+    "Railway maps directly to the existing persistent Node entrypoint and ORD-A08 health contract.",
+    "Railway exposes deployment, log and rollback operations while keeping the initial staging workflow operationally small.",
+    "Fly.io remains the preferred future candidate when Sao Paulo placement becomes more important than staging simplicity.",
+    "Render free cold starts reduce deterministic canary reliability.",
+    "Vercel general Node server support is recent and Sao Paulo managed compute is Pro-only."
+  ],
+  "remainingBlockers": [
+    "explicit_provider_selection",
+    "provider_specific_adapter",
+    "provider_account_and_billing_decision",
+    "secure_secret_injection",
+    "provider_specific_check_env",
+    "separate_deployment_authorization",
+    "read_only_ord_a08_preflight_after_deployment",
+    "explicit_authorization_for_real_visual_canary"
+  ],
+  "nextAction": "Wait for explicit Railway staging selection, then build a non-secret provider adapter and run only dry-run and check-env."
+}
