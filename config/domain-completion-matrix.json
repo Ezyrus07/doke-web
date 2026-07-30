@@ -1,6 +1,6 @@
 {
-  "version": "1.3.33",
-  "updatedAt": "2026-07-30T13:32:00-03:00",
+  "version": "1.3.34",
+  "updatedAt": "2026-07-30T15:50:00-03:00",
   "title": "Doke Domain Completion Matrix",
   "purpose": "Single source of truth for domain maturity, data authority, staging evidence, blockers, dependencies and mandatory completion order.",
   "maturityScale": {
@@ -983,7 +983,12 @@
         "config/ord-001-a07e-concurrent-replay-canary.json",
         "docs/ORD-001-A07E-CONCURRENT-REPLAY-CANARY.md",
         "docs/validation/ORD-001-A07E-CONCURRENT-REPLAY-CANARY.json",
-        ".github/workflows/ord-001-a07e-concurrent-replay-canary.yml"
+        ".github/workflows/ord-001-a07e-concurrent-replay-canary.yml",
+        "config/ord-001-a07b-staging-migration-application.json",
+        "docs/ORD-001-A07B-STAGING-MIGRATION-APPLICATION.md",
+        "docs/validation/ORD-001-A07B-STAGING-MIGRATION-APPLICATION.json",
+        "scripts/audit-ord-001-a07b-staging-migration-application.js",
+        ".github/workflows/ord-001-a07b-staging-migration-application.yml"
       ],
       "scanRoots": [
         "backend/modules/orders",
@@ -1057,7 +1062,8 @@
         "audit:ord-001-a07d-edge-function-freshness-wiring",
         "run:ord-001-a07e-concurrent-replay-canary",
         "test:ord-001-a07e-concurrent-replay-canary",
-        "audit:ord-001-a07e-concurrent-replay-canary"
+        "audit:ord-001-a07e-concurrent-replay-canary",
+        "audit:ord-001-a07b-staging-migration-application"
       ],
       "evidence": [
         "Canonical state machine, transaction events, outbox worker and operational controls are active in staging.",
@@ -1121,7 +1127,11 @@
         "Repository wiring is complete while staging migrations, Cron changes, Edge Function deploy and production remain unauthorized.",
         "ORD-A07E executes 32 concurrent local invocations with the same nonce and proves exactly one acceptance, 31 HTTP 409 replay rejections, one worker run and one event-claim path.",
         "The ORD-A07E runner is local-only and rejects staging, remote, production, execute and deploy modes while performing zero network requests and zero mutations.",
-        "The local canary preserves ORD-A07B, ORD-A07C and ORD-A07D contracts but does not authorize or replace the remote staging replay canary."
+        "The local canary preserves ORD-A07B, ORD-A07C and ORD-A07D contracts but does not authorize or replace the remote staging replay canary.",
+        "ORD-A07B was explicitly authorized and applied to Doke staging as migration ord_a07b_worker_invocation_nonce_ledger; Supabase recorded execution version 20260730184101 without manual migration-history edits.",
+        "The staging nonce ledger, SECURITY INVOKER consume RPC, RLS, primary key, expiry constraint, expiry index and least-privilege grants were verified; anon and authenticated remain denied while service_role is authorized.",
+        "Staging atomicity verification accepted the first nonce use and rejected duplicate, expired and excessively future uses; all order-domain counts remained zero.",
+        "One source=test verification row remains because two narrowly scoped deletion attempts were blocked by tool safety; Cron headers, Edge Function deploy, A07C, Railway and production remain unchanged."
       ],
       "blockers": [
         {
@@ -1172,8 +1182,7 @@
         "Review and apply the generated ORD-A07B nonce-ledger migration through the controlled staging release path, verify grants and atomic duplicate rejection, then wire Cron headers and Edge freshness enforcement before any replay canary.",
         "Apply the canonical ORD-A07B nonce ledger migration to staging only after exact authorization, then run read-only grant, RLS, atomicity and zero-drift verification.",
         "After the ORD-A07B ledger is applied and verified in staging, authorize the ORD-A07C Cron header migration separately, then wire Edge Function header reading and atomic nonce consumption before the worker run begins.",
-        "Apply and verify ORD-A07B under its exact staging authorization, then separately authorize ORD-A07C, deploy the repository-wired Edge Function through the controlled staging release, and run the concurrent replay canary.",
-        "Apply ORD-A07B only under its exact staging authorization, then separately authorize ORD-A07C, deploy the wired Edge Function through controlled staging release, and authorize the remote concurrent replay canary."
+        "Require a separate exact authorization for ORD-A07C before applying the Cron header migration; keep the Edge Function undeployed until A07C is verified, then authorize the remote replay canary separately."
       ],
       "exitCriteria": [
         "Two real accounts complete request, accept, proposal, approval, start and completion across devices.",
