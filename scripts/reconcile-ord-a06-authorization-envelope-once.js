@@ -99,7 +99,7 @@ appendUnique(ord.tests, ['audit:ord-001-a06-authorization-envelope']);
 appendUnique(ord.evidence, [
   'A short-lived authorization envelope contract now binds one runId to the authorized client, professional, service and staging targets using SHA-256 without committing raw identifiers.',
   'The authorization file must remain outside the repository, match an operator-supplied digest, expire within two hours, prohibit production, limit execution to one order and require cleanup.',
-  'The envelope preparer is inert by default: dry-run performs no reads of credentials, check-env writes nothing, and write requires a separate explicit decision plus a dedicated flag.',
+  'The authorization envelope preparer is inert by default: dry-run performs no reads of credentials, check-env writes nothing, and write requires a separate explicit decision plus a dedicated flag.',
   'The Playwright executor now rejects check-env and execute unless the envelope digest, lifetime, resource bindings and target bindings all validate.'
 ]);
 const blocker = ord.blockers.find((entry) => entry.id === 'ORD-B02');
@@ -113,55 +113,4 @@ ord.nextActions = [
 ];
 write(matrixPath, `${JSON.stringify(matrix, null, 2)}\n`);
 
-const staticWorkflow = `name: Doke ORD-A06 Authorization Envelope
-
-on:
-  pull_request:
-    paths:
-      - 'scripts/lib/ord-a06-authorization-envelope.js'
-      - 'scripts/prepare-ord-001-a06-authorization-envelope.js'
-      - 'scripts/execute-ord-001-a06-visual-settlement-playwright.js'
-      - 'scripts/audit-ord-001-a06-authorization-envelope.js'
-      - 'docs/ORD-001-A06-AUTHORIZATION-ENVELOPE.md'
-      - 'docs/validation/ORD-001-A06-AUTHORIZATION-ENVELOPE.json'
-      - '.github/workflows/ord-001-a06-authorization-envelope.yml'
-      - 'config/domain-completion-matrix.json'
-      - 'package.json'
-  workflow_dispatch:
-
-permissions:
-  contents: read
-
-jobs:
-  contracts:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-      - name: Audit authorization envelope contract
-        run: node scripts/audit-ord-001-a06-authorization-envelope.js
-      - name: Prove preparer remains dry-run only in CI
-        run: node scripts/prepare-ord-001-a06-authorization-envelope.js --dry-run
-      - name: Preserve fail-closed Playwright executor
-        run: node scripts/audit-ord-001-a06-playwright-executor.js
-      - name: Prove Playwright remains dry-run only in CI
-        run: node scripts/execute-ord-001-a06-visual-settlement-playwright.js --dry-run
-      - name: Preserve staging readiness boundary
-        run: node scripts/audit-ord-001-a06-execution-readiness.js
-      - name: Preserve cleanup boundary
-        run: node scripts/audit-ord-001-a06-cleanup-boundary.js
-      - name: Audit completion matrix
-        run: node scripts/audit-domain-completion-matrix.js
-`;
-write('.github/workflows/ord-001-a06-authorization-envelope.yml', staticWorkflow);
-
-for (const temporary of [
-  '.github/workflows/ord-a06-authorization-envelope-reconcile-once.yml',
-  'scripts/reconcile-ord-a06-authorization-envelope-once.js'
-]) {
-  if (fs.existsSync(temporary)) fs.unlinkSync(temporary);
-}
-
-console.log('ORD-A06 authorization envelope reconciliation complete.');
+console.log('ORD-A06 non-workflow authorization reconciliation complete.');
