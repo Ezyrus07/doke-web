@@ -42,8 +42,8 @@ function main() {
   if (config.migration.sha256 !== actualHash) failures.push('ORD-A07C migration SHA-256 mismatch');
   if (config.migration.appliedToStaging !== false) failures.push('migration must remain unapplied to staging');
   if (config.activation.cronFunctionUpdatedInStaging !== false) failures.push('staging Cron function must remain unchanged');
-  if (config.activation.edgeFunctionReadsHeaders !== false) failures.push('Edge Function header reader must remain disconnected');
-  if (config.activation.edgeFunctionConsumesNonce !== false) failures.push('Edge Function nonce consumer must remain disconnected');
+  if (config.activation.edgeFunctionReadsHeaders !== false) failures.push('Edge Function header reader must remain disconnected in staging');
+  if (config.activation.edgeFunctionConsumesNonce !== false) failures.push('Edge Function nonce consumer must remain disconnected in staging');
   if (config.execution.stagingDatabaseMutationsPerformed !== 0) failures.push('staging mutation count must remain zero');
   if (config.execution.cronJobsChanged !== 0) failures.push('Cron change count must remain zero');
   if (config.execution.edgeFunctionsDeployed !== 0) failures.push('Edge Function deploy count must remain zero');
@@ -74,8 +74,11 @@ function main() {
   if (/vault\.create_secret|https:\/\//.test(migration)) failures.push('Cron header migration must not create secrets or hardcode a project URL');
   if (/cron\.schedule|cron\.unschedule/.test(migration)) failures.push('ORD-A07C must not replace or reschedule the Cron job');
 
-  if (/invocation-headers\.mjs|invocation-freshness\.mjs/.test(worker)) {
-    failures.push('Edge Function activation must remain pending in ORD-A07C');
+  const gateImport = worker.indexOf('import { assertFreshWorkerRequest } from "./invocation-gate.mjs";');
+  const gateCall = worker.indexOf('freshness = await assertFreshWorkerRequest');
+  const beginCall = worker.indexOf('begin_order_event_worker_run');
+  if (gateImport < 0 || gateCall < 0 || beginCall < 0 || gateCall > beginCall) {
+    failures.push('ORD-A07D local wiring must validate freshness before the worker run begins');
   }
 
   if (!includesAll(docs.toLowerCase(), ['ord-a07c', '24 bytes', 'base64url', 'activation remains pending'])) {
