@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 971 arquivos no escopo; 247 referências a localStorage; 77 a sessionStorage; 556 referências mock; 177 referências de rede/Supabase; 34 marcadores de implementação pendente.
+**Evidência estática observada:** 974 arquivos no escopo; 247 referências a localStorage; 77 a sessionStorage; 556 referências mock; 177 referências de rede/Supabase; 34 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -440,6 +440,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - ORD-A09B0 provider selection handoff separates the exact Railway staging selection phrase from account, billing, secrets, infrastructure, deployment, rollback, visual canary and production authorizations; generic continuation remains non-authorizing.
 - ORD-A09B0 now includes a fail-closed selection intent firewall: generic continuation, paraphrases, case changes, punctuation changes, non-Railway providers and production targets are rejected; the exact phrase can authorize only an in-memory non-secret adapter-preparation evaluation and never persists selection or authorizes billing, infrastructure or deployment.
 - ORD-A09B0 now includes a provider-neutral fail-closed conformance suite that rejects missing adapter methods, production capability, network enabled by default, executable commands, embedded secret values and any dry-run reporting network, mutation, command execution, deployment, rollback or production change; provider selection remains unbound.
+- ORD-A07B defines a fail-closed five-minute worker invocation freshness contract with thirty-second future skew, URL-safe nonce validation and mandatory atomic nonce consumption before a worker run may begin; activation remains deliberately pending until an official Supabase CLI migration creates the private nonce ledger and service-role-only consume RPC.
 
 **Bloqueadores:**
 - **ORD-B02 · HIGH · frontend_activation:** Canonical reads, canary commands, cleanup, deterministic settlement, readiness discovery and the fail-closed Playwright executor pass. A short-lived authorization envelope is now mandatory; ORD-B02 remains until explicit authorization is issued, check-env passes and the real two-context visual canary is executed. _(Fase 6)_
@@ -452,7 +453,6 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - Issue one short-lived resource-bound authorization envelope outside the repository and retain only its path and SHA-256 in the executor environment.
 - Supply credentials, approved targets and service-role secret only to the executor process, then run check-env without browser, network or mutations.
 - Permit execute only after every authorization binding passes; review requested, accepted, quoted and optimistic-conflict evidence and prove cleanup twice with zero residue.
-- Harden worker invocation freshness and replay resistance.
 - Deploy the ORD-A07 request freshness contract only through the controlled staging release path and rerun the non-mutating preflight.
 - Retain explicit authorization as a separate prerequisite before the real two-context visual canary.
 - Select and formally bind one external staging release provider without changing production.
@@ -464,6 +464,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - Await the exact Railway staging selection phrase; after it is received, create only the non-secret provider-specific adapter and run local dry-run plus check-env while keeping account, billing, infrastructure and deployment separately authorized.
 - Keep the selection intent firewall fail-closed and await the exact Railway staging selection phrase before creating only the non-secret provider-specific adapter.
 - Require any future provider-specific adapter to pass the neutral conformance suite, while awaiting the exact Railway staging selection phrase before implementation.
+- Generate the ORD-A07B private nonce-ledger migration through the Supabase CLI, validate it locally, then apply and deploy only through the controlled staging release path before activating Edge freshness enforcement.
 
 **Gate de saída:**
 - Two real accounts complete request, accept, proposal, approval, start and completion across devices.
@@ -888,7 +889,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 1/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 207 arquivos no escopo; 64 referências a localStorage; 8 a sessionStorage; 268 referências mock; 8 referências de rede/Supabase; 24 marcadores de implementação pendente.
+**Evidência estática observada:** 208 arquivos no escopo; 64 referências a localStorage; 8 a sessionStorage; 268 referências mock; 8 referências de rede/Supabase; 24 marcadores de implementação pendente.
 
 **Evidências:**
 - The master plan identifies legal, privacy and commercial decisions as mandatory.
@@ -948,7 +949,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2236 arquivos no escopo; 504 referências a localStorage; 150 a sessionStorage; 879 referências mock; 572 referências de rede/Supabase; 88 marcadores de implementação pendente.
+**Evidência estática observada:** 2241 arquivos no escopo; 504 referências a localStorage; 150 a sessionStorage; 879 referências mock; 572 referências de rede/Supabase; 88 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
@@ -1009,4 +1010,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-07-30T11:15:00-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-07-30T11:19:00-03:00._

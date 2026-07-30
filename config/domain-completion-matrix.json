@@ -1,6 +1,6 @@
 {
-  "version": "1.3.27",
-  "updatedAt": "2026-07-30T11:15:00-03:00",
+  "version": "1.3.28",
+  "updatedAt": "2026-07-30T11:19:00-03:00",
   "title": "Doke Domain Completion Matrix",
   "purpose": "Single source of truth for domain maturity, data authority, staging evidence, blockers, dependencies and mandatory completion order.",
   "maturityScale": {
@@ -945,7 +945,14 @@
         "scripts/audit-ord-001-a09b0-provider-adapter-conformance.js",
         "docs/ORD-001-A09B0-PROVIDER-ADAPTER-CONFORMANCE.md",
         "docs/validation/ORD-001-A09B0-PROVIDER-ADAPTER-CONFORMANCE.json",
-        ".github/workflows/ord-001-a09b0-provider-adapter-conformance.yml"
+        ".github/workflows/ord-001-a09b0-provider-adapter-conformance.yml",
+        "supabase/functions/order-event-worker/invocation-freshness.mjs",
+        "config/ord-001-a07b-worker-invocation-freshness.json",
+        "scripts/test-order-event-worker-invocation-freshness.js",
+        "scripts/audit-ord-001-a07b-worker-invocation-freshness.js",
+        "docs/ORD-001-A07B-WORKER-INVOCATION-FRESHNESS.md",
+        "docs/validation/ORD-001-A07B-WORKER-INVOCATION-FRESHNESS.json",
+        ".github/workflows/ord-001-a07b-worker-invocation-freshness.yml"
       ],
       "scanRoots": [
         "backend/modules/orders",
@@ -1006,7 +1013,9 @@
         "test:ord-001-a09b0-provider-selection-intent-firewall",
         "audit:ord-001-a09b0-provider-selection-intent-firewall",
         "test:ord-001-a09b0-provider-adapter-conformance",
-        "audit:ord-001-a09b0-provider-adapter-conformance"
+        "audit:ord-001-a09b0-provider-adapter-conformance",
+        "test:ord-001-a07b-worker-invocation-freshness",
+        "audit:ord-001-a07b-worker-invocation-freshness"
       ],
       "evidence": [
         "Canonical state machine, transaction events, outbox worker and operational controls are active in staging.",
@@ -1051,7 +1060,8 @@
         "ORD-A09B0 installs a provider-neutral adapter contract that validates exact selection input but never materializes commands or permits status, deploy or rollback before a provider-specific adapter and separate deployment authorization exist.",
         "ORD-A09B0 provider selection handoff separates the exact Railway staging selection phrase from account, billing, secrets, infrastructure, deployment, rollback, visual canary and production authorizations; generic continuation remains non-authorizing.",
         "ORD-A09B0 now includes a fail-closed selection intent firewall: generic continuation, paraphrases, case changes, punctuation changes, non-Railway providers and production targets are rejected; the exact phrase can authorize only an in-memory non-secret adapter-preparation evaluation and never persists selection or authorizes billing, infrastructure or deployment.",
-        "ORD-A09B0 now includes a provider-neutral fail-closed conformance suite that rejects missing adapter methods, production capability, network enabled by default, executable commands, embedded secret values and any dry-run reporting network, mutation, command execution, deployment, rollback or production change; provider selection remains unbound."
+        "ORD-A09B0 now includes a provider-neutral fail-closed conformance suite that rejects missing adapter methods, production capability, network enabled by default, executable commands, embedded secret values and any dry-run reporting network, mutation, command execution, deployment, rollback or production change; provider selection remains unbound.",
+        "ORD-A07B defines a fail-closed five-minute worker invocation freshness contract with thirty-second future skew, URL-safe nonce validation and mandatory atomic nonce consumption before a worker run may begin; activation remains deliberately pending until an official Supabase CLI migration creates the private nonce ledger and service-role-only consume RPC."
       ],
       "blockers": [
         {
@@ -1088,7 +1098,6 @@
         "Issue one short-lived resource-bound authorization envelope outside the repository and retain only its path and SHA-256 in the executor environment.",
         "Supply credentials, approved targets and service-role secret only to the executor process, then run check-env without browser, network or mutations.",
         "Permit execute only after every authorization binding passes; review requested, accepted, quoted and optimistic-conflict evidence and prove cleanup twice with zero residue.",
-        "Harden worker invocation freshness and replay resistance.",
         "Deploy the ORD-A07 request freshness contract only through the controlled staging release path and rerun the non-mutating preflight.",
         "Retain explicit authorization as a separate prerequisite before the real two-context visual canary.",
         "Select and formally bind one external staging release provider without changing production.",
@@ -1099,7 +1108,8 @@
         "After an independently authorized deployment, execute the ORD-A08 read-only GET/OPTIONS preflight before any visual canary.",
         "Await the exact Railway staging selection phrase; after it is received, create only the non-secret provider-specific adapter and run local dry-run plus check-env while keeping account, billing, infrastructure and deployment separately authorized.",
         "Keep the selection intent firewall fail-closed and await the exact Railway staging selection phrase before creating only the non-secret provider-specific adapter.",
-        "Require any future provider-specific adapter to pass the neutral conformance suite, while awaiting the exact Railway staging selection phrase before implementation."
+        "Require any future provider-specific adapter to pass the neutral conformance suite, while awaiting the exact Railway staging selection phrase before implementation.",
+        "Generate the ORD-A07B private nonce-ledger migration through the Supabase CLI, validate it locally, then apply and deploy only through the controlled staging release path before activating Edge freshness enforcement."
       ],
       "exitCriteria": [
         "Two real accounts complete request, accept, proposal, approval, start and completion across devices.",
