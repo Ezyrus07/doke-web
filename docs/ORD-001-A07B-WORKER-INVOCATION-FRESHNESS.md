@@ -40,6 +40,8 @@ The migration was generated through Supabase CLI `2.109.0`:
 
 `supabase/migrations/20260730144324_ord_a07b_worker_invocation_nonce_ledger.sql`
 
+This is the single canonical migration retained in the branch. Duplicate outputs from already-running one-time generator jobs were removed before final validation.
+
 It creates:
 
 - private table `private.order_event_worker_invocation_nonces`;
