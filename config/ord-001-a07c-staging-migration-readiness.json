@@ -1,0 +1,95 @@
+{
+  "contractVersion": "ord-a07c-staging-migration-readiness-v1",
+  "domain": "ORD-001",
+  "sublot": "ORD-A07C-READINESS",
+  "status": "staging_cron_header_migration_readiness_complete_application_unauthorized",
+  "recordedAt": "2026-07-30T16:37:00-03:00",
+  "migration": {
+    "path": "supabase/migrations/20260730153500_ord_a07c_worker_invocation_headers.sql",
+    "sha256": "542411c1bd1d7db26301eb403601ddfa22e3284b45c817442aa917a8adcbf16e",
+    "gitBlobSha": "5d5496cbbeaa9430bcb727cb961c2a64d6635f4b",
+    "appliedToStaging": false,
+    "changesOnlyFunction": "private.invoke_order_event_worker_if_needed()",
+    "changesCronSchedule": false,
+    "createsSecrets": false,
+    "hardcodesProjectUrl": false
+  },
+  "stagingPreflight": {
+    "a07bLedgerExists": true,
+    "a07bConsumeRpcExists": true,
+    "a07cMigrationRecorded": false,
+    "cronJobName": "doke-order-event-worker",
+    "cronJobActive": true,
+    "cronSchedule": "* * * * *",
+    "cronCommand": "select private.invoke_order_event_worker_if_needed();",
+    "cronFunctionHasIssuedAtHeader": false,
+    "cronFunctionHasNonceHeader": false,
+    "orders": 0,
+    "budgets": 0,
+    "history": 0,
+    "domainEvents": 0,
+    "metricEvents": 0,
+    "deliveryAttempts": 0
+  },
+  "preservedBehavior": {
+    "projectUrlSecret": "doke_project_url",
+    "workerTokenSecret": "doke_order_event_worker_token",
+    "requestPath": "/functions/v1/order-event-worker",
+    "source": "cron",
+    "limit": 25,
+    "timeoutMilliseconds": 30000,
+    "staleClaimRecoverySeconds": 300
+  },
+  "authorization": {
+    "exactPhrase": "I_EXPLICITLY_AUTHORIZE_ORD_A07C_WORKER_INVOCATION_HEADERS_MIGRATION_ON_DOKE_STAGING",
+    "genericCommandsRejected": [
+      "proximo",
+      "próximo",
+      "pode prosseguir",
+      "continue"
+    ],
+    "authorizedScopeAfterExactPhrase": [
+      "apply the canonical ORD-A07C migration to Doke staging only",
+      "verify the function body and confirm the Cron schedule and command remain unchanged"
+    ],
+    "stillBlockedAfterExactPhrase": [
+      "Edge Function deployment",
+      "remote replay canary",
+      "production database changes",
+      "Railway selection or deployment",
+      "billing, account or secret creation",
+      "pull request merge"
+    ]
+  },
+  "postApplicationAssertions": [
+    "migration history contains ord_a07c_worker_invocation_headers",
+    "the Cron job remains active with schedule * * * * *",
+    "the Cron command remains select private.invoke_order_event_worker_if_needed();",
+    "the function emits x-doke-worker-issued-at and x-doke-worker-nonce",
+    "issued-at is thirteen-digit epoch milliseconds",
+    "nonce is a thirty-two-character base64url value generated from twenty-four random bytes",
+    "Vault secret names, request path, payload limit and timeout remain unchanged",
+    "A07B ledger and consume RPC remain present",
+    "orders, budgets, history, events, metrics and delivery-attempt counts remain unchanged"
+  ],
+  "rollback": {
+    "strategy": "forward_only_rollback_migration",
+    "manualMigrationHistoryDeletionAllowed": false,
+    "edgeFunctionMustRemainUndeployed": true,
+    "requiredSequence": [
+      "confirm the Edge Function remains undeployed",
+      "capture the current Cron schedule, command and function definition",
+      "create a separate reviewed rollback migration restoring the previous function body",
+      "apply rollback only to staging",
+      "verify the schedule, command and order-domain counts remain unchanged"
+    ]
+  },
+  "capabilities": {
+    "dryRunAvailable": true,
+    "checkEnvAvailable": true,
+    "executeModeAvailable": false,
+    "networkAvailable": false,
+    "databaseMutationAvailable": false,
+    "productionAllowed": false
+  }
+}
