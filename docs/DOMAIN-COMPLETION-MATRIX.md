@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 968 arquivos no escopo; 247 referências a localStorage; 77 a sessionStorage; 556 referências mock; 177 referências de rede/Supabase; 33 marcadores de implementação pendente.
+**Evidência estática observada:** 971 arquivos no escopo; 247 referências a localStorage; 77 a sessionStorage; 556 referências mock; 177 referências de rede/Supabase; 34 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -439,12 +439,13 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - ORD-A09B0 installs a provider-neutral adapter contract that validates exact selection input but never materializes commands or permits status, deploy or rollback before a provider-specific adapter and separate deployment authorization exist.
 - ORD-A09B0 provider selection handoff separates the exact Railway staging selection phrase from account, billing, secrets, infrastructure, deployment, rollback, visual canary and production authorizations; generic continuation remains non-authorizing.
 - ORD-A09B0 now includes a fail-closed selection intent firewall: generic continuation, paraphrases, case changes, punctuation changes, non-Railway providers and production targets are rejected; the exact phrase can authorize only an in-memory non-secret adapter-preparation evaluation and never persists selection or authorizes billing, infrastructure or deployment.
+- ORD-A09B0 now includes a provider-neutral fail-closed conformance suite that rejects missing adapter methods, production capability, network enabled by default, executable commands, embedded secret values and any dry-run reporting network, mutation, command execution, deployment, rollback or production change; provider selection remains unbound.
 
 **Bloqueadores:**
 - **ORD-B02 · HIGH · frontend_activation:** Canonical reads, canary commands, cleanup, deterministic settlement, readiness discovery and the fail-closed Playwright executor pass. A short-lived authorization envelope is now mandatory; ORD-B02 remains until explicit authorization is issued, check-env passes and the real two-context visual canary is executed. _(Fase 6)_
 - **ORD-B03 · HIGH · financial_dependency:** Payment authority is not connected to a real PSP webhook lifecycle. _(Fase 8)_
 - **ORD-B04 · MEDIUM · scheduling:** Order scheduling and availability are not server-canonical. _(Fase 6)_
-- **ORD-B05 · HIGH · staging_release:** ORD-A08 release identity, ORD-A09A provider evaluation, the ORD-A09B0 provider-neutral adapter boundary, provider selection handoff and fail-closed selection intent firewall are complete. Railway is recommended as the external staging release provider, but no explicit provider selection, provider-specific adapter, account, billing, secrets, infrastructure, rollback command or deployment exists. _(Fase 6)_
+- **ORD-B05 · HIGH · staging_release:** ORD-A08 release identity, ORD-A09A provider evaluation, the ORD-A09B0 provider-neutral adapter boundary, provider selection handoff, selection intent firewall and adapter conformance suite are complete. Railway is recommended as the external staging release provider, but no explicit provider selection, provider-specific adapter, account, billing, secrets, infrastructure, rollback command or deployment exists. _(Fase 6)_
 
 **Próximas ações:**
 - Receive an explicit operational authorization decision for the identified staging client, professional and professional-owned service.
@@ -462,6 +463,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - After an independently authorized deployment, execute the ORD-A08 read-only GET/OPTIONS preflight before any visual canary.
 - Await the exact Railway staging selection phrase; after it is received, create only the non-secret provider-specific adapter and run local dry-run plus check-env while keeping account, billing, infrastructure and deployment separately authorized.
 - Keep the selection intent firewall fail-closed and await the exact Railway staging selection phrase before creating only the non-secret provider-specific adapter.
+- Require any future provider-specific adapter to pass the neutral conformance suite, while awaiting the exact Railway staging selection phrase before implementation.
 
 **Gate de saída:**
 - Two real accounts complete request, accept, proposal, approval, start and completion across devices.
@@ -886,7 +888,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 1/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 206 arquivos no escopo; 64 referências a localStorage; 8 a sessionStorage; 268 referências mock; 8 referências de rede/Supabase; 23 marcadores de implementação pendente.
+**Evidência estática observada:** 207 arquivos no escopo; 64 referências a localStorage; 8 a sessionStorage; 268 referências mock; 8 referências de rede/Supabase; 24 marcadores de implementação pendente.
 
 **Evidências:**
 - The master plan identifies legal, privacy and commercial decisions as mandatory.
@@ -946,7 +948,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2231 arquivos no escopo; 504 referências a localStorage; 150 a sessionStorage; 879 referências mock; 572 referências de rede/Supabase; 87 marcadores de implementação pendente.
+**Evidência estática observada:** 2236 arquivos no escopo; 504 referências a localStorage; 150 a sessionStorage; 879 referências mock; 572 referências de rede/Supabase; 88 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
@@ -1007,4 +1009,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-07-30T10:30:00-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-07-30T11:15:00-03:00._

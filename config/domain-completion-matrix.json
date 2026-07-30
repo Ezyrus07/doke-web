@@ -1,6 +1,6 @@
 {
-  "version": "1.3.26",
-  "updatedAt": "2026-07-30T10:30:00-03:00",
+  "version": "1.3.27",
+  "updatedAt": "2026-07-30T11:15:00-03:00",
   "title": "Doke Domain Completion Matrix",
   "purpose": "Single source of truth for domain maturity, data authority, staging evidence, blockers, dependencies and mandatory completion order.",
   "maturityScale": {
@@ -938,7 +938,14 @@
         "scripts/audit-ord-001-a09b0-provider-selection-intent-firewall.js",
         "docs/ORD-001-A09B0-PROVIDER-SELECTION-INTENT-FIREWALL.md",
         "docs/validation/ORD-001-A09B0-PROVIDER-SELECTION-INTENT-FIREWALL.json",
-        ".github/workflows/ord-001-a09b0-provider-selection-intent-firewall.yml"
+        ".github/workflows/ord-001-a09b0-provider-selection-intent-firewall.yml",
+        "backend/runtime/staging/provider-adapter-conformance.js",
+        "config/ord-001-a09b0-provider-adapter-conformance.json",
+        "scripts/test-ord-001-a09b0-provider-adapter-conformance.js",
+        "scripts/audit-ord-001-a09b0-provider-adapter-conformance.js",
+        "docs/ORD-001-A09B0-PROVIDER-ADAPTER-CONFORMANCE.md",
+        "docs/validation/ORD-001-A09B0-PROVIDER-ADAPTER-CONFORMANCE.json",
+        ".github/workflows/ord-001-a09b0-provider-adapter-conformance.yml"
       ],
       "scanRoots": [
         "backend/modules/orders",
@@ -997,7 +1004,9 @@
         "plan:ord-001-a09b0-provider-adapter:dry-run",
         "audit:ord-001-a09b0-provider-selection-handoff",
         "test:ord-001-a09b0-provider-selection-intent-firewall",
-        "audit:ord-001-a09b0-provider-selection-intent-firewall"
+        "audit:ord-001-a09b0-provider-selection-intent-firewall",
+        "test:ord-001-a09b0-provider-adapter-conformance",
+        "audit:ord-001-a09b0-provider-adapter-conformance"
       ],
       "evidence": [
         "Canonical state machine, transaction events, outbox worker and operational controls are active in staging.",
@@ -1041,7 +1050,8 @@
         "ORD-A09A evaluated Railway, Fly.io, Render and Vercel and recommends Railway only for initial external staging; no provider selection, account, billing, secret or deployment was authorized.",
         "ORD-A09B0 installs a provider-neutral adapter contract that validates exact selection input but never materializes commands or permits status, deploy or rollback before a provider-specific adapter and separate deployment authorization exist.",
         "ORD-A09B0 provider selection handoff separates the exact Railway staging selection phrase from account, billing, secrets, infrastructure, deployment, rollback, visual canary and production authorizations; generic continuation remains non-authorizing.",
-        "ORD-A09B0 now includes a fail-closed selection intent firewall: generic continuation, paraphrases, case changes, punctuation changes, non-Railway providers and production targets are rejected; the exact phrase can authorize only an in-memory non-secret adapter-preparation evaluation and never persists selection or authorizes billing, infrastructure or deployment."
+        "ORD-A09B0 now includes a fail-closed selection intent firewall: generic continuation, paraphrases, case changes, punctuation changes, non-Railway providers and production targets are rejected; the exact phrase can authorize only an in-memory non-secret adapter-preparation evaluation and never persists selection or authorizes billing, infrastructure or deployment.",
+        "ORD-A09B0 now includes a provider-neutral fail-closed conformance suite that rejects missing adapter methods, production capability, network enabled by default, executable commands, embedded secret values and any dry-run reporting network, mutation, command execution, deployment, rollback or production change; provider selection remains unbound."
       ],
       "blockers": [
         {
@@ -1069,7 +1079,7 @@
           "id": "ORD-B05",
           "severity": "high",
           "category": "staging_release",
-          "description": "ORD-A08 release identity, ORD-A09A provider evaluation, the ORD-A09B0 provider-neutral adapter boundary, provider selection handoff and fail-closed selection intent firewall are complete. Railway is recommended as the external staging release provider, but no explicit provider selection, provider-specific adapter, account, billing, secrets, infrastructure, rollback command or deployment exists.",
+          "description": "ORD-A08 release identity, ORD-A09A provider evaluation, the ORD-A09B0 provider-neutral adapter boundary, provider selection handoff, selection intent firewall and adapter conformance suite are complete. Railway is recommended as the external staging release provider, but no explicit provider selection, provider-specific adapter, account, billing, secrets, infrastructure, rollback command or deployment exists.",
           "targetPhase": "Fase 6"
         }
       ],
@@ -1088,7 +1098,8 @@
         "After explicit selection, create only a non-secret provider adapter and run dry-run plus check-env; keep account creation, billing and deploy separately authorized.",
         "After an independently authorized deployment, execute the ORD-A08 read-only GET/OPTIONS preflight before any visual canary.",
         "Await the exact Railway staging selection phrase; after it is received, create only the non-secret provider-specific adapter and run local dry-run plus check-env while keeping account, billing, infrastructure and deployment separately authorized.",
-        "Keep the selection intent firewall fail-closed and await the exact Railway staging selection phrase before creating only the non-secret provider-specific adapter."
+        "Keep the selection intent firewall fail-closed and await the exact Railway staging selection phrase before creating only the non-secret provider-specific adapter.",
+        "Require any future provider-specific adapter to pass the neutral conformance suite, while awaiting the exact Railway staging selection phrase before implementation."
       ],
       "exitCriteria": [
         "Two real accounts complete request, accept, proposal, approval, start and completion across devices.",
