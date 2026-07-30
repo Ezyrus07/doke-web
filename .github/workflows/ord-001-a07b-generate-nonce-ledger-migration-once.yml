@@ -34,7 +34,7 @@ jobs:
           fetch-depth: 0
       - uses: supabase/setup-cli@v2.1.1
         with:
-          version: 2.101.0
+          version: 2.109.0
           github-token: ${{ github.token }}
       - name: Discover pinned CLI commands
         run: |
@@ -73,6 +73,7 @@ jobs:
 
           revoke all on private.order_event_worker_invocation_nonces from public, anon, authenticated;
           grant usage on schema private to service_role;
+          grant usage on schema extensions to service_role;
           grant select, insert, delete on private.order_event_worker_invocation_nonces to service_role;
 
           create or replace function public.consume_order_event_worker_invocation_nonce(
