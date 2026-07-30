@@ -2,7 +2,7 @@ import { assertFreshWorkerRequest } from '../../supabase/functions/order-event-w
 
 const DEFAULT_CONCURRENCY = 32;
 const DEFAULT_NOW_MS = 1_775_000_000_000;
-const DEFAULT_NONCE = 'A07EConcurrentReplayNonce000001';
+const DEFAULT_NONCE = 'A07EConcurrentReplayNonce0000001';
 
 function deepFreeze(value) {
   if (Array.isArray(value)) return Object.freeze(value.map(deepFreeze));
