@@ -36,14 +36,28 @@
   },
   "rootCause": {
     "classification": "frontend_provider_responsibility_collision",
-    "description": "The A05 write canary replaces ordersProvider with api-write-canary-frontend-activation. The same field is also used to decide whether canonical Supabase reads are active, so read-after-write settlement can become unavailable while commands succeed.",
-    "currentReadFailure": "DOKE_ORDER_READ_AUTHORITY_UNAVAILABLE",
+    "description": "The A05 write canary replaced ordersProvider with api-write-canary-frontend-activation while the same field selected canonical reads. Commands could succeed while read-after-write settlement became unavailable.",
+    "previousReadFailure": "DOKE_ORDER_READ_AUTHORITY_UNAVAILABLE",
+    "resolvedInRuntime": true,
     "requiredArchitecture": {
       "ordersReadProvider": "supabase-read",
       "ordersCommandProvider": "api-write-canary-frontend-activation",
       "silentLocalFallback": false,
       "directBrowserDml": false
     }
+  },
+  "runtimeReconciliation": {
+    "status": "complete",
+    "ordersReadProvider": "supabase-read",
+    "ordersCommandProvider": "api-write-canary-frontend-activation",
+    "repositoryUsesIndependentReadProvider": true,
+    "clientAndProfessionalStorageIsolated": true,
+    "requestedSettlementObserved": true,
+    "acceptedSettlementObserved": true,
+    "quotedSettlementObserved": true,
+    "rollbackPreservesCanonicalReads": true,
+    "externalNetworkUsed": false,
+    "databaseMutationPerformed": false
   },
   "executionGate": {
     "realBrowserExecutionAllowed": false,
@@ -91,18 +105,20 @@
       "description": "Two explicitly authorized staging test accounts are not available under the historical canary identities."
     },
     {
-      "id": "ORD-A06-B02",
-      "description": "Read and command providers must be separated before visual read-after-write settlement can be trusted."
-    },
-    {
       "id": "ORD-A06-B03",
       "description": "The cleanup boundary for runId-tagged browser canary fixtures must be frozen before real mutation execution."
     }
   ],
+  "resolvedFindings": [
+    {
+      "id": "ORD-A06-B02",
+      "description": "Canonical read and command providers are separated and deterministic two-context settlement passes."
+    }
+  ],
   "nextActions": [
-    "Separate ordersReadProvider from the write canary command provider.",
-    "Prove read-after-write convergence in deterministic isolated browser runtimes.",
-    "Keep the real Playwright canary fail-closed until authorized accounts and cleanup authority exist."
+    "Freeze a service-role-only cleanup boundary for runId-tagged ORD-A06 fixtures.",
+    "Obtain two explicitly authorized staging test accounts without changing real users.",
+    "Run the real two-browser canary and prove zero residue."
   ],
   "operationalSafety": {
     "accountsCreated": 0,
@@ -110,6 +126,8 @@
     "passwordsChanged": 0,
     "realRowsMutated": 0,
     "syntheticRowsRemaining": 0,
+    "temporaryApplicatorsPresent": false,
+    "temporaryHelpersPresent": false,
     "productionChanged": false,
     "paidProvidersEnabled": false,
     "rankingChanged": false,
