@@ -1,0 +1,47 @@
+name: Doke ORD-A07E Concurrent Replay Canary
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/lib/ord-a07e-concurrent-replay-canary.mjs'
+      - 'scripts/run-ord-001-a07e-concurrent-replay-canary.mjs'
+      - 'scripts/test-ord-001-a07e-concurrent-replay-canary.mjs'
+      - 'scripts/audit-ord-001-a07e-concurrent-replay-canary.js'
+      - 'config/ord-001-a07e-concurrent-replay-canary.json'
+      - 'docs/ORD-001-A07E-CONCURRENT-REPLAY-CANARY.md'
+      - 'docs/validation/ORD-001-A07E-CONCURRENT-REPLAY-CANARY.json'
+      - 'supabase/functions/order-event-worker/invocation-gate.mjs'
+      - 'supabase/functions/order-event-worker/invocation-freshness.mjs'
+      - 'supabase/functions/order-event-worker/invocation-headers.mjs'
+      - 'config/domain-completion-matrix.json'
+      - 'package.json'
+      - '.github/workflows/ord-001-a07e-concurrent-replay-canary.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Execute local concurrent replay canary
+        run: node scripts/run-ord-001-a07e-concurrent-replay-canary.mjs --concurrency=32
+      - name: Test concurrent replay canary boundaries
+        run: node scripts/test-ord-001-a07e-concurrent-replay-canary.mjs
+      - name: Audit concurrent replay canary
+        run: node scripts/audit-ord-001-a07e-concurrent-replay-canary.js
+      - name: Preserve Edge Function freshness wiring
+        run: node scripts/test-ord-001-a07d-worker-invocation-gate.mjs && node scripts/audit-ord-001-a07d-edge-function-freshness-wiring.js
+      - name: Preserve header issuance and nonce ledger contracts
+        run: |
+          node scripts/test-ord-001-a07c-worker-invocation-headers.mjs
+          node scripts/audit-ord-001-a07c-worker-invocation-headers.js
+          node scripts/test-order-event-worker-invocation-freshness.js
+          node scripts/audit-ord-001-a07b-worker-invocation-freshness.js
+      - name: Audit completion matrix
+        run: node scripts/audit-domain-completion-matrix.js
