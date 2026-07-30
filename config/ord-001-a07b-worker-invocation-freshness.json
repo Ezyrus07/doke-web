@@ -1,0 +1,42 @@
+{
+  "contractVersion": "ord-a07b-worker-invocation-freshness-v1",
+  "status": "freshness_contract_complete_activation_pending_nonce_ledger",
+  "domain": "ORD-001",
+  "sublot": "ORD-A07B",
+  "scope": "order-event-worker invocation freshness and replay resistance",
+  "freshness": {
+    "maxAgeMs": 300000,
+    "futureSkewMs": 30000,
+    "issuedAtHeader": "x-doke-worker-issued-at",
+    "nonceHeader": "x-doke-worker-nonce",
+    "nonceLengthMin": 24,
+    "nonceLengthMax": 128
+  },
+  "requiredSequence": [
+    "validate existing worker token",
+    "validate issued-at timestamp",
+    "validate nonce format",
+    "consume nonce atomically in Postgres",
+    "begin worker run only after nonce consumption"
+  ],
+  "activationState": {
+    "edgeFunctionWired": false,
+    "nonceLedgerMigrationCreated": false,
+    "nonceLedgerAppliedToStaging": false,
+    "cronHeadersUpdated": false,
+    "remoteCanaryExecuted": false
+  },
+  "executionEvidence": {
+    "networkRequestsPerformed": 0,
+    "databaseMutationsPerformed": 0,
+    "migrationsApplied": 0,
+    "edgeFunctionsDeployed": 0,
+    "ordersCreated": 0,
+    "productionChanged": false
+  },
+  "blockers": [
+    "supabase_cli_unavailable_for_official_migration_generation",
+    "atomic_nonce_ledger_required_before_edge_activation",
+    "staging_migration_and_deploy_require_controlled_release_path"
+  ]
+}
