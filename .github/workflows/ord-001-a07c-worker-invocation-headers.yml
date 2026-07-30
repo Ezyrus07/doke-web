@@ -1,0 +1,180 @@
+name: Doke ORD-A07C Worker Invocation Headers
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/functions/order-event-worker/invocation-headers.mjs'
+      - 'supabase/functions/order-event-worker/index.ts'
+      - 'supabase/migrations/20260730153500_ord_a07c_worker_invocation_headers.sql'
+      - 'config/ord-001-a07c-worker-invocation-headers.json'
+      - 'scripts/test-ord-001-a07c-worker-invocation-headers.mjs'
+      - 'scripts/audit-ord-001-a07c-worker-invocation-headers.js'
+      - 'docs/ORD-001-A07C-WORKER-INVOCATION-HEADERS.md'
+      - 'docs/validation/ORD-001-A07C-WORKER-INVOCATION-HEADERS.json'
+      - 'config/domain-completion-matrix.json'
+      - 'package.json'
+      - '.github/workflows/ord-001-a07c-worker-invocation-headers.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      PGPASSWORD: postgres
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Test runtime-neutral invocation headers
+        run: node scripts/test-ord-001-a07c-worker-invocation-headers.mjs
+      - name: Validate Cron header migration on ephemeral Postgres 17
+        shell: bash
+        run: |
+          set -euo pipefail
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 <<'SQL'
+          create schema if not exists private;
+          create schema if not exists vault;
+          create schema if not exists net;
+          create schema if not exists extensions;
+          create extension if not exists pgcrypto with schema extensions;
+
+          do $$ begin
+            create role anon nologin;
+          exception when duplicate_object then null; end $$;
+          do $$ begin
+            create role authenticated nologin;
+          exception when duplicate_object then null; end $$;
+          do $$ begin
+            create role service_role nologin bypassrls;
+          exception when duplicate_object then null; end $$;
+
+          create table private.order_domain_events (
+            delivery_status text not null,
+            available_at timestamptz not null,
+            delivery_attempts integer not null default 0,
+            max_delivery_attempts integer not null default 5,
+            claimed_at timestamptz
+          );
+
+          create or replace function private.recover_stale_order_event_claims(p_stale_after_seconds integer default 300)
+          returns integer
+          language sql
+          as $$ select 0 $$;
+
+          create table vault.decrypted_secrets (
+            name text primary key,
+            decrypted_secret text not null
+          );
+          insert into vault.decrypted_secrets(name, decrypted_secret) values
+            ('doke_project_url', 'https://example.supabase.test'),
+            ('doke_order_event_worker_token', 'test-worker-token');
+
+          create table net.http_request_capture (
+            id bigserial primary key,
+            url text not null,
+            headers jsonb not null,
+            body jsonb not null,
+            timeout_milliseconds integer not null,
+            recorded_at timestamptz not null default clock_timestamp()
+          );
+
+          create or replace function net.http_post(
+            url text,
+            headers jsonb,
+            body jsonb,
+            timeout_milliseconds integer
+          )
+          returns bigint
+          language plpgsql
+          as $$
+          declare
+            v_id bigint;
+          begin
+            insert into net.http_request_capture(url, headers, body, timeout_milliseconds)
+            values (url, headers, body, timeout_milliseconds)
+            returning id into v_id;
+            return v_id;
+          end;
+          $$;
+          SQL
+
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            -f supabase/migrations/20260730153500_ord_a07c_worker_invocation_headers.sql
+
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 <<'SQL'
+          insert into private.order_domain_events(
+            delivery_status,
+            available_at,
+            delivery_attempts,
+            max_delivery_attempts
+          ) values ('ready', clock_timestamp() - interval '1 second', 0, 5);
+
+          select private.invoke_order_event_worker_if_needed();
+          select private.invoke_order_event_worker_if_needed();
+
+          do $$
+          declare
+            v_count integer;
+            v_distinct_nonces integer;
+            v_formats_valid boolean;
+            v_payload_valid boolean;
+            v_boundary_valid boolean;
+          begin
+            select
+              count(*),
+              count(distinct headers ->> 'x-doke-worker-nonce'),
+              bool_and(
+                (headers ->> 'x-doke-worker-issued-at') ~ '^\d{13}$'
+                and (headers ->> 'x-doke-worker-nonce') ~ '^[A-Za-z0-9_-]{32}$'
+                and abs(
+                  (headers ->> 'x-doke-worker-issued-at')::bigint
+                  - floor(extract(epoch from clock_timestamp()) * 1000)::bigint
+                ) < 60000
+              ),
+              bool_and(
+                headers ->> 'x-doke-worker-source' = 'cron'
+                and body ->> 'source' = 'cron'
+                and (body ->> 'limit')::integer = 25
+              ),
+              bool_and(
+                url = 'https://example.supabase.test/functions/v1/order-event-worker'
+                and headers ->> 'x-doke-worker-token' = 'test-worker-token'
+                and timeout_milliseconds = 30000
+              )
+            into v_count, v_distinct_nonces, v_formats_valid, v_payload_valid, v_boundary_valid
+            from net.http_request_capture;
+
+            if v_count <> 2 then raise exception 'expected two captured Cron invocations'; end if;
+            if v_distinct_nonces <> 2 then raise exception 'each invocation must use a distinct nonce'; end if;
+            if v_formats_valid is not true then raise exception 'freshness header format is invalid'; end if;
+            if v_payload_valid is not true then raise exception 'Cron source or payload changed'; end if;
+            if v_boundary_valid is not true then raise exception 'Vault or HTTP boundary changed'; end if;
+          end;
+          $$;
+          SQL
+      - name: Audit worker invocation header contract
+        run: node scripts/audit-ord-001-a07c-worker-invocation-headers.js
+      - name: Preserve ORD-A07B freshness and staging readiness
+        run: |
+          node scripts/test-order-event-worker-invocation-freshness.js
+          node scripts/audit-ord-001-a07b-worker-invocation-freshness.js
+          node scripts/test-ord-001-a07b-staging-migration-readiness.js
+          node scripts/audit-ord-001-a07b-staging-migration-readiness.js
+      - name: Audit completion matrix
+        run: node scripts/audit-domain-completion-matrix.js
