@@ -1,0 +1,126 @@
+{
+  "contractVersion": "ord-a09b0-provider-selection-handoff-v1",
+  "domain": "ORD-001",
+  "sublot": "ORD-A09B0-HANDOFF",
+  "status": "decision_packet_ready_selection_pending_explicit_phrase",
+  "environment": "staging",
+  "recommendation": {
+    "provider": "railway",
+    "scope": "initial_external_staging_only",
+    "region": "Virginia, USA",
+    "fallback": "fly.io",
+    "sourceContract": "config/ord-001-a09-staging-provider-evaluation.json"
+  },
+  "decisionBoundary": {
+    "providerSelected": false,
+    "providerBound": false,
+    "providerAccountCreated": false,
+    "billingAuthorized": false,
+    "paidPlanEnabled": false,
+    "infrastructureAuthorized": false,
+    "infrastructureCreated": false,
+    "secretsAuthorized": false,
+    "secretsConfigured": false,
+    "deploymentAuthorized": false,
+    "deploymentPerformed": false,
+    "rollbackPerformed": false,
+    "visualCanaryAuthorized": false,
+    "productionChanged": false,
+    "genericNextMeansSelection": false
+  },
+  "requiredSelection": {
+    "provider": "railway",
+    "phrase": "I_EXPLICITLY_SELECT_RAILWAY_FOR_DOKE_STAGING",
+    "effect": "authorizes_provider_specific_adapter_preparation_only",
+    "doesNotAuthorize": [
+      "provider_account_creation",
+      "billing_or_paid_plan",
+      "infrastructure_creation",
+      "secret_injection",
+      "domain_configuration",
+      "network_operations",
+      "deployment",
+      "rollback_execution",
+      "real_visual_canary",
+      "production_changes"
+    ]
+  },
+  "authorizationStages": [
+    {
+      "stage": "provider_selection",
+      "status": "pending",
+      "authorization": "exact_selection_phrase"
+    },
+    {
+      "stage": "provider_specific_adapter",
+      "status": "blocked_by_provider_selection",
+      "authorization": "selection_phrase_only"
+    },
+    {
+      "stage": "provider_account_and_billing",
+      "status": "not_authorized",
+      "authorization": "separate_explicit_operational_decision"
+    },
+    {
+      "stage": "secret_injection",
+      "status": "not_authorized",
+      "authorization": "separate_explicit_operational_decision"
+    },
+    {
+      "stage": "infrastructure_creation",
+      "status": "not_authorized",
+      "authorization": "separate_explicit_operational_decision"
+    },
+    {
+      "stage": "deployment",
+      "status": "not_authorized",
+      "authorization": "separate_explicit_deployment_decision"
+    },
+    {
+      "stage": "read_only_release_preflight",
+      "status": "blocked_until_authorized_deployment",
+      "authorization": "ord_a08_contract"
+    },
+    {
+      "stage": "real_visual_canary",
+      "status": "not_authorized",
+      "authorization": "separate_resource_bound_authorization"
+    },
+    {
+      "stage": "production",
+      "status": "forbidden",
+      "authorization": "out_of_scope"
+    }
+  ],
+  "postSelectionScope": {
+    "allowed": [
+      "create_non_secret_railway_adapter_contract",
+      "define_environment_variable_names_without_values",
+      "map_release_id_git_revision_and_rollback_id_fields",
+      "define_status_deploy_and_rollback_command_shapes",
+      "run_local_dry_run",
+      "run_local_check_env_without_network"
+    ],
+    "forbiddenWithoutSeparateAuthorization": [
+      "create_or_use_provider_account",
+      "enable_billing_or_paid_plan",
+      "create_provider_project_or_service",
+      "configure_secrets_or_tokens",
+      "configure_domain",
+      "call_provider_api_or_cli",
+      "perform_remote_status_check",
+      "deploy",
+      "rollback",
+      "run_real_visual_canary",
+      "change_production"
+    ]
+  },
+  "evidence": {
+    "commandsMaterialized": false,
+    "networkRequestsPerformed": 0,
+    "mutationsPerformed": 0,
+    "accountsUsed": 0,
+    "providerManifestsCreated": false
+  },
+  "nextAction": "Wait for the exact Railway staging selection phrase before creating a provider-specific adapter."
+}
