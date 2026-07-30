@@ -1,0 +1,35 @@
+name: Doke ORD-A07D Edge Function Staging Deploy Readiness
+
+on:
+  pull_request:
+    paths:
+      - 'config/ord-001-a07d-edge-function-staging-deploy-readiness.json'
+      - 'docs/ORD-001-A07D-EDGE-FUNCTION-STAGING-DEPLOY-READINESS.md'
+      - 'scripts/audit-ord-001-a07d-edge-function-staging-deploy-readiness.js'
+      - 'supabase/functions/order-event-worker/**'
+      - '.github/workflows/ord-001-a07d-edge-function-staging-deploy-readiness.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Audit Edge Function staging deploy readiness
+        run: node scripts/audit-ord-001-a07d-edge-function-staging-deploy-readiness.js
+      - name: Preserve local freshness wiring
+        run: |
+          node scripts/test-ord-001-a07d-worker-invocation-gate.mjs
+          node scripts/audit-ord-001-a07d-edge-function-freshness-wiring.js
+      - name: Preserve A07B and A07C application evidence
+        run: |
+          node scripts/audit-ord-001-a07b-staging-migration-application.js
+          node scripts/audit-ord-001-a07c-staging-migration-application.js
+      - name: Audit completion matrix
+        run: node scripts/audit-domain-completion-matrix.js
