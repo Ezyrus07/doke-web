@@ -22,10 +22,9 @@ function normalizeProvider(value) {
 function freezeResult(value) {
   if (Array.isArray(value)) return Object.freeze(value.map(freezeResult));
   if (!value || typeof value !== 'object') return value;
-  Object.keys(value).forEach((key) => {
-    value[key] = freezeResult(value[key]);
-  });
-  return Object.freeze(value);
+  return Object.freeze(Object.fromEntries(
+    Object.entries(value).map(([key, nestedValue]) => [key, freezeResult(nestedValue)])
+  ));
 }
 
 function readSelectionInput(env) {
