@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 981 arquivos no escopo; 247 referências a localStorage; 77 a sessionStorage; 556 referências mock; 181 referências de rede/Supabase; 34 marcadores de implementação pendente.
+**Evidência estática observada:** 984 arquivos no escopo; 247 referências a localStorage; 77 a sessionStorage; 556 referências mock; 182 referências de rede/Supabase; 34 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -452,6 +452,10 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - Postgres 17 validation captures two stubbed Cron invocations, proves distinct nonces and preserves source, payload, URL, token and timeout behavior.
 - The repository migration does not create secrets, reschedule Cron, hardcode a project URL or activate the Edge Function.
 - ORD-A07C remains inactive until the ORD-A07B nonce ledger is applied and separate Cron and Edge Function release gates are authorized.
+- ORD-A07D wires token verification, freshness validation and atomic nonce consumption before begin_order_event_worker_run in the repository Edge Function.
+- Missing or invalid freshness fails with HTTP 428, unavailable ledger fails with HTTP 428, and replay fails with HTTP 409 before any worker run or event claim.
+- The nonce is excluded from worker-run metadata and logs; only issued-at and calculated age are retained for diagnosis.
+- Repository wiring is complete while staging migrations, Cron changes, Edge Function deploy and production remain unauthorized.
 
 **Bloqueadores:**
 - **ORD-B02 · HIGH · frontend_activation:** Canonical reads, canary commands, cleanup, deterministic settlement, readiness discovery and the fail-closed Playwright executor pass. A short-lived authorization envelope is now mandatory; ORD-B02 remains until explicit authorization is issued, check-env passes and the real two-context visual canary is executed. _(Fase 6)_
@@ -478,6 +482,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - Review and apply the generated ORD-A07B nonce-ledger migration through the controlled staging release path, verify grants and atomic duplicate rejection, then wire Cron headers and Edge freshness enforcement before any replay canary.
 - Apply the canonical ORD-A07B nonce ledger migration to staging only after exact authorization, then run read-only grant, RLS, atomicity and zero-drift verification.
 - After the ORD-A07B ledger is applied and verified in staging, authorize the ORD-A07C Cron header migration separately, then wire Edge Function header reading and atomic nonce consumption before the worker run begins.
+- Apply and verify ORD-A07B under its exact staging authorization, then separately authorize ORD-A07C, deploy the repository-wired Edge Function through the controlled staging release, and run the concurrent replay canary.
 
 **Gate de saída:**
 - Two real accounts complete request, accept, proposal, approval, start and completion across devices.
@@ -902,7 +907,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 1/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 210 arquivos no escopo; 64 referências a localStorage; 8 a sessionStorage; 268 referências mock; 8 referências de rede/Supabase; 24 marcadores de implementação pendente.
+**Evidência estática observada:** 211 arquivos no escopo; 64 referências a localStorage; 8 a sessionStorage; 268 referências mock; 8 referências de rede/Supabase; 24 marcadores de implementação pendente.
 
 **Evidências:**
 - The master plan identifies legal, privacy and commercial decisions as mandatory.
@@ -962,7 +967,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2253 arquivos no escopo; 504 referências a localStorage; 150 a sessionStorage; 879 referências mock; 577 referências de rede/Supabase; 88 marcadores de implementação pendente.
+**Evidência estática observada:** 2258 arquivos no escopo; 504 referências a localStorage; 150 a sessionStorage; 879 referências mock; 579 referências de rede/Supabase; 88 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
@@ -1023,4 +1028,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-07-30T12:40:00-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-07-30T13:08:00-03:00._
