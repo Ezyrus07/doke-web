@@ -1,0 +1,46 @@
+name: Doke ORD-A09B0 Provider Adapter Boundary
+
+on:
+  pull_request:
+    paths:
+      - 'config/ord-001-a09b0-provider-adapter-boundary.json'
+      - 'backend/runtime/staging/provider-adapter-contract.js'
+      - 'scripts/plan-ord-001-a09b0-provider-adapter.js'
+      - 'scripts/test-ord-001-a09b0-provider-adapter-contract.js'
+      - 'scripts/audit-ord-001-a09b0-provider-adapter-boundary.js'
+      - 'docs/ORD-001-A09B0-PROVIDER-ADAPTER-BOUNDARY.md'
+      - 'docs/validation/ORD-001-A09B0-PROVIDER-ADAPTER-BOUNDARY.json'
+      - 'config/domain-completion-matrix.json'
+      - 'package.json'
+      - '.github/workflows/ord-001-a09b0-provider-adapter-boundary.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Test provider-neutral adapter contract
+        run: node scripts/test-ord-001-a09b0-provider-adapter-contract.js
+      - name: Prove planner remains dry-run
+        run: node scripts/plan-ord-001-a09b0-provider-adapter.js --dry-run
+      - name: Audit provider adapter boundary
+        run: node scripts/audit-ord-001-a09b0-provider-adapter-boundary.js
+      - name: Preserve provider evaluation
+        run: node scripts/audit-ord-001-a09a-staging-provider-evaluation.js
+      - name: Preserve staging release readiness
+        run: node scripts/audit-ord-001-a08-staging-release-readiness.js
+      - name: Preserve request freshness
+        run: node scripts/audit-ord-001-a07-request-freshness.js
+      - name: Preserve authorization envelope
+        run: node scripts/audit-ord-001-a06-authorization-envelope.js
+      - name: Preserve cleanup boundary
+        run: node scripts/audit-ord-001-a06-cleanup-boundary.js
+      - name: Audit completion matrix
+        run: node scripts/audit-domain-completion-matrix.js
