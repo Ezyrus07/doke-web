@@ -37,9 +37,12 @@ Object.entries(config.decisionBoundary).forEach(([key, value]) => {
   assert.strictEqual(value, false, `Decision boundary must remain false: ${key}`);
 });
 
-assert.strictEqual(adapterBoundary.decisionBoundary.providerSelected, false);
-assert.strictEqual(adapterBoundary.decisionBoundary.providerBound, false);
-assert.strictEqual(adapterBoundary.decisionBoundary.genericNextMeansSelection, false);
+assert.strictEqual(adapterBoundary.selection.providerSelected, false);
+assert.strictEqual(adapterBoundary.selection.genericNextMeansSelection, false);
+assert.strictEqual(adapterBoundary.adapter.providerSpecificAdapterBound, false);
+assert.strictEqual(adapterBoundary.adapter.commandsMaterialized, false);
+assert.strictEqual(adapterBoundary.adapter.networkAllowed, false);
+assert.strictEqual(adapterBoundary.adapter.productionAllowed, false);
 assert(config.requiredSelection.doesNotAuthorize.includes('billing_or_paid_plan'));
 assert(config.requiredSelection.doesNotAuthorize.includes('deployment'));
 assert(config.requiredSelection.doesNotAuthorize.includes('production_changes'));
