@@ -194,3 +194,9 @@ O relatório registra apenas presença de requisitos, checks, IDs do fixture, ca
 ## Limite deliberado
 
 Este artefato não concede autorização para executar o canário. A execução continua bloqueada até que duas contas de teste, um serviço, URLs e flags sejam fornecidos explicitamente para uma única rodada controlada.
+
+## Envelope de autorização obrigatório
+
+Além das flags anteriores, `--check-env` e `--execute` exigem `DOKE_ORD_A06_AUTHORIZATION_MANIFEST_PATH` e `DOKE_ORD_A06_AUTHORIZATION_MANIFEST_SHA256`.
+
+O envelope precisa estar fora do repositório, ter validade máxima de duas horas e estar vinculado por SHA-256 ao runId, marcador, duas contas, serviço e três URLs. Consulte `docs/ORD-001-A06-AUTHORIZATION-ENVELOPE.md`.

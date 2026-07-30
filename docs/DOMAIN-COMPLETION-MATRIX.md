@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 946 arquivos no escopo; 247 referências a localStorage; 77 a sessionStorage; 556 referências mock; 176 referências de rede/Supabase; 32 marcadores de implementação pendente.
+**Evidência estática observada:** 951 arquivos no escopo; 247 referências a localStorage; 77 a sessionStorage; 556 referências mock; 176 referências de rede/Supabase; 32 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -423,17 +423,21 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - The readiness evidence stores only aggregate capacity and boolean eligibility; no e-mail, UUID, username, display name, service reference, credential or token is committed.
 - Technical capacity is explicitly separated from operational authorization: existing users and services remain unusable until each resource is authorized and secrets are injected outside the repository.
 - The readiness CI gate is static-only and preserves the fail-closed Playwright executor, cleanup boundary and deterministic cross-session settlement without browser or staging mutation.
+- A short-lived authorization envelope contract now binds one runId to the authorized client, professional, service and staging targets using SHA-256 without committing raw identifiers.
+- The authorization file must remain outside the repository, match an operator-supplied digest, expire within two hours, prohibit production, limit execution to one order and require cleanup.
+- The authorization envelope preparer is inert by default: dry-run performs no reads of credentials, check-env writes nothing, and write requires a separate explicit decision plus a dedicated flag.
+- The Playwright executor now rejects check-env and execute unless the envelope digest, lifetime, resource bindings and target bindings all validate.
 
 **Bloqueadores:**
-- **ORD-B02 · HIGH · frontend_activation:** Canonical reads, canary commands, cleanup, deterministic settlement and the fail-closed Playwright executor pass. Staging contains one compatible account pair and one eligible owned service, but ORD-B02 remains until those resources are explicitly authorized and the real two-context visual canary is executed. _(Fase 6)_
+- **ORD-B02 · HIGH · frontend_activation:** Canonical reads, canary commands, cleanup, deterministic settlement, readiness discovery and the fail-closed Playwright executor pass. A short-lived authorization envelope is now mandatory; ORD-B02 remains until explicit authorization is issued, check-env passes and the real two-context visual canary is executed. _(Fase 6)_
 - **ORD-B03 · HIGH · financial_dependency:** Payment authority is not connected to a real PSP webhook lifecycle. _(Fase 8)_
 - **ORD-B04 · MEDIUM · scheduling:** Order scheduling and availability are not server-canonical. _(Fase 6)_
 
 **Próximas ações:**
-- Obtain explicit authorization for the identified staging client, professional and professional-owned published service without modifying user data.
-- Supply account credentials, approved web/API/Supabase endpoints, service reference and service-role secret only to the executor environment.
-- Run the fail-closed executor in check-env mode and permit execution only when all authorization, target and mutation gates pass.
-- Review requested, accepted, quoted and optimistic-conflict evidence, invoke cleanup twice and prove zero residue.
+- Receive an explicit operational authorization decision for the identified staging client, professional and professional-owned service.
+- Issue one short-lived resource-bound authorization envelope outside the repository and retain only its path and SHA-256 in the executor environment.
+- Supply credentials, approved targets and service-role secret only to the executor process, then run check-env without browser, network or mutations.
+- Permit execute only after every authorization binding passes; review requested, accepted, quoted and optimistic-conflict evidence and prove cleanup twice with zero residue.
 - Harden worker invocation freshness and replay resistance.
 
 **Gate de saída:**
@@ -859,7 +863,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 1/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 199 arquivos no escopo; 64 referências a localStorage; 8 a sessionStorage; 268 referências mock; 8 referências de rede/Supabase; 22 marcadores de implementação pendente.
+**Evidência estática observada:** 200 arquivos no escopo; 64 referências a localStorage; 8 a sessionStorage; 268 referências mock; 8 referências de rede/Supabase; 22 marcadores de implementação pendente.
 
 **Evidências:**
 - The master plan identifies legal, privacy and commercial decisions as mandatory.
@@ -919,7 +923,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2201 arquivos no escopo; 504 referências a localStorage; 150 a sessionStorage; 879 referências mock; 571 referências de rede/Supabase; 86 marcadores de implementação pendente.
+**Evidência estática observada:** 2206 arquivos no escopo; 504 referências a localStorage; 150 a sessionStorage; 879 referências mock; 571 referências de rede/Supabase; 86 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
@@ -980,4 +984,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-07-29T22:23:00-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-07-29T22:45:00-03:00._

@@ -3,6 +3,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { validateAuthorizationEnvelope } = require('./lib/ord-a06-authorization-envelope');
 
 const root = process.cwd();
 const args = new Set(process.argv.slice(2));
@@ -14,6 +15,8 @@ const writeReport = args.has('--write-report');
 const ENV = Object.freeze({
   environment: 'DOKE_ENVIRONMENT',
   authorizationAck: 'DOKE_ORD_A06_AUTHORIZATION_ACK',
+  authorizationManifestPath: 'DOKE_ORD_A06_AUTHORIZATION_MANIFEST_PATH',
+  authorizationManifestDigest: 'DOKE_ORD_A06_AUTHORIZATION_MANIFEST_SHA256',
   allowNetwork: 'DOKE_ORD_A06_ALLOW_NETWORK',
   allowMutations: 'DOKE_ORD_A06_ALLOW_MUTATIONS',
   allowExecute: 'DOKE_ORD_A06_EXECUTE',
@@ -38,6 +41,9 @@ const DEFAULT_REPORT_PATH = 'reports/generated/ord-a06-playwright-executor-repor
 const REQUIRED_FILES = Object.freeze([
   'scripts/execute-ord-001-a06-visual-settlement-playwright.js',
   'scripts/audit-ord-001-a06-playwright-executor.js',
+  'scripts/lib/ord-a06-authorization-envelope.js',
+  'docs/ORD-001-A06-AUTHORIZATION-ENVELOPE.md',
+  'docs/validation/ORD-001-A06-AUTHORIZATION-ENVELOPE.json',
   'docs/ORD-001-A06-PLAYWRIGHT-EXECUTOR.md',
   'docs/validation/ORD-001-A06-PLAYWRIGHT-EXECUTOR.json',
   'supabase/migrations/20260730003500_ord_a06_canary_cleanup_boundary.sql',
@@ -61,6 +67,9 @@ const report = {
   environment: {
     name: process.env[ENV.environment] || '',
     authorizationAcknowledged: process.env[ENV.authorizationAck] === AUTHORIZATION_ACK,
+    hasAuthorizationManifestPath: Boolean(process.env[ENV.authorizationManifestPath]),
+    hasAuthorizationManifestDigest: Boolean(process.env[ENV.authorizationManifestDigest]),
+    authorizationEnvelope: null,
     allowNetwork: process.env[ENV.allowNetwork] === '1',
     allowMutations: process.env[ENV.allowMutations] === '1',
     allowExecute: process.env[ENV.allowExecute] === '1',
@@ -189,6 +198,8 @@ function evaluateEnvironment() {
 
   requireExact(environment, 'staging', `${ENV.environment} must be staging.`);
   requireExact(process.env[ENV.authorizationAck], AUTHORIZATION_ACK, `${ENV.authorizationAck} must explicitly authorize the two staging test accounts.`);
+  requireValue(ENV.authorizationManifestPath);
+  requireValue(ENV.authorizationManifestDigest);
   requireFlag(ENV.allowNetwork);
   requireFlag(ENV.allowMutations);
   requireFlag(ENV.allowExecute);
@@ -214,6 +225,31 @@ function evaluateEnvironment() {
 
   for (const [label, url] of [['web', webBaseUrl], ['api', apiBaseUrl], ['supabase', supabaseUrl]]) {
     if (url && !isSafeTarget(url, marker)) report.failures.push(`${label} target is production-like or does not contain the explicit staging marker.`);
+  }
+
+  if (!report.failures.length) {
+    try {
+      const authorization = validateAuthorizationEnvelope({
+        root,
+        manifestPath: process.env[ENV.authorizationManifestPath],
+        manifestDigest: process.env[ENV.authorizationManifestDigest],
+        expected: {
+          authorizationAck: AUTHORIZATION_ACK,
+          runId,
+          targetMarker: marker,
+          clientEmail,
+          professionalEmail,
+          serviceRef: process.env[ENV.serviceRef],
+          webBaseUrl,
+          apiBaseUrl,
+          supabaseUrl
+        }
+      });
+      report.environment.authorizationEnvelope = authorization.summary;
+      record('environment.authorization_envelope', 'passed', authorization.summary.authorizationId);
+    } catch (error) {
+      report.failures.push(`Authorization envelope rejected: ${error.message}`);
+    }
   }
 
   if (!report.failures.length) record('environment.fail_closed_gate', 'passed');
