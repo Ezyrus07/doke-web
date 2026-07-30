@@ -26,6 +26,17 @@ jobs:
       - name: Apply and validate ORD-A08
         shell: bash
         run: |
+          python - <<'PY'
+          from pathlib import Path
+          helper = Path('scripts/reconcile-ord-a08-staging-release-once.py')
+          source = helper.read_text(encoding='utf-8')
+          old = r"  fs.writeFileSync(destination, JSON.stringify(report, null, 2) + '\n', 'utf8');"
+          new = r"  fs.writeFileSync(destination, JSON.stringify(report, null, 2) + '\\n', 'utf8');"
+          if new not in source:
+              if old not in source:
+                  raise SystemExit('ORD-A08 newline anchor missing')
+              helper.write_text(source.replace(old, new, 1), encoding='utf-8')
+          PY
           python scripts/reconcile-ord-a08-staging-release-once.py
           rm -f scripts/ord-a08-trigger.txt
           node scripts/test-ord-001-a08-staging-release-runtime.js
