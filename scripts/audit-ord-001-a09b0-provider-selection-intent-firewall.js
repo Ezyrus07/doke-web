@@ -81,7 +81,7 @@ assert.strictEqual(exact.productionAllowed, false);
   REQUIRED_PHRASE,
   'seleção canônica não é persistida',
   'Billing',
-  'Deploy',
+  'deploy',
   'produção'
 ].forEach((fragment) => assert(docs.includes(fragment), `Documentation missing: ${fragment}`));
 
