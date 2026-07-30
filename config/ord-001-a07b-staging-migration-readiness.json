@@ -1,0 +1,84 @@
+{
+  "contractVersion": "ord-a07b-staging-migration-readiness-v1",
+  "domain": "ORD-001",
+  "sublot": "ORD-A07B-READINESS",
+  "status": "staging_migration_application_readiness_complete_application_unauthorized",
+  "migration": {
+    "path": "supabase/migrations/20260730144324_ord_a07b_worker_invocation_nonce_ledger.sql",
+    "sha256": "8060dae0b5cd896c558872cd9abd1dc7bc5ba06a3707816f228ab5bc429abe68",
+    "gitBlobSha": "de84873de6d8f65a60b03444635351a372d1b4e0",
+    "generatedBySupabaseCli": true,
+    "supabaseCliVersion": "2.109.0",
+    "validatedOnPostgresMajor": 17
+  },
+  "stagingPreflight": {
+    "ledgerTableExists": false,
+    "consumeFunctionExists": false,
+    "migrationRecorded": false,
+    "pgcryptoInstalled": true,
+    "serviceRoleExtensionsUsage": true,
+    "serviceRolePrivateUsage": false,
+    "orders": 0,
+    "budgets": 0,
+    "history": 0,
+    "events": 0,
+    "metrics": 0,
+    "deliveryAttempts": 0
+  },
+  "authorization": {
+    "exactPhrase": "I_EXPLICITLY_AUTHORIZE_ORD_A07B_NONCE_LEDGER_MIGRATION_ON_DOKE_STAGING",
+    "genericCommandsRejected": [
+      "proximo",
+      "próximo",
+      "pode prosseguir",
+      "continue"
+    ],
+    "authorizedScopeAfterExactPhrase": [
+      "apply the canonical ORD-A07B nonce ledger migration to Doke staging only",
+      "run read-only post-application verification"
+    ],
+    "stillBlockedAfterExactPhrase": [
+      "production database changes",
+      "Cron header changes",
+      "Edge Function wiring or deployment",
+      "remote replay canary",
+      "Railway selection or deployment",
+      "billing, account or secret creation"
+    ]
+  },
+  "postApplicationAssertions": [
+    "migration history contains version 20260730144324",
+    "private.order_event_worker_invocation_nonces exists",
+    "public.consume_order_event_worker_invocation_nonce(text,timestamptz,text) exists",
+    "row level security is enabled",
+    "anon and authenticated cannot execute the RPC",
+    "service_role can execute the RPC",
+    "first test nonce is accepted and duplicate use is rejected",
+    "expired and excessively future timestamps are rejected",
+    "orders, budgets, history, events, metrics and delivery-attempt counts remain unchanged"
+  ],
+  "rollback": {
+    "strategy": "forward_only_rollback_migration",
+    "manualMigrationHistoryDeletionAllowed": false,
+    "callersMustRemainDisconnected": true,
+    "ledgerMustBeEmptyOrTestScoped": true,
+    "requiredSequence": [
+      "confirm Cron and Edge Function remain disconnected",
+      "verify the ledger contains no non-test operational rows",
+      "create a separate reviewed rollback migration",
+      "revoke RPC execution",
+      "drop the RPC",
+      "drop the private ledger table and index",
+      "apply the rollback only to staging",
+      "verify order-domain counts remain unchanged"
+    ]
+  },
+  "capabilities": {
+    "dryRunAvailable": true,
+    "checkEnvAvailable": true,
+    "executeModeAvailable": false,
+    "networkAvailable": false,
+    "databaseMutationAvailable": false,
+    "productionAllowed": false
+  }
+}
