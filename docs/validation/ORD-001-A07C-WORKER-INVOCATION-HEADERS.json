@@ -1,0 +1,63 @@
+{
+  "domain": "ORD-001",
+  "sublot": "ORD-A07C",
+  "status": "worker_invocation_header_issuance_prepared_activation_pending",
+  "recordedAt": "2026-07-30T12:35:00-03:00",
+  "runtime": {
+    "module": "supabase/functions/order-event-worker/invocation-headers.mjs",
+    "issuedAtHeader": "x-doke-worker-issued-at",
+    "nonceHeader": "x-doke-worker-nonce",
+    "sourceHeader": "x-doke-worker-source",
+    "nonceRandomBytes": 24,
+    "nonceLength": 32,
+    "noncePattern": "^[A-Za-z0-9_-]{32}$",
+    "cryptographicRandomnessRequired": true,
+    "headerBuilderCarriesSecrets": false,
+    "immutableEnvelope": true
+  },
+  "migration": {
+    "path": "supabase/migrations/20260730153500_ord_a07c_worker_invocation_headers.sql",
+    "sha256": "542411c1bd1d7db26301eb403601ddfa22e3284b45c817442aa917a8adcbf16e",
+    "appliedToStaging": false,
+    "cronScheduleChanged": false,
+    "secretsCreated": false,
+    "projectUrlHardcoded": false
+  },
+  "tests": {
+    "deterministicEncoding": true,
+    "distinctEntropyProducesDistinctNonce": true,
+    "caseInsensitiveHeaderRead": true,
+    "invalidEntropyRejected": true,
+    "invalidTimestampRejected": true,
+    "postgres17CronFunctionValidated": true,
+    "twoInvocationsProduceDistinctNonces": true,
+    "issuedAtFormatValidated": true,
+    "sourceAndPayloadPreserved": true,
+    "vaultAndNetworkBoundariesStubbed": true
+  },
+  "activation": {
+    "ordA07bLedgerAppliedToStaging": false,
+    "ordA07cHeadersAppliedToStaging": false,
+    "edgeFunctionReadsHeaders": false,
+    "edgeFunctionConsumesNonce": false,
+    "edgeFunctionDeployed": false,
+    "remoteReplayCanaryExecuted": false
+  },
+  "execution": {
+    "externalNetworkRequestsPerformed": 0,
+    "stagingDatabaseMutationsPerformed": 0,
+    "migrationsAppliedToStaging": 0,
+    "cronJobsChanged": 0,
+    "edgeFunctionsDeployed": 0,
+    "ordersCreated": 0,
+    "productionChanged": false
+  },
+  "remainingBlockers": [
+    "ord_a07b_nonce_ledger_staging_application",
+    "ord_a07c_cron_header_migration_authorization",
+    "edge_function_header_reader_wiring",
+    "edge_function_nonce_consumption_wiring",
+    "controlled_staging_release",
+    "concurrent_replay_canary"
+  ]
+}
