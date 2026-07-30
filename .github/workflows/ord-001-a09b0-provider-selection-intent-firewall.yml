@@ -1,0 +1,41 @@
+name: Doke ORD-A09B0 Provider Selection Intent Firewall
+
+on:
+  pull_request:
+    paths:
+      - 'backend/runtime/staging/provider-selection-intent-firewall.js'
+      - 'config/ord-001-a09b0-provider-selection-intent-firewall.json'
+      - 'scripts/test-ord-001-a09b0-provider-selection-intent-firewall.js'
+      - 'scripts/audit-ord-001-a09b0-provider-selection-intent-firewall.js'
+      - 'docs/ORD-001-A09B0-PROVIDER-SELECTION-INTENT-FIREWALL.md'
+      - 'docs/validation/ORD-001-A09B0-PROVIDER-SELECTION-INTENT-FIREWALL.json'
+      - 'config/domain-completion-matrix.json'
+      - 'package.json'
+      - '.github/workflows/ord-001-a09b0-provider-selection-intent-firewall.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Test selection intent firewall
+        run: node scripts/test-ord-001-a09b0-provider-selection-intent-firewall.js
+      - name: Audit selection intent firewall
+        run: node scripts/audit-ord-001-a09b0-provider-selection-intent-firewall.js
+      - name: Preserve selection handoff
+        run: node scripts/audit-ord-001-a09b0-provider-selection-handoff.js
+      - name: Preserve provider-neutral adapter boundary
+        run: node scripts/audit-ord-001-a09b0-provider-adapter-boundary.js
+      - name: Preserve provider evaluation
+        run: node scripts/audit-ord-001-a09a-staging-provider-evaluation.js
+      - name: Preserve staging release readiness
+        run: node scripts/audit-ord-001-a08-staging-release-readiness.js
+      - name: Audit completion matrix
+        run: node scripts/audit-domain-completion-matrix.js
