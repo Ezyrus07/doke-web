@@ -24,15 +24,15 @@ const ROUTES = Object.freeze([
 
   // Orders.
   route('orders.list', 'GET', '/orders', 'orders', 'listOrders', ['client', 'professional', 'support', 'admin'], 'order_participant_or_support', false, false),
-  route('orders.create', 'POST', '/orders', 'orders', 'createOrder', ['client'], 'order_client', true, true),
+  route('orders.create', 'POST', '/orders', 'orders', 'createOrder', ['client'], 'order_client', true, true, false, true),
   route('orders.get', 'GET', '/orders/:id', 'orders', 'getOrder', ['client', 'professional', 'support', 'admin'], 'order_participant_or_support', false, false),
-  route('orders.accept', 'POST', '/orders/:id/accept', 'orders', 'acceptOrder', ['professional'], 'order_professional', true, true),
-  route('orders.decline', 'POST', '/orders/:id/decline', 'orders', 'declineOrder', ['professional'], 'order_professional', true, true),
-  route('orders.quote', 'POST', '/orders/:id/quote', 'orders', 'sendQuote', ['professional'], 'order_professional', true, true),
-  route('orders.charge', 'POST', '/orders/:id/charge', 'orders', 'sendCharge', ['professional'], 'order_professional', true, true),
-  route('orders.start', 'POST', '/orders/:id/start', 'orders', 'startOrder', ['professional'], 'order_professional', true, true),
-  route('orders.complete', 'POST', '/orders/:id/complete', 'orders', 'completeOrder', ['professional'], 'order_professional', true, true),
-  route('orders.updateStatus', 'POST', '/orders/:id/status', 'orders', 'updateOrderStatus', ['support', 'admin'], 'internal_operator', true, true, true),
+  route('orders.accept', 'POST', '/orders/:id/accept', 'orders', 'acceptOrder', ['professional'], 'order_professional', true, true, false, true),
+  route('orders.decline', 'POST', '/orders/:id/decline', 'orders', 'declineOrder', ['professional'], 'order_professional', true, true, false, true),
+  route('orders.quote', 'POST', '/orders/:id/quote', 'orders', 'sendQuote', ['professional'], 'order_professional', true, true, false, true),
+  route('orders.charge', 'POST', '/orders/:id/charge', 'orders', 'sendCharge', ['professional'], 'order_professional', true, true, false, true),
+  route('orders.start', 'POST', '/orders/:id/start', 'orders', 'startOrder', ['professional'], 'order_professional', true, true, false, true),
+  route('orders.complete', 'POST', '/orders/:id/complete', 'orders', 'completeOrder', ['professional'], 'order_professional', true, true, false, true),
+  route('orders.updateStatus', 'POST', '/orders/:id/status', 'orders', 'updateOrderStatus', ['support', 'admin'], 'internal_operator', true, true, true, true),
 
   // Conversations and messages.
   route('conversations.list', 'GET', '/conversations', 'messaging', 'listConversations', ['client', 'professional', 'support', 'admin'], 'conversation_participant_or_support', false, false),
@@ -75,7 +75,7 @@ const ROUTES = Object.freeze([
   route('auditEvents.list', 'GET', '/admin/audit-events', 'admin', 'listAuditEvents', ['support', 'admin'], 'internal_operator', false, false, true)
 ]);
 
-function route(name, method, path, module, handler, allowedRoles, scope, idempotencyRequired, auditRequired, serviceRoleRequired) {
+function route(name, method, path, module, handler, allowedRoles, scope, idempotencyRequired, auditRequired, serviceRoleRequired, requestFreshnessRequired) {
   return Object.freeze({
     name,
     method,
@@ -87,6 +87,7 @@ function route(name, method, path, module, handler, allowedRoles, scope, idempot
     idempotencyRequired: Boolean(idempotencyRequired),
     auditRequired: Boolean(auditRequired),
     serviceRoleRequired: Boolean(serviceRoleRequired),
+    requestFreshnessRequired: Boolean(requestFreshnessRequired),
     authorizationGate: 'backend_route_guard',
     rlsValidationRequired: true
   });

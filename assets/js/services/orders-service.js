@@ -379,6 +379,28 @@ function extractIdempotencyKey(payload, options) {
     return template.replace(':id', id);
   }
 
+
+
+  function createOrdersWriteRequestNonce() {
+    var cryptoApi = root.crypto || root.msCrypto;
+    if (cryptoApi && typeof cryptoApi.randomUUID === 'function') return 'ord-' + cryptoApi.randomUUID();
+    if (cryptoApi && typeof cryptoApi.getRandomValues === 'function') {
+      var bytes = new Uint8Array(16);
+      cryptoApi.getRandomValues(bytes);
+      return 'ord-' + Array.prototype.map.call(bytes, function (value) {
+        return value.toString(16).padStart(2, '0');
+      }).join('');
+    }
+    return 'ord-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+  }
+
+  function createOrdersWriteFreshnessHeaders() {
+    return {
+      issuedAt: new Date().toISOString(),
+      nonce: createOrdersWriteRequestNonce()
+    };
+  }
+
   function ordersWriteCanaryRequest(path, payload, idempotencyKey) {
     assertOrdersWriteIdempotencyKey(idempotencyKey);
     if (!/^\/orders(\/|$)/.test(path)) return Promise.reject(new Error('Orders write API canary blocked non-orders endpoint: ' + path));
@@ -401,10 +423,13 @@ function extractIdempotencyKey(payload, options) {
         }));
         throw authError;
       }
+      var freshness = createOrdersWriteFreshnessHeaders();
       var headers = {
         Accept: 'application/json',
         'Content-Type': 'application/json',
-        'x-idempotency-key': idempotencyKey
+        'x-idempotency-key': idempotencyKey,
+        'x-doke-request-issued-at': freshness.issuedAt,
+        'x-doke-request-nonce': freshness.nonce
       };
       headers.Authorization = 'Bearer ' + token;
 

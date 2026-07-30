@@ -5,6 +5,18 @@ const assert = require('assert');
 const fs = require('fs');
 
 const read = (file) => fs.readFileSync(file, 'utf8');
+
+function compareVersions(left, right) {
+  const normalize = (value) => String(value || '').split('.').map((part) => Number(part) || 0);
+  const a = normalize(left);
+  const b = normalize(right);
+  const size = Math.max(a.length, b.length);
+  for (let index = 0; index < size; index += 1) {
+    const delta = (a[index] || 0) - (b[index] || 0);
+    if (delta) return delta > 0 ? 1 : -1;
+  }
+  return 0;
+}
 const required = [
   'scripts/lib/ord-a06-authorization-envelope.js',
   'scripts/prepare-ord-001-a06-authorization-envelope.js',
@@ -110,7 +122,7 @@ assert.strictEqual(scripts['prepare:ord-001-a06-authorization-envelope:dry-run']
 assert.strictEqual(scripts['prepare:ord-001-a06-authorization-envelope:check-env'], 'node scripts/prepare-ord-001-a06-authorization-envelope.js --check-env');
 assert.strictEqual(scripts['prepare:ord-001-a06-authorization-envelope'], 'node scripts/prepare-ord-001-a06-authorization-envelope.js --write');
 
-assert.strictEqual(matrix.version, '1.3.21');
+assert(compareVersions(matrix.version, '1.3.21') >= 0, `Matrix version ${matrix.version} predates the A06 authorization contract.`);
 const ord = matrix.domains.find((domain) => domain.id === 'ORD-001');
 assert(ord, 'ORD-001 missing from completion matrix.');
 [

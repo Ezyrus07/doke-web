@@ -1,6 +1,7 @@
 'use strict';
 
 const { assertIdempotencyKey } = require('../security/idempotency-contract');
+const { assertRequestFreshness } = require('../security/request-freshness-contract');
 const { assertRoutePermission } = require('../security/backend-permission-contract');
 const { buildAuditEvent } = require('../security/audit-event-contract');
 const {
@@ -20,6 +21,7 @@ function createActionHandler(route, implementation) {
     const actor = requestContext.actor;
 
     assertRoutePermission(route, actor, requestContext);
+    const requestFreshness = route.requestFreshnessRequired ? assertRequestFreshness(requestContext) : null;
     const idempotencyKey = route.idempotencyRequired ? assertIdempotencyKey(requestContext) : '';
     const idempotencyClaim = route.idempotencyRequired
       ? await claimIdempotencyEntry(route, requestContext, actor, idempotencyKey)
@@ -40,7 +42,8 @@ function createActionHandler(route, implementation) {
         route,
         context: requestContext,
         actor,
-        idempotencyKey
+        idempotencyKey,
+        requestFreshness
       });
 
       if (route.auditRequired) {

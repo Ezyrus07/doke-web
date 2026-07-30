@@ -1,6 +1,6 @@
 {
-  "version": "1.3.21",
-  "updatedAt": "2026-07-29T22:45:00-03:00",
+  "version": "1.3.22",
+  "updatedAt": "2026-07-30T08:02:00-03:00",
   "title": "Doke Domain Completion Matrix",
   "purpose": "Single source of truth for domain maturity, data authority, staging evidence, blockers, dependencies and mandatory completion order.",
   "maturityScale": {
@@ -900,7 +900,12 @@
         "scripts/audit-ord-001-a06-authorization-envelope.js",
         "docs/ORD-001-A06-AUTHORIZATION-ENVELOPE.md",
         "docs/validation/ORD-001-A06-AUTHORIZATION-ENVELOPE.json",
-        ".github/workflows/ord-001-a06-authorization-envelope.yml"
+        ".github/workflows/ord-001-a06-authorization-envelope.yml",
+        "backend/shared/security/request-freshness-contract.js",
+        "scripts/audit-ord-001-a07-request-freshness.js",
+        "scripts/test-order-request-freshness-runtime.js",
+        "docs/ORD-001-A07-REQUEST-FRESHNESS.md",
+        "docs/validation/ORD-001-A07-REQUEST-FRESHNESS.json"
       ],
       "scanRoots": [
         "backend/modules/orders",
@@ -947,7 +952,9 @@
         "audit:ord-001-a06-playwright-executor",
         "execute:ord-001-a06-playwright:dry-run",
         "audit:ord-001-a06-execution-readiness",
-        "audit:ord-001-a06-authorization-envelope"
+        "audit:ord-001-a06-authorization-envelope",
+        "audit:ord-001-a07-request-freshness",
+        "test:ord-001-a07-request-freshness"
       ],
       "evidence": [
         "Canonical state machine, transaction events, outbox worker and operational controls are active in staging.",
@@ -979,7 +986,11 @@
         "A short-lived authorization envelope contract now binds one runId to the authorized client, professional, service and staging targets using SHA-256 without committing raw identifiers.",
         "The authorization file must remain outside the repository, match an operator-supplied digest, expire within two hours, prohibit production, limit execution to one order and require cleanup.",
         "The authorization envelope preparer is inert by default: dry-run performs no reads of credentials, check-env writes nothing, and write requires a separate explicit decision plus a dedicated flag.",
-        "The Playwright executor now rejects check-env and execute unless the envelope digest, lifetime, resource bindings and target bindings all validate."
+        "The Playwright executor now rejects check-env and execute unless the envelope digest, lifetime, resource bindings and target bindings all validate.",
+        "ORD-A07 adds a five-minute request freshness window and thirty-second future clock skew limit to every order mutation before idempotency claim.",
+        "The orders frontend emits per-request issued-at and nonce headers, while the staging Node runtime exposes only those explicit headers through CORS.",
+        "Existing persistent idempotency entries now enforce expires_at when read, preventing expired keys from being replayed or reused.",
+        "No browser shared secret or false request-signature claim was introduced; JWT, route authorization, RLS and idempotency remain independent controls."
       ],
       "blockers": [
         {
@@ -1009,7 +1020,9 @@
         "Issue one short-lived resource-bound authorization envelope outside the repository and retain only its path and SHA-256 in the executor environment.",
         "Supply credentials, approved targets and service-role secret only to the executor process, then run check-env without browser, network or mutations.",
         "Permit execute only after every authorization binding passes; review requested, accepted, quoted and optimistic-conflict evidence and prove cleanup twice with zero residue.",
-        "Harden worker invocation freshness and replay resistance."
+        "Harden worker invocation freshness and replay resistance.",
+        "Deploy the ORD-A07 request freshness contract only through the controlled staging release path and rerun the non-mutating preflight.",
+        "Retain explicit authorization as a separate prerequisite before the real two-context visual canary."
       ],
       "exitCriteria": [
         "Two real accounts complete request, accept, proposal, approval, start and completion across devices.",

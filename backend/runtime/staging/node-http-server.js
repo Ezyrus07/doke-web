@@ -8,7 +8,7 @@ const DEFAULT_PORT = 8787;
 const DEFAULT_HOST = '127.0.0.1';
 const MAX_BODY_BYTES = 1024 * 1024;
 const ALLOWED_METHODS = 'GET,POST,PATCH,PUT,DELETE,OPTIONS';
-const ALLOWED_HEADERS = 'authorization,content-type,x-idempotency-key,x-request-id,apikey';
+const ALLOWED_HEADERS = 'authorization,content-type,x-idempotency-key,x-request-id,x-doke-request-issued-at,x-doke-request-nonce,apikey';
 
 function createNodeHttpServer(options) {
   const safeOptions = options && typeof options === 'object' ? options : {};

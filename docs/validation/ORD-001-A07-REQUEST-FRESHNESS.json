@@ -1,0 +1,39 @@
+{
+  "domain": "ORD-001",
+  "sublot": "ORD-A07",
+  "status": "request_freshness_contract_complete_not_deployed",
+  "environment": "staging",
+  "recordedAt": "2026-07-30T08:02:00-03:00",
+  "objective": "Reject stale or future order mutations before idempotency claim while preserving exact replay convergence.",
+  "contract": {
+    "issuedAtHeader": "x-doke-request-issued-at",
+    "nonceHeader": "x-doke-request-nonce",
+    "maximumAgeSeconds": 300,
+    "maximumFutureSkewSeconds": 30,
+    "orderMutationRoutesProtected": 8,
+    "readRoutesProtected": 0,
+    "persistentIdempotencyExpiryEnforced": true,
+    "browserSharedSecretIntroduced": false
+  },
+  "currentExecution": {
+    "deployedToStaging": false,
+    "accountsUsed": 0,
+    "networkRequestsPerformed": false,
+    "mutationsPerformed": false,
+    "ordersCreated": 0,
+    "productionChanged": false
+  },
+  "privacy": {
+    "rawNoncesRecorded": false,
+    "emailsRecorded": false,
+    "passwordsRecorded": false,
+    "tokensRecorded": false,
+    "serviceRoleRecorded": false
+  },
+  "remainingBlockers": [
+    "deploy_staging_runtime_with_request_freshness_contract",
+    "execute_read_only_preflight_against_deployed_runtime",
+    "explicit_authorization_for_real_visual_canary"
+  ],
+  "nextAction": "Validate the contract in CI, then deploy only through the controlled staging release path before any authorized visual canary."
+}

@@ -21,7 +21,7 @@ async function claimIdempotencyEntry(route, context, actor, idempotencyKey) {
   const actorId = sanitizeNullableUuid(actor && actor.id);
 
   const existing = await readIdempotencyEntry(serviceSupabase, safeKey);
-  if (existing) return evaluateExistingEntry(existing, route, actorId, requestHash);
+  if (existing) return evaluateExistingEntry(existing, route, actorId, requestHash, context);
 
   const payload = {
     idempotency_key: safeKey,
@@ -43,7 +43,7 @@ async function claimIdempotencyEntry(route, context, actor, idempotencyKey) {
 
   if (response && response.error) {
     const racedEntry = await readIdempotencyEntry(serviceSupabase, safeKey).catch(() => null);
-    if (racedEntry) return evaluateExistingEntry(racedEntry, route, actorId, requestHash);
+    if (racedEntry) return evaluateExistingEntry(racedEntry, route, actorId, requestHash, context);
     throw response.error;
   }
 
@@ -108,7 +108,7 @@ async function readIdempotencyEntry(serviceSupabase, idempotencyKey) {
   return response && response.data || null;
 }
 
-function evaluateExistingEntry(existing, route, actorId, requestHash) {
+function evaluateExistingEntry(existing, route, actorId, requestHash, context) {
   const existingActorId = sanitizeNullableUuid(existing.actor_id);
   const sameActor = !existingActorId && !actorId || existingActorId === actorId;
   const sameAction = String(existing.action || '') === String(route.name || '');
@@ -117,6 +117,8 @@ function evaluateExistingEntry(existing, route, actorId, requestHash) {
   if (!sameActor || !sameAction || !sameHash) {
     throw conflict('Idempotency key already exists for another actor, action or payload.');
   }
+
+  if (isIdempotencyEntryExpired(existing, context)) throw expired();
 
   const status = String(existing.status || '').toLowerCase();
   if (status === 'succeeded') {
@@ -134,6 +136,13 @@ function evaluateExistingEntry(existing, route, actorId, requestHash) {
   if (status === 'failed') throw failed();
   if (status === 'expired') throw expired();
   throw conflict(`Unsupported idempotency status: ${status || 'unknown'}.`);
+}
+
+function isIdempotencyEntryExpired(existing, context) {
+  const expiresAtMs = Date.parse(existing && existing.expires_at || '');
+  if (!Number.isFinite(expiresAtMs)) return false;
+  const nowMs = Date.parse(context && context.now || new Date().toISOString());
+  return Number.isFinite(nowMs) && nowMs >= expiresAtMs;
 }
 
 function normalizeResponseBody(result) {
@@ -214,5 +223,6 @@ module.exports = Object.freeze({
   claimIdempotencyEntry,
   completeIdempotencyEntry,
   failIdempotencyEntry,
+  isIdempotencyEntryExpired,
   buildIdempotencyDebugPayload
 });
