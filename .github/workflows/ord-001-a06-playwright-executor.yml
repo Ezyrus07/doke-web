@@ -1,0 +1,65 @@
+name: Doke ORD-A06 Playwright Executor
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/execute-ord-001-a06-visual-settlement-playwright.js'
+      - 'scripts/audit-ord-001-a06-playwright-executor.js'
+      - 'docs/ORD-001-A06-PLAYWRIGHT-EXECUTOR.md'
+      - 'docs/validation/ORD-001-A06-PLAYWRIGHT-EXECUTOR.json'
+      - '.github/workflows/ord-001-a06-playwright-executor.yml'
+      - 'package.json'
+      - 'config/domain-completion-matrix.json'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+      - 'scripts/audit-ord-001-a06-cleanup-boundary.js'
+      - 'scripts/audit-ord-001-a06-visual-settlement.js'
+      - 'scripts/test-order-visual-settlement-runtime.js'
+      - 'scripts/audit-ord-001-a05-command-activation.js'
+      - 'scripts/test-order-command-activation-runtime.js'
+      - 'scripts/audit-ord-001-a04-read-authority.js'
+      - 'scripts/test-order-read-authority-runtime.js'
+      - 'scripts/audit-ord-001-a03-command-boundary.js'
+      - 'scripts/test-order-command-boundary-runtime.js'
+      - 'scripts/test-order-state-machine-runtime.js'
+      - 'scripts/audit-domain-completion-matrix.js'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Audit ORD-A06 fail-closed executor
+        run: node scripts/audit-ord-001-a06-playwright-executor.js
+      - name: Prove executor remains dry-run only in CI
+        run: node scripts/execute-ord-001-a06-visual-settlement-playwright.js --dry-run
+      - name: Preserve ORD-A06 cleanup boundary
+        run: node scripts/audit-ord-001-a06-cleanup-boundary.js
+      - name: Preserve ORD-A06 cross-session settlement
+        run: |
+          node scripts/audit-ord-001-a06-visual-settlement.js
+          node scripts/test-order-visual-settlement-runtime.js
+      - name: Preserve ORD-A05 command authority
+        run: |
+          node scripts/audit-ord-001-a05-command-activation.js
+          node scripts/test-order-command-activation-runtime.js
+      - name: Preserve ORD-A04 read authority
+        run: |
+          node scripts/audit-ord-001-a04-read-authority.js
+          node scripts/test-order-read-authority-runtime.js
+      - name: Preserve ORD-A03 command boundary
+        run: |
+          node scripts/audit-ord-001-a03-command-boundary.js
+          node scripts/test-order-command-boundary-runtime.js
+          node scripts/test-order-state-machine-runtime.js
+      - name: Audit completion matrix
+        run: node scripts/audit-domain-completion-matrix.js
+
+# This workflow never installs a browser, opens network access or performs mutations.
