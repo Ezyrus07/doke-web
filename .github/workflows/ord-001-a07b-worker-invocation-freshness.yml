@@ -1,0 +1,38 @@
+name: Doke ORD-A07B Worker Invocation Freshness
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/functions/order-event-worker/invocation-freshness.mjs'
+      - 'supabase/functions/order-event-worker/index.ts'
+      - 'config/ord-001-a07b-worker-invocation-freshness.json'
+      - 'scripts/test-order-event-worker-invocation-freshness.js'
+      - 'scripts/audit-ord-001-a07b-worker-invocation-freshness.js'
+      - 'docs/ORD-001-A07B-WORKER-INVOCATION-FRESHNESS.md'
+      - 'docs/validation/ORD-001-A07B-WORKER-INVOCATION-FRESHNESS.json'
+      - 'config/domain-completion-matrix.json'
+      - 'package.json'
+      - '.github/workflows/ord-001-a07b-worker-invocation-freshness.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Test worker invocation freshness
+        run: node scripts/test-order-event-worker-invocation-freshness.js
+      - name: Audit worker invocation freshness
+        run: node scripts/audit-ord-001-a07b-worker-invocation-freshness.js
+      - name: Preserve existing worker contract
+        run: node scripts/test-order-event-worker-contract.js
+      - name: Preserve request freshness contract
+        run: node scripts/audit-ord-001-a07-request-freshness.js
+      - name: Audit completion matrix
+        run: node scripts/audit-domain-completion-matrix.js
