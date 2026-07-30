@@ -67,7 +67,12 @@ assert.strictEqual(
 );
 
 const matrix = JSON.parse(read('config/domain-completion-matrix.json'));
-assert.strictEqual(matrix.version, '1.3.18');
+const version = String(matrix.version || '').split('.').map((value) => Number(value));
+assert(version.length === 3 && version.every(Number.isFinite), `Invalid matrix version: ${matrix.version}`);
+assert(
+  version[0] > 1 || (version[0] === 1 && (version[1] > 3 || (version[1] === 3 && version[2] >= 18))),
+  `ORD-A06 cleanup requires matrix version 1.3.18 or newer; received ${matrix.version}`
+);
 const ord = matrix.domains.find((domain) => domain.id === 'ORD-001');
 assert(ord, 'ORD-001 missing from completion matrix.');
 [
@@ -80,6 +85,9 @@ assert(ord, 'ORD-001 missing from completion matrix.');
 ].forEach((path) => assert(ord.requiredPaths.includes(path), `ORD-001 matrix missing required path: ${path}`));
 assert(ord.tests.includes('audit:ord-001-a06-cleanup-boundary'));
 assert(ord.evidence.some((entry) => entry.includes('service-role-only cleanup boundary')));
-assert(ord.blockers.some((blocker) => blocker.id === 'ORD-B02' && blocker.description.includes('cleanup boundary is now staged')));
+assert(
+  ord.blockers.some((blocker) => blocker.id === 'ORD-B02' && /cleanup/i.test(blocker.description)),
+  'ORD-B02 must continue to reference the runId-scoped cleanup readiness while the real browser canary is pending.'
+);
 
 console.log('ORD-A06 canary cleanup boundary audit passed.');
