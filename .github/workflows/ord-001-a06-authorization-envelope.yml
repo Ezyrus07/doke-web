@@ -46,11 +46,11 @@ jobs:
               if pinned not in audit_source:
                   raise SystemExit('A06 matrix version assertion anchor missing')
               audit_source = audit_source.replace(pinned, compatible, 1)
-              export_anchor = "function requireAll(label, source, tokens) {"
-              helper_function = "function compareVersions(left, right) {\n  const normalize = (value) => String(value || '').split('.').map((part) => Number(part) || 0);\n  const a = normalize(left);\n  const b = normalize(right);\n  const size = Math.max(a.length, b.length);\n  for (let index = 0; index < size; index += 1) {\n    const delta = (a[index] || 0) - (b[index] || 0);\n    if (delta) return delta > 0 ? 1 : -1;\n  }\n  return 0;\n}\n\n"
-              if export_anchor not in audit_source:
-                  raise SystemExit('A06 auditor helper anchor missing')
-              audit_source = audit_source.replace(export_anchor, helper_function + export_anchor, 1)
+              insert_anchor = "const read = (file) => fs.readFileSync(file, 'utf8');\n"
+              helper_function = "\nfunction compareVersions(left, right) {\n  const normalize = (value) => String(value || '').split('.').map((part) => Number(part) || 0);\n  const a = normalize(left);\n  const b = normalize(right);\n  const size = Math.max(a.length, b.length);\n  for (let index = 0; index < size; index += 1) {\n    const delta = (a[index] || 0) - (b[index] || 0);\n    if (delta) return delta > 0 ? 1 : -1;\n  }\n  return 0;\n}\n"
+              if insert_anchor not in audit_source:
+                  raise SystemExit('A06 auditor insertion anchor missing')
+              audit_source = audit_source.replace(insert_anchor, insert_anchor + helper_function, 1)
               auditor.write_text(audit_source, encoding='utf-8')
           PY
           python scripts/reconcile-ord-a07-request-freshness-once.py
