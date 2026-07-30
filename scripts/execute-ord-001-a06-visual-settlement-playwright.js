@@ -166,11 +166,11 @@ function assertRequiredFiles() {
 function assertNoCredentialDefaults() {
   const source = fs.readFileSync(__filename, 'utf8');
   const forbidden = [
-    'cliente@doke.local',
-    'profissional@doke.local',
-    'suporte@doke.local',
-    'admin@doke.local'
-  ];
+    ['cliente', 'doke.local'],
+    ['profissional', 'doke.local'],
+    ['suporte', 'doke.local'],
+    ['admin', 'doke.local']
+  ].map(function (parts) { return parts[0] + '@' + parts[1]; });
   for (const value of forbidden) {
     if (source.includes(value)) report.failures.push(`Executor contains forbidden historical credential default: ${value}`);
   }

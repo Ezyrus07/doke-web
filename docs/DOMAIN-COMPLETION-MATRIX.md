@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 941 arquivos no escopo; 245 referências a localStorage; 75 a sessionStorage; 555 referências mock; 175 referências de rede/Supabase; 32 marcadores de implementação pendente.
+**Evidência estática observada:** 944 arquivos no escopo; 247 referências a localStorage; 77 a sessionStorage; 556 referências mock; 176 referências de rede/Supabase; 32 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -415,16 +415,20 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - ORD-A06 now has a service-role-only cleanup boundary that requires matching runId metadata and external_id markers and refuses ambiguous or partial scope.
 - The cleanup boundary aborts on messaging, payment, wallet, review, quote-funnel or manual operator dependencies instead of broadening deletion authority.
 - A rolled-back staging canary proved authenticated denial, explicit JWT role precedence, requested-to-quoted cleanup, control-order survival, idempotent re-execution and zero residue.
+- ORD-A06 now has a fail-closed Playwright executor with no default credentials, URLs or service reference and with an exact authorization acknowledgement.
+- The executor isolates client and professional browser contexts, logs in through the real UI, preserves supabase-read, scopes all commands to one runId and probes one-success/one-conflict optimistic concurrency.
+- The executor captures requested, accepted and quoted UI evidence, submits a BRL 123.45 quote and invokes the service-role cleanup outside the browser twice to prove cleaned then already_clean.
+- CI runs only the static audit and dry-run; no account, browser network request or staging mutation was used to close this technical preparation step.
 
 **Bloqueadores:**
-- **ORD-B02 · HIGH · frontend_activation:** Canonical reads, canary commands and deterministic cross-context settlement pass, and the service-role-only cleanup boundary is now staged. ORD-B02 remains until two explicitly authorized staging accounts complete the real browser UI canary. _(Fase 6)_
+- **ORD-B02 · HIGH · frontend_activation:** Canonical reads, canary commands, deterministic cross-context settlement, runId-scoped cleanup and a fail-closed Playwright executor now pass. ORD-B02 remains until two explicitly authorized staging accounts complete the real visual UI canary. _(Fase 6)_
 - **ORD-B03 · HIGH · financial_dependency:** Payment authority is not connected to a real PSP webhook lifecycle. _(Fase 8)_
 - **ORD-B04 · MEDIUM · scheduling:** Order scheduling and availability are not server-canonical. _(Fase 6)_
 
 **Próximas ações:**
-- Obtain two explicitly authorized staging test accounts without changing real users.
-- Run the two-browser requested, accepted, quoted, optimistic-conflict and UI settlement canary using one ord-a06 runId.
-- Invoke the service-role cleanup boundary and prove zero residue after the real browser canary.
+- Obtain two explicitly authorized staging test accounts, approved staging or preview URLs and one authorized published service reference without changing real users.
+- Execute the fail-closed two-context Playwright canary with one ord-a06 runId and explicit network, mutation and execution flags.
+- Review requested, accepted, quoted and optimistic-conflict evidence, invoke cleanup and prove zero residue.
 - Harden worker invocation freshness and replay resistance.
 
 **Gate de saída:**
@@ -850,7 +854,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 1/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 197 arquivos no escopo; 62 referências a localStorage; 6 a sessionStorage; 267 referências mock; 8 referências de rede/Supabase; 22 marcadores de implementação pendente.
+**Evidência estática observada:** 198 arquivos no escopo; 64 referências a localStorage; 8 a sessionStorage; 268 referências mock; 8 referências de rede/Supabase; 22 marcadores de implementação pendente.
 
 **Evidências:**
 - The master plan identifies legal, privacy and commercial decisions as mandatory.
@@ -910,7 +914,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2196 arquivos no escopo; 502 referências a localStorage; 148 a sessionStorage; 878 referências mock; 570 referências de rede/Supabase; 86 marcadores de implementação pendente.
+**Evidência estática observada:** 2199 arquivos no escopo; 504 referências a localStorage; 150 a sessionStorage; 879 referências mock; 571 referências de rede/Supabase; 86 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
@@ -971,4 +975,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-07-29T21:31:00-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-07-29T21:55:00-03:00._

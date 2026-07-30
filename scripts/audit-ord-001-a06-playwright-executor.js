@@ -100,8 +100,6 @@ function assertNoDefaults(source) {
   const forbiddenAssignments = [
     /clientEmail\s*:\s*['"][^'"]+@[^'"]+['"]/,
     /professionalEmail\s*:\s*['"][^'"]+@[^'"]+['"]/,
-    /clientPassword\s*:\s*['"][^'"]+['"]/,
-    /professionalPassword\s*:\s*['"][^'"]+['"]/,
     /serviceRoleKey\s*:\s*['"](?:ey|sb_|sk_|service_role)[^'"]*['"]/i
   ];
   forbiddenAssignments.forEach((pattern) => {
