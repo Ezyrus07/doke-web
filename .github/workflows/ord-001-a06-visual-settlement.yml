@@ -1,0 +1,52 @@
+name: Doke ORD-A06 Visual Settlement Preflight
+
+on:
+  pull_request:
+    paths:
+      - assets/js/core/runtime-config.js
+      - assets/js/repositories/orders-repository.js
+      - assets/js/services/orders-service.js
+      - config/domain-completion-matrix.json
+      - docs/DOMAIN-COMPLETION-MATRIX.md
+      - docs/ORD-001-A06-VISUAL-SETTLEMENT-PREFLIGHT.md
+      - docs/validation/ORD-001-A06-VISUAL-SETTLEMENT-PREFLIGHT.json
+      - package.json
+      - reports/generated/domain-completion-matrix-report.json
+      - scripts/audit-ord-001-a04-read-authority.js
+      - scripts/audit-ord-001-a05-command-activation.js
+      - scripts/audit-ord-001-a06-visual-settlement.js
+      - scripts/test-order-command-activation-runtime.js
+      - scripts/test-order-command-boundary-runtime.js
+      - scripts/test-order-read-authority-runtime.js
+      - scripts/test-order-state-machine-runtime.js
+      - scripts/test-order-visual-settlement-runtime.js
+      - .github/workflows/ord-001-a06-visual-settlement.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Audit ORD-A06 visual settlement preflight
+        run: node scripts/audit-ord-001-a06-visual-settlement.js
+      - name: Test isolated read-after-write settlement
+        run: node scripts/test-order-visual-settlement-runtime.js
+      - name: Preserve ORD-A05 authenticated command activation
+        run: node scripts/audit-ord-001-a05-command-activation.js && node scripts/test-order-command-activation-runtime.js
+      - name: Preserve ORD-A04 canonical read authority
+        run: node scripts/audit-ord-001-a04-read-authority.js && node scripts/test-order-read-authority-runtime.js
+      - name: Preserve ORD-A03 command boundary
+        run: node scripts/audit-ord-001-a03-command-boundary.js && node scripts/test-order-command-boundary-runtime.js
+      - name: Preserve order state machine
+        run: node scripts/test-order-state-machine-runtime.js
+      - name: Audit domain completion matrix
+        run: node scripts/audit-domain-completion-matrix.js
+
+# Permanent read-only gate. Real two-account browser mutation remains explicitly blocked.
