@@ -30,7 +30,7 @@ The accepted request returned run ID `c461950e-44a4-425b-bafc-cb2e99811cdb`. It 
 
 The accepted empty test run was deleted only after verifying its exact ID, `source=test`, `status=completed`, zero counters and absence of delivery attempts.
 
-The nonce cleanup plan required deleting the canary nonce while preserving the preexisting test nonce. During the accepted invocation, the canonical consume RPC automatically removed the old expired test nonce before inserting the canary nonce. The ledger therefore remained at one row instead of temporarily increasing to two.
+The nonce cleanup plan required deleting the canary nonce while preserving the preexisting test nonce. During the accepted invocation, the canonical consume RPC automatically removed the expired preexisting test nonce before inserting the canary nonce. The ledger therefore remained at one row instead of temporarily increasing to two.
 
 Deleting the canary nonce would have reduced the ledger below the one-row baseline. The safe resolution was to retain the canary nonce row, whose `expires_at` is `2026-07-31T02:10:16.114+00:00`, while deleting the worker run. This preserves the expected ledger and test-row counts without recreating or fabricating data.
 
