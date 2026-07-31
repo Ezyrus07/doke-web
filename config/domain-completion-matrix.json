@@ -1,6 +1,6 @@
 {
-  "version": "1.3.48",
-  "updatedAt": "2026-07-31T10:41:00-03:00",
+  "version": "1.3.49",
+  "updatedAt": "2026-07-31T11:18:00-03:00",
   "title": "Doke Domain Completion Matrix",
   "purpose": "Single source of truth for domain maturity, data authority, staging evidence, blockers, dependencies and mandatory completion order.",
   "maturityScale": {
@@ -1072,7 +1072,15 @@
         "scripts/audit-sched-001-a05-persistence-readiness.js",
         "docs/SCHED-001-A05-PERSISTENCE-READINESS.md",
         "docs/validation/SCHED-001-A05-PERSISTENCE-READINESS.json",
-        ".github/workflows/sched-001-a05-persistence-readiness.yml"
+        ".github/workflows/sched-001-a05-persistence-readiness.yml",
+        "config/sched-001-a07-history-canary-readiness.json",
+        "docs/SCHED-001-A07-MIGRATION-HISTORY-CANARY-READINESS.md",
+        "docs/validation/SCHED-001-A07-MIGRATION-HISTORY-CANARY-READINESS.json",
+        "scripts/plan-sched-001-a07-history-canaries.js",
+        "scripts/test-sched-001-a07-history-canary-readiness.js",
+        "scripts/audit-sched-001-a07-history-canary-readiness.js",
+        "supabase/tests/020_sched_a07_rolled_back_canaries.sql",
+        ".github/workflows/sched-001-a07-history-canary-readiness.yml"
       ],
       "scanRoots": [
         "backend/modules/orders",
@@ -1167,7 +1175,9 @@
         "test:sched-001-a03-reservation-migration-static",
         "audit:sched-001-a04-server-command-runtime",
         "test:sched-001-a04-scheduling-service-runtime",
-        "audit:sched-001-a05-persistence-readiness"
+        "audit:sched-001-a05-persistence-readiness",
+        "audit:sched-001-a07-history-canary-readiness",
+        "test:sched-001-a07-history-canary-readiness"
       ],
       "evidence": [
         "Canonical state machine, transaction events, outbox worker and operational controls are active in staging.",
@@ -1300,7 +1310,7 @@
         }
       ],
       "nextActions": [
-        "Require the exact independent staging authorization phrase before applying SCHED-A03 and SCHED-A04.",
+        "Complete SCHED-A07 migration-history repair and rolled-back staging canaries after exact independent authorization.",
         "After authorized application, run read-only schema, grant, policy and migration-order verification.",
         "Run rolled-back persona, idempotency, DST and concurrent overlap canaries before runtime activation.",
         "Create the server composition root and wire ORD-001 only after all staging canaries pass."
@@ -1388,7 +1398,15 @@
         "scripts/audit-sched-001-a05-persistence-readiness.js",
         "docs/SCHED-001-A05-PERSISTENCE-READINESS.md",
         "docs/validation/SCHED-001-A05-PERSISTENCE-READINESS.json",
-        ".github/workflows/sched-001-a05-persistence-readiness.yml"
+        ".github/workflows/sched-001-a05-persistence-readiness.yml",
+        "config/sched-001-a07-history-canary-readiness.json",
+        "docs/SCHED-001-A07-MIGRATION-HISTORY-CANARY-READINESS.md",
+        "docs/validation/SCHED-001-A07-MIGRATION-HISTORY-CANARY-READINESS.json",
+        "scripts/plan-sched-001-a07-history-canaries.js",
+        "scripts/test-sched-001-a07-history-canary-readiness.js",
+        "scripts/audit-sched-001-a07-history-canary-readiness.js",
+        "supabase/tests/020_sched_a07_rolled_back_canaries.sql",
+        ".github/workflows/sched-001-a07-history-canary-readiness.yml"
       ],
       "scanRoots": [
         "assets/js/pages/pedidos",
@@ -1420,7 +1438,9 @@
         "test:sched-001-a04-scheduling-service-runtime",
         "audit:sched-001-a05-persistence-readiness",
         "test:sched-001-a05-postgres-repository-runtime",
-        "test:sched-001-a05-staging-readiness"
+        "test:sched-001-a05-staging-readiness",
+        "audit:sched-001-a07-history-canary-readiness",
+        "test:sched-001-a07-history-canary-readiness"
       ],
       "evidence": [
         "Availability schema exists, but no implemented scheduling backend module exists.",
@@ -1445,36 +1465,29 @@
           "id": "SCHED-B02",
           "severity": "critical",
           "category": "server_authority",
-          "description": "The command runtime and PostgreSQL transaction adapter exist, but A03/A04 are unapplied and no trusted server composition root activates the adapter.",
+          "description": "Canonical schema and PostgreSQL adapter exist in staging, but the trusted server composition root and runtime activation are pending.",
           "targetPhase": "Fase 6"
         },
         {
           "id": "SCHED-B03",
           "severity": "high",
           "category": "concurrency",
-          "description": "Migration compatibility and rollback readiness are proven read-only; staging application and rolled-back concurrent overlap proof remain absent.",
+          "description": "Canonical schema is applied, but migration-history alignment and rolled-back remote concurrency, idempotency and DST canaries are pending.",
           "targetPhase": "Fase 6"
         },
         {
           "id": "SCHED-B04",
           "severity": "high",
           "category": "order_integration",
-          "description": "Atomic order projection SQL exists, but orders.schedule_reservation_id is unapplied and ORD-001 remains disconnected.",
-          "targetPhase": "Fase 6"
-        },
-        {
-          "id": "SCHED-B05",
-          "severity": "high",
-          "category": "reservation_status_authority",
-          "description": "A03 contains booked-state policy hardening and A05 confirms it is required, but the migration remains unapplied.",
+          "description": "orders.schedule_reservation_id exists in staging, but ORD-001 runtime wiring to the canonical reservation remains pending.",
           "targetPhase": "Fase 6"
         }
       ],
       "nextActions": [
-        "Require the exact independent staging authorization phrase before applying SCHED-A03 and SCHED-A04.",
-        "After authorized application, run read-only schema, grant, policy and migration-order verification.",
-        "Run rolled-back persona, idempotency, DST and concurrent overlap canaries before runtime activation.",
-        "Create the server composition root and wire ORD-001 only after all staging canaries pass."
+        "Require the exact SCHED-A07 authorization before mutating migration history or executing rolled-back canaries.",
+        "Repair only the four frozen migration-history versions and verify exact local/remote alignment.",
+        "Execute the single-transaction SCHED-A07 canary and require rollback plus unchanged aggregate counts.",
+        "Create the trusted server composition root only after the repair and canaries pass."
       ],
       "exitCriteria": [
         "Concurrent booking attempts cannot reserve the same slot.",

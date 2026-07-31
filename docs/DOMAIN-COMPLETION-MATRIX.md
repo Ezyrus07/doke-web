@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 1027 arquivos no escopo; 248 referências a localStorage; 78 a sessionStorage; 557 referências mock; 193 referências de rede/Supabase; 35 marcadores de implementação pendente.
+**Evidência estática observada:** 1031 arquivos no escopo; 248 referências a localStorage; 78 a sessionStorage; 557 referências mock; 193 referências de rede/Supabase; 35 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -151,7 +151,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção blocked.
 
-**Evidência estática observada:** 213 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 0 referências mock; 5 referências de rede/Supabase; 9 marcadores de implementação pendente.
+**Evidência estática observada:** 214 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 0 referências mock; 5 referências de rede/Supabase; 9 marcadores de implementação pendente.
 
 **Tabelas/autoridades de dados:** `users`, `user_profiles`, `client_profiles`, `audit_logs`, `availability_slots`, `budgets`, `communities`, `community_members`, `community_posts`, `favorites`, `message_attachments`, `reports`, `reviews`, `service_categories`, `verification_events`.
 
@@ -344,7 +344,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção blocked.
 
-**Evidência estática observada:** 216 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 3 referências mock; 19 referências de rede/Supabase; 9 marcadores de implementação pendente.
+**Evidência estática observada:** 217 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 3 referências mock; 19 referências de rede/Supabase; 9 marcadores de implementação pendente.
 
 **Páginas:** `index.html`, `resultados.html`, `detalhe-anuncio.html`.
 
@@ -503,7 +503,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - **ORD-B05 · HIGH · staging_release:** ORD-A08 release identity, ORD-A09A provider evaluation, the ORD-A09B0 provider-neutral adapter boundary, provider selection handoff, selection intent firewall and adapter conformance suite are complete. Railway is recommended as the external staging release provider, but no explicit provider selection, provider-specific adapter, account, billing, secrets, infrastructure, rollback command or deployment exists. ORD-B05 remains open until exactly I_EXPLICITLY_SELECT_RAILWAY_FOR_DOKE_STAGING authorizes only non-secret adapter preparation; every external action remains separately blocked. _(Fase 6)_
 
 **Próximas ações:**
-- Require the exact independent staging authorization phrase before applying SCHED-A03 and SCHED-A04.
+- Complete SCHED-A07 migration-history repair and rolled-back staging canaries after exact independent authorization.
 - After authorized application, run read-only schema, grant, policy and migration-order verification.
 - Run rolled-back persona, idempotency, DST and concurrent overlap canaries before runtime activation.
 - Create the server composition root and wire ORD-001 only after all staging canaries pass.
@@ -520,7 +520,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 2/6; UI local; servidor partial; staging staging canary; segurança partial; produção blocked.
 
-**Evidência estática observada:** 998 arquivos no escopo; 186 referências a localStorage; 70 a sessionStorage; 301 referências mock; 192 referências de rede/Supabase; 19 marcadores de implementação pendente.
+**Evidência estática observada:** 1001 arquivos no escopo; 186 referências a localStorage; 70 a sessionStorage; 301 referências mock; 192 referências de rede/Supabase; 19 marcadores de implementação pendente.
 
 **Páginas:** `anunciar-servico.html`, `pedidos.html`, `orcamento.html`.
 
@@ -545,16 +545,15 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - Three aggregate-only staging reads confirmed PostgreSQL 17.6, zero scheduling/order rows, absent A03/A04 authority objects and migrations, absent btree_gist, and legacy booked-state policy exposure without mutating staging.
 
 **Bloqueadores:**
-- **SCHED-B02 · CRITICAL · server_authority:** The command runtime and PostgreSQL transaction adapter exist, but A03/A04 are unapplied and no trusted server composition root activates the adapter. _(Fase 6)_
-- **SCHED-B03 · HIGH · concurrency:** Migration compatibility and rollback readiness are proven read-only; staging application and rolled-back concurrent overlap proof remain absent. _(Fase 6)_
-- **SCHED-B04 · HIGH · order_integration:** Atomic order projection SQL exists, but orders.schedule_reservation_id is unapplied and ORD-001 remains disconnected. _(Fase 6)_
-- **SCHED-B05 · HIGH · reservation_status_authority:** A03 contains booked-state policy hardening and A05 confirms it is required, but the migration remains unapplied. _(Fase 6)_
+- **SCHED-B02 · CRITICAL · server_authority:** Canonical schema and PostgreSQL adapter exist in staging, but the trusted server composition root and runtime activation are pending. _(Fase 6)_
+- **SCHED-B03 · HIGH · concurrency:** Canonical schema is applied, but migration-history alignment and rolled-back remote concurrency, idempotency and DST canaries are pending. _(Fase 6)_
+- **SCHED-B04 · HIGH · order_integration:** orders.schedule_reservation_id exists in staging, but ORD-001 runtime wiring to the canonical reservation remains pending. _(Fase 6)_
 
 **Próximas ações:**
-- Require the exact independent staging authorization phrase before applying SCHED-A03 and SCHED-A04.
-- After authorized application, run read-only schema, grant, policy and migration-order verification.
-- Run rolled-back persona, idempotency, DST and concurrent overlap canaries before runtime activation.
-- Create the server composition root and wire ORD-001 only after all staging canaries pass.
+- Require the exact SCHED-A07 authorization before mutating migration history or executing rolled-back canaries.
+- Repair only the four frozen migration-history versions and verify exact local/remote alignment.
+- Execute the single-transaction SCHED-A07 canary and require rollback plus unchanged aggregate counts.
+- Create the trusted server composition root only after the repair and canaries pass.
 
 **Gate de saída:**
 - Concurrent booking attempts cannot reserve the same slot.
@@ -947,7 +946,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 1/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 226 arquivos no escopo; 64 referências a localStorage; 8 a sessionStorage; 269 referências mock; 8 referências de rede/Supabase; 25 marcadores de implementação pendente.
+**Evidência estática observada:** 227 arquivos no escopo; 64 referências a localStorage; 8 a sessionStorage; 269 referências mock; 8 referências de rede/Supabase; 25 marcadores de implementação pendente.
 
 **Evidências:**
 - The master plan identifies legal, privacy and commercial decisions as mandatory.
@@ -1007,7 +1006,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2326 arquivos no escopo; 505 referências a localStorage; 151 a sessionStorage; 880 referências mock; 590 referências de rede/Supabase; 89 marcadores de implementação pendente.
+**Evidência estática observada:** 2332 arquivos no escopo; 505 referências a localStorage; 151 a sessionStorage; 880 referências mock; 590 referências de rede/Supabase; 89 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
@@ -1068,4 +1067,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-07-31T10:41:00-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-07-31T11:18:00-03:00._

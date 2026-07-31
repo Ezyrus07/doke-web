@@ -134,10 +134,10 @@ assert(sched, 'SCHED-001 missing from matrix');
 assert(sched.maturity >= 1);
 assert(['none', 'contract_only', 'partial', 'canonical'].includes(sched.serverAuthority));
 assert.strictEqual(sched.securityGate, 'partial');
-assert.deepStrictEqual(sched.blockers.map((item) => item.id), ['SCHED-B02', 'SCHED-B03', 'SCHED-B04', 'SCHED-B05']);
+assert.deepStrictEqual(sched.blockers.map((item) => item.id), ['SCHED-B02', 'SCHED-B03', 'SCHED-B04']);
 assert(config.orderedNextActions[0].includes('SCHED-A04'));
-assert(sched.nextActions[0].includes('exact independent staging authorization'));
-assert(ord.nextActions[0].includes('exact independent staging authorization'));
+assert(sched.nextActions[0].includes('SCHED-A07'));
+assert(ord.nextActions[0].includes('SCHED-A07'));
 
 [CONFIG_PATH, DOC_PATH, EVIDENCE_PATH, CONTRACT_PATH, TEST_PATH,
   'scripts/audit-sched-001-a02-command-event-timezone-conflict-contract.js', WORKFLOW_PATH]

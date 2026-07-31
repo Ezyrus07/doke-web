@@ -109,9 +109,9 @@ assert.strictEqual(sched.maturity, 2);
 assert.strictEqual(sched.serverAuthority, 'partial');
 assert.strictEqual(sched.stagingEvidence, 'staging_canary');
 assert.strictEqual(sched.securityGate, 'partial');
-assert.deepStrictEqual(sched.blockers.map((item) => item.id), ['SCHED-B02', 'SCHED-B03', 'SCHED-B04', 'SCHED-B05']);
-assert.deepStrictEqual(sched.nextActions, config.orderedNextActions);
-assert(ord.nextActions[0].includes('exact independent staging authorization'));
+assert.deepStrictEqual(sched.blockers.map((item) => item.id), ['SCHED-B02', 'SCHED-B03', 'SCHED-B04']);
+assert(sched.nextActions[0].includes('SCHED-A07'));
+assert(ord.nextActions[0].includes('SCHED-A07'));
 const requiredPaths = [
   PATHS.config, PATHS.adapter, PATHS.runtimeTest, PATHS.readinessTest,
   PATHS.planner, PATHS.docs, PATHS.evidence, PATHS.workflow

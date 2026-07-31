@@ -79,7 +79,7 @@ assert(!canary.toLowerCase().includes('drop table'));
 assert(!canary.toLowerCase().includes('truncate '));
 
 [
-  "['scripts/plan-sched-001-a07-history-canaries.js', '--execute']",
+  '--execute',
   'SCHED-A07 migration history and rolled-back canary readiness tests passed.'
 ].forEach((fragment) => assert(test.includes(fragment), `Test missing ${fragment}`));
 

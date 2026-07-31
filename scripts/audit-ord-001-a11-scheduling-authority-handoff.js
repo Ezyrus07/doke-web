@@ -117,12 +117,12 @@ assert(ordB04.description.includes('canonical reservation reference'));
 assert(sched.maturity >= 1);
 assert(['none', 'contract_only', 'partial', 'canonical'].includes(sched.serverAuthority));
 assert(!sched.blockers.some((blocker) => blocker.id === 'SCHED-B01'));
-assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B05' && blocker.category === 'reservation_status_authority'));
+assert(!sched.blockers.some((blocker) => blocker.id === 'SCHED-B05'));
 assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B02'));
 assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B03'));
 assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B04' && blocker.category === 'order_integration'));
-assert(sched.nextActions[0].includes('exact independent staging authorization'));
-assert(ord.nextActions[0].includes('exact independent staging authorization'));
+assert(sched.nextActions[0].includes('SCHED-A07'));
+assert(ord.nextActions[0].includes('SCHED-A07'));
 
 [
   CONFIG_PATH,

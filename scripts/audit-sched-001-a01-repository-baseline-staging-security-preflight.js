@@ -135,9 +135,9 @@ assert(!sched.blockers.some((blocker) => blocker.id === 'SCHED-B01'));
 assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B02'));
 assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B03'));
 assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B04'));
-assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B05' && blocker.category === 'reservation_status_authority'));
-assert(sched.nextActions[0].includes('exact independent staging authorization'));
-assert(ord.nextActions[0].includes('exact independent staging authorization'));
+assert(!sched.blockers.some((blocker) => blocker.id === 'SCHED-B05'));
+assert(sched.nextActions[0].includes('SCHED-A07'));
+assert(ord.nextActions[0].includes('SCHED-A07'));
 
 [
   CONFIG_PATH,
