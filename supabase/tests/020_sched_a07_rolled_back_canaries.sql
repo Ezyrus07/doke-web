@@ -10,6 +10,7 @@ do $sched_a07_canary$
 declare
   v_client_id uuid;
   v_professional_id uuid;
+  v_service_id uuid;
   v_rule_id uuid := extensions.gen_random_uuid();
   v_order_1 uuid := extensions.gen_random_uuid();
   v_order_2 uuid := extensions.gen_random_uuid();
@@ -22,27 +23,40 @@ declare
   v_idempotency_duplicate_rejected boolean := false;
   v_event_duplicate_rejected boolean := false;
 begin
+  select s.id, s.professional_id
+    into v_service_id, v_professional_id
+  from public.services s
+  join public.service_versions sv
+    on sv.id = s.approved_version_id
+   and sv.service_id = s.id
+   and sv.professional_id = s.professional_id
+   and sv.review_status = 'approved'
+  join public.users p
+    on p.id = s.professional_id
+   and p.role = 'professional'
+   and p.status = 'active'
+  where s.status = 'published'
+    and s.moderation_status in ('published', 'changes_pending_review', 'changes_required')
+  order by s.created_at, s.id
+  limit 1;
+
   select id into v_client_id
   from public.users
-  where role = 'client' and status = 'active'
+  where role = 'client'
+    and status = 'active'
+    and id <> v_professional_id
   order by created_at, id
   limit 1;
 
-  select id into v_professional_id
-  from public.users
-  where role = 'professional' and status = 'active'
-  order by created_at, id
-  limit 1;
-
-  if v_client_id is null or v_professional_id is null then
-    raise exception 'SCHED_A07_CANARY_ACTORS_MISSING';
+  if v_client_id is null or v_professional_id is null or v_service_id is null then
+    raise exception 'SCHED_A07_CANARY_ACTORS_OR_SERVICE_MISSING';
   end if;
 
-  insert into public.orders (id, client_id, professional_id, title, status, metadata)
+  insert into public.orders (id, client_id, service_id, title, status, metadata)
   values
-    (v_order_1, v_client_id, v_professional_id, 'SCHED-A07 canary order 1', 'requested', '{"canary":"SCHED-A07"}'::jsonb),
-    (v_order_2, v_client_id, v_professional_id, 'SCHED-A07 canary order 2', 'requested', '{"canary":"SCHED-A07"}'::jsonb),
-    (v_order_3, v_client_id, v_professional_id, 'SCHED-A07 canary DST order', 'requested', '{"canary":"SCHED-A07"}'::jsonb);
+    (v_order_1, v_client_id, v_service_id, 'SCHED-A07 canary order 1', 'requested', '{"canary":"SCHED-A07"}'::jsonb),
+    (v_order_2, v_client_id, v_service_id, 'SCHED-A07 canary order 2', 'requested', '{"canary":"SCHED-A07"}'::jsonb),
+    (v_order_3, v_client_id, v_service_id, 'SCHED-A07 canary DST order', 'requested', '{"canary":"SCHED-A07"}'::jsonb);
 
   insert into public.schedule_availability_rules (
     id, professional_id, timezone, rule, status, version, created_by
