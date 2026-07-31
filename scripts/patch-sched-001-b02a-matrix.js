@@ -12,6 +12,8 @@ if (matrix.version !== '1.3.50') {
   throw new Error(`SCHED_B02A_MATRIX_VERSION_UNEXPECTED:${matrix.version}`);
 }
 
+patchCumulativeAudits();
+
 const sched = matrix.domains.find((domain) => domain.id === 'SCHED-001');
 if (!sched) throw new Error('SCHED_B02A_DOMAIN_MISSING');
 if (sched.maturity !== 3) throw new Error(`SCHED_B02A_MATURITY_UNEXPECTED:${sched.maturity}`);
@@ -55,6 +57,33 @@ matrix.updatedAt = process.env.SCHED_B02A_UPDATED_AT || new Date().toISOString()
 fs.writeFileSync(matrixPath, `${JSON.stringify(matrix, null, 2)}\n`);
 fs.writeFileSync(packagePath, `${JSON.stringify(pkg, null, 2)}\n`);
 console.log('SCHED-B02A matrix reconciliation prepared.');
+
+function patchCumulativeAudits() {
+  const paths = [
+    'scripts/audit-sched-001-a02-command-event-timezone-conflict-contract.js',
+    'scripts/audit-sched-001-a03-reservation-migration-local-contract.js',
+    'scripts/audit-sched-001-a04-server-command-runtime.js',
+    'scripts/audit-sched-001-a07-history-canary-readiness.js',
+    'scripts/audit-ord-001-a10-blocker-reconciliation.js',
+    'scripts/audit-ord-001-a11-scheduling-authority-handoff.js'
+  ];
+  const frozen = "  assert(sched.nextActions[0].includes('trusted server composition root'));";
+  const transition = [
+    "  if (compareVersions(matrix.version, '1.3.51') >= 0) {",
+    "    assert(sched.nextActions[0].includes('authenticated staging composition canary'));",
+    '  } else {',
+    "    assert(sched.nextActions[0].includes('trusted server composition root'));",
+    '  }'
+  ].join('\n');
+
+  paths.forEach((path) => {
+    let source = fs.readFileSync(path, 'utf8');
+    if (source.includes(transition)) return;
+    if (!source.includes(frozen)) return;
+    source = source.replace(frozen, transition);
+    fs.writeFileSync(path, source);
+  });
+}
 
 function appendUnique(list, value) {
   if (!Array.isArray(list)) throw new Error('SCHED_B02A_EXPECTED_ARRAY');
