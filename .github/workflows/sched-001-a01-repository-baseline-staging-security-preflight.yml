@@ -1,0 +1,27 @@
+name: Doke SCHED-A01 Repository Baseline and Staging Security Preflight
+
+on:
+  pull_request:
+    paths:
+      - 'config/sched-001-a01-repository-baseline-staging-security-preflight.json'
+      - 'docs/SCHED-001-A01-REPOSITORY-BASELINE-STAGING-SECURITY-PREFLIGHT.md'
+      - 'docs/validation/SCHED-001-A01-REPOSITORY-BASELINE-STAGING-SECURITY-PREFLIGHT.json'
+      - 'scripts/audit-sched-001-a01-repository-baseline-staging-security-preflight.js'
+      - '.github/workflows/sched-001-a01-repository-baseline-staging-security-preflight.yml'
+      - 'config/domain-completion-matrix.json'
+      - 'package.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Audit SCHED-A01 repository baseline and staging security preflight
+        run: node scripts/audit-sched-001-a01-repository-baseline-staging-security-preflight.js
