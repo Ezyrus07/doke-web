@@ -1,0 +1,146 @@
+{
+  "contractVersion": "sched-a04-server-command-runtime-v1",
+  "status": "repository_server_command_runtime_complete_transactional_adapter_and_staging_pending",
+  "domain": "SCHED-001",
+  "source": ["SCHED-A02-v2", "SCHED-A03-v2"],
+  "scope": "repository_only_server_command_runtime",
+  "authority": {
+    "canonicalOwner": "SCHED-001",
+    "browserCommandExecutionAllowed": false,
+    "professionalDirectBookingAllowed": false,
+    "orderParallelSchedulingAuthorityAllowed": false,
+    "runtimeRequiresTrustedServerActor": true
+  },
+  "modules": {
+    "service": "backend/modules/scheduling/scheduling-service.js",
+    "handlers": "backend/modules/scheduling/scheduling-command-handlers.js",
+    "repositoryPort": "backend/modules/scheduling/scheduling-repository-port.js",
+    "timezone": "backend/modules/scheduling/scheduling-timezone.js",
+    "normalization": "backend/modules/scheduling/scheduling-normalization.js",
+    "errors": "backend/modules/scheduling/scheduling-errors.js"
+  },
+  "commands": {
+    "count": 6,
+    "names": [
+      "upsert_availability_rule",
+      "create_schedule_hold",
+      "confirm_schedule_reservation",
+      "reschedule_reservation",
+      "cancel_schedule_reservation",
+      "expire_schedule_holds"
+    ],
+    "allUseOneRepositoryTransaction": true,
+    "allRequireIdempotencyKey": true,
+    "allValidateFrozenActorContract": true
+  },
+  "repositoryPort": {
+    "supabaseClientCoupled": false,
+    "networkCoupled": false,
+    "transactionCallbackRequired": true,
+    "requiredMethods": [
+      "claimIdempotency",
+      "completeIdempotency",
+      "getAvailabilityRule",
+      "insertAvailabilityRule",
+      "updateAvailabilityRule",
+      "getOrder",
+      "isRangeAvailable",
+      "listActiveReservations",
+      "insertReservation",
+      "getReservationForUpdate",
+      "updateReservation",
+      "insertEvent",
+      "projectOrderSchedule",
+      "clearOrderSchedule",
+      "listExpiredHolds"
+    ]
+  },
+  "idempotency": {
+    "hash": "sha256_of_stable_normalized_command_payload",
+    "scope": ["command_name", "principal_key", "idempotency_key"],
+    "sameKeySamePayload": "return_frozen_original_result",
+    "sameKeyDifferentPayload": "DOKE_SCHEDULE_IDEMPOTENCY_CONFLICT",
+    "sameKeyInProgress": "DOKE_SCHEDULE_IDEMPOTENCY_IN_PROGRESS",
+    "claimAndCompletionInsideCommandTransaction": true,
+    "failedCommandRollsBackClaim": true,
+    "minimumRetentionDays": 30
+  },
+  "time": {
+    "canonicalRange": "UTC starts_at/ends_at",
+    "rangeConvention": "[start,end)",
+    "ianaValidation": true,
+    "localProjectionVerifiedAgainstUtc": true,
+    "explicitStartOffsetRequired": true,
+    "nonexistentLocalTimeRejected": true,
+    "ambiguousLocalTimeAcceptedOnlyWithMatchingUtcAndOffset": true,
+    "dstFallbackLocalOrderingIsAuthority": false
+  },
+  "compatibilityMigration": {
+    "path": "supabase/migrations/20260731151000_sched_a04_dst_local_projection_compatibility.sql",
+    "applied": false,
+    "purpose": "drop_invalid_local_wall_clock_ordering_constraint",
+    "utcOrderingPreserved": true,
+    "stagingAuthorized": false
+  },
+  "transactionality": {
+    "reservationMutation": true,
+    "availabilityMutation": true,
+    "durableEventInsert": true,
+    "orderProjectionUpdate": true,
+    "idempotencyCompletion": true,
+    "rollbackOnAnyFailure": true
+  },
+  "conflict": {
+    "localPreflightUsesFrozenOverlapContract": true,
+    "adjacentRangesAllowed": true,
+    "databaseExclusionRemainsFinalAuthorityAfterApplication": true,
+    "postgresExclusionSqlState": "23P01",
+    "mappedCode": "DOKE_SCHEDULE_CONFLICT"
+  },
+  "orderIntegration": {
+    "confirmProjectsScheduleReservationIdAndScheduledAt": true,
+    "rescheduleUpdatesScheduledAtProjection": true,
+    "cancelClearsProjection": true,
+    "scheduledAtRemainsReadProjection": true,
+    "ordersRuntimeWired": false
+  },
+  "runtimeProof": {
+    "test": "scripts/test-sched-001-a04-scheduling-service-runtime.js",
+    "inMemoryTransactionalAdapter": true,
+    "commandsCovered": 6,
+    "networkRequests": 0,
+    "databaseRequests": 0,
+    "browserRequests": 0
+  },
+  "blockerDisposition": {
+    "SCHED-B02": "command_runtime_implemented_transactional_persistence_adapter_and_activation_pending",
+    "SCHED-B03": "local_conflict_runtime_and_sqlstate_mapping_proven_application_and_remote_concurrency_pending",
+    "SCHED-B04": "order_projection_port_implemented_schema_application_and_orders_wiring_pending",
+    "SCHED-B05": "server_actor_boundary_implemented_legacy_policy_hardening_application_pending"
+  },
+  "orderedNextActions": [
+    "Execute SCHED-A05 transactional persistence adapter and staging migration readiness, rollback and compatibility gate without applying migrations.",
+    "Require an exact independent authorization before applying the SCHED-A03 and SCHED-A04 migrations to staging.",
+    "After authorized application, run rolled-back persona, idempotency, DST and concurrent overlap canaries.",
+    "Wire ORD-001 to the canonical schedule_reservation_id only after the scheduling runtime is active in staging."
+  ],
+  "forbidden": {
+    "applyMigration": true,
+    "mutateStaging": true,
+    "deploy": true,
+    "changeCron": true,
+    "changeBilling": true,
+    "changeProduction": true,
+    "mergePullRequest": true,
+    "closeSchedBlockers": true
+  },
+  "evidence": {
+    "networkRequestsPerformed": 0,
+    "stagingReadsPerformed": 0,
+    "stagingMutationsPerformed": 0,
+    "migrationsApplied": 0,
+    "deploymentsPerformed": 0,
+    "productionChanged": false,
+    "pullRequestMerged": false
+  }
+}

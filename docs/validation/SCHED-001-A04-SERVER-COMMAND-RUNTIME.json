@@ -1,0 +1,66 @@
+{
+  "contractVersion": "sched-a04-server-command-runtime-v1",
+  "status": "repository_server_command_runtime_complete_transactional_adapter_and_staging_pending",
+  "domain": "SCHED-001",
+  "runtime": {
+    "commandCount": 6,
+    "transactionalRepositoryPort": true,
+    "supabaseCoupled": false,
+    "browserCallable": false,
+    "trustedServerActorsRequired": true,
+    "immutableResults": true
+  },
+  "proof": {
+    "test": "scripts/test-sched-001-a04-scheduling-service-runtime.js",
+    "inMemoryRollbackAdapter": true,
+    "allCommandsCovered": true,
+    "samePayloadReplayCovered": true,
+    "differentPayloadConflictCovered": true,
+    "activeClaimCoveredByRuntimeContract": true,
+    "overlapCovered": true,
+    "adjacencyCovered": true,
+    "versionConflictCovered": true,
+    "eventFailureRollbackCovered": true,
+    "orderProjectionCovered": true,
+    "terminalOrderCovered": true
+  },
+  "timezone": {
+    "ianaValidation": true,
+    "utcCanonical": true,
+    "localProjectionVerification": true,
+    "nonexistentLocalTimeRejected": true,
+    "ambiguousLocalTimeRequiresMatchingUtcAndOffset": true,
+    "dstFallbackCrossingCovered": true,
+    "localWallClockOrderingAuthority": false
+  },
+  "compatibilityMigration": {
+    "generated": true,
+    "path": "supabase/migrations/20260731151000_sched_a04_dst_local_projection_compatibility.sql",
+    "applied": false,
+    "dropsInvalidConstraint": "schedule_reservations_local_range",
+    "preservesUtcRangeConstraints": true
+  },
+  "transactionality": {
+    "idempotencyClaim": "same_transaction",
+    "canonicalMutation": "same_transaction",
+    "durableEvent": "same_transaction",
+    "orderProjection": "same_transaction",
+    "idempotencyCompletion": "same_transaction",
+    "failureRollsBackAll": true
+  },
+  "blockers": {
+    "closed": [],
+    "advanced": ["SCHED-B02", "SCHED-B03", "SCHED-B04", "SCHED-B05"],
+    "remainingOpen": ["SCHED-B02", "SCHED-B03", "SCHED-B04", "SCHED-B05"]
+  },
+  "execution": {
+    "networkRequestsPerformed": 0,
+    "stagingReadsPerformed": 0,
+    "stagingMutationsPerformed": 0,
+    "migrationsApplied": 0,
+    "deploymentsPerformed": 0,
+    "cronChangesPerformed": 0,
+    "productionChanged": false,
+    "pullRequestMerged": false
+  }
+}
