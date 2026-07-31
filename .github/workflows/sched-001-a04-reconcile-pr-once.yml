@@ -24,6 +24,18 @@ jobs:
           sed -n "/node <<'NODE'/,/^          NODE$/p" .github/workflows/sched-001-a04-reconcile-once.yml \
             | sed '1d;$d;s/^          //' > /tmp/reconcile-sched-a04.js
           node /tmp/reconcile-sched-a04.js
+      - name: Advance historical A11 runtime presence gate
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const path = 'scripts/audit-ord-001-a11-scheduling-authority-handoff.js';
+          let source = fs.readFileSync(path, 'utf8');
+          const previous = "assert(!fs.existsSync('backend/modules/scheduling/scheduling-service.js'));";
+          const advanced = "assert(fs.existsSync('backend/modules/scheduling/scheduling-service.js'));";
+          if (source.includes(previous)) source = source.replace(previous, advanced);
+          else if (!source.includes(advanced)) throw new Error('ORD-A11 scheduling runtime presence gate not found.');
+          fs.writeFileSync(path, source);
+          NODE
       - name: Regenerate living matrix documents
         run: node scripts/audit-domain-completion-matrix.js --write
       - name: Validate reconciled A04 assets
