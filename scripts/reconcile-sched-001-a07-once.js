@@ -67,6 +67,7 @@ const replacements = [
   ["assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B05' && blocker.category === 'reservation_status_authority'));", "assert(!sched.blockers.some((blocker) => blocker.id === 'SCHED-B05'));"],
   ["assert.deepStrictEqual(sched.nextActions, config.orderedNextActions);", "assert(sched.nextActions[0].includes('SCHED-A07'));"],
   ["assert(sched.nextActions[0].includes('SCHED-A05'));", "assert(sched.nextActions[0].includes('SCHED-A07'));"],
+  ["assert(sched.nextActions[0].includes('exact independent staging authorization'));", "assert(sched.nextActions[0].includes('SCHED-A07'));"],
   ["assert(ord.nextActions[0].includes('SCHED-A05'));", "assert(ord.nextActions[0].includes('SCHED-A07'));"],
   ["assert(ord.nextActions[0].includes('exact independent staging authorization'));", "assert(ord.nextActions[0].includes('SCHED-A07'));"],
   ["assert.deepStrictEqual(ord.nextActions.slice(1), config.orderedNextActions.slice(1));", "assert.strictEqual(ord.nextActions.length, 4);" ]
