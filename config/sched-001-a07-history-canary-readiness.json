@@ -1,0 +1,128 @@
+{
+  "contractVersion": "sched-a07-history-canary-readiness-v1",
+  "status": "staging_schema_applied_history_repair_and_rolled_back_canaries_pending_authorization",
+  "domain": "SCHED-001",
+  "source": ["SCHED-A05-v1", "SCHED-A06-staging-application"],
+  "scope": "repository_only_history_repair_and_rolled_back_canary_readiness",
+  "staging": {
+    "projectRef": "zwkczgewzbsorbrjuzpb",
+    "projectName": "doke-web-staging",
+    "postgresVersion": "17.6",
+    "canonicalSchemaApplied": true,
+    "schemaApplicationOrder": [
+      "sched_a03_reservation_authority",
+      "sched_a04_dst_local_projection_compatibility"
+    ],
+    "remoteRecordedMigrations": [
+      {"version": "20260731141315", "name": "sched_a03_reservation_authority"},
+      {"version": "20260731141349", "name": "sched_a04_dst_local_projection_compatibility"}
+    ],
+    "canonicalRepositoryMigrations": [
+      {"version": "20260731123000", "path": "supabase/migrations/20260731123000_sched_a03_reservation_authority.sql"},
+      {"version": "20260731151000", "path": "supabase/migrations/20260731151000_sched_a04_dst_local_projection_compatibility.sql"}
+    ],
+    "migrationHistoryAligned": false,
+    "runtimeActivated": false,
+    "ordWired": false,
+    "workerActivated": false,
+    "canonicalRows": {
+      "availabilityRules": 0,
+      "reservations": 0,
+      "idempotency": 0,
+      "events": 0,
+      "ordersWithReservationReference": 0
+    },
+    "canaryPrerequisites": {
+      "clientActors": 1,
+      "professionalActors": 1,
+      "orders": 0,
+      "syntheticOrdersRequiredInsideTransaction": true
+    }
+  },
+  "historyRepair": {
+    "authority": "Supabase CLI migration repair",
+    "directSchemaMigrationsTableMutationAllowed": false,
+    "localFileRenameAllowed": false,
+    "migrationReapplicationAllowed": false,
+    "requiredSequence": [
+      "verify schema objects and aggregate counts are unchanged",
+      "mark remote generated versions 20260731141315 and 20260731141349 as reverted",
+      "mark canonical repository versions 20260731123000 and 20260731151000 as applied",
+      "run supabase migration list and require exact local/remote alignment",
+      "abort before canaries when alignment is not exact"
+    ],
+    "commands": [
+      "supabase migration repair 20260731141315 20260731141349 --status reverted --linked",
+      "supabase migration repair 20260731123000 20260731151000 --status applied --linked",
+      "supabase migration list --linked"
+    ],
+    "schemaMutationExpected": false,
+    "migrationHistoryMutationExpected": true
+  },
+  "rolledBackCanaries": {
+    "path": "supabase/tests/020_sched_a07_rolled_back_canaries.sql",
+    "transactionRequired": true,
+    "finalStatement": "rollback",
+    "persistentRowsAllowed": false,
+    "tests": [
+      "synthetic client and professional selection without exposing identity values",
+      "synthetic order creation inside the transaction",
+      "canonical availability-rule insert",
+      "active reservation overlap rejected by GiST exclusion",
+      "adjacent half-open range accepted",
+      "DST fall-back local wall-clock reversal accepted while UTC remains ordered",
+      "idempotency scope uniqueness enforced",
+      "durable event aggregate uniqueness enforced",
+      "order schedule_reservation_id and scheduled_at projection validated",
+      "all synthetic rows removed by rollback"
+    ]
+  },
+  "authorization": {
+    "exactPhrase": "I_EXPLICITLY_AUTHORIZE_SCHED_A07_MIGRATION_HISTORY_REPAIR_AND_ROLLED_BACK_CANARIES_ON_DOKE_STAGING",
+    "genericCommandsRejected": ["proximo", "próximo", "pode prosseguir", "continue"],
+    "authorizedScopeAfterExactPhrase": [
+      "repair only the four specified SCHED migration-history versions on doke-web-staging",
+      "run migration-list alignment verification",
+      "execute only the SCHED-A07 SQL canary inside one transaction ending in rollback",
+      "run read-only post-canary aggregate verification"
+    ],
+    "stillBlockedAfterExactPhrase": [
+      "production database changes",
+      "persistent canary data",
+      "scheduling runtime activation",
+      "ORD-001 wiring",
+      "Cron or hold-expiration worker activation",
+      "Edge Function or Railway deployment",
+      "billing, account or secret creation",
+      "merge of pull request 25"
+    ]
+  },
+  "blockerDisposition": {
+    "SCHED-B02": "schema_and_adapter_present_composition_root_and_runtime_activation_pending",
+    "SCHED-B03": "schema_applied_history_alignment_and_rolled_back_remote_concurrency_canaries_pending",
+    "SCHED-B04": "order_projection_schema_present_ord_runtime_wiring_pending",
+    "SCHED-B05": "closed_by_authorized_a03_application_and_read_only_policy_verification"
+  },
+  "orderedNextActions": [
+    "Require the exact SCHED-A07 authorization before mutating migration history or executing rolled-back canaries.",
+    "Repair only the four frozen migration-history versions and verify exact local/remote alignment.",
+    "Execute the single-transaction SCHED-A07 canary and require rollback plus unchanged aggregate counts.",
+    "Create the trusted server composition root only after the repair and canaries pass."
+  ],
+  "capabilities": {
+    "dryRunAvailable": true,
+    "executeModeAvailable": false,
+    "migrationHistoryMutationAvailable": false,
+    "databaseCanaryMutationAvailable": false,
+    "productionAllowed": false
+  },
+  "evidence": {
+    "stagingReadsPerformed": 1,
+    "stagingMutationsPerformed": 0,
+    "migrationHistoryMutationsPerformed": 0,
+    "canariesExecuted": 0,
+    "deploymentsPerformed": 0,
+    "productionChanged": false,
+    "pullRequestMerged": false
+  }
+}
