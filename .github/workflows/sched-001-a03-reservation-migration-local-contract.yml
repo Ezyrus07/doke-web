@@ -1,0 +1,39 @@
+name: Doke SCHED-A03 Reservation Migration Local Contract
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/migrations/20260731123000_sched_a03_reservation_authority.sql'
+      - 'config/sched-001-a03-reservation-migration-local-contract.json'
+      - 'docs/SCHED-001-A03-RESERVATION-MIGRATION-LOCAL-CONTRACT.md'
+      - 'docs/validation/SCHED-001-A03-RESERVATION-MIGRATION-LOCAL-CONTRACT.json'
+      - 'scripts/audit-sched-001-a03-reservation-migration-local-contract.js'
+      - 'scripts/test-sched-001-a03-reservation-migration-static.js'
+      - '.github/workflows/sched-001-a03-reservation-migration-local-contract.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  migration-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Audit SCHED-A03 repository-only migration contract
+        run: node scripts/audit-sched-001-a03-reservation-migration-local-contract.js
+      - name: Test SCHED-A03 migration statically
+        run: node scripts/test-sched-001-a03-reservation-migration-static.js
+      - name: Preserve SCHED-A02 command and conflict contract
+        run: node scripts/audit-sched-001-a02-command-event-timezone-conflict-contract.js
+      - name: Preserve SCHED-A01 staging baseline
+        run: node scripts/audit-sched-001-a01-repository-baseline-staging-security-preflight.js
+      - name: Preserve ORD-A11 authority handoff
+        run: node scripts/audit-ord-001-a11-scheduling-authority-handoff.js
+      - name: Audit completion matrix
+        run: node scripts/audit-domain-completion-matrix.js
+
+# Permanent repository-only gate. No migration application, network, deploy, Cron or staging mutation.

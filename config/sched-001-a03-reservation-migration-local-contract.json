@@ -1,0 +1,90 @@
+{
+  "contractVersion": "sched-a03-reservation-migration-local-contract-v1",
+  "status": "repository_migration_generated_local_static_tests_only",
+  "domain": "SCHED-001",
+  "source": ["SCHED-A01", "SCHED-A02"],
+  "scope": "repository_only_migration_generation",
+  "migration": {
+    "path": "supabase/migrations/20260731123000_sched_a03_reservation_authority.sql",
+    "applied": false,
+    "stagingAuthorized": false,
+    "productionAuthorized": false,
+    "requiredExtension": "btree_gist",
+    "canonicalReservationTable": "public.schedule_reservations",
+    "idempotencyTable": "private.schedule_command_idempotency",
+    "eventTable": "private.schedule_domain_events",
+    "orderReference": "public.orders.schedule_reservation_id"
+  },
+  "reservationAuthority": {
+    "browserDmlAllowed": false,
+    "serviceRoleCrudOnly": true,
+    "states": ["held", "confirmed", "cancelled", "expired"],
+    "activeOccupancyStates": ["held", "confirmed"],
+    "minimumDurationMinutes": 15,
+    "maximumDurationDays": 30,
+    "rangeConvention": "[start,end)",
+    "optimisticVersionField": "version"
+  },
+  "conflictProtection": {
+    "primitive": "partial_gist_exclusion_constraint",
+    "professionalEquality": true,
+    "rangeExpression": "tstzrange(starts_at, ends_at, '[)')",
+    "overlapOperator": "&&",
+    "predicate": "status in ('held','confirmed')",
+    "adjacentRangesConflict": false
+  },
+  "idempotency": {
+    "uniqueScope": ["command_name", "principal_key", "idempotency_key"],
+    "requestHash": "sha256_hex",
+    "minimumRetentionDays": 30
+  },
+  "events": {
+    "durable": true,
+    "uniqueEventKey": true,
+    "uniqueReservationSequence": true,
+    "eventTypes": [
+      "schedule.availability_rule_upserted",
+      "schedule.hold_created",
+      "schedule.hold_expired",
+      "schedule.confirmed",
+      "schedule.rescheduled",
+      "schedule.cancelled"
+    ]
+  },
+  "legacyAvailabilityHardening": {
+    "professionalMayInsertBooked": false,
+    "professionalMayUpdateToBooked": false,
+    "allowedProfessionalStatuses": ["available", "blocked"]
+  },
+  "blockerDisposition": {
+    "SCHED-B02": "migration_generated_server_command_runtime_pending",
+    "SCHED-B03": "migration_generated_application_and_concurrency_proof_pending",
+    "SCHED-B04": "order_reference_generated_application_and_runtime_integration_pending",
+    "SCHED-B05": "policy_hardening_generated_application_pending"
+  },
+  "orderedNextActions": [
+    "Implement SCHED-A04 server scheduling commands against the frozen A02 contract and generated A03 schema.",
+    "Prepare a separately authorized staging migration readiness gate with preflight, rollback and compatibility checks.",
+    "Apply the A03 migration only after an exact independent staging authorization.",
+    "Run remote persona and concurrent overlap canaries under rollback after application."
+  ],
+  "forbidden": {
+    "applyMigration": true,
+    "mutateStaging": true,
+    "deploy": true,
+    "changeCron": true,
+    "changeBilling": true,
+    "changeProduction": true,
+    "mergePullRequest": true,
+    "closeSchedBlockers": true
+  },
+  "evidence": {
+    "networkRequestsPerformed": 0,
+    "stagingReadsPerformed": 0,
+    "stagingMutationsPerformed": 0,
+    "migrationsApplied": 0,
+    "deploymentsPerformed": 0,
+    "productionChanged": false,
+    "pullRequestMerged": false
+  }
+}
