@@ -53,6 +53,10 @@ Repeated provider-selection actions are collapsed into one exact, fail-closed in
 
 `ORD-A11` completed the ownership handoff and `SCHED-A01` completed the read-only staging security preflight. `SCHED-B01` is closed, while `ORD-B04` remains open through the implementation blockers owned by `SCHED-001`.
 
+## Scheduling handoff progression
+
+`ORD-A11` completed the ownership handoff and `SCHED-A01` completed the read-only staging security preflight. `SCHED-B01` is closed, while `ORD-B04` remains open through the implementation blockers owned by `SCHED-001`.
+
 ## Cumulative contract compatibility
 
 The reconciled blocker descriptions retain the canonical clauses required by earlier gates: `authorization envelope`, `external staging release provider` and `explicit provider selection`. This preserves the cumulative A06, A08 and A09 contracts while keeping the A10/A11 ownership and sequencing authoritative.

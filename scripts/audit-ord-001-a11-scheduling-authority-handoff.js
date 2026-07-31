@@ -53,6 +53,7 @@ assert.strictEqual(config.decision.genericContinuationAuthorizesLiveChanges, fal
 assert.strictEqual(config.observedRepositoryState.availabilityRlsEnablementMigrationExists, true);
 assert.strictEqual(config.observedRepositoryState.roleSeparatedAvailabilityReadPoliciesExist, true);
 assert.strictEqual(config.observedRepositoryState.stagingRlsVerificationRecordedForSched, true);
+assert.strictEqual(config.observedRepositoryState.stagingRlsVerificationRecordedForSched, true);
 assert.strictEqual(config.observedRepositoryState.schedulingBackendModuleImplemented, false);
 assert.strictEqual(config.observedRepositoryState.databaseAntiDoubleBookingContractExists, false);
 assert.strictEqual(config.observedRepositoryState.ordersAcceptRawScheduledAt, true);
