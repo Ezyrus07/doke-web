@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 1033 arquivos no escopo; 248 referências a localStorage; 78 a sessionStorage; 557 referências mock; 194 referências de rede/Supabase; 35 marcadores de implementação pendente.
+**Evidência estática observada:** 1036 arquivos no escopo; 248 referências a localStorage; 78 a sessionStorage; 557 referências mock; 194 referências de rede/Supabase; 35 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -520,7 +520,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI local; servidor partial; staging staging canary; segurança partial; produção blocked.
 
-**Evidência estática observada:** 1002 arquivos no escopo; 186 referências a localStorage; 70 a sessionStorage; 301 referências mock; 193 referências de rede/Supabase; 19 marcadores de implementação pendente.
+**Evidência estática observada:** 1005 arquivos no escopo; 186 referências a localStorage; 70 a sessionStorage; 301 referências mock; 193 referências de rede/Supabase; 19 marcadores de implementação pendente.
 
 **Páginas:** `anunciar-servico.html`, `pedidos.html`, `orcamento.html`.
 
@@ -544,16 +544,17 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - The canary fixture uses a published service with an approved version because requested orders require canonical service authority.
 - Post-rollback verification found zero schedule rules, reservations, idempotency rows, schedule events, canary orders and orders linked to a schedule reservation; no test data remained persisted.
 - Runtime activation, trusted composition root, ORD-001 wiring, workers, Cron, deploy, production and merge remain blocked.
+- SCHED-B02A implements a fail-closed trusted composition root that composes the existing PostgreSQL adapter and scheduling service only when the exact staging flag, environment and project ref match; no runtime, database, deployment or production mutation occurred.
 
 **Bloqueadores:**
-- **SCHED-B02 · CRITICAL · server_authority:** Canonical schema and PostgreSQL adapter exist in staging, but the trusted server composition root and runtime activation are pending. _(Fase 6)_
+- **SCHED-B02 · CRITICAL · server_authority:** The trusted composition root exists with an exact staging-only fail-closed gate, but authenticated staging activation and command-boundary canaries are pending. _(Fase 6)_
 - **SCHED-B04 · HIGH · order_integration:** orders.schedule_reservation_id exists in staging, but ORD-001 runtime wiring to the canonical reservation remains pending. _(Fase 6)_
 
 **Próximas ações:**
-- Create the trusted server composition root for the existing scheduling command runtime and PostgreSQL adapter behind a staging-only fail-closed activation gate.
-- Wire ORD-001 to consume schedule_reservation_id and scheduled_at only as the canonical reservation reference and projection, removing raw scheduled_at booking authority.
-- Add authenticated persona and command-boundary canaries for the activated server composition before any frontend authority switch.
-- Keep production, Cron, workers, deployment and merge blocked until SCHED-B02 and SCHED-B04 have independent evidence.
+- Execute the SCHED-B02B authenticated staging composition canary for client, professional, support and administrator personas with rollback and residue verification.
+- Activate the trusted scheduling composition root only in staging behind the exact fail-closed environment and project-ref gate after explicit authorization.
+- Wire ORD-001 to consume schedule_reservation_id and scheduled_at only as the canonical reservation reference and projection after SCHED-B02 is independently closed.
+- Keep production, frontend authority switch, Cron, workers, deployment and merge blocked until SCHED-B02 and SCHED-B04 have independent evidence.
 
 **Gate de saída:**
 - Concurrent booking attempts cannot reserve the same slot.
@@ -946,7 +947,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 1/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 228 arquivos no escopo; 64 referências a localStorage; 8 a sessionStorage; 269 referências mock; 8 referências de rede/Supabase; 25 marcadores de implementação pendente.
+**Evidência estática observada:** 229 arquivos no escopo; 64 referências a localStorage; 8 a sessionStorage; 269 referências mock; 8 referências de rede/Supabase; 25 marcadores de implementação pendente.
 
 **Evidências:**
 - The master plan identifies legal, privacy and commercial decisions as mandatory.
@@ -1006,7 +1007,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2335 arquivos no escopo; 505 referências a localStorage; 151 a sessionStorage; 880 referências mock; 591 referências de rede/Supabase; 89 marcadores de implementação pendente.
+**Evidência estática observada:** 2340 arquivos no escopo; 505 referências a localStorage; 151 a sessionStorage; 880 referências mock; 591 referências de rede/Supabase; 89 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
@@ -1067,4 +1068,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-07-31T13:31:23-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-07-31T15:46:13-03:00._
