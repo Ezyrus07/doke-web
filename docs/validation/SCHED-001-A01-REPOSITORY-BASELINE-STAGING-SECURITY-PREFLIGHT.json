@@ -1,0 +1,118 @@
+{
+  "contractVersion": "sched-a01-repository-baseline-staging-security-preflight-v1",
+  "status": "read_only_staging_security_preflight_complete_foundational_authority_incomplete",
+  "observedAt": "2026-07-31T08:20:00-03:00",
+  "target": {
+    "environment": "staging",
+    "projectRef": "zwkczgewzbsorbrjuzpb",
+    "table": "public.availability_slots"
+  },
+  "repository": {
+    "pullRequest": 25,
+    "branch": "ord/ord-001-baseline-audit",
+    "preflightHead": "edb24e3e0298fbd7db22c0df6ea3004e56bec658"
+  },
+  "schema": {
+    "exists": true,
+    "owner": "postgres",
+    "rlsEnabled": true,
+    "forceRls": false,
+    "columns": [
+      "id",
+      "professional_id",
+      "starts_at",
+      "ends_at",
+      "status",
+      "created_at"
+    ],
+    "constraints": [
+      "availability_slots_pkey",
+      "availability_slots_professional_id_fkey",
+      "availability_slots_check",
+      "availability_slots_status_check"
+    ],
+    "indexes": [
+      "availability_slots_pkey",
+      "idx_availability_search_future",
+      "idx_availability_slots_professional_start"
+    ],
+    "triggers": []
+  },
+  "appliedMigrations": [
+    {
+      "version": "20260722161200",
+      "name": "availability_reviews_authority"
+    },
+    {
+      "version": "20260722162204",
+      "name": "public_policy_role_separation"
+    }
+  ],
+  "policies": {
+    "count": 5,
+    "names": [
+      "availability_slots_anon_select",
+      "availability_slots_authenticated_select",
+      "availability_slots_owner_delete",
+      "availability_slots_owner_insert",
+      "availability_slots_owner_update"
+    ],
+    "anonymousFutureAvailableOnly": true,
+    "authenticatedOwnerOperatorVisibility": true,
+    "ownerInsertRestrictedToProfessional": true,
+    "ownerUpdateRestrictedToProfessional": true,
+    "ownerDeleteRejectsBooked": true,
+    "ownerUpdateCanSetBooked": true
+  },
+  "grants": {
+    "anon": ["SELECT"],
+    "authenticated": ["DELETE", "INSERT", "SELECT", "UPDATE"],
+    "service_role": ["DELETE", "INSERT", "SELECT", "UPDATE"],
+    "publicGrantPresent": false
+  },
+  "roles": {
+    "anonBypassRls": false,
+    "authenticatedBypassRls": false,
+    "serviceRoleBypassRls": true,
+    "postgresBypassRls": true
+  },
+  "data": {
+    "availabilityRows": 0,
+    "availableRows": 0,
+    "blockedRows": 0,
+    "bookedRows": 0,
+    "futureRows": 0,
+    "invalidRanges": 0,
+    "activeOverlapPairs": 0,
+    "orderRows": 0,
+    "scheduledOrderRows": 0
+  },
+  "missingCapabilities": {
+    "canonicalReservationTable": true,
+    "canonicalHoldTable": true,
+    "timezoneColumn": true,
+    "orderLink": true,
+    "holdExpiration": true,
+    "idempotencyKey": true,
+    "updatedAt": true,
+    "optimisticVersion": true,
+    "activeRangeExclusionConstraint": true,
+    "statusTransitionTrigger": true,
+    "ordersScheduleReservationReference": true,
+    "btreeGistExtension": true
+  },
+  "blockers": {
+    "closed": ["SCHED-B01"],
+    "open": ["SCHED-B02", "SCHED-B03", "SCHED-B04", "SCHED-B05"],
+    "new": ["SCHED-B05"]
+  },
+  "execution": {
+    "readOnlySqlQueriesExecuted": 2,
+    "stagingReadsPerformed": 2,
+    "stagingMutationsPerformed": 0,
+    "migrationsApplied": 0,
+    "deploymentsPerformed": 0,
+    "productionChanged": false,
+    "pullRequestMerged": false
+  }
+}
