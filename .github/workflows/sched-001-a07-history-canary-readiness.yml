@@ -134,11 +134,22 @@ jobs:
           while IFS= read -r -d '' file; do
             mode="$(git ls-files -s -- "$file" | awk 'NR == 1 { print $1 }')"
             [ -n "$mode" ] || mode=100644
-            content="$(base64 -w0 "$file")"
-            blob_sha="$(
-              jq -n --arg content "$content" '{content:$content,encoding:"base64"}' \
-                | gh api --method POST "repos/$GITHUB_REPOSITORY/git/blobs" --input - --jq '.sha'
-            )"
+            payload="$(mktemp)"
+            python3 - "$file" "$payload" <<'PY'
+          import base64
+          import json
+          import pathlib
+          import sys
+
+          source = pathlib.Path(sys.argv[1])
+          target = pathlib.Path(sys.argv[2])
+          target.write_text(json.dumps({
+              "content": base64.b64encode(source.read_bytes()).decode("ascii"),
+              "encoding": "base64",
+          }), encoding="utf-8")
+          PY
+            blob_sha="$(gh api --method POST "repos/$GITHUB_REPOSITORY/git/blobs" --input "$payload" --jq '.sha')"
+            rm -f "$payload"
             jq --arg path "$file" --arg mode "$mode" --arg sha "$blob_sha" \
               '. + [{path:$path,mode:$mode,type:"blob",sha:$sha}]' \
               "$TREE_ENTRIES" > "$TREE_ENTRIES.next"
@@ -152,20 +163,20 @@ jobs:
             mv "$TREE_ENTRIES.next" "$TREE_ENTRIES"
           done < <(git diff --cached --name-only --diff-filter=D -z)
 
-          TREE_SHA="$(
-            jq -n --arg base_tree "$BASE_TREE_SHA" --slurpfile tree "$TREE_ENTRIES" \
-              '{base_tree:$base_tree,tree:$tree[0]}' \
-              | gh api --method POST "repos/$GITHUB_REPOSITORY/git/trees" --input - --jq '.sha'
-          )"
+          tree_payload="$(mktemp)"
+          jq -n --arg base_tree "$BASE_TREE_SHA" --slurpfile tree "$TREE_ENTRIES" \
+            '{base_tree:$base_tree,tree:$tree[0]}' > "$tree_payload"
+          TREE_SHA="$(gh api --method POST "repos/$GITHUB_REPOSITORY/git/trees" --input "$tree_payload" --jq '.sha')"
+          rm -f "$tree_payload"
 
-          COMMIT_SHA="$(
-            jq -n \
-              --arg message 'docs(sched): close A09 staging reconciliation evidence' \
-              --arg tree "$TREE_SHA" \
-              --arg parent "$BASE_SHA" \
-              '{message:$message,tree:$tree,parents:[$parent]}' \
-              | gh api --method POST "repos/$GITHUB_REPOSITORY/git/commits" --input - --jq '.sha'
-          )"
+          commit_payload="$(mktemp)"
+          jq -n \
+            --arg message 'docs(sched): close A09 staging reconciliation evidence' \
+            --arg tree "$TREE_SHA" \
+            --arg parent "$BASE_SHA" \
+            '{message:$message,tree:$tree,parents:[$parent]}' > "$commit_payload"
+          COMMIT_SHA="$(gh api --method POST "repos/$GITHUB_REPOSITORY/git/commits" --input "$commit_payload" --jq '.sha')"
+          rm -f "$commit_payload"
 
           OUTPUT_DIR="$RUNNER_TEMP/sched-a09-git-object"
           mkdir -p "$OUTPUT_DIR"
