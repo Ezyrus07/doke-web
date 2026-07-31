@@ -53,12 +53,12 @@ assert.strictEqual(config.decision.genericContinuationAuthorizesLiveChanges, fal
 assert.strictEqual(config.observedRepositoryState.availabilityRlsEnablementMigrationExists, true);
 assert.strictEqual(config.observedRepositoryState.roleSeparatedAvailabilityReadPoliciesExist, true);
 assert.strictEqual(config.observedRepositoryState.stagingRlsVerificationRecordedForSched, true);
-assert.strictEqual(config.observedRepositoryState.stagingRlsVerificationRecordedForSched, true);
 assert.strictEqual(config.observedRepositoryState.schedulingBackendModuleImplemented, false);
 assert.strictEqual(config.observedRepositoryState.databaseAntiDoubleBookingContractExists, false);
 assert.strictEqual(config.observedRepositoryState.ordersAcceptRawScheduledAt, true);
 assert.strictEqual(config.observedRepositoryState.orderReservationReferenceExists, false);
 assert.strictEqual(config.orderedNextActions.length, 4);
+assert(config.orderedNextActions[0].includes('SCHED-A03'));
 assert.strictEqual(config.targetModel.scheduleReservations.requiredDatabaseRule, 'active held or confirmed ranges for one professional must not overlap');
 assert(config.targetModel.scheduleReservations.preferredPostgresPrimitive.includes('GiST exclusion constraint'));
 assert.strictEqual(config.timePolicy.canonicalInstantStorage, 'UTC timestamptz');
@@ -105,7 +105,7 @@ const compareVersions = (left, right) => {
   }
   return 0;
 };
-assert(compareVersions(matrix.version, '1.3.44') >= 0, `Matrix version ${matrix.version} predates SCHED-A01.`);
+assert(compareVersions(matrix.version, '1.3.46') >= 0, `Matrix version ${matrix.version} predates SCHED-A03.`);
 const ord = matrix.domains.find((domain) => domain.id === 'ORD-001');
 const sched = matrix.domains.find((domain) => domain.id === 'SCHED-001');
 assert(ord, 'ORD-001 missing from completion matrix');
@@ -121,7 +121,8 @@ assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B05' && blocker.ca
 assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B02'));
 assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B03'));
 assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B04' && blocker.category === 'order_integration'));
-assert.deepStrictEqual(sched.nextActions, config.orderedNextActions);
+assert(sched.nextActions[0].includes('SCHED-A04'));
+assert(ord.nextActions[0].includes('SCHED-A04'));
 
 [
   CONFIG_PATH,
