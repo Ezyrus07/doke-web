@@ -1,0 +1,29 @@
+name: Doke ORD-A10 Blocker Reconciliation
+
+on:
+  pull_request:
+    paths:
+      - 'config/ord-001-a10-blocker-reconciliation.json'
+      - 'docs/ORD-001-A10-BLOCKER-RECONCILIATION.md'
+      - 'docs/validation/ORD-001-A10-BLOCKER-RECONCILIATION.json'
+      - 'scripts/audit-ord-001-a10-blocker-reconciliation.js'
+      - '.github/workflows/ord-001-a10-blocker-reconciliation.yml'
+      - 'config/domain-completion-matrix.json'
+      - 'package.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Audit ORD-A10 blocker reconciliation
+        run: |
+          node scripts/audit-ord-001-a10-blocker-reconciliation.js
+          node scripts/audit-domain-completion-matrix.js
