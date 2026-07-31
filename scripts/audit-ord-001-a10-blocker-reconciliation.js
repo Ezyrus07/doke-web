@@ -20,6 +20,16 @@ const matrix = JSON.parse(fs.readFileSync(MATRIX_PATH, 'utf8'));
 const docs = fs.readFileSync(DOC_PATH, 'utf8');
 const workflow = fs.readFileSync(WORKFLOW_PATH, 'utf8');
 
+const compareVersions = (left, right) => {
+  const a = String(left).split('.').map(Number);
+  const b = String(right).split('.').map(Number);
+  for (let index = 0; index < Math.max(a.length, b.length); index += 1) {
+    const delta = (a[index] || 0) - (b[index] || 0);
+    if (delta !== 0) return delta;
+  }
+  return 0;
+};
+
 assert.strictEqual(config.contractVersion, 'ord-a10-blocker-reconciliation-v1');
 assert.strictEqual(config.status, 'repository_reconciliation_complete_external_and_cross_domain_blockers_remain');
 assert.strictEqual(config.domain, 'ORD-001');
@@ -58,11 +68,18 @@ assert.strictEqual(evidence.execution.stagingMutationsPerformed, 0);
 assert.strictEqual(evidence.execution.deploymentsPerformed, 0);
 assert.strictEqual(evidence.execution.productionChanged, false);
 
-assert.strictEqual(matrix.version, '1.3.41');
+assert(compareVersions(matrix.version, '1.3.41') >= 0, `Matrix version ${matrix.version} predates ORD-A10.`);
 const ord = matrix.domains.find((domain) => domain.id === 'ORD-001');
 assert(ord, 'ORD-001 domain missing from completion matrix');
 assert.deepStrictEqual(ord.blockers.map((blocker) => blocker.id), ['ORD-B02', 'ORD-B03', 'ORD-B04', 'ORD-B05']);
 assert.deepStrictEqual(ord.nextActions, config.orderedNextActions);
+
+const blockers = Object.fromEntries(ord.blockers.map((blocker) => [blocker.id, blocker]));
+assert(blockers['ORD-B02'].description.includes('authorization envelope'));
+assert(blockers['ORD-B05'].description.includes('external staging release provider'));
+assert(blockers['ORD-B05'].description.includes('explicit provider selection'));
+assert(blockers['ORD-B03'].description.includes('PAY-001'));
+assert(blockers['ORD-B04'].description.includes('SCHED-001'));
 
 [
   CONFIG_PATH,
