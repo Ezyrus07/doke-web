@@ -119,10 +119,17 @@ assert(['none', 'contract_only', 'partial', 'canonical'].includes(sched.serverAu
 assert(!sched.blockers.some((blocker) => blocker.id === 'SCHED-B01'));
 assert(!sched.blockers.some((blocker) => blocker.id === 'SCHED-B05'));
 assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B02'));
-assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B03'));
 assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B04' && blocker.category === 'order_integration'));
-assert(sched.nextActions[0].includes('SCHED-A07'));
-assert(ord.nextActions[0].includes('SCHED-A07'));
+if (compareVersions(matrix.version, '1.3.50') >= 0 && sched.maturity === 3) {
+  assert(!sched.blockers.some((blocker) => blocker.id === 'SCHED-B03'));
+  assert(sched.nextActions[0].includes('trusted server composition root'));
+  assert(ord.nextActions[0].includes('Keep ORD-B04 handed to SCHED-001'));
+  assert(ord.evidence.some((item) => item.includes('SCHED-A08 completed the official migration-history repair')));
+} else {
+  assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B03'));
+  assert(sched.nextActions[0].includes('SCHED-A07'));
+  assert(ord.nextActions[0].includes('SCHED-A07'));
+}
 
 [
   CONFIG_PATH,

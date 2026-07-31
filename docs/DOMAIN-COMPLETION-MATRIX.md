@@ -6,7 +6,7 @@ Este é o mapa operacional obrigatório para concluir a lógica da Doke. Ele cru
 
 - Domínios/programas mapeados: **23**.
 - Fluxos críticos mapeados: **15**.
-- Maturidade média atual: **2.87/6**.
+- Maturidade média atual: **2.91/6**.
 - Bloqueadores críticos explícitos: **13**.
 - Domínios prontos para produção: **0**.
 - Runtime padrão: dados **mock**, auth **supabase**, rede **desativada**.
@@ -41,8 +41,8 @@ RLS habilitado, mas sem policy: .
 | ---: | --- | ---: |
 | 0 | not started | 1 |
 | 1 | foundation only | 2 |
-| 2 | local functional | 5 |
-| 3 | staging canary or hybrid | 6 |
+| 2 | local functional | 4 |
+| 3 | staging canary or hybrid | 7 |
 | 4 | staging operational | 9 |
 | 5 | private beta ready | 0 |
 | 6 | production ready | 0 |
@@ -58,7 +58,7 @@ RLS habilitado, mas sem policy: .
 | 5 | CAT-001 | Catálogo, publicação e moderação de serviços | 4/6 | remote | canonical | staging operational | partial | blocked |
 | 6 | SEARCH-001 | Busca, descoberta, favoritos e ranking | 4/6 | hybrid | canonical | staging operational | partial | blocked |
 | 7 | ORD-001 | Orçamentos, propostas e ciclo de pedidos | 4/6 | hybrid | canonical | staging operational | partial | blocked |
-| 8 | SCHED-001 | Agenda, disponibilidade e execução do serviço | 2/6 | local | partial | staging canary | partial | blocked |
+| 8 | SCHED-001 | Agenda, disponibilidade e execução do serviço | 3/6 | local | partial | staging canary | partial | blocked |
 | 9 | MSG-001 | Mensagens, conversas, presença e anexos | 3/6 | hybrid | partial | staging canary | partial | blocked |
 | 10 | NTF-001 | Notificações, e-mail e push | 3/6 | hybrid | partial | staging canary | blocked | blocked |
 | 11 | PAY-001 | Pagamentos, cobrança, escrow e webhooks | 2/6 | local | contract only | local e2e | blocked | blocked |
@@ -106,7 +106,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 | FLOW-03 | Tornar-se profissional e KYC | staging operational | PROF-001 | profile_setup → document_upload → submit → admin_review → decision → role_activation | PROF-B04, PROF-B05 |
 | FLOW-04 | Publicar serviço | hybrid | CAT-001 | draft → media → quote_template → submit_review → moderation → publish → edit_version |  |
 | FLOW-05 | Solicitar orçamento e criar pedido | staging operational | ORD-001 | service_snapshot → questionnaire → request → outbox_event → professional_notification | ORD-B02 |
-| FLOW-06 | Aceite, proposta e agenda | hybrid | ORD-001 | accept → proposal → client_approval → schedule_hold → confirmation | SCHED-B02, SCHED-B03, ORD-B04 |
+| FLOW-06 | Aceite, proposta e agenda | hybrid | ORD-001 | accept → proposal → client_approval → schedule_hold → confirmation | SCHED-B02, ORD-B04 |
 | FLOW-07 | Conversa transacional | hybrid | MSG-001 | conversation → message → attachment → read_state → realtime → notification | MSG-B02, MSG-B03 |
 | FLOW-08 | Pagamento, retenção e liberação | blocked | PAY-001 | charge → provider_checkout → signed_webhook → ledger → receivable → release | PAY-B01, PAY-B03, PAY-B04 |
 | FLOW-09 | Cancelamento, reembolso e disputa | blocked | DSP-001 | eligibility → cancel → refund → dispute → evidence → decision → appeal | DSP-B01, DSP-B03 |
@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 1031 arquivos no escopo; 248 referências a localStorage; 78 a sessionStorage; 557 referências mock; 193 referências de rede/Supabase; 35 marcadores de implementação pendente.
+**Evidência estática observada:** 1033 arquivos no escopo; 248 referências a localStorage; 78 a sessionStorage; 557 referências mock; 194 referências de rede/Supabase; 35 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -494,7 +494,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - ORD-001 remains prohibited from direct schedule mutation or parallel conflict detection and will consume schedule_reservation_id plus durable schedule events.
 - ORD-001 now has the generated SCHED-A03 order reference contract, while scheduled_at remains a read projection and no migration was applied.
 - ORD-001 now has an executable SCHED-A04 order projection port for schedule_reservation_id and scheduled_at, but ORD-B04 remains open until a transactional adapter and staging activation exist.
-- The SCHED-A05 PostgreSQL adapter contains atomic order schedule projection SQL, but ORD-001 remains disconnected until migration application and remote canaries pass.
+- SCHED-A08 completed the official migration-history repair and rolled-back remote overlap, adjacency, idempotency, event, DST and order-projection canaries; ORD-B04 remains open only for trusted runtime wiring to the canonical reservation authority.
 
 **Bloqueadores:**
 - **ORD-B02 · HIGH · frontend_activation:** Canonical reads, canary commands, cleanup, deterministic settlement, readiness discovery and the fail-closed Playwright executor pass. A short-lived authorization envelope is mandatory; ORD-B02 remains under ORD-001 until explicit resource authorization is issued, check-env passes, the real two-context visual canary is executed and run-scoped cleanup proves zero residue. _(Fase 6)_
@@ -503,10 +503,10 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - **ORD-B05 · HIGH · staging_release:** ORD-A08 release identity, ORD-A09A provider evaluation, the ORD-A09B0 provider-neutral adapter boundary, provider selection handoff, selection intent firewall and adapter conformance suite are complete. Railway is recommended as the external staging release provider, but no explicit provider selection, provider-specific adapter, account, billing, secrets, infrastructure, rollback command or deployment exists. ORD-B05 remains open until exactly I_EXPLICITLY_SELECT_RAILWAY_FOR_DOKE_STAGING authorizes only non-secret adapter preparation; every external action remains separately blocked. _(Fase 6)_
 
 **Próximas ações:**
-- Complete SCHED-A07 migration-history repair and rolled-back staging canaries after exact independent authorization.
-- After authorized application, run read-only schema, grant, policy and migration-order verification.
-- Run rolled-back persona, idempotency, DST and concurrent overlap canaries before runtime activation.
-- Create the server composition root and wire ORD-001 only after all staging canaries pass.
+- Keep ORD-B04 handed to SCHED-001 until the trusted scheduling composition root is active and independently canary-validated.
+- Consume only schedule_reservation_id plus scheduled_at projection after SCHED-001 activation; do not restore raw scheduled_at booking authority.
+- Complete the separately authorized ORD-B02 real two-context visual settlement canary.
+- Keep PAY-001 and external staging release dependencies explicit under ORD-B03 and ORD-B05.
 
 **Gate de saída:**
 - Two real accounts complete request, accept, proposal, approval, start and completion across devices.
@@ -518,42 +518,42 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Objetivo:** Prevent double booking and make availability, confirmation and rescheduling server-authoritative.
 
-**Estado:** maturidade 2/6; UI local; servidor partial; staging staging canary; segurança partial; produção blocked.
+**Estado:** maturidade 3/6; UI local; servidor partial; staging staging canary; segurança partial; produção blocked.
 
-**Evidência estática observada:** 1001 arquivos no escopo; 186 referências a localStorage; 70 a sessionStorage; 301 referências mock; 192 referências de rede/Supabase; 19 marcadores de implementação pendente.
+**Evidência estática observada:** 1002 arquivos no escopo; 186 referências a localStorage; 70 a sessionStorage; 301 referências mock; 193 referências de rede/Supabase; 19 marcadores de implementação pendente.
 
 **Páginas:** `anunciar-servico.html`, `pedidos.html`, `orcamento.html`.
 
 **Tabelas/autoridades de dados:** `availability_slots`, `orders`, `schedule_availability_rules`, `schedule_reservations`, `schedule_command_idempotency`, `schedule_domain_events`.
 
 **Evidências:**
-- Availability schema exists, but no implemented scheduling backend module exists.
 - Repository migrations 113 and 119 enable availability_slots RLS, define owner write policies and separate anonymous available-slot reads from authenticated owner/operator visibility.
-- The scheduling backend module remains unimplemented, no canonical hold or reservation lifecycle exists and no database-level active-range anti-double-booking rule is proven.
 - ORD-A11 defines SCHED-001 as the sole canonical time authority and prohibits ORD-001 from retaining parallel scheduling or raw scheduled_at booking authority.
 - SCHED-A01 read-only staging inspection verified availability_slots RLS enabled, FORCE RLS disabled, five expected policies, role-separated grants, the two authority migrations and a zero-row baseline.
 - The deployed owner update policy allows a professional to set their own availability row to booked because no status-transition boundary exists.
-- No hold or reservation table, timezone, order link, expiration, idempotency key, optimistic version, exclusion constraint or schedule_reservation_id exists; btree_gist is not installed.
 - SCHED-A01 executed two read-only SQL queries and performed zero mutations, migrations, deployments, production changes or merge.
 - SCHED-A02 freezes six commands, six durable event types, held/confirmed active occupancy, server-only confirmation, UTC plus IANA timezone interpretation and [start,end) ranges.
 - The executable pure scheduling contract proves overlap, adjacency, actor, transition, version, idempotency, event-key and hold-expiration semantics without database, network or browser access.
 - No SCHED blocker closes at A02: migration, server runtime, order reference and policy hardening remain required.
-- SCHED-A03 generated a repository-only canonical reservation migration with persistent idempotency, durable events, orders.schedule_reservation_id, service-role-only grants and a partial GiST exclusion constraint; it has not been applied.
 - SCHED-A04 implemented a repository-agnostic transaction command runtime for all six scheduling commands with deterministic idempotency, optimistic concurrency, DST-safe timezone validation, durable events, order projections and rollback tests; no persistence adapter or migration was activated.
-- SCHED-A04 generated an append-only compatibility migration that removes local wall-clock ordering as authority across DST fall-back while preserving UTC ordering; it has not been applied.
 - SCHED-A05 implements all fifteen persistence-port methods over one injected PostgreSQL SERIALIZABLE transaction with parameterized SQL, deterministic rollback, optimistic version checks and SKIP LOCKED hold expiration.
-- Three aggregate-only staging reads confirmed PostgreSQL 17.6, zero scheduling/order rows, absent A03/A04 authority objects and migrations, absent btree_gist, and legacy booked-state policy exposure without mutating staging.
+- SCHED-A06 applied the canonical A03 reservation authority and A04 DST compatibility schema only to Doke staging, including schedule rules, reservations, idempotency, durable events, orders.schedule_reservation_id and the active-range GiST exclusion constraint.
+- SCHED-A08 used the official Supabase CLI migration repair path: generated versions 20260731141315 and 20260731141349 were marked reverted, while canonical versions 20260731123000 and 20260731151000 were marked applied; no manual mutation of supabase_migrations.schema_migrations occurred.
+- The broad local-versus-remote migration equality gate exposed pre-existing repository-wide legacy drift, but isolated verification confirmed the four frozen SCHED migration versions in the exact canonical state.
+- The SCHED-A07 canary passed in one transaction ending in ROLLBACK and proved overlap rejection, adjacent reservation acceptance, DST fallback compatibility, scoped idempotency uniqueness, event uniqueness and order schedule projection.
+- The canary fixture uses a published service with an approved version because requested orders require canonical service authority.
+- Post-rollback verification found zero schedule rules, reservations, idempotency rows, schedule events, canary orders and orders linked to a schedule reservation; no test data remained persisted.
+- Runtime activation, trusted composition root, ORD-001 wiring, workers, Cron, deploy, production and merge remain blocked.
 
 **Bloqueadores:**
 - **SCHED-B02 · CRITICAL · server_authority:** Canonical schema and PostgreSQL adapter exist in staging, but the trusted server composition root and runtime activation are pending. _(Fase 6)_
-- **SCHED-B03 · HIGH · concurrency:** Canonical schema is applied, but migration-history alignment and rolled-back remote concurrency, idempotency and DST canaries are pending. _(Fase 6)_
 - **SCHED-B04 · HIGH · order_integration:** orders.schedule_reservation_id exists in staging, but ORD-001 runtime wiring to the canonical reservation remains pending. _(Fase 6)_
 
 **Próximas ações:**
-- Require the exact SCHED-A07 authorization before mutating migration history or executing rolled-back canaries.
-- Repair only the four frozen migration-history versions and verify exact local/remote alignment.
-- Execute the single-transaction SCHED-A07 canary and require rollback plus unchanged aggregate counts.
-- Create the trusted server composition root only after the repair and canaries pass.
+- Create the trusted server composition root for the existing scheduling command runtime and PostgreSQL adapter behind a staging-only fail-closed activation gate.
+- Wire ORD-001 to consume schedule_reservation_id and scheduled_at only as the canonical reservation reference and projection, removing raw scheduled_at booking authority.
+- Add authenticated persona and command-boundary canaries for the activated server composition before any frontend authority switch.
+- Keep production, Cron, workers, deployment and merge blocked until SCHED-B02 and SCHED-B04 have independent evidence.
 
 **Gate de saída:**
 - Concurrent booking attempts cannot reserve the same slot.
@@ -946,7 +946,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 1/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 227 arquivos no escopo; 64 referências a localStorage; 8 a sessionStorage; 269 referências mock; 8 referências de rede/Supabase; 25 marcadores de implementação pendente.
+**Evidência estática observada:** 228 arquivos no escopo; 64 referências a localStorage; 8 a sessionStorage; 269 referências mock; 8 referências de rede/Supabase; 25 marcadores de implementação pendente.
 
 **Evidências:**
 - The master plan identifies legal, privacy and commercial decisions as mandatory.
@@ -1006,7 +1006,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2332 arquivos no escopo; 505 referências a localStorage; 151 a sessionStorage; 880 referências mock; 590 referências de rede/Supabase; 89 marcadores de implementação pendente.
+**Evidência estática observada:** 2335 arquivos no escopo; 505 referências a localStorage; 151 a sessionStorage; 880 referências mock; 591 referências de rede/Supabase; 89 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
@@ -1067,4 +1067,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-07-31T11:18:00-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-07-31T13:31:23-03:00._

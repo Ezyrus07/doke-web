@@ -74,7 +74,12 @@ const ord = matrix.domains.find((domain) => domain.id === 'ORD-001');
 assert(ord, 'ORD-001 domain missing from completion matrix');
 assert.deepStrictEqual(ord.blockers.map((blocker) => blocker.id), ['ORD-B02', 'ORD-B03', 'ORD-B04', 'ORD-B05']);
 assert.strictEqual(ord.nextActions.length, 4);
-assert(ord.nextActions[0].includes('SCHED-A07'));
+if (compareVersions(matrix.version, '1.3.50') >= 0) {
+  assert(ord.nextActions[0].includes('Keep ORD-B04 handed to SCHED-001'));
+  assert(ord.evidence.some((item) => item.includes('SCHED-A08 completed the official migration-history repair')));
+} else {
+  assert(ord.nextActions[0].includes('SCHED-A07'));
+}
 
 const blockers = Object.fromEntries(ord.blockers.map((blocker) => [blocker.id, blocker]));
 assert(blockers['ORD-B02'].description.includes('authorization envelope'));

@@ -239,14 +239,21 @@ assert(compareVersions(matrix.version, '1.3.47') >= 0, `Matrix version ${matrix.
 const sched = matrix.domains.find((domain) => domain.id === 'SCHED-001');
 const ord = matrix.domains.find((domain) => domain.id === 'ORD-001');
 assert(sched && ord, 'ORD-001 or SCHED-001 missing from matrix.');
-assert.strictEqual(sched.maturity, 2);
 assert(['contract_only', 'partial'].includes(sched.serverAuthority));
 assert.strictEqual(sched.stagingEvidence, 'staging_canary');
 assert.strictEqual(sched.securityGate, 'partial');
-assert.deepStrictEqual(sched.blockers.map((item) => item.id), ['SCHED-B02', 'SCHED-B03', 'SCHED-B04']);
 assert(config.orderedNextActions[0].includes('SCHED-A05'));
-assert(sched.nextActions[0].includes('SCHED-A07'));
-assert(ord.nextActions[0].includes('SCHED-A07'));
+const postA09 = compareVersions(matrix.version, '1.3.50') >= 0 && sched.maturity === 3;
+if (postA09) {
+  assert.deepStrictEqual(sched.blockers.map((item) => item.id), ['SCHED-B02', 'SCHED-B04']);
+  assert(sched.nextActions[0].includes('trusted server composition root'));
+  assert(ord.evidence.some((item) => item.includes('SCHED-A08 completed the official migration-history repair')));
+} else {
+  assert.strictEqual(sched.maturity, 2);
+  assert.deepStrictEqual(sched.blockers.map((item) => item.id), ['SCHED-B02', 'SCHED-B03', 'SCHED-B04']);
+  assert(sched.nextActions[0].includes('SCHED-A07'));
+  assert(ord.nextActions[0].includes('SCHED-A07'));
+}
 REQUIRED_PATHS.forEach((path) => {
   assert(sched.requiredPaths.includes(path), `SCHED matrix missing ${path}`);
   assert(ord.requiredPaths.includes(path), `ORD matrix missing ${path}`);

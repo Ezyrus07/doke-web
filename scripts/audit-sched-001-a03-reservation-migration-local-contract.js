@@ -115,8 +115,15 @@ assert(sched && ord);
 assert(sched.tests.includes('audit:sched-001-a03-reservation-migration-local-contract'));
 assert(sched.tests.includes('test:sched-001-a03-reservation-migration-static'));
 assert(config.orderedNextActions[0].includes('SCHED-A04'));
-assert(sched.nextActions[0].includes('SCHED-A07'));
-assert(ord.nextActions[0].includes('SCHED-A07'));
+const postA09 = Number(String(matrix.version).split('.')[2]) >= 50 && sched.maturity === 3;
+if (postA09) {
+  assert.deepStrictEqual(sched.blockers.map((item) => item.id), ['SCHED-B02', 'SCHED-B04']);
+  assert(sched.nextActions[0].includes('trusted server composition root'));
+  assert(ord.evidence.some((item) => item.includes('SCHED-A08 completed the official migration-history repair')));
+} else {
+  assert(sched.nextActions[0].includes('SCHED-A07'));
+  assert(ord.nextActions[0].includes('SCHED-A07'));
+}
 assert.strictEqual(pkg.scripts['audit:sched-001-a03-reservation-migration-local-contract'], 'node scripts/audit-sched-001-a03-reservation-migration-local-contract.js');
 assert.strictEqual(pkg.scripts['test:sched-001-a03-reservation-migration-static'], 'node scripts/test-sched-001-a03-reservation-migration-static.js');
 
