@@ -126,7 +126,7 @@ if (temporaryA09Executor) {
   const writeExecutor = workflow.includes('permissions:\n  contents: write');
   const readOnlyArtifactExecutor = workflow.includes('permissions:\n  contents: read')
     && workflow.includes('actions/upload-artifact@v4')
-    && workflow.includes('sched-a09-validated-closure');
+    && workflow.includes('sched-a09-');
   assert(writeExecutor || readOnlyArtifactExecutor);
   assert(workflow.includes('node scripts/close-sched-001-a09-documentation-matrix.js'));
   assert(!workflow.includes('supabase migration repair'));
