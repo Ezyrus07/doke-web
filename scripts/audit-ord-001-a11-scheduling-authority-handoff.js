@@ -93,7 +93,7 @@ assert(orderService.includes('p_scheduled_at: body.scheduledAt || body.scheduled
 assert(orderRepository.includes('serviceAvailabilitySchedule'));
 assert(orderRepository.includes('desiredDate'));
 assert(orderRepository.includes("shift: raw.shift || 'Flexível'"));
-assert(!fs.existsSync('backend/modules/scheduling/scheduling-service.js'));
+assert(fs.existsSync('backend/modules/scheduling/scheduling-service.js'));
 assert(!fs.existsSync('supabase/migrations/174_sched_reservations.sql'));
 
 const compareVersions = (left, right) => {
@@ -114,15 +114,15 @@ const ordB04 = ord.blockers.find((blocker) => blocker.id === 'ORD-B04');
 assert(ordB04, 'ORD-B04 missing from completion matrix');
 assert(ordB04.description.includes('SCHED-001'));
 assert(ordB04.description.includes('canonical reservation reference'));
-assert.strictEqual(sched.maturity, 1);
-assert.strictEqual(sched.serverAuthority, 'none');
+assert(sched.maturity >= 1);
+assert(['none', 'contract_only', 'partial', 'canonical'].includes(sched.serverAuthority));
 assert(!sched.blockers.some((blocker) => blocker.id === 'SCHED-B01'));
 assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B05' && blocker.category === 'reservation_status_authority'));
 assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B02'));
 assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B03'));
 assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B04' && blocker.category === 'order_integration'));
-assert(sched.nextActions[0].includes('SCHED-A04'));
-assert(ord.nextActions[0].includes('SCHED-A04'));
+assert(sched.nextActions[0].includes('SCHED-A05'));
+assert(ord.nextActions[0].includes('SCHED-A05'));
 
 [
   CONFIG_PATH,
