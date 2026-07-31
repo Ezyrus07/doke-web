@@ -123,7 +123,11 @@ assert.strictEqual(pkg.scripts['plan:sched-001-a07-history-canaries'], 'node scr
 
 const temporaryA09Executor = workflow.includes('name: SCHED-A09 Documentation and Matrix Reconciliation');
 if (temporaryA09Executor) {
-  assert(workflow.includes('permissions:\n  contents: write'));
+  const writeExecutor = workflow.includes('permissions:\n  contents: write');
+  const readOnlyArtifactExecutor = workflow.includes('permissions:\n  contents: read')
+    && workflow.includes('actions/upload-artifact@v4')
+    && workflow.includes('sched-a09-validated-closure');
+  assert(writeExecutor || readOnlyArtifactExecutor);
   assert(workflow.includes('node scripts/close-sched-001-a09-documentation-matrix.js'));
   assert(!workflow.includes('supabase migration repair'));
   assert(!workflow.includes('psql '));
