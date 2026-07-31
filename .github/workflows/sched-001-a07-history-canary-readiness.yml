@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: sched-a09-documentation-matrix-${{ github.event.pull_request.number || github.ref }}
@@ -116,13 +116,30 @@ jobs:
           rm -f scripts/close-sched-001-a09-documentation-matrix.js
           rm -f scripts/patch-sched-001-a09-cumulative-audits.js
 
-      - name: Commit and push A09 closure
+      - name: Package validated closure
         shell: bash
         run: |
           set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          ARTIFACT_ROOT="$RUNNER_TEMP/sched-a09-closure"
+          FILE_ROOT="$ARTIFACT_ROOT/files"
+          rm -rf "$ARTIFACT_ROOT"
+          mkdir -p "$FILE_ROOT"
           git add -A
           git diff --cached --check
-          git commit -m "docs(sched): close A09 staging reconciliation evidence"
-          git push origin HEAD:${{ github.event.pull_request.head.ref }}
+          git rev-parse HEAD > "$ARTIFACT_ROOT/base_sha.txt"
+          git diff --cached --name-only --diff-filter=D > "$ARTIFACT_ROOT/deleted.txt"
+          git diff --cached --binary > "$ARTIFACT_ROOT/closure.patch"
+          git diff --cached --stat > "$ARTIFACT_ROOT/stat.txt"
+          while IFS= read -r file; do
+            [ -n "$file" ] || continue
+            mkdir -p "$FILE_ROOT/$(dirname "$file")"
+            cp "$file" "$FILE_ROOT/$file"
+          done < <(git diff --cached --name-only --diff-filter=ACMRT)
+
+      - name: Upload validated A09 closure
+        uses: actions/upload-artifact@v4
+        with:
+          name: sched-a09-validated-closure
+          path: ${{ runner.temp }}/sched-a09-closure
+          if-no-files-found: error
+          retention-days: 1
