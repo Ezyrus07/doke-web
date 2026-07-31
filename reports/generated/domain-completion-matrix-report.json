@@ -1,7 +1,7 @@
 {
   "name": "domain-completion-matrix",
-  "version": "1.3.43",
-  "generatedAt": "2026-07-31T08:10:00-03:00",
+  "version": "1.3.44",
+  "generatedAt": "2026-07-31T08:20:00-03:00",
   "status": "passed",
   "summary": {
     "domains": 23,
@@ -19,8 +19,8 @@
       "blocked": 21
     },
     "securityGateCounts": {
-      "partial": 12,
-      "blocked": 10,
+      "partial": 13,
+      "blocked": 9,
       "passed": 1
     },
     "blockerCounts": {
@@ -32,7 +32,7 @@
     "repositories": 25,
     "backendModules": 15,
     "migrations": 173,
-    "packageScripts": 937,
+    "packageScripts": 938,
     "staging": {
       "publicTotal": 45,
       "publicRlsDisabled": 0,
@@ -221,7 +221,7 @@
       "id": "GOV-001",
       "name": "Governança, arquitetura e comando central",
       "maturity": 4,
-      "filesMatched": 1011,
+      "filesMatched": 1013,
       "sampleFiles": [
         "docs/ACTIVE-CONTRACTS-INDEX.md",
         "docs/API-ADAPTER-CONTRACT.md",
@@ -3338,7 +3338,8 @@
         "audit:ord-001-a07e-remote-concurrent-replay-canary-readiness",
         "audit:ord-001-a07e-remote-concurrent-replay-canary-application",
         "audit:ord-001-a10-blocker-reconciliation",
-        "audit:ord-001-a11-scheduling-authority-handoff"
+        "audit:ord-001-a11-scheduling-authority-handoff",
+        "audit:sched-001-a01-repository-baseline-staging-security-preflight"
       ]
     },
     {
@@ -3430,17 +3431,10 @@
       },
       "blockers": [
         {
-          "id": "SCHED-B01",
-          "severity": "high",
-          "category": "staging_security_verification",
-          "description": "Repository migrations enable and role-separate availability_slots RLS, but SCHED-specific read-only staging verification of schema, policies and grants is not yet recorded.",
-          "targetPhase": "Fase 1"
-        },
-        {
           "id": "SCHED-B02",
           "severity": "critical",
           "category": "server_authority",
-          "description": "No canonical scheduling service handles availability rules, holds, confirmed reservations, expiration, rescheduling, cancellation or timezone rules.",
+          "description": "No canonical scheduling service owns availability rules, holds, confirmed reservations, expiration, rescheduling, cancellation, timezone or protected status transitions; the current owner policy can set booked directly.",
           "targetPhase": "Fase 6"
         },
         {
@@ -3456,11 +3450,19 @@
           "category": "order_integration",
           "description": "Orders accept raw scheduled_at and do not reference a canonical schedule reservation, so accepted proposals are not transactionally bound to authoritative occupancy.",
           "targetPhase": "Fase 6"
+        },
+        {
+          "id": "SCHED-B05",
+          "severity": "high",
+          "category": "reservation_status_authority",
+          "description": "The professional owner update policy can set availability_slots.status to booked without a canonical reservation command, order binding or protected status-transition boundary.",
+          "targetPhase": "Fase 6"
         }
       ],
       "tests": [
         "test:order-transaction-cycle-contract",
-        "audit:ord-001-a11-scheduling-authority-handoff"
+        "audit:ord-001-a11-scheduling-authority-handoff",
+        "audit:sched-001-a01-repository-baseline-staging-security-preflight"
       ]
     },
     {
@@ -4519,7 +4521,7 @@
       "id": "LEGAL-001",
       "name": "Jurídico, privacidade, confiança e políticas comerciais",
       "maturity": 1,
-      "filesMatched": 221,
+      "filesMatched": 222,
       "sampleFiles": [
         "docs/ACTIVE-CONTRACTS-INDEX.md",
         "docs/API-ADAPTER-CONTRACT.md",
@@ -6247,7 +6249,7 @@
       "id": "APP-001",
       "name": "Aplicativos Android e iOS",
       "maturity": 0,
-      "filesMatched": 2295,
+      "filesMatched": 2298,
       "sampleFiles": [
         ".agents/skills/animation-vocabulary/SKILL.md",
         ".agents/skills/apple-design/SKILL.md",

@@ -12,13 +12,17 @@ The previous matrix statement that `availability_slots` simply had RLS disabled 
 
 - migration `113_availability_reviews_authority.sql` enables RLS and defines owner/operator write policies;
 - migration `119_public_policy_role_separation.sql` separates anonymous available-slot reads from authenticated owner/operator reads;
-- no SCHED-specific staging verification currently proves the deployed policies and grants;
+- `SCHED-A01` now proves the deployed schema, RLS, policies, grants and migration versions through read-only staging inspection;
 - `backend/modules/scheduling` still has no implemented scheduling service;
 - no database-level active-range anti-double-booking contract is present;
 - order creation still accepts raw `scheduledAt`/`scheduled_at` directly;
 - browser order projections still carry desired date, shift and service availability snapshot data.
 
-Therefore, the security blocker remains open as a staging-verification problem, while the server-authority and concurrency blockers remain implementation problems.
+Therefore, `SCHED-B01` is closed. The server-authority, concurrency, order-integration and reservation-status boundaries remain open implementation problems.
+
+## SCHED-A01 security finding
+
+RLS is correctly deployed, but the owner update policy does not constrain the new status. A professional can currently update their own slot to `booked` without a canonical reservation command. `SCHED-B05` records this authority-conflation defect.
 
 ## Canonical ownership
 
@@ -90,12 +94,11 @@ Expected durable events:
 
 ## Remaining execution order
 
-1. perform a read-only staging preflight of `availability_slots` schema, RLS, policies and grants;
-2. freeze the SCHED command, event, timezone and conflict contracts;
-3. generate and test a migration locally without applying it;
-4. implement the server scheduling module;
-5. wire accepted proposals and orders to canonical reservation references;
-6. only then run authorized staging application and concurrency canaries.
+1. freeze the SCHED command, event, timezone, idempotency, status-authority and conflict contracts;
+2. generate and test a migration locally without applying it;
+3. implement the server scheduling module;
+4. wire accepted proposals and orders to canonical reservation references;
+5. only then run separately authorized staging application and concurrency canaries.
 
 ## Closure decision
 

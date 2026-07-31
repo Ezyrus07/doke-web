@@ -44,10 +44,14 @@ The matrix previously retained three A07B/A07C actions even though the nonce led
 
 Repeated provider-selection actions are collapsed into one exact, fail-closed instruction. After the A11 handoff, the remaining queue is intentionally short:
 
-1. execute the `SCHED-001` repository baseline and read-only staging security preflight defined by `ORD-A11`;
+1. execute `SCHED-A02` to freeze command, event, timezone, idempotency, status-authority and conflict contracts;
 2. hand off `ORD-B03` to `PAY-001`;
 3. await explicit resource authorization for `ORD-B02`;
 4. await exactly `I_EXPLICITLY_SELECT_RAILWAY_FOR_DOKE_STAGING` for the limited `ORD-B05` adapter-preparation step.
+
+## Scheduling handoff progression
+
+`ORD-A11` completed the ownership handoff and `SCHED-A01` completed the read-only staging security preflight. `SCHED-B01` is closed, while `ORD-B04` remains open through the implementation blockers owned by `SCHED-001`.
 
 ## Cumulative contract compatibility
 

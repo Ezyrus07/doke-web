@@ -52,6 +52,7 @@ assert.strictEqual(config.decision.schedulingDomainOwnsCanonicalTimeAuthority, t
 assert.strictEqual(config.decision.genericContinuationAuthorizesLiveChanges, false);
 assert.strictEqual(config.observedRepositoryState.availabilityRlsEnablementMigrationExists, true);
 assert.strictEqual(config.observedRepositoryState.roleSeparatedAvailabilityReadPoliciesExist, true);
+assert.strictEqual(config.observedRepositoryState.stagingRlsVerificationRecordedForSched, true);
 assert.strictEqual(config.observedRepositoryState.schedulingBackendModuleImplemented, false);
 assert.strictEqual(config.observedRepositoryState.databaseAntiDoubleBookingContractExists, false);
 assert.strictEqual(config.observedRepositoryState.ordersAcceptRawScheduledAt, true);
@@ -94,7 +95,16 @@ assert(orderRepository.includes("shift: raw.shift || 'Flexível'"));
 assert(!fs.existsSync('backend/modules/scheduling/scheduling-service.js'));
 assert(!fs.existsSync('supabase/migrations/174_sched_reservations.sql'));
 
-assert.strictEqual(matrix.version, '1.3.43');
+const compareVersions = (left, right) => {
+  const a = String(left).split('.').map(Number);
+  const b = String(right).split('.').map(Number);
+  for (let index = 0; index < Math.max(a.length, b.length); index += 1) {
+    const delta = (a[index] || 0) - (b[index] || 0);
+    if (delta !== 0) return delta;
+  }
+  return 0;
+};
+assert(compareVersions(matrix.version, '1.3.44') >= 0, `Matrix version ${matrix.version} predates SCHED-A01.`);
 const ord = matrix.domains.find((domain) => domain.id === 'ORD-001');
 const sched = matrix.domains.find((domain) => domain.id === 'SCHED-001');
 assert(ord, 'ORD-001 missing from completion matrix');
@@ -105,7 +115,8 @@ assert(ordB04.description.includes('SCHED-001'));
 assert(ordB04.description.includes('canonical reservation reference'));
 assert.strictEqual(sched.maturity, 1);
 assert.strictEqual(sched.serverAuthority, 'none');
-assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B01' && blocker.description.includes('staging verification')));
+assert(!sched.blockers.some((blocker) => blocker.id === 'SCHED-B01'));
+assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B05' && blocker.category === 'reservation_status_authority'));
 assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B02'));
 assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B03'));
 assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B04' && blocker.category === 'order_integration'));

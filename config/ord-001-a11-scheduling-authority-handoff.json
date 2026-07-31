@@ -22,7 +22,7 @@
     "ordersAcceptRawScheduledAt": true,
     "orderReservationReferenceExists": false,
     "frontendServiceAvailabilityIsSnapshotOrFormData": true,
-    "stagingRlsVerificationRecordedForSched": false
+    "stagingRlsVerificationRecordedForSched": true
   },
   "canonicalOwnership": {
     "SCHED-001": [
@@ -111,10 +111,10 @@
     "rangeConvention": "half-open [start,end)"
   },
   "orderedNextActions": [
-    "Run a read-only SCHED-001 staging preflight for availability_slots RLS, policies, grants and schema drift; do not mutate staging.",
-    "Freeze the canonical availability-rule and schedule-reservation command, event, timezone and conflict contracts in SCHED-001.",
-    "Generate but do not apply a reviewed SCHED-001 migration with active-range anti-double-booking enforcement and deterministic tests.",
-    "Implement the server scheduling module and make ORD-001 consume a canonical reservation reference instead of treating raw scheduled_at as booking authority."
+    "Freeze SCHED-001 command, event, timezone, idempotency, status-authority and conflict contracts without changing staging.",
+    "Generate and test locally, but do not apply, a reviewed migration that separates canonical reservations from availability and enforces non-overlapping active ranges.",
+    "Implement the server scheduling module with hold expiration, confirmation, rescheduling and cancellation commands.",
+    "Make ORD-001 consume schedule_reservation_id and retain scheduled_at only as a read projection."
   ],
   "forbidden": {
     "applyMigration": true,
