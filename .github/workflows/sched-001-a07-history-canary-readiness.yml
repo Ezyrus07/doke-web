@@ -127,6 +127,7 @@ jobs:
           git add -A
           git diff --cached --check
           git rev-parse HEAD > "$ARTIFACT_ROOT/base_sha.txt"
+          git rev-parse 'HEAD^{tree}' > "$ARTIFACT_ROOT/base_tree_sha.txt"
           git diff --cached --name-only --diff-filter=D > "$ARTIFACT_ROOT/deleted.txt"
           git diff --cached --binary > "$ARTIFACT_ROOT/closure.patch"
           git diff --cached --stat > "$ARTIFACT_ROOT/stat.txt"
@@ -139,7 +140,8 @@ jobs:
       - name: Upload validated A09 closure
         uses: actions/upload-artifact@v4
         with:
-          name: sched-a09-validated-closure
+          name: sched-a09-complete-tree
           path: ${{ runner.temp }}/sched-a09-closure
           if-no-files-found: error
+          include-hidden-files: true
           retention-days: 1
