@@ -1,0 +1,68 @@
+{
+  "domain": "ORD-001",
+  "sublot": "ORD-A07E-REMOTE-READINESS",
+  "status": "remote_concurrent_replay_canary_readiness_complete_execution_unauthorized",
+  "recordedAt": "2026-07-30T22:50:00-03:00",
+  "verified": {
+    "localConcurrentReplayCanaryPassed": true,
+    "remoteFunctionVersion": 10,
+    "remoteFunctionStatus": "ACTIVE",
+    "remoteVerifyJwt": false,
+    "remoteBundleSha256": "2f480553c636b96a061e66fcb3a6ddaf06d458459c898f215e2472ff2d8a4dc0",
+    "a07bApplied": true,
+    "a07cApplied": true,
+    "a07dDeployed": true,
+    "concurrencyFrozen": 32,
+    "expectedAcceptedCount": 1,
+    "expectedReplayRejectedCount": 31,
+    "expectedReplayStatus": 409,
+    "expectedReplayError": "DOKE_ORDER_EVENT_WORKER_REPLAY_REJECTED",
+    "cleanupUsesAcceptedRunId": true,
+    "cleanupPreservesPreexistingTestNonce": true,
+    "serviceRoleCanDeleteNonce": true,
+    "serviceRoleCanDeleteWorkerRun": false,
+    "genericContinuationRejected": true,
+    "plannerHasExecutionCapability": false
+  },
+  "preflight": {
+    "cronActive": true,
+    "cronSchedule": "* * * * *",
+    "cronCommand": "select private.invoke_order_event_worker_if_needed();",
+    "orders": 0,
+    "budgets": 0,
+    "history": 0,
+    "domainEvents": 0,
+    "workerRuns": 1,
+    "nonceLedgerRows": 1,
+    "testWorkerRuns": 0,
+    "preexistingTestNonceRows": 1
+  },
+  "authorization": {
+    "exactPhraseRequired": "I_EXPLICITLY_AUTHORIZE_ORD_A07E_REMOTE_CONCURRENT_REPLAY_CANARY_ON_DOKE_STAGING",
+    "received": false,
+    "remoteCanaryAuthorized": false,
+    "cleanupAuthorized": false,
+    "deployAuthorized": false,
+    "productionAuthorized": false,
+    "mergeAuthorized": false
+  },
+  "execution": {
+    "remoteRequestsPlanned": 32,
+    "remoteRequestsExecuted": 0,
+    "stagingDatabaseMutationsPerformed": 0,
+    "cleanupRowsDeleted": 0,
+    "cronJobsChanged": 0,
+    "edgeFunctionsDeployed": 0,
+    "migrationsApplied": 0,
+    "productionChanged": false
+  },
+  "remainingBlockers": [
+    "exact_remote_canary_authorization",
+    "preflight_revalidation_at_execution_time",
+    "remote_concurrent_request_execution",
+    "cleanup_and_postcheck",
+    "railway_selection_or_deployment",
+    "production_changes",
+    "pull_request_merge"
+  ]
+}
