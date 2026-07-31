@@ -1,0 +1,42 @@
+name: Doke SCHED-B02 Trusted Composition Root Readiness
+
+on:
+  pull_request:
+    paths:
+      - 'backend/modules/scheduling/scheduling-composition-root.js'
+      - 'config/sched-001-b02-composition-root-readiness.json'
+      - 'docs/SCHED-001-B02-COMPOSITION-ROOT-READINESS.md'
+      - 'docs/validation/SCHED-001-B02-COMPOSITION-ROOT-READINESS.json'
+      - 'scripts/audit-sched-001-b02-composition-root-readiness.js'
+      - 'scripts/test-sched-001-b02-composition-root-runtime.js'
+      - '.github/workflows/sched-001-b02-composition-root-readiness.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  readiness:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Audit SCHED-B02 trusted composition root readiness
+        run: node scripts/audit-sched-001-b02-composition-root-readiness.js
+      - name: Test SCHED-B02 fail-closed composition runtime
+        run: node scripts/test-sched-001-b02-composition-root-runtime.js
+      - name: Preserve SCHED-A05 PostgreSQL adapter contract
+        run: |
+          node scripts/audit-sched-001-a05-persistence-readiness.js
+          node scripts/test-sched-001-a05-postgres-repository-runtime.js
+      - name: Preserve scheduling command runtime contract
+        run: |
+          node scripts/audit-sched-001-a04-server-command-runtime.js
+          node scripts/test-sched-001-a04-scheduling-service-runtime.js
+      - name: Preserve migration-history and canary evidence
+        run: node scripts/audit-sched-001-a07-history-canary-readiness.js
+      - name: Audit domain completion matrix
+        run: node scripts/audit-domain-completion-matrix.js
