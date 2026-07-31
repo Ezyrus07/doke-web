@@ -26,7 +26,7 @@ A generic command such as `próximo`, `pode prosseguir` or any paraphrase does n
 
 `ORD-B04` remains open, but its implementation authority belongs to `SCHED-001`.
 
-`ORD-001` must not create a parallel scheduling authority. Availability, booking, confirmation, rescheduling and double-booking protection must become server-canonical under `SCHED-001` before the order domain can claim scheduling completion.
+The ownership handoff is now recorded by `ORD-A11`. `ORD-001` must not create a parallel scheduling authority. Availability, holds, confirmed reservations, conflict protection, timezone, rescheduling and cancellation must become server-canonical under `SCHED-001`, while the order domain consumes one canonical reservation reference.
 
 ### ORD-B05 — external staging provider
 
@@ -42,16 +42,16 @@ That phrase does not authorize account creation, a paid plan, billing, secrets, 
 
 The matrix previously retained three A07B/A07C actions even though the nonce ledger migration, Cron header migration, Edge freshness deployment and remote replay canary are already complete in staging. Those obsolete actions are removed.
 
-Repeated provider-selection actions are collapsed into one exact, fail-closed instruction. The remaining queue is intentionally short:
+Repeated provider-selection actions are collapsed into one exact, fail-closed instruction. After the A11 handoff, the remaining queue is intentionally short:
 
-1. hand off `ORD-B04` to `SCHED-001`;
+1. execute the `SCHED-001` repository baseline and read-only staging security preflight defined by `ORD-A11`;
 2. hand off `ORD-B03` to `PAY-001`;
 3. await explicit resource authorization for `ORD-B02`;
 4. await exactly `I_EXPLICITLY_SELECT_RAILWAY_FOR_DOKE_STAGING` for the limited `ORD-B05` adapter-preparation step.
 
 ## Cumulative contract compatibility
 
-The reconciled blocker descriptions retain the canonical clauses required by earlier gates: `authorization envelope`, `external staging release provider` and `explicit provider selection`. This preserves the cumulative A06, A08 and A09 contracts while keeping the new A10 ownership and sequencing authoritative.
+The reconciled blocker descriptions retain the canonical clauses required by earlier gates: `authorization envelope`, `external staging release provider` and `explicit provider selection`. This preserves the cumulative A06, A08 and A09 contracts while keeping the A10/A11 ownership and sequencing authoritative.
 
 ## Closure decision
 
