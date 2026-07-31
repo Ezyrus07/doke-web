@@ -76,7 +76,6 @@ jobs:
             config/sched-001-a09-staging-reconciliation.json \
             docs/DOMAIN-COMPLETION-MATRIX.md \
             docs/SCHED-001-A09-STAGING-RECONCILIATION.md \
-            reports/generated/domain-completion-matrix-report.json \
             scripts/audit-ord-001-a10-blocker-reconciliation.js \
             scripts/audit-ord-001-a11-scheduling-authority-handoff.js \
             scripts/audit-sched-001-a02-command-event-timezone-conflict-contract.js \
@@ -85,6 +84,7 @@ jobs:
             scripts/audit-sched-001-a05-persistence-readiness.js \
             scripts/close-sched-001-a09-documentation-matrix.js \
             scripts/patch-sched-001-a09-cumulative-audits.js
+          git add -f reports/generated/domain-completion-matrix-report.json
 
           if git diff --cached --name-only | grep -q '^\.github/workflows/'; then
             echo 'SCHED_A09_WORKFLOW_MUTATION_STAGED' >&2
