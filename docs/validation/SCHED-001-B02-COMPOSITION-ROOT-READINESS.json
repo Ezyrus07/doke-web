@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "domain": "SCHED-001",
+  "sublot": "SCHED-B02A",
+  "contractVersion": "sched-b02-composition-root-readiness-v1",
+  "status": "repository_readiness_complete",
+  "environment": "repository_only",
+  "projectRef": "zwkczgewzbsorbrjuzpb",
+  "assets": [
+    "backend/modules/scheduling/scheduling-composition-root.js",
+    "config/sched-001-b02-composition-root-readiness.json",
+    "docs/SCHED-001-B02-COMPOSITION-ROOT-READINESS.md",
+    "scripts/audit-sched-001-b02-composition-root-readiness.js",
+    "scripts/test-sched-001-b02-composition-root-runtime.js",
+    ".github/workflows/sched-001-b02-composition-root-readiness.yml"
+  ],
+  "assertions": [
+    "default_runtime_disabled",
+    "exact_true_flag_required",
+    "staging_environment_required",
+    "staging_project_ref_required",
+    "production_environment_blocked",
+    "postgres_pool_injection_required_after_activation",
+    "serializable_isolation_preserved",
+    "no_connection_string_parsing",
+    "no_secret_key_handling",
+    "no_parallel_scheduling_authority"
+  ],
+  "mutations": {
+    "database": 0,
+    "migrationHistory": 0,
+    "stagingRuntime": 0,
+    "production": 0,
+    "deployment": 0
+  },
+  "blockers": {
+    "closed": [],
+    "remainingOpen": [
+      "SCHED-B02",
+      "SCHED-B04"
+    ]
+  },
+  "nextGate": "SCHED-B02B authenticated staging composition canary"
+}
