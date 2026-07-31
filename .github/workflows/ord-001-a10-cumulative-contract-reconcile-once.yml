@@ -1,0 +1,67 @@
+name: ORD-A10 Cumulative Contract Reconcile Once
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/ord-001-a10-cumulative-contract-reconcile-once.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  reconcile:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Reconcile cumulative blocker wording
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('fs');
+          const matrixPath = 'config/domain-completion-matrix.json';
+          const matrix = JSON.parse(fs.readFileSync(matrixPath, 'utf8'));
+          matrix.version = '1.3.42';
+          matrix.updatedAt = '2026-07-30T23:30:00-03:00';
+          const ord = matrix.domains.find((domain) => domain.id === 'ORD-001');
+          if (!ord) throw new Error('ORD-001 domain not found');
+
+          const descriptions = {
+            'ORD-B02': 'Canonical reads, canary commands, cleanup, deterministic settlement, readiness discovery and the fail-closed Playwright executor pass. A short-lived authorization envelope is mandatory; ORD-B02 remains under ORD-001 until explicit resource authorization is issued, check-env passes, the real two-context visual canary is executed and run-scoped cleanup proves zero residue.',
+            'ORD-B03': 'Financial completion remains blocked by PAY-001. Payment authority is not connected to a real PSP webhook lifecycle, and ORD-001 must consume rather than duplicate that server-canonical authority before this blocker can close.',
+            'ORD-B04': 'Scheduling completion remains blocked by SCHED-001. Order scheduling and availability are not server-canonical; availability, booking, confirmation, rescheduling and double-booking protection must become authoritative there before ORD-001 can close this blocker.',
+            'ORD-B05': 'ORD-A08 release identity, ORD-A09A provider evaluation, the ORD-A09B0 provider-neutral adapter boundary, provider selection handoff, selection intent firewall and adapter conformance suite are complete. Railway is recommended as the external staging release provider, but no explicit provider selection, provider-specific adapter, account, billing, secrets, infrastructure, rollback command or deployment exists. ORD-B05 remains open until exactly I_EXPLICITLY_SELECT_RAILWAY_FOR_DOKE_STAGING authorizes only non-secret adapter preparation; every external action remains separately blocked.'
+          };
+
+          ord.blockers = ord.blockers.map((blocker) => ({
+            ...blocker,
+            description: descriptions[blocker.id] || blocker.description
+          }));
+          fs.writeFileSync(matrixPath, JSON.stringify(matrix, null, 2) + '\n');
+          NODE
+
+          node scripts/audit-ord-001-a10-blocker-reconciliation.js
+          node scripts/audit-ord-001-a06-authorization-envelope.js
+          node scripts/audit-ord-001-a08-staging-release-readiness.js
+          node scripts/audit-ord-001-a09a-staging-provider-evaluation.js
+          node scripts/audit-ord-001-a09b0-provider-adapter-boundary.js
+          node scripts/audit-ord-001-a09b0-provider-selection-handoff.js
+          node scripts/audit-ord-001-a09b0-provider-adapter-conformance.js
+          node scripts/audit-domain-completion-matrix.js --write
+          node scripts/audit-domain-completion-matrix.js
+
+          git add config/domain-completion-matrix.json docs/DOMAIN-COMPLETION-MATRIX.md
+          git add -f reports/generated/domain-completion-matrix-report.json
+          git config user.name 'github-actions[bot]'
+          git config user.email '4189826+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Preserve cumulative ORD blocker contracts' || exit 0
+          git pull --rebase origin ${{ github.event.pull_request.head.ref || github.ref_name }}
+          git push origin HEAD:${{ github.event.pull_request.head.ref || github.ref_name }}
