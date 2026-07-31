@@ -1,0 +1,56 @@
+{
+  "domain": "ORD-001",
+  "sublot": "ORD-A07E-REMOTE-APPLICATION",
+  "status": "passed_with_cleanup_baseline_restored",
+  "recordedAt": "2026-07-30T23:08:00-03:00",
+  "authorization": {
+    "exactPhraseReceived": true,
+    "scopeLimitedToRemoteCanaryAndSpecificCleanup": true,
+    "deployAuthorized": false,
+    "migrationAuthorized": false,
+    "cronChangeAuthorized": false,
+    "productionAuthorized": false,
+    "mergeAuthorized": false
+  },
+  "remote": {
+    "functionVersion": 10,
+    "functionStatus": "ACTIVE",
+    "verifyJwt": false,
+    "bundleSha256": "2f480553c636b96a061e66fcb3a6ddaf06d458459c898f215e2472ff2d8a4dc0",
+    "requests": 32,
+    "responses": 32,
+    "accepted": 1,
+    "replays": 31,
+    "unexpected": 0,
+    "timeouts": 0,
+    "transportErrors": 0,
+    "acceptedRequestId": 26,
+    "acceptedRunId": "c461950e-44a4-425b-bafc-cb2e99811cdb",
+    "replayStatus": 409,
+    "replayError": "DOKE_ORDER_EVENT_WORKER_REPLAY_REJECTED"
+  },
+  "cleanup": {
+    "workerRunDeleted": true,
+    "workerRunDeleteConditionsVerified": true,
+    "nonceDeleted": false,
+    "nonceRetainedToPreserveBaseline": true,
+    "reason": "The consume RPC removed the expired preexisting test nonce before inserting the canary nonce. The canary nonce therefore became the sole test ledger row; deleting it would have created count drift.",
+    "nonceExpiresAt": "2026-07-31T02:10:16.114+00:00"
+  },
+  "postCleanup": {
+    "orders": 0,
+    "budgets": 0,
+    "history": 0,
+    "domainEvents": 0,
+    "metricEvents": 0,
+    "deliveryAttempts": 0,
+    "workerRuns": 1,
+    "testWorkerRuns": 0,
+    "nonceLedgerRows": 1,
+    "testNonceRows": 1,
+    "cronActive": true,
+    "cronSchedule": "* * * * *",
+    "cronCommand": "select private.invoke_order_event_worker_if_needed();"
+  },
+  "result": "exactly_one_remote_invocation_accepted_and_all_31_replays_rejected"
+}
