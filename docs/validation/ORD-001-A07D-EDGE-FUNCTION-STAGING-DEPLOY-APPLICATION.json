@@ -1,0 +1,73 @@
+{
+  "domain": "ORD-001",
+  "sublot": "ORD-A07D-DEPLOY-APPLICATION",
+  "status": "edge_function_staging_deploy_applied_and_verified",
+  "recordedAt": "2026-07-30T22:38:00-03:00",
+  "authorization": {
+    "exactPhraseReceived": true,
+    "scopeLimitedToFrozenStagingBundleAndVerification": true,
+    "remoteReplayCanaryAuthorized": false,
+    "productionAuthorized": false,
+    "railwayAuthorized": false,
+    "mergeAuthorized": false
+  },
+  "remoteBefore": {
+    "version": 9,
+    "status": "ACTIVE",
+    "verifyJwt": false,
+    "bundleSha256": "5b4594aaf6f259928e2f27e5f920c616f9baff42a1702b3ba8bc87649c221852"
+  },
+  "remoteAfter": {
+    "version": 10,
+    "status": "ACTIVE",
+    "verifyJwt": false,
+    "bundleSha256": "2f480553c636b96a061e66fcb3a6ddaf06d458459c898f215e2472ff2d8a4dc0",
+    "fileCount": 6,
+    "entrypoint": "index.ts",
+    "importMap": "deno.json"
+  },
+  "probes": {
+    "invalidToken": {
+      "transport": "pg_net",
+      "requestId": 11,
+      "status": 401,
+      "body": { "error": "WORKER_AUTH_REQUIRED" }
+    },
+    "missingFreshness": {
+      "transport": "pg_net",
+      "requestId": 12,
+      "status": 428,
+      "body": { "error": "DOKE_ORDER_EVENT_WORKER_FRESHNESS_REQUIRED" },
+      "workerTokenDisclosed": false
+    }
+  },
+  "postDeploySnapshot": {
+    "cronJobActive": true,
+    "cronSchedule": "* * * * *",
+    "cronCommand": "select private.invoke_order_event_worker_if_needed();",
+    "orders": 0,
+    "budgets": 0,
+    "history": 0,
+    "domainEvents": 0,
+    "metricEvents": 0,
+    "deliveryAttempts": 0,
+    "workerRuns": 1,
+    "nonceLedgerRows": 1,
+    "a07bLedgerExists": true,
+    "a07bConsumeRpcExists": true
+  },
+  "execution": {
+    "edgeFunctionsDeployed": 1,
+    "httpVerificationProbes": 2,
+    "domainRowsMutated": 0,
+    "cronJobsChanged": 0,
+    "databaseMigrationsApplied": 0,
+    "productionChanged": false
+  },
+  "remainingBlockers": [
+    "remote_concurrent_replay_canary_authorization",
+    "railway_selection_or_deployment",
+    "production_changes",
+    "pull_request_merge"
+  ]
+}
