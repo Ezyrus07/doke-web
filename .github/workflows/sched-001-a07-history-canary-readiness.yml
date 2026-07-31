@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: sched-a09-documentation-matrix-${{ github.event.pull_request.number || github.ref }}
@@ -116,32 +116,70 @@ jobs:
           rm -f scripts/close-sched-001-a09-documentation-matrix.js
           rm -f scripts/patch-sched-001-a09-cumulative-audits.js
 
-      - name: Package validated closure
+      - name: Build validated Git objects without moving branch
+        id: git_objects
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          ARTIFACT_ROOT="$RUNNER_TEMP/sched-a09-closure"
-          FILE_ROOT="$ARTIFACT_ROOT/files"
-          rm -rf "$ARTIFACT_ROOT"
-          mkdir -p "$FILE_ROOT"
           git add -A
           git diff --cached --check
-          git rev-parse HEAD > "$ARTIFACT_ROOT/base_sha.txt"
-          git rev-parse 'HEAD^{tree}' > "$ARTIFACT_ROOT/base_tree_sha.txt"
-          git diff --cached --name-only --diff-filter=D > "$ARTIFACT_ROOT/deleted.txt"
-          git diff --cached --binary > "$ARTIFACT_ROOT/closure.patch"
-          git diff --cached --stat > "$ARTIFACT_ROOT/stat.txt"
-          while IFS= read -r file; do
-            [ -n "$file" ] || continue
-            mkdir -p "$FILE_ROOT/$(dirname "$file")"
-            cp "$file" "$FILE_ROOT/$file"
-          done < <(git diff --cached --name-only --diff-filter=ACMRT)
 
-      - name: Upload validated A09 closure
+          BASE_SHA="$(git rev-parse HEAD)"
+          BASE_TREE_SHA="$(git rev-parse 'HEAD^{tree}')"
+          TREE_ENTRIES="$(mktemp)"
+          printf '[]\n' > "$TREE_ENTRIES"
+
+          while IFS= read -r -d '' file; do
+            mode="$(git ls-files -s -- "$file" | awk 'NR == 1 { print $1 }')"
+            [ -n "$mode" ] || mode=100644
+            content="$(base64 -w0 "$file")"
+            blob_sha="$(
+              jq -n --arg content "$content" '{content:$content,encoding:"base64"}' \
+                | gh api --method POST "repos/$GITHUB_REPOSITORY/git/blobs" --input - --jq '.sha'
+            )"
+            jq --arg path "$file" --arg mode "$mode" --arg sha "$blob_sha" \
+              '. + [{path:$path,mode:$mode,type:"blob",sha:$sha}]' \
+              "$TREE_ENTRIES" > "$TREE_ENTRIES.next"
+            mv "$TREE_ENTRIES.next" "$TREE_ENTRIES"
+          done < <(git diff --cached --name-only --diff-filter=ACMRT -z)
+
+          while IFS= read -r -d '' file; do
+            jq --arg path "$file" \
+              '. + [{path:$path,mode:"100644",type:"blob",sha:null}]' \
+              "$TREE_ENTRIES" > "$TREE_ENTRIES.next"
+            mv "$TREE_ENTRIES.next" "$TREE_ENTRIES"
+          done < <(git diff --cached --name-only --diff-filter=D -z)
+
+          TREE_SHA="$(
+            jq -n --arg base_tree "$BASE_TREE_SHA" --slurpfile tree "$TREE_ENTRIES" \
+              '{base_tree:$base_tree,tree:$tree[0]}' \
+              | gh api --method POST "repos/$GITHUB_REPOSITORY/git/trees" --input - --jq '.sha'
+          )"
+
+          COMMIT_SHA="$(
+            jq -n \
+              --arg message 'docs(sched): close A09 staging reconciliation evidence' \
+              --arg tree "$TREE_SHA" \
+              --arg parent "$BASE_SHA" \
+              '{message:$message,tree:$tree,parents:[$parent]}' \
+              | gh api --method POST "repos/$GITHUB_REPOSITORY/git/commits" --input - --jq '.sha'
+          )"
+
+          OUTPUT_DIR="$RUNNER_TEMP/sched-a09-git-object"
+          mkdir -p "$OUTPUT_DIR"
+          printf '%s\n' "$BASE_SHA" > "$OUTPUT_DIR/base_sha.txt"
+          printf '%s\n' "$BASE_TREE_SHA" > "$OUTPUT_DIR/base_tree_sha.txt"
+          printf '%s\n' "$TREE_SHA" > "$OUTPUT_DIR/tree_sha.txt"
+          printf '%s\n' "$COMMIT_SHA" > "$OUTPUT_DIR/commit_sha.txt"
+          git diff --cached --name-status > "$OUTPUT_DIR/name_status.txt"
+          git diff --cached --stat > "$OUTPUT_DIR/stat.txt"
+
+      - name: Upload validated Git object metadata
         uses: actions/upload-artifact@v4
         with:
-          name: sched-a09-complete-tree
-          path: ${{ runner.temp }}/sched-a09-closure
+          name: sched-a09-git-object
+          path: ${{ runner.temp }}/sched-a09-git-object
           if-no-files-found: error
-          include-hidden-files: true
           retention-days: 1
