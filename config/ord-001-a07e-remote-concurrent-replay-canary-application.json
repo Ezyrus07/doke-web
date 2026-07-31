@@ -1,0 +1,101 @@
+{
+  "contractVersion": "ord-a07e-remote-concurrent-replay-canary-application-v1",
+  "domain": "ORD-001",
+  "sublot": "ORD-A07E-REMOTE-APPLICATION",
+  "status": "remote_concurrent_replay_canary_passed_cleanup_baseline_restored",
+  "authorizedAt": "2026-07-30T23:01:00-03:00",
+  "authorizationPhrase": "I_EXPLICITLY_AUTHORIZE_ORD_A07E_REMOTE_CONCURRENT_REPLAY_CANARY_ON_DOKE_STAGING",
+  "target": {
+    "environment": "staging",
+    "projectId": "zwkczgewzbsorbrjuzpb",
+    "functionName": "order-event-worker",
+    "version": 10,
+    "status": "ACTIVE",
+    "verifyJwt": false,
+    "bundleSha256": "2f480553c636b96a061e66fcb3a6ddaf06d458459c898f215e2472ff2d8a4dc0",
+    "productionAllowed": false
+  },
+  "dispatch": {
+    "transport": "pg_net",
+    "requestIds": [13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44],
+    "requestCount": 32,
+    "issuedAt": "1785463516114",
+    "nonceHashSha256": "dc30a98de4b2105f75130a318bf985c1395d3734a90e41509532933e6b3000b1",
+    "source": "test",
+    "body": { "limit": 1 }
+  },
+  "result": {
+    "received": 32,
+    "acceptedCount": 1,
+    "replayRejectedCount": 31,
+    "unexpectedCount": 0,
+    "timedOutCount": 0,
+    "transportErrorCount": 0,
+    "acceptedRequestId": 26,
+    "acceptedRunId": "c461950e-44a4-425b-bafc-cb2e99811cdb",
+    "acceptedHttpStatus": 200,
+    "acceptedClaimed": 0,
+    "acceptedCompleted": 0,
+    "acceptedFailed": 0,
+    "acceptedDeadLetter": 0,
+    "replayHttpStatus": 409,
+    "replayError": "DOKE_ORDER_EVENT_WORKER_REPLAY_REJECTED"
+  },
+  "intermediate": {
+    "orders": 0,
+    "budgets": 0,
+    "history": 0,
+    "domainEvents": 0,
+    "metricEvents": 0,
+    "deliveryAttempts": 0,
+    "workerRuns": 2,
+    "testWorkerRuns": 1,
+    "nonceLedgerRows": 1,
+    "testNonceRows": 1,
+    "acceptedRunCompleted": true,
+    "acceptedRunAllCountsZero": true
+  },
+  "cleanup": {
+    "acceptedWorkerRunDeleted": true,
+    "deletedWorkerRunCount": 1,
+    "canaryNonceDeleted": false,
+    "nonceRetentionReason": "The canonical consume RPC evicted the expired preexisting test nonce before inserting the canary nonce. Deleting the canary nonce would have reduced the ledger below the one-row baseline.",
+    "canaryNonceExpiresAt": "2026-07-31T02:10:16.114+00:00",
+    "preexistingNoncePreservedByIdentity": false,
+    "baselinePreservedByCount": true
+  },
+  "postCleanup": {
+    "orders": 0,
+    "budgets": 0,
+    "history": 0,
+    "domainEvents": 0,
+    "metricEvents": 0,
+    "deliveryAttempts": 0,
+    "workerRuns": 1,
+    "testWorkerRuns": 0,
+    "nonceLedgerRows": 1,
+    "testNonceRows": 1,
+    "acceptedRunPresent": false,
+    "canaryNoncePresent": true,
+    "cronActive": true,
+    "cronSchedule": "* * * * *",
+    "cronCommand": "select private.invoke_order_event_worker_if_needed();"
+  },
+  "execution": {
+    "remoteRequestsExecuted": 32,
+    "workerRunsCreated": 1,
+    "workerRunsDeleted": 1,
+    "nonceRowsInserted": 1,
+    "nonceRowsDeletedByCleanup": 0,
+    "domainRowsMutated": 0,
+    "cronJobsChanged": 0,
+    "edgeFunctionsDeployed": 0,
+    "migrationsApplied": 0,
+    "productionChanged": false
+  },
+  "stillBlocked": [
+    "railway_selection_or_deployment",
+    "production_changes",
+    "pull_request_merge"
+  ]
+}
