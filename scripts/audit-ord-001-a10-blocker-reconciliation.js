@@ -37,6 +37,7 @@ assert.strictEqual(config.scope, 'repository_only');
 assert.strictEqual(config.reconciliation.blockersClosedByThisSublot, 0);
 assert.strictEqual(config.reconciliation.domainClosureClaimed, false);
 assert.strictEqual(config.orderedNextActions.length, 4);
+assert(config.orderedNextActions[0].includes('SCHED-A03'));
 
 const disposition = Object.fromEntries(config.blockerDisposition.map((item) => [item.id, item]));
 assert.deepStrictEqual(Object.keys(disposition).sort(), ['ORD-B02', 'ORD-B03', 'ORD-B04', 'ORD-B05']);
@@ -68,11 +69,13 @@ assert.strictEqual(evidence.execution.stagingMutationsPerformed, 0);
 assert.strictEqual(evidence.execution.deploymentsPerformed, 0);
 assert.strictEqual(evidence.execution.productionChanged, false);
 
-assert(compareVersions(matrix.version, '1.3.41') >= 0, `Matrix version ${matrix.version} predates ORD-A10.`);
+assert(compareVersions(matrix.version, '1.3.46') >= 0, `Matrix version ${matrix.version} predates SCHED-A03.`);
 const ord = matrix.domains.find((domain) => domain.id === 'ORD-001');
 assert(ord, 'ORD-001 domain missing from completion matrix');
 assert.deepStrictEqual(ord.blockers.map((blocker) => blocker.id), ['ORD-B02', 'ORD-B03', 'ORD-B04', 'ORD-B05']);
-assert.deepStrictEqual(ord.nextActions, config.orderedNextActions);
+assert.strictEqual(ord.nextActions.length, 4);
+assert(ord.nextActions[0].includes('SCHED-A04'));
+assert.deepStrictEqual(ord.nextActions.slice(1), config.orderedNextActions.slice(1));
 
 const blockers = Object.fromEntries(ord.blockers.map((blocker) => [blocker.id, blocker]));
 assert(blockers['ORD-B02'].description.includes('authorization envelope'));
