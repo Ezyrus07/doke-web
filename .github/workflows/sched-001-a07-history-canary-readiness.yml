@@ -5,6 +5,7 @@ on:
     paths:
       - '.github/workflows/sched-001-a07-history-canary-readiness.yml'
       - 'scripts/close-sched-001-a09-documentation-matrix.js'
+      - 'scripts/patch-sched-001-a09-cumulative-audits.js'
   workflow_dispatch:
 
 permissions:
@@ -37,6 +38,7 @@ jobs:
         run: |
           set -euo pipefail
           export SCHED_A09_UPDATED_AT="$(TZ=America/Bahia date -Iseconds)"
+          node scripts/patch-sched-001-a09-cumulative-audits.js
           node scripts/close-sched-001-a09-documentation-matrix.js
 
       - name: Regenerate and validate canonical matrix
@@ -45,10 +47,15 @@ jobs:
           set -euo pipefail
           npm run write:domain-completion-matrix
           npm run audit:domain-completion-matrix
+          npm run audit:sched-001-a02-command-event-timezone-conflict-contract
+          npm run audit:sched-001-a03-reservation-migration-local-contract
           npm run audit:sched-001-a04-server-command-runtime
           npm run test:sched-001-a04-scheduling-service-runtime
           npm run audit:sched-001-a05-persistence-readiness
           npm run test:sched-001-a05-postgres-repository-runtime
+          npm run audit:ord-001-a10-blocker-reconciliation
+          npm run audit:ord-001-a11-scheduling-authority-handoff
+          npm run audit:sched-001-a07-history-canary-readiness
 
       - name: Restore historical readiness workflow and remove executors
         shell: bash
@@ -107,6 +114,7 @@ jobs:
           YAML
           rm -f .github/workflows/sched-001-a09-documentation-matrix.yml
           rm -f scripts/close-sched-001-a09-documentation-matrix.js
+          rm -f scripts/patch-sched-001-a09-cumulative-audits.js
 
       - name: Commit and push A09 closure
         shell: bash
