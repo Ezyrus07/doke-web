@@ -1,0 +1,39 @@
+name: Doke ORD-A11 Scheduling Authority Handoff
+
+on:
+  pull_request:
+    paths:
+      - 'config/ord-001-a11-scheduling-authority-handoff.json'
+      - 'docs/ORD-001-A11-SCHEDULING-AUTHORITY-HANDOFF.md'
+      - 'docs/validation/ORD-001-A11-SCHEDULING-AUTHORITY-HANDOFF.json'
+      - 'scripts/audit-ord-001-a11-scheduling-authority-handoff.js'
+      - '.github/workflows/ord-001-a11-scheduling-authority-handoff.yml'
+      - 'config/domain-completion-matrix.json'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+      - 'package.json'
+      - 'supabase/migrations/113_availability_reviews_authority.sql'
+      - 'supabase/migrations/119_public_policy_role_separation.sql'
+      - 'backend/modules/orders/orders-service.js'
+      - 'assets/js/repositories/orders-repository.js'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Audit ORD-A11 scheduling authority handoff
+        run: node scripts/audit-ord-001-a11-scheduling-authority-handoff.js
+      - name: Preserve ORD-A10 blocker reconciliation
+        run: node scripts/audit-ord-001-a10-blocker-reconciliation.js
+      - name: Preserve ORD-A07E replay application
+        run: node scripts/audit-ord-001-a07e-remote-concurrent-replay-canary-application.js
+      - name: Audit completion matrix
+        run: node scripts/audit-domain-completion-matrix.js
