@@ -20,6 +20,7 @@ assert.strictEqual(contract.rangesOverlap(
   { startsAt: '2026-08-01T12:00:00Z', endsAt: '2026-08-01T13:00:00Z' },
   { startsAt: '2026-08-01T12:30:00Z', endsAt: '2026-08-01T13:30:00Z' }
 ), true);
+// Adjacent half-open ranges do not conflict.
 assert.strictEqual(contract.rangesOverlap(
   { startsAt: '2026-08-01T12:00:00Z', endsAt: '2026-08-01T13:00:00Z' },
   { startsAt: '2026-08-01T13:00:00Z', endsAt: '2026-08-01T14:00:00Z' }
