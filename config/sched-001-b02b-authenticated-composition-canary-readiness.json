@@ -1,0 +1,94 @@
+{
+  "schemaVersion": 1,
+  "domain": "SCHED-001",
+  "sublot": "SCHED-B02B",
+  "contractVersion": "sched-b02b-authenticated-composition-canary-readiness-v1",
+  "scope": "repository_only_authenticated_staging_canary_readiness",
+  "environment": "doke-web-staging",
+  "projectRef": "zwkczgewzbsorbrjuzpb",
+  "authorization": {
+    "requiredExactPhrase": "I_EXPLICITLY_AUTHORIZE_SCHED_B02B_AUTHENTICATED_COMPOSITION_CANARIES_ON_DOKE_STAGING",
+    "genericNextAllowed": false,
+    "productionCovered": false,
+    "deploymentCovered": false,
+    "ordWiringCovered": false,
+    "frontendAuthoritySwitchCovered": false
+  },
+  "runtimeGate": {
+    "enabledFlag": "DOKE_SCHEDULING_RUNTIME_ENABLED",
+    "enabledValue": "true",
+    "environmentFlag": "DOKE_RUNTIME_ENVIRONMENT",
+    "environmentValue": "staging",
+    "projectRefFlag": "SUPABASE_PROJECT_REF",
+    "projectRefValue": "zwkczgewzbsorbrjuzpb",
+    "failClosed": true
+  },
+  "personas": [
+    {
+      "name": "client",
+      "actorRole": "client_order_participant",
+      "allowedCommands": ["create_schedule_hold"],
+      "forbiddenCommands": ["confirm_schedule_reservation", "reschedule_reservation", "expire_schedule_holds"]
+    },
+    {
+      "name": "professional",
+      "actorRole": "professional_owner",
+      "allowedCommands": ["upsert_availability_rule"],
+      "forbiddenCommands": ["confirm_schedule_reservation", "expire_schedule_holds"]
+    },
+    {
+      "name": "support",
+      "actorRole": "support",
+      "allowedCommands": ["upsert_availability_rule", "create_schedule_hold", "confirm_schedule_reservation", "reschedule_reservation", "cancel_schedule_reservation"],
+      "forbiddenCommands": ["expire_schedule_holds"]
+    },
+    {
+      "name": "admin",
+      "actorRole": "admin",
+      "allowedCommands": ["upsert_availability_rule", "create_schedule_hold", "confirm_schedule_reservation", "reschedule_reservation", "cancel_schedule_reservation"],
+      "forbiddenCommands": ["expire_schedule_holds"]
+    }
+  ],
+  "canaryAssertions": [
+    "runtime_disabled_without_exact_gate",
+    "client_hold_allowed_for_owned_order",
+    "client_confirmation_forbidden",
+    "professional_availability_upsert_allowed",
+    "professional_booking_confirmation_forbidden",
+    "support_command_boundary_enforced",
+    "admin_command_boundary_enforced",
+    "idempotent_replay_returns_same_result",
+    "different_payload_same_key_rejected",
+    "overlap_rejected",
+    "order_projection_matches_reservation",
+    "transaction_rolled_back",
+    "zero_canary_residue"
+  ],
+  "residueTables": [
+    "public.schedule_availability_rules",
+    "public.schedule_reservations",
+    "private.schedule_command_idempotency",
+    "private.schedule_domain_events",
+    "public.orders"
+  ],
+  "capabilities": {
+    "executeModeAvailable": false,
+    "databaseMutationAvailable": false,
+    "runtimeActivated": false,
+    "authenticatedCanaryExecuted": false
+  },
+  "blockers": {
+    "closed": [],
+    "remainingOpen": ["SCHED-B02", "SCHED-B04"]
+  },
+  "nextGate": "authorized authenticated staging composition canary execution",
+  "prohibitedActions": [
+    "production_access",
+    "deployment",
+    "frontend_authority_switch",
+    "ord_runtime_wiring",
+    "cron_activation",
+    "worker_activation",
+    "merge"
+  ]
+}
