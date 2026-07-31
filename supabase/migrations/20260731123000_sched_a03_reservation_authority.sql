@@ -1,9 +1,32 @@
--- Doke SCHED-A03: canonical scheduling reservation authority.
+-- Doke SCHED-A03: canonical scheduling authority schema.
 -- Repository-generated migration only. Do not apply without an exact, independent staging authorization.
 
 begin;
+set local search_path = pg_catalog, public, private, extensions;
 
 create extension if not exists btree_gist with schema extensions;
+
+create table if not exists public.schedule_availability_rules (
+  id uuid primary key default extensions.gen_random_uuid(),
+  professional_id uuid not null references public.users(id) on delete cascade,
+  timezone text not null,
+  rule jsonb not null,
+  status text not null default 'active'
+    check (status in ('active', 'paused', 'archived')),
+  version bigint not null default 1 check (version > 0),
+  created_by uuid references public.users(id) on delete set null,
+  created_at timestamptz not null default pg_catalog.now(),
+  updated_at timestamptz not null default pg_catalog.now(),
+  constraint schedule_availability_rules_timezone_shape check (
+    timezone ~ '^(UTC|[A-Za-z][A-Za-z0-9._+-]*(/[A-Za-z0-9._+-]+)+)$'
+  ),
+  constraint schedule_availability_rules_rule_object check (
+    jsonb_typeof(rule) = 'object'
+  )
+);
+
+create index if not exists schedule_availability_rules_professional_status
+  on public.schedule_availability_rules(professional_id, status, updated_at desc);
 
 create table if not exists public.schedule_reservations (
   id uuid primary key default extensions.gen_random_uuid(),
@@ -101,15 +124,42 @@ create table if not exists private.schedule_command_idempotency (
   principal_key text not null,
   idempotency_key text not null,
   request_hash text not null,
+  state text not null default 'in_progress'
+    check (state in ('in_progress', 'completed', 'failed')),
+  aggregate_type text check (aggregate_type in ('availability_rule', 'reservation')),
+  aggregate_id uuid,
+  availability_rule_id uuid references public.schedule_availability_rules(id) on delete set null,
   reservation_id uuid references public.schedule_reservations(id) on delete set null,
-  result_payload jsonb not null default '{}'::jsonb,
+  result_payload jsonb,
+  error_payload jsonb,
   created_at timestamptz not null default pg_catalog.now(),
+  completed_at timestamptz,
   expires_at timestamptz not null default (pg_catalog.now() + interval '30 days'),
   constraint schedule_command_idempotency_request_hash check (
     request_hash ~ '^[a-f0-9]{64}$'
   ),
   constraint schedule_command_idempotency_retention check (
     expires_at >= created_at + interval '30 days'
+  ),
+  constraint schedule_command_idempotency_aggregate_reference check (
+    (aggregate_type is null and aggregate_id is null and availability_rule_id is null and reservation_id is null)
+    or (
+      aggregate_type = 'availability_rule'
+      and aggregate_id is not null
+      and availability_rule_id = aggregate_id
+      and reservation_id is null
+    )
+    or (
+      aggregate_type = 'reservation'
+      and aggregate_id is not null
+      and reservation_id = aggregate_id
+      and availability_rule_id is null
+    )
+  ),
+  constraint schedule_command_idempotency_state_payload check (
+    (state = 'in_progress' and completed_at is null and result_payload is null and error_payload is null)
+    or (state = 'completed' and completed_at is not null and result_payload is not null and error_payload is null)
+    or (state = 'failed' and completed_at is not null and result_payload is null and error_payload is not null)
   ),
   unique (command_name, principal_key, idempotency_key)
 );
@@ -120,8 +170,11 @@ create index if not exists schedule_command_idempotency_expiry
 create table if not exists private.schedule_domain_events (
   id uuid primary key default extensions.gen_random_uuid(),
   event_key text not null unique,
-  reservation_id uuid not null references public.schedule_reservations(id) on delete restrict,
-  order_id uuid not null references public.orders(id) on delete restrict,
+  aggregate_type text not null check (aggregate_type in ('availability_rule', 'reservation')),
+  aggregate_id uuid not null,
+  availability_rule_id uuid references public.schedule_availability_rules(id) on delete restrict,
+  reservation_id uuid references public.schedule_reservations(id) on delete restrict,
+  order_id uuid references public.orders(id) on delete restrict,
   professional_id uuid not null references public.users(id) on delete restrict,
   sequence_no bigint not null check (sequence_no > 0),
   event_type text not null check (event_type in (
@@ -138,19 +191,52 @@ create table if not exists private.schedule_domain_events (
   payload jsonb not null,
   occurred_at timestamptz not null,
   created_at timestamptz not null default pg_catalog.now(),
-  unique (reservation_id, sequence_no)
+  constraint schedule_domain_events_aggregate_reference check (
+    (
+      aggregate_type = 'availability_rule'
+      and availability_rule_id is not null
+      and availability_rule_id = aggregate_id
+      and reservation_id is null
+      and order_id is null
+    )
+    or (
+      aggregate_type = 'reservation'
+      and reservation_id is not null
+      and reservation_id = aggregate_id
+      and availability_rule_id is null
+      and order_id is not null
+    )
+  ),
+  constraint schedule_domain_events_event_aggregate check (
+    (event_type = 'schedule.availability_rule_upserted' and aggregate_type = 'availability_rule')
+    or (
+      event_type in (
+        'schedule.hold_created',
+        'schedule.hold_expired',
+        'schedule.confirmed',
+        'schedule.rescheduled',
+        'schedule.cancelled'
+      )
+      and aggregate_type = 'reservation'
+    )
+  ),
+  unique (aggregate_type, aggregate_id, sequence_no)
 );
 
 create index if not exists schedule_domain_events_order_created
-  on private.schedule_domain_events(order_id, created_at);
+  on private.schedule_domain_events(order_id, created_at)
+  where order_id is not null;
 
-create index if not exists schedule_domain_events_reservation_sequence
-  on private.schedule_domain_events(reservation_id, sequence_no);
+create index if not exists schedule_domain_events_aggregate_sequence
+  on private.schedule_domain_events(aggregate_type, aggregate_id, sequence_no);
 
+alter table public.schedule_availability_rules enable row level security;
 alter table public.schedule_reservations enable row level security;
 alter table private.schedule_command_idempotency enable row level security;
 alter table private.schedule_domain_events enable row level security;
 
+revoke all privileges on table public.schedule_availability_rules
+  from public, anon, authenticated, service_role;
 revoke all privileges on table public.schedule_reservations
   from public, anon, authenticated, service_role;
 revoke all privileges on table private.schedule_command_idempotency
@@ -158,6 +244,8 @@ revoke all privileges on table private.schedule_command_idempotency
 revoke all privileges on table private.schedule_domain_events
   from public, anon, authenticated, service_role;
 
+grant select, insert, update, delete on table public.schedule_availability_rules
+  to service_role;
 grant select, insert, update, delete on table public.schedule_reservations
   to service_role;
 grant select, insert, update, delete on table private.schedule_command_idempotency
@@ -165,8 +253,8 @@ grant select, insert, update, delete on table private.schedule_command_idempoten
 grant select, insert, update, delete on table private.schedule_domain_events
   to service_role;
 
--- availability_slots remains the professional's declared intent surface.
--- A professional may create or edit available/blocked intent, but never materialize booking state.
+-- availability_slots remains a legacy professional intent surface until A04 command adoption.
+-- Professionals may change only non-booked intent rows and can never create, clear or mutate booked state.
 drop policy if exists availability_slots_owner_insert on public.availability_slots;
 drop policy if exists availability_slots_owner_update on public.availability_slots;
 drop policy if exists availability_slots_owner_delete on public.availability_slots;
@@ -189,6 +277,7 @@ create policy availability_slots_owner_update
   using (
     professional_id = (select auth.uid())
     and public.current_user_role() = 'professional'
+    and status in ('available', 'blocked')
   )
   with check (
     professional_id = (select auth.uid())
@@ -204,9 +293,11 @@ create policy availability_slots_owner_delete
   using (
     professional_id = (select auth.uid())
     and public.current_user_role() = 'professional'
-    and status <> 'booked'
+    and status in ('available', 'blocked')
   );
 
+comment on table public.schedule_availability_rules is
+  'Canonical SCHED-001 availability-rule authority mutated only through server commands.';
 comment on table public.schedule_reservations is
   'Canonical SCHED-001 occupancy authority. Only held and confirmed rows occupy time.';
 comment on column public.orders.schedule_reservation_id is
@@ -214,7 +305,7 @@ comment on column public.orders.schedule_reservation_id is
 comment on table private.schedule_command_idempotency is
   'Persistent command replay ledger scoped by command, principal and idempotency key.';
 comment on table private.schedule_domain_events is
-  'Durable SCHED-001 event stream written atomically with canonical scheduling mutations.';
+  'Aggregate-aware durable SCHED-001 event stream written atomically with canonical scheduling mutations.';
 
 notify pgrst, 'reload schema';
 

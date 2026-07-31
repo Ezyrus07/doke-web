@@ -3,39 +3,46 @@
 const RESERVATION_STATES = Object.freeze(['held', 'confirmed', 'cancelled', 'expired']);
 const ACTIVE_OCCUPANCY_STATES = Object.freeze(['held', 'confirmed']);
 const TERMINAL_STATES = Object.freeze(['cancelled', 'expired']);
+const EVENT_AGGREGATE_TYPES = Object.freeze(['availability_rule', 'reservation']);
 const RANGE_CONVENTION = '[start,end)';
 const HOLD_TTL_SECONDS = 600;
 
 const COMMANDS = Object.freeze({
   upsert_availability_rule: Object.freeze({
     actors: Object.freeze(['professional_owner', 'support', 'admin']),
+    aggregateType: 'availability_rule',
     eventType: 'schedule.availability_rule_upserted'
   }),
   create_schedule_hold: Object.freeze({
     actors: Object.freeze(['client_order_participant', 'support', 'admin']),
+    aggregateType: 'reservation',
     to: 'held',
     eventType: 'schedule.hold_created'
   }),
   confirm_schedule_reservation: Object.freeze({
     actors: Object.freeze(['order_service', 'support', 'admin']),
+    aggregateType: 'reservation',
     from: Object.freeze(['held']),
     to: 'confirmed',
     eventType: 'schedule.confirmed'
   }),
   reschedule_reservation: Object.freeze({
     actors: Object.freeze(['order_service', 'support', 'admin']),
+    aggregateType: 'reservation',
     from: Object.freeze(['confirmed']),
     to: 'confirmed',
     eventType: 'schedule.rescheduled'
   }),
   cancel_schedule_reservation: Object.freeze({
     actors: Object.freeze(['order_service', 'support', 'admin']),
+    aggregateType: 'reservation',
     from: Object.freeze(['held', 'confirmed']),
     to: 'cancelled',
     eventType: 'schedule.cancelled'
   }),
   expire_schedule_holds: Object.freeze({
     actors: Object.freeze(['schedule_worker', 'service_role']),
+    aggregateType: 'reservation',
     from: Object.freeze(['held']),
     to: 'expired',
     eventType: 'schedule.hold_expired'
@@ -49,6 +56,7 @@ const ERROR_CODES = Object.freeze({
   versionConflict: 'DOKE_SCHEDULE_VERSION_CONFLICT',
   idempotencyConflict: 'DOKE_SCHEDULE_IDEMPOTENCY_CONFLICT',
   invalidTransition: 'DOKE_SCHEDULE_INVALID_TRANSITION',
+  invalidEventAggregate: 'DOKE_SCHEDULE_EVENT_AGGREGATE_INVALID',
   holdExpired: 'DOKE_SCHEDULE_HOLD_EXPIRED'
 });
 
@@ -64,6 +72,10 @@ function normalizeState(value) {
 }
 
 function normalizeActor(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+function normalizeAggregateType(value) {
   return String(value || '').trim().toLowerCase();
 }
 
@@ -147,6 +159,7 @@ function assertTransition(commandName, currentState, actorRole) {
   }
   return Object.freeze({
     command: commandName,
+    aggregateType: command.aggregateType,
     previousState: state || null,
     nextState: command.to || state || null,
     eventType: command.eventType
@@ -173,13 +186,17 @@ function assertIdempotencyReplay(previous, incoming) {
   throw contractError(ERROR_CODES.idempotencyConflict, 'The idempotency key was reused with a different payload.');
 }
 
-function buildEventKey(reservationId, sequenceNo) {
-  const id = String(reservationId || '').trim();
+function buildEventKey(aggregateType, aggregateId, sequenceNo) {
+  const type = normalizeAggregateType(aggregateType);
+  const id = String(aggregateId || '').trim();
   const sequence = Number(sequenceNo);
-  if (!id || !Number.isInteger(sequence) || sequence < 1) {
-    throw contractError(ERROR_CODES.invalidTransition, 'A reservation id and positive event sequence are required.');
+  if (!EVENT_AGGREGATE_TYPES.includes(type) || !id || !Number.isInteger(sequence) || sequence < 1) {
+    throw contractError(
+      ERROR_CODES.invalidEventAggregate,
+      'A supported aggregate type, aggregate id and positive event sequence are required.'
+    );
   }
-  return `schedule:${id}:v${sequence}`;
+  return `schedule:${type}:${id}:v${sequence}`;
 }
 
 function isHoldExpired(reservation, cutoff) {
@@ -193,11 +210,13 @@ module.exports = Object.freeze({
   RESERVATION_STATES,
   ACTIVE_OCCUPANCY_STATES,
   TERMINAL_STATES,
+  EVENT_AGGREGATE_TYPES,
   RANGE_CONVENTION,
   HOLD_TTL_SECONDS,
   COMMANDS,
   ERROR_CODES,
   normalizeState,
+  normalizeAggregateType,
   validateRange,
   rangesOverlap,
   assertNoActiveConflict,

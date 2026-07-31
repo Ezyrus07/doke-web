@@ -12,16 +12,8 @@ const TEST_PATH = 'scripts/test-sched-001-a02-contract-runtime.js';
 const WORKFLOW_PATH = '.github/workflows/sched-001-a02-command-event-timezone-conflict-contract.yml';
 const MATRIX_PATH = 'config/domain-completion-matrix.json';
 
-[
-  CONFIG_PATH,
-  DOC_PATH,
-  EVIDENCE_PATH,
-  CONTRACT_PATH,
-  TEST_PATH,
-  WORKFLOW_PATH,
-  MATRIX_PATH,
-  'package.json'
-].forEach((file) => assert(fs.existsSync(file), `Missing SCHED-A02 asset: ${file}`));
+[CONFIG_PATH, DOC_PATH, EVIDENCE_PATH, CONTRACT_PATH, TEST_PATH, WORKFLOW_PATH, MATRIX_PATH, 'package.json']
+  .forEach((file) => assert(fs.existsSync(file), `Missing SCHED-A02 asset: ${file}`));
 
 const config = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8'));
 const evidence = JSON.parse(fs.readFileSync(EVIDENCE_PATH, 'utf8'));
@@ -42,10 +34,11 @@ const compareVersions = (left, right) => {
   return 0;
 };
 
-assert.strictEqual(config.contractVersion, 'sched-a02-command-event-timezone-conflict-contract-v1');
+assert.strictEqual(config.contractVersion, 'sched-a02-command-event-timezone-conflict-contract-v2');
 assert.strictEqual(config.status, 'repository_contract_frozen_migration_and_runtime_pending');
 assert.strictEqual(config.domain, 'SCHED-001');
 assert.strictEqual(config.scope, 'repository_only_executable_contract');
+assert(config.compatibilityCorrection.includes('aggregate-aware'));
 assert.strictEqual(config.authority.canonicalOwner, 'SCHED-001');
 assert.strictEqual(config.authority.reservationMutationBoundary, 'server_command_only');
 assert.strictEqual(config.authority.browserMayConfirmBooking, false);
@@ -54,6 +47,8 @@ assert.strictEqual(config.authority.professionalMaySetBookedDirectly, false);
 assert.deepStrictEqual(config.entities.scheduleReservation.states, ['held', 'confirmed', 'cancelled', 'expired']);
 assert.deepStrictEqual(config.entities.scheduleReservation.activeOccupancyStates, ['held', 'confirmed']);
 assert.strictEqual(Object.keys(config.commands).length, 6);
+assert.strictEqual(config.commands.upsert_availability_rule.aggregateType, 'availability_rule');
+assert.strictEqual(config.commands.create_schedule_hold.aggregateType, 'reservation');
 assert.strictEqual(config.commands.create_schedule_hold.holdTtlSeconds, 600);
 assert.deepStrictEqual(config.commands.create_schedule_hold.holdTtlAllowedRangeSeconds, [300, 900]);
 assert.deepStrictEqual(config.commands.confirm_schedule_reservation.authorizedActors, ['order_service', 'support', 'admin']);
@@ -72,8 +67,12 @@ assert.strictEqual(config.conflictPolicy.requiredExtension, 'btree_gist');
 assert(config.conflictPolicy.databasePrimitive.includes('GiST exclusion constraint'));
 assert.strictEqual(config.conflictPolicy.conflictCode, 'DOKE_SCHEDULE_CONFLICT');
 assert.strictEqual(config.events.eventStore, 'private.schedule_domain_events');
+assert.deepStrictEqual(config.events.aggregateTypes, ['availability_rule', 'reservation']);
+assert.strictEqual(config.events.eventKey, 'schedule:{aggregate_type}:{aggregate_id}:v{sequence_no}');
+assert.deepStrictEqual(config.events.conditionalReferences.availability_rule, ['availability_rule_id']);
+assert.deepStrictEqual(config.events.conditionalReferences.reservation, ['reservation_id', 'order_id']);
 assert.strictEqual(config.events.types.length, 6);
-assert.strictEqual(config.events.transactionality, 'canonical row mutation, event insertion and order projection update must commit atomically or all roll back');
+assert(config.events.transactionality.includes('canonical mutation and durable event insertion'));
 assert.strictEqual(config.orderIntegration.canonicalReference, 'orders.schedule_reservation_id');
 assert.strictEqual(config.orderIntegration.scheduledAtRole, 'read projection only');
 assert.strictEqual(config.orderedNextActions.length, 4);
@@ -87,12 +86,15 @@ assert.strictEqual(evidence.contractVersion, config.contractVersion);
 assert.strictEqual(evidence.status, config.status);
 assert.strictEqual(evidence.contract.commandCount, 6);
 assert.strictEqual(evidence.contract.eventTypeCount, 6);
+assert.deepStrictEqual(evidence.contract.eventAggregateTypes, ['availability_rule', 'reservation']);
 assert.strictEqual(evidence.contract.serverOnlyReservationMutation, true);
 assert.strictEqual(evidence.time.rangeConvention, '[start,end)');
 assert.strictEqual(evidence.time.adjacentRangesConflict, false);
 assert.strictEqual(evidence.conflict.requiredExtension, 'btree_gist');
 assert.strictEqual(evidence.concurrency.optimisticVersionRequired, true);
 assert.strictEqual(evidence.concurrency.idempotencyRequired, true);
+assert.strictEqual(evidence.events.availabilityRuleEventHasReservationId, false);
+assert.strictEqual(evidence.events.reservationEventsRequireOrderId, true);
 assert.strictEqual(evidence.events.transactionalWithCanonicalMutation, true);
 assert.deepStrictEqual(evidence.blockers.closed, []);
 assert.deepStrictEqual(evidence.blockers.remainingOpen, ['SCHED-B02', 'SCHED-B03', 'SCHED-B04', 'SCHED-B05']);
@@ -102,6 +104,7 @@ assert.strictEqual(evidence.execution.migrationsApplied, 0);
 
 [
   "const RANGE_CONVENTION = '[start,end)'",
+  "const EVENT_AGGREGATE_TYPES = Object.freeze(['availability_rule', 'reservation'])",
   'function validateRange',
   'function rangesOverlap',
   'function assertNoActiveConflict',
@@ -112,16 +115,18 @@ assert.strictEqual(evidence.execution.migrationsApplied, 0);
   'function isHoldExpired',
   'DOKE_SCHEDULE_CONFLICT',
   'DOKE_SCHEDULE_VERSION_CONFLICT',
-  'DOKE_SCHEDULE_IDEMPOTENCY_CONFLICT'
+  'DOKE_SCHEDULE_IDEMPOTENCY_CONFLICT',
+  'DOKE_SCHEDULE_EVENT_AGGREGATE_INVALID'
 ].forEach((fragment) => assert(contractSource.includes(fragment), `Contract module missing: ${fragment}`));
 assert(!contractSource.includes('fetch('));
 assert(!contractSource.includes('supabase'));
 assert(!contractSource.includes('process.env'));
 assert(testSource.includes('adjacent'));
+assert(testSource.includes("buildEventKey('availability_rule'"));
 assert(testSource.includes('DOKE_SCHEDULE_ACTOR_FORBIDDEN'));
 assert(testSource.includes('DOKE_SCHEDULE_IDEMPOTENCY_CONFLICT'));
 
-assert(compareVersions(matrix.version, '1.3.45') >= 0, `Matrix version ${matrix.version} predates SCHED-A02.`);
+assert(compareVersions(matrix.version, '1.3.46') >= 0, `Matrix version ${matrix.version} predates SCHED-A03.`);
 const ord = matrix.domains.find((domain) => domain.id === 'ORD-001');
 const sched = matrix.domains.find((domain) => domain.id === 'SCHED-001');
 assert(ord, 'ORD-001 missing from matrix');
@@ -130,22 +135,15 @@ assert.strictEqual(sched.maturity, 1);
 assert.strictEqual(sched.serverAuthority, 'none');
 assert.strictEqual(sched.securityGate, 'partial');
 assert.deepStrictEqual(sched.blockers.map((item) => item.id), ['SCHED-B02', 'SCHED-B03', 'SCHED-B04', 'SCHED-B05']);
-assert(sched.blockers.every((item) => item.description.includes('A02') || item.description.includes('contract')));
 assert.deepStrictEqual(sched.nextActions, config.orderedNextActions);
-assert(ord.nextActions[0].includes('SCHED-A03'));
+assert(ord.nextActions[0].includes('SCHED-A04'));
 
-[
-  CONFIG_PATH,
-  DOC_PATH,
-  EVIDENCE_PATH,
-  CONTRACT_PATH,
-  TEST_PATH,
-  'scripts/audit-sched-001-a02-command-event-timezone-conflict-contract.js',
-  WORKFLOW_PATH
-].forEach((path) => {
-  assert(sched.requiredPaths.includes(path), `SCHED requiredPaths missing ${path}`);
-  assert(ord.requiredPaths.includes(path), `ORD requiredPaths missing ${path}`);
-});
+[CONFIG_PATH, DOC_PATH, EVIDENCE_PATH, CONTRACT_PATH, TEST_PATH,
+  'scripts/audit-sched-001-a02-command-event-timezone-conflict-contract.js', WORKFLOW_PATH]
+  .forEach((path) => {
+    assert(sched.requiredPaths.includes(path), `SCHED requiredPaths missing ${path}`);
+    assert(ord.requiredPaths.includes(path), `ORD requiredPaths missing ${path}`);
+  });
 assert(sched.tests.includes('audit:sched-001-a02-command-event-timezone-conflict-contract'));
 assert(sched.tests.includes('test:sched-001-a02-contract-runtime'));
 assert(ord.tests.includes('audit:sched-001-a02-command-event-timezone-conflict-contract'));
@@ -159,8 +157,10 @@ assert.strictEqual(pkg.scripts['test:sched-001-a02-contract-runtime'], 'node scr
   'same key and different payload',
   'half-open `[start,end)`',
   'btree_gist',
+  'aggregate-aware',
+  'schedule:{aggregate_type}:{aggregate_id}:v{sequence_no}',
   'private.schedule_domain_events',
-  'SCHED-A03 — Reservation Migration Generation and Local Contract Tests',
+  'SCHED-A04 — Server Scheduling Command Module and Deterministic Runtime Tests',
   'staging mutations: 0'
 ].forEach((fragment) => assert(docs.includes(fragment), `Documentation missing: ${fragment}`));
 

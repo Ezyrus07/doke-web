@@ -1,8 +1,8 @@
 {
-  "contractVersion": "sched-a03-reservation-migration-local-contract-v1",
+  "contractVersion": "sched-a03-reservation-migration-local-contract-v2",
   "status": "repository_migration_generated_local_static_tests_only",
   "domain": "SCHED-001",
-  "source": ["SCHED-A01", "SCHED-A02"],
+  "source": ["SCHED-A01", "SCHED-A02-v2"],
   "scope": "repository_only_migration_generation",
   "migration": {
     "path": "supabase/migrations/20260731123000_sched_a03_reservation_authority.sql",
@@ -10,10 +10,19 @@
     "stagingAuthorized": false,
     "productionAuthorized": false,
     "requiredExtension": "btree_gist",
+    "canonicalAvailabilityRuleTable": "public.schedule_availability_rules",
     "canonicalReservationTable": "public.schedule_reservations",
     "idempotencyTable": "private.schedule_command_idempotency",
     "eventTable": "private.schedule_domain_events",
     "orderReference": "public.orders.schedule_reservation_id"
+  },
+  "availabilityAuthority": {
+    "browserDmlAllowed": false,
+    "serviceRoleCrudOnly": true,
+    "states": ["active", "paused", "archived"],
+    "optimisticVersionField": "version",
+    "ruleShape": "json_object",
+    "timezone": "IANA identifier"
   },
   "reservationAuthority": {
     "browserDmlAllowed": false,
@@ -36,12 +45,17 @@
   "idempotency": {
     "uniqueScope": ["command_name", "principal_key", "idempotency_key"],
     "requestHash": "sha256_hex",
+    "states": ["in_progress", "completed", "failed"],
+    "aggregateAware": true,
     "minimumRetentionDays": 30
   },
   "events": {
     "durable": true,
+    "aggregateAware": true,
+    "aggregateTypes": ["availability_rule", "reservation"],
+    "eventKey": "schedule:{aggregate_type}:{aggregate_id}:v{sequence_no}",
     "uniqueEventKey": true,
-    "uniqueReservationSequence": true,
+    "uniqueAggregateSequence": true,
     "eventTypes": [
       "schedule.availability_rule_upserted",
       "schedule.hold_created",
@@ -53,7 +67,9 @@
   },
   "legacyAvailabilityHardening": {
     "professionalMayInsertBooked": false,
+    "professionalMayUpdateBookedRow": false,
     "professionalMayUpdateToBooked": false,
+    "professionalMayDeleteBookedRow": false,
     "allowedProfessionalStatuses": ["available", "blocked"]
   },
   "blockerDisposition": {

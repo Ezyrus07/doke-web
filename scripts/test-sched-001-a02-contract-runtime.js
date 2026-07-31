@@ -6,6 +6,7 @@ const contract = require('../backend/modules/scheduling/scheduling-contract');
 
 assert.deepStrictEqual(contract.RESERVATION_STATES, ['held', 'confirmed', 'cancelled', 'expired']);
 assert.deepStrictEqual(contract.ACTIVE_OCCUPANCY_STATES, ['held', 'confirmed']);
+assert.deepStrictEqual(contract.EVENT_AGGREGATE_TYPES, ['availability_rule', 'reservation']);
 assert.strictEqual(contract.RANGE_CONVENTION, '[start,end)');
 assert.strictEqual(contract.HOLD_TTL_SECONDS, 600);
 
@@ -20,7 +21,6 @@ assert.strictEqual(contract.rangesOverlap(
   { startsAt: '2026-08-01T12:00:00Z', endsAt: '2026-08-01T13:00:00Z' },
   { startsAt: '2026-08-01T12:30:00Z', endsAt: '2026-08-01T13:30:00Z' }
 ), true);
-// adjacent half-open ranges do not conflict.
 assert.strictEqual(contract.rangesOverlap(
   { startsAt: '2026-08-01T12:00:00Z', endsAt: '2026-08-01T13:00:00Z' },
   { startsAt: '2026-08-01T13:00:00Z', endsAt: '2026-08-01T14:00:00Z' }
@@ -56,6 +56,7 @@ assert.deepStrictEqual(contract.assertTransition(
   'order_service'
 ), {
   command: 'confirm_schedule_reservation',
+  aggregateType: 'reservation',
   previousState: 'held',
   nextState: 'confirmed',
   eventType: 'schedule.confirmed'
@@ -66,9 +67,21 @@ assert.deepStrictEqual(contract.assertTransition(
   'support'
 ), {
   command: 'reschedule_reservation',
+  aggregateType: 'reservation',
   previousState: 'confirmed',
   nextState: 'confirmed',
   eventType: 'schedule.rescheduled'
+});
+assert.deepStrictEqual(contract.assertTransition(
+  'upsert_availability_rule',
+  'active',
+  'professional_owner'
+), {
+  command: 'upsert_availability_rule',
+  aggregateType: 'availability_rule',
+  previousState: 'active',
+  nextState: 'active',
+  eventType: 'schedule.availability_rule_upserted'
 });
 assert.throws(
   () => contract.assertTransition('confirm_schedule_reservation', 'confirmed', 'order_service'),
@@ -94,7 +107,19 @@ assert.throws(
   (error) => error.code === 'DOKE_SCHEDULE_IDEMPOTENCY_CONFLICT'
 );
 
-assert.strictEqual(contract.buildEventKey('reservation-1', 2), 'schedule:reservation-1:v2');
+assert.strictEqual(
+  contract.buildEventKey('reservation', 'reservation-1', 2),
+  'schedule:reservation:reservation-1:v2'
+);
+assert.strictEqual(
+  contract.buildEventKey('availability_rule', 'rule-1', 3),
+  'schedule:availability_rule:rule-1:v3'
+);
+assert.throws(
+  () => contract.buildEventKey('unknown', 'aggregate-1', 1),
+  (error) => error.code === 'DOKE_SCHEDULE_EVENT_AGGREGATE_INVALID'
+);
+
 assert.strictEqual(contract.isHoldExpired({
   status: 'held',
   holdExpiresAt: '2026-08-01T12:10:00Z'

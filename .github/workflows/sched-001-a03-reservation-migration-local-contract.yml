@@ -1,4 +1,4 @@
-name: Doke SCHED-A03 Reservation Migration Local Contract
+name: Doke SCHED-A03 Scheduling Authority Migration Local Contract
 
 on:
   pull_request:
@@ -9,6 +9,11 @@ on:
       - 'docs/validation/SCHED-001-A03-RESERVATION-MIGRATION-LOCAL-CONTRACT.json'
       - 'scripts/audit-sched-001-a03-reservation-migration-local-contract.js'
       - 'scripts/test-sched-001-a03-reservation-migration-static.js'
+      - 'config/sched-001-a02-command-event-timezone-conflict-contract.json'
+      - 'backend/modules/scheduling/scheduling-contract.js'
+      - 'scripts/test-sched-001-a02-contract-runtime.js'
+      - 'config/domain-completion-matrix.json'
+      - 'package.json'
       - '.github/workflows/sched-001-a03-reservation-migration-local-contract.yml'
   workflow_dispatch:
 
@@ -29,6 +34,8 @@ jobs:
         run: node scripts/test-sched-001-a03-reservation-migration-static.js
       - name: Preserve SCHED-A02 command and conflict contract
         run: node scripts/audit-sched-001-a02-command-event-timezone-conflict-contract.js
+      - name: Test aggregate-aware SCHED-A02 runtime semantics
+        run: node scripts/test-sched-001-a02-contract-runtime.js
       - name: Preserve SCHED-A01 staging baseline
         run: node scripts/audit-sched-001-a01-repository-baseline-staging-security-preflight.js
       - name: Preserve ORD-A11 authority handoff

@@ -1,9 +1,10 @@
 {
-  "contractVersion": "sched-a02-command-event-timezone-conflict-contract-v1",
+  "contractVersion": "sched-a02-command-event-timezone-conflict-contract-v2",
   "status": "repository_contract_frozen_migration_and_runtime_pending",
   "domain": "SCHED-001",
   "source": ["ORD-A11", "SCHED-A01"],
   "scope": "repository_only_executable_contract",
+  "compatibilityCorrection": "SCHED-A03 generalized durable event identity from reservation-only to aggregate-aware availability-rule and reservation events.",
   "authority": {
     "canonicalOwner": "SCHED-001",
     "availabilityOwner": "professional",
@@ -31,12 +32,14 @@
   },
   "commands": {
     "upsert_availability_rule": {
+      "aggregateType": "availability_rule",
       "authorizedActors": ["professional_owner", "support", "admin"],
       "requiredInputs": ["professional_id", "timezone", "rule", "idempotency_key"],
       "updateRequires": ["expected_version"],
       "emits": "schedule.availability_rule_upserted"
     },
     "create_schedule_hold": {
+      "aggregateType": "reservation",
       "authorizedActors": ["client_order_participant", "support", "admin"],
       "requiredInputs": ["order_id", "professional_id", "starts_at", "ends_at", "timezone", "idempotency_key"],
       "preconditions": [
@@ -50,12 +53,14 @@
       "emits": "schedule.hold_created"
     },
     "confirm_schedule_reservation": {
+      "aggregateType": "reservation",
       "authorizedActors": ["order_service", "support", "admin"],
       "requiredInputs": ["reservation_id", "order_id", "expected_version", "idempotency_key", "authorization_context"],
       "allowedFrom": ["held"],
       "emits": "schedule.confirmed"
     },
     "reschedule_reservation": {
+      "aggregateType": "reservation",
       "authorizedActors": ["order_service", "support", "admin"],
       "requiredInputs": ["reservation_id", "starts_at", "ends_at", "timezone", "expected_version", "idempotency_key", "authorization_context"],
       "allowedFrom": ["confirmed"],
@@ -63,12 +68,14 @@
       "emits": "schedule.rescheduled"
     },
     "cancel_schedule_reservation": {
+      "aggregateType": "reservation",
       "authorizedActors": ["order_service", "support", "admin"],
       "requiredInputs": ["reservation_id", "expected_version", "idempotency_key", "reason", "authorization_context"],
       "allowedFrom": ["held", "confirmed"],
       "emits": "schedule.cancelled"
     },
     "expire_schedule_holds": {
+      "aggregateType": "reservation",
       "authorizedActors": ["schedule_worker", "service_role"],
       "requiredInputs": ["cutoff", "batch_limit"],
       "allowedFrom": ["held"],
@@ -116,11 +123,16 @@
   },
   "events": {
     "eventStore": "private.schedule_domain_events",
-    "eventKey": "schedule:{reservation_id}:v{sequence_no}",
+    "aggregateTypes": ["availability_rule", "reservation"],
+    "eventKey": "schedule:{aggregate_type}:{aggregate_id}:v{sequence_no}",
     "requiredEnvelope": [
-      "id", "event_key", "reservation_id", "order_id", "professional_id", "sequence_no",
+      "id", "event_key", "aggregate_type", "aggregate_id", "professional_id", "sequence_no",
       "event_type", "actor_id", "actor_role", "command", "payload", "occurred_at", "created_at"
     ],
+    "conditionalReferences": {
+      "availability_rule": ["availability_rule_id"],
+      "reservation": ["reservation_id", "order_id"]
+    },
     "types": [
       "schedule.availability_rule_upserted",
       "schedule.hold_created",
@@ -130,11 +142,11 @@
       "schedule.cancelled"
     ],
     "payloadMinimum": [
-      "reservationId", "orderId", "professionalId", "previousStatus", "nextStatus",
+      "aggregateType", "aggregateId", "professionalId", "previousStatus", "nextStatus",
       "previousRange", "nextRange", "timezone", "version", "actorRole", "command",
       "idempotencyKey", "correlationId", "causationId", "occurredAt"
     ],
-    "transactionality": "canonical row mutation, event insertion and order projection update must commit atomically or all roll back"
+    "transactionality": "canonical mutation and durable event insertion commit atomically; reservation commands also update the order projection in the same transaction"
   },
   "orderIntegration": {
     "canonicalReference": "orders.schedule_reservation_id",
@@ -153,6 +165,7 @@
     "DOKE_SCHEDULE_VERSION_CONFLICT",
     "DOKE_SCHEDULE_IDEMPOTENCY_CONFLICT",
     "DOKE_SCHEDULE_INVALID_TRANSITION",
+    "DOKE_SCHEDULE_EVENT_AGGREGATE_INVALID",
     "DOKE_SCHEDULE_HOLD_EXPIRED"
   ],
   "blockerDisposition": {
@@ -162,10 +175,10 @@
     "SCHED-B05": "contract_frozen_policy_hardening_and_server_command_pending"
   },
   "orderedNextActions": [
-    "Generate and test locally, but do not apply, the SCHED-A03 reservation migration with btree_gist, canonical reservations, idempotency, events, protected grants and active-range exclusion.",
-    "Implement the server scheduling command module and deterministic runtime tests against the frozen A02 contract.",
-    "Prepare a separately authorized staging migration readiness gate and rollback plan.",
-    "Make ORD-001 consume schedule_reservation_id and retain scheduled_at only as an event-driven read projection."
+    "Implement SCHED-A04 server scheduling commands against the frozen A02 contract and generated A03 schema.",
+    "Prepare a separately authorized staging migration readiness gate with preflight, rollback and compatibility checks.",
+    "Apply the A03 migration only after an exact independent staging authorization.",
+    "Run remote persona and concurrent overlap canaries under rollback after application."
   ],
   "forbidden": {
     "applyMigration": true,

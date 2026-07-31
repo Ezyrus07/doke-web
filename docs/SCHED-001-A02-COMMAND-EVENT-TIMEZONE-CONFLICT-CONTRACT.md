@@ -20,22 +20,13 @@ The professional owns availability intent. A professional cannot directly mark a
 
 An availability rule preserves recurring local wall-clock intent and explicit exceptions. It requires an IANA timezone and uses optimistic versioning.
 
-States:
-
-- `active`;
-- `paused`;
-- `archived`.
+States: `active`, `paused`, `archived`.
 
 ### Schedule reservation
 
 A schedule reservation is the single occupancy authority for both temporary holds and confirmed bookings.
 
-States:
-
-- `held`;
-- `confirmed`;
-- `cancelled`;
-- `expired`.
+States: `held`, `confirmed`, `cancelled`, `expired`.
 
 Only `held` and `confirmed` occupy time. `cancelled` and `expired` are terminal and do not block a new reservation.
 
@@ -43,36 +34,19 @@ Only `held` and `confirmed` occupy time. `cancelled` and `expired` are terminal 
 
 ### `upsert_availability_rule`
 
-Authorized for the professional owner, support or admin. Updates require `expected_version`. It emits `schedule.availability_rule_upserted`.
+Authorized for the professional owner, support or admin. Updates require `expected_version`. It emits `schedule.availability_rule_upserted` on the `availability_rule` aggregate.
 
 ### `create_schedule_hold`
 
-Authorized for the authenticated client who participates in the order, plus support or admin. It requires:
+Authorized for the authenticated client who participates in the order, plus support or admin. It requires an eligible order, matching professional, canonical availability, valid UTC range and IANA timezone, idempotency key and no active overlap. Default hold TTL is 600 seconds and may vary only between 300 and 900 seconds.
 
-- eligible order;
-- matching professional;
-- canonical availability;
-- valid UTC range and IANA timezone;
-- idempotency key;
-- no active overlap.
+### Reservation mutation commands
 
-Default hold TTL is 600 seconds. Configuration may vary only between 300 and 900 seconds.
-
-### `confirm_schedule_reservation`
-
-Only `order_service`, support or admin can confirm a hold. The command requires the canonical order authorization context, `expected_version` and idempotency key. The professional or browser cannot confirm booking directly.
-
-### `reschedule_reservation`
-
-Only the server command boundary can atomically change a confirmed range after validating participant policy, availability, version and conflicts. It remains `confirmed` and emits `schedule.rescheduled`.
-
-### `cancel_schedule_reservation`
-
-Only the server command boundary can cancel a held or confirmed reservation after validating the order authorization context and reason.
+`confirm_schedule_reservation`, `reschedule_reservation` and `cancel_schedule_reservation` execute only through the server command boundary after validating actor, order context, version and conflicts. The professional or browser cannot confirm booking directly.
 
 ### `expire_schedule_holds`
 
-Only the scheduling worker or service role can expire held rows. The command is batch-bounded and emits one durable event for every accepted transition.
+Only the scheduling worker or service role can expire held rows. The command is batch-bounded and emits one durable reservation event for every accepted transition.
 
 ## State transitions
 
@@ -109,9 +83,7 @@ Every canonical mutation requires `expected_version` and a locked row. A mismatc
 
 ## Conflict policy
 
-Two ranges conflict when:
-
-`startA < endB AND startB < endA`
+Two ranges conflict when `startA < endB AND startB < endA`.
 
 The future database rule must use `btree_gist` and a partial GiST exclusion constraint equivalent to:
 
@@ -125,7 +97,12 @@ A conflict returns `DOKE_SCHEDULE_CONFLICT`.
 
 ## Durable event boundary
 
-The future event store is `private.schedule_domain_events`.
+The future event store is `private.schedule_domain_events` and is aggregate-aware.
+
+- availability changes use aggregate type `availability_rule` and reference `availability_rule_id` without a reservation or order reference;
+- hold and reservation changes use aggregate type `reservation` and require `reservation_id` plus `order_id`.
+
+Event keys follow `schedule:{aggregate_type}:{aggregate_id}:v{sequence_no}`. This corrects the original reservation-only key shape, which could not represent `schedule.availability_rule_upserted` truthfully.
 
 Event types:
 
@@ -136,23 +113,11 @@ Event types:
 - `schedule.rescheduled`;
 - `schedule.cancelled`.
 
-Reservation event keys follow `schedule:{reservation_id}:v{sequence_no}`. The event envelope includes reservation, order, professional, actor, command, old/new status, old/new range, timezone, version, idempotency key, correlation ID, causation ID and UTC occurrence time.
-
-Canonical mutation, durable event insertion and order projection update must commit atomically or all roll back.
+Canonical mutation and durable event insertion must commit atomically. Reservation commands that change the order projection must update that projection in the same transaction.
 
 ## Executable contract
 
-`backend/modules/scheduling/scheduling-contract.js` provides deterministic, side-effect-free checks for:
-
-- valid ranges;
-- half-open overlap behavior;
-- active occupancy conflicts;
-- actor authorization;
-- state transitions;
-- optimistic versions;
-- idempotency replay;
-- event keys;
-- hold expiration.
+`backend/modules/scheduling/scheduling-contract.js` provides deterministic, side-effect-free checks for valid ranges, half-open overlap behavior, active occupancy conflicts, actor authorization, state transitions, optimistic versions, idempotency replay, aggregate-aware event keys and hold expiration.
 
 `scripts/test-sched-001-a02-contract-runtime.js` proves the frozen semantics without database, network or browser access.
 
@@ -162,14 +127,18 @@ No blocker is closed by this sublot.
 
 - `SCHED-B02`: command contract frozen; server runtime remains absent;
 - `SCHED-B03`: conflict contract frozen; migration and concurrent proof remain absent;
-- `SCHED-B04`: order integration frozen; `schedule_reservation_id` remains absent;
-- `SCHED-B05`: direct-booking prohibition frozen; policy hardening and server commands remain absent.
+- `SCHED-B04`: order integration frozen; migration application and runtime integration remain absent;
+- `SCHED-B05`: direct-booking prohibition frozen; policy hardening application and server commands remain absent.
+
+## Compatibility correction recorded in SCHED-A03
+
+SCHED-A03 found that the original reservation-only durable-event envelope could not represent an availability-rule event. Contract v2 introduces explicit aggregate type and aggregate ID while preserving the six frozen event types and all command semantics.
 
 ## Next step
 
-The next safe sublot is `SCHED-A03 — Reservation Migration Generation and Local Contract Tests`.
+The next safe sublot is `SCHED-A04 — Server Scheduling Command Module and Deterministic Runtime Tests`.
 
-It may generate and test a reviewed migration containing canonical reservations, idempotency, durable events, protected grants and active-range exclusion. Generic continuation must not apply that migration to staging.
+Generic continuation may implement repository-only server commands and tests. It must not apply the A03 migration to staging.
 
 ## Execution evidence
 

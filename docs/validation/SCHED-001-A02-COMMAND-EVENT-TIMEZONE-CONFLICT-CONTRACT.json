@@ -1,13 +1,15 @@
 {
-  "contractVersion": "sched-a02-command-event-timezone-conflict-contract-v1",
+  "contractVersion": "sched-a02-command-event-timezone-conflict-contract-v2",
   "status": "repository_contract_frozen_migration_and_runtime_pending",
   "domain": "SCHED-001",
   "observedHeadBeforeSublot": "5f8d594fbca0cf39e842e87537b03f22537cb7e8",
+  "compatibilityCorrectionAt": "SCHED-A03",
   "contract": {
     "reservationStates": ["held", "confirmed", "cancelled", "expired"],
     "activeOccupancyStates": ["held", "confirmed"],
     "commandCount": 6,
     "eventTypeCount": 6,
+    "eventAggregateTypes": ["availability_rule", "reservation"],
     "serverOnlyReservationMutation": true,
     "professionalDirectBookingForbidden": true,
     "orderParallelConflictAuthorityForbidden": true
@@ -38,7 +40,9 @@
   },
   "events": {
     "futureStore": "private.schedule_domain_events",
-    "eventKeyPattern": "schedule:{reservation_id}:v{sequence_no}",
+    "eventKeyPattern": "schedule:{aggregate_type}:{aggregate_id}:v{sequence_no}",
+    "availabilityRuleEventHasReservationId": false,
+    "reservationEventsRequireOrderId": true,
     "transactionalWithCanonicalMutation": true,
     "types": [
       "schedule.availability_rule_upserted",

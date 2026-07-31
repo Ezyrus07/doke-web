@@ -1,21 +1,23 @@
 {
-  "contractVersion": "sched-a03-reservation-migration-local-contract-v1",
+  "contractVersion": "sched-a03-reservation-migration-local-contract-v2",
   "status": "repository_migration_generated_local_static_tests_only",
-  "validatedAt": "2026-07-31T09:30:00-03:00",
+  "validatedAt": "2026-07-31T09:50:00-03:00",
   "migration": {
     "generated": true,
     "applied": false,
     "wrappedInTransaction": true,
+    "fixedSearchPath": true,
     "requiredExtension": "btree_gist",
+    "canonicalAvailabilityRuleTable": true,
     "canonicalReservationTable": true,
     "persistentIdempotencyLedger": true,
-    "durableEventStore": true,
+    "aggregateAwareDurableEventStore": true,
     "orderReferenceGenerated": true,
     "legacyBookedMutationBlocked": true
   },
   "security": {
-    "anonReservationDmlGrant": false,
-    "authenticatedReservationDmlGrant": false,
+    "anonSchedulingDmlGrant": false,
+    "authenticatedSchedulingDmlGrant": false,
     "serviceRoleLeastPrivilegeCrud": true,
     "newBrowserMutationPolicy": false,
     "productionTouched": false
@@ -26,6 +28,12 @@
     "rangeConvention": "[start,end)",
     "adjacentRangesConflict": false,
     "remoteConcurrencyProof": false
+  },
+  "events": {
+    "aggregateTypes": ["availability_rule", "reservation"],
+    "availabilityRuleRequiresReservationReference": false,
+    "reservationRequiresOrderReference": true,
+    "uniqueAggregateSequence": true
   },
   "blockers": {
     "closed": [],
