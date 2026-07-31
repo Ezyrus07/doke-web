@@ -1,0 +1,166 @@
+{
+  "contractVersion": "sched-a01-repository-baseline-staging-security-preflight-v1",
+  "status": "read_only_staging_security_preflight_complete_foundational_authority_incomplete",
+  "domain": "SCHED-001",
+  "sourceHandoff": "ORD-A11",
+  "scope": "repository_baseline_and_read_only_staging_security_preflight",
+  "observedAt": "2026-07-31T08:20:00-03:00",
+  "repository": {
+    "name": "Ezyrus07/doke-web",
+    "branch": "ord/ord-001-baseline-audit",
+    "pullRequest": 25,
+    "preflightHead": "edb24e3e0298fbd7db22c0df6ea3004e56bec658"
+  },
+  "staging": {
+    "projectRef": "zwkczgewzbsorbrjuzpb",
+    "environment": "staging",
+    "readOnly": true
+  },
+  "authorizationBoundary": {
+    "genericContinuationAuthorizedReadOnlyInspection": true,
+    "genericContinuationAuthorizesDdl": false,
+    "genericContinuationAuthorizesDml": false,
+    "genericContinuationAuthorizesMigrationApplication": false,
+    "genericContinuationAuthorizesDeployment": false,
+    "genericContinuationAuthorizesProduction": false,
+    "genericContinuationAuthorizesMerge": false
+  },
+  "repositoryBaseline": {
+    "availabilityDefinitionMigration": "supabase/migrations/003_communication_finance_community.sql",
+    "availabilityRlsMigration": "supabase/migrations/113_availability_reviews_authority.sql",
+    "availabilityRoleSeparationMigration": "supabase/migrations/119_public_policy_role_separation.sql",
+    "schedulingBackendModuleImplemented": false,
+    "ordersAcceptRawScheduledAt": true,
+    "orderReservationReferenceExists": false
+  },
+  "stagingFindings": {
+    "table": {
+      "schema": "public",
+      "name": "availability_slots",
+      "exists": true,
+      "owner": "postgres",
+      "rlsEnabled": true,
+      "forceRls": false,
+      "rowCount": 0
+    },
+    "appliedMigrations": [
+      {
+        "version": "20260722161200",
+        "name": "availability_reviews_authority"
+      },
+      {
+        "version": "20260722162204",
+        "name": "public_policy_role_separation"
+      }
+    ],
+    "columns": [
+      "id uuid not null",
+      "professional_id uuid not null",
+      "starts_at timestamptz not null",
+      "ends_at timestamptz not null",
+      "status text not null default available",
+      "created_at timestamptz not null default now()"
+    ],
+    "policies": [
+      "availability_slots_anon_select",
+      "availability_slots_authenticated_select",
+      "availability_slots_owner_insert",
+      "availability_slots_owner_update",
+      "availability_slots_owner_delete"
+    ],
+    "grants": {
+      "anon": ["SELECT"],
+      "authenticated": ["SELECT", "INSERT", "UPDATE", "DELETE"],
+      "service_role": ["SELECT", "INSERT", "UPDATE", "DELETE"]
+    },
+    "indexes": [
+      "availability_slots_pkey",
+      "idx_availability_search_future",
+      "idx_availability_slots_professional_start"
+    ],
+    "constraints": [
+      "availability_slots_pkey",
+      "availability_slots_professional_id_fkey",
+      "availability_slots_check",
+      "availability_slots_status_check"
+    ],
+    "triggers": [],
+    "dataSummary": {
+      "total": 0,
+      "available": 0,
+      "blocked": 0,
+      "booked": 0,
+      "invalidRanges": 0,
+      "activeOverlapPairs": 0,
+      "scheduledOrders": 0
+    },
+    "roleBoundary": {
+      "anonBypassesRls": false,
+      "authenticatedBypassesRls": false,
+      "serviceRoleBypassesRls": true,
+      "postgresBypassesRls": true
+    }
+  },
+  "confirmedSecurityState": {
+    "repositoryRlsMigrationsApplied": true,
+    "anonymousReadIsFutureAvailableOnly": true,
+    "authenticatedReadIncludesOwnerAndOperators": true,
+    "ownerWritesRequireProfessionalIdentity": true,
+    "bookedSlotDeletionBlockedForOwner": true,
+    "publicTableGrantAbsent": true,
+    "invalidRangeCheckPresent": true
+  },
+  "authorityAndConcurrencyGaps": {
+    "availabilityAndReservationConflated": true,
+    "ownerUpdatePolicyCanSetBooked": true,
+    "statusTransitionTriggerExists": false,
+    "canonicalReservationTableExists": false,
+    "canonicalHoldTableExists": false,
+    "activeRangeExclusionConstraintExists": false,
+    "btreeGistExtensionInstalled": false,
+    "timezoneColumnExists": false,
+    "orderIdColumnExists": false,
+    "expiresAtColumnExists": false,
+    "idempotencyKeyColumnExists": false,
+    "updatedAtColumnExists": false,
+    "optimisticVersionColumnExists": false,
+    "ordersScheduleReservationIdExists": false
+  },
+  "blockerDisposition": {
+    "SCHED-B01": {
+      "status": "closed_by_read_only_staging_verification",
+      "reason": "RLS, policies, grants, schema and applied migration versions were verified directly in staging without mutation."
+    },
+    "SCHED-B02": {
+      "status": "open",
+      "reason": "No canonical scheduling command service owns availability, holds, reservations, expiration, rescheduling, cancellation or timezone."
+    },
+    "SCHED-B03": {
+      "status": "open",
+      "reason": "No database exclusion or equivalent contract prevents overlapping active reservations."
+    },
+    "SCHED-B04": {
+      "status": "open",
+      "reason": "Orders accept raw scheduled_at and do not reference a canonical reservation."
+    },
+    "SCHED-B05": {
+      "status": "open_new",
+      "reason": "The professional owner update policy can set status to booked without a canonical reservation command or protected transition boundary."
+    }
+  },
+  "orderedNextActions": [
+    "Freeze SCHED-001 command, event, timezone, idempotency, status-authority and conflict contracts without changing staging.",
+    "Generate and test locally, but do not apply, a reviewed migration that separates canonical reservations from availability and enforces non-overlapping active ranges.",
+    "Implement the server scheduling module with hold expiration, confirmation, rescheduling and cancellation commands.",
+    "Make ORD-001 consume schedule_reservation_id and retain scheduled_at only as a read projection."
+  ],
+  "evidence": {
+    "readOnlySqlQueriesExecuted": 2,
+    "stagingReadsPerformed": 2,
+    "stagingMutationsPerformed": 0,
+    "migrationsApplied": 0,
+    "deploymentsPerformed": 0,
+    "productionChanged": false,
+    "pullRequestMerged": false
+  }
+}
