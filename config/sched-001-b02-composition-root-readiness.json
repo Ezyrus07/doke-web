@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "domain": "SCHED-001",
+  "sublot": "SCHED-B02A",
+  "contractVersion": "sched-b02-composition-root-readiness-v1",
+  "scope": "repository_only_trusted_composition_root_readiness",
+  "environment": "doke-web-staging",
+  "projectRef": "zwkczgewzbsorbrjuzpb",
+  "activation": {
+    "flag": "DOKE_SCHEDULING_RUNTIME_ENABLED",
+    "requiredValue": "true",
+    "environmentFlag": "DOKE_RUNTIME_ENVIRONMENT",
+    "requiredEnvironment": "staging",
+    "projectRefFlag": "SUPABASE_PROJECT_REF",
+    "productionBlocked": true,
+    "defaultState": "disabled",
+    "failClosed": true
+  },
+  "composition": {
+    "poolMustBeInjected": true,
+    "connectionStringParsingAllowed": false,
+    "serviceRoleKeyHandlingAllowed": false,
+    "repository": "backend/modules/scheduling/scheduling-postgres-repository.js",
+    "service": "backend/modules/scheduling/scheduling-service.js",
+    "root": "backend/modules/scheduling/scheduling-composition-root.js",
+    "isolationLevel": "serializable"
+  },
+  "capabilities": {
+    "repositoryRuntimeImplemented": true,
+    "stagingRuntimeActivated": false,
+    "authenticatedCanaryExecuted": false,
+    "frontendAuthoritySwitched": false,
+    "productionActivationAvailable": false,
+    "deploymentAvailable": false
+  },
+  "blockers": {
+    "closed": [],
+    "remainingOpen": [
+      "SCHED-B02",
+      "SCHED-B04"
+    ]
+  },
+  "nextGate": "SCHED-B02B authenticated staging composition canary",
+  "prohibitedActions": [
+    "production_access",
+    "runtime_activation_without_exact_staging_gate",
+    "frontend_authority_switch",
+    "ord_runtime_wiring",
+    "cron_activation",
+    "worker_activation",
+    "deployment",
+    "merge"
+  ]
+}
