@@ -1,7 +1,7 @@
 {
   "name": "domain-completion-matrix",
-  "version": "1.3.42",
-  "generatedAt": "2026-07-30T23:30:00-03:00",
+  "version": "1.3.43",
+  "generatedAt": "2026-07-31T08:10:00-03:00",
   "status": "passed",
   "summary": {
     "domains": 23,
@@ -25,14 +25,14 @@
     },
     "blockerCounts": {
       "medium": 9,
-      "high": 36,
-      "critical": 14
+      "high": 38,
+      "critical": 13
     },
     "activeHtmlPages": 30,
     "repositories": 25,
     "backendModules": 15,
     "migrations": 173,
-    "packageScripts": 936,
+    "packageScripts": 937,
     "staging": {
       "publicTotal": 45,
       "publicRlsDisabled": 0,
@@ -221,7 +221,7 @@
       "id": "GOV-001",
       "name": "Governança, arquitetura e comando central",
       "maturity": 4,
-      "filesMatched": 1009,
+      "filesMatched": 1011,
       "sampleFiles": [
         "docs/ACTIVE-CONTRACTS-INDEX.md",
         "docs/API-ADAPTER-CONTRACT.md",
@@ -3269,7 +3269,7 @@
           "id": "ORD-B04",
           "severity": "medium",
           "category": "scheduling_dependency",
-          "description": "Scheduling completion remains blocked by SCHED-001. Order scheduling and availability are not server-canonical; availability, booking, confirmation, rescheduling and double-booking protection must become authoritative there before ORD-001 can close this blocker.",
+          "description": "ORD-B04 is formally handed to SCHED-001 but remains open. Availability, holds, confirmed reservations, conflict protection, timezone, rescheduling and cancellation must become server-canonical there; ORD-001 must consume one canonical reservation reference instead of treating raw scheduled_at as booking authority.",
           "targetPhase": "Fase 6"
         },
         {
@@ -3337,7 +3337,8 @@
         "test:ord-001-a07e-remote-concurrent-replay-canary-readiness",
         "audit:ord-001-a07e-remote-concurrent-replay-canary-readiness",
         "audit:ord-001-a07e-remote-concurrent-replay-canary-application",
-        "audit:ord-001-a10-blocker-reconciliation"
+        "audit:ord-001-a10-blocker-reconciliation",
+        "audit:ord-001-a11-scheduling-authority-handoff"
       ]
     },
     {
@@ -3430,28 +3431,36 @@
       "blockers": [
         {
           "id": "SCHED-B01",
-          "severity": "critical",
-          "category": "rls",
-          "description": "availability_slots has RLS disabled.",
+          "severity": "high",
+          "category": "staging_security_verification",
+          "description": "Repository migrations enable and role-separate availability_slots RLS, but SCHED-specific read-only staging verification of schema, policies and grants is not yet recorded.",
           "targetPhase": "Fase 1"
         },
         {
           "id": "SCHED-B02",
           "severity": "critical",
           "category": "server_authority",
-          "description": "No canonical scheduling service handles holds, conflicts, rescheduling or timezone rules.",
+          "description": "No canonical scheduling service handles availability rules, holds, confirmed reservations, expiration, rescheduling, cancellation or timezone rules.",
           "targetPhase": "Fase 6"
         },
         {
           "id": "SCHED-B03",
           "severity": "high",
           "category": "concurrency",
-          "description": "No database-level anti-double-booking contract is proven.",
+          "description": "No database-level exclusion or equivalent active-range contract proves that concurrent holds or bookings for one professional cannot overlap.",
+          "targetPhase": "Fase 6"
+        },
+        {
+          "id": "SCHED-B04",
+          "severity": "high",
+          "category": "order_integration",
+          "description": "Orders accept raw scheduled_at and do not reference a canonical schedule reservation, so accepted proposals are not transactionally bound to authoritative occupancy.",
           "targetPhase": "Fase 6"
         }
       ],
       "tests": [
-        "test:order-transaction-cycle-contract"
+        "test:order-transaction-cycle-contract",
+        "audit:ord-001-a11-scheduling-authority-handoff"
       ]
     },
     {
@@ -4510,7 +4519,7 @@
       "id": "LEGAL-001",
       "name": "Jurídico, privacidade, confiança e políticas comerciais",
       "maturity": 1,
-      "filesMatched": 220,
+      "filesMatched": 221,
       "sampleFiles": [
         "docs/ACTIVE-CONTRACTS-INDEX.md",
         "docs/API-ADAPTER-CONTRACT.md",
@@ -6238,7 +6247,7 @@
       "id": "APP-001",
       "name": "Aplicativos Android e iOS",
       "maturity": 0,
-      "filesMatched": 2292,
+      "filesMatched": 2295,
       "sampleFiles": [
         ".agents/skills/animation-vocabulary/SKILL.md",
         ".agents/skills/apple-design/SKILL.md",

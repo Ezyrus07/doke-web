@@ -127,11 +127,11 @@ assert.strictEqual(pkg.scripts['audit:ord-001-a11-scheduling-authority-handoff']
 
 [
   'Corrected baseline',
-  'SCHED-001 owns',
-  'ORD-001 owns',
+  '`SCHED-001` owns',
+  '`ORD-001` owns',
   'GiST exclusion constraint',
   'schedule_reservation_id',
-  'ORD-B04 remains open',
+  '`ORD-B04` remains open',
   'Generic continuation does not authorize'
 ].forEach((fragment) => assert(docs.includes(fragment), `Documentation missing: ${fragment}`));
 
