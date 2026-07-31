@@ -71,9 +71,22 @@ assert.deepStrictEqual(config.stagingFindings.grants.authenticated, ['SELECT', '
 assert.strictEqual(config.confirmedSecurityState.publicTableGrantAbsent, true);
 assert.strictEqual(config.confirmedSecurityState.invalidRangeCheckPresent, true);
 
-Object.values(config.authorityAndConcurrencyGaps).forEach((value) => {
-  if (typeof value === 'boolean') assert.strictEqual(value, true);
-});
+const gaps = config.authorityAndConcurrencyGaps;
+assert.strictEqual(gaps.availabilityAndReservationConflated, true);
+assert.strictEqual(gaps.ownerUpdatePolicyCanSetBooked, true);
+assert.strictEqual(gaps.statusTransitionTriggerExists, false);
+assert.strictEqual(gaps.canonicalReservationTableExists, false);
+assert.strictEqual(gaps.canonicalHoldTableExists, false);
+assert.strictEqual(gaps.activeRangeExclusionConstraintExists, false);
+assert.strictEqual(gaps.btreeGistExtensionInstalled, false);
+assert.strictEqual(gaps.timezoneColumnExists, false);
+assert.strictEqual(gaps.orderIdColumnExists, false);
+assert.strictEqual(gaps.expiresAtColumnExists, false);
+assert.strictEqual(gaps.idempotencyKeyColumnExists, false);
+assert.strictEqual(gaps.updatedAtColumnExists, false);
+assert.strictEqual(gaps.optimisticVersionColumnExists, false);
+assert.strictEqual(gaps.ordersScheduleReservationIdExists, false);
+
 assert.strictEqual(config.blockerDisposition['SCHED-B01'].status, 'closed_by_read_only_staging_verification');
 assert.strictEqual(config.blockerDisposition['SCHED-B02'].status, 'open');
 assert.strictEqual(config.blockerDisposition['SCHED-B03'].status, 'open');
