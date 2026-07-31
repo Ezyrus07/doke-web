@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 1005 arquivos no escopo; 247 referências a localStorage; 77 a sessionStorage; 556 referências mock; 186 referências de rede/Supabase; 35 marcadores de implementação pendente.
+**Evidência estática observada:** 1007 arquivos no escopo; 247 referências a localStorage; 77 a sessionStorage; 556 referências mock; 186 referências de rede/Supabase; 35 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -482,6 +482,11 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - Read-only staging inspection confirmed service_role can delete the nonce row but cannot delete worker runs, so future run cleanup requires narrowly conditioned privileged SQL.
 - The readiness planner supports only dry-run and check-env, contains no network, SQL, deploy or cleanup execution capability, and rejects generic continuation.
 - The remote replay canary remains unexecuted and requires the exact independent authorization phrase I_EXPLICITLY_AUTHORIZE_ORD_A07E_REMOTE_CONCURRENT_REPLAY_CANARY_ON_DOKE_STAGING.
+- The authorized ORD-A07E staging canary dispatched 32 concurrent requests sharing one issued-at and nonce; exactly one returned HTTP 200 and all other 31 returned HTTP 409 DOKE_ORDER_EVENT_WORKER_REPLAY_REJECTED.
+- The sole accepted invocation created one empty completed test worker run with zero claimed, completed, failed and dead-letter events; the run was deleted through a narrowly conditioned privileged cleanup.
+- The canonical nonce consumer evicted the expired preexisting test nonce before inserting the canary nonce, so the canary nonce was retained to preserve the one-row ledger baseline instead of deleting it and creating count drift.
+- Post-cleanup staging returned to one historical worker run, zero test worker runs, one test nonce row and zero orders, budgets, history, domain events, metric events or delivery attempts.
+- The remote replay canary required no Edge Function deploy, migration or Cron change; Railway, production and merge remain blocked.
 
 **Bloqueadores:**
 - **ORD-B02 · HIGH · frontend_activation:** Canonical reads, canary commands, cleanup, deterministic settlement, readiness discovery and the fail-closed Playwright executor pass. A short-lived authorization envelope is now mandatory; ORD-B02 remains until explicit authorization is issued, check-env passes and the real two-context visual canary is executed. _(Fase 6)_
@@ -508,7 +513,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - Review and apply the generated ORD-A07B nonce-ledger migration through the controlled staging release path, verify grants and atomic duplicate rejection, then wire Cron headers and Edge freshness enforcement before any replay canary.
 - Apply the canonical ORD-A07B nonce ledger migration to staging only after exact authorization, then run read-only grant, RLS, atomicity and zero-drift verification.
 - After the ORD-A07B ledger is applied and verified in staging, authorize the ORD-A07C Cron header migration separately, then wire Edge Function header reading and atomic nonce consumption before the worker run begins.
-- Execute the cleanup-safe ORD-A07E remote concurrent replay canary on Doke staging only after the exact authorization phrase; generic continuation must not execute it.
+- Review the remaining ORD-001 blockers after the successful remote replay canary and select the next repository-only closure sublot; do not activate Railway, production or merge from generic continuation.
 
 **Gate de saída:**
 - Two real accounts complete request, accept, proposal, approval, start and completion across devices.
@@ -933,7 +938,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 1/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 218 arquivos no escopo; 64 referências a localStorage; 8 a sessionStorage; 268 referências mock; 8 referências de rede/Supabase; 25 marcadores de implementação pendente.
+**Evidência estática observada:** 219 arquivos no escopo; 64 referências a localStorage; 8 a sessionStorage; 268 referências mock; 8 referências de rede/Supabase; 25 marcadores de implementação pendente.
 
 **Evidências:**
 - The master plan identifies legal, privacy and commercial decisions as mandatory.
@@ -993,7 +998,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2286 arquivos no escopo; 504 referências a localStorage; 150 a sessionStorage; 879 referências mock; 583 referências de rede/Supabase; 89 marcadores de implementação pendente.
+**Evidência estática observada:** 2289 arquivos no escopo; 504 referências a localStorage; 150 a sessionStorage; 879 referências mock; 583 referências de rede/Supabase; 89 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
@@ -1054,4 +1059,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-07-30T23:00:00-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-07-30T23:10:00-03:00._

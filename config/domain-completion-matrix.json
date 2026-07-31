@@ -1,6 +1,6 @@
 {
-  "version": "1.3.39",
-  "updatedAt": "2026-07-30T23:00:00-03:00",
+  "version": "1.3.40",
+  "updatedAt": "2026-07-30T23:10:00-03:00",
   "title": "Doke Domain Completion Matrix",
   "purpose": "Single source of truth for domain maturity, data authority, staging evidence, blockers, dependencies and mandatory completion order.",
   "maturityScale": {
@@ -1016,7 +1016,12 @@
         "scripts/audit-ord-001-a07e-remote-concurrent-replay-canary-readiness.js",
         "docs/ORD-001-A07E-REMOTE-CONCURRENT-REPLAY-CANARY-READINESS.md",
         "docs/validation/ORD-001-A07E-REMOTE-CONCURRENT-REPLAY-CANARY-READINESS.json",
-        ".github/workflows/ord-001-a07e-remote-concurrent-replay-canary-readiness.yml"
+        ".github/workflows/ord-001-a07e-remote-concurrent-replay-canary-readiness.yml",
+        "config/ord-001-a07e-remote-concurrent-replay-canary-application.json",
+        "docs/ORD-001-A07E-REMOTE-CONCURRENT-REPLAY-CANARY-APPLICATION.md",
+        "docs/validation/ORD-001-A07E-REMOTE-CONCURRENT-REPLAY-CANARY-APPLICATION.json",
+        "scripts/audit-ord-001-a07e-remote-concurrent-replay-canary-application.js",
+        ".github/workflows/ord-001-a07e-remote-concurrent-replay-canary-application.yml"
       ],
       "scanRoots": [
         "backend/modules/orders",
@@ -1101,7 +1106,8 @@
         "audit:ord-001-a07d-edge-function-staging-deploy-application",
         "plan:ord-001-a07e-remote-concurrent-replay-canary:dry-run",
         "test:ord-001-a07e-remote-concurrent-replay-canary-readiness",
-        "audit:ord-001-a07e-remote-concurrent-replay-canary-readiness"
+        "audit:ord-001-a07e-remote-concurrent-replay-canary-readiness",
+        "audit:ord-001-a07e-remote-concurrent-replay-canary-application"
       ],
       "evidence": [
         "Canonical state machine, transaction events, outbox worker and operational controls are active in staging.",
@@ -1188,7 +1194,12 @@
         "The cleanup contract deletes only the accepted empty test worker run by returned runId and only the SHA-256 hash of the canary nonce, while preserving the preexisting test nonce row.",
         "Read-only staging inspection confirmed service_role can delete the nonce row but cannot delete worker runs, so future run cleanup requires narrowly conditioned privileged SQL.",
         "The readiness planner supports only dry-run and check-env, contains no network, SQL, deploy or cleanup execution capability, and rejects generic continuation.",
-        "The remote replay canary remains unexecuted and requires the exact independent authorization phrase I_EXPLICITLY_AUTHORIZE_ORD_A07E_REMOTE_CONCURRENT_REPLAY_CANARY_ON_DOKE_STAGING."
+        "The remote replay canary remains unexecuted and requires the exact independent authorization phrase I_EXPLICITLY_AUTHORIZE_ORD_A07E_REMOTE_CONCURRENT_REPLAY_CANARY_ON_DOKE_STAGING.",
+        "The authorized ORD-A07E staging canary dispatched 32 concurrent requests sharing one issued-at and nonce; exactly one returned HTTP 200 and all other 31 returned HTTP 409 DOKE_ORDER_EVENT_WORKER_REPLAY_REJECTED.",
+        "The sole accepted invocation created one empty completed test worker run with zero claimed, completed, failed and dead-letter events; the run was deleted through a narrowly conditioned privileged cleanup.",
+        "The canonical nonce consumer evicted the expired preexisting test nonce before inserting the canary nonce, so the canary nonce was retained to preserve the one-row ledger baseline instead of deleting it and creating count drift.",
+        "Post-cleanup staging returned to one historical worker run, zero test worker runs, one test nonce row and zero orders, budgets, history, domain events, metric events or delivery attempts.",
+        "The remote replay canary required no Edge Function deploy, migration or Cron change; Railway, production and merge remain blocked."
       ],
       "blockers": [
         {
@@ -1239,7 +1250,7 @@
         "Review and apply the generated ORD-A07B nonce-ledger migration through the controlled staging release path, verify grants and atomic duplicate rejection, then wire Cron headers and Edge freshness enforcement before any replay canary.",
         "Apply the canonical ORD-A07B nonce ledger migration to staging only after exact authorization, then run read-only grant, RLS, atomicity and zero-drift verification.",
         "After the ORD-A07B ledger is applied and verified in staging, authorize the ORD-A07C Cron header migration separately, then wire Edge Function header reading and atomic nonce consumption before the worker run begins.",
-        "Execute the cleanup-safe ORD-A07E remote concurrent replay canary on Doke staging only after the exact authorization phrase; generic continuation must not execute it."
+        "Review the remaining ORD-001 blockers after the successful remote replay canary and select the next repository-only closure sublot; do not activate Railway, production or merge from generic continuation."
       ],
       "exitCriteria": [
         "Two real accounts complete request, accept, proposal, approval, start and completion across devices.",
