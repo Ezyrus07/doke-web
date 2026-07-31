@@ -1,0 +1,113 @@
+name: SCHED-A03 Reconcile Once
+
+on:
+  push:
+    branches:
+      - ord/ord-001-baseline-audit
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ord/ord-001-baseline-audit
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Reconcile matrix and package scripts
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+
+          const appendUnique = (items, value) => {
+            if (!items.includes(value)) items.push(value);
+          };
+
+          const matrixPath = 'config/domain-completion-matrix.json';
+          const packagePath = 'package.json';
+          const matrix = JSON.parse(fs.readFileSync(matrixPath, 'utf8'));
+          const pkg = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
+
+          matrix.version = '1.3.46';
+          matrix.updatedAt = '2026-07-31T09:40:00-03:00';
+
+          const sched = matrix.domains.find((domain) => domain.id === 'SCHED-001');
+          const ord = matrix.domains.find((domain) => domain.id === 'ORD-001');
+          if (!sched || !ord) throw new Error('ORD-001 or SCHED-001 missing from matrix');
+
+          const paths = [
+            'supabase/migrations/20260731123000_sched_a03_reservation_authority.sql',
+            'config/sched-001-a03-reservation-migration-local-contract.json',
+            'docs/SCHED-001-A03-RESERVATION-MIGRATION-LOCAL-CONTRACT.md',
+            'docs/validation/SCHED-001-A03-RESERVATION-MIGRATION-LOCAL-CONTRACT.json',
+            'scripts/audit-sched-001-a03-reservation-migration-local-contract.js',
+            'scripts/test-sched-001-a03-reservation-migration-static.js',
+            '.github/workflows/sched-001-a03-reservation-migration-local-contract.yml'
+          ];
+          const tests = [
+            'audit:sched-001-a03-reservation-migration-local-contract',
+            'test:sched-001-a03-reservation-migration-static'
+          ];
+
+          for (const domain of [sched, ord]) {
+            domain.requiredPaths ||= [];
+            domain.tests ||= [];
+            paths.forEach((path) => appendUnique(domain.requiredPaths, path));
+            tests.forEach((test) => appendUnique(domain.tests, test));
+          }
+
+          const schedEvidence = 'SCHED-A03 generated a repository-only canonical reservation migration with persistent idempotency, durable events, orders.schedule_reservation_id, service-role-only grants and a partial GiST exclusion constraint; it has not been applied.';
+          appendUnique(sched.evidence, schedEvidence);
+          appendUnique(ord.evidence, 'ORD-001 now has the generated SCHED-A03 order reference contract, while scheduled_at remains a read projection and no migration was applied.');
+
+          const blockerDescriptions = {
+            'SCHED-B02': 'SCHED-A02 froze the contract and SCHED-A03 generated the schema, but the canonical server scheduling command runtime is still absent.',
+            'SCHED-B03': 'SCHED-A03 generated the partial GiST active-range exclusion, but it is not applied and no remote concurrent overlap proof exists.',
+            'SCHED-B04': 'SCHED-A03 generated orders.schedule_reservation_id, but the column is not applied and ORD-001 does not consume the canonical reservation runtime yet.',
+            'SCHED-B05': 'SCHED-A03 generated policy hardening that forbids professional booked mutations, but staging remains unchanged until separately authorized application.'
+          };
+          for (const blocker of sched.blockers) {
+            if (blockerDescriptions[blocker.id]) blocker.description = blockerDescriptions[blocker.id];
+          }
+
+          sched.nextActions = [
+            'Implement SCHED-A04 server scheduling commands against the frozen A02 contract and generated A03 schema.',
+            'Prepare a separately authorized staging migration readiness gate with preflight, rollback and compatibility checks.',
+            'Apply the A03 migration only after an exact independent staging authorization.',
+            'Run remote persona and concurrent overlap canaries under rollback after application.'
+          ];
+          ord.nextActions = ord.nextActions.map((action) =>
+            action.includes('SCHED-A03')
+              ? 'Complete SCHED-A04 server scheduling commands before ORD-B04 can consume schedule_reservation_id.'
+              : action
+          );
+
+          pkg.scripts['audit:sched-001-a03-reservation-migration-local-contract'] = 'node scripts/audit-sched-001-a03-reservation-migration-local-contract.js';
+          pkg.scripts['test:sched-001-a03-reservation-migration-static'] = 'node scripts/test-sched-001-a03-reservation-migration-static.js';
+
+          fs.writeFileSync(matrixPath, `${JSON.stringify(matrix, null, 2)}\n`);
+          fs.writeFileSync(packagePath, `${JSON.stringify(pkg, null, 2)}\n`);
+          NODE
+      - name: Regenerate living matrix documents
+        run: node scripts/audit-domain-completion-matrix.js --write
+      - name: Validate reconciled A03 assets
+        run: |
+          node scripts/audit-sched-001-a03-reservation-migration-local-contract.js
+          node scripts/test-sched-001-a03-reservation-migration-static.js
+          node scripts/audit-domain-completion-matrix.js
+      - name: Commit reconciliation when needed
+        run: |
+          if git diff --quiet; then
+            echo 'SCHED-A03 reconciliation already complete.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add config/domain-completion-matrix.json package.json docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json
+          git commit -m 'Reconcile SCHED-A03 matrix and package scripts'
+          git push origin HEAD:ord/ord-001-baseline-audit
