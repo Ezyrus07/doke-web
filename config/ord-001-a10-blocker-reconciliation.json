@@ -1,0 +1,81 @@
+{
+  "contractVersion": "ord-a10-blocker-reconciliation-v1",
+  "status": "repository_reconciliation_complete_external_and_cross_domain_blockers_remain",
+  "domain": "ORD-001",
+  "scope": "repository_only",
+  "baselineMatrixVersion": "1.3.40",
+  "objective": "Remove obsolete ORD-001 actions, assign every remaining blocker to its actual authority and preserve all external authorization boundaries.",
+  "blockerDisposition": [
+    {
+      "id": "ORD-B02",
+      "severity": "high",
+      "owner": "ORD-001",
+      "classification": "external_operational_authorization_and_live_canary",
+      "remainsOpen": true,
+      "closureCondition": "Receive explicit resource authorization, issue a short-lived bound envelope, pass check-env, execute the real two-context visual canary and prove run-scoped cleanup with zero residue.",
+      "genericContinuationAuthorizes": false
+    },
+    {
+      "id": "ORD-B03",
+      "severity": "high",
+      "owner": "PAY-001",
+      "classification": "cross_domain_financial_dependency",
+      "remainsOpen": true,
+      "closureCondition": "Connect payment authority to a real PSP webhook lifecycle under PAY-001 before financial completion can be claimed by ORD-001.",
+      "genericContinuationAuthorizes": false
+    },
+    {
+      "id": "ORD-B04",
+      "severity": "medium",
+      "owner": "SCHED-001",
+      "classification": "cross_domain_scheduling_dependency",
+      "remainsOpen": true,
+      "closureCondition": "Make availability, booking, confirmation and rescheduling server-canonical under SCHED-001 with double-booking protection.",
+      "genericContinuationAuthorizes": false
+    },
+    {
+      "id": "ORD-B05",
+      "severity": "high",
+      "owner": "ORD-001",
+      "classification": "external_provider_selection_and_staging_release",
+      "remainsOpen": true,
+      "closureCondition": "Receive the exact Railway staging selection phrase, prepare only a non-secret provider adapter, then separately authorize account, billing, infrastructure and deployment before any external staging release.",
+      "requiredPhrase": "I_EXPLICITLY_SELECT_RAILWAY_FOR_DOKE_STAGING",
+      "genericContinuationAuthorizes": false
+    }
+  ],
+  "reconciliation": {
+    "obsoleteActionsRemoved": [
+      "Review and apply the generated ORD-A07B nonce-ledger migration through the controlled staging release path, verify grants and atomic duplicate rejection, then wire Cron headers and Edge freshness enforcement before any replay canary.",
+      "Apply the canonical ORD-A07B nonce ledger migration to staging only after exact authorization, then run read-only grant, RLS, atomicity and zero-drift verification.",
+      "After the ORD-A07B ledger is applied and verified in staging, authorize the ORD-A07C Cron header migration separately, then wire Edge Function header reading and atomic nonce consumption before the worker run begins."
+    ],
+    "duplicateProviderActionsCollapsed": true,
+    "blockersClosedByThisSublot": 0,
+    "domainClosureClaimed": false
+  },
+  "orderedNextActions": [
+    "Handoff ORD-B04 to SCHED-001 and keep order scheduling read-only/local until server-canonical availability and double-booking protection exist.",
+    "Handoff ORD-B03 to PAY-001 and keep financial completion blocked until a real PSP webhook lifecycle is authoritative.",
+    "Await explicit resource authorization before executing the ORD-B02 real two-context visual canary; generic continuation remains non-authorizing.",
+    "Await exactly I_EXPLICITLY_SELECT_RAILWAY_FOR_DOKE_STAGING before preparing only the non-secret provider adapter for ORD-B05; account, billing, infrastructure and deployment remain separately blocked."
+  ],
+  "forbidden": {
+    "stagingMutation": true,
+    "providerSelectionFromGenericContinuation": true,
+    "accountCreation": true,
+    "billing": true,
+    "infrastructureCreation": true,
+    "deployment": true,
+    "productionChange": true,
+    "merge": true,
+    "falseDomainClosure": true
+  },
+  "evidence": {
+    "networkRequestsPerformed": 0,
+    "stagingMutationsPerformed": 0,
+    "providerAccountsUsed": 0,
+    "productionChanged": false,
+    "pullRequestMerged": false
+  }
+}
