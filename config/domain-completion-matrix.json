@@ -1,6 +1,6 @@
 {
-  "version": "1.3.45",
-  "updatedAt": "2026-07-31T08:50:00-03:00",
+  "version": "1.3.46",
+  "updatedAt": "2026-07-31T09:40:00-03:00",
   "title": "Doke Domain Completion Matrix",
   "purpose": "Single source of truth for domain maturity, data authority, staging evidence, blockers, dependencies and mandatory completion order.",
   "maturityScale": {
@@ -1043,7 +1043,14 @@
         "docs/validation/SCHED-001-A02-COMMAND-EVENT-TIMEZONE-CONFLICT-CONTRACT.json",
         "scripts/audit-sched-001-a02-command-event-timezone-conflict-contract.js",
         "scripts/test-sched-001-a02-contract-runtime.js",
-        ".github/workflows/sched-001-a02-command-event-timezone-conflict-contract.yml"
+        ".github/workflows/sched-001-a02-command-event-timezone-conflict-contract.yml",
+        "supabase/migrations/20260731123000_sched_a03_reservation_authority.sql",
+        "config/sched-001-a03-reservation-migration-local-contract.json",
+        "docs/SCHED-001-A03-RESERVATION-MIGRATION-LOCAL-CONTRACT.md",
+        "docs/validation/SCHED-001-A03-RESERVATION-MIGRATION-LOCAL-CONTRACT.json",
+        "scripts/audit-sched-001-a03-reservation-migration-local-contract.js",
+        "scripts/test-sched-001-a03-reservation-migration-static.js",
+        ".github/workflows/sched-001-a03-reservation-migration-local-contract.yml"
       ],
       "scanRoots": [
         "backend/modules/orders",
@@ -1133,7 +1140,9 @@
         "audit:ord-001-a10-blocker-reconciliation",
         "audit:ord-001-a11-scheduling-authority-handoff",
         "audit:sched-001-a01-repository-baseline-staging-security-preflight",
-        "audit:sched-001-a02-command-event-timezone-conflict-contract"
+        "audit:sched-001-a02-command-event-timezone-conflict-contract",
+        "audit:sched-001-a03-reservation-migration-local-contract",
+        "test:sched-001-a03-reservation-migration-static"
       ],
       "evidence": [
         "Canonical state machine, transaction events, outbox worker and operational controls are active in staging.",
@@ -1230,7 +1239,8 @@
         "SCHED-A01 verified availability_slots RLS, five policies, role grants, applied migration versions and zero-row baseline directly in staging without mutation.",
         "The preflight closed SCHED-B01 but found that professionals can set their own availability row to booked, while no reservation command, hold lifecycle, exclusion constraint or order reservation reference exists.",
         "SCHED-A02 freezes the server-only scheduling command boundary, durable event envelope, IANA timezone policy, optimistic concurrency, idempotency and half-open conflict semantics without changing staging.",
-        "ORD-001 remains prohibited from direct schedule mutation or parallel conflict detection and will consume schedule_reservation_id plus durable schedule events."
+        "ORD-001 remains prohibited from direct schedule mutation or parallel conflict detection and will consume schedule_reservation_id plus durable schedule events.",
+        "ORD-001 now has the generated SCHED-A03 order reference contract, while scheduled_at remains a read projection and no migration was applied."
       ],
       "blockers": [
         {
@@ -1263,7 +1273,7 @@
         }
       ],
       "nextActions": [
-        "Execute SCHED-A03 reservation migration generation and local contract tests without applying any migration or mutating staging.",
+        "Complete SCHED-A04 server scheduling commands before ORD-B04 can consume schedule_reservation_id.",
         "Handoff ORD-B03 to PAY-001 and keep financial completion blocked until a real PSP webhook lifecycle is authoritative.",
         "Await explicit resource authorization before executing the ORD-B02 real two-context visual canary; generic continuation remains non-authorizing.",
         "Await exactly I_EXPLICITLY_SELECT_RAILWAY_FOR_DOKE_STAGING before preparing only the non-secret provider adapter for ORD-B05; account, billing, infrastructure and deployment remain separately blocked."
@@ -1322,7 +1332,14 @@
         "docs/validation/SCHED-001-A02-COMMAND-EVENT-TIMEZONE-CONFLICT-CONTRACT.json",
         "scripts/audit-sched-001-a02-command-event-timezone-conflict-contract.js",
         "scripts/test-sched-001-a02-contract-runtime.js",
-        ".github/workflows/sched-001-a02-command-event-timezone-conflict-contract.yml"
+        ".github/workflows/sched-001-a02-command-event-timezone-conflict-contract.yml",
+        "supabase/migrations/20260731123000_sched_a03_reservation_authority.sql",
+        "config/sched-001-a03-reservation-migration-local-contract.json",
+        "docs/SCHED-001-A03-RESERVATION-MIGRATION-LOCAL-CONTRACT.md",
+        "docs/validation/SCHED-001-A03-RESERVATION-MIGRATION-LOCAL-CONTRACT.json",
+        "scripts/audit-sched-001-a03-reservation-migration-local-contract.js",
+        "scripts/test-sched-001-a03-reservation-migration-static.js",
+        ".github/workflows/sched-001-a03-reservation-migration-local-contract.yml"
       ],
       "scanRoots": [
         "assets/js/pages/pedidos",
@@ -1341,7 +1358,9 @@
         "audit:ord-001-a11-scheduling-authority-handoff",
         "audit:sched-001-a01-repository-baseline-staging-security-preflight",
         "audit:sched-001-a02-command-event-timezone-conflict-contract",
-        "test:sched-001-a02-contract-runtime"
+        "test:sched-001-a02-contract-runtime",
+        "audit:sched-001-a03-reservation-migration-local-contract",
+        "test:sched-001-a03-reservation-migration-static"
       ],
       "evidence": [
         "Availability schema exists, but no implemented scheduling backend module exists.",
@@ -1354,43 +1373,44 @@
         "SCHED-A01 executed two read-only SQL queries and performed zero mutations, migrations, deployments, production changes or merge.",
         "SCHED-A02 freezes six commands, six durable event types, held/confirmed active occupancy, server-only confirmation, UTC plus IANA timezone interpretation and [start,end) ranges.",
         "The executable pure scheduling contract proves overlap, adjacency, actor, transition, version, idempotency, event-key and hold-expiration semantics without database, network or browser access.",
-        "No SCHED blocker closes at A02: migration, server runtime, order reference and policy hardening remain required."
+        "No SCHED blocker closes at A02: migration, server runtime, order reference and policy hardening remain required.",
+        "SCHED-A03 generated a repository-only canonical reservation migration with persistent idempotency, durable events, orders.schedule_reservation_id, service-role-only grants and a partial GiST exclusion constraint; it has not been applied."
       ],
       "blockers": [
         {
           "id": "SCHED-B02",
           "severity": "critical",
           "category": "server_authority",
-          "description": "SCHED-A02 freezes the canonical command, transition, actor, idempotency, timezone and durable-event contract, but the server scheduling runtime is not implemented.",
+          "description": "SCHED-A02 froze the contract and SCHED-A03 generated the schema, but the canonical server scheduling command runtime is still absent.",
           "targetPhase": "Fase 6"
         },
         {
           "id": "SCHED-B03",
           "severity": "high",
           "category": "concurrency",
-          "description": "SCHED-A02 freezes held and confirmed active occupancy with [start,end) overlap semantics and a btree_gist GiST exclusion design, but no migration or concurrent database proof exists.",
+          "description": "SCHED-A03 generated the partial GiST active-range exclusion, but it is not applied and no remote concurrent overlap proof exists.",
           "targetPhase": "Fase 6"
         },
         {
           "id": "SCHED-B04",
           "severity": "high",
           "category": "order_integration",
-          "description": "SCHED-A02 freezes orders.schedule_reservation_id and event-driven scheduled_at projection as the integration contract, but the schema and runtime integration do not exist.",
+          "description": "SCHED-A03 generated orders.schedule_reservation_id, but the column is not applied and ORD-001 does not consume the canonical reservation runtime yet.",
           "targetPhase": "Fase 6"
         },
         {
           "id": "SCHED-B05",
           "severity": "high",
           "category": "reservation_status_authority",
-          "description": "SCHED-A02 forbids professional direct booking and reserves confirmation for the server command boundary, but availability policy hardening and canonical reservation commands are not implemented.",
+          "description": "SCHED-A03 generated policy hardening that forbids professional booked mutations, but staging remains unchanged until separately authorized application.",
           "targetPhase": "Fase 6"
         }
       ],
       "nextActions": [
-        "Generate and test locally, but do not apply, the SCHED-A03 reservation migration with btree_gist, canonical reservations, idempotency, events, protected grants and active-range exclusion.",
-        "Implement the server scheduling command module and deterministic runtime tests against the frozen A02 contract.",
-        "Prepare a separately authorized staging migration readiness gate and rollback plan.",
-        "Make ORD-001 consume schedule_reservation_id and retain scheduled_at only as an event-driven read projection."
+        "Implement SCHED-A04 server scheduling commands against the frozen A02 contract and generated A03 schema.",
+        "Prepare a separately authorized staging migration readiness gate with preflight, rollback and compatibility checks.",
+        "Apply the A03 migration only after an exact independent staging authorization.",
+        "Run remote persona and concurrent overlap canaries under rollback after application."
       ],
       "exitCriteria": [
         "Concurrent booking attempts cannot reserve the same slot.",

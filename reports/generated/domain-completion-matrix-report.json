@@ -1,7 +1,7 @@
 {
   "name": "domain-completion-matrix",
-  "version": "1.3.45",
-  "generatedAt": "2026-07-31T08:50:00-03:00",
+  "version": "1.3.46",
+  "generatedAt": "2026-07-31T09:40:00-03:00",
   "status": "passed",
   "summary": {
     "domains": 23,
@@ -31,8 +31,8 @@
     "activeHtmlPages": 30,
     "repositories": 25,
     "backendModules": 15,
-    "migrations": 173,
-    "packageScripts": 940,
+    "migrations": 174,
+    "packageScripts": 942,
     "staging": {
       "publicTotal": 45,
       "publicRlsDisabled": 0,
@@ -221,7 +221,7 @@
       "id": "GOV-001",
       "name": "Governança, arquitetura e comando central",
       "maturity": 4,
-      "filesMatched": 1016,
+      "filesMatched": 1019,
       "sampleFiles": [
         "docs/ACTIVE-CONTRACTS-INDEX.md",
         "docs/API-ADAPTER-CONTRACT.md",
@@ -2344,7 +2344,7 @@
       "id": "SEC-001",
       "name": "Segurança, RLS, grants e autoridade dos dados",
       "maturity": 4,
-      "filesMatched": 211,
+      "filesMatched": 212,
       "sampleFiles": [
         "backend/shared/auth/supabase-actor-resolver.js",
         "backend/shared/security/audit-event-contract.js",
@@ -2984,7 +2984,7 @@
       "id": "SEARCH-001",
       "name": "Busca, descoberta, favoritos e ranking",
       "maturity": 4,
-      "filesMatched": 214,
+      "filesMatched": 215,
       "sampleFiles": [
         "assets/js/components/service-favorites-controller.js",
         "assets/js/pages/resultados-data-controller.js",
@@ -3344,7 +3344,9 @@
         "audit:ord-001-a10-blocker-reconciliation",
         "audit:ord-001-a11-scheduling-authority-handoff",
         "audit:sched-001-a01-repository-baseline-staging-security-preflight",
-        "audit:sched-001-a02-command-event-timezone-conflict-contract"
+        "audit:sched-001-a02-command-event-timezone-conflict-contract",
+        "audit:sched-001-a03-reservation-migration-local-contract",
+        "test:sched-001-a03-reservation-migration-static"
       ]
     },
     {
@@ -3440,28 +3442,28 @@
           "id": "SCHED-B02",
           "severity": "critical",
           "category": "server_authority",
-          "description": "SCHED-A02 freezes the canonical command, transition, actor, idempotency, timezone and durable-event contract, but the server scheduling runtime is not implemented.",
+          "description": "SCHED-A02 froze the contract and SCHED-A03 generated the schema, but the canonical server scheduling command runtime is still absent.",
           "targetPhase": "Fase 6"
         },
         {
           "id": "SCHED-B03",
           "severity": "high",
           "category": "concurrency",
-          "description": "SCHED-A02 freezes held and confirmed active occupancy with [start,end) overlap semantics and a btree_gist GiST exclusion design, but no migration or concurrent database proof exists.",
+          "description": "SCHED-A03 generated the partial GiST active-range exclusion, but it is not applied and no remote concurrent overlap proof exists.",
           "targetPhase": "Fase 6"
         },
         {
           "id": "SCHED-B04",
           "severity": "high",
           "category": "order_integration",
-          "description": "SCHED-A02 freezes orders.schedule_reservation_id and event-driven scheduled_at projection as the integration contract, but the schema and runtime integration do not exist.",
+          "description": "SCHED-A03 generated orders.schedule_reservation_id, but the column is not applied and ORD-001 does not consume the canonical reservation runtime yet.",
           "targetPhase": "Fase 6"
         },
         {
           "id": "SCHED-B05",
           "severity": "high",
           "category": "reservation_status_authority",
-          "description": "SCHED-A02 forbids professional direct booking and reserves confirmation for the server command boundary, but availability policy hardening and canonical reservation commands are not implemented.",
+          "description": "SCHED-A03 generated policy hardening that forbids professional booked mutations, but staging remains unchanged until separately authorized application.",
           "targetPhase": "Fase 6"
         }
       ],
@@ -3470,7 +3472,9 @@
         "audit:ord-001-a11-scheduling-authority-handoff",
         "audit:sched-001-a01-repository-baseline-staging-security-preflight",
         "audit:sched-001-a02-command-event-timezone-conflict-contract",
-        "test:sched-001-a02-contract-runtime"
+        "test:sched-001-a02-contract-runtime",
+        "audit:sched-001-a03-reservation-migration-local-contract",
+        "test:sched-001-a03-reservation-migration-static"
       ]
     },
     {
@@ -4529,7 +4533,7 @@
       "id": "LEGAL-001",
       "name": "Jurídico, privacidade, confiança e políticas comerciais",
       "maturity": 1,
-      "filesMatched": 223,
+      "filesMatched": 224,
       "sampleFiles": [
         "docs/ACTIVE-CONTRACTS-INDEX.md",
         "docs/API-ADAPTER-CONTRACT.md",
@@ -6257,7 +6261,7 @@
       "id": "APP-001",
       "name": "Aplicativos Android e iOS",
       "maturity": 0,
-      "filesMatched": 2303,
+      "filesMatched": 2308,
       "sampleFiles": [
         ".agents/skills/animation-vocabulary/SKILL.md",
         ".agents/skills/apple-design/SKILL.md",
@@ -6292,7 +6296,7 @@
         "mock": 880,
         "network": 584,
         "directSupabase": 518,
-        "todo": 91
+        "todo": 89
       },
       "signalFiles": {
         "localStorage": [
@@ -9856,7 +9860,7 @@
           },
           {
             "file": "config/domain-completion-matrix.json",
-            "count": 3
+            "count": 1
           },
           {
             "file": "configuracoes.html",
