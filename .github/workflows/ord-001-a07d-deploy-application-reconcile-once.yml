@@ -1,0 +1,90 @@
+name: ORD-A07D Deploy Application Reconcile Once
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/ord-001-a07d-deploy-application-reconcile-once.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  reconcile:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Reconcile ORD-A07D deployment application
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('fs');
+
+          const packagePath = 'package.json';
+          const packageJson = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
+          packageJson.scripts['audit:ord-001-a07d-edge-function-staging-deploy-application'] =
+            'node scripts/audit-ord-001-a07d-edge-function-staging-deploy-application.js';
+          fs.writeFileSync(packagePath, JSON.stringify(packageJson, null, 2) + '\n');
+
+          const matrixPath = 'config/domain-completion-matrix.json';
+          const matrix = JSON.parse(fs.readFileSync(matrixPath, 'utf8'));
+          matrix.version = '1.3.38';
+          matrix.updatedAt = '2026-07-30T22:46:00-03:00';
+          const ord = matrix.domains.find((domain) => domain.id === 'ORD-001');
+          if (!ord) throw new Error('ORD-001 domain not found');
+
+          const appendUnique = (array, values) => {
+            for (const value of values) if (!array.includes(value)) array.push(value);
+          };
+
+          appendUnique(ord.requiredPaths, [
+            'config/ord-001-a07d-edge-function-staging-deploy-application.json',
+            'docs/ORD-001-A07D-EDGE-FUNCTION-STAGING-DEPLOY-APPLICATION.md',
+            'docs/validation/ORD-001-A07D-EDGE-FUNCTION-STAGING-DEPLOY-APPLICATION.json',
+            'scripts/audit-ord-001-a07d-edge-function-staging-deploy-application.js',
+            '.github/workflows/ord-001-a07d-edge-function-staging-deploy-application.yml'
+          ]);
+          appendUnique(ord.tests, [
+            'audit:ord-001-a07d-edge-function-staging-deploy-application'
+          ]);
+          appendUnique(ord.evidence, [
+            'The explicitly authorized frozen order-event-worker bundle was deployed to Doke staging as active version 10, advancing from version 9 while preserving verify_jwt=false and the pinned Supabase client import map.',
+            'Remote runtime probes confirmed invalid token rejection with HTTP 401 WORKER_AUTH_REQUIRED and valid-token missing-freshness rejection with HTTP 428 DOKE_ORDER_EVENT_WORKER_FRESHNESS_REQUIRED without disclosing the Vault token.',
+            'The deployment and two pg_net verification probes left Cron schedule and command unchanged, did not create orders, budgets, history, domain events, metric events or delivery attempts, and did not increase worker-run or nonce-ledger counts.',
+            'The remote concurrent replay canary, Railway, production and merge remain independently blocked.'
+          ]);
+          ord.nextActions = ord.nextActions.filter((action) =>
+            !/deploy.*order-event-worker|edge function.*deploy|exact.*a07d.*authorization/i.test(action)
+          );
+          appendUnique(ord.nextActions, [
+            'Prepare a separate exact-authorization and cleanup-safe gate for the remote concurrent replay canary on Doke staging; do not execute it from generic continuation.'
+          ]);
+
+          fs.writeFileSync(matrixPath, JSON.stringify(matrix, null, 2) + '\n');
+          NODE
+
+          node scripts/audit-ord-001-a07d-edge-function-staging-deploy-application.js
+          node scripts/audit-ord-001-a07d-edge-function-staging-deploy-readiness.js
+          node scripts/test-ord-001-a07d-worker-invocation-gate.mjs
+          node scripts/audit-ord-001-a07d-edge-function-freshness-wiring.js
+          node scripts/audit-ord-001-a07b-staging-migration-application.js
+          node scripts/audit-ord-001-a07c-staging-migration-application.js
+          node scripts/audit-ord-001-a07e-concurrent-replay-canary.js
+          node scripts/audit-domain-completion-matrix.js --write
+          node scripts/audit-domain-completion-matrix.js
+
+          git add package.json config/domain-completion-matrix.json docs/DOMAIN-COMPLETION-MATRIX.md
+          git add -f reports/generated/domain-completion-matrix-report.json
+          git config user.name 'github-actions[bot]'
+          git config user.email '4189826+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Reconcile ORD-A07D staging deployment evidence' || exit 0
+          git pull --rebase origin ${{ github.event.pull_request.head.ref || github.ref_name }}
+          git push origin HEAD:${{ github.event.pull_request.head.ref || github.ref_name }}
