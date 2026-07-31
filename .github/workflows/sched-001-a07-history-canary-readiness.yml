@@ -31,9 +31,7 @@ jobs:
         with:
           node-version: 24
       - name: Reconcile SCHED-A07 matrix and living gates
-        run: |
-          node scripts/reconcile-sched-001-a07-once.js
-          node scripts/audit-domain-completion-matrix.js --write
+        run: node scripts/reconcile-sched-001-a07-once.js
       - name: Restore permanent read-only workflow and remove temporary assets
         run: |
           cat > .github/workflows/sched-001-a07-history-canary-readiness.yml <<'YAML'
@@ -90,6 +88,7 @@ jobs:
           rm -f .github/workflows/sched-001-a07-reconcile-once.yml
           rm -f scripts/reconcile-sched-001-a07-once.js
           rm -f config/sched-a07-reconcile-trigger.txt
+          node scripts/audit-domain-completion-matrix.js --write
       - name: Validate reconciled SCHED-A07 assets
         run: |
           node scripts/test-sched-001-a07-history-canary-readiness.js
