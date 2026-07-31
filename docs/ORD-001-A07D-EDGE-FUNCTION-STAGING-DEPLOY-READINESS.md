@@ -6,6 +6,18 @@
 
 The repository bundle for `order-event-worker` is frozen by Git blob SHA. No Edge Function was deployed in this lot.
 
+## Current staging function
+
+Read-only inspection confirmed:
+
+- function: `order-event-worker`;
+- deployed version: `9`;
+- status: `ACTIVE`;
+- `verify_jwt`: `false`;
+- deployed bundle SHA-256: `5b4594aaf6f259928e2f27e5f920c616f9baff42a1702b3ba8bc87649c221852`.
+
+`verify_jwt` must remain `false` during this deploy because the private Cron authenticates with `x-doke-worker-token` and does not send an Authorization JWT. Changing it to `true` would break the Cron invocation path.
+
 ## Frozen bundle
 
 - `index.ts`: `8a6f5c8f19b3584b99fda36782822cebfb5d2ec7`
@@ -13,6 +25,9 @@ The repository bundle for `order-event-worker` is frozen by Git blob SHA. No Edg
 - `invocation-gate.mjs`: `acf432f2f2566fa2bfaa0c2d62d83e45530055a6`
 - `invocation-freshness.mjs`: `1085f1037be53e2b7f3ceffa130bfd06afe60065`
 - `invocation-headers.mjs`: `95c9bc4271ce136b65a280847f7b160b0497b26e`
+- `deno.json`: `969d2d4b384780250105a21b1939a95e60210918`
+
+The import map pins `@supabase/supabase-js` to `npm:@supabase/supabase-js@2.110.0`.
 
 ## Security ordering
 
@@ -26,14 +41,15 @@ A future deploy requires exactly:
 
 `I_EXPLICITLY_AUTHORIZE_ORD_A07D_ORDER_EVENT_WORKER_EDGE_FUNCTION_DEPLOY_ON_DOKE_STAGING`
 
-This phrase authorizes only deployment of the frozen `order-event-worker` bundle to Doke staging and read-only post-deploy verification. It does not authorize a remote replay canary, production, Railway, or merge.
+This phrase authorizes only deployment of the six frozen `order-event-worker` files to Doke staging with `verify_jwt: false`, followed by read-only post-deploy verification. It does not authorize a remote replay canary, production, Railway, or merge.
 
 ## Required post-deploy checks
 
-- function exists in staging;
-- deployed bundle matches the frozen repository bundle;
-- JWT configuration is preserved;
-- required runtime secrets are available without disclosure;
+- function remains active in staging;
+- deployed version increments from version 9;
+- deployed files match the frozen repository bundle;
+- `verify_jwt` remains `false`;
+- required built-in runtime secrets are available without disclosure;
 - invalid token returns 401;
 - missing freshness returns 428;
 - Cron schedule and command remain unchanged;
