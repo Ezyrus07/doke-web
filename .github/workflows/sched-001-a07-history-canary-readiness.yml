@@ -57,140 +57,40 @@ jobs:
           npm run audit:ord-001-a11-scheduling-authority-handoff
           npm run audit:sched-001-a07-history-canary-readiness
 
-      - name: Restore historical readiness workflow and remove executors
+      - name: Remove temporary scripts only
         shell: bash
         run: |
           set -euo pipefail
-          cat > .github/workflows/sched-001-a07-history-canary-readiness.yml <<'YAML'
-          name: Doke SCHED-A07 Migration History and Canary Readiness
-
-          on:
-            pull_request:
-              paths:
-                - 'config/sched-001-a07-history-canary-readiness.json'
-                - 'docs/SCHED-001-A07-MIGRATION-HISTORY-CANARY-READINESS.md'
-                - 'docs/validation/SCHED-001-A07-MIGRATION-HISTORY-CANARY-READINESS.json'
-                - 'scripts/plan-sched-001-a07-history-canaries.js'
-                - 'scripts/test-sched-001-a07-history-canary-readiness.js'
-                - 'scripts/audit-sched-001-a07-history-canary-readiness.js'
-                - 'supabase/tests/020_sched_a07_rolled_back_canaries.sql'
-                - 'config/domain-completion-matrix.json'
-                - 'package.json'
-                - '.github/workflows/sched-001-a07-history-canary-readiness.yml'
-            workflow_dispatch:
-
-          permissions:
-            contents: read
-
-          jobs:
-            readiness:
-              runs-on: ubuntu-latest
-              steps:
-                - uses: actions/checkout@v4
-                - uses: actions/setup-node@v4
-                  with:
-                    node-version: 24
-                - name: Audit SCHED-A07 migration history and canary readiness
-                  run: node scripts/audit-sched-001-a07-history-canary-readiness.js
-                - name: Test SCHED-A07 authorization firewall and rollback contract
-                  run: node scripts/test-sched-001-a07-history-canary-readiness.js
-                - name: Prove SCHED-A07 planner remains dry-run only
-                  run: node scripts/plan-sched-001-a07-history-canaries.js
-                - name: Preserve SCHED-A05 persistence readiness
-                  run: |
-                    node scripts/audit-sched-001-a05-persistence-readiness.js
-                    node scripts/test-sched-001-a05-postgres-repository-runtime.js
-                    node scripts/test-sched-001-a05-staging-readiness.js
-                - name: Preserve cumulative scheduling and order contracts
-                  run: |
-                    node scripts/audit-sched-001-a04-server-command-runtime.js
-                    node scripts/audit-sched-001-a03-reservation-migration-local-contract.js
-                    node scripts/audit-sched-001-a02-command-event-timezone-conflict-contract.js
-                    node scripts/audit-sched-001-a01-repository-baseline-staging-security-preflight.js
-                    node scripts/audit-ord-001-a11-scheduling-authority-handoff.js
-                    node scripts/audit-ord-001-a10-blocker-reconciliation.js
-                - name: Audit completion matrix
-                  run: node scripts/audit-domain-completion-matrix.js
-          YAML
-          rm -f .github/workflows/sched-001-a09-documentation-matrix.yml
           rm -f scripts/close-sched-001-a09-documentation-matrix.js
           rm -f scripts/patch-sched-001-a09-cumulative-audits.js
 
-      - name: Build validated Git objects without moving branch
-        id: git_objects
+      - name: Commit and push validated non-workflow closure
         shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          git add -A
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add \
+            config/domain-completion-matrix.json \
+            config/sched-001-a09-staging-reconciliation.json \
+            docs/DOMAIN-COMPLETION-MATRIX.md \
+            docs/SCHED-001-A09-STAGING-RECONCILIATION.md \
+            reports/generated/domain-completion-matrix-report.json \
+            scripts/audit-ord-001-a10-blocker-reconciliation.js \
+            scripts/audit-ord-001-a11-scheduling-authority-handoff.js \
+            scripts/audit-sched-001-a02-command-event-timezone-conflict-contract.js \
+            scripts/audit-sched-001-a03-reservation-migration-local-contract.js \
+            scripts/audit-sched-001-a04-server-command-runtime.js \
+            scripts/audit-sched-001-a05-persistence-readiness.js \
+            scripts/close-sched-001-a09-documentation-matrix.js \
+            scripts/patch-sched-001-a09-cumulative-audits.js
+
+          if git diff --cached --name-only | grep -q '^\.github/workflows/'; then
+            echo 'SCHED_A09_WORKFLOW_MUTATION_STAGED' >&2
+            exit 31
+          fi
+
           git diff --cached --check
-
-          BASE_SHA="$(git rev-parse HEAD)"
-          BASE_TREE_SHA="$(git rev-parse 'HEAD^{tree}')"
-          TREE_ENTRIES="$(mktemp)"
-          printf '[]\n' > "$TREE_ENTRIES"
-
-          while IFS= read -r -d '' file; do
-            mode="$(git ls-files -s -- "$file" | awk 'NR == 1 { print $1 }')"
-            [ -n "$mode" ] || mode=100644
-            payload="$(mktemp)"
-            python3 - "$file" "$payload" <<'PY'
-          import base64
-          import json
-          import pathlib
-          import sys
-
-          source = pathlib.Path(sys.argv[1])
-          target = pathlib.Path(sys.argv[2])
-          target.write_text(json.dumps({
-              "content": base64.b64encode(source.read_bytes()).decode("ascii"),
-              "encoding": "base64",
-          }), encoding="utf-8")
-          PY
-            blob_sha="$(gh api --method POST "repos/$GITHUB_REPOSITORY/git/blobs" --input "$payload" --jq '.sha')"
-            rm -f "$payload"
-            jq --arg path "$file" --arg mode "$mode" --arg sha "$blob_sha" \
-              '. + [{path:$path,mode:$mode,type:"blob",sha:$sha}]' \
-              "$TREE_ENTRIES" > "$TREE_ENTRIES.next"
-            mv "$TREE_ENTRIES.next" "$TREE_ENTRIES"
-          done < <(git diff --cached --name-only --diff-filter=ACMRT -z)
-
-          while IFS= read -r -d '' file; do
-            jq --arg path "$file" \
-              '. + [{path:$path,mode:"100644",type:"blob",sha:null}]' \
-              "$TREE_ENTRIES" > "$TREE_ENTRIES.next"
-            mv "$TREE_ENTRIES.next" "$TREE_ENTRIES"
-          done < <(git diff --cached --name-only --diff-filter=D -z)
-
-          tree_payload="$(mktemp)"
-          jq -n --arg base_tree "$BASE_TREE_SHA" --slurpfile tree "$TREE_ENTRIES" \
-            '{base_tree:$base_tree,tree:$tree[0]}' > "$tree_payload"
-          TREE_SHA="$(gh api --method POST "repos/$GITHUB_REPOSITORY/git/trees" --input "$tree_payload" --jq '.sha')"
-          rm -f "$tree_payload"
-
-          commit_payload="$(mktemp)"
-          jq -n \
-            --arg message 'docs(sched): close A09 staging reconciliation evidence' \
-            --arg tree "$TREE_SHA" \
-            --arg parent "$BASE_SHA" \
-            '{message:$message,tree:$tree,parents:[$parent]}' > "$commit_payload"
-          COMMIT_SHA="$(gh api --method POST "repos/$GITHUB_REPOSITORY/git/commits" --input "$commit_payload" --jq '.sha')"
-          rm -f "$commit_payload"
-
-          OUTPUT_DIR="$RUNNER_TEMP/sched-a09-git-object"
-          mkdir -p "$OUTPUT_DIR"
-          printf '%s\n' "$BASE_SHA" > "$OUTPUT_DIR/base_sha.txt"
-          printf '%s\n' "$BASE_TREE_SHA" > "$OUTPUT_DIR/base_tree_sha.txt"
-          printf '%s\n' "$TREE_SHA" > "$OUTPUT_DIR/tree_sha.txt"
-          printf '%s\n' "$COMMIT_SHA" > "$OUTPUT_DIR/commit_sha.txt"
-          git diff --cached --name-status > "$OUTPUT_DIR/name_status.txt"
-          git diff --cached --stat > "$OUTPUT_DIR/stat.txt"
-
-      - name: Upload validated Git object metadata
-        uses: actions/upload-artifact@v4
-        with:
-          name: sched-a09-git-object
-          path: ${{ runner.temp }}/sched-a09-git-object
-          if-no-files-found: error
-          retention-days: 1
+          git commit -m "docs(sched): close A09 staging reconciliation evidence"
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
