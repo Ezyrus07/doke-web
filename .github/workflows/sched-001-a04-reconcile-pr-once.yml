@@ -1,0 +1,57 @@
+name: SCHED-A04 Reconcile PR Once
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  reconcile:
+    if: github.event_name != 'pull_request' || github.head_ref == 'ord/ord-001-baseline-audit'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ord/ord-001-baseline-audit
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Execute frozen A04 reconciliation script
+        run: |
+          sed -n "/node <<'NODE'/,/^          NODE$/p" .github/workflows/sched-001-a04-reconcile-once.yml \
+            | sed '1d;$d;s/^          //' > /tmp/reconcile-sched-a04.js
+          node /tmp/reconcile-sched-a04.js
+      - name: Regenerate living matrix documents
+        run: node scripts/audit-domain-completion-matrix.js --write
+      - name: Validate reconciled A04 assets
+        run: |
+          node scripts/audit-sched-001-a04-server-command-runtime.js
+          node scripts/test-sched-001-a04-scheduling-service-runtime.js
+          node scripts/audit-sched-001-a03-reservation-migration-local-contract.js
+          node scripts/test-sched-001-a03-reservation-migration-static.js
+          node scripts/audit-sched-001-a02-command-event-timezone-conflict-contract.js
+          node scripts/test-sched-001-a02-contract-runtime.js
+          node scripts/audit-sched-001-a01-repository-baseline-staging-security-preflight.js
+          node scripts/audit-ord-001-a11-scheduling-authority-handoff.js
+          node scripts/audit-ord-001-a10-blocker-reconciliation.js
+          node scripts/audit-domain-completion-matrix.js
+      - name: Commit reconciliation when needed
+        run: |
+          if git diff --quiet; then
+            echo 'SCHED-A04 reconciliation already complete.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add config/domain-completion-matrix.json package.json docs/DOMAIN-COMPLETION-MATRIX.md
+          git add scripts/audit-sched-001-a01-repository-baseline-staging-security-preflight.js
+          git add scripts/audit-sched-001-a02-command-event-timezone-conflict-contract.js
+          git add scripts/audit-sched-001-a03-reservation-migration-local-contract.js
+          git add scripts/audit-ord-001-a11-scheduling-authority-handoff.js
+          git add scripts/audit-ord-001-a10-blocker-reconciliation.js
+          git add -f reports/generated/domain-completion-matrix-report.json
+          git commit -m 'Reconcile SCHED-A04 runtime and living gates'
+          git push origin HEAD:ord/ord-001-baseline-audit
