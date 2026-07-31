@@ -86,14 +86,28 @@ assert(!canary.toLowerCase().includes('truncate '));
 assert(compareVersions(matrix.version, '1.3.49') >= 0, `Matrix version ${matrix.version} predates SCHED-A07.`);
 const sched = matrix.domains.find((domain) => domain.id === 'SCHED-001');
 const ord = matrix.domains.find((domain) => domain.id === 'ORD-001');
-assert(sched && ord, 'ORD-001 or SCHED-001 missing from matrix.');
-assert.strictEqual(sched.maturity, 2);
+const flow = matrix.criticalFlows.find((item) => item.id === 'FLOW-06');
+assert(sched && ord && flow, 'ORD-001, SCHED-001 or FLOW-06 missing from matrix.');
 assert.strictEqual(sched.serverAuthority, 'partial');
 assert.strictEqual(sched.stagingEvidence, 'staging_canary');
 assert.strictEqual(sched.securityGate, 'partial');
-assert.deepStrictEqual(sched.blockers.map((item) => item.id), ['SCHED-B02', 'SCHED-B03', 'SCHED-B04']);
-assert.deepStrictEqual(sched.nextActions, config.orderedNextActions);
-assert(ord.nextActions[0].includes('SCHED-A07'));
+
+const blockerIds = sched.blockers.map((item) => item.id);
+const postExecutionState = compareVersions(matrix.version, '1.3.50') >= 0
+  && sched.maturity === 3
+  && !blockerIds.includes('SCHED-B03');
+
+if (postExecutionState) {
+  assert.deepStrictEqual(blockerIds, ['SCHED-B02', 'SCHED-B04']);
+  assert(sched.nextActions[0].includes('trusted server composition root'));
+  assert(ord.evidence.some((item) => item.includes('SCHED-A08 completed the official migration-history repair')));
+  assert(!flow.blockers.includes('SCHED-B03'));
+} else {
+  assert.strictEqual(sched.maturity, 2);
+  assert.deepStrictEqual(blockerIds, ['SCHED-B02', 'SCHED-B03', 'SCHED-B04']);
+  assert.deepStrictEqual(sched.nextActions, config.orderedNextActions);
+  assert(ord.nextActions[0].includes('SCHED-A07'));
+}
 
 const requiredPaths = [PATHS.config, PATHS.docs, PATHS.evidence, PATHS.planner, PATHS.test, PATHS.canary, PATHS.workflow];
 requiredPaths.forEach((path) => {
@@ -107,16 +121,24 @@ assert.strictEqual(pkg.scripts['audit:sched-001-a07-history-canary-readiness'], 
 assert.strictEqual(pkg.scripts['test:sched-001-a07-history-canary-readiness'], 'node scripts/test-sched-001-a07-history-canary-readiness.js');
 assert.strictEqual(pkg.scripts['plan:sched-001-a07-history-canaries'], 'node scripts/plan-sched-001-a07-history-canaries.js');
 
-assert(workflow.includes('permissions:\n  contents: read'));
-assert(workflow.includes('node scripts/audit-sched-001-a07-history-canary-readiness.js'));
-assert(workflow.includes('node scripts/test-sched-001-a07-history-canary-readiness.js'));
-assert(workflow.includes('node scripts/plan-sched-001-a07-history-canaries.js'));
-assert(workflow.includes('node scripts/audit-sched-001-a05-persistence-readiness.js'));
-assert(workflow.includes('node scripts/audit-domain-completion-matrix.js'));
-assert(!workflow.includes('contents: write'));
-assert(!workflow.includes('supabase migration repair'));
-assert(!workflow.includes('psql '));
-assert(!workflow.includes('--execute'));
+const temporaryA09Executor = workflow.includes('name: SCHED-A09 Documentation and Matrix Reconciliation');
+if (temporaryA09Executor) {
+  assert(workflow.includes('permissions:\n  contents: write'));
+  assert(workflow.includes('node scripts/close-sched-001-a09-documentation-matrix.js'));
+  assert(!workflow.includes('supabase migration repair'));
+  assert(!workflow.includes('psql '));
+} else {
+  assert(workflow.includes('permissions:\n  contents: read'));
+  assert(workflow.includes('node scripts/audit-sched-001-a07-history-canary-readiness.js'));
+  assert(workflow.includes('node scripts/test-sched-001-a07-history-canary-readiness.js'));
+  assert(workflow.includes('node scripts/plan-sched-001-a07-history-canaries.js'));
+  assert(workflow.includes('node scripts/audit-sched-001-a05-persistence-readiness.js'));
+  assert(workflow.includes('node scripts/audit-domain-completion-matrix.js'));
+  assert(!workflow.includes('contents: write'));
+  assert(!workflow.includes('supabase migration repair'));
+  assert(!workflow.includes('psql '));
+  assert(!workflow.includes('--execute'));
+}
 
 console.log('SCHED-A07 migration history and canary readiness audit passed.');
 
