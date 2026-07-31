@@ -1,0 +1,87 @@
+{
+  "contractVersion": "ord-a07d-edge-function-staging-deploy-application-v1",
+  "domain": "ORD-001",
+  "sublot": "ORD-A07D-DEPLOY-APPLICATION",
+  "status": "edge_function_staging_deploy_applied_and_verified",
+  "authorizedAt": "2026-07-30T22:26:00-03:00",
+  "authorizationPhrase": "I_EXPLICITLY_AUTHORIZE_ORD_A07D_ORDER_EVENT_WORKER_EDGE_FUNCTION_DEPLOY_ON_DOKE_STAGING",
+  "target": {
+    "environment": "staging",
+    "projectId": "zwkczgewzbsorbrjuzpb",
+    "functionName": "order-event-worker",
+    "productionAllowed": false
+  },
+  "repository": {
+    "head": "4e84d509652aaf2bb13c5b87fa797ebc63657989",
+    "bundle": {
+      "supabase/functions/order-event-worker/index.ts": "8a6f5c8f19b3584b99fda36782822cebfb5d2ec7",
+      "supabase/functions/order-event-worker/worker.mjs": "7431069105336ac0c793ea0787e75ae28ac40177",
+      "supabase/functions/order-event-worker/invocation-gate.mjs": "acf432f2f2566fa2bfaa0c2d62d83e45530055a6",
+      "supabase/functions/order-event-worker/invocation-freshness.mjs": "1085f1037be53e2b7f3ceffa130bfd06afe60065",
+      "supabase/functions/order-event-worker/invocation-headers.mjs": "95c9bc4271ce136b65a280847f7b160b0497b26e",
+      "supabase/functions/order-event-worker/deno.json": "969d2d4b384780250105a21b1939a95e60210918"
+    }
+  },
+  "deployment": {
+    "beforeVersion": 9,
+    "beforeBundleSha256": "5b4594aaf6f259928e2f27e5f920c616f9baff42a1702b3ba8bc87649c221852",
+    "afterVersion": 10,
+    "afterBundleSha256": "2f480553c636b96a061e66fcb3a6ddaf06d458459c898f215e2472ff2d8a4dc0",
+    "status": "ACTIVE",
+    "verifyJwtBefore": false,
+    "verifyJwtAfter": false,
+    "importMapPath": "deno.json",
+    "entrypointPath": "index.ts"
+  },
+  "runtimeVerification": {
+    "requiredSecretsExistWithoutDisclosure": true,
+    "invalidToken": {
+      "requestId": 11,
+      "status": 401,
+      "error": "WORKER_AUTH_REQUIRED"
+    },
+    "validTokenMissingFreshness": {
+      "requestId": 12,
+      "status": 428,
+      "error": "DOKE_ORDER_EVENT_WORKER_FRESHNESS_REQUIRED"
+    },
+    "remoteReplayCanaryExecuted": false
+  },
+  "integrity": {
+    "cronJobActive": true,
+    "cronSchedule": "* * * * *",
+    "cronCommand": "select private.invoke_order_event_worker_if_needed();",
+    "ordersBefore": 0,
+    "ordersAfter": 0,
+    "budgetsBefore": 0,
+    "budgetsAfter": 0,
+    "historyBefore": 0,
+    "historyAfter": 0,
+    "domainEventsBefore": 0,
+    "domainEventsAfter": 0,
+    "metricEventsBefore": 0,
+    "metricEventsAfter": 0,
+    "deliveryAttemptsBefore": 0,
+    "deliveryAttemptsAfter": 0,
+    "workerRunsBefore": 1,
+    "workerRunsAfter": 1,
+    "nonceLedgerRowsBefore": 1,
+    "nonceLedgerRowsAfter": 1,
+    "a07bLedgerExists": true,
+    "a07bConsumeRpcExists": true
+  },
+  "execution": {
+    "edgeFunctionsDeployed": 1,
+    "httpVerificationProbes": 2,
+    "domainRowsMutated": 0,
+    "cronJobsChanged": 0,
+    "databaseMigrationsApplied": 0,
+    "productionChanged": false
+  },
+  "stillBlocked": [
+    "remote_concurrent_replay_canary",
+    "railway_selection_or_deployment",
+    "production_changes",
+    "pull_request_merge"
+  ]
+}
