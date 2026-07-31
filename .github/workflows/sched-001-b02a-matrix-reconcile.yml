@@ -32,6 +32,7 @@ jobs:
       - name: Reconcile B02A source matrix
         run: |
           set -euo pipefail
+          test -f scripts/patch-sched-001-b02a-matrix.js
           export SCHED_B02A_UPDATED_AT="$(TZ=America/Bahia date -Iseconds)"
           node scripts/patch-sched-001-b02a-matrix.js
           npm run write:domain-completion-matrix
@@ -50,8 +51,6 @@ jobs:
           npm run audit:ord-001-a10-blocker-reconciliation
           npm run audit:ord-001-a11-scheduling-authority-handoff
           npm run audit:sched-001-a07-history-canary-readiness
-      - name: Remove temporary matrix patcher
-        run: rm -f scripts/patch-sched-001-b02a-matrix.js
       - name: Commit validated non-workflow reconciliation
         run: |
           set -euo pipefail
@@ -66,8 +65,7 @@ jobs:
             scripts/audit-sched-001-a04-server-command-runtime.js \
             scripts/audit-sched-001-a07-history-canary-readiness.js \
             scripts/audit-ord-001-a10-blocker-reconciliation.js \
-            scripts/audit-ord-001-a11-scheduling-authority-handoff.js \
-            scripts/patch-sched-001-b02a-matrix.js
+            scripts/audit-ord-001-a11-scheduling-authority-handoff.js
           git add -f reports/generated/domain-completion-matrix-report.json
           if git diff --cached --name-only | grep -q '^\.github/workflows/'; then
             echo 'SCHED_B02A_WORKFLOW_MUTATION_STAGED' >&2
