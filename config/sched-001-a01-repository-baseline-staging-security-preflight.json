@@ -69,9 +69,21 @@
       "availability_slots_owner_delete"
     ],
     "grants": {
-      "anon": ["SELECT"],
-      "authenticated": ["SELECT", "INSERT", "UPDATE", "DELETE"],
-      "service_role": ["SELECT", "INSERT", "UPDATE", "DELETE"]
+      "anon": [
+        "SELECT"
+      ],
+      "authenticated": [
+        "SELECT",
+        "INSERT",
+        "UPDATE",
+        "DELETE"
+      ],
+      "service_role": [
+        "SELECT",
+        "INSERT",
+        "UPDATE",
+        "DELETE"
+      ]
     },
     "indexes": [
       "availability_slots_pkey",
@@ -149,10 +161,10 @@
     }
   },
   "orderedNextActions": [
-    "Freeze SCHED-001 command, event, timezone, idempotency, status-authority and conflict contracts without changing staging.",
-    "Generate and test locally, but do not apply, a reviewed migration that separates canonical reservations from availability and enforces non-overlapping active ranges.",
-    "Implement the server scheduling module with hold expiration, confirmation, rescheduling and cancellation commands.",
-    "Make ORD-001 consume schedule_reservation_id and retain scheduled_at only as a read projection."
+    "Generate and test locally, but do not apply, the SCHED-A03 reservation migration with btree_gist, canonical reservations, idempotency, events, protected grants and active-range exclusion.",
+    "Implement the server scheduling command module and deterministic runtime tests against the frozen A02 contract.",
+    "Prepare a separately authorized staging migration readiness gate and rollback plan.",
+    "Make ORD-001 consume schedule_reservation_id and retain scheduled_at only as an event-driven read projection."
   ],
   "evidence": {
     "readOnlySqlQueriesExecuted": 2,

@@ -1,7 +1,7 @@
 {
   "name": "domain-completion-matrix",
-  "version": "1.3.44",
-  "generatedAt": "2026-07-31T08:20:00-03:00",
+  "version": "1.3.45",
+  "generatedAt": "2026-07-31T08:50:00-03:00",
   "status": "passed",
   "summary": {
     "domains": 23,
@@ -32,7 +32,7 @@
     "repositories": 25,
     "backendModules": 15,
     "migrations": 173,
-    "packageScripts": 938,
+    "packageScripts": 940,
     "staging": {
       "publicTotal": 45,
       "publicRlsDisabled": 0,
@@ -221,7 +221,7 @@
       "id": "GOV-001",
       "name": "Governança, arquitetura e comando central",
       "maturity": 4,
-      "filesMatched": 1013,
+      "filesMatched": 1016,
       "sampleFiles": [
         "docs/ACTIVE-CONTRACTS-INDEX.md",
         "docs/API-ADAPTER-CONTRACT.md",
@@ -254,7 +254,7 @@
         "localStorage": 247,
         "sessionStorage": 77,
         "mock": 557,
-        "network": 186,
+        "network": 187,
         "directSupabase": 145,
         "todo": 35
       },
@@ -1632,6 +1632,10 @@
           },
           {
             "file": "scripts/audit-resultados-data-controller.js",
+            "count": 1
+          },
+          {
+            "file": "scripts/audit-sched-001-a02-command-event-timezone-conflict-contract.js",
             "count": 1
           },
           {
@@ -3339,14 +3343,15 @@
         "audit:ord-001-a07e-remote-concurrent-replay-canary-application",
         "audit:ord-001-a10-blocker-reconciliation",
         "audit:ord-001-a11-scheduling-authority-handoff",
-        "audit:sched-001-a01-repository-baseline-staging-security-preflight"
+        "audit:sched-001-a01-repository-baseline-staging-security-preflight",
+        "audit:sched-001-a02-command-event-timezone-conflict-contract"
       ]
     },
     {
       "id": "SCHED-001",
       "name": "Agenda, disponibilidade e execução do serviço",
       "maturity": 1,
-      "filesMatched": 15,
+      "filesMatched": 16,
       "sampleFiles": [
         "assets/js/pages/anunciar-servico.js",
         "assets/js/pages/pedidos/orders-action-panels.js",
@@ -3362,6 +3367,7 @@
         "assets/js/pages/pedidos/orders-intelligence.js",
         "assets/js/pages/pedidos/orders-render.js",
         "assets/js/pages/pedidos/orders-state.js",
+        "backend/modules/scheduling/scheduling-contract.js",
         "supabase/migrations/002_marketplace_core.sql"
       ],
       "missingRequiredPaths": [],
@@ -3434,35 +3440,37 @@
           "id": "SCHED-B02",
           "severity": "critical",
           "category": "server_authority",
-          "description": "No canonical scheduling service owns availability rules, holds, confirmed reservations, expiration, rescheduling, cancellation, timezone or protected status transitions; the current owner policy can set booked directly.",
+          "description": "SCHED-A02 freezes the canonical command, transition, actor, idempotency, timezone and durable-event contract, but the server scheduling runtime is not implemented.",
           "targetPhase": "Fase 6"
         },
         {
           "id": "SCHED-B03",
           "severity": "high",
           "category": "concurrency",
-          "description": "No database-level exclusion or equivalent active-range contract proves that concurrent holds or bookings for one professional cannot overlap.",
+          "description": "SCHED-A02 freezes held and confirmed active occupancy with [start,end) overlap semantics and a btree_gist GiST exclusion design, but no migration or concurrent database proof exists.",
           "targetPhase": "Fase 6"
         },
         {
           "id": "SCHED-B04",
           "severity": "high",
           "category": "order_integration",
-          "description": "Orders accept raw scheduled_at and do not reference a canonical schedule reservation, so accepted proposals are not transactionally bound to authoritative occupancy.",
+          "description": "SCHED-A02 freezes orders.schedule_reservation_id and event-driven scheduled_at projection as the integration contract, but the schema and runtime integration do not exist.",
           "targetPhase": "Fase 6"
         },
         {
           "id": "SCHED-B05",
           "severity": "high",
           "category": "reservation_status_authority",
-          "description": "The professional owner update policy can set availability_slots.status to booked without a canonical reservation command, order binding or protected status-transition boundary.",
+          "description": "SCHED-A02 forbids professional direct booking and reserves confirmation for the server command boundary, but availability policy hardening and canonical reservation commands are not implemented.",
           "targetPhase": "Fase 6"
         }
       ],
       "tests": [
         "test:order-transaction-cycle-contract",
         "audit:ord-001-a11-scheduling-authority-handoff",
-        "audit:sched-001-a01-repository-baseline-staging-security-preflight"
+        "audit:sched-001-a01-repository-baseline-staging-security-preflight",
+        "audit:sched-001-a02-command-event-timezone-conflict-contract",
+        "test:sched-001-a02-contract-runtime"
       ]
     },
     {
@@ -4521,7 +4529,7 @@
       "id": "LEGAL-001",
       "name": "Jurídico, privacidade, confiança e políticas comerciais",
       "maturity": 1,
-      "filesMatched": 222,
+      "filesMatched": 223,
       "sampleFiles": [
         "docs/ACTIVE-CONTRACTS-INDEX.md",
         "docs/API-ADAPTER-CONTRACT.md",
@@ -6249,7 +6257,7 @@
       "id": "APP-001",
       "name": "Aplicativos Android e iOS",
       "maturity": 0,
-      "filesMatched": 2298,
+      "filesMatched": 2303,
       "sampleFiles": [
         ".agents/skills/animation-vocabulary/SKILL.md",
         ".agents/skills/apple-design/SKILL.md",
@@ -6282,9 +6290,9 @@
         "localStorage": 504,
         "sessionStorage": 150,
         "mock": 880,
-        "network": 583,
+        "network": 584,
         "directSupabase": 518,
-        "todo": 89
+        "todo": 91
       },
       "signalFiles": {
         "localStorage": [
@@ -8727,6 +8735,10 @@
             "count": 1
           },
           {
+            "file": "scripts/audit-sched-001-a02-command-event-timezone-conflict-contract.js",
+            "count": 1
+          },
+          {
             "file": "scripts/audit-search-authority-baseline.js",
             "count": 2
           },
@@ -9844,7 +9856,7 @@
           },
           {
             "file": "config/domain-completion-matrix.json",
-            "count": 1
+            "count": 3
           },
           {
             "file": "configuracoes.html",

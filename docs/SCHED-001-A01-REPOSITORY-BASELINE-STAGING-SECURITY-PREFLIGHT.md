@@ -120,3 +120,8 @@ Only after those contracts pass should the project generate a migration. A gener
 - deployments: 0;
 - production changes: 0;
 - merge: not authorized.
+
+
+## Progression after SCHED-A02
+
+SCHED-A02 is complete as a repository-only executable contract. The next safe sublot is SCHED-A03 migration generation and local tests; no migration application or staging mutation is authorized.

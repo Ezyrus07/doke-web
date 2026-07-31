@@ -68,3 +68,8 @@ No blocker is closed by this sublot.
 `ORD-001` is repository-reconciled but not domain-complete. Its exit criteria still require two real accounts to complete the order lifecycle across devices, idempotent repeated actions, durable events and removal of mock authority from production paths.
 
 Production and PR merge remain blocked.
+
+
+## Progression after SCHED-A02
+
+SCHED-A02 is complete as a repository-only executable contract. The next safe sublot is SCHED-A03 migration generation and local tests; no migration application or staging mutation is authorized.

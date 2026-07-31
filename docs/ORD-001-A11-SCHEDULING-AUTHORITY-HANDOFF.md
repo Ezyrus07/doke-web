@@ -105,3 +105,8 @@ Expected durable events:
 `ORD-B04` remains open. `SCHED-001` also remains incomplete.
 
 The handoff eliminates ambiguity of ownership; it does not implement the scheduling backend or authorize any live change. Generic continuation does not authorize migration application, staging mutation, deployment, production or merge.
+
+
+## Progression after SCHED-A02
+
+SCHED-A02 is complete as a repository-only executable contract. The next safe sublot is SCHED-A03 migration generation and local tests; no migration application or staging mutation is authorized.

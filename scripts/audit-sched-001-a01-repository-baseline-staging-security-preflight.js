@@ -121,7 +121,7 @@ assert(roleSeparation.includes('availability_slots_anon_select'));
 assert(roleSeparation.includes('availability_slots_authenticated_select'));
 assert(orderService.includes('p_scheduled_at: body.scheduledAt || body.scheduled_at || null'));
 
-assert.strictEqual(matrix.version, '1.3.44');
+assert(Number(String(matrix.version).split('.')[2]) >= 44, `Matrix version ${matrix.version} predates SCHED-A01.`);
 const ord = matrix.domains.find((domain) => domain.id === 'ORD-001');
 const sched = matrix.domains.find((domain) => domain.id === 'SCHED-001');
 assert(ord, 'ORD-001 missing from matrix');
@@ -136,7 +136,7 @@ assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B03'));
 assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B04'));
 assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B05' && blocker.category === 'reservation_status_authority'));
 assert.deepStrictEqual(sched.nextActions, config.orderedNextActions);
-assert(ord.nextActions[0].includes('SCHED-A02'));
+assert(ord.nextActions[0].includes('SCHED-A03'));
 
 [
   CONFIG_PATH,
