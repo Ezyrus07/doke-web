@@ -1,0 +1,44 @@
+name: Doke ORD-A07E Remote Concurrent Replay Canary Readiness
+
+on:
+  pull_request:
+    paths:
+      - config/ord-001-a07e-remote-concurrent-replay-canary-readiness.json
+      - scripts/plan-ord-001-a07e-remote-concurrent-replay-canary.js
+      - scripts/test-ord-001-a07e-remote-concurrent-replay-canary-readiness.js
+      - scripts/audit-ord-001-a07e-remote-concurrent-replay-canary-readiness.js
+      - docs/ORD-001-A07E-REMOTE-CONCURRENT-REPLAY-CANARY-READINESS.md
+      - docs/validation/ORD-001-A07E-REMOTE-CONCURRENT-REPLAY-CANARY-READINESS.json
+      - config/ord-001-a07e-concurrent-replay-canary.json
+      - scripts/audit-ord-001-a07e-concurrent-replay-canary.js
+      - config/ord-001-a07d-edge-function-staging-deploy-application.json
+      - scripts/audit-ord-001-a07d-edge-function-staging-deploy-application.js
+      - config/domain-completion-matrix.json
+      - .github/workflows/ord-001-a07e-remote-concurrent-replay-canary-readiness.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Test remote canary authorization boundaries
+        run: node scripts/test-ord-001-a07e-remote-concurrent-replay-canary-readiness.js
+      - name: Render deterministic readiness plan
+        run: node scripts/plan-ord-001-a07e-remote-concurrent-replay-canary.js --dry-run
+      - name: Audit remote concurrent replay canary readiness
+        run: node scripts/audit-ord-001-a07e-remote-concurrent-replay-canary-readiness.js
+      - name: Preserve local concurrent replay proof
+        run: node scripts/audit-ord-001-a07e-concurrent-replay-canary.js
+      - name: Preserve A07D staging deployment evidence
+        run: node scripts/audit-ord-001-a07d-edge-function-staging-deploy-application.js
+      - name: Audit completion matrix
+        run: node scripts/audit-domain-completion-matrix.js
+
+# Readiness only. This workflow performs no network call, database mutation, cleanup, deploy or production action.
