@@ -1,0 +1,40 @@
+name: Doke ORD-A07D Edge Function Staging Deploy Application
+
+on:
+  pull_request:
+    paths:
+      - 'config/ord-001-a07d-edge-function-staging-deploy-application.json'
+      - 'docs/ORD-001-A07D-EDGE-FUNCTION-STAGING-DEPLOY-APPLICATION.md'
+      - 'docs/validation/ORD-001-A07D-EDGE-FUNCTION-STAGING-DEPLOY-APPLICATION.json'
+      - 'scripts/audit-ord-001-a07d-edge-function-staging-deploy-application.js'
+      - 'supabase/functions/order-event-worker/**'
+      - '.github/workflows/ord-001-a07d-edge-function-staging-deploy-application.yml'
+      - 'config/domain-completion-matrix.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Audit ORD-A07D deployment application
+        run: node scripts/audit-ord-001-a07d-edge-function-staging-deploy-application.js
+      - name: Preserve deploy readiness and freshness wiring
+        run: |
+          node scripts/audit-ord-001-a07d-edge-function-staging-deploy-readiness.js
+          node scripts/test-ord-001-a07d-worker-invocation-gate.mjs
+          node scripts/audit-ord-001-a07d-edge-function-freshness-wiring.js
+      - name: Preserve A07B and A07C staging evidence
+        run: |
+          node scripts/audit-ord-001-a07b-staging-migration-application.js
+          node scripts/audit-ord-001-a07c-staging-migration-application.js
+      - name: Preserve remote replay canary boundary
+        run: node scripts/audit-ord-001-a07e-concurrent-replay-canary.js
+      - name: Audit completion matrix
+        run: node scripts/audit-domain-completion-matrix.js
