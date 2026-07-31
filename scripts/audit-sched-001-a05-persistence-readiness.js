@@ -108,8 +108,16 @@ assert(sched && ord, 'ORD-001 or SCHED-001 missing from matrix.');
 assert.strictEqual(sched.serverAuthority, 'partial');
 assert.strictEqual(sched.stagingEvidence, 'staging_canary');
 assert.strictEqual(sched.securityGate, 'partial');
+const postB02A = compareVersions(matrix.version, '1.3.51') >= 0 && sched.maturity === 3;
 const postA09 = compareVersions(matrix.version, '1.3.50') >= 0 && sched.maturity === 3;
-if (postA09) {
+if (postB02A) {
+  assert.deepStrictEqual(sched.blockers.map((item) => item.id), ['SCHED-B02', 'SCHED-B04']);
+  assert(sched.nextActions[0].includes('authenticated staging composition canary'));
+  assert(sched.requiredPaths.includes('backend/modules/scheduling/scheduling-composition-root.js'));
+  assert(sched.tests.includes('audit:sched-001-b02-composition-root-readiness'));
+  assert(sched.tests.includes('test:sched-001-b02-composition-root-runtime'));
+  assert(ord.evidence.some((item) => item.includes('SCHED-A08 completed the official migration-history repair')));
+} else if (postA09) {
   assert.deepStrictEqual(sched.blockers.map((item) => item.id), ['SCHED-B02', 'SCHED-B04']);
   assert(sched.nextActions[0].includes('trusted server composition root'));
   assert(ord.evidence.some((item) => item.includes('SCHED-A08 completed the official migration-history repair')));
