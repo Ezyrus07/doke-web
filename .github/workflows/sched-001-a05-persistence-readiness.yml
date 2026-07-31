@@ -1,0 +1,56 @@
+name: Doke SCHED-A05 PostgreSQL Persistence and Staging Readiness
+
+on:
+  pull_request:
+    paths:
+      - 'backend/modules/scheduling/**'
+      - 'supabase/migrations/20260731123000_sched_a03_reservation_authority.sql'
+      - 'supabase/migrations/20260731151000_sched_a04_dst_local_projection_compatibility.sql'
+      - 'config/sched-001-a05-persistence-readiness.json'
+      - 'scripts/audit-sched-001-a05-persistence-readiness.js'
+      - 'scripts/test-sched-001-a05-postgres-repository-runtime.js'
+      - 'scripts/test-sched-001-a05-staging-readiness.js'
+      - 'scripts/plan-sched-001-a05-staging-readiness.js'
+      - 'docs/SCHED-001-A05-PERSISTENCE-READINESS.md'
+      - 'docs/validation/SCHED-001-A05-PERSISTENCE-READINESS.json'
+      - 'config/domain-completion-matrix.json'
+      - 'package.json'
+      - '.github/workflows/sched-001-a05-persistence-readiness.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  persistence-readiness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Audit SCHED-A05 persistence and readiness
+        run: node scripts/audit-sched-001-a05-persistence-readiness.js
+      - name: Test PostgreSQL persistence adapter
+        run: node scripts/test-sched-001-a05-postgres-repository-runtime.js
+      - name: Test migration readiness firewall
+        run: node scripts/test-sched-001-a05-staging-readiness.js
+      - name: Prove planner remains dry-run only
+        run: node scripts/plan-sched-001-a05-staging-readiness.js --dry-run
+      - name: Preserve SCHED-A04 runtime
+        run: |
+          node scripts/audit-sched-001-a04-server-command-runtime.js
+          node scripts/test-sched-001-a04-scheduling-service-runtime.js
+      - name: Preserve SCHED-A03 migration contract
+        run: |
+          node scripts/audit-sched-001-a03-reservation-migration-local-contract.js
+          node scripts/test-sched-001-a03-reservation-migration-static.js
+      - name: Preserve frozen upstream contracts
+        run: |
+          node scripts/audit-sched-001-a02-command-event-timezone-conflict-contract.js
+          node scripts/test-sched-001-a02-contract-runtime.js
+          node scripts/audit-sched-001-a01-repository-baseline-staging-security-preflight.js
+          node scripts/audit-ord-001-a11-scheduling-authority-handoff.js
+          node scripts/audit-ord-001-a10-blocker-reconciliation.js
+      - name: Audit completion matrix
+        run: node scripts/audit-domain-completion-matrix.js
