@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "domain": "SCHED-001",
+  "sublot": "SCHED-A09",
+  "status": "staging_reconciliation_complete",
+  "observedAt": "2026-07-31T13:31:23-03:00",
+  "environment": "doke-web-staging",
+  "projectRef": "zwkczgewzbsorbrjuzpb",
+  "sourceRunId": 30640486565,
+  "sourceJobId": 91193858536,
+  "sourceCommit": "6660aff20d028dd4737c4e0607c923d740cfacaa",
+  "migrationHistory": {
+    "canonicalApplied": [
+      "20260731123000",
+      "20260731151000"
+    ],
+    "generatedReverted": [
+      "20260731141315",
+      "20260731141349"
+    ],
+    "officialCliRepair": true,
+    "manualHistoryMutation": false
+  },
+  "canary": {
+    "transactionRolledBack": true,
+    "assertions": [
+      "overlap_rejected",
+      "adjacent_reservation_accepted",
+      "dst_fallback_compatible",
+      "idempotency_scope_unique",
+      "event_sequence_unique",
+      "order_projection_written"
+    ],
+    "residue": {
+      "scheduleAvailabilityRules": 0,
+      "scheduleReservations": 0,
+      "scheduleCommandIdempotency": 0,
+      "scheduleDomainEvents": 0,
+      "ordersWithReservation": 0,
+      "canaryOrders": 0
+    }
+  },
+  "matrixTransition": {
+    "fromVersion": "1.3.49",
+    "toVersion": "1.3.50",
+    "maturityFrom": 2,
+    "maturityTo": 3,
+    "closedBlockers": [
+      "SCHED-B03"
+    ],
+    "remainingBlockers": [
+      "SCHED-B02",
+      "SCHED-B04"
+    ],
+    "serverAuthority": "partial",
+    "stagingEvidence": "staging_canary",
+    "productionGate": "blocked"
+  },
+  "prohibitedActionsConfirmedAbsent": [
+    "production_access",
+    "runtime_activation",
+    "ord_runtime_wiring",
+    "cron_activation",
+    "worker_activation",
+    "deployment",
+    "merge"
+  ]
+}
