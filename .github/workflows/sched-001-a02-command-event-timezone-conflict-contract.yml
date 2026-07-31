@@ -1,0 +1,39 @@
+name: Doke SCHED-A02 Command Event Timezone Conflict Contract
+
+on:
+  pull_request:
+    paths:
+      - 'config/sched-001-a02-command-event-timezone-conflict-contract.json'
+      - 'backend/modules/scheduling/scheduling-contract.js'
+      - 'docs/SCHED-001-A02-COMMAND-EVENT-TIMEZONE-CONFLICT-CONTRACT.md'
+      - 'docs/validation/SCHED-001-A02-COMMAND-EVENT-TIMEZONE-CONFLICT-CONTRACT.json'
+      - 'scripts/audit-sched-001-a02-command-event-timezone-conflict-contract.js'
+      - 'scripts/test-sched-001-a02-contract-runtime.js'
+      - 'config/domain-completion-matrix.json'
+      - 'package.json'
+      - '.github/workflows/sched-001-a02-command-event-timezone-conflict-contract.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Audit SCHED-A02 contract freeze
+        run: node scripts/audit-sched-001-a02-command-event-timezone-conflict-contract.js
+      - name: Test executable scheduling semantics
+        run: node scripts/test-sched-001-a02-contract-runtime.js
+      - name: Preserve SCHED-A01 staging baseline
+        run: node scripts/audit-sched-001-a01-repository-baseline-staging-security-preflight.js
+      - name: Preserve ORD-A11 authority handoff
+        run: node scripts/audit-ord-001-a11-scheduling-authority-handoff.js
+      - name: Audit completion matrix
+        run: node scripts/audit-domain-completion-matrix.js
+
+# Permanent repository-only gate. No network, migration application, deploy or staging mutation.
