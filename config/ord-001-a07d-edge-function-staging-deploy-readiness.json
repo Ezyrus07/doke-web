@@ -8,14 +8,28 @@
     "environment": "staging",
     "projectId": "zwkczgewzbsorbrjuzpb",
     "functionName": "order-event-worker",
-    "productionAllowed": false
+    "productionAllowed": false,
+    "currentlyDeployedVersion": 9,
+    "currentlyDeployedStatus": "ACTIVE",
+    "currentlyDeployedVerifyJwt": false,
+    "currentlyDeployedBundleSha256": "5b4594aaf6f259928e2f27e5f920c616f9baff42a1702b3ba8bc87649c221852"
   },
   "bundle": {
     "supabase/functions/order-event-worker/index.ts": "8a6f5c8f19b3584b99fda36782822cebfb5d2ec7",
     "supabase/functions/order-event-worker/worker.mjs": "7431069105336ac0c793ea0787e75ae28ac40177",
     "supabase/functions/order-event-worker/invocation-gate.mjs": "acf432f2f2566fa2bfaa0c2d62d83e45530055a6",
     "supabase/functions/order-event-worker/invocation-freshness.mjs": "1085f1037be53e2b7f3ceffa130bfd06afe60065",
-    "supabase/functions/order-event-worker/invocation-headers.mjs": "95c9bc4271ce136b65a280847f7b160b0497b26e"
+    "supabase/functions/order-event-worker/invocation-headers.mjs": "95c9bc4271ce136b65a280847f7b160b0497b26e",
+    "supabase/functions/order-event-worker/deno.json": "969d2d4b384780250105a21b1939a95e60210918"
+  },
+  "runtime": {
+    "entrypointPath": "index.ts",
+    "importMapPath": "deno.json",
+    "verifyJwtRequiredValue": false,
+    "verifyJwtReason": "The private Cron authenticates with x-doke-worker-token and does not send an Authorization JWT.",
+    "supabaseJsImport": "npm:@supabase/supabase-js@2.110.0",
+    "requiredBuiltInSecrets": ["SUPABASE_URL", "SUPABASE_SECRET_KEY_OR_SERVICE_ROLE_KEY"],
+    "optionalSecrets": ["ORDER_EVENT_WEBHOOK_URL", "ORDER_EVENT_WEBHOOK_SECRET"]
   },
   "verified": {
     "tokenVerifiedBeforeFreshness": true,
@@ -28,7 +42,10 @@
     "repositoryWiringComplete": true,
     "deployModeUnavailable": true,
     "genericContinuationRejected": true,
-    "productionTargetRejected": true
+    "productionTargetRejected": true,
+    "deployedVersionReadOnlyInspected": true,
+    "verifyJwtFalseLocked": true,
+    "importMapFrozen": true
   },
   "authorization": {
     "exactPhraseRequired": "I_EXPLICITLY_AUTHORIZE_ORD_A07D_ORDER_EVENT_WORKER_EDGE_FUNCTION_DEPLOY_ON_DOKE_STAGING",
@@ -39,8 +56,9 @@
   },
   "postDeployChecks": [
     "function_exists_in_staging",
-    "deployed_bundle_matches_frozen_blobs",
-    "verify_jwt_configuration_preserved",
+    "deployed_version_increments_from_9",
+    "deployed_bundle_matches_frozen_files",
+    "verify_jwt_remains_false",
     "required_runtime_secrets_available_without_disclosure",
     "missing_freshness_returns_428",
     "invalid_token_returns_401",
