@@ -45,6 +45,10 @@ jobs:
           npm run test:sched-001-a05-postgres-repository-runtime
           npm run audit:sched-001-a04-server-command-runtime
           npm run test:sched-001-a04-scheduling-service-runtime
+          npm run audit:sched-001-a03-reservation-migration-local-contract
+          npm run audit:sched-001-a02-command-event-timezone-conflict-contract
+          npm run audit:ord-001-a10-blocker-reconciliation
+          npm run audit:ord-001-a11-scheduling-authority-handoff
           npm run audit:sched-001-a07-history-canary-readiness
       - name: Remove temporary matrix patcher
         run: rm -f scripts/patch-sched-001-b02a-matrix.js
@@ -57,6 +61,12 @@ jobs:
             config/domain-completion-matrix.json \
             docs/DOMAIN-COMPLETION-MATRIX.md \
             package.json \
+            scripts/audit-sched-001-a02-command-event-timezone-conflict-contract.js \
+            scripts/audit-sched-001-a03-reservation-migration-local-contract.js \
+            scripts/audit-sched-001-a04-server-command-runtime.js \
+            scripts/audit-sched-001-a07-history-canary-readiness.js \
+            scripts/audit-ord-001-a10-blocker-reconciliation.js \
+            scripts/audit-ord-001-a11-scheduling-authority-handoff.js \
             scripts/patch-sched-001-b02a-matrix.js
           git add -f reports/generated/domain-completion-matrix-report.json
           if git diff --cached --name-only | grep -q '^\.github/workflows/'; then
