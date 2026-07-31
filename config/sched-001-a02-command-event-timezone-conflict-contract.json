@@ -1,0 +1,188 @@
+{
+  "contractVersion": "sched-a02-command-event-timezone-conflict-contract-v1",
+  "status": "repository_contract_frozen_migration_and_runtime_pending",
+  "domain": "SCHED-001",
+  "source": ["ORD-A11", "SCHED-A01"],
+  "scope": "repository_only_executable_contract",
+  "authority": {
+    "canonicalOwner": "SCHED-001",
+    "availabilityOwner": "professional",
+    "reservationMutationBoundary": "server_command_only",
+    "orderDomainRole": "authorize order context and consume schedule_reservation_id plus durable events",
+    "browserMayConfirmBooking": false,
+    "professionalMaySetBookedDirectly": false
+  },
+  "entities": {
+    "availabilityRule": {
+      "purpose": "Recurring local wall-clock availability and explicit exceptions owned by the professional.",
+      "states": ["active", "paused", "archived"],
+      "requiredFields": ["id", "professional_id", "timezone", "rule", "status", "version", "created_at", "updated_at"]
+    },
+    "scheduleReservation": {
+      "purpose": "Single occupancy authority for temporary holds and confirmed bookings.",
+      "states": ["held", "confirmed", "cancelled", "expired"],
+      "activeOccupancyStates": ["held", "confirmed"],
+      "terminalStates": ["cancelled", "expired"],
+      "requiredFields": [
+        "id", "professional_id", "order_id", "starts_at", "ends_at", "timezone",
+        "status", "hold_expires_at", "version", "idempotency_key", "created_at", "updated_at"
+      ]
+    }
+  },
+  "commands": {
+    "upsert_availability_rule": {
+      "authorizedActors": ["professional_owner", "support", "admin"],
+      "requiredInputs": ["professional_id", "timezone", "rule", "idempotency_key"],
+      "updateRequires": ["expected_version"],
+      "emits": "schedule.availability_rule_upserted"
+    },
+    "create_schedule_hold": {
+      "authorizedActors": ["client_order_participant", "support", "admin"],
+      "requiredInputs": ["order_id", "professional_id", "starts_at", "ends_at", "timezone", "idempotency_key"],
+      "preconditions": [
+        "order is visible to the actor and eligible for scheduling",
+        "professional matches the order",
+        "range is inside canonical availability after exceptions",
+        "no overlapping active occupancy exists"
+      ],
+      "holdTtlSeconds": 600,
+      "holdTtlAllowedRangeSeconds": [300, 900],
+      "emits": "schedule.hold_created"
+    },
+    "confirm_schedule_reservation": {
+      "authorizedActors": ["order_service", "support", "admin"],
+      "requiredInputs": ["reservation_id", "order_id", "expected_version", "idempotency_key", "authorization_context"],
+      "allowedFrom": ["held"],
+      "emits": "schedule.confirmed"
+    },
+    "reschedule_reservation": {
+      "authorizedActors": ["order_service", "support", "admin"],
+      "requiredInputs": ["reservation_id", "starts_at", "ends_at", "timezone", "expected_version", "idempotency_key", "authorization_context"],
+      "allowedFrom": ["confirmed"],
+      "preconditions": ["participant policy is satisfied", "new range is available", "no overlapping active occupancy exists"],
+      "emits": "schedule.rescheduled"
+    },
+    "cancel_schedule_reservation": {
+      "authorizedActors": ["order_service", "support", "admin"],
+      "requiredInputs": ["reservation_id", "expected_version", "idempotency_key", "reason", "authorization_context"],
+      "allowedFrom": ["held", "confirmed"],
+      "emits": "schedule.cancelled"
+    },
+    "expire_schedule_holds": {
+      "authorizedActors": ["schedule_worker", "service_role"],
+      "requiredInputs": ["cutoff", "batch_limit"],
+      "allowedFrom": ["held"],
+      "emits": "schedule.hold_expired"
+    }
+  },
+  "transitions": [
+    {"from": "held", "command": "confirm_schedule_reservation", "to": "confirmed"},
+    {"from": "held", "command": "cancel_schedule_reservation", "to": "cancelled"},
+    {"from": "held", "command": "expire_schedule_holds", "to": "expired"},
+    {"from": "confirmed", "command": "reschedule_reservation", "to": "confirmed"},
+    {"from": "confirmed", "command": "cancel_schedule_reservation", "to": "cancelled"}
+  ],
+  "idempotency": {
+    "scope": "command_name plus authenticated actor or service principal plus idempotency_key",
+    "sameKeySamePayload": "return the original canonical result without another mutation or event",
+    "sameKeyDifferentPayload": "reject with DOKE_SCHEDULE_IDEMPOTENCY_CONFLICT",
+    "retentionMinimumDays": 30
+  },
+  "optimisticConcurrency": {
+    "field": "version",
+    "initialValue": 1,
+    "increment": 1,
+    "mutationRequirement": "expected_version must match the locked canonical row",
+    "conflictCode": "DOKE_SCHEDULE_VERSION_CONFLICT"
+  },
+  "timePolicy": {
+    "canonicalInstantStorage": "UTC timestamptz",
+    "ruleTimezone": "IANA identifier",
+    "rangeConvention": "half-open [start,end)",
+    "adjacentRangesConflict": false,
+    "nonexistentLocalTime": "reject with DOKE_SCHEDULE_LOCAL_TIME_NONEXISTENT",
+    "ambiguousLocalTime": "require explicit UTC offset or reject with DOKE_SCHEDULE_LOCAL_TIME_AMBIGUOUS",
+    "persistOriginalIntent": ["timezone", "local_start", "local_end", "resolved_offset_minutes"],
+    "minimumDurationMinutes": 15,
+    "maximumDurationDays": 30
+  },
+  "conflictPolicy": {
+    "occupiedStatuses": ["held", "confirmed"],
+    "overlapDefinition": "ranges overlap when startA < endB and startB < endA",
+    "databasePrimitive": "GiST exclusion constraint using professional_id WITH = and tstzrange(starts_at, ends_at, '[)') WITH && WHERE status IN ('held','confirmed')",
+    "requiredExtension": "btree_gist",
+    "staleHoldHandling": "expire stale held rows inside the command transaction before attempting a new hold; scheduled expiration remains defense in depth",
+    "conflictCode": "DOKE_SCHEDULE_CONFLICT"
+  },
+  "events": {
+    "eventStore": "private.schedule_domain_events",
+    "eventKey": "schedule:{reservation_id}:v{sequence_no}",
+    "requiredEnvelope": [
+      "id", "event_key", "reservation_id", "order_id", "professional_id", "sequence_no",
+      "event_type", "actor_id", "actor_role", "command", "payload", "occurred_at", "created_at"
+    ],
+    "types": [
+      "schedule.availability_rule_upserted",
+      "schedule.hold_created",
+      "schedule.hold_expired",
+      "schedule.confirmed",
+      "schedule.rescheduled",
+      "schedule.cancelled"
+    ],
+    "payloadMinimum": [
+      "reservationId", "orderId", "professionalId", "previousStatus", "nextStatus",
+      "previousRange", "nextRange", "timezone", "version", "actorRole", "command",
+      "idempotencyKey", "correlationId", "causationId", "occurredAt"
+    ],
+    "transactionality": "canonical row mutation, event insertion and order projection update must commit atomically or all roll back"
+  },
+  "orderIntegration": {
+    "canonicalReference": "orders.schedule_reservation_id",
+    "scheduledAtRole": "read projection only",
+    "projectionSource": "schedule.confirmed, schedule.rescheduled and schedule.cancelled events",
+    "orderMayWriteReservationRangeDirectly": false,
+    "orderMayRunParallelConflictDetection": false
+  },
+  "errorCodes": [
+    "DOKE_SCHEDULE_ACTOR_FORBIDDEN",
+    "DOKE_SCHEDULE_INVALID_RANGE",
+    "DOKE_SCHEDULE_LOCAL_TIME_NONEXISTENT",
+    "DOKE_SCHEDULE_LOCAL_TIME_AMBIGUOUS",
+    "DOKE_SCHEDULE_OUTSIDE_AVAILABILITY",
+    "DOKE_SCHEDULE_CONFLICT",
+    "DOKE_SCHEDULE_VERSION_CONFLICT",
+    "DOKE_SCHEDULE_IDEMPOTENCY_CONFLICT",
+    "DOKE_SCHEDULE_INVALID_TRANSITION",
+    "DOKE_SCHEDULE_HOLD_EXPIRED"
+  ],
+  "blockerDisposition": {
+    "SCHED-B02": "contract_frozen_runtime_pending",
+    "SCHED-B03": "contract_frozen_migration_and_concurrency_proof_pending",
+    "SCHED-B04": "contract_frozen_order_reference_migration_and_runtime_pending",
+    "SCHED-B05": "contract_frozen_policy_hardening_and_server_command_pending"
+  },
+  "orderedNextActions": [
+    "Generate and test locally, but do not apply, the SCHED-A03 reservation migration with btree_gist, canonical reservations, idempotency, events, protected grants and active-range exclusion.",
+    "Implement the server scheduling command module and deterministic runtime tests against the frozen A02 contract.",
+    "Prepare a separately authorized staging migration readiness gate and rollback plan.",
+    "Make ORD-001 consume schedule_reservation_id and retain scheduled_at only as an event-driven read projection."
+  ],
+  "forbidden": {
+    "applyMigration": true,
+    "mutateStaging": true,
+    "deploy": true,
+    "changeProduction": true,
+    "mergePullRequest": true,
+    "closeSchedBlockers": true,
+    "claimSchedRuntimeComplete": true
+  },
+  "evidence": {
+    "networkRequestsPerformed": 0,
+    "stagingReadsPerformed": 0,
+    "stagingMutationsPerformed": 0,
+    "migrationsApplied": 0,
+    "deploymentsPerformed": 0,
+    "productionChanged": false,
+    "pullRequestMerged": false
+  }
+}
