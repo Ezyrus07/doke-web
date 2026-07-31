@@ -49,6 +49,10 @@ Repeated provider-selection actions are collapsed into one exact, fail-closed in
 3. await explicit resource authorization for `ORD-B02`;
 4. await exactly `I_EXPLICITLY_SELECT_RAILWAY_FOR_DOKE_STAGING` for the limited `ORD-B05` adapter-preparation step.
 
+## Cumulative contract compatibility
+
+The reconciled blocker descriptions retain the canonical clauses required by earlier gates: `authorization envelope`, `external staging release provider` and `explicit provider selection`. This preserves the cumulative A06, A08 and A09 contracts while keeping the new A10 ownership and sequencing authoritative.
+
 ## Closure decision
 
 No blocker is closed by this sublot.
