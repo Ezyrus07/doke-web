@@ -486,10 +486,10 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - ORD-A10 is repository-only and performed zero network requests, zero staging mutations, zero provider actions and zero production changes.
 
 **Bloqueadores:**
-- **ORD-B02 · HIGH · frontend_activation:** Canonical reads, commands, cleanup, deterministic settlement and the fail-closed Playwright executor pass. ORD-B02 remains under ORD-001 until explicit resource authorization, a valid short-lived envelope, successful check-env, the real two-context visual canary and zero-residue cleanup are completed. _(Fase 6)_
-- **ORD-B03 · HIGH · financial_dependency:** Financial completion remains blocked by PAY-001. ORD-001 must consume, not duplicate, a real server-canonical PSP webhook lifecycle before this blocker can close. _(Fase 8)_
-- **ORD-B04 · MEDIUM · scheduling_dependency:** Scheduling completion remains blocked by SCHED-001. Availability, booking, confirmation, rescheduling and double-booking protection must become server-canonical there before ORD-001 can close this blocker. _(Fase 6)_
-- **ORD-B05 · HIGH · staging_release:** Railway remains recommended but unselected. ORD-B05 remains under ORD-001 until exactly I_EXPLICITLY_SELECT_RAILWAY_FOR_DOKE_STAGING authorizes only non-secret adapter preparation; account, billing, infrastructure and deployment remain separately blocked. _(Fase 6)_
+- **ORD-B02 · HIGH · frontend_activation:** Canonical reads, canary commands, cleanup, deterministic settlement, readiness discovery and the fail-closed Playwright executor pass. A short-lived authorization envelope is mandatory; ORD-B02 remains under ORD-001 until explicit resource authorization is issued, check-env passes, the real two-context visual canary is executed and run-scoped cleanup proves zero residue. _(Fase 6)_
+- **ORD-B03 · HIGH · financial_dependency:** Financial completion remains blocked by PAY-001. Payment authority is not connected to a real PSP webhook lifecycle, and ORD-001 must consume rather than duplicate that server-canonical authority before this blocker can close. _(Fase 8)_
+- **ORD-B04 · MEDIUM · scheduling_dependency:** Scheduling completion remains blocked by SCHED-001. Order scheduling and availability are not server-canonical; availability, booking, confirmation, rescheduling and double-booking protection must become authoritative there before ORD-001 can close this blocker. _(Fase 6)_
+- **ORD-B05 · HIGH · staging_release:** ORD-A08 release identity, ORD-A09A provider evaluation, the ORD-A09B0 provider-neutral adapter boundary, provider selection handoff, selection intent firewall and adapter conformance suite are complete. Railway is recommended as the external staging release provider, but no explicit provider selection, provider-specific adapter, account, billing, secrets, infrastructure, rollback command or deployment exists. ORD-B05 remains open until exactly I_EXPLICITLY_SELECT_RAILWAY_FOR_DOKE_STAGING authorizes only non-secret adapter preparation; every external action remains separately blocked. _(Fase 6)_
 
 **Próximas ações:**
 - Handoff ORD-B04 to SCHED-001 and keep order scheduling read-only/local until server-canonical availability and double-booking protection exist.
@@ -1041,4 +1041,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-07-30T23:20:00-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-07-30T23:30:00-03:00._
