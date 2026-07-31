@@ -134,7 +134,7 @@ drops only `schedule_reservations_local_range`. UTC ordering and duration constr
 
 ## Deterministic proof
 
-`scripts/test-sched-001-a04-scheduling-service-runtime.js` uses an in-memory transaction adapter with rollback snapshots.
+`scripts/test-sched-001-a04-scheduling-service-runtime.js` uses an in-memory transaction adapter with rollback snapshots. The explicit fault injection is named `synthetic event failure`.
 
 It proves:
 
