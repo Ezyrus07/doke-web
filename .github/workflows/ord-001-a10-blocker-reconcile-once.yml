@@ -1,117 +1,13 @@
-name: ORD-A10 Blocker Reconcile Once
+name: ORD-A10 Blocker Reconcile Retired
 
 on:
-  pull_request:
-    paths:
-      - '.github/workflows/ord-001-a10-blocker-reconcile-once.yml'
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  reconcile:
-    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+  retired:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
-          fetch-depth: 0
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-      - name: Reconcile ORD-A10 blocker handoff
-        shell: bash
-        run: |
-          set -euo pipefail
-          node <<'NODE'
-          const fs = require('fs');
-
-          const config = JSON.parse(fs.readFileSync('config/ord-001-a10-blocker-reconciliation.json', 'utf8'));
-
-          const packagePath = 'package.json';
-          const packageJson = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
-          packageJson.scripts['audit:ord-001-a10-blocker-reconciliation'] =
-            'node scripts/audit-ord-001-a10-blocker-reconciliation.js';
-          fs.writeFileSync(packagePath, JSON.stringify(packageJson, null, 2) + '\n');
-
-          const matrixPath = 'config/domain-completion-matrix.json';
-          const matrix = JSON.parse(fs.readFileSync(matrixPath, 'utf8'));
-          matrix.version = '1.3.41';
-          matrix.updatedAt = '2026-07-30T23:20:00-03:00';
-          const ord = matrix.domains.find((domain) => domain.id === 'ORD-001');
-          if (!ord) throw new Error('ORD-001 domain not found');
-
-          const appendUnique = (array, values) => {
-            for (const value of values) if (!array.includes(value)) array.push(value);
-          };
-
-          appendUnique(ord.requiredPaths, [
-            'config/ord-001-a10-blocker-reconciliation.json',
-            'docs/ORD-001-A10-BLOCKER-RECONCILIATION.md',
-            'docs/validation/ORD-001-A10-BLOCKER-RECONCILIATION.json',
-            'scripts/audit-ord-001-a10-blocker-reconciliation.js',
-            '.github/workflows/ord-001-a10-blocker-reconciliation.yml'
-          ]);
-          appendUnique(ord.tests, ['audit:ord-001-a10-blocker-reconciliation']);
-
-          const obsoleteEvidencePatterns = [
-            /migration remains unapplied to staging and the Edge Function remains unwired/i,
-            /ledger table, consume RPC and migration history entry remain absent/i,
-            /staging preflight confirms A07B is present, A07C is absent/i,
-            /No Edge Function was deployed, no remote replay canary ran/i,
-            /records order-event-worker version 9 as ACTIVE/i,
-            /remote concurrent replay canary, Railway, production and merge remain independently blocked/i,
-            /remote replay canary remains unexecuted and requires/i
-          ];
-          ord.evidence = ord.evidence.filter((entry) =>
-            !obsoleteEvidencePatterns.some((pattern) => pattern.test(entry))
-          );
-          appendUnique(ord.evidence, [
-            'ORD-A10 reconciles the remaining blockers without claiming false domain closure: ORD-B02 and ORD-B05 remain externally authorized ORD work, while ORD-B03 and ORD-B04 are handed to PAY-001 and SCHED-001 respectively.',
-            'Obsolete A07B/A07C next actions and stale future-state evidence were removed after the successful staging ledger, Cron header, Edge Function and remote replay sequence.',
-            'The remaining ORD-001 queue is reduced to four fail-closed actions; generic continuation authorizes no live visual canary, provider selection, billing, infrastructure, deployment, production change or merge.',
-            'ORD-A10 is repository-only and performed zero network requests, zero staging mutations, zero provider actions and zero production changes.'
-          ]);
-
-          const blockerUpdates = {
-            'ORD-B02': {
-              category: 'frontend_activation',
-              description: 'Canonical reads, commands, cleanup, deterministic settlement and the fail-closed Playwright executor pass. ORD-B02 remains under ORD-001 until explicit resource authorization, a valid short-lived envelope, successful check-env, the real two-context visual canary and zero-residue cleanup are completed.'
-            },
-            'ORD-B03': {
-              category: 'financial_dependency',
-              description: 'Financial completion remains blocked by PAY-001. ORD-001 must consume, not duplicate, a real server-canonical PSP webhook lifecycle before this blocker can close.'
-            },
-            'ORD-B04': {
-              category: 'scheduling_dependency',
-              description: 'Scheduling completion remains blocked by SCHED-001. Availability, booking, confirmation, rescheduling and double-booking protection must become server-canonical there before ORD-001 can close this blocker.'
-            },
-            'ORD-B05': {
-              category: 'staging_release',
-              description: 'Railway remains recommended but unselected. ORD-B05 remains under ORD-001 until exactly I_EXPLICITLY_SELECT_RAILWAY_FOR_DOKE_STAGING authorizes only non-secret adapter preparation; account, billing, infrastructure and deployment remain separately blocked.'
-            }
-          };
-          ord.blockers = ord.blockers.map((blocker) => ({
-            ...blocker,
-            ...(blockerUpdates[blocker.id] || {})
-          }));
-          ord.nextActions = [...config.orderedNextActions];
-
-          fs.writeFileSync(matrixPath, JSON.stringify(matrix, null, 2) + '\n');
-          NODE
-
-          node scripts/audit-ord-001-a10-blocker-reconciliation.js
-          node scripts/audit-ord-001-a07e-remote-concurrent-replay-canary-application.js
-          node scripts/audit-ord-001-a09b0-provider-selection-handoff.js
-          node scripts/audit-domain-completion-matrix.js --write
-          node scripts/audit-domain-completion-matrix.js
-
-          git add package.json config/domain-completion-matrix.json docs/DOMAIN-COMPLETION-MATRIX.md
-          git add -f reports/generated/domain-completion-matrix-report.json
-          git config user.name 'github-actions[bot]'
-          git config user.email '4189826+github-actions[bot]@users.noreply.github.com'
-          git commit -m 'Reconcile ORD-A10 blocker handoff' || exit 0
-          git pull --rebase origin ${{ github.event.pull_request.head.ref || github.ref_name }}
-          git push origin HEAD:${{ github.event.pull_request.head.ref || github.ref_name }}
+      - run: echo "ORD-A10 one-time reconciliation is complete and this workflow is retired."
