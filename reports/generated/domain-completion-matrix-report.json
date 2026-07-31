@@ -1,7 +1,7 @@
 {
   "name": "domain-completion-matrix",
-  "version": "1.3.47",
-  "generatedAt": "2026-07-31T09:55:00-03:00",
+  "version": "1.3.48",
+  "generatedAt": "2026-07-31T10:41:00-03:00",
   "status": "passed",
   "summary": {
     "domains": 23,
@@ -32,7 +32,7 @@
     "repositories": 25,
     "backendModules": 15,
     "migrations": 175,
-    "packageScripts": 944,
+    "packageScripts": 948,
     "staging": {
       "publicTotal": 45,
       "publicRlsDisabled": 0,
@@ -221,7 +221,7 @@
       "id": "GOV-001",
       "name": "Governança, arquitetura e comando central",
       "maturity": 4,
-      "filesMatched": 1022,
+      "filesMatched": 1027,
       "sampleFiles": [
         "docs/ACTIVE-CONTRACTS-INDEX.md",
         "docs/API-ADAPTER-CONTRACT.md",
@@ -254,7 +254,7 @@
         "localStorage": 248,
         "sessionStorage": 78,
         "mock": 557,
-        "network": 192,
+        "network": 193,
         "directSupabase": 149,
         "todo": 35
       },
@@ -1648,6 +1648,10 @@
           },
           {
             "file": "scripts/audit-sched-001-a04-server-command-runtime.js",
+            "count": 1
+          },
+          {
+            "file": "scripts/audit-sched-001-a05-persistence-readiness.js",
             "count": 1
           },
           {
@@ -3368,14 +3372,15 @@
         "audit:sched-001-a03-reservation-migration-local-contract",
         "test:sched-001-a03-reservation-migration-static",
         "audit:sched-001-a04-server-command-runtime",
-        "test:sched-001-a04-scheduling-service-runtime"
+        "test:sched-001-a04-scheduling-service-runtime",
+        "audit:sched-001-a05-persistence-readiness"
       ]
     },
     {
       "id": "SCHED-001",
       "name": "Agenda, disponibilidade e execução do serviço",
       "maturity": 2,
-      "filesMatched": 993,
+      "filesMatched": 998,
       "sampleFiles": [
         "assets/js/pages/anunciar-servico.js",
         "assets/js/pages/pedidos/orders-action-panels.js",
@@ -3395,20 +3400,20 @@
         "backend/modules/scheduling/scheduling-contract.js",
         "backend/modules/scheduling/scheduling-errors.js",
         "backend/modules/scheduling/scheduling-normalization.js",
+        "backend/modules/scheduling/scheduling-postgres-repository.js",
         "backend/modules/scheduling/scheduling-repository-port.js",
         "backend/modules/scheduling/scheduling-service.js",
         "backend/modules/scheduling/scheduling-timezone.js",
         "scripts/apply-domain-card-classes.js",
         "scripts/audit-action-favorite-ownership.js",
-        "scripts/audit-active-contracts-index.js",
-        "scripts/audit-active-legacy-structures.js"
+        "scripts/audit-active-contracts-index.js"
       ],
       "missingRequiredPaths": [],
       "signals": {
         "localStorage": 186,
         "sessionStorage": 70,
         "mock": 301,
-        "network": 191,
+        "network": 192,
         "directSupabase": 155,
         "todo": 19
       },
@@ -4477,6 +4482,10 @@
             "count": 1
           },
           {
+            "file": "scripts/audit-sched-001-a05-persistence-readiness.js",
+            "count": 1
+          },
+          {
             "file": "scripts/audit-search-authority-baseline.js",
             "count": 2
           },
@@ -5127,28 +5136,28 @@
           "id": "SCHED-B02",
           "severity": "critical",
           "category": "server_authority",
-          "description": "SCHED-A04 implements all six canonical commands against a transaction-capable repository port, but the concrete persistence adapter and server activation remain absent.",
+          "description": "The command runtime and PostgreSQL transaction adapter exist, but A03/A04 are unapplied and no trusted server composition root activates the adapter.",
           "targetPhase": "Fase 6"
         },
         {
           "id": "SCHED-B03",
           "severity": "high",
           "category": "concurrency",
-          "description": "SCHED-A04 proves local overlap behavior and maps PostgreSQL exclusion SQLSTATE 23P01, but the generated migrations are not applied and no remote concurrent overlap proof exists.",
+          "description": "Migration compatibility and rollback readiness are proven read-only; staging application and rolled-back concurrent overlap proof remain absent.",
           "targetPhase": "Fase 6"
         },
         {
           "id": "SCHED-B04",
           "severity": "high",
           "category": "order_integration",
-          "description": "SCHED-A04 implements atomic order projection operations, but schedule_reservation_id is not applied and ORD-001 does not consume the active scheduling runtime.",
+          "description": "Atomic order projection SQL exists, but orders.schedule_reservation_id is unapplied and ORD-001 remains disconnected.",
           "targetPhase": "Fase 6"
         },
         {
           "id": "SCHED-B05",
           "severity": "high",
           "category": "reservation_status_authority",
-          "description": "SCHED-A04 enforces trusted server actors and forbids professional booking commands, but the generated legacy policy hardening remains unapplied.",
+          "description": "A03 contains booked-state policy hardening and A05 confirms it is required, but the migration remains unapplied.",
           "targetPhase": "Fase 6"
         }
       ],
@@ -5161,7 +5170,10 @@
         "audit:sched-001-a03-reservation-migration-local-contract",
         "test:sched-001-a03-reservation-migration-static",
         "audit:sched-001-a04-server-command-runtime",
-        "test:sched-001-a04-scheduling-service-runtime"
+        "test:sched-001-a04-scheduling-service-runtime",
+        "audit:sched-001-a05-persistence-readiness",
+        "test:sched-001-a05-postgres-repository-runtime",
+        "test:sched-001-a05-staging-readiness"
       ]
     },
     {
@@ -6220,7 +6232,7 @@
       "id": "LEGAL-001",
       "name": "Jurídico, privacidade, confiança e políticas comerciais",
       "maturity": 1,
-      "filesMatched": 225,
+      "filesMatched": 226,
       "sampleFiles": [
         "docs/ACTIVE-CONTRACTS-INDEX.md",
         "docs/API-ADAPTER-CONTRACT.md",
@@ -7948,7 +7960,7 @@
       "id": "APP-001",
       "name": "Aplicativos Android e iOS",
       "maturity": 0,
-      "filesMatched": 2319,
+      "filesMatched": 2326,
       "sampleFiles": [
         ".agents/skills/animation-vocabulary/SKILL.md",
         ".agents/skills/apple-design/SKILL.md",
@@ -7981,7 +7993,7 @@
         "localStorage": 505,
         "sessionStorage": 151,
         "mock": 880,
-        "network": 589,
+        "network": 590,
         "directSupabase": 522,
         "todo": 89
       },
@@ -10439,6 +10451,10 @@
           },
           {
             "file": "scripts/audit-sched-001-a04-server-command-runtime.js",
+            "count": 1
+          },
+          {
+            "file": "scripts/audit-sched-001-a05-persistence-readiness.js",
             "count": 1
           },
           {

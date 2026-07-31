@@ -115,8 +115,8 @@ assert(sched && ord);
 assert(sched.tests.includes('audit:sched-001-a03-reservation-migration-local-contract'));
 assert(sched.tests.includes('test:sched-001-a03-reservation-migration-static'));
 assert(config.orderedNextActions[0].includes('SCHED-A04'));
-assert(sched.nextActions[0].includes('SCHED-A05'));
-assert(ord.nextActions[0].includes('SCHED-A05'));
+assert(sched.nextActions[0].includes('exact independent staging authorization'));
+assert(ord.nextActions[0].includes('exact independent staging authorization'));
 assert.strictEqual(pkg.scripts['audit:sched-001-a03-reservation-migration-local-contract'], 'node scripts/audit-sched-001-a03-reservation-migration-local-contract.js');
 assert.strictEqual(pkg.scripts['test:sched-001-a03-reservation-migration-static'], 'node scripts/test-sched-001-a03-reservation-migration-static.js');
 

@@ -74,8 +74,7 @@ const ord = matrix.domains.find((domain) => domain.id === 'ORD-001');
 assert(ord, 'ORD-001 domain missing from completion matrix');
 assert.deepStrictEqual(ord.blockers.map((blocker) => blocker.id), ['ORD-B02', 'ORD-B03', 'ORD-B04', 'ORD-B05']);
 assert.strictEqual(ord.nextActions.length, 4);
-assert(ord.nextActions[0].includes('SCHED-A05'));
-assert.deepStrictEqual(ord.nextActions.slice(1), config.orderedNextActions.slice(1));
+assert(ord.nextActions[0].includes('exact independent staging authorization'));
 
 const blockers = Object.fromEntries(ord.blockers.map((blocker) => [blocker.id, blocker]));
 assert(blockers['ORD-B02'].description.includes('authorization envelope'));

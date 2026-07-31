@@ -121,8 +121,8 @@ assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B05' && blocker.ca
 assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B02'));
 assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B03'));
 assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B04' && blocker.category === 'order_integration'));
-assert(sched.nextActions[0].includes('SCHED-A05'));
-assert(ord.nextActions[0].includes('SCHED-A05'));
+assert(sched.nextActions[0].includes('exact independent staging authorization'));
+assert(ord.nextActions[0].includes('exact independent staging authorization'));
 
 [
   CONFIG_PATH,

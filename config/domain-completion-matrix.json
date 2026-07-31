@@ -1,6 +1,6 @@
 {
-  "version": "1.3.47",
-  "updatedAt": "2026-07-31T09:55:00-03:00",
+  "version": "1.3.48",
+  "updatedAt": "2026-07-31T10:41:00-03:00",
   "title": "Doke Domain Completion Matrix",
   "purpose": "Single source of truth for domain maturity, data authority, staging evidence, blockers, dependencies and mandatory completion order.",
   "maturityScale": {
@@ -1063,7 +1063,16 @@
         "docs/validation/SCHED-001-A04-SERVER-COMMAND-RUNTIME.json",
         "scripts/audit-sched-001-a04-server-command-runtime.js",
         "scripts/test-sched-001-a04-scheduling-service-runtime.js",
-        ".github/workflows/sched-001-a04-server-command-runtime.yml"
+        ".github/workflows/sched-001-a04-server-command-runtime.yml",
+        "config/sched-001-a05-persistence-readiness.json",
+        "backend/modules/scheduling/scheduling-postgres-repository.js",
+        "scripts/test-sched-001-a05-postgres-repository-runtime.js",
+        "scripts/test-sched-001-a05-staging-readiness.js",
+        "scripts/plan-sched-001-a05-staging-readiness.js",
+        "scripts/audit-sched-001-a05-persistence-readiness.js",
+        "docs/SCHED-001-A05-PERSISTENCE-READINESS.md",
+        "docs/validation/SCHED-001-A05-PERSISTENCE-READINESS.json",
+        ".github/workflows/sched-001-a05-persistence-readiness.yml"
       ],
       "scanRoots": [
         "backend/modules/orders",
@@ -1157,7 +1166,8 @@
         "audit:sched-001-a03-reservation-migration-local-contract",
         "test:sched-001-a03-reservation-migration-static",
         "audit:sched-001-a04-server-command-runtime",
-        "test:sched-001-a04-scheduling-service-runtime"
+        "test:sched-001-a04-scheduling-service-runtime",
+        "audit:sched-001-a05-persistence-readiness"
       ],
       "evidence": [
         "Canonical state machine, transaction events, outbox worker and operational controls are active in staging.",
@@ -1256,7 +1266,8 @@
         "SCHED-A02 freezes the server-only scheduling command boundary, durable event envelope, IANA timezone policy, optimistic concurrency, idempotency and half-open conflict semantics without changing staging.",
         "ORD-001 remains prohibited from direct schedule mutation or parallel conflict detection and will consume schedule_reservation_id plus durable schedule events.",
         "ORD-001 now has the generated SCHED-A03 order reference contract, while scheduled_at remains a read projection and no migration was applied.",
-        "ORD-001 now has an executable SCHED-A04 order projection port for schedule_reservation_id and scheduled_at, but ORD-B04 remains open until a transactional adapter and staging activation exist."
+        "ORD-001 now has an executable SCHED-A04 order projection port for schedule_reservation_id and scheduled_at, but ORD-B04 remains open until a transactional adapter and staging activation exist.",
+        "The SCHED-A05 PostgreSQL adapter contains atomic order schedule projection SQL, but ORD-001 remains disconnected until migration application and remote canaries pass."
       ],
       "blockers": [
         {
@@ -1289,10 +1300,10 @@
         }
       ],
       "nextActions": [
-        "Complete SCHED-A05 transactional persistence adapter and staging readiness before ORD-B04 can consume schedule_reservation_id.",
-        "Handoff ORD-B03 to PAY-001 and keep financial completion blocked until a real PSP webhook lifecycle is authoritative.",
-        "Await explicit resource authorization before executing the ORD-B02 real two-context visual canary; generic continuation remains non-authorizing.",
-        "Await exactly I_EXPLICITLY_SELECT_RAILWAY_FOR_DOKE_STAGING before preparing only the non-secret provider adapter for ORD-B05; account, billing, infrastructure and deployment remain separately blocked."
+        "Require the exact independent staging authorization phrase before applying SCHED-A03 and SCHED-A04.",
+        "After authorized application, run read-only schema, grant, policy and migration-order verification.",
+        "Run rolled-back persona, idempotency, DST and concurrent overlap canaries before runtime activation.",
+        "Create the server composition root and wire ORD-001 only after all staging canaries pass."
       ],
       "exitCriteria": [
         "Two real accounts complete request, accept, proposal, approval, start and completion across devices.",
@@ -1316,7 +1327,7 @@
       "priority": 8,
       "maturity": 2,
       "userFacingAuthority": "local",
-      "serverAuthority": "contract_only",
+      "serverAuthority": "partial",
       "stagingEvidence": "staging_canary",
       "securityGate": "partial",
       "productionGate": "blocked",
@@ -1368,7 +1379,16 @@
         "docs/validation/SCHED-001-A04-SERVER-COMMAND-RUNTIME.json",
         "scripts/audit-sched-001-a04-server-command-runtime.js",
         "scripts/test-sched-001-a04-scheduling-service-runtime.js",
-        ".github/workflows/sched-001-a04-server-command-runtime.yml"
+        ".github/workflows/sched-001-a04-server-command-runtime.yml",
+        "config/sched-001-a05-persistence-readiness.json",
+        "backend/modules/scheduling/scheduling-postgres-repository.js",
+        "scripts/test-sched-001-a05-postgres-repository-runtime.js",
+        "scripts/test-sched-001-a05-staging-readiness.js",
+        "scripts/plan-sched-001-a05-staging-readiness.js",
+        "scripts/audit-sched-001-a05-persistence-readiness.js",
+        "docs/SCHED-001-A05-PERSISTENCE-READINESS.md",
+        "docs/validation/SCHED-001-A05-PERSISTENCE-READINESS.json",
+        ".github/workflows/sched-001-a05-persistence-readiness.yml"
       ],
       "scanRoots": [
         "assets/js/pages/pedidos",
@@ -1397,7 +1417,10 @@
         "audit:sched-001-a03-reservation-migration-local-contract",
         "test:sched-001-a03-reservation-migration-static",
         "audit:sched-001-a04-server-command-runtime",
-        "test:sched-001-a04-scheduling-service-runtime"
+        "test:sched-001-a04-scheduling-service-runtime",
+        "audit:sched-001-a05-persistence-readiness",
+        "test:sched-001-a05-postgres-repository-runtime",
+        "test:sched-001-a05-staging-readiness"
       ],
       "evidence": [
         "Availability schema exists, but no implemented scheduling backend module exists.",
@@ -1413,43 +1436,45 @@
         "No SCHED blocker closes at A02: migration, server runtime, order reference and policy hardening remain required.",
         "SCHED-A03 generated a repository-only canonical reservation migration with persistent idempotency, durable events, orders.schedule_reservation_id, service-role-only grants and a partial GiST exclusion constraint; it has not been applied.",
         "SCHED-A04 implemented a repository-agnostic transaction command runtime for all six scheduling commands with deterministic idempotency, optimistic concurrency, DST-safe timezone validation, durable events, order projections and rollback tests; no persistence adapter or migration was activated.",
-        "SCHED-A04 generated an append-only compatibility migration that removes local wall-clock ordering as authority across DST fall-back while preserving UTC ordering; it has not been applied."
+        "SCHED-A04 generated an append-only compatibility migration that removes local wall-clock ordering as authority across DST fall-back while preserving UTC ordering; it has not been applied.",
+        "SCHED-A05 implements all fifteen persistence-port methods over one injected PostgreSQL SERIALIZABLE transaction with parameterized SQL, deterministic rollback, optimistic version checks and SKIP LOCKED hold expiration.",
+        "Three aggregate-only staging reads confirmed PostgreSQL 17.6, zero scheduling/order rows, absent A03/A04 authority objects and migrations, absent btree_gist, and legacy booked-state policy exposure without mutating staging."
       ],
       "blockers": [
         {
           "id": "SCHED-B02",
           "severity": "critical",
           "category": "server_authority",
-          "description": "SCHED-A04 implements all six canonical commands against a transaction-capable repository port, but the concrete persistence adapter and server activation remain absent.",
+          "description": "The command runtime and PostgreSQL transaction adapter exist, but A03/A04 are unapplied and no trusted server composition root activates the adapter.",
           "targetPhase": "Fase 6"
         },
         {
           "id": "SCHED-B03",
           "severity": "high",
           "category": "concurrency",
-          "description": "SCHED-A04 proves local overlap behavior and maps PostgreSQL exclusion SQLSTATE 23P01, but the generated migrations are not applied and no remote concurrent overlap proof exists.",
+          "description": "Migration compatibility and rollback readiness are proven read-only; staging application and rolled-back concurrent overlap proof remain absent.",
           "targetPhase": "Fase 6"
         },
         {
           "id": "SCHED-B04",
           "severity": "high",
           "category": "order_integration",
-          "description": "SCHED-A04 implements atomic order projection operations, but schedule_reservation_id is not applied and ORD-001 does not consume the active scheduling runtime.",
+          "description": "Atomic order projection SQL exists, but orders.schedule_reservation_id is unapplied and ORD-001 remains disconnected.",
           "targetPhase": "Fase 6"
         },
         {
           "id": "SCHED-B05",
           "severity": "high",
           "category": "reservation_status_authority",
-          "description": "SCHED-A04 enforces trusted server actors and forbids professional booking commands, but the generated legacy policy hardening remains unapplied.",
+          "description": "A03 contains booked-state policy hardening and A05 confirms it is required, but the migration remains unapplied.",
           "targetPhase": "Fase 6"
         }
       ],
       "nextActions": [
-        "Execute SCHED-A05 transactional persistence adapter and staging migration readiness, rollback and compatibility gate without applying migrations.",
-        "Require an exact independent authorization before applying the SCHED-A03 and SCHED-A04 migrations to staging.",
-        "After authorized application, run rolled-back persona, idempotency, DST and concurrent overlap canaries.",
-        "Wire ORD-001 to the canonical schedule_reservation_id only after the scheduling runtime is active in staging."
+        "Require the exact independent staging authorization phrase before applying SCHED-A03 and SCHED-A04.",
+        "After authorized application, run read-only schema, grant, policy and migration-order verification.",
+        "Run rolled-back persona, idempotency, DST and concurrent overlap canaries before runtime activation.",
+        "Create the server composition root and wire ORD-001 only after all staging canaries pass."
       ],
       "exitCriteria": [
         "Concurrent booking attempts cannot reserve the same slot.",

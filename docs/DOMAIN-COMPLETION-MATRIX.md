@@ -58,7 +58,7 @@ RLS habilitado, mas sem policy: .
 | 5 | CAT-001 | Catálogo, publicação e moderação de serviços | 4/6 | remote | canonical | staging operational | partial | blocked |
 | 6 | SEARCH-001 | Busca, descoberta, favoritos e ranking | 4/6 | hybrid | canonical | staging operational | partial | blocked |
 | 7 | ORD-001 | Orçamentos, propostas e ciclo de pedidos | 4/6 | hybrid | canonical | staging operational | partial | blocked |
-| 8 | SCHED-001 | Agenda, disponibilidade e execução do serviço | 2/6 | local | contract only | staging canary | partial | blocked |
+| 8 | SCHED-001 | Agenda, disponibilidade e execução do serviço | 2/6 | local | partial | staging canary | partial | blocked |
 | 9 | MSG-001 | Mensagens, conversas, presença e anexos | 3/6 | hybrid | partial | staging canary | partial | blocked |
 | 10 | NTF-001 | Notificações, e-mail e push | 3/6 | hybrid | partial | staging canary | blocked | blocked |
 | 11 | PAY-001 | Pagamentos, cobrança, escrow e webhooks | 2/6 | local | contract only | local e2e | blocked | blocked |
@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 1022 arquivos no escopo; 248 referências a localStorage; 78 a sessionStorage; 557 referências mock; 192 referências de rede/Supabase; 35 marcadores de implementação pendente.
+**Evidência estática observada:** 1027 arquivos no escopo; 248 referências a localStorage; 78 a sessionStorage; 557 referências mock; 193 referências de rede/Supabase; 35 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -494,6 +494,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - ORD-001 remains prohibited from direct schedule mutation or parallel conflict detection and will consume schedule_reservation_id plus durable schedule events.
 - ORD-001 now has the generated SCHED-A03 order reference contract, while scheduled_at remains a read projection and no migration was applied.
 - ORD-001 now has an executable SCHED-A04 order projection port for schedule_reservation_id and scheduled_at, but ORD-B04 remains open until a transactional adapter and staging activation exist.
+- The SCHED-A05 PostgreSQL adapter contains atomic order schedule projection SQL, but ORD-001 remains disconnected until migration application and remote canaries pass.
 
 **Bloqueadores:**
 - **ORD-B02 · HIGH · frontend_activation:** Canonical reads, canary commands, cleanup, deterministic settlement, readiness discovery and the fail-closed Playwright executor pass. A short-lived authorization envelope is mandatory; ORD-B02 remains under ORD-001 until explicit resource authorization is issued, check-env passes, the real two-context visual canary is executed and run-scoped cleanup proves zero residue. _(Fase 6)_
@@ -502,10 +503,10 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - **ORD-B05 · HIGH · staging_release:** ORD-A08 release identity, ORD-A09A provider evaluation, the ORD-A09B0 provider-neutral adapter boundary, provider selection handoff, selection intent firewall and adapter conformance suite are complete. Railway is recommended as the external staging release provider, but no explicit provider selection, provider-specific adapter, account, billing, secrets, infrastructure, rollback command or deployment exists. ORD-B05 remains open until exactly I_EXPLICITLY_SELECT_RAILWAY_FOR_DOKE_STAGING authorizes only non-secret adapter preparation; every external action remains separately blocked. _(Fase 6)_
 
 **Próximas ações:**
-- Complete SCHED-A05 transactional persistence adapter and staging readiness before ORD-B04 can consume schedule_reservation_id.
-- Handoff ORD-B03 to PAY-001 and keep financial completion blocked until a real PSP webhook lifecycle is authoritative.
-- Await explicit resource authorization before executing the ORD-B02 real two-context visual canary; generic continuation remains non-authorizing.
-- Await exactly I_EXPLICITLY_SELECT_RAILWAY_FOR_DOKE_STAGING before preparing only the non-secret provider adapter for ORD-B05; account, billing, infrastructure and deployment remain separately blocked.
+- Require the exact independent staging authorization phrase before applying SCHED-A03 and SCHED-A04.
+- After authorized application, run read-only schema, grant, policy and migration-order verification.
+- Run rolled-back persona, idempotency, DST and concurrent overlap canaries before runtime activation.
+- Create the server composition root and wire ORD-001 only after all staging canaries pass.
 
 **Gate de saída:**
 - Two real accounts complete request, accept, proposal, approval, start and completion across devices.
@@ -517,9 +518,9 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Objetivo:** Prevent double booking and make availability, confirmation and rescheduling server-authoritative.
 
-**Estado:** maturidade 2/6; UI local; servidor contract only; staging staging canary; segurança partial; produção blocked.
+**Estado:** maturidade 2/6; UI local; servidor partial; staging staging canary; segurança partial; produção blocked.
 
-**Evidência estática observada:** 993 arquivos no escopo; 186 referências a localStorage; 70 a sessionStorage; 301 referências mock; 191 referências de rede/Supabase; 19 marcadores de implementação pendente.
+**Evidência estática observada:** 998 arquivos no escopo; 186 referências a localStorage; 70 a sessionStorage; 301 referências mock; 192 referências de rede/Supabase; 19 marcadores de implementação pendente.
 
 **Páginas:** `anunciar-servico.html`, `pedidos.html`, `orcamento.html`.
 
@@ -540,18 +541,20 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - SCHED-A03 generated a repository-only canonical reservation migration with persistent idempotency, durable events, orders.schedule_reservation_id, service-role-only grants and a partial GiST exclusion constraint; it has not been applied.
 - SCHED-A04 implemented a repository-agnostic transaction command runtime for all six scheduling commands with deterministic idempotency, optimistic concurrency, DST-safe timezone validation, durable events, order projections and rollback tests; no persistence adapter or migration was activated.
 - SCHED-A04 generated an append-only compatibility migration that removes local wall-clock ordering as authority across DST fall-back while preserving UTC ordering; it has not been applied.
+- SCHED-A05 implements all fifteen persistence-port methods over one injected PostgreSQL SERIALIZABLE transaction with parameterized SQL, deterministic rollback, optimistic version checks and SKIP LOCKED hold expiration.
+- Three aggregate-only staging reads confirmed PostgreSQL 17.6, zero scheduling/order rows, absent A03/A04 authority objects and migrations, absent btree_gist, and legacy booked-state policy exposure without mutating staging.
 
 **Bloqueadores:**
-- **SCHED-B02 · CRITICAL · server_authority:** SCHED-A04 implements all six canonical commands against a transaction-capable repository port, but the concrete persistence adapter and server activation remain absent. _(Fase 6)_
-- **SCHED-B03 · HIGH · concurrency:** SCHED-A04 proves local overlap behavior and maps PostgreSQL exclusion SQLSTATE 23P01, but the generated migrations are not applied and no remote concurrent overlap proof exists. _(Fase 6)_
-- **SCHED-B04 · HIGH · order_integration:** SCHED-A04 implements atomic order projection operations, but schedule_reservation_id is not applied and ORD-001 does not consume the active scheduling runtime. _(Fase 6)_
-- **SCHED-B05 · HIGH · reservation_status_authority:** SCHED-A04 enforces trusted server actors and forbids professional booking commands, but the generated legacy policy hardening remains unapplied. _(Fase 6)_
+- **SCHED-B02 · CRITICAL · server_authority:** The command runtime and PostgreSQL transaction adapter exist, but A03/A04 are unapplied and no trusted server composition root activates the adapter. _(Fase 6)_
+- **SCHED-B03 · HIGH · concurrency:** Migration compatibility and rollback readiness are proven read-only; staging application and rolled-back concurrent overlap proof remain absent. _(Fase 6)_
+- **SCHED-B04 · HIGH · order_integration:** Atomic order projection SQL exists, but orders.schedule_reservation_id is unapplied and ORD-001 remains disconnected. _(Fase 6)_
+- **SCHED-B05 · HIGH · reservation_status_authority:** A03 contains booked-state policy hardening and A05 confirms it is required, but the migration remains unapplied. _(Fase 6)_
 
 **Próximas ações:**
-- Execute SCHED-A05 transactional persistence adapter and staging migration readiness, rollback and compatibility gate without applying migrations.
-- Require an exact independent authorization before applying the SCHED-A03 and SCHED-A04 migrations to staging.
-- After authorized application, run rolled-back persona, idempotency, DST and concurrent overlap canaries.
-- Wire ORD-001 to the canonical schedule_reservation_id only after the scheduling runtime is active in staging.
+- Require the exact independent staging authorization phrase before applying SCHED-A03 and SCHED-A04.
+- After authorized application, run read-only schema, grant, policy and migration-order verification.
+- Run rolled-back persona, idempotency, DST and concurrent overlap canaries before runtime activation.
+- Create the server composition root and wire ORD-001 only after all staging canaries pass.
 
 **Gate de saída:**
 - Concurrent booking attempts cannot reserve the same slot.
@@ -944,7 +947,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 1/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 225 arquivos no escopo; 64 referências a localStorage; 8 a sessionStorage; 269 referências mock; 8 referências de rede/Supabase; 25 marcadores de implementação pendente.
+**Evidência estática observada:** 226 arquivos no escopo; 64 referências a localStorage; 8 a sessionStorage; 269 referências mock; 8 referências de rede/Supabase; 25 marcadores de implementação pendente.
 
 **Evidências:**
 - The master plan identifies legal, privacy and commercial decisions as mandatory.
@@ -1004,7 +1007,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2319 arquivos no escopo; 505 referências a localStorage; 151 a sessionStorage; 880 referências mock; 589 referências de rede/Supabase; 89 marcadores de implementação pendente.
+**Evidência estática observada:** 2326 arquivos no escopo; 505 referências a localStorage; 151 a sessionStorage; 880 referências mock; 590 referências de rede/Supabase; 89 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
@@ -1065,4 +1068,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-07-31T09:55:00-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-07-31T10:41:00-03:00._
