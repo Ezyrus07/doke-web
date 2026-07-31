@@ -1,0 +1,105 @@
+{
+  "contractVersion": "ord-a07e-remote-concurrent-replay-canary-readiness-v1",
+  "domain": "ORD-001",
+  "sublot": "ORD-A07E-REMOTE-READINESS",
+  "status": "remote_concurrent_replay_canary_readiness_complete_execution_unauthorized",
+  "recordedAt": "2026-07-30T22:50:00-03:00",
+  "target": {
+    "environment": "staging",
+    "projectId": "zwkczgewzbsorbrjuzpb",
+    "functionName": "order-event-worker",
+    "requiredVersion": 10,
+    "requiredStatus": "ACTIVE",
+    "requiredVerifyJwt": false,
+    "requiredBundleSha256": "2f480553c636b96a061e66fcb3a6ddaf06d458459c898f215e2472ff2d8a4dc0",
+    "productionAllowed": false
+  },
+  "scenario": {
+    "concurrency": 32,
+    "method": "POST",
+    "sameIssuedAtForAllRequests": true,
+    "sameNonceForAllRequests": true,
+    "source": "test",
+    "body": { "limit": 1 },
+    "expectedAcceptedCount": 1,
+    "expectedReplayRejectedCount": 31,
+    "expectedUnexpectedCount": 0,
+    "acceptedHttpStatus": 200,
+    "replayHttpStatus": 409,
+    "replayError": "DOKE_ORDER_EVENT_WORKER_REPLAY_REJECTED",
+    "acceptedResponseMustContainRunId": true
+  },
+  "preflightSnapshot": {
+    "cronActive": true,
+    "cronSchedule": "* * * * *",
+    "cronCommand": "select private.invoke_order_event_worker_if_needed();",
+    "orders": 0,
+    "budgets": 0,
+    "history": 0,
+    "domainEvents": 0,
+    "workerRuns": 1,
+    "nonceLedgerRows": 1,
+    "testWorkerRuns": 0,
+    "preexistingTestNonceRows": 1,
+    "serviceRoleCanDeleteNonce": true,
+    "serviceRoleCanDeleteWorkerRun": false
+  },
+  "cleanup": {
+    "required": true,
+    "acceptedRunIdSource": "accepted_http_response",
+    "workerRunDeleteAuthority": "privileged_staging_sql",
+    "workerRunDeleteConditions": {
+      "idEqualsAcceptedRunId": true,
+      "sourceEquals": "test",
+      "statusEquals": "completed",
+      "claimedCountEquals": 0,
+      "completedCountEquals": 0,
+      "failedCountEquals": 0,
+      "deadLetterCountEquals": 0
+    },
+    "nonceDeleteAuthority": "privileged_staging_sql",
+    "nonceDeleteConditions": {
+      "nonceHashEqualsCanaryNonceSha256": true,
+      "sourceEquals": "test"
+    },
+    "mustNotDeletePreexistingTestNonceRows": true,
+    "postCleanupExpected": {
+      "orders": 0,
+      "budgets": 0,
+      "history": 0,
+      "domainEvents": 0,
+      "workerRuns": 1,
+      "nonceLedgerRows": 1,
+      "testWorkerRuns": 0,
+      "testNonceRows": 1
+    }
+  },
+  "rollback": {
+    "edgeFunctionRollbackNotAuthorized": true,
+    "cronChangeNotAuthorized": true,
+    "migrationNotAuthorized": true,
+    "abortOnPreflightDrift": true,
+    "abortOnUnexpectedDomainRows": true,
+    "retainEvidenceBeforeCleanup": true
+  },
+  "authorization": {
+    "exactPhraseRequired": "I_EXPLICITLY_AUTHORIZE_ORD_A07E_REMOTE_CONCURRENT_REPLAY_CANARY_ON_DOKE_STAGING",
+    "remoteCanaryAuthorized": false,
+    "cleanupAuthorized": false,
+    "edgeFunctionDeployAuthorized": false,
+    "productionAuthorized": false,
+    "railwayAuthorized": false,
+    "mergeAuthorized": false,
+    "genericContinuationRejected": true
+  },
+  "execution": {
+    "remoteRequestsPlanned": 32,
+    "remoteRequestsExecuted": 0,
+    "stagingDatabaseMutationsPerformed": 0,
+    "cleanupRowsDeleted": 0,
+    "cronJobsChanged": 0,
+    "edgeFunctionsDeployed": 0,
+    "migrationsApplied": 0,
+    "productionChanged": false
+  }
+}
