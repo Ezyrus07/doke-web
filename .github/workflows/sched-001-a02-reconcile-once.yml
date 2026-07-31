@@ -56,10 +56,15 @@ jobs:
 
           const a01AuditPath = 'scripts/audit-sched-001-a01-repository-baseline-staging-security-preflight.js';
           let a01Audit = fs.readFileSync(a01AuditPath, 'utf8');
-          a01Audit = a01Audit.replace(
-            "assert.strictEqual(matrix.version, '1.3.44');",
-            "assert(Number(String(matrix.version).split('.')[2]) >= 44, `Matrix version ${matrix.version} predates SCHED-A01.`);"
-          );
+          a01Audit = a01Audit
+            .replace(
+              "assert.strictEqual(matrix.version, '1.3.44');",
+              "assert(Number(String(matrix.version).split('.')[2]) >= 44, `Matrix version ${matrix.version} predates SCHED-A01.`);"
+            )
+            .replace(
+              "assert(ord.nextActions[0].includes('SCHED-A02'));",
+              "assert(ord.nextActions[0].includes('SCHED-A03'));"
+            );
           fs.writeFileSync(a01AuditPath, a01Audit);
 
           const matrixPath = 'config/domain-completion-matrix.json';
