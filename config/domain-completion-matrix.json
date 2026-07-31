@@ -1,6 +1,6 @@
 {
-  "version": "1.3.36",
-  "updatedAt": "2026-07-30T18:19:00-03:00",
+  "version": "1.3.37",
+  "updatedAt": "2026-07-30T21:18:00-03:00",
   "title": "Doke Domain Completion Matrix",
   "purpose": "Single source of truth for domain maturity, data authority, staging evidence, blockers, dependencies and mandatory completion order.",
   "maturityScale": {
@@ -1000,7 +1000,11 @@
         "docs/ORD-001-A07C-STAGING-MIGRATION-APPLICATION.md",
         "docs/validation/ORD-001-A07C-STAGING-MIGRATION-APPLICATION.json",
         "scripts/audit-ord-001-a07c-staging-migration-application.js",
-        ".github/workflows/ord-001-a07c-staging-migration-application.yml"
+        ".github/workflows/ord-001-a07c-staging-migration-application.yml",
+        "config/ord-001-a07d-edge-function-staging-deploy-readiness.json",
+        "docs/ORD-001-A07D-EDGE-FUNCTION-STAGING-DEPLOY-READINESS.md",
+        "scripts/audit-ord-001-a07d-edge-function-staging-deploy-readiness.js",
+        ".github/workflows/ord-001-a07d-edge-function-staging-deploy-readiness.yml"
       ],
       "scanRoots": [
         "backend/modules/orders",
@@ -1080,7 +1084,8 @@
         "plan:ord-001-a07c-staging-migration:check-env",
         "test:ord-001-a07c-staging-migration-readiness",
         "audit:ord-001-a07c-staging-migration-readiness",
-        "audit:ord-001-a07c-staging-migration-application"
+        "audit:ord-001-a07c-staging-migration-application",
+        "audit:ord-001-a07d-edge-function-staging-deploy-readiness"
       ],
       "evidence": [
         "Canonical state machine, transaction events, outbox worker and operational controls are active in staging.",
@@ -1155,7 +1160,10 @@
         "ORD-A07C was explicitly authorized and applied to Doke staging as ord_a07c_worker_invocation_headers; Supabase recorded execution version 20260730204044 without manual migration-history edits.",
         "The staging Cron invocation function now emits issued-at and nonce headers while preserving its * * * * * schedule, canonical command, Vault secret names, endpoint, source, limit 25, timeout 30000 and A07B ledger authority.",
         "The private Cron entrypoint remains SECURITY DEFINER owned and executable only by postgres; public, anon, authenticated and service_role remain denied, and all order-domain counts stayed zero.",
-        "No Edge Function was deployed, no remote replay canary ran, and Railway, production and merge remain blocked."
+        "No Edge Function was deployed, no remote replay canary ran, and Railway, production and merge remain blocked.",
+        "ORD-A07D staging deploy readiness freezes the complete six-file order-event-worker bundle, including deno.json and the pinned Supabase JS import map.",
+        "Read-only staging inspection records order-event-worker version 9 as ACTIVE with verify_jwt false; the deploy contract requires verify_jwt to remain false because the private Cron authenticates by worker token rather than Authorization JWT.",
+        "The deploy gate has no deploy capability, requires an exact independent authorization phrase, and keeps remote canary, production, Railway and merge blocked."
       ],
       "blockers": [
         {
@@ -1207,7 +1215,8 @@
         "Apply the canonical ORD-A07B nonce ledger migration to staging only after exact authorization, then run read-only grant, RLS, atomicity and zero-drift verification.",
         "After the ORD-A07B ledger is applied and verified in staging, authorize the ORD-A07C Cron header migration separately, then wire Edge Function header reading and atomic nonce consumption before the worker run begins.",
         "Require a separate exact authorization for ORD-A07C before applying the Cron header migration; keep the Edge Function undeployed until A07C is verified, then authorize the remote replay canary separately.",
-        "Prepare a separate exact-authorization gate for controlled order-event-worker Edge Function deployment to staging; after deployment verification, require another independent authorization for the remote concurrent replay canary."
+        "Prepare a separate exact-authorization gate for controlled order-event-worker Edge Function deployment to staging; after deployment verification, require another independent authorization for the remote concurrent replay canary.",
+        "Deploy the frozen order-event-worker bundle to Doke staging only after the exact A07D authorization phrase, preserve verify_jwt false, perform read-only post-deploy verification, and require separate authorization for the remote replay canary."
       ],
       "exitCriteria": [
         "Two real accounts complete request, accept, proposal, approval, start and completion across devices.",

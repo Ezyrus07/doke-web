@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 997 arquivos no escopo; 247 referências a localStorage; 77 a sessionStorage; 556 referências mock; 185 referências de rede/Supabase; 34 marcadores de implementação pendente.
+**Evidência estática observada:** 999 arquivos no escopo; 247 referências a localStorage; 77 a sessionStorage; 556 referências mock; 185 referências de rede/Supabase; 34 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -470,6 +470,9 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - The staging Cron invocation function now emits issued-at and nonce headers while preserving its * * * * * schedule, canonical command, Vault secret names, endpoint, source, limit 25, timeout 30000 and A07B ledger authority.
 - The private Cron entrypoint remains SECURITY DEFINER owned and executable only by postgres; public, anon, authenticated and service_role remain denied, and all order-domain counts stayed zero.
 - No Edge Function was deployed, no remote replay canary ran, and Railway, production and merge remain blocked.
+- ORD-A07D staging deploy readiness freezes the complete six-file order-event-worker bundle, including deno.json and the pinned Supabase JS import map.
+- Read-only staging inspection records order-event-worker version 9 as ACTIVE with verify_jwt false; the deploy contract requires verify_jwt to remain false because the private Cron authenticates by worker token rather than Authorization JWT.
+- The deploy gate has no deploy capability, requires an exact independent authorization phrase, and keeps remote canary, production, Railway and merge blocked.
 
 **Bloqueadores:**
 - **ORD-B02 · HIGH · frontend_activation:** Canonical reads, canary commands, cleanup, deterministic settlement, readiness discovery and the fail-closed Playwright executor pass. A short-lived authorization envelope is now mandatory; ORD-B02 remains until explicit authorization is issued, check-env passes and the real two-context visual canary is executed. _(Fase 6)_
@@ -498,6 +501,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - After the ORD-A07B ledger is applied and verified in staging, authorize the ORD-A07C Cron header migration separately, then wire Edge Function header reading and atomic nonce consumption before the worker run begins.
 - Require a separate exact authorization for ORD-A07C before applying the Cron header migration; keep the Edge Function undeployed until A07C is verified, then authorize the remote replay canary separately.
 - Prepare a separate exact-authorization gate for controlled order-event-worker Edge Function deployment to staging; after deployment verification, require another independent authorization for the remote concurrent replay canary.
+- Deploy the frozen order-event-worker bundle to Doke staging only after the exact A07D authorization phrase, preserve verify_jwt false, perform read-only post-deploy verification, and require separate authorization for the remote replay canary.
 
 **Gate de saída:**
 - Two real accounts complete request, accept, proposal, approval, start and completion across devices.
@@ -922,7 +926,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 1/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 215 arquivos no escopo; 64 referências a localStorage; 8 a sessionStorage; 268 referências mock; 8 referências de rede/Supabase; 24 marcadores de implementação pendente.
+**Evidência estática observada:** 216 arquivos no escopo; 64 referências a localStorage; 8 a sessionStorage; 268 referências mock; 8 referências de rede/Supabase; 24 marcadores de implementação pendente.
 
 **Evidências:**
 - The master plan identifies legal, privacy and commercial decisions as mandatory.
@@ -982,7 +986,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2275 arquivos no escopo; 504 referências a localStorage; 150 a sessionStorage; 879 referências mock; 582 referências de rede/Supabase; 88 marcadores de implementação pendente.
+**Evidência estática observada:** 2278 arquivos no escopo; 504 referências a localStorage; 150 a sessionStorage; 879 referências mock; 582 referências de rede/Supabase; 88 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
@@ -1043,4 +1047,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-07-30T18:19:00-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-07-30T21:18:00-03:00._
