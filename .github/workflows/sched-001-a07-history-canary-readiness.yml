@@ -1,96 +1,49 @@
-name: SCHED-A09 Documentation and Matrix Reconciliation
+name: Doke SCHED-A07 Migration History and Canary Readiness
 
 on:
   pull_request:
     paths:
+      - 'config/sched-001-a07-history-canary-readiness.json'
+      - 'docs/SCHED-001-A07-MIGRATION-HISTORY-CANARY-READINESS.md'
+      - 'docs/validation/SCHED-001-A07-MIGRATION-HISTORY-CANARY-READINESS.json'
+      - 'scripts/plan-sched-001-a07-history-canaries.js'
+      - 'scripts/test-sched-001-a07-history-canary-readiness.js'
+      - 'scripts/audit-sched-001-a07-history-canary-readiness.js'
+      - 'supabase/tests/020_sched_a07_rolled_back_canaries.sql'
+      - 'config/domain-completion-matrix.json'
+      - 'package.json'
       - '.github/workflows/sched-001-a07-history-canary-readiness.yml'
-      - 'scripts/close-sched-001-a09-documentation-matrix.js'
-      - 'scripts/patch-sched-001-a09-cumulative-audits.js'
   workflow_dispatch:
 
 permissions:
-  contents: write
-
-concurrency:
-  group: sched-a09-documentation-matrix-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: false
+  contents: read
 
 jobs:
-  close-a09:
-    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
+  readiness:
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout PR head branch
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
-          ref: ${{ github.event.pull_request.head.ref }}
-          fetch-depth: 0
-
-      - name: Set up Node
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 24
-
-      - name: Apply SCHED-A09 documentation reconciliation
-        shell: bash
+      - name: Audit SCHED-A07 migration history and canary readiness
+        run: node scripts/audit-sched-001-a07-history-canary-readiness.js
+      - name: Test SCHED-A07 authorization firewall and rollback contract
+        run: node scripts/test-sched-001-a07-history-canary-readiness.js
+      - name: Prove SCHED-A07 planner remains dry-run only
+        run: node scripts/plan-sched-001-a07-history-canaries.js
+      - name: Preserve SCHED-A05 persistence readiness
         run: |
-          set -euo pipefail
-          export SCHED_A09_UPDATED_AT="$(TZ=America/Bahia date -Iseconds)"
-          node scripts/patch-sched-001-a09-cumulative-audits.js
-          node scripts/close-sched-001-a09-documentation-matrix.js
-
-      - name: Regenerate and validate canonical matrix
-        shell: bash
+          node scripts/audit-sched-001-a05-persistence-readiness.js
+          node scripts/test-sched-001-a05-postgres-repository-runtime.js
+          node scripts/test-sched-001-a05-staging-readiness.js
+      - name: Preserve cumulative scheduling and order contracts
         run: |
-          set -euo pipefail
-          npm run write:domain-completion-matrix
-          npm run audit:domain-completion-matrix
-          npm run audit:sched-001-a02-command-event-timezone-conflict-contract
-          npm run audit:sched-001-a03-reservation-migration-local-contract
-          npm run audit:sched-001-a04-server-command-runtime
-          npm run test:sched-001-a04-scheduling-service-runtime
-          npm run audit:sched-001-a05-persistence-readiness
-          npm run test:sched-001-a05-postgres-repository-runtime
-          npm run audit:ord-001-a10-blocker-reconciliation
-          npm run audit:ord-001-a11-scheduling-authority-handoff
-          npm run audit:sched-001-a07-history-canary-readiness
-
-      - name: Remove temporary scripts only
-        shell: bash
-        run: |
-          set -euo pipefail
-          rm -f scripts/close-sched-001-a09-documentation-matrix.js
-          rm -f scripts/patch-sched-001-a09-cumulative-audits.js
-
-      - name: Commit and push validated non-workflow closure
-        shell: bash
-        run: |
-          set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-          git add \
-            config/domain-completion-matrix.json \
-            config/sched-001-a09-staging-reconciliation.json \
-            docs/DOMAIN-COMPLETION-MATRIX.md \
-            docs/SCHED-001-A09-STAGING-RECONCILIATION.md \
-            scripts/audit-ord-001-a10-blocker-reconciliation.js \
-            scripts/audit-ord-001-a11-scheduling-authority-handoff.js \
-            scripts/audit-sched-001-a02-command-event-timezone-conflict-contract.js \
-            scripts/audit-sched-001-a03-reservation-migration-local-contract.js \
-            scripts/audit-sched-001-a04-server-command-runtime.js \
-            scripts/audit-sched-001-a05-persistence-readiness.js \
-            scripts/close-sched-001-a09-documentation-matrix.js \
-            scripts/patch-sched-001-a09-cumulative-audits.js
-          git add -f reports/generated/domain-completion-matrix-report.json
-
-          if git diff --cached --name-only | grep -q '^\.github/workflows/'; then
-            echo 'SCHED_A09_WORKFLOW_MUTATION_STAGED' >&2
-            exit 31
-          fi
-
-          git diff --cached --check
-          git commit -m "docs(sched): close A09 staging reconciliation evidence"
-          git push origin HEAD:${{ github.event.pull_request.head.ref }}
+          node scripts/audit-sched-001-a04-server-command-runtime.js
+          node scripts/audit-sched-001-a03-reservation-migration-local-contract.js
+          node scripts/audit-sched-001-a02-command-event-timezone-conflict-contract.js
+          node scripts/audit-sched-001-a01-repository-baseline-staging-security-preflight.js
+          node scripts/audit-ord-001-a11-scheduling-authority-handoff.js
+          node scripts/audit-ord-001-a10-blocker-reconciliation.js
+      - name: Audit completion matrix
+        run: node scripts/audit-domain-completion-matrix.js
