@@ -1,0 +1,78 @@
+{
+  "contractVersion": "sched-a02-command-event-timezone-conflict-contract-v1",
+  "status": "repository_contract_frozen_migration_and_runtime_pending",
+  "domain": "SCHED-001",
+  "observedHeadBeforeSublot": "5f8d594fbca0cf39e842e87537b03f22537cb7e8",
+  "contract": {
+    "reservationStates": ["held", "confirmed", "cancelled", "expired"],
+    "activeOccupancyStates": ["held", "confirmed"],
+    "commandCount": 6,
+    "eventTypeCount": 6,
+    "serverOnlyReservationMutation": true,
+    "professionalDirectBookingForbidden": true,
+    "orderParallelConflictAuthorityForbidden": true
+  },
+  "time": {
+    "canonicalStorage": "UTC timestamptz",
+    "ruleTimezone": "IANA identifier",
+    "rangeConvention": "[start,end)",
+    "adjacentRangesConflict": false,
+    "nonexistentLocalTimeRejected": true,
+    "ambiguousLocalTimeRequiresOffset": true,
+    "minimumDurationMinutes": 15,
+    "maximumDurationDays": 30
+  },
+  "conflict": {
+    "overlapFormula": "startA < endB and startB < endA",
+    "requiredExtension": "btree_gist",
+    "databasePrimitive": "partial GiST exclusion for professional_id and tstzrange over held or confirmed rows",
+    "staleHoldLazyExpirationRequired": true,
+    "conflictCode": "DOKE_SCHEDULE_CONFLICT"
+  },
+  "concurrency": {
+    "optimisticVersionRequired": true,
+    "expectedVersionRequired": true,
+    "idempotencyRequired": true,
+    "sameKeySamePayloadReturnsOriginal": true,
+    "sameKeyDifferentPayloadRejected": true
+  },
+  "events": {
+    "futureStore": "private.schedule_domain_events",
+    "eventKeyPattern": "schedule:{reservation_id}:v{sequence_no}",
+    "transactionalWithCanonicalMutation": true,
+    "types": [
+      "schedule.availability_rule_upserted",
+      "schedule.hold_created",
+      "schedule.hold_expired",
+      "schedule.confirmed",
+      "schedule.rescheduled",
+      "schedule.cancelled"
+    ]
+  },
+  "orderIntegration": {
+    "futureReference": "orders.schedule_reservation_id",
+    "scheduledAtReadProjectionOnly": true,
+    "eventDrivenProjection": true
+  },
+  "runtimeProof": {
+    "pureContractModule": "backend/modules/scheduling/scheduling-contract.js",
+    "testScript": "scripts/test-sched-001-a02-contract-runtime.js",
+    "databaseAccess": false,
+    "networkAccess": false,
+    "browserAccess": false
+  },
+  "blockers": {
+    "closed": [],
+    "advanced": ["SCHED-B02", "SCHED-B03", "SCHED-B04", "SCHED-B05"],
+    "remainingOpen": ["SCHED-B02", "SCHED-B03", "SCHED-B04", "SCHED-B05"]
+  },
+  "execution": {
+    "networkRequestsPerformed": 0,
+    "stagingReadsPerformed": 0,
+    "stagingMutationsPerformed": 0,
+    "migrationsApplied": 0,
+    "deploymentsPerformed": 0,
+    "productionChanged": false,
+    "pullRequestMerged": false
+  }
+}
