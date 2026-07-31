@@ -122,7 +122,11 @@ assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B02'));
 assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B04' && blocker.category === 'order_integration'));
 if (compareVersions(matrix.version, '1.3.50') >= 0 && sched.maturity === 3) {
   assert(!sched.blockers.some((blocker) => blocker.id === 'SCHED-B03'));
-  assert(sched.nextActions[0].includes('trusted server composition root'));
+  if (Number(String(matrix.version).split('.')[2] || 0) >= 51) {
+    assert(sched.nextActions[0].includes('authenticated staging composition canary'));
+  } else {
+    assert(sched.nextActions[0].includes('trusted server composition root'));
+  }
   assert(ord.nextActions[0].includes('Keep ORD-B04 handed to SCHED-001'));
   assert(ord.evidence.some((item) => item.includes('SCHED-A08 completed the official migration-history repair')));
 } else {

@@ -246,7 +246,11 @@ assert(config.orderedNextActions[0].includes('SCHED-A05'));
 const postA09 = compareVersions(matrix.version, '1.3.50') >= 0 && sched.maturity === 3;
 if (postA09) {
   assert.deepStrictEqual(sched.blockers.map((item) => item.id), ['SCHED-B02', 'SCHED-B04']);
-  assert(sched.nextActions[0].includes('trusted server composition root'));
+  if (Number(String(matrix.version).split('.')[2] || 0) >= 51) {
+    assert(sched.nextActions[0].includes('authenticated staging composition canary'));
+  } else {
+    assert(sched.nextActions[0].includes('trusted server composition root'));
+  }
   assert(ord.evidence.some((item) => item.includes('SCHED-A08 completed the official migration-history repair')));
 } else {
   assert.strictEqual(sched.maturity, 2);
