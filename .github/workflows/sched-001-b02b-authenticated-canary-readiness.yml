@@ -1,0 +1,39 @@
+name: Doke SCHED-B02B Authenticated Composition Canary Readiness
+
+on:
+  pull_request:
+    paths:
+      - 'config/sched-001-b02b-authenticated-composition-canary-readiness.json'
+      - 'docs/SCHED-001-B02B-AUTHENTICATED-COMPOSITION-CANARY-READINESS.md'
+      - 'docs/validation/SCHED-001-B02B-AUTHENTICATED-COMPOSITION-CANARY-READINESS.json'
+      - 'scripts/audit-sched-001-b02b-authenticated-canary-readiness.js'
+      - 'scripts/test-sched-001-b02b-authenticated-canary-readiness.js'
+      - 'backend/modules/scheduling/scheduling-composition-root.js'
+      - '.github/workflows/sched-001-b02b-authenticated-canary-readiness.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  readiness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Audit B02B readiness contract
+        run: node scripts/audit-sched-001-b02b-authenticated-canary-readiness.js
+      - name: Test B02B persona and rollback contract
+        run: node scripts/test-sched-001-b02b-authenticated-canary-readiness.js
+      - name: Preserve B02A composition root contract
+        run: |
+          node scripts/audit-sched-001-b02-composition-root-readiness.js
+          node scripts/test-sched-001-b02-composition-root-runtime.js
+      - name: Preserve scheduling runtime and persistence contracts
+        run: |
+          node scripts/audit-sched-001-a04-server-command-runtime.js
+          node scripts/test-sched-001-a04-scheduling-service-runtime.js
+          node scripts/audit-sched-001-a05-persistence-readiness.js
+          node scripts/test-sched-001-a05-postgres-repository-runtime.js
