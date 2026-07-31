@@ -1,0 +1,137 @@
+{
+  "contractVersion": "ord-a11-scheduling-authority-handoff-v1",
+  "status": "repository_handoff_complete_sched_implementation_pending",
+  "sourceDomain": "ORD-001",
+  "targetDomain": "SCHED-001",
+  "sourceBlocker": "ORD-B04",
+  "scope": "repository_only",
+  "decision": {
+    "blockerClosed": false,
+    "orderDomainMayOwnParallelSchedule": false,
+    "schedulingDomainOwnsCanonicalTimeAuthority": true,
+    "genericContinuationAuthorizesLiveChanges": false
+  },
+  "observedRepositoryState": {
+    "availabilityTableExists": true,
+    "availabilityRlsEnablementMigrationExists": true,
+    "roleSeparatedAvailabilityReadPoliciesExist": true,
+    "schedulingBackendModuleImplemented": false,
+    "databaseAntiDoubleBookingContractExists": false,
+    "canonicalHoldLifecycleExists": false,
+    "canonicalReservationLifecycleExists": false,
+    "ordersAcceptRawScheduledAt": true,
+    "orderReservationReferenceExists": false,
+    "frontendServiceAvailabilityIsSnapshotOrFormData": true,
+    "stagingRlsVerificationRecordedForSched": false
+  },
+  "canonicalOwnership": {
+    "SCHED-001": [
+      "availability rules and exceptions",
+      "public available-slot projection",
+      "temporary booking holds and expiration",
+      "confirmed reservations",
+      "conflict detection and anti-double-booking enforcement",
+      "rescheduling and cancellation policy",
+      "timezone and daylight-saving interpretation",
+      "schedule command idempotency and optimistic concurrency",
+      "schedule lifecycle events"
+    ],
+    "ORD-001": [
+      "order lifecycle and participant authorization",
+      "proposal acceptance and service execution states",
+      "reference to one canonical schedule reservation",
+      "projection of confirmed schedule data for order reads",
+      "reaction to durable schedule lifecycle events"
+    ],
+    "ORD-001_must_not_own": [
+      "independent availability rules",
+      "browser-only booking authority",
+      "raw scheduled_at as final reservation authority",
+      "parallel conflict detection",
+      "parallel reschedule or cancellation rules"
+    ]
+  },
+  "targetModel": {
+    "availabilityRules": {
+      "purpose": "professional recurrence rules and explicit exceptions",
+      "timezone": "IANA timezone required",
+      "storage": "rules retain local wall-clock intent; generated instants are UTC"
+    },
+    "scheduleReservations": {
+      "purpose": "single occupancy authority for holds and confirmed bookings",
+      "requiredFields": [
+        "id",
+        "professional_id",
+        "order_id",
+        "starts_at",
+        "ends_at",
+        "timezone",
+        "status",
+        "hold_expires_at",
+        "version",
+        "idempotency_key",
+        "created_at",
+        "updated_at"
+      ],
+      "statuses": [
+        "held",
+        "confirmed",
+        "cancelled",
+        "expired"
+      ],
+      "requiredDatabaseRule": "active held or confirmed ranges for one professional must not overlap",
+      "preferredPostgresPrimitive": "GiST exclusion constraint over professional_id and tstzrange(starts_at, ends_at, '[)') for active occupancy"
+    },
+    "orderProjection": {
+      "reservationReference": "schedule_reservation_id",
+      "scheduledAt": "read projection only after activation",
+      "scheduleRevision": "expected reservation version or durable event revision"
+    }
+  },
+  "commandBoundary": [
+    "upsert_availability_rule",
+    "create_schedule_hold",
+    "confirm_schedule_reservation",
+    "reschedule_reservation",
+    "cancel_schedule_reservation",
+    "expire_schedule_holds"
+  ],
+  "eventBoundary": [
+    "schedule.hold_created",
+    "schedule.hold_expired",
+    "schedule.confirmed",
+    "schedule.rescheduled",
+    "schedule.cancelled"
+  ],
+  "timePolicy": {
+    "canonicalInstantStorage": "UTC timestamptz",
+    "ruleTimezone": "IANA identifier",
+    "nonexistentLocalTime": "reject with explicit validation error",
+    "ambiguousLocalTime": "require explicit offset or deterministic documented policy",
+    "rangeConvention": "half-open [start,end)"
+  },
+  "orderedNextActions": [
+    "Run a read-only SCHED-001 staging preflight for availability_slots RLS, policies, grants and schema drift; do not mutate staging.",
+    "Freeze the canonical availability-rule and schedule-reservation command, event, timezone and conflict contracts in SCHED-001.",
+    "Generate but do not apply a reviewed SCHED-001 migration with active-range anti-double-booking enforcement and deterministic tests.",
+    "Implement the server scheduling module and make ORD-001 consume a canonical reservation reference instead of treating raw scheduled_at as booking authority."
+  ],
+  "forbidden": {
+    "applyMigration": true,
+    "mutateStaging": true,
+    "deploy": true,
+    "createProviderInfrastructure": true,
+    "changeProduction": true,
+    "mergePullRequest": true,
+    "closeOrdB04": true,
+    "claimSchedCompletion": true
+  },
+  "evidence": {
+    "networkRequestsPerformed": 0,
+    "stagingMutationsPerformed": 0,
+    "migrationsApplied": 0,
+    "deploymentsPerformed": 0,
+    "productionChanged": false,
+    "pullRequestMerged": false
+  }
+}
