@@ -4,6 +4,16 @@ on:
   push:
     branches:
       - ord/ord-001-baseline-audit
+  pull_request:
+    types: [opened, reopened, synchronize]
+    paths:
+      - 'supabase/migrations/20260731123000_sched_a03_reservation_authority.sql'
+      - 'config/sched-001-a03-reservation-migration-local-contract.json'
+      - 'docs/SCHED-001-A03-RESERVATION-MIGRATION-LOCAL-CONTRACT.md'
+      - 'docs/validation/SCHED-001-A03-RESERVATION-MIGRATION-LOCAL-CONTRACT.json'
+      - 'scripts/audit-sched-001-a03-reservation-migration-local-contract.js'
+      - 'scripts/test-sched-001-a03-reservation-migration-static.js'
+      - '.github/workflows/sched-001-a03-reconcile-once.yml'
   workflow_dispatch:
 
 permissions:
@@ -11,6 +21,7 @@ permissions:
 
 jobs:
   reconcile:
+    if: github.event_name != 'pull_request' || github.head_ref == 'ord/ord-001-baseline-audit'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -61,9 +72,14 @@ jobs:
             tests.forEach((test) => appendUnique(domain.tests, test));
           }
 
-          const schedEvidence = 'SCHED-A03 generated a repository-only canonical reservation migration with persistent idempotency, durable events, orders.schedule_reservation_id, service-role-only grants and a partial GiST exclusion constraint; it has not been applied.';
-          appendUnique(sched.evidence, schedEvidence);
-          appendUnique(ord.evidence, 'ORD-001 now has the generated SCHED-A03 order reference contract, while scheduled_at remains a read projection and no migration was applied.');
+          appendUnique(
+            sched.evidence,
+            'SCHED-A03 generated a repository-only canonical reservation migration with persistent idempotency, durable events, orders.schedule_reservation_id, service-role-only grants and a partial GiST exclusion constraint; it has not been applied.'
+          );
+          appendUnique(
+            ord.evidence,
+            'ORD-001 now has the generated SCHED-A03 order reference contract, while scheduled_at remains a read projection and no migration was applied.'
+          );
 
           const blockerDescriptions = {
             'SCHED-B02': 'SCHED-A02 froze the contract and SCHED-A03 generated the schema, but the canonical server scheduling command runtime is still absent.',
