@@ -1,0 +1,158 @@
+{
+  "contractVersion": "sched-a05-persistence-readiness-v1",
+  "status": "postgres_adapter_complete_staging_readiness_complete_application_unauthorized",
+  "domain": "SCHED-001",
+  "source": ["SCHED-A03-v2", "SCHED-A04-v1"],
+  "scope": "repository_adapter_and_read_only_staging_preflight",
+  "adapter": {
+    "path": "backend/modules/scheduling/scheduling-postgres-repository.js",
+    "database": "Supabase PostgreSQL",
+    "transport": "injected PostgreSQL pool/client",
+    "supabaseJsMultiQueryTransactionUsed": false,
+    "transactionIsolation": "serializable",
+    "parameterizedQueriesOnly": true,
+    "lockTimeoutMs": 5000,
+    "statementTimeoutMs": 15000,
+    "transactionPortMethods": 15,
+    "expiredHoldLocking": "for update skip locked",
+    "databaseOverlapAuthority": "partial GiST exclusion constraint after migration application",
+    "availabilityRuleV1": {
+      "shape": "weekdays plus local windows",
+      "unknownShape": "fail_closed",
+      "crossLocalDateRange": "fail_closed"
+    }
+  },
+  "migrations": [
+    {
+      "version": "20260731123000",
+      "path": "supabase/migrations/20260731123000_sched_a03_reservation_authority.sql",
+      "gitBlobSha": "87b4061f1b7a3e219b79fc6ebbc06973ff9d2202",
+      "applied": false
+    },
+    {
+      "version": "20260731151000",
+      "path": "supabase/migrations/20260731151000_sched_a04_dst_local_projection_compatibility.sql",
+      "gitBlobSha": "b08182c883361834dad8aaff51668558316b4327",
+      "applied": false
+    }
+  ],
+  "stagingPreflight": {
+    "projectRef": "zwkczgewzbsorbrjuzpb",
+    "projectName": "doke-web-staging",
+    "projectStatus": "ACTIVE_HEALTHY",
+    "postgresVersion": "17.6",
+    "postgresMajor": 17,
+    "readOnlySqlQueries": 3,
+    "aggregateOnly": true,
+    "scheduleAvailabilityRulesExists": false,
+    "scheduleReservationsExists": false,
+    "scheduleCommandIdempotencyExists": false,
+    "scheduleDomainEventsExists": false,
+    "ordersScheduleReservationIdExists": false,
+    "btreeGistInstalled": false,
+    "a03MigrationRecorded": false,
+    "a04MigrationRecorded": false,
+    "availabilitySlots": {
+      "rows": 0,
+      "bookedRows": 0,
+      "unexpectedStatusRows": 0,
+      "invalidRanges": 0,
+      "activeOverlapPairs": 0,
+      "legacyInsertCanCreateBooked": true,
+      "legacyUpdateCanCreateOrMutateBooked": true,
+      "a03HardeningRequired": true
+    },
+    "orders": {
+      "rows": 0,
+      "scheduledRows": 0,
+      "terminalScheduledRows": 0,
+      "backfillRequired": false
+    }
+  },
+  "compatibilityGate": {
+    "postgres17Compatible": true,
+    "btreeGistCreationIncludedInA03": true,
+    "emptySchedulingDataSet": true,
+    "orderProjectionBackfillRequired": false,
+    "dstCorrectionMustFollowA03": true,
+    "requiredOrder": ["20260731123000", "20260731151000"],
+    "applicationReady": true,
+    "applicationAuthorized": false,
+    "remoteConcurrencyProofComplete": false,
+    "runtimeActivationReady": false
+  },
+  "authorization": {
+    "exactPhrase": "I_EXPLICITLY_AUTHORIZE_SCHED_A03_A04_MIGRATIONS_ON_DOKE_STAGING",
+    "genericCommandsRejected": ["proximo", "próximo", "pode prosseguir", "continue"],
+    "authorizedScopeAfterExactPhrase": [
+      "apply SCHED-A03 then SCHED-A04 to doke-web-staging only",
+      "run read-only post-application schema, grant and policy verification"
+    ],
+    "stillBlockedAfterExactPhrase": [
+      "production database changes",
+      "runtime activation or ORD-001 wiring",
+      "Cron or worker scheduling changes",
+      "Edge Function or Railway deployment",
+      "billing, account or secret creation",
+      "merge of pull request 25"
+    ]
+  },
+  "postApplicationAssertions": [
+    "migration history contains versions 20260731123000 and 20260731151000 in this order",
+    "btree_gist is installed in extensions",
+    "canonical scheduling and private ledger tables exist with RLS enabled",
+    "anon and authenticated have no DML grants on canonical scheduling authorities",
+    "service_role has explicit select, insert, update and delete grants only",
+    "schedule_reservations_no_active_overlap exists and uses half-open ranges",
+    "orders.schedule_reservation_id exists with foreign key and partial unique index",
+    "schedule_reservations_local_range no longer exists",
+    "legacy availability policies prohibit browser creation, mutation and deletion of booked rows",
+    "aggregate row counts remain unchanged"
+  ],
+  "rollback": {
+    "strategy": "forward_only_reviewed_rollback_migration",
+    "manualMigrationHistoryDeletionAllowed": false,
+    "runtimeMustRemainDisconnected": true,
+    "requiredSequence": [
+      "confirm scheduling runtime, ORD-001 wiring and hold-expiration worker remain disconnected",
+      "verify all four new authority tables contain no operational rows",
+      "create a separately reviewed rollback migration",
+      "restore prior availability_slots policies only if explicitly accepted as a temporary security regression",
+      "drop orders scheduling foreign key, index and column",
+      "drop scheduling event and idempotency tables",
+      "drop reservation exclusion constraint and canonical scheduling tables",
+      "retain btree_gist when other objects depend on it; otherwise review removal separately",
+      "apply rollback to staging only after exact rollback authorization",
+      "verify order and availability aggregate counts remain unchanged"
+    ]
+  },
+  "blockerDisposition": {
+    "SCHED-B02": "postgres_adapter_complete_schema_application_composition_root_and_activation_pending",
+    "SCHED-B03": "migration_readiness_complete_application_and_remote_concurrency_canary_pending",
+    "SCHED-B04": "order_projection_sql_complete_schema_application_and_ord_wiring_pending",
+    "SCHED-B05": "policy_hardening_readiness_complete_application_pending"
+  },
+  "orderedNextActions": [
+    "Require the exact independent staging authorization phrase before applying SCHED-A03 and SCHED-A04.",
+    "After authorized application, run read-only schema, grant, policy and migration-order verification.",
+    "Run rolled-back persona, idempotency, DST and concurrent overlap canaries before runtime activation.",
+    "Create the server composition root and wire ORD-001 only after all staging canaries pass."
+  ],
+  "capabilities": {
+    "dryRunAvailable": true,
+    "checkEnvAvailable": true,
+    "executeModeAvailable": false,
+    "networkMutationAvailable": false,
+    "databaseMutationAvailable": false,
+    "productionAllowed": false
+  },
+  "evidence": {
+    "networkRequestsPerformed": 3,
+    "stagingReadsPerformed": 3,
+    "stagingMutationsPerformed": 0,
+    "migrationsApplied": 0,
+    "deploymentsPerformed": 0,
+    "productionChanged": false,
+    "pullRequestMerged": false
+  }
+}
