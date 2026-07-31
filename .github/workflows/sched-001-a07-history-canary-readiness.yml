@@ -101,13 +101,15 @@ jobs:
           node scripts/audit-ord-001-a11-scheduling-authority-handoff.js
           node scripts/audit-ord-001-a10-blocker-reconciliation.js
           node scripts/audit-domain-completion-matrix.js
-      - name: Commit reconciliation when needed
+      - name: Commit reconciliation without workflow mutations
         run: |
+          git restore .github/workflows/sched-001-a07-history-canary-readiness.yml
+          git restore .github/workflows/sched-001-a07-reconcile-once.yml
           if git diff --quiet; then
             exit 0
           fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -A package.json config/domain-completion-matrix.json docs/DOMAIN-COMPLETION-MATRIX.md scripts/audit-sched-001-a01-repository-baseline-staging-security-preflight.js scripts/audit-sched-001-a02-command-event-timezone-conflict-contract.js scripts/audit-sched-001-a03-reservation-migration-local-contract.js scripts/audit-sched-001-a04-server-command-runtime.js scripts/audit-sched-001-a05-persistence-readiness.js scripts/audit-sched-001-a07-history-canary-readiness.js scripts/audit-ord-001-a10-blocker-reconciliation.js scripts/audit-ord-001-a11-scheduling-authority-handoff.js .github/workflows/sched-001-a07-history-canary-readiness.yml .github/workflows/sched-001-a07-reconcile-once.yml scripts/reconcile-sched-001-a07-once.js config/sched-a07-reconcile-trigger.txt
+          git add -A package.json config/domain-completion-matrix.json docs/DOMAIN-COMPLETION-MATRIX.md scripts/audit-sched-001-a01-repository-baseline-staging-security-preflight.js scripts/audit-sched-001-a02-command-event-timezone-conflict-contract.js scripts/audit-sched-001-a03-reservation-migration-local-contract.js scripts/audit-sched-001-a04-server-command-runtime.js scripts/audit-sched-001-a05-persistence-readiness.js scripts/audit-sched-001-a07-history-canary-readiness.js scripts/audit-ord-001-a10-blocker-reconciliation.js scripts/audit-ord-001-a11-scheduling-authority-handoff.js scripts/reconcile-sched-001-a07-once.js config/sched-a07-reconcile-trigger.txt
           git commit -m 'Reconcile SCHED-A07 migration history readiness'
           git push origin HEAD:ord/ord-001-baseline-audit
