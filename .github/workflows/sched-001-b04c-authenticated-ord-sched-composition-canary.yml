@@ -1,0 +1,94 @@
+name: Doke SCHED-B04C Authenticated ORD SCHED Composition Canary
+
+on:
+  workflow_dispatch:
+    inputs:
+      authorization_phrase:
+        description: Exact SCHED-B04C staging authorization phrase
+        required: true
+        type: string
+      expected_head_sha:
+        description: Exact current PR head SHA
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sched-b04c-authenticated-ord-sched-composition-canary
+  cancel-in-progress: false
+
+jobs:
+  authenticated-ord-sched-composition-canary:
+    if: github.ref == 'refs/heads/ord/ord-001-baseline-audit'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      NODE_ENV: test
+      DOKE_SCHEDULING_RUNTIME_ENABLED: 'true'
+      DOKE_RUNTIME_ENVIRONMENT: staging
+      SUPABASE_PROJECT_REF: zwkczgewzbsorbrjuzpb
+      SCHED_B04C_AUTHORIZATION: ${{ inputs.authorization_phrase }}
+      SCHED_B04C_EXPECTED_HEAD_SHA: ${{ inputs.expected_head_sha }}
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SCHED_B04C_REPORT_PATH: reports/generated/sched-001-b04c-authenticated-ord-sched-composition-canary-report.json
+    steps:
+      - name: Require exact authorization and immutable head
+        shell: bash
+        env:
+          AUTHORIZATION_PHRASE: ${{ inputs.authorization_phrase }}
+          EXPECTED_HEAD_SHA: ${{ inputs.expected_head_sha }}
+        run: |
+          set -euo pipefail
+          test "$AUTHORIZATION_PHRASE" = "I_EXPLICITLY_AUTHORIZE_SCHED_B04C_AUTHENTICATED_ORD_SCHED_COMPOSITION_CANARIES_ON_DOKE_STAGING"
+          test -n "$EXPECTED_HEAD_SHA"
+          test "$EXPECTED_HEAD_SHA" = "$GITHUB_SHA"
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ord/ord-001-baseline-audit
+          fetch-depth: 1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install pinned dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Preserve fail-closed repository contracts
+        run: |
+          set -euo pipefail
+          node --check scripts/execute-sched-001-b04c-authenticated-ord-sched-composition-canary.js
+          node scripts/audit-sched-001-b04c-authenticated-ord-sched-composition-canary-execution.js
+          node scripts/test-sched-001-b04c-authenticated-ord-sched-composition-canary-execution.js
+          node scripts/audit-sched-001-b04c-authenticated-ord-sched-composition-canary-readiness.js
+          node scripts/test-sched-001-b04c-authenticated-ord-sched-composition-canary-readiness.js
+          node scripts/audit-sched-001-b04b-ord-canonical-wiring-implementation.js
+          node scripts/test-sched-001-b04b-ord-canonical-wiring-runtime.js
+          node scripts/audit-sched-001-b02b-authenticated-composition-canary.js
+          node scripts/test-sched-001-b02b-authenticated-composition-canary.js
+          node scripts/audit-sched-001-a05-persistence-readiness.js
+          node scripts/test-sched-001-a05-postgres-repository-runtime.js
+          node scripts/audit-sched-001-a04-server-command-runtime.js
+          node scripts/test-sched-001-a04-scheduling-service-runtime.js
+          node scripts/audit-ord-001-a11-scheduling-authority-handoff.js
+          npm run audit:domain-completion-matrix
+
+      - name: Read-only staging and pull request preflight
+        run: node scripts/execute-sched-001-b04c-authenticated-ord-sched-composition-canary.js --preflight
+
+      - name: Execute controlled ORD SCHED canary ending in rollback
+        run: node scripts/execute-sched-001-b04c-authenticated-ord-sched-composition-canary.js --execute
+
+      - name: Upload sanitized canary evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sched-001-b04c-authenticated-ord-sched-composition-canary-${{ github.run_id }}
+          path: reports/generated/sched-001-b04c-authenticated-ord-sched-composition-canary-report.json
+          if-no-files-found: warn
+          retention-days: 14
