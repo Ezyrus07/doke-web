@@ -21,7 +21,10 @@ const workflow = fs.readFileSync(WORKFLOW_PATH, 'utf8');
 
 assert.strictEqual(config.contractVersion, 'sched-b04c-authenticated-ord-sched-composition-canary-execution-v1');
 assert.strictEqual(config.authorization.exactPhrase, readiness.authorization.requiredExactPhrase);
-assert.strictEqual(config.authorization.status, 'awaiting_exact_authorization');
+assert([
+  'awaiting_exact_authorization',
+  'consumed_failed_closed_blocked_on_b04d'
+].includes(config.authorization.status), `Unexpected B04C authorization status: ${config.authorization.status}`);
 assert.strictEqual(config.authorization.genericContinuationAllowed, false);
 assert.strictEqual(config.authorization.repositoryAdditionTriggersExecution, false);
 assert.strictEqual(config.authorization.trigger, 'workflow_dispatch_exact_phrase_and_expected_head_sha');
@@ -50,6 +53,15 @@ assert.deepStrictEqual(config.allowedSecrets.sort(), ['SUPABASE_ACCESS_TOKEN', '
   'persistent_canary_data',
   'pull_request_merge'
 ].forEach((action) => assert(config.prohibitedActions.includes(action), `Missing prohibited action: ${action}`));
+
+if (config.authorization.status === 'consumed_failed_closed_blocked_on_b04d') {
+  assert.strictEqual(config.executionState.authenticatedCanaryExecuted, true);
+  assert.strictEqual(config.executionState.canaryPassed, false);
+  assert.strictEqual(config.executionState.blockedBy, 'SCHED-B04D-STAGING-MIGRATION');
+  assert.strictEqual(config.executionState.persistentMutationsPerformed, 0);
+  assert.strictEqual(config.executionState.allAuthorizedAttemptsRolledBack, true);
+  assert.strictEqual(config.executionState.allResidueCountsZero, true);
+}
 
 [
   "const MODES = new Set(['--preflight', '--execute'])",
