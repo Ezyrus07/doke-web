@@ -1,0 +1,30 @@
+name: Doke SCHED-B04C Closure Impact Audit
+
+on:
+  pull_request:
+    branches:
+      - search/search-ux02-intent-favorites-clean
+    paths:
+      - '.github/workflows/sched-001-b04c-closure-impact-audit.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  impact:
+    if: >-
+      github.event.pull_request.number == 25 &&
+      github.event.pull_request.draft == true &&
+      github.event.pull_request.head.ref == 'ord/ord-001-baseline-audit'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Locate blocker-coupled contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -RInE "SCHED-B04|ORD-B04" scripts config package.json .github/workflows/sched-001-*.yml .github/workflows/ord-001-a1*.yml \
+            | grep -v 'sched-001-b04c-closure-impact-audit.yml' \
+            | head -n 1000
