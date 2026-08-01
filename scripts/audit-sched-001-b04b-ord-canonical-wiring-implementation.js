@@ -87,13 +87,27 @@ assert(!stateMachine.includes("quoted: Object.freeze(['accepted', 'scheduled', '
 assert(stateMachine.includes('DOKE_ORDER_SCHEDULE_AUTHORITY_REQUIRED'));
 assert(stateMachine.includes("if (next === 'scheduled')"));
 
-[
-  "status = 'scheduled'",
-  "status in ('accepted', 'scheduled')",
-  'schedule_reservation_id is null or schedule_reservation_id = $2',
-  "when status = 'scheduled' then 'accepted'",
-  'and schedule_reservation_id = $2'
-].forEach((fragment) => assert(repository.includes(fragment), `Scheduling repository missing ${fragment}`));
+const delegatesProjectionToB04D =
+  repository.includes('private.apply_order_schedule_projection')
+  && repository.includes('private.clear_order_schedule_projection');
+if (delegatesProjectionToB04D) {
+  [
+    '/* sched-a05:project-order-schedule */',
+    'private.apply_order_schedule_projection',
+    '/* sched-a05:clear-order-schedule */',
+    'private.clear_order_schedule_projection',
+    'DOKE_SCHEDULE_ORDER_PROJECTION_FAILED',
+    'DOKE_SCHEDULE_ORDER_CLEAR_FAILED'
+  ].forEach((fragment) => assert(repository.includes(fragment), `B04D delegated repository missing ${fragment}`));
+} else {
+  [
+    "status = 'scheduled'",
+    "status in ('accepted', 'scheduled')",
+    'schedule_reservation_id is null or schedule_reservation_id = $2',
+    "when status = 'scheduled' then 'accepted'",
+    'and schedule_reservation_id = $2'
+  ].forEach((fragment) => assert(repository.includes(fragment), `Scheduling repository missing ${fragment}`));
+}
 
 [
   'assertOrderSchedulable(order)',
