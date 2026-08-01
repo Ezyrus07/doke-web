@@ -116,9 +116,14 @@ assert(sched.tests.includes('audit:sched-001-a03-reservation-migration-local-con
 assert(sched.tests.includes('test:sched-001-a03-reservation-migration-static'));
 assert(config.orderedNextActions[0].includes('SCHED-A04'));
 const schedMatrixPatchA03 = Number(String(matrix.version).split('.')[2] || 0);
+const postB04Closure = schedMatrixPatchA03 >= 70 && sched.maturity >= 3;
 const postB02B = schedMatrixPatchA03 >= 63 && sched.maturity >= 3;
 const postA09 = schedMatrixPatchA03 >= 50 && sched.maturity === 3;
-if (postB02B) {
+if (postB04Closure) {
+  assert.deepStrictEqual(sched.blockers.map((item) => item.id), []);
+  assert(sched.nextActions[0].includes('frontend'));
+  assert(ord.evidence.some((item) => item.includes('run 30716088197')));
+} else if (postB02B) {
   assert.deepStrictEqual(sched.blockers.map((item) => item.id), ['SCHED-B04']);
   assert(sched.nextActions[0].includes('SCHED-B04') || sched.nextActions[0].includes('ORD-001'));
   assert(ord.evidence.some((item) => item.includes('SCHED-A08 completed the official migration-history repair')));

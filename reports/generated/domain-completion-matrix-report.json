@@ -1,7 +1,7 @@
 {
   "name": "domain-completion-matrix",
-  "version": "1.3.69",
-  "generatedAt": "2026-08-01T15:49:00-03:00",
+  "version": "1.3.70",
+  "generatedAt": "2026-08-01T17:03:06-03:00",
   "status": "passed",
   "summary": {
     "domains": 23,
@@ -24,15 +24,15 @@
       "passed": 1
     },
     "blockerCounts": {
-      "medium": 9,
-      "high": 36,
+      "medium": 8,
+      "high": 35,
       "critical": 12
     },
     "activeHtmlPages": 30,
     "repositories": 25,
     "backendModules": 15,
     "migrations": 176,
-    "packageScripts": 965,
+    "packageScripts": 966,
     "staging": {
       "publicTotal": 45,
       "publicRlsDisabled": 0,
@@ -221,7 +221,7 @@
       "id": "GOV-001",
       "name": "Governança, arquitetura e comando central",
       "maturity": 4,
-      "filesMatched": 1057,
+      "filesMatched": 1059,
       "sampleFiles": [
         "docs/ACTIVE-CONTRACTS-INDEX.md",
         "docs/API-ADAPTER-CONTRACT.md",
@@ -3327,13 +3327,6 @@
           "targetPhase": "Fase 8"
         },
         {
-          "id": "ORD-B04",
-          "severity": "medium",
-          "category": "scheduling_dependency",
-          "description": "ORD-B04 remains handed to SCHED-001. The canonical reservation reference is guarded by B04D, which is applied and verified on staging; closure still requires a separately authorized B04C composition retry proving confirmation, reschedule and canonical cancellation with rollback and zero residue.",
-          "targetPhase": "Fase 6"
-        },
-        {
           "id": "ORD-B05",
           "severity": "high",
           "category": "staging_release",
@@ -3416,14 +3409,15 @@
         "audit:sched-001-b04c-authenticated-ord-sched-composition-canary-readiness",
         "test:sched-001-b04c-authenticated-ord-sched-composition-canary-readiness",
         "audit:sched-001-b04c-authenticated-ord-sched-composition-canary-execution",
-        "test:sched-001-b04c-authenticated-ord-sched-composition-canary-execution"
+        "test:sched-001-b04c-authenticated-ord-sched-composition-canary-execution",
+        "audit:sched-001-b04c-authenticated-ord-sched-composition-canary-closure"
       ]
     },
     {
       "id": "SCHED-001",
       "name": "Agenda, disponibilidade e execução do serviço",
       "maturity": 3,
-      "filesMatched": 1021,
+      "filesMatched": 1022,
       "sampleFiles": [
         "assets/js/pages/anunciar-servico.js",
         "assets/js/pages/pedidos/orders-action-panels.js",
@@ -5206,15 +5200,7 @@
           }
         ]
       },
-      "blockers": [
-        {
-          "id": "SCHED-B04",
-          "severity": "high",
-          "category": "order_integration",
-          "description": "B04D is applied and independently verified on Doke staging. SCHED-B04 remains open only until a separately authorized B04C authenticated ORD/SCHED composition retry passes with final rollback, zero residue and unchanged authority counts.",
-          "targetPhase": "Fase 6"
-        }
-      ],
+      "blockers": [],
       "tests": [
         "test:order-transaction-cycle-contract",
         "audit:ord-001-a11-scheduling-authority-handoff",
@@ -5243,7 +5229,8 @@
         "audit:sched-001-b04c-authenticated-ord-sched-composition-canary-execution",
         "test:sched-001-b04c-authenticated-ord-sched-composition-canary-execution",
         "audit:sched-001-b04d-canonical-order-projection-guard-readiness",
-        "test:sched-001-b04d-canonical-order-projection-guard-runtime"
+        "test:sched-001-b04d-canonical-order-projection-guard-runtime",
+        "audit:sched-001-b04c-authenticated-ord-sched-composition-canary-closure"
       ]
     },
     {
@@ -6302,7 +6289,7 @@
       "id": "LEGAL-001",
       "name": "Jurídico, privacidade, confiança e políticas comerciais",
       "maturity": 1,
-      "filesMatched": 235,
+      "filesMatched": 236,
       "sampleFiles": [
         "docs/ACTIVE-CONTRACTS-INDEX.md",
         "docs/API-ADAPTER-CONTRACT.md",
@@ -8030,7 +8017,7 @@
       "id": "APP-001",
       "name": "Aplicativos Android e iOS",
       "maturity": 0,
-      "filesMatched": 2380,
+      "filesMatched": 2383,
       "sampleFiles": [
         ".agents/skills/animation-vocabulary/SKILL.md",
         ".agents/skills/apple-design/SKILL.md",
@@ -12088,9 +12075,7 @@
       ],
       "status": "hybrid",
       "owner": "ORD-001",
-      "blockers": [
-        "ORD-B04"
-      ]
+      "blockers": []
     },
     {
       "id": "FLOW-07",

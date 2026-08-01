@@ -114,8 +114,14 @@ const sched = matrix.domains.find((domain) => domain.id === 'SCHED-001');
 const ord = matrix.domains.find((domain) => domain.id === 'ORD-001');
 assert(sched && ord, 'SCHED-001 or ORD-001 missing from completion matrix.');
 assert(!sched.blockers.some((blocker) => blocker.id === 'SCHED-B02'));
-assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B04'));
-assert(ord.blockers.some((blocker) => blocker.id === 'ORD-B04'));
+const postB04Closure = Number(String(matrix.version).split('.')[2] || 0) >= 70;
+if (postB04Closure) {
+  assert(!sched.blockers.some((blocker) => blocker.id === 'SCHED-B04'));
+  assert(!ord.blockers.some((blocker) => blocker.id === 'ORD-B04'));
+} else {
+  assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B04'));
+  assert(ord.blockers.some((blocker) => blocker.id === 'ORD-B04'));
+}
 assert.strictEqual(sched.serverAuthority, 'partial');
 assert.strictEqual(sched.stagingEvidence, 'staging_canary');
 

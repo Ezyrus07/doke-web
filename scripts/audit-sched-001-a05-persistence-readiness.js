@@ -108,10 +108,15 @@ assert(sched && ord, 'ORD-001 or SCHED-001 missing from matrix.');
 assert.strictEqual(sched.serverAuthority, 'partial');
 assert.strictEqual(sched.stagingEvidence, 'staging_canary');
 assert.strictEqual(sched.securityGate, 'partial');
+const postB04Closure = compareVersions(matrix.version, '1.3.70') >= 0 && sched.maturity >= 3;
 const postB02B = compareVersions(matrix.version, '1.3.63') >= 0 && sched.maturity >= 3;
 const postB02A = compareVersions(matrix.version, '1.3.51') >= 0 && sched.maturity === 3;
 const postA09 = compareVersions(matrix.version, '1.3.50') >= 0 && sched.maturity === 3;
-if (postB02B) {
+if (postB04Closure) {
+  assert.deepStrictEqual(sched.blockers.map((item) => item.id), []);
+  assert(sched.nextActions[0].includes('frontend'));
+  assert(ord.evidence.some((item) => item.includes('run 30716088197')));
+} else if (postB02B) {
   assert.deepStrictEqual(sched.blockers.map((item) => item.id), ['SCHED-B04']);
   assert(sched.nextActions[0].includes('SCHED-B04') || sched.nextActions[0].includes('ORD-001'));
   assert(sched.requiredPaths.includes('backend/modules/scheduling/scheduling-composition-root.js'));

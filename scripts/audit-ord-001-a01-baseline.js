@@ -72,9 +72,10 @@ const a04Path = 'docs/validation/ORD-001-A04-READ-AUTHORITY.json';
 const a03Closed = fs.existsSync(path.join(root, a03Path));
 const a04Closed = fs.existsSync(path.join(root, a04Path));
 const blockerIds = new Set((orderDomain.blockers || []).map((blocker) => blocker.id));
-['ORD-B02', 'ORD-B03', 'ORD-B04'].forEach((id) => {
-  assert(blockerIds.has(id), `Active ORD blocker missing: ${id}`);
-});
+const matrixPatchOrdA01 = Number(String(matrix.version).split('.')[2] || 0);
+const requiredOrdBlockersA01 = matrixPatchOrdA01 >= 70 ? ['ORD-B02', 'ORD-B03'] : ['ORD-B02', 'ORD-B03', 'ORD-B04'];
+requiredOrdBlockersA01.forEach((id) => assert(blockerIds.has(id), `Active ORD blocker missing: ${id}`));
+if (matrixPatchOrdA01 >= 70) assert(!blockerIds.has('ORD-B04'));
 if (a03Closed) {
   const a03 = readJson(a03Path);
   assert.strictEqual(a03.status, 'complete');

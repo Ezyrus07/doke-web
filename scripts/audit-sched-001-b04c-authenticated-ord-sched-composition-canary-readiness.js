@@ -118,8 +118,14 @@ assert(sched.requiredPaths.includes(PATHS.evidence));
 assert(ord.requiredPaths.includes(PATHS.config));
 assert(sched.tests.includes('audit:sched-001-b04c-authenticated-ord-sched-composition-canary-readiness'));
 assert(ord.tests.includes('test:sched-001-b04c-authenticated-ord-sched-composition-canary-readiness'));
-assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B04'));
-assert(ord.blockers.some((blocker) => blocker.id === 'ORD-B04'));
+const postB04Closure = Number(String(matrix.version).split('.')[2] || 0) >= 70;
+if (postB04Closure) {
+  assert(!sched.blockers.some((blocker) => blocker.id === 'SCHED-B04'));
+  assert(!ord.blockers.some((blocker) => blocker.id === 'ORD-B04'));
+} else {
+  assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B04'));
+  assert(ord.blockers.some((blocker) => blocker.id === 'ORD-B04'));
+}
 
 assert(workflow.includes('permissions:\n  contents: read'));
 assert(workflow.includes('npm run audit:sched-001-b04c-authenticated-ord-sched-composition-canary-readiness'));

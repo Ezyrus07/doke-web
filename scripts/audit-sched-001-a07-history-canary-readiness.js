@@ -99,7 +99,10 @@ const postExecutionState = compareVersions(matrix.version, '1.3.50') >= 0
 
 if (postExecutionState) {
   const schedMatrixPatchA07 = Number(String(matrix.version).split('.')[2] || 0);
-  if (schedMatrixPatchA07 >= 63) {
+  if (schedMatrixPatchA07 >= 70) {
+    assert.deepStrictEqual(blockerIds, []);
+    assert(sched.nextActions[0].includes('frontend'));
+  } else if (schedMatrixPatchA07 >= 63) {
     assert.deepStrictEqual(blockerIds, ['SCHED-B04']);
     assert(sched.nextActions[0].includes('SCHED-B04') || sched.nextActions[0].includes('ORD-001'));
   } else {

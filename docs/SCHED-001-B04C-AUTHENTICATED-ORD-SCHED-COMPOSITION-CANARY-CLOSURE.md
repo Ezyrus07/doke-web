@@ -41,4 +41,4 @@ Seven earlier authorized attempts failed closed while progressively exposing har
 
 No production access, migration, deploy, frontend connection, Cron activation, worker activation, billing change, infrastructure change, merge, auto-merge, real-user-data use or persistent canary row occurred.
 
-Matrix and blocker reconciliation are intentionally performed in a separate validated phase.
+The validated matrix reconciliation closes `SCHED-B04` and `ORD-B04`. SCHED remains maturity `3`, server authority `partial` and staging evidence `staging_canary`; ORD retains `ORD-B02`, `ORD-B03` and `ORD-B05`.

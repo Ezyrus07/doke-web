@@ -118,24 +118,33 @@ const ord = matrix.domains.find((domain) => domain.id === 'ORD-001');
 const sched = matrix.domains.find((domain) => domain.id === 'SCHED-001');
 assert(ord, 'ORD-001 missing from completion matrix');
 assert(sched, 'SCHED-001 missing from completion matrix');
+const schedMatrixPatchA11 = Number(String(matrix.version).split('.')[2] || 0);
 const ordB04 = ord.blockers.find((blocker) => blocker.id === 'ORD-B04');
-assert(ordB04, 'ORD-B04 missing from completion matrix');
-assert(ordB04.description.includes('SCHED-001'));
-assert(ordB04.description.includes('canonical reservation reference'));
+if (schedMatrixPatchA11 >= 70) {
+  assert(!ordB04);
+  assert(ord.evidence.some((item) => item.includes('run 30716088197')));
+} else {
+  assert(ordB04);
+  assert(ordB04.description.includes('SCHED-001'));
+  assert(ordB04.description.includes('canonical reservation reference'));
+}
 assert(sched.maturity >= 1);
 assert(['none', 'contract_only', 'partial', 'canonical'].includes(sched.serverAuthority));
 assert(!sched.blockers.some((blocker) => blocker.id === 'SCHED-B01'));
 assert(!sched.blockers.some((blocker) => blocker.id === 'SCHED-B05'));
-const schedMatrixPatchA11 = Number(String(matrix.version).split('.')[2] || 0);
 if (schedMatrixPatchA11 >= 63) {
   assert(!sched.blockers.some((blocker) => blocker.id === 'SCHED-B02'));
 } else {
   assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B02'));
 }
-assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B04' && blocker.category === 'order_integration'));
+if (schedMatrixPatchA11 >= 70) assert(!sched.blockers.some((blocker) => blocker.id === 'SCHED-B04'));
+else assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B04' && blocker.category === 'order_integration'));
 if (compareVersions(matrix.version, '1.3.50') >= 0 && sched.maturity >= 3) {
   assert(!sched.blockers.some((blocker) => blocker.id === 'SCHED-B03'));
-  if (schedMatrixPatchA11 >= 63) {
+  if (schedMatrixPatchA11 >= 70) {
+    assert(sched.nextActions[0].includes('frontend'));
+    assert(ord.nextActions[0].includes('ORD-B02'));
+  } else if (schedMatrixPatchA11 >= 63) {
     assert(sched.nextActions[0].includes('SCHED-B04') || sched.nextActions[0].includes('ORD-001'));
     assert(ord.nextActions.some((action) => action.includes('ORD-B04') || action.includes('SCHED-B04')));
   } else if (schedMatrixPatchA11 >= 51) {

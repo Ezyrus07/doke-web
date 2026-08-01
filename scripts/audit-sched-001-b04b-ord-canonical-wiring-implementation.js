@@ -144,8 +144,14 @@ assert(sched.requiredPaths.includes(PATHS.authority));
 assert(sched.requiredPaths.includes(PATHS.config));
 assert(sched.tests.includes('audit:sched-001-b04b-ord-canonical-wiring-implementation'));
 assert(sched.tests.includes('test:sched-001-b04b-ord-canonical-wiring-runtime'));
-assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B04'));
-assert(ord.blockers.some((blocker) => blocker.id === 'ORD-B04'));
+const postB04Closure = Number(String(matrix.version).split('.')[2] || 0) >= 70;
+if (postB04Closure) {
+  assert(!sched.blockers.some((blocker) => blocker.id === 'SCHED-B04'));
+  assert(!ord.blockers.some((blocker) => blocker.id === 'ORD-B04'));
+} else {
+  assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B04'));
+  assert(ord.blockers.some((blocker) => blocker.id === 'ORD-B04'));
+}
 assert.strictEqual(sched.serverAuthority, 'partial');
 assert.strictEqual(sched.productionGate, 'blocked');
 
