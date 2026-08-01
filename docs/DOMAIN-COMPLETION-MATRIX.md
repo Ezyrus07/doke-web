@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 1035 arquivos no escopo; 248 referências a localStorage; 78 a sessionStorage; 557 referências mock; 194 referências de rede/Supabase; 35 marcadores de implementação pendente.
+**Evidência estática observada:** 1041 arquivos no escopo; 248 referências a localStorage; 78 a sessionStorage; 557 referências mock; 196 referências de rede/Supabase; 35 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -520,7 +520,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI local; servidor partial; staging staging canary; segurança partial; produção blocked.
 
-**Evidência estática observada:** 1004 arquivos no escopo; 186 referências a localStorage; 70 a sessionStorage; 301 referências mock; 193 referências de rede/Supabase; 19 marcadores de implementação pendente.
+**Evidência estática observada:** 1009 arquivos no escopo; 186 referências a localStorage; 70 a sessionStorage; 301 referências mock; 195 referências de rede/Supabase; 19 marcadores de implementação pendente.
 
 **Páginas:** `anunciar-servico.html`, `pedidos.html`, `orcamento.html`.
 
@@ -545,6 +545,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - Post-rollback verification found zero schedule rules, reservations, idempotency rows, schedule events, canary orders and orders linked to a schedule reservation; no test data remained persisted.
 - Runtime activation, trusted composition root, ORD-001 wiring, workers, Cron, deploy, production and merge remain blocked.
 - SCHED-B02A implements a fail-closed trusted composition root that composes the existing PostgreSQL adapter and scheduling service only when the exact staging flag, environment and project ref match; no runtime, database, deployment or production mutation occurred.
+- SCHED-B02B execution readiness now provides a one-shot authorized GitHub Actions path, read-only PR/project/schema/persona preflight, one outer SERIALIZABLE transaction, per-command savepoints through the canonical composition root, mandatory final rollback and independent residue verification; remote execution evidence is still pending.
 
 **Bloqueadores:**
 - **SCHED-B02 · CRITICAL · server_authority:** The trusted composition root exists with an exact staging-only fail-closed gate, but authenticated staging activation and command-boundary canaries are pending. _(Fase 6)_
@@ -947,7 +948,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 1/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 229 arquivos no escopo; 64 referências a localStorage; 8 a sessionStorage; 269 referências mock; 8 referências de rede/Supabase; 25 marcadores de implementação pendente.
+**Evidência estática observada:** 230 arquivos no escopo; 64 referências a localStorage; 8 a sessionStorage; 269 referências mock; 8 referências de rede/Supabase; 25 marcadores de implementação pendente.
 
 **Evidências:**
 - The master plan identifies legal, privacy and commercial decisions as mandatory.
@@ -1007,7 +1008,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2339 arquivos no escopo; 505 referências a localStorage; 151 a sessionStorage; 880 referências mock; 591 referências de rede/Supabase; 89 marcadores de implementação pendente.
+**Evidência estática observada:** 2347 arquivos no escopo; 505 referências a localStorage; 151 a sessionStorage; 880 referências mock; 593 referências de rede/Supabase; 89 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.

@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "domain": "SCHED-001",
+  "sublot": "SCHED-B02B",
+  "contractVersion": "sched-b02b-authenticated-composition-canary-execution-v1",
+  "scope": "one_shot_authorized_authenticated_staging_composition_canary",
+  "authorization": {
+    "exactPhrase": "I_EXPLICITLY_AUTHORIZE_SCHED_B02B_AUTHENTICATED_COMPOSITION_CANARIES_ON_DOKE_STAGING",
+    "status": "authorized_pending_execution",
+    "oneShotTrigger": "file_added_on_authorized_branch",
+    "genericContinuationAllowed": false
+  },
+  "target": {
+    "repository": "Ezyrus07/doke-web",
+    "pullRequest": 25,
+    "branch": "ord/ord-001-baseline-audit",
+    "pullRequestMustRemainOpen": true,
+    "pullRequestMustRemainDraft": true,
+    "autoMergeMustRemainDisabled": true,
+    "environment": "doke-web-staging",
+    "projectRef": "zwkczgewzbsorbrjuzpb"
+  },
+  "runtimeGate": {
+    "DOKE_SCHEDULING_RUNTIME_ENABLED": "true",
+    "DOKE_RUNTIME_ENVIRONMENT": "staging",
+    "SUPABASE_PROJECT_REF": "zwkczgewzbsorbrjuzpb",
+    "failClosed": true
+  },
+  "syntheticPersonas": {
+    "client": "cliente@doke.local",
+    "professional": "profissional@doke.local",
+    "support": "suporte@doke.local",
+    "admin": "admin@doke.local"
+  },
+  "transaction": {
+    "outerBoundary": "single_postgresql_transaction",
+    "commandBoundary": "savepoint_per_composition_root_command",
+    "finalStatement": "rollback",
+    "commitAllowed": false,
+    "persistentCanaryRowsAllowed": 0
+  },
+  "allowedSecrets": [
+    "SUPABASE_ACCESS_TOKEN",
+    "SUPABASE_DB_PASSWORD"
+  ],
+  "prohibitedActions": [
+    "production_access",
+    "migration_application",
+    "deployment",
+    "cron_activation",
+    "worker_activation",
+    "frontend_connection",
+    "ord_runtime_wiring",
+    "billing_change",
+    "infrastructure_change",
+    "pull_request_merge",
+    "auto_merge_enablement",
+    "real_user_data",
+    "persistent_canary_data"
+  ]
+}
