@@ -502,16 +502,18 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - The exactly authorized B04C staging canary proved that canonical cancellation currently stops at the deployed ORD trigger with DOKE_ORDER_TRANSITION_INVALID before scheduled orders can return to accepted.
 - B04D preserves the generic ORD lifecycle graph and introduces a private SCHED composition context so only atomic reference-and-time clearing can perform scheduled-to-accepted restoration.
 - No staging migration, production access, deployment, frontend activation or merge occurred while preparing B04D.
+- The B04D private canonical projection guard is applied and verified on Doke staging as migration version 20260801185150.
+- ORD generic scheduled transitions remain closed; only the validated private SCHED context may project or atomically clear reservation reference and time.
+- No production access, deployment, frontend activation, Cron, worker or merge occurred during B04D staging application.
 
 **Bloqueadores:**
 - **ORD-B02 · HIGH · frontend_activation:** Canonical reads, canary commands, cleanup, deterministic settlement, readiness discovery and the fail-closed Playwright executor pass. A short-lived authorization envelope is mandatory; ORD-B02 remains under ORD-001 until explicit resource authorization is issued, check-env passes, the real two-context visual canary is executed and run-scoped cleanup proves zero residue. _(Fase 6)_
 - **ORD-B03 · HIGH · financial_dependency:** Financial completion remains blocked by PAY-001. Payment authority is not connected to a real PSP webhook lifecycle, and ORD-001 must consume rather than duplicate that server-canonical authority before this blocker can close. _(Fase 8)_
-- **ORD-B04 · MEDIUM · scheduling_dependency:** ORD-B04 remains handed to SCHED-001. The canonical reservation reference and projection-only scheduled_at wiring are local, but the deployed state-machine trigger rejects canonical scheduled-to-accepted restoration. SCHED-B04D is repository-ready and must be applied to staging under exact authorization before a separate B04C retry can close this blocker. _(Fase 6)_
+- **ORD-B04 · MEDIUM · scheduling_dependency:** ORD-B04 remains handed to SCHED-001. The canonical reservation reference is guarded by B04D, which is applied and verified on staging; closure still requires a separately authorized B04C composition retry proving confirmation, reschedule and canonical cancellation with rollback and zero residue. _(Fase 6)_
 - **ORD-B05 · HIGH · staging_release:** ORD-A08 release identity, ORD-A09A provider evaluation, the ORD-A09B0 provider-neutral adapter boundary, provider selection handoff, selection intent firewall and adapter conformance suite are complete. Railway is recommended as the external staging release provider, but no explicit provider selection, provider-specific adapter, account, billing, secrets, infrastructure, rollback command or deployment exists. ORD-B05 remains open until exactly I_EXPLICITLY_SELECT_RAILWAY_FOR_DOKE_STAGING authorizes only non-secret adapter preparation; every external action remains separately blocked. _(Fase 6)_
 
 **Próximas ações:**
-- Apply the SCHED-B04D canonical projection guard to staging only after its exact migration authorization.
-- Retry the authenticated ORD/SCHED canary separately and require confirmation, reschedule, cancellation, rollback and zero-residue evidence.
+- Retry ORD-B04 through the ORD-001/SCHED-001 B04C composition canary only under its separate exact staging authorization.
 - Keep generic scheduled transitions and direct schedule projection writes prohibited.
 - Keep deployment, production and merge blocked pending independent release authorization.
 
@@ -565,14 +567,16 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - The failed B04C transaction ended in ROLLBACK; all fifteen residue counters were zero and all authority counts were unchanged.
 - SCHED-B04D prepares private service-role-only projection and clear functions, transaction-local context validation, direct canonical-field write rejection and adapter wiring without applying any migration.
 - The generic ORD transition graph remains closed: scheduled-to-accepted is permitted only when the private canonical clear function removes both reservation reference and time projection.
+- SCHED-B04D was exactly authorized and applied to Doke staging as migration version 20260801185150 with no manual migration-history mutation.
+- Remote verification confirmed the private projection and clear functions, explicit SECURITY DEFINER search paths, service_role-only execution, denied PUBLIC/anon/authenticated execution, enabled ORD trigger, direct-write rejection and preserved generic transition graph.
+- B04D argument guards passed and Supabase advisors reported no new B04D-specific security or performance finding; production, deployment, frontend activation, Cron, workers and merge remained untouched.
 
 **Bloqueadores:**
-- **SCHED-B04 · HIGH · order_integration:** B04B local wiring and B04C authenticated staging execution reached canonical cancellation, but the deployed ORD trigger rejects the required scheduled-to-accepted restoration. B04D repository guards are prepared; the blocker remains open until the exactly authorized staging migration is applied and a separately authorized B04C retry passes with rollback and zero residue. _(Fase 6)_
+- **SCHED-B04 · HIGH · order_integration:** B04D is applied and independently verified on Doke staging. SCHED-B04 remains open only until a separately authorized B04C authenticated ORD/SCHED composition retry passes with final rollback, zero residue and unchanged authority counts. _(Fase 6)_
 
 **Próximas ações:**
-- Apply SCHED-B04D to Doke staging only after the exact independent migration authorization.
-- Verify migration history and private function grants without manually mutating supabase_migrations.schema_migrations.
-- Retry B04C only under a separate exact authorization after the B04D migration is independently verified.
+- Retry SCHED-B04 through B04C only under its separate exact staging authorization.
+- Require confirmation, reschedule, cancellation, partial rollback, final ROLLBACK, zero residue and unchanged authority counts.
 - Keep frontend authority switch, deployment, Cron, workers, production and merge blocked.
 
 **Gate de saída:**
@@ -1087,4 +1091,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-08-01T15:15:00-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-08-01T15:49:00-03:00._

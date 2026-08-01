@@ -1,7 +1,7 @@
 {
   "name": "domain-completion-matrix",
-  "version": "1.3.68",
-  "generatedAt": "2026-08-01T15:15:00-03:00",
+  "version": "1.3.69",
+  "generatedAt": "2026-08-01T15:49:00-03:00",
   "status": "passed",
   "summary": {
     "domains": 23,
@@ -3330,7 +3330,7 @@
           "id": "ORD-B04",
           "severity": "medium",
           "category": "scheduling_dependency",
-          "description": "ORD-B04 remains handed to SCHED-001. The canonical reservation reference and projection-only scheduled_at wiring are local, but the deployed state-machine trigger rejects canonical scheduled-to-accepted restoration. SCHED-B04D is repository-ready and must be applied to staging under exact authorization before a separate B04C retry can close this blocker.",
+          "description": "ORD-B04 remains handed to SCHED-001. The canonical reservation reference is guarded by B04D, which is applied and verified on staging; closure still requires a separately authorized B04C composition retry proving confirmation, reschedule and canonical cancellation with rollback and zero residue.",
           "targetPhase": "Fase 6"
         },
         {
@@ -5211,7 +5211,7 @@
           "id": "SCHED-B04",
           "severity": "high",
           "category": "order_integration",
-          "description": "B04B local wiring and B04C authenticated staging execution reached canonical cancellation, but the deployed ORD trigger rejects the required scheduled-to-accepted restoration. B04D repository guards are prepared; the blocker remains open until the exactly authorized staging migration is applied and a separately authorized B04C retry passes with rollback and zero residue.",
+          "description": "B04D is applied and independently verified on Doke staging. SCHED-B04 remains open only until a separately authorized B04C authenticated ORD/SCHED composition retry passes with final rollback, zero residue and unchanged authority counts.",
           "targetPhase": "Fase 6"
         }
       ],
