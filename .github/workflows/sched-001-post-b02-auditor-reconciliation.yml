@@ -1,9 +1,9 @@
 name: SCHED Post-B02 Auditor Reconciliation
 
 on:
-  push:
+  pull_request:
     branches:
-      - ord/ord-001-baseline-audit
+      - search/search-ux02-intent-favorites-clean
     paths:
       - .github/workflows/sched-001-post-b02-auditor-reconciliation.yml
 
@@ -16,6 +16,7 @@ concurrency:
 
 jobs:
   reconcile:
+    if: github.event.pull_request.number == 25
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout PR head branch
