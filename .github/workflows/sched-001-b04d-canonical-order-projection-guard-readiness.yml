@@ -5,49 +5,68 @@ on:
     branches:
       - search/search-ux02-intent-favorites-clean
     paths:
-      - 'supabase/migrations/20260801183000_sched_b04d_canonical_order_projection_guard.sql'
-      - 'backend/modules/scheduling/scheduling-postgres-repository.js'
-      - 'config/sched-001-b04d-canonical-order-projection-guard-readiness.json'
-      - 'docs/SCHED-001-B04D-CANONICAL-ORDER-PROJECTION-GUARD-READINESS.md'
-      - 'docs/validation/SCHED-001-B04D-CANONICAL-ORDER-PROJECTION-GUARD-READINESS.json'
-      - 'scripts/audit-sched-001-b04d-canonical-order-projection-guard-readiness.js'
-      - 'scripts/test-sched-001-b04d-canonical-order-projection-guard-runtime.js'
       - '.github/workflows/sched-001-b04d-canonical-order-projection-guard-readiness.yml'
-      - 'config/domain-completion-matrix.json'
-      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
 
 permissions:
-  contents: read
+  contents: write
+
+concurrency:
+  group: sched-b04c-matrix-closure-existing-gate
+  cancel-in-progress: false
 
 jobs:
-  readiness:
+  reconcile-b04c-closure:
+    if: >-
+      github.event.pull_request.number == 25 &&
+      github.event.pull_request.draft == true &&
+      github.event.pull_request.head.ref == 'ord/ord-001-baseline-audit'
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ord/ord-001-baseline-audit
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
       - name: Install pinned dependencies
         run: npm ci --ignore-scripts
-      - name: Audit B04D canonical projection guard readiness
-        run: node scripts/audit-sched-001-b04d-canonical-order-projection-guard-readiness.js
-      - name: Test B04D canonical projection adapter runtime
-        run: node scripts/test-sched-001-b04d-canonical-order-projection-guard-runtime.js
-      - name: Preserve B04C and B04B contracts
+      - name: Reconcile B04C matrix closure
+        run: python scripts/reconcile-sched-001-b04c-matrix-closure.py
+      - name: Regenerate deterministic matrix derivatives
+        run: npm run write:domain-completion-matrix
+      - name: Validate cumulative contracts
         run: |
+          set -euo pipefail
+          node scripts/audit-sched-001-b04c-authenticated-ord-sched-composition-canary-closure.js
           node scripts/audit-sched-001-b04c-authenticated-ord-sched-composition-canary-execution.js
           node scripts/test-sched-001-b04c-authenticated-ord-sched-composition-canary-execution.js
+          node scripts/audit-sched-001-b04d-canonical-order-projection-guard-readiness.js
+          node scripts/test-sched-001-b04d-canonical-order-projection-guard-runtime.js
           node scripts/audit-sched-001-b04c-authenticated-ord-sched-composition-canary-readiness.js
-          node scripts/test-sched-001-b04c-authenticated-ord-sched-composition-canary-readiness.js
           node scripts/audit-sched-001-b04b-ord-canonical-wiring-implementation.js
           node scripts/test-sched-001-b04b-ord-canonical-wiring-runtime.js
-      - name: Preserve scheduling persistence and ORD handoff
-        run: |
+          node scripts/audit-sched-001-b04-ord-canonical-wiring-readiness.js
+          node scripts/audit-sched-001-a07-history-canary-readiness.js
           node scripts/audit-sched-001-a05-persistence-readiness.js
-          node scripts/test-sched-001-a05-postgres-repository-runtime.js
           node scripts/audit-sched-001-a04-server-command-runtime.js
-          node scripts/test-sched-001-a04-scheduling-service-runtime.js
+          node scripts/audit-sched-001-a03-reservation-migration-local-contract.js
+          node scripts/audit-sched-001-a02-command-event-timezone-conflict-contract.js
+          node scripts/audit-sched-001-a01-repository-baseline-staging-security-preflight.js
           node scripts/audit-ord-001-a11-scheduling-authority-handoff.js
-      - name: Audit domain completion matrix
-        run: npm run audit:domain-completion-matrix
+          node scripts/audit-ord-001-a10-blocker-reconciliation.js
+          node scripts/audit-ord-001-a01-baseline.js
+          npm run audit:domain-completion-matrix
+          git diff --check
+      - name: Publish validated closure
+        run: |
+          set -euo pipefail
+          git config user.name "doke-ci"
+          git config user.email "doke-ci@users.noreply.github.com"
+          git add config docs scripts package.json
+          git add -f reports/generated/domain-completion-matrix-report.json
+          git diff --cached --check
+          git commit -m "docs(sched): close authenticated ORD scheduling integration"
+          git push origin HEAD:ord/ord-001-baseline-audit
