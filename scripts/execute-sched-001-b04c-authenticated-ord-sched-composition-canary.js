@@ -731,7 +731,7 @@ await expectCode(
 );
 const partialStored = await readReservation(client, partialHold.reservation.id);
 requireExact(partialStored.status, 'held', 'DOKE_SCHED_B04C_PARTIAL_FAILURE_DID_NOT_ROLL_BACK');
-requireExact(partialStored.version, 1, 'DOKE_SCHED_B04C_PARTIAL_FAILURE_CHANGED_VERSION');
+requireExact(Number(partialStored.version), 1, 'DOKE_SCHED_B04C_PARTIAL_FAILURE_CHANGED_VERSION');
 const partialOrder = await readOrder(client, fixtures.orders.partial);
 requireExact(partialOrder.status, 'scheduled', 'DOKE_SCHED_B04C_PARTIAL_FAILURE_CHANGED_ORDER');
 requireExact(
