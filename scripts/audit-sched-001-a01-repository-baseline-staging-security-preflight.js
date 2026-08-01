@@ -12,6 +12,7 @@ const MATRIX_PATH = 'config/domain-completion-matrix.json';
 const RLS_PATH = 'supabase/migrations/113_availability_reviews_authority.sql';
 const ROLE_PATH = 'supabase/migrations/119_public_policy_role_separation.sql';
 const ORDER_SERVICE_PATH = 'backend/modules/orders/orders-service.js';
+const B04B_EVIDENCE_PATH = 'docs/validation/SCHED-001-B04B-ORD-CANONICAL-WIRING-IMPLEMENTATION.json';
 
 [
   CONFIG_PATH,
@@ -120,7 +121,12 @@ assert(rls.includes('availability_slots_owner_update'));
 assert(rls.includes('availability_slots_owner_delete'));
 assert(roleSeparation.includes('availability_slots_anon_select'));
 assert(roleSeparation.includes('availability_slots_authenticated_select'));
-assert(orderService.includes('p_scheduled_at: body.scheduledAt || body.scheduled_at || null'));
+if (fs.existsSync(B04B_EVIDENCE_PATH)) {
+  assert(orderService.includes('p_scheduled_at: null'));
+  assert(!orderService.includes('p_scheduled_at: body.scheduledAt || body.scheduled_at || null'));
+} else {
+  assert(orderService.includes('p_scheduled_at: body.scheduledAt || body.scheduled_at || null'));
+}
 
 assert(Number(String(matrix.version).split('.')[2]) >= 46, `Matrix version ${matrix.version} predates SCHED-A03.`);
 const ord = matrix.domains.find((domain) => domain.id === 'ORD-001');
