@@ -1,0 +1,111 @@
+{
+  "schemaVersion": 1,
+  "domain": "SCHED-001",
+  "dependentDomain": "ORD-001",
+  "sublot": "SCHED-B04C",
+  "contractVersion": "sched-b04c-authenticated-ord-sched-composition-canary-execution-v1",
+  "scope": "manually_dispatched_exactly_authorized_authenticated_staging_ord_sched_composition_canary",
+  "authorization": {
+    "exactPhrase": "I_EXPLICITLY_AUTHORIZE_SCHED_B04C_AUTHENTICATED_ORD_SCHED_COMPOSITION_CANARIES_ON_DOKE_STAGING",
+    "status": "awaiting_exact_authorization",
+    "trigger": "workflow_dispatch_exact_phrase_and_expected_head_sha",
+    "genericContinuationAllowed": false,
+    "repositoryAdditionTriggersExecution": false
+  },
+  "target": {
+    "repository": "Ezyrus07/doke-web",
+    "pullRequest": 25,
+    "branch": "ord/ord-001-baseline-audit",
+    "pullRequestMustRemainOpen": true,
+    "pullRequestMustRemainDraft": true,
+    "autoMergeMustRemainDisabled": true,
+    "environment": "doke-web-staging",
+    "projectRef": "zwkczgewzbsorbrjuzpb",
+    "projectName": "doke-web-staging"
+  },
+  "runtimeGate": {
+    "DOKE_SCHEDULING_RUNTIME_ENABLED": "true",
+    "DOKE_RUNTIME_ENVIRONMENT": "staging",
+    "SUPABASE_PROJECT_REF": "zwkczgewzbsorbrjuzpb",
+    "failClosed": true,
+    "browserExecutionForbidden": true,
+    "expectedHeadShaRequired": true
+  },
+  "syntheticFixture": {
+    "source": "transaction_scoped_auth_public_service_order_and_schedule_rows",
+    "emailDomain": "example.invalid",
+    "persistentRowsAllowed": 0,
+    "realUserDataAllowed": false,
+    "personas": ["client", "professional", "support", "admin"],
+    "orderCases": [
+      "canonical_confirmation_reschedule_cancel",
+      "reservation_replacement_rejected",
+      "partial_projection_rollback"
+    ]
+  },
+  "assertions": {
+    "preferenceRemainsClientIntent": true,
+    "holdDoesNotScheduleOrder": true,
+    "clientConfirmationForbidden": true,
+    "professionalManualScheduledTransitionForbidden": true,
+    "confirmationProjectsReservationTimeAndStatus": true,
+    "reschedulePreservesReservationReference": true,
+    "genericCancellationWithActiveReservationForbidden": true,
+    "startRequiresConfirmedMatchingReservation": true,
+    "differentReservationReplacementRejected": true,
+    "incompleteProjectionRejected": true,
+    "partialProjectionRollbackRequired": true,
+    "idempotentReplayRequired": true,
+    "differentPayloadSameKeyRejected": true,
+    "sharedCorrelationIdRequired": true,
+    "independentDomainIdempotencyKeysRequired": true
+  },
+  "transaction": {
+    "outerBoundary": "single_postgresql_transaction",
+    "isolation": "SERIALIZABLE",
+    "commandBoundary": "savepoint_per_cross_domain_command",
+    "finalStatement": "ROLLBACK",
+    "commitAllowed": false,
+    "postRollbackVerificationRequired": true,
+    "persistentCanaryRowsAllowed": 0
+  },
+  "residueTables": [
+    "auth.users",
+    "public.users",
+    "public.user_profiles",
+    "public.client_profiles",
+    "public.services",
+    "public.service_versions",
+    "public.orders",
+    "public.order_status_history",
+    "public.schedule_availability_rules",
+    "public.schedule_reservations",
+    "private.schedule_command_idempotency",
+    "private.schedule_domain_events"
+  ],
+  "allowedSecrets": [
+    "SUPABASE_ACCESS_TOKEN",
+    "SUPABASE_DB_PASSWORD"
+  ],
+  "prohibitedActions": [
+    "production_access",
+    "migration_application",
+    "deployment",
+    "frontend_authority_switch",
+    "cron_activation",
+    "worker_activation",
+    "billing_change",
+    "infrastructure_change",
+    "pull_request_merge",
+    "auto_merge_enablement",
+    "real_user_data",
+    "persistent_canary_data"
+  ],
+  "executionState": {
+    "executorPrepared": true,
+    "workflowDispatchPrepared": false,
+    "authenticatedCanaryExecuted": false,
+    "stagingReadsPerformed": 0,
+    "stagingMutationsPerformed": 0
+  }
+}
