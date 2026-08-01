@@ -7,10 +7,11 @@
   "scope": "manually_dispatched_exactly_authorized_authenticated_staging_ord_sched_composition_canary",
   "authorization": {
     "exactPhrase": "I_EXPLICITLY_AUTHORIZE_SCHED_B04C_AUTHENTICATED_ORD_SCHED_COMPOSITION_CANARIES_ON_DOKE_STAGING",
-    "status": "awaiting_exact_authorization",
+    "status": "consumed_failed_closed_blocked_on_b04d",
     "trigger": "workflow_dispatch_exact_phrase_and_expected_head_sha",
     "genericContinuationAllowed": false,
-    "repositoryAdditionTriggersExecution": false
+    "repositoryAdditionTriggersExecution": false,
+    "mayBeReusedForRetry": false
   },
   "target": {
     "repository": "Ezyrus07/doke-web",
@@ -150,12 +151,33 @@
         "postRollbackVerification": "passed",
         "residueCountsZero": true,
         "authorityCountDeltaZero": true
+      },
+      {
+        "runId": 30711882162,
+        "jobId": 91400663624,
+        "headSha": "a85c0e73c43207e71d68d8c1328703c257c9e062",
+        "result": "failed_closed",
+        "failureCode": "DOKE_ORDER_TRANSITION_INVALID",
+        "failedBoundary": "canonical_reservation_cancel_scheduled_to_accepted",
+        "rootCause": "deployed_ord_trigger_rejects_canonical_scheduled_to_accepted_restoration",
+        "transactionRolledBack": true,
+        "postRollbackVerification": "passed",
+        "residueCountsZero": true,
+        "authorityCountDeltaZero": true
       }
     ],
     "partialRollbackFixtureCorrection": "cancel_main_projection_then_prime_an_accepted_partial_order_with_a_valid_but_incompatible_released_reservation_reference",
     "sanitizedDiagnosticCodesEnabled": true,
-    "authenticatedCanaryExecuted": false,
-    "stagingReadsPerformed": 3,
+    "authenticatedCanaryExecuted": true,
+    "canaryPassed": false,
+    "blockedBy": "SCHED-B04D-STAGING-MIGRATION",
+    "stagingReadPreflightsPerformed": 4,
+    "transactionalAttemptsPerformed": 4,
+    "allAuthorizedAttemptsRolledBack": true,
+    "allResidueCountsZero": true,
+    "allAuthorityCountDeltasZero": true,
+    "persistentMutationsPerformed": 0,
+    "stagingReadsPerformed": 4,
     "stagingMutationsPerformed": 0
   }
 }
