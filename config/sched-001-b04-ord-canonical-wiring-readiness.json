@@ -1,0 +1,128 @@
+{
+  "schemaVersion": 1,
+  "domain": "SCHED-001",
+  "dependentDomain": "ORD-001",
+  "sublot": "SCHED-B04A",
+  "contractVersion": "sched-b04-ord-canonical-wiring-readiness-v1",
+  "scope": "repository_only_order_scheduling_authority_wiring_readiness",
+  "authority": {
+    "reservationReference": "orders.schedule_reservation_id",
+    "timeProjection": "orders.scheduled_at",
+    "reservationWriter": "backend/modules/scheduling/scheduling-service.js",
+    "projectionWriter": "backend/modules/scheduling/scheduling-postgres-repository.js",
+    "orderReader": "backend/modules/orders/orders-service.js",
+    "rawScheduledAtIsAuthority": false,
+    "orderServiceMayCreateReservation": false,
+    "frontendMayWriteCanonicalSchedule": false
+  },
+  "requiredOrderReadModel": {
+    "selectScheduleReservationId": true,
+    "exposeScheduleReservationId": true,
+    "exposeScheduledAtProjection": true,
+    "scheduledAtWithoutReservationIsCanonical": false,
+    "reservationStatusMustBeResolvedServerSide": true
+  },
+  "requiredCommandFlow": {
+    "createOrder": {
+      "canonicalScheduleMutationAllowed": false,
+      "appointmentIntentMayRemainMetadataOnly": true,
+      "directScheduledAtInputMustBeIgnoredOrRejected": true
+    },
+    "createHold": {
+      "owner": "SCHED-001",
+      "orderParticipantRequired": true,
+      "projectsOrderOnlyAfterCanonicalMutation": true
+    },
+    "confirmReservation": {
+      "owner": "SCHED-001",
+      "orderStatusTarget": "scheduled",
+      "reservationStatusRequired": "confirmed",
+      "sameTransactionRequired": true
+    },
+    "rescheduleReservation": {
+      "owner": "SCHED-001",
+      "orderStatusRemains": "scheduled",
+      "sameReservationIdRequired": true,
+      "scheduledAtProjectionUpdated": true
+    },
+    "cancelReservation": {
+      "owner": "SCHED-001",
+      "clearReservationReference": true,
+      "clearScheduledAtProjection": true,
+      "orderCancellationNotImplicit": true
+    },
+    "startOrder": {
+      "confirmedReservationRequiredWhenScheduleReferenceExists": true,
+      "rawScheduledAtCheckForbidden": true
+    }
+  },
+  "statePolicy": {
+    "scheduledStateAuthority": "confirmed_schedule_reservation",
+    "manualScheduledTransitionAllowed": false,
+    "acceptedOrQuotedMayReceiveHold": true,
+    "confirmedReservationMayTransitionOrderToScheduled": true,
+    "cancelledReservationDoesNotAutomaticallyCancelOrder": true,
+    "orderCancellationMustCancelActiveReservationInSameComposition": true,
+    "terminalOrderMayNotRetainActiveReservation": true
+  },
+  "idempotency": {
+    "orderAndScheduleCommandsKeepIndependentKeys": true,
+    "correlationIdRequiredAcrossDomains": true,
+    "replayMustNotDuplicateReservationOrOrderEvent": true,
+    "partialProjectionMustFailClosed": true
+  },
+  "transactionBoundary": {
+    "trustedServerOnly": true,
+    "serializable": true,
+    "singleDatabaseTransactionPreferred": true,
+    "compensatingFrontendWriteForbidden": true,
+    "rollbackOnProjectionFailure": true
+  },
+  "readinessFindings": [
+    {
+      "id": "B04-F01",
+      "path": "backend/modules/orders/orders-service.js",
+      "finding": "ORDER_SELECT does not include schedule_reservation_id and normalizeOrder does not expose scheduleReservationId."
+    },
+    {
+      "id": "B04-F02",
+      "path": "backend/modules/orders/orders-service.js",
+      "finding": "createOrder forwards user-provided scheduledAt directly to create_order_command."
+    },
+    {
+      "id": "B04-F03",
+      "path": "backend/modules/orders/order-state-machine.js",
+      "finding": "scheduled remains reachable through generic order transitions without requiring a confirmed reservation."
+    },
+    {
+      "id": "B04-F04",
+      "path": "backend/modules/scheduling/scheduling-postgres-repository.js",
+      "finding": "The scheduling adapter already owns canonical order projection and must remain the only writer during wiring."
+    }
+  ],
+  "capabilities": {
+    "readinessContractFrozen": true,
+    "orderReadModelWired": false,
+    "commandCompositionWired": false,
+    "stagingCanaryExecuted": false,
+    "frontendConnected": false,
+    "deploymentAvailable": false,
+    "productionActivationAvailable": false
+  },
+  "blockers": {
+    "closed": ["SCHED-B02"],
+    "remainingOpen": ["SCHED-B04", "ORD-B04"]
+  },
+  "nextGate": "SCHED-B04B repository implementation and local contract tests",
+  "prohibitedActions": [
+    "staging_mutation",
+    "production_access",
+    "frontend_authority_switch",
+    "deployment",
+    "cron_activation",
+    "worker_activation",
+    "billing_change",
+    "infrastructure_change",
+    "merge"
+  ]
+}
