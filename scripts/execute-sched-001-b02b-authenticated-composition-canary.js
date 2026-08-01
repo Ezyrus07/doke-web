@@ -370,7 +370,7 @@ async function assertOrderProjection(client, orderId, reservation) {
   }
 }
 
-async function runCompositionCanary(client, preflight, env) {
+async function runCompositionCanary(client, preflight, env, reportProgress = () => {}) {
   const generatedIds = Array.from({ length: 32 }, (_, index) =>
     `b02b0000-0000-4000-8000-${String(index + 1).padStart(12, '0')}`);
   let nextId = 0;
@@ -389,6 +389,7 @@ async function runCompositionCanary(client, preflight, env) {
     support: { id: personas.support.id, role: 'support' },
     admin: { id: personas.admin.id, role: 'admin' }
   });
+  reportProgress('composition_insert_orders');
   const orderIds = await insertSyntheticOrders(client, personas, preflight.service);
   const rulePayload = {
     professionalId: personas.professional.id,
@@ -397,10 +398,12 @@ async function runCompositionCanary(client, preflight, env) {
     status: 'active'
   };
 
+  reportProgress('composition_professional');
   const professionalRule = await root.upsertAvailabilityRule(context(actors.professional, 'professional-rule', rulePayload));
   assert.deepStrictEqual(await root.upsertAvailabilityRule(context(actors.professional, 'professional-rule', rulePayload)), professionalRule);
   await expectCode(() => root.upsertAvailabilityRule(context(actors.professional, 'professional-rule', { ...rulePayload, status: 'paused' })), contract.ERROR_CODES.idempotencyConflict);
 
+  reportProgress('composition_client');
   const clientHoldPayload = { orderId: orderIds[0], professionalId: personas.professional.id, ...range(9, 10) };
   const clientHold = await root.createScheduleHold(context(actors.client, 'client-hold', clientHoldPayload));
   assert.deepStrictEqual(await root.createScheduleHold(context(actors.client, 'client-hold', clientHoldPayload)), clientHold);
@@ -412,6 +415,7 @@ async function runCompositionCanary(client, preflight, env) {
     await expectCode(() => root[command](context(actors.professional, `professional-forbidden-${command}`, {})), contract.ERROR_CODES.actorForbidden);
   }
 
+  reportProgress('composition_support');
   const supportRule = await root.upsertAvailabilityRule(context(actors.support, 'support-rule-update', {
     ...rulePayload, ruleId: professionalRule.availabilityRule.id, expectedVersion: 1
   }));
@@ -431,6 +435,7 @@ async function runCompositionCanary(client, preflight, env) {
   }));
   await expectCode(() => root.expireScheduleHolds(context(actors.support, 'support-forbidden-expire', {})), contract.ERROR_CODES.actorForbidden);
 
+  reportProgress('composition_admin');
   const adminRule = await root.upsertAvailabilityRule(context(actors.admin, 'admin-rule-update', {
     ...rulePayload, ruleId: professionalRule.availabilityRule.id, expectedVersion: 2
   }));
@@ -535,7 +540,12 @@ async function main(argv = process.argv.slice(2), env = process.env) {
     const fixtures = await provisionTransactionalFixtures(connection.client);
     report.transactionalFixtures = { personas: 4, publishedServices: 1, persistentRowsAllowed: 0 };
     report.executionStage = 'composition_canary';
-    report.personas = await runCompositionCanary(connection.client, { ...preflight, ...fixtures }, env);
+    report.personas = await runCompositionCanary(
+      connection.client,
+      { ...preflight, ...fixtures },
+      env,
+      (stage) => { report.executionStage = stage; }
+    );
     report.transaction = { opened: true, commandSavepoints: true, finalStatement: 'rollback', committed: false };
     await connection.client.query('rollback');
     outerTransactionOpen = false;

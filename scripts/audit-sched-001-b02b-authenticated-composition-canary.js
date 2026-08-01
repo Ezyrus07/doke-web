@@ -10,6 +10,7 @@ const paths = {
   attempt3: 'config/sched-001-b02b-authenticated-composition-canary-attempt-3.json',
   attempt4: 'config/sched-001-b02b-authenticated-composition-canary-attempt-4.json',
   attempt5: 'config/sched-001-b02b-authenticated-composition-canary-attempt-5.json',
+  attempt6: 'config/sched-001-b02b-authenticated-composition-canary-attempt-6.json',
   executor: 'scripts/execute-sched-001-b02b-authenticated-composition-canary.js',
   test: 'scripts/test-sched-001-b02b-authenticated-composition-canary.js',
   workflow: '.github/workflows/sched-001-b02b-authenticated-composition-canary.yml',
@@ -57,6 +58,7 @@ assert.deepStrictEqual(config.syntheticPersonas.roles, {
 
 assert(executor.includes("report.postRollbackVerification = 'passed'"));
 assert(executor.includes("report.executionStage = 'transactional_fixture_provisioning'"));
+assert(executor.includes("reportProgress('composition_professional')"));
 
 assert(executor.includes('provisionTransactionalFixtures'));
 assert(executor.includes('insert into auth.users'));
