@@ -1,0 +1,708 @@
+name: Doke SCHED-B04C Closure Governance Reconciliation
+
+on:
+  pull_request:
+    branches:
+      - search/search-ux02-intent-favorites-clean
+    paths:
+      - '.github/workflows/sched-001-b04c-closure-governance-reconciliation.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sched-b04c-closure-governance-reconciliation
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    if: >-
+      github.event.pull_request.number == 25 &&
+      github.event.pull_request.draft == true &&
+      github.event.pull_request.head.ref == 'ord/ord-001-baseline-audit'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout PR head branch
+        uses: actions/checkout@v4
+        with:
+          ref: ord/ord-001-baseline-audit
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install pinned dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Reconcile successful B04C closure
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          ROOT = Path('.')
+          MATRIX_PATH = ROOT / 'config/domain-completion-matrix.json'
+          EXECUTION_PATH = ROOT / 'config/sched-001-b04c-authenticated-ord-sched-composition-canary-execution.json'
+          CLOSURE_CONFIG_PATH = ROOT / 'config/sched-001-b04c-authenticated-ord-sched-composition-canary-closure.json'
+          CLOSURE_DOC_PATH = ROOT / 'docs/SCHED-001-B04C-AUTHENTICATED-ORD-SCHED-COMPOSITION-CANARY-CLOSURE.md'
+          CLOSURE_EVIDENCE_PATH = ROOT / 'docs/validation/SCHED-001-B04C-AUTHENTICATED-ORD-SCHED-COMPOSITION-CANARY-CLOSURE.json'
+          CLOSURE_AUDIT_PATH = ROOT / 'scripts/audit-sched-001-b04c-authenticated-ord-sched-composition-canary-closure.js'
+          CLOSURE_WORKFLOW_PATH = ROOT / '.github/workflows/sched-001-b04c-authenticated-ord-sched-composition-canary-closure.yml'
+
+          def write_json(path, value):
+              path.parent.mkdir(parents=True, exist_ok=True)
+              path.write_text(json.dumps(value, indent=2, ensure_ascii=False) + '\n')
+
+          def replace_once(path, old, new):
+              text = path.read_text()
+              if text.count(old) != 1:
+                  raise SystemExit(f'Unexpected replacement count for {path}: {old[:100]!r} -> {text.count(old)}')
+              path.write_text(text.replace(old, new, 1))
+
+          # Finalize the execution ledger without erasing any fail-closed attempt.
+          execution = json.loads(EXECUTION_PATH.read_text())
+          execution['authorization']['status'] = 'consumed_success'
+          execution['authorization']['mayBeReusedForRetry'] = False
+          attempts = execution['executionState'].setdefault('authorizedAttempts', [])
+          new_attempts = [
+              {
+                  'runId': 30715551681,
+                  'jobId': 91410396095,
+                  'headSha': '13fb73a144a2f62dcc9a8cf113a2dedb54b4ab49',
+                  'result': 'failed_closed',
+                  'failureCode': 'DOKE_SCHED_B04C_EXPECTED_FAILURE_MISSING',
+                  'failureClass': 'check_violation_domain_error_mapping_mismatch',
+                  'transactionRolledBack': True,
+                  'postRollbackVerification': 'passed',
+                  'residueCountsZero': True,
+                  'authorityCountDeltaZero': True
+              },
+              {
+                  'runId': 30715701371,
+                  'jobId': 91410778851,
+                  'headSha': '476a90dcba0f34c23bc69abebee756d84d32a090',
+                  'result': 'failed_closed',
+                  'failureClass': 'transaction_aborted_after_unrecovered_negative_sql',
+                  'diagnosticSqlState': '25P02',
+                  'transactionRolledBack': True,
+                  'postRollbackVerification': 'passed',
+                  'residueCountsZero': True,
+                  'authorityCountDeltaZero': True
+              },
+              {
+                  'runId': 30715885793,
+                  'jobId': 91411247154,
+                  'headSha': '3774c701f95e4376a332828b629febaf5711d604',
+                  'result': 'failed_closed',
+                  'failureCode': 'DOKE_SCHED_B04C_PARTIAL_FAILURE_CHANGED_VERSION',
+                  'failureClass': 'bigint_driver_representation_false_negative',
+                  'transactionRolledBack': True,
+                  'postRollbackVerification': 'passed',
+                  'residueCountsZero': True,
+                  'authorityCountDeltaZero': True
+              },
+              {
+                  'runId': 30716088197,
+                  'jobId': 91411759384,
+                  'headSha': 'c2bddcd061d2136e07d8c3790abf8f66884c480f',
+                  'result': 'authenticated_ord_sched_composition_canary_passed',
+                  'transactionRolledBack': True,
+                  'postRollbackVerification': 'passed',
+                  'residueCountsZero': True,
+                  'authorityCountDeltaZero': True
+              }
+          ]
+          existing_ids = {item.get('runId') for item in attempts}
+          attempts.extend(item for item in new_attempts if item['runId'] not in existing_ids)
+          state = execution['executionState']
+          state['authenticatedCanaryExecuted'] = True
+          state['canaryPassed'] = True
+          state['blockedBy'] = None
+          state['stagingReadPreflightsPerformed'] = 8
+          state['transactionalAttemptsPerformed'] = 8
+          state['successfulAttempts'] = 1
+          state['failedClosedAttemptsBeforeSuccess'] = 7
+          state['allAuthorizedAttemptsRolledBack'] = True
+          state['allResidueCountsZero'] = True
+          state['allAuthorityCountDeltasZero'] = True
+          state['persistentMutationsPerformed'] = 0
+          state['stagingReadsPerformed'] = 8
+          state['stagingMutationsPerformed'] = 0
+          state['successfulRun'] = {
+              'runId': 30716088197,
+              'jobId': 91411759384,
+              'headSha': 'c2bddcd061d2136e07d8c3790abf8f66884c480f',
+              'observedAt': '2026-08-01T20:02:54.753Z',
+              'result': 'authenticated_ord_sched_composition_canary_passed',
+              'personas': 4,
+              'publishedServices': 1,
+              'orders': 3,
+              'isolation': 'SERIALIZABLE',
+              'commandSavepoints': True,
+              'finalStatement': 'ROLLBACK',
+              'committed': False,
+              'rolledBack': True,
+              'residueCounters': 15,
+              'residueCountsZero': True,
+              'authorityCountDeltaZero': True,
+              'artifactId': 8823372228,
+              'artifactSha256': '11c36ae4cf142dbc11f322302ade862cae178017b8edee831235d8439006df92'
+          }
+          state['closureDecision'] = {
+              'closed': ['SCHED-B04', 'ORD-B04'],
+              'remainingSchedBlockers': [],
+              'remainingOrdBlockers': ['ORD-B02', 'ORD-B03', 'ORD-B05'],
+              'domainCompletionClaimed': False
+          }
+          state['temporaryAuthorizedWorkflowRemoved'] = True
+          state['temporaryAuthorizedWorkflowRemovalCommit'] = '6b82edfb781ea167b6ec43113ac42ba2b0eb0de3'
+          state['temporaryBigintReconcilerRemoved'] = True
+          state['temporaryBigintReconcilerRemovalCommit'] = '015b383d16611a4510aca769fff71b16764b654b'
+          write_json(EXECUTION_PATH, execution)
+
+          closure = {
+              'schemaVersion': 1,
+              'domain': 'SCHED-001',
+              'dependentDomain': 'ORD-001',
+              'sublot': 'SCHED-B04C-CLOSURE',
+              'contractVersion': 'sched-b04c-authenticated-ord-sched-composition-canary-closure-v1',
+              'status': 'authenticated_staging_composition_canary_passed_blockers_closed',
+              'target': {
+                  'repository': 'Ezyrus07/doke-web',
+                  'pullRequest': 25,
+                  'branch': 'ord/ord-001-baseline-audit',
+                  'environment': 'doke-web-staging',
+                  'projectRef': 'zwkczgewzbsorbrjuzpb'
+              },
+              'authorization': {
+                  'exactPhrase': 'I_EXPLICITLY_AUTHORIZE_SCHED_B04C_AUTHENTICATED_ORD_SCHED_COMPOSITION_CANARIES_ON_DOKE_STAGING',
+                  'status': 'consumed',
+                  'mayBeReused': False,
+                  'genericContinuationAllowed': False
+              },
+              'successfulRun': state['successfulRun'],
+              'assertions': {
+                  'clientPreferenceRemainedIntent': True,
+                  'holdAllowedWithoutSchedulingOrder': True,
+                  'clientConfirmationForbidden': True,
+                  'idempotentReplayPassed': True,
+                  'divergentPayloadRejected': True,
+                  'professionalAcceptAllowed': True,
+                  'manualScheduledTransitionForbidden': True,
+                  'startRequiredCanonicalAuthority': True,
+                  'confirmationProjectedAtomically': True,
+                  'reschedulePreservedReservationId': True,
+                  'cancellationClearedProjection': True,
+                  'genericCancellationBlocked': True,
+                  'differentReservationReplacementRejected': True,
+                  'partialProjectionRolledBack': True,
+                  'incompleteProjectionRejected': True,
+                  'orderScheduledEventObserved': True,
+                  'orderAcceptedEventObserved': True,
+                  'sharedCorrelationObserved': True
+              },
+              'attempts': {
+                  'totalAuthorized': 8,
+                  'failedClosedBeforeSuccess': 7,
+                  'successful': 1,
+                  'allEndedInRollback': True,
+                  'allResidueCountsZero': True,
+                  'allAuthorityCountDeltasZero': True
+              },
+              'independentPostRunVerification': {
+                  'performed': True,
+                  'residueCountersChecked': 15,
+                  'allResidueCountsZero': True,
+                  'authorityCountersChecked': 8,
+                  'allAuthorityCountsZero': True
+              },
+              'blockerDecision': {
+                  'closed': ['SCHED-B04', 'ORD-B04'],
+                  'remainingSched': [],
+                  'remainingOrd': ['ORD-B02', 'ORD-B03', 'ORD-B05'],
+                  'domainCompletionClaimed': False
+              },
+              'matrixDecision': {
+                  'version': '1.3.70',
+                  'schedMaturity': 3,
+                  'schedServerAuthority': 'partial',
+                  'schedStagingEvidence': 'staging_canary',
+                  'reasonNoPromotion': 'Frontend activation, continuous hold expiration operations and production release remain separately gated.'
+              },
+              'prohibitedActionsObserved': {
+                  'productionAccess': 0,
+                  'migrationsApplied': 0,
+                  'deployments': 0,
+                  'cronActivations': 0,
+                  'workerActivations': 0,
+                  'frontendConnections': 0,
+                  'billingChanges': 0,
+                  'infrastructureChanges': 0,
+                  'mergePerformed': False,
+                  'autoMergeEnabled': False,
+                  'realUserDataUsed': False,
+                  'persistentCanaryRows': 0
+              }
+          }
+          write_json(CLOSURE_CONFIG_PATH, closure)
+          write_json(CLOSURE_EVIDENCE_PATH, closure)
+
+          CLOSURE_DOC_PATH.write_text('''# SCHED-001 / B04C — Authenticated ORD/SCHED staging closure
+
+## Result
+
+The exactly authorized authenticated ORD/SCHED composition canary passed on Doke staging in GitHub Actions run `30716088197`, job `91411759384`, at head `c2bddcd061d2136e07d8c3790abf8f66884c480f`.
+
+The exact authorization was consumed:
+
+```text
+I_EXPLICITLY_AUTHORIZE_SCHED_B04C_AUTHENTICATED_ORD_SCHED_COMPOSITION_CANARIES_ON_DOKE_STAGING
+```
+
+It cannot be reused.
+
+## Proven behavior
+
+The canary used four synthetic authenticated personas, one synthetic published service and three synthetic orders inside one PostgreSQL `SERIALIZABLE` transaction. It proved:
+
+- client scheduling preference remains intent rather than order authority;
+- hold creation does not schedule the order;
+- client confirmation is denied;
+- idempotent replay returns the same result and divergent payload reuse is rejected;
+- professionals can accept orders but cannot manufacture scheduled state;
+- starting work requires the matching confirmed canonical reservation;
+- confirmation atomically projects reservation reference, time and `scheduled` status;
+- rescheduling preserves the canonical reservation ID;
+- generic cancellation is blocked while canonical schedule authority is active;
+- canonical reservation cancellation atomically clears reference and time and returns the order to `accepted`;
+- replacing a canonical reservation with a reservation from another order is rejected;
+- incomplete projection is rejected;
+- a failed cross-domain projection rolls back to its command savepoint without changing the prior order or reservation state;
+- ORD scheduled and accepted events are emitted under the shared correlation ID.
+
+## Transaction and cleanup
+
+The outer transaction ended with `ROLLBACK`; `COMMIT` was prohibited. All 15 canary residue counters were zero, and all 8 authority counters were unchanged. An independent post-run Supabase query reconfirmed zero residue and zero authority rows.
+
+Seven earlier authorized attempts failed closed while progressively exposing and correcting harness assumptions. Every attempt ended in rollback with zero residue and no authority drift. The successful attempt did not weaken B04D or the generic ORD lifecycle graph.
+
+## Blocker decision
+
+The authenticated staging evidence closes:
+
+- `SCHED-B04` — canonical ORD integration;
+- `ORD-B04` — scheduling dependency.
+
+This does not complete either domain. SCHED remains maturity `3`, server authority `partial`, staging evidence `staging_canary`, because frontend activation, continuous hold-expiration operations and production release remain separately gated.
+
+ORD still has `ORD-B02`, `ORD-B03` and `ORD-B05` open.
+
+## Explicitly untouched
+
+No production access, migration, deploy, frontend connection, Cron activation, worker activation, billing change, infrastructure change, merge, auto-merge, real-user-data use or persistent canary row occurred.
+''')
+
+          CLOSURE_AUDIT_PATH.write_text(r'''#!/usr/bin/env node
+'use strict';
+
+const assert = require('assert');
+const fs = require('fs');
+
+const CONFIG_PATH = 'config/sched-001-b04c-authenticated-ord-sched-composition-canary-closure.json';
+const EVIDENCE_PATH = 'docs/validation/SCHED-001-B04C-AUTHENTICATED-ORD-SCHED-COMPOSITION-CANARY-CLOSURE.json';
+const DOC_PATH = 'docs/SCHED-001-B04C-AUTHENTICATED-ORD-SCHED-COMPOSITION-CANARY-CLOSURE.md';
+const EXECUTION_PATH = 'config/sched-001-b04c-authenticated-ord-sched-composition-canary-execution.json';
+const MATRIX_PATH = 'config/domain-completion-matrix.json';
+const WORKFLOW_PATH = '.github/workflows/sched-001-b04c-authenticated-ord-sched-composition-canary-closure.yml';
+const PACKAGE_PATH = 'package.json';
+
+[CONFIG_PATH, EVIDENCE_PATH, DOC_PATH, EXECUTION_PATH, MATRIX_PATH, WORKFLOW_PATH, PACKAGE_PATH]
+  .forEach((file) => assert(fs.existsSync(file), `Missing B04C closure asset: ${file}`));
+
+const config = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8'));
+const evidence = JSON.parse(fs.readFileSync(EVIDENCE_PATH, 'utf8'));
+const execution = JSON.parse(fs.readFileSync(EXECUTION_PATH, 'utf8'));
+const matrix = JSON.parse(fs.readFileSync(MATRIX_PATH, 'utf8'));
+const pkg = JSON.parse(fs.readFileSync(PACKAGE_PATH, 'utf8'));
+const docs = fs.readFileSync(DOC_PATH, 'utf8');
+const workflow = fs.readFileSync(WORKFLOW_PATH, 'utf8');
+
+assert.strictEqual(config.contractVersion, 'sched-b04c-authenticated-ord-sched-composition-canary-closure-v1');
+assert.strictEqual(config.status, 'authenticated_staging_composition_canary_passed_blockers_closed');
+assert.strictEqual(config.authorization.status, 'consumed');
+assert.strictEqual(config.authorization.mayBeReused, false);
+assert.strictEqual(config.successfulRun.runId, 30716088197);
+assert.strictEqual(config.successfulRun.jobId, 91411759384);
+assert.strictEqual(config.successfulRun.headSha, 'c2bddcd061d2136e07d8c3790abf8f66884c480f');
+assert.strictEqual(config.successfulRun.result, 'authenticated_ord_sched_composition_canary_passed');
+assert.strictEqual(config.successfulRun.isolation, 'SERIALIZABLE');
+assert.strictEqual(config.successfulRun.finalStatement, 'ROLLBACK');
+assert.strictEqual(config.successfulRun.committed, false);
+assert.strictEqual(config.successfulRun.rolledBack, true);
+assert.strictEqual(config.successfulRun.residueCountsZero, true);
+assert.strictEqual(config.successfulRun.authorityCountDeltaZero, true);
+assert.strictEqual(config.attempts.totalAuthorized, 8);
+assert.strictEqual(config.attempts.failedClosedBeforeSuccess, 7);
+assert.strictEqual(config.attempts.successful, 1);
+assert.strictEqual(config.attempts.allEndedInRollback, true);
+assert.strictEqual(config.independentPostRunVerification.allResidueCountsZero, true);
+assert.strictEqual(config.independentPostRunVerification.allAuthorityCountsZero, true);
+assert.deepStrictEqual(config.blockerDecision.closed, ['SCHED-B04', 'ORD-B04']);
+assert.deepStrictEqual(config.blockerDecision.remainingSched, []);
+assert.deepStrictEqual(config.blockerDecision.remainingOrd, ['ORD-B02', 'ORD-B03', 'ORD-B05']);
+assert.strictEqual(config.blockerDecision.domainCompletionClaimed, false);
+Object.values(config.prohibitedActionsObserved).forEach((value) => {
+  if (typeof value === 'boolean') assert.strictEqual(value, false);
+  else assert.strictEqual(value, 0);
+});
+assert.deepStrictEqual(evidence, config);
+
+assert.strictEqual(execution.authorization.status, 'consumed_success');
+assert.strictEqual(execution.executionState.canaryPassed, true);
+assert.strictEqual(execution.executionState.blockedBy, null);
+assert.strictEqual(execution.executionState.successfulRun.runId, 30716088197);
+assert.strictEqual(execution.executionState.allAuthorizedAttemptsRolledBack, true);
+assert.strictEqual(execution.executionState.allResidueCountsZero, true);
+assert.strictEqual(execution.executionState.allAuthorityCountDeltasZero, true);
+
+assert.strictEqual(matrix.version, '1.3.70');
+const sched = matrix.domains.find((domain) => domain.id === 'SCHED-001');
+const ord = matrix.domains.find((domain) => domain.id === 'ORD-001');
+assert(sched && ord);
+assert.strictEqual(sched.maturity, 3);
+assert.strictEqual(sched.serverAuthority, 'partial');
+assert.strictEqual(sched.stagingEvidence, 'staging_canary');
+assert.deepStrictEqual(sched.blockers.map((item) => item.id), []);
+assert.deepStrictEqual(ord.blockers.map((item) => item.id), ['ORD-B02', 'ORD-B03', 'ORD-B05']);
+assert(sched.nextActions[0].includes('frontend'));
+assert(ord.nextActions[0].includes('ORD-B02'));
+assert(sched.evidence.some((item) => item.includes('run 30716088197')));
+assert(ord.evidence.some((item) => item.includes('run 30716088197')));
+
+[CONFIG_PATH, EVIDENCE_PATH, DOC_PATH,
+ 'scripts/audit-sched-001-b04c-authenticated-ord-sched-composition-canary-closure.js',
+ WORKFLOW_PATH].forEach((path) => {
+  assert(sched.requiredPaths.includes(path));
+  assert(ord.requiredPaths.includes(path));
+});
+assert(sched.tests.includes('audit:sched-001-b04c-authenticated-ord-sched-composition-canary-closure'));
+assert(ord.tests.includes('audit:sched-001-b04c-authenticated-ord-sched-composition-canary-closure'));
+assert.strictEqual(
+  pkg.scripts['audit:sched-001-b04c-authenticated-ord-sched-composition-canary-closure'],
+  'node scripts/audit-sched-001-b04c-authenticated-ord-sched-composition-canary-closure.js'
+);
+
+['authenticated_ord_sched_composition_canary_passed', 'SERIALIZABLE', 'ROLLBACK',
+ 'SCHED-B04', 'ORD-B04', 'ORD-B02', 'ORD-B03', 'ORD-B05'].forEach((fragment) => {
+  assert(docs.includes(fragment), `Closure documentation missing ${fragment}`);
+});
+
+assert(workflow.includes('permissions:\n  contents: read'));
+assert(workflow.includes('npm run audit:sched-001-b04c-authenticated-ord-sched-composition-canary-closure'));
+['contents: write', 'secrets.', 'SUPABASE_ACCESS_TOKEN', 'SUPABASE_DB_PASSWORD', 'psql ', 'curl ', '--execute', 'git push']
+  .forEach((fragment) => assert(!workflow.includes(fragment), `Closure workflow contains ${fragment}`));
+assert(!fs.existsSync('.github/workflows/sched-001-b04c-authorized-retry-application.yml'));
+assert(!fs.existsSync('.github/workflows/sched-001-b04c-bigint-normalization-reconciliation.yml'));
+
+console.log('SCHED-B04C authenticated ORD/SCHED composition canary closure audit passed.');
+''')
+
+          CLOSURE_WORKFLOW_PATH.write_text('''name: Doke SCHED-B04C Authenticated ORD SCHED Composition Closure
+
+on:
+  pull_request:
+    branches:
+      - search/search-ux02-intent-favorites-clean
+    paths:
+      - 'config/domain-completion-matrix.json'
+      - 'config/sched-001-b04c-authenticated-ord-sched-composition-canary-execution.json'
+      - 'config/sched-001-b04c-authenticated-ord-sched-composition-canary-closure.json'
+      - 'docs/SCHED-001-B04C-AUTHENTICATED-ORD-SCHED-COMPOSITION-CANARY-CLOSURE.md'
+      - 'docs/validation/SCHED-001-B04C-AUTHENTICATED-ORD-SCHED-COMPOSITION-CANARY-CLOSURE.json'
+      - 'scripts/audit-sched-001-b04c-authenticated-ord-sched-composition-canary-closure.js'
+      - 'scripts/audit-sched-001-b04c-authenticated-ord-sched-composition-canary-execution.js'
+      - 'scripts/test-sched-001-b04c-authenticated-ord-sched-composition-canary-execution.js'
+      - 'scripts/audit-ord-001-a10-blocker-reconciliation.js'
+      - 'scripts/audit-ord-001-a11-scheduling-authority-handoff.js'
+      - 'package.json'
+      - '.github/workflows/sched-001-b04c-authenticated-ord-sched-composition-canary-closure.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  closure:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Audit authenticated ORD SCHED closure
+        run: |
+          set -euo pipefail
+          npm run audit:sched-001-b04c-authenticated-ord-sched-composition-canary-closure
+          node scripts/audit-sched-001-b04c-authenticated-ord-sched-composition-canary-execution.js
+          node scripts/test-sched-001-b04c-authenticated-ord-sched-composition-canary-execution.js
+          node scripts/audit-sched-001-b04d-canonical-order-projection-guard-readiness.js
+          node scripts/test-sched-001-b04d-canonical-order-projection-guard-runtime.js
+          node scripts/audit-sched-001-b04c-authenticated-ord-sched-composition-canary-readiness.js
+          node scripts/audit-sched-001-b04b-ord-canonical-wiring-implementation.js
+          node scripts/test-sched-001-b04b-ord-canonical-wiring-runtime.js
+          node scripts/audit-sched-001-b04-ord-canonical-wiring-readiness.js
+          node scripts/audit-sched-001-a07-history-canary-readiness.js
+          node scripts/audit-sched-001-a05-persistence-readiness.js
+          node scripts/audit-sched-001-a04-server-command-runtime.js
+          node scripts/audit-sched-001-a03-reservation-migration-local-contract.js
+          node scripts/audit-sched-001-a02-command-event-timezone-conflict-contract.js
+          node scripts/audit-sched-001-a01-repository-baseline-staging-security-preflight.js
+          node scripts/audit-ord-001-a11-scheduling-authority-handoff.js
+          node scripts/audit-ord-001-a10-blocker-reconciliation.js
+          node scripts/audit-ord-001-a01-baseline.js
+          npm run audit:domain-completion-matrix
+''')
+
+          # Update package scripts.
+          package_path = ROOT / 'package.json'
+          package = json.loads(package_path.read_text())
+          package['scripts']['audit:sched-001-b04c-authenticated-ord-sched-composition-canary-closure'] = \
+              'node scripts/audit-sched-001-b04c-authenticated-ord-sched-composition-canary-closure.js'
+          write_json(package_path, package)
+
+          # Advance the canonical matrix without promoting operational maturity.
+          matrix = json.loads(MATRIX_PATH.read_text())
+          if matrix['version'] != '1.3.69':
+              raise SystemExit(f"Unexpected matrix version: {matrix['version']}")
+          matrix['version'] = '1.3.70'
+          matrix['updatedAt'] = '2026-08-01T17:03:06-03:00'
+          domains = {domain['id']: domain for domain in matrix['domains']}
+          sched = domains['SCHED-001']
+          order = domains['ORD-001']
+          sched['blockers'] = [item for item in sched['blockers'] if item['id'] != 'SCHED-B04']
+          order['blockers'] = [item for item in order['blockers'] if item['id'] != 'ORD-B04']
+          sched['nextActions'] = [
+              'Connect the authenticated frontend scheduling surfaces to the canonical server authority under a separately reviewed activation gate.',
+              'Add continuous hold-expiration operations through Cron or workers only under independent authorization and preserve canonical ORD projection.',
+              'Keep production release and pull-request merge blocked pending independent release authorization.'
+          ]
+          order['nextActions'] = [
+              'Complete ORD-B02 through the separately authorized two-account visual settlement canary and run-scoped cleanup.',
+              'Keep ORD-B03 handed to PAY-001 until the real PSP webhook lifecycle becomes canonical.',
+              'Keep ORD-B05 blocked until exact external staging provider selection and separately authorized deployment.',
+              'Keep production release and pull-request merge blocked pending independent authorization.'
+          ]
+          sched_evidence = [
+              'SCHED-B04C authenticated ORD/SCHED composition passed in staging run 30716088197 at head c2bddcd061d2136e07d8c3790abf8f66884c480f.',
+              'The successful canary proved confirmation, reschedule, canonical cancellation, replacement rejection, partial rollback, idempotency and cross-domain event correlation inside one SERIALIZABLE transaction ending in ROLLBACK.',
+              'All 15 residue counters were zero and all 8 authority counters were unchanged in both the canary report and independent post-run verification; SCHED-B04 is closed without promoting maturity or enabling frontend, Cron, workers, production or merge.'
+          ]
+          order_evidence = [
+              'SCHED-B04C authenticated ORD/SCHED composition passed in staging run 30716088197 and proved the canonical reservation reference and projection lifecycle end to end.',
+              'Confirmation emitted order.scheduled, reschedule preserved the reservation ID, and canonical cancellation emitted order.accepted while atomically clearing reference and scheduled time.',
+              'ORD-B04 is closed; ORD-B02, ORD-B03 and ORD-B05 remain open, and production, deployment, frontend activation and merge remain blocked.'
+          ]
+          for item in sched_evidence:
+              if item not in sched['evidence']:
+                  sched['evidence'].append(item)
+          for item in order_evidence:
+              if item not in order['evidence']:
+                  order['evidence'].append(item)
+          closure_paths = [
+              str(CLOSURE_CONFIG_PATH), str(CLOSURE_DOC_PATH), str(CLOSURE_EVIDENCE_PATH),
+              str(CLOSURE_AUDIT_PATH), str(CLOSURE_WORKFLOW_PATH)
+          ]
+          for domain in (sched, order):
+              for item in closure_paths:
+                  if item not in domain['requiredPaths']:
+                      domain['requiredPaths'].append(item)
+              test_name = 'audit:sched-001-b04c-authenticated-ord-sched-composition-canary-closure'
+              if test_name not in domain['tests']:
+                  domain['tests'].append(test_name)
+          for flow in matrix.get('criticalFlows', []):
+              if isinstance(flow.get('blockers'), list):
+                  flow['blockers'] = [item for item in flow['blockers'] if item not in ('SCHED-B04', 'ORD-B04')]
+          write_json(MATRIX_PATH, matrix)
+
+          # Version-gate current-matrix expectations while retaining historical sublot assertions.
+          replace_once(ROOT / 'scripts/audit-ord-001-a01-baseline.js',
+              "['ORD-B02', 'ORD-B03', 'ORD-B04'].forEach((id) => {\n  assert(blockerIds.has(id), `Active ORD blocker missing: ${id}`);\n});",
+              "const matrixPatchOrdA01 = Number(String(matrix.version).split('.')[2] || 0);\nconst requiredOrdBlockersA01 = matrixPatchOrdA01 >= 70\n  ? ['ORD-B02', 'ORD-B03']\n  : ['ORD-B02', 'ORD-B03', 'ORD-B04'];\nrequiredOrdBlockersA01.forEach((id) => {\n  assert(blockerIds.has(id), `Active ORD blocker missing: ${id}`);\n});\nif (matrixPatchOrdA01 >= 70) assert(!blockerIds.has('ORD-B04'));"
+          )
+
+          replace_once(ROOT / 'scripts/audit-sched-001-a01-repository-baseline-staging-security-preflight.js',
+              "if (schedMatrixPatchA01 >= 63) {",
+              "if (schedMatrixPatchA01 >= 70) {\n  assert.deepStrictEqual(sched.blockers.map((blocker) => blocker.id), []);\n  assert(sched.nextActions[0].includes('frontend'));\n} else if (schedMatrixPatchA01 >= 63) {"
+          )
+
+          for relative, marker in [
+              ('scripts/audit-sched-001-a02-command-event-timezone-conflict-contract.js',
+               "const postB02B = compareVersions(matrix.version, '1.3.63') >= 0 && sched.maturity >= 3;"),
+              ('scripts/audit-sched-001-a04-server-command-runtime.js',
+               "const postB02B = compareVersions(matrix.version, '1.3.63') >= 0 && sched.maturity >= 3;"),
+              ('scripts/audit-sched-001-a05-persistence-readiness.js',
+               "const postB02B = compareVersions(matrix.version, '1.3.63') >= 0 && sched.maturity >= 3;")
+          ]:
+              path = ROOT / relative
+              replace_once(path, marker, "const postB04Closure = compareVersions(matrix.version, '1.3.70') >= 0 && sched.maturity >= 3;\n" + marker)
+              replace_once(path, "if (postB02B) {",
+                  "if (postB04Closure) {\n  assert.deepStrictEqual(sched.blockers.map((item) => item.id), []);\n  assert(sched.nextActions[0].includes('frontend'));\n  assert(ord.evidence.some((item) => item.includes('run 30716088197')));\n} else if (postB02B) {")
+
+          a03 = ROOT / 'scripts/audit-sched-001-a03-reservation-migration-local-contract.js'
+          replace_once(a03,
+              "const postB02B = schedMatrixPatchA03 >= 63 && sched.maturity >= 3;",
+              "const postB04Closure = schedMatrixPatchA03 >= 70 && sched.maturity >= 3;\nconst postB02B = schedMatrixPatchA03 >= 63 && sched.maturity >= 3;")
+          replace_once(a03, "if (postB02B) {",
+              "if (postB04Closure) {\n  assert.deepStrictEqual(sched.blockers.map((item) => item.id), []);\n  assert(sched.nextActions[0].includes('frontend'));\n  assert(ord.evidence.some((item) => item.includes('run 30716088197')));\n} else if (postB02B) {")
+
+          a07 = ROOT / 'scripts/audit-sched-001-a07-history-canary-readiness.js'
+          replace_once(a07,
+              "if (schedMatrixPatchA07 >= 63) {",
+              "if (schedMatrixPatchA07 >= 70) {\n    assert.deepStrictEqual(blockerIds, []);\n    assert(sched.nextActions[0].includes('frontend'));\n  } else if (schedMatrixPatchA07 >= 63) {")
+
+          for relative in [
+              'scripts/audit-sched-001-b04-ord-canonical-wiring-readiness.js',
+              'scripts/audit-sched-001-b04b-ord-canonical-wiring-implementation.js',
+              'scripts/audit-sched-001-b04c-authenticated-ord-sched-composition-canary-readiness.js'
+          ]:
+              path = ROOT / relative
+              old = "assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B04'));\nassert(ord.blockers.some((blocker) => blocker.id === 'ORD-B04'));"
+              new = "const postB04Closure = Number(String(matrix.version).split('.')[2] || 0) >= 70;\nif (postB04Closure) {\n  assert(!sched.blockers.some((blocker) => blocker.id === 'SCHED-B04'));\n  assert(!ord.blockers.some((blocker) => blocker.id === 'ORD-B04'));\n} else {\n  assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B04'));\n  assert(ord.blockers.some((blocker) => blocker.id === 'ORD-B04'));\n}"
+              replace_once(path, old, new)
+
+          # ORD-A10 current matrix branch.
+          a10 = ROOT / 'scripts/audit-ord-001-a10-blocker-reconciliation.js'
+          old_a10 = """assert.deepStrictEqual(ord.blockers.map((blocker) => blocker.id), ['ORD-B02', 'ORD-B03', 'ORD-B04', 'ORD-B05']);
+assert.strictEqual(ord.nextActions.length, 4);
+if (compareVersions(matrix.version, '1.3.50') >= 0) {
+  assert(ord.nextActions[0].includes('Keep ORD-B04 handed to SCHED-001'));
+  assert(ord.evidence.some((item) => item.includes('SCHED-A08 completed the official migration-history repair')));
+} else {
+  assert(ord.nextActions[0].includes('SCHED-A07'));
+}
+
+const blockers = Object.fromEntries(ord.blockers.map((blocker) => [blocker.id, blocker]));
+assert(blockers['ORD-B02'].description.includes('authorization envelope'));
+assert(blockers['ORD-B05'].description.includes('external staging release provider'));
+assert(blockers['ORD-B05'].description.includes('explicit provider selection'));
+assert(blockers['ORD-B03'].description.includes('PAY-001'));
+assert(blockers['ORD-B04'].description.includes('SCHED-001'));"""
+          new_a10 = """const postB04Closure = compareVersions(matrix.version, '1.3.70') >= 0;
+assert.deepStrictEqual(
+  ord.blockers.map((blocker) => blocker.id),
+  postB04Closure ? ['ORD-B02', 'ORD-B03', 'ORD-B05'] : ['ORD-B02', 'ORD-B03', 'ORD-B04', 'ORD-B05']
+);
+assert.strictEqual(ord.nextActions.length, 4);
+if (postB04Closure) {
+  assert(ord.nextActions[0].includes('ORD-B02'));
+  assert(ord.evidence.some((item) => item.includes('run 30716088197')));
+} else if (compareVersions(matrix.version, '1.3.50') >= 0) {
+  assert(ord.nextActions[0].includes('Keep ORD-B04 handed to SCHED-001'));
+  assert(ord.evidence.some((item) => item.includes('SCHED-A08 completed the official migration-history repair')));
+} else {
+  assert(ord.nextActions[0].includes('SCHED-A07'));
+}
+
+const blockers = Object.fromEntries(ord.blockers.map((blocker) => [blocker.id, blocker]));
+assert(blockers['ORD-B02'].description.includes('authorization envelope'));
+assert(blockers['ORD-B05'].description.includes('external staging release provider'));
+assert(blockers['ORD-B05'].description.includes('explicit provider selection'));
+assert(blockers['ORD-B03'].description.includes('PAY-001'));
+if (postB04Closure) assert(!blockers['ORD-B04']);
+else assert(blockers['ORD-B04'].description.includes('SCHED-001'));"""
+          replace_once(a10, old_a10, new_a10)
+
+          # ORD-A11 historical handoff plus current matrix closure.
+          a11 = ROOT / 'scripts/audit-ord-001-a11-scheduling-authority-handoff.js'
+          old_a11_reference = """const ordB04 = ord.blockers.find((blocker) => blocker.id === 'ORD-B04');
+assert(ordB04, 'ORD-B04 missing from completion matrix');
+assert(ordB04.description.includes('SCHED-001'));
+assert(ordB04.description.includes('canonical reservation reference'));"""
+          new_a11_reference = """const schedMatrixPatchA11 = Number(String(matrix.version).split('.')[2] || 0);
+const ordB04 = ord.blockers.find((blocker) => blocker.id === 'ORD-B04');
+if (schedMatrixPatchA11 >= 70) {
+  assert(!ordB04, 'ORD-B04 must be closed after successful B04C staging composition');
+  assert(ord.evidence.some((item) => item.includes('run 30716088197')));
+} else {
+  assert(ordB04, 'ORD-B04 missing from completion matrix');
+  assert(ordB04.description.includes('SCHED-001'));
+  assert(ordB04.description.includes('canonical reservation reference'));
+}"""
+          replace_once(a11, old_a11_reference, new_a11_reference)
+          replace_once(a11, "const schedMatrixPatchA11 = Number(String(matrix.version).split('.')[2] || 0);\nif (schedMatrixPatchA11 >= 63) {",
+              "if (schedMatrixPatchA11 >= 63) {")
+          replace_once(a11,
+              "assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B04' && blocker.category === 'order_integration'));",
+              "if (schedMatrixPatchA11 >= 70) assert(!sched.blockers.some((blocker) => blocker.id === 'SCHED-B04'));\nelse assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B04' && blocker.category === 'order_integration'));"
+          )
+          replace_once(a11,
+              "if (schedMatrixPatchA11 >= 63) {\n    assert(sched.nextActions[0].includes('SCHED-B04') || sched.nextActions[0].includes('ORD-001'));\n    assert(ord.nextActions.some((action) => action.includes('ORD-B04') || action.includes('SCHED-B04')));",
+              "if (schedMatrixPatchA11 >= 70) {\n    assert(sched.nextActions[0].includes('frontend'));\n    assert(ord.nextActions[0].includes('ORD-B02'));\n  } else if (schedMatrixPatchA11 >= 63) {\n    assert(sched.nextActions[0].includes('SCHED-B04') || sched.nextActions[0].includes('ORD-001'));\n    assert(ord.nextActions.some((action) => action.includes('ORD-B04') || action.includes('SCHED-B04')));"
+          )
+
+          # B04C execution contract now accepts and verifies consumed success.
+          execution_audit = ROOT / 'scripts/audit-sched-001-b04c-authenticated-ord-sched-composition-canary-execution.js'
+          replace_once(execution_audit,
+              "  'consumed_failed_closed_blocked_on_b04d'\n].includes(config.authorization.status)",
+              "  'consumed_failed_closed_blocked_on_b04d',\n  'consumed_success'\n].includes(config.authorization.status)")
+          replace_once(execution_audit,
+              "if (config.authorization.status === 'consumed_failed_closed_blocked_on_b04d') {\n  assert.strictEqual(config.executionState.authenticatedCanaryExecuted, true);\n  assert.strictEqual(config.executionState.canaryPassed, false);\n  assert.strictEqual(config.executionState.blockedBy, 'SCHED-B04D-STAGING-MIGRATION');\n  assert.strictEqual(config.executionState.persistentMutationsPerformed, 0);\n  assert.strictEqual(config.executionState.allAuthorizedAttemptsRolledBack, true);\n  assert.strictEqual(config.executionState.allResidueCountsZero, true);\n}",
+              "if (config.authorization.status === 'consumed_failed_closed_blocked_on_b04d') {\n  assert.strictEqual(config.executionState.authenticatedCanaryExecuted, true);\n  assert.strictEqual(config.executionState.canaryPassed, false);\n  assert.strictEqual(config.executionState.blockedBy, 'SCHED-B04D-STAGING-MIGRATION');\n  assert.strictEqual(config.executionState.persistentMutationsPerformed, 0);\n  assert.strictEqual(config.executionState.allAuthorizedAttemptsRolledBack, true);\n  assert.strictEqual(config.executionState.allResidueCountsZero, true);\n} else if (config.authorization.status === 'consumed_success') {\n  assert.strictEqual(config.executionState.authenticatedCanaryExecuted, true);\n  assert.strictEqual(config.executionState.canaryPassed, true);\n  assert.strictEqual(config.executionState.blockedBy, null);\n  assert.strictEqual(config.executionState.successfulRun.runId, 30716088197);\n  assert.strictEqual(config.executionState.successfulRun.result, 'authenticated_ord_sched_composition_canary_passed');\n  assert.strictEqual(config.executionState.allAuthorizedAttemptsRolledBack, true);\n  assert.strictEqual(config.executionState.allResidueCountsZero, true);\n  assert.strictEqual(config.executionState.allAuthorityCountDeltasZero, true);\n}"
+          )
+
+          execution_test = ROOT / 'scripts/test-sched-001-b04c-authenticated-ord-sched-composition-canary-execution.js'
+          replace_once(execution_test,
+              "  'consumed_failed_closed_blocked_on_b04d'\n].includes(config.authorization.status));",
+              "  'consumed_failed_closed_blocked_on_b04d',\n  'consumed_success'\n].includes(config.authorization.status));")
+          replace_once(execution_test,
+              "if (config.authorization.status === 'awaiting_exact_authorization') {\n  assert.strictEqual(config.executionState.authenticatedCanaryExecuted, false);\n} else {\n  assert.strictEqual(config.executionState.authenticatedCanaryExecuted, true);\n  assert.strictEqual(config.executionState.canaryPassed, false);\n  assert.strictEqual(config.executionState.blockedBy, 'SCHED-B04D-STAGING-MIGRATION');\n  assert.strictEqual(config.executionState.persistentMutationsPerformed, 0);\n  assert.strictEqual(config.executionState.allAuthorizedAttemptsRolledBack, true);\n  assert.strictEqual(config.executionState.allResidueCountsZero, true);\n}",
+              "if (config.authorization.status === 'awaiting_exact_authorization') {\n  assert.strictEqual(config.executionState.authenticatedCanaryExecuted, false);\n} else if (config.authorization.status === 'consumed_success') {\n  assert.strictEqual(config.executionState.authenticatedCanaryExecuted, true);\n  assert.strictEqual(config.executionState.canaryPassed, true);\n  assert.strictEqual(config.executionState.blockedBy, null);\n  assert.strictEqual(config.executionState.successfulRun.runId, 30716088197);\n  assert.strictEqual(config.executionState.allAuthorizedAttemptsRolledBack, true);\n  assert.strictEqual(config.executionState.allResidueCountsZero, true);\n  assert.strictEqual(config.executionState.allAuthorityCountDeltasZero, true);\n} else {\n  assert.strictEqual(config.executionState.authenticatedCanaryExecuted, true);\n  assert.strictEqual(config.executionState.canaryPassed, false);\n  assert.strictEqual(config.executionState.blockedBy, 'SCHED-B04D-STAGING-MIGRATION');\n  assert.strictEqual(config.executionState.persistentMutationsPerformed, 0);\n  assert.strictEqual(config.executionState.allAuthorizedAttemptsRolledBack, true);\n  assert.strictEqual(config.executionState.allResidueCountsZero, true);\n}"
+          )
+          PY
+
+      - name: Regenerate deterministic matrix derivatives
+        run: npm run write:domain-completion-matrix
+
+      - name: Validate reconciled closure
+        run: |
+          set -euo pipefail
+          npm run audit:sched-001-b04c-authenticated-ord-sched-composition-canary-closure
+          node scripts/audit-sched-001-b04c-authenticated-ord-sched-composition-canary-execution.js
+          node scripts/test-sched-001-b04c-authenticated-ord-sched-composition-canary-execution.js
+          node scripts/audit-sched-001-b04d-canonical-order-projection-guard-readiness.js
+          node scripts/test-sched-001-b04d-canonical-order-projection-guard-runtime.js
+          node scripts/audit-sched-001-b04c-authenticated-ord-sched-composition-canary-readiness.js
+          node scripts/audit-sched-001-b04b-ord-canonical-wiring-implementation.js
+          node scripts/test-sched-001-b04b-ord-canonical-wiring-runtime.js
+          node scripts/audit-sched-001-b04-ord-canonical-wiring-readiness.js
+          node scripts/audit-sched-001-a07-history-canary-readiness.js
+          node scripts/audit-sched-001-a05-persistence-readiness.js
+          node scripts/audit-sched-001-a04-server-command-runtime.js
+          node scripts/audit-sched-001-a03-reservation-migration-local-contract.js
+          node scripts/audit-sched-001-a02-command-event-timezone-conflict-contract.js
+          node scripts/audit-sched-001-a01-repository-baseline-staging-security-preflight.js
+          node scripts/audit-ord-001-a11-scheduling-authority-handoff.js
+          node scripts/audit-ord-001-a10-blocker-reconciliation.js
+          node scripts/audit-ord-001-a01-baseline.js
+          npm run audit:domain-completion-matrix
+          git diff --check
+
+      - name: Publish B04C closure governance
+        run: |
+          set -euo pipefail
+          git config user.name "doke-ci"
+          git config user.email "doke-ci@users.noreply.github.com"
+          git add config docs scripts package.json .github/workflows/sched-001-b04c-authenticated-ord-sched-composition-canary-closure.yml
+          git add -f reports/generated/domain-completion-matrix-report.json
+          if git diff --cached --quiet; then
+            echo "B04C closure governance already reconciled."
+            exit 0
+          fi
+          git commit -m "docs(sched): close authenticated ORD scheduling integration"
+          git push origin HEAD:ord/ord-001-baseline-audit
