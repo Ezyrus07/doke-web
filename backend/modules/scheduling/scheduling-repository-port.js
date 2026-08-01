@@ -50,6 +50,12 @@ function mapRepositoryError(error) {
   if (!error || error.code && String(error.code).startsWith('DOKE_')) return error;
   const code = String(error.code || error.sqlState || '').toUpperCase();
   const message = String(error.message || error.details || '');
+  if (/^DOKE_[A-Z0-9_]+$/.test(message)) {
+    const domainError = new Error(message);
+    domainError.code = message;
+    domainError.sqlState = code || null;
+    return domainError;
+  }
   if (code === '23P01' || message.includes('schedule_reservations_no_active_overlap')) {
     return contractError(
       contract.ERROR_CODES.conflict,

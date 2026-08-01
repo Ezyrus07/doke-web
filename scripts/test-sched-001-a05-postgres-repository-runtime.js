@@ -8,7 +8,7 @@ const {
   ruleContainsRange,
   toCamelRow
 } = require('../backend/modules/scheduling/scheduling-postgres-repository');
-const { REQUIRED_TRANSACTION_METHODS } = require('../backend/modules/scheduling/scheduling-repository-port');
+const { REQUIRED_TRANSACTION_METHODS, mapRepositoryError } = require('../backend/modules/scheduling/scheduling-repository-port');
 
 function response(rows) {
   return { rows: rows || [] };
@@ -159,6 +159,12 @@ function createPool(client) {
     () => tx.updateReservation('res-1', 3, { status: 'confirmed', holdExpiresAt: null, version: 4, updatedAt: '2026-08-03T10:00:00.000Z' }),
     (error) => error.code === '40001'
   );
+
+  const projectionSqlError = new Error('DOKE_SCHEDULE_ORDER_PROJECTION_FAILED');
+projectionSqlError.code = '40001';
+const mappedProjectionError = mapRepositoryError(projectionSqlError);
+assert.strictEqual(mappedProjectionError.code, 'DOKE_SCHEDULE_ORDER_PROJECTION_FAILED');
+assert.strictEqual(mappedProjectionError.sqlState, '40001');
 
   const rollbackClient = createScriptedClient({});
   const rollbackRepository = createSchedulingPostgresRepository({ pool: createPool(rollbackClient) });
