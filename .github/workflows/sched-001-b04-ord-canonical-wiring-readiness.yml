@@ -1,63 +1,51 @@
-name: Doke SCHED-B04A Matrix Reconciliation
+name: Doke SCHED-B04 ORD Canonical Wiring Readiness
 
 on:
   pull_request:
     branches:
       - search/search-ux02-intent-favorites-clean
     paths:
+      - 'config/sched-001-b04-ord-canonical-wiring-readiness.json'
+      - 'docs/SCHED-001-B04-ORD-CANONICAL-WIRING-READINESS.md'
+      - 'docs/validation/SCHED-001-B04-ORD-CANONICAL-WIRING-READINESS.json'
+      - 'scripts/audit-sched-001-b04-ord-canonical-wiring-readiness.js'
+      - 'scripts/test-sched-001-b04-ord-canonical-wiring-readiness.js'
       - '.github/workflows/sched-001-b04-ord-canonical-wiring-readiness.yml'
+      - 'backend/modules/orders/orders-service.js'
+      - 'backend/modules/orders/order-state-machine.js'
+      - 'backend/modules/scheduling/scheduling-postgres-repository.js'
+      - 'config/domain-completion-matrix.json'
+      - 'package.json'
 
 permissions:
-  contents: write
-
-concurrency:
-  group: sched-b04a-matrix-reconciliation
-  cancel-in-progress: false
+  contents: read
 
 jobs:
-  reconcile:
-    if: github.event.pull_request.number == 25
+  readiness:
     runs-on: ubuntu-24.04
     steps:
-      - name: Checkout PR head branch
-        uses: actions/checkout@v4
-        with:
-          ref: ord/ord-001-baseline-audit
-          fetch-depth: 0
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
       - name: Install pinned dependencies
         run: npm ci --ignore-scripts
-      - name: Patch B04A matrix and regenerate derivatives
+      - name: Audit SCHED-B04 ORD canonical wiring readiness
+        run: npm run audit:sched-001-b04-ord-canonical-wiring-readiness
+      - name: Test SCHED-B04 ORD canonical wiring contract
+        run: npm run test:sched-001-b04-ord-canonical-wiring-readiness
+      - name: Preserve B02B authenticated composition evidence
         run: |
-          export SCHED_B04A_UPDATED_AT="$(TZ=America/Bahia date -Iseconds)"
-          node scripts/patch-sched-001-b04a-matrix.js
-          npm run write:domain-completion-matrix
-      - name: Validate reconciled state
-        run: |
-          set -euo pipefail
-          node scripts/test-sched-001-b04-ord-canonical-wiring-readiness.js
           node scripts/audit-sched-001-b02b-authenticated-composition-canary.js
           node scripts/test-sched-001-b02b-authenticated-composition-canary.js
+      - name: Preserve scheduling composition and persistence contracts
+        run: |
           node scripts/audit-sched-001-b02-composition-root-readiness.js
           node scripts/test-sched-001-b02-composition-root-runtime.js
           node scripts/audit-sched-001-a05-persistence-readiness.js
           node scripts/test-sched-001-a05-postgres-repository-runtime.js
-          node scripts/audit-ord-001-a11-scheduling-authority-handoff.js
-          node scripts/audit-domain-completion-matrix.js
-          git diff --check
-      - name: Remove temporary matrix patcher
-        run: git rm scripts/patch-sched-001-b04a-matrix.js
-      - name: Commit validated B04A reconciliation
-        run: |
-          set -euo pipefail
-          git config user.name "doke-ci"
-          git config user.email "doke-ci@users.noreply.github.com"
-          git add config/domain-completion-matrix.json \
-            package.json \
-            docs/DOMAIN-COMPLETION-MATRIX.md
-          git add -f reports/generated/domain-completion-matrix-report.json
-          git commit -m "docs(sched): register B04A canonical wiring readiness"
-          git push origin HEAD:ord/ord-001-baseline-audit
+      - name: Preserve ORD scheduling authority handoff
+        run: node scripts/audit-ord-001-a11-scheduling-authority-handoff.js
+      - name: Audit domain completion matrix
+        run: node scripts/audit-domain-completion-matrix.js
