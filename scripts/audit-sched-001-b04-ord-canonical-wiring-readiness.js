@@ -89,8 +89,14 @@ assert.strictEqual(sched.serverAuthority, 'partial');
 assert.strictEqual(sched.stagingEvidence, 'staging_canary');
 
 assert(workflow.includes('permissions:\n  contents: read'));
-assert(workflow.includes('node scripts/audit-sched-001-b04-ord-canonical-wiring-readiness.js'));
-assert(workflow.includes('node scripts/test-sched-001-b04-ord-canonical-wiring-readiness.js'));
+assert(
+  workflow.includes('node scripts/audit-sched-001-b04-ord-canonical-wiring-readiness.js')
+    || workflow.includes('npm run audit:sched-001-b04-ord-canonical-wiring-readiness')
+);
+assert(
+  workflow.includes('node scripts/test-sched-001-b04-ord-canonical-wiring-readiness.js')
+    || workflow.includes('npm run test:sched-001-b04-ord-canonical-wiring-readiness')
+);
 assert(workflow.includes('node scripts/audit-sched-001-b02b-authenticated-composition-canary.js'));
 assert(!workflow.includes('contents: write'));
 assert(!workflow.includes('secrets.'));
