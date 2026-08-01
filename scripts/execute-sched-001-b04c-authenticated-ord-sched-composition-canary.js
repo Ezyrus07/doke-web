@@ -41,8 +41,18 @@ function requireExact(value, expected, code) {
 function safeError(error) {
   const code = String(error && error.code || 'DOKE_SCHED_B04C_UNEXPECTED_FAILURE');
   const message = String(error && error.message || '');
-  if (/^DOKE_[A-Z0-9_]+$/.test(message)) return { code: message, message };
-  if (code.startsWith('DOKE_')) return { code, message: code };
+  const safeDetails = error && error.details && typeof error.details === 'object'
+    ? Object.freeze({
+        expectedCode: String(error.details.expectedCode || ''),
+        actualCode: error.details.actualCode == null ? null : String(error.details.actualCode)
+      })
+    : null;
+  if (/^DOKE_[A-Z0-9_]+$/.test(message)) {
+    return safeDetails ? { code: message, message, details: safeDetails } : { code: message, message };
+  }
+  if (code.startsWith('DOKE_')) {
+    return safeDetails ? { code, message: code, details: safeDetails } : { code, message: code };
+  }
   const diagnosticClasses = Object.freeze({
     '22007': 'invalid_datetime',
     '22P02': 'invalid_text_representation',
