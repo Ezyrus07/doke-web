@@ -13,10 +13,13 @@ const PATHS = Object.freeze({
   schedulingRepository: 'backend/modules/scheduling/scheduling-postgres-repository.js',
   b02Evidence: 'docs/validation/SCHED-001-B02B-AUTHENTICATED-COMPOSITION-CANARY.json',
   matrix: 'config/domain-completion-matrix.json',
-  workflow: '.github/workflows/sched-001-b04-ord-canonical-wiring-readiness.yml'
+  workflow: '.github/workflows/sched-001-b04-ord-canonical-wiring-readiness.yml',
+  b04bEvidence: 'docs/validation/SCHED-001-B04B-ORD-CANONICAL-WIRING-IMPLEMENTATION.json'
 });
 
-Object.values(PATHS).forEach((path) => assert(fs.existsSync(path), `Missing B04 readiness asset: ${path}`));
+Object.entries(PATHS)
+  .filter(([key]) => key !== 'b04bEvidence')
+  .forEach(([, path]) => assert(fs.existsSync(path), `Missing B04 readiness asset: ${path}`));
 
 const config = JSON.parse(fs.readFileSync(PATHS.config, 'utf8'));
 const evidence = JSON.parse(fs.readFileSync(PATHS.evidence, 'utf8'));
@@ -53,14 +56,26 @@ assert.strictEqual(config.capabilities.stagingCanaryExecuted, false);
 assert.strictEqual(b02Evidence.result, 'authenticated_composition_canary_passed');
 assert.deepStrictEqual(b02Evidence.blockers.remainingOpen, ['SCHED-B04']);
 
-// Current gaps are intentionally frozen by readiness and must remain visible until B04B.
-assert(orderService.includes("'scheduled_at',"));
-assert(!readOrderSelect(orderService).includes("'schedule_reservation_id'"));
-assert(orderService.includes('scheduledAt: source.scheduled_at || source.scheduledAt ||'));
-assert(!orderService.includes('scheduleReservationId: source.schedule_reservation_id'));
-assert(orderService.includes('p_scheduled_at: body.scheduledAt || body.scheduled_at || null'));
-assert(orderStateMachine.includes("accepted: Object.freeze(['quoted', 'scheduled', 'in_progress', 'cancelled'])"));
-assert(orderStateMachine.includes("quoted: Object.freeze(['accepted', 'scheduled', 'in_progress', 'cancelled'])"));
+const b04bImplemented = fs.existsSync(PATHS.b04bEvidence);
+if (b04bImplemented) {
+  assert(readOrderSelect(orderService).includes("'schedule_reservation_id'"));
+  assert(orderService.includes('scheduleReservationId: scheduleProjection.scheduleReservationId'));
+  assert(orderService.includes('scheduleAuthority: scheduleProjection.authority'));
+  assert(orderService.includes('p_scheduled_at: null'));
+  assert(!orderService.includes('p_scheduled_at: body.scheduledAt || body.scheduled_at || null'));
+  assert(!orderStateMachine.includes("accepted: Object.freeze(['quoted', 'scheduled', 'in_progress', 'cancelled'])"));
+  assert(!orderStateMachine.includes("quoted: Object.freeze(['accepted', 'scheduled', 'in_progress', 'cancelled'])"));
+  assert(orderStateMachine.includes('DOKE_ORDER_SCHEDULE_AUTHORITY_REQUIRED'));
+} else {
+  // Current gaps are intentionally frozen by readiness and must remain visible until B04B.
+  assert(orderService.includes("'scheduled_at',"));
+  assert(!readOrderSelect(orderService).includes("'schedule_reservation_id'"));
+  assert(orderService.includes('scheduledAt: source.scheduled_at || source.scheduledAt ||'));
+  assert(!orderService.includes('scheduleReservationId: source.schedule_reservation_id'));
+  assert(orderService.includes('p_scheduled_at: body.scheduledAt || body.scheduled_at || null'));
+  assert(orderStateMachine.includes("accepted: Object.freeze(['quoted', 'scheduled', 'in_progress', 'cancelled'])"));
+  assert(orderStateMachine.includes("quoted: Object.freeze(['accepted', 'scheduled', 'in_progress', 'cancelled'])"));
+}
 
 // Preserve SCHED as the only canonical projection writer.
 [

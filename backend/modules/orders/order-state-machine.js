@@ -32,8 +32,8 @@ const STATUS_ALIASES = Object.freeze({
 const TRANSITIONS = Object.freeze({
   draft: Object.freeze(['requested', 'cancelled']),
   requested: Object.freeze(['accepted', 'quoted', 'cancelled']),
-  accepted: Object.freeze(['quoted', 'scheduled', 'in_progress', 'cancelled']),
-  quoted: Object.freeze(['accepted', 'scheduled', 'in_progress', 'cancelled']),
+  accepted: Object.freeze(['quoted', 'in_progress', 'cancelled']),
+  quoted: Object.freeze(['accepted', 'in_progress', 'cancelled']),
   scheduled: Object.freeze(['in_progress', 'cancelled']),
   in_progress: Object.freeze(['completed', 'cancelled', 'disputed']),
   completed: Object.freeze(['disputed']),
@@ -126,8 +126,8 @@ function isRoleTransitionAllowed(currentStatus, nextStatus, actorRole) {
     return {
       draft: [],
       requested: ['accepted', 'quoted', 'cancelled'],
-      accepted: ['quoted', 'scheduled', 'in_progress', 'cancelled'],
-      quoted: ['scheduled', 'in_progress', 'cancelled'],
+      accepted: ['quoted', 'in_progress', 'cancelled'],
+      quoted: ['in_progress', 'cancelled'],
       scheduled: ['in_progress', 'cancelled'],
       in_progress: ['completed', 'cancelled', 'disputed'],
       completed: ['disputed'],
@@ -177,6 +177,15 @@ function assertTransition(input) {
   const next = normalizeStatus(details.nextStatus);
   const role = normalizeRole(details.actorRole);
   const action = String(details.action || 'updateStatus').trim();
+
+  if (next === 'scheduled') {
+    throw createError(
+      'DOKE_ORDER_SCHEDULE_AUTHORITY_REQUIRED',
+      'The scheduled status can be projected only by a confirmed canonical schedule reservation.',
+      409,
+      { currentStatus: current, nextStatus: next, actorRole: role, action }
+    );
+  }
 
   if (canTransition({ currentStatus: current, nextStatus: next, actorRole: role, action })) {
     return Object.freeze({ currentStatus: current, nextStatus: next, actorRole: role, action });

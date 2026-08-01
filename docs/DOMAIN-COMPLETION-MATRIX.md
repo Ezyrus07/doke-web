@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 1045 arquivos no escopo; 248 referências a localStorage; 78 a sessionStorage; 557 referências mock; 196 referências de rede/Supabase; 35 marcadores de implementação pendente.
+**Evidência estática observada:** 1048 arquivos no escopo; 248 referências a localStorage; 78 a sessionStorage; 557 referências mock; 196 referências de rede/Supabase; 35 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -387,7 +387,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção blocked.
 
-**Evidência estática observada:** 24 arquivos no escopo; 11 referências a localStorage; 0 a sessionStorage; 71 referências mock; 22 referências de rede/Supabase; 2 marcadores de implementação pendente.
+**Evidência estática observada:** 25 arquivos no escopo; 11 referências a localStorage; 0 a sessionStorage; 71 referências mock; 22 referências de rede/Supabase; 2 marcadores de implementação pendente.
 
 **Páginas:** `orcamento.html`, `pedidos.html`, `mensagens.html`, `pagamento-profissional.html`, `admin-pedidos-operacao.html`.
 
@@ -496,6 +496,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - ORD-001 now has an executable SCHED-A04 order projection port for schedule_reservation_id and scheduled_at, but ORD-B04 remains open until a transactional adapter and staging activation exist.
 - SCHED-A08 completed the official migration-history repair and rolled-back remote overlap, adjacency, idempotency, event, DST and order-projection canaries; ORD-B04 remains open only for trusted runtime wiring to the canonical reservation authority.
 - SCHED-B04A froze the repository-only ORD canonical wiring contract: schedule_reservation_id is the reservation authority, scheduled_at is projection-only, direct schedule writes remain prohibited, and no runtime, staging, frontend, deployment or production effect occurred.
+- ORD generic commands can no longer manufacture scheduled state or cancel/start through an unresolved canonical reservation; B04B remains fail-closed until the authenticated composition canary.
 
 **Bloqueadores:**
 - **ORD-B02 · HIGH · frontend_activation:** Canonical reads, canary commands, cleanup, deterministic settlement, readiness discovery and the fail-closed Playwright executor pass. A short-lived authorization envelope is mandatory; ORD-B02 remains under ORD-001 until explicit resource authorization is issued, check-env passes, the real two-context visual canary is executed and run-scoped cleanup proves zero residue. _(Fase 6)_
@@ -507,6 +508,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - Implement ORD-B04 through SCHED-B04B so orders consume schedule_reservation_id as authority and scheduled_at only as a projection from a confirmed reservation.
 - Preserve order lifecycle ownership while prohibiting generic manual transitions to scheduled and direct frontend writes to canonical schedule fields.
 - Keep staging, deployment, production and merge blocked pending independent local and remote evidence.
+- Validate ORD/SCHED authenticated composition and atomic order-event behavior in SCHED-B04C before frontend authority switch.
 
 **Gate de saída:**
 - Two real accounts complete request, accept, proposal, approval, start and completion across devices.
@@ -520,7 +522,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI local; servidor partial; staging staging canary; segurança partial; produção blocked.
 
-**Evidência estática observada:** 1011 arquivos no escopo; 186 referências a localStorage; 70 a sessionStorage; 301 referências mock; 195 referências de rede/Supabase; 19 marcadores de implementação pendente.
+**Evidência estática observada:** 1013 arquivos no escopo; 186 referências a localStorage; 70 a sessionStorage; 301 referências mock; 195 referências de rede/Supabase; 19 marcadores de implementação pendente.
 
 **Páginas:** `anunciar-servico.html`, `pedidos.html`, `orcamento.html`.
 
@@ -550,6 +552,8 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - SCHED-B02B run 30676215676 passed at commit 4168cd4983afd34c42c5bfcf48d2723d060a5b18: client, professional, support and administrator allowed/forbidden boundaries passed; idempotent replay, divergent payload rejection, overlap rejection and order projection passed; the transaction ended in ROLLBACK; all 11 residue counters were zero and authority counts were unchanged.
 - No production access, migration, deploy, Cron, worker, frontend connection, ORD wiring, billing, infrastructure, merge or auto-merge occurred. SCHED-B02 is closed by the authenticated composition evidence; SCHED-B04 remains open for separately authorized ORD integration.
 - SCHED-B04A froze the repository-only ORD canonical wiring contract: schedule_reservation_id is the reservation authority, scheduled_at is projection-only, direct schedule writes remain prohibited, and no runtime, staging, frontend, deployment or production effect occurred.
+- SCHED-B04B wires the ORD read model to schedule_reservation_id, demotes client-supplied dates to metadata intent, blocks generic scheduled transitions, and projects confirmed reservations atomically as scheduled.
+- Reservation cancellation clears the matching reference and time projection, returns scheduled orders to accepted, and start/cancel paths fail closed when canonical scheduling authority is unavailable.
 
 **Bloqueadores:**
 - **SCHED-B04 · HIGH · order_integration:** The ORD/SCHED authority contract is frozen, but the order read model, trusted command composition and local integration tests are not implemented. _(Fase 6)_
@@ -558,6 +562,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - Implement SCHED-B04B locally: expose schedule_reservation_id in the order read model, reject direct canonical scheduled_at writes, and compose confirmed reservations with the scheduled order state.
 - Add fail-closed local tests for confirm, reschedule, reservation cancellation, order cancellation and start-order authorization across ORD-001 and SCHED-001.
 - Keep staging mutations, frontend authority switch, deployment, Cron, workers, production and merge blocked until a separately authorized remote canary exists.
+- Prepare SCHED-B04C authenticated ORD/SCHED composition canary readiness with rollback-only staging evidence.
 
 **Gate de saída:**
 - Concurrent booking attempts cannot reserve the same slot.
@@ -950,7 +955,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 1/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 232 arquivos no escopo; 64 referências a localStorage; 8 a sessionStorage; 269 referências mock; 8 referências de rede/Supabase; 25 marcadores de implementação pendente.
+**Evidência estática observada:** 233 arquivos no escopo; 64 referências a localStorage; 8 a sessionStorage; 269 referências mock; 8 referências de rede/Supabase; 25 marcadores de implementação pendente.
 
 **Evidências:**
 - The master plan identifies legal, privacy and commercial decisions as mandatory.
@@ -1010,7 +1015,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2362 arquivos no escopo; 505 referências a localStorage; 151 a sessionStorage; 880 referências mock; 593 referências de rede/Supabase; 90 marcadores de implementação pendente.
+**Evidência estática observada:** 2367 arquivos no escopo; 505 referências a localStorage; 151 a sessionStorage; 880 referências mock; 593 referências de rede/Supabase; 90 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
@@ -1071,4 +1076,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-07-31T22:18:12-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-08-01T06:53:00-03:00._

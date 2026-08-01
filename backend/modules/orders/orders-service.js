@@ -5,6 +5,13 @@ const {
   normalizeStatus,
   assertTransition
 } = require('./order-state-machine');
+const {
+  readScheduleProjection,
+  readSchedulePreference,
+  applySchedulePreference,
+  assertStartScheduleAuthority,
+  assertGenericCancellationAllowed
+} = require('./order-scheduling-authority');
 
 const ORDER_SELECT = [
   'id',
@@ -20,6 +27,7 @@ const ORDER_SELECT = [
   'city',
   'state',
   'scheduled_at',
+  'schedule_reservation_id',
   'metadata',
   'created_at',
   'updated_at'
@@ -87,6 +95,7 @@ function normalizeOrder(row, options) {
       : null;
   const budget = options && options.budget || null;
   const amountCents = budget && Number.isFinite(Number(budget.amount_cents)) ? Number(budget.amount_cents) : null;
+  const scheduleProjection = readScheduleProjection(source);
   return Object.freeze({
     id: source.id || '',
     clientId: source.client_id || source.clientId || '',
@@ -101,7 +110,10 @@ function normalizeOrder(row, options) {
     city: source.city || '',
     state: source.state || '',
     location: [source.city, source.state].filter(Boolean).join(', '),
-    scheduledAt: source.scheduled_at || source.scheduledAt || '',
+    scheduleReservationId: scheduleProjection.scheduleReservationId,
+    scheduledAt: scheduleProjection.scheduledAt,
+    scheduleAuthority: scheduleProjection.authority,
+    hasCanonicalSchedule: scheduleProjection.canonical,
     metadata: cloneJson(metadata) || {},
     createdAt: source.created_at || source.createdAt || '',
     updatedAt: source.updated_at || source.updatedAt || '',
@@ -156,6 +168,7 @@ async function createOrder(context, actor) {
   const supabase = requireSupabase(context);
   const safeActor = requireActor(actor);
   const body = context.body || {};
+  const schedulePreference = readSchedulePreference(body);
   const serviceRef = sanitizeReference(body.serviceId || body.service_id);
   if (!serviceRef) throw badRequest('Service id is required.');
 
@@ -175,7 +188,7 @@ async function createOrder(context, actor) {
   const title = sanitizeText(body.title || body.serviceTitle || body.summary, 140);
   if (!title) throw badRequest('Order title is required.');
 
-  const metadata = sanitizeOrderMetadata(body);
+  const metadata = sanitizeOrderMetadata(body, schedulePreference);
   if (typeof supabase.rpc !== 'function') {
     throw unavailable('Supabase RPC support is required for canonical order creation.');
   }
@@ -185,7 +198,7 @@ async function createOrder(context, actor) {
     p_description: sanitizeText(body.description || body.details || '', 4000) || null,
     p_city: sanitizeText(body.city || metadata.city || '', 80) || null,
     p_state: sanitizeText(body.state || metadata.state || '', 40) || null,
-    p_scheduled_at: body.scheduledAt || body.scheduled_at || null,
+    p_scheduled_at: null,
     p_metadata: metadata,
     p_external_id: sanitizeText(body.externalId || body.external_id || body.idempotencyKey || body.idempotency_key || '', 160) || null
   });
@@ -206,6 +219,7 @@ async function declineOrder(context, actor, orderId) {
   const supabase = requireSupabase(context);
   const order = await readOrderRow(supabase, orderId);
   assertProfessionalOrderAccess(order, actor);
+  assertGenericCancellationAllowed(order);
   const note = sanitizeText(context.body && (context.body.reason || context.body.note) || 'Pedido recusado pelo profissional.', 500);
   return transitionOrder(supabase, order, actor, 'cancelled', note, 'decline');
 }
@@ -262,6 +276,7 @@ async function startOrder(context, actor, orderId) {
   const supabase = requireSupabase(context);
   const order = await readOrderRow(supabase, orderId);
   assertProfessionalOrderAccess(order, actor);
+  await assertStartScheduleAuthority(context, order);
   return transitionOrder(supabase, order, actor, 'in_progress', 'Atendimento iniciado pelo profissional.', 'start');
 }
 
@@ -277,6 +292,8 @@ async function updateOrderStatus(context, actor, orderId) {
   const supabase = chooseOrderSupabase(context, actor);
   const order = await readOrderRow(supabase, orderId);
   const nextStatus = normalizeBackendStatus(context.body && (context.body.status || context.body.nextStatus));
+  if (nextStatus === 'cancelled') assertGenericCancellationAllowed(order);
+  if (nextStatus === 'in_progress') await assertStartScheduleAuthority(context, order);
   const note = sanitizeText(context.body && (context.body.note || context.body.reason) || `Status atualizado para ${nextStatus}.`, 800);
   return transitionOrder(supabase, order, actor, nextStatus, note, 'updateStatus');
 }
@@ -320,7 +337,7 @@ function isOrderEligibleService(service) {
   return ['published', 'changes_pending_review', 'changes_required'].includes(String(service.moderation_status || '').toLowerCase());
 }
 
-function sanitizeOrderMetadata(body) {
+function sanitizeOrderMetadata(body, schedulePreference) {
   const source = body && body.metadata && typeof body.metadata === 'object'
     ? body.metadata
     : body && typeof body === 'object'
@@ -334,7 +351,7 @@ function sanitizeOrderMetadata(body) {
   delete metadata.serviceSnapshotAuthority;
   delete metadata.professionalId;
   delete metadata.providerId;
-  return metadata;
+  return applySchedulePreference(metadata, schedulePreference);
 }
 
 async function transitionOrder(supabase, order, actor, nextStatus, note, action) {

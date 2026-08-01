@@ -41,7 +41,7 @@ function resolveCanonicalSchedule(order, reservation) {
 
 function mayTransitionOrderToScheduled(order, reservation) {
   const current = String(order && order.status || '').toLowerCase();
-  if (!['accepted', 'quoted', 'scheduled'].includes(current)) return false;
+  if (!['accepted', 'scheduled'].includes(current)) return false;
   return resolveCanonicalSchedule(order, reservation).canonical;
 }
 

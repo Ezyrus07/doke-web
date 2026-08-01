@@ -144,6 +144,7 @@ function createCommandHandlers(options) {
     const reservation = await requireReservation(tx, payload.reservationId);
     const order = await requireOrder(tx, reservation.orderId);
     assertOrderEligible(order);
+    assertOrderSchedulable(order);
     assertMatchingProfessional(order, reservation.professionalId);
     contract.assertTransition(scope.commandName, reservation.status, context.actor.role);
     contract.assertExpectedVersion(reservation.version, payload.expectedVersion);
@@ -185,7 +186,8 @@ function createCommandHandlers(options) {
       orderProjection: Object.freeze({
         orderId: order.id,
         scheduleReservationId: updated.id,
-        scheduledAt: updated.startsAt
+        scheduledAt: updated.startsAt,
+        orderStatus: 'scheduled'
       }),
       event
     });
@@ -196,6 +198,7 @@ function createCommandHandlers(options) {
     const reservation = await requireReservation(tx, payload.reservationId);
     const order = await requireOrder(tx, reservation.orderId);
     assertOrderEligible(order);
+    assertOrderSchedulable(order);
     contract.assertTransition(scope.commandName, reservation.status, context.actor.role);
     contract.assertExpectedVersion(reservation.version, payload.expectedVersion);
 
@@ -244,7 +247,8 @@ function createCommandHandlers(options) {
       orderProjection: Object.freeze({
         orderId: order.id,
         scheduleReservationId: updated.id,
-        scheduledAt: updated.startsAt
+        scheduledAt: updated.startsAt,
+        orderStatus: 'scheduled'
       }),
       event
     });
@@ -289,7 +293,8 @@ function createCommandHandlers(options) {
       orderProjection: Object.freeze({
         orderId: order.id,
         scheduleReservationId: null,
-        scheduledAt: null
+        scheduledAt: null,
+        orderStatus: 'accepted'
       }),
       event
     });
@@ -403,6 +408,19 @@ function assertOrderEligible(order) {
       RUNTIME_ERROR_CODES.orderIneligible,
       'The order is not eligible for scheduling.',
       { orderId: order.id, orderStatus: order.status },
+      409
+    );
+  }
+  return true;
+}
+
+function assertOrderSchedulable(order) {
+  const status = String(order && order.status || '').toLowerCase();
+  if (!['accepted', 'scheduled'].includes(status)) {
+    throw runtimeError(
+      RUNTIME_ERROR_CODES.orderIneligible,
+      'The order must be accepted before a schedule reservation can project it as scheduled.',
+      { orderId: order && order.id || null, orderStatus: status || null },
       409
     );
   }

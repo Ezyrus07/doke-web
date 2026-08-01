@@ -89,7 +89,15 @@ assert(rls.includes('availability_slots_owner_update'));
 assert(rls.includes('availability_slots_owner_delete'));
 assert(policies.includes('availability_slots_anon_select'));
 assert(policies.includes('availability_slots_authenticated_select'));
-assert(orderService.includes('p_scheduled_at: body.scheduledAt || body.scheduled_at || null'));
+const b04bImplemented = fs.existsSync('docs/validation/SCHED-001-B04B-ORD-CANONICAL-WIRING-IMPLEMENTATION.json');
+if (b04bImplemented) {
+  assert(orderService.includes("'schedule_reservation_id',"));
+  assert(orderService.includes('scheduleReservationId: scheduleProjection.scheduleReservationId'));
+  assert(orderService.includes('p_scheduled_at: null'));
+  assert(!orderService.includes('p_scheduled_at: body.scheduledAt || body.scheduled_at || null'));
+} else {
+  assert(orderService.includes('p_scheduled_at: body.scheduledAt || body.scheduled_at || null'));
+}
 assert(orderRepository.includes('serviceAvailabilitySchedule'));
 assert(orderRepository.includes('desiredDate'));
 assert(orderRepository.includes("shift: raw.shift || 'Flexível'"));

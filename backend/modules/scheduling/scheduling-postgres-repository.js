@@ -232,8 +232,10 @@ function createTransactionPort(client) {
       const response = await query(
         `/* sched-a05:project-order-schedule */
          update public.orders
-         set schedule_reservation_id = $2, scheduled_at = $3, updated_at = pg_catalog.now()
+         set schedule_reservation_id = $2, scheduled_at = $3, status = 'scheduled', updated_at = pg_catalog.now()
          where id = $1
+           and status in ('accepted', 'scheduled')
+           and (schedule_reservation_id is null or schedule_reservation_id = $2)
          returning id, client_id, professional_id, status, scheduled_at, schedule_reservation_id`,
         [orderId, reservationId, scheduledAt]
       );
@@ -244,8 +246,10 @@ function createTransactionPort(client) {
       const response = await query(
         `/* sched-a05:clear-order-schedule */
          update public.orders
-         set schedule_reservation_id = null, scheduled_at = null, updated_at = pg_catalog.now()
-         where id = $1 and (schedule_reservation_id is null or schedule_reservation_id = $2)
+         set schedule_reservation_id = null, scheduled_at = null,
+             status = case when status = 'scheduled' then 'accepted' else status end,
+             updated_at = pg_catalog.now()
+         where id = $1 and schedule_reservation_id = $2
          returning id, client_id, professional_id, status, scheduled_at, schedule_reservation_id`,
         [orderId, reservationId]
       );
