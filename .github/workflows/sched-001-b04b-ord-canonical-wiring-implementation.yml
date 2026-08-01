@@ -1,0 +1,56 @@
+name: Doke SCHED-B04B ORD Canonical Wiring Implementation
+
+on:
+  pull_request:
+    branches:
+      - search/search-ux02-intent-favorites-clean
+    paths:
+      - 'backend/modules/orders/order-scheduling-authority.js'
+      - 'backend/modules/orders/orders-service.js'
+      - 'backend/modules/orders/order-state-machine.js'
+      - 'backend/modules/scheduling/scheduling-command-handlers.js'
+      - 'backend/modules/scheduling/scheduling-postgres-repository.js'
+      - 'config/sched-001-b04b-ord-canonical-wiring-implementation.json'
+      - 'docs/SCHED-001-B04B-ORD-CANONICAL-WIRING-IMPLEMENTATION.md'
+      - 'docs/validation/SCHED-001-B04B-ORD-CANONICAL-WIRING-IMPLEMENTATION.json'
+      - 'scripts/audit-sched-001-b04b-ord-canonical-wiring-implementation.js'
+      - 'scripts/test-sched-001-b04b-ord-canonical-wiring-runtime.js'
+      - 'scripts/audit-sched-001-b04-ord-canonical-wiring-readiness.js'
+      - '.github/workflows/sched-001-b04b-ord-canonical-wiring-implementation.yml'
+      - 'config/domain-completion-matrix.json'
+      - 'package.json'
+
+permissions:
+  contents: read
+
+jobs:
+  implementation:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install pinned dependencies
+        run: npm ci --ignore-scripts
+      - name: Audit B04B implementation
+        run: npm run audit:sched-001-b04b-ord-canonical-wiring-implementation
+      - name: Test B04B runtime contract
+        run: npm run test:sched-001-b04b-ord-canonical-wiring-runtime
+      - name: Preserve B04A readiness
+        run: |
+          npm run audit:sched-001-b04-ord-canonical-wiring-readiness
+          npm run test:sched-001-b04-ord-canonical-wiring-readiness
+      - name: Preserve scheduling repository runtime
+        run: |
+          node scripts/audit-sched-001-a05-persistence-readiness.js
+          node scripts/test-sched-001-a05-postgres-repository-runtime.js
+      - name: Preserve scheduling service runtime
+        run: |
+          node scripts/audit-sched-001-a04-server-command-runtime.js
+          node scripts/test-sched-001-a04-scheduling-service-runtime.js
+      - name: Preserve ORD scheduling handoff
+        run: node scripts/audit-ord-001-a11-scheduling-authority-handoff.js
+      - name: Audit domain completion matrix
+        run: npm run audit:domain-completion-matrix
