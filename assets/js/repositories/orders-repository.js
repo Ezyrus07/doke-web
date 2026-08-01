@@ -225,6 +225,7 @@
       quoted: 'Orçamento enviado',
       budget_sent: 'Orçamento enviado',
       accepted: 'Pedido aceito',
+      scheduled: 'Agendado',
       in_progress: 'Em andamento',
       completed: 'Concluído',
       cancelled: 'Cancelado',
@@ -233,6 +234,30 @@
       responded: 'Respondido'
     };
     return labels[normalizedStatus] || 'Aguardando resposta';
+  }
+
+
+  function deriveScheduleAuthority(raw, normalizedStatus) {
+    raw = raw || {};
+    var scheduleReservationId = normalizeText(raw.scheduleReservationId || raw.schedule_reservation_id || '');
+    var scheduledAt = normalizeText(raw.scheduledAt || raw.scheduled_at || '');
+    var status = normalizeStatus(normalizedStatus || raw.status || '');
+    var desiredDate = normalizeText(raw.desiredDate || raw.date || raw.daté || '');
+    var hasReservation = Boolean(scheduleReservationId);
+    var hasScheduledAt = Boolean(scheduledAt);
+    var isScheduled = status === 'scheduled';
+    var authority = 'none';
+
+    if (hasReservation && hasScheduledAt && isScheduled) authority = 'canonical_confirmed';
+    else if (hasReservation || hasScheduledAt || isScheduled) authority = 'incomplete_projection';
+    else if (desiredDate) authority = 'client_intent';
+
+    return Object.freeze({
+      scheduleReservationId: scheduleReservationId,
+      scheduledAt: scheduledAt,
+      scheduleAuthority: authority,
+      hasCanonicalSchedule: authority === 'canonical_confirmed'
+    });
   }
 
   function makeId() {
@@ -260,6 +285,7 @@
     var serviceAvailabilitySchedule = Array.isArray(raw.serviceAvailabilitySchedule)
       ? raw.serviceAvailabilitySchedule
       : (serviceSnapshot && Array.isArray(serviceSnapshot.availabilitySchedule) ? serviceSnapshot.availabilitySchedule : []);
+    var scheduleProjection = deriveScheduleAuthority(raw, status);
 
     return Object.assign({}, raw, {
       id: normalizeText(raw.id) || makeId(),
@@ -296,7 +322,11 @@
       details: raw.details || raw.description || '',
       status: status,
       backendStatus: raw.backendStatus || rawStatus,
-      statusLabel: statusLabel,
+      statusLabel: status === 'scheduled' ? 'Agendado' : statusLabel,
+      scheduleReservationId: scheduleProjection.scheduleReservationId,
+      scheduledAt: scheduleProjection.scheduledAt,
+      scheduleAuthority: scheduleProjection.scheduleAuthority,
+      hasCanonicalSchedule: scheduleProjection.hasCanonicalSchedule,
       createdAt: createdAt,
       creatédAt: createdAt,
       updatedAt: updatedAt,
@@ -465,7 +495,8 @@
       status: row.status,
       city: row.city || metadata.city,
       state: row.state || metadata.state,
-      scheduledAt: row.scheduled_at || metadata.scheduledAt,
+      scheduleReservationId: row.schedule_reservation_id || '',
+      scheduledAt: row.scheduled_at || '',
       createdAt: row.created_at || metadata.createdAt,
       updatedAt: row.updated_at || metadata.updatedAt,
       syncStatus: 'synced',
@@ -693,6 +724,7 @@
     legacyStorageKey: LEGACY_STORAGE_KEY,
     normalize: normalizeOrder,
     normalizeStatus: normalizeStatus,
+    deriveScheduleAuthority: deriveScheduleAuthority,
     readLocal: readLocal,
     listLocal: listLocal,
     load: load,

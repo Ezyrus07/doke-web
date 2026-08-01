@@ -235,7 +235,7 @@
     if (status === 'disputed') return 'disputed';
     if (status === 'completed') return 'completed';
     if (status === 'cancelled') return 'cancelled';
-    if (status === 'conversation' || status === 'accepted' || status === 'in_progress') return 'conversation';
+    if (status === 'conversation' || status === 'accepted' || status === 'scheduled' || status === 'in_progress') return 'conversation';
     if (status === 'responded' || status === 'quoted') return 'responded';
     return 'pending';
   }
@@ -292,6 +292,72 @@
     }).join(' • ');
   }
 
+
+  function formatIntentDate(value) {
+    var normalized = String(value || '').trim();
+    if (!normalized) return '';
+    var match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(normalized);
+    var date = match
+      ? new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]), 12, 0, 0)
+      : new Date(normalized);
+    if (Number.isNaN(date.getTime())) return normalized;
+    return new Intl.DateTimeFormat('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    }).format(date);
+  }
+
+  function formatCanonicalSchedule(value) {
+    var date = new Date(value || '');
+    if (Number.isNaN(date.getTime())) return null;
+    var timeZone = '';
+    try { timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; }
+    catch (error) { timeZone = ''; }
+    var options = { dateStyle: 'medium', timeStyle: 'short' };
+    if (timeZone) options.timeZone = timeZone;
+    return {
+      label: new Intl.DateTimeFormat('pt-BR', options).format(date),
+      timeZone: timeZone
+    };
+  }
+
+  function getSchedulePresentation(order) {
+    order = order || {};
+    var authority = String(order.scheduleAuthority || 'none');
+    if (authority === 'canonical_confirmed' && order.hasCanonicalSchedule === true) {
+      var canonical = formatCanonicalSchedule(order.scheduledAt);
+      if (canonical) {
+        return {
+          authority: 'canonical_confirmed',
+          label: 'Agendado: ' + canonical.label,
+          detail: 'Agendamento confirmado para ' + canonical.label + (canonical.timeZone ? ' (' + canonical.timeZone + ')' : '')
+        };
+      }
+      authority = 'incomplete_projection';
+    }
+    if (authority === 'incomplete_projection') {
+      return {
+        authority: 'incomplete_projection',
+        label: 'Agenda indisponível: atualize o pedido',
+        detail: 'A projeção de agenda está incompleta. Nenhum horário deve ser tratado como confirmado.'
+      };
+    }
+    if (authority === 'client_intent') {
+      var intent = formatIntentDate(order.desiredDate || order.date || order.daté || '');
+      return {
+        authority: 'client_intent',
+        label: 'Data desejada: ' + (intent || 'a combinar'),
+        detail: 'Data desejada pelo cliente. O horário ainda não foi confirmado.'
+      };
+    }
+    return {
+      authority: 'none',
+      label: 'Disponibilidade do anúncio: ' + formatServiceSchedule(order),
+      detail: 'Nenhum agendamento foi confirmado para este pedido.'
+    };
+  }
+
   function getAttachmentsCount(order) {
     return Array.isArray(order && order.attachments) ? order.attachments.length : 0;
   }
@@ -310,6 +376,8 @@
   function getCardBadgeLabel(order) {
     var status = normalizeStatusToken(order && order.status || 'pending');
     if (order && order.smartBadge) return order.smartBadge;
+    if (order && order.scheduleAuthority === 'incomplete_projection') return 'Agenda indisponível';
+    if (order && order.scheduleAuthority === 'canonical_confirmed' && order.hasCanonicalSchedule === true) return 'Agendado';
     if (status === 'completed') return 'Pós-serviço';
     if (status === 'accepted' || status === 'conversation') return 'Conversa';
     if (status === 'quoted') return 'Proposta';
@@ -350,6 +418,8 @@
 
   function getDetailFlow(order, professionalView) {
     var status = order.status || 'pending';
+    if (order.scheduleAuthority === 'incomplete_projection') return 'A projeção de agenda está incompleta. Atualize o pedido antes de considerar qualquer horário confirmado.';
+    if (order.scheduleAuthority === 'canonical_confirmed' && order.hasCanonicalSchedule === true) return 'O horário foi confirmado pela autoridade canônica de agenda.';
     if (status === 'accepted' || status === 'conversation' || status === 'responded') return 'Pedido aceito. A conversa está liberada para alinhar proposta e próximos passos.';
     if (status === 'quoted') return 'Proposta enviada pelo profissional. O cliente precisa aprovar para liberar o atendimento.';
     if (status === 'in_progress') {
@@ -414,13 +484,14 @@
     var title = escapeHtml(formatCardTitle(order.serviceTitle || order.service || order.title || 'Serviço solicitado'));
     var serviceImage = getServiceImage(order);
     var serviceCategory = escapeHtml(getServiceCategory(order) || 'Serviço');
-    var serviceSchedule = escapeHtml(formatServiceSchedule(order));
+    var schedulePresentation = getSchedulePresentation(order);
+    var serviceSchedule = escapeHtml(schedulePresentation.label);
     var attachmentsCount = getAttachmentsCount(order);
     var serviceHref = order.serviceId ? 'detalhe-anuncio.html?id=' + encodeURIComponent(order.serviceId) : '';
     var location = escapeHtml(formatCardLocation(order.location || order.locationTitle || 'Endereço a confirmar'));
     var cardBadge = escapeHtml(getCardBadgeLabel(order));
     var scope = escapeHtml(order.scope || order.details || order.description || 'Escopo enviado pelo orçamento');
-    var timeline = escapeHtml(order.urgency || order.desiredDate || 'Aguardando retorno do profissional');
+    var timeline = escapeHtml(schedulePresentation.detail || order.urgency || order.desiredDate || 'Aguardando retorno do profissional');
     var materials = escapeHtml(order.materials || 'Materiais a alinhar com o profissional');
     var budget = escapeHtml(order.budget || order.detailBudget || 'A definir após resposta do profissional');
     var payment = escapeHtml(order.payment || 'Pagamento a combinar');
@@ -470,6 +541,10 @@
     article.dataset.serviceImage = serviceImage;
     article.dataset.serviceCategory = getServiceCategory(order);
     article.dataset.serviceSchedule = JSON.stringify(getServiceSchedule(order));
+    article.dataset.scheduleAuthority = schedulePresentation.authority;
+    article.dataset.scheduleReservationId = order.scheduleReservationId || '';
+    article.dataset.scheduledAt = order.scheduledAt || '';
+    article.dataset.hasCanonicalSchedule = order.hasCanonicalSchedule === true ? 'true' : 'false';
     article.dataset.professionalId = order.professionalId || order.providerId || '';
     article.dataset.professionalProfileId = order.professionalProfileId || '';
     article.dataset.viewerRole = professionalView ? 'professional' : 'client';
@@ -496,7 +571,7 @@
             <span class="order-card__category">${serviceCategory}</span>
             <h2>${title}</h2>
             <div class="order-card__facts" aria-label="Resumo do pedido">
-              <span>${serviceSchedule}</span>
+              <span data-order-schedule-authority="${escapeHtml(schedulePresentation.authority)}">${serviceSchedule}</span>
               ${attachmentsCount ? `<span>${attachmentsCount} ${attachmentsCount === 1 ? 'anexo' : 'anexos'}</span>` : ''}
             </div>
           </div>
@@ -569,6 +644,9 @@
           order && order.id,
           order && order.status,
           order && order.updatedAt,
+          order && order.scheduleReservationId,
+          order && order.scheduledAt,
+          order && order.scheduleAuthority,
           order && order.disputeStatus,
           order && order.disputeResponseText,
           (() => { var d = getWalletDisputeForOrder(order); return d && (d.status + ':' + d.updatedAt + ':' + (d.responseAt || '')); })(),

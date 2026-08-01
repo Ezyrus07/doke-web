@@ -1,6 +1,6 @@
 {
-  "version": "1.3.71",
-  "updatedAt": "2026-08-01T19:22:00-03:00",
+  "version": "1.3.72",
+  "updatedAt": "2026-08-01T20:07:00-03:00",
   "title": "Doke Domain Completion Matrix",
   "purpose": "Single source of truth for domain maturity, data authority, staging evidence, blockers, dependencies and mandatory completion order.",
   "maturityScale": {
@@ -1113,7 +1113,13 @@
         "scripts/test-sched-001-c01a-frontend-canonical-authority-readiness.js",
         ".github/workflows/sched-001-c01a-frontend-canonical-authority-readiness.yml",
         "assets/js/pages/orcamento.js",
-        "assets/js/pages/pedidos-local-orders.js"
+        "assets/js/pages/pedidos-local-orders.js",
+        "config/sched-001-c01b-frontend-canonical-schedule-read-model.json",
+        "docs/SCHED-001-C01B-FRONTEND-CANONICAL-SCHEDULE-READ-MODEL.md",
+        "docs/validation/SCHED-001-C01B-FRONTEND-CANONICAL-SCHEDULE-READ-MODEL.json",
+        "scripts/audit-sched-001-c01b-frontend-canonical-schedule-read-model.js",
+        "scripts/test-sched-001-c01b-frontend-canonical-schedule-read-model.js",
+        ".github/workflows/sched-001-c01b-frontend-canonical-schedule-read-model.yml"
       ],
       "scanRoots": [
         "backend/modules/orders",
@@ -1221,7 +1227,9 @@
         "test:sched-001-b04c-authenticated-ord-sched-composition-canary-execution",
         "audit:sched-001-b04c-authenticated-ord-sched-composition-canary-closure",
         "audit:sched-001-c01a-frontend-canonical-authority-readiness",
-        "test:sched-001-c01a-frontend-canonical-authority-readiness"
+        "test:sched-001-c01a-frontend-canonical-authority-readiness",
+        "audit:sched-001-c01b-frontend-canonical-schedule-read-model",
+        "test:sched-001-c01b-frontend-canonical-schedule-read-model"
       ],
       "evidence": [
         "Canonical state machine, transaction events, outbox worker and operational controls are active in staging.",
@@ -1337,7 +1345,10 @@
         "ORD-B04 is closed; ORD-B02, ORD-B03 and ORD-B05 remain open, and production, deployment, frontend activation and merge remain blocked.",
         "SCHED-C01A freezes how ORD browser surfaces must consume canonical scheduling: schedule_reservation_id, scheduled_at and scheduled status form one fail-closed projection tuple.",
         "Quote dates remain client intent, generic browser transitions to scheduled remain absent, and advertised service availability must not be presented as a confirmed booking.",
-        "C01A does not close ORD-B02, ORD-B03 or ORD-B05 and does not activate frontend commands, staging access, deployment, production or merge."
+        "C01A does not close ORD-B02, ORD-B03 or ORD-B05 and does not activate frontend commands, staging access, deployment, production or merge.",
+        "SCHED-C01B maps the canonical scheduling projection into the ORD browser DTO and exposes it read-only to order cards.",
+        "Generic scheduled transitions remain absent, quote dates remain client intent and incomplete schedule projections fail closed in presentation.",
+        "C01B does not close ORD-B02, ORD-B03 or ORD-B05 and does not activate staging or production writes."
       ],
       "blockers": [
         {
@@ -1538,7 +1549,13 @@
         "assets/js/repositories/orders-repository.js",
         "assets/js/services/orders-service.js",
         "assets/js/pages/orcamento.js",
-        "assets/js/pages/pedidos-local-orders.js"
+        "assets/js/pages/pedidos-local-orders.js",
+        "config/sched-001-c01b-frontend-canonical-schedule-read-model.json",
+        "docs/SCHED-001-C01B-FRONTEND-CANONICAL-SCHEDULE-READ-MODEL.md",
+        "docs/validation/SCHED-001-C01B-FRONTEND-CANONICAL-SCHEDULE-READ-MODEL.json",
+        "scripts/audit-sched-001-c01b-frontend-canonical-schedule-read-model.js",
+        "scripts/test-sched-001-c01b-frontend-canonical-schedule-read-model.js",
+        ".github/workflows/sched-001-c01b-frontend-canonical-schedule-read-model.yml"
       ],
       "scanRoots": [
         "assets/js/pages/pedidos",
@@ -1589,7 +1606,9 @@
         "test:sched-001-b04d-canonical-order-projection-guard-runtime",
         "audit:sched-001-b04c-authenticated-ord-sched-composition-canary-closure",
         "audit:sched-001-c01a-frontend-canonical-authority-readiness",
-        "test:sched-001-c01a-frontend-canonical-authority-readiness"
+        "test:sched-001-c01a-frontend-canonical-authority-readiness",
+        "audit:sched-001-c01b-frontend-canonical-schedule-read-model",
+        "test:sched-001-c01b-frontend-canonical-schedule-read-model"
       ],
       "evidence": [
         "Repository migrations 113 and 119 enable availability_slots RLS, define owner write policies and separate anonymous available-slot reads from authenticated owner/operator visibility.",
@@ -1631,13 +1650,16 @@
         "All 15 residue counters were zero and all 8 authority counters were unchanged in both the canary report and independent post-run verification; SCHED-B04 is closed without promoting maturity or enabling frontend, Cron, workers, production or merge.",
         "SCHED-C01A froze the repository-only frontend authority contract after the authenticated ORD/SCHED staging composition closed SCHED-B04.",
         "The audit found that the browser order mapper exposes scheduled_at but not schedule_reservation_id, scheduleAuthority or hasCanonicalSchedule; the quote form still submits date only as client intent and the orders surface renders advertised service availability rather than a confirmed reservation.",
-        "C01A changes no runtime behavior and performs zero staging reads, mutations, migrations, deployments, frontend command activations, Cron or worker activations; SCHED remains maturity 3 with partial server authority and no internal blocker."
+        "C01A changes no runtime behavior and performs zero staging reads, mutations, migrations, deployments, frontend command activations, Cron or worker activations; SCHED remains maturity 3 with partial server authority and no internal blocker.",
+        "SCHED-C01B implemented a repository-only canonical schedule read model: schedule_reservation_id, scheduled_at and scheduled status now derive fail-closed scheduleAuthority and hasCanonicalSchedule.",
+        "The orders surface now distinguishes canonical confirmed booking, client date intent, incomplete projection and advertised service availability without activating any scheduling command.",
+        "C01B changed frontend read presentation only; staging reads and mutations, migrations, deploys, Cron, workers, production and merge remained zero."
       ],
       "blockers": [],
       "nextActions": [
-        "Implement SCHED-C01B repository-only frontend canonical schedule read model and presentation adapters without enabling remote scheduling commands.",
-        "Prepare a separately reviewed server-mediated frontend command boundary for hold, confirmation, reschedule and cancellation while preserving idempotency and fail-closed authority.",
-        "Keep staging browser activation, Cron or workers, production release and pull-request merge under independent authorization."
+        "Implement SCHED-C01C deterministic frontend presentation coverage for canonical_confirmed, client_intent and incomplete_projection without remote scheduling commands.",
+        "Verify order detail and message summaries consume the same canonical schedule read model before any authenticated browser canary.",
+        "Keep staging browser activation, scheduling commands, Cron or workers, production release and pull-request merge under independent authorization."
       ],
       "exitCriteria": [
         "Concurrent booking attempts cannot reserve the same slot.",

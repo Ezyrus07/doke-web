@@ -720,6 +720,11 @@ function extractIdempotencyKey(payload, options) {
       nextAction: 'Aprovar proposta',
       flow: 'O profissional enviou uma proposta. Revise os valores e confirme para liberar o atendimento.'
     },
+    scheduled: {
+      label: 'Agendado',
+      nextAction: 'Acompanhar agendamento',
+      flow: 'O horário foi confirmado pela autoridade canônica de agenda.'
+    },
     in_progress: {
       label: 'Em andamento',
       nextAction: 'Acompanhar atendimento',

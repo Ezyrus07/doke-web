@@ -77,13 +77,16 @@ const serviceSource = fs.readFileSync('assets/js/services/orders-service.js', 'u
 const quoteSource = fs.readFileSync('assets/js/pages/orcamento.js', 'utf8');
 const ordersSurfaceSource = fs.readFileSync('assets/js/pages/pedidos-local-orders.js', 'utf8');
 
-assert(repositorySource.includes('scheduledAt: row.scheduled_at || metadata.scheduledAt'));
-assert(!repositorySource.includes('scheduleReservationId: row.schedule_reservation_id'));
+assert(repositorySource.includes("scheduleReservationId: row.schedule_reservation_id || ''"));
+assert(repositorySource.includes("scheduledAt: row.scheduled_at || ''"));
+assert(repositorySource.includes('function deriveScheduleAuthority(raw, normalizedStatus)'));
 assert(!serviceSource.includes("scheduled: Object.freeze({"));
+assert(serviceSource.includes("scheduled: {\n      label: 'Agendado'"));
 assert(quoteSource.includes('desiredDate: data.get("data") || ""'));
 assert(!quoteSource.includes('scheduledAt:'));
 assert(ordersSurfaceSource.includes('serviceAvailabilitySchedule'));
-assert(!ordersSurfaceSource.includes('hasCanonicalSchedule'));
+assert(ordersSurfaceSource.includes('hasCanonicalSchedule'));
+assert(ordersSurfaceSource.includes('Agenda indisponível: atualize o pedido'));
 
 assert.strictEqual(config.nextImplementation.sublot, 'SCHED-C01B');
 assert.strictEqual(config.nextImplementation.stagingAuthorizationRequired, false);

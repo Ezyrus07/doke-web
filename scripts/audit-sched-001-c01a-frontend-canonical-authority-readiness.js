@@ -65,13 +65,14 @@ Object.values(config.effects).forEach((value) => {
   else assert.strictEqual(value, 0);
 });
 
-assert(ordersRepository.includes('scheduledAt: row.scheduled_at || metadata.scheduledAt'));
-assert(!ordersRepository.includes('scheduleReservationId: row.schedule_reservation_id'));
-assert(!ordersRepository.includes("scheduleAuthority: 'canonical_confirmed'"));
-assert(!ordersRepository.includes('hasCanonicalSchedule: true'));
-assert(!/\bscheduled\s*:\s*['\"]Agendado/.test(ordersRepository));
+assert(ordersRepository.includes("scheduleReservationId: row.schedule_reservation_id || ''"));
+assert(ordersRepository.includes("scheduledAt: row.scheduled_at || ''"));
+assert(ordersRepository.includes('function deriveScheduleAuthority(raw, normalizedStatus)'));
+assert(ordersRepository.includes('hasCanonicalSchedule: scheduleProjection.hasCanonicalSchedule'));
+assert(/\bscheduled\s*:\s*['\"]Agendado/.test(ordersRepository));
 
 assert(ordersService.includes('var ORDER_TRANSITIONS = Object.freeze({'));
+assert(ordersService.includes("scheduled: {\n      label: 'Agendado'"));
 assert(!ordersService.includes("scheduled: Object.freeze({"));
 assert(!ordersService.includes("scheduled: 'schedule'"));
 assert(!ordersService.includes("scheduled: 'confirmSchedule'"));
@@ -83,10 +84,14 @@ assert(!quoteSurface.includes('scheduledAt:'));
 
 assert(ordersSurface.includes('serviceAvailabilitySchedule'));
 assert(ordersSurface.includes("return 'Agenda a combinar'"));
-assert(!ordersSurface.includes('scheduleReservationId'));
-assert(!ordersSurface.includes('hasCanonicalSchedule'));
+assert(ordersSurface.includes('scheduleReservationId'));
+assert(ordersSurface.includes('hasCanonicalSchedule'));
+assert(ordersSurface.includes('Agenda indisponível: atualize o pedido'));
 
-assert.strictEqual(matrix.version, '1.3.71');
+const matrixParts = String(matrix.version).split('.').map(Number);
+assert.strictEqual(matrixParts[0], 1);
+assert.strictEqual(matrixParts[1], 3);
+assert(matrixParts[2] >= 71, 'C01A requires matrix 1.3.71 or later');
 const sched = matrix.domains.find((domain) => domain.id === 'SCHED-001');
 const ord = matrix.domains.find((domain) => domain.id === 'ORD-001');
 assert(sched && ord);
@@ -95,7 +100,7 @@ assert.strictEqual(sched.serverAuthority, 'partial');
 assert.strictEqual(sched.stagingEvidence, 'staging_canary');
 assert.deepStrictEqual(sched.blockers.map((blocker) => blocker.id), []);
 assert.deepStrictEqual(ord.blockers.map((blocker) => blocker.id), ['ORD-B02', 'ORD-B03', 'ORD-B05']);
-assert(sched.nextActions[0].includes('SCHED-C01B'));
+assert(Array.isArray(sched.nextActions) && sched.nextActions.length > 0);
 assert(sched.evidence.some((item) => item.includes('SCHED-C01A')));
 assert(ord.evidence.some((item) => item.includes('SCHED-C01A')));
 
