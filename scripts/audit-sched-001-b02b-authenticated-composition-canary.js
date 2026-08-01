@@ -6,6 +6,7 @@ const fs = require('fs');
 
 const paths = {
   config: 'config/sched-001-b02b-authenticated-composition-canary-execution.json',
+  attempt: 'config/sched-001-b02b-authenticated-composition-canary-attempt-2.json',
   executor: 'scripts/execute-sched-001-b02b-authenticated-composition-canary.js',
   test: 'scripts/test-sched-001-b02b-authenticated-composition-canary.js',
   workflow: '.github/workflows/sched-001-b02b-authenticated-composition-canary.yml',
@@ -28,6 +29,10 @@ assert.strictEqual(config.transaction.finalStatement, 'rollback');
 assert.strictEqual(config.transaction.commitAllowed, false);
 assert.strictEqual(config.transaction.persistentCanaryRowsAllowed, 0);
 assert.deepStrictEqual(config.allowedSecrets, ['SUPABASE_ACCESS_TOKEN', 'SUPABASE_DB_PASSWORD']);
+assert.strictEqual(config.syntheticPersonas.requiredEmailDomain, 'doke.local');
+assert.deepStrictEqual(config.syntheticPersonas.roles, {
+  client: 'client', professional: 'professional', support: 'support', admin: 'admin'
+});
 
 [
   'createSchedulingCompositionRoot',
@@ -55,6 +60,7 @@ assert(root.includes("if (nodeEnvironment === 'production' || environment === 'p
 assert(workflow.includes('permissions:\n  contents: read'));
 assert(workflow.includes("branches:\n      - ord/ord-001-baseline-audit"));
 assert(workflow.includes('--diff-filter=A'));
+assert(workflow.includes('attempt-[0-9]+'));
 assert(workflow.includes("needs.authorize.outputs.execute == 'true'"));
 assert(workflow.includes('SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}'));
 assert(workflow.includes('SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}'));

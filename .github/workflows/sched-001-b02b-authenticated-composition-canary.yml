@@ -6,6 +6,7 @@ on:
       - ord/ord-001-baseline-audit
     paths:
       - 'config/sched-001-b02b-authenticated-composition-canary-execution.json'
+      - 'config/sched-001-b02b-authenticated-composition-canary-attempt-*.json'
 
 permissions:
   contents: read
@@ -23,8 +24,8 @@ jobs:
         name: Require one-shot authorization envelope addition
         shell: bash
         run: |
-          target='config/sched-001-b02b-authenticated-composition-canary-execution.json'
-          if git diff-tree --no-commit-id --name-only --diff-filter=A -r "${{ github.event.before }}" "${{ github.sha }}" | grep -Fxq "$target"; then
+          if git diff-tree --no-commit-id --name-only --diff-filter=A -r "${{ github.event.before }}" "${{ github.sha }}" \
+            | grep -Eq '^config/sched-001-b02b-authenticated-composition-canary-(execution|attempt-[0-9]+)\.json$'; then
             echo 'execute=true' >> "$GITHUB_OUTPUT"
           else
             echo 'execute=false' >> "$GITHUB_OUTPUT"

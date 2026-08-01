@@ -132,22 +132,51 @@ async function connectStaging(project, password) {
 }
 
 async function loadPersonas(client) {
-  const expected = CONFIG.syntheticPersonas;
+  const requiredDomain = CONFIG.syntheticPersonas.requiredEmailDomain;
+  const expectedRoles = CONFIG.syntheticPersonas.roles;
   const response = await client.query({
     name: 'sched-b02b-preflight-personas',
-    text: `select auth_user.id::text, lower(auth_user.email) as email, app_user.role, app_user.status
-           from auth.users auth_user
-           join public.users app_user on app_user.id = auth_user.id
-           where lower(auth_user.email) = any($1::text[])
-           order by lower(auth_user.email)`,
-    values: [Object.values(expected)]
+    text: `with synthetic_personas as (
+             select auth_user.id::text,
+                    lower(auth_user.email) as email,
+                    app_user.role,
+                    app_user.status,
+                    row_number() over (
+                      partition by app_user.role
+                      order by case
+                        when app_user.role = 'professional' and exists (
+                          select 1
+                          from public.services service
+                          join public.service_versions version
+                            on version.id = service.approved_version_id
+                           and version.service_id = service.id
+                           and version.professional_id = service.professional_id
+                           and version.review_status = 'approved'
+                          where service.professional_id = app_user.id
+                            and service.status = 'published'
+                            and service.moderation_status in ('published', 'changes_pending_review', 'changes_required')
+                        ) then 0 else 1 end,
+                        lower(auth_user.email), auth_user.id
+                    ) as role_rank
+             from auth.users auth_user
+             join public.users app_user on app_user.id = auth_user.id
+             where lower(auth_user.email) like ('%@' || $1::text)
+               and app_user.role = any($2::text[])
+               and app_user.status = 'active'
+           )
+           select id, email, role, status
+           from synthetic_personas
+           where role_rank = 1
+           order by role`,
+    values: [requiredDomain, Object.values(expectedRoles)]
   });
-  const byEmail = new Map(response.rows.map((row) => [row.email, row]));
-  const roles = { client: 'client', professional: 'professional', support: 'support', admin: 'admin' };
+  const byRole = new Map(response.rows.map((row) => [row.role, row]));
   const personas = {};
-  for (const [name, email] of Object.entries(expected)) {
-    const row = byEmail.get(email);
-    if (!row || row.role !== roles[name] || row.status !== 'active') fail(`DOKE_SCHED_B02B_${name.toUpperCase()}_PERSONA_INVALID`);
+  for (const [name, role] of Object.entries(expectedRoles)) {
+    const row = byRole.get(role);
+    if (!row || !row.email.endsWith(`@${requiredDomain}`) || row.status !== 'active') {
+      fail(`DOKE_SCHED_B02B_${name.toUpperCase()}_PERSONA_INVALID`);
+    }
     personas[name] = Object.freeze({ id: row.id, role: row.role });
   }
   return Object.freeze(personas);
