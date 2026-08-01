@@ -43,6 +43,7 @@ function safeError(error) {
     '23514': 'check_violation',
     '25P02': 'transaction_aborted',
     '42601': 'syntax_error',
+    '42P18': 'indeterminate_datatype',
     '42703': 'undefined_column',
     '42883': 'undefined_function',
     'P0001': 'raised_exception',
@@ -371,10 +372,10 @@ async function insertSyntheticOrders(client, personas, service) {
     text: `insert into public.orders (
              id, client_id, professional_id, service_id, title, description, status, metadata
            ) values
-             ($5::uuid, $1::uuid, $2::uuid, $3::uuid, 'SCHED-B02B synthetic order 1', $4, 'requested', jsonb_build_object('canarySublot', $6, 'synthetic', true)),
-             ($7::uuid, $1::uuid, $2::uuid, $3::uuid, 'SCHED-B02B synthetic order 2', $4, 'requested', jsonb_build_object('canarySublot', $6, 'synthetic', true)),
-             ($8::uuid, $1::uuid, $2::uuid, $3::uuid, 'SCHED-B02B synthetic order 3', $4, 'requested', jsonb_build_object('canarySublot', $6, 'synthetic', true)),
-             ($9::uuid, $1::uuid, $2::uuid, $3::uuid, 'SCHED-B02B synthetic order 4', $4, 'requested', jsonb_build_object('canarySublot', $6, 'synthetic', true))`,
+             ($5::uuid, $1::uuid, $2::uuid, $3::uuid, 'SCHED-B02B synthetic order 1', $4::text, 'requested', jsonb_build_object('canarySublot', $6::text, 'synthetic', true)),
+             ($7::uuid, $1::uuid, $2::uuid, $3::uuid, 'SCHED-B02B synthetic order 2', $4::text, 'requested', jsonb_build_object('canarySublot', $6::text, 'synthetic', true)),
+             ($8::uuid, $1::uuid, $2::uuid, $3::uuid, 'SCHED-B02B synthetic order 3', $4::text, 'requested', jsonb_build_object('canarySublot', $6::text, 'synthetic', true)),
+             ($9::uuid, $1::uuid, $2::uuid, $3::uuid, 'SCHED-B02B synthetic order 4', $4::text, 'requested', jsonb_build_object('canarySublot', $6::text, 'synthetic', true))`,
     values: [
       personas.client.id,
       personas.professional.id,
