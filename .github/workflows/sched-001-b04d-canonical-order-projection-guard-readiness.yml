@@ -33,6 +33,8 @@ jobs:
           cache: npm
       - name: Install pinned dependencies
         run: npm ci --ignore-scripts
+      - name: Register closure audit script
+        run: npm pkg set "scripts.audit:sched-001-b04c-authenticated-ord-sched-composition-canary-closure=node scripts/audit-sched-001-b04c-authenticated-ord-sched-composition-canary-closure.js"
       - name: Reconcile B04C matrix closure
         run: python scripts/reconcile-sched-001-b04c-matrix-closure.py
       - name: Regenerate deterministic matrix derivatives
