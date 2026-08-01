@@ -634,35 +634,74 @@ requireExact(
   'DOKE_SCHED_B04C_REPLACEMENT_CHANGED_TIME'
 );
 
-  const partialHold = await root.createScheduleHold(commandContext(actors.client, 'partial-hold', {
-    orderId: fixtures.orders.partial,
-    professionalId: fixtures.personas.professional.id,
-    ...range(14, 15)
-  }, correlationId));
-  await expectCode(
-    () => root.confirmScheduleReservation(commandContext(actors.admin, 'partial-confirm', {
-      reservationId: partialHold.reservation.id,
-      expectedVersion: 1
-    }, correlationId)),
-    'DOKE_SCHEDULE_ORDER_PROJECTION_FAILED'
-  );
-  const partialStored = await readReservation(client, partialHold.reservation.id);
-  requireExact(partialStored.status, 'held', 'DOKE_SCHED_B04C_PARTIAL_FAILURE_DID_NOT_ROLL_BACK');
-  const partialOrder = await readOrder(client, fixtures.orders.partial);
-  requireExact(partialOrder.status, 'requested', 'DOKE_SCHED_B04C_PARTIAL_FAILURE_CHANGED_ORDER');
-  requireExact(partialOrder.schedule_reservation_id, null, 'DOKE_SCHED_B04C_PARTIAL_FAILURE_PROJECTED_REFERENCE');
-
   await root.cancelScheduleReservation(commandContext(actors.support, 'main-cancel', {
-    reservationId: mainHold.reservation.id,
-    expectedVersion: 3,
-    reason: 'Synthetic SCHED-B04C cancellation.'
-  }, correlationId));
-  const cancelledOrder = await readOrder(client, fixtures.orders.main);
-  requireExact(cancelledOrder.status, 'accepted', 'DOKE_SCHED_B04C_CANCEL_DID_NOT_RESTORE_ACCEPTED');
-  requireExact(cancelledOrder.schedule_reservation_id, null, 'DOKE_SCHED_B04C_CANCEL_DID_NOT_CLEAR_REFERENCE');
-  requireExact(cancelledOrder.scheduled_at, null, 'DOKE_SCHED_B04C_CANCEL_DID_NOT_CLEAR_TIME');
-  const cancelOrderEvent = await assertOrderEventProjection(client, fixtures.orders.main, 'accepted');
-  const correlations = await assertScheduleCorrelation(client, mainHold.reservation.id, correlationId);
+  reservationId: mainHold.reservation.id,
+  expectedVersion: 3,
+  reason: 'Synthetic SCHED-B04C cancellation.'
+}, correlationId));
+const cancelledOrder = await readOrder(client, fixtures.orders.main);
+requireExact(cancelledOrder.status, 'accepted', 'DOKE_SCHED_B04C_CANCEL_DID_NOT_RESTORE_ACCEPTED');
+requireExact(cancelledOrder.schedule_reservation_id, null, 'DOKE_SCHED_B04C_CANCEL_DID_NOT_CLEAR_REFERENCE');
+requireExact(cancelledOrder.scheduled_at, null, 'DOKE_SCHED_B04C_CANCEL_DID_NOT_CLEAR_TIME');
+const cancelOrderEvent = await assertOrderEventProjection(client, fixtures.orders.main, 'accepted');
+const correlations = await assertScheduleCorrelation(client, mainHold.reservation.id, correlationId);
+
+const partialHold = await root.createScheduleHold(commandContext(actors.client, 'partial-hold', {
+  orderId: fixtures.orders.partial,
+  professionalId: fixtures.personas.professional.id,
+  ...range(14, 15)
+}, correlationId));
+const primedPartial = await client.query({
+  name: 'sched-b04c-prime-partial-projection-conflict',
+  text: `update public.orders
+         set status = 'accepted',
+             schedule_reservation_id = $2::uuid,
+             scheduled_at = $3::timestamptz,
+             updated_at = pg_catalog.now()
+         where id = $1::uuid and status = 'requested'
+         returning id`,
+  values: [
+    fixtures.orders.partial,
+    mainHold.reservation.id,
+    rescheduled.reservation.startsAt
+  ]
+});
+requireExact(primedPartial.rowCount, 1, 'DOKE_SCHED_B04C_PARTIAL_CONFLICT_FIXTURE_FAILED');
+const partialBeforeFailure = await readOrder(client, fixtures.orders.partial);
+requireExact(partialBeforeFailure.status, 'accepted', 'DOKE_SCHED_B04C_PARTIAL_FIXTURE_NOT_ACCEPTED');
+requireExact(
+  partialBeforeFailure.schedule_reservation_id,
+  mainHold.reservation.id,
+  'DOKE_SCHED_B04C_PARTIAL_FIXTURE_REFERENCE_MISMATCH'
+);
+requireExact(
+  new Date(partialBeforeFailure.scheduled_at).toISOString(),
+  new Date(rescheduled.reservation.startsAt).toISOString(),
+  'DOKE_SCHED_B04C_PARTIAL_FIXTURE_TIME_MISMATCH'
+);
+
+await expectCode(
+  () => root.confirmScheduleReservation(commandContext(actors.admin, 'partial-confirm', {
+    reservationId: partialHold.reservation.id,
+    expectedVersion: 1
+  }, correlationId)),
+  'DOKE_SCHEDULE_ORDER_PROJECTION_FAILED'
+);
+const partialStored = await readReservation(client, partialHold.reservation.id);
+requireExact(partialStored.status, 'held', 'DOKE_SCHED_B04C_PARTIAL_FAILURE_DID_NOT_ROLL_BACK');
+requireExact(partialStored.version, 1, 'DOKE_SCHED_B04C_PARTIAL_FAILURE_CHANGED_VERSION');
+const partialOrder = await readOrder(client, fixtures.orders.partial);
+requireExact(partialOrder.status, 'accepted', 'DOKE_SCHED_B04C_PARTIAL_FAILURE_CHANGED_ORDER');
+requireExact(
+  partialOrder.schedule_reservation_id,
+  mainHold.reservation.id,
+  'DOKE_SCHED_B04C_PARTIAL_FAILURE_CHANGED_REFERENCE'
+);
+requireExact(
+  new Date(partialOrder.scheduled_at).toISOString(),
+  new Date(rescheduled.reservation.startsAt).toISOString(),
+  'DOKE_SCHED_B04C_PARTIAL_FAILURE_CHANGED_TIME'
+);
 
   return Object.freeze({
     client: {
