@@ -1,0 +1,46 @@
+name: Doke SCHED-C01A Frontend Canonical Authority Readiness
+
+on:
+  pull_request:
+    branches:
+      - search/search-ux02-intent-favorites-clean
+    paths:
+      - 'config/domain-completion-matrix.json'
+      - 'config/sched-001-c01a-frontend-canonical-authority-readiness.json'
+      - 'docs/SCHED-001-C01A-FRONTEND-CANONICAL-AUTHORITY-READINESS.md'
+      - 'docs/validation/SCHED-001-C01A-FRONTEND-CANONICAL-AUTHORITY-READINESS.json'
+      - 'scripts/audit-sched-001-c01a-frontend-canonical-authority-readiness.js'
+      - 'scripts/test-sched-001-c01a-frontend-canonical-authority-readiness.js'
+      - 'assets/js/repositories/orders-repository.js'
+      - 'assets/js/services/orders-service.js'
+      - 'assets/js/pages/orcamento.js'
+      - 'assets/js/pages/pedidos-local-orders.js'
+      - 'package.json'
+      - '.github/workflows/sched-001-c01a-frontend-canonical-authority-readiness.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  readiness:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install pinned dependencies
+        run: npm ci --ignore-scripts
+      - name: Audit frontend canonical authority readiness
+        run: |
+          set -euo pipefail
+          npm run audit:sched-001-c01a-frontend-canonical-authority-readiness
+          npm run test:sched-001-c01a-frontend-canonical-authority-readiness
+          npm run audit:sched-001-b04c-authenticated-ord-sched-composition-canary-closure
+          node scripts/audit-sched-001-b04d-canonical-order-projection-guard-readiness.js
+          node scripts/test-sched-001-b04d-canonical-order-projection-guard-runtime.js
+          node scripts/audit-ord-001-a11-scheduling-authority-handoff.js
+          node scripts/audit-ord-001-a10-blocker-reconciliation.js
+          npm run audit:domain-completion-matrix
