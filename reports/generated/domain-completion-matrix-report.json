@@ -1,7 +1,7 @@
 {
   "name": "domain-completion-matrix",
-  "version": "1.3.63",
-  "generatedAt": "2026-07-31T15:46:13-03:00",
+  "version": "1.3.64",
+  "generatedAt": "2026-07-31T22:18:12-03:00",
   "status": "passed",
   "summary": {
     "domains": 23,
@@ -32,7 +32,7 @@
     "repositories": 25,
     "backendModules": 15,
     "migrations": 175,
-    "packageScripts": 955,
+    "packageScripts": 957,
     "staging": {
       "publicTotal": 45,
       "publicRlsDisabled": 0,
@@ -221,7 +221,7 @@
       "id": "GOV-001",
       "name": "Governança, arquitetura e comando central",
       "maturity": 4,
-      "filesMatched": 1043,
+      "filesMatched": 1046,
       "sampleFiles": [
         "docs/ACTIVE-CONTRACTS-INDEX.md",
         "docs/API-ADAPTER-CONTRACT.md",
@@ -256,7 +256,7 @@
         "mock": 557,
         "network": 196,
         "directSupabase": 151,
-        "todo": 35
+        "todo": 36
       },
       "signalFiles": {
         "localStorage": [
@@ -2355,6 +2355,10 @@
             "count": 1
           },
           {
+            "file": "scripts/patch-sched-001-b04a-matrix.js",
+            "count": 1
+          },
+          {
             "file": "scripts/test-order-payment-hold-contract.js",
             "count": 1
           },
@@ -3313,7 +3317,7 @@
           "id": "ORD-B04",
           "severity": "medium",
           "category": "scheduling_dependency",
-          "description": "ORD-B04 is formally handed to SCHED-001 but remains open. Availability, holds, confirmed reservations, conflict protection, timezone, rescheduling and cancellation must become server-canonical there; ORD-001 must consume one canonical reservation reference instead of treating raw scheduled_at as booking authority.",
+          "description": "The order domain remains handed to SCHED-001 until the canonical reservation reference, projection-only scheduled_at model and trusted command composition are implemented and validated.",
           "targetPhase": "Fase 6"
         },
         {
@@ -3391,14 +3395,16 @@
         "test:sched-001-a04-scheduling-service-runtime",
         "audit:sched-001-a05-persistence-readiness",
         "audit:sched-001-a07-history-canary-readiness",
-        "test:sched-001-a07-history-canary-readiness"
+        "test:sched-001-a07-history-canary-readiness",
+        "audit:sched-001-b04-ord-canonical-wiring-readiness",
+        "test:sched-001-b04-ord-canonical-wiring-readiness"
       ]
     },
     {
       "id": "SCHED-001",
       "name": "Agenda, disponibilidade e execução do serviço",
       "maturity": 3,
-      "filesMatched": 1010,
+      "filesMatched": 1012,
       "sampleFiles": [
         "assets/js/pages/anunciar-servico.js",
         "assets/js/pages/pedidos/orders-action-panels.js",
@@ -3433,7 +3439,7 @@
         "mock": 301,
         "network": 195,
         "directSupabase": 157,
-        "todo": 19
+        "todo": 20
       },
       "signalFiles": {
         "localStorage": [
@@ -5136,6 +5142,10 @@
             "count": 1
           },
           {
+            "file": "scripts/patch-sched-001-b04a-matrix.js",
+            "count": 1
+          },
+          {
             "file": "scripts/test-order-payment-hold-contract.js",
             "count": 1
           },
@@ -5170,7 +5180,7 @@
           "id": "SCHED-B04",
           "severity": "high",
           "category": "order_integration",
-          "description": "orders.schedule_reservation_id exists in staging, but ORD-001 runtime wiring to the canonical reservation remains pending.",
+          "description": "The ORD/SCHED authority contract is frozen, but the order read model, trusted command composition and local integration tests are not implemented.",
           "targetPhase": "Fase 6"
         }
       ],
@@ -5192,7 +5202,9 @@
         "audit:sched-001-b02-composition-root-readiness",
         "test:sched-001-b02-composition-root-runtime",
         "audit:sched-001-b02b-authenticated-composition-canary",
-        "test:sched-001-b02b-authenticated-composition-canary"
+        "test:sched-001-b02b-authenticated-composition-canary",
+        "audit:sched-001-b04-ord-canonical-wiring-readiness",
+        "test:sched-001-b04-ord-canonical-wiring-readiness"
       ]
     },
     {
@@ -6251,7 +6263,7 @@
       "id": "LEGAL-001",
       "name": "Jurídico, privacidade, confiança e políticas comerciais",
       "maturity": 1,
-      "filesMatched": 231,
+      "filesMatched": 232,
       "sampleFiles": [
         "docs/ACTIVE-CONTRACTS-INDEX.md",
         "docs/API-ADAPTER-CONTRACT.md",
@@ -7979,7 +7991,7 @@
       "id": "APP-001",
       "name": "Aplicativos Android e iOS",
       "maturity": 0,
-      "filesMatched": 2359,
+      "filesMatched": 2363,
       "sampleFiles": [
         ".agents/skills/animation-vocabulary/SKILL.md",
         ".agents/skills/apple-design/SKILL.md",
@@ -8014,7 +8026,7 @@
         "mock": 880,
         "network": 593,
         "directSupabase": 524,
-        "todo": 89
+        "todo": 91
       },
       "signalFiles": {
         "localStorage": [
@@ -11618,7 +11630,7 @@
           },
           {
             "file": "config/domain-completion-matrix.json",
-            "count": 1
+            "count": 2
           },
           {
             "file": "configuracoes.html",
@@ -11738,6 +11750,10 @@
           },
           {
             "file": "scripts/audit-stage63a-critical-important-inventory.js",
+            "count": 1
+          },
+          {
+            "file": "scripts/patch-sched-001-b04a-matrix.js",
             "count": 1
           },
           {

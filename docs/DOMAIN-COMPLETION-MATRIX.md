@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 1043 arquivos no escopo; 248 referências a localStorage; 78 a sessionStorage; 557 referências mock; 196 referências de rede/Supabase; 35 marcadores de implementação pendente.
+**Evidência estática observada:** 1046 arquivos no escopo; 248 referências a localStorage; 78 a sessionStorage; 557 referências mock; 196 referências de rede/Supabase; 36 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -495,18 +495,18 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - ORD-001 now has the generated SCHED-A03 order reference contract, while scheduled_at remains a read projection and no migration was applied.
 - ORD-001 now has an executable SCHED-A04 order projection port for schedule_reservation_id and scheduled_at, but ORD-B04 remains open until a transactional adapter and staging activation exist.
 - SCHED-A08 completed the official migration-history repair and rolled-back remote overlap, adjacency, idempotency, event, DST and order-projection canaries; ORD-B04 remains open only for trusted runtime wiring to the canonical reservation authority.
+- SCHED-B04A froze the repository-only ORD canonical wiring contract: schedule_reservation_id is the reservation authority, scheduled_at is projection-only, direct schedule writes remain prohibited, and no runtime, staging, frontend, deployment or production effect occurred.
 
 **Bloqueadores:**
 - **ORD-B02 · HIGH · frontend_activation:** Canonical reads, canary commands, cleanup, deterministic settlement, readiness discovery and the fail-closed Playwright executor pass. A short-lived authorization envelope is mandatory; ORD-B02 remains under ORD-001 until explicit resource authorization is issued, check-env passes, the real two-context visual canary is executed and run-scoped cleanup proves zero residue. _(Fase 6)_
 - **ORD-B03 · HIGH · financial_dependency:** Financial completion remains blocked by PAY-001. Payment authority is not connected to a real PSP webhook lifecycle, and ORD-001 must consume rather than duplicate that server-canonical authority before this blocker can close. _(Fase 8)_
-- **ORD-B04 · MEDIUM · scheduling_dependency:** ORD-B04 is formally handed to SCHED-001 but remains open. Availability, holds, confirmed reservations, conflict protection, timezone, rescheduling and cancellation must become server-canonical there; ORD-001 must consume one canonical reservation reference instead of treating raw scheduled_at as booking authority. _(Fase 6)_
+- **ORD-B04 · MEDIUM · scheduling_dependency:** The order domain remains handed to SCHED-001 until the canonical reservation reference, projection-only scheduled_at model and trusted command composition are implemented and validated. _(Fase 6)_
 - **ORD-B05 · HIGH · staging_release:** ORD-A08 release identity, ORD-A09A provider evaluation, the ORD-A09B0 provider-neutral adapter boundary, provider selection handoff, selection intent firewall and adapter conformance suite are complete. Railway is recommended as the external staging release provider, but no explicit provider selection, provider-specific adapter, account, billing, secrets, infrastructure, rollback command or deployment exists. ORD-B05 remains open until exactly I_EXPLICITLY_SELECT_RAILWAY_FOR_DOKE_STAGING authorizes only non-secret adapter preparation; every external action remains separately blocked. _(Fase 6)_
 
 **Próximas ações:**
-- Keep ORD-B04 handed to SCHED-001 until the trusted scheduling composition root is active and independently canary-validated.
-- Consume only schedule_reservation_id plus scheduled_at projection after SCHED-001 activation; do not restore raw scheduled_at booking authority.
-- Complete the separately authorized ORD-B02 real two-context visual settlement canary.
-- Keep PAY-001 and external staging release dependencies explicit under ORD-B03 and ORD-B05.
+- Implement ORD-B04 through SCHED-B04B so orders consume schedule_reservation_id as authority and scheduled_at only as a projection from a confirmed reservation.
+- Preserve order lifecycle ownership while prohibiting generic manual transitions to scheduled and direct frontend writes to canonical schedule fields.
+- Keep staging, deployment, production and merge blocked pending independent local and remote evidence.
 
 **Gate de saída:**
 - Two real accounts complete request, accept, proposal, approval, start and completion across devices.
@@ -520,7 +520,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI local; servidor partial; staging staging canary; segurança partial; produção blocked.
 
-**Evidência estática observada:** 1010 arquivos no escopo; 186 referências a localStorage; 70 a sessionStorage; 301 referências mock; 195 referências de rede/Supabase; 19 marcadores de implementação pendente.
+**Evidência estática observada:** 1012 arquivos no escopo; 186 referências a localStorage; 70 a sessionStorage; 301 referências mock; 195 referências de rede/Supabase; 20 marcadores de implementação pendente.
 
 **Páginas:** `anunciar-servico.html`, `pedidos.html`, `orcamento.html`.
 
@@ -549,13 +549,15 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - SCHED-B02B run 30675062764 stopped in the read-only preflight because the frozen exact client email did not match the staging synthetic identity set; the mutation step was skipped and staging mutations remained zero. Attempt 2 resolves only active doke.local identities by canonical role and requires the professional persona to own an approved published service.
 - SCHED-B02B run 30676215676 passed at commit 4168cd4983afd34c42c5bfcf48d2723d060a5b18: client, professional, support and administrator allowed/forbidden boundaries passed; idempotent replay, divergent payload rejection, overlap rejection and order projection passed; the transaction ended in ROLLBACK; all 11 residue counters were zero and authority counts were unchanged.
 - No production access, migration, deploy, Cron, worker, frontend connection, ORD wiring, billing, infrastructure, merge or auto-merge occurred. SCHED-B02 is closed by the authenticated composition evidence; SCHED-B04 remains open for separately authorized ORD integration.
+- SCHED-B04A froze the repository-only ORD canonical wiring contract: schedule_reservation_id is the reservation authority, scheduled_at is projection-only, direct schedule writes remain prohibited, and no runtime, staging, frontend, deployment or production effect occurred.
 
 **Bloqueadores:**
-- **SCHED-B04 · HIGH · order_integration:** orders.schedule_reservation_id exists in staging, but ORD-001 runtime wiring to the canonical reservation remains pending. _(Fase 6)_
+- **SCHED-B04 · HIGH · order_integration:** The ORD/SCHED authority contract is frozen, but the order read model, trusted command composition and local integration tests are not implemented. _(Fase 6)_
 
 **Próximas ações:**
-- Prepare a separately authorized SCHED-B04 and ORD-001 integration sublot that consumes schedule_reservation_id and scheduled_at only as the canonical reservation reference and projection.
-- Keep production, frontend authority switch, Cron, workers, deployment and merge blocked until SCHED-B04 has independent evidence.
+- Implement SCHED-B04B locally: expose schedule_reservation_id in the order read model, reject direct canonical scheduled_at writes, and compose confirmed reservations with the scheduled order state.
+- Add fail-closed local tests for confirm, reschedule, reservation cancellation, order cancellation and start-order authorization across ORD-001 and SCHED-001.
+- Keep staging mutations, frontend authority switch, deployment, Cron, workers, production and merge blocked until a separately authorized remote canary exists.
 
 **Gate de saída:**
 - Concurrent booking attempts cannot reserve the same slot.
@@ -948,7 +950,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 1/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 231 arquivos no escopo; 64 referências a localStorage; 8 a sessionStorage; 269 referências mock; 8 referências de rede/Supabase; 25 marcadores de implementação pendente.
+**Evidência estática observada:** 232 arquivos no escopo; 64 referências a localStorage; 8 a sessionStorage; 269 referências mock; 8 referências de rede/Supabase; 25 marcadores de implementação pendente.
 
 **Evidências:**
 - The master plan identifies legal, privacy and commercial decisions as mandatory.
@@ -1008,7 +1010,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2359 arquivos no escopo; 505 referências a localStorage; 151 a sessionStorage; 880 referências mock; 593 referências de rede/Supabase; 89 marcadores de implementação pendente.
+**Evidência estática observada:** 2363 arquivos no escopo; 505 referências a localStorage; 151 a sessionStorage; 880 referências mock; 593 referências de rede/Supabase; 91 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
@@ -1069,4 +1071,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-07-31T15:46:13-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-07-31T22:18:12-03:00._

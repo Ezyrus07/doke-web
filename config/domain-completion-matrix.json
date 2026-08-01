@@ -1,6 +1,6 @@
 {
-  "version": "1.3.63",
-  "updatedAt": "2026-07-31T15:46:13-03:00",
+  "version": "1.3.64",
+  "updatedAt": "2026-07-31T22:18:12-03:00",
   "title": "Doke Domain Completion Matrix",
   "purpose": "Single source of truth for domain maturity, data authority, staging evidence, blockers, dependencies and mandatory completion order.",
   "maturityScale": {
@@ -1080,7 +1080,13 @@
         "scripts/test-sched-001-a07-history-canary-readiness.js",
         "scripts/audit-sched-001-a07-history-canary-readiness.js",
         "supabase/tests/020_sched_a07_rolled_back_canaries.sql",
-        ".github/workflows/sched-001-a07-history-canary-readiness.yml"
+        ".github/workflows/sched-001-a07-history-canary-readiness.yml",
+        "config/sched-001-b04-ord-canonical-wiring-readiness.json",
+        "docs/SCHED-001-B04-ORD-CANONICAL-WIRING-READINESS.md",
+        "docs/validation/SCHED-001-B04-ORD-CANONICAL-WIRING-READINESS.json",
+        "scripts/audit-sched-001-b04-ord-canonical-wiring-readiness.js",
+        "scripts/test-sched-001-b04-ord-canonical-wiring-readiness.js",
+        ".github/workflows/sched-001-b04-ord-canonical-wiring-readiness.yml"
       ],
       "scanRoots": [
         "backend/modules/orders",
@@ -1177,7 +1183,9 @@
         "test:sched-001-a04-scheduling-service-runtime",
         "audit:sched-001-a05-persistence-readiness",
         "audit:sched-001-a07-history-canary-readiness",
-        "test:sched-001-a07-history-canary-readiness"
+        "test:sched-001-a07-history-canary-readiness",
+        "audit:sched-001-b04-ord-canonical-wiring-readiness",
+        "test:sched-001-b04-ord-canonical-wiring-readiness"
       ],
       "evidence": [
         "Canonical state machine, transaction events, outbox worker and operational controls are active in staging.",
@@ -1277,7 +1285,8 @@
         "ORD-001 remains prohibited from direct schedule mutation or parallel conflict detection and will consume schedule_reservation_id plus durable schedule events.",
         "ORD-001 now has the generated SCHED-A03 order reference contract, while scheduled_at remains a read projection and no migration was applied.",
         "ORD-001 now has an executable SCHED-A04 order projection port for schedule_reservation_id and scheduled_at, but ORD-B04 remains open until a transactional adapter and staging activation exist.",
-        "SCHED-A08 completed the official migration-history repair and rolled-back remote overlap, adjacency, idempotency, event, DST and order-projection canaries; ORD-B04 remains open only for trusted runtime wiring to the canonical reservation authority."
+        "SCHED-A08 completed the official migration-history repair and rolled-back remote overlap, adjacency, idempotency, event, DST and order-projection canaries; ORD-B04 remains open only for trusted runtime wiring to the canonical reservation authority.",
+        "SCHED-B04A froze the repository-only ORD canonical wiring contract: schedule_reservation_id is the reservation authority, scheduled_at is projection-only, direct schedule writes remain prohibited, and no runtime, staging, frontend, deployment or production effect occurred."
       ],
       "blockers": [
         {
@@ -1298,7 +1307,7 @@
           "id": "ORD-B04",
           "severity": "medium",
           "category": "scheduling_dependency",
-          "description": "ORD-B04 is formally handed to SCHED-001 but remains open. Availability, holds, confirmed reservations, conflict protection, timezone, rescheduling and cancellation must become server-canonical there; ORD-001 must consume one canonical reservation reference instead of treating raw scheduled_at as booking authority.",
+          "description": "The order domain remains handed to SCHED-001 until the canonical reservation reference, projection-only scheduled_at model and trusted command composition are implemented and validated.",
           "targetPhase": "Fase 6"
         },
         {
@@ -1310,10 +1319,9 @@
         }
       ],
       "nextActions": [
-        "Keep ORD-B04 handed to SCHED-001 until the trusted scheduling composition root is active and independently canary-validated.",
-        "Consume only schedule_reservation_id plus scheduled_at projection after SCHED-001 activation; do not restore raw scheduled_at booking authority.",
-        "Complete the separately authorized ORD-B02 real two-context visual settlement canary.",
-        "Keep PAY-001 and external staging release dependencies explicit under ORD-B03 and ORD-B05."
+        "Implement ORD-B04 through SCHED-B04B so orders consume schedule_reservation_id as authority and scheduled_at only as a projection from a confirmed reservation.",
+        "Preserve order lifecycle ownership while prohibiting generic manual transitions to scheduled and direct frontend writes to canonical schedule fields.",
+        "Keep staging, deployment, production and merge blocked pending independent local and remote evidence."
       ],
       "exitCriteria": [
         "Two real accounts complete request, accept, proposal, approval, start and completion across devices.",
@@ -1439,7 +1447,13 @@
         "scripts/test-sched-001-b02b-authenticated-composition-canary.js",
         ".github/workflows/sched-001-b02b-authenticated-composition-canary.yml",
         "docs/SCHED-001-B02B-AUTHENTICATED-COMPOSITION-CANARY.md",
-        "docs/validation/SCHED-001-B02B-AUTHENTICATED-COMPOSITION-CANARY.json"
+        "docs/validation/SCHED-001-B02B-AUTHENTICATED-COMPOSITION-CANARY.json",
+        "config/sched-001-b04-ord-canonical-wiring-readiness.json",
+        "docs/SCHED-001-B04-ORD-CANONICAL-WIRING-READINESS.md",
+        "docs/validation/SCHED-001-B04-ORD-CANONICAL-WIRING-READINESS.json",
+        "scripts/audit-sched-001-b04-ord-canonical-wiring-readiness.js",
+        "scripts/test-sched-001-b04-ord-canonical-wiring-readiness.js",
+        ".github/workflows/sched-001-b04-ord-canonical-wiring-readiness.yml"
       ],
       "scanRoots": [
         "assets/js/pages/pedidos",
@@ -1477,7 +1491,9 @@
         "audit:sched-001-b02-composition-root-readiness",
         "test:sched-001-b02-composition-root-runtime",
         "audit:sched-001-b02b-authenticated-composition-canary",
-        "test:sched-001-b02b-authenticated-composition-canary"
+        "test:sched-001-b02b-authenticated-composition-canary",
+        "audit:sched-001-b04-ord-canonical-wiring-readiness",
+        "test:sched-001-b04-ord-canonical-wiring-readiness"
       ],
       "evidence": [
         "Repository migrations 113 and 119 enable availability_slots RLS, define owner write policies and separate anonymous available-slot reads from authenticated owner/operator visibility.",
@@ -1501,20 +1517,22 @@
         "SCHED-B02B provides a one-shot authorized GitHub Actions path, read-only PR/project/schema preflight, one outer SERIALIZABLE transaction, per-command savepoints through the canonical composition root, mandatory final rollback and independent residue verification.",
         "SCHED-B02B run 30675062764 stopped in the read-only preflight because the frozen exact client email did not match the staging synthetic identity set; the mutation step was skipped and staging mutations remained zero. Attempt 2 resolves only active doke.local identities by canonical role and requires the professional persona to own an approved published service.",
         "SCHED-B02B run 30676215676 passed at commit 4168cd4983afd34c42c5bfcf48d2723d060a5b18: client, professional, support and administrator allowed/forbidden boundaries passed; idempotent replay, divergent payload rejection, overlap rejection and order projection passed; the transaction ended in ROLLBACK; all 11 residue counters were zero and authority counts were unchanged.",
-        "No production access, migration, deploy, Cron, worker, frontend connection, ORD wiring, billing, infrastructure, merge or auto-merge occurred. SCHED-B02 is closed by the authenticated composition evidence; SCHED-B04 remains open for separately authorized ORD integration."
+        "No production access, migration, deploy, Cron, worker, frontend connection, ORD wiring, billing, infrastructure, merge or auto-merge occurred. SCHED-B02 is closed by the authenticated composition evidence; SCHED-B04 remains open for separately authorized ORD integration.",
+        "SCHED-B04A froze the repository-only ORD canonical wiring contract: schedule_reservation_id is the reservation authority, scheduled_at is projection-only, direct schedule writes remain prohibited, and no runtime, staging, frontend, deployment or production effect occurred."
       ],
       "blockers": [
         {
           "id": "SCHED-B04",
           "severity": "high",
           "category": "order_integration",
-          "description": "orders.schedule_reservation_id exists in staging, but ORD-001 runtime wiring to the canonical reservation remains pending.",
+          "description": "The ORD/SCHED authority contract is frozen, but the order read model, trusted command composition and local integration tests are not implemented.",
           "targetPhase": "Fase 6"
         }
       ],
       "nextActions": [
-        "Prepare a separately authorized SCHED-B04 and ORD-001 integration sublot that consumes schedule_reservation_id and scheduled_at only as the canonical reservation reference and projection.",
-        "Keep production, frontend authority switch, Cron, workers, deployment and merge blocked until SCHED-B04 has independent evidence."
+        "Implement SCHED-B04B locally: expose schedule_reservation_id in the order read model, reject direct canonical scheduled_at writes, and compose confirmed reservations with the scheduled order state.",
+        "Add fail-closed local tests for confirm, reschedule, reservation cancellation, order cancellation and start-order authorization across ORD-001 and SCHED-001.",
+        "Keep staging mutations, frontend authority switch, deployment, Cron, workers, production and merge blocked until a separately authorized remote canary exists."
       ],
       "exitCriteria": [
         "Concurrent booking attempts cannot reserve the same slot.",
