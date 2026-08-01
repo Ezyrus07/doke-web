@@ -1,4 +1,4 @@
-name: Doke SCHED-B04C Attempt 3 Structural Fixture Fix
+name: Doke SCHED-B04C Attempt 4 Executor-Only Fixture Fix
 
 on:
   pull_request:
@@ -11,11 +11,11 @@ permissions:
   contents: write
 
 concurrency:
-  group: sched-b04c-attempt3-structural-fixture-fix
+  group: sched-b04c-attempt4-executor-only-fixture-fix
   cancel-in-progress: false
 
 jobs:
-  fix-and-authorize-attempt-3:
+  publish-executor-fix:
     if: >-
       github.event.pull_request.number == 25 &&
       github.event.pull_request.draft == true &&
@@ -36,7 +36,7 @@ jobs:
       - name: Install pinned dependencies
         run: npm ci --ignore-scripts
 
-      - name: Replace invalid fixture by structural markers
+      - name: Correct replacement fixture only
         shell: bash
         run: |
           set -euo pipefail
@@ -48,6 +48,12 @@ jobs:
 
           import_marker = "const { assertTransition } = require('../backend/modules/orders/order-state-machine');\n"
           repository_import = "const { createTransactionPort } = require('../backend/modules/scheduling/scheduling-postgres-repository');\n"
+          fixed_marker = "const directTransactionPort = createTransactionPort(client);"
+
+          if fixed_marker in source:
+              print('B04C replacement fixture already corrected; no executor mutation required.')
+              raise SystemExit(0)
+
           if repository_import not in source:
               if import_marker not in source:
                   raise SystemExit('executor import marker missing')
@@ -89,17 +95,7 @@ jobs:
           );
 
           """
-          source = source[:start] + new_block + source[end:]
-          executor_path.write_text(source)
-
-          bridge_path = Path('.github/workflows/sched-001-b04c-authorized-one-shot-bridge.yml')
-          bridge_lines = bridge_path.read_text().splitlines()
-          if not bridge_lines or not bridge_lines[0].startswith('name: Doke SCHED-B04C Authorized One-Shot Bridge'):
-              raise SystemExit('one-shot bridge name marker missing')
-          bridge_lines[0] = 'name: Doke SCHED-B04C Authorized One-Shot Bridge Attempt 3'
-          bridge_path.write_text('\n'.join(bridge_lines) + '\n')
-
-          Path('.github/workflows/sched-001-b04c-attempt2-fixture-fix.yml').unlink()
+          executor_path.write_text(source[:start] + new_block + source[end:])
           PY
 
       - name: Validate corrected canary package
@@ -116,11 +112,16 @@ jobs:
           npm run audit:domain-completion-matrix
           git diff --check
 
-      - name: Publish corrected attempt 3 package
+      - name: Publish executor correction
+        shell: bash
         run: |
           set -euo pipefail
+          if git diff --quiet -- scripts/execute-sched-001-b04c-authenticated-ord-sched-composition-canary.js; then
+            echo "Executor already corrected; nothing to publish."
+            exit 0
+          fi
           git config user.name "doke-ci"
           git config user.email "doke-ci@users.noreply.github.com"
-          git add -A
+          git add scripts/execute-sched-001-b04c-authenticated-ord-sched-composition-canary.js
           git commit -m "fix(sched): respect one active reservation in B04C canary"
           git push origin HEAD:ord/ord-001-baseline-audit
