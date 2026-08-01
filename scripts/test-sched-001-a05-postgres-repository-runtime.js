@@ -166,6 +166,17 @@ const mappedProjectionError = mapRepositoryError(projectionSqlError);
 assert.strictEqual(mappedProjectionError.code, 'DOKE_SCHEDULE_ORDER_PROJECTION_FAILED');
 assert.strictEqual(mappedProjectionError.sqlState, '40001');
 
+  const privateProjectionError = new Error('DOKE_SCHEDULE_RESERVATION_PROJECTION_INVALID');
+privateProjectionError.code = '23514';
+const privateProjectionClient = createScriptedClient({
+  'project-order-schedule': [privateProjectionError]
+});
+const privateProjectionTx = createTransactionPort(privateProjectionClient);
+await assert.rejects(
+  () => privateProjectionTx.projectOrderSchedule('order-1', 'res-foreign', '2026-08-03T12:00:00.000Z'),
+  (error) => error.code === 'DOKE_SCHEDULE_RESERVATION_PROJECTION_INVALID' && error.sqlState === '23514'
+);
+
   const rollbackClient = createScriptedClient({});
   const rollbackRepository = createSchedulingPostgresRepository({ pool: createPool(rollbackClient) });
   await assert.rejects(() => rollbackRepository.transaction(async () => {

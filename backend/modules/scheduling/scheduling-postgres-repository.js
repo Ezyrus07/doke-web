@@ -1,6 +1,6 @@
 'use strict';
 
-const { assertTransactionPort } = require('./scheduling-repository-port');
+const { assertTransactionPort, mapRepositoryError } = require('./scheduling-repository-port');
 
 const DEFAULT_ISOLATION_LEVEL = 'serializable';
 const DEFAULT_LOCK_TIMEOUT_MS = 5000;
@@ -229,30 +229,38 @@ function createTransactionPort(client) {
     },
 
     async projectOrderSchedule(orderId, reservationId, scheduledAt) {
-      const response = await query(
-        `/* sched-a05:project-order-schedule */
-         select *
-         from private.apply_order_schedule_projection(
-           $1::uuid,
-           $2::uuid,
-           $3::timestamptz
-         )`,
-        [orderId, reservationId, scheduledAt]
-      );
-      return requireRow(response, 'DOKE_SCHEDULE_ORDER_PROJECTION_FAILED');
+      try {
+        const response = await query(
+          `/* sched-a05:project-order-schedule */
+           select *
+           from private.apply_order_schedule_projection(
+             $1::uuid,
+             $2::uuid,
+             $3::timestamptz
+           )`,
+          [orderId, reservationId, scheduledAt]
+        );
+        return requireRow(response, 'DOKE_SCHEDULE_ORDER_PROJECTION_FAILED');
+      } catch (error) {
+        throw mapRepositoryError(error);
+      }
     },
 
     async clearOrderSchedule(orderId, reservationId) {
-      const response = await query(
-        `/* sched-a05:clear-order-schedule */
-         select *
-         from private.clear_order_schedule_projection(
-           $1::uuid,
-           $2::uuid
-         )`,
-        [orderId, reservationId]
-      );
-      return requireRow(response, 'DOKE_SCHEDULE_ORDER_CLEAR_FAILED');
+      try {
+        const response = await query(
+          `/* sched-a05:clear-order-schedule */
+           select *
+           from private.clear_order_schedule_projection(
+             $1::uuid,
+             $2::uuid
+           )`,
+          [orderId, reservationId]
+        );
+        return requireRow(response, 'DOKE_SCHEDULE_ORDER_CLEAR_FAILED');
+      } catch (error) {
+        throw mapRepositoryError(error);
+      }
     },
 
     async listExpiredHolds(cutoff, limit) {

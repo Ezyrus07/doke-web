@@ -624,7 +624,7 @@ await expectCode(
     mainHold.reservation.id,
     mainHold.reservation.startsAt
   ),
-  'DOKE_SCHEDULE_ORDER_PROJECTION_FAILED'
+  'DOKE_SCHEDULE_RESERVATION_PROJECTION_INVALID'
 );
 const replacementOrder = await readOrder(client, fixtures.orders.replacement);
 requireExact(replacementOrder.schedule_reservation_id, replacementA.reservation.id, 'DOKE_SCHED_B04C_REPLACEMENT_OVERWROTE_REFERENCE');
