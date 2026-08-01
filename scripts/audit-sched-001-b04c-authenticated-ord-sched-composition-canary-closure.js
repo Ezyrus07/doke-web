@@ -61,7 +61,10 @@ assert.strictEqual(execution.executionState.allAuthorizedAttemptsRolledBack, tru
 assert.strictEqual(execution.executionState.allResidueCountsZero, true);
 assert.strictEqual(execution.executionState.allAuthorityCountDeltasZero, true);
 
-assert.strictEqual(matrix.version, '1.3.70');
+const matrixParts = String(matrix.version).split('.').map(Number);
+assert.strictEqual(matrixParts[0], 1);
+assert.strictEqual(matrixParts[1], 3);
+assert(matrixParts[2] >= 70, 'B04C closure requires matrix 1.3.70 or later');
 const sched = matrix.domains.find((domain) => domain.id === 'SCHED-001');
 const ord = matrix.domains.find((domain) => domain.id === 'ORD-001');
 assert(sched && ord);

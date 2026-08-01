@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 1059 arquivos no escopo; 248 referências a localStorage; 78 a sessionStorage; 557 referências mock; 202 referências de rede/Supabase; 35 marcadores de implementação pendente.
+**Evidência estática observada:** 1062 arquivos no escopo; 248 referências a localStorage; 78 a sessionStorage; 557 referências mock; 202 referências de rede/Supabase; 35 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -508,6 +508,9 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - SCHED-B04C authenticated ORD/SCHED composition passed in staging run 30716088197 and proved the canonical reservation reference and projection lifecycle end to end.
 - Confirmation emitted order.scheduled, reschedule preserved the reservation ID, and canonical cancellation emitted order.accepted while atomically clearing reference and scheduled time.
 - ORD-B04 is closed; ORD-B02, ORD-B03 and ORD-B05 remain open, and production, deployment, frontend activation and merge remain blocked.
+- SCHED-C01A freezes how ORD browser surfaces must consume canonical scheduling: schedule_reservation_id, scheduled_at and scheduled status form one fail-closed projection tuple.
+- Quote dates remain client intent, generic browser transitions to scheduled remain absent, and advertised service availability must not be presented as a confirmed booking.
+- C01A does not close ORD-B02, ORD-B03 or ORD-B05 and does not activate frontend commands, staging access, deployment, production or merge.
 
 **Bloqueadores:**
 - **ORD-B02 · HIGH · frontend_activation:** Canonical reads, canary commands, cleanup, deterministic settlement, readiness discovery and the fail-closed Playwright executor pass. A short-lived authorization envelope is mandatory; ORD-B02 remains under ORD-001 until explicit resource authorization is issued, check-env passes, the real two-context visual canary is executed and run-scoped cleanup proves zero residue. _(Fase 6)_
@@ -532,7 +535,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI local; servidor partial; staging staging canary; segurança partial; produção blocked.
 
-**Evidência estática observada:** 1022 arquivos no escopo; 186 referências a localStorage; 70 a sessionStorage; 301 referências mock; 201 referências de rede/Supabase; 19 marcadores de implementação pendente.
+**Evidência estática observada:** 1024 arquivos no escopo; 186 referências a localStorage; 70 a sessionStorage; 301 referências mock; 201 referências de rede/Supabase; 19 marcadores de implementação pendente.
 
 **Páginas:** `anunciar-servico.html`, `pedidos.html`, `orcamento.html`.
 
@@ -576,14 +579,17 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - SCHED-B04C authenticated ORD/SCHED composition passed in staging run 30716088197 at head c2bddcd061d2136e07d8c3790abf8f66884c480f.
 - The successful canary proved confirmation, reschedule, canonical cancellation, replacement rejection, partial rollback, idempotency and cross-domain event correlation inside one SERIALIZABLE transaction ending in ROLLBACK.
 - All 15 residue counters were zero and all 8 authority counters were unchanged in both the canary report and independent post-run verification; SCHED-B04 is closed without promoting maturity or enabling frontend, Cron, workers, production or merge.
+- SCHED-C01A froze the repository-only frontend authority contract after the authenticated ORD/SCHED staging composition closed SCHED-B04.
+- The audit found that the browser order mapper exposes scheduled_at but not schedule_reservation_id, scheduleAuthority or hasCanonicalSchedule; the quote form still submits date only as client intent and the orders surface renders advertised service availability rather than a confirmed reservation.
+- C01A changes no runtime behavior and performs zero staging reads, mutations, migrations, deployments, frontend command activations, Cron or worker activations; SCHED remains maturity 3 with partial server authority and no internal blocker.
 
 **Bloqueadores:**
 - Nenhum.
 
 **Próximas ações:**
-- Connect the authenticated frontend scheduling surfaces to the canonical server authority under a separately reviewed activation gate.
-- Add continuous hold-expiration operations through Cron or workers only under independent authorization and preserve canonical ORD projection.
-- Keep production release and pull-request merge blocked pending independent release authorization.
+- Implement SCHED-C01B repository-only frontend canonical schedule read model and presentation adapters without enabling remote scheduling commands.
+- Prepare a separately reviewed server-mediated frontend command boundary for hold, confirmation, reschedule and cancellation while preserving idempotency and fail-closed authority.
+- Keep staging browser activation, Cron or workers, production release and pull-request merge under independent authorization.
 
 **Gate de saída:**
 - Concurrent booking attempts cannot reserve the same slot.
@@ -976,7 +982,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 1/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 236 arquivos no escopo; 64 referências a localStorage; 8 a sessionStorage; 269 referências mock; 8 referências de rede/Supabase; 25 marcadores de implementação pendente.
+**Evidência estática observada:** 237 arquivos no escopo; 64 referências a localStorage; 8 a sessionStorage; 269 referências mock; 8 referências de rede/Supabase; 25 marcadores de implementação pendente.
 
 **Evidências:**
 - The master plan identifies legal, privacy and commercial decisions as mandatory.
@@ -1036,7 +1042,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2383 arquivos no escopo; 505 referências a localStorage; 151 a sessionStorage; 880 referências mock; 599 referências de rede/Supabase; 89 marcadores de implementação pendente.
+**Evidência estática observada:** 2387 arquivos no escopo; 505 referências a localStorage; 151 a sessionStorage; 880 referências mock; 599 referências de rede/Supabase; 89 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
@@ -1097,4 +1103,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-08-01T17:03:06-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-08-01T19:22:00-03:00._
