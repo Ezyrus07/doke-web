@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 1051 arquivos no escopo; 248 referências a localStorage; 78 a sessionStorage; 557 referências mock; 196 referências de rede/Supabase; 35 marcadores de implementação pendente.
+**Evidência estática observada:** 1054 arquivos no escopo; 248 referências a localStorage; 78 a sessionStorage; 557 referências mock; 198 referências de rede/Supabase; 35 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -498,18 +498,19 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - SCHED-B04A froze the repository-only ORD canonical wiring contract: schedule_reservation_id is the reservation authority, scheduled_at is projection-only, direct schedule writes remain prohibited, and no runtime, staging, frontend, deployment or production effect occurred.
 - ORD generic commands can no longer manufacture scheduled state or cancel/start through an unresolved canonical reservation; B04B remains fail-closed until the authenticated composition canary.
 - SCHED-B04C froze the authenticated ORD/SCHED composition canary contract with synthetic personas, SERIALIZABLE rollback, cross-domain idempotency and zero-residue verification; no staging access was performed.
+- SCHED-B04C execution package now exercises the ORD/SCHED projection contract, order event/history projection, replacement rejection, start authorization and partial-projection rollback, but no staging execution has occurred and ORD-B04 remains open.
 
 **Bloqueadores:**
 - **ORD-B02 · HIGH · frontend_activation:** Canonical reads, canary commands, cleanup, deterministic settlement, readiness discovery and the fail-closed Playwright executor pass. A short-lived authorization envelope is mandatory; ORD-B02 remains under ORD-001 until explicit resource authorization is issued, check-env passes, the real two-context visual canary is executed and run-scoped cleanup proves zero residue. _(Fase 6)_
 - **ORD-B03 · HIGH · financial_dependency:** Financial completion remains blocked by PAY-001. Payment authority is not connected to a real PSP webhook lifecycle, and ORD-001 must consume rather than duplicate that server-canonical authority before this blocker can close. _(Fase 8)_
-- **ORD-B04 · MEDIUM · scheduling_dependency:** The order domain remains handed to SCHED-001 until the canonical reservation reference, projection-only scheduled_at model and trusted command composition are implemented and validated. _(Fase 6)_
+- **ORD-B04 · MEDIUM · scheduling_dependency:** ORD consumes the canonical schedule reservation projection locally and the exact-authorization staging executor is prepared. The blocker remains open until SCHED-B04C passes remotely with rollback, order event/history evidence and zero residue. _(Fase 6)_
 - **ORD-B05 · HIGH · staging_release:** ORD-A08 release identity, ORD-A09A provider evaluation, the ORD-A09B0 provider-neutral adapter boundary, provider selection handoff, selection intent firewall and adapter conformance suite are complete. Railway is recommended as the external staging release provider, but no explicit provider selection, provider-specific adapter, account, billing, secrets, infrastructure, rollback command or deployment exists. ORD-B05 remains open until exactly I_EXPLICITLY_SELECT_RAILWAY_FOR_DOKE_STAGING authorizes only non-secret adapter preparation; every external action remains separately blocked. _(Fase 6)_
 
 **Próximas ações:**
-- Execute SCHED-B04C authenticated ORD/SCHED composition canary only after the exact independent staging authorization.
-- Implement ORD-B04 through SCHED-B04B so orders consume schedule_reservation_id as authority and scheduled_at only as a projection from a confirmed reservation.
-- Preserve order lifecycle ownership while prohibiting generic manual transitions to scheduled and direct frontend writes to canonical schedule fields.
-- Keep staging, deployment, production and merge blocked pending independent local and remote evidence.
+- Execute the exact-authorized SCHED-B04C authenticated ORD/SCHED staging canary and preserve the rollback evidence.
+- Close ORD-B04 only when the canonical reservation reference, order status/history projection and start/cancel boundaries pass remotely.
+- Keep generic scheduled transitions, direct scheduled_at authority and frontend compensating writes prohibited.
+- Keep deployment, production and merge blocked pending independent release authorization.
 
 **Gate de saída:**
 - Two real accounts complete request, accept, proposal, approval, start and completion across devices.
@@ -523,7 +524,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI local; servidor partial; staging staging canary; segurança partial; produção blocked.
 
-**Evidência estática observada:** 1015 arquivos no escopo; 186 referências a localStorage; 70 a sessionStorage; 301 referências mock; 195 referências de rede/Supabase; 19 marcadores de implementação pendente.
+**Evidência estática observada:** 1018 arquivos no escopo; 186 referências a localStorage; 70 a sessionStorage; 301 referências mock; 197 referências de rede/Supabase; 19 marcadores de implementação pendente.
 
 **Páginas:** `anunciar-servico.html`, `pedidos.html`, `orcamento.html`.
 
@@ -556,15 +557,16 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - SCHED-B04B wires the ORD read model to schedule_reservation_id, demotes client-supplied dates to metadata intent, blocks generic scheduled transitions, and projects confirmed reservations atomically as scheduled.
 - Reservation cancellation clears the matching reference and time projection, returns scheduled orders to accepted, and start/cancel paths fail closed when canonical scheduling authority is unavailable.
 - SCHED-B04C froze the authenticated ORD/SCHED composition canary contract with synthetic personas, SERIALIZABLE rollback, cross-domain idempotency and zero-residue verification; no staging access was performed.
+- SCHED-B04C execution package is inert and fail-closed: it requires a manual workflow dispatch on the exact PR head, the exact independent staging authorization phrase, the frozen project ref, open draft PR state, SERIALIZABLE outer transaction, per-command savepoints, final ROLLBACK and independent zero-residue verification.
 
 **Bloqueadores:**
-- **SCHED-B04 · HIGH · order_integration:** The ORD/SCHED authority contract is frozen, but the order read model, trusted command composition and local integration tests are not implemented. _(Fase 6)_
+- **SCHED-B04 · HIGH · order_integration:** The ORD/SCHED local authority wiring and an inert exact-authorization canary executor are implemented. The blocker remains open until the authenticated staging composition canary passes with final rollback, unchanged authority counts and zero residue. _(Fase 6)_
 
 **Próximas ações:**
-- Execute SCHED-B04C authenticated ORD/SCHED composition canary only after the exact independent staging authorization.
-- Implement SCHED-B04B locally: expose schedule_reservation_id in the order read model, reject direct canonical scheduled_at writes, and compose confirmed reservations with the scheduled order state.
-- Add fail-closed local tests for confirm, reschedule, reservation cancellation, order cancellation and start-order authorization across ORD-001 and SCHED-001.
-- Keep staging mutations, frontend authority switch, deployment, Cron, workers, production and merge blocked until a separately authorized remote canary exists.
+- Execute SCHED-B04C only after I_EXPLICITLY_AUTHORIZE_SCHED_B04C_AUTHENTICATED_ORD_SCHED_COMPOSITION_CANARIES_ON_DOKE_STAGING is supplied with the exact current PR head SHA.
+- Require confirmation, reschedule, reservation cancellation, replacement rejection, order event/history projection and partial-projection rollback to pass in one SERIALIZABLE transaction ending in ROLLBACK.
+- Close SCHED-B04 and ORD-B04 only after independent post-rollback residue and authority-count verification succeeds.
+- Keep frontend authority switch, deployment, Cron, workers, production and merge blocked.
 
 **Gate de saída:**
 - Concurrent booking attempts cannot reserve the same slot.
@@ -1017,7 +1019,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2371 arquivos no escopo; 505 referências a localStorage; 151 a sessionStorage; 880 referências mock; 593 referências de rede/Supabase; 90 marcadores de implementação pendente.
+**Evidência estática observada:** 2375 arquivos no escopo; 505 referências a localStorage; 151 a sessionStorage; 880 referências mock; 595 referências de rede/Supabase; 89 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
@@ -1078,4 +1080,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-08-01T13:11:00-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-08-01T14:06:00-03:00._
