@@ -240,13 +240,28 @@ function createOrderRuntime(options) {
   assert.strictEqual(projected.status, 'scheduled');
   const cleared = await tx.clearOrderSchedule('order-1', 'reservation-1');
   assert.strictEqual(cleared.status, 'accepted');
+
   const projectSql = sqlCalls[0].text.toLowerCase();
-  assert(projectSql.includes("status = 'scheduled'"));
-  assert(projectSql.includes("status in ('accepted', 'scheduled')"));
-  assert(projectSql.includes('schedule_reservation_id is null or schedule_reservation_id = $2'));
   const clearSql = sqlCalls[1].text.toLowerCase();
-  assert(clearSql.includes("when status = 'scheduled' then 'accepted'"));
-  assert(clearSql.includes('schedule_reservation_id = $2'));
+  const delegatesProjectionToB04D = projectSql.includes('private.apply_order_schedule_projection');
+  const delegatesClearToB04D = clearSql.includes('private.clear_order_schedule_projection');
+  assert.strictEqual(delegatesProjectionToB04D, delegatesClearToB04D,
+    'Projection and clearing must use the same persistence strategy.');
+
+  if (delegatesProjectionToB04D) {
+    assert(projectSql.includes('/* sched-a05:project-order-schedule */'));
+    assert(projectSql.includes('private.apply_order_schedule_projection'));
+    assert(!projectSql.includes('update public.orders'));
+    assert(clearSql.includes('/* sched-a05:clear-order-schedule */'));
+    assert(clearSql.includes('private.clear_order_schedule_projection'));
+    assert(!clearSql.includes('update public.orders'));
+  } else {
+    assert(projectSql.includes("status = 'scheduled'"));
+    assert(projectSql.includes("status in ('accepted', 'scheduled')"));
+    assert(projectSql.includes('schedule_reservation_id is null or schedule_reservation_id = $2'));
+    assert(clearSql.includes("when status = 'scheduled' then 'accepted'"));
+    assert(clearSql.includes('schedule_reservation_id = $2'));
+  }
 
   console.log('SCHED-B04B ORD canonical wiring runtime tests passed.');
 })().catch((error) => {
