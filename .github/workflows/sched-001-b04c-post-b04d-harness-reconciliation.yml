@@ -1,0 +1,232 @@
+name: Doke SCHED-B04C Post-B04D Harness Reconciliation
+
+on:
+  pull_request:
+    branches:
+      - search/search-ux02-intent-favorites-clean
+    paths:
+      - '.github/workflows/sched-001-b04c-post-b04d-harness-reconciliation.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sched-b04c-post-b04d-harness-reconciliation
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    if: >-
+      github.event.pull_request.number == 25 &&
+      github.event.pull_request.draft == true &&
+      github.event.pull_request.head.ref == 'ord/ord-001-baseline-audit'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout PR head branch
+        uses: actions/checkout@v4
+        with:
+          ref: ord/ord-001-baseline-audit
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install pinned dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Reconcile post-B04D harness
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          port_path = Path('backend/modules/scheduling/scheduling-repository-port.js')
+          port = port_path.read_text()
+          old_port = """function mapRepositoryError(error) {
+            if (!error || error.code && String(error.code).startsWith('DOKE_')) return error;
+            const code = String(error.code || error.sqlState || '').toUpperCase();
+            const message = String(error.message || error.details || '');
+            if (code === '23P01' || message.includes('schedule_reservations_no_active_overlap')) {
+          """
+          new_port = """function mapRepositoryError(error) {
+            if (!error || error.code && String(error.code).startsWith('DOKE_')) return error;
+            const code = String(error.code || error.sqlState || '').toUpperCase();
+            const message = String(error.message || error.details || '');
+            if (/^DOKE_[A-Z0-9_]+$/.test(message)) {
+              const domainError = new Error(message);
+              domainError.code = message;
+              domainError.sqlState = code || null;
+              return domainError;
+            }
+            if (code === '23P01' || message.includes('schedule_reservations_no_active_overlap')) {
+          """
+          if port.count(old_port) != 1:
+              raise SystemExit('Unexpected scheduling repository error mapper shape')
+          port_path.write_text(port.replace(old_port, new_port))
+
+          test_path = Path('scripts/test-sched-001-a05-postgres-repository-runtime.js')
+          test = test_path.read_text()
+          old_import = "const { REQUIRED_TRANSACTION_METHODS } = require('../backend/modules/scheduling/scheduling-repository-port');"
+          new_import = "const { REQUIRED_TRANSACTION_METHODS, mapRepositoryError } = require('../backend/modules/scheduling/scheduling-repository-port');"
+          if test.count(old_import) != 1:
+              raise SystemExit('Unexpected A05 repository-port import shape')
+          test = test.replace(old_import, new_import)
+          anchor = """  await assert.rejects(
+            () => tx.updateReservation('res-1', 3, { status: 'confirmed', holdExpiresAt: null, version: 4, updatedAt: '2026-08-03T10:00:00.000Z' }),
+            (error) => error.code === '40001'
+          );
+
+          """
+          addition = anchor + """  const projectionSqlError = new Error('DOKE_SCHEDULE_ORDER_PROJECTION_FAILED');
+          projectionSqlError.code = '40001';
+          const mappedProjectionError = mapRepositoryError(projectionSqlError);
+          assert.strictEqual(mappedProjectionError.code, 'DOKE_SCHEDULE_ORDER_PROJECTION_FAILED');
+          assert.strictEqual(mappedProjectionError.sqlState, '40001');
+
+          """
+          if test.count(anchor) != 1:
+              raise SystemExit('Unexpected A05 version-conflict test shape')
+          test_path.write_text(test.replace(anchor, addition))
+
+          executor_path = Path('scripts/execute-sched-001-b04c-authenticated-ord-sched-composition-canary.js')
+          executor = executor_path.read_text()
+          old_fixture = """const partialHold = await root.createScheduleHold(commandContext(actors.client, 'partial-hold', {
+            orderId: fixtures.orders.partial,
+            professionalId: fixtures.personas.professional.id,
+            ...range(14, 15)
+          }, correlationId));
+          const primedPartial = await client.query({
+            name: 'sched-b04c-prime-partial-projection-conflict',
+            text: `update public.orders
+                   set status = 'accepted',
+                       schedule_reservation_id = $2::uuid,
+                       scheduled_at = $3::timestamptz,
+                       updated_at = pg_catalog.now()
+                   where id = $1::uuid and status = 'requested'
+                   returning id`,
+            values: [
+              fixtures.orders.partial,
+              mainHold.reservation.id,
+              rescheduled.reservation.startsAt
+            ]
+          });
+          requireExact(primedPartial.rowCount, 1, 'DOKE_SCHED_B04C_PARTIAL_CONFLICT_FIXTURE_FAILED');
+          const partialBeforeFailure = await readOrder(client, fixtures.orders.partial);
+          requireExact(partialBeforeFailure.status, 'accepted', 'DOKE_SCHED_B04C_PARTIAL_FIXTURE_NOT_ACCEPTED');
+          requireExact(
+            partialBeforeFailure.schedule_reservation_id,
+            mainHold.reservation.id,
+            'DOKE_SCHED_B04C_PARTIAL_FIXTURE_REFERENCE_MISMATCH'
+          );
+          requireExact(
+            new Date(partialBeforeFailure.scheduled_at).toISOString(),
+            new Date(rescheduled.reservation.startsAt).toISOString(),
+            'DOKE_SCHED_B04C_PARTIAL_FIXTURE_TIME_MISMATCH'
+          );
+
+          """
+          new_fixture = """const partialAccepted = await client.query({
+            name: 'sched-b04c-accept-partial-order',
+            text: `update public.orders
+                   set status = 'accepted', updated_at = pg_catalog.now()
+                   where id = $1::uuid and status = 'requested'
+                   returning id`,
+            values: [fixtures.orders.partial]
+          });
+          requireExact(partialAccepted.rowCount, 1, 'DOKE_SCHED_B04C_PARTIAL_ACCEPT_FIXTURE_FAILED');
+
+          const partialBaselineHold = await root.createScheduleHold(commandContext(actors.client, 'partial-baseline-hold', {
+            orderId: fixtures.orders.partial,
+            professionalId: fixtures.personas.professional.id,
+            ...range(13, 14)
+          }, correlationId));
+          const partialBaselineConfirmed = await root.confirmScheduleReservation(commandContext(actors.admin, 'partial-baseline-confirm', {
+            reservationId: partialBaselineHold.reservation.id,
+            expectedVersion: 1
+          }, correlationId));
+          const partialBaselineOrder = await readOrder(client, fixtures.orders.partial);
+          assertOrderProjection(partialBaselineOrder, partialBaselineConfirmed.reservation, 'scheduled');
+
+          const releasedBaseline = await client.query({
+            name: 'sched-b04c-release-baseline-reservation-without-order-clear',
+            text: `update public.schedule_reservations
+                   set status = 'cancelled', hold_expires_at = null,
+                       version = version + 1, updated_at = pg_catalog.now()
+                   where id = $1::uuid and status = 'confirmed'
+                   returning id, version`,
+            values: [partialBaselineHold.reservation.id]
+          });
+          requireExact(releasedBaseline.rowCount, 1, 'DOKE_SCHED_B04C_PARTIAL_BASELINE_RELEASE_FAILED');
+
+          const partialBeforeFailure = await readOrder(client, fixtures.orders.partial);
+          requireExact(partialBeforeFailure.status, 'scheduled', 'DOKE_SCHED_B04C_PARTIAL_FIXTURE_NOT_SCHEDULED');
+          requireExact(
+            partialBeforeFailure.schedule_reservation_id,
+            partialBaselineHold.reservation.id,
+            'DOKE_SCHED_B04C_PARTIAL_FIXTURE_REFERENCE_MISMATCH'
+          );
+          requireExact(
+            new Date(partialBeforeFailure.scheduled_at).toISOString(),
+            new Date(partialBaselineConfirmed.reservation.startsAt).toISOString(),
+            'DOKE_SCHED_B04C_PARTIAL_FIXTURE_TIME_MISMATCH'
+          );
+
+          const partialHold = await root.createScheduleHold(commandContext(actors.client, 'partial-hold', {
+            orderId: fixtures.orders.partial,
+            professionalId: fixtures.personas.professional.id,
+            ...range(14, 15)
+          }, correlationId));
+
+          """
+          if executor.count(old_fixture) != 1:
+              raise SystemExit('Unexpected B04C partial rollback fixture shape')
+          executor = executor.replace(old_fixture, new_fixture)
+          executor = executor.replace(
+            "requireExact(partialOrder.status, 'accepted', 'DOKE_SCHED_B04C_PARTIAL_FAILURE_CHANGED_ORDER');",
+            "requireExact(partialOrder.status, 'scheduled', 'DOKE_SCHED_B04C_PARTIAL_FAILURE_CHANGED_ORDER');"
+          )
+          executor = executor.replace(
+            "mainHold.reservation.id,\n            'DOKE_SCHED_B04C_PARTIAL_FAILURE_CHANGED_REFERENCE'",
+            "partialBaselineHold.reservation.id,\n            'DOKE_SCHED_B04C_PARTIAL_FAILURE_CHANGED_REFERENCE'"
+          )
+          executor = executor.replace(
+            "new Date(rescheduled.reservation.startsAt).toISOString(),\n            'DOKE_SCHED_B04C_PARTIAL_FAILURE_CHANGED_TIME'",
+            "new Date(partialBaselineConfirmed.reservation.startsAt).toISOString(),\n            'DOKE_SCHED_B04C_PARTIAL_FAILURE_CHANGED_TIME'"
+          )
+          executor_path.write_text(executor)
+          PY
+
+      - name: Validate reconciled contracts
+        run: |
+          set -euo pipefail
+          node --check backend/modules/scheduling/scheduling-repository-port.js
+          node --check scripts/execute-sched-001-b04c-authenticated-ord-sched-composition-canary.js
+          node scripts/test-sched-001-a05-postgres-repository-runtime.js
+          node scripts/audit-sched-001-b04c-authenticated-ord-sched-composition-canary-execution.js
+          node scripts/test-sched-001-b04c-authenticated-ord-sched-composition-canary-execution.js
+          node scripts/audit-sched-001-b04d-canonical-order-projection-guard-readiness.js
+          node scripts/test-sched-001-b04d-canonical-order-projection-guard-runtime.js
+          node scripts/audit-sched-001-b04b-ord-canonical-wiring-implementation.js
+          node scripts/test-sched-001-b04b-ord-canonical-wiring-runtime.js
+          node scripts/audit-ord-001-a11-scheduling-authority-handoff.js
+          npm run audit:domain-completion-matrix
+          git diff --check
+
+      - name: Publish reconciled harness
+        run: |
+          set -euo pipefail
+          git config user.name "doke-ci"
+          git config user.email "doke-ci@users.noreply.github.com"
+          git add backend/modules/scheduling/scheduling-repository-port.js
+          git add scripts/test-sched-001-a05-postgres-repository-runtime.js
+          git add scripts/execute-sched-001-b04c-authenticated-ord-sched-composition-canary.js
+          if git diff --cached --quiet; then
+            echo "Harness already reconciled."
+            exit 0
+          fi
+          git commit -m "fix(sched): reconcile B04C canary with B04D projection guard"
+          git push origin HEAD:ord/ord-001-baseline-audit
