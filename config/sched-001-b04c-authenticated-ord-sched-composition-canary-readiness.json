@@ -1,0 +1,142 @@
+{
+  "schemaVersion": 1,
+  "domain": "SCHED-001",
+  "dependentDomain": "ORD-001",
+  "sublot": "SCHED-B04C",
+  "contractVersion": "sched-b04c-authenticated-ord-sched-composition-canary-readiness-v1",
+  "scope": "repository_only_authenticated_ord_sched_composition_canary_readiness",
+  "environment": "doke-web-staging",
+  "projectRef": "zwkczgewzbsorbrjuzpb",
+  "authorization": {
+    "requiredExactPhrase": "I_EXPLICITLY_AUTHORIZE_SCHED_B04C_AUTHENTICATED_ORD_SCHED_COMPOSITION_CANARIES_ON_DOKE_STAGING",
+    "genericNextAllowed": false,
+    "productionCovered": false,
+    "deploymentCovered": false,
+    "frontendAuthoritySwitchCovered": false,
+    "migrationCovered": false,
+    "cronOrWorkerCovered": false
+  },
+  "runtimeGate": {
+    "enabledFlag": "DOKE_SCHEDULING_RUNTIME_ENABLED",
+    "enabledValue": "true",
+    "environmentFlag": "DOKE_RUNTIME_ENVIRONMENT",
+    "environmentValue": "staging",
+    "projectRefFlag": "SUPABASE_PROJECT_REF",
+    "projectRefValue": "zwkczgewzbsorbrjuzpb",
+    "failClosed": true,
+    "poolMustBeInjected": true,
+    "browserExecutionForbidden": true
+  },
+  "syntheticFixture": {
+    "transactionScopedOnly": true,
+    "realUserDataAllowed": false,
+    "createsSyntheticClient": true,
+    "createsSyntheticProfessional": true,
+    "createsSyntheticSupport": true,
+    "createsSyntheticAdmin": true,
+    "createsSyntheticService": true,
+    "createsSyntheticOrder": true,
+    "persistentRowsAllowed": 0
+  },
+  "personas": [
+    {
+      "name": "client",
+      "requiredAssertions": [
+        "schedule_preference_remains_client_intent",
+        "create_hold_allowed_for_owned_order",
+        "manual_scheduled_transition_forbidden",
+        "confirmation_forbidden",
+        "reagendamento_forbidden"
+      ]
+    },
+    {
+      "name": "professional",
+      "requiredAssertions": [
+        "accept_order_allowed",
+        "manual_scheduled_transition_forbidden",
+        "confirmation_forbidden",
+        "start_without_confirmed_reservation_forbidden",
+        "start_with_matching_confirmed_reservation_allowed"
+      ]
+    },
+    {
+      "name": "support",
+      "requiredAssertions": [
+        "confirm_reservation_projects_order_atomically",
+        "reschedule_preserves_reservation_reference",
+        "cancel_reservation_clears_projection_and_restores_accepted",
+        "generic_order_cancel_with_active_reservation_forbidden"
+      ]
+    },
+    {
+      "name": "admin",
+      "requiredAssertions": [
+        "confirm_reservation_projects_order_atomically",
+        "projection_cannot_replace_different_reservation",
+        "incomplete_projection_fails_closed",
+        "generic_scheduled_transition_forbidden"
+      ]
+    }
+  ],
+  "crossDomainAssertions": [
+    "order_read_model_exposes_schedule_reservation_id",
+    "raw_scheduled_at_never_grants_authority",
+    "hold_does_not_schedule_order",
+    "confirmed_reservation_sets_reference_time_and_scheduled_status",
+    "reschedule_keeps_same_reservation_id_and_updates_time",
+    "reservation_cancel_clears_reference_time_and_restores_accepted",
+    "order_cancel_with_active_reservation_requires_composition",
+    "start_requires_confirmed_matching_reservation",
+    "shared_correlation_id_recorded",
+    "independent_domain_idempotency_keys_enforced",
+    "different_payload_same_key_rejected",
+    "partial_projection_rolls_back",
+    "transaction_rolled_back",
+    "zero_canary_residue"
+  ],
+  "transaction": {
+    "isolation": "SERIALIZABLE",
+    "outerBoundary": "single_postgresql_transaction",
+    "commandBoundary": "savepoint_per_cross_domain_command",
+    "finalStatement": "ROLLBACK",
+    "commitForbidden": true,
+    "postRollbackVerificationRequired": true
+  },
+  "residueTables": [
+    "auth.users",
+    "public.users",
+    "public.user_profiles",
+    "public.client_profiles",
+    "public.services",
+    "public.service_versions",
+    "public.orders",
+    "public.order_status_history",
+    "public.schedule_availability_rules",
+    "public.schedule_reservations",
+    "private.schedule_command_idempotency",
+    "private.schedule_domain_events"
+  ],
+  "capabilities": {
+    "executeModeAvailable": false,
+    "databaseMutationAvailable": false,
+    "runtimeActivated": false,
+    "authenticatedCanaryExecuted": false,
+    "frontendConnected": false
+  },
+  "blockers": {
+    "closed": ["SCHED-B02"],
+    "remainingOpen": ["SCHED-B04", "ORD-B04"]
+  },
+  "nextGate": "separately authorized authenticated ORD SCHED staging composition canary execution",
+  "prohibitedActions": [
+    "production_access",
+    "migration_application",
+    "deployment",
+    "frontend_authority_switch",
+    "cron_activation",
+    "worker_activation",
+    "billing_or_infrastructure_change",
+    "persistent_canary_data",
+    "merge"
+  ]
+}
