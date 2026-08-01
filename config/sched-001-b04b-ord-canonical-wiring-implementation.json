@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "domain": "SCHED-001",
+  "dependentDomain": "ORD-001",
+  "sublot": "SCHED-B04B",
+  "contractVersion": "sched-b04b-ord-canonical-wiring-implementation-v1",
+  "scope": "repository_only_ord_sched_canonical_wiring_implementation",
+  "authority": {
+    "reservationReference": "orders.schedule_reservation_id",
+    "timeProjection": "orders.scheduled_at",
+    "statusProjection": "orders.status=scheduled",
+    "scheduleWriter": "scheduling_postgres_repository",
+    "rawScheduledAtIsAuthority": false
+  },
+  "orderReadModel": {
+    "scheduleReservationIdExposed": true,
+    "scheduleAuthorityExposed": true,
+    "canonicalRequiresReferenceAndTime": true,
+    "legacyTimeOnlyClassifiedIncomplete": true
+  },
+  "createOrder": {
+    "directScheduledAtWriteBlocked": true,
+    "preferenceStoredAsMetadataIntent": true,
+    "canonicalProjectionInputForcedNull": true,
+    "forgedAuthorityMetadataRemoved": true
+  },
+  "statePolicy": {
+    "manualScheduledTransitionAllowed": false,
+    "scheduledStateAuthority": "confirmed_schedule_reservation",
+    "confirmationAllowedFrom": ["accepted", "scheduled"],
+    "reservationCancellationRestoresOrderStatus": "accepted",
+    "genericOrderCancellationWithReservationAllowed": false,
+    "startWithReservationRequiresConfirmedAuthority": true
+  },
+  "transactionPolicy": {
+    "confirmationAndProjectionSameTransaction": true,
+    "rescheduleKeepsReservationId": true,
+    "clearRequiresMatchingReservationId": true,
+    "projectionFailureRollsBackReservationMutation": true,
+    "isolation": "serializable"
+  },
+  "capabilities": {
+    "orderReadModelWired": true,
+    "directScheduleProjectionBlocked": true,
+    "manualScheduledTransitionBlocked": true,
+    "canonicalStatusProjectionImplemented": true,
+    "reservationCancellationProjectionImplemented": true,
+    "startAuthorityGuardImplemented": true,
+    "genericCancellationFailClosed": true,
+    "frontendAuthoritySwitched": false,
+    "stagingCanaryExecuted": false,
+    "productionActivationAvailable": false
+  },
+  "blockers": {
+    "closed": ["SCHED-B02"],
+    "remainingOpen": ["SCHED-B04", "ORD-B04"]
+  },
+  "nextGate": "SCHED-B04C authenticated ORD/SCHED composition canary readiness"
+}
