@@ -74,7 +74,8 @@ assert.deepStrictEqual(contract.COMMANDS.expire_schedule_holds.actors, ['schedul
   assert.deepStrictEqual(safeError({ code: '23503', message: 'detail omitted' }), {
     code: 'DOKE_SCHED_B02B_UNEXPECTED_FAILURE',
     message: 'The authenticated staging composition canary failed closed.',
-    diagnosticClass: 'foreign_key_violation'
+    diagnosticClass: 'foreign_key_violation',
+    diagnosticSqlState: '23503'
   });
   assert.strictEqual(safeError({ code: 'ECONNREFUSED' }).diagnosticClass, 'unclassified');
   console.log('SCHED-B02B authenticated composition canary tests passed.');

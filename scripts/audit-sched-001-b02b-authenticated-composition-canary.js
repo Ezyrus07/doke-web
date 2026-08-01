@@ -14,6 +14,7 @@ const paths = {
   attempt7: 'config/sched-001-b02b-authenticated-composition-canary-attempt-7.json',
   attempt8: 'config/sched-001-b02b-authenticated-composition-canary-attempt-8.json',
   attempt9: 'config/sched-001-b02b-authenticated-composition-canary-attempt-9.json',
+  attempt10: 'config/sched-001-b02b-authenticated-composition-canary-attempt-10.json',
   executor: 'scripts/execute-sched-001-b02b-authenticated-composition-canary.js',
   test: 'scripts/test-sched-001-b02b-authenticated-composition-canary.js',
   workflow: '.github/workflows/sched-001-b02b-authenticated-composition-canary.yml',
@@ -64,6 +65,7 @@ assert(executor.includes("report.executionStage = 'transactional_fixture_provisi
 assert(executor.includes("reportProgress('composition_professional')"));
 assert(executor.includes("position('pg_catalog.coalesce'"));
 assert(executor.includes("'23503': 'foreign_key_violation'"));
+assert(executor.includes('diagnosticSqlState'));
 
 assert(executor.includes('provisionTransactionalFixtures'));
 assert(executor.includes('insert into auth.users'));

@@ -52,7 +52,8 @@ function safeError(error) {
   return {
     code: 'DOKE_SCHED_B02B_UNEXPECTED_FAILURE',
     message: 'The authenticated staging composition canary failed closed.',
-    diagnosticClass: diagnosticClasses[known] || 'unclassified'
+    diagnosticClass: diagnosticClasses[known] || 'unclassified',
+    diagnosticSqlState: /^[0-9A-Z]{5}$/.test(known) ? known : null
   };
 }
 
