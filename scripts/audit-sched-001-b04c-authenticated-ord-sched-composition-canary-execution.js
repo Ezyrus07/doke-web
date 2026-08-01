@@ -23,7 +23,8 @@ assert.strictEqual(config.contractVersion, 'sched-b04c-authenticated-ord-sched-c
 assert.strictEqual(config.authorization.exactPhrase, readiness.authorization.requiredExactPhrase);
 assert([
   'awaiting_exact_authorization',
-  'consumed_failed_closed_blocked_on_b04d'
+  'consumed_failed_closed_blocked_on_b04d',
+  'consumed_success'
 ].includes(config.authorization.status), `Unexpected B04C authorization status: ${config.authorization.status}`);
 assert.strictEqual(config.authorization.genericContinuationAllowed, false);
 assert.strictEqual(config.authorization.repositoryAdditionTriggersExecution, false);
@@ -61,6 +62,27 @@ if (config.authorization.status === 'consumed_failed_closed_blocked_on_b04d') {
   assert.strictEqual(config.executionState.persistentMutationsPerformed, 0);
   assert.strictEqual(config.executionState.allAuthorizedAttemptsRolledBack, true);
   assert.strictEqual(config.executionState.allResidueCountsZero, true);
+} else if (config.authorization.status === 'consumed_success') {
+  assert.strictEqual(config.authorization.mayBeReusedForRetry, false);
+  assert.strictEqual(config.executionState.authenticatedCanaryExecuted, true);
+  assert.strictEqual(config.executionState.canaryPassed, true);
+  assert.strictEqual(config.executionState.blockedBy, null);
+  assert.strictEqual(config.executionState.transactionalAttemptsPerformed, 8);
+  assert.strictEqual(config.executionState.successfulAttempts, 1);
+  assert.strictEqual(config.executionState.failedClosedAttemptsBeforeSuccess, 7);
+  assert.strictEqual(config.executionState.successfulRun.runId, 30716088197);
+  assert.strictEqual(config.executionState.successfulRun.jobId, 91411759384);
+  assert.strictEqual(config.executionState.successfulRun.result, 'authenticated_ord_sched_composition_canary_passed');
+  assert.strictEqual(config.executionState.successfulRun.isolation, 'SERIALIZABLE');
+  assert.strictEqual(config.executionState.successfulRun.finalStatement, 'ROLLBACK');
+  assert.strictEqual(config.executionState.successfulRun.committed, false);
+  assert.strictEqual(config.executionState.successfulRun.rolledBack, true);
+  assert.strictEqual(config.executionState.allAuthorizedAttemptsRolledBack, true);
+  assert.strictEqual(config.executionState.allResidueCountsZero, true);
+  assert.strictEqual(config.executionState.allAuthorityCountDeltasZero, true);
+  assert.strictEqual(config.executionState.persistentMutationsPerformed, 0);
+  assert.strictEqual(config.executionState.temporaryAuthorizedWorkflowRemoved, true);
+  assert.strictEqual(config.executionState.temporaryBigintReconcilerRemoved, true);
 }
 
 [
