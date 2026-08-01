@@ -16,6 +16,7 @@ const {
   assertGenericCancellationAllowed
 } = require('../backend/modules/orders/order-scheduling-authority');
 const { assertTransition } = require('../backend/modules/orders/order-state-machine');
+const { createTransactionPort } = require('../backend/modules/scheduling/scheduling-postgres-repository');
 
 const CONFIG = require('../config/sched-001-b04c-authenticated-ord-sched-composition-canary-execution.json');
 const EXPECTED_PROJECT_REF = 'zwkczgewzbsorbrjuzpb';
@@ -596,30 +597,32 @@ async function runCompositionCanary(client, fixtures, env) {
   requireExact(rescheduled.reservation.id, confirmed.reservation.id, 'DOKE_SCHED_B04C_RESCHEDULE_REPLACED_RESERVATION');
 
   const replacementA = await root.createScheduleHold(commandContext(actors.support, 'replacement-a-hold', {
-    orderId: fixtures.orders.replacement,
-    professionalId: fixtures.personas.professional.id,
-    ...range(12, 13)
-  }, correlationId));
-  const replacementB = await root.createScheduleHold(commandContext(actors.admin, 'replacement-b-hold', {
-    orderId: fixtures.orders.replacement,
-    professionalId: fixtures.personas.professional.id,
-    ...range(13, 14)
-  }, correlationId));
-  await root.confirmScheduleReservation(commandContext(actors.support, 'replacement-a-confirm', {
-    reservationId: replacementA.reservation.id,
-    expectedVersion: 1
-  }, correlationId));
-  await expectCode(
-    () => root.confirmScheduleReservation(commandContext(actors.admin, 'replacement-b-confirm', {
-      reservationId: replacementB.reservation.id,
-      expectedVersion: 1
-    }, correlationId)),
-    'DOKE_SCHEDULE_ORDER_PROJECTION_FAILED'
-  );
-  const replacementBStored = await readReservation(client, replacementB.reservation.id);
-  requireExact(replacementBStored.status, 'held', 'DOKE_SCHED_B04C_REPLACEMENT_FAILURE_DID_NOT_ROLL_BACK');
-  const replacementOrder = await readOrder(client, fixtures.orders.replacement);
-  requireExact(replacementOrder.schedule_reservation_id, replacementA.reservation.id, 'DOKE_SCHED_B04C_REPLACEMENT_OVERWROTE_REFERENCE');
+  orderId: fixtures.orders.replacement,
+  professionalId: fixtures.personas.professional.id,
+  ...range(12, 13)
+}, correlationId));
+const replacementAConfirmed = await root.confirmScheduleReservation(commandContext(actors.support, 'replacement-a-confirm', {
+  reservationId: replacementA.reservation.id,
+  expectedVersion: 1
+}, correlationId));
+const replacementOrderBeforeGuard = await readOrder(client, fixtures.orders.replacement);
+assertOrderProjection(replacementOrderBeforeGuard, replacementAConfirmed.reservation, 'scheduled');
+const directTransactionPort = createTransactionPort(client);
+await expectCode(
+  () => directTransactionPort.projectOrderSchedule(
+    fixtures.orders.replacement,
+    mainHold.reservation.id,
+    mainHold.reservation.startsAt
+  ),
+  'DOKE_SCHEDULE_ORDER_PROJECTION_FAILED'
+);
+const replacementOrder = await readOrder(client, fixtures.orders.replacement);
+requireExact(replacementOrder.schedule_reservation_id, replacementA.reservation.id, 'DOKE_SCHED_B04C_REPLACEMENT_OVERWROTE_REFERENCE');
+requireExact(
+  new Date(replacementOrder.scheduled_at).toISOString(),
+  new Date(replacementAConfirmed.reservation.startsAt).toISOString(),
+  'DOKE_SCHED_B04C_REPLACEMENT_CHANGED_TIME'
+);
 
   const partialHold = await root.createScheduleHold(commandContext(actors.client, 'partial-hold', {
     orderId: fixtures.orders.partial,
