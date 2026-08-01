@@ -77,13 +77,29 @@ if (b04bImplemented) {
   assert(orderStateMachine.includes("quoted: Object.freeze(['accepted', 'scheduled', 'in_progress', 'cancelled'])"));
 }
 
-// Preserve SCHED as the only canonical projection writer.
-[
-  'async projectOrderSchedule(orderId, reservationId, scheduledAt)',
-  'set schedule_reservation_id = $2, scheduled_at = $3',
-  'async clearOrderSchedule(orderId, reservationId)',
-  'set schedule_reservation_id = null, scheduled_at = null'
-].forEach((fragment) => assert(schedulingRepository.includes(fragment), `Scheduling repository missing ${fragment}`));
+// Preserve SCHED as the only canonical projection writer. B04D may delegate
+// the SQL mutation to private service-role-only functions, but no third
+// persistence strategy is accepted here.
+assert(schedulingRepository.includes('async projectOrderSchedule(orderId, reservationId, scheduledAt)'));
+assert(schedulingRepository.includes('async clearOrderSchedule(orderId, reservationId)'));
+const delegatesProjectionToB04D =
+  schedulingRepository.includes('private.apply_order_schedule_projection')
+  && schedulingRepository.includes('private.clear_order_schedule_projection');
+if (delegatesProjectionToB04D) {
+  assert(schedulingRepository.includes('/* sched-a05:project-order-schedule */'));
+  assert(schedulingRepository.includes('private.apply_order_schedule_projection'));
+  assert(schedulingRepository.includes('/* sched-a05:clear-order-schedule */'));
+  assert(schedulingRepository.includes('private.clear_order_schedule_projection'));
+  const projectStart = schedulingRepository.indexOf('async projectOrderSchedule(');
+  const clearStart = schedulingRepository.indexOf('async clearOrderSchedule(', projectStart + 1);
+  const expiredStart = schedulingRepository.indexOf('async listExpiredHolds(', clearStart + 1);
+  assert(projectStart >= 0 && clearStart > projectStart && expiredStart > clearStart);
+  assert(!schedulingRepository.slice(projectStart, clearStart).includes('update public.orders'));
+  assert(!schedulingRepository.slice(clearStart, expiredStart).includes('update public.orders'));
+} else {
+  assert(schedulingRepository.includes('set schedule_reservation_id = $2, scheduled_at = $3'));
+  assert(schedulingRepository.includes('set schedule_reservation_id = null, scheduled_at = null'));
+}
 
 [
   '`orders.schedule_reservation_id`',
