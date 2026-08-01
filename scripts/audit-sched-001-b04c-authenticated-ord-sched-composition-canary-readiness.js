@@ -87,8 +87,25 @@ const requiredAssertions = new Set(config.crossDomainAssertions);
 assert(orders.includes('p_scheduled_at: null'));
 assert(handlers.includes('projectOrderSchedule'));
 assert(handlers.includes('clearOrderSchedule'));
-assert(repository.includes("status = 'scheduled'"));
-assert(repository.includes("status = case when status = 'scheduled' then 'accepted' else status end"));
+
+const delegatesProjectionToB04D =
+  repository.includes('private.apply_order_schedule_projection')
+  && repository.includes('private.clear_order_schedule_projection');
+if (delegatesProjectionToB04D) {
+  assert(repository.includes('/* sched-a05:project-order-schedule */'));
+  assert(repository.includes('private.apply_order_schedule_projection'));
+  assert(repository.includes('/* sched-a05:clear-order-schedule */'));
+  assert(repository.includes('private.clear_order_schedule_projection'));
+  const projectStart = repository.indexOf('async projectOrderSchedule(');
+  const clearStart = repository.indexOf('async clearOrderSchedule(', projectStart + 1);
+  const expiredStart = repository.indexOf('async listExpiredHolds(', clearStart + 1);
+  assert(projectStart >= 0 && clearStart > projectStart && expiredStart > clearStart);
+  assert(!repository.slice(projectStart, clearStart).includes('update public.orders'));
+  assert(!repository.slice(clearStart, expiredStart).includes('update public.orders'));
+} else {
+  assert(repository.includes("status = 'scheduled'"));
+  assert(repository.includes("status = case when status = 'scheduled' then 'accepted' else status end"));
+}
 
 assert.strictEqual(pkg.scripts['audit:sched-001-b04c-authenticated-ord-sched-composition-canary-readiness'], 'node scripts/audit-sched-001-b04c-authenticated-ord-sched-composition-canary-readiness.js');
 assert.strictEqual(pkg.scripts['test:sched-001-b04c-authenticated-ord-sched-composition-canary-readiness'], 'node scripts/test-sched-001-b04c-authenticated-ord-sched-composition-canary-readiness.js');
