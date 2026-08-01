@@ -39,6 +39,22 @@ jobs:
         run: npm pkg set "scripts.audit:sched-001-b04c-authenticated-ord-sched-composition-canary-closure=node scripts/audit-sched-001-b04c-authenticated-ord-sched-composition-canary-closure.js"
       - name: Reconcile B04C matrix closure
         run: python scripts/reconcile-sched-001-b04c-matrix-closure.py
+      - name: Normalize generated ORD-A11 declaration
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('scripts/audit-ord-001-a11-scheduling-authority-handoff.js')
+          source = path.read_text()
+          declaration = "const schedMatrixPatchA11 = Number(String(matrix.version).split('.')[2] || 0);\n"
+          if source.count(declaration) != 2:
+              raise SystemExit(f'Unexpected schedMatrixPatchA11 declaration count: {source.count(declaration)}')
+          first = source.find(declaration)
+          second = source.find(declaration, first + len(declaration))
+          source = source[:second] + source[second + len(declaration):]
+          path.write_text(source)
+          PY
       - name: Regenerate deterministic matrix derivatives
         run: npm run write:domain-completion-matrix
       - name: Validate cumulative contracts
