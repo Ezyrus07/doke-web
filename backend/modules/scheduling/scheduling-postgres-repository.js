@@ -231,12 +231,12 @@ function createTransactionPort(client) {
     async projectOrderSchedule(orderId, reservationId, scheduledAt) {
       const response = await query(
         `/* sched-a05:project-order-schedule */
-         update public.orders
-         set schedule_reservation_id = $2, scheduled_at = $3, status = 'scheduled', updated_at = pg_catalog.now()
-         where id = $1
-           and status in ('accepted', 'scheduled')
-           and (schedule_reservation_id is null or schedule_reservation_id = $2)
-         returning id, client_id, professional_id, status, scheduled_at, schedule_reservation_id`,
+         select *
+         from private.apply_order_schedule_projection(
+           $1::uuid,
+           $2::uuid,
+           $3::timestamptz
+         )`,
         [orderId, reservationId, scheduledAt]
       );
       return requireRow(response, 'DOKE_SCHEDULE_ORDER_PROJECTION_FAILED');
@@ -245,12 +245,11 @@ function createTransactionPort(client) {
     async clearOrderSchedule(orderId, reservationId) {
       const response = await query(
         `/* sched-a05:clear-order-schedule */
-         update public.orders
-         set schedule_reservation_id = null, scheduled_at = null,
-             status = case when status = 'scheduled' then 'accepted' else status end,
-             updated_at = pg_catalog.now()
-         where id = $1 and schedule_reservation_id = $2
-         returning id, client_id, professional_id, status, scheduled_at, schedule_reservation_id`,
+         select *
+         from private.clear_order_schedule_projection(
+           $1::uuid,
+           $2::uuid
+         )`,
         [orderId, reservationId]
       );
       return requireRow(response, 'DOKE_SCHEDULE_ORDER_CLEAR_FAILED');

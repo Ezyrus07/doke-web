@@ -1,6 +1,6 @@
 {
-  "version": "1.3.67",
-  "updatedAt": "2026-08-01T14:06:00-03:00",
+  "version": "1.3.68",
+  "updatedAt": "2026-08-01T15:15:00-03:00",
   "title": "Doke Domain Completion Matrix",
   "purpose": "Single source of truth for domain maturity, data authority, staging evidence, blockers, dependencies and mandatory completion order.",
   "maturityScale": {
@@ -90,7 +90,7 @@
   "domains": [
     {
       "id": "GOV-001",
-      "name": "Governança, arquitetura e comando central",
+      "name": "Governan\u00e7a, arquitetura e comando central",
       "wave": "A",
       "priority": 1,
       "maturity": 4,
@@ -99,7 +99,7 @@
       "stagingEvidence": "staging_operational",
       "securityGate": "partial",
       "productionGate": "candidate",
-      "objective": "Manter uma única base oficial, contratos vivos, gates verificáveis e rastreabilidade de mudanças.",
+      "objective": "Manter uma \u00fanica base oficial, contratos vivos, gates verific\u00e1veis e rastreabilidade de mudan\u00e7as.",
       "pages": [],
       "requiredPaths": [
         "AGENTS.md",
@@ -151,7 +151,7 @@
     },
     {
       "id": "SEC-001",
-      "name": "Segurança, RLS, grants e autoridade dos dados",
+      "name": "Seguran\u00e7a, RLS, grants e autoridade dos dados",
       "wave": "A",
       "priority": 2,
       "maturity": 4,
@@ -347,7 +347,7 @@
     },
     {
       "id": "AUTH-001",
-      "name": "Autenticação, sessão e identidade",
+      "name": "Autentica\u00e7\u00e3o, sess\u00e3o e identidade",
       "wave": "A",
       "priority": 3,
       "maturity": 4,
@@ -603,7 +603,7 @@
     },
     {
       "id": "CAT-001",
-      "name": "Catálogo, publicação e moderação de serviços",
+      "name": "Cat\u00e1logo, publica\u00e7\u00e3o e modera\u00e7\u00e3o de servi\u00e7os",
       "wave": "B",
       "priority": 5,
       "maturity": 4,
@@ -833,7 +833,7 @@
     },
     {
       "id": "ORD-001",
-      "name": "Orçamentos, propostas e ciclo de pedidos",
+      "name": "Or\u00e7amentos, propostas e ciclo de pedidos",
       "wave": "B",
       "priority": 7,
       "maturity": 4,
@@ -1309,7 +1309,10 @@
         "SCHED-B04A froze the repository-only ORD canonical wiring contract: schedule_reservation_id is the reservation authority, scheduled_at is projection-only, direct schedule writes remain prohibited, and no runtime, staging, frontend, deployment or production effect occurred.",
         "ORD generic commands can no longer manufacture scheduled state or cancel/start through an unresolved canonical reservation; B04B remains fail-closed until the authenticated composition canary.",
         "SCHED-B04C froze the authenticated ORD/SCHED composition canary contract with synthetic personas, SERIALIZABLE rollback, cross-domain idempotency and zero-residue verification; no staging access was performed.",
-        "SCHED-B04C execution package now exercises the ORD/SCHED projection contract, order event/history projection, replacement rejection, start authorization and partial-projection rollback, but no staging execution has occurred and ORD-B04 remains open."
+        "SCHED-B04C execution package now exercises the ORD/SCHED projection contract, order event/history projection, replacement rejection, start authorization and partial-projection rollback, but no staging execution has occurred and ORD-B04 remains open.",
+        "The exactly authorized B04C staging canary proved that canonical cancellation currently stops at the deployed ORD trigger with DOKE_ORDER_TRANSITION_INVALID before scheduled orders can return to accepted.",
+        "B04D preserves the generic ORD lifecycle graph and introduces a private SCHED composition context so only atomic reference-and-time clearing can perform scheduled-to-accepted restoration.",
+        "No staging migration, production access, deployment, frontend activation or merge occurred while preparing B04D."
       ],
       "blockers": [
         {
@@ -1330,7 +1333,7 @@
           "id": "ORD-B04",
           "severity": "medium",
           "category": "scheduling_dependency",
-          "description": "ORD-B04 remains handed to SCHED-001. ORD now consumes the canonical reservation reference and projection-only scheduled_at model locally, and the exact-authorization staging executor is prepared. The blocker remains open until SCHED-B04C passes remotely with rollback, order event/history evidence and zero residue.",
+          "description": "ORD-B04 remains handed to SCHED-001. The canonical reservation reference and projection-only scheduled_at wiring are local, but the deployed state-machine trigger rejects canonical scheduled-to-accepted restoration. SCHED-B04D is repository-ready and must be applied to staging under exact authorization before a separate B04C retry can close this blocker.",
           "targetPhase": "Fase 6"
         },
         {
@@ -1342,9 +1345,9 @@
         }
       ],
       "nextActions": [
-        "Execute the exact-authorized SCHED-B04C authenticated ORD/SCHED staging canary and preserve the rollback evidence.",
-        "Close ORD-B04 only when the canonical reservation reference, order status/history projection and start/cancel boundaries pass remotely.",
-        "Keep generic scheduled transitions, direct scheduled_at authority and frontend compensating writes prohibited.",
+        "Apply the SCHED-B04D canonical projection guard to staging only after its exact migration authorization.",
+        "Retry the authenticated ORD/SCHED canary separately and require confirmation, reschedule, cancellation, rollback and zero-residue evidence.",
+        "Keep generic scheduled transitions and direct schedule projection writes prohibited.",
         "Keep deployment, production and merge blocked pending independent release authorization."
       ],
       "exitCriteria": [
@@ -1364,7 +1367,7 @@
     },
     {
       "id": "SCHED-001",
-      "name": "Agenda, disponibilidade e execução do serviço",
+      "name": "Agenda, disponibilidade e execu\u00e7\u00e3o do servi\u00e7o",
       "wave": "B",
       "priority": 8,
       "maturity": 3,
@@ -1495,7 +1498,14 @@
         "scripts/execute-sched-001-b04c-authenticated-ord-sched-composition-canary.js",
         "scripts/audit-sched-001-b04c-authenticated-ord-sched-composition-canary-execution.js",
         "scripts/test-sched-001-b04c-authenticated-ord-sched-composition-canary-execution.js",
-        ".github/workflows/sched-001-b04c-authenticated-ord-sched-composition-canary.yml"
+        ".github/workflows/sched-001-b04c-authenticated-ord-sched-composition-canary.yml",
+        "supabase/migrations/20260801183000_sched_b04d_canonical_order_projection_guard.sql",
+        "config/sched-001-b04d-canonical-order-projection-guard-readiness.json",
+        "docs/SCHED-001-B04D-CANONICAL-ORDER-PROJECTION-GUARD-READINESS.md",
+        "docs/validation/SCHED-001-B04D-CANONICAL-ORDER-PROJECTION-GUARD-READINESS.json",
+        "scripts/audit-sched-001-b04d-canonical-order-projection-guard-readiness.js",
+        "scripts/test-sched-001-b04d-canonical-order-projection-guard-runtime.js",
+        ".github/workflows/sched-001-b04d-canonical-order-projection-guard-readiness.yml"
       ],
       "scanRoots": [
         "assets/js/pages/pedidos",
@@ -1541,7 +1551,9 @@
         "audit:sched-001-b04c-authenticated-ord-sched-composition-canary-readiness",
         "test:sched-001-b04c-authenticated-ord-sched-composition-canary-readiness",
         "audit:sched-001-b04c-authenticated-ord-sched-composition-canary-execution",
-        "test:sched-001-b04c-authenticated-ord-sched-composition-canary-execution"
+        "test:sched-001-b04c-authenticated-ord-sched-composition-canary-execution",
+        "audit:sched-001-b04d-canonical-order-projection-guard-readiness",
+        "test:sched-001-b04d-canonical-order-projection-guard-runtime"
       ],
       "evidence": [
         "Repository migrations 113 and 119 enable availability_slots RLS, define owner write policies and separate anonymous available-slot reads from authenticated owner/operator visibility.",
@@ -1570,21 +1582,25 @@
         "SCHED-B04B wires the ORD read model to schedule_reservation_id, demotes client-supplied dates to metadata intent, blocks generic scheduled transitions, and projects confirmed reservations atomically as scheduled.",
         "Reservation cancellation clears the matching reference and time projection, returns scheduled orders to accepted, and start/cancel paths fail closed when canonical scheduling authority is unavailable.",
         "SCHED-B04C froze the authenticated ORD/SCHED composition canary contract with synthetic personas, SERIALIZABLE rollback, cross-domain idempotency and zero-residue verification; no staging access was performed.",
-        "SCHED-B04C execution package is inert and fail-closed: it requires a manual workflow dispatch on the exact PR head, the exact independent staging authorization phrase, the frozen project ref, open draft PR state, SERIALIZABLE outer transaction, per-command savepoints, final ROLLBACK and independent zero-residue verification."
+        "SCHED-B04C execution package is inert and fail-closed: it requires a manual workflow dispatch on the exact PR head, the exact independent staging authorization phrase, the frozen project ref, open draft PR state, SERIALIZABLE outer transaction, per-command savepoints, final ROLLBACK and independent zero-residue verification.",
+        "The exactly authorized B04C staging canary reached canonical reservation cancellation and exposed DOKE_ORDER_TRANSITION_INVALID because the deployed ORD trigger rejects scheduled-to-accepted restoration.",
+        "The failed B04C transaction ended in ROLLBACK; all fifteen residue counters were zero and all authority counts were unchanged.",
+        "SCHED-B04D prepares private service-role-only projection and clear functions, transaction-local context validation, direct canonical-field write rejection and adapter wiring without applying any migration.",
+        "The generic ORD transition graph remains closed: scheduled-to-accepted is permitted only when the private canonical clear function removes both reservation reference and time projection."
       ],
       "blockers": [
         {
           "id": "SCHED-B04",
           "severity": "high",
           "category": "order_integration",
-          "description": "The ORD/SCHED local authority wiring and an inert exact-authorization canary executor are implemented. The blocker remains open until the authenticated staging composition canary passes with final rollback, unchanged authority counts and zero residue.",
+          "description": "B04B local wiring and B04C authenticated staging execution reached canonical cancellation, but the deployed ORD trigger rejects the required scheduled-to-accepted restoration. B04D repository guards are prepared; the blocker remains open until the exactly authorized staging migration is applied and a separately authorized B04C retry passes with rollback and zero residue.",
           "targetPhase": "Fase 6"
         }
       ],
       "nextActions": [
-        "Execute SCHED-B04C only after I_EXPLICITLY_AUTHORIZE_SCHED_B04C_AUTHENTICATED_ORD_SCHED_COMPOSITION_CANARIES_ON_DOKE_STAGING is supplied with the exact current PR head SHA.",
-        "Require confirmation, reschedule, reservation cancellation, replacement rejection, order event/history projection and partial-projection rollback to pass in one SERIALIZABLE transaction ending in ROLLBACK.",
-        "Close SCHED-B04 and ORD-B04 only after independent post-rollback residue and authority-count verification succeeds.",
+        "Apply SCHED-B04D to Doke staging only after the exact independent migration authorization.",
+        "Verify migration history and private function grants without manually mutating supabase_migrations.schema_migrations.",
+        "Retry B04C only under a separate exact authorization after the B04D migration is independently verified.",
         "Keep frontend authority switch, deployment, Cron, workers, production and merge blocked."
       ],
       "exitCriteria": [
@@ -1601,7 +1617,7 @@
     },
     {
       "id": "MSG-001",
-      "name": "Mensagens, conversas, presença e anexos",
+      "name": "Mensagens, conversas, presen\u00e7a e anexos",
       "wave": "B",
       "priority": 9,
       "maturity": 3,
@@ -1694,7 +1710,7 @@
     },
     {
       "id": "NTF-001",
-      "name": "Notificações, e-mail e push",
+      "name": "Notifica\u00e7\u00f5es, e-mail e push",
       "wave": "B",
       "priority": 10,
       "maturity": 3,
@@ -1777,7 +1793,7 @@
     },
     {
       "id": "PAY-001",
-      "name": "Pagamentos, cobrança, escrow e webhooks",
+      "name": "Pagamentos, cobran\u00e7a, escrow e webhooks",
       "wave": "B",
       "priority": 11,
       "maturity": 2,
@@ -1881,7 +1897,7 @@
     },
     {
       "id": "WAL-001",
-      "name": "Carteira, recebíveis, saldo e saques",
+      "name": "Carteira, receb\u00edveis, saldo e saques",
       "wave": "B",
       "priority": 12,
       "maturity": 3,
@@ -2087,7 +2103,7 @@
     },
     {
       "id": "REP-001",
-      "name": "Avaliações, reputação e recompra",
+      "name": "Avalia\u00e7\u00f5es, reputa\u00e7\u00e3o e recompra",
       "wave": "B",
       "priority": 14,
       "maturity": 3,
@@ -2173,7 +2189,7 @@
     },
     {
       "id": "COM-001",
-      "name": "Comunidades, membros e moderação social",
+      "name": "Comunidades, membros e modera\u00e7\u00e3o social",
       "wave": "C",
       "priority": 15,
       "maturity": 3,
@@ -2262,7 +2278,7 @@
     },
     {
       "id": "CONTENT-001",
-      "name": "Workers, publicações, mídia e feed social",
+      "name": "Workers, publica\u00e7\u00f5es, m\u00eddia e feed social",
       "wave": "C",
       "priority": 16,
       "maturity": 2,
@@ -2349,7 +2365,7 @@
     },
     {
       "id": "ADM-001",
-      "name": "Administração, suporte e moderação",
+      "name": "Administra\u00e7\u00e3o, suporte e modera\u00e7\u00e3o",
       "wave": "C",
       "priority": 17,
       "maturity": 4,
@@ -2438,7 +2454,7 @@
     },
     {
       "id": "REL-001",
-      "name": "Observabilidade, incidentes, SLOs e proteção de mudanças",
+      "name": "Observabilidade, incidentes, SLOs e prote\u00e7\u00e3o de mudan\u00e7as",
       "wave": "C",
       "priority": 18,
       "maturity": 4,
@@ -2623,7 +2639,7 @@
     },
     {
       "id": "LEGAL-001",
-      "name": "Jurídico, privacidade, confiança e políticas comerciais",
+      "name": "Jur\u00eddico, privacidade, confian\u00e7a e pol\u00edticas comerciais",
       "wave": "A",
       "priority": 20,
       "maturity": 1,
@@ -2848,7 +2864,7 @@
     },
     {
       "id": "BETA-001",
-      "name": "Beta fechado, operação regional e lançamento",
+      "name": "Beta fechado, opera\u00e7\u00e3o regional e lan\u00e7amento",
       "wave": "D",
       "priority": 23,
       "maturity": 1,
@@ -2937,7 +2953,7 @@
   "criticalFlows": [
     {
       "id": "FLOW-01",
-      "name": "Descoberta pública",
+      "name": "Descoberta p\u00fablica",
       "steps": [
         "home",
         "search",
@@ -2982,7 +2998,7 @@
     },
     {
       "id": "FLOW-04",
-      "name": "Publicar serviço",
+      "name": "Publicar servi\u00e7o",
       "steps": [
         "draft",
         "media",
@@ -2998,7 +3014,7 @@
     },
     {
       "id": "FLOW-05",
-      "name": "Solicitar orçamento e criar pedido",
+      "name": "Solicitar or\u00e7amento e criar pedido",
       "steps": [
         "service_snapshot",
         "questionnaire",
@@ -3048,7 +3064,7 @@
     },
     {
       "id": "FLOW-08",
-      "name": "Pagamento, retenção e liberação",
+      "name": "Pagamento, reten\u00e7\u00e3o e libera\u00e7\u00e3o",
       "steps": [
         "charge",
         "provider_checkout",
@@ -3105,7 +3121,7 @@
     },
     {
       "id": "FLOW-11",
-      "name": "Avaliação e recompra",
+      "name": "Avalia\u00e7\u00e3o e recompra",
       "steps": [
         "eligibility",
         "review",
@@ -3122,7 +3138,7 @@
     },
     {
       "id": "FLOW-12",
-      "name": "Comunidade e conteúdo",
+      "name": "Comunidade e conte\u00fado",
       "steps": [
         "discover",
         "join_or_request",
@@ -3142,7 +3158,7 @@
     },
     {
       "id": "FLOW-13",
-      "name": "Operação administrativa",
+      "name": "Opera\u00e7\u00e3o administrativa",
       "steps": [
         "queue",
         "case",
@@ -3159,7 +3175,7 @@
     },
     {
       "id": "FLOW-14",
-      "name": "Incidente e proteção de mudança",
+      "name": "Incidente e prote\u00e7\u00e3o de mudan\u00e7a",
       "steps": [
         "health",
         "alert",
@@ -3179,7 +3195,7 @@
     },
     {
       "id": "FLOW-15",
-      "name": "Beta fechado e lançamento",
+      "name": "Beta fechado e lan\u00e7amento",
       "steps": [
         "security_gate",
         "legal_gate",

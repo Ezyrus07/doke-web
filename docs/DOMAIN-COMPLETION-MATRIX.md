@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 1054 arquivos no escopo; 248 referências a localStorage; 78 a sessionStorage; 557 referências mock; 198 referências de rede/Supabase; 35 marcadores de implementação pendente.
+**Evidência estática observada:** 1057 arquivos no escopo; 248 referências a localStorage; 78 a sessionStorage; 557 referências mock; 202 referências de rede/Supabase; 35 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -151,7 +151,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção blocked.
 
-**Evidência estática observada:** 214 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 0 referências mock; 5 referências de rede/Supabase; 9 marcadores de implementação pendente.
+**Evidência estática observada:** 215 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 0 referências mock; 5 referências de rede/Supabase; 9 marcadores de implementação pendente.
 
 **Tabelas/autoridades de dados:** `users`, `user_profiles`, `client_profiles`, `audit_logs`, `availability_slots`, `budgets`, `communities`, `community_members`, `community_posts`, `favorites`, `message_attachments`, `reports`, `reviews`, `service_categories`, `verification_events`.
 
@@ -344,7 +344,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção blocked.
 
-**Evidência estática observada:** 217 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 3 referências mock; 19 referências de rede/Supabase; 9 marcadores de implementação pendente.
+**Evidência estática observada:** 218 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 3 referências mock; 19 referências de rede/Supabase; 9 marcadores de implementação pendente.
 
 **Páginas:** `index.html`, `resultados.html`, `detalhe-anuncio.html`.
 
@@ -499,17 +499,20 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - ORD generic commands can no longer manufacture scheduled state or cancel/start through an unresolved canonical reservation; B04B remains fail-closed until the authenticated composition canary.
 - SCHED-B04C froze the authenticated ORD/SCHED composition canary contract with synthetic personas, SERIALIZABLE rollback, cross-domain idempotency and zero-residue verification; no staging access was performed.
 - SCHED-B04C execution package now exercises the ORD/SCHED projection contract, order event/history projection, replacement rejection, start authorization and partial-projection rollback, but no staging execution has occurred and ORD-B04 remains open.
+- The exactly authorized B04C staging canary proved that canonical cancellation currently stops at the deployed ORD trigger with DOKE_ORDER_TRANSITION_INVALID before scheduled orders can return to accepted.
+- B04D preserves the generic ORD lifecycle graph and introduces a private SCHED composition context so only atomic reference-and-time clearing can perform scheduled-to-accepted restoration.
+- No staging migration, production access, deployment, frontend activation or merge occurred while preparing B04D.
 
 **Bloqueadores:**
 - **ORD-B02 · HIGH · frontend_activation:** Canonical reads, canary commands, cleanup, deterministic settlement, readiness discovery and the fail-closed Playwright executor pass. A short-lived authorization envelope is mandatory; ORD-B02 remains under ORD-001 until explicit resource authorization is issued, check-env passes, the real two-context visual canary is executed and run-scoped cleanup proves zero residue. _(Fase 6)_
 - **ORD-B03 · HIGH · financial_dependency:** Financial completion remains blocked by PAY-001. Payment authority is not connected to a real PSP webhook lifecycle, and ORD-001 must consume rather than duplicate that server-canonical authority before this blocker can close. _(Fase 8)_
-- **ORD-B04 · MEDIUM · scheduling_dependency:** ORD-B04 remains handed to SCHED-001. ORD now consumes the canonical reservation reference and projection-only scheduled_at model locally, and the exact-authorization staging executor is prepared. The blocker remains open until SCHED-B04C passes remotely with rollback, order event/history evidence and zero residue. _(Fase 6)_
+- **ORD-B04 · MEDIUM · scheduling_dependency:** ORD-B04 remains handed to SCHED-001. The canonical reservation reference and projection-only scheduled_at wiring are local, but the deployed state-machine trigger rejects canonical scheduled-to-accepted restoration. SCHED-B04D is repository-ready and must be applied to staging under exact authorization before a separate B04C retry can close this blocker. _(Fase 6)_
 - **ORD-B05 · HIGH · staging_release:** ORD-A08 release identity, ORD-A09A provider evaluation, the ORD-A09B0 provider-neutral adapter boundary, provider selection handoff, selection intent firewall and adapter conformance suite are complete. Railway is recommended as the external staging release provider, but no explicit provider selection, provider-specific adapter, account, billing, secrets, infrastructure, rollback command or deployment exists. ORD-B05 remains open until exactly I_EXPLICITLY_SELECT_RAILWAY_FOR_DOKE_STAGING authorizes only non-secret adapter preparation; every external action remains separately blocked. _(Fase 6)_
 
 **Próximas ações:**
-- Execute the exact-authorized SCHED-B04C authenticated ORD/SCHED staging canary and preserve the rollback evidence.
-- Close ORD-B04 only when the canonical reservation reference, order status/history projection and start/cancel boundaries pass remotely.
-- Keep generic scheduled transitions, direct scheduled_at authority and frontend compensating writes prohibited.
+- Apply the SCHED-B04D canonical projection guard to staging only after its exact migration authorization.
+- Retry the authenticated ORD/SCHED canary separately and require confirmation, reschedule, cancellation, rollback and zero-residue evidence.
+- Keep generic scheduled transitions and direct schedule projection writes prohibited.
 - Keep deployment, production and merge blocked pending independent release authorization.
 
 **Gate de saída:**
@@ -524,7 +527,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI local; servidor partial; staging staging canary; segurança partial; produção blocked.
 
-**Evidência estática observada:** 1018 arquivos no escopo; 186 referências a localStorage; 70 a sessionStorage; 301 referências mock; 197 referências de rede/Supabase; 19 marcadores de implementação pendente.
+**Evidência estática observada:** 1021 arquivos no escopo; 186 referências a localStorage; 70 a sessionStorage; 301 referências mock; 201 referências de rede/Supabase; 19 marcadores de implementação pendente.
 
 **Páginas:** `anunciar-servico.html`, `pedidos.html`, `orcamento.html`.
 
@@ -558,14 +561,18 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - Reservation cancellation clears the matching reference and time projection, returns scheduled orders to accepted, and start/cancel paths fail closed when canonical scheduling authority is unavailable.
 - SCHED-B04C froze the authenticated ORD/SCHED composition canary contract with synthetic personas, SERIALIZABLE rollback, cross-domain idempotency and zero-residue verification; no staging access was performed.
 - SCHED-B04C execution package is inert and fail-closed: it requires a manual workflow dispatch on the exact PR head, the exact independent staging authorization phrase, the frozen project ref, open draft PR state, SERIALIZABLE outer transaction, per-command savepoints, final ROLLBACK and independent zero-residue verification.
+- The exactly authorized B04C staging canary reached canonical reservation cancellation and exposed DOKE_ORDER_TRANSITION_INVALID because the deployed ORD trigger rejects scheduled-to-accepted restoration.
+- The failed B04C transaction ended in ROLLBACK; all fifteen residue counters were zero and all authority counts were unchanged.
+- SCHED-B04D prepares private service-role-only projection and clear functions, transaction-local context validation, direct canonical-field write rejection and adapter wiring without applying any migration.
+- The generic ORD transition graph remains closed: scheduled-to-accepted is permitted only when the private canonical clear function removes both reservation reference and time projection.
 
 **Bloqueadores:**
-- **SCHED-B04 · HIGH · order_integration:** The ORD/SCHED local authority wiring and an inert exact-authorization canary executor are implemented. The blocker remains open until the authenticated staging composition canary passes with final rollback, unchanged authority counts and zero residue. _(Fase 6)_
+- **SCHED-B04 · HIGH · order_integration:** B04B local wiring and B04C authenticated staging execution reached canonical cancellation, but the deployed ORD trigger rejects the required scheduled-to-accepted restoration. B04D repository guards are prepared; the blocker remains open until the exactly authorized staging migration is applied and a separately authorized B04C retry passes with rollback and zero residue. _(Fase 6)_
 
 **Próximas ações:**
-- Execute SCHED-B04C only after I_EXPLICITLY_AUTHORIZE_SCHED_B04C_AUTHENTICATED_ORD_SCHED_COMPOSITION_CANARIES_ON_DOKE_STAGING is supplied with the exact current PR head SHA.
-- Require confirmation, reschedule, reservation cancellation, replacement rejection, order event/history projection and partial-projection rollback to pass in one SERIALIZABLE transaction ending in ROLLBACK.
-- Close SCHED-B04 and ORD-B04 only after independent post-rollback residue and authority-count verification succeeds.
+- Apply SCHED-B04D to Doke staging only after the exact independent migration authorization.
+- Verify migration history and private function grants without manually mutating supabase_migrations.schema_migrations.
+- Retry B04C only under a separate exact authorization after the B04D migration is independently verified.
 - Keep frontend authority switch, deployment, Cron, workers, production and merge blocked.
 
 **Gate de saída:**
@@ -959,7 +966,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 1/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 234 arquivos no escopo; 64 referências a localStorage; 8 a sessionStorage; 269 referências mock; 8 referências de rede/Supabase; 25 marcadores de implementação pendente.
+**Evidência estática observada:** 235 arquivos no escopo; 64 referências a localStorage; 8 a sessionStorage; 269 referências mock; 8 referências de rede/Supabase; 25 marcadores de implementação pendente.
 
 **Evidências:**
 - The master plan identifies legal, privacy and commercial decisions as mandatory.
@@ -1019,7 +1026,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2375 arquivos no escopo; 505 referências a localStorage; 151 a sessionStorage; 880 referências mock; 595 referências de rede/Supabase; 89 marcadores de implementação pendente.
+**Evidência estática observada:** 2380 arquivos no escopo; 505 referências a localStorage; 151 a sessionStorage; 880 referências mock; 599 referências de rede/Supabase; 89 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
@@ -1080,4 +1087,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-08-01T14:06:00-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-08-01T15:15:00-03:00._

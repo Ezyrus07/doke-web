@@ -1,7 +1,7 @@
 {
   "name": "domain-completion-matrix",
-  "version": "1.3.67",
-  "generatedAt": "2026-08-01T14:06:00-03:00",
+  "version": "1.3.68",
+  "generatedAt": "2026-08-01T15:15:00-03:00",
   "status": "passed",
   "summary": {
     "domains": 23,
@@ -31,8 +31,8 @@
     "activeHtmlPages": 30,
     "repositories": 25,
     "backendModules": 15,
-    "migrations": 175,
-    "packageScripts": 963,
+    "migrations": 176,
+    "packageScripts": 965,
     "staging": {
       "publicTotal": 45,
       "publicRlsDisabled": 0,
@@ -221,7 +221,7 @@
       "id": "GOV-001",
       "name": "Governança, arquitetura e comando central",
       "maturity": 4,
-      "filesMatched": 1054,
+      "filesMatched": 1057,
       "sampleFiles": [
         "docs/ACTIVE-CONTRACTS-INDEX.md",
         "docs/API-ADAPTER-CONTRACT.md",
@@ -254,8 +254,8 @@
         "localStorage": 248,
         "sessionStorage": 78,
         "mock": 557,
-        "network": 198,
-        "directSupabase": 152,
+        "network": 202,
+        "directSupabase": 156,
         "todo": 35
       },
       "signalFiles": {
@@ -1835,6 +1835,10 @@
             "count": 4
           },
           {
+            "file": "scripts/test-sched-001-b04d-canonical-order-projection-guard-runtime.js",
+            "count": 4
+          },
+          {
             "file": "scripts/test-search-ranked-rpc-v2-runtime.js",
             "count": 6
           },
@@ -2225,6 +2229,10 @@
             "count": 4
           },
           {
+            "file": "scripts/test-sched-001-b04d-canonical-order-projection-guard-runtime.js",
+            "count": 4
+          },
+          {
             "file": "scripts/test-search-ranked-rpc-v2-runtime.js",
             "count": 6
           },
@@ -2392,7 +2400,7 @@
       "id": "SEC-001",
       "name": "Segurança, RLS, grants e autoridade dos dados",
       "maturity": 4,
-      "filesMatched": 214,
+      "filesMatched": 215,
       "sampleFiles": [
         "backend/shared/auth/supabase-actor-resolver.js",
         "backend/shared/security/audit-event-contract.js",
@@ -3032,7 +3040,7 @@
       "id": "SEARCH-001",
       "name": "Busca, descoberta, favoritos e ranking",
       "maturity": 4,
-      "filesMatched": 217,
+      "filesMatched": 218,
       "sampleFiles": [
         "assets/js/components/service-favorites-controller.js",
         "assets/js/pages/resultados-data-controller.js",
@@ -3322,7 +3330,7 @@
           "id": "ORD-B04",
           "severity": "medium",
           "category": "scheduling_dependency",
-          "description": "ORD-B04 remains handed to SCHED-001. ORD now consumes the canonical reservation reference and projection-only scheduled_at model locally, and the exact-authorization staging executor is prepared. The blocker remains open until SCHED-B04C passes remotely with rollback, order event/history evidence and zero residue.",
+          "description": "ORD-B04 remains handed to SCHED-001. The canonical reservation reference and projection-only scheduled_at wiring are local, but the deployed state-machine trigger rejects canonical scheduled-to-accepted restoration. SCHED-B04D is repository-ready and must be applied to staging under exact authorization before a separate B04C retry can close this blocker.",
           "targetPhase": "Fase 6"
         },
         {
@@ -3415,7 +3423,7 @@
       "id": "SCHED-001",
       "name": "Agenda, disponibilidade e execução do serviço",
       "maturity": 3,
-      "filesMatched": 1018,
+      "filesMatched": 1021,
       "sampleFiles": [
         "assets/js/pages/anunciar-servico.js",
         "assets/js/pages/pedidos/orders-action-panels.js",
@@ -3448,8 +3456,8 @@
         "localStorage": 186,
         "sessionStorage": 70,
         "mock": 301,
-        "network": 197,
-        "directSupabase": 158,
+        "network": 201,
+        "directSupabase": 162,
         "todo": 19
       },
       "signalFiles": {
@@ -4701,6 +4709,10 @@
             "count": 4
           },
           {
+            "file": "scripts/test-sched-001-b04d-canonical-order-projection-guard-runtime.js",
+            "count": 4
+          },
+          {
             "file": "scripts/test-search-ranked-rpc-v2-runtime.js",
             "count": 6
           },
@@ -5103,6 +5115,10 @@
             "count": 4
           },
           {
+            "file": "scripts/test-sched-001-b04d-canonical-order-projection-guard-runtime.js",
+            "count": 4
+          },
+          {
             "file": "scripts/test-search-ranked-rpc-v2-runtime.js",
             "count": 6
           },
@@ -5195,7 +5211,7 @@
           "id": "SCHED-B04",
           "severity": "high",
           "category": "order_integration",
-          "description": "The ORD/SCHED local authority wiring and an inert exact-authorization canary executor are implemented. The blocker remains open until the authenticated staging composition canary passes with final rollback, unchanged authority counts and zero residue.",
+          "description": "B04B local wiring and B04C authenticated staging execution reached canonical cancellation, but the deployed ORD trigger rejects the required scheduled-to-accepted restoration. B04D repository guards are prepared; the blocker remains open until the exactly authorized staging migration is applied and a separately authorized B04C retry passes with rollback and zero residue.",
           "targetPhase": "Fase 6"
         }
       ],
@@ -5225,7 +5241,9 @@
         "audit:sched-001-b04c-authenticated-ord-sched-composition-canary-readiness",
         "test:sched-001-b04c-authenticated-ord-sched-composition-canary-readiness",
         "audit:sched-001-b04c-authenticated-ord-sched-composition-canary-execution",
-        "test:sched-001-b04c-authenticated-ord-sched-composition-canary-execution"
+        "test:sched-001-b04c-authenticated-ord-sched-composition-canary-execution",
+        "audit:sched-001-b04d-canonical-order-projection-guard-readiness",
+        "test:sched-001-b04d-canonical-order-projection-guard-runtime"
       ]
     },
     {
@@ -6284,7 +6302,7 @@
       "id": "LEGAL-001",
       "name": "Jurídico, privacidade, confiança e políticas comerciais",
       "maturity": 1,
-      "filesMatched": 234,
+      "filesMatched": 235,
       "sampleFiles": [
         "docs/ACTIVE-CONTRACTS-INDEX.md",
         "docs/API-ADAPTER-CONTRACT.md",
@@ -8012,7 +8030,7 @@
       "id": "APP-001",
       "name": "Aplicativos Android e iOS",
       "maturity": 0,
-      "filesMatched": 2375,
+      "filesMatched": 2380,
       "sampleFiles": [
         ".agents/skills/animation-vocabulary/SKILL.md",
         ".agents/skills/apple-design/SKILL.md",
@@ -8045,8 +8063,8 @@
         "localStorage": 505,
         "sessionStorage": 151,
         "mock": 880,
-        "network": 595,
-        "directSupabase": 525,
+        "network": 599,
+        "directSupabase": 529,
         "todo": 89
       },
       "signalFiles": {
@@ -10690,6 +10708,10 @@
             "count": 4
           },
           {
+            "file": "scripts/test-sched-001-b04d-canonical-order-projection-guard-runtime.js",
+            "count": 4
+          },
+          {
             "file": "scripts/test-search-ranked-rpc-v2-runtime.js",
             "count": 6
           },
@@ -11453,6 +11475,10 @@
           },
           {
             "file": "scripts/test-sched-001-a04-scheduling-service-runtime.js",
+            "count": 4
+          },
+          {
+            "file": "scripts/test-sched-001-b04d-canonical-order-projection-guard-runtime.js",
             "count": 4
           },
           {
