@@ -431,6 +431,28 @@ async function expectCode(operation, expectedCode) {
   return expectedCode;
 }
 
+async function expectCodeInsideSavepoint(client, savepointName, operation, expectedCode) {
+  if (!/^[a-z0-9_]+$/.test(savepointName)) {
+    fail('DOKE_SCHED_B04C_SAVEPOINT_NAME_INVALID');
+  }
+  await client.query(`savepoint ${savepointName}`);
+  let caught = null;
+  try {
+    await operation();
+  } catch (error) {
+    caught = error;
+  }
+  await client.query(`rollback to savepoint ${savepointName}`);
+  await client.query(`release savepoint ${savepointName}`);
+  if (!caught || caught.code !== expectedCode) {
+    fail('DOKE_SCHED_B04C_EXPECTED_FAILURE_MISSING', 'DOKE_SCHED_B04C_EXPECTED_FAILURE_MISSING', {
+      expectedCode,
+      actualCode: caught && caught.code || null
+    });
+  }
+  return expectedCode;
+}
+
 async function readOrder(client, orderId) {
   const response = await client.query({
     name: 'sched-b04c-read-order',
@@ -618,7 +640,9 @@ const replacementAConfirmed = await root.confirmScheduleReservation(commandConte
 const replacementOrderBeforeGuard = await readOrder(client, fixtures.orders.replacement);
 assertOrderProjection(replacementOrderBeforeGuard, replacementAConfirmed.reservation, 'scheduled');
 const directTransactionPort = createTransactionPort(client);
-await expectCode(
+await expectCodeInsideSavepoint(
+  client,
+  'b04c_replacement_projection_guard',
   () => directTransactionPort.projectOrderSchedule(
     fixtures.orders.replacement,
     mainHold.reservation.id,
