@@ -11,6 +11,7 @@ const DOC_PATH = 'docs/SCHED-001-B04D-CANONICAL-ORDER-PROJECTION-GUARD-READINESS
 const VALIDATION_PATH = 'docs/validation/SCHED-001-B04D-CANONICAL-ORDER-PROJECTION-GUARD-READINESS.json';
 const WORKFLOW_PATH = '.github/workflows/sched-001-b04d-canonical-order-projection-guard-readiness.yml';
 const EXPECTED_AUTHORIZATION = 'I_EXPLICITLY_AUTHORIZE_SCHED_B04D_CANONICAL_ORDER_PROJECTION_GUARD_MIGRATION_ON_DOKE_STAGING';
+const NEXT_AUTHORIZATION = 'I_EXPLICITLY_AUTHORIZE_SCHED_B04C_AUTHENTICATED_ORD_SCHED_COMPOSITION_CANARIES_ON_DOKE_STAGING';
 
 for (const path of [CONFIG_PATH, MIGRATION_PATH, ADAPTER_PATH, DOC_PATH, VALIDATION_PATH, WORKFLOW_PATH]) {
   assert(fs.existsSync(path), `Missing B04D evidence path: ${path}`);
@@ -26,34 +27,71 @@ const workflow = fs.readFileSync(WORKFLOW_PATH, 'utf8');
 assert.strictEqual(config.domain, 'SCHED-001');
 assert.strictEqual(config.dependentDomain, 'ORD-001');
 assert.strictEqual(config.sublot, 'SCHED-B04D');
-assert.strictEqual(config.scope, 'repository_only_canonical_order_projection_guard_readiness');
+assert.strictEqual(config.contractVersion, 'sched-b04d-canonical-order-projection-guard-staging-application-v1');
+assert.strictEqual(config.scope, 'staging_applied_canonical_order_projection_guard');
 assert.strictEqual(config.rootCauseEvidence.failureCode, 'DOKE_ORDER_TRANSITION_INVALID');
 assert.strictEqual(config.rootCauseEvidence.transactionRolledBack, true);
 assert.strictEqual(config.rootCauseEvidence.residueCountsZero, true);
 assert.strictEqual(config.rootCauseEvidence.authorityCountDeltaZero, true);
-assert.strictEqual(config.migration.repositoryOnly, true);
-assert.strictEqual(config.migration.appliedToStaging, false);
+assert.strictEqual(config.migration.repositoryPrepared, true);
+assert.strictEqual(config.migration.appliedToStaging, true);
+assert.strictEqual(config.migration.remoteVersion, '20260801185150');
+assert.strictEqual(config.migration.remoteName, 'sched_b04d_canonical_order_projection_guard');
+assert.strictEqual(config.migration.projectRef, 'zwkczgewzbsorbrjuzpb');
+assert.strictEqual(config.migration.applicationStatus, 'applied_and_verified');
 assert.strictEqual(config.migration.appliedToProduction, false);
+assert.strictEqual(config.migration.manualSchemaHistoryMutationAllowed, false);
 assert.strictEqual(config.authorityContract.genericScheduledToAcceptedTransitionAllowed, false);
 assert.strictEqual(config.authorityContract.directScheduleFieldWritesForbidden, true);
 assert.strictEqual(config.authorityContract.serviceRoleOnly, true);
 assert.strictEqual(config.authorization.requiredExactPhrase, EXPECTED_AUTHORIZATION);
-assert.strictEqual(config.authorization.genericContinuationAllowed, false);
-assert.strictEqual(config.authorization.coversStagingMigrationOnly, true);
-assert.strictEqual(config.authorization.coversCanaryRetry, false);
+assert.strictEqual(config.authorization.status, 'consumed');
+assert.strictEqual(config.authorization.mayBeReused, false);
+assert.strictEqual(config.authorization.coveredCanaryRetry, false);
 assert.strictEqual(config.capabilities.adapterWiringPrepared, true);
 assert.strictEqual(config.capabilities.localStaticTestsPrepared, true);
-assert.strictEqual(config.capabilities.stagingMigrationApplied, false);
+assert.strictEqual(config.capabilities.stagingMigrationApplied, true);
+assert.strictEqual(config.capabilities.stagingMigrationVerified, true);
+assert.strictEqual(config.capabilities.authenticatedCanaryRetried, false);
 assert.deepStrictEqual(config.blockers.remainingOpen, ['SCHED-B04', 'ORD-B04']);
+assert(config.blockers.closed.includes('SCHED-B04D-STAGING-MIGRATION'));
 
-assert.strictEqual(validation.result, 'repository_readiness_prepared');
+for (const key of [
+  'migrationHistoryListed',
+  'privateProjectionFunctionPresent',
+  'privateClearFunctionPresent',
+  'orderTriggerPresentAndEnabled',
+  'securityDefinerConfirmed',
+  'explicitSearchPathConfirmed',
+  'anonExecuteDenied',
+  'authenticatedExecuteDenied',
+  'publicExecuteDenied',
+  'serviceRoleProjectionExecuteAllowed',
+  'directWriteGuardPresent',
+  'genericTransitionGraphPreserved',
+  'argumentGuardsPassed'
+]) {
+  assert.strictEqual(config.verification[key], true, `Remote verification missing: ${key}`);
+}
+assert.strictEqual(config.verification.newB04DSecurityAdvisorFindings, 0);
+assert.strictEqual(config.verification.newB04DPerformanceAdvisorFindings, 0);
+
+assert.strictEqual(validation.result, 'staging_migration_applied_and_verified');
 assert.strictEqual(validation.rootCause.rolledBack, true);
 assert.strictEqual(validation.rootCause.postRollbackVerification, 'passed');
+assert.strictEqual(validation.remoteApplication.projectRef, 'zwkczgewzbsorbrjuzpb');
+assert.strictEqual(validation.remoteApplication.migrationVersion, '20260801185150');
+assert.strictEqual(validation.remoteApplication.migrationName, 'sched_b04d_canonical_order_projection_guard');
+assert.strictEqual(validation.remoteApplication.historyVerification, 'passed');
+assert.strictEqual(validation.remoteApplication.functionAndGrantVerification, 'passed');
+assert.strictEqual(validation.remoteApplication.triggerVerification, 'passed');
+assert.strictEqual(validation.remoteApplication.argumentGuardVerification, 'passed');
 assert.strictEqual(validation.assertions.genericScheduledToAcceptedRemainsForbidden, true);
 assert.strictEqual(validation.assertions.canonicalScheduledToAcceptedRestrictedToClearContext, true);
-assert.strictEqual(validation.assertions.stagingMigrationsApplied, 0);
+assert.strictEqual(validation.assertions.stagingMigrationsApplied, 1);
 assert.strictEqual(validation.assertions.productionAccess, 0);
-assert.strictEqual(validation.nextAuthorization, EXPECTED_AUTHORIZATION);
+assert.strictEqual(validation.assertions.b04cRetryExecutions, 0);
+assert.strictEqual(validation.nextAuthorization, NEXT_AUTHORIZATION);
 
 for (const marker of [
   'create or replace function private.apply_order_schedule_projection',
@@ -94,7 +132,9 @@ assert(projectSection.includes('/* sched-a05:project-order-schedule */'));
 assert(clearSection.includes('/* sched-a05:clear-order-schedule */'));
 
 assert(documentation.includes(EXPECTED_AUTHORIZATION));
-assert(documentation.includes('No migration was applied to staging or production.'));
+assert(documentation.includes(NEXT_AUTHORIZATION));
+assert(documentation.includes('20260801185150'));
+assert(documentation.includes('applied and verified on Doke staging'));
 assert(documentation.includes('scheduled -> accepted'));
 
 assert(workflow.includes('permissions:\n  contents: read'));
@@ -103,4 +143,4 @@ assert(!workflow.includes('SUPABASE_DB_PASSWORD'));
 assert(!workflow.includes('workflow_dispatch'));
 assert(!workflow.includes('contents: write'));
 
-console.log('SCHED-B04D canonical order projection guard readiness audit passed.');
+console.log('SCHED-B04D canonical order projection guard staging application audit passed.');
