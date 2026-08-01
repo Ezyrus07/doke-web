@@ -1,55 +1,61 @@
-name: Doke SCHED-B04C Readiness Reconciliation
+name: Doke SCHED-B04C Authenticated ORD SCHED Composition Canary Readiness
 
 on:
   pull_request:
     branches:
       - search/search-ux02-intent-favorites-clean
     paths:
+      - 'config/sched-001-b04c-authenticated-ord-sched-composition-canary-readiness.json'
+      - 'docs/SCHED-001-B04C-AUTHENTICATED-ORD-SCHED-COMPOSITION-CANARY-READINESS.md'
+      - 'docs/validation/SCHED-001-B04C-AUTHENTICATED-ORD-SCHED-COMPOSITION-CANARY-READINESS.json'
+      - 'scripts/audit-sched-001-b04c-authenticated-ord-sched-composition-canary-readiness.js'
+      - 'scripts/test-sched-001-b04c-authenticated-ord-sched-composition-canary-readiness.js'
       - '.github/workflows/sched-001-b04c-authenticated-ord-sched-composition-canary-readiness.yml'
+      - 'backend/modules/orders/order-scheduling-authority.js'
+      - 'backend/modules/orders/orders-service.js'
+      - 'backend/modules/orders/order-state-machine.js'
+      - 'backend/modules/scheduling/scheduling-command-handlers.js'
+      - 'backend/modules/scheduling/scheduling-postgres-repository.js'
+      - 'config/domain-completion-matrix.json'
+      - 'package.json'
 
 permissions:
-  contents: write
-
-concurrency:
-  group: sched-b04c-readiness-reconciliation
-  cancel-in-progress: false
+  contents: read
 
 jobs:
-  reconcile:
-    if: github.event.pull_request.number == 25
+  readiness:
     runs-on: ubuntu-24.04
     steps:
-      - name: Checkout PR head branch
-        uses: actions/checkout@v4
-        with:
-          ref: ord/ord-001-baseline-audit
-          fetch-depth: 0
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
       - name: Install pinned dependencies
         run: npm ci --ignore-scripts
-      - name: Apply B04C readiness reconciliation
-        run: node scripts/apply-sched-001-b04c-authenticated-ord-sched-canary-readiness.js
-      - name: Regenerate deterministic matrix derivatives
-        run: npm run write:domain-completion-matrix
-      - name: Validate readiness contracts before publication
+      - name: Audit B04C authenticated composition readiness
+        run: npm run audit:sched-001-b04c-authenticated-ord-sched-composition-canary-readiness
+      - name: Test B04C authenticated composition contract
+        run: npm run test:sched-001-b04c-authenticated-ord-sched-composition-canary-readiness
+      - name: Preserve B04B repository wiring
         run: |
-          set -euo pipefail
-          npm run test:sched-001-b04c-authenticated-ord-sched-composition-canary-readiness
           npm run audit:sched-001-b04b-ord-canonical-wiring-implementation
           npm run test:sched-001-b04b-ord-canonical-wiring-runtime
+      - name: Preserve B04A authority readiness
+        run: |
           npm run audit:sched-001-b04-ord-canonical-wiring-readiness
           npm run test:sched-001-b04-ord-canonical-wiring-readiness
-          npm run audit:domain-completion-matrix
-          git diff --check
-      - name: Publish reconciled readiness state
+      - name: Preserve authenticated scheduling evidence
         run: |
-          set -euo pipefail
-          git config user.name "doke-ci"
-          git config user.email "doke-ci@users.noreply.github.com"
-          git add -A
-          git add -f reports/generated/domain-completion-matrix-report.json
-          git commit -m "docs(sched): reconcile B04C authenticated canary readiness"
-          git push origin HEAD:ord/ord-001-baseline-audit
+          node scripts/audit-sched-001-b02b-authenticated-composition-canary.js
+          node scripts/test-sched-001-b02b-authenticated-composition-canary.js
+      - name: Preserve scheduling persistence and service contracts
+        run: |
+          node scripts/audit-sched-001-a05-persistence-readiness.js
+          node scripts/test-sched-001-a05-postgres-repository-runtime.js
+          node scripts/audit-sched-001-a04-server-command-runtime.js
+          node scripts/test-sched-001-a04-scheduling-service-runtime.js
+      - name: Preserve ORD scheduling handoff
+        run: node scripts/audit-ord-001-a11-scheduling-authority-handoff.js
+      - name: Audit domain completion matrix
+        run: npm run audit:domain-completion-matrix
