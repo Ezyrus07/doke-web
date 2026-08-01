@@ -1,0 +1,129 @@
+name: Doke SCHED-B04D Staging Governance Reconciliation
+
+on:
+  pull_request:
+    branches:
+      - search/search-ux02-intent-favorites-clean
+    paths:
+      - '.github/workflows/sched-001-b04d-staging-governance-reconciliation.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sched-b04d-staging-governance-reconciliation
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    if: >-
+      github.event.pull_request.number == 25 &&
+      github.event.pull_request.draft == true &&
+      github.event.pull_request.head.ref == 'ord/ord-001-baseline-audit'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout PR head branch
+        uses: actions/checkout@v4
+        with:
+          ref: ord/ord-001-baseline-audit
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install pinned dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Reconcile B04D staging governance
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path('config/domain-completion-matrix.json')
+          matrix = json.loads(path.read_text())
+          matrix['version'] = '1.3.69'
+          matrix['updatedAt'] = '2026-08-01T15:49:00-03:00'
+          domains = {domain['id']: domain for domain in matrix['domains']}
+          sched = domains['SCHED-001']
+          order = domains['ORD-001']
+
+          sched_evidence = [
+            'SCHED-B04D was exactly authorized and applied to Doke staging as migration version 20260801185150 with no manual migration-history mutation.',
+            'Remote verification confirmed the private projection and clear functions, explicit SECURITY DEFINER search paths, service_role-only execution, denied PUBLIC/anon/authenticated execution, enabled ORD trigger, direct-write rejection and preserved generic transition graph.',
+            'B04D argument guards passed and Supabase advisors reported no new B04D-specific security or performance finding; production, deployment, frontend activation, Cron, workers and merge remained untouched.'
+          ]
+          for item in sched_evidence:
+              if item not in sched['evidence']:
+                  sched['evidence'].append(item)
+
+          for blocker in sched['blockers']:
+              if blocker['id'] == 'SCHED-B04':
+                  blocker['description'] = 'B04D is applied and independently verified on Doke staging. SCHED-B04 remains open only until a separately authorized B04C authenticated ORD/SCHED composition retry passes with final rollback, zero residue and unchanged authority counts.'
+
+          sched['nextActions'] = [
+            'Retry B04C only under its separate exact staging authorization.',
+            'Require confirmation, reschedule, cancellation, partial rollback, final ROLLBACK, zero residue and unchanged authority counts.',
+            'Keep frontend authority switch, deployment, Cron, workers, production and merge blocked.'
+          ]
+
+          order_evidence = [
+            'The B04D private canonical projection guard is applied and verified on Doke staging as migration version 20260801185150.',
+            'ORD generic scheduled transitions remain closed; only the validated private SCHED context may project or atomically clear reservation reference and time.',
+            'No production access, deployment, frontend activation, Cron, worker or merge occurred during B04D staging application.'
+          ]
+          for item in order_evidence:
+              if item not in order['evidence']:
+                  order['evidence'].append(item)
+
+          for blocker in order['blockers']:
+              if blocker['id'] == 'ORD-B04':
+                  blocker['description'] = 'ORD-B04 remains handed to SCHED-001. B04D is applied and verified on staging, but closure still requires a separately authorized B04C composition retry proving confirmation, reschedule and canonical cancellation with rollback and zero residue.'
+
+          order['nextActions'] = [
+            'Retry the authenticated ORD/SCHED composition canary only under its separate exact staging authorization.',
+            'Keep generic scheduled transitions and direct schedule projection writes prohibited.',
+            'Keep deployment, production and merge blocked pending independent release authorization.'
+          ]
+
+          path.write_text(json.dumps(matrix, indent=2) + '\n')
+          PY
+
+      - name: Regenerate deterministic matrix derivatives
+        run: npm run write:domain-completion-matrix
+
+      - name: Validate reconciled state
+        run: |
+          set -euo pipefail
+          node scripts/audit-sched-001-b04d-canonical-order-projection-guard-readiness.js
+          node scripts/test-sched-001-b04d-canonical-order-projection-guard-runtime.js
+          node scripts/audit-sched-001-b04c-authenticated-ord-sched-composition-canary-execution.js
+          node scripts/test-sched-001-b04c-authenticated-ord-sched-composition-canary-execution.js
+          node scripts/audit-sched-001-b04c-authenticated-ord-sched-composition-canary-readiness.js
+          node scripts/test-sched-001-b04c-authenticated-ord-sched-composition-canary-readiness.js
+          node scripts/audit-sched-001-b04b-ord-canonical-wiring-implementation.js
+          node scripts/test-sched-001-b04b-ord-canonical-wiring-runtime.js
+          node scripts/audit-sched-001-a05-persistence-readiness.js
+          node scripts/test-sched-001-a05-postgres-repository-runtime.js
+          node scripts/audit-ord-001-a11-scheduling-authority-handoff.js
+          npm run audit:domain-completion-matrix
+          git diff --check
+
+      - name: Publish reconciled governance
+        run: |
+          set -euo pipefail
+          git config user.name "doke-ci"
+          git config user.email "doke-ci@users.noreply.github.com"
+          git add config/domain-completion-matrix.json
+          git add docs/DOMAIN-COMPLETION-MATRIX.md
+          git add -f reports/generated/domain-completion-matrix-report.json
+          if git diff --cached --quiet; then
+            echo "Governance already reconciled."
+            exit 0
+          fi
+          git commit -m "docs(sched): record B04D staging application in matrix"
+          git push origin HEAD:ord/ord-001-baseline-audit
