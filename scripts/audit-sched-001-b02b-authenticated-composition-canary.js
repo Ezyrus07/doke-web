@@ -12,6 +12,7 @@ const paths = {
   attempt5: 'config/sched-001-b02b-authenticated-composition-canary-attempt-5.json',
   attempt6: 'config/sched-001-b02b-authenticated-composition-canary-attempt-6.json',
   attempt7: 'config/sched-001-b02b-authenticated-composition-canary-attempt-7.json',
+  attempt8: 'config/sched-001-b02b-authenticated-composition-canary-attempt-8.json',
   executor: 'scripts/execute-sched-001-b02b-authenticated-composition-canary.js',
   test: 'scripts/test-sched-001-b02b-authenticated-composition-canary.js',
   workflow: '.github/workflows/sched-001-b02b-authenticated-composition-canary.yml',

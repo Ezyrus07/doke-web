@@ -351,11 +351,24 @@ async function insertSyntheticOrders(client, personas, service) {
   ];
   await client.query({
     name: 'sched-b02b-insert-synthetic-orders',
-    text: `insert into public.orders (id, client_id, service_id, title, status, metadata)
-           select source.id, $1::uuid, $2::uuid, source.title, 'requested',
-                  jsonb_build_object('canarySublot', $3, 'synthetic', true)
-           from unnest($4::uuid[], $5::text[]) as source(id, title)`,
-    values: [personas.client.id, service.id, CANARY_SUBLOT, ids, ids.map((_, index) => `SCHED-B02B synthetic order ${index + 1}`)]
+    text: `insert into public.orders (
+             id, client_id, professional_id, service_id, title, description, status, metadata
+           ) values
+             ($5::uuid, $1::uuid, $2::uuid, $3::uuid, 'SCHED-B02B synthetic order 1', $4, 'requested', jsonb_build_object('canarySublot', $6, 'synthetic', true)),
+             ($7::uuid, $1::uuid, $2::uuid, $3::uuid, 'SCHED-B02B synthetic order 2', $4, 'requested', jsonb_build_object('canarySublot', $6, 'synthetic', true)),
+             ($8::uuid, $1::uuid, $2::uuid, $3::uuid, 'SCHED-B02B synthetic order 3', $4, 'requested', jsonb_build_object('canarySublot', $6, 'synthetic', true)),
+             ($9::uuid, $1::uuid, $2::uuid, $3::uuid, 'SCHED-B02B synthetic order 4', $4, 'requested', jsonb_build_object('canarySublot', $6, 'synthetic', true))`,
+    values: [
+      personas.client.id,
+      personas.professional.id,
+      service.id,
+      'Transaction-scoped synthetic order for the SCHED-B02B composition canary.',
+      ids[0],
+      CANARY_SUBLOT,
+      ids[1],
+      ids[2],
+      ids[3]
+    ]
   });
   return Object.freeze(ids);
 }
