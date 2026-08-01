@@ -75,22 +75,17 @@ jobs:
           if test.count(old_import) != 1:
               raise SystemExit('Unexpected A05 repository-port import shape')
           test = test.replace(old_import, new_import)
-          anchor = """  await assert.rejects(
-            () => tx.updateReservation('res-1', 3, { status: 'confirmed', holdExpiresAt: null, version: 4, updatedAt: '2026-08-03T10:00:00.000Z' }),
-            (error) => error.code === '40001'
-          );
-
-          """
-          addition = anchor + """  const projectionSqlError = new Error('DOKE_SCHEDULE_ORDER_PROJECTION_FAILED');
+          rollback_marker = "  const rollbackClient = createScriptedClient({});"
+          mapping_test = """  const projectionSqlError = new Error('DOKE_SCHEDULE_ORDER_PROJECTION_FAILED');
           projectionSqlError.code = '40001';
           const mappedProjectionError = mapRepositoryError(projectionSqlError);
           assert.strictEqual(mappedProjectionError.code, 'DOKE_SCHEDULE_ORDER_PROJECTION_FAILED');
           assert.strictEqual(mappedProjectionError.sqlState, '40001');
 
           """
-          if test.count(anchor) != 1:
-              raise SystemExit('Unexpected A05 version-conflict test shape')
-          test_path.write_text(test.replace(anchor, addition))
+          if test.count(rollback_marker) != 1:
+              raise SystemExit('Unexpected A05 rollback test marker')
+          test_path.write_text(test.replace(rollback_marker, mapping_test + rollback_marker, 1))
 
           executor_path = Path('scripts/execute-sched-001-b04c-authenticated-ord-sched-composition-canary.js')
           executor = executor_path.read_text()
@@ -185,17 +180,22 @@ jobs:
           if executor.count(old_fixture) != 1:
               raise SystemExit('Unexpected B04C partial rollback fixture shape')
           executor = executor.replace(old_fixture, new_fixture)
+          old_status = "requireExact(partialOrder.status, 'accepted', 'DOKE_SCHED_B04C_PARTIAL_FAILURE_CHANGED_ORDER');"
+          old_reference = "mainHold.reservation.id,\n  'DOKE_SCHED_B04C_PARTIAL_FAILURE_CHANGED_REFERENCE'"
+          old_time = "new Date(rescheduled.reservation.startsAt).toISOString(),\n  'DOKE_SCHED_B04C_PARTIAL_FAILURE_CHANGED_TIME'"
+          if executor.count(old_status) != 1 or executor.count(old_reference) != 1 or executor.count(old_time) != 1:
+              raise SystemExit('Unexpected B04C post-failure assertion shape')
           executor = executor.replace(
-            "requireExact(partialOrder.status, 'accepted', 'DOKE_SCHED_B04C_PARTIAL_FAILURE_CHANGED_ORDER');",
+            old_status,
             "requireExact(partialOrder.status, 'scheduled', 'DOKE_SCHED_B04C_PARTIAL_FAILURE_CHANGED_ORDER');"
           )
           executor = executor.replace(
-            "mainHold.reservation.id,\n            'DOKE_SCHED_B04C_PARTIAL_FAILURE_CHANGED_REFERENCE'",
-            "partialBaselineHold.reservation.id,\n            'DOKE_SCHED_B04C_PARTIAL_FAILURE_CHANGED_REFERENCE'"
+            old_reference,
+            "partialBaselineHold.reservation.id,\n  'DOKE_SCHED_B04C_PARTIAL_FAILURE_CHANGED_REFERENCE'"
           )
           executor = executor.replace(
-            "new Date(rescheduled.reservation.startsAt).toISOString(),\n            'DOKE_SCHED_B04C_PARTIAL_FAILURE_CHANGED_TIME'",
-            "new Date(partialBaselineConfirmed.reservation.startsAt).toISOString(),\n            'DOKE_SCHED_B04C_PARTIAL_FAILURE_CHANGED_TIME'"
+            old_time,
+            "new Date(partialBaselineConfirmed.reservation.startsAt).toISOString(),\n  'DOKE_SCHED_B04C_PARTIAL_FAILURE_CHANGED_TIME'"
           )
           executor_path.write_text(executor)
           PY
