@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 1,
+  "domain": "SCHED-001",
+  "dependentDomain": "ORD-001",
+  "sublot": "SCHED-B04D",
+  "contractVersion": "sched-b04d-canonical-order-projection-guard-readiness-v1",
+  "scope": "repository_only_canonical_order_projection_guard_readiness",
+  "rootCauseEvidence": {
+    "authorizedCanaryRunId": 30711882162,
+    "authorizedCanaryJobId": 91400663624,
+    "headSha": "a85c0e73c43207e71d68d8c1328703c257c9e062",
+    "failureCode": "DOKE_ORDER_TRANSITION_INVALID",
+    "failedTransition": "scheduled_to_accepted",
+    "transactionRolledBack": true,
+    "postRollbackVerification": "passed",
+    "residueCountsZero": true,
+    "authorityCountDeltaZero": true
+  },
+  "migration": {
+    "path": "supabase/migrations/20260801183000_sched_b04d_canonical_order_projection_guard.sql",
+    "repositoryOnly": true,
+    "appliedToStaging": false,
+    "appliedToProduction": false,
+    "manualSchemaHistoryMutationAllowed": false
+  },
+  "authorityContract": {
+    "genericScheduledToAcceptedTransitionAllowed": false,
+    "canonicalClearCanRestoreAccepted": true,
+    "canonicalProjectionFunction": "private.apply_order_schedule_projection",
+    "canonicalClearFunction": "private.clear_order_schedule_projection",
+    "directScheduleFieldWritesForbidden": true,
+    "serviceRoleOnly": true,
+    "transactionLocalContext": true,
+    "reservationOrderStatusAndTimeMustMatch": true,
+    "referenceAndTimeClearTogether": true
+  },
+  "adapter": {
+    "path": "backend/modules/scheduling/scheduling-postgres-repository.js",
+    "mustCallPrivateProjectionFunctions": true,
+    "directOrdersProjectionUpdateAllowed": false,
+    "externalSchedulingContractChanged": false
+  },
+  "authorization": {
+    "requiredExactPhrase": "I_EXPLICITLY_AUTHORIZE_SCHED_B04D_CANONICAL_ORDER_PROJECTION_GUARD_MIGRATION_ON_DOKE_STAGING",
+    "genericContinuationAllowed": false,
+    "coversStagingMigrationOnly": true,
+    "coversCanaryRetry": false,
+    "coversProduction": false,
+    "coversDeployment": false,
+    "coversFrontendAuthoritySwitch": false,
+    "coversCronOrWorkers": false,
+    "coversMerge": false
+  },
+  "capabilities": {
+    "repositoryContractPrepared": true,
+    "adapterWiringPrepared": false,
+    "localStaticTestsPrepared": false,
+    "stagingMigrationApplied": false,
+    "authenticatedCanaryRetried": false,
+    "frontendConnected": false
+  },
+  "blockers": {
+    "closed": ["SCHED-B02"],
+    "remainingOpen": ["SCHED-B04", "ORD-B04"],
+    "newlyIdentified": ["SCHED-B04D-STAGING-MIGRATION"]
+  },
+  "prohibitedActions": [
+    "production_access",
+    "staging_migration_application_without_exact_authorization",
+    "manual_schema_migration_history_mutation",
+    "deployment",
+    "frontend_authority_switch",
+    "cron_activation",
+    "worker_activation",
+    "billing_change",
+    "infrastructure_change",
+    "persistent_canary_data",
+    "pull_request_merge",
+    "auto_merge_enablement"
+  ],
+  "nextGate": "exactly authorized SCHED-B04D staging migration application followed by a separately authorized B04C retry"
+}
