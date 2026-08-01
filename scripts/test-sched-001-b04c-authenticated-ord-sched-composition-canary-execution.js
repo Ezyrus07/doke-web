@@ -15,11 +15,23 @@ const {
 assert.strictEqual(EXPECTED_PROJECT_REF, config.target.projectRef);
 assert.strictEqual(CANARY_PREFIX, 'sched-b04c-canary:');
 assert.strictEqual(config.authorization.exactPhrase, readiness.authorization.requiredExactPhrase);
-assert.strictEqual(config.authorization.status, 'awaiting_exact_authorization');
+assert([
+  'awaiting_exact_authorization',
+  'consumed_failed_closed_blocked_on_b04d'
+].includes(config.authorization.status));
 assert.strictEqual(config.authorization.repositoryAdditionTriggersExecution, false);
 assert.strictEqual(config.transaction.finalStatement, 'ROLLBACK');
 assert.strictEqual(config.transaction.commitAllowed, false);
-assert.strictEqual(config.executionState.authenticatedCanaryExecuted, false);
+if (config.authorization.status === 'awaiting_exact_authorization') {
+  assert.strictEqual(config.executionState.authenticatedCanaryExecuted, false);
+} else {
+  assert.strictEqual(config.executionState.authenticatedCanaryExecuted, true);
+  assert.strictEqual(config.executionState.canaryPassed, false);
+  assert.strictEqual(config.executionState.blockedBy, 'SCHED-B04D-STAGING-MIGRATION');
+  assert.strictEqual(config.executionState.persistentMutationsPerformed, 0);
+  assert.strictEqual(config.executionState.allAuthorizedAttemptsRolledBack, true);
+  assert.strictEqual(config.executionState.allResidueCountsZero, true);
+}
 
 (async () => {
   const calls = [];
