@@ -1,4 +1,4 @@
-name: Doke SCHED-B04C Attempt 5 Sanitized Diagnostic Preservation
+name: Doke SCHED-B04C Attempt 6 Partial Rollback Fixture Fix
 
 on:
   pull_request:
@@ -11,11 +11,11 @@ permissions:
   contents: write
 
 concurrency:
-  group: sched-b04c-attempt5-sanitized-diagnostics
+  group: sched-b04c-attempt6-partial-rollback-fixture
   cancel-in-progress: false
 
 jobs:
-  publish-sanitized-diagnostics:
+  publish-partial-rollback-fix:
     if: >-
       github.event.pull_request.number == 25 &&
       github.event.pull_request.draft == true &&
@@ -36,7 +36,7 @@ jobs:
       - name: Install pinned dependencies
         run: npm ci --ignore-scripts
 
-      - name: Preserve only sanitized expected and actual denial codes
+      - name: Correct partial projection rollback fixture
         shell: bash
         run: |
           set -euo pipefail
@@ -45,37 +45,92 @@ jobs:
 
           path = Path('scripts/execute-sched-001-b04c-authenticated-ord-sched-composition-canary.js')
           source = path.read_text()
-          marker = "const safeDetails = error && error.details && typeof error.details === 'object'"
-          if marker in source:
-              print('Sanitized diagnostic preservation already present.')
+          fixed_marker = "sched-b04c-prime-partial-projection-conflict"
+          if fixed_marker in source:
+              print('Partial rollback fixture already corrected.')
               raise SystemExit(0)
 
-          old = """  const code = String(error && error.code || 'DOKE_SCHED_B04C_UNEXPECTED_FAILURE');
-            const message = String(error && error.message || '');
-            if (/^DOKE_[A-Z0-9_]+$/.test(message)) return { code: message, message };
-            if (code.startsWith('DOKE_')) return { code, message: code };
+          start_marker = "  const partialHold = await root.createScheduleHold(commandContext(actors.client, 'partial-hold', {"
+          end_marker = "  return Object.freeze({"
+          start = source.find(start_marker)
+          end = source.find(end_marker, start + 1)
+          if start < 0 or end < 0 or end <= start:
+              raise SystemExit('partial rollback structural markers missing')
+
+          replacement = """  await root.cancelScheduleReservation(commandContext(actors.support, 'main-cancel', {
+            reservationId: mainHold.reservation.id,
+            expectedVersion: 3,
+            reason: 'Synthetic SCHED-B04C cancellation.'
+          }, correlationId));
+          const cancelledOrder = await readOrder(client, fixtures.orders.main);
+          requireExact(cancelledOrder.status, 'accepted', 'DOKE_SCHED_B04C_CANCEL_DID_NOT_RESTORE_ACCEPTED');
+          requireExact(cancelledOrder.schedule_reservation_id, null, 'DOKE_SCHED_B04C_CANCEL_DID_NOT_CLEAR_REFERENCE');
+          requireExact(cancelledOrder.scheduled_at, null, 'DOKE_SCHED_B04C_CANCEL_DID_NOT_CLEAR_TIME');
+          const cancelOrderEvent = await assertOrderEventProjection(client, fixtures.orders.main, 'accepted');
+          const correlations = await assertScheduleCorrelation(client, mainHold.reservation.id, correlationId);
+
+          const partialHold = await root.createScheduleHold(commandContext(actors.client, 'partial-hold', {
+            orderId: fixtures.orders.partial,
+            professionalId: fixtures.personas.professional.id,
+            ...range(14, 15)
+          }, correlationId));
+          const primedPartial = await client.query({
+            name: 'sched-b04c-prime-partial-projection-conflict',
+            text: `update public.orders
+                   set status = 'accepted',
+                       schedule_reservation_id = $2::uuid,
+                       scheduled_at = $3::timestamptz,
+                       updated_at = pg_catalog.now()
+                   where id = $1::uuid and status = 'requested'
+                   returning id`,
+            values: [
+              fixtures.orders.partial,
+              mainHold.reservation.id,
+              rescheduled.reservation.startsAt
+            ]
+          });
+          requireExact(primedPartial.rowCount, 1, 'DOKE_SCHED_B04C_PARTIAL_CONFLICT_FIXTURE_FAILED');
+          const partialBeforeFailure = await readOrder(client, fixtures.orders.partial);
+          requireExact(partialBeforeFailure.status, 'accepted', 'DOKE_SCHED_B04C_PARTIAL_FIXTURE_NOT_ACCEPTED');
+          requireExact(
+            partialBeforeFailure.schedule_reservation_id,
+            mainHold.reservation.id,
+            'DOKE_SCHED_B04C_PARTIAL_FIXTURE_REFERENCE_MISMATCH'
+          );
+          requireExact(
+            new Date(partialBeforeFailure.scheduled_at).toISOString(),
+            new Date(rescheduled.reservation.startsAt).toISOString(),
+            'DOKE_SCHED_B04C_PARTIAL_FIXTURE_TIME_MISMATCH'
+          );
+
+          await expectCode(
+            () => root.confirmScheduleReservation(commandContext(actors.admin, 'partial-confirm', {
+              reservationId: partialHold.reservation.id,
+              expectedVersion: 1
+            }, correlationId)),
+            'DOKE_SCHEDULE_ORDER_PROJECTION_FAILED'
+          );
+          const partialStored = await readReservation(client, partialHold.reservation.id);
+          requireExact(partialStored.status, 'held', 'DOKE_SCHED_B04C_PARTIAL_FAILURE_DID_NOT_ROLL_BACK');
+          requireExact(partialStored.version, 1, 'DOKE_SCHED_B04C_PARTIAL_FAILURE_CHANGED_VERSION');
+          const partialOrder = await readOrder(client, fixtures.orders.partial);
+          requireExact(partialOrder.status, 'accepted', 'DOKE_SCHED_B04C_PARTIAL_FAILURE_CHANGED_ORDER');
+          requireExact(
+            partialOrder.schedule_reservation_id,
+            mainHold.reservation.id,
+            'DOKE_SCHED_B04C_PARTIAL_FAILURE_CHANGED_REFERENCE'
+          );
+          requireExact(
+            new Date(partialOrder.scheduled_at).toISOString(),
+            new Date(rescheduled.reservation.startsAt).toISOString(),
+            'DOKE_SCHED_B04C_PARTIAL_FAILURE_CHANGED_TIME'
+          );
+
           """
-          new = """  const code = String(error && error.code || 'DOKE_SCHED_B04C_UNEXPECTED_FAILURE');
-            const message = String(error && error.message || '');
-            const safeDetails = error && error.details && typeof error.details === 'object'
-              ? Object.freeze({
-                  expectedCode: String(error.details.expectedCode || ''),
-                  actualCode: error.details.actualCode == null ? null : String(error.details.actualCode)
-                })
-              : null;
-            if (/^DOKE_[A-Z0-9_]+$/.test(message)) {
-              return safeDetails ? { code: message, message, details: safeDetails } : { code: message, message };
-            }
-            if (code.startsWith('DOKE_')) {
-              return safeDetails ? { code, message: code, details: safeDetails } : { code, message: code };
-            }
-          """
-          if old not in source:
-              raise SystemExit('safeError structural block not found')
-          path.write_text(source.replace(old, new, 1))
+          path.write_text(source[:start] + replacement + source[end:])
           PY
 
-      - name: Validate diagnostic-only change
+      - name: Validate corrected canary package
         run: |
           set -euo pipefail
           node --check scripts/execute-sched-001-b04c-authenticated-ord-sched-composition-canary.js
@@ -89,16 +144,16 @@ jobs:
           npm run audit:domain-completion-matrix
           git diff --check
 
-      - name: Publish sanitized diagnostic support
+      - name: Publish partial rollback fixture correction
         shell: bash
         run: |
           set -euo pipefail
           if git diff --quiet -- scripts/execute-sched-001-b04c-authenticated-ord-sched-composition-canary.js; then
-            echo "Diagnostic support already present; nothing to publish."
+            echo "Partial rollback fixture already corrected; nothing to publish."
             exit 0
           fi
           git config user.name "doke-ci"
           git config user.email "doke-ci@users.noreply.github.com"
           git add scripts/execute-sched-001-b04c-authenticated-ord-sched-composition-canary.js
-          git commit -m "chore(sched): preserve sanitized B04C denial diagnostics"
+          git commit -m "fix(sched): prove partial projection rollback after eligibility"
           git push origin HEAD:ord/ord-001-baseline-audit
