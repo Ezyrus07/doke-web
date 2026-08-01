@@ -1,6 +1,6 @@
 {
-  "version": "1.3.65",
-  "updatedAt": "2026-08-01T06:53:00-03:00",
+  "version": "1.3.66",
+  "updatedAt": "2026-08-01T13:11:00-03:00",
   "title": "Doke Domain Completion Matrix",
   "purpose": "Single source of truth for domain maturity, data authority, staging evidence, blockers, dependencies and mandatory completion order.",
   "maturityScale": {
@@ -1089,7 +1089,13 @@
         ".github/workflows/sched-001-b04-ord-canonical-wiring-readiness.yml",
         "backend/modules/orders/order-scheduling-authority.js",
         "config/sched-001-b04b-ord-canonical-wiring-implementation.json",
-        "docs/validation/SCHED-001-B04B-ORD-CANONICAL-WIRING-IMPLEMENTATION.json"
+        "docs/validation/SCHED-001-B04B-ORD-CANONICAL-WIRING-IMPLEMENTATION.json",
+        "config/sched-001-b04c-authenticated-ord-sched-composition-canary-readiness.json",
+        "docs/SCHED-001-B04C-AUTHENTICATED-ORD-SCHED-COMPOSITION-CANARY-READINESS.md",
+        "docs/validation/SCHED-001-B04C-AUTHENTICATED-ORD-SCHED-COMPOSITION-CANARY-READINESS.json",
+        "scripts/audit-sched-001-b04c-authenticated-ord-sched-composition-canary-readiness.js",
+        "scripts/test-sched-001-b04c-authenticated-ord-sched-composition-canary-readiness.js",
+        ".github/workflows/sched-001-b04c-authenticated-ord-sched-composition-canary-readiness.yml"
       ],
       "scanRoots": [
         "backend/modules/orders",
@@ -1190,7 +1196,9 @@
         "audit:sched-001-b04-ord-canonical-wiring-readiness",
         "test:sched-001-b04-ord-canonical-wiring-readiness",
         "audit:sched-001-b04b-ord-canonical-wiring-implementation",
-        "test:sched-001-b04b-ord-canonical-wiring-runtime"
+        "test:sched-001-b04b-ord-canonical-wiring-runtime",
+        "audit:sched-001-b04c-authenticated-ord-sched-composition-canary-readiness",
+        "test:sched-001-b04c-authenticated-ord-sched-composition-canary-readiness"
       ],
       "evidence": [
         "Canonical state machine, transaction events, outbox worker and operational controls are active in staging.",
@@ -1292,7 +1300,8 @@
         "ORD-001 now has an executable SCHED-A04 order projection port for schedule_reservation_id and scheduled_at, but ORD-B04 remains open until a transactional adapter and staging activation exist.",
         "SCHED-A08 completed the official migration-history repair and rolled-back remote overlap, adjacency, idempotency, event, DST and order-projection canaries; ORD-B04 remains open only for trusted runtime wiring to the canonical reservation authority.",
         "SCHED-B04A froze the repository-only ORD canonical wiring contract: schedule_reservation_id is the reservation authority, scheduled_at is projection-only, direct schedule writes remain prohibited, and no runtime, staging, frontend, deployment or production effect occurred.",
-        "ORD generic commands can no longer manufacture scheduled state or cancel/start through an unresolved canonical reservation; B04B remains fail-closed until the authenticated composition canary."
+        "ORD generic commands can no longer manufacture scheduled state or cancel/start through an unresolved canonical reservation; B04B remains fail-closed until the authenticated composition canary.",
+        "SCHED-B04C froze the authenticated ORD/SCHED composition canary contract with synthetic personas, SERIALIZABLE rollback, cross-domain idempotency and zero-residue verification; no staging access was performed."
       ],
       "blockers": [
         {
@@ -1325,10 +1334,10 @@
         }
       ],
       "nextActions": [
+        "Execute SCHED-B04C authenticated ORD/SCHED composition canary only after the exact independent staging authorization.",
         "Implement ORD-B04 through SCHED-B04B so orders consume schedule_reservation_id as authority and scheduled_at only as a projection from a confirmed reservation.",
         "Preserve order lifecycle ownership while prohibiting generic manual transitions to scheduled and direct frontend writes to canonical schedule fields.",
-        "Keep staging, deployment, production and merge blocked pending independent local and remote evidence.",
-        "Validate ORD/SCHED authenticated composition and atomic order-event behavior in SCHED-B04C before frontend authority switch."
+        "Keep staging, deployment, production and merge blocked pending independent local and remote evidence."
       ],
       "exitCriteria": [
         "Two real accounts complete request, accept, proposal, approval, start and completion across devices.",
@@ -1467,7 +1476,13 @@
         "docs/validation/SCHED-001-B04B-ORD-CANONICAL-WIRING-IMPLEMENTATION.json",
         "scripts/audit-sched-001-b04b-ord-canonical-wiring-implementation.js",
         "scripts/test-sched-001-b04b-ord-canonical-wiring-runtime.js",
-        ".github/workflows/sched-001-b04b-ord-canonical-wiring-implementation.yml"
+        ".github/workflows/sched-001-b04b-ord-canonical-wiring-implementation.yml",
+        "config/sched-001-b04c-authenticated-ord-sched-composition-canary-readiness.json",
+        "docs/SCHED-001-B04C-AUTHENTICATED-ORD-SCHED-COMPOSITION-CANARY-READINESS.md",
+        "docs/validation/SCHED-001-B04C-AUTHENTICATED-ORD-SCHED-COMPOSITION-CANARY-READINESS.json",
+        "scripts/audit-sched-001-b04c-authenticated-ord-sched-composition-canary-readiness.js",
+        "scripts/test-sched-001-b04c-authenticated-ord-sched-composition-canary-readiness.js",
+        ".github/workflows/sched-001-b04c-authenticated-ord-sched-composition-canary-readiness.yml"
       ],
       "scanRoots": [
         "assets/js/pages/pedidos",
@@ -1509,7 +1524,9 @@
         "audit:sched-001-b04-ord-canonical-wiring-readiness",
         "test:sched-001-b04-ord-canonical-wiring-readiness",
         "audit:sched-001-b04b-ord-canonical-wiring-implementation",
-        "test:sched-001-b04b-ord-canonical-wiring-runtime"
+        "test:sched-001-b04b-ord-canonical-wiring-runtime",
+        "audit:sched-001-b04c-authenticated-ord-sched-composition-canary-readiness",
+        "test:sched-001-b04c-authenticated-ord-sched-composition-canary-readiness"
       ],
       "evidence": [
         "Repository migrations 113 and 119 enable availability_slots RLS, define owner write policies and separate anonymous available-slot reads from authenticated owner/operator visibility.",
@@ -1536,7 +1553,8 @@
         "No production access, migration, deploy, Cron, worker, frontend connection, ORD wiring, billing, infrastructure, merge or auto-merge occurred. SCHED-B02 is closed by the authenticated composition evidence; SCHED-B04 remains open for separately authorized ORD integration.",
         "SCHED-B04A froze the repository-only ORD canonical wiring contract: schedule_reservation_id is the reservation authority, scheduled_at is projection-only, direct schedule writes remain prohibited, and no runtime, staging, frontend, deployment or production effect occurred.",
         "SCHED-B04B wires the ORD read model to schedule_reservation_id, demotes client-supplied dates to metadata intent, blocks generic scheduled transitions, and projects confirmed reservations atomically as scheduled.",
-        "Reservation cancellation clears the matching reference and time projection, returns scheduled orders to accepted, and start/cancel paths fail closed when canonical scheduling authority is unavailable."
+        "Reservation cancellation clears the matching reference and time projection, returns scheduled orders to accepted, and start/cancel paths fail closed when canonical scheduling authority is unavailable.",
+        "SCHED-B04C froze the authenticated ORD/SCHED composition canary contract with synthetic personas, SERIALIZABLE rollback, cross-domain idempotency and zero-residue verification; no staging access was performed."
       ],
       "blockers": [
         {
@@ -1548,10 +1566,10 @@
         }
       ],
       "nextActions": [
+        "Execute SCHED-B04C authenticated ORD/SCHED composition canary only after the exact independent staging authorization.",
         "Implement SCHED-B04B locally: expose schedule_reservation_id in the order read model, reject direct canonical scheduled_at writes, and compose confirmed reservations with the scheduled order state.",
         "Add fail-closed local tests for confirm, reschedule, reservation cancellation, order cancellation and start-order authorization across ORD-001 and SCHED-001.",
-        "Keep staging mutations, frontend authority switch, deployment, Cron, workers, production and merge blocked until a separately authorized remote canary exists.",
-        "Prepare SCHED-B04C authenticated ORD/SCHED composition canary readiness with rollback-only staging evidence."
+        "Keep staging mutations, frontend authority switch, deployment, Cron, workers, production and merge blocked until a separately authorized remote canary exists."
       ],
       "exitCriteria": [
         "Concurrent booking attempts cannot reserve the same slot.",
