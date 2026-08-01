@@ -67,6 +67,10 @@ assert.deepStrictEqual(contract.COMMANDS.expire_schedule_holds.actors, ['schedul
     code: contract.ERROR_CODES.actorForbidden,
     message: contract.ERROR_CODES.actorForbidden
   });
+  assert.deepStrictEqual(safeError({ code: '23514', message: 'DOKE_ORDER_SERVICE_NOT_ELIGIBLE' }), {
+    code: 'DOKE_ORDER_SERVICE_NOT_ELIGIBLE',
+    message: 'DOKE_ORDER_SERVICE_NOT_ELIGIBLE'
+  });
   assert.strictEqual(safeError({ code: 'ECONNREFUSED' }).code, 'DOKE_SCHED_B02B_UNEXPECTED_FAILURE');
   console.log('SCHED-B02B authenticated composition canary tests passed.');
 })().catch((error) => {

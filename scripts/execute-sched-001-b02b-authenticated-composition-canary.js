@@ -32,6 +32,8 @@ function requireExact(value, expected, code) {
 
 function safeError(error) {
   const known = String(error && error.code || 'DOKE_SCHED_B02B_UNEXPECTED_FAILURE');
+  const safeMessage = String(error && error.message || '');
+  if (/^DOKE_[A-Z0-9_]+$/.test(safeMessage)) return { code: safeMessage, message: safeMessage };
   return {
     code: known.startsWith('DOKE_') ? known : 'DOKE_SCHED_B02B_UNEXPECTED_FAILURE',
     message: known.startsWith('DOKE_') ? known : 'The authenticated staging composition canary failed closed.'
@@ -141,6 +143,7 @@ async function verifySchemaGate(client) {
     to_regclass('public.schedule_reservations') is not null as reservations,
     to_regclass('private.schedule_command_idempotency') is not null as idempotency,
     to_regclass('private.schedule_domain_events') is not null as events,
+    position('pg_catalog.coalesce' in pg_get_functiondef('private.canonicalize_order_service_snapshot()'::regprocedure)) = 0 as order_snapshot_fix,
     exists (select 1 from information_schema.columns where table_schema = 'public'
       and table_name = 'orders' and column_name = 'schedule_reservation_id') as order_projection`);
   if (!tables.rows[0] || Object.values(tables.rows[0]).some((value) => value !== true)) fail('DOKE_SCHED_B02B_SCHEMA_GATE_FAILED');
