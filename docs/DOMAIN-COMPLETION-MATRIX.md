@@ -7,7 +7,7 @@ Este é o mapa operacional obrigatório para concluir a lógica da Doke. Ele cru
 - Domínios/programas mapeados: **23**.
 - Fluxos críticos mapeados: **15**.
 - Maturidade média atual: **2.91/6**.
-- Bloqueadores críticos explícitos: **13**.
+- Bloqueadores críticos explícitos: **12**.
 - Domínios prontos para produção: **0**.
 - Runtime padrão: dados **mock**, auth **supabase**, rede **desativada**.
 
@@ -106,7 +106,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 | FLOW-03 | Tornar-se profissional e KYC | staging operational | PROF-001 | profile_setup → document_upload → submit → admin_review → decision → role_activation | PROF-B04, PROF-B05 |
 | FLOW-04 | Publicar serviço | hybrid | CAT-001 | draft → media → quote_template → submit_review → moderation → publish → edit_version |  |
 | FLOW-05 | Solicitar orçamento e criar pedido | staging operational | ORD-001 | service_snapshot → questionnaire → request → outbox_event → professional_notification | ORD-B02 |
-| FLOW-06 | Aceite, proposta e agenda | hybrid | ORD-001 | accept → proposal → client_approval → schedule_hold → confirmation | SCHED-B02, ORD-B04 |
+| FLOW-06 | Aceite, proposta e agenda | hybrid | ORD-001 | accept → proposal → client_approval → schedule_hold → confirmation | ORD-B04 |
 | FLOW-07 | Conversa transacional | hybrid | MSG-001 | conversation → message → attachment → read_state → realtime → notification | MSG-B02, MSG-B03 |
 | FLOW-08 | Pagamento, retenção e liberação | blocked | PAY-001 | charge → provider_checkout → signed_webhook → ledger → receivable → release | PAY-B01, PAY-B03, PAY-B04 |
 | FLOW-09 | Cancelamento, reembolso e disputa | blocked | DSP-001 | eligibility → cancel → refund → dispute → evidence → decision → appeal | DSP-B01, DSP-B03 |
@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 1041 arquivos no escopo; 248 referências a localStorage; 78 a sessionStorage; 557 referências mock; 196 referências de rede/Supabase; 35 marcadores de implementação pendente.
+**Evidência estática observada:** 1042 arquivos no escopo; 248 referências a localStorage; 78 a sessionStorage; 557 referências mock; 196 referências de rede/Supabase; 35 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -543,21 +543,19 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - The SCHED-A07 canary passed in one transaction ending in ROLLBACK and proved overlap rejection, adjacent reservation acceptance, DST fallback compatibility, scoped idempotency uniqueness, event uniqueness and order schedule projection.
 - The canary fixture uses a published service with an approved version because requested orders require canonical service authority.
 - Post-rollback verification found zero schedule rules, reservations, idempotency rows, schedule events, canary orders and orders linked to a schedule reservation; no test data remained persisted.
-- Runtime activation, trusted composition root, ORD-001 wiring, workers, Cron, deploy, production and merge remain blocked.
+- ORD-001 wiring, workers, Cron, deploy, production and merge remain blocked.
 - SCHED-B02A implements a fail-closed trusted composition root that composes the existing PostgreSQL adapter and scheduling service only when the exact staging flag, environment and project ref match; no runtime, database, deployment or production mutation occurred.
-- SCHED-B02B execution readiness now provides a one-shot authorized GitHub Actions path, read-only PR/project/schema/persona preflight, one outer SERIALIZABLE transaction, per-command savepoints through the canonical composition root, mandatory final rollback and independent residue verification; remote execution evidence is still pending.
+- SCHED-B02B provides a one-shot authorized GitHub Actions path, read-only PR/project/schema preflight, one outer SERIALIZABLE transaction, per-command savepoints through the canonical composition root, mandatory final rollback and independent residue verification.
 - SCHED-B02B run 30675062764 stopped in the read-only preflight because the frozen exact client email did not match the staging synthetic identity set; the mutation step was skipped and staging mutations remained zero. Attempt 2 resolves only active doke.local identities by canonical role and requires the professional persona to own an approved published service.
-- SCHED-B02B runs 30675212259 and 30675383979 stopped in read-only preflight because staging did not contain an active synthetic client matching the required identity projection; both mutation steps were skipped and staging mutations remained zero. Run 30676148237 identified SQLSTATE 42P18 at synthetic order insertion; the jsonb_build_object canary marker parameter lacked an explicit type. ROLLBACK and all 11 residue counters plus authority-count equality were independently verified. Attempt 11 casts that marker to text.
+- SCHED-B02B run 30676215676 passed at commit 4168cd4983afd34c42c5bfcf48d2723d060a5b18: client, professional, support and administrator allowed/forbidden boundaries passed; idempotent replay, divergent payload rejection, overlap rejection and order projection passed; the transaction ended in ROLLBACK; all 11 residue counters were zero and authority counts were unchanged.
+- No production access, migration, deploy, Cron, worker, frontend connection, ORD wiring, billing, infrastructure, merge or auto-merge occurred. SCHED-B02 is closed by the authenticated composition evidence; SCHED-B04 remains open for separately authorized ORD integration.
 
 **Bloqueadores:**
-- **SCHED-B02 · CRITICAL · server_authority:** The trusted composition root exists with an exact staging-only fail-closed gate, but authenticated staging activation and command-boundary canaries are pending. _(Fase 6)_
 - **SCHED-B04 · HIGH · order_integration:** orders.schedule_reservation_id exists in staging, but ORD-001 runtime wiring to the canonical reservation remains pending. _(Fase 6)_
 
 **Próximas ações:**
-- Execute the SCHED-B02B authenticated staging composition canary for client, professional, support and administrator personas with rollback and residue verification.
-- Activate the trusted scheduling composition root only in staging behind the exact fail-closed environment and project-ref gate after explicit authorization.
-- Wire ORD-001 to consume schedule_reservation_id and scheduled_at only as the canonical reservation reference and projection after SCHED-B02 is independently closed.
-- Keep production, frontend authority switch, Cron, workers, deployment and merge blocked until SCHED-B02 and SCHED-B04 have independent evidence.
+- Prepare a separately authorized SCHED-B04 and ORD-001 integration sublot that consumes schedule_reservation_id and scheduled_at only as the canonical reservation reference and projection.
+- Keep production, frontend authority switch, Cron, workers, deployment and merge blocked until SCHED-B04 has independent evidence.
 
 **Gate de saída:**
 - Concurrent booking attempts cannot reserve the same slot.
@@ -950,7 +948,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 1/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 230 arquivos no escopo; 64 referências a localStorage; 8 a sessionStorage; 269 referências mock; 8 referências de rede/Supabase; 25 marcadores de implementação pendente.
+**Evidência estática observada:** 231 arquivos no escopo; 64 referências a localStorage; 8 a sessionStorage; 269 referências mock; 8 referências de rede/Supabase; 25 marcadores de implementação pendente.
 
 **Evidências:**
 - The master plan identifies legal, privacy and commercial decisions as mandatory.
@@ -1010,7 +1008,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2357 arquivos no escopo; 505 referências a localStorage; 151 a sessionStorage; 880 referências mock; 593 referências de rede/Supabase; 89 marcadores de implementação pendente.
+**Evidência estática observada:** 2358 arquivos no escopo; 505 referências a localStorage; 151 a sessionStorage; 880 referências mock; 593 referências de rede/Supabase; 89 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.

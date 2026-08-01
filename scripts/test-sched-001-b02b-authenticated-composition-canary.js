@@ -13,7 +13,7 @@ const {
 
 assert.strictEqual(EXPECTED_PROJECT_REF, config.target.projectRef);
 assert.strictEqual(CANARY_PREFIX, 'sched-b02b-canary:');
-assert.strictEqual(config.authorization.status, 'authorized_pending_execution');
+assert.strictEqual(config.authorization.status, 'executed_passed');
 assert.strictEqual(config.authorization.oneShotTrigger, 'file_added_on_authorized_branch');
 assert.strictEqual(config.runtimeGate.failClosed, true);
 assert.strictEqual(config.transaction.outerBoundary, 'single_postgresql_transaction');

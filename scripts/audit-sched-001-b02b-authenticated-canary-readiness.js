@@ -19,7 +19,7 @@ const config = JSON.parse(fs.readFileSync(paths.config, 'utf8'));
 const evidence = JSON.parse(fs.readFileSync(paths.evidence, 'utf8'));
 const docs = fs.readFileSync(paths.docs, 'utf8');
 const root = fs.readFileSync(paths.root, 'utf8');
-const workflow = fs.readFileSync(paths.workflow, 'utf8');
+const workflow = fs.readFileSync(paths.workflow, 'utf8').replace(/\r\n/g, '\n');
 
 assert.strictEqual(evidence.contractVersion, config.contractVersion);
 assert.strictEqual(evidence.result, 'ready_not_executed');

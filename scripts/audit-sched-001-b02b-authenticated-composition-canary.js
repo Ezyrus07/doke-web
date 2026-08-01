@@ -19,6 +19,8 @@ const paths = {
   executor: 'scripts/execute-sched-001-b02b-authenticated-composition-canary.js',
   test: 'scripts/test-sched-001-b02b-authenticated-composition-canary.js',
   workflow: '.github/workflows/sched-001-b02b-authenticated-composition-canary.yml',
+  evidence: 'docs/validation/SCHED-001-B02B-AUTHENTICATED-COMPOSITION-CANARY.json',
+  docs: 'docs/SCHED-001-B02B-AUTHENTICATED-COMPOSITION-CANARY.md',
   root: 'backend/modules/scheduling/scheduling-composition-root.js'
 };
 Object.values(paths).forEach((file) => assert(fs.existsSync(file), `Missing B02B canary asset: ${file}`));
@@ -27,6 +29,7 @@ const config = JSON.parse(fs.readFileSync(paths.config, 'utf8'));
 const executor = fs.readFileSync(paths.executor, 'utf8');
 const workflow = fs.readFileSync(paths.workflow, 'utf8');
 const root = fs.readFileSync(paths.root, 'utf8');
+const evidence = JSON.parse(fs.readFileSync(paths.evidence, 'utf8'));
 
 assert.strictEqual(config.target.projectRef, 'zwkczgewzbsorbrjuzpb');
 assert.strictEqual(config.target.pullRequest, 25);
@@ -37,6 +40,13 @@ assert.strictEqual(config.target.autoMergeMustRemainDisabled, true);
 assert.strictEqual(config.transaction.finalStatement, 'rollback');
 assert.strictEqual(config.transaction.commitAllowed, false);
 assert.strictEqual(config.transaction.persistentCanaryRowsAllowed, 0);
+assert.strictEqual(config.authorization.status, 'executed_passed');
+assert.strictEqual(config.executionEvidence.runId, 30676215676);
+assert.strictEqual(config.executionEvidence.rolledBack, true);
+assert.strictEqual(config.executionEvidence.residueCountsZero, true);
+assert.strictEqual(evidence.result, 'authenticated_composition_canary_passed');
+assert.strictEqual(evidence.transaction.rolledBack, true);
+assert(Object.values(evidence.residue).every((value) => value === 0));
 assert.deepStrictEqual(config.allowedSecrets, ['SUPABASE_ACCESS_TOKEN', 'SUPABASE_DB_PASSWORD']);
 assert.strictEqual(config.syntheticPersonas.source, 'transaction_scoped_auth_and_public_projections');
 assert.strictEqual(config.syntheticPersonas.emailDomain, 'example.invalid');

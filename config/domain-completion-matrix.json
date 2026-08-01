@@ -1,5 +1,5 @@
 {
-  "version": "1.3.62",
+  "version": "1.3.63",
   "updatedAt": "2026-07-31T15:46:13-03:00",
   "title": "Doke Domain Completion Matrix",
   "purpose": "Single source of truth for domain maturity, data authority, staging evidence, blockers, dependencies and mandatory completion order.",
@@ -1437,7 +1437,9 @@
         "scripts/execute-sched-001-b02b-authenticated-composition-canary.js",
         "scripts/audit-sched-001-b02b-authenticated-composition-canary.js",
         "scripts/test-sched-001-b02b-authenticated-composition-canary.js",
-        ".github/workflows/sched-001-b02b-authenticated-composition-canary.yml"
+        ".github/workflows/sched-001-b02b-authenticated-composition-canary.yml",
+        "docs/SCHED-001-B02B-AUTHENTICATED-COMPOSITION-CANARY.md",
+        "docs/validation/SCHED-001-B02B-AUTHENTICATED-COMPOSITION-CANARY.json"
       ],
       "scanRoots": [
         "assets/js/pages/pedidos",
@@ -1494,20 +1496,14 @@
         "The SCHED-A07 canary passed in one transaction ending in ROLLBACK and proved overlap rejection, adjacent reservation acceptance, DST fallback compatibility, scoped idempotency uniqueness, event uniqueness and order schedule projection.",
         "The canary fixture uses a published service with an approved version because requested orders require canonical service authority.",
         "Post-rollback verification found zero schedule rules, reservations, idempotency rows, schedule events, canary orders and orders linked to a schedule reservation; no test data remained persisted.",
-        "Runtime activation, trusted composition root, ORD-001 wiring, workers, Cron, deploy, production and merge remain blocked.",
+        "ORD-001 wiring, workers, Cron, deploy, production and merge remain blocked.",
         "SCHED-B02A implements a fail-closed trusted composition root that composes the existing PostgreSQL adapter and scheduling service only when the exact staging flag, environment and project ref match; no runtime, database, deployment or production mutation occurred.",
-        "SCHED-B02B execution readiness now provides a one-shot authorized GitHub Actions path, read-only PR/project/schema/persona preflight, one outer SERIALIZABLE transaction, per-command savepoints through the canonical composition root, mandatory final rollback and independent residue verification; remote execution evidence is still pending.",
+        "SCHED-B02B provides a one-shot authorized GitHub Actions path, read-only PR/project/schema preflight, one outer SERIALIZABLE transaction, per-command savepoints through the canonical composition root, mandatory final rollback and independent residue verification.",
         "SCHED-B02B run 30675062764 stopped in the read-only preflight because the frozen exact client email did not match the staging synthetic identity set; the mutation step was skipped and staging mutations remained zero. Attempt 2 resolves only active doke.local identities by canonical role and requires the professional persona to own an approved published service.",
-        "SCHED-B02B runs 30675212259 and 30675383979 stopped in read-only preflight because staging did not contain an active synthetic client matching the required identity projection; both mutation steps were skipped and staging mutations remained zero. Run 30676148237 identified SQLSTATE 42P18 at synthetic order insertion; the jsonb_build_object canary marker parameter lacked an explicit type. ROLLBACK and all 11 residue counters plus authority-count equality were independently verified. Attempt 11 casts that marker to text."
+        "SCHED-B02B run 30676215676 passed at commit 4168cd4983afd34c42c5bfcf48d2723d060a5b18: client, professional, support and administrator allowed/forbidden boundaries passed; idempotent replay, divergent payload rejection, overlap rejection and order projection passed; the transaction ended in ROLLBACK; all 11 residue counters were zero and authority counts were unchanged.",
+        "No production access, migration, deploy, Cron, worker, frontend connection, ORD wiring, billing, infrastructure, merge or auto-merge occurred. SCHED-B02 is closed by the authenticated composition evidence; SCHED-B04 remains open for separately authorized ORD integration."
       ],
       "blockers": [
-        {
-          "id": "SCHED-B02",
-          "severity": "critical",
-          "category": "server_authority",
-          "description": "The trusted composition root exists with an exact staging-only fail-closed gate, but authenticated staging activation and command-boundary canaries are pending.",
-          "targetPhase": "Fase 6"
-        },
         {
           "id": "SCHED-B04",
           "severity": "high",
@@ -1517,10 +1513,8 @@
         }
       ],
       "nextActions": [
-        "Execute the SCHED-B02B authenticated staging composition canary for client, professional, support and administrator personas with rollback and residue verification.",
-        "Activate the trusted scheduling composition root only in staging behind the exact fail-closed environment and project-ref gate after explicit authorization.",
-        "Wire ORD-001 to consume schedule_reservation_id and scheduled_at only as the canonical reservation reference and projection after SCHED-B02 is independently closed.",
-        "Keep production, frontend authority switch, Cron, workers, deployment and merge blocked until SCHED-B02 and SCHED-B04 have independent evidence."
+        "Prepare a separately authorized SCHED-B04 and ORD-001 integration sublot that consumes schedule_reservation_id and scheduled_at only as the canonical reservation reference and projection.",
+        "Keep production, frontend authority switch, Cron, workers, deployment and merge blocked until SCHED-B04 has independent evidence."
       ],
       "exitCriteria": [
         "Concurrent booking attempts cannot reserve the same slot.",
@@ -2960,7 +2954,6 @@
       "status": "hybrid",
       "owner": "ORD-001",
       "blockers": [
-        "SCHED-B02",
         "ORD-B04"
       ]
     },

@@ -1,12 +1,14 @@
 # SCHED-001 — B02B Authenticated Composition Canary Readiness
 
+> Snapshot histórico de readiness. A execução foi concluída com sucesso no run `30676215676`; a evidência atual está em `docs/SCHED-001-B02B-AUTHENTICATED-COMPOSITION-CANARY.md` e `docs/validation/SCHED-001-B02B-AUTHENTICATED-COMPOSITION-CANARY.json`.
+
 ## Objetivo
 
 Congelar o canário autenticado que validará o composition root real de scheduling exclusivamente em `doke-web-staging`, sem ativar produção, frontend authority switch, ORD runtime wiring, Cron, workers ou deploy.
 
-## Estado atual
+## Estado atual (snapshot de readiness)
 
-O composition root B02A existe e permanece fail-closed. Este sublote não ativa o runtime e não acessa o banco. Ele apenas define personas, command boundaries, rollback e autorização.
+No momento deste snapshot, o composition root B02A existia e permanecia fail-closed. O artefato apenas definia personas, command boundaries, rollback e autorização; a execução posterior está registrada na evidência atual indicada acima.
 
 ## Gate exato de runtime
 

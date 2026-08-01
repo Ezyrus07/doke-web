@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "domain": "SCHED-001",
+  "sublot": "SCHED-B02B",
+  "contractVersion": "sched-b02b-authenticated-composition-canary-execution-v1",
+  "result": "authenticated_composition_canary_passed",
+  "observedAt": "2026-08-01T00:43:42.700Z",
+  "githubActions": {
+    "runId": 30676215676,
+    "jobId": 91303926976,
+    "artifactId": 8810541699,
+    "headSha": "4168cd4983afd34c42c5bfcf48d2723d060a5b18"
+  },
+  "pullRequest": {
+    "number": 25,
+    "state": "open",
+    "draft": true,
+    "merged": false,
+    "autoMergeEnabled": false,
+    "head": "ord/ord-001-baseline-audit"
+  },
+  "staging": {
+    "projectRef": "zwkczgewzbsorbrjuzpb",
+    "projectName": "doke-web-staging",
+    "compositionRootEnabled": true,
+    "canonicalSchedulingMigrationsApplied": 2,
+    "generatedSchedulingMigrationsApplied": 0
+  },
+  "personas": {
+    "client": {
+      "allowed": ["create_schedule_hold"],
+      "forbidden": ["confirm_schedule_reservation", "reschedule_reservation", "expire_schedule_holds"],
+      "idempotentReplay": true,
+      "divergentPayloadRejected": true
+    },
+    "professional": {
+      "allowed": ["upsert_availability_rule"],
+      "forbidden": ["confirm_schedule_reservation", "expire_schedule_holds"],
+      "idempotentReplay": true,
+      "divergentPayloadRejected": true
+    },
+    "support": {
+      "allowed": ["upsert_availability_rule", "create_schedule_hold", "confirm_schedule_reservation", "reschedule_reservation", "cancel_schedule_reservation"],
+      "forbidden": ["expire_schedule_holds"],
+      "orderProjectionValidated": true
+    },
+    "admin": {
+      "allowed": ["upsert_availability_rule", "create_schedule_hold", "confirm_schedule_reservation", "reschedule_reservation", "cancel_schedule_reservation"],
+      "forbidden": ["expire_schedule_holds"],
+      "overlapRejected": true,
+      "orderProjectionValidated": true
+    }
+  },
+  "transaction": {
+    "opened": true,
+    "commandSavepoints": true,
+    "finalStatement": "rollback",
+    "committed": false,
+    "rolledBack": true,
+    "authorityCountDeltaZero": true
+  },
+  "residue": {
+    "schedule_availability_rules": 0,
+    "schedule_reservations": 0,
+    "schedule_command_idempotency": 0,
+    "schedule_domain_events": 0,
+    "orders": 0,
+    "auth_users": 0,
+    "users": 0,
+    "user_profiles": 0,
+    "client_profiles": 0,
+    "services": 0,
+    "service_versions": 0
+  },
+  "prohibitedEffects": {
+    "productionAccess": 0,
+    "migrationsApplied": 0,
+    "deployments": 0,
+    "cronActivations": 0,
+    "workerActivations": 0,
+    "frontendConnections": 0,
+    "ordWiringChanges": 0,
+    "billingChanges": 0,
+    "infrastructureChanges": 0,
+    "mergePerformed": false,
+    "autoMergeEnabled": false
+  },
+  "blockers": {
+    "closed": ["SCHED-B02"],
+    "remainingOpen": ["SCHED-B04"]
+  }
+}
