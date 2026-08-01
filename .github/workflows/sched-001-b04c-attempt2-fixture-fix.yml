@@ -1,4 +1,4 @@
-name: Doke SCHED-B04C Attempt 4 Executor-Only Fixture Fix
+name: Doke SCHED-B04C Attempt 5 Sanitized Diagnostic Preservation
 
 on:
   pull_request:
@@ -11,11 +11,11 @@ permissions:
   contents: write
 
 concurrency:
-  group: sched-b04c-attempt4-executor-only-fixture-fix
+  group: sched-b04c-attempt5-sanitized-diagnostics
   cancel-in-progress: false
 
 jobs:
-  publish-executor-fix:
+  publish-sanitized-diagnostics:
     if: >-
       github.event.pull_request.number == 25 &&
       github.event.pull_request.draft == true &&
@@ -36,69 +36,46 @@ jobs:
       - name: Install pinned dependencies
         run: npm ci --ignore-scripts
 
-      - name: Correct replacement fixture only
+      - name: Preserve only sanitized expected and actual denial codes
         shell: bash
         run: |
           set -euo pipefail
           python - <<'PY'
           from pathlib import Path
 
-          executor_path = Path('scripts/execute-sched-001-b04c-authenticated-ord-sched-composition-canary.js')
-          source = executor_path.read_text()
-
-          import_marker = "const { assertTransition } = require('../backend/modules/orders/order-state-machine');\n"
-          repository_import = "const { createTransactionPort } = require('../backend/modules/scheduling/scheduling-postgres-repository');\n"
-          fixed_marker = "const directTransactionPort = createTransactionPort(client);"
-
-          if fixed_marker in source:
-              print('B04C replacement fixture already corrected; no executor mutation required.')
+          path = Path('scripts/execute-sched-001-b04c-authenticated-ord-sched-composition-canary.js')
+          source = path.read_text()
+          marker = "const safeDetails = error && error.details && typeof error.details === 'object'"
+          if marker in source:
+              print('Sanitized diagnostic preservation already present.')
               raise SystemExit(0)
 
-          if repository_import not in source:
-              if import_marker not in source:
-                  raise SystemExit('executor import marker missing')
-              source = source.replace(import_marker, import_marker + repository_import, 1)
-
-          start_marker = "  const replacementA = await root.createScheduleHold(commandContext(actors.support, 'replacement-a-hold', {"
-          end_marker = "  const partialHold = await root.createScheduleHold(commandContext(actors.client, 'partial-hold', {"
-          start = source.find(start_marker)
-          end = source.find(end_marker, start + 1)
-          if start < 0 or end < 0 or end <= start:
-              raise SystemExit('replacement fixture structural markers missing')
-
-          new_block = """  const replacementA = await root.createScheduleHold(commandContext(actors.support, 'replacement-a-hold', {
-            orderId: fixtures.orders.replacement,
-            professionalId: fixtures.personas.professional.id,
-            ...range(12, 13)
-          }, correlationId));
-          const replacementAConfirmed = await root.confirmScheduleReservation(commandContext(actors.support, 'replacement-a-confirm', {
-            reservationId: replacementA.reservation.id,
-            expectedVersion: 1
-          }, correlationId));
-          const replacementOrderBeforeGuard = await readOrder(client, fixtures.orders.replacement);
-          assertOrderProjection(replacementOrderBeforeGuard, replacementAConfirmed.reservation, 'scheduled');
-          const directTransactionPort = createTransactionPort(client);
-          await expectCode(
-            () => directTransactionPort.projectOrderSchedule(
-              fixtures.orders.replacement,
-              mainHold.reservation.id,
-              mainHold.reservation.startsAt
-            ),
-            'DOKE_SCHEDULE_ORDER_PROJECTION_FAILED'
-          );
-          const replacementOrder = await readOrder(client, fixtures.orders.replacement);
-          requireExact(replacementOrder.schedule_reservation_id, replacementA.reservation.id, 'DOKE_SCHED_B04C_REPLACEMENT_OVERWROTE_REFERENCE');
-          requireExact(
-            new Date(replacementOrder.scheduled_at).toISOString(),
-            new Date(replacementAConfirmed.reservation.startsAt).toISOString(),
-            'DOKE_SCHED_B04C_REPLACEMENT_CHANGED_TIME'
-          );
-
+          old = """  const code = String(error && error.code || 'DOKE_SCHED_B04C_UNEXPECTED_FAILURE');
+            const message = String(error && error.message || '');
+            if (/^DOKE_[A-Z0-9_]+$/.test(message)) return { code: message, message };
+            if (code.startsWith('DOKE_')) return { code, message: code };
           """
-          executor_path.write_text(source[:start] + new_block + source[end:])
+          new = """  const code = String(error && error.code || 'DOKE_SCHED_B04C_UNEXPECTED_FAILURE');
+            const message = String(error && error.message || '');
+            const safeDetails = error && error.details && typeof error.details === 'object'
+              ? Object.freeze({
+                  expectedCode: String(error.details.expectedCode || ''),
+                  actualCode: error.details.actualCode == null ? null : String(error.details.actualCode)
+                })
+              : null;
+            if (/^DOKE_[A-Z0-9_]+$/.test(message)) {
+              return safeDetails ? { code: message, message, details: safeDetails } : { code: message, message };
+            }
+            if (code.startsWith('DOKE_')) {
+              return safeDetails ? { code, message: code, details: safeDetails } : { code, message: code };
+            }
+          """
+          if old not in source:
+              raise SystemExit('safeError structural block not found')
+          path.write_text(source.replace(old, new, 1))
           PY
 
-      - name: Validate corrected canary package
+      - name: Validate diagnostic-only change
         run: |
           set -euo pipefail
           node --check scripts/execute-sched-001-b04c-authenticated-ord-sched-composition-canary.js
@@ -112,16 +89,16 @@ jobs:
           npm run audit:domain-completion-matrix
           git diff --check
 
-      - name: Publish executor correction
+      - name: Publish sanitized diagnostic support
         shell: bash
         run: |
           set -euo pipefail
           if git diff --quiet -- scripts/execute-sched-001-b04c-authenticated-ord-sched-composition-canary.js; then
-            echo "Executor already corrected; nothing to publish."
+            echo "Diagnostic support already present; nothing to publish."
             exit 0
           fi
           git config user.name "doke-ci"
           git config user.email "doke-ci@users.noreply.github.com"
           git add scripts/execute-sched-001-b04c-authenticated-ord-sched-composition-canary.js
-          git commit -m "fix(sched): respect one active reservation in B04C canary"
+          git commit -m "chore(sched): preserve sanitized B04C denial diagnostics"
           git push origin HEAD:ord/ord-001-baseline-audit
