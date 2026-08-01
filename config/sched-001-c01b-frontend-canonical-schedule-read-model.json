@@ -1,0 +1,108 @@
+{
+  "schemaVersion": 1,
+  "domain": "SCHED-001",
+  "dependentDomain": "ORD-001",
+  "sublot": "SCHED-C01B",
+  "contractVersion": "sched-c01b-frontend-canonical-schedule-read-model-v1",
+  "status": "repository_only_read_model_implemented",
+  "scope": "map_and_present_canonical_schedule_without_remote_command_activation",
+  "target": {
+    "repository": "Ezyrus07/doke-web",
+    "pullRequest": 25,
+    "branch": "ord/ord-001-baseline-audit",
+    "environmentAccess": "none"
+  },
+  "authorityModel": {
+    "reservationReference": "orders.schedule_reservation_id",
+    "timeProjection": "orders.scheduled_at",
+    "scheduledStatus": "orders.status=scheduled",
+    "authorityValues": [
+      "none",
+      "client_intent",
+      "canonical_confirmed",
+      "incomplete_projection"
+    ],
+    "canonicalConfirmedRequiresCompleteTuple": true,
+    "incompleteProjectionFailsClosed": true,
+    "metadataMayClaimCanonicalAuthority": false,
+    "browserMayMutateCanonicalFields": false
+  },
+  "implementation": {
+    "ordersRepository": {
+      "mapsScheduleReservationIdFromCanonicalColumn": true,
+      "mapsScheduledAtFromCanonicalColumn": true,
+      "derivesScheduleAuthority": true,
+      "derivesHasCanonicalSchedule": true,
+      "exposesDerivationForContractTests": true,
+      "remoteMetadataFallbackForCanonicalFields": false
+    },
+    "ordersSurface": {
+      "canonicalConfirmedPresentation": true,
+      "clientIntentPresentation": true,
+      "incompleteProjectionErrorPresentation": true,
+      "advertisedAvailabilityPresentation": true,
+      "availabilitySeparatedFromConfirmedBooking": true,
+      "canonicalFieldsExposedAsReadOnlyDataset": true
+    },
+    "ordersService": {
+      "scheduledReadLabelAdded": true,
+      "genericScheduledTransitionAdded": false,
+      "genericScheduledActionEndpointAdded": false,
+      "remoteSchedulingCommandsActivated": false
+    },
+    "quoteSurface": {
+      "desiredDateRemainsClientIntent": true,
+      "submitsScheduleReservationId": false,
+      "submitsScheduledAt": false
+    }
+  },
+  "presentation": {
+    "canonicalConfirmedPrefix": "Agendado:",
+    "clientIntentPrefix": "Data desejada:",
+    "incompleteProjectionLabel": "Agenda indisponível: atualize o pedido",
+    "advertisedAvailabilityPrefix": "Disponibilidade do anúncio:",
+    "invalidCanonicalTimestampFailsClosed": true,
+    "browserTimezoneUsedOnlyForPresentation": true
+  },
+  "validation": {
+    "staticAudit": "audit:sched-001-c01b-frontend-canonical-schedule-read-model",
+    "runtimeTest": "test:sched-001-c01b-frontend-canonical-schedule-read-model",
+    "permanentWorkflow": ".github/workflows/sched-001-c01b-frontend-canonical-schedule-read-model.yml"
+  },
+  "prohibitedActions": [
+    "staging_read",
+    "staging_mutation",
+    "migration_application",
+    "deployment",
+    "frontend_schedule_command_activation",
+    "direct_database_write",
+    "optimistic_canonical_schedule_mutation",
+    "cron_activation",
+    "worker_activation",
+    "production_access",
+    "pull_request_merge",
+    "auto_merge_enablement",
+    "real_user_data"
+  ],
+  "effects": {
+    "runtimeFilesModified": 3,
+    "frontendReadBehaviorChanged": true,
+    "frontendWriteBehaviorChanged": false,
+    "stagingReads": 0,
+    "stagingMutations": 0,
+    "migrationsApplied": 0,
+    "deployments": 0,
+    "productionAccess": 0,
+    "mergePerformed": false
+  },
+  "nextImplementation": {
+    "sublot": "SCHED-C01C",
+    "scope": [
+      "add deterministic browser presentation coverage for canonical_confirmed, client_intent and incomplete_projection",
+      "verify order detail and message summary consume the same read model",
+      "keep every remote scheduling command disabled"
+    ],
+    "stagingAuthorizationRequired": false,
+    "frontendCommandActivationAllowed": false
+  }
+}
