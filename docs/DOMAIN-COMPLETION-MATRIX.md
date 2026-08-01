@@ -513,7 +513,8 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - **ORD-B05 · HIGH · staging_release:** ORD-A08 release identity, ORD-A09A provider evaluation, the ORD-A09B0 provider-neutral adapter boundary, provider selection handoff, selection intent firewall and adapter conformance suite are complete. Railway is recommended as the external staging release provider, but no explicit provider selection, provider-specific adapter, account, billing, secrets, infrastructure, rollback command or deployment exists. ORD-B05 remains open until exactly I_EXPLICITLY_SELECT_RAILWAY_FOR_DOKE_STAGING authorizes only non-secret adapter preparation; every external action remains separately blocked. _(Fase 6)_
 
 **Próximas ações:**
-- Retry ORD-B04 through the ORD-001/SCHED-001 B04C composition canary only under its separate exact staging authorization.
+- Keep ORD-B04 handed to SCHED-001; B04D is applied and verified on staging, and closure remains blocked on a separately authorized B04C retry.
+- Retry the authenticated ORD/SCHED composition canary separately and require confirmation, reschedule, cancellation, rollback and zero-residue evidence.
 - Keep generic scheduled transitions and direct schedule projection writes prohibited.
 - Keep deployment, production and merge blocked pending independent release authorization.
 
