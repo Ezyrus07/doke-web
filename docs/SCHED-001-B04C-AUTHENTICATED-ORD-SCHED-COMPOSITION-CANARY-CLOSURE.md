@@ -4,6 +4,12 @@
 
 The exactly authorized authenticated ORD/SCHED composition canary passed on Doke staging in run `30716088197`, job `91411759384`, at head `c2bddcd061d2136e07d8c3790abf8f66884c480f`.
 
+Exact result:
+
+```text
+authenticated_ord_sched_composition_canary_passed
+```
+
 The authorization was consumed and cannot be reused.
 
 ## Proven behavior
