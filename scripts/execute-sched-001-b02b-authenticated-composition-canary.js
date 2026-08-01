@@ -34,9 +34,25 @@ function safeError(error) {
   const known = String(error && error.code || 'DOKE_SCHED_B02B_UNEXPECTED_FAILURE');
   const safeMessage = String(error && error.message || '');
   if (/^DOKE_[A-Z0-9_]+$/.test(safeMessage)) return { code: safeMessage, message: safeMessage };
+  const diagnosticClasses = Object.freeze({
+    '22007': 'invalid_datetime',
+    '22P02': 'invalid_text_representation',
+    '23502': 'not_null_violation',
+    '23503': 'foreign_key_violation',
+    '23505': 'unique_violation',
+    '23514': 'check_violation',
+    '25P02': 'transaction_aborted',
+    '42601': 'syntax_error',
+    '42703': 'undefined_column',
+    '42883': 'undefined_function',
+    'P0001': 'raised_exception',
+    ERR_ASSERTION: 'runtime_assertion'
+  });
+  if (known.startsWith('DOKE_')) return { code: known, message: known };
   return {
-    code: known.startsWith('DOKE_') ? known : 'DOKE_SCHED_B02B_UNEXPECTED_FAILURE',
-    message: known.startsWith('DOKE_') ? known : 'The authenticated staging composition canary failed closed.'
+    code: 'DOKE_SCHED_B02B_UNEXPECTED_FAILURE',
+    message: 'The authenticated staging composition canary failed closed.',
+    diagnosticClass: diagnosticClasses[known] || 'unclassified'
   };
 }
 
