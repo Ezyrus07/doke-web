@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "domain": "SCHED-001",
+  "dependentDomain": "ORD-001",
+  "sublot": "SCHED-B04D",
+  "result": "repository_readiness_prepared",
+  "rootCause": {
+    "runId": 30711882162,
+    "jobId": 91400663624,
+    "failureCode": "DOKE_ORDER_TRANSITION_INVALID",
+    "failedBoundary": "canonical_reservation_cancel_clears_projection_and_restores_accepted",
+    "rolledBack": true,
+    "postRollbackVerification": "passed",
+    "residueCountsZero": true,
+    "authorityCountDeltaZero": true
+  },
+  "assertions": {
+    "genericScheduledToAcceptedRemainsForbidden": true,
+    "privateProjectionFunctionRequired": true,
+    "privateClearFunctionRequired": true,
+    "serviceRoleOnlyExecution": true,
+    "matchingOrderReservationAndTimeRequired": true,
+    "directCanonicalFieldWritesForbidden": true,
+    "referenceAndTimeClearAtomically": true,
+    "canonicalScheduledToAcceptedRestrictedToClearContext": true,
+    "productionAccess": 0,
+    "stagingMigrationsApplied": 0,
+    "manualMigrationHistoryMutations": 0,
+    "deployments": 0,
+    "frontendConnections": 0,
+    "cronActivations": 0,
+    "workerActivations": 0,
+    "mergePerformed": false,
+    "autoMergeEnabled": false
+  },
+  "expectedRepositoryEvidence": [
+    "supabase/migrations/20260801183000_sched_b04d_canonical_order_projection_guard.sql",
+    "backend/modules/scheduling/scheduling-postgres-repository.js",
+    "config/sched-001-b04d-canonical-order-projection-guard-readiness.json",
+    "docs/SCHED-001-B04D-CANONICAL-ORDER-PROJECTION-GUARD-READINESS.md",
+    "scripts/audit-sched-001-b04d-canonical-order-projection-guard-readiness.js",
+    "scripts/test-sched-001-b04d-canonical-order-projection-guard-runtime.js",
+    ".github/workflows/sched-001-b04d-canonical-order-projection-guard-readiness.yml"
+  ],
+  "nextAuthorization": "I_EXPLICITLY_AUTHORIZE_SCHED_B04D_CANONICAL_ORDER_PROJECTION_GUARD_MIGRATION_ON_DOKE_STAGING"
+}
