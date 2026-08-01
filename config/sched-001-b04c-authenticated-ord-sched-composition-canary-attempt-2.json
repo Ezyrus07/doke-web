@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "domain": "SCHED-001",
+  "dependentDomain": "ORD-001",
+  "sublot": "SCHED-B04C",
+  "attempt": 2,
+  "authorizationPhrase": "I_EXPLICITLY_AUTHORIZE_SCHED_B04C_AUTHENTICATED_ORD_SCHED_COMPOSITION_CANARIES_ON_DOKE_STAGING",
+  "authorizationScope": "staging_transactional_canary_rollback_and_residue_verification_only",
+  "priorAttempt": {
+    "runId": 30711080174,
+    "jobId": 91398535644,
+    "result": "failed_closed",
+    "diagnosticSqlState": "23505",
+    "diagnosticClass": "unique_violation",
+    "rootCause": "canary_fixture_violated_canonical_one_active_reservation_per_order_invariant",
+    "transactionRolledBack": true,
+    "postRollbackVerification": "passed",
+    "residueCountsZero": true,
+    "authorityCountDeltaZero": true
+  },
+  "correction": {
+    "databaseChanged": false,
+    "schemaChanged": false,
+    "runtimeAuthorityChanged": false,
+    "executorFixtureChanged": true,
+    "strategy": "exercise_projection_replacement_guard_with_a_different_existing_canonical_reservation_via_postgresql_transaction_port"
+  },
+  "expectedProtections": {
+    "pullRequestMustRemainOpenDraftAndUnmerged": true,
+    "exactHeadShaRequired": true,
+    "serializableTransaction": true,
+    "finalStatement": "ROLLBACK",
+    "persistentRowsAllowed": 0,
+    "productionAccessAllowed": false,
+    "migrationAllowed": false,
+    "deploymentAllowed": false,
+    "frontendAuthoritySwitchAllowed": false,
+    "cronOrWorkerActivationAllowed": false,
+    "mergeAllowed": false
+  }
+}
