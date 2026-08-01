@@ -1,0 +1,50 @@
+name: Doke SCHED-C01B Frontend Canonical Schedule Read Model
+
+on:
+  pull_request:
+    branches:
+      - search/search-ux02-intent-favorites-clean
+    paths:
+      - 'assets/js/repositories/orders-repository.js'
+      - 'assets/js/services/orders-service.js'
+      - 'assets/js/pages/orcamento.js'
+      - 'assets/js/pages/pedidos-local-orders.js'
+      - 'config/sched-001-c01b-frontend-canonical-schedule-read-model.json'
+      - 'docs/SCHED-001-C01B-FRONTEND-CANONICAL-SCHEDULE-READ-MODEL.md'
+      - 'docs/validation/SCHED-001-C01B-FRONTEND-CANONICAL-SCHEDULE-READ-MODEL.json'
+      - 'scripts/audit-sched-001-c01b-frontend-canonical-schedule-read-model.js'
+      - 'scripts/test-sched-001-c01b-frontend-canonical-schedule-read-model.js'
+      - '.github/workflows/sched-001-c01b-frontend-canonical-schedule-read-model.yml'
+      - 'config/domain-completion-matrix.json'
+      - 'package.json'
+
+permissions:
+  contents: read
+
+jobs:
+  read-model:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install pinned dependencies
+        run: npm ci --ignore-scripts
+      - name: Audit C01B read model
+        run: npm run audit:sched-001-c01b-frontend-canonical-schedule-read-model
+      - name: Test C01B read model
+        run: npm run test:sched-001-c01b-frontend-canonical-schedule-read-model
+      - name: Preserve C01A readiness history
+        run: |
+          npm run audit:sched-001-c01a-frontend-canonical-authority-readiness
+          npm run test:sched-001-c01a-frontend-canonical-authority-readiness
+      - name: Validate cumulative scheduling authority
+        run: |
+          npm run audit:sched-001-b04c-authenticated-ord-sched-composition-canary-closure
+          node scripts/audit-sched-001-b04d-canonical-order-projection-guard-readiness.js
+          node scripts/test-sched-001-b04d-canonical-order-projection-guard-runtime.js
+          npm run audit:domain-completion-matrix
+          git diff --check
