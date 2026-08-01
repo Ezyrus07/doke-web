@@ -137,8 +137,8 @@ async function loadPersonas(client) {
   const response = await client.query({
     name: 'sched-b02b-preflight-personas',
     text: `with synthetic_personas as (
-             select auth_user.id::text,
-                    lower(auth_user.email) as email,
+             select app_user.id::text,
+                    lower(app_user.email) as email,
                     app_user.role,
                     app_user.status,
                     row_number() over (
@@ -156,11 +156,10 @@ async function loadPersonas(client) {
                             and service.status = 'published'
                             and service.moderation_status in ('published', 'changes_pending_review', 'changes_required')
                         ) then 0 else 1 end,
-                        lower(auth_user.email), auth_user.id
+                        lower(app_user.email), app_user.id
                     ) as role_rank
-             from auth.users auth_user
-             join public.users app_user on app_user.id = auth_user.id
-             where lower(auth_user.email) like ('%@' || $1::text)
+             from public.users app_user
+             where lower(app_user.email) like ('%@' || $1::text)
                and app_user.role = any($2::text[])
                and app_user.status = 'active'
            )
@@ -461,6 +460,7 @@ function publicPreflight(preflight) {
     compositionRootEnabled: preflight.activation.enabled,
     migrationHistory: preflight.schema,
     syntheticPersonas: Object.fromEntries(Object.keys(preflight.personas).map((name) => [name, 'validated'])),
+    trustedActorContextSource: 'public.users synthetic identity projection',
     syntheticPublishedService: true,
     preExistingCanaryResidue: preflight.residue,
     authorityCountsBefore: preflight.authorityCounts
