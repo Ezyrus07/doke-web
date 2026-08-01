@@ -1,0 +1,141 @@
+{
+  "schemaVersion": 1,
+  "domain": "SCHED-001",
+  "dependentDomain": "ORD-001",
+  "sublot": "SCHED-C01A",
+  "contractVersion": "sched-c01a-frontend-canonical-scheduling-authority-readiness-v1",
+  "status": "repository_only_readiness_frozen",
+  "scope": "freeze_frontend_read_and_command_boundaries_without_activation",
+  "target": {
+    "repository": "Ezyrus07/doke-web",
+    "pullRequest": 25,
+    "branch": "ord/ord-001-baseline-audit",
+    "environmentAccess": "none"
+  },
+  "canonicalAuthority": {
+    "reservationReference": "orders.schedule_reservation_id",
+    "timeProjection": "orders.scheduled_at",
+    "scheduledStatus": "orders.status=scheduled",
+    "validScheduledTuple": [
+      "schedule_reservation_id is present",
+      "scheduled_at is present",
+      "status is scheduled",
+      "referenced reservation is confirmed and belongs to the order"
+    ],
+    "incompleteProjectionPolicy": "fail_closed",
+    "browserMayInferAuthorityFromDateAlone": false,
+    "browserMayWriteCanonicalFieldsDirectly": false
+  },
+  "observedFrontendState": {
+    "ordersRepository": {
+      "remoteScheduledAtMapped": true,
+      "remoteScheduleReservationIdMapped": false,
+      "explicitScheduleAuthorityDerived": false,
+      "explicitHasCanonicalScheduleDerived": false
+    },
+    "ordersService": {
+      "genericBrowserScheduledTransitionDefined": false,
+      "genericScheduledActionEndpointDefined": false,
+      "preserveNoManualScheduledTransition": true
+    },
+    "quoteSurface": {
+      "path": "assets/js/pages/orcamento.js",
+      "desiredDateSubmitted": true,
+      "legacyDateAliasSubmitted": true,
+      "canonicalScheduledAtSubmitted": false,
+      "canonicalReservationReferenceSubmitted": false,
+      "classification": "client_intent_only"
+    },
+    "ordersSurface": {
+      "path": "assets/js/pages/pedidos-local-orders.js",
+      "serviceAvailabilityRendered": true,
+      "canonicalReservationProjectionRendered": false,
+      "scheduledStatusPresentationDefined": false,
+      "risk": "service availability can be mistaken for a confirmed booking"
+    }
+  },
+  "frontendReadContract": {
+    "requiredFields": [
+      "scheduleReservationId",
+      "scheduledAt",
+      "scheduleAuthority",
+      "hasCanonicalSchedule"
+    ],
+    "scheduleAuthorityValues": [
+      "none",
+      "client_intent",
+      "canonical_confirmed",
+      "incomplete_projection"
+    ],
+    "canonicalConfirmedRequiresCompleteTuple": true,
+    "incompleteProjectionMustRenderErrorState": true,
+    "serviceAvailabilityMustRemainSeparateFromBooking": true,
+    "timezonePresentation": "render server UTC projection in the user's explicit IANA timezone without changing authority"
+  },
+  "frontendCommandContract": {
+    "directSupabaseWritesAllowed": false,
+    "genericOrderStatusScheduledAllowed": false,
+    "clientIntentSubmissionAllowed": true,
+    "holdRequestRequiresServerCommandBoundary": true,
+    "confirmationRequiresServerComposition": true,
+    "rescheduleRequiresServerComposition": true,
+    "cancellationRequiresServerComposition": true,
+    "optimisticCanonicalFieldMutationAllowed": false,
+    "compensatingBrowserWritesAllowed": false,
+    "idempotencyKeyRequiredForEveryCommand": true,
+    "serverResponseMustBeReReadBeforePresentation": true
+  },
+  "surfacePlan": [
+    {
+      "surface": "orcamento",
+      "role": "capture client scheduling intent only",
+      "activationAtC01A": false
+    },
+    {
+      "surface": "pedidos cards and detail",
+      "role": "read canonical projection and distinguish it from service availability",
+      "activationAtC01A": false
+    },
+    {
+      "surface": "mensagens order summary",
+      "role": "mirror canonical schedule read model only",
+      "activationAtC01A": false
+    }
+  ],
+  "nextImplementation": {
+    "sublot": "SCHED-C01B",
+    "scope": [
+      "map schedule_reservation_id into the browser order DTO",
+      "derive fail-closed scheduleAuthority and hasCanonicalSchedule",
+      "add read-only scheduled presentation to order surfaces",
+      "separate service availability from confirmed booking copy",
+      "add local contract tests without enabling remote commands"
+    ],
+    "stagingAuthorizationRequired": false,
+    "frontendCommandActivationAllowed": false
+  },
+  "prohibitedActions": [
+    "staging_read",
+    "staging_mutation",
+    "migration_application",
+    "deployment",
+    "frontend_command_activation",
+    "direct_database_write",
+    "cron_activation",
+    "worker_activation",
+    "production_access",
+    "pull_request_merge",
+    "auto_merge_enablement",
+    "real_user_data"
+  ],
+  "effects": {
+    "runtimeFilesModified": 0,
+    "frontendBehaviorChanged": false,
+    "stagingReads": 0,
+    "stagingMutations": 0,
+    "migrationsApplied": 0,
+    "deployments": 0,
+    "productionAccess": 0,
+    "mergePerformed": false
+  }
+}
