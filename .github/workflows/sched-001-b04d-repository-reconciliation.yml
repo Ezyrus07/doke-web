@@ -1,0 +1,201 @@
+name: Doke SCHED-B04D Repository Reconciliation
+
+on:
+  pull_request:
+    branches:
+      - search/search-ux02-intent-favorites-clean
+    paths:
+      - '.github/workflows/sched-001-b04d-repository-reconciliation.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sched-b04d-repository-reconciliation
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    if: >-
+      github.event.pull_request.number == 25 &&
+      github.event.pull_request.draft == true &&
+      github.event.pull_request.head.ref == 'ord/ord-001-baseline-audit'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout PR head branch
+        uses: actions/checkout@v4
+        with:
+          ref: ord/ord-001-baseline-audit
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install pinned dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Wire adapter and reconcile B04D governance
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          adapter_path = Path('backend/modules/scheduling/scheduling-postgres-repository.js')
+          adapter = adapter_path.read_text()
+          project_start = adapter.find('    async projectOrderSchedule(')
+          clear_start = adapter.find('    async clearOrderSchedule(', project_start + 1)
+          expired_start = adapter.find('    async listExpiredHolds(', clear_start + 1)
+          if project_start < 0 or clear_start < 0 or expired_start < 0:
+              raise SystemExit('Could not isolate scheduling projection adapter methods')
+
+          methods = """    async projectOrderSchedule(orderId, reservationId, scheduledAt) {
+                const response = await query(
+                  `/* sched-a05:project-order-schedule */
+                   select *
+                   from private.apply_order_schedule_projection(
+                     $1::uuid,
+                     $2::uuid,
+                     $3::timestamptz
+                   )`,
+                  [orderId, reservationId, scheduledAt]
+                );
+                return requireRow(response, 'DOKE_SCHEDULE_ORDER_PROJECTION_FAILED');
+              },
+
+              async clearOrderSchedule(orderId, reservationId) {
+                const response = await query(
+                  `/* sched-a05:clear-order-schedule */
+                   select *
+                   from private.clear_order_schedule_projection(
+                     $1::uuid,
+                     $2::uuid
+                   )`,
+                  [orderId, reservationId]
+                );
+                return requireRow(response, 'DOKE_SCHEDULE_ORDER_CLEAR_FAILED');
+              },
+
+          """
+          adapter_path.write_text(adapter[:project_start] + methods + adapter[expired_start:])
+
+          config_path = Path('config/sched-001-b04d-canonical-order-projection-guard-readiness.json')
+          config = json.loads(config_path.read_text())
+          config['capabilities']['adapterWiringPrepared'] = True
+          config['capabilities']['localStaticTestsPrepared'] = True
+          config_path.write_text(json.dumps(config, indent=2) + '\n')
+
+          package_path = Path('package.json')
+          package = json.loads(package_path.read_text())
+          scripts = package.setdefault('scripts', {})
+          scripts['audit:sched-001-b04d-canonical-order-projection-guard-readiness'] = 'node scripts/audit-sched-001-b04d-canonical-order-projection-guard-readiness.js'
+          scripts['test:sched-001-b04d-canonical-order-projection-guard-runtime'] = 'node scripts/test-sched-001-b04d-canonical-order-projection-guard-runtime.js'
+          package_path.write_text(json.dumps(package, indent=2) + '\n')
+
+          matrix_path = Path('config/domain-completion-matrix.json')
+          matrix = json.loads(matrix_path.read_text())
+          matrix['version'] = '1.3.68'
+          matrix['updatedAt'] = '2026-08-01T15:15:00-03:00'
+          domains = {domain['id']: domain for domain in matrix['domains']}
+          sched = domains['SCHED-001']
+          order = domains['ORD-001']
+
+          required_paths = [
+            'supabase/migrations/20260801183000_sched_b04d_canonical_order_projection_guard.sql',
+            'config/sched-001-b04d-canonical-order-projection-guard-readiness.json',
+            'docs/SCHED-001-B04D-CANONICAL-ORDER-PROJECTION-GUARD-READINESS.md',
+            'docs/validation/SCHED-001-B04D-CANONICAL-ORDER-PROJECTION-GUARD-READINESS.json',
+            'scripts/audit-sched-001-b04d-canonical-order-projection-guard-readiness.js',
+            'scripts/test-sched-001-b04d-canonical-order-projection-guard-runtime.js',
+            '.github/workflows/sched-001-b04d-canonical-order-projection-guard-readiness.yml'
+          ]
+          for path in required_paths:
+              if path not in sched['requiredPaths']:
+                  sched['requiredPaths'].append(path)
+
+          test_names = [
+            'audit:sched-001-b04d-canonical-order-projection-guard-readiness',
+            'test:sched-001-b04d-canonical-order-projection-guard-runtime'
+          ]
+          for name in test_names:
+              if name not in sched['tests']:
+                  sched['tests'].append(name)
+
+          sched_evidence = [
+            'The exactly authorized B04C staging canary reached canonical reservation cancellation and exposed DOKE_ORDER_TRANSITION_INVALID because the deployed ORD trigger rejects scheduled-to-accepted restoration.',
+            'The failed B04C transaction ended in ROLLBACK; all fifteen residue counters were zero and all authority counts were unchanged.',
+            'SCHED-B04D prepares private service-role-only projection and clear functions, transaction-local context validation, direct canonical-field write rejection and adapter wiring without applying any migration.',
+            'The generic ORD transition graph remains closed: scheduled-to-accepted is permitted only when the private canonical clear function removes both reservation reference and time projection.'
+          ]
+          for item in sched_evidence:
+              if item not in sched['evidence']:
+                  sched['evidence'].append(item)
+
+          for blocker in sched['blockers']:
+              if blocker['id'] == 'SCHED-B04':
+                  blocker['description'] = 'B04B local wiring and B04C authenticated staging execution reached canonical cancellation, but the deployed ORD trigger rejects the required scheduled-to-accepted restoration. B04D repository guards are prepared; the blocker remains open until the exactly authorized staging migration is applied and a separately authorized B04C retry passes with rollback and zero residue.'
+
+          sched['nextActions'] = [
+            'Apply SCHED-B04D to Doke staging only after the exact independent migration authorization.',
+            'Verify migration history and private function grants without manually mutating supabase_migrations.schema_migrations.',
+            'Retry B04C only under a separate exact authorization after the B04D migration is independently verified.',
+            'Keep frontend authority switch, deployment, Cron, workers, production and merge blocked.'
+          ]
+
+          order_evidence = [
+            'The exactly authorized B04C staging canary proved that canonical cancellation currently stops at the deployed ORD trigger with DOKE_ORDER_TRANSITION_INVALID before scheduled orders can return to accepted.',
+            'B04D preserves the generic ORD lifecycle graph and introduces a private SCHED composition context so only atomic reference-and-time clearing can perform scheduled-to-accepted restoration.',
+            'No staging migration, production access, deployment, frontend activation or merge occurred while preparing B04D.'
+          ]
+          for item in order_evidence:
+              if item not in order['evidence']:
+                  order['evidence'].append(item)
+
+          for blocker in order['blockers']:
+              if blocker['id'] == 'ORD-B04':
+                  blocker['description'] = 'ORD-B04 remains handed to SCHED-001. The canonical reservation reference and projection-only scheduled_at wiring are local, but the deployed state-machine trigger rejects canonical scheduled-to-accepted restoration. SCHED-B04D is repository-ready and must be applied to staging under exact authorization before a separate B04C retry can close this blocker.'
+
+          order['nextActions'] = [
+            'Apply the SCHED-B04D canonical projection guard to staging only after its exact migration authorization.',
+            'Retry the authenticated ORD/SCHED canary separately and require confirmation, reschedule, cancellation, rollback and zero-residue evidence.',
+            'Keep generic scheduled transitions and direct schedule projection writes prohibited.',
+            'Keep deployment, production and merge blocked pending independent release authorization.'
+          ]
+
+          matrix_path.write_text(json.dumps(matrix, indent=2) + '\n')
+          PY
+
+      - name: Regenerate deterministic matrix derivatives
+        run: npm run write:domain-completion-matrix
+
+      - name: Validate B04D repository package
+        run: |
+          set -euo pipefail
+          npm run audit:sched-001-b04d-canonical-order-projection-guard-readiness
+          npm run test:sched-001-b04d-canonical-order-projection-guard-runtime
+          node scripts/audit-sched-001-b04c-authenticated-ord-sched-composition-canary-execution.js
+          node scripts/test-sched-001-b04c-authenticated-ord-sched-composition-canary-execution.js
+          node scripts/audit-sched-001-b04b-ord-canonical-wiring-implementation.js
+          node scripts/test-sched-001-b04b-ord-canonical-wiring-runtime.js
+          node scripts/audit-sched-001-a05-persistence-readiness.js
+          node scripts/test-sched-001-a05-postgres-repository-runtime.js
+          node scripts/audit-ord-001-a11-scheduling-authority-handoff.js
+          npm run audit:domain-completion-matrix
+          git diff --check
+
+      - name: Publish reconciled B04D repository state
+        run: |
+          set -euo pipefail
+          git config user.name "doke-ci"
+          git config user.email "doke-ci@users.noreply.github.com"
+          git add backend/modules/scheduling/scheduling-postgres-repository.js
+          git add config/sched-001-b04d-canonical-order-projection-guard-readiness.json
+          git add config/domain-completion-matrix.json
+          git add docs/DOMAIN-COMPLETION-MATRIX.md
+          git add package.json
+          git add -f reports/generated/domain-completion-matrix-report.json
+          git commit -m "feat(sched): wire B04D canonical order projection guard"
+          git push origin HEAD:ord/ord-001-baseline-audit
