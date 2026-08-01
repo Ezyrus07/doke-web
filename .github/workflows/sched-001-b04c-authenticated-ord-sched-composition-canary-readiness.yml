@@ -6,11 +6,16 @@ on:
       - search/search-ux02-intent-favorites-clean
     paths:
       - 'config/sched-001-b04c-authenticated-ord-sched-composition-canary-readiness.json'
+      - 'config/sched-001-b04c-authenticated-ord-sched-composition-canary-execution.json'
       - 'docs/SCHED-001-B04C-AUTHENTICATED-ORD-SCHED-COMPOSITION-CANARY-READINESS.md'
       - 'docs/validation/SCHED-001-B04C-AUTHENTICATED-ORD-SCHED-COMPOSITION-CANARY-READINESS.json'
       - 'scripts/audit-sched-001-b04c-authenticated-ord-sched-composition-canary-readiness.js'
       - 'scripts/test-sched-001-b04c-authenticated-ord-sched-composition-canary-readiness.js'
+      - 'scripts/audit-sched-001-b04c-authenticated-ord-sched-composition-canary-execution.js'
+      - 'scripts/test-sched-001-b04c-authenticated-ord-sched-composition-canary-execution.js'
+      - 'scripts/execute-sched-001-b04c-authenticated-ord-sched-composition-canary.js'
       - '.github/workflows/sched-001-b04c-authenticated-ord-sched-composition-canary-readiness.yml'
+      - '.github/workflows/sched-001-b04c-authenticated-ord-sched-composition-canary.yml'
       - 'backend/modules/orders/order-scheduling-authority.js'
       - 'backend/modules/orders/orders-service.js'
       - 'backend/modules/orders/order-state-machine.js'
@@ -37,6 +42,11 @@ jobs:
         run: npm run audit:sched-001-b04c-authenticated-ord-sched-composition-canary-readiness
       - name: Test B04C authenticated composition contract
         run: npm run test:sched-001-b04c-authenticated-ord-sched-composition-canary-readiness
+      - name: Validate inert B04C execution package
+        run: |
+          node --check scripts/execute-sched-001-b04c-authenticated-ord-sched-composition-canary.js
+          node scripts/audit-sched-001-b04c-authenticated-ord-sched-composition-canary-execution.js
+          node scripts/test-sched-001-b04c-authenticated-ord-sched-composition-canary-execution.js
       - name: Preserve B04B repository wiring
         run: |
           npm run audit:sched-001-b04b-ord-canonical-wiring-implementation
