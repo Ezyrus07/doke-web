@@ -1,0 +1,73 @@
+name: SCHED Post-B02 Auditor Reconciliation
+
+on:
+  push:
+    branches:
+      - ord/ord-001-baseline-audit
+    paths:
+      - .github/workflows/sched-001-post-b02-auditor-reconciliation.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sched-post-b02-auditor-reconciliation
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout PR head branch
+        uses: actions/checkout@v4
+        with:
+          ref: ord/ord-001-baseline-audit
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Reconcile cumulative scheduling auditors
+        run: node scripts/reconcile-sched-001-post-b02-auditors.js
+
+      - name: Validate post-B02 governance state
+        run: |
+          set -euo pipefail
+          node scripts/audit-sched-001-a01-repository-baseline-staging-security-preflight.js
+          node scripts/audit-sched-001-a02-command-event-timezone-conflict-contract.js
+          node scripts/audit-sched-001-a03-reservation-migration-local-contract.js
+          node scripts/audit-sched-001-a04-server-command-runtime.js
+          node scripts/test-sched-001-a04-scheduling-service-runtime.js
+          node scripts/audit-sched-001-a05-persistence-readiness.js
+          node scripts/test-sched-001-a05-postgres-repository-runtime.js
+          node scripts/audit-sched-001-a07-history-canary-readiness.js
+          node scripts/audit-sched-001-b02-composition-root-readiness.js
+          node scripts/test-sched-001-b02-composition-root-runtime.js
+          node scripts/audit-sched-001-b02b-authenticated-canary-readiness.js
+          node scripts/test-sched-001-b02b-authenticated-canary-readiness.js
+          node scripts/audit-sched-001-b02b-authenticated-composition-canary.js
+          node scripts/test-sched-001-b02b-authenticated-composition-canary.js
+          node scripts/audit-ord-001-a11-scheduling-authority-handoff.js
+          node scripts/audit-domain-completion-matrix.js
+          git diff --check
+
+      - name: Remove temporary reconciler
+        run: git rm scripts/reconcile-sched-001-post-b02-auditors.js
+
+      - name: Commit validated reconciliation
+        run: |
+          set -euo pipefail
+          git config user.name "doke-ci"
+          git config user.email "doke-ci@users.noreply.github.com"
+          git add scripts/audit-sched-001-a01-repository-baseline-staging-security-preflight.js \
+            scripts/audit-sched-001-a02-command-event-timezone-conflict-contract.js \
+            scripts/audit-sched-001-a03-reservation-migration-local-contract.js \
+            scripts/audit-sched-001-a04-server-command-runtime.js \
+            scripts/audit-sched-001-a05-persistence-readiness.js \
+            scripts/audit-sched-001-a07-history-canary-readiness.js \
+            scripts/audit-ord-001-a11-scheduling-authority-handoff.js \
+            scripts/reconcile-sched-001-post-b02-auditors.js
+          git commit -m "fix(sched): reconcile cumulative auditors after B02 closure"
+          git push origin HEAD:ord/ord-001-baseline-audit
