@@ -531,8 +531,10 @@ async function main(argv = process.argv.slice(2), env = process.env) {
     await connection.client.query("set local search_path = pg_catalog, public, private, extensions");
     await connection.client.query("set local lock_timeout = '5s'");
     await connection.client.query("set local statement_timeout = '30s'");
+    report.executionStage = 'transactional_fixture_provisioning';
     const fixtures = await provisionTransactionalFixtures(connection.client);
     report.transactionalFixtures = { personas: 4, publishedServices: 1, persistentRowsAllowed: 0 };
+    report.executionStage = 'composition_canary';
     report.personas = await runCompositionCanary(connection.client, { ...preflight, ...fixtures }, env);
     report.transaction = { opened: true, commandSavepoints: true, finalStatement: 'rollback', committed: false };
     await connection.client.query('rollback');
@@ -546,19 +548,40 @@ async function main(argv = process.argv.slice(2), env = process.env) {
     report.residue = residue;
     report.authorityCountsAfter = authorityCountsAfter;
     report.authorityCountDeltaZero = true;
+    report.executionStage = 'completed';
     report.result = 'authenticated_composition_canary_passed';
     writeReport(report, reportPath);
     console.log(JSON.stringify(report, null, 2));
     return report;
   } catch (error) {
     if (outerTransactionOpen) {
-      await connection.client.query('rollback').catch(() => {});
+      try {
+        await connection.client.query('rollback');
+        report.transaction = { opened: true, finalStatement: 'rollback', committed: false, rolledBack: true };
+      } catch (_) {
+        report.transaction = { opened: true, finalStatement: 'rollback', committed: false, rolledBack: false };
+      }
       outerTransactionOpen = false;
-      report.transaction = { opened: true, finalStatement: 'rollback', committed: false, rolledBack: true };
     }
     report.result = 'failed_closed';
     report.failure = safeError(error);
-    if (mode === '--execute') writeReport(report, reportPath);
+    if (mode === '--execute') {
+      try {
+        const residue = await loadResidueCounts(connection.client);
+        const authorityCountsAfter = await loadAuthorityCounts(connection.client);
+        assertZeroCounts(residue, 'DOKE_SCHED_B02B_POST_ROLLBACK_RESIDUE_PRESENT');
+        if (report.preflight) assertEqualCounts(report.preflight.authorityCountsBefore, authorityCountsAfter, 'DOKE_SCHED_B02B_AUTHORITY_COUNT_DRIFT');
+        report.residue = residue;
+        report.authorityCountsAfter = authorityCountsAfter;
+        report.authorityCountDeltaZero = true;
+        report.postRollbackVerification = 'passed';
+      } catch (verificationError) {
+        report.postRollbackVerification = 'failed';
+        report.rollbackVerificationFailure = safeError(verificationError);
+      }
+      writeReport(report, reportPath);
+      console.log(JSON.stringify(report, null, 2));
+    }
     throw error;
   } finally {
     connection.client.release();
