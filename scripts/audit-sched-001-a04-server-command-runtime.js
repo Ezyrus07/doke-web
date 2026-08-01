@@ -243,8 +243,13 @@ assert(['contract_only', 'partial'].includes(sched.serverAuthority));
 assert.strictEqual(sched.stagingEvidence, 'staging_canary');
 assert.strictEqual(sched.securityGate, 'partial');
 assert(config.orderedNextActions[0].includes('SCHED-A05'));
+const postB02B = compareVersions(matrix.version, '1.3.63') >= 0 && sched.maturity >= 3;
 const postA09 = compareVersions(matrix.version, '1.3.50') >= 0 && sched.maturity === 3;
-if (postA09) {
+if (postB02B) {
+  assert.deepStrictEqual(sched.blockers.map((item) => item.id), ['SCHED-B04']);
+  assert(sched.nextActions[0].includes('SCHED-B04') || sched.nextActions[0].includes('ORD-001'));
+  assert(ord.evidence.some((item) => item.includes('SCHED-A08 completed the official migration-history repair')));
+} else if (postA09) {
   assert.deepStrictEqual(sched.blockers.map((item) => item.id), ['SCHED-B02', 'SCHED-B04']);
   if (Number(String(matrix.version).split('.')[2] || 0) >= 51) {
     assert(sched.nextActions[0].includes('authenticated staging composition canary'));

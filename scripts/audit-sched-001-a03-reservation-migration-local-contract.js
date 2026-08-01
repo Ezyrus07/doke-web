@@ -115,10 +115,16 @@ assert(sched && ord);
 assert(sched.tests.includes('audit:sched-001-a03-reservation-migration-local-contract'));
 assert(sched.tests.includes('test:sched-001-a03-reservation-migration-static'));
 assert(config.orderedNextActions[0].includes('SCHED-A04'));
-const postA09 = Number(String(matrix.version).split('.')[2]) >= 50 && sched.maturity === 3;
-if (postA09) {
+const schedMatrixPatchA03 = Number(String(matrix.version).split('.')[2] || 0);
+const postB02B = schedMatrixPatchA03 >= 63 && sched.maturity >= 3;
+const postA09 = schedMatrixPatchA03 >= 50 && sched.maturity === 3;
+if (postB02B) {
+  assert.deepStrictEqual(sched.blockers.map((item) => item.id), ['SCHED-B04']);
+  assert(sched.nextActions[0].includes('SCHED-B04') || sched.nextActions[0].includes('ORD-001'));
+  assert(ord.evidence.some((item) => item.includes('SCHED-A08 completed the official migration-history repair')));
+} else if (postA09) {
   assert.deepStrictEqual(sched.blockers.map((item) => item.id), ['SCHED-B02', 'SCHED-B04']);
-  if (Number(String(matrix.version).split('.')[2] || 0) >= 51) {
+  if (schedMatrixPatchA03 >= 51) {
     assert(sched.nextActions[0].includes('authenticated staging composition canary'));
   } else {
     assert(sched.nextActions[0].includes('trusted server composition root'));

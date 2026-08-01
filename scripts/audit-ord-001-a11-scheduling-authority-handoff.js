@@ -118,16 +118,25 @@ assert(sched.maturity >= 1);
 assert(['none', 'contract_only', 'partial', 'canonical'].includes(sched.serverAuthority));
 assert(!sched.blockers.some((blocker) => blocker.id === 'SCHED-B01'));
 assert(!sched.blockers.some((blocker) => blocker.id === 'SCHED-B05'));
-assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B02'));
+const schedMatrixPatchA11 = Number(String(matrix.version).split('.')[2] || 0);
+if (schedMatrixPatchA11 >= 63) {
+  assert(!sched.blockers.some((blocker) => blocker.id === 'SCHED-B02'));
+} else {
+  assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B02'));
+}
 assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B04' && blocker.category === 'order_integration'));
-if (compareVersions(matrix.version, '1.3.50') >= 0 && sched.maturity === 3) {
+if (compareVersions(matrix.version, '1.3.50') >= 0 && sched.maturity >= 3) {
   assert(!sched.blockers.some((blocker) => blocker.id === 'SCHED-B03'));
-  if (Number(String(matrix.version).split('.')[2] || 0) >= 51) {
+  if (schedMatrixPatchA11 >= 63) {
+    assert(sched.nextActions[0].includes('SCHED-B04') || sched.nextActions[0].includes('ORD-001'));
+    assert(ord.nextActions.some((action) => action.includes('ORD-B04') || action.includes('SCHED-B04')));
+  } else if (schedMatrixPatchA11 >= 51) {
     assert(sched.nextActions[0].includes('authenticated staging composition canary'));
+    assert(ord.nextActions[0].includes('Keep ORD-B04 handed to SCHED-001'));
   } else {
     assert(sched.nextActions[0].includes('trusted server composition root'));
+    assert(ord.nextActions[0].includes('Keep ORD-B04 handed to SCHED-001'));
   }
-  assert(ord.nextActions[0].includes('Keep ORD-B04 handed to SCHED-001'));
   assert(ord.evidence.some((item) => item.includes('SCHED-A08 completed the official migration-history repair')));
 } else {
   assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B03'));

@@ -98,11 +98,17 @@ const postExecutionState = compareVersions(matrix.version, '1.3.50') >= 0
   && !blockerIds.includes('SCHED-B03');
 
 if (postExecutionState) {
-  assert.deepStrictEqual(blockerIds, ['SCHED-B02', 'SCHED-B04']);
-  if (Number(String(matrix.version).split('.')[2] || 0) >= 51) {
-    assert(sched.nextActions[0].includes('authenticated staging composition canary'));
+  const schedMatrixPatchA07 = Number(String(matrix.version).split('.')[2] || 0);
+  if (schedMatrixPatchA07 >= 63) {
+    assert.deepStrictEqual(blockerIds, ['SCHED-B04']);
+    assert(sched.nextActions[0].includes('SCHED-B04') || sched.nextActions[0].includes('ORD-001'));
   } else {
-    assert(sched.nextActions[0].includes('trusted server composition root'));
+    assert.deepStrictEqual(blockerIds, ['SCHED-B02', 'SCHED-B04']);
+    if (schedMatrixPatchA07 >= 51) {
+      assert(sched.nextActions[0].includes('authenticated staging composition canary'));
+    } else {
+      assert(sched.nextActions[0].includes('trusted server composition root'));
+    }
   }
   assert(ord.evidence.some((item) => item.includes('SCHED-A08 completed the official migration-history repair')));
   assert(!flow.blockers.includes('SCHED-B03'));

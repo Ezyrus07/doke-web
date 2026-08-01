@@ -132,12 +132,29 @@ assert(['none', 'contract_only', 'partial', 'canonical'].includes(sched.serverAu
 assert.strictEqual(sched.stagingEvidence, 'staging_canary');
 assert.strictEqual(sched.securityGate, 'partial');
 assert(!sched.blockers.some((blocker) => blocker.id === 'SCHED-B01'));
-assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B02'));
-assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B03'));
-assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B04'));
 assert(!sched.blockers.some((blocker) => blocker.id === 'SCHED-B05'));
-assert(sched.nextActions[0].includes('SCHED-A07'));
-assert(ord.nextActions[0].includes('SCHED-A07'));
+const schedMatrixPatchA01 = Number(String(matrix.version).split('.')[2] || 0);
+if (schedMatrixPatchA01 >= 63) {
+  assert(!sched.blockers.some((blocker) => blocker.id === 'SCHED-B02'));
+  assert(!sched.blockers.some((blocker) => blocker.id === 'SCHED-B03'));
+  assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B04'));
+  assert(sched.nextActions[0].includes('SCHED-B04') || sched.nextActions[0].includes('ORD-001'));
+} else if (schedMatrixPatchA01 >= 50) {
+  assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B02'));
+  assert(!sched.blockers.some((blocker) => blocker.id === 'SCHED-B03'));
+  assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B04'));
+  if (schedMatrixPatchA01 >= 51) {
+    assert(sched.nextActions[0].includes('authenticated staging composition canary'));
+  } else {
+    assert(sched.nextActions[0].includes('trusted server composition root'));
+  }
+} else {
+  assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B02'));
+  assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B03'));
+  assert(sched.blockers.some((blocker) => blocker.id === 'SCHED-B04'));
+  assert(sched.nextActions[0].includes('SCHED-A07'));
+  assert(ord.nextActions[0].includes('SCHED-A07'));
+}
 
 [
   CONFIG_PATH,
