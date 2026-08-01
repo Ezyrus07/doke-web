@@ -18,7 +18,9 @@ assert.strictEqual(config.authorization.oneShotTrigger, 'file_added_on_authorize
 assert.strictEqual(config.runtimeGate.failClosed, true);
 assert.strictEqual(config.transaction.outerBoundary, 'single_postgresql_transaction');
 assert.strictEqual(config.transaction.commandBoundary, 'savepoint_per_composition_root_command');
-assert.strictEqual(config.syntheticPersonas.requiredEmailDomain, 'doke.local');
+assert.strictEqual(config.syntheticPersonas.source, 'transaction_scoped_auth_and_public_projections');
+assert.strictEqual(config.syntheticPersonas.emailDomain, 'example.invalid');
+assert.strictEqual(config.syntheticPersonas.persistentRowsAllowed, 0);
 assert.deepStrictEqual(config.syntheticPersonas.roles, {
   client: 'client', professional: 'professional', support: 'support', admin: 'admin'
 });

@@ -131,78 +131,12 @@ async function connectStaging(project, password) {
   fail('DOKE_SCHED_B02B_DATABASE_CONNECTION_FAILED');
 }
 
-async function loadPersonas(client) {
-  const requiredDomain = CONFIG.syntheticPersonas.requiredEmailDomain;
-  const expectedRoles = CONFIG.syntheticPersonas.roles;
-  const response = await client.query({
-    name: 'sched-b02b-preflight-personas',
-    text: `with synthetic_personas as (
-             select app_user.id::text,
-                    lower(app_user.email) as email,
-                    app_user.role,
-                    app_user.status,
-                    row_number() over (
-                      partition by app_user.role
-                      order by case
-                        when app_user.role = 'professional' and exists (
-                          select 1
-                          from public.services service
-                          join public.service_versions version
-                            on version.id = service.approved_version_id
-                           and version.service_id = service.id
-                           and version.professional_id = service.professional_id
-                           and version.review_status = 'approved'
-                          where service.professional_id = app_user.id
-                            and service.status = 'published'
-                            and service.moderation_status in ('published', 'changes_pending_review', 'changes_required')
-                        ) then 0 else 1 end,
-                        lower(app_user.email), app_user.id
-                    ) as role_rank
-             from public.users app_user
-             where lower(app_user.email) like ('%@' || $1::text)
-               and app_user.role = any($2::text[])
-               and app_user.status = 'active'
-           )
-           select id, email, role, status
-           from synthetic_personas
-           where role_rank = 1
-           order by role`,
-    values: [requiredDomain, Object.values(expectedRoles)]
-  });
-  const byRole = new Map(response.rows.map((row) => [row.role, row]));
-  const personas = {};
-  for (const [name, role] of Object.entries(expectedRoles)) {
-    const row = byRole.get(role);
-    if (!row || !row.email.endsWith(`@${requiredDomain}`) || row.status !== 'active') {
-      fail(`DOKE_SCHED_B02B_${name.toUpperCase()}_PERSONA_INVALID`);
-    }
-    personas[name] = Object.freeze({ id: row.id, role: row.role });
-  }
-  return Object.freeze(personas);
-}
-
-async function loadCanonicalService(client, professionalId) {
-  const response = await client.query({
-    name: 'sched-b02b-preflight-service',
-    text: `select service.id::text, service.professional_id::text
-           from public.services service
-           join public.service_versions version
-             on version.id = service.approved_version_id
-            and version.service_id = service.id
-            and version.professional_id = service.professional_id
-            and version.review_status = 'approved'
-           where service.professional_id = $1::uuid
-             and service.status = 'published'
-             and service.moderation_status in ('published', 'changes_pending_review', 'changes_required')
-           order by service.created_at, service.id limit 1`,
-    values: [professionalId]
-  });
-  if (!response.rows[0]) fail('DOKE_SCHED_B02B_SYNTHETIC_SERVICE_MISSING');
-  return Object.freeze(response.rows[0]);
-}
-
 async function verifySchemaGate(client) {
   const tables = await client.query(`select
+    to_regclass('auth.users') is not null as auth_users,
+    to_regclass('public.users') is not null as users,
+    to_regclass('public.services') is not null as services,
+    to_regclass('public.service_versions') is not null as service_versions,
     to_regclass('public.schedule_availability_rules') is not null as rules,
     to_regclass('public.schedule_reservations') is not null as reservations,
     to_regclass('private.schedule_command_idempotency') is not null as idempotency,
@@ -238,8 +172,14 @@ async function loadResidueCounts(client) {
       (select count(*)::int from public.schedule_reservations where idempotency_key like $2) as schedule_reservations,
       (select count(*)::int from private.schedule_command_idempotency where idempotency_key like $2) as schedule_command_idempotency,
       (select count(*)::int from private.schedule_domain_events where payload #>> '{_eventMeta,correlationId}' like $2) as schedule_domain_events,
-      (select count(*)::int from public.orders where metadata ->> 'canarySublot' = $1) as orders`,
-    values: [CANARY_SUBLOT, `${CANARY_PREFIX}%`]
+      (select count(*)::int from public.orders where metadata ->> 'canarySublot' = $1) as orders,
+      (select count(*)::int from auth.users where lower(email) like $3) as auth_users,
+      (select count(*)::int from public.users where lower(email) like $3) as users,
+      (select count(*)::int from public.user_profiles profile join public.users app_user on app_user.id = profile.user_id where lower(app_user.email) like $3) as user_profiles,
+      (select count(*)::int from public.client_profiles profile join public.users app_user on app_user.id = profile.user_id where lower(app_user.email) like $3) as client_profiles,
+      (select count(*)::int from public.services where external_id like $2) as services,
+      (select count(*)::int from public.service_versions version join public.services service on service.id = version.service_id where service.external_id like $2) as service_versions`,
+    values: [CANARY_SUBLOT, `${CANARY_PREFIX}%`, 'sched-b02b-canary-%@example.invalid']
   });
   return Object.freeze({ ...response.rows[0] });
 }
@@ -256,11 +196,78 @@ async function runReadOnlyPreflight(client, env) {
   const activation = evaluateSchedulingRuntimeActivation(env);
   requireExact(activation.enabled, true, 'DOKE_SCHED_B02B_COMPOSITION_ROOT_DISABLED');
   const schema = await verifySchemaGate(client);
-  const personas = await loadPersonas(client);
-  const service = await loadCanonicalService(client, personas.professional.id);
   const residue = await loadResidueCounts(client);
   assertZeroCounts(residue, 'DOKE_SCHED_B02B_PREFLIGHT_RESIDUE_PRESENT');
-  return Object.freeze({ activation, schema, personas, service, residue, authorityCounts: await loadAuthorityCounts(client) });
+  return Object.freeze({ activation, schema, residue, authorityCounts: await loadAuthorityCounts(client) });
+}
+
+async function provisionTransactionalFixtures(client) {
+  const personas = Object.freeze({
+    client: Object.freeze({ id: 'b02b0000-0000-4000-8000-000000000101', role: 'client' }),
+    professional: Object.freeze({ id: 'b02b0000-0000-4000-8000-000000000102', role: 'professional' }),
+    support: Object.freeze({ id: 'b02b0000-0000-4000-8000-000000000103', role: 'support' }),
+    admin: Object.freeze({ id: 'b02b0000-0000-4000-8000-000000000104', role: 'admin' })
+  });
+  const entries = Object.entries(personas);
+  await client.query({
+    name: 'sched-b02b-insert-transactional-auth-personas',
+    text: `insert into auth.users (
+             id, aud, role, email, encrypted_password, email_confirmed_at,
+             raw_app_meta_data, raw_user_meta_data, created_at, updated_at
+           )
+           select source.id, 'authenticated', 'authenticated', source.email, '', pg_catalog.now(),
+                  jsonb_build_object('provider', 'email', 'providers', jsonb_build_array('email')),
+                  jsonb_build_object('name', source.name), pg_catalog.now(), pg_catalog.now()
+           from unnest($1::uuid[], $2::text[], $3::text[]) as source(id, email, name)`,
+    values: [
+      entries.map(([, persona]) => persona.id),
+      entries.map(([name]) => `sched-b02b-canary-${name}@example.invalid`),
+      entries.map(([name]) => `SCHED-B02B ${name}`)
+    ]
+  });
+  await client.query({
+    name: 'sched-b02b-materialize-transactional-personas',
+    text: `update public.users app_user
+           set role = source.role, status = 'active', onboarding_status = 'completed', updated_at = pg_catalog.now()
+           from unnest($1::uuid[], $2::text[]) as source(id, role)
+           where app_user.id = source.id`,
+    values: [entries.map(([, persona]) => persona.id), entries.map(([, persona]) => persona.role)]
+  });
+  const service = Object.freeze({ id: 'b02b0000-0000-4000-8000-000000000201', professional_id: personas.professional.id });
+  const versionId = 'b02b0000-0000-4000-8000-000000000202';
+  await client.query({
+    name: 'sched-b02b-insert-transactional-service',
+    text: `insert into public.services (
+             id, professional_id, title, slug, description, price_mode, price_cents,
+             currency, status, city, state, external_id, metadata, moderation_status
+           ) values (
+             $1::uuid, $2::uuid, 'SCHED-B02B synthetic service', 'sched-b02b-canary-service',
+             'Transaction-scoped synthetic service for the SCHED-B02B composition canary.',
+             'fixed', 10000, 'BRL', 'published', 'Salvador', 'BA', $3, $4::jsonb, 'published'
+           )`,
+    values: [service.id, service.professional_id, `${CANARY_PREFIX}service`, JSON.stringify({ canarySublot: CANARY_SUBLOT, synthetic: true })]
+  });
+  await client.query({
+    name: 'sched-b02b-insert-transactional-service-version',
+    text: `insert into public.service_versions (
+             id, service_id, professional_id, version_number, source, change_class,
+             review_status, snapshot, change_summary, submitted_at, reviewed_at,
+             risk_flags, classification_reasons, visibility_action
+           ) values (
+             $1::uuid, $2::uuid, $3::uuid, 1, 'create', 'critical', 'approved',
+             $4::jsonb, '{}'::jsonb, pg_catalog.now(), pg_catalog.now(),
+             '[]'::jsonb, '[]'::jsonb, 'not_public_until_approved'
+           )`,
+    values: [versionId, service.id, service.professional_id, JSON.stringify({ id: `${CANARY_PREFIX}service`, title: 'SCHED-B02B synthetic service', priceValue: 100, priceLabel: 'R$ 100', images: [], providerName: 'SCHED-B02B synthetic professional' })]
+  });
+  await client.query("select set_config('doke.service_moderation_apply', 'on', true)");
+  await client.query({
+    name: 'sched-b02b-approve-transactional-service',
+    text: `update public.services set approved_version_id = $1::uuid, status = 'published', moderation_status = 'published' where id = $2::uuid`,
+    values: [versionId, service.id]
+  });
+  await client.query("select set_config('doke.service_moderation_apply', 'off', true)");
+  return Object.freeze({ personas, service });
 }
 
 function createTransactionalCanaryPool(client) {
@@ -459,9 +466,9 @@ function publicPreflight(preflight) {
   return {
     compositionRootEnabled: preflight.activation.enabled,
     migrationHistory: preflight.schema,
-    syntheticPersonas: Object.fromEntries(Object.keys(preflight.personas).map((name) => [name, 'validated'])),
-    trustedActorContextSource: 'public.users synthetic identity projection',
-    syntheticPublishedService: true,
+    syntheticPersonas: Object.fromEntries(Object.keys(CONFIG.syntheticPersonas.roles).map((name) => [name, 'transaction_scoped'])),
+    trustedActorContextSource: 'transaction-scoped auth.users and public.users synthetic projections',
+    syntheticPublishedService: 'transaction_scoped',
     preExistingCanaryResidue: preflight.residue,
     authorityCountsBefore: preflight.authorityCounts
   };
@@ -524,7 +531,9 @@ async function main(argv = process.argv.slice(2), env = process.env) {
     await connection.client.query("set local search_path = pg_catalog, public, private, extensions");
     await connection.client.query("set local lock_timeout = '5s'");
     await connection.client.query("set local statement_timeout = '30s'");
-    report.personas = await runCompositionCanary(connection.client, preflight, env);
+    const fixtures = await provisionTransactionalFixtures(connection.client);
+    report.transactionalFixtures = { personas: 4, publishedServices: 1, persistentRowsAllowed: 0 };
+    report.personas = await runCompositionCanary(connection.client, { ...preflight, ...fixtures }, env);
     report.transaction = { opened: true, commandSavepoints: true, finalStatement: 'rollback', committed: false };
     await connection.client.query('rollback');
     outerTransactionOpen = false;

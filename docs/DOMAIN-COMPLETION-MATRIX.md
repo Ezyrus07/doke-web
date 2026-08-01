@@ -547,7 +547,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - SCHED-B02A implements a fail-closed trusted composition root that composes the existing PostgreSQL adapter and scheduling service only when the exact staging flag, environment and project ref match; no runtime, database, deployment or production mutation occurred.
 - SCHED-B02B execution readiness now provides a one-shot authorized GitHub Actions path, read-only PR/project/schema/persona preflight, one outer SERIALIZABLE transaction, per-command savepoints through the canonical composition root, mandatory final rollback and independent residue verification; remote execution evidence is still pending.
 - SCHED-B02B run 30675062764 stopped in the read-only preflight because the frozen exact client email did not match the staging synthetic identity set; the mutation step was skipped and staging mutations remained zero. Attempt 2 resolves only active doke.local identities by canonical role and requires the professional persona to own an approved published service.
-- SCHED-B02B run 30675212259 confirmed that the synthetic personas are absent from auth.users while their canonical doke.local role projections remain in public.users; the mutation step was skipped and staging mutations remained zero. Attempt 3 sources trusted server actor contexts from those synthetic public.users projections without performing Auth login or using persona passwords.
+- SCHED-B02B runs 30675212259 and 30675383979 stopped in read-only preflight because staging did not contain an active synthetic client matching the required identity projection; both mutation steps were skipped and staging mutations remained zero. Attempt 4 removes this external seed dependency by creating all four authenticated synthetic identities and one approved service only after the outer transaction begins; fixture residues are included in the mandatory post-rollback zero check.
 
 **Bloqueadores:**
 - **SCHED-B02 · CRITICAL · server_authority:** The trusted composition root exists with an exact staging-only fail-closed gate, but authenticated staging activation and command-boundary canaries are pending. _(Fase 6)_
@@ -1010,7 +1010,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2349 arquivos no escopo; 505 referências a localStorage; 151 a sessionStorage; 880 referências mock; 593 referências de rede/Supabase; 89 marcadores de implementação pendente.
+**Evidência estática observada:** 2350 arquivos no escopo; 505 referências a localStorage; 151 a sessionStorage; 880 referências mock; 593 referências de rede/Supabase; 89 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.

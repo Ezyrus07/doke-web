@@ -8,6 +8,7 @@ const paths = {
   config: 'config/sched-001-b02b-authenticated-composition-canary-execution.json',
   attempt: 'config/sched-001-b02b-authenticated-composition-canary-attempt-2.json',
   attempt3: 'config/sched-001-b02b-authenticated-composition-canary-attempt-3.json',
+  attempt4: 'config/sched-001-b02b-authenticated-composition-canary-attempt-4.json',
   executor: 'scripts/execute-sched-001-b02b-authenticated-composition-canary.js',
   test: 'scripts/test-sched-001-b02b-authenticated-composition-canary.js',
   workflow: '.github/workflows/sched-001-b02b-authenticated-composition-canary.yml',
@@ -30,7 +31,9 @@ assert.strictEqual(config.transaction.finalStatement, 'rollback');
 assert.strictEqual(config.transaction.commitAllowed, false);
 assert.strictEqual(config.transaction.persistentCanaryRowsAllowed, 0);
 assert.deepStrictEqual(config.allowedSecrets, ['SUPABASE_ACCESS_TOKEN', 'SUPABASE_DB_PASSWORD']);
-assert.strictEqual(config.syntheticPersonas.requiredEmailDomain, 'doke.local');
+assert.strictEqual(config.syntheticPersonas.source, 'transaction_scoped_auth_and_public_projections');
+assert.strictEqual(config.syntheticPersonas.emailDomain, 'example.invalid');
+assert.strictEqual(config.syntheticPersonas.persistentRowsAllowed, 0);
 assert.deepStrictEqual(config.syntheticPersonas.roles, {
   client: 'client', professional: 'professional', support: 'support', admin: 'admin'
 });
@@ -51,8 +54,10 @@ assert.deepStrictEqual(config.syntheticPersonas.roles, {
   'assertEqualCounts'
 ].forEach((fragment) => assert(executor.includes(fragment), `Executor missing ${fragment}`));
 
-assert(executor.includes('from public.users app_user'));
-assert(!executor.includes('from auth.users auth_user'));
+assert(executor.includes('provisionTransactionalFixtures'));
+assert(executor.includes('insert into auth.users'));
+assert(executor.includes('insert into public.service_versions'));
+assert(executor.includes("'sched-b02b-canary-%@example.invalid'"));
 
 assert(!executor.includes("connection.client.query('commit')"));
 assert(!executor.includes('supabase migration'));
