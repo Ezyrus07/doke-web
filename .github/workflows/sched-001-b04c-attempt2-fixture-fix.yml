@@ -1,4 +1,4 @@
-name: Doke SCHED-B04C Attempt 2 Fixture Fix
+name: Doke SCHED-B04C Attempt 3 Structural Fixture Fix
 
 on:
   pull_request:
@@ -11,11 +11,11 @@ permissions:
   contents: write
 
 concurrency:
-  group: sched-b04c-attempt2-fixture-fix
+  group: sched-b04c-attempt3-structural-fixture-fix
   cancel-in-progress: false
 
 jobs:
-  fix-and-authorize-attempt-2:
+  fix-and-authorize-attempt-3:
     if: >-
       github.event.pull_request.number == 25 &&
       github.event.pull_request.draft == true &&
@@ -36,7 +36,7 @@ jobs:
       - name: Install pinned dependencies
         run: npm ci --ignore-scripts
 
-      - name: Replace invalid two-active-reservations fixture
+      - name: Replace invalid fixture by structural markers
         shell: bash
         run: |
           set -euo pipefail
@@ -46,38 +46,19 @@ jobs:
           executor_path = Path('scripts/execute-sched-001-b04c-authenticated-ord-sched-composition-canary.js')
           source = executor_path.read_text()
 
-          old_import = "const { assertTransition } = require('../backend/modules/orders/order-state-machine');\n"
-          new_import = old_import + "const { createTransactionPort } = require('../backend/modules/scheduling/scheduling-postgres-repository');\n"
-          if old_import not in source:
-              raise SystemExit('expected executor import marker missing')
-          source = source.replace(old_import, new_import, 1)
+          import_marker = "const { assertTransition } = require('../backend/modules/orders/order-state-machine');\n"
+          repository_import = "const { createTransactionPort } = require('../backend/modules/scheduling/scheduling-postgres-repository');\n"
+          if repository_import not in source:
+              if import_marker not in source:
+                  raise SystemExit('executor import marker missing')
+              source = source.replace(import_marker, import_marker + repository_import, 1)
 
-          old_block = """  const replacementA = await root.createScheduleHold(commandContext(actors.support, 'replacement-a-hold', {
-            orderId: fixtures.orders.replacement,
-            professionalId: fixtures.personas.professional.id,
-            ...range(12, 13)
-          }, correlationId));
-          const replacementB = await root.createScheduleHold(commandContext(actors.admin, 'replacement-b-hold', {
-            orderId: fixtures.orders.replacement,
-            professionalId: fixtures.personas.professional.id,
-            ...range(13, 14)
-          }, correlationId));
-          await root.confirmScheduleReservation(commandContext(actors.support, 'replacement-a-confirm', {
-            reservationId: replacementA.reservation.id,
-            expectedVersion: 1
-          }, correlationId));
-          await expectCode(
-            () => root.confirmScheduleReservation(commandContext(actors.admin, 'replacement-b-confirm', {
-              reservationId: replacementB.reservation.id,
-              expectedVersion: 1
-            }, correlationId)),
-            'DOKE_SCHEDULE_ORDER_PROJECTION_FAILED'
-          );
-          const replacementBStored = await readReservation(client, replacementB.reservation.id);
-          requireExact(replacementBStored.status, 'held', 'DOKE_SCHED_B04C_REPLACEMENT_FAILURE_DID_NOT_ROLL_BACK');
-          const replacementOrder = await readOrder(client, fixtures.orders.replacement);
-          requireExact(replacementOrder.schedule_reservation_id, replacementA.reservation.id, 'DOKE_SCHED_B04C_REPLACEMENT_OVERWROTE_REFERENCE');
-          """
+          start_marker = "  const replacementA = await root.createScheduleHold(commandContext(actors.support, 'replacement-a-hold', {"
+          end_marker = "  const partialHold = await root.createScheduleHold(commandContext(actors.client, 'partial-hold', {"
+          start = source.find(start_marker)
+          end = source.find(end_marker, start + 1)
+          if start < 0 or end < 0 or end <= start:
+              raise SystemExit('replacement fixture structural markers missing')
 
           new_block = """  const replacementA = await root.createScheduleHold(commandContext(actors.support, 'replacement-a-hold', {
             orderId: fixtures.orders.replacement,
@@ -106,20 +87,17 @@ jobs:
             new Date(replacementAConfirmed.reservation.startsAt).toISOString(),
             'DOKE_SCHED_B04C_REPLACEMENT_CHANGED_TIME'
           );
-          """
 
-          if old_block not in source:
-              raise SystemExit('invalid replacement fixture block not found')
-          source = source.replace(old_block, new_block, 1)
+          """
+          source = source[:start] + new_block + source[end:]
           executor_path.write_text(source)
 
           bridge_path = Path('.github/workflows/sched-001-b04c-authorized-one-shot-bridge.yml')
-          bridge = bridge_path.read_text()
-          old_name = 'name: Doke SCHED-B04C Authorized One-Shot Bridge\n'
-          new_name = 'name: Doke SCHED-B04C Authorized One-Shot Bridge Attempt 2\n'
-          if old_name not in bridge:
+          bridge_lines = bridge_path.read_text().splitlines()
+          if not bridge_lines or not bridge_lines[0].startswith('name: Doke SCHED-B04C Authorized One-Shot Bridge'):
               raise SystemExit('one-shot bridge name marker missing')
-          bridge_path.write_text(bridge.replace(old_name, new_name, 1))
+          bridge_lines[0] = 'name: Doke SCHED-B04C Authorized One-Shot Bridge Attempt 3'
+          bridge_path.write_text('\n'.join(bridge_lines) + '\n')
 
           Path('.github/workflows/sched-001-b04c-attempt2-fixture-fix.yml').unlink()
           PY
@@ -138,7 +116,7 @@ jobs:
           npm run audit:domain-completion-matrix
           git diff --check
 
-      - name: Publish corrected attempt 2 package
+      - name: Publish corrected attempt 3 package
         run: |
           set -euo pipefail
           git config user.name "doke-ci"
