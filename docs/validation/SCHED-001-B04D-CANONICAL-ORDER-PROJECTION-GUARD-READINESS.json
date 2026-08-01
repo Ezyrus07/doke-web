@@ -3,7 +3,7 @@
   "domain": "SCHED-001",
   "dependentDomain": "ORD-001",
   "sublot": "SCHED-B04D",
-  "result": "repository_readiness_prepared",
+  "result": "staging_migration_applied_and_verified",
   "rootCause": {
     "runId": 30711882162,
     "jobId": 91400663624,
@@ -14,24 +14,39 @@
     "residueCountsZero": true,
     "authorityCountDeltaZero": true
   },
+  "remoteApplication": {
+    "projectRef": "zwkczgewzbsorbrjuzpb",
+    "migrationVersion": "20260801185150",
+    "migrationName": "sched_b04d_canonical_order_projection_guard",
+    "historyVerification": "passed",
+    "functionAndGrantVerification": "passed",
+    "triggerVerification": "passed",
+    "argumentGuardVerification": "passed"
+  },
   "assertions": {
     "genericScheduledToAcceptedRemainsForbidden": true,
     "privateProjectionFunctionRequired": true,
     "privateClearFunctionRequired": true,
     "serviceRoleOnlyExecution": true,
+    "anonExecutionDenied": true,
+    "authenticatedExecutionDenied": true,
+    "publicExecutionDenied": true,
     "matchingOrderReservationAndTimeRequired": true,
     "directCanonicalFieldWritesForbidden": true,
     "referenceAndTimeClearAtomically": true,
     "canonicalScheduledToAcceptedRestrictedToClearContext": true,
     "productionAccess": 0,
-    "stagingMigrationsApplied": 0,
+    "stagingMigrationsApplied": 1,
     "manualMigrationHistoryMutations": 0,
     "deployments": 0,
     "frontendConnections": 0,
     "cronActivations": 0,
     "workerActivations": 0,
+    "b04cRetryExecutions": 0,
     "mergePerformed": false,
-    "autoMergeEnabled": false
+    "autoMergeEnabled": false,
+    "newB04DSecurityAdvisorFindings": 0,
+    "newB04DPerformanceAdvisorFindings": 0
   },
   "expectedRepositoryEvidence": [
     "supabase/migrations/20260801183000_sched_b04d_canonical_order_projection_guard.sql",
@@ -42,5 +57,5 @@
     "scripts/test-sched-001-b04d-canonical-order-projection-guard-runtime.js",
     ".github/workflows/sched-001-b04d-canonical-order-projection-guard-readiness.yml"
   ],
-  "nextAuthorization": "I_EXPLICITLY_AUTHORIZE_SCHED_B04D_CANONICAL_ORDER_PROJECTION_GUARD_MIGRATION_ON_DOKE_STAGING"
+  "nextAuthorization": "I_EXPLICITLY_AUTHORIZE_SCHED_B04C_AUTHENTICATED_ORD_SCHED_COMPOSITION_CANARIES_ON_DOKE_STAGING"
 }
