@@ -1,0 +1,149 @@
+name: Doke SCHED-C01D Authenticated Browser Read-Only Canary
+
+on:
+  pull_request:
+    branches:
+      - search/search-ux02-intent-favorites-clean
+    paths:
+      - 'scripts/execute-sched-001-c01d-authenticated-browser-read-only-canary.js'
+      - 'scripts/test-sched-001-c01d-authenticated-browser-read-only-canary.js'
+      - 'config/sched-001-c01d-authenticated-browser-canary-readiness.json'
+      - '.github/workflows/sched-001-c01d-authenticated-browser-read-only-canary.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sched-c01d-authenticated-browser-read-only-canary
+  cancel-in-progress: false
+
+jobs:
+  canary:
+    if: >-
+      github.event.pull_request.number == 25 &&
+      github.event.pull_request.draft == true &&
+      github.event.pull_request.head.ref == 'ord/ord-001-baseline-audit'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      DOKE_ENVIRONMENT: staging
+      DOKE_SCHED_C01D_AUTHORIZATION: I_EXPLICITLY_AUTHORIZE_SCHED_C01D_AUTHENTICATED_BROWSER_READ_ONLY_CANARY_ON_DOKE_STAGING
+      DOKE_SCHED_C01D_EXPECTED_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      DOKE_SCHED_C01D_ALLOW_NETWORK: '1'
+      DOKE_SCHED_C01D_EXECUTE: '1'
+      DOKE_SCHED_C01D_WEB_BASE_URL: http://127.0.0.1:5500
+      SUPABASE_PROJECT_REF: zwkczgewzbsorbrjuzpb
+      DOKE_STAGING_CLIENT_EMAIL: ${{ secrets.DOKE_STAGING_CLIENT_EMAIL }}
+      DOKE_STAGING_CLIENT_PASSWORD: ${{ secrets.DOKE_STAGING_CLIENT_PASSWORD }}
+      DOKE_STAGING_PROFESSIONAL_EMAIL: ${{ secrets.DOKE_STAGING_PROFESSIONAL_EMAIL }}
+      DOKE_STAGING_PROFESSIONAL_PASSWORD: ${{ secrets.DOKE_STAGING_PROFESSIONAL_PASSWORD }}
+      DOKE_SCHED_C01D_REPORT_PATH: reports/generated/sched-001-c01d-authenticated-browser-read-only-canary-report.json
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ord/ord-001-baseline-audit
+          fetch-depth: 1
+
+      - name: Require immutable authorized head
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$DOKE_SCHED_C01D_EXPECTED_HEAD_SHA"
+          test "$DOKE_SCHED_C01D_AUTHORIZATION" = "I_EXPLICITLY_AUTHORIZE_SCHED_C01D_AUTHENTICATED_BROWSER_READ_ONLY_CANARY_ON_DOKE_STAGING"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install pinned dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Preserve execution package contracts
+        run: |
+          node --check scripts/execute-sched-001-c01d-authenticated-browser-read-only-canary.js
+          node scripts/test-sched-001-c01d-authenticated-browser-read-only-canary.js
+          node scripts/execute-sched-001-c01d-authenticated-browser-read-only-canary.js --dry-run
+          node scripts/audit-sched-001-c01d-authenticated-browser-canary-readiness.js
+          node scripts/test-sched-001-c01d-authenticated-browser-canary-readiness.js
+          npm run audit:sched-001-c01c-deterministic-frontend-presentation
+          npm run test:sched-001-c01c-deterministic-frontend-presentation
+          npm run audit:domain-completion-matrix
+
+      - name: Materialize ephemeral authorization envelope
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in DOKE_STAGING_CLIENT_EMAIL DOKE_STAGING_CLIENT_PASSWORD DOKE_STAGING_PROFESSIONAL_EMAIL DOKE_STAGING_PROFESSIONAL_PASSWORD; do
+            test -n "${!name:-}"
+          done
+          test "$DOKE_STAGING_CLIENT_EMAIL" != "$DOKE_STAGING_PROFESSIONAL_EMAIL"
+          mkdir -p "$RUNNER_TEMP/sched-c01d"
+          export CASE_MANIFEST_PATH="$RUNNER_TEMP/sched-c01d/case-manifest.json"
+          export AUTHORIZATION_ENVELOPE_PATH="$RUNNER_TEMP/sched-c01d/authorization-envelope.json"
+          node <<'NODE'
+          const crypto = require('crypto');
+          const fs = require('fs');
+          const sha256 = (value) => crypto.createHash('sha256').update(value).digest('hex');
+          const now = new Date();
+          const expires = new Date(now.getTime() + 90 * 60 * 1000);
+          const manifest = {
+            contractVersion: 'sched-c01d-read-only-case-manifest-v1',
+            headSha: process.env.DOKE_SCHED_C01D_EXPECTED_HEAD_SHA,
+            projectRef: process.env.SUPABASE_PROJECT_REF,
+            requiredAuthorities: ['canonical_confirmed'],
+            alternateAuthorities: ['client_intent', 'none'],
+            maximumOrders: 4
+          };
+          const manifestText = JSON.stringify(manifest, null, 2) + '\n';
+          fs.writeFileSync(process.env.CASE_MANIFEST_PATH, manifestText);
+          const manifestDigest = sha256(manifestText);
+          const envelope = {
+            contractVersion: 'sched-c01d-external-authorization-envelope-v1',
+            issuedAt: now.toISOString(),
+            expiresAt: expires.toISOString(),
+            headSha: process.env.DOKE_SCHED_C01D_EXPECTED_HEAD_SHA,
+            projectRef: process.env.SUPABASE_PROJECT_REF,
+            authorizationPhraseDigest: sha256(process.env.DOKE_SCHED_C01D_AUTHORIZATION),
+            clientAccountDigest: sha256(String(process.env.DOKE_STAGING_CLIENT_EMAIL).trim().toLowerCase()),
+            professionalAccountDigest: sha256(String(process.env.DOKE_STAGING_PROFESSIONAL_EMAIL).trim().toLowerCase()),
+            caseManifestDigest: manifestDigest
+          };
+          const envelopeText = JSON.stringify(envelope, null, 2) + '\n';
+          fs.writeFileSync(process.env.AUTHORIZATION_ENVELOPE_PATH, envelopeText);
+          fs.appendFileSync(process.env.GITHUB_ENV, `DOKE_SCHED_C01D_CASE_MANIFEST_PATH=${process.env.CASE_MANIFEST_PATH}\n`);
+          fs.appendFileSync(process.env.GITHUB_ENV, `DOKE_SCHED_C01D_CASE_MANIFEST_SHA256=${manifestDigest}\n`);
+          fs.appendFileSync(process.env.GITHUB_ENV, `DOKE_SCHED_C01D_AUTHORIZATION_ENVELOPE_PATH=${process.env.AUTHORIZATION_ENVELOPE_PATH}\n`);
+          fs.appendFileSync(process.env.GITHUB_ENV, `DOKE_SCHED_C01D_AUTHORIZATION_ENVELOPE_SHA256=${sha256(envelopeText)}\n`);
+          NODE
+
+      - name: Fail-closed environment preflight
+        run: node scripts/execute-sched-001-c01d-authenticated-browser-read-only-canary.js --check-env --write-report
+
+      - name: Install isolated Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Start exact-PR local web server
+        shell: bash
+        run: |
+          set -euo pipefail
+          DOKE_E2E_DISABLE_REMOTE_SERVICES=0 node scripts/serve-static-site.js --host=127.0.0.1 --port=5500 > "$RUNNER_TEMP/sched-c01d-server.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/sched-c01d-server.pid"
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:5500/index.html >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat "$RUNNER_TEMP/sched-c01d-server.log"
+          exit 1
+
+      - name: Execute authenticated browser read-only canary
+        run: node scripts/execute-sched-001-c01d-authenticated-browser-read-only-canary.js --execute --write-report
+
+      - name: Upload sanitized C01D evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sched-001-c01d-authenticated-browser-read-only-canary-${{ github.run_id }}
+          path: reports/generated/sched-001-c01d-authenticated-browser-read-only-canary-report.json
+          if-no-files-found: warn
+          retention-days: 14
