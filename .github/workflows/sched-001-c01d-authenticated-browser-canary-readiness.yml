@@ -14,8 +14,10 @@ on:
       - 'scripts/execute-sched-001-c01d-authenticated-browser-read-only-canary.js'
       - 'scripts/run-sched-001-c01d-authenticated-browser-read-only-canary.js'
       - 'scripts/prepare-sched-001-c01d-authenticated-browser-login-runtime.js'
+      - 'scripts/prepare-sched-001-c01d-authenticated-browser-bootstrap-runtime.js'
       - 'scripts/test-sched-001-c01d-authenticated-browser-read-only-canary.js'
       - 'scripts/test-sched-001-c01d-authenticated-browser-read-only-canary-runner.js'
+      - 'scripts/test-sched-001-c01d-authenticated-browser-bootstrap-runtime.js'
       - '.github/workflows/sched-001-c01d-authenticated-browser-canary-readiness.yml'
       - 'config/sched-001-c01c-deterministic-frontend-presentation.json'
       - 'assets/js/patterns/order-schedule-presentation.js'
@@ -47,7 +49,9 @@ jobs:
           node --check scripts/execute-sched-001-c01d-authenticated-browser-read-only-canary.js
           node --check scripts/run-sched-001-c01d-authenticated-browser-read-only-canary.js
           node --check scripts/prepare-sched-001-c01d-authenticated-browser-login-runtime.js
+          node --check scripts/prepare-sched-001-c01d-authenticated-browser-bootstrap-runtime.js
           node --check scripts/test-sched-001-c01d-authenticated-browser-read-only-canary-runner.js
+          node --check scripts/test-sched-001-c01d-authenticated-browser-bootstrap-runtime.js
       - name: Validate inert C01D readiness package
         run: |
           node scripts/audit-sched-001-c01d-authenticated-browser-canary-readiness.js
@@ -55,9 +59,11 @@ jobs:
           node scripts/plan-sched-001-c01d-authenticated-browser-canary.js --dry-run
           node scripts/test-sched-001-c01d-authenticated-browser-read-only-canary.js
           node scripts/test-sched-001-c01d-authenticated-browser-read-only-canary-runner.js
+          node scripts/test-sched-001-c01d-authenticated-browser-bootstrap-runtime.js
           node scripts/run-sched-001-c01d-authenticated-browser-read-only-canary.js --dry-run
           node scripts/prepare-sched-001-c01d-authenticated-browser-login-runtime.js --dry-run
-          git diff --exit-code -- scripts/execute-sched-001-c01d-authenticated-browser-read-only-canary.js
+          node scripts/prepare-sched-001-c01d-authenticated-browser-bootstrap-runtime.js --dry-run
+          git diff --exit-code -- scripts/execute-sched-001-c01d-authenticated-browser-read-only-canary.js scripts/prepare-sched-001-c01d-authenticated-browser-login-runtime.js
       - name: Preserve deterministic frontend authority
         run: |
           npm run audit:sched-001-c01c-deterministic-frontend-presentation
