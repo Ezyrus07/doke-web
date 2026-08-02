@@ -9,10 +9,11 @@ import {
 
 const assert = (condition, message) => { if (!condition) throw new Error(message); };
 const a05Present = fs.existsSync('config/msg-001-a05-attachment-lifecycle.json');
+const expectedOperationCount = a05Present ? 24 : 21;
 
 assert(
-  ALLOWED_ACTIONS.size === (a05Present ? 17 : 14),
-  `Expected ${a05Present ? 'seventeen' : 'fourteen'} self-service operations.`,
+  ALLOWED_ACTIONS.size === expectedOperationCount,
+  `Expected ${expectedOperationCount} self-service operations, received ${ALLOWED_ACTIONS.size}.`,
 );
 if (a05Present) {
   [
