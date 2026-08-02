@@ -1,0 +1,53 @@
+name: Doke MSG-A04 Realtime Publication Subscription Contract
+
+on:
+  pull_request:
+    paths:
+      - 'assets/js/repositories/messages-realtime-repository.js'
+      - 'assets/js/core/supabase-config.js'
+      - 'mensagens.html'
+      - 'supabase/migrations/20260802183100_msg_a04_realtime_publication_contract.sql'
+      - 'config/msg-001-a04-realtime-publication-subscription-contract.json'
+      - 'docs/MSG-001-A04-REALTIME-PUBLICATION-SUBSCRIPTION-CONTRACT.md'
+      - 'docs/validation/MSG-001-A04-REALTIME-PUBLICATION-SUBSCRIPTION-CONTRACT.json'
+      - 'scripts/audit-msg-001-a04-realtime-publication-subscription-contract.js'
+      - 'scripts/test-msg-001-a04-realtime-publication-subscription-runtime.js'
+      - 'scripts/audit-msg-001-a01-authority-baseline.js'
+      - 'config/domain-completion-matrix.json'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+      - 'package.json'
+      - '.github/workflows/msg-001-a04-realtime-publication-subscription-contract.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Validate MSG-A04 Realtime contract
+        run: |
+          node --check assets/js/repositories/messages-realtime-repository.js
+          node --check scripts/audit-msg-001-a04-realtime-publication-subscription-contract.js
+          node --check scripts/test-msg-001-a04-realtime-publication-subscription-runtime.js
+          npm run audit:msg-001-a01-authority-baseline
+          npm run audit:msg-001-a02-canonical-authority-boundary
+          npm run test:msg-001-a02-canonical-authority-boundary
+          npm run audit:msg-001-a03-server-command-boundary
+          npm run test:msg-001-a03-server-command-boundary
+          npm run audit:msg-001-a04-realtime-publication-subscription-contract
+          npm run test:msg-001-a04-realtime-publication-subscription-runtime
+          npm run audit:messages-api-contract
+          npm run test:messages-supabase-repository-contract
+          npm run test:attachments-supabase-repository-contract
+          npm run audit:domain-completion-matrix
+          git diff --check
