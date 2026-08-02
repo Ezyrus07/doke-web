@@ -16,12 +16,16 @@ const unboundedCleanup = `  } finally {
 }`;
 const deferredFinish = `  process.stdout.write(JSON.stringify(report, null, 2) + '\\n');
   process.exitCode = code;`;
+const unboundedDetailLoop = `  for (const orderCase of cases.slice(0, report.manifest.maximumOrders)) {
+    await inspectOrdersDetail(page, orderCase);
+  }`;
 
 const executorSource = fs.readFileSync(executor, 'utf8');
 const runnerSource = fs.readFileSync(runner, 'utf8');
 assert.strictEqual(executorSource.split(legacyWait).length - 1, 1);
 assert.strictEqual(executorSource.split(unboundedCleanup).length - 1, 1);
 assert.strictEqual(executorSource.split(deferredFinish).length - 1, 1);
+assert.strictEqual(executorSource.split(unboundedDetailLoop).length - 1, 1);
 assert(runnerSource.includes("waitUntil: 'commit'"));
 assert(!runnerSource.includes("waitUntil: 'domcontentloaded'"));
 assert(runnerSource.includes("resolve('timeout'), 10_000"));
@@ -30,6 +34,20 @@ assert(runnerSource.includes('timeout: watchdogMs'));
 assert(runnerSource.includes("killSignal: 'SIGKILL'"));
 assert(runnerSource.includes('runner_watchdog_timeout_before_executor_completion'));
 assert(runnerSource.includes('executionCountersComplete: false'));
+assert(runnerSource.includes("lastCheckpoint: previous.lastCheckpoint || 'unknown'"));
+assert(runnerSource.includes('checkpointHistory: Array.isArray(previous.checkpointHistory)'));
+assert(runnerSource.includes("lastCheckpoint: 'initialized'"));
+assert(runnerSource.includes('async function withPhaseTimeout'));
+assert(runnerSource.includes("120_000,\n      'client_inspection'"));
+assert(runnerSource.includes("120_000,\n      'professional_inspection'"));
+assert(runnerSource.includes("90_000, 'canonical_messages_inspection'"));
+assert(runnerSource.includes("90_000, 'alternate_messages_inspection'"));
+assert(runnerSource.includes('const detailCandidates = ['));
+assert(runnerSource.includes("cases.find((entry) => entry.authority === 'canonical_confirmed')"));
+assert(runnerSource.includes("cases.find((entry) => entry.authority === 'client_intent' || entry.authority === 'none')"));
+assert(runnerSource.includes('page.setDefaultTimeout(10_000)'));
+assert(runnerSource.includes('page.setDefaultNavigationTimeout(20_000)'));
+assert(runnerSource.includes("checkpoint(persona + '_orders_collected')"));
 assert(runnerSource.includes('fs.writeSync(1, serialized)'));
 assert(runnerSource.includes('process.exit(code)'));
 assert(runnerSource.includes('fs.rmSync(runtimePath, { force: true })'));
@@ -50,6 +68,8 @@ assert.strictEqual(report.rawIdentifiersRecorded, false);
 assert.strictEqual(report.browserContextsCreated, 0);
 assert.strictEqual(report.stagingReadsPerformed, 0);
 assert.strictEqual(report.stagingMutationsPerformed, 0);
+assert.strictEqual(report.lastCheckpoint, 'initialized');
+assert.deepStrictEqual(report.checkpointHistory, []);
 
 const after = fs.readdirSync('scripts').filter((name) => name.startsWith(runtimePrefix));
 assert.deepStrictEqual(after, []);
