@@ -8,7 +8,7 @@ const { spawnSync } = require('child_process');
 const executorPath = path.join(__dirname, 'execute-sched-001-c01d-authenticated-browser-read-only-canary.js');
 const runtimePrefix = '.sched-c01d-authenticated-browser-read-only-canary-runtime-';
 const legacyWait = "page.waitForURL(/\\/pedidos\\.html(?:[?#].*)?$/, { timeout: 30_000 }),";
-const correctedWait = "page.waitForURL(/\\/pedidos\\.html(?:[?#].*)?$/, { waitUntil: 'domcontentloaded', timeout: 30_000 }),";
+const correctedWait = "page.waitForURL(/\\/pedidos\\.html(?:[?#].*)?$/, { waitUntil: 'commit', timeout: 30_000 }),";
 
 function countOccurrences(source, fragment) {
   return source.split(fragment).length - 1;
