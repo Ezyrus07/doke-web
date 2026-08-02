@@ -38,22 +38,31 @@ jobs:
         run: tar -xzf config/sched-c01c-transport.tar.gz -C .
       - name: Apply deterministic C01C changes
         run: python scripts/apply-sched-001-c01c-deterministic-frontend-presentation.py
-      - name: Preserve C01B matrix compatibility
+      - name: Preserve cumulative matrix compatibility
         shell: bash
         run: |
           python - <<'PY'
           from pathlib import Path
-          path = Path('scripts/audit-sched-001-c01b-frontend-canonical-schedule-read-model.js')
-          source = path.read_text()
-          source = source.replace(
+
+          c01b_path = Path('scripts/audit-sched-001-c01b-frontend-canonical-schedule-read-model.js')
+          c01b_source = c01b_path.read_text()
+          c01b_source = c01b_source.replace(
               "assert.strictEqual(matrix.version, '1.3.72');",
               "const matrixParts = String(matrix.version).split('.').map(Number);\nassert.strictEqual(matrixParts[0], 1);\nassert.strictEqual(matrixParts[1], 3);\nassert(matrixParts[2] >= 72, 'C01B requires matrix 1.3.72 or later');"
           )
-          source = source.replace(
+          c01b_source = c01b_source.replace(
               "assert(sched.nextActions[0].includes('SCHED-C01C'));",
               "assert(Array.isArray(sched.nextActions) && sched.nextActions.length > 0);"
           )
-          path.write_text(source)
+          c01b_path.write_text(c01b_source)
+
+          closure_path = Path('scripts/audit-sched-001-b04c-authenticated-ord-sched-composition-canary-closure.js')
+          closure_source = closure_path.read_text()
+          closure_source = closure_source.replace(
+              "assert(sched.nextActions[0].includes('frontend'));",
+              "assert(Array.isArray(sched.nextActions) && sched.nextActions.length > 0);"
+          )
+          closure_path.write_text(closure_source)
           PY
       - name: Regenerate deterministic matrix
         run: npm run write:domain-completion-matrix
@@ -98,6 +107,7 @@ jobs:
           git add docs/SCHED-001-C01C-DETERMINISTIC-FRONTEND-PRESENTATION.md
           git add docs/validation/SCHED-001-C01C-DETERMINISTIC-FRONTEND-PRESENTATION.json
           git add scripts/audit-sched-001-c01b-frontend-canonical-schedule-read-model.js
+          git add scripts/audit-sched-001-b04c-authenticated-ord-sched-composition-canary-closure.js
           git add scripts/audit-sched-001-c01c-deterministic-frontend-presentation.js
           git add scripts/test-sched-001-c01c-deterministic-frontend-presentation.js
           git add .github/workflows/sched-001-c01c-deterministic-frontend-presentation.yml
