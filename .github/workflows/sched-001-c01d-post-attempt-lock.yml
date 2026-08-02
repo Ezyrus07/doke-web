@@ -1,0 +1,41 @@
+name: Doke SCHED-C01D Post-Attempt Lock
+
+on:
+  pull_request:
+    branches:
+      - search/search-ux02-intent-favorites-clean
+    paths:
+      - '.github/workflows/sched-001-c01d-post-attempt-lock.yml'
+      - 'scripts/audit-sched-001-c01d-authenticated-browser-read-only-canary.js'
+
+permissions:
+  contents: read
+
+jobs:
+  lock:
+    if: >-
+      github.event.pull_request.number == 25 &&
+      github.event.pull_request.draft == true &&
+      github.event.pull_request.head.ref == 'ord/ord-001-baseline-audit'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install pinned dependencies
+        run: npm ci --ignore-scripts
+      - name: Validate consumed-authorization lock
+        run: |
+          node --check scripts/execute-sched-001-c01d-authenticated-browser-read-only-canary.js
+          node scripts/audit-sched-001-c01d-authenticated-browser-read-only-canary.js
+          node scripts/test-sched-001-c01d-authenticated-browser-read-only-canary.js
+          node scripts/execute-sched-001-c01d-authenticated-browser-read-only-canary.js --dry-run
+          node scripts/audit-sched-001-c01d-authenticated-browser-canary-readiness.js
+          node scripts/test-sched-001-c01d-authenticated-browser-canary-readiness.js
+          npm run audit:sched-001-c01c-deterministic-frontend-presentation
+          npm run test:sched-001-c01c-deterministic-frontend-presentation
+          npm run audit:domain-completion-matrix
+          git diff --check
