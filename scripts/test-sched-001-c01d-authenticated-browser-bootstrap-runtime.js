@@ -15,7 +15,7 @@ const executorSource = fs.readFileSync(executor, 'utf8');
 
 assert(wrapperSource.includes("'supabase.min.js'),\n    path.join(root"));
 assert(wrapperSource.includes("path: localSupabaseUmd"));
-assert(!wrapperSource.includes('body: localSupabaseSource'));
+assert(wrapperSource.includes("'Supabase CDN fulfillment body'"));
 assert(wrapperSource.includes("checkpoint('orders_domcontentloaded')"));
 assert(wrapperSource.includes("checkpoint('orders_document_bootstrap_complete')"));
 assert(wrapperSource.includes('orders_domcontentloaded_node_watchdog'));
