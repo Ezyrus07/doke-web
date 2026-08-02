@@ -1,0 +1,217 @@
+{
+  "schemaVersion": 1,
+  "domain": "SCHED-001",
+  "dependentDomains": [
+    "ORD-001",
+    "MSG-001"
+  ],
+  "sublot": "SCHED-C01E",
+  "contractVersion": "sched-c01e-synthetic-order-fixture-lifecycle-readiness-v1",
+  "scope": "repository_only_synthetic_order_fixture_lifecycle_readiness",
+  "environment": "doke-web-staging",
+  "projectRef": "zwkczgewzbsorbrjuzpb",
+  "triggerEvidence": {
+    "c01dRun": 30753218635,
+    "c01dJob": 91510829724,
+    "authenticatedContexts": 2,
+    "stagingReads": 2,
+    "visibleOrderCards": 0,
+    "stagingMutations": 0,
+    "blocker": "synthetic_personas_have_no_visible_order_fixtures"
+  },
+  "authorization": {
+    "requiredFixtureLifecyclePhrase": "I_EXPLICITLY_AUTHORIZE_SCHED_C01E_SYNTHETIC_ORDER_FIXTURE_LIFECYCLE_ON_DOKE_STAGING",
+    "requiredBrowserReadOnlyPhrase": "I_EXPLICITLY_AUTHORIZE_SCHED_C01D_AUTHENTICATED_BROWSER_READ_ONLY_CANARY_ON_DOKE_STAGING",
+    "bothPhrasesRequiredInSameEnvelope": true,
+    "genericNextAllowed": false,
+    "fixtureMutationCovered": false,
+    "browserExecutionCovered": false,
+    "productionCovered": false,
+    "accountMutationCovered": false,
+    "paymentMutationCovered": false,
+    "deploymentCovered": false,
+    "migrationCovered": false,
+    "mergeCovered": false
+  },
+  "accountPolicy": {
+    "existingSyntheticClientRequired": true,
+    "existingSyntheticProfessionalRequired": true,
+    "authUserCreationForbidden": true,
+    "passwordChangeForbidden": true,
+    "emailChangeForbidden": true,
+    "roleChangeForbidden": true,
+    "realAccountUseForbidden": true,
+    "rawAccountIdentifiersInRepositoryForbidden": true,
+    "accountDigestsOnlyInEvidence": true
+  },
+  "lifecycle": {
+    "failClosed": true,
+    "phases": [
+      "preflight_zero_residue",
+      "resolve_existing_synthetic_personas",
+      "provision_bounded_fixture_graph",
+      "verify_fixture_visibility",
+      "execute_bound_c01d_read_only_canary",
+      "cleanup_fixture_graph",
+      "independent_zero_residue_verification"
+    ],
+    "singleWorkflowRequired": true,
+    "singleHeadShaRequired": true,
+    "singleRunIdRequired": true,
+    "runIdPattern": "^sched-c01e-[a-z0-9][a-z0-9-]{5,72}$",
+    "maximumLifetimeSeconds": 3600,
+    "cleanupAlwaysRequired": true,
+    "cleanupMustSurviveCanaryFailure": true,
+    "independentCleanupVerificationRequired": true,
+    "preExistingResidueBlocksExecution": true
+  },
+  "fixtureManifest": {
+    "serviceCount": 1,
+    "serviceVersionCount": 1,
+    "orderCount": 2,
+    "conversationCount": 2,
+    "messageCountMaximum": 2,
+    "scheduleReservationCount": 1,
+    "canonicalConfirmedOrderCount": 1,
+    "alternateOrderCount": 1,
+    "alternateAllowedAuthorities": [
+      "client_intent",
+      "none"
+    ],
+    "sameClientProfessionalPairRequired": true,
+    "bothOrdersVisibleToBothPersonasRequired": true,
+    "rawFixtureIdentifiersInRepositoryForbidden": true,
+    "fixtureIdsGeneratedAtRuntime": true,
+    "doubleMarkerRequired": true,
+    "markerFields": [
+      "metadata.canaryRunId",
+      "metadata.canaryDomain",
+      "metadata.canarySublot",
+      "metadata.canaryScope",
+      "external_id_prefix"
+    ]
+  },
+  "canonicalConfirmedCase": {
+    "orderStatus": "scheduled",
+    "reservationStatus": "confirmed",
+    "scheduleReservationIdRequired": true,
+    "scheduledAtRequired": true,
+    "reservationOrderMatchRequired": true,
+    "reservationStartMatchRequired": true,
+    "canonicalProjectionFunctionRequired": true,
+    "directScheduleProjectionWriteForbidden": true
+  },
+  "alternateCase": {
+    "orderStatusAllowed": [
+      "requested",
+      "accepted"
+    ],
+    "scheduleReservationIdRequired": false,
+    "scheduledAtRequired": false,
+    "confirmationCopyForbidden": true,
+    "clientIntentStoredOnlyAsMetadata": true
+  },
+  "messageSurface": {
+    "conversationPerOrderRequired": true,
+    "messageBodyMayContainOnlySyntheticText": true,
+    "scheduleCommandControlsForbidden": true,
+    "legacyScheduleCopyForbidden": true
+  },
+  "mutationBoundary": {
+    "serviceRoleOnly": true,
+    "directPostgresAllowedOnlyInsideSeparatelyAuthorizedApplication": true,
+    "browserMutationForbidden": true,
+    "productionTargetRejected": true,
+    "targetProjectMustMatch": true,
+    "headMustMatchAuthorizationEnvelope": true,
+    "paymentsForbidden": true,
+    "walletMutationForbidden": true,
+    "reviewsForbidden": true,
+    "disputesForbidden": true,
+    "notificationsMayOnlyBeTriggerGenerated": true,
+    "domainEventsMayOnlyBeTriggerOrCommandGenerated": true
+  },
+  "cleanup": {
+    "deleteOrderDependenciesBeforeOrders": true,
+    "deleteOrdersBeforeService": true,
+    "allowedBoundedRelations": [
+      "public.messages",
+      "public.conversations",
+      "public.notifications",
+      "public.order_status_history",
+      "private.order_event_delivery_attempts",
+      "private.order_metric_events",
+      "private.order_domain_events",
+      "private.schedule_domain_events",
+      "private.schedule_command_idempotency",
+      "public.schedule_reservations",
+      "public.orders",
+      "public.service_versions",
+      "public.services"
+    ],
+    "forbiddenDependencyRelations": [
+      "public.payments",
+      "public.payment_disputes",
+      "public.transactions",
+      "public.receipts",
+      "public.wallet_receivables",
+      "public.reviews"
+    ],
+    "abortOnMarkerMismatch": true,
+    "abortOnAmbiguousScope": true,
+    "abortOnForbiddenDependency": true,
+    "idempotentAlreadyCleanResultRequired": true,
+    "zeroResidueRequired": true
+  },
+  "evidencePolicy": {
+    "jsonReportAllowed": true,
+    "screenshotsAllowed": false,
+    "videoAllowed": false,
+    "traceAllowed": false,
+    "htmlReportAllowed": false,
+    "credentialsRecorded": false,
+    "rawAccountIdentifiersRecorded": false,
+    "rawFixtureIdentifiersRecorded": false,
+    "digestsCountsAndAssertionsOnly": true
+  },
+  "capabilities": {
+    "dryRunAvailable": true,
+    "environmentCheckAvailable": false,
+    "fixtureProvisioningAvailable": false,
+    "fixtureCleanupAvailable": false,
+    "browserExecutionAvailable": false,
+    "networkAvailable": false,
+    "credentialInputsAvailable": false,
+    "databaseConnectionAvailable": false
+  },
+  "effects": {
+    "stagingReads": 0,
+    "stagingMutations": 0,
+    "productionAccess": 0,
+    "accountsCreated": 0,
+    "accountsModified": 0,
+    "ordersCreated": 0,
+    "reservationsCreated": 0,
+    "conversationsCreated": 0,
+    "paymentsCreated": 0,
+    "migrationsApplied": 0,
+    "deploymentsPerformed": 0,
+    "mergePerformed": false,
+    "autoMergeEnabled": false
+  },
+  "nextGate": "separately authorized single-workflow fixture lifecycle plus bound C01D read-only canary",
+  "prohibitedActions": [
+    "production_access",
+    "fixture_application_without_both_authorization_phrases",
+    "auth_user_creation",
+    "account_profile_or_role_mutation",
+    "real_user_data_use",
+    "browser_write_requests",
+    "payment_or_wallet_mutation",
+    "migration_application",
+    "deployment",
+    "cron_or_worker_activation",
+    "billing_or_infrastructure_change",
+    "merge"
+  ]
+}
