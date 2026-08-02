@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 'use strict';
 
+const fs = require('fs');
 const { execFileSync } = require('child_process');
 
 const workflowPath = '.github/workflows/sched-001-c01d-canonical-runtime-reconcile-temporary.yml';
+const executorPath = 'scripts/execute-sched-001-c01d-authenticated-browser-read-only-canary.js';
 const gitOptions = { encoding: 'utf8', maxBuffer: 8 * 1024 * 1024 };
 const startMarker = "          node <<'NODE'\n";
 const endMarker = '\n          NODE\n';
@@ -76,3 +78,19 @@ for (const [before, after] of syntaxRepairs) {
 process.stdout.write(`Using canonical reconciliation source from ${sourceCommit}.\n`);
 const execute = new Function('require', 'process', '__dirname', '__filename', embedded);
 execute(require, process, __dirname, __filename);
+
+let executor = fs.readFileSync(executorPath, 'utf8');
+const escapedBackticks = (executor.match(/\\`/g) || []).length;
+const escapedInterpolations = (executor.match(/\\\$\{/g) || []).length;
+if (escapedBackticks === 0 || escapedInterpolations === 0) {
+  throw new Error(
+    `Expected generated executor template escapes, found backticks=${escapedBackticks}, interpolations=${escapedInterpolations}.`
+  );
+}
+executor = executor
+  .replace(/\\`/g, '`')
+  .replace(/\\\$\{/g, '${');
+fs.writeFileSync(executorPath, executor);
+process.stdout.write(
+  `Materialized canonical executor templates: backticks=${escapedBackticks}, interpolations=${escapedInterpolations}.\n`
+);
