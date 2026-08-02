@@ -1,6 +1,6 @@
 {
-  "version": "1.3.79",
-  "updatedAt": "2026-08-02T16:27:00-03:00",
+  "version": "1.3.80",
+  "updatedAt": "2026-08-02T16:59:00-03:00",
   "title": "Doke Domain Completion Matrix",
   "purpose": "Single source of truth for domain maturity, data authority, staging evidence, blockers, dependencies and mandatory completion order.",
   "maturityScale": {
@@ -1779,7 +1779,16 @@
         "docs/validation/MSG-001-A02-CANONICAL-AUTHORITY-BOUNDARY.json",
         "scripts/audit-msg-001-a02-canonical-authority-boundary.js",
         "scripts/test-msg-001-a02-canonical-authority-boundary.js",
-        ".github/workflows/msg-001-a02-canonical-authority-boundary.yml"
+        ".github/workflows/msg-001-a02-canonical-authority-boundary.yml",
+        "config/msg-001-a03-server-command-boundary.json",
+        "docs/MSG-001-A03-SERVER-COMMAND-BOUNDARY.md",
+        "docs/validation/MSG-001-A03-SERVER-COMMAND-BOUNDARY.json",
+        "scripts/audit-msg-001-a03-server-command-boundary.js",
+        "scripts/test-msg-001-a03-server-command-boundary.js",
+        ".github/workflows/msg-001-a03-server-command-boundary.yml",
+        "assets/js/services/message-service.js",
+        "assets/js/services/api-repository-provider.js",
+        "scripts/test-attachments-supabase-repository-contract.js"
       ],
       "scanRoots": [
         "backend/modules/messaging",
@@ -1805,7 +1814,9 @@
         "test:sched-001-c01c-deterministic-frontend-presentation",
         "audit:msg-001-a01-authority-baseline",
         "audit:msg-001-a02-canonical-authority-boundary",
-        "test:msg-001-a02-canonical-authority-boundary"
+        "test:msg-001-a02-canonical-authority-boundary",
+        "audit:msg-001-a03-server-command-boundary",
+        "test:msg-001-a03-server-command-boundary"
       ],
       "evidence": [
         "Backend handlers and staging multi-domain messaging flow exist.",
@@ -1815,7 +1826,8 @@
         "Conversation and message participant policies passed regression canaries after initplan optimization.",
         "SCHED-C01C makes message order summaries and message order details consume the canonical schedule presenter instead of independently presenting desired date and advertised availability.",
         "MSG-A01 froze the repository-only authority baseline: the browser retains persistent local conversation/message fallback and localStorage presence, typing and read receipts; the backend Supabase service and participant RLS exist; authenticated browser DML policies remain; conversations and messages are not declared in Supabase Realtime; transaction-attachments retains local pending fallback.",
-        "MSG-A02 implemented the repository-only canonical authority split: authenticated UUID sessions are remote-only and fail closed without Supabase; non-UUID or anonymous fixtures are memory-only; canonical paths no longer merge, persist or synchronize browser-local conversations and messages."
+        "MSG-A02 implemented the repository-only canonical authority split: authenticated UUID sessions are remote-only and fail closed without Supabase; non-UUID or anonymous fixtures are memory-only; canonical paths no longer merge, persist or synchronize browser-local conversations and messages.",
+        "MSG-A03 repository-only server-owned command boundary: authenticated UUID commands require the dedicated API provider and direct browser Supabase DML is blocked."
       ],
       "blockers": [
         {
@@ -1841,9 +1853,8 @@
         }
       ],
       "nextActions": [
-        "MSG-A03: introduce a server-owned command and read-state boundary; retire direct authenticated browser DML as canonical authority.",
-        "MSG-A04: prepare participant-scoped Realtime publication and subscription contracts without applying staging changes.",
-        "MSG-A05: map and harden transaction-attachments ownership, signed URL, cleanup and retention boundaries."
+        "MSG-A04: prepare participant-scoped Realtime publication and subscription contracts without staging application.",
+        "MSG-A05: harden transaction-attachments ownership, signed URL, cleanup and retention boundaries."
       ],
       "exitCriteria": [
         "Two devices exchange messages without refresh.",

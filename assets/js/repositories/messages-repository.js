@@ -289,6 +289,19 @@
     return error;
   }
 
+  function createDirectBrowserDmlError(operation) {
+    var error = new Error('Comando de mensagens exige o boundary server-owned: ' + normalizeText(operation || 'unknown') + '.');
+    error.code = 'DOKE_MESSAGES_DIRECT_BROWSER_DML_BLOCKED';
+    error.operation = normalizeText(operation || 'unknown');
+    return error;
+  }
+
+  function rejectDirectBrowserDml(operation) {
+    var error = createDirectBrowserDmlError(operation);
+    warnRemote(error, 'DML direto bloqueado');
+    return Promise.reject(error);
+  }
+
   function setProviderState(provider) {
     try { document.documentElement.setAttribute(PROVIDER_ATTRIBUTE, provider); } catch (error) {}
   }
@@ -450,75 +463,7 @@
     return metadata;
   }
 
-  function saveRemote(conversation) {
-    var client = getSupabaseClient();
-    if (!client) return Promise.reject(new Error('Supabase client unavailable.'));
-    return getCurrentSupabaseUser(client).then(function (user) {
-      if (!user || !isUuid(user.id)) throw new Error('Faça login com uma conta Supabase para sincronizar a conversa.');
-      var normalized = normalizeConversation(conversation);
-      if (!isUuid(normalized.clientId) || !isUuid(normalized.professionalId)) throw new Error('Cliente ou profissional ainda não possuem identidade Supabase válida.');
-      if (user.id !== normalized.clientId && user.id !== normalized.professionalId) throw new Error('Você não participa desta conversa.');
-      return resolveRemoteOrderId(client, normalized.orderId).then(function (remoteOrderId) {
-        var payload = {
-          external_id: normalized.id,
-          order_id: remoteOrderId,
-          client_id: normalized.clientId,
-          professional_id: normalized.professionalId,
-          status: normalized.archived ? 'archived' : 'active',
-          last_message_at: normalized.updatedAt || nowIso(),
-          metadata: sanitizeConversationMetadata(normalized),
-          updated_at: nowIso()
-        };
-        return client.from(REMOTE_CONVERSATIONS_TABLE).upsert(payload, { onConflict: 'external_id' }).select('*').single().then(function (result) {
-          if (result.error) throw result.error;
-          var remoteConversation = result.data;
-          var messages = normalized.messages || [];
-          return messages.reduce(function (chain, message) {
-            return chain.then(function () {
-              if (!isUuid(message.senderId)) return null;
-              var attachmentRepository = Doke.repositories && Doke.repositories.attachments;
-              var attachmentTask = attachmentRepository && typeof attachmentRepository.syncPendingConversation === 'function'
-                ? attachmentRepository.syncPendingConversation(normalized.id, message.attachments || [])
-                : Promise.resolve(message.attachments || []);
-              return attachmentTask.then(function (attachments) {
-                var normalizedMessage = normalizeMessage(Object.assign({}, message, {
-                  attachments: attachments,
-                  attachment: attachments[0] || null,
-                  src: attachments[0] && attachments[0].url || message.src || ''
-                }), normalized);
-                var persistedAttachments = attachmentRepository && typeof attachmentRepository.toPersistedMetadata === 'function'
-                  ? attachmentRepository.toPersistedMetadata(normalizedMessage.attachments || [])
-                  : normalizedMessage.attachments || [];
-                var persistedMetadata = clone(normalizedMessage);
-                persistedMetadata.attachments = persistedAttachments;
-                persistedMetadata.attachment = persistedAttachments[0] || null;
-                if (persistedAttachments[0] && persistedAttachments[0].path) persistedMetadata.src = '';
-                var messagePayload = {
-                  external_id: normalizedMessage.id,
-                  conversation_id: remoteConversation.id,
-                  sender_id: normalizedMessage.senderId,
-                  body: normalizedMessage.body || normalizedMessage.text || '',
-                  message_type: normalizedMessage.type || 'text',
-                  attachments: persistedAttachments,
-                  metadata: persistedMetadata,
-                  status: normalizedMessage.read ? 'read' : (normalizedMessage.status || 'sent'),
-                  read_at: normalizedMessage.read ? nowIso() : null,
-                  created_at: normalizedMessage.createdAt || nowIso()
-                };
-                return client.from(REMOTE_MESSAGES_TABLE).upsert(messagePayload, { onConflict: 'external_id' }).then(function (messageResult) {
-                  if (messageResult.error) throw messageResult.error;
-                });
-              });
-            });
-          }, Promise.resolve()).then(function () {
-            return fetchRemoteConversations().then(function (items) {
-              return items.find(function (item) { return item.id === normalized.id; }) || normalized;
-            });
-          });
-        });
-      });
-    });
-  }
+
 
   function saveLocal(conversation, syncStatus) {
     var normalized = normalizeConversation(Object.assign({}, conversation, { syncStatus: syncStatus || conversation.syncStatus || 'local' }));
@@ -597,21 +542,7 @@
   function save(conversation) {
     var normalized = normalizeConversation(conversation);
     if (getAuthorityMode() === 'fixture-memory') return saveLocal(normalized, 'memory-only');
-    if (!getSupabaseClient()) {
-      var unavailable = createAuthorityError('Cliente Supabase indisponível para gravar a conversa autenticada.');
-      warnRemote(unavailable, 'gravação');
-      return Promise.reject(unavailable);
-    }
-    return saveRemote(normalized).then(function (remoteSaved) {
-      cache = mergeById([remoteSaved], cache || []);
-      cacheAuthority = 'remote-only';
-      lastRemoteError = null;
-      setProviderState('supabase');
-      return clone(remoteSaved);
-    }).catch(function (error) {
-      warnRemote(error, 'gravação');
-      throw error;
-    });
+    return rejectDirectBrowserDml('save');
   }
 
   function createForOrder(order, options) {
@@ -681,6 +612,7 @@
   function removeMessage(conversationId, messageId) {
     var id = normalizeText(conversationId), target = normalizeText(messageId);
     if (!id || !target) return Promise.resolve(false);
+    if (getAuthorityMode() === 'remote-only') return rejectDirectBrowserDml('removeMessage');
     return getById(id).then(function (conversation) {
       if (!conversation) return false;
       var before = conversation.messages || [];
@@ -689,16 +621,14 @@
       var last = conversation.messages[conversation.messages.length - 1];
       conversation.lastMessage = getMessagePreview(last) || conversation.lastSeen || conversation.statusLabel || 'Conversa do pedido';
       conversation.updatedAt = nowIso();
-      return save(conversation).then(function () {
-        var client = getSupabaseClient();
-        if (!client) return true;
-        return client.from(REMOTE_MESSAGES_TABLE).update({ status: 'removed', body: '', metadata: {} }).eq('external_id', target).then(function () { return true; });
-      });
+      return save(conversation).then(function () { return true; });
     });
   }
 
   function markAsRead(conversationId) {
     var id = normalizeText(conversationId);
+    if (!id) return Promise.resolve(false);
+    if (getAuthorityMode() === 'remote-only') return rejectDirectBrowserDml('markAsRead');
     return getById(id).then(function (conversation) {
       if (!conversation) return false;
       var user = getSessionUser() || {};
@@ -713,7 +643,7 @@
     readLocal: readLocal, writeLocal: writeLocal, listLocal: listLocal, load: load, list: list, getById: getById, save: save,
     createForOrder: createForOrder, updateOrderContext: updateOrderContext, addMessage: addMessage, removeMessage: removeMessage,
     markAsRead: markAsRead, clearLocal: function () { writeLocal([]); }, syncPending: function () { return synchronizePending(readLocal()); },
-    getAuthorityStatus: function () { return Object.freeze({ authority: getAuthorityMode(), persistentLocalAuthority: false, pendingSynchronization: false }); },
+    getAuthorityStatus: function () { var authority = getAuthorityMode(); return Object.freeze({ authority: authority, commandAuthority: authority === 'remote-only' ? 'server-owned' : 'fixture-memory', directBrowserDml: false, persistentLocalAuthority: false, pendingSynchronization: false }); },
     getProviderStatus: function () { var authority = getAuthorityMode(); return Object.freeze({ authority: authority, provider: authority === 'remote-only' ? (getSupabaseClient() ? 'supabase' : 'unavailable') : 'fixture-memory', fallbackActive: false, lastError: lastRemoteError ? normalizeText(lastRemoteError.message) : '' }); },
     clearCache: function () { cache = null; cacheAuthority = ''; }
   });

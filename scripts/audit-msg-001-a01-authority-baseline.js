@@ -114,7 +114,10 @@ assert.strictEqual(msg.userFacingAuthority, 'hybrid');
 assert.strictEqual(msg.serverAuthority, 'partial');
 assert.deepStrictEqual(msg.blockers.map((item) => item.id), ['MSG-B02', 'MSG-B03', 'MSG-B04']);
 assert(msg.evidence.some((item) => item.includes('MSG-A01')));
-if (fs.existsSync('config/msg-001-a02-canonical-authority-boundary.json')) {
+if (fs.existsSync('config/msg-001-a03-server-command-boundary.json')) {
+  assert(msg.nextActions.some((item) => item.includes('MSG-A04')));
+  assert(!msg.nextActions.some((item) => item.includes('MSG-A03')));
+} else if (fs.existsSync('config/msg-001-a02-canonical-authority-boundary.json')) {
   assert(msg.nextActions.some((item) => item.includes('MSG-A03')));
   assert(!msg.nextActions.some((item) => item.includes('MSG-A02')));
 } else {

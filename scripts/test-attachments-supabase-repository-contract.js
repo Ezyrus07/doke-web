@@ -85,7 +85,15 @@ assert.strictEqual(persistedPending.dataUrl, 'data:image/png;base64,BBB', 'Small
 assert(repository.includes('toPersistedMetadata'), 'Signed URLs and Base64 previews must not be persisted as remote metadata.');
 assert(repository.includes('resolveUrls'), 'Private attachments must be rehydrated with signed URLs.');
 assert(orderRepository.includes('toPersistedMetadata'), 'Order metadata must strip transient attachment URLs before remote persistence.');
-assert(messagesRepository.includes('toPersistedMetadata'), 'Message metadata must strip transient attachment URLs before remote persistence.');
+if (fs.existsSync('config/msg-001-a03-server-command-boundary.json')) {
+  const messageService = fs.readFileSync('assets/js/services/message-service.js', 'utf8');
+  assert(!messagesRepository.includes('saveRemote'), 'A03 must remove browser-owned remote message persistence.');
+  assert(!messagesRepository.includes('.upsert('), 'A03 must remove direct browser message upsert.');
+  assert(messageService.includes('executeMessagesServerCommand'), 'A03 must route message persistence through the server-owned command boundary.');
+  assert(repository.includes('toPersistedMetadata'), 'Attachment metadata sanitation must remain owned by the attachment repository.');
+} else {
+  assert(messagesRepository.includes('toPersistedMetadata'), 'Message metadata must strip transient attachment URLs before remote persistence.');
+}
 assert(orderPage.includes('attachments-repository.js'), 'Budget page must load the attachment authority.');
 assert(messagesPage.includes('attachments-repository.js'), 'Messages page must load the attachment authority.');
 assert(ordersPage.includes('attachments-repository.js'), 'Orders page must load the attachment authority.');

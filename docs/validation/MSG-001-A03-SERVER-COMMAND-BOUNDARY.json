@@ -1,0 +1,69 @@
+{
+  "contractVersion": "msg-a03-server-command-boundary-v1",
+  "status": "repository_only_server_command_boundary_enforced",
+  "domain": "MSG-001",
+  "observedAt": "2026-08-02T16:59:00-03:00",
+  "repository": {
+    "name": "Ezyrus07/doke-web",
+    "branch": "msg/msg-001-baseline-audit",
+    "baseHead": "2eb72a137092aa2eb699af0cd5bd1e57e82921e5"
+  },
+  "commandAuthority": {
+    "authenticatedUuidSession": "server-owned-api-provider",
+    "fixtureSession": "fixture-memory",
+    "globalProviderMayRemainMock": true,
+    "directBrowserSupabaseDmlAllowed": false,
+    "localFallbackAllowed": false,
+    "unavailableServerBoundaryPolicy": "reject_fail_closed",
+    "unavailableErrorCode": "DOKE_MESSAGES_SERVER_COMMAND_UNAVAILABLE",
+    "directDmlErrorCode": "DOKE_MESSAGES_DIRECT_BROWSER_DML_BLOCKED"
+  },
+  "commands": [
+    "createForOrder",
+    "updateOrder",
+    "sendMessage",
+    "removeMessage",
+    "markRead"
+  ],
+  "readAuthority": {
+    "conversationsAndMessages": "supabase-remote-only",
+    "changedByA03": false
+  },
+  "endpoints": {
+    "createForOrder": "/orders/:id/conversation",
+    "updateOrder": "/conversations/:id/order",
+    "sendMessage": "/conversations/:id/messages",
+    "removeMessage": "/conversations/:id/messages/remove",
+    "markRead": "/conversations/:id/read"
+  },
+  "blockerDisposition": {
+    "MSG-B02": {
+      "status": "open",
+      "reason": "Realtime publication and subscription are MSG-A04."
+    },
+    "MSG-B03": {
+      "status": "narrowed",
+      "reason": "Conversation commands and read state now require the server-owned provider; presence and typing remain local-only."
+    },
+    "MSG-B04": {
+      "status": "open",
+      "reason": "Attachment lifecycle remains MSG-A05."
+    }
+  },
+  "orderedNextActions": [
+    "MSG-A04: prepare participant-scoped Realtime publication and subscription contracts without staging application.",
+    "MSG-A05: harden transaction-attachments ownership, signed URL, cleanup and retention boundaries."
+  ],
+  "effects": {
+    "stagingReads": 0,
+    "stagingMutations": 0,
+    "migrationsApplied": 0,
+    "realtimePublicationChanges": 0,
+    "storagePolicyChanges": 0,
+    "deployments": 0,
+    "productionChanged": false,
+    "accountsChanged": 0,
+    "messagesChanged": 0,
+    "pullRequestsMerged": 0
+  }
+}

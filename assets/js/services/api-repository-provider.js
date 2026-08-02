@@ -81,6 +81,7 @@
       createForOrder: '/orders/:id/conversation',
       updateOrder: '/conversations/:id/order',
       sendMessage: '/conversations/:id/messages',
+      removeMessage: '/conversations/:id/messages/remove',
       markRead: '/conversations/:id/read'
     }),
     messages: Object.freeze({

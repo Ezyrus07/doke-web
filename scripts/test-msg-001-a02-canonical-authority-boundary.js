@@ -76,7 +76,10 @@ function boot(user, options) {
   );
   await assert.rejects(
     remote.repository.save({ id: 'conv-real', clientId: uuid, professionalId: '22222222-2222-4222-8222-222222222222', messages: [] }),
-    function (error) { return error && error.code === 'DOKE_MESSAGES_REMOTE_AUTHORITY_UNAVAILABLE'; }
+    function (error) {
+      if (fs.existsSync('config/msg-001-a03-server-command-boundary.json')) return error && error.code === 'DOKE_MESSAGES_DIRECT_BROWSER_DML_BLOCKED';
+      return error && error.code === 'DOKE_MESSAGES_REMOTE_AUTHORITY_UNAVAILABLE';
+    }
   );
   assert.strictEqual(remote.getWrites(), 0, 'real authority must not persist failed operations locally');
   const remoteLocal = remote.repository.listLocal({ currentUser: false });

@@ -60,7 +60,11 @@ assert(version[2] >= 79, 'MSG-A02 requires matrix 1.3.79 or later');
 const msg = matrix.domains.find(function (domain) { return domain.id === 'MSG-001'; });
 assert(msg);
 assert(msg.evidence.some(function (item) { return item.includes('MSG-A02'); }));
-assert(msg.nextActions.length === 3 && msg.nextActions[0].includes('MSG-A03'));
+if (fs.existsSync('config/msg-001-a03-server-command-boundary.json')) {
+  assert(msg.nextActions.length === 2 && msg.nextActions[0].includes('MSG-A04'));
+} else {
+  assert(msg.nextActions.length === 3 && msg.nextActions[0].includes('MSG-A03'));
+}
 Object.values(paths).filter(function (file) { return file !== paths.matrix && file !== paths.package; }).forEach(function (file) {
   assert(msg.requiredPaths.includes(file), 'MSG requiredPaths missing ' + file);
 });
