@@ -1,0 +1,153 @@
+name: Doke SCHED-C01B Governance Reconciliation
+
+on:
+  pull_request:
+    branches:
+      - search/search-ux02-intent-favorites-clean
+    paths:
+      - '.github/workflows/sched-001-c01b-governance-reconciliation.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sched-c01b-governance-reconciliation
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    if: >-
+      github.event.pull_request.number == 25 &&
+      github.event.pull_request.draft == true &&
+      github.event.pull_request.head.ref == 'ord/ord-001-baseline-audit'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ord/ord-001-baseline-audit
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install pinned dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Reconcile C01B matrix governance
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          matrix_path = Path('config/domain-completion-matrix.json')
+          matrix = json.loads(matrix_path.read_text())
+          if matrix.get('version') != '1.3.71':
+              raise SystemExit(f"Unexpected matrix version: {matrix.get('version')}")
+
+          matrix['version'] = '1.3.72'
+          matrix['updatedAt'] = '2026-08-02T00:05:00-03:00'
+          domains = {item['id']: item for item in matrix['domains']}
+          sched = domains['SCHED-001']
+          order = domains['ORD-001']
+
+          required_paths = [
+              'config/sched-001-c01b-frontend-canonical-schedule-read-model.json',
+              'docs/SCHED-001-C01B-FRONTEND-CANONICAL-SCHEDULE-READ-MODEL.md',
+              'docs/validation/SCHED-001-C01B-FRONTEND-CANONICAL-SCHEDULE-READ-MODEL.json',
+              'assets/js/repositories/orders-repository.js',
+              'assets/js/services/orders-service.js',
+              'assets/js/pages/orcamento.js',
+              'assets/js/pages/pedidos-local-orders.js',
+              'scripts/audit-sched-001-c01b-frontend-canonical-schedule-read-model.js',
+              'scripts/test-sched-001-c01b-frontend-canonical-schedule-read-model.js',
+              '.github/workflows/sched-001-c01b-frontend-canonical-schedule-read-model.yml'
+          ]
+          tests = [
+              'audit:sched-001-c01b-frontend-canonical-schedule-read-model',
+              'test:sched-001-c01b-frontend-canonical-schedule-read-model'
+          ]
+
+          for domain in (sched, order):
+              for path in required_paths:
+                  if path not in domain['requiredPaths']:
+                      domain['requiredPaths'].append(path)
+              for test in tests:
+                  if test not in domain['tests']:
+                      domain['tests'].append(test)
+
+          sched_evidence = [
+              'SCHED-C01B implemented and executable-tested the browser canonical schedule read model without enabling any remote scheduling command.',
+              'The order DTO maps schedule_reservation_id and scheduled_at only from canonical order columns, derives none, client_intent, canonical_confirmed or incomplete_projection, and fails closed on partial tuples.',
+              'The orders surface distinguishes confirmed schedule, client intent, incomplete projection and advertised availability while generic browser transitions to scheduled remain absent.'
+          ]
+          order_evidence = [
+              'SCHED-C01B gives ORD browser surfaces a read-only canonical schedule projection using scheduleReservationId, scheduledAt, scheduleAuthority and hasCanonicalSchedule.',
+              'Quote-submitted desiredDate remains client intent and cannot manufacture schedule_reservation_id, scheduled_at or scheduled status.',
+              'C01B changes no staging data, migrations, deployments, remote command activation, production or merge state and preserves ORD-B02, ORD-B03 and ORD-B05.'
+          ]
+          for item in sched_evidence:
+              if item not in sched['evidence']:
+                  sched['evidence'].append(item)
+          for item in order_evidence:
+              if item not in order['evidence']:
+                  order['evidence'].append(item)
+
+          sched['nextActions'] = [
+              'Complete SCHED-C01C deterministic frontend presentation coverage for order cards, order detail and message summaries while keeping scheduling commands disabled.',
+              'Prepare the authenticated read-only two-account browser canary required by ORD-B02 only after C01C repository validation is green.',
+              'Keep staging execution, frontend remote command activation, Cron or workers, production release and pull-request merge under independent authorization.'
+          ]
+
+          if sched.get('maturity') != 3 or sched.get('serverAuthority') != 'partial':
+              raise SystemExit('C01B must not promote SCHED maturity or authority')
+          if sched.get('blockers') != []:
+              raise SystemExit('C01B must not reopen SCHED blockers')
+          if [item['id'] for item in order.get('blockers', [])] != ['ORD-B02', 'ORD-B03', 'ORD-B05']:
+              raise SystemExit('C01B must preserve remaining ORD blockers')
+
+          matrix_path.write_text(json.dumps(matrix, indent=2, ensure_ascii=False) + '\n')
+          PY
+
+      - name: Regenerate matrix derivatives
+        run: npm run write:domain-completion-matrix
+
+      - name: Validate C01B and cumulative scheduling contracts
+        run: |
+          set -euo pipefail
+          npm run audit:sched-001-c01b-frontend-canonical-schedule-read-model
+          npm run test:sched-001-c01b-frontend-canonical-schedule-read-model
+          npm run audit:sched-001-c01a-frontend-canonical-authority-readiness
+          npm run test:sched-001-c01a-frontend-canonical-authority-readiness
+          npm run audit:sched-001-b04c-authenticated-ord-sched-composition-canary-closure
+          node scripts/audit-sched-001-b04d-canonical-order-projection-guard-readiness.js
+          node scripts/test-sched-001-b04d-canonical-order-projection-guard-runtime.js
+          node scripts/audit-sched-001-b04b-ord-canonical-wiring-implementation.js
+          node scripts/test-sched-001-b04b-ord-canonical-wiring-runtime.js
+          node scripts/audit-ord-001-a11-scheduling-authority-handoff.js
+          node scripts/audit-ord-001-a10-blocker-reconciliation.js
+          npm run audit:domain-completion-matrix
+          node --check assets/js/repositories/orders-repository.js
+          node --check assets/js/services/orders-service.js
+          node --check assets/js/pages/pedidos-local-orders.js
+          git diff --check
+
+      - name: Publish reconciled C01B governance
+        run: |
+          set -euo pipefail
+          git config user.name "doke-ci"
+          git config user.email "doke-ci@users.noreply.github.com"
+          git add config/domain-completion-matrix.json
+          git add docs/DOMAIN-COMPLETION-MATRIX.md
+          git add -f reports/generated/domain-completion-matrix-report.json
+          if git diff --cached --quiet; then
+            echo "C01B governance already reconciled."
+            exit 0
+          fi
+          git commit -m "docs(sched): close C01B canonical schedule read model"
+          git push origin HEAD:ord/ord-001-baseline-audit
