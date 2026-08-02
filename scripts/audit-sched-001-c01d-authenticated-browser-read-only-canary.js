@@ -10,10 +10,12 @@ const paths = {
   workflow: '.github/workflows/sched-001-c01d-authenticated-browser-read-only-canary.yml',
   readiness: 'config/sched-001-c01d-authenticated-browser-canary-readiness.json'
 };
-Object.values(paths).forEach((file) => assert(fs.existsSync(file), `Missing C01D execution asset: ${file}`));
+[paths.executor, paths.test, paths.readiness].forEach((file) => {
+  assert(fs.existsSync(file), `Missing C01D execution asset: ${file}`);
+});
+assert(!fs.existsSync(paths.workflow), 'C01D one-shot workflow must remain removed after authorization consumption.');
 
 const executor = fs.readFileSync(paths.executor, 'utf8');
-const workflow = fs.readFileSync(paths.workflow, 'utf8');
 const readiness = JSON.parse(fs.readFileSync(paths.readiness, 'utf8'));
 
 [
@@ -27,7 +29,9 @@ const readiness = JSON.parse(fs.readFileSync(paths.readiness, 'utf8'));
   'authorizationPhraseDigest',
   'caseManifestDigest',
   'clientAccountDigest',
-  'professionalAccountDigest'
+  'professionalAccountDigest',
+  'Exactly one of --dry-run, --check-env or --execute is required.',
+  'environment_ready_for_authorized_read_only_execution'
 ].forEach((fragment) => assert(executor.includes(fragment), `Executor missing: ${fragment}`));
 
 [
@@ -40,26 +44,12 @@ const readiness = JSON.parse(fs.readFileSync(paths.readiness, 'utf8'));
   'trace: \'on\''
 ].forEach((fragment) => assert(!executor.includes(fragment), `Executor contains forbidden fragment: ${fragment}`));
 
-assert(workflow.includes('permissions:\n  contents: read'));
-assert(workflow.includes('DOKE_STAGING_CLIENT_EMAIL: ${{ secrets.DOKE_STAGING_CLIENT_EMAIL }}'));
-assert(workflow.includes('DOKE_STAGING_PROFESSIONAL_PASSWORD: ${{ secrets.DOKE_STAGING_PROFESSIONAL_PASSWORD }}'));
-assert(workflow.includes('Fail-closed environment preflight'));
-assert(workflow.indexOf('Fail-closed environment preflight') < workflow.indexOf('Install isolated Chromium'));
-assert(workflow.includes('DOKE_E2E_DISABLE_REMOTE_SERVICES=0'));
-assert(workflow.includes('--execute --write-report'));
-assert(workflow.includes('retention-days: 14'));
-[
-  'contents: write',
-  'SUPABASE_DB_PASSWORD',
-  'SUPABASE_ACCESS_TOKEN',
-  'service_role',
-  'git push',
-  'psql '
-].forEach((fragment) => assert(!workflow.includes(fragment), `Workflow contains forbidden fragment: ${fragment}`));
-
 assert.strictEqual(readiness.authorization.requiredExactPhrase, 'I_EXPLICITLY_AUTHORIZE_SCHED_C01D_AUTHENTICATED_BROWSER_READ_ONLY_CANARY_ON_DOKE_STAGING');
+assert.strictEqual(readiness.authorization.genericNextAllowed, false);
 assert.strictEqual(readiness.runtimeGate.postLoginReadOnlyGuardRequired, true);
 assert.deepStrictEqual(readiness.runtimeGate.allowedPostLoginMethods, ['GET', 'HEAD', 'OPTIONS']);
 assert.strictEqual(readiness.evidencePolicy.screenshotsAllowed, false);
+assert.strictEqual(readiness.evidencePolicy.reportContainsRawUserIdentifiers, false);
+assert.strictEqual(readiness.evidencePolicy.reportContainsRawOrderIdentifiers, false);
 
-console.log('SCHED-C01D authenticated browser read-only execution audit passed.');
+console.log('SCHED-C01D execution package lock audit passed; one-shot workflow is absent.');
