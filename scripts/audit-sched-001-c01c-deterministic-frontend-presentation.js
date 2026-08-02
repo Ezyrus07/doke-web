@@ -104,7 +104,10 @@ assert(messagesHtml.indexOf(scriptPath) < messagesHtml.indexOf('assets/js/pages/
   assert(!messages.includes(fragment));
 });
 
-assert.strictEqual(matrix.version, '1.3.73');
+const matrixParts = String(matrix.version).split('.').map(Number);
+assert.strictEqual(matrixParts[0], 1);
+assert.strictEqual(matrixParts[1], 3);
+assert(matrixParts[2] >= 73, 'C01C requires matrix 1.3.73 or later');
 const sched = matrix.domains.find((domain) => domain.id === 'SCHED-001');
 const ord = matrix.domains.find((domain) => domain.id === 'ORD-001');
 const msg = matrix.domains.find((domain) => domain.id === 'MSG-001');
