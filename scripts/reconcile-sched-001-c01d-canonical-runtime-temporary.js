@@ -90,7 +90,25 @@ if (escapedBackticks === 0 || escapedInterpolations === 0) {
 executor = executor
   .replace(/\\`/g, '`')
   .replace(/\\\$\{/g, '${');
+
+const regexRepairs = new Map([
+  [
+    "page.waitForURL(/\\\\/pedidos\\\\.html(?:[?#].*)?$/",
+    "page.waitForURL(/\\/pedidos\\.html(?:[?#].*)?$/"
+  ],
+  [
+    "/supabase\\\\.co/.test(entry.url)",
+    "/supabase\\.co/.test(entry.url)"
+  ]
+]);
+for (const [before, after] of regexRepairs) {
+  const count = executor.split(before).length - 1;
+  if (count !== 1) throw new Error(`Expected one generated regex repair target, found ${count}: ${before}`);
+  executor = executor.replace(before, after);
+}
+
 fs.writeFileSync(executorPath, executor);
+execFileSync(process.execPath, ['--check', executorPath], { stdio: 'inherit' });
 process.stdout.write(
-  `Materialized canonical executor templates: backticks=${escapedBackticks}, interpolations=${escapedInterpolations}.\n`
+  `Materialized canonical executor templates: backticks=${escapedBackticks}, interpolations=${escapedInterpolations}; regexes=2.\n`
 );
