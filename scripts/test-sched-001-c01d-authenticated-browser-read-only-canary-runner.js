@@ -13,7 +13,8 @@ const legacyWait = "page.waitForURL(/\\/pedidos\\.html(?:[?#].*)?$/, { timeout: 
 const executorSource = fs.readFileSync(executor, 'utf8');
 const runnerSource = fs.readFileSync(runner, 'utf8');
 assert.strictEqual(executorSource.split(legacyWait).length - 1, 1);
-assert(runnerSource.includes("waitUntil: 'domcontentloaded'"));
+assert(runnerSource.includes("waitUntil: 'commit'"));
+assert(!runnerSource.includes("waitUntil: 'domcontentloaded'"));
 assert(runnerSource.includes('source.replace(legacyWait, correctedWait)'));
 assert(runnerSource.includes('fs.rmSync(runtimePath, { force: true })'));
 
