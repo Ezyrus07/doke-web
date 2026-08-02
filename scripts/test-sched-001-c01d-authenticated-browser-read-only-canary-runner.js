@@ -3,19 +3,18 @@
 
 const assert = require('assert');
 const fs = require('fs');
-const path = require('path');
 const { spawnSync } = require('child_process');
 
 const runner = 'scripts/run-sched-001-c01d-authenticated-browser-read-only-canary.js';
 const executor = 'scripts/execute-sched-001-c01d-authenticated-browser-read-only-canary.js';
 const runtimePrefix = '.sched-c01d-authenticated-browser-read-only-canary-runtime-';
 const legacyWait = "page.waitForURL(/\\/pedidos\\.html(?:[?#].*)?$/, { timeout: 30_000 }),";
-const correctedWait = "page.waitForURL(/\\/pedidos\\.html(?:[?#].*)?$/, { waitUntil: 'domcontentloaded', timeout: 30_000 }),";
 
 const executorSource = fs.readFileSync(executor, 'utf8');
 const runnerSource = fs.readFileSync(runner, 'utf8');
 assert.strictEqual(executorSource.split(legacyWait).length - 1, 1);
-assert(runnerSource.includes(correctedWait));
+assert(runnerSource.includes("waitUntil: 'domcontentloaded'"));
+assert(runnerSource.includes('source.replace(legacyWait, correctedWait)'));
 assert(runnerSource.includes('fs.rmSync(runtimePath, { force: true })'));
 
 const before = fs.readdirSync('scripts').filter((name) => name.startsWith(runtimePrefix));
