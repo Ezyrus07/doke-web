@@ -103,24 +103,52 @@ const boundedNavigateOrders = `async function navigateOrders(page) {
   const localSupabaseUmd = supabaseUmdCandidates.find((candidate) => fs.existsSync(candidate));
   if (!localSupabaseUmd) throw new Error('Pinned local Supabase UMD browser bundle was not found after npm ci.');
 
+  await page.addInitScript({ path: localSupabaseUmd });
+  checkpoint('orders_supabase_local_preloaded');
   await page.route('https://fonts.googleapis.com/**', (route) => route.abort('blockedbyclient'));
   await page.route('https://fonts.gstatic.com/**', (route) => route.abort('blockedbyclient'));
-  await page.route('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2', (route) => route.fulfill({
-    path: localSupabaseUmd,
-    contentType: 'application/javascript'
-  }));
+  await page.route('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2**', (route) => {
+    checkpoint('orders_supabase_cdn_intercepted');
+    return route.abort('blockedbyclient');
+  });
   checkpoint('orders_external_fonts_blocked');
-  checkpoint('orders_supabase_cdn_localized');
   checkpoint('orders_navigation_goto_start');
   await page.goto(url, { waitUntil: 'commit', timeout: 20_000 });
   checkpoint('orders_navigation_goto_commit');
   await page.locator('.orders-list').waitFor({ state: 'attached', timeout: 15_000 });
   checkpoint('orders_list_attached');
-  await page.waitForFunction(() => typeof window.DokeInitOrders === 'function', null, { timeout: 30_000 });
+
+  try {
+    await page.waitForFunction(() => Boolean(
+      window.Doke?.services?.accountAccess?.guardPage
+      && typeof window.DokeHydrateLocalOrders === 'function'
+    ), null, { timeout: 20_000 });
+  } catch {
+    const prerequisiteState = await page.evaluate(() => ({
+      accountAccessReady: Boolean(window.Doke?.services?.accountAccess?.guardPage),
+      localOrdersReady: typeof window.DokeHydrateLocalOrders === 'function',
+      initializerReady: typeof window.DokeInitOrders === 'function',
+      readyState: document.readyState
+    }));
+    throw new Error(
+      'Orders prerequisites unavailable: accountAccess=' + prerequisiteState.accountAccessReady
+      + ', localOrders=' + prerequisiteState.localOrdersReady
+      + ', initializer=' + prerequisiteState.initializerReady
+      + ', readyState=' + prerequisiteState.readyState
+    );
+  }
+  checkpoint('orders_prerequisites_ready');
+
+  const initializerReady = await page.evaluate(() => typeof window.DokeInitOrders === 'function');
+  if (!initializerReady) {
+    await page.addScriptTag({ path: path.join(root, 'assets', 'js', 'pages', 'pedidos.js') });
+    checkpoint('orders_entrypoint_injected');
+  }
+  await page.waitForFunction(() => typeof window.DokeInitOrders === 'function', null, { timeout: 10_000 });
   checkpoint('orders_initializer_ready');
   await page.evaluate(() => {
-    const root = document.querySelector('.orders-page');
-    if (root?.dataset.ordersReady !== 'true') window.DokeInitOrders();
+    const pageRoot = document.querySelector('.orders-page');
+    if (pageRoot?.dataset.ordersReady !== 'true') window.DokeInitOrders();
   });
   checkpoint('orders_initializer_invoked');
   await page.waitForFunction(() => {
