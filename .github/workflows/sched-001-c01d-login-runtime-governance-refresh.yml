@@ -1,0 +1,56 @@
+name: Doke SCHED-C01D Login Runtime Governance Refresh
+
+on:
+  pull_request:
+    branches:
+      - search/search-ux02-intent-favorites-clean
+    paths:
+      - '.github/workflows/sched-001-c01d-login-runtime-governance-refresh.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sched-c01d-login-runtime-governance-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    if: >-
+      github.event.pull_request.number == 25 &&
+      github.event.pull_request.draft == true &&
+      github.event.pull_request.head.ref == 'ord/ord-001-baseline-audit'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ord/ord-001-baseline-audit
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install pinned dependencies
+        run: npm ci --ignore-scripts
+      - name: Refresh and validate matrix derivatives
+        run: |
+          set -euo pipefail
+          npm run write:domain-completion-matrix
+          npm run audit:domain-completion-matrix
+          node --check scripts/prepare-sched-001-c01d-authenticated-browser-login-runtime.js
+          node scripts/prepare-sched-001-c01d-authenticated-browser-login-runtime.js --dry-run
+          git diff --exit-code -- scripts/execute-sched-001-c01d-authenticated-browser-read-only-canary.js
+          git diff --check
+      - name: Publish refreshed matrix document
+        run: |
+          set -euo pipefail
+          git config user.name "doke-ci"
+          git config user.email "doke-ci@users.noreply.github.com"
+          git add docs/DOMAIN-COMPLETION-MATRIX.md
+          if git diff --cached --quiet; then
+            echo "Matrix document already current."
+            exit 0
+          fi
+          git commit -m "docs(sched): refresh C01D login runtime matrix"
+          git push origin HEAD:ord/ord-001-baseline-audit
