@@ -39,9 +39,15 @@ assert.deepStrictEqual(report.postLoginAllowedMethods, ['GET', 'HEAD', 'OPTIONS'
 assert.deepStrictEqual(report.surfaces, config.surfaces);
 assert.deepStrictEqual(report.capabilities, config.capabilities);
 assert.deepStrictEqual(report.effects, config.effects);
-assert(!dryRun.stdout.includes('@'));
-assert(!dryRun.stdout.includes('password'));
-assert(!dryRun.stdout.includes('service_role'));
+
+const output = dryRun.stdout;
+assert(!/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i.test(output));
+assert(!/\b[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b/i.test(output));
+assert(!/eyJ[A-Za-z0-9_-]{20,}/.test(output));
+assert(!/\bsb_(?:secret|publishable)_[A-Za-z0-9_-]{20,}\b/i.test(output));
+assert(!/\bsk_[A-Za-z0-9_-]{20,}\b/i.test(output));
+assert(!/"password"\s*:/i.test(output));
+assert(!/"serviceRoleKey"\s*:/i.test(output));
 
 const noMode = spawnSync(process.execPath, [PLANNER_PATH], {
   cwd: process.cwd(),
