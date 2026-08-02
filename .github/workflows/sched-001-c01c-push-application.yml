@@ -1,4 +1,4 @@
-name: Doke SCHED-C01C Push Application
+name: Doke SCHED-C01C Application Executor
 
 on:
   pull_request:
@@ -6,12 +6,13 @@ on:
       - search/search-ux02-intent-favorites-clean
     paths:
       - '.github/workflows/sched-001-c01c-push-application.yml'
+      - 'config/sched-c01c-transport.tar.gz'
 
 permissions:
   contents: write
 
 concurrency:
-  group: sched-c01c-push-application
+  group: sched-c01c-application
   cancel-in-progress: false
 
 jobs:
@@ -33,35 +34,61 @@ jobs:
           cache: npm
       - name: Install pinned dependencies
         run: npm ci --ignore-scripts
-      - name: Apply deterministic C01C repository changes
+      - name: Extract deterministic C01C transport
+        run: tar -xzf config/sched-c01c-transport.tar.gz -C .
+      - name: Apply deterministic C01C changes
+        run: python scripts/apply-sched-001-c01c-deterministic-frontend-presentation.py
+      - name: Regenerate deterministic matrix
+        run: npm run write:domain-completion-matrix
+      - name: Validate C01C and cumulative scheduling authority
+        run: |
+          node --check assets/js/patterns/order-schedule-presentation.js
+          node --check assets/js/pages/pedidos-local-orders.js
+          node --check assets/js/pages/pedidos/orders-data.js
+          node --check assets/js/pages/pedidos/orders-details.js
+          node --check assets/js/pages/mensagens.js
+          npm run audit:sched-001-c01c-deterministic-frontend-presentation
+          npm run test:sched-001-c01c-deterministic-frontend-presentation
+          npm run audit:sched-001-c01b-frontend-canonical-schedule-read-model
+          npm run test:sched-001-c01b-frontend-canonical-schedule-read-model
+          npm run audit:sched-001-c01a-frontend-canonical-authority-readiness
+          npm run test:sched-001-c01a-frontend-canonical-authority-readiness
+          npm run audit:sched-001-b04c-authenticated-ord-sched-composition-canary-closure
+          node scripts/audit-sched-001-b04d-canonical-order-projection-guard-readiness.js
+          node scripts/test-sched-001-b04d-canonical-order-projection-guard-runtime.js
+          node scripts/audit-sched-001-b04b-ord-canonical-wiring-implementation.js
+          node scripts/test-sched-001-b04b-ord-canonical-wiring-runtime.js
+          node scripts/audit-ord-001-a11-scheduling-authority-handoff.js
+          npm run audit:domain-completion-matrix
+          git diff --check
+      - name: Publish C01C and remove transport files
         shell: bash
         run: |
           set -euo pipefail
-          python - <<'PY'
-          import base64
-          import json
-          import re
-          from pathlib import Path
-          
-          def write_b64(path, payload):
-              target = Path(path)
-              target.parent.mkdir(parents=True, exist_ok=True)
-              target.write_bytes(base64.b64decode(payload))
-          
-          def replace_once(path, old, new):
-              target = Path(path)
-              source = target.read_text()
-              count = source.count(old)
-              if count != 1:
-                  raise SystemExit(f'{path}: expected one occurrence, found {count}: {old[:120]!r}')
-              target.write_text(source.replace(old, new, 1))
-          
-          def replace_regex(path, pattern, replacement):
-              target = Path(path)
-              source = target.read_text()
-              updated, count = re.subn(pattern, replacement, source, count=1, flags=re.MULTILINE | re.DOTALL)
-              if count != 1:
-                  raise SystemExit(f'{path}: expected one regex replacement, found {count}: {pattern[:120]!r}')
-              target.write_text(updated)
-          
-          write_b64('assets/js/patterns/order-schedule-presentation.js', 'LyogRG9rZSBjYW5vbmljYWwgb3JkZXIgc2NoZWR1bGUgcHJlc2VudGF0aW9uLgogICBSZXNwb25zaWJpbGl0eTogZGVyaXZlIGRldGVybWluaXN0aWMsIHJlYWQtb25seSBzY2hlZHVsZSBjb3B5IGZyb20gdGhlIGNhbm9uaWNhbCBvcmRlciB0dXBsZS4KICAgVGhpcyBtb2R1bGUgbmV2ZXIgc2VuZHMgY29tbWFuZHMsIHdyaXRlcyBjYW5vbmljYWwgZmllbGRzIG9yIGNoYW5nZXMgb3JkZXIgc3RhdGUuICovCihmdW5jdGlvbiAocm9vdCwgZmFjdG9yeSkgewogICd1c2Ugc3RyaWN0JzsKCiAgdmFyIGFwaSA9IGZhY3RvcnkoKTsKCiAgaWYgKHR5cGVvZiBtb2R1bGUgPT09ICdvYmplY3QnICYmIG1vZHVsZS5leHBvcnRzKSB7CiAgICBtb2R1bGUuZXhwb3J0cyA9IGFwaTsKICB9CgogIGlmIChyb290KSB7CiAgICB2YXIgRG9rZSA9IHJvb3QuRG9rZSB8fCAocm9vdC5Eb2tlID0ge30pOwogICAgdmFyIHBhdHRlcm5zID0gRG9rZS5wYXR0ZXJucyB8fCAoRG9rZS5wYXR0ZXJucyA9IHt9KTsKICAgIHBhdHRlcm5zLm9yZGVyU2NoZWR1bGVQcmVzZW50YXRpb24gPSBPYmplY3QuZnJlZXplKGFwaSk7CiAgfQp9KSh0eXBlb2YgZ2xvYmFsVGhpcyAhPT0gJ3VuZGVmaW5lZCcgPyBnbG9iYWxUaGlzIDogdGhpcywgZnVuY3Rpb24gKCkgewogICd1c2Ugc3RyaWN0JzsKCiAgdmFyIEFVVEhPUklUWV9WQUxVRVMgPSBPYmplY3QuZnJlZXplKFsKICAgICdub25lJywKICAgICdjbGllbnRfaW50ZW50JywKICAgICdjYW5vbmljYWxfY29uZmlybWVkJywKICAgICdpbmNvbXBsZXRlX3Byb2plY3Rpb24nCiAgXSk7CgogIGZ1bmN0aW9uIG5vcm1hbGl6ZVRleHQodmFsdWUpIHsKICAgIHJldHVybiBTdHJpbmcodmFsdWUgPT0gbnVsbCA/ICcnIDogdmFsdWUpLnRyaW0oKTsKICB9CgogIGZ1bmN0aW9uIG5vcm1hbGl6ZVN0YXR1cyh2YWx1ZSkgewogICAgcmV0dXJuIG5vcm1hbGl6ZVRleHQodmFsdWUpLnRvTG93ZXJDYXNlKCk7CiAgfQoKICBmdW5jdGlvbiByZWFkU2NoZWR1bGVQcmVmZXJlbmNlKG9yZGVyKSB7CiAgICB2YXIgcHJlZmVyZW5jZSA9IG9yZGVyICYmIG9yZGVyLnNjaGVkdWxlUHJlZmVyZW5jZTsKICAgIGlmICghcHJlZmVyZW5jZSB8fCB0eXBlb2YgcHJlZmVyZW5jZSAhPT0gJ29iamVjdCcpIHJldHVybiB7fTsKICAgIHJldHVybiBwcmVmZXJlbmNlOwogIH0KCiAgZnVuY3Rpb24gcmVhZERlc2lyZWREYXRlKG9yZGVyKSB7CiAgICB2YXIgcHJlZmVyZW5jZSA9IHJlYWRTY2hlZHVsZVByZWZlcmVuY2Uob3JkZXIpOwogICAgcmV0dXJuIG5vcm1hbGl6ZVRleHQoCiAgICAgIG9yZGVyICYmIChvcmRlci5kZXNpcmVkRGF0ZSB8fCBvcmRlci5kYXRlIHx8IG9yZGVyLmRhdMOpKQogICAgICB8fCBwcmVmZXJlbmNlLmRlc2lyZWREYXRlCiAgICAgIHx8IHByZWZlcmVuY2UuZGF0ZQogICAgICB8fCAnJwogICAgKTsKICB9CgogIGZ1bmN0aW9uIHJlYWRTaGlmdChvcmRlcikgewogICAgdmFyIHByZWZlcmVuY2UgPSByZWFkU2NoZWR1bGVQcmVmZXJlbmNlKG9yZGVyKTsKICAgIHJldHVybiBub3JtYWxpemVUZXh0KG9yZGVyICYmIG9yZGVyLnNoaWZ0IHx8IHByZWZlcmVuY2Uuc2hpZnQgfHwgJycpOwogIH0KCiAgZnVuY3Rpb24gcmVhZEF2YWlsYWJpbGl0eShvcmRlcikgewogICAgdmFyIHNuYXBzaG90ID0gb3JkZXIgJiYgb3JkZXIuc2VydmljZVNuYXBzaG90ICYmIHR5cGVvZiBvcmRlci5zZXJ2aWNlU25hcHNob3QgPT09ICdvYmplY3QnCiAgICAgID8gb3JkZXIuc2VydmljZVNuYXBzaG90CiAgICAgIDoge307CiAgICBpZiAoQXJyYXkuaXNBcnJheShvcmRlciAmJiBvcmRlci5zZXJ2aWNlQXZhaWxhYmlsaXR5U2NoZWR1bGUpKSByZXR1cm4gb3JkZXIuc2VydmljZUF2YWlsYWJpbGl0eVNjaGVkdWxlOwogICAgaWYgKEFycmF5LmlzQXJyYXkob3JkZXIgJiYgb3JkZXIuc2VydmljZVNjaGVkdWxlKSkgcmV0dXJuIG9yZGVyLnNlcnZpY2VTY2hlZHVsZTsKICAgIGlmIChBcnJheS5pc0FycmF5KHNuYXBzaG90LmF2YWlsYWJpbGl0eVNjaGVkdWxlKSkgcmV0dXJuIHNuYXBzaG90LmF2YWlsYWJpbGl0eVNjaGVkdWxlOwogICAgcmV0dXJuIFtdOwogIH0KCiAgZnVuY3Rpb24gZGVyaXZlQXV0aG9yaXR5KG9yZGVyKSB7CiAgICBvcmRlciA9IG9yZGVyIHx8IHt9OwogICAgdmFyIHNjaGVkdWxlUmVzZXJ2YXRpb25JZCA9IG5vcm1hbGl6ZVRleHQob3JkZXIuc2NoZWR1bGVSZXNlcnZhdGlvbklkIHx8IG9yZGVyLnNjaGVkdWxlX3Jlc2VydmF0aW9uX2lkIHx8ICcnKTsKICAgIHZhciBzY2hlZHVsZWRBdCA9IG5vcm1hbGl6ZVRleHQob3JkZXIuc2NoZWR1bGVkQXQgfHwgb3JkZXIuc2NoZWR1bGVkX2F0IHx8ICcnKTsKICAgIHZhciBzdGF0dXMgPSBub3JtYWxpemVTdGF0dXMob3JkZXIuc3RhdHVzIHx8IG9yZGVyLmJhY2tlbmRTdGF0dXMgfHwgJycpOwogICAgdmFyIGhhc1Jlc2VydmF0aW9uID0gQm9vbGVhbihzY2hlZHVsZVJlc2VydmF0aW9uSWQpOwogICAgdmFyIGhhc1NjaGVkdWxlZEF0ID0gQm9vbGVhbihzY2hlZHVsZWRBdCk7CiAgICB2YXIgaXNTY2hlZHVsZWQgPSBzdGF0dXMgPT09ICdzY2hlZHVsZWQnOwoKICAgIGlmIChoYXNSZXNlcnZhdGlvbiAmJiBoYXNTY2hlZHVsZWRBdCAmJiBpc1NjaGVkdWxlZCkgcmV0dXJuICdjYW5vbmljYWxfY29uZmlybWVkJzsKICAgIGlmIChoYXNSZXNlcnZhdGlvbiB8fCBoYXNTY2hlZHVsZWRBdCB8fCBpc1NjaGVkdWxlZCkgcmV0dXJuICdpbmNvbXBsZXRlX3Byb2plY3Rpb24nOwogICAgaWYgKHJlYWREZXNpcmVkRGF0ZShvcmRlcikgfHwgcmVhZFNoaWZ0KG9yZGVyKSkgcmV0dXJuICdjbGllbnRfaW50ZW50JzsKICAgIHJldHVybiAnbm9uZSc7CiAgfQoKICBmdW5jdGlvbiBmb3JtYXRJbnRlbnREYXRlKHZhbHVlLCBvcHRpb25zKSB7CiAgICB2YXIgbm9ybWFsaXplZCA9IG5vcm1hbGl6ZVRleHQodmFsdWUpOwogICAgaWYgKCFub3JtYWxpemVkKSByZXR1cm4gJyc7CiAgICB2YXIgbWF0Y2ggPSAvXihcZHs0fSktKFxkezJ9KS0oXGR7Mn0pJC8uZXhlYyhub3JtYWxpemVkKTsKICAgIHZhciBkYXRlID0gbWF0Y2gKICAgICAgPyBuZXcgRGF0ZShOdW1iZXIobWF0Y2hbMV0pLCBOdW1iZXIobWF0Y2hbMl0pIC0gMSwgTnVtYmVyKG1hdGNoWzNdKSwgMTIsIDAsIDApCiAgICAgIDogbmV3IERhdGUobm9ybWFsaXplZCk7CiAgICBpZiAoTnVtYmVyLmlzTmFOKGRhdGUuZ2V0VGltZSgpKSkgcmV0dXJuIG5vcm1hbGl6ZWQ7CiAgICByZXR1cm4gbmV3IEludGwuRGF0ZVRpbWVGb3JtYXQoJ3B0LUJSJywgT2JqZWN0LmFzc2lnbih7CiAgICAgIGRheTogJzItZGlnaXQnLAogICAgICBtb250aDogJzItZGlnaXQnLAogICAgICB5ZWFyOiAnbnVtZXJpYycKICAgIH0sIG9wdGlvbnMgJiYgb3B0aW9ucy5pbnRlbnRGb3JtYXQgfHwge30pKS5mb3JtYXQoZGF0ZSk7CiAgfQoKICBmdW5jdGlvbiBmb3JtYXRDYW5vbmljYWxTY2hlZHVsZSh2YWx1ZSwgb3B0aW9ucykgewogICAgdmFyIGRhdGUgPSBuZXcgRGF0ZSh2YWx1ZSB8fCAnJyk7CiAgICBpZiAoTnVtYmVyLmlzTmFOKGRhdGUuZ2V0VGltZSgpKSkgcmV0dXJuIG51bGw7CiAgICB2YXIgdGltZVpvbmUgPSBub3JtYWxpemVUZXh0KG9wdGlvbnMgJiYgb3B0aW9ucy50aW1lWm9uZSk7CiAgICBpZiAoIXRpbWVab25lKSB7CiAgICAgIHRyeSB7IHRpbWVab25lID0gSW50bC5EYXRlVGltZUZvcm1hdCgpLnJlc29sdmVkT3B0aW9ucygpLnRpbWVab25lIHx8ICcnOyB9CiAgICAgIGNhdGNoIChlcnJvcikgeyB0aW1lWm9uZSA9ICcnOyB9CiAgICB9CiAgICB2YXIgZm9ybWF0T3B0aW9ucyA9IE9iamVjdC5hc3NpZ24oewogICAgICBkYXRlU3R5bGU6ICdtZWRpdW0nLAogICAgICB0aW1lU3R5bGU6ICdzaG9ydCcKICAgIH0sIG9wdGlvbnMgJiYgb3B0aW9ucy5jYW5vbmljYWxGb3JtYXQgfHwge30pOwogICAgaWYgKHRpbWVab25lKSBmb3JtYXRPcHRpb25zLnRpbWVab25lID0gdGltZVpvbmU7CiAgICByZXR1cm4gT2JqZWN0LmZyZWV6ZSh7CiAgICAgIGxhYmVsOiBuZXcgSW50bC5EYXRlVGltZUZvcm1hdCgncHQtQlInLCBmb3JtYXRPcHRpb25zKS5mb3JtYXQoZGF0ZSksCiAgICAgIHRpbWVab25lOiB0aW1lWm9uZQogICAgfSk7CiAgfQoKICBmdW5jdGlvbiBmb3JtYXRBdmFpbGFiaWxpdHkob3JkZXIpIHsKICAgIHZhciBzY2hlZHVsZSA9IHJlYWRBdmFpbGFiaWxpdHkob3JkZXIpLmZpbHRlcihmdW5jdGlvbiAoc2xvdCkgewogICAgICByZXR1cm4gc2xvdCAmJiAoc2xvdC5zdGFydCB8fCBzbG90LnRpbWUpICYmIChzbG90LmVuZCB8fCBzbG90LnRpbWUpOwogICAgfSkuc2xpY2UoMCwgMyk7CiAgICBpZiAoIXNjaGVkdWxlLmxlbmd0aCkgcmV0dXJuICdBZ2VuZGEgYSBjb21iaW5hcic7CiAgICByZXR1cm4gc2NoZWR1bGUubWFwKGZ1bmN0aW9uIChzbG90KSB7CiAgICAgIHZhciBkYXkgPSBub3JtYWxpemVUZXh0KHNsb3QubGFiZWwgfHwgc2xvdC5kYXlMYWJlbCB8fCBzbG90LmRheSB8fCAnRGlhJyk7CiAgICAgIHZhciB0aW1lID0gbm9ybWFsaXplVGV4dChzbG90LnRpbWUgfHwgJycpOwogICAgICBpZiAoIXRpbWUpIHRpbWUgPSBbbm9ybWFsaXplVGV4dChzbG90LnN0YXJ0KSwgbm9ybWFsaXplVGV4dChzbG90LmVuZCldLmZpbHRlcihCb29sZWFuKS5qb2luKCdigJMnKTsKICAgICAgcmV0dXJuIFtkYXksIHRpbWVdLmZpbHRlcihCb29sZWFuKS5qb2luKCcgJyk7CiAgICB9KS5maWx0ZXIoQm9vbGVhbikuam9pbignIOKAoiAnKSB8fCAnQWdlbmRhIGEgY29tYmluYXInOwogIH0KCiAgZnVuY3Rpb24gaW5jb21wbGV0ZVByZXNlbnRhdGlvbigpIHsKICAgIHJldHVybiBPYmplY3QuZnJlZXplKHsKICAgICAgYXV0aG9yaXR5OiAnaW5jb21wbGV0ZV9wcm9qZWN0aW9uJywKICAgICAgdGl0bGU6ICdTaW5jcm9uaXphw6fDo28gZGEgYWdlbmRhIHBlbmRlbnRlJywKICAgICAgd...
+          rm -f .github/workflows/sched-001-c01c-push-application.yml
+          rm -f scripts/apply-sched-001-c01c-deterministic-frontend-presentation.py
+          rm -f config/sched-001-c01c-workflow-payload.txt
+          rm -f config/sched-c01c-transport.tar.gz
+          git config user.name "doke-ci"
+          git config user.email "doke-ci@users.noreply.github.com"
+          git add assets/js/patterns/order-schedule-presentation.js
+          git add assets/js/pages/pedidos-local-orders.js
+          git add assets/js/pages/pedidos/orders-data.js
+          git add assets/js/pages/pedidos/orders-details.js
+          git add assets/js/pages/mensagens.js
+          git add pedidos.html mensagens.html
+          git add config/sched-001-c01c-deterministic-frontend-presentation.json
+          git add docs/SCHED-001-C01C-DETERMINISTIC-FRONTEND-PRESENTATION.md
+          git add docs/validation/SCHED-001-C01C-DETERMINISTIC-FRONTEND-PRESENTATION.json
+          git add scripts/audit-sched-001-c01c-deterministic-frontend-presentation.js
+          git add scripts/test-sched-001-c01c-deterministic-frontend-presentation.js
+          git add .github/workflows/sched-001-c01c-deterministic-frontend-presentation.yml
+          git add package.json config/domain-completion-matrix.json docs/DOMAIN-COMPLETION-MATRIX.md
+          git add -f reports/generated/domain-completion-matrix-report.json
+          git add -u .github/workflows/sched-001-c01c-push-application.yml
+          git add -u scripts/apply-sched-001-c01c-deterministic-frontend-presentation.py
+          git add -u config/sched-001-c01c-workflow-payload.txt
+          git add -u config/sched-c01c-transport.tar.gz
+          git diff --cached --check
+          git commit -m "feat(sched): add deterministic frontend schedule presentation"
+          git push origin HEAD:ord/ord-001-baseline-audit
