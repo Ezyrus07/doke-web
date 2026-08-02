@@ -1,6 +1,6 @@
 {
-  "version": "1.3.81",
-  "updatedAt": "2026-08-02T18:31:00-03:00",
+  "version": "1.3.82",
+  "updatedAt": "2026-08-02T19:00:00-03:00",
   "title": "Doke Domain Completion Matrix",
   "purpose": "Single source of truth for domain maturity, data authority, staging evidence, blockers, dependencies and mandatory completion order.",
   "maturityScale": {
@@ -1796,7 +1796,17 @@
         "docs/validation/MSG-001-A04-REALTIME-PUBLICATION-SUBSCRIPTION-CONTRACT.json",
         "scripts/audit-msg-001-a04-realtime-publication-subscription-contract.js",
         "scripts/test-msg-001-a04-realtime-publication-subscription-runtime.js",
-        ".github/workflows/msg-001-a04-realtime-publication-subscription-contract.yml"
+        ".github/workflows/msg-001-a04-realtime-publication-subscription-contract.yml",
+        "supabase/migrations/20260802220000_msg_a05_transaction_attachment_lifecycle_contract.sql",
+        "supabase/functions/self-service-operations/index.ts",
+        "supabase/functions/self-service-operations/operations.mjs",
+        "supabase/functions/transaction-attachment-cleanup/index.ts",
+        "config/msg-001-a05-attachment-lifecycle.json",
+        "docs/MSG-001-A05-ATTACHMENT-LIFECYCLE.md",
+        "docs/validation/MSG-001-A05-ATTACHMENT-LIFECYCLE.json",
+        "scripts/audit-msg-001-a05-attachment-lifecycle.js",
+        "scripts/test-msg-001-a05-attachment-lifecycle-runtime.js",
+        ".github/workflows/msg-001-a05-attachment-lifecycle.yml"
       ],
       "scanRoots": [
         "backend/modules/messaging",
@@ -1826,7 +1836,9 @@
         "audit:msg-001-a03-server-command-boundary",
         "test:msg-001-a03-server-command-boundary",
         "audit:msg-001-a04-realtime-publication-subscription-contract",
-        "test:msg-001-a04-realtime-publication-subscription-runtime"
+        "test:msg-001-a04-realtime-publication-subscription-runtime",
+        "audit:msg-001-a05-attachment-lifecycle",
+        "test:msg-001-a05-attachment-lifecycle-runtime"
       ],
       "evidence": [
         "Backend handlers and staging multi-domain messaging flow exist.",
@@ -1838,7 +1850,8 @@
         "MSG-A01 froze the repository-only authority baseline: the browser retains persistent local conversation/message fallback and localStorage presence, typing and read receipts; the backend Supabase service and participant RLS exist; authenticated browser DML policies remain; conversations and messages are not declared in Supabase Realtime; transaction-attachments retains local pending fallback.",
         "MSG-A02 implemented the repository-only canonical authority split: authenticated UUID sessions are remote-only and fail closed without Supabase; non-UUID or anonymous fixtures are memory-only; canonical paths no longer merge, persist or synchronize browser-local conversations and messages.",
         "MSG-A03 repository-only server-owned command boundary: authenticated UUID commands require the dedicated API provider and direct browser Supabase DML is blocked.",
-        "MSG-A04 repository-only participant-scoped Realtime publication/subscription contract: conversations and messages are prepared for RLS-authorized INSERT/UPDATE invalidation signals, feature-flagged off until explicit staging application and canaries."
+        "MSG-A04 repository-only participant-scoped Realtime publication/subscription contract: conversations and messages are prepared for RLS-authorized INSERT/UPDATE invalidation signals, feature-flagged off until explicit staging application and canaries.",
+        "MSG-A05 repository-only attachment lifecycle contract: authenticated uploads use server-owned signed intents, direct browser deletes and local pending fallback are removed, and cleanup/retention are frozen without staging activation."
       ],
       "blockers": [
         {
@@ -1864,8 +1877,9 @@
         }
       ],
       "nextActions": [
-        "MSG-A04B: apply the Realtime publication migration and run participant-isolation canaries only after fresh explicit staging authorization.",
-        "MSG-A05: harden transaction-attachments ownership, signed URL, cleanup and retention boundaries."
+        "MSG-A06: prepare a server-authoritative presence and typing boundary without staging activation.",
+        "MSG-A05B: apply the attachment lifecycle migration, deploy Edge actions and cleanup worker, then run authenticated ownership and retention canaries only after fresh explicit staging authorization.",
+        "MSG-A04B: apply the Realtime publication migration and run participant-isolation canaries only after fresh explicit staging authorization."
       ],
       "exitCriteria": [
         "Two devices exchange messages without refresh.",

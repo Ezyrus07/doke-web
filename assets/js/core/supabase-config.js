@@ -8,6 +8,8 @@ window.DOKE_SUPABASE_CONFIG = {
   messagesEnabled: true,
   messagesRealtimeEnabled: false,
   attachmentsEnabled: true,
+  attachmentLifecycleEnabled: false,
+  attachmentSignedUrlTtlSeconds: 300,
   notificationsEnabled: true,
   walletEnabled: true,
   paymentsEnabled: true,
