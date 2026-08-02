@@ -1,0 +1,90 @@
+name: Doke SCHED-C01D Login Navigation Fix
+
+on:
+  pull_request:
+    branches:
+      - search/search-ux02-intent-favorites-clean
+    paths:
+      - '.github/workflows/sched-001-c01d-login-navigation-fix.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sched-c01d-login-navigation-fix
+  cancel-in-progress: false
+
+jobs:
+  fix:
+    if: >-
+      github.event.pull_request.number == 25 &&
+      github.event.pull_request.draft == true &&
+      github.event.pull_request.head.ref == 'ord/ord-001-baseline-audit'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ord/ord-001-baseline-audit
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install pinned dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Apply exact login navigation fix
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 <<'PY'
+          from pathlib import Path
+
+          executor = Path('scripts/execute-sched-001-c01d-authenticated-browser-read-only-canary.js')
+          source = executor.read_text(encoding='utf-8')
+          old = "page.waitForURL(/\\/pedidos\\.html(?:[?#].*)?$/, { timeout: 30_000 }),"
+          new = "page.waitForURL(/\\/pedidos\\.html(?:[?#].*)?$/, { waitUntil: 'domcontentloaded', timeout: 30_000 }),"
+          if source.count(old) != 1:
+              raise SystemExit(f'expected exactly one legacy waitForURL contract, found {source.count(old)}')
+          executor.write_text(source.replace(old, new), encoding='utf-8')
+
+          test = Path('scripts/test-sched-001-c01d-authenticated-browser-read-only-canary.js')
+          test_source = test.read_text(encoding='utf-8')
+          require_old = "const assert = require('assert');\nconst { spawnSync } = require('child_process');"
+          require_new = "const assert = require('assert');\nconst fs = require('fs');\nconst { spawnSync } = require('child_process');"
+          if test_source.count(require_old) != 1:
+              raise SystemExit('test require insertion point mismatch')
+          test_source = test_source.replace(require_old, require_new)
+          anchor = "const executor = 'scripts/execute-sched-001-c01d-authenticated-browser-read-only-canary.js';\n"
+          assertions = """
+const executorSource = fs.readFileSync(executor, 'utf8');
+assert(executorSource.includes("page.waitForURL(/\\\\/pedidos\\\\.html(?:[?#].*)?$/, { waitUntil: 'domcontentloaded', timeout: 30_000 })"));
+assert(!executorSource.includes("page.waitForURL(/\\\\/pedidos\\\\.html(?:[?#].*)?$/, { timeout: 30_000 })"));
+"""
+          if test_source.count(anchor) != 1:
+              raise SystemExit('test assertion insertion point mismatch')
+          test.write_text(test_source.replace(anchor, anchor + assertions), encoding='utf-8')
+          PY
+
+      - name: Validate corrected executor
+        run: |
+          node --check scripts/execute-sched-001-c01d-authenticated-browser-read-only-canary.js
+          node scripts/test-sched-001-c01d-authenticated-browser-read-only-canary.js
+          node scripts/execute-sched-001-c01d-authenticated-browser-read-only-canary.js --dry-run
+          node scripts/audit-sched-001-c01d-authenticated-browser-canary-readiness.js
+          node scripts/test-sched-001-c01d-authenticated-browser-canary-readiness.js
+          git diff --check
+
+      - name: Commit deterministic fix
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add scripts/execute-sched-001-c01d-authenticated-browser-read-only-canary.js scripts/test-sched-001-c01d-authenticated-browser-read-only-canary.js
+          git diff --cached --quiet && { echo 'No changes to commit'; exit 1; }
+          git commit -m 'Fix SCHED-C01D login navigation wait'
+          git push origin HEAD:ord/ord-001-baseline-audit
