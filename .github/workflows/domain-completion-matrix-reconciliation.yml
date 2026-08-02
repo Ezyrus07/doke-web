@@ -59,9 +59,9 @@ jobs:
           node scripts/audit-ord-001-a06-cleanup-boundary.js
           node scripts/audit-sched-001-b04d-canonical-order-projection-guard-readiness.js
           git diff --check
-          test "$(git diff --name-only)" = "docs/DOMAIN-COMPLETION-MATRIX.md"
+          test "$(git diff --name-only)" = $'docs/DOMAIN-COMPLETION-MATRIX.md\nreports/generated/domain-completion-matrix-report.json'
 
-      - name: Publish generated document only
+      - name: Publish generated matrix artifacts only
         shell: bash
         env:
           EXPECTED_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
@@ -70,6 +70,6 @@ jobs:
           test "$(git ls-remote origin refs/heads/ord/ord-001-baseline-audit | cut -f1)" = "$EXPECTED_HEAD_SHA"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/DOMAIN-COMPLETION-MATRIX.md
+          git add docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json
           git commit -m "docs(gov): refresh domain completion matrix"
           git push origin HEAD:refs/heads/ord/ord-001-baseline-audit
