@@ -1,6 +1,6 @@
 {
-  "version": "1.3.73",
-  "updatedAt": "2026-08-01T20:53:00-03:00",
+  "version": "1.3.74",
+  "updatedAt": "2026-08-02T14:34:00-03:00",
   "title": "Doke Domain Completion Matrix",
   "purpose": "Single source of truth for domain maturity, data authority, staging evidence, blockers, dependencies and mandatory completion order.",
   "maturityScale": {
@@ -1582,7 +1582,30 @@
         "docs/validation/SCHED-001-C01C-DETERMINISTIC-FRONTEND-PRESENTATION.json",
         "scripts/audit-sched-001-c01c-deterministic-frontend-presentation.js",
         "scripts/test-sched-001-c01c-deterministic-frontend-presentation.js",
-        ".github/workflows/sched-001-c01c-deterministic-frontend-presentation.yml"
+        ".github/workflows/sched-001-c01c-deterministic-frontend-presentation.yml",
+        "config/sched-001-c01d-authenticated-browser-canary-readiness.json",
+        "docs/SCHED-001-C01D-AUTHENTICATED-BROWSER-CANARY-READINESS.md",
+        "docs/validation/SCHED-001-C01D-AUTHENTICATED-BROWSER-CANARY-READINESS.json",
+        "scripts/plan-sched-001-c01d-authenticated-browser-canary.js",
+        "scripts/audit-sched-001-c01d-authenticated-browser-canary-readiness.js",
+        "scripts/test-sched-001-c01d-authenticated-browser-canary-readiness.js",
+        "scripts/execute-sched-001-c01d-authenticated-browser-read-only-canary.js",
+        "scripts/run-sched-001-c01d-authenticated-browser-read-only-canary.js",
+        "scripts/prepare-sched-001-c01d-authenticated-browser-login-runtime.js",
+        "scripts/prepare-sched-001-c01d-authenticated-browser-bootstrap-runtime.js",
+        "scripts/test-sched-001-c01d-authenticated-browser-read-only-canary.js",
+        "scripts/test-sched-001-c01d-authenticated-browser-read-only-canary-runner.js",
+        "scripts/test-sched-001-c01d-authenticated-browser-bootstrap-runtime.js",
+        ".github/workflows/sched-001-c01d-authenticated-browser-canary-readiness.yml",
+        "config/sched-001-c01e-synthetic-order-fixture-lifecycle-readiness.json",
+        "docs/SCHED-001-C01E-SYNTHETIC-ORDER-FIXTURE-LIFECYCLE-READINESS.md",
+        "docs/validation/SCHED-001-C01E-SYNTHETIC-ORDER-FIXTURE-LIFECYCLE-READINESS.json",
+        "scripts/plan-sched-001-c01e-synthetic-order-fixture-lifecycle.js",
+        "scripts/audit-sched-001-c01e-synthetic-order-fixture-lifecycle-readiness.js",
+        "scripts/test-sched-001-c01e-synthetic-order-fixture-lifecycle-readiness.js",
+        "scripts/execute-sched-001-c01e-synthetic-order-fixture-lifecycle.js",
+        "scripts/prepare-sched-001-c01e-dual-authorization-runtime.js",
+        ".github/workflows/sched-001-c01e-synthetic-order-fixture-lifecycle-readiness.yml"
       ],
       "scanRoots": [
         "assets/js/pages/pedidos",
@@ -1683,13 +1706,19 @@
         "SCHED-C01B implemented a repository-only canonical schedule read model: schedule_reservation_id, scheduled_at and scheduled status now derive fail-closed scheduleAuthority and hasCanonicalSchedule.",
         "The orders surface now distinguishes canonical confirmed booking, client date intent, incomplete projection and advertised service availability without activating any scheduling command.",
         "C01B changed frontend read presentation only; staging reads and mutations, migrations, deploys, Cron, workers, production and merge remained zero.",
-        "SCHED-C01C centralizes deterministic read-only schedule presentation for canonical confirmation, client intent, incomplete projection and advertised availability across orders and messages."
+        "SCHED-C01C centralizes deterministic read-only schedule presentation for canonical confirmation, client intent, incomplete projection and advertised availability across orders and messages.",
+        "SCHED-C01E plus C01D run 30758233092 consumed both exact staging authorizations once at head 9ccf08d4261a6ab87f2f6ac1b46837400ae23cab and failed closed; neither authorization may be reused.",
+        "C01E provisioned one bounded synthetic service and approved version, two orders, two conversations and messages, one confirmed reservation, one canonical-confirmed case and one alternate case, then cleanup and independent verification confirmed zero residue in all thirteen audited relation groups.",
+        "C01D completed authenticated client login and canonical session recognition, fulfilled the deferred Supabase SDK request from the pinned local bundle and reached orders_list_attached, then timed out before the first completed authenticated order read; no cases or user surfaces were asserted.",
+        "The repository-only C01D bootstrap preparer prefers the pinned minified Supabase UMD, fulfills the deferred script from a local file, waits for DOMContentLoaded and required dependencies under independent Node watchdogs, records only sanitized diagnostics and restores canonical runtime files byte for byte.",
+        "Final head 8e0a0185e4e0f3ed63dffb6440fb29160910dbed passed C01D readiness run 30758798905 job 91525550132 and C01E readiness run 30758798695 job 91525549424, including bootstrap regression, cleanup boundary, projection guard and cumulative matrix audit.",
+        "The C01E plus C01D attempt and repository-only hardening changed no production resource, deployment, migration, payment, account, Cron, worker, merge or auto-merge state."
       ],
       "blockers": [],
       "nextActions": [
-        "Prepare SCHED-C01D independently authorized authenticated browser read-only presentation canary.",
-        "Keep scheduling confirmation, reschedule and cancellation commands disabled in the browser until a separate command-activation sublot is authorized.",
-        "Keep Cron, workers, production release and pull-request merge under independent authorization."
+        "Do not execute another SCHED-C01E plus SCHED-C01D staging canary without fresh exact authorization phrases for both scopes in the same bounded authorization envelope.",
+        "When separately authorized, execute the bounded SCHED-C01E fixture lifecycle plus the bound SCHED-C01D read-only browser canary on one immutable head and require completed authenticated reads plus independent thirteen-group zero-residue verification.",
+        "Keep browser scheduling commands, Cron, workers, production release and pull-request merge under separate explicit authorization."
       ],
       "exitCriteria": [
         "Concurrent booking attempts cannot reserve the same slot.",

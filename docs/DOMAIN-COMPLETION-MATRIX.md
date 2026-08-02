@@ -590,14 +590,20 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - The orders surface now distinguishes canonical confirmed booking, client date intent, incomplete projection and advertised service availability without activating any scheduling command.
 - C01B changed frontend read presentation only; staging reads and mutations, migrations, deploys, Cron, workers, production and merge remained zero.
 - SCHED-C01C centralizes deterministic read-only schedule presentation for canonical confirmation, client intent, incomplete projection and advertised availability across orders and messages.
+- SCHED-C01E plus C01D run 30758233092 consumed both exact staging authorizations once at head 9ccf08d4261a6ab87f2f6ac1b46837400ae23cab and failed closed; neither authorization may be reused.
+- C01E provisioned one bounded synthetic service and approved version, two orders, two conversations and messages, one confirmed reservation, one canonical-confirmed case and one alternate case, then cleanup and independent verification confirmed zero residue in all thirteen audited relation groups.
+- C01D completed authenticated client login and canonical session recognition, fulfilled the deferred Supabase SDK request from the pinned local bundle and reached orders_list_attached, then timed out before the first completed authenticated order read; no cases or user surfaces were asserted.
+- The repository-only C01D bootstrap preparer prefers the pinned minified Supabase UMD, fulfills the deferred script from a local file, waits for DOMContentLoaded and required dependencies under independent Node watchdogs, records only sanitized diagnostics and restores canonical runtime files byte for byte.
+- Final head 8e0a0185e4e0f3ed63dffb6440fb29160910dbed passed C01D readiness run 30758798905 job 91525550132 and C01E readiness run 30758798695 job 91525549424, including bootstrap regression, cleanup boundary, projection guard and cumulative matrix audit.
+- The C01E plus C01D attempt and repository-only hardening changed no production resource, deployment, migration, payment, account, Cron, worker, merge or auto-merge state.
 
 **Bloqueadores:**
 - Nenhum.
 
 **Próximas ações:**
-- Prepare SCHED-C01D independently authorized authenticated browser read-only presentation canary.
-- Keep scheduling confirmation, reschedule and cancellation commands disabled in the browser until a separate command-activation sublot is authorized.
-- Keep Cron, workers, production release and pull-request merge under independent authorization.
+- Do not execute another SCHED-C01E plus SCHED-C01D staging canary without fresh exact authorization phrases for both scopes in the same bounded authorization envelope.
+- When separately authorized, execute the bounded SCHED-C01E fixture lifecycle plus the bound SCHED-C01D read-only browser canary on one immutable head and require completed authenticated reads plus independent thirteen-group zero-residue verification.
+- Keep browser scheduling commands, Cron, workers, production release and pull-request merge under separate explicit authorization.
 
 **Gate de saída:**
 - Concurrent booking attempts cannot reserve the same slot.
@@ -1112,4 +1118,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-08-01T20:53:00-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-08-02T14:34:00-03:00._
