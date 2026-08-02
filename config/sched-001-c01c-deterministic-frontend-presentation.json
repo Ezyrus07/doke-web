@@ -1,0 +1,57 @@
+{
+  "contractVersion": "sched-c01c-deterministic-frontend-presentation-v1",
+  "status": "repository_only_deterministic_presentation_implemented",
+  "target": {
+    "environmentAccess": "none",
+    "runtime": "browser_read_only",
+    "surfaces": [
+      "orders_card",
+      "orders_detail_drawer",
+      "messages_order_summary",
+      "messages_order_detail"
+    ]
+  },
+  "authorityModel": {
+    "authorityValues": [
+      "none",
+      "client_intent",
+      "canonical_confirmed",
+      "incomplete_projection"
+    ],
+    "canonicalConfirmedRequiresCompleteTuple": true,
+    "incompleteProjectionFailsClosed": true,
+    "presentationMayClaimCanonicalAuthority": false,
+    "browserMayMutateCanonicalFields": false
+  },
+  "implementation": {
+    "sharedPresenter": "assets/js/patterns/order-schedule-presentation.js",
+    "ordersCardDelegatesToSharedPresenter": true,
+    "ordersDetailConsumesSharedPresenter": true,
+    "messagesSummariesConsumeSharedPresenter": true,
+    "remoteSchedulingCommandsActivated": false,
+    "optimisticSchedulingWritesAdded": false,
+    "supabaseChanged": false
+  },
+  "deterministicCoverage": {
+    "canonicalConfirmed": true,
+    "clientIntent": true,
+    "incompleteProjection": true,
+    "noneAvailability": true,
+    "forgedAuthorityClaimRejected": true,
+    "invalidCanonicalTimestampFailsClosed": true
+  },
+  "safety": {
+    "productionAccess": false,
+    "stagingAccess": false,
+    "migrationApplied": false,
+    "deploymentPerformed": false,
+    "cronOrWorkerActivated": false,
+    "billingOrInfrastructureChanged": false,
+    "mergePerformed": false,
+    "autoMergeEnabled": false
+  },
+  "next": {
+    "id": "SCHED-C01D",
+    "description": "Prepare an independently authorized authenticated browser read-only canary for the canonical schedule presentation."
+  }
+}

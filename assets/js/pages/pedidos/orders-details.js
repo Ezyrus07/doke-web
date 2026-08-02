@@ -102,7 +102,7 @@
             <dl class="orders-detail-list">
               <div class="orders-detail-row"><dt data-detail-peer-label>Profissional</dt><dd data-detail-company></dd></div>
               <div class="orders-detail-row"><dt>Local</dt><dd data-detail-address></dd></div>
-              <div class="orders-detail-row" data-detail-schedule-row hidden><dt>Agenda do serviço</dt><dd data-detail-schedule></dd></div>
+              <div class="orders-detail-row" data-detail-schedule-row hidden><dt data-detail-schedule-label>Agenda do serviço</dt><dd data-detail-schedule></dd></div>
               <div class="orders-detail-row"><dt>Escopo</dt><dd data-detail-scope></dd></div>
               <div class="orders-detail-row"><dt>Orçamento</dt><dd data-detail-budget></dd></div>
               <div class="orders-detail-row"><dt>Pagamento</dt><dd data-detail-payment></dd></div>
@@ -491,9 +491,24 @@
     setText(layer, '[data-detail-company]', order.company);
     setText(layer, '[data-detail-address]', order.address);
     const scheduleRow = layer.querySelector('[data-detail-schedule-row]');
-    const schedule = Array.isArray(order.serviceSchedule) ? order.serviceSchedule : [];
-    const scheduleLabel = schedule.map((slot) => `${clean(slot.label || slot.day || 'Dia')} ${clean(slot.start)}–${clean(slot.end)}`).filter(Boolean).join(' • ');
-    if (scheduleRow) scheduleRow.hidden = !scheduleLabel;
+    const schedulePresenter = window.Doke?.patterns?.orderSchedulePresentation;
+    const fallbackSchedule = Array.isArray(order.serviceSchedule)
+      ? order.serviceSchedule.map((slot) => `${clean(slot.label || slot.day || 'Dia')} ${clean(slot.start)}–${clean(slot.end)}`).filter(Boolean).join(' • ')
+      : '';
+    const schedulePresentation = schedulePresenter?.getPresentation
+      ? schedulePresenter.getPresentation(order)
+      : {
+          authority: order.scheduleAuthority || 'none',
+          title: order.schedulePresentationTitle || 'Agenda do serviço',
+          value: order.schedulePresentationValue || fallbackSchedule,
+          detail: order.schedulePresentationDetail || ''
+        };
+    const scheduleLabel = clean(schedulePresentation.value || schedulePresentation.label);
+    if (scheduleRow) {
+      scheduleRow.hidden = !scheduleLabel;
+      scheduleRow.dataset.scheduleAuthority = schedulePresentation.authority || 'none';
+    }
+    setText(layer, '[data-detail-schedule-label]', schedulePresentation.title || 'Agenda do serviço');
     setText(layer, '[data-detail-schedule]', scheduleLabel);
     setText(layer, '[data-detail-scope]', order.scope);
     setText(layer, '[data-detail-budget]', order.budget);

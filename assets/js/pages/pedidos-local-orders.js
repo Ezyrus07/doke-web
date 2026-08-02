@@ -324,6 +324,10 @@
 
   function getSchedulePresentation(order) {
     order = order || {};
+    var sharedPresenter = Doke.patterns && Doke.patterns.orderSchedulePresentation;
+    if (sharedPresenter && typeof sharedPresenter.getPresentation === 'function') {
+      return sharedPresenter.getPresentation(order);
+    }
     var authority = String(order.scheduleAuthority || 'none');
     if (authority === 'canonical_confirmed' && order.hasCanonicalSchedule === true) {
       var canonical = formatCanonicalSchedule(order.scheduledAt);
@@ -545,6 +549,11 @@
     article.dataset.scheduleReservationId = order.scheduleReservationId || '';
     article.dataset.scheduledAt = order.scheduledAt || '';
     article.dataset.hasCanonicalSchedule = order.hasCanonicalSchedule === true ? 'true' : 'false';
+    article.dataset.schedulePresentationTitle = schedulePresentation.title || '';
+    article.dataset.schedulePresentationValue = schedulePresentation.value || schedulePresentation.label || '';
+    article.dataset.schedulePresentationDetail = schedulePresentation.detail || '';
+    article.dataset.desiredDate = order.desiredDate || order.date || order.daté || '';
+    article.dataset.shift = order.shift || '';
     article.dataset.professionalId = order.professionalId || order.providerId || '';
     article.dataset.professionalProfileId = order.professionalProfileId || '';
     article.dataset.viewerRole = professionalView ? 'professional' : 'client';

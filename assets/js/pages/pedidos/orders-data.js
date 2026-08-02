@@ -17,6 +17,12 @@
       badge: 'Conversa liberada',
       icon: 'alert'
     },
+    scheduled: {
+      label: 'Agendado',
+      summary: 'Horário confirmado',
+      badge: 'Agendado',
+      icon: 'calendar'
+    },
     conversation: {
       label: 'Pedido aceito',
       summary: 'Em negociação',
@@ -136,6 +142,15 @@
       professionalId: clean(card.dataset.professionalId),
       professionalProfileId: clean(card.dataset.professionalProfileId),
       serviceSchedule: (() => { try { return JSON.parse(card.dataset.serviceSchedule || '[]'); } catch (error) { return []; } })(),
+      scheduleReservationId: clean(card.dataset.scheduleReservationId),
+      scheduledAt: clean(card.dataset.scheduledAt),
+      scheduleAuthority: clean(card.dataset.scheduleAuthority) || 'none',
+      hasCanonicalSchedule: card.dataset.hasCanonicalSchedule === 'true',
+      schedulePresentationTitle: clean(card.dataset.schedulePresentationTitle),
+      schedulePresentationValue: clean(card.dataset.schedulePresentationValue),
+      schedulePresentationDetail: clean(card.dataset.schedulePresentationDetail),
+      desiredDate: clean(card.dataset.desiredDate),
+      shift: clean(card.dataset.shift),
       address: clean(card.dataset.detailAddress) || clean(qs('.order-card__location', card)?.textContent),
       scope: clean(card.dataset.detailScope),
       timeline: clean(card.dataset.detailTimeline),

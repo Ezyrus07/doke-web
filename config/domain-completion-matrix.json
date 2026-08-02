@@ -1,6 +1,6 @@
 {
-  "version": "1.3.72",
-  "updatedAt": "2026-08-01T20:07:00-03:00",
+  "version": "1.3.73",
+  "updatedAt": "2026-08-01T20:53:00-03:00",
   "title": "Doke Domain Completion Matrix",
   "purpose": "Single source of truth for domain maturity, data authority, staging evidence, blockers, dependencies and mandatory completion order.",
   "maturityScale": {
@@ -1119,7 +1119,19 @@
         "docs/validation/SCHED-001-C01B-FRONTEND-CANONICAL-SCHEDULE-READ-MODEL.json",
         "scripts/audit-sched-001-c01b-frontend-canonical-schedule-read-model.js",
         "scripts/test-sched-001-c01b-frontend-canonical-schedule-read-model.js",
-        ".github/workflows/sched-001-c01b-frontend-canonical-schedule-read-model.yml"
+        ".github/workflows/sched-001-c01b-frontend-canonical-schedule-read-model.yml",
+        "assets/js/patterns/order-schedule-presentation.js",
+        "assets/js/pages/pedidos/orders-data.js",
+        "assets/js/pages/pedidos/orders-details.js",
+        "assets/js/pages/mensagens.js",
+        "pedidos.html",
+        "mensagens.html",
+        "config/sched-001-c01c-deterministic-frontend-presentation.json",
+        "docs/SCHED-001-C01C-DETERMINISTIC-FRONTEND-PRESENTATION.md",
+        "docs/validation/SCHED-001-C01C-DETERMINISTIC-FRONTEND-PRESENTATION.json",
+        "scripts/audit-sched-001-c01c-deterministic-frontend-presentation.js",
+        "scripts/test-sched-001-c01c-deterministic-frontend-presentation.js",
+        ".github/workflows/sched-001-c01c-deterministic-frontend-presentation.yml"
       ],
       "scanRoots": [
         "backend/modules/orders",
@@ -1229,7 +1241,9 @@
         "audit:sched-001-c01a-frontend-canonical-authority-readiness",
         "test:sched-001-c01a-frontend-canonical-authority-readiness",
         "audit:sched-001-c01b-frontend-canonical-schedule-read-model",
-        "test:sched-001-c01b-frontend-canonical-schedule-read-model"
+        "test:sched-001-c01b-frontend-canonical-schedule-read-model",
+        "audit:sched-001-c01c-deterministic-frontend-presentation",
+        "test:sched-001-c01c-deterministic-frontend-presentation"
       ],
       "evidence": [
         "Canonical state machine, transaction events, outbox worker and operational controls are active in staging.",
@@ -1348,7 +1362,8 @@
         "C01A does not close ORD-B02, ORD-B03 or ORD-B05 and does not activate frontend commands, staging access, deployment, production or merge.",
         "SCHED-C01B maps the canonical scheduling projection into the ORD browser DTO and exposes it read-only to order cards.",
         "Generic scheduled transitions remain absent, quote dates remain client intent and incomplete schedule projections fail closed in presentation.",
-        "C01B does not close ORD-B02, ORD-B03 or ORD-B05 and does not activate staging or production writes."
+        "C01B does not close ORD-B02, ORD-B03 or ORD-B05 and does not activate staging or production writes.",
+        "SCHED-C01C makes the order detail drawer consume the same canonical schedule presenter used by order cards without adding any order or scheduling command."
       ],
       "blockers": [
         {
@@ -1555,7 +1570,19 @@
         "docs/validation/SCHED-001-C01B-FRONTEND-CANONICAL-SCHEDULE-READ-MODEL.json",
         "scripts/audit-sched-001-c01b-frontend-canonical-schedule-read-model.js",
         "scripts/test-sched-001-c01b-frontend-canonical-schedule-read-model.js",
-        ".github/workflows/sched-001-c01b-frontend-canonical-schedule-read-model.yml"
+        ".github/workflows/sched-001-c01b-frontend-canonical-schedule-read-model.yml",
+        "assets/js/patterns/order-schedule-presentation.js",
+        "assets/js/pages/pedidos/orders-data.js",
+        "assets/js/pages/pedidos/orders-details.js",
+        "assets/js/pages/mensagens.js",
+        "pedidos.html",
+        "mensagens.html",
+        "config/sched-001-c01c-deterministic-frontend-presentation.json",
+        "docs/SCHED-001-C01C-DETERMINISTIC-FRONTEND-PRESENTATION.md",
+        "docs/validation/SCHED-001-C01C-DETERMINISTIC-FRONTEND-PRESENTATION.json",
+        "scripts/audit-sched-001-c01c-deterministic-frontend-presentation.js",
+        "scripts/test-sched-001-c01c-deterministic-frontend-presentation.js",
+        ".github/workflows/sched-001-c01c-deterministic-frontend-presentation.yml"
       ],
       "scanRoots": [
         "assets/js/pages/pedidos",
@@ -1608,7 +1635,9 @@
         "audit:sched-001-c01a-frontend-canonical-authority-readiness",
         "test:sched-001-c01a-frontend-canonical-authority-readiness",
         "audit:sched-001-c01b-frontend-canonical-schedule-read-model",
-        "test:sched-001-c01b-frontend-canonical-schedule-read-model"
+        "test:sched-001-c01b-frontend-canonical-schedule-read-model",
+        "audit:sched-001-c01c-deterministic-frontend-presentation",
+        "test:sched-001-c01c-deterministic-frontend-presentation"
       ],
       "evidence": [
         "Repository migrations 113 and 119 enable availability_slots RLS, define owner write policies and separate anonymous available-slot reads from authenticated owner/operator visibility.",
@@ -1653,13 +1682,14 @@
         "C01A changes no runtime behavior and performs zero staging reads, mutations, migrations, deployments, frontend command activations, Cron or worker activations; SCHED remains maturity 3 with partial server authority and no internal blocker.",
         "SCHED-C01B implemented a repository-only canonical schedule read model: schedule_reservation_id, scheduled_at and scheduled status now derive fail-closed scheduleAuthority and hasCanonicalSchedule.",
         "The orders surface now distinguishes canonical confirmed booking, client date intent, incomplete projection and advertised service availability without activating any scheduling command.",
-        "C01B changed frontend read presentation only; staging reads and mutations, migrations, deploys, Cron, workers, production and merge remained zero."
+        "C01B changed frontend read presentation only; staging reads and mutations, migrations, deploys, Cron, workers, production and merge remained zero.",
+        "SCHED-C01C centralizes deterministic read-only schedule presentation for canonical confirmation, client intent, incomplete projection and advertised availability across orders and messages."
       ],
       "blockers": [],
       "nextActions": [
-        "Implement SCHED-C01C deterministic frontend presentation coverage for canonical_confirmed, client_intent and incomplete_projection without remote scheduling commands.",
-        "Verify order detail and message summaries consume the same canonical schedule read model before any authenticated browser canary.",
-        "Keep staging browser activation, scheduling commands, Cron or workers, production release and pull-request merge under independent authorization."
+        "Prepare SCHED-C01D independently authorized authenticated browser read-only presentation canary.",
+        "Keep scheduling confirmation, reschedule and cancellation commands disabled in the browser until a separate command-activation sublot is authorized.",
+        "Keep Cron, workers, production release and pull-request merge under independent authorization."
       ],
       "exitCriteria": [
         "Concurrent booking attempts cannot reserve the same slot.",
@@ -1696,7 +1726,19 @@
         "assets/js/repositories/attachments-repository.js",
         "assets/js/features/chat-realtime-presence.js",
         "supabase/migrations/011_messages_shared_runtime.sql",
-        "supabase/migrations/012_transaction_attachments_storage.sql"
+        "supabase/migrations/012_transaction_attachments_storage.sql",
+        "assets/js/patterns/order-schedule-presentation.js",
+        "assets/js/pages/pedidos/orders-data.js",
+        "assets/js/pages/pedidos/orders-details.js",
+        "assets/js/pages/mensagens.js",
+        "pedidos.html",
+        "mensagens.html",
+        "config/sched-001-c01c-deterministic-frontend-presentation.json",
+        "docs/SCHED-001-C01C-DETERMINISTIC-FRONTEND-PRESENTATION.md",
+        "docs/validation/SCHED-001-C01C-DETERMINISTIC-FRONTEND-PRESENTATION.json",
+        "scripts/audit-sched-001-c01c-deterministic-frontend-presentation.js",
+        "scripts/test-sched-001-c01c-deterministic-frontend-presentation.js",
+        ".github/workflows/sched-001-c01c-deterministic-frontend-presentation.yml"
       ],
       "scanRoots": [
         "backend/modules/messaging",
@@ -1717,14 +1759,17 @@
         "test:messages-supabase-repository-contract",
         "test:attachments-supabase-repository-contract",
         "test:messages-interaction-stability-contract",
-        "test:messages-startup-hydration-stability-contract"
+        "test:messages-startup-hydration-stability-contract",
+        "audit:sched-001-c01c-deterministic-frontend-presentation",
+        "test:sched-001-c01c-deterministic-frontend-presentation"
       ],
       "evidence": [
         "Backend handlers and staging multi-domain messaging flow exist.",
         "Messages repository uses remote tables but retains localStorage and mock fallbacks.",
         "Only notifications is currently published to Supabase Realtime.",
         "message_attachments now has participant/sender RLS and least-privilege grants; anon access and cross-participant deletion are denied.",
-        "Conversation and message participant policies passed regression canaries after initplan optimization."
+        "Conversation and message participant policies passed regression canaries after initplan optimization.",
+        "SCHED-C01C makes message order summaries and message order details consume the canonical schedule presenter instead of independently presenting desired date and advertised availability."
       ],
       "blockers": [
         {

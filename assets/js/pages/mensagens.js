@@ -1439,7 +1439,7 @@
             </section>
 
             <section class="orders-detail-section" data-detail-schedule-section>
-              <span class="orders-detail-section__eyebrow">Disponibilidade do anúncio</span>
+              <span class="orders-detail-section__eyebrow">Agenda do pedido</span>
               <div class="orders-detail-schedule" data-detail-schedule></div>
             </section>
 
@@ -1555,16 +1555,36 @@
       ].filter((item) => String(item[1] || "").trim());
     };
 
-    const getOrderScheduleItems = (order) => {
+    const getCanonicalSchedulePresentation = (order) => {
+      const presenter = window.Doke?.patterns?.orderSchedulePresentation;
+      if (presenter?.getPresentation) return presenter.getPresentation(order || {});
       const source = Array.isArray(order?.serviceAvailabilitySchedule)
         ? order.serviceAvailabilitySchedule
         : Array.isArray(order?.serviceSnapshot?.availabilitySchedule)
           ? order.serviceSnapshot.availabilitySchedule
           : [];
-      return source.map((item) => ({
-        day: item?.label || item?.dayLabel || item?.day || "Dia",
-        time: [item?.start, item?.end].filter(Boolean).join("–") || item?.time || "A combinar"
-      })).filter((item) => item.day || item.time);
+      const availability = source.map((item) => {
+        const day = item?.label || item?.dayLabel || item?.day || "Dia";
+        const time = [item?.start, item?.end].filter(Boolean).join("–") || item?.time || "A combinar";
+        return `${day} ${time}`.trim();
+      }).filter(Boolean).join(" • ") || "Agenda a combinar";
+      return {
+        authority: "none",
+        title: "Disponibilidade do profissional",
+        value: availability,
+        label: `Disponibilidade do anúncio: ${availability}`,
+        detail: "Nenhum agendamento foi confirmado para este pedido.",
+        readOnly: true
+      };
+    };
+
+    const getOrderScheduleItems = (order) => {
+      const presentation = getCanonicalSchedulePresentation(order);
+      if (!presentation?.value) return [];
+      return [{
+        day: presentation.title || "Agenda do pedido",
+        time: presentation.value
+      }];
     };
 
     const getOrderAttachmentItems = (order) => (Array.isArray(order?.attachments) ? order.attachments : [])
@@ -1804,6 +1824,7 @@
         materials: order.materials || order.serviceIncludedItems || order.serviceSnapshot?.includedItems || "A confirmar com o profissional",
         triageItems: getOrderTriageItems(order),
         scheduleItems: getOrderScheduleItems(order),
+        scheduleAuthority: getCanonicalSchedulePresentation(order).authority,
         attachments: getOrderAttachmentItems(order),
         flow: config.flow,
         actionTitle: config.actionTitle,
@@ -1865,6 +1886,7 @@
       if (scheduleSection && scheduleNode) {
         const items = Array.isArray(details.scheduleItems) ? details.scheduleItems : [];
         scheduleSection.hidden = !items.length;
+        scheduleSection.dataset.scheduleAuthority = details.scheduleAuthority || 'none';
         scheduleNode.innerHTML = items.map((item) => `<span class="orders-detail-schedule__item"><strong>${escapeHtml(item.day)}</strong><span>${escapeHtml(item.time)}</span></span>`).join("");
       }
 
@@ -2032,12 +2054,11 @@
       const canQuote = canTransitionConversationOrder(conversation, 'quoted');
       const canApproveProposal = canTransitionConversationOrder(conversation, 'in_progress');
       const financialActionKind = getFinancialActionKind(conversation);
-      const schedule = formatOrderSchedule(order.serviceAvailabilitySchedule || order.serviceSnapshot?.availabilitySchedule);
+      const schedulePresentation = getCanonicalSchedulePresentation(order);
       const included = splitOrderItems(order.serviceIncludedItems).slice(0, 3);
       const attachmentCount = getOrderAttachmentCount(order);
       const serviceImage = getOrderImage(order);
       const scope = order.scope || order.details || order.description || 'Escopo não informado';
-      const desiredDate = [order.desiredDate, order.shift].filter(Boolean).join(' • ');
       const pendingNotice = orderStatus === 'pending'
         ? (professionalView
           ? 'Revise o pedido antes de aceitar. A conversa completa é liberada após o aceite.'
@@ -2099,8 +2120,7 @@
               <div><dt>${escapeHtml(peerLabel)}</dt><dd>${escapeHtml(peerName)}</dd></div>
               <div><dt>Estimativa</dt><dd>${escapeHtml(order.budget || order.servicePriceLabel || 'A definir')}</dd></div>
               <div><dt>Local</dt><dd>${escapeHtml(order.location || order.serviceRegion || 'A combinar')}</dd></div>
-              ${desiredDate ? `<div><dt>Data desejada</dt><dd>${escapeHtml(desiredDate)}</dd></div>` : ``}
-              ${schedule ? `<div class="messages-order-card__fact-wide"><dt>Agenda do anúncio</dt><dd>${escapeHtml(schedule)}</dd></div>` : ``}
+              ${schedulePresentation?.value ? `<div class="messages-order-card__fact-wide" data-schedule-authority="${escapeHtml(schedulePresentation.authority || 'none')}"><dt>${escapeHtml(schedulePresentation.title || 'Agenda do pedido')}</dt><dd>${escapeHtml(schedulePresentation.value)}</dd></div>` : ``}
               <div><dt>Anexos</dt><dd>${attachmentCount ? `${attachmentCount} arquivo${attachmentCount === 1 ? '' : 's'}` : 'Nenhum'}</dd></div>
             </dl>
             ${included.length ? `<div class="messages-order-card__included"><strong>Incluído no serviço</strong><span>${included.map(escapeHtml).join(' • ')}</span></div>` : ``}
