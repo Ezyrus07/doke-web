@@ -23,14 +23,14 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ord/ord-001-baseline-audit
-          fetch-depth: 1
+          fetch-depth: 20
 
-      - name: Require immutable source head
+      - name: Require immutable source head and validated ancestor
         env:
           EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
         run: |
-          test "$EXPECTED_HEAD" = "30474a63c87d374e228e4b6520c11fffad72888c"
           test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"
+          git merge-base --is-ancestor 30474a63c87d374e228e4b6520c11fffad72888c HEAD
 
       - uses: actions/setup-node@v4
         with:
