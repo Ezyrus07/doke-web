@@ -146,16 +146,49 @@ const boundedNavigateOrders = `async function navigateOrders(page) {
   }
   await page.waitForFunction(() => typeof window.DokeInitOrders === 'function', null, { timeout: 10_000 });
   checkpoint('orders_initializer_ready');
-  await page.evaluate(() => {
+
+  const initializationMode = await page.evaluate(async () => {
     const pageRoot = document.querySelector('.orders-page');
-    if (pageRoot?.dataset.ordersReady !== 'true') window.DokeInitOrders();
+    if (pageRoot?.dataset.ordersReady === 'true') return 'already_started';
+    await Promise.resolve(window.DokeInitOrders());
+    return 'started_and_awaited';
   });
-  checkpoint('orders_initializer_invoked');
-  await page.waitForFunction(() => {
-    const list = document.querySelector('.orders-list');
-    return Boolean(list && (list.dataset.localOrdersRendered === 'true' || document.querySelector('.order-card[data-id]')));
-  }, null, { timeout: 30_000 });
-  checkpoint('orders_render_ready');
+  checkpoint('orders_initializer_invoked_' + initializationMode);
+
+  try {
+    await page.waitForFunction(() => {
+      const list = document.querySelector('.orders-list');
+      const provider = document.documentElement.getAttribute('data-doke-orders-provider');
+      const state = document.body?.dataset.ordersExperienceState || '';
+      const readProvider = window.Doke?.runtimeConfig?.ordersReadProvider || '';
+      const rendered = list?.dataset.localOrdersRendered === 'true';
+      return Boolean(
+        rendered
+        && readProvider === 'supabase-read'
+        && provider === 'supabase-read'
+        && (state === 'ready' || state === 'empty')
+      );
+    }, null, { timeout: 30_000 });
+  } catch {
+    const remoteState = await page.evaluate(() => {
+      const list = document.querySelector('.orders-list');
+      return {
+        readProvider: window.Doke?.runtimeConfig?.ordersReadProvider || '',
+        providerAttribute: document.documentElement.getAttribute('data-doke-orders-provider') || '',
+        experienceState: document.body?.dataset.ordersExperienceState || '',
+        rendered: list?.dataset.localOrdersRendered === 'true',
+        cardCount: document.querySelectorAll('.order-card[data-id]').length
+      };
+    });
+    throw new Error(
+      'Remote orders hydration unavailable: readProvider=' + remoteState.readProvider
+      + ', provider=' + remoteState.providerAttribute
+      + ', state=' + remoteState.experienceState
+      + ', rendered=' + remoteState.rendered
+      + ', cards=' + remoteState.cardCount
+    );
+  }
+  checkpoint('orders_remote_hydration_complete');
 }`;
 
 function replaceExactlyOnce(source, before, after, label) {
