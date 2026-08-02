@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 1084 arquivos no escopo; 250 referências a localStorage; 78 a sessionStorage; 559 referências mock; 205 referências de rede/Supabase; 35 marcadores de implementação pendente.
+**Evidência estática observada:** 1086 arquivos no escopo; 253 referências a localStorage; 78 a sessionStorage; 559 referências mock; 205 referências de rede/Supabase; 35 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -539,7 +539,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI local; servidor partial; staging staging canary; segurança partial; produção blocked.
 
-**Evidência estática observada:** 1042 arquivos no escopo; 188 referências a localStorage; 70 a sessionStorage; 303 referências mock; 204 referências de rede/Supabase; 19 marcadores de implementação pendente.
+**Evidência estática observada:** 1043 arquivos no escopo; 190 referências a localStorage; 70 a sessionStorage; 303 referências mock; 204 referências de rede/Supabase; 19 marcadores de implementação pendente.
 
 **Páginas:** `anunciar-servico.html`, `pedidos.html`, `orcamento.html`.
 
@@ -633,6 +633,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - message_attachments now has participant/sender RLS and least-privilege grants; anon access and cross-participant deletion are denied.
 - Conversation and message participant policies passed regression canaries after initplan optimization.
 - SCHED-C01C makes message order summaries and message order details consume the canonical schedule presenter instead of independently presenting desired date and advertised availability.
+- MSG-A01 froze the repository-only authority baseline: the browser retains persistent local conversation/message fallback and localStorage presence, typing and read receipts; the backend Supabase service and participant RLS exist; authenticated browser DML policies remain; conversations and messages are not declared in Supabase Realtime; transaction-attachments retains local pending fallback.
 
 **Bloqueadores:**
 - **MSG-B02 · CRITICAL · realtime:** messages and conversations are not in the realtime publication. _(Fase 7)_
@@ -640,9 +641,10 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - **MSG-B04 · HIGH · storage:** Transaction attachment bucket policies are not mapped in the current staging snapshot. _(Fase 1)_
 
 **Próximas ações:**
-- Map and secure the transaction attachment object bucket.
-- Enable scoped realtime for conversation participants.
-- Remove production localStorage authority and add offline/retry semantics.
+- MSG-A02: freeze canonical conversation and message authority so authenticated UUID sessions are remote-only and non-UUID fixtures are memory-only.
+- MSG-A03: introduce a server-owned command and read-state boundary; retire silent browser DML success and persistent pending fallback for real sessions.
+- MSG-A04: prepare participant-scoped Realtime publication and subscription contracts without applying staging changes.
+- MSG-A05: map and harden transaction-attachments ownership, signed URL, cleanup and retention boundaries.
 
 **Gate de saída:**
 - Two devices exchange messages without refresh.
@@ -1000,7 +1002,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 1/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 241 arquivos no escopo; 64 referências a localStorage; 8 a sessionStorage; 269 referências mock; 8 referências de rede/Supabase; 25 marcadores de implementação pendente.
+**Evidência estática observada:** 242 arquivos no escopo; 65 referências a localStorage; 8 a sessionStorage; 269 referências mock; 8 referências de rede/Supabase; 25 marcadores de implementação pendente.
 
 **Evidências:**
 - The master plan identifies legal, privacy and commercial decisions as mandatory.
@@ -1060,7 +1062,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2414 arquivos no escopo; 507 referências a localStorage; 151 a sessionStorage; 882 referências mock; 602 referências de rede/Supabase; 89 marcadores de implementação pendente.
+**Evidência estática observada:** 2417 arquivos no escopo; 511 referências a localStorage; 151 a sessionStorage; 882 referências mock; 602 referências de rede/Supabase; 89 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
@@ -1121,4 +1123,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-08-02T15:50:00-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-08-02T16:12:00-03:00._
