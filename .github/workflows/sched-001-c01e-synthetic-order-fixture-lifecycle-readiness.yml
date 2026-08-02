@@ -14,6 +14,8 @@ on:
       - '.github/workflows/sched-001-c01e-synthetic-order-fixture-lifecycle-readiness.yml'
       - 'config/sched-001-c01d-authenticated-browser-canary-readiness.json'
       - 'scripts/execute-sched-001-c01d-authenticated-browser-read-only-canary.js'
+      - 'scripts/prepare-sched-001-c01d-authenticated-browser-bootstrap-runtime.js'
+      - 'scripts/test-sched-001-c01d-authenticated-browser-bootstrap-runtime.js'
       - 'supabase/migrations/20260730003500_ord_a06_canary_cleanup_boundary.sql'
       - 'supabase/migrations/20260801183000_sched_b04d_canonical_order_projection_guard.sql'
       - 'config/domain-completion-matrix.json'
@@ -39,6 +41,8 @@ jobs:
           node --check scripts/plan-sched-001-c01e-synthetic-order-fixture-lifecycle.js
           node --check scripts/audit-sched-001-c01e-synthetic-order-fixture-lifecycle-readiness.js
           node --check scripts/test-sched-001-c01e-synthetic-order-fixture-lifecycle-readiness.js
+          node --check scripts/prepare-sched-001-c01d-authenticated-browser-bootstrap-runtime.js
+          node --check scripts/test-sched-001-c01d-authenticated-browser-bootstrap-runtime.js
       - name: Validate inert fixture lifecycle package
         run: |
           node scripts/audit-sched-001-c01e-synthetic-order-fixture-lifecycle-readiness.js
@@ -50,6 +54,9 @@ jobs:
           node scripts/test-sched-001-c01d-authenticated-browser-canary-readiness.js
           node scripts/test-sched-001-c01d-authenticated-browser-read-only-canary.js
           node scripts/test-sched-001-c01d-authenticated-browser-read-only-canary-runner.js
+          node scripts/test-sched-001-c01d-authenticated-browser-bootstrap-runtime.js
+          node scripts/prepare-sched-001-c01d-authenticated-browser-bootstrap-runtime.js --dry-run
+          git diff --exit-code -- scripts/execute-sched-001-c01d-authenticated-browser-read-only-canary.js scripts/prepare-sched-001-c01d-authenticated-browser-login-runtime.js
       - name: Preserve cleanup and canonical projection boundaries
         run: |
           node scripts/audit-ord-001-a06-cleanup-boundary.js
