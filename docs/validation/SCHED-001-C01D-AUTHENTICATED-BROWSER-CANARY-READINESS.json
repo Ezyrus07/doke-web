@@ -1,0 +1,138 @@
+{
+  "schemaVersion": 1,
+  "domain": "SCHED-001",
+  "dependentDomains": [
+    "ORD-001",
+    "MSG-001"
+  ],
+  "sublot": "SCHED-C01D",
+  "contractVersion": "sched-c01d-authenticated-browser-read-only-canary-readiness-v1",
+  "scope": "repository_only_authenticated_browser_read_only_canary_readiness",
+  "environment": "doke-web-staging",
+  "projectRef": "zwkczgewzbsorbrjuzpb",
+  "authorization": {
+    "requiredExactPhrase": "I_EXPLICITLY_AUTHORIZE_SCHED_C01D_AUTHENTICATED_BROWSER_READ_ONLY_CANARY_ON_DOKE_STAGING",
+    "genericNextAllowed": false,
+    "productionCovered": false,
+    "browserExecutionCovered": false,
+    "stagingCredentialsCovered": false,
+    "dataMutationCovered": false,
+    "schedulingCommandsCovered": false,
+    "deploymentCovered": false,
+    "migrationCovered": false,
+    "mergeCovered": false
+  },
+  "runtimeGate": {
+    "failClosed": true,
+    "targetUrlMustBeInjected": true,
+    "targetMustContainStagingMarker": true,
+    "productionLikeTargetsRejected": true,
+    "credentialsMustBeInjected": true,
+    "authorizationEnvelopeMustBeInjected": true,
+    "browserContexts": 2,
+    "browserContextIsolationRequired": true,
+    "postLoginReadOnlyGuardRequired": true,
+    "allowedPostLoginMethods": [
+      "GET",
+      "HEAD",
+      "OPTIONS"
+    ],
+    "authTokenExchangeMayBeAllowedOnlyDuringLogin": true,
+    "serviceRoleMaterialInBrowserForbidden": true,
+    "directDatabaseAccessForbidden": true,
+    "directSchedulingRpcForbidden": true
+  },
+  "externalAuthorizationEnvelope": {
+    "required": true,
+    "repositoryStorageForbidden": true,
+    "rawIdentifiersInRepositoryForbidden": true,
+    "maxLifetimeSeconds": 7200,
+    "mustBind": [
+      "authorization_phrase_digest",
+      "head_sha",
+      "staging_target",
+      "client_account",
+      "professional_account",
+      "order_cases"
+    ],
+    "reportMayPersistOnlyDigests": true
+  },
+  "caseManifest": {
+    "mustBeInjected": true,
+    "rawOrderIdsInRepositoryForbidden": true,
+    "canonicalConfirmedCaseRequired": true,
+    "clientIntentOrNoneCaseRequired": true,
+    "liveIncompleteProjectionCaseForbidden": true,
+    "unexpectedIncompleteProjectionMustFailClosed": true,
+    "maximumOrders": 4
+  },
+  "surfaces": [
+    "orders_card",
+    "orders_detail_drawer",
+    "messages_order_summary",
+    "messages_order_detail"
+  ],
+  "requiredAssertions": [
+    "same_order_has_same_schedule_authority_across_surfaces",
+    "canonical_confirmed_requires_complete_tuple",
+    "client_intent_never_claims_confirmation",
+    "none_never_claims_confirmation",
+    "unexpected_incomplete_projection_fails_closed",
+    "legacy_data_desejada_copy_absent_from_messages_summary",
+    "legacy_agenda_do_anuncio_copy_absent_from_messages_summary",
+    "schedule_command_controls_absent",
+    "no_post_login_mutation_requests",
+    "no_service_role_material_in_browser",
+    "no_raw_identifiers_in_persisted_report"
+  ],
+  "evidencePolicy": {
+    "screenshotsAllowed": false,
+    "videoAllowed": false,
+    "traceAllowedOnlyOnFailure": false,
+    "htmlReportAllowed": false,
+    "jsonReportAllowed": true,
+    "reportContainsCredentials": false,
+    "reportContainsRawUserIdentifiers": false,
+    "reportContainsRawOrderIdentifiers": false,
+    "reportContainsOnlyAssertionsDigestsAndCounts": true
+  },
+  "capabilities": {
+    "dryRunAvailable": true,
+    "environmentCheckAvailable": false,
+    "executeModeAvailable": false,
+    "browserNetworkAvailable": false,
+    "credentialInputsAvailable": false,
+    "stagingReadAvailable": false,
+    "stagingMutationAvailable": false,
+    "schedulingCommandAvailable": false,
+    "authenticatedCanaryExecuted": false
+  },
+  "effects": {
+    "stagingReads": 0,
+    "stagingMutations": 0,
+    "productionAccess": 0,
+    "accountsUsed": 0,
+    "browserContextsCreated": 0,
+    "networkRequestsPerformed": 0,
+    "migrationsApplied": 0,
+    "deploymentsPerformed": 0,
+    "mergePerformed": false,
+    "autoMergeEnabled": false
+  },
+  "nextGate": "separately authorized authenticated browser read-only canary execution package",
+  "prohibitedActions": [
+    "production_access",
+    "staging_browser_execution",
+    "credential_resolution",
+    "authorization_envelope_creation",
+    "order_or_schedule_mutation",
+    "schedule_confirmation",
+    "schedule_reschedule",
+    "schedule_cancel",
+    "migration_application",
+    "deployment",
+    "cron_or_worker_activation",
+    "billing_or_infrastructure_change",
+    "merge"
+  ]
+}
