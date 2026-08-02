@@ -39,14 +39,29 @@ assert.strictEqual(config.status, 'repository_only_baseline_frozen');
 assert.strictEqual(config.authorityBoundary.environmentAccess, 'none');
 Object.values(config.effects).forEach((value) => assert(value === 0 || value === false));
 
-[
-  "var STORAGE_KEY = 'doke.conversations.local.v1'",
-  "var LEGACY_STORAGE_KEY = 'doke.messages.local.v1'",
-  "setProviderState('local-fallback')",
-  "return loadLocal(options)",
-  "saveLocal(normalized, 'pending')",
-  "syncStatus: 'pending'"
-].forEach((fragment) => assert(messagesRepository.includes(fragment), 'Messages repository missing baseline fragment: ' + fragment));
+if (fs.existsSync('config/msg-001-a02-canonical-authority-boundary.json')) {
+  [
+    "return user && isUuid(user.id) ? 'remote-only' : 'fixture-memory'",
+    "error.code = 'DOKE_MESSAGES_REMOTE_AUTHORITY_UNAVAILABLE'",
+    "return saveLocal(normalized, 'memory-only')",
+    'persistentLocalAuthority: false',
+    'pendingSynchronization: false'
+  ].forEach((fragment) => assert(messagesRepository.includes(fragment), 'Messages repository missing A02 closure fragment: ' + fragment));
+  [
+    'var local = readLocal();',
+    "remote.forEach(function (item) { saveLocal(item, 'synced'); });",
+    "return saveLocal(Object.assign({}, localSaved, { syncStatus: 'pending'"
+  ].forEach((fragment) => assert(!messagesRepository.includes(fragment), 'Messages repository retained A01 gap after A02: ' + fragment));
+} else {
+  [
+    "var STORAGE_KEY = 'doke.conversations.local.v1'",
+    "var LEGACY_STORAGE_KEY = 'doke.messages.local.v1'",
+    "setProviderState('local-fallback')",
+    "return loadLocal(options)",
+    "saveLocal(normalized, 'pending')",
+    "syncStatus: 'pending'"
+  ].forEach((fragment) => assert(messagesRepository.includes(fragment), 'Messages repository missing baseline fragment: ' + fragment));
+}
 
 [
   "var STORAGE_KEY = 'doke.chat.presence.v1'",
@@ -99,7 +114,12 @@ assert.strictEqual(msg.userFacingAuthority, 'hybrid');
 assert.strictEqual(msg.serverAuthority, 'partial');
 assert.deepStrictEqual(msg.blockers.map((item) => item.id), ['MSG-B02', 'MSG-B03', 'MSG-B04']);
 assert(msg.evidence.some((item) => item.includes('MSG-A01')));
-assert(msg.nextActions.some((item) => item.includes('MSG-A02')));
+if (fs.existsSync('config/msg-001-a02-canonical-authority-boundary.json')) {
+  assert(msg.nextActions.some((item) => item.includes('MSG-A03')));
+  assert(!msg.nextActions.some((item) => item.includes('MSG-A02')));
+} else {
+  assert(msg.nextActions.some((item) => item.includes('MSG-A02')));
+}
 Object.values(paths).filter((file) => ![paths.matrix, paths.package].includes(file)).forEach((file) => {
   assert(msg.requiredPaths.includes(file), 'MSG requiredPaths missing ' + file);
 });
