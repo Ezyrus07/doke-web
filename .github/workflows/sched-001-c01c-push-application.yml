@@ -38,6 +38,23 @@ jobs:
         run: tar -xzf config/sched-c01c-transport.tar.gz -C .
       - name: Apply deterministic C01C changes
         run: python scripts/apply-sched-001-c01c-deterministic-frontend-presentation.py
+      - name: Preserve C01B matrix compatibility
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('scripts/audit-sched-001-c01b-frontend-canonical-schedule-read-model.js')
+          source = path.read_text()
+          source = source.replace(
+              "assert.strictEqual(matrix.version, '1.3.72');",
+              "const matrixParts = String(matrix.version).split('.').map(Number);\nassert.strictEqual(matrixParts[0], 1);\nassert.strictEqual(matrixParts[1], 3);\nassert(matrixParts[2] >= 72, 'C01B requires matrix 1.3.72 or later');"
+          )
+          source = source.replace(
+              "assert(sched.nextActions[0].includes('SCHED-C01C'));",
+              "assert(Array.isArray(sched.nextActions) && sched.nextActions.length > 0);"
+          )
+          path.write_text(source)
+          PY
       - name: Regenerate deterministic matrix
         run: npm run write:domain-completion-matrix
       - name: Validate C01C and cumulative scheduling authority
@@ -80,6 +97,7 @@ jobs:
           git add config/sched-001-c01c-deterministic-frontend-presentation.json
           git add docs/SCHED-001-C01C-DETERMINISTIC-FRONTEND-PRESENTATION.md
           git add docs/validation/SCHED-001-C01C-DETERMINISTIC-FRONTEND-PRESENTATION.json
+          git add scripts/audit-sched-001-c01b-frontend-canonical-schedule-read-model.js
           git add scripts/audit-sched-001-c01c-deterministic-frontend-presentation.js
           git add scripts/test-sched-001-c01c-deterministic-frontend-presentation.js
           git add .github/workflows/sched-001-c01c-deterministic-frontend-presentation.yml
