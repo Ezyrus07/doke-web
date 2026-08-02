@@ -96,9 +96,21 @@ const originalNavigateOrders = `async function navigateOrders(page) {
 const boundedNavigateOrders = `async function navigateOrders(page) {
   const base = stripSlash(process.env[ENV.webBaseUrl]);
   const url = \`${'${base}'}/pedidos.html?dokeTarget=staging&dokeOrdersProvider=supabase-read&dokeOrdersReadProvider=supabase-read&dokeEnableNetwork=1\`;
+  const supabaseUmdCandidates = [
+    path.join(root, 'node_modules', '@supabase', 'supabase-js', 'dist', 'umd', 'supabase.js'),
+    path.join(root, 'node_modules', '@supabase', 'supabase-js', 'dist', 'umd', 'supabase.min.js')
+  ];
+  const localSupabaseUmd = supabaseUmdCandidates.find((candidate) => fs.existsSync(candidate));
+  if (!localSupabaseUmd) throw new Error('Pinned local Supabase UMD browser bundle was not found after npm ci.');
+
   await page.route('https://fonts.googleapis.com/**', (route) => route.abort('blockedbyclient'));
   await page.route('https://fonts.gstatic.com/**', (route) => route.abort('blockedbyclient'));
+  await page.route('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2', (route) => route.fulfill({
+    path: localSupabaseUmd,
+    contentType: 'application/javascript'
+  }));
   checkpoint('orders_external_fonts_blocked');
+  checkpoint('orders_supabase_cdn_localized');
   checkpoint('orders_navigation_goto_start');
   await page.goto(url, { waitUntil: 'commit', timeout: 20_000 });
   checkpoint('orders_navigation_goto_commit');
