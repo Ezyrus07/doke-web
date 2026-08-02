@@ -18,8 +18,6 @@ jobs:
     if: github.event_name == 'workflow_dispatch' || github.head_ref == 'msg/msg-001-baseline-audit'
     runs-on: ubuntu-24.04
     timeout-minutes: 12
-    env:
-      EXPECTED_HEAD: 1033eb0118f3d23a70592a020a1ca118459a7702
     steps:
       - uses: actions/checkout@v4
         with:
@@ -28,8 +26,8 @@ jobs:
 
       - name: Require immutable MSG-A04 generator ancestor
         run: |
-          test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"
-          git merge-base --is-ancestor b486ffa96d85c968746e13f273969677c5f194dc HEAD
+          git merge-base --is-ancestor 1033eb0118f3d23a70592a020a1ca118459a7702 HEAD
+          echo "RUN_HEAD=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
 
       - uses: actions/setup-node@v4
         with:
@@ -134,7 +132,7 @@ jobs:
       - name: Publish canonical non-workflow artifacts
         run: |
           git fetch origin msg/msg-001-baseline-audit --depth=1
-          test "$(git rev-parse origin/msg/msg-001-baseline-audit)" = "$EXPECTED_HEAD"
+          test "$(git rev-parse origin/msg/msg-001-baseline-audit)" = "$RUN_HEAD"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -m "feat(msg): prepare participant-scoped Realtime contract"
