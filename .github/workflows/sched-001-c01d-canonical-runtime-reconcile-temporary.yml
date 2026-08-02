@@ -1,0 +1,799 @@
+name: Doke Temporary SCHED-C01D Canonical Runtime Reconcile
+
+on:
+  pull_request:
+    branches:
+      - search/search-ux02-intent-favorites-clean
+    paths:
+      - '.github/workflows/sched-001-c01d-canonical-runtime-reconcile-temporary.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sched-001-c01d-canonical-runtime-reconcile-temporary
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    if: github.event.pull_request.number == 25 && github.event.pull_request.head.ref == 'ord/ord-001-baseline-audit' && github.event.pull_request.draft == true
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ord/ord-001-baseline-audit
+          fetch-depth: 1
+
+      - name: Require immutable source head
+        env:
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install pinned dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Canonicalize C01D browser runtime
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+
+          const paths = {
+            executor: 'scripts/execute-sched-001-c01d-authenticated-browser-read-only-canary.js',
+            runner: 'scripts/run-sched-001-c01d-authenticated-browser-read-only-canary.js',
+            runnerTest: 'scripts/test-sched-001-c01d-authenticated-browser-read-only-canary-runner.js',
+            bootstrapTest: 'scripts/test-sched-001-c01d-authenticated-browser-bootstrap-runtime.js',
+            loginPreparer: 'scripts/prepare-sched-001-c01d-authenticated-browser-login-runtime.js',
+            bootstrapPreparer: 'scripts/prepare-sched-001-c01d-authenticated-browser-bootstrap-runtime.js',
+            config: 'config/sched-001-c01d-authenticated-browser-canary-readiness.json',
+            evidence: 'docs/validation/SCHED-001-C01D-AUTHENTICATED-BROWSER-CANARY-READINESS.json',
+            docs: 'docs/SCHED-001-C01D-AUTHENTICATED-BROWSER-CANARY-READINESS.md',
+            audit: 'scripts/audit-sched-001-c01d-authenticated-browser-canary-readiness.js',
+            workflow: '.github/workflows/sched-001-c01d-authenticated-browser-canary-readiness.yml',
+            matrix: 'config/domain-completion-matrix.json'
+          };
+
+          function replaceOnce(source, before, after, label) {
+            const count = source.split(before).length - 1;
+            if (count !== 1) throw new Error(`Expected exactly one ${label}, found ${count}.`);
+            return source.replace(before, after);
+          }
+
+          function replaceBlock(source, startMarker, endMarker, replacement, label) {
+            const start = source.indexOf(startMarker);
+            if (start < 0) throw new Error(`Missing ${label} start marker.`);
+            const end = source.indexOf(endMarker, start + startMarker.length);
+            if (end < 0) throw new Error(`Missing ${label} end marker.`);
+            if (source.indexOf(startMarker, start + 1) >= 0) throw new Error(`Duplicate ${label} start marker.`);
+            return source.slice(0, start) + replacement.trimEnd() + '\n\n' + source.slice(end);
+          }
+
+          let executor = fs.readFileSync(paths.executor, 'utf8');
+          executor = replaceOnce(
+            executor,
+            `  failures: [],\n  warnings: []\n};`,
+            `  failures: [],\n  warnings: [],\n  lastCheckpoint: 'initialized',\n  checkpointHistory: []\n};`,
+            'executor report checkpoint tail'
+          );
+
+          const canonicalExecuteCanary = String.raw`async function executeCanary() {
+  const { chromium } = require('@playwright/test');
+  const launchOptions = { headless: true };
+  if (process.env[ENV.browserPath]) {
+    launchOptions.executablePath = process.env[ENV.browserPath];
+    launchOptions.args = ['--no-sandbox', '--disable-dev-shm-usage'];
+  }
+
+  checkpoint('browser_launch_start');
+  const browser = await chromium.launch(launchOptions);
+  checkpoint('browser_launched');
+  const clientContext = await createContext(browser, 'client');
+  const professionalContext = await createContext(browser, 'professional');
+  report.browserContextsCreated = 2;
+  checkpoint('browser_contexts_created');
+
+  try {
+    checkpoint('client_inspection_start');
+    const client = await withPhaseTimeout(
+      inspectPersona(clientContext, 'client', process.env[ENV.clientEmail], process.env[ENV.clientPassword]),
+      120_000,
+      'client_inspection'
+    );
+    checkpoint('client_inspection_complete');
+
+    checkpoint('professional_inspection_start');
+    const professional = await withPhaseTimeout(
+      inspectPersona(professionalContext, 'professional', process.env[ENV.professionalEmail], process.env[ENV.professionalPassword]),
+      120_000,
+      'professional_inspection'
+    );
+    checkpoint('professional_inspection_complete');
+
+    const all = client.cases.concat(professional.cases);
+    const canonical = all.find((entry) => entry.authority === 'canonical_confirmed');
+    const alternate = all.find((entry) => entry.authority === 'client_intent' || entry.authority === 'none');
+    if (!canonical) fail('No authorized visible canonical_confirmed order case was found.');
+    if (!alternate) fail('No authorized visible client_intent or none order case was found.');
+
+    if (canonical) {
+      checkpoint('canonical_messages_inspection_start');
+      await withPhaseTimeout(
+        inspectMessages(clientContext, professionalContext, canonical),
+        90_000,
+        'canonical_messages_inspection'
+      );
+      checkpoint('canonical_messages_inspection_complete');
+    }
+    if (alternate && alternate.orderDigest !== canonical?.orderDigest) {
+      checkpoint('alternate_messages_inspection_start');
+      await withPhaseTimeout(
+        inspectMessages(clientContext, professionalContext, alternate),
+        90_000,
+        'alternate_messages_inspection'
+      );
+      checkpoint('alternate_messages_inspection_complete');
+    }
+  } finally {
+    checkpoint('browser_cleanup_start');
+    const cleanup = (async () => {
+      await Promise.allSettled([clientContext.close(), professionalContext.close()]);
+      await browser.close();
+      return 'closed';
+    })();
+    const cleanupOutcome = await Promise.race([
+      cleanup.catch((error) => {
+        report.warnings.push('browser_cleanup_error:' + String(error && error.message || error));
+        return 'error';
+      }),
+      new Promise((resolve) => setTimeout(() => resolve('timeout'), 10_000))
+    ]);
+    if (cleanupOutcome === 'timeout') report.warnings.push('browser_cleanup_timeout_forced_exit');
+    checkpoint('browser_cleanup_complete');
+  }
+}`;
+          executor = replaceBlock(executor, 'async function executeCanary() {', 'async function createContext', canonicalExecuteCanary, 'executeCanary');
+
+          const canonicalInspectPersona = String.raw`async function inspectPersona(context, persona, email, password) {
+  const page = await context.newPage();
+  page.setDefaultTimeout(10_000);
+  page.setDefaultNavigationTimeout(20_000);
+  checkpoint(persona + '_page_created');
+  const mutations = [];
+  const requests = [];
+  page.on('request', (request) => requests.push({ method: request.method(), url: shapeUrl(request.url()) }));
+
+  checkpoint(persona + '_login_start');
+  await login(page, email, password, persona);
+  checkpoint(persona + '_login_complete');
+  await installReadOnlyGuard(page, mutations);
+  checkpoint(persona + '_orders_navigation_start');
+  await navigateOrders(page);
+  checkpoint(persona + '_orders_navigation_complete');
+  const cases = await collectOrderCases(page, persona);
+  checkpoint(persona + '_orders_collected');
+  if (!cases.length) report.warnings.push(\`\${persona} account has no visible order cards.\`);
+
+  const detailCandidates = [
+    cases.find((entry) => entry.authority === 'canonical_confirmed'),
+    cases.find((entry) => entry.authority === 'client_intent' || entry.authority === 'none')
+  ].filter((entry, index, list) => entry && list.findIndex((candidate) => candidate.orderDigest === entry.orderDigest) === index);
+
+  for (const orderCase of detailCandidates) {
+    checkpoint(persona + '_orders_detail_start_' + orderCase.authority);
+    await inspectOrdersDetail(page, orderCase);
+    checkpoint(persona + '_orders_detail_complete_' + orderCase.authority);
+  }
+
+  if (mutations.length) {
+    report.postLoginMutationRequests += mutations.length;
+    fail(\`\${persona} attempted post-login mutation requests: \${mutations.map((entry) => entry.method + ' ' + entry.url).join(', ')}\`);
+  }
+  report.stagingReadsPerformed += requests.filter((entry) => /supabase\\.co/.test(entry.url) && ALLOWED_AFTER_LOGIN.has(entry.method)).length;
+  await page.close();
+  return { persona, cases };
+}`;
+          executor = replaceBlock(executor, 'async function inspectPersona(', 'async function login', canonicalInspectPersona, 'inspectPersona');
+
+          const canonicalLogin = String.raw`async function login(page, email, password, persona) {
+  const base = stripSlash(process.env[ENV.webBaseUrl]);
+  const loginUrl = \`\${base}/auth/login.html?next=../pedidos.html%3FdokeTarget%3Dstaging\`;
+  const sessionKeys = new Set(['doke.auth.session.v1', 'doke.auth.session.v2', 'doke.auth.session']);
+
+  checkpoint(persona + '_login_page_goto_start');
+  await page.goto(loginUrl, { waitUntil: 'commit', timeout: 20_000 });
+  checkpoint(persona + '_login_page_goto_commit');
+
+  const emailInput = page.locator('#email-login');
+  const passwordInput = page.locator('#senha-login');
+  const submit = page.locator('[data-auth-submit]');
+  await emailInput.waitFor({ state: 'visible', timeout: 10_000 });
+  checkpoint(persona + '_login_form_visible');
+  await emailInput.fill(email, { timeout: 10_000 });
+  await passwordInput.fill(password, { timeout: 10_000 });
+  checkpoint(persona + '_login_credentials_filled');
+
+  const navigation = page.waitForURL(/\\/pedidos\\.html(?:[?#].*)?$/, {
+    waitUntil: 'commit',
+    timeout: 30_000
+  });
+  await submit.click({ noWaitAfter: true, timeout: 10_000 });
+  checkpoint(persona + '_login_submit_clicked');
+  await navigation;
+  checkpoint(persona + '_login_target_committed');
+
+  let user = null;
+  const sessionDeadline = Date.now() + 20_000;
+  while (!user && Date.now() < sessionDeadline) {
+    const state = await page.context().storageState();
+    for (const origin of state.origins || []) {
+      for (const entry of origin.localStorage || []) {
+        if (!sessionKeys.has(entry.name)) continue;
+        try {
+          const snapshot = JSON.parse(entry.value);
+          const candidate = snapshot?.user || snapshot?.currentUser || snapshot || null;
+          if (candidate && candidate.id) {
+            user = { role: String(candidate.role || candidate.type || 'client').trim().toLowerCase() };
+            break;
+          }
+        } catch {}
+      }
+      if (user) break;
+    }
+    if (!user) await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+
+  if (!user) throw new Error(\`\${persona} login did not materialize the canonical sanitized session snapshot.\`);
+  checkpoint(persona + '_login_session_ready');
+  if (persona === 'professional' && user.role !== 'professional') {
+    throw new Error(\`Professional credential resolved as role=\${user.role || 'unknown'}.\`);
+  }
+}`;
+          executor = replaceBlock(executor, 'async function login(', 'async function installReadOnlyGuard', canonicalLogin, 'login');
+
+          const canonicalNavigateOrders = String.raw`async function navigateOrders(page) {
+  const base = stripSlash(process.env[ENV.webBaseUrl]);
+  const url = \`\${base}/pedidos.html?dokeTarget=staging&dokeOrdersProvider=supabase-read&dokeOrdersReadProvider=supabase-read&dokeEnableNetwork=1\`;
+  const supabaseUmdCandidates = [
+    path.join(root, 'node_modules', '@supabase', 'supabase-js', 'dist', 'umd', 'supabase.min.js'),
+    path.join(root, 'node_modules', '@supabase', 'supabase-js', 'dist', 'umd', 'supabase.js')
+  ];
+  const localSupabaseUmd = supabaseUmdCandidates.find((candidate) => fs.existsSync(candidate));
+  if (!localSupabaseUmd) throw new Error('Pinned local Supabase UMD browser bundle was not found after npm ci.');
+
+  const bootstrapDiagnostics = {
+    domContentLoaded: false,
+    pageErrors: 0,
+    failedScripts: 0
+  };
+  page.on('domcontentloaded', () => {
+    bootstrapDiagnostics.domContentLoaded = true;
+    checkpoint('orders_domcontentloaded');
+  });
+  page.on('pageerror', () => {
+    bootstrapDiagnostics.pageErrors += 1;
+  });
+  page.on('requestfailed', (request) => {
+    if (request.resourceType() === 'script') bootstrapDiagnostics.failedScripts += 1;
+  });
+
+  await page.route('https://fonts.googleapis.com/**', (route) => route.abort('blockedbyclient'));
+  await page.route('https://fonts.gstatic.com/**', (route) => route.abort('blockedbyclient'));
+  await page.route('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2**', async (route) => {
+    checkpoint('orders_supabase_cdn_fulfilled_locally');
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/javascript; charset=utf-8',
+      path: localSupabaseUmd
+    });
+  });
+  checkpoint('orders_external_fonts_blocked');
+  checkpoint('orders_navigation_goto_start');
+  await page.goto(url, { waitUntil: 'commit', timeout: 20_000 });
+  checkpoint('orders_navigation_goto_commit');
+  await page.locator('.orders-list').waitFor({ state: 'attached', timeout: 15_000 });
+  checkpoint('orders_list_attached');
+
+  try {
+    await Promise.race([
+      page.waitForLoadState('domcontentloaded', { timeout: 20_000 }),
+      new Promise((_, reject) => setTimeout(
+        () => reject(new Error('orders_domcontentloaded_node_watchdog')),
+        22_000
+      ))
+    ]);
+  } catch {
+    throw new Error(
+      'Orders document bootstrap unavailable: domContentLoaded=' + bootstrapDiagnostics.domContentLoaded
+      + ', pageErrors=' + bootstrapDiagnostics.pageErrors
+      + ', failedScripts=' + bootstrapDiagnostics.failedScripts
+    );
+  }
+  checkpoint('orders_document_bootstrap_complete');
+
+  try {
+    await Promise.race([
+      page.waitForFunction(() => Boolean(
+        typeof window.supabase?.createClient === 'function'
+        && window.Doke?.services?.accountAccess?.guardPage
+        && typeof window.DokeHydrateLocalOrders === 'function'
+      ), null, { polling: 100, timeout: 20_000 }),
+      new Promise((_, reject) => setTimeout(
+        () => reject(new Error('orders_prerequisites_node_watchdog')),
+        22_000
+      ))
+    ]);
+  } catch {
+    const prerequisiteState = await page.evaluate(() => ({
+      supabaseSdkReady: typeof window.supabase?.createClient === 'function',
+      accountAccessReady: Boolean(window.Doke?.services?.accountAccess?.guardPage),
+      localOrdersReady: typeof window.DokeHydrateLocalOrders === 'function',
+      initializerReady: typeof window.DokeInitOrders === 'function',
+      readyState: document.readyState
+    }));
+    throw new Error(
+      'Orders prerequisites unavailable: supabaseSdk=' + prerequisiteState.supabaseSdkReady
+      + ', accountAccess=' + prerequisiteState.accountAccessReady
+      + ', localOrders=' + prerequisiteState.localOrdersReady
+      + ', initializer=' + prerequisiteState.initializerReady
+      + ', readyState=' + prerequisiteState.readyState
+    );
+  }
+  checkpoint('orders_prerequisites_ready');
+
+  const initializerReady = await page.evaluate(() => typeof window.DokeInitOrders === 'function');
+  if (!initializerReady) {
+    await page.addScriptTag({ path: path.join(root, 'assets', 'js', 'pages', 'pedidos.js') });
+    checkpoint('orders_entrypoint_injected');
+  }
+  await page.waitForFunction(() => typeof window.DokeInitOrders === 'function', null, { timeout: 10_000 });
+  checkpoint('orders_initializer_ready');
+
+  const initializationMode = await page.evaluate(async () => {
+    const pageRoot = document.querySelector('.orders-page');
+    if (pageRoot?.dataset.ordersReady === 'true') return 'already_started';
+    await Promise.resolve(window.DokeInitOrders());
+    return 'started_and_awaited';
+  });
+  checkpoint('orders_initializer_invoked_' + initializationMode);
+
+  try {
+    await page.waitForFunction(() => {
+      const list = document.querySelector('.orders-list');
+      const provider = document.documentElement.getAttribute('data-doke-orders-provider');
+      const state = document.body?.dataset.ordersExperienceState || '';
+      const readProvider = window.Doke?.runtimeConfig?.ordersReadProvider || '';
+      const rendered = list?.dataset.localOrdersRendered === 'true';
+      return Boolean(
+        rendered
+        && readProvider === 'supabase-read'
+        && provider === 'supabase-read'
+        && (state === 'ready' || state === 'empty')
+      );
+    }, null, { polling: 100, timeout: 45_000 });
+  } catch {
+    const remoteState = await page.evaluate(() => {
+      const list = document.querySelector('.orders-list');
+      return {
+        supabaseSdkReady: typeof window.supabase?.createClient === 'function',
+        sharedClientReady: Boolean(window.DokeSupabase?.getClient?.()),
+        readProvider: window.Doke?.runtimeConfig?.ordersReadProvider || '',
+        providerAttribute: document.documentElement.getAttribute('data-doke-orders-provider') || '',
+        experienceState: document.body?.dataset.ordersExperienceState || '',
+        rendered: list?.dataset.localOrdersRendered === 'true',
+        cardCount: document.querySelectorAll('.order-card[data-id]').length
+      };
+    });
+    throw new Error(
+      'Remote orders hydration unavailable: supabaseSdk=' + remoteState.supabaseSdkReady
+      + ', sharedClient=' + remoteState.sharedClientReady
+      + ', readProvider=' + remoteState.readProvider
+      + ', provider=' + remoteState.providerAttribute
+      + ', state=' + remoteState.experienceState
+      + ', rendered=' + remoteState.rendered
+      + ', cards=' + remoteState.cardCount
+    );
+  }
+  checkpoint('orders_remote_hydration_complete');
+}`;
+          executor = replaceBlock(executor, 'async function navigateOrders(', 'async function collectOrderCases', canonicalNavigateOrders, 'navigateOrders');
+
+          executor = replaceOnce(
+            executor,
+            `  const page = await context.newPage();\n  const mutations = [];\n  await installReadOnlyGuard(page, mutations);`,
+            `  const page = await context.newPage();\n  page.setDefaultTimeout(10_000);\n  page.setDefaultNavigationTimeout(20_000);\n  checkpoint('messages_page_created_' + orderCase.authority);\n  const mutations = [];\n  await installReadOnlyGuard(page, mutations);`,
+            'messages page defaults'
+          );
+
+          const diagnosticHelpers = String.raw`async function withPhaseTimeout(promise, timeoutMs, label) {
+  let timer;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error(label + '_timeout_after_' + timeoutMs + 'ms')), timeoutMs);
+      })
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
+function checkpoint(name) {
+  report.lastCheckpoint = String(name);
+  report.checkpointHistory.push({ name: String(name), at: new Date().toISOString() });
+  if (report.checkpointHistory.length > 40) report.checkpointHistory.shift();
+  if (writeReport || execute || checkEnv) {
+    const file = path.resolve(root, process.env[ENV.reportPath] || DEFAULT_REPORT);
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, JSON.stringify(report, null, 2) + '\n');
+  }
+}
+
+`;
+          executor = replaceOnce(executor, 'function check(surface, name, passed) {', diagnosticHelpers + 'function check(surface, name, passed) {', 'diagnostic helper anchor');
+
+          executor = replaceBlock(
+            executor,
+            'function finish(code) {',
+            'function fail(message)',
+            String.raw`function finish(code) {
+  report.stagingMutationsPerformed = report.postLoginMutationRequests;
+  if (writeReport || execute || checkEnv) {
+    const file = path.resolve(root, process.env[ENV.reportPath] || DEFAULT_REPORT);
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, JSON.stringify(report, null, 2) + '\n');
+  }
+  const serialized = JSON.stringify(report, null, 2) + '\n';
+  fs.writeSync(1, serialized);
+  process.exit(code);
+}`,
+            'finish'
+          );
+          fs.writeFileSync(paths.executor, executor);
+
+          const runner = String.raw`#!/usr/bin/env node
+'use strict';
+
+const fs = require('fs');
+const path = require('path');
+const { spawnSync } = require('child_process');
+
+const executorPath = path.join(__dirname, 'execute-sched-001-c01d-authenticated-browser-read-only-canary.js');
+const defaultReport = 'reports/generated/sched-001-c01d-authenticated-browser-read-only-canary-report.json';
+const watchdogMs = 8 * 60 * 1000;
+
+function writeWatchdogReport() {
+  const reportPath = path.resolve(
+    process.cwd(),
+    process.env.DOKE_SCHED_C01D_REPORT_PATH || defaultReport
+  );
+  let previous = {};
+  try {
+    previous = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+  } catch {
+    previous = {};
+  }
+
+  const report = {
+    contractVersion: previous.contractVersion || 'sched-c01d-authenticated-browser-read-only-canary-execution-v1',
+    generatedAt: new Date().toISOString(),
+    mode: 'execute',
+    status: 'failed',
+    headSha: String(process.env.DOKE_SCHED_C01D_EXPECTED_HEAD_SHA || previous.headSha || ''),
+    projectRef: previous.projectRef || 'zwkczgewzbsorbrjuzpb',
+    credentialsRecorded: false,
+    rawIdentifiersRecorded: false,
+    screenshotsCaptured: 0,
+    videosCaptured: 0,
+    tracesCaptured: 0,
+    executionCountersComplete: false,
+    browserContextsCreated: null,
+    stagingReadsPerformed: null,
+    stagingMutationsPerformed: null,
+    postLoginMutationRequests: null,
+    selectedCases: Array.isArray(previous.selectedCases) ? previous.selectedCases : [],
+    surfaceChecks: Array.isArray(previous.surfaceChecks) ? previous.surfaceChecks : [],
+    failures: ['runner_watchdog_timeout_before_executor_completion'],
+    warnings: ['Execution counters are intentionally null because the child process was force-terminated.'],
+    lastCheckpoint: previous.lastCheckpoint || 'unknown',
+    checkpointHistory: Array.isArray(previous.checkpointHistory) ? previous.checkpointHistory : [],
+    caseManifestDigest: previous.caseManifestDigest,
+    manifest: previous.manifest,
+    authorizationEnvelopeDigest: previous.authorizationEnvelopeDigest
+  };
+
+  fs.mkdirSync(path.dirname(reportPath), { recursive: true });
+  const serialized = JSON.stringify(report, null, 2) + '\n';
+  fs.writeFileSync(reportPath, serialized);
+  fs.writeSync(1, serialized);
+}
+
+function run() {
+  const result = spawnSync(
+    process.execPath,
+    [executorPath, ...process.argv.slice(2)],
+    {
+      cwd: process.cwd(),
+      env: process.env,
+      encoding: null,
+      maxBuffer: 16 * 1024 * 1024,
+      timeout: watchdogMs,
+      killSignal: 'SIGKILL'
+    }
+  );
+
+  if (result.stdout) process.stdout.write(result.stdout);
+  if (result.stderr) process.stderr.write(result.stderr);
+  if (result.error?.code === 'ETIMEDOUT' && process.argv.includes('--execute')) {
+    writeWatchdogReport();
+    return 1;
+  }
+  if (result.error) throw result.error;
+  return Number.isInteger(result.status) ? result.status : 1;
+}
+
+try {
+  process.exitCode = run();
+} catch (error) {
+  console.error(error && (error.stack || error.message) || String(error));
+  process.exitCode = 1;
+}
+`;
+          fs.writeFileSync(paths.runner, runner, { mode: 0o755 });
+
+          const runnerTest = String.raw`#!/usr/bin/env node
+'use strict';
+
+const assert = require('assert');
+const fs = require('fs');
+const { spawnSync } = require('child_process');
+
+const executor = 'scripts/execute-sched-001-c01d-authenticated-browser-read-only-canary.js';
+const runner = 'scripts/run-sched-001-c01d-authenticated-browser-read-only-canary.js';
+const removedPreparers = [
+  'scripts/prepare-sched-001-c01d-authenticated-browser-login-runtime.js',
+  'scripts/prepare-sched-001-c01d-authenticated-browser-bootstrap-runtime.js'
+];
+const executorSource = fs.readFileSync(executor, 'utf8');
+const runnerSource = fs.readFileSync(runner, 'utf8');
+
+[
+  "lastCheckpoint: 'initialized'",
+  'async function withPhaseTimeout',
+  "120_000,\n      'client_inspection'",
+  "120_000,\n      'professional_inspection'",
+  "90_000,\n        'canonical_messages_inspection'",
+  'page.setDefaultTimeout(10_000)',
+  "new Set(['doke.auth.session.v1', 'doke.auth.session.v2', 'doke.auth.session'])",
+  "submit.click({ noWaitAfter: true",
+  "'supabase.min.js'),\n    path.join(root",
+  "checkpoint('orders_domcontentloaded')",
+  'orders_domcontentloaded_node_watchdog',
+  'orders_prerequisites_node_watchdog',
+  'path: localSupabaseUmd',
+  'await Promise.resolve(window.DokeInitOrders())',
+  "state === 'ready' || state === 'empty'",
+  "checkpoint('orders_remote_hydration_complete')",
+  "resolve('timeout'), 10_000",
+  'browser_cleanup_timeout_forced_exit',
+  'fs.writeSync(1, serialized)',
+  'process.exit(code)'
+].forEach((fragment) => assert(executorSource.includes(fragment), `Canonical executor missing ${fragment}`));
+
+assert(!executorSource.includes('localSupabaseSource'));
+assert(runnerSource.includes('timeout: watchdogMs'));
+assert(runnerSource.includes("killSignal: 'SIGKILL'"));
+assert(runnerSource.includes('runner_watchdog_timeout_before_executor_completion'));
+[
+  'runtimePrefix',
+  'buildRuntimeSource',
+  'writeFileSync(runtimePath',
+  'replaceExactlyOnce(source'
+].forEach((fragment) => assert(!runnerSource.includes(fragment), `Runner retains source rewriting: ${fragment}`));
+removedPreparers.forEach((file) => assert(!fs.existsSync(file), `Legacy runtime preparer still exists: ${file}`));
+
+const dryRun = spawnSync(process.execPath, [runner, '--dry-run'], {
+  encoding: 'utf8',
+  maxBuffer: 16 * 1024 * 1024
+});
+assert.strictEqual(dryRun.status, 0, dryRun.stderr);
+const report = JSON.parse(dryRun.stdout);
+assert.strictEqual(report.mode, 'dry-run');
+assert.strictEqual(report.status, 'dry_run_only');
+assert.strictEqual(report.browserContextsCreated, 0);
+assert.strictEqual(report.stagingReadsPerformed, 0);
+assert.strictEqual(report.stagingMutationsPerformed, 0);
+assert.strictEqual(report.lastCheckpoint, 'initialized');
+assert.deepStrictEqual(report.checkpointHistory, []);
+
+console.log('SCHED-C01D canonical browser runner tests passed.');
+`;
+          fs.writeFileSync(paths.runnerTest, runnerTest, { mode: 0o755 });
+
+          const bootstrapTest = String.raw`#!/usr/bin/env node
+'use strict';
+
+const assert = require('assert');
+const fs = require('fs');
+const { spawnSync } = require('child_process');
+
+const executor = 'scripts/execute-sched-001-c01d-authenticated-browser-read-only-canary.js';
+const source = fs.readFileSync(executor, 'utf8');
+[
+  "checkpoint('orders_navigation_goto_commit')",
+  "checkpoint('orders_list_attached')",
+  "checkpoint('orders_document_bootstrap_complete')",
+  "checkpoint('orders_prerequisites_ready')",
+  "checkpoint('orders_initializer_ready')",
+  "checkpoint('orders_remote_hydration_complete')",
+  'bootstrapDiagnostics.pageErrors',
+  'bootstrapDiagnostics.failedScripts',
+  "polling: 100, timeout: 20_000",
+  "polling: 100, timeout: 45_000"
+].forEach((fragment) => assert(source.includes(fragment), `Canonical bootstrap contract missing ${fragment}`));
+assert(!source.includes('page.addInitScript({ path: localSupabaseUmd })'));
+assert(!source.includes('body: localSupabaseSource'));
+
+const before = fs.readFileSync(executor, 'utf8');
+const result = spawnSync(process.execPath, [executor, '--dry-run'], {
+  encoding: 'utf8',
+  maxBuffer: 16 * 1024 * 1024
+});
+assert.strictEqual(result.status, 0, result.stderr || result.stdout);
+const report = JSON.parse(result.stdout);
+assert.strictEqual(report.status, 'dry_run_only');
+assert.strictEqual(report.stagingReadsPerformed, 0);
+assert.strictEqual(report.stagingMutationsPerformed, 0);
+assert.strictEqual(fs.readFileSync(executor, 'utf8'), before);
+
+console.log('SCHED-C01D canonical browser bootstrap tests passed.');
+`;
+          fs.writeFileSync(paths.bootstrapTest, bootstrapTest, { mode: 0o755 });
+
+          fs.rmSync(paths.loginPreparer, { force: true });
+          fs.rmSync(paths.bootstrapPreparer, { force: true });
+
+          const config = JSON.parse(fs.readFileSync(paths.config, 'utf8'));
+          Object.assign(config.runtimeGate, {
+            canonicalExecutorRequired: true,
+            runtimeSourceRewritingForbidden: true,
+            bootstrapWatchdogsRequired: true,
+            initializerPromiseMustBeAwaited: true,
+            remoteHydrationTerminalStateRequired: true
+          });
+          config.canonicalRuntime = {
+            executorOwnsLoginSynchronization: true,
+            executorOwnsSupabaseDeferFulfillment: true,
+            executorOwnsBootstrapDiagnostics: true,
+            executorOwnsPhaseTimeouts: true,
+            executorOwnsBoundedCleanup: true,
+            runnerMayOnlySuperviseProcessWatchdog: true,
+            legacyRuntimePreparersRemoved: true
+          };
+          fs.writeFileSync(paths.config, JSON.stringify(config, null, 2) + '\n');
+          fs.writeFileSync(paths.evidence, JSON.stringify(config, null, 2) + '\n');
+
+          let docs = fs.readFileSync(paths.docs, 'utf8');
+          const canonicalSection = `\n## Canonical runtime consolidation\n\nThe authenticated browser executor now owns login synchronization, local fulfillment of the pinned Supabase defer script, DOM and dependency watchdogs, awaited order initialization, terminal remote hydration validation, phase timeouts, sanitized checkpoints and bounded cleanup. The runner is limited to the outer process watchdog. Runtime source rewriting and the two legacy preparer scripts were removed.\n\nThis consolidation is repository-only. It performs no browser execution, credential resolution, staging read, staging mutation, migration, deployment, production access or merge. SCHED-C01D remains blocked until a fresh exact authorization is supplied together with the independently authorized SCHED-C01E lifecycle.\n`;
+          if (!docs.includes('## Canonical runtime consolidation')) docs += canonicalSection;
+          fs.writeFileSync(paths.docs, docs);
+
+          let audit = fs.readFileSync(paths.audit, 'utf8');
+          audit = replaceOnce(
+            audit,
+            `  matrix: 'config/domain-completion-matrix.json'\n});`,
+            `  matrix: 'config/domain-completion-matrix.json',\n  executor: 'scripts/execute-sched-001-c01d-authenticated-browser-read-only-canary.js',\n  runner: 'scripts/run-sched-001-c01d-authenticated-browser-read-only-canary.js',\n  runnerTest: 'scripts/test-sched-001-c01d-authenticated-browser-read-only-canary-runner.js',\n  bootstrapTest: 'scripts/test-sched-001-c01d-authenticated-browser-bootstrap-runtime.js'\n});`,
+            'C01D audit PATHS extension'
+          );
+          audit = replaceOnce(
+            audit,
+            `const matrix = JSON.parse(fs.readFileSync(PATHS.matrix, 'utf8'));`,
+            `const matrix = JSON.parse(fs.readFileSync(PATHS.matrix, 'utf8'));\nconst executor = fs.readFileSync(PATHS.executor, 'utf8');\nconst runner = fs.readFileSync(PATHS.runner, 'utf8');\nconst runnerTest = fs.readFileSync(PATHS.runnerTest, 'utf8');\nconst bootstrapTest = fs.readFileSync(PATHS.bootstrapTest, 'utf8');`,
+            'C01D audit source reads'
+          );
+          audit = replaceOnce(
+            audit,
+            `assert.strictEqual(config.runtimeGate.directSchedulingRpcForbidden, true);`,
+            `assert.strictEqual(config.runtimeGate.directSchedulingRpcForbidden, true);\nassert.strictEqual(config.runtimeGate.canonicalExecutorRequired, true);\nassert.strictEqual(config.runtimeGate.runtimeSourceRewritingForbidden, true);\nassert.strictEqual(config.runtimeGate.bootstrapWatchdogsRequired, true);\nassert.strictEqual(config.runtimeGate.initializerPromiseMustBeAwaited, true);\nassert.strictEqual(config.runtimeGate.remoteHydrationTerminalStateRequired, true);\nassert.strictEqual(config.canonicalRuntime.legacyRuntimePreparersRemoved, true);\nassert.strictEqual(config.canonicalRuntime.runnerMayOnlySuperviseProcessWatchdog, true);`,
+            'C01D canonical runtime assertions'
+          );
+          audit = replaceOnce(
+            audit,
+            `console.log('SCHED-C01D authenticated browser read-only canary readiness audit passed.');`,
+            `assert(executor.includes("checkpoint('orders_remote_hydration_complete')"));\nassert(executor.includes('await Promise.resolve(window.DokeInitOrders())'));\nassert(executor.includes('orders_domcontentloaded_node_watchdog'));\nassert(executor.includes('orders_prerequisites_node_watchdog'));\nassert(executor.includes('path: localSupabaseUmd'));\nassert(executor.includes('async function withPhaseTimeout'));\nassert(runner.includes('timeout: watchdogMs'));\nassert(!runner.includes('buildRuntimeSource'));\nassert(!runner.includes('runtimePrefix'));\nassert(runnerTest.includes('legacyRuntimePreparersRemoved') || runnerTest.includes('Legacy runtime preparer still exists'));\nassert(bootstrapTest.includes('Canonical bootstrap contract missing'));\nassert(!fs.existsSync('scripts/prepare-sched-001-c01d-authenticated-browser-login-runtime.js'));\nassert(!fs.existsSync('scripts/prepare-sched-001-c01d-authenticated-browser-bootstrap-runtime.js'));\nassert(!workflow.includes('prepare-sched-001-c01d-authenticated-browser-login-runtime.js'));\nassert(!workflow.includes('prepare-sched-001-c01d-authenticated-browser-bootstrap-runtime.js'));\n\nconsole.log('SCHED-C01D authenticated browser read-only canary readiness audit passed.');`,
+            'C01D final audit assertions'
+          );
+          fs.writeFileSync(paths.audit, audit);
+
+          let workflow = fs.readFileSync(paths.workflow, 'utf8');
+          [
+            "      - 'scripts/prepare-sched-001-c01d-authenticated-browser-login-runtime.js'\n",
+            "      - 'scripts/prepare-sched-001-c01d-authenticated-browser-bootstrap-runtime.js'\n",
+            '          node --check scripts/prepare-sched-001-c01d-authenticated-browser-login-runtime.js\n',
+            '          node --check scripts/prepare-sched-001-c01d-authenticated-browser-bootstrap-runtime.js\n',
+            '          node scripts/prepare-sched-001-c01d-authenticated-browser-login-runtime.js --dry-run\n',
+            '          node scripts/prepare-sched-001-c01d-authenticated-browser-bootstrap-runtime.js --dry-run\n'
+          ].forEach((line) => { workflow = workflow.replace(line, ''); });
+          workflow = workflow.replace(
+            '          git diff --exit-code -- scripts/execute-sched-001-c01d-authenticated-browser-read-only-canary.js scripts/prepare-sched-001-c01d-authenticated-browser-login-runtime.js',
+            '          git diff --exit-code -- scripts/execute-sched-001-c01d-authenticated-browser-read-only-canary.js scripts/run-sched-001-c01d-authenticated-browser-read-only-canary.js'
+          );
+          workflow = workflow.replace(
+            '# Permanent repository-only C01D readiness gate; authenticated execution remains separately authorized.',
+            '# Permanent repository-only C01D canonical runtime gate; authenticated execution remains separately authorized.'
+          );
+          fs.writeFileSync(paths.workflow, workflow);
+
+          const matrix = JSON.parse(fs.readFileSync(paths.matrix, 'utf8'));
+          const sched = matrix.domains.find((domain) => domain.id === 'SCHED-001');
+          if (!sched) throw new Error('SCHED-001 domain missing from matrix.');
+          const removed = new Set([paths.loginPreparer, paths.bootstrapPreparer]);
+          sched.requiredPaths = sched.requiredPaths.filter((entry) => !removed.has(entry));
+          const evidenceLine = 'SCHED-C01D canonicalized the authenticated browser runtime: login synchronization, Supabase defer fulfillment, bootstrap watchdogs, awaited initialization, terminal hydration checks, phase timeouts and bounded cleanup now live in the canonical executor; runtime source rewriting and both preparer scripts were removed without staging access.';
+          if (!sched.evidence.includes(evidenceLine)) sched.evidence.push(evidenceLine);
+          const versionParts = String(matrix.version).split('.').map(Number);
+          if (versionParts.length !== 3 || versionParts.some(Number.isNaN)) throw new Error('Invalid matrix version.');
+          versionParts[2] += 1;
+          matrix.version = versionParts.join('.');
+          matrix.updatedAt = '2026-08-02T14:50:00-03:00';
+          fs.writeFileSync(paths.matrix, JSON.stringify(matrix, null, 2) + '\n');
+          NODE
+
+      - name: Regenerate canonical matrix artifacts
+        run: npm run write:domain-completion-matrix
+
+      - name: Validate canonical C01D runtime and cumulative gates
+        run: |
+          node --check scripts/execute-sched-001-c01d-authenticated-browser-read-only-canary.js
+          node --check scripts/run-sched-001-c01d-authenticated-browser-read-only-canary.js
+          node --check scripts/test-sched-001-c01d-authenticated-browser-read-only-canary-runner.js
+          node --check scripts/test-sched-001-c01d-authenticated-browser-bootstrap-runtime.js
+          node --check scripts/audit-sched-001-c01d-authenticated-browser-canary-readiness.js
+          node scripts/audit-sched-001-c01d-authenticated-browser-canary-readiness.js
+          node scripts/test-sched-001-c01d-authenticated-browser-canary-readiness.js
+          node scripts/test-sched-001-c01d-authenticated-browser-read-only-canary.js
+          node scripts/test-sched-001-c01d-authenticated-browser-read-only-canary-runner.js
+          node scripts/test-sched-001-c01d-authenticated-browser-bootstrap-runtime.js
+          node scripts/run-sched-001-c01d-authenticated-browser-read-only-canary.js --dry-run
+          npm run audit:sched-001-c01c-deterministic-frontend-presentation
+          npm run test:sched-001-c01c-deterministic-frontend-presentation
+          node scripts/audit-sched-001-c01e-synthetic-order-fixture-lifecycle-readiness.js
+          node scripts/test-sched-001-c01e-synthetic-order-fixture-lifecycle-readiness.js
+          npm run audit:domain-completion-matrix
+          git diff --check
+
+      - name: Stage only canonical runtime artifacts
+        run: |
+          git add -A \
+            scripts/execute-sched-001-c01d-authenticated-browser-read-only-canary.js \
+            scripts/run-sched-001-c01d-authenticated-browser-read-only-canary.js \
+            scripts/test-sched-001-c01d-authenticated-browser-read-only-canary-runner.js \
+            scripts/test-sched-001-c01d-authenticated-browser-bootstrap-runtime.js \
+            scripts/prepare-sched-001-c01d-authenticated-browser-login-runtime.js \
+            scripts/prepare-sched-001-c01d-authenticated-browser-bootstrap-runtime.js \
+            config/sched-001-c01d-authenticated-browser-canary-readiness.json \
+            docs/validation/SCHED-001-C01D-AUTHENTICATED-BROWSER-CANARY-READINESS.json \
+            docs/SCHED-001-C01D-AUTHENTICATED-BROWSER-CANARY-READINESS.md \
+            scripts/audit-sched-001-c01d-authenticated-browser-canary-readiness.js \
+            .github/workflows/sched-001-c01d-authenticated-browser-canary-readiness.yml \
+            config/domain-completion-matrix.json \
+            docs/DOMAIN-COMPLETION-MATRIX.md
+          git add -f reports/generated/domain-completion-matrix-report.json
+          git diff --cached --check
+          test -n "$(git diff --cached --name-only)"
+
+      - name: Publish canonical runtime consolidation
+        env:
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          git fetch origin ord/ord-001-baseline-audit --depth=1
+          test "$(git rev-parse origin/ord/ord-001-baseline-audit)" = "$EXPECTED_HEAD"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "refactor(sched): canonicalize C01D browser runtime"
+          git push origin HEAD:ord/ord-001-baseline-audit
