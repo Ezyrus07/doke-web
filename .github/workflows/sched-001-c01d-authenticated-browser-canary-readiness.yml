@@ -1,0 +1,58 @@
+name: Doke SCHED-C01D Authenticated Browser Canary Readiness
+
+on:
+  pull_request:
+    branches:
+      - search/search-ux02-intent-favorites-clean
+    paths:
+      - 'config/sched-001-c01d-authenticated-browser-canary-readiness.json'
+      - 'docs/SCHED-001-C01D-AUTHENTICATED-BROWSER-CANARY-READINESS.md'
+      - 'docs/validation/SCHED-001-C01D-AUTHENTICATED-BROWSER-CANARY-READINESS.json'
+      - 'scripts/plan-sched-001-c01d-authenticated-browser-canary.js'
+      - 'scripts/audit-sched-001-c01d-authenticated-browser-canary-readiness.js'
+      - 'scripts/test-sched-001-c01d-authenticated-browser-canary-readiness.js'
+      - '.github/workflows/sched-001-c01d-authenticated-browser-canary-readiness.yml'
+      - 'config/sched-001-c01c-deterministic-frontend-presentation.json'
+      - 'assets/js/patterns/order-schedule-presentation.js'
+      - 'assets/js/pages/pedidos-local-orders.js'
+      - 'assets/js/pages/pedidos/orders-details.js'
+      - 'assets/js/pages/mensagens.js'
+      - 'config/domain-completion-matrix.json'
+
+permissions:
+  contents: read
+
+jobs:
+  readiness:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install pinned dependencies
+        run: npm ci --ignore-scripts
+      - name: Validate readiness syntax
+        run: |
+          node --check scripts/plan-sched-001-c01d-authenticated-browser-canary.js
+          node --check scripts/audit-sched-001-c01d-authenticated-browser-canary-readiness.js
+          node --check scripts/test-sched-001-c01d-authenticated-browser-canary-readiness.js
+      - name: Validate inert C01D readiness package
+        run: |
+          node scripts/audit-sched-001-c01d-authenticated-browser-canary-readiness.js
+          node scripts/test-sched-001-c01d-authenticated-browser-canary-readiness.js
+          node scripts/plan-sched-001-c01d-authenticated-browser-canary.js --dry-run
+      - name: Preserve deterministic frontend authority
+        run: |
+          npm run audit:sched-001-c01c-deterministic-frontend-presentation
+          npm run test:sched-001-c01c-deterministic-frontend-presentation
+          npm run audit:sched-001-c01b-frontend-canonical-schedule-read-model
+          npm run test:sched-001-c01b-frontend-canonical-schedule-read-model
+          npm run audit:sched-001-c01a-frontend-canonical-authority-readiness
+          npm run test:sched-001-c01a-frontend-canonical-authority-readiness
+      - name: Validate cumulative governance
+        run: |
+          npm run audit:domain-completion-matrix
+          git diff --check
