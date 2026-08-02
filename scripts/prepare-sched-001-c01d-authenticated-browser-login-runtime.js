@@ -102,14 +102,17 @@ const boundedNavigateOrders = `async function navigateOrders(page) {
   ];
   const localSupabaseUmd = supabaseUmdCandidates.find((candidate) => fs.existsSync(candidate));
   if (!localSupabaseUmd) throw new Error('Pinned local Supabase UMD browser bundle was not found after npm ci.');
+  const localSupabaseSource = fs.readFileSync(localSupabaseUmd, 'utf8');
 
-  await page.addInitScript({ path: localSupabaseUmd });
-  checkpoint('orders_supabase_local_preloaded');
   await page.route('https://fonts.googleapis.com/**', (route) => route.abort('blockedbyclient'));
   await page.route('https://fonts.gstatic.com/**', (route) => route.abort('blockedbyclient'));
-  await page.route('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2**', (route) => {
-    checkpoint('orders_supabase_cdn_intercepted');
-    return route.abort('blockedbyclient');
+  await page.route('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2**', async (route) => {
+    checkpoint('orders_supabase_cdn_fulfilled_locally');
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/javascript; charset=utf-8',
+      body: localSupabaseSource
+    });
   });
   checkpoint('orders_external_fonts_blocked');
   checkpoint('orders_navigation_goto_start');
@@ -120,18 +123,21 @@ const boundedNavigateOrders = `async function navigateOrders(page) {
 
   try {
     await page.waitForFunction(() => Boolean(
-      window.Doke?.services?.accountAccess?.guardPage
+      typeof window.supabase?.createClient === 'function'
+      && window.Doke?.services?.accountAccess?.guardPage
       && typeof window.DokeHydrateLocalOrders === 'function'
     ), null, { timeout: 20_000 });
   } catch {
     const prerequisiteState = await page.evaluate(() => ({
+      supabaseSdkReady: typeof window.supabase?.createClient === 'function',
       accountAccessReady: Boolean(window.Doke?.services?.accountAccess?.guardPage),
       localOrdersReady: typeof window.DokeHydrateLocalOrders === 'function',
       initializerReady: typeof window.DokeInitOrders === 'function',
       readyState: document.readyState
     }));
     throw new Error(
-      'Orders prerequisites unavailable: accountAccess=' + prerequisiteState.accountAccessReady
+      'Orders prerequisites unavailable: supabaseSdk=' + prerequisiteState.supabaseSdkReady
+      + ', accountAccess=' + prerequisiteState.accountAccessReady
       + ', localOrders=' + prerequisiteState.localOrdersReady
       + ', initializer=' + prerequisiteState.initializerReady
       + ', readyState=' + prerequisiteState.readyState
@@ -173,6 +179,8 @@ const boundedNavigateOrders = `async function navigateOrders(page) {
     const remoteState = await page.evaluate(() => {
       const list = document.querySelector('.orders-list');
       return {
+        supabaseSdkReady: typeof window.supabase?.createClient === 'function',
+        sharedClientReady: Boolean(window.DokeSupabase?.getClient?.()),
         readProvider: window.Doke?.runtimeConfig?.ordersReadProvider || '',
         providerAttribute: document.documentElement.getAttribute('data-doke-orders-provider') || '',
         experienceState: document.body?.dataset.ordersExperienceState || '',
@@ -181,7 +189,9 @@ const boundedNavigateOrders = `async function navigateOrders(page) {
       };
     });
     throw new Error(
-      'Remote orders hydration unavailable: readProvider=' + remoteState.readProvider
+      'Remote orders hydration unavailable: supabaseSdk=' + remoteState.supabaseSdkReady
+      + ', sharedClient=' + remoteState.sharedClientReady
+      + ', readProvider=' + remoteState.readProvider
       + ', provider=' + remoteState.providerAttribute
       + ', state=' + remoteState.experienceState
       + ', rendered=' + remoteState.rendered
