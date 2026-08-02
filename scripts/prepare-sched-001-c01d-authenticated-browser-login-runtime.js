@@ -96,12 +96,14 @@ const originalNavigateOrders = `async function navigateOrders(page) {
 const boundedNavigateOrders = `async function navigateOrders(page) {
   const base = stripSlash(process.env[ENV.webBaseUrl]);
   const url = \`${'${base}'}/pedidos.html?dokeTarget=staging&dokeOrdersProvider=supabase-read&dokeOrdersReadProvider=supabase-read&dokeEnableNetwork=1\`;
+  await page.route(/^https:\/\/fonts\.(?:googleapis|gstatic)\.com\//, (route) => route.abort('blockedbyclient'));
+  checkpoint('orders_external_fonts_blocked');
   checkpoint('orders_navigation_goto_start');
   await page.goto(url, { waitUntil: 'commit', timeout: 20_000 });
   checkpoint('orders_navigation_goto_commit');
   await page.locator('.orders-list').waitFor({ state: 'attached', timeout: 15_000 });
   checkpoint('orders_list_attached');
-  await page.waitForFunction(() => typeof window.DokeInitOrders === 'function', null, { timeout: 15_000 });
+  await page.waitForFunction(() => typeof window.DokeInitOrders === 'function', null, { timeout: 30_000 });
   checkpoint('orders_initializer_ready');
   await page.evaluate(() => {
     const root = document.querySelector('.orders-page');
