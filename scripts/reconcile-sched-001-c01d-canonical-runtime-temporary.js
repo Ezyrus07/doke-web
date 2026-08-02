@@ -20,13 +20,7 @@ if (end < 0) throw new Error('Previous workflow does not contain the reconciliat
 const embedded = previousWorkflow
   .slice(start + startMarker.length, end)
   .split('\n')
-  .map((line) => {
-    if (!line) return '';
-    if (!line.startsWith('          ')) {
-      throw new Error(`Unexpected embedded source indentation: ${line.slice(0, 80)}`);
-    }
-    return line.slice(10);
-  })
+  .map((line) => line.startsWith('          ') ? line.slice(10) : line)
   .join('\n');
 
 const execute = new Function('require', 'process', '__dirname', '__filename', embedded);
