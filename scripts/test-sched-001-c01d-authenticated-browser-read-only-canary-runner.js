@@ -6,6 +6,7 @@ const fs = require('fs');
 const { spawnSync } = require('child_process');
 
 const runner = 'scripts/run-sched-001-c01d-authenticated-browser-read-only-canary.js';
+const preparer = 'scripts/prepare-sched-001-c01d-authenticated-browser-login-runtime.js';
 const executor = 'scripts/execute-sched-001-c01d-authenticated-browser-read-only-canary.js';
 const runtimePrefix = '.sched-c01d-authenticated-browser-read-only-canary-runtime-';
 const legacyWait = "page.waitForURL(/\\/pedidos\\.html(?:[?#].*)?$/, { timeout: 30_000 }),";
@@ -22,6 +23,7 @@ const unboundedDetailLoop = `  for (const orderCase of cases.slice(0, report.man
 
 const executorSource = fs.readFileSync(executor, 'utf8');
 const runnerSource = fs.readFileSync(runner, 'utf8');
+const preparerSource = fs.readFileSync(preparer, 'utf8');
 assert.strictEqual(executorSource.split(legacyWait).length - 1, 1);
 assert.strictEqual(executorSource.split(unboundedCleanup).length - 1, 1);
 assert.strictEqual(executorSource.split(deferredFinish).length - 1, 1);
@@ -51,6 +53,13 @@ assert(runnerSource.includes("checkpoint(persona + '_orders_collected')"));
 assert(runnerSource.includes('fs.writeSync(1, serialized)'));
 assert(runnerSource.includes('process.exit(code)'));
 assert(runnerSource.includes('fs.rmSync(runtimePath, { force: true })'));
+assert(preparerSource.includes("new Set(['doke.auth.session.v1', 'doke.auth.session.v2', 'doke.auth.session'])"));
+assert(preparerSource.includes('page.context().storageState()'));
+assert(preparerSource.includes('candidate && candidate.id'));
+assert(preparerSource.includes("user = { role: String(candidate.role || candidate.type || 'client')"));
+assert(preparerSource.includes("checkpoint(persona + '_login_session_ready')"));
+assert(preparerSource.includes('canonical sanitized session snapshot'));
+assert(preparerSource.includes("submit.click({ noWaitAfter: true"));
 
 const before = fs.readdirSync('scripts').filter((name) => name.startsWith(runtimePrefix));
 assert.deepStrictEqual(before, []);
@@ -70,6 +79,16 @@ assert.strictEqual(report.stagingReadsPerformed, 0);
 assert.strictEqual(report.stagingMutationsPerformed, 0);
 assert.strictEqual(report.lastCheckpoint, 'initialized');
 assert.deepStrictEqual(report.checkpointHistory, []);
+
+const preparedDryRun = spawnSync(process.execPath, [preparer, '--dry-run'], {
+  encoding: 'utf8',
+  maxBuffer: 16 * 1024 * 1024
+});
+assert.strictEqual(preparedDryRun.status, 0, preparedDryRun.stderr);
+const preparedReport = JSON.parse(preparedDryRun.stdout);
+assert.strictEqual(preparedReport.mode, 'dry-run');
+assert.strictEqual(preparedReport.status, 'dry_run_only');
+assert.strictEqual(fs.readFileSync(executor, 'utf8'), executorSource);
 
 const after = fs.readdirSync('scripts').filter((name) => name.startsWith(runtimePrefix));
 assert.deepStrictEqual(after, []);
