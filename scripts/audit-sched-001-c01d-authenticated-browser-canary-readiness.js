@@ -17,7 +17,11 @@ const PATHS = Object.freeze({
   ordersCard: 'assets/js/pages/pedidos-local-orders.js',
   ordersDetail: 'assets/js/pages/pedidos/orders-details.js',
   messages: 'assets/js/pages/mensagens.js',
-  matrix: 'config/domain-completion-matrix.json'
+  matrix: 'config/domain-completion-matrix.json',
+  executor: 'scripts/execute-sched-001-c01d-authenticated-browser-read-only-canary.js',
+  runner: 'scripts/run-sched-001-c01d-authenticated-browser-read-only-canary.js',
+  runnerTest: 'scripts/test-sched-001-c01d-authenticated-browser-read-only-canary-runner.js',
+  bootstrapTest: 'scripts/test-sched-001-c01d-authenticated-browser-bootstrap-runtime.js'
 });
 
 Object.values(PATHS).forEach((file) => assert(fs.existsSync(file), `Missing SCHED-C01D readiness asset: ${file}`));
@@ -33,6 +37,10 @@ const ordersCard = fs.readFileSync(PATHS.ordersCard, 'utf8');
 const ordersDetail = fs.readFileSync(PATHS.ordersDetail, 'utf8');
 const messages = fs.readFileSync(PATHS.messages, 'utf8');
 const matrix = JSON.parse(fs.readFileSync(PATHS.matrix, 'utf8'));
+const executor = fs.readFileSync(PATHS.executor, 'utf8');
+const runner = fs.readFileSync(PATHS.runner, 'utf8');
+const runnerTest = fs.readFileSync(PATHS.runnerTest, 'utf8');
+const bootstrapTest = fs.readFileSync(PATHS.bootstrapTest, 'utf8');
 
 assert.deepStrictEqual(evidence, config);
 assert.strictEqual(config.contractVersion, 'sched-c01d-authenticated-browser-read-only-canary-readiness-v1');
@@ -55,6 +63,13 @@ assert.deepStrictEqual(config.runtimeGate.allowedPostLoginMethods, ['GET', 'HEAD
 assert.strictEqual(config.runtimeGate.serviceRoleMaterialInBrowserForbidden, true);
 assert.strictEqual(config.runtimeGate.directDatabaseAccessForbidden, true);
 assert.strictEqual(config.runtimeGate.directSchedulingRpcForbidden, true);
+assert.strictEqual(config.runtimeGate.canonicalExecutorRequired, true);
+assert.strictEqual(config.runtimeGate.runtimeSourceRewritingForbidden, true);
+assert.strictEqual(config.runtimeGate.bootstrapWatchdogsRequired, true);
+assert.strictEqual(config.runtimeGate.initializerPromiseMustBeAwaited, true);
+assert.strictEqual(config.runtimeGate.remoteHydrationTerminalStateRequired, true);
+assert.strictEqual(config.canonicalRuntime.legacyRuntimePreparersRemoved, true);
+assert.strictEqual(config.canonicalRuntime.runnerMayOnlySuperviseProcessWatchdog, true);
 assert.strictEqual(config.externalAuthorizationEnvelope.repositoryStorageForbidden, true);
 assert.strictEqual(config.externalAuthorizationEnvelope.rawIdentifiersInRepositoryForbidden, true);
 assert.strictEqual(config.externalAuthorizationEnvelope.maxLifetimeSeconds, 7200);
@@ -170,5 +185,21 @@ assert(workflow.includes('npm run audit:sched-001-c01c-deterministic-frontend-pr
   'supabase ',
   'git push'
 ].forEach((fragment) => assert(!workflow.includes(fragment), `C01D readiness workflow contains prohibited fragment: ${fragment}`));
+
+assert(executor.includes("checkpoint('orders_remote_hydration_complete')"));
+assert(executor.includes('await Promise.resolve(window.DokeInitOrders())'));
+assert(executor.includes('orders_domcontentloaded_node_watchdog'));
+assert(executor.includes('orders_prerequisites_node_watchdog'));
+assert(executor.includes('path: localSupabaseUmd'));
+assert(executor.includes('async function withPhaseTimeout'));
+assert(runner.includes('timeout: watchdogMs'));
+assert(!runner.includes('buildRuntimeSource'));
+assert(!runner.includes('runtimePrefix'));
+assert(runnerTest.includes('legacyRuntimePreparersRemoved') || runnerTest.includes('Legacy runtime preparer still exists'));
+assert(bootstrapTest.includes('Canonical bootstrap contract missing'));
+assert(!fs.existsSync('scripts/prepare-sched-001-c01d-authenticated-browser-login-runtime.js'));
+assert(!fs.existsSync('scripts/prepare-sched-001-c01d-authenticated-browser-bootstrap-runtime.js'));
+assert(!workflow.includes('prepare-sched-001-c01d-authenticated-browser-login-runtime.js'));
+assert(!workflow.includes('prepare-sched-001-c01d-authenticated-browser-bootstrap-runtime.js'));
 
 console.log('SCHED-C01D authenticated browser read-only canary readiness audit passed.');

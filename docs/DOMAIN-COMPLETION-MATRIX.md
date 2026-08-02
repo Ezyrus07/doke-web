@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 1086 arquivos no escopo; 250 referências a localStorage; 78 a sessionStorage; 559 referências mock; 205 referências de rede/Supabase; 35 marcadores de implementação pendente.
+**Evidência estática observada:** 1085 arquivos no escopo; 250 referências a localStorage; 78 a sessionStorage; 559 referências mock; 205 referências de rede/Supabase; 35 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -539,7 +539,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI local; servidor partial; staging staging canary; segurança partial; produção blocked.
 
-**Evidência estática observada:** 1044 arquivos no escopo; 188 referências a localStorage; 70 a sessionStorage; 303 referências mock; 204 referências de rede/Supabase; 19 marcadores de implementação pendente.
+**Evidência estática observada:** 1043 arquivos no escopo; 188 referências a localStorage; 70 a sessionStorage; 303 referências mock; 204 referências de rede/Supabase; 19 marcadores de implementação pendente.
 
 **Páginas:** `anunciar-servico.html`, `pedidos.html`, `orcamento.html`.
 
@@ -596,6 +596,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - The repository-only C01D bootstrap preparer prefers the pinned minified Supabase UMD, fulfills the deferred script from a local file, waits for DOMContentLoaded and required dependencies under independent Node watchdogs, records only sanitized diagnostics and restores canonical runtime files byte for byte.
 - Final head 8e0a0185e4e0f3ed63dffb6440fb29160910dbed passed C01D readiness run 30758798905 job 91525550132 and C01E readiness run 30758798695 job 91525549424, including bootstrap regression, cleanup boundary, projection guard and cumulative matrix audit.
 - The C01E plus C01D attempt and repository-only hardening changed no production resource, deployment, migration, payment, account, Cron, worker, merge or auto-merge state.
+- SCHED-C01D canonicalized the authenticated browser runtime: login synchronization, Supabase defer fulfillment, bootstrap watchdogs, awaited initialization, terminal hydration checks, phase timeouts and bounded cleanup now live in the canonical executor; runtime source rewriting and both preparer scripts were removed without staging access.
 
 **Bloqueadores:**
 - Nenhum.
@@ -1057,7 +1058,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2416 arquivos no escopo; 507 referências a localStorage; 151 a sessionStorage; 882 referências mock; 602 referências de rede/Supabase; 89 marcadores de implementação pendente.
+**Evidência estática observada:** 2415 arquivos no escopo; 507 referências a localStorage; 151 a sessionStorage; 882 referências mock; 602 referências de rede/Supabase; 89 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
@@ -1118,4 +1119,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-08-02T14:34:00-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-08-02T14:50:00-03:00._

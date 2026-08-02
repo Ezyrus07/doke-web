@@ -61,7 +61,9 @@ const report = {
   selectedCases: [],
   surfaceChecks: [],
   failures: [],
-  warnings: []
+  warnings: [],
+  lastCheckpoint: 'initialized',
+  checkpointHistory: []
 };
 
 main().catch((error) => {
@@ -223,24 +225,71 @@ async function executeCanary() {
     launchOptions.args = ['--no-sandbox', '--disable-dev-shm-usage'];
   }
 
+  checkpoint('browser_launch_start');
   const browser = await chromium.launch(launchOptions);
+  checkpoint('browser_launched');
   const clientContext = await createContext(browser, 'client');
   const professionalContext = await createContext(browser, 'professional');
   report.browserContextsCreated = 2;
+  checkpoint('browser_contexts_created');
 
   try {
-    const client = await inspectPersona(clientContext, 'client', process.env[ENV.clientEmail], process.env[ENV.clientPassword]);
-    const professional = await inspectPersona(professionalContext, 'professional', process.env[ENV.professionalEmail], process.env[ENV.professionalPassword]);
+    checkpoint('client_inspection_start');
+    const client = await withPhaseTimeout(
+      inspectPersona(clientContext, 'client', process.env[ENV.clientEmail], process.env[ENV.clientPassword]),
+      120_000,
+      'client_inspection'
+    );
+    checkpoint('client_inspection_complete');
+
+    checkpoint('professional_inspection_start');
+    const professional = await withPhaseTimeout(
+      inspectPersona(professionalContext, 'professional', process.env[ENV.professionalEmail], process.env[ENV.professionalPassword]),
+      120_000,
+      'professional_inspection'
+    );
+    checkpoint('professional_inspection_complete');
+
     const all = client.cases.concat(professional.cases);
     const canonical = all.find((entry) => entry.authority === 'canonical_confirmed');
     const alternate = all.find((entry) => entry.authority === 'client_intent' || entry.authority === 'none');
     if (!canonical) fail('No authorized visible canonical_confirmed order case was found.');
     if (!alternate) fail('No authorized visible client_intent or none order case was found.');
-    if (canonical) await inspectMessages(clientContext, professionalContext, canonical);
-    if (alternate && alternate.orderDigest !== canonical?.orderDigest) await inspectMessages(clientContext, professionalContext, alternate);
+
+    if (canonical) {
+      checkpoint('canonical_messages_inspection_start');
+      await withPhaseTimeout(
+        inspectMessages(clientContext, professionalContext, canonical),
+        90_000,
+        'canonical_messages_inspection'
+      );
+      checkpoint('canonical_messages_inspection_complete');
+    }
+    if (alternate && alternate.orderDigest !== canonical?.orderDigest) {
+      checkpoint('alternate_messages_inspection_start');
+      await withPhaseTimeout(
+        inspectMessages(clientContext, professionalContext, alternate),
+        90_000,
+        'alternate_messages_inspection'
+      );
+      checkpoint('alternate_messages_inspection_complete');
+    }
   } finally {
-    await Promise.allSettled([clientContext.close(), professionalContext.close()]);
-    await browser.close();
+    checkpoint('browser_cleanup_start');
+    const cleanup = (async () => {
+      await Promise.allSettled([clientContext.close(), professionalContext.close()]);
+      await browser.close();
+      return 'closed';
+    })();
+    const cleanupOutcome = await Promise.race([
+      cleanup.catch((error) => {
+        report.warnings.push('browser_cleanup_error:' + String(error && error.message || error));
+        return 'error';
+      }),
+      new Promise((resolve) => setTimeout(() => resolve('timeout'), 10_000))
+    ]);
+    if (cleanupOutcome === 'timeout') report.warnings.push('browser_cleanup_timeout_forced_exit');
+    checkpoint('browser_cleanup_complete');
   }
 }
 
@@ -263,18 +312,35 @@ async function createContext(browser, persona) {
 
 async function inspectPersona(context, persona, email, password) {
   const page = await context.newPage();
+  page.setDefaultTimeout(10_000);
+  page.setDefaultNavigationTimeout(20_000);
+  checkpoint(persona + '_page_created');
   const mutations = [];
   const requests = [];
   page.on('request', (request) => requests.push({ method: request.method(), url: shapeUrl(request.url()) }));
 
+  checkpoint(persona + '_login_start');
   await login(page, email, password, persona);
+  checkpoint(persona + '_login_complete');
   await installReadOnlyGuard(page, mutations);
+  checkpoint(persona + '_orders_navigation_start');
   await navigateOrders(page);
+  checkpoint(persona + '_orders_navigation_complete');
   const cases = await collectOrderCases(page, persona);
+  checkpoint(persona + '_orders_collected');
   if (!cases.length) report.warnings.push(`${persona} account has no visible order cards.`);
-  for (const orderCase of cases.slice(0, report.manifest.maximumOrders)) {
+
+  const detailCandidates = [
+    cases.find((entry) => entry.authority === 'canonical_confirmed'),
+    cases.find((entry) => entry.authority === 'client_intent' || entry.authority === 'none')
+  ].filter((entry, index, list) => entry && list.findIndex((candidate) => candidate.orderDigest === entry.orderDigest) === index);
+
+  for (const orderCase of detailCandidates) {
+    checkpoint(persona + '_orders_detail_start_' + orderCase.authority);
     await inspectOrdersDetail(page, orderCase);
+    checkpoint(persona + '_orders_detail_complete_' + orderCase.authority);
   }
+
   if (mutations.length) {
     report.postLoginMutationRequests += mutations.length;
     fail(`${persona} attempted post-login mutation requests: ${mutations.map((entry) => entry.method + ' ' + entry.url).join(', ')}`);
@@ -287,20 +353,56 @@ async function inspectPersona(context, persona, email, password) {
 async function login(page, email, password, persona) {
   const base = stripSlash(process.env[ENV.webBaseUrl]);
   const loginUrl = `${base}/auth/login.html?next=../pedidos.html%3FdokeTarget%3Dstaging`;
-  await page.goto(loginUrl, { waitUntil: 'domcontentloaded' });
-  await page.locator('#email-login').fill(email);
-  await page.locator('#senha-login').fill(password);
-  await Promise.all([
-    page.waitForURL(/\/pedidos\.html(?:[?#].*)?$/, { timeout: 30_000 }),
-    page.locator('[data-auth-submit]').click()
-  ]);
-  await page.waitForFunction(() => Boolean(window.Doke?.session?.getCurrentUser?.()?.id), null, { timeout: 20_000 });
-  const user = await page.evaluate(() => {
-    const value = window.Doke?.session?.getCurrentUser?.() || null;
-    return value ? { id: value.id, role: value.role } : null;
+  const sessionKeys = new Set(['doke.auth.session.v1', 'doke.auth.session.v2', 'doke.auth.session']);
+
+  checkpoint(persona + '_login_page_goto_start');
+  await page.goto(loginUrl, { waitUntil: 'commit', timeout: 20_000 });
+  checkpoint(persona + '_login_page_goto_commit');
+
+  const emailInput = page.locator('#email-login');
+  const passwordInput = page.locator('#senha-login');
+  const submit = page.locator('[data-auth-submit]');
+  await emailInput.waitFor({ state: 'visible', timeout: 10_000 });
+  checkpoint(persona + '_login_form_visible');
+  await emailInput.fill(email, { timeout: 10_000 });
+  await passwordInput.fill(password, { timeout: 10_000 });
+  checkpoint(persona + '_login_credentials_filled');
+
+  const navigation = page.waitForURL(/\/pedidos\.html(?:[?#].*)?$/, {
+    waitUntil: 'commit',
+    timeout: 30_000
   });
-  if (!user?.id) throw new Error(`${persona} login did not materialize a canonical user.`);
-  if (persona === 'professional' && user.role !== 'professional') throw new Error(`Professional credential resolved as role=${user.role || 'unknown'}.`);
+  await submit.click({ noWaitAfter: true, timeout: 10_000 });
+  checkpoint(persona + '_login_submit_clicked');
+  await navigation;
+  checkpoint(persona + '_login_target_committed');
+
+  let user = null;
+  const sessionDeadline = Date.now() + 20_000;
+  while (!user && Date.now() < sessionDeadline) {
+    const state = await page.context().storageState();
+    for (const origin of state.origins || []) {
+      for (const entry of origin.localStorage || []) {
+        if (!sessionKeys.has(entry.name)) continue;
+        try {
+const snapshot = JSON.parse(entry.value);
+const candidate = snapshot?.user || snapshot?.currentUser || snapshot || null;
+if (candidate && candidate.id) {
+  user = { role: String(candidate.role || candidate.type || 'client').trim().toLowerCase() };
+  break;
+}
+        } catch {}
+      }
+      if (user) break;
+    }
+    if (!user) await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+
+  if (!user) throw new Error(`${persona} login did not materialize the canonical sanitized session snapshot.`);
+  checkpoint(persona + '_login_session_ready');
+  if (persona === 'professional' && user.role !== 'professional') {
+    throw new Error(`Professional credential resolved as role=${user.role || 'unknown'}.`);
+  }
 }
 
 async function installReadOnlyGuard(page, mutations) {
@@ -316,11 +418,147 @@ async function installReadOnlyGuard(page, mutations) {
 async function navigateOrders(page) {
   const base = stripSlash(process.env[ENV.webBaseUrl]);
   const url = `${base}/pedidos.html?dokeTarget=staging&dokeOrdersProvider=supabase-read&dokeOrdersReadProvider=supabase-read&dokeEnableNetwork=1`;
-  await page.goto(url, { waitUntil: 'domcontentloaded' });
-  await page.waitForFunction(() => {
-    const list = document.querySelector('.orders-list');
-    return Boolean(list && (list.dataset.localOrdersRendered === 'true' || document.querySelector('.order-card[data-id]')));
-  }, null, { timeout: 30_000 });
+  const supabaseUmdCandidates = [
+    path.join(root, 'node_modules', '@supabase', 'supabase-js', 'dist', 'umd', 'supabase.min.js'),
+    path.join(root, 'node_modules', '@supabase', 'supabase-js', 'dist', 'umd', 'supabase.js')
+  ];
+  const localSupabaseUmd = supabaseUmdCandidates.find((candidate) => fs.existsSync(candidate));
+  if (!localSupabaseUmd) throw new Error('Pinned local Supabase UMD browser bundle was not found after npm ci.');
+
+  const bootstrapDiagnostics = {
+    domContentLoaded: false,
+    pageErrors: 0,
+    failedScripts: 0
+  };
+  page.on('domcontentloaded', () => {
+    bootstrapDiagnostics.domContentLoaded = true;
+    checkpoint('orders_domcontentloaded');
+  });
+  page.on('pageerror', () => {
+    bootstrapDiagnostics.pageErrors += 1;
+  });
+  page.on('requestfailed', (request) => {
+    if (request.resourceType() === 'script') bootstrapDiagnostics.failedScripts += 1;
+  });
+
+  await page.route('https://fonts.googleapis.com/**', (route) => route.abort('blockedbyclient'));
+  await page.route('https://fonts.gstatic.com/**', (route) => route.abort('blockedbyclient'));
+  await page.route('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2**', async (route) => {
+    checkpoint('orders_supabase_cdn_fulfilled_locally');
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/javascript; charset=utf-8',
+      path: localSupabaseUmd
+    });
+  });
+  checkpoint('orders_external_fonts_blocked');
+  checkpoint('orders_navigation_goto_start');
+  await page.goto(url, { waitUntil: 'commit', timeout: 20_000 });
+  checkpoint('orders_navigation_goto_commit');
+  await page.locator('.orders-list').waitFor({ state: 'attached', timeout: 15_000 });
+  checkpoint('orders_list_attached');
+
+  try {
+    await Promise.race([
+      page.waitForLoadState('domcontentloaded', { timeout: 20_000 }),
+      new Promise((_, reject) => setTimeout(
+        () => reject(new Error('orders_domcontentloaded_node_watchdog')),
+        22_000
+      ))
+    ]);
+  } catch {
+    throw new Error(
+      'Orders document bootstrap unavailable: domContentLoaded=' + bootstrapDiagnostics.domContentLoaded
+      + ', pageErrors=' + bootstrapDiagnostics.pageErrors
+      + ', failedScripts=' + bootstrapDiagnostics.failedScripts
+    );
+  }
+  checkpoint('orders_document_bootstrap_complete');
+
+  try {
+    await Promise.race([
+      page.waitForFunction(() => Boolean(
+        typeof window.supabase?.createClient === 'function'
+        && window.Doke?.services?.accountAccess?.guardPage
+        && typeof window.DokeHydrateLocalOrders === 'function'
+      ), null, { polling: 100, timeout: 20_000 }),
+      new Promise((_, reject) => setTimeout(
+        () => reject(new Error('orders_prerequisites_node_watchdog')),
+        22_000
+      ))
+    ]);
+  } catch {
+    const prerequisiteState = await page.evaluate(() => ({
+      supabaseSdkReady: typeof window.supabase?.createClient === 'function',
+      accountAccessReady: Boolean(window.Doke?.services?.accountAccess?.guardPage),
+      localOrdersReady: typeof window.DokeHydrateLocalOrders === 'function',
+      initializerReady: typeof window.DokeInitOrders === 'function',
+      readyState: document.readyState
+    }));
+    throw new Error(
+      'Orders prerequisites unavailable: supabaseSdk=' + prerequisiteState.supabaseSdkReady
+      + ', accountAccess=' + prerequisiteState.accountAccessReady
+      + ', localOrders=' + prerequisiteState.localOrdersReady
+      + ', initializer=' + prerequisiteState.initializerReady
+      + ', readyState=' + prerequisiteState.readyState
+    );
+  }
+  checkpoint('orders_prerequisites_ready');
+
+  const initializerReady = await page.evaluate(() => typeof window.DokeInitOrders === 'function');
+  if (!initializerReady) {
+    await page.addScriptTag({ path: path.join(root, 'assets', 'js', 'pages', 'pedidos.js') });
+    checkpoint('orders_entrypoint_injected');
+  }
+  await page.waitForFunction(() => typeof window.DokeInitOrders === 'function', null, { timeout: 10_000 });
+  checkpoint('orders_initializer_ready');
+
+  const initializationMode = await page.evaluate(async () => {
+    const pageRoot = document.querySelector('.orders-page');
+    if (pageRoot?.dataset.ordersReady === 'true') return 'already_started';
+    await Promise.resolve(window.DokeInitOrders());
+    return 'started_and_awaited';
+  });
+  checkpoint('orders_initializer_invoked_' + initializationMode);
+
+  try {
+    await page.waitForFunction(() => {
+      const list = document.querySelector('.orders-list');
+      const provider = document.documentElement.getAttribute('data-doke-orders-provider');
+      const state = document.body?.dataset.ordersExperienceState || '';
+      const readProvider = window.Doke?.runtimeConfig?.ordersReadProvider || '';
+      const rendered = list?.dataset.localOrdersRendered === 'true';
+      return Boolean(
+        rendered
+        && readProvider === 'supabase-read'
+        && provider === 'supabase-read'
+        && (state === 'ready' || state === 'empty')
+      );
+    }, null, { polling: 100, timeout: 45_000 });
+  } catch {
+    const remoteState = await page.evaluate(() => {
+      const list = document.querySelector('.orders-list');
+      return {
+        supabaseSdkReady: typeof window.supabase?.createClient === 'function',
+        sharedClientReady: Boolean(window.DokeSupabase?.getClient?.()),
+        readProvider: window.Doke?.runtimeConfig?.ordersReadProvider || '',
+        providerAttribute: document.documentElement.getAttribute('data-doke-orders-provider') || '',
+        experienceState: document.body?.dataset.ordersExperienceState || '',
+        rendered: list?.dataset.localOrdersRendered === 'true',
+        cardCount: document.querySelectorAll('.order-card[data-id]').length
+      };
+    });
+    throw new Error(
+      'Remote orders hydration unavailable: supabaseSdk=' + remoteState.supabaseSdkReady
+      + ', sharedClient=' + remoteState.sharedClientReady
+      + ', readProvider=' + remoteState.readProvider
+      + ', provider=' + remoteState.providerAttribute
+      + ', state=' + remoteState.experienceState
+      + ', rendered=' + remoteState.rendered
+      + ', cards=' + remoteState.cardCount
+    );
+  }
+  checkpoint('orders_remote_hydration_complete');
 }
 
 async function collectOrderCases(page, persona) {
@@ -396,6 +634,9 @@ async function inspectOrdersDetail(page, orderCase) {
 async function inspectMessages(clientContext, professionalContext, orderCase) {
   const context = orderCase.persona === 'professional' ? professionalContext : clientContext;
   const page = await context.newPage();
+  page.setDefaultTimeout(10_000);
+  page.setDefaultNavigationTimeout(20_000);
+  checkpoint('messages_page_created_' + orderCase.authority);
   const mutations = [];
   await installReadOnlyGuard(page, mutations);
   const base = stripSlash(process.env[ENV.webBaseUrl]);
@@ -436,6 +677,31 @@ async function inspectMessages(clientContext, professionalContext, orderCase) {
   await page.close();
 }
 
+async function withPhaseTimeout(promise, timeoutMs, label) {
+  let timer;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error(label + '_timeout_after_' + timeoutMs + 'ms')), timeoutMs);
+      })
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
+function checkpoint(name) {
+  report.lastCheckpoint = String(name);
+  report.checkpointHistory.push({ name: String(name), at: new Date().toISOString() });
+  if (report.checkpointHistory.length > 40) report.checkpointHistory.shift();
+  if (writeReport || execute || checkEnv) {
+    const file = path.resolve(root, process.env[ENV.reportPath] || DEFAULT_REPORT);
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, JSON.stringify(report, null, 2) + '\n');
+  }
+}
+
 function check(surface, name, passed) {
   const entry = { surface: name, persona: surface.persona, orderDigest: surface.orderDigest, authority: surface.authority, passed: Boolean(passed) };
   report.surfaceChecks.push(entry);
@@ -449,8 +715,9 @@ function finish(code) {
     fs.mkdirSync(path.dirname(file), { recursive: true });
     fs.writeFileSync(file, JSON.stringify(report, null, 2) + '\n');
   }
-  process.stdout.write(JSON.stringify(report, null, 2) + '\n');
-  process.exitCode = code;
+  const serialized = JSON.stringify(report, null, 2) + '\n';
+  fs.writeSync(1, serialized);
+  process.exit(code);
 }
 
 function fail(message) { report.failures.push(String(message)); }

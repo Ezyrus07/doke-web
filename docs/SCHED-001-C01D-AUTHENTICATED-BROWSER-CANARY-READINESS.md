@@ -97,3 +97,9 @@ It must not persist credentials, e-mails, UUIDs, usernames, raw order IDs, raw s
 ## Next gate
 
 After this readiness package is validated, SCHED-C01D remains blocked until the exact independent authorization phrase is supplied. Only then may a separate execution package be prepared and run.
+
+## Canonical runtime consolidation
+
+The authenticated browser executor now owns login synchronization, local fulfillment of the pinned Supabase defer script, DOM and dependency watchdogs, awaited order initialization, terminal remote hydration validation, phase timeouts, sanitized checkpoints and bounded cleanup. The runner is limited to the outer process watchdog. Runtime source rewriting and the two legacy preparer scripts were removed.
+
+This consolidation is repository-only. It performs no browser execution, credential resolution, staging read, staging mutation, migration, deployment, production access or merge. SCHED-C01D remains blocked until a fresh exact authorization is supplied together with the independently authorized SCHED-C01E lifecycle.
