@@ -30,6 +30,7 @@ const originalLogin = `async function login(page, email, password, persona) {
 const boundedLogin = `async function login(page, email, password, persona) {
   const base = stripSlash(process.env[ENV.webBaseUrl]);
   const loginUrl = \`${'${base}'}/auth/login.html?next=../pedidos.html%3FdokeTarget%3Dstaging\`;
+  const sessionKeys = new Set(['doke.auth.session.v1', 'doke.auth.session.v2', 'doke.auth.session']);
 
   checkpoint(persona + '_login_page_goto_start');
   await page.goto(loginUrl, { waitUntil: 'commit', timeout: 20_000 });
@@ -53,17 +54,29 @@ const boundedLogin = `async function login(page, email, password, persona) {
   await navigation;
   checkpoint(persona + '_login_target_committed');
 
-  await page.waitForFunction(
-    () => Boolean(window.Doke?.session?.getCurrentUser?.()?.id),
-    null,
-    { timeout: 20_000 }
-  );
+  let user = null;
+  const sessionDeadline = Date.now() + 20_000;
+  while (!user && Date.now() < sessionDeadline) {
+    const state = await page.context().storageState();
+    for (const origin of state.origins || []) {
+      for (const entry of origin.localStorage || []) {
+        if (!sessionKeys.has(entry.name)) continue;
+        try {
+          const snapshot = JSON.parse(entry.value);
+          const candidate = snapshot?.user || snapshot?.currentUser || snapshot || null;
+          if (candidate && candidate.id) {
+            user = { role: String(candidate.role || candidate.type || 'client').trim().toLowerCase() };
+            break;
+          }
+        } catch {}
+      }
+      if (user) break;
+    }
+    if (!user) await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+
+  if (!user) throw new Error(\`${'${persona}'} login did not materialize the canonical sanitized session snapshot.\`);
   checkpoint(persona + '_login_session_ready');
-  const user = await page.evaluate(() => {
-    const value = window.Doke?.session?.getCurrentUser?.() || null;
-    return value ? { id: value.id, role: value.role } : null;
-  });
-  if (!user?.id) throw new Error(\`${'${persona}'} login did not materialize a canonical user.\`);
   if (persona === 'professional' && user.role !== 'professional') throw new Error(\`Professional credential resolved as role=${'${user.role || \'unknown\'}'}.\`);
 
   // Preserve the audited transformation anchor used by the canonical runner:
