@@ -9,13 +9,29 @@ const runner = 'scripts/run-sched-001-c01d-authenticated-browser-read-only-canar
 const executor = 'scripts/execute-sched-001-c01d-authenticated-browser-read-only-canary.js';
 const runtimePrefix = '.sched-c01d-authenticated-browser-read-only-canary-runtime-';
 const legacyWait = "page.waitForURL(/\\/pedidos\\.html(?:[?#].*)?$/, { timeout: 30_000 }),";
+const unboundedCleanup = `  } finally {
+    await Promise.allSettled([clientContext.close(), professionalContext.close()]);
+    await browser.close();
+  }
+}`;
+const deferredFinish = `  process.stdout.write(JSON.stringify(report, null, 2) + '\\n');
+  process.exitCode = code;`;
 
 const executorSource = fs.readFileSync(executor, 'utf8');
 const runnerSource = fs.readFileSync(runner, 'utf8');
 assert.strictEqual(executorSource.split(legacyWait).length - 1, 1);
+assert.strictEqual(executorSource.split(unboundedCleanup).length - 1, 1);
+assert.strictEqual(executorSource.split(deferredFinish).length - 1, 1);
 assert(runnerSource.includes("waitUntil: 'commit'"));
 assert(!runnerSource.includes("waitUntil: 'domcontentloaded'"));
-assert(runnerSource.includes('source.replace(legacyWait, correctedWait)'));
+assert(runnerSource.includes("resolve('timeout'), 10_000"));
+assert(runnerSource.includes('browser_cleanup_timeout_forced_exit'));
+assert(runnerSource.includes('timeout: watchdogMs'));
+assert(runnerSource.includes("killSignal: 'SIGKILL'"));
+assert(runnerSource.includes('runner_watchdog_timeout_before_executor_completion'));
+assert(runnerSource.includes('executionCountersComplete: false'));
+assert(runnerSource.includes('fs.writeSync(1, serialized)'));
+assert(runnerSource.includes('process.exit(code)'));
 assert(runnerSource.includes('fs.rmSync(runtimePath, { force: true })'));
 
 const before = fs.readdirSync('scripts').filter((name) => name.startsWith(runtimePrefix));
