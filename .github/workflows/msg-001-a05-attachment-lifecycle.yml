@@ -1,0 +1,60 @@
+name: Doke MSG-A05 Attachment Lifecycle Contract
+
+on:
+  pull_request:
+    paths:
+      - 'assets/js/repositories/attachments-repository.js'
+      - 'assets/js/core/supabase-config.js'
+      - 'supabase/migrations/20260802220000_msg_a05_transaction_attachment_lifecycle_contract.sql'
+      - 'supabase/functions/self-service-operations/index.ts'
+      - 'supabase/functions/self-service-operations/operations.mjs'
+      - 'supabase/functions/transaction-attachment-cleanup/index.ts'
+      - 'config/msg-001-a05-attachment-lifecycle.json'
+      - 'docs/MSG-001-A05-ATTACHMENT-LIFECYCLE.md'
+      - 'docs/validation/MSG-001-A05-ATTACHMENT-LIFECYCLE.json'
+      - 'scripts/audit-msg-001-a05-attachment-lifecycle.js'
+      - 'scripts/test-msg-001-a05-attachment-lifecycle-runtime.js'
+      - 'scripts/test-attachments-supabase-repository-contract.js'
+      - 'scripts/test-self-service-operations-edge-runtime.mjs'
+      - 'config/domain-completion-matrix.json'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+      - 'package.json'
+      - '.github/workflows/msg-001-a05-attachment-lifecycle.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lifecycle:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Validate MSG-A05 attachment lifecycle
+        run: |
+          node --check assets/js/repositories/attachments-repository.js
+          node --check supabase/functions/self-service-operations/operations.mjs
+          node --check scripts/audit-msg-001-a05-attachment-lifecycle.js
+          node --check scripts/test-msg-001-a05-attachment-lifecycle-runtime.js
+          npm run audit:msg-001-a01-authority-baseline
+          npm run audit:msg-001-a02-canonical-authority-boundary
+          npm run test:msg-001-a02-canonical-authority-boundary
+          npm run audit:msg-001-a03-server-command-boundary
+          npm run test:msg-001-a03-server-command-boundary
+          npm run audit:msg-001-a04-realtime-publication-subscription-contract
+          npm run test:msg-001-a04-realtime-publication-subscription-runtime
+          npm run audit:msg-001-a05-attachment-lifecycle
+          npm run test:msg-001-a05-attachment-lifecycle-runtime
+          npm run test:attachments-supabase-repository-contract
+          node scripts/test-self-service-edge-authority-contract.js
+          node scripts/test-self-service-operations-edge-runtime.mjs
+          node scripts/audit-edge-function-source-closure.js
+          npm run audit:domain-completion-matrix
+          git diff --check
