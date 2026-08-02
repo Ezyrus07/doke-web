@@ -1,0 +1,160 @@
+name: Doke Temporary C01D C01E Matrix Semantic Reconcile
+
+on:
+  pull_request:
+    branches:
+      - search/search-ux02-intent-favorites-clean
+    paths:
+      - '.github/workflows/domain-completion-matrix-c01de-semantic-reconcile-temporary.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: domain-completion-matrix-c01de-semantic-reconcile-temporary
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    if: github.event.pull_request.number == 25 && github.event.pull_request.head.ref == 'ord/ord-001-baseline-audit' && github.event.pull_request.draft == true
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ord/ord-001-baseline-audit
+          fetch-depth: 1
+
+      - name: Require immutable source head
+        env:
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install pinned dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Reconcile canonical C01D C01E source state
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const path = 'config/domain-completion-matrix.json';
+          const matrix = JSON.parse(fs.readFileSync(path, 'utf8'));
+          const sched = matrix.domains.find((domain) => domain.id === 'SCHED-001');
+          if (!sched) throw new Error('SCHED-001 domain not found');
+
+          const addUnique = (target, values) => {
+            for (const value of values) {
+              if (!target.includes(value)) target.push(value);
+            }
+          };
+
+          const versionParts = String(matrix.version).split('.').map(Number);
+          if (versionParts.length !== 3 || versionParts.some(Number.isNaN)) {
+            throw new Error(`Unexpected matrix version: ${matrix.version}`);
+          }
+          versionParts[2] += 1;
+          matrix.version = versionParts.join('.');
+          matrix.updatedAt = '2026-08-02T14:34:00-03:00';
+
+          addUnique(sched.requiredPaths, [
+            'config/sched-001-c01d-authenticated-browser-canary-readiness.json',
+            'docs/SCHED-001-C01D-AUTHENTICATED-BROWSER-CANARY-READINESS.md',
+            'docs/validation/SCHED-001-C01D-AUTHENTICATED-BROWSER-CANARY-READINESS.json',
+            'scripts/plan-sched-001-c01d-authenticated-browser-canary.js',
+            'scripts/audit-sched-001-c01d-authenticated-browser-canary-readiness.js',
+            'scripts/test-sched-001-c01d-authenticated-browser-canary-readiness.js',
+            'scripts/execute-sched-001-c01d-authenticated-browser-read-only-canary.js',
+            'scripts/run-sched-001-c01d-authenticated-browser-read-only-canary.js',
+            'scripts/prepare-sched-001-c01d-authenticated-browser-login-runtime.js',
+            'scripts/prepare-sched-001-c01d-authenticated-browser-bootstrap-runtime.js',
+            'scripts/test-sched-001-c01d-authenticated-browser-read-only-canary.js',
+            'scripts/test-sched-001-c01d-authenticated-browser-read-only-canary-runner.js',
+            'scripts/test-sched-001-c01d-authenticated-browser-bootstrap-runtime.js',
+            '.github/workflows/sched-001-c01d-authenticated-browser-canary-readiness.yml',
+            'config/sched-001-c01e-synthetic-order-fixture-lifecycle-readiness.json',
+            'docs/SCHED-001-C01E-SYNTHETIC-ORDER-FIXTURE-LIFECYCLE-READINESS.md',
+            'docs/validation/SCHED-001-C01E-SYNTHETIC-ORDER-FIXTURE-LIFECYCLE-READINESS.json',
+            'scripts/plan-sched-001-c01e-synthetic-order-fixture-lifecycle.js',
+            'scripts/audit-sched-001-c01e-synthetic-order-fixture-lifecycle-readiness.js',
+            'scripts/test-sched-001-c01e-synthetic-order-fixture-lifecycle-readiness.js',
+            'scripts/execute-sched-001-c01e-synthetic-order-fixture-lifecycle.js',
+            'scripts/prepare-sched-001-c01e-dual-authorization-runtime.js',
+            '.github/workflows/sched-001-c01e-synthetic-order-fixture-lifecycle-readiness.yml'
+          ]);
+
+          addUnique(sched.tests, [
+            'audit:sched-001-c01d-authenticated-browser-canary-readiness',
+            'test:sched-001-c01d-authenticated-browser-canary-readiness',
+            'test:sched-001-c01d-authenticated-browser-read-only-canary',
+            'test:sched-001-c01d-authenticated-browser-read-only-canary-runner',
+            'test:sched-001-c01d-authenticated-browser-bootstrap-runtime',
+            'audit:sched-001-c01e-synthetic-order-fixture-lifecycle-readiness',
+            'test:sched-001-c01e-synthetic-order-fixture-lifecycle-readiness'
+          ]);
+
+          addUnique(sched.evidence, [
+            'SCHED-C01E plus C01D run 30758233092 consumed both exact staging authorizations once at head 9ccf08d4261a6ab87f2f6ac1b46837400ae23cab and failed closed; neither authorization may be reused.',
+            'C01E provisioned one bounded synthetic service and approved version, two orders, two conversations and messages, one confirmed reservation, one canonical-confirmed case and one alternate case, then cleanup and independent verification confirmed zero residue in all thirteen audited relation groups.',
+            'C01D completed authenticated client login and canonical session recognition, fulfilled the deferred Supabase SDK request from the pinned local bundle and reached orders_list_attached, then timed out before the first completed authenticated order read; no cases or user surfaces were asserted.',
+            'The repository-only C01D bootstrap preparer prefers the pinned minified Supabase UMD, fulfills the deferred script from a local file, waits for DOMContentLoaded and required dependencies under independent Node watchdogs, records only sanitized diagnostics and restores canonical runtime files byte for byte.',
+            'Final head 8e0a0185e4e0f3ed63dffb6440fb29160910dbed passed C01D readiness run 30758798905 job 91525550132 and C01E readiness run 30758798695 job 91525549424, including bootstrap regression, cleanup boundary, projection guard and cumulative matrix audit.',
+            'The C01E plus C01D attempt and repository-only hardening changed no production resource, deployment, migration, payment, account, Cron, worker, merge or auto-merge state.'
+          ]);
+
+          sched.nextActions = [
+            'Do not execute another C01E plus C01D staging canary without fresh exact authorization phrases for both scopes in the same bounded authorization envelope.',
+            'When separately authorized, execute the bounded C01E fixture lifecycle plus the bound C01D read-only browser canary on one immutable head and require completed authenticated reads plus independent thirteen-group zero-residue verification.',
+            'Keep browser scheduling commands, Cron, workers, production release and pull-request merge under separate explicit authorization.'
+          ];
+
+          fs.writeFileSync(path, `${JSON.stringify(matrix, null, 2)}\n`);
+          NODE
+
+      - name: Regenerate canonical matrix artifacts
+        run: npm run write:domain-completion-matrix
+
+      - name: Validate C01D C01E and cumulative governance
+        run: |
+          npm run audit:domain-completion-matrix
+          node scripts/audit-sched-001-c01d-authenticated-browser-canary-readiness.js
+          node scripts/test-sched-001-c01d-authenticated-browser-canary-readiness.js
+          node scripts/test-sched-001-c01d-authenticated-browser-read-only-canary.js
+          node scripts/test-sched-001-c01d-authenticated-browser-read-only-canary-runner.js
+          node scripts/test-sched-001-c01d-authenticated-browser-bootstrap-runtime.js
+          node scripts/audit-sched-001-c01e-synthetic-order-fixture-lifecycle-readiness.js
+          node scripts/test-sched-001-c01e-synthetic-order-fixture-lifecycle-readiness.js
+          node scripts/audit-ord-001-a06-cleanup-boundary.js
+          node scripts/audit-sched-001-b04d-canonical-order-projection-guard-readiness.js
+          node scripts/test-sched-001-b04d-canonical-order-projection-guard-runtime.js
+          git diff --check
+
+      - name: Stage only canonical matrix artifacts
+        run: |
+          git add config/domain-completion-matrix.json
+          git add docs/DOMAIN-COMPLETION-MATRIX.md
+          git add -f reports/generated/domain-completion-matrix-report.json
+          staged="$(git diff --cached --name-only)"
+          test -n "$staged"
+          printf '%s\n' "$staged" | while IFS= read -r path; do
+            case "$path" in
+              config/domain-completion-matrix.json|docs/DOMAIN-COMPLETION-MATRIX.md|reports/generated/domain-completion-matrix-report.json) ;;
+              *) echo "Unexpected staged path: $path" >&2; exit 1 ;;
+            esac
+          done
+          git diff --cached --check
+
+      - name: Publish semantic reconciliation only
+        env:
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          git fetch origin ord/ord-001-baseline-audit --depth=1
+          test "$(git rev-parse origin/ord/ord-001-baseline-audit)" = "$EXPECTED_HEAD"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "docs(governance): reconcile C01D C01E execution state"
+          git push origin HEAD:ord/ord-001-baseline-audit
