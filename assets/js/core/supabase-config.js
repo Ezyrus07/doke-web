@@ -6,6 +6,7 @@ window.DOKE_SUPABASE_CONFIG = {
   searchEdgeFunction: "search-public-services-v2",
   ordersEnabled: true,
   messagesEnabled: true,
+  messagesRealtimeEnabled: false,
   attachmentsEnabled: true,
   notificationsEnabled: true,
   walletEnabled: true,
