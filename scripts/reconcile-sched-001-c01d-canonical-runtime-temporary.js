@@ -42,11 +42,36 @@ if (!sourceWorkflow) {
 
 const start = sourceWorkflow.indexOf(startMarker);
 const end = sourceWorkflow.indexOf(endMarker, start + startMarker.length);
-const embedded = sourceWorkflow
+let embedded = sourceWorkflow
   .slice(start + startMarker.length, end)
   .split('\n')
   .map((line) => line.startsWith('          ') ? line.slice(10) : line)
   .join('\n');
+
+const syntaxRepairs = new Map([
+  [
+    "].forEach((fragment) => assert(executorSource.includes(fragment), `Canonical executor missing ${fragment}`));",
+    "].forEach((fragment) => assert(executorSource.includes(fragment), 'Canonical executor missing ' + fragment));"
+  ],
+  [
+    "].forEach((fragment) => assert(!runnerSource.includes(fragment), `Runner retains source rewriting: ${fragment}`));",
+    "].forEach((fragment) => assert(!runnerSource.includes(fragment), 'Runner retains source rewriting: ' + fragment));"
+  ],
+  [
+    "removedPreparers.forEach((file) => assert(!fs.existsSync(file), `Legacy runtime preparer still exists: ${file}`));",
+    "removedPreparers.forEach((file) => assert(!fs.existsSync(file), 'Legacy runtime preparer still exists: ' + file));"
+  ],
+  [
+    "].forEach((fragment) => assert(source.includes(fragment), `Canonical bootstrap contract missing ${fragment}`));",
+    "].forEach((fragment) => assert(source.includes(fragment), 'Canonical bootstrap contract missing ' + fragment));"
+  ]
+]);
+
+for (const [before, after] of syntaxRepairs) {
+  const count = embedded.split(before).length - 1;
+  if (count !== 1) throw new Error(`Expected one nested template repair target, found ${count}: ${before}`);
+  embedded = embedded.replace(before, after);
+}
 
 process.stdout.write(`Using canonical reconciliation source from ${sourceCommit}.\n`);
 const execute = new Function('require', 'process', '__dirname', '__filename', embedded);
