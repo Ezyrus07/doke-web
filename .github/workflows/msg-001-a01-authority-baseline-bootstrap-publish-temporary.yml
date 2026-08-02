@@ -1,0 +1,93 @@
+name: Doke Temporary MSG-A01 Authority Baseline Publish
+
+on:
+  pull_request:
+    branches:
+      - ord/ord-001-baseline-audit
+    paths:
+      - '.github/workflows/msg-001-a01-authority-baseline-bootstrap-publish-temporary.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: msg-001-a01-authority-baseline-bootstrap-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.event.pull_request.head.ref == 'msg/msg-001-baseline-audit' && github.event.pull_request.draft == true
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: msg/msg-001-baseline-audit
+          fetch-depth: 20
+
+      - name: Require stacked immutable ancestor
+        env:
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"
+          git merge-base --is-ancestor 749a15a14cb7282a04b834ec88240dcbc65e0eae HEAD
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install pinned dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Reuse frozen generator from first bootstrap
+        run: |
+          awk '/^[[:space:]]*node <<'"'"'NODE'"'"'$/ {capture=1; next} /^[[:space:]]*NODE$/ && capture {exit} capture {sub(/^          /, ""); print}' \
+            .github/workflows/msg-001-a01-authority-baseline-bootstrap-temporary.yml \
+            > /tmp/msg-a01-generate.js
+          test -s /tmp/msg-a01-generate.js
+          node /tmp/msg-a01-generate.js
+          npm run write:domain-completion-matrix
+
+      - name: Validate complete generated package
+        run: |
+          node --check scripts/audit-msg-001-a01-authority-baseline.js
+          npm run audit:msg-001-a01-authority-baseline
+          npm run test:messages-supabase-repository-contract
+          npm run test:attachments-supabase-repository-contract
+          npm run audit:domain-completion-matrix
+          git diff --check
+
+      - name: Stage only non-workflow canonical artifacts
+        run: |
+          git add \
+            config/msg-001-a01-authority-baseline.json \
+            docs/MSG-001-A01-AUTHORITY-BASELINE.md \
+            scripts/audit-msg-001-a01-authority-baseline.js \
+            package.json \
+            config/domain-completion-matrix.json \
+            docs/DOMAIN-COMPLETION-MATRIX.md
+          git add -f \
+            docs/validation/MSG-001-A01-AUTHORITY-BASELINE.json \
+            reports/generated/domain-completion-matrix-report.json
+          staged="$(git diff --cached --name-only)"
+          test -n "$staged"
+          printf '%s\n' "$staged" | while IFS= read -r file; do
+            case "$file" in
+              config/msg-001-a01-authority-baseline.json|docs/MSG-001-A01-AUTHORITY-BASELINE.md|docs/validation/MSG-001-A01-AUTHORITY-BASELINE.json|scripts/audit-msg-001-a01-authority-baseline.js|package.json|config/domain-completion-matrix.json|docs/DOMAIN-COMPLETION-MATRIX.md|reports/generated/domain-completion-matrix-report.json) ;;
+              *) echo "Unexpected staged file: $file" >&2; exit 1 ;;
+            esac
+          done
+          test "$(git diff --cached --name-only | wc -l)" -eq 8
+          git diff --cached --check
+
+      - name: Publish MSG-A01 domain artifacts
+        env:
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          git fetch origin msg/msg-001-baseline-audit --depth=1
+          test "$(git rev-parse origin/msg/msg-001-baseline-audit)" = "$EXPECTED_HEAD"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "docs(msg): freeze MSG-A01 authority baseline"
+          git push origin HEAD:msg/msg-001-baseline-audit
