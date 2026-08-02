@@ -65,7 +65,7 @@ jobs:
           npm run audit:domain-completion-matrix
           git diff --check
 
-      - name: Stage only canonical runtime artifacts
+      - name: Stage canonical runtime artifacts excluding workflow
         run: |
           git add -A \
             scripts/execute-sched-001-c01d-authenticated-browser-read-only-canary.js \
@@ -78,7 +78,6 @@ jobs:
             docs/validation/SCHED-001-C01D-AUTHENTICATED-BROWSER-CANARY-READINESS.json \
             docs/SCHED-001-C01D-AUTHENTICATED-BROWSER-CANARY-READINESS.md \
             scripts/audit-sched-001-c01d-authenticated-browser-canary-readiness.js \
-            .github/workflows/sched-001-c01d-authenticated-browser-canary-readiness.yml \
             config/domain-completion-matrix.json \
             docs/DOMAIN-COMPLETION-MATRIX.md
           git add -f reports/generated/domain-completion-matrix-report.json
