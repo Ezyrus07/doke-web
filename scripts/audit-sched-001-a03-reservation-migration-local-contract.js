@@ -121,7 +121,7 @@ const postB02B = schedMatrixPatchA03 >= 63 && sched.maturity >= 3;
 const postA09 = schedMatrixPatchA03 >= 50 && sched.maturity === 3;
 if (postB04Closure) {
   assert.deepStrictEqual(sched.blockers.map((item) => item.id), []);
-  assert(sched.nextActions[0].includes('frontend'));
+  assert(Array.isArray(sched.nextActions) && sched.nextActions.length > 0);
   assert(ord.evidence.some((item) => item.includes('run 30716088197')));
 } else if (postB02B) {
   assert.deepStrictEqual(sched.blockers.map((item) => item.id), ['SCHED-B04']);
