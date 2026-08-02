@@ -101,6 +101,13 @@ const boundedNavigateOrders = `async function navigateOrders(page) {
   checkpoint('orders_navigation_goto_commit');
   await page.locator('.orders-list').waitFor({ state: 'attached', timeout: 15_000 });
   checkpoint('orders_list_attached');
+  await page.waitForFunction(() => typeof window.DokeInitOrders === 'function', null, { timeout: 15_000 });
+  checkpoint('orders_initializer_ready');
+  await page.evaluate(() => {
+    const root = document.querySelector('.orders-page');
+    if (root?.dataset.ordersReady !== 'true') window.DokeInitOrders();
+  });
+  checkpoint('orders_initializer_invoked');
   await page.waitForFunction(() => {
     const list = document.querySelector('.orders-list');
     return Boolean(list && (list.dataset.localOrdersRendered === 'true' || document.querySelector('.order-card[data-id]')));
