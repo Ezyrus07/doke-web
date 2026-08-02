@@ -101,7 +101,19 @@ const migrationText = fs.readdirSync('supabase/migrations')
   .filter((file) => file.endsWith('.sql'))
   .map((file) => fs.readFileSync(path.join('supabase/migrations', file), 'utf8'))
   .join('\n');
-assert(!/alter\s+publication\s+supabase_realtime[\s\S]{0,300}add\s+table[\s\S]{0,100}public\.(conversations|messages)/i.test(migrationText));
+
+if (fs.existsSync('config/msg-001-a04-realtime-publication-subscription-contract.json')) {
+  const realtimeContract = JSON.parse(
+    fs.readFileSync('config/msg-001-a04-realtime-publication-subscription-contract.json', 'utf8')
+  );
+  assert(/alter\s+publication\s+supabase_realtime[\s\S]{0,300}add\s+table[\s\S]{0,100}public\.conversations/i.test(migrationText));
+  assert(/alter\s+publication\s+supabase_realtime[\s\S]{0,300}add\s+table[\s\S]{0,100}public\.messages/i.test(migrationText));
+  assert.strictEqual(realtimeContract.publication.migrationApplied, false);
+  assert.strictEqual(realtimeContract.effects.realtimePublicationChanges, 0);
+  assert.strictEqual(realtimeContract.subscriptions.defaultEnabled, false);
+} else {
+  assert(!/alter\s+publication\s+supabase_realtime[\s\S]{0,300}add\s+table[\s\S]{0,100}public\.(conversations|messages)/i.test(migrationText));
+}
 
 const version = String(matrix.version).split('.').map(Number);
 assert.strictEqual(version[0], 1);
