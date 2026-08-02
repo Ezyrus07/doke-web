@@ -1,9 +1,9 @@
 name: Doke SCHED-C01D Login Navigation Fix
 
 on:
-  pull_request:
+  push:
     branches:
-      - search/search-ux02-intent-favorites-clean
+      - ord/ord-001-baseline-audit
     paths:
       - '.github/workflows/sched-001-c01d-login-navigation-fix.yml'
 
@@ -16,10 +16,7 @@ concurrency:
 
 jobs:
   fix:
-    if: >-
-      github.event.pull_request.number == 25 &&
-      github.event.pull_request.draft == true &&
-      github.event.pull_request.head.ref == 'ord/ord-001-baseline-audit'
+    if: github.ref == 'refs/heads/ord/ord-001-baseline-audit'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
