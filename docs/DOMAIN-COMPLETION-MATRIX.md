@@ -598,12 +598,12 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - The C01E plus C01D attempt and repository-only hardening changed no production resource, deployment, migration, payment, account, Cron, worker, merge or auto-merge state.
 - SCHED-C01D canonicalized the authenticated browser runtime: login synchronization, Supabase defer fulfillment, bootstrap watchdogs, awaited initialization, terminal hydration checks, phase timeouts and bounded cleanup now live in the canonical executor; runtime source rewriting and both preparer scripts were removed without staging access.
 - Authorized run 30761292305 failed closed after authentication because a second orders navigation canceled 71 deferred scripts before DOMContentLoaded; cleanup independently verified zero residue across all 13 fixture groups. The repository-only correction now targets the canonical orders URL during login and reuses that document instead of navigating twice.
+- SCHED-C01D single-navigation repository validation closed on head 30474a63c87d374e228e4b6520c11fffad72888c: permanent C01D, C01E and C01C gates passed in runs 30761908387, 30761908161 and 30761908428. Remote proof remains incomplete because authorized run 30761292305 completed zero authenticated reads; both exact phrases were consumed and independent cleanup verified zero residue across thirteen groups.
 
 **Bloqueadores:**
 - Nenhum.
 
 **Próximas ações:**
-- Validate SCHED-C01D single-navigation bootstrap repository-only; any new SCHED-C01E plus SCHED-C01D staging canary still requires a fresh exact authorization pair for one immutable head.
 - Do not execute another SCHED-C01E plus SCHED-C01D staging canary without fresh exact authorization phrases for both scopes in the same bounded authorization envelope.
 - When separately authorized, execute the bounded SCHED-C01E fixture lifecycle plus the bound SCHED-C01D read-only browser canary on one immutable head and require completed authenticated reads plus independent thirteen-group zero-residue verification.
 - Keep browser scheduling commands, Cron, workers, production release and pull-request merge under separate explicit authorization.
@@ -1121,4 +1121,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-08-02T15:26:00-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-08-02T15:50:00-03:00._

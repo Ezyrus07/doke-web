@@ -111,3 +111,11 @@ Authorized run 30761292305 proved that authentication and session materializatio
 The login target now includes the complete staging read-provider query. Supabase and font routes are installed before the redirect, allowed read requests use Playwright route fallback so the pinned Supabase fulfillment remains reachable, and navigateOrders reuses the already loaded canonical document. A guarded fallback navigation remains only for unexpected target drift.
 
 This correction is repository-only. Any remote validation still requires a fresh independent C01E and C01D authorization pair.
+
+## Repository validation closure
+
+The single-navigation correction is repository-validated on immutable head `30474a63c87d374e228e4b6520c11fffad72888c`. The permanent C01D readiness gate passed in run `30761908387` / job `91533849967`, C01E readiness passed in run `30761908161` / job `91533849460`, and C01C presentation passed in run `30761908428` / job `91533850005`.
+
+The authorized remote attempt remains fail-closed rather than successful: run `30761292305` completed zero authenticated staging reads, consumed both exact authorization phrases, and independently verified zero residue across thirteen fixture groups. Those phrases are not reusable.
+
+Repository validation is therefore complete, while remote proof remains separately blocked. Any new staging attempt requires a fresh exact C01E plus C01D authorization pair bound to one immutable head.
