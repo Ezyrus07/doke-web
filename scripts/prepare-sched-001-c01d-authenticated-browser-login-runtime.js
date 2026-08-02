@@ -83,6 +83,31 @@ const boundedLogin = `async function login(page, email, password, persona) {
   // page.waitForURL(/\\/pedidos\\.html(?:[?#].*)?$/, { timeout: 30_000 }),
 }`;
 
+const originalNavigateOrders = `async function navigateOrders(page) {
+  const base = stripSlash(process.env[ENV.webBaseUrl]);
+  const url = \`${'${base}'}/pedidos.html?dokeTarget=staging&dokeOrdersProvider=supabase-read&dokeOrdersReadProvider=supabase-read&dokeEnableNetwork=1\`;
+  await page.goto(url, { waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => {
+    const list = document.querySelector('.orders-list');
+    return Boolean(list && (list.dataset.localOrdersRendered === 'true' || document.querySelector('.order-card[data-id]')));
+  }, null, { timeout: 30_000 });
+}`;
+
+const boundedNavigateOrders = `async function navigateOrders(page) {
+  const base = stripSlash(process.env[ENV.webBaseUrl]);
+  const url = \`${'${base}'}/pedidos.html?dokeTarget=staging&dokeOrdersProvider=supabase-read&dokeOrdersReadProvider=supabase-read&dokeEnableNetwork=1\`;
+  checkpoint('orders_navigation_goto_start');
+  await page.goto(url, { waitUntil: 'commit', timeout: 20_000 });
+  checkpoint('orders_navigation_goto_commit');
+  await page.locator('.orders-list').waitFor({ state: 'attached', timeout: 15_000 });
+  checkpoint('orders_list_attached');
+  await page.waitForFunction(() => {
+    const list = document.querySelector('.orders-list');
+    return Boolean(list && (list.dataset.localOrdersRendered === 'true' || document.querySelector('.order-card[data-id]')));
+  }, null, { timeout: 30_000 });
+  checkpoint('orders_render_ready');
+}`;
+
 function replaceExactlyOnce(source, before, after, label) {
   const count = source.split(before).length - 1;
   if (count !== 1) {
@@ -94,11 +119,17 @@ function replaceExactlyOnce(source, before, after, label) {
 function run() {
   const originalSource = fs.readFileSync(executorPath, 'utf8');
   const originalMode = fs.statSync(executorPath).mode;
-  const patchedSource = replaceExactlyOnce(
+  let patchedSource = replaceExactlyOnce(
     originalSource,
     originalLogin,
     boundedLogin,
     'C01D login function'
+  );
+  patchedSource = replaceExactlyOnce(
+    patchedSource,
+    originalNavigateOrders,
+    boundedNavigateOrders,
+    'C01D orders navigation function'
   );
 
   try {
