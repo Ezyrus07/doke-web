@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 1094 arquivos no escopo; 259 referências a localStorage; 78 a sessionStorage; 569 referências mock; 205 referências de rede/Supabase; 35 marcadores de implementação pendente.
+**Evidência estática observada:** 1092 arquivos no escopo; 258 referências a localStorage; 78 a sessionStorage; 563 referências mock; 205 referências de rede/Supabase; 35 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -539,7 +539,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI local; servidor partial; staging staging canary; segurança partial; produção blocked.
 
-**Evidência estática observada:** 1049 arquivos no escopo; 195 referências a localStorage; 70 a sessionStorage; 311 referências mock; 204 referências de rede/Supabase; 19 marcadores de implementação pendente.
+**Evidência estática observada:** 1047 arquivos no escopo; 194 referências a localStorage; 70 a sessionStorage; 305 referências mock; 204 referências de rede/Supabase; 19 marcadores de implementação pendente.
 
 **Páginas:** `anunciar-servico.html`, `pedidos.html`, `orcamento.html`.
 
@@ -1062,7 +1062,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2427 arquivos no escopo; 517 referências a localStorage; 151 a sessionStorage; 893 referências mock; 599 referências de rede/Supabase; 89 marcadores de implementação pendente.
+**Evidência estática observada:** 2425 arquivos no escopo; 516 referências a localStorage; 151 a sessionStorage; 887 referências mock; 599 referências de rede/Supabase; 89 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
