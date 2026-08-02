@@ -96,7 +96,8 @@ const originalNavigateOrders = `async function navigateOrders(page) {
 const boundedNavigateOrders = `async function navigateOrders(page) {
   const base = stripSlash(process.env[ENV.webBaseUrl]);
   const url = \`${'${base}'}/pedidos.html?dokeTarget=staging&dokeOrdersProvider=supabase-read&dokeOrdersReadProvider=supabase-read&dokeEnableNetwork=1\`;
-  await page.route(/^https:\/\/fonts\.(?:googleapis|gstatic)\.com\//, (route) => route.abort('blockedbyclient'));
+  await page.route('https://fonts.googleapis.com/**', (route) => route.abort('blockedbyclient'));
+  await page.route('https://fonts.gstatic.com/**', (route) => route.abort('blockedbyclient'));
   checkpoint('orders_external_fonts_blocked');
   checkpoint('orders_navigation_goto_start');
   await page.goto(url, { waitUntil: 'commit', timeout: 20_000 });
