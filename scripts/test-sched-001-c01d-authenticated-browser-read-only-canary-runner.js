@@ -60,6 +60,11 @@ assert(preparerSource.includes("user = { role: String(candidate.role || candidat
 assert(preparerSource.includes("checkpoint(persona + '_login_session_ready')"));
 assert(preparerSource.includes('canonical sanitized session snapshot'));
 assert(preparerSource.includes("submit.click({ noWaitAfter: true"));
+assert(preparerSource.includes("typeof window.DokeInitOrders === 'function'"));
+assert(preparerSource.includes("checkpoint('orders_initializer_ready')"));
+assert(preparerSource.includes('window.DokeInitOrders();'));
+assert(preparerSource.includes("checkpoint('orders_initializer_invoked')"));
+assert(preparerSource.includes("checkpoint('orders_render_ready')"));
 
 const before = fs.readdirSync('scripts').filter((name) => name.startsWith(runtimePrefix));
 assert.deepStrictEqual(before, []);
