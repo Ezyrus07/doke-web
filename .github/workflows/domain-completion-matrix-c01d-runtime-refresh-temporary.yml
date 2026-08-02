@@ -1,0 +1,82 @@
+name: Doke Temporary C01D Runtime Matrix Refresh
+
+on:
+  pull_request:
+    branches:
+      - search/search-ux02-intent-favorites-clean
+    paths:
+      - '.github/workflows/domain-completion-matrix-c01d-runtime-refresh-temporary.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: domain-completion-matrix-c01d-runtime-refresh-temporary
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    if: github.event.pull_request.number == 25 && github.event.pull_request.head.ref == 'ord/ord-001-baseline-audit' && github.event.pull_request.draft == true
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ord/ord-001-baseline-audit
+          fetch-depth: 1
+
+      - name: Require immutable source head
+        env:
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install pinned dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Regenerate canonical matrix artifacts
+        run: npm run write:domain-completion-matrix
+
+      - name: Validate final canonical runtime governance
+        run: |
+          node scripts/audit-sched-001-c01d-authenticated-browser-canary-readiness.js
+          node scripts/test-sched-001-c01d-authenticated-browser-canary-readiness.js
+          node scripts/test-sched-001-c01d-authenticated-browser-read-only-canary.js
+          node scripts/test-sched-001-c01d-authenticated-browser-read-only-canary-runner.js
+          node scripts/test-sched-001-c01d-authenticated-browser-bootstrap-runtime.js
+          node scripts/audit-sched-001-c01e-synthetic-order-fixture-lifecycle-readiness.js
+          node scripts/test-sched-001-c01e-synthetic-order-fixture-lifecycle-readiness.js
+          npm run audit:sched-001-c01c-deterministic-frontend-presentation
+          npm run test:sched-001-c01c-deterministic-frontend-presentation
+          npm run audit:domain-completion-matrix
+          git diff --check
+
+      - name: Stage only canonical matrix artifacts
+        run: |
+          git add config/domain-completion-matrix.json
+          git add docs/DOMAIN-COMPLETION-MATRIX.md
+          git add -f reports/generated/domain-completion-matrix-report.json
+          staged="$(git diff --cached --name-only)"
+          test -n "$staged"
+          printf '%s\n' "$staged" | while IFS= read -r path; do
+            case "$path" in
+              config/domain-completion-matrix.json|docs/DOMAIN-COMPLETION-MATRIX.md|reports/generated/domain-completion-matrix-report.json) ;;
+              *) echo "Unexpected staged path: $path" >&2; exit 1 ;;
+            esac
+          done
+          git diff --cached --check
+
+      - name: Publish canonical matrix refresh
+        env:
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          git fetch origin ord/ord-001-baseline-audit --depth=1
+          test "$(git rev-parse origin/ord/ord-001-baseline-audit)" = "$EXPECTED_HEAD"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "docs(governance): refresh C01D canonical runtime matrix"
+          git push origin HEAD:ord/ord-001-baseline-audit
