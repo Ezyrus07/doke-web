@@ -95,14 +95,13 @@ jobs:
           node scripts/audit-ord-001-a11-scheduling-authority-handoff.js
           npm run audit:domain-completion-matrix
           git diff --check
-      - name: Publish C01C and remove transport files
+      - name: Publish validated C01C code
         shell: bash
         run: |
           set -euo pipefail
-          rm -f .github/workflows/sched-001-c01c-push-application.yml
+          rm -f .github/workflows/sched-001-c01c-deterministic-frontend-presentation.yml
           rm -f scripts/apply-sched-001-c01c-deterministic-frontend-presentation.py
           rm -f config/sched-001-c01c-workflow-payload.txt
-          rm -f config/sched-c01c-transport.tar.gz
           git config user.name "doke-ci"
           git config user.email "doke-ci@users.noreply.github.com"
           git add -A
