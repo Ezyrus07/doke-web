@@ -33,10 +33,14 @@ jobs:
       - name: Regenerate deterministic matrix document
         run: |
           npm run write:domain-completion-matrix
+          git restore --worktree -- reports/generated/domain-completion-matrix-report.json || true
+          git clean -f -- reports/generated/domain-completion-matrix-report.json || true
           npm run audit:domain-completion-matrix
           git diff --check
-          changed="$(git diff --name-only)"
-          test "$changed" = "docs/DOMAIN-COMPLETION-MATRIX.md"
+          mapfile -t changed < <(git diff --name-only)
+          printf '%s\n' "${changed[@]}"
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = "docs/DOMAIN-COMPLETION-MATRIX.md"
       - name: Publish generated Markdown only
         run: |
           git config user.name "doke-ci"
