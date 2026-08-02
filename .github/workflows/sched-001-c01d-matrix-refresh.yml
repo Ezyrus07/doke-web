@@ -1,0 +1,60 @@
+name: Doke SCHED-C01D Matrix Refresh
+
+on:
+  pull_request:
+    branches:
+      - search/search-ux02-intent-favorites-clean
+    paths:
+      - '.github/workflows/sched-001-c01d-matrix-refresh.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sched-c01d-matrix-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    if: >-
+      github.event.pull_request.number == 25 &&
+      github.event.pull_request.draft == true &&
+      github.event.pull_request.head.ref == 'ord/ord-001-baseline-audit'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ord/ord-001-baseline-audit
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install pinned dependencies
+        run: npm ci --ignore-scripts
+      - name: Regenerate deterministic matrix artifacts
+        run: |
+          npm run write:domain-completion-matrix
+          npm run audit:domain-completion-matrix
+          node scripts/audit-sched-001-c01d-authenticated-browser-canary-readiness.js
+          node scripts/test-sched-001-c01d-authenticated-browser-canary-readiness.js
+          node scripts/plan-sched-001-c01d-authenticated-browser-canary.js --dry-run
+          npm run audit:sched-001-c01c-deterministic-frontend-presentation
+          npm run test:sched-001-c01c-deterministic-frontend-presentation
+          git diff --check
+      - name: Publish generated matrix artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "doke-ci"
+          git config user.email "doke-ci@users.noreply.github.com"
+          git add docs/DOMAIN-COMPLETION-MATRIX.md
+          git add -f reports/generated/domain-completion-matrix-report.json
+          if git diff --cached --quiet; then
+            echo "Matrix artifacts already current."
+            exit 0
+          fi
+          git diff --cached --check
+          git commit -m "docs(matrix): refresh after C01D readiness"
+          git push origin HEAD:ord/ord-001-baseline-audit
