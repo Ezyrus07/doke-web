@@ -11,6 +11,10 @@ on:
       - 'scripts/plan-sched-001-c01d-authenticated-browser-canary.js'
       - 'scripts/audit-sched-001-c01d-authenticated-browser-canary-readiness.js'
       - 'scripts/test-sched-001-c01d-authenticated-browser-canary-readiness.js'
+      - 'scripts/execute-sched-001-c01d-authenticated-browser-read-only-canary.js'
+      - 'scripts/run-sched-001-c01d-authenticated-browser-read-only-canary.js'
+      - 'scripts/test-sched-001-c01d-authenticated-browser-read-only-canary.js'
+      - 'scripts/test-sched-001-c01d-authenticated-browser-read-only-canary-runner.js'
       - '.github/workflows/sched-001-c01d-authenticated-browser-canary-readiness.yml'
       - 'config/sched-001-c01c-deterministic-frontend-presentation.json'
       - 'assets/js/patterns/order-schedule-presentation.js'
@@ -39,11 +43,17 @@ jobs:
           node --check scripts/plan-sched-001-c01d-authenticated-browser-canary.js
           node --check scripts/audit-sched-001-c01d-authenticated-browser-canary-readiness.js
           node --check scripts/test-sched-001-c01d-authenticated-browser-canary-readiness.js
+          node --check scripts/execute-sched-001-c01d-authenticated-browser-read-only-canary.js
+          node --check scripts/run-sched-001-c01d-authenticated-browser-read-only-canary.js
+          node --check scripts/test-sched-001-c01d-authenticated-browser-read-only-canary-runner.js
       - name: Validate inert C01D readiness package
         run: |
           node scripts/audit-sched-001-c01d-authenticated-browser-canary-readiness.js
           node scripts/test-sched-001-c01d-authenticated-browser-canary-readiness.js
           node scripts/plan-sched-001-c01d-authenticated-browser-canary.js --dry-run
+          node scripts/test-sched-001-c01d-authenticated-browser-read-only-canary.js
+          node scripts/test-sched-001-c01d-authenticated-browser-read-only-canary-runner.js
+          node scripts/run-sched-001-c01d-authenticated-browser-read-only-canary.js --dry-run
       - name: Preserve deterministic frontend authority
         run: |
           npm run audit:sched-001-c01c-deterministic-frontend-presentation
