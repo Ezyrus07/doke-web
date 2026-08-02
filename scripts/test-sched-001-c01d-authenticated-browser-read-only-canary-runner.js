@@ -78,9 +78,17 @@ assert(preparerSource.includes("page.addScriptTag({ path: path.join(root, 'asset
 assert(preparerSource.includes("checkpoint('orders_entrypoint_injected')"));
 assert(preparerSource.includes("typeof window.DokeInitOrders === 'function'"));
 assert(preparerSource.includes("checkpoint('orders_initializer_ready')"));
-assert(preparerSource.includes('window.DokeInitOrders();'));
-assert(preparerSource.includes("checkpoint('orders_initializer_invoked')"));
-assert(preparerSource.includes("checkpoint('orders_render_ready')"));
+assert(preparerSource.includes('await Promise.resolve(window.DokeInitOrders())'));
+assert(preparerSource.includes("return 'started_and_awaited'"));
+assert(preparerSource.includes("return 'already_started'"));
+assert(preparerSource.includes("checkpoint('orders_initializer_invoked_' + initializationMode)"));
+assert(preparerSource.includes("window.Doke?.runtimeConfig?.ordersReadProvider"));
+assert(preparerSource.includes("readProvider === 'supabase-read'"));
+assert(preparerSource.includes("provider === 'supabase-read'"));
+assert(preparerSource.includes("state === 'ready' || state === 'empty'"));
+assert(preparerSource.includes('Remote orders hydration unavailable: readProvider='));
+assert(preparerSource.includes("checkpoint('orders_remote_hydration_complete')"));
+assert(!preparerSource.includes("checkpoint('orders_render_ready')"));
 
 const before = fs.readdirSync('scripts').filter((name) => name.startsWith(runtimePrefix));
 assert.deepStrictEqual(before, []);
