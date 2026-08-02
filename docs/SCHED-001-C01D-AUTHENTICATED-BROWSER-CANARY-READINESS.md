@@ -103,3 +103,11 @@ After this readiness package is validated, SCHED-C01D remains blocked until the 
 The authenticated browser executor now owns login synchronization, local fulfillment of the pinned Supabase defer script, DOM and dependency watchdogs, awaited order initialization, terminal remote hydration validation, phase timeouts, sanitized checkpoints and bounded cleanup. The runner is limited to the outer process watchdog. Runtime source rewriting and the two legacy preparer scripts were removed.
 
 This consolidation is repository-only. It performs no browser execution, credential resolution, staging read, staging mutation, migration, deployment, production access or merge. SCHED-C01D remains blocked until a fresh exact authorization is supplied together with the independently authorized SCHED-C01E lifecycle.
+
+## Single-navigation bootstrap correction
+
+Authorized run 30761292305 proved that authentication and session materialization succeeded, but the executor immediately started a second navigation to the same orders document. That navigation canceled the first document's 71 deferred scripts and left DOMContentLoaded unavailable.
+
+The login target now includes the complete staging read-provider query. Supabase and font routes are installed before the redirect, allowed read requests use Playwright route fallback so the pinned Supabase fulfillment remains reachable, and navigateOrders reuses the already loaded canonical document. A guarded fallback navigation remains only for unexpected target drift.
+
+This correction is repository-only. Any remote validation still requires a fresh independent C01E and C01D authorization pair.

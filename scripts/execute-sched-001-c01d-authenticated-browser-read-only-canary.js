@@ -319,6 +319,9 @@ async function inspectPersona(context, persona, email, password) {
   const requests = [];
   page.on('request', (request) => requests.push({ method: request.method(), url: shapeUrl(request.url()) }));
 
+  checkpoint(persona + '_orders_bootstrap_routes_start');
+  await installOrdersBootstrapRoutes(page);
+  checkpoint(persona + '_orders_bootstrap_routes_ready');
   checkpoint(persona + '_login_start');
   await login(page, email, password, persona);
   checkpoint(persona + '_login_complete');
@@ -352,7 +355,8 @@ async function inspectPersona(context, persona, email, password) {
 
 async function login(page, email, password, persona) {
   const base = stripSlash(process.env[ENV.webBaseUrl]);
-  const loginUrl = `${base}/auth/login.html?next=../pedidos.html%3FdokeTarget%3Dstaging`;
+  const ordersPath = '../pedidos.html?dokeTarget=staging&dokeOrdersProvider=supabase-read&dokeOrdersReadProvider=supabase-read&dokeEnableNetwork=1';
+  const loginUrl = `${base}/auth/login.html?next=${encodeURIComponent(ordersPath)}`;
   const sessionKeys = new Set(['doke.auth.session.v1', 'doke.auth.session.v2', 'doke.auth.session']);
 
   checkpoint(persona + '_login_page_goto_start');
@@ -369,13 +373,13 @@ async function login(page, email, password, persona) {
   checkpoint(persona + '_login_credentials_filled');
 
   const navigation = page.waitForURL(/\/pedidos\.html(?:[?#].*)?$/, {
-    waitUntil: 'commit',
+    waitUntil: 'domcontentloaded',
     timeout: 30_000
   });
   await submit.click({ noWaitAfter: true, timeout: 10_000 });
   checkpoint(persona + '_login_submit_clicked');
   await navigation;
-  checkpoint(persona + '_login_target_committed');
+  checkpoint(persona + '_login_target_domcontentloaded');
 
   let user = null;
   const sessionDeadline = Date.now() + 20_000;
@@ -405,41 +409,13 @@ if (candidate && candidate.id) {
   }
 }
 
-async function installReadOnlyGuard(page, mutations) {
-  await page.route('**/*', async (route) => {
-    const request = route.request();
-    const method = request.method().toUpperCase();
-    if (ALLOWED_AFTER_LOGIN.has(method)) return route.continue();
-    mutations.push({ method, url: shapeUrl(request.url()) });
-    return route.abort('blockedbyclient');
-  });
-}
-
-async function navigateOrders(page) {
-  const base = stripSlash(process.env[ENV.webBaseUrl]);
-  const url = `${base}/pedidos.html?dokeTarget=staging&dokeOrdersProvider=supabase-read&dokeOrdersReadProvider=supabase-read&dokeEnableNetwork=1`;
-  const supabaseUmdCandidates = [
+async function installOrdersBootstrapRoutes(page) {
+  const candidates = [
     path.join(root, 'node_modules', '@supabase', 'supabase-js', 'dist', 'umd', 'supabase.min.js'),
     path.join(root, 'node_modules', '@supabase', 'supabase-js', 'dist', 'umd', 'supabase.js')
   ];
-  const localSupabaseUmd = supabaseUmdCandidates.find((candidate) => fs.existsSync(candidate));
+  const localSupabaseUmd = candidates.find((candidate) => fs.existsSync(candidate));
   if (!localSupabaseUmd) throw new Error('Pinned local Supabase UMD browser bundle was not found after npm ci.');
-
-  const bootstrapDiagnostics = {
-    domContentLoaded: false,
-    pageErrors: 0,
-    failedScripts: 0
-  };
-  page.on('domcontentloaded', () => {
-    bootstrapDiagnostics.domContentLoaded = true;
-    checkpoint('orders_domcontentloaded');
-  });
-  page.on('pageerror', () => {
-    bootstrapDiagnostics.pageErrors += 1;
-  });
-  page.on('requestfailed', (request) => {
-    if (request.resourceType() === 'script') bootstrapDiagnostics.failedScripts += 1;
-  });
 
   await page.route('https://fonts.googleapis.com/**', (route) => route.abort('blockedbyclient'));
   await page.route('https://fonts.gstatic.com/**', (route) => route.abort('blockedbyclient'));
@@ -452,9 +428,62 @@ async function navigateOrders(page) {
     });
   });
   checkpoint('orders_external_fonts_blocked');
-  checkpoint('orders_navigation_goto_start');
-  await page.goto(url, { waitUntil: 'commit', timeout: 20_000 });
-  checkpoint('orders_navigation_goto_commit');
+}
+
+async function installReadOnlyGuard(page, mutations) {
+  await page.route('**/*', async (route) => {
+    const request = route.request();
+    const method = request.method().toUpperCase();
+    if (ALLOWED_AFTER_LOGIN.has(method)) return route.fallback();
+    mutations.push({ method, url: shapeUrl(request.url()) });
+    return route.abort('blockedbyclient');
+  });
+}
+
+function isCanonicalOrdersUrl(currentValue, targetValue) {
+  try {
+    const current = new URL(currentValue);
+    const target = new URL(targetValue);
+    const required = ['dokeTarget', 'dokeOrdersProvider', 'dokeOrdersReadProvider', 'dokeEnableNetwork'];
+    return current.origin === target.origin
+      && current.pathname === target.pathname
+      && required.every((name) => current.searchParams.get(name) === target.searchParams.get(name));
+  } catch {
+    return false;
+  }
+}
+
+async function navigateOrders(page) {
+  const base = stripSlash(process.env[ENV.webBaseUrl]);
+  const url = `${base}/pedidos.html?dokeTarget=staging&dokeOrdersProvider=supabase-read&dokeOrdersReadProvider=supabase-read&dokeEnableNetwork=1`;
+  const bootstrapDiagnostics = {
+    domContentLoaded: await page.evaluate(() => document.readyState !== 'loading'),
+    pageErrors: 0,
+    failedScripts: 0
+  };
+  if (bootstrapDiagnostics.domContentLoaded) checkpoint('orders_domcontentloaded_before_navigation_check');
+  page.on('domcontentloaded', () => {
+    if (!isCanonicalOrdersUrl(page.url(), url)) return;
+    bootstrapDiagnostics.domContentLoaded = true;
+    checkpoint('orders_domcontentloaded');
+  });
+  page.on('pageerror', () => {
+    if (isCanonicalOrdersUrl(page.url(), url)) bootstrapDiagnostics.pageErrors += 1;
+  });
+  page.on('requestfailed', (request) => {
+    if (isCanonicalOrdersUrl(page.url(), url) && request.resourceType() === 'script') {
+      bootstrapDiagnostics.failedScripts += 1;
+    }
+  });
+
+  checkpoint('orders_navigation_target_check');
+  if (isCanonicalOrdersUrl(page.url(), url)) {
+    checkpoint('orders_navigation_reused_login_target');
+  } else {
+    checkpoint('orders_navigation_goto_start');
+    await page.goto(url, { waitUntil: 'commit', timeout: 20_000 });
+    checkpoint('orders_navigation_goto_commit');
+  }
   await page.locator('.orders-list').waitFor({ state: 'attached', timeout: 15_000 });
   checkpoint('orders_list_attached');
 

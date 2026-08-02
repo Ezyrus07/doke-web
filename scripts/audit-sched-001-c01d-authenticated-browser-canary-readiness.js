@@ -202,4 +202,16 @@ assert(!fs.existsSync('scripts/prepare-sched-001-c01d-authenticated-browser-boot
 assert(!workflow.includes('prepare-sched-001-c01d-authenticated-browser-login-runtime.js'));
 assert(!workflow.includes('prepare-sched-001-c01d-authenticated-browser-bootstrap-runtime.js'));
 
+assert.strictEqual(config.canonicalRuntime.loginTargetsCanonicalOrdersUrl, true);
+assert.strictEqual(config.canonicalRuntime.duplicateOrdersNavigationForbidden, true);
+assert.strictEqual(config.canonicalRuntime.bootstrapRoutesInstalledBeforeLoginRedirect, true);
+assert.strictEqual(config.canonicalRuntime.allowedReadRoutesUseFallback, true);
+assert(executor.includes('await installOrdersBootstrapRoutes(page)'));
+assert(executor.includes("waitUntil: 'domcontentloaded'"));
+assert(executor.includes('encodeURIComponent(ordersPath)'));
+assert(executor.includes('return route.fallback()'));
+assert(executor.includes("checkpoint('orders_navigation_reused_login_target')"));
+assert(!executor.includes("next=../pedidos.html%3FdokeTarget%3Dstaging"));
+assert(!executor.includes('if (ALLOWED_AFTER_LOGIN.has(method)) return route.continue()'));
+
 console.log('SCHED-C01D authenticated browser read-only canary readiness audit passed.');
