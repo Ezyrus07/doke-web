@@ -43,7 +43,12 @@ assert(version[0] === 1 && version[1] === 3 && version[2] >= 80);
 const msg = matrix.domains.find(domain => domain.id === 'MSG-001');
 assert(msg);
 assert(msg.evidence.some(item => item.includes('MSG-A03')));
-assert(msg.nextActions.length === 2 && msg.nextActions[0].includes('MSG-A04'));
+if (fs.existsSync('config/msg-001-a05-attachment-lifecycle.json')) {
+  assert(msg.nextActions.length === 3 && msg.nextActions[0].includes('MSG-A06'));
+  assert(!msg.nextActions.some(item => item.includes('MSG-A05:')));
+} else {
+  assert(msg.nextActions.length === 2 && msg.nextActions[0].includes('MSG-A04'));
+}
 Object.values(paths).filter(file => ![paths.matrix, paths.package].includes(file)).forEach(file => assert(msg.requiredPaths.includes(file), 'requiredPaths: ' + file));
 assert(msg.tests.includes('audit:msg-001-a03-server-command-boundary'));
 assert(msg.tests.includes('test:msg-001-a03-server-command-boundary'));
