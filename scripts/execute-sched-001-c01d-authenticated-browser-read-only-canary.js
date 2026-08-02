@@ -164,7 +164,7 @@ function validateEnvironment() {
 
 function validateJsonFile(pathEnv, digestEnv, validator) {
   const file = path.resolve(root, process.env[pathEnv] || '');
-  if (!fs.existsSync(file)) {
+  if (!fs.existsSync(file) || !fs.statSync(file).isFile()) {
     fail(`${pathEnv} does not point to an existing file.`);
     return;
   }
