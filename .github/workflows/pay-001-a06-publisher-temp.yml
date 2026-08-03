@@ -52,6 +52,15 @@ jobs:
               contract_content = contract_content.replace("const path = require('node:path');\n", "const path = require('node:path');\nconst { isNumericSemanticVersionAtLeast } = require('./lib/semantic-version');\n")
           contract_content = contract_content.replace("assert(matrix.version === '1.3.90', 'matrix must remain 1.3.90 for A05 hardening');", "assert(isNumericSemanticVersionAtLeast(matrix.version, '1.3.90'), 'matrix must remain at least 1.3.90 after A05 hardening');")
           contract_audit.write_text(contract_content)
+          docs = Path('docs/PAY-001-A06-PROVIDER-SELECTION-LEGAL-HANDOFF.md')
+          docs_content = docs.read_text()
+          marker = '`repository_only_decision_handoff_ready_provider_unselected_staging_blocked`\n'
+          statement = '\nEm termos operacionais, PAY-A06 não seleciona nenhum PSP e não autoriza qualquer efeito remoto.\n'
+          if statement.strip() not in docs_content:
+              if marker not in docs_content:
+                  raise SystemExit('PAY-A06 documentation status marker missing')
+              docs_content = docs_content.replace(marker, marker + statement, 1)
+          docs.write_text(docs_content)
           PYFIX
           node scripts/prepare-pay-001-a06-matrix-temp.js
       - name: Remove temporary transport and generator
