@@ -24,7 +24,9 @@ jobs:
         with:
           node-version: 24
       - name: Remove temporary publishers and restore MSG-A05 gate
-        run: node scripts/tmp-cleanup-msg-a06.js
+        run: |
+          node scripts/tmp-cleanup-msg-a06.js
+          node scripts/audit-domain-completion-matrix.js --write
       - name: Validate canonical MSG-A06 before cleanup commit
         run: |
           npm run audit:msg-001-a01-authority-baseline
@@ -55,6 +57,8 @@ jobs:
           git add -A scripts/tmp-finalize-msg-a06.js
           git add -A .github/workflows/tmp-msg-a06-publisher.yml
           git add .github/workflows/msg-001-a05-attachment-lifecycle.yml
+          git add docs/DOMAIN-COMPLETION-MATRIX.md
+          git add -f reports/generated/domain-completion-matrix-report.json
           git rm scripts/tmp-cleanup-msg-a06.js
           git commit -m "Remove MSG-A06 temporary publishers"
           git push origin HEAD:msg/msg-001-baseline-audit
