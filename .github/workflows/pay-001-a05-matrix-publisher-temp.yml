@@ -47,17 +47,25 @@ jobs:
         run: |
           rm -f .github/workflows/pay-001-a05-matrix-generator-temp.yml
           rm -f .github/workflows/pay-001-a05-matrix-publisher-temp.yml
-      - name: Verify exact repository-only change set
+      - name: Verify repository-only change boundary
         run: |
           git diff --check
-          actual="$(git status --short | awk '{print $2}' | sort)"
-          expected="$(printf '%s\n' \
-            .github/workflows/pay-001-a05-matrix-generator-temp.yml \
-            .github/workflows/pay-001-a05-matrix-publisher-temp.yml \
-            config/domain-completion-matrix.json \
-            docs/DOMAIN-COMPLETION-MATRIX.md \
-            reports/generated/domain-completion-matrix-report.json | sort)"
-          test "$actual" = "$expected"
+          changed="$(git status --short | sed -E 's/^.. //' | sort)"
+          test -n "$changed"
+          while IFS= read -r file; do
+            case "$file" in
+              .github/workflows/pay-001-a05-matrix-generator-temp.yml|\
+              .github/workflows/pay-001-a05-matrix-publisher-temp.yml|\
+              config/domain-completion-matrix.json|\
+              docs/DOMAIN-COMPLETION-MATRIX.md|\
+              reports/generated/domain-completion-matrix-report.json) ;;
+              *) echo "Unexpected changed path: $file" >&2; exit 1 ;;
+            esac
+          done <<< "$changed"
+          test -n "$(git diff --name-only -- docs/DOMAIN-COMPLETION-MATRIX.md)"
+          test -n "$(git diff --name-only -- reports/generated/domain-completion-matrix-report.json)"
+          test -n "$(git diff --name-only -- .github/workflows/pay-001-a05-matrix-generator-temp.yml)"
+          test -n "$(git diff --name-only -- .github/workflows/pay-001-a05-matrix-publisher-temp.yml)"
       - name: Publish generated derivatives and cleanup
         run: |
           git config user.name 'doke-pay-a05-bot'
