@@ -1,0 +1,10 @@
+'use strict';
+const fs = require('node:fs');
+const file = '.github/tmp/msg-a08-generator.js';
+let source = fs.readFileSync(file, 'utf8');
+const oldText = "  'Use MSG-A08 as the mandatory activation gate; a generic continuation command does not authorize staging reads, migrations, deployments, Realtime settings or authenticated canaries.',";
+const newText = "  'MSG-A07B remains the first activation phase under the mandatory MSG-A08 gate; a generic continuation command does not authorize staging reads, migrations, deployments, Realtime settings or authenticated canaries.',";
+if (!source.includes(oldText)) throw new Error('MSG-A08 next-action marker not found.');
+source = source.replace(oldText, newText);
+fs.writeFileSync(file, source);
+console.log('MSG-A08 next-action invariant patched.');
