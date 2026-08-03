@@ -123,3 +123,4 @@ msg.nextActions = [
 write('config/domain-completion-matrix.json', JSON.stringify(matrix, null, 2));
 
 console.log('MSG-A06 existing files patched.');
+// Trigger rerun after the publisher workflow already exists on the branch.
