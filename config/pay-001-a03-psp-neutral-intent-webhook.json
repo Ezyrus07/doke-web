@@ -1,0 +1,84 @@
+{
+  "contractVersion": "pay-a03-psp-neutral-intent-webhook-v1",
+  "status": "repository_only_psp_neutral_contract_ready_provider_unselected",
+  "objective": "Define provider-neutral payment intent, signed webhook verification and persistent event deduplication without selecting or activating a payment provider.",
+  "provider": {
+    "selected": false,
+    "adapterActivated": false,
+    "accountCreated": false,
+    "webhookRegistered": false,
+    "secretConfigured": false
+  },
+  "paymentIntent": {
+    "authority": "server_only",
+    "idempotencyRequired": true,
+    "requestHashRequired": true,
+    "captureStrategy": "authorize_then_hold",
+    "browserMayAssertSettlement": false,
+    "rawCardDataAllowed": false
+  },
+  "signedWebhook": {
+    "algorithm": "hmac_sha256",
+    "signatureVersion": "v1",
+    "rawBodyRequired": true,
+    "timestampToleranceSeconds": 300,
+    "verifyBeforeJsonParse": true,
+    "secretSource": "server_runtime_only_unconfigured",
+    "normalizedEventTypes": [
+      "payment_intent.created",
+      "payment.authorized",
+      "payment.requires_action",
+      "payment.held",
+      "payment.released",
+      "payment.refunded",
+      "payment.failed",
+      "payment.cancelled",
+      "dispute.opened",
+      "dispute.resolved"
+    ]
+  },
+  "eventLedger": {
+    "table": "api_idempotency_keys",
+    "action": "payments.providerWebhook.ingest",
+    "entityType": "payment_provider_event",
+    "actorId": null,
+    "keyFormat": "pay:webhook:{provider}:{eventId}",
+    "payloadHashRequired": true,
+    "exactReplay": "return_original_result",
+    "payloadDrift": "reject_conflict",
+    "inProgressReplay": "reject_in_progress",
+    "failedEventReplay": "require_operator_reconciliation",
+    "defaultRetentionHours": 720
+  },
+  "eventOrdering": {
+    "outOfOrder": "defer_without_state_mutation",
+    "exactStateReplay": "acknowledge_idempotently",
+    "terminalStates": ["refunded", "failed", "cancelled"],
+    "releasedMayEnterDispute": true
+  },
+  "invariants": [
+    "No provider name, credential or commercial decision is embedded in the canonical contract.",
+    "Webhook signatures are verified against the untouched raw body before JSON parsing.",
+    "Signature comparison is constant-time and timestamp-bounded.",
+    "Provider event identity is provider plus eventId and payload hash.",
+    "A duplicate event with the same payload replays without repeating side effects.",
+    "A duplicate event ID with payload drift fails closed.",
+    "Out-of-order events are deferred and do not mutate payment state.",
+    "The browser cannot create provider settlement evidence.",
+    "No raw card data is accepted or persisted by Doke."
+  ],
+  "effects": {
+    "stagingReads": 0,
+    "stagingMutations": 0,
+    "migrationsApplied": 0,
+    "edgeFunctionsDeployed": 0,
+    "pspAccountsCreated": 0,
+    "webhooksRegistered": 0,
+    "secretsCreated": 0,
+    "paymentsCreated": 0,
+    "refundsCreated": 0,
+    "payoutsCreated": 0,
+    "productionChanged": false,
+    "pullRequestMerged": false
+  }
+}
