@@ -1,0 +1,106 @@
+{
+  "contractVersion": "pay-a09-deployment-inspection-handoff-v1",
+  "status": "repository_only_separated_handoffs_ready_remote_execution_blocked",
+  "objective": "Separate read-only preflight, migration application, post-migration verification, forward-only rollback and temporary artifact cleanup into independent one-shot resource-bound authorizations without executing any remote action.",
+  "a08Dependency": {
+    "contractVersion": "pay-a08-immutable-migrations-read-only-canary-v1",
+    "manifestHash": "bb219a05ea58139508d8bfe7c5f1e3f7d3ce7953953bb199bbd2bcbd9812d032",
+    "migrationCount": 4,
+    "providerNeutral": true,
+    "migrationSourcesImmutable": true
+  },
+  "authorizationBoundary": {
+    "freshnessSeconds": 900,
+    "oneShot": true,
+    "exactGitHeadRequired": true,
+    "manifestHashRequired": true,
+    "resourcePlanHashRequired": true,
+    "evidenceHashRequired": true,
+    "stagingProjectIdentityRequired": true,
+    "distinctApproversRequired": true,
+    "crossOperationNonceReuseAllowed": false,
+    "genericContinuationAuthorizesAnything": false,
+    "priorAuthorizationReusable": false,
+    "productionExplicitlyDenied": true,
+    "externalAuthorizedExecutorRequired": true,
+    "remoteActionsAllowedByRepositoryContract": false,
+    "repositoryExecutionPerformed": false
+  },
+  "phases": {
+    "read_only_preflight": {
+      "phrase": "I_EXPLICITLY_AUTHORIZE_PAY_A09_READ_ONLY_PREFLIGHT_ON_DOKE_STAGING",
+      "scope": "reconciliation_schema_read_only_preflight_only",
+      "currentReady": false,
+      "mutationAllowed": false,
+      "financialRowReadsAllowed": false,
+      "personalDataReadsAllowed": false
+    },
+    "migration_application": {
+      "phrase": "I_EXPLICITLY_AUTHORIZE_PAY_A09_RECONCILIATION_MIGRATION_APPLICATION_ON_DOKE_STAGING",
+      "scope": "reconciliation_migration_application_only",
+      "currentReady": false,
+      "compatiblePreflightEvidenceRequired": true,
+      "orderedOnceFailClosedRequired": true,
+      "stopOnFirstFailureRequired": true,
+      "manualSqlAllowed": false,
+      "manualMigrationHistoryMutationAllowed": false,
+      "postVerificationPlanRequired": true,
+      "rollbackPlanRequired": true,
+      "cleanupPlanRequired": true
+    },
+    "post_migration_verification": {
+      "phrase": "I_EXPLICITLY_AUTHORIZE_PAY_A09_POST_MIGRATION_VERIFICATION_ON_DOKE_STAGING",
+      "scope": "reconciliation_post_migration_read_only_verification_only",
+      "currentReady": false,
+      "applicationReceiptRequired": true,
+      "mutationAllowed": false,
+      "automaticDriftRepairAllowed": false
+    },
+    "rollback": {
+      "phrase": "I_EXPLICITLY_AUTHORIZE_PAY_A09_FORWARD_ONLY_ROLLBACK_ON_DOKE_STAGING",
+      "scope": "reconciliation_forward_only_rollback_only",
+      "currentReady": false,
+      "failureEvidenceRequired": true,
+      "mode": "forward_only_reviewed_migration",
+      "destructiveDownMigrationAllowed": false,
+      "manualMigrationHistoryDeletionAllowed": false,
+      "dataDeletionAllowed": false,
+      "automaticRollbackAllowed": false
+    },
+    "cleanup": {
+      "phrase": "I_EXPLICITLY_AUTHORIZE_PAY_A09_TEMPORARY_ARTIFACT_CLEANUP",
+      "scope": "reconciliation_temporary_artifact_cleanup_only",
+      "currentReady": false,
+      "allowedTargets": [
+        "temporary_authorization_envelope",
+        "temporary_executor_workspace",
+        "temporary_canary_evidence",
+        "temporary_ci_artifact"
+      ],
+      "databaseRowsDeletionAllowed": false,
+      "migrationHistoryDeletionAllowed": false,
+      "secretDeletionAllowed": false,
+      "automaticCleanupAllowed": false
+    }
+  },
+  "currentBlockers": ["PAY-B01", "PAY-B03", "PAY-B04"],
+  "effects": {
+    "networkRequests": 0,
+    "stagingReads": 0,
+    "stagingMutations": 0,
+    "migrationsApplied": 0,
+    "postMigrationQueriesExecuted": 0,
+    "rollbackMigrationsApplied": 0,
+    "temporaryArtifactsDeleted": 0,
+    "databaseRowsDeleted": 0,
+    "migrationHistoryRowsDeleted": 0,
+    "secretsConfigured": 0,
+    "edgeFunctionsDeployed": 0,
+    "paymentsCreated": 0,
+    "refundsCreated": 0,
+    "payoutsCreated": 0,
+    "productionChanged": false,
+    "pullRequestMerged": false
+  },
+  "nextAction": "PAY-A10 — build inert external-executor adapters and evidence ingestion for the separated PAY-A09 phases; staging remains blocked until a fresh exact phase authorization is supplied."
+}
