@@ -23,7 +23,7 @@ const PROVIDER_ACKNOWLEDGEMENT_STATES = Object.freeze([
   'failed',
   'cancelled'
 ]);
-const SENSITIVE_FIELD_PATTERN = /(^|_)(card(number)?|pan|cvv|cvc|security(code)?|track[12]?|magnetic|raw(card|payment)|full(card|pan))($|_)/i;
+const SENSITIVE_FIELD_PATTERN = /(^|_)(card_?number|card|pan|cvv|cvc|security_?code|track_?[12]?|magnetic|raw_?(card|payment)|full_?(card|pan))($|_)/i;
 
 function normalizePaymentIntent(input) {
   const source = assertPlainObject(input, 'Payment intent input is required.');

@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 1113 arquivos no escopo; 271 referências a localStorage; 78 a sessionStorage; 577 referências mock; 206 referências de rede/Supabase; 35 marcadores de implementação pendente.
+**Evidência estática observada:** 1116 arquivos no escopo; 271 referências a localStorage; 78 a sessionStorage; 577 referências mock; 206 referências de rede/Supabase; 35 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -539,7 +539,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI local; servidor partial; staging staging canary; segurança partial; produção blocked.
 
-**Evidência estática observada:** 1064 arquivos no escopo; 205 referências a localStorage; 70 a sessionStorage; 318 referências mock; 205 referências de rede/Supabase; 19 marcadores de implementação pendente.
+**Evidência estática observada:** 1066 arquivos no escopo; 205 referências a localStorage; 70 a sessionStorage; 318 referências mock; 205 referências de rede/Supabase; 19 marcadores de implementação pendente.
 
 **Páginas:** `anunciar-servico.html`, `pedidos.html`, `orcamento.html`.
 
@@ -718,6 +718,10 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - PAY-A02 makes authenticated UUID financial mutations fail closed when API/server or the synthetic staging sandbox is unavailable; local mutation is restricted to non-UUID fixtures.
 - Payment command execution now follows the declared API then staging sandbox then non-UUID fixture precedence.
 - Wallet, dispute, withdrawal, bank-account and payment-save fallbacks no longer create local financial outcomes for authenticated UUID sessions.
+- PAY-A03 defines a PSP-neutral payment-intent envelope with deterministic request hashing, integer minor-unit amounts, authorize-then-hold semantics and recursive rejection of raw card data.
+- PAY-A03 verifies HMAC-SHA256 signatures against the untouched raw body before JSON parsing, uses constant-time comparison and enforces a bounded timestamp replay window.
+- Verified provider events reuse api_idempotency_keys through a service-role-only ledger keyed by provider and event ID; exact replay is safe, payload drift fails closed and failed events require reconciliation.
+- No PSP, account, signing secret, webhook registration, migration, deploy or real-money evidence was introduced by PAY-A03.
 
 **Bloqueadores:**
 - **PAY-B01 · CRITICAL · external_provider:** No PSP integration or signed webhook authority exists. _(Fase 8)_
@@ -725,9 +729,10 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - **PAY-B04 · HIGH · reconciliation:** No provider reconciliation or mismatch queue is operational. _(Fase 8)_
 
 **Próximas ações:**
-- PAY-A03: define a PSP-neutral payment-intent and signed-webhook event contract on the existing persistent idempotency store.
-- PAY-A04: define provider event ingestion, ordering, replay and terminal-state projection without selecting a PSP.
-- PAY-A05: prepare legal, accounting, reconciliation and synthetic staging evaluation criteria before provider activation.
+- PAY-A04 — define provider-neutral reconciliation, divergence classification, operator queue and controlled replay without selecting or activating a PSP.
+- PAY-B01 — select and contract a PSP, configure signed webhook authority and run provider-specific staging conformance only after explicit authorization.
+- PAY-B03 — approve commercial, fiscal, escrow, refund, dispute and payout rules.
+- PAY-B04 — operationalize reconciliation and divergence handling before production.
 
 **Gate de saída:**
 - No card data is stored by Doke.
@@ -1016,7 +1021,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 1/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 251 arquivos no escopo; 68 referências a localStorage; 8 a sessionStorage; 272 referências mock; 8 referências de rede/Supabase; 25 marcadores de implementação pendente.
+**Evidência estática observada:** 252 arquivos no escopo; 68 referências a localStorage; 8 a sessionStorage; 272 referências mock; 8 referências de rede/Supabase; 25 marcadores de implementação pendente.
 
 **Evidências:**
 - The master plan identifies legal, privacy and commercial decisions as mandatory.
@@ -1076,7 +1081,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2460 arquivos no escopo; 529 referências a localStorage; 151 a sessionStorage; 902 referências mock; 603 referências de rede/Supabase; 89 marcadores de implementação pendente.
+**Evidência estática observada:** 2468 arquivos no escopo; 529 referências a localStorage; 151 a sessionStorage; 902 referências mock; 608 referências de rede/Supabase; 89 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
@@ -1137,4 +1142,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-08-03T08:36:00-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-08-03T09:55:00-03:00._
