@@ -60,7 +60,10 @@ assert(version[2] >= 79, 'MSG-A02 requires matrix 1.3.79 or later');
 const msg = matrix.domains.find(function (domain) { return domain.id === 'MSG-001'; });
 assert(msg);
 assert(msg.evidence.some(function (item) { return item.includes('MSG-A02'); }));
-if (fs.existsSync('config/msg-001-a05-attachment-lifecycle.json')) {
+if (fs.existsSync('config/msg-001-a06-presence-typing-boundary.json')) {
+  assert(msg.nextActions[0].includes('MSG-A07'));
+  assert(!msg.nextActions.some(function (item) { return item.includes('MSG-A06:'); }));
+} else if (fs.existsSync('config/msg-001-a05-attachment-lifecycle.json')) {
   assert(msg.nextActions.length === 3 && msg.nextActions[0].includes('MSG-A06'));
   assert(!msg.nextActions.some(function (item) { return item.includes('MSG-A05:'); }));
 } else if (fs.existsSync('config/msg-001-a03-server-command-boundary.json')) {

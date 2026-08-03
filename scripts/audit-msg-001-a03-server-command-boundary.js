@@ -43,7 +43,10 @@ assert(version[0] === 1 && version[1] === 3 && version[2] >= 80);
 const msg = matrix.domains.find(domain => domain.id === 'MSG-001');
 assert(msg);
 assert(msg.evidence.some(item => item.includes('MSG-A03')));
-if (fs.existsSync('config/msg-001-a05-attachment-lifecycle.json')) {
+if (fs.existsSync('config/msg-001-a06-presence-typing-boundary.json')) {
+  assert(msg.nextActions[0].includes('MSG-A07'));
+  assert(!msg.nextActions.some(item => item.includes('MSG-A06:')));
+} else if (fs.existsSync('config/msg-001-a05-attachment-lifecycle.json')) {
   assert(msg.nextActions.length === 3 && msg.nextActions[0].includes('MSG-A06'));
   assert(!msg.nextActions.some(item => item.includes('MSG-A05:')));
 } else {

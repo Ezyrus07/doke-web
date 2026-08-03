@@ -63,14 +63,27 @@ if (fs.existsSync('config/msg-001-a02-canonical-authority-boundary.json')) {
   ].forEach((fragment) => assert(messagesRepository.includes(fragment), 'Messages repository missing baseline fragment: ' + fragment));
 }
 
-[
-  "var STORAGE_KEY = 'doke.chat.presence.v1'",
-  "var TYPING_KEY = 'doke.chat.typing.v1'",
-  "var READ_KEY = 'doke.chat.reads.v1'",
-  "return { id: 'local-user', name: 'Você' }",
-  'localStorage.getItem',
-  'localStorage.setItem'
-].forEach((fragment) => assert(presence.includes(fragment), 'Presence baseline missing fragment: ' + fragment));
+if (fs.existsSync('config/msg-001-a06-presence-typing-boundary.json')) {
+  const presenceRepository = fs.readFileSync('assets/js/repositories/messages-presence-repository.js', 'utf8');
+  [
+    'private: true',
+    "channel.on('presence'",
+    "event: 'typing'",
+    'DOKE_MESSAGES_PRESENCE_CANONICAL_SESSION_REQUIRED',
+    'localPersistence: false'
+  ].forEach((fragment) => assert(presenceRepository.includes(fragment), 'Presence A06 closure missing fragment: ' + fragment));
+  ['localStorage', 'doke.chat.presence.v1', 'doke.chat.typing.v1', 'doke.chat.reads.v1']
+    .forEach((fragment) => assert(!presence.includes(fragment), 'Presence A06 retained legacy authority: ' + fragment));
+} else {
+  [
+    "var STORAGE_KEY = 'doke.chat.presence.v1'",
+    "var TYPING_KEY = 'doke.chat.typing.v1'",
+    "var READ_KEY = 'doke.chat.reads.v1'",
+    "return { id: 'local-user', name: 'Você' }",
+    'localStorage.getItem',
+    'localStorage.setItem'
+  ].forEach((fragment) => assert(presence.includes(fragment), 'Presence baseline missing fragment: ' + fragment));
+}
 
 [
   'Supabase user client is required for messaging runtime handlers.',
@@ -152,7 +165,10 @@ assert.strictEqual(msg.userFacingAuthority, 'hybrid');
 assert.strictEqual(msg.serverAuthority, 'partial');
 assert.deepStrictEqual(msg.blockers.map((item) => item.id), ['MSG-B02', 'MSG-B03', 'MSG-B04']);
 assert(msg.evidence.some((item) => item.includes('MSG-A01')));
-if (fs.existsSync('config/msg-001-a05-attachment-lifecycle.json')) {
+if (fs.existsSync('config/msg-001-a06-presence-typing-boundary.json')) {
+  assert(msg.nextActions.some((item) => item.includes('MSG-A07')));
+  assert(!msg.nextActions.some((item) => item.includes('MSG-A06:')));
+} else if (fs.existsSync('config/msg-001-a05-attachment-lifecycle.json')) {
   assert(msg.nextActions.some((item) => item.includes('MSG-A06')));
   assert(!msg.nextActions.some((item) => item.includes('MSG-A05:')));
 } else if (fs.existsSync('config/msg-001-a03-server-command-boundary.json')) {

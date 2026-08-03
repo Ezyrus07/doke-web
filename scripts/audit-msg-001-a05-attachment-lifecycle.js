@@ -68,9 +68,16 @@ assert(docs.includes('30 days'));
 
 const msg = matrix.domains.find((domain) => domain.id === 'MSG-001');
 assert(msg);
-assert(matrix.version === '1.3.82');
+const matrixVersion = matrix.version.split('.').map(Number);
+assert(matrixVersion[0] === 1 && matrixVersion[1] === 3 && matrixVersion[2] >= 82);
 assert(msg.evidence.some((item) => item.includes('MSG-A05')));
-assert(msg.nextActions.some((item) => item.includes('MSG-A06')));
+if (fs.existsSync('config/msg-001-a06-presence-typing-boundary.json')) {
+  assert(matrixVersion[2] >= 83);
+  assert(msg.nextActions.some((item) => item.includes('MSG-A07')));
+  assert(!msg.nextActions.some((item) => item.includes('MSG-A06:')));
+} else {
+  assert(msg.nextActions.some((item) => item.includes('MSG-A06')));
+}
 assert(!msg.nextActions.some((item) => item.includes('MSG-A05 —')));
 
 console.log('MSG-A05 attachment lifecycle audit passed.');
