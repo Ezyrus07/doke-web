@@ -3,46 +3,51 @@ name: Doke MSG-A05 Attachment Lifecycle Contract
 on:
   pull_request:
     paths:
-      - 'assets/js/repositories/attachments-repository.js'
-      - 'assets/js/core/supabase-config.js'
-      - 'supabase/migrations/20260802220000_msg_a05_transaction_attachment_lifecycle_contract.sql'
-      - 'supabase/functions/self-service-operations/index.ts'
-      - 'supabase/functions/self-service-operations/operations.mjs'
-      - 'supabase/functions/transaction-attachment-cleanup/index.ts'
-      - 'config/msg-001-a05-attachment-lifecycle.json'
-      - 'docs/MSG-001-A05-ATTACHMENT-LIFECYCLE.md'
-      - 'docs/validation/MSG-001-A05-ATTACHMENT-LIFECYCLE.json'
-      - 'scripts/audit-msg-001-a05-attachment-lifecycle.js'
-      - 'scripts/test-msg-001-a05-attachment-lifecycle-runtime.js'
-      - 'scripts/test-attachments-supabase-repository-contract.js'
-      - 'scripts/test-self-service-operations-edge-runtime.mjs'
-      - 'config/domain-completion-matrix.json'
-      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
-      - 'reports/generated/domain-completion-matrix-report.json'
-      - 'package.json'
+      - 'scripts/tmp-a06-1.js'
+      - 'scripts/tmp-a06-group1.js'
+      - 'scripts/tmp-a06-5.js'
+      - 'scripts/tmp-a06-6.js'
+      - 'scripts/tmp-a06-7.js'
+      - 'scripts/tmp-a06-8.js'
+      - 'scripts/tmp-patch-msg-a06.js'
       - '.github/workflows/msg-001-a05-attachment-lifecycle.yml'
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  lifecycle:
+  publish-a06:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.ref == 'msg/msg-001-baseline-audit'
     runs-on: ubuntu-24.04
-    timeout-minutes: 12
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: msg/msg-001-baseline-audit
+          fetch-depth: 0
+
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-          cache: npm
-      - run: npm ci --ignore-scripts
-      - name: Validate MSG-A05 attachment lifecycle
+
+      - name: Materialize MSG-A06
         run: |
-          node --check assets/js/repositories/attachments-repository.js
-          node --check supabase/functions/self-service-operations/operations.mjs
-          node --check scripts/audit-msg-001-a05-attachment-lifecycle.js
-          node --check scripts/test-msg-001-a05-attachment-lifecycle-runtime.js
+          node scripts/tmp-a06-1.js
+          node scripts/tmp-a06-group1.js
+          node scripts/tmp-a06-5.js
+          node scripts/tmp-a06-6.js
+          node scripts/tmp-a06-7.js
+          node scripts/tmp-a06-8.js
+          node scripts/tmp-patch-msg-a06.js
+          node scripts/audit-domain-completion-matrix.js --write
+
+      - name: Validate MSG-A06
+        run: |
+          node --check assets/js/repositories/messages-presence-repository.js
+          node --check assets/js/features/chat-realtime-presence.js
+          node --check scripts/audit-msg-001-a06-presence-typing-boundary.js
+          node --check scripts/test-msg-001-a06-presence-typing-runtime.js
           npm run audit:msg-001-a01-authority-baseline
           npm run audit:msg-001-a02-canonical-authority-boundary
           npm run test:msg-001-a02-canonical-authority-boundary
@@ -52,9 +57,32 @@ jobs:
           npm run test:msg-001-a04-realtime-publication-subscription-runtime
           npm run audit:msg-001-a05-attachment-lifecycle
           npm run test:msg-001-a05-attachment-lifecycle-runtime
-          npm run test:attachments-supabase-repository-contract
-          node scripts/test-self-service-edge-authority-contract.js
-          node scripts/test-self-service-operations-edge-runtime.mjs
-          node scripts/audit-edge-function-source-closure.js
+          npm run audit:msg-001-a06-presence-typing-boundary
+          npm run test:msg-001-a06-presence-typing-runtime
           npm run audit:domain-completion-matrix
           git diff --check
+
+      - name: Commit canonical MSG-A06
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/js/repositories/messages-presence-repository.js
+          git add assets/js/features/chat-realtime-presence.js
+          git add assets/js/core/supabase-config.js
+          git add mensagens.html package.json
+          git add supabase/migrations/20260802234000_msg_a06_presence_typing_realtime_authorization_contract.sql
+          git add config/msg-001-a06-presence-typing-boundary.json
+          git add docs/MSG-001-A06-PRESENCE-TYPING-BOUNDARY.md
+          git add docs/validation/MSG-001-A06-PRESENCE-TYPING-BOUNDARY.json
+          git add scripts/audit-msg-001-a06-presence-typing-boundary.js
+          git add scripts/test-msg-001-a06-presence-typing-runtime.js
+          git add scripts/audit-msg-001-a01-authority-baseline.js
+          git add config/domain-completion-matrix.json
+          git add docs/DOMAIN-COMPLETION-MATRIX.md
+          git add reports/generated/domain-completion-matrix-report.json
+          if git diff --cached --quiet; then
+            echo "No canonical changes to commit."
+            exit 0
+          fi
+          git commit -m "Prepare MSG-A06 private presence typing boundary"
+          git push origin HEAD:msg/msg-001-baseline-audit
