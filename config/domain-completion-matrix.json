@@ -1,6 +1,6 @@
 {
-  "version": "1.3.85",
-  "updatedAt": "2026-08-03T07:32:00-03:00",
+  "version": "1.3.86",
+  "updatedAt": "2026-08-03T08:04:00-03:00",
   "title": "Doke Domain Completion Matrix",
   "purpose": "Single source of truth for domain maturity, data authority, staging evidence, blockers, dependencies and mandatory completion order.",
   "maturityScale": {
@@ -2038,7 +2038,13 @@
         "supabase/migrations/109_financial_final_permissions.sql",
         "supabase/functions/financial-operations/index.ts",
         "docs/SECURITY-FINANCIAL-RPC-AUTHORITY.md",
-        "supabase/tests/009_financial_rpc_authority_validation.sql"
+        "supabase/tests/009_financial_rpc_authority_validation.sql",
+        "config/pay-001-a01-authority-baseline.json",
+        "docs/PAY-001-A01-AUTHORITY-BASELINE.md",
+        "docs/validation/PAY-001-A01-AUTHORITY-BASELINE.json",
+        "scripts/audit-pay-001-a01-authority-baseline.js",
+        "scripts/test-pay-001-a01-authority-baseline.js",
+        ".github/workflows/pay-001-a01-authority-baseline.yml"
       ],
       "scanRoots": [
         "assets/js/pages/pagamento-profissional.js",
@@ -2063,13 +2069,18 @@
         "test:finance-supabase-repository-contract",
         "test:order-transaction-cycle-contract",
         "test:financial-rpc-authority-contract",
-        "test:financial-operations-edge-runtime"
+        "test:financial-operations-edge-runtime",
+        "audit:pay-001-a01-authority-baseline",
+        "test:pay-001-a01-authority-baseline"
       ],
       "evidence": [
         "Financial contracts, ledger-like tables and local beta-launch E2E exist.",
         "No real PSP, signed webhook, reconciliation job or production card tokenization is connected.",
         "Browser sessions can no longer create payment rows, receivables or escrow releases through legacy RPCs; remote payment materialization now fails closed until signed PSP authority exists.",
-        "Payment, transaction, receipt and receivable tables are authenticated read-only projections with participant RLS and no anon grants."
+        "Payment, transaction, receipt and receivable tables are authenticated read-only projections with participant RLS and no anon grants.",
+        "PAY-A01 freezes the repository-only payment authority split across API, the synthetic Supabase staging sandbox and local browser simulation without claiming real-money authority.",
+        "No PSP, signed webhook verifier, provider event ledger or reconciliation worker is operational; browser and sandbox outcomes are not production payment evidence.",
+        "Authenticated UUID receivable materialization and release remain fail-closed when server/provider authority is unavailable, while legacy local flows remain explicitly inventoried for later removal."
       ],
       "blockers": [
         {
@@ -2095,10 +2106,9 @@
         }
       ],
       "nextActions": [
-        "Select PSP after legal/accounting review.",
-        "Design signed webhook ingestion using the locked server-side idempotency store.",
-        "Make verified provider events the only payment, receivable and escrow authority.",
-        "Build reconciliation, refund and failure recovery."
+        "PAY-A02: establish a canonical authenticated payment authority boundary that rejects local financial mutation fallback for UUID sessions while preserving memory-only fixtures.",
+        "PAY-A03: define a PSP-neutral payment-intent and signed-webhook event contract on the existing persistent idempotency store.",
+        "PAY-A04: prepare provider-selection, legal, accounting, reconciliation and synthetic staging evaluation criteria without selecting or activating a PSP implicitly."
       ],
       "exitCriteria": [
         "No card data is stored by Doke.",

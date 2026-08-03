@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 1107 arquivos no escopo; 269 referências a localStorage; 78 a sessionStorage; 563 referências mock; 206 referências de rede/Supabase; 35 marcadores de implementação pendente.
+**Evidência estática observada:** 1110 arquivos no escopo; 270 referências a localStorage; 78 a sessionStorage; 570 referências mock; 206 referências de rede/Supabase; 35 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -539,7 +539,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI local; servidor partial; staging staging canary; segurança partial; produção blocked.
 
-**Evidência estática observada:** 1060 arquivos no escopo; 204 referências a localStorage; 70 a sessionStorage; 305 referências mock; 205 referências de rede/Supabase; 19 marcadores de implementação pendente.
+**Evidência estática observada:** 1062 arquivos no escopo; 204 referências a localStorage; 70 a sessionStorage; 312 referências mock; 205 referências de rede/Supabase; 19 marcadores de implementação pendente.
 
 **Páginas:** `anunciar-servico.html`, `pedidos.html`, `orcamento.html`.
 
@@ -712,6 +712,9 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - No real PSP, signed webhook, reconciliation job or production card tokenization is connected.
 - Browser sessions can no longer create payment rows, receivables or escrow releases through legacy RPCs; remote payment materialization now fails closed until signed PSP authority exists.
 - Payment, transaction, receipt and receivable tables are authenticated read-only projections with participant RLS and no anon grants.
+- PAY-A01 freezes the repository-only payment authority split across API, the synthetic Supabase staging sandbox and local browser simulation without claiming real-money authority.
+- No PSP, signed webhook verifier, provider event ledger or reconciliation worker is operational; browser and sandbox outcomes are not production payment evidence.
+- Authenticated UUID receivable materialization and release remain fail-closed when server/provider authority is unavailable, while legacy local flows remain explicitly inventoried for later removal.
 
 **Bloqueadores:**
 - **PAY-B01 · CRITICAL · external_provider:** No PSP integration or signed webhook authority exists. _(Fase 8)_
@@ -719,10 +722,9 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - **PAY-B04 · HIGH · reconciliation:** No provider reconciliation or mismatch queue is operational. _(Fase 8)_
 
 **Próximas ações:**
-- Select PSP after legal/accounting review.
-- Design signed webhook ingestion using the locked server-side idempotency store.
-- Make verified provider events the only payment, receivable and escrow authority.
-- Build reconciliation, refund and failure recovery.
+- PAY-A02: establish a canonical authenticated payment authority boundary that rejects local financial mutation fallback for UUID sessions while preserving memory-only fixtures.
+- PAY-A03: define a PSP-neutral payment-intent and signed-webhook event contract on the existing persistent idempotency store.
+- PAY-A04: prepare provider-selection, legal, accounting, reconciliation and synthetic staging evaluation criteria without selecting or activating a PSP implicitly.
 
 **Gate de saída:**
 - No card data is stored by Doke.
@@ -1011,7 +1013,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 1/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 249 arquivos no escopo; 67 referências a localStorage; 8 a sessionStorage; 271 referências mock; 8 referências de rede/Supabase; 25 marcadores de implementação pendente.
+**Evidência estática observada:** 250 arquivos no escopo; 68 referências a localStorage; 8 a sessionStorage; 271 referências mock; 8 referências de rede/Supabase; 25 marcadores de implementação pendente.
 
 **Evidências:**
 - The master plan identifies legal, privacy and commercial decisions as mandatory.
@@ -1071,7 +1073,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2452 arquivos no escopo; 527 referências a localStorage; 151 a sessionStorage; 887 referências mock; 603 referências de rede/Supabase; 89 marcadores de implementação pendente.
+**Evidência estática observada:** 2457 arquivos no escopo; 528 referências a localStorage; 151 a sessionStorage; 895 referências mock; 603 referências de rede/Supabase; 89 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
@@ -1132,4 +1134,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-08-03T07:32:00-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-08-03T08:04:00-03:00._
