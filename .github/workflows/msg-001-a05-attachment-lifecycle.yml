@@ -3,29 +3,46 @@ name: Doke MSG-A05 Attachment Lifecycle Contract
 on:
   pull_request:
     paths:
+      - 'assets/js/repositories/attachments-repository.js'
+      - 'assets/js/core/supabase-config.js'
+      - 'supabase/migrations/20260802220000_msg_a05_transaction_attachment_lifecycle_contract.sql'
+      - 'supabase/functions/self-service-operations/index.ts'
+      - 'supabase/functions/self-service-operations/operations.mjs'
+      - 'supabase/functions/transaction-attachment-cleanup/index.ts'
+      - 'config/msg-001-a05-attachment-lifecycle.json'
+      - 'docs/MSG-001-A05-ATTACHMENT-LIFECYCLE.md'
+      - 'docs/validation/MSG-001-A05-ATTACHMENT-LIFECYCLE.json'
+      - 'scripts/audit-msg-001-a05-attachment-lifecycle.js'
+      - 'scripts/test-msg-001-a05-attachment-lifecycle-runtime.js'
+      - 'package.json'
+      - 'config/domain-completion-matrix.json'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
       - '.github/workflows/msg-001-a05-attachment-lifecycle.yml'
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  regenerate-matrix:
-    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.ref == 'msg/msg-001-baseline-audit'
+  contract:
     runs-on: ubuntu-24.04
-    timeout-minutes: 12
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: msg/msg-001-baseline-audit
-          fetch-depth: 0
+
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      - name: Regenerate matrix after temporary publisher cleanup
-        run: node scripts/audit-domain-completion-matrix.js --write
-      - name: Validate cumulative MSG contracts
+          cache: npm
+
+      - run: npm ci --ignore-scripts
+
+      - name: Validate MSG-A05 attachment lifecycle
         run: |
+          node --check assets/js/repositories/attachments-repository.js
+          node --check scripts/audit-msg-001-a05-attachment-lifecycle.js
+          node --check scripts/test-msg-001-a05-attachment-lifecycle-runtime.js
           npm run audit:msg-001-a01-authority-baseline
           npm run audit:msg-001-a02-canonical-authority-boundary
           npm run test:msg-001-a02-canonical-authority-boundary
@@ -35,19 +52,11 @@ jobs:
           npm run test:msg-001-a04-realtime-publication-subscription-runtime
           npm run audit:msg-001-a05-attachment-lifecycle
           npm run test:msg-001-a05-attachment-lifecycle-runtime
-          npm run audit:msg-001-a06-presence-typing-boundary
-          npm run test:msg-001-a06-presence-typing-runtime
+          npm run audit:messages-api-contract
+          npm run test:messages-supabase-repository-contract
+          npm run test:attachments-supabase-repository-contract
+          npm run test:self-service-operations-authority-contract
+          npm run test:self-service-operations-authority-runtime
+          npm run audit:edge-functions-source-closure
           npm run audit:domain-completion-matrix
           git diff --check
-      - name: Commit regenerated matrix documents
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/DOMAIN-COMPLETION-MATRIX.md
-          git add -f reports/generated/domain-completion-matrix-report.json
-          if git diff --cached --quiet; then
-            echo "Matrix documents already current."
-            exit 0
-          fi
-          git commit -m "Regenerate matrix after MSG-A06 cleanup"
-          git push origin HEAD:msg/msg-001-baseline-audit
