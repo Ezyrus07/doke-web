@@ -2,6 +2,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const { isNumericSemanticVersionAtLeast } = require('./lib/semantic-version');
 
 const root = path.resolve(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
@@ -54,7 +55,7 @@ assert(migration.includes("extension in ('presence', 'broadcast')"), 'extension 
 assert(migration.includes('c.client_id = auth.uid() or c.professional_id = auth.uid()'), 'participant proof missing');
 assert(migration.includes("'^doke:conversation:"), 'topic format guard missing');
 
-assert(['1.3.83', '1.3.84', '1.3.85'].includes(matrix.version), 'matrix version must include A06, A07 or A08');
+assert(isNumericSemanticVersionAtLeast(matrix.version, '1.3.83'), 'matrix version must be at least 1.3.83');
 assert(msg, 'MSG-001 matrix domain missing');
 [
   'assets/js/repositories/messages-presence-repository.js',

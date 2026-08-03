@@ -1,6 +1,7 @@
 'use strict';
 const fs = require('node:fs');
 const path = require('node:path');
+const { isNumericSemanticVersionAtLeast } = require('./lib/semantic-version');
 const root = path.resolve(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 const assert = (condition, message) => { if (!condition) throw new Error('MSG-A07 audit failed: ' + message); };
@@ -33,7 +34,7 @@ assert(backend.includes('async function removeMessage'), 'server remove command 
 assert(backend.includes("status: 'removed'"), 'remove tombstone missing');
 assert(handlers.includes('createMessagingCommandHandler'), 'ack wrapper missing');
 assert(handlers.includes("status: replayed ? 'replayed' : 'accepted'"), 'ack states missing');
-assert(['1.3.84', '1.3.85'].includes(matrix.version), 'matrix version must include A07 or A08');
+assert(isNumericSemanticVersionAtLeast(matrix.version, '1.3.84'), 'matrix version must be at least 1.3.84');
 assert(msg && msg.tests.includes('audit:msg-001-a07-command-reliability'), 'matrix audit');
 assert(msg.tests.includes('test:msg-001-a07-command-reliability-runtime'), 'matrix runtime');
 assert(workflow.includes('permissions:\n  contents: read'), 'workflow read-only');
