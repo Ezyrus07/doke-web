@@ -27,7 +27,7 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      - name: Inspect and extract closed PAY-A09 payload
+      - name: Extract verified closed payload
         run: |
           test -s .pay-a09-bootstrap/payload.b64
           base64 --decode .pay-a09-bootstrap/payload.b64 > /tmp/pay-a09.tar.gz
@@ -35,10 +35,7 @@ jobs:
           gzip -t /tmp/pay-a09.tar.gz
           tar -tzf /tmp/pay-a09.tar.gz > /tmp/pay-a09-files.txt
           test -s /tmp/pay-a09-files.txt
-          if grep -E '(^/|(^|/)\.\.(/|$)|(^|/)\.git(/|$))' /tmp/pay-a09-files.txt; then
-            echo 'Unsafe archive path detected.' >&2
-            exit 1
-          fi
+          if grep -E '(^/|(^|/)\.\.(/|$)|(^|/)\.git(/|$))' /tmp/pay-a09-files.txt; then exit 1; fi
           while IFS= read -r file; do
             case "$file" in
               backend/modules/payments/payment-reconciliation-staging-handoff.js|\
@@ -56,19 +53,15 @@ jobs:
           from pathlib import Path
           path = Path('scripts/audit-pay-001-a09-deployment-inspection-handoff.js')
           source = path.read_text(encoding='utf-8')
-          before = "'post-migration'"
-          after = "'pós-migration'"
-          if before not in source:
+          if "'post-migration'" not in source:
               raise SystemExit('Expected PAY-A09 documentation token was not found')
-          path.write_text(source.replace(before, after, 1), encoding='utf-8')
+          path.write_text(source.replace("'post-migration'", "'pós-migration'", 1), encoding='utf-8')
           PY
-      - name: Patch canonical package, matrix and cumulative gates
-        run: node scripts/pay-001-a09-publish.js
-      - run: npm ci --ignore-scripts
-      - name: Generate canonical matrix derivatives
-        run: npm run write:domain-completion-matrix
-      - name: Validate PAY-A09 and cumulative contracts
+      - name: Patch and validate repository contracts
         run: |
+          node scripts/pay-001-a09-publish.js
+          npm ci --ignore-scripts
+          npm run write:domain-completion-matrix
           node --check backend/modules/payments/payment-reconciliation-staging-handoff.js
           node --check scripts/audit-pay-001-a09-deployment-inspection-handoff.js
           node --check scripts/test-pay-001-a09-deployment-inspection-handoff.js
@@ -106,14 +99,11 @@ jobs:
           npm run audit:domain-completion-matrix
           node -e "const m=require('./config/domain-completion-matrix.json'); if(m.version!=='1.3.94') throw new Error('PAY-A09 matrix must be 1.3.94')"
           git diff --check
-      - name: Verify repository-only safety boundary
+      - name: Verify bounded repository-only changes
         run: |
           test -f docs/validation/PAY-001-A09-DEPLOYMENT-INSPECTION-HANDOFF.json
           grep -q $'permissions:\n  contents: read' .github/workflows/pay-001-a09-deployment-inspection-handoff.yml
-          if grep -E 'contents: write|secrets\.|SUPABASE_ACCESS_TOKEN|SUPABASE_DB_PASSWORD|(^|[[:space:]])psql[[:space:]]|(^|[[:space:]])curl[[:space:]]|supabase (db push|migration up|functions deploy)|git push|--execute' .github/workflows/pay-001-a09-deployment-inspection-handoff.yml; then
-            echo 'Permanent PAY-A09 workflow contains prohibited capability.' >&2
-            exit 1
-          fi
+          if grep -E 'contents: write|secrets\.|SUPABASE_ACCESS_TOKEN|SUPABASE_DB_PASSWORD|(^|[[:space:]])psql[[:space:]]|(^|[[:space:]])curl[[:space:]]|supabase (db push|migration up|functions deploy)|git push|--execute' .github/workflows/pay-001-a09-deployment-inspection-handoff.yml; then exit 1; fi
           git diff --quiet -- .github/workflows
           rm -f scripts/pay-001-a09-publish.js
           changed="$(git status --short --untracked-files=all | sed -E 's/^.. //' | sort)"
@@ -131,6 +121,7 @@ jobs:
               package.json|\
               config/domain-completion-matrix.json|\
               docs/DOMAIN-COMPLETION-MATRIX.md|\
+              reports/generated/domain-completion-matrix-report.json|\
               .pay-a09-bootstrap/payload.b64) ;;
               *) echo "Unexpected changed path: $file" >&2; exit 1 ;;
             esac
