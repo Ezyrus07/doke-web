@@ -7,6 +7,12 @@ on:
     paths:
       - '.github/tmp/pay-a01-matrix-generator.js'
       - '.github/workflows/pay-001-a01-baseline-publisher.yml'
+  pull_request:
+    branches:
+      - msg/msg-001-baseline-audit
+    paths:
+      - '.github/tmp/pay-a01-matrix-generator.js'
+      - '.github/workflows/pay-001-a01-baseline-publisher.yml'
   workflow_dispatch:
 
 permissions:
@@ -14,6 +20,7 @@ permissions:
 
 jobs:
   publish:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.ref == 'pay/pay-001-baseline-audit'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
