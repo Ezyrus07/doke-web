@@ -1,0 +1,55 @@
+name: Doke PAY-A01 Financial Authority Baseline
+
+on:
+  pull_request:
+    paths:
+      - 'assets/js/services/payment-service.js'
+      - 'assets/js/repositories/finance-repository.js'
+      - 'assets/js/core/supabase-config.js'
+      - 'backend/modules/wallet/**'
+      - 'supabase/functions/financial-operations/**'
+      - 'supabase/migrations/014_finance_wallet_shared_runtime.sql'
+      - 'supabase/migrations/106_financial_table_permission_authority.sql'
+      - 'supabase/migrations/107_financial_rpc_authority.sql'
+      - 'supabase/migrations/108_financial_operator_authority.sql'
+      - 'supabase/migrations/109_financial_final_permissions.sql'
+      - 'config/pay-001-a01-authority-baseline.json'
+      - 'docs/PAY-001-A01-AUTHORITY-BASELINE.md'
+      - 'docs/validation/PAY-001-A01-AUTHORITY-BASELINE.json'
+      - 'scripts/audit-pay-001-a01-authority-baseline.js'
+      - 'scripts/test-pay-001-a01-authority-baseline.js'
+      - 'config/domain-completion-matrix.json'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+      - 'package.json'
+      - '.github/workflows/pay-001-a01-authority-baseline.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  baseline:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Validate PAY-A01 financial authority baseline
+        run: |
+          node --check scripts/audit-pay-001-a01-authority-baseline.js
+          node --check scripts/test-pay-001-a01-authority-baseline.js
+          npm run audit:pay-001-a01-authority-baseline
+          npm run test:pay-001-a01-authority-baseline
+          npm run test:order-charge-creation-contract
+          npm run test:order-payment-hold-contract
+          npm run test:order-transaction-cycle-contract
+          npm run test:finance-supabase-repository-contract
+          npm run test:financial-rpc-authority-contract
+          npm run test:financial-operations-edge-runtime
+          npm run audit:domain-completion-matrix
+          git diff --check
