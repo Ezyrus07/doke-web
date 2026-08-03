@@ -1,7 +1,7 @@
 /* Doke Attachments Repository
-   Responsibility: secure persistence boundary for order and conversation attachments.
-   Files are private in Supabase Storage and exposed through short-lived signed URLs.
-   Local fallback preserves small previews and file metadata without blocking the product. */
+   Responsibility: private transaction attachment boundary.
+   UUID sessions use server-owned upload intents and removal commands.
+   Non-UUID fixtures remain memory-only and never become remote authority. */
 (function () {
   'use strict';
 
@@ -13,8 +13,8 @@
   var PROVIDER_ATTRIBUTE = 'data-doke-attachments-provider';
   var MAX_FILE_SIZE = 10 * 1024 * 1024;
   var MAX_FILES = 8;
-  var LOCAL_INLINE_LIMIT = 160000;
-  var SIGNED_URL_TTL = 900;
+  var FIXTURE_INLINE_LIMIT = 160000;
+  var DEFAULT_SIGNED_URL_TTL = 300;
   var ALLOWED_TYPES = Object.freeze([
     'image/jpeg',
     'image/png',
@@ -47,16 +47,41 @@
     return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(normalizeText(value));
   }
 
-  function setProviderState(provider) {
-    try { document.documentElement.setAttribute(PROVIDER_ATTRIBUTE, provider); }
-    catch (error) { /* test environments may not expose documentElement */ }
+  function getSessionUser() {
+    if (Doke.session && typeof Doke.session.getCurrentUser === 'function') {
+      var current = Doke.session.getCurrentUser();
+      if (current) return current;
+    }
+    try {
+      var raw = root.localStorage && root.localStorage.getItem('doke.auth.session.v1');
+      var session = raw ? JSON.parse(raw) : null;
+      return session && session.user || null;
+    } catch (error) {
+      return null;
+    }
   }
 
-  function warnRemote(error, context) {
-    lastRemoteError = error || new Error('Falha desconhecida no armazenamento de anexos.');
-    setProviderState('local-fallback');
+  function getAuthorityMode() {
+    var user = getSessionUser();
+    return user && isUuid(user.id) ? 'remote-server-owned' : 'fixture-memory';
+  }
+
+  function setProviderState(provider) {
+    try { document.documentElement.setAttribute(PROVIDER_ATTRIBUTE, provider); }
+    catch (error) {}
+  }
+
+  function createAuthorityError(code, message) {
+    var error = new Error(message || 'A autoridade de anexos está indisponível.');
+    error.code = code || 'DOKE_ATTACHMENTS_SERVER_AUTHORITY_UNAVAILABLE';
+    return error;
+  }
+
+  function recordRemoteError(error, context) {
+    lastRemoteError = error || createAuthorityError();
+    setProviderState(getAuthorityMode() === 'remote-server-owned' ? 'server-error' : 'fixture-memory');
     if (root.console && typeof root.console.warn === 'function') {
-      root.console.warn('[Doke attachments repository] Supabase Storage indisponível em ' + context + '. Usando fallback local.', error);
+      root.console.warn('[Doke attachments repository] Falha em ' + context + '. Operação encerrada em fail-closed.', error);
     }
   }
 
@@ -66,53 +91,40 @@
     var config = root.DOKE_SUPABASE_CONFIG || {};
     var sdk = root.supabase;
     if (!config.enabled || config.attachmentsEnabled === false || !config.url || !config.anonKey || !sdk || typeof sdk.createClient !== 'function') {
-      setProviderState('local');
+      setProviderState(getAuthorityMode() === 'remote-server-owned' ? 'server-unavailable' : 'fixture-memory');
       return null;
     }
     try {
       supabaseClient = root.DokeSupabase && typeof root.DokeSupabase.getClient === 'function'
         ? root.DokeSupabase.getClient()
         : sdk.createClient(config.url, config.anonKey);
-      setProviderState('supabase');
+      setProviderState('supabase-private');
     } catch (error) {
-      warnRemote(error, 'bootstrap');
+      recordRemoteError(error, 'bootstrap');
       supabaseClient = null;
     }
     return supabaseClient;
   }
 
-  function getCurrentSupabaseUser(client) {
-    if (!client || !client.auth || typeof client.auth.getSession !== 'function') return Promise.resolve(null);
-    return Promise.resolve(client.auth.getSession()).then(function (result) {
-      return result && result.data && result.data.session && result.data.session.user || null;
-    });
+  function requireRemoteBoundary() {
+    var config = root.DOKE_SUPABASE_CONFIG || {};
+    if (config.attachmentLifecycleEnabled !== true) {
+      throw createAuthorityError(
+        'DOKE_ATTACHMENTS_LIFECYCLE_NOT_ACTIVATED',
+        'O lifecycle server-owned de anexos ainda não foi ativado.'
+      );
+    }
+    var client = getSupabaseClient();
+    if (!client) throw createAuthorityError();
+    if (!root.DokeSupabase || typeof root.DokeSupabase.invokeSelfService !== 'function') {
+      throw createAuthorityError();
+    }
+    return client;
   }
 
   function normalizeSource(value) {
     var source = normalizeText(value).toLowerCase();
     return source === 'message' || source === 'conversation' ? 'conversation' : 'order';
-  }
-
-  function getResourceTable(source) {
-    return normalizeSource(source) === 'conversation' ? 'conversations' : 'orders';
-  }
-
-  function getResourceFolder(source) {
-    return normalizeSource(source) === 'conversation' ? 'conversations' : 'orders';
-  }
-
-  function sanitizeFileName(value) {
-    var input = normalizeText(value || 'anexo');
-    var extensionMatch = input.match(/(\.[a-z0-9]{1,10})$/i);
-    var extension = extensionMatch ? extensionMatch[1].toLowerCase() : '';
-    var base = extension ? input.slice(0, -extension.length) : input;
-    base = base
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/[^a-z0-9_-]+/gi, '-')
-      .replace(/^-+|-+$/g, '')
-      .slice(0, 80) || 'anexo';
-    return base + extension;
   }
 
   function createAttachmentId() {
@@ -128,37 +140,18 @@
   }
 
   function normalizeAttachment(raw) {
-    if (!raw) return null;
-    if (typeof raw === 'string') {
-      return {
-        id: createAttachmentId(),
-        name: raw,
-        type: '',
-        size: 0,
-        bucket: '',
-        path: '',
-        source: '',
-        resourceId: '',
-        uploadedBy: '',
-        createdAt: '',
-        url: '',
-        downloadUrl: '',
-        previewable: false,
-        syncStatus: 'local'
-      };
-    }
-    if (typeof raw !== 'object') return null;
-
+    if (!raw || typeof raw !== 'object') return null;
     var type = normalizeText(raw.type || raw.mimeType || raw.contentType || '');
+    var pathValue = normalizeText(raw.path || raw.storagePath || raw.objectPath || '');
     var url = normalizeText(raw.url || raw.signedUrl || raw.dataUrl || raw.preview || '');
-    var path = normalizeText(raw.path || raw.storagePath || raw.objectPath || '');
     return {
-      id: normalizeText(raw.id || raw.attachmentId) || createAttachmentId(),
+      id: normalizeText(raw.id || raw.attachmentId || raw.lifecycleId) || createAttachmentId(),
+      lifecycleId: normalizeText(raw.lifecycleId || raw.attachmentId || raw.id || ''),
       name: normalizeText(raw.name || raw.filename || raw.originalName || 'anexo'),
       type: type,
       size: Number(raw.size || raw.sizeBytes) || 0,
-      bucket: normalizeText(raw.bucket) || (path ? BUCKET : ''),
-      path: path,
+      bucket: normalizeText(raw.bucket) || (pathValue ? BUCKET : ''),
+      path: pathValue,
       source: normalizeSource(raw.source || raw.kind || ''),
       resourceId: normalizeText(raw.resourceId || raw.orderId || raw.conversationId || ''),
       uploadedBy: normalizeText(raw.uploadedBy || raw.uploaderId || ''),
@@ -167,7 +160,8 @@
       dataUrl: /^data:/i.test(url) ? url : normalizeText(raw.dataUrl || ''),
       downloadUrl: normalizeText(raw.downloadUrl || ''),
       previewable: raw.previewable === true || (Boolean(url) && isPreviewableType(type)),
-      syncStatus: normalizeText(raw.syncStatus) || (path ? 'synced' : 'local'),
+      syncStatus: normalizeText(raw.syncStatus) || (pathValue ? 'synced' : 'fixture-memory'),
+      retentionState: normalizeText(raw.retentionState || raw.lifecycleStatus || ''),
       tooLarge: raw.tooLarge === true,
       error: normalizeText(raw.error || '')
     };
@@ -183,18 +177,19 @@
   function toPersistedMetadata(items) {
     return normalizeAttachments(items).map(function (item) {
       var persisted = Object.assign({}, item);
+      persisted.url = '';
+      persisted.downloadUrl = '';
+      persisted.previewable = isPreviewableType(persisted.type);
+      persisted.error = '';
+      persisted.tooLarge = false;
       if (persisted.path) {
-        persisted.url = '';
         persisted.dataUrl = '';
-        persisted.downloadUrl = '';
-        persisted.previewable = isPreviewableType(persisted.type);
         persisted.syncStatus = 'synced';
-        persisted.tooLarge = false;
-        persisted.error = '';
-      } else {
-        persisted.url = /^data:/i.test(persisted.dataUrl || persisted.url || '') ? (persisted.dataUrl || persisted.url) : '';
+      } else if (persisted.syncStatus === 'fixture-memory') {
+        persisted.url = /^data:/i.test(item.dataUrl || item.url || '') ? (item.dataUrl || item.url) : '';
         persisted.dataUrl = persisted.url;
-        persisted.downloadUrl = '';
+      } else {
+        persisted.dataUrl = '';
       }
       return persisted;
     });
@@ -216,7 +211,7 @@
 
   function fileToDataUrl(file) {
     return new Promise(function (resolve) {
-      if (!file || Number(file.size || 0) > LOCAL_INLINE_LIMIT || typeof FileReader !== 'function') {
+      if (!file || Number(file.size || 0) > FIXTURE_INLINE_LIMIT || typeof FileReader !== 'function') {
         resolve('');
         return;
       }
@@ -227,7 +222,7 @@
     });
   }
 
-  function createLocalAttachments(files, source, resourceId, reason) {
+  function createFixtureAttachments(files, source, resourceId) {
     var normalizedSource = normalizeSource(source);
     return Promise.all(validateFiles(files).map(function (file) {
       return fileToDataUrl(file).then(function (dataUrl) {
@@ -241,65 +236,34 @@
           url: dataUrl,
           dataUrl: dataUrl,
           previewable: Boolean(dataUrl) && isPreviewableType(file.type),
-          syncStatus: 'pending',
-          tooLarge: !dataUrl && Number(file.size || 0) > LOCAL_INLINE_LIMIT,
-          error: reason ? normalizeText(reason.message || reason) : ''
+          syncStatus: 'fixture-memory',
+          tooLarge: !dataUrl && Number(file.size || 0) > FIXTURE_INLINE_LIMIT
         });
       });
     }));
   }
 
-  function dataUrlToBlob(dataUrl) {
-    var raw = normalizeText(dataUrl);
-    if (!/^data:/i.test(raw)) return null;
-    var parts = raw.split(',');
-    if (parts.length < 2) return null;
-    var header = parts[0];
-    var mimeMatch = header.match(/^data:([^;,]+)/i);
-    var mime = mimeMatch ? mimeMatch[1] : 'application/octet-stream';
-    var binary;
-    try { binary = header.indexOf(';base64') !== -1 ? atob(parts[1]) : decodeURIComponent(parts[1]); }
-    catch (error) { return null; }
-    var bytes = new Uint8Array(binary.length);
-    for (var index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
-    return new Blob([bytes], { type: mime });
-  }
-
-  function resolveRemoteResourceId(client, source, resourceId) {
-    var id = normalizeText(resourceId);
-    if (!id) return Promise.reject(new Error('Recurso do anexo não informado.'));
-    if (isUuid(id)) return Promise.resolve(id);
-    return client.from(getResourceTable(source)).select('id').eq('external_id', id).maybeSingle().then(function (result) {
-      if (result.error) throw result.error;
-      if (!result.data || !result.data.id) throw new Error('O recurso ainda não foi sincronizado no Supabase.');
-      return result.data.id;
-    });
-  }
-
-  function createObjectPath(source, remoteResourceId, userId, fileName) {
-    return [
-      getResourceFolder(source),
-      remoteResourceId,
-      userId,
-      Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8) + '-' + sanitizeFileName(fileName)
-    ].join('/');
+  function signedUrlTtl() {
+    var config = root.DOKE_SUPABASE_CONFIG || {};
+    var configured = Number(config.attachmentSignedUrlTtlSeconds);
+    if (!Number.isFinite(configured) || configured < 60 || configured > 900) return DEFAULT_SIGNED_URL_TTL;
+    return configured;
   }
 
   function createSignedUrls(client, attachment, options) {
-    options = options || {};
     var normalized = normalizeAttachment(attachment);
     if (!normalized || !normalized.path || !client || !client.storage) return Promise.resolve(normalized);
     var bucket = client.storage.from(normalized.bucket || BUCKET);
-    var ttl = Number(options.expiresIn) || SIGNED_URL_TTL;
-    var previewPromise = bucket.createSignedUrl(normalized.path, ttl).then(function (result) {
+    var ttl = Number(options && options.expiresIn) || signedUrlTtl();
+    var previewTask = bucket.createSignedUrl(normalized.path, ttl).then(function (result) {
       if (result.error) throw result.error;
       return result.data && result.data.signedUrl || '';
     });
-    var downloadPromise = bucket.createSignedUrl(normalized.path, ttl, { download: normalized.name }).then(function (result) {
+    var downloadTask = bucket.createSignedUrl(normalized.path, ttl, { download: normalized.name }).then(function (result) {
       if (result.error) throw result.error;
       return result.data && result.data.signedUrl || '';
-    }).catch(function () { return ''; });
-    return Promise.all([previewPromise, downloadPromise]).then(function (urls) {
+    });
+    return Promise.all([previewTask, downloadTask]).then(function (urls) {
       return normalizeAttachment(Object.assign({}, normalized, {
         url: urls[0],
         downloadUrl: urls[1] || urls[0],
@@ -309,124 +273,166 @@
     });
   }
 
-  function uploadBlob(client, user, source, resourceId, remoteResourceId, blob, metadata) {
-    var name = normalizeText(metadata && metadata.name || 'anexo');
-    var type = normalizeText(metadata && metadata.type || blob && blob.type || 'application/octet-stream');
-    var size = Number(metadata && metadata.size || blob && blob.size || 0);
-    var objectPath = createObjectPath(source, remoteResourceId, user.id, name);
-    var bucket = client.storage.from(BUCKET);
-    return bucket.upload(objectPath, blob, {
-      upsert: false,
-      contentType: type,
-      cacheControl: '3600'
+  function invokeAttachmentAction(action, params) {
+    try {
+      requireRemoteBoundary();
+    } catch (error) {
+      return Promise.reject(error);
+    }
+    return Promise.resolve(root.DokeSupabase.invokeSelfService(action, params || {})).catch(function (error) {
+      recordRemoteError(error, action);
+      throw error;
+    });
+  }
+
+  function prepareRemoteUploads(source, resourceId, files) {
+    return invokeAttachmentAction('prepare_transaction_attachment_uploads', {
+      p_resource_kind: normalizeSource(source),
+      p_resource_ref: normalizeText(resourceId),
+      p_files: files.map(function (file) {
+        return {
+          name: normalizeText(file.name),
+          type: normalizeText(file.type),
+          size: Number(file.size || 0)
+        };
+      })
     }).then(function (result) {
-      if (result.error) throw result.error;
-      return createSignedUrls(client, {
-        id: normalizeText(metadata && metadata.id) || createAttachmentId(),
-        name: name,
-        type: type,
-        size: size,
-        bucket: BUCKET,
-        path: objectPath,
-        source: source,
-        resourceId: resourceId,
-        uploadedBy: user.id,
-        createdAt: metadata && metadata.createdAt || nowIso(),
-        syncStatus: 'synced'
+      var uploads = result && Array.isArray(result.uploads) ? result.uploads : [];
+      if (uploads.length !== files.length) {
+        throw createAuthorityError('DOKE_ATTACHMENTS_UPLOAD_INTENT_INCOMPLETE', 'O servidor não preparou todos os anexos.');
+      }
+      return uploads;
+    });
+  }
+
+  function abandonPreparedUploads(uploads) {
+    return Promise.all((uploads || []).map(function (upload) {
+      var id = normalizeText(upload && (upload.attachmentId || upload.lifecycleId || upload.id));
+      if (!id) return Promise.resolve(false);
+      return invokeAttachmentAction('remove_transaction_attachment', {
+        p_attachment_id: id,
+        p_reason: 'upload_failed'
+      }).then(function () { return true; }).catch(function () { return false; });
+    }));
+  }
+
+  function uploadRemoteFiles(source, resourceId, files) {
+    var client;
+    try { client = requireRemoteBoundary(); }
+    catch (error) { return Promise.reject(error); }
+
+    var prepared = [];
+    return prepareRemoteUploads(source, resourceId, files).then(function (uploads) {
+      prepared = uploads;
+      return uploads.reduce(function (chain, upload, index) {
+        return chain.then(function (completed) {
+          var file = files[index];
+          var bucketName = normalizeText(upload.bucket) || BUCKET;
+          var objectPath = normalizeText(upload.path);
+          var token = normalizeText(upload.token);
+          if (!objectPath || !token) throw createAuthorityError('DOKE_ATTACHMENTS_SIGNED_UPLOAD_INVALID');
+          var bucket = client.storage.from(bucketName);
+          if (!bucket || typeof bucket.uploadToSignedUrl !== 'function') {
+            throw createAuthorityError('DOKE_ATTACHMENTS_SIGNED_UPLOAD_UNAVAILABLE');
+          }
+          return Promise.resolve(bucket.uploadToSignedUrl(objectPath, token, file, {
+            contentType: normalizeText(file.type),
+            cacheControl: '3600'
+          })).then(function (result) {
+            if (result && result.error) throw result.error;
+            completed.push(upload);
+            return completed;
+          });
+        });
+      }, Promise.resolve([]));
+    }).then(function () {
+      return invokeAttachmentAction('confirm_transaction_attachment_uploads', {
+        p_attachment_ids: prepared.map(function (item) {
+          return normalizeText(item.attachmentId || item.lifecycleId || item.id);
+        })
       });
+    }).then(function (result) {
+      var items = result && Array.isArray(result.items) ? result.items : [];
+      if (items.length !== files.length) {
+        throw createAuthorityError('DOKE_ATTACHMENTS_CONFIRMATION_INCOMPLETE');
+      }
+      return Promise.all(items.map(function (item) {
+        return createSignedUrls(client, normalizeAttachment({
+          id: item.attachmentId || item.id,
+          lifecycleId: item.attachmentId || item.id,
+          name: item.name,
+          type: item.type,
+          size: item.size,
+          bucket: item.bucket || BUCKET,
+          path: item.path,
+          source: source,
+          resourceId: resourceId,
+          uploadedBy: item.uploadedBy,
+          retentionState: item.status || 'uploaded',
+          syncStatus: 'synced'
+        }));
+      }));
+    }).then(function (items) {
+      lastRemoteError = null;
+      setProviderState('server-owned');
+      return items;
+    }).catch(function (error) {
+      recordRemoteError(error, 'upload');
+      return abandonPreparedUploads(prepared).then(function () { throw error; });
     });
   }
 
   function uploadFiles(source, resourceId, files, options) {
-    options = options || {};
     var list;
     try { list = validateFiles(files, options); }
     catch (error) { return Promise.reject(error); }
     if (!list.length) return Promise.resolve([]);
-
-    var client = getSupabaseClient();
-    if (!client) return createLocalAttachments(list, source, resourceId);
-
-    return getCurrentSupabaseUser(client).then(function (user) {
-      if (!user || !isUuid(user.id)) throw new Error('Faça login com uma conta Supabase para enviar anexos.');
-      return resolveRemoteResourceId(client, source, resourceId).then(function (remoteResourceId) {
-        return list.reduce(function (chain, file) {
-          return chain.then(function (uploaded) {
-            return uploadBlob(client, user, normalizeSource(source), resourceId, remoteResourceId, file, {
-              name: file.name,
-              type: file.type,
-              size: file.size
-            }).then(function (attachment) {
-              uploaded.push(attachment);
-              return uploaded;
-            });
-          });
-        }, Promise.resolve([]));
-      });
-    }).then(function (items) {
-      setProviderState('supabase');
-      return items;
-    }).catch(function (error) {
-      warnRemote(error, 'upload');
-      return createLocalAttachments(list, source, resourceId, error);
-    });
+    if (getAuthorityMode() === 'fixture-memory') {
+      setProviderState('fixture-memory');
+      return createFixtureAttachments(list, source, resourceId);
+    }
+    return uploadRemoteFiles(normalizeSource(source), resourceId, list);
   }
 
   function syncPending(source, resourceId, attachments) {
     var items = normalizeAttachments(attachments);
-    var pending = items.filter(function (item) {
-      return item.syncStatus !== 'synced' && /^data:/i.test(item.dataUrl || item.url || '');
-    });
-    if (!pending.length || !getSupabaseClient()) return Promise.resolve(items);
-
-    var client = getSupabaseClient();
-    return getCurrentSupabaseUser(client).then(function (user) {
-      if (!user || !isUuid(user.id)) return items;
-      return resolveRemoteResourceId(client, source, resourceId).then(function (remoteResourceId) {
-        var syncedById = Object.create(null);
-        return pending.reduce(function (chain, item) {
-          return chain.then(function () {
-            var blob = dataUrlToBlob(item.dataUrl || item.url);
-            if (!blob) return null;
-            return uploadBlob(client, user, normalizeSource(source), resourceId, remoteResourceId, blob, item).then(function (synced) {
-              syncedById[item.id] = synced;
-              return synced;
-            });
-          });
-        }, Promise.resolve()).then(function () {
-          return items.map(function (item) { return syncedById[item.id] || item; });
-        });
-      });
-    }).catch(function (error) {
-      warnRemote(error, 'sincronização pendente');
-      return items;
-    });
+    if (getAuthorityMode() === 'fixture-memory') return Promise.resolve(items);
+    if (items.some(function (item) { return item.syncStatus !== 'synced' || !item.path; })) {
+      return Promise.reject(createAuthorityError(
+        'DOKE_ATTACHMENTS_PENDING_SYNC_FORBIDDEN',
+        'Sessões reais não aceitam anexos pendentes ou Base64 para sincronização posterior.'
+      ));
+    }
+    return Promise.resolve(items);
   }
 
   function resolveUrls(attachments, options) {
     var items = normalizeAttachments(attachments);
+    if (!items.some(function (item) { return Boolean(item.path); })) return Promise.resolve(items);
+    if (getAuthorityMode() === 'fixture-memory') return Promise.resolve(items);
     var client = getSupabaseClient();
-    if (!client || !items.some(function (item) { return Boolean(item.path); })) return Promise.resolve(items);
+    if (!client) return Promise.reject(createAuthorityError());
     return Promise.all(items.map(function (item) {
       if (!item.path) return Promise.resolve(item);
-      return createSignedUrls(client, item, options).catch(function (error) {
-        warnRemote(error, 'URL assinada');
-        return item;
-      });
-    }));
+      return createSignedUrls(client, item, options);
+    })).catch(function (error) {
+      recordRemoteError(error, 'signed-url');
+      throw error;
+    });
   }
 
   function remove(attachment) {
     var item = normalizeAttachment(attachment);
-    if (!item || !item.path) return Promise.resolve(false);
-    var client = getSupabaseClient();
-    if (!client) return Promise.resolve(false);
-    return client.storage.from(item.bucket || BUCKET).remove([item.path]).then(function (result) {
-      if (result.error) throw result.error;
+    if (!item) return Promise.resolve(false);
+    if (getAuthorityMode() === 'fixture-memory') return Promise.resolve(true);
+    var attachmentId = normalizeText(item.lifecycleId || item.id);
+    if (!attachmentId) return Promise.reject(createAuthorityError('DOKE_ATTACHMENTS_ID_REQUIRED'));
+    return invokeAttachmentAction('remove_transaction_attachment', {
+      p_attachment_id: attachmentId,
+      p_reason: 'user_removed'
+    }).then(function () {
+      setProviderState('server-owned');
       return true;
-    }).catch(function (error) {
-      warnRemote(error, 'remoção');
-      return false;
     });
   }
 
@@ -445,10 +451,22 @@
     syncPendingConversation: function (conversationId, attachments) { return syncPending('conversation', conversationId, attachments); },
     resolveUrls: resolveUrls,
     remove: remove,
-    getProviderStatus: function () {
+    getAuthorityStatus: function () {
+      var mode = getAuthorityMode();
       return Object.freeze({
-        provider: getSupabaseClient() ? 'supabase' : 'local',
-        fallbackActive: Boolean(lastRemoteError),
+        authority: mode,
+        uploadAuthority: mode === 'remote-server-owned' ? 'server-owned-signed-intent' : 'fixture-memory',
+        removalAuthority: mode === 'remote-server-owned' ? 'server-owned' : 'fixture-memory',
+        pendingSynchronization: false,
+        persistentBase64Authority: false
+      });
+    },
+    getProviderStatus: function () {
+      var mode = getAuthorityMode();
+      return Object.freeze({
+        authority: mode,
+        provider: mode === 'remote-server-owned' ? (getSupabaseClient() ? 'supabase-private' : 'unavailable') : 'fixture-memory',
+        fallbackActive: false,
         lastError: lastRemoteError ? normalizeText(lastRemoteError.message) : ''
       });
     }

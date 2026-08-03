@@ -22,10 +22,12 @@ const docs = read('docs/API-ADAPTER-CONTRACT.md') + '\n' + read('docs/BACKEND-IN
 assert(service.includes('getMessagesProviderStatus'), 'message-service must expose provider status.');
 assert(service.includes('shouldUseMessagesApi'), 'message-service must gate API usage through provider status.');
 assert(service.includes("boundary.list('conversations'"), 'message-service must list conversations through repositoryBoundary.');
-assert(service.includes("boundary.action('conversations', 'sendMessage'"), 'message-service must send messages through repositoryBoundary action.');
-assert(service.includes("boundary.action('conversations', 'markRead'"), 'message-service must mark conversations read through repositoryBoundary action.');
+assert(service.includes('executeMessagesServerCommand'), 'message-service must expose the dedicated server command executor.');
+assert(service.includes("executeMessagesServerCommand('sendMessage'"), 'message-service must send authenticated messages through the server-owned provider.');
+assert(service.includes("executeMessagesServerCommand('markRead'"), 'message-service must mark authenticated conversations read through the server-owned provider.');
 assert(apiProvider.includes("createForOrder: '/orders/:id/conversation'"), 'api provider must map createForOrder conversation endpoint.');
 assert(apiProvider.includes("sendMessage: '/conversations/:id/messages'"), 'api provider must map sendMessage endpoint.');
+assert(apiProvider.includes("removeMessage: '/conversations/:id/messages/remove'"), 'api provider must map removeMessage endpoint.');
 assert(apiProvider.includes("markRead: '/conversations/:id/read'"), 'api provider must map markRead endpoint.');
 assert(mockProvider.includes("conversation: 'conversations'"), 'mock provider must alias conversations.');
 assert(mockProvider.includes('mockConversationAction'), 'mock provider must implement conversation actions.');

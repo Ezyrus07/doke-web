@@ -1,0 +1,75 @@
+{
+  "contractVersion": "msg-a04-realtime-publication-subscription-v1",
+  "status": "repository_only_realtime_contract_ready_disabled",
+  "domain": "MSG-001",
+  "observedAt": "2026-08-02T18:31:00-03:00",
+  "repository": {
+    "name": "Ezyrus07/doke-web",
+    "branch": "msg/msg-001-baseline-audit",
+    "baseHead": "b486ffa96d85c968746e13f273969677c5f194dc"
+  },
+  "publication": {
+    "name": "supabase_realtime",
+    "tables": [
+      "public.conversations",
+      "public.messages"
+    ],
+    "migrationApplied": false,
+    "stagingApplicationRequiresFreshExplicitAuthorization": true
+  },
+  "authorization": {
+    "source": "postgres-rls",
+    "conversations": "auth.uid() equals client_id or professional_id",
+    "messages": "participant exists through public.conversations",
+    "serviceRoleExposedToBrowser": false
+  },
+  "subscriptions": {
+    "featureFlag": "messagesRealtimeEnabled",
+    "defaultEnabled": false,
+    "conversations": {
+      "events": [
+        "INSERT",
+        "UPDATE"
+      ],
+      "filters": [
+        "client_id=eq.<auth.uid>",
+        "professional_id=eq.<auth.uid>"
+      ]
+    },
+    "messages": {
+      "events": [
+        "INSERT",
+        "UPDATE"
+      ],
+      "filter": null,
+      "participantIsolation": "RLS authorization per delivered row"
+    },
+    "deleteEvents": {
+      "subscribed": false,
+      "reason": "Supabase Postgres Changes DELETE events cannot be filtered and RLS is not applied to deleted rows.",
+      "reconciliation": "authoritative reread after server-owned remove command"
+    },
+    "payloadPolicy": "payloads are signals only; UI state is rebuilt from a fresh remote-only repository read"
+  },
+  "presenceAndTyping": {
+    "changedByA04": false,
+    "status": "local-only legacy behavior remains isolated for a later realtime presence boundary"
+  },
+  "orderedNextActions": [
+    "MSG-A04B: apply the Realtime publication migration and run participant-isolation canaries only after fresh explicit staging authorization.",
+    "MSG-A05: harden transaction-attachments ownership, signed URL, cleanup and retention boundaries."
+  ],
+  "effects": {
+    "stagingReads": 0,
+    "stagingMutations": 0,
+    "migrationsApplied": 0,
+    "realtimePublicationChanges": 0,
+    "subscriptionsActivatedByDefault": false,
+    "storagePolicyChanges": 0,
+    "deployments": 0,
+    "productionChanged": false,
+    "accountsChanged": 0,
+    "messagesChanged": 0,
+    "pullRequestsMerged": 0
+  }
+}

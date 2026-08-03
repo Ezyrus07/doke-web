@@ -1,0 +1,65 @@
+name: Doke MSG-A07 Command Reliability Contract
+
+on:
+  pull_request:
+    paths:
+      - 'assets/js/services/message-command-executor.js'
+      - 'assets/js/services/message-service.js'
+      - 'assets/js/services/api-repository-provider.js'
+      - 'backend/modules/messaging/messaging-service.js'
+      - 'backend/modules/messaging/route-handlers.js'
+      - 'backend/shared/http/route-registry.js'
+      - 'config/msg-001-a07-command-reliability.json'
+      - 'docs/MSG-001-A07-COMMAND-RELIABILITY.md'
+      - 'docs/validation/MSG-001-A07-COMMAND-RELIABILITY.json'
+      - 'scripts/audit-msg-001-a07-command-reliability.js'
+      - 'scripts/test-msg-001-a07-command-reliability-runtime.js'
+      - 'scripts/audit-msg-001-a06-presence-typing-boundary.js'
+      - 'config/domain-completion-matrix.json'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+      - 'package.json'
+      - '.github/workflows/msg-001-a07-command-reliability.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  reliability:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Validate MSG-A07 acknowledgement and idempotency boundary
+        run: |
+          node --check assets/js/services/message-command-executor.js
+          node --check assets/js/services/message-service.js
+          node --check assets/js/services/api-repository-provider.js
+          node --check backend/modules/messaging/messaging-service.js
+          node --check backend/modules/messaging/route-handlers.js
+          node --check scripts/audit-msg-001-a07-command-reliability.js
+          node --check scripts/test-msg-001-a07-command-reliability-runtime.js
+          npm run audit:msg-001-a01-authority-baseline
+          npm run audit:msg-001-a02-canonical-authority-boundary
+          npm run test:msg-001-a02-canonical-authority-boundary
+          npm run audit:msg-001-a03-server-command-boundary
+          npm run test:msg-001-a03-server-command-boundary
+          npm run audit:msg-001-a04-realtime-publication-subscription-contract
+          npm run test:msg-001-a04-realtime-publication-subscription-runtime
+          npm run audit:msg-001-a05-attachment-lifecycle
+          npm run test:msg-001-a05-attachment-lifecycle-runtime
+          npm run audit:msg-001-a06-presence-typing-boundary
+          npm run test:msg-001-a06-presence-typing-runtime
+          npm run audit:msg-001-a07-command-reliability
+          npm run test:msg-001-a07-command-reliability-runtime
+          npm run audit:messages-api-contract
+          npm run audit:runtime-idempotency-audit
+          npm run audit:staging-messaging-runtime
+          npm run audit:domain-completion-matrix
+          git diff --check

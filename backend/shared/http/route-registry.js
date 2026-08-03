@@ -37,10 +37,11 @@ const ROUTES = Object.freeze([
   // Conversations and messages.
   route('conversations.list', 'GET', '/conversations', 'messaging', 'listConversations', ['client', 'professional', 'support', 'admin'], 'conversation_participant_or_support', false, false),
   route('conversations.get', 'GET', '/conversations/:id', 'messaging', 'getConversation', ['client', 'professional', 'support', 'admin'], 'conversation_participant_or_support', false, false),
-  route('conversations.createForOrder', 'POST', '/orders/:id/conversation', 'messaging', 'createConversationForOrder', ['client', 'professional', 'support', 'admin'], 'order_participant_or_support', true, true),
-  route('conversations.updateOrder', 'POST', '/conversations/:id/order', 'messaging', 'updateConversationOrder', ['client', 'professional', 'support', 'admin'], 'conversation_participant_or_support', true, true),
-  route('messages.send', 'POST', '/conversations/:id/messages', 'messaging', 'sendMessage', ['client', 'professional', 'support', 'admin'], 'conversation_participant_or_support', false, false),
-  route('messages.markRead', 'POST', '/conversations/:id/read', 'messaging', 'markConversationRead', ['client', 'professional', 'support', 'admin'], 'conversation_participant_or_support', false, false),
+  route('conversations.createForOrder', 'POST', '/orders/:id/conversation', 'messaging', 'createConversationForOrder', ['client', 'professional', 'support', 'admin'], 'order_participant_or_support', true, true, false, true),
+  route('conversations.updateOrder', 'POST', '/conversations/:id/order', 'messaging', 'updateConversationOrder', ['client', 'professional', 'support', 'admin'], 'conversation_participant_or_support', true, true, false, true),
+  route('messages.send', 'POST', '/conversations/:id/messages', 'messaging', 'sendMessage', ['client', 'professional', 'support', 'admin'], 'conversation_participant_or_support', true, true, false, true),
+  route('messages.remove', 'POST', '/conversations/:id/messages/remove', 'messaging', 'removeMessage', ['client', 'professional', 'support', 'admin'], 'conversation_participant_or_support', true, true, false, true),
+  route('messages.markRead', 'POST', '/conversations/:id/read', 'messaging', 'markConversationRead', ['client', 'professional', 'support', 'admin'], 'conversation_participant_or_support', true, true, false, true),
 
   // Notifications.
   route('notifications.list', 'GET', '/notifications', 'notifications', 'listNotifications', ['client', 'professional', 'support', 'admin'], 'notification_owner', false, false),

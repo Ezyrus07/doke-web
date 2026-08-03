@@ -1,0 +1,154 @@
+{
+  "contractVersion": "msg-a08-staging-activation-readiness-v1",
+  "status": "repository_only_staging_activation_readiness_ready_not_executed",
+  "domain": "MSG-001",
+  "observedAt": "2026-08-03T07:32:00-03:00",
+  "objective": "Freeze a fail-closed staging activation sequence for MSG-A04B through MSG-A07B without authorizing or executing remote effects.",
+  "authority": {
+    "genericContinuationAuthorizesRemoteEffects": false,
+    "freshExplicitAuthorizationPerPhase": true,
+    "productionTargetAllowed": false,
+    "realAccountsAllowed": false,
+    "syntheticUuidPersonasOnly": true,
+    "exactHeadRequired": true,
+    "oneRemoteOperatorAtATime": true
+  },
+  "preflight": {
+    "required": [
+      "exact_pr_head_recorded",
+      "staging_project_ref_verified",
+      "production_project_ref_denied",
+      "migration_history_read_only_snapshot",
+      "pending_migration_names_match_repository",
+      "edge_function_source_closure_passed",
+      "permanent_gates_a01_through_a08_green",
+      "feature_flags_confirmed_false",
+      "synthetic_personas_prepared",
+      "rollback_owner_named",
+      "evidence_directory_empty_or_new_run_scoped"
+    ],
+    "migrationRepairAllowedAsRoutineRollback": false,
+    "dashboardSqlEditsAllowed": false,
+    "directRemoteSchemaEditsAllowed": false
+  },
+  "activationOrder": [
+    {
+      "phase": "MSG-A07B",
+      "purpose": "Deploy and validate server-owned command acknowledgement and persistent idempotency before enabling dependent messaging features.",
+      "remoteEffects": [
+        "server_runtime_deploy",
+        "synthetic_command_canaries"
+      ],
+      "canaries": [
+        "lost_response_same_command_id_returns_replayed_ack",
+        "concurrent_same_command_id_materializes_one_effect",
+        "same_key_payload_drift_is_rejected",
+        "functional_errors_are_not_retried",
+        "cross_actor_command_replay_is_denied"
+      ],
+      "flagMustRemainFalseUntilPass": null,
+      "rollback": "Redeploy the last known-good server runtime; do not mutate migration history."
+    },
+    {
+      "phase": "MSG-A05B",
+      "purpose": "Apply the attachment lifecycle resources and deploy cleanup while the browser feature remains disabled.",
+      "remoteEffects": [
+        "database_migration_apply",
+        "edge_function_deploy",
+        "synthetic_storage_canaries"
+      ],
+      "canaries": [
+        "owner_prepare_upload_confirm_bind_download_remove",
+        "cross_owner_prepare_confirm_remove_denied",
+        "arbitrary_storage_path_denied",
+        "unattached_object_cleanup_is_scoped_to_synthetic_fixture",
+        "removed_attachment_retention_contract_observed"
+      ],
+      "flagMustRemainFalseUntilPass": "attachmentLifecycleEnabled",
+      "rollback": "Keep the feature flag false, stop cleanup scheduling and use an explicitly reviewed compensating migration only if required; never delete storage metadata with direct SQL."
+    },
+    {
+      "phase": "MSG-A04B",
+      "purpose": "Apply participant-scoped message publication while client Realtime consumption remains disabled.",
+      "remoteEffects": [
+        "database_migration_apply",
+        "synthetic_realtime_canaries"
+      ],
+      "canaries": [
+        "participant_insert_update_signal_received",
+        "non_participant_receives_no_signal",
+        "delete_event_not_subscribed",
+        "payload_is_invalidation_signal_only",
+        "canonical_snapshot_is_reread_remote_only"
+      ],
+      "flagMustRemainFalseUntilPass": "messagesRealtimeEnabled",
+      "rollback": "Keep the feature flag false and apply a reviewed compensating publication migration if isolation or delivery canaries fail."
+    },
+    {
+      "phase": "MSG-A06B",
+      "purpose": "Apply private Presence and Broadcast authorization after message publication isolation is proven.",
+      "remoteEffects": [
+        "database_migration_apply",
+        "realtime_settings_change",
+        "synthetic_presence_canaries"
+      ],
+      "canaries": [
+        "participant_presence_join_sync_leave",
+        "participant_typing_broadcast_received",
+        "non_participant_channel_join_denied",
+        "non_participant_broadcast_denied",
+        "disconnect_clears_presence_and_typing_timers"
+      ],
+      "flagMustRemainFalseUntilPass": "messagesPresenceEnabled",
+      "rollback": "Keep the feature flag false, restore the prior Realtime setting and apply a reviewed compensating policy migration if authorization fails."
+    }
+  ],
+  "phaseRules": {
+    "previousPhaseMustPass": true,
+    "stopOnFirstFailure": true,
+    "flagsActivatedDuringCanary": false,
+    "featureActivationRequiresSeparateDecisionAfterCanaries": true,
+    "evidenceRequiredBeforeBlockerClosure": true,
+    "destructiveRollbackForbidden": true
+  },
+  "evidenceManifest": {
+    "requiredFields": [
+      "repository_head",
+      "pull_request_number",
+      "staging_project_ref_fingerprint",
+      "authorization_scope",
+      "operator",
+      "started_at",
+      "completed_at",
+      "migration_history_before",
+      "migration_history_after",
+      "function_versions_before",
+      "function_versions_after",
+      "synthetic_persona_ids",
+      "canary_assertions",
+      "rollback_decision",
+      "production_effects_zero"
+    ],
+    "secretsOrTokensStored": false,
+    "realUserIdentifiersStored": false
+  },
+  "effects": {
+    "stagingReads": 0,
+    "stagingMutations": 0,
+    "migrationsApplied": 0,
+    "deployments": 0,
+    "realtimeSettingsChanged": 0,
+    "storagePoliciesChanged": 0,
+    "productionChanged": false,
+    "realAccountsChanged": 0,
+    "realMessagesChanged": 0,
+    "realAttachmentsChanged": 0,
+    "pullRequestsMerged": 0
+  },
+  "orderedNextActions": [
+    "Obtain a fresh explicit staging authorization scoped to MSG-A07B only.",
+    "Execute phases strictly in the declared order and stop after any failed preflight or canary.",
+    "Do not activate A05, A04 or A06 browser flags until their remote resources and isolation canaries pass.",
+    "Update the matrix blockers only from run-scoped evidence produced on the exact validated head."
+  ]
+}

@@ -1,0 +1,101 @@
+{
+  "contractVersion": "msg-a01-authority-baseline-v1",
+  "status": "repository_only_baseline_frozen",
+  "domain": "MSG-001",
+  "scope": "browser_backend_realtime_and_attachment_authority_inventory",
+  "observedAt": "2026-08-02T16:12:00-03:00",
+  "repository": {
+    "name": "Ezyrus07/doke-web",
+    "branch": "msg/msg-001-baseline-audit",
+    "baseBranch": "ord/ord-001-baseline-audit",
+    "baseHead": "749a15a14cb7282a04b834ec88240dcbc65e0eae"
+  },
+  "authorityBoundary": {
+    "environmentAccess": "none",
+    "stagingReadsAuthorized": false,
+    "stagingMutationsAuthorized": false,
+    "migrationApplicationAuthorized": false,
+    "realtimePublicationChangeAuthorized": false,
+    "storagePolicyChangeAuthorized": false,
+    "deploymentAuthorized": false,
+    "productionAuthorized": false,
+    "mergeAuthorized": false
+  },
+  "browserFindings": {
+    "repositoryDeclaresLocalMockPersistenceBoundary": true,
+    "conversationStorageKey": "doke.conversations.local.v1",
+    "legacyMessageStorageKey": "doke.messages.local.v1",
+    "remoteReadFailureFallsBackToLocal": true,
+    "remoteWriteFailurePersistsPendingLocalState": true,
+    "pendingLocalSynchronizationExists": true,
+    "realAndFixtureAuthorityAreNotSeparated": true,
+    "sessionFallbackReadsBrowserStorage": true
+  },
+  "presenceFindings": {
+    "transport": "localStorage",
+    "presenceKey": "doke.chat.presence.v1",
+    "typingKey": "doke.chat.typing.v1",
+    "readReceiptKey": "doke.chat.reads.v1",
+    "crossDeviceAuthoritative": false,
+    "fallbackIdentity": "local-user"
+  },
+  "backendFindings": {
+    "messagingServiceExists": true,
+    "supabaseRequiredForRuntimeHandlers": true,
+    "participantScopeValidated": true,
+    "internalOperationsRequireServiceRoleClient": true,
+    "createConversationForOrderExists": true,
+    "sendMessageExists": true,
+    "markConversationReadExists": true
+  },
+  "databaseFindings": {
+    "conversationsRlsDeclared": true,
+    "messagesRlsDeclared": true,
+    "participantSelectPoliciesDeclared": true,
+    "browserConversationInsertDeclared": true,
+    "browserConversationUpdateDeclared": true,
+    "browserMessageInsertDeclared": true,
+    "browserMessageUpdateDeclared": true,
+    "conversationsRealtimePublicationDeclared": false,
+    "messagesRealtimePublicationDeclared": false
+  },
+  "attachmentFindings": {
+    "bucket": "transaction-attachments",
+    "signedUrlTtlSeconds": 900,
+    "localFallbackEnabled": true,
+    "pendingInlinePreviewEnabled": true,
+    "repositoryStoragePolicyMapComplete": false
+  },
+  "blockerDisposition": {
+    "MSG-B02": {
+      "status": "confirmed",
+      "reason": "No repository migration publishes conversations or messages to Supabase Realtime."
+    },
+    "MSG-B03": {
+      "status": "confirmed",
+      "reason": "Persistent local conversations, messages, presence, typing and read receipts can diverge across devices."
+    },
+    "MSG-B04": {
+      "status": "confirmed_repository_mapping_incomplete",
+      "reason": "The attachment repository targets transaction-attachments, but a complete canonical bucket-policy and lifecycle map is not frozen in MSG-001."
+    }
+  },
+  "orderedNextActions": [
+    "MSG-A02: freeze canonical conversation and message authority so authenticated UUID sessions are remote-only and non-UUID fixtures are memory-only.",
+    "MSG-A03: introduce a server-owned command and read-state boundary; retire silent browser DML success and persistent pending fallback for real sessions.",
+    "MSG-A04: prepare participant-scoped Realtime publication and subscription contracts without applying staging changes.",
+    "MSG-A05: map and harden transaction-attachments ownership, signed URL, cleanup and retention boundaries."
+  ],
+  "effects": {
+    "stagingReads": 0,
+    "stagingMutations": 0,
+    "migrationsApplied": 0,
+    "realtimePublicationChanges": 0,
+    "storagePolicyChanges": 0,
+    "deployments": 0,
+    "productionChanged": false,
+    "accountsChanged": 0,
+    "messagesChanged": 0,
+    "pullRequestsMerged": 0
+  }
+}

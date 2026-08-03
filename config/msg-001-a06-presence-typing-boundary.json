@@ -1,0 +1,77 @@
+{
+  "contractVersion": "msg-a06-presence-typing-boundary-v1",
+  "status": "repository_only_private_ephemeral_boundary_ready_disabled",
+  "domain": "MSG-001",
+  "observedAt": "2026-08-02T21:36:00-03:00",
+  "repository": {
+    "name": "Ezyrus07/doke-web",
+    "branch": "msg/msg-001-baseline-audit",
+    "baseHead": "9d1471d0c8f41bf492530ba574efa0119dc0aa61"
+  },
+  "authority": {
+    "authenticatedUuidSession": "private-supabase-realtime-channel",
+    "conversationScope": "participant-authorized-uuid",
+    "fixtureSession": "memory-only-no-remote-channel",
+    "browserLocalStorageAuthority": false,
+    "payloadIdentityTrusted": false,
+    "durableMessageAuthority": false
+  },
+  "channel": {
+    "topic": "doke:conversation:<conversation_uuid>:ephemeral",
+    "private": true,
+    "presence": true,
+    "broadcastEvent": "typing",
+    "globalOrUnfilteredChannelsAllowed": false,
+    "featureFlag": "messagesPresenceEnabled",
+    "defaultEnabled": false
+  },
+  "privacy": {
+    "presencePayload": [
+      "connectionId",
+      "visibility",
+      "joinedAt"
+    ],
+    "typingIdentity": "generic participant indicator",
+    "namesOrEmailsBroadcast": false,
+    "persistentPresenceLedger": false
+  },
+  "lifecycle": {
+    "typingTtlMs": 6000,
+    "typingThrottleMs": 1000,
+    "unsubscribeOnConversationChange": true,
+    "unsubscribeOnSessionChange": true,
+    "unsubscribeOnPageHide": true,
+    "clearTimersOnDisconnect": true
+  },
+  "authorization": {
+    "table": "realtime.messages",
+    "extensions": [
+      "presence",
+      "broadcast"
+    ],
+    "receivePolicy": "authenticated participant only",
+    "sendPolicy": "authenticated participant only",
+    "participantProof": "public.conversations.client_id or professional_id equals auth.uid()",
+    "migrationApplied": false,
+    "stagingApplicationRequiresFreshExplicitAuthorization": true
+  },
+  "blockers": {
+    "MSG-B03": "repository contract prepared; operational closure still requires authorized policy application and authenticated cross-account canaries"
+  },
+  "orderedNextActions": [
+    "MSG-A07: prepare command acknowledgement, idempotency and retry contract repository-only.",
+    "MSG-A06B: apply Realtime Authorization policies and execute cross-account presence/typing canaries only after fresh explicit staging authorization."
+  ],
+  "effects": {
+    "stagingReads": 0,
+    "stagingMutations": 0,
+    "migrationsApplied": 0,
+    "realtimePoliciesApplied": 0,
+    "remoteChannelsActivatedByDefault": false,
+    "deployments": 0,
+    "productionChanged": false,
+    "accountsChanged": 0,
+    "messagesChanged": 0,
+    "pullRequestsMerged": 0
+  }
+}

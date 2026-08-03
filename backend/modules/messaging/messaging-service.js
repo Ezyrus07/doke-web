@@ -206,6 +206,24 @@ async function sendMessage(context, actor, conversationId) {
   };
 }
 
+async function removeMessage(context, actor, conversationId) {
+  const safeActor = requireActor(actor);
+  const supabase = chooseMessagingSupabase(context, safeActor);
+  const conversation = await readConversationRow(supabase, conversationId);
+  assertConversationAccess(conversation, safeActor);
+  const messageId = sanitizeNullableUuid(context.body && (context.body.messageId || context.body.id));
+  if (!messageId) throw badRequest('Message id is required.');
+  const messageResponse = await supabase.from('messages').select(MESSAGE_SELECT).eq('id', messageId).eq('conversation_id', conversation.id).maybeSingle();
+  if (messageResponse && messageResponse.error) throw messageResponse.error;
+  const message = messageResponse && messageResponse.data;
+  if (!message) throw notFound('Message not found.');
+  if (!isInternal(safeActor) && message.sender_id !== safeActor.id) throw forbidden('Only the sender can remove this message.');
+  if (message.status === 'removed') return { ok: true, messageId, conversationId: conversation.id, status: 'removed', alreadyRemoved: true };
+  const response = await supabase.from('messages').update({ status: 'removed', body: '' }).eq('id', messageId).eq('conversation_id', conversation.id).select(MESSAGE_SELECT).maybeSingle();
+  if (response && response.error) throw response.error;
+  return { ok: true, message: normalizeMessage(response && response.data, conversation), messageId, conversationId: conversation.id, status: 'removed', alreadyRemoved: false };
+}
+
 async function markConversationRead(context, actor, conversationId) {
   const safeActor = requireActor(actor);
   const supabase = chooseMessagingSupabase(context, safeActor);
@@ -371,6 +389,7 @@ module.exports = Object.freeze({
   createConversationForOrder,
   updateConversationOrder,
   sendMessage,
+  removeMessage,
   markConversationRead,
   assertConversationAccess,
   assertOrderAccess

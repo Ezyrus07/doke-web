@@ -1,0 +1,66 @@
+{
+  "contractVersion": "msg-a07-command-reliability-v1",
+  "status": "repository_only_command_reliability_ready_not_deployed",
+  "domain": "MSG-001",
+  "observedAt": "2026-08-02T23:35:00-03:00",
+  "authority": {
+    "authenticatedUuidSession": "server-owned-idempotent-command",
+    "idempotencyAuthority": "backend persistent idempotency store",
+    "acknowledgementAuthority": "server route wrapper",
+    "browserPersistence": false,
+    "fixtureSession": "memory-only"
+  },
+  "envelope": {
+    "header": "x-idempotency-key",
+    "requestIdHeader": "x-request-id",
+    "sameKeyAcrossRetries": true,
+    "acknowledgementRequired": true,
+    "acknowledgementStates": [
+      "accepted",
+      "replayed"
+    ]
+  },
+  "retry": {
+    "maxAttempts": 3,
+    "delaysMs": [
+      250,
+      750
+    ],
+    "retryableHttpStatuses": [
+      408,
+      425,
+      429,
+      502,
+      503,
+      504
+    ],
+    "functionalErrorsRetried": false,
+    "idempotencyConflictsRetried": false
+  },
+  "deduplication": {
+    "concurrentInFlightByCommandId": true,
+    "persistentReplay": true,
+    "sideEffectsOncePerAcknowledgedCommand": true,
+    "replayedMessageCreatesNewRow": false
+  },
+  "commands": [
+    "createForOrder",
+    "updateOrder",
+    "sendMessage",
+    "removeMessage",
+    "markRead"
+  ],
+  "effects": {
+    "stagingReads": 0,
+    "stagingMutations": 0,
+    "migrationsApplied": 0,
+    "deployments": 0,
+    "productionChanged": false,
+    "messagesChanged": 0,
+    "pullRequestsMerged": 0
+  },
+  "orderedNextActions": [
+    "MSG-A07B: deploy the server runtime and execute lost-response/replay canaries only after fresh explicit staging authorization.",
+    "MSG-A06B/A05B/A04B remain separately authorization-gated."
+  ]
+}

@@ -1,0 +1,74 @@
+{
+  "contractVersion": "msg-a02-canonical-authority-boundary-v1",
+  "status": "repository_only_authority_split_implemented",
+  "domain": "MSG-001",
+  "scope": "canonical_remote_only_real_sessions_and_memory_only_fixtures",
+  "observedAt": "2026-08-02T16:27:00-03:00",
+  "repository": {
+    "name": "Ezyrus07/doke-web",
+    "branch": "msg/msg-001-baseline-audit",
+    "baseHead": "39114341b2e1ee4d5e6797eb0538558d65e70a3b"
+  },
+  "authorityClasses": {
+    "authenticatedUuidSession": "remote-only",
+    "nonUuidOrAnonymousFixture": "fixture-memory",
+    "persistentBrowserConversationAuthorityAllowed": false,
+    "realSessionLocalFallbackAllowed": false,
+    "realSessionPendingWriteAllowed": false,
+    "legacyStorageKeysDeletedAutomatically": false,
+    "legacyStorageKeysConsultedByCanonicalPaths": false
+  },
+  "readContract": {
+    "realSessionSource": "Supabase conversations and messages only",
+    "remoteFailurePolicy": "reject_fail_closed",
+    "remoteRowsPersistedToBrowserStorage": false,
+    "fixtureSource": "in_memory_plus_static_fixture_seed",
+    "crossAuthorityMergeAllowed": false
+  },
+  "writeContract": {
+    "realSessionDestination": "Supabase only",
+    "remoteFailurePolicy": "reject_fail_closed",
+    "optimisticPersistentLocalSuccessAllowed": false,
+    "pendingSynchronizationAllowed": false,
+    "fixtureDestination": "memory-only"
+  },
+  "compatibility": {
+    "publicRepositoryApiPreserved": true,
+    "localStorageKeysPreservedForNonDestructiveMigration": true,
+    "explicitLegacyReadWriteExportsRemainNonPersistentMemoryAdapters": true,
+    "realtimePublicationChanged": false,
+    "backendCommandBoundaryChanged": false,
+    "attachmentLifecycleChanged": false
+  },
+  "blockerDisposition": {
+    "MSG-B02": {
+      "status": "open",
+      "reason": "Realtime publication remains outside MSG-A02."
+    },
+    "MSG-B03": {
+      "status": "narrowed",
+      "reason": "Conversation and message persistence no longer mixes local and remote authority; presence, typing and read-receipt realtime remain pending."
+    },
+    "MSG-B04": {
+      "status": "open",
+      "reason": "Attachment ownership, cleanup and retention remain outside MSG-A02."
+    }
+  },
+  "orderedNextActions": [
+    "MSG-A03: introduce a server-owned command and read-state boundary; retire direct authenticated browser DML as canonical authority.",
+    "MSG-A04: prepare participant-scoped Realtime publication and subscription contracts without applying staging changes.",
+    "MSG-A05: map and harden transaction-attachments ownership, signed URL, cleanup and retention boundaries."
+  ],
+  "effects": {
+    "stagingReads": 0,
+    "stagingMutations": 0,
+    "migrationsApplied": 0,
+    "realtimePublicationChanges": 0,
+    "storagePolicyChanges": 0,
+    "deployments": 0,
+    "productionChanged": false,
+    "accountsChanged": 0,
+    "messagesChanged": 0,
+    "pullRequestsMerged": 0
+  }
+}

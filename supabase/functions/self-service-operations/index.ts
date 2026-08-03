@@ -31,6 +31,9 @@ const rpc = async (
 };
 
 const ratePolicyForAction = (action: string) => {
+  if (action === "prepare_transaction_attachment_uploads") return { limit: 20, windowSeconds: 600 };
+  if (action === "confirm_transaction_attachment_uploads") return { limit: 30, windowSeconds: 600 };
+  if (action === "remove_transaction_attachment") return { limit: 30, windowSeconds: 600 };
   if (action === "prepare_service_media_uploads") return { limit: 10, windowSeconds: 600 };
   if (action === "submit_service_for_review") return { limit: 10, windowSeconds: 600 };
   return { limit: 30, windowSeconds: 60 };
@@ -86,6 +89,66 @@ Deno.serve(async (req: Request) => {
   const params = normalizePayload(body.params);
 
   try {
+    if (action === "prepare_transaction_attachment_uploads") {
+      const intent = await rpc(serviceClient, "prepare_transaction_attachment_uploads_internal", {
+        p_actor_id: actor.id,
+        p_resource_kind: normalizeText(params.p_resource_kind, 20),
+        p_resource_ref: normalizeText(params.p_resource_ref, 140),
+        p_files: Array.isArray(params.p_files) ? params.p_files : [],
+      }) as Record<string, unknown>;
+      const items = Array.isArray(intent?.items)
+        ? intent.items as Array<Record<string, unknown>>
+        : [];
+      const uploads = await Promise.all(items.map(async (item) => {
+        const bucket = normalizeText(item.bucket, 100);
+        const path = normalizeText(item.path, 1024);
+        const { data, error } = await authClient.storage
+          .from(bucket)
+          .createSignedUploadUrl(path, { upsert: false });
+        if (error || !data?.token) {
+          throw error || new Error("DOKE_ATTACHMENT_SIGNED_UPLOAD_UNAVAILABLE");
+        }
+        return { ...item, token: data.token };
+      }));
+      return jsonResponse(req, 200, { ...intent, uploads });
+    }
+
+    if (action === "confirm_transaction_attachment_uploads") {
+      const attachmentIds = Array.isArray(params.p_attachment_ids)
+        ? params.p_attachment_ids.map((value) => normalizeText(value, 80))
+        : [];
+      const result = await rpc(serviceClient, "confirm_transaction_attachment_uploads_internal", {
+        p_actor_id: actor.id,
+        p_attachment_ids: attachmentIds,
+      });
+      return jsonResponse(req, 200, result ?? {});
+    }
+
+    if (action === "remove_transaction_attachment") {
+      const attachmentId = normalizeText(params.p_attachment_id, 80);
+      const authorizationResult = await rpc(
+        serviceClient,
+        "authorize_transaction_attachment_removal_internal",
+        {
+          p_actor_id: actor.id,
+          p_attachment_id: attachmentId,
+          p_reason: normalizeText(params.p_reason, 80) || "user_removed",
+        },
+      ) as Record<string, unknown>;
+      const bucket = normalizeText(authorizationResult?.bucket, 100) ||
+        "transaction-attachments";
+      const path = normalizeText(authorizationResult?.path, 1024);
+      if (!path) throw new Error("DOKE_ATTACHMENT_PATH_INVALID");
+
+      const { error: removeError } = await serviceClient.storage.from(bucket).remove([path]);
+      await rpc(serviceClient, "mark_transaction_attachment_removed_internal", {
+        p_attachment_id: attachmentId,
+        p_error: removeError ? String(removeError.message || removeError) : null,
+      });
+      if (removeError) throw removeError;
+      return jsonResponse(req, 200, { removed: true, attachmentId });
+    }
+
     if (action === "prepare_service_media_uploads") {
       const intent = await rpc(serviceClient, "create_service_media_upload_intent_internal", {
         p_actor_id: actor.id,

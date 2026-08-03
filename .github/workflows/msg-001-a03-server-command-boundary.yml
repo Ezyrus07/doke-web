@@ -1,0 +1,49 @@
+name: Doke MSG-A03 Server-Owned Command Boundary
+
+on:
+  push:
+    branches:
+      - msg/msg-001-baseline-audit
+    paths:
+      - 'assets/js/repositories/messages-repository.js'
+      - 'assets/js/services/message-service.js'
+      - 'assets/js/services/api-repository-provider.js'
+      - 'config/msg-001-a03-server-command-boundary.json'
+      - 'docs/MSG-001-A03-SERVER-COMMAND-BOUNDARY.md'
+      - 'docs/validation/MSG-001-A03-SERVER-COMMAND-BOUNDARY.json'
+      - 'scripts/audit-msg-001-a03-server-command-boundary.js'
+      - 'scripts/test-msg-001-a03-server-command-boundary.js'
+      - 'config/domain-completion-matrix.json'
+      - 'package.json'
+      - '.github/workflows/msg-001-a03-server-command-boundary.yml'
+  pull_request:
+    branches:
+      - ord/ord-001-baseline-audit
+
+permissions:
+  contents: read
+
+jobs:
+  boundary:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Validate MSG-A03 server-owned command boundary
+        run: |
+          node --check assets/js/repositories/messages-repository.js
+          node --check assets/js/services/message-service.js
+          npm run audit:msg-001-a01-authority-baseline
+          npm run audit:msg-001-a02-canonical-authority-boundary
+          npm run test:msg-001-a02-canonical-authority-boundary
+          npm run audit:msg-001-a03-server-command-boundary
+          npm run test:msg-001-a03-server-command-boundary
+          npm run audit:messages-api-contract
+          npm run test:messages-supabase-repository-contract
+          npm run test:attachments-supabase-repository-contract
+          npm run audit:domain-completion-matrix

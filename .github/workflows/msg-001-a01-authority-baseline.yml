@@ -1,0 +1,43 @@
+name: Doke MSG-A01 Authority Baseline
+
+on:
+  pull_request:
+    branches:
+      - ord/ord-001-baseline-audit
+    paths:
+      - 'config/msg-001-a01-authority-baseline.json'
+      - 'docs/MSG-001-A01-AUTHORITY-BASELINE.md'
+      - 'docs/validation/MSG-001-A01-AUTHORITY-BASELINE.json'
+      - 'scripts/audit-msg-001-a01-authority-baseline.js'
+      - 'assets/js/repositories/messages-repository.js'
+      - 'assets/js/features/chat-realtime-presence.js'
+      - 'backend/modules/messaging/messaging-service.js'
+      - 'assets/js/repositories/attachments-repository.js'
+      - 'supabase/migrations/**'
+      - 'config/domain-completion-matrix.json'
+      - 'package.json'
+      - '.github/workflows/msg-001-a01-authority-baseline.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  baseline:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install pinned dependencies
+        run: npm ci --ignore-scripts
+      - name: Validate MSG-A01 authority baseline
+        run: |
+          node --check scripts/audit-msg-001-a01-authority-baseline.js
+          npm run audit:msg-001-a01-authority-baseline
+          npm run test:messages-supabase-repository-contract
+          npm run test:attachments-supabase-repository-contract
+          npm run audit:domain-completion-matrix
+          git diff --check

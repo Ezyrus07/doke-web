@@ -1,0 +1,74 @@
+{
+  "contractVersion": "msg-a05-attachment-lifecycle-v1",
+  "status": "repository_only_attachment_lifecycle_ready_disabled",
+  "domain": "MSG-001",
+  "observedAt": "2026-08-02T19:00:00-03:00",
+  "repository": {
+    "name": "Ezyrus07/doke-web",
+    "branch": "msg/msg-001-baseline-audit",
+    "baseHead": "efecb8d82abcb3e722380f8d172142bdf533fa0d"
+  },
+  "authority": {
+    "authenticatedUuidSession": "server-owned-signed-upload-intent",
+    "fixtureSession": "fixture-memory",
+    "directBrowserUpload": false,
+    "directBrowserDelete": false,
+    "localPendingFallback": false,
+    "persistentBase64Authority": false
+  },
+  "storage": {
+    "bucket": "transaction-attachments",
+    "access": "private",
+    "signedUploadTokenLifetime": "2 hours (Supabase platform contract)",
+    "signedReadUrlTtlSeconds": 300,
+    "pathAuthority": "server-generated lifecycle UUID path",
+    "selectAuthorization": "resource participant plus registered lifecycle object",
+    "insertAuthorization": "active pending lifecycle intent owned by auth.uid",
+    "authenticatedUpdatePolicy": false,
+    "authenticatedDeletePolicy": false
+  },
+  "lifecycle": {
+    "states": [
+      "pending",
+      "uploaded",
+      "attached",
+      "orphaned",
+      "removed",
+      "expired",
+      "failed"
+    ],
+    "pendingIntentExpiry": "2 hours",
+    "uploadedUnattachedRetention": "24 hours",
+    "removedMessageRetention": "30 days",
+    "cleanupTransport": "Storage API only; never delete storage.objects metadata directly",
+    "cleanupFunction": "transaction-attachment-cleanup",
+    "deployed": false
+  },
+  "edgeActions": [
+    "prepare_transaction_attachment_uploads",
+    "confirm_transaction_attachment_uploads",
+    "remove_transaction_attachment"
+  ],
+  "integration": {
+    "messageBindingFunction": "attach_transaction_attachments_to_message_internal",
+    "serverOwnedMessageCommandMustBindBeforeSuccess": true
+  },
+  "orderedNextActions": [
+    "MSG-A06: prepare a server-authoritative presence and typing boundary without staging activation.",
+    "MSG-A05B: apply the attachment lifecycle migration, deploy Edge actions and cleanup worker, then run authenticated ownership and retention canaries only after fresh explicit staging authorization.",
+    "MSG-A04B: apply the Realtime publication migration and run participant-isolation canaries only after fresh explicit staging authorization."
+  ],
+  "effects": {
+    "stagingReads": 0,
+    "stagingMutations": 0,
+    "migrationsApplied": 0,
+    "storagePolicyChanges": 0,
+    "edgeDeployments": 0,
+    "cleanupSchedulesCreated": 0,
+    "productionChanged": false,
+    "accountsChanged": 0,
+    "messagesChanged": 0,
+    "attachmentsChanged": 0,
+    "pullRequestsMerged": 0
+  }
+}

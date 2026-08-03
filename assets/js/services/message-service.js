@@ -30,6 +30,86 @@
     return String(value || '').trim();
   }
 
+  function isUuid(value) {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(normalizeText(value));
+  }
+
+  function requiresServerOwnedCommands() {
+    var actor = getCurrentUser();
+    return Boolean(actor && isUuid(actor.id));
+  }
+
+  function createServerCommandError(message, action, cause) {
+    var error = new Error(message || 'Boundary server-owned de mensagens indisponível.');
+    error.code = 'DOKE_MESSAGES_SERVER_COMMAND_UNAVAILABLE';
+    error.action = normalizeText(action || 'unknown');
+    if (cause) error.cause = cause;
+    return error;
+  }
+
+  function getServerCommandBoundaryStatus() {
+    var boundary = getRepositoryBoundary();
+    var status = boundary && typeof boundary.getDataProviderStatus === 'function'
+      ? boundary.getDataProviderStatus()
+      : null;
+    var registered = Boolean(boundary && typeof boundary.hasProvider === 'function' && boundary.hasProvider('api'));
+    return Object.freeze({
+      required: requiresServerOwnedCommands(),
+      provider: 'api',
+      registered: registered,
+      apiReady: Boolean(status && status.apiReady === true),
+      ready: registered && Boolean(status && status.apiReady === true),
+      activeProvider: status && status.activeProvider || 'mock'
+    });
+  }
+
+  function getCommandExecutor() {
+    if (Doke.messageCommandExecutor && typeof Doke.messageCommandExecutor.execute === 'function') return Doke.messageCommandExecutor;
+    if (Doke.messageCommandReliability && typeof Doke.messageCommandReliability.createExecutor === 'function') {
+      Doke.messageCommandExecutor = Doke.messageCommandReliability.createExecutor();
+      return Doke.messageCommandExecutor;
+    }
+    return null;
+  }
+
+  function unwrapCommandData(outcome) {
+    return outcome && Object.prototype.hasOwnProperty.call(outcome, 'data') ? outcome.data : outcome;
+  }
+
+  function executeMessagesServerCommand(actionName, payload) {
+    var boundary = getRepositoryBoundary();
+    var status = getServerCommandBoundaryStatus();
+    if (!status.ready || !boundary || typeof boundary.getProvider !== 'function') {
+      return Promise.reject(createServerCommandError('Boundary server-owned de mensagens não está configurado.', actionName));
+    }
+    var provider;
+    try {
+      provider = boundary.getProvider('api');
+    } catch (error) {
+      return Promise.reject(createServerCommandError('Provider de API de mensagens indisponível.', actionName, error));
+    }
+    if (!provider || typeof provider.action !== 'function') {
+      return Promise.reject(createServerCommandError('Provider de API não implementa comandos de mensagens.', actionName));
+    }
+    var actor = getCurrentUser() || {};
+    var nextPayload = Object.assign({}, payload || {}, {
+      action: actionName,
+      actorId: actor.id || '',
+      actorRole: actor.role || 'guest'
+    });
+    var executor = getCommandExecutor();
+    if (!executor) return Promise.reject(createServerCommandError('Executor idempotente de mensagens não está carregado.', actionName));
+    return executor.execute(actionName, nextPayload, function (requestPayload) {
+      return provider.action('conversations', requestPayload);
+    }, {
+      commandId: nextPayload.commandId || nextPayload.clientMutationId || '',
+      dedupeKey: nextPayload.commandId || nextPayload.clientMutationId || ''
+    }).catch(function (error) {
+      if (error && (error.code === 'DOKE_MESSAGES_COMMAND_ACK_INVALID' || error.code === 'DOKE_MESSAGES_SERVER_COMMAND_UNAVAILABLE')) throw error;
+      throw createServerCommandError('Comando server-owned de mensagens falhou.', actionName, error);
+    });
+  }
+
   function getMessagesProviderStatus() {
     var boundary = getRepositoryBoundary();
     var status = boundary && typeof boundary.getDataProviderStatus === 'function'
@@ -44,7 +124,9 @@
       requestedProvider: status && status.requestedProvider || activeProvider,
       apiReady: apiReady,
       messagesApiActive: activeProvider === 'api' && apiReady,
-      fallbackProvider: 'local-mock'
+      fallbackProvider: 'local-mock',
+      commandAuthority: requiresServerOwnedCommands() ? 'server-owned' : 'fixture-memory',
+      commandReady: getServerCommandBoundaryStatus().ready
     });
   }
 
@@ -103,7 +185,7 @@
       actorRole: (getCurrentUser() || {}).role || 'guest'
     });
     return boundary.action('conversations', 'createForOrder', payload).then(function (response) {
-      return normalizeConversationFromProvider(response && response.conversation || response);
+      return normalizeConversationFromProvider(unwrapCommandData(response) && unwrapCommandData(response).conversation || unwrapCommandData(response));
     });
   }
 
@@ -118,7 +200,7 @@
       actorRole: (getCurrentUser() || {}).role || 'guest'
     });
     return boundary.action('conversations', 'updateOrder', payload).then(function (response) {
-      return normalizeConversationFromProvider(response && response.conversation || response);
+      return normalizeConversationFromProvider(unwrapCommandData(response) && unwrapCommandData(response).conversation || unwrapCommandData(response));
     });
   }
 
@@ -132,7 +214,7 @@
       actorRole: (getCurrentUser() || {}).role || 'guest'
     });
     return boundary.action('conversations', 'sendMessage', nextPayload).then(function (response) {
-      return normalizeMessageFromProvider(response && response.message || response, { id: conversationId });
+      return normalizeMessageFromProvider(unwrapCommandData(response) && unwrapCommandData(response).message || unwrapCommandData(response), { id: conversationId });
     });
   }
 
@@ -288,6 +370,15 @@
       auditSecurity('create_for_order_denied', 'denied', { actor: actor, resourceId: order.id || '', reason: 'order_scope_mismatch' });
       return Promise.reject(security.createPermissionError ? security.createPermissionError('conversation:create_for_order', { orderId: order.id || '' }) : new Error('Você não tem permissão para abrir esta conversa.'));
     }
+    if (requiresServerOwnedCommands()) {
+      return executeMessagesServerCommand('createForOrder', Object.assign({}, options || {}, {
+        id: order && (order.id || order.orderId) || options && options.orderId || '',
+        orderId: order && (order.id || order.orderId) || options && options.orderId || '',
+        order: clone(order || {})
+      })).then(function (response) {
+        return normalizeConversationFromProvider(unwrapCommandData(response) && unwrapCommandData(response).conversation || unwrapCommandData(response));
+      });
+    }
     if (shouldUseMessagesApi()) return messagesBoundaryCreateForOrder(order || {}, options || {});
     if (!repository || typeof repository.createForOrder !== 'function') return Promise.resolve(null);
     return repository.createForOrder(order, options || {});
@@ -300,6 +391,15 @@
 
   function updateConversationOrder(order, options) {
     var repository = getRepository();
+    if (requiresServerOwnedCommands()) {
+      return executeMessagesServerCommand('updateOrder', Object.assign({}, options || {}, {
+        id: order && (order.conversationId || order.id || order.orderId) || options && options.conversationId || '',
+        orderId: order && (order.id || order.orderId) || options && options.orderId || '',
+        order: clone(order || {})
+      })).then(function (response) {
+        return normalizeConversationFromProvider(unwrapCommandData(response) && unwrapCommandData(response).conversation || unwrapCommandData(response));
+      });
+    }
     if (shouldUseMessagesApi()) return messagesBoundaryUpdateOrder(order || {}, options || {});
     if (!repository || typeof repository.updateOrderContext !== 'function') return Promise.resolve(null);
     return repository.updateOrderContext(order, options || {});
@@ -374,11 +474,27 @@
       });
       delete messagePayload.deferSideEffects;
 
+      if (requiresServerOwnedCommands()) {
+        return executeMessagesServerCommand('sendMessage', Object.assign({}, messagePayload, {
+          id: conversationId,
+          conversationId: conversationId
+        })).then(function (outcome) {
+          return {
+            message: normalizeMessageFromProvider(unwrapCommandData(outcome) && unwrapCommandData(outcome).message || unwrapCommandData(outcome), { id: conversationId }),
+            commandId: outcome && outcome.commandId || '',
+            acknowledgement: outcome && outcome.acknowledgement || null
+          };
+        });
+      }
       if (shouldUseMessagesApi()) return messagesBoundarySendMessage(conversationId, messagePayload);
       if (!repository || typeof repository.addMessage !== 'function') return Promise.resolve(null);
       return repository.addMessage(conversationId, messagePayload);
-    }).then(function (message) {
+    }).then(function (result) {
+      var message = result && result.message || result;
+      var commandId = result && result.commandId || '';
       if (deferSideEffects) return message;
+      var executor = getCommandExecutor();
+      if (commandId && executor && typeof executor.claimSideEffects === 'function' && !executor.claimSideEffects(commandId)) return message;
       return commitMessageEffects(conversationId, message, { actor: user });
     });
   }
@@ -395,8 +511,16 @@
       if (!message) return false;
       var canRemove = actor.role === 'admin' || actor.role === 'support' || String(message.senderId || '') === String(actor.id || '');
       if (!canRemove) throw new Error('Você não tem permissão para remover esta mensagem.');
-      if (shouldUseMessagesApi()) {
-        throw new Error('Remoção compensatória de mensagem ainda não está disponível no provider de API.');
+      if (requiresServerOwnedCommands() || shouldUseMessagesApi()) {
+        return executeMessagesServerCommand('removeMessage', {
+          id: conversationId,
+          conversationId: conversationId,
+          messageId: messageId
+        }).then(function (response) {
+          var data = unwrapCommandData(response);
+          if (typeof data === 'boolean') return data;
+          return data ? data.ok !== false : true;
+        });
       }
       var repository = getRepository();
       if (!repository || typeof repository.removeMessage !== 'function') return false;
@@ -414,10 +538,17 @@
   function markAsRead(conversationId) {
     if (!conversationId) return Promise.resolve(false);
     var actor = getCurrentUser() || {};
-    if (shouldUseMessagesApi()) {
+    if (requiresServerOwnedCommands() || shouldUseMessagesApi()) {
       return getConversationById(conversationId).then(function (conversation) {
         if (conversation) assertConversationAccess(conversation, 'mark_conversation_read', actor);
-        return messagesBoundaryMarkAsRead(conversationId);
+        return executeMessagesServerCommand('markRead', {
+          id: conversationId,
+          conversationId: conversationId
+        });
+      }).then(function (response) {
+        var data = unwrapCommandData(response);
+        if (typeof data === 'boolean') return data;
+        return data ? data.ok !== false : true;
       });
     }
     var repository = getRepository();
@@ -437,6 +568,7 @@
   services.messages = Object.freeze({
     provider: getMessagesProviderStatus().activeProvider,
     getMessagesProviderStatus: getMessagesProviderStatus,
+    getServerCommandBoundaryStatus: getServerCommandBoundaryStatus,
     listConversations: listConversations,
     listLocalConversations: listLocalConversations,
     getConversationById: getConversationById,
