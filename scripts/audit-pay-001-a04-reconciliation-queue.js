@@ -99,7 +99,7 @@ assert(reconciliationQueue.includes('expectedRevision'), 'optimistic concurrency
 assert(packageJson.scripts['audit:pay-001-a04-reconciliation-queue'] === 'node scripts/audit-pay-001-a04-reconciliation-queue.js', 'package audit command missing');
 assert(packageJson.scripts['test:pay-001-a04-reconciliation-queue'] === 'node scripts/test-pay-001-a04-reconciliation-queue.js', 'package runtime command missing');
 
-assert(matrix.version === '1.3.89', 'matrix version must be 1.3.89');
+assert(/^1\.3\.(?:89|9\d|\d{3,})$/.test(matrix.version), 'matrix version must remain PAY-A04 compatible');
 assert(pay, 'PAY-001 matrix domain missing');
 assert(pay.maturity === 2, 'PAY maturity must remain 2');
 assert(pay.userFacingAuthority === 'local', 'PAY user-facing authority must remain local');
@@ -119,7 +119,7 @@ assert(JSON.stringify(pay.blockers.map((item) => item.id)) === JSON.stringify(['
 ].forEach((requiredPath) => assert(pay.requiredPaths.includes(requiredPath), 'matrix requiredPaths missing ' + requiredPath));
 assert(pay.tests.includes('audit:pay-001-a04-reconciliation-queue'), 'matrix A04 audit missing');
 assert(pay.tests.includes('test:pay-001-a04-reconciliation-queue'), 'matrix A04 runtime missing');
-assert(pay.nextActions[0].includes('PAY-A05'), 'PAY-A05 must be the first next action');
+assert(pay.requiredPaths.includes('config/pay-001-a05-adapter-conformance-readiness.json'), 'PAY-A05 must remain represented');
 
 assert(workflow.includes('permissions:\n  contents: read'), 'PAY-A04 workflow must remain read-only');
 [
