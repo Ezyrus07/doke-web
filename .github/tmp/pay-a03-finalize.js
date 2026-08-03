@@ -42,6 +42,16 @@ replaceRequired(
   "assert(pay.nextActions[0].includes('PAY-A03'), 'PAY-A03 must be next');",
   "assert(pay.nextActions[0].includes('PAY-A03') || pay.nextActions[0].includes('PAY-A04'), 'PAY-A03/PAY-A04 progression mismatch');"
 );
+replaceRequired(
+  'scripts/audit-pay-001-a03-psp-neutral-intent-webhook.js',
+  "  const combined = [intentContract, webhookContract, eventLedger, JSON.stringify(config)].join('\\n').toLowerCase();\n  assert(!combined.includes(providerName), 'provider-specific dependency found: ' + providerName);",
+  "  const combined = [intentContract, webhookContract, eventLedger, JSON.stringify(config)].join('\\n').toLowerCase();\n  const lexical = ' ' + combined.replace(/[^a-z0-9]+/g, ' ') + ' ';\n  const needle = ' ' + providerName.toLowerCase().replace(/[^a-z0-9]+/g, ' ') + ' ';\n  assert(!lexical.includes(needle), 'provider-specific dependency found: ' + providerName);"
+);
+replaceRequired(
+  'scripts/test-pay-001-a03-psp-neutral-intent-webhook.js',
+  "  assert.match(verification.rawBodyHash, /^[0-9a-f]{64}$/);\n\n  await expectReject(\n    () => Promise.resolve().then(() => verifyWebhookSignature({ rawBody, secret: SECRET, signatureHeader: signatureHeader.replace(/.$/, '0'), now: NOW_SECONDS })),",
+  "  assert.match(verification.rawBodyHash, /^[0-9a-f]{64}$/);\n  const invalidSignatureHeader = signatureHeader.slice(0, -1) + (signatureHeader.endsWith('0') ? '1' : '0');\n\n  await expectReject(\n    () => Promise.resolve().then(() => verifyWebhookSignature({ rawBody, secret: SECRET, signatureHeader: invalidSignatureHeader, now: NOW_SECONDS })),"
+);
 
 const pkg = readJson('package.json');
 pkg.scripts['audit:pay-001-a03-psp-neutral-intent-webhook'] = 'node scripts/audit-pay-001-a03-psp-neutral-intent-webhook.js';
@@ -82,4 +92,4 @@ pay.nextActions = [
 ];
 writeJson('config/domain-completion-matrix.json', matrix);
 
-console.log('PAY-A03 package, matrix, cumulative audits and sensitive-field boundary finalized.');
+console.log('PAY-A03 package, matrix, cumulative audits and contract tests finalized.');
