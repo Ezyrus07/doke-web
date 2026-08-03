@@ -1,0 +1,63 @@
+'use strict';
+
+const fs = require('node:fs');
+const path = require('node:path');
+const root = path.resolve(__dirname, '../..');
+const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
+const write = (file, content) => fs.writeFileSync(path.join(root, file), content);
+const readJson = (file) => JSON.parse(read(file));
+const writeJson = (file, value) => write(file, JSON.stringify(value, null, 2) + '\n');
+const uniquePush = (list, values) => {
+  values.forEach((value) => { if (!list.includes(value)) list.push(value); });
+};
+
+const intentPath = 'backend/modules/payments/payment-provider-contract.js';
+let intentContract = read(intentPath);
+const oldPattern = "const SENSITIVE_FIELD_PATTERN = /(^|_)(card(number)?|pan|cvv|cvc|security(code)?|track[12]?|magnetic|raw(card|payment)|full(card|pan))($|_)/i;";
+const newPattern = "const SENSITIVE_FIELD_PATTERN = /(^|_)(card_?number|card|pan|cvv|cvc|security_?code|track_?[12]?|magnetic|raw_?(card|payment)|full_?(card|pan))($|_)/i;";
+if (!intentContract.includes(oldPattern) && !intentContract.includes(newPattern)) {
+  throw new Error('PAY-A03 sensitive field pattern anchor missing.');
+}
+intentContract = intentContract.replace(oldPattern, newPattern);
+write(intentPath, intentContract);
+
+const pkg = readJson('package.json');
+pkg.scripts['audit:pay-001-a03-psp-neutral-intent-webhook'] = 'node scripts/audit-pay-001-a03-psp-neutral-intent-webhook.js';
+pkg.scripts['test:pay-001-a03-psp-neutral-intent-webhook'] = 'node scripts/test-pay-001-a03-psp-neutral-intent-webhook.js';
+writeJson('package.json', pkg);
+
+const matrix = readJson('config/domain-completion-matrix.json');
+matrix.version = '1.3.88';
+matrix.updatedAt = '2026-08-03T09:55:00-03:00';
+const pay = matrix.domains.find((domain) => domain.id === 'PAY-001');
+if (!pay) throw new Error('PAY-001 matrix domain missing.');
+uniquePush(pay.requiredPaths, [
+  'backend/modules/payments/payment-provider-contract.js',
+  'backend/modules/payments/provider-webhook-contract.js',
+  'backend/modules/payments/provider-event-ledger.js',
+  'config/pay-001-a03-psp-neutral-intent-webhook.json',
+  'docs/PAY-001-A03-PSP-NEUTRAL-INTENT-WEBHOOK.md',
+  'docs/validation/PAY-001-A03-PSP-NEUTRAL-INTENT-WEBHOOK.json',
+  'scripts/audit-pay-001-a03-psp-neutral-intent-webhook.js',
+  'scripts/test-pay-001-a03-psp-neutral-intent-webhook.js',
+  '.github/workflows/pay-001-a03-psp-neutral-intent-webhook.yml'
+]);
+uniquePush(pay.tests, [
+  'audit:pay-001-a03-psp-neutral-intent-webhook',
+  'test:pay-001-a03-psp-neutral-intent-webhook'
+]);
+uniquePush(pay.evidence, [
+  'PAY-A03 defines a PSP-neutral payment-intent envelope with deterministic request hashing, integer minor-unit amounts, authorize-then-hold semantics and recursive rejection of raw card data.',
+  'PAY-A03 verifies HMAC-SHA256 signatures against the untouched raw body before JSON parsing, uses constant-time comparison and enforces a bounded timestamp replay window.',
+  'Verified provider events reuse api_idempotency_keys through a service-role-only ledger keyed by provider and event ID; exact replay is safe, payload drift fails closed and failed events require reconciliation.',
+  'No PSP, account, signing secret, webhook registration, migration, deploy or real-money evidence was introduced by PAY-A03.'
+]);
+pay.nextActions = [
+  'PAY-A04 — define provider-neutral reconciliation, divergence classification, operator queue and controlled replay without selecting or activating a PSP.',
+  'PAY-B01 — select and contract a PSP, configure signed webhook authority and run provider-specific staging conformance only after explicit authorization.',
+  'PAY-B03 — approve commercial, fiscal, escrow, refund, dispute and payout rules.',
+  'PAY-B04 — operationalize reconciliation and divergence handling before production.'
+];
+writeJson('config/domain-completion-matrix.json', matrix);
+
+console.log('PAY-A03 package, matrix and sensitive-field boundary finalized.');
