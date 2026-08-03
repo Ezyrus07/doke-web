@@ -15,6 +15,9 @@ const repository = read('assets/js/repositories/messages-presence-repository.js'
 const feature = read('assets/js/features/chat-realtime-presence.js');
 const html = read('mensagens.html');
 const migration = read('supabase/migrations/20260802234000_msg_a06_presence_typing_realtime_authorization_contract.sql');
+const matrix = JSON.parse(read('config/domain-completion-matrix.json'));
+const msg = matrix.domains.find((domain) => domain.id === 'MSG-001');
+const workflow = read('.github/workflows/msg-001-a06-presence-typing-boundary.yml');
 
 assert(config.contractVersion === 'msg-a06-presence-typing-boundary-v1', 'contract version mismatch');
 assert(config.status === 'repository_only_private_ephemeral_boundary_ready_disabled', 'status must remain repository-only');
@@ -50,5 +53,25 @@ assert(migration.includes('for insert'), 'send policy missing');
 assert(migration.includes("extension in ('presence', 'broadcast')"), 'extension restriction missing');
 assert(migration.includes('c.client_id = auth.uid() or c.professional_id = auth.uid()'), 'participant proof missing');
 assert(migration.includes("'^doke:conversation:"), 'topic format guard missing');
+
+assert(matrix.version === '1.3.83', 'matrix version must be 1.3.83');
+assert(msg, 'MSG-001 matrix domain missing');
+[
+  'assets/js/repositories/messages-presence-repository.js',
+  'assets/js/features/chat-realtime-presence.js',
+  'supabase/migrations/20260802234000_msg_a06_presence_typing_realtime_authorization_contract.sql',
+  'config/msg-001-a06-presence-typing-boundary.json',
+  'docs/MSG-001-A06-PRESENCE-TYPING-BOUNDARY.md',
+  'docs/validation/MSG-001-A06-PRESENCE-TYPING-BOUNDARY.json',
+  'scripts/audit-msg-001-a06-presence-typing-boundary.js',
+  'scripts/test-msg-001-a06-presence-typing-runtime.js',
+  '.github/workflows/msg-001-a06-presence-typing-boundary.yml'
+].forEach((requiredPath) => assert(msg.requiredPaths.includes(requiredPath), 'matrix requiredPaths missing ' + requiredPath));
+assert(msg.tests.includes('audit:msg-001-a06-presence-typing-boundary'), 'matrix audit test missing');
+assert(msg.tests.includes('test:msg-001-a06-presence-typing-runtime'), 'matrix runtime test missing');
+assert(workflow.includes('permissions:\n  contents: read'), 'MSG-A06 workflow must remain read-only');
+['contents: write', 'secrets.', 'SUPABASE_ACCESS_TOKEN', 'SUPABASE_DB_PASSWORD', 'psql ', 'curl ', 'git push'].forEach((fragment) => {
+  assert(!workflow.includes(fragment), 'MSG-A06 workflow contains prohibited fragment: ' + fragment);
+});
 
 console.log('MSG-A06 presence and typing boundary audit passed.');
