@@ -46,27 +46,25 @@ jobs:
               docs/validation/PAY-001-A08-*|\
               scripts/audit-pay-001-a08-*|\
               scripts/test-pay-001-a08-*|\
+              scripts/pay-001-a08-publish.js|\
               supabase/migrations/*|\
-              .github/workflows/pay-001-a08-*|\
-              package.json|\
-              config/domain-completion-matrix.json|\
-              scripts/audit-pay-001-a07-reconciliation-operations-readiness.js) ;;
+              .github/workflows/pay-001-a08-*) ;;
               *) echo "Unexpected archive entry: $file" >&2; exit 1 ;;
             esac
           done < /tmp/pay-a08-files.txt
           tar -xzf /tmp/pay-a08.tar.gz -C .
           rm -rf .pay-a08-bootstrap
           rm -f .github/workflows/pay-001-a08-bootstrap-temp.yml
+      - name: Patch canonical package, matrix and cumulative A07 gate
+        run: node scripts/pay-001-a08-publish.js
       - run: npm ci --ignore-scripts
       - name: Generate canonical matrix derivatives
         run: npm run write:domain-completion-matrix
       - name: Validate PAY-A08 and cumulative contracts
         run: |
-          A08_AUDIT="$(node -e "const s=require('./package.json').scripts; const k=Object.keys(s).find(x=>x.startsWith('audit:pay-001-a08')); if(k) process.stdout.write(k)")"
-          A08_TEST="$(node -e "const s=require('./package.json').scripts; const k=Object.keys(s).find(x=>x.startsWith('test:pay-001-a08')); if(k) process.stdout.write(k)")"
-          test -n "$A08_AUDIT"
-          test -n "$A08_TEST"
-          find backend/modules/payments scripts -maxdepth 2 -type f \( -iname '*a08*.js' -o -iname '*migration*canary*.js' \) -print0 | xargs -0 -r -n1 node --check
+          node --check backend/modules/payments/payment-reconciliation-migration-canary-contract.js
+          node --check scripts/audit-pay-001-a08-immutable-migrations-read-only-canary.js
+          node --check scripts/test-pay-001-a08-immutable-migrations-read-only-canary.js
           npm run audit:pay-001-a01-authority-baseline
           npm run test:pay-001-a01-authority-baseline
           npm run audit:pay-001-a02-authenticated-authority-boundary
@@ -83,8 +81,8 @@ jobs:
           npm run test:pay-001-a06-provider-selection-legal-handoff
           npm run audit:pay-001-a07-reconciliation-operations-readiness
           npm run test:pay-001-a07-reconciliation-operations-readiness
-          npm run "$A08_AUDIT"
-          npm run "$A08_TEST"
+          npm run audit:pay-001-a08-immutable-migrations-read-only-canary
+          npm run test:pay-001-a08-immutable-migrations-read-only-canary
           node scripts/test-semantic-version.js
           npm run audit:msg-001-a06-presence-typing-boundary
           npm run test:msg-001-a06-presence-typing-runtime
@@ -104,15 +102,18 @@ jobs:
         run: |
           test ! -e .pay-a08-bootstrap/payload.b64
           test ! -e .github/workflows/pay-001-a08-bootstrap-temp.yml
-          test "$(find supabase/migrations -maxdepth 1 -type f -newer .git/HEAD 2>/dev/null | wc -l)" -ge 0
           for workflow in .github/workflows/pay-001-a08-*.yml; do
             test -f "$workflow"
+            case "$workflow" in
+              *-temp.yml) continue ;;
+            esac
             grep -q $'permissions:\n  contents: read' "$workflow"
             if grep -E 'contents: write|secrets\.|SUPABASE_ACCESS_TOKEN|SUPABASE_DB_PASSWORD|(^|[[:space:]])psql[[:space:]]|(^|[[:space:]])curl[[:space:]]|supabase (db push|migration up|functions deploy)|git push' "$workflow"; then
               echo "Permanent workflow contains prohibited remote capability: $workflow" >&2
               exit 1
             fi
           done
+          rm -f scripts/pay-001-a08-publish.js
           changed="$(git status --short | sed -E 's/^.. //' | sort)"
           test -n "$changed"
           while IFS= read -r file; do
@@ -120,14 +121,14 @@ jobs:
               .pay-a08-bootstrap/payload.b64|\
               .github/workflows/pay-001-a08-bootstrap-temp.yml|\
               .github/workflows/pay-001-a08-*.yml|\
-              backend/modules/payments/*|\
+              backend/modules/payments/payment-reconciliation-migration-canary-contract.js|\
               config/pay-001-a08-*|\
               docs/PAY-001-A08-*|\
               docs/validation/PAY-001-A08-*|\
               scripts/audit-pay-001-a08-*|\
               scripts/test-pay-001-a08-*|\
               scripts/audit-pay-001-a07-reconciliation-operations-readiness.js|\
-              supabase/migrations/*|\
+              supabase/migrations/*pay_a08*.sql|\
               package.json|\
               config/domain-completion-matrix.json|\
               docs/DOMAIN-COMPLETION-MATRIX.md|\
