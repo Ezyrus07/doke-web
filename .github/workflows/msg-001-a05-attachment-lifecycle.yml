@@ -3,7 +3,7 @@ name: Doke MSG-A05 Attachment Lifecycle Contract
 on:
   pull_request:
     paths:
-      - 'scripts/tmp-finalize-msg-a06.js'
+      - 'scripts/tmp-cleanup-msg-a06.js'
       - '.github/workflows/msg-001-a05-attachment-lifecycle.yml'
   workflow_dispatch:
 
@@ -11,7 +11,7 @@ permissions:
   contents: write
 
 jobs:
-  finalize-a06:
+  cleanup-a06:
     if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.ref == 'msg/msg-001-baseline-audit'
     runs-on: ubuntu-24.04
     timeout-minutes: 12
@@ -23,11 +23,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      - name: Finalize permanent MSG-A06 gate and matrix
-        run: |
-          node scripts/tmp-finalize-msg-a06.js
-          node scripts/audit-domain-completion-matrix.js --write
-      - name: Validate cumulative MSG contracts
+      - name: Remove temporary publishers and restore MSG-A05 gate
+        run: node scripts/tmp-cleanup-msg-a06.js
+      - name: Validate canonical MSG-A06 before cleanup commit
         run: |
           npm run audit:msg-001-a01-authority-baseline
           npm run audit:msg-001-a02-canonical-authority-boundary
@@ -42,17 +40,21 @@ jobs:
           npm run test:msg-001-a06-presence-typing-runtime
           npm run audit:domain-completion-matrix
           git diff --check
-      - name: Commit final MSG-A06 metadata
+      - name: Commit clean repository state
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add scripts/audit-msg-001-a06-presence-typing-boundary.js
-          git add config/domain-completion-matrix.json
-          git add docs/DOMAIN-COMPLETION-MATRIX.md
-          git add -f reports/generated/domain-completion-matrix-report.json
-          if git diff --cached --quiet; then
-            echo "No final metadata changes to commit."
-            exit 0
-          fi
-          git commit -m "Finalize MSG-A06 read-only gate metadata"
+          git add -A scripts/tmp-a06-1.js
+          git add -A scripts/tmp-a06-group1.js
+          git add -A scripts/tmp-a06-5.js
+          git add -A scripts/tmp-a06-6.js
+          git add -A scripts/tmp-a06-7.js
+          git add -A scripts/tmp-a06-8.js
+          git add -A scripts/tmp-patch-msg-a06.js
+          git add -A scripts/tmp-patch-msg-a06-cumulative.js
+          git add -A scripts/tmp-finalize-msg-a06.js
+          git add -A .github/workflows/tmp-msg-a06-publisher.yml
+          git add .github/workflows/msg-001-a05-attachment-lifecycle.yml
+          git rm scripts/tmp-cleanup-msg-a06.js
+          git commit -m "Remove MSG-A06 temporary publishers"
           git push origin HEAD:msg/msg-001-baseline-audit
