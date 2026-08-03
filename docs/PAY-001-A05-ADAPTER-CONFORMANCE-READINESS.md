@@ -1,90 +1,111 @@
-# PAY-001 / A05 — Conformidade de adaptadores e readiness fail-closed de staging
+# PAY-001 / A05 — Conformidade de adapters e readiness fail-closed de staging
 
 ## Objetivo
 
-Definir o conjunto mínimo de provas que qualquer futuro adaptador de PSP deve passar antes de ser considerado candidato a staging, e congelar um gate que permaneça bloqueado enquanto seleção do provedor, revisão jurídico-contábil, credenciais, webhook, reconciliação e autorização one-shot não existirem.
+Definir o conjunto mínimo de provas que qualquer futuro adapter de PSP deve passar antes de ser considerado candidato a staging, sem escolher provedor, criar conta, usar credenciais ou executar efeitos financeiros.
 
-A05 é exclusivamente repository-only. O harness usa um adaptador de fixture, sem rede e sem efeitos remotos.
+O A05 é exclusivamente repository-only. O harness usa fixtures determinísticas, rede desabilitada e autoridade financeira nula.
 
-## Contrato do adaptador
+## Contrato explícito do adapter
 
-Todo adaptador candidato deve declarar um manifest `pay-provider-adapter-v1` e implementar:
+O contrato `pay-provider-adapter-v1` exige:
 
 - `getManifest`;
+- `checkHealth`;
 - `createPaymentIntent`;
+- `getPaymentIntent`;
+- `normalizeIntentAcknowledgement`;
 - `normalizeWebhookEvent`;
 - `fetchPaymentSnapshot`;
 - `classifyError`.
 
-O manifest deve declarar suporte a `BRL`, `authorize_then_hold`, todos os eventos normalizados de A03 e as seguintes restrições:
+O manifesto deve fixar uma versão imutável do adapter, suportar `BRL` e declarar individualmente, como `true` ou `false`, as capacidades:
 
-- inacessível ao navegador;
-- segredo resolvido somente no runtime server-side;
-- nenhum dado bruto de cartão;
-- nenhuma mutação financeira direta;
+- authorize e hold;
+- capture/release;
+- refund total e parcial;
+- cancelamento;
+- disputa e chargeback;
+- payout e split;
+- webhooks assinados;
+- idempotência;
+- consulta de eventos e settlement;
+- reconciliação.
+
+Capacidade ausente não recebe fallback. A operação é recusada com erro estável `DOKE_PAYMENT_ADAPTER_CAPABILITY_UNSUPPORTED`.
+
+O manifesto também congela:
+
+- navegador sem acesso ao adapter;
+- secrets somente no runtime server-side;
+- dados brutos de cartão proibidos;
+- mutação financeira direta proibida;
+- fallback local de mutação para UUID proibido;
 - settlement somente por eventos verificados.
 
-## Harness de conformidade
+## Harness local de conformidade
 
-O harness local prova:
+O harness base e a extensão explícita validam:
 
-1. manifest e capacidades obrigatórias;
-2. criação idempotente do payment intent;
-3. conflito quando a mesma chave recebe outro payload;
-4. acknowledgement incapaz de declarar settlement;
-5. normalização do webhook somente após assinatura verificada;
-6. snapshot do PSP reconciliável com a projeção canônica;
-7. rejeição de campos sensíveis;
-8. classificação fail-closed de timeout, rate limit, autenticação, conflito e erro permanente.
+1. interface, versão imutável e manifesto de capacidades;
+2. health/readiness sem rede, mutação remota, dinheiro ou produção;
+3. criação, consulta e replay idempotente do payment intent;
+4. rejeição de payload drift e acknowledgement incompleto;
+5. rejeição recursiva de PAN, CVV/CVC e dados equivalentes;
+6. assinatura válida, inválida e expirada;
+7. raw body obrigatório antes do parse;
+8. normalização somente após verificação;
+9. replay exato determinístico;
+10. claim concorrente e event ID reutilizado com payload diferente;
+11. evento fora de ordem adiado e estado terminal protegido;
+12. snapshots reconciliados e divergências classificadas;
+13. resolução automática e mutação automática de dinheiro sempre falsas;
+14. timeout, rate limit, autenticação, conflito, indisponibilidade, resposta incompleta e erro permanente;
+15. capacidade não suportada bloqueada;
+16. ausência de fallback local de mutação para usuários UUID.
 
-A evidência contém somente hashes, IDs de fixture e contadores zero de rede, mutação remota e efeitos financeiros.
+A evidência permanece sintética e contém somente hashes, IDs de fixture e contadores zero de rede, staging e dinheiro.
 
-## Gate de staging
+## Readiness fail-closed para staging
 
-O gate `pay-staging-readiness-v1` exige cumulativamente:
+Antes de qualquer futura execução, o gate exige cumulativamente:
 
-- contratos A01–A05 verdes;
-- harness do adaptador verde;
-- head Git exato;
-- seleção formal do PSP;
-- aprovação jurídica e contábil;
-- conta sandbox do PSP;
+- A01–A05 verdes no head exato;
+- PSP formalmente selecionado;
+- revisão jurídica e contábil;
+- conta sandbox;
+- adapter específico com versão imutável;
+- projeto staging confirmado e produção explicitamente negada;
 - credenciais exclusivamente server-side;
-- secret e endpoint de webhook registrados;
-- projeto de staging confirmado e produção negada;
-- feature flags desligadas;
-- store de reconciliação e fila operacional prontos;
-- rollback e plano de evidência;
-- autorização explícita, fresca e one-shot.
+- secret e endpoint controlado de webhook;
+- migrations e deploys identificados;
+- fixtures exclusivamente sintéticas;
+- sandbox ou orçamento máximo zero;
+- store de reconciliação e fila operacional;
+- rollback e cleanup definidos;
+- evidência sanitizada;
+- autorização explícita, fresca, head-pinned e one-shot.
 
-Se qualquer item faltar, `readyForAuthorizedStagingExecution` permanece `false`.
+A ausência de qualquer item mantém `readyForAuthorizedStagingExecution: false`.
 
-## Plano não executável
+## Autoridade não concedida
 
-Mesmo quando todos os checks forem verdadeiros, o contrato apenas produz um plano:
-
-- não executável pelo próprio contrato;
-- dependente de executor externo autorizado;
-- preso ao head e ao hash de readiness;
-- produção proibida;
-- nenhuma feature flag pode mudar antes da revisão da evidência.
-
-A autorização deve ser one-shot, corresponder ao head e ao hash do plano e declarar `productionAllowed: false`.
+Mesmo com readiness integral, o repositório produz apenas um plano não executável. Ele não pode selecionar PSP, registrar webhook, configurar secret, aplicar migration, fazer deploy, criar pagamento, refund, payout ou disputa, nem alterar feature flags ou produção.
 
 ## Blockers preservados
 
-- `PAY-B01`: PSP, conta, credenciais, webhook e conformance específica ainda ausentes;
-- `PAY-B03`: regras comerciais, fiscais, escrow, refund, disputa e payout ainda não aprovadas;
-- `PAY-B04`: store remoto, agenda, fila real, métricas e runbook ainda ausentes.
+- `PAY-B01`: PSP, conta, adapter específico, credenciais, webhook e conformance real ainda ausentes;
+- `PAY-B03`: regras comerciais, fiscais, escrow, refund, disputa, chargeback e payout ainda não aprovadas;
+- `PAY-B04`: store remoto, scheduler, fila real, métricas, alertas e runbook ainda ausentes.
+
+A maturidade permanece `2/6`, matriz `1.3.90`, autoridade server-side `contract_only` e gates de segurança e produção bloqueados.
 
 ## Efeitos operacionais
 
-- staging reads: 0;
-- staging mutations: 0;
-- migrations: 0;
-- deploys: 0;
+- staging reads e mutations: 0;
+- migrations e deploys: 0;
 - contas, secrets ou webhooks: 0;
-- execuções contra sandbox externo: 0;
-- pagamentos, refunds ou payouts: 0;
+- chamadas externas de PSP: 0;
+- pagamentos, refunds e payouts: 0;
 - produção: intocada;
 - merge: não.

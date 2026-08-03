@@ -1,5 +1,5 @@
 name: Doke PAY-A05 Adapter Conformance and Staging Readiness
-# Definitive repository-only validation on the clean PAY-A05 head. No provider network or staging executor is invoked.
+# Definitive repository-only validation for the explicit adapter contract. No provider network or staging executor is invoked.
 
 on:
   pull_request:
@@ -10,6 +10,8 @@ on:
       - 'docs/validation/PAY-001-A05-ADAPTER-CONFORMANCE-READINESS.json'
       - 'scripts/audit-pay-001-a05-adapter-conformance-readiness.js'
       - 'scripts/test-pay-001-a05-adapter-conformance-readiness.js'
+      - 'scripts/audit-pay-001-a05-adapter-contract.js'
+      - 'scripts/test-pay-001-a05-adapter-contract.js'
       - 'scripts/audit-pay-001-a04-reconciliation-queue.js'
       - 'config/domain-completion-matrix.json'
       - 'docs/DOMAIN-COMPLETION-MATRIX.md'
@@ -35,9 +37,12 @@ jobs:
       - name: Validate PAY-A01 through PAY-A05
         run: |
           node --check backend/modules/payments/payment-provider-adapter-conformance.js
+          node --check backend/modules/payments/payment-provider-adapter-contract.js
           node --check backend/modules/payments/payment-staging-readiness.js
           node --check scripts/audit-pay-001-a05-adapter-conformance-readiness.js
           node --check scripts/test-pay-001-a05-adapter-conformance-readiness.js
+          node --check scripts/audit-pay-001-a05-adapter-contract.js
+          node --check scripts/test-pay-001-a05-adapter-contract.js
           npm run audit:pay-001-a01-authority-baseline
           npm run test:pay-001-a01-authority-baseline
           npm run audit:pay-001-a02-authenticated-authority-boundary
@@ -48,6 +53,8 @@ jobs:
           npm run test:pay-001-a04-reconciliation-queue
           npm run audit:pay-001-a05-adapter-conformance-readiness
           npm run test:pay-001-a05-adapter-conformance-readiness
+          node scripts/audit-pay-001-a05-adapter-contract.js
+          node scripts/test-pay-001-a05-adapter-contract.js
           npm run test:finance-supabase-repository-contract
           npm run test:financial-rpc-authority-contract
           npm run test:financial-operations-edge-runtime
