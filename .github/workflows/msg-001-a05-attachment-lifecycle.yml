@@ -10,6 +10,7 @@ on:
       - 'scripts/tmp-a06-7.js'
       - 'scripts/tmp-a06-8.js'
       - 'scripts/tmp-patch-msg-a06.js'
+      - 'scripts/tmp-patch-msg-a06-cumulative.js'
       - '.github/workflows/msg-001-a05-attachment-lifecycle.yml'
   workflow_dispatch:
 
@@ -40,6 +41,7 @@ jobs:
           node scripts/tmp-a06-7.js
           node scripts/tmp-a06-8.js
           node scripts/tmp-patch-msg-a06.js
+          node scripts/tmp-patch-msg-a06-cumulative.js
           node scripts/audit-domain-completion-matrix.js --write
 
       - name: Validate MSG-A06
@@ -77,6 +79,9 @@ jobs:
           git add scripts/audit-msg-001-a06-presence-typing-boundary.js
           git add scripts/test-msg-001-a06-presence-typing-runtime.js
           git add scripts/audit-msg-001-a01-authority-baseline.js
+          git add scripts/audit-msg-001-a02-canonical-authority-boundary.js
+          git add scripts/audit-msg-001-a03-server-command-boundary.js
+          git add scripts/audit-msg-001-a05-attachment-lifecycle.js
           git add config/domain-completion-matrix.json
           git add docs/DOMAIN-COMPLETION-MATRIX.md
           git add reports/generated/domain-completion-matrix-report.json
