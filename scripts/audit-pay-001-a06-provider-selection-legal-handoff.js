@@ -141,7 +141,7 @@ assert(pay.tests.includes('audit:pay-001-a06-provider-selection-legal-handoff'),
 assert(pay.tests.includes('test:pay-001-a06-provider-selection-legal-handoff'), 'matrix A06 runtime missing');
 assert(pay.evidence.some((item) => item.includes('PAY-A06')), 'matrix A06 evidence missing');
 assert(pay.requiredPaths.includes('backend/modules/payments/payment-reconciliation-operations-contract.js'), 'PAY-A07 must remain completed after the handoff');
-assert(pay.nextActions[0].includes('PAY-A08'), 'PAY-A08 must follow completed PAY-A07');
+assert(['PAY-A08', 'PAY-A09'].some((sublot) => pay.nextActions[0].includes(sublot)), 'PAY-A08 or its completed successor PAY-A09 must follow PAY-A07');
 
 assert(workflow.includes('permissions:\n  contents: read'), 'PAY-A06 workflow must remain read-only');
 [

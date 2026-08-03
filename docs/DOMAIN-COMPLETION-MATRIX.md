@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 1132 arquivos no escopo; 271 referências a localStorage; 78 a sessionStorage; 577 referências mock; 206 referências de rede/Supabase; 35 marcadores de implementação pendente.
+**Evidência estática observada:** 1136 arquivos no escopo; 271 referências a localStorage; 78 a sessionStorage; 577 referências mock; 206 referências de rede/Supabase; 35 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -151,7 +151,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção blocked.
 
-**Evidência estática observada:** 218 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 0 referências mock; 5 referências de rede/Supabase; 9 marcadores de implementação pendente.
+**Evidência estática observada:** 222 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 0 referências mock; 5 referências de rede/Supabase; 9 marcadores de implementação pendente.
 
 **Tabelas/autoridades de dados:** `users`, `user_profiles`, `client_profiles`, `audit_logs`, `availability_slots`, `budgets`, `communities`, `community_members`, `community_posts`, `favorites`, `message_attachments`, `reports`, `reviews`, `service_categories`, `verification_events`.
 
@@ -344,7 +344,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção blocked.
 
-**Evidência estática observada:** 221 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 3 referências mock; 19 referências de rede/Supabase; 9 marcadores de implementação pendente.
+**Evidência estática observada:** 225 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 3 referências mock; 19 referências de rede/Supabase; 9 marcadores de implementação pendente.
 
 **Páginas:** `index.html`, `resultados.html`, `detalhe-anuncio.html`.
 
@@ -539,7 +539,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI local; servidor partial; staging staging canary; segurança partial; produção blocked.
 
-**Evidência estática observada:** 1078 arquivos no escopo; 205 referências a localStorage; 70 a sessionStorage; 318 referências mock; 205 referências de rede/Supabase; 19 marcadores de implementação pendente.
+**Evidência estática observada:** 1085 arquivos no escopo; 205 referências a localStorage; 70 a sessionStorage; 318 referências mock; 205 referências de rede/Supabase; 19 marcadores de implementação pendente.
 
 **Páginas:** `anunciar-servico.html`, `pedidos.html`, `orcamento.html`.
 
@@ -699,11 +699,11 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 2/6; UI local; servidor contract only; staging local e2e; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 16 arquivos no escopo; 1 referências a localStorage; 0 a sessionStorage; 2 referências mock; 47 referências de rede/Supabase; 2 marcadores de implementação pendente.
+**Evidência estática observada:** 21 arquivos no escopo; 1 referências a localStorage; 0 a sessionStorage; 2 referências mock; 47 referências de rede/Supabase; 2 marcadores de implementação pendente.
 
 **Páginas:** `pagamento-profissional.html`, `mensagens.html`, `pedidos.html`.
 
-**Tabelas/autoridades de dados:** `payments`, `transactions`, `receipts`, `wallet_receivables`.
+**Tabelas/autoridades de dados:** `payments`, `transactions`, `receipts`, `wallet_receivables`, `private.payment_reconciliation_cases`, `private.payment_reconciliation_audit_events`, `private.payment_reconciliation_leases`, `private.payment_reconciliation_alert_outbox`, `private.payment_reconciliation_metric_rollups`.
 
 **Edge Functions:** `financial-operations`.
 
@@ -736,14 +736,15 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - PAY-A06 selection authorizes only local provider-specific adapter preparation without secrets or network access; account, billing, webhook, migration, deploy, sandbox money and production remain separately blocked.
 - PAY-A06 staging conformance authorization is separately bound to candidate, packet, head, immutable adapter version, staging identity, evidence hash and sandbox/zero-budget constraints, while repository execution authority remains absent.
 - PAY-A07 defines the repository-only provider-neutral reconciliation operations contract: server-only persistence, optimistic concurrency, database leases, disabled idempotent scheduler, low-cardinality metrics, atomic sanitized alert outbox, incident runbook and resource-bound one-shot staging authorization; no remote infrastructure or money authority was activated.
+- PAY-A08 freezes four provider-neutral private reconciliation migration sources by SHA-256 and defines a SELECT-only schema/migration-history canary that rejects DDL, DML, RPC, scheduler mutation, migration application and automatic drift repair; no remote read or mutation was executed.
 
 **Bloqueadores:**
 - **PAY-B01 · CRITICAL · external_provider:** No PSP integration or signed webhook authority exists. _(Fase 8)_
 - **PAY-B03 · CRITICAL · legal_compliance:** Commercial, tax, escrow and refund rules are not legally approved. _(Fase 2)_
-- **PAY-B04 · HIGH · reconciliation:** Remote operational reconciliation infrastructure remains absent: no canonical store, database leases, scheduler, metrics sink, alert delivery, on-call ownership or staging rehearsal exists. PAY-A07 defines the repository-only contract but does not deploy or activate those resources. _(Fase 8)_
+- **PAY-B04 · HIGH · reconciliation:** Remote reconciliation infrastructure remains absent. PAY-A08 defines four immutable migration sources and a read-only canary contract, but no migration is applied and no canonical store, database lease, scheduler, metrics sink, alert delivery, on-call ownership or staging rehearsal exists. _(Fase 8)_
 
 **Próximas ações:**
-- PAY-A08 — design immutable provider-neutral migrations and a read-only staging canary plan for the A07 store, lease, outbox and observability contracts without applying anything until a separate explicit authorization.
+- PAY-A09 — prepare separate resource-bound handoffs for read-only schema inspection and for migration application; neither action is authorized by generic continuation.
 - PAY-B03 — complete qualified commercial, fiscal, funds-flow, escrow, refund, dispute, chargeback and payout decisions before any provider selection.
 - PAY-B01 — evaluate candidates using the PAY-A06 packet and provide the exact resource-bound selection authorization only after every approval is current.
 - PAY-B04 — implement and validate the remote reconciliation store, operator queue, scheduler and observability before provider sandbox activation.
@@ -1035,7 +1036,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 1/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 256 arquivos no escopo; 68 referências a localStorage; 8 a sessionStorage; 272 referências mock; 8 referências de rede/Supabase; 25 marcadores de implementação pendente.
+**Evidência estática observada:** 257 arquivos no escopo; 68 referências a localStorage; 8 a sessionStorage; 272 referências mock; 8 referências de rede/Supabase; 25 marcadores de implementação pendente.
 
 **Evidências:**
 - The master plan identifies legal, privacy and commercial decisions as mandatory.
@@ -1095,7 +1096,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2494 arquivos no escopo; 529 referências a localStorage; 151 a sessionStorage; 902 referências mock; 608 referências de rede/Supabase; 89 marcadores de implementação pendente.
+**Evidência estática observada:** 2504 arquivos no escopo; 529 referências a localStorage; 151 a sessionStorage; 902 referências mock; 608 referências de rede/Supabase; 89 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
@@ -1156,4 +1157,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-08-03T14:20:00-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-08-03T17:26:00-03:00._
