@@ -1,0 +1,91 @@
+#!/usr/bin/env node
+'use strict';
+
+const fs = require('node:fs');
+const path = require('node:path');
+
+const temporaryFiles = [
+  'scripts/tmp-a06-1.js',
+  'scripts/tmp-a06-group1.js',
+  'scripts/tmp-a06-5.js',
+  'scripts/tmp-a06-6.js',
+  'scripts/tmp-a06-7.js',
+  'scripts/tmp-a06-8.js',
+  'scripts/tmp-patch-msg-a06.js',
+  'scripts/tmp-patch-msg-a06-cumulative.js',
+  'scripts/tmp-finalize-msg-a06.js',
+  '.github/workflows/tmp-msg-a06-publisher.yml'
+];
+
+temporaryFiles.forEach((file) => {
+  if (fs.existsSync(file)) fs.rmSync(file);
+});
+
+const canonicalA05 = `name: Doke MSG-A05 Attachment Lifecycle Contract
+
+on:
+  pull_request:
+    paths:
+      - 'assets/js/repositories/attachments-repository.js'
+      - 'assets/js/core/supabase-config.js'
+      - 'supabase/migrations/20260802220000_msg_a05_transaction_attachment_lifecycle_contract.sql'
+      - 'supabase/functions/self-service-operations/index.ts'
+      - 'supabase/functions/self-service-operations/operations.mjs'
+      - 'supabase/functions/transaction-attachment-cleanup/index.ts'
+      - 'config/msg-001-a05-attachment-lifecycle.json'
+      - 'docs/MSG-001-A05-ATTACHMENT-LIFECYCLE.md'
+      - 'docs/validation/MSG-001-A05-ATTACHMENT-LIFECYCLE.json'
+      - 'scripts/audit-msg-001-a05-attachment-lifecycle.js'
+      - 'scripts/test-msg-001-a05-attachment-lifecycle-runtime.js'
+      - 'package.json'
+      - 'config/domain-completion-matrix.json'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+      - '.github/workflows/msg-001-a05-attachment-lifecycle.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci --ignore-scripts
+
+      - name: Validate MSG-A05 attachment lifecycle
+        run: |
+          node --check assets/js/repositories/attachments-repository.js
+          node --check scripts/audit-msg-001-a05-attachment-lifecycle.js
+          node --check scripts/test-msg-001-a05-attachment-lifecycle-runtime.js
+          npm run audit:msg-001-a01-authority-baseline
+          npm run audit:msg-001-a02-canonical-authority-boundary
+          npm run test:msg-001-a02-canonical-authority-boundary
+          npm run audit:msg-001-a03-server-command-boundary
+          npm run test:msg-001-a03-server-command-boundary
+          npm run audit:msg-001-a04-realtime-publication-subscription-contract
+          npm run test:msg-001-a04-realtime-publication-subscription-runtime
+          npm run audit:msg-001-a05-attachment-lifecycle
+          npm run test:msg-001-a05-attachment-lifecycle-runtime
+          npm run audit:messages-api-contract
+          npm run test:messages-supabase-repository-contract
+          npm run test:attachments-supabase-repository-contract
+          npm run test:self-service-operations-authority-contract
+          npm run test:self-service-operations-authority-runtime
+          npm run audit:edge-functions-source-closure
+          npm run audit:domain-completion-matrix
+          git diff --check
+`;
+
+fs.mkdirSync(path.dirname('.github/workflows/msg-001-a05-attachment-lifecycle.yml'), { recursive: true });
+fs.writeFileSync('.github/workflows/msg-001-a05-attachment-lifecycle.yml', canonicalA05);
+
+console.log('MSG-A06 temporary publishers removed and MSG-A05 gate restored.');
