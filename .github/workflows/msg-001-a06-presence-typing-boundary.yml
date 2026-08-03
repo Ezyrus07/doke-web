@@ -1,41 +1,49 @@
 name: Doke MSG-A06 Presence Typing Boundary
-# Temporary MSG-A07 publisher attempt 6; restored read-only in working tree before validation.
 
 on:
   pull_request:
     paths:
+      - 'assets/js/repositories/messages-presence-repository.js'
+      - 'assets/js/features/chat-realtime-presence.js'
+      - 'assets/js/core/supabase-config.js'
+      - 'mensagens.html'
+      - 'supabase/migrations/20260802234000_msg_a06_presence_typing_realtime_authorization_contract.sql'
+      - 'config/msg-001-a06-presence-typing-boundary.json'
+      - 'docs/MSG-001-A06-PRESENCE-TYPING-BOUNDARY.md'
+      - 'docs/validation/MSG-001-A06-PRESENCE-TYPING-BOUNDARY.json'
+      - 'scripts/audit-msg-001-a06-presence-typing-boundary.js'
+      - 'scripts/test-msg-001-a06-presence-typing-runtime.js'
+      - 'scripts/audit-msg-001-a01-authority-baseline.js'
+      - 'scripts/audit-msg-001-a02-canonical-authority-boundary.js'
+      - 'scripts/audit-msg-001-a03-server-command-boundary.js'
+      - 'scripts/audit-msg-001-a05-attachment-lifecycle.js'
+      - 'config/domain-completion-matrix.json'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+      - 'package.json'
       - '.github/workflows/msg-001-a06-presence-typing-boundary.yml'
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  publish-a07:
-    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.ref == 'msg/msg-001-baseline-audit'
+  boundary:
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: msg/msg-001-baseline-audit
-          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
       - run: npm ci --ignore-scripts
-      - name: Generate MSG-A07 repository contract
+      - name: Validate MSG-A06 private presence and typing boundary
         run: |
-          node .github/tmp/fix-msg-a07-generator.js
-          node .github/tmp/patch-msg-a07-generator-v2.js
-          node .github/tmp/patch-msg-a07-generator-v3.js
-          node .github/tmp/patch-msg-a07-generator-v4.js
-          node .github/tmp/msg-a07-generator.js
-          node .github/tmp/restore-msg-a06-readonly.js
-          node scripts/audit-domain-completion-matrix.js --write
-      - name: Validate cumulative MSG-A01 through MSG-A07
-        run: |
+          node --check assets/js/repositories/messages-presence-repository.js
+          node --check assets/js/features/chat-realtime-presence.js
+          node --check scripts/audit-msg-001-a06-presence-typing-boundary.js
+          node --check scripts/test-msg-001-a06-presence-typing-runtime.js
           npm run audit:msg-001-a01-authority-baseline
           npm run audit:msg-001-a02-canonical-authority-boundary
           npm run test:msg-001-a02-canonical-authority-boundary
@@ -47,24 +55,5 @@ jobs:
           npm run test:msg-001-a05-attachment-lifecycle-runtime
           npm run audit:msg-001-a06-presence-typing-boundary
           npm run test:msg-001-a06-presence-typing-runtime
-          npm run audit:msg-001-a07-command-reliability
-          npm run test:msg-001-a07-command-reliability-runtime
-          npm run audit:messages-api-contract
-          npm run audit:runtime-idempotency-audit
-          npm run audit:staging-messaging-runtime
           npm run audit:domain-completion-matrix
           git diff --check
-      - name: Commit canonical MSG-A07 files
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git reset .github/workflows .github/tmp
-          git add -f docs/validation/MSG-001-A07-COMMAND-RELIABILITY.json
-          git add -f reports/generated/domain-completion-matrix-report.json
-          if git diff --cached --quiet; then
-            echo "MSG-A07 files already current."
-            exit 0
-          fi
-          git commit -m "Implement MSG-A07 command reliability contract"
-          git push origin HEAD:msg/msg-001-baseline-audit
