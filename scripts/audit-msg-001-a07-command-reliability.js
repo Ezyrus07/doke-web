@@ -33,7 +33,7 @@ assert(backend.includes('async function removeMessage'), 'server remove command 
 assert(backend.includes("status: 'removed'"), 'remove tombstone missing');
 assert(handlers.includes('createMessagingCommandHandler'), 'ack wrapper missing');
 assert(handlers.includes("status: replayed ? 'replayed' : 'accepted'"), 'ack states missing');
-assert(matrix.version === '1.3.84', 'matrix version');
+assert(['1.3.84', '1.3.85'].includes(matrix.version), 'matrix version must include A07 or A08');
 assert(msg && msg.tests.includes('audit:msg-001-a07-command-reliability'), 'matrix audit');
 assert(msg.tests.includes('test:msg-001-a07-command-reliability-runtime'), 'matrix runtime');
 assert(workflow.includes('permissions:\n  contents: read'), 'workflow read-only');
