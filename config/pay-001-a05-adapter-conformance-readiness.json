@@ -1,0 +1,97 @@
+{
+  "contractVersion": "pay-a05-adapter-conformance-readiness-v1",
+  "status": "repository_only_psp_neutral_conformance_ready_staging_blocked",
+  "objective": "Define a provider-neutral adapter conformance harness and fail-closed staging readiness gate without selecting, configuring or activating a PSP.",
+  "provider": {
+    "selected": false,
+    "adapterActivated": false,
+    "accountCreated": false,
+    "webhookRegistered": false,
+    "secretConfigured": false
+  },
+  "adapterHarness": {
+    "contractVersion": "pay-provider-adapter-v1",
+    "harnessVersion": "pay-provider-adapter-conformance-v1",
+    "fixtureOnly": true,
+    "networkAccess": false,
+    "externalProviderCalls": 0,
+    "requiredMethods": [
+      "getManifest",
+      "createPaymentIntent",
+      "normalizeWebhookEvent",
+      "fetchPaymentSnapshot",
+      "classifyError"
+    ],
+    "requiredCapabilities": [
+      "idempotent_payment_intent",
+      "verified_webhook_normalization",
+      "provider_snapshot_read",
+      "no_raw_card_data",
+      "server_only_secret_resolution",
+      "verified_events_only_settlement",
+      "no_direct_money_mutation"
+    ],
+    "requiredCurrency": "BRL",
+    "requiredCaptureStrategy": "authorize_then_hold",
+    "requiredScenarios": [
+      "manifest_validation",
+      "intent_idempotency",
+      "intent_payload_drift",
+      "settlement_authority_denial",
+      "verified_webhook_normalization",
+      "provider_snapshot_reconciliation",
+      "sensitive_data_rejection",
+      "error_classification"
+    ]
+  },
+  "stagingReadiness": {
+    "currentReady": false,
+    "failClosed": true,
+    "exactHeadRequired": true,
+    "providerSelectionRequired": true,
+    "legalAccountingApprovalRequired": true,
+    "providerSandboxAccountRequired": true,
+    "serverCredentialsRequired": true,
+    "webhookSecretRequired": true,
+    "webhookRegistrationRequired": true,
+    "stagingProjectVerificationRequired": true,
+    "productionExplicitlyDeniedRequired": true,
+    "featureFlagsMustRemainDisabled": true,
+    "reconciliationStoreRequired": true,
+    "operatorQueueRequired": true,
+    "rollbackPlanRequired": true,
+    "evidencePlanRequired": true,
+    "freshOneShotAuthorizationRequired": true,
+    "repositoryContractMayExecuteRemoteActions": false
+  },
+  "orderedActivationPhases": [
+    "verify_exact_head_and_staging_identity",
+    "verify_provider_selection_and_legal_accounting_approval",
+    "verify_server_credentials_and_signed_webhook_registration",
+    "run_adapter_conformance_against_provider_sandbox",
+    "run_idempotent_intent_and_duplicate_delivery_canaries",
+    "run_out_of_order_and_terminal_state_canaries",
+    "run_reconciliation_and_operator_queue_canaries",
+    "review_sanitized_evidence_before_any_feature_flag_change"
+  ],
+  "currentBlockers": [
+    "PAY-B01",
+    "PAY-B03",
+    "PAY-B04"
+  ],
+  "effects": {
+    "stagingReads": 0,
+    "stagingMutations": 0,
+    "migrationsApplied": 0,
+    "edgeFunctionsDeployed": 0,
+    "providerAccountsCreated": 0,
+    "webhooksRegistered": 0,
+    "secretsCreated": 0,
+    "adapterSandboxRuns": 0,
+    "paymentsCreated": 0,
+    "refundsCreated": 0,
+    "payoutsCreated": 0,
+    "productionChanged": false,
+    "pullRequestMerged": false
+  }
+}
