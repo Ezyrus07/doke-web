@@ -1,0 +1,55 @@
+name: Doke PAY-A01 Final Matrix Publisher
+
+on:
+  pull_request:
+    branches:
+      - msg/msg-001-baseline-audit
+    paths:
+      - '.github/workflows/pay-001-a01-final-matrix-publisher.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.ref == 'pay/pay-001-baseline-audit'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: pay/pay-001-baseline-audit
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Simulate permanent clean state and regenerate matrix
+        run: |
+          rm -f .github/workflows/pay-001-a01-final-matrix-publisher.yml
+          node scripts/audit-domain-completion-matrix.js --write
+      - name: Validate clean PAY-A01 state
+        run: |
+          npm run audit:pay-001-a01-authority-baseline
+          npm run test:pay-001-a01-authority-baseline
+          npm run test:finance-supabase-repository-contract
+          npm run test:financial-rpc-authority-contract
+          npm run test:financial-operations-edge-runtime
+          npm run test:staging-finance-sandbox-authority-contract
+          npm run test:staging-finance-sandbox-edge-runtime
+          npm run audit:domain-completion-matrix
+          git diff --check
+      - name: Commit final clean matrix artifacts
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/DOMAIN-COMPLETION-MATRIX.md
+          git add -f reports/generated/domain-completion-matrix-report.json
+          if git diff --cached --quiet; then
+            echo "Final PAY-A01 matrix artifacts already current."
+            exit 0
+          fi
+          git commit -m "Regenerate PAY-A01 clean matrix artifacts"
+          git push origin HEAD:pay/pay-001-baseline-audit
