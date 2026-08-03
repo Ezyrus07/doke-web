@@ -55,7 +55,7 @@ assert(JSON.stringify(pay.blockers.map((item) => item.id)) === JSON.stringify(['
 ].forEach((required) => assert(pay.requiredPaths.includes(required), 'matrix missing ' + required));
 assert(pay.tests.includes('audit:pay-001-a02-authenticated-authority-boundary'), 'matrix audit command missing');
 assert(pay.tests.includes('test:pay-001-a02-authenticated-authority-boundary'), 'matrix test command missing');
-assert(pay.nextActions[0].includes('PAY-A03') || pay.nextActions[0].includes('PAY-A04'), 'PAY-A03/PAY-A04 progression mismatch');
+assert(pay.requiredPaths.includes('config/pay-001-a03-psp-neutral-intent-webhook.json') && pay.requiredPaths.includes('config/pay-001-a04-reconciliation-queue.json'), 'PAY-A03/PAY-A04 progression must remain represented');
 assert(workflow.includes('permissions:\n  contents: read'), 'workflow must remain read-only');
 ['contents: write', 'secrets.', 'SUPABASE_ACCESS_TOKEN', 'SUPABASE_DB_PASSWORD', 'psql ', 'curl ', 'supabase functions deploy', 'supabase db push', 'git push'].forEach((fragment) => assert(!workflow.includes(fragment), 'workflow contains prohibited fragment: ' + fragment));
 

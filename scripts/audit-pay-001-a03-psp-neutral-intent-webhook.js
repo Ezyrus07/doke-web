@@ -84,7 +84,7 @@ assert(eventLedger.includes('DOKE_PAYMENT_PROVIDER_EVENT_PREVIOUSLY_FAILED'), 'f
 assert(packageJson.scripts['audit:pay-001-a03-psp-neutral-intent-webhook'] === 'node scripts/audit-pay-001-a03-psp-neutral-intent-webhook.js', 'package audit command missing');
 assert(packageJson.scripts['test:pay-001-a03-psp-neutral-intent-webhook'] === 'node scripts/test-pay-001-a03-psp-neutral-intent-webhook.js', 'package runtime command missing');
 
-assert(matrix.version === '1.3.88', 'matrix version must be 1.3.88');
+assert(/^1\.3\.(?:8[8-9]|9\d|\d{3,})$/.test(matrix.version), 'matrix version must remain PAY-A03 compatible');
 assert(pay, 'PAY-001 matrix domain missing');
 assert(pay.maturity === 2, 'PAY maturity must remain 2');
 assert(pay.userFacingAuthority === 'local', 'PAY user-facing authority must remain local');
@@ -105,7 +105,7 @@ assert(JSON.stringify(pay.blockers.map((item) => item.id)) === JSON.stringify(['
 ].forEach((requiredPath) => assert(pay.requiredPaths.includes(requiredPath), 'matrix requiredPaths missing ' + requiredPath));
 assert(pay.tests.includes('audit:pay-001-a03-psp-neutral-intent-webhook'), 'matrix A03 audit missing');
 assert(pay.tests.includes('test:pay-001-a03-psp-neutral-intent-webhook'), 'matrix A03 runtime missing');
-assert(pay.nextActions[0].includes('PAY-A04'), 'PAY-A04 must be the first next action');
+assert(pay.requiredPaths.includes('config/pay-001-a04-reconciliation-queue.json'), 'PAY-A04 must remain represented');
 
 assert(workflow.includes('permissions:\n  contents: read'), 'PAY-A03 workflow must remain read-only');
 [

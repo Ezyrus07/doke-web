@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 1116 arquivos no escopo; 271 referências a localStorage; 78 a sessionStorage; 577 referências mock; 206 referências de rede/Supabase; 35 marcadores de implementação pendente.
+**Evidência estática observada:** 1119 arquivos no escopo; 271 referências a localStorage; 78 a sessionStorage; 577 referências mock; 206 referências de rede/Supabase; 35 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -539,7 +539,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI local; servidor partial; staging staging canary; segurança partial; produção blocked.
 
-**Evidência estática observada:** 1066 arquivos no escopo; 205 referências a localStorage; 70 a sessionStorage; 318 referências mock; 205 referências de rede/Supabase; 19 marcadores de implementação pendente.
+**Evidência estática observada:** 1068 arquivos no escopo; 205 referências a localStorage; 70 a sessionStorage; 318 referências mock; 205 referências de rede/Supabase; 19 marcadores de implementação pendente.
 
 **Páginas:** `anunciar-servico.html`, `pedidos.html`, `orcamento.html`.
 
@@ -722,6 +722,10 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - PAY-A03 verifies HMAC-SHA256 signatures against the untouched raw body before JSON parsing, uses constant-time comparison and enforces a bounded timestamp replay window.
 - Verified provider events reuse api_idempotency_keys through a service-role-only ledger keyed by provider and event ID; exact replay is safe, payload drift fails closed and failed events require reconciliation.
 - No PSP, account, signing secret, webhook registration, migration, deploy or real-money evidence was introduced by PAY-A03.
+- PAY-A04 defines deterministic Doke/provider financial snapshots and classifies identity, state, currency, amount, settlement-reference and event-ledger divergences without automatic money mutation.
+- PAY-A04 requires a server-side operator-queue adapter, optimistic concurrency, support/admin roles, rationale, separation of duties and fresh matched comparison before resolution.
+- PAY-A04 controlled replay requires an unchanged comparison fingerprint, original verified raw-body hash, payload hash, signature reverification, second-operator approval, idempotency and dry-run before apply.
+- PAY-A04 replay envelopes explicitly deny direct payment, wallet, refund and payout mutation; no remote reconciliation store, provider, secret, migration or deploy was introduced.
 
 **Bloqueadores:**
 - **PAY-B01 · CRITICAL · external_provider:** No PSP integration or signed webhook authority exists. _(Fase 8)_
@@ -729,10 +733,10 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - **PAY-B04 · HIGH · reconciliation:** No provider reconciliation or mismatch queue is operational. _(Fase 8)_
 
 **Próximas ações:**
-- PAY-A04 — define provider-neutral reconciliation, divergence classification, operator queue and controlled replay without selecting or activating a PSP.
-- PAY-B01 — select and contract a PSP, configure signed webhook authority and run provider-specific staging conformance only after explicit authorization.
+- PAY-A05 — define a PSP-neutral adapter conformance harness and fail-closed staging activation readiness without selecting or activating a provider.
+- PAY-B01 — select and contract a PSP, configure account, secret and signed webhook, then run provider-specific staging conformance only after explicit authorization.
 - PAY-B03 — approve commercial, fiscal, escrow, refund, dispute and payout rules.
-- PAY-B04 — operationalize reconciliation and divergence handling before production.
+- PAY-B04 — implement the remote reconciliation store, schedule, operator queue, metrics and runbook before production.
 
 **Gate de saída:**
 - No card data is stored by Doke.
@@ -1021,7 +1025,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 1/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 252 arquivos no escopo; 68 referências a localStorage; 8 a sessionStorage; 272 referências mock; 8 referências de rede/Supabase; 25 marcadores de implementação pendente.
+**Evidência estática observada:** 253 arquivos no escopo; 68 referências a localStorage; 8 a sessionStorage; 272 referências mock; 8 referências de rede/Supabase; 25 marcadores de implementação pendente.
 
 **Evidências:**
 - The master plan identifies legal, privacy and commercial decisions as mandatory.
@@ -1081,7 +1085,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2467 arquivos no escopo; 529 referências a localStorage; 151 a sessionStorage; 902 referências mock; 608 referências de rede/Supabase; 89 marcadores de implementação pendente.
+**Evidência estática observada:** 2474 arquivos no escopo; 529 referências a localStorage; 151 a sessionStorage; 902 referências mock; 608 referências de rede/Supabase; 89 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
@@ -1142,4 +1146,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-08-03T09:55:00-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-08-03T10:43:00-03:00._

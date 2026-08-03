@@ -1,6 +1,6 @@
 {
-  "version": "1.3.88",
-  "updatedAt": "2026-08-03T09:55:00-03:00",
+  "version": "1.3.89",
+  "updatedAt": "2026-08-03T10:43:00-03:00",
   "title": "Doke Domain Completion Matrix",
   "purpose": "Single source of truth for domain maturity, data authority, staging evidence, blockers, dependencies and mandatory completion order.",
   "maturityScale": {
@@ -2059,7 +2059,15 @@
         "docs/validation/PAY-001-A03-PSP-NEUTRAL-INTENT-WEBHOOK.json",
         "scripts/audit-pay-001-a03-psp-neutral-intent-webhook.js",
         "scripts/test-pay-001-a03-psp-neutral-intent-webhook.js",
-        ".github/workflows/pay-001-a03-psp-neutral-intent-webhook.yml"
+        ".github/workflows/pay-001-a03-psp-neutral-intent-webhook.yml",
+        "backend/modules/payments/payment-reconciliation-contract.js",
+        "backend/modules/payments/payment-reconciliation-queue.js",
+        "config/pay-001-a04-reconciliation-queue.json",
+        "docs/PAY-001-A04-RECONCILIATION-QUEUE.md",
+        "docs/validation/PAY-001-A04-RECONCILIATION-QUEUE.json",
+        "scripts/audit-pay-001-a04-reconciliation-queue.js",
+        "scripts/test-pay-001-a04-reconciliation-queue.js",
+        ".github/workflows/pay-001-a04-reconciliation-queue.yml"
       ],
       "scanRoots": [
         "assets/js/pages/pagamento-profissional.js",
@@ -2090,7 +2098,9 @@
         "audit:pay-001-a02-authenticated-authority-boundary",
         "test:pay-001-a02-authenticated-authority-boundary",
         "audit:pay-001-a03-psp-neutral-intent-webhook",
-        "test:pay-001-a03-psp-neutral-intent-webhook"
+        "test:pay-001-a03-psp-neutral-intent-webhook",
+        "audit:pay-001-a04-reconciliation-queue",
+        "test:pay-001-a04-reconciliation-queue"
       ],
       "evidence": [
         "Financial contracts, ledger-like tables and local beta-launch E2E exist.",
@@ -2106,7 +2116,11 @@
         "PAY-A03 defines a PSP-neutral payment-intent envelope with deterministic request hashing, integer minor-unit amounts, authorize-then-hold semantics and recursive rejection of raw card data.",
         "PAY-A03 verifies HMAC-SHA256 signatures against the untouched raw body before JSON parsing, uses constant-time comparison and enforces a bounded timestamp replay window.",
         "Verified provider events reuse api_idempotency_keys through a service-role-only ledger keyed by provider and event ID; exact replay is safe, payload drift fails closed and failed events require reconciliation.",
-        "No PSP, account, signing secret, webhook registration, migration, deploy or real-money evidence was introduced by PAY-A03."
+        "No PSP, account, signing secret, webhook registration, migration, deploy or real-money evidence was introduced by PAY-A03.",
+        "PAY-A04 defines deterministic Doke/provider financial snapshots and classifies identity, state, currency, amount, settlement-reference and event-ledger divergences without automatic money mutation.",
+        "PAY-A04 requires a server-side operator-queue adapter, optimistic concurrency, support/admin roles, rationale, separation of duties and fresh matched comparison before resolution.",
+        "PAY-A04 controlled replay requires an unchanged comparison fingerprint, original verified raw-body hash, payload hash, signature reverification, second-operator approval, idempotency and dry-run before apply.",
+        "PAY-A04 replay envelopes explicitly deny direct payment, wallet, refund and payout mutation; no remote reconciliation store, provider, secret, migration or deploy was introduced."
       ],
       "blockers": [
         {
@@ -2132,10 +2146,10 @@
         }
       ],
       "nextActions": [
-        "PAY-A04 — define provider-neutral reconciliation, divergence classification, operator queue and controlled replay without selecting or activating a PSP.",
-        "PAY-B01 — select and contract a PSP, configure signed webhook authority and run provider-specific staging conformance only after explicit authorization.",
+        "PAY-A05 — define a PSP-neutral adapter conformance harness and fail-closed staging activation readiness without selecting or activating a provider.",
+        "PAY-B01 — select and contract a PSP, configure account, secret and signed webhook, then run provider-specific staging conformance only after explicit authorization.",
         "PAY-B03 — approve commercial, fiscal, escrow, refund, dispute and payout rules.",
-        "PAY-B04 — operationalize reconciliation and divergence handling before production."
+        "PAY-B04 — implement the remote reconciliation store, schedule, operator queue, metrics and runbook before production."
       ],
       "exitCriteria": [
         "No card data is stored by Doke.",
