@@ -75,6 +75,20 @@
     }
   }
 
+  function hasAuthenticatedUuidSession() {
+    var user = getSessionUser() || {};
+    return isUuid(user.id);
+  }
+
+  function authenticatedAuthorityError(operation, cause) {
+    var error = financialServerAuthorityError(operation);
+    if (cause) {
+      error.cause = cause;
+      error.remoteCode = normalizeText(cause.code || cause.name || '');
+    }
+    return error;
+  }
+
   function isSupportOrAdmin(user) {
     var role = normalizeText(user && user.role).toLowerCase();
     return role === 'support' || role === 'admin';
@@ -454,6 +468,7 @@
   }
 
   function fallbackWalletAction(method, payload, error) {
+    if (hasAuthenticatedUuidSession()) return Promise.reject(authenticatedAuthorityError(method, error));
     warnRemote(error, method);
     if (!localWallet || typeof localWallet[method] !== 'function') return Promise.reject(error);
     return Promise.resolve(localWallet[method](payload)).then(function (result) {
@@ -610,8 +625,9 @@
   }
 
   function financialServerAuthorityError(operation) {
-    var error = new Error('A operação financeira "' + operation + '" exige autoridade do servidor e confirmação do provedor de pagamento.');
+    var error = new Error('A operação financeira "' + operation + '" exige autoridade do servidor financeiro. Nenhuma simulação local foi executada.');
     error.code = 'DOKE_FINANCIAL_SERVER_AUTHORITY_REQUIRED';
+    error.operation = normalizeText(operation);
     return error;
   }
 
@@ -636,6 +652,7 @@
       document.dispatchEvent(new CustomEvent('doke:wallet-bank-account-saved', { detail: { account: clone(account) } }));
       return { account: clone(account), wallet: localWallet.readWallet() };
     }).catch(function (error) {
+      if (hasAuthenticatedUuidSession()) throw authenticatedAuthorityError('salvar conta bancária', error);
       warnRemote(error, 'salvar conta bancária');
       return localWallet.saveBankAccount(payload).then(function (result) {
         if (result && result.account) result.account.syncStatus = 'local-simulation';
@@ -645,12 +662,18 @@
   }
 
   function registerReceivable(payload) {
-    if (!getSupabaseClient()) return Promise.resolve(localWallet.registerReceivable(payload || {}));
+    if (!getSupabaseClient()) {
+      if (hasAuthenticatedUuidSession()) return Promise.reject(financialServerAuthorityError('materializar recebível'));
+      return Promise.resolve(localWallet.registerReceivable(payload || {}));
+    }
     return Promise.reject(financialServerAuthorityError('materializar recebível'));
   }
 
   function releaseHeldReceivable(payload) {
-    if (!getSupabaseClient()) return Promise.resolve(localWallet.releaseHeldReceivable(payload || {}));
+    if (!getSupabaseClient()) {
+      if (hasAuthenticatedUuidSession()) return Promise.reject(financialServerAuthorityError('liberar recebível'));
+      return Promise.resolve(localWallet.releaseHeldReceivable(payload || {}));
+    }
     return Promise.reject(financialServerAuthorityError('liberar recebível'));
   }
 
@@ -759,6 +782,7 @@
   }
 
   function savePayment(payment) {
+    if (hasAuthenticatedUuidSession()) return Promise.reject(financialServerAuthorityError('gravar pagamento no navegador'));
     var normalized = localPayments.normalize(payment || {});
     var previous = localPayments.readLocal().find(function (item) {
       return String(item.id || '') === String(normalized.id || '') || Boolean(normalized.eventKey && item.eventKey && String(item.eventKey) === String(normalized.eventKey));
@@ -769,7 +793,7 @@
       document.dispatchEvent(new CustomEvent(previous ? 'doke:payment-updated' : 'doke:payment-created', { detail: { payment: clone(remotePayment), previous: clone(previous) } }));
       return { payment: clone(remotePayment), created: !previous, updated: Boolean(previous) };
     }).catch(function (error) {
-      if (shouldFailClosed(error)) throw error;
+      if (shouldFailClosed(error) || hasAuthenticatedUuidSession()) throw authenticatedAuthorityError('gravar pagamento no navegador', error);
       warnRemote(error, 'gravação do pagamento');
       return localPayments.save(Object.assign({}, normalized, { syncStatus: 'local-simulation', financialAuthority: 'local' }));
     });
@@ -799,10 +823,13 @@
     resolveDispute: resolveDispute,
     getProviderStatus: function () {
       return Object.freeze({
-        provider: getSupabaseClient() ? 'supabase' : 'local',
-        fallbackActive: Boolean(lastRemoteError),
+        provider: getSupabaseClient() ? 'supabase' : hasAuthenticatedUuidSession() ? 'unavailable' : 'local',
+        fallbackActive: !hasAuthenticatedUuidSession() && Boolean(lastRemoteError),
         lastError: lastRemoteError ? normalizeText(lastRemoteError.message) : '',
-        localFinancialSimulation: !getSupabaseClient() || Boolean(lastRemoteError)
+        authenticatedUuidSession: hasAuthenticatedUuidSession(),
+        remoteMutationRequired: hasAuthenticatedUuidSession(),
+        localMutationAllowed: !hasAuthenticatedUuidSession(),
+        localFinancialSimulation: !hasAuthenticatedUuidSession() && (!getSupabaseClient() || Boolean(lastRemoteError))
       });
     }
   }));
@@ -817,10 +844,13 @@
     save: savePayment,
     getProviderStatus: function () {
       return Object.freeze({
-        provider: getSupabaseClient() ? 'supabase' : 'local',
-        fallbackActive: Boolean(lastRemoteError),
+        provider: getSupabaseClient() ? 'supabase' : hasAuthenticatedUuidSession() ? 'unavailable' : 'local',
+        fallbackActive: !hasAuthenticatedUuidSession() && Boolean(lastRemoteError),
         lastError: lastRemoteError ? normalizeText(lastRemoteError.message) : '',
-        localFinancialSimulation: !getSupabaseClient() || Boolean(lastRemoteError)
+        authenticatedUuidSession: hasAuthenticatedUuidSession(),
+        remoteMutationRequired: hasAuthenticatedUuidSession(),
+        localMutationAllowed: !hasAuthenticatedUuidSession(),
+        localFinancialSimulation: !hasAuthenticatedUuidSession() && (!getSupabaseClient() || Boolean(lastRemoteError))
       });
     }
   }));

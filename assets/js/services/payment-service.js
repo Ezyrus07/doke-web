@@ -19,6 +19,10 @@
     return String(value || '').replace(/\s+/g, ' ').trim();
   }
 
+  function isUuid(value) {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(normalizeText(value));
+  }
+
   function parseAmount(value) {
     if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
     var normalized = normalizeText(value).replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.');
@@ -38,6 +42,23 @@
   function getCurrentUser() {
     if (Doke.session && typeof Doke.session.getCurrentUser === 'function') return Doke.session.getCurrentUser();
     return null;
+  }
+
+  function financialRemoteAuthorityError(operation) {
+    var error = new Error('A operação financeira "' + operation + '" exige autoridade remota. Nenhuma simulação local foi executada.');
+    error.code = 'DOKE_FINANCIAL_SERVER_AUTHORITY_REQUIRED';
+    error.operation = normalizeText(operation);
+    return error;
+  }
+
+  function isAuthenticatedUuidActor() {
+    var actor = getCurrentUser() || {};
+    return isUuid(actor.id);
+  }
+
+  function assertLocalFinancialFixtureAllowed(operation) {
+    if (isAuthenticatedUuidActor()) throw financialRemoteAuthorityError(operation);
+    return true;
   }
 
   function getPaymentsRepository() {
@@ -91,19 +112,28 @@
     var apiReady = Boolean(status && status.apiReady === true);
     var apiActive = Boolean(status && status.activeProvider === 'api' && apiReady);
     var sandboxActive = shouldUseFinanceSandbox();
+    var actor = getCurrentUser() || {};
+    var authenticatedUuidSession = isUuid(actor.id);
+    var localMutationAllowed = !authenticatedUuidSession;
+    var remoteMutationRequired = authenticatedUuidSession && !apiActive && !sandboxActive;
     var activeProvider = apiActive
       ? 'api'
-      : sandboxActive ? 'supabase-sandbox' : repositoryStatus && repositoryStatus.provider || 'mock';
+      : sandboxActive
+        ? 'supabase-sandbox'
+        : localMutationAllowed ? repositoryStatus && repositoryStatus.provider || 'mock' : 'unavailable';
     return Object.freeze({
       domain: 'payments',
       activeProvider: activeProvider,
       apiReady: apiReady,
       paymentsApiActive: apiActive,
       financeSandboxActive: sandboxActive,
-      fallbackActive: Boolean(repositoryStatus && repositoryStatus.fallbackActive),
-      localFinancialSimulation: Boolean(repositoryStatus && repositoryStatus.localFinancialSimulation),
+      authenticatedUuidSession: authenticatedUuidSession,
+      localMutationAllowed: localMutationAllowed,
+      remoteMutationRequired: remoteMutationRequired,
+      fallbackActive: localMutationAllowed && Boolean(repositoryStatus && repositoryStatus.fallbackActive),
+      localFinancialSimulation: localMutationAllowed && Boolean(repositoryStatus && repositoryStatus.localFinancialSimulation),
       sandboxFinancialSimulation: sandboxActive,
-      fallbackProvider: repository ? 'local-mock' : 'unavailable'
+      fallbackProvider: localMutationAllowed && repository ? 'local-mock' : 'unavailable'
     });
   }
 
@@ -543,8 +573,6 @@
     payload = payload || {};
     if (!normalizedOrderId) return Promise.reject(new Error('Pedido inválido para pagamento.'));
 
-    if (shouldUseFinanceSandbox()) return confirmSandboxPaymentFlow(normalizedOrderId, payload);
-
     if (shouldUsePaymentsApi()) {
       var boundary = getBoundary();
       var actor = getCurrentUser() || {};
@@ -555,6 +583,10 @@
         actorRole: actor.role || 'guest'
       }));
     }
+
+    if (shouldUseFinanceSandbox()) return confirmSandboxPaymentFlow(normalizedOrderId, payload);
+    try { assertLocalFinancialFixtureAllowed('confirmar pagamento'); }
+    catch (error) { return Promise.reject(error); }
 
     if (paymentTasks[normalizedOrderId]) return paymentTasks[normalizedOrderId];
     var task = confirmLocalPayment(normalizedOrderId, payload);
@@ -740,7 +772,6 @@
     var normalizedOrderId = normalizeText(orderId);
     payload = payload || {};
     if (!normalizedOrderId) return Promise.reject(new Error('Pedido inválido para solicitação de conclusão.'));
-    if (shouldUseFinanceSandbox()) return requestSandboxCompletionFlow(normalizedOrderId, payload);
     if (shouldUsePaymentsApi()) {
       var boundary = getBoundary();
       var actor = getCurrentUser() || {};
@@ -751,6 +782,9 @@
         actorRole: actor.role || 'guest'
       }));
     }
+    if (shouldUseFinanceSandbox()) return requestSandboxCompletionFlow(normalizedOrderId, payload);
+    try { assertLocalFinancialFixtureAllowed('solicitar conclusão financeira'); }
+    catch (error) { return Promise.reject(error); }
     var taskKey = 'request:' + normalizedOrderId;
     if (completionTasks[taskKey]) return completionTasks[taskKey];
     var task = requestCompletionLocal(normalizedOrderId, payload);
@@ -903,7 +937,6 @@
     var normalizedOrderId = normalizeText(orderId);
     payload = payload || {};
     if (!normalizedOrderId) return Promise.reject(new Error('Pedido inválido para confirmação da conclusão.'));
-    if (shouldUseFinanceSandbox()) return releaseSandboxCompletionFlow(normalizedOrderId, payload);
     if (shouldUsePaymentsApi()) {
       var boundary = getBoundary();
       var actor = getCurrentUser() || {};
@@ -914,6 +947,9 @@
         actorRole: actor.role || 'guest'
       }));
     }
+    if (shouldUseFinanceSandbox()) return releaseSandboxCompletionFlow(normalizedOrderId, payload);
+    try { assertLocalFinancialFixtureAllowed('confirmar conclusão e liberar pagamento'); }
+    catch (error) { return Promise.reject(error); }
     var taskKey = 'confirm:' + normalizedOrderId;
     if (completionTasks[taskKey]) return completionTasks[taskKey];
     var task = confirmCompletionLocal(normalizedOrderId, payload);

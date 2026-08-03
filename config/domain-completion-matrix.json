@@ -1,6 +1,6 @@
 {
-  "version": "1.3.86",
-  "updatedAt": "2026-08-03T08:04:00-03:00",
+  "version": "1.3.87",
+  "updatedAt": "2026-08-03T08:36:00-03:00",
   "title": "Doke Domain Completion Matrix",
   "purpose": "Single source of truth for domain maturity, data authority, staging evidence, blockers, dependencies and mandatory completion order.",
   "maturityScale": {
@@ -2044,7 +2044,13 @@
         "docs/validation/PAY-001-A01-AUTHORITY-BASELINE.json",
         "scripts/audit-pay-001-a01-authority-baseline.js",
         "scripts/test-pay-001-a01-authority-baseline.js",
-        ".github/workflows/pay-001-a01-authority-baseline.yml"
+        ".github/workflows/pay-001-a01-authority-baseline.yml",
+        "config/pay-001-a02-authenticated-authority-boundary.json",
+        "docs/PAY-001-A02-AUTHENTICATED-AUTHORITY-BOUNDARY.md",
+        "docs/validation/PAY-001-A02-AUTHENTICATED-AUTHORITY-BOUNDARY.json",
+        "scripts/audit-pay-001-a02-authenticated-authority-boundary.js",
+        "scripts/test-pay-001-a02-authenticated-authority-boundary.js",
+        ".github/workflows/pay-001-a02-authenticated-authority-boundary.yml"
       ],
       "scanRoots": [
         "assets/js/pages/pagamento-profissional.js",
@@ -2071,7 +2077,9 @@
         "test:financial-rpc-authority-contract",
         "test:financial-operations-edge-runtime",
         "audit:pay-001-a01-authority-baseline",
-        "test:pay-001-a01-authority-baseline"
+        "test:pay-001-a01-authority-baseline",
+        "audit:pay-001-a02-authenticated-authority-boundary",
+        "test:pay-001-a02-authenticated-authority-boundary"
       ],
       "evidence": [
         "Financial contracts, ledger-like tables and local beta-launch E2E exist.",
@@ -2080,7 +2088,10 @@
         "Payment, transaction, receipt and receivable tables are authenticated read-only projections with participant RLS and no anon grants.",
         "PAY-A01 freezes the repository-only payment authority split across API, the synthetic Supabase staging sandbox and local browser simulation without claiming real-money authority.",
         "No PSP, signed webhook verifier, provider event ledger or reconciliation worker is operational; browser and sandbox outcomes are not production payment evidence.",
-        "Authenticated UUID receivable materialization and release remain fail-closed when server/provider authority is unavailable, while legacy local flows remain explicitly inventoried for later removal."
+        "Authenticated UUID receivable materialization and release remain fail-closed when server/provider authority is unavailable, while legacy local flows remain explicitly inventoried for later removal.",
+        "PAY-A02 makes authenticated UUID financial mutations fail closed when API/server or the synthetic staging sandbox is unavailable; local mutation is restricted to non-UUID fixtures.",
+        "Payment command execution now follows the declared API then staging sandbox then non-UUID fixture precedence.",
+        "Wallet, dispute, withdrawal, bank-account and payment-save fallbacks no longer create local financial outcomes for authenticated UUID sessions."
       ],
       "blockers": [
         {
@@ -2106,9 +2117,9 @@
         }
       ],
       "nextActions": [
-        "PAY-A02: establish a canonical authenticated payment authority boundary that rejects local financial mutation fallback for UUID sessions while preserving memory-only fixtures.",
         "PAY-A03: define a PSP-neutral payment-intent and signed-webhook event contract on the existing persistent idempotency store.",
-        "PAY-A04: prepare provider-selection, legal, accounting, reconciliation and synthetic staging evaluation criteria without selecting or activating a PSP implicitly."
+        "PAY-A04: define provider event ingestion, ordering, replay and terminal-state projection without selecting a PSP.",
+        "PAY-A05: prepare legal, accounting, reconciliation and synthetic staging evaluation criteria before provider activation."
       ],
       "exitCriteria": [
         "No card data is stored by Doke.",
