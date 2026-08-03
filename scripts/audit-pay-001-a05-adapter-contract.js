@@ -16,6 +16,7 @@ const config = json('config/pay-001-a05-adapter-conformance-readiness.json');
 const workflow = read('.github/workflows/pay-001-a05-adapter-conformance-readiness.yml');
 const matrix = json('config/domain-completion-matrix.json');
 const pay = matrix.domains.find((domain) => domain.id === 'PAY-001');
+const extension = config.adapterHarness.explicitContract;
 
 assert(contract.includes("const CONTRACT_VERSION = 'pay-provider-adapter-v1'"), 'contract version missing');
 [
@@ -68,10 +69,13 @@ assert(contract.includes("'incomplete_response'"), 'incomplete response classifi
   'automaticResolutionAllowed'
 ].forEach((fragment) => assert(test.includes(fragment), `extended scenario missing: ${fragment}`));
 
-assert(config.adapterHarness.explicitAdapterContract === 'backend/modules/payments/payment-provider-adapter-contract.js', 'explicit adapter contract path missing');
-assert(config.adapterHarness.extendedConformanceTest === 'scripts/test-pay-001-a05-adapter-contract.js', 'extended conformance test path missing');
-assert(config.adapterHarness.requiredMethods.length === 8, 'required method set incomplete');
-assert(config.adapterHarness.financialCapabilities.length === 15, 'capability manifest incomplete');
+assert(config.adapterHarness.harnessVersion === 'pay-provider-adapter-conformance-v1', 'base harness version changed');
+assert(config.adapterHarness.requiredMethods.join(',') === 'getManifest,createPaymentIntent,normalizeWebhookEvent,fetchPaymentSnapshot,classifyError', 'base required methods changed');
+assert(extension && extension.path === 'backend/modules/payments/payment-provider-adapter-contract.js', 'explicit adapter contract path missing');
+assert(extension.audit === 'scripts/audit-pay-001-a05-adapter-contract.js', 'explicit audit path missing');
+assert(extension.test === 'scripts/test-pay-001-a05-adapter-contract.js', 'extended conformance test path missing');
+assert(extension.requiredMethods.length === 8, 'extended required method set incomplete');
+assert(extension.financialCapabilities.length === 15, 'capability manifest incomplete');
 assert(config.adapterHarness.networkAccess === false, 'network must remain disabled');
 assert(config.stagingReadiness.currentReady === false && config.stagingReadiness.failClosed === true, 'staging must remain fail-closed');
 assert(config.stagingReadiness.immutableAdapterVersionRequired === true, 'immutable adapter version readiness missing');
