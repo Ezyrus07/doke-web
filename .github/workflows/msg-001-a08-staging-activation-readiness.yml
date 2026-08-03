@@ -1,36 +1,40 @@
-name: Doke MSG-A08 Final Cleanup Matrix Publisher
+name: Doke MSG-A08 Staging Activation Readiness
 
 on:
   pull_request:
     paths:
+      - 'config/msg-001-a08-staging-activation-readiness.json'
+      - 'docs/MSG-001-A08-STAGING-ACTIVATION-READINESS.md'
+      - 'docs/validation/MSG-001-A08-STAGING-ACTIVATION-READINESS.json'
+      - 'scripts/audit-msg-001-a08-staging-activation-readiness.js'
+      - 'scripts/test-msg-001-a08-staging-activation-readiness.js'
+      - 'scripts/audit-msg-001-a06-presence-typing-boundary.js'
+      - 'scripts/audit-msg-001-a07-command-reliability.js'
+      - 'config/domain-completion-matrix.json'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+      - 'package.json'
       - '.github/workflows/msg-001-a08-staging-activation-readiness.yml'
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  finalize-a08-matrix:
-    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.ref == 'msg/msg-001-baseline-audit'
+  readiness:
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: msg/msg-001-baseline-audit
-          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
       - run: npm ci --ignore-scripts
-      - name: Simulate permanent clean state
+      - name: Validate MSG-A08 fail-closed activation readiness
         run: |
-          echo 'bmFtZTogRG9rZSBNU0ctQTA4IFN0YWdpbmcgQWN0aXZhdGlvbiBSZWFkaW5lc3MKCm9uOgogIHB1bGxfcmVxdWVzdDoKICAgIHBhdGhzOgogICAgICAtICdjb25maWcvbXNnLTAwMS1hMDgtc3RhZ2luZy1hY3RpdmF0aW9uLXJlYWRpbmVzcy5qc29uJwogICAgICAtICdkb2NzL01TRy0wMDEtQTA4LVNUQUdJTkctQUNUSVZBVElPTi1SRUFESU5FU1MubWQnCiAgICAgIC0gJ2RvY3MvdmFsaWRhdGlvbi9NU0ctMDAxLUEwOC1TVEFHSU5HLUFDVElWQVRJT04tUkVBRElORVNTLmpzb24nCiAgICAgIC0gJ3NjcmlwdHMvYXVkaXQtbXNnLTAwMS1hMDgtc3RhZ2luZy1hY3RpdmF0aW9uLXJlYWRpbmVzcy5qcycKICAgICAgLSAnc2NyaXB0cy90ZXN0LW1zZy0wMDEtYTA4LXN0YWdpbmctYWN0aXZhdGlvbi1yZWFkaW5lc3MuanMnCiAgICAgIC0gJ3NjcmlwdHMvYXVkaXQtbXNnLTAwMS1hMDYtcHJlc2VuY2UtdHlwaW5nLWJvdW5kYXJ5LmpzJwogICAgICAtICdzY3JpcHRzL2F1ZGl0LW1zZy0wMDEtYTA3LWNvbW1hbmQtcmVsaWFiaWxpdHkuanMnCiAgICAgIC0gJ2NvbmZpZy9kb21haW4tY29tcGxldGlvbi1tYXRyaXguanNvbicKICAgICAgLSAnZG9jcy9ET01BSU4tQ09NUExFVElPTi1NQVRSSVgubWQnCiAgICAgIC0gJ3JlcG9ydHMvZ2VuZXJhdGVkL2RvbWFpbi1jb21wbGV0aW9uLW1hdHJpeC1yZXBvcnQuanNvbicKICAgICAgLSAncGFja2FnZS5qc29uJwogICAgICAtICcuZ2l0aHViL3dvcmtmbG93cy9tc2ctMDAxLWEwOC1zdGFnaW5nLWFjdGl2YXRpb24tcmVhZGluZXNzLnltbCcKICB3b3JrZmxvd19kaXNwYXRjaDoKCnBlcm1pc3Npb25zOgogIGNvbnRlbnRzOiByZWFkCgpqb2JzOgogIHJlYWRpbmVzczoKICAgIHJ1bnMtb246IHVidW50dS0yNC4wNAogICAgdGltZW91dC1taW51dGVzOiAxMgogICAgc3RlcHM6CiAgICAgIC0gdXNlczogYWN0aW9ucy9jaGVja291dEB2NAogICAgICAtIHVzZXM6IGFjdGlvbnMvc2V0dXAtbm9kZUB2NAogICAgICAgIHdpdGg6CiAgICAgICAgICBub2RlLXZlcnNpb246IDI0CiAgICAgICAgICBjYWNoZTogbnBtCiAgICAgIC0gcnVuOiBucG0gY2kgLS1pZ25vcmUtc2NyaXB0cwogICAgICAtIG5hbWU6IFZhbGlkYXRlIE1TRy1BMDggZmFpbC1jbG9zZWQgYWN0aXZhdGlvbiByZWFkaW5lc3MKICAgICAgICBydW46IHwKICAgICAgICAgIG5vZGUgLS1jaGVjayBzY3JpcHRzL2F1ZGl0LW1zZy0wMDEtYTA4LXN0YWdpbmctYWN0aXZhdGlvbi1yZWFkaW5lc3MuanMKICAgICAgICAgIG5vZGUgLS1jaGVjayBzY3JpcHRzL3Rlc3QtbXNnLTAwMS1hMDgtc3RhZ2luZy1hY3RpdmF0aW9uLXJlYWRpbmVzcy5qcwogICAgICAgICAgbnBtIHJ1biBhdWRpdDptc2ctMDAxLWEwMS1hdXRob3JpdHktYmFzZWxpbmUKICAgICAgICAgIG5wbSBydW4gYXVkaXQ6bXNnLTAwMS1hMDItY2Fub25pY2FsLWF1dGhvcml0eS1ib3VuZGFyeQogICAgICAgICAgbnBtIHJ1biB0ZXN0Om1zZy0wMDEtYTAyLWNhbm9uaWNhbC1hdXRob3JpdHktYm91bmRhcnkKICAgICAgICAgIG5wbSBydW4gYXVkaXQ6bXNnLTAwMS1hMDMtc2VydmVyLWNvbW1hbmQtYm91bmRhcnkKICAgICAgICAgIG5wbSBydW4gdGVzdDptc2ctMDAxLWEwMy1zZXJ2ZXItY29tbWFuZC1ib3VuZGFyeQogICAgICAgICAgbnBtIHJ1biBhdWRpdDptc2ctMDAxLWEwNC1yZWFsdGltZS1wdWJsaWNhdGlvbi1zdWJzY3JpcHRpb24tY29udHJhY3QKICAgICAgICAgIG5wbSBydW4gdGVzdDptc2ctMDAxLWEwNC1yZWFsdGltZS1wdWJsaWNhdGlvbi1zdWJzY3JpcHRpb24tcnVudGltZQogICAgICAgICAgbnBtIHJ1biBhdWRpdDptc2ctMDAxLWEwNS1hdHRhY2htZW50LWxpZmVjeWNsZQogICAgICAgICAgbnBtIHJ1biB0ZXN0Om1zZy0wMDEtYTA1LWF0dGFjaG1lbnQtbGlmZWN5Y2xlLXJ1bnRpbWUKICAgICAgICAgIG5wbSBydW4gYXVkaXQ6bXNnLTAwMS1hMDYtcHJlc2VuY2UtdHlwaW5nLWJvdW5kYXJ5CiAgICAgICAgICBucG0gcnVuIHRlc3Q6bXNnLTAwMS1hMDYtcHJlc2VuY2UtdHlwaW5nLXJ1bnRpbWUKICAgICAgICAgIG5wbSBydW4gYXVkaXQ6bXNnLTAwMS1hMDctY29tbWFuZC1yZWxpYWJpbGl0eQogICAgICAgICAgbnBtIHJ1biB0ZXN0Om1zZy0wMDEtYTA3LWNvbW1hbmQtcmVsaWFiaWxpdHktcnVudGltZQogICAgICAgICAgbnBtIHJ1biBhdWRpdDptc2ctMDAxLWEwOC1zdGFnaW5nLWFjdGl2YXRpb24tcmVhZGluZXNzCiAgICAgICAgICBucG0gcnVuIHRlc3Q6bXNnLTAwMS1hMDgtc3RhZ2luZy1hY3RpdmF0aW9uLXJlYWRpbmVzcwogICAgICAgICAgbnBtIHJ1biBhdWRpdDptZXNzYWdlcy1hcGktY29udHJhY3QKICAgICAgICAgIG5wbSBydW4gYXVkaXQ6cnVudGltZS1pZGVtcG90ZW5jeS1hdWRpdAogICAgICAgICAgbnBtIHJ1biBhdWRpdDpzdGFnaW5nLW1lc3NhZ2luZy1ydW50aW1lCiAgICAgICAgICBucG0gcnVuIGF1ZGl0OmRvbWFpbi1jb21wbGV0aW9uLW1hdHJpeAogICAgICAgICAgZ2l0IGRpZmYgLS1jaGVjawo=' | base64 -d > .github/workflows/msg-001-a08-staging-activation-readiness.yml
-          rm -f .github/tmp/msg-a08-generator.js .github/tmp/patch-msg-a08-generator.js
-          node scripts/audit-domain-completion-matrix.js --write
-      - name: Validate simulated final state
-        run: |
+          node --check scripts/audit-msg-001-a08-staging-activation-readiness.js
+          node --check scripts/test-msg-001-a08-staging-activation-readiness.js
           npm run audit:msg-001-a01-authority-baseline
           npm run audit:msg-001-a02-canonical-authority-boundary
           npm run test:msg-001-a02-canonical-authority-boundary
@@ -51,15 +55,3 @@ jobs:
           npm run audit:staging-messaging-runtime
           npm run audit:domain-completion-matrix
           git diff --check
-      - name: Commit final-state matrix artifacts
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/DOMAIN-COMPLETION-MATRIX.md
-          git add -f reports/generated/domain-completion-matrix-report.json
-          if git diff --cached --quiet; then
-            echo "Final-state matrix already current."
-            exit 0
-          fi
-          git commit -m "Regenerate matrix for permanent MSG-A08 state"
-          git push origin HEAD:msg/msg-001-baseline-audit
