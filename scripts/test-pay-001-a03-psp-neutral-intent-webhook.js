@@ -134,9 +134,10 @@ async function main() {
   const verification = verifyWebhookSignature({ rawBody, secret: SECRET, signatureHeader, now: NOW_SECONDS });
   assert.equal(verification.verified, true);
   assert.match(verification.rawBodyHash, /^[0-9a-f]{64}$/);
+  const invalidSignatureHeader = signatureHeader.slice(0, -1) + (signatureHeader.endsWith('0') ? '1' : '0');
 
   await expectReject(
-    () => Promise.resolve().then(() => verifyWebhookSignature({ rawBody, secret: SECRET, signatureHeader: signatureHeader.replace(/.$/, '0'), now: NOW_SECONDS })),
+    () => Promise.resolve().then(() => verifyWebhookSignature({ rawBody, secret: SECRET, signatureHeader: invalidSignatureHeader, now: NOW_SECONDS })),
     'DOKE_PAYMENT_WEBHOOK_SIGNATURE_INVALID'
   );
   await expectReject(

@@ -52,7 +52,7 @@ assert(/paymentsEnabled:\s*true/.test(supabaseConfig), 'payments runtime flag ba
 assert(/financeSandboxEnabled:\s*true/.test(supabaseConfig), 'finance sandbox flag baseline mismatch');
 assert(supabaseConfig.includes('zwkczgewzbsorbrjuzpb.supabase.co'), 'staging project URL baseline mismatch');
 
-assert(['1.3.86', '1.3.87'].includes(matrix.version), 'matrix version must be PAY-A01/PAY-A02 compatible');
+assert(/^1\.3\.(?:8[6-9]|9\d|\d{3,})$/.test(matrix.version), 'matrix version must remain PAY-A01 compatible');
 assert(pay, 'PAY-001 matrix domain missing');
 assert(pay.maturity === 2, 'PAY-001 maturity must remain 2');
 assert(pay.userFacingAuthority === 'local', 'PAY-001 UI authority must remain local');

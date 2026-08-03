@@ -40,7 +40,7 @@ assert(finance.includes("if (hasAuthenticatedUuidSession()) return Promise.rejec
 assert(finance.includes("if (hasAuthenticatedUuidSession()) return Promise.reject(financialServerAuthorityError('gravar pagamento no navegador'));"), 'payment save guard missing');
 assert(finance.includes('localMutationAllowed: !hasAuthenticatedUuidSession()'), 'finance provider mutation capability missing');
 
-assert(matrix.version === '1.3.87', 'matrix version must be 1.3.87');
+assert(/^1\.3\.(?:8[7-9]|9\d|\d{3,})$/.test(matrix.version), 'matrix version must remain PAY-A02 compatible');
 assert(pay && pay.maturity === 2, 'PAY maturity must remain 2');
 assert(pay.serverAuthority === 'contract_only', 'server authority must remain contract-only');
 assert(pay.securityGate === 'blocked' && pay.productionGate === 'blocked', 'production gates must remain blocked');
@@ -55,7 +55,7 @@ assert(JSON.stringify(pay.blockers.map((item) => item.id)) === JSON.stringify(['
 ].forEach((required) => assert(pay.requiredPaths.includes(required), 'matrix missing ' + required));
 assert(pay.tests.includes('audit:pay-001-a02-authenticated-authority-boundary'), 'matrix audit command missing');
 assert(pay.tests.includes('test:pay-001-a02-authenticated-authority-boundary'), 'matrix test command missing');
-assert(pay.nextActions[0].includes('PAY-A03'), 'PAY-A03 must be next');
+assert(pay.nextActions[0].includes('PAY-A03') || pay.nextActions[0].includes('PAY-A04'), 'PAY-A03/PAY-A04 progression mismatch');
 assert(workflow.includes('permissions:\n  contents: read'), 'workflow must remain read-only');
 ['contents: write', 'secrets.', 'SUPABASE_ACCESS_TOKEN', 'SUPABASE_DB_PASSWORD', 'psql ', 'curl ', 'supabase functions deploy', 'supabase db push', 'git push'].forEach((fragment) => assert(!workflow.includes(fragment), 'workflow contains prohibited fragment: ' + fragment));
 

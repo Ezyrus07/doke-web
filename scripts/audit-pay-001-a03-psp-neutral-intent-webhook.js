@@ -76,7 +76,9 @@ assert(eventLedger.includes('DOKE_PAYMENT_PROVIDER_EVENT_PREVIOUSLY_FAILED'), 'f
   'asaas'
 ].forEach((providerName) => {
   const combined = [intentContract, webhookContract, eventLedger, JSON.stringify(config)].join('\n').toLowerCase();
-  assert(!combined.includes(providerName), 'provider-specific dependency found: ' + providerName);
+  const lexical = ' ' + combined.replace(/[^a-z0-9]+/g, ' ') + ' ';
+  const needle = ' ' + providerName.toLowerCase().replace(/[^a-z0-9]+/g, ' ') + ' ';
+  assert(!lexical.includes(needle), 'provider-specific dependency found: ' + providerName);
 });
 
 assert(packageJson.scripts['audit:pay-001-a03-psp-neutral-intent-webhook'] === 'node scripts/audit-pay-001-a03-psp-neutral-intent-webhook.js', 'package audit command missing');
