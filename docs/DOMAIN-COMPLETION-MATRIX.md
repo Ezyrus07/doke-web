@@ -1081,7 +1081,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2468 arquivos no escopo; 529 referências a localStorage; 151 a sessionStorage; 902 referências mock; 608 referências de rede/Supabase; 89 marcadores de implementação pendente.
+**Evidência estática observada:** 2467 arquivos no escopo; 529 referências a localStorage; 151 a sessionStorage; 902 referências mock; 608 referências de rede/Supabase; 89 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
