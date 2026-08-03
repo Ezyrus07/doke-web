@@ -3,7 +3,6 @@ name: Doke MSG-A05 Attachment Lifecycle Contract
 on:
   pull_request:
     paths:
-      - 'scripts/tmp-cleanup-msg-a06.js'
       - '.github/workflows/msg-001-a05-attachment-lifecycle.yml'
   workflow_dispatch:
 
@@ -11,7 +10,7 @@ permissions:
   contents: write
 
 jobs:
-  cleanup-a06:
+  regenerate-matrix:
     if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.ref == 'msg/msg-001-baseline-audit'
     runs-on: ubuntu-24.04
     timeout-minutes: 12
@@ -23,11 +22,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      - name: Remove temporary publishers and restore MSG-A05 gate
-        run: |
-          node scripts/tmp-cleanup-msg-a06.js
-          node scripts/audit-domain-completion-matrix.js --write
-      - name: Validate canonical MSG-A06 before cleanup commit
+      - name: Regenerate matrix after temporary publisher cleanup
+        run: node scripts/audit-domain-completion-matrix.js --write
+      - name: Validate cumulative MSG contracts
         run: |
           npm run audit:msg-001-a01-authority-baseline
           npm run audit:msg-001-a02-canonical-authority-boundary
@@ -42,23 +39,15 @@ jobs:
           npm run test:msg-001-a06-presence-typing-runtime
           npm run audit:domain-completion-matrix
           git diff --check
-      - name: Commit clean repository state
+      - name: Commit regenerated matrix documents
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A scripts/tmp-a06-1.js
-          git add -A scripts/tmp-a06-group1.js
-          git add -A scripts/tmp-a06-5.js
-          git add -A scripts/tmp-a06-6.js
-          git add -A scripts/tmp-a06-7.js
-          git add -A scripts/tmp-a06-8.js
-          git add -A scripts/tmp-patch-msg-a06.js
-          git add -A scripts/tmp-patch-msg-a06-cumulative.js
-          git add -A scripts/tmp-finalize-msg-a06.js
-          git add -A .github/workflows/tmp-msg-a06-publisher.yml
-          git add .github/workflows/msg-001-a05-attachment-lifecycle.yml
           git add docs/DOMAIN-COMPLETION-MATRIX.md
           git add -f reports/generated/domain-completion-matrix-report.json
-          git rm scripts/tmp-cleanup-msg-a06.js
-          git commit -m "Remove MSG-A06 temporary publishers"
+          if git diff --cached --quiet; then
+            echo "Matrix documents already current."
+            exit 0
+          fi
+          git commit -m "Regenerate matrix after MSG-A06 cleanup"
           git push origin HEAD:msg/msg-001-baseline-audit
