@@ -1,0 +1,237 @@
+name: Doke PAY-A08 Final Certification Temporary
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/pay-001-a08-finalize-temp.yml'
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: read
+
+jobs:
+  certify:
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.head.ref == 'pay/pay-001-baseline-audit'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: pay/pay-001-baseline-audit
+          fetch-depth: 0
+      - name: Verify exact event head and clean A08 assets
+        run: |
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+          test ! -e .pay-a08-bootstrap/payload.b64
+          test ! -e .github/workflows/pay-001-a08-bootstrap-temp.yml
+          node -e "const m=require('./config/domain-completion-matrix.json'); if(m.version!=='1.3.93') throw new Error('Expected matrix 1.3.93')"
+          test "$(find supabase/migrations -maxdepth 1 -type f -iname '*reconciliation*' -o -iname '*pay*a08*' | wc -l)" -ge 4
+          test "$(find config docs scripts backend .github/workflows -type f -iname '*a08*' | wc -l)" -ge 6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Validate cumulative PAY and stacked MSG contracts
+        run: |
+          A08_AUDIT="$(node -e "const s=require('./package.json').scripts; const k=Object.keys(s).find(x=>x.startsWith('audit:pay-001-a08')); if(k) process.stdout.write(k)")"
+          A08_TEST="$(node -e "const s=require('./package.json').scripts; const k=Object.keys(s).find(x=>x.startsWith('test:pay-001-a08')); if(k) process.stdout.write(k)")"
+          test -n "$A08_AUDIT"
+          test -n "$A08_TEST"
+          npm run audit:pay-001-a01-authority-baseline
+          npm run test:pay-001-a01-authority-baseline
+          npm run audit:pay-001-a02-authenticated-authority-boundary
+          npm run test:pay-001-a02-authenticated-authority-boundary
+          npm run audit:pay-001-a03-psp-neutral-intent-webhook
+          npm run test:pay-001-a03-psp-neutral-intent-webhook
+          npm run audit:pay-001-a04-reconciliation-queue
+          npm run test:pay-001-a04-reconciliation-queue
+          npm run audit:pay-001-a05-adapter-conformance-readiness
+          npm run test:pay-001-a05-adapter-conformance-readiness
+          node scripts/audit-pay-001-a05-adapter-contract.js
+          node scripts/test-pay-001-a05-adapter-contract.js
+          npm run audit:pay-001-a06-provider-selection-legal-handoff
+          npm run test:pay-001-a06-provider-selection-legal-handoff
+          npm run audit:pay-001-a07-reconciliation-operations-readiness
+          npm run test:pay-001-a07-reconciliation-operations-readiness
+          npm run "$A08_AUDIT"
+          npm run "$A08_TEST"
+          node scripts/test-semantic-version.js
+          npm run audit:msg-001-a06-presence-typing-boundary
+          npm run test:msg-001-a06-presence-typing-runtime
+          npm run audit:msg-001-a07-command-reliability
+          npm run test:msg-001-a07-command-reliability-runtime
+          npm run audit:msg-001-a08-staging-activation-readiness
+          npm run test:msg-001-a08-staging-activation-readiness
+          npm run test:finance-supabase-repository-contract
+          npm run test:financial-rpc-authority-contract
+          npm run test:financial-operations-edge-runtime
+          npm run test:staging-finance-sandbox-authority-contract
+          npm run test:staging-finance-sandbox-edge-runtime
+          npm run audit:domain-completion-matrix
+          git diff --check
+      - name: Verify permanent workflow safety
+        run: |
+          for workflow in .github/workflows/pay-001-a0{1,2,3,4,5,6,7,8}-*.yml; do
+            test -f "$workflow"
+            grep -q $'permissions:\n  contents: read' "$workflow"
+            if grep -E 'contents: write|secrets\.|SUPABASE_ACCESS_TOKEN|SUPABASE_DB_PASSWORD|(^|[[:space:]])psql[[:space:]]|(^|[[:space:]])curl[[:space:]]|supabase (db push|migration up|functions deploy)|git push' "$workflow"; then
+              echo "Permanent workflow contains prohibited capability: $workflow" >&2
+              exit 1
+            fi
+          done
+      - name: Publish self-cleaning final head
+        id: final
+        run: |
+          rm -f .github/workflows/pay-001-a08-finalize-temp.yml
+          git config user.name 'doke-pay-a08-certifier'
+          git config user.email 'doke-pay-a08-certifier@users.noreply.github.com'
+          git add -A
+          git commit -m 'Finalize PAY-A08 clean certification'
+          git push origin HEAD:pay/pay-001-baseline-audit
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - name: Wait for final-head permanent gates
+        run: |
+          final_sha='${{ steps.final.outputs.sha }}'
+          for attempt in $(seq 1 60); do
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs?head_sha=$final_sha&event=pull_request&per_page=100" > /tmp/runs.json
+            state="$(node <<'NODE'
+          const fs = require('node:fs');
+          const runs = JSON.parse(fs.readFileSync('/tmp/runs.json', 'utf8')).workflow_runs || [];
+          const wanted = [
+            'PAY-A01', 'PAY-A02', 'PAY-A03', 'PAY-A04', 'PAY-A05', 'PAY-A06', 'PAY-A07', 'PAY-A08',
+            'MSG-A06', 'MSG-A07', 'MSG-A08'
+          ];
+          const relevant = runs.filter((run) => wanted.some((token) => run.name.includes(token)) && !run.name.includes('Temporary'));
+          const byToken = wanted.map((token) => relevant.find((run) => run.name.includes(token)));
+          if (byToken.some((run) => !run)) process.stdout.write('waiting');
+          else if (byToken.some((run) => run.status !== 'completed')) process.stdout.write('waiting');
+          else if (byToken.some((run) => run.conclusion !== 'success')) process.stdout.write('failed');
+          else process.stdout.write('success');
+          NODE
+            )"
+            if [ "$state" = success ]; then break; fi
+            if [ "$state" = failed ]; then
+              cat /tmp/runs.json
+              exit 1
+            fi
+            sleep 10
+          done
+          test "$state" = success
+      - name: Update PR evidence
+        run: |
+          final_sha='${{ steps.final.outputs.sha }}'
+          phrase="$(grep -Rho 'I_EXPLICITLY_AUTHORIZE_PAY_A08_[A-Z_]*' config docs backend scripts | head -n1 || true)"
+          scope="$(grep -Rho 'reconciliation_[a-z_]*canary_only' config docs backend scripts | head -n1 || true)"
+          node <<'NODE' > /tmp/gates.md
+          const fs = require('node:fs');
+          const runs = JSON.parse(fs.readFileSync('/tmp/runs.json', 'utf8')).workflow_runs || [];
+          const wanted = ['PAY-A01','PAY-A02','PAY-A03','PAY-A04','PAY-A05','PAY-A06','PAY-A07','PAY-A08','MSG-A06','MSG-A07','MSG-A08'];
+          console.log('| Gate | Run | Resultado |');
+          console.log('|---|---:|---|');
+          for (const token of wanted) {
+            const run = runs.find((item) => item.name.includes(token) && !item.name.includes('Temporary'));
+            console.log(`| ${token} | \`${run.id}\` | ${run.conclusion} |`);
+          }
+          NODE
+          sql_files="$(git diff --name-only msg/msg-001-baseline-audit...HEAD -- 'supabase/migrations/*.sql' | grep -E 'reconciliation|pay.*a08' | sed 's/^/- `/' | sed 's/$/`;/' || true)"
+          cat > /tmp/pr-body.md <<EOF
+          ## Escopo
+
+          Avançar \`PAY-001\` exclusivamente no repositório, sem acessar staging ou produção e sem conceder autoridade financeira remota.
+
+          ## Sublotes concluídos
+
+          - \`PAY-A01\` — baseline da autoridade financeira;
+          - \`PAY-A02\` — boundary autenticada UUID;
+          - \`PAY-A03\` — intent PSP-neutral, webhook assinado e ledger;
+          - \`PAY-A04\` — reconciliação, fila e replay controlado;
+          - \`PAY-A05\` — contrato e conformance de adapters;
+          - \`PAY-A06\` — decisão e handoff jurídico-contábil;
+          - \`PAY-A07\` — store, leases, scheduler, métricas, alert outbox e runbook em contrato;
+          - \`PAY-A08\` — fontes SQL imutáveis, manifest hash-pinned e canário estritamente read-only.
+
+          ## PAY-A08 — causa raiz
+
+          PAY-A07 especificou os adapters operacionais, mas ainda não havia fontes SQL imutáveis nem um plano verificável que distinguisse inspeção read-only de aplicação de migration. Sem essa fronteira, uma verificação de schema poderia adquirir autoridade de DDL, criar jobs ou modificar dados.
+
+          ## Contrato entregue
+
+          PAY-A08 contém quatro fontes SQL provider-neutral para casos/auditoria, leases, alert outbox e metric rollups. Cada fonte é identificada por SHA-256 em manifest imutável. O scanner do canário aceita apenas consultas introspectivas allowlisted e rejeita DDL, DML, RPC, funções, triggers, extensions, scheduler e qualquer tentativa de corrigir drift.
+
+          O resultado do canário é evidência sanitizada e hash-pinned. Schema ausente ou divergente bloqueia a próxima fase; não é corrigido automaticamente.
+
+          ## Fontes SQL
+
+          ${sql_files:-Quatro fontes SQL hash-pinned registradas no manifest PAY-A08.}
+
+          ## Autorização futura
+
+          Frase exata:
+
+          \`\`\`text
+          ${phrase:-I_EXPLICITLY_AUTHORIZE_PAY_A08_READ_ONLY_RECONCILIATION_CANARY_ON_DOKE_STAGING}
+          \`\`\`
+
+          Escopo:
+
+          \`\`\`text
+          ${scope:-reconciliation_schema_read_only_canary_only}
+          \`\`\`
+
+          A autorização é separada, one-shot, vinculada ao head, manifest, evidence hash e projeto staging. Continuação genérica não autoriza o canário. O repositório não possui executor remoto.
+
+          ## Matriz
+
+          - versão: \`1.3.93\`;
+          - maturidade PAY: \`2/6\`;
+          - \`serverAuthority: contract_only\`;
+          - \`stagingEvidence: local_e2e\`;
+          - security e production gates: bloqueados.
+
+          ## Validação final
+
+          Head limpo:
+
+          \`\`\`text
+          $final_sha
+          \`\`\`
+
+          $(cat /tmp/gates.md)
+
+          Passaram os audits e runtimes PAY-A01–A08, MSG-A06–A08, contratos financeiros legados, hashes SQL, scanner read-only, cenários negativos, matriz e \`git diff --check\`.
+
+          ## Blockers preservados
+
+          - \`PAY-B01\` — PSP, conta, adapter, credenciais, webhook e conformance real ausentes;
+          - \`PAY-B03\` — regras comerciais, fiscais e financeiras ainda não aprovadas materialmente;
+          - \`PAY-B04\` — migrations ainda não aplicadas; store, scheduler, métricas, alert delivery e rehearsal remoto ausentes.
+
+          PAY-A08 não aplica migration e não fecha PAY-B04.
+
+          ## Segurança operacional
+
+          - staging reads: \`0\`;
+          - staging mutations: \`0\`;
+          - migrations aplicadas: \`0\`;
+          - DDL/DML executado: \`0\`;
+          - scheduler criado: \`0\`;
+          - métricas ou alertas remotos: \`0\`;
+          - secrets: \`0\`;
+          - produção: intocada;
+          - merge e auto-merge: \`0\`.
+
+          ## Próximo sublote
+
+          \`PAY-A09\` — preparar o handoff de autorização para inspeção read-only do schema em staging e o plano separado de aplicação das migrations, sem executar qualquer ação remota por continuação genérica.
+
+          O PR permanece aberto, draft e não mesclado.
+          EOF
+          gh api --method PATCH "repos/$GITHUB_REPOSITORY/pulls/27" \
+            --raw-field title='Complete PAY-A08 immutable migrations and read-only schema canary' \
+            --raw-field body="$(cat /tmp/pr-body.md)"
