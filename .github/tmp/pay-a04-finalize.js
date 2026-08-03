@@ -1,4 +1,5 @@
 'use strict';
+// Registered trigger for PAY-A04 repository finalization.
 
 const fs = require('node:fs');
 const path = require('node:path');
