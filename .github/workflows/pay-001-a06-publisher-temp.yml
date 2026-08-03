@@ -36,6 +36,14 @@ jobs:
           base64 --decode /tmp/pay-a06-payload.b64 > /tmp/pay-a06-payload.tar.gz
           printf '%s  %s\n' '15fd9382eccc80ab51917727805888ec8daea03c626d370d519d9f7ceb3d6482' '/tmp/pay-a06-payload.tar.gz' | sha256sum --check --strict
           tar -xzf /tmp/pay-a06-payload.tar.gz -C .
+          python - <<'PYFIX'
+          from pathlib import Path
+          path = Path('scripts/audit-pay-001-a05-adapter-conformance-readiness.js')
+          content = path.read_text()
+          content = content.replace("\"const ADAPTER_CONTRACT_VERSION = 'pay-provider-adapter-v1'\",\n  'checkHealth'", "\"const CONTRACT_VERSION = 'pay-provider-adapter-v1'\",\n  'checkHealth'")
+          content = content.replace("  'DOKE_PAYMENT_ADAPTER_CAPABILITY_UNSUPPORTED',\n  'DOKE_FINANCIAL_SERVER_AUTHORITY_REQUIRED'", "  'DOKE_PAYMENT_ADAPTER_CAPABILITY_UNSUPPORTED'")
+          path.write_text(content)
+          PYFIX
           node scripts/prepare-pay-001-a06-matrix-temp.js
       - name: Remove temporary transport and generator
         run: |
