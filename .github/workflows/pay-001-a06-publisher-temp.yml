@@ -46,6 +46,12 @@ jobs:
           lines[version_rows[1]] = lines[version_rows[1]].replace('ADAPTER_CONTRACT_VERSION', 'CONTRACT_VERSION')
           lines = [line for line in lines if 'DOKE_FINANCIAL_SERVER_AUTHORITY_REQUIRED' not in line]
           path.write_text('\n'.join(lines) + '\n')
+          contract_audit = Path('scripts/audit-pay-001-a05-adapter-contract.js')
+          contract_content = contract_audit.read_text()
+          if "isNumericSemanticVersionAtLeast" not in contract_content:
+              contract_content = contract_content.replace("const path = require('node:path');\n", "const path = require('node:path');\nconst { isNumericSemanticVersionAtLeast } = require('./lib/semantic-version');\n")
+          contract_content = contract_content.replace("assert(matrix.version === '1.3.90', 'matrix must remain 1.3.90 for A05 hardening');", "assert(isNumericSemanticVersionAtLeast(matrix.version, '1.3.90'), 'matrix must remain at least 1.3.90 after A05 hardening');")
+          contract_audit.write_text(contract_content)
           PYFIX
           node scripts/prepare-pay-001-a06-matrix-temp.js
       - name: Remove temporary transport and generator
@@ -115,6 +121,7 @@ jobs:
               scripts/audit-pay-001-a06-provider-selection-legal-handoff.js|\
               scripts/test-pay-001-a06-provider-selection-legal-handoff.js|\
               scripts/audit-pay-001-a05-adapter-conformance-readiness.js|\
+              scripts/audit-pay-001-a05-adapter-contract.js|\
               .github/workflows/pay-001-a06-provider-selection-legal-handoff.yml|\
               package.json|\
               config/domain-completion-matrix.json|\
@@ -140,6 +147,7 @@ jobs:
             scripts/audit-pay-001-a06-provider-selection-legal-handoff.js \
             scripts/test-pay-001-a06-provider-selection-legal-handoff.js \
             scripts/audit-pay-001-a05-adapter-conformance-readiness.js \
+            scripts/audit-pay-001-a05-adapter-contract.js \
             .github/workflows/pay-001-a06-provider-selection-legal-handoff.yml \
             package.json \
             config/domain-completion-matrix.json \
