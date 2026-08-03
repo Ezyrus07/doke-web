@@ -54,7 +54,6 @@ jobs:
           done < /tmp/pay-a08-files.txt
           tar -xzf /tmp/pay-a08.tar.gz -C .
           rm -rf .pay-a08-bootstrap
-          rm -f .github/workflows/pay-001-a08-bootstrap-temp.yml
       - name: Patch canonical package, matrix and cumulative gates
         run: |
           node scripts/pay-001-a08-publish.js
@@ -114,26 +113,20 @@ jobs:
       - name: Verify repository-only safety boundary
         run: |
           test ! -e .pay-a08-bootstrap/payload.b64
-          test ! -e .github/workflows/pay-001-a08-bootstrap-temp.yml
-          for workflow in .github/workflows/pay-001-a08-*.yml; do
-            test -f "$workflow"
-            case "$workflow" in
-              *-temp.yml) continue ;;
-            esac
-            grep -q $'permissions:\n  contents: read' "$workflow"
-            if grep -E 'contents: write|secrets\.|SUPABASE_ACCESS_TOKEN|SUPABASE_DB_PASSWORD|(^|[[:space:]])psql[[:space:]]|(^|[[:space:]])curl[[:space:]]|supabase (db push|migration up|functions deploy)|git push' "$workflow"; then
-              echo "Permanent workflow contains prohibited remote capability: $workflow" >&2
-              exit 1
-            fi
-          done
+          test -e .github/workflows/pay-001-a08-bootstrap-temp.yml
+          test -e .github/workflows/pay-001-a08-immutable-migrations-read-only-canary.yml
+          grep -q $'permissions:\n  contents: read' .github/workflows/pay-001-a08-immutable-migrations-read-only-canary.yml
+          if grep -E 'contents: write|secrets\.|SUPABASE_ACCESS_TOKEN|SUPABASE_DB_PASSWORD|(^|[[:space:]])psql[[:space:]]|(^|[[:space:]])curl[[:space:]]|supabase (db push|migration up|functions deploy)|git push' .github/workflows/pay-001-a08-immutable-migrations-read-only-canary.yml; then
+            echo 'Permanent PAY-A08 workflow contains prohibited remote capability.' >&2
+            exit 1
+          fi
           rm -f scripts/pay-001-a08-publish.js
+          rm -f .github/workflows/pay-001-a08-immutable-migrations-read-only-canary.yml
           changed="$(git status --short | sed -E 's/^.. //' | sort)"
           test -n "$changed"
           while IFS= read -r file; do
             case "$file" in
               .pay-a08-bootstrap/payload.b64|\
-              .github/workflows/pay-001-a08-bootstrap-temp.yml|\
-              .github/workflows/pay-001-a08-*.yml|\
               backend/modules/payments/payment-reconciliation-migration-canary-contract.js|\
               config/pay-001-a08-*|\
               docs/PAY-001-A08-*|\
@@ -152,7 +145,7 @@ jobs:
           done <<< "$changed"
           git fetch origin pay/pay-001-baseline-audit
           test "$(git rev-parse origin/pay/pay-001-baseline-audit)" = "${{ github.event.pull_request.head.sha }}"
-      - name: Publish clean PAY-A08 commit
+      - name: Publish PAY-A08 repository assets
         run: |
           git config user.name 'doke-pay-a08-bot'
           git config user.email 'doke-pay-a08-bot@users.noreply.github.com'
