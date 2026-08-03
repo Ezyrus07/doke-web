@@ -52,6 +52,16 @@ jobs:
             esac
           done < /tmp/pay-a09-files.txt
           tar -xzf /tmp/pay-a09.tar.gz -C .
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('scripts/audit-pay-001-a09-deployment-inspection-handoff.js')
+          source = path.read_text(encoding='utf-8')
+          before = "'post-migration'"
+          after = "'pós-migration'"
+          if before not in source:
+              raise SystemExit('Expected PAY-A09 documentation token was not found')
+          path.write_text(source.replace(before, after, 1), encoding='utf-8')
+          PY
       - name: Patch canonical package, matrix and cumulative gates
         run: node scripts/pay-001-a09-publish.js
       - run: npm ci --ignore-scripts
