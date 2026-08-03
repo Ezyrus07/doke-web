@@ -140,7 +140,8 @@ assert(JSON.stringify(pay.blockers.map((item) => item.id)) === JSON.stringify(['
 assert(pay.tests.includes('audit:pay-001-a06-provider-selection-legal-handoff'), 'matrix A06 audit missing');
 assert(pay.tests.includes('test:pay-001-a06-provider-selection-legal-handoff'), 'matrix A06 runtime missing');
 assert(pay.evidence.some((item) => item.includes('PAY-A06')), 'matrix A06 evidence missing');
-assert(pay.nextActions[0].includes('PAY-A07'), 'PAY-A07 must be the first next action');
+assert(pay.requiredPaths.includes('backend/modules/payments/payment-reconciliation-operations-contract.js'), 'PAY-A07 must remain completed after the handoff');
+assert(pay.nextActions[0].includes('PAY-A08'), 'PAY-A08 must follow completed PAY-A07');
 
 assert(workflow.includes('permissions:\n  contents: read'), 'PAY-A06 workflow must remain read-only');
 [

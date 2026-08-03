@@ -1,6 +1,6 @@
 {
-  "version": "1.3.91",
-  "updatedAt": "2026-08-03T13:30:00-03:00",
+  "version": "1.3.92",
+  "updatedAt": "2026-08-03T14:20:00-03:00",
   "title": "Doke Domain Completion Matrix",
   "purpose": "Single source of truth for domain maturity, data authority, staging evidence, blockers, dependencies and mandatory completion order.",
   "maturityScale": {
@@ -2085,7 +2085,14 @@
         "docs/validation/PAY-001-A06-PROVIDER-SELECTION-LEGAL-HANDOFF.json",
         "scripts/audit-pay-001-a06-provider-selection-legal-handoff.js",
         "scripts/test-pay-001-a06-provider-selection-legal-handoff.js",
-        ".github/workflows/pay-001-a06-provider-selection-legal-handoff.yml"
+        ".github/workflows/pay-001-a06-provider-selection-legal-handoff.yml",
+        "backend/modules/payments/payment-reconciliation-operations-contract.js",
+        "config/pay-001-a07-reconciliation-operations-readiness.json",
+        "docs/PAY-001-A07-RECONCILIATION-OPERATIONS-READINESS.md",
+        "docs/validation/PAY-001-A07-RECONCILIATION-OPERATIONS-READINESS.json",
+        "scripts/audit-pay-001-a07-reconciliation-operations-readiness.js",
+        "scripts/test-pay-001-a07-reconciliation-operations-readiness.js",
+        ".github/workflows/pay-001-a07-reconciliation-operations-readiness.yml"
       ],
       "scanRoots": [
         "assets/js/pages/pagamento-profissional.js",
@@ -2123,7 +2130,9 @@
         "audit:pay-001-a05-adapter-conformance-readiness",
         "test:pay-001-a05-adapter-conformance-readiness",
         "audit:pay-001-a06-provider-selection-legal-handoff",
-        "test:pay-001-a06-provider-selection-legal-handoff"
+        "test:pay-001-a06-provider-selection-legal-handoff",
+        "audit:pay-001-a07-reconciliation-operations-readiness",
+        "test:pay-001-a07-reconciliation-operations-readiness"
       ],
       "evidence": [
         "Financial contracts, ledger-like tables and local beta-launch E2E exist.",
@@ -2152,7 +2161,8 @@
         "PAY-A06 requires referenced commercial, fiscal, funds-flow, refund, dispute, payout, KYC, privacy, reconciliation and contingency decisions plus named legal, accounting, finance, security and operations approvals with separation of duties.",
         "PAY-A06 provider selection requires a fresh resource-bound one-shot authorization matching the exact candidate, packet fingerprint and Git head; generic continuation and prior authorization are rejected.",
         "PAY-A06 selection authorizes only local provider-specific adapter preparation without secrets or network access; account, billing, webhook, migration, deploy, sandbox money and production remain separately blocked.",
-        "PAY-A06 staging conformance authorization is separately bound to candidate, packet, head, immutable adapter version, staging identity, evidence hash and sandbox/zero-budget constraints, while repository execution authority remains absent."
+        "PAY-A06 staging conformance authorization is separately bound to candidate, packet, head, immutable adapter version, staging identity, evidence hash and sandbox/zero-budget constraints, while repository execution authority remains absent.",
+        "PAY-A07 defines the repository-only provider-neutral reconciliation operations contract: server-only persistence, optimistic concurrency, database leases, disabled idempotent scheduler, low-cardinality metrics, atomic sanitized alert outbox, incident runbook and resource-bound one-shot staging authorization; no remote infrastructure or money authority was activated."
       ],
       "blockers": [
         {
@@ -2173,12 +2183,12 @@
           "id": "PAY-B04",
           "severity": "high",
           "category": "reconciliation",
-          "description": "No provider reconciliation or mismatch queue is operational.",
+          "description": "Remote operational reconciliation infrastructure remains absent: no canonical store, database leases, scheduler, metrics sink, alert delivery, on-call ownership or staging rehearsal exists. PAY-A07 defines the repository-only contract but does not deploy or activate those resources.",
           "targetPhase": "Fase 8"
         }
       ],
       "nextActions": [
-        "PAY-A07 — define the PSP-neutral remote reconciliation persistence, scheduler, metrics, alerts and incident-runbook contract without applying migrations or executing remote operations.",
+        "PAY-A08 — design immutable provider-neutral migrations and a read-only staging canary plan for the A07 store, lease, outbox and observability contracts without applying anything until a separate explicit authorization.",
         "PAY-B03 — complete qualified commercial, fiscal, funds-flow, escrow, refund, dispute, chargeback and payout decisions before any provider selection.",
         "PAY-B01 — evaluate candidates using the PAY-A06 packet and provide the exact resource-bound selection authorization only after every approval is current.",
         "PAY-B04 — implement and validate the remote reconciliation store, operator queue, scheduler and observability before provider sandbox activation."

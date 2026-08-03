@@ -198,7 +198,7 @@ expectCode('DOKE_PAYMENT_SENSITIVE_DATA_FORBIDDEN', () => buildMetricPoint({
   value: 1,
   labels: { environment: 'staging' },
   observedAt: NOW,
-  metadata: { email: 'forbidden@example.test' }
+  metadata: { rawCardNumber: '4111111111111111' }
 }));
 
 const alertA = buildAlertOutboxRecord(alertInput());
@@ -211,7 +211,7 @@ expectCode('DOKE_PAYMENT_RECONCILIATION_ALERT_CONTEXT_INVALID', () => buildAlert
   context: { environment: 'staging', providerIntentId: 'pi-secret' }
 })));
 expectCode('DOKE_PAYMENT_SENSITIVE_DATA_FORBIDDEN', () => buildAlertOutboxRecord(alertInput({
-  context: { environment: 'staging', email: 'forbidden@example.test' }
+  context: { environment: 'staging', rawCardNumber: '4111111111111111' }
 })));
 
 const runbook = buildIncidentRunbookPlan({
