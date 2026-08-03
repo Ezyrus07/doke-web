@@ -6,12 +6,14 @@ on:
       - pay/pay-001-baseline-audit
     paths:
       - '.github/tmp/pay-a02-apply.js'
+      - '.github/tmp/pay-a02-async-fix.js'
       - '.github/workflows/pay-001-a02-publisher.yml'
   pull_request:
     branches:
       - msg/msg-001-baseline-audit
     paths:
       - '.github/tmp/pay-a02-apply.js'
+      - '.github/tmp/pay-a02-async-fix.js'
       - '.github/workflows/pay-001-a02-publisher.yml'
   workflow_dispatch:
 
@@ -36,6 +38,7 @@ jobs:
       - name: Apply PAY-A02 deterministic patch
         run: |
           node .github/tmp/pay-a02-apply.js
+          node .github/tmp/pay-a02-async-fix.js
           node scripts/audit-domain-completion-matrix.js --write
       - name: Validate PAY-A01 and PAY-A02
         run: |
