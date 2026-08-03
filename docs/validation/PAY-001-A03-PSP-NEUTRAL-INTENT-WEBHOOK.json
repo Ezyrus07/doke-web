@@ -1,0 +1,39 @@
+{
+  "contractVersion": "pay-a03-psp-neutral-intent-webhook-v1",
+  "validatedAt": "2026-08-03T09:55:00-03:00",
+  "scope": "repository_only",
+  "providerSelected": false,
+  "remoteEffects": false,
+  "assertions": [
+    "payment intent payloads are deterministic and idempotent",
+    "sensitive card data is rejected recursively",
+    "provider acknowledgement cannot assert settlement",
+    "webhook signature is verified before JSON parsing",
+    "HMAC comparison is constant-time and timestamp-bounded",
+    "provider events use persistent api_idempotency_keys ledger semantics",
+    "exact replay does not repeat event application",
+    "event ID payload drift fails closed",
+    "out-of-order events are deferred without state mutation",
+    "terminal financial states reject conflicting transitions"
+  ],
+  "evidence": {
+    "config": "config/pay-001-a03-psp-neutral-intent-webhook.json",
+    "intentContract": "backend/modules/payments/payment-provider-contract.js",
+    "webhookContract": "backend/modules/payments/provider-webhook-contract.js",
+    "eventLedger": "backend/modules/payments/provider-event-ledger.js",
+    "audit": "scripts/audit-pay-001-a03-psp-neutral-intent-webhook.js",
+    "runtime": "scripts/test-pay-001-a03-psp-neutral-intent-webhook.js",
+    "workflow": ".github/workflows/pay-001-a03-psp-neutral-intent-webhook.yml"
+  },
+  "effects": {
+    "stagingReads": 0,
+    "stagingMutations": 0,
+    "migrationsApplied": 0,
+    "edgeFunctionsDeployed": 0,
+    "pspAccountsCreated": 0,
+    "webhooksRegistered": 0,
+    "paymentsCreated": 0,
+    "productionChanged": false,
+    "pullRequestMerged": false
+  }
+}
