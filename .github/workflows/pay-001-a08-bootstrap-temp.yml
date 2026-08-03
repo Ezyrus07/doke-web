@@ -55,8 +55,21 @@ jobs:
           tar -xzf /tmp/pay-a08.tar.gz -C .
           rm -rf .pay-a08-bootstrap
           rm -f .github/workflows/pay-001-a08-bootstrap-temp.yml
-      - name: Patch canonical package, matrix and cumulative A07 gate
-        run: node scripts/pay-001-a08-publish.js
+      - name: Patch canonical package, matrix and cumulative gates
+        run: |
+          node scripts/pay-001-a08-publish.js
+          node <<'NODE'
+          const fs = require('node:fs');
+          const file = 'scripts/audit-pay-001-a06-provider-selection-legal-handoff.js';
+          let source = fs.readFileSync(file, 'utf8');
+          const before = "assert(pay.nextActions[0].includes('PAY-A08'), 'PAY-A08 must follow completed PAY-A07');";
+          const after = "assert(['PAY-A08', 'PAY-A09'].some((sublot) => pay.nextActions[0].includes(sublot)), 'PAY-A08 or its completed successor PAY-A09 must follow PAY-A07');";
+          source = source.replace(before, after);
+          if (!source.includes('PAY-A08 or its completed successor PAY-A09 must follow PAY-A07')) {
+            throw new Error('Could not patch cumulative PAY-A06 next-action assertion');
+          }
+          fs.writeFileSync(file, source);
+          NODE
       - run: npm ci --ignore-scripts
       - name: Generate canonical matrix derivatives
         run: npm run write:domain-completion-matrix
@@ -127,6 +140,7 @@ jobs:
               docs/validation/PAY-001-A08-*|\
               scripts/audit-pay-001-a08-*|\
               scripts/test-pay-001-a08-*|\
+              scripts/audit-pay-001-a06-provider-selection-legal-handoff.js|\
               scripts/audit-pay-001-a07-reconciliation-operations-readiness.js|\
               supabase/migrations/*pay_a08*.sql|\
               package.json|\
