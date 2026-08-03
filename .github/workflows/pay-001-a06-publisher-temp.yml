@@ -39,10 +39,13 @@ jobs:
           python - <<'PYFIX'
           from pathlib import Path
           path = Path('scripts/audit-pay-001-a05-adapter-conformance-readiness.js')
-          content = path.read_text()
-          content = content.replace("\"const ADAPTER_CONTRACT_VERSION = 'pay-provider-adapter-v1'\",\n  'checkHealth'", "\"const CONTRACT_VERSION = 'pay-provider-adapter-v1'\",\n  'checkHealth'")
-          content = content.replace("  'DOKE_PAYMENT_ADAPTER_CAPABILITY_UNSUPPORTED',\n  'DOKE_FINANCIAL_SERVER_AUTHORITY_REQUIRED'", "  'DOKE_PAYMENT_ADAPTER_CAPABILITY_UNSUPPORTED'")
-          path.write_text(content)
+          lines = path.read_text().splitlines()
+          version_rows = [index for index, line in enumerate(lines) if "const ADAPTER_CONTRACT_VERSION = 'pay-provider-adapter-v1'" in line]
+          if len(version_rows) != 2:
+              raise SystemExit(f'Unexpected adapter contract version assertions: {version_rows}')
+          lines[version_rows[1]] = lines[version_rows[1]].replace('ADAPTER_CONTRACT_VERSION', 'CONTRACT_VERSION')
+          lines = [line for line in lines if 'DOKE_FINANCIAL_SERVER_AUTHORITY_REQUIRED' not in line]
+          path.write_text('\n'.join(lines) + '\n')
           PYFIX
           node scripts/prepare-pay-001-a06-matrix-temp.js
       - name: Remove temporary transport and generator
