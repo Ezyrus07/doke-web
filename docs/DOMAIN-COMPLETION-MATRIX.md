@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 1126 arquivos no escopo; 271 referências a localStorage; 78 a sessionStorage; 577 referências mock; 206 referências de rede/Supabase; 35 marcadores de implementação pendente.
+**Evidência estática observada:** 1129 arquivos no escopo; 271 referências a localStorage; 78 a sessionStorage; 577 referências mock; 206 referências de rede/Supabase; 35 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -539,7 +539,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI local; servidor partial; staging staging canary; segurança partial; produção blocked.
 
-**Evidência estática observada:** 1074 arquivos no escopo; 205 referências a localStorage; 70 a sessionStorage; 318 referências mock; 205 referências de rede/Supabase; 19 marcadores de implementação pendente.
+**Evidência estática observada:** 1076 arquivos no escopo; 205 referências a localStorage; 70 a sessionStorage; 318 referências mock; 205 referências de rede/Supabase; 19 marcadores de implementação pendente.
 
 **Páginas:** `anunciar-servico.html`, `pedidos.html`, `orcamento.html`.
 
@@ -699,7 +699,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 2/6; UI local; servidor contract only; staging local e2e; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 6 arquivos no escopo; 1 referências a localStorage; 0 a sessionStorage; 2 referências mock; 42 referências de rede/Supabase; 2 marcadores de implementação pendente.
+**Evidência estática observada:** 15 arquivos no escopo; 1 referências a localStorage; 0 a sessionStorage; 2 referências mock; 47 referências de rede/Supabase; 2 marcadores de implementação pendente.
 
 **Páginas:** `pagamento-profissional.html`, `mensagens.html`, `pedidos.html`.
 
@@ -730,6 +730,11 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - PAY-A05 requires verified webhook normalization, provider snapshot reconciliation through A04, sensitive-data rejection and fail-closed retry classification before an adapter may become a staging candidate.
 - PAY-A05 staging readiness requires formal provider selection, legal/accounting approval, sandbox account, server credentials, signed webhook registration, exact head, reconciliation store, operator queue, rollback, evidence and fresh one-shot authorization.
 - PAY-A05 cannot execute remote actions, activate a provider or change feature flags; the provider remains unselected and all staging, deployment and money effects remain zero.
+- PAY-A06 defines an immutable, fingerprinted and expiring PSP decision packet whose advisory score cannot select a provider and whose candidate identifier remains opaque.
+- PAY-A06 requires referenced commercial, fiscal, funds-flow, refund, dispute, payout, KYC, privacy, reconciliation and contingency decisions plus named legal, accounting, finance, security and operations approvals with separation of duties.
+- PAY-A06 provider selection requires a fresh resource-bound one-shot authorization matching the exact candidate, packet fingerprint and Git head; generic continuation and prior authorization are rejected.
+- PAY-A06 selection authorizes only local provider-specific adapter preparation without secrets or network access; account, billing, webhook, migration, deploy, sandbox money and production remain separately blocked.
+- PAY-A06 staging conformance authorization is separately bound to candidate, packet, head, immutable adapter version, staging identity, evidence hash and sandbox/zero-budget constraints, while repository execution authority remains absent.
 
 **Bloqueadores:**
 - **PAY-B01 · CRITICAL · external_provider:** No PSP integration or signed webhook authority exists. _(Fase 8)_
@@ -737,10 +742,10 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - **PAY-B04 · HIGH · reconciliation:** No provider reconciliation or mismatch queue is operational. _(Fase 8)_
 
 **Próximas ações:**
-- PAY-A06 — formalize the provider-selection handoff, legal/accounting decision packet and exact one-shot staging execution authorization contract without selecting a provider implicitly.
-- PAY-B01 — select and contract a PSP, configure account, secret and signed webhook, then run provider-specific staging conformance only after explicit authorization.
-- PAY-B03 — approve commercial, fiscal, escrow, refund, dispute and payout rules.
-- PAY-B04 — implement the remote reconciliation store, schedule, operator queue, metrics and runbook before production.
+- PAY-A07 — define the PSP-neutral remote reconciliation persistence, scheduler, metrics, alerts and incident-runbook contract without applying migrations or executing remote operations.
+- PAY-B03 — complete qualified commercial, fiscal, funds-flow, escrow, refund, dispute, chargeback and payout decisions before any provider selection.
+- PAY-B01 — evaluate candidates using the PAY-A06 packet and provide the exact resource-bound selection authorization only after every approval is current.
+- PAY-B04 — implement and validate the remote reconciliation store, operator queue, scheduler and observability before provider sandbox activation.
 
 **Gate de saída:**
 - No card data is stored by Doke.
@@ -1029,7 +1034,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 1/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 254 arquivos no escopo; 68 referências a localStorage; 8 a sessionStorage; 272 referências mock; 8 referências de rede/Supabase; 25 marcadores de implementação pendente.
+**Evidência estática observada:** 255 arquivos no escopo; 68 referências a localStorage; 8 a sessionStorage; 272 referências mock; 8 referências de rede/Supabase; 25 marcadores de implementação pendente.
 
 **Evidências:**
 - The master plan identifies legal, privacy and commercial decisions as mandatory.
@@ -1089,7 +1094,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2484 arquivos no escopo; 529 referências a localStorage; 151 a sessionStorage; 902 referências mock; 608 referências de rede/Supabase; 89 marcadores de implementação pendente.
+**Evidência estática observada:** 2489 arquivos no escopo; 529 referências a localStorage; 151 a sessionStorage; 902 referências mock; 608 referências de rede/Supabase; 89 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
@@ -1150,4 +1155,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-08-03T11:28:00-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-08-03T13:30:00-03:00._

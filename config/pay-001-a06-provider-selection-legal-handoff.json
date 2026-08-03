@@ -1,0 +1,185 @@
+{
+  "contractVersion": "pay-a06-provider-selection-legal-handoff-v1",
+  "status": "repository_only_decision_handoff_ready_provider_unselected_staging_blocked",
+  "objective": "Formalize a provider-neutral PSP decision packet, qualified approval boundary, explicit provider-selection handoff and resource-bound one-shot staging authorization contract without selecting or activating a provider.",
+  "provider": {
+    "candidateId": null,
+    "selected": false,
+    "contracted": false,
+    "accountCreated": false,
+    "billingAuthorized": false,
+    "adapterPrepared": false,
+    "credentialsConfigured": false,
+    "webhookRegistered": false,
+    "sandboxConformanceExecuted": false,
+    "productionAllowed": false
+  },
+  "decisionPacket": {
+    "contractVersion": "pay-provider-selection-handoff-v1",
+    "candidateIdentifierMustBeOpaque": true,
+    "automaticSelectionAllowed": false,
+    "advisoryScoreMaySelectProvider": false,
+    "immutablePacketVersionRequired": true,
+    "exactGitHeadRequired": true,
+    "fingerprintRequired": true,
+    "expiryRequired": true,
+    "unresolvedBlockersAllowed": false,
+    "requiredEvaluationDimensions": [
+      "regulatory_and_marketplace_fit",
+      "funds_flow_and_hold_model",
+      "capture_refund_dispute_chargeback",
+      "payout_split_and_recipient_onboarding",
+      "signed_webhooks_idempotency_and_event_query",
+      "settlement_and_reconciliation_exports",
+      "pricing_reserves_minimums_and_exit_costs",
+      "security_privacy_lgpd_and_pci_scope",
+      "sandbox_sla_support_and_incident_response",
+      "contract_termination_data_portability_and_insolvency"
+    ],
+    "requiredPolicyDecisions": [
+      "commercial_model",
+      "tax_and_fiscal_responsibility",
+      "funds_flow_and_escrow_classification",
+      "refund_and_cancellation_rules",
+      "dispute_and_chargeback_rules",
+      "payout_and_split_rules",
+      "kyc_aml_and_recipient_onboarding",
+      "privacy_security_and_retention",
+      "reconciliation_and_accounting_controls",
+      "contract_exit_and_contingency"
+    ],
+    "requiredApprovals": [
+      "legal",
+      "accounting_tax",
+      "finance_treasury",
+      "security_privacy",
+      "product_operations"
+    ],
+    "minimumDistinctApprovers": 3,
+    "qualifiedExternalReviewStillRequired": true
+  },
+  "selectionAuthorization": {
+    "phrase": "I_EXPLICITLY_SELECT_PSP_CANDIDATE_FOR_DOKE_STAGING_ADAPTER_PREPARATION",
+    "scope": "provider_specific_adapter_preparation_only",
+    "exactCandidateRequired": true,
+    "exactPacketFingerprintRequired": true,
+    "exactGitHeadRequired": true,
+    "freshnessSeconds": 900,
+    "oneShot": true,
+    "genericContinuationAuthorizesSelection": false,
+    "remoteActionsAllowedByRepositoryContract": false,
+    "productionAllowed": false,
+    "allowedAfterValidation": [
+      "create_provider_specific_adapter_source_without_secrets",
+      "define_environment_variable_names_without_values",
+      "run_local_adapter_tests_without_network"
+    ],
+    "doesNotAuthorize": [
+      "provider_account_creation",
+      "contract_signature",
+      "billing_or_paid_plan",
+      "secret_injection",
+      "webhook_registration",
+      "provider_api_or_cli_calls",
+      "migration_application",
+      "deployment",
+      "sandbox_payment_creation",
+      "refund",
+      "payout",
+      "dispute",
+      "production_change"
+    ]
+  },
+  "stagingAuthorization": {
+    "phrase": "I_EXPLICITLY_AUTHORIZE_PAY_A06_PROVIDER_SANDBOX_CONFORMANCE_ON_DOKE_STAGING",
+    "scope": "provider_sandbox_conformance_only",
+    "selectionMustExistFirst": true,
+    "exactCandidateRequired": true,
+    "exactPacketFingerprintRequired": true,
+    "exactGitHeadRequired": true,
+    "immutableAdapterVersionRequired": true,
+    "stagingProjectIdentityRequired": true,
+    "readinessEvidenceHashRequired": true,
+    "sandboxOrZeroBudgetRequired": true,
+    "freshnessSeconds": 900,
+    "oneShot": true,
+    "externalAuthorizedExecutorRequired": true,
+    "remoteActionsAllowedByRepositoryContract": false,
+    "productionExplicitlyDenied": true,
+    "repositoryExecutionPerformed": false
+  },
+  "orderedDecisionAndActivationStages": [
+    {
+      "stage": "decision_packet_preparation",
+      "status": "repository_contract_ready",
+      "authority": "repository_only"
+    },
+    {
+      "stage": "qualified_legal_accounting_and_operational_approvals",
+      "status": "pending_external_decisions",
+      "authority": "named_qualified_approvers"
+    },
+    {
+      "stage": "explicit_provider_selection",
+      "status": "blocked_until_complete_packet",
+      "authority": "exact_resource_bound_one_shot_selection"
+    },
+    {
+      "stage": "provider_specific_adapter_preparation",
+      "status": "blocked_until_explicit_selection",
+      "authority": "selection_scope_only"
+    },
+    {
+      "stage": "provider_contract_account_and_billing",
+      "status": "not_authorized",
+      "authority": "separate_explicit_business_authorization"
+    },
+    {
+      "stage": "credentials_and_webhook_registration",
+      "status": "not_authorized",
+      "authority": "separate_explicit_security_authorization"
+    },
+    {
+      "stage": "migration_or_deployment",
+      "status": "not_authorized",
+      "authority": "separate_explicit_technical_authorization"
+    },
+    {
+      "stage": "provider_sandbox_conformance",
+      "status": "blocked_by_selection_and_a05_readiness",
+      "authority": "exact_resource_bound_one_shot_staging_authorization"
+    },
+    {
+      "stage": "production",
+      "status": "forbidden",
+      "authority": "out_of_scope"
+    }
+  ],
+  "currentBlockers": [
+    "PAY-B01",
+    "PAY-B03",
+    "PAY-B04"
+  ],
+  "effects": {
+    "providerCandidatesEvaluatedRemotely": 0,
+    "providerSelected": false,
+    "providerContractsSigned": 0,
+    "providerAccountsCreated": 0,
+    "billingChanges": 0,
+    "networkRequests": 0,
+    "stagingReads": 0,
+    "stagingMutations": 0,
+    "migrationsApplied": 0,
+    "edgeFunctionsDeployed": 0,
+    "webhooksRegistered": 0,
+    "secretsConfigured": 0,
+    "sandboxConformanceRuns": 0,
+    "paymentsCreated": 0,
+    "refundsCreated": 0,
+    "payoutsCreated": 0,
+    "disputesCreated": 0,
+    "productionChanged": false,
+    "pullRequestMerged": false
+  },
+  "nextAction": "PAY-A07 — define the PSP-neutral remote reconciliation persistence, scheduler, metrics, alerts and incident-runbook contract without applying migrations or executing remote operations."
+}

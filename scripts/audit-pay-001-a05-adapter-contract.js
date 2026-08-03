@@ -2,6 +2,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const { isNumericSemanticVersionAtLeast } = require('./lib/semantic-version');
 
 const root = path.resolve(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
@@ -88,7 +89,7 @@ assert(config.stagingReadiness.sanitizedEvidenceRequired === true, 'sanitized ev
 assert(config.effects.stagingReads === 0 && config.effects.stagingMutations === 0, 'staging effects must remain zero');
 assert(config.effects.paymentsCreated === 0 && config.effects.refundsCreated === 0 && config.effects.payoutsCreated === 0, 'money effects must remain zero');
 
-assert(matrix.version === '1.3.90', 'matrix must remain 1.3.90 for A05 hardening');
+assert(isNumericSemanticVersionAtLeast(matrix.version, '1.3.90'), 'matrix must remain at least 1.3.90 after A05 hardening');
 assert(pay && pay.maturity === 2, 'PAY maturity must remain 2/6');
 assert(pay.serverAuthority === 'contract_only', 'PAY server authority must remain contract-only');
 assert(pay.securityGate === 'blocked' && pay.productionGate === 'blocked', 'PAY security/production gates must remain blocked');
