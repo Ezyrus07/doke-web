@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 1101 arquivos no escopo; 268 referências a localStorage; 78 a sessionStorage; 563 referências mock; 206 referências de rede/Supabase; 35 marcadores de implementação pendente.
+**Evidência estática observada:** 1104 arquivos no escopo; 269 referências a localStorage; 78 a sessionStorage; 563 referências mock; 206 referências de rede/Supabase; 35 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -539,7 +539,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI local; servidor partial; staging staging canary; segurança partial; produção blocked.
 
-**Evidência estática observada:** 1056 arquivos no escopo; 203 referências a localStorage; 70 a sessionStorage; 305 referências mock; 205 referências de rede/Supabase; 19 marcadores de implementação pendente.
+**Evidência estática observada:** 1058 arquivos no escopo; 204 referências a localStorage; 70 a sessionStorage; 305 referências mock; 205 referências de rede/Supabase; 19 marcadores de implementação pendente.
 
 **Páginas:** `anunciar-servico.html`, `pedidos.html`, `orcamento.html`.
 
@@ -620,7 +620,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI hybrid; servidor partial; staging staging canary; segurança partial; produção blocked.
 
-**Evidência estática observada:** 7 arquivos no escopo; 8 referências a localStorage; 0 a sessionStorage; 5 referências mock; 41 referências de rede/Supabase; 3 marcadores de implementação pendente.
+**Evidência estática observada:** 7 arquivos no escopo; 8 referências a localStorage; 0 a sessionStorage; 5 referências mock; 43 referências de rede/Supabase; 3 marcadores de implementação pendente.
 
 **Páginas:** `mensagens.html`, `pedidos.html`, `comunidade-interna.html`.
 
@@ -639,6 +639,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - MSG-A04 repository-only participant-scoped Realtime publication/subscription contract: conversations and messages are prepared for RLS-authorized INSERT/UPDATE invalidation signals, feature-flagged off until explicit staging application and canaries.
 - MSG-A05 repository-only attachment lifecycle contract: authenticated uploads use server-owned signed intents, direct browser deletes and local pending fallback are removed, and cleanup/retention are frozen without staging activation.
 - MSG-A06 retires localStorage presence, typing and read-receipt authority and prepares private participant-scoped Presence/Broadcast channels behind a disabled feature flag.
+- MSG-A07 requires one commandId across bounded retries, validates server acknowledgements, replays through the persistent idempotency store and consumes browser side effects once.
 
 **Bloqueadores:**
 - **MSG-B02 · CRITICAL · realtime:** messages and conversations are not in the realtime publication. _(Fase 7)_
@@ -646,7 +647,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - **MSG-B04 · HIGH · storage:** Transaction attachment bucket policies are not mapped in the current staging snapshot. _(Fase 1)_
 
 **Próximas ações:**
-- Complete MSG-A07 repository-only command acknowledgement, idempotency, deduplication and bounded retry contract.
+- Execute MSG-A07B lost-response, concurrent replay and acknowledgement canaries only after fresh explicit staging authorization.
 - Apply MSG-A06 Realtime Authorization policies and execute participant/non-participant presence canaries only after fresh explicit staging authorization.
 - Apply MSG-A05 attachment lifecycle resources only after fresh explicit staging authorization.
 - Apply MSG-A04 publication changes and execute participant-scoped message canaries only after fresh explicit staging authorization.
@@ -1007,7 +1008,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 1/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 247 arquivos no escopo; 67 referências a localStorage; 8 a sessionStorage; 271 referências mock; 8 referências de rede/Supabase; 25 marcadores de implementação pendente.
+**Evidência estática observada:** 248 arquivos no escopo; 67 referências a localStorage; 8 a sessionStorage; 271 referências mock; 8 referências de rede/Supabase; 25 marcadores de implementação pendente.
 
 **Evidências:**
 - The master plan identifies legal, privacy and commercial decisions as mandatory.
@@ -1036,7 +1037,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI hybrid; servidor partial; staging local e2e; segurança partial; produção blocked.
 
-**Evidência estática observada:** 854 arquivos no escopo; 230 referências a localStorage; 71 a sessionStorage; 241 referências mock; 257 referências de rede/Supabase; 9 marcadores de implementação pendente.
+**Evidência estática observada:** 855 arquivos no escopo; 230 referências a localStorage; 71 a sessionStorage; 241 referências mock; 257 referências de rede/Supabase; 9 marcadores de implementação pendente.
 
 **Páginas:** `index.html`, `resultados.html`, `detalhe-anuncio.html`, `pedidos.html`, `mensagens.html`, `notificacoes.html`, `carteira.html`, `perfil.html`, `comunidade.html`.
 
@@ -1067,7 +1068,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2443 arquivos no escopo; 526 referências a localStorage; 151 a sessionStorage; 887 referências mock; 601 referências de rede/Supabase; 89 marcadores de implementação pendente.
+**Evidência estática observada:** 2454 arquivos no escopo; 528 referências a localStorage; 151 a sessionStorage; 887 referências mock; 607 referências de rede/Supabase; 89 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
@@ -1128,4 +1129,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-08-02T22:05:00-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-08-02T23:35:00-03:00._

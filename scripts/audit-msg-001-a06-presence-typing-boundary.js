@@ -54,7 +54,7 @@ assert(migration.includes("extension in ('presence', 'broadcast')"), 'extension 
 assert(migration.includes('c.client_id = auth.uid() or c.professional_id = auth.uid()'), 'participant proof missing');
 assert(migration.includes("'^doke:conversation:"), 'topic format guard missing');
 
-assert(matrix.version === '1.3.83', 'matrix version must be 1.3.83');
+assert(['1.3.83', '1.3.84'].includes(matrix.version), 'matrix version must include A06 or A07');
 assert(msg, 'MSG-001 matrix domain missing');
 [
   'assets/js/repositories/messages-presence-repository.js',

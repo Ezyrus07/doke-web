@@ -63,6 +63,19 @@
     });
   }
 
+  function getCommandExecutor() {
+    if (Doke.messageCommandExecutor && typeof Doke.messageCommandExecutor.execute === 'function') return Doke.messageCommandExecutor;
+    if (Doke.messageCommandReliability && typeof Doke.messageCommandReliability.createExecutor === 'function') {
+      Doke.messageCommandExecutor = Doke.messageCommandReliability.createExecutor();
+      return Doke.messageCommandExecutor;
+    }
+    return null;
+  }
+
+  function unwrapCommandData(outcome) {
+    return outcome && Object.prototype.hasOwnProperty.call(outcome, 'data') ? outcome.data : outcome;
+  }
+
   function executeMessagesServerCommand(actionName, payload) {
     var boundary = getRepositoryBoundary();
     var status = getServerCommandBoundaryStatus();
@@ -84,8 +97,15 @@
       actorId: actor.id || '',
       actorRole: actor.role || 'guest'
     });
-    return Promise.resolve(provider.action('conversations', nextPayload)).catch(function (error) {
-      if (error && error.code === 'DOKE_MESSAGES_SERVER_COMMAND_UNAVAILABLE') throw error;
+    var executor = getCommandExecutor();
+    if (!executor) return Promise.reject(createServerCommandError('Executor idempotente de mensagens não está carregado.', actionName));
+    return executor.execute(actionName, nextPayload, function (requestPayload) {
+      return provider.action('conversations', requestPayload);
+    }, {
+      commandId: nextPayload.commandId || nextPayload.clientMutationId || '',
+      dedupeKey: nextPayload.commandId || nextPayload.clientMutationId || ''
+    }).catch(function (error) {
+      if (error && (error.code === 'DOKE_MESSAGES_COMMAND_ACK_INVALID' || error.code === 'DOKE_MESSAGES_SERVER_COMMAND_UNAVAILABLE')) throw error;
       throw createServerCommandError('Comando server-owned de mensagens falhou.', actionName, error);
     });
   }
@@ -165,7 +185,7 @@
       actorRole: (getCurrentUser() || {}).role || 'guest'
     });
     return boundary.action('conversations', 'createForOrder', payload).then(function (response) {
-      return normalizeConversationFromProvider(response && response.conversation || response);
+      return normalizeConversationFromProvider(unwrapCommandData(response) && unwrapCommandData(response).conversation || unwrapCommandData(response));
     });
   }
 
@@ -180,7 +200,7 @@
       actorRole: (getCurrentUser() || {}).role || 'guest'
     });
     return boundary.action('conversations', 'updateOrder', payload).then(function (response) {
-      return normalizeConversationFromProvider(response && response.conversation || response);
+      return normalizeConversationFromProvider(unwrapCommandData(response) && unwrapCommandData(response).conversation || unwrapCommandData(response));
     });
   }
 
@@ -194,7 +214,7 @@
       actorRole: (getCurrentUser() || {}).role || 'guest'
     });
     return boundary.action('conversations', 'sendMessage', nextPayload).then(function (response) {
-      return normalizeMessageFromProvider(response && response.message || response, { id: conversationId });
+      return normalizeMessageFromProvider(unwrapCommandData(response) && unwrapCommandData(response).message || unwrapCommandData(response), { id: conversationId });
     });
   }
 
@@ -356,7 +376,7 @@
         orderId: order && (order.id || order.orderId) || options && options.orderId || '',
         order: clone(order || {})
       })).then(function (response) {
-        return normalizeConversationFromProvider(response && response.conversation || response);
+        return normalizeConversationFromProvider(unwrapCommandData(response) && unwrapCommandData(response).conversation || unwrapCommandData(response));
       });
     }
     if (shouldUseMessagesApi()) return messagesBoundaryCreateForOrder(order || {}, options || {});
@@ -377,7 +397,7 @@
         orderId: order && (order.id || order.orderId) || options && options.orderId || '',
         order: clone(order || {})
       })).then(function (response) {
-        return normalizeConversationFromProvider(response && response.conversation || response);
+        return normalizeConversationFromProvider(unwrapCommandData(response) && unwrapCommandData(response).conversation || unwrapCommandData(response));
       });
     }
     if (shouldUseMessagesApi()) return messagesBoundaryUpdateOrder(order || {}, options || {});
@@ -458,15 +478,23 @@
         return executeMessagesServerCommand('sendMessage', Object.assign({}, messagePayload, {
           id: conversationId,
           conversationId: conversationId
-        })).then(function (response) {
-          return normalizeMessageFromProvider(response && response.message || response, { id: conversationId });
+        })).then(function (outcome) {
+          return {
+            message: normalizeMessageFromProvider(unwrapCommandData(outcome) && unwrapCommandData(outcome).message || unwrapCommandData(outcome), { id: conversationId }),
+            commandId: outcome && outcome.commandId || '',
+            acknowledgement: outcome && outcome.acknowledgement || null
+          };
         });
       }
       if (shouldUseMessagesApi()) return messagesBoundarySendMessage(conversationId, messagePayload);
       if (!repository || typeof repository.addMessage !== 'function') return Promise.resolve(null);
       return repository.addMessage(conversationId, messagePayload);
-    }).then(function (message) {
+    }).then(function (result) {
+      var message = result && result.message || result;
+      var commandId = result && result.commandId || '';
       if (deferSideEffects) return message;
+      var executor = getCommandExecutor();
+      if (commandId && executor && typeof executor.claimSideEffects === 'function' && !executor.claimSideEffects(commandId)) return message;
       return commitMessageEffects(conversationId, message, { actor: user });
     });
   }
@@ -489,8 +517,9 @@
           conversationId: conversationId,
           messageId: messageId
         }).then(function (response) {
-          if (typeof response === 'boolean') return response;
-          return response ? response.ok !== false : true;
+          var data = unwrapCommandData(response);
+          if (typeof data === 'boolean') return data;
+          return data ? data.ok !== false : true;
         });
       }
       var repository = getRepository();
@@ -517,8 +546,9 @@
           conversationId: conversationId
         });
       }).then(function (response) {
-        if (typeof response === 'boolean') return response;
-        return response ? response.ok !== false : true;
+        var data = unwrapCommandData(response);
+        if (typeof data === 'boolean') return data;
+        return data ? data.ok !== false : true;
       });
     }
     var repository = getRepository();

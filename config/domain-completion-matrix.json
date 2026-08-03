@@ -1,6 +1,6 @@
 {
-  "version": "1.3.83",
-  "updatedAt": "2026-08-02T22:05:00-03:00",
+  "version": "1.3.84",
+  "updatedAt": "2026-08-02T23:35:00-03:00",
   "title": "Doke Domain Completion Matrix",
   "purpose": "Single source of truth for domain maturity, data authority, staging evidence, blockers, dependencies and mandatory completion order.",
   "maturityScale": {
@@ -1814,7 +1814,14 @@
         "docs/validation/MSG-001-A06-PRESENCE-TYPING-BOUNDARY.json",
         "scripts/audit-msg-001-a06-presence-typing-boundary.js",
         "scripts/test-msg-001-a06-presence-typing-runtime.js",
-        ".github/workflows/msg-001-a06-presence-typing-boundary.yml"
+        ".github/workflows/msg-001-a06-presence-typing-boundary.yml",
+        "assets/js/services/message-command-executor.js",
+        "config/msg-001-a07-command-reliability.json",
+        "docs/MSG-001-A07-COMMAND-RELIABILITY.md",
+        "docs/validation/MSG-001-A07-COMMAND-RELIABILITY.json",
+        "scripts/audit-msg-001-a07-command-reliability.js",
+        "scripts/test-msg-001-a07-command-reliability-runtime.js",
+        ".github/workflows/msg-001-a07-command-reliability.yml"
       ],
       "scanRoots": [
         "backend/modules/messaging",
@@ -1848,7 +1855,9 @@
         "audit:msg-001-a05-attachment-lifecycle",
         "test:msg-001-a05-attachment-lifecycle-runtime",
         "audit:msg-001-a06-presence-typing-boundary",
-        "test:msg-001-a06-presence-typing-runtime"
+        "test:msg-001-a06-presence-typing-runtime",
+        "audit:msg-001-a07-command-reliability",
+        "test:msg-001-a07-command-reliability-runtime"
       ],
       "evidence": [
         "Backend handlers and staging multi-domain messaging flow exist.",
@@ -1862,7 +1871,8 @@
         "MSG-A03 repository-only server-owned command boundary: authenticated UUID commands require the dedicated API provider and direct browser Supabase DML is blocked.",
         "MSG-A04 repository-only participant-scoped Realtime publication/subscription contract: conversations and messages are prepared for RLS-authorized INSERT/UPDATE invalidation signals, feature-flagged off until explicit staging application and canaries.",
         "MSG-A05 repository-only attachment lifecycle contract: authenticated uploads use server-owned signed intents, direct browser deletes and local pending fallback are removed, and cleanup/retention are frozen without staging activation.",
-        "MSG-A06 retires localStorage presence, typing and read-receipt authority and prepares private participant-scoped Presence/Broadcast channels behind a disabled feature flag."
+        "MSG-A06 retires localStorage presence, typing and read-receipt authority and prepares private participant-scoped Presence/Broadcast channels behind a disabled feature flag.",
+        "MSG-A07 requires one commandId across bounded retries, validates server acknowledgements, replays through the persistent idempotency store and consumes browser side effects once."
       ],
       "blockers": [
         {
@@ -1888,7 +1898,7 @@
         }
       ],
       "nextActions": [
-        "Complete MSG-A07 repository-only command acknowledgement, idempotency, deduplication and bounded retry contract.",
+        "Execute MSG-A07B lost-response, concurrent replay and acknowledgement canaries only after fresh explicit staging authorization.",
         "Apply MSG-A06 Realtime Authorization policies and execute participant/non-participant presence canaries only after fresh explicit staging authorization.",
         "Apply MSG-A05 attachment lifecycle resources only after fresh explicit staging authorization.",
         "Apply MSG-A04 publication changes and execute participant-scoped message canaries only after fresh explicit staging authorization."

@@ -4,6 +4,7 @@ const assert = require('assert');
 const fs = require('fs');
 const vm = require('vm');
 
+const reliabilitySource = fs.readFileSync('assets/js/services/message-command-executor.js', 'utf8');
 const source = fs.readFileSync('assets/js/services/message-service.js', 'utf8');
 const uuid = '11111111-1111-4111-8111-111111111111';
 const peer = '22222222-2222-4222-8222-222222222222';
@@ -18,9 +19,18 @@ function boot(apiReady) {
   const provider = {
     action(resource, payload) {
       calls.push({ resource, payload });
-      if (payload.action === 'sendMessage') return Promise.resolve({ message: Object.assign({ id: 'msg-new' }, payload) });
-      if (payload.action === 'createForOrder' || payload.action === 'updateOrder') return Promise.resolve({ conversation });
-      return Promise.resolve({ ok: true });
+      let data;
+      if (payload.action === 'sendMessage') data = { message: Object.assign({ id: 'msg-new' }, payload) };
+      else if (payload.action === 'createForOrder' || payload.action === 'updateOrder') data = { conversation };
+      else data = { ok: true };
+      return Promise.resolve({
+        data,
+        acknowledgement: {
+          commandId: payload.commandId,
+          action: payload.action,
+          status: 'accepted'
+        }
+      });
     }
   };
   const Doke = {
@@ -44,7 +54,9 @@ function boot(apiReady) {
   function CustomEvent(name, init) { this.type = name; this.detail = init && init.detail; }
   const root = { Doke, document, CustomEvent, localStorage: { getItem() { return null; } }, console: { warn() {} } };
   root.window = root;
-  vm.runInNewContext(source, { window: root, document, CustomEvent, Promise, Object, Array, String, Boolean, RegExp, JSON, Error, console: root.console }, { filename: 'message-service.js' });
+  const context = { window: root, document, CustomEvent, Promise, Object, Array, String, Boolean, RegExp, JSON, Error, Map, Set, Date, Math, setTimeout, clearTimeout, console: root.console };
+  vm.runInNewContext(reliabilitySource, context, { filename: 'message-command-executor.js' });
+  vm.runInNewContext(source, context, { filename: 'message-service.js' });
   return { service: Doke.services.messages, calls };
 }
 

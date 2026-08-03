@@ -34,13 +34,16 @@ const messagingHandlers = read('backend/modules/messaging/route-handlers.js');
 [
   'handlers.listConversations = createActionHandler',
   'handlers.getConversation = createActionHandler',
-  'handlers.createConversationForOrder = createActionHandler',
-  'handlers.updateConversationOrder = createActionHandler',
-  'handlers.sendMessage = createActionHandler',
-  'handlers.markConversationRead = createActionHandler'
+  'handlers.createConversationForOrder = createMessagingCommandHandler',
+  'handlers.updateConversationOrder = createMessagingCommandHandler',
+  'handlers.sendMessage = createMessagingCommandHandler',
+  'handlers.removeMessage = createMessagingCommandHandler',
+  'handlers.markConversationRead = createMessagingCommandHandler'
 ].forEach((snippet) => {
   if (!messagingHandlers.includes(snippet)) failures.push(`messaging route handlers missing ${snippet}`);
 });
+if (!messagingHandlers.includes('function createMessagingCommandHandler')) failures.push('messaging command handler factory missing');
+if (!messagingHandlers.includes('createActionHandler(route')) failures.push('messaging command handler must delegate to createActionHandler');
 
 [
   'listConversations',
@@ -48,6 +51,7 @@ const messagingHandlers = read('backend/modules/messaging/route-handlers.js');
   'createConversationForOrder',
   'updateConversationOrder',
   'sendMessage',
+  'removeMessage',
   'markConversationRead',
   "from('conversations')",
   "from('messages')",
@@ -68,6 +72,7 @@ if (registry && loader) {
     'conversations.createForOrder',
     'conversations.updateOrder',
     'messages.send',
+    'messages.remove',
     'messages.markRead'
   ];
 

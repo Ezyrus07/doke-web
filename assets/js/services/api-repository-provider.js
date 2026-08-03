@@ -210,11 +210,34 @@
         }
       };
 
-      if (body !== undefined) options.body = JSON.stringify(body);
+      if (body !== undefined) {
+        var requestBody = clone(body || {});
+        var requestMeta = requestBody && requestBody.__requestMeta && typeof requestBody.__requestMeta === 'object'
+          ? requestBody.__requestMeta
+          : {};
+        if (requestBody && typeof requestBody === 'object') delete requestBody.__requestMeta;
+        if (requestMeta.idempotencyKey) options.headers['x-idempotency-key'] = String(requestMeta.idempotencyKey);
+        if (requestMeta.requestId) options.headers['x-request-id'] = String(requestMeta.requestId);
+        if (requestMeta.commandAttempt) options.headers['x-doke-command-attempt'] = String(requestMeta.commandAttempt);
+        if (requestMeta.commandCreatedAt) options.headers['x-doke-command-created-at'] = String(requestMeta.commandCreatedAt);
+        options.body = JSON.stringify(requestBody);
+      }
 
       return window.fetch(baseUrl + path, options).then(function (response) {
-        if (!response.ok) throw new Error('API request failed: ' + response.status);
+        if (!response.ok) {
+          var error = new Error('API request failed: ' + response.status);
+          error.code = 'DOKE_API_HTTP_ERROR';
+          error.status = response.status;
+          throw error;
+        }
         return response.status === 204 ? null : response.json();
+      }).catch(function (error) {
+        if (error && error.code) throw error;
+        var networkError = new Error('API network request failed.');
+        networkError.code = 'DOKE_API_NETWORK_ERROR';
+        networkError.retryable = true;
+        networkError.cause = error;
+        throw networkError;
       });
     }
 
