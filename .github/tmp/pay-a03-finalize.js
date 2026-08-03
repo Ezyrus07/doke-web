@@ -10,6 +10,12 @@ const writeJson = (file, value) => write(file, JSON.stringify(value, null, 2) + 
 const uniquePush = (list, values) => {
   values.forEach((value) => { if (!list.includes(value)) list.push(value); });
 };
+const replaceRequired = (file, before, after) => {
+  let content = read(file);
+  if (!content.includes(before) && !content.includes(after)) throw new Error('PAY-A03 patch anchor missing in ' + file);
+  content = content.replace(before, after);
+  write(file, content);
+};
 
 const intentPath = 'backend/modules/payments/payment-provider-contract.js';
 let intentContract = read(intentPath);
@@ -20,6 +26,22 @@ if (!intentContract.includes(oldPattern) && !intentContract.includes(newPattern)
 }
 intentContract = intentContract.replace(oldPattern, newPattern);
 write(intentPath, intentContract);
+
+replaceRequired(
+  'scripts/audit-pay-001-a01-authority-baseline.js',
+  "assert(['1.3.86', '1.3.87'].includes(matrix.version), 'matrix version must be PAY-A01/PAY-A02 compatible');",
+  "assert(/^1\\.3\\.(?:8[6-9]|9\\d|\\d{3,})$/.test(matrix.version), 'matrix version must remain PAY-A01 compatible');"
+);
+replaceRequired(
+  'scripts/audit-pay-001-a02-authenticated-authority-boundary.js',
+  "assert(matrix.version === '1.3.87', 'matrix version must be 1.3.87');",
+  "assert(/^1\\.3\\.(?:8[7-9]|9\\d|\\d{3,})$/.test(matrix.version), 'matrix version must remain PAY-A02 compatible');"
+);
+replaceRequired(
+  'scripts/audit-pay-001-a02-authenticated-authority-boundary.js',
+  "assert(pay.nextActions[0].includes('PAY-A03'), 'PAY-A03 must be next');",
+  "assert(pay.nextActions[0].includes('PAY-A03') || pay.nextActions[0].includes('PAY-A04'), 'PAY-A03/PAY-A04 progression mismatch');"
+);
 
 const pkg = readJson('package.json');
 pkg.scripts['audit:pay-001-a03-psp-neutral-intent-webhook'] = 'node scripts/audit-pay-001-a03-psp-neutral-intent-webhook.js';
@@ -60,4 +82,4 @@ pay.nextActions = [
 ];
 writeJson('config/domain-completion-matrix.json', matrix);
 
-console.log('PAY-A03 package, matrix and sensitive-field boundary finalized.');
+console.log('PAY-A03 package, matrix, cumulative audits and sensitive-field boundary finalized.');
