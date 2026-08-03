@@ -1,0 +1,67 @@
+name: Doke MSG-A08 Staging Activation Readiness Publisher
+
+on:
+  pull_request:
+    paths:
+      - '.github/tmp/msg-a08-generator.js'
+      - '.github/workflows/msg-001-a08-staging-activation-readiness.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish-a08:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.ref == 'msg/msg-001-baseline-audit'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: msg/msg-001-baseline-audit
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Generate MSG-A08 repository contract
+        run: |
+          node .github/tmp/msg-a08-generator.js
+          node scripts/audit-domain-completion-matrix.js --write
+      - name: Validate cumulative MSG-A01 through MSG-A08
+        run: |
+          npm run audit:msg-001-a01-authority-baseline
+          npm run audit:msg-001-a02-canonical-authority-boundary
+          npm run test:msg-001-a02-canonical-authority-boundary
+          npm run audit:msg-001-a03-server-command-boundary
+          npm run test:msg-001-a03-server-command-boundary
+          npm run audit:msg-001-a04-realtime-publication-subscription-contract
+          npm run test:msg-001-a04-realtime-publication-subscription-runtime
+          npm run audit:msg-001-a05-attachment-lifecycle
+          npm run test:msg-001-a05-attachment-lifecycle-runtime
+          npm run audit:msg-001-a06-presence-typing-boundary
+          npm run test:msg-001-a06-presence-typing-runtime
+          npm run audit:msg-001-a07-command-reliability
+          npm run test:msg-001-a07-command-reliability-runtime
+          npm run audit:msg-001-a08-staging-activation-readiness
+          npm run test:msg-001-a08-staging-activation-readiness
+          npm run audit:messages-api-contract
+          npm run audit:runtime-idempotency-audit
+          npm run audit:staging-messaging-runtime
+          npm run audit:domain-completion-matrix
+          git diff --check
+      - name: Commit canonical MSG-A08 files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git reset .github/workflows .github/tmp
+          git add -f docs/validation/MSG-001-A08-STAGING-ACTIVATION-READINESS.json
+          git add -f reports/generated/domain-completion-matrix-report.json
+          if git diff --cached --quiet; then
+            echo "MSG-A08 files already current."
+            exit 0
+          fi
+          git commit -m "Prepare MSG-A08 staging activation readiness"
+          git push origin HEAD:msg/msg-001-baseline-audit
