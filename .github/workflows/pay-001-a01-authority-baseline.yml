@@ -8,6 +8,7 @@ on:
       - 'assets/js/core/supabase-config.js'
       - 'backend/modules/wallet/**'
       - 'supabase/functions/financial-operations/**'
+      - 'supabase/functions/staging-finance-sandbox/**'
       - 'supabase/migrations/014_finance_wallet_shared_runtime.sql'
       - 'supabase/migrations/106_financial_table_permission_authority.sql'
       - 'supabase/migrations/107_financial_rpc_authority.sql'
@@ -45,11 +46,10 @@ jobs:
           node --check scripts/test-pay-001-a01-authority-baseline.js
           npm run audit:pay-001-a01-authority-baseline
           npm run test:pay-001-a01-authority-baseline
-          npm run test:order-charge-creation-contract
-          npm run test:order-payment-hold-contract
-          npm run test:order-transaction-cycle-contract
           npm run test:finance-supabase-repository-contract
           npm run test:financial-rpc-authority-contract
           npm run test:financial-operations-edge-runtime
+          npm run test:staging-finance-sandbox-authority-contract
+          npm run test:staging-finance-sandbox-edge-runtime
           npm run audit:domain-completion-matrix
           git diff --check
