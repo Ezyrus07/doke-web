@@ -1,0 +1,147 @@
+name: Doke PAY-A09 Controlled Publisher Temporary
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/pay-001-a09-publisher-temp.yml'
+      - '.pay-a09-bootstrap/payload.b64'
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.head.ref == 'pay/pay-001-baseline-audit'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: pay/pay-001-baseline-audit
+          fetch-depth: 0
+      - name: Verify exact event head
+        run: test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Inspect and extract closed PAY-A09 payload
+        run: |
+          test -s .pay-a09-bootstrap/payload.b64
+          base64 --decode .pay-a09-bootstrap/payload.b64 > /tmp/pay-a09.tar.gz
+          test "$(sha256sum /tmp/pay-a09.tar.gz | cut -d' ' -f1)" = "00e1b213dbdd28428d7bd3656b84bf939e59f4e7a3dfefd3eab8def999881c21"
+          gzip -t /tmp/pay-a09.tar.gz
+          tar -tzf /tmp/pay-a09.tar.gz > /tmp/pay-a09-files.txt
+          test -s /tmp/pay-a09-files.txt
+          if grep -E '(^/|(^|/)\.\.(/|$)|(^|/)\.git(/|$))' /tmp/pay-a09-files.txt; then
+            echo 'Unsafe archive path detected.' >&2
+            exit 1
+          fi
+          while IFS= read -r file; do
+            case "$file" in
+              backend/modules/payments/payment-reconciliation-staging-handoff.js|\
+              config/pay-001-a09-deployment-inspection-handoff.json|\
+              docs/PAY-001-A09-DEPLOYMENT-INSPECTION-HANDOFF.md|\
+              docs/validation/PAY-001-A09-DEPLOYMENT-INSPECTION-HANDOFF.json|\
+              scripts/audit-pay-001-a09-deployment-inspection-handoff.js|\
+              scripts/test-pay-001-a09-deployment-inspection-handoff.js|\
+              scripts/pay-001-a09-publish.js) ;;
+              *) echo "Unexpected archive entry: $file" >&2; exit 1 ;;
+            esac
+          done < /tmp/pay-a09-files.txt
+          tar -xzf /tmp/pay-a09.tar.gz -C .
+      - name: Patch canonical package, matrix and cumulative gates
+        run: node scripts/pay-001-a09-publish.js
+      - run: npm ci --ignore-scripts
+      - name: Generate canonical matrix derivatives
+        run: npm run write:domain-completion-matrix
+      - name: Validate PAY-A09 and cumulative contracts
+        run: |
+          node --check backend/modules/payments/payment-reconciliation-staging-handoff.js
+          node --check scripts/audit-pay-001-a09-deployment-inspection-handoff.js
+          node --check scripts/test-pay-001-a09-deployment-inspection-handoff.js
+          npm run audit:pay-001-a01-authority-baseline
+          npm run test:pay-001-a01-authority-baseline
+          npm run audit:pay-001-a02-authenticated-authority-boundary
+          npm run test:pay-001-a02-authenticated-authority-boundary
+          npm run audit:pay-001-a03-psp-neutral-intent-webhook
+          npm run test:pay-001-a03-psp-neutral-intent-webhook
+          npm run audit:pay-001-a04-reconciliation-queue
+          npm run test:pay-001-a04-reconciliation-queue
+          npm run audit:pay-001-a05-adapter-conformance-readiness
+          npm run test:pay-001-a05-adapter-conformance-readiness
+          node scripts/audit-pay-001-a05-adapter-contract.js
+          node scripts/test-pay-001-a05-adapter-contract.js
+          npm run audit:pay-001-a06-provider-selection-legal-handoff
+          npm run test:pay-001-a06-provider-selection-legal-handoff
+          npm run audit:pay-001-a07-reconciliation-operations-readiness
+          npm run test:pay-001-a07-reconciliation-operations-readiness
+          npm run audit:pay-001-a08-immutable-migrations-read-only-canary
+          npm run test:pay-001-a08-immutable-migrations-read-only-canary
+          npm run audit:pay-001-a09-deployment-inspection-handoff
+          npm run test:pay-001-a09-deployment-inspection-handoff
+          npm run audit:msg-001-a06-presence-typing-boundary
+          npm run test:msg-001-a06-presence-typing-runtime
+          npm run audit:msg-001-a07-command-reliability
+          npm run test:msg-001-a07-command-reliability-runtime
+          npm run audit:msg-001-a08-staging-activation-readiness
+          npm run test:msg-001-a08-staging-activation-readiness
+          npm run test:finance-supabase-repository-contract
+          npm run test:financial-rpc-authority-contract
+          npm run test:financial-operations-edge-runtime
+          npm run test:staging-finance-sandbox-authority-contract
+          npm run test:staging-finance-sandbox-edge-runtime
+          npm run audit:domain-completion-matrix
+          node -e "const m=require('./config/domain-completion-matrix.json'); if(m.version!=='1.3.94') throw new Error('PAY-A09 matrix must be 1.3.94')"
+          git diff --check
+      - name: Verify repository-only safety boundary
+        run: |
+          test -f docs/validation/PAY-001-A09-DEPLOYMENT-INSPECTION-HANDOFF.json
+          grep -q $'permissions:\n  contents: read' .github/workflows/pay-001-a09-deployment-inspection-handoff.yml
+          if grep -E 'contents: write|secrets\.|SUPABASE_ACCESS_TOKEN|SUPABASE_DB_PASSWORD|(^|[[:space:]])psql[[:space:]]|(^|[[:space:]])curl[[:space:]]|supabase (db push|migration up|functions deploy)|git push|--execute' .github/workflows/pay-001-a09-deployment-inspection-handoff.yml; then
+            echo 'Permanent PAY-A09 workflow contains prohibited capability.' >&2
+            exit 1
+          fi
+          git diff --quiet -- .github/workflows
+          rm -f scripts/pay-001-a09-publish.js
+          changed="$(git status --short --untracked-files=all | sed -E 's/^.. //' | sort)"
+          while IFS= read -r file; do
+            test -z "$file" && continue
+            case "$file" in
+              backend/modules/payments/payment-reconciliation-staging-handoff.js|\
+              config/pay-001-a09-deployment-inspection-handoff.json|\
+              docs/PAY-001-A09-DEPLOYMENT-INSPECTION-HANDOFF.md|\
+              scripts/audit-pay-001-a09-deployment-inspection-handoff.js|\
+              scripts/test-pay-001-a09-deployment-inspection-handoff.js|\
+              scripts/audit-pay-001-a06-provider-selection-legal-handoff.js|\
+              scripts/audit-pay-001-a07-reconciliation-operations-readiness.js|\
+              scripts/audit-pay-001-a08-immutable-migrations-read-only-canary.js|\
+              package.json|\
+              config/domain-completion-matrix.json|\
+              docs/DOMAIN-COMPLETION-MATRIX.md|\
+              .pay-a09-bootstrap/payload.b64) ;;
+              *) echo "Unexpected changed path: $file" >&2; exit 1 ;;
+            esac
+          done <<< "$changed"
+          git fetch origin pay/pay-001-baseline-audit
+          test "$(git rev-parse origin/pay/pay-001-baseline-audit)" = "${{ github.event.pull_request.head.sha }}"
+      - name: Publish PAY-A09 repository assets
+        run: |
+          git config user.name 'doke-pay-a09-bot'
+          git config user.email 'doke-pay-a09-bot@users.noreply.github.com'
+          git rm .pay-a09-bootstrap/payload.b64
+          git add backend/modules/payments/payment-reconciliation-staging-handoff.js
+          git add config/pay-001-a09-deployment-inspection-handoff.json
+          git add docs/PAY-001-A09-DEPLOYMENT-INSPECTION-HANDOFF.md
+          git add scripts/audit-pay-001-a09-deployment-inspection-handoff.js
+          git add scripts/test-pay-001-a09-deployment-inspection-handoff.js
+          git add scripts/audit-pay-001-a06-provider-selection-legal-handoff.js
+          git add scripts/audit-pay-001-a07-reconciliation-operations-readiness.js
+          git add scripts/audit-pay-001-a08-immutable-migrations-read-only-canary.js
+          git add package.json config/domain-completion-matrix.json docs/DOMAIN-COMPLETION-MATRIX.md
+          git add -f docs/validation/PAY-001-A09-DEPLOYMENT-INSPECTION-HANDOFF.json
+          git add -f reports/generated/domain-completion-matrix-report.json
+          git commit -m 'Complete PAY-A09 deployment and inspection handoff'
+          git push origin HEAD:pay/pay-001-baseline-audit
