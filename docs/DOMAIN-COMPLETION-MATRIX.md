@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 1104 arquivos no escopo; 269 referências a localStorage; 78 a sessionStorage; 563 referências mock; 206 referências de rede/Supabase; 35 marcadores de implementação pendente.
+**Evidência estática observada:** 1107 arquivos no escopo; 269 referências a localStorage; 78 a sessionStorage; 563 referências mock; 206 referências de rede/Supabase; 35 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -539,7 +539,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI local; servidor partial; staging staging canary; segurança partial; produção blocked.
 
-**Evidência estática observada:** 1058 arquivos no escopo; 204 referências a localStorage; 70 a sessionStorage; 305 referências mock; 205 referências de rede/Supabase; 19 marcadores de implementação pendente.
+**Evidência estática observada:** 1060 arquivos no escopo; 204 referências a localStorage; 70 a sessionStorage; 305 referências mock; 205 referências de rede/Supabase; 19 marcadores de implementação pendente.
 
 **Páginas:** `anunciar-servico.html`, `pedidos.html`, `orcamento.html`.
 
@@ -640,6 +640,9 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - MSG-A05 repository-only attachment lifecycle contract: authenticated uploads use server-owned signed intents, direct browser deletes and local pending fallback are removed, and cleanup/retention are frozen without staging activation.
 - MSG-A06 retires localStorage presence, typing and read-receipt authority and prepares private participant-scoped Presence/Broadcast channels behind a disabled feature flag.
 - MSG-A07 requires one commandId across bounded retries, validates server acknowledgements, replays through the persistent idempotency store and consumes browser side effects once.
+- MSG-A08 freezes a repository-only, fail-closed staging activation order for command reliability, attachments, message Realtime and private Presence without executing remote effects.
+- Every remote phase requires fresh explicit authorization, exact-head preflight, synthetic personas, run-scoped evidence and stop-on-first-failure behavior.
+- Browser feature flags remain false during resource application and canaries; destructive rollback and routine migration-history rewriting are prohibited.
 
 **Bloqueadores:**
 - **MSG-B02 · CRITICAL · realtime:** messages and conversations are not in the realtime publication. _(Fase 7)_
@@ -647,10 +650,10 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - **MSG-B04 · HIGH · storage:** Transaction attachment bucket policies are not mapped in the current staging snapshot. _(Fase 1)_
 
 **Próximas ações:**
-- Execute MSG-A07B lost-response, concurrent replay and acknowledgement canaries only after fresh explicit staging authorization.
-- Apply MSG-A06 Realtime Authorization policies and execute participant/non-participant presence canaries only after fresh explicit staging authorization.
-- Apply MSG-A05 attachment lifecycle resources only after fresh explicit staging authorization.
-- Apply MSG-A04 publication changes and execute participant-scoped message canaries only after fresh explicit staging authorization.
+- MSG-A07B remains the first activation phase under the mandatory MSG-A08 gate; a generic continuation command does not authorize staging reads, migrations, deployments, Realtime settings or authenticated canaries.
+- Execute MSG-A07B first only after fresh explicit staging authorization and record lost-response, replay, conflict and cross-actor evidence.
+- Execute MSG-A05B, then MSG-A04B, then MSG-A06B only after the preceding phase passes and each phase receives its own explicit staging authorization.
+- Keep attachmentLifecycleEnabled, messagesRealtimeEnabled and messagesPresenceEnabled false until their remote resources and isolation canaries pass.
 
 **Gate de saída:**
 - Two devices exchange messages without refresh.
@@ -1008,7 +1011,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 1/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 248 arquivos no escopo; 67 referências a localStorage; 8 a sessionStorage; 271 referências mock; 8 referências de rede/Supabase; 25 marcadores de implementação pendente.
+**Evidência estática observada:** 249 arquivos no escopo; 67 referências a localStorage; 8 a sessionStorage; 271 referências mock; 8 referências de rede/Supabase; 25 marcadores de implementação pendente.
 
 **Evidências:**
 - The master plan identifies legal, privacy and commercial decisions as mandatory.
@@ -1068,7 +1071,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2448 arquivos no escopo; 527 referências a localStorage; 151 a sessionStorage; 887 referências mock; 603 referências de rede/Supabase; 89 marcadores de implementação pendente.
+**Evidência estática observada:** 2454 arquivos no escopo; 527 referências a localStorage; 151 a sessionStorage; 887 referências mock; 603 referências de rede/Supabase; 89 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
@@ -1129,4 +1132,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-08-02T23:35:00-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-08-03T07:32:00-03:00._
