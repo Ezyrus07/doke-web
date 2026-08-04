@@ -42,6 +42,27 @@ jobs:
       - name: Apply PAY-A14 repository metadata
         run: |
           node scripts/apply-pay-001-a14-repository-metadata.js
+          python3 - <<'PYFIX'
+          from pathlib import Path
+          import re
+          files = [
+              'scripts/audit-pay-001-a06-provider-selection-legal-handoff.js',
+              'scripts/audit-pay-001-a07-reconciliation-operations-readiness.js',
+              'scripts/audit-pay-001-a08-immutable-migrations-read-only-canary.js',
+              'scripts/audit-pay-001-a09-deployment-inspection-handoff.js',
+          ]
+          pattern = re.compile(r'assert\(\[[^\n]*\]\.some\(\(sublot\) => pay\.nextActions\[0\]\.includes\(sublot\)\), "PAY successor must remain monotonic after PAY-A10"\);')
+          replaced = 0
+          for file in files:
+              path = Path(file)
+              source = path.read_text(encoding='utf-8')
+              source, count = pattern.subn("assert(pay.nextActions[0].includes('PAY-A15'), 'PAY-A15 must be the first next action');", source)
+              replaced += count
+              path.write_text(source, encoding='utf-8')
+          if replaced != 4:
+              raise SystemExit(f'Expected 4 legacy PAY successor guards, replaced {replaced}.')
+          print(f'Legacy PAY successor guards advanced: {replaced}')
+          PYFIX
           rm -f .pay-a14-bootstrap/chunk-*.b64
           rmdir .pay-a14-bootstrap 2>/dev/null || true
           rm -f scripts/apply-pay-001-a14-repository-metadata.js
