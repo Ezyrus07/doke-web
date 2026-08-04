@@ -1,0 +1,88 @@
+{
+  "contractId": "wal-a03-wallet-projection-authority-v1",
+  "envelopeVersion": "wallet-projection-envelope-v1",
+  "domain": "WAL-001",
+  "dependsOn": [
+    "wal-a01-authority-baseline-v1",
+    "wal-a02-bank-account-sensitive-data-boundary-v1"
+  ],
+  "sourceHead": "e07a5fddb2cb36b2fdbb991748e715f29385104a",
+  "createdAt": "2026-08-04T15:49:00-03:00",
+  "scope": "repository_only",
+  "status": "contract_ready_runtime_integration_required",
+  "runtimeIntegrated": false,
+  "migrationPrepared": false,
+  "migrationApplied": false,
+  "stagingValidated": false,
+  "canonicalIntegration": {
+    "derivedMatrixRefresh": "completed",
+    "derivedMatrixCommit": "4ef01789841bfcdf7934d4fa5040e6e6eba7ec18",
+    "temporaryWorkflowRemoved": true,
+    "checkpointRecordedAt": "2026-08-04T16:05:00-03:00"
+  },
+  "states": [
+    { "id": "unauthenticated", "source": "none", "valuesVisible": false, "displayAuthority": "none", "retryVisible": false },
+    { "id": "loading", "source": "none", "valuesVisible": false, "displayAuthority": "none", "retryVisible": false },
+    { "id": "authoritative", "source": "remote_server", "valuesVisible": true, "displayAuthority": "remote_authoritative", "retryVisible": false },
+    { "id": "stale", "source": "cached_remote", "valuesVisible": true, "displayAuthority": "cached_non_authoritative", "retryVisible": true },
+    { "id": "unavailable", "source": "none", "valuesVisible": false, "displayAuthority": "none", "retryVisible": true }
+  ],
+  "authoritativeRequirements": [
+    "Authenticated session.",
+    "Source is remote_server.",
+    "Opaque wallet identifier and account-scope SHA-256 are present.",
+    "Projection revision is a positive integer.",
+    "All balances are non-negative integer cents and total equals available plus pending plus reserved.",
+    "Remote projection is fresh at observedAt.",
+    "Projection fingerprint is valid.",
+    "An explicit remote zero is permitted; inferred zero is forbidden."
+  ],
+  "nonAuthoritativeRules": [
+    "Unauthenticated, loading and unavailable envelopes contain no wallet identifier, balance, revision or projection timestamp.",
+    "Unavailable never serializes numeric zero as a substitute for missing authority.",
+    "Stale values derive only from a previously validated remote projection.",
+    "Stale values are display-only, carry a warning and cannot authorize mutation.",
+    "Local simulation and browser aggregation cannot create authoritative envelopes.",
+    "Remote errors never silently fall back to an empty authoritative wallet."
+  ],
+  "balanceFields": ["availableCents", "pendingCents", "reservedCents", "totalCents"],
+  "unavailableReasons": ["remote_unavailable", "remote_timeout", "remote_error", "invalid_remote_projection"],
+  "staleReasons": ["remote_unavailable", "remote_timeout", "remote_error", "refresh_failed", "cache_expired"],
+  "runtimeIntegrationRequirements": [
+    "Wrap the Supabase wallet read in the canonical projection envelope.",
+    "Stop copying remote failure or empty fallback into an authoritative local wallet.",
+    "Persist only validated cached_remote envelopes and their fingerprints.",
+    "Render unavailable without numeric balances and with an explicit retry path.",
+    "Render stale values with a visible warning and disable financial actions.",
+    "Permit authoritative zero only when returned by a fresh remote projection.",
+    "Keep UUID-authenticated sessions fail-closed when remote authority is unavailable.",
+    "Obtain explicit authorization before changing runtime, migration, staging or deployment."
+  ],
+  "preservedBlockers": ["WAL-B02", "WAL-B03", "WAL-B04", "PAY-B01", "PAY-B03", "PAY-B04"],
+  "authority": {
+    "displayAuthorityContract": true,
+    "runtimeDisplayAuthority": false,
+    "mutationAuthority": false,
+    "withdrawalRequestAuthority": false,
+    "realMoneyAuthority": false,
+    "providerTransferAuthority": false,
+    "remoteExecutionAuthority": false,
+    "stagingAuthority": false,
+    "productionAuthority": false
+  },
+  "prohibitedEffects": {
+    "networkRequests": false,
+    "databaseConnections": false,
+    "stagingReads": false,
+    "stagingMutations": false,
+    "migrations": false,
+    "deployments": false,
+    "providerContact": false,
+    "credentialsConfigured": false,
+    "realBankDataRead": false,
+    "realBankDataWrite": false,
+    "withdrawalMutation": false,
+    "realMoneyMovement": false,
+    "productionChanges": false
+  }
+}

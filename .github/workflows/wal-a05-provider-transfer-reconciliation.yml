@@ -1,0 +1,40 @@
+name: WAL-A05 Provider Transfer Reconciliation
+
+on:
+  pull_request:
+    paths:
+      - 'backend/modules/wallet/provider-transfer-reconciliation-contract.js'
+      - 'config/wal-a05-provider-transfer-reconciliation.json'
+      - 'tests/fixtures/wal-a05-provider-transfer-reconciliation-cases.json'
+      - 'docs/WAL-A05-PROVIDER-TRANSFER-RECONCILIATION.md'
+      - 'scripts/audit-wal-a05-provider-transfer-reconciliation.js'
+      - 'scripts/test-wal-a05-provider-transfer-reconciliation.js'
+      - '.github/workflows/wal-a05-provider-transfer-reconciliation.yml'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  wal-a05-provider-transfer-reconciliation:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Syntax
+        run: |
+          node --check backend/modules/wallet/provider-transfer-reconciliation-contract.js
+          node --check scripts/audit-wal-a05-provider-transfer-reconciliation.js
+          node --check scripts/test-wal-a05-provider-transfer-reconciliation.js
+      - name: Audit provider transfer reconciliation
+        run: node scripts/audit-wal-a05-provider-transfer-reconciliation.js
+      - name: Conformance
+        run: node scripts/test-wal-a05-provider-transfer-reconciliation.js
+      - name: Diff hygiene
+        run: git diff --check

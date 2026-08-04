@@ -1,0 +1,49 @@
+name: WAL-A04 Withdrawal Idempotency
+
+on:
+  pull_request:
+    paths:
+      - 'backend/modules/wallet/withdrawal-idempotency-contract.js'
+      - 'config/wal-a04-withdrawal-idempotency.json'
+      - 'tests/fixtures/wal-a04-withdrawal-idempotency-cases.json'
+      - 'docs/WAL-A04-WITHDRAWAL-IDEMPOTENCY.md'
+      - 'scripts/audit-wal-a04-withdrawal-idempotency.js'
+      - 'scripts/test-wal-a04-withdrawal-idempotency.js'
+      - 'backend/shared/security/idempotency-contract.js'
+      - 'backend/shared/security/persistent-idempotency-store.js'
+      - 'backend/modules/wallet/wallet-service.js'
+      - 'assets/js/repositories/wallet-repository.js'
+      - 'config/domain-completion-matrix.json'
+      - '.github/workflows/wal-a04-withdrawal-idempotency.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  wal-a04-withdrawal-idempotency:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Syntax
+        run: |
+          node --check backend/modules/wallet/withdrawal-idempotency-contract.js
+          node --check scripts/audit-wal-a04-withdrawal-idempotency.js
+          node --check scripts/test-wal-a04-withdrawal-idempotency.js
+
+      - name: Audit withdrawal idempotency
+        run: node scripts/audit-wal-a04-withdrawal-idempotency.js
+
+      - name: Conformance
+        run: node scripts/test-wal-a04-withdrawal-idempotency.js
+
+      - name: Diff hygiene
+        run: git diff --check
