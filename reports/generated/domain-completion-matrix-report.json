@@ -1,7 +1,7 @@
 {
   "name": "domain-completion-matrix",
-  "version": "1.3.95",
-  "generatedAt": "2026-08-03T20:59:00-03:00",
+  "version": "1.3.96",
+  "generatedAt": "2026-08-03T21:26:00-03:00",
   "status": "passed",
   "summary": {
     "domains": 23,
@@ -32,7 +32,7 @@
     "repositories": 27,
     "backendModules": 15,
     "migrations": 183,
-    "packageScripts": 1007,
+    "packageScripts": 1010,
     "staging": {
       "publicTotal": 45,
       "publicRlsDisabled": 0,
@@ -221,7 +221,7 @@
       "id": "GOV-001",
       "name": "Governança, arquitetura e comando central",
       "maturity": 4,
-      "filesMatched": 1141,
+      "filesMatched": 1145,
       "sampleFiles": [
         "docs/ACTIVE-CONTRACTS-INDEX.md",
         "docs/API-ADAPTER-CONTRACT.md",
@@ -254,7 +254,7 @@
         "localStorage": 271,
         "sessionStorage": 78,
         "mock": 577,
-        "network": 206,
+        "network": 207,
         "directSupabase": 157,
         "todo": 35
       },
@@ -1701,6 +1701,10 @@
           {
             "file": "scripts/audit-page-state-surfaces.js",
             "count": 2
+          },
+          {
+            "file": "scripts/audit-pay-001-a11-executor-protocol-conformance.js",
+            "count": 1
           },
           {
             "file": "scripts/audit-product-controller-stack.js",
@@ -3543,7 +3547,7 @@
       "id": "SCHED-001",
       "name": "Agenda, disponibilidade e execução do serviço",
       "maturity": 3,
-      "filesMatched": 1088,
+      "filesMatched": 1091,
       "sampleFiles": [
         "assets/js/pages/anunciar-servico.js",
         "assets/js/pages/pedidos/orders-action-panels.js",
@@ -3576,7 +3580,7 @@
         "localStorage": 205,
         "sessionStorage": 70,
         "mock": 318,
-        "network": 205,
+        "network": 206,
         "directSupabase": 163,
         "todo": 19
       },
@@ -4669,6 +4673,10 @@
             "count": 2
           },
           {
+            "file": "scripts/audit-pay-001-a11-executor-protocol-conformance.js",
+            "count": 1
+          },
+          {
             "file": "scripts/audit-product-controller-stack.js",
             "count": 1
           },
@@ -5699,7 +5707,7 @@
       "id": "PAY-001",
       "name": "Pagamentos, cobrança, escrow e webhooks",
       "maturity": 2,
-      "filesMatched": 23,
+      "filesMatched": 30,
       "sampleFiles": [
         "assets/js/pages/pagamento-profissional.js",
         "assets/js/repositories/finance-repository.js",
@@ -5710,6 +5718,7 @@
         "backend/modules/payments/payment-provider-selection-handoff.js",
         "backend/modules/payments/payment-reconciliation-contract.js",
         "backend/modules/payments/payment-reconciliation-executor-adapter.js",
+        "backend/modules/payments/payment-reconciliation-executor-protocol.js",
         "backend/modules/payments/payment-reconciliation-migration-canary-contract.js",
         "backend/modules/payments/payment-reconciliation-operations-contract.js",
         "backend/modules/payments/payment-reconciliation-queue.js",
@@ -5719,11 +5728,12 @@
         "backend/modules/payments/provider-webhook-contract.js",
         "backend/modules/wallet/route-handlers.js",
         "backend/modules/wallet/wallet-service.js",
-        "supabase/migrations/014_finance_wallet_shared_runtime.sql",
-        "supabase/migrations/20260803190000_pay_a08_reconciliation_cases_audit.sql",
-        "supabase/migrations/20260803190100_pay_a08_reconciliation_leases.sql",
-        "supabase/migrations/20260803190200_pay_a08_reconciliation_alert_outbox.sql",
-        "supabase/migrations/20260803190300_pay_a08_reconciliation_metric_rollups.sql"
+        "config/pay-a11-executor-protocol-manifests/cleanup.json",
+        "config/pay-a11-executor-protocol-manifests/migration-application.json",
+        "config/pay-a11-executor-protocol-manifests/post-migration-verification.json",
+        "config/pay-a11-executor-protocol-manifests/read-only-preflight.json",
+        "config/pay-a11-executor-protocol-manifests/rollback.json",
+        "supabase/migrations/014_finance_wallet_shared_runtime.sql"
       ],
       "missingRequiredPaths": [],
       "signals": {
@@ -5818,7 +5828,7 @@
           "id": "PAY-B04",
           "severity": "high",
           "category": "reconciliation",
-          "description": "Remote reconciliation infrastructure remains absent. PAY-A08 defines immutable migration sources and a read-only canary; PAY-A09 separates preflight, application, verification, forward-only rollback and cleanup handoffs, but no remote read, migration, store, lease, scheduler, metrics sink, alert delivery, on-call ownership or staging rehearsal exists.",
+          "description": "Remote reconciliation infrastructure remains absent. PAY-A08 defines immutable migrations; PAY-A09 separates staging phases; PAY-A10 validates inert dispatch, receipt and evidence; PAY-A11 freezes provider-neutral protocol manifests and a deterministic dry-run corpus, but no remote read, migration, store, lease, scheduler, metrics sink, alert delivery, on-call ownership or staging rehearsal exists.",
           "targetPhase": "Fase 8"
         }
       ],
@@ -5848,7 +5858,9 @@
         "audit:pay-001-a09-deployment-inspection-handoff",
         "test:pay-001-a09-deployment-inspection-handoff",
         "audit:pay-001-a10-external-executor-evidence-ingestion",
-        "test:pay-001-a10-external-executor-evidence-ingestion"
+        "test:pay-001-a10-external-executor-evidence-ingestion",
+        "audit:pay-001-a11-executor-protocol-conformance",
+        "test:pay-001-a11-executor-protocol-conformance"
       ]
     },
     {
@@ -6575,7 +6587,7 @@
       "id": "LEGAL-001",
       "name": "Jurídico, privacidade, confiança e políticas comerciais",
       "maturity": 1,
-      "filesMatched": 259,
+      "filesMatched": 260,
       "sampleFiles": [
         "docs/ACTIVE-CONTRACTS-INDEX.md",
         "docs/API-ADAPTER-CONTRACT.md",
@@ -8323,7 +8335,7 @@
       "id": "APP-001",
       "name": "Aplicativos Android e iOS",
       "maturity": 0,
-      "filesMatched": 2513,
+      "filesMatched": 2525,
       "sampleFiles": [
         ".agents/skills/animation-vocabulary/SKILL.md",
         ".agents/skills/apple-design/SKILL.md",
@@ -8356,7 +8368,7 @@
         "localStorage": 529,
         "sessionStorage": 151,
         "mock": 902,
-        "network": 608,
+        "network": 609,
         "directSupabase": 535,
         "todo": 89
       },
@@ -10879,6 +10891,10 @@
           {
             "file": "scripts/audit-page-state-surfaces.js",
             "count": 2
+          },
+          {
+            "file": "scripts/audit-pay-001-a11-executor-protocol-conformance.js",
+            "count": 1
           },
           {
             "file": "scripts/audit-product-controller-stack.js",

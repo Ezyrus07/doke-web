@@ -1,0 +1,317 @@
+{
+  "corpusVersion": "pay-reconciliation-executor-conformance-corpus-v1",
+  "exactGitHead": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "fixtureClock": "2026-08-03T20:00:00.000Z",
+  "cases": [
+    {
+      "id": "valid_read_only_preflight",
+      "operation": "read_only_preflight",
+      "mutation": "none",
+      "expected": {
+        "accepted": true
+      }
+    },
+    {
+      "id": "valid_migration_application",
+      "operation": "migration_application",
+      "mutation": "none",
+      "expected": {
+        "accepted": true
+      }
+    },
+    {
+      "id": "valid_post_migration_verification",
+      "operation": "post_migration_verification",
+      "mutation": "none",
+      "expected": {
+        "accepted": true
+      }
+    },
+    {
+      "id": "valid_rollback",
+      "operation": "rollback",
+      "mutation": "none",
+      "expected": {
+        "accepted": true
+      }
+    },
+    {
+      "id": "valid_cleanup",
+      "operation": "cleanup",
+      "mutation": "none",
+      "expected": {
+        "accepted": true
+      }
+    },
+    {
+      "id": "reject_manifest_extra_field",
+      "operation": "read_only_preflight",
+      "mutation": "manifest_extra_field",
+      "expected": {
+        "accepted": false,
+        "errorCode": "DOKE_PAY_A11_MANIFEST_FIELD_DENIED"
+      }
+    },
+    {
+      "id": "reject_manifest_transport_enabled",
+      "operation": "read_only_preflight",
+      "mutation": "manifest_transport_enabled",
+      "expected": {
+        "accepted": false,
+        "errorCode": "DOKE_PAY_A11_CAPABILITY_DENIED"
+      }
+    },
+    {
+      "id": "reject_manifest_credentials_enabled",
+      "operation": "read_only_preflight",
+      "mutation": "manifest_credentials_enabled",
+      "expected": {
+        "accepted": false,
+        "errorCode": "DOKE_PAY_A11_CAPABILITY_DENIED"
+      }
+    },
+    {
+      "id": "reject_manifest_endpoint_enabled",
+      "operation": "read_only_preflight",
+      "mutation": "manifest_endpoint_enabled",
+      "expected": {
+        "accepted": false,
+        "errorCode": "DOKE_PAY_A11_CAPABILITY_DENIED"
+      }
+    },
+    {
+      "id": "reject_manifest_network_enabled",
+      "operation": "read_only_preflight",
+      "mutation": "manifest_network_enabled",
+      "expected": {
+        "accepted": false,
+        "errorCode": "DOKE_PAY_A11_CAPABILITY_DENIED"
+      }
+    },
+    {
+      "id": "reject_manifest_database_enabled",
+      "operation": "migration_application",
+      "mutation": "manifest_database_enabled",
+      "expected": {
+        "accepted": false,
+        "errorCode": "DOKE_PAY_A11_CAPABILITY_DENIED"
+      }
+    },
+    {
+      "id": "reject_manifest_subprocess_enabled",
+      "operation": "migration_application",
+      "mutation": "manifest_subprocess_enabled",
+      "expected": {
+        "accepted": false,
+        "errorCode": "DOKE_PAY_A11_CAPABILITY_DENIED"
+      }
+    },
+    {
+      "id": "reject_manifest_environment_enabled",
+      "operation": "migration_application",
+      "mutation": "manifest_environment_enabled",
+      "expected": {
+        "accepted": false,
+        "errorCode": "DOKE_PAY_A11_CAPABILITY_DENIED"
+      }
+    },
+    {
+      "id": "reject_manifest_raw_sql_enabled",
+      "operation": "migration_application",
+      "mutation": "manifest_raw_sql_enabled",
+      "expected": {
+        "accepted": false,
+        "errorCode": "DOKE_PAY_A11_CAPABILITY_DENIED"
+      }
+    },
+    {
+      "id": "reject_manifest_production_enabled",
+      "operation": "migration_application",
+      "mutation": "manifest_production_enabled",
+      "expected": {
+        "accepted": false,
+        "errorCode": "DOKE_PAY_A11_CAPABILITY_DENIED"
+      }
+    },
+    {
+      "id": "reject_manifest_money_enabled",
+      "operation": "migration_application",
+      "mutation": "manifest_money_enabled",
+      "expected": {
+        "accepted": false,
+        "errorCode": "DOKE_PAY_A11_CAPABILITY_DENIED"
+      }
+    },
+    {
+      "id": "reject_manifest_provider_enabled",
+      "operation": "migration_application",
+      "mutation": "manifest_provider_enabled",
+      "expected": {
+        "accepted": false,
+        "errorCode": "DOKE_PAY_A11_CAPABILITY_DENIED"
+      }
+    },
+    {
+      "id": "reject_manifest_auto_next_enabled",
+      "operation": "post_migration_verification",
+      "mutation": "manifest_auto_next_enabled",
+      "expected": {
+        "accepted": false,
+        "errorCode": "DOKE_PAY_A11_CAPABILITY_DENIED"
+      }
+    },
+    {
+      "id": "reject_manifest_wrong_capability",
+      "operation": "post_migration_verification",
+      "mutation": "manifest_wrong_capability",
+      "expected": {
+        "accepted": false,
+        "errorCode": "DOKE_PAY_A11_CAPABILITY_MISMATCH"
+      }
+    },
+    {
+      "id": "reject_manifest_fingerprint_drift",
+      "operation": "post_migration_verification",
+      "mutation": "manifest_fingerprint_drift",
+      "expected": {
+        "accepted": false,
+        "errorCode": "DOKE_PAY_A11_MANIFEST_FINGERPRINT_MISMATCH"
+      }
+    },
+    {
+      "id": "reject_preflight_mutation_policy",
+      "operation": "read_only_preflight",
+      "mutation": "phase_preflight_mutation_enabled",
+      "expected": {
+        "accepted": false,
+        "errorCode": "DOKE_PAY_A11_PHASE_POLICY_DRIFT"
+      }
+    },
+    {
+      "id": "reject_migration_continue_on_failure",
+      "operation": "migration_application",
+      "mutation": "phase_migration_stop_on_failure_disabled",
+      "expected": {
+        "accepted": false,
+        "errorCode": "DOKE_PAY_A11_PHASE_POLICY_DRIFT"
+      }
+    },
+    {
+      "id": "reject_post_verification_auto_repair",
+      "operation": "post_migration_verification",
+      "mutation": "phase_post_auto_repair_enabled",
+      "expected": {
+        "accepted": false,
+        "errorCode": "DOKE_PAY_A11_PHASE_POLICY_DRIFT"
+      }
+    },
+    {
+      "id": "reject_destructive_rollback_policy",
+      "operation": "rollback",
+      "mutation": "phase_rollback_destructive_enabled",
+      "expected": {
+        "accepted": false,
+        "errorCode": "DOKE_PAY_A11_PHASE_POLICY_DRIFT"
+      }
+    },
+    {
+      "id": "reject_cleanup_database_target",
+      "operation": "cleanup",
+      "mutation": "phase_cleanup_database_target_added",
+      "expected": {
+        "accepted": false,
+        "errorCode": "DOKE_PAY_A11_PHASE_POLICY_DRIFT"
+      }
+    },
+    {
+      "id": "reject_dry_run_operation_drift",
+      "operation": "read_only_preflight",
+      "mutation": "dry_run_operation_drift",
+      "expected": {
+        "accepted": false,
+        "errorCode": "DOKE_PAY_A11_DRY_RUN_OPERATION_MISMATCH"
+      }
+    },
+    {
+      "id": "reject_dry_run_network_enabled",
+      "operation": "read_only_preflight",
+      "mutation": "dry_run_network_enabled",
+      "expected": {
+        "accepted": false,
+        "errorCode": "DOKE_PAY_A11_DRY_RUN_CAPABILITY_DENIED"
+      }
+    },
+    {
+      "id": "reject_dry_run_fingerprint_drift",
+      "operation": "cleanup",
+      "mutation": "dry_run_fingerprint_drift",
+      "expected": {
+        "accepted": false,
+        "errorCode": "DOKE_PAY_A11_DRY_RUN_FINGERPRINT_MISMATCH"
+      }
+    },
+    {
+      "id": "reject_cross_phase_receipt_status",
+      "operation": "read_only_preflight",
+      "mutation": "receipt_cross_phase_status",
+      "expected": {
+        "accepted": false,
+        "errorCode": "DOKE_PAY_A10_RECEIPT_STATUS_INVALID"
+      }
+    },
+    {
+      "id": "reject_stale_receipt",
+      "operation": "read_only_preflight",
+      "mutation": "receipt_stale",
+      "expected": {
+        "accepted": false,
+        "errorCode": "DOKE_PAY_A10_RECEIPT_EXPIRED"
+      }
+    },
+    {
+      "id": "reject_receipt_head_drift",
+      "operation": "post_migration_verification",
+      "mutation": "receipt_head_drift",
+      "expected": {
+        "accepted": false,
+        "errorCode": "DOKE_PAY_A10_RECEIPT_HEAD_MISMATCH"
+      }
+    },
+    {
+      "id": "reject_receipt_replay",
+      "operation": "cleanup",
+      "mutation": "receipt_replay",
+      "expected": {
+        "accepted": false,
+        "errorCode": "DOKE_PAY_A10_RECEIPT_REPLAYED"
+      }
+    },
+    {
+      "id": "reject_raw_sql_evidence_field",
+      "operation": "migration_application",
+      "mutation": "evidence_raw_sql_field",
+      "expected": {
+        "accepted": false,
+        "errorCode": "DOKE_PAY_A10_EVIDENCE_FIELD_DENIED"
+      }
+    },
+    {
+      "id": "reject_evidence_receipt_drift",
+      "operation": "post_migration_verification",
+      "mutation": "evidence_receipt_drift",
+      "expected": {
+        "accepted": false,
+        "errorCode": "DOKE_PAY_A10_EVIDENCE_RECEIPT_MISMATCH"
+      }
+    },
+    {
+      "id": "reject_evidence_replay",
+      "operation": "rollback",
+      "mutation": "evidence_replay",
+      "expected": {
+        "accepted": false,
+        "errorCode": "DOKE_PAY_A10_EVIDENCE_REPLAYED"
+      }
+    }
+  ]
+}
