@@ -1,0 +1,43 @@
+name: DSP-A02 Canonical Lifecycle Effect Taxonomy
+
+on:
+  pull_request:
+    paths:
+      - 'backend/modules/disputes/dispute-lifecycle-taxonomy-contract.js'
+      - 'config/dsp-a02-canonical-lifecycle-effect-taxonomy.json'
+      - 'tests/fixtures/dsp-a02-canonical-lifecycle-effect-cases.json'
+      - 'docs/DSP-A02-CANONICAL-LIFECYCLE-EFFECT-TAXONOMY.md'
+      - 'scripts/audit-dsp-a02-canonical-lifecycle-effect-taxonomy.js'
+      - 'scripts/test-dsp-a02-canonical-lifecycle-effect-taxonomy.js'
+      - '.github/workflows/dsp-a02-canonical-lifecycle-effect-taxonomy.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dsp-a02-canonical-lifecycle-effect-taxonomy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Syntax
+        run: |
+          node --check backend/modules/disputes/dispute-lifecycle-taxonomy-contract.js
+          node --check scripts/audit-dsp-a02-canonical-lifecycle-effect-taxonomy.js
+          node --check scripts/test-dsp-a02-canonical-lifecycle-effect-taxonomy.js
+      - name: Audit canonical taxonomy
+        run: node scripts/audit-dsp-a02-canonical-lifecycle-effect-taxonomy.js
+      - name: Conformance
+        run: node scripts/test-dsp-a02-canonical-lifecycle-effect-taxonomy.js
+      - name: DSP-A01 regression
+        run: |
+          node scripts/audit-dsp-a01-authority-baseline.js
+          node scripts/test-dsp-a01-authority-baseline.js
+      - name: Diff hygiene
+        run: git diff --check
