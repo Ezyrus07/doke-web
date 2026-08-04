@@ -43,7 +43,7 @@ jobs:
           246d4aff39291b5fc555f5c64575eecc389adfa6382fba0bacd8173b274eb44d  tests/fixtures/dsp-a05-operator-case-dual-control-cases.json
           SUMS
 
-      - name: Validate DSP-A05
+      - name: Validate DSP-A05 and predecessor contracts
         shell: bash
         run: |
           set -euo pipefail
@@ -52,8 +52,6 @@ jobs:
           node --check scripts/test-dsp-a05-operator-case-dual-control-readiness.js
           node scripts/audit-dsp-a05-operator-case-dual-control-readiness.js
           node scripts/test-dsp-a05-operator-case-dual-control-readiness.js
-          node scripts/audit-dsp-a04-provider-chargeback-reconciliation-boundary.js
-          node scripts/test-dsp-a04-provider-chargeback-reconciliation-boundary.js
           node scripts/audit-dsp-a03-evidence-deadline-appeal-contract.js
           node scripts/test-dsp-a03-evidence-deadline-appeal-contract.js
           node scripts/audit-dsp-a02-canonical-lifecycle-effect-taxonomy.js
@@ -62,12 +60,15 @@ jobs:
           node scripts/test-dsp-a01-authority-baseline.js
           git diff --check
 
-      - name: Clean transport and commit
+      - name: Restore DSP-A04, validate, clean and commit
         shell: bash
         run: |
           set -euo pipefail
           git show 974e0c60bda67c13e4fd837f3b38bac1ddc2ada3:.github/workflows/dsp-a04-provider-chargeback-reconciliation-boundary.yml > .github/workflows/dsp-a04-provider-chargeback-reconciliation-boundary.yml
+          node scripts/audit-dsp-a04-provider-chargeback-reconciliation-boundary.js
+          node scripts/test-dsp-a04-provider-chargeback-reconciliation-boundary.js
           rm -rf .dsp-a05-materialize .github/workflows/dsp-a05-materialize-temporary.yml
+          git diff --check
           git config user.name "doke-ci"
           git config user.email "actions@users.noreply.github.com"
           git add -A -- .dsp-a05-materialize .github/workflows/dsp-a05-materialize-temporary.yml .github/workflows/dsp-a04-provider-chargeback-reconciliation-boundary.yml .github/workflows/dsp-a05-operator-case-dual-control-readiness.yml backend/modules/disputes/dispute-operator-case-dual-control-readiness.js config/dsp-a05-operator-case-dual-control-readiness.json docs/DSP-A05-OPERATOR-CASE-DUAL-CONTROL-READINESS.md scripts/audit-dsp-a05-operator-case-dual-control-readiness.js scripts/test-dsp-a05-operator-case-dual-control-readiness.js tests/fixtures/dsp-a05-operator-case-dual-control-cases.json
