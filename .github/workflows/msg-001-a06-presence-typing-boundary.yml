@@ -1,4 +1,5 @@
 name: Doke MSG-A06 Presence Typing Boundary
+# Matrix compatibility is monotonic and validated through a shared numeric semantic-version utility.
 
 on:
   pull_request:
@@ -17,6 +18,8 @@ on:
       - 'scripts/audit-msg-001-a02-canonical-authority-boundary.js'
       - 'scripts/audit-msg-001-a03-server-command-boundary.js'
       - 'scripts/audit-msg-001-a05-attachment-lifecycle.js'
+      - 'scripts/lib/semantic-version.js'
+      - 'scripts/test-semantic-version.js'
       - 'config/domain-completion-matrix.json'
       - 'docs/DOMAIN-COMPLETION-MATRIX.md'
       - 'reports/generated/domain-completion-matrix-report.json'
@@ -42,8 +45,11 @@ jobs:
         run: |
           node --check assets/js/repositories/messages-presence-repository.js
           node --check assets/js/features/chat-realtime-presence.js
+          node --check scripts/lib/semantic-version.js
+          node --check scripts/test-semantic-version.js
           node --check scripts/audit-msg-001-a06-presence-typing-boundary.js
           node --check scripts/test-msg-001-a06-presence-typing-runtime.js
+          node scripts/test-semantic-version.js
           npm run audit:msg-001-a01-authority-baseline
           npm run audit:msg-001-a02-canonical-authority-boundary
           npm run test:msg-001-a02-canonical-authority-boundary

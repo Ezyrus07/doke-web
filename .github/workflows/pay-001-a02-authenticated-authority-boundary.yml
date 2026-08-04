@@ -1,0 +1,54 @@
+name: Doke PAY-A02 Authenticated Financial Authority Boundary
+# Definitive read-only validation on the PAY-A05 hardening and stacked MSG compatibility head.
+
+on:
+  pull_request:
+    paths:
+      - 'assets/js/services/payment-service.js'
+      - 'assets/js/repositories/finance-repository.js'
+      - 'config/pay-001-a02-authenticated-authority-boundary.json'
+      - 'docs/PAY-001-A02-AUTHENTICATED-AUTHORITY-BOUNDARY.md'
+      - 'docs/validation/PAY-001-A02-AUTHENTICATED-AUTHORITY-BOUNDARY.json'
+      - 'scripts/audit-pay-001-a01-authority-baseline.js'
+      - 'scripts/audit-pay-001-a02-authenticated-authority-boundary.js'
+      - 'scripts/test-pay-001-a01-authority-baseline.js'
+      - 'scripts/test-pay-001-a02-authenticated-authority-boundary.js'
+      - 'config/domain-completion-matrix.json'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+      - 'package.json'
+      - '.github/workflows/pay-001-a01-authority-baseline.yml'
+      - '.github/workflows/pay-001-a02-authenticated-authority-boundary.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  boundary:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Validate PAY-A01 and PAY-A02
+        run: |
+          node --check scripts/audit-pay-001-a01-authority-baseline.js
+          node --check scripts/audit-pay-001-a02-authenticated-authority-boundary.js
+          node --check scripts/test-pay-001-a01-authority-baseline.js
+          node --check scripts/test-pay-001-a02-authenticated-authority-boundary.js
+          npm run audit:pay-001-a01-authority-baseline
+          npm run test:pay-001-a01-authority-baseline
+          npm run audit:pay-001-a02-authenticated-authority-boundary
+          npm run test:pay-001-a02-authenticated-authority-boundary
+          npm run test:finance-supabase-repository-contract
+          npm run test:financial-rpc-authority-contract
+          npm run test:financial-operations-edge-runtime
+          npm run test:staging-finance-sandbox-authority-contract
+          npm run test:staging-finance-sandbox-edge-runtime
+          npm run audit:domain-completion-matrix
+          git diff --check

@@ -1,0 +1,99 @@
+{
+  "contractVersion": "pay-a13-executor-lifecycle-governance-v1",
+  "status": "repository_only_executor_lifecycle_governance_and_incident_revocation_handoff_ready_real_onboarding_and_remote_authority_blocked",
+  "objective": "Define provider-neutral executor onboarding, trust-root rotation, offboarding, approval quorum, key-custody attestations and emergency revocation handoffs without configuring a real executor, storing private keys or granting remote authority.",
+  "dependencies": {
+    "a12ContractVersion": "pay-a12-executor-trust-root-signature-v1",
+    "a12TrustBundleVersion": "pay-reconciliation-executor-trust-bundle-v1"
+  },
+  "governancePolicy": {
+    "lifecycleRequestVersion": "pay-executor-lifecycle-request-v1",
+    "custodyAttestationVersion": "pay-executor-key-custody-attestation-v1",
+    "approvalRecordVersion": "pay-executor-governance-approval-v1",
+    "decisionVersion": "pay-executor-lifecycle-decision-v1",
+    "incidentHandoffVersion": "pay-executor-incident-revocation-handoff-v1",
+    "allowedActions": [
+      "onboard_executor",
+      "rotate_trust_root",
+      "offboard_executor",
+      "emergency_revoke_root"
+    ],
+    "approverRoles": [
+      "security",
+      "finance_operations",
+      "legal_compliance",
+      "platform_operations"
+    ],
+    "standardMinimumApprovals": 3,
+    "emergencyMinimumApprovals": 2,
+    "separationOfDutiesRequired": true,
+    "duplicateApproversDenied": true,
+    "duplicateRolesDenied": true,
+    "exactRequestFingerprintBindingRequired": true,
+    "approvalEvidenceHashesRequired": true,
+    "requestReplayDenied": true,
+    "custodyClasses": [
+      "managed_hsm",
+      "managed_kms",
+      "dedicated_signing_service"
+    ],
+    "privateKeyExportDenied": true,
+    "dualControlRequired": true,
+    "repositoryPrivateKeyCustodyDenied": true,
+    "privateKeyMaterialDenied": true,
+    "offboardingRevokesAllRoots": true,
+    "offboardingPreservesAuditEvidence": true,
+    "historicalEvidenceDeletionDenied": true,
+    "emergencySecurityApprovalRequired": true,
+    "emergencySecondOperationalRoleRequired": true,
+    "incidentResponseDeadlineWithinOneHour": true,
+    "incidentFollowUpWithinTwentyFourHours": true,
+    "realExecutorOnboarded": false,
+    "realTrustRootApproved": false,
+    "realCustodyProviderConfigured": false,
+    "productionAllowed": false,
+    "remoteExecutionAllowedByRepositoryContract": false,
+    "repositoryExecutionPerformed": false
+  },
+  "conformance": {
+    "fixturePath": "tests/fixtures/pay-a13-executor-lifecycle-governance-cases.json",
+    "totalCases": 38,
+    "positiveCases": 5,
+    "negativeCases": 33,
+    "networkRequests": 0,
+    "databaseConnections": 0,
+    "subprocesses": 0,
+    "environmentReads": 0
+  },
+  "currentBlockers": [
+    "PAY-B01",
+    "PAY-B03",
+    "PAY-B04"
+  ],
+  "effects": {
+    "networkRequests": 0,
+    "stagingReads": 0,
+    "stagingMutations": 0,
+    "databaseConnections": 0,
+    "subprocesses": 0,
+    "environmentReads": 0,
+    "realExecutorsOnboarded": 0,
+    "realExecutorsOffboarded": 0,
+    "realTrustRootsApproved": 0,
+    "realTrustRootsRevoked": 0,
+    "privateKeysStored": 0,
+    "custodyProvidersConfigured": 0,
+    "approvalsSubmittedToRemoteSystems": 0,
+    "incidentNotificationsDelivered": 0,
+    "migrationsApplied": 0,
+    "rollbacksApplied": 0,
+    "secretsConfigured": 0,
+    "endpointsConfigured": 0,
+    "paymentsCreated": 0,
+    "refundsCreated": 0,
+    "payoutsCreated": 0,
+    "productionChanged": false,
+    "pullRequestMerged": false
+  },
+  "nextAction": "PAY-A15 — define external identity-issuer lifecycle, revocation/status snapshots, stale-credential invalidation and audit-retention handoff, remaining repository-only."
+}

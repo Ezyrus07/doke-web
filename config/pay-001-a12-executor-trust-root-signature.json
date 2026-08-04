@@ -1,0 +1,80 @@
+{
+  "contractVersion": "pay-a12-executor-trust-root-signature-v1",
+  "status": "repository_only_trust_root_and_offline_detached_signature_contract_ready_real_roots_and_remote_execution_blocked",
+  "objective": "Define provider-neutral executor trust-root, detached-signature, key-rotation and revocation contracts for PAY-A10 receipts without storing private keys, configuring real trust roots or granting remote authority.",
+  "dependencies": {
+    "a10ContractVersion": "pay-a10-external-executor-evidence-ingestion-v1",
+    "a11ContractVersion": "pay-a11-executor-protocol-conformance-v1"
+  },
+  "trustPolicy": {
+    "trustBundleVersion": "pay-reconciliation-executor-trust-bundle-v1",
+    "detachedEnvelopeVersion": "pay-reconciliation-detached-signature-v1",
+    "verifiedReceiptVersion": "pay-reconciliation-verified-receipt-v1",
+    "signingDomain": "doke-pay-executor-receipt-v1",
+    "allowedSignatureSchemes": [
+      "ed25519",
+      "rsa_pss_sha256"
+    ],
+    "allowedRootStatuses": [
+      "active",
+      "retiring",
+      "revoked"
+    ],
+    "realTrustRootsConfigured": false,
+    "activeTrustRootCount": 0,
+    "privateKeysStored": false,
+    "repositoryManagedPrivateKeys": false,
+    "offlineVerificationOnly": true,
+    "exactA10ReceiptBinding": true,
+    "exactA11ProtocolBinding": true,
+    "rotationRequiresStrictlyIncreasingVersion": true,
+    "retiringKeysRequireBoundedGrace": true,
+    "revokedKeysRejected": true,
+    "publicKeyFingerprintRequired": true,
+    "executorAndOperationAllowlistsRequired": true,
+    "signatureReplayDenied": true,
+    "rawSignatureStored": false,
+    "productionAllowed": false,
+    "remoteExecutionAllowedByRepositoryContract": false,
+    "repositoryExecutionPerformed": false
+  },
+  "conformance": {
+    "fixturePath": "tests/fixtures/pay-a12-executor-trust-root-cases.json",
+    "totalCases": 28,
+    "positiveCases": 4,
+    "negativeCases": 24,
+    "ephemeralKeysGeneratedInMemory": true,
+    "syntheticPrivateKeysPersisted": false,
+    "networkRequests": 0,
+    "databaseConnections": 0,
+    "subprocesses": 0,
+    "environmentReads": 0
+  },
+  "currentBlockers": [
+    "PAY-B01",
+    "PAY-B03",
+    "PAY-B04"
+  ],
+  "effects": {
+    "networkRequests": 0,
+    "stagingReads": 0,
+    "stagingMutations": 0,
+    "databaseConnections": 0,
+    "subprocesses": 0,
+    "environmentReads": 0,
+    "realTrustRootsConfigured": 0,
+    "privateKeysStored": 0,
+    "signaturesReceivedFromRemoteExecutors": 0,
+    "receiptsAcceptedFromRemoteExecutors": 0,
+    "migrationsApplied": 0,
+    "rollbacksApplied": 0,
+    "secretsConfigured": 0,
+    "endpointsConfigured": 0,
+    "paymentsCreated": 0,
+    "refundsCreated": 0,
+    "payoutsCreated": 0,
+    "productionChanged": false,
+    "pullRequestMerged": false
+  },
+  "nextAction": "PAY-A14 — define signed governance evidence bundles, external identity attestation ingestion and immutable lifecycle decision receipt chaining, remaining repository-only after PAY-A13 governance completion."
+}

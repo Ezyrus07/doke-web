@@ -1,0 +1,55 @@
+name: Doke PAY-A04 Reconciliation Queue and Controlled Replay
+# Definitive read-only validation on the PAY-A05 hardening and stacked MSG compatibility head.
+
+on:
+  pull_request:
+    paths:
+      - 'backend/modules/payments/**'
+      - 'config/pay-001-a04-reconciliation-queue.json'
+      - 'docs/PAY-001-A04-RECONCILIATION-QUEUE.md'
+      - 'docs/validation/PAY-001-A04-RECONCILIATION-QUEUE.json'
+      - 'scripts/audit-pay-001-a04-reconciliation-queue.js'
+      - 'scripts/test-pay-001-a04-reconciliation-queue.js'
+      - 'scripts/audit-pay-001-a03-psp-neutral-intent-webhook.js'
+      - 'config/domain-completion-matrix.json'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+      - 'package.json'
+      - '.github/workflows/pay-001-a04-reconciliation-queue.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Validate PAY-A01 through PAY-A04
+        run: |
+          node --check backend/modules/payments/payment-reconciliation-contract.js
+          node --check backend/modules/payments/payment-reconciliation-queue.js
+          node --check scripts/audit-pay-001-a04-reconciliation-queue.js
+          node --check scripts/test-pay-001-a04-reconciliation-queue.js
+          npm run audit:pay-001-a01-authority-baseline
+          npm run test:pay-001-a01-authority-baseline
+          npm run audit:pay-001-a02-authenticated-authority-boundary
+          npm run test:pay-001-a02-authenticated-authority-boundary
+          npm run audit:pay-001-a03-psp-neutral-intent-webhook
+          npm run test:pay-001-a03-psp-neutral-intent-webhook
+          npm run audit:pay-001-a04-reconciliation-queue
+          npm run test:pay-001-a04-reconciliation-queue
+          npm run test:finance-supabase-repository-contract
+          npm run test:financial-rpc-authority-contract
+          npm run test:financial-operations-edge-runtime
+          npm run test:staging-finance-sandbox-authority-contract
+          npm run test:staging-finance-sandbox-edge-runtime
+          npm run audit:domain-completion-matrix
+          git diff --check

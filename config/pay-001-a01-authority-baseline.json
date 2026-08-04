@@ -1,0 +1,101 @@
+{
+  "contractVersion": "pay-a01-authority-baseline-v1",
+  "status": "repository_only_financial_authority_baseline_frozen_no_psp",
+  "domain": "PAY-001",
+  "observedAt": "2026-08-03T08:04:00-03:00",
+  "base": {
+    "branch": "msg/msg-001-baseline-audit",
+    "head": "7b896dfafe023cce5aba3abe7e6eed9eb65f1bcf"
+  },
+  "objective": "Freeze the current payment, escrow and webhook authority split before any PSP selection, deployment or real-money activation.",
+  "observedRuntime": {
+    "paymentProviderDecisionOrder": [
+      "api",
+      "supabase-sandbox",
+      "local-mock"
+    ],
+    "paymentsEnabled": true,
+    "financeSandboxEnabled": true,
+    "financeSandboxProjectRef": "zwkczgewzbsorbrjuzpb",
+    "browserLocalPaymentOrchestrationPresent": true,
+    "browserLocalCompletionReleasePresent": true,
+    "localWalletFallbackPresent": true,
+    "remoteReadProjectionPresent": true,
+    "authenticatedUuidPaymentMaterializationFailsClosedWithoutServerAuthority": true,
+    "authenticatedUuidReceivableReleaseFailsClosedWithoutServerAuthority": true
+  },
+  "authority": {
+    "realMoneyAuthority": "none",
+    "pspSelected": false,
+    "pspContractSigned": false,
+    "signedWebhookAuthority": false,
+    "providerEventLedgerAuthority": false,
+    "providerReconciliationOperational": false,
+    "refundAuthorityOperational": false,
+    "chargebackAuthorityOperational": false,
+    "browserMayAssertProviderSuccess": false,
+    "browserMayStoreRawCardData": false,
+    "localSimulationIsProductionAuthority": false,
+    "sandboxAuthority": "staging_synthetic_only",
+    "productionActivationAllowed": false
+  },
+  "canonicalFutureBoundary": {
+    "providerVerifiedEventsOnly": [
+      "payment_succeeded",
+      "payment_failed",
+      "payment_refunded",
+      "payment_disputed",
+      "payment_cancelled",
+      "payout_confirmed"
+    ],
+    "requiredBeforeRemoteMutation": [
+      "fresh_legal_and_accounting_review",
+      "psp_selection_decision",
+      "signed_webhook_verification_contract",
+      "persistent_idempotency_contract",
+      "provider_event_ordering_contract",
+      "reconciliation_and_mismatch_queue",
+      "synthetic_staging_canaries",
+      "explicit_staging_authorization"
+    ]
+  },
+  "blockers": [
+    {
+      "id": "PAY-B01",
+      "severity": "critical",
+      "category": "external_provider",
+      "description": "No PSP integration or signed webhook authority exists."
+    },
+    {
+      "id": "PAY-B03",
+      "severity": "critical",
+      "category": "legal_compliance",
+      "description": "Commercial, tax, escrow and refund rules are not legally approved."
+    },
+    {
+      "id": "PAY-B04",
+      "severity": "high",
+      "category": "reconciliation",
+      "description": "No provider reconciliation or mismatch queue is operational."
+    }
+  ],
+  "effects": {
+    "stagingReads": 0,
+    "stagingMutations": 0,
+    "migrationsApplied": 0,
+    "edgeFunctionsDeployed": 0,
+    "providerAccountsCreated": 0,
+    "webhookEndpointsRegistered": 0,
+    "paymentsCreated": 0,
+    "refundsCreated": 0,
+    "productionChanged": false,
+    "realUsersChanged": 0,
+    "pullRequestsMerged": 0
+  },
+  "orderedNextActions": [
+    "PAY-A02: establish a canonical authenticated payment authority boundary that rejects local financial mutation fallback for UUID sessions while preserving memory-only fixtures.",
+    "PAY-A03: define a PSP-neutral payment-intent and signed-webhook event contract on the existing persistent idempotency store.",
+    "PAY-A04: prepare provider-selection, legal, accounting, reconciliation and synthetic staging evaluation criteria without selecting or activating a PSP implicitly."
+  ]
+}
+

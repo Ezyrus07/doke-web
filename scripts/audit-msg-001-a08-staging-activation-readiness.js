@@ -3,6 +3,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const { isNumericSemanticVersionAtLeast } = require('./lib/semantic-version');
 const root = process.cwd();
 const failures = [];
 
@@ -38,7 +39,7 @@ assert(workflow.includes('permissions:\n  contents: read'), 'A08 permanent workf
 });
 assert(packageJson.scripts && packageJson.scripts['audit:msg-001-a08-staging-activation-readiness'] === 'node scripts/audit-msg-001-a08-staging-activation-readiness.js', 'Missing A08 audit script registration.');
 assert(packageJson.scripts && packageJson.scripts['test:msg-001-a08-staging-activation-readiness'] === 'node scripts/test-msg-001-a08-staging-activation-readiness.js', 'Missing A08 test script registration.');
-assert(matrix.version === '1.3.85', 'Matrix version must be 1.3.85.');
+assert(isNumericSemanticVersionAtLeast(matrix.version, '1.3.85'), 'Matrix version must be at least 1.3.85.');
 const msg = (matrix.domains || []).find((domain) => domain.id === 'MSG-001');
 assert(Boolean(msg), 'MSG-001 matrix entry missing.');
 if (msg) {

@@ -1,0 +1,65 @@
+{
+  "contractVersion": "pay-a02-authenticated-authority-boundary-v1",
+  "status": "repository_only_authenticated_financial_mutation_boundary_active",
+  "objective": "Require remote financial authority for authenticated UUID sessions while retaining isolated non-UUID fixtures and read-only local cache behavior.",
+  "sessionClasses": {
+    "authenticatedUuid": {
+      "mutationAuthority": "remote_required",
+      "localMutationFallback": false,
+      "localReadCache": "allowed_non_authoritative",
+      "providerWhenUnavailable": "unavailable"
+    },
+    "syntheticNonUuidFixture": {
+      "mutationAuthority": "local_fixture_only",
+      "localMutationFallback": true,
+      "productionEvidence": false
+    },
+    "anonymous": {
+      "mutationAuthority": "none"
+    }
+  },
+  "providerPrecedence": [
+    "api",
+    "supabase_staging_sandbox",
+    "non_uuid_local_fixture"
+  ],
+  "protectedMutations": [
+    "confirm_charge_payment",
+    "request_completion",
+    "confirm_completion_and_release",
+    "save_bank_account",
+    "register_receivable",
+    "release_receivable",
+    "request_withdrawal",
+    "resolve_withdrawal",
+    "open_dispute",
+    "respond_dispute",
+    "resolve_dispute",
+    "save_payment"
+  ],
+  "failure": {
+    "code": "DOKE_FINANCIAL_SERVER_AUTHORITY_REQUIRED",
+    "behavior": "fail_closed_without_local_mutation"
+  },
+  "invariants": [
+    "API commands take precedence over the staging sandbox when both are available.",
+    "Authenticated UUID sessions never execute local financial mutation fallback.",
+    "The staging sandbox remains synthetic and project-scoped.",
+    "Non-UUID fixtures may use local mutation only as non-production test data.",
+    "Local reads and projections may be cached but never assert provider settlement.",
+    "No raw card data is persisted by Doke."
+  ],
+  "effects": {
+    "stagingReads": 0,
+    "stagingMutations": 0,
+    "migrationsApplied": 0,
+    "edgeFunctionsDeployed": 0,
+    "pspAccountsCreated": 0,
+    "webhooksRegistered": 0,
+    "paymentsCreated": 0,
+    "refundsCreated": 0,
+    "payoutsCreated": 0,
+    "productionChanged": false,
+    "pullRequestMerged": false
+  }
+}

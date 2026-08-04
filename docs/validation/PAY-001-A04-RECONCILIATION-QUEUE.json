@@ -1,0 +1,39 @@
+{
+  "validationId": "PAY-001-A04-RECONCILIATION-QUEUE",
+  "contractVersion": "pay-a04-reconciliation-queue-v1",
+  "matrixVersion": "1.3.89",
+  "mode": "repository_only",
+  "assertions": [
+    "Doke and provider snapshots are normalized and deterministically fingerprinted.",
+    "Raw provider payloads and sensitive card data are rejected from reconciliation artifacts.",
+    "Divergences are classified without automatic financial mutation.",
+    "The operator queue fails closed without a server-side store adapter.",
+    "Only support/admin operators can triage; replay approval requires separation of duties.",
+    "Critical replay approval requires admin.",
+    "Controlled replay requires unchanged fingerprint, signed-event evidence, idempotency and dry-run.",
+    "Replay commands cannot directly mutate payments, wallets, refunds or payouts.",
+    "Resolution requires a fresh matched comparison."
+  ],
+  "expectedEffects": {
+    "stagingReads": 0,
+    "stagingMutations": 0,
+    "migrationsApplied": 0,
+    "edgeFunctionsDeployed": 0,
+    "reconciliationTablesCreated": 0,
+    "operatorCasesCreatedRemotely": 0,
+    "providerEventsReplayedRemotely": 0,
+    "pspAccountsCreated": 0,
+    "webhooksRegistered": 0,
+    "secretsCreated": 0,
+    "paymentsCreated": 0,
+    "refundsCreated": 0,
+    "payoutsCreated": 0,
+    "productionChanged": false,
+    "pullRequestMerged": false
+  },
+  "blockersPreserved": [
+    "PAY-B01",
+    "PAY-B03",
+    "PAY-B04"
+  ]
+}

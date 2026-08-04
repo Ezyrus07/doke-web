@@ -1,0 +1,43 @@
+name: Doke PAY-A08 Immutable Migrations Read-Only Canary
+
+on:
+  pull_request:
+    paths:
+      - 'backend/modules/payments/payment-reconciliation-migration-canary-contract.js'
+      - 'config/pay-001-a08-immutable-migrations-read-only-canary.json'
+      - 'docs/PAY-001-A08-IMMUTABLE-MIGRATIONS-READ-ONLY-CANARY.md'
+      - 'docs/validation/PAY-001-A08-IMMUTABLE-MIGRATIONS-READ-ONLY-CANARY.json'
+      - 'scripts/audit-pay-001-a08-immutable-migrations-read-only-canary.js'
+      - 'scripts/test-pay-001-a08-immutable-migrations-read-only-canary.js'
+      - 'supabase/migrations/*pay_a08*.sql'
+      - 'config/domain-completion-matrix.json'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+      - 'package.json'
+      - '.github/workflows/pay-001-a08-immutable-migrations-read-only-canary.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Syntax and PAY-A08 contract
+        run: |
+          node --check backend/modules/payments/payment-reconciliation-migration-canary-contract.js
+          node --check scripts/audit-pay-001-a08-immutable-migrations-read-only-canary.js
+          node --check scripts/test-pay-001-a08-immutable-migrations-read-only-canary.js
+          npm run audit:pay-001-a07-reconciliation-operations-readiness
+          npm run test:pay-001-a07-reconciliation-operations-readiness
+          npm run audit:pay-001-a08-immutable-migrations-read-only-canary
+          npm run test:pay-001-a08-immutable-migrations-read-only-canary
+          npm run audit:domain-completion-matrix
+          git diff --check

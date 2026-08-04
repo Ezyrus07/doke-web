@@ -1,0 +1,91 @@
+{
+  "contractVersion": "pay-a14-governance-evidence-chain-v1",
+  "status": "repository_only_signed_governance_evidence_external_identity_ingestion_and_immutable_decision_chain_ready_remote_identity_and_authority_blocked",
+  "objective": "Bind PAY-A13 lifecycle decisions to offline-verified external identity attestations, signed governance evidence bundles and immutable per-executor decision receipts without contacting identity providers, storing direct identifiers or granting remote authority.",
+  "dependencies": {
+    "a13ContractVersion": "pay-a13-executor-lifecycle-governance-v1",
+    "a13DecisionVersion": "pay-executor-lifecycle-decision-v1",
+    "a12SignatureSchemes": [
+      "ed25519",
+      "rsa_pss_sha256"
+    ]
+  },
+  "evidencePolicy": {
+    "identityTrustBundleVersion": "pay-external-identity-trust-bundle-v1",
+    "identityAttestationVersion": "pay-external-identity-attestation-v1",
+    "evidenceBundleVersion": "pay-governance-evidence-bundle-v1",
+    "signatureEnvelopeVersion": "pay-governance-detached-signature-v1",
+    "decisionReceiptVersion": "pay-lifecycle-decision-receipt-v1",
+    "decisionChainVersion": "pay-lifecycle-decision-chain-v1",
+    "signingDomain": "doke-pay-governance-evidence-v1",
+    "allowedPurposes": [
+      "identity_attestation",
+      "governance_evidence"
+    ],
+    "allowedAssuranceLevels": [
+      "aal2",
+      "aal3"
+    ],
+    "securityApprovalRequiresAal3": true,
+    "minimumIndependentIdentityIssuers": 2,
+    "directIdentifiersDenied": true,
+    "privateKeyMaterialDenied": true,
+    "repositoryPrivateKeyCustodyDenied": true,
+    "identityAttestationMaximumHours": 24,
+    "decisionReceiptAcceptanceMaximumHours": 24,
+    "exactA13DecisionBindingRequired": true,
+    "exactApprovalFingerprintBindingRequired": true,
+    "signatureReplayDenied": true,
+    "identityReplayDenied": true,
+    "decisionReceiptReplayDenied": true,
+    "decisionChainForkDenied": true,
+    "decisionChainSequenceMustBeContiguous": true,
+    "decisionChainMayNotCrossExecutors": true,
+    "realIdentityIssuerConfigured": false,
+    "realGovernanceSignerConfigured": false,
+    "realIdentityDataIngested": false,
+    "productionAllowed": false,
+    "remoteExecutionAllowedByRepositoryContract": false,
+    "repositoryExecutionPerformed": false
+  },
+  "conformance": {
+    "fixturePath": "tests/fixtures/pay-a14-governance-evidence-chain-cases.json",
+    "totalCases": 52,
+    "positiveCases": 6,
+    "negativeCases": 46,
+    "networkRequests": 0,
+    "databaseConnections": 0,
+    "subprocesses": 0,
+    "environmentReads": 0
+  },
+  "currentBlockers": [
+    "PAY-B01",
+    "PAY-B03",
+    "PAY-B04"
+  ],
+  "effects": {
+    "networkRequests": 0,
+    "databaseConnections": 0,
+    "subprocesses": 0,
+    "environmentReads": 0,
+    "stagingReads": 0,
+    "stagingMutations": 0,
+    "externalIdentityProviderRequests": 0,
+    "externalGovernanceSystemRequests": 0,
+    "realIdentityAttestationsIngested": 0,
+    "realGovernanceBundlesSigned": 0,
+    "realDecisionReceiptsPersisted": 0,
+    "directIdentifiersStored": 0,
+    "privateKeysStored": 0,
+    "migrationsApplied": 0,
+    "rollbacksApplied": 0,
+    "secretsConfigured": 0,
+    "endpointsConfigured": 0,
+    "paymentsCreated": 0,
+    "refundsCreated": 0,
+    "payoutsCreated": 0,
+    "productionChanged": false,
+    "pullRequestMerged": false
+  },
+  "nextAction": "PAY-A15 — define external identity-issuer lifecycle, revocation/status snapshots, stale-credential invalidation and audit-retention handoff, remaining repository-only."
+}

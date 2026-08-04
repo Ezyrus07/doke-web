@@ -1,4 +1,5 @@
 name: Doke MSG-A07 Command Reliability Contract
+# Matrix compatibility is monotonic and validated through a shared numeric semantic-version utility.
 
 on:
   pull_request:
@@ -15,6 +16,8 @@ on:
       - 'scripts/audit-msg-001-a07-command-reliability.js'
       - 'scripts/test-msg-001-a07-command-reliability-runtime.js'
       - 'scripts/audit-msg-001-a06-presence-typing-boundary.js'
+      - 'scripts/lib/semantic-version.js'
+      - 'scripts/test-semantic-version.js'
       - 'config/domain-completion-matrix.json'
       - 'docs/DOMAIN-COMPLETION-MATRIX.md'
       - 'reports/generated/domain-completion-matrix-report.json'
@@ -43,8 +46,11 @@ jobs:
           node --check assets/js/services/api-repository-provider.js
           node --check backend/modules/messaging/messaging-service.js
           node --check backend/modules/messaging/route-handlers.js
+          node --check scripts/lib/semantic-version.js
+          node --check scripts/test-semantic-version.js
           node --check scripts/audit-msg-001-a07-command-reliability.js
           node --check scripts/test-msg-001-a07-command-reliability-runtime.js
+          node scripts/test-semantic-version.js
           npm run audit:msg-001-a01-authority-baseline
           npm run audit:msg-001-a02-canonical-authority-boundary
           npm run test:msg-001-a02-canonical-authority-boundary

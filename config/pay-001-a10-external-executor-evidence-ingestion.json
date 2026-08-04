@@ -1,0 +1,136 @@
+{
+  "contractVersion": "pay-a10-external-executor-evidence-ingestion-v1",
+  "status": "repository_only_inert_executor_adapters_and_sanitized_evidence_ingestion_ready_remote_execution_blocked",
+  "objective": "Provide inert phase-specific external executor adapters, signed receipt validation and sanitized immutable evidence ingestion for PAY-A09 without configuring transport, credentials, endpoints or remote authority.",
+  "dependencies": {
+    "a09ContractVersion": "pay-a09-deployment-inspection-handoff-v1",
+    "a09PlanVersion": "pay-reconciliation-staging-handoff-plan-v1",
+    "a08ManifestHash": "bb219a05ea58139508d8bfe7c5f1e3f7d3ce7953953bb199bbd2bcbd9812d032",
+    "phaseCount": 5
+  },
+  "adapterBoundary": {
+    "adapterVersion": "pay-reconciliation-executor-adapter-v1",
+    "dispatchVersion": "pay-reconciliation-executor-dispatch-v1",
+    "phaseSpecific": true,
+    "transportConfigured": false,
+    "credentialsConfigured": false,
+    "endpointConfigured": false,
+    "executeMethodPresent": false,
+    "externalExecutorAuthorizationStillRequired": true,
+    "nextPhaseAutomaticallyAuthorized": false,
+    "remoteExecutionAllowedByRepositoryContract": false,
+    "repositoryExecutionPerformed": false,
+    "productionAllowed": false,
+    "directMoneyMutationAllowed": false,
+    "providerOperationAllowed": false
+  },
+  "profiles": {
+    "read_only_preflight": {
+      "executorType": "external_read_only_inspector",
+      "capability": "read_only_catalog_query",
+      "allowedStatuses": [
+        "preflight_passed",
+        "blocked"
+      ]
+    },
+    "migration_application": {
+      "executorType": "external_database_executor",
+      "capability": "ordered_migration_application",
+      "allowedStatuses": [
+        "applied",
+        "partial",
+        "failed",
+        "blocked"
+      ]
+    },
+    "post_migration_verification": {
+      "executorType": "external_read_only_inspector",
+      "capability": "post_migration_catalog_query",
+      "allowedStatuses": [
+        "verified",
+        "verification_failed",
+        "blocked"
+      ]
+    },
+    "rollback": {
+      "executorType": "external_database_executor",
+      "capability": "forward_only_corrective_migration",
+      "allowedStatuses": [
+        "rollback_planned",
+        "rolled_forward",
+        "failed",
+        "blocked"
+      ]
+    },
+    "cleanup": {
+      "executorType": "external_cleanup_executor",
+      "capability": "temporary_artifact_cleanup",
+      "allowedStatuses": [
+        "cleaned",
+        "failed",
+        "blocked"
+      ]
+    }
+  },
+  "receiptBoundary": {
+    "receiptVersion": "pay-reconciliation-execution-receipt-v1",
+    "freshnessSeconds": 900,
+    "signatureSchemes": [
+      "ed25519",
+      "rsa_pss_sha256"
+    ],
+    "exactHeadBindingRequired": true,
+    "manifestBindingRequired": true,
+    "resourcePlanBindingRequired": true,
+    "planFingerprintBindingRequired": true,
+    "dispatchFingerprintBindingRequired": true,
+    "executorIdHashed": true,
+    "executionIdHashed": true,
+    "rawSignatureStored": false,
+    "rawLogsStored": false,
+    "replayAllowed": false,
+    "crossPhaseStatusAllowed": false
+  },
+  "evidenceBoundary": {
+    "evidenceVersion": "pay-reconciliation-execution-evidence-v1",
+    "aggregateCountsOnly": true,
+    "immutableAuditRecord": true,
+    "rawEvidenceStored": false,
+    "rawLogsStored": false,
+    "userIdentifiersAllowed": false,
+    "financialIdentifiersAllowed": false,
+    "providerPayloadAllowed": false,
+    "secretsAllowed": false,
+    "rawSqlAllowed": false,
+    "stdoutAllowed": false,
+    "stderrAllowed": false,
+    "automaticFollowUpAllowed": false,
+    "remoteActionTriggeredByIngestion": false,
+    "replayAllowed": false
+  },
+  "currentBlockers": [
+    "PAY-B01",
+    "PAY-B03",
+    "PAY-B04"
+  ],
+  "effects": {
+    "networkRequests": 0,
+    "stagingReads": 0,
+    "stagingMutations": 0,
+    "dispatchesSent": 0,
+    "receiptsReceivedFromRemoteExecutor": 0,
+    "remoteEvidenceIngested": 0,
+    "migrationsApplied": 0,
+    "postMigrationQueriesExecuted": 0,
+    "rollbackMigrationsApplied": 0,
+    "temporaryArtifactsDeleted": 0,
+    "secretsConfigured": 0,
+    "endpointsConfigured": 0,
+    "paymentsCreated": 0,
+    "refundsCreated": 0,
+    "payoutsCreated": 0,
+    "productionChanged": false,
+    "pullRequestMerged": false
+  },
+  "nextAction": "PAY-A12 — define executor trust roots, offline detached-signature verification, key rotation and revocation contracts for receipts, remaining repository-only."
+}

@@ -1,0 +1,137 @@
+{
+  "contractVersion": "pay-a04-reconciliation-queue-v1",
+  "status": "repository_only_psp_neutral_reconciliation_contract_ready_persistence_unconfigured",
+  "objective": "Define provider-neutral reconciliation, divergence classification, operator queue and controlled replay without selecting or activating a payment provider.",
+  "provider": {
+    "selected": false,
+    "adapterActivated": false,
+    "accountCreated": false,
+    "webhookRegistered": false,
+    "secretConfigured": false
+  },
+  "snapshots": {
+    "authorities": [
+      "doke",
+      "provider"
+    ],
+    "adapterNormalizationRequired": true,
+    "rawProviderPayloadAllowedInQueue": false,
+    "rawCardDataAllowed": false,
+    "comparisonDimensions": [
+      "provider_identity",
+      "state",
+      "currency",
+      "gross_amount",
+      "fee_amount",
+      "net_amount",
+      "released_amount",
+      "refunded_amount",
+      "settlement_reference",
+      "event_ledger_status"
+    ],
+    "fingerprintRequired": true
+  },
+  "divergencePolicy": {
+    "automaticResolutionAllowed": false,
+    "automaticMoneyMutationAllowed": false,
+    "classes": {
+      "critical": [
+        "internal_snapshot_missing",
+        "provider_identity_mismatch",
+        "currency_mismatch",
+        "gross_amount_mismatch",
+        "net_amount_mismatch",
+        "released_amount_mismatch",
+        "refunded_amount_mismatch",
+        "duplicate_provider_object"
+      ],
+      "high": [
+        "provider_snapshot_missing",
+        "state_mismatch",
+        "provider_settlement_reference_missing",
+        "settlement_reference_mismatch",
+        "event_ledger_failed",
+        "event_ledger_missing"
+      ],
+      "medium": [
+        "fee_amount_mismatch"
+      ],
+      "low": [
+        "event_ledger_in_progress"
+      ]
+    }
+  },
+  "operatorQueue": {
+    "persistence": "server_store_adapter_required_unconfigured",
+    "browserAccess": false,
+    "allowedRoles": [
+      "support",
+      "admin"
+    ],
+    "statuses": [
+      "open",
+      "triaged",
+      "replay_review",
+      "approved_for_replay",
+      "dry_run_passed",
+      "replay_submitted",
+      "pending_verification",
+      "resolved",
+      "dismissed",
+      "escalated"
+    ],
+    "optimisticConcurrencyRequired": true,
+    "rationaleRequired": true,
+    "separationOfDutiesRequired": true,
+    "freshMatchedComparisonRequiredForResolution": true
+  },
+  "controlledReplay": {
+    "eligibleSignals": [
+      "event_ledger_failed",
+      "event_ledger_missing"
+    ],
+    "blockingSignals": [
+      "internal_snapshot_missing",
+      "provider_snapshot_missing",
+      "provider_identity_mismatch",
+      "currency_mismatch",
+      "gross_amount_mismatch",
+      "net_amount_mismatch",
+      "released_amount_mismatch",
+      "refunded_amount_mismatch",
+      "duplicate_provider_object"
+    ],
+    "expectedComparisonFingerprintRequired": true,
+    "originalVerifiedRawBodyHashRequired": true,
+    "payloadHashRequired": true,
+    "signatureReverificationRequired": true,
+    "operatorApprovalRequired": true,
+    "secondOperatorRequired": true,
+    "criticalApprovalRole": "admin",
+    "approvalTtlSeconds": 900,
+    "dryRunRequired": true,
+    "atomicServerRuntimeRequired": true,
+    "directPaymentMutationAllowed": false,
+    "directWalletMutationAllowed": false,
+    "directRefundMutationAllowed": false,
+    "directPayoutMutationAllowed": false,
+    "resolutionRequiresFreshComparison": true
+  },
+  "effects": {
+    "stagingReads": 0,
+    "stagingMutations": 0,
+    "migrationsApplied": 0,
+    "edgeFunctionsDeployed": 0,
+    "reconciliationTablesCreated": 0,
+    "operatorCasesCreatedRemotely": 0,
+    "providerEventsReplayedRemotely": 0,
+    "pspAccountsCreated": 0,
+    "webhooksRegistered": 0,
+    "secretsCreated": 0,
+    "paymentsCreated": 0,
+    "refundsCreated": 0,
+    "payoutsCreated": 0,
+    "productionChanged": false,
+    "pullRequestMerged": false
+  }
+}

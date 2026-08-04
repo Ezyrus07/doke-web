@@ -1,0 +1,118 @@
+{
+  "contractVersion": "pay-a17-transparency-recovery-incident-handoff-v1",
+  "status": "repository_only_transparency_checkpoints_forward_only_recovery_cache_poisoning_incident_evidence_and_operational_adoption_handoff_ready_remote_authority_blocked",
+  "objective": "Define append-only offline transparency checkpoints, rollback-safe forward-only distribution recovery, hashes-only cache-poisoning incident evidence and a blocked operational adoption handoff without configuring a real log, witness, cache, endpoint, identity provider or execution channel.",
+  "dependencies": {
+    "a16ContractVersion": "pay-a16-issuer-status-distribution-resilience-v1",
+    "a16CheckpointSourceVersion": "pay-identity-status-distribution-manifest-v1",
+    "a16CacheProofVersion": "pay-identity-status-cache-consistency-proof-v1",
+    "a16QuorumDecisionVersion": "pay-identity-multi-issuer-quorum-decision-v1"
+  },
+  "transparencyRecoveryPolicy": {
+    "checkpointVersion": "pay-identity-distribution-transparency-checkpoint-v1",
+    "checkpointChainVersion": "pay-identity-distribution-transparency-chain-v1",
+    "recoveryPlanVersion": "pay-identity-distribution-recovery-plan-v1",
+    "recoveryResultVersion": "pay-identity-distribution-recovery-result-v1",
+    "incidentEvidenceVersion": "pay-identity-cache-poisoning-incident-evidence-v1",
+    "incidentChainVersion": "pay-identity-cache-poisoning-incident-chain-v1",
+    "adoptionHandoffVersion": "pay-identity-distribution-operational-adoption-handoff-v1",
+    "adoptionDecisionVersion": "pay-identity-distribution-operational-adoption-decision-v1",
+    "minimumWitnesses": 2,
+    "minimumApprovals": 2,
+    "maximumCheckpointIntervalSeconds": 300,
+    "maximumRecoveryWindowSeconds": 900,
+    "maximumIncidentEvidenceDelaySeconds": 300,
+    "publicationModes": [
+      "offline_bundle"
+    ],
+    "recoveryModes": [
+      "forward_only_rebuild"
+    ],
+    "detectionClasses": [
+      "manifest_mismatch",
+      "payload_hash_mismatch",
+      "split_brain",
+      "replay",
+      "clock_rollback"
+    ],
+    "containmentStates": [
+      "under_investigation",
+      "contained_offline",
+      "recovery_validated"
+    ],
+    "adoptionStates": [
+      "blocked_repository_only"
+    ],
+    "appendOnlyCheckpointChainRequired": true,
+    "checkpointForkAndReplayDenied": true,
+    "distributionEpochRollbackDenied": true,
+    "lifecycleRollbackDenied": true,
+    "treeSizeRollbackDenied": true,
+    "clockRollbackDenied": true,
+    "forwardOnlyRecoveryRequired": true,
+    "compromisedCheckpointReuseDenied": true,
+    "compromisedManifestReuseDenied": true,
+    "cacheInvalidationSetMustMatchPlan": true,
+    "automaticRecoveryExecutionDenied": true,
+    "incidentEvidenceHashesOnlyRequired": true,
+    "rawPayloadAndDirectIdentifiersDenied": true,
+    "containmentStateRollbackDenied": true,
+    "recoveryValidatedStateRequiresOfflineResult": true,
+    "ownerReviewerRoleSeparationRequired": true,
+    "operationalAdoptionRemainsBlocked": true,
+    "blockersPreserved": true,
+    "endpointsCredentialsAndPrivateKeysDenied": true,
+    "realTransparencyLogConfigured": false,
+    "realWitnessConfigured": false,
+    "realRecoveryExecuted": false,
+    "realIncidentContainmentApplied": false,
+    "realOperationalAdoptionAuthorized": false,
+    "productionAllowed": false,
+    "remoteExecutionAllowedByRepositoryContract": false,
+    "repositoryExecutionPerformed": false
+  },
+  "conformance": {
+    "fixturePath": "tests/fixtures/pay-a17-transparency-recovery-incident-handoff-cases.json",
+    "totalCases": 94,
+    "positiveCases": 12,
+    "negativeCases": 82,
+    "networkRequests": 0,
+    "databaseConnections": 0,
+    "subprocesses": 0,
+    "environmentReads": 0
+  },
+  "currentBlockers": [
+    "PAY-B01",
+    "PAY-B03",
+    "PAY-B04"
+  ],
+  "effects": {
+    "networkRequests": 0,
+    "databaseConnections": 0,
+    "subprocesses": 0,
+    "environmentReads": 0,
+    "stagingReads": 0,
+    "stagingMutations": 0,
+    "externalIdentityProviderRequests": 0,
+    "externalTransparencyLogRequests": 0,
+    "realCheckpointsPublished": 0,
+    "realWitnessesContacted": 0,
+    "realRecoveryPlansExecuted": 0,
+    "realCacheEntriesInvalidated": 0,
+    "realIncidentContainmentActionsApplied": 0,
+    "realOperationalAdoptionDecisionsApplied": 0,
+    "directIdentifiersStored": 0,
+    "rawPayloadsStored": 0,
+    "privateKeysStored": 0,
+    "migrationsApplied": 0,
+    "rollbacksApplied": 0,
+    "secretsConfigured": 0,
+    "endpointsConfigured": 0,
+    "paymentsCreated": 0,
+    "refundsCreated": 0,
+    "payoutsCreated": 0,
+    "productionChanged": false,
+    "pullRequestMerged": false
+  },
+  "nextAction": "PAY-A18 — define witness interoperability, checkpoint inclusion and consistency proof conformance, recovery rehearsal attestation and the final pre-provider adoption gate, remaining repository-only."
+}

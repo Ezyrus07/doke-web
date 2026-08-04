@@ -1,0 +1,124 @@
+{
+  "contractVersion": "pay-a08-immutable-migrations-read-only-canary-v1",
+  "status": "repository_only_immutable_migrations_and_read_only_canary_ready_remote_application_blocked",
+  "objective": "Freeze provider-neutral reconciliation migrations by SHA-256 and define a strictly read-only staging schema canary without applying SQL or granting remote financial authority.",
+  "migrationManifest": {
+    "contractVersion": "pay-a08-immutable-migrations-read-only-canary-v1",
+    "manifestVersion": "pay-reconciliation-migration-manifest-v1",
+    "providerNeutral": true,
+    "remoteApplicationAllowed": false,
+    "migrations": [
+      {
+        "id": "pay_a08_reconciliation_cases_audit",
+        "path": "supabase/migrations/20260803190000_pay_a08_reconciliation_cases_audit.sql",
+        "sha256": "fb1583f99bfd70ae046e0e807805f64932a39e55a4d098825a3d7d92198e5856",
+        "order": 1,
+        "applied": false,
+        "rollbackMode": "forward_only_reviewed_migration"
+      },
+      {
+        "id": "pay_a08_reconciliation_leases",
+        "path": "supabase/migrations/20260803190100_pay_a08_reconciliation_leases.sql",
+        "sha256": "41ba591c39c4634d07ffe4b29748cccc3f2a1ebf95d11d043edb4c932ad0dd7f",
+        "order": 2,
+        "applied": false,
+        "rollbackMode": "forward_only_reviewed_migration"
+      },
+      {
+        "id": "pay_a08_reconciliation_alert_outbox",
+        "path": "supabase/migrations/20260803190200_pay_a08_reconciliation_alert_outbox.sql",
+        "sha256": "9282cefaaffa9f3daccf736afa07c50d87f127d06d10c67fff470b7e316908eb",
+        "order": 3,
+        "applied": false,
+        "rollbackMode": "forward_only_reviewed_migration"
+      },
+      {
+        "id": "pay_a08_reconciliation_metric_rollups",
+        "path": "supabase/migrations/20260803190300_pay_a08_reconciliation_metric_rollups.sql",
+        "sha256": "c20e3e61af73a2bde263c3dc3f9f2fdd10a736b827b9b1c6606bdea5af55672a",
+        "order": 4,
+        "applied": false,
+        "rollbackMode": "forward_only_reviewed_migration"
+      }
+    ],
+    "manifestHash": "bb219a05ea58139508d8bfe7c5f1e3f7d3ce7953953bb199bbd2bcbd9812d032"
+  },
+  "databaseBoundary": {
+    "schema": "private",
+    "browserAccess": false,
+    "dataApiExposureAllowed": false,
+    "rawProviderPayloadStored": false,
+    "rawCardDataStored": false,
+    "directMoneyMutationAllowed": false,
+    "automaticResolutionAllowed": false,
+    "migrationApplicationPerformed": false,
+    "remoteObjectsCreated": 0
+  },
+  "readOnlyCanary": {
+    "canaryVersion": "pay-reconciliation-schema-read-only-canary-v1",
+    "enabled": false,
+    "allowedStatement": "SELECT",
+    "allowedRelations": [
+      "pg_catalog.pg_class",
+      "pg_catalog.pg_namespace",
+      "pg_catalog.pg_attribute",
+      "pg_catalog.pg_index",
+      "pg_catalog.pg_constraint",
+      "pg_catalog.pg_proc",
+      "information_schema.columns",
+      "information_schema.table_constraints",
+      "information_schema.key_column_usage",
+      "supabase_migrations.schema_migrations"
+    ],
+    "ddlAllowed": false,
+    "dmlAllowed": false,
+    "rpcAllowed": false,
+    "schedulerMutationAllowed": false,
+    "migrationApplicationAllowed": false,
+    "automaticDriftRepairAllowed": false,
+    "financialRowReadsAllowed": false,
+    "personalDataReadsAllowed": false,
+    "repositoryMayExecuteRemoteActions": false
+  },
+  "stagingAuthorization": {
+    "phrase": "I_EXPLICITLY_AUTHORIZE_PAY_A08_READ_ONLY_RECONCILIATION_CANARY_ON_DOKE_STAGING",
+    "scope": "reconciliation_schema_read_only_canary_only",
+    "currentReady": false,
+    "exactGitHeadRequired": true,
+    "manifestHashRequired": true,
+    "evidenceHashRequired": true,
+    "stagingProjectIdentityRequired": true,
+    "productionExplicitlyDenied": true,
+    "freshnessSeconds": 900,
+    "oneShot": true,
+    "genericContinuationAuthorizesStaging": false,
+    "externalAuthorizedExecutorRequired": true,
+    "remoteActionsAllowedByRepositoryContract": false,
+    "repositoryExecutionPerformed": false
+  },
+  "currentBlockers": [
+    "PAY-B01",
+    "PAY-B03",
+    "PAY-B04"
+  ],
+  "effects": {
+    "networkRequests": 0,
+    "stagingReads": 0,
+    "stagingMutations": 0,
+    "migrationsApplied": 0,
+    "ddlStatementsExecuted": 0,
+    "dmlStatementsExecuted": 0,
+    "reconciliationTablesCreated": 0,
+    "schedulerJobsCreated": 0,
+    "metricPointsWrittenRemotely": 0,
+    "alertsDelivered": 0,
+    "secretsConfigured": 0,
+    "edgeFunctionsDeployed": 0,
+    "paymentsCreated": 0,
+    "refundsCreated": 0,
+    "payoutsCreated": 0,
+    "productionChanged": false,
+    "pullRequestMerged": false
+  },
+  "nextAction": "PAY-A09 — prepare separate, resource-bound handoffs for read-only schema inspection and migration application; neither action is authorized by generic continuation."
+}

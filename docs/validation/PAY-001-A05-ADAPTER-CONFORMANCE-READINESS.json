@@ -1,0 +1,39 @@
+{
+  "validationId": "PAY-001-A05-ADAPTER-CONFORMANCE-READINESS",
+  "contractVersion": "pay-a05-adapter-conformance-readiness-v1",
+  "matrixVersion": "1.3.90",
+  "mode": "repository_only",
+  "assertions": [
+    "The explicit provider-neutral adapter contract requires create, query, acknowledgement normalization, webhook normalization, reconciliation snapshot, health and stable error classification methods.",
+    "Every financial capability is declared explicitly and unsupported capabilities fail closed without silent simulation.",
+    "Adapter health is effect-free, network-free, mutation-free, money-free and production-denied.",
+    "Payment intent create/query replay is stable; payload drift and incomplete acknowledgement fail closed.",
+    "Sensitive payment fields, invalid signatures, expired signatures and parsed bodies without raw-body verification are rejected.",
+    "Exact provider event replay is deterministic; concurrent claims and event payload drift are rejected.",
+    "Out-of-order events are deferred and terminal states are protected.",
+    "Provider snapshots reconcile through A04 and deliberate divergences cannot trigger automatic resolution or money mutation.",
+    "Timeout, rate limit and provider unavailability are retryable only for idempotent operations; authentication, conflict, incomplete response and permanent failures remain blocked.",
+    "Staging readiness additionally requires immutable adapter version, controlled webhook endpoint, migration/deployment inventory, synthetic fixtures, zero-budget or sandbox mode, cleanup and sanitized evidence.",
+    "A ready plan remains non-executable by the repository contract and production is denied."
+  ],
+  "expectedEffects": {
+    "stagingReads": 0,
+    "stagingMutations": 0,
+    "migrationsApplied": 0,
+    "edgeFunctionsDeployed": 0,
+    "providerAccountsCreated": 0,
+    "webhooksRegistered": 0,
+    "secretsCreated": 0,
+    "adapterSandboxRuns": 0,
+    "paymentsCreated": 0,
+    "refundsCreated": 0,
+    "payoutsCreated": 0,
+    "productionChanged": false,
+    "pullRequestMerged": false
+  },
+  "blockersPreserved": [
+    "PAY-B01",
+    "PAY-B03",
+    "PAY-B04"
+  ]
+}

@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 1107 arquivos no escopo; 269 referências a localStorage; 78 a sessionStorage; 563 referências mock; 206 referências de rede/Supabase; 35 marcadores de implementação pendente.
+**Evidência estática observada:** 1172 arquivos no escopo; 271 referências a localStorage; 78 a sessionStorage; 577 referências mock; 221 referências de rede/Supabase; 36 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -151,7 +151,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção blocked.
 
-**Evidência estática observada:** 218 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 0 referências mock; 5 referências de rede/Supabase; 9 marcadores de implementação pendente.
+**Evidência estática observada:** 222 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 0 referências mock; 5 referências de rede/Supabase; 9 marcadores de implementação pendente.
 
 **Tabelas/autoridades de dados:** `users`, `user_profiles`, `client_profiles`, `audit_logs`, `availability_slots`, `budgets`, `communities`, `community_members`, `community_posts`, `favorites`, `message_attachments`, `reports`, `reviews`, `service_categories`, `verification_events`.
 
@@ -344,7 +344,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção blocked.
 
-**Evidência estática observada:** 221 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 3 referências mock; 19 referências de rede/Supabase; 9 marcadores de implementação pendente.
+**Evidência estática observada:** 225 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 3 referências mock; 19 referências de rede/Supabase; 9 marcadores de implementação pendente.
 
 **Páginas:** `index.html`, `resultados.html`, `detalhe-anuncio.html`.
 
@@ -539,7 +539,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI local; servidor partial; staging staging canary; segurança partial; produção blocked.
 
-**Evidência estática observada:** 1060 arquivos no escopo; 204 referências a localStorage; 70 a sessionStorage; 305 referências mock; 205 referências de rede/Supabase; 19 marcadores de implementação pendente.
+**Evidência estática observada:** 1109 arquivos no escopo; 205 referências a localStorage; 70 a sessionStorage; 318 referências mock; 220 referências de rede/Supabase; 19 marcadores de implementação pendente.
 
 **Páginas:** `anunciar-servico.html`, `pedidos.html`, `orcamento.html`.
 
@@ -699,11 +699,11 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 2/6; UI local; servidor contract only; staging local e2e; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 6 arquivos no escopo; 1 referências a localStorage; 0 a sessionStorage; 2 referências mock; 42 referências de rede/Supabase; 2 marcadores de implementação pendente.
+**Evidência estática observada:** 48 arquivos no escopo; 1 referências a localStorage; 0 a sessionStorage; 2 referências mock; 54 referências de rede/Supabase; 2 marcadores de implementação pendente.
 
 **Páginas:** `pagamento-profissional.html`, `mensagens.html`, `pedidos.html`.
 
-**Tabelas/autoridades de dados:** `payments`, `transactions`, `receipts`, `wallet_receivables`.
+**Tabelas/autoridades de dados:** `payments`, `transactions`, `receipts`, `wallet_receivables`, `private.payment_reconciliation_cases`, `private.payment_reconciliation_audit_events`, `private.payment_reconciliation_leases`, `private.payment_reconciliation_alert_outbox`, `private.payment_reconciliation_metric_rollups`.
 
 **Edge Functions:** `financial-operations`.
 
@@ -712,17 +712,54 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - No real PSP, signed webhook, reconciliation job or production card tokenization is connected.
 - Browser sessions can no longer create payment rows, receivables or escrow releases through legacy RPCs; remote payment materialization now fails closed until signed PSP authority exists.
 - Payment, transaction, receipt and receivable tables are authenticated read-only projections with participant RLS and no anon grants.
+- PAY-A01 freezes the repository-only payment authority split across API, the synthetic Supabase staging sandbox and local browser simulation without claiming real-money authority.
+- No PSP, signed webhook verifier, provider event ledger or reconciliation worker is operational; browser and sandbox outcomes are not production payment evidence.
+- Authenticated UUID receivable materialization and release remain fail-closed when server/provider authority is unavailable, while legacy local flows remain explicitly inventoried for later removal.
+- PAY-A02 makes authenticated UUID financial mutations fail closed when API/server or the synthetic staging sandbox is unavailable; local mutation is restricted to non-UUID fixtures.
+- Payment command execution now follows the declared API then staging sandbox then non-UUID fixture precedence.
+- Wallet, dispute, withdrawal, bank-account and payment-save fallbacks no longer create local financial outcomes for authenticated UUID sessions.
+- PAY-A03 defines a PSP-neutral payment-intent envelope with deterministic request hashing, integer minor-unit amounts, authorize-then-hold semantics and recursive rejection of raw card data.
+- PAY-A03 verifies HMAC-SHA256 signatures against the untouched raw body before JSON parsing, uses constant-time comparison and enforces a bounded timestamp replay window.
+- Verified provider events reuse api_idempotency_keys through a service-role-only ledger keyed by provider and event ID; exact replay is safe, payload drift fails closed and failed events require reconciliation.
+- No PSP, account, signing secret, webhook registration, migration, deploy or real-money evidence was introduced by PAY-A03.
+- PAY-A04 defines deterministic Doke/provider financial snapshots and classifies identity, state, currency, amount, settlement-reference and event-ledger divergences without automatic money mutation.
+- PAY-A04 requires a server-side operator-queue adapter, optimistic concurrency, support/admin roles, rationale, separation of duties and fresh matched comparison before resolution.
+- PAY-A04 controlled replay requires an unchanged comparison fingerprint, original verified raw-body hash, payload hash, signature reverification, second-operator approval, idempotency and dry-run before apply.
+- PAY-A04 replay envelopes explicitly deny direct payment, wallet, refund and payout mutation; no remote reconciliation store, provider, secret, migration or deploy was introduced.
+- PAY-A05 defines a PSP-neutral adapter manifest, required methods and capabilities, deterministic intent replay and an offline fixture-only conformance harness with zero provider-network calls.
+- PAY-A05 requires verified webhook normalization, provider snapshot reconciliation through A04, sensitive-data rejection and fail-closed retry classification before an adapter may become a staging candidate.
+- PAY-A05 staging readiness requires formal provider selection, legal/accounting approval, sandbox account, server credentials, signed webhook registration, exact head, reconciliation store, operator queue, rollback, evidence and fresh one-shot authorization.
+- PAY-A05 cannot execute remote actions, activate a provider or change feature flags; the provider remains unselected and all staging, deployment and money effects remain zero.
+- PAY-A06 defines an immutable, fingerprinted and expiring PSP decision packet whose advisory score cannot select a provider and whose candidate identifier remains opaque.
+- PAY-A06 requires referenced commercial, fiscal, funds-flow, refund, dispute, payout, KYC, privacy, reconciliation and contingency decisions plus named legal, accounting, finance, security and operations approvals with separation of duties.
+- PAY-A06 provider selection requires a fresh resource-bound one-shot authorization matching the exact candidate, packet fingerprint and Git head; generic continuation and prior authorization are rejected.
+- PAY-A06 selection authorizes only local provider-specific adapter preparation without secrets or network access; account, billing, webhook, migration, deploy, sandbox money and production remain separately blocked.
+- PAY-A06 staging conformance authorization is separately bound to candidate, packet, head, immutable adapter version, staging identity, evidence hash and sandbox/zero-budget constraints, while repository execution authority remains absent.
+- PAY-A07 defines the repository-only provider-neutral reconciliation operations contract: server-only persistence, optimistic concurrency, database leases, disabled idempotent scheduler, low-cardinality metrics, atomic sanitized alert outbox, incident runbook and resource-bound one-shot staging authorization; no remote infrastructure or money authority was activated.
+- PAY-A08 freezes four provider-neutral private reconciliation migration sources by SHA-256 and defines a SELECT-only schema/migration-history canary that rejects DDL, DML, RPC, scheduler mutation, migration application and automatic drift repair; no remote read or mutation was executed.
+- PAY-A09 separates read-only preflight, ordered fail-closed migration application, post-migration verification, forward-only corrective rollback and allowlisted temporary-artifact cleanup into fresh one-shot resource-bound authorizations with distinct approvers; generic continuation, cross-operation nonce reuse, destructive rollback, manual migration-history deletion and repository remote execution remain denied.
+- PAY-A10: five inert phase-specific external executor adapters, signed receipt validation and sanitized replay-protected evidence ingestion validated repository-only.
+- PAY-A11 freezes five provider-neutral executor protocol manifests and validates 35 deterministic offline conformance cases, including 30 fail-closed negative cases, while preserving zero network, database, subprocess, environment, staging, production and financial effects.
+- PAY-A12 defines provider-neutral executor trust bundles, verifies Ed25519 and RSA-PSS-SHA256 detached signatures offline, enforces operation/executor allowlists, bounded rotation grace, immediate revocation rejection and replay protection, while storing no private keys or real trust roots and preserving zero remote effects.
+- PAY-A13 repository-only lifecycle-governance validation: docs/validation/PAY-001-A13-EXECUTOR-LIFECYCLE-GOVERNANCE.json
+- PAY-A14 signed governance evidence, external identity attestation and immutable lifecycle decision-chain validation: docs/validation/PAY-001-A14-GOVERNANCE-EVIDENCE-CHAIN.json
+- PAY-A15: signed issuer lifecycle/status snapshots, stale credential invalidation and hashes-only retention handoff validated repository-only (64/64).
+- PAY-A16: provider-neutral status distribution manifests, immutable cache-consistency proofs, bounded degraded mode and independent multi-issuer quorum validated repository-only (72/72).
+- PAY-A17: append-only transparency checkpoints, forward-only recovery, hashes-only cache-poisoning incident evidence and blocked operational adoption handoff passed 94/94 repository-only conformance cases.
+- PAY-A18: interoperable witness profiles, deterministic inclusion and consistency-proof conformance, synthetic forward-only recovery rehearsal attestation and a blocked pre-provider adoption gate passed 54/54 repository-only cases.
+- PAY-B03A commercial-policy decision gate passed 39/39 repository-only cases, records a PSP-managed non-custodial funds-flow proposal and preserves PAY-B03 pending executive, legal, tax and accounting approval.
+- PAY-B03B approval-evidence package passed 39/39 repository-only cases, defines four approval scopes and nine pending parameters, requires qualified external legal and tax/accounting review, records zero approvals and preserves PAY-B03 open.
 
 **Bloqueadores:**
 - **PAY-B01 · CRITICAL · external_provider:** No PSP integration or signed webhook authority exists. _(Fase 8)_
 - **PAY-B03 · CRITICAL · legal_compliance:** Commercial, tax, escrow and refund rules are not legally approved. _(Fase 2)_
-- **PAY-B04 · HIGH · reconciliation:** No provider reconciliation or mismatch queue is operational. _(Fase 8)_
+- **PAY-B04 · HIGH · reconciliation:** Remote reconciliation infrastructure remains absent. PAY-A08 through PAY-A17 define immutable migrations, phased staging controls, external evidence, executor protocols and trust, issuer status distribution, transparency and forward-only recovery. PAY-A18 adds interoperable witness profiles, inclusion and consistency-proof conformance plus synthetic rehearsal attestation, but no real trust roots, witnesses, transparency log, remote store, lease, scheduler, metrics sink, alert delivery, on-call ownership or staging rehearsal exists. _(Fase 8)_
 
 **Próximas ações:**
-- Select PSP after legal/accounting review.
-- Design signed webhook ingestion using the locked server-side idempotency store.
-- Make verified provider events the only payment, receivable and escrow authority.
-- Build reconciliation, refund and failure recovery.
+- Complete PAY-B03B by obtaining versioned executive, finance/risk, qualified external legal and qualified external tax/accounting approvals for all four scopes and nine parameters; PAY-B03 remains open until real evidence exists and runtime alignment is complete.
+- After real approval evidence and parameter values are supplied, execute a separate PAY-B03C runtime-policy alignment sublot without activating provider or production authority.
+- Keep PAY-B01 provider selection, account, credentials and provider contact blocked until separate explicit authorization.
+- Keep PAY-B04 remote infrastructure, staging execution and production release blocked pending separate design and authorization.
 
 **Gate de saída:**
 - No card data is stored by Doke.
@@ -1011,7 +1048,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 1/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 249 arquivos no escopo; 67 referências a localStorage; 8 a sessionStorage; 271 referências mock; 8 referências de rede/Supabase; 25 marcadores de implementação pendente.
+**Evidência estática observada:** 269 arquivos no escopo; 68 referências a localStorage; 8 a sessionStorage; 272 referências mock; 8 referências de rede/Supabase; 26 marcadores de implementação pendente.
 
 **Evidências:**
 - The master plan identifies legal, privacy and commercial decisions as mandatory.
@@ -1071,7 +1108,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2452 arquivos no escopo; 527 referências a localStorage; 151 a sessionStorage; 887 referências mock; 603 referências de rede/Supabase; 89 marcadores de implementação pendente.
+**Evidência estática observada:** 2579 arquivos no escopo; 529 referências a localStorage; 151 a sessionStorage; 902 referências mock; 630 referências de rede/Supabase; 90 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
@@ -1132,4 +1169,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-08-03T07:32:00-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-08-04T13:50:00-03:00._
