@@ -52,7 +52,7 @@ check('sublot-order', sublots.map((item) => item.id).join(',') === 'WAL-A02,WAL-
 check('external-provider-block', sublots.find((item) => item.id === 'WAL-A05')?.authority === 'blocked_external_provider', 'provider-transfer work must remain externally blocked');
 
 const effects = contract.prohibitedEffects || {};
-check('effect-count', Object.keys(effects).length === 10, 'ten prohibited-effect fields are required');
+check('effect-count', Object.keys(effects).length === 11, 'eleven prohibited-effect fields are required');
 check('effects-all-false', Object.values(effects).every((value) => value === false), 'every prohibited effect must remain false');
 
 const result = {
