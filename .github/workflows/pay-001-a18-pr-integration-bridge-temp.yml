@@ -1,0 +1,126 @@
+name: Doke PAY-A18 PR Integration Bridge Temp
+
+on:
+  pull_request:
+    branches:
+      - 'pay/pay-001-baseline-audit'
+    paths:
+      - '.pay-a18-matrix-integration.request'
+      - 'scripts/test-pay-001-a18-witness-proof-rehearsal-adoption-gate.js'
+      - '.github/workflows/pay-001-a18-matrix-integration-temp.yml'
+      - '.github/workflows/pay-001-a18-pr-integration-bridge-temp.yml'
+      - '.github/workflows/pay-001-a18-pr-integration-finalizer-temp.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  integrate:
+    if: github.head_ref == 'pay/pay-a18-witness-proof-rehearsal-build'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: pay/pay-a18-witness-proof-rehearsal-build
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci --ignore-scripts
+      - name: Apply deterministic integration and fixture correction
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 <<'PY'
+          from pathlib import Path
+          path = Path('scripts/test-pay-001-a18-witness-proof-rehearsal-adoption-gate.js')
+          source = path.read_text()
+          old = ', ...effects, providerContactAuthorized: false });'
+          new = ', ...effects });'
+          if source.count(old) != 1:
+              raise SystemExit('Expected exactly one PAY-A17 decision fixture boundary')
+          path.write_text(source.replace(old, new))
+          PY
+          sed -n "/^          node <<'NODE'$/,/^          NODE$/p" \
+            .github/workflows/pay-001-a18-matrix-integration-temp.yml \
+            | sed '1d;$d;s/^          //' > /tmp/apply-pay-a18-matrix.js
+          test -s /tmp/apply-pay-a18-matrix.js
+          node /tmp/apply-pay-a18-matrix.js
+          node scripts/audit-domain-completion-matrix.js --write
+          node scripts/audit-domain-completion-matrix.js
+          for gate in \
+            audit:pay-001-a06-provider-selection-legal-handoff \
+            audit:pay-001-a07-reconciliation-operations-readiness \
+            audit:pay-001-a08-immutable-migrations-read-only-canary \
+            audit:pay-001-a09-deployment-inspection-handoff \
+            audit:pay-001-a10-external-executor-evidence-ingestion \
+            audit:pay-001-a11-executor-protocol-conformance \
+            audit:pay-001-a12-executor-trust-root-signature \
+            audit:pay-001-a13-executor-lifecycle-governance \
+            audit:pay-001-a14-governance-evidence-chain \
+            audit:pay-001-a15-identity-issuer-lifecycle \
+            audit:pay-001-a16-issuer-status-distribution-resilience \
+            audit:pay-001-a17-transparency-recovery-incident-handoff \
+            audit:pay-001-a18-witness-proof-rehearsal-adoption-gate \
+            test:pay-001-a18-witness-proof-rehearsal-adoption-gate
+          do
+            npm run "$gate"
+          done
+          git diff --check
+      - name: Commit allowlisted clean integration tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .pay-a18-matrix-integration.request
+          rm .github/workflows/pay-001-a18-matrix-integration-temp.yml
+          rm .github/workflows/pay-001-a18-pr-integration-bridge-temp.yml
+          rm .github/workflows/pay-001-a18-pr-integration-finalizer-temp.yml
+          git add -A -- .
+          git add -f -- reports/generated/domain-completion-matrix-report.json
+          git diff --cached --name-only | sort > /tmp/actual.txt
+          cat > /tmp/allowed.txt <<'EOF'
+          .github/workflows/pay-001-a18-matrix-integration-temp.yml
+          .github/workflows/pay-001-a18-pr-integration-bridge-temp.yml
+          .github/workflows/pay-001-a18-pr-integration-finalizer-temp.yml
+          .pay-a18-matrix-integration.request
+          config/domain-completion-matrix.json
+          docs/DOMAIN-COMPLETION-MATRIX.md
+          package.json
+          reports/generated/domain-completion-matrix-report.json
+          scripts/audit-pay-001-a06-provider-selection-legal-handoff.js
+          scripts/audit-pay-001-a07-reconciliation-operations-readiness.js
+          scripts/audit-pay-001-a08-immutable-migrations-read-only-canary.js
+          scripts/audit-pay-001-a09-deployment-inspection-handoff.js
+          scripts/audit-pay-001-a10-external-executor-evidence-ingestion.js
+          scripts/audit-pay-001-a11-executor-protocol-conformance.js
+          scripts/audit-pay-001-a12-executor-trust-root-signature.js
+          scripts/audit-pay-001-a13-executor-lifecycle-governance.js
+          scripts/audit-pay-001-a14-governance-evidence-chain.js
+          scripts/audit-pay-001-a15-identity-issuer-lifecycle.js
+          scripts/audit-pay-001-a16-issuer-status-distribution-resilience.js
+          scripts/audit-pay-001-a17-transparency-recovery-incident-handoff.js
+          scripts/test-pay-001-a18-witness-proof-rehearsal-adoption-gate.js
+          EOF
+          sed -i 's/^          //' /tmp/allowed.txt
+          while IFS= read -r path; do
+            grep -Fxq "$path" /tmp/allowed.txt || { echo "Unexpected staged path: $path"; exit 1; }
+          done < /tmp/actual.txt
+          for required in \
+            package.json \
+            config/domain-completion-matrix.json \
+            docs/DOMAIN-COMPLETION-MATRIX.md \
+            reports/generated/domain-completion-matrix-report.json \
+            scripts/test-pay-001-a18-witness-proof-rehearsal-adoption-gate.js \
+            .pay-a18-matrix-integration.request \
+            .github/workflows/pay-001-a18-matrix-integration-temp.yml \
+            .github/workflows/pay-001-a18-pr-integration-bridge-temp.yml \
+            .github/workflows/pay-001-a18-pr-integration-finalizer-temp.yml
+          do
+            grep -Fxq "$required" /tmp/actual.txt || { echo "Required staged path missing: $required"; exit 1; }
+          done
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Integrate PAY-A18 into canonical completion matrix'
+          git push origin HEAD:pay/pay-a18-witness-proof-rehearsal-build
