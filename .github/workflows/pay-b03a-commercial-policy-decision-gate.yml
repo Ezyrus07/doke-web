@@ -1,0 +1,47 @@
+name: Doke PAY-B03A Commercial Policy Decision Gate
+
+on:
+  push:
+    paths:
+      - 'backend/modules/payments/payment-commercial-policy-decision.js'
+      - 'config/pay-b03a-commercial-policy-decision-gate.json'
+      - 'tests/fixtures/pay-b03a-commercial-policy-decision-cases.json'
+      - 'docs/PAY-B03A-COMMERCIAL-POLICY-DECISION-GATE.md'
+      - 'docs/validation/PAY-B03A-COMMERCIAL-POLICY-DECISION-GATE.json'
+      - 'scripts/audit-pay-b03a-commercial-policy-decision-gate.js'
+      - 'scripts/test-pay-b03a-commercial-policy-decision-gate.js'
+      - '.github/workflows/pay-b03a-commercial-policy-decision-gate.yml'
+  pull_request:
+    paths:
+      - 'backend/modules/payments/payment-commercial-policy-decision.js'
+      - 'config/pay-b03a-commercial-policy-decision-gate.json'
+      - 'tests/fixtures/pay-b03a-commercial-policy-decision-cases.json'
+      - 'docs/PAY-B03A-COMMERCIAL-POLICY-DECISION-GATE.md'
+      - 'docs/validation/PAY-B03A-COMMERCIAL-POLICY-DECISION-GATE.json'
+      - 'scripts/audit-pay-b03a-commercial-policy-decision-gate.js'
+      - 'scripts/test-pay-b03a-commercial-policy-decision-gate.js'
+      - '.github/workflows/pay-b03a-commercial-policy-decision-gate.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax
+        run: |
+          node --check backend/modules/payments/payment-commercial-policy-decision.js
+          node --check scripts/audit-pay-b03a-commercial-policy-decision-gate.js
+          node --check scripts/test-pay-b03a-commercial-policy-decision-gate.js
+      - name: Audit
+        run: node scripts/audit-pay-b03a-commercial-policy-decision-gate.js
+      - name: Conformance
+        run: node scripts/test-pay-b03a-commercial-policy-decision-gate.js
+      - name: Diff hygiene
+        run: git diff --check
