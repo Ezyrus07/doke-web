@@ -101,6 +101,12 @@ jobs:
           .github/workflows/pay-001-a15-identity-issuer-lifecycle.yml
           .github/workflows/pay-001-a15-publisher-temp.yml
           .pay-a15-bootstrap/chunk-01.b64
+          .pay-a15-bootstrap/chunk-02.b64
+          .pay-a15-bootstrap/chunk-03.b64
+          .pay-a15-bootstrap/chunk-04.b64
+          .pay-a15-bootstrap/chunk-05.b64
+          .pay-a15-bootstrap/chunk-06.b64
+          .pay-a15-bootstrap/chunk-07.b64
           backend/modules/payments/payment-reconciliation-identity-issuer-lifecycle.js
           config/domain-completion-matrix.json
           config/pay-001-a15-identity-issuer-lifecycle.json
@@ -126,7 +132,8 @@ jobs:
           git status --porcelain=v1 | sed -E 's/^.. //' | sort -u > /tmp/pay-a15-changed.txt
           unexpected="$(comm -23 /tmp/pay-a15-changed.txt <(sort -u /tmp/pay-a15-allowlist.txt))"
           test -z "$unexpected" || { echo "Unexpected PAY-A15 changes:"; echo "$unexpected"; exit 1; }
-          for forbidden in .pay-a15-bootstrap/chunk-01.b64 scripts/apply-pay-001-a15-repository-metadata.js .github/workflows/pay-001-a15-publisher-temp.yml; do
+          test ! -d .pay-a15-bootstrap
+          for forbidden in scripts/apply-pay-001-a15-repository-metadata.js .github/workflows/pay-001-a15-publisher-temp.yml; do
             test ! -e "$forbidden"
           done
           grep -F 'permissions:' .github/workflows/pay-001-a15-identity-issuer-lifecycle.yml
