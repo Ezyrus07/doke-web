@@ -24,13 +24,23 @@
 
   const setState = (state, detail = {}) => {
     const root = document.querySelector('[data-state-boundary="novidades"]');
-    if (root) {
-      root.dataset.viewState = state;
-      root.setAttribute('aria-busy', state === 'loading' || state === 'refreshing' ? 'true' : 'false');
+    const boundary = root || document.body;
+    const stateContracts = window.Doke?.stateContracts;
+    const contentKey = detail.contentKey || `view.${String(state).replace(/-/g, '_')}`;
+    const options = {
+      contentKey,
+      variables: detail.variables || {},
+      announce: detail.announce ?? state !== 'ready'
+    };
+
+    const applied = stateContracts?.setBoundaryState?.(boundary, state, options) === true;
+    if (!applied) {
+      boundary.dataset.viewState = state;
+      boundary.setAttribute('aria-busy', state === 'loading' || state === 'refreshing' ? 'true' : 'false');
     }
 
     document.body.dataset.newsExperienceState = state;
-    window.Doke?.experience?.states?.set?.(root || document.body, state, detail);
+    window.Doke?.experience?.states?.set?.(boundary, state, detail);
   };
 
   const readPreference = () => {
@@ -73,11 +83,11 @@
   const api = {
     begin() {
       const preference = readPreference();
-      setState('ready', { source: 'static-editorial-content', preference });
+      setState('ready', { source: 'static-editorial-content', preference, announce: false });
       return preference;
     },
     ready(detail = {}) {
-      setState('ready', detail);
+      setState('ready', { ...detail, announce: false });
     },
     refreshing(detail = {}) {
       setState('refreshing', detail);
@@ -85,7 +95,7 @@
     savePreference(next) {
       try {
         const value = savePreference(next);
-        setState('ready', { preference: value });
+        setState('ready', { preference: value, announce: false });
         return value;
       } catch (error) {
         reportError(error);
