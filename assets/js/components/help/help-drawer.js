@@ -1,6 +1,11 @@
 (() => {
   const DRAWER_ID = 'doke-help-drawer';
+  const OVERLAY_VERSION = '20260804-ux-nav-001-v1';
+  const OVERLAY_SRC = 'assets/js/core/overlay-experience.js';
   let lastTrigger = null;
+  let overlayTask = null;
+  let overlayHandle = null;
+  let fallbackKeydownBound = false;
 
   const icon = {
     close: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6 6 18"></path></svg>',
@@ -31,6 +36,7 @@
     const drawer = document.createElement('section');
     drawer.id = DRAWER_ID;
     drawer.className = 'doke-help-drawer';
+    drawer.hidden = true;
     drawer.setAttribute('aria-hidden', 'true');
     drawer.innerHTML = `
       <button class="doke-help-drawer__backdrop" type="button" data-help-drawer-close aria-label="Fechar ajuda"></button>
@@ -40,7 +46,7 @@
           <button class="doke-help-drawer__close doke-close-button doke-icon-btn doke-icon-btn--flat" type="button" data-help-drawer-close aria-label="Fechar ajuda">${icon.close}</button>
         </header>
         <label class="doke-help-drawer__search doke-search-field">
-          <input class="doke-search-field__input doke-input" type="search" placeholder="Buscar ajuda" autocomplete="off" spellcheck="false">
+          <input class="doke-search-field__input doke-input" type="search" placeholder="Buscar ajuda" autocomplete="off" spellcheck="false" data-overlay-initial-focus>
           ${icon.search}
         </label>
         <p class="doke-help-drawer__text">Encontre respostas rápidas para as dúvidas mais comuns ou fale com nosso time.</p>
@@ -64,28 +70,152 @@
     return drawer;
   };
 
+  const getOverlayExperience = () => window.Doke?.overlayExperience || null;
+
+  const resolveOverlaySrc = () => {
+    const owner = document.currentScript
+      || Array.from(document.scripts || []).find((script) => /\/assets\/js\/components\/help\/help-drawer\.js(?:\?|$)/i.test(script.src));
+    try {
+      return new URL('../../core/overlay-experience.js', owner?.src || document.baseURI).href;
+    } catch (error) {
+      return OVERLAY_SRC;
+    }
+  };
+
+  const ensureOverlayExperience = () => {
+    const available = getOverlayExperience();
+    if (available?.version === OVERLAY_VERSION) return Promise.resolve(available);
+
+    const bootstrapAuthority = window.Doke?.pageBootstrap?.ensureOverlayExperience;
+    if (typeof bootstrapAuthority === 'function') {
+      return Promise.resolve(bootstrapAuthority()).then(() => {
+        const authority = getOverlayExperience();
+        if (!authority) throw new Error('overlay-experience-unavailable');
+        return authority;
+      });
+    }
+
+    if (overlayTask) return overlayTask;
+    overlayTask = new Promise((resolve, reject) => {
+      const finish = () => {
+        const authority = getOverlayExperience();
+        if (authority?.version === OVERLAY_VERSION) resolve(authority);
+        else reject(new Error('overlay-experience-unavailable'));
+      };
+
+      let script = document.querySelector('script[data-doke-overlay-experience]');
+      const isNew = !script;
+      if (!script) {
+        script = document.createElement('script');
+        script.src = resolveOverlaySrc();
+        script.async = false;
+        script.dataset.dokeOverlayExperience = 'true';
+      }
+      script.addEventListener('load', finish, { once: true });
+      script.addEventListener('error', () => reject(new Error('overlay-experience-load-failed')), { once: true });
+      if (isNew) (document.head || document.documentElement).appendChild(script);
+      if (getOverlayExperience()) finish();
+    }).catch((error) => {
+      overlayTask = null;
+      throw error;
+    });
+
+    return overlayTask;
+  };
+
+  const fallbackKeydown = (event) => {
+    if (event.key !== 'Escape') return;
+    const drawer = document.getElementById(DRAWER_ID);
+    if (!drawer?.classList.contains('is-open')) return;
+    event.preventDefault();
+    closeDrawer('escape-fallback');
+  };
+
+  const bindFallbackKeydown = () => {
+    if (fallbackKeydownBound) return;
+    fallbackKeydownBound = true;
+    document.addEventListener('keydown', fallbackKeydown, true);
+  };
+
+  const unbindFallbackKeydown = () => {
+    if (!fallbackKeydownBound) return;
+    fallbackKeydownBound = false;
+    document.removeEventListener('keydown', fallbackKeydown, true);
+  };
+
+  const activateOverlay = (drawer, trigger) => {
+    const panel = drawer.querySelector('.doke-help-drawer__panel');
+    const initialFocus = drawer.querySelector('[data-overlay-initial-focus]')
+      || drawer.querySelector('[data-help-drawer-close]');
+
+    ensureOverlayExperience()
+      .then((overlay) => {
+        if (!drawer.classList.contains('is-open')) return;
+        unbindFallbackKeydown();
+        if (overlayHandle) overlayHandle.close({ reason: 'replaced', restoreFocus: false });
+        overlayHandle = overlay.open({
+          id: 'help-drawer',
+          root: drawer,
+          surface: panel,
+          trigger,
+          kind: overlay.kinds.DRAWER,
+          modal: true,
+          closeOnEscape: true,
+          trapFocus: true,
+          lockScroll: true,
+          inertBackground: true,
+          returnFocus: true,
+          initialFocus,
+          onRequestClose(detail) {
+            closeDrawer(detail.reason);
+          }
+        });
+      })
+      .catch((error) => {
+        console.warn('[DokeHelpDrawer] Overlay authority unavailable; using local fallback.', error);
+        bindFallbackKeydown();
+        requestAnimationFrame(() => initialFocus?.focus?.({ preventScroll: true }));
+      });
+  };
+
   const openDrawer = (trigger) => {
     const drawer = createDrawer();
     lastTrigger = trigger instanceof HTMLElement ? trigger : null;
     drawer.hidden = false;
+    drawer.removeAttribute('hidden');
     requestAnimationFrame(() => {
       drawer.classList.add('is-open');
       drawer.setAttribute('aria-hidden', 'false');
       document.body.classList.add('doke-help-drawer-open');
+      activateOverlay(drawer, lastTrigger);
     });
   };
 
-  const closeDrawer = () => {
+  function closeDrawer(reason = 'programmatic') {
     const drawer = document.getElementById(DRAWER_ID);
-    if (!drawer) return;
+    if (!drawer || !drawer.classList.contains('is-open')) return false;
+
     drawer.classList.remove('is-open');
     drawer.setAttribute('aria-hidden', 'true');
     document.body.classList.remove('doke-help-drawer-open');
+    unbindFallbackKeydown();
+
+    const handle = overlayHandle;
+    overlayHandle = null;
+    if (handle) {
+      handle.close({ reason });
+    } else {
+      lastTrigger?.focus?.({ preventScroll: true });
+    }
+
     setTimeout(() => {
-      if (!drawer.classList.contains('is-open')) drawer.hidden = true;
+      if (!drawer.classList.contains('is-open')) {
+        drawer.hidden = true;
+        drawer.setAttribute('hidden', '');
+      }
     }, 220);
-    lastTrigger?.focus?.({ preventScroll: true });
-  };
+    return true;
+  }
 
   document.addEventListener('click', (event) => {
     const openButton = event.target.closest('[data-help-drawer-open]');
@@ -97,19 +227,18 @@
 
     if (event.target.closest('[data-help-drawer-close]')) {
       event.preventDefault();
-      closeDrawer();
+      closeDrawer('backdrop-or-close');
       return;
     }
 
     const pendingCenter = event.target.closest('[data-help-center-pending]');
-    if (pendingCenter) {
-      event.preventDefault();
-    }
+    if (pendingCenter) event.preventDefault();
   });
 
-  document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') closeDrawer();
-  });
-
-  window.DokeHelpDrawer = { open: openDrawer, close: closeDrawer };
+  window.DokeHelpDrawer = {
+    open: openDrawer,
+    close: closeDrawer,
+    ensureOverlayExperience,
+    isOpen: () => Boolean(document.getElementById(DRAWER_ID)?.classList.contains('is-open'))
+  };
 })();

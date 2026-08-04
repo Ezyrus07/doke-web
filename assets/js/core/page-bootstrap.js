@@ -5,6 +5,7 @@
   var Doke = root.Doke || (root.Doke = {});
   var auth = root.DokeAuth || (root.DokeAuth = {});
   var bootstrapScriptUrl = document.currentScript && document.currentScript.src || '';
+  var OVERLAY_EXPERIENCE_VERSION = '20260804-ux-nav-001-v1';
 
   function pageName() {
     return (root.location.pathname.split('/').pop() || 'index.html').replace('.html', '') || 'index';
@@ -156,6 +157,13 @@
       : null;
   }
 
+  async function ensureOverlayExperience() {
+    await loadCoreScript('overlay-experience.js', function () {
+      return Boolean(Doke.overlayExperience && Doke.overlayExperience.version === OVERLAY_EXPERIENCE_VERSION);
+    });
+    return Doke.overlayExperience || null;
+  }
+
   function failClosedAuthGuard(error) {
     var html = document.documentElement;
     var protectedSurface = html.hasAttribute('data-auth-guard');
@@ -186,6 +194,12 @@
       failClosedAuthGuard(error);
     }
 
+    try {
+      await ensureOverlayExperience();
+    } catch (error) {
+      console.warn && console.warn('[Doke] Overlay/focus experience indisponível; componentes manterão fallback local.', error);
+    }
+
     applyPermissionHooks();
     if (Doke.state) Doke.state.set('bootstrapped', true);
     document.documentElement.classList.add('doke-app-ready');
@@ -193,7 +207,8 @@
       detail: {
         authGuardReady: Boolean(auth.guard),
         sessionAuthorityReady: Boolean(auth.sessionAuthority),
-        passwordAuthorityReady: Boolean(auth.passwordAuthority)
+        passwordAuthorityReady: Boolean(auth.passwordAuthority),
+        overlayExperienceReady: Boolean(Doke.overlayExperience)
       }
     }));
   }
@@ -202,7 +217,8 @@
     bootstrap: bootstrap,
     ensureAuthRouteGuard: ensureAuthRouteGuard,
     ensureAuthSessionAuthority: ensureAuthSessionAuthority,
-    ensureSettingsPasswordAuthority: ensureSettingsPasswordAuthority
+    ensureSettingsPasswordAuthority: ensureSettingsPasswordAuthority,
+    ensureOverlayExperience: ensureOverlayExperience
   });
 
   if (document.readyState === 'loading') {
