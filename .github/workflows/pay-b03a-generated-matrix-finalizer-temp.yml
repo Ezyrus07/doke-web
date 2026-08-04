@@ -1,0 +1,53 @@
+name: Doke PAY-B03A Generated Matrix Finalizer Temp
+
+on:
+  push:
+    branches:
+      - pay/pay-b03a-commercial-policy-decision-build
+    paths:
+      - '.github/workflows/pay-b03a-generated-matrix-finalizer-temp.yml'
+  pull_request:
+    paths:
+      - '.github/workflows/pay-b03a-generated-matrix-finalizer-temp.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    if: github.repository == 'Ezyrus07/doke-web' && github.head_ref == 'pay/pay-b03a-commercial-policy-decision-build'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: pay/pay-b03a-commercial-policy-decision-build
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Regenerate canonical matrix derivatives
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/audit-domain-completion-matrix.js --write
+          node scripts/audit-domain-completion-matrix.js
+          node scripts/audit-pay-b03a-commercial-policy-decision-gate.js
+          node scripts/test-pay-b03a-commercial-policy-decision-gate.js
+          git diff --check
+      - name: Commit allowlisted generated outputs and self-remove
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add docs/DOMAIN-COMPLETION-MATRIX.md
+          git add -f reports/generated/domain-completion-matrix-report.json
+          git rm .github/workflows/pay-b03a-generated-matrix-finalizer-temp.yml
+          changed="$(git diff --cached --name-only | sort)"
+          expected="$(printf '%s\n' '.github/workflows/pay-b03a-generated-matrix-finalizer-temp.yml' 'docs/DOMAIN-COMPLETION-MATRIX.md' 'reports/generated/domain-completion-matrix-report.json' | sort)"
+          test "$changed" = "$expected"
+          git commit -m 'Refresh PAY-B03A generated matrix evidence'
+          git push origin HEAD:pay/pay-b03a-commercial-policy-decision-build
