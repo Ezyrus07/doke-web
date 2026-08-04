@@ -1,0 +1,51 @@
+name: Doke UX-CORE-002 Mutation Manager
+
+on:
+  pull_request:
+    paths:
+      - 'assets/js/core/mutation-manager.js'
+      - 'assets/js/pages/news-experience.js'
+      - 'scripts/test-ux-core-002-mutation-manager.js'
+      - 'docs/ux/UX-CORE-002.md'
+      - '.github/workflows/ux-core-002-mutation-manager.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ux-core-002:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Validate JavaScript syntax
+        run: |
+          node --check assets/js/core/mutation-manager.js
+          node --check assets/js/pages/news-experience.js
+          node --check scripts/test-ux-core-002-mutation-manager.js
+
+      - name: Run UX-CORE-002 contract tests
+        run: node scripts/test-ux-core-002-mutation-manager.js
+
+      - name: Preserve UX-CORE-001 dependency
+        run: node scripts/test-ux-core-001-state-content-registry.js
+
+      - name: Validate patch whitespace
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            git diff --check "${{ github.event.pull_request.base.sha }}...${{ github.sha }}"
+          else
+            git diff --check HEAD^
+          fi
