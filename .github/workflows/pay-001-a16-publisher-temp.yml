@@ -50,7 +50,6 @@ jobs:
           node scripts/apply-pay-001-a16-repository-metadata.js
           rm -rf .pay-a16-bootstrap
           rm -f scripts/apply-pay-001-a16-repository-metadata.js
-          rm -f .github/workflows/pay-001-a16-publisher-temp.yml
           npm run write:domain-completion-matrix
       - name: Validate PAY-A16 and cumulative boundaries
         run: |
@@ -108,8 +107,6 @@ jobs:
           git add -f docs/validation/PAY-001-A16-ISSUER-STATUS-DISTRIBUTION-RESILIENCE.json
           git diff --cached --name-only | sort > /tmp/pay-a16-actual.txt
           cat > /tmp/pay-a16-allowed.txt <<'LIST'
-          .github/workflows/pay-001-a16-issuer-status-distribution-resilience.yml
-          .github/workflows/pay-001-a16-publisher-temp.yml
           .pay-a16-bootstrap/chunk-00.b64
           .pay-a16-bootstrap/chunk-01.b64
           .pay-a16-bootstrap/chunk-02.b64
@@ -144,7 +141,8 @@ jobs:
           diff -u /tmp/pay-a16-allowed.txt /tmp/pay-a16-actual.txt
           test ! -d .pay-a16-bootstrap
           test ! -e scripts/apply-pay-001-a16-repository-metadata.js
-          test ! -e .github/workflows/pay-001-a16-publisher-temp.yml
+          test -e .github/workflows/pay-001-a16-publisher-temp.yml
+          test -e .github/workflows/pay-001-a16-issuer-status-distribution-resilience.yml
       - name: Publish PAY-A16
         run: |
           git config user.name "doke-pay-a16-publisher"
