@@ -48,10 +48,10 @@ jobs:
       - name: Apply PAY-A16 repository metadata
         run: |
           node scripts/apply-pay-001-a16-repository-metadata.js
-          npm run write:domain-completion-matrix
           rm -rf .pay-a16-bootstrap
           rm -f scripts/apply-pay-001-a16-repository-metadata.js
           rm -f .github/workflows/pay-001-a16-publisher-temp.yml
+          npm run write:domain-completion-matrix
       - name: Validate PAY-A16 and cumulative boundaries
         run: |
           node --check backend/modules/payments/payment-reconciliation-identity-status-resilience.js
