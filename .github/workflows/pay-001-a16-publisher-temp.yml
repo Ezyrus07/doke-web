@@ -1,0 +1,144 @@
+name: Doke PAY-A16 Publisher Temporary
+
+on:
+  push:
+    branches:
+      - pay/pay-a16-issuer-status-resilience-build
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pay-a16-publisher
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: pay/pay-a16-issuer-status-resilience-build
+          fetch-depth: 0
+      - name: Verify exact event head
+        run: |
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$GITHUB_REF_NAME" = "pay/pay-a16-issuer-status-resilience-build"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Reassemble and verify PAY-A16 payload
+        run: |
+          cat .pay-a16-bootstrap/chunk-*.b64 | LC_ALL=C tr -cd 'A-Za-z0-9+/=' > /tmp/pay-a16.b64
+          actual_b64="$(sha256sum /tmp/pay-a16.b64 | awk '{print $1}')"
+          echo "PAY-A16 normalized base64 SHA-256: $actual_b64"
+          test "$actual_b64" = "6b95cefda41d0d29029b3614749c766372aed206e7f221066c22fb1b46f499f9"
+          base64 -d /tmp/pay-a16.b64 > /tmp/pay-a16.tar.gz
+          actual_gzip="$(sha256sum /tmp/pay-a16.tar.gz | awk '{print $1}')"
+          echo "PAY-A16 gzip SHA-256: $actual_gzip"
+          test "$actual_gzip" = "689a2294fc3253313e6e9f47af1d122874d57117942667fdf0611a7100f54762"
+          gzip -dc /tmp/pay-a16.tar.gz | tar -xf -
+      - name: Apply PAY-A16 repository metadata
+        run: |
+          node scripts/apply-pay-001-a16-repository-metadata.js
+          npm run write:domain-completion-matrix
+          rm -rf .pay-a16-bootstrap
+          rm -f scripts/apply-pay-001-a16-repository-metadata.js
+          rm -f .github/workflows/pay-001-a16-publisher-temp.yml
+      - name: Validate PAY-A16 and cumulative boundaries
+        run: |
+          node --check backend/modules/payments/payment-reconciliation-identity-status-resilience.js
+          node --check scripts/audit-pay-001-a16-issuer-status-distribution-resilience.js
+          node --check scripts/test-pay-001-a16-issuer-status-distribution-resilience.js
+          npm run audit:pay-001-a01-authority-baseline
+          npm run test:pay-001-a01-authority-baseline
+          npm run audit:pay-001-a02-authenticated-authority-boundary
+          npm run test:pay-001-a02-authenticated-authority-boundary
+          npm run audit:pay-001-a03-psp-neutral-intent-webhook
+          npm run test:pay-001-a03-psp-neutral-intent-webhook
+          npm run audit:pay-001-a04-reconciliation-queue
+          npm run test:pay-001-a04-reconciliation-queue
+          npm run audit:pay-001-a05-adapter-conformance-readiness
+          npm run test:pay-001-a05-adapter-conformance-readiness
+          npm run audit:pay-001-a06-provider-selection-legal-handoff
+          npm run test:pay-001-a06-provider-selection-legal-handoff
+          npm run audit:pay-001-a07-reconciliation-operations-readiness
+          npm run test:pay-001-a07-reconciliation-operations-readiness
+          npm run audit:pay-001-a08-immutable-migrations-read-only-canary
+          npm run test:pay-001-a08-immutable-migrations-read-only-canary
+          npm run audit:pay-001-a09-deployment-inspection-handoff
+          npm run test:pay-001-a09-deployment-inspection-handoff
+          npm run audit:pay-001-a10-external-executor-evidence-ingestion
+          npm run test:pay-001-a10-external-executor-evidence-ingestion
+          npm run audit:pay-001-a11-executor-protocol-conformance
+          npm run test:pay-001-a11-executor-protocol-conformance
+          npm run audit:pay-001-a12-executor-trust-root-signature
+          npm run test:pay-001-a12-executor-trust-root-signature
+          npm run audit:pay-001-a13-executor-lifecycle-governance
+          npm run test:pay-001-a13-executor-lifecycle-governance
+          npm run audit:pay-001-a14-governance-evidence-chain
+          npm run test:pay-001-a14-governance-evidence-chain
+          npm run audit:pay-001-a15-identity-issuer-lifecycle
+          npm run test:pay-001-a15-identity-issuer-lifecycle
+          npm run audit:pay-001-a16-issuer-status-distribution-resilience
+          npm run test:pay-001-a16-issuer-status-distribution-resilience
+          npm run audit:msg-001-a06-presence-typing-boundary
+          npm run test:msg-001-a06-presence-typing-runtime
+          npm run audit:msg-001-a07-command-reliability
+          npm run test:msg-001-a07-command-reliability-runtime
+          npm run audit:msg-001-a08-staging-activation-readiness
+          npm run test:msg-001-a08-staging-activation-readiness
+          npm run test:finance-supabase-repository-contract
+          npm run test:financial-rpc-authority-contract
+          npm run test:financial-operations-edge-runtime
+          npm run test:staging-finance-sandbox-authority-contract
+          npm run test:staging-finance-sandbox-edge-runtime
+          npm run audit:domain-completion-matrix
+          git diff --check
+      - name: Verify bounded publisher changes
+        run: |
+          git add -A
+          git add -f docs/validation/PAY-001-A16-ISSUER-STATUS-DISTRIBUTION-RESILIENCE.json
+          git diff --cached --name-only | sort > /tmp/pay-a16-actual.txt
+          cat > /tmp/pay-a16-allowed.txt <<'LIST'
+          .github/workflows/pay-001-a16-issuer-status-distribution-resilience.yml
+          .github/workflows/pay-001-a16-publisher-temp.yml
+          .pay-a16-bootstrap/chunk-00.b64
+          .pay-a16-bootstrap/chunk-01.b64
+          .pay-a16-bootstrap/chunk-02.b64
+          backend/modules/payments/payment-reconciliation-identity-status-resilience.js
+          config/domain-completion-matrix.json
+          config/pay-001-a16-issuer-status-distribution-resilience.json
+          docs/DOMAIN-COMPLETION-MATRIX.md
+          docs/PAY-001-A16-ISSUER-STATUS-DISTRIBUTION-RESILIENCE.md
+          docs/validation/PAY-001-A16-ISSUER-STATUS-DISTRIBUTION-RESILIENCE.json
+          package.json
+          reports/generated/domain-completion-matrix-report.json
+          scripts/audit-pay-001-a06-provider-selection-legal-handoff.js
+          scripts/audit-pay-001-a07-reconciliation-operations-readiness.js
+          scripts/audit-pay-001-a08-immutable-migrations-read-only-canary.js
+          scripts/audit-pay-001-a09-deployment-inspection-handoff.js
+          scripts/audit-pay-001-a10-external-executor-evidence-ingestion.js
+          scripts/audit-pay-001-a11-executor-protocol-conformance.js
+          scripts/audit-pay-001-a12-executor-trust-root-signature.js
+          scripts/audit-pay-001-a13-executor-lifecycle-governance.js
+          scripts/audit-pay-001-a14-governance-evidence-chain.js
+          scripts/audit-pay-001-a15-identity-issuer-lifecycle.js
+          scripts/audit-pay-001-a16-issuer-status-distribution-resilience.js
+          scripts/test-pay-001-a16-issuer-status-distribution-resilience.js
+          tests/fixtures/pay-a16-issuer-status-distribution-resilience-cases.json
+          LIST
+          sort -o /tmp/pay-a16-allowed.txt /tmp/pay-a16-allowed.txt
+          diff -u /tmp/pay-a16-allowed.txt /tmp/pay-a16-actual.txt
+          test ! -d .pay-a16-bootstrap
+          test ! -e scripts/apply-pay-001-a16-repository-metadata.js
+          test ! -e .github/workflows/pay-001-a16-publisher-temp.yml
+      - name: Publish PAY-A16
+        run: |
+          git config user.name "doke-pay-a16-publisher"
+          git config user.email "actions@users.noreply.github.com"
+          git commit -m "Complete PAY-A16 issuer status distribution resilience"
+          git push origin HEAD:pay/pay-a16-issuer-status-resilience-build
