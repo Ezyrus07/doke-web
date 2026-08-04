@@ -1,0 +1,68 @@
+name: REP-A04 Matrix Refresh Temporary
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/rep-a04-matrix-refresh-temporary.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'rep/rep-001-baseline-audit'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Install
+        run: npm ci --ignore-scripts
+
+      - name: Regenerate canonical matrix
+        run: npm run write:domain-completion-matrix
+
+      - name: Audit canonical matrix
+        run: npm run audit:domain-completion-matrix
+
+      - name: Enforce strict changed-file allowlist
+        shell: bash
+        run: |
+          set -euo pipefail
+          allowed_one='docs/DOMAIN-COMPLETION-MATRIX.md'
+          allowed_two='reports/generated/domain-completion-matrix-report.json'
+          while IFS= read -r line; do
+            [ -z "$line" ] && continue
+            path="${line:3}"
+            if [ "$path" != "$allowed_one" ] && [ "$path" != "$allowed_two" ]; then
+              echo "Unexpected generated change: $path" >&2
+              exit 1
+            fi
+          done < <(git status --porcelain --untracked-files=all)
+
+      - name: Commit allowlisted derivatives
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'doke-contract-bot'
+          git config user.email 'doke-contract-bot@users.noreply.github.com'
+          git add docs/DOMAIN-COMPLETION-MATRIX.md
+          git add -f reports/generated/domain-completion-matrix-report.json
+          git diff --cached --check
+          if git diff --cached --quiet; then
+            echo 'Canonical matrix already current.'
+            exit 0
+          fi
+          git commit -m 'docs(rep): refresh canonical matrix for REP-A04'
+          git push origin "HEAD:${{ github.event.pull_request.head.ref }}"
