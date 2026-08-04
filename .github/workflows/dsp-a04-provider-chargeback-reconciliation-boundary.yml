@@ -1,0 +1,65 @@
+name: DSP-A04 Provider Chargeback Reconciliation Boundary
+
+on:
+  pull_request:
+    paths:
+      - 'backend/modules/disputes/provider-chargeback-reconciliation-boundary.js'
+      - 'config/dsp-a04-provider-chargeback-reconciliation-boundary.json'
+      - 'tests/fixtures/dsp-a04-provider-chargeback-reconciliation-cases.json'
+      - 'docs/DSP-A04-PROVIDER-CHARGEBACK-RECONCILIATION-BOUNDARY.md'
+      - 'scripts/audit-dsp-a04-provider-chargeback-reconciliation-boundary.js'
+      - 'scripts/test-dsp-a04-provider-chargeback-reconciliation-boundary.js'
+      - '.github/workflows/dsp-a04-provider-chargeback-reconciliation-boundary.yml'
+      - 'backend/modules/disputes/dispute-evidence-deadline-appeal-contract.js'
+      - 'backend/modules/disputes/dispute-lifecycle-taxonomy-contract.js'
+      - 'config/dsp-a03-evidence-deadline-appeal-contract.json'
+      - 'config/dsp-a02-canonical-lifecycle-effect-taxonomy.json'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dsp-a04-provider-chargeback-reconciliation-boundary:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Syntax
+        run: |
+          node --check backend/modules/disputes/provider-chargeback-reconciliation-boundary.js
+          node --check scripts/audit-dsp-a04-provider-chargeback-reconciliation-boundary.js
+          node --check scripts/test-dsp-a04-provider-chargeback-reconciliation-boundary.js
+
+      - name: Audit provider chargeback reconciliation boundary
+        run: node scripts/audit-dsp-a04-provider-chargeback-reconciliation-boundary.js
+
+      - name: Conformance
+        run: node scripts/test-dsp-a04-provider-chargeback-reconciliation-boundary.js
+
+      - name: DSP-A03 regression
+        run: |
+          node scripts/audit-dsp-a03-evidence-deadline-appeal-contract.js
+          node scripts/test-dsp-a03-evidence-deadline-appeal-contract.js
+
+      - name: DSP-A02 regression
+        run: |
+          node scripts/audit-dsp-a02-canonical-lifecycle-effect-taxonomy.js
+          node scripts/test-dsp-a02-canonical-lifecycle-effect-taxonomy.js
+
+      - name: DSP-A01 regression
+        run: |
+          node scripts/audit-dsp-a01-authority-baseline.js
+          node scripts/test-dsp-a01-authority-baseline.js
+
+      - name: Diff hygiene
+        run: git diff --check
