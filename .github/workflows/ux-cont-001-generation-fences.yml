@@ -1,0 +1,54 @@
+name: Doke UX-CONT-001 Generation Fences
+
+on:
+  pull_request:
+    paths:
+      - 'assets/js/core/continuity-experience.js'
+      - 'assets/js/pages/news-experience.js'
+      - 'scripts/test-ux-cont-001-generation-fences.js'
+      - 'docs/ux/UX-CONT-001.md'
+      - '.github/workflows/ux-cont-001-generation-fences.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ux-cont-001:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Validate JavaScript syntax
+        run: |
+          node --check assets/js/core/continuity-experience.js
+          node --check assets/js/pages/news-experience.js
+          node --check scripts/test-ux-cont-001-generation-fences.js
+
+      - name: Run UX-CONT-001 contract tests
+        run: node scripts/test-ux-cont-001-generation-fences.js
+
+      - name: Preserve UX-CORE-002 dependency
+        run: node scripts/test-ux-core-002-mutation-manager.js
+
+      - name: Preserve UX-CORE-001 dependency
+        run: node scripts/test-ux-core-001-state-content-registry.js
+
+      - name: Validate patch whitespace
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            git diff --check "${{ github.event.pull_request.base.sha }}...${{ github.sha }}"
+          else
+            git diff --check HEAD^
+          fi
