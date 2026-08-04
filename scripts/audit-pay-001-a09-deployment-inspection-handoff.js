@@ -126,7 +126,7 @@ assert(pay.scanRoots.includes(paths.module), 'matrix scanRoots missing A09 modul
 assert(pay.tests.includes('audit:pay-001-a09-deployment-inspection-handoff'), 'matrix A09 audit missing');
 assert(pay.tests.includes('test:pay-001-a09-deployment-inspection-handoff'), 'matrix A09 test missing');
 assert(pay.evidence.some((item) => item.includes('PAY-A09')), 'matrix A09 evidence missing');
-assert(["PAY-A10","PAY-A11","PAY-A12","PAY-A13","PAY-A14"].some((sublot) => pay.nextActions[0].includes(sublot)), "PAY successor must remain monotonic after PAY-A10");
+assert(pay.nextActions[0].includes('PAY-A15'), 'PAY-A15 must be the first next action');
 
 assert(workflow.includes('permissions:\n  contents: read'), 'workflow must remain read-only');
 ['contents: write', 'secrets.', 'SUPABASE_ACCESS_TOKEN', 'SUPABASE_DB_PASSWORD', 'psql ', 'curl ', 'supabase db push', 'supabase migration up', 'git push', '--execute']

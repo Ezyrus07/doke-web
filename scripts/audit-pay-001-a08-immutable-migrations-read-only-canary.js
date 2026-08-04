@@ -92,7 +92,7 @@ assert(JSON.stringify(pay.blockers.map((item) => item.id)) === JSON.stringify(['
 assert(pay.tests.includes('audit:pay-001-a08-immutable-migrations-read-only-canary'), 'matrix A08 audit missing');
 assert(pay.tests.includes('test:pay-001-a08-immutable-migrations-read-only-canary'), 'matrix A08 test missing');
 assert(pay.evidence.some((item) => item.includes('PAY-A08')), 'matrix A08 evidence missing');
-assert(["PAY-A09","PAY-A10","PAY-A11","PAY-A12","PAY-A13","PAY-A14"].some((sublot) => pay.nextActions[0].includes(sublot)), "PAY successor must remain monotonic after PAY-A10");
+assert(pay.nextActions[0].includes('PAY-A15'), 'PAY-A15 must be the first next action');
 
 assert(workflow.includes('permissions:\n  contents: read'), 'workflow must be read-only');
 ['contents: write', 'secrets.', 'SUPABASE_ACCESS_TOKEN', 'SUPABASE_DB_PASSWORD', 'psql ', 'curl ', 'supabase db push', 'supabase migration up', 'git push', '--execute']
