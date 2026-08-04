@@ -1,0 +1,49 @@
+name: DSP-A02 Matrix Refresh Temporary
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/dsp-a02-matrix-refresh-temp.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh-derived-matrix:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout DSP branch
+        uses: actions/checkout@v4
+        with:
+          ref: dsp/dsp-001-baseline-audit
+          fetch-depth: 0
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+      - name: Regenerate derived matrix artifacts
+        run: npm run write:domain-completion-matrix
+      - name: Stage strict allowlist and remove temporary workflow
+        run: |
+          rm .github/workflows/dsp-a02-matrix-refresh-temp.yml
+          git add docs/DOMAIN-COMPLETION-MATRIX.md
+          git add -f reports/generated/domain-completion-matrix-report.json
+          git add -u .github/workflows/dsp-a02-matrix-refresh-temp.yml
+          unexpected="$(git status --porcelain | awk '{print $2}' | grep -Ev '^(docs/DOMAIN-COMPLETION-MATRIX.md|reports/generated/domain-completion-matrix-report.json|.github/workflows/dsp-a02-matrix-refresh-temp.yml)$' || true)"
+          if [ -n "$unexpected" ]; then
+            echo "Unexpected generated paths:"
+            echo "$unexpected"
+            exit 1
+          fi
+          git diff --cached --check
+      - name: Commit canonical generated artifacts
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Refresh matrix after DSP-A02 taxonomy"
+          git push origin HEAD:dsp/dsp-001-baseline-audit
