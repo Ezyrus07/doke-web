@@ -60,7 +60,7 @@ jobs:
           node scripts/test-dsp-a01-authority-baseline.js
           git diff --check
 
-      - name: Restore DSP-A04, validate, clean and commit
+      - name: Restore DSP-A04, validate, clean and publish object
         shell: bash
         run: |
           set -euo pipefail
@@ -73,4 +73,5 @@ jobs:
           git config user.email "actions@users.noreply.github.com"
           git add -A -- .dsp-a05-materialize .github/workflows/dsp-a05-materialize-temporary.yml .github/workflows/dsp-a04-provider-chargeback-reconciliation-boundary.yml .github/workflows/dsp-a05-operator-case-dual-control-readiness.yml backend/modules/disputes/dispute-operator-case-dual-control-readiness.js config/dsp-a05-operator-case-dual-control-readiness.json docs/DSP-A05-OPERATOR-CASE-DUAL-CONTROL-READINESS.md scripts/audit-dsp-a05-operator-case-dual-control-readiness.js scripts/test-dsp-a05-operator-case-dual-control-readiness.js tests/fixtures/dsp-a05-operator-case-dual-control-cases.json
           git commit -m "feat(disputes): add DSP-A05 operator dual-control readiness"
+          echo "DSP_A05_COMMIT_SHA=$(git rev-parse HEAD)"
           git push origin HEAD:dsp/dsp-001-baseline-audit
