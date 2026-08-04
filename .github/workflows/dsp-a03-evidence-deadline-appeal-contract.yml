@@ -1,0 +1,49 @@
+name: DSP-A03 Evidence Deadline Appeal Contract
+
+on:
+  pull_request:
+    paths:
+      - 'backend/modules/disputes/dispute-evidence-deadline-appeal-contract.js'
+      - 'config/dsp-a03-evidence-deadline-appeal-contract.json'
+      - 'tests/fixtures/dsp-a03-evidence-deadline-appeal-cases.json'
+      - 'docs/DSP-A03-EVIDENCE-DEADLINE-APPEAL-CONTRACT.md'
+      - 'scripts/audit-dsp-a03-evidence-deadline-appeal-contract.js'
+      - 'scripts/test-dsp-a03-evidence-deadline-appeal-contract.js'
+      - '.github/workflows/dsp-a03-evidence-deadline-appeal-contract.yml'
+      - 'backend/modules/disputes/dispute-lifecycle-taxonomy-contract.js'
+      - 'config/dsp-a02-canonical-lifecycle-effect-taxonomy.json'
+      - 'config/dsp-a01-authority-baseline.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dsp-a03-evidence-deadline-appeal-contract:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Syntax
+        run: |
+          node --check backend/modules/disputes/dispute-evidence-deadline-appeal-contract.js
+          node --check scripts/audit-dsp-a03-evidence-deadline-appeal-contract.js
+          node --check scripts/test-dsp-a03-evidence-deadline-appeal-contract.js
+      - name: Audit evidence deadline appeal contract
+        run: node scripts/audit-dsp-a03-evidence-deadline-appeal-contract.js
+      - name: Conformance
+        run: node scripts/test-dsp-a03-evidence-deadline-appeal-contract.js
+      - name: DSP-A02 regression
+        run: |
+          node scripts/audit-dsp-a02-canonical-lifecycle-effect-taxonomy.js
+          node scripts/test-dsp-a02-canonical-lifecycle-effect-taxonomy.js
+      - name: DSP-A01 regression
+        run: |
+          node scripts/audit-dsp-a01-authority-baseline.js
+          node scripts/test-dsp-a01-authority-baseline.js
+      - name: Diff hygiene
+        run: git diff --check
