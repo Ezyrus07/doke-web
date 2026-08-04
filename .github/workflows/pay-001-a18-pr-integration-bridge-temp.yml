@@ -29,7 +29,7 @@ jobs:
           node-version: '22'
           cache: 'npm'
       - run: npm ci --ignore-scripts
-      - name: Apply deterministic integration and fixture correction
+      - name: Confirm canonical fixture and apply deterministic integration
         shell: bash
         run: |
           set -euo pipefail
@@ -38,10 +38,12 @@ jobs:
           path = Path('scripts/test-pay-001-a18-witness-proof-rehearsal-adoption-gate.js')
           source = path.read_text()
           old = ', ...effects, providerContactAuthorized: false });'
-          new = ', ...effects });'
-          if source.count(old) != 1:
-              raise SystemExit('Expected exactly one PAY-A17 decision fixture boundary')
-          path.write_text(source.replace(old, new))
+          canonical = ', ...effects });'
+          if old in source:
+              source = source.replace(old, canonical)
+              path.write_text(source)
+          elif canonical not in source:
+              raise SystemExit('Canonical PAY-A17 decision fixture boundary missing')
           PY
           sed -n "/^          node <<'NODE'$/,/^          NODE$/p" \
             .github/workflows/pay-001-a18-matrix-integration-temp.yml \
