@@ -233,7 +233,7 @@ assert(
   'matrix A17 test missing'
 );
 assert(pay.evidence.some((item) => item.includes('PAY-A17')), 'matrix A17 evidence missing');
-assert(pay.nextActions[0].includes('PAY-A18'), 'PAY-A18 must be first next action');
+assert(pay.nextActions[0].includes('PAY-B03'), 'PAY-B03 must be first next action');
 
 const predecessorGuards = [
   'scripts/audit-pay-001-a06-provider-selection-legal-handoff.js',
@@ -250,7 +250,7 @@ const predecessorGuards = [
 ];
 predecessorGuards.forEach((file) => {
   const guardSource = read(file);
-  assert(guardSource.includes('PAY-A18'), 'successor guard not advanced in ' + file);
+  assert(guardSource.includes('PAY-B03'), 'successor guard not advanced in ' + file);
 });
 
 assert(workflow.includes('permissions:\n  contents: read'), 'workflow must remain read-only');

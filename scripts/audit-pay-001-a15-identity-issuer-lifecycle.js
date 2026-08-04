@@ -125,7 +125,7 @@ assert(pay.scanRoots.includes(paths.fixture), 'matrix scanRoots missing A15 fixt
 assert(pay.tests.includes('audit:pay-001-a15-identity-issuer-lifecycle'), 'matrix A15 audit missing');
 assert(pay.tests.includes('test:pay-001-a15-identity-issuer-lifecycle'), 'matrix A15 test missing');
 assert(pay.evidence.some((item) => item.includes('PAY-A15')), 'matrix A15 evidence missing');
-assert(pay.nextActions[0].includes('PAY-A18'), 'PAY-A18 must be first next action');
+assert(pay.nextActions[0].includes('PAY-B03'), 'PAY-B03 must be first next action');
 
 assert(workflow.includes('permissions:\n  contents: read'), 'workflow must remain read-only');
 [
