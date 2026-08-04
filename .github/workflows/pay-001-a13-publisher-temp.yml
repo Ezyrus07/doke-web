@@ -1,0 +1,134 @@
+name: Doke PAY-A13 Publisher Temporary
+
+on:
+  push:
+    branches:
+      - 'pay/pay-a13-lifecycle-governance-build'
+    paths:
+      - '.github/workflows/pay-001-a13-publisher-temp.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: pay/pay-a13-lifecycle-governance-build
+          fetch-depth: 0
+      - name: Verify exact event head
+        run: test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Reassemble and verify PAY-A13 payload
+        run: |
+          cat .pay-a13-bootstrap/chunk-*.b64 | LC_ALL=C tr -cd 'A-Za-z0-9+/=' > /tmp/pay-a13.b64
+          actual_b64="$(sha256sum /tmp/pay-a13.b64 | awk '{print $1}')"
+          echo "PAY-A13 normalized base64 SHA-256: $actual_b64"
+          test "$actual_b64" = "db3928f8204cdb0fadf382f8d3bdd034ee49fd4de4cd50d3e8c9e69ca74d8087"
+          base64 -d /tmp/pay-a13.b64 > /tmp/pay-a13.tar.gz
+          actual_gzip="$(sha256sum /tmp/pay-a13.tar.gz | awk '{print $1}')"
+          echo "PAY-A13 gzip SHA-256: $actual_gzip"
+          test "$actual_gzip" = "0a7244bb95500b89d940d7588029b64f36831ca41a075a6cd6c00834e204cd88"
+          gzip -dc /tmp/pay-a13.tar.gz | tar -xf -
+      - name: Apply PAY-A13 repository metadata
+        run: |
+          node scripts/apply-pay-001-a13-repository-metadata.js
+          rm -f .pay-a13-bootstrap/chunk-*.b64
+          rmdir .pay-a13-bootstrap 2>/dev/null || true
+          rm -f scripts/apply-pay-001-a13-repository-metadata.js
+          rm -f .github/workflows/pay-001-a13-publisher-temp.yml
+          npm run write:domain-completion-matrix
+      - name: Validate PAY-A13 and cumulative boundaries
+        run: |
+          node --check backend/modules/payments/payment-reconciliation-executor-governance.js
+          node --check scripts/audit-pay-001-a13-executor-lifecycle-governance.js
+          node --check scripts/test-pay-001-a13-executor-lifecycle-governance.js
+          npm run audit:pay-001-a01-authority-baseline
+          npm run test:pay-001-a01-authority-baseline
+          npm run audit:pay-001-a02-authenticated-authority-boundary
+          npm run test:pay-001-a02-authenticated-authority-boundary
+          npm run audit:pay-001-a03-psp-neutral-intent-webhook
+          npm run test:pay-001-a03-psp-neutral-intent-webhook
+          npm run audit:pay-001-a04-reconciliation-queue
+          npm run test:pay-001-a04-reconciliation-queue
+          npm run audit:pay-001-a05-adapter-conformance-readiness
+          npm run test:pay-001-a05-adapter-conformance-readiness
+          npm run audit:pay-001-a06-provider-selection-legal-handoff
+          npm run test:pay-001-a06-provider-selection-legal-handoff
+          npm run audit:pay-001-a07-reconciliation-operations-readiness
+          npm run test:pay-001-a07-reconciliation-operations-readiness
+          npm run audit:pay-001-a08-immutable-migrations-read-only-canary
+          npm run test:pay-001-a08-immutable-migrations-read-only-canary
+          npm run audit:pay-001-a09-deployment-inspection-handoff
+          npm run test:pay-001-a09-deployment-inspection-handoff
+          npm run audit:pay-001-a10-external-executor-evidence-ingestion
+          npm run test:pay-001-a10-external-executor-evidence-ingestion
+          npm run audit:pay-001-a11-executor-protocol-conformance
+          npm run test:pay-001-a11-executor-protocol-conformance
+          npm run audit:pay-001-a12-executor-trust-root-signature
+          npm run test:pay-001-a12-executor-trust-root-signature
+          npm run audit:pay-001-a13-executor-lifecycle-governance
+          npm run test:pay-001-a13-executor-lifecycle-governance
+          npm run audit:msg-001-a06-presence-typing-boundary
+          npm run test:msg-001-a06-presence-typing-runtime
+          npm run audit:msg-001-a07-command-reliability
+          npm run test:msg-001-a07-command-reliability-runtime
+          npm run audit:msg-001-a08-staging-activation-readiness
+          npm run test:msg-001-a08-staging-activation-readiness
+          npm run test:finance-supabase-repository-contract
+          npm run test:financial-rpc-authority-contract
+          npm run test:financial-operations-edge-runtime
+          npm run test:staging-finance-sandbox-authority-contract
+          npm run test:staging-finance-sandbox-edge-runtime
+          npm run audit:domain-completion-matrix
+          git diff --check
+      - name: Verify bounded publisher changes
+        run: |
+          changed="$(git status --short --untracked-files=all | sed -E 's/^.. //' | sort)"
+          while IFS= read -r changed_file; do
+            test -z "$changed_file" && continue
+            case "$changed_file" in
+              backend/modules/payments/payment-reconciliation-executor-governance.js) ;;
+              config/pay-001-a13-executor-lifecycle-governance.json) ;;
+              tests/fixtures/pay-a13-executor-lifecycle-governance-cases.json) ;;
+              docs/PAY-001-A13-EXECUTOR-LIFECYCLE-GOVERNANCE.md) ;;
+              docs/validation/PAY-001-A13-EXECUTOR-LIFECYCLE-GOVERNANCE.json) ;;
+              scripts/audit-pay-001-a13-executor-lifecycle-governance.js) ;;
+              scripts/test-pay-001-a13-executor-lifecycle-governance.js) ;;
+              package.json) ;;
+              config/domain-completion-matrix.json) ;;
+              docs/DOMAIN-COMPLETION-MATRIX.md) ;;
+              reports/generated/domain-completion-matrix-report.json) ;;
+              config/pay-001-a12-executor-trust-root-signature.json) ;;
+              docs/PAY-001-A12-EXECUTOR-TRUST-ROOT-SIGNATURE.md) ;;
+              scripts/audit-pay-001-a06-provider-selection-legal-handoff.js) ;;
+              scripts/audit-pay-001-a07-reconciliation-operations-readiness.js) ;;
+              scripts/audit-pay-001-a08-immutable-migrations-read-only-canary.js) ;;
+              scripts/audit-pay-001-a09-deployment-inspection-handoff.js) ;;
+              scripts/audit-pay-001-a10-external-executor-evidence-ingestion.js) ;;
+              scripts/audit-pay-001-a11-executor-protocol-conformance.js) ;;
+              scripts/audit-pay-001-a12-executor-trust-root-signature.js) ;;
+              .pay-a13-bootstrap/chunk-*.b64) ;;
+              scripts/apply-pay-001-a13-repository-metadata.js) ;;
+              .github/workflows/pay-001-a13-publisher-temp.yml) ;;
+              *) echo "Unexpected PAY-A13 publisher change: $changed_file" >&2; exit 1 ;;
+            esac
+          done <<< "$changed"
+          git fetch origin pay/pay-a13-lifecycle-governance-build
+          test "$(git rev-parse origin/pay/pay-a13-lifecycle-governance-build)" = "${{ github.sha }}"
+      - name: Publish PAY-A13 build branch
+        run: |
+          git config user.name 'doke-pay-a13-bot'
+          git config user.email 'doke-pay-a13-bot@users.noreply.github.com'
+          git add -A
+          git add -f docs/validation/PAY-001-A13-EXECUTOR-LIFECYCLE-GOVERNANCE.json
+          git add -f reports/generated/domain-completion-matrix-report.json
+          git commit -m 'Complete PAY-A13 executor lifecycle governance'
+          git push origin HEAD:pay/pay-a13-lifecycle-governance-build
