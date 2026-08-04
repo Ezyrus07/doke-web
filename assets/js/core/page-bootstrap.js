@@ -6,6 +6,7 @@
   var auth = root.DokeAuth || (root.DokeAuth = {});
   var bootstrapScriptUrl = document.currentScript && document.currentScript.src || '';
   var OVERLAY_EXPERIENCE_VERSION = '20260804-ux-nav-001-v1';
+  var ACCESSIBILITY_EXPERIENCE_VERSION = '20260804-ux-a11y-001-v1';
 
   function pageName() {
     return (root.location.pathname.split('/').pop() || 'index.html').replace('.html', '') || 'index';
@@ -105,7 +106,7 @@
     return loadScript(coreScriptUrl(fileName), ready, fileName);
   }
 
-  function ensureStyle(relativePath) {
+  function ensureStyle(relativePath, datasetValue) {
     var href = assetUrl(relativePath);
     var exists = Array.prototype.some.call(document.styleSheets || [], function (sheet) {
       return sheet && sheet.href === href;
@@ -114,7 +115,7 @@
     var link = document.createElement('link');
     link.rel = 'stylesheet';
     link.href = href;
-    link.dataset.dokeAuthCapability = 'settings-password-style';
+    link.dataset.dokeAuthCapability = datasetValue || 'runtime-style';
     (document.head || document.documentElement).appendChild(link);
   }
 
@@ -128,7 +129,7 @@
   async function ensureSettingsPasswordAuthority() {
     if (pageName() !== 'configuracoes') return null;
 
-    ensureStyle('assets/css/components/auth/password-dialog.css');
+    ensureStyle('assets/css/components/auth/password-dialog.css', 'settings-password-style');
     await loadScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2', function () {
       return Boolean(root.supabase && typeof root.supabase.createClient === 'function');
     }, 'supabase-sdk');
@@ -162,6 +163,17 @@
       return Boolean(Doke.overlayExperience && Doke.overlayExperience.version === OVERLAY_EXPERIENCE_VERSION);
     });
     return Doke.overlayExperience || null;
+  }
+
+  async function ensureAccessibilityExperience() {
+    ensureStyle('assets/css/core/accessibility-experience.css', 'accessibility-experience-style');
+    await loadCoreScript('accessibility-experience.js', function () {
+      return Boolean(
+        Doke.accessibilityExperience
+        && Doke.accessibilityExperience.version === ACCESSIBILITY_EXPERIENCE_VERSION
+      );
+    });
+    return Doke.accessibilityExperience || null;
   }
 
   function failClosedAuthGuard(error) {
@@ -200,6 +212,12 @@
       console.warn && console.warn('[Doke] Overlay/focus experience indisponível; componentes manterão fallback local.', error);
     }
 
+    try {
+      await ensureAccessibilityExperience();
+    } catch (error) {
+      console.warn && console.warn('[Doke] Accessibility experience indisponível; semântica nativa será preservada.', error);
+    }
+
     applyPermissionHooks();
     if (Doke.state) Doke.state.set('bootstrapped', true);
     document.documentElement.classList.add('doke-app-ready');
@@ -208,7 +226,8 @@
         authGuardReady: Boolean(auth.guard),
         sessionAuthorityReady: Boolean(auth.sessionAuthority),
         passwordAuthorityReady: Boolean(auth.passwordAuthority),
-        overlayExperienceReady: Boolean(Doke.overlayExperience)
+        overlayExperienceReady: Boolean(Doke.overlayExperience),
+        accessibilityExperienceReady: Boolean(Doke.accessibilityExperience)
       }
     }));
   }
@@ -218,7 +237,8 @@
     ensureAuthRouteGuard: ensureAuthRouteGuard,
     ensureAuthSessionAuthority: ensureAuthSessionAuthority,
     ensureSettingsPasswordAuthority: ensureSettingsPasswordAuthority,
-    ensureOverlayExperience: ensureOverlayExperience
+    ensureOverlayExperience: ensureOverlayExperience,
+    ensureAccessibilityExperience: ensureAccessibilityExperience
   });
 
   if (document.readyState === 'loading') {
