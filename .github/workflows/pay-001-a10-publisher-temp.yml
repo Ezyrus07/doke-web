@@ -52,6 +52,16 @@ jobs:
             esac
           done < /tmp/pay-a10-files.txt
           tar -xzf /tmp/pay-a10.tar.gz -C .
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('scripts/audit-pay-001-a10-external-executor-evidence-ingestion.js')
+          source = path.read_text(encoding='utf-8')
+          before = "'900 segundos'"
+          after = "'900 seconds'"
+          if before not in source:
+              raise SystemExit('Expected PAY-A10 documentation token was not found')
+          path.write_text(source.replace(before, after, 1), encoding='utf-8')
+          PY
       - name: Patch canonical package, matrix and successor gates
         run: node scripts/pay-001-a10-publish.js
       - run: npm ci --ignore-scripts
