@@ -1,0 +1,168 @@
+{
+  "contractId": "wal-a01-authority-baseline-v1",
+  "domain": "WAL-001",
+  "sourceHead": "5a893bc80040db45390213e39cab24f1f62b928c",
+  "createdAt": "2026-08-04T15:05:00-03:00",
+  "scope": "repository_only",
+  "status": "baseline_frozen_followup_required",
+  "currentAuthority": {
+    "userFacingAuthority": "hybrid",
+    "serverAuthority": "partial",
+    "stagingEvidence": "staging_canary",
+    "securityGate": "blocked",
+    "productionGate": "blocked",
+    "realMoneyAuthority": false,
+    "providerTransferAuthority": false,
+    "productionAuthority": false
+  },
+  "canonicalRemotePaths": {
+    "bankAccountWrite": "public.save_wallet_bank_account via self-service-operations",
+    "withdrawalRequest": "public.request_wallet_withdrawal via self-service-operations",
+    "withdrawalResolution": "financial-operations Edge Function with service-role-only internal RPC",
+    "walletRead": "participant-scoped Supabase projections",
+    "providerTransfer": "absent"
+  },
+  "legacyOrLocalPaths": [
+    "assets/js/repositories/wallet-repository.js localStorage simulation",
+    "assets/js/repositories/finance-repository.js remote-to-local projection cache",
+    "backend/modules/wallet/wallet-service.js direct table mutation handlers",
+    "supabase/migrations/005_wallet_runtime_foundation.sql owner-writable plaintext bank-account foundation"
+  ],
+  "findings": [
+    {
+      "id": "WAL-A01-F01",
+      "severity": "critical",
+      "category": "sensitive_browser_persistence",
+      "summary": "The remote wallet projection, including full bank-account fields, is copied into localStorage.",
+      "evidencePaths": [
+        "assets/js/repositories/finance-repository.js",
+        "assets/js/repositories/wallet-repository.js"
+      ]
+    },
+    {
+      "id": "WAL-A01-F02",
+      "severity": "high",
+      "category": "plaintext_bank_data",
+      "summary": "Account holder, document, branch, account number and Pix key are stored as plaintext columns and copied into withdrawal snapshots.",
+      "evidencePaths": [
+        "supabase/migrations/005_wallet_runtime_foundation.sql",
+        "supabase/migrations/107_financial_rpc_authority.sql"
+      ]
+    },
+    {
+      "id": "WAL-A01-F03",
+      "severity": "high",
+      "category": "authority_split",
+      "summary": "Hardened RPC and Edge Function paths coexist with legacy backend handlers that perform direct table writes.",
+      "evidencePaths": [
+        "backend/modules/wallet/wallet-service.js",
+        "backend/modules/wallet/route-handlers.js",
+        "supabase/migrations/107_financial_rpc_authority.sql"
+      ]
+    },
+    {
+      "id": "WAL-A01-F04",
+      "severity": "high",
+      "category": "retry_idempotency",
+      "summary": "The browser creates withdrawal external IDs and event keys from Date.now and Math.random, so a lost response followed by a retry can use a new idempotency identity.",
+      "evidencePaths": [
+        "assets/js/repositories/finance-repository.js",
+        "supabase/migrations/107_financial_rpc_authority.sql"
+      ]
+    },
+    {
+      "id": "WAL-A01-F05",
+      "severity": "high",
+      "category": "silent_degradation",
+      "summary": "Wallet reads can swallow remote failures and render local or empty projections, obscuring the distinction between unavailable authority and a real zero balance.",
+      "evidencePaths": [
+        "backend/modules/wallet/wallet-service.js",
+        "assets/js/repositories/finance-repository.js"
+      ]
+    },
+    {
+      "id": "WAL-A01-F06",
+      "severity": "high",
+      "category": "noncanonical_financial_rules",
+      "summary": "The local repository and an older shared-runtime migration encode a fixed five-percent platform fee even though PAY-B03 parameters remain unapproved.",
+      "evidencePaths": [
+        "assets/js/repositories/wallet-repository.js",
+        "supabase/migrations/014_finance_wallet_shared_runtime.sql",
+        "config/pay-b03b-commercial-approval-evidence-package.json"
+      ]
+    },
+    {
+      "id": "WAL-A01-F07",
+      "severity": "high",
+      "category": "legacy_resolution_consistency",
+      "summary": "The legacy approval path can complete a withdrawal before a provider transfer and ignores wallet-adjustment failure, so it must remain noncanonical and unreachable for real authority.",
+      "evidencePaths": [
+        "backend/modules/wallet/wallet-service.js",
+        "supabase/functions/financial-operations/index.ts"
+      ]
+    },
+    {
+      "id": "WAL-A01-F08",
+      "severity": "critical",
+      "category": "provider_dependency",
+      "summary": "No provider transfer, settlement receipt or remote reconciliation authority exists for production withdrawals.",
+      "evidencePaths": [
+        "config/domain-completion-matrix.json",
+        "docs/DOMAIN-COMPLETION-MATRIX.md"
+      ]
+    }
+  ],
+  "mandatoryInvariants": [
+    "Authenticated UUID sessions never create local financial outcomes.",
+    "A zero or empty wallet must never be shown as authoritative when remote authority is unavailable.",
+    "Available balance is derived from canonical immutable financial entries, not browser aggregation.",
+    "Bank-account secrets are not persisted in browser storage or returned unmasked after intake.",
+    "Withdrawal retries reuse a stable client request identity across reloads and uncertain responses.",
+    "Withdrawal completion requires provider-confirmed transfer evidence and reconciliation.",
+    "Support and admin users do not receive unrestricted raw bank-account fields.",
+    "No unapproved PAY-B03 commission, payout or negative-balance parameter becomes runtime authority."
+  ],
+  "preservedBlockers": [
+    "WAL-B02",
+    "WAL-B03",
+    "WAL-B04",
+    "PAY-B01",
+    "PAY-B03",
+    "PAY-B04"
+  ],
+  "nextSublots": [
+    {
+      "id": "WAL-A02",
+      "name": "bank-account sensitive-data boundary",
+      "authority": "repository_only"
+    },
+    {
+      "id": "WAL-A03",
+      "name": "wallet projection authority and unavailable-state contract",
+      "authority": "repository_only"
+    },
+    {
+      "id": "WAL-A04",
+      "name": "withdrawal stable idempotency and lost-response contract",
+      "authority": "repository_only"
+    },
+    {
+      "id": "WAL-A05",
+      "name": "provider transfer and settlement readiness",
+      "authority": "blocked_external_provider"
+    }
+  ],
+  "prohibitedEffects": {
+    "networkRequests": false,
+    "databaseConnections": false,
+    "stagingReads": false,
+    "stagingMutations": false,
+    "migrations": false,
+    "deployments": false,
+    "providerContact": false,
+    "bankDataMutation": false,
+    "withdrawalMutation": false,
+    "realMoneyMovement": false,
+    "productionChanges": false
+  }
+}
