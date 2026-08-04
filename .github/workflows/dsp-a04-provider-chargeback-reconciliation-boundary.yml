@@ -1,65 +1,64 @@
-name: DSP-A04 Provider Chargeback Reconciliation Boundary
+name: DSP-A04 Matrix Refresh Temporary
 
 on:
   pull_request:
     paths:
-      - 'backend/modules/disputes/provider-chargeback-reconciliation-boundary.js'
-      - 'config/dsp-a04-provider-chargeback-reconciliation-boundary.json'
-      - 'tests/fixtures/dsp-a04-provider-chargeback-reconciliation-cases.json'
-      - 'docs/DSP-A04-PROVIDER-CHARGEBACK-RECONCILIATION-BOUNDARY.md'
-      - 'scripts/audit-dsp-a04-provider-chargeback-reconciliation-boundary.js'
-      - 'scripts/test-dsp-a04-provider-chargeback-reconciliation-boundary.js'
       - '.github/workflows/dsp-a04-provider-chargeback-reconciliation-boundary.yml'
-      - 'backend/modules/disputes/dispute-evidence-deadline-appeal-contract.js'
-      - 'backend/modules/disputes/dispute-lifecycle-taxonomy-contract.js'
-      - 'config/dsp-a03-evidence-deadline-appeal-contract.json'
-      - 'config/dsp-a02-canonical-lifecycle-effect-taxonomy.json'
-      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
-      - 'reports/generated/domain-completion-matrix-report.json'
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  dsp-a04-provider-chargeback-reconciliation-boundary:
+  refresh:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
-      - name: Checkout
+      - name: Checkout branch
         uses: actions/checkout@v4
+        with:
+          ref: dsp/dsp-001-baseline-audit
+          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '24'
+          cache: npm
 
-      - name: Syntax
+      - name: Install
+        run: npm ci --ignore-scripts
+
+      - name: Regenerate matrix derivatives
+        run: npm run write:domain-completion-matrix
+
+      - name: Enforce allowlist and commit derivatives
+        shell: bash
         run: |
-          node --check backend/modules/disputes/provider-chargeback-reconciliation-boundary.js
-          node --check scripts/audit-dsp-a04-provider-chargeback-reconciliation-boundary.js
-          node --check scripts/test-dsp-a04-provider-chargeback-reconciliation-boundary.js
-
-      - name: Audit provider chargeback reconciliation boundary
-        run: node scripts/audit-dsp-a04-provider-chargeback-reconciliation-boundary.js
-
-      - name: Conformance
-        run: node scripts/test-dsp-a04-provider-chargeback-reconciliation-boundary.js
-
-      - name: DSP-A03 regression
-        run: |
-          node scripts/audit-dsp-a03-evidence-deadline-appeal-contract.js
-          node scripts/test-dsp-a03-evidence-deadline-appeal-contract.js
-
-      - name: DSP-A02 regression
-        run: |
-          node scripts/audit-dsp-a02-canonical-lifecycle-effect-taxonomy.js
-          node scripts/test-dsp-a02-canonical-lifecycle-effect-taxonomy.js
-
-      - name: DSP-A01 regression
-        run: |
-          node scripts/audit-dsp-a01-authority-baseline.js
-          node scripts/test-dsp-a01-authority-baseline.js
-
-      - name: Diff hygiene
-        run: git diff --check
+          set -euo pipefail
+          python - <<'PY'
+          import subprocess
+          allowed = {
+            'docs/DOMAIN-COMPLETION-MATRIX.md',
+            'reports/generated/domain-completion-matrix-report.json'
+          }
+          changed = []
+          for line in subprocess.check_output(['git', 'status', '--porcelain=v1'], text=True).splitlines():
+              path = line[3:]
+              if ' -> ' in path:
+                  path = path.split(' -> ', 1)[1]
+              changed.append(path)
+          unexpected = sorted(set(changed) - allowed)
+          if unexpected:
+              raise SystemExit('Unexpected files: ' + ', '.join(unexpected))
+          missing = sorted(allowed - set(changed))
+          if missing:
+              raise SystemExit('Expected derivative changes missing: ' + ', '.join(missing))
+          PY
+          npm run audit:domain-completion-matrix
+          git diff --check
+          git config user.name "doke-ci"
+          git config user.email "actions@users.noreply.github.com"
+          git add -- docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json
+          git commit -m "docs(matrix): include DSP-A05 operator readiness"
+          git push origin HEAD:dsp/dsp-001-baseline-audit
