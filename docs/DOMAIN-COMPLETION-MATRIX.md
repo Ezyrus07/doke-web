@@ -699,7 +699,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 2/6; UI local; servidor contract only; staging local e2e; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 45 arquivos no escopo; 1 referências a localStorage; 0 a sessionStorage; 2 referências mock; 54 referências de rede/Supabase; 2 marcadores de implementação pendente.
+**Evidência estática observada:** 46 arquivos no escopo; 1 referências a localStorage; 0 a sessionStorage; 2 referências mock; 54 referências de rede/Supabase; 2 marcadores de implementação pendente.
 
 **Páginas:** `pagamento-profissional.html`, `mensagens.html`, `pedidos.html`.
 
@@ -747,6 +747,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - PAY-A16: provider-neutral status distribution manifests, immutable cache-consistency proofs, bounded degraded mode and independent multi-issuer quorum validated repository-only (72/72).
 - PAY-A17: append-only transparency checkpoints, forward-only recovery, hashes-only cache-poisoning incident evidence and blocked operational adoption handoff passed 94/94 repository-only conformance cases.
 - PAY-A18: interoperable witness profiles, deterministic inclusion and consistency-proof conformance, synthetic forward-only recovery rehearsal attestation and a blocked pre-provider adoption gate passed 54/54 repository-only cases.
+- PAY-B03A commercial-policy decision gate passed 39/39 repository-only cases, records a PSP-managed non-custodial funds-flow proposal and preserves PAY-B03 pending executive, legal, tax and accounting approval.
 
 **Bloqueadores:**
 - **PAY-B01 · CRITICAL · external_provider:** No PSP integration or signed webhook authority exists. _(Fase 8)_
@@ -754,7 +755,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - **PAY-B04 · HIGH · reconciliation:** Remote reconciliation infrastructure remains absent. PAY-A08 through PAY-A17 define immutable migrations, phased staging controls, external evidence, executor protocols and trust, issuer status distribution, transparency and forward-only recovery. PAY-A18 adds interoperable witness profiles, inclusion and consistency-proof conformance plus synthetic rehearsal attestation, but no real trust roots, witnesses, transparency log, remote store, lease, scheduler, metrics sink, alert delivery, on-call ownership or staging rehearsal exists. _(Fase 8)_
 
 **Próximas ações:**
-- PAY-B03 — obtain legally approved commercial, tax, escrow, refund, dispute and funds-flow decisions before any provider evaluation.
+- PAY-B03B — obtain executive, legal, tax and accounting approval for fee, funds-flow, cancellation, refund, dispute, chargeback and invoicing decisions; PAY-B03 remains open until versioned approval evidence exists.
 - PAY-B01 — keep PSP selection, account creation, credentials, signed webhook registration and provider contact blocked until a separate resource-bound authorization exists.
 - PAY-B04 — keep remote reconciliation infrastructure, real witnesses, transparency-log publication and staging rehearsal blocked until separately designed and authorized.
 
@@ -1166,4 +1167,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-08-04T11:53:00-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-08-04T13:30:00-03:00._
