@@ -42,6 +42,33 @@ jobs:
       - name: Apply PAY-A12 repository metadata
         run: |
           node scripts/apply-pay-001-a12-repository-metadata.js
+          python3 - <<'PY'
+          from pathlib import Path
+          replacements = {
+            'scripts/audit-pay-001-a06-provider-selection-legal-handoff.js': [
+              ('["PAY-A08","PAY-A09","PAY-A10","PAY-A11","PAY-A12"]', '["PAY-A08","PAY-A09","PAY-A10","PAY-A11","PAY-A12","PAY-A13"]')
+            ],
+            'scripts/audit-pay-001-a07-reconciliation-operations-readiness.js': [
+              ('["PAY-A09","PAY-A10","PAY-A11","PAY-A12"]', '["PAY-A09","PAY-A10","PAY-A11","PAY-A12","PAY-A13"]')
+            ],
+            'scripts/audit-pay-001-a08-immutable-migrations-read-only-canary.js': [
+              ('["PAY-A09","PAY-A10","PAY-A11","PAY-A12"]', '["PAY-A09","PAY-A10","PAY-A11","PAY-A12","PAY-A13"]')
+            ],
+            'scripts/audit-pay-001-a09-deployment-inspection-handoff.js': [
+              ('["PAY-A10","PAY-A11","PAY-A12"]', '["PAY-A10","PAY-A11","PAY-A12","PAY-A13"]')
+            ],
+            'scripts/audit-pay-001-a10-external-executor-evidence-ingestion.js': [
+              ("assert(pay.nextActions[0].includes('PAY-A12'), 'PAY-A12 must be the first next action');", "assert(pay.nextActions[0].includes('PAY-A13'), 'PAY-A13 must be the first next action');")
+            ]
+          }
+          for file, pairs in replacements.items():
+            path = Path(file)
+            source = path.read_text(encoding='utf-8')
+            for old, new in pairs:
+              assert old in source, f'missing expected guard in {file}'
+              source = source.replace(old, new)
+            path.write_text(source, encoding='utf-8')
+          PY
           npm run write:domain-completion-matrix
           rm -f .pay-a12-bootstrap/chunk-*.b64
           rm -f scripts/apply-pay-001-a12-repository-metadata.js
@@ -102,10 +129,15 @@ jobs:
               docs/validation/PAY-001-A12-EXECUTOR-TRUST-ROOT-SIGNATURE.json) ;;
               scripts/audit-pay-001-a12-executor-trust-root-signature.js) ;;
               scripts/test-pay-001-a12-executor-trust-root-signature.js) ;;
+              scripts/audit-pay-001-a06-provider-selection-legal-handoff.js) ;;
+              scripts/audit-pay-001-a07-reconciliation-operations-readiness.js) ;;
+              scripts/audit-pay-001-a08-immutable-migrations-read-only-canary.js) ;;
+              scripts/audit-pay-001-a09-deployment-inspection-handoff.js) ;;
+              scripts/audit-pay-001-a10-external-executor-evidence-ingestion.js) ;;
+              scripts/audit-pay-001-a11-executor-protocol-conformance.js) ;;
               package.json) ;;
               config/domain-completion-matrix.json) ;;
               config/pay-001-a11-executor-protocol-conformance.json) ;;
-              scripts/audit-pay-001-a11-executor-protocol-conformance.js) ;;
               docs/DOMAIN-COMPLETION-MATRIX.md) ;;
               reports/generated/domain-completion-matrix-report.json) ;;
               .pay-a12-bootstrap/chunk-*.b64) ;;
