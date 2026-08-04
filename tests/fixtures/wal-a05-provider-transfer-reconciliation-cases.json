@@ -1,0 +1,35 @@
+{
+  "contractId": "wal-a05-provider-transfer-reconciliation-v1",
+  "fixturePolicy": "synthetic_only",
+  "positiveScenarios": [
+    "deterministic command and provider idempotency",
+    "signed webhook accepted",
+    "authenticated status poll processing",
+    "provider success requires reconciliation",
+    "matching settlement evidence produces settled",
+    "exact provider event replay is deduplicated",
+    "failed provider result is terminal",
+    "reversal after success invalidates completion"
+  ],
+  "negativeScenarios": [
+    "raw bank data",
+    "provider credentials",
+    "amount drift",
+    "currency drift",
+    "destination drift",
+    "provider reference conflict",
+    "provider event conflict",
+    "provider sequence conflict",
+    "invalid status transition",
+    "unsigned webhook",
+    "unauthenticated poll",
+    "provider success without settlement evidence",
+    "settlement without segregation of duties",
+    "settlement fingerprint tampering",
+    "forged completed projection"
+  ],
+  "realProvider": false,
+  "realCredentials": false,
+  "realBankData": false,
+  "realMoney": false
+}
