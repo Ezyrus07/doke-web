@@ -43,9 +43,14 @@ jobs:
           from pathlib import Path
           path = Path('scripts/audit-pay-001-a11-executor-protocol-conformance.js')
           source = path.read_text(encoding='utf-8')
-          old = "'five phases'"
-          assert old in source
-          path.write_text(source.replace(old, "'cinco fases'"), encoding='utf-8')
+          replacements = {
+              "'five phases'": "'cinco fases'",
+              "'cleanup allowlist'": "'temporary authorization envelope'",
+          }
+          for old, new in replacements.items():
+              assert old in source
+              source = source.replace(old, new)
+          path.write_text(source, encoding='utf-8')
           PY
           rm -f .pay-a11-bootstrap/chunk-*.b64
           rm -f .pay-a11-bootstrap/apply.js
