@@ -254,7 +254,7 @@ function testPilotSource() {
   const newsSource = fs.readFileSync(NEWS, 'utf8');
   assert(newsSource.includes('formMutationManager'), 'pilot must use the canonical manager');
   assert(newsSource.includes("action: 'save_preference'"), 'pilot action must be explicit');
-  assert(newsSource.includes("authority: 'client-local-preference'"), 'pilot authority must be explicit');
+  assert(newsSource.includes("authority: 'client-account-storage'"), 'pilot authority must be explicit');
   assert(newsSource.includes('doke:news-preference-saved'), 'pilot must expose a receipt event');
   assert(!newsSource.includes('experience?.optimistic?.mutate'), 'pilot must not use the legacy optimistic helper');
 }
