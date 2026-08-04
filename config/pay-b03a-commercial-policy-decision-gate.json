@@ -1,0 +1,226 @@
+{
+  "contractVersion": "pay-b03a-commercial-policy-decision-gate-v1",
+  "packetVersion": "pay-commercial-policy-decision-packet-v1",
+  "packetId": "pay-b03a-policy-packet.alpha",
+  "fundsFlowModel": "psp_managed_split_conditional_release",
+  "sources": [
+    {
+      "sourceId": "SRC-BCB-MARKETPLACE",
+      "title": "Banco Central — marketplaces e subcredenciadores",
+      "url": "https://www.bcb.gov.br/estabilidadefinanceira/faq-liquidacao-centralizada",
+      "verifiedOn": "2026-08-04"
+    },
+    {
+      "sourceId": "SRC-LAW-12865",
+      "title": "Lei nº 12.865/2013 — arranjos e instituições de pagamento",
+      "url": "https://www.planalto.gov.br/ccivil_03/_ato2011-2014/2013/lei/l12865.htm",
+      "verifiedOn": "2026-08-04"
+    },
+    {
+      "sourceId": "SRC-BCB-RES150",
+      "title": "Resolução BCB nº 150/2021 — arranjos de pagamento",
+      "url": "https://www.bcb.gov.br/estabilidadefinanceira/exibenormativo?numero=150&tipo=Resolu%C3%A7%C3%A3o+BCB",
+      "verifiedOn": "2026-08-04"
+    },
+    {
+      "sourceId": "SRC-CDC",
+      "title": "Código de Defesa do Consumidor — Lei nº 8.078/1990",
+      "url": "https://www.planalto.gov.br/ccivil_03/leis/l8078compilado.htm",
+      "verifiedOn": "2026-08-04"
+    },
+    {
+      "sourceId": "SRC-RFB-CONSULTA",
+      "title": "Receita Federal — interpretação tributária e consulta formal",
+      "url": "https://www.gov.br/receitafederal/pt-br/servicos/interpretacao/interpretacao-tributaria-e-aduaneira",
+      "verifiedOn": "2026-08-04"
+    }
+  ],
+  "decisions": [
+    {
+      "decisionId": "BUSINESS-001",
+      "category": "business_model",
+      "question": "Qual é o papel econômico padrão da Doke?",
+      "state": "proposed_direction",
+      "proposedDirection": "A Doke opera como marketplace intermediador; o profissional continua sendo o prestador do serviço contratado pelo cliente.",
+      "rationale": "Evita tratar a Doke como prestadora universal e mantém a arquitetura compatível com um PSP que liquida para múltiplos recebedores.",
+      "sourceIds": ["SRC-BCB-MARKETPLACE", "SRC-CDC"],
+      "openQuestions": []
+    },
+    {
+      "decisionId": "BUSINESS-002",
+      "category": "contracting_parties",
+      "question": "Quem assume obrigações perante o consumidor?",
+      "state": "requires_legal_interpretation",
+      "proposedDirection": "O profissional assume a execução do serviço; a Doke assume deveres próprios de informação, segurança, atendimento, moderação e mediação, sem cláusulas de exoneração absoluta.",
+      "rationale": "O CDC restringe transferência integral de responsabilidade e exige informação clara; a extensão concreta da responsabilidade da plataforma precisa de parecer jurídico.",
+      "sourceIds": ["SRC-CDC"],
+      "openQuestions": ["Definir a extensão da responsabilidade solidária ou subsidiária da Doke por categoria de serviço."]
+    },
+    {
+      "decisionId": "BUSINESS-003",
+      "category": "platform_fee",
+      "question": "Como a Doke será remunerada?",
+      "state": "requires_business_parameter",
+      "proposedDirection": "Cobrar comissão percentual sobre o valor bruto do serviço, destacada antes do pagamento e registrada separadamente do valor do profissional.",
+      "rationale": "Uma base percentual é simples para marketplace, mas taxa, mínimo, teto e incidência tributária ainda precisam de decisão executiva.",
+      "sourceIds": ["SRC-LAW-12865", "SRC-CDC"],
+      "openQuestions": ["Fixar percentual, mínimo, teto, política promocional e base de incidência."]
+    },
+    {
+      "decisionId": "BUSINESS-004",
+      "category": "payment_costs",
+      "question": "Quem arca com tarifas do PSP e parcelamento?",
+      "state": "requires_provider_capability",
+      "proposedDirection": "Exibir o custo antes da confirmação e alocar tarifas conforme contrato do PSP, sem deduções ocultas do recebível do profissional.",
+      "rationale": "A decisão depende do modelo de pricing, parcelamento e split oferecido pelo PSP.",
+      "sourceIds": ["SRC-LAW-12865", "SRC-BCB-RES150", "SRC-CDC"],
+      "openQuestions": ["Definir alocação por Pix, cartão, parcelamento, refund e chargeback."]
+    },
+    {
+      "decisionId": "BUSINESS-005",
+      "category": "discounts",
+      "question": "Como cupons e subsídios afetam o profissional?",
+      "state": "requires_business_parameter",
+      "proposedDirection": "Descontos financiados pela Doke não reduzem o valor bruto do profissional; descontos financiados pelo profissional exigem aceite explícito e registro separado.",
+      "rationale": "Evita divergência entre preço contratado, valor pago e recebível.",
+      "sourceIds": ["SRC-CDC"],
+      "openQuestions": ["Definir orçamento promocional, limites e compartilhamento de desconto."]
+    },
+    {
+      "decisionId": "FUNDS-001",
+      "category": "funds_flow",
+      "question": "A Doke pode custodiar recursos?",
+      "state": "proposed_direction",
+      "proposedDirection": "Não. O fluxo alvo é split e liberação condicional geridos por PSP regulado, sem trânsito de recursos em conta bancária própria da Doke.",
+      "rationale": "Receber e repassar pagamentos pode enquadrar o marketplace como participante de arranjo/subcredenciador; o modelo não custodial reduz risco regulatório e operacional.",
+      "sourceIds": ["SRC-BCB-MARKETPLACE", "SRC-LAW-12865", "SRC-BCB-RES150"],
+      "openQuestions": []
+    },
+    {
+      "decisionId": "FUNDS-002",
+      "category": "hold",
+      "question": "Quando o valor entra em garantia?",
+      "state": "requires_provider_capability",
+      "proposedDirection": "Somente após autorização/captura confirmada pelo PSP, vinculada a cobrança aprovada, idempotency key e recebedor verificado.",
+      "rationale": "O repositório já modela held, mas a semântica real depende da API e do contrato do PSP.",
+      "sourceIds": ["SRC-LAW-12865", "SRC-BCB-RES150"],
+      "openQuestions": ["Confirmar se o PSP oferece split com reserva, escrow-like ou liquidação diferida compatível."]
+    },
+    {
+      "decisionId": "FUNDS-003",
+      "category": "release",
+      "question": "Quando o valor é liberado?",
+      "state": "proposed_direction",
+      "proposedDirection": "Na beta inicial, apenas por confirmação explícita do cliente ou decisão terminal de suporte; não haverá liberação automática por decurso de prazo.",
+      "rationale": "É a opção fail-closed mais segura enquanto não existem SLAs, antifraude e política jurídica aprovados.",
+      "sourceIds": ["SRC-CDC"],
+      "openQuestions": []
+    },
+    {
+      "decisionId": "FUNDS-004",
+      "category": "payout",
+      "question": "Quando o profissional recebe?",
+      "state": "requires_provider_capability",
+      "proposedDirection": "Após a liberação, o PSP liquida diretamente ao profissional conforme calendário contratual; a Doke não mantém saldo monetário próprio.",
+      "rationale": "Prazo de liquidação, antecipação e reservas dependem do PSP e do risco do serviço.",
+      "sourceIds": ["SRC-BCB-MARKETPLACE", "SRC-BCB-RES150"],
+      "openQuestions": ["Definir D+N por meio de pagamento, reserva, antecipação e bloqueio por risco."]
+    },
+    {
+      "decisionId": "REFUND-001",
+      "category": "cancellation_before_start",
+      "question": "Qual é o tratamento antes do início do serviço?",
+      "state": "requires_legal_interpretation",
+      "proposedDirection": "Proposta de reembolso integral antes do início do serviço, com fluxo específico para direito de arrependimento em contratação remota.",
+      "rationale": "A regra é favorável ao consumidor, mas exceções, início imediato e custos de terceiros exigem revisão jurídica.",
+      "sourceIds": ["SRC-CDC"],
+      "openQuestions": ["Definir prova de início, consentimento para início imediato e tratamento de custos externos."]
+    },
+    {
+      "decisionId": "REFUND-002",
+      "category": "cancellation_after_start",
+      "question": "Qual é o tratamento após o início?",
+      "state": "requires_legal_interpretation",
+      "proposedDirection": "Congelar a liberação e decidir entre reexecução, reembolso parcial, reembolso integral ou pagamento proporcional com base em evidências.",
+      "rationale": "Uma regra binária cliente/profissional é insuficiente para serviços parcialmente executados.",
+      "sourceIds": ["SRC-CDC"],
+      "openQuestions": ["Definir fórmula de proporcionalidade, categorias sem reexecução e limites de retenção."]
+    },
+    {
+      "decisionId": "REFUND-003",
+      "category": "provider_cancellation",
+      "question": "O que ocorre quando o profissional cancela?",
+      "state": "proposed_direction",
+      "proposedDirection": "Reembolso integral do valor cobrado ao cliente e bloqueio de qualquer recebível do profissional para o pedido.",
+      "rationale": "A parte que não executará o serviço não deve receber o valor em garantia.",
+      "sourceIds": ["SRC-CDC"],
+      "openQuestions": []
+    },
+    {
+      "decisionId": "REFUND-004",
+      "category": "non_delivery_quality",
+      "question": "Como tratar não entrega e vício de qualidade?",
+      "state": "requires_legal_interpretation",
+      "proposedDirection": "Não entrega: reembolso integral. Vício de qualidade: oferecer reexecução quando cabível ou reembolso parcial/integral conforme escolha aplicável do consumidor e análise de evidências.",
+      "rationale": "O CDC prevê alternativas para vícios de serviço; a política precisa adaptar isso às categorias da Doke.",
+      "sourceIds": ["SRC-CDC"],
+      "openQuestions": ["Mapear categorias, prazos de correção, impossibilidade de reexecução e danos materiais."]
+    },
+    {
+      "decisionId": "DISPUTE-001",
+      "category": "dispute_sla",
+      "question": "Quais são os prazos de evidência e decisão?",
+      "state": "requires_business_parameter",
+      "proposedDirection": "Proposta inicial: 5 dias corridos para evidência de cada parte e meta interna de 10 dias úteis para decisão, com extensão justificada.",
+      "rationale": "SLAs claros reduzem retenção indefinida, mas precisam ser testados operacionalmente.",
+      "sourceIds": ["SRC-CDC"],
+      "openQuestions": ["Aprovar prazos, pausas, extensão, ausência de resposta e comunicação ao usuário."]
+    },
+    {
+      "decisionId": "DISPUTE-002",
+      "category": "dispute_governance",
+      "question": "Quem decide e como funciona recurso?",
+      "state": "proposed_direction",
+      "proposedDirection": "Suporte com separação de funções decide por fundamento registrado; uma revisão independente é admitida antes da execução financeira terminal quando tecnicamente possível.",
+      "rationale": "A decisão afeta dinheiro e exige trilha auditável, imparcialidade e impossibilidade de inversão silenciosa.",
+      "sourceIds": ["SRC-CDC"],
+      "openQuestions": []
+    },
+    {
+      "decisionId": "CHARGEBACK-001",
+      "category": "chargeback",
+      "question": "Como alocar chargebacks e reservas?",
+      "state": "requires_provider_capability",
+      "proposedDirection": "Responsabilidade preliminar por causa: falha do serviço/fraude do profissional ao profissional; erro de plataforma à Doke; fraude de pagamento e taxas conforme regras do PSP/arranjo. Reserva e compensação permanecem bloqueadas.",
+      "rationale": "A Resolução BCB nº 150 disciplina regras de chargeback do arranjo, mas a implementação depende do contrato concreto do PSP.",
+      "sourceIds": ["SRC-BCB-RES150", "SRC-CDC"],
+      "openQuestions": ["Definir janela, evidências, reserva, saldo negativo, cobrança posterior e limites de compensação."]
+    },
+    {
+      "decisionId": "TAX-001",
+      "category": "tax_invoicing",
+      "question": "Quem emite documentos fiscais?",
+      "state": "requires_legal_interpretation",
+      "proposedDirection": "Hipótese de trabalho: o profissional documenta o serviço ao cliente; a Doke documenta apenas sua remuneração de intermediação. Nenhuma automação fiscal será ativada sem parecer tributário.",
+      "rationale": "A incidência pode variar por município, regime e natureza do serviço; consulta formal deve ser considerada.",
+      "sourceIds": ["SRC-RFB-CONSULTA"],
+      "openQuestions": ["Validar ISS, município competente, retenções, Simples Nacional, autônomos e emissão por categoria."]
+    },
+    {
+      "decisionId": "CONSUMER-001",
+      "category": "right_of_withdrawal",
+      "question": "Como aplicar o direito de arrependimento?",
+      "state": "requires_legal_interpretation",
+      "proposedDirection": "Disponibilizar cancelamento de contratação remota por 7 dias e capturar consentimento específico antes de início imediato, sem presumir renúncia automática.",
+      "rationale": "O art. 49 do CDC prevê sete dias e devolução dos valores; a aplicação a serviços iniciados precisa de interpretação jurídica específica.",
+      "sourceIds": ["SRC-CDC"],
+      "openQuestions": ["Definir efeito do início solicitado pelo consumidor, serviços urgentes, personalizados e já consumidos."]
+    }
+  ],
+  "ownerRoleHash": "93717fb993ee7069dc6716d5aa8b0b5c48480efece2b4cb3d859ffd2d9ec0fbd",
+  "reviewerRoleHashes": [
+    "3bb7aa1a8e7ef15e371e078bc9a5a47fc03cef88bcfc7db15a7baf4244228da5",
+    "a894200ed6426741df8d362dedfea77bc4c5ce8f25660888a109368f2bdc4725"
+  ],
+  "preparedAt": "2026-08-04T16:10:00.000Z"
+}
