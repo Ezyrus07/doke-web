@@ -1,5 +1,5 @@
 {
-  "version": "1.3.96",
+  "version": "1.3.97",
   "updatedAt": "2026-08-03T21:26:00-03:00",
   "title": "Doke Domain Completion Matrix",
   "purpose": "Single source of truth for domain maturity, data authority, staging evidence, blockers, dependencies and mandatory completion order.",
@@ -2131,7 +2131,15 @@
         "scripts/write-pay-001-a11-executor-protocol-manifests.js",
         "scripts/audit-pay-001-a11-executor-protocol-conformance.js",
         "scripts/test-pay-001-a11-executor-protocol-conformance.js",
-        ".github/workflows/pay-001-a11-executor-protocol-conformance.yml"
+        ".github/workflows/pay-001-a11-executor-protocol-conformance.yml",
+        "backend/modules/payments/payment-reconciliation-executor-trust.js",
+        "config/pay-001-a12-executor-trust-root-signature.json",
+        "tests/fixtures/pay-a12-executor-trust-root-cases.json",
+        "docs/PAY-001-A12-EXECUTOR-TRUST-ROOT-SIGNATURE.md",
+        "docs/validation/PAY-001-A12-EXECUTOR-TRUST-ROOT-SIGNATURE.json",
+        "scripts/audit-pay-001-a12-executor-trust-root-signature.js",
+        "scripts/test-pay-001-a12-executor-trust-root-signature.js",
+        ".github/workflows/pay-001-a12-executor-trust-root-signature.yml"
       ],
       "scanRoots": [
         "assets/js/pages/pagamento-profissional.js",
@@ -2149,7 +2157,9 @@
         "backend/modules/payments/payment-reconciliation-executor-adapter.js",
         "backend/modules/payments/payment-reconciliation-executor-protocol.js",
         "tests/fixtures/pay-a11-executor-protocol-conformance-corpus.json",
-        "config/pay-a11-executor-protocol-manifests"
+        "config/pay-a11-executor-protocol-manifests",
+        "backend/modules/payments/payment-reconciliation-executor-trust.js",
+        "tests/fixtures/pay-a12-executor-trust-root-cases.json"
       ],
       "tables": [
         "payments",
@@ -2194,7 +2204,9 @@
         "audit:pay-001-a10-external-executor-evidence-ingestion",
         "test:pay-001-a10-external-executor-evidence-ingestion",
         "audit:pay-001-a11-executor-protocol-conformance",
-        "test:pay-001-a11-executor-protocol-conformance"
+        "test:pay-001-a11-executor-protocol-conformance",
+        "audit:pay-001-a12-executor-trust-root-signature",
+        "test:pay-001-a12-executor-trust-root-signature"
       ],
       "evidence": [
         "Financial contracts, ledger-like tables and local beta-launch E2E exist.",
@@ -2228,7 +2240,8 @@
         "PAY-A08 freezes four provider-neutral private reconciliation migration sources by SHA-256 and defines a SELECT-only schema/migration-history canary that rejects DDL, DML, RPC, scheduler mutation, migration application and automatic drift repair; no remote read or mutation was executed.",
         "PAY-A09 separates read-only preflight, ordered fail-closed migration application, post-migration verification, forward-only corrective rollback and allowlisted temporary-artifact cleanup into fresh one-shot resource-bound authorizations with distinct approvers; generic continuation, cross-operation nonce reuse, destructive rollback, manual migration-history deletion and repository remote execution remain denied.",
         "PAY-A10: five inert phase-specific external executor adapters, signed receipt validation and sanitized replay-protected evidence ingestion validated repository-only.",
-        "PAY-A11 freezes five provider-neutral executor protocol manifests and validates 35 deterministic offline conformance cases, including 30 fail-closed negative cases, while preserving zero network, database, subprocess, environment, staging, production and financial effects."
+        "PAY-A11 freezes five provider-neutral executor protocol manifests and validates 35 deterministic offline conformance cases, including 30 fail-closed negative cases, while preserving zero network, database, subprocess, environment, staging, production and financial effects.",
+        "PAY-A12 defines provider-neutral executor trust bundles, verifies Ed25519 and RSA-PSS-SHA256 detached signatures offline, enforces operation/executor allowlists, bounded rotation grace, immediate revocation rejection and replay protection, while storing no private keys or real trust roots and preserving zero remote effects."
       ],
       "blockers": [
         {
@@ -2249,12 +2262,12 @@
           "id": "PAY-B04",
           "severity": "high",
           "category": "reconciliation",
-          "description": "Remote reconciliation infrastructure remains absent. PAY-A08 defines immutable migrations; PAY-A09 separates staging phases; PAY-A10 validates inert dispatch, receipt and evidence; PAY-A11 freezes provider-neutral protocol manifests and a deterministic dry-run corpus, but no remote read, migration, store, lease, scheduler, metrics sink, alert delivery, on-call ownership or staging rehearsal exists.",
+          "description": "Remote reconciliation infrastructure remains absent. PAY-A08 defines immutable migrations; PAY-A09 separates staging phases; PAY-A10 validates inert dispatch, receipt and evidence; PAY-A11 freezes provider-neutral protocol manifests and a deterministic dry-run corpus; PAY-A12 defines offline executor trust-root and detached-signature verification, but no real trust roots, remote read, migration, store, lease, scheduler, metrics sink, alert delivery, on-call ownership or staging rehearsal exists.",
           "targetPhase": "Fase 8"
         }
       ],
       "nextActions": [
-        "PAY-A12 — define executor trust roots, offline detached-signature verification, key rotation and revocation contracts for receipts, remaining repository-only."
+        "PAY-A13 — define executor onboarding/offboarding, trust-root approval quorum, key-custody attestations and incident revocation handoff, remaining repository-only."
       ],
       "exitCriteria": [
         "No card data is stored by Doke.",

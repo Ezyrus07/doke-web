@@ -1,6 +1,6 @@
 {
   "name": "domain-completion-matrix",
-  "version": "1.3.96",
+  "version": "1.3.97",
   "generatedAt": "2026-08-03T21:26:00-03:00",
   "status": "passed",
   "summary": {
@@ -32,7 +32,7 @@
     "repositories": 27,
     "backendModules": 15,
     "migrations": 183,
-    "packageScripts": 1010,
+    "packageScripts": 1012,
     "staging": {
       "publicTotal": 45,
       "publicRlsDisabled": 0,
@@ -221,7 +221,7 @@
       "id": "GOV-001",
       "name": "Governança, arquitetura e comando central",
       "maturity": 4,
-      "filesMatched": 1145,
+      "filesMatched": 1148,
       "sampleFiles": [
         "docs/ACTIVE-CONTRACTS-INDEX.md",
         "docs/API-ADAPTER-CONTRACT.md",
@@ -254,7 +254,7 @@
         "localStorage": 271,
         "sessionStorage": 78,
         "mock": 577,
-        "network": 207,
+        "network": 208,
         "directSupabase": 157,
         "todo": 35
       },
@@ -1704,6 +1704,10 @@
           },
           {
             "file": "scripts/audit-pay-001-a11-executor-protocol-conformance.js",
+            "count": 1
+          },
+          {
+            "file": "scripts/audit-pay-001-a12-executor-trust-root-signature.js",
             "count": 1
           },
           {
@@ -3547,7 +3551,7 @@
       "id": "SCHED-001",
       "name": "Agenda, disponibilidade e execução do serviço",
       "maturity": 3,
-      "filesMatched": 1091,
+      "filesMatched": 1093,
       "sampleFiles": [
         "assets/js/pages/anunciar-servico.js",
         "assets/js/pages/pedidos/orders-action-panels.js",
@@ -3580,7 +3584,7 @@
         "localStorage": 205,
         "sessionStorage": 70,
         "mock": 318,
-        "network": 206,
+        "network": 207,
         "directSupabase": 163,
         "todo": 19
       },
@@ -4677,6 +4681,10 @@
             "count": 1
           },
           {
+            "file": "scripts/audit-pay-001-a12-executor-trust-root-signature.js",
+            "count": 1
+          },
+          {
             "file": "scripts/audit-product-controller-stack.js",
             "count": 1
           },
@@ -5707,7 +5715,7 @@
       "id": "PAY-001",
       "name": "Pagamentos, cobrança, escrow e webhooks",
       "maturity": 2,
-      "filesMatched": 30,
+      "filesMatched": 32,
       "sampleFiles": [
         "assets/js/pages/pagamento-profissional.js",
         "assets/js/repositories/finance-repository.js",
@@ -5719,6 +5727,7 @@
         "backend/modules/payments/payment-reconciliation-contract.js",
         "backend/modules/payments/payment-reconciliation-executor-adapter.js",
         "backend/modules/payments/payment-reconciliation-executor-protocol.js",
+        "backend/modules/payments/payment-reconciliation-executor-trust.js",
         "backend/modules/payments/payment-reconciliation-migration-canary-contract.js",
         "backend/modules/payments/payment-reconciliation-operations-contract.js",
         "backend/modules/payments/payment-reconciliation-queue.js",
@@ -5732,16 +5741,15 @@
         "config/pay-a11-executor-protocol-manifests/migration-application.json",
         "config/pay-a11-executor-protocol-manifests/post-migration-verification.json",
         "config/pay-a11-executor-protocol-manifests/read-only-preflight.json",
-        "config/pay-a11-executor-protocol-manifests/rollback.json",
-        "supabase/migrations/014_finance_wallet_shared_runtime.sql"
+        "config/pay-a11-executor-protocol-manifests/rollback.json"
       ],
       "missingRequiredPaths": [],
       "signals": {
         "localStorage": 1,
         "sessionStorage": 0,
         "mock": 2,
-        "network": 47,
-        "directSupabase": 45,
+        "network": 49,
+        "directSupabase": 47,
         "todo": 2
       },
       "signalFiles": {
@@ -5768,6 +5776,10 @@
             "count": 9
           },
           {
+            "file": "backend/modules/payments/payment-reconciliation-executor-trust.js",
+            "count": 2
+          },
+          {
             "file": "backend/modules/payments/provider-event-ledger.js",
             "count": 4
           },
@@ -5788,6 +5800,10 @@
           {
             "file": "assets/js/repositories/finance-repository.js",
             "count": 7
+          },
+          {
+            "file": "backend/modules/payments/payment-reconciliation-executor-trust.js",
+            "count": 2
           },
           {
             "file": "backend/modules/payments/provider-event-ledger.js",
@@ -5828,7 +5844,7 @@
           "id": "PAY-B04",
           "severity": "high",
           "category": "reconciliation",
-          "description": "Remote reconciliation infrastructure remains absent. PAY-A08 defines immutable migrations; PAY-A09 separates staging phases; PAY-A10 validates inert dispatch, receipt and evidence; PAY-A11 freezes provider-neutral protocol manifests and a deterministic dry-run corpus, but no remote read, migration, store, lease, scheduler, metrics sink, alert delivery, on-call ownership or staging rehearsal exists.",
+          "description": "Remote reconciliation infrastructure remains absent. PAY-A08 defines immutable migrations; PAY-A09 separates staging phases; PAY-A10 validates inert dispatch, receipt and evidence; PAY-A11 freezes provider-neutral protocol manifests and a deterministic dry-run corpus; PAY-A12 defines offline executor trust-root and detached-signature verification, but no real trust roots, remote read, migration, store, lease, scheduler, metrics sink, alert delivery, on-call ownership or staging rehearsal exists.",
           "targetPhase": "Fase 8"
         }
       ],
@@ -5860,7 +5876,9 @@
         "audit:pay-001-a10-external-executor-evidence-ingestion",
         "test:pay-001-a10-external-executor-evidence-ingestion",
         "audit:pay-001-a11-executor-protocol-conformance",
-        "test:pay-001-a11-executor-protocol-conformance"
+        "test:pay-001-a11-executor-protocol-conformance",
+        "audit:pay-001-a12-executor-trust-root-signature",
+        "test:pay-001-a12-executor-trust-root-signature"
       ]
     },
     {
@@ -6587,7 +6605,7 @@
       "id": "LEGAL-001",
       "name": "Jurídico, privacidade, confiança e políticas comerciais",
       "maturity": 1,
-      "filesMatched": 260,
+      "filesMatched": 261,
       "sampleFiles": [
         "docs/ACTIVE-CONTRACTS-INDEX.md",
         "docs/API-ADAPTER-CONTRACT.md",
@@ -8335,7 +8353,7 @@
       "id": "APP-001",
       "name": "Aplicativos Android e iOS",
       "maturity": 0,
-      "filesMatched": 2525,
+      "filesMatched": 2531,
       "sampleFiles": [
         ".agents/skills/animation-vocabulary/SKILL.md",
         ".agents/skills/apple-design/SKILL.md",
@@ -8368,8 +8386,8 @@
         "localStorage": 529,
         "sessionStorage": 151,
         "mock": 902,
-        "network": 609,
-        "directSupabase": 535,
+        "network": 612,
+        "directSupabase": 537,
         "todo": 89
       },
       "signalFiles": {
@@ -10697,6 +10715,10 @@
             "count": 7
           },
           {
+            "file": "backend/modules/payments/payment-reconciliation-executor-trust.js",
+            "count": 2
+          },
+          {
             "file": "backend/modules/payments/provider-event-ledger.js",
             "count": 4
           },
@@ -10894,6 +10916,10 @@
           },
           {
             "file": "scripts/audit-pay-001-a11-executor-protocol-conformance.js",
+            "count": 1
+          },
+          {
+            "file": "scripts/audit-pay-001-a12-executor-trust-root-signature.js",
             "count": 1
           },
           {
@@ -11585,6 +11611,10 @@
           {
             "file": "backend/modules/orders/orders-service.js",
             "count": 7
+          },
+          {
+            "file": "backend/modules/payments/payment-reconciliation-executor-trust.js",
+            "count": 2
           },
           {
             "file": "backend/modules/payments/provider-event-ledger.js",
