@@ -1,8 +1,10 @@
 (() => {
   const STORAGE_PREFIX = 'doke.news-view.v1';
   const MUTATION_MANAGER_SRC = 'assets/js/core/mutation-manager.js?v=20260804-ux-core-002-v1';
+  const CONTINUITY_SRC = 'assets/js/core/continuity-experience.js?v=20260804-ux-cont-001-v1';
   const VALID_FILTERS = new Set(['all', 'update', 'announcement', 'security', 'community']);
   let mutationManagerTask = null;
+  let continuityTask = null;
 
   const getUserId = () => {
     const candidates = [
@@ -61,11 +63,11 @@
     }
   };
 
-  const writePreference = (normalized) => {
+  const writePreference = (normalized, targetStorageKey) => {
     const serialized = JSON.stringify(normalized);
-    localStorage.setItem(storageKey(), serialized);
+    localStorage.setItem(targetStorageKey, serialized);
 
-    if (localStorage.getItem(storageKey()) !== serialized) {
+    if (localStorage.getItem(targetStorageKey) !== serialized) {
       const error = new Error('news-preference-persistence-failed');
       error.code = 'NEWS_PREFERENCE_PERSISTENCE_FAILED';
       throw error;
@@ -75,40 +77,73 @@
   };
 
   const getMutationManager = () => window.Doke?.formMutationManager || null;
+  const getContinuity = () => window.Doke?.continuityExperience || null;
 
-  const ensureMutationManager = () => {
-    const available = getMutationManager();
+  const ensureScriptAuthority = ({
+    getter,
+    task,
+    setTask,
+    selector,
+    src,
+    datasetKey,
+    unavailable,
+    loadFailed
+  }) => {
+    const available = getter();
     if (available) return Promise.resolve(available);
-    if (mutationManagerTask) return mutationManagerTask;
+    if (task) return task;
 
-    mutationManagerTask = new Promise((resolve, reject) => {
+    const loading = new Promise((resolve, reject) => {
       const finish = () => {
-        const manager = getMutationManager();
-        if (manager) resolve(manager);
-        else reject(new Error('mutation-manager-unavailable'));
+        const authority = getter();
+        if (authority) resolve(authority);
+        else reject(new Error(unavailable));
       };
 
-      let script = document.querySelector('script[data-doke-mutation-manager]');
+      let script = document.querySelector(selector);
       const isNewScript = !script;
       if (!script) {
         script = document.createElement('script');
-        script.src = MUTATION_MANAGER_SRC;
+        script.src = src;
         script.async = false;
-        script.dataset.dokeMutationManager = 'true';
+        script.dataset[datasetKey] = 'true';
       }
 
       script.addEventListener('load', finish, { once: true });
-      script.addEventListener('error', () => reject(new Error('mutation-manager-load-failed')), { once: true });
+      script.addEventListener('error', () => reject(new Error(loadFailed)), { once: true });
 
       if (isNewScript) document.head.append(script);
-      if (getMutationManager()) finish();
+      if (getter()) finish();
     }).catch((error) => {
-      mutationManagerTask = null;
+      setTask(null);
       throw error;
     });
 
-    return mutationManagerTask;
+    setTask(loading);
+    return loading;
   };
+
+  const ensureMutationManager = () => ensureScriptAuthority({
+    getter: getMutationManager,
+    task: mutationManagerTask,
+    setTask: (value) => { mutationManagerTask = value; },
+    selector: 'script[data-doke-mutation-manager]',
+    src: MUTATION_MANAGER_SRC,
+    datasetKey: 'dokeMutationManager',
+    unavailable: 'mutation-manager-unavailable',
+    loadFailed: 'mutation-manager-load-failed'
+  });
+
+  const ensureContinuity = () => ensureScriptAuthority({
+    getter: getContinuity,
+    task: continuityTask,
+    setTask: (value) => { continuityTask = value; },
+    selector: 'script[data-doke-continuity-experience]',
+    src: CONTINUITY_SRC,
+    datasetKey: 'dokeContinuityExperience',
+    unavailable: 'continuity-experience-unavailable',
+    loadFailed: 'continuity-experience-load-failed'
+  });
 
   const reportError = (error) => {
     const state = navigator.onLine === false ? 'offline' : 'error';
@@ -116,35 +151,56 @@
     window.dispatchEvent(new CustomEvent('doke:news-experience-error', { detail: { error, state } }));
   };
 
-  const savePreference = (next) => {
-    const normalized = normalizePreference(next);
-    const accountId = getUserId();
+  const saveWithManager = ({
+    manager,
+    requestHandle,
+    normalized,
+    accountId,
+    targetStorageKey
+  }) => {
+    requestHandle?.assertCurrent();
 
-    return ensureMutationManager()
-      .then((manager) => manager.execute({
-        domain: 'news',
-        action: 'save_preference',
-        accountId,
-        entityType: 'preference',
-        entityId: 'news-view',
-        payload: normalized,
-        dedupeKey: `news|save_preference|${accountId}|${manager.fingerprint(normalized)}`,
-        authority: 'client-local-preference',
-        request: () => ({
-          value: writePreference(normalized),
+    return manager.execute({
+      domain: 'news',
+      action: 'save_preference',
+      accountId,
+      entityType: 'preference',
+      entityId: 'news-view',
+      payload: normalized,
+      dedupeKey: `news|save_preference|${accountId}|${manager.fingerprint(normalized)}`,
+      authority: 'client-local-preference',
+      request: () => {
+        requestHandle?.assertCurrent();
+        if (requestHandle?.signal?.aborted) {
+          const error = new Error('news-preference-request-aborted');
+          error.code = 'NEWS_PREFERENCE_REQUEST_ABORTED';
+          throw error;
+        }
+
+        return {
+          value: writePreference(normalized, targetStorageKey),
           confirmed: true,
           authorityReceipt: {
             authority: 'client-local-preference',
             authorityReference: 'news-view-v1',
             confirmedAt: Date.now()
           }
-        }),
-        classifyError: () => manager.states.REJECTED,
-        onStateChange: (mutation) => {
+        };
+      },
+      classifyError: (error) => (
+        error?.code === 'DOKE_CONTINUITY_STALE_CONTEXT'
+          ? manager.states.CANCELLED
+          : manager.states.REJECTED
+      ),
+      onStateChange: (mutation) => {
+        const apply = () => {
           document.body.dataset.newsPreferenceMutationState = mutation.state;
-        }
-      }))
-      .then((outcome) => {
+        };
+        if (requestHandle) requestHandle.commit(apply);
+        else apply();
+      }
+    }).then((outcome) => {
+      const applyOutcome = () => {
         setState('ready', { preference: normalized, announce: false });
         window.dispatchEvent(new CustomEvent('doke:news-preference-saved', {
           detail: {
@@ -153,25 +209,73 @@
           }
         }));
         return outcome.result || normalized;
-      })
+      };
+
+      if (!requestHandle) return applyOutcome();
+      const committed = requestHandle.commit(applyOutcome);
+      return committed.applied ? committed.value : normalized;
+    });
+  };
+
+  const savePreference = (next) => {
+    const normalized = normalizePreference(next);
+    const accountId = getUserId();
+    const targetStorageKey = storageKey();
+
+    return ensureContinuity()
       .catch((error) => {
-        if (error?.message === 'mutation-manager-load-failed' || error?.message === 'mutation-manager-unavailable') {
-          try {
-            const value = writePreference(normalized);
-            setState('ready', { preference: value, announce: false });
-            return value;
-          } catch (storageError) {
-            reportError(storageError);
+        console.warn('[Doke][Novidades] Continuity fences indisponíveis; usando compatibilidade local.', error);
+        return null;
+      })
+      .then((continuity) => {
+        const revisionKey = 'news.preference';
+        const revision = continuity?.bumpRevision?.(revisionKey) || '';
+        const requestHandle = continuity?.beginRequest?.({
+          lane: 'news.preference.save',
+          revisionKey,
+          revision,
+          entityKey: 'preference/news-view',
+          abortPrevious: true
+        }) || null;
+
+        return ensureMutationManager()
+          .then((manager) => saveWithManager({
+            manager,
+            requestHandle,
+            normalized,
+            accountId,
+            targetStorageKey
+          }))
+          .catch((error) => {
+            const validation = requestHandle?.validate?.();
+            if (validation && !validation.current) return normalized;
+
+            if (error?.message === 'mutation-manager-load-failed' || error?.message === 'mutation-manager-unavailable') {
+              const applyFallback = () => {
+                const value = writePreference(normalized, targetStorageKey);
+                setState('ready', { preference: value, announce: false });
+                return value;
+              };
+
+              if (!requestHandle) return applyFallback();
+              const committed = requestHandle.commit(applyFallback);
+              return committed.applied ? committed.value : normalized;
+            }
+
+            reportError(error);
             return normalized;
-          }
-        }
-        reportError(error);
-        return normalized;
+          })
+          .finally(() => {
+            requestHandle?.settle?.();
+          });
       });
   };
 
   const api = {
     begin() {
+      ensureContinuity().catch((error) => {
+        console.warn('[Doke][Novidades] Continuity fences serão carregados sob demanda.', error);
+      });
       ensureMutationManager().catch((error) => {
         console.warn('[Doke][Novidades] Mutation manager será carregado sob demanda.', error);
       });
@@ -188,6 +292,7 @@
     savePreference,
     readPreference,
     ensureMutationManager,
+    ensureContinuity,
     invalidate() {
       window.Doke?.stableShellRouter?.invalidate?.('novidades.html');
     }
@@ -197,8 +302,27 @@
   window.Doke.newsExperience = api;
 
   window.addEventListener('online', () => {
-    api.refreshing({ reason: 'online' });
-    api.invalidate();
-    window.setTimeout(() => api.ready({ reason: 'online' }), 0);
+    ensureContinuity().catch(() => null).then((continuity) => {
+      const requestHandle = continuity?.beginRequest?.({
+        lane: 'news.online-refresh',
+        entityKey: 'route/novidades',
+        abortPrevious: true
+      }) || null;
+
+      const beginRefresh = () => {
+        api.refreshing({ reason: 'online' });
+        api.invalidate();
+      };
+
+      if (requestHandle) requestHandle.commit(beginRefresh);
+      else beginRefresh();
+
+      window.setTimeout(() => {
+        const finishRefresh = () => api.ready({ reason: 'online' });
+        if (requestHandle) requestHandle.commit(finishRefresh);
+        else finishRefresh();
+        requestHandle?.settle?.();
+      }, 0);
+    });
   });
 })();
