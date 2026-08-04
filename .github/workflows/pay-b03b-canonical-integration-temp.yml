@@ -1,0 +1,136 @@
+name: Doke PAY-B03B Canonical Integration Temp
+
+on:
+  push:
+    branches:
+      - pay/pay-b03b-commercial-approval-evidence-build
+    paths:
+      - '.github/workflows/pay-b03b-canonical-integration-temp.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  integrate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: pay/pay-b03b-commercial-approval-evidence-build
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+      - name: Apply deterministic canonical integration
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+
+          const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+          packageJson.scripts['audit:pay-b03b-commercial-approval-evidence-package'] = 'node scripts/audit-pay-b03b-commercial-approval-evidence-package.js';
+          packageJson.scripts['test:pay-b03b-commercial-approval-evidence-package'] = 'node scripts/test-pay-b03b-commercial-approval-evidence-package.js';
+          fs.writeFileSync('package.json', JSON.stringify(packageJson, null, 2) + '\n');
+
+          const matrixPath = 'config/domain-completion-matrix.json';
+          const matrix = JSON.parse(fs.readFileSync(matrixPath, 'utf8'));
+          const pay = matrix.domains.find((domain) => domain.id === 'PAY-001');
+          if (!pay) throw new Error('PAY-001 domain missing');
+          matrix.version = '1.3.105';
+          matrix.updatedAt = '2026-08-04T13:50:00-03:00';
+
+          const paths = [
+            'backend/modules/payments/payment-commercial-approval-evidence.js',
+            'config/pay-b03b-commercial-approval-evidence-package.json',
+            'tests/fixtures/pay-b03b-commercial-approval-evidence-cases.json',
+            'docs/PAY-B03B-COMMERCIAL-APPROVAL-EVIDENCE-PACKAGE.md',
+            'docs/validation/PAY-B03B-COMMERCIAL-APPROVAL-EVIDENCE-PACKAGE.json',
+            'scripts/audit-pay-b03b-commercial-approval-evidence-package.js',
+            'scripts/test-pay-b03b-commercial-approval-evidence-package.js',
+            '.github/workflows/pay-b03b-commercial-approval-evidence-package.yml'
+          ];
+          for (const file of paths) if (!pay.requiredPaths.includes(file)) pay.requiredPaths.push(file);
+          for (const file of [paths[0], paths[2]]) if (!pay.scanRoots.includes(file)) pay.scanRoots.push(file);
+          for (const script of [
+            'audit:pay-b03b-commercial-approval-evidence-package',
+            'test:pay-b03b-commercial-approval-evidence-package'
+          ]) if (!pay.tests.includes(script)) pay.tests.push(script);
+          const evidenceLine = 'PAY-B03B approval-evidence package passed 39/39 repository-only cases, defines four approval scopes and nine pending parameters, requires qualified external legal and tax/accounting review, records zero approvals and preserves PAY-B03 open.';
+          if (!pay.evidence.includes(evidenceLine)) pay.evidence.push(evidenceLine);
+          pay.nextActions = [
+            'Complete PAY-B03B by obtaining versioned executive, finance/risk, qualified external legal and qualified external tax/accounting approvals for all four scopes and nine parameters; PAY-B03 remains open until real evidence exists and runtime alignment is complete.',
+            'After real approval evidence and parameter values are supplied, execute a separate PAY-B03C runtime-policy alignment sublot without activating provider or production authority.',
+            'Keep PAY-B01 provider selection, account, credentials and provider contact blocked until separate explicit authorization.',
+            'Keep PAY-B04 remote infrastructure, staging execution and production release blocked pending separate design and authorization.'
+          ];
+          fs.writeFileSync(matrixPath, JSON.stringify(matrix, null, 2) + '\n');
+
+          for (const file of [
+            'scripts/audit-pay-b03a-commercial-policy-decision-gate.js',
+            'scripts/audit-pay-001-a18-witness-proof-rehearsal-adoption-gate.js'
+          ]) {
+            let source = fs.readFileSync(file, 'utf8');
+            if (!source.includes("matrix.version === '1.3.104'")) throw new Error('Expected matrix guard missing: ' + file);
+            source = source.replaceAll("matrix.version === '1.3.104'", "matrix.version === '1.3.105'")
+              .replaceAll('Matrix version must be 1.3.104', 'Matrix version must be 1.3.105')
+              .replaceAll('matrix version must be 1.3.104', 'matrix version must be 1.3.105');
+            fs.writeFileSync(file, source);
+          }
+
+          const auditPath = 'scripts/audit-pay-b03b-commercial-approval-evidence-package.js';
+          let audit = fs.readFileSync(auditPath, 'utf8');
+          const marker = "console.log('PAY-B03B commercial approval evidence package audit passed.');";
+          if (!audit.includes(marker)) throw new Error('PAY-B03B audit marker missing');
+          const integration = `const packageJson = readJson('package.json');
+          const matrix = readJson('config/domain-completion-matrix.json');
+          const pay = matrix.domains.find((domain) => domain.id === 'PAY-001');
+          assert(matrix.version === '1.3.105', 'matrix version must be 1.3.105');
+          assert(packageJson.scripts['audit:pay-b03b-commercial-approval-evidence-package'] === 'node scripts/audit-pay-b03b-commercial-approval-evidence-package.js', 'package audit script missing');
+          assert(packageJson.scripts['test:pay-b03b-commercial-approval-evidence-package'] === 'node scripts/test-pay-b03b-commercial-approval-evidence-package.js', 'package test script missing');
+          assert(pay && pay.maturity === 2, 'PAY maturity must remain 2');
+          assert(pay.userFacingAuthority === 'local' && pay.serverAuthority === 'contract_only', 'PAY authority drifted');
+          assert(pay.stagingEvidence === 'local_e2e', 'PAY staging evidence drifted');
+          assert(pay.securityGate === 'blocked' && pay.productionGate === 'blocked', 'PAY gates must remain blocked');
+          assert(JSON.stringify(pay.blockers.map((item) => item.id)) === JSON.stringify(['PAY-B01', 'PAY-B03', 'PAY-B04']), 'PAY blockers drifted');
+          Object.values(paths).forEach((file) => assert(pay.requiredPaths.includes(file), 'matrix required path missing: ' + file));
+          [paths.module, paths.fixture].forEach((file) => assert(pay.scanRoots.includes(file), 'matrix scan root missing: ' + file));
+          ['audit:pay-b03b-commercial-approval-evidence-package', 'test:pay-b03b-commercial-approval-evidence-package']
+            .forEach((script) => assert(pay.tests.includes(script), 'matrix test missing: ' + script));
+          assert(pay.evidence.some((item) => item.includes('PAY-B03B') && item.includes('39/39') && item.includes('zero approvals')), 'matrix PAY-B03B evidence missing');
+          assert(pay.nextActions[0].includes('PAY-B03B') && pay.nextActions[0].includes('PAY-B03 remains open'), 'PAY-B03B next action drift');
+
+          `;
+          audit = audit.replace(marker, integration + marker);
+          fs.writeFileSync(auditPath, audit);
+          NODE
+
+          npm run write:domain-completion-matrix
+          node scripts/audit-pay-b03a-commercial-policy-decision-gate.js
+          node scripts/test-pay-b03a-commercial-policy-decision-gate.js
+          node scripts/audit-pay-b03b-commercial-approval-evidence-package.js
+          node scripts/test-pay-b03b-commercial-approval-evidence-package.js
+          node scripts/audit-pay-001-a18-witness-proof-rehearsal-adoption-gate.js
+          node scripts/test-pay-001-a18-witness-proof-rehearsal-adoption-gate.js
+          npm run audit:domain-completion-matrix
+          git diff --check
+      - name: Commit allowlisted integration and self-remove
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json
+          git add config/domain-completion-matrix.json
+          git add docs/DOMAIN-COMPLETION-MATRIX.md
+          git add -f reports/generated/domain-completion-matrix-report.json
+          git add scripts/audit-pay-b03a-commercial-policy-decision-gate.js
+          git add scripts/audit-pay-b03b-commercial-approval-evidence-package.js
+          git add scripts/audit-pay-001-a18-witness-proof-rehearsal-adoption-gate.js
+          git rm .github/workflows/pay-b03b-canonical-integration-temp.yml
+          changed="$(git diff --cached --name-only | sort)"
+          expected="$(printf '%s\n' '.github/workflows/pay-b03b-canonical-integration-temp.yml' 'config/domain-completion-matrix.json' 'docs/DOMAIN-COMPLETION-MATRIX.md' 'package.json' 'reports/generated/domain-completion-matrix-report.json' 'scripts/audit-pay-001-a18-witness-proof-rehearsal-adoption-gate.js' 'scripts/audit-pay-b03a-commercial-policy-decision-gate.js' 'scripts/audit-pay-b03b-commercial-approval-evidence-package.js' | sort)"
+          test "$changed" = "$expected"
+          git diff --cached --check
+          git commit -m "Integrate PAY-B03B approval evidence package"
+          git push origin HEAD:pay/pay-b03b-commercial-approval-evidence-build
