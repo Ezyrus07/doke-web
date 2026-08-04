@@ -63,4 +63,4 @@ PAY-A16 performs zero network requests, database connections, subprocesses, envi
 
 ## Next sublot
 
-PAY-A17 should define transparency checkpoints, rollback-safe distribution recovery, cache-poisoning incident evidence and operational adoption handoff, remaining repository-only.
+PAY-A18 should define transparency checkpoints, rollback-safe distribution recovery, cache-poisoning incident evidence and operational adoption handoff, remaining repository-only.

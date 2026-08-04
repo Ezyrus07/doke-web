@@ -175,7 +175,7 @@ assert(JSON.stringify(pay.blockers.map((item) => item.id)) === JSON.stringify(['
 assert(pay.tests.includes('audit:pay-001-a07-reconciliation-operations-readiness'), 'matrix A07 audit missing');
 assert(pay.tests.includes('test:pay-001-a07-reconciliation-operations-readiness'), 'matrix A07 runtime missing');
 assert(pay.evidence.some((item) => item.includes('PAY-A07')), 'matrix A07 evidence missing');
-assert(pay.nextActions[0].includes('PAY-A17'), 'PAY-A17 must be the first next action');
+assert(pay.nextActions[0].includes('PAY-A18'), 'PAY-A18 must be the first next action');
 
 assert(workflow.includes('permissions:\n  contents: read'), 'PAY-A07 workflow must remain read-only');
 [

@@ -1,0 +1,619 @@
+{
+  "contractVersion": "pay-a17-transparency-recovery-incident-handoff-v1",
+  "totalCases": 94,
+  "positiveCases": [
+    {
+      "id": "checkpoint_genesis_valid"
+    },
+    {
+      "id": "checkpoint_successor_valid"
+    },
+    {
+      "id": "checkpoint_chain_valid"
+    },
+    {
+      "id": "recovery_plan_valid"
+    },
+    {
+      "id": "recovery_result_valid"
+    },
+    {
+      "id": "incident_genesis_valid"
+    },
+    {
+      "id": "incident_contained_valid"
+    },
+    {
+      "id": "incident_recovery_validated"
+    },
+    {
+      "id": "incident_chain_valid"
+    },
+    {
+      "id": "adoption_handoff_valid"
+    },
+    {
+      "id": "adoption_decision_blocked"
+    },
+    {
+      "id": "effects_remain_zero"
+    }
+  ],
+  "negativeCases": [
+    {
+      "id": "checkpoint_invalid_id",
+      "target": "checkpointGenesis",
+      "expectedCode": "DOKE_PAY_A17_CHECKPOINT_ID_INVALID",
+      "path": "input.checkpointId",
+      "value": "bad"
+    },
+    {
+      "id": "checkpoint_sequence_zero",
+      "target": "checkpointGenesis",
+      "expectedCode": "DOKE_PAY_A17_CHECKPOINT_SEQUENCE_INVALID",
+      "path": "input.checkpointSequence",
+      "value": 0
+    },
+    {
+      "id": "checkpoint_genesis_predecessor",
+      "target": "checkpointGenesis",
+      "expectedCode": "DOKE_PAY_A17_GENESIS_CHECKPOINT_PREDECESSOR_DENIED",
+      "path": "input.previousCheckpointHash",
+      "value": "2f05d4b689d270cafb02285f35f44866f7dc8a2d368a3f9d1124373eeab31fb1"
+    },
+    {
+      "id": "checkpoint_manifest_mismatch",
+      "target": "checkpointGenesis",
+      "expectedCode": "DOKE_PAY_A17_CHECKPOINT_MANIFEST_MISMATCH",
+      "path": "input.distributionManifestFingerprint",
+      "value": "2f05d4b689d270cafb02285f35f44866f7dc8a2d368a3f9d1124373eeab31fb1"
+    },
+    {
+      "id": "checkpoint_epoch_mismatch",
+      "target": "checkpointGenesis",
+      "expectedCode": "DOKE_PAY_A17_CHECKPOINT_EPOCH_MISMATCH",
+      "path": "input.distributionEpoch",
+      "value": 99
+    },
+    {
+      "id": "checkpoint_lifecycle_mismatch",
+      "target": "checkpointGenesis",
+      "expectedCode": "DOKE_PAY_A17_CHECKPOINT_LIFECYCLE_MISMATCH",
+      "path": "input.lifecycleSequence",
+      "value": 99
+    },
+    {
+      "id": "checkpoint_issuer_mismatch",
+      "target": "checkpointGenesis",
+      "expectedCode": "DOKE_PAY_A17_CHECKPOINT_ISSUER_MISMATCH",
+      "path": "input.issuerIdHash",
+      "value": "9b987089a1de42f33c1fa2bbe18b2a900c967e3940beea45d754515bd8fdcc77"
+    },
+    {
+      "id": "checkpoint_family_mismatch",
+      "target": "checkpointGenesis",
+      "expectedCode": "DOKE_PAY_A17_CHECKPOINT_FAMILY_MISMATCH",
+      "path": "input.issuerFamilyHash",
+      "value": "f2839234143bda9550734b9f18457734ad741d2879632e52a69873990f327fa7"
+    },
+    {
+      "id": "checkpoint_cache_proof_mismatch",
+      "target": "checkpointGenesis",
+      "expectedCode": "DOKE_PAY_A17_CHECKPOINT_CACHE_PROOF_MISMATCH",
+      "path": "input.cacheProofFingerprint",
+      "value": "2f05d4b689d270cafb02285f35f44866f7dc8a2d368a3f9d1124373eeab31fb1"
+    },
+    {
+      "id": "checkpoint_quorum_mismatch",
+      "target": "checkpointGenesis",
+      "expectedCode": "DOKE_PAY_A17_CHECKPOINT_QUORUM_MISMATCH",
+      "path": "input.quorumDecisionFingerprint",
+      "value": "2f05d4b689d270cafb02285f35f44866f7dc8a2d368a3f9d1124373eeab31fb1"
+    },
+    {
+      "id": "checkpoint_invalid_time",
+      "target": "checkpointGenesis",
+      "expectedCode": "DOKE_PAY_A17_CHECKPOINT_TIME_INVALID",
+      "path": "input.observedAt",
+      "value": "not-a-time"
+    },
+    {
+      "id": "checkpoint_tree_size_zero",
+      "target": "checkpointGenesis",
+      "expectedCode": "DOKE_PAY_A17_TREE_SIZE_INVALID",
+      "path": "input.treeSize",
+      "value": 0
+    },
+    {
+      "id": "checkpoint_root_invalid",
+      "target": "checkpointGenesis",
+      "expectedCode": "DOKE_PAY_A17_ROOT_HASH_INVALID",
+      "path": "input.rootHash",
+      "value": "bad"
+    },
+    {
+      "id": "checkpoint_witness_too_few",
+      "target": "checkpointGenesis",
+      "expectedCode": "DOKE_PAY_A17_WITNESSES_INVALID",
+      "path": "input.witnessHashes",
+      "value": [
+        "2ba73781992bb9b7be49389386fbc45f81014cb10b82052274211fa9f9e67601"
+      ]
+    },
+    {
+      "id": "checkpoint_witness_duplicate",
+      "target": "checkpointGenesis",
+      "expectedCode": "DOKE_PAY_A17_WITNESSES_INVALID",
+      "path": "input.witnessHashes",
+      "value": [
+        "2ba73781992bb9b7be49389386fbc45f81014cb10b82052274211fa9f9e67601",
+        "2ba73781992bb9b7be49389386fbc45f81014cb10b82052274211fa9f9e67601"
+      ]
+    },
+    {
+      "id": "checkpoint_witness_unsorted",
+      "target": "checkpointGenesis",
+      "expectedCode": "DOKE_PAY_A17_WITNESSES_INVALID",
+      "path": "input.witnessHashes",
+      "value": [
+        "7c17f24e3dbc545455df44f499030e6e14559dab1228cfa03e90e2078dde29f7",
+        "2ba73781992bb9b7be49389386fbc45f81014cb10b82052274211fa9f9e67601"
+      ]
+    },
+    {
+      "id": "checkpoint_publication_mode",
+      "target": "checkpointGenesis",
+      "expectedCode": "DOKE_PAY_A17_PUBLICATION_MODE_INVALID",
+      "path": "input.publicationMode",
+      "value": "primary"
+    },
+    {
+      "id": "checkpoint_endpoint_boundary",
+      "target": "checkpointGenesis",
+      "expectedCode": "DOKE_PAY_A17_REMOTE_MATERIAL_DENIED",
+      "path": "input.containsEndpoints",
+      "value": true
+    },
+    {
+      "id": "checkpoint_private_key_boundary",
+      "target": "checkpointGenesis",
+      "expectedCode": "DOKE_PAY_A17_REMOTE_MATERIAL_DENIED",
+      "path": "input.containsPrivateKeyMaterial",
+      "value": true
+    },
+    {
+      "id": "checkpoint_production",
+      "target": "checkpointGenesis",
+      "expectedCode": "DOKE_PAY_A17_PRODUCTION_DENIED",
+      "path": "input.production",
+      "value": true
+    },
+    {
+      "id": "checkpoint_previous_missing",
+      "target": "checkpointSuccessor",
+      "expectedCode": "DOKE_PAY_A17_PREVIOUS_CHECKPOINT_REQUIRED",
+      "path": "options.previousCheckpoint"
+    },
+    {
+      "id": "checkpoint_previous_hash_mismatch",
+      "target": "checkpointSuccessor",
+      "expectedCode": "DOKE_PAY_A17_PREVIOUS_CHECKPOINT_HASH_MISMATCH",
+      "path": "input.previousCheckpointHash",
+      "value": "2f05d4b689d270cafb02285f35f44866f7dc8a2d368a3f9d1124373eeab31fb1"
+    },
+    {
+      "id": "checkpoint_sequence_gap",
+      "target": "checkpointSuccessor",
+      "expectedCode": "DOKE_PAY_A17_CHECKPOINT_SEQUENCE_GAP",
+      "path": "input.checkpointSequence",
+      "value": 5
+    },
+    {
+      "id": "checkpoint_chain_issuer_cross",
+      "target": "checkpointSuccessor",
+      "expectedCode": "DOKE_PAY_A17_CHECKPOINT_ISSUER_MISMATCH",
+      "path": "input.issuerIdHash",
+      "value": "9b987089a1de42f33c1fa2bbe18b2a900c967e3940beea45d754515bd8fdcc77"
+    },
+    {
+      "id": "checkpoint_chain_family_cross",
+      "target": "checkpointSuccessor",
+      "expectedCode": "DOKE_PAY_A17_CHECKPOINT_FAMILY_MISMATCH",
+      "path": "input.issuerFamilyHash",
+      "value": "f2839234143bda9550734b9f18457734ad741d2879632e52a69873990f327fa7"
+    },
+    {
+      "id": "checkpoint_epoch_rollback",
+      "target": "checkpointSuccessor",
+      "expectedCode": "DOKE_PAY_A17_CHECKPOINT_EPOCH_ROLLBACK_DENIED",
+      "special": "checkpoint_epoch_rollback"
+    },
+    {
+      "id": "checkpoint_lifecycle_rollback",
+      "target": "checkpointSuccessor",
+      "expectedCode": "DOKE_PAY_A17_CHECKPOINT_LIFECYCLE_ROLLBACK_DENIED",
+      "special": "checkpoint_lifecycle_rollback"
+    },
+    {
+      "id": "checkpoint_tree_rollback",
+      "target": "checkpointSuccessor",
+      "expectedCode": "DOKE_PAY_A17_TREE_SIZE_ROLLBACK_DENIED",
+      "path": "input.treeSize",
+      "value": 1
+    },
+    {
+      "id": "checkpoint_clock_rollback",
+      "target": "checkpointSuccessor",
+      "expectedCode": "DOKE_PAY_A17_CHECKPOINT_CLOCK_ROLLBACK_DENIED",
+      "path": "input.observedAt",
+      "value": "2026-08-04T10:00:00.000Z"
+    },
+    {
+      "id": "checkpoint_interval_exceeded",
+      "target": "checkpointSuccessor",
+      "expectedCode": "DOKE_PAY_A17_CHECKPOINT_INTERVAL_EXCEEDED",
+      "path": "input.observedAt",
+      "value": "2026-08-04T10:10:01.000Z"
+    },
+    {
+      "id": "checkpoint_chain_empty",
+      "target": "checkpointChain",
+      "expectedCode": "DOKE_PAY_A17_CHECKPOINT_CHAIN_REQUIRED",
+      "special": "chain_empty"
+    },
+    {
+      "id": "checkpoint_chain_tampered",
+      "target": "checkpointChain",
+      "expectedCode": "DOKE_PAY_A17_CHECKPOINT_INTEGRITY_FAILED",
+      "path": "chain.1.rootHash",
+      "value": "2f05d4b689d270cafb02285f35f44866f7dc8a2d368a3f9d1124373eeab31fb1"
+    },
+    {
+      "id": "checkpoint_chain_replay",
+      "target": "checkpointChain",
+      "expectedCode": "DOKE_PAY_A17_CHECKPOINT_REPLAY_DENIED",
+      "special": "checkpoint_chain_replay"
+    },
+    {
+      "id": "checkpoint_chain_fork",
+      "target": "checkpointChain",
+      "expectedCode": "DOKE_PAY_A17_CHECKPOINT_FORK_DENIED",
+      "special": "checkpoint_chain_fork"
+    },
+    {
+      "id": "checkpoint_chain_sequence_gap",
+      "target": "checkpointChain",
+      "expectedCode": "DOKE_PAY_A17_CHECKPOINT_SEQUENCE_GAP",
+      "special": "checkpoint_chain_sequence_gap"
+    },
+    {
+      "id": "checkpoint_chain_epoch_rollback",
+      "target": "checkpointChain",
+      "expectedCode": "DOKE_PAY_A17_CHECKPOINT_EPOCH_ROLLBACK_DENIED",
+      "special": "checkpoint_chain_epoch_rollback"
+    },
+    {
+      "id": "recovery_invalid_id",
+      "target": "recoveryPlan",
+      "expectedCode": "DOKE_PAY_A17_RECOVERY_ID_INVALID",
+      "path": "input.recoveryId",
+      "value": "bad"
+    },
+    {
+      "id": "recovery_incident_hash_invalid",
+      "target": "recoveryPlan",
+      "expectedCode": "DOKE_PAY_A17_INCIDENT_ID_HASH_INVALID",
+      "path": "input.incidentIdHash",
+      "value": "bad"
+    },
+    {
+      "id": "recovery_compromised_mismatch",
+      "target": "recoveryPlan",
+      "expectedCode": "DOKE_PAY_A17_COMPROMISED_CHECKPOINT_MISMATCH",
+      "path": "input.compromisedCheckpointHash",
+      "value": "2f05d4b689d270cafb02285f35f44866f7dc8a2d368a3f9d1124373eeab31fb1"
+    },
+    {
+      "id": "recovery_last_good_mismatch",
+      "target": "recoveryPlan",
+      "expectedCode": "DOKE_PAY_A17_LAST_KNOWN_GOOD_MISMATCH",
+      "path": "input.lastKnownGoodCheckpointHash",
+      "value": "2f05d4b689d270cafb02285f35f44866f7dc8a2d368a3f9d1124373eeab31fb1"
+    },
+    {
+      "id": "recovery_last_good_order",
+      "target": "recoveryPlan",
+      "expectedCode": "DOKE_PAY_A17_LAST_KNOWN_GOOD_ORDER_INVALID",
+      "special": "recovery_last_good_order"
+    },
+    {
+      "id": "recovery_target_manifest_mismatch",
+      "target": "recoveryPlan",
+      "expectedCode": "DOKE_PAY_A17_RECOVERY_TARGET_MANIFEST_MISMATCH",
+      "path": "input.targetManifestFingerprint",
+      "value": "2f05d4b689d270cafb02285f35f44866f7dc8a2d368a3f9d1124373eeab31fb1"
+    },
+    {
+      "id": "recovery_target_epoch_mismatch",
+      "target": "recoveryPlan",
+      "expectedCode": "DOKE_PAY_A17_RECOVERY_TARGET_EPOCH_MISMATCH",
+      "path": "input.targetDistributionEpoch",
+      "value": 99
+    },
+    {
+      "id": "recovery_target_lifecycle_mismatch",
+      "target": "recoveryPlan",
+      "expectedCode": "DOKE_PAY_A17_RECOVERY_TARGET_LIFECYCLE_MISMATCH",
+      "path": "input.targetLifecycleSequence",
+      "value": 99
+    },
+    {
+      "id": "recovery_forward_only_epoch",
+      "target": "recoveryPlan",
+      "expectedCode": "DOKE_PAY_A17_FORWARD_ONLY_EPOCH_REQUIRED",
+      "special": "recovery_forward_only_epoch"
+    },
+    {
+      "id": "recovery_lifecycle_rollback",
+      "target": "recoveryPlan",
+      "expectedCode": "DOKE_PAY_A17_RECOVERY_LIFECYCLE_ROLLBACK_DENIED",
+      "special": "recovery_lifecycle_rollback"
+    },
+    {
+      "id": "recovery_mode_invalid",
+      "target": "recoveryPlan",
+      "expectedCode": "DOKE_PAY_A17_RECOVERY_MODE_INVALID",
+      "path": "input.recoveryMode",
+      "value": "restore_snapshot"
+    },
+    {
+      "id": "recovery_cache_duplicate",
+      "target": "recoveryPlan",
+      "expectedCode": "DOKE_PAY_A17_INVALIDATED_CACHE_SET_INVALID",
+      "path": "input.invalidatedCacheEntryFingerprints",
+      "value": [
+        "ee7ee6bbc7eb21e316687fca6744ef8c3815a866a12acd2e54de58fee9027a89",
+        "ee7ee6bbc7eb21e316687fca6744ef8c3815a866a12acd2e54de58fee9027a89"
+      ]
+    },
+    {
+      "id": "recovery_approvals_low",
+      "target": "recoveryPlan",
+      "expectedCode": "DOKE_PAY_A17_MINIMUM_APPROVALS_INVALID",
+      "path": "input.minimumApprovals",
+      "value": 1
+    },
+    {
+      "id": "recovery_automatic_execution",
+      "target": "recoveryPlan",
+      "expectedCode": "DOKE_PAY_A17_RECOVERY_AUTHORITY_DENIED",
+      "path": "input.automaticExecutionAuthorized",
+      "value": true
+    },
+    {
+      "id": "recovery_result_version",
+      "target": "recoveryResult",
+      "expectedCode": "DOKE_PAY_A17_RECOVERY_RESULT_VERSION_INVALID",
+      "path": "result.resultVersion",
+      "value": "v0"
+    },
+    {
+      "id": "recovery_result_plan_mismatch",
+      "target": "recoveryResult",
+      "expectedCode": "DOKE_PAY_A17_RECOVERY_RESULT_PLAN_MISMATCH",
+      "path": "result.planFingerprint",
+      "value": "2f05d4b689d270cafb02285f35f44866f7dc8a2d368a3f9d1124373eeab31fb1"
+    },
+    {
+      "id": "recovery_result_before_plan",
+      "target": "recoveryResult",
+      "expectedCode": "DOKE_PAY_A17_RECOVERY_WINDOW_INVALID",
+      "path": "result.completedAt",
+      "value": "2026-08-04T10:05:00.000Z"
+    },
+    {
+      "id": "recovery_result_window",
+      "target": "recoveryResult",
+      "expectedCode": "DOKE_PAY_A17_RECOVERY_WINDOW_INVALID",
+      "path": "result.completedAt",
+      "value": "2026-08-04T10:30:01.000Z"
+    },
+    {
+      "id": "recovery_result_checkpoint_reuse",
+      "target": "recoveryResult",
+      "expectedCode": "DOKE_PAY_A17_RECOVERY_CHECKPOINT_REUSE_DENIED",
+      "special": "recovery_result_checkpoint_reuse"
+    },
+    {
+      "id": "recovery_result_manifest_mismatch",
+      "target": "recoveryResult",
+      "expectedCode": "DOKE_PAY_A17_RECOVERY_RESULT_MANIFEST_MISMATCH",
+      "path": "result.rebuiltManifestFingerprint",
+      "value": "2f05d4b689d270cafb02285f35f44866f7dc8a2d368a3f9d1124373eeab31fb1"
+    },
+    {
+      "id": "recovery_result_epoch_mismatch",
+      "target": "recoveryResult",
+      "expectedCode": "DOKE_PAY_A17_RECOVERY_RESULT_EPOCH_MISMATCH",
+      "path": "result.resultingDistributionEpoch",
+      "value": 99
+    },
+    {
+      "id": "recovery_result_invalidation_mismatch",
+      "target": "recoveryResult",
+      "expectedCode": "DOKE_PAY_A17_RECOVERY_INVALIDATION_SET_MISMATCH",
+      "path": "result.invalidatedCacheEntryFingerprints",
+      "value": [
+        "471420154b49815042ed924041457102bf2df21124c5fb25b44394d61d5021ec"
+      ]
+    },
+    {
+      "id": "recovery_result_status",
+      "target": "recoveryResult",
+      "expectedCode": "DOKE_PAY_A17_RECOVERY_VALIDATION_STATUS_INVALID",
+      "path": "result.validationStatus",
+      "value": "applied_remote"
+    },
+    {
+      "id": "recovery_result_network_effect",
+      "target": "recoveryResult",
+      "expectedCode": "DOKE_PAY_A17_RECOVERY_RESULT_AUTHORITY_ESCALATION",
+      "path": "result.networkRequests",
+      "value": 1
+    },
+    {
+      "id": "incident_id_invalid",
+      "target": "incidentGenesis",
+      "expectedCode": "DOKE_PAY_A17_INCIDENT_ID_HASH_INVALID",
+      "path": "input.incidentIdHash",
+      "value": "bad"
+    },
+    {
+      "id": "incident_sequence_zero",
+      "target": "incidentGenesis",
+      "expectedCode": "DOKE_PAY_A17_INCIDENT_SEQUENCE_INVALID",
+      "path": "input.incidentSequence",
+      "value": 0
+    },
+    {
+      "id": "incident_time_invalid",
+      "target": "incidentGenesis",
+      "expectedCode": "DOKE_PAY_A17_INCIDENT_TIME_INVALID",
+      "path": "input.detectedAt",
+      "value": "bad-time"
+    },
+    {
+      "id": "incident_detection_invalid",
+      "target": "incidentGenesis",
+      "expectedCode": "DOKE_PAY_A17_DETECTION_CLASS_INVALID",
+      "path": "input.detectionClass",
+      "value": "unknown"
+    },
+    {
+      "id": "incident_replicas_too_few",
+      "target": "incidentGenesis",
+      "expectedCode": "DOKE_PAY_A17_OBSERVED_REPLICAS_INVALID",
+      "path": "input.observedReplicaHashes",
+      "value": [
+        "d44dcfec29c8c885075577055c1160dc79508d40c9a86a0fa4ada918d448184a"
+      ]
+    },
+    {
+      "id": "incident_no_manifest_mismatch",
+      "target": "incidentGenesis",
+      "expectedCode": "DOKE_PAY_A17_MANIFEST_MISMATCH_EVIDENCE_REQUIRED",
+      "special": "incident_no_manifest_mismatch"
+    },
+    {
+      "id": "incident_hash_only_false",
+      "target": "incidentGenesis",
+      "expectedCode": "DOKE_PAY_A17_HASH_ONLY_EVIDENCE_REQUIRED",
+      "path": "input.evidenceHashOnly",
+      "value": false
+    },
+    {
+      "id": "incident_raw_payload",
+      "target": "incidentGenesis",
+      "expectedCode": "DOKE_PAY_A17_INCIDENT_SENSITIVE_MATERIAL_DENIED",
+      "path": "input.rawPayloadStored",
+      "value": true
+    },
+    {
+      "id": "incident_previous_missing",
+      "target": "incidentSuccessor",
+      "expectedCode": "DOKE_PAY_A17_PREVIOUS_INCIDENT_EVIDENCE_REQUIRED",
+      "path": "options.previousIncidentEvidence"
+    },
+    {
+      "id": "incident_sequence_gap",
+      "target": "incidentSuccessor",
+      "expectedCode": "DOKE_PAY_A17_INCIDENT_SEQUENCE_GAP",
+      "path": "input.incidentSequence",
+      "value": 5
+    },
+    {
+      "id": "incident_containment_rollback",
+      "target": "incidentRecovered",
+      "expectedCode": "DOKE_PAY_A17_CONTAINMENT_STATE_ROLLBACK_DENIED",
+      "path": "input.containmentState",
+      "value": "under_investigation"
+    },
+    {
+      "id": "incident_chain_replay",
+      "target": "incidentChain",
+      "expectedCode": "DOKE_PAY_A17_INCIDENT_REPLAY_DENIED",
+      "special": "incident_chain_replay"
+    },
+    {
+      "id": "handoff_checkpoint_head",
+      "target": "handoff",
+      "expectedCode": "DOKE_PAY_A17_HANDOFF_CHECKPOINT_HEAD_MISMATCH",
+      "path": "input.checkpointChainHeadHash",
+      "value": "2f05d4b689d270cafb02285f35f44866f7dc8a2d368a3f9d1124373eeab31fb1"
+    },
+    {
+      "id": "handoff_recovery_result",
+      "target": "handoff",
+      "expectedCode": "DOKE_PAY_A17_HANDOFF_RECOVERY_RESULT_MISMATCH",
+      "path": "input.recoveryResultFingerprint",
+      "value": "2f05d4b689d270cafb02285f35f44866f7dc8a2d368a3f9d1124373eeab31fb1"
+    },
+    {
+      "id": "handoff_incident_head",
+      "target": "handoff",
+      "expectedCode": "DOKE_PAY_A17_HANDOFF_INCIDENT_HEAD_MISMATCH",
+      "path": "input.incidentChainHeadHash",
+      "value": "2f05d4b689d270cafb02285f35f44866f7dc8a2d368a3f9d1124373eeab31fb1"
+    },
+    {
+      "id": "handoff_role_overlap",
+      "target": "handoff",
+      "expectedCode": "DOKE_PAY_A17_ROLE_SEPARATION_REQUIRED",
+      "special": "handoff_role_overlap"
+    },
+    {
+      "id": "handoff_approvals_low",
+      "target": "handoff",
+      "expectedCode": "DOKE_PAY_A17_MINIMUM_APPROVALS_INVALID",
+      "path": "input.minimumApprovals",
+      "value": 1
+    },
+    {
+      "id": "handoff_adoption_state",
+      "target": "handoff",
+      "expectedCode": "DOKE_PAY_A17_ADOPTION_STATE_INVALID",
+      "path": "input.adoptionState",
+      "value": "ready"
+    },
+    {
+      "id": "handoff_blockers_changed",
+      "target": "handoff",
+      "expectedCode": "DOKE_PAY_A17_BLOCKERS_CHANGED",
+      "path": "input.blockers",
+      "value": [
+        "PAY-B01"
+      ]
+    },
+    {
+      "id": "handoff_production",
+      "target": "handoff",
+      "expectedCode": "DOKE_PAY_A17_ADOPTION_AUTHORITY_DENIED",
+      "path": "input.production",
+      "value": true
+    },
+    {
+      "id": "adoption_handoff_mismatch",
+      "target": "adoption",
+      "expectedCode": "DOKE_PAY_A17_ADOPTION_DECISION_HANDOFF_MISMATCH",
+      "path": "input.handoffFingerprint",
+      "value": "2f05d4b689d270cafb02285f35f44866f7dc8a2d368a3f9d1124373eeab31fb1"
+    },
+    {
+      "id": "adoption_ready_denied",
+      "target": "adoption",
+      "expectedCode": "DOKE_PAY_A17_OPERATIONAL_ADOPTION_DENIED",
+      "path": "input.decision",
+      "value": "ready"
+    }
+  ]
+}

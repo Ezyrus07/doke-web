@@ -99,7 +99,7 @@ Object.entries(config.effects).forEach(([key, value]) => assert(value === 0 || v
   'PAY-A16', 'PAY-A15', 'distribution manifest', 'cache consistency',
   'split-brain', 'degraded_read_only', 'fail_closed', '120 seconds',
   'multi-issuer', 'two distinct issuer-family', 'health gate only',
-  '72/72', 'PAY-B01', 'PAY-B03', 'PAY-B04', 'PAY-A17'
+  '72/72', 'PAY-B01', 'PAY-B03', 'PAY-B04', 'PAY-A18'
 ].forEach((fragment) => assert(docs.toLowerCase().includes(fragment.toLowerCase()), 'documentation missing: ' + fragment));
 
 assert(evidence.status === 'passed_repository_only', 'evidence status mismatch');
@@ -141,7 +141,7 @@ assert(pay.scanRoots.includes(paths.fixture), 'matrix scanRoots missing A16 fixt
 assert(pay.tests.includes('audit:pay-001-a16-issuer-status-distribution-resilience'), 'matrix A16 audit missing');
 assert(pay.tests.includes('test:pay-001-a16-issuer-status-distribution-resilience'), 'matrix A16 test missing');
 assert(pay.evidence.some((item) => item.includes('PAY-A16')), 'matrix A16 evidence missing');
-assert(pay.nextActions[0].includes('PAY-A17'), 'PAY-A17 must be first next action');
+assert(pay.nextActions[0].includes('PAY-A18'), 'PAY-A18 must be first next action');
 
 assert(workflow.includes('permissions:\n  contents: read'), 'workflow must remain read-only');
 [
