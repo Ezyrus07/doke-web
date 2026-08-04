@@ -7,10 +7,10 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  diagnose-dsp-a05-transport:
+  materialize-dsp-a05:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -20,26 +20,56 @@ jobs:
           ref: dsp/dsp-001-baseline-audit
           fetch-depth: 0
 
-      - name: Diagnose archive transport
+      - name: Reconstruct DSP-A05 artifacts
         shell: bash
         run: |
           set -euo pipefail
-          python - <<'PY'
-          from pathlib import Path
-          import base64, gzip, re
-          text = Path('.github/workflows/dsp-a05-materialize-temporary.yml').read_text()
-          start = text.index("<<'ARCHIVE'")
-          payload = text[start:].splitlines()[1]
-          allowed = set('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=')
-          invalid = [(i, ch, payload[max(0, i-40):i+80]) for i, ch in enumerate(payload) if ch not in allowed]
-          print({'payload_length': len(payload), 'length_mod_4': len(payload) % 4, 'invalid_count': len(invalid)})
-          for item in invalid[:10]:
-              print({'position': item[0], 'char_repr': repr(item[1]), 'context': item[2]})
-          try:
-              raw = base64.b64decode(payload, validate=True)
-              print({'decoded_bytes': len(raw), 'gzip_magic': raw[:2].hex()})
-              print({'gzip_uncompressed_bytes': len(gzip.decompress(raw))})
-          except Exception as exc:
-              print({'decode_error': type(exc).__name__, 'message': str(exc)})
-              raise
-          PY
+          mkdir -p backend/modules/disputes config docs scripts tests/fixtures .github/workflows /tmp/dsp-a05
+          base64 -d .dsp-a05-materialize/small.tar.gz.b64 | tar -xz -C "$GITHUB_WORKSPACE"
+          base64 -d .dsp-a05-materialize/audit.gz.b64 | gzip -d > scripts/audit-dsp-a05-operator-case-dual-control-readiness.js
+          base64 -d .dsp-a05-materialize/module.part1.gz.b64 | gzip -d > /tmp/dsp-a05/module.1
+          base64 -d .dsp-a05-materialize/module.part2.gz.b64 | gzip -d > /tmp/dsp-a05/module.2
+          cat /tmp/dsp-a05/module.1 /tmp/dsp-a05/module.2 > backend/modules/disputes/dispute-operator-case-dual-control-readiness.js
+          base64 -d .dsp-a05-materialize/test.part1.gz.b64 | gzip -d > /tmp/dsp-a05/test.1
+          base64 -d .dsp-a05-materialize/test.part2.gz.b64 | gzip -d > /tmp/dsp-a05/test.2
+          cat /tmp/dsp-a05/test.1 /tmp/dsp-a05/test.2 > scripts/test-dsp-a05-operator-case-dual-control-readiness.js
+          sha256sum -c <<'SUMS'
+          4478a9e25808cb95e8839e75f744370413d2289fa3f8de8de6d142afc731879b  .github/workflows/dsp-a05-operator-case-dual-control-readiness.yml
+          60abc11e1870cbf7858c232a715ef9d651cc35c9dd1901db0c4afd775c9d7d25  backend/modules/disputes/dispute-operator-case-dual-control-readiness.js
+          7657234537f29146ad8add6562d651c651779eda78c6693b11fdd1f0f4996fe2  config/dsp-a05-operator-case-dual-control-readiness.json
+          1b8b0554b58cec26ab0ba505ed05f8e2ab2ec6b55c14614830cc3f54e8948478  docs/DSP-A05-OPERATOR-CASE-DUAL-CONTROL-READINESS.md
+          c0bcef7834d6d9994fa216ecec4241f994b7bdbb7501eb81ef87a9693bd90cb0  scripts/audit-dsp-a05-operator-case-dual-control-readiness.js
+          4c2219ff5a3f64d8b3d697f6332cf8ffdd92fa963bbf7ec337fe12c1b0002163  scripts/test-dsp-a05-operator-case-dual-control-readiness.js
+          246d4aff39291b5fc555f5c64575eecc389adfa6382fba0bacd8173b274eb44d  tests/fixtures/dsp-a05-operator-case-dual-control-cases.json
+          SUMS
+
+      - name: Validate DSP-A05
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check backend/modules/disputes/dispute-operator-case-dual-control-readiness.js
+          node --check scripts/audit-dsp-a05-operator-case-dual-control-readiness.js
+          node --check scripts/test-dsp-a05-operator-case-dual-control-readiness.js
+          node scripts/audit-dsp-a05-operator-case-dual-control-readiness.js
+          node scripts/test-dsp-a05-operator-case-dual-control-readiness.js
+          node scripts/audit-dsp-a04-provider-chargeback-reconciliation-boundary.js
+          node scripts/test-dsp-a04-provider-chargeback-reconciliation-boundary.js
+          node scripts/audit-dsp-a03-evidence-deadline-appeal-contract.js
+          node scripts/test-dsp-a03-evidence-deadline-appeal-contract.js
+          node scripts/audit-dsp-a02-canonical-lifecycle-effect-taxonomy.js
+          node scripts/test-dsp-a02-canonical-lifecycle-effect-taxonomy.js
+          node scripts/audit-dsp-a01-authority-baseline.js
+          node scripts/test-dsp-a01-authority-baseline.js
+          git diff --check
+
+      - name: Clean transport and commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git show 974e0c60bda67c13e4fd837f3b38bac1ddc2ada3:.github/workflows/dsp-a04-provider-chargeback-reconciliation-boundary.yml > .github/workflows/dsp-a04-provider-chargeback-reconciliation-boundary.yml
+          rm -rf .dsp-a05-materialize .github/workflows/dsp-a05-materialize-temporary.yml
+          git config user.name "doke-ci"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A -- .dsp-a05-materialize .github/workflows/dsp-a05-materialize-temporary.yml .github/workflows/dsp-a04-provider-chargeback-reconciliation-boundary.yml .github/workflows/dsp-a05-operator-case-dual-control-readiness.yml backend/modules/disputes/dispute-operator-case-dual-control-readiness.js config/dsp-a05-operator-case-dual-control-readiness.json docs/DSP-A05-OPERATOR-CASE-DUAL-CONTROL-READINESS.md scripts/audit-dsp-a05-operator-case-dual-control-readiness.js scripts/test-dsp-a05-operator-case-dual-control-readiness.js tests/fixtures/dsp-a05-operator-case-dual-control-cases.json
+          git commit -m "feat(disputes): add DSP-A05 operator dual-control readiness"
+          git push origin HEAD:dsp/dsp-001-baseline-audit
