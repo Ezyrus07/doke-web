@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - pay/pay-a16-issuer-status-resilience-build
+  pull_request:
+    paths:
+      - '.pay-a16-bootstrap/**'
+      - '.github/workflows/pay-001-a16-publisher-temp.yml'
 
 permissions:
   contents: write
@@ -21,10 +25,10 @@ jobs:
         with:
           ref: pay/pay-a16-issuer-status-resilience-build
           fetch-depth: 0
-      - name: Verify exact event head
+      - name: Verify exact branch head
         run: |
-          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
-          test "$GITHUB_REF_NAME" = "pay/pay-a16-issuer-status-resilience-build"
+          git fetch origin pay/pay-a16-issuer-status-resilience-build
+          test "$(git rev-parse HEAD)" = "$(git rev-parse origin/pay/pay-a16-issuer-status-resilience-build)"
       - uses: actions/setup-node@v4
         with:
           node-version: 24
