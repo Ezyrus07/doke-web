@@ -1,0 +1,168 @@
+name: Doke PAY-A17 Publisher Retry Temporary
+
+on:
+  push:
+    branches:
+      - pay/pay-a17-transparency-recovery-build
+  pull_request:
+    paths:
+      - '.pay-a17-bootstrap/**'
+      - '.github/workflows/pay-001-a17-publisher-retry-temp.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pay-a17-publisher-retry
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: pay/pay-a17-transparency-recovery-build
+          fetch-depth: 0
+      - name: Detect payload
+        id: gate
+        run: |
+          if compgen -G '.pay-a17-bootstrap/chunk-*.b64' > /dev/null; then
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Verify and extract PAY-A17 payload
+        if: steps.gate.outputs.skip != 'true'
+        run: |
+          cat .pay-a17-bootstrap/chunk-*.b64 | LC_ALL=C tr -cd 'A-Za-z0-9+/=' > /tmp/pay-a17.b64
+          test "$(sha256sum /tmp/pay-a17.b64 | awk '{print $1}')" = "30eb9f3527a136824bcdbd2cf560e03c2987b1fc2b7a6ffa27a0ce74a0030efe"
+          base64 -d /tmp/pay-a17.b64 > /tmp/pay-a17.tar.gz
+          test "$(sha256sum /tmp/pay-a17.tar.gz | awk '{print $1}')" = "bfef35431ed155e62e0e398fd97d36b71b0e639b9a35dbb4cf8f385f97ecad8a"
+          gzip -dc /tmp/pay-a17.tar.gz | tar -xf -
+          test -f scripts/apply-pay-001-a17-repository-metadata.js
+      - uses: actions/setup-node@v4
+        if: steps.gate.outputs.skip != 'true'
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
+        if: steps.gate.outputs.skip != 'true'
+      - name: Apply repository metadata
+        if: steps.gate.outputs.skip != 'true'
+        run: |
+          node scripts/apply-pay-001-a17-repository-metadata.js
+          rm -rf .pay-a17-bootstrap
+          rm -f scripts/apply-pay-001-a17-repository-metadata.js
+          npm run write:domain-completion-matrix
+      - name: Validate cumulative boundaries
+        if: steps.gate.outputs.skip != 'true'
+        run: |
+          node --check backend/modules/payments/payment-reconciliation-transparency-recovery.js
+          node --check scripts/audit-pay-001-a17-transparency-recovery-incident-handoff.js
+          node --check scripts/test-pay-001-a17-transparency-recovery-incident-handoff.js
+          npm run audit:pay-001-a01-authority-baseline
+          npm run test:pay-001-a01-authority-baseline
+          npm run audit:pay-001-a02-authenticated-authority-boundary
+          npm run test:pay-001-a02-authenticated-authority-boundary
+          npm run audit:pay-001-a03-psp-neutral-intent-webhook
+          npm run test:pay-001-a03-psp-neutral-intent-webhook
+          npm run audit:pay-001-a04-reconciliation-queue
+          npm run test:pay-001-a04-reconciliation-queue
+          npm run audit:pay-001-a05-adapter-conformance-readiness
+          npm run test:pay-001-a05-adapter-conformance-readiness
+          npm run audit:pay-001-a06-provider-selection-legal-handoff
+          npm run test:pay-001-a06-provider-selection-legal-handoff
+          npm run audit:pay-001-a07-reconciliation-operations-readiness
+          npm run test:pay-001-a07-reconciliation-operations-readiness
+          npm run audit:pay-001-a08-immutable-migrations-read-only-canary
+          npm run test:pay-001-a08-immutable-migrations-read-only-canary
+          npm run audit:pay-001-a09-deployment-inspection-handoff
+          npm run test:pay-001-a09-deployment-inspection-handoff
+          npm run audit:pay-001-a10-external-executor-evidence-ingestion
+          npm run test:pay-001-a10-external-executor-evidence-ingestion
+          npm run audit:pay-001-a11-executor-protocol-conformance
+          npm run test:pay-001-a11-executor-protocol-conformance
+          npm run audit:pay-001-a12-executor-trust-root-signature
+          npm run test:pay-001-a12-executor-trust-root-signature
+          npm run audit:pay-001-a13-executor-lifecycle-governance
+          npm run test:pay-001-a13-executor-lifecycle-governance
+          npm run audit:pay-001-a14-governance-evidence-chain
+          npm run test:pay-001-a14-governance-evidence-chain
+          npm run audit:pay-001-a15-identity-issuer-lifecycle
+          npm run test:pay-001-a15-identity-issuer-lifecycle
+          npm run audit:pay-001-a16-issuer-status-distribution-resilience
+          npm run test:pay-001-a16-issuer-status-distribution-resilience
+          npm run audit:pay-001-a17-transparency-recovery-incident-handoff
+          npm run test:pay-001-a17-transparency-recovery-incident-handoff
+          npm run audit:msg-001-a06-presence-typing-boundary
+          npm run test:msg-001-a06-presence-typing-runtime
+          npm run audit:msg-001-a07-command-reliability
+          npm run test:msg-001-a07-command-reliability-runtime
+          npm run audit:msg-001-a08-staging-activation-readiness
+          npm run test:msg-001-a08-staging-activation-readiness
+          npm run test:finance-supabase-repository-contract
+          npm run test:financial-rpc-authority-contract
+          npm run test:financial-operations-edge-runtime
+          npm run test:staging-finance-sandbox-authority-contract
+          npm run test:staging-finance-sandbox-edge-runtime
+          npm run audit:domain-completion-matrix
+          git diff --check
+      - name: Verify no unexpected files
+        if: steps.gate.outputs.skip != 'true'
+        run: |
+          git add -A
+          git add -f docs/validation/PAY-001-A17-TRANSPARENCY-RECOVERY-INCIDENT-HANDOFF.json
+          git diff --cached --name-only | sort -u > /tmp/pay-a17-actual.txt
+          cat > /tmp/pay-a17-allowed.txt <<'LIST'
+          .pay-a17-bootstrap/chunk-00.b64
+          .pay-a17-bootstrap/chunk-01.b64
+          .pay-a17-bootstrap/chunk-02.b64
+          .pay-a17-bootstrap/chunk-03.b64
+          .pay-a17-bootstrap/chunk-04.b64
+          backend/modules/payments/payment-reconciliation-transparency-recovery.js
+          config/domain-completion-matrix.json
+          config/pay-001-a17-transparency-recovery-incident-handoff.json
+          docs/DOMAIN-COMPLETION-MATRIX.md
+          docs/PAY-001-A06-PROVIDER-SELECTION-LEGAL-HANDOFF.md
+          docs/PAY-001-A07-RECONCILIATION-OPERATIONS-READINESS.md
+          docs/PAY-001-A08-IMMUTABLE-MIGRATIONS-READ-ONLY-CANARY.md
+          docs/PAY-001-A09-DEPLOYMENT-INSPECTION-HANDOFF.md
+          docs/PAY-001-A10-EXTERNAL-EXECUTOR-EVIDENCE-INGESTION.md
+          docs/PAY-001-A11-EXECUTOR-PROTOCOL-CONFORMANCE.md
+          docs/PAY-001-A12-EXECUTOR-TRUST-ROOT-SIGNATURE.md
+          docs/PAY-001-A13-EXECUTOR-LIFECYCLE-GOVERNANCE.md
+          docs/PAY-001-A14-GOVERNANCE-EVIDENCE-CHAIN.md
+          docs/PAY-001-A15-IDENTITY-ISSUER-LIFECYCLE.md
+          docs/PAY-001-A16-ISSUER-STATUS-DISTRIBUTION-RESILIENCE.md
+          docs/PAY-001-A17-TRANSPARENCY-RECOVERY-INCIDENT-HANDOFF.md
+          docs/validation/PAY-001-A17-TRANSPARENCY-RECOVERY-INCIDENT-HANDOFF.json
+          package.json
+          reports/generated/domain-completion-matrix-report.json
+          scripts/audit-pay-001-a06-provider-selection-legal-handoff.js
+          scripts/audit-pay-001-a07-reconciliation-operations-readiness.js
+          scripts/audit-pay-001-a08-immutable-migrations-read-only-canary.js
+          scripts/audit-pay-001-a09-deployment-inspection-handoff.js
+          scripts/audit-pay-001-a10-external-executor-evidence-ingestion.js
+          scripts/audit-pay-001-a11-executor-protocol-conformance.js
+          scripts/audit-pay-001-a12-executor-trust-root-signature.js
+          scripts/audit-pay-001-a13-executor-lifecycle-governance.js
+          scripts/audit-pay-001-a14-governance-evidence-chain.js
+          scripts/audit-pay-001-a15-identity-issuer-lifecycle.js
+          scripts/audit-pay-001-a16-issuer-status-distribution-resilience.js
+          scripts/audit-pay-001-a17-transparency-recovery-incident-handoff.js
+          scripts/test-pay-001-a17-transparency-recovery-incident-handoff.js
+          tests/fixtures/pay-a17-transparency-recovery-incident-handoff-cases.json
+          LIST
+          sort -u -o /tmp/pay-a17-allowed.txt /tmp/pay-a17-allowed.txt
+          test ! -s <(comm -23 /tmp/pay-a17-actual.txt /tmp/pay-a17-allowed.txt)
+          test ! -d .pay-a17-bootstrap
+          test ! -e scripts/apply-pay-001-a17-repository-metadata.js
+      - name: Publish PAY-A17
+        if: steps.gate.outputs.skip != 'true'
+        run: |
+          git config user.name "doke-pay-a17-publisher"
+          git config user.email "actions@users.noreply.github.com"
+          git commit -m "Complete PAY-A17 transparency recovery incident handoff"
+          git push origin HEAD:pay/pay-a17-transparency-recovery-build
