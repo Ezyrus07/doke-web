@@ -1,0 +1,47 @@
+name: WAL-A02 Bank Account Sensitive Data Boundary
+
+on:
+  pull_request:
+    paths:
+      - 'backend/modules/wallet/wallet-bank-account-sensitive-data.js'
+      - 'config/wal-a02-bank-account-sensitive-data-boundary.json'
+      - 'tests/fixtures/wal-a02-bank-account-sensitive-data-cases.json'
+      - 'docs/WAL-A02-BANK-ACCOUNT-SENSITIVE-DATA-BOUNDARY.md'
+      - 'scripts/audit-wal-a02-bank-account-sensitive-data-boundary.js'
+      - 'scripts/test-wal-a02-bank-account-sensitive-data-boundary.js'
+      - 'assets/js/repositories/finance-repository.js'
+      - 'assets/js/repositories/wallet-repository.js'
+      - 'supabase/migrations/107_financial_rpc_authority.sql'
+      - '.github/workflows/wal-a02-bank-account-sensitive-data-boundary.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  wal-a02-bank-account-sensitive-data-boundary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Syntax
+        run: |
+          node --check backend/modules/wallet/wallet-bank-account-sensitive-data.js
+          node --check scripts/audit-wal-a02-bank-account-sensitive-data-boundary.js
+          node --check scripts/test-wal-a02-bank-account-sensitive-data-boundary.js
+
+      - name: Audit sensitive-data boundary
+        run: node scripts/audit-wal-a02-bank-account-sensitive-data-boundary.js
+
+      - name: Conformance
+        run: node scripts/test-wal-a02-bank-account-sensitive-data-boundary.js
+
+      - name: Diff hygiene
+        run: git diff --check
