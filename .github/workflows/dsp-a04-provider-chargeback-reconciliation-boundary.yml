@@ -43,7 +43,7 @@ jobs:
             'reports/generated/domain-completion-matrix-report.json'
           }
           changed = []
-          for line in subprocess.check_output(['git', 'status', '--porcelain=v1'], text=True).splitlines():
+          for line in subprocess.check_output(['git', 'status', '--porcelain=v1', '--ignored=no'], text=True).splitlines():
               path = line[3:]
               if ' -> ' in path:
                   path = path.split(' -> ', 1)[1]
@@ -59,6 +59,7 @@ jobs:
           git diff --check
           git config user.name "doke-ci"
           git config user.email "actions@users.noreply.github.com"
-          git add -- docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json
+          git add -- docs/DOMAIN-COMPLETION-MATRIX.md
+          git add -f -- reports/generated/domain-completion-matrix-report.json
           git commit -m "docs(matrix): include DSP-A05 operator readiness"
           git push origin HEAD:dsp/dsp-001-baseline-audit
