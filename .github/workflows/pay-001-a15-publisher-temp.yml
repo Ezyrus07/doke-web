@@ -1,0 +1,140 @@
+name: Doke PAY-A15 Publisher Temporary
+
+on:
+  pull_request:
+    paths:
+      - '.pay-a15-bootstrap/chunk-*.b64'
+      - '.github/workflows/pay-001-a15-publisher-temp.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.head.ref == 'pay/pay-001-baseline-audit'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: pay/pay-001-baseline-audit
+          fetch-depth: 0
+      - name: Verify exact event head
+        run: test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Reassemble and verify PAY-A15 payload
+        run: |
+          cat .pay-a15-bootstrap/chunk-*.b64 | LC_ALL=C tr -cd 'A-Za-z0-9+/=' > /tmp/pay-a15.b64
+          actual_b64="$(sha256sum /tmp/pay-a15.b64 | awk '{print $1}')"
+          echo "PAY-A15 normalized base64 SHA-256: $actual_b64"
+          test "$actual_b64" = "0e859edf826db36064d44aec0fa03258c882153f74039e8772b63e9613478504"
+          base64 -d /tmp/pay-a15.b64 > /tmp/pay-a15.tar.gz
+          actual_gzip="$(sha256sum /tmp/pay-a15.tar.gz | awk '{print $1}')"
+          echo "PAY-A15 gzip SHA-256: $actual_gzip"
+          test "$actual_gzip" = "fb1c412f90f88e8aa3de300c7a1c7d4a033c9d6ba2ed9db8616654f929b4c19a"
+          gzip -dc /tmp/pay-a15.tar.gz | tar -xf -
+      - name: Apply PAY-A15 repository metadata
+        run: |
+          node scripts/apply-pay-001-a15-repository-metadata.js
+          rm -f .pay-a15-bootstrap/chunk-*.b64
+          rmdir .pay-a15-bootstrap 2>/dev/null || true
+          rm -f scripts/apply-pay-001-a15-repository-metadata.js
+          rm -f .github/workflows/pay-001-a15-publisher-temp.yml
+          npm run write:domain-completion-matrix
+      - name: Validate PAY-A15 and cumulative boundaries
+        run: |
+          node --check backend/modules/payments/payment-reconciliation-identity-issuer-lifecycle.js
+          node --check scripts/audit-pay-001-a15-identity-issuer-lifecycle.js
+          node --check scripts/test-pay-001-a15-identity-issuer-lifecycle.js
+          npm run audit:pay-001-a01-authority-baseline
+          npm run test:pay-001-a01-authority-baseline
+          npm run audit:pay-001-a02-authenticated-authority-boundary
+          npm run test:pay-001-a02-authenticated-authority-boundary
+          npm run audit:pay-001-a03-psp-neutral-intent-webhook
+          npm run test:pay-001-a03-psp-neutral-intent-webhook
+          npm run audit:pay-001-a04-reconciliation-queue
+          npm run test:pay-001-a04-reconciliation-queue
+          npm run audit:pay-001-a05-adapter-conformance-readiness
+          npm run test:pay-001-a05-adapter-conformance-readiness
+          npm run audit:pay-001-a06-provider-selection-legal-handoff
+          npm run test:pay-001-a06-provider-selection-legal-handoff
+          npm run audit:pay-001-a07-reconciliation-operations-readiness
+          npm run test:pay-001-a07-reconciliation-operations-readiness
+          npm run audit:pay-001-a08-immutable-migrations-read-only-canary
+          npm run test:pay-001-a08-immutable-migrations-read-only-canary
+          npm run audit:pay-001-a09-deployment-inspection-handoff
+          npm run test:pay-001-a09-deployment-inspection-handoff
+          npm run audit:pay-001-a10-external-executor-evidence-ingestion
+          npm run test:pay-001-a10-external-executor-evidence-ingestion
+          npm run audit:pay-001-a11-executor-protocol-conformance
+          npm run test:pay-001-a11-executor-protocol-conformance
+          npm run audit:pay-001-a12-executor-trust-root-signature
+          npm run test:pay-001-a12-executor-trust-root-signature
+          npm run audit:pay-001-a13-executor-lifecycle-governance
+          npm run test:pay-001-a13-executor-lifecycle-governance
+          npm run audit:pay-001-a14-governance-evidence-chain
+          npm run test:pay-001-a14-governance-evidence-chain
+          npm run audit:pay-001-a15-identity-issuer-lifecycle
+          npm run test:pay-001-a15-identity-issuer-lifecycle
+          npm run audit:msg-001-a06-presence-typing-boundary
+          npm run test:msg-001-a06-presence-typing-runtime
+          npm run audit:msg-001-a07-command-reliability
+          npm run test:msg-001-a07-command-reliability-runtime
+          npm run audit:msg-001-a08-staging-activation-readiness
+          npm run test:msg-001-a08-staging-activation-readiness
+          npm run test:finance-supabase-repository-contract
+          npm run test:financial-rpc-authority-contract
+          npm run test:financial-operations-edge-runtime
+          npm run test:staging-finance-sandbox-authority-contract
+          npm run test:staging-finance-sandbox-edge-runtime
+          npm run audit:domain-completion-matrix
+          git diff --check
+      - name: Verify bounded publisher changes
+        run: |
+          cat > /tmp/pay-a15-allowlist.txt <<'EOF'
+          .github/workflows/pay-001-a15-identity-issuer-lifecycle.yml
+          .github/workflows/pay-001-a15-publisher-temp.yml
+          .pay-a15-bootstrap/chunk-01.b64
+          backend/modules/payments/payment-reconciliation-identity-issuer-lifecycle.js
+          config/domain-completion-matrix.json
+          config/pay-001-a15-identity-issuer-lifecycle.json
+          docs/DOMAIN-COMPLETION-MATRIX.md
+          docs/PAY-001-A15-IDENTITY-ISSUER-LIFECYCLE.md
+          docs/validation/PAY-001-A15-IDENTITY-ISSUER-LIFECYCLE.json
+          package.json
+          reports/generated/domain-completion-matrix-report.json
+          scripts/audit-pay-001-a06-provider-selection-legal-handoff.js
+          scripts/audit-pay-001-a07-reconciliation-operations-readiness.js
+          scripts/audit-pay-001-a08-immutable-migrations-read-only-canary.js
+          scripts/audit-pay-001-a09-deployment-inspection-handoff.js
+          scripts/audit-pay-001-a10-external-executor-evidence-ingestion.js
+          scripts/audit-pay-001-a11-executor-protocol-conformance.js
+          scripts/audit-pay-001-a12-executor-trust-root-signature.js
+          scripts/audit-pay-001-a13-executor-lifecycle-governance.js
+          scripts/audit-pay-001-a14-governance-evidence-chain.js
+          scripts/audit-pay-001-a15-identity-issuer-lifecycle.js
+          scripts/test-pay-001-a15-identity-issuer-lifecycle.js
+          tests/fixtures/pay-a15-identity-issuer-lifecycle-cases.json
+          EOF
+          git status --short
+          git status --porcelain=v1 | sed -E 's/^.. //' | sort -u > /tmp/pay-a15-changed.txt
+          unexpected="$(comm -23 /tmp/pay-a15-changed.txt <(sort -u /tmp/pay-a15-allowlist.txt))"
+          test -z "$unexpected" || { echo "Unexpected PAY-A15 changes:"; echo "$unexpected"; exit 1; }
+          for forbidden in .pay-a15-bootstrap/chunk-01.b64 scripts/apply-pay-001-a15-repository-metadata.js .github/workflows/pay-001-a15-publisher-temp.yml; do
+            test ! -e "$forbidden"
+          done
+          grep -F 'permissions:' .github/workflows/pay-001-a15-identity-issuer-lifecycle.yml
+          grep -F '  contents: read' .github/workflows/pay-001-a15-identity-issuer-lifecycle.yml
+      - name: Publish PAY-A15
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Complete PAY-A15 identity issuer lifecycle and stale credential invalidation"
+          git push origin HEAD:pay/pay-001-baseline-audit
