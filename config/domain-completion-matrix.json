@@ -1,6 +1,6 @@
 {
-  "version": "1.3.100",
-  "updatedAt": "2026-08-04T08:25:00-03:00",
+  "version": "1.3.101",
+  "updatedAt": "2026-08-04T09:21:00-03:00",
   "title": "Doke Domain Completion Matrix",
   "purpose": "Single source of truth for domain maturity, data authority, staging evidence, blockers, dependencies and mandatory completion order.",
   "maturityScale": {
@@ -2163,7 +2163,15 @@
         "docs/validation/PAY-001-A15-IDENTITY-ISSUER-LIFECYCLE.json",
         "scripts/audit-pay-001-a15-identity-issuer-lifecycle.js",
         "scripts/test-pay-001-a15-identity-issuer-lifecycle.js",
-        ".github/workflows/pay-001-a15-identity-issuer-lifecycle.yml"
+        ".github/workflows/pay-001-a15-identity-issuer-lifecycle.yml",
+        "backend/modules/payments/payment-reconciliation-identity-status-resilience.js",
+        "config/pay-001-a16-issuer-status-distribution-resilience.json",
+        "tests/fixtures/pay-a16-issuer-status-distribution-resilience-cases.json",
+        "docs/PAY-001-A16-ISSUER-STATUS-DISTRIBUTION-RESILIENCE.md",
+        "docs/validation/PAY-001-A16-ISSUER-STATUS-DISTRIBUTION-RESILIENCE.json",
+        "scripts/audit-pay-001-a16-issuer-status-distribution-resilience.js",
+        "scripts/test-pay-001-a16-issuer-status-distribution-resilience.js",
+        ".github/workflows/pay-001-a16-issuer-status-distribution-resilience.yml"
       ],
       "scanRoots": [
         "assets/js/pages/pagamento-profissional.js",
@@ -2189,7 +2197,9 @@
         "backend/modules/payments/payment-reconciliation-governance-evidence.js",
         "tests/fixtures/pay-a14-governance-evidence-chain-cases.json",
         "backend/modules/payments/payment-reconciliation-identity-issuer-lifecycle.js",
-        "tests/fixtures/pay-a15-identity-issuer-lifecycle-cases.json"
+        "tests/fixtures/pay-a15-identity-issuer-lifecycle-cases.json",
+        "backend/modules/payments/payment-reconciliation-identity-status-resilience.js",
+        "tests/fixtures/pay-a16-issuer-status-distribution-resilience-cases.json"
       ],
       "tables": [
         "payments",
@@ -2242,7 +2252,9 @@
         "audit:pay-001-a14-governance-evidence-chain",
         "test:pay-001-a14-governance-evidence-chain",
         "audit:pay-001-a15-identity-issuer-lifecycle",
-        "test:pay-001-a15-identity-issuer-lifecycle"
+        "test:pay-001-a15-identity-issuer-lifecycle",
+        "audit:pay-001-a16-issuer-status-distribution-resilience",
+        "test:pay-001-a16-issuer-status-distribution-resilience"
       ],
       "evidence": [
         "Financial contracts, ledger-like tables and local beta-launch E2E exist.",
@@ -2280,7 +2292,8 @@
         "PAY-A12 defines provider-neutral executor trust bundles, verifies Ed25519 and RSA-PSS-SHA256 detached signatures offline, enforces operation/executor allowlists, bounded rotation grace, immediate revocation rejection and replay protection, while storing no private keys or real trust roots and preserving zero remote effects.",
         "PAY-A13 repository-only lifecycle-governance validation: docs/validation/PAY-001-A13-EXECUTOR-LIFECYCLE-GOVERNANCE.json",
         "PAY-A14 signed governance evidence, external identity attestation and immutable lifecycle decision-chain validation: docs/validation/PAY-001-A14-GOVERNANCE-EVIDENCE-CHAIN.json",
-        "PAY-A15: signed issuer lifecycle/status snapshots, stale credential invalidation and hashes-only retention handoff validated repository-only (64/64)."
+        "PAY-A15: signed issuer lifecycle/status snapshots, stale credential invalidation and hashes-only retention handoff validated repository-only (64/64).",
+        "PAY-A16: provider-neutral status distribution manifests, immutable cache-consistency proofs, bounded degraded mode and independent multi-issuer quorum validated repository-only (72/72)."
       ],
       "blockers": [
         {
@@ -2306,7 +2319,7 @@
         }
       ],
       "nextActions": [
-        "PAY-A16 — define issuer status distribution manifests, cache-consistency proofs, outage/degraded-mode policy and multi-issuer quorum health aggregation, remaining repository-only."
+        "PAY-A17 — define transparency checkpoints, rollback-safe distribution recovery, cache-poisoning incident evidence and operational adoption handoff, remaining repository-only."
       ],
       "exitCriteria": [
         "No card data is stored by Doke.",

@@ -128,7 +128,7 @@ assert(pay.scanRoots.includes(paths.module), 'matrix scanRoots missing A10 modul
 assert(pay.tests.includes('audit:pay-001-a10-external-executor-evidence-ingestion'), 'matrix A10 audit missing');
 assert(pay.tests.includes('test:pay-001-a10-external-executor-evidence-ingestion'), 'matrix A10 test missing');
 assert(pay.evidence.some((item) => item.includes('PAY-A10')), 'matrix A10 evidence missing');
-assert(pay.nextActions[0].includes('PAY-A16'), 'PAY-A16 must be the first next action');
+assert(pay.nextActions[0].includes('PAY-A17'), 'PAY-A17 must be the first next action');
 
 assert(workflow.includes('permissions:\n  contents: read'), 'workflow must remain read-only');
 [

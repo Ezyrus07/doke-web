@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 1157 arquivos no escopo; 271 referências a localStorage; 78 a sessionStorage; 577 referências mock; 216 referências de rede/Supabase; 36 marcadores de implementação pendente.
+**Evidência estática observada:** 1160 arquivos no escopo; 271 referências a localStorage; 78 a sessionStorage; 577 referências mock; 217 referências de rede/Supabase; 36 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -539,7 +539,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI local; servidor partial; staging staging canary; segurança partial; produção blocked.
 
-**Evidência estática observada:** 1099 arquivos no escopo; 205 referências a localStorage; 70 a sessionStorage; 318 referências mock; 215 referências de rede/Supabase; 19 marcadores de implementação pendente.
+**Evidência estática observada:** 1101 arquivos no escopo; 205 referências a localStorage; 70 a sessionStorage; 318 referências mock; 216 referências de rede/Supabase; 19 marcadores de implementação pendente.
 
 **Páginas:** `anunciar-servico.html`, `pedidos.html`, `orcamento.html`.
 
@@ -699,7 +699,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 2/6; UI local; servidor contract only; staging local e2e; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 38 arquivos no escopo; 1 referências a localStorage; 0 a sessionStorage; 2 referências mock; 53 referências de rede/Supabase; 2 marcadores de implementação pendente.
+**Evidência estática observada:** 40 arquivos no escopo; 1 referências a localStorage; 0 a sessionStorage; 2 referências mock; 54 referências de rede/Supabase; 2 marcadores de implementação pendente.
 
 **Páginas:** `pagamento-profissional.html`, `mensagens.html`, `pedidos.html`.
 
@@ -744,6 +744,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - PAY-A13 repository-only lifecycle-governance validation: docs/validation/PAY-001-A13-EXECUTOR-LIFECYCLE-GOVERNANCE.json
 - PAY-A14 signed governance evidence, external identity attestation and immutable lifecycle decision-chain validation: docs/validation/PAY-001-A14-GOVERNANCE-EVIDENCE-CHAIN.json
 - PAY-A15: signed issuer lifecycle/status snapshots, stale credential invalidation and hashes-only retention handoff validated repository-only (64/64).
+- PAY-A16: provider-neutral status distribution manifests, immutable cache-consistency proofs, bounded degraded mode and independent multi-issuer quorum validated repository-only (72/72).
 
 **Bloqueadores:**
 - **PAY-B01 · CRITICAL · external_provider:** No PSP integration or signed webhook authority exists. _(Fase 8)_
@@ -751,7 +752,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - **PAY-B04 · HIGH · reconciliation:** Remote reconciliation infrastructure remains absent. PAY-A08 defines immutable migrations; PAY-A09 separates staging phases; PAY-A10 validates inert dispatch, receipt and evidence; PAY-A11 freezes provider-neutral protocol manifests and a deterministic dry-run corpus; PAY-A12 defines offline executor trust-root and detached-signature verification, but no real trust roots, remote read, migration, store, lease, scheduler, metrics sink, alert delivery, on-call ownership or staging rehearsal exists. _(Fase 8)_
 
 **Próximas ações:**
-- PAY-A16 — define issuer status distribution manifests, cache-consistency proofs, outage/degraded-mode policy and multi-issuer quorum health aggregation, remaining repository-only.
+- PAY-A17 — define transparency checkpoints, rollback-safe distribution recovery, cache-poisoning incident evidence and operational adoption handoff, remaining repository-only.
 
 **Gate de saída:**
 - No card data is stored by Doke.
@@ -1040,7 +1041,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 1/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 264 arquivos no escopo; 68 referências a localStorage; 8 a sessionStorage; 272 referências mock; 8 referências de rede/Supabase; 26 marcadores de implementação pendente.
+**Evidência estática observada:** 265 arquivos no escopo; 68 referências a localStorage; 8 a sessionStorage; 272 referências mock; 8 referências de rede/Supabase; 26 marcadores de implementação pendente.
 
 **Evidências:**
 - The master plan identifies legal, privacy and commercial decisions as mandatory.
@@ -1100,7 +1101,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2549 arquivos no escopo; 529 referências a localStorage; 151 a sessionStorage; 902 referências mock; 624 referências de rede/Supabase; 90 marcadores de implementação pendente.
+**Evidência estática observada:** 2555 arquivos no escopo; 529 referências a localStorage; 151 a sessionStorage; 902 referências mock; 626 referências de rede/Supabase; 90 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
@@ -1161,4 +1162,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-08-04T08:25:00-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-08-04T09:21:00-03:00._

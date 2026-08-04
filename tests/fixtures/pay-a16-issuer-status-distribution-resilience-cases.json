@@ -1,0 +1,297 @@
+{
+  "contractVersion": "pay-a16-issuer-status-distribution-resilience-v1",
+  "fixedClock": "2026-08-04T12:00:00.000Z",
+  "totalCases": 72,
+  "positiveCases": [
+    {
+      "id": "positive_manifest_genesis",
+      "expected": "pass"
+    },
+    {
+      "id": "positive_manifest_rotation",
+      "expected": "pass"
+    },
+    {
+      "id": "positive_cache_entry",
+      "expected": "pass"
+    },
+    {
+      "id": "positive_cache_consistency",
+      "expected": "pass"
+    },
+    {
+      "id": "positive_outage_healthy",
+      "expected": "pass"
+    },
+    {
+      "id": "positive_outage_degraded_read_only",
+      "expected": "pass"
+    },
+    {
+      "id": "positive_health_snapshot",
+      "expected": "pass"
+    },
+    {
+      "id": "positive_multi_issuer_quorum",
+      "expected": "pass"
+    },
+    {
+      "id": "positive_receipt_genesis",
+      "expected": "pass"
+    },
+    {
+      "id": "positive_receipt_chain",
+      "expected": "pass"
+    }
+  ],
+  "negativeCases": [
+    {
+      "id": "manifest_unknown_field",
+      "expectedErrorCode": "DOKE_PAY_A16_DISTRIBUTION_MANIFEST_INVALID"
+    },
+    {
+      "id": "manifest_remote_url",
+      "expectedErrorCode": "DOKE_PAY_A16_REMOTE_MATERIAL_DENIED"
+    },
+    {
+      "id": "manifest_bad_id",
+      "expectedErrorCode": "DOKE_PAY_A16_MANIFEST_ID_INVALID"
+    },
+    {
+      "id": "manifest_issuer_mismatch",
+      "expectedErrorCode": "DOKE_PAY_A16_MANIFEST_ISSUER_MISMATCH"
+    },
+    {
+      "id": "manifest_family_hash",
+      "expectedErrorCode": "DOKE_PAY_A16_ISSUER_FAMILY_HASH_INVALID"
+    },
+    {
+      "id": "manifest_record_hash",
+      "expectedErrorCode": "DOKE_PAY_A16_ISSUER_RECORD_HASH_INVALID"
+    },
+    {
+      "id": "manifest_trust_mismatch",
+      "expectedErrorCode": "DOKE_PAY_A16_MANIFEST_TRUST_BUNDLE_MISMATCH"
+    },
+    {
+      "id": "manifest_snapshot_mismatch",
+      "expectedErrorCode": "DOKE_PAY_A16_MANIFEST_SNAPSHOT_MISMATCH"
+    },
+    {
+      "id": "manifest_lifecycle_mismatch",
+      "expectedErrorCode": "DOKE_PAY_A16_MANIFEST_LIFECYCLE_MISMATCH"
+    },
+    {
+      "id": "manifest_epoch_invalid",
+      "expectedErrorCode": "DOKE_PAY_A16_DISTRIBUTION_EPOCH_INVALID"
+    },
+    {
+      "id": "manifest_window_too_long",
+      "expectedErrorCode": "DOKE_PAY_A16_DISTRIBUTION_WINDOW_INVALID"
+    },
+    {
+      "id": "manifest_outside_status",
+      "expectedErrorCode": "DOKE_PAY_A16_MANIFEST_OUTSIDE_STATUS_WINDOW"
+    },
+    {
+      "id": "manifest_ttl_invalid",
+      "expectedErrorCode": "DOKE_PAY_A16_CACHE_TTL_INVALID"
+    },
+    {
+      "id": "manifest_stale_invalid",
+      "expectedErrorCode": "DOKE_PAY_A16_STALE_WINDOW_INVALID"
+    },
+    {
+      "id": "manifest_channels_missing",
+      "expectedErrorCode": "DOKE_PAY_A16_DISTRIBUTION_CHANNELS_REQUIRED"
+    },
+    {
+      "id": "manifest_channel_invalid",
+      "expectedErrorCode": "DOKE_PAY_A16_DISTRIBUTION_CHANNEL_INVALID"
+    },
+    {
+      "id": "manifest_duplicate_channel",
+      "expectedErrorCode": "DOKE_PAY_A16_DUPLICATE_CHANNEL_DENIED"
+    },
+    {
+      "id": "manifest_channel_order",
+      "expectedErrorCode": "DOKE_PAY_A16_CHANNEL_ORDER_INVALID"
+    },
+    {
+      "id": "manifest_replicas_invalid",
+      "expectedErrorCode": "DOKE_PAY_A16_MINIMUM_REPLICAS_INVALID"
+    },
+    {
+      "id": "manifest_production_denied",
+      "expectedErrorCode": "DOKE_PAY_A16_PRODUCTION_MANIFEST_DENIED"
+    },
+    {
+      "id": "manifest_payload_mismatch",
+      "expectedErrorCode": "DOKE_PAY_A16_PAYLOAD_HASH_MISMATCH"
+    },
+    {
+      "id": "manifest_genesis_predecessor",
+      "expectedErrorCode": "DOKE_PAY_A16_GENESIS_MANIFEST_PREDECESSOR_DENIED"
+    },
+    {
+      "id": "manifest_previous_required",
+      "expectedErrorCode": "DOKE_PAY_A16_PREVIOUS_MANIFEST_REQUIRED"
+    },
+    {
+      "id": "manifest_epoch_gap",
+      "expectedErrorCode": "DOKE_PAY_A16_DISTRIBUTION_EPOCH_GAP"
+    },
+    {
+      "id": "manifest_previous_fingerprint",
+      "expectedErrorCode": "DOKE_PAY_A16_PREVIOUS_MANIFEST_FINGERPRINT_MISMATCH"
+    },
+    {
+      "id": "manifest_lifecycle_rollback",
+      "expectedErrorCode": "DOKE_PAY_A16_LIFECYCLE_ROLLBACK_DENIED"
+    },
+    {
+      "id": "manifest_fingerprint_tamper",
+      "expectedErrorCode": "DOKE_PAY_A16_MANIFEST_FINGERPRINT_MISMATCH"
+    },
+    {
+      "id": "cache_bad_id",
+      "expectedErrorCode": "DOKE_PAY_A16_CACHE_ENTRY_ID_INVALID"
+    },
+    {
+      "id": "cache_bad_key",
+      "expectedErrorCode": "DOKE_PAY_A16_CACHE_KEY_HASH_INVALID"
+    },
+    {
+      "id": "cache_bad_replica",
+      "expectedErrorCode": "DOKE_PAY_A16_REPLICA_HASH_INVALID"
+    },
+    {
+      "id": "cache_outside_manifest",
+      "expectedErrorCode": "DOKE_PAY_A16_CACHE_TIME_OUTSIDE_MANIFEST"
+    },
+    {
+      "id": "cache_manifest_mismatch",
+      "expectedErrorCode": "DOKE_PAY_A16_CACHE_MANIFEST_MISMATCH"
+    },
+    {
+      "id": "cache_lifecycle_mismatch",
+      "expectedErrorCode": "DOKE_PAY_A16_CACHE_LIFECYCLE_MISMATCH"
+    },
+    {
+      "id": "cache_epoch_mismatch",
+      "expectedErrorCode": "DOKE_PAY_A16_CACHE_EPOCH_MISMATCH"
+    },
+    {
+      "id": "cache_payload_mismatch",
+      "expectedErrorCode": "DOKE_PAY_A16_CACHE_PAYLOAD_MISMATCH"
+    },
+    {
+      "id": "cache_expiry_mismatch",
+      "expectedErrorCode": "DOKE_PAY_A16_CACHE_EXPIRY_MISMATCH"
+    },
+    {
+      "id": "cache_fingerprint_tamper",
+      "expectedErrorCode": "DOKE_PAY_A16_CACHE_ENTRY_FINGERPRINT_MISMATCH"
+    },
+    {
+      "id": "proof_quorum_missing",
+      "expectedErrorCode": "DOKE_PAY_A16_CACHE_REPLICA_QUORUM_MISSING"
+    },
+    {
+      "id": "proof_duplicate_replica",
+      "expectedErrorCode": "DOKE_PAY_A16_DUPLICATE_REPLICA_DENIED"
+    },
+    {
+      "id": "proof_future_cache",
+      "expectedErrorCode": "DOKE_PAY_A16_CACHE_CLOCK_ROLLBACK_DETECTED"
+    },
+    {
+      "id": "proof_too_stale",
+      "expectedErrorCode": "DOKE_PAY_A16_CACHE_ENTRY_TOO_STALE"
+    },
+    {
+      "id": "proof_fingerprint_tamper",
+      "expectedErrorCode": "DOKE_PAY_A16_CACHE_PROOF_FINGERPRINT_MISMATCH"
+    },
+    {
+      "id": "outage_bad_policy_id",
+      "expectedErrorCode": "DOKE_PAY_A16_OUTAGE_POLICY_ID_INVALID"
+    },
+    {
+      "id": "outage_issuer_mismatch",
+      "expectedErrorCode": "DOKE_PAY_A16_OUTAGE_ISSUER_MISMATCH"
+    },
+    {
+      "id": "outage_clock_rollback",
+      "expectedErrorCode": "DOKE_PAY_A16_OUTAGE_CLOCK_ROLLBACK_DENIED"
+    },
+    {
+      "id": "outage_proof_future",
+      "expectedErrorCode": "DOKE_PAY_A16_OUTAGE_PROOF_FROM_FUTURE"
+    },
+    {
+      "id": "outage_fail_open",
+      "expectedErrorCode": "DOKE_PAY_A16_FAIL_OPEN_DENIED"
+    },
+    {
+      "id": "outage_remote_refresh",
+      "expectedErrorCode": "DOKE_PAY_A16_FAIL_OPEN_DENIED"
+    },
+    {
+      "id": "outage_degraded_acceptance",
+      "expectedErrorCode": "DOKE_PAY_A16_DEGRADED_CREDENTIAL_ACCEPTANCE_DENIED"
+    },
+    {
+      "id": "outage_fingerprint_tamper",
+      "expectedErrorCode": "DOKE_PAY_A16_OUTAGE_POLICY_FINGERPRINT_MISMATCH"
+    },
+    {
+      "id": "health_context_bad",
+      "expectedErrorCode": "DOKE_PAY_A16_CONTEXT_FINGERPRINT_INVALID"
+    },
+    {
+      "id": "health_flags_invalid",
+      "expectedErrorCode": "DOKE_PAY_A16_HEALTH_FLAGS_INVALID"
+    },
+    {
+      "id": "health_fingerprint_tamper",
+      "expectedErrorCode": "DOKE_PAY_A16_HEALTH_FINGERPRINT_MISMATCH"
+    },
+    {
+      "id": "quorum_inventory_short",
+      "expectedErrorCode": "DOKE_PAY_A16_ISSUER_QUORUM_INVENTORY_INVALID"
+    },
+    {
+      "id": "quorum_duplicate_issuer",
+      "expectedErrorCode": "DOKE_PAY_A16_DUPLICATE_ISSUER_DENIED"
+    },
+    {
+      "id": "quorum_duplicate_family",
+      "expectedErrorCode": "DOKE_PAY_A16_DUPLICATE_ISSUER_FAMILY_DENIED"
+    },
+    {
+      "id": "quorum_context_mismatch",
+      "expectedErrorCode": "DOKE_PAY_A16_QUORUM_CONTEXT_MISMATCH"
+    },
+    {
+      "id": "quorum_fingerprint_tamper",
+      "expectedErrorCode": "DOKE_PAY_A16_QUORUM_DECISION_FINGERPRINT_MISMATCH"
+    },
+    {
+      "id": "receipt_sequence_invalid",
+      "expectedErrorCode": "DOKE_PAY_A16_RECEIPT_SEQUENCE_INVALID"
+    },
+    {
+      "id": "receipt_genesis_predecessor",
+      "expectedErrorCode": "DOKE_PAY_A16_GENESIS_RECEIPT_PREDECESSOR_DENIED"
+    },
+    {
+      "id": "receipt_sequence_gap",
+      "expectedErrorCode": "DOKE_PAY_A16_RECEIPT_SEQUENCE_GAP"
+    },
+    {
+      "id": "receipt_chain_tamper",
+      "expectedErrorCode": "DOKE_PAY_A16_DISTRIBUTION_RECEIPT_INTEGRITY_FAILED"
+    }
+  ]
+}
