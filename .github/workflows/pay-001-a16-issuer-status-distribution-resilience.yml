@@ -1,0 +1,83 @@
+name: Doke PAY-A16 Issuer Status Distribution Resilience
+
+on:
+  pull_request:
+    paths:
+      - 'backend/modules/payments/payment-reconciliation-identity-status-resilience.js'
+      - 'config/pay-001-a16-issuer-status-distribution-resilience.json'
+      - 'tests/fixtures/pay-a16-issuer-status-distribution-resilience-cases.json'
+      - 'docs/PAY-001-A16-ISSUER-STATUS-DISTRIBUTION-RESILIENCE.md'
+      - 'docs/validation/PAY-001-A16-ISSUER-STATUS-DISTRIBUTION-RESILIENCE.json'
+      - 'scripts/audit-pay-001-a16-issuer-status-distribution-resilience.js'
+      - 'scripts/test-pay-001-a16-issuer-status-distribution-resilience.js'
+      - 'scripts/audit-pay-001-a15-identity-issuer-lifecycle.js'
+      - 'package.json'
+      - 'config/domain-completion-matrix.json'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+      - '.github/workflows/pay-001-a16-issuer-status-distribution-resilience.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Validate PAY-A16 and cumulative boundaries
+        run: |
+          node --check backend/modules/payments/payment-reconciliation-identity-status-resilience.js
+          node --check scripts/audit-pay-001-a16-issuer-status-distribution-resilience.js
+          node --check scripts/test-pay-001-a16-issuer-status-distribution-resilience.js
+          npm run audit:pay-001-a01-authority-baseline
+          npm run test:pay-001-a01-authority-baseline
+          npm run audit:pay-001-a02-authenticated-authority-boundary
+          npm run test:pay-001-a02-authenticated-authority-boundary
+          npm run audit:pay-001-a03-psp-neutral-intent-webhook
+          npm run test:pay-001-a03-psp-neutral-intent-webhook
+          npm run audit:pay-001-a04-reconciliation-queue
+          npm run test:pay-001-a04-reconciliation-queue
+          npm run audit:pay-001-a05-adapter-conformance-readiness
+          npm run test:pay-001-a05-adapter-conformance-readiness
+          npm run audit:pay-001-a06-provider-selection-legal-handoff
+          npm run test:pay-001-a06-provider-selection-legal-handoff
+          npm run audit:pay-001-a07-reconciliation-operations-readiness
+          npm run test:pay-001-a07-reconciliation-operations-readiness
+          npm run audit:pay-001-a08-immutable-migrations-read-only-canary
+          npm run test:pay-001-a08-immutable-migrations-read-only-canary
+          npm run audit:pay-001-a09-deployment-inspection-handoff
+          npm run test:pay-001-a09-deployment-inspection-handoff
+          npm run audit:pay-001-a10-external-executor-evidence-ingestion
+          npm run test:pay-001-a10-external-executor-evidence-ingestion
+          npm run audit:pay-001-a11-executor-protocol-conformance
+          npm run test:pay-001-a11-executor-protocol-conformance
+          npm run audit:pay-001-a12-executor-trust-root-signature
+          npm run test:pay-001-a12-executor-trust-root-signature
+          npm run audit:pay-001-a13-executor-lifecycle-governance
+          npm run test:pay-001-a13-executor-lifecycle-governance
+          npm run audit:pay-001-a14-governance-evidence-chain
+          npm run test:pay-001-a14-governance-evidence-chain
+          npm run audit:pay-001-a15-identity-issuer-lifecycle
+          npm run test:pay-001-a15-identity-issuer-lifecycle
+          npm run audit:pay-001-a16-issuer-status-distribution-resilience
+          npm run test:pay-001-a16-issuer-status-distribution-resilience
+          npm run audit:msg-001-a06-presence-typing-boundary
+          npm run test:msg-001-a06-presence-typing-runtime
+          npm run audit:msg-001-a07-command-reliability
+          npm run test:msg-001-a07-command-reliability-runtime
+          npm run audit:msg-001-a08-staging-activation-readiness
+          npm run test:msg-001-a08-staging-activation-readiness
+          npm run test:finance-supabase-repository-contract
+          npm run test:financial-rpc-authority-contract
+          npm run test:financial-operations-edge-runtime
+          npm run test:staging-finance-sandbox-authority-contract
+          npm run test:staging-finance-sandbox-edge-runtime
+          npm run audit:domain-completion-matrix
+          git diff --check
