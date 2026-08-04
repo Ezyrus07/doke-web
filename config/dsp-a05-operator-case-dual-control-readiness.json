@@ -1,0 +1,156 @@
+{
+  "contractId": "dsp-a05-operator-case-dual-control-readiness-v1",
+  "domain": "DSP-001",
+  "dependsOn": [
+    "dsp-a01-authority-baseline-v1",
+    "dsp-a02-canonical-lifecycle-effect-taxonomy-v1",
+    "dsp-a03-evidence-deadline-appeal-contract-v1",
+    "dsp-a04-provider-chargeback-reconciliation-boundary-v1",
+    "pay-001-a03-psp-neutral-intent-webhook-v1",
+    "wal-a05-provider-transfer-reconciliation-v1"
+  ],
+  "sourceHead": "974e0c60bda67c13e4fd837f3b38bac1ddc2ada3",
+  "scope": "repository_only",
+  "status": "operator_case_dual_control_readiness_complete_external_activation_blocked",
+  "repositoryContractSequenceComplete": true,
+  "runtimeIntegrated": false,
+  "migrationPrepared": false,
+  "migrationApplied": false,
+  "stagingValidated": false,
+  "providerSelected": false,
+  "providerCredentialsConfigured": false,
+  "approvedPolicyPresent": false,
+  "operatorQueueConfigured": false,
+  "roleDirectoryConfigured": false,
+  "immutableStoreConfigured": false,
+  "caseStates": [
+    "queued",
+    "triage",
+    "evidence_collection",
+    "provider_pending",
+    "operator_review",
+    "decision_pending_approval",
+    "financial_effect_pending_approval",
+    "reconciliation_pending",
+    "paused_policy_hold",
+    "conflict",
+    "closed"
+  ],
+  "priorities": [
+    "low",
+    "normal",
+    "high",
+    "critical"
+  ],
+  "operatorRoles": [
+    "intake_analyst",
+    "evidence_reviewer",
+    "decision_recommender",
+    "decision_approver",
+    "financial_effect_approver",
+    "reconciliation_operator",
+    "auditor",
+    "incident_manager"
+  ],
+  "approvalScopes": [
+    "case_decision",
+    "financial_effect"
+  ],
+  "financialEffects": [
+    "none",
+    "refund",
+    "release",
+    "chargeback_adjustment"
+  ],
+  "slaStates": [
+    "not_started",
+    "within_sla",
+    "due_soon",
+    "breached",
+    "paused_policy_hold",
+    "resolved"
+  ],
+  "escalationLevels": [
+    "none",
+    "queue_attention",
+    "supervisor_review",
+    "incident_review",
+    "executive_risk_review"
+  ],
+  "semanticRules": [
+    "operator cases are append-only and revision linked",
+    "raw identity, payment, banking, provider credential and evidence bodies are prohibited",
+    "initiators and recommenders cannot approve their own outcome",
+    "reconciliation operators cannot approve the same financial effect",
+    "financial effects require distinct decision and financial-effect approvers",
+    "approvals are revision-bound, policy-bound, target-bound, expiring and revocable",
+    "SLA breach escalates work but never decides a case or executes a financial effect",
+    "conflict and policy hold fail closed",
+    "structural readiness never grants runtime or financial authority",
+    "refund, release and chargeback adjustment remain blocked until external activation"
+  ],
+  "readinessRequirements": [
+    "dualControlReady",
+    "reconciliationMatched",
+    "evidenceBundleMatched",
+    "lifecycleMatched",
+    "providerChainMatched",
+    "auditTrailComplete",
+    "approvedPolicyPresent",
+    "operatorQueueConfigured",
+    "roleDirectoryConfigured",
+    "immutableStoreConfigured",
+    "slaNotBreached",
+    "caseNotConflict",
+    "caseNotClosed"
+  ],
+  "authority": {
+    "contractAuthority": true,
+    "operatorCaseReferenceAuthority": true,
+    "structuralReadinessAuthority": true,
+    "runtimeMutationAuthority": false,
+    "decisionAuthority": false,
+    "refundAuthority": false,
+    "releaseAuthority": false,
+    "chargebackAuthority": false,
+    "providerSubmissionAuthority": false,
+    "realMoneyAuthority": false,
+    "stagingAuthority": false,
+    "productionAuthority": false
+  },
+  "preservedBlockers": [
+    "DSP-B01",
+    "DSP-B03",
+    "DSP-B04",
+    "PAY-B01",
+    "PAY-B03",
+    "PAY-B04",
+    "WAL-B02",
+    "WAL-B03",
+    "WAL-B04"
+  ],
+  "prohibitedEffects": {
+    "networkRequests": false,
+    "databaseConnections": false,
+    "stagingReads": false,
+    "stagingMutations": false,
+    "migrations": false,
+    "deployments": false,
+    "providerContact": false,
+    "credentialsConfigured": false,
+    "realOperatorQueueCreated": false,
+    "realCaseAssigned": false,
+    "realApprovalRecorded": false,
+    "realRefundExecuted": false,
+    "realReleaseExecuted": false,
+    "realChargebackAdjusted": false,
+    "realMoneyMovement": false,
+    "productionChanges": false
+  },
+  "nextGates": [
+    "DSP-B01 approved policy package",
+    "DSP-B03 provider chargeback integration and reconciliation",
+    "DSP-B04 operator queue, SLA, escalation and dual-control activation",
+    "separate migration, staging and production authorizations"
+  ]
+}

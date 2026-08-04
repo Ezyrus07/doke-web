@@ -1,0 +1,91 @@
+{
+  "contractId": "dsp-a02-canonical-lifecycle-effect-taxonomy-v1",
+  "domain": "DSP-001",
+  "dependsOn": ["dsp-a01-authority-baseline-v1"],
+  "sourceHead": "fb23cc58487873e246f1d721355c5455943164df",
+  "scope": "repository_only",
+  "status": "taxonomy_complete_runtime_integration_blocked",
+  "matrixIntegration": {
+    "derivedArtifactsRefreshed": true,
+    "refreshCommit": "849315c578449ba0209ce6958861062fe99a8c23",
+    "temporaryWorkflowRemoved": true
+  },
+  "runtimeIntegrated": false,
+  "migrationPrepared": false,
+  "migrationApplied": false,
+  "stagingValidated": false,
+  "approvedPolicyPresent": false,
+  "providerChargebackIntegrated": false,
+  "operatorCaseWorkflowComplete": false,
+  "axes": {
+    "case": ["pre_payment_cancellation_requested", "pre_payment_cancelled", "dispute_open", "counterparty_response_due", "evidence_collection", "operator_review", "decision_pending_approval", "decision_issued", "appeal_open", "appeal_review", "case_closed", "unmapped"],
+    "financialEffect": ["none", "release_blocked", "refund_proposed", "refund_authorized", "refund_submitted", "refund_confirmed", "release_proposed", "release_authorized", "release_submitted", "release_confirmed", "chargeback_pending", "chargeback_won", "chargeback_lost", "reconciliation_required", "effect_reversed", "unmapped"],
+    "providerDispute": ["not_applicable", "unknown", "notification_received", "evidence_due", "provider_review", "won", "lost", "reversed", "unmapped"]
+  },
+  "semanticRules": [
+    "case state, financial effect state and provider dispute state are orthogonal and must not overwrite each other",
+    "pre-payment cancellation ends with no financial effect",
+    "payment-started cancellation must open a dispute and block release",
+    "legacy refunded or released labels are reconciliation-required claims, not provider-confirmed terminal effects",
+    "operator decision and provider outcome are separate evidence sources",
+    "appeal appends a new immutable revision and never mutates prior decision evidence",
+    "only reconciled terminal financial effects may support case closure",
+    "unmapped status values fail closed",
+    "cache, mock and localStorage never create financial authority"
+  ],
+  "legacyMappings": {
+    "caseExamples": {
+      "contestacao_aberta": "dispute_open",
+      "em_analise": "operator_review",
+      "reembolsado": "decision_issued",
+      "resolvida_profissional": "decision_issued",
+      "recurso_aberto": "appeal_open"
+    },
+    "financialEffectExamples": {
+      "blocked_by_dispute": "release_blocked",
+      "refunded": "reconciliation_required",
+      "released": "reconciliation_required",
+      "chargeback": "chargeback_pending",
+      "provider_mismatch": "reconciliation_required"
+    }
+  },
+  "terminalGates": {
+    "decisionIssued": ["approvedPolicy", "operatorAuthorized", "separationOfDuties", "auditRecorded", "evidenceComplete", "immutableDecisionVersion", "idempotencyVerified"],
+    "refundOrReleaseConfirmed": ["providerEvidenceAuthenticated", "reconciliationMatched", "amountCurrencyMatched", "idempotencyVerified", "auditRecorded"],
+    "chargebackFinal": ["providerEvidenceAuthenticated", "providerEventFinal", "reconciliationMatched", "amountCurrencyMatched", "auditRecorded"],
+    "caseClosed": ["approvedPolicy", "immutableDecisionVersion", "auditRecorded", "financialEffectResolved"]
+  },
+  "preservedBlockers": ["DSP-B01", "DSP-B03", "DSP-B04", "PAY-B01", "PAY-B03", "PAY-B04", "WAL-B02", "WAL-B03", "WAL-B04"],
+  "authority": {
+    "contractAuthority": true,
+    "runtimeMutationAuthority": false,
+    "refundAuthority": false,
+    "releaseAuthority": false,
+    "chargebackAuthority": false,
+    "providerEvidenceAuthority": false,
+    "stagingAuthority": false,
+    "realMoneyAuthority": false,
+    "productionAuthority": false
+  },
+  "prohibitedEffects": {
+    "networkRequests": false,
+    "databaseConnections": false,
+    "stagingReads": false,
+    "stagingMutations": false,
+    "migrations": false,
+    "deployments": false,
+    "providerContact": false,
+    "credentialsConfigured": false,
+    "realDisputeOpened": false,
+    "refundExecuted": false,
+    "releaseExecuted": false,
+    "chargebackSubmitted": false,
+    "realMoneyMovement": false,
+    "productionChanges": false
+  },
+  "nextSublots": [
+    "DSP-A03 evidence, deadline and appeal contract",
+    "DSP-A04 provider chargeback reconciliation boundary",
+    "DSP-A05 operator case and dual-control readiness"
+  ]
+}

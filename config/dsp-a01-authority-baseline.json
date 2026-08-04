@@ -1,0 +1,143 @@
+{
+  "contractId": "dsp-a01-authority-baseline-v1",
+  "domain": "DSP-001",
+  "sourceHead": "5013b30b9591436d7795304ce8a1b3b4a334466c",
+  "createdAt": "2026-08-04T16:55:00-03:00",
+  "scope": "repository_only",
+  "status": "baseline_complete_policy_and_provider_dependencies_open",
+  "runtimeIntegrated": false,
+  "migrationPrepared": false,
+  "migrationApplied": false,
+  "stagingValidated": false,
+  "approvedPolicyPresent": false,
+  "providerChargebackIntegrated": false,
+  "operatorCaseWorkflowComplete": false,
+  "canonicalIntegration": {
+    "derivedMatrixRefresh": "completed",
+    "derivedMatrixCommit": "533598aa2fb533a00949f0a22a0d97dcd0b8fe7d",
+    "temporaryWorkflowRemoved": true
+  },
+  "currentAuthority": {
+    "prePaymentCancellation": "hybrid_local_and_server_contracts",
+    "participantDisputeOpen": "authenticated_server_self_service_with_local_fallback_inventory",
+    "professionalDisputeResponse": "authenticated_server_self_service_with_local_fallback_inventory",
+    "refundOrReleaseDecision": "service_role_operator_boundary_with_local_simulation_inventory",
+    "providerChargebackState": "absent",
+    "appealAndDeadlineAuthority": "incomplete"
+  },
+  "observedSurfaces": [
+    "assets/js/services/orders-service.js",
+    "assets/js/services/wallet-service.js",
+    "assets/js/repositories/wallet-repository.js",
+    "assets/js/repositories/finance-repository.js",
+    "backend/modules/wallet/wallet-service.js",
+    "supabase/migrations/107_financial_rpc_authority.sql",
+    "supabase/migrations/108_financial_operator_authority.sql",
+    "supabase/functions/financial-operations/operations.mjs",
+    "scripts/test-order-cancellation-dispute-contract.js"
+  ],
+  "baselineFindings": [
+    {
+      "id": "DSP-A01-F01",
+      "severity": "critical",
+      "finding": "Cancellation, refund, evidence, deadline and appeal outcomes lack approved commercial and legal policy authority.",
+      "blockedBy": "DSP-B01"
+    },
+    {
+      "id": "DSP-A01-F02",
+      "severity": "high",
+      "finding": "Provider chargeback events, evidence submission and provider dispute reconciliation are absent.",
+      "blockedBy": "DSP-B03"
+    },
+    {
+      "id": "DSP-A01-F03",
+      "severity": "high",
+      "finding": "General case queues, evidence deadlines, escalation, appeals and support SLA authority are incomplete.",
+      "blockedBy": "DSP-B04"
+    },
+    {
+      "id": "DSP-A01-F04",
+      "severity": "high",
+      "finding": "LocalStorage-driven cancellation and dispute simulation coexists with authenticated remote operations and cannot be treated as production authority.",
+      "blockedBy": "DSP-A01-AUTHORITY-SPLIT"
+    },
+    {
+      "id": "DSP-A01-F05",
+      "severity": "high",
+      "finding": "A provider or operator success signal alone cannot authorize refund, release, chargeback loss or terminal order state without policy-bound reconciliation evidence.",
+      "blockedBy": "DSP-A01-TERMINAL-EFFECT-GATE"
+    },
+    {
+      "id": "DSP-A01-F06",
+      "severity": "medium",
+      "finding": "Current local and remote status vocabularies require a canonical transition map before runtime integration.",
+      "blockedBy": "DSP-A01-STATE-MAP"
+    }
+  ],
+  "decisionRules": {
+    "prePaymentCancellation": "contract_only_no_financial_effect",
+    "postPaymentCancellation": "dispute_required",
+    "openDispute": "participant_and_linked_order_validation_required",
+    "respondDispute": "counterparty_and_linked_order_validation_required",
+    "refundDecision": "blocked_policy_reconciliation_and_operator_evidence_required",
+    "releaseDecision": "blocked_policy_reconciliation_and_operator_evidence_required",
+    "providerChargeback": "blocked_provider_integration_required",
+    "appealDecision": "blocked_case_workflow_and_policy_required"
+  },
+  "preservedBlockers": [
+    "DSP-B01",
+    "DSP-B03",
+    "DSP-B04",
+    "PAY-B01",
+    "PAY-B03",
+    "PAY-B04",
+    "WAL-B02",
+    "WAL-B03",
+    "WAL-B04"
+  ],
+  "mandatoryInvariants": [
+    "pre-payment cancellation must not create a payment or refund",
+    "paid-order cancellation must use the financial dispute path",
+    "participant identity and linked-order authority must be server-validated",
+    "one active dispute per financial subject and intent",
+    "dispute opening must freeze release without fabricating provider state",
+    "refund or release requires policy-bound operator authority and audit evidence",
+    "provider chargeback state cannot be invented locally",
+    "terminal financial effects require idempotency and reconciliation",
+    "appeal cannot overwrite immutable prior evidence",
+    "local simulation and cache never create production authority"
+  ],
+  "authority": {
+    "contractAuthority": true,
+    "runtimeMutationAuthority": false,
+    "refundAuthority": false,
+    "releaseAuthority": false,
+    "chargebackAuthority": false,
+    "providerEvidenceAuthority": false,
+    "stagingAuthority": false,
+    "realMoneyAuthority": false,
+    "productionAuthority": false
+  },
+  "prohibitedEffects": {
+    "networkRequests": false,
+    "databaseConnections": false,
+    "stagingReads": false,
+    "stagingMutations": false,
+    "migrations": false,
+    "deployments": false,
+    "providerContact": false,
+    "credentialsConfigured": false,
+    "realDisputeOpened": false,
+    "refundExecuted": false,
+    "releaseExecuted": false,
+    "chargebackSubmitted": false,
+    "realMoneyMovement": false,
+    "productionChanges": false
+  },
+  "nextSublots": [
+    "DSP-A02 canonical lifecycle and effect taxonomy",
+    "DSP-A03 evidence, deadline and appeal contract",
+    "DSP-A04 provider chargeback reconciliation boundary",
+    "DSP-A05 operator case and dual-control readiness"
+  ]
+}

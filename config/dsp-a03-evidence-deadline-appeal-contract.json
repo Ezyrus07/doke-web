@@ -1,0 +1,153 @@
+{
+  "contractId": "dsp-a03-evidence-deadline-appeal-contract-v1",
+  "domain": "DSP-001",
+  "dependsOn": [
+    "dsp-a01-authority-baseline-v1",
+    "dsp-a02-canonical-lifecycle-effect-taxonomy-v1"
+  ],
+  "sourceHead": "12d344bed387571d105fadfa0437e265ce4cf4f3",
+  "scope": "repository_only",
+  "status": "evidence_deadline_appeal_contract_complete_runtime_integration_blocked",
+  "runtimeIntegrated": false,
+  "migrationPrepared": false,
+  "migrationApplied": false,
+  "stagingValidated": false,
+  "approvedPolicyPresent": false,
+  "operatorCaseWorkflowComplete": false,
+  "providerChargebackIntegrated": false,
+  "evidence": {
+    "kinds": [
+      "service_scope",
+      "communication",
+      "delivery_or_completion",
+      "cancellation_request",
+      "payment_record",
+      "provider_record",
+      "operator_note",
+      "appeal_statement",
+      "other"
+    ],
+    "sources": [
+      "client_participant",
+      "professional_participant",
+      "system_projection",
+      "provider_authenticated",
+      "operator_internal"
+    ],
+    "requirements": [
+      "content is referenced by opaque storage identifiers and SHA-256 digests",
+      "evidence revisions are append-only and bind to prior fingerprints",
+      "raw evidence bodies, payment credentials and banking data are prohibited in the contract",
+      "evidence reference authority does not establish truth or decision authority",
+      "participant, case, order and transaction relationships must be validated server-side"
+    ]
+  },
+  "deadlines": {
+    "types": [
+      "counterparty_response",
+      "evidence_submission",
+      "operator_review",
+      "appeal_submission",
+      "provider_evidence"
+    ],
+    "states": [
+      "not_started",
+      "open",
+      "due_soon",
+      "elapsed",
+      "grace",
+      "expired",
+      "paused_policy_hold",
+      "resolved"
+    ],
+    "requirements": [
+      "all deadlines use UTC and bind to an approved policy revision",
+      "deadline evaluation receives an explicit clock and never uses hidden local time",
+      "expiry or non-response never creates automatic refund, release or case victory",
+      "extensions append a new revision and preserve the prior deadline",
+      "extension requires approved policy, authorized operator, reason and audit evidence"
+    ]
+  },
+  "appeal": {
+    "states": [
+      "appeal_open",
+      "appeal_evidence_collection",
+      "appeal_review",
+      "appeal_decision_pending_approval",
+      "appeal_decision_issued",
+      "appeal_closed"
+    ],
+    "requirements": [
+      "appeal binds to an immutable prior decision fingerprint",
+      "appeal binds to a versioned evidence bundle and policy revision",
+      "appeal adds history and never overwrites the original decision",
+      "appeal reviewer separation is enforced by the future operator workflow",
+      "appeal records cannot mutate financial effects or provider outcomes"
+    ]
+  },
+  "semanticRules": [
+    "evidence presence is not evidence truth",
+    "deadline expiry is not an automatic win",
+    "counterparty non-response is an auditable fact, not a terminal decision",
+    "operator review remains blocked while required evidence or windows are unresolved",
+    "appeal creates an immutable revision chain",
+    "unknown or malformed evidence fails closed",
+    "cache, mock and localStorage never create evidence or deadline authority",
+    "no evidence, deadline or appeal operation grants refund, release or chargeback authority"
+  ],
+  "preservedBlockers": [
+    "DSP-B01",
+    "DSP-B03",
+    "DSP-B04",
+    "PAY-B01",
+    "PAY-B03",
+    "PAY-B04",
+    "WAL-B02",
+    "WAL-B03",
+    "WAL-B04"
+  ],
+  "authority": {
+    "contractAuthority": true,
+    "evidenceReferenceAuthority": true,
+    "evidenceTruthAuthority": false,
+    "decisionAuthority": false,
+    "runtimeMutationAuthority": false,
+    "refundAuthority": false,
+    "releaseAuthority": false,
+    "chargebackAuthority": false,
+    "providerEvidenceAuthority": false,
+    "stagingAuthority": false,
+    "realMoneyAuthority": false,
+    "productionAuthority": false
+  },
+  "prohibitedEffects": {
+    "networkRequests": false,
+    "databaseConnections": false,
+    "stagingReads": false,
+    "stagingMutations": false,
+    "migrations": false,
+    "deployments": false,
+    "providerContact": false,
+    "credentialsConfigured": false,
+    "realDisputeOpened": false,
+    "realEvidenceUploaded": false,
+    "refundExecuted": false,
+    "releaseExecuted": false,
+    "chargebackSubmitted": false,
+    "realMoneyMovement": false,
+    "productionChanges": false
+  },
+  "matrixIntegration": {
+    "integrated": true,
+    "refreshCommit": "20cc7f409e97c9c907cf12e46dde8c176346f0cb",
+    "derivedFiles": [
+      "docs/DOMAIN-COMPLETION-MATRIX.md",
+      "reports/generated/domain-completion-matrix-report.json"
+    ],
+    "temporaryWorkflowRemoved": true
+  },
+  "nextSublots": [
+    "DSP-A04 provider chargeback reconciliation boundary",
+    "DSP-A05 operator case and dual-control readiness"
+  ]
+}

@@ -1,0 +1,109 @@
+{
+  "contractId": "dsp-a05-operator-case-dual-control-readiness-v1",
+  "positiveCases": [
+    "create append-only operator case",
+    "transition queued to triage",
+    "record chained operator actions",
+    "one decision approval for no-effect cancellation",
+    "two distinct approvals for refund",
+    "SLA within window",
+    "SLA due soon escalates queue attention",
+    "SLA breach escalates supervisor review",
+    "policy hold pauses SLA without deciding",
+    "structural readiness remains execution-disabled"
+  ],
+  "negativeCases": [
+    {
+      "name": "raw operator email",
+      "expectedCode": "DSP_A05_SENSITIVE_DATA_FORBIDDEN"
+    },
+    {
+      "name": "raw banking data",
+      "expectedCode": "DSP_A05_SENSITIVE_DATA_FORBIDDEN"
+    },
+    {
+      "name": "invalid case transition",
+      "expectedCode": "DSP_A05_CASE_TRANSITION_INVALID"
+    },
+    {
+      "name": "self approval by recommender",
+      "expectedCode": "DSP_A05_SELF_APPROVAL_FORBIDDEN"
+    },
+    {
+      "name": "self approval by initiator",
+      "expectedCode": "DSP_A05_SELF_APPROVAL_FORBIDDEN"
+    },
+    {
+      "name": "approval by reconciliation operator",
+      "expectedCode": "DSP_A05_RECONCILIATION_APPROVAL_CONFLICT"
+    },
+    {
+      "name": "stale case revision approval",
+      "expectedCode": "DSP_A05_APPROVAL_STALE_REVISION"
+    },
+    {
+      "name": "expired approval",
+      "expectedCode": "DSP_A05_APPROVAL_EXPIRED"
+    },
+    {
+      "name": "duplicate approver",
+      "expectedCode": "DSP_A05_DUPLICATE_APPROVER"
+    },
+    {
+      "name": "broken action chain",
+      "expectedCode": "DSP_A05_ACTION_CHAIN_BROKEN"
+    },
+    {
+      "name": "SLA breach auto decision",
+      "expectedCode": "blocked_by_contract"
+    },
+    {
+      "name": "structural readiness auto execution",
+      "expectedCode": "blocked_by_contract"
+    },
+    {
+      "name": "missing dual-control evaluation",
+      "expectedCode": "DSP_A05_READINESS_DUAL_CONTROL_INVALID"
+    },
+    {
+      "name": "mismatched SLA evaluation",
+      "expectedCode": "DSP_A05_READINESS_SLA_INVALID"
+    }
+  ],
+  "requiredRoles": [
+    "intake_analyst",
+    "evidence_reviewer",
+    "decision_recommender",
+    "decision_approver",
+    "financial_effect_approver",
+    "reconciliation_operator",
+    "auditor",
+    "incident_manager"
+  ],
+  "requiredReadiness": [
+    "dualControlReady",
+    "reconciliationMatched",
+    "evidenceBundleMatched",
+    "lifecycleMatched",
+    "providerChainMatched",
+    "auditTrailComplete",
+    "approvedPolicyPresent",
+    "operatorQueueConfigured",
+    "roleDirectoryConfigured",
+    "immutableStoreConfigured",
+    "slaNotBreached",
+    "caseNotConflict",
+    "caseNotClosed"
+  ],
+  "authority": {
+    "runtimeMutationAuthority": false,
+    "decisionAuthority": false,
+    "refundAuthority": false,
+    "releaseAuthority": false,
+    "chargebackAuthority": false,
+    "providerSubmissionAuthority": false,
+    "realMoneyAuthority": false,
+    "stagingAuthority": false,
+    "productionAuthority": false
+  }
+}

@@ -1,0 +1,53 @@
+name: DSP-A01 Authority Baseline
+
+on:
+  pull_request:
+    paths:
+      - 'config/dsp-a01-authority-baseline.json'
+      - 'docs/DSP-A01-AUTHORITY-BASELINE.md'
+      - 'scripts/audit-dsp-a01-authority-baseline.js'
+      - 'scripts/test-dsp-a01-authority-baseline.js'
+      - '.github/workflows/dsp-a01-authority-baseline.yml'
+      - 'assets/js/services/orders-service.js'
+      - 'assets/js/services/wallet-service.js'
+      - 'assets/js/repositories/wallet-repository.js'
+      - 'assets/js/repositories/finance-repository.js'
+      - 'backend/modules/wallet/wallet-service.js'
+      - 'supabase/migrations/107_financial_rpc_authority.sql'
+      - 'supabase/migrations/108_financial_operator_authority.sql'
+      - 'supabase/functions/financial-operations/operations.mjs'
+      - 'scripts/test-order-cancellation-dispute-contract.js'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dsp-a01-authority-baseline:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Syntax
+        run: |
+          node --check scripts/audit-dsp-a01-authority-baseline.js
+          node --check scripts/test-dsp-a01-authority-baseline.js
+          node --check scripts/test-order-cancellation-dispute-contract.js
+      - name: Audit authority baseline
+        run: node scripts/audit-dsp-a01-authority-baseline.js
+      - name: Conformance
+        run: node scripts/test-dsp-a01-authority-baseline.js
+      - name: Legacy regression compatibility guard
+        run: |
+          grep -q "assertOrderCommandProviderAvailable" assets/js/services/orders-service.js
+          grep -q "localStorage" scripts/test-order-cancellation-dispute-contract.js
+          grep -q "openDispute" scripts/test-order-cancellation-dispute-contract.js
+          grep -q "respondDispute" scripts/test-order-cancellation-dispute-contract.js
+          echo "Legacy local mutation test is inventoried but intentionally not executed against the current fail-closed server-authoritative runtime."
+      - name: Diff hygiene
+        run: git diff --check
