@@ -1,6 +1,6 @@
 {
-  "version": "1.3.94",
-  "updatedAt": "2026-08-03T18:20:00-03:00",
+  "version": "1.3.95",
+  "updatedAt": "2026-08-03T20:59:00-03:00",
   "title": "Doke Domain Completion Matrix",
   "purpose": "Single source of truth for domain maturity, data authority, staging evidence, blockers, dependencies and mandatory completion order.",
   "maturityScale": {
@@ -2110,7 +2110,14 @@
         "docs/validation/PAY-001-A09-DEPLOYMENT-INSPECTION-HANDOFF.json",
         "scripts/audit-pay-001-a09-deployment-inspection-handoff.js",
         "scripts/test-pay-001-a09-deployment-inspection-handoff.js",
-        ".github/workflows/pay-001-a09-deployment-inspection-handoff.yml"
+        ".github/workflows/pay-001-a09-deployment-inspection-handoff.yml",
+        "backend/modules/payments/payment-reconciliation-executor-adapter.js",
+        "config/pay-001-a10-external-executor-evidence-ingestion.json",
+        "docs/PAY-001-A10-EXTERNAL-EXECUTOR-EVIDENCE-INGESTION.md",
+        "docs/validation/PAY-001-A10-EXTERNAL-EXECUTOR-EVIDENCE-INGESTION.json",
+        "scripts/audit-pay-001-a10-external-executor-evidence-ingestion.js",
+        "scripts/test-pay-001-a10-external-executor-evidence-ingestion.js",
+        ".github/workflows/pay-001-a10-external-executor-evidence-ingestion.yml"
       ],
       "scanRoots": [
         "assets/js/pages/pagamento-profissional.js",
@@ -2124,7 +2131,8 @@
         "supabase/migrations/20260803190100_pay_a08_reconciliation_leases.sql",
         "supabase/migrations/20260803190200_pay_a08_reconciliation_alert_outbox.sql",
         "supabase/migrations/20260803190300_pay_a08_reconciliation_metric_rollups.sql",
-        "backend/modules/payments/payment-reconciliation-staging-handoff.js"
+        "backend/modules/payments/payment-reconciliation-staging-handoff.js",
+        "backend/modules/payments/payment-reconciliation-executor-adapter.js"
       ],
       "tables": [
         "payments",
@@ -2165,7 +2173,9 @@
         "audit:pay-001-a08-immutable-migrations-read-only-canary",
         "test:pay-001-a08-immutable-migrations-read-only-canary",
         "audit:pay-001-a09-deployment-inspection-handoff",
-        "test:pay-001-a09-deployment-inspection-handoff"
+        "test:pay-001-a09-deployment-inspection-handoff",
+        "audit:pay-001-a10-external-executor-evidence-ingestion",
+        "test:pay-001-a10-external-executor-evidence-ingestion"
       ],
       "evidence": [
         "Financial contracts, ledger-like tables and local beta-launch E2E exist.",
@@ -2197,7 +2207,8 @@
         "PAY-A06 staging conformance authorization is separately bound to candidate, packet, head, immutable adapter version, staging identity, evidence hash and sandbox/zero-budget constraints, while repository execution authority remains absent.",
         "PAY-A07 defines the repository-only provider-neutral reconciliation operations contract: server-only persistence, optimistic concurrency, database leases, disabled idempotent scheduler, low-cardinality metrics, atomic sanitized alert outbox, incident runbook and resource-bound one-shot staging authorization; no remote infrastructure or money authority was activated.",
         "PAY-A08 freezes four provider-neutral private reconciliation migration sources by SHA-256 and defines a SELECT-only schema/migration-history canary that rejects DDL, DML, RPC, scheduler mutation, migration application and automatic drift repair; no remote read or mutation was executed.",
-        "PAY-A09 separates read-only preflight, ordered fail-closed migration application, post-migration verification, forward-only corrective rollback and allowlisted temporary-artifact cleanup into fresh one-shot resource-bound authorizations with distinct approvers; generic continuation, cross-operation nonce reuse, destructive rollback, manual migration-history deletion and repository remote execution remain denied."
+        "PAY-A09 separates read-only preflight, ordered fail-closed migration application, post-migration verification, forward-only corrective rollback and allowlisted temporary-artifact cleanup into fresh one-shot resource-bound authorizations with distinct approvers; generic continuation, cross-operation nonce reuse, destructive rollback, manual migration-history deletion and repository remote execution remain denied.",
+        "PAY-A10: five inert phase-specific external executor adapters, signed receipt validation and sanitized replay-protected evidence ingestion validated repository-only."
       ],
       "blockers": [
         {
@@ -2223,10 +2234,7 @@
         }
       ],
       "nextActions": [
-        "PAY-A10 — build inert external-executor adapters and sanitized evidence ingestion for the separated PAY-A09 phases; staging remains blocked until a fresh exact phase authorization is supplied.",
-        "PAY-B03 — complete qualified commercial, fiscal, funds-flow, escrow, refund, dispute, chargeback and payout decisions before any provider selection.",
-        "PAY-B01 — evaluate candidates using the PAY-A06 packet and provide the exact resource-bound selection authorization only after every approval is current.",
-        "PAY-B04 — implement and validate the remote reconciliation store, operator queue, scheduler and observability before provider sandbox activation."
+        "PAY-A11 — define provider-neutral external executor protocol manifests and a deterministic dry-run conformance corpus for all five PAY-A09 phases, remaining repository-only."
       ],
       "exitCriteria": [
         "No card data is stored by Doke.",
