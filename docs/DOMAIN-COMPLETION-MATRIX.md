@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 1148 arquivos no escopo; 271 referências a localStorage; 78 a sessionStorage; 577 referências mock; 208 referências de rede/Supabase; 35 marcadores de implementação pendente.
+**Evidência estática observada:** 1151 arquivos no escopo; 271 referências a localStorage; 78 a sessionStorage; 577 referências mock; 209 referências de rede/Supabase; 35 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -539,7 +539,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI local; servidor partial; staging staging canary; segurança partial; produção blocked.
 
-**Evidência estática observada:** 1093 arquivos no escopo; 205 referências a localStorage; 70 a sessionStorage; 318 referências mock; 207 referências de rede/Supabase; 19 marcadores de implementação pendente.
+**Evidência estática observada:** 1095 arquivos no escopo; 205 referências a localStorage; 70 a sessionStorage; 318 referências mock; 208 referências de rede/Supabase; 19 marcadores de implementação pendente.
 
 **Páginas:** `anunciar-servico.html`, `pedidos.html`, `orcamento.html`.
 
@@ -699,7 +699,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 2/6; UI local; servidor contract only; staging local e2e; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 32 arquivos no escopo; 1 referências a localStorage; 0 a sessionStorage; 2 referências mock; 49 referências de rede/Supabase; 2 marcadores de implementação pendente.
+**Evidência estática observada:** 34 arquivos no escopo; 1 referências a localStorage; 0 a sessionStorage; 2 referências mock; 49 referências de rede/Supabase; 2 marcadores de implementação pendente.
 
 **Páginas:** `pagamento-profissional.html`, `mensagens.html`, `pedidos.html`.
 
@@ -741,6 +741,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - PAY-A10: five inert phase-specific external executor adapters, signed receipt validation and sanitized replay-protected evidence ingestion validated repository-only.
 - PAY-A11 freezes five provider-neutral executor protocol manifests and validates 35 deterministic offline conformance cases, including 30 fail-closed negative cases, while preserving zero network, database, subprocess, environment, staging, production and financial effects.
 - PAY-A12 defines provider-neutral executor trust bundles, verifies Ed25519 and RSA-PSS-SHA256 detached signatures offline, enforces operation/executor allowlists, bounded rotation grace, immediate revocation rejection and replay protection, while storing no private keys or real trust roots and preserving zero remote effects.
+- PAY-A13 repository-only lifecycle-governance validation: docs/validation/PAY-001-A13-EXECUTOR-LIFECYCLE-GOVERNANCE.json
 
 **Bloqueadores:**
 - **PAY-B01 · CRITICAL · external_provider:** No PSP integration or signed webhook authority exists. _(Fase 8)_
@@ -748,7 +749,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - **PAY-B04 · HIGH · reconciliation:** Remote reconciliation infrastructure remains absent. PAY-A08 defines immutable migrations; PAY-A09 separates staging phases; PAY-A10 validates inert dispatch, receipt and evidence; PAY-A11 freezes provider-neutral protocol manifests and a deterministic dry-run corpus; PAY-A12 defines offline executor trust-root and detached-signature verification, but no real trust roots, remote read, migration, store, lease, scheduler, metrics sink, alert delivery, on-call ownership or staging rehearsal exists. _(Fase 8)_
 
 **Próximas ações:**
-- PAY-A13 — define executor onboarding/offboarding, trust-root approval quorum, key-custody attestations and incident revocation handoff, remaining repository-only.
+- PAY-A14 — define signed governance evidence bundles, external identity attestation ingestion and immutable lifecycle decision receipt chaining, remaining repository-only.
 
 **Gate de saída:**
 - No card data is stored by Doke.
@@ -1037,7 +1038,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 1/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 261 arquivos no escopo; 68 referências a localStorage; 8 a sessionStorage; 272 referências mock; 8 referências de rede/Supabase; 25 marcadores de implementação pendente.
+**Evidência estática observada:** 262 arquivos no escopo; 68 referências a localStorage; 8 a sessionStorage; 272 referências mock; 8 referências de rede/Supabase; 25 marcadores de implementação pendente.
 
 **Evidências:**
 - The master plan identifies legal, privacy and commercial decisions as mandatory.
@@ -1097,7 +1098,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2531 arquivos no escopo; 529 referências a localStorage; 151 a sessionStorage; 902 referências mock; 612 referências de rede/Supabase; 89 marcadores de implementação pendente.
+**Evidência estática observada:** 2537 arquivos no escopo; 529 referências a localStorage; 151 a sessionStorage; 902 referências mock; 613 referências de rede/Supabase; 89 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
@@ -1158,4 +1159,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-08-03T21:26:00-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-08-03T22:47:00-03:00._

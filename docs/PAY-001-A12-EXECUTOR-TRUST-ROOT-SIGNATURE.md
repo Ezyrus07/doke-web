@@ -78,4 +78,4 @@ The suite covers active Ed25519 and RSA-PSS roots, rotation success, retiring-ke
 
 ## Next action
 
-`PAY-A13` — define executor onboarding/offboarding, trust-root approval quorum, key-custody attestations and incident revocation handoff, remaining repository-only.
+PAY-A13 completed the lifecycle-governance handoff. `PAY-A14` — define signed governance evidence bundles, external identity attestation ingestion and immutable lifecycle decision receipt chaining, remaining repository-only.
