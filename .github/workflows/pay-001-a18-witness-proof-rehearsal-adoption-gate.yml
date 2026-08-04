@@ -1,0 +1,41 @@
+name: Doke PAY-A18 Witness Proof Rehearsal Adoption Gate
+
+on:
+  push:
+    paths:
+      - 'backend/modules/payments/payment-reconciliation-witness-proof-rehearsal.js'
+      - 'config/pay-001-a18-witness-proof-rehearsal-adoption-gate.json'
+      - 'tests/fixtures/pay-a18-witness-proof-rehearsal-adoption-gate-cases.json'
+      - 'docs/PAY-001-A18-WITNESS-PROOF-REHEARSAL-ADOPTION-GATE.md'
+      - 'docs/validation/PAY-001-A18-WITNESS-PROOF-REHEARSAL-ADOPTION-GATE.json'
+      - 'scripts/audit-pay-001-a18-witness-proof-rehearsal-adoption-gate.js'
+      - 'scripts/test-pay-001-a18-witness-proof-rehearsal-adoption-gate.js'
+      - '.github/workflows/pay-001-a18-witness-proof-rehearsal-adoption-gate.yml'
+  pull_request:
+    paths:
+      - 'backend/modules/payments/payment-reconciliation-witness-proof-rehearsal.js'
+      - 'config/pay-001-a18-witness-proof-rehearsal-adoption-gate.json'
+      - 'tests/fixtures/pay-a18-witness-proof-rehearsal-adoption-gate-cases.json'
+      - 'docs/PAY-001-A18-WITNESS-PROOF-REHEARSAL-ADOPTION-GATE.md'
+      - 'docs/validation/PAY-001-A18-WITNESS-PROOF-REHEARSAL-ADOPTION-GATE.json'
+      - 'scripts/audit-pay-001-a18-witness-proof-rehearsal-adoption-gate.js'
+      - 'scripts/test-pay-001-a18-witness-proof-rehearsal-adoption-gate.js'
+      - '.github/workflows/pay-001-a18-witness-proof-rehearsal-adoption-gate.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci --ignore-scripts
+      - run: node scripts/audit-pay-001-a18-witness-proof-rehearsal-adoption-gate.js
+      - run: node scripts/test-pay-001-a18-witness-proof-rehearsal-adoption-gate.js
+      - run: git diff --check
