@@ -41,6 +41,18 @@ jobs:
       - name: Apply PAY-A13 repository metadata
         run: |
           node scripts/apply-pay-001-a13-repository-metadata.js
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const path = 'config/domain-completion-matrix.json';
+          const matrix = JSON.parse(fs.readFileSync(path, 'utf8'));
+          const pay = matrix.domains.find((domain) => domain.id === 'PAY-001');
+          if (!pay) throw new Error('PAY-001 matrix domain missing');
+          const evidencePath = 'docs/validation/PAY-001-A13-EXECUTOR-LIFECYCLE-GOVERNANCE.json';
+          pay.evidence = pay.evidence.filter((item) => item !== evidencePath);
+          const descriptor = 'PAY-A13 repository-only lifecycle-governance validation: ' + evidencePath;
+          if (!pay.evidence.includes(descriptor)) pay.evidence.push(descriptor);
+          fs.writeFileSync(path, JSON.stringify(matrix, null, 2) + '\n');
+          NODE
           rm -f .pay-a13-bootstrap/chunk-*.b64
           rmdir .pay-a13-bootstrap 2>/dev/null || true
           rm -f scripts/apply-pay-001-a13-repository-metadata.js
