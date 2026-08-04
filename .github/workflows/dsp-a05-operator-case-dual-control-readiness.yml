@@ -1,0 +1,65 @@
+name: DSP-A05 Operator Case Dual-Control Readiness
+
+on:
+  pull_request:
+    paths:
+      - 'backend/modules/disputes/dispute-operator-case-dual-control-readiness.js'
+      - 'config/dsp-a05-operator-case-dual-control-readiness.json'
+      - 'tests/fixtures/dsp-a05-operator-case-dual-control-cases.json'
+      - 'docs/DSP-A05-OPERATOR-CASE-DUAL-CONTROL-READINESS.md'
+      - 'scripts/audit-dsp-a05-operator-case-dual-control-readiness.js'
+      - 'scripts/test-dsp-a05-operator-case-dual-control-readiness.js'
+      - '.github/workflows/dsp-a05-operator-case-dual-control-readiness.yml'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dsp-a05-operator-case-dual-control-readiness:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Syntax
+        run: |
+          node --check backend/modules/disputes/dispute-operator-case-dual-control-readiness.js
+          node --check scripts/audit-dsp-a05-operator-case-dual-control-readiness.js
+          node --check scripts/test-dsp-a05-operator-case-dual-control-readiness.js
+
+      - name: Audit operator case dual-control readiness
+        run: node scripts/audit-dsp-a05-operator-case-dual-control-readiness.js
+
+      - name: Conformance
+        run: node scripts/test-dsp-a05-operator-case-dual-control-readiness.js
+
+      - name: DSP-A04 regression
+        run: |
+          node scripts/audit-dsp-a04-provider-chargeback-reconciliation-boundary.js
+          node scripts/test-dsp-a04-provider-chargeback-reconciliation-boundary.js
+
+      - name: DSP-A03 regression
+        run: |
+          node scripts/audit-dsp-a03-evidence-deadline-appeal-contract.js
+          node scripts/test-dsp-a03-evidence-deadline-appeal-contract.js
+
+      - name: DSP-A02 regression
+        run: |
+          node scripts/audit-dsp-a02-canonical-lifecycle-effect-taxonomy.js
+          node scripts/test-dsp-a02-canonical-lifecycle-effect-taxonomy.js
+
+      - name: DSP-A01 regression
+        run: |
+          node scripts/audit-dsp-a01-authority-baseline.js
+          node scripts/test-dsp-a01-authority-baseline.js
+
+      - name: Diff hygiene
+        run: git diff --check

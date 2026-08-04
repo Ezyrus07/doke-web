@@ -3,75 +3,63 @@ name: DSP-A04 Provider Chargeback Reconciliation Boundary
 on:
   pull_request:
     paths:
+      - 'backend/modules/disputes/provider-chargeback-reconciliation-boundary.js'
+      - 'config/dsp-a04-provider-chargeback-reconciliation-boundary.json'
+      - 'tests/fixtures/dsp-a04-provider-chargeback-reconciliation-cases.json'
+      - 'docs/DSP-A04-PROVIDER-CHARGEBACK-RECONCILIATION-BOUNDARY.md'
+      - 'scripts/audit-dsp-a04-provider-chargeback-reconciliation-boundary.js'
+      - 'scripts/test-dsp-a04-provider-chargeback-reconciliation-boundary.js'
       - '.github/workflows/dsp-a04-provider-chargeback-reconciliation-boundary.yml'
+      - 'backend/modules/disputes/dispute-evidence-deadline-appeal-contract.js'
+      - 'backend/modules/disputes/dispute-lifecycle-taxonomy-contract.js'
+      - 'config/dsp-a03-evidence-deadline-appeal-contract.json'
+      - 'config/dsp-a02-canonical-lifecycle-effect-taxonomy.json'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  materialize-dsp-a05:
+  dsp-a04-provider-chargeback-reconciliation-boundary:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
-      - name: Checkout branch
+      - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          ref: dsp/dsp-001-baseline-audit
-          fetch-depth: 0
+          node-version: '24'
 
-      - name: Reconstruct DSP-A05 artifacts
-        shell: bash
+      - name: Syntax
         run: |
-          set -euo pipefail
-          mkdir -p backend/modules/disputes config docs scripts tests/fixtures .github/workflows /tmp/dsp-a05
-          base64 -d .dsp-a05-materialize/small.tar.gz.b64 | tar -xz -C "$GITHUB_WORKSPACE"
-          base64 -d .dsp-a05-materialize/audit.gz.b64 | gzip -d > scripts/audit-dsp-a05-operator-case-dual-control-readiness.js
-          base64 -d .dsp-a05-materialize/module.part1.gz.b64 | gzip -d > /tmp/dsp-a05/module.1
-          base64 -d .dsp-a05-materialize/module.part2.gz.b64 | gzip -d > /tmp/dsp-a05/module.2
-          cat /tmp/dsp-a05/module.1 /tmp/dsp-a05/module.2 > backend/modules/disputes/dispute-operator-case-dual-control-readiness.js
-          base64 -d .dsp-a05-materialize/test.part1.gz.b64 | gzip -d > /tmp/dsp-a05/test.1
-          base64 -d .dsp-a05-materialize/test.part2.gz.b64 | gzip -d > /tmp/dsp-a05/test.2
-          cat /tmp/dsp-a05/test.1 /tmp/dsp-a05/test.2 > scripts/test-dsp-a05-operator-case-dual-control-readiness.js
-          sha256sum -c <<'SUMS'
-          4478a9e25808cb95e8839e75f744370413d2289fa3f8de8de6d142afc731879b  .github/workflows/dsp-a05-operator-case-dual-control-readiness.yml
-          60abc11e1870cbf7858c232a715ef9d651cc35c9dd1901db0c4afd775c9d7d25  backend/modules/disputes/dispute-operator-case-dual-control-readiness.js
-          7657234537f29146ad8add6562d651c651779eda78c6693b11fdd1f0f4996fe2  config/dsp-a05-operator-case-dual-control-readiness.json
-          1b8b0554b58cec26ab0ba505ed05f8e2ab2ec6b55c14614830cc3f54e8948478  docs/DSP-A05-OPERATOR-CASE-DUAL-CONTROL-READINESS.md
-          c0bcef7834d6d9994fa216ecec4241f994b7bdbb7501eb81ef87a9693bd90cb0  scripts/audit-dsp-a05-operator-case-dual-control-readiness.js
-          4c2219ff5a3f64d8b3d697f6332cf8ffdd92fa963bbf7ec337fe12c1b0002163  scripts/test-dsp-a05-operator-case-dual-control-readiness.js
-          246d4aff39291b5fc555f5c64575eecc389adfa6382fba0bacd8173b274eb44d  tests/fixtures/dsp-a05-operator-case-dual-control-cases.json
-          SUMS
+          node --check backend/modules/disputes/provider-chargeback-reconciliation-boundary.js
+          node --check scripts/audit-dsp-a04-provider-chargeback-reconciliation-boundary.js
+          node --check scripts/test-dsp-a04-provider-chargeback-reconciliation-boundary.js
 
-      - name: Validate DSP-A05 and predecessor contracts
-        shell: bash
+      - name: Audit provider chargeback reconciliation boundary
+        run: node scripts/audit-dsp-a04-provider-chargeback-reconciliation-boundary.js
+
+      - name: Conformance
+        run: node scripts/test-dsp-a04-provider-chargeback-reconciliation-boundary.js
+
+      - name: DSP-A03 regression
         run: |
-          set -euo pipefail
-          node --check backend/modules/disputes/dispute-operator-case-dual-control-readiness.js
-          node --check scripts/audit-dsp-a05-operator-case-dual-control-readiness.js
-          node --check scripts/test-dsp-a05-operator-case-dual-control-readiness.js
-          node scripts/audit-dsp-a05-operator-case-dual-control-readiness.js
-          node scripts/test-dsp-a05-operator-case-dual-control-readiness.js
           node scripts/audit-dsp-a03-evidence-deadline-appeal-contract.js
           node scripts/test-dsp-a03-evidence-deadline-appeal-contract.js
+
+      - name: DSP-A02 regression
+        run: |
           node scripts/audit-dsp-a02-canonical-lifecycle-effect-taxonomy.js
           node scripts/test-dsp-a02-canonical-lifecycle-effect-taxonomy.js
+
+      - name: DSP-A01 regression
+        run: |
           node scripts/audit-dsp-a01-authority-baseline.js
           node scripts/test-dsp-a01-authority-baseline.js
-          git diff --check
 
-      - name: Restore DSP-A04, validate, clean and publish object
-        shell: bash
-        run: |
-          set -euo pipefail
-          git show 974e0c60bda67c13e4fd837f3b38bac1ddc2ada3:.github/workflows/dsp-a04-provider-chargeback-reconciliation-boundary.yml > .github/workflows/dsp-a04-provider-chargeback-reconciliation-boundary.yml
-          node scripts/audit-dsp-a04-provider-chargeback-reconciliation-boundary.js
-          node scripts/test-dsp-a04-provider-chargeback-reconciliation-boundary.js
-          rm -rf .dsp-a05-materialize .github/workflows/dsp-a05-materialize-temporary.yml
-          git diff --check
-          git config user.name "doke-ci"
-          git config user.email "actions@users.noreply.github.com"
-          git add -A -- .dsp-a05-materialize .github/workflows/dsp-a05-materialize-temporary.yml .github/workflows/dsp-a04-provider-chargeback-reconciliation-boundary.yml .github/workflows/dsp-a05-operator-case-dual-control-readiness.yml backend/modules/disputes/dispute-operator-case-dual-control-readiness.js config/dsp-a05-operator-case-dual-control-readiness.json docs/DSP-A05-OPERATOR-CASE-DUAL-CONTROL-READINESS.md scripts/audit-dsp-a05-operator-case-dual-control-readiness.js scripts/test-dsp-a05-operator-case-dual-control-readiness.js tests/fixtures/dsp-a05-operator-case-dual-control-cases.json
-          git commit -m "feat(disputes): add DSP-A05 operator dual-control readiness"
-          echo "DSP_A05_COMMIT_SHA=$(git rev-parse HEAD)"
-          git push origin HEAD:dsp/dsp-001-baseline-audit
+      - name: Diff hygiene
+        run: git diff --check
