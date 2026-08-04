@@ -163,7 +163,7 @@ assert.ok(!eventText.includes('user-b'));
 assert.ok(newsSource.includes('CONTINUITY_SRC'));
 assert.ok(newsSource.includes('ensureContinuity'));
 assert.ok(newsSource.includes("lane: 'news.preference.save'"));
-assert.ok(newsSource.includes('const targetStorageKey = storageKey()'));
+assert.ok(newsSource.includes('resolvePreferenceStorage'));
 assert.ok(newsSource.includes('requestHandle?.assertCurrent()'));
 assert.ok(newsSource.includes('requestHandle.commit(applyOutcome)'));
 assert.ok(newsSource.includes("lane: 'news.online-refresh'"));
