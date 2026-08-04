@@ -1,0 +1,114 @@
+name: Doke PAY-B03A Canonical Integration Temp
+
+on:
+  push:
+    branches:
+      - pay/pay-b03a-commercial-policy-decision-build
+    paths:
+      - '.github/workflows/pay-b03a-canonical-integration-temp.yml'
+  pull_request:
+    paths:
+      - '.github/workflows/pay-b03a-canonical-integration-temp.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  integrate:
+    if: github.repository == 'Ezyrus07/doke-web' && github.head_ref == 'pay/pay-b03a-commercial-policy-decision-build'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: pay/pay-b03a-commercial-policy-decision-build
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Apply deterministic canonical integration
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('node:fs');
+          const addUnique = (array, value) => { if (!array.includes(value)) array.push(value); };
+
+          const packagePath = 'package.json';
+          const packageJson = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
+          packageJson.scripts['audit:pay-b03a-commercial-policy-decision-gate'] = 'node scripts/audit-pay-b03a-commercial-policy-decision-gate.js';
+          packageJson.scripts['test:pay-b03a-commercial-policy-decision-gate'] = 'node scripts/test-pay-b03a-commercial-policy-decision-gate.js';
+          fs.writeFileSync(packagePath, JSON.stringify(packageJson, null, 2) + '\n');
+
+          const matrixPath = 'config/domain-completion-matrix.json';
+          const matrix = JSON.parse(fs.readFileSync(matrixPath, 'utf8'));
+          if (matrix.version !== '1.3.103') throw new Error('Expected matrix 1.3.103');
+          matrix.version = '1.3.104';
+          matrix.updatedAt = '2026-08-04T13:30:00-03:00';
+          const pay = matrix.domains.find((domain) => domain.id === 'PAY-001');
+          if (!pay) throw new Error('PAY-001 domain missing');
+          const paths = [
+            'backend/modules/payments/payment-commercial-policy-decision.js',
+            'config/pay-b03a-commercial-policy-decision-gate.json',
+            'tests/fixtures/pay-b03a-commercial-policy-decision-cases.json',
+            'docs/PAY-B03A-COMMERCIAL-POLICY-DECISION-GATE.md',
+            'docs/validation/PAY-B03A-COMMERCIAL-POLICY-DECISION-GATE.json',
+            'scripts/audit-pay-b03a-commercial-policy-decision-gate.js',
+            'scripts/test-pay-b03a-commercial-policy-decision-gate.js',
+            '.github/workflows/pay-b03a-commercial-policy-decision-gate.yml'
+          ];
+          paths.forEach((item) => addUnique(pay.requiredPaths, item));
+          [paths[0], paths[2]].forEach((item) => addUnique(pay.scanRoots, item));
+          addUnique(pay.tests, 'audit:pay-b03a-commercial-policy-decision-gate');
+          addUnique(pay.tests, 'test:pay-b03a-commercial-policy-decision-gate');
+          addUnique(pay.evidence, 'PAY-B03A commercial-policy decision gate passed 39/39 repository-only cases, records a PSP-managed non-custodial funds-flow proposal and preserves PAY-B03 pending executive, legal, tax and accounting approval.');
+          pay.nextActions = [
+            'PAY-B03B — obtain executive, legal, tax and accounting approval for fee, funds-flow, cancellation, refund, dispute, chargeback and invoicing decisions; PAY-B03 remains open until versioned approval evidence exists.',
+            'PAY-B01 — keep PSP selection, account creation, credentials, signed webhook registration and provider contact blocked until a separate resource-bound authorization exists.',
+            'PAY-B04 — keep remote reconciliation infrastructure, real witnesses, transparency-log publication and staging rehearsal blocked until separately designed and authorized.'
+          ];
+          fs.writeFileSync(matrixPath, JSON.stringify(matrix, null, 2) + '\n');
+
+          const auditPath = 'scripts/audit-pay-b03a-commercial-policy-decision-gate.js';
+          let audit = fs.readFileSync(auditPath, 'utf8');
+          const oldAudit = "assert(matrix.version === '1.3.103', 'Expected matrix 1.3.103 before integration');\nassert(pay && pay.maturity === 2 && pay.serverAuthority === 'contract_only', 'PAY baseline drift');\nassert(pay.blockers.some((item) => item.id === 'PAY-B03'), 'PAY-B03 must remain open');\nassert(pay.nextActions[0].includes('PAY-B03'), 'PAY-B03 must remain first next action');";
+          const newAudit = "assert(matrix.version === '1.3.104', 'Matrix version must be 1.3.104');\nassert(packageJson.scripts['audit:pay-b03a-commercial-policy-decision-gate'] === 'node scripts/audit-pay-b03a-commercial-policy-decision-gate.js', 'Package audit script missing');\nassert(packageJson.scripts['test:pay-b03a-commercial-policy-decision-gate'] === 'node scripts/test-pay-b03a-commercial-policy-decision-gate.js', 'Package test script missing');\nassert(pay && pay.maturity === 2 && pay.serverAuthority === 'contract_only', 'PAY baseline drift');\nassert(pay.userFacingAuthority === 'local' && pay.stagingEvidence === 'local_e2e', 'PAY authority drift');\nassert(pay.securityGate === 'blocked' && pay.productionGate === 'blocked', 'PAY gates must remain blocked');\nassert(JSON.stringify(pay.blockers.map((item) => item.id)) === JSON.stringify(['PAY-B01','PAY-B03','PAY-B04']), 'PAY blockers drift');\nObject.values(paths).forEach((file) => assert(pay.requiredPaths.includes(file), 'Matrix required path missing: ' + file));\n[paths.module, paths.fixture].forEach((file) => assert(pay.scanRoots.includes(file), 'Matrix scan root missing: ' + file));\n['audit:pay-b03a-commercial-policy-decision-gate','test:pay-b03a-commercial-policy-decision-gate'].forEach((script) => assert(pay.tests.includes(script), 'Matrix test missing: ' + script));\nassert(pay.evidence.some((item) => item.includes('PAY-B03A') && item.includes('39/39')), 'Matrix PAY-B03A evidence missing');\nassert(pay.nextActions[0].includes('PAY-B03B') && pay.nextActions[0].includes('PAY-B03 remains open'), 'PAY-B03B next action drift');";
+          if (!audit.includes(oldAudit)) throw new Error('PAY-B03A audit integration anchor missing');
+          audit = audit.replace(oldAudit, newAudit);
+          audit = audit.replace("const matrix = json('config/domain-completion-matrix.json');", "const packageJson = json('package.json');\nconst matrix = json('config/domain-completion-matrix.json');");
+          fs.writeFileSync(auditPath, audit);
+
+          const a18Path = 'scripts/audit-pay-001-a18-witness-proof-rehearsal-adoption-gate.js';
+          let a18 = fs.readFileSync(a18Path, 'utf8');
+          const before = "assert(matrix.version === '1.3.103', 'matrix version must be 1.3.103');";
+          const after = "assert(matrix.version === '1.3.104', 'matrix version must be 1.3.104');";
+          if (!a18.includes(before)) throw new Error('PAY-A18 matrix guard anchor missing');
+          a18 = a18.replace(before, after);
+          fs.writeFileSync(a18Path, a18);
+          NODE
+          node scripts/audit-domain-completion-matrix.js --write
+          node scripts/audit-domain-completion-matrix.js
+          node scripts/audit-pay-b03a-commercial-policy-decision-gate.js
+          node scripts/test-pay-b03a-commercial-policy-decision-gate.js
+          npm run audit:pay-001-a06-provider-selection-legal-handoff
+          npm run audit:pay-001-a17-transparency-recovery-incident-handoff
+          npm run audit:pay-001-a18-witness-proof-rehearsal-adoption-gate
+          npm run test:pay-001-a18-witness-proof-rehearsal-adoption-gate
+          git diff --check
+      - name: Commit allowlisted integration and self-remove
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add package.json config/domain-completion-matrix.json docs/DOMAIN-COMPLETION-MATRIX.md
+          git add scripts/audit-pay-b03a-commercial-policy-decision-gate.js scripts/audit-pay-001-a18-witness-proof-rehearsal-adoption-gate.js
+          git add -f reports/generated/domain-completion-matrix-report.json
+          git rm .github/workflows/pay-b03a-canonical-integration-temp.yml
+          changed="$(git diff --cached --name-only | sort)"
+          expected="$(printf '%s\n' '.github/workflows/pay-b03a-canonical-integration-temp.yml' 'config/domain-completion-matrix.json' 'docs/DOMAIN-COMPLETION-MATRIX.md' 'package.json' 'reports/generated/domain-completion-matrix-report.json' 'scripts/audit-pay-001-a18-witness-proof-rehearsal-adoption-gate.js' 'scripts/audit-pay-b03a-commercial-policy-decision-gate.js' | sort)"
+          test "$changed" = "$expected"
+          git commit -m 'Integrate PAY-B03A commercial policy gate canonically'
+          git push origin HEAD:pay/pay-b03a-commercial-policy-decision-build
