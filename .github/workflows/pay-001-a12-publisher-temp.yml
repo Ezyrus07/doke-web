@@ -30,10 +30,14 @@ jobs:
       - run: npm ci --ignore-scripts
       - name: Reassemble and verify PAY-A12 payload
         run: |
-          cat .pay-a12-bootstrap/chunk-*.b64 > /tmp/pay-a12.b64
-          test "$(sha256sum /tmp/pay-a12.b64 | awk '{print $1}')" = "1debb8651e5731e40378ce79bc2db3807a056b89df3dc79c5402baf42e74701b"
+          cat .pay-a12-bootstrap/chunk-*.b64 | LC_ALL=C tr -cd 'A-Za-z0-9+/=' > /tmp/pay-a12.b64
+          actual_b64="$(sha256sum /tmp/pay-a12.b64 | awk '{print $1}')"
+          echo "PAY-A12 normalized base64 SHA-256: $actual_b64"
+          test "$actual_b64" = "1debb8651e5731e40378ce79bc2db3807a056b89df3dc79c5402baf42e74701b"
           base64 -d /tmp/pay-a12.b64 > /tmp/pay-a12.tar.gz
-          test "$(sha256sum /tmp/pay-a12.tar.gz | awk '{print $1}')" = "5fac75fa321fe51c74ec48afeec103ca6d5a1e48e5f358fca72743bba7ef3171"
+          actual_gzip="$(sha256sum /tmp/pay-a12.tar.gz | awk '{print $1}')"
+          echo "PAY-A12 gzip SHA-256: $actual_gzip"
+          test "$actual_gzip" = "5fac75fa321fe51c74ec48afeec103ca6d5a1e48e5f358fca72743bba7ef3171"
           gzip -dc /tmp/pay-a12.tar.gz | tar -xf -
       - name: Apply PAY-A12 repository metadata
         run: |
@@ -116,6 +120,8 @@ jobs:
         run: |
           git config user.name 'doke-pay-a12-bot'
           git config user.email 'doke-pay-a12-bot@users.noreply.github.com'
+          git add -f docs/validation/PAY-001-A12-EXECUTOR-TRUST-ROOT-SIGNATURE.json
+          git add -f reports/generated/domain-completion-matrix-report.json
           git add -A
           git commit -m 'Complete PAY-A12 trust-root signature contracts'
           git push origin HEAD:pay/pay-001-baseline-audit
