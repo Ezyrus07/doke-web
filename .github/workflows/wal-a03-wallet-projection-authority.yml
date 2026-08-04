@@ -1,0 +1,47 @@
+name: WAL-A03 Wallet Projection Authority
+
+on:
+  pull_request:
+    paths:
+      - 'backend/modules/wallet/wallet-projection-authority.js'
+      - 'config/wal-a03-wallet-projection-authority.json'
+      - 'tests/fixtures/wal-a03-wallet-projection-authority-cases.json'
+      - 'docs/WAL-A03-WALLET-PROJECTION-AUTHORITY.md'
+      - 'scripts/audit-wal-a03-wallet-projection-authority.js'
+      - 'scripts/test-wal-a03-wallet-projection-authority.js'
+      - 'assets/js/repositories/finance-repository.js'
+      - 'assets/js/repositories/wallet-repository.js'
+      - 'config/domain-completion-matrix.json'
+      - '.github/workflows/wal-a03-wallet-projection-authority.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  wal-a03-wallet-projection-authority:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Syntax
+        run: |
+          node --check backend/modules/wallet/wallet-projection-authority.js
+          node --check scripts/audit-wal-a03-wallet-projection-authority.js
+          node --check scripts/test-wal-a03-wallet-projection-authority.js
+
+      - name: Audit projection authority
+        run: node scripts/audit-wal-a03-wallet-projection-authority.js
+
+      - name: Conformance
+        run: node scripts/test-wal-a03-wallet-projection-authority.js
+
+      - name: Diff hygiene
+        run: git diff --check
