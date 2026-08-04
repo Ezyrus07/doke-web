@@ -101,7 +101,7 @@ jobs:
           git diff --check
       - name: Verify bounded changes
         run: |
-          changed="$(git status --short | sed -E 's/^.. //' | sort)"
+          changed="$(git status --short --untracked-files=all | sed -E 's/^.. //' | sort)"
           while IFS= read -r file; do
             test -z "$file" && continue
             case "$file" in
