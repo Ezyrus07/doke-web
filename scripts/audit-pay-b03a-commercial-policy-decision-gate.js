@@ -49,7 +49,7 @@ assert(!workflow.includes('workflow_dispatch') && !workflow.includes('secrets.')
 const packageJson = json('package.json');
 const matrix = json('config/domain-completion-matrix.json');
 const pay = matrix.domains.find((domain) => domain.id === 'PAY-001');
-assert(matrix.version === '1.3.104', 'Matrix version must be 1.3.104');
+assert(matrix.version === '1.3.105', 'Matrix version must be 1.3.105');
 assert(packageJson.scripts['audit:pay-b03a-commercial-policy-decision-gate'] === 'node scripts/audit-pay-b03a-commercial-policy-decision-gate.js', 'Package audit script missing');
 assert(packageJson.scripts['test:pay-b03a-commercial-policy-decision-gate'] === 'node scripts/test-pay-b03a-commercial-policy-decision-gate.js', 'Package test script missing');
 assert(pay && pay.maturity === 2 && pay.serverAuthority === 'contract_only', 'PAY baseline drift');

@@ -130,7 +130,7 @@ const matrix = readJson('config/domain-completion-matrix.json');
 const pay = matrix.domains.find((domain) => domain.id === 'PAY-001');
 assert(packageJson.scripts['audit:pay-001-a18-witness-proof-rehearsal-adoption-gate'] === 'node scripts/audit-pay-001-a18-witness-proof-rehearsal-adoption-gate.js', 'package audit script missing');
 assert(packageJson.scripts['test:pay-001-a18-witness-proof-rehearsal-adoption-gate'] === 'node scripts/test-pay-001-a18-witness-proof-rehearsal-adoption-gate.js', 'package test script missing');
-assert(matrix.version === '1.3.104', 'matrix version must be 1.3.104');
+assert(matrix.version === '1.3.105', 'matrix version must be 1.3.105');
 assert(pay, 'PAY-001 matrix domain missing');
 assert(pay.maturity === 2, 'PAY maturity must remain 2');
 assert(pay.userFacingAuthority === 'local', 'PAY user authority drifted');
