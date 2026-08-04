@@ -1,10 +1,13 @@
 (() => {
-  const STORAGE_PREFIX = 'doke.news-view.v1';
+  const LEGACY_STORAGE_PREFIX = 'doke.news-view.v1';
   const MUTATION_MANAGER_SRC = 'assets/js/core/mutation-manager.js?v=20260804-ux-core-002-v1';
   const CONTINUITY_SRC = 'assets/js/core/continuity-experience.js?v=20260804-ux-cont-001-v1';
+  const ACCOUNT_STORAGE_SRC = 'assets/js/core/account-storage.js?v=20260804-ux-priv-001-v1';
   const VALID_FILTERS = new Set(['all', 'update', 'announcement', 'security', 'community']);
   let mutationManagerTask = null;
   let continuityTask = null;
+  let accountStorageTask = null;
+  let volatilePreference = { filter: 'all', expanded: false };
 
   const getUserId = () => {
     const candidates = [
@@ -21,10 +24,8 @@
       if (id) return String(id);
     }
 
-    return 'guest';
+    return '';
   };
-
-  const storageKey = () => `${STORAGE_PREFIX}:${getUserId()}`;
 
   const setState = (state, detail = {}) => {
     const root = document.querySelector('[data-state-boundary="novidades"]');
@@ -52,32 +53,9 @@
     expanded: next?.expanded === true
   });
 
-  const readPreference = () => {
-    try {
-      const raw = localStorage.getItem(storageKey());
-      if (!raw) return { filter: 'all', expanded: false };
-      return normalizePreference(JSON.parse(raw));
-    } catch (error) {
-      console.warn('[Doke][Novidades] Não foi possível restaurar preferências.', error);
-      return { filter: 'all', expanded: false };
-    }
-  };
-
-  const writePreference = (normalized, targetStorageKey) => {
-    const serialized = JSON.stringify(normalized);
-    localStorage.setItem(targetStorageKey, serialized);
-
-    if (localStorage.getItem(targetStorageKey) !== serialized) {
-      const error = new Error('news-preference-persistence-failed');
-      error.code = 'NEWS_PREFERENCE_PERSISTENCE_FAILED';
-      throw error;
-    }
-
-    return normalized;
-  };
-
   const getMutationManager = () => window.Doke?.formMutationManager || null;
   const getContinuity = () => window.Doke?.continuityExperience || null;
+  const getAccountStorage = () => window.Doke?.accountStorage || null;
 
   const ensureScriptAuthority = ({
     getter,
@@ -145,6 +123,82 @@
     loadFailed: 'continuity-experience-load-failed'
   });
 
+  const ensureAccountStorage = () => ensureScriptAuthority({
+    getter: getAccountStorage,
+    task: accountStorageTask,
+    setTask: (value) => { accountStorageTask = value; },
+    selector: 'script[data-doke-account-storage]',
+    src: ACCOUNT_STORAGE_SRC,
+    datasetKey: 'dokeAccountStorage',
+    unavailable: 'account-storage-unavailable',
+    loadFailed: 'account-storage-load-failed'
+  });
+
+  const resolvePreferenceStorage = (storage, accountId = getUserId()) => {
+    const scope = storage.resolveScope({ accountId, allowGuest: true });
+    const storageKey = storage.makeKey({
+      scopeId: scope.scopeId,
+      kind: scope.kind,
+      domain: 'news',
+      key: 'view',
+      version: 1
+    });
+
+    if (scope.kind === 'account') {
+      storage.migrateLegacy({
+        scopeId: scope.scopeId,
+        kind: scope.kind,
+        domain: 'news',
+        key: 'view',
+        version: 1,
+        legacyKeys: [`${LEGACY_STORAGE_PREFIX}:${scope.scopeId}`],
+        transform: normalizePreference
+      });
+    }
+
+    return { scope, storageKey, descriptor: storage.publicDescriptor(storageKey) };
+  };
+
+  const readPreference = () => {
+    const storage = getAccountStorage();
+    if (!storage) return volatilePreference;
+    try {
+      const target = resolvePreferenceStorage(storage);
+      const stored = storage.read(target.storageKey);
+      volatilePreference = normalizePreference(stored || volatilePreference);
+      return volatilePreference;
+    } catch (error) {
+      console.warn('[Doke][Novidades] Não foi possível restaurar preferências.', error);
+      return volatilePreference;
+    }
+  };
+
+  const restorePreference = () => ensureAccountStorage()
+    .then(() => {
+      const preference = readPreference();
+      setState('ready', { source: 'account-storage', preference, announce: false });
+      window.dispatchEvent(new CustomEvent('doke:news-preference-restored', {
+        detail: { preference }
+      }));
+      return preference;
+    })
+    .catch((error) => {
+      console.warn('[Doke][Novidades] Account storage indisponível; preferência ficará efêmera.', error);
+      return volatilePreference;
+    });
+
+  const writePreference = (storage, target, normalized) => {
+    const persisted = storage.write({ storageKey: target.storageKey, value: normalized });
+    const confirmed = normalizePreference(storage.read(target.storageKey));
+    if (JSON.stringify(confirmed) !== JSON.stringify(normalized)) {
+      const error = new Error('news-preference-persistence-failed');
+      error.code = 'NEWS_PREFERENCE_PERSISTENCE_FAILED';
+      throw error;
+    }
+    volatilePreference = confirmed;
+    return { value: confirmed, descriptor: persisted.descriptor };
+  };
+
   const reportError = (error) => {
     const state = navigator.onLine === false ? 'offline' : 'error';
     setState(state, { error });
@@ -153,22 +207,24 @@
 
   const saveWithManager = ({
     manager,
+    storage,
+    target,
     requestHandle,
     normalized,
-    accountId,
-    targetStorageKey
+    accountId
   }) => {
     requestHandle?.assertCurrent();
+    const scopeIdentity = accountId || target.scope.scopeId;
 
     return manager.execute({
       domain: 'news',
       action: 'save_preference',
-      accountId,
+      accountId: scopeIdentity,
       entityType: 'preference',
       entityId: 'news-view',
       payload: normalized,
-      dedupeKey: `news|save_preference|${accountId}|${manager.fingerprint(normalized)}`,
-      authority: 'client-local-preference',
+      dedupeKey: `news|save_preference|${scopeIdentity}|${manager.fingerprint(normalized)}`,
+      authority: 'client-account-storage',
       request: () => {
         requestHandle?.assertCurrent();
         if (requestHandle?.signal?.aborted) {
@@ -177,12 +233,13 @@
           throw error;
         }
 
+        const persisted = writePreference(storage, target, normalized);
         return {
-          value: writePreference(normalized, targetStorageKey),
+          value: persisted.value,
           confirmed: true,
           authorityReceipt: {
-            authority: 'client-local-preference',
-            authorityReference: 'news-view-v1',
+            authority: 'client-account-storage',
+            authorityReference: `${persisted.descriptor.domain}:${persisted.descriptor.keyFingerprint}:v${persisted.descriptor.version}`,
             confirmedAt: Date.now()
           }
         };
@@ -220,7 +277,7 @@
   const savePreference = (next) => {
     const normalized = normalizePreference(next);
     const accountId = getUserId();
-    const targetStorageKey = storageKey();
+    volatilePreference = normalized;
 
     return ensureContinuity()
       .catch((error) => {
@@ -238,28 +295,46 @@
           abortPrevious: true
         }) || null;
 
-        return ensureMutationManager()
-          .then((manager) => saveWithManager({
-            manager,
-            requestHandle,
-            normalized,
-            accountId,
-            targetStorageKey
-          }))
+        return Promise.all([ensureMutationManager(), ensureAccountStorage()])
+          .then(([manager, storage]) => {
+            requestHandle?.assertCurrent();
+            const target = resolvePreferenceStorage(storage, accountId);
+            return saveWithManager({
+              manager,
+              storage,
+              target,
+              requestHandle,
+              normalized,
+              accountId
+            });
+          })
           .catch((error) => {
             const validation = requestHandle?.validate?.();
             if (validation && !validation.current) return normalized;
 
-            if (error?.message === 'mutation-manager-load-failed' || error?.message === 'mutation-manager-unavailable') {
+            const managerUnavailable = error?.message === 'mutation-manager-load-failed'
+              || error?.message === 'mutation-manager-unavailable';
+            const storageUnavailable = error?.message === 'account-storage-load-failed'
+              || error?.message === 'account-storage-unavailable';
+
+            if (managerUnavailable && !storageUnavailable) {
+              const storage = getAccountStorage();
               const applyFallback = () => {
-                const value = writePreference(normalized, targetStorageKey);
-                setState('ready', { preference: value, announce: false });
-                return value;
+                if (!storage) return normalized;
+                const target = resolvePreferenceStorage(storage, accountId);
+                const persisted = writePreference(storage, target, normalized).value;
+                setState('ready', { preference: persisted, announce: false });
+                return persisted;
               };
 
               if (!requestHandle) return applyFallback();
               const committed = requestHandle.commit(applyFallback);
               return committed.applied ? committed.value : normalized;
+            }
+
+            if (storageUnavailable) {
+              setState('ready', { preference: normalized, persistence: 'ephemeral', announce: false });
+              return normalized;
             }
 
             reportError(error);
@@ -279,6 +354,7 @@
       ensureMutationManager().catch((error) => {
         console.warn('[Doke][Novidades] Mutation manager será carregado sob demanda.', error);
       });
+      restorePreference();
       const preference = readPreference();
       setState('ready', { source: 'static-editorial-content', preference, announce: false });
       return preference;
@@ -291,8 +367,10 @@
     },
     savePreference,
     readPreference,
+    restorePreference,
     ensureMutationManager,
     ensureContinuity,
+    ensureAccountStorage,
     invalidate() {
       window.Doke?.stableShellRouter?.invalidate?.('novidades.html');
     }

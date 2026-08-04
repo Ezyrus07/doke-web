@@ -11,7 +11,64 @@
   const STORAGE_KEY = 'doke.auth.session.v1';
   const LEGACY_KEYS = Object.freeze(['doke.auth.session.v2', 'doke.auth.session']);
   const SENSITIVE_SESSION_KEYS = Object.freeze(['token', 'accessToken', 'access_token', 'refreshToken', 'refresh_token']);
+  const ACCOUNT_STORAGE_VERSION = '20260804-ux-priv-001-v1';
   const listeners = new Set();
+  let accountStorageTask = null;
+  let activeAccountId = '';
+
+  const resolveAccountStorageSrc = () => {
+    const scripts = Array.from(document.querySelectorAll('script[src]'));
+    const owner = document.currentScript || scripts.find((script) => /\/assets\/js\/core\/session\.js(?:\?|$)/i.test(script.src));
+    try {
+      return new URL(`account-storage.js?v=${ACCOUNT_STORAGE_VERSION}`, owner?.src || root.location.href).href;
+    } catch {
+      return `assets/js/core/account-storage.js?v=${ACCOUNT_STORAGE_VERSION}`;
+    }
+  };
+
+  const getAccountStorage = () => Doke.accountStorage || null;
+
+  const ensureAccountStorage = () => {
+    const available = getAccountStorage();
+    if (available) return Promise.resolve(available);
+    if (accountStorageTask) return accountStorageTask;
+
+    accountStorageTask = new Promise((resolve, reject) => {
+      const finish = () => {
+        const authority = getAccountStorage();
+        if (authority) resolve(authority);
+        else reject(new Error('account-storage-unavailable'));
+      };
+
+      let script = document.querySelector('script[data-doke-account-storage]');
+      const isNewScript = !script;
+      if (!script) {
+        script = document.createElement('script');
+        script.src = resolveAccountStorageSrc();
+        script.async = false;
+        script.dataset.dokeAccountStorage = 'true';
+      }
+
+      script.addEventListener('load', finish, { once: true });
+      script.addEventListener('error', () => reject(new Error('account-storage-load-failed')), { once: true });
+      if (isNewScript) document.head.append(script);
+      if (getAccountStorage()) finish();
+    }).catch((error) => {
+      accountStorageTask = null;
+      throw error;
+    });
+
+    return accountStorageTask;
+  };
+
+  const sessionAccountId = (session) => String(session?.user?.id || session?.user?.userId || session?.user?.uid || '').trim();
+
+  const coordinateAccountStorage = (previousAccountId, nextAccountId, reason = 'session-change') => {
+    if (previousAccountId === nextAccountId) return;
+    ensureAccountStorage()
+      .then((storage) => storage.handleAccountTransition({ previousAccountId, nextAccountId, reason }))
+      .catch((error) => console.warn('[DokeSession] Account storage cleanup unavailable.', error));
+  };
 
   const safeParse = (value) => {
     try {
@@ -226,6 +283,11 @@
   };
 
   const notify = (session) => {
+    const nextAccountId = sessionAccountId(session);
+    const previousAccountId = activeAccountId;
+    activeAccountId = nextAccountId;
+    coordinateAccountStorage(previousAccountId, nextAccountId, 'session-change');
+
     syncAppState(session);
 
     listeners.forEach((listener) => {
@@ -359,12 +421,18 @@
     normalizeUser,
     normalizeProfile,
     normalizeSession,
-    normalizeSessionProvider
+    normalizeSessionProvider,
+    ensureAccountStorage
   });
 
   ns.session = api;
   ns.SessionStore = api;
   Doke.session = api;
 
-  syncAppState(read());
+  const initialSession = read();
+  activeAccountId = sessionAccountId(initialSession);
+  syncAppState(initialSession);
+  ensureAccountStorage()
+    .then((storage) => storage.bootstrap({ currentAccountId: activeAccountId }))
+    .catch((error) => console.warn('[DokeSession] Account storage authority will retry on demand.', error));
 })();
