@@ -1,0 +1,47 @@
+name: Doke PAY-B03B Commercial Approval Evidence Package
+
+on:
+  push:
+    paths:
+      - 'backend/modules/payments/payment-commercial-approval-evidence.js'
+      - 'config/pay-b03b-commercial-approval-evidence-package.json'
+      - 'tests/fixtures/pay-b03b-commercial-approval-evidence-cases.json'
+      - 'docs/PAY-B03B-COMMERCIAL-APPROVAL-EVIDENCE-PACKAGE.md'
+      - 'docs/validation/PAY-B03B-COMMERCIAL-APPROVAL-EVIDENCE-PACKAGE.json'
+      - 'scripts/audit-pay-b03b-commercial-approval-evidence-package.js'
+      - 'scripts/test-pay-b03b-commercial-approval-evidence-package.js'
+      - '.github/workflows/pay-b03b-commercial-approval-evidence-package.yml'
+  pull_request:
+    paths:
+      - 'backend/modules/payments/payment-commercial-approval-evidence.js'
+      - 'config/pay-b03b-commercial-approval-evidence-package.json'
+      - 'tests/fixtures/pay-b03b-commercial-approval-evidence-cases.json'
+      - 'docs/PAY-B03B-COMMERCIAL-APPROVAL-EVIDENCE-PACKAGE.md'
+      - 'docs/validation/PAY-B03B-COMMERCIAL-APPROVAL-EVIDENCE-PACKAGE.json'
+      - 'scripts/audit-pay-b03b-commercial-approval-evidence-package.js'
+      - 'scripts/test-pay-b03b-commercial-approval-evidence-package.js'
+      - '.github/workflows/pay-b03b-commercial-approval-evidence-package.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax
+        run: |
+          node --check backend/modules/payments/payment-commercial-approval-evidence.js
+          node --check scripts/audit-pay-b03b-commercial-approval-evidence-package.js
+          node --check scripts/test-pay-b03b-commercial-approval-evidence-package.js
+      - name: Audit
+        run: node scripts/audit-pay-b03b-commercial-approval-evidence-package.js
+      - name: Conformance
+        run: node scripts/test-pay-b03b-commercial-approval-evidence-package.js
+      - name: Diff hygiene
+        run: git diff --check
