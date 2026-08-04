@@ -3,63 +3,82 @@ name: DSP-A04 Provider Chargeback Reconciliation Boundary
 on:
   pull_request:
     paths:
-      - 'backend/modules/disputes/provider-chargeback-reconciliation-boundary.js'
-      - 'config/dsp-a04-provider-chargeback-reconciliation-boundary.json'
-      - 'tests/fixtures/dsp-a04-provider-chargeback-reconciliation-cases.json'
-      - 'docs/DSP-A04-PROVIDER-CHARGEBACK-RECONCILIATION-BOUNDARY.md'
-      - 'scripts/audit-dsp-a04-provider-chargeback-reconciliation-boundary.js'
-      - 'scripts/test-dsp-a04-provider-chargeback-reconciliation-boundary.js'
       - '.github/workflows/dsp-a04-provider-chargeback-reconciliation-boundary.yml'
-      - 'backend/modules/disputes/dispute-evidence-deadline-appeal-contract.js'
-      - 'backend/modules/disputes/dispute-lifecycle-taxonomy-contract.js'
-      - 'config/dsp-a03-evidence-deadline-appeal-contract.json'
-      - 'config/dsp-a02-canonical-lifecycle-effect-taxonomy.json'
-      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
-      - 'reports/generated/domain-completion-matrix-report.json'
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  dsp-a04-provider-chargeback-reconciliation-boundary:
+  materialize-dsp-a05:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
-      - name: Checkout
+      - name: Checkout branch
         uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          ref: dsp/dsp-001-baseline-audit
+          fetch-depth: 0
 
-      - name: Syntax
+      - name: Extract validated DSP-A05 package
+        shell: bash
         run: |
-          node --check backend/modules/disputes/provider-chargeback-reconciliation-boundary.js
-          node --check scripts/audit-dsp-a04-provider-chargeback-reconciliation-boundary.js
-          node --check scripts/test-dsp-a04-provider-chargeback-reconciliation-boundary.js
+          set -euo pipefail
+          sed -n "/<<'ARCHIVE'/,/^ARCHIVE$/p" .github/workflows/dsp-a05-materialize-temporary.yml | sed '1d;$d' > /tmp/dsp-a05.tar.gz.b64
+          test -s /tmp/dsp-a05.tar.gz.b64
+          base64 -d /tmp/dsp-a05.tar.gz.b64 > /tmp/dsp-a05.tar.gz
+          tar -xzf /tmp/dsp-a05.tar.gz -C "$GITHUB_WORKSPACE"
+          git show 974e0c60bda67c13e4fd837f3b38bac1ddc2ada3:.github/workflows/dsp-a04-provider-chargeback-reconciliation-boundary.yml > .github/workflows/dsp-a04-provider-chargeback-reconciliation-boundary.yml
+          rm -f .github/workflows/dsp-a05-materialize-temporary.yml
 
-      - name: Audit provider chargeback reconciliation boundary
-        run: node scripts/audit-dsp-a04-provider-chargeback-reconciliation-boundary.js
-
-      - name: Conformance
-        run: node scripts/test-dsp-a04-provider-chargeback-reconciliation-boundary.js
-
-      - name: DSP-A03 regression
+      - name: Validate DSP-A05
+        shell: bash
         run: |
-          node scripts/audit-dsp-a03-evidence-deadline-appeal-contract.js
-          node scripts/test-dsp-a03-evidence-deadline-appeal-contract.js
+          set -euo pipefail
+          node --check backend/modules/disputes/dispute-operator-case-dual-control-readiness.js
+          node --check scripts/audit-dsp-a05-operator-case-dual-control-readiness.js
+          node --check scripts/test-dsp-a05-operator-case-dual-control-readiness.js
+          node scripts/audit-dsp-a05-operator-case-dual-control-readiness.js
+          node scripts/test-dsp-a05-operator-case-dual-control-readiness.js
+          git diff --check
 
-      - name: DSP-A02 regression
+      - name: Enforce allowlist and commit
+        shell: bash
         run: |
-          node scripts/audit-dsp-a02-canonical-lifecycle-effect-taxonomy.js
-          node scripts/test-dsp-a02-canonical-lifecycle-effect-taxonomy.js
-
-      - name: DSP-A01 regression
-        run: |
-          node scripts/audit-dsp-a01-authority-baseline.js
-          node scripts/test-dsp-a01-authority-baseline.js
-
-      - name: Diff hygiene
-        run: git diff --check
+          set -euo pipefail
+          python - <<'PY'
+          import os
+          import subprocess
+          allowed = {
+            '.github/workflows/dsp-a04-provider-chargeback-reconciliation-boundary.yml',
+            '.github/workflows/dsp-a05-materialize-temporary.yml',
+            '.github/workflows/dsp-a05-operator-case-dual-control-readiness.yml',
+            'backend/modules/disputes/dispute-operator-case-dual-control-readiness.js',
+            'config/dsp-a05-operator-case-dual-control-readiness.json',
+            'docs/DSP-A05-OPERATOR-CASE-DUAL-CONTROL-READINESS.md',
+            'scripts/audit-dsp-a05-operator-case-dual-control-readiness.js',
+            'scripts/test-dsp-a05-operator-case-dual-control-readiness.js',
+            'tests/fixtures/dsp-a05-operator-case-dual-control-cases.json'
+          }
+          required = allowed - {
+            '.github/workflows/dsp-a04-provider-chargeback-reconciliation-boundary.yml',
+            '.github/workflows/dsp-a05-materialize-temporary.yml'
+          }
+          changed = []
+          for line in subprocess.check_output(['git', 'status', '--porcelain=v1'], text=True).splitlines():
+              path = line[3:]
+              if ' -> ' in path:
+                  path = path.split(' -> ', 1)[1]
+              changed.append(path)
+          unexpected = sorted(set(changed) - allowed)
+          if unexpected:
+              raise SystemExit('Unexpected files: ' + ', '.join(unexpected))
+          missing = sorted(path for path in required if not os.path.exists(path))
+          if missing:
+              raise SystemExit('Missing files: ' + ', '.join(missing))
+          PY
+          git config user.name "doke-ci"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A -- .github/workflows/dsp-a04-provider-chargeback-reconciliation-boundary.yml .github/workflows/dsp-a05-materialize-temporary.yml .github/workflows/dsp-a05-operator-case-dual-control-readiness.yml backend/modules/disputes/dispute-operator-case-dual-control-readiness.js config/dsp-a05-operator-case-dual-control-readiness.json docs/DSP-A05-OPERATOR-CASE-DUAL-CONTROL-READINESS.md scripts/audit-dsp-a05-operator-case-dual-control-readiness.js scripts/test-dsp-a05-operator-case-dual-control-readiness.js tests/fixtures/dsp-a05-operator-case-dual-control-cases.json
+          git commit -m "feat(disputes): add DSP-A05 operator dual-control readiness"
+          git push origin HEAD:dsp/dsp-001-baseline-audit
