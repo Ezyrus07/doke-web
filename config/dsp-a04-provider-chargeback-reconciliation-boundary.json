@@ -1,0 +1,104 @@
+{
+  "contractId": "dsp-a04-provider-chargeback-reconciliation-boundary-v1",
+  "domain": "DSP-001",
+  "dependsOn": [
+    "dsp-a01-authority-baseline-v1",
+    "dsp-a02-canonical-lifecycle-effect-taxonomy-v1",
+    "dsp-a03-evidence-deadline-appeal-contract-v1",
+    "pay-001-a03-psp-neutral-intent-webhook-v1",
+    "wal-a05-provider-transfer-reconciliation-v1"
+  ],
+  "sourceHead": "e906735503a153edb7b00eaeba7e4e9dac97ca29",
+  "scope": "repository_only",
+  "status": "provider_chargeback_reconciliation_boundary_complete_runtime_integration_blocked",
+  "runtimeIntegrated": false,
+  "migrationPrepared": false,
+  "migrationApplied": false,
+  "stagingValidated": false,
+  "providerSelected": false,
+  "providerCredentialsConfigured": false,
+  "approvedPolicyPresent": false,
+  "operatorCaseWorkflowComplete": false,
+  "providerStates": [
+    "unknown",
+    "opened",
+    "evidence_due",
+    "evidence_submitted",
+    "under_review",
+    "won",
+    "lost",
+    "reversed"
+  ],
+  "observationSources": [
+    "signed_webhook",
+    "authenticated_poll",
+    "authenticated_api_response",
+    "provider_statement"
+  ],
+  "reconciliationStates": [
+    "provider_unknown",
+    "provider_open",
+    "evidence_required",
+    "provider_review",
+    "reconciliation_required",
+    "reconciled_won",
+    "reconciled_lost",
+    "reversed",
+    "conflict"
+  ],
+  "semanticRules": [
+    "provider events require a verified signature or authenticated channel",
+    "duplicate events with the same fingerprint are replays",
+    "event id or sequence reuse with different content is a conflict",
+    "provider event order and state transitions are validated",
+    "a final provider result is not a reconciled internal result",
+    "reconciliation matches transaction, case, amount, currency, dispute reference, evidence bundle and ledger records",
+    "one webhook never establishes financial authority",
+    "raw payloads, credentials, card data, banking data and evidence bodies are prohibited",
+    "chargeback observations cannot execute refund, release, transfer or production mutation"
+  ],
+  "authority": {
+    "contractAuthority": true,
+    "providerObservationReferenceAuthority": true,
+    "providerResultAuthority": false,
+    "decisionAuthority": false,
+    "runtimeMutationAuthority": false,
+    "refundAuthority": false,
+    "releaseAuthority": false,
+    "chargebackAuthority": false,
+    "providerSubmissionAuthority": false,
+    "realMoneyAuthority": false,
+    "productionAuthority": false
+  },
+  "preservedBlockers": [
+    "DSP-B01",
+    "DSP-B03",
+    "DSP-B04",
+    "PAY-B01",
+    "PAY-B03",
+    "PAY-B04",
+    "WAL-B02",
+    "WAL-B03",
+    "WAL-B04"
+  ],
+  "prohibitedEffects": {
+    "networkRequests": false,
+    "databaseConnections": false,
+    "stagingReads": false,
+    "stagingMutations": false,
+    "migrations": false,
+    "deployments": false,
+    "providerContact": false,
+    "credentialsConfigured": false,
+    "realWebhookReceived": false,
+    "realChargebackOpened": false,
+    "realEvidenceSubmitted": false,
+    "refundExecuted": false,
+    "releaseExecuted": false,
+    "realMoneyMovement": false,
+    "productionChanges": false
+  },
+  "nextSublots": [
+    "DSP-A05 operator case and dual-control readiness"
+  ]
+}
