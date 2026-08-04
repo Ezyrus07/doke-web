@@ -69,11 +69,11 @@ jobs:
               source = source.replace(old, new)
             path.write_text(source, encoding='utf-8')
           PY
-          npm run write:domain-completion-matrix
           rm -f .pay-a12-bootstrap/chunk-*.b64
           rm -f scripts/apply-pay-001-a12-repository-metadata.js
           rm -f .github/workflows/pay-001-a12-publisher-temp.yml
           rmdir .pay-a12-bootstrap 2>/dev/null || true
+          npm run write:domain-completion-matrix
       - name: Validate PAY-A12 and cumulative boundaries
         run: |
           node --check backend/modules/payments/payment-reconciliation-executor-trust.js
