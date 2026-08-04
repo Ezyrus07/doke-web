@@ -1,0 +1,142 @@
+{
+  "contractId": "wal-a02-bank-account-sensitive-data-boundary-v1",
+  "domain": "WAL-001",
+  "dependsOn": "wal-a01-authority-baseline-v1",
+  "sourceHead": "af67e2e850c3fd893d3e5c5ada22a27eebc56f3f",
+  "createdAt": "2026-08-04T15:20:00-03:00",
+  "scope": "repository_only",
+  "status": "contract_ready_runtime_integration_required",
+  "runtimeIntegrated": false,
+  "migrationPrepared": false,
+  "migrationApplied": false,
+  "stagingValidated": false,
+  "storageClasses": [
+    {
+      "id": "transient_raw_intake",
+      "rawDataAllowed": true,
+      "browserPersistenceAllowed": false,
+      "auditLoggingAllowed": false,
+      "requiredDisposition": "destroy_after_protected_write_or_failure"
+    },
+    {
+      "id": "protected_server_secret",
+      "rawDataAllowed": true,
+      "browserPersistenceAllowed": false,
+      "auditLoggingAllowed": false,
+      "requiredProtection": ["encrypted_server_side", "tokenized_external_vault"],
+      "currentImplementation": "absent"
+    },
+    {
+      "id": "masked_browser_projection",
+      "rawDataAllowed": false,
+      "browserPersistenceAllowed": true,
+      "auditLoggingAllowed": true,
+      "requiredContract": "wallet-bank-account-masked-projection-v1"
+    },
+    {
+      "id": "withdrawal_destination_reference",
+      "rawDataAllowed": false,
+      "browserPersistenceAllowed": true,
+      "auditLoggingAllowed": true,
+      "requiredContract": "wallet-withdrawal-destination-reference-v1"
+    }
+  ],
+  "rawSensitiveFields": [
+    "account_holder",
+    "document",
+    "branch",
+    "account_number",
+    "pix_key"
+  ],
+  "maskedProjectionFields": [
+    "bankAccountReferenceId",
+    "bankAccountSecretVersion",
+    "bankName",
+    "bankCode",
+    "accountType",
+    "holderNameMasked",
+    "documentMasked",
+    "branchMasked",
+    "accountNumberMasked",
+    "pixKeyMasked",
+    "pixKeyType",
+    "destinationKind",
+    "destinationLabel",
+    "status",
+    "updatedAt",
+    "projectionFingerprint"
+  ],
+  "accessMatrix": [
+    {
+      "actor": "wallet_owner",
+      "maskedProjection": "allow",
+      "rawSecret": "deny_after_intake",
+      "protectedWrite": "self_service_server_command_only"
+    },
+    {
+      "actor": "support",
+      "maskedProjection": "allow_need_to_know",
+      "rawSecret": "deny",
+      "protectedWrite": "deny"
+    },
+    {
+      "actor": "admin",
+      "maskedProjection": "allow_need_to_know",
+      "rawSecret": "deny",
+      "protectedWrite": "deny"
+    },
+    {
+      "actor": "service_role",
+      "maskedProjection": "allow",
+      "rawSecret": "protected_adapter_only",
+      "protectedWrite": "allow_through_versioned_adapter"
+    }
+  ],
+  "retentionRules": [
+    "Raw intake exists only for the duration of one protected-write command.",
+    "Browser storage may contain only a validated masked projection.",
+    "Audit logs may contain only redacted values, opaque references and fingerprints.",
+    "Withdrawal records bind an opaque reference and masked projection fingerprint, never a raw bank-account snapshot.",
+    "Deletion, rotation and retention durations require a separately approved policy before runtime activation."
+  ],
+  "runtimeIntegrationRequirements": [
+    "Replace remote-to-local full bank-account projection with the masked projection contract.",
+    "Replace raw withdrawal bank_account_snapshot with an opaque reference plus projection fingerprint.",
+    "Introduce an encrypted or tokenized server-side secret adapter without exposing keys to browser or repository.",
+    "Return masked projections from owner and operator read paths.",
+    "Remove or permanently isolate legacy direct-DML bank-account handlers.",
+    "Add stable secret-version rotation and deletion semantics.",
+    "Obtain explicit authorization before migration, staging reads, staging mutations or deployment."
+  ],
+  "preservedBlockers": [
+    "WAL-B02",
+    "WAL-B03",
+    "WAL-B04",
+    "PAY-B01",
+    "PAY-B03",
+    "PAY-B04"
+  ],
+  "authority": {
+    "realMoneyAuthority": false,
+    "providerTransferAuthority": false,
+    "rawBankDataRuntimeAuthority": false,
+    "remoteExecutionAuthority": false,
+    "stagingAuthority": false,
+    "productionAuthority": false
+  },
+  "prohibitedEffects": {
+    "networkRequests": false,
+    "databaseConnections": false,
+    "stagingReads": false,
+    "stagingMutations": false,
+    "migrations": false,
+    "deployments": false,
+    "providerContact": false,
+    "credentialsConfigured": false,
+    "realBankDataRead": false,
+    "realBankDataWrite": false,
+    "withdrawalMutation": false,
+    "realMoneyMovement": false,
+    "productionChanges": false
+  }
+}
