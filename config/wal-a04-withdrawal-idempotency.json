@@ -1,0 +1,99 @@
+{
+  "contractId": "wal-a04-withdrawal-idempotency-v1",
+  "intentVersion": "wallet-withdrawal-intent-v1",
+  "requestVersion": "wallet-withdrawal-request-envelope-v1",
+  "outcomeVersion": "wallet-withdrawal-outcome-v1",
+  "domain": "WAL-001",
+  "dependsOn": [
+    "wal-a01-authority-baseline-v1",
+    "wal-a02-bank-account-sensitive-data-boundary-v1",
+    "wal-a03-wallet-projection-authority-v1"
+  ],
+  "sourceHead": "49664f3e66c27ec7736213bc680d3198039f8c2f",
+  "createdAt": "2026-08-04T16:11:00-03:00",
+  "scope": "repository_only",
+  "status": "contract_ready_runtime_integration_required",
+  "runtimeIntegrated": false,
+  "migrationPrepared": false,
+  "migrationApplied": false,
+  "stagingValidated": false,
+  "intentIdentity": {
+    "stableAcrossReload": true,
+    "stableAcrossRetry": true,
+    "stableAcrossTimeout": true,
+    "stableAcrossLostResponse": true,
+    "fields": [
+      "intentId",
+      "actorScopeHash",
+      "amountCents",
+      "currency",
+      "destinationReferenceId",
+      "destinationFingerprint",
+      "clientRevision"
+    ]
+  },
+  "lifecycleStates": [
+    "prepared",
+    "claimed",
+    "resolution_required",
+    "failed_retryable",
+    "succeeded",
+    "rejected_terminal"
+  ],
+  "retryRules": [
+    "Every retry of one intent reuses the same deterministic idempotency key.",
+    "The same key with a different actor, amount, currency, destination or revision is a conflict.",
+    "Timeout, reload and lost response require reconciliation or replay with the same key.",
+    "A succeeded intent always returns the same stored withdrawal identifier.",
+    "A terminal rejection cannot be converted into a new withdrawal by changing the key silently.",
+    "A new intent requires an explicit user action after the previous intent is resolved."
+  ],
+  "dataBoundary": [
+    "Only an opaque destination reference and SHA-256 fingerprint are allowed.",
+    "Raw account holder, document, branch, account number, Pix key and bank snapshot are forbidden.",
+    "The contract never stores provider credentials or bank secrets."
+  ],
+  "runtimeIntegrationRequirements": [
+    "Persist the withdrawal intent before the first network request.",
+    "Reuse the exact intent and idempotency key after reload, timeout or response loss.",
+    "Bind the server ledger to actor, route and request fingerprint.",
+    "Return the stored withdrawal for successful replays.",
+    "Reject the same key with a different payload.",
+    "Expose a reconciliation path for claimed or unknown-after-submit intents.",
+    "Do not mark a withdrawal completed before provider confirmation and reconciliation.",
+    "Obtain explicit authorization before runtime, migration, staging or deployment changes."
+  ],
+  "preservedBlockers": [
+    "WAL-B02",
+    "WAL-B03",
+    "WAL-B04",
+    "PAY-B01",
+    "PAY-B03",
+    "PAY-B04"
+  ],
+  "authority": {
+    "idempotencyContractAuthority": true,
+    "runtimeMutationAuthority": false,
+    "withdrawalRequestAuthority": false,
+    "providerTransferAuthority": false,
+    "realMoneyAuthority": false,
+    "remoteExecutionAuthority": false,
+    "stagingAuthority": false,
+    "productionAuthority": false
+  },
+  "prohibitedEffects": {
+    "networkRequests": false,
+    "databaseConnections": false,
+    "stagingReads": false,
+    "stagingMutations": false,
+    "migrations": false,
+    "deployments": false,
+    "providerContact": false,
+    "credentialsConfigured": false,
+    "realBankDataRead": false,
+    "realBankDataWrite": false,
+    "withdrawalMutation": false,
+    "realMoneyMovement": false,
+    "productionChanges": false
+  }
+}
