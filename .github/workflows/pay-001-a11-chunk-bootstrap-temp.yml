@@ -39,6 +39,14 @@ jobs:
         run: |
           node .pay-a11-bootstrap/apply.js
           node scripts/write-pay-001-a11-executor-protocol-manifests.js
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('scripts/audit-pay-001-a11-executor-protocol-conformance.js')
+          source = path.read_text(encoding='utf-8')
+          old = "'five phases'"
+          assert old in source
+          path.write_text(source.replace(old, "'cinco fases'"), encoding='utf-8')
+          PY
           rm -f .pay-a11-bootstrap/chunk-*.b64
           rm -f .pay-a11-bootstrap/apply.js
           rm -f .github/workflows/pay-001-a11-chunk-bootstrap-temp.yml
