@@ -1,0 +1,118 @@
+{
+  "contractId": "wal-a05-provider-transfer-reconciliation-v1",
+  "commandVersion": "wallet-provider-transfer-command-v1",
+  "observationVersion": "wallet-provider-transfer-observation-v1",
+  "settlementVersion": "wallet-withdrawal-settlement-evidence-v1",
+  "reconciliationVersion": "wallet-withdrawal-reconciliation-v1",
+  "domain": "WAL-001",
+  "dependsOn": [
+    "wal-a01-authority-baseline-v1",
+    "wal-a02-bank-account-sensitive-data-boundary-v1",
+    "wal-a03-wallet-projection-authority-v1",
+    "wal-a04-withdrawal-idempotency-v1",
+    "pay-b03-commercial-policy-decision-gate-v1"
+  ],
+  "sourceHead": "d8308cc4ab7f9527275cb44bd9b9e8a24c4dd498",
+  "createdAt": "2026-08-04T16:32:00-03:00",
+  "scope": "repository_only",
+  "status": "contract_ready_external_dependencies_required",
+  "runtimeIntegrated": false,
+  "providerSelected": false,
+  "providerCredentialsConfigured": false,
+  "migrationPrepared": false,
+  "migrationApplied": false,
+  "stagingValidated": false,
+  "settlementRule": "A withdrawal is completed only after authenticated provider success and matching settlement reconciliation evidence.",
+  "providerStatuses": [
+    "submission_unknown",
+    "accepted",
+    "processing",
+    "succeeded",
+    "failed",
+    "reversed"
+  ],
+  "reconciliationStates": [
+    "queued",
+    "provider_unknown",
+    "provider_processing",
+    "reconciliation_required",
+    "settled",
+    "failed_terminal",
+    "reversed"
+  ],
+  "requiredBindings": [
+    "withdrawalId",
+    "intentId",
+    "withdrawalOutcomeFingerprint",
+    "amountCents",
+    "currency",
+    "destinationReferenceId",
+    "destinationFingerprint",
+    "providerAdapterRef",
+    "providerConfigurationFingerprint",
+    "providerIdempotencyKey",
+    "transferFingerprint"
+  ],
+  "settlementEvidenceRequirements": [
+    "provider status succeeded",
+    "authenticated and immutable provider evidence",
+    "one provider transfer reference per transfer command",
+    "matching amount, currency, destination and transfer fingerprint",
+    "matching provider observation fingerprint",
+    "opaque ledger entry and settlement references",
+    "segregation of duties",
+    "reconciliation timestamp after provider success"
+  ],
+  "forbiddenShortcuts": [
+    "provider success without reconciliation",
+    "manual approval as settlement evidence",
+    "local or browser-generated settlement",
+    "multiple provider references for one command",
+    "same provider event or sequence with conflicting evidence",
+    "out-of-order or invalid provider transitions",
+    "marking completed before settled",
+    "raw bank data or provider credentials in contract artifacts"
+  ],
+  "preservedBlockers": [
+    "WAL-B02",
+    "WAL-B03",
+    "WAL-B04",
+    "PAY-B01",
+    "PAY-B03",
+    "PAY-B04"
+  ],
+  "externalDependencies": [
+    "provider selection and contracting",
+    "commercial, legal and tax approval evidence",
+    "provider adapter and credential boundary",
+    "immutable migrations",
+    "staging transfer simulation and reconciliation canaries",
+    "production launch authorization"
+  ],
+  "authority": {
+    "contractAuthority": true,
+    "runtimeMutationAuthority": false,
+    "providerSubmissionAuthority": false,
+    "providerTransferAuthority": false,
+    "realMoneyAuthority": false,
+    "remoteExecutionAuthority": false,
+    "stagingAuthority": false,
+    "productionAuthority": false
+  },
+  "prohibitedEffects": {
+    "networkRequests": false,
+    "databaseConnections": false,
+    "stagingReads": false,
+    "stagingMutations": false,
+    "migrations": false,
+    "deployments": false,
+    "providerContact": false,
+    "credentialsConfigured": false,
+    "realBankDataRead": false,
+    "realBankDataWrite": false,
+    "withdrawalMutation": false,
+    "providerTransfer": false,
+    "realMoneyMovement": false,
+    "productionChanges": false
+  }
+}
