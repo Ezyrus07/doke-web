@@ -1,0 +1,58 @@
+{
+  "contractId": "wal-a02-bank-account-sensitive-data-boundary-v1",
+  "syntheticOnly": true,
+  "positiveCases": [
+    {
+      "id": "bank-account-with-email-pix",
+      "account": {
+        "holderName": "Pessoa Exemplo",
+        "document": "123.456.789-00",
+        "bankName": "Banco Sintético",
+        "bankCode": "999",
+        "branch": "1234",
+        "accountNumber": "987654-3",
+        "accountType": "checking",
+        "pixKey": "pessoa@example.test",
+        "status": "pending"
+      },
+      "expected": {
+        "destinationKind": "pix",
+        "documentMaskedSuffix": "8900",
+        "accountMaskedSuffix": "54-3",
+        "pixMaskContains": "@•••.test"
+      }
+    },
+    {
+      "id": "bank-account-only",
+      "account": {
+        "holderName": "Titular Teste",
+        "document": "11222333000144",
+        "bankName": "Instituição Exemplo",
+        "bankCode": "777",
+        "branch": "42",
+        "accountNumber": "0000123456",
+        "accountType": "payment",
+        "status": "verified"
+      },
+      "expected": {
+        "destinationKind": "bank_account",
+        "documentMaskedSuffix": "0144",
+        "accountMaskedSuffix": "3456"
+      }
+    },
+    {
+      "id": "phone-pix",
+      "account": {
+        "holderName": "Usuário Sintético",
+        "document": "00000000000",
+        "pixKey": "+55 (31) 99999-1234",
+        "accountType": "savings",
+        "status": "pending"
+      },
+      "expected": {
+        "destinationKind": "pix",
+        "pixMaskedSuffix": "1234"
+      }
+    }
+  ]
+}
