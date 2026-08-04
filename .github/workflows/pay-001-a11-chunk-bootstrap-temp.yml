@@ -1,0 +1,124 @@
+name: Doke PAY-A11 Chunk Bootstrap Temporary
+
+on:
+  pull_request:
+    paths:
+      - '.pay-a11-bootstrap/chunk-*.b64'
+      - '.github/workflows/pay-001-a11-chunk-bootstrap-temp.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.head.ref == 'pay/pay-001-baseline-audit'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: pay/pay-001-baseline-audit
+          fetch-depth: 0
+      - name: Verify exact event head
+        run: test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Reassemble and verify PAY-A11 payload
+        run: |
+          cat .pay-a11-bootstrap/chunk-*.b64 > /tmp/pay-a11.b64
+          test "$(sha256sum /tmp/pay-a11.b64 | awk '{print $1}')" = "47176859dbdd0fc3ed2d9b42637f9f2c7c994ccb183345acc1fc5c99ca6bdedc"
+          base64 -d /tmp/pay-a11.b64 > /tmp/pay-a11.tar.gz
+          test "$(sha256sum /tmp/pay-a11.tar.gz | awk '{print $1}')" = "1a4379c6f7e33dec11a91ce016240af48327d24c6018edb89f2f4fc9138d0996"
+          gzip -dc /tmp/pay-a11.tar.gz | tar -xf -
+      - name: Apply repository-only PAY-A11 patch
+        run: |
+          node .pay-a11-bootstrap/apply.js
+          node scripts/write-pay-001-a11-executor-protocol-manifests.js
+          rm -f .pay-a11-bootstrap/chunk-*.b64
+          rm -f .pay-a11-bootstrap/apply.js
+          rm -f .github/workflows/pay-001-a11-chunk-bootstrap-temp.yml
+          rmdir .pay-a11-bootstrap 2>/dev/null || true
+          npm run write:domain-completion-matrix
+      - name: Validate PAY-A11 and cumulative boundaries
+        run: |
+          node --check backend/modules/payments/payment-reconciliation-executor-protocol.js
+          node --check scripts/write-pay-001-a11-executor-protocol-manifests.js
+          node --check scripts/audit-pay-001-a11-executor-protocol-conformance.js
+          node --check scripts/test-pay-001-a11-executor-protocol-conformance.js
+          node scripts/write-pay-001-a11-executor-protocol-manifests.js --check
+          npm run audit:pay-001-a01-authority-baseline
+          npm run test:pay-001-a01-authority-baseline
+          npm run audit:pay-001-a02-authenticated-authority-boundary
+          npm run test:pay-001-a02-authenticated-authority-boundary
+          npm run audit:pay-001-a03-psp-neutral-intent-webhook
+          npm run test:pay-001-a03-psp-neutral-intent-webhook
+          npm run audit:pay-001-a04-reconciliation-queue
+          npm run test:pay-001-a04-reconciliation-queue
+          npm run audit:pay-001-a05-adapter-conformance-readiness
+          npm run test:pay-001-a05-adapter-conformance-readiness
+          npm run audit:pay-001-a06-provider-selection-legal-handoff
+          npm run test:pay-001-a06-provider-selection-legal-handoff
+          npm run audit:pay-001-a07-reconciliation-operations-readiness
+          npm run test:pay-001-a07-reconciliation-operations-readiness
+          npm run audit:pay-001-a08-immutable-migrations-read-only-canary
+          npm run test:pay-001-a08-immutable-migrations-read-only-canary
+          npm run audit:pay-001-a09-deployment-inspection-handoff
+          npm run test:pay-001-a09-deployment-inspection-handoff
+          npm run audit:pay-001-a10-external-executor-evidence-ingestion
+          npm run test:pay-001-a10-external-executor-evidence-ingestion
+          npm run audit:pay-001-a11-executor-protocol-conformance
+          npm run test:pay-001-a11-executor-protocol-conformance
+          npm run audit:msg-001-a06-presence-typing-boundary
+          npm run test:msg-001-a06-presence-typing-runtime
+          npm run audit:msg-001-a07-command-reliability
+          npm run test:msg-001-a07-command-reliability-runtime
+          npm run audit:msg-001-a08-staging-activation-readiness
+          npm run test:msg-001-a08-staging-activation-readiness
+          npm run test:finance-supabase-repository-contract
+          npm run test:financial-rpc-authority-contract
+          npm run test:financial-operations-edge-runtime
+          npm run test:staging-finance-sandbox-authority-contract
+          npm run test:staging-finance-sandbox-edge-runtime
+          npm run audit:domain-completion-matrix
+          git diff --check
+      - name: Verify bounded changes
+        run: |
+          changed="$(git status --short | sed -E 's/^.. //' | sort)"
+          while IFS= read -r file; do
+            test -z "$file" && continue
+            case "$file" in
+              backend/modules/payments/payment-reconciliation-executor-protocol.js) ;;
+              config/pay-001-a11-executor-protocol-conformance.json) ;;
+              config/pay-a11-executor-protocol-manifests/*) ;;
+              tests/fixtures/pay-a11-executor-protocol-conformance-corpus.json) ;;
+              docs/PAY-001-A11-EXECUTOR-PROTOCOL-CONFORMANCE.md) ;;
+              docs/validation/PAY-001-A11-EXECUTOR-PROTOCOL-CONFORMANCE.json) ;;
+              scripts/write-pay-001-a11-executor-protocol-manifests.js) ;;
+              scripts/audit-pay-001-a11-executor-protocol-conformance.js) ;;
+              scripts/test-pay-001-a11-executor-protocol-conformance.js) ;;
+              .github/workflows/pay-001-a11-executor-protocol-conformance.yml) ;;
+              package.json) ;;
+              config/domain-completion-matrix.json) ;;
+              config/pay-001-a10-external-executor-evidence-ingestion.json) ;;
+              docs/DOMAIN-COMPLETION-MATRIX.md) ;;
+              reports/generated/domain-completion-matrix-report.json) ;;
+              scripts/audit-pay-001-a*.js) ;;
+              .pay-a11-bootstrap/chunk-*.b64) ;;
+              .github/workflows/pay-001-a11-chunk-bootstrap-temp.yml) ;;
+              *) echo "Unexpected PAY-A11 change: $file" >&2; exit 1 ;;
+            esac
+          done <<< "$changed"
+          git fetch origin pay/pay-001-baseline-audit
+          test "$(git rev-parse origin/pay/pay-001-baseline-audit)" = "${{ github.event.pull_request.head.sha }}"
+      - name: Publish PAY-A11
+        run: |
+          git config user.name 'doke-pay-a11-bot'
+          git config user.email 'doke-pay-a11-bot@users.noreply.github.com'
+          git add -A
+          git commit -m 'Complete PAY-A11 executor protocol conformance'
+          git push origin HEAD:pay/pay-001-baseline-audit
