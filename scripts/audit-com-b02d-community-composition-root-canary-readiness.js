@@ -12,14 +12,17 @@ const files = {
   fixtures: 'tests/fixtures/com-b02d-community-composition-root-cases.json',
   test: 'scripts/test-com-b02d-community-composition-root-canary-readiness.js',
   docs: 'docs/COM-B02D-COMMUNITY-COMPOSITION-ROOT-CANARY-READINESS.md',
+  executionDocs: 'docs/COM-B02D-AUTHENTICATED-READ-ONLY-CANARY-EXECUTION.md',
   initialEvidence: 'docs/validation/COM-B02D-COMMUNITY-COMPOSITION-ROOT-CANARY-READINESS.json',
-  attemptEvidence: 'docs/validation/COM-B02D-AUTHENTICATED-READ-ONLY-CANARY-ATTEMPT-1.json',
+  attempt1Evidence: 'docs/validation/COM-B02D-AUTHENTICATED-READ-ONLY-CANARY-ATTEMPT-1.json',
+  attempt2Evidence: 'docs/validation/COM-B02D-AUTHENTICATED-READ-ONLY-CANARY-ATTEMPT-2.json',
   workflow: '.github/workflows/com-b02d-community-composition-root-canary-readiness.yml',
   runtime: 'backend/runtime/staging/staging-api-runtime.js',
   routes: 'backend/shared/http/route-registry.js',
   loader: 'backend/shared/http/module-route-loader.js',
   predecessor: 'docs/validation/COM-B02C-STAGING-MIGRATION-APPLICATION.json'
 };
+
 const read = (key) => fs.readFileSync(path.join(root, files[key]), 'utf8');
 let checks = 0;
 const check = (value, message) => { checks += 1; assert.ok(value, message); };
@@ -34,8 +37,10 @@ const source = read('module');
 const config = JSON.parse(read('config'));
 const fixtures = JSON.parse(read('fixtures'));
 const docs = read('docs');
+const executionDocs = read('executionDocs');
 const initialEvidence = JSON.parse(read('initialEvidence'));
-const attemptEvidence = JSON.parse(read('attemptEvidence'));
+const attempt1Evidence = JSON.parse(read('attempt1Evidence'));
+const attempt2Evidence = JSON.parse(read('attempt2Evidence'));
 const workflow = read('workflow');
 const runtime = read('runtime');
 const routes = read('routes');
@@ -60,7 +65,7 @@ check(!source.includes('commitEventAndProjection('), 'no event mutation exposure
 const expectedContract = 'com-b02d-community-composition-root-canary-readiness-v1';
 equal(config.contractId, expectedContract, 'config contract');
 equal(config.scope, 'repository_only', 'repository only');
-equal(config.status, 'canary_attempt_1_failed_before_database_access_retry_authorization_required', 'status');
+equal(config.status, 'authenticated_read_only_canary_certified', 'status');
 equal(config.stagingFoundation.projectId, 'zwkczgewzbsorbrjuzpb', 'project frozen');
 equal(config.stagingFoundation.migrationVersion, '20260805153539', 'migration version');
 equal(config.stagingFoundation.migrationApplied, true, 'migration applied');
@@ -73,30 +78,47 @@ equal(config.canary.requiredPhrase, phrase, 'phrase frozen');
 equal(config.canary.authorizationReceived, true, 'authorization received');
 equal(config.canary.authorizationConsumed, true, 'authorization consumed');
 equal(config.canary.executionAttempted, true, 'execution attempted');
-equal(config.canary.successfulExecutions, 0, 'zero successes');
-equal(config.canary.failedExecutions, 1, 'one failed attempt');
-equal(config.canary.lastAttemptFailedStage, 'executor_audit', 'failed stage');
-equal(config.canary.lastAttemptReachedDatabase, false, 'database not reached');
-equal(config.canary.retryAuthorizationRequired, true, 'retry authorization required');
-equal(config.canary.nextAttemptNumber, 2, 'next attempt');
+equal(config.canary.successfulExecutions, 1, 'one success');
+equal(config.canary.failedExecutions, 1, 'one historical failure');
+equal(config.canary.successfulAttemptNumber, 2, 'successful attempt 2');
+equal(config.canary.successfulRunId, 31026205446, 'successful run');
+equal(config.canary.successfulExecutionJobId, 92375512459, 'successful job');
+equal(config.canary.artifactId, 8938744322, 'artifact id');
+equal(config.canary.actorSource, 'server_verified_authenticated_session', 'actor source');
+equal(config.canary.assuranceLevel, 'aal1', 'aal');
+equal(config.canary.result, 'null', 'probe result null');
 equal(config.canary.readOnly, true, 'read only');
 equal(config.canary.mutationAllowed, false, 'mutation prohibited');
-equal(config.authority.authenticatedCanaryAuthority, false, 'canary authority false');
-equal(config.authority.stagingReadAuthority, false, 'read authority false');
-equal(config.authority.stagingMutationAuthority, false, 'mutation authority false');
-equal(config.authority.runtimeDeploymentAuthority, false, 'deployment false');
-equal(config.authority.productionAuthority, false, 'production false');
-equal(config.authority.pullRequestMergeAuthority, false, 'merge false');
-for (const value of Object.values(config.effects)) equal(value, false, 'effect false');
-equal(config.nextAction, 'await_new_exact_explicit_canary_authorization_for_attempt_2', 'next action');
+equal(config.canary.countsUnchanged, true, 'counts unchanged');
+equal(config.canary.domainRowsCreated, 0, 'zero rows');
+equal(config.canary.endedWithRollback, true, 'rollback');
+equal(config.canary.retryAuthorizationRequired, false, 'no retry required');
+for (const key of ['authenticatedCanaryAuthority', 'stagingReadAuthority', 'stagingMutationAuthority', 'runtimeDeploymentAuthority', 'productionAuthority', 'pullRequestMergeAuthority']) {
+  equal(config.authority[key], false, `${key} closed`);
+}
+equal(config.effects.networkRequestExecutedByCanary, true, 'network read recorded');
+equal(config.effects.databaseReadExecutedByCanary, true, 'database read recorded');
+equal(config.effects.databaseMutationExecuted, false, 'no database mutation');
+equal(config.effects.routeRegistered, false, 'no route');
+equal(config.effects.runtimeDeployed, false, 'no runtime deploy');
+equal(config.effects.edgeFunctionDeployed, false, 'no edge deploy');
+equal(config.effects.realCommunityChanged, false, 'no community change');
+equal(config.effects.realMembershipChanged, false, 'no membership change');
+equal(config.effects.realRoleChanged, false, 'no role change');
+equal(config.effects.productionChanged, false, 'no production change');
+equal(config.effects.pullRequestMerged, false, 'no merge');
+equal(config.nextAction, 'define_next_repository_only_com_boundary', 'next action');
 
 equal(fixtures.authorizationCases.length, fixtures.expected.authorizationTotal, 'fixture total');
 equal(fixtures.expected.authorized, 1, 'one authorized evaluator case');
 equal(fixtures.expected.blocked, 8, 'eight blocked evaluator cases');
 check(docs.includes(phrase), 'docs phrase');
+check(docs.includes('authenticated read-only canary: passed'), 'docs success');
 check(docs.includes('connected to main runtime: false'), 'docs disconnected');
-check(docs.includes('static_auditor_literal_mismatch'), 'docs root cause');
-check(docs.includes('database read executed by canary: false'), 'docs no canary database read');
+check(docs.includes('database mutation executed: false'), 'docs no mutation');
+check(executionDocs.includes('attempt 2: success'), 'execution docs success');
+check(executionDocs.includes('run: 31026205446'), 'execution docs run');
+check(executionDocs.includes('counts unchanged: true'), 'execution docs counts');
 check(!runtime.includes('community-composition-root'), 'main runtime unchanged');
 check(!routes.includes("module: 'communities'"), 'no community route');
 check(!loader.includes("require('../../modules/communities"), 'loader unchanged');
@@ -108,28 +130,36 @@ equal(predecessor.remainingAuthority.stagingMutationAuthority, false, 'predecess
 
 equal(initialEvidence.validationId, 'COM-B02D-COMMUNITY-COMPOSITION-ROOT-CANARY-READINESS', 'initial evidence id');
 equal(initialEvidence.certification.result, 'success', 'initial readiness certification');
-equal(initialEvidence.compositionRoot.connectedToMainRuntime, false, 'initial runtime disconnected');
-equal(initialEvidence.compositionRoot.routeRegistered, false, 'initial route absent');
 equal(initialEvidence.effects.databaseMutationExecuted, false, 'initial no mutation');
 
-equal(attemptEvidence.status, 'failed_closed_before_database_access', 'attempt evidence status');
-equal(attemptEvidence.workflow.runId, 31024711149, 'attempt run');
-equal(attemptEvidence.workflow.executionJobId, 92370362046, 'attempt job');
-equal(attemptEvidence.rootCause.class, 'static_auditor_literal_mismatch', 'attempt root cause');
-equal(attemptEvidence.execution.databaseAccessStarted, false, 'attempt database not reached');
-equal(attemptEvidence.execution.compositionRootInvoked, false, 'attempt root not invoked');
-equal(attemptEvidence.effects.databaseMutationExecuted, false, 'attempt no mutation');
-equal(attemptEvidence.retry.newExplicitAuthorizationRequired, true, 'attempt retry required');
+equal(attempt1Evidence.status, 'failed_closed_before_database_access', 'attempt 1 status');
+equal(attempt1Evidence.workflow.runId, 31024711149, 'attempt 1 run');
+equal(attempt1Evidence.execution.databaseAccessStarted, false, 'attempt 1 database not reached');
+equal(attempt1Evidence.effects.databaseMutationExecuted, false, 'attempt 1 no mutation');
+
+equal(attempt2Evidence.status, 'authenticated_read_only_canary_passed', 'attempt 2 status');
+equal(attempt2Evidence.workflow.runId, 31026205446, 'attempt 2 run');
+equal(attempt2Evidence.workflow.executionJobId, 92375512459, 'attempt 2 job');
+equal(attempt2Evidence.artifact.id, 8938744322, 'attempt 2 artifact');
+equal(attempt2Evidence.transaction.readOnly, true, 'attempt 2 read only');
+equal(attempt2Evidence.transaction.endedWithRollback, true, 'attempt 2 rollback');
+equal(attempt2Evidence.result.countsUnchanged, true, 'attempt 2 counts unchanged');
+equal(attempt2Evidence.result.domainRowsCreated, 0, 'attempt 2 zero rows');
+equal(attempt2Evidence.effects.databaseMutationExecuted, false, 'attempt 2 no mutation');
+equal(attempt2Evidence.effects.runtimeDeployed, false, 'attempt 2 no deploy');
+equal(attempt2Evidence.effects.productionChanged, false, 'attempt 2 no production');
+equal(attempt2Evidence.effects.pullRequestMerged, false, 'attempt 2 no merge');
 
 check(workflow.includes('permissions:\n  contents: read'), 'workflow read-only');
-check(workflow.includes('Audit COM-B02D'), 'audit step');
+check(workflow.includes('Audit COM-B02D readiness'), 'readiness audit step');
+check(workflow.includes('Audit COM-B02D attempt 2 success'), 'attempt 2 audit step');
 check(workflow.includes('Conformance COM-B02D'), 'conformance step');
 check(workflow.includes('COM-B02C predecessor regression'), 'predecessor regression');
-check(workflow.includes('docs/validation/COM-B02D-COMMUNITY-COMPOSITION-ROOT-CANARY-READINESS.json'), 'initial evidence watched');
+check(workflow.includes('COM-B02D-AUTHENTICATED-READ-ONLY-CANARY-ATTEMPT-2.json'), 'attempt 2 evidence watched');
 check(!workflow.includes('workflow_dispatch'), 'no dispatch');
 check(!workflow.includes('secrets.'), 'no secrets');
 check(!workflow.includes('supabase '), 'no supabase command');
 check(!workflow.includes('psql'), 'no psql');
 check(!workflow.includes('curl '), 'no curl');
 
-console.log(`COM-B02D audit passed: ${checks}/${checks}`);
+console.log(`COM-B02D final audit passed: ${checks}/${checks}`);
