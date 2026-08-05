@@ -73,7 +73,7 @@ for (const token of [
  equal(config.contractId, contract, 'config contract');
 equal(config.domain, 'COM-001', 'domain');
 equal(config.scope, 'repository_only', 'scope');
-equal(config.status, 'repository_contract_ready_for_certification', 'initial status');
+equal(config.status, 'repository_contract_certified_runtime_blocked', 'certified status');
 equal(config.caseAuthority.caseKinds.length, 3, 'case kinds');
 equal(config.caseAuthority.caseStates.length, 12, 'case states');
 equal(config.caseAuthority.canonicalServerSnapshotRequired, true, 'canonical case');
@@ -111,7 +111,12 @@ for (const [key, value] of Object.entries(config.authority)) {
   else equal(value, false, `${key} closed`);
 }
 for (const value of Object.values(config.prohibitedEffects)) equal(value, false, 'effect false');
-equal(config.certification.result, 'pending', 'certification pending');
+equal(config.certification.head, '33c0f454ced665af4363bc86dbecf6b3b59249d5', 'certified head');
+equal(config.certification.run, 31056452918, 'certification run');
+equal(config.certification.job, 92474892858, 'certification job');
+equal(config.certification.audit, '210/210', 'certification audit');
+equal(config.certification.conformance, '51/51', 'certification conformance');
+equal(config.certification.result, 'success', 'certification success');
 
  equal(fixture.contractId, contract, 'fixture contract');
 equal(fixture.scope, 'repository_only', 'fixture scope');
@@ -134,10 +139,14 @@ for (const marker of [
 
  equal(evidence.validationId, 'COM-B04-MODERATION-CASE-AUTHORITY', 'evidence id');
 equal(evidence.contractId, contract, 'evidence contract');
-equal(evidence.status, 'ready_for_certification', 'evidence pending');
+equal(evidence.status, 'repository_contract_certified', 'evidence certified');
 equal(evidence.scope, 'repository_only', 'evidence scope');
+equal(evidence.certification.headSha, '33c0f454ced665af4363bc86dbecf6b3b59249d5', 'evidence head');
+equal(evidence.certification.runId, 31056452918, 'evidence run');
+equal(evidence.certification.jobId, 92474892858, 'evidence job');
+equal(evidence.certification.auditPassed, 210, 'evidence audit');
 equal(evidence.certification.conformancePassed, 51, 'evidence conformance');
-equal(evidence.certification.diffHygiene, 'pending', 'evidence hygiene pending');
+equal(evidence.certification.diffHygiene, 'success', 'evidence hygiene');
 for (const value of Object.values(evidence.effects)) equal(value, false, 'evidence effect false');
 for (const value of Object.values(evidence.remainingAuthority)) equal(value, false, 'evidence authority false');
 
