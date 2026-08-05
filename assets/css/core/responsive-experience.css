@@ -1,0 +1,89 @@
+/* Doke UX-RESP-001 — responsive viewport and overflow contract */
+
+.doke-responsive-safe-area-probe {
+  position: fixed;
+  inset: 0 auto auto 0;
+  inline-size: 0;
+  block-size: 0;
+  visibility: hidden;
+  pointer-events: none;
+  padding:
+    env(safe-area-inset-top)
+    env(safe-area-inset-right)
+    env(safe-area-inset-bottom)
+    env(safe-area-inset-left);
+}
+
+.doke-responsive-inline-contain {
+  min-inline-size: 0;
+  max-inline-size: 100%;
+}
+
+.doke-responsive-inline-contain > * {
+  min-inline-size: 0;
+}
+
+.doke-responsive-scroll-x {
+  max-inline-size: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-inline: contain;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+
+.doke-responsive-scroll-x:focus-visible {
+  outline: 3px solid var(--color-primary, #2a5f90);
+  outline-offset: 3px;
+}
+
+[data-doke-responsive-pilot="novidades"],
+[data-doke-responsive-pilot="novidades"] .news-layout,
+[data-doke-responsive-pilot="novidades"] .news-layout__main,
+[data-doke-responsive-pilot="novidades"] .news-grid,
+[data-doke-responsive-pilot="novidades"] .news-card,
+[data-doke-responsive-pilot="novidades"] .news-feature {
+  min-inline-size: 0;
+  max-inline-size: 100%;
+}
+
+html[data-doke-layout-mode="compact"] [data-doke-responsive-pilot="novidades"] .news-layout {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+html[data-doke-layout-mode="compact"] [data-doke-responsive-pilot="novidades"] .news-filters {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  inline-size: 100%;
+  padding-block-end: 4px;
+}
+
+html[data-doke-layout-mode="compact"] [data-doke-responsive-pilot="novidades"] .news-filter {
+  flex: 0 0 auto;
+}
+
+html[data-doke-layout-mode="medium"] [data-doke-responsive-pilot="novidades"] .news-layout {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+html[data-doke-keyboard-state="open"] {
+  --doke-visible-viewport-height:
+    calc(var(--doke-visual-viewport-height, 100dvh) - var(--doke-safe-area-bottom, 0px));
+}
+
+html:not([data-doke-keyboard-state="open"]) {
+  --doke-visible-viewport-height: var(--doke-visual-viewport-height, 100dvh);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .doke-responsive-scroll-x {
+    scroll-behavior: auto;
+  }
+}
+
+@media (forced-colors: active) {
+  .doke-responsive-scroll-x:focus-visible {
+    outline-color: CanvasText;
+  }
+}
