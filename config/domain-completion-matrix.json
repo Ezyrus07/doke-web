@@ -1,6 +1,6 @@
 {
-  "version": "1.3.105",
-  "updatedAt": "2026-08-04T13:50:00-03:00",
+  "version": "1.3.106",
+  "updatedAt": "2026-08-05T19:52:00-03:00",
   "title": "Doke Domain Completion Matrix",
   "purpose": "Single source of truth for domain maturity, data authority, staging evidence, blockers, dependencies and mandatory completion order.",
   "maturityScale": {
@@ -2702,7 +2702,15 @@
         "assets/js/repositories/community-repository.js",
         "assets/js/services/community-service.js",
         "backend/modules/communities/.gitkeep",
-        "supabase/migrations/003_communication_finance_community.sql"
+        "supabase/migrations/003_communication_finance_community.sql",
+        "backend/modules/communities/community-server-authority-contract.js",
+        "backend/modules/communities/community-supabase-repository-adapter.js",
+        "backend/runtime/staging/community-composition-root.js",
+        "backend/modules/communities/community-realtime-channel-scale-policy.js",
+        "config/com-b03-realtime-channel-scale-policy.json",
+        "scripts/test-com-b03-community-realtime-channel-scale-policy.js",
+        "scripts/audit-com-b03-community-realtime-channel-scale-policy.js",
+        "docs/validation/COM-B03-COMMUNITY-REALTIME-CHANNEL-SCALE-POLICY.json"
       ],
       "scanRoots": [
         "assets/js/features/community",
@@ -2722,27 +2730,32 @@
       "tests": [
         "test:community-domain-infrastructure",
         "test:community-domain-transactions",
-        "test:community-member-discipline-runtime-contract"
+        "test:community-member-discipline-runtime-contract",
+        "audit:com-b03-community-realtime-channel-scale-policy",
+        "test:com-b03-community-realtime-channel-scale-policy"
       ],
       "evidence": [
         "Rich local community logic and local runtime domain contracts exist.",
-        "Backend communities module is empty and all three core community tables have RLS disabled.",
         "Public/private discovery, membership, role management and posts now have server-side RLS with canonical owner membership and 18 rollback canaries.",
-        "Members cannot self-assign moderator/owner, nonmembers cannot read or post in private communities, and owners cannot delete or downgrade the canonical owner row."
+        "Members cannot self-assign moderator/owner, nonmembers cannot read or post in private communities, and owners cannot delete or downgrade the canonical owner row.",
+        "The communities backend now has a server-authority contract, Supabase repository adapter and private persistence foundation applied and structurally verified in staging.",
+        "An authenticated read-only composition-root canary passed against staging with an existing aal1 session, rollback and unchanged 0/0/0 domain row counts.",
+        "COM-B03 scalable realtime channel policy is repository-certified with bounded leases, privacy gates, channel caps, event deduplication, backpressure, resume cursors and deterministic reconnect.",
+        "No community Realtime publication, authenticated subscription, route or runtime integration is active yet."
       ],
       "blockers": [
         {
           "id": "COM-B02",
           "severity": "critical",
-          "category": "server_authority",
-          "description": "Membership, roles, bans, invitations and posts are not server-canonical.",
+          "category": "server_runtime_activation",
+          "description": "Server-authority contracts, persistence foundation and a read-only canary are certified, but membership, roles, invitations, bans and content commands are not integrated into the canonical runtime.",
           "targetPhase": "Fase 11"
         },
         {
           "id": "COM-B03",
           "severity": "high",
-          "category": "realtime",
-          "description": "No community realtime publication or scalable channel policy is active.",
+          "category": "realtime_activation",
+          "description": "Scalable channel policy is repository-certified, but no community Realtime publication or authenticated subscription is active.",
           "targetPhase": "Fase 11"
         },
         {
@@ -2754,8 +2767,8 @@
         }
       ],
       "nextActions": [
-        "Implement server-canonical invitations, join requests, bans and appeals.",
-        "Add scoped realtime and scalable channel policy.",
+        "Integrate the certified server-authority repository into the main runtime for invitations, join requests, roles, bans and content commands.",
+        "Prepare scoped Realtime publication and an authenticated subscription canary under separate explicit staging authorization.",
         "Complete content reports, sanctions and media moderation."
       ],
       "exitCriteria": [
