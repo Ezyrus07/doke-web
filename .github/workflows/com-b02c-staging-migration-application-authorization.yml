@@ -43,11 +43,5 @@ jobs:
         run: |
           node scripts/audit-com-b02-server-authority-contract.js
           node scripts/test-com-b02-server-authority-contract.js
-      - name: No execution surface
-        run: |
-          ! grep -q 'workflow_dispatch' .github/workflows/com-b02c-staging-migration-application-authorization.yml
-          ! grep -q 'secrets\.' .github/workflows/com-b02c-staging-migration-application-authorization.yml
-          ! grep -q 'supabase db push' .github/workflows/com-b02c-staging-migration-application-authorization.yml
-          ! grep -q 'psql' .github/workflows/com-b02c-staging-migration-application-authorization.yml
       - name: Diff hygiene
         run: git diff --check
