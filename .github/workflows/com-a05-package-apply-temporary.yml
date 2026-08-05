@@ -3,7 +3,12 @@ name: COM-A05 Package Apply Temporary
 on:
   pull_request:
     paths:
-      - '.github/com-a05-package.b64'
+      - '.github/com-a05-package.part01'
+      - '.github/com-a05-package.part02'
+      - '.github/com-a05-package.part03'
+      - '.github/com-a05-package.part04'
+      - '.github/com-a05-package.part05'
+      - '.github/com-a05-package.part06'
       - '.github/workflows/com-a05-package-apply-temporary.yml'
   workflow_dispatch:
 
@@ -25,12 +30,21 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          package='.github/com-a05-package.b64'
-          if [ ! -f "$package" ]; then
-            echo 'Package already consumed.'
-            exit 0
-          fi
-          base64 -d "$package" > /tmp/com-a05.tgz
+          parts=(
+            '.github/com-a05-package.part01'
+            '.github/com-a05-package.part02'
+            '.github/com-a05-package.part03'
+            '.github/com-a05-package.part04'
+            '.github/com-a05-package.part05'
+            '.github/com-a05-package.part06'
+          )
+          for part in "${parts[@]}"; do
+            test -f "$part"
+          done
+          cat "${parts[@]}" > /tmp/com-a05-package.b64
+          echo '9f35598c604a94f694483cf60ee075cac8a61859aaa8b5f8f934c6ada3981f3b  /tmp/com-a05-package.b64' | sha256sum -c -
+          base64 -d /tmp/com-a05-package.b64 > /tmp/com-a05.tgz
+          echo '6643a77dd090c1880c18db86b963bcfc281e3668db22673e6ac796b49587f12c  /tmp/com-a05.tgz' | sha256sum -c -
           mapfile -t actual < <(tar -tzf /tmp/com-a05.tgz | sort)
           expected=(
             'backend/modules/communities/community-moderation-media-contract.js'
@@ -69,7 +83,7 @@ jobs:
           git add scripts/audit-com-a05-moderation-appeal-media-readiness.js
           git add scripts/test-com-a05-moderation-appeal-media-readiness.js
           git add tests/fixtures/com-a05-moderation-media-cases.json
-          git rm "$package"
+          git rm -f .github/com-a05-package.b64 "${parts[@]}"
           git diff --cached --check
           git commit -m 'feat(com): add COM-A05 moderation appeal media readiness'
           git push origin "HEAD:${{ github.event.pull_request.head.ref }}"
