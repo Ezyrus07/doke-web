@@ -5,7 +5,7 @@ on:
     branches:
       - com/com-001-baseline-audit
     paths:
-      - 'config/com-b03-domain-matrix-reconciliation-attempt-2.json'
+      - 'config/com-b03-domain-matrix-reconciliation-attempt-3.json'
 
 permissions:
   contents: write
@@ -20,11 +20,11 @@ jobs:
         with:
           ref: com/com-001-baseline-audit
           fetch-depth: 2
-      - name: Require one-shot attempt 2 envelope addition
+      - name: Require one-shot attempt 3 envelope addition
         shell: bash
         run: |
           git diff-tree --no-commit-id --name-only --diff-filter=A -r HEAD^ HEAD \
-            | grep -Fxq 'config/com-b03-domain-matrix-reconciliation-attempt-2.json'
+            | grep -Fxq 'config/com-b03-domain-matrix-reconciliation-attempt-3.json'
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -37,11 +37,11 @@ jobs:
         run: |
           node <<'NODE'
           const fs = require('fs');
-          const envelopePath = 'config/com-b03-domain-matrix-reconciliation-attempt-2.json';
+          const envelopePath = 'config/com-b03-domain-matrix-reconciliation-attempt-3.json';
           const matrixPath = 'config/domain-completion-matrix.json';
           const packagePath = 'package.json';
           const envelope = JSON.parse(fs.readFileSync(envelopePath, 'utf8'));
-          if (envelope.contractId !== 'com-b03-domain-matrix-reconciliation-attempt-2-v1') throw new Error('INVALID_ENVELOPE');
+          if (envelope.contractId !== 'com-b03-domain-matrix-reconciliation-attempt-3-v1') throw new Error('INVALID_ENVELOPE');
           if (envelope.status !== 'authorized_repository_only_reconciliation') throw new Error('INVALID_STATUS');
           if (envelope.certifiedPolicyHead !== 'cd4b3082ac13f31f8aa8eaef6cbf60bd6cdeb498') throw new Error('POLICY_HEAD_MISMATCH');
 
@@ -126,7 +126,8 @@ jobs:
         run: |
           git config user.name 'doke-matrix-bot'
           git config user.email 'doke-matrix-bot@users.noreply.github.com'
-          git add package.json config/domain-completion-matrix.json docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json
+          git add package.json config/domain-completion-matrix.json docs/DOMAIN-COMPLETION-MATRIX.md
+          git add -f reports/generated/domain-completion-matrix-report.json
           git diff --cached --quiet && { echo 'No matrix changes produced'; exit 1; }
           git commit -m 'docs(com): reconcile COM-B03 domain completion matrix'
           git push origin HEAD:com/com-001-baseline-audit
