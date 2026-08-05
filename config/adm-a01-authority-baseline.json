@@ -1,0 +1,210 @@
+{
+  "contractId": "adm-a01-authority-baseline-v1",
+  "domain": "ADM-001",
+  "sourceHead": "140e477f06b73d97b7529c47e29a58571fbb915e",
+  "scope": "repository_only",
+  "status": "baseline_complete_runtime_blocked",
+  "objective": "Inventory administrative authority, operator roles, queues, decisions and audit sources before unified server-owned case management.",
+  "adminPages": [
+    "admin.html",
+    "admin-verificacao.html",
+    "admin-anuncio-revisao.html",
+    "admin-pedidos-operacao.html"
+  ],
+  "operatorRolesObserved": [
+    "admin",
+    "support",
+    "moderator"
+  ],
+  "authoritySources": [
+    {
+      "id": "admin_access_frontend",
+      "surface": "assets/js/services/admin-access-service.js",
+      "authority": "hybrid_session_permission_with_mock_fallback",
+      "risk": "frontend fallback accepts isMockSupport or mockSupport"
+    },
+    {
+      "id": "admin_dashboard_controller",
+      "surface": "assets/js/pages/admin.js",
+      "authority": "hybrid_local_and_remote_aggregation",
+      "risk": "controller reads local orders and notifications while mixing remote domain repositories"
+    },
+    {
+      "id": "service_moderation",
+      "surface": "assets/js/repositories/service-moderation-repository.js",
+      "authority": "remote_edge_function",
+      "operation": "service-moderation-operations"
+    },
+    {
+      "id": "professional_verification",
+      "surface": "assets/js/services/professional-identity-verification-service.js",
+      "authority": "remote_domain_specific"
+    },
+    {
+      "id": "financial_operations",
+      "surface": "assets/js/services/wallet-service.js",
+      "authority": "hybrid_domain_specific"
+    },
+    {
+      "id": "order_operations",
+      "surface": "admin-pedidos-operacao.html",
+      "authority": "remote_domain_specific"
+    }
+  ],
+  "findings": [
+    {
+      "id": "ADM-A01-F01",
+      "severity": "critical",
+      "category": "access_authority",
+      "description": "Frontend admin access contains mock-support fallbacks and is not sufficient as operator authorization."
+    },
+    {
+      "id": "ADM-A01-F02",
+      "severity": "high",
+      "category": "authority_split",
+      "description": "The main admin controller combines local order/notification reads with remote domain repositories."
+    },
+    {
+      "id": "ADM-A01-F03",
+      "severity": "high",
+      "category": "case_model",
+      "description": "Users, identity, services, orders, payments, disputes, communities and content do not share one canonical case model."
+    },
+    {
+      "id": "ADM-A01-F04",
+      "severity": "high",
+      "category": "audit_split",
+      "description": "Financial, service moderation, identity and order operations expose separate audit streams without one correlation ledger."
+    },
+    {
+      "id": "ADM-A01-F05",
+      "severity": "high",
+      "category": "rbac",
+      "description": "Observed admin/support/moderator roles lack one canonical scoped permission matrix for every administrative action."
+    },
+    {
+      "id": "ADM-A01-F06",
+      "severity": "high",
+      "category": "least_privilege",
+      "description": "Time-bounded operator access, purpose binding and case-scoped grants are not universally enforced."
+    },
+    {
+      "id": "ADM-A01-F07",
+      "severity": "high",
+      "category": "dual_control",
+      "description": "High-risk identity, financial and account actions lack one cross-domain maker-checker policy."
+    },
+    {
+      "id": "ADM-A01-F08",
+      "severity": "medium",
+      "category": "queue_fragmentation",
+      "description": "Service moderation, verification, disputes and order operations use separate queues and navigation surfaces."
+    },
+    {
+      "id": "ADM-A01-F09",
+      "severity": "medium",
+      "category": "reason_codes",
+      "description": "Reason, evidence, before/after and correlation requirements are not normalized across all operator commands."
+    },
+    {
+      "id": "ADM-A01-F10",
+      "severity": "medium",
+      "category": "appeals_sla",
+      "description": "Unified notes, SLA, escalation and appeal handling remain incomplete."
+    },
+    {
+      "id": "ADM-A01-F11",
+      "severity": "medium",
+      "category": "break_glass",
+      "description": "No universal break-glass lifecycle with expiration, review and immutable evidence is defined."
+    },
+    {
+      "id": "ADM-A01-F12",
+      "severity": "medium",
+      "category": "data_minimization",
+      "description": "Operator views do not yet share one explicit field-minimization and sensitive-data masking contract."
+    }
+  ],
+  "canonicalPrinciples": {
+    "frontendAccessIsAuthorization": false,
+    "mockSupportAllowed": false,
+    "directDatabaseEditsAllowed": false,
+    "unifiedCaseRequired": true,
+    "correlationIdRequired": true,
+    "reasonCodeRequired": true,
+    "beforeAfterRequired": true,
+    "immutableAuditRequired": true,
+    "timeBoundedAccessRequired": true,
+    "caseScopedAccessRequired": true,
+    "dualControlForHighRiskRequired": true,
+    "breakGlassRequiresReview": true,
+    "sensitiveDataMinimizationRequired": true
+  },
+  "authority": {
+    "contractAuthority": true,
+    "inventoryAuthority": true,
+    "operatorIdentityAuthority": false,
+    "operatorSessionAuthority": false,
+    "rolePermissionAuthority": false,
+    "caseQueueAuthority": false,
+    "caseAssignmentAuthority": false,
+    "decisionAuthority": false,
+    "dualControlAuthority": false,
+    "auditWriteAuthority": false,
+    "userMutationAuthority": false,
+    "identityMutationAuthority": false,
+    "serviceModerationAuthority": false,
+    "orderMutationAuthority": false,
+    "financialMutationAuthority": false,
+    "disputeMutationAuthority": false,
+    "communityModerationAuthority": false,
+    "contentModerationAuthority": false,
+    "runtimeMutationAuthority": false,
+    "stagingAuthority": false,
+    "productionAuthority": false
+  },
+  "prohibitedEffects": {
+    "networkRequests": false,
+    "databaseConnections": false,
+    "stagingReads": false,
+    "stagingMutations": false,
+    "migrations": false,
+    "deployments": false,
+    "credentialsConfigured": false,
+    "realOperatorSessionCreated": false,
+    "realCaseCreated": false,
+    "realUserChanged": false,
+    "realIdentityDecisionMade": false,
+    "realServiceDecisionMade": false,
+    "realOrderChanged": false,
+    "realFinancialDecisionMade": false,
+    "realDisputeChanged": false,
+    "realCommunityOrContentDecisionMade": false,
+    "realAuditEventWritten": false,
+    "productionChanges": false
+  },
+  "preservedBlockers": [
+    "ADM-B03",
+    "ADM-B04",
+    "AUTH-001",
+    "PAY-B01",
+    "PAY-B03",
+    "PAY-B04",
+    "DSP-B01",
+    "DSP-B03",
+    "DSP-B04",
+    "COM-B02",
+    "COM-B03",
+    "COM-B04",
+    "LEGAL-B01",
+    "LEGAL-B03",
+    "LEGAL-B04"
+  ],
+  "plannedSublots": [
+    "ADM-A02 operator identity, scoped RBAC and time-bounded access",
+    "ADM-A03 unified case, queue, notes, SLA and correlation ledger",
+    "ADM-A04 high-risk maker-checker, dual control and break-glass",
+    "ADM-A05 cross-domain appeals, observability and activation readiness"
+  ],
+  "nextSublot": "ADM-A02 operator identity scoped RBAC and time-bounded access"
+}
