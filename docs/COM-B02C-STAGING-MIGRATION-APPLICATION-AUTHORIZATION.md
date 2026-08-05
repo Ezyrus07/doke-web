@@ -1,64 +1,79 @@
-# COM-B02C — autorização de aplicação da migration em staging
+# COM-B02C — aplicação da migration em staging
 
 Contrato: `com-b02c-staging-migration-application-authorization-v1`
 
-## Objetivo
+## Resultado
 
-Este sublote cria somente o gate de autorização para uma futura aplicação, em staging, da migration preparada no COM-B02B. Ele não instala executor, não configura credenciais, não conecta ao Supabase e não aplica SQL.
+A autorização explícita foi recebida, validada e consumida uma única vez. A migration congelada foi aplicada exclusivamente no projeto `doke-web-staging` e passou pela verificação estrutural pós-aplicação.
 
-## Migration congelada
+Nenhum runtime foi implantado, nenhuma Edge Function foi alterada, nenhum dado de comunidade foi criado e produção permaneceu intocada.
+
+## Autorização consumida
+
+```text
+phrase: I_EXPLICITLY_AUTHORIZE_COM_B02C_SERVER_AUTHORITY_MIGRATION_ON_DOKE_STAGING
+received at: 2026-08-05T12:34:00-03:00
+consumed at: 2026-08-05T15:35:39Z
+single use: true
+reusable: false
+```
+
+A presença da frase no repositório não concede nova autorização. O uso único já foi consumido.
+
+## Migration aplicada
 
 ```text
 path: supabase/migrations/20260805121500_com_b02b_server_authority.sql
 git blob SHA: fd74f6abc029023c4e0972b32b35daca975c3d57
-target: staging
+applied name: com_b02b_server_authority
+Supabase recorded version: 20260805153539
+target project: zwkczgewzbsorbrjuzpb
+target environment: staging
 productionAllowed: false
 ```
 
-Qualquer alteração de caminho ou blob invalida a autorização e exige nova revisão.
+O preflight confirmou ausência de colisão de schema, tabelas e RPCs, presença de `service_role` e inexistência anterior da migration no histórico.
 
-## Frase obrigatória
+## Verificação estrutural
 
-```text
-I_EXPLICITLY_AUTHORIZE_COM_B02C_SERVER_AUTHORITY_MIGRATION_ON_DOKE_STAGING
-```
+- schema `com_private` criado;
+- tabelas `community_state`, `community_event` e `command_idempotency` criadas;
+- RLS habilitada nas três tabelas;
+- `anon` e `authenticated` sem acesso às tabelas;
+- `anon` e `authenticated` sem execução das RPCs;
+- `service_role` com execução das três RPCs previstas;
+- RPC read-only executada sob `service_role` e retornou ausência de estado sem criar linhas;
+- três RPCs com `SECURITY DEFINER` e `search_path` fixo;
+- RPC de commit contém `FOR UPDATE`, insert de evento e update da projeção na mesma transação;
+- contagem final: zero linhas nas três tabelas.
 
-A simples presença dessa frase na documentação ou no código não representa autorização recebida. A autorização somente existe quando o usuário a fornece explicitamente em uma mensagem posterior e o estado canônico é atualizado para consumi-la uma única vez.
+## Advisors
 
-## Uso único
+Os advisors oficiais não encontraram warning ou erro de segurança relacionado aos novos objetos COM. Foram emitidos três avisos informativos `rls_enabled_no_policy`, esperados porque as tabelas privadas são deliberadamente fail-closed e acessadas apenas por RPCs `service_role`.
 
-- a autorização não é reutilizável;
-- uma tentativa de execução consome a autorização;
-- uma falha exige nova autorização explícita;
-- produção permanece proibida;
-- merge do PR permanece proibido sem autorização separada.
+Nenhum lint de performance foi associado aos novos objetos COM.
 
-## Verificação exigida após futura aplicação
-
-- histórico de migrations contém a versão esperada;
-- schema `com_private` existe;
-- tabelas `community_state`, `community_event` e `command_idempotency` existem;
-- RLS está habilitada nas três tabelas;
-- `anon` e `authenticated` não têm acesso às tabelas;
-- `authenticated` não pode executar as RPCs autoritativas;
-- `service_role` possui apenas os grants previstos;
-- RPC transacional usa `security definer` e `search_path` fixo;
-- evento e projeção são confirmados atomicamente;
-- a aplicação não cria linhas de domínio.
-
-## Estado atual
+## Estado final
 
 ```text
-authorization received: false
-authorization consumed: false
-executor installed: false
-credentials configured: false
-migration applied: false
-staging read authority: false
-staging mutation authority: false
+authorization received: true
+authorization consumed: true
+migration applied: true
+structural verification: passed
+runtime deployed: false
+staging mutation authority remaining: false
 production authority: false
+pull request merge authority: false
 ```
 
-## Fail-closed
+## Evidência
 
-Frase divergente, alvo diferente de staging, blob diferente, permissão de produção, autorização já consumida ou tentativa anterior mantêm o resultado `blocked_repository_only`.
+A evidência estruturada está em:
+
+```text
+docs/validation/COM-B02C-STAGING-MIGRATION-APPLICATION.json
+```
+
+## Próxima fronteira
+
+Integração do adapter ao composition root, deploy server-side, canários autenticados, runtime, produção e merge permanecem bloqueados e exigem autorizações separadas.
