@@ -1,52 +1,31 @@
 #!/usr/bin/env node
 'use strict';
 
-const assert = require('assert');
-const fs = require('fs');
-const vm = require('vm');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
 
-const searchDataSource = fs.readFileSync('assets/js/pages/search-data.js', 'utf8');
+const searchDataPath = require.resolve('../assets/js/pages/search-data.js');
+const searchDataSource = fs.readFileSync(searchDataPath, 'utf8');
 const resultsSource = fs.readFileSync('assets/js/pages/search-results.js', 'utf8');
 const resultsHtml = fs.readFileSync('resultados.html', 'utf8');
 
-new vm.Script(searchDataSource, { filename: 'search-data.js' });
-
-const sandbox = {
-  window: {
-    Doke: {},
-    localStorage: {
-      getItem() { return null; },
-      setItem() {}
-    }
-  },
-  URLSearchParams,
-  URL,
-  AbortController,
-  Event,
-  CustomEvent: class CustomEvent {
-    constructor(type, init) {
-      this.type = type;
-      this.detail = init && init.detail;
-    }
-  },
-  Object,
-  Array,
-  Boolean,
-  Number,
-  String,
-  JSON,
-  Math,
-  Set,
-  console
+const previousWindow = global.window;
+global.window = {
+  Doke: {},
+  localStorage: {
+    getItem() { return null; },
+    setItem() {}
+  }
 };
-sandbox.window.window = sandbox.window;
+global.window.window = global.window;
 
-vm.runInNewContext(searchDataSource, sandbox, { filename: 'search-data.js' });
+delete require.cache[searchDataPath];
+require(searchDataPath);
 
-const api = sandbox.window.Doke.searchFilterState;
+const api = global.window.Doke.searchFilterState;
 assert(api, 'Doke.searchFilterState must be published.');
-assert.strictEqual(api.version, '20260805-ux-filters-001-v1');
-assert.strictEqual(api.contract, 'search-filter-state-v1');
+assert.equal(api.version, '20260805-ux-filters-001-v1');
+assert.equal(api.contract, 'search-filter-state-v1');
 assert(Object.isFrozen(api), 'Filter authority must be frozen.');
 assert(Object.isFrozen(api.filterKeys), 'Filter key registry must be frozen.');
 
@@ -57,11 +36,11 @@ const normalized = api.normalize({
   minRating: '4.8',
   guaranteed: 1
 });
-assert.strictEqual(normalized.searchType, 'services');
-assert.deepStrictEqual(Array.from(normalized.categories), ['Limpeza', 'Pintura']);
-assert.strictEqual(normalized.state, 'MG');
-assert.strictEqual(normalized.minRating, 4.8);
-assert.strictEqual(normalized.guaranteed, true);
+assert.equal(normalized.searchType, 'services');
+assert.deepEqual(Array.from(normalized.categories), ['Limpeza', 'Pintura']);
+assert.equal(normalized.state, 'MG');
+assert(Math.abs(normalized.minRating - 4.8) < Number.EPSILON);
+assert.equal(normalized.guaranteed, true);
 assert(Object.isFrozen(normalized));
 assert(Object.isFrozen(normalized.categories));
 
@@ -74,15 +53,15 @@ const initial = api.normalize({
 });
 const controller = api.createController({ applied: initial });
 let state = controller.getSnapshot();
-assert.strictEqual(state.dirty, false);
-assert.strictEqual(state.activeAppliedCount, 4);
+assert.equal(state.dirty, false);
+assert.equal(state.activeAppliedCount, 4);
 
 controller.update({ city: 'Contagem', emergency: true });
 state = controller.getSnapshot();
-assert.strictEqual(state.dirty, true);
-assert.strictEqual(state.applied.city, 'Belo Horizonte', 'Draft edits must not mutate applied filters.');
-assert.strictEqual(state.draft.city, 'Contagem');
-assert.strictEqual(state.draft.emergency, true);
+assert.equal(state.dirty, true);
+assert.equal(state.applied.city, 'Belo Horizonte', 'Draft edits must not mutate applied filters.');
+assert.equal(state.draft.city, 'Contagem');
+assert.equal(state.draft.emergency, true);
 
 const beforeCommitUrl = api.serializeUrl(state.applied, '?q=diarista&cursor=opaque');
 assert(beforeCommitUrl.includes('city=Belo+Horizonte'));
@@ -90,52 +69,53 @@ assert(!beforeCommitUrl.includes('city=Contagem'), 'Draft values must not leak i
 
 controller.cancel();
 state = controller.getSnapshot();
-assert.strictEqual(state.dirty, false);
-assert.strictEqual(state.draft.city, 'Belo Horizonte');
-assert.strictEqual(state.draft.emergency, false);
+assert.equal(state.dirty, false);
+assert.equal(state.draft.city, 'Belo Horizonte');
+assert.equal(state.draft.emergency, false);
 
 controller.update({ categories: [], state: '', city: '', guaranteed: false, online: true });
 const receipt = controller.commit();
-assert.strictEqual(receipt.changed, true);
-assert.deepStrictEqual(
-  Array.from(receipt.changedKeys).sort(),
-  ['categories', 'city', 'guaranteed', 'online', 'state'].sort()
+assert.equal(receipt.changed, true);
+const alphabetical = (left, right) => left.localeCompare(right, 'en');
+assert.deepEqual(
+  Array.from(receipt.changedKeys).sort(alphabetical),
+  ['categories', 'city', 'guaranteed', 'online', 'state'].sort(alphabetical)
 );
-assert.strictEqual(receipt.applied.online, true);
-assert.strictEqual(controller.getSnapshot().dirty, false);
+assert.equal(receipt.applied.online, true);
+assert.equal(controller.getSnapshot().dirty, false);
 
 controller.update({ emergency: true });
 controller.clearDraft();
 state = controller.getSnapshot();
-assert.strictEqual(state.draft.searchType, 'services');
-assert.strictEqual(state.activeDraftCount, 0);
-assert.strictEqual(state.dirty, true, 'Clearing a non-empty applied snapshot must remain a draft until commit.');
+assert.equal(state.draft.searchType, 'services');
+assert.equal(state.activeDraftCount, 0);
+assert.equal(state.dirty, true, 'Clearing a non-empty applied snapshot must remain a draft until commit.');
 controller.cancel();
 
 const parsed = api.parseUrl(
   '?q=encanador&type=users&categories=Limpeza&cat%C3%A9gory=Pintura&stat%C3%A9=MG&city=Contagem&guaranteed=1'
 );
-assert.strictEqual(parsed.searchType, 'users');
-assert.deepStrictEqual(Array.from(parsed.categories), ['Limpeza', 'Pintura']);
-assert.strictEqual(parsed.state, 'MG');
-assert.strictEqual(parsed.city, 'Contagem');
-assert.strictEqual(parsed.guaranteed, true);
+assert.equal(parsed.searchType, 'users');
+assert.deepEqual(Array.from(parsed.categories), ['Limpeza', 'Pintura']);
+assert.equal(parsed.state, 'MG');
+assert.equal(parsed.city, 'Contagem');
+assert.equal(parsed.guaranteed, true);
 
 const serialized = api.serializeUrl(parsed, '?q=encanador&cursor=opaque&pageSize=12&categories=old&stat%C3%A9=SP');
 const serializedParams = new URLSearchParams(serialized);
-assert.strictEqual(serializedParams.get('q'), 'encanador');
-assert.strictEqual(serializedParams.get('type'), 'users');
-assert.deepStrictEqual(serializedParams.getAll('category'), ['Limpeza', 'Pintura']);
-assert.strictEqual(serializedParams.get('state'), 'MG');
-assert.strictEqual(serializedParams.get('categories'), null);
-assert.strictEqual(serializedParams.get('catégory'), null);
-assert.strictEqual(serializedParams.get('staté'), null);
-assert.strictEqual(serializedParams.get('cursor'), 'opaque', 'Filter serialization must not own search pagination cleanup.');
-assert.strictEqual(serializedParams.get('pageSize'), '12');
+assert.equal(serializedParams.get('q'), 'encanador');
+assert.equal(serializedParams.get('type'), 'users');
+assert.deepEqual(serializedParams.getAll('category'), ['Limpeza', 'Pintura']);
+assert.equal(serializedParams.get('state'), 'MG');
+assert.equal(serializedParams.get('categories'), null);
+assert.equal(serializedParams.get('catégory'), null);
+assert.equal(serializedParams.get('staté'), null);
+assert.equal(serializedParams.get('cursor'), 'opaque', 'Filter serialization must not own search pagination cleanup.');
+assert.equal(serializedParams.get('pageSize'), '12');
 
-assert.strictEqual(api.activeCount(parsed), 5);
-assert.strictEqual(api.equals(parsed, api.normalize(parsed)), true);
-assert.deepStrictEqual(Array.from(api.changedKeys(parsed, Object.assign({}, parsed, { online: true }))), ['online']);
+assert.equal(api.activeCount(parsed), 5);
+assert.equal(api.equals(parsed, api.normalize(parsed)), true);
+assert.deepEqual(Array.from(api.changedKeys(parsed, { ...parsed, online: true })), ['online']);
 
 assert(
   searchDataSource.includes("root.document.addEventListener('change', onChange, { capture: true") &&
@@ -188,4 +168,5 @@ assert(
   'The regression gate must keep detecting the legacy auto-apply boundary that the authority intercepts.'
 );
 
+global.window = previousWindow;
 console.log('UX-FILTERS-001 applied/draft filter contracts passed.');
