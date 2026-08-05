@@ -164,6 +164,18 @@ assert(
   !searchDataSource.includes('eval('),
   'CEP must remain a local draft mutation and the authority must not introduce dynamic execution.'
 );
+assert(
+  searchDataSource.includes('function scheduleArm()') &&
+  searchDataSource.includes('root.setTimeout(arm, 0)') &&
+  searchDataSource.includes("root.document.addEventListener('DOMContentLoaded', scheduleArm"),
+  'The authority must arm after the route bootstrap task has populated canonical URL filters.'
+);
+assert(
+  searchDataSource.includes('Doke.searchFilterStateInstallation.cleanup()') &&
+  searchDataSource.includes('Doke.searchFilterStateInstallation = install()') &&
+  !searchDataSource.includes('var installation = null;'),
+  'Route re-execution must clean the globally published installation before replacing it.'
+);
 
 const searchDataIndex = resultsHtml.indexOf('assets/js/pages/search-data.js');
 const resultsRuntimeIndex = resultsHtml.indexOf('assets/js/pages/search-results.js');
