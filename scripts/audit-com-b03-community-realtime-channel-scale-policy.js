@@ -20,17 +20,10 @@ const files = {
   routes: 'backend/shared/http/route-registry.js',
   loader: 'backend/shared/http/module-route-loader.js'
 };
-
 const read = (key) => fs.readFileSync(path.join(root, files[key]), 'utf8');
 let checks = 0;
-const check = (value, message) => {
-  checks += 1;
-  assert.ok(value, message);
-};
-const equal = (actual, expected, message) => {
-  checks += 1;
-  assert.strictEqual(actual, expected, message);
-};
+const check = (value, message) => { checks += 1; assert.ok(value, message); };
+const equal = (actual, expected, message) => { checks += 1; assert.strictEqual(actual, expected, message); };
 
 for (const [key, relative] of Object.entries(files)) {
   check(fs.existsSync(path.join(root, relative)), `${key} exists`);
@@ -50,77 +43,85 @@ const b02dEvidence = JSON.parse(read('b02dEvidence'));
 const runtime = read('runtime');
 const routes = read('routes');
 const loader = read('loader');
+const expectedContract = 'com-b03-realtime-channel-scale-policy-v1';
 
-check(source.includes("const CONTRACT_ID = 'com-b03-realtime-channel-scale-policy-v1'"), 'contract id');
-check(source.includes("'channel_messages', 'channel_presence', 'channel_typing', 'community_posts'"), 'topic allowlist');
-check(source.includes("const VISIBILITIES = Object.freeze(['public', 'private', 'invite_only'])"), 'visibility allowlist');
-check(source.includes('server_verified_session'), 'server verified actor');
-check(source.includes('PRIVATE_COMMUNITY_ACCESS_REQUIRED'), 'private privacy gate');
-check(source.includes('CHANNEL_READ_ROLE_REQUIRED'), 'channel role gate');
-check(source.includes('ACTIVE_BAN_BLOCKS_REALTIME'), 'ban gate');
-check(source.includes('SESSION_CHANNEL_CAP_REACHED'), 'session cap');
-check(source.includes('ACTOR_CHANNEL_CAP_REACHED'), 'actor cap');
-check(source.includes('COMMUNITY_CHANNEL_CAP_REACHED'), 'community cap');
-check(source.includes('ACTIVE_SCOPE_LEASE_REUSED'), 'lease reuse');
-check(source.includes('teardownRequired: true'), 'teardown required');
-check(source.includes('EVENT_ID_ALREADY_DELIVERED'), 'event dedupe');
-check(source.includes('EVENT_SEQUENCE_GAP_EXCEEDED'), 'sequence gap');
-check(source.includes('EPHEMERAL_EVENT_COALESCED'), 'ephemeral coalescing');
-check(source.includes('DURABLE_EVENT_BACKPRESSURE'), 'durable backpressure');
-check(source.includes('QUEUE_HARD_LIMIT_REACHED'), 'hard queue gate');
-check(source.includes('RESUME_CURSOR_EXPIRED'), 'cursor expiry');
-check(source.includes('RESUME_CURSOR_REVISION_AHEAD'), 'cursor revision gate');
-check(source.includes('exponential_full_jitter'), 'reconnect strategy');
-check(source.includes('SENSITIVE_EVENT_PAYLOAD_PROHIBITED'), 'sensitive payload gate');
-check(source.includes('realtimeSubscriptionAuthority: false'), 'subscription authority false');
-check(source.includes('realtimePublicationAuthority: false'), 'publication authority false');
-check(source.includes('runtimeMutationAuthority: false'), 'runtime authority false');
-check(source.includes('stagingMutationAuthority: false'), 'staging authority false');
-check(source.includes('productionAuthority: false'), 'production authority false');
+for (const marker of [
+  `const CONTRACT_ID = '${expectedContract}'`,
+  "'channel_messages', 'channel_presence', 'channel_typing', 'community_posts'",
+  "const VISIBILITIES = Object.freeze(['public', 'private', 'invite_only'])",
+  'server_verified_session',
+  'PRIVATE_COMMUNITY_ACCESS_REQUIRED',
+  'CHANNEL_READ_ROLE_REQUIRED',
+  'ACTIVE_BAN_BLOCKS_REALTIME',
+  'SESSION_CHANNEL_CAP_REACHED',
+  'ACTOR_CHANNEL_CAP_REACHED',
+  'COMMUNITY_CHANNEL_CAP_REACHED',
+  'ACTIVE_SCOPE_LEASE_REUSED',
+  'teardownRequired: true',
+  'EVENT_ID_ALREADY_DELIVERED',
+  'EVENT_SEQUENCE_GAP_EXCEEDED',
+  'EPHEMERAL_EVENT_COALESCED',
+  'DURABLE_EVENT_BACKPRESSURE',
+  'QUEUE_HARD_LIMIT_REACHED',
+  'RESUME_CURSOR_EXPIRED',
+  'RESUME_CURSOR_REVISION_AHEAD',
+  'exponential_full_jitter',
+  'SENSITIVE_EVENT_PAYLOAD_PROHIBITED',
+  'realtimeSubscriptionAuthority: false',
+  'realtimePublicationAuthority: false',
+  'runtimeMutationAuthority: false',
+  'stagingMutationAuthority: false',
+  'productionAuthority: false'
+]) check(source.includes(marker), `source marker: ${marker}`);
 
 for (const token of [
-  'createClient', '.channel(', 'postgres_changes', '.from(', 'process.env',
-  'fetch(', 'SUPABASE_', 'ALTER PUBLICATION', 'supabase_realtime', 'realtime.send('
-]) {
-  check(!source.includes(token), `module has no operational surface: ${token}`);
-}
+  'createClient', '.channel(', 'postgres_changes', 'process.env', 'fetch(',
+  'SUPABASE_', 'ALTER PUBLICATION', 'supabase_realtime', 'realtime.send(',
+  'supabase.from(', 'serviceSupabase.from(', 'client.from('
+]) check(!source.includes(token), `no operational surface: ${token}`);
 
-const expectedContract = 'com-b03-realtime-channel-scale-policy-v1';
-equal(config.contractId, expectedContract, 'config contract');
+ equal(config.contractId, expectedContract, 'config contract');
 equal(config.domain, 'COM-001', 'domain');
 equal(config.scope, 'repository_only', 'repository only');
 equal(config.status, 'contract_complete_runtime_blocked', 'runtime blocked');
-equal(config.runtimeIntegrated, false, 'runtime not integrated');
-equal(config.realtimePublicationConfigured, false, 'publication not configured');
-equal(config.subscriptionCreated, false, 'subscription absent');
-equal(config.stagingValidated, false, 'staging not validated');
+for (const key of ['runtimeIntegrated', 'realtimePublicationConfigured', 'subscriptionCreated', 'stagingValidated']) {
+  equal(config[key], false, `${key} false`);
+}
 equal(config.topics.length, 4, 'four topics');
-equal(config.visibility.activeMembershipRequired, true, 'membership required');
-equal(config.visibility.privateVisibilityGrantRequired, true, 'private grant required');
-equal(config.visibility.activeBanBlocksRealtime, true, 'ban blocks');
-equal(config.visibility.channelRoleGateRequired, true, 'channel role required');
-equal(config.visibility.unknownVisibilityFailsClosed, true, 'unknown visibility closed');
+for (const key of [
+  'activeMembershipRequired', 'privateVisibilityGrantRequired',
+  'activeBanBlocksRealtime', 'channelRoleGateRequired', 'unknownVisibilityFailsClosed'
+]) equal(config.visibility[key], true, `visibility ${key}`);
 equal(config.lease.minimumSeconds, 30, 'minimum lease');
 equal(config.lease.maximumSeconds, 900, 'maximum lease');
 equal(config.lease.membershipRevalidationSeconds, 60, 'membership revalidation');
+equal(config.lease.maximumTopicsPerLease, 4, 'topic cap');
 equal(config.lease.teardownRequired, true, 'teardown config');
 equal(config.lease.duplicateScopeReused, true, 'reuse config');
-equal(config.lease.mixedCommunityAndChannelScopesAllowed, false, 'mixed scope blocked');
-equal(config.channelCaps.maximumConcurrentPerSession, 8, 'session cap config');
-equal(config.channelCaps.maximumConcurrentPerActor, 12, 'actor cap config');
-equal(config.channelCaps.maximumConcurrentPerCommunity, 6, 'community cap config');
+equal(config.lease.mixedCommunityAndChannelScopesAllowed, false, 'mixed scopes false');
+equal(config.channelCaps.canonicalServerSnapshotRequired, true, 'canonical caps');
+equal(config.channelCaps.maximumConcurrentPerSession, 8, 'session cap');
+equal(config.channelCaps.maximumConcurrentPerActor, 12, 'actor cap');
+equal(config.channelCaps.maximumConcurrentPerCommunity, 6, 'community cap');
 equal(config.delivery.maximumPayloadBytes, 16384, 'payload cap');
-equal(config.delivery.queueHighWatermark, 64, 'high watermark config');
-equal(config.delivery.queueHardLimit, 96, 'hard limit config');
-equal(config.delivery.deduplicateByEventId, true, 'dedupe config');
-equal(config.delivery.orderedBySequence, true, 'ordering config');
-equal(config.delivery.ephemeralTopicsCoalesceLatest, true, 'coalescing config');
-equal(config.delivery.durableTopicsRequireResyncOnOverflow, true, 'durable resync config');
+equal(config.delivery.maximumEventAgeMs, 30000, 'event age');
+equal(config.delivery.maximumFutureSkewMs, 5000, 'future skew');
+equal(config.delivery.maximumSequenceGap, 100, 'sequence gap');
+equal(config.delivery.queueHighWatermark, 64, 'watermark');
+equal(config.delivery.queueHardLimit, 96, 'hard limit');
+for (const key of [
+  'serverAuthoritativeEnvelopeRequired', 'deduplicateByEventId',
+  'orderedBySequence', 'ephemeralTopicsCoalesceLatest',
+  'durableTopicsRequireResyncOnOverflow'
+]) equal(config.delivery[key], true, `delivery ${key}`);
 equal(config.delivery.sensitivePayloadAllowed, false, 'sensitive payload false');
-equal(config.resume.maximumCursorAgeMs, 300000, 'cursor age config');
-equal(config.resume.expiredCursorRequiresResync, true, 'cursor resync config');
-equal(config.reconnect.strategy, 'exponential_full_jitter', 'reconnect config');
-equal(config.reconnect.maximumAttempts, 8, 'reconnect attempts config');
+equal(config.resume.maximumCursorAgeMs, 300000, 'cursor age');
+equal(config.resume.revisionAheadConflicts, true, 'cursor conflict');
+equal(config.resume.expiredCursorRequiresResync, true, 'cursor resync');
+equal(config.reconnect.strategy, 'exponential_full_jitter', 'reconnect strategy');
+equal(config.reconnect.baseMs, 500, 'reconnect base');
+equal(config.reconnect.maximumMs, 30000, 'reconnect max');
+equal(config.reconnect.maximumAttempts, 8, 'reconnect attempts');
 for (const key of [
   'realtimeSubscriptionAuthority', 'realtimePublicationAuthority',
   'publicationMutationAuthority', 'runtimeMutationAuthority',
@@ -134,51 +135,45 @@ equal(fixture.community.source, 'canonical_server', 'fixture canonical');
 equal(fixture.community.complete, true, 'fixture complete');
 equal(fixture.community.visibility, 'private', 'fixture private');
 equal(fixture.capacity.source, 'canonical_server', 'capacity canonical');
-equal(fixture.expected.topics, 4, 'fixture topic total');
-equal(fixture.expected.maximumLeaseSeconds, 900, 'fixture lease cap');
+equal(fixture.expected.topics, 4, 'fixture topics');
+equal(fixture.expected.maximumLeaseSeconds, 900, 'fixture lease');
 equal(fixture.expected.maximumConcurrentPerSession, 8, 'fixture session cap');
 equal(fixture.expected.queueHighWatermark, 64, 'fixture watermark');
 equal(fixture.expected.queueHardLimit, 96, 'fixture hard limit');
-check(test.includes('COM-B03 conformance passed'), 'test completion marker');
-check(test.includes('Object.isFrozen(output.lease)'), 'immutable lease tested');
-check(test.includes('duplicate lease reused'), 'reuse tested');
-check(test.includes('typing coalesced'), 'typing coalescing tested');
-check(test.includes('durable backpressure'), 'durable backpressure tested');
+for (const marker of [
+  'COM-B03 conformance passed', 'Object.isFrozen(output.lease)',
+  'duplicate lease reused', 'typing coalesced', 'durable backpressure'
+]) check(test.includes(marker), `test marker: ${marker}`);
 
  equal(a04Config.contractId, 'com-a04-content-realtime-rate-limit-v1', 'A04 predecessor');
 equal(a04Config.status, 'contract_complete_runtime_blocked', 'A04 complete');
-equal(a04Config.realtime.maximumSubscriptionMinutes, 15, 'A04 lease predecessor');
+equal(a04Config.realtime.maximumSubscriptionMinutes, 15, 'A04 lease');
 equal(a04Config.authority.realtimeSubscriptionAuthority, false, 'A04 authority closed');
-check(a04Module.includes("const REALTIME_TOPICS = Object.freeze(['channel_messages', 'channel_presence', 'channel_typing', 'community_posts'])"), 'A04 topic compatibility');
-check(a04Module.includes('membershipRevalidationRequired'), 'A04 membership revalidation contract');
+check(a04Module.includes("const REALTIME_TOPICS = Object.freeze(['channel_messages', 'channel_presence', 'channel_typing', 'community_posts'])"), 'A04 topics compatible');
+check(a04Module.includes('ACTIVE_COMMUNITY_MEMBERSHIP_REQUIRED'), 'A04 membership gate');
+check(a04Module.includes('SHORT_REALTIME_EXPIRY_REQUIRED'), 'A04 expiry gate');
 
-equal(b02dConfig.status, 'authenticated_read_only_canary_certified', 'B02D certified');
-equal(b02dConfig.canary.successfulExecutions, 1, 'B02D canary success');
-equal(b02dConfig.canary.countsUnchanged, true, 'B02D counts unchanged');
+ equal(b02dConfig.status, 'authenticated_read_only_canary_certified', 'B02D certified');
+equal(b02dConfig.canary.successfulExecutions, 1, 'B02D success');
+equal(b02dConfig.canary.countsUnchanged, true, 'B02D counts');
 equal(b02dConfig.authority.stagingMutationAuthority, false, 'B02D staging closed');
-equal(b02dEvidence.status, 'authenticated_read_only_canary_passed', 'B02D evidence passed');
+equal(b02dEvidence.status, 'authenticated_read_only_canary_passed', 'B02D evidence');
 equal(b02dEvidence.result.domainRowsCreated, 0, 'B02D zero rows');
 equal(b02dEvidence.effects.databaseMutationExecuted, false, 'B02D no mutation');
 
-check(docs.includes('COM-B03 — realtime escalável'), 'docs title');
-check(docs.includes('repository_only'), 'docs repository only');
-check(docs.includes('realtime publication configured: false'), 'docs publication false');
-check(docs.includes('subscription created: false'), 'docs subscription false');
-check(docs.includes('COM-B03B'), 'docs next boundary');
+for (const marker of [
+  'COM-B03 — realtime escalável', 'repository_only',
+  'realtime publication configured: false', 'subscription created: false', 'COM-B03B'
+]) check(docs.includes(marker), `docs marker: ${marker}`);
 check(!runtime.includes('community-realtime-channel-scale-policy'), 'runtime unchanged');
-check(!routes.includes("module: 'communities'"), 'route not registered');
+check(!routes.includes("module: 'communities'"), 'route absent');
 check(!loader.includes("require('../../modules/communities/community-realtime"), 'loader unchanged');
-
-check(workflow.includes('permissions:\n  contents: read'), 'workflow read-only token');
-check(workflow.includes('Audit COM-B03'), 'workflow audit');
-check(workflow.includes('Conformance COM-B03'), 'workflow conformance');
-check(workflow.includes('COM-A04 predecessor regression'), 'A04 regression');
-check(workflow.includes('COM-B02D predecessor regression'), 'B02D regression');
-check(!workflow.includes('workflow_dispatch'), 'no manual dispatch');
-check(!workflow.includes('secrets.'), 'no secrets');
-check(!workflow.includes('supabase '), 'no Supabase CLI');
-check(!workflow.includes('psql'), 'no psql');
-check(!workflow.includes('curl '), 'no curl');
-check(!workflow.includes('contents: write'), 'no write token');
+for (const marker of [
+  'permissions:\n  contents: read', 'Audit COM-B03', 'Conformance COM-B03',
+  'COM-A04 predecessor regression', 'COM-B02D predecessor regression'
+]) check(workflow.includes(marker), `workflow marker: ${marker}`);
+for (const token of ['workflow_dispatch', 'secrets.', 'supabase ', 'psql', 'curl ', 'contents: write']) {
+  check(!workflow.includes(token), `workflow no ${token}`);
+}
 
 console.log(`COM-B03 audit passed: ${checks}/${checks}`);
