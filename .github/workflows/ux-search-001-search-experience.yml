@@ -1,0 +1,176 @@
+name: Doke UX-SEARCH-001 Search Experience
+
+on:
+  pull_request:
+    paths:
+      - 'assets/js/core/search-experience.js'
+      - 'assets/js/pages/search/server-results-surface.js'
+      - 'assets/js/pages/search/results-authority-pilot.js'
+      - 'assets/css/core/search-experience.css'
+      - 'scripts/test-ux-search-001-search-experience.js'
+      - 'docs/ux/UX-SEARCH-001.md'
+      - '.github/workflows/ux-search-001-search-experience.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ux-search-001:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Validate JavaScript syntax
+        run: |
+          node --check assets/js/core/search-experience.js
+          node --check assets/js/pages/search/server-results-surface.js
+          node --check assets/js/pages/search/results-authority-pilot.js
+          node --check scripts/test-ux-search-001-search-experience.js
+
+      - name: Run UX-SEARCH-001 contract tests
+        run: node scripts/test-ux-search-001-search-experience.js
+
+      - name: Preserve public service catalog without new debt
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          else
+            BASE_SHA="$(git rev-parse HEAD^)"
+          fi
+          HEAD_OUTPUT="$(mktemp)"
+          BASE_OUTPUT="$(mktemp)"
+          HEAD_SIGNATURES="$(mktemp)"
+          BASE_SIGNATURES="$(mktemp)"
+          NEW_SIGNATURES="$(mktemp)"
+          BASE_WORKTREE="$(mktemp -d)/base"
+          set +e
+          node scripts/test-public-service-catalog-contract.js >"${HEAD_OUTPUT}" 2>&1
+          HEAD_STATUS=$?
+          git worktree add --detach "${BASE_WORKTREE}" "${BASE_SHA}" >/dev/null 2>&1
+          (cd "${BASE_WORKTREE}" && node scripts/test-public-service-catalog-contract.js) >"${BASE_OUTPUT}" 2>&1
+          BASE_STATUS=$?
+          set -e
+          cat "${HEAD_OUTPUT}"
+          if [[ ${HEAD_STATUS} -eq 0 ]]; then
+            echo "[ux-search-catalog] Full public service catalog contract passes."
+            git worktree remove --force "${BASE_WORKTREE}" >/dev/null 2>&1 || true
+            exit 0
+          fi
+          if [[ ${BASE_STATUS} -eq 0 ]]; then
+            echo "[ux-search-catalog] Head introduced a catalog failure against a clean base."
+            git worktree remove --force "${BASE_WORKTREE}" >/dev/null 2>&1 || true
+            exit 1
+          fi
+          grep -E 'AssertionError|assert\(|DOKE_|Error:' "${HEAD_OUTPUT}" | sed 's#^.*AssertionError#AssertionError#' | sort -u >"${HEAD_SIGNATURES}" || true
+          grep -E 'AssertionError|assert\(|DOKE_|Error:' "${BASE_OUTPUT}" | sed 's#^.*AssertionError#AssertionError#' | sort -u >"${BASE_SIGNATURES}" || true
+          comm -23 "${HEAD_SIGNATURES}" "${BASE_SIGNATURES}" >"${NEW_SIGNATURES}"
+          if [[ -s "${NEW_SIGNATURES}" ]]; then
+            echo "[ux-search-catalog] New failure signatures introduced by this PR:"
+            cat "${NEW_SIGNATURES}"
+            git worktree remove --force "${BASE_WORKTREE}" >/dev/null 2>&1 || true
+            exit 1
+          fi
+          echo "[ux-search-catalog] No new public catalog failure signatures."
+          echo "[ux-search-catalog] Pre-existing stale source assertion remains tracked in issue #64."
+          git worktree remove --force "${BASE_WORKTREE}" >/dev/null 2>&1 || true
+
+      - name: Preserve loading baseline without new debt
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          else
+            BASE_SHA="$(git rev-parse HEAD^)"
+          fi
+          HEAD_OUTPUT="$(mktemp)"
+          BASE_OUTPUT="$(mktemp)"
+          HEAD_FAILURES="$(mktemp)"
+          BASE_FAILURES="$(mktemp)"
+          NEW_FAILURES="$(mktemp)"
+          BASE_WORKTREE="$(mktemp -d)/base"
+          set +e
+          node scripts/audit-final-loading-baseline.js >"${HEAD_OUTPUT}" 2>&1
+          HEAD_STATUS=$?
+          git worktree add --detach "${BASE_WORKTREE}" "${BASE_SHA}" >/dev/null 2>&1
+          (cd "${BASE_WORKTREE}" && node scripts/audit-final-loading-baseline.js) >"${BASE_OUTPUT}" 2>&1
+          BASE_STATUS=$?
+          set -e
+          cat "${HEAD_OUTPUT}"
+          if [[ ${HEAD_STATUS} -eq 0 ]]; then
+            echo "[ux-search-loading] Full loading baseline passes."
+            git worktree remove --force "${BASE_WORKTREE}" >/dev/null 2>&1 || true
+            exit 0
+          fi
+          if [[ ${BASE_STATUS} -eq 0 ]]; then
+            echo "[ux-search-loading] Head introduced loading failures against a clean base."
+            git worktree remove --force "${BASE_WORKTREE}" >/dev/null 2>&1 || true
+            exit 1
+          fi
+          grep '^- ' "${HEAD_OUTPUT}" | sort -u >"${HEAD_FAILURES}" || true
+          grep '^- ' "${BASE_OUTPUT}" | sort -u >"${BASE_FAILURES}" || true
+          comm -23 "${HEAD_FAILURES}" "${BASE_FAILURES}" >"${NEW_FAILURES}"
+          if [[ -s "${NEW_FAILURES}" ]]; then
+            echo "[ux-search-loading] New loading failures introduced by this PR:"
+            cat "${NEW_FAILURES}"
+            git worktree remove --force "${BASE_WORKTREE}" >/dev/null 2>&1 || true
+            exit 1
+          fi
+          echo "[ux-search-loading] No new loading failures."
+          echo "[ux-search-loading] Pre-existing profile debt remains tracked in issue #60."
+          git worktree remove --force "${BASE_WORKTREE}" >/dev/null 2>&1 || true
+
+      - name: Preserve UX-CARDS-001 dependency
+        run: node scripts/test-ux-cards-001-card-experience.js
+
+      - name: Preserve UX-PERF-001 dependency
+        run: node scripts/test-ux-perf-001-performance-experience.js
+
+      - name: Preserve UX-RESP-001 dependency
+        run: node scripts/test-ux-resp-001-responsive-experience.js
+
+      - name: Preserve UX-A11Y-001 dependency
+        run: node scripts/test-ux-a11y-001-accessibility-experience.js
+
+      - name: Preserve UX-NAV-001 dependency
+        run: node scripts/test-ux-nav-001-overlay-focus.js
+
+      - name: Preserve navigation lifecycle contracts
+        run: node scripts/audit-navigation-lifecycle-contract.js
+
+      - name: Preserve auth and page bootstrap contracts
+        run: node scripts/audit-auth-session-contracts.js
+
+      - name: Preserve UX-PRIV-001 dependency
+        run: node scripts/test-ux-priv-001-account-storage.js
+
+      - name: Preserve UX-CONT-001 dependency
+        run: node scripts/test-ux-cont-001-generation-fences.js
+
+      - name: Preserve UX-CORE-002 dependency
+        run: node scripts/test-ux-core-002-mutation-manager.js
+
+      - name: Preserve UX-CORE-001 dependency
+        run: node scripts/test-ux-core-001-state-content-registry.js
+
+      - name: Validate patch whitespace
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            git diff --check "${{ github.event.pull_request.base.sha }}...${{ github.sha }}"
+          else
+            git diff --check HEAD^
+          fi
