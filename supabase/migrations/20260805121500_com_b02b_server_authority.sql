@@ -37,7 +37,6 @@ create table if not exists com_private.command_idempotency (
 alter table com_private.community_state enable row level security;
 alter table com_private.community_event enable row level security;
 alter table com_private.command_idempotency enable row level security;
-
 revoke all on all tables in schema com_private from public, anon, authenticated;
 
 create or replace function public.com_load_canonical_state_v1(p_community_id uuid)
@@ -71,9 +70,6 @@ as $$
 declare
   existing com_private.command_idempotency;
 begin
-  if auth.uid() is null or auth.uid() <> p_actor_id then
-    raise exception 'AUTHENTICATED_ACTOR_MISMATCH';
-  end if;
   insert into com_private.command_idempotency(actor_id, client_request_id, idempotency_key, intent_fingerprint)
   values (p_actor_id, p_client_request_id, p_idempotency_key, p_intent_fingerprint)
   on conflict (actor_id, client_request_id) do nothing;
@@ -82,17 +78,18 @@ begin
   if existing.intent_fingerprint <> p_intent_fingerprint then
     raise exception 'IDEMPOTENCY_INTENT_MISMATCH';
   end if;
-  return jsonb_build_object('claimed', true, 'replayed', existing.claimed_at < now());
+  return jsonb_build_object('claimed', true, 'intentFingerprint', existing.intent_fingerprint);
 end;
 $$;
 
-create or replace function public.com_append_event_v1(
+create or replace function public.com_commit_event_projection_v1(
   p_community_id uuid,
   p_actor_id uuid,
   p_expected_revision bigint,
   p_event_type text,
   p_event_hash text,
-  p_payload jsonb
+  p_payload jsonb,
+  p_projection jsonb
 )
 returns jsonb
 language plpgsql
@@ -102,51 +99,28 @@ as $$
 declare
   current_revision bigint;
 begin
-  if auth.uid() is null or auth.uid() <> p_actor_id then
-    raise exception 'AUTHENTICATED_ACTOR_MISMATCH';
-  end if;
-  select revision into current_revision from com_private.community_state
-  where community_id = p_community_id for update;
+  select revision into current_revision
+  from com_private.community_state
+  where community_id = p_community_id
+  for update;
   if current_revision is null then raise exception 'COMMUNITY_NOT_FOUND'; end if;
   if current_revision <> p_expected_revision then raise exception 'REVISION_CONFLICT'; end if;
   insert into com_private.community_event(community_id, revision, actor_id, event_type, event_hash, payload)
   values (p_community_id, current_revision + 1, p_actor_id, p_event_type, p_event_hash, coalesce(p_payload, '{}'::jsonb));
-  return jsonb_build_object('revision', current_revision + 1);
-end;
-$$;
-
-create or replace function public.com_commit_projection_v1(
-  p_community_id uuid,
-  p_expected_revision bigint,
-  p_projection jsonb
-)
-returns jsonb
-language plpgsql
-security definer
-set search_path = pg_catalog, public, com_private
-as $$
-declare
-  affected integer;
-begin
-  if auth.uid() is null then raise exception 'AUTHENTICATION_REQUIRED'; end if;
   update com_private.community_state
-  set revision = revision + 1,
+  set revision = current_revision + 1,
       projection = coalesce(p_projection, '{}'::jsonb),
       updated_at = now()
-  where community_id = p_community_id and revision = p_expected_revision;
-  get diagnostics affected = row_count;
-  if affected <> 1 then raise exception 'REVISION_CONFLICT'; end if;
-  return jsonb_build_object('revision', p_expected_revision + 1);
+  where community_id = p_community_id and revision = current_revision;
+  return jsonb_build_object('revision', current_revision + 1, 'eventHash', p_event_hash);
 end;
 $$;
 
-revoke all on function public.com_load_canonical_state_v1(uuid) from public, anon;
-revoke all on function public.com_claim_idempotency_key_v1(uuid,uuid,text,text) from public, anon;
-revoke all on function public.com_append_event_v1(uuid,uuid,bigint,text,text,jsonb) from public, anon;
-revoke all on function public.com_commit_projection_v1(uuid,bigint,jsonb) from public, anon;
-grant execute on function public.com_load_canonical_state_v1(uuid) to authenticated;
-grant execute on function public.com_claim_idempotency_key_v1(uuid,uuid,text,text) to authenticated;
-grant execute on function public.com_append_event_v1(uuid,uuid,bigint,text,text,jsonb) to authenticated;
-grant execute on function public.com_commit_projection_v1(uuid,bigint,jsonb) to authenticated;
+revoke all on function public.com_load_canonical_state_v1(uuid) from public, anon, authenticated;
+revoke all on function public.com_claim_idempotency_key_v1(uuid,uuid,text,text) from public, anon, authenticated;
+revoke all on function public.com_commit_event_projection_v1(uuid,uuid,bigint,text,text,jsonb,jsonb) from public, anon, authenticated;
+grant execute on function public.com_load_canonical_state_v1(uuid) to service_role;
+grant execute on function public.com_claim_idempotency_key_v1(uuid,uuid,text,text) to service_role;
+grant execute on function public.com_commit_event_projection_v1(uuid,uuid,bigint,text,text,jsonb,jsonb) to service_role;
 
 commit;
