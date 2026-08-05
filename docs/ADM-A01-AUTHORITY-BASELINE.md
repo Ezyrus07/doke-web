@@ -41,6 +41,24 @@ A autoridade é fragmentada. Moderação de serviços já chama `service-moderat
 
 Somente `contractAuthority` e `inventoryAuthority` são verdadeiros. Toda autoridade de sessão, RBAC, fila, decisão, auditoria, mutação, staging e produção permanece falsa.
 
+## Matriz canônica
+
+- Refresh commit: `8adb9ea55a96ea880f28901438f99afdc1f70d07`.
+- Refresh run: `31010152782`.
+- Refresh job: `92319938425`.
+- Workflow temporário removido: `3d90e3adfb212d3cdff194fea88ba4dfbba6555a`.
+- Somente `docs/DOMAIN-COMPLETION-MATRIX.md` e `reports/generated/domain-completion-matrix-report.json` foram permitidos no refresh.
+
+## Checkpoint de certificação
+
+- Head certificado antes da integração documental final: `7aa6cc33620f54029a46c1a2bad91c08cd84a4d2`.
+- Run: `31010051528`.
+- Job: `92319590428`.
+- Auditoria: `196/196`.
+- Conformidade: `174/174`.
+- Regressão COM-A05: sucesso.
+- Higiene do diff: sucesso.
+
 ## Sequência
 
 - ADM-A02 — identidade do operador, RBAC escopado e acesso temporário;
