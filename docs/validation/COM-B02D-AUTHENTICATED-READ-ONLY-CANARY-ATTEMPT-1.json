@@ -1,0 +1,77 @@
+{
+  "validationId": "COM-B02D-AUTHENTICATED-READ-ONLY-CANARY-ATTEMPT-1",
+  "contractId": "com-b02d-authenticated-read-only-canary-execution-v1",
+  "domain": "COM-001",
+  "status": "failed_closed_before_database_access",
+  "authorization": {
+    "source": "explicit_user_message",
+    "receivedAt": "2026-08-05T13:07:00-03:00",
+    "singleUse": true,
+    "consumed": true,
+    "reusable": false
+  },
+  "target": {
+    "environment": "staging",
+    "projectId": "zwkczgewzbsorbrjuzpb",
+    "projectName": "doke-web-staging",
+    "migrationVersion": "20260805153539",
+    "communityId": "00000000-0000-4000-8000-0000000000d2",
+    "pullRequest": 61,
+    "branch": "com/com-001-baseline-audit",
+    "head": "92611cb0459502c0ba5780b2a88dff839ee4c078"
+  },
+  "workflow": {
+    "runId": 31024711149,
+    "runAttempt": 1,
+    "authorizeJobId": 92370066067,
+    "executionJobId": 92370362046,
+    "authorizationGatePassed": true,
+    "conclusion": "failure",
+    "failedStep": "Audit execution surface",
+    "failureCode": "ERR_ASSERTION",
+    "failureMessage": "read-only setting asserted"
+  },
+  "rootCause": {
+    "class": "static_auditor_literal_mismatch",
+    "detail": "The JavaScript executor contains an escaped SQL literal for transaction_read_only, while the auditor searched for the unescaped source representation.",
+    "runtimeContractDefect": false,
+    "databaseDefect": false,
+    "credentialDefect": false
+  },
+  "execution": {
+    "dependenciesInstalled": true,
+    "executorAuditStarted": true,
+    "predecessorRegressionStarted": false,
+    "databaseConnectionAttempted": false,
+    "databaseAccessStarted": false,
+    "authenticatedActorResolved": false,
+    "compositionRootInvoked": false,
+    "rpcInvoked": false,
+    "artifactGenerated": false
+  },
+  "effects": {
+    "networkRequestExecutedByCanary": false,
+    "databaseReadExecutedByCanary": false,
+    "databaseMutationExecuted": false,
+    "fixtureCreated": false,
+    "sessionCreated": false,
+    "routeRegistered": false,
+    "runtimeDeployed": false,
+    "edgeFunctionDeployed": false,
+    "productionChanged": false,
+    "pullRequestMerged": false
+  },
+  "remainingAuthority": {
+    "authenticatedCanaryAuthority": false,
+    "stagingReadAuthority": false,
+    "stagingMutationAuthority": false,
+    "runtimeDeploymentAuthority": false,
+    "productionAuthority": false,
+    "pullRequestMergeAuthority": false
+  },
+  "retry": {
+    "newExplicitAuthorizationRequired": true,
+    "previousAuthorizationReusable": false,
+    "nextAttemptNumber": 2
+  }
+}
