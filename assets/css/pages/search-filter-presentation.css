@@ -1,0 +1,140 @@
+/* UX-FILTERS-002 — applied filter chips and grouped count presentation. */
+
+.results-active-chips[data-filter-presentation-version] {
+  display: block;
+  min-inline-size: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.results-active-chips[data-filter-presentation-version][hidden] {
+  display: none;
+}
+
+.results-active-chip-groups {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px 16px;
+  min-inline-size: 0;
+}
+
+.results-active-chip-group {
+  display: grid;
+  gap: 6px;
+  min-inline-size: 0;
+}
+
+.results-active-chip-group__label {
+  color: var(--doke-text-muted, #5f6f7f);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.results-active-chip-group__items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-inline-size: 0;
+}
+
+.results-active-chip--removable {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-block-size: 34px;
+  max-inline-size: 100%;
+  padding: 7px 10px 7px 12px;
+  border: 1px solid var(--doke-border-subtle, rgba(42, 95, 144, 0.18));
+  border-radius: 999px;
+  background: var(--doke-surface-soft, #f4f8fb);
+  color: var(--doke-text, #17324a);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.results-active-chip--removable:hover {
+  border-color: var(--doke-primary, #2a5f90);
+  background: var(--doke-surface, #fff);
+}
+
+.results-active-chip--removable:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--doke-primary, #2a5f90) 35%, transparent);
+  outline-offset: 2px;
+}
+
+.results-active-chip__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.results-active-chip__remove {
+  display: grid;
+  place-items: center;
+  inline-size: 18px;
+  block-size: 18px;
+  border-radius: 50%;
+  background: color-mix(in srgb, currentColor 10%, transparent);
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.results-filter-count {
+  display: inline-grid;
+  place-items: center;
+  min-inline-size: 20px;
+  block-size: 20px;
+  padding-inline: 5px;
+  border-radius: 999px;
+  background: var(--doke-primary, #2a5f90);
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.results-filter-count:not([hidden]) {
+  color: var(--doke-surface, #fff);
+}
+
+.results-filter-count[hidden] {
+  display: none;
+}
+
+@media (max-width: 600px) {
+  .results-active-chip-groups {
+    flex-wrap: nowrap;
+    align-items: stretch;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    padding-block: 2px 6px;
+    scrollbar-width: thin;
+  }
+
+  .results-active-chip-group {
+    flex: 0 0 auto;
+  }
+
+  .results-active-chip-group__items {
+    flex-wrap: nowrap;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .results-active-chip--removable {
+    scroll-behavior: auto;
+  }
+}
+
+@media (forced-colors: active) {
+  .results-active-chip--removable,
+  .results-filter-count {
+    border: 1px solid ButtonText;
+  }
+}
