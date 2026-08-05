@@ -1,0 +1,42 @@
+#!/usr/bin/env node
+'use strict';
+
+const assert = require('assert');
+const fs = require('fs');
+const path = require('path');
+const root = path.join(__dirname, '..');
+const read = (p) => fs.readFileSync(path.join(root, p), 'utf8');
+const adapter = read('backend/modules/communities/community-supabase-repository-adapter.js');
+const sql = read('supabase/migrations/20260805121500_com_b02b_server_authority.sql');
+const config = JSON.parse(read('config/com-b02b-supabase-repository-migration-readiness.json'));
+let checks = 0;
+const check = (v, m) => { checks += 1; assert.ok(v, m); };
+const equal = (a, b, m) => { checks += 1; assert.strictEqual(a, b, m); };
+
+check(adapter.includes("authority !== 'server_service_role'"), 'service role executor required');
+check(adapter.includes('commitEventAndProjection'), 'atomic adapter method');
+check(!adapter.includes('createClient'), 'no embedded client');
+check(!adapter.includes('process.env'), 'no credentials');
+check(!adapter.includes('fetch('), 'no network');
+check(sql.startsWith('begin;'), 'transaction begin');
+check(sql.trim().endsWith('commit;'), 'transaction commit');
+check(sql.includes('enable row level security'), 'RLS enabled');
+check(sql.includes('grant execute on function public.com_commit_event_projection_v1'), 'atomic rpc grant');
+check(sql.includes('to service_role'), 'service role grant');
+check(sql.includes('from public, anon, authenticated'), 'client roles revoked');
+check(!sql.includes('grant execute on function public.com_commit_event_projection_v1(uuid,uuid,bigint,text,text,jsonb,jsonb) to authenticated'), 'no authenticated grant');
+check(sql.includes('for update'), 'row lock');
+check(sql.includes("raise exception 'REVISION_CONFLICT'"), 'revision conflict');
+check(sql.includes("raise exception 'IDEMPOTENCY_INTENT_MISMATCH'"), 'idempotency mismatch');
+equal(config.scope, 'repository_only', 'scope');
+equal(config.migrationPrepared, true, 'migration prepared');
+equal(config.migrationApplied, false, 'migration not applied');
+equal(config.runtimeIntegrated, false, 'runtime false');
+equal(config.stagingValidated, false, 'staging false');
+equal(config.rpcAuthority, 'service_role_only', 'rpc authority');
+equal(config.transactionBoundary, 'event_and_projection_atomic', 'atomic boundary');
+equal(config.authority.browserRpcAuthority, false, 'browser false');
+equal(config.authority.authenticatedRoleRpcAuthority, false, 'authenticated false');
+equal(config.authority.migrationExecutionAuthority, false, 'execution false');
+for (const value of Object.values(config.prohibitedEffects)) equal(value, false, 'effect false');
+console.log(`COM-B02B audit passed: ${checks}/${checks}`);
