@@ -23,6 +23,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -40,4 +42,4 @@ jobs:
           node scripts/audit-com-a05-moderation-appeal-media-readiness.js
           node scripts/test-com-a05-moderation-appeal-media-readiness.js
       - name: Diff hygiene
-        run: git diff --check ${{ github.event.pull_request.base.sha }}..${{ github.sha }}
+        run: git diff --check ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
