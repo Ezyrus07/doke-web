@@ -1,0 +1,69 @@
+name: Domain Completion Matrix Artifact Sync
+
+on:
+  push:
+    branches:
+      - com/com-001-baseline-audit
+    paths:
+      - 'config/domain-completion-matrix-refresh.json'
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact branch head
+        uses: actions/checkout@v4
+        with:
+          ref: com/com-001-baseline-audit
+          fetch-depth: 2
+      - name: Validate refresh manifest
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const manifest = JSON.parse(fs.readFileSync('config/domain-completion-matrix-refresh.json', 'utf8'));
+          if (manifest.contractId !== 'domain-completion-matrix-refresh-v1') throw new Error('INVALID_REFRESH_CONTRACT');
+          if (manifest.status !== 'refresh_requested') throw new Error('INVALID_REFRESH_STATUS');
+          if (manifest.matrixVersion !== '1.3.106') throw new Error('MATRIX_VERSION_MISMATCH');
+          if (manifest.domain !== 'COM-001' || manifest.boundary !== 'COM-B03') throw new Error('REFRESH_SCOPE_MISMATCH');
+          if (manifest.effects.repositoryDerivedArtifactsOnly !== true) throw new Error('INVALID_EFFECT_SCOPE');
+          NODE
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Install pinned dependencies
+        run: npm ci --ignore-scripts
+      - name: Regenerate deterministic artifacts
+        run: npm run write:domain-completion-matrix
+      - name: Preserve canonical source
+        run: git diff --exit-code -- config/domain-completion-matrix.json
+      - name: Audit generated matrix
+        run: npm run audit:domain-completion-matrix
+      - name: Audit COM-B03 matrix reconciliation
+        run: node scripts/audit-com-b03-domain-matrix-reconciliation.js
+      - name: Restrict generated diff
+        shell: bash
+        run: |
+          unexpected="$(git status --porcelain | awk '{print $2}' \
+            | grep -v -E '^(docs/DOMAIN-COMPLETION-MATRIX\.md|reports/generated/domain-completion-matrix-report\.json)$' || true)"
+          test -z "$unexpected" || { echo "$unexpected"; exit 1; }
+          git diff --check
+      - name: Commit generated artifacts
+        shell: bash
+        run: |
+          git config user.name 'doke-matrix-bot'
+          git config user.email 'doke-matrix-bot@users.noreply.github.com'
+          git add docs/DOMAIN-COMPLETION-MATRIX.md
+          git add -f reports/generated/domain-completion-matrix-report.json
+          if git diff --cached --quiet; then
+            echo 'Generated artifacts already synchronized.'
+            exit 0
+          fi
+          git commit -m 'docs(matrix): synchronize generated domain artifacts'
+          git push origin HEAD:com/com-001-baseline-audit
