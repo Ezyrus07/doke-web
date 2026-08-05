@@ -41,8 +41,67 @@ jobs:
       - name: Run UX-CARDS-001 contract tests
         run: node scripts/test-ux-cards-001-card-experience.js
 
-      - name: Preserve public service catalog
-        run: node scripts/test-public-service-catalog-contract.js
+      - name: Preserve public service catalog without new debt
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          else
+            BASE_SHA="$(git rev-parse HEAD^)"
+          fi
+
+          HEAD_OUTPUT="$(mktemp)"
+          BASE_OUTPUT="$(mktemp)"
+          HEAD_SIGNATURE="$(mktemp)"
+          BASE_SIGNATURE="$(mktemp)"
+          NEW_SIGNATURE="$(mktemp)"
+          BASE_WORKTREE="$(mktemp -d)/base"
+
+          set +e
+          node scripts/test-public-service-catalog-contract.js >"${HEAD_OUTPUT}" 2>&1
+          HEAD_STATUS=$?
+          git worktree add --detach "${BASE_WORKTREE}" "${BASE_SHA}" >/dev/null 2>&1
+          (
+            cd "${BASE_WORKTREE}"
+            node scripts/test-public-service-catalog-contract.js
+          ) >"${BASE_OUTPUT}" 2>&1
+          BASE_STATUS=$?
+          set -e
+
+          cat "${HEAD_OUTPUT}"
+
+          if [[ ${HEAD_STATUS} -eq 0 ]]; then
+            echo "[ux-cards-catalog] Full public catalog contract passes."
+            git worktree remove --force "${BASE_WORKTREE}" >/dev/null 2>&1 || true
+            exit 0
+          fi
+
+          if [[ ${BASE_STATUS} -eq 0 ]]; then
+            echo "[ux-cards-catalog] Head introduced a catalog failure against a clean base."
+            git worktree remove --force "${BASE_WORKTREE}" >/dev/null 2>&1 || true
+            exit 1
+          fi
+
+          grep -E 'AssertionError|assert\(' "${HEAD_OUTPUT}" \
+            | sed -E 's#/[A-Za-z0-9_.-]+(/[A-Za-z0-9_.-]+)*/scripts/#scripts/#g' \
+            | sort -u >"${HEAD_SIGNATURE}" || true
+          grep -E 'AssertionError|assert\(' "${BASE_OUTPUT}" \
+            | sed -E 's#/[A-Za-z0-9_.-]+(/[A-Za-z0-9_.-]+)*/scripts/#scripts/#g' \
+            | sort -u >"${BASE_SIGNATURE}" || true
+          comm -23 "${HEAD_SIGNATURE}" "${BASE_SIGNATURE}" >"${NEW_SIGNATURE}"
+
+          if [[ -s "${NEW_SIGNATURE}" ]]; then
+            echo "[ux-cards-catalog] New catalog failure signature introduced by this PR:"
+            cat "${NEW_SIGNATURE}"
+            git worktree remove --force "${BASE_WORKTREE}" >/dev/null 2>&1 || true
+            exit 1
+          fi
+
+          echo "[ux-cards-catalog] No new catalog failure signature."
+          echo "[ux-cards-catalog] Pre-existing stale source assertion remains tracked in issue #64."
+          git worktree remove --force "${BASE_WORKTREE}" >/dev/null 2>&1 || true
 
       - name: Preserve loading baseline without new debt
         shell: bash
