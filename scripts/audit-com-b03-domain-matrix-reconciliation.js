@@ -11,7 +11,9 @@ const files = {
   doc: 'docs/DOMAIN-COMPLETION-MATRIX.md',
   report: 'reports/generated/domain-completion-matrix-report.json',
   policy: 'config/com-b03-realtime-channel-scale-policy.json',
-  evidence: 'docs/validation/COM-B03-COMMUNITY-REALTIME-CHANNEL-SCALE-POLICY.json'
+  evidence: 'docs/validation/COM-B03-COMMUNITY-REALTIME-CHANNEL-SCALE-POLICY.json',
+  refresh: 'config/domain-completion-matrix-refresh.json',
+  syncWorkflow: '.github/workflows/domain-completion-matrix-sync.yml'
 };
 const temporaryPaths = [
   '.github/workflows/com-b03-domain-matrix-reconciliation.yml',
@@ -38,6 +40,8 @@ const doc = read('doc');
 const report = JSON.parse(read('report'));
 const policy = JSON.parse(read('policy'));
 const evidence = JSON.parse(read('evidence'));
+const refresh = JSON.parse(read('refresh'));
+const syncWorkflow = read('syncWorkflow');
 const domain = matrix.domains.find((item) => item.id === 'COM-001');
 const flow = matrix.criticalFlows.find((item) => item.id === 'FLOW-12');
 
@@ -133,6 +137,35 @@ check(Array.isArray(report.domains), 'report domains array');
 const reportDomain = report.domains.find((item) => item.id === 'COM-001');
 check(reportDomain, 'report COM-001 entry');
 check(reportDomain.filesMatched >= 16, 'report scans COM-B03 paths');
+
+ equal(refresh.contractId, 'domain-completion-matrix-refresh-v1', 'refresh contract');
+equal(refresh.status, 'refresh_requested', 'refresh status');
+equal(refresh.matrixVersion, '1.3.106', 'refresh matrix version');
+equal(refresh.domain, 'COM-001', 'refresh domain');
+equal(refresh.boundary, 'COM-B03', 'refresh boundary');
+equal(refresh.effects.repositoryDerivedArtifactsOnly, true, 'derived artifacts only');
+for (const key of [
+  'databaseAccessed', 'stagingChanged', 'realtimePublicationChanged',
+  'subscriptionCreated', 'runtimeIntegrated', 'productionChanged', 'pullRequestMerged'
+]) equal(refresh.effects[key], false, `refresh ${key} false`);
+
+for (const marker of [
+  "- 'config/domain-completion-matrix-refresh.json'",
+  'permissions:\n  contents: write',
+  'npm run write:domain-completion-matrix',
+  'git diff --exit-code -- config/domain-completion-matrix.json',
+  'npm run audit:domain-completion-matrix',
+  'node scripts/audit-com-b03-domain-matrix-reconciliation.js',
+  "git add docs/DOMAIN-COMPLETION-MATRIX.md",
+  'git add -f reports/generated/domain-completion-matrix-report.json',
+  'git push origin HEAD:com/com-001-baseline-audit'
+]) check(syncWorkflow.includes(marker), `sync workflow marker: ${marker}`);
+for (const forbidden of [
+  'workflow_dispatch', 'secrets.', 'SUPABASE_', 'supabase ', 'psql', 'curl ',
+  'config/domain-completion-matrix.json\n          git add'
+]) check(!syncWorkflow.includes(forbidden), `sync workflow no ${forbidden}`);
+check(syncWorkflow.includes('Restrict generated diff'), 'sync diff restricted');
+check(syncWorkflow.includes('repositoryDerivedArtifactsOnly'), 'sync manifest scope enforced');
 
  equal(policy.status, 'repository_contract_certified_runtime_blocked', 'policy certified');
 equal(policy.realtimePublicationConfigured, false, 'publication remains false');
