@@ -70,7 +70,7 @@ equal(readiness.canary.authorizationReceived, false, 'readiness remains pre-exec
 equal(readiness.canary.executionAttempted, false, 'readiness attempt remains false until evidence');
 check(compositionRoot.includes('COM_MUTATING_RPC_BLOCKED'), 'root mutation blocker retained');
 check(docs.includes(phrase), 'docs phrase');
-check(docs.includes('BEGIN READ ONLY'), 'docs read only');
+check(docs.includes('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY'), 'docs read-only isolation');
 
 check(workflow.includes('branches:\n      - com/com-001-baseline-audit'), 'exact branch');
 check(workflow.includes('permissions:\n  contents: read'), 'read-only token');
