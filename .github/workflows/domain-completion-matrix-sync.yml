@@ -28,9 +28,9 @@ jobs:
           const manifest = JSON.parse(fs.readFileSync('config/domain-completion-matrix-refresh.json', 'utf8'));
           if (manifest.contractId !== 'domain-completion-matrix-refresh-v1') throw new Error('INVALID_REFRESH_CONTRACT');
           if (manifest.status !== 'refresh_requested') throw new Error('INVALID_REFRESH_STATUS');
-          if (manifest.matrixVersion !== '1.3.106') throw new Error('MATRIX_VERSION_MISMATCH');
-          if (manifest.domain !== 'COM-001' || manifest.boundary !== 'COM-B03') throw new Error('REFRESH_SCOPE_MISMATCH');
-          if (manifest.effects.repositoryDerivedArtifactsOnly !== true) throw new Error('INVALID_EFFECT_SCOPE');
+          if (manifest.matrixVersion !== '1.3.107') throw new Error('MATRIX_VERSION_MISMATCH');
+          if (manifest.domain !== 'COM-001' || manifest.boundary !== 'COM-B04') throw new Error('REFRESH_SCOPE_MISMATCH');
+          if (manifest.effects.repositorySourceAndDerivedArtifacts !== true) throw new Error('INVALID_EFFECT_SCOPE');
           NODE
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -39,31 +39,90 @@ jobs:
           cache: npm
       - name: Install pinned dependencies
         run: npm ci --ignore-scripts
+      - name: Integrate COM-B04 into canonical source
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const manifest = JSON.parse(fs.readFileSync('config/domain-completion-matrix-refresh.json', 'utf8'));
+          const packagePath = 'package.json';
+          const matrixPath = 'config/domain-completion-matrix.json';
+          const pkg = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
+          pkg.scripts['audit:com-b04-moderation-case-authority'] = 'node scripts/audit-com-b04-moderation-case-authority.js';
+          pkg.scripts['test:com-b04-moderation-case-authority'] = 'node scripts/test-com-b04-moderation-case-authority.js';
+          fs.writeFileSync(packagePath, `${JSON.stringify(pkg, null, 2)}\n`);
+
+          const matrix = JSON.parse(fs.readFileSync(matrixPath, 'utf8'));
+          if (!['1.3.106', '1.3.107'].includes(matrix.version)) throw new Error('UNEXPECTED_MATRIX_VERSION');
+          const domain = matrix.domains.find((item) => item.id === 'COM-001');
+          if (!domain) throw new Error('COM_DOMAIN_MISSING');
+          if (domain.maturity !== 3 || domain.serverAuthority !== 'partial') throw new Error('UNEXPECTED_COM_MATURITY');
+          matrix.version = manifest.matrixVersion;
+          matrix.updatedAt = manifest.updatedAt;
+
+          const addUnique = (array, values) => {
+            const target = Array.isArray(array) ? array : [];
+            for (const value of values) if (!target.includes(value)) target.push(value);
+            return target;
+          };
+          domain.requiredPaths = addUnique(domain.requiredPaths, [
+            'backend/modules/communities/community-moderation-case-authority.js',
+            'config/com-b04-moderation-case-authority.json',
+            'tests/fixtures/com-b04-moderation-case-cases.json',
+            'scripts/test-com-b04-moderation-case-authority.js',
+            'scripts/audit-com-b04-moderation-case-authority.js',
+            'scripts/audit-com-b04-domain-matrix-reconciliation.js',
+            'docs/COM-B04-MODERATION-CASE-AUTHORITY.md',
+            'docs/validation/COM-B04-MODERATION-CASE-AUTHORITY.json'
+          ]);
+          domain.tests = addUnique(domain.tests, [
+            'audit:com-b04-moderation-case-authority',
+            'test:com-b04-moderation-case-authority'
+          ]);
+          domain.evidence = addUnique(domain.evidence, [
+            'COM-B04 canonical moderation case authority is repository-certified with revision-bound evidence, dual control, bounded sanctions, independent appeals, authenticated scan attestations and serializable transaction plans.',
+            'No moderation case persistence, sanction executor, appeal queue, media disposition runtime, migration or staging mutation is active yet.'
+          ]);
+          const b04 = (domain.blockers || []).find((item) => item.id === 'COM-B04');
+          if (!b04) throw new Error('COM_B04_BLOCKER_MISSING');
+          b04.category = 'moderation_persistence_activation';
+          b04.description = 'Canonical moderation case authority is repository-certified, but immutable persistence, migration, runtime integration and staging validation are not active.';
+          domain.nextActions = (domain.nextActions || []).map((item) =>
+            item === 'Complete content reports, sanctions and media moderation.'
+              ? 'Prepare immutable moderation case persistence and migration readiness under COM-B04B; any staging application requires separate explicit authorization.'
+              : item
+          );
+          fs.writeFileSync(matrixPath, `${JSON.stringify(matrix, null, 2)}\n`);
+          NODE
       - name: Regenerate deterministic artifacts
         run: npm run write:domain-completion-matrix
-      - name: Preserve canonical source
-        run: git diff --exit-code -- config/domain-completion-matrix.json
       - name: Audit generated matrix
         run: npm run audit:domain-completion-matrix
-      - name: Audit COM-B03 matrix reconciliation
+      - name: Audit COM-B03 matrix continuity
         run: node scripts/audit-com-b03-domain-matrix-reconciliation.js
-      - name: Restrict generated diff
+      - name: Audit COM-B04 contract
+        run: |
+          node scripts/audit-com-b04-moderation-case-authority.js
+          node scripts/test-com-b04-moderation-case-authority.js
+      - name: Audit COM-B04 matrix reconciliation
+        run: node scripts/audit-com-b04-domain-matrix-reconciliation.js
+      - name: Restrict repository diff
         shell: bash
         run: |
           unexpected="$(git status --porcelain | awk '{print $2}' \
-            | grep -v -E '^(docs/DOMAIN-COMPLETION-MATRIX\.md|reports/generated/domain-completion-matrix-report\.json)$' || true)"
+            | grep -v -E '^(package\.json|config/domain-completion-matrix\.json|docs/DOMAIN-COMPLETION-MATRIX\.md|reports/generated/domain-completion-matrix-report\.json)$' || true)"
           test -z "$unexpected" || { echo "$unexpected"; exit 1; }
           git diff --check
-      - name: Commit generated artifacts
+      - name: Commit canonical and generated artifacts
         shell: bash
         run: |
           git config user.name 'doke-matrix-bot'
           git config user.email 'doke-matrix-bot@users.noreply.github.com'
-          git add docs/DOMAIN-COMPLETION-MATRIX.md
+          git add package.json config/domain-completion-matrix.json docs/DOMAIN-COMPLETION-MATRIX.md
           git add -f reports/generated/domain-completion-matrix-report.json
           if git diff --cached --quiet; then
-            echo 'Generated artifacts already synchronized.'
+            echo 'Canonical and generated artifacts already synchronized.'
             exit 0
           fi
-          git commit -m 'docs(matrix): synchronize generated domain artifacts'
+          git commit -m 'docs(com): integrate COM-B04 domain completion matrix'
           git push origin HEAD:com/com-001-baseline-audit
