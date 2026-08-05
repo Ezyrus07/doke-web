@@ -158,7 +158,31 @@ async function validateFallbackRuntime() {
   const requests = [];
   const appended = [];
   const renderedEvents = [];
+  const controller = {
+    run(intent, executor) {
+      return Promise.resolve(executor({
+        intent,
+        generation: 1,
+        signal: { aborted: false },
+        operation: intent.operation
+      })).then((value) => ({ applied: true, status: 'applied', value }));
+    },
+    cancel() {},
+    getSnapshot() {
+      return { initialInFlight: false, paginationInFlight: false, retryAvailable: false };
+    }
+  };
   const Doke = {
+    searchExperience: {
+      version: '20260804-ux-search-001-v1',
+      operations: { INITIAL: 'initial', PAGINATION: 'pagination', RETRY: 'retry' },
+      createController() { return controller; },
+      replaceUrl() { return ''; }
+    },
+    searchResultsAuthorityPilot: {
+      version: '20260804-ux-search-001-results-v1',
+      init() {}
+    },
     services: {
       search: {
         getContract() {
@@ -192,7 +216,16 @@ async function validateFallbackRuntime() {
   };
   const sandbox = {
     window: { Doke },
-    document: { dispatchEvent(event) { renderedEvents.push(event); } },
+    document: {
+      currentScript: null,
+      baseURI: 'https://doke.local/resultados.html',
+      scripts: [],
+      styleSheets: [],
+      querySelector(selector) {
+        return selector.startsWith('link[') ? {} : null;
+      },
+      dispatchEvent(event) { renderedEvents.push(event); }
+    },
     CustomEvent: class CustomEvent {
       constructor(name, init) { this.type = name; this.detail = init && init.detail; }
     },
@@ -204,7 +237,9 @@ async function validateFallbackRuntime() {
     String,
     Number,
     Boolean,
-    Array
+    Array,
+    URL,
+    Error
   };
   sandbox.window.window = sandbox.window;
   vm.runInNewContext(surface, sandbox, { filename: 'server-results-surface.js' });
