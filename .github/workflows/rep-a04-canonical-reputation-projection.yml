@@ -1,0 +1,64 @@
+name: REP-A04 Canonical Reputation Projection
+
+on:
+  pull_request:
+    paths:
+      - 'backend/modules/reputation/canonical-reputation-projection.js'
+      - 'config/rep-a04-canonical-reputation-projection.json'
+      - 'tests/fixtures/rep-a04-reputation-projection-cases.json'
+      - 'docs/REP-A04-CANONICAL-REPUTATION-PROJECTION.md'
+      - 'scripts/audit-rep-a04-canonical-reputation-projection.js'
+      - 'scripts/test-rep-a04-canonical-reputation-projection.js'
+      - '.github/workflows/rep-a04-canonical-reputation-projection.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  rep-a04-canonical-reputation-projection:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Syntax
+        run: |
+          node --check backend/modules/reputation/canonical-reputation-projection.js
+          node --check scripts/audit-rep-a04-canonical-reputation-projection.js
+          node --check scripts/test-rep-a04-canonical-reputation-projection.js
+
+      - name: Audit canonical reputation projection
+        run: node scripts/audit-rep-a04-canonical-reputation-projection.js
+
+      - name: Canonical reputation conformance
+        run: node scripts/test-rep-a04-canonical-reputation-projection.js
+
+      - name: REP-A03 regression
+        run: |
+          node scripts/audit-rep-a03-review-moderation-lifecycle.js
+          node scripts/test-rep-a03-review-moderation-lifecycle.js
+
+      - name: REP-A02 regression
+        run: |
+          node scripts/audit-rep-a02-review-command-authority.js
+          node scripts/test-rep-a02-review-command-authority.js
+
+      - name: REP-A01 regression
+        run: |
+          node scripts/audit-rep-a01-authority-baseline.js
+          node scripts/test-rep-a01-authority-baseline.js
+
+      - name: DSP-A05 predecessor regression
+        run: |
+          node scripts/audit-dsp-a05-operator-case-dual-control-readiness.js
+          node scripts/test-dsp-a05-operator-case-dual-control-readiness.js
+
+      - name: Diff hygiene
+        run: git diff --check

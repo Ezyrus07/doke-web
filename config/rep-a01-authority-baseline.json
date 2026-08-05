@@ -1,0 +1,174 @@
+{
+  "contractId": "rep-a01-authority-baseline-v1",
+  "domain": "REP-001",
+  "sourceHead": "43789d4059542deb51ce31ac47e11d9cca144f69",
+  "createdAt": "2026-08-04T19:36:00-03:00",
+  "scope": "repository_only",
+  "status": "baseline_frozen_followup_required",
+  "runtimeIntegrated": false,
+  "migrationPrepared": false,
+  "migrationApplied": false,
+  "stagingValidated": false,
+  "approvedReputationPolicyPresent": false,
+  "moderationWorkflowConfigured": false,
+  "canonicalReputationProjectionConfigured": false,
+  "fraudDetectionConfigured": false,
+  "rehireFlowConfigured": false,
+  "currentAuthority": {
+    "reviewSubmission": "hybrid_browser_local_and_direct_authenticated_table_insert",
+    "reviewEligibility": "browser_orchestration_plus_static_rls_completed_order_check",
+    "reviewUniqueness": "local_get_by_order_guard_plus_database_unique_order_reviewer_constraint",
+    "reviewPublication": "authenticated_insert_defaults_to_published",
+    "reviewModeration": "service_role_table_update_without_domain_case_contract",
+    "reputationAggregation": "browser_local_storage_projection",
+    "disputeImpact": "browser_blocks_active_dispute_but_remote_insert_policy_does_not",
+    "reviewSideEffects": "non_atomic_browser_updates_across_review_order_conversation_notification",
+    "rehire": "absent"
+  },
+  "observedSurfaces": [
+    "assets/js/repositories/reviews-repository.js",
+    "assets/js/services/review-service.js",
+    "assets/js/pages/avaliacao-profissional.js",
+    "assets/js/pages/profile-reviews.js",
+    "supabase/migrations/002_marketplace_core.sql",
+    "supabase/migrations/113_availability_reviews_authority.sql",
+    "scripts/test-order-transaction-cycle-contract.js"
+  ],
+  "baselineFindings": [
+    {
+      "id": "REP-A01-F01",
+      "severity": "critical",
+      "category": "browser_authority",
+      "finding": "The reviews repository is localStorage-first and the review service declares provider local-mock, so browser state can create reviews and reputation outcomes.",
+      "blockedBy": "REP-A01-CANONICAL-AUTHORITY"
+    },
+    {
+      "id": "REP-A01-F02",
+      "severity": "critical",
+      "category": "direct_dml",
+      "finding": "Authenticated participants can insert directly into public.reviews and the policy requires status published, bypassing a server-owned command, moderation intake and idempotent acknowledgement boundary.",
+      "blockedBy": "REP-B02"
+    },
+    {
+      "id": "REP-A01-F03",
+      "severity": "high",
+      "category": "eligibility_gap",
+      "finding": "Browser eligibility requires completed order, released payment, linked charge and no active dispute, while remote RLS proves only completed-order participation and does not enforce payment release or dispute impact.",
+      "blockedBy": "REP-B02"
+    },
+    {
+      "id": "REP-A01-F04",
+      "severity": "high",
+      "category": "idempotency_concurrency",
+      "finding": "The database unique constraint protects order plus reviewer, but no server command idempotency, lost-response replay, concurrent submission or remote canary evidence is present.",
+      "blockedBy": "REP-B02"
+    },
+    {
+      "id": "REP-A01-F05",
+      "severity": "high",
+      "category": "moderation",
+      "finding": "New reviews are immediately published and no auditable moderation, report, sanction, restoration or appeal lifecycle is defined.",
+      "blockedBy": "REP-B02"
+    },
+    {
+      "id": "REP-A01-F06",
+      "severity": "critical",
+      "category": "reputation_model",
+      "finding": "Professional reputation is aggregated in the browser from local reviews and is not a canonical server projection resistant to tampering, hidden rows, fraud or dispute reversals.",
+      "blockedBy": "REP-B03"
+    },
+    {
+      "id": "REP-A01-F07",
+      "severity": "high",
+      "category": "atomicity",
+      "finding": "Review creation, order review flags, conversation mutation, charge mutation, notification and reputation events are separate browser writes without one atomic server transaction or durable outbox.",
+      "blockedBy": "REP-A01-ATOMIC-EFFECTS"
+    },
+    {
+      "id": "REP-A01-F08",
+      "severity": "high",
+      "category": "fraud_privacy",
+      "finding": "No canonical fraud controls, collusion detection, rate limits, text safety, personal-data redaction or suspicious-review hold rules are defined.",
+      "blockedBy": "REP-B03"
+    },
+    {
+      "id": "REP-A01-F09",
+      "severity": "medium",
+      "category": "role_model",
+      "finding": "The remote policy permits either transaction participant to review the counterparty, while the active browser service supports only client-to-professional reviews; the product authority is ambiguous.",
+      "blockedBy": "REP-A01-ROLE-SCOPE"
+    },
+    {
+      "id": "REP-A01-F10",
+      "severity": "medium",
+      "category": "retention",
+      "finding": "No canonical rehire command links repeat hiring to the prior completed order, current service snapshot, pricing, availability and a new Doke transaction.",
+      "blockedBy": "REP-B04"
+    }
+  ],
+  "mandatoryInvariants": [
+    "authenticated UUID sessions never create authoritative reviews in localStorage",
+    "review submission uses a server-owned command and stable client request identity",
+    "only a participant of the exact completed order may review the configured counterparty",
+    "payment and dispute eligibility are evaluated by canonical server state",
+    "one review per configured actor and completed order is concurrency-safe",
+    "lost-response retries return the same review identity and outcome",
+    "new reviews enter an explicit moderation state rather than client-selected publication",
+    "review text is validated, rate-limited and protected against prohibited personal data",
+    "moderation, hiding, removal, restoration and appeal are append-only and audited",
+    "reputation is recalculated server-side from eligible canonical review revisions",
+    "hidden removed fraudulent or invalidated reviews cannot influence public reputation",
+    "dispute outcomes change reputation only through an approved versioned policy",
+    "review creation and transaction side effects are atomic or outbox-backed",
+    "public profile projections expose aggregate reputation without private risk signals",
+    "rehire creates a new Doke order linked to prior transaction history and current service authority",
+    "local fixtures and caches never create production reputation authority"
+  ],
+  "authority": {
+    "contractAuthority": true,
+    "baselineAuthority": true,
+    "reviewCommandAuthority": false,
+    "reviewPublicationAuthority": false,
+    "moderationAuthority": false,
+    "reputationProjectionAuthority": false,
+    "fraudDecisionAuthority": false,
+    "rehireAuthority": false,
+    "runtimeMutationAuthority": false,
+    "stagingAuthority": false,
+    "productionAuthority": false
+  },
+  "preservedBlockers": [
+    "REP-B02",
+    "REP-B03",
+    "REP-B04",
+    "DSP-B01",
+    "DSP-B03",
+    "DSP-B04",
+    "PAY-B01",
+    "PAY-B03",
+    "PAY-B04"
+  ],
+  "prohibitedEffects": {
+    "networkRequests": false,
+    "databaseConnections": false,
+    "stagingReads": false,
+    "stagingMutations": false,
+    "migrations": false,
+    "deployments": false,
+    "providerContact": false,
+    "credentialsConfigured": false,
+    "realReviewCreated": false,
+    "realReviewModerated": false,
+    "realReputationChanged": false,
+    "realRehireCreated": false,
+    "realUserDataChanged": false,
+    "realMoneyMovement": false,
+    "productionChanges": false
+  },
+  "nextSublots": [
+    "REP-A02 server-owned eligibility, uniqueness and idempotent review command",
+    "REP-A03 moderation, reporting, restoration and appeal lifecycle",
+    "REP-A04 canonical reputation projection, fraud resistance and dispute impact",
+    "REP-A05 rehire transaction-linkage and retention readiness"
+  ]
+}

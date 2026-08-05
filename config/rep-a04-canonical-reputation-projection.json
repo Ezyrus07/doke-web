@@ -1,0 +1,102 @@
+{
+  "contractId": "rep-a04-canonical-reputation-projection-v1",
+  "domain": "REP-001",
+  "sourceHead": "e8a8829d709af6a6527a935184f2b35e4bdd60ea",
+  "createdAt": "2026-08-04T20:36:00-03:00",
+  "scope": "repository_only",
+  "status": "contract_ready_runtime_integration_required",
+  "runtimeIntegrated": false,
+  "migrationPrepared": false,
+  "migrationApplied": false,
+  "stagingValidated": false,
+  "projectionStates": ["authoritative", "stale", "unavailable"],
+  "reviewDispositions": ["eligible", "quarantined", "excluded"],
+  "publicAggregate": {
+    "averageRating": "sum_of_eligible_integer_ratings_divided_by_eligible_count_rounded_to_2_decimals",
+    "emptyAuthoritative": "averageRating_null_and_count_zero",
+    "histogram": "eligible_reviews_only",
+    "staleProjection": "display_only_with_warning_never_ranking_authority",
+    "unavailableProjection": "no_numeric_reputation_synthesized"
+  },
+  "canonicalInputs": {
+    "source": "canonical_server",
+    "reviewScope": "client_to_professional",
+    "requiredHeads": ["moderationLedgerHead", "fraudLedgerHead", "disputeLedgerHead"],
+    "requiredReviewProvenance": ["moderationRevision", "moderationEventHash", "fraudPolicyVersion", "fraudDecisionHash", "disputeRevision", "disputeDecisionHash"],
+    "requiredUniqueness": "REP-A02 uniquenessKey"
+  },
+  "fraudBoundary": {
+    "signalsDoNotDecide": true,
+    "allowedDispositions": ["eligible", "quarantined", "excluded"],
+    "dispositionRequiresAuthoritativePolicyAndDecisionHash": true,
+    "automaticFraudExclusionAuthority": false
+  },
+  "disputeBoundary": {
+    "eligible": "final canonical dispute facts allow reputation",
+    "quarantined": "active, unknown or reconciliation-pending dispute",
+    "excluded": "final canonical reversal or invalidation",
+    "browserDisputeStateAuthority": false
+  },
+  "mandatoryInvariants": [
+    "only canonical server snapshots can establish public reputation",
+    "published review state is necessary but not sufficient for inclusion",
+    "active moderation cases quarantine published reviews",
+    "hidden, removed and pending-moderation reviews are excluded",
+    "fraud signals alone cannot exclude or down-rank a review",
+    "fraud quarantine or exclusion requires a versioned policy and decision hash",
+    "dispute impact requires an authoritative revision and decision hash",
+    "duplicate review IDs fail closed",
+    "duplicate REP-A02 uniqueness subjects fail closed",
+    "rating aggregation uses eligible reviews only",
+    "an authoritative empty projection uses null average rather than synthetic zero stars",
+    "stale cache may be displayed with warning but never used for public ranking",
+    "unavailable authority never synthesizes a numeric reputation",
+    "projection fingerprints bind policy, ledger heads, counts and aggregates",
+    "raw review bodies, credentials, payment data and private messages are prohibited",
+    "the browser cannot mutate review inclusion or reputation scores",
+    "projection acceptance grants no runtime, fraud-decision or moderation authority"
+  ],
+  "authority": {
+    "contractAuthority": true,
+    "reputationProjectionContractAuthority": true,
+    "fraudImpactContractAuthority": true,
+    "disputeImpactContractAuthority": true,
+    "reputationProjectionRuntimeAuthority": false,
+    "fraudDecisionAuthority": false,
+    "moderationRuntimeAuthority": false,
+    "reviewPublicationRuntimeAuthority": false,
+    "rehireAuthority": false,
+    "stagingAuthority": false,
+    "productionAuthority": false
+  },
+  "preservedBlockers": ["REP-B02", "REP-B03", "REP-B04", "DSP-B01", "DSP-B03", "DSP-B04", "PAY-B01", "PAY-B03", "PAY-B04"],
+  "prohibitedEffects": {
+    "networkRequests": false,
+    "databaseConnections": false,
+    "stagingReads": false,
+    "stagingMutations": false,
+    "migrations": false,
+    "deployments": false,
+    "providerContact": false,
+    "credentialsConfigured": false,
+    "realReviewCreated": false,
+    "realReviewModerated": false,
+    "realReputationChanged": false,
+    "realFraudDecision": false,
+    "realDisputeChanged": false,
+    "realRehireCreated": false,
+    "realUserDataChanged": false,
+    "realMoneyMovement": false,
+    "productionChanges": false
+  },
+  "nextSublots": ["REP-A05 rehire transaction-linkage and retention readiness"],
+  "canonicalIntegration": {
+    "derivedMatrixRefresh": "completed",
+    "derivedMatrixCommit": "56a118dd6a2fe0384722cfc5ed6f36001daaf36f",
+    "refreshRun": 30961141880,
+    "refreshJob": 92165102622,
+    "temporaryWorkflowRequired": true,
+    "temporaryWorkflowRemoved": true,
+    "temporaryWorkflowRemovalCommit": "e2a552cc15c05a6309598b47c46134dfb5cffc92"
+  }
+}

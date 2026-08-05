@@ -1,0 +1,150 @@
+{
+  "contractId": "rep-a03-review-moderation-lifecycle-v1",
+  "domain": "REP-001",
+  "sourceHead": "bfcb7edd82a8602048e6ba1fbe49be8909684552",
+  "createdAt": "2026-08-04T20:12:00-03:00",
+  "scope": "repository_only",
+  "status": "contract_ready_runtime_integration_required",
+  "runtimeIntegrated": false,
+  "migrationPrepared": false,
+  "migrationApplied": false,
+  "stagingValidated": false,
+  "reviewStates": [
+    "pending_moderation",
+    "published",
+    "hidden",
+    "removed"
+  ],
+  "caseStates": [
+    "none",
+    "open",
+    "under_review",
+    "resolved",
+    "appeal_pending",
+    "appeal_resolved"
+  ],
+  "actions": [
+    "publish",
+    "report",
+    "triage",
+    "hide",
+    "remove",
+    "dismiss_report",
+    "appeal",
+    "restore",
+    "deny_appeal"
+  ],
+  "decisions": [
+    "accept",
+    "replay",
+    "reject",
+    "conflict",
+    "unavailable"
+  ],
+  "policy": {
+    "reportEffect": "opens_case_without_automatic_visibility_or_reputation_change",
+    "appealEffect": "opens_independent_review_without_automatic_restoration",
+    "publicVisibility": "derived_only_from_authoritative_transition",
+    "reputationImpact": "deferred_to_REP_A04",
+    "evidenceStorage": "opaque_references_and_digests_only",
+    "eventHistory": "append_only_hash_chained"
+  },
+  "roleBoundary": {
+    "report": [
+      "authenticated_user",
+      "trust_system"
+    ],
+    "appeal": [
+      "review_author"
+    ],
+    "moderation": [
+      "moderator",
+      "senior_moderator"
+    ],
+    "appealDecision": [
+      "senior_moderator"
+    ],
+    "conflictOfInterest": "moderator_cannot_be_author_reviewed_user_or_case_opener",
+    "appealIndependence": "appeal_decider_must_differ_from_prior_decision_actor"
+  },
+  "mandatoryInvariants": [
+    "only canonical server snapshots can authorize moderation transitions",
+    "every command uses a stable UUID clientRequestId and optimistic revisions",
+    "same command identity and fingerprint replays the same outcome",
+    "payload drift under the same idempotency key is a conflict",
+    "reports open a case but do not automatically hide, remove or alter reputation",
+    "triage does not alter public visibility",
+    "hide and remove require an authoritative under-review case",
+    "dismissal closes the case without manufacturing a new review",
+    "appeals can be submitted only by the review author",
+    "appeals do not automatically restore public visibility",
+    "appeal decisions require an independent senior moderator",
+    "restore and deny-appeal commands bind to the exact prior decision event",
+    "moderators cannot decide cases involving themselves as author, reviewed user or reporter",
+    "event envelopes are append-only and hash chained",
+    "raw evidence, credentials, payment data and private message bodies are prohibited",
+    "public visibility is derived from review state and never selected by the browser",
+    "moderation acceptance alone grants no reputation mutation authority",
+    "localStorage, cache and local mock state never establish moderation authority"
+  ],
+  "authority": {
+    "contractAuthority": true,
+    "moderationLifecycleContractAuthority": true,
+    "appealLifecycleContractAuthority": true,
+    "eventEnvelopeContractAuthority": true,
+    "moderationRuntimeAuthority": false,
+    "reviewPublicationRuntimeAuthority": false,
+    "reputationProjectionAuthority": false,
+    "fraudDecisionAuthority": false,
+    "rehireAuthority": false,
+    "stagingAuthority": false,
+    "productionAuthority": false
+  },
+  "preservedBlockers": [
+    "REP-B02",
+    "REP-B03",
+    "REP-B04",
+    "DSP-B01",
+    "DSP-B03",
+    "DSP-B04",
+    "PAY-B01",
+    "PAY-B03",
+    "PAY-B04"
+  ],
+  "prohibitedEffects": {
+    "networkRequests": false,
+    "databaseConnections": false,
+    "stagingReads": false,
+    "stagingMutations": false,
+    "migrations": false,
+    "deployments": false,
+    "providerContact": false,
+    "credentialsConfigured": false,
+    "realReviewCreated": false,
+    "realReviewPublished": false,
+    "realReviewReported": false,
+    "realReviewHidden": false,
+    "realReviewRemoved": false,
+    "realReviewRestored": false,
+    "realAppealCreated": false,
+    "realModerationDecision": false,
+    "realReputationChanged": false,
+    "realRehireCreated": false,
+    "realUserDataChanged": false,
+    "realMoneyMovement": false,
+    "productionChanges": false
+  },
+  "nextSublots": [
+    "REP-A04 canonical reputation projection, fraud resistance and dispute impact",
+    "REP-A05 rehire transaction-linkage and retention readiness"
+  ],
+  "canonicalIntegration": {
+    "derivedMatrixRefresh": "completed",
+    "derivedMatrixCommit": "f40e2e0744c57eb3326469ba98a86e19f25ae541",
+    "refreshRun": 30959858712,
+    "refreshJob": 92161174092,
+    "temporaryWorkflowRequired": true,
+    "temporaryWorkflowRemoved": true,
+    "temporaryWorkflowRemovalCommit": "8e7b14f78048ef3047da3be462b36b159cd1c528"
+  }
+}

@@ -1,0 +1,54 @@
+name: REP-A02 Review Command Authority
+
+on:
+  pull_request:
+    paths:
+      - 'backend/modules/reputation/review-command-authority.js'
+      - 'config/rep-a02-review-command-authority.json'
+      - 'tests/fixtures/rep-a02-review-command-cases.json'
+      - 'docs/REP-A02-REVIEW-COMMAND-AUTHORITY.md'
+      - 'scripts/audit-rep-a02-review-command-authority.js'
+      - 'scripts/test-rep-a02-review-command-authority.js'
+      - '.github/workflows/rep-a02-review-command-authority.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  rep-a02-review-command-authority:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Syntax
+        run: |
+          node --check backend/modules/reputation/review-command-authority.js
+          node --check scripts/audit-rep-a02-review-command-authority.js
+          node --check scripts/test-rep-a02-review-command-authority.js
+
+      - name: Audit review command authority
+        run: node scripts/audit-rep-a02-review-command-authority.js
+
+      - name: Review command conformance
+        run: node scripts/test-rep-a02-review-command-authority.js
+
+      - name: REP-A01 regression
+        run: |
+          node scripts/audit-rep-a01-authority-baseline.js
+          node scripts/test-rep-a01-authority-baseline.js
+
+      - name: DSP-A05 predecessor regression
+        run: |
+          node scripts/audit-dsp-a05-operator-case-dual-control-readiness.js
+          node scripts/test-dsp-a05-operator-case-dual-control-readiness.js
+
+      - name: Diff hygiene
+        run: git diff --check
