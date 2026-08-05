@@ -21,7 +21,10 @@ const repo = createCommunitySupabaseRepository({
   await repo.commitEventAndProjection({ communityId: uuid, actorId: uuid, expectedRevision: 0, eventType: 'membership_joined', eventHash: sha, payload: {}, projection: {} });
   assert.deepStrictEqual(calls.map((c) => c.name), [RPC.loadCanonicalState, RPC.claimIdempotencyKey, RPC.commitEventAndProjection]);
   assert.throws(() => createCommunitySupabaseRepository({ rpc() {} }), /SERVER_SERVICE_ROLE_RPC_EXECUTOR_REQUIRED/);
-  assert.throws(() => repo.loadCanonicalState({ communityId: 'bad' }), /COMMUNITY_UUID_REQUIRED/);
-  assert.throws(() => repo.commitEventAndProjection({ communityId: uuid, actorId: uuid, expectedRevision: -1, eventType: 'x', eventHash: sha }), /EXPECTED_REVISION_REQUIRED/);
+  await assert.rejects(repo.loadCanonicalState({ communityId: 'bad' }), /COMMUNITY_UUID_REQUIRED/);
+  await assert.rejects(
+    repo.commitEventAndProjection({ communityId: uuid, actorId: uuid, expectedRevision: -1, eventType: 'x', eventHash: sha }),
+    /EXPECTED_REVISION_REQUIRED/
+  );
   console.log('COM-B02B conformance passed: 6/6');
 })().catch((error) => { console.error(error); process.exit(1); });
