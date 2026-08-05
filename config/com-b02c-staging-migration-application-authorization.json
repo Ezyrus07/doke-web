@@ -1,0 +1,73 @@
+{
+  "contractId": "com-b02c-staging-migration-application-authorization-v1",
+  "domain": "COM-001",
+  "dependsOn": [
+    "com-b02b-supabase-repository-migration-readiness-v1"
+  ],
+  "scope": "repository_only",
+  "status": "explicit_authorization_required",
+  "authorization": {
+    "requiredPhrase": "I_EXPLICITLY_AUTHORIZE_COM_B02C_SERVER_AUTHORITY_MIGRATION_ON_DOKE_STAGING",
+    "received": false,
+    "consumed": false,
+    "singleUse": true,
+    "reusableAfterFailure": false
+  },
+  "target": {
+    "environment": "staging",
+    "productionAllowed": false
+  },
+  "migration": {
+    "repositoryPath": "supabase/migrations/20260805121500_com_b02b_server_authority.sql",
+    "repositoryGitBlobSha": "fd74f6abc029023c4e0972b32b35daca975c3d57",
+    "prepared": true,
+    "applied": false
+  },
+  "executor": {
+    "installed": false,
+    "credentialsConfigured": false,
+    "executionAttempted": false,
+    "successfulExecutions": 0,
+    "failedExecutions": 0
+  },
+  "verificationRequiredAfterApplication": [
+    "migration_history_contains_expected_version",
+    "private_schema_exists",
+    "community_state_table_exists",
+    "community_event_table_exists",
+    "command_idempotency_table_exists",
+    "rls_enabled_on_all_private_tables",
+    "authenticated_role_has_no_table_access",
+    "authenticated_role_has_no_rpc_execute",
+    "service_role_has_expected_rpc_execute",
+    "event_projection_rpc_is_security_definer",
+    "event_projection_rpc_has_fixed_search_path",
+    "event_and_projection_commit_is_atomic",
+    "zero_domain_rows_created_by_application"
+  ],
+  "authority": {
+    "authorizationContractAuthority": true,
+    "singleExecutionAuthorization": false,
+    "migrationExecutionAuthority": false,
+    "stagingReadAuthority": false,
+    "stagingMutationAuthority": false,
+    "productionAuthority": false,
+    "pullRequestMergeAuthority": false
+  },
+  "prohibitedEffects": {
+    "networkRequests": false,
+    "databaseConnections": false,
+    "migrationApplied": false,
+    "stagingRead": false,
+    "stagingMutation": false,
+    "credentialsConfigured": false,
+    "runtimeDeployed": false,
+    "realCommunityChanged": false,
+    "realMembershipChanged": false,
+    "realRoleChanged": false,
+    "realUserDataChanged": false,
+    "productionChanged": false,
+    "pullRequestMerged": false
+  },
+  "nextAction": "await_exact_explicit_authorization_phrase"
+}
