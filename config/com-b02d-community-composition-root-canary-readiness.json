@@ -5,7 +5,7 @@
     "com-b02c-staging-migration-application-authorization-v1"
   ],
   "scope": "repository_only",
-  "status": "composition_root_prepared_canary_authorization_required",
+  "status": "canary_attempt_1_failed_before_database_access_retry_authorization_required",
   "stagingFoundation": {
     "projectName": "doke-web-staging",
     "projectId": "zwkczgewzbsorbrjuzpb",
@@ -26,13 +26,19 @@
   },
   "canary": {
     "requiredPhrase": "I_EXPLICITLY_AUTHORIZE_COM_B02D_AUTHENTICATED_READ_ONLY_CANARY_ON_DOKE_STAGING",
-    "authorizationReceived": false,
-    "authorizationConsumed": false,
+    "authorizationReceived": true,
+    "authorizationConsumed": true,
     "singleUse": true,
     "reusableAfterFailure": false,
-    "executionAttempted": false,
+    "executionAttempted": true,
     "successfulExecutions": 0,
-    "failedExecutions": 0,
+    "failedExecutions": 1,
+    "lastAttemptNumber": 1,
+    "lastAttemptRunId": 31024711149,
+    "lastAttemptFailedStage": "executor_audit",
+    "lastAttemptReachedDatabase": false,
+    "retryAuthorizationRequired": true,
+    "nextAttemptNumber": 2,
     "actorSource": "server_verified_authenticated_session",
     "targetCommunityId": "00000000-0000-4000-8000-0000000000d2",
     "expectedResult": "null_or_canonical_state",
@@ -48,9 +54,9 @@
     "productionAuthority": false,
     "pullRequestMergeAuthority": false
   },
-  "prohibitedEffects": {
-    "networkRequestExecuted": false,
-    "databaseReadExecuted": false,
+  "effects": {
+    "networkRequestExecutedByCanary": false,
+    "databaseReadExecutedByCanary": false,
     "databaseMutationExecuted": false,
     "routeRegistered": false,
     "runtimeDeployed": false,
@@ -61,5 +67,5 @@
     "productionChanged": false,
     "pullRequestMerged": false
   },
-  "nextAction": "await_exact_explicit_canary_authorization_phrase"
+  "nextAction": "await_new_exact_explicit_canary_authorization_for_attempt_2"
 }
