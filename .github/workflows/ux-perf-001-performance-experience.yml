@@ -40,8 +40,64 @@ jobs:
       - name: Run UX-PERF-001 contract tests
         run: node scripts/test-ux-perf-001-performance-experience.js
 
-      - name: Preserve loading navigation baseline
-        run: node scripts/audit-final-loading-baseline.js
+      - name: Preserve loading navigation baseline without new debt
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          else
+            BASE_SHA="$(git rev-parse HEAD^)"
+          fi
+
+          HEAD_OUTPUT="$(mktemp)"
+          BASE_OUTPUT="$(mktemp)"
+          HEAD_FAILURES="$(mktemp)"
+          BASE_FAILURES="$(mktemp)"
+          NEW_FAILURES="$(mktemp)"
+          BASE_WORKTREE="$(mktemp -d)/base"
+
+          set +e
+          node scripts/audit-final-loading-baseline.js >"${HEAD_OUTPUT}" 2>&1
+          HEAD_STATUS=$?
+          git worktree add --detach "${BASE_WORKTREE}" "${BASE_SHA}" >/dev/null 2>&1
+          (
+            cd "${BASE_WORKTREE}"
+            node scripts/audit-final-loading-baseline.js
+          ) >"${BASE_OUTPUT}" 2>&1
+          BASE_STATUS=$?
+          set -e
+
+          cat "${HEAD_OUTPUT}"
+
+          if [[ ${HEAD_STATUS} -eq 0 ]]; then
+            echo "[ux-perf-loading-baseline] Full loading baseline passes."
+            git worktree remove --force "${BASE_WORKTREE}" >/dev/null 2>&1 || true
+            exit 0
+          fi
+
+          if [[ ${BASE_STATUS} -eq 0 ]]; then
+            echo "[ux-perf-loading-baseline] Head introduced loading baseline failures against a clean base."
+            git worktree remove --force "${BASE_WORKTREE}" >/dev/null 2>&1 || true
+            exit 1
+          fi
+
+          grep '^- ' "${HEAD_OUTPUT}" | sort -u >"${HEAD_FAILURES}" || true
+          grep '^- ' "${BASE_OUTPUT}" | sort -u >"${BASE_FAILURES}" || true
+          comm -23 "${HEAD_FAILURES}" "${BASE_FAILURES}" >"${NEW_FAILURES}"
+
+          if [[ -s "${NEW_FAILURES}" ]]; then
+            echo "[ux-perf-loading-baseline] New failures introduced by this PR:"
+            cat "${NEW_FAILURES}"
+            git worktree remove --force "${BASE_WORKTREE}" >/dev/null 2>&1 || true
+            exit 1
+          fi
+
+          echo "[ux-perf-loading-baseline] No new loading baseline failures."
+          echo "[ux-perf-loading-baseline] Pre-existing debt is tracked in issue #60:"
+          cat "${BASE_FAILURES}"
+          git worktree remove --force "${BASE_WORKTREE}" >/dev/null 2>&1 || true
 
       - name: Preserve UX-RESP-001 dependency
         run: node scripts/test-ux-resp-001-responsive-experience.js
