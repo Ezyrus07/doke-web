@@ -1,0 +1,75 @@
+name: COM-A05 Package Apply Temporary
+
+on:
+  pull_request:
+    paths:
+      - '.github/com-a05-package.b64'
+      - '.github/workflows/com-a05-package-apply-temporary.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'com/com-001-baseline-audit'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+      - name: Apply validated package
+        shell: bash
+        run: |
+          set -euo pipefail
+          package='.github/com-a05-package.b64'
+          if [ ! -f "$package" ]; then
+            echo 'Package already consumed.'
+            exit 0
+          fi
+          base64 -d "$package" > /tmp/com-a05.tgz
+          mapfile -t actual < <(tar -tzf /tmp/com-a05.tgz | sort)
+          expected=(
+            'backend/modules/communities/community-moderation-media-contract.js'
+            'config/com-a05-moderation-appeal-media-readiness.json'
+            'docs/COM-A05-MODERATION-APPEAL-MEDIA-READINESS.md'
+            'scripts/audit-com-a05-moderation-appeal-media-readiness.js'
+            'scripts/test-com-a05-moderation-appeal-media-readiness.js'
+            'tests/fixtures/com-a05-moderation-media-cases.json'
+          )
+          mapfile -t expected_sorted < <(printf '%s\n' "${expected[@]}" | sort)
+          if [ "${actual[*]}" != "${expected_sorted[*]}" ]; then
+            printf 'Unexpected package contents:\n%s\n' "${actual[*]}" >&2
+            exit 1
+          fi
+          tar -xzf /tmp/com-a05.tgz
+          node --check backend/modules/communities/community-moderation-media-contract.js
+          node --check scripts/audit-com-a05-moderation-appeal-media-readiness.js
+          node --check scripts/test-com-a05-moderation-appeal-media-readiness.js
+          node scripts/audit-com-a05-moderation-appeal-media-readiness.js
+          node scripts/test-com-a05-moderation-appeal-media-readiness.js
+          node scripts/audit-com-a04-content-realtime-rate-limit.js
+          node scripts/test-com-a04-content-realtime-rate-limit.js
+          node scripts/audit-com-a03-governance-discipline-ledger.js
+          node scripts/test-com-a03-governance-discipline-ledger.js
+          node scripts/audit-com-a02-canonical-discovery-membership.js
+          node scripts/test-com-a02-canonical-discovery-membership.js
+          node scripts/audit-com-a01-authority-baseline.js
+          node scripts/test-com-a01-authority-baseline.js
+          node scripts/audit-rep-a05-rehire-transaction-readiness.js
+          node scripts/test-rep-a05-rehire-transaction-readiness.js
+          git config user.name 'doke-contract-bot'
+          git config user.email 'doke-contract-bot@users.noreply.github.com'
+          git add backend/modules/communities/community-moderation-media-contract.js
+          git add config/com-a05-moderation-appeal-media-readiness.json
+          git add docs/COM-A05-MODERATION-APPEAL-MEDIA-READINESS.md
+          git add scripts/audit-com-a05-moderation-appeal-media-readiness.js
+          git add scripts/test-com-a05-moderation-appeal-media-readiness.js
+          git add tests/fixtures/com-a05-moderation-media-cases.json
+          git rm "$package"
+          git diff --cached --check
+          git commit -m 'feat(com): add COM-A05 moderation appeal media readiness'
+          git push origin "HEAD:${{ github.event.pull_request.head.ref }}"
