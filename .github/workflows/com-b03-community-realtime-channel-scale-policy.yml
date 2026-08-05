@@ -8,8 +8,13 @@ on:
       - 'tests/fixtures/com-b03-community-realtime-channel-cases.json'
       - 'scripts/test-com-b03-community-realtime-channel-scale-policy.js'
       - 'scripts/audit-com-b03-community-realtime-channel-scale-policy.js'
+      - 'scripts/audit-com-b03-domain-matrix-reconciliation.js'
       - 'docs/COM-B03-COMMUNITY-REALTIME-CHANNEL-SCALE-POLICY.md'
       - 'docs/validation/COM-B03-COMMUNITY-REALTIME-CHANNEL-SCALE-POLICY.json'
+      - 'package.json'
+      - 'config/domain-completion-matrix.json'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
       - '.github/workflows/com-b03-community-realtime-channel-scale-policy.yml'
 
 permissions:
@@ -31,10 +36,15 @@ jobs:
           node --check backend/modules/communities/community-realtime-channel-scale-policy.js
           node --check scripts/test-com-b03-community-realtime-channel-scale-policy.js
           node --check scripts/audit-com-b03-community-realtime-channel-scale-policy.js
+          node --check scripts/audit-com-b03-domain-matrix-reconciliation.js
       - name: Audit COM-B03
         run: node scripts/audit-com-b03-community-realtime-channel-scale-policy.js
       - name: Conformance COM-B03
         run: node scripts/test-com-b03-community-realtime-channel-scale-policy.js
+      - name: Audit COM-B03 domain matrix reconciliation
+        run: node scripts/audit-com-b03-domain-matrix-reconciliation.js
+      - name: Audit canonical domain matrix drift
+        run: npm run audit:domain-completion-matrix
       - name: COM-A04 predecessor regression
         run: |
           node scripts/audit-com-a04-content-realtime-rate-limit.js
