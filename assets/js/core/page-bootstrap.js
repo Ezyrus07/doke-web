@@ -7,6 +7,7 @@
   var bootstrapScriptUrl = document.currentScript && document.currentScript.src || '';
   var OVERLAY_EXPERIENCE_VERSION = '20260804-ux-nav-001-v1';
   var ACCESSIBILITY_EXPERIENCE_VERSION = '20260804-ux-a11y-001-v1';
+  var RESPONSIVE_EXPERIENCE_VERSION = '20260804-ux-resp-001-v1';
 
   function pageName() {
     return (root.location.pathname.split('/').pop() || 'index.html').replace('.html', '') || 'index';
@@ -176,6 +177,17 @@
     return Doke.accessibilityExperience || null;
   }
 
+  async function ensureResponsiveExperience() {
+    ensureStyle('assets/css/core/responsive-experience.css', 'responsive-experience-style');
+    await loadCoreScript('responsive-experience.js', function () {
+      return Boolean(
+        Doke.responsiveExperience
+        && Doke.responsiveExperience.version === RESPONSIVE_EXPERIENCE_VERSION
+      );
+    });
+    return Doke.responsiveExperience || null;
+  }
+
   function failClosedAuthGuard(error) {
     var html = document.documentElement;
     var protectedSurface = html.hasAttribute('data-auth-guard');
@@ -218,6 +230,12 @@
       console.warn && console.warn('[Doke] Accessibility experience indisponível; semântica nativa será preservada.', error);
     }
 
+    try {
+      await ensureResponsiveExperience();
+    } catch (error) {
+      console.warn && console.warn('[Doke] Responsive experience indisponível; CSS e guards legados permanecerão ativos.', error);
+    }
+
     applyPermissionHooks();
     if (Doke.state) Doke.state.set('bootstrapped', true);
     document.documentElement.classList.add('doke-app-ready');
@@ -227,7 +245,8 @@
         sessionAuthorityReady: Boolean(auth.sessionAuthority),
         passwordAuthorityReady: Boolean(auth.passwordAuthority),
         overlayExperienceReady: Boolean(Doke.overlayExperience),
-        accessibilityExperienceReady: Boolean(Doke.accessibilityExperience)
+        accessibilityExperienceReady: Boolean(Doke.accessibilityExperience),
+        responsiveExperienceReady: Boolean(Doke.responsiveExperience)
       }
     }));
   }
@@ -238,7 +257,8 @@
     ensureAuthSessionAuthority: ensureAuthSessionAuthority,
     ensureSettingsPasswordAuthority: ensureSettingsPasswordAuthority,
     ensureOverlayExperience: ensureOverlayExperience,
-    ensureAccessibilityExperience: ensureAccessibilityExperience
+    ensureAccessibilityExperience: ensureAccessibilityExperience,
+    ensureResponsiveExperience: ensureResponsiveExperience
   });
 
   if (document.readyState === 'loading') {
