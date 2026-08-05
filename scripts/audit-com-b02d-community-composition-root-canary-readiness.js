@@ -12,6 +12,7 @@ const files = {
   fixtures: 'tests/fixtures/com-b02d-community-composition-root-cases.json',
   test: 'scripts/test-com-b02d-community-composition-root-canary-readiness.js',
   docs: 'docs/COM-B02D-COMMUNITY-COMPOSITION-ROOT-CANARY-READINESS.md',
+  evidence: 'docs/validation/COM-B02D-COMMUNITY-COMPOSITION-ROOT-CANARY-READINESS.json',
   workflow: '.github/workflows/com-b02d-community-composition-root-canary-readiness.yml',
   runtime: 'backend/runtime/staging/staging-api-runtime.js',
   routes: 'backend/shared/http/route-registry.js',
@@ -32,6 +33,7 @@ const source = read('module');
 const config = JSON.parse(read('config'));
 const fixtures = JSON.parse(read('fixtures'));
 const docs = read('docs');
+const evidence = JSON.parse(read('evidence'));
 const workflow = read('workflow');
 const runtime = read('runtime');
 const routes = read('routes');
@@ -89,14 +91,37 @@ check(docs.includes('não representa autorização recebida'), 'docs no implied 
 check(!runtime.includes('community-composition-root'), 'main runtime unchanged');
 check(!routes.includes("module: 'communities'"), 'no community route');
 check(!loader.includes("require('../../modules/communities"), 'loader unchanged');
+
 equal(predecessor.status, 'staging_migration_applied_and_structurally_verified', 'predecessor success');
 equal(predecessor.migration.successfulApplications, 1, 'predecessor migration applied');
 equal(predecessor.verification.domainRowsCreated, 0, 'predecessor zero rows');
 equal(predecessor.remainingAuthority.stagingMutationAuthority, false, 'predecessor mutation authority closed');
+
+equal(evidence.validationId, 'COM-B02D-COMMUNITY-COMPOSITION-ROOT-CANARY-READINESS', 'evidence id');
+equal(evidence.contractId, expectedContract, 'evidence contract');
+equal(evidence.status, 'repository_readiness_certified_canary_authorization_required', 'evidence status');
+equal(evidence.certification.result, 'success', 'evidence result');
+equal(evidence.certification.auditPassed, 90, 'evidence audit passed');
+equal(evidence.certification.auditTotal, 90, 'evidence audit total');
+equal(evidence.certification.conformancePassed, 17, 'evidence conformance passed');
+equal(evidence.certification.conformanceTotal, 17, 'evidence conformance total');
+equal(evidence.compositionRoot.connectedToMainRuntime, false, 'evidence runtime disconnected');
+equal(evidence.compositionRoot.routeRegistered, false, 'evidence route absent');
+equal(evidence.compositionRoot.mutatingRpcExposed, false, 'evidence mutation absent');
+equal(evidence.canary.authorizationReceived, false, 'evidence authorization absent');
+equal(evidence.canary.executionAttempted, false, 'evidence canary not attempted');
+equal(evidence.effects.networkRequestExecuted, false, 'evidence no network');
+equal(evidence.effects.databaseReadExecuted, false, 'evidence no database read');
+equal(evidence.effects.databaseMutationExecuted, false, 'evidence no database mutation');
+equal(evidence.remainingAuthority.stagingReadAuthority, false, 'evidence read authority false');
+equal(evidence.remainingAuthority.stagingMutationAuthority, false, 'evidence mutation authority false');
+equal(evidence.remainingAuthority.productionAuthority, false, 'evidence production false');
+
 check(workflow.includes('permissions:\n  contents: read'), 'workflow read-only');
 check(workflow.includes('Audit COM-B02D'), 'audit step');
 check(workflow.includes('Conformance COM-B02D'), 'conformance step');
 check(workflow.includes('COM-B02C predecessor regression'), 'predecessor regression');
+check(workflow.includes('docs/validation/COM-B02D-COMMUNITY-COMPOSITION-ROOT-CANARY-READINESS.json'), 'evidence path watched');
 check(!workflow.includes('workflow_dispatch'), 'no dispatch');
 check(!workflow.includes('secrets.'), 'no secrets');
 check(!workflow.includes('supabase '), 'no supabase command');
