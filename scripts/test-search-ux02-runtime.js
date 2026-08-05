@@ -38,7 +38,7 @@ assert(
 );
 assert(
   card.includes('function initialFavoriteState(serviceId)') &&
-    card.includes("favoriteState.active ? ' is-active' : ''") &&
+    card.includes("favoriteState.active ? ' is-active' : '')") &&
     card.includes("favorite.setAttribute('aria-pressed', String(favoriteState.active))"),
   'Cards must paint the known canonical favorite state before hydration.'
 );
@@ -224,6 +224,8 @@ async function validateFallbackRuntime() {
       querySelector(selector) {
         return selector.startsWith('link[') ? {} : null;
       },
+      addEventListener() {},
+      removeEventListener() {},
       dispatchEvent(event) { renderedEvents.push(event); }
     },
     CustomEvent: class CustomEvent {
@@ -239,6 +241,8 @@ async function validateFallbackRuntime() {
     Boolean,
     Array,
     URL,
+    URLSearchParams,
+    AbortController,
     Error
   };
   sandbox.window.window = sandbox.window;
