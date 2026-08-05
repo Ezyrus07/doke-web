@@ -1,0 +1,57 @@
+name: COM-B02 Server Authority Contract
+
+on:
+  pull_request:
+    paths:
+      - 'backend/modules/communities/community-server-authority-contract.js'
+      - 'config/com-b02-server-authority-contract.json'
+      - 'docs/COM-B02-SERVER-AUTHORITY-CONTRACT.md'
+      - 'scripts/audit-com-b02-server-authority-contract.js'
+      - 'scripts/test-com-b02-server-authority-contract.js'
+      - '.github/workflows/com-b02-server-authority-contract.yml'
+      - 'backend/modules/communities/community-policy-operational-integration-gate.js'
+      - 'config/com-b01-policy-operational-integration-gate.json'
+      - 'backend/modules/communities/community-moderation-media-contract.js'
+      - 'config/com-a05-moderation-appeal-media-readiness.json'
+
+permissions:
+  contents: read
+
+jobs:
+  com-b02-server-authority-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Syntax
+        run: |
+          node --check backend/modules/communities/community-server-authority-contract.js
+          node --check scripts/audit-com-b02-server-authority-contract.js
+          node --check scripts/test-com-b02-server-authority-contract.js
+      - name: Audit COM-B02
+        run: node scripts/audit-com-b02-server-authority-contract.js
+      - name: Conformance COM-B02
+        run: node scripts/test-com-b02-server-authority-contract.js
+      - name: COM-B01 predecessor regression
+        run: |
+          node scripts/audit-com-b01-policy-operational-integration-gate.js
+          node scripts/test-com-b01-policy-operational-integration-gate.js
+      - name: COM-A05 regression
+        run: |
+          node scripts/audit-com-a05-moderation-appeal-media-readiness.js
+          node scripts/test-com-a05-moderation-appeal-media-readiness.js
+      - name: COM-A03 regression
+        run: |
+          node scripts/audit-com-a03-governance-discipline-ledger.js
+          node scripts/test-com-a03-governance-discipline-ledger.js
+      - name: COM-A02 regression
+        run: |
+          node scripts/audit-com-a02-canonical-discovery-membership.js
+          node scripts/test-com-a02-canonical-discovery-membership.js
+      - name: Diff hygiene
+        run: git diff --check
