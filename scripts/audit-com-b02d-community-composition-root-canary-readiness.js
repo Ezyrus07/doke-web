@@ -89,8 +89,10 @@ check(docs.includes('não representa autorização recebida'), 'docs no implied 
 check(!runtime.includes('community-composition-root'), 'main runtime unchanged');
 check(!routes.includes("module: 'communities'"), 'no community route');
 check(!loader.includes("require('../../modules/communities"), 'loader unchanged');
-equal(predecessor.result, 'success', 'predecessor success');
-equal(predecessor.migration.applied, true, 'predecessor migration applied');
+equal(predecessor.status, 'staging_migration_applied_and_structurally_verified', 'predecessor success');
+equal(predecessor.migration.successfulApplications, 1, 'predecessor migration applied');
+equal(predecessor.verification.domainRowsCreated, 0, 'predecessor zero rows');
+equal(predecessor.remainingAuthority.stagingMutationAuthority, false, 'predecessor mutation authority closed');
 check(workflow.includes('permissions:\n  contents: read'), 'workflow read-only');
 check(workflow.includes('Audit COM-B02D'), 'audit step');
 check(workflow.includes('Conformance COM-B02D'), 'conformance step');
