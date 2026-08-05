@@ -418,7 +418,6 @@ window.DokeSearchData = (() => {
     'online',
     'availableToday'
   ]);
-  var installation = null;
 
   function cleanText(value) {
     return String(value == null ? '' : value).trim();
@@ -1172,10 +1171,18 @@ window.DokeSearchData = (() => {
       });
     }, { once: true, signal: signal });
 
-    if (root.document.readyState === 'loading') {
-      root.document.addEventListener('DOMContentLoaded', arm, { once: true, signal: signal });
-    } else {
+    function scheduleArm() {
+      if (typeof root.setTimeout === 'function') {
+        root.setTimeout(arm, 0);
+        return;
+      }
       defer(arm);
+    }
+
+    if (root.document.readyState === 'loading') {
+      root.document.addEventListener('DOMContentLoaded', scheduleArm, { once: true, signal: signal });
+    } else {
+      scheduleArm();
     }
 
     return Object.freeze({
@@ -1214,7 +1221,8 @@ window.DokeSearchData = (() => {
   });
 
   Doke.searchFilterState = api;
-  if (installation && installation.cleanup) installation.cleanup();
-  installation = install();
-  Doke.searchFilterStateInstallation = installation;
+  if (Doke.searchFilterStateInstallation && Doke.searchFilterStateInstallation.cleanup) {
+    Doke.searchFilterStateInstallation.cleanup();
+  }
+  Doke.searchFilterStateInstallation = install();
 }());
