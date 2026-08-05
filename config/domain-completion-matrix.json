@@ -1,6 +1,6 @@
 {
-  "version": "1.3.106",
-  "updatedAt": "2026-08-05T19:52:00-03:00",
+  "version": "1.3.107",
+  "updatedAt": "2026-08-05T20:38:00-03:00",
   "title": "Doke Domain Completion Matrix",
   "purpose": "Single source of truth for domain maturity, data authority, staging evidence, blockers, dependencies and mandatory completion order.",
   "maturityScale": {
@@ -2710,7 +2710,15 @@
         "config/com-b03-realtime-channel-scale-policy.json",
         "scripts/test-com-b03-community-realtime-channel-scale-policy.js",
         "scripts/audit-com-b03-community-realtime-channel-scale-policy.js",
-        "docs/validation/COM-B03-COMMUNITY-REALTIME-CHANNEL-SCALE-POLICY.json"
+        "docs/validation/COM-B03-COMMUNITY-REALTIME-CHANNEL-SCALE-POLICY.json",
+        "backend/modules/communities/community-moderation-case-authority.js",
+        "config/com-b04-moderation-case-authority.json",
+        "tests/fixtures/com-b04-moderation-case-cases.json",
+        "scripts/test-com-b04-moderation-case-authority.js",
+        "scripts/audit-com-b04-moderation-case-authority.js",
+        "scripts/audit-com-b04-domain-matrix-reconciliation.js",
+        "docs/COM-B04-MODERATION-CASE-AUTHORITY.md",
+        "docs/validation/COM-B04-MODERATION-CASE-AUTHORITY.json"
       ],
       "scanRoots": [
         "assets/js/features/community",
@@ -2732,7 +2740,9 @@
         "test:community-domain-transactions",
         "test:community-member-discipline-runtime-contract",
         "audit:com-b03-community-realtime-channel-scale-policy",
-        "test:com-b03-community-realtime-channel-scale-policy"
+        "test:com-b03-community-realtime-channel-scale-policy",
+        "audit:com-b04-moderation-case-authority",
+        "test:com-b04-moderation-case-authority"
       ],
       "evidence": [
         "Rich local community logic and local runtime domain contracts exist.",
@@ -2741,7 +2751,9 @@
         "The communities backend now has a server-authority contract, Supabase repository adapter and private persistence foundation applied and structurally verified in staging.",
         "An authenticated read-only composition-root canary passed against staging with an existing aal1 session, rollback and unchanged 0/0/0 domain row counts.",
         "COM-B03 scalable realtime channel policy is repository-certified with bounded leases, privacy gates, channel caps, event deduplication, backpressure, resume cursors and deterministic reconnect.",
-        "No community Realtime publication, authenticated subscription, route or runtime integration is active yet."
+        "No community Realtime publication, authenticated subscription, route or runtime integration is active yet.",
+        "COM-B04 canonical moderation case authority is repository-certified with revision-bound evidence, dual control, bounded sanctions, independent appeals, authenticated scan attestations and serializable transaction plans.",
+        "No moderation case persistence, sanction executor, appeal queue, media disposition runtime, migration or staging mutation is active yet."
       ],
       "blockers": [
         {
@@ -2761,15 +2773,15 @@
         {
           "id": "COM-B04",
           "severity": "high",
-          "category": "moderation",
-          "description": "Content reports, sanctions, appeals and media moderation are incomplete.",
+          "category": "moderation_persistence_activation",
+          "description": "Canonical moderation case authority is repository-certified, but immutable persistence, migration, runtime integration and staging validation are not active.",
           "targetPhase": "Fase 12"
         }
       ],
       "nextActions": [
         "Integrate the certified server-authority repository into the main runtime for invitations, join requests, roles, bans and content commands.",
         "Prepare scoped Realtime publication and an authenticated subscription canary under separate explicit staging authorization.",
-        "Complete content reports, sanctions and media moderation."
+        "Prepare immutable moderation case persistence and migration readiness under COM-B04B; any staging application requires separate explicit authorization."
       ],
       "exitCriteria": [
         "Community state survives device changes and refreshes.",

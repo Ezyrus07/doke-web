@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 1256 arquivos no escopo; 298 referências a localStorage; 81 a sessionStorage; 595 referências mock; 249 referências de rede/Supabase; 37 marcadores de implementação pendente.
+**Evidência estática observada:** 1260 arquivos no escopo; 298 referências a localStorage; 81 a sessionStorage; 595 referências mock; 254 referências de rede/Supabase; 38 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -539,7 +539,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI local; servidor partial; staging staging canary; segurança partial; produção blocked.
 
-**Evidência estática observada:** 1167 arquivos no escopo; 221 referências a localStorage; 73 a sessionStorage; 331 referências mock; 247 referências de rede/Supabase; 19 marcadores de implementação pendente.
+**Evidência estática observada:** 1170 arquivos no escopo; 221 referências a localStorage; 73 a sessionStorage; 331 referências mock; 252 referências de rede/Supabase; 19 marcadores de implementação pendente.
 
 **Páginas:** `anunciar-servico.html`, `pedidos.html`, `orcamento.html`.
 
@@ -880,7 +880,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI hybrid; servidor partial; staging staging canary; segurança partial; produção blocked.
 
-**Evidência estática observada:** 16 arquivos no escopo; 56 referências a localStorage; 24 a sessionStorage; 4 referências mock; 12 referências de rede/Supabase; 0 marcadores de implementação pendente.
+**Evidência estática observada:** 17 arquivos no escopo; 56 referências a localStorage; 24 a sessionStorage; 4 referências mock; 12 referências de rede/Supabase; 0 marcadores de implementação pendente.
 
 **Páginas:** `comunidade.html`, `comunidade-interna.html`.
 
@@ -894,16 +894,18 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - An authenticated read-only composition-root canary passed against staging with an existing aal1 session, rollback and unchanged 0/0/0 domain row counts.
 - COM-B03 scalable realtime channel policy is repository-certified with bounded leases, privacy gates, channel caps, event deduplication, backpressure, resume cursors and deterministic reconnect.
 - No community Realtime publication, authenticated subscription, route or runtime integration is active yet.
+- COM-B04 canonical moderation case authority is repository-certified with revision-bound evidence, dual control, bounded sanctions, independent appeals, authenticated scan attestations and serializable transaction plans.
+- No moderation case persistence, sanction executor, appeal queue, media disposition runtime, migration or staging mutation is active yet.
 
 **Bloqueadores:**
 - **COM-B02 · CRITICAL · server_runtime_activation:** Server-authority contracts, persistence foundation and a read-only canary are certified, but membership, roles, invitations, bans and content commands are not integrated into the canonical runtime. _(Fase 11)_
 - **COM-B03 · HIGH · realtime_activation:** Scalable channel policy is repository-certified, but no community Realtime publication or authenticated subscription is active. _(Fase 11)_
-- **COM-B04 · HIGH · moderation:** Content reports, sanctions, appeals and media moderation are incomplete. _(Fase 12)_
+- **COM-B04 · HIGH · moderation_persistence_activation:** Canonical moderation case authority is repository-certified, but immutable persistence, migration, runtime integration and staging validation are not active. _(Fase 12)_
 
 **Próximas ações:**
 - Integrate the certified server-authority repository into the main runtime for invitations, join requests, roles, bans and content commands.
 - Prepare scoped Realtime publication and an authenticated subscription canary under separate explicit staging authorization.
-- Complete content reports, sanctions and media moderation.
+- Prepare immutable moderation case persistence and migration readiness under COM-B04B; any staging application requires separate explicit authorization.
 
 **Gate de saída:**
 - Community state survives device changes and refreshes.
@@ -1051,7 +1053,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 1/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 296 arquivos no escopo; 79 referências a localStorage; 8 a sessionStorage; 277 referências mock; 9 referências de rede/Supabase; 27 marcadores de implementação pendente.
+**Evidência estática observada:** 297 arquivos no escopo; 79 referências a localStorage; 8 a sessionStorage; 277 referências mock; 9 referências de rede/Supabase; 28 marcadores de implementação pendente.
 
 **Evidências:**
 - The master plan identifies legal, privacy and commercial decisions as mandatory.
@@ -1111,7 +1113,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2735 arquivos no escopo; 567 referências a localStorage; 154 a sessionStorage; 926 referências mock; 669 referências de rede/Supabase; 91 marcadores de implementação pendente.
+**Evidência estática observada:** 2742 arquivos no escopo; 567 referências a localStorage; 154 a sessionStorage; 926 referências mock; 674 referências de rede/Supabase; 92 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
@@ -1172,4 +1174,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-08-05T19:52:00-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-08-05T20:38:00-03:00._
