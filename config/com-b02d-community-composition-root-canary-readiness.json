@@ -1,0 +1,65 @@
+{
+  "contractId": "com-b02d-community-composition-root-canary-readiness-v1",
+  "domain": "COM-001",
+  "dependsOn": [
+    "com-b02c-staging-migration-application-authorization-v1"
+  ],
+  "scope": "repository_only",
+  "status": "composition_root_prepared_canary_authorization_required",
+  "stagingFoundation": {
+    "projectName": "doke-web-staging",
+    "projectId": "zwkczgewzbsorbrjuzpb",
+    "migrationVersion": "20260805153539",
+    "migrationApplied": true,
+    "structuralVerificationPassed": true
+  },
+  "compositionRoot": {
+    "repositoryPath": "backend/runtime/staging/community-composition-root.js",
+    "prepared": true,
+    "connectedToMainRuntime": false,
+    "routeRegistered": false,
+    "serviceRoleClientInjectedOnly": true,
+    "readOnlyRpcAllowlist": [
+      "com_load_canonical_state_v1"
+    ],
+    "mutatingRpcExposed": false
+  },
+  "canary": {
+    "requiredPhrase": "I_EXPLICITLY_AUTHORIZE_COM_B02D_AUTHENTICATED_READ_ONLY_CANARY_ON_DOKE_STAGING",
+    "authorizationReceived": false,
+    "authorizationConsumed": false,
+    "singleUse": true,
+    "reusableAfterFailure": false,
+    "executionAttempted": false,
+    "successfulExecutions": 0,
+    "failedExecutions": 0,
+    "actorSource": "server_verified_authenticated_session",
+    "targetCommunityId": "00000000-0000-4000-8000-0000000000d2",
+    "expectedResult": "null_or_canonical_state",
+    "readOnly": true,
+    "mutationAllowed": false
+  },
+  "authority": {
+    "compositionRootContractAuthority": true,
+    "authenticatedCanaryAuthority": false,
+    "stagingReadAuthority": false,
+    "stagingMutationAuthority": false,
+    "runtimeDeploymentAuthority": false,
+    "productionAuthority": false,
+    "pullRequestMergeAuthority": false
+  },
+  "prohibitedEffects": {
+    "networkRequestExecuted": false,
+    "databaseReadExecuted": false,
+    "databaseMutationExecuted": false,
+    "routeRegistered": false,
+    "runtimeDeployed": false,
+    "edgeFunctionDeployed": false,
+    "realCommunityChanged": false,
+    "realMembershipChanged": false,
+    "realRoleChanged": false,
+    "productionChanged": false,
+    "pullRequestMerged": false
+  },
+  "nextAction": "await_exact_explicit_canary_authorization_phrase"
+}
