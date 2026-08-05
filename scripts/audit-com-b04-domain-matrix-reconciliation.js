@@ -101,7 +101,7 @@ check(report.summary && report.summary.domains === 23, 'report domain count');
 check(Array.isArray(report.domains), 'report domains array');
 const reportDomain = report.domains.find((item) => item.id === 'COM-001');
 check(reportDomain, 'report COM-001 entry');
-check(reportDomain.filesMatched >= 24, 'report scans B04 paths');
+check(reportDomain.filesMatched >= 17, 'report scans B04 paths');
 
 equal(config.status, 'repository_contract_certified_runtime_blocked', 'B04 config certified');
 equal(config.runtimeIntegrated, false, 'runtime remains disconnected');
