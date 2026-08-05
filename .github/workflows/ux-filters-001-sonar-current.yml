@@ -14,15 +14,38 @@ jobs:
   inspect:
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
     steps:
-      - name: Fetch current Sonar findings
+      - name: Fetch authenticated Sonar compute status
         shell: bash
         run: |
           set -euo pipefail
-          curl --fail --silent --show-error --get \
-            --data-urlencode 'componentKeys=Ezyrus07_doke-web' \
-            --data-urlencode 'pullRequest=70' \
-            --data-urlencode 'resolved=false' \
+          if [[ -z "${SONAR_TOKEN:-}" ]]; then
+            echo 'SONAR_TOKEN is not configured for this workflow.'
+            exit 1
+          fi
+
+          ACTIVITY="$(curl --fail --silent --show-error \
+            -u "${SONAR_TOKEN}:" \
+            --get \
+            --data-urlencode 'component=Ezyrus07_doke-web' \
             --data-urlencode 'ps=100' \
-            'https://sonarcloud.io/api/issues/search' \
-            | jq -r '.issues[] | [.type, .severity, .rule, .component, (.line // .textRange.startLine // 0), .message, (.creationDate // ""), (.updateDate // "")] | @tsv'
+            'https://sonarcloud.io/api/ce/activity')"
+
+          echo 'Recent PR #70 tasks:'
+          echo "${ACTIVITY}" | jq -r '.tasks[] | select(.pullRequest == "70") | [.id, .status, .submittedAt, (.executedAt // ""), (.executionTimeMs // 0), (.errorMessage // "")] | @tsv'
+
+          TASK_ID="$(echo "${ACTIVITY}" | jq -r '[.tasks[] | select(.pullRequest == "70")][0].id // empty')"
+          if [[ -z "${TASK_ID}" ]]; then
+            echo 'No PR #70 compute task found.'
+            exit 1
+          fi
+
+          echo 'Latest task detail:'
+          curl --fail --silent --show-error \
+            -u "${SONAR_TOKEN}:" \
+            --get \
+            --data-urlencode "id=${TASK_ID}" \
+            'https://sonarcloud.io/api/ce/task' \
+            | jq -r '.task | {id,status,errorMessage,errorStacktrace,warningCount,warnings,analysisId,componentKey,pullRequest}'
