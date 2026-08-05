@@ -380,7 +380,7 @@
     return freeze({
       contractVersion: CONTRACT_VERSION,
       fingerprint: cardFingerprint(card, Object.assign({ kind: CARD_KINDS.EDITORIAL }, options)),
-      kind: CARD_KINDS.EDITORORIAL,
+      kind: CARD_KINDS.EDITORIAL,
       surface: token(options.surface, 'editorial'),
       authority: AUTHORITIES.PLATFORM_EDITORIAL,
       identity: normalizeIdentity({}, { identityApplicable: false }),
