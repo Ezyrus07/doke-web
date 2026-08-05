@@ -12,7 +12,8 @@ const files = {
   fixtures: 'tests/fixtures/com-b02d-community-composition-root-cases.json',
   test: 'scripts/test-com-b02d-community-composition-root-canary-readiness.js',
   docs: 'docs/COM-B02D-COMMUNITY-COMPOSITION-ROOT-CANARY-READINESS.md',
-  evidence: 'docs/validation/COM-B02D-COMMUNITY-COMPOSITION-ROOT-CANARY-READINESS.json',
+  initialEvidence: 'docs/validation/COM-B02D-COMMUNITY-COMPOSITION-ROOT-CANARY-READINESS.json',
+  attemptEvidence: 'docs/validation/COM-B02D-AUTHENTICATED-READ-ONLY-CANARY-ATTEMPT-1.json',
   workflow: '.github/workflows/com-b02d-community-composition-root-canary-readiness.yml',
   runtime: 'backend/runtime/staging/staging-api-runtime.js',
   routes: 'backend/shared/http/route-registry.js',
@@ -33,7 +34,8 @@ const source = read('module');
 const config = JSON.parse(read('config'));
 const fixtures = JSON.parse(read('fixtures'));
 const docs = read('docs');
-const evidence = JSON.parse(read('evidence'));
+const initialEvidence = JSON.parse(read('initialEvidence'));
+const attemptEvidence = JSON.parse(read('attemptEvidence'));
 const workflow = read('workflow');
 const runtime = read('runtime');
 const routes = read('routes');
@@ -58,7 +60,7 @@ check(!source.includes('commitEventAndProjection('), 'no event mutation exposure
 const expectedContract = 'com-b02d-community-composition-root-canary-readiness-v1';
 equal(config.contractId, expectedContract, 'config contract');
 equal(config.scope, 'repository_only', 'repository only');
-equal(config.status, 'composition_root_prepared_canary_authorization_required', 'status');
+equal(config.status, 'canary_attempt_1_failed_before_database_access_retry_authorization_required', 'status');
 equal(config.stagingFoundation.projectId, 'zwkczgewzbsorbrjuzpb', 'project frozen');
 equal(config.stagingFoundation.migrationVersion, '20260805153539', 'migration version');
 equal(config.stagingFoundation.migrationApplied, true, 'migration applied');
@@ -68,9 +70,15 @@ equal(config.compositionRoot.connectedToMainRuntime, false, 'not connected');
 equal(config.compositionRoot.routeRegistered, false, 'no route');
 equal(config.compositionRoot.mutatingRpcExposed, false, 'no mutation rpc');
 equal(config.canary.requiredPhrase, phrase, 'phrase frozen');
-equal(config.canary.authorizationReceived, false, 'authorization absent');
-equal(config.canary.authorizationConsumed, false, 'authorization not consumed');
-equal(config.canary.executionAttempted, false, 'execution not attempted');
+equal(config.canary.authorizationReceived, true, 'authorization received');
+equal(config.canary.authorizationConsumed, true, 'authorization consumed');
+equal(config.canary.executionAttempted, true, 'execution attempted');
+equal(config.canary.successfulExecutions, 0, 'zero successes');
+equal(config.canary.failedExecutions, 1, 'one failed attempt');
+equal(config.canary.lastAttemptFailedStage, 'executor_audit', 'failed stage');
+equal(config.canary.lastAttemptReachedDatabase, false, 'database not reached');
+equal(config.canary.retryAuthorizationRequired, true, 'retry authorization required');
+equal(config.canary.nextAttemptNumber, 2, 'next attempt');
 equal(config.canary.readOnly, true, 'read only');
 equal(config.canary.mutationAllowed, false, 'mutation prohibited');
 equal(config.authority.authenticatedCanaryAuthority, false, 'canary authority false');
@@ -79,15 +87,16 @@ equal(config.authority.stagingMutationAuthority, false, 'mutation authority fals
 equal(config.authority.runtimeDeploymentAuthority, false, 'deployment false');
 equal(config.authority.productionAuthority, false, 'production false');
 equal(config.authority.pullRequestMergeAuthority, false, 'merge false');
-for (const value of Object.values(config.prohibitedEffects)) equal(value, false, 'prohibited effect false');
-equal(config.nextAction, 'await_exact_explicit_canary_authorization_phrase', 'next action');
+for (const value of Object.values(config.effects)) equal(value, false, 'effect false');
+equal(config.nextAction, 'await_new_exact_explicit_canary_authorization_for_attempt_2', 'next action');
 
 equal(fixtures.authorizationCases.length, fixtures.expected.authorizationTotal, 'fixture total');
-equal(fixtures.expected.authorized, 1, 'one authorized case');
-equal(fixtures.expected.blocked, 8, 'eight blocked cases');
+equal(fixtures.expected.authorized, 1, 'one authorized evaluator case');
+equal(fixtures.expected.blocked, 8, 'eight blocked evaluator cases');
 check(docs.includes(phrase), 'docs phrase');
 check(docs.includes('connected to main runtime: false'), 'docs disconnected');
-check(docs.includes('não representa autorização recebida'), 'docs no implied auth');
+check(docs.includes('static_auditor_literal_mismatch'), 'docs root cause');
+check(docs.includes('database read executed by canary: false'), 'docs no canary database read');
 check(!runtime.includes('community-composition-root'), 'main runtime unchanged');
 check(!routes.includes("module: 'communities'"), 'no community route');
 check(!loader.includes("require('../../modules/communities"), 'loader unchanged');
@@ -97,31 +106,26 @@ equal(predecessor.migration.successfulApplications, 1, 'predecessor migration ap
 equal(predecessor.verification.domainRowsCreated, 0, 'predecessor zero rows');
 equal(predecessor.remainingAuthority.stagingMutationAuthority, false, 'predecessor mutation authority closed');
 
-equal(evidence.validationId, 'COM-B02D-COMMUNITY-COMPOSITION-ROOT-CANARY-READINESS', 'evidence id');
-equal(evidence.contractId, expectedContract, 'evidence contract');
-equal(evidence.status, 'repository_readiness_certified_canary_authorization_required', 'evidence status');
-equal(evidence.certification.result, 'success', 'evidence result');
-equal(evidence.certification.auditPassed, 90, 'evidence audit passed');
-equal(evidence.certification.auditTotal, 90, 'evidence audit total');
-equal(evidence.certification.conformancePassed, 17, 'evidence conformance passed');
-equal(evidence.certification.conformanceTotal, 17, 'evidence conformance total');
-equal(evidence.compositionRoot.connectedToMainRuntime, false, 'evidence runtime disconnected');
-equal(evidence.compositionRoot.routeRegistered, false, 'evidence route absent');
-equal(evidence.compositionRoot.mutatingRpcExposed, false, 'evidence mutation absent');
-equal(evidence.canary.authorizationReceived, false, 'evidence authorization absent');
-equal(evidence.canary.executionAttempted, false, 'evidence canary not attempted');
-equal(evidence.effects.networkRequestExecuted, false, 'evidence no network');
-equal(evidence.effects.databaseReadExecuted, false, 'evidence no database read');
-equal(evidence.effects.databaseMutationExecuted, false, 'evidence no database mutation');
-equal(evidence.remainingAuthority.stagingReadAuthority, false, 'evidence read authority false');
-equal(evidence.remainingAuthority.stagingMutationAuthority, false, 'evidence mutation authority false');
-equal(evidence.remainingAuthority.productionAuthority, false, 'evidence production false');
+equal(initialEvidence.validationId, 'COM-B02D-COMMUNITY-COMPOSITION-ROOT-CANARY-READINESS', 'initial evidence id');
+equal(initialEvidence.certification.result, 'success', 'initial readiness certification');
+equal(initialEvidence.compositionRoot.connectedToMainRuntime, false, 'initial runtime disconnected');
+equal(initialEvidence.compositionRoot.routeRegistered, false, 'initial route absent');
+equal(initialEvidence.effects.databaseMutationExecuted, false, 'initial no mutation');
+
+equal(attemptEvidence.status, 'failed_closed_before_database_access', 'attempt evidence status');
+equal(attemptEvidence.workflow.runId, 31024711149, 'attempt run');
+equal(attemptEvidence.workflow.executionJobId, 92370362046, 'attempt job');
+equal(attemptEvidence.rootCause.class, 'static_auditor_literal_mismatch', 'attempt root cause');
+equal(attemptEvidence.execution.databaseAccessStarted, false, 'attempt database not reached');
+equal(attemptEvidence.execution.compositionRootInvoked, false, 'attempt root not invoked');
+equal(attemptEvidence.effects.databaseMutationExecuted, false, 'attempt no mutation');
+equal(attemptEvidence.retry.newExplicitAuthorizationRequired, true, 'attempt retry required');
 
 check(workflow.includes('permissions:\n  contents: read'), 'workflow read-only');
 check(workflow.includes('Audit COM-B02D'), 'audit step');
 check(workflow.includes('Conformance COM-B02D'), 'conformance step');
 check(workflow.includes('COM-B02C predecessor regression'), 'predecessor regression');
-check(workflow.includes('docs/validation/COM-B02D-COMMUNITY-COMPOSITION-ROOT-CANARY-READINESS.json'), 'evidence path watched');
+check(workflow.includes('docs/validation/COM-B02D-COMMUNITY-COMPOSITION-ROOT-CANARY-READINESS.json'), 'initial evidence watched');
 check(!workflow.includes('workflow_dispatch'), 'no dispatch');
 check(!workflow.includes('secrets.'), 'no secrets');
 check(!workflow.includes('supabase '), 'no supabase command');
