@@ -35,7 +35,7 @@ const flow = matrix.criticalFlows.find((item) => item.id === 'FLOW-12');
 check(domain, 'COM-001 domain exists');
 check(flow, 'FLOW-12 exists');
 equal(matrix.version, '1.3.107', 'matrix version');
-equal(matrix.updatedAt, '2026-08-05T20:35:00-03:00', 'matrix timestamp');
+equal(matrix.updatedAt, '2026-08-05T20:38:00-03:00', 'matrix timestamp');
 equal(domain.maturity, 3, 'maturity preserved');
 equal(domain.userFacingAuthority, 'hybrid', 'UI authority preserved');
 equal(domain.serverAuthority, 'partial', 'server authority partial');
@@ -90,12 +90,12 @@ check(
 for (const marker of [
   '**COM-B04 · HIGH · moderation_persistence_activation:** Canonical moderation case authority is repository-certified',
   'Prepare immutable moderation case persistence and migration readiness under COM-B04B; any staging application requires separate explicit authorization.',
-  'Baseline: 2026-08-05T20:35:00-03:00.'
+  'Baseline: 2026-08-05T20:38:00-03:00.'
 ]) check(doc.includes(marker), `generated document marker: ${marker}`);
 
 equal(report.name, 'domain-completion-matrix', 'report name');
 equal(report.version, '1.3.107', 'report version');
-equal(report.generatedAt, '2026-08-05T20:35:00-03:00', 'report timestamp');
+equal(report.generatedAt, '2026-08-05T20:38:00-03:00', 'report timestamp');
 equal(report.status, 'passed', 'report status');
 check(report.summary && report.summary.domains === 23, 'report domain count');
 check(Array.isArray(report.domains), 'report domains array');
