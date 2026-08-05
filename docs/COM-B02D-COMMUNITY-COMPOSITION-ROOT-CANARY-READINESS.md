@@ -1,50 +1,64 @@
-# COM-B02D — composition root e readiness do canário autenticado
+# COM-B02D — composition root e canário autenticado read-only
 
-Contrato: `com-b02d-community-composition-root-canary-readiness-v1`
-
-## Objetivo
-
-Preparar a conexão repository-only entre o runtime staging canônico e o adapter Supabase de comunidades. Este sublote não registra rota, não implanta runtime e não executa qualquer leitura remota.
+Contrato: `com-b02d-community-composition-root-canary-readiness-v1`.
 
 ## Composition root
 
-O arquivo `backend/runtime/staging/community-composition-root.js` recebe um cliente `serviceSupabase` já criado pelo runtime. Ele o reduz a um executor com autoridade `server_service_role` e allowlist exclusiva da RPC read-only `com_load_canonical_state_v1`.
+O arquivo `backend/runtime/staging/community-composition-root.js` recebe um cliente `serviceSupabase` por injeção server-side, reduz a superfície à autoridade `server_service_role` e mantém allowlist exclusiva da RPC `com_load_canonical_state_v1`.
 
-O root expõe apenas `probeCanonicalState`. Métodos de idempotência, evento, projeção e qualquer autoridade mutável não são expostos. Ator anônimo, UUID inválido, ator inativo, runtime diferente de staging ou ausência do cliente server-side falham em modo fechado.
+O root expõe somente `probeCanonicalState`. Idempotência, evento, projeção e RPCs mutáveis permanecem inacessíveis. Nenhuma rota foi registrada e o root continua desconectado do runtime principal.
 
-## Estado de integração
+## Tentativa autenticada 1
+
+A autorização explícita foi recebida em 5 de agosto de 2026 e consumida pelo run `31024711149`.
+
+O gate de adição única passou, mas o job foi interrompido na etapa `Audit execution surface`, antes das regressões, da conexão ao banco, da resolução do ator e da invocação do composition root.
+
+Causa raiz:
 
 ```text
-composition root prepared: true
-connected to main runtime: false
-route registered: false
-runtime deployed: false
-network request executed: false
-database read executed: false
-database mutation executed: false
+class: static_auditor_literal_mismatch
+assertion: read-only setting asserted
 ```
 
-## Canário futuro
+O executor contém `current_setting(\'transaction_read_only\')` dentro de uma string JavaScript. O auditor procurava a representação não escapada do literal no código-fonte. Isso foi um falso negativo do auditor, não uma falha do contrato, do Supabase ou das credenciais.
 
-O canário futuro deverá:
+## Efeitos da tentativa 1
 
-1. resolver um usuário por sessão autenticada server-verified;
-2. construir o composition root com o cliente service-role já confinado ao servidor;
-3. consultar o UUID de probe `00000000-0000-4000-8000-0000000000d2`;
-4. aceitar somente `null` ou uma projeção canônica válida;
-5. confirmar que nenhuma tabela foi alterada.
+```text
+authorization consumed: true
+execution attempted: true
+executor audit passed: false
+database connection attempted: false
+database read executed by canary: false
+database mutation executed: false
+composition root invoked: false
+rpc invoked: false
+fixture created: false
+session created: false
+route registered: false
+runtime deployed: false
+production changed: false
+pull request merged: false
+```
 
-A frase exigida é:
+A autorização da tentativa 1 não é reutilizável. Uma segunda tentativa exige nova mensagem explícita com a frase congelada:
 
 ```text
 I_EXPLICITLY_AUTHORIZE_COM_B02D_AUTHENTICATED_READ_ONLY_CANARY_ON_DOKE_STAGING
 ```
 
-A presença da frase neste documento ou no código não representa autorização recebida. A autorização deve ser enviada explicitamente em mensagem posterior e será de uso único.
+A presença da frase neste documento não concede autorização.
 
-## Autoridade atual
+## Estado atual
 
 ```text
+composition root prepared: true
+connected to main runtime: false
+route registered: false
+successful canary executions: 0
+failed canary executions: 1
+retry authorization required: true
 authenticated canary authority: false
 staging read authority: false
 staging mutation authority: false
@@ -52,3 +66,5 @@ runtime deployment authority: false
 production authority: false
 pull request merge authority: false
 ```
+
+Evidência: `docs/validation/COM-B02D-AUTHENTICATED-READ-ONLY-CANARY-ATTEMPT-1.json`.
