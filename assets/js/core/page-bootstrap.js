@@ -8,6 +8,8 @@
   var OVERLAY_EXPERIENCE_VERSION = '20260804-ux-nav-001-v1';
   var ACCESSIBILITY_EXPERIENCE_VERSION = '20260804-ux-a11y-001-v1';
   var RESPONSIVE_EXPERIENCE_VERSION = '20260804-ux-resp-001-v1';
+  var PERFORMANCE_EXPERIENCE_VERSION = '20260804-ux-perf-001-v1';
+  var NEWS_PERFORMANCE_PILOT_VERSION = '20260804-ux-perf-001-news-v1';
 
   function pageName() {
     return (root.location.pathname.split('/').pop() || 'index.html').replace('.html', '') || 'index';
@@ -44,6 +46,10 @@
 
   function coreScriptUrl(fileName) {
     return assetUrl('assets/js/core/' + fileName);
+  }
+
+  function pageScriptUrl(fileName) {
+    return assetUrl('assets/js/pages/' + fileName);
   }
 
   function findScriptByUrl(src) {
@@ -159,6 +165,27 @@
       : null;
   }
 
+  async function ensurePerformanceExperience() {
+    await loadCoreScript('performance-experience.js', function () {
+      return Boolean(
+        Doke.performanceExperience
+        && Doke.performanceExperience.version === PERFORMANCE_EXPERIENCE_VERSION
+      );
+    });
+    return Doke.performanceExperience || null;
+  }
+
+  async function ensurePerformancePilot() {
+    if (pageName() !== 'novidades') return null;
+    await loadScript(pageScriptUrl('news-performance-pilot.js'), function () {
+      return Boolean(
+        Doke.newsPerformancePilot
+        && Doke.newsPerformancePilot.version === NEWS_PERFORMANCE_PILOT_VERSION
+      );
+    }, 'news-performance-pilot');
+    return Doke.newsPerformancePilot || null;
+  }
+
   async function ensureOverlayExperience() {
     await loadCoreScript('overlay-experience.js', function () {
       return Boolean(Doke.overlayExperience && Doke.overlayExperience.version === OVERLAY_EXPERIENCE_VERSION);
@@ -204,6 +231,13 @@
   async function bootstrap() {
     applyPageMetadata();
 
+    var performanceTask = ensurePerformanceExperience()
+      .then(function () { return ensurePerformancePilot(); })
+      .catch(function (error) {
+        console.warn && console.warn('[Doke] Performance experience indisponível; loading legado permanecerá ativo.', error);
+        return null;
+      });
+
     if (!Doke.rolloutGuard || Doke.rolloutGuard.shouldRun('authSessionBootstrap')) {
       if (Doke.session) Doke.session.bootstrap();
     } else {
@@ -236,6 +270,7 @@
       console.warn && console.warn('[Doke] Responsive experience indisponível; CSS e guards legados permanecerão ativos.', error);
     }
 
+    await performanceTask;
     applyPermissionHooks();
     if (Doke.state) Doke.state.set('bootstrapped', true);
     document.documentElement.classList.add('doke-app-ready');
@@ -244,6 +279,8 @@
         authGuardReady: Boolean(auth.guard),
         sessionAuthorityReady: Boolean(auth.sessionAuthority),
         passwordAuthorityReady: Boolean(auth.passwordAuthority),
+        performanceExperienceReady: Boolean(Doke.performanceExperience),
+        performancePilotReady: Boolean(Doke.newsPerformancePilot),
         overlayExperienceReady: Boolean(Doke.overlayExperience),
         accessibilityExperienceReady: Boolean(Doke.accessibilityExperience),
         responsiveExperienceReady: Boolean(Doke.responsiveExperience)
@@ -256,6 +293,8 @@
     ensureAuthRouteGuard: ensureAuthRouteGuard,
     ensureAuthSessionAuthority: ensureAuthSessionAuthority,
     ensureSettingsPasswordAuthority: ensureSettingsPasswordAuthority,
+    ensurePerformanceExperience: ensurePerformanceExperience,
+    ensurePerformancePilot: ensurePerformancePilot,
     ensureOverlayExperience: ensureOverlayExperience,
     ensureAccessibilityExperience: ensureAccessibilityExperience,
     ensureResponsiveExperience: ensureResponsiveExperience
