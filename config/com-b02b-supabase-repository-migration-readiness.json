@@ -1,0 +1,49 @@
+{
+  "contractId": "com-b02b-supabase-repository-migration-readiness-v1",
+  "domain": "COM-001",
+  "dependsOn": [
+    "com-b02-server-authority-contract-v1"
+  ],
+  "scope": "repository_only",
+  "status": "adapter_and_immutable_migration_prepared_not_applied",
+  "adapterPrepared": true,
+  "migrationPrepared": true,
+  "migrationApplied": false,
+  "runtimeIntegrated": false,
+  "stagingValidated": false,
+  "rpcAuthority": "service_role_only",
+  "transactionBoundary": "event_and_projection_atomic",
+  "migrationPath": "supabase/migrations/20260805121500_com_b02b_server_authority.sql",
+  "requiredTables": [
+    "com_private.community_state",
+    "com_private.community_event",
+    "com_private.command_idempotency"
+  ],
+  "requiredRpcs": [
+    "com_load_canonical_state_v1",
+    "com_claim_idempotency_key_v1",
+    "com_commit_event_projection_v1"
+  ],
+  "authority": {
+    "browserRpcAuthority": false,
+    "authenticatedRoleRpcAuthority": false,
+    "serviceRoleRpcAuthorityPrepared": true,
+    "migrationExecutionAuthority": false,
+    "runtimeMutationAuthority": false,
+    "stagingAuthority": false,
+    "productionAuthority": false
+  },
+  "prohibitedEffects": {
+    "networkRequests": false,
+    "databaseConnections": false,
+    "migrationApplied": false,
+    "deployment": false,
+    "credentialsConfigured": false,
+    "realCommunityChanged": false,
+    "realMembershipChanged": false,
+    "realRoleChanged": false,
+    "realUserDataChanged": false,
+    "productionChanges": false
+  },
+  "nextSublot": "COM-B02C migration application authorization and staging structural verification"
+}
