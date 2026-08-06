@@ -123,10 +123,10 @@
       skeletonSelectors: '[data-professional-profile-hydration-skeleton]',
       readySelectors: '[data-professional-profile-hydration-ready]',
       errorSelectors: '[data-state-error]',
-      skeletonMode: 'route-and-document',
+      skeletonMode: 'hard-load',
       readyPolicy: 'after-skeleton',
-      preserveReadyDuringHydration: false,
-      minDuration: 220,
+      preserveReadyDuringHydration: true,
+      minDuration: 0,
       maxDuration: 9000,
       hasItems: function () { return true; },
       onRetry: function () { window.DokeInitProfessionalProfile(); }

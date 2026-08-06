@@ -34,7 +34,7 @@ for (const file of pages) {
 
 const publicProfessional = read('perfil.html');
 requireTerm('perfil.html', publicProfessional, 'data-profile-hydration-ready hidden', 'conteúdo público deve aguardar hidratação');
-requireTerm('perfil.html', publicProfessional, 'assets/js/pages/profile-experience.js?v=20260719-profile-family-v1', 'controller público versionado ausente');
+requireTerm('perfil.html', publicProfessional, 'assets/js/pages/profile-experience.js', 'controller público canônico ausente');
 
 const publicClient = read('perfil-cliente.html');
 requireTerm('perfil-cliente.html', publicClient, 'data-state-scope="perfil-cliente"', 'scope da região de estado deve coincidir com a boundary');
