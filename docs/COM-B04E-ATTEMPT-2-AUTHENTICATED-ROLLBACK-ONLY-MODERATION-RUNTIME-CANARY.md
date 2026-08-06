@@ -6,13 +6,13 @@ Execute the COM-B04D moderation composition against the real COM-B04B staging pe
 
 ## New explicit authority
 
-Attempt 2 was authorized once by the distinct phrase:
+Attempt 2 is authorized once by the distinct phrase:
 
 ```text
 I_EXPLICITLY_AUTHORIZE_COM_B04E_ATTEMPT_2_AUTHENTICATED_ROLLBACK_ONLY_MODERATION_RUNTIME_COMPOSITION_CANARY_ON_DOKE_STAGING
 ```
 
-This authorization was independent from attempt 1, single-use and non-reusable after any workflow attempt. It did not authorize workflow reruns, route registration, runtime deployment, real moderation, production changes or pull-request merge.
+The authorization was consumed successfully by attempt 2. It was independent from attempt 1, single-use and non-reusable after any workflow attempt. It did not authorize workflow reruns, route registration, runtime deployment, real moderation, production changes or pull-request merge.
 
 ## Attempt 1 prerequisite
 
@@ -56,7 +56,7 @@ config/com-b04e-attempt-2-authenticated-rollback-only-moderation-runtime-canary.
 .github/workflows/com-b04e-attempt-2-authenticated-rollback-only-moderation-runtime-canary.yml
 ```
 
-No attempt-1 file was repurposed as the attempt-2 trigger.
+No attempt-1 file is repurposed as the attempt-2 trigger.
 
 ## Runtime boundary
 
@@ -231,7 +231,8 @@ The consumed workflow trigger was archived after success. A rerun or modificatio
 ```text
 staging reads: executed
 synthetic rollback-scoped staging writes: executed
-persistent staging writes: not executed
+persistent staging writes: prohibited
+persistent staging writes executed: false
 new user/session creation: not executed
 route registration: not executed
 runtime deployment: not executed
