@@ -1,0 +1,147 @@
+name: Doke UX-PERF-DEBT-001 Profile Hydration
+
+on:
+  push:
+    branches:
+      - ux/ux-perf-debt-001-profile-hydration
+    paths:
+      - 'assets/js/pages/owner-profile-experience.js'
+      - 'assets/js/pages/client-profile-experience.js'
+      - 'assets/js/pages/professional-profile-experience.js'
+      - 'assets/js/core/page-hydration.js'
+      - 'assets/js/core/stable-shell-router.js'
+      - 'scripts/test-profile-navigation-hydration-contract.js'
+      - 'scripts/test-profile-family-contract.js'
+      - 'scripts/audit-final-loading-baseline.js'
+      - 'scripts/test-shared-page-hydration-contract.js'
+      - 'scripts/audit-navigation-lifecycle-contract.js'
+      - 'docs/ux/UX-PERF-DEBT-001.md'
+      - '.github/workflows/ux-perf-debt-001-profile-hydration.yml'
+      - 'sonar-project.properties'
+  pull_request:
+    paths:
+      - 'assets/js/pages/owner-profile-experience.js'
+      - 'assets/js/pages/client-profile-experience.js'
+      - 'assets/js/pages/professional-profile-experience.js'
+      - 'assets/js/core/page-hydration.js'
+      - 'assets/js/core/stable-shell-router.js'
+      - 'scripts/test-profile-navigation-hydration-contract.js'
+      - 'scripts/test-profile-family-contract.js'
+      - 'scripts/audit-final-loading-baseline.js'
+      - 'scripts/test-shared-page-hydration-contract.js'
+      - 'scripts/audit-navigation-lifecycle-contract.js'
+      - 'docs/ux/UX-PERF-DEBT-001.md'
+      - '.github/workflows/ux-perf-debt-001-profile-hydration.yml'
+      - 'sonar-project.properties'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  ux-perf-debt-001-profile-hydration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+
+      - name: Validate JavaScript syntax
+        run: |
+          node --check assets/js/pages/owner-profile-experience.js
+          node --check assets/js/pages/client-profile-experience.js
+          node --check assets/js/pages/professional-profile-experience.js
+          node --check scripts/test-profile-navigation-hydration-contract.js
+          node --check scripts/test-profile-family-contract.js
+
+      - name: Validate profile hydration behavior
+        run: node scripts/test-profile-navigation-hydration-contract.js
+
+      - name: Validate loading baseline and shared hydration
+        run: |
+          node scripts/audit-final-loading-baseline.js
+          node scripts/test-shared-page-hydration-contract.js
+
+      - name: Preserve profile family and navigation lifecycle
+        run: |
+          node scripts/test-profile-family-contract.js
+          node scripts/audit-navigation-lifecycle-contract.js
+
+      - name: Generate executable LCOV for inherited Sonar configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf coverage/ux-search-debt-001
+          mkdir -p coverage/ux-search-debt-001
+          node --test \
+            --experimental-test-coverage \
+            --test-coverage-include='assets/js/pages/search/server-results-surface.js' \
+            --test-reporter=spec \
+            --test-reporter-destination=stdout \
+            --test-reporter=lcov \
+            --test-reporter-destination=coverage/ux-search-debt-001/lcov.info \
+            scripts/test-ux-search-001-search-experience.js \
+            scripts/test-search-ux02-runtime.js
+
+      - name: Validate LCOV evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          REPORT='coverage/ux-search-debt-001/lcov.info'
+          test -s "${REPORT}"
+          grep -Fq 'SF:assets/js/pages/search/server-results-surface.js' "${REPORT}"
+
+      - name: Require SonarQube Cloud credential
+        if: github.event_name != 'pull_request'
+        shell: bash
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${SONAR_TOKEN}" ]]; then
+            echo '::error::SONAR_TOKEN is unavailable to the trusted branch workflow.'
+            exit 1
+          fi
+
+      - name: Upload LCOV evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ux-perf-debt-001-lcov-${{ github.event_name }}-${{ github.run_id }}
+          path: coverage/ux-search-debt-001/lcov.info
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Validate patch whitespace
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            git diff --check "${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}"
+          else
+            git diff --check HEAD^
+          fi
+
+      - name: Analyze PR and enforce SonarQube Cloud Quality Gate
+        if: github.event_name != 'pull_request'
+        uses: SonarSource/sonarqube-scan-action@c7ee0f9df90b7aa20e8dcf9695dcfe2e7da5b4f2
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.projectKey=Ezyrus07_doke-web
+            -Dsonar.organization=ezyrus07
+            -Dsonar.pullrequest.key=82
+            -Dsonar.pullrequest.branch=ux/ux-perf-debt-001-profile-hydration
+            -Dsonar.pullrequest.base=ux/ux-cards-debt-001-catalog-contract
+            -Dsonar.javascript.lcov.reportPaths=coverage/ux-search-debt-001/lcov.info
+            -Dsonar.qualitygate.wait=true
+            -Dsonar.qualitygate.timeout=600
