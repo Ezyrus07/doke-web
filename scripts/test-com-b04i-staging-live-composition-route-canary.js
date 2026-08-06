@@ -124,7 +124,7 @@ async function main() {
       payload: Object.freeze({
         kind: 'content_report',
         initialEvidenceKind: 'report_statement',
-        initialEvidenceRef: 'opaque://com-b04i/local-test',
+        initialEvidenceRef: 'opaque:com-b04i:local-test',
         initialEvidenceDigest: moderation.sha256('com-b04i-local-test-evidence')
       })
     })
