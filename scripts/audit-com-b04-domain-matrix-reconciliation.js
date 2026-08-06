@@ -21,7 +21,7 @@ const flow = matrix.criticalFlows.find((item) => item.id === 'FLOW-12');
 
 check(domain, 'COM-001 domain exists');
 check(flow, 'FLOW-12 exists');
-check(['1.3.108', '1.3.109', '1.3.110', '1.3.111'].includes(matrix.version), 'matrix version continuity');
+check(['1.3.108', '1.3.109', '1.3.110', '1.3.111', '1.3.112'].includes(matrix.version), 'matrix version continuity');
 equal(domain.maturity, 3, 'maturity preserved');
 equal(domain.userFacingAuthority, 'hybrid', 'UI authority preserved');
 equal(domain.serverAuthority, 'partial', 'server authority partial');
@@ -67,10 +67,14 @@ if (matrix.version === '1.3.108') {
 } else if (matrix.version === '1.3.110') {
   equal(blocker.category, 'moderation_authenticated_staging_canary', 'B04 category at B04D');
   check(domain.nextActions.some((item) => item.includes('COM-B04E')), 'B04E next action');
-} else {
+} else if (matrix.version === '1.3.111') {
   equal(blocker.category, 'moderation_live_composition_activation', 'B04 category at B04G');
   check(domain.evidence.some((item) => item.includes('COM-B04G repository-wired')), 'B04G wiring evidence');
   check(domain.nextActions.some((item) => item.includes('COM-B04H')), 'B04H next action');
+} else {
+  equal(blocker.category, 'moderation_staging_live_activation_authorization', 'B04 category at B04H');
+  check(domain.evidence.some((item) => item.includes('COM-B04H repository-certified')), 'B04H readiness evidence');
+  check(domain.nextActions.some((item) => item.includes('COM-B04I')), 'B04I next action');
 }
 
 equal(report.name, 'domain-completion-matrix', 'report name');
