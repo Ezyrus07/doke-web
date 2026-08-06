@@ -1,5 +1,7 @@
 name: COM-B04I Attempt 2 Staging Live Composition Route Canary
 
+# One-shot activation chain:
+# readiness head baa531e6 -> authorization trigger 541081fa -> registered workflow 51724c58 -> this armed commit.
 on:
   push:
     branches:
@@ -29,7 +31,7 @@ jobs:
           COM_B04I_ATTEMPT_2_AUTHORIZATION: I_EXPLICITLY_AUTHORIZE_COM_B04I_ATTEMPT_2_STAGING_LIVE_COMPOSITION_ACTIVATION_AND_ROLLBACK_ONLY_ROUTE_CANARY
         run: |
           test "${GITHUB_RUN_ATTEMPT}" = "1"
-          test "$(git rev-parse HEAD^)" = "541081fadbc3b478a01215b9bfbb26f7ac2297c3"
+          test "$(git rev-parse HEAD^)" = "51724c58d5a6fca360d1b5ced2c5b41e452b8055"
           workflow='.github/workflows/com-b04i-staging-live-composition-route-canary.yml'
           status="$(git diff-tree --no-commit-id --name-status -r HEAD -- "$workflow")"
           test "$status" = $'M\t'"$workflow"
