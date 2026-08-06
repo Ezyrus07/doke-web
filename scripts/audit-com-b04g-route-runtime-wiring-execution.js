@@ -157,15 +157,23 @@ for (const remote of [
   ok(!b04fWorkflow.includes(remote), `B04F workflow remote marker absent: ${remote}`);
 }
 
-// Lifecycle and evidence are explicit.
-equal(config.status, 'authorization_consumed_repository_wiring_completed_pending_certification', 'config status');
+const supportedStatuses = [
+  'authorization_consumed_repository_wiring_completed_pending_certification',
+  'authorization_consumed_repository_wiring_certified'
+];
+const supportedResults = [
+  'repository_wiring_completed_pending_certification',
+  'repository_wiring_certified'
+];
+const supportedEvidenceResults = ['pending_certification', 'success'];
+ok(supportedStatuses.includes(config.status), 'config lifecycle status');
 equal(config.authorization.received, true, 'authorization received');
 equal(config.authorization.source, 'explicit_user_message', 'authorization source');
 equal(config.authorization.consumed, true, 'authorization consumed');
 equal(config.authorization.executionAttempted, true, 'execution attempted');
 equal(config.authorization.singleExecutionOnly, true, 'single execution');
 equal(config.authorization.workflowRerunAllowedAfterAttempt, false, 'rerun false');
-equal(config.execution.result, 'repository_wiring_completed_pending_certification', 'execution pending certification');
+ok(supportedResults.includes(config.execution.result), 'execution lifecycle result');
 equal(config.currentEffects.routeRegistered, true, 'route registered effect');
 equal(config.currentEffects.communitiesModuleLoaded, true, 'module loaded effect');
 equal(config.currentEffects.runtimeHandlerExported, true, 'handler exported effect');
@@ -185,17 +193,35 @@ equal(evidence.execution.moduleLoaded, true, 'evidence module');
 equal(evidence.execution.handlerExported, true, 'evidence handler');
 equal(evidence.execution.handlerFailureCode, 'COM_B04G_ROUTE_NOT_DEPLOYED_OR_ACTIVATED', 'evidence code');
 equal(evidence.execution.handlerHttpStatus, 503, 'evidence status code');
+ok(supportedEvidenceResults.includes(evidence.execution.result), 'evidence lifecycle result');
 equal(evidence.effects.runtimeActivated, false, 'evidence runtime false');
 equal(evidence.effects.stagingAccessed, false, 'evidence staging false');
 equal(evidence.effects.productionChanged, false, 'evidence production false');
 equal(evidence.effects.pullRequestMerged, false, 'evidence merge false');
 
-// Matrix remains intentionally unpromoted.
-equal(matrix.version, '1.3.110', 'matrix version');
+ok(['1.3.110', '1.3.111'].includes(matrix.version), 'matrix version');
 const com = matrix.domains.find((entry) => entry.id === 'COM-001');
 ok(com, 'COM-001 matrix entry');
 equal(com.maturity, 3, 'COM maturity unchanged');
 equal(com.serverAuthority, 'partial', 'server authority partial');
 equal(com.productionGate, 'blocked', 'production blocked');
+
+if (matrix.version === '1.3.111') {
+  equal(matrix.updatedAt, '2026-08-06T09:36:00-03:00', 'matrix update timestamp');
+  const blocker = com.blockers.find((item) => item.id === 'COM-B04');
+  ok(blocker, 'COM-B04 blocker');
+  equal(blocker.category, 'moderation_live_composition_activation', 'live composition blocker');
+  ok(com.evidence.some((item) => item.includes('COM-B04G repository-wired')), 'matrix B04G evidence');
+  ok(com.nextActions.some((item) => item.includes('COM-B04H')), 'matrix B04H next action');
+}
+
+if (config.status === 'authorization_consumed_repository_wiring_certified') {
+  ok(/^[a-f0-9]{40}$/.test(config.execution.certifiedHead), 'config certified head');
+  ok(Number.isInteger(config.execution.run) && config.execution.run > 0, 'config certified run');
+  ok(Number.isInteger(config.execution.job) && config.execution.job > 0, 'config certified job');
+  equal(evidence.execution.certifiedHead, config.execution.certifiedHead, 'evidence certified head');
+  equal(evidence.execution.run, config.execution.run, 'evidence certified run');
+  equal(evidence.execution.job, config.execution.job, 'evidence certified job');
+}
 
 console.log(`COM-B04G blocked route wiring audit passed: ${checks}/${checks}`);
