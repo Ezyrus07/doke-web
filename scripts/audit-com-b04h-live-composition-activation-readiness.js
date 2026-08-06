@@ -84,8 +84,11 @@ ok(loader.includes("require('../../modules/communities/route-handlers')"), 'modu
 
 for (const remote of [
   'secrets.', 'environment: staging', 'workflow_dispatch', 'curl ', 'psql ',
-  'supabase db', 'supabase functions', 'SUPABASE_SERVICE_ROLE_KEY'
+  'supabase db', 'supabase functions'
 ]) ok(!workflow.includes(remote), `workflow remote marker absent: ${remote}`);
+ok(workflow.includes("! grep -R -F 'SUPABASE_SERVICE_ROLE_KEY'"), 'workflow proves service-role key absence');
+ok(workflow.includes("! grep -R -F 'SUPABASE_ACCESS_TOKEN'"), 'workflow proves access token absence');
+ok(workflow.includes("! grep -R -F 'SUPABASE_DB_PASSWORD'"), 'workflow proves database password absence');
 
 for (const marker of [
   'COM-B04H Live Composition Activation Readiness',
