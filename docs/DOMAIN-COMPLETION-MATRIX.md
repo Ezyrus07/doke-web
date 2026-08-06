@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 1271 arquivos no escopo; 298 referências a localStorage; 81 a sessionStorage; 595 referências mock; 255 referências de rede/Supabase; 38 marcadores de implementação pendente.
+**Evidência estática observada:** 1289 arquivos no escopo; 298 referências a localStorage; 81 a sessionStorage; 595 referências mock; 269 referências de rede/Supabase; 38 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -539,7 +539,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI local; servidor partial; staging staging canary; segurança partial; produção blocked.
 
-**Evidência estática observada:** 1180 arquivos no escopo; 221 referências a localStorage; 73 a sessionStorage; 331 referências mock; 253 referências de rede/Supabase; 19 marcadores de implementação pendente.
+**Evidência estática observada:** 1193 arquivos no escopo; 221 referências a localStorage; 73 a sessionStorage; 331 referências mock; 267 referências de rede/Supabase; 19 marcadores de implementação pendente.
 
 **Páginas:** `anunciar-servico.html`, `pedidos.html`, `orcamento.html`.
 
@@ -880,7 +880,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI hybrid; servidor partial; staging staging canary; segurança partial; produção blocked.
 
-**Evidência estática observada:** 19 arquivos no escopo; 56 referências a localStorage; 24 a sessionStorage; 4 referências mock; 14 referências de rede/Supabase; 0 marcadores de implementação pendente.
+**Evidência estática observada:** 22 arquivos no escopo; 56 referências a localStorage; 24 a sessionStorage; 4 referências mock; 14 referências de rede/Supabase; 0 marcadores de implementação pendente.
 
 **Páginas:** `comunidade.html`, `comunidade-interna.html`.
 
@@ -902,16 +902,20 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - COM-B04D repository-certified the moderation runtime composition boundary with server-verified sessions, canonical context binding, domain-first evaluation and a disabled-by-default atomic repository handoff.
 - For new cases, initial report evidence is materialized into the immutable evidence ledger instead of remaining only in the command payload.
 - Live staging invocation, route registration, real moderation actions and production remain blocked.
+- COM-B04E authenticated a real active staging session and proved the moderation composition-to-persistence handoff inside a SERIALIZABLE rollback-only transaction with zero persistent residue.
+- COM-B04F froze the canonical moderation command route and its security requirements while route registration and runtime loading remained blocked.
+- COM-B04G repository-wired communities.moderation.command into the route registry and module loader with a handler that always fails closed as HTTP 503 COM_B04G_ROUTE_NOT_DEPLOYED_OR_ACTIVATED.
+- Live composition activation, staging deployment, traffic, real moderation actions, production and pull-request merge remain blocked.
 
 **Bloqueadores:**
 - **COM-B02 · CRITICAL · server_runtime_activation:** Server-authority contracts, persistence foundation and a read-only canary are certified, but membership, roles, invitations, bans and content commands are not integrated into the canonical runtime. _(Fase 11)_
 - **COM-B03 · HIGH · realtime_activation:** Scalable channel policy is repository-certified, but no community Realtime publication or authenticated subscription is active. _(Fase 11)_
-- **COM-B04 · HIGH · moderation_authenticated_staging_canary:** Moderation runtime composition is repository-certified and persistence is structurally verified in staging, but authenticated live invocation, route activation and real moderation execution are not active. _(Fase 12)_
+- **COM-B04 · HIGH · moderation_live_composition_activation:** Authenticated rollback-only composition canary passed and repository route/module wiring is certified, but the wired handler remains fail-closed and live composition, deployment, traffic and real moderation are not active. _(Fase 12)_
 
 **Próximas ações:**
 - Integrate the certified server-authority repository into the main runtime for invitations, join requests, roles, bans and content commands.
 - Prepare scoped Realtime publication and an authenticated subscription canary under separate explicit staging authorization.
-- Execute an authenticated rollback-only moderation composition canary in staging under COM-B04E only after separate explicit authorization.
+- Prepare COM-B04H repository-only live composition activation readiness; staging deployment, traffic and real moderation require separate explicit authorization.
 
 **Gate de saída:**
 - Community state survives device changes and refreshes.
@@ -1059,7 +1063,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 1/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 300 arquivos no escopo; 79 referências a localStorage; 8 a sessionStorage; 277 referências mock; 9 referências de rede/Supabase; 28 marcadores de implementação pendente.
+**Evidência estática observada:** 305 arquivos no escopo; 79 referências a localStorage; 8 a sessionStorage; 277 referências mock; 9 referências de rede/Supabase; 28 marcadores de implementação pendente.
 
 **Evidências:**
 - The master plan identifies legal, privacy and commercial decisions as mandatory.
@@ -1119,7 +1123,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2760 arquivos no escopo; 567 referências a localStorage; 154 a sessionStorage; 926 referências mock; 677 referências de rede/Supabase; 92 marcadores de implementação pendente.
+**Evidência estática observada:** 2787 arquivos no escopo; 567 referências a localStorage; 154 a sessionStorage; 926 referências mock; 691 referências de rede/Supabase; 92 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
@@ -1180,4 +1184,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-08-05T22:17:00-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-08-06T09:36:00-03:00._
