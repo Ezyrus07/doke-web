@@ -47,11 +47,26 @@ equal(config.runtime.adapterIntegrated, false, 'runtime');
 equal(config.effects.productionChanged, false, 'production');
 equal(config.effects.pullRequestMerged, false, 'merge');
 for (const value of Object.values(config.remainingAuthority)) equal(value, false, 'authority');
+
+equal(config.canonicalMatrix.version, '1.3.109', 'matrix version');
+equal(config.canonicalMatrix.commit, '5500c37f6d54c50b7d799c5d18860ced157a0a67', 'matrix commit');
+equal(config.canonicalMatrix.syncRun, 31061884873, 'matrix run');
+equal(config.canonicalMatrix.syncJob, 92491362136, 'matrix job');
+equal(config.canonicalMatrix.result, 'success', 'matrix result');
+equal(config.canonicalMatrix.comB04Continuity, '58/58', 'B04 continuity');
+equal(config.canonicalMatrix.comB04BRepositoryAudit, '172/172', 'B04B audit');
+equal(config.canonicalMatrix.comB04BConformance, '21/21', 'B04B conformance');
+equal(config.canonicalMatrix.comB04BMatrixContinuity, '64/64', 'B04B matrix');
+equal(config.canonicalMatrix.comB04CEvidenceAudit, '67/67', 'B04C audit');
+equal(config.canonicalMatrix.comB04CMatrixReconciliation, '59/59', 'B04C matrix');
+equal(config.canonicalMatrix.globalMatrix, 'passed', 'global matrix');
+
 equal(evidence.status, 'staging_structural_verification_passed', 'evidence status');
 equal(evidence.verification.tables, '8/8', 'evidence tables');
 equal(evidence.verification.foreignKeysIndexed, true, 'evidence indexes');
 equal(evidence.rollbackCanary.transactionRolledBack, true, 'evidence rollback');
 equal(evidence.rollbackCanary.persistentResidue, false, 'evidence residue');
+equal(evidence.canonicalMatrix, config.canonicalMatrix, 'evidence matrix parity');
 for (const marker of ['20260806004634  com_b04b_moderation_persistence','20260806004832  com_b04c_moderation_fk_indexes','CASE_REVISION_CONFLICT','IMMUTABLE_MODERATION_LEDGER','COM-B04D — repository-only runtime composition readiness']) check(doc.includes(marker), marker);
 check(baseMigration.includes('force row level security'), 'forced rls');
 check(baseMigration.includes('to service_role;'), 'service role');
