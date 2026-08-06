@@ -107,11 +107,13 @@ for (const marker of [
   'COM-001 maturity: 3/6'
 ]) ok(doc.includes(marker), `doc marker: ${marker}`);
 
-for (const [key, value] of Object.entries({
-  contractId: 'com-b04h-live-composition-activation-readiness-v1',
-  scope: 'repository_only_live_composition_activation_readiness',
-  status: 'repository_readiness_prepared_live_activation_blocked'
-})) equal(config[key], value, `config ${key}`);
+const supportedStatuses = [
+  'repository_readiness_prepared_live_activation_blocked',
+  'repository_readiness_certified_live_activation_blocked'
+];
+equal(config.contractId, 'com-b04h-live-composition-activation-readiness-v1', 'config contract');
+equal(config.scope, 'repository_only_live_composition_activation_readiness', 'config scope');
+ok(supportedStatuses.includes(config.status), 'config lifecycle status');
 
 equal(config.currentState.handlerHttpStatus, 503, 'config 503');
 equal(config.currentState.compositionActivationMode, 'disabled', 'config disabled');
@@ -138,11 +140,36 @@ equal(evidence.effects.stagingChanged, false, 'evidence staging false');
 equal(evidence.effects.productionChanged, false, 'evidence production false');
 equal(evidence.effects.pullRequestMerged, false, 'evidence merge false');
 
-ok(['1.3.111', '1.3.112'].includes(matrix.version), 'matrix lifecycle version');
+equal(matrix.version, '1.3.112', 'matrix version');
+equal(matrix.updatedAt, '2026-08-06T10:24:00-03:00', 'matrix timestamp');
 const com = matrix.domains.find((entry) => entry.id === 'COM-001');
 ok(com, 'COM-001 exists');
 equal(com.maturity, 3, 'matrix maturity unchanged');
 equal(com.serverAuthority, 'partial', 'matrix server authority partial');
 equal(com.productionGate, 'blocked', 'matrix production blocked');
+const blocker = com.blockers.find((entry) => entry.id === 'COM-B04');
+ok(blocker, 'COM-B04 blocker');
+equal(blocker.category, 'moderation_staging_live_activation_authorization', 'matrix activation blocker');
+ok(com.evidence.some((item) => item.includes('COM-B04H repository-certified')), 'matrix B04H evidence');
+ok(com.nextActions.some((item) => item.includes('COM-B04I')), 'matrix B04I next action');
+
+if (config.status === 'repository_readiness_certified_live_activation_blocked') {
+  equal(config.matrix.version, '1.3.112', 'config matrix version');
+  ok(/^[a-f0-9]{40}$/.test(config.matrix.canonicalCommit), 'matrix canonical commit');
+  ok(Number.isInteger(config.matrix.syncRun) && config.matrix.syncRun > 0, 'matrix sync run');
+  ok(Number.isInteger(config.matrix.syncJob) && config.matrix.syncJob > 0, 'matrix sync job');
+  equal(config.matrix.syncResult, 'success', 'matrix sync result');
+  ok(/^[a-f0-9]{40}$/.test(config.certification.head), 'certified head');
+  ok(Number.isInteger(config.certification.run) && config.certification.run > 0, 'certification run');
+  ok(Number.isInteger(config.certification.job) && config.certification.job > 0, 'certification job');
+  equal(config.certification.result, 'success', 'certification result');
+  equal(evidence.matrix.canonicalCommit, config.matrix.canonicalCommit, 'evidence matrix commit');
+  equal(evidence.certification.head, config.certification.head, 'evidence certified head');
+  equal(evidence.certification.run, config.certification.run, 'evidence certification run');
+  equal(evidence.certification.job, config.certification.job, 'evidence certification job');
+  equal(evidence.certification.result, 'success', 'evidence certification result');
+  ok(doc.includes(config.certification.head), 'doc certified head');
+  ok(doc.includes(String(config.certification.run)), 'doc certification run');
+}
 
 console.log(`COM-B04H live composition activation readiness audit passed: ${checks}/${checks}`);
