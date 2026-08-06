@@ -12,6 +12,11 @@ const PUBLIC_CATALOG_CHAIN = Object.freeze([
   'assets/js/components/public-service-card.js'
 ]);
 
+const HOME_DATA_CHAIN = Object.freeze([
+  'assets/js/pages/home/public-services.js',
+  'assets/js/pages/index-data-controller.js'
+]);
+
 function createStorage() {
   const data = new Map();
   return {
@@ -39,11 +44,11 @@ function canonicalAssetPath(source) {
     .replace(/^\.\//, '');
 }
 
-function assertPublicCatalogScriptChain(html, pageName) {
+function assertScriptChain(html, pageName, chain, orderLabel) {
   const sources = extractScriptSources(html).map(canonicalAssetPath);
-  const positions = PUBLIC_CATALOG_CHAIN.map((assetPath) => sources.indexOf(assetPath));
+  const positions = chain.map((assetPath) => sources.indexOf(assetPath));
 
-  PUBLIC_CATALOG_CHAIN.forEach((assetPath, index) => {
+  chain.forEach((assetPath, index) => {
     assert.notStrictEqual(positions[index], -1, `${pageName} must load ${assetPath}`);
     assert.strictEqual(
       sources.filter((source) => source === assetPath).length,
@@ -53,8 +58,17 @@ function assertPublicCatalogScriptChain(html, pageName) {
   });
 
   assert(
-    positions[0] < positions[1] && positions[1] < positions[2],
-    `${pageName} must load public catalog scripts in repository -> service -> card order`
+    positions.every((position, index) => index === 0 || positions[index - 1] < position),
+    `${pageName} must load scripts in ${orderLabel} order`
+  );
+}
+
+function assertPublicCatalogScriptChain(html, pageName) {
+  assertScriptChain(
+    html,
+    pageName,
+    PUBLIC_CATALOG_CHAIN,
+    'repository -> service -> card'
   );
 }
 
@@ -114,9 +128,13 @@ function sourceContract() {
   cacheKeyAgnosticContract();
   assertPublicCatalogScriptChain(index, 'index.html');
   assertPublicCatalogScriptChain(results, 'resultados.html');
+  assertScriptChain(
+    index,
+    'index.html',
+    HOME_DATA_CHAIN,
+    'public services -> index data controller'
+  );
 
-  assert(index.includes('home/public-services.js?v=20260719-home-first-load-v1'));
-  assert(index.includes('index-data-controller.js?v=20260719-home-first-load-v1'));
   assert(index.indexOf('home-search-hero doke-page-section') < index.indexOf('data-home-hydration-skeleton'), 'search must render before the recommendation skeleton');
   assert(index.indexOf('home-catégories doke-page-section') < index.indexOf('data-home-hydration-skeleton'), 'categories must render before the recommendation skeleton');
   assert(!index.includes('<article class="doke-ad-card'), 'home must not ship static example ads');
