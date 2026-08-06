@@ -781,8 +781,7 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
     els.resultsActiveChips.innerHTML = chips.map((chip) => `<span class="results-active-chip">${chip}</span>`).join('');
   };
 
-  const renderRelatedSections = (query) => {
-    void query;
+  const renderRelatedSections = () => {
     if (resultsPresentationAdapter?.clearRelatedSections) {
       resultsPresentationAdapter.clearRelatedSections();
       return;
@@ -809,7 +808,7 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
     const isWorkerSearch = filters.searchType === 'workers';
     const isBeforeAfterSearch = filters.searchType === 'before-after';
 
-    renderRelatedSections(query);
+    renderRelatedSections();
 
     if (filters.searchType !== 'services') {
       serverResultsSurface?.deactivate?.({
