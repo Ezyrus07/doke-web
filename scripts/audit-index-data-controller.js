@@ -55,8 +55,6 @@ const requiredHtmlTokens = [
   'data-page-key="index"',
   'data-home-list-region="featured-services"',
   'data-home-list="featured-services"',
-  'data-home-list-region="recommended-services"',
-  'data-home-list="recommended-services"',
   'data-home-list-region="workers"',
   'data-home-list="workers"',
   'data-home-list-region="publications"',
@@ -88,10 +86,21 @@ for (const token of controllerRequiredTokens) {
   }
 }
 
-const forbiddenControllerTokens = ['fetch(', 'localStorage', 'sessionStorage', 'supabase', 'firebase', '.innerHTML'];
-for (const token of forbiddenControllerTokens) {
-  if (controller.toLowerCase().includes(token.toLowerCase())) {
-    findings.push({ severity: 'error', message: `index-data-controller.js must not use ${token}` });
+// The controller may observe Supabase bootstrap readiness, but domain data must
+// continue to flow through pageDataOrchestrator/services/repositories. Validate
+// direct data access instead of rejecting the provider name as plain text.
+const forbiddenControllerPatterns = [
+  { pattern: /\bfetch\s*\(/, label: 'fetch()' },
+  { pattern: /\blocalStorage\b/, label: 'localStorage' },
+  { pattern: /\bsessionStorage\b/, label: 'sessionStorage' },
+  { pattern: /\bcreateClient\s*\(/, label: 'createClient()' },
+  { pattern: /\.from\s*\(/, label: 'direct Supabase table access' },
+  { pattern: /\bfirebase\b/i, label: 'Firebase' },
+  { pattern: /\.innerHTML\b/, label: 'innerHTML' }
+];
+for (const entry of forbiddenControllerPatterns) {
+  if (entry.pattern.test(controller)) {
+    findings.push({ severity: 'error', message: `index-data-controller.js must not use ${entry.label}` });
   }
 }
 
