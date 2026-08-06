@@ -145,6 +145,34 @@ The canary fails if any of these conditions is not satisfied:
 
 The authorization remains consumed after any execution attempt.
 
+## Attempt 1 outcome
+
+```text
+run: 31065331290
+authorization job: 92501745650 — success
+canary job: 92501791534 — failure
+head: b833568d99af00f2405ab231a264646f35de908b
+authorization consumed: true
+workflow rerun allowed: false
+```
+
+Attempt 1 stopped at the repository static-audit step. Syntax and local conformance passed `36/36`, but the auditor incorrectly required the complete authorization phrase to be repeated literally inside the executor source. The executor correctly imported `REQUIRED_AUTHORIZATION_PHRASE` from the canary boundary, so the assertion was a false positive.
+
+The staging executor was skipped. Therefore:
+
+```text
+database connection attempted by workflow: false
+authenticated staging session selected by workflow: false
+SERIALIZABLE transaction opened by workflow: false
+rollback-scoped mutation executed: false
+persistent mutation executed: false
+report artifact created: false
+```
+
+An independent postflight read confirmed that all eight moderation tables remained at zero rows. No synthetic or real moderation data was created.
+
+The static auditor was corrected repository-only after the attempt, and the consumed attempt-1 workflow trigger was archived. The original authorization cannot be reused.
+
 ## Effects allowed
 
 ```text
@@ -162,4 +190,4 @@ pull-request merge: prohibited
 
 ## Next boundary
 
-A successful COM-B04E canary proves the composition and persistence handoff under a real authenticated staging session. It does not activate an endpoint. Any route wiring or deploy must be a later sublot with separate explicit authorization.
+COM-B04E remains incomplete because the authenticated rollback-only executor did not run. A second attempt requires a distinct explicit authorization phrase, a new one-shot trigger and a new workflow identity. It still must not activate an endpoint, register a route, deploy runtime code or affect production.
