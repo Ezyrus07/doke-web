@@ -186,6 +186,7 @@ function request() {
   equal(result.revision, 1, 'revision one');
   equal(result.replay, false, 'not replay');
   equal(result.initialEvidenceMaterialized, true, 'initial evidence materialized');
+  equal(result.rawIdentifiersExposed, false, 'raw identifiers not exposed');
   equal(result.runtimeActivated, false, 'runtime not activated');
   equal(result.productionAuthority, false, 'production authority false');
   equal(result.pullRequestMergeAuthority, false, 'merge authority false');
