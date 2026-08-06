@@ -48,7 +48,7 @@ const context = {
 };
 
 vm.createContext(context);
-vm.runInContext(source, context, { filename: 'rail-state.js' });
+vm.runInContext(source, context, { filename: 'assets/js/pages/home/rail-state.js' });
 
 const api = window.Doke.homeRailState;
 assert(api, 'home rail state authority must be published');
