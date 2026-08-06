@@ -1,0 +1,145 @@
+name: Doke UX-HOME-001 Rail States
+
+on:
+  push:
+    branches:
+      - ux/ux-home-001-rail-states
+    paths:
+      - 'index.html'
+      - 'assets/js/pages/home/rail-state.js'
+      - 'assets/js/pages/home/favorites-surface.js'
+      - 'assets/js/pages/home/public-services.js'
+      - 'assets/js/pages/index-data-controller.js'
+      - 'assets/js/core/list-state.js'
+      - 'scripts/test-ux-home-001-rail-state.js'
+      - 'scripts/audit-index-data-controller.js'
+      - 'scripts/test-public-service-catalog-contract.js'
+      - 'scripts/audit-action-favorite-ownership.js'
+      - 'scripts/test-index-return-hydration-contract.js'
+      - 'docs/ux/UX-HOME-001.md'
+      - '.github/workflows/ux-home-001-rail-states.yml'
+      - 'sonar-project.properties'
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'assets/js/pages/home/rail-state.js'
+      - 'assets/js/pages/home/favorites-surface.js'
+      - 'assets/js/pages/home/public-services.js'
+      - 'assets/js/pages/index-data-controller.js'
+      - 'assets/js/core/list-state.js'
+      - 'scripts/test-ux-home-001-rail-state.js'
+      - 'scripts/audit-index-data-controller.js'
+      - 'scripts/test-public-service-catalog-contract.js'
+      - 'scripts/audit-action-favorite-ownership.js'
+      - 'scripts/test-index-return-hydration-contract.js'
+      - 'docs/ux/UX-HOME-001.md'
+      - '.github/workflows/ux-home-001-rail-states.yml'
+      - 'sonar-project.properties'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  ux-home-001-rail-states:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+
+      - name: Validate JavaScript syntax
+        run: |
+          node --check assets/js/pages/home/rail-state.js
+          node --check scripts/test-ux-home-001-rail-state.js
+          node --check assets/js/pages/home/favorites-surface.js
+          node --check assets/js/pages/home/public-services.js
+          node --check assets/js/pages/index-data-controller.js
+
+      - name: Validate immutable rail state behavior
+        run: node scripts/test-ux-home-001-rail-state.js
+
+      - name: Preserve Home and favorite baselines
+        run: |
+          node scripts/audit-index-data-controller.js
+          node scripts/test-public-service-catalog-contract.js
+          node scripts/audit-action-favorite-ownership.js
+          node scripts/test-index-return-hydration-contract.js
+
+      - name: Generate executable LCOV
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf coverage/ux-home-001
+          mkdir -p coverage/ux-home-001
+          node --test \
+            --experimental-test-coverage \
+            --test-coverage-include='assets/js/pages/home/rail-state.js' \
+            --test-reporter=spec \
+            --test-reporter-destination=stdout \
+            --test-reporter=lcov \
+            --test-reporter-destination=coverage/ux-home-001/lcov.info \
+            scripts/test-ux-home-001-rail-state.js
+
+      - name: Validate LCOV evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          REPORT='coverage/ux-home-001/lcov.info'
+          test -s "${REPORT}"
+          grep -Fq 'SF:assets/js/pages/home/rail-state.js' "${REPORT}"
+
+      - name: Require SonarQube Cloud credential
+        if: github.event_name != 'pull_request'
+        shell: bash
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${SONAR_TOKEN}" ]]; then
+            echo '::error::SONAR_TOKEN is unavailable to the trusted branch workflow.'
+            exit 1
+          fi
+
+      - name: Upload LCOV evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ux-home-001-lcov-${{ github.event_name }}-${{ github.run_id }}
+          path: coverage/ux-home-001/lcov.info
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Validate patch whitespace
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            git diff --check "${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}"
+          else
+            git diff --check HEAD^
+          fi
+
+      - name: Analyze PR and enforce SonarQube Cloud Quality Gate
+        if: github.event_name != 'pull_request'
+        uses: SonarSource/sonarqube-scan-action@c7ee0f9df90b7aa20e8dcf9695dcfe2e7da5b4f2
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.projectKey=Ezyrus07_doke-web
+            -Dsonar.organization=ezyrus07
+            -Dsonar.pullrequest.key=84
+            -Dsonar.pullrequest.branch=ux/ux-home-001-rail-states
+            -Dsonar.pullrequest.base=ux/ux-perf-debt-001-profile-hydration
+            -Dsonar.javascript.lcov.reportPaths=coverage/ux-home-001/lcov.info
+            -Dsonar.qualitygate.wait=true
+            -Dsonar.qualitygate.timeout=600
