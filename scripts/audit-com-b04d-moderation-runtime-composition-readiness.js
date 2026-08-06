@@ -60,7 +60,11 @@ check(!source.includes("activationMode === 'production'"), 'no production activa
 check(!source.includes("require('../../shared/http/route-registry')"), 'composition does not register routes');
 check(!source.includes('process.env.SUPABASE_SERVICE_ROLE_KEY'), 'no environment secret read');
 check(!source.includes('Deno.env.get'), 'no edge secret read');
-check(source.indexOf('evaluateCommand({') < source.indexOf('buildCommitInput(envelope, actor, context, decision)'), 'domain evaluates before commit mapping');
+const decisionIndex = source.indexOf('const decision = evaluateCommand({');
+const preparedIndex = source.indexOf("const preparedCommit = decision.decision === 'accept'");
+const commitMappingIndex = source.indexOf('buildCommitInput(envelope, actor, context, decision)', preparedIndex);
+check(decisionIndex >= 0 && preparedIndex > decisionIndex && commitMappingIndex > preparedIndex,
+  'domain evaluates before accepted commit mapping');
 check(source.includes("decision.decision === 'accept'"), 'only accept creates commit');
 check(source.includes("preparedCommit: null") || source.includes(': null;'), 'non-accept path can remain read-only');
 check(source.includes("environment !== 'local_test_double'"), 'test executor environment restricted');
