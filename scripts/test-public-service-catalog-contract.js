@@ -1,10 +1,16 @@
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
-const assert = require('assert');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
+const assert = require('node:assert/strict');
 
 const root = path.resolve(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
+
+const PUBLIC_CATALOG_CHAIN = Object.freeze([
+  'assets/js/repositories/services-repository.js',
+  'assets/js/services/services-service.js',
+  'assets/js/components/public-service-card.js'
+]);
 
 function createStorage() {
   const data = new Map();
@@ -14,6 +20,52 @@ function createStorage() {
     removeItem(key) { data.delete(String(key)); },
     clear() { data.clear(); }
   };
+}
+
+function extractScriptSources(html) {
+  const sources = [];
+  const pattern = /<script\b[^>]*\bsrc=(["'])([^"']+)\1[^>]*>/gi;
+  let match;
+  while ((match = pattern.exec(html)) !== null) {
+    sources.push(match[2]);
+  }
+  return sources;
+}
+
+function canonicalAssetPath(source) {
+  return String(source)
+    .split('#', 1)[0]
+    .split('?', 1)[0]
+    .replace(/^\.\//, '');
+}
+
+function assertPublicCatalogScriptChain(html, pageName) {
+  const sources = extractScriptSources(html).map(canonicalAssetPath);
+  const positions = PUBLIC_CATALOG_CHAIN.map((assetPath) => sources.indexOf(assetPath));
+
+  PUBLIC_CATALOG_CHAIN.forEach((assetPath, index) => {
+    assert.notStrictEqual(positions[index], -1, `${pageName} must load ${assetPath}`);
+    assert.strictEqual(
+      sources.filter((source) => source === assetPath).length,
+      1,
+      `${pageName} must load ${assetPath} exactly once`
+    );
+  });
+
+  assert(
+    positions[0] < positions[1] && positions[1] < positions[2],
+    `${pageName} must load public catalog scripts in repository -> service -> card order`
+  );
+}
+
+function cacheKeyAgnosticContract() {
+  const fixture = [
+    '<script src="assets/js/repositories/services-repository.js?v=repo-a"></script>',
+    '<script src="assets/js/services/services-service.js?v=service-b#ready"></script>',
+    '<script src="./assets/js/components/public-service-card.js?v=card-c"></script>'
+  ].join('');
+
+  assertPublicCatalogScriptChain(fixture, 'cache-key fixture');
 }
 
 async function repositoryContract() {
@@ -58,11 +110,11 @@ function sourceContract() {
   const index = read('index.html');
   const results = read('resultados.html');
   const detail = read('detalhe-anuncio.html');
-  [index, results].forEach((html) => {
-    assert(/services-repository\.js\?v=20260718-(?:services-backend|home-sdk-fallback)-v1/.test(html));
-    assert(html.includes('services-service.js?v=20260718-public-catalog-v1'));
-    assert(html.includes('public-service-card.js?v=20260718-public-catalog-v1'));
-  });
+
+  cacheKeyAgnosticContract();
+  assertPublicCatalogScriptChain(index, 'index.html');
+  assertPublicCatalogScriptChain(results, 'resultados.html');
+
   assert(index.includes('home/public-services.js?v=20260719-home-first-load-v1'));
   assert(index.includes('index-data-controller.js?v=20260719-home-first-load-v1'));
   assert(index.indexOf('home-search-hero doke-page-section') < index.indexOf('data-home-hydration-skeleton'), 'search must render before the recommendation skeleton');
