@@ -73,10 +73,26 @@ const ROUTES = Object.freeze([
   route('disputes.refund', 'POST', '/admin/disputes/:id/refund', 'admin', 'refundDispute', ['support', 'admin'], 'internal_operator', true, true, true),
   route('receipts.list', 'GET', '/receipts', 'wallet', 'listReceipts', ['client', 'professional', 'support', 'admin'], 'receipt_owner_or_support', false, false),
   route('receipts.get', 'GET', '/receipts/:id', 'wallet', 'getReceipt', ['client', 'professional', 'support', 'admin'], 'receipt_owner_or_support', false, false),
-  route('auditEvents.list', 'GET', '/admin/audit-events', 'admin', 'listAuditEvents', ['support', 'admin'], 'internal_operator', false, false, true)
+  route('auditEvents.list', 'GET', '/admin/audit-events', 'admin', 'listAuditEvents', ['support', 'admin'], 'internal_operator', false, false, true),
+
+  // Communities moderation — repository wired, deployment and live composition blocked.
+  route(
+    'communities.moderation.command',
+    'POST',
+    '/communities/:communityId/moderation/commands',
+    'communities',
+    'executeModerationCommand',
+    ['client', 'professional', 'support', 'admin'],
+    'canonical_community_moderation_authority',
+    true,
+    true,
+    true,
+    true,
+    'backend_route_guard_plus_canonical_domain_authority'
+  )
 ]);
 
-function route(name, method, path, module, handler, allowedRoles, scope, idempotencyRequired, auditRequired, serviceRoleRequired, requestFreshnessRequired) {
+function route(name, method, path, module, handler, allowedRoles, scope, idempotencyRequired, auditRequired, serviceRoleRequired, requestFreshnessRequired, authorizationGate) {
   return Object.freeze({
     name,
     method,
@@ -89,7 +105,7 @@ function route(name, method, path, module, handler, allowedRoles, scope, idempot
     auditRequired: Boolean(auditRequired),
     serviceRoleRequired: Boolean(serviceRoleRequired),
     requestFreshnessRequired: Boolean(requestFreshnessRequired),
-    authorizationGate: 'backend_route_guard',
+    authorizationGate: authorizationGate || 'backend_route_guard',
     rlsValidationRequired: true
   });
 }
