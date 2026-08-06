@@ -2,7 +2,7 @@
 
 ## Status
 
-First implementation increment on top of UX-RESULTS-001.
+CI-based SonarQube Cloud analysis is configured on top of UX-RESULTS-001. The pull request remains draft and unmerged.
 
 ## Base
 
@@ -35,7 +35,7 @@ That static bundle publishes and executes both:
 - `Doke.searchExperience`;
 - `Doke.searchResultsServerSurface`.
 
-The SEARCH-UX02 runtime harness now loads the canonical production module through Node `require` under controlled globals that are restored after execution. This preserves source attribution without dynamic code execution.
+The SEARCH-UX02 runtime harness loads the canonical production module through Node `require` under controlled globals that are restored after execution. This preserves source attribution without dynamic code execution.
 
 The gate requires:
 
@@ -44,16 +44,26 @@ The gate requires:
 - at least one executable source line to be hit;
 - the Resultados, filter, search and transversal UX stack to remain green.
 
-## Sonar import boundary
+Current executable baseline:
 
-The current project uses SonarQube Cloud automatic analysis. Automatic analysis does not import coverage and cannot run concurrently with a CI-based SonarScanner.
+```text
+lines: 911/1134 — 80.34%
+branches: 56.09%
+functions: 77.08%
+```
 
-Therefore this increment produces a deterministic LCOV artifact and reports readiness, but does not fabricate Sonar coverage. Final completion requires:
+## CI-based Sonar analysis
 
-1. disabling automatic analysis for the SonarQube Cloud project;
-2. configuring the repository secret `SONAR_TOKEN`;
-3. adding and executing the CI-based scanner against this LCOV report;
-4. confirming coverage is displayed by Sonar with zero new findings and zero security hotspots.
+Automatic analysis is disabled and the repository secret is supplied to the trusted branch workflow. The CI scanner:
+
+- imports `coverage/ux-search-debt-001/lcov.info`;
+- analyzes pull request `#75` against `ux/ux-results-001-canonical-composition`;
+- waits for the SonarQube Cloud Quality Gate;
+- fails closed when the credential, report or Quality Gate is unavailable.
+
+`sonar-project.properties` separates main code from `scripts/` and `tests/`, so test harnesses are analyzed as test code and do not create artificial production coverage debt. Binary evidence and generated outputs are excluded from source analysis, while product code, Supabase assets and GitHub workflows remain in scope.
+
+All GitHub Actions dependencies used by this workflow are pinned to immutable commit SHAs. No Sonar issue is accepted, suppressed or excluded.
 
 ## Preserved boundaries
 

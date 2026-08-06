@@ -32,14 +32,24 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '22'
+
+      - name: Validate Sonar analysis scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s sonar-project.properties
+          grep -Fqx 'sonar.sources=.' sonar-project.properties
+          grep -Fqx 'sonar.tests=scripts,tests' sonar-project.properties
+          grep -Fqx 'sonar.javascript.lcov.reportPaths=coverage/ux-search-debt-001/lcov.info' sonar-project.properties
+          grep -Fq 'uses: SonarSource/sonarqube-scan-action@c7ee0f9df90b7aa20e8dcf9695dcfe2e7da5b4f2' .github/workflows/ux-search-debt-001-coverage.yml
 
       - name: Validate JavaScript syntax
         run: |
@@ -138,7 +148,7 @@ jobs:
           echo '[ux-search-debt] SonarQube Cloud token reference is available.'
 
       - name: Upload executable coverage evidence
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: ux-search-debt-001-coverage-${{ github.event_name }}-${{ github.run_id }}
           path: coverage/ux-search-debt-001/lcov.info
@@ -156,16 +166,13 @@ jobs:
 
       - name: Import LCOV and enforce SonarQube Cloud Quality Gate
         if: github.event_name != 'pull_request'
-        uses: SonarSource/sonarqube-scan-action@v7
+        uses: SonarSource/sonarqube-scan-action@c7ee0f9df90b7aa20e8dcf9695dcfe2e7da5b4f2 # v7
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN || secrets.SONARCLOUD_TOKEN }}
         with:
           args: >
-            -Dsonar.projectKey=Ezyrus07_doke-web
-            -Dsonar.organization=ezyrus07
             -Dsonar.pullrequest.key=75
             -Dsonar.pullrequest.branch=ux/ux-search-debt-001-coverage
             -Dsonar.pullrequest.base=ux/ux-results-001-canonical-composition
-            -Dsonar.javascript.lcov.reportPaths=coverage/ux-search-debt-001/lcov.info
             -Dsonar.qualitygate.wait=true
             -Dsonar.qualitygate.timeout=600
