@@ -21,7 +21,7 @@ const flow = matrix.criticalFlows.find((item) => item.id === 'FLOW-12');
 
 check(domain, 'COM-001 domain exists');
 check(flow, 'FLOW-12 exists');
-check(['1.3.108', '1.3.109'].includes(matrix.version), 'matrix version continuity');
+check(['1.3.108', '1.3.109', '1.3.110'].includes(matrix.version), 'matrix version continuity');
 equal(domain.maturity, 3, 'maturity preserved');
 equal(domain.userFacingAuthority, 'hybrid', 'UI authority preserved');
 equal(domain.serverAuthority, 'partial', 'server authority partial');
@@ -61,9 +61,12 @@ check(flow.blockers.includes('COM-B04'), 'FLOW-12 blocker retained');
 if (matrix.version === '1.3.108') {
   equal(blocker.category, 'moderation_persistence_application', 'B04 category at B04B');
   check(domain.nextActions.some((item) => item.includes('COM-B04C')), 'B04C next action');
-} else {
+} else if (matrix.version === '1.3.109') {
   equal(blocker.category, 'moderation_runtime_composition', 'B04 category at B04C');
   check(domain.nextActions.some((item) => item.includes('COM-B04D')), 'B04D next action');
+} else {
+  equal(blocker.category, 'moderation_authenticated_staging_canary', 'B04 category at B04D');
+  check(domain.nextActions.some((item) => item.includes('COM-B04E')), 'B04E next action');
 }
 
 equal(report.name, 'domain-completion-matrix', 'report name');
