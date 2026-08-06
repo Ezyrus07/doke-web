@@ -126,6 +126,7 @@ Sections without current-intent ownership are hidden and cleared by the adapter.
 - `assets/js/pages/search/server-results-surface.js`;
 - `scripts/test-ux-results-001-presentation-foundation.js`;
 - `scripts/test-ux-results-001-dom-adapter.js`;
+- `tests/e2e/ux-results-001-browser-acceptance.spec.js`;
 - `.github/workflows/ux-results-001-presentation-foundation.yml`;
 - this document.
 
@@ -152,20 +153,27 @@ The gate validates:
 - SEARCH-UX02, CARDS, PERF, RESP, A11Y, NAV, PRIV, CONT, CORE-001 and CORE-002 regressions;
 - navigation lifecycle, authentication/session bootstrap and patch whitespace.
 
-## Remaining risk
-
-The deterministic gate validates ownership and state transitions, but it does not replace a browser-level visual review of responsive layout, focus behavior and real network timing. No staging or production environment was accessed in this increment.
-
-## Rollback
-
-Revert the UX-RESULTS-001 commits. No database, remote data or schema rollback is required.
-
 ## Browser acceptance harness
 
 The Playwright harness validates desktop 1366×768 and mobile 390×844 with remote services disabled. It covers rapid latest-wins searches, preservation of accepted cards without blocking flicker, empty versus fallback, related-section ownership, pagination focus/busy/rollback/append, retry, error and compact-viewport overflow.
 
 The harness runs against the repository static server and stores Playwright evidence. It does not access staging, production, Supabase, RPCs or external search services.
 
-## Remaining closure work
+## Security hardening
 
-The final QC must resolve the current SonarQube Cloud failure without suppressing findings, rerun every deterministic and browser gate on one immutable head, inspect evidence and register the definitive checkpoint.
+The final QC hardened the browser gate and removed all SonarQube findings reported for this increment:
+
+- removed the obsolete `void` placeholder from `renderRelatedSections`;
+- installs dependencies with `npm ci --ignore-scripts`, preventing package lifecycle scripts from executing during CI installation;
+- invokes the Playwright CLI directly from the locked local dependency instead of using `npx` on-demand resolution;
+- uses optional chaining in the deterministic DOM adapter harness.
+
+No Sonar rule was suppressed, downgraded or excluded. The repository Quality Gate remains authoritative for closure.
+
+## Remaining risk
+
+The browser harness uses deterministic local fixtures with remote services disabled. It validates composition, timing, focus and responsive overflow, but it does not exercise staging or production network latency. Those environments were not accessed in this increment.
+
+## Rollback
+
+Revert the UX-RESULTS-001 commits. No database, remote data or schema rollback is required.

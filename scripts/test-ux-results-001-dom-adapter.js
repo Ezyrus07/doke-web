@@ -21,7 +21,7 @@ const previousWindow = global.window;
 const previousCustomEvent = global.CustomEvent;
 global.CustomEvent = function CustomEvent(name, init) {
   this.type = name;
-  this.detail = init && init.detail;
+  this.detail = init?.detail;
 };
 global.window = { Doke: {}, document: { dispatchEvent() {} } };
 global.window.window = global.window;
