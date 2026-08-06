@@ -128,14 +128,14 @@ jobs:
         if: github.event_name != 'pull_request'
         shell: bash
         env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN || secrets.SONARCLOUD_TOKEN }}
         run: |
           set -euo pipefail
           if [[ -z "${SONAR_TOKEN}" ]]; then
-            echo '::error::SONAR_TOKEN is not available to the trusted branch workflow.'
+            echo '::error::Neither SONAR_TOKEN nor SONARCLOUD_TOKEN is available to the trusted branch workflow.'
             exit 1
           fi
-          echo '[ux-search-debt] SONAR_TOKEN reference is available.'
+          echo '[ux-search-debt] SonarQube Cloud token reference is available.'
 
       - name: Upload executable coverage evidence
         uses: actions/upload-artifact@v4
@@ -158,7 +158,7 @@ jobs:
         if: github.event_name != 'pull_request'
         uses: SonarSource/sonarqube-scan-action@v7
         env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN || secrets.SONARCLOUD_TOKEN }}
         with:
           args: >
             -Dsonar.projectKey=Ezyrus07_doke-web
