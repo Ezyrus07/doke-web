@@ -54,14 +54,16 @@ old_tail = """    }).finally(function () {
 """
 new_tail = """    });
 
-    flight.promise = promise;
-    serviceRefreshFlight = flight;
-    promise.then(function () {
+    var exposedPromise = promise.then(function (result) {
       if (serviceRefreshFlight === flight) serviceRefreshFlight = null;
-    }, function () {
+      return result;
+    }, function (error) {
       if (serviceRefreshFlight === flight) serviceRefreshFlight = null;
+      throw error;
     });
-    return promise;
+    flight.promise = exposedPromise;
+    serviceRefreshFlight = flight;
+    return exposedPromise;
 """
 if controller.count(old_tail) != 1:
     raise SystemExit(f'service refresh tail count: {controller.count(old_tail)}')
