@@ -6,8 +6,17 @@ const messaging = require('../../modules/messaging/route-handlers');
 const notifications = require('../../modules/notifications/route-handlers');
 const wallet = require('../../modules/wallet/route-handlers');
 const admin = require('../../modules/admin/route-handlers');
+const communities = require('../../modules/communities/route-handlers');
 
-const modules = Object.freeze({ auth, orders, messaging, notifications, wallet, admin });
+const modules = Object.freeze({
+  auth,
+  orders,
+  messaging,
+  notifications,
+  wallet,
+  admin,
+  communities
+});
 
 function listModuleRoutes() {
   return Object.keys(modules).reduce((all, key) => all.concat(modules[key].routes), []);
