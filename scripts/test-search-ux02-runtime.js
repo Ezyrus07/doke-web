@@ -1,13 +1,15 @@
 'use strict';
 
-const assert = require('assert');
-const fs = require('fs');
-const vm = require('vm');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const vm = require('node:vm');
 
 const read = (path) => fs.readFileSync(path, 'utf8');
 const card = read('assets/js/components/public-service-card.js');
 const interactions = read('assets/js/components/ad-card-interactions.js');
-const surface = read('assets/js/pages/search/server-results-surface.js');
+const SURFACE_PATH = 'assets/js/pages/search/server-results-surface.js';
+const surface = read(SURFACE_PATH);
+const surfaceModulePath = require.resolve('../assets/js/pages/search/server-results-surface.js');
 const homePublicServices = read('assets/js/pages/home/public-services.js');
 const homeFavorites = read('assets/js/pages/home/favorites-surface.js');
 const profileFavorites = read('assets/js/pages/profile/favorites-surface.js');
@@ -214,80 +216,84 @@ async function validateFallbackRuntime() {
       }
     }
   };
-  const sandbox = {
-    window: { Doke },
-    document: {
-      currentScript: null,
-      baseURI: 'https://doke.local/resultados.html',
-      scripts: [],
-      styleSheets: [],
-      querySelector(selector) {
-        return selector.startsWith('link[') ? {} : null;
-      },
-      addEventListener() {},
-      removeEventListener() {},
-      dispatchEvent(event) { renderedEvents.push(event); }
+  const runtimeWindow = { Doke };
+  runtimeWindow.window = runtimeWindow;
+  const runtimeDocument = {
+    currentScript: null,
+    baseURI: 'https://doke.local/resultados.html',
+    scripts: [],
+    styleSheets: [],
+    querySelector(selector) {
+      return selector.startsWith('link[') ? {} : null;
     },
-    CustomEvent: class CustomEvent {
-      constructor(name, init) { this.type = name; this.detail = init && init.detail; }
-    },
-    console,
-    Promise,
-    Set,
-    Object,
-    JSON,
-    String,
-    Number,
-    Boolean,
-    Array,
-    URL,
-    URLSearchParams,
-    AbortController,
-    Error
+    addEventListener() {},
+    removeEventListener() {},
+    dispatchEvent(event) { renderedEvents.push(event); }
   };
-  sandbox.window.window = sandbox.window;
-  vm.runInNewContext(surface, sandbox, { filename: 'server-results-surface.js' });
+  class RuntimeCustomEvent {
+    constructor(name, init) {
+      this.type = name;
+      this.detail = init?.detail;
+    }
+  }
 
-  const title = { textContent: '' };
-  const description = { textContent: '' };
-  const count = { textContent: '' };
-  const grid = {
-    hidden: false,
-    textContent: '',
-    appendChild(node) { appended.push(node); }
-  };
-  let visibleState = '';
-  const context = {
-    query: 'termo inexistente',
-    filters: {},
-    grid,
-    title,
-    description,
-    count,
-    inlineEmpty: { hidden: false },
-    createCard(item) { return { item }; },
-    setResultsState(state) { visibleState = state; },
-    settleHydration() {},
-    refreshPreviews() {},
-    renderActiveChips() {},
-    loadMoreButton: {
-      disabled: false,
+  const previousWindow = global.window;
+  const previousDocument = global.document;
+  const previousCustomEvent = global.CustomEvent;
+  delete require.cache[surfaceModulePath];
+  global.window = runtimeWindow;
+  global.document = runtimeDocument;
+  global.CustomEvent = RuntimeCustomEvent;
+
+  try {
+    require(surfaceModulePath);
+
+    const title = { textContent: '' };
+    const description = { textContent: '' };
+    const count = { textContent: '' };
+    const grid = {
       hidden: false,
-      dataset: {},
-      setAttribute() {}
-    },
-    pagination: { hidden: false }
-  };
+      textContent: '',
+      appendChild(node) { appended.push(node); }
+    };
+    let visibleState = '';
+    const context = {
+      query: 'termo inexistente',
+      filters: {},
+      grid,
+      title,
+      description,
+      count,
+      inlineEmpty: { hidden: false },
+      createCard(item) { return { item }; },
+      setResultsState(state) { visibleState = state; },
+      settleHydration() {},
+      refreshPreviews() {},
+      renderActiveChips() {},
+      loadMoreButton: {
+        disabled: false,
+        hidden: false,
+        dataset: {},
+        setAttribute() {}
+      },
+      pagination: { hidden: false }
+    };
 
-  const result = await sandbox.window.Doke.searchResultsServerSurface.render(context);
-  assert.deepStrictEqual(requests.map((request) => request.query), ['termo inexistente', '']);
-  assert.strictEqual(result.length, 1, 'Fallback must return the server catalog page.');
-  assert.strictEqual(appended.length, 1, 'Fallback card must be rendered once.');
-  assert.strictEqual(title.textContent, 'Outros anúncios');
-  assert(description.textContent.includes('Nenhum anúncio correspondeu exatamente'));
-  assert.strictEqual(visibleState, 'results');
-  assert.strictEqual(sandbox.window.Doke.searchResultsServerSurface.getSnapshot().mode, 'fallback');
-  assert(renderedEvents.some((event) => event.type === 'doke:search-server-page-rendered' && event.detail.fallbackUsed === true));
+    const result = await runtimeWindow.Doke.searchResultsServerSurface.render(context);
+    assert.deepStrictEqual(requests.map((request) => request.query), ['termo inexistente', '']);
+    assert.strictEqual(result.length, 1, 'Fallback must return the server catalog page.');
+    assert.strictEqual(appended.length, 1, 'Fallback card must be rendered once.');
+    assert.strictEqual(title.textContent, 'Outros anúncios');
+    assert(description.textContent.includes('Nenhum anúncio correspondeu exatamente'));
+    assert.strictEqual(visibleState, 'results');
+    assert.strictEqual(runtimeWindow.Doke.searchResultsServerSurface.getSnapshot().mode, 'fallback');
+    assert(renderedEvents.some((event) => event.type === 'doke:search-server-page-rendered' && event.detail.fallbackUsed === true));
+  } finally {
+    delete require.cache[surfaceModulePath];
+    global.window = previousWindow;
+    global.document = previousDocument;
+    global.CustomEvent = previousCustomEvent;
+  }
 }
 
 (async () => {
