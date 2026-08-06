@@ -193,8 +193,14 @@ for (const marker of [
   'persistent staging writes: prohibited'
 ]) check(doc.includes(marker), `doc marker: ${marker}`);
 
-check(workflow.includes('COM-B04E Authenticated Rollback-only Moderation Runtime Canary'), 'workflow name');
-check(workflow.includes('config/com-b04e-authenticated-rollback-only-moderation-runtime-canary.json'), 'workflow one-shot path');
+check(
+  workflow.includes('COM-B04E Authenticated Rollback-only Moderation Runtime Canary') ||
+    workflow.includes('COM-B04E Attempt 1 Archived Rollback-only Canary'),
+  'workflow name or archived name'
+);
+check(workflow.includes('Attempt 1 authorization was consumed by run 31065331290.'), 'workflow attempt archived');
+check(workflow.includes('config/com-b04e-authenticated-rollback-only-moderation-runtime-canary.json'), 'workflow historical one-shot path');
+check(workflow.includes('config/com-b04e-attempt-1-archived-never-trigger.json'), 'workflow consumed trigger disabled');
 check(workflow.includes('permissions:\n  contents: read'), 'workflow read-only repository permission');
 check(workflow.includes('secrets.SUPABASE_ACCESS_TOKEN'), 'workflow access token secret');
 check(workflow.includes('secrets.SUPABASE_DB_PASSWORD'), 'workflow database password secret');
