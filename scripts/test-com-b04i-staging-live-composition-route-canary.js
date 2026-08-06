@@ -8,6 +8,7 @@ const {
   CONTRACT_ID,
   ACTIVATION_MODE,
   REQUIRED_AUTHORIZATION_PHRASE,
+  REQUIRED_AUTHORIZATION_SOURCE_HEAD,
   REQUIRED_RPC_ALLOWLIST,
   createModerationStagingLiveRouteCanary
 } = require('../backend/runtime/staging/community-moderation-live-route-canary');
@@ -54,7 +55,7 @@ const runtime = createModerationStagingLiveRouteCanary({
     consumed: true,
     singleUse: true,
     reusableAfterFailure: false,
-    sourceHead: '20b17d96012756c547d522dd5ae38637185de4ee'
+    sourceHead: REQUIRED_AUTHORIZATION_SOURCE_HEAD
   }),
   transactionGuard: Object.freeze({
     authority: 'staging_outer_transaction_guard',
@@ -89,7 +90,7 @@ const runtime = createModerationStagingLiveRouteCanary({
       });
     }
   }),
-  clock: Object.freeze({ authority: 'server_utc_clock', async now() { return '2026-08-06T13:50:00.000Z'; } })
+  clock: Object.freeze({ authority: 'server_utc_clock', async now() { return '2026-08-06T20:25:00.000Z'; } })
 });
 
 async function main() {
@@ -116,7 +117,7 @@ async function main() {
 
   const response = await handler({
     headers: Object.freeze({}),
-    requestId: 'com-b04i-local-conformance',
+    requestId: 'com-b04i-attempt-2-local-conformance',
     envelope: Object.freeze({
       command: 'open_case',
       clientRequestId,
