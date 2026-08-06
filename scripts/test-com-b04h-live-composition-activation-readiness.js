@@ -8,6 +8,7 @@ const routeHandlers = require('../backend/modules/communities/route-handlers');
 const { findRouteByName } = require('../backend/shared/http/route-registry');
 const { getHandler } = require('../backend/shared/http/module-route-loader');
 const config = require('../config/com-b04h-live-composition-activation-readiness.json');
+const matrix = require('../config/domain-completion-matrix.json');
 
 let checks = 0;
 const equal = (actual, expected, label) => { checks += 1; assert.deepStrictEqual(actual, expected, label); };
@@ -162,7 +163,10 @@ async function main() {
   equal(driftBlocked.ready, false, 'blob drift blocked');
   ok(driftBlocked.blockers.includes('BOUND_BLOB_REQUIRED:blockedRouteHandler'), 'blob blocker');
 
-  equal(config.status, 'repository_readiness_prepared_live_activation_blocked', 'config status');
+  ok([
+    'repository_readiness_prepared_live_activation_blocked',
+    'repository_readiness_certified_live_activation_blocked'
+  ].includes(config.status), 'config lifecycle status');
   equal(config.currentState.handlerHttpStatus, 503, 'config HTTP status');
   equal(config.currentState.liveCompositionActivated, false, 'config live false');
   equal(config.effects.routeHandlerChanged, false, 'handler unchanged');
@@ -175,6 +179,23 @@ async function main() {
   equal(config.effects.pullRequestMerged, false, 'merge false');
   equal(config.matrix.maturityAfterReadiness, 3, 'maturity unchanged');
   equal(config.matrix.promotionAllowed, false, 'promotion false');
+  equal(matrix.version, '1.3.112', 'canonical matrix version');
+  const com = matrix.domains.find((entry) => entry.id === 'COM-001');
+  ok(com, 'COM-001 matrix entry');
+  equal(com.maturity, 3, 'matrix maturity unchanged');
+  equal(com.serverAuthority, 'partial', 'matrix server authority partial');
+  equal(com.productionGate, 'blocked', 'matrix production blocked');
+
+  if (config.status === 'repository_readiness_certified_live_activation_blocked') {
+    equal(config.matrix.version, '1.3.112', 'certified config matrix version');
+    ok(/^[a-f0-9]{40}$/.test(config.matrix.canonicalCommit), 'canonical matrix commit');
+    ok(Number.isInteger(config.matrix.syncRun) && config.matrix.syncRun > 0, 'matrix sync run');
+    ok(Number.isInteger(config.matrix.syncJob) && config.matrix.syncJob > 0, 'matrix sync job');
+    ok(/^[a-f0-9]{40}$/.test(config.certification.head), 'certified head');
+    ok(Number.isInteger(config.certification.run) && config.certification.run > 0, 'certification run');
+    ok(Number.isInteger(config.certification.job) && config.certification.job > 0, 'certification job');
+    equal(config.certification.result, 'success', 'certification result');
+  }
 
   console.log(`COM-B04H live composition activation readiness passed: ${checks}/${checks}`);
 }
