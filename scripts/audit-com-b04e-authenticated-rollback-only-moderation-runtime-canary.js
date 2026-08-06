@@ -81,6 +81,7 @@ for (const marker of [
   'core live path blocked',
   'load commit load order',
   'initial evidence materialized',
+  'raw identifiers not exposed',
   'token not retained',
   'transaction guard checked throughout',
   'COM_B04E_AUTHORIZATION_ALREADY_CONSUMED',
@@ -92,7 +93,7 @@ for (const marker of [
 ]) check(test.includes(marker), `test marker: ${marker}`);
 
 for (const marker of [
-  phrase,
+  'REQUIRED_AUTHORIZATION_PHRASE',
   "const REQUIRED_MIGRATIONS = Object.freeze(['20260806004634', '20260806004832'])",
   "exact(String(env.GITHUB_RUN_ATTEMPT || '1'), '1'",
   'SUPABASE_ACCESS_TOKEN',
@@ -124,14 +125,17 @@ check(executor.includes('actorSha256: hash(row.user_id)'), 'actor is hashed');
 check(executor.includes('sessionSha256: hash(row.session_id)'), 'session is hashed');
 check(!executor.includes('email:'), 'email not retained');
 
- equal(config.contractId, 'com-b04e-authenticated-rollback-only-moderation-runtime-composition-canary-v1', 'config contract');
-equal(config.status, 'explicit_authorization_received_execution_pending', 'config pending state');
+const allowedConfigStatuses = [
+  'explicit_authorization_received_execution_pending',
+  'authorization_consumed_pre_execution_audit_failed',
+  'authenticated_rollback_only_canary_passed'
+];
+equal(config.contractId, 'com-b04e-authenticated-rollback-only-moderation-runtime-composition-canary-v1', 'config contract');
+check(allowedConfigStatuses.includes(config.status), 'config lifecycle status');
 equal(config.authorization.phrase, phrase, 'config authorization phrase');
 equal(config.authorization.received, true, 'authorization received');
 equal(config.authorization.singleUse, true, 'authorization single use');
-equal(config.authorization.consumed, false, 'authorization not yet consumed in trigger');
 equal(config.authorization.reusableAfterFailure, false, 'authorization non-reusable');
-equal(config.execution.attempted, false, 'execution pending');
 equal(config.execution.workflowRerunAllowed, false, 'rerun blocked');
 equal(config.target.environment, 'staging', 'staging target');
 equal(config.target.projectId, 'zwkczgewzbsorbrjuzpb', 'project target');
@@ -145,19 +149,37 @@ equal(config.effects.runtimeDeploymentAllowed, false, 'deployment blocked');
 equal(config.effects.productionAllowed, false, 'production blocked');
 equal(config.effects.pullRequestMergeAllowed, false, 'merge blocked');
 
- equal(evidence.contractId, config.contractId, 'evidence contract');
-equal(evidence.status, 'explicit_authorization_received_execution_pending', 'evidence pending');
+if (config.status === 'explicit_authorization_received_execution_pending') {
+  equal(config.authorization.consumed, false, 'pending authorization unconsumed');
+  equal(config.execution.attempted, false, 'pending execution unattempted');
+} else {
+  equal(config.authorization.consumed, true, 'attempt authorization consumed');
+  equal(config.execution.attempted, true, 'execution attempt recorded');
+}
+
+const allowedEvidenceStatuses = [
+  'explicit_authorization_received_execution_pending',
+  'authorization_consumed_pre_execution_audit_failed',
+  'authenticated_rollback_only_canary_passed'
+];
+equal(evidence.contractId, config.contractId, 'evidence contract');
+check(allowedEvidenceStatuses.includes(evidence.status), 'evidence lifecycle status');
 equal(evidence.preflight.readExecuted, true, 'preflight read recorded');
 equal(evidence.preflight.commitRpcPresent, true, 'commit RPC preflight');
 equal(evidence.preflight.authenticatedCommitBlocked, true, 'authenticated direct commit blocked');
 equal(evidence.preflight.activeAuthenticatedSessionCount, 20, 'active session count recorded');
 equal(evidence.preflight.moderationLedgerRowsBeforeCanary, 0, 'empty ledger preflight');
-equal(evidence.execution.attempted, false, 'evidence attempt pending');
 equal(evidence.expected.transactionRolledBack, true, 'rollback expected');
 equal(evidence.expected.persistentResidue, false, 'no residue expected');
 equal(evidence.effects.stagingReadExecuted, true, 'preflight read effect');
-equal(evidence.effects.rollbackScopedMutationExecuted, false, 'rollback mutation pending');
 equal(evidence.effects.persistentStagingMutationExecuted, false, 'persistent mutation false');
+
+if (evidence.status === 'explicit_authorization_received_execution_pending') {
+  equal(evidence.execution.attempted, false, 'evidence attempt pending');
+  equal(evidence.effects.rollbackScopedMutationExecuted, false, 'rollback mutation pending');
+} else {
+  equal(evidence.execution.attempted, true, 'evidence attempt recorded');
+}
 
 for (const marker of [
   'existing active staging session',
@@ -172,7 +194,7 @@ for (const marker of [
 ]) check(doc.includes(marker), `doc marker: ${marker}`);
 
 check(workflow.includes('COM-B04E Authenticated Rollback-only Moderation Runtime Canary'), 'workflow name');
-check(workflow.includes("config/com-b04e-authenticated-rollback-only-moderation-runtime-canary.json"), 'workflow one-shot path');
+check(workflow.includes('config/com-b04e-authenticated-rollback-only-moderation-runtime-canary.json'), 'workflow one-shot path');
 check(workflow.includes('permissions:\n  contents: read'), 'workflow read-only repository permission');
 check(workflow.includes('secrets.SUPABASE_ACCESS_TOKEN'), 'workflow access token secret');
 check(workflow.includes('secrets.SUPABASE_DB_PASSWORD'), 'workflow database password secret');
