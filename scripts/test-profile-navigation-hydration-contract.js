@@ -51,7 +51,8 @@ const professional = read('assets/js/pages/professional-profile-experience.js');
 const professionalInit = professional.indexOf('window.DokeInitProfessionalProfile');
 const professionalMedia = professional.indexOf('Promise.resolve(renderProfessionalProfile(payload))', professionalInit);
 const professionalReady = professional.indexOf('hydration?.ready({ hasItems: true })', professionalMedia);
-assert(professionalInit >= 0 && professionalMedia > professionalInit, 'professional profile: media readiness is not awaited during initialization');
+assert(professionalInit >= 0, 'professional profile: initialization entry point is missing');
+assert(professionalMedia > professionalInit, 'professional profile: media readiness is not awaited during initialization');
 assert(professionalReady > professionalMedia, 'professional profile: hydration ready precedes media readiness');
 
 function loadHydrationCore({ internal = false, restore = false, navigationType = 'navigate', routeVisualMode = '' } = {}) {
