@@ -1,0 +1,178 @@
+name: Doke UX-SEARCH-DEBT-001 Executable Coverage
+
+on:
+  push:
+    branches:
+      - ux/ux-search-debt-001-coverage
+    paths:
+      - 'assets/js/pages/search/server-results-surface.js'
+      - 'scripts/test-ux-search-001-search-experience.js'
+      - 'scripts/test-search-ux02-runtime.js'
+      - 'docs/ux/UX-SEARCH-DEBT-001.md'
+      - 'sonar-project.properties'
+      - '.github/workflows/ux-search-debt-001-coverage.yml'
+  pull_request:
+    paths:
+      - 'assets/js/pages/search/server-results-surface.js'
+      - 'scripts/test-ux-search-001-search-experience.js'
+      - 'scripts/test-search-ux02-runtime.js'
+      - 'docs/ux/UX-SEARCH-DEBT-001.md'
+      - 'sonar-project.properties'
+      - '.github/workflows/ux-search-debt-001-coverage.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  ux-search-debt-001-coverage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+
+      - name: Validate Sonar analysis scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s sonar-project.properties
+          grep -Fqx 'sonar.sources=.' sonar-project.properties
+          grep -Fqx 'sonar.tests=scripts,tests' sonar-project.properties
+          grep -Fqx 'sonar.javascript.lcov.reportPaths=coverage/ux-search-debt-001/lcov.info' sonar-project.properties
+          grep -Fq 'uses: SonarSource/sonarqube-scan-action@c7ee0f9df90b7aa20e8dcf9695dcfe2e7da5b4f2' .github/workflows/ux-search-debt-001-coverage.yml
+
+      - name: Validate JavaScript syntax
+        run: |
+          node --check assets/js/pages/search/server-results-surface.js
+          node --check scripts/test-ux-search-001-search-experience.js
+          node --check scripts/test-search-ux02-runtime.js
+
+      - name: Verify the six Sonar findings are removed
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -Fq "require('node:fs')" scripts/test-ux-search-001-search-experience.js
+          grep -Fq "require('node:path')" scripts/test-ux-search-001-search-experience.js
+          grep -Fq "require('node:assert/strict')" scripts/test-ux-search-001-search-experience.js
+          ! grep -Fq "init && init.detail" scripts/test-ux-search-001-search-experience.js
+          ! grep -Fq "event && event.detail" scripts/test-ux-search-001-search-experience.js
+          ! grep -Fq "event && event.type === 'stale-result'" scripts/test-ux-search-001-search-experience.js
+
+      - name: Preserve direct deterministic invocation
+        run: |
+          node scripts/test-ux-search-001-search-experience.js
+          node scripts/test-search-ux02-runtime.js
+
+      - name: Generate executable LCOV with Node test coverage
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf coverage/ux-search-debt-001
+          mkdir -p coverage/ux-search-debt-001
+          node --test \
+            --experimental-test-coverage \
+            --test-coverage-include='assets/js/pages/search/server-results-surface.js' \
+            --test-reporter=spec \
+            --test-reporter-destination=stdout \
+            --test-reporter=lcov \
+            --test-reporter-destination=coverage/ux-search-debt-001/lcov.info \
+            scripts/test-ux-search-001-search-experience.js \
+            scripts/test-search-ux02-runtime.js
+
+      - name: Validate LCOV source ownership and non-zero execution
+        shell: bash
+        run: |
+          set -euo pipefail
+          REPORT='coverage/ux-search-debt-001/lcov.info'
+          test -s "${REPORT}"
+          grep -Fq 'SF:assets/js/pages/search/server-results-surface.js' "${REPORT}"
+          awk -F: '
+            /^LF:/ { found += $2 }
+            /^LH:/ { hit += $2 }
+            END {
+              if (found <= 0 || hit <= 0) {
+                print "[ux-search-debt] LCOV does not contain executable coverage." > "/dev/stderr"
+                exit 1
+              }
+              printf("[ux-search-debt] executable lines: %d/%d (%.2f%%)\n", hit, found, (100 * hit) / found)
+            }
+          ' "${REPORT}"
+
+      - name: Preserve UX-RESULTS-001 dependencies
+        run: |
+          node scripts/test-ux-results-001-presentation-foundation.js
+          node scripts/test-ux-results-001-dom-adapter.js
+
+      - name: Preserve filter and search stack
+        run: |
+          node scripts/test-ux-filters-002-filter-presentation.js
+          node scripts/test-ux-filters-001-filter-state.js
+          node scripts/test-ux-search-001-search-experience.js
+          node scripts/test-search-ux02-runtime.js
+
+      - name: Preserve transversal UX contracts
+        run: |
+          node scripts/test-ux-cards-001-card-experience.js
+          node scripts/test-ux-perf-001-performance-experience.js
+          node scripts/test-ux-resp-001-responsive-experience.js
+          node scripts/test-ux-a11y-001-accessibility-experience.js
+          node scripts/test-ux-nav-001-overlay-focus.js
+          node scripts/audit-navigation-lifecycle-contract.js
+          node scripts/audit-auth-session-contracts.js
+          node scripts/test-ux-priv-001-account-storage.js
+          node scripts/test-ux-cont-001-generation-fences.js
+          node scripts/test-ux-core-002-mutation-manager.js
+          node scripts/test-ux-core-001-state-content-registry.js
+
+      - name: Require SonarQube Cloud CI credential
+        if: github.event_name != 'pull_request'
+        shell: bash
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN || secrets.SONARCLOUD_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${SONAR_TOKEN}" ]]; then
+            echo '::error::Neither SONAR_TOKEN nor SONARCLOUD_TOKEN is available to the trusted branch workflow.'
+            exit 1
+          fi
+          echo '[ux-search-debt] SonarQube Cloud token reference is available.'
+
+      - name: Upload executable coverage evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ux-search-debt-001-coverage-${{ github.event_name }}-${{ github.run_id }}
+          path: coverage/ux-search-debt-001/lcov.info
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Validate patch whitespace
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            git diff --check "${{ github.event.pull_request.base.sha }}...${{ github.sha }}"
+          else
+            git diff --check HEAD^
+          fi
+
+      - name: Import LCOV and enforce SonarQube Cloud Quality Gate
+        if: github.event_name != 'pull_request'
+        uses: SonarSource/sonarqube-scan-action@c7ee0f9df90b7aa20e8dcf9695dcfe2e7da5b4f2 # v7
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN || secrets.SONARCLOUD_TOKEN }}
+        with:
+          args: >
+            -Dsonar.pullrequest.key=75
+            -Dsonar.pullrequest.branch=ux/ux-search-debt-001-coverage
+            -Dsonar.pullrequest.base=ux/ux-results-001-canonical-composition
+            -Dsonar.qualitygate.wait=true
+            -Dsonar.qualitygate.timeout=600

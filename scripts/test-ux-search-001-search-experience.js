@@ -1,6 +1,8 @@
-const fs = require('fs');
-const path = require('path');
-const assert = require('assert');
+'use strict';
+
+const fs = require('node:fs');
+const path = require('node:path');
+const assert = require('node:assert/strict');
 
 const root = path.resolve(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
@@ -22,7 +24,7 @@ const historyState = {
 class TestCustomEvent {
   constructor(type, init) {
     this.type = type;
-    this.detail = init && init.detail;
+    this.detail = init?.detail;
   }
 }
 
@@ -36,7 +38,7 @@ global.document = {
   addEventListener() {},
   removeEventListener() {},
   dispatchEvent(event) {
-    observedEvents.push(event && event.detail);
+    observedEvents.push(event?.detail);
     return true;
   }
 };
@@ -122,7 +124,7 @@ async function testLatestWins() {
   assert.strictEqual(receiptB.applied, true);
   assert.strictEqual(receiptB.state, api.states.READY);
   assert.strictEqual(controller.getState(), api.states.READY);
-  assert(observedEvents.some((event) => event && event.type === 'stale-result'));
+  assert(observedEvents.some((event) => event?.type === 'stale-result'));
   assert(!JSON.stringify(observedEvents).includes('eletricista'), 'events must not expose raw queries');
 }
 
