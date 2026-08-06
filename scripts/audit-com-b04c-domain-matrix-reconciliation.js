@@ -21,7 +21,7 @@ const flow = matrix.criticalFlows.find((item) => item.id === 'FLOW-12');
 
 check(domain, 'COM-001 domain exists');
 check(flow, 'FLOW-12 exists');
-check(['1.3.109', '1.3.110'].includes(matrix.version), 'matrix version continuity');
+check(['1.3.109', '1.3.110', '1.3.111'].includes(matrix.version), 'matrix version continuity');
 equal(domain.maturity, 3, 'maturity preserved');
 equal(domain.userFacingAuthority, 'hybrid', 'UI authority preserved');
 equal(domain.serverAuthority, 'partial', 'server authority partial');
@@ -61,13 +61,20 @@ if (matrix.version === '1.3.109') {
   const nextAction = 'Prepare repository-only moderation runtime composition under COM-B04D; any live staging invocation or real moderation action requires separate explicit authorization.';
   check(domain.nextActions.includes(nextAction), 'B04D next action');
   check(doc.includes(nextAction), 'doc B04D next action');
-} else {
+} else if (matrix.version === '1.3.110') {
   equal(matrix.updatedAt, '2026-08-05T22:17:00-03:00', 'B04D matrix timestamp');
   equal(blocker.category, 'moderation_authenticated_staging_canary', 'B04D blocker category');
   equal(blocker.description, 'Moderation runtime composition is repository-certified and persistence is structurally verified in staging, but authenticated live invocation, route activation and real moderation execution are not active.', 'B04D blocker description');
   const nextAction = 'Execute an authenticated rollback-only moderation composition canary in staging under COM-B04E only after separate explicit authorization.';
   check(domain.nextActions.includes(nextAction), 'B04E next action');
   check(doc.includes(nextAction), 'doc B04E next action');
+} else {
+  equal(matrix.updatedAt, '2026-08-06T09:36:00-03:00', 'B04G matrix timestamp');
+  equal(blocker.category, 'moderation_live_composition_activation', 'B04G blocker category');
+  check(blocker.description.includes('repository route/module wiring is certified'), 'B04G blocker description');
+  const nextAction = 'Prepare COM-B04H repository-only live composition activation readiness; staging deployment, traffic and real moderation require separate explicit authorization.';
+  check(domain.nextActions.includes(nextAction), 'B04H next action');
+  check(doc.includes(nextAction), 'doc B04H next action');
 }
 
 equal(report.name, 'domain-completion-matrix', 'report name');
