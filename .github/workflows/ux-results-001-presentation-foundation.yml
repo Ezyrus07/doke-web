@@ -1,0 +1,149 @@
+name: Doke UX-RESULTS-001 Presentation Foundation
+
+on:
+  pull_request:
+    paths:
+      - 'resultados.html'
+      - 'assets/js/pages/search-results-presentation.js'
+      - 'assets/js/pages/search-results-dom-adapter.js'
+      - 'assets/js/pages/search-results.js'
+      - 'assets/js/pages/search/server-results-surface.js'
+      - 'scripts/test-ux-results-001-presentation-foundation.js'
+      - 'scripts/test-ux-results-001-dom-adapter.js'
+      - 'tests/e2e/ux-results-001-browser-acceptance.spec.js'
+      - 'docs/ux/UX-RESULTS-001.md'
+      - '.github/workflows/ux-results-001-presentation-foundation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ux-results-001-foundation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Validate JavaScript syntax
+        run: |
+          node --check assets/js/pages/search-results-presentation.js
+          node --check assets/js/pages/search-results-dom-adapter.js
+          node --check assets/js/pages/search-results.js
+          node --check assets/js/pages/search/server-results-surface.js
+          node --check scripts/test-ux-results-001-presentation-foundation.js
+          node --check scripts/test-ux-results-001-dom-adapter.js
+          node --check tests/e2e/ux-results-001-browser-acceptance.spec.js
+
+      - name: Run UX-RESULTS-001 presentation foundation contracts
+        run: node scripts/test-ux-results-001-presentation-foundation.js
+
+      - name: Run UX-RESULTS-001 DOM adapter contracts
+        run: node scripts/test-ux-results-001-dom-adapter.js
+
+      - name: Preserve UX-FILTERS-002 dependency
+        run: node scripts/test-ux-filters-002-filter-presentation.js
+
+      - name: Preserve UX-FILTERS-001 dependency
+        run: node scripts/test-ux-filters-001-filter-state.js
+
+      - name: Preserve UX-SEARCH-001 dependency
+        run: node scripts/test-ux-search-001-search-experience.js
+
+      - name: Preserve SEARCH-UX02 legacy dependency
+        run: node scripts/test-search-ux02-runtime.js
+
+      - name: Preserve UX-CARDS-001 dependency
+        run: node scripts/test-ux-cards-001-card-experience.js
+
+      - name: Preserve UX-PERF-001 dependency
+        run: node scripts/test-ux-perf-001-performance-experience.js
+
+      - name: Preserve UX-RESP-001 dependency
+        run: node scripts/test-ux-resp-001-responsive-experience.js
+
+      - name: Preserve UX-A11Y-001 dependency
+        run: node scripts/test-ux-a11y-001-accessibility-experience.js
+
+      - name: Preserve UX-NAV-001 dependency
+        run: node scripts/test-ux-nav-001-overlay-focus.js
+
+      - name: Preserve navigation lifecycle contracts
+        run: node scripts/audit-navigation-lifecycle-contract.js
+
+      - name: Preserve auth and page bootstrap contracts
+        run: node scripts/audit-auth-session-contracts.js
+
+      - name: Preserve UX-PRIV-001 dependency
+        run: node scripts/test-ux-priv-001-account-storage.js
+
+      - name: Preserve UX-CONT-001 dependency
+        run: node scripts/test-ux-cont-001-generation-fences.js
+
+      - name: Preserve UX-CORE-002 dependency
+        run: node scripts/test-ux-core-002-mutation-manager.js
+
+      - name: Preserve UX-CORE-001 dependency
+        run: node scripts/test-ux-core-001-state-content-registry.js
+
+      - name: Validate static wiring
+        shell: bash
+        run: |
+          grep -Fq 'assets/js/pages/search-results-presentation.js?v=20260805-ux-results-001-v1' resultados.html
+          grep -Fq 'assets/js/pages/search-results-dom-adapter.js?v=20260805-ux-results-001-dom-v1' resultados.html
+          grep -Fq 'searchResultsDomAdapter' assets/js/pages/search-results.js
+          grep -Fq 'context.presentation' assets/js/pages/search/server-results-surface.js
+
+      - name: Validate patch whitespace
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            git diff --check "${{ github.event.pull_request.base.sha }}...${{ github.sha }}"
+          else
+            git diff --check HEAD^
+          fi
+
+  ux-results-001-browser-acceptance:
+    needs: ux-results-001-foundation
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts
+
+      - name: Install Chromium from the locked local Playwright package
+        run: node node_modules/playwright/cli.js install --with-deps chromium
+
+      - name: Run UX-RESULTS-001 browser acceptance
+        run: node node_modules/@playwright/test/cli.js test tests/e2e/ux-results-001-browser-acceptance.spec.js --workers=1
+
+      - name: Upload browser acceptance evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ux-results-001-browser-acceptance-${{ github.sha }}
+          path: |
+            reports/generated/playwright-html/
+            reports/generated/playwright-results.json
+            test-results/
+          if-no-files-found: warn
+          retention-days: 14
