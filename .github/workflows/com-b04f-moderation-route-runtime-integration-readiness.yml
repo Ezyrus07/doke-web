@@ -68,7 +68,8 @@ jobs:
           ! grep -F "'communities.moderation.command'" backend/shared/http/route-registry.js
           ! grep -F "'/communities/:communityId/moderation/commands'" backend/shared/http/route-registry.js
           ! grep -F "require('../../modules/communities/route-handlers')" backend/shared/http/module-route-loader.js
-          ! grep -R -F 'SUPABASE_SERVICE_ROLE_KEY' \
+          secret_marker='SUPABASE''_SERVICE_ROLE_KEY'
+          ! grep -R -F "$secret_marker" \
             backend/modules/communities/community-moderation-route-runtime-readiness.js \
             config/com-b04f-moderation-route-runtime-integration-readiness.json \
             scripts/test-com-b04f-moderation-route-runtime-integration-readiness.js \
