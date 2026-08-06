@@ -21,8 +21,7 @@ const flow = matrix.criticalFlows.find((item) => item.id === 'FLOW-12');
 
 check(domain, 'COM-001 domain exists');
 check(flow, 'FLOW-12 exists');
-equal(matrix.version, '1.3.109', 'matrix version');
-equal(matrix.updatedAt, '2026-08-05T22:02:00-03:00', 'matrix timestamp');
+check(['1.3.109', '1.3.110'].includes(matrix.version), 'matrix version continuity');
 equal(domain.maturity, 3, 'maturity preserved');
 equal(domain.userFacingAuthority, 'hybrid', 'UI authority preserved');
 equal(domain.serverAuthority, 'partial', 'server authority partial');
@@ -54,17 +53,26 @@ for (const marker of [
 
 const blocker = domain.blockers.find((item) => item.id === 'COM-B04');
 check(blocker, 'COM-B04 blocker retained');
-equal(blocker.category, 'moderation_runtime_composition', 'blocker category');
-equal(blocker.description, 'Immutable moderation persistence is applied and structurally verified in staging, but runtime composition, authenticated invocation and real moderation execution are not active.', 'blocker description');
 check(flow.blockers.includes('COM-B04'), 'FLOW-12 blocker retained');
-const nextAction = 'Prepare repository-only moderation runtime composition under COM-B04D; any live staging invocation or real moderation action requires separate explicit authorization.';
-check(domain.nextActions.includes(nextAction), 'next action');
-check(doc.includes(nextAction), 'doc next action');
-check(doc.includes('Baseline: 2026-08-05T22:02:00-03:00.'), 'doc baseline');
+if (matrix.version === '1.3.109') {
+  equal(matrix.updatedAt, '2026-08-05T22:02:00-03:00', 'B04C matrix timestamp');
+  equal(blocker.category, 'moderation_runtime_composition', 'B04C blocker category');
+  equal(blocker.description, 'Immutable moderation persistence is applied and structurally verified in staging, but runtime composition, authenticated invocation and real moderation execution are not active.', 'B04C blocker description');
+  const nextAction = 'Prepare repository-only moderation runtime composition under COM-B04D; any live staging invocation or real moderation action requires separate explicit authorization.';
+  check(domain.nextActions.includes(nextAction), 'B04D next action');
+  check(doc.includes(nextAction), 'doc B04D next action');
+} else {
+  equal(matrix.updatedAt, '2026-08-05T22:17:00-03:00', 'B04D matrix timestamp');
+  equal(blocker.category, 'moderation_authenticated_staging_canary', 'B04D blocker category');
+  equal(blocker.description, 'Moderation runtime composition is repository-certified and persistence is structurally verified in staging, but authenticated live invocation, route activation and real moderation execution are not active.', 'B04D blocker description');
+  const nextAction = 'Execute an authenticated rollback-only moderation composition canary in staging under COM-B04E only after separate explicit authorization.';
+  check(domain.nextActions.includes(nextAction), 'B04E next action');
+  check(doc.includes(nextAction), 'doc B04E next action');
+}
 
 equal(report.name, 'domain-completion-matrix', 'report name');
-equal(report.version, '1.3.109', 'report version');
-equal(report.generatedAt, '2026-08-05T22:02:00-03:00', 'report timestamp');
+equal(report.version, matrix.version, 'report version');
+equal(report.generatedAt, matrix.updatedAt, 'report timestamp');
 equal(report.status, 'passed', 'report status');
 const reportDomain = report.domains.find((item) => item.id === 'COM-001');
 check(reportDomain && reportDomain.filesMatched >= 17, 'report scans COM paths');
@@ -75,7 +83,7 @@ equal(config.structure.foreignKeysIndexed, true, 'FK indexes');
 equal(config.structure.persistentRowCount, 0, 'persistent rows');
 equal(config.rollbackCanary.idempotentReplay, true, 'replay');
 equal(config.rollbackCanary.persistentResidue, false, 'canary residue');
-equal(config.runtime.adapterIntegrated, false, 'runtime disconnected');
+equal(config.runtime.adapterIntegrated, false, 'B04C historical runtime disconnected');
 equal(config.effects.stagingSchemaChanged, true, 'staging schema changed');
 equal(config.effects.productionChanged, false, 'production unchanged');
 equal(config.effects.pullRequestMerged, false, 'PR unmerged');
