@@ -152,15 +152,49 @@ There is no visible or functional site change.
 
 The deployed application is unchanged. The branch route still returns `503` and performs no database or moderation operation.
 
-## Matrix
+## Matrix synchronization
 
 ```text
 version before: 1.3.111
-target version: 1.3.112
+version: 1.3.112
+canonical commit: 05c40d4aaa53a5699643eed1e2634d2e07dcaff3
+sync run: 31106422249
+sync job: 92632656989
+sync result: success
 COM-001 maturity: 3/6
 serverAuthority: partial
+stagingEvidence: staging_canary
 productionGate: blocked
 promotion allowed: false
+```
+
+Matrix reconciliation results:
+
+```text
+COM-B04: 59/59
+COM-B04B: 172/172 + 21/21 + 64/64
+COM-B04C: 80/80 + 59/59
+COM-B04D: 39/39 + 155/155 + 72/72
+COM-B04G: 95/95 + 159/159
+COM-B04H: 108/108 + 138/138
+restricted diff: passed
+```
+
+## Repository certification
+
+```text
+certified head: e7e769ce18c846fbd40d3cabf5a0d7ada055f1f7
+run: 31107031100
+job: 92634750174
+result: success
+COM-B04H conformance: 113/113
+COM-B04H audit: 143/143
+immutable predecessor blobs: passed
+fail-closed runtime boundary: passed
+COM-B04G regression: 95/95 + 159/159
+COM-B04D regression: 39/39 + 155/155 + 72/72
+repository-only security checks: passed
+diff hygiene: passed
 ```
 
 ## Next authorization boundary
