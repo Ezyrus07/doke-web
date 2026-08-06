@@ -23,6 +23,32 @@ async function main() {
     </body></html>`, { waitUntil: 'domcontentloaded' });
 
     await page.addScriptTag({ content: read('assets/js/core/page-hydration.js') });
+    await page.evaluate(() => {
+      window.DOKE_SUPABASE_CONFIG = { enabled: false, servicesEnabled: true };
+      window.Doke = window.Doke || {};
+      window.Doke.repositoryBoundary = {
+        getRegisteredProviders() { return ['hydration-contract']; }
+      };
+      window.Doke.pageDataOrchestrator = {
+        peekPageData() { return null; },
+        getPageData() {
+          return Promise.resolve({ services: [], workers: [], publications: [] });
+        }
+      };
+      window.Doke.repositories = {
+        services: { clearCache() {} }
+      };
+      window.Doke.services = {
+        services: {
+          list() {
+            return Promise.resolve([{ id: 'hydration-contract-service', status: 'active' }]);
+          }
+        }
+      };
+      window.Doke.homePublicServices = {
+        render(items) { return Array.isArray(items) ? items.length : 0; }
+      };
+    });
     await page.addScriptTag({ content: read('assets/js/pages/index-data-controller.js') });
     await page.waitForTimeout(30);
 
@@ -54,7 +80,8 @@ async function main() {
     if (!['ready', 'empty'].includes(result.state)) throw new Error(`unexpected hydration state after return: ${result.state}`);
 
     console.log('[index-return-hydration-contract] ok');
-    console.log('- replacing the home DOM creates a fresh hydration lifecycle');
+    console.log('- canonical dependencies resolve the first Home hydration');
+    console.log('- replacing the Home boundary creates a fresh hydration lifecycle');
     console.log('- ready content is revealed after returning to index');
   } finally {
     await browser.close();
