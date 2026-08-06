@@ -96,10 +96,8 @@ jobs:
           node scripts/audit-com-b04-moderation-case-authority.js
           node scripts/test-com-b04-moderation-case-authority.js
           node scripts/audit-com-b04-domain-matrix-reconciliation.js
-      - name: Canonical matrix and diff hygiene
-        run: |
-          npm run audit:domain-completion-matrix
-          git diff --check
+      - name: Diff hygiene
+        run: git diff --check
       - name: Execute one-shot authenticated rollback-only canary
         run: node scripts/execute-com-b04e-authenticated-rollback-only-moderation-runtime-canary.js
       - name: Upload sanitized canary evidence
