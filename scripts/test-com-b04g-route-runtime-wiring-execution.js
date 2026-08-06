@@ -48,7 +48,6 @@ function validAuthorizationPacket() {
 }
 
 async function main() {
-  // The pre-execution packet granted exactly one repository-only execution.
   const authorization = gate.evaluateRouteRuntimeWiringAuthorization(validAuthorizationPacket());
   equal(authorization.decision, 'authorized_for_single_repository_wiring_execution', 'authorization decision');
   equal(authorization.singleExecutionAuthorization, true, 'single execution authorization');
@@ -62,7 +61,6 @@ async function main() {
   equal(authorization.productionAuthority, false, 'no production authority');
   equal(authorization.pullRequestMergeAuthority, false, 'no merge authority');
 
-  // The exact frozen route is now present once.
   const route = findRouteByName(readiness.CANDIDATE_ROUTE.name);
   ok(route, 'candidate route registered');
   equal(route.name, 'communities.moderation.command', 'route name');
@@ -86,13 +84,11 @@ async function main() {
   equal(listRoutes().filter((entry) => entry.method === route.method && entry.path === route.path).length, 1, 'method path unique');
   equal(new Set(ROUTES.map((entry) => entry.name)).size, ROUTES.length, 'all route names unique');
 
-  // Existing route defaults remain unchanged.
   const login = findRouteByName('auth.login');
   ok(login, 'existing auth route retained');
   equal(login.authorizationGate, 'backend_route_guard', 'existing route gate unchanged');
   equal(login.rlsValidationRequired, true, 'existing route rls unchanged');
 
-  // The module loader exposes only the blocked handler.
   equal(Object.prototype.hasOwnProperty.call(modules, 'communities'), true, 'communities module loaded');
   equal(modules.communities, routeHandlers, 'loader module identity');
   equal(routeHandlers.routes, [route], 'module route list');
@@ -126,7 +122,6 @@ async function main() {
     'handler always fails closed before dependencies'
   );
 
-  // COM-B04D remains impossible to activate live.
   equal(composition.ACTIVATION_MODES, ['disabled', 'local_test_double'], 'composition modes unchanged');
   const blockedComposition = composition.createModerationRuntimeComposition({
     sessionVerifier: { authority: 'server_verified_session_boundary', async verify() { return null; } },
@@ -141,14 +136,21 @@ async function main() {
   equal(blockedComposition.stagingAuthority, false, 'composition staging authority false');
   equal(blockedComposition.productionAuthority, false, 'composition production authority false');
 
-  // Lifecycle is consumed and repository wiring is complete, but operational effects remain blocked.
-  equal(config.status, 'authorization_consumed_repository_wiring_completed_pending_certification', 'config execution status');
+  const supportedStatuses = [
+    'authorization_consumed_repository_wiring_completed_pending_certification',
+    'authorization_consumed_repository_wiring_certified'
+  ];
+  const supportedResults = [
+    'repository_wiring_completed_pending_certification',
+    'repository_wiring_certified'
+  ];
+  ok(supportedStatuses.includes(config.status), 'config lifecycle status');
   equal(config.authorization.received, true, 'authorization received');
   equal(config.authorization.consumed, true, 'authorization consumed');
   equal(config.authorization.executionAttempted, true, 'execution attempted');
   equal(config.authorization.singleExecutionOnly, true, 'single execution only');
   equal(config.authorization.workflowRerunAllowedAfterAttempt, false, 'rerun false');
-  equal(config.execution.result, 'repository_wiring_completed_pending_certification', 'execution result');
+  ok(supportedResults.includes(config.execution.result), 'execution lifecycle result');
   equal(config.currentEffects.routeRegistered, true, 'route effect true');
   equal(config.currentEffects.communitiesModuleLoaded, true, 'loader effect true');
   equal(config.currentEffects.runtimeHandlerExported, true, 'handler effect true');
@@ -160,15 +162,22 @@ async function main() {
     equal(value, false, `excluded authority false: ${key}`);
   }
 
-  equal(config.matrix.version, '1.3.110', 'matrix version');
+  ok(['1.3.110', '1.3.111'].includes(config.matrix.version), 'config matrix version');
   equal(config.matrix.maturityBefore, 3, 'maturity before');
   equal(config.matrix.maturityAfterWiring, 3, 'maturity unchanged');
   equal(config.matrix.promotionAllowed, false, 'matrix promotion false');
+  ok(['1.3.110', '1.3.111'].includes(matrix.version), 'canonical matrix version');
   const com = matrix.domains.find((entry) => entry.id === 'COM-001');
   ok(com, 'COM-001 matrix entry');
   equal(com.maturity, 3, 'COM maturity unchanged');
   equal(com.serverAuthority, 'partial', 'server authority partial');
   equal(com.productionGate, 'blocked', 'production gate blocked');
+
+  if (config.status === 'authorization_consumed_repository_wiring_certified') {
+    ok(/^[a-f0-9]{40}$/.test(config.execution.certifiedHead), 'certified head');
+    ok(Number.isInteger(config.execution.run) && config.execution.run > 0, 'certified run');
+    ok(Number.isInteger(config.execution.job) && config.execution.job > 0, 'certified job');
+  }
 
   console.log(`COM-B04G blocked route wiring execution passed: ${checks}/${checks}`);
 }
