@@ -54,7 +54,10 @@ for (const table of [
 }
 
 for (const table of ['case_event','evidence_record','decision_record','sanction_event','appeal_event','media_review_event']) {
-  check(sql.includes(`'${table}'`), `${table} immutable trigger registered`);
+  check(
+    sql.includes(`create trigger ${table}_immutable before update or delete on com_moderation_private.${table}`),
+    `${table} immutable trigger registered`
+  );
 }
 check(sql.includes("raise exception 'IMMUTABLE_MODERATION_LEDGER'"), 'immutable mutation rejected');
 check(sql.includes('before update or delete'), 'updates and deletes blocked');
