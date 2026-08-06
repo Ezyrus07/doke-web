@@ -9,8 +9,9 @@ const {
 } = require('../../modules/communities/community-moderation-supabase-repository-adapter');
 
 const CONTRACT_ID = 'com-b04i-staging-live-composition-route-canary-v1';
-const READINESS_CONTRACT_ID = 'com-b04h-live-composition-activation-readiness-v1';
-const REQUIRED_AUTHORIZATION_PHRASE = 'I_EXPLICITLY_AUTHORIZE_COM_B04I_STAGING_LIVE_COMPOSITION_ACTIVATION_AND_ROLLBACK_ONLY_ROUTE_CANARY';
+const READINESS_CONTRACT_ID = 'com-b04i-attempt-2-readiness-v1';
+const REQUIRED_AUTHORIZATION_PHRASE = 'I_EXPLICITLY_AUTHORIZE_COM_B04I_ATTEMPT_2_STAGING_LIVE_COMPOSITION_ACTIVATION_AND_ROLLBACK_ONLY_ROUTE_CANARY';
+const REQUIRED_AUTHORIZATION_SOURCE_HEAD = 'baa531e6672fbd752038e7f9b35d436aa6efa486';
 const REQUIRED_PROJECT_ID = 'zwkczgewzbsorbrjuzpb';
 const ACTIVATION_MODE = 'staging_authenticated_server_runtime';
 const ROUTE_NAME = 'communities.moderation.command';
@@ -41,7 +42,7 @@ function assertAuthorization(packet) {
   exact(packet.consumed, true, 'COM_B04I_AUTHORIZATION_MUST_BE_CONSUMED');
   exact(packet.singleUse, true, 'COM_B04I_SINGLE_USE_AUTHORIZATION_REQUIRED');
   exact(packet.reusableAfterFailure, false, 'COM_B04I_AUTHORIZATION_REUSE_PROHIBITED');
-  exact(packet.sourceHead, '20b17d96012756c547d522dd5ae38637185de4ee', 'COM_B04I_SOURCE_HEAD_MISMATCH');
+  exact(packet.sourceHead, REQUIRED_AUTHORIZATION_SOURCE_HEAD, 'COM_B04I_SOURCE_HEAD_MISMATCH');
   return packet;
 }
 
@@ -161,6 +162,7 @@ module.exports = freeze({
   CONTRACT_ID,
   READINESS_CONTRACT_ID,
   REQUIRED_AUTHORIZATION_PHRASE,
+  REQUIRED_AUTHORIZATION_SOURCE_HEAD,
   REQUIRED_PROJECT_ID,
   ACTIVATION_MODE,
   ROUTE_NAME,
