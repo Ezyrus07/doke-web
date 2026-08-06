@@ -6,14 +6,15 @@
     "com-b04b-immutable-moderation-persistence-readiness-v1",
     "com-b04c-moderation-persistence-staging-verification-v1"
   ],
-  "status": "explicit_authorization_received_execution_pending",
+  "status": "authorization_consumed_pre_execution_audit_failed",
   "authorization": {
     "phrase": "I_EXPLICITLY_AUTHORIZE_COM_B04E_AUTHENTICATED_ROLLBACK_ONLY_MODERATION_RUNTIME_COMPOSITION_CANARY_ON_DOKE_STAGING",
     "source": "explicit_user_message",
     "receivedAt": "2026-08-05T22:54:00-03:00",
     "received": true,
     "singleUse": true,
-    "consumed": false,
+    "consumed": true,
+    "consumedByRun": 31065331290,
     "reusableAfterFailure": false
   },
   "target": {
@@ -32,7 +33,7 @@
     "run": 31065275827,
     "job": 92501580895,
     "result": "success",
-    "conformance": "35/35",
+    "conformance": "36/36",
     "predecessorRegressions": "passed",
     "diffHygiene": "passed"
   },
@@ -57,21 +58,51 @@
     "expectedPersistentResidue": false
   },
   "execution": {
-    "attempted": false,
+    "attempted": true,
     "workflowRerunAllowed": false,
-    "run": null,
-    "job": null,
-    "head": null,
-    "result": "pending"
+    "run": 31065331290,
+    "authorizationJob": 92501745650,
+    "job": 92501791534,
+    "head": "b833568d99af00f2405ab231a264646f35de908b",
+    "result": "pre_execution_static_audit_failed",
+    "failureStage": "COM-B04E fail-closed audit",
+    "failureCause": "auditor_required_authorization_literal_in_executor_instead_of_imported_constant",
+    "syntaxPassed": true,
+    "localConformance": "36/36",
+    "executorStarted": false,
+    "databaseConnectionAttemptedByWorkflow": false,
+    "rollbackScopedMutationExecuted": false,
+    "reportArtifactCreated": false
+  },
+  "postflight": {
+    "verifiedAt": "2026-08-05T23:24:00-03:00",
+    "caseProjectionRows": 0,
+    "caseEventRows": 0,
+    "commandIdempotencyRows": 0,
+    "evidenceRecordRows": 0,
+    "decisionRecordRows": 0,
+    "sanctionEventRows": 0,
+    "appealEventRows": 0,
+    "mediaReviewEventRows": 0,
+    "persistentResidue": false
   },
   "effects": {
     "stagingReadAllowed": true,
+    "stagingPreflightAndPostflightReadExecuted": true,
     "rollbackScopedMutationAllowed": true,
+    "rollbackScopedMutationExecuted": false,
     "persistentStagingMutationAllowed": false,
+    "persistentStagingMutationExecuted": false,
     "routeRegistrationAllowed": false,
+    "routeRegistered": false,
     "runtimeDeploymentAllowed": false,
+    "runtimeDeployed": false,
     "realModerationAllowed": false,
+    "realModerationExecuted": false,
     "productionAllowed": false,
-    "pullRequestMergeAllowed": false
-  }
+    "productionChanged": false,
+    "pullRequestMergeAllowed": false,
+    "pullRequestMerged": false
+  },
+  "nextAction": "A second authenticated rollback-only canary requires a new distinct explicit authorization and a new one-shot trigger."
 }
