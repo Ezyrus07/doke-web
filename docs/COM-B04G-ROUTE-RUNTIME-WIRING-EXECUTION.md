@@ -132,7 +132,24 @@ productionGate: blocked
 promotion allowed: false
 ```
 
-The deterministic sync registered COM-B04E, COM-B04F and COM-B04G evidence without promoting operational authority.
+## Repository certification
+
+```text
+certified head: be8a8fe9c4f89ff6d41a034f4de244cc8410eedd
+run: 31103590796
+job: 92622986902
+result: success
+COM-B04G conformance: 92/92
+COM-B04G audit: 153/153
+blocked route invocation: passed
+COM-B04F historical continuity: passed
+COM-B04E regression: 36/36 + 194/194
+COM-B04D regression: 39/39 + 155/155 + 72/72
+repository-only security checks: passed
+diff hygiene: passed
+```
+
+The deterministic sync and repository certification registered COM-B04E, COM-B04F and COM-B04G evidence without promoting operational authority.
 
 Repository wiring alone does not make moderation operational.
 
