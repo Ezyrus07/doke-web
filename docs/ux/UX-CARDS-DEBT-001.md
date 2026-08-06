@@ -16,24 +16,34 @@ Pull request: `#81`.
 
 ## Root cause
 
-The legacy public catalog test treated cache-busting query strings as architectural contracts. It required specific July 2026 version suffixes for:
+The legacy public catalog test treated cache-busting query strings as architectural contracts. It required specific July 2026 version suffixes for five canonical scripts:
 
 - `services-repository.js`;
 - `services-service.js`;
-- `public-service-card.js`.
+- `public-service-card.js`;
+- `home/public-services.js`;
+- `index-data-controller.js`.
 
-Those suffixes are delivery metadata and legitimately change when unrelated contracts evolve. The stale assertions failed even when the same canonical repository, service and renderer remained wired correctly.
+Those suffixes are delivery metadata and legitimately change when unrelated contracts evolve. The stale assertions failed even when the same canonical repository, service, renderer and Home hydration authorities remained wired correctly.
 
 ## Semantic contract
 
-The refreshed test extracts external script sources from `index.html` and `resultados.html`, removes only a leading `./`, query string and fragment, and then requires:
+The refreshed test extracts external script sources, removes only a leading `./`, query string and fragment, and then requires:
+
+For `index.html` and `resultados.html`:
 
 1. the canonical services repository exactly once;
 2. the canonical services service exactly once;
 3. the canonical public service card renderer exactly once;
 4. dependency order `repository -> service -> card`.
 
-A deterministic synthetic fixture proves that different cache keys and fragments do not alter the contract.
+For `index.html`:
+
+1. the canonical public-services controller exactly once;
+2. the canonical index data controller exactly once;
+3. dependency order `public services -> index data controller`.
+
+A deterministic synthetic fixture proves that different cache keys and fragments do not alter the public catalog contract.
 
 ## Preserved contracts
 
