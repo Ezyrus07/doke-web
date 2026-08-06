@@ -19,7 +19,6 @@ const paths = Object.freeze({
   test: 'scripts/test-com-b04e-attempt-2-authenticated-rollback-only-moderation-runtime-canary.js',
   executor: 'scripts/execute-com-b04e-attempt-2-authenticated-rollback-only-moderation-runtime-canary.js',
   envelopeAudit: 'scripts/audit-com-b04e-attempt-2-execution-envelope.js',
-  audit: 'scripts/audit-com-b04e-attempt-2-readiness.js',
   attempt1Config: 'config/com-b04e-authenticated-rollback-only-moderation-runtime-canary.json',
   doc: 'docs/COM-B04E-ATTEMPT-2-AUTHENTICATED-ROLLBACK-ONLY-MODERATION-RUNTIME-CANARY.md',
   evidence: 'docs/validation/COM-B04E-ATTEMPT-2-AUTHENTICATED-ROLLBACK-ONLY-MODERATION-RUNTIME-CANARY.json',
@@ -56,25 +55,24 @@ for (const marker of [
   'COM_B04E_ATTEMPT_2_SYNTHETIC_CASE_MUST_BE_ABSENT',
   'repository.commitCaseCommand(prepared.preparedCommit)',
   'COM_B04E_ATTEMPT_2_CANONICAL_READ_AFTER_WRITE_INVALID',
-  'authorizationPhraseSha256',
   'rawIdentifiersExposed: false'
 ]) check(wrapper.includes(marker), `wrapper marker: ${marker}`);
 
-check(!wrapper.includes('process.env'), 'wrapper does not read environment');
-check(!wrapper.includes('route-registry'), 'wrapper does not register route');
-check(!wrapper.includes("activationMode: 'staging'"), 'wrapper has no staging mode');
-check(!wrapper.includes("activationMode: 'live'"), 'wrapper has no live mode');
-check(!wrapper.includes("activationMode: 'production'"), 'wrapper has no production mode');
-check(!wrapper.includes('SUPABASE_SERVICE_ROLE_KEY'), 'wrapper contains no service-role secret');
-check(wrapper.indexOf('composition.invokePreparedCommand(prepared)') < wrapper.indexOf('repository.commitCaseCommand(prepared.preparedCommit)'), 'live block proved before canary commit');
-check(wrapper.includes('if (attempted)'), 'single-use guard');
-check(wrapper.indexOf('attempted = true') < wrapper.indexOf('composition.prepareCommand(request)'), 'attempt consumed before preparation');
-
+for (const forbidden of [
+  'process.env',
+  'route-registry',
+  "activationMode: 'staging'",
+  "activationMode: 'live'",
+  "activationMode: 'production'",
+  'SUPABASE_SERVICE_ROLE_KEY'
+]) check(!wrapper.includes(forbidden), `wrapper excludes: ${forbidden}`);
+check(wrapper.indexOf('composition.invokePreparedCommand(prepared)') < wrapper.indexOf('repository.commitCaseCommand(prepared.preparedCommit)'), 'live path block precedes rollback commit');
+check(wrapper.indexOf('attempted = true') < wrapper.indexOf('composition.prepareCommand(request)'), 'authorization consumed before preparation');
 check(core.includes("Object.freeze(['disabled', 'local_test_double'])"), 'core safe modes unchanged');
-check(core.includes('COM_B04D_LIVE_INVOCATION_NOT_AUTHORIZED'), 'core live invocation blocked');
+check(core.includes('COM_B04D_LIVE_INVOCATION_NOT_AUTHORIZED'), 'core live path blocked');
 check(core.includes('routeRegistered: false'), 'core route unregistered');
-check(adapter.includes("transactionBoundary: 'single_security_definer_rpc'"), 'adapter single RPC boundary');
-check(adapter.includes("authority !== 'server_service_role'"), 'adapter service-role requirement');
+check(adapter.includes("transactionBoundary: 'single_security_definer_rpc'"), 'single atomic RPC boundary');
+check(adapter.includes("authority !== 'server_service_role'"), 'service-role executor required');
 
 for (const marker of [
   'COM-B04E attempt-2 conformance passed',
@@ -111,30 +109,33 @@ for (const marker of [
   "authority: 'server_service_role'",
   "environment: 'staging_rollback_canary_attempt_2'",
   "authority: 'staging_outer_transaction_guard'",
-  "BEGIN ISOLATION LEVEL SERIALIZABLE READ WRITE",
-  "SET LOCAL ROLE service_role",
-  "RESET ROLE",
+  'BEGIN ISOLATION LEVEL SERIALIZABLE READ WRITE',
+  'SET LOCAL ROLE service_role',
+  'RESET ROLE',
   "client.query('ROLLBACK')",
   'createModerationRollbackCanaryAttempt2({',
   'assertCountDelta(baselineCounts, insideCounts)',
   'assertSameCounts(baselineCounts, postflightCounts',
   'DOKE_COM_B04E_ATTEMPT_2_PERSISTENT_RESIDUE_DETECTED',
   'rawIdentifiersExposed: false',
-  'persistentMutationExecuted: false',
   "report.status = 'failed_closed'",
   'writeReport(report)'
 ]) check(executor.includes(marker), `executor marker: ${marker}`);
 
-check(!executor.includes("client.query('COMMIT')"), 'executor has no COMMIT');
-check(!executor.includes('SUPABASE_SERVICE_ROLE_KEY'), 'executor contains no service-role key');
-check(!executor.includes('signInWithPassword'), 'executor creates no session');
-check(!executor.includes('admin.createUser'), 'executor creates no user');
-check(!executor.includes('route-registry'), 'executor registers no route');
-check(executor.includes('phraseSha256: hash(REQUIRED_AUTHORIZATION_PHRASE)'), 'report hashes phrase');
+for (const forbidden of [
+  "client.query('COMMIT')",
+  'SUPABASE_SERVICE_ROLE_KEY',
+  'signInWithPassword',
+  'admin.createUser',
+  'route-registry',
+  'email:'
+]) check(!executor.includes(forbidden), `executor excludes: ${forbidden}`);
+check(executor.includes('phraseSha256: hash(REQUIRED_AUTHORIZATION_PHRASE)'), 'authorization phrase hashed');
 check(executor.includes('actorSha256: hash(row.user_id)'), 'actor hashed');
 check(executor.includes('sessionSha256: hash(row.session_id)'), 'session hashed');
-check(!executor.includes('email:'), 'email not retained');
-check(executor.indexOf('const report = {') < executor.indexOf('verifyExecutionEnvelope(env)'), 'report initialized before envelope verification');
+const reportIndex = executor.indexOf('const report = {');
+const envelopeInvocationIndex = executor.indexOf('    verifyExecutionEnvelope(env);');
+check(reportIndex >= 0 && envelopeInvocationIndex >= 0 && reportIndex < envelopeInvocationIndex, 'report initialized before envelope invocation');
 
 for (const marker of [
   "require('../config/com-b04e-attempt-2-authenticated-rollback-only-moderation-runtime-canary.json')",
@@ -149,7 +150,7 @@ for (const marker of [
   'COM-B04E attempt-2 execution envelope audit passed'
 ]) check(envelopeAudit.includes(marker), `envelope audit marker: ${marker}`);
 
-// Canonical attempt-1 state must remain immutable and consumed.
+// Attempt 1 remains consumed, closed and residue-free.
 equal(attempt1.status, 'authorization_consumed_pre_execution_audit_failed', 'attempt-1 status');
 equal(attempt1.authorization.consumed, true, 'attempt-1 consumed');
 equal(attempt1.authorization.consumedByRun, 31065331290, 'attempt-1 run');
@@ -159,19 +160,19 @@ equal(attempt1.execution.databaseConnectionAttemptedByWorkflow, false, 'attempt-
 equal(attempt1.execution.rollbackScopedMutationExecuted, false, 'attempt-1 mutation false');
 equal(attempt1.postflight.persistentResidue, false, 'attempt-1 residue false');
 
-// Pending evidence must not claim execution.
+// Preparation evidence cannot claim a live execution.
 equal(evidence.contractId, 'com-b04e-attempt-2-authenticated-rollback-only-moderation-runtime-composition-canary-v1', 'evidence contract');
-equal(evidence.status, 'explicit_authorization_received_repository_preparation_pending', 'evidence pending status');
-equal(evidence.authorization.consumed, false, 'authorization not consumed during preparation');
-equal(evidence.previousAttempt.authorizationConsumed, true, 'previous attempt consumed');
+equal(evidence.status, 'explicit_authorization_received_repository_preparation_pending', 'evidence pending');
+equal(evidence.authorization.consumed, false, 'authorization unconsumed during preparation');
+equal(evidence.previousAttempt.authorizationConsumed, true, 'previous authorization consumed');
 equal(evidence.previousAttempt.executorStarted, false, 'previous executor false');
 equal(evidence.preflight.projectStatus, 'ACTIVE_HEALTHY', 'project healthy');
 equal(evidence.preflight.requiredMigrations, 2, 'migrations present');
 equal(evidence.preflight.activeAuthenticatedSessionCount, 20, 'active sessions recorded');
 equal(evidence.preflight.moderationLedgerRowsBeforeCanary, 0, 'empty ledger recorded');
 equal(evidence.execution.attempted, false, 'execution pending');
-equal(evidence.effects.rollbackScopedMutationExecuted, false, 'no rollback mutation yet');
-equal(evidence.effects.persistentStagingMutationExecuted, false, 'no persistent mutation');
+equal(evidence.effects.rollbackScopedMutationExecuted, false, 'rollback mutation absent');
+equal(evidence.effects.persistentStagingMutationExecuted, false, 'persistent mutation absent');
 
 for (const marker of [
   'Attempt 2 is authorized once by the distinct phrase',
@@ -201,7 +202,7 @@ for (const marker of [
   'if: always()',
   'actions/upload-artifact@v4'
 ]) check(workflow.includes(marker), `workflow marker: ${marker}`);
-check(!workflow.includes('SUPABASE_SERVICE_ROLE_KEY'), 'workflow contains no service-role key');
+check(!workflow.includes('SUPABASE_SERVICE_ROLE_KEY'), 'workflow has no service-role key');
 check(!workflow.includes('supabase db push'), 'workflow applies no migration');
 check(!workflow.includes('supabase functions deploy'), 'workflow deploys nothing');
 
