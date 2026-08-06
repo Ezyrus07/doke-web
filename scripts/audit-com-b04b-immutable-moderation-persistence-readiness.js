@@ -85,7 +85,7 @@ const expectedMethods = [
 ];
 equal(config.contractId, 'com-b04b-immutable-moderation-persistence-readiness-v1', 'contract id');
 equal(config.scope, 'repository_only', 'scope');
-equal(config.status, 'adapter_and_immutable_migration_prepared_not_applied', 'status');
+check(['adapter_and_immutable_migration_prepared_not_applied','repository_contract_certified_migration_not_applied'].includes(config.status), 'status');
 equal(config.adapterPrepared, true, 'adapter prepared');
 equal(config.migrationPrepared, true, 'migration prepared');
 equal(config.migrationApplied, false, 'migration not applied');
@@ -110,6 +110,18 @@ for (const [key, value] of Object.entries(config.authority)) {
 }
 for (const value of Object.values(config.prohibitedEffects)) equal(value, false, 'prohibited effect false');
 
+if (config.status === 'repository_contract_certified_migration_not_applied') {
+  equal(config.certifiedRepositoryHead, 'e6ef05ebf0241a5f3a0d3b9f25304e77fda68861', 'certified repository head');
+  equal(config.certification.run, 31060030246, 'certification run');
+  equal(config.certification.job, 92485763612, 'certification job');
+  equal(config.certification.result, 'success', 'certification result');
+  equal(config.certification.audit, '156/156', 'certification audit');
+  equal(config.certification.conformance, '21/21', 'certification conformance');
+  equal(config.certification.matrixReconciliation, '85/85', 'matrix certification');
+  equal(config.certification.predecessorContinuity, '82/82', 'predecessor continuity');
+  equal(config.certification.globalMatrix, 'passed', 'global matrix certification');
+}
+
 equal(evidence.contractId, config.contractId, 'evidence contract');
 check(['repository_artifacts_prepared_pending_ci','repository_contract_certified'].includes(evidence.status), 'evidence status');
 check(['pending_repository_certification','passed_repository_only'].includes(evidence.result), 'evidence result');
@@ -118,6 +130,16 @@ equal(evidence.runtimeIntegrated, false, 'evidence runtime false');
 equal(evidence.stagingValidated, false, 'evidence staging false');
 for (const value of Object.values(evidence.effects)) equal(value, false, 'evidence effect false');
 for (const value of Object.values(evidence.remainingAuthority)) equal(value, false, 'remaining authority false');
+
+if (evidence.status === 'repository_contract_certified') {
+  equal(evidence.certifiedRepositoryHead, config.certifiedRepositoryHead, 'evidence certified head');
+  equal(evidence.certification.run, config.certification.run, 'evidence certification run');
+  equal(evidence.certification.job, config.certification.job, 'evidence certification job');
+  equal(evidence.certification.result, 'success', 'evidence certification result');
+  equal(evidence.certification.audit, '156/156', 'evidence audit result');
+  equal(evidence.certification.conformance, '21/21', 'evidence conformance result');
+  equal(evidence.certification.matrixReconciliation, '85/85', 'evidence matrix result');
+}
 
 for (const marker of [
   'one `SECURITY DEFINER` RPC',
