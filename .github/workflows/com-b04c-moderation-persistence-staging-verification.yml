@@ -1,0 +1,51 @@
+name: COM-B04C Moderation Persistence Staging Verification
+
+on:
+  push:
+    branches: [com/com-001-baseline-audit]
+    paths:
+      - 'config/com-b04c-moderation-persistence-staging-verification.json'
+      - 'docs/COM-B04C-MODERATION-PERSISTENCE-STAGING-VERIFICATION.md'
+      - 'docs/validation/COM-B04C-MODERATION-PERSISTENCE-STAGING-VERIFICATION.json'
+      - 'scripts/audit-com-b04c-moderation-persistence-staging-verification.js'
+      - 'supabase/migrations/20260805214700_com_b04c_moderation_fk_indexes.sql'
+      - '.github/workflows/com-b04c-moderation-persistence-staging-verification.yml'
+  pull_request:
+    paths:
+      - 'config/com-b04c-moderation-persistence-staging-verification.json'
+      - 'docs/COM-B04C-MODERATION-PERSISTENCE-STAGING-VERIFICATION.md'
+      - 'docs/validation/COM-B04C-MODERATION-PERSISTENCE-STAGING-VERIFICATION.json'
+      - 'scripts/audit-com-b04c-moderation-persistence-staging-verification.js'
+      - 'supabase/migrations/20260805214700_com_b04c_moderation_fk_indexes.sql'
+      - '.github/workflows/com-b04c-moderation-persistence-staging-verification.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  com-b04c-staging-verification:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Syntax
+        run: node --check scripts/audit-com-b04c-moderation-persistence-staging-verification.js
+      - name: Audit COM-B04C
+        run: node scripts/audit-com-b04c-moderation-persistence-staging-verification.js
+      - name: COM-B04B regression
+        run: |
+          node scripts/audit-com-b04b-immutable-moderation-persistence-readiness.js
+          node scripts/test-com-b04b-immutable-moderation-persistence-readiness.js
+          node scripts/audit-com-b04b-domain-matrix-reconciliation.js
+      - name: COM-B04 regression
+        run: |
+          node scripts/audit-com-b04-moderation-case-authority.js
+          node scripts/test-com-b04-moderation-case-authority.js
+          node scripts/audit-com-b04-domain-matrix-reconciliation.js
+      - name: Canonical matrix drift
+        run: npm run audit:domain-completion-matrix
+      - name: Diff hygiene
+        run: git diff --check
