@@ -1,0 +1,79 @@
+name: COM-B04G Route Runtime Wiring Authorization Readiness
+
+on:
+  push:
+    branches:
+      - com/com-001-baseline-audit
+    paths:
+      - 'backend/modules/communities/community-moderation-route-runtime-wiring-authorization.js'
+      - 'config/com-b04g-route-runtime-wiring-authorization-readiness.json'
+      - 'scripts/test-com-b04g-route-runtime-wiring-authorization-readiness.js'
+      - 'scripts/audit-com-b04g-route-runtime-wiring-authorization-readiness.js'
+      - 'docs/COM-B04G-ROUTE-RUNTIME-WIRING-AUTHORIZATION-READINESS.md'
+      - '.github/workflows/com-b04g-route-runtime-wiring-authorization-readiness.yml'
+      - 'backend/modules/communities/community-moderation-route-runtime-readiness.js'
+      - 'backend/shared/http/route-registry.js'
+      - 'backend/shared/http/module-route-loader.js'
+      - 'backend/modules/communities/community-moderation-runtime-composition.js'
+      - 'config/domain-completion-matrix.json'
+  pull_request:
+    paths:
+      - 'backend/modules/communities/community-moderation-route-runtime-wiring-authorization.js'
+      - 'config/com-b04g-route-runtime-wiring-authorization-readiness.json'
+      - 'scripts/test-com-b04g-route-runtime-wiring-authorization-readiness.js'
+      - 'scripts/audit-com-b04g-route-runtime-wiring-authorization-readiness.js'
+      - 'docs/COM-B04G-ROUTE-RUNTIME-WIRING-AUTHORIZATION-READINESS.md'
+      - '.github/workflows/com-b04g-route-runtime-wiring-authorization-readiness.yml'
+      - 'backend/modules/communities/community-moderation-route-runtime-readiness.js'
+      - 'backend/shared/http/route-registry.js'
+      - 'backend/shared/http/module-route-loader.js'
+      - 'backend/modules/communities/community-moderation-runtime-composition.js'
+      - 'config/domain-completion-matrix.json'
+
+permissions:
+  contents: read
+
+jobs:
+  readiness:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Syntax
+        run: |
+          node --check backend/modules/communities/community-moderation-route-runtime-wiring-authorization.js
+          node --check scripts/test-com-b04g-route-runtime-wiring-authorization-readiness.js
+          node --check scripts/audit-com-b04g-route-runtime-wiring-authorization-readiness.js
+      - name: COM-B04G conformance
+        run: node scripts/test-com-b04g-route-runtime-wiring-authorization-readiness.js
+      - name: COM-B04G repository audit
+        run: node scripts/audit-com-b04g-route-runtime-wiring-authorization-readiness.js
+      - name: Repository surfaces remain untouched
+        shell: bash
+        run: |
+          test "$(git rev-parse HEAD:backend/modules/communities/community-moderation-route-runtime-readiness.js)" = "e3af9ea714d81f77b6e08d270e5afe6897fc67a2"
+          test "$(git rev-parse HEAD:backend/shared/http/route-registry.js)" = "a0456c2c98662b7f2c48f6426e56e5b0330624eb"
+          test "$(git rev-parse HEAD:backend/shared/http/module-route-loader.js)" = "d5322507bf7d0ecee4313aab1a7b9c04c9df29c9"
+          ! grep -F "'communities.moderation.command'" backend/shared/http/route-registry.js
+          ! grep -F "'/communities/:communityId/moderation/commands'" backend/shared/http/route-registry.js
+          ! grep -F "require('../../modules/communities/route-handlers')" backend/shared/http/module-route-loader.js
+          grep -F "authorization_required_not_consumed" config/com-b04g-route-runtime-wiring-authorization-readiness.json
+          grep -F '"received": false' config/com-b04g-route-runtime-wiring-authorization-readiness.json
+          grep -F '"consumed": false' config/com-b04g-route-runtime-wiring-authorization-readiness.json
+      - name: COM-B04F regression
+        run: |
+          node scripts/test-com-b04f-moderation-route-runtime-integration-readiness.js
+          node scripts/audit-com-b04f-moderation-route-runtime-integration-readiness.js
+      - name: COM-B04E regression
+        run: |
+          node scripts/test-com-b04e-attempt-2-authenticated-rollback-only-moderation-runtime-canary.js
+          node scripts/audit-com-b04e-attempt-2-readiness.js
+      - name: Diff hygiene
+        run: git diff --check
