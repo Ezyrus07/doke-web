@@ -10,9 +10,15 @@ on:
       - 'supabase/migrations/20260805205800_com_b04b_moderation_persistence.sql'
       - 'scripts/test-com-b04b-immutable-moderation-persistence-readiness.js'
       - 'scripts/audit-com-b04b-immutable-moderation-persistence-readiness.js'
+      - 'scripts/audit-com-b04b-domain-matrix-reconciliation.js'
+      - 'scripts/audit-com-b04-domain-matrix-reconciliation.js'
       - 'docs/COM-B04B-IMMUTABLE-MODERATION-PERSISTENCE-READINESS.md'
       - 'docs/validation/COM-B04B-IMMUTABLE-MODERATION-PERSISTENCE-READINESS.json'
       - '.github/workflows/com-b04b-immutable-moderation-persistence-readiness.yml'
+      - 'package.json'
+      - 'config/domain-completion-matrix.json'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
   pull_request:
     paths:
       - 'backend/modules/communities/community-moderation-supabase-repository-adapter.js'
@@ -20,9 +26,15 @@ on:
       - 'supabase/migrations/20260805205800_com_b04b_moderation_persistence.sql'
       - 'scripts/test-com-b04b-immutable-moderation-persistence-readiness.js'
       - 'scripts/audit-com-b04b-immutable-moderation-persistence-readiness.js'
+      - 'scripts/audit-com-b04b-domain-matrix-reconciliation.js'
+      - 'scripts/audit-com-b04-domain-matrix-reconciliation.js'
       - 'docs/COM-B04B-IMMUTABLE-MODERATION-PERSISTENCE-READINESS.md'
       - 'docs/validation/COM-B04B-IMMUTABLE-MODERATION-PERSISTENCE-READINESS.json'
       - '.github/workflows/com-b04b-immutable-moderation-persistence-readiness.yml'
+      - 'package.json'
+      - 'config/domain-completion-matrix.json'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
 
 permissions:
   contents: read
@@ -43,10 +55,14 @@ jobs:
           node --check backend/modules/communities/community-moderation-supabase-repository-adapter.js
           node --check scripts/test-com-b04b-immutable-moderation-persistence-readiness.js
           node --check scripts/audit-com-b04b-immutable-moderation-persistence-readiness.js
+          node --check scripts/audit-com-b04b-domain-matrix-reconciliation.js
+          node --check scripts/audit-com-b04-domain-matrix-reconciliation.js
       - name: Audit COM-B04B
         run: node scripts/audit-com-b04b-immutable-moderation-persistence-readiness.js
       - name: Conformance COM-B04B
         run: node scripts/test-com-b04b-immutable-moderation-persistence-readiness.js
+      - name: Audit COM-B04B domain matrix reconciliation
+        run: node scripts/audit-com-b04b-domain-matrix-reconciliation.js
       - name: COM-B04 predecessor regression
         run: |
           node scripts/audit-com-b04-moderation-case-authority.js
