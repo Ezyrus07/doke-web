@@ -120,18 +120,37 @@ equal(config.translationBoundary.initialEvidenceMaterialized, true, 'initial evi
 equal(config.translationBoundary.singleSecurityDefinerRpcCommit, true, 'single RPC');
 equal(config.localConformance.disabledInvocationRejected, true, 'disabled invocation');
 equal(config.localConformance.replayRemainsReadOnly, true, 'replay read-only');
+equal(config.canonicalMatrix.version, '1.3.110', 'config matrix version');
+equal(config.canonicalMatrix.commit, '5cb1b90364be487aaa477a6443a97fbbbb625d34', 'config matrix commit');
+equal(config.canonicalMatrix.syncRun, 31063511588, 'config matrix run');
+equal(config.canonicalMatrix.syncJob, 92496281894, 'config matrix job');
+equal(config.canonicalMatrix.result, 'success', 'config matrix result');
+equal(config.canonicalMatrix.comB04DConformance, '39/39', 'config conformance total');
+equal(config.canonicalMatrix.comB04DAudit, '136/136', 'config audit total');
+equal(config.canonicalMatrix.comB04DContinuity, '71/71', 'config continuity total');
+equal(config.canonicalMatrix.globalMatrix, 'passed', 'config global matrix');
+equal(config.canonicalMatrix.diffRestriction, 'passed', 'config diff restriction');
 for (const [key, value] of Object.entries(config.effects)) equal(value, false, `effect false: ${key}`);
 for (const [key, value] of Object.entries(config.remainingAuthority)) equal(value, false, `authority false: ${key}`);
 
 equal(evidence.contractId, config.contractId, 'evidence contract');
 equal(evidence.status, config.status, 'evidence status');
-check(['prepared_repository_only_pending_final_ci_binding', 'repository_certified_live_invocation_blocked'].includes(evidence.result), 'evidence result allowed');
+equal(evidence.result, 'repository_certified_live_invocation_blocked', 'evidence certified result');
 equal(evidence.composition.defaultActivationMode, 'disabled', 'evidence default disabled');
 equal(evidence.composition.liveMode, false, 'evidence no live mode');
 equal(evidence.composition.routeRegistered, false, 'evidence route false');
 equal(evidence.verifiedProperties.initialEvidenceMaterialized, true, 'evidence initial materialization');
 equal(evidence.verifiedProperties.disabledModeRejectsInvocation, true, 'evidence disabled invocation');
 equal(evidence.verifiedProperties.bearerTokenRetained, false, 'evidence token absent');
+equal(evidence.canonicalMatrix.version, config.canonicalMatrix.version, 'evidence matrix version');
+equal(evidence.canonicalMatrix.commit, config.canonicalMatrix.commit, 'evidence matrix commit');
+equal(evidence.canonicalMatrix.syncRun, config.canonicalMatrix.syncRun, 'evidence matrix run');
+equal(evidence.canonicalMatrix.syncJob, config.canonicalMatrix.syncJob, 'evidence matrix job');
+equal(evidence.canonicalMatrix.result, 'success', 'evidence matrix result');
+equal(evidence.canonicalMatrix.comB04DConformance, '39/39', 'evidence conformance');
+equal(evidence.canonicalMatrix.comB04DAudit, '136/136', 'evidence audit');
+equal(evidence.canonicalMatrix.comB04DContinuity, '71/71', 'evidence continuity');
+equal(evidence.certification.result, 'matrix_sync_certified_pending_final_head_gate', 'evidence certification phase');
 for (const [key, value] of Object.entries(evidence.effects)) equal(value, false, `evidence effect false: ${key}`);
 
 for (const marker of [
