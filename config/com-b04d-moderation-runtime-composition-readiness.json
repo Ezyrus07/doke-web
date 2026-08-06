@@ -1,0 +1,90 @@
+{
+  "contractId": "com-b04d-moderation-runtime-composition-readiness-v1",
+  "domain": "COM-001",
+  "dependsOn": [
+    "com-b04-moderation-case-authority-v1",
+    "com-b04b-immutable-moderation-persistence-readiness-v1",
+    "com-b04c-moderation-persistence-staging-verification-v1"
+  ],
+  "scope": "repository_only_runtime_composition_readiness",
+  "status": "repository_composition_ready_live_invocation_blocked",
+  "preparedAt": "2026-08-05T22:17:00-03:00",
+  "composition": {
+    "module": "backend/modules/communities/community-moderation-runtime-composition.js",
+    "domainAuthority": "backend/modules/communities/community-moderation-case-authority.js",
+    "repositoryAdapter": "backend/modules/communities/community-moderation-supabase-repository-adapter.js",
+    "defaultActivationMode": "disabled",
+    "allowedActivationModes": [
+      "disabled",
+      "local_test_double"
+    ],
+    "liveActivationModePresent": false,
+    "routeRegistered": false
+  },
+  "securityBoundary": {
+    "serverVerifiedSessionRequired": true,
+    "canonicalServerContextRequired": true,
+    "canonicalAuthorizationActorBindingRequired": true,
+    "persistedCaseBindingRequired": true,
+    "persistenceProvenanceRequired": true,
+    "clientActorOverrideBlocked": true,
+    "clientAuthorizationOverrideBlocked": true,
+    "clientServiceRoleSelectionBlocked": true,
+    "rawSensitivePayloadBlocked": true,
+    "bearerTokenRetainedInPreparedCommand": false,
+    "serviceRoleExecutorInternalOnly": true
+  },
+  "translationBoundary": {
+    "domainRulesDuplicated": false,
+    "domainDecisionRequiredBeforeCommitMapping": true,
+    "projectionAssemblerPresent": true,
+    "initialEvidenceMaterialized": true,
+    "decisionLedgerMappingPresent": true,
+    "sanctionLedgerMappingPresent": true,
+    "appealLedgerMappingPresent": true,
+    "mediaLedgerMappingPresent": true,
+    "singleSecurityDefinerRpcCommit": true,
+    "serializableTransactionPlanPreserved": true,
+    "hashChainPreserved": true,
+    "idempotencyIdentityPreserved": true
+  },
+  "localConformance": {
+    "test": "scripts/test-com-b04d-moderation-runtime-composition-readiness.js",
+    "newCasePreparationUsesNoReadRpc": true,
+    "existingCaseLoadsCanonicalPersistenceFirst": true,
+    "disabledInvocationRejected": true,
+    "localTestDoubleSingleCommitRpc": true,
+    "replayRemainsReadOnly": true,
+    "forgedAuthorityRejected": true,
+    "persistenceDriftRejected": true
+  },
+  "effects": {
+    "databaseAccessed": false,
+    "stagingRead": false,
+    "stagingMutation": false,
+    "migrationApplied": false,
+    "deploymentExecuted": false,
+    "runtimeActivated": false,
+    "routeRegistered": false,
+    "realReportCreated": false,
+    "realContentChanged": false,
+    "realSanctionApplied": false,
+    "realAppealChanged": false,
+    "realMediaChanged": false,
+    "productionChanged": false,
+    "pullRequestMerged": false
+  },
+  "remainingAuthority": {
+    "liveInvocationAuthority": false,
+    "stagingReadAuthority": false,
+    "stagingMutationAuthority": false,
+    "runtimeMutationAuthority": false,
+    "realModerationWriteAuthority": false,
+    "realSanctionWriteAuthority": false,
+    "realAppealWriteAuthority": false,
+    "realMediaWriteAuthority": false,
+    "productionAuthority": false,
+    "pullRequestMergeAuthority": false
+  },
+  "nextSublot": "COM-B04E authenticated staging runtime composition canary under separate explicit authorization"
+}
