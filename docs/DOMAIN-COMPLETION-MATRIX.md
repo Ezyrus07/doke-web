@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 1264 arquivos no escopo; 298 referências a localStorage; 81 a sessionStorage; 595 referências mock; 255 referências de rede/Supabase; 38 marcadores de implementação pendente.
+**Evidência estática observada:** 1267 arquivos no escopo; 298 referências a localStorage; 81 a sessionStorage; 595 referências mock; 255 referências de rede/Supabase; 38 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -151,7 +151,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção blocked.
 
-**Evidência estática observada:** 224 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 0 referências mock; 5 referências de rede/Supabase; 9 marcadores de implementação pendente.
+**Evidência estática observada:** 225 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 0 referências mock; 5 referências de rede/Supabase; 9 marcadores de implementação pendente.
 
 **Tabelas/autoridades de dados:** `users`, `user_profiles`, `client_profiles`, `audit_logs`, `availability_slots`, `budgets`, `communities`, `community_members`, `community_posts`, `favorites`, `message_attachments`, `reports`, `reviews`, `service_categories`, `verification_events`.
 
@@ -344,7 +344,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção blocked.
 
-**Evidência estática observada:** 227 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 3 referências mock; 19 referências de rede/Supabase; 9 marcadores de implementação pendente.
+**Evidência estática observada:** 228 arquivos no escopo; 0 referências a localStorage; 0 a sessionStorage; 3 referências mock; 19 referências de rede/Supabase; 9 marcadores de implementação pendente.
 
 **Páginas:** `index.html`, `resultados.html`, `detalhe-anuncio.html`.
 
@@ -539,7 +539,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI local; servidor partial; staging staging canary; segurança partial; produção blocked.
 
-**Evidência estática observada:** 1174 arquivos no escopo; 221 referências a localStorage; 73 a sessionStorage; 331 referências mock; 253 referências de rede/Supabase; 19 marcadores de implementação pendente.
+**Evidência estática observada:** 1177 arquivos no escopo; 221 referências a localStorage; 73 a sessionStorage; 331 referências mock; 253 referências de rede/Supabase; 19 marcadores de implementação pendente.
 
 **Páginas:** `anunciar-servico.html`, `pedidos.html`, `orcamento.html`.
 
@@ -896,17 +896,19 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - No community Realtime publication, authenticated subscription, route or runtime integration is active yet.
 - COM-B04 canonical moderation case authority is repository-certified with revision-bound evidence, dual control, bounded sanctions, independent appeals, authenticated scan attestations and serializable transaction plans.
 - COM-B04B immutable moderation persistence readiness is repository-certified with private RLS-forced tables, append-only ledgers, service-role-only SECURITY DEFINER RPCs, expected-revision CAS, hash-chain validation and atomic idempotency.
-- No COM-B04B migration has been applied; runtime, staging writes, real moderation actions and production remain blocked.
+- COM-B04C applied and structurally verified immutable moderation persistence in staging: eight private RLS-forced tables, six immutable ledger triggers, two service-role-only SECURITY DEFINER RPCs, and complete foreign-key index coverage.
+- A rollback-only canary proved atomic revision creation, idempotent replay, revision-conflict rejection and immutable-ledger enforcement.
+- No synthetic moderation rows persisted; runtime composition, real moderation actions and production remain blocked.
 
 **Bloqueadores:**
 - **COM-B02 · CRITICAL · server_runtime_activation:** Server-authority contracts, persistence foundation and a read-only canary are certified, but membership, roles, invitations, bans and content commands are not integrated into the canonical runtime. _(Fase 11)_
 - **COM-B03 · HIGH · realtime_activation:** Scalable channel policy is repository-certified, but no community Realtime publication or authenticated subscription is active. _(Fase 11)_
-- **COM-B04 · HIGH · moderation_persistence_application:** Immutable moderation persistence adapter and migration are repository-certified, but migration application, structural staging verification, runtime integration and real moderation execution are not active. _(Fase 12)_
+- **COM-B04 · HIGH · moderation_runtime_composition:** Immutable moderation persistence is applied and structurally verified in staging, but runtime composition, authenticated invocation and real moderation execution are not active. _(Fase 12)_
 
 **Próximas ações:**
 - Integrate the certified server-authority repository into the main runtime for invitations, join requests, roles, bans and content commands.
 - Prepare scoped Realtime publication and an authenticated subscription canary under separate explicit staging authorization.
-- Apply the COM-B04B migration and verify immutable moderation structure in staging under COM-B04C only after separate explicit authorization.
+- Prepare repository-only moderation runtime composition under COM-B04D; any live staging invocation or real moderation action requires separate explicit authorization.
 
 **Gate de saída:**
 - Community state survives device changes and refreshes.
@@ -1054,7 +1056,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 1/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 298 arquivos no escopo; 79 referências a localStorage; 8 a sessionStorage; 277 referências mock; 9 referências de rede/Supabase; 28 marcadores de implementação pendente.
+**Evidência estática observada:** 299 arquivos no escopo; 79 referências a localStorage; 8 a sessionStorage; 277 referências mock; 9 referências de rede/Supabase; 28 marcadores de implementação pendente.
 
 **Evidências:**
 - The master plan identifies legal, privacy and commercial decisions as mandatory.
@@ -1114,7 +1116,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2749 arquivos no escopo; 567 referências a localStorage; 154 a sessionStorage; 926 referências mock; 677 referências de rede/Supabase; 92 marcadores de implementação pendente.
+**Evidência estática observada:** 2754 arquivos no escopo; 567 referências a localStorage; 154 a sessionStorage; 926 referências mock; 677 referências de rede/Supabase; 92 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
@@ -1175,4 +1177,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-08-05T21:24:00-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-08-05T22:02:00-03:00._

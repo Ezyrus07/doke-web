@@ -1,6 +1,6 @@
 {
-  "version": "1.3.108",
-  "updatedAt": "2026-08-05T21:24:00-03:00",
+  "version": "1.3.109",
+  "updatedAt": "2026-08-05T22:02:00-03:00",
   "title": "Doke Domain Completion Matrix",
   "purpose": "Single source of truth for domain maturity, data authority, staging evidence, blockers, dependencies and mandatory completion order.",
   "maturityScale": {
@@ -2727,7 +2727,14 @@
         "scripts/audit-com-b04b-domain-matrix-reconciliation.js",
         "docs/COM-B04B-IMMUTABLE-MODERATION-PERSISTENCE-READINESS.md",
         "docs/validation/COM-B04B-IMMUTABLE-MODERATION-PERSISTENCE-READINESS.json",
-        ".github/workflows/com-b04b-immutable-moderation-persistence-readiness.yml"
+        ".github/workflows/com-b04b-immutable-moderation-persistence-readiness.yml",
+        "config/com-b04c-moderation-persistence-staging-verification.json",
+        "supabase/migrations/20260805214700_com_b04c_moderation_fk_indexes.sql",
+        "scripts/audit-com-b04c-moderation-persistence-staging-verification.js",
+        "scripts/audit-com-b04c-domain-matrix-reconciliation.js",
+        "docs/COM-B04C-MODERATION-PERSISTENCE-STAGING-VERIFICATION.md",
+        "docs/validation/COM-B04C-MODERATION-PERSISTENCE-STAGING-VERIFICATION.json",
+        ".github/workflows/com-b04c-moderation-persistence-staging-verification.yml"
       ],
       "scanRoots": [
         "assets/js/features/community",
@@ -2753,7 +2760,8 @@
         "audit:com-b04-moderation-case-authority",
         "test:com-b04-moderation-case-authority",
         "audit:com-b04b-immutable-moderation-persistence-readiness",
-        "test:com-b04b-immutable-moderation-persistence-readiness"
+        "test:com-b04b-immutable-moderation-persistence-readiness",
+        "audit:com-b04c-moderation-persistence-staging-verification"
       ],
       "evidence": [
         "Rich local community logic and local runtime domain contracts exist.",
@@ -2765,7 +2773,9 @@
         "No community Realtime publication, authenticated subscription, route or runtime integration is active yet.",
         "COM-B04 canonical moderation case authority is repository-certified with revision-bound evidence, dual control, bounded sanctions, independent appeals, authenticated scan attestations and serializable transaction plans.",
         "COM-B04B immutable moderation persistence readiness is repository-certified with private RLS-forced tables, append-only ledgers, service-role-only SECURITY DEFINER RPCs, expected-revision CAS, hash-chain validation and atomic idempotency.",
-        "No COM-B04B migration has been applied; runtime, staging writes, real moderation actions and production remain blocked."
+        "COM-B04C applied and structurally verified immutable moderation persistence in staging: eight private RLS-forced tables, six immutable ledger triggers, two service-role-only SECURITY DEFINER RPCs, and complete foreign-key index coverage.",
+        "A rollback-only canary proved atomic revision creation, idempotent replay, revision-conflict rejection and immutable-ledger enforcement.",
+        "No synthetic moderation rows persisted; runtime composition, real moderation actions and production remain blocked."
       ],
       "blockers": [
         {
@@ -2785,15 +2795,15 @@
         {
           "id": "COM-B04",
           "severity": "high",
-          "category": "moderation_persistence_application",
-          "description": "Immutable moderation persistence adapter and migration are repository-certified, but migration application, structural staging verification, runtime integration and real moderation execution are not active.",
+          "category": "moderation_runtime_composition",
+          "description": "Immutable moderation persistence is applied and structurally verified in staging, but runtime composition, authenticated invocation and real moderation execution are not active.",
           "targetPhase": "Fase 12"
         }
       ],
       "nextActions": [
         "Integrate the certified server-authority repository into the main runtime for invitations, join requests, roles, bans and content commands.",
         "Prepare scoped Realtime publication and an authenticated subscription canary under separate explicit staging authorization.",
-        "Apply the COM-B04B migration and verify immutable moderation structure in staging under COM-B04C only after separate explicit authorization."
+        "Prepare repository-only moderation runtime composition under COM-B04D; any live staging invocation or real moderation action requires separate explicit authorization."
       ],
       "exitCriteria": [
         "Community state survives device changes and refreshes.",
