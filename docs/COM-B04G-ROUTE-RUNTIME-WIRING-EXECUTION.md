@@ -117,15 +117,22 @@ There is no visible or functional site change in any deployed environment.
 
 The route is present only in the PR branch. Even if this branch is started locally, the endpoint intentionally returns `503` and performs no domain or database operation.
 
-## Matrix
+## Matrix synchronization
 
 ```text
-matrix version: 1.3.110
+matrix version: 1.3.111
+canonical commit: 4badbbe0d542f3f216e6ab72fbe599a649524216
+sync run: 31103318270
+sync job: 92622061274
+sync result: success
 COM-001 maturity: 3/6
 serverAuthority: partial
+stagingEvidence: staging_canary
 productionGate: blocked
 promotion allowed: false
 ```
+
+The deterministic sync registered COM-B04E, COM-B04F and COM-B04G evidence without promoting operational authority.
 
 Repository wiring alone does not make moderation operational.
 
