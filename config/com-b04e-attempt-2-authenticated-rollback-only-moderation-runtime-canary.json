@@ -6,14 +6,15 @@
     "com-b04b-immutable-moderation-persistence-readiness-v1",
     "com-b04c-moderation-persistence-staging-verification-v1"
   ],
-  "status": "explicit_authorization_received_execution_pending",
+  "status": "authenticated_rollback_only_canary_passed",
   "authorization": {
     "phrase": "I_EXPLICITLY_AUTHORIZE_COM_B04E_ATTEMPT_2_AUTHENTICATED_ROLLBACK_ONLY_MODERATION_RUNTIME_COMPOSITION_CANARY_ON_DOKE_STAGING",
     "source": "explicit_user_message",
     "receivedAt": "2026-08-05T23:39:00-03:00",
     "received": true,
     "singleUse": true,
-    "consumed": false,
+    "consumed": true,
+    "consumedByRun": 31067102891,
     "reusableAfterFailure": false
   },
   "previousAttempt": {
@@ -73,22 +74,86 @@
     "expectedPersistentResidue": false
   },
   "execution": {
-    "attempted": false,
+    "attempted": true,
     "workflowRerunAllowed": false,
-    "run": null,
-    "authorizationJob": null,
-    "job": null,
-    "head": null,
-    "result": "pending"
+    "run": 31067102891,
+    "authorizationJob": 92506997430,
+    "job": 92507013853,
+    "head": "bbe3b52354a7e540a27cadb30c30159fb531485e",
+    "result": "success",
+    "startedAt": "2026-08-06T02:58:48.796Z",
+    "completedAt": "2026-08-06T02:58:51.434Z",
+    "executorStarted": true,
+    "databaseConnectionAttempted": true,
+    "authenticatedSessionVerified": true,
+    "assuranceLevel": "aal1",
+    "actorRole": "professional",
+    "actorSha256": "cdaebb5b5ccbd3be33a6b175232a93d4f07be5aa17bc9f2425f04e38c8a75e30",
+    "sessionSha256": "5130cc50ac91a2d658fa4205bc6f6de1edabe2ff4d2ee3d2084fb4f0b8be56dc",
+    "rawIdentifiersExposed": false,
+    "domainDecision": "accept",
+    "domainReason": "MODERATION_CASE_OPEN_ACCEPTED",
+    "revisionObservedInsideTransaction": 1,
+    "eventHash": "ed7f465eaaad4d6db2955a8bb5c59fdb5866a85fa72c7607cffe62902e8cd856",
+    "caseIdSha256": "beea9704863d82417026c0be58604d7a8412060a241013d3d3f8f727d7510878",
+    "initialEvidenceMaterialized": true,
+    "countDeltaInsideTransaction": {
+      "caseProjection": 1,
+      "caseEvent": 1,
+      "commandIdempotency": 1,
+      "evidenceRecord": 1,
+      "decisionRecord": 0,
+      "sanctionEvent": 0,
+      "appealEvent": 0,
+      "mediaReviewEvent": 0
+    },
+    "transactionIsolation": "serializable",
+    "transactionRolledBack": true,
+    "countsRestoredAfterRollback": true,
+    "rollbackScopedMutationExecuted": true,
+    "persistentMutationExecuted": false
+  },
+  "artifact": {
+    "id": 8954212159,
+    "name": "com-b04e-attempt-2-authenticated-rollback-only-canary-31067102891",
+    "sizeBytes": 1696,
+    "digest": "sha256:46e17bee0b21b76cfbb1e185ae9fe05eea7f6793091871e15b4f63f09dcbc510",
+    "expiresAt": "2026-08-20T02:58:51Z",
+    "sanitized": true
+  },
+  "postflight": {
+    "verifiedAt": "2026-08-06T03:00:00Z",
+    "caseProjectionRows": 0,
+    "caseEventRows": 0,
+    "commandIdempotencyRows": 0,
+    "evidenceRecordRows": 0,
+    "decisionRecordRows": 0,
+    "sanctionEventRows": 0,
+    "appealEventRows": 0,
+    "mediaReviewEventRows": 0,
+    "syntheticCaseAbsent": true,
+    "syntheticEventAbsent": true,
+    "syntheticCommandAbsent": true,
+    "syntheticEvidenceAbsent": true,
+    "persistentResidue": false
   },
   "effects": {
     "stagingReadAllowed": true,
+    "stagingReadExecuted": true,
     "rollbackScopedMutationAllowed": true,
+    "rollbackScopedMutationExecuted": true,
     "persistentStagingMutationAllowed": false,
+    "persistentStagingMutationExecuted": false,
     "routeRegistrationAllowed": false,
+    "routeRegistered": false,
     "runtimeDeploymentAllowed": false,
+    "runtimeDeployed": false,
     "realModerationAllowed": false,
+    "realModerationExecuted": false,
     "productionAllowed": false,
-    "pullRequestMergeAllowed": false
-  }
+    "productionChanged": false,
+    "pullRequestMergeAllowed": false,
+    "pullRequestMerged": false
+  },
+  "nextAction": "COM-B04E is canary-certified. Any route wiring, runtime deployment or live moderation activation requires a separate explicitly authorized sublot."
 }
