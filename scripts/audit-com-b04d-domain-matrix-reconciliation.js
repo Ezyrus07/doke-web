@@ -22,7 +22,7 @@ const flow = matrix.criticalFlows.find((item) => item.id === 'FLOW-12');
 
 check(domain, 'COM-001 domain exists');
 check(flow, 'FLOW-12 exists');
-check(['1.3.109', '1.3.110', '1.3.111'].includes(matrix.version), 'supported matrix version');
+check(['1.3.109', '1.3.110', '1.3.111', '1.3.112'].includes(matrix.version), 'supported matrix version');
 equal(domain.maturity, 3, 'maturity preserved');
 equal(domain.userFacingAuthority, 'hybrid', 'UI authority preserved');
 equal(domain.serverAuthority, 'partial', 'server authority partial');
@@ -76,7 +76,7 @@ if (matrix.version === '1.3.109') {
     check(domain.nextActions.includes(nextAction), 'B04E next action');
     check(doc.includes(nextAction), 'doc B04E next action');
     check(doc.includes('Baseline: 2026-08-05T22:17:00-03:00.'), 'doc B04D baseline');
-  } else {
+  } else if (matrix.version === '1.3.111') {
     equal(matrix.updatedAt, '2026-08-06T09:36:00-03:00', 'B04G sync timestamp');
     equal(blocker.category, 'moderation_live_composition_activation', 'B04G blocker category');
     equal(blocker.description, 'Authenticated rollback-only composition canary passed and repository route/module wiring is certified, but the wired handler remains fail-closed and live composition, deployment, traffic and real moderation are not active.', 'B04G blocker description');
@@ -85,6 +85,15 @@ if (matrix.version === '1.3.109') {
     check(doc.includes(nextAction), 'doc B04H next action');
     check(domain.evidence.some((item) => item.includes('COM-B04G repository-wired')), 'B04G evidence');
     check(doc.includes('Baseline: 2026-08-06T09:36:00-03:00.'), 'doc B04G baseline');
+  } else {
+    equal(matrix.updatedAt, '2026-08-06T10:24:00-03:00', 'B04H sync timestamp');
+    equal(blocker.category, 'moderation_staging_live_activation_authorization', 'B04H blocker category');
+    equal(blocker.description, 'COM-B04H repository-certified the live composition activation proof package, but the route handler remains HTTP 503, the composition remains disabled and staging activation, traffic and real moderation require separate COM-B04I authorization.', 'B04H blocker description');
+    const nextAction = 'Authorize and execute COM-B04I staging live composition activation and rollback-only route canary only after the exact separate authorization phrase.';
+    check(domain.nextActions.includes(nextAction), 'B04I next action');
+    check(doc.includes(nextAction), 'doc B04I next action');
+    check(domain.evidence.some((item) => item.includes('COM-B04H repository-certified')), 'B04H evidence');
+    check(doc.includes('Baseline: 2026-08-06T10:24:00-03:00.'), 'doc B04H baseline');
   }
 
   equal(report.version, matrix.version, 'post-sync report version');
