@@ -36,67 +36,45 @@ controller = controller.replace(
     "var revalidatedHasItems = Boolean(result.collections.featuredCount || result.collections.moreCount || counts.workers || counts.publications);\n      publishRootExperience(root, resolveRootState(revalidatedHasItems, result.ok), result.errorCode);",
     1
 )
-
-promise_anchor = "    var promise = loadAuthoritativeServices(context).then(function (catalogResult) {\n"
-if controller.count(promise_anchor) != 1:
-    raise SystemExit('service refresh promise anchor mismatch')
-controller = controller.replace(
-    promise_anchor,
-    "    var flight = { root: root, promise: null };\n" + promise_anchor
-)
-
-old_tail = """    }).finally(function () {
-      if (serviceRefreshFlight && serviceRefreshFlight.promise === promise) serviceRefreshFlight = null;
-    });
-
-    serviceRefreshFlight = { root: root, promise: promise };
-    return promise;
-"""
-new_tail = """    });
-
-    var exposedPromise = promise.then(function (result) {
-      if (serviceRefreshFlight === flight) serviceRefreshFlight = null;
-      return result;
-    }, function (error) {
-      if (serviceRefreshFlight === flight) serviceRefreshFlight = null;
-      throw error;
-    });
-    flight.promise = exposedPromise;
-    serviceRefreshFlight = flight;
-    return exposedPromise;
-"""
-if controller.count(old_tail) != 1:
-    raise SystemExit(f'service refresh tail count: {controller.count(old_tail)}')
-controller = controller.replace(old_tail, new_tail)
-
-retry_start = "    return refreshServiceRails(root, getHomeContext(), { retry: true }).then(function (result) {"
-if controller.count(retry_start) != 1:
-    raise SystemExit('retry start mismatch')
-controller = controller.replace(
-    retry_start,
-    "    var refreshPromise = refreshServiceRails(root, getHomeContext(), { retry: true });\n    return refreshPromise.then(function (result) {"
-)
-
-retry_end = """      return result;
-    });
-  }
-
-  Doke.indexDataController = {
-"""
-retry_end_replacement = """      return result;
-    }).finally(function () {
-      if (serviceRefreshFlight && serviceRefreshFlight.root === root && serviceRefreshFlight.promise === refreshPromise) {
-        serviceRefreshFlight = null;
-      }
-    });
-  }
-
-  Doke.indexDataController = {
-"""
-if controller.count(retry_end) != 1:
-    raise SystemExit(f'retry end count: {controller.count(retry_end)}')
-controller = controller.replace(retry_end, retry_end_replacement)
 controller_path.write_text(controller, encoding='utf-8')
+
+test_path = Path('scripts/test-ux-home-001-index-controller.js')
+test_source = test_path.read_text(encoding='utf-8')
+old_test = """async function verifyStalePreservationAndSingleFlight() {
+  const harness = createHarness({ serviceCount: 7, workers: 1 });
+  await harness.api.load(harness.root);
+  harness.failServices('CATALOG_REFRESH_FAILED');
+  const failedRefresh = await harness.api.retryServices();
+  assert.equal(failedRefresh.ok, false);
+"""
+new_test = """async function verifyStalePreservationAndSingleFlight() {
+  const harness = createHarness({ serviceCount: 7, workers: 1 });
+  await harness.api.load(harness.root);
+  assert.equal(harness.serviceCalls(), 1, 'initial Home load must issue one catalog request');
+  harness.failServices('CATALOG_REFRESH_FAILED');
+  const failedRefresh = await harness.api.retryServices();
+  assert.equal(failedRefresh.ok, false);
+  assert.equal(harness.serviceCalls(), 2, 'settled retry must issue one additional catalog request');
+"""
+if test_source.count(old_test) != 1:
+    raise SystemExit(f'single-flight test prelude count: {test_source.count(old_test)}')
+test_source = test_source.replace(old_test, new_test)
+
+old_assertion = """  const first = harness.api.retryServices();
+  const second = harness.api.retryServices();
+  assert.equal(harness.serviceCalls(), callsBefore + 1, 'concurrent retry must reuse one catalog request');
+  request.resolve(services(7));
+"""
+new_assertion = """  const first = harness.api.retryServices();
+  const second = harness.api.retryServices();
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(harness.serviceCalls(), callsBefore + 1, 'concurrent retry must reuse one catalog request');
+  request.resolve(services(7));
+"""
+if test_source.count(old_assertion) != 1:
+    raise SystemExit(f'single-flight assertion block count: {test_source.count(old_assertion)}')
+test_source = test_source.replace(old_assertion, new_assertion)
+test_path.write_text(test_source, encoding='utf-8')
 
 workflow_path = Path('.github/workflows/ux-home-001-rail-states.yml')
 workflow = workflow_path.read_text(encoding='utf-8')
@@ -154,4 +132,4 @@ workflow = workflow.replace(
     coverage_grep + "          grep -Fq 'SF:assets/js/pages/index-data-controller.js' \"${REPORT}\"\n"
 )
 workflow_path.write_text(workflow, encoding='utf-8')
-print('UX-HOME-001 controller invariants and coverage gate applied')
+print('UX-HOME-001 controller invariants, async single-flight test and coverage gate applied')
