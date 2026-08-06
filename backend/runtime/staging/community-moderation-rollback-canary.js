@@ -142,6 +142,7 @@ function createModerationRollbackCanary(options) {
       revision: committed.revision,
       replay: committed.replay === true,
       initialEvidenceMaterialized: Boolean(prepared.preparedCommit.evidenceRecord),
+      rawIdentifiersExposed: false,
       runtimeActivated: false,
       productionAuthority: false,
       pullRequestMergeAuthority: false
