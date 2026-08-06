@@ -45,18 +45,27 @@ controller = controller.replace(
     "    var flight = { root: root, promise: null };\n" + promise_anchor
 )
 
-old_cleanup = "      if (serviceRefreshFlight && serviceRefreshFlight.promise === promise) serviceRefreshFlight = null;"
-if controller.count(old_cleanup) != 1:
-    raise SystemExit('service refresh cleanup mismatch')
-controller = controller.replace(old_cleanup, "      if (serviceRefreshFlight === flight) serviceRefreshFlight = null;")
+old_tail = """    }).finally(function () {
+      if (serviceRefreshFlight && serviceRefreshFlight.promise === promise) serviceRefreshFlight = null;
+    });
 
-old_assignment = "    serviceRefreshFlight = { root: root, promise: promise };"
-if controller.count(old_assignment) != 1:
-    raise SystemExit('service refresh assignment mismatch')
-controller = controller.replace(
-    old_assignment,
-    "    flight.promise = promise;\n    serviceRefreshFlight = flight;"
-)
+    serviceRefreshFlight = { root: root, promise: promise };
+    return promise;
+"""
+new_tail = """    });
+
+    flight.promise = promise;
+    serviceRefreshFlight = flight;
+    promise.then(function () {
+      if (serviceRefreshFlight === flight) serviceRefreshFlight = null;
+    }, function () {
+      if (serviceRefreshFlight === flight) serviceRefreshFlight = null;
+    });
+    return promise;
+"""
+if controller.count(old_tail) != 1:
+    raise SystemExit(f'service refresh tail count: {controller.count(old_tail)}')
+controller = controller.replace(old_tail, new_tail)
 controller_path.write_text(controller, encoding='utf-8')
 
 workflow_path = Path('.github/workflows/ux-home-001-rail-states.yml')
