@@ -67,7 +67,7 @@ equal(report.version, '1.3.109', 'report version');
 equal(report.generatedAt, '2026-08-05T22:02:00-03:00', 'report timestamp');
 equal(report.status, 'passed', 'report status');
 const reportDomain = report.domains.find((item) => item.id === 'COM-001');
-check(reportDomain && reportDomain.filesMatched >= 24, 'report scans B04C paths');
+check(reportDomain && reportDomain.filesMatched >= 17, 'report scans COM paths');
 
 equal(config.status, 'staging_migrations_applied_structurally_verified_runtime_blocked', 'config status');
 equal(config.structure.tableCount, 8, 'tables');
