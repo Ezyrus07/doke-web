@@ -58,11 +58,11 @@ jobs:
           node-version: '22'
           cache: npm
 
-      - name: Install repository dependencies
-        run: npm ci
+      - name: Install repository dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts
 
-      - name: Install Playwright Chromium
-        run: npx playwright install chromium
+      - name: Install Playwright Chromium from locked dependency
+        run: node node_modules/@playwright/test/cli.js install chromium
 
       - name: Validate JavaScript syntax
         run: |
