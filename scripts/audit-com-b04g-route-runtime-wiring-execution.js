@@ -199,7 +199,7 @@ equal(evidence.effects.stagingAccessed, false, 'evidence staging false');
 equal(evidence.effects.productionChanged, false, 'evidence production false');
 equal(evidence.effects.pullRequestMerged, false, 'evidence merge false');
 
-ok(['1.3.110', '1.3.111'].includes(matrix.version), 'matrix version');
+ok(['1.3.110', '1.3.111', '1.3.112'].includes(matrix.version), 'matrix version');
 const com = matrix.domains.find((entry) => entry.id === 'COM-001');
 ok(com, 'COM-001 matrix entry');
 equal(com.maturity, 3, 'COM maturity unchanged');
@@ -207,12 +207,19 @@ equal(com.serverAuthority, 'partial', 'server authority partial');
 equal(com.productionGate, 'blocked', 'production blocked');
 
 if (matrix.version === '1.3.111') {
-  equal(matrix.updatedAt, '2026-08-06T09:36:00-03:00', 'matrix update timestamp');
+  equal(matrix.updatedAt, '2026-08-06T09:36:00-03:00', 'matrix B04G timestamp');
   const blocker = com.blockers.find((item) => item.id === 'COM-B04');
   ok(blocker, 'COM-B04 blocker');
   equal(blocker.category, 'moderation_live_composition_activation', 'live composition blocker');
   ok(com.evidence.some((item) => item.includes('COM-B04G repository-wired')), 'matrix B04G evidence');
   ok(com.nextActions.some((item) => item.includes('COM-B04H')), 'matrix B04H next action');
+} else if (matrix.version === '1.3.112') {
+  equal(matrix.updatedAt, '2026-08-06T10:24:00-03:00', 'matrix B04H timestamp');
+  const blocker = com.blockers.find((item) => item.id === 'COM-B04');
+  ok(blocker, 'COM-B04 blocker after B04H');
+  equal(blocker.category, 'moderation_staging_live_activation_authorization', 'B04H authorization blocker');
+  ok(com.evidence.some((item) => item.includes('COM-B04H repository-certified')), 'matrix B04H evidence');
+  ok(com.nextActions.some((item) => item.includes('COM-B04I')), 'matrix B04I next action');
 }
 
 if (config.status === 'authorization_consumed_repository_wiring_certified') {
