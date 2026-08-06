@@ -1,6 +1,6 @@
 {
-  "version": "1.3.109",
-  "updatedAt": "2026-08-05T22:02:00-03:00",
+  "version": "1.3.110",
+  "updatedAt": "2026-08-05T22:17:00-03:00",
   "title": "Doke Domain Completion Matrix",
   "purpose": "Single source of truth for domain maturity, data authority, staging evidence, blockers, dependencies and mandatory completion order.",
   "maturityScale": {
@@ -2734,7 +2734,15 @@
         "scripts/audit-com-b04c-domain-matrix-reconciliation.js",
         "docs/COM-B04C-MODERATION-PERSISTENCE-STAGING-VERIFICATION.md",
         "docs/validation/COM-B04C-MODERATION-PERSISTENCE-STAGING-VERIFICATION.json",
-        ".github/workflows/com-b04c-moderation-persistence-staging-verification.yml"
+        ".github/workflows/com-b04c-moderation-persistence-staging-verification.yml",
+        "backend/modules/communities/community-moderation-runtime-composition.js",
+        "config/com-b04d-moderation-runtime-composition-readiness.json",
+        "scripts/test-com-b04d-moderation-runtime-composition-readiness.js",
+        "scripts/audit-com-b04d-moderation-runtime-composition-readiness.js",
+        "scripts/audit-com-b04d-domain-matrix-reconciliation.js",
+        "docs/COM-B04D-MODERATION-RUNTIME-COMPOSITION-READINESS.md",
+        "docs/validation/COM-B04D-MODERATION-RUNTIME-COMPOSITION-READINESS.json",
+        ".github/workflows/com-b04d-moderation-runtime-composition-readiness.yml"
       ],
       "scanRoots": [
         "assets/js/features/community",
@@ -2761,7 +2769,9 @@
         "test:com-b04-moderation-case-authority",
         "audit:com-b04b-immutable-moderation-persistence-readiness",
         "test:com-b04b-immutable-moderation-persistence-readiness",
-        "audit:com-b04c-moderation-persistence-staging-verification"
+        "audit:com-b04c-moderation-persistence-staging-verification",
+        "audit:com-b04d-moderation-runtime-composition-readiness",
+        "test:com-b04d-moderation-runtime-composition-readiness"
       ],
       "evidence": [
         "Rich local community logic and local runtime domain contracts exist.",
@@ -2775,7 +2785,10 @@
         "COM-B04B immutable moderation persistence readiness is repository-certified with private RLS-forced tables, append-only ledgers, service-role-only SECURITY DEFINER RPCs, expected-revision CAS, hash-chain validation and atomic idempotency.",
         "COM-B04C applied and structurally verified immutable moderation persistence in staging: eight private RLS-forced tables, six immutable ledger triggers, two service-role-only SECURITY DEFINER RPCs, and complete foreign-key index coverage.",
         "A rollback-only canary proved atomic revision creation, idempotent replay, revision-conflict rejection and immutable-ledger enforcement.",
-        "No synthetic moderation rows persisted; runtime composition, real moderation actions and production remain blocked."
+        "No synthetic moderation rows persisted; runtime composition, real moderation actions and production remain blocked.",
+        "COM-B04D repository-certified the moderation runtime composition boundary with server-verified sessions, canonical context binding, domain-first evaluation and a disabled-by-default atomic repository handoff.",
+        "For new cases, initial report evidence is materialized into the immutable evidence ledger instead of remaining only in the command payload.",
+        "Live staging invocation, route registration, real moderation actions and production remain blocked."
       ],
       "blockers": [
         {
@@ -2795,15 +2808,15 @@
         {
           "id": "COM-B04",
           "severity": "high",
-          "category": "moderation_runtime_composition",
-          "description": "Immutable moderation persistence is applied and structurally verified in staging, but runtime composition, authenticated invocation and real moderation execution are not active.",
+          "category": "moderation_authenticated_staging_canary",
+          "description": "Moderation runtime composition is repository-certified and persistence is structurally verified in staging, but authenticated live invocation, route activation and real moderation execution are not active.",
           "targetPhase": "Fase 12"
         }
       ],
       "nextActions": [
         "Integrate the certified server-authority repository into the main runtime for invitations, join requests, roles, bans and content commands.",
         "Prepare scoped Realtime publication and an authenticated subscription canary under separate explicit staging authorization.",
-        "Prepare repository-only moderation runtime composition under COM-B04D; any live staging invocation or real moderation action requires separate explicit authorization."
+        "Execute an authenticated rollback-only moderation composition canary in staging under COM-B04E only after separate explicit authorization."
       ],
       "exitCriteria": [
         "Community state survives device changes and refreshes.",
