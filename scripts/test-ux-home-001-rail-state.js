@@ -2,23 +2,18 @@
 'use strict';
 
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const path = require('node:path');
-const vm = require('node:vm');
 
-const root = path.resolve(__dirname, '..');
-const source = fs.readFileSync(path.join(root, 'assets/js/pages/home/rail-state.js'), 'utf8');
 const events = [];
 const appliedListStates = [];
 
-const document = {
+const documentStub = {
   dispatchEvent(event) {
     events.push(event);
     return true;
   }
 };
 
-const window = {
+const windowStub = {
   Doke: {
     listState: {
       setListState(region, state) {
@@ -30,27 +25,20 @@ const window = {
   }
 };
 
-const context = {
-  window,
-  document,
-  CustomEvent: function CustomEvent(type, options) {
-    this.type = type;
-    this.detail = options && options.detail;
-  },
-  Map,
-  Object,
-  Array,
-  String,
-  Number,
-  Boolean,
-  Error,
-  Math
+const CustomEventStub = function CustomEvent(type, options) {
+  this.type = type;
+  this.detail = options && options.detail;
 };
 
-vm.createContext(context);
-vm.runInContext(source, context, { filename: 'assets/js/pages/home/rail-state.js' });
+global.window = windowStub;
+global.document = documentStub;
+global.CustomEvent = CustomEventStub;
 
-const api = window.Doke.homeRailState;
+const sourcePath = require.resolve('../assets/js/pages/home/rail-state.js');
+delete require.cache[sourcePath];
+require(sourcePath);
+
+const api = windowStub.Doke.homeRailState;
 assert(api, 'home rail state authority must be published');
 assert.equal(api.contract, 'home-rail-state-v1');
 assert(Object.isFrozen(api));
@@ -173,6 +161,8 @@ for (const event of stateEvents) {
   assert(!Object.hasOwn(event.detail, 'error'));
   assert(!Object.hasOwn(event.detail, 'message'));
 }
+
+for (const key of ['window', 'document', 'CustomEvent']) delete global[key];
 
 console.log('ux-home-001-rail-state: ok');
 console.log('- immutable snapshots, independent counts, stale preservation, latest-generation and sanitized events validated');
