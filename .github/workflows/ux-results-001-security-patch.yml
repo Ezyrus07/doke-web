@@ -1,0 +1,68 @@
+name: UX-RESULTS-001 Security Patch
+
+on:
+  push:
+    branches:
+      - ux/ux-results-001-canonical-composition
+    paths:
+      - '.github/workflows/ux-results-001-security-patch.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch-search-results:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: ux/ux-results-001-canonical-composition
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Remove obsolete void placeholder
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const path = 'assets/js/pages/search-results.js';
+          const source = fs.readFileSync(path, 'utf8');
+          const declaration = "  const renderRelatedSections = (query) => {\n    void query;";
+          const invocation = '    renderRelatedSections(query);';
+          if ((source.split(declaration).length - 1) !== 1) {
+            throw new Error('renderRelatedSections declaration anchor mismatch');
+          }
+          if ((source.split(invocation).length - 1) !== 1) {
+            throw new Error('renderRelatedSections invocation anchor mismatch');
+          }
+          const updated = source
+            .replace(declaration, '  const renderRelatedSections = () => {')
+            .replace(invocation, '    renderRelatedSections();');
+          fs.writeFileSync(path, updated);
+          NODE
+
+      - name: Validate JavaScript and UX contracts
+        run: |
+          node --check assets/js/pages/search-results.js
+          node scripts/test-ux-results-001-presentation-foundation.js
+          node scripts/test-ux-results-001-dom-adapter.js
+          node scripts/test-ux-filters-002-filter-presentation.js
+          node scripts/test-ux-search-001-search-experience.js
+          node scripts/test-search-ux02-runtime.js
+
+      - name: Publish JavaScript correction
+        shell: bash
+        run: |
+          git config user.name "doke"
+          git config user.email "bielantoniomma@gmail.com"
+          git add assets/js/pages/search-results.js
+          git diff --cached --check
+          git commit -m "UX-RESULTS-001 remove obsolete void placeholder"
+          git push origin HEAD:ux/ux-results-001-canonical-composition
