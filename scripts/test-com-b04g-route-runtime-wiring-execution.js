@@ -166,7 +166,7 @@ async function main() {
   equal(config.matrix.maturityBefore, 3, 'maturity before');
   equal(config.matrix.maturityAfterWiring, 3, 'maturity unchanged');
   equal(config.matrix.promotionAllowed, false, 'matrix promotion false');
-  ok(['1.3.110', '1.3.111'].includes(matrix.version), 'canonical matrix version');
+  ok(['1.3.110', '1.3.111', '1.3.112'].includes(matrix.version), 'canonical matrix version');
   const com = matrix.domains.find((entry) => entry.id === 'COM-001');
   ok(com, 'COM-001 matrix entry');
   equal(com.maturity, 3, 'COM maturity unchanged');
