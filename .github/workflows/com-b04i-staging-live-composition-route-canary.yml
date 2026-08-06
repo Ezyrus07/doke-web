@@ -1,13 +1,13 @@
 name: COM-B04I Attempt 2 Staging Live Composition Route Canary
 
 # One-shot activation chain:
-# readiness head baa531e6 -> authorization trigger 541081fa -> registered workflow 51724c58 -> this armed commit.
+# readiness head -> attempt-2 authorization trigger -> registered workflow arm -> historical-path bridge.
 on:
   push:
     branches:
       - com/com-001-baseline-audit
     paths:
-      - '.github/workflows/com-b04i-staging-live-composition-route-canary.yml'
+      - 'config/com-b04i-staging-live-composition-route-canary.json'
 
 permissions:
   contents: read
@@ -31,14 +31,16 @@ jobs:
           COM_B04I_ATTEMPT_2_AUTHORIZATION: I_EXPLICITLY_AUTHORIZE_COM_B04I_ATTEMPT_2_STAGING_LIVE_COMPOSITION_ACTIVATION_AND_ROLLBACK_ONLY_ROUTE_CANARY
         run: |
           test "${GITHUB_RUN_ATTEMPT}" = "1"
-          test "$(git rev-parse HEAD^)" = "51724c58d5a6fca360d1b5ced2c5b41e452b8055"
-          workflow='.github/workflows/com-b04i-staging-live-composition-route-canary.yml'
-          status="$(git diff-tree --no-commit-id --name-status -r HEAD -- "$workflow")"
-          test "$status" = $'M\t'"$workflow"
+          bridge='config/com-b04i-staging-live-composition-route-canary.json'
+          status="$(git diff-tree --no-commit-id --name-status -r HEAD -- "$bridge")"
+          test "$status" = $'M\t'"$bridge"
           node <<'NODE'
           const fs = require('fs');
+          const cp = require('child_process');
           const config = JSON.parse(fs.readFileSync('config/com-b04i-attempt-2-staging-live-composition-route-canary.json', 'utf8'));
+          const bridge = JSON.parse(fs.readFileSync('config/com-b04i-staging-live-composition-route-canary.json', 'utf8'));
           const phrase = 'I_EXPLICITLY_AUTHORIZE_COM_B04I_ATTEMPT_2_STAGING_LIVE_COMPOSITION_ACTIVATION_AND_ROLLBACK_ONLY_ROUTE_CANARY';
+          const parent = cp.execFileSync('git', ['rev-parse', 'HEAD^'], { encoding: 'utf8' }).trim();
           if (process.env.COM_B04I_ATTEMPT_2_AUTHORIZATION !== phrase) throw new Error('COM_B04I_ATTEMPT_2_ENV_AUTHORIZATION_MISMATCH');
           if (config.contractId !== 'com-b04i-attempt-2-staging-live-composition-route-canary-v1') throw new Error('COM_B04I_ATTEMPT_2_CONTRACT_MISMATCH');
           if (config.status !== 'authorization_consumed_execution_pending') throw new Error('COM_B04I_ATTEMPT_2_NOT_PENDING');
@@ -51,6 +53,9 @@ jobs:
           if (config.synthetic?.initialEvidenceReference !== 'opaque:com-b04i:staging-live-route-canary') throw new Error('COM_B04I_ATTEMPT_2_OPAQUE_REFERENCE_INVALID');
           const allowlist = ['com_moderation_load_case_v1', 'com_moderation_commit_case_command_v1'];
           if (JSON.stringify(config.canary?.rpcAllowlist) !== JSON.stringify(allowlist)) throw new Error('COM_B04I_ATTEMPT_2_RPC_ALLOWLIST_INVALID');
+          if (bridge.attempt2Activation?.authorizationTriggerHead !== '541081fadbc3b478a01215b9bfbb26f7ac2297c3') throw new Error('COM_B04I_ATTEMPT_2_BRIDGE_TRIGGER_MISMATCH');
+          if (bridge.attempt2Activation?.activationWorkflowHead !== parent) throw new Error('COM_B04I_ATTEMPT_2_BRIDGE_PARENT_MISMATCH');
+          if (bridge.attempt2Activation?.singleUse !== true || bridge.attempt2Activation?.consumed !== true) throw new Error('COM_B04I_ATTEMPT_2_BRIDGE_STATE_INVALID');
           NODE
 
   canary:
