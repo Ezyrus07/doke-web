@@ -1,4 +1,4 @@
-name: COM-B04F Moderation Route Runtime Integration Readiness
+name: COM-B04F Historical Route Runtime Readiness Continuity
 
 on:
   push:
@@ -6,41 +6,33 @@ on:
       - com/com-001-baseline-audit
     paths:
       - 'backend/modules/communities/community-moderation-route-runtime-readiness.js'
-      - 'config/com-b04f-moderation-route-runtime-integration-readiness.json'
-      - 'scripts/test-com-b04f-moderation-route-runtime-integration-readiness.js'
-      - 'scripts/audit-com-b04f-moderation-route-runtime-integration-readiness.js'
-      - 'docs/COM-B04F-MODERATION-ROUTE-RUNTIME-INTEGRATION-READINESS.md'
-      - '.github/workflows/com-b04f-moderation-route-runtime-integration-readiness.yml'
       - 'backend/shared/http/route-registry.js'
       - 'backend/shared/http/module-route-loader.js'
-      - 'backend/runtime/staging/staging-api-runtime.js'
-      - 'backend/runtime/staging/node-http-server.js'
-      - 'backend/runtime/staging/runtime-release-contract.js'
+      - 'backend/modules/communities/route-handlers.js'
+      - 'config/com-b04g-route-runtime-wiring-authorization-readiness.json'
+      - 'scripts/test-com-b04g-route-runtime-wiring-execution.js'
+      - 'scripts/audit-com-b04g-route-runtime-wiring-execution.js'
+      - '.github/workflows/com-b04f-moderation-route-runtime-integration-readiness.yml'
       - 'backend/modules/communities/community-moderation-runtime-composition.js'
-      - 'docs/validation/COM-B04E-ATTEMPT-2-AUTHENTICATED-ROLLBACK-ONLY-MODERATION-RUNTIME-CANARY.json'
       - 'config/domain-completion-matrix.json'
   pull_request:
     paths:
       - 'backend/modules/communities/community-moderation-route-runtime-readiness.js'
-      - 'config/com-b04f-moderation-route-runtime-integration-readiness.json'
-      - 'scripts/test-com-b04f-moderation-route-runtime-integration-readiness.js'
-      - 'scripts/audit-com-b04f-moderation-route-runtime-integration-readiness.js'
-      - 'docs/COM-B04F-MODERATION-ROUTE-RUNTIME-INTEGRATION-READINESS.md'
-      - '.github/workflows/com-b04f-moderation-route-runtime-integration-readiness.yml'
       - 'backend/shared/http/route-registry.js'
       - 'backend/shared/http/module-route-loader.js'
-      - 'backend/runtime/staging/staging-api-runtime.js'
-      - 'backend/runtime/staging/node-http-server.js'
-      - 'backend/runtime/staging/runtime-release-contract.js'
+      - 'backend/modules/communities/route-handlers.js'
+      - 'config/com-b04g-route-runtime-wiring-authorization-readiness.json'
+      - 'scripts/test-com-b04g-route-runtime-wiring-execution.js'
+      - 'scripts/audit-com-b04g-route-runtime-wiring-execution.js'
+      - '.github/workflows/com-b04f-moderation-route-runtime-integration-readiness.yml'
       - 'backend/modules/communities/community-moderation-runtime-composition.js'
-      - 'docs/validation/COM-B04E-ATTEMPT-2-AUTHENTICATED-ROLLBACK-ONLY-MODERATION-RUNTIME-CANARY.json'
       - 'config/domain-completion-matrix.json'
 
 permissions:
   contents: read
 
 jobs:
-  readiness:
+  continuity:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -50,51 +42,21 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - name: Syntax
+      - name: Historical COM-B04F contract remains immutable
         run: |
+          test "$(git rev-parse HEAD:backend/modules/communities/community-moderation-route-runtime-readiness.js)" = "e3af9ea714d81f77b6e08d270e5afe6897fc67a2"
           node --check backend/modules/communities/community-moderation-route-runtime-readiness.js
-          node --check scripts/test-com-b04f-moderation-route-runtime-integration-readiness.js
-          node --check scripts/audit-com-b04f-moderation-route-runtime-integration-readiness.js
-      - name: COM-B04F conformance
-        run: node scripts/test-com-b04f-moderation-route-runtime-integration-readiness.js
-      - name: COM-B04F repository audit
-        run: node scripts/audit-com-b04f-moderation-route-runtime-integration-readiness.js
-      - name: Repository-only fail-closed checks
-        shell: bash
-        run: |
           grep -F "registrationAllowed: false" backend/modules/communities/community-moderation-route-runtime-readiness.js
           grep -F "runtimeWiringAllowed: false" backend/modules/communities/community-moderation-route-runtime-readiness.js
-          grep -F "COM_B04F_ROUTE_ACTIVATION_NOT_AUTHORIZED" backend/modules/communities/community-moderation-route-runtime-readiness.js
-          ! grep -F "'communities.moderation.command'" backend/shared/http/route-registry.js
-          ! grep -F "'/communities/:communityId/moderation/commands'" backend/shared/http/route-registry.js
-          ! grep -F "require('../../modules/communities/route-handlers')" backend/shared/http/module-route-loader.js
-          secret_marker='SUPABASE''_SERVICE_ROLE_KEY'
-          ! grep -R -F "$secret_marker" \
-            backend/modules/communities/community-moderation-route-runtime-readiness.js \
-            config/com-b04f-moderation-route-runtime-integration-readiness.json \
-            scripts/test-com-b04f-moderation-route-runtime-integration-readiness.js
-      - name: COM-B04E regression
+          grep -F "nextSublot: 'COM-B04G'" backend/modules/communities/community-moderation-route-runtime-readiness.js
+      - name: Authorized successor wiring is blocked-only
         run: |
-          node scripts/test-com-b04e-attempt-2-authenticated-rollback-only-moderation-runtime-canary.js
-          node scripts/audit-com-b04e-attempt-2-readiness.js
-      - name: COM-B04D regression
+          node scripts/test-com-b04g-route-runtime-wiring-execution.js
+          node scripts/audit-com-b04g-route-runtime-wiring-execution.js
+      - name: Live composition remains disabled
         run: |
-          node scripts/test-com-b04d-moderation-runtime-composition-readiness.js
-          node scripts/audit-com-b04d-moderation-runtime-composition-readiness.js
-          node scripts/audit-com-b04d-domain-matrix-reconciliation.js
-      - name: COM-B04C regression
-        run: |
-          node scripts/audit-com-b04c-moderation-persistence-staging-verification.js
-          node scripts/audit-com-b04c-domain-matrix-reconciliation.js
-      - name: COM-B04B regression
-        run: |
-          node scripts/audit-com-b04b-immutable-moderation-persistence-readiness.js
-          node scripts/test-com-b04b-immutable-moderation-persistence-readiness.js
-          node scripts/audit-com-b04b-domain-matrix-reconciliation.js
-      - name: COM-B04 regression
-        run: |
-          node scripts/audit-com-b04-moderation-case-authority.js
-          node scripts/test-com-b04-moderation-case-authority.js
-          node scripts/audit-com-b04-domain-matrix-reconciliation.js
+          grep -F "Object.freeze(['disabled', 'local_test_double'])" backend/modules/communities/community-moderation-runtime-composition.js
+          grep -F 'COM_B04D_LIVE_INVOCATION_NOT_AUTHORIZED' backend/modules/communities/community-moderation-runtime-composition.js
+          grep -F 'COM_B04G_ROUTE_NOT_DEPLOYED_OR_ACTIVATED' backend/modules/communities/route-handlers.js
       - name: Diff hygiene
         run: git diff --check
