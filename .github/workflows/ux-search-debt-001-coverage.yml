@@ -7,16 +7,18 @@ on:
       - 'scripts/test-ux-search-001-search-experience.js'
       - 'scripts/test-search-ux02-runtime.js'
       - 'docs/ux/UX-SEARCH-DEBT-001.md'
+      - 'sonar-project.properties'
       - '.github/workflows/ux-search-debt-001-coverage.yml'
   workflow_dispatch:
 
 permissions:
   contents: read
+  pull-requests: read
 
 jobs:
   ux-search-debt-001-coverage:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 35
 
     steps:
       - name: Checkout repository
@@ -112,20 +114,19 @@ jobs:
           node scripts/test-ux-core-002-mutation-manager.js
           node scripts/test-ux-core-001-state-content-registry.js
 
-      - name: Report Sonar CI import readiness
+      - name: Require SonarQube Cloud CI credential
         shell: bash
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          if [[ -n "${SONAR_TOKEN}" ]]; then
-            echo '[ux-search-debt] SONAR_TOKEN reference is available.'
-          else
-            echo '::notice::LCOV is valid, but SONAR_TOKEN is not available to this workflow. Sonar CI import remains pending.'
+          set -euo pipefail
+          if [[ -z "${SONAR_TOKEN}" ]]; then
+            echo '::error::SONAR_TOKEN is not available to the CI workflow.'
+            exit 1
           fi
-          echo '::notice::Automatic analysis must be disabled in SonarQube Cloud before a CI-based scanner can import LCOV.'
+          echo '[ux-search-debt] SONAR_TOKEN reference is available.'
 
       - name: Upload executable coverage evidence
-        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: ux-search-debt-001-coverage-${{ github.run_id }}
@@ -141,3 +142,15 @@ jobs:
           else
             git diff --check HEAD^
           fi
+
+      - name: Import LCOV and enforce SonarQube Cloud Quality Gate
+        uses: SonarSource/sonarqube-scan-action@v7
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.projectKey=Ezyrus07_doke-web
+            -Dsonar.organization=ezyrus07
+            -Dsonar.javascript.lcov.reportPaths=coverage/ux-search-debt-001/lcov.info
+            -Dsonar.qualitygate.wait=true
+            -Dsonar.qualitygate.timeout=600
