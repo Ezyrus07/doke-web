@@ -51,7 +51,7 @@ for (const marker of [
   'PERSISTENCE_PROVENANCE_REQUIRED',
   'COM_B04D_LIVE_INVOCATION_NOT_AUTHORIZED',
   'buildInitialEvidence',
-  'single_security_definer_rpc'
+  'transactionBoundary: repository.transactionBoundary'
 ]) check(source.includes(marker), `source marker: ${marker}`);
 
 check(!source.includes("activationMode === 'live'"), 'no live activation branch');
@@ -96,8 +96,11 @@ check(domain.includes('commitAuthority: false'), 'domain keeps commit authority 
 check(adapter.includes("const CONTRACT_ID = 'com-b04b-immutable-moderation-persistence-readiness-v1'"), 'B04B adapter contract');
 check(adapter.includes("authority !== 'server_service_role'"), 'adapter requires service role executor');
 check(adapter.includes("transactionBoundary: 'single_security_definer_rpc'"), 'adapter atomic RPC boundary');
+check(source.includes('transactionBoundary: repository.transactionBoundary') &&
+  adapter.includes("transactionBoundary: 'single_security_definer_rpc'"),
+'composition preserves exact adapter transaction boundary');
 
- equal(config.contractId, 'com-b04d-moderation-runtime-composition-readiness-v1', 'config contract');
+equal(config.contractId, 'com-b04d-moderation-runtime-composition-readiness-v1', 'config contract');
 equal(config.scope, 'repository_only_runtime_composition_readiness', 'config scope');
 equal(config.status, 'repository_composition_ready_live_invocation_blocked', 'config status');
 equal(config.composition.defaultActivationMode, 'disabled', 'default disabled');
@@ -116,7 +119,7 @@ equal(config.localConformance.replayRemainsReadOnly, true, 'replay read-only');
 for (const [key, value] of Object.entries(config.effects)) equal(value, false, `effect false: ${key}`);
 for (const [key, value] of Object.entries(config.remainingAuthority)) equal(value, false, `authority false: ${key}`);
 
- equal(evidence.contractId, config.contractId, 'evidence contract');
+equal(evidence.contractId, config.contractId, 'evidence contract');
 equal(evidence.status, config.status, 'evidence status');
 check(['prepared_repository_only_pending_final_ci_binding', 'repository_certified_live_invocation_blocked'].includes(evidence.result), 'evidence result allowed');
 equal(evidence.composition.defaultActivationMode, 'disabled', 'evidence default disabled');
