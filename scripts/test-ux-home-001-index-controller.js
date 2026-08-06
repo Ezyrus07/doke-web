@@ -322,9 +322,11 @@ async function verifyPartialFailureAndSanitization() {
 async function verifyStalePreservationAndSingleFlight() {
   const harness = createHarness({ serviceCount: 7, workers: 1 });
   await harness.api.load(harness.root);
+  assert.equal(harness.serviceCalls(), 1, 'initial Home load must issue one catalog request');
   harness.failServices('CATALOG_REFRESH_FAILED');
   const failedRefresh = await harness.api.retryServices();
   assert.equal(failedRefresh.ok, false);
+  assert.equal(harness.serviceCalls(), 2, 'settled retry must issue one additional catalog request');
   const featured = railSnapshot(harness.root, 'featured-services');
   const more = railSnapshot(harness.root, 'more-services');
   assert.equal(featured.state, 'ready');
@@ -340,6 +342,7 @@ async function verifyStalePreservationAndSingleFlight() {
   const callsBefore = harness.serviceCalls();
   const first = harness.api.retryServices();
   const second = harness.api.retryServices();
+  await new Promise((resolve) => setImmediate(resolve));
   assert.equal(harness.serviceCalls(), callsBefore + 1, 'concurrent retry must reuse one catalog request');
   request.resolve(services(7));
   await Promise.all([first, second]);

@@ -446,6 +446,12 @@
     return promise;
   }
 
+  function resolveRootState(hasItems, remoteAccepted) {
+    if (hasItems) return 'ready';
+    if (remoteAccepted) return 'empty';
+    return isOffline() ? 'offline' : 'error';
+  }
+
   function publishRootExperience(root, state, code) {
     setRootState(root, state, code);
     if (Doke.experience && Doke.experience.states) {
@@ -502,7 +508,7 @@
       );
       var acceptedEmpty = serviceResult.ok && !hasItems;
       var rootCode = serviceResult.ok ? orchestrationResult.errorCode : serviceResult.errorCode;
-      var rootState = hasItems || serviceResult.ok ? 'ready' : (isOffline() ? 'offline' : 'error');
+      var rootState = resolveRootState(hasItems, serviceResult.ok);
       publishRootExperience(root, rootState, rootCode);
 
       var result = {
@@ -566,7 +572,8 @@
       if (!result || !isCurrentRoot(root)) return result;
       var counts = commitEditorialRails(root, getRailStateController(root));
       updateListHooks(root, result.collections, counts);
-      publishRootExperience(root, result.ok || counts.workers || counts.publications ? 'ready' : 'error', result.errorCode);
+      var retryHasItems = Boolean(result.collections.featuredCount || result.collections.moreCount || counts.workers || counts.publications);
+      publishRootExperience(root, resolveRootState(retryHasItems, result.ok), result.errorCode);
       return result;
     });
   }
@@ -590,7 +597,8 @@
       if (!result || !isCurrentRoot(root)) return;
       var counts = editorialCounts(root);
       updateListHooks(root, result.collections, counts);
-      publishRootExperience(root, result.ok || counts.workers || counts.publications ? 'ready' : 'error', result.errorCode);
+      var revalidatedHasItems = Boolean(result.collections.featuredCount || result.collections.moreCount || counts.workers || counts.publications);
+      publishRootExperience(root, resolveRootState(revalidatedHasItems, result.ok), result.errorCode);
       Doke.indexDataController.lastPayload = {
         page: PAGE_NAME,
         context: getHomeContext(),

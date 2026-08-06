@@ -12,6 +12,7 @@ on:
       - 'assets/js/pages/index-data-controller.js'
       - 'assets/js/core/list-state.js'
       - 'scripts/test-ux-home-001-rail-state.js'
+      - 'scripts/test-ux-home-001-index-controller.js'
       - 'scripts/audit-index-data-controller.js'
       - 'scripts/test-public-service-catalog-contract.js'
       - 'scripts/audit-action-favorite-ownership.js'
@@ -28,6 +29,7 @@ on:
       - 'assets/js/pages/index-data-controller.js'
       - 'assets/js/core/list-state.js'
       - 'scripts/test-ux-home-001-rail-state.js'
+      - 'scripts/test-ux-home-001-index-controller.js'
       - 'scripts/audit-index-data-controller.js'
       - 'scripts/test-public-service-catalog-contract.js'
       - 'scripts/audit-action-favorite-ownership.js'
@@ -68,12 +70,16 @@ jobs:
         run: |
           node --check assets/js/pages/home/rail-state.js
           node --check scripts/test-ux-home-001-rail-state.js
+          node --check scripts/test-ux-home-001-index-controller.js
           node --check assets/js/pages/home/favorites-surface.js
           node --check assets/js/pages/home/public-services.js
           node --check assets/js/pages/index-data-controller.js
 
       - name: Validate immutable rail state behavior
         run: node scripts/test-ux-home-001-rail-state.js
+
+      - name: Validate Home controller behavior
+        run: node scripts/test-ux-home-001-index-controller.js
 
       - name: Preserve Home and favorite baselines
         run: |
@@ -91,11 +97,13 @@ jobs:
           node --test \
             --experimental-test-coverage \
             --test-coverage-include='assets/js/pages/home/rail-state.js' \
+            --test-coverage-include='assets/js/pages/index-data-controller.js' \
             --test-reporter=spec \
             --test-reporter-destination=stdout \
             --test-reporter=lcov \
             --test-reporter-destination=coverage/ux-home-001/lcov.info \
-            scripts/test-ux-home-001-rail-state.js
+            scripts/test-ux-home-001-rail-state.js \
+            scripts/test-ux-home-001-index-controller.js
 
       - name: Validate LCOV evidence
         shell: bash
@@ -104,6 +112,7 @@ jobs:
           REPORT='coverage/ux-home-001/lcov.info'
           test -s "${REPORT}"
           grep -Fq 'SF:assets/js/pages/home/rail-state.js' "${REPORT}"
+          grep -Fq 'SF:assets/js/pages/index-data-controller.js' "${REPORT}"
 
       - name: Require SonarQube Cloud credential
         if: github.event_name != 'pull_request'
