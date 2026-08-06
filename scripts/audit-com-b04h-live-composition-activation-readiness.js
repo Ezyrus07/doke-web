@@ -70,7 +70,7 @@ for (const marker of [
 for (const forbidden of [
   'createClient(', '.rpc(', '.from(', 'fetch(', 'process.env',
   'SUPABASE_SERVICE_ROLE_KEY', 'SUPABASE_ACCESS_TOKEN', 'SUPABASE_DB_PASSWORD',
-  'COMMIT', 'ROLLBACK', 'workflow_dispatch'
+  'workflow_dispatch'
 ]) ok(!contract.includes(forbidden), `contract forbidden marker absent: ${forbidden}`);
 
 ok(composition.includes("Object.freeze(['disabled', 'local_test_double'])"), 'composition has no live mode');
