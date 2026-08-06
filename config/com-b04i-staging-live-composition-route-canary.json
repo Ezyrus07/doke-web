@@ -3,7 +3,7 @@
   "dependsOn": "com-b04h-live-composition-activation-readiness-v1",
   "domain": "COM-001",
   "scope": "staging_process_local_live_composition_and_rollback_only_route_canary",
-  "status": "authorization_consumed_execution_pending",
+  "status": "authorization_consumed_pre_staging_local_conformance_failed",
   "authorization": {
     "phrase": "I_EXPLICITLY_AUTHORIZE_COM_B04I_STAGING_LIVE_COMPOSITION_ACTIVATION_AND_ROLLBACK_ONLY_ROUTE_CANARY",
     "source": "explicit_user_message",
@@ -11,15 +11,23 @@
     "receivedAt": "2026-08-06T10:50:00-03:00",
     "consumed": true,
     "consumedAt": "2026-08-06T10:50:00-03:00",
+    "consumedByRun": 31109121586,
     "singleUse": true,
     "reusableAfterFailure": false,
     "sourceHead": "20b17d96012756c547d522dd5ae38637185de4ee"
   },
   "execution": {
     "attempted": true,
+    "authorizeJob": 92641955844,
+    "canaryJob": 92642381116,
     "executorStarted": false,
+    "databaseConnectionAttempted": false,
+    "stagingNetworkRequestExecuted": false,
+    "rollbackScopedMutationExecuted": false,
     "workflowRerunAllowed": false,
-    "result": "pending"
+    "result": "failed_closed_before_staging_access",
+    "failureCode": "COM_B04I_ACCEPTED_PREPARED_COMMAND_REQUIRED",
+    "rootCause": "local_fixture_used_noncanonical_opaque_reference_with_slashes"
   },
   "target": {
     "environment": "staging",
@@ -45,23 +53,21 @@
     "expectedRouteStatus": 200,
     "defaultExportedRouteStatus": 503
   },
-  "synthetic": {
+  "historicalSynthetic": {
     "communityId": "b0410000-0000-4000-8000-000000000001",
     "targetId": "b0410000-0000-4000-8000-000000000002",
     "clientRequestId": "b0410000-0000-4000-8000-000000000003",
     "initialEvidenceReference": "opaque://com-b04i/staging-live-route-canary",
-    "initialEvidenceDigestSeed": "com-b04i-staging-live-route-canary-evidence-v1"
+    "initialEvidenceDigestSeed": "com-b04i-staging-live-route-canary-evidence-v1",
+    "referenceAcceptedByCanonicalContract": false
   },
-  "expectedEffects": {
-    "stagingNetworkReadExecuted": true,
-    "rollbackScopedSyntheticMutationExecuted": true,
-    "processLocalRuntimeActivated": true,
-    "persistentStagingMutationExecuted": false,
-    "publicTrafficEnabled": false,
-    "runtimeDeployed": false,
-    "realModerationExecuted": false,
-    "productionChanged": false,
-    "pullRequestMerged": false
+  "postflight": {
+    "databaseAccessed": false,
+    "persistentResidue": false,
+    "caseProjectionRowsCreated": 0,
+    "caseEventRowsCreated": 0,
+    "commandIdempotencyRowsCreated": 0,
+    "evidenceRecordRowsCreated": 0
   },
   "excludedAuthority": {
     "persistentStagingRuntimeAuthority": false,
@@ -74,10 +80,10 @@
     "pullRequestMergeAuthority": false
   },
   "matrix": {
-    "versionBefore": "1.3.112",
-    "targetVersionAfterSuccess": "1.3.113",
-    "maturityBefore": 3,
+    "version": "1.3.112",
+    "maturity": 3,
     "promotionAllowed": false,
     "productionGate": "blocked"
-  }
+  },
+  "nextAction": "prepare_distinct_com_b04i_attempt_2_authorization_boundary"
 }
