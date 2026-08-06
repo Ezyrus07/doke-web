@@ -9,6 +9,7 @@ on:
       - 'scripts/test-com-b04e-authenticated-rollback-only-moderation-runtime-canary.js'
       - 'scripts/execute-com-b04e-authenticated-rollback-only-moderation-runtime-canary.js'
       - 'scripts/audit-com-b04e-authenticated-rollback-only-moderation-runtime-canary.js'
+      - 'config/com-b04e-authenticated-rollback-only-moderation-runtime-canary.json'
       - 'docs/COM-B04E-AUTHENTICATED-ROLLBACK-ONLY-MODERATION-RUNTIME-CANARY.md'
       - 'docs/validation/COM-B04E-AUTHENTICATED-ROLLBACK-ONLY-MODERATION-RUNTIME-CANARY.json'
       - '.github/workflows/com-b04e-authenticated-rollback-only-moderation-runtime-canary.yml'
@@ -39,6 +40,8 @@ jobs:
           node --check scripts/audit-com-b04e-authenticated-rollback-only-moderation-runtime-canary.js
       - name: COM-B04E conformance
         run: node scripts/test-com-b04e-authenticated-rollback-only-moderation-runtime-canary.js
+      - name: COM-B04E lifecycle audit
+        run: node scripts/audit-com-b04e-authenticated-rollback-only-moderation-runtime-canary.js
       - name: Repository-only fail-closed checks
         shell: bash
         run: |
