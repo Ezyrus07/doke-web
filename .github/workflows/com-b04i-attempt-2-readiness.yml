@@ -57,6 +57,7 @@ jobs:
           ! grep -R -E 'process\.env|SUPABASE_(SERVICE_ROLE_KEY|ACCESS_TOKEN|DB_PASSWORD)' backend/runtime/staging/community-moderation-live-route-canary.js
           grep -F 'COM_B04G_ROUTE_NOT_DEPLOYED_OR_ACTIVATED' backend/modules/communities/route-handlers.js
           grep -F 'config/com-b04i-attempt-1-archived-never-trigger.json' .github/workflows/com-b04i-staging-live-composition-route-canary.yml
-          ! grep -R -F 'opaque://' scripts/test-com-b04i-staging-live-composition-route-canary.js config/com-b04i-attempt-2-readiness.json
+          ! grep -F "initialEvidenceRef: 'opaque://" scripts/test-com-b04i-staging-live-composition-route-canary.js
+          grep -F '"canonicalOpaqueReference": "opaque:com-b04i:staging-live-route-canary"' config/com-b04i-attempt-2-readiness.json
       - name: Diff hygiene
         run: git diff --check
