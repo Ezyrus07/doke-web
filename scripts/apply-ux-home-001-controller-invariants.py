@@ -66,6 +66,34 @@ new_tail = """    });
 if controller.count(old_tail) != 1:
     raise SystemExit(f'service refresh tail count: {controller.count(old_tail)}')
 controller = controller.replace(old_tail, new_tail)
+
+retry_start = "    return refreshServiceRails(root, getHomeContext(), { retry: true }).then(function (result) {"
+if controller.count(retry_start) != 1:
+    raise SystemExit('retry start mismatch')
+controller = controller.replace(
+    retry_start,
+    "    var refreshPromise = refreshServiceRails(root, getHomeContext(), { retry: true });\n    return refreshPromise.then(function (result) {"
+)
+
+retry_end = """      return result;
+    });
+  }
+
+  Doke.indexDataController = {
+"""
+retry_end_replacement = """      return result;
+    }).finally(function () {
+      if (serviceRefreshFlight && serviceRefreshFlight.root === root && serviceRefreshFlight.promise === refreshPromise) {
+        serviceRefreshFlight = null;
+      }
+    });
+  }
+
+  Doke.indexDataController = {
+"""
+if controller.count(retry_end) != 1:
+    raise SystemExit(f'retry end count: {controller.count(retry_end)}')
+controller = controller.replace(retry_end, retry_end_replacement)
 controller_path.write_text(controller, encoding='utf-8')
 
 workflow_path = Path('.github/workflows/ux-home-001-rail-states.yml')
