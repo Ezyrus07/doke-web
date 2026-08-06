@@ -1,6 +1,6 @@
 {
-  "version": "1.3.111",
-  "updatedAt": "2026-08-06T09:36:00-03:00",
+  "version": "1.3.112",
+  "updatedAt": "2026-08-06T10:24:00-03:00",
   "title": "Doke Domain Completion Matrix",
   "purpose": "Single source of truth for domain maturity, data authority, staging evidence, blockers, dependencies and mandatory completion order.",
   "maturityScale": {
@@ -2755,7 +2755,14 @@
         "docs/validation/COM-B04G-ROUTE-RUNTIME-WIRING-EXECUTION.json",
         ".github/workflows/com-b04g-route-runtime-wiring-execution.yml",
         ".github/workflows/com-b04g-route-runtime-wiring-authorization-readiness.yml",
-        ".github/workflows/com-b04f-moderation-route-runtime-integration-readiness.yml"
+        ".github/workflows/com-b04f-moderation-route-runtime-integration-readiness.yml",
+        "backend/modules/communities/community-moderation-live-composition-activation-readiness.js",
+        "config/com-b04h-live-composition-activation-readiness.json",
+        "scripts/test-com-b04h-live-composition-activation-readiness.js",
+        "scripts/audit-com-b04h-live-composition-activation-readiness.js",
+        "docs/COM-B04H-LIVE-COMPOSITION-ACTIVATION-READINESS.md",
+        "docs/validation/COM-B04H-LIVE-COMPOSITION-ACTIVATION-READINESS.json",
+        ".github/workflows/com-b04h-live-composition-activation-readiness.yml"
       ],
       "scanRoots": [
         "assets/js/features/community",
@@ -2786,7 +2793,9 @@
         "audit:com-b04d-moderation-runtime-composition-readiness",
         "test:com-b04d-moderation-runtime-composition-readiness",
         "test:com-b04g-route-runtime-wiring-execution",
-        "audit:com-b04g-route-runtime-wiring-execution"
+        "audit:com-b04g-route-runtime-wiring-execution",
+        "test:com-b04h-live-composition-activation-readiness",
+        "audit:com-b04h-live-composition-activation-readiness"
       ],
       "evidence": [
         "Rich local community logic and local runtime domain contracts exist.",
@@ -2807,7 +2816,10 @@
         "COM-B04E authenticated a real active staging session and proved the moderation composition-to-persistence handoff inside a SERIALIZABLE rollback-only transaction with zero persistent residue.",
         "COM-B04F froze the canonical moderation command route and its security requirements while route registration and runtime loading remained blocked.",
         "COM-B04G repository-wired communities.moderation.command into the route registry and module loader with a handler that always fails closed as HTTP 503 COM_B04G_ROUTE_NOT_DEPLOYED_OR_ACTIVATED.",
-        "Live composition activation, staging deployment, traffic, real moderation actions, production and pull-request merge remain blocked."
+        "Live composition activation, staging deployment, traffic, real moderation actions, production and pull-request merge remain blocked.",
+        "COM-B04H repository-certified the exact live composition activation proof package for server-verified session, canonical context, server UTC clock, service-role RPC allowlist, immutable audit storage, approved policy and request-security boundaries.",
+        "The COM-B04G route handler remains fail-closed as HTTP 503 COM_B04G_ROUTE_NOT_DEPLOYED_OR_ACTIVATED and the COM-B04D composition remains limited to disabled and local_test_double modes.",
+        "COM-B04H grants repository readiness only; staging access, deployment, traffic, real moderation, production and pull-request merge remain blocked."
       ],
       "blockers": [
         {
@@ -2827,15 +2839,15 @@
         {
           "id": "COM-B04",
           "severity": "high",
-          "category": "moderation_live_composition_activation",
-          "description": "Authenticated rollback-only composition canary passed and repository route/module wiring is certified, but the wired handler remains fail-closed and live composition, deployment, traffic and real moderation are not active.",
+          "category": "moderation_staging_live_activation_authorization",
+          "description": "COM-B04H repository-certified the live composition activation proof package, but the route handler remains HTTP 503, the composition remains disabled and staging activation, traffic and real moderation require separate COM-B04I authorization.",
           "targetPhase": "Fase 12"
         }
       ],
       "nextActions": [
         "Integrate the certified server-authority repository into the main runtime for invitations, join requests, roles, bans and content commands.",
         "Prepare scoped Realtime publication and an authenticated subscription canary under separate explicit staging authorization.",
-        "Prepare COM-B04H repository-only live composition activation readiness; staging deployment, traffic and real moderation require separate explicit authorization."
+        "Authorize and execute COM-B04I staging live composition activation and rollback-only route canary only after the exact separate authorization phrase."
       ],
       "exitCriteria": [
         "Community state survives device changes and refreshes.",
