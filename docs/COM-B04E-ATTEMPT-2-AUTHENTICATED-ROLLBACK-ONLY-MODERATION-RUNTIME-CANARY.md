@@ -2,9 +2,9 @@
 
 ## Objective
 
-Execute the COM-B04D moderation composition against the real COM-B04B staging persistence RPCs with one existing active authenticated session. Every synthetic write must remain inside one outer `SERIALIZABLE` transaction and must be removed by `ROLLBACK`.
+Validate the COM-B04D composition against the real COM-B04B persistence RPCs in `doke-web-staging`, using one existing active authenticated session. All synthetic writes must remain inside one outer `SERIALIZABLE` transaction and be removed by `ROLLBACK`.
 
-## New explicit authority
+## Explicit authority
 
 Attempt 2 is authorized once by the distinct phrase:
 
@@ -12,11 +12,11 @@ Attempt 2 is authorized once by the distinct phrase:
 I_EXPLICITLY_AUTHORIZE_COM_B04E_ATTEMPT_2_AUTHENTICATED_ROLLBACK_ONLY_MODERATION_RUNTIME_COMPOSITION_CANARY_ON_DOKE_STAGING
 ```
 
-The authorization was consumed successfully by attempt 2. It was independent from attempt 1, single-use and non-reusable after any workflow attempt. It did not authorize workflow reruns, route registration, runtime deployment, real moderation, production changes or pull-request merge.
+The authorization was consumed by run `31067102891`. It is single-use, non-reusable and does not authorize reruns, route registration, deployment, real moderation, production changes or merge.
 
-## Attempt 1 prerequisite
+## Attempt-1 closure
 
-The attempt-2 executor verified the canonical attempt-1 record before any network or database operation:
+The executor verified the previous attempt before any network or database operation:
 
 ```text
 attempt-1 status: authorization_consumed_pre_execution_audit_failed
@@ -26,41 +26,11 @@ executor started: false
 database connection attempted: false
 rollback-scoped mutation executed: false
 persistent residue: false
-all eight moderation tables after attempt 1: zero
-```
-
-The original authorization and original trigger were not reused.
-
-## Target
-
-```text
-environment: staging
-project: doke-web-staging
-project ref: zwkczgewzbsorbrjuzpb
-pull request: 61
-branch: com/com-001-baseline-audit
-```
-
-## Isolated implementation
-
-Attempt 2 used separate files:
-
-```text
-backend/runtime/staging/community-moderation-rollback-canary-attempt-2.js
-scripts/test-com-b04e-attempt-2-authenticated-rollback-only-moderation-runtime-canary.js
-scripts/execute-com-b04e-attempt-2-authenticated-rollback-only-moderation-runtime-canary.js
-scripts/audit-com-b04e-attempt-2-readiness.js
-scripts/audit-com-b04e-attempt-2-execution-envelope.js
-config/com-b04e-attempt-2-authenticated-rollback-only-moderation-runtime-canary.json
-.github/workflows/com-b04e-attempt-2-authenticated-rollback-only-canary-readiness.yml
-.github/workflows/com-b04e-attempt-2-authenticated-rollback-only-moderation-runtime-canary.yml
 ```
 
 No attempt-1 file is repurposed as the attempt-2 trigger.
 
 ## Runtime boundary
-
-The production-facing COM-B04D composition remained:
 
 ```text
 activationMode: disabled
@@ -70,62 +40,39 @@ stagingAuthority: false
 productionAuthority: false
 ```
 
-The attempt-2 boundary first invoked the normal COM-B04D method and required:
+The wrapper first invokes the normal COM-B04D live path and requires:
 
 ```text
 COM_B04D_LIVE_INVOCATION_NOT_AUTHORIZED
 ```
 
-Only after proving the live path was blocked did the dedicated rollback-only wrapper use the prepared persistence command.
+Only after that proof may the dedicated rollback-only wrapper use the prepared persistence command.
 
 ## Authenticated actor
 
-The executor selected one existing active staging session by joining:
-
-```text
-auth.sessions
-auth.users
-public.users
-```
-
-The selected session was active, not expired, not deleted, not banned and used `aal1`. No user or session was created. Raw user ID, session ID, email, token and password were not persisted or logged. Only SHA-256 evidence, role and AAL appeared in the sanitized report.
-
-## Synthetic command
-
-The canary executed one synthetic `open_case` command with synthetic community, target, owner and request UUIDs. The evidence reference was opaque and did not identify real content.
-
-Observed domain result:
-
-```text
-decision: accept
-reason: MODERATION_CASE_OPEN_ACCEPTED
-expected revision: 0
-next revision: 1
-initial immutable evidence record: present
-```
+An existing active staging session was selected from `auth.sessions`, `auth.users` and `public.users`. The session used `aal1`; no user or session was created. Raw user ID, session ID, email, token and password were not retained. The report contains only role, AAL and SHA-256 evidence.
 
 ## Transaction protocol
 
 ```text
-1. Verify attempt-1 closure.
-2. Verify the new authorization envelope and first workflow attempt.
-3. Verify PR, project, migrations, schema and privileges.
-4. Record baseline counts for all eight moderation tables.
-5. Select and hash one active authenticated staging session.
-6. BEGIN ISOLATION LEVEL SERIALIZABLE READ WRITE.
-7. Capture the server UTC clock.
-8. SET LOCAL ROLE service_role.
-9. Prepare the synthetic command through COM-B04D.
-10. Prove the normal COM-B04D live invocation path is blocked.
-11. Verify the derived case is absent through the load RPC.
-12. Execute exactly one COM-B04B atomic SECURITY DEFINER commit RPC.
-13. Read the case through the load RPC.
-14. RESET ROLE and verify rollback-scoped rows and count deltas.
-15. ROLLBACK.
-16. Verify exact baseline restoration and zero synthetic residue.
+1. Verify attempt-1 closure and the attempt-2 one-shot envelope.
+2. Verify PR, project, migrations, schema and privileges.
+3. Record baseline counts for all eight moderation tables.
+4. Select and hash one active authenticated session.
+5. BEGIN ISOLATION LEVEL SERIALIZABLE READ WRITE.
+6. Capture the server UTC clock.
+7. SET LOCAL ROLE service_role.
+8. Prepare the synthetic open_case command through COM-B04D.
+9. Prove the normal COM-B04D live path is blocked.
+10. Verify the derived case is absent through the load RPC.
+11. Execute one COM-B04B atomic SECURITY DEFINER commit RPC.
+12. Read the case back through the load RPC.
+13. RESET ROLE and inspect rollback-scoped rows.
+14. ROLLBACK.
+15. Verify exact baseline restoration and zero residue.
 ```
 
-No `COMMIT` statement was permitted or executed.
+No `COMMIT` statement is permitted. None was executed.
 
 ## Observed rollback-scoped delta
 
@@ -140,21 +87,17 @@ appeal_event: +0
 media_review_event: +0
 ```
 
-After rollback, all eight counts matched the baseline exactly.
-
-## Attempt 2 outcome
+## Successful execution
 
 ```text
 run: 31067102891
 authorization job: 92506997430 — success
 canary job: 92507013853 — success
 authorized head: bbe3b52354a7e540a27cadb30c30159fb531485e
-workflow run attempt: 1
-authorization consumed: true
-workflow rerun allowed: false
+workflow attempt: 1
 ```
 
-Execution result:
+Observed result:
 
 ```text
 authenticated session verified: true
@@ -165,7 +108,7 @@ core live path blocked: true
 domain decision: accept
 domain reason: MODERATION_CASE_OPEN_ACCEPTED
 transaction isolation: serializable
-revision observed inside transaction: 1
+revision inside transaction: 1
 initial evidence materialized: true
 transaction rolled back: true
 counts restored after rollback: true
@@ -173,9 +116,9 @@ persistent residue: false
 raw identifiers exposed: false
 ```
 
-The executor used the PostgreSQL TLS pooler and the `service_role` database role only inside the outer transaction. The sanitized artifact contains only hashes for the actor, session and synthetic case.
+The atomic event hash was `ed7f465eaaad4d6db2955a8bb5c59fdb5866a85fa72c7607cffe62902e8cd856`; the synthetic case is represented only by SHA-256 `beea9704863d82417026c0be58604d7a8412060a241013d3d3f8f727d7510878`.
 
-## Artifact
+## Sanitized artifact
 
 ```text
 artifact id: 8954212159
@@ -183,12 +126,9 @@ name: com-b04e-attempt-2-authenticated-rollback-only-canary-31067102891
 size: 1696 bytes
 digest: sha256:46e17bee0b21b76cfbb1e185ae9fe05eea7f6793091871e15b4f63f09dcbc510
 expires: 2026-08-20T02:58:51Z
-sanitized: true
 ```
 
 ## Independent postflight
-
-A separate read after the workflow confirmed:
 
 ```text
 case_projection: 0
@@ -206,27 +146,7 @@ synthetic evidence absent: true
 persistent residue: false
 ```
 
-## Fail-closed behavior preserved
-
-The canary would have failed and consumed the authorization if any of these conditions had been violated:
-
-- attempt-1 closure inconsistent;
-- attempt-2 phrase, contract, target or one-shot state drifted;
-- workflow run attempt not `1`;
-- PR not open, draft, unmerged and without auto-merge;
-- project not `ACTIVE_HEALTHY`;
-- required migrations, tables, functions or privileges drifted;
-- no eligible authenticated session existed;
-- transaction or `service_role` guard failed;
-- COM-B04D live path was not blocked;
-- domain decision, evidence translation, revision or hash chain differed;
-- rollback-scoped deltas differed;
-- rollback failed to restore baseline counts;
-- any residue remained.
-
-The consumed workflow trigger was archived after success. A rerun or modification of the original attempt-2 envelope cannot start another canary.
-
-## Effects
+## Effects and limits
 
 ```text
 staging reads: executed
@@ -241,6 +161,8 @@ production changes: not executed
 pull-request merge: not executed
 ```
 
+The consumed attempt-2 trigger is archived and cannot start another canary.
+
 ## Certified boundary
 
-COM-B04E is canary-certified: the authenticated composition-to-persistence handoff and mandatory rollback guarantee worked against staging. The site runtime remains disabled and no endpoint exists. Route wiring, deployment, live moderation and production remain separate future authorization boundaries.
+COM-B04E is canary-certified: the authenticated composition-to-persistence handoff and mandatory rollback worked against staging. The runtime remains disabled and no endpoint exists. Route wiring, deployment, live moderation and production require separate explicit authorization.
