@@ -18,23 +18,12 @@ if controller.count(anchor) != 1:
     raise SystemExit(f'publishRootExperience anchor count: {controller.count(anchor)}')
 controller = controller.replace(anchor, helper)
 
-replacements = {
-    "var rootState = hasItems || serviceResult.ok ? 'ready' : (isOffline() ? 'offline' : 'error');":
-        "var rootState = resolveRootState(hasItems, serviceResult.ok);",
-    "publishRootExperience(root, result.ok || counts.workers || counts.publications ? 'ready' : 'error', result.errorCode);":
-        "var retryHasItems = Boolean(result.collections.featuredCount || result.collections.moreCount || counts.workers || counts.publications);\n      publishRootExperience(root, resolveRootState(retryHasItems, result.ok), result.errorCode);",
-    "publishRootExperience(root, result.ok || counts.workers || counts.publications ? 'ready' : 'error', result.errorCode);":
-        "var revalidatedHasItems = Boolean(result.collections.featuredCount || result.collections.moreCount || counts.workers || counts.publications);\n      publishRootExperience(root, resolveRootState(revalidatedHasItems, result.ok), result.errorCode);"
-}
-
-# The last two source strings are identical and occur in order. Replace them independently.
-shared = "publishRootExperience(root, result.ok || counts.workers || counts.publications ? 'ready' : 'error', result.errorCode);"
-if controller.count("var rootState = hasItems || serviceResult.ok ? 'ready' : (isOffline() ? 'offline' : 'error');") != 1:
+root_expression = "var rootState = hasItems || serviceResult.ok ? 'ready' : (isOffline() ? 'offline' : 'error');"
+if controller.count(root_expression) != 1:
     raise SystemExit('root state expression not found exactly once')
-controller = controller.replace(
-    "var rootState = hasItems || serviceResult.ok ? 'ready' : (isOffline() ? 'offline' : 'error');",
-    "var rootState = resolveRootState(hasItems, serviceResult.ok);"
-)
+controller = controller.replace(root_expression, "var rootState = resolveRootState(hasItems, serviceResult.ok);")
+
+shared = "publishRootExperience(root, result.ok || counts.workers || counts.publications ? 'ready' : 'error', result.errorCode);"
 if controller.count(shared) != 2:
     raise SystemExit(f'shared root publish count: {controller.count(shared)}')
 controller = controller.replace(
@@ -46,6 +35,27 @@ controller = controller.replace(
     shared,
     "var revalidatedHasItems = Boolean(result.collections.featuredCount || result.collections.moreCount || counts.workers || counts.publications);\n      publishRootExperience(root, resolveRootState(revalidatedHasItems, result.ok), result.errorCode);",
     1
+)
+
+promise_anchor = "    var promise = loadAuthoritativeServices(context).then(function (catalogResult) {\n"
+if controller.count(promise_anchor) != 1:
+    raise SystemExit('service refresh promise anchor mismatch')
+controller = controller.replace(
+    promise_anchor,
+    "    var flight = { root: root, promise: null };\n" + promise_anchor
+)
+
+old_cleanup = "      if (serviceRefreshFlight && serviceRefreshFlight.promise === promise) serviceRefreshFlight = null;"
+if controller.count(old_cleanup) != 1:
+    raise SystemExit('service refresh cleanup mismatch')
+controller = controller.replace(old_cleanup, "      if (serviceRefreshFlight === flight) serviceRefreshFlight = null;")
+
+old_assignment = "    serviceRefreshFlight = { root: root, promise: promise };"
+if controller.count(old_assignment) != 1:
+    raise SystemExit('service refresh assignment mismatch')
+controller = controller.replace(
+    old_assignment,
+    "    flight.promise = promise;\n    serviceRefreshFlight = flight;"
 )
 controller_path.write_text(controller, encoding='utf-8')
 
