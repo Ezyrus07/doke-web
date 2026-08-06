@@ -22,7 +22,7 @@ const flow = matrix.criticalFlows.find((item) => item.id === 'FLOW-12');
 
 check(domain, 'COM-001 domain exists');
 check(flow, 'FLOW-12 exists');
-check(['1.3.109', '1.3.110'].includes(matrix.version), 'supported matrix version');
+check(['1.3.109', '1.3.110', '1.3.111'].includes(matrix.version), 'supported matrix version');
 equal(domain.maturity, 3, 'maturity preserved');
 equal(domain.userFacingAuthority, 'hybrid', 'UI authority preserved');
 equal(domain.serverAuthority, 'partial', 'server authority partial');
@@ -41,7 +41,6 @@ if (matrix.version === '1.3.109') {
   equal(report.version, '1.3.109', 'pre-sync report version');
   equal(report.generatedAt, '2026-08-05T22:02:00-03:00', 'pre-sync report timestamp');
 } else {
-  equal(matrix.updatedAt, '2026-08-05T22:17:00-03:00', 'post-sync timestamp');
   for (const required of [
     'backend/modules/communities/community-moderation-runtime-composition.js',
     'config/com-b04d-moderation-runtime-composition-readiness.json',
@@ -69,18 +68,30 @@ if (matrix.version === '1.3.109') {
     check(doc.includes(marker), `doc evidence: ${marker}`);
   }
 
-  equal(blocker.category, 'moderation_authenticated_staging_canary', 'post-sync blocker category');
-  equal(blocker.description, 'Moderation runtime composition is repository-certified and persistence is structurally verified in staging, but authenticated live invocation, route activation and real moderation execution are not active.', 'post-sync blocker description');
-  const nextAction = 'Execute an authenticated rollback-only moderation composition canary in staging under COM-B04E only after separate explicit authorization.';
-  check(domain.nextActions.includes(nextAction), 'post-sync next action');
-  check(doc.includes(nextAction), 'doc post-sync next action');
-  check(doc.includes('Baseline: 2026-08-05T22:17:00-03:00.'), 'doc post-sync baseline');
+  if (matrix.version === '1.3.110') {
+    equal(matrix.updatedAt, '2026-08-05T22:17:00-03:00', 'B04D sync timestamp');
+    equal(blocker.category, 'moderation_authenticated_staging_canary', 'B04D blocker category');
+    equal(blocker.description, 'Moderation runtime composition is repository-certified and persistence is structurally verified in staging, but authenticated live invocation, route activation and real moderation execution are not active.', 'B04D blocker description');
+    const nextAction = 'Execute an authenticated rollback-only moderation composition canary in staging under COM-B04E only after separate explicit authorization.';
+    check(domain.nextActions.includes(nextAction), 'B04E next action');
+    check(doc.includes(nextAction), 'doc B04E next action');
+    check(doc.includes('Baseline: 2026-08-05T22:17:00-03:00.'), 'doc B04D baseline');
+  } else {
+    equal(matrix.updatedAt, '2026-08-06T09:36:00-03:00', 'B04G sync timestamp');
+    equal(blocker.category, 'moderation_live_composition_activation', 'B04G blocker category');
+    equal(blocker.description, 'Authenticated rollback-only composition canary passed and repository route/module wiring is certified, but the wired handler remains fail-closed and live composition, deployment, traffic and real moderation are not active.', 'B04G blocker description');
+    const nextAction = 'Prepare COM-B04H repository-only live composition activation readiness; staging deployment, traffic and real moderation require separate explicit authorization.';
+    check(domain.nextActions.includes(nextAction), 'B04H next action');
+    check(doc.includes(nextAction), 'doc B04H next action');
+    check(domain.evidence.some((item) => item.includes('COM-B04G repository-wired')), 'B04G evidence');
+    check(doc.includes('Baseline: 2026-08-06T09:36:00-03:00.'), 'doc B04G baseline');
+  }
 
-  equal(report.version, '1.3.110', 'post-sync report version');
-  equal(report.generatedAt, '2026-08-05T22:17:00-03:00', 'post-sync report timestamp');
+  equal(report.version, matrix.version, 'post-sync report version');
+  equal(report.generatedAt, matrix.updatedAt, 'post-sync report timestamp');
 }
 
- equal(report.name, 'domain-completion-matrix', 'report name');
+equal(report.name, 'domain-completion-matrix', 'report name');
 equal(report.status, 'passed', 'report status');
 const reportDomain = report.domains.find((item) => item.id === 'COM-001');
 check(reportDomain && reportDomain.filesMatched >= 17, 'report scans COM paths');
