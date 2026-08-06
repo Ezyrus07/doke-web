@@ -835,6 +835,7 @@
   function setButtonState(context, loading) {
     var button = context && context.loadMoreButton;
     var pagination = context && context.pagination;
+    if (context && context.presentation) return;
     if (!button) return;
     button.disabled = Boolean(loading);
     button.setAttribute('aria-busy', loading ? 'true' : 'false');
@@ -870,6 +871,7 @@
   function applySuccess(context, response, append, options) {
     options = options || {};
     var fallback = options.fallback === true;
+    var presentationTicket = options.presentationTicket || null;
     var incoming = Array.isArray(response && response.items) ? response.items : [];
     var additions = append ? uniqueItems(state.items, incoming) : incoming;
     var contract = searchContract();
@@ -886,33 +888,48 @@
     state.hasNext = Boolean(response && response.page && response.page.hasNext);
     state.nextCursor = normalizeText(response && response.page && response.page.nextCursor);
 
-    if (context.count) context.count.textContent = String(state.items.length);
-    if (context.title) {
-      context.title.textContent = fallback
-        ? 'Outros anúncios'
-        : context.query
-          ? 'Resultados para "' + context.query + '"'
-          : 'Resultados em destaque';
-    }
-    if (context.description) {
-      context.description.textContent = fallback
-        ? 'Nenhum anúncio correspondeu exatamente a "' + context.query + '". Veja outros serviços disponíveis no catálogo oficial.'
-        : state.items.length
-          ? (state.hasNext ? 'Resultados carregados do catálogo oficial. Há mais anúncios disponíveis.' : 'Resultados carregados do catálogo oficial.')
-          : 'Nenhum anúncio aprovado corresponde a esta busca.';
+    if (context.presentation && presentationTicket) {
+      var descriptor = Doke.searchExperience.describeMode('services', contract);
+      context.presentation.commit(presentationTicket, {
+        applied: true,
+        state: fallback ? 'fallback' : state.items.length ? 'ready' : 'empty',
+        mode: 'services',
+        operation: append ? 'pagination' : 'initial',
+        query: context.query,
+        count: state.items.length,
+        hasNext: state.hasNext,
+        authority: descriptor.authority,
+        coverage: descriptor.coverage,
+        sections: {}
+      });
+    } else {
+      if (context.count) context.count.textContent = String(state.items.length);
+      if (context.title) {
+        context.title.textContent = fallback
+          ? 'Outros anúncios'
+          : context.query
+            ? 'Resultados para "' + context.query + '"'
+            : 'Resultados em destaque';
+      }
+      if (context.description) {
+        context.description.textContent = fallback
+          ? 'Nenhum anúncio correspondeu exatamente a "' + context.query + '". Veja outros serviços disponíveis no catálogo oficial.'
+          : state.items.length
+            ? (state.hasNext ? 'Resultados carregados do catálogo oficial. Há mais anúncios disponíveis.' : 'Resultados carregados do catálogo oficial.')
+            : 'Nenhum anúncio aprovado corresponde a esta busca.';
+      }
+      if (state.items.length) {
+        if (context.inlineEmpty) context.inlineEmpty.hidden = true;
+        context.setResultsState('results');
+      } else {
+        context.setResultsState('empty');
+        context.grid.hidden = false;
+      }
+      setButtonState(context, false);
     }
     if (typeof context.renderActiveChips === 'function') {
       context.renderActiveChips(context.query, context.filters, state.items.length);
     }
-
-    if (state.items.length) {
-      if (context.inlineEmpty) context.inlineEmpty.hidden = true;
-      context.setResultsState('results');
-    } else {
-      context.setResultsState('empty');
-      context.grid.hidden = false;
-    }
-    setButtonState(context, false);
     context.settleHydration();
     context.refreshPreviews();
     Doke.serviceFavoritesController && Doke.serviceFavoritesController.hydrate
@@ -933,11 +950,29 @@
     return state.items.slice();
   }
 
-  function applyFailure(context, error, append) {
+  function applyFailure(context, error, append, presentationTicket) {
     var contract = searchContract();
     state.hasNext = false;
     state.nextCursor = '';
-    if (!append) {
+    if (context.presentation && presentationTicket) {
+      var descriptor = Doke.searchExperience.describeMode('services', contract);
+      if (append) {
+        context.presentation.cancel(presentationTicket, 'pagination-error');
+      } else {
+        state.items = [];
+        context.grid.textContent = '';
+        context.presentation.fail(presentationTicket, {
+          mode: 'services',
+          query: context.query,
+          count: 0,
+          retryAvailable: Boolean(state.context),
+          errorCode: error && error.code || 'DOKE_SEARCH_QUERY_FAILED',
+          authority: descriptor.authority,
+          coverage: descriptor.coverage
+        });
+        if (typeof context.failHydration === 'function') context.failHydration(error);
+      }
+    } else if (!append) {
       state.items = [];
       context.grid.textContent = '';
       if (context.count) context.count.textContent = '0';
@@ -1006,14 +1041,29 @@
     state.loading = true;
     setButtonState(context, true);
     var intent = intentFor(context, request, append, retry);
+    var descriptor = Doke.searchExperience.describeMode('services', searchContract());
+    var presentationTicket = context.presentation && context.presentation.begin
+      ? context.presentation.begin({
+          mode: 'services',
+          operation: append ? 'pagination' : retry ? 'retry' : 'initial',
+          query: context.query,
+          filters: context.filters,
+          authority: descriptor.authority,
+          coverage: descriptor.coverage,
+          sections: {}
+        })
+      : null;
 
     return controller.run(intent, function (execution) {
       return queryWithEditorialFallback(context, request, append, execution.signal);
     }).then(function (receipt) {
-      if (!receipt || receipt.applied !== true) return state.items.slice();
-      return applySuccess(context, receipt.value.response, append, receipt.value);
+      if (!receipt || receipt.applied !== true) {
+        if (presentationTicket) context.presentation.cancel(presentationTicket, 'search-receipt-not-applied');
+        return state.items.slice();
+      }
+      return applySuccess(context, receipt.value.response, append, Object.assign({}, receipt.value, { presentationTicket: presentationTicket }));
     }).catch(function (error) {
-      return applyFailure(context, error, append);
+      return applyFailure(context, error, append, presentationTicket);
     }).finally(function () {
       var snapshot = controller.getSnapshot();
       state.loading = snapshot.initialInFlight || snapshot.paginationInFlight;

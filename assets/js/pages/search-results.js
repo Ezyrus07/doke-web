@@ -135,6 +135,7 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
 
   const normalize = searchData.normalize || ((value = '') => String(value || '').toLowerCase());
   const serverResultsSurface = window.Doke?.searchResultsServerSurface;
+  const resultsPresentationAdapter = window.Doke?.searchResultsDomAdapter?.install?.();
   const getUserMatches = searchData.getUserMatches || (() => []);
   const getShortVideoMatches = searchData.getShortVideoMatches || (() => []);
   const getBeforeAfterMatches = searchData.getBeforeAfterMatches || (() => []);
@@ -162,6 +163,7 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
     previewController?.abort();
     previewController = null;
     serverResultsSurface?.cancel?.();
+    resultsPresentationAdapter?.cleanup?.();
     closeResultsSearchDropdown();
     closeModal(false);
     closeInlineCep(false);
@@ -462,6 +464,7 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
   };
 
   const setResultsState = (state) => {
+    if (resultsPresentationAdapter) return;
     const isLoading = state === 'loading';
     const isEmpty = state === 'empty';
 
@@ -474,6 +477,9 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
     if (els.resultsGrid) els.resultsGrid.hidden = isLoading;
     if (els.resultsInlineEmpty) els.resultsInlineEmpty.hidden = !isEmpty;
   };
+
+  const presentLocalResults = ({ mode, query, count, filters }) =>
+    resultsPresentationAdapter?.commitLocal?.({ mode, query, count, filters, sections: {} }) || null;
 
   const resultsLayout = queryAny('[data-results-layout]');
   const RESULTS_FILTERS_DESKTOP_MEDIA = '(min-width: 961px)';
@@ -776,6 +782,11 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
   };
 
   const renderRelatedSections = (query) => {
+    void query;
+    if (resultsPresentationAdapter?.clearRelatedSections) {
+      resultsPresentationAdapter.clearRelatedSections();
+      return;
+    }
     const hide = (section, grid) => {
       if (grid) grid.innerHTML = '';
       if (section) section.hidden = true;
@@ -811,15 +822,18 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
       const displayUsers = query ? userResults : (searchData.userPool || []);
       els.resultsGrid.innerHTML = '';
       displayUsers.slice(0, 6).forEach((item) => els.resultsGrid.appendChild(createUserCard(item)));
-      if (els.resultsTitle) els.resultsTitle.textContent = query ? `Usuários para "${query}"` : 'Usuários em destaque';
-      if (els.resultsDescription) {
-        els.resultsDescription.textContent = displayUsers.length
-          ? 'Perfis relacionados ao que você digitou.'
-          : 'Não encontramos usuários com esse nome ou termo.';
+      const presented = presentLocalResults({ mode: 'users', query, count: displayUsers.length, filters });
+      if (!presented) {
+        if (els.resultsTitle) els.resultsTitle.textContent = query ? `Usuários para "${query}"` : 'Usuários em destaque';
+        if (els.resultsDescription) {
+          els.resultsDescription.textContent = displayUsers.length
+            ? 'Perfis relacionados ao que você digitou.'
+            : 'Não encontramos usuários com esse nome ou termo.';
+        }
+        if (els.resultsCount) els.resultsCount.textContent = formatCount(displayUsers.length);
+        setResultsState(displayUsers.length ? 'results' : 'empty');
       }
-      if (els.resultsCount) els.resultsCount.textContent = formatCount(displayUsers.length);
       renderActiveChips(query, filters, displayUsers.length);
-      setResultsState(displayUsers.length ? 'results' : 'empty');
       settleResultsHydration();
       refreshResultPreviews();
       return;
@@ -829,15 +843,18 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
       const workerResults = query ? getShortVideoMatches(query) : (searchData.shortVideoPool || []);
       els.resultsGrid.innerHTML = '';
       workerResults.slice(0, 8).forEach((item) => els.resultsGrid.appendChild(createVideoCard(item)));
-      if (els.resultsTitle) els.resultsTitle.textContent = query ? `Workers para "${query}"` : 'Workers em destaque';
-      if (els.resultsDescription) {
-        els.resultsDescription.textContent = workerResults.length
-          ? 'Vídeos curtos de profissionais relacionados ao que você pesquisou.'
-          : 'Não encontramos workers com esse termo.';
+      const presented = presentLocalResults({ mode: 'workers', query, count: workerResults.length, filters });
+      if (!presented) {
+        if (els.resultsTitle) els.resultsTitle.textContent = query ? `Workers para "${query}"` : 'Workers em destaque';
+        if (els.resultsDescription) {
+          els.resultsDescription.textContent = workerResults.length
+            ? 'Vídeos curtos de profissionais relacionados ao que você pesquisou.'
+            : 'Não encontramos workers com esse termo.';
+        }
+        if (els.resultsCount) els.resultsCount.textContent = formatCount(workerResults.length);
+        setResultsState(workerResults.length ? 'results' : 'empty');
       }
-      if (els.resultsCount) els.resultsCount.textContent = formatCount(workerResults.length);
       renderActiveChips(query, filters, workerResults.length);
-      setResultsState(workerResults.length ? 'results' : 'empty');
       settleResultsHydration();
       refreshResultPreviews();
       return;
@@ -847,15 +864,18 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
       const beforeAfterResults = query ? getBeforeAfterMatches(query) : (searchData.beforeAfterPool || []);
       els.resultsGrid.innerHTML = '';
       beforeAfterResults.slice(0, 8).forEach((item) => els.resultsGrid.appendChild(createBeforeAfterCard(item)));
-      if (els.resultsTitle) els.resultsTitle.textContent = query ? `Publicações para "${query}"` : 'Publicações em destaque';
-      if (els.resultsDescription) {
-        els.resultsDescription.textContent = beforeAfterResults.length
-          ? 'Publicações visuais de profissionais relacionadas ao que você pesquisou.'
-          : 'Não encontramos publicações com esse termo.';
+      const presented = presentLocalResults({ mode: 'before-after', query, count: beforeAfterResults.length, filters });
+      if (!presented) {
+        if (els.resultsTitle) els.resultsTitle.textContent = query ? `Publicações para "${query}"` : 'Publicações em destaque';
+        if (els.resultsDescription) {
+          els.resultsDescription.textContent = beforeAfterResults.length
+            ? 'Publicações visuais de profissionais relacionadas ao que você pesquisou.'
+            : 'Não encontramos publicações com esse termo.';
+        }
+        if (els.resultsCount) els.resultsCount.textContent = formatCount(beforeAfterResults.length);
+        setResultsState(beforeAfterResults.length ? 'results' : 'empty');
       }
-      if (els.resultsCount) els.resultsCount.textContent = formatCount(beforeAfterResults.length);
       renderActiveChips(query, filters, beforeAfterResults.length);
-      setResultsState(beforeAfterResults.length ? 'results' : 'empty');
       settleResultsHydration();
       refreshResultPreviews();
       return;
@@ -864,7 +884,12 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
     if (!serverResultsSurface?.render) {
       const error = new Error('Autoridade canônica de resultados não carregada.');
       error.code = 'DOKE_SEARCH_AUTHORITY_UNAVAILABLE';
-      setResultsState('error');
+      const ticket = resultsPresentationAdapter?.begin?.({ mode: 'services', operation: 'initial', query, filters });
+      if (ticket) {
+        resultsPresentationAdapter.fail(ticket, { mode: 'services', query, errorCode: error.code });
+      } else {
+        setResultsState('error');
+      }
       failResultsHydration(error);
       console.error('[resultados] Autoridade canônica de busca indisponível.', error);
       return Promise.reject(error);
@@ -885,7 +910,8 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
       settleHydration: settleResultsHydration,
       failHydration: failResultsHydration,
       refreshPreviews: refreshResultPreviews,
-      renderActiveChips
+      renderActiveChips,
+      presentation: resultsPresentationAdapter
     }).catch((error) => {
       console.error('[resultados] Falha ao consultar a busca canônica.', error);
       return [];
@@ -894,7 +920,6 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
 
   const loadResults = (fresh = false) => {
     void fresh;
-    setResultsState('loading');
     return Promise.resolve(renderResults()).catch((error) => {
       setResultsState('error');
       failResultsHydration(error);

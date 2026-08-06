@@ -3,8 +3,13 @@ name: Doke UX-RESULTS-001 Presentation Foundation
 on:
   pull_request:
     paths:
+      - 'resultados.html'
       - 'assets/js/pages/search-results-presentation.js'
+      - 'assets/js/pages/search-results-dom-adapter.js'
+      - 'assets/js/pages/search-results.js'
+      - 'assets/js/pages/search/server-results-surface.js'
       - 'scripts/test-ux-results-001-presentation-foundation.js'
+      - 'scripts/test-ux-results-001-dom-adapter.js'
       - 'docs/ux/UX-RESULTS-001.md'
       - '.github/workflows/ux-results-001-presentation-foundation.yml'
   workflow_dispatch:
@@ -31,10 +36,17 @@ jobs:
       - name: Validate JavaScript syntax
         run: |
           node --check assets/js/pages/search-results-presentation.js
+          node --check assets/js/pages/search-results-dom-adapter.js
+          node --check assets/js/pages/search-results.js
+          node --check assets/js/pages/search/server-results-surface.js
           node --check scripts/test-ux-results-001-presentation-foundation.js
+          node --check scripts/test-ux-results-001-dom-adapter.js
 
       - name: Run UX-RESULTS-001 presentation foundation contracts
         run: node scripts/test-ux-results-001-presentation-foundation.js
+
+      - name: Run UX-RESULTS-001 DOM adapter contracts
+        run: node scripts/test-ux-results-001-dom-adapter.js
 
       - name: Preserve UX-FILTERS-002 dependency
         run: node scripts/test-ux-filters-002-filter-presentation.js
@@ -80,6 +92,14 @@ jobs:
 
       - name: Preserve UX-CORE-001 dependency
         run: node scripts/test-ux-core-001-state-content-registry.js
+
+      - name: Validate static wiring
+        shell: bash
+        run: |
+          grep -Fq 'assets/js/pages/search-results-presentation.js?v=20260805-ux-results-001-v1' resultados.html
+          grep -Fq 'assets/js/pages/search-results-dom-adapter.js?v=20260805-ux-results-001-dom-v1' resultados.html
+          grep -Fq 'searchResultsDomAdapter' assets/js/pages/search-results.js
+          grep -Fq 'context.presentation' assets/js/pages/search/server-results-surface.js
 
       - name: Validate patch whitespace
         shell: bash
