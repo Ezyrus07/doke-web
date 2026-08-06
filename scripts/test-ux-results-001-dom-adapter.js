@@ -103,6 +103,15 @@ assert.equal(nodes.pagination.hidden, false);
 assert.equal(nodes.loadMore.hidden, false);
 assert.equal(nodes.layout.dataset.searchCanonical, 'true');
 
+const rapidA = installation.begin({ mode: 'services', operation: 'initial', query: 'telhado', authority: 'remote_catalog', coverage: 'catalog' });
+const rapidB = installation.begin({ mode: 'services', operation: 'initial', query: 'pintura', authority: 'remote_catalog', coverage: 'catalog' });
+assert.equal(nodes.loading.hidden, true, 'Rapid searches must preserve accepted cards.');
+assert.equal(nodes.grid.hidden, false);
+assert.equal(installation.commit(rapidA, { applied: true, state: 'ready', count: 99 }).applied, false);
+installation.cancel(rapidB, 'rapid-search-cancelled');
+assert.equal(nodes.count.textContent, '12');
+assert.equal(nodes.title.textContent, 'Resultados para “pintor”');
+
 const pageTicket = installation.begin({
   mode: 'services',
   operation: 'pagination',
@@ -110,7 +119,8 @@ const pageTicket = installation.begin({
   authority: 'remote_catalog',
   coverage: 'catalog'
 });
-assert.equal(nodes.loadMore.disabled, true);
+assert.equal(nodes.loadMore.disabled, false, 'Busy pagination must remain focusable.');
+assert.equal(nodes.loadMore.attrs['aria-disabled'], 'true');
 assert.equal(nodes.loadMore.textContent, 'Carregando mais...');
 installation.cancel(pageTicket, 'pagination-failed');
 assert.equal(nodes.count.textContent, '12');

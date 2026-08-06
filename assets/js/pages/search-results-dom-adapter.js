@@ -118,9 +118,10 @@
     if (nodes.loadMore) {
       var busy = Boolean(snapshot.pagination && snapshot.pagination.busy);
       nodes.loadMore.hidden = !paginationVisible;
-      nodes.loadMore.disabled = busy;
+      nodes.loadMore.disabled = false;
       nodes.loadMore.textContent = busy ? 'Carregando mais...' : 'Carregar mais';
       nodes.loadMore.dataset.actionState = busy ? 'loading' : 'idle';
+      setAttribute(nodes.loadMore, 'aria-disabled', busy ? 'true' : 'false');
       setAttribute(nodes.loadMore, 'aria-busy', busy ? 'true' : 'false');
     }
 
@@ -174,7 +175,9 @@
       if (disposed) return null;
       input = Object.assign({}, input || {});
       if (!input.searchFingerprint) input.searchFingerprint = fingerprintFor(input);
-      var previousSnapshot = controller.getSnapshot();
+      var previousSnapshot = typeof controller.getAcceptedSnapshot === 'function'
+        ? controller.getAcceptedSnapshot()
+        : controller.getSnapshot();
       var snapshot = controller.begin(input);
       view.apply(snapshot);
       dispatch(snapshot);
@@ -205,13 +208,14 @@
     function cancel(ticket, reason) {
       if (disposed || !ticket || !activeTicket) return null;
       if (ticket.generation !== activeTicket.generation || ticket.searchFingerprint !== activeTicket.searchFingerprint) return null;
-      controller.cancel(reason || 'presentation-cancelled');
+      var cancellation = controller.cancel(reason || 'presentation-cancelled');
       activeTicket = null;
-      if (ticket.previousSnapshot) {
-        view.apply(ticket.previousSnapshot);
-        dispatch(ticket.previousSnapshot);
+      var restored = cancellation && cancellation.snapshot || ticket.previousSnapshot || null;
+      if (restored) {
+        view.apply(restored);
+        dispatch(restored);
       }
-      return ticket.previousSnapshot || null;
+      return restored;
     }
 
     function commitLocal(input) {

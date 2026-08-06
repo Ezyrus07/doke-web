@@ -10,6 +10,7 @@ on:
       - 'assets/js/pages/search/server-results-surface.js'
       - 'scripts/test-ux-results-001-presentation-foundation.js'
       - 'scripts/test-ux-results-001-dom-adapter.js'
+      - 'tests/e2e/ux-results-001-browser-acceptance.spec.js'
       - 'docs/ux/UX-RESULTS-001.md'
       - '.github/workflows/ux-results-001-presentation-foundation.yml'
   workflow_dispatch:
@@ -41,6 +42,7 @@ jobs:
           node --check assets/js/pages/search/server-results-surface.js
           node --check scripts/test-ux-results-001-presentation-foundation.js
           node --check scripts/test-ux-results-001-dom-adapter.js
+          node --check tests/e2e/ux-results-001-browser-acceptance.spec.js
 
       - name: Run UX-RESULTS-001 presentation foundation contracts
         run: node scripts/test-ux-results-001-presentation-foundation.js
@@ -109,3 +111,39 @@ jobs:
           else
             git diff --check HEAD^
           fi
+
+  ux-results-001-browser-acceptance:
+    needs: ux-results-001-foundation
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run UX-RESULTS-001 browser acceptance
+        run: node node_modules/@playwright/test/cli.js test tests/e2e/ux-results-001-browser-acceptance.spec.js --workers=1
+
+      - name: Upload browser acceptance evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ux-results-001-browser-acceptance-${{ github.sha }}
+          path: |
+            reports/generated/playwright-html/
+            reports/generated/playwright-results.json
+            test-results/
+          if-no-files-found: warn
+          retention-days: 14

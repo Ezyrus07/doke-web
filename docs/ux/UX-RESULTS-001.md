@@ -159,3 +159,13 @@ The deterministic gate validates ownership and state transitions, but it does no
 ## Rollback
 
 Revert the UX-RESULTS-001 commits. No database, remote data or schema rollback is required.
+
+## Browser acceptance harness
+
+The Playwright harness validates desktop 1366×768 and mobile 390×844 with remote services disabled. It covers rapid latest-wins searches, preservation of accepted cards without blocking flicker, empty versus fallback, related-section ownership, pagination focus/busy/rollback/append, retry, error and compact-viewport overflow.
+
+The harness runs against the repository static server and stores Playwright evidence. It does not access staging, production, Supabase, RPCs or external search services.
+
+## Remaining closure work
+
+The final QC must resolve the current SonarQube Cloud failure without suppressing findings, rerun every deterministic and browser gate on one immutable head, inspect evidence and register the definitive checkpoint.

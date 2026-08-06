@@ -296,6 +296,7 @@
       applied: true,
       state: STATES.IDLE
     }, options.initial || {}));
+    var accepted = current;
     var active = null;
     var generation = current.generation;
 
@@ -311,6 +312,7 @@
         mode: mode,
         operation: operation
       });
+      var acceptedSnapshot = accepted;
       current = createViewModel({
         applied: true,
         generation: generation,
@@ -319,11 +321,11 @@
         operation: operation,
         state: operation === OPERATIONS.PAGINATION ? STATES.PAGINATING : STATES.LOADING,
         query: input.query,
-        count: operation === OPERATIONS.PAGINATION ? current.count : 0,
-        previousCount: current.count,
-        authority: input.authority || current.authority,
-        coverage: input.coverage || current.coverage,
-        sections: input.sections || current.sections
+        count: operation === OPERATIONS.PAGINATION ? acceptedSnapshot.count : 0,
+        previousCount: acceptedSnapshot.count,
+        authority: input.authority || acceptedSnapshot.authority,
+        coverage: input.coverage || acceptedSnapshot.coverage,
+        sections: input.sections || acceptedSnapshot.sections
       });
       return current;
     }
@@ -358,6 +360,7 @@
       if (!next.committable) return reject('state-not-committable', input);
 
       current = next;
+      accepted = next;
       active = null;
       return freeze({
         applied: true,
@@ -370,6 +373,7 @@
 
     function cancel(reason) {
       active = null;
+      current = accepted;
       return freeze({
         applied: false,
         reason: token(reason, 'cancelled'),
@@ -382,6 +386,7 @@
       commit: commit,
       cancel: cancel,
       getSnapshot: function getSnapshot() { return current; },
+      getAcceptedSnapshot: function getAcceptedSnapshot() { return accepted; },
       getActiveIntent: function getActiveIntent() { return active; }
     });
   }

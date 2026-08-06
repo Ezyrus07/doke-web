@@ -154,6 +154,8 @@ const pendingB = controller.begin({
   query: 'B'
 });
 assert.equal(pendingB.searchFingerprint, 'intent-b');
+assert.equal(pendingB.previousCount, 5, 'Consecutive searches must preserve the last accepted count.');
+assert.equal(controller.getAcceptedSnapshot().count, 5);
 
 const staleReceipt = controller.commit({
   applied: true,
@@ -189,6 +191,7 @@ const accepted = controller.commit({
 assert.equal(accepted.applied, true);
 assert.equal(accepted.snapshot.count, 11);
 assert.equal(controller.getActiveIntent(), null);
+assert.equal(controller.getAcceptedSnapshot().count, 11);
 
 controller.begin({
   generation: 4,
@@ -210,6 +213,14 @@ const pageAccepted = controller.commit({
 });
 assert.equal(pageAccepted.snapshot.contentPolicy, api.contentPolicies.APPEND);
 assert.equal(pageAccepted.snapshot.count, 18);
+
+const rapidA = controller.begin({ generation: 5, searchFingerprint: 'rapid-a', mode: 'services', operation: 'initial', query: 'A' });
+const rapidB = controller.begin({ generation: 6, searchFingerprint: 'rapid-b', mode: 'services', operation: 'initial', query: 'B' });
+assert.equal(rapidA.previousCount, 18);
+assert.equal(rapidB.previousCount, 18, 'Loading generations must not replace the accepted checkpoint.');
+const restoredAfterCancel = controller.cancel('rapid-cancelled');
+assert.equal(restoredAfterCancel.snapshot.count, 18);
+assert.equal(restoredAfterCancel.snapshot.state, api.states.READY);
 
 const diagnostic = api.diagnosticFor({
   applied: true,
