@@ -1,0 +1,159 @@
+name: Doke UX-HOME-002 More Services State
+
+on:
+  push:
+    branches:
+      - ux/ux-home-002-more-services-filters
+    paths:
+      - 'index.html'
+      - 'assets/js/pages/home/more-services-state.js'
+      - 'assets/js/pages/home/more-services-surface.js'
+      - 'scripts/test-ux-home-002-more-services-state.js'
+      - 'scripts/test-ux-home-002-more-services-surface.js'
+      - 'scripts/test-ux-home-002-index-contract.js'
+      - 'scripts/test-ux-home-002-browser-contract.js'
+      - 'docs/ux/UX-HOME-002.md'
+      - '.github/workflows/ux-home-002-more-services-state.yml'
+      - 'sonar-project.properties'
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'assets/js/pages/home/more-services-state.js'
+      - 'assets/js/pages/home/more-services-surface.js'
+      - 'scripts/test-ux-home-002-more-services-state.js'
+      - 'scripts/test-ux-home-002-more-services-surface.js'
+      - 'scripts/test-ux-home-002-index-contract.js'
+      - 'scripts/test-ux-home-002-browser-contract.js'
+      - 'docs/ux/UX-HOME-002.md'
+      - '.github/workflows/ux-home-002-more-services-state.yml'
+      - 'sonar-project.properties'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  ux-home-002-more-services-state:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install repository dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts
+
+      - name: Install Playwright Chromium from locked dependency
+        run: ./node_modules/.bin/playwright install chromium
+
+      - name: Validate JavaScript syntax
+        run: |
+          node --check assets/js/pages/home/more-services-state.js
+          node --check assets/js/pages/home/more-services-surface.js
+          node --check scripts/test-ux-home-002-more-services-state.js
+          node --check scripts/test-ux-home-002-more-services-surface.js
+          node --check scripts/test-ux-home-002-index-contract.js
+          node --check scripts/test-ux-home-002-browser-contract.js
+
+      - name: Validate Home composition contract
+        run: node scripts/test-ux-home-002-index-contract.js
+
+      - name: Validate More services state behavior
+        run: node scripts/test-ux-home-002-more-services-state.js
+
+      - name: Validate More services surface behavior
+        run: node scripts/test-ux-home-002-more-services-surface.js
+
+      - name: Validate More services browser behavior
+        run: node scripts/test-ux-home-002-browser-contract.js
+
+      - name: Preserve inherited Home and search contracts
+        run: |
+          node scripts/test-ux-home-001-rail-state.js
+          node scripts/test-ux-home-001-index-controller.js
+          node scripts/test-ux-home-001-favorites-surface.js
+          node scripts/test-index-return-hydration-contract.js
+          node scripts/test-search-ux02-runtime.js
+          node scripts/test-ux-search-001-search-experience.js
+
+      - name: Generate executable LCOV
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf coverage/ux-home-002
+          mkdir -p coverage/ux-home-002
+          node --test \
+            --experimental-test-coverage \
+            --test-coverage-include='assets/js/pages/home/more-services-state.js' \
+            --test-coverage-include='assets/js/pages/home/more-services-surface.js' \
+            --test-reporter=spec \
+            --test-reporter-destination=stdout \
+            --test-reporter=lcov \
+            --test-reporter-destination=coverage/ux-home-002/lcov.info \
+            scripts/test-ux-home-002-more-services-state.js \
+            scripts/test-ux-home-002-more-services-surface.js
+
+      - name: Validate LCOV evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          REPORT='coverage/ux-home-002/lcov.info'
+          test -s "${REPORT}"
+          grep -Fq 'SF:assets/js/pages/home/more-services-state.js' "${REPORT}"
+          grep -Fq 'SF:assets/js/pages/home/more-services-surface.js' "${REPORT}"
+
+      - name: Require SonarQube Cloud credential
+        if: github.event_name != 'pull_request'
+        shell: bash
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${SONAR_TOKEN}" ]]; then
+            echo '::error::SONAR_TOKEN is unavailable to the trusted branch workflow.'
+            exit 1
+          fi
+
+      - name: Upload LCOV evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ux-home-002-lcov-${{ github.event_name }}-${{ github.run_id }}
+          path: coverage/ux-home-002/lcov.info
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Validate patch whitespace
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            git diff --check "${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}"
+          else
+            git diff --check HEAD^
+          fi
+
+      - name: Analyze PR and enforce SonarQube Cloud Quality Gate
+        if: github.event_name != 'pull_request'
+        uses: SonarSource/sonarqube-scan-action@c7ee0f9df90b7aa20e8dcf9695dcfe2e7da5b4f2
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.projectKey=Ezyrus07_doke-web
+            -Dsonar.organization=ezyrus07
+            -Dsonar.pullrequest.key=86
+            -Dsonar.pullrequest.branch=ux/ux-home-002-more-services-filters
+            -Dsonar.pullrequest.base=ux/ux-home-001-rail-states
+            -Dsonar.javascript.lcov.reportPaths=coverage/ux-home-002/lcov.info
+            -Dsonar.qualitygate.wait=true
+            -Dsonar.qualitygate.timeout=600
