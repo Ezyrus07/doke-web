@@ -2,7 +2,7 @@
   "contractId": "com-b04i-r1-remote-node-execution-path-recovery-v1",
   "domain": "COM-001",
   "scope": "repository_only_remote_node_execution_path_recovery",
-  "status": "recovery_workflow_revision_2_installation_pending_trigger",
+  "status": "recovery_workflow_revision_3_installation_pending_trigger",
   "sourceHead": "61cc9f7c2f90e841498f545fd2cddc7236e3b420",
   "problem": {
     "attempt2AuthorizationConsumed": true,
@@ -25,8 +25,29 @@
       "workflowRunCreated": true,
       "exactTriggerCommitCheckedOut": true,
       "parentBindingPassed": true,
+      "remoteNodeExecutorStarted": false,
       "failureStage": "repository_audit_before_remote_node_executor",
       "failureCause": "audit_expected_hyphenated_com_b04g_marker_instead_of_canonical_underscored_error_code",
+      "artifactCreated": false,
+      "secretsRead": false,
+      "stagingAccessed": false
+    },
+    {
+      "revision": 2,
+      "workflowInstallHead": "b719125aee0a7ee8c954fadcb55317802f13292a",
+      "triggerHead": "3fa2dd130a9d7c6617a7acc1619441ae14ee45e3",
+      "run": 31137679848,
+      "job": 92740643549,
+      "workflowRunCreated": true,
+      "exactTriggerCommitCheckedOut": true,
+      "parentBindingPassed": true,
+      "repositoryAudit": "107/107",
+      "remoteNodeExecutorStarted": true,
+      "failureStage": "remote_node_executor_historical_readiness_audit",
+      "failureCause": "historical_attempt2_readiness_audit_expected_pre_split_archived_workflow_marker",
+      "artifactCreated": true,
+      "artifactId": 8978678207,
+      "artifactDigest": "sha256:af587ee965acbb926d46ffc0e520e9a4402806c94b0a6719d22f82a6fdd33ce8",
       "secretsRead": false,
       "stagingAccessed": false
     }
@@ -36,12 +57,14 @@
     "triggerCreatedInSeparateCommit": true,
     "event": "push",
     "branch": "com/com-001-baseline-audit",
-    "triggerPath": "config/com-b04i-r1-remote-node-execution-trigger-v2.json",
+    "triggerPath": "config/com-b04i-r1-remote-node-execution-trigger-v3.json",
     "runner": "ubuntu-24.04",
     "nodeVersion": "24",
     "remoteNodeProcessRequired": true,
     "defaultFailClosedHandlerInvocationRequired": true,
     "sanitizedArtifactRequired": true,
+    "historicalReadinessEvidenceValidation": true,
+    "historicalReadinessAuditReexecution": false,
     "workflowRerunAllowed": false,
     "newTriggerRevisionRequiredAfterFailure": true,
     "secretsRequired": false,
@@ -55,7 +78,7 @@
     "remoteNodeProcessExecuted": true,
     "defaultHandlerReturned503": true,
     "localCanaryConformancePassed": true,
-    "attempt2ReadinessAuditPassed": true,
+    "attempt2ReadinessEvidenceCertified": true,
     "artifactUploaded": true,
     "stagingAccessed": false,
     "productionChanged": false,
@@ -78,5 +101,5 @@
     "promotionAllowed": false,
     "productionGate": "blocked"
   },
-  "nextAction": "install_recovery_workflow_revision_2_then_create_distinct_trigger_v2"
+  "nextAction": "install_recovery_workflow_revision_3_then_create_distinct_trigger_v3"
 }
