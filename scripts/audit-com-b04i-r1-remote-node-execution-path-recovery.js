@@ -45,21 +45,27 @@ const matrix = json(files.matrix);
 
 equal(config.contractId, 'com-b04i-r1-remote-node-execution-path-recovery-v1', 'contract');
 equal(config.scope, 'repository_only_remote_node_execution_path_recovery', 'scope');
-equal(config.status, 'recovery_workflow_revision_2_installation_pending_trigger', 'status');
+equal(config.status, 'recovery_workflow_revision_3_installation_pending_trigger', 'status');
 equal(config.sourceHead, '61cc9f7c2f90e841498f545fd2cddc7236e3b420', 'source head');
 equal(config.problem.attempt2AuthorizationConsumed, true, 'attempt 2 consumed');
 equal(config.problem.attempt2AuthorizationReusable, false, 'attempt 2 not reusable');
 equal(config.problem.workflowRunMaterializedForExactTrigger, false, 'historical attempt-2 run absent');
-equal(config.problem.remoteNodeExecutorStarted, false, 'historical executor absent');
+equal(config.problem.remoteNodeExecutorStarted, false, 'historical attempt-2 executor absent');
 equal(config.problem.splitPersistenceCanaryPassed, true, 'split persistence passed');
 equal(config.problem.endToEndLiveRouteCertified, false, 'end-to-end not certified');
-equal(config.recoveryAttempts.length, 1, 'one prior recovery attempt');
+equal(config.recoveryAttempts.length, 2, 'two prior recovery attempts');
 equal(config.recoveryAttempts[0].run, 31137291437, 'recovery attempt 1 run');
-equal(config.recoveryAttempts[0].workflowRunCreated, true, 'recovery run materialized');
-equal(config.recoveryAttempts[0].stagingAccessed, false, 'recovery attempt no staging');
+equal(config.recoveryAttempts[0].remoteNodeExecutorStarted, false, 'attempt 1 executor false');
+equal(config.recoveryAttempts[1].run, 31137679848, 'recovery attempt 2 run');
+equal(config.recoveryAttempts[1].repositoryAudit, '107/107', 'attempt 2 audit passed');
+equal(config.recoveryAttempts[1].remoteNodeExecutorStarted, true, 'attempt 2 executor started');
+equal(config.recoveryAttempts[1].artifactCreated, true, 'attempt 2 artifact created');
+equal(config.recoveryAttempts[1].stagingAccessed, false, 'attempt 2 no staging');
 equal(config.recoveryMechanism.workflowPreinstalledBeforeTrigger, true, 'preinstall workflow');
 equal(config.recoveryMechanism.triggerCreatedInSeparateCommit, true, 'separate trigger');
-equal(config.recoveryMechanism.triggerPath, 'config/com-b04i-r1-remote-node-execution-trigger-v2.json', 'revision-2 trigger path');
+equal(config.recoveryMechanism.triggerPath, 'config/com-b04i-r1-remote-node-execution-trigger-v3.json', 'revision-3 trigger path');
+equal(config.recoveryMechanism.historicalReadinessEvidenceValidation, true, 'evidence validation enabled');
+equal(config.recoveryMechanism.historicalReadinessAuditReexecution, false, 'stale audit not rerun');
 equal(config.recoveryMechanism.secretsRequired, false, 'no secrets');
 equal(config.recoveryMechanism.environmentRequired, false, 'no environment');
 equal(config.recoveryMechanism.stagingAccessAllowed, false, 'no staging');
@@ -72,7 +78,7 @@ for (const marker of [
   'GITHUB_ACTIONS', 'GITHUB_EVENT_NAME', 'GITHUB_REF_NAME', 'GITHUB_RUN_ATTEMPT',
   "git('rev-parse', 'HEAD^')", 'COM_B04G_ROUTE_NOT_DEPLOYED_OR_ACTIVATED',
   'test-com-b04i-staging-live-composition-route-canary.js',
-  'audit-com-b04i-attempt-2-readiness.js',
+  'COM-B04I-ATTEMPT-2-READINESS.json',
   'remote_node_execution_path_recovered',
   'stagingAccessed: false', 'productionChanged: false', 'pullRequestMerged: false'
 ]) ok(executor.includes(marker), `executor marker: ${marker}`);
@@ -84,7 +90,7 @@ for (const forbidden of [
 
 for (const marker of [
   'COM-B04I-R1 Remote Node Execution Path Recovery',
-  'config/com-b04i-r1-remote-node-execution-trigger-v2.json',
+  'config/com-b04i-r1-remote-node-execution-trigger-v3.json',
   'node scripts/execute-com-b04i-r1-remote-node-execution-path-recovery.js',
   'node scripts/audit-com-b04i-r1-remote-node-execution-path-recovery.js',
   'actions/upload-artifact@v4',
@@ -106,7 +112,8 @@ for (const marker of [
 equal(evidence.contractId, config.contractId, 'evidence contract');
 ok([
   'recovery_workflow_installation_pending_trigger',
-  'recovery_workflow_revision_2_installation_pending_trigger'
+  'recovery_workflow_revision_2_installation_pending_trigger',
+  'recovery_workflow_revision_3_installation_pending_trigger'
 ].includes(evidence.status), 'evidence pending lifecycle status');
 equal(evidence.effects.stagingAccessed, false, 'evidence staging false');
 equal(evidence.effects.productionChanged, false, 'evidence production false');
@@ -116,11 +123,13 @@ equal(attempt1.authorization.consumed, true, 'attempt 1 consumed');
 equal(attempt1.authorization.reusableAfterFailure, false, 'attempt 1 not reusable');
 equal(attempt2Readiness.status, 'repository_ready_new_explicit_authorization_required', 'attempt 2 readiness retained');
 equal(attempt2Evidence.certification.result, 'success', 'attempt 2 readiness certified');
+equal(attempt2Evidence.certification.localConformance, '28/28', 'attempt 2 conformance evidence');
+equal(attempt2Evidence.certification.readinessAudit, '58/58', 'attempt 2 audit evidence');
 equal(splitEvidence.status, 'split_canary_passed_full_node_route_not_executed', 'split canary evidence retained');
-equal(splitEvidence.execution.githubActionsNodeExecutorStarted, false, 'remote Node executor remained absent');
+equal(splitEvidence.execution.githubActionsNodeExecutorStarted, false, 'remote Node executor remained absent in split');
 equal(splitEvidence.proof.transactionRolledBack, true, 'split transaction rolled back');
 equal(splitEvidence.proof.persistentResidue, false, 'split residue false');
-equal(splitEvidence.scopeQualification.remoteNodeHandlerExecuted, false, 'remote handler not executed');
+equal(splitEvidence.scopeQualification.remoteNodeHandlerExecuted, false, 'remote handler not executed in split');
 equal(splitEvidence.scopeQualification.endToEndLiveRouteCertified, false, 'split not end-to-end');
 ok(handlers.includes("const FAILURE_CODE = 'COM_B04G_ROUTE_NOT_DEPLOYED_OR_ACTIVATED'"), 'default handler fail closed');
 
