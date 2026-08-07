@@ -6,14 +6,18 @@ on:
       - ux/ux-home-002-more-services-filters
     paths:
       - 'assets/js/pages/home/more-services-state.js'
+      - 'assets/js/pages/home/more-services-surface.js'
       - 'scripts/test-ux-home-002-more-services-state.js'
+      - 'scripts/test-ux-home-002-more-services-surface.js'
       - 'docs/ux/UX-HOME-002.md'
       - '.github/workflows/ux-home-002-more-services-state.yml'
       - 'sonar-project.properties'
   pull_request:
     paths:
       - 'assets/js/pages/home/more-services-state.js'
+      - 'assets/js/pages/home/more-services-surface.js'
       - 'scripts/test-ux-home-002-more-services-state.js'
+      - 'scripts/test-ux-home-002-more-services-surface.js'
       - 'docs/ux/UX-HOME-002.md'
       - '.github/workflows/ux-home-002-more-services-state.yml'
       - 'sonar-project.properties'
@@ -43,10 +47,15 @@ jobs:
       - name: Validate JavaScript syntax
         run: |
           node --check assets/js/pages/home/more-services-state.js
+          node --check assets/js/pages/home/more-services-surface.js
           node --check scripts/test-ux-home-002-more-services-state.js
+          node --check scripts/test-ux-home-002-more-services-surface.js
 
       - name: Validate More services state behavior
         run: node scripts/test-ux-home-002-more-services-state.js
+
+      - name: Validate More services surface behavior
+        run: node scripts/test-ux-home-002-more-services-surface.js
 
       - name: Preserve inherited Home and search contracts
         run: |
@@ -65,11 +74,13 @@ jobs:
           node --test \
             --experimental-test-coverage \
             --test-coverage-include='assets/js/pages/home/more-services-state.js' \
+            --test-coverage-include='assets/js/pages/home/more-services-surface.js' \
             --test-reporter=spec \
             --test-reporter-destination=stdout \
             --test-reporter=lcov \
             --test-reporter-destination=coverage/ux-home-002/lcov.info \
-            scripts/test-ux-home-002-more-services-state.js
+            scripts/test-ux-home-002-more-services-state.js \
+            scripts/test-ux-home-002-more-services-surface.js
 
       - name: Validate LCOV evidence
         shell: bash
@@ -78,6 +89,7 @@ jobs:
           REPORT='coverage/ux-home-002/lcov.info'
           test -s "${REPORT}"
           grep -Fq 'SF:assets/js/pages/home/more-services-state.js' "${REPORT}"
+          grep -Fq 'SF:assets/js/pages/home/more-services-surface.js' "${REPORT}"
 
       - name: Require SonarQube Cloud credential
         if: github.event_name != 'pull_request'
