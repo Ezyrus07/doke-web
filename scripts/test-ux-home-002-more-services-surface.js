@@ -51,6 +51,9 @@ function control(kind, text = '') {
         return { querySelector: () => ({ textContent: this.label }) };
       }
       if ((selector.includes('[data-more-services-intent]') || selector.includes('#more-services-tabs-track')) && this.kind === 'tab') return this;
+      if (selector === '[data-more-filters-section="quick"]' && this.kind === 'chip') {
+        return { dataset: { moreFiltersSection: 'quick' } };
+      }
       if (selector.includes('.filter-chip') && this.kind === 'chip') return this;
       if (selector === '[data-more-services-load]' && this.kind === 'load') return this;
       if (selector === '[data-more-filters-apply]' && this.kind === 'apply') return this;
