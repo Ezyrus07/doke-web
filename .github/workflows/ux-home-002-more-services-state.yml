@@ -5,19 +5,25 @@ on:
     branches:
       - ux/ux-home-002-more-services-filters
     paths:
+      - 'index.html'
       - 'assets/js/pages/home/more-services-state.js'
       - 'assets/js/pages/home/more-services-surface.js'
       - 'scripts/test-ux-home-002-more-services-state.js'
       - 'scripts/test-ux-home-002-more-services-surface.js'
+      - 'scripts/test-ux-home-002-index-contract.js'
+      - 'scripts/test-ux-home-002-browser-contract.js'
       - 'docs/ux/UX-HOME-002.md'
       - '.github/workflows/ux-home-002-more-services-state.yml'
       - 'sonar-project.properties'
   pull_request:
     paths:
+      - 'index.html'
       - 'assets/js/pages/home/more-services-state.js'
       - 'assets/js/pages/home/more-services-surface.js'
       - 'scripts/test-ux-home-002-more-services-state.js'
       - 'scripts/test-ux-home-002-more-services-surface.js'
+      - 'scripts/test-ux-home-002-index-contract.js'
+      - 'scripts/test-ux-home-002-browser-contract.js'
       - 'docs/ux/UX-HOME-002.md'
       - '.github/workflows/ux-home-002-more-services-state.yml'
       - 'sonar-project.properties'
@@ -30,7 +36,7 @@ permissions:
 jobs:
   ux-home-002-more-services-state:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
 
     steps:
       - name: Checkout repository
@@ -44,12 +50,23 @@ jobs:
           node-version: '22'
           cache: npm
 
+      - name: Install repository dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts
+
+      - name: Install Playwright Chromium from locked dependency
+        run: ./node_modules/.bin/playwright install chromium
+
       - name: Validate JavaScript syntax
         run: |
           node --check assets/js/pages/home/more-services-state.js
           node --check assets/js/pages/home/more-services-surface.js
           node --check scripts/test-ux-home-002-more-services-state.js
           node --check scripts/test-ux-home-002-more-services-surface.js
+          node --check scripts/test-ux-home-002-index-contract.js
+          node --check scripts/test-ux-home-002-browser-contract.js
+
+      - name: Validate Home composition contract
+        run: node scripts/test-ux-home-002-index-contract.js
 
       - name: Validate More services state behavior
         run: node scripts/test-ux-home-002-more-services-state.js
@@ -57,11 +74,15 @@ jobs:
       - name: Validate More services surface behavior
         run: node scripts/test-ux-home-002-more-services-surface.js
 
+      - name: Validate More services browser behavior
+        run: node scripts/test-ux-home-002-browser-contract.js
+
       - name: Preserve inherited Home and search contracts
         run: |
           node scripts/test-ux-home-001-rail-state.js
           node scripts/test-ux-home-001-index-controller.js
           node scripts/test-ux-home-001-favorites-surface.js
+          node scripts/test-index-return-hydration-contract.js
           node scripts/test-search-ux02-runtime.js
           node scripts/test-ux-search-001-search-experience.js
 
