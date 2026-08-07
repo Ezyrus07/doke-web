@@ -6,14 +6,18 @@ on:
       - ux/ux-home-003-rail-scroll-sync
     paths:
       - 'assets/js/pages/home/rail-scroll-state.js'
+      - 'assets/js/pages/home/rail-scroll-controller.js'
       - 'scripts/test-ux-home-003-rail-scroll-state.js'
+      - 'scripts/test-ux-home-003-rail-scroll-controller.js'
       - 'docs/ux/UX-HOME-003.md'
       - '.github/workflows/ux-home-003-rail-scroll-sync.yml'
       - 'sonar-project.properties'
   pull_request:
     paths:
       - 'assets/js/pages/home/rail-scroll-state.js'
+      - 'assets/js/pages/home/rail-scroll-controller.js'
       - 'scripts/test-ux-home-003-rail-scroll-state.js'
+      - 'scripts/test-ux-home-003-rail-scroll-controller.js'
       - 'docs/ux/UX-HOME-003.md'
       - '.github/workflows/ux-home-003-rail-scroll-sync.yml'
       - 'sonar-project.properties'
@@ -43,10 +47,15 @@ jobs:
       - name: Validate JavaScript syntax
         run: |
           node --check assets/js/pages/home/rail-scroll-state.js
+          node --check assets/js/pages/home/rail-scroll-controller.js
           node --check scripts/test-ux-home-003-rail-scroll-state.js
+          node --check scripts/test-ux-home-003-rail-scroll-controller.js
 
       - name: Validate rail scroll state behavior
         run: node scripts/test-ux-home-003-rail-scroll-state.js
+
+      - name: Validate rail scroll controller behavior
+        run: node scripts/test-ux-home-003-rail-scroll-controller.js
 
       - name: Preserve inherited Home contracts
         run: |
@@ -65,11 +74,13 @@ jobs:
           node --test \
             --experimental-test-coverage \
             --test-coverage-include='assets/js/pages/home/rail-scroll-state.js' \
+            --test-coverage-include='assets/js/pages/home/rail-scroll-controller.js' \
             --test-reporter=spec \
             --test-reporter-destination=stdout \
             --test-reporter=lcov \
             --test-reporter-destination=coverage/ux-home-003/lcov.info \
-            scripts/test-ux-home-003-rail-scroll-state.js
+            scripts/test-ux-home-003-rail-scroll-state.js \
+            scripts/test-ux-home-003-rail-scroll-controller.js
 
       - name: Validate LCOV evidence
         shell: bash
@@ -78,6 +89,7 @@ jobs:
           REPORT='coverage/ux-home-003/lcov.info'
           test -s "${REPORT}"
           grep -Fq 'SF:assets/js/pages/home/rail-scroll-state.js' "${REPORT}"
+          grep -Fq 'SF:assets/js/pages/home/rail-scroll-controller.js' "${REPORT}"
           FOUND="$(awk -F: '/^LF:/{lf+=$2} /^LH:/{lh+=$2} END{print lh+0 "/" lf+0}' "${REPORT}")"
           echo "[ux-home-003] executable lines: ${FOUND}"
 
