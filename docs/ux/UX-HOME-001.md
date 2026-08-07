@@ -99,7 +99,7 @@ Concluída:
 
 ### Fase 2 — Home remota/editorial
 
-Implementação concluída no controller:
+Concluída:
 
 - `index-data-controller.js` integrado ao rail-state;
 - respostas remotas representadas por envelopes explícitos;
@@ -110,29 +110,61 @@ Implementação concluída no controller:
 - root state resolvido por conteúdo aceito e autoridade remota;
 - contagens calculadas antes dos eventos;
 - retry single-flight e route fence validados;
-- LCOV atribuído ao código canônico.
+- LCOV atribuído ao código canônico;
+- finding final de optional chaining corrigido sem suppressão.
 
-Evidência de validação:
+Evidência final da Fase 2:
 
-- run confiável `31137028166`: sintaxe, rail-state, controller, Playwright, LCOV, credencial, artifact e whitespace aprovados;
-- cobertura executável desse checkpoint: `rail-state.js` 98,74% linhas e `index-data-controller.js` 80,19% linhas; conjunto 86,44%;
-- Sonar Quality Gate aprovado com 87,2% de cobertura em código novo e zero Security Hotspots;
-- a análise identificou uma última simplificação de optional chaining em `getRenderedItemCount()`;
-- correção final publicada em `f9e6113fa87f05ea540c533555380f70a7867565`, substituindo `child.matches && child.matches(...)` por `child.matches?.(...)`;
+- trusted run `31142083063`, head `3ced7d74bbf69d6ffe99b4229fcc2a9bb4430eef`: success;
+- Sonar Quality Gate: passed;
+- 0 new issues, 0 accepted issues, 0 Security Hotspots e 0 Sonar annotations;
+- 87,2% Coverage on New Code;
 - nenhum finding foi aceito, suprimido ou excluído para obter aprovação.
-
-A correção final deve ser reanalisada no Sonar antes de considerar a Fase 2 encerrada para fins de evidência.
 
 ### Fase 3 — Favoritos
 
-Pendente neste PR até o gate final da Fase 2:
+Concluída na implementação e nos contratos:
 
-- integrar `favorites-surface.js` ao rail-state;
-- separar falha de ledger e catálogo;
+- `favorites-surface.js` integrado ao rail `favorites` de `Doke.homeRailState`;
+- `Doke.serviceFavoritesController` continua sendo a única autoridade de ownership;
+- sessão resolvida pela autoridade canônica `Doke.session`, com fallback compatível para `DokeAuth.service`;
+- usuário anônimo publica `hidden-anonymous`, nunca `empty`;
+- resposta aceita com zero favoritos publica `empty` + `hidden-insufficient-items`;
+- falha de ledger e falha de catálogo possuem códigos públicos distintos;
+- recovery é localizado no rail, com `Tentar novamente`;
+- refresh da mesma conta preserva cards aceitos e degrada para `stale` em falha;
+- troca de conta limpa a superfície antes do novo carregamento;
+- account, route, section e generation fences descartam respostas antigas;
+- preview continua limitado a seis cards e posicionado antes do showcase profissional;
+- cards continuam usando `Doke.publicServiceCard` e são reconciliados pelo controller canônico;
+- eventos da Home expõem somente estado sanitizado, sem IDs de favoritos, identidade, usuário, itens ou mensagens técnicas;
+- `favorites-surface.js` participa do LCOV executável.
+
+Contrato determinístico `scripts/test-ux-home-001-favorites-surface.js` valida:
+
+- anônimo;
+- vazio legítimo;
+- ready com cards canônicos;
+- erro de ledger;
+- erro de catálogo;
+- stale refresh;
+- troca de conta com latest-wins;
+- troca de root/rota;
 - retry localizado;
-- account/route generation;
-- preservar cards em refresh;
-- sanitizar eventos.
+- sanitização de eventos.
+
+Evidência da Fase 3 antes do checkpoint documental final:
+
+- trusted run `31142950599`, head `0706619e3eb5dee1f87f1c6bdc6ebbd08467badc`: success;
+- Sonar Quality Gate: passed;
+- 0 new issues, 0 accepted issues, 0 Security Hotspots e 0 Sonar annotations;
+- 83,9% Coverage on New Code;
+- Home Favorites behavior, Playwright, LCOV e whitespace: success;
+- SEARCH-UX02 encontrou duas assertions textuais presas à implementação antiga (`services.slice(0, 6)` e contagem por `services.length`), embora o comportamento novo estivesse correto;
+- essas assertions foram atualizadas para as autoridades semânticas atuais `buildPreviewNodes(items)` e `updateCount(ui, count)`;
+- no head `c75c583c56acf7de2bcf8309acd712bb18a608f0`, SEARCH-UX02, UX-SEARCH-DEBT e UX-HOME passaram novamente em seus gates de PR.
+
+Este documento é o checkpoint que dispara a última análise confiável no SHA final candidato. A issue #83 só pode ser encerrada se esse novo SHA repetir Quality Gate verde e todos os contratos herdados permanecerem aprovados.
 
 ## Fora deste PR
 
@@ -144,4 +176,8 @@ Pendente neste PR até o gate final da Fase 2:
 
 ## Rollback
 
-O módulo é aditivo. A integração do controller pode ser revertida isoladamente, retirando o carregamento de `home/rail-state.js` e restaurando o controller anterior, sem alterar dados persistidos. A fase de Favoritos permanecerá separada para preservar rollback localizado.
+A integração é reversível por camada:
+
+- Fase 2: retirar `home/rail-state.js` do carregamento e restaurar o controller anterior;
+- Fase 3: reverter somente `favorites-surface.js` e seu teste comportamental;
+- nenhuma reversão exige migration, mudança de backend ou alteração de dados persistidos.
