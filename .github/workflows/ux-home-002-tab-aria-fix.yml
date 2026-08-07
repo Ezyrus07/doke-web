@@ -1,0 +1,94 @@
+name: UX-HOME-002 Tab ARIA Fix
+
+on:
+  push:
+    branches:
+      - ux/ux-home-002-more-services-filters
+    paths:
+      - '.github/workflows/ux-home-002-tab-aria-fix.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply-fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Apply semantic tab ARIA fix
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          index_path = Path('index.html')
+          index = index_path.read_text(encoding='utf-8')
+          pattern = re.compile(r'(<button[^>]*data-more-services-intent="[^"]+"[^>]*role="tab"[^>]*?) aria-pressed="(?:true|false)"([^>]*>)')
+          index, count = pattern.subn(r'\1\2', index)
+          if count != 6:
+              raise SystemExit(f'Expected six tab aria-pressed removals in index.html, got {count}.')
+          index_path.write_text(index, encoding='utf-8')
+
+          surface_path = Path('assets/js/pages/home/more-services-surface.js')
+          surface = surface_path.read_text(encoding='utf-8')
+          lines = [
+              "      tab.setAttribute('aria-pressed', String(intent === intents.FOR_YOU));\n",
+              "      tab.setAttribute('aria-pressed', String(selected));\n",
+          ]
+          for line in lines:
+              if surface.count(line) != 1:
+                  raise SystemExit(f'Expected one surface ARIA line: {line.strip()}')
+              surface = surface.replace(line, '', 1)
+          surface_path.write_text(surface, encoding='utf-8')
+
+          contract_path = Path('scripts/test-ux-home-002-index-contract.js')
+          contract = contract_path.read_text(encoding='utf-8')
+          old = 'aria-selected="${selected}"[^>]*aria-pressed="${selected}"[^>]*tabindex="${tabIndex}"'
+          new = 'aria-selected="${selected}"[^>]*tabindex="${tabIndex}"'
+          if contract.count(old) != 1:
+              raise SystemExit('Expected one index contract ARIA pattern.')
+          contract = contract.replace(old, new, 1)
+          anchor = "assert.equal((html.match(/data-more-services-intent=/g) || []).length, 6, 'More services must expose exactly six stable intents.');"
+          extra = "assert(!/<button[^>]*role=\"tab\"[^>]*aria-pressed=/.test(html), 'Tabs must use aria-selected instead of aria-pressed.');\n"
+          if anchor not in contract:
+              raise SystemExit('Index contract anchor missing.')
+          contract = contract.replace(anchor, extra + anchor, 1)
+          contract_path.write_text(contract, encoding='utf-8')
+
+          browser_path = Path('scripts/test-ux-home-002-browser-contract.js')
+          browser = browser_path.read_text(encoding='utf-8')
+          browser_pattern = re.compile(r'(<button class="mini-tab[^>]*data-more-services-intent="[^"]+"[^>]*role="tab"[^>]*?) aria-pressed="(?:true|false)"([^>]*>)')
+          browser, browser_count = browser_pattern.subn(r'\1\2', browser)
+          if browser_count != 6:
+              raise SystemExit(f'Expected six browser fixture ARIA removals, got {browser_count}.')
+          browser_path.write_text(browser, encoding='utf-8')
+          PY
+
+      - name: Validate focused contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check assets/js/pages/home/more-services-surface.js
+          node --check scripts/test-ux-home-002-index-contract.js
+          node --check scripts/test-ux-home-002-browser-contract.js
+          node scripts/test-ux-home-002-index-contract.js
+          node scripts/test-ux-home-002-more-services-state.js
+          node scripts/test-ux-home-002-more-services-surface.js
+          git diff --check
+
+      - name: Commit canonical accessibility fix
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'doke-ci'
+          git config user.email 'doke-ci@users.noreply.github.com'
+          git add index.html assets/js/pages/home/more-services-surface.js scripts/test-ux-home-002-index-contract.js scripts/test-ux-home-002-browser-contract.js
+          git commit -m 'fix: use valid ARIA semantics for more-services tabs'
+          git push origin HEAD:ux/ux-home-002-more-services-filters
