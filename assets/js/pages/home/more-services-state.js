@@ -273,7 +273,8 @@
     }
 
     function setDraft(next) {
-      draftFilters = freezeFilters({ ...draftFilters, ...(next || {}) });
+      if (!next) return draftFilters;
+      draftFilters = freezeFilters({ ...draftFilters, ...next });
       return draftFilters;
     }
 
