@@ -1,0 +1,157 @@
+name: UX-HOME-003 Runtime Integration
+
+on:
+  push:
+    branches:
+      - ux/ux-home-003-rail-scroll-sync
+    paths:
+      - '.github/workflows/ux-home-003-runtime-integration.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  integrate-runtime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Apply exact rail runtime integration
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          home = Path('assets/js/pages/home.js')
+          text = home.read_text(encoding='utf-8')
+
+          replacements = [
+              (
+                  'const catégoryTrack = document.querySelector("[data-catégory-track]");\n'
+                  'const catégoryArrows = document.querySelectorAll("[data-catégory-arrow]");\n'
+                  'const railArrows = document.querySelectorAll("[data-rail-arrow]");\n',
+                  ''
+              ),
+              (
+                  'const initHomeWorkers = window.DokeHomeWorkers?.create({ signal }) || (() => {});\n',
+                  'const initHomeWorkers = window.DokeHomeWorkers?.create({ signal }) || (() => {});\n'
+                  'const initHomeRailScroll = window.DokeHomeRailScroll?.create({ signal }) || (() => {});\n'
+              ),
+              (
+                  'const bindScrollRail = ({ track, arrows, directionAttr, amountFactor }) => {\n'
+                  '  if (!track || !arrows.length) return;\n\n'
+                  '  arrows.forEach((arrow) => {\n'
+                  '    arrow.addEventListener("click", () => {\n'
+                  '      const direction = arrow.dataset[directionAttr] === "next" ? 1 : -1;\n'
+                  '      const amount = Math.max(220, Math.round(track.clientWidth * amountFactor));\n'
+                  '      track.scrollBy({ left: amount * direction, behavior: "smooth" });\n'
+                  '    });\n'
+                  '  });\n'
+                  '};\n\n',
+                  ''
+              ),
+              (
+                  'bindScrollRail({\n'
+                  '  track: catégoryTrack,\n'
+                  '  arrows: catégoryArrows,\n'
+                  '  directionAttr: "catégoryArrow",\n'
+                  '  amountFactor: 0.45\n'
+                  '});\n\n'
+                  'railArrows.forEach((arrow) => {\n'
+                  '  const targetId = arrow.dataset.railTarget;\n'
+                  '  if (!targetId) return;\n'
+                  '  const track = document.getElementById(targetId);\n'
+                  '  if (!track) return;\n\n'
+                  '  bindScrollRail({\n'
+                  '    track,\n'
+                  '    arrows: [arrow],\n'
+                  '    directionAttr: "railArrow",\n'
+                  '    amountFactor: 0.82\n'
+                  '  });\n'
+                  '});\n\n',
+                  ''
+              ),
+              (
+                  'initHomeWorkers();\nPromise.resolve(window.Doke?.homePublicServices?.init?.()).finally(initMoreServicesProgressiveReveal);',
+                  'initHomeWorkers();\ninitHomeRailScroll();\nPromise.resolve(window.Doke?.homePublicServices?.init?.()).finally(initMoreServicesProgressiveReveal);'
+              ),
+          ]
+
+          for old, new in replacements:
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'Expected exactly one home.js replacement, found {count}: {old[:120]!r}')
+              text = text.replace(old, new, 1)
+
+          forbidden = ['bindScrollRail', '[data-rail-arrow]', 'catégoryTrack', 'catégoryArrows', 'railArrows']
+          for token in forbidden:
+              if token in text:
+                  raise SystemExit(f'Legacy rail authority remains in home.js: {token}')
+          if text.count('DokeHomeRailScroll?.create({ signal })') != 1:
+              raise SystemExit('Expected exactly one DokeHomeRailScroll lifecycle binding.')
+          if text.count('initHomeRailScroll();') != 1:
+              raise SystemExit('Expected exactly one DokeHomeRailScroll initialization call.')
+          home.write_text(text, encoding='utf-8')
+
+          index = Path('index.html')
+          html = index.read_text(encoding='utf-8')
+          old = (
+              '  <script src="assets/js/pages/home/workers.js?v=20260628-route-scroll-v1"></script>\n'
+              '  <script src="assets/js/pages/home.js?v=20260719-onboarding-no-flash-v1"></script>'
+          )
+          new = (
+              '  <script src="assets/js/pages/home/workers.js?v=20260628-route-scroll-v1"></script>\n'
+              '  <script src="assets/js/pages/home/rail-scroll-state.js?v=20260807-ux-home-003-v1"></script>\n'
+              '  <script src="assets/js/pages/home/rail-scroll-controller.js?v=20260807-ux-home-003-v1"></script>\n'
+              '  <script src="assets/js/pages/home.js?v=20260719-onboarding-no-flash-v1"></script>'
+          )
+          if html.count(old) != 1:
+              raise SystemExit(f'Expected exactly one index script insertion point, found {html.count(old)}.')
+          html = html.replace(old, new, 1)
+          if html.count('assets/js/pages/home/rail-scroll-state.js?v=20260807-ux-home-003-v1') != 1:
+              raise SystemExit('rail-scroll-state.js must load exactly once.')
+          if html.count('assets/js/pages/home/rail-scroll-controller.js?v=20260807-ux-home-003-v1') != 1:
+              raise SystemExit('rail-scroll-controller.js must load exactly once.')
+          index.write_text(html, encoding='utf-8')
+          PY
+
+      - name: Validate contracts before commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check assets/js/pages/home/rail-scroll-state.js
+          node --check assets/js/pages/home/rail-scroll-controller.js
+          node --check assets/js/pages/home.js
+          node scripts/test-ux-home-003-rail-scroll-state.js
+          node scripts/test-ux-home-003-rail-scroll-controller.js
+          node scripts/test-ux-home-001-rail-state.js
+          node scripts/test-ux-home-001-index-controller.js
+          node scripts/test-ux-home-001-favorites-surface.js
+          node scripts/test-ux-home-002-more-services-state.js
+          node scripts/test-ux-home-002-more-services-surface.js
+          node scripts/test-search-ux02-runtime.js
+          node scripts/test-ux-search-001-search-experience.js
+          ! grep -Fq 'bindScrollRail' assets/js/pages/home.js
+          ! grep -Fq '[data-rail-arrow]' assets/js/pages/home.js
+          grep -Fq 'DokeHomeRailScroll?.create({ signal })' assets/js/pages/home.js
+          grep -Fq 'initHomeRailScroll();' assets/js/pages/home.js
+          git diff --check
+
+      - name: Commit canonical Home rail integration
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- assets/js/pages/home.js index.html; then
+            echo '::error::Expected canonical rail integration diff was not produced.'
+            exit 1
+          fi
+          git config user.name 'doke-ci'
+          git config user.email 'doke-ci@users.noreply.github.com'
+          git add assets/js/pages/home.js index.html
+          git commit -m 'feat: wire synchronized category rail navigation'
+          git push origin HEAD:ux/ux-home-003-rail-scroll-sync
