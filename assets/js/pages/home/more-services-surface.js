@@ -7,7 +7,7 @@
   var REGION_SELECTOR = '[data-home-list-region="more-services"]';
   var GRID_SELECTOR = '[data-more-services-grid]';
   var PANEL_SELECTOR = '[data-more-filters-panel]';
-  var TAB_SELECTOR = '[data-more-services-intent], #more-services-tabs-track .mini-tab';
+  var TAB_SELECTOR = '#more-services-tabs-track [role="tab"][data-more-services-intent]';
   var QUICK_FILTER_SELECTOR = '[data-more-filters-section="quick"] .filter-chip';
   var FILTER_APPLY_SELECTOR = '[data-more-filters-apply]';
   var FILTER_CLOSE_SELECTOR = '[data-more-filters-close]';
@@ -360,7 +360,7 @@
     if (loadHost) loadHost.hidden = snapshot.resultState !== 'ready' || snapshot.resultCount <= INITIAL_LIMIT;
     if (loadButton) loadButton.hidden = !snapshot.hasMore;
 
-    region.dataset.moreServicesIntent = snapshot.intent;
+    region.dataset.moreServicesActiveIntent = snapshot.intent;
     region.dataset.moreServicesAvailability = snapshot.availabilityState;
     region.dataset.moreServicesResultCount = String(snapshot.resultCount);
     region.dataset.moreServicesVisibleCount = String(snapshot.visibleCount);
