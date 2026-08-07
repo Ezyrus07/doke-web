@@ -33,7 +33,9 @@
   }
 
   function normalizeCategories(values) {
-    var source = Array.isArray(values) ? values : (values ? [values] : []);
+    var source = [];
+    if (Array.isArray(values)) source = values;
+    else if (values) source = [values];
     var seen = Object.create(null);
     return Object.freeze(source.map(cleanText).filter(function (value) {
       var key = normalizeText(value);
@@ -74,8 +76,8 @@
   function resolveRating(item) {
     item = item || {};
     var candidates = [item.rating, item.providerRating, item.averageRating, item.average_rating];
-    for (var index = 0; index < candidates.length; index += 1) {
-      var rating = Number(candidates[index]);
+    for (var candidate of candidates) {
+      var rating = Number(candidate);
       if (Number.isFinite(rating) && rating > 0) return rating;
     }
     return 0;
@@ -84,8 +86,8 @@
   function resolveTimestamp(item) {
     item = item || {};
     var candidates = [item.createdAt, item.created_at, item.updatedAt, item.updated_at];
-    for (var index = 0; index < candidates.length; index += 1) {
-      var timestamp = Date.parse(cleanText(candidates[index]));
+    for (var candidate of candidates) {
+      var timestamp = Date.parse(cleanText(candidate));
       if (Number.isFinite(timestamp)) return timestamp;
     }
     return 0;
@@ -107,7 +109,8 @@
 
     var category = normalizeText(resolveCategory(item));
     var matchesCategory = !filters.categories.length || filters.categories.some(function (candidate) {
-      return category === normalizeText(candidate) || category.indexOf(normalizeText(candidate)) !== -1;
+      var normalizedCandidate = normalizeText(candidate);
+      return category === normalizedCandidate || category.includes(normalizedCandidate);
     });
     var matchesState = !filters.state || normalizeText(resolveState(item)) === normalizeText(filters.state);
     var matchesCity = !filters.city || normalizeText(item.city) === normalizeText(filters.city);
@@ -131,7 +134,7 @@
 
   function validateIntent(intent) {
     var normalized = cleanText(intent) || DEFAULT_INTENT;
-    if (INTENT_VALUES.indexOf(normalized) !== -1) return normalized;
+    if (INTENT_VALUES.includes(normalized)) return normalized;
     var error = new Error('Intent de Mais anúncios não reconhecido.');
     error.code = 'DOKE_HOME_MORE_SERVICES_INTENT_INVALID';
     throw error;
@@ -156,9 +159,9 @@
         .sort(function (left, right) { return right.rating - left.rating || left.index - right.index; })
         .map(function (entry) { return entry.item; });
     } else if (intent === INTENTS.GUARANTEED) {
-      source = source.filter(function (item) { return item && item.guaranteed === true; });
+      source = source.filter(function (item) { return item?.guaranteed === true; });
     } else if (intent === INTENTS.AVAILABLE_TODAY) {
-      source = source.filter(function (item) { return item && item.availableToday === true; });
+      source = source.filter(function (item) { return item?.availableToday === true; });
     } else if (intent === INTENTS.NEWEST) {
       source = source
         .map(function (item, index) { return { item: item, index: index, timestamp: resolveTimestamp(item) }; })
@@ -222,9 +225,9 @@
       var result = derive(source, intent, appliedFilters);
       var resultCount = result.items.length;
       var visibleCount = Math.min(resultCount, visibleLimit);
-      var resultState = result.availabilityState !== 'available'
-        ? 'unavailable'
-        : resultCount > 0 ? 'ready' : 'empty';
+      var resultState = 'empty';
+      if (result.availabilityState !== 'available') resultState = 'unavailable';
+      else if (resultCount > 0) resultState = 'ready';
       return Object.freeze({
         contract: CONTRACT,
         intent: intent,
@@ -270,7 +273,7 @@
     }
 
     function setDraft(next) {
-      draftFilters = freezeFilters(Object.assign({}, draftFilters, next || {}));
+      draftFilters = freezeFilters({ ...draftFilters, ...(next || {}) });
       return draftFilters;
     }
 
