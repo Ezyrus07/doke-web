@@ -45,16 +45,21 @@ const matrix = json(files.matrix);
 
 equal(config.contractId, 'com-b04i-r1-remote-node-execution-path-recovery-v1', 'contract');
 equal(config.scope, 'repository_only_remote_node_execution_path_recovery', 'scope');
-equal(config.status, 'recovery_workflow_installation_pending_trigger', 'status');
+equal(config.status, 'recovery_workflow_revision_2_installation_pending_trigger', 'status');
 equal(config.sourceHead, '61cc9f7c2f90e841498f545fd2cddc7236e3b420', 'source head');
 equal(config.problem.attempt2AuthorizationConsumed, true, 'attempt 2 consumed');
 equal(config.problem.attempt2AuthorizationReusable, false, 'attempt 2 not reusable');
-equal(config.problem.workflowRunMaterializedForExactTrigger, false, 'historical run absent');
+equal(config.problem.workflowRunMaterializedForExactTrigger, false, 'historical attempt-2 run absent');
 equal(config.problem.remoteNodeExecutorStarted, false, 'historical executor absent');
 equal(config.problem.splitPersistenceCanaryPassed, true, 'split persistence passed');
 equal(config.problem.endToEndLiveRouteCertified, false, 'end-to-end not certified');
+equal(config.recoveryAttempts.length, 1, 'one prior recovery attempt');
+equal(config.recoveryAttempts[0].run, 31137291437, 'recovery attempt 1 run');
+equal(config.recoveryAttempts[0].workflowRunCreated, true, 'recovery run materialized');
+equal(config.recoveryAttempts[0].stagingAccessed, false, 'recovery attempt no staging');
 equal(config.recoveryMechanism.workflowPreinstalledBeforeTrigger, true, 'preinstall workflow');
 equal(config.recoveryMechanism.triggerCreatedInSeparateCommit, true, 'separate trigger');
+equal(config.recoveryMechanism.triggerPath, 'config/com-b04i-r1-remote-node-execution-trigger-v2.json', 'revision-2 trigger path');
 equal(config.recoveryMechanism.secretsRequired, false, 'no secrets');
 equal(config.recoveryMechanism.environmentRequired, false, 'no environment');
 equal(config.recoveryMechanism.stagingAccessAllowed, false, 'no staging');
@@ -79,11 +84,11 @@ for (const forbidden of [
 
 for (const marker of [
   'COM-B04I-R1 Remote Node Execution Path Recovery',
-  "config/com-b04i-r1-remote-node-execution-trigger.json",
+  'config/com-b04i-r1-remote-node-execution-trigger-v2.json',
   'node scripts/execute-com-b04i-r1-remote-node-execution-path-recovery.js',
   'node scripts/audit-com-b04i-r1-remote-node-execution-path-recovery.js',
   'actions/upload-artifact@v4',
-  'COM-B04G_ROUTE_NOT_DEPLOYED_OR_ACTIVATED',
+  'COM_B04G_ROUTE_NOT_DEPLOYED_OR_ACTIVATED',
   'git diff --check'
 ]) ok(workflow.includes(marker), `workflow marker: ${marker}`);
 
@@ -99,7 +104,10 @@ for (const marker of [
 ]) ok(doc.includes(marker), `doc marker: ${marker}`);
 
 equal(evidence.contractId, config.contractId, 'evidence contract');
-equal(evidence.status, 'recovery_workflow_installation_pending_trigger', 'evidence status');
+ok([
+  'recovery_workflow_installation_pending_trigger',
+  'recovery_workflow_revision_2_installation_pending_trigger'
+].includes(evidence.status), 'evidence pending lifecycle status');
 equal(evidence.effects.stagingAccessed, false, 'evidence staging false');
 equal(evidence.effects.productionChanged, false, 'evidence production false');
 equal(evidence.effects.pullRequestMerged, false, 'evidence merge false');
