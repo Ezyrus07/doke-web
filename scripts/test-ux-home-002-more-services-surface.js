@@ -287,11 +287,14 @@ function optionByLabel(select, text) {
 }
 
 function click(target) {
+  var prevented = false;
+  var stopped = false;
   regionListeners.click.handler({
     target,
-    preventDefault() {},
-    stopPropagation() {}
+    preventDefault() { prevented = true; },
+    stopPropagation() { stopped = true; }
   });
+  return { prevented, stopped };
 }
 
 function change(target) {
@@ -342,11 +345,13 @@ assert.equal(snapshot.resultCount, 7);
 assert.equal(snapshot.visibleCount, 6);
 
 const legacyBeforeLoad = legacyAbortCount;
-click(loadButton);
+const loadEvent = click(loadButton);
 snapshot = surface.getSnapshot();
+assert.equal(loadEvent.prevented, true, 'load-more must prevent the legacy default interaction');
+assert.equal(loadEvent.stopped, true, 'load-more must stop the legacy progressive-reveal listener');
 assert.equal(snapshot.visibleCount, 7);
 assert.equal(grid.children.length, 7);
-assert(legacyAbortCount > legacyBeforeLoad, 'load-more must remain under the new authority, not the legacy controller');
+assert.equal(legacyAbortCount, legacyBeforeLoad, 'the already-removed legacy controller must not be recreated by local reveal');
 
 region.dataset.homeRailFreshnessState = 'stale';
 const staleResultCount = snapshot.resultCount;
