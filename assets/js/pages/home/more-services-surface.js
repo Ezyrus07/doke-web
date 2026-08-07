@@ -6,6 +6,7 @@
   var BINDING_KEY = 'DokeHomeMoreServicesSurfaceBinding';
   var REGION_SELECTOR = '[data-home-list-region="more-services"]';
   var GRID_SELECTOR = '[data-more-services-grid]';
+  var PANEL_SELECTOR = '[data-more-filters-panel]';
   var TAB_SELECTOR = '[data-more-services-intent], #more-services-tabs-track .mini-tab';
   var QUICK_FILTER_SELECTOR = '[data-more-filters-section="quick"] .filter-chip';
   var FILTER_APPLY_SELECTOR = '[data-more-filters-apply]';
@@ -108,9 +109,20 @@
     });
   }
 
-  function configureFilterControls(region) {
-    var selects = Array.from(region.querySelectorAll('[data-more-filters-panel] select'));
-    selects.forEach(function (select) {
+  function filterSelects(scope) {
+    if (!scope?.querySelectorAll) return [];
+    var direct = Array.from(scope.querySelectorAll('select'));
+    if (direct.length) return direct;
+    return Array.from(scope.querySelectorAll(PANEL_SELECTOR + ' select'));
+  }
+
+  function quickFilters(scope) {
+    if (!scope?.querySelectorAll) return [];
+    return Array.from(scope.querySelectorAll(QUICK_FILTER_SELECTOR));
+  }
+
+  function configureFilterControls(scope) {
+    filterSelects(scope).forEach(function (select) {
       var label = labelText(select);
       if (select.matches('[data-home-staté-select]')) select.dataset.moreServicesFilter = 'state';
       else if (select.matches('[data-home-city-select]')) select.dataset.moreServicesFilter = 'city';
@@ -131,7 +143,7 @@
       }
     });
 
-    Array.from(region.querySelectorAll(QUICK_FILTER_SELECTOR)).forEach(function (chip) {
+    quickFilters(scope).forEach(function (chip) {
       var key = QUICK_FILTER_BY_LABEL[normalize(chip.textContent)];
       if (!key) {
         chip.disabled = true;
@@ -161,7 +173,7 @@
     });
   }
 
-  function ensureStateNodes(region) {
+  function ensureStateNodes(region, panel) {
     var empty = region.querySelector('[data-list-empty]');
     if (!empty) {
       empty = document.createElement('div');
@@ -189,8 +201,8 @@
       region.appendChild(feedback);
     }
 
-    var reset = region.querySelector(FILTER_RESET_SELECTOR);
-    var actions = region.querySelector('.more-filters__actions');
+    var reset = panel?.querySelector?.(FILTER_RESET_SELECTOR) || region.querySelector(FILTER_RESET_SELECTOR);
+    var actions = panel?.querySelector?.('.more-filters__actions') || region.querySelector('.more-filters__actions');
     if (!reset && actions) {
       reset = document.createElement('button');
       reset.type = 'button';
@@ -229,9 +241,14 @@
     return { key: key, value: String(control.value || '').trim() };
   }
 
-  function readDraft(region) {
+  function filterControls(scope) {
+    if (!scope?.querySelectorAll) return [];
+    return Array.from(scope.querySelectorAll('[data-more-services-filter]'));
+  }
+
+  function readDraft(scope) {
     var draft = {};
-    Array.from(region.querySelectorAll('[data-more-services-filter]')).forEach(function (control) {
+    filterControls(scope).forEach(function (control) {
       var key = control.dataset.moreServicesFilter;
       if (!key || control.disabled) return;
       var entry = readControlValue(control);
@@ -269,9 +286,9 @@
     control.value = String(filters[key] || '');
   }
 
-  function syncDraftUi(region, filters) {
+  function syncDraftUi(scope, filters) {
     filters = filters || {};
-    Array.from(region.querySelectorAll('[data-more-services-filter]')).forEach(function (control) {
+    filterControls(scope).forEach(function (control) {
       var key = control.dataset.moreServicesFilter;
       if (!key || control.disabled) return;
       if (control.matches('.filter-chip')) {
@@ -335,7 +352,7 @@
 
     renderCards(grid, snapshot.visibleItems);
     syncTabs(region, snapshot);
-    syncDraftUi(region, snapshot.draftFilters);
+    syncDraftUi(binding.filterScope, snapshot.draftFilters);
     updateListState(region, snapshot);
 
     var loadHost = region.querySelector('[data-more-services-load-host]');
@@ -368,27 +385,14 @@
     return target?.closest?.(selector) || null;
   }
 
-  function handleClick(binding, event) {
+  function handleRegionClick(binding, event) {
     if (!binding || !currentRoot(binding.root)) return;
     var target = event.target;
-
     var tab = supportedControl(target, TAB_SELECTOR);
     if (tab && binding.region.contains(tab) && tab.dataset.moreServicesIntent) {
       event.preventDefault();
       event.stopPropagation();
-      var intentSnapshot = binding.controller.setIntent(tab.dataset.moreServicesIntent);
-      render(binding, intentSnapshot);
-      return;
-    }
-
-    var quick = supportedControl(target, '.filter-chip');
-    if (quick && binding.region.contains(quick) && quick.dataset.moreServicesFilter && !quick.disabled) {
-      event.preventDefault();
-      event.stopPropagation();
-      var key = quick.dataset.moreServicesFilter;
-      var currentDraft = binding.controller.getSnapshot().draftFilters;
-      binding.controller.setDraft({ [key]: !currentDraft[key] });
-      syncDraftUi(binding.region, binding.controller.getSnapshot().draftFilters);
+      render(binding, binding.controller.setIntent(tab.dataset.moreServicesIntent));
       return;
     }
 
@@ -397,41 +401,58 @@
       event.preventDefault();
       event.stopPropagation();
       render(binding, binding.controller.revealMore());
+    }
+  }
+
+  function handlePanelClick(binding, event) {
+    if (!binding || !currentRoot(binding.root)) return;
+    var panel = binding.panel;
+    var target = event.target;
+
+    var quick = supportedControl(target, '.filter-chip');
+    if (quick && panel?.contains?.(quick) && quick.dataset.moreServicesFilter && !quick.disabled) {
+      event.preventDefault();
+      event.stopPropagation();
+      var key = quick.dataset.moreServicesFilter;
+      var currentDraft = binding.controller.getSnapshot().draftFilters;
+      binding.controller.setDraft({ [key]: !currentDraft[key] });
+      syncDraftUi(binding.filterScope, binding.controller.getSnapshot().draftFilters);
       return;
     }
 
     var apply = supportedControl(target, FILTER_APPLY_SELECTOR);
-    if (apply && binding.region.contains(apply)) {
-      binding.controller.replaceDraft(readDraft(binding.region));
+    if (apply && panel?.contains?.(apply)) {
+      binding.controller.replaceDraft(readDraft(binding.filterScope));
       render(binding, binding.controller.applyDraft());
       return;
     }
 
     var reset = supportedControl(target, FILTER_RESET_SELECTOR);
-    if (reset && binding.region.contains(reset)) {
+    if (reset && panel?.contains?.(reset)) {
       event.preventDefault();
+      event.stopPropagation();
       var resetSnapshot = binding.controller.resetFilters();
-      syncDraftUi(binding.region, resetSnapshot.appliedFilters);
+      syncDraftUi(binding.filterScope, resetSnapshot.appliedFilters);
       render(binding, resetSnapshot);
       return;
     }
 
     var close = supportedControl(target, FILTER_CLOSE_SELECTOR);
-    if (close && binding.region.contains(close)) {
-      var filters = binding.controller.cancelDraft();
-      syncDraftUi(binding.region, filters);
+    if (close && panel?.contains?.(close)) {
+      syncDraftUi(binding.filterScope, binding.controller.cancelDraft());
     }
   }
 
-  function handleChange(binding, event) {
+  function handlePanelChange(binding, event) {
     var control = supportedControl(event.target, '[data-more-services-filter]');
-    if (!control || !binding.region.contains(control) || control.disabled) return;
-    binding.controller.replaceDraft(readDraft(binding.region));
+    if (!control || !binding.panel?.contains?.(control) || control.disabled) return;
+    binding.controller.replaceDraft(readDraft(binding.filterScope));
   }
 
   function createBinding(scope) {
     var region = getRegion(scope);
     var grid = region?.querySelector(GRID_SELECTOR);
+    var panel = region?.querySelector(PANEL_SELECTOR) || null;
     var stateApi = Doke.homeMoreServicesState;
     if (!region || !grid || !stateApi?.createController || !Doke.publicServiceCard?.create) return null;
 
@@ -442,25 +463,43 @@
       initialLimit: Number.parseInt(grid.dataset.moreServicesLimit || '', 10) || INITIAL_LIMIT,
       step: Number.parseInt(grid.dataset.moreServicesStep || '', 10) || REVEAL_STEP
     });
+    var filterScope = panel || region;
     var binding = {
       root: scope,
       region: region,
       grid: grid,
+      panel: panel,
+      filterScope: filterScope,
       controller: controller,
       abortController: abortController
     };
 
     configureTabs(region, stateApi.intents);
-    configureFilterControls(region);
-    ensureStateNodes(region);
-    syncDraftUi(region, controller.getSnapshot().draftFilters);
+    configureFilterControls(filterScope);
+    ensureStateNodes(region, panel);
+    syncDraftUi(filterScope, controller.getSnapshot().draftFilters);
 
     region.addEventListener('click', function (event) {
-      handleClick(binding, event);
+      handleRegionClick(binding, event);
     }, { capture: true, signal: abortController.signal });
-    region.addEventListener('change', function (event) {
-      handleChange(binding, event);
-    }, { signal: abortController.signal });
+
+    if (panel) {
+      panel.addEventListener('click', function (event) {
+        handlePanelClick(binding, event);
+      }, { capture: true, signal: abortController.signal });
+      panel.addEventListener('change', function (event) {
+        handlePanelChange(binding, event);
+      }, { signal: abortController.signal });
+    } else {
+      region.addEventListener('click', function (event) {
+        handlePanelClick(binding, event);
+      }, { capture: true, signal: abortController.signal });
+      region.addEventListener('change', function (event) {
+        var control = supportedControl(event.target, '[data-more-services-filter]');
+        if (!control || !region.contains(control) || control.disabled) return;
+        binding.controller.replaceDraft(readDraft(filterScope));
+      }, { signal: abortController.signal });
+    }
 
     root[BINDING_KEY] = binding;
     return binding;
