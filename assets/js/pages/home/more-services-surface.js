@@ -215,29 +215,27 @@
     return normalize(select?.selectedOptions?.[0]?.textContent || '') === normalize(positiveLabel);
   }
 
+  function readControlValue(control) {
+    var key = control.dataset.moreServicesFilter;
+    if (control.matches('.filter-chip')) return { key: key, value: control.classList.contains('is-active') };
+    if (key === 'categories') {
+      var category = String(control.value || '').trim();
+      return { key: key, value: normalize(category) === 'todas' || !category ? [] : [category] };
+    }
+    if (key === 'minRating') return { key: key, value: readRating(control) };
+    if (key === 'guaranteed') return { key: key, value: readBooleanSelect(control, 'Com garantia') };
+    if (key === 'emergency') return { key: key, value: readBooleanSelect(control, 'Sim') };
+    if (key === 'online') return { key: key, value: readBooleanSelect(control, 'Online') };
+    return { key: key, value: String(control.value || '').trim() };
+  }
+
   function readDraft(region) {
     var draft = {};
     Array.from(region.querySelectorAll('[data-more-services-filter]')).forEach(function (control) {
       var key = control.dataset.moreServicesFilter;
       if (!key || control.disabled) return;
-      if (control.matches('.filter-chip')) {
-        draft[key] = control.classList.contains('is-active');
-        return;
-      }
-      if (key === 'categories') {
-        var category = String(control.value || '').trim();
-        draft.categories = normalize(category) === 'todas' || !category ? [] : [category];
-      } else if (key === 'minRating') {
-        draft.minRating = readRating(control);
-      } else if (key === 'guaranteed') {
-        draft.guaranteed = readBooleanSelect(control, 'Com garantia');
-      } else if (key === 'emergency') {
-        draft.emergency = readBooleanSelect(control, 'Sim');
-      } else if (key === 'online') {
-        draft.online = readBooleanSelect(control, 'Online');
-      } else {
-        draft[key] = String(control.value || '').trim();
-      }
+      var entry = readControlValue(control);
+      draft[entry.key] = entry.value;
     });
     return draft;
   }
@@ -282,7 +280,7 @@
 
   function abortLegacyReveal(grid) {
     grid?.__dokeProgressiveRevealController?.abort?.();
-    if (grid && grid.__dokeProgressiveRevealController) delete grid.__dokeProgressiveRevealController;
+    if (grid?.__dokeProgressiveRevealController) delete grid.__dokeProgressiveRevealController;
   }
 
   function renderCards(grid, items) {
@@ -300,10 +298,17 @@
       Doke.listState.setListState(region, 'ready');
       return;
     }
-    var message = snapshot.resultState === 'unavailable'
-      ? 'A aba Seguindo ficará disponível quando a Doke tiver uma fonte canônica de profissionais seguidos.'
-      : 'Nenhum anúncio corresponde aos filtros aplicados.';
+    var message = 'Nenhum anúncio corresponde aos filtros aplicados.';
+    if (snapshot.resultState === 'unavailable') {
+      message = 'A aba Seguindo ficará disponível quando a Doke tiver uma fonte canônica de profissionais seguidos.';
+    }
     Doke.listState.setListState(region, 'empty', { message: message });
+  }
+
+  function resultFeedback(snapshot) {
+    if (snapshot.resultState === 'unavailable') return 'Seguindo ainda não está disponível.';
+    var suffix = snapshot.resultCount === 1 ? ' anúncio encontrado.' : ' anúncios encontrados.';
+    return snapshot.resultCount + suffix;
   }
 
   function render(binding, snapshot) {
@@ -331,11 +336,7 @@
     grid.dataset.itemCount = String(snapshot.resultCount);
 
     var feedback = region.querySelector('[data-more-services-count-feedback]');
-    if (feedback) {
-      feedback.textContent = snapshot.resultState === 'unavailable'
-        ? 'Seguindo ainda não está disponível.'
-        : snapshot.resultCount + (snapshot.resultCount === 1 ? ' anúncio encontrado.' : ' anúncios encontrados.');
-    }
+    if (feedback) feedback.textContent = resultFeedback(snapshot);
     return snapshot;
   }
 
@@ -343,8 +344,8 @@
     if (!binding || !currentRoot(binding.root)) return null;
     var source = acceptedSource(binding.root, payload);
     if (source === null) return null;
-    var snapshot = binding.controller.setSource(source);
-    return render(binding, snapshot);
+    var nextSnapshot = binding.controller.setSource(source);
+    return render(binding, nextSnapshot);
   }
 
   function supportedControl(target, selector) {
@@ -359,8 +360,8 @@
     if (tab && binding.region.contains(tab) && tab.dataset.moreServicesIntent) {
       event.preventDefault();
       event.stopPropagation();
-      var snapshot = binding.controller.setIntent(tab.dataset.moreServicesIntent);
-      render(binding, snapshot);
+      var intentSnapshot = binding.controller.setIntent(tab.dataset.moreServicesIntent);
+      render(binding, intentSnapshot);
       return;
     }
 
@@ -393,9 +394,9 @@
     var reset = supportedControl(target, FILTER_RESET_SELECTOR);
     if (reset && binding.region.contains(reset)) {
       event.preventDefault();
-      var snapshot = binding.controller.resetFilters();
-      syncDraftUi(binding.region, snapshot.appliedFilters);
-      render(binding, snapshot);
+      var resetSnapshot = binding.controller.resetFilters();
+      syncDraftUi(binding.region, resetSnapshot.appliedFilters);
+      render(binding, resetSnapshot);
       return;
     }
 
