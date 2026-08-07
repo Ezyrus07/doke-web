@@ -21,7 +21,6 @@ function option(text, value = text) {
 }
 
 function control(kind, text = '') {
-  const listeners = new Map();
   const node = {
     kind,
     textContent: text,
@@ -38,7 +37,7 @@ function control(kind, text = '') {
     label: '',
     setAttribute(name, value) { this.attributes.set(name, String(value)); },
     removeAttribute(name) { this.attributes.delete(name); },
-    addEventListener(type, handler) { listeners.set(type, handler); },
+    addEventListener() {},
     matches(selector) {
       if (selector === '.filter-chip') return this.kind === 'chip';
       if (selector === '[data-home-staté-select]') return this.kind === 'select-state';
@@ -51,9 +50,6 @@ function control(kind, text = '') {
         return { querySelector: () => ({ textContent: this.label }) };
       }
       if ((selector.includes('[data-more-services-intent]') || selector.includes('#more-services-tabs-track')) && this.kind === 'tab') return this;
-      if (selector === '[data-more-filters-section="quick"]' && this.kind === 'chip') {
-        return { dataset: { moreFiltersSection: 'quick' } };
-      }
       if (selector.includes('.filter-chip') && this.kind === 'chip') return this;
       if (selector === '[data-more-services-load]' && this.kind === 'load') return this;
       if (selector === '[data-more-filters-apply]' && this.kind === 'apply') return this;
@@ -127,6 +123,29 @@ const grid = {
 const actions = { firstChild: resetButton, insertBefore() {} };
 const controls = { parentNode: { insertBefore() {} } };
 const regionListeners = {};
+const panelListeners = {};
+
+const panel = {
+  dataset: { moreFiltersPanel: '' },
+  querySelector(selector) {
+    if (selector === '[data-more-services-reset]') return resetButton;
+    if (selector === '.more-filters__actions') return actions;
+    return null;
+  },
+  querySelectorAll(selector) {
+    if (selector === 'select') return selects;
+    if (selector.includes('[data-more-filters-section="quick"]')) return chips;
+    if (selector === '[data-more-services-filter]') return [...chips, ...selects];
+    return [];
+  },
+  addEventListener(typeName, handler, options = {}) {
+    panelListeners[typeName] = { handler, capture: Boolean(options.capture) };
+  },
+  contains(node) {
+    return [...chips, ...selects, applyButton, closeButton, resetButton].includes(node);
+  }
+};
+
 const region = {
   dataset: {
     homeRailFreshnessState: 'fresh',
@@ -136,6 +155,7 @@ const region = {
   hidden: false,
   querySelector(selector) {
     if (selector === '[data-more-services-grid]') return grid;
+    if (selector === '[data-more-filters-panel]') return panel;
     if (selector === '[data-list-empty]') return emptyState;
     if (selector === '[data-more-services-count-feedback]') return feedback;
     if (selector === '[data-more-services-reset]') return resetButton;
@@ -147,16 +167,13 @@ const region = {
   },
   querySelectorAll(selector) {
     if (selector.includes('[data-more-services-intent]') || selector.includes('#more-services-tabs-track')) return tabs;
-    if (selector === '[data-more-filters-panel] select') return selects;
-    if (selector.includes('[data-more-filters-section="quick"]')) return chips;
-    if (selector === '[data-more-services-filter]') return [...chips, ...selects];
     return [];
   },
-  addEventListener(type, handler, options = {}) {
-    regionListeners[type] = { handler, capture: Boolean(options.capture) };
+  addEventListener(typeName, handler, options = {}) {
+    regionListeners[typeName] = { handler, capture: Boolean(options.capture) };
   },
   contains(node) {
-    return [grid, ...tabs, ...chips, ...selects, loadButton, applyButton, closeButton, resetButton].includes(node);
+    return [grid, ...tabs, loadButton, panel].includes(node) || panel.contains(node);
   },
   appendChild() {},
   setAttribute() {},
@@ -178,10 +195,10 @@ const documentStub = {
     if (selector.includes('[data-state-boundary="index"]')) return pageRoot;
     return null;
   },
-  addEventListener(type, handler) {
-    const handlers = documentListeners.get(type) || [];
+  addEventListener(typeName, handler) {
+    const handlers = documentListeners.get(typeName) || [];
     handlers.push(handler);
-    documentListeners.set(type, handlers);
+    documentListeners.set(typeName, handlers);
   },
   dispatchEvent(event) {
     stateEvents.push(event);
@@ -192,8 +209,8 @@ const documentStub = {
 };
 
 class CustomEventStub {
-  constructor(type, options = {}) {
-    this.type = type;
+  constructor(typeName, options = {}) {
+    this.type = typeName;
     this.detail = options.detail;
   }
 }
@@ -265,6 +282,7 @@ const surface = Doke.homeMoreServicesSurface;
 assert(surface, 'more-services surface must be published');
 const binding = surface.boot();
 assert(binding, 'surface must bind to the Home more-services region');
+assert.equal(binding.panel, panel, 'surface must bind filter events to the portable panel node');
 let snapshot = surface.getSnapshot();
 assert.equal(snapshot.resultCount, 7, 'surface must consume only services after the six featured cards');
 assert.equal(snapshot.visibleCount, 6);
@@ -289,19 +307,32 @@ function optionByLabel(select, text) {
   return select.options.find((item) => item.textContent === text);
 }
 
-function click(target) {
+function eventFor(target) {
   var prevented = false;
   var stopped = false;
-  regionListeners.click.handler({
-    target,
-    preventDefault() { prevented = true; },
-    stopPropagation() { stopped = true; }
-  });
-  return { prevented, stopped };
+  return {
+    event: {
+      target,
+      preventDefault() { prevented = true; },
+      stopPropagation() { stopped = true; }
+    },
+    flags() { return { prevented, stopped }; }
+  };
+}
+
+function click(target) {
+  const wrapped = eventFor(target);
+  const listener = panel.contains(target) && !tabs.includes(target) && target !== loadButton
+    ? panelListeners.click
+    : regionListeners.click;
+  assert(listener?.handler, `Expected click listener for ${target.kind}.`);
+  listener.handler(wrapped.event);
+  return wrapped.flags();
 }
 
 function change(target) {
-  regionListeners.change.handler({ target });
+  assert(panelListeners.change?.handler, 'Expected panel change listener.');
+  panelListeners.change.handler({ target });
 }
 
 click(tabs[1]);
@@ -365,13 +396,13 @@ region.dataset.homeRailFreshnessState = 'fresh';
 
 const sanitized = stateEvents.filter((event) => event.type === 'doke:home-more-services-state-change');
 assert(sanitized.length > 0);
-for (const event of sanitized) {
-  const serialized = JSON.stringify(event.detail);
+for (const stateEvent of sanitized) {
+  const serialized = JSON.stringify(stateEvent.detail);
   assert(!serialized.includes('service-'));
-  assert(!Object.hasOwn(event.detail, 'items'));
-  assert(!Object.hasOwn(event.detail, 'userId'));
-  assert(!Object.hasOwn(event.detail, 'providerId'));
-  assert(!Object.hasOwn(event.detail, 'query'));
+  assert(!Object.hasOwn(stateEvent.detail, 'items'));
+  assert(!Object.hasOwn(stateEvent.detail, 'userId'));
+  assert(!Object.hasOwn(stateEvent.detail, 'providerId'));
+  assert(!Object.hasOwn(stateEvent.detail, 'query'));
 }
 
 delete require.cache[statePath];
@@ -379,4 +410,4 @@ delete require.cache[surfacePath];
 for (const key of ['window', 'document', 'CustomEvent', 'AbortController']) delete global[key];
 
 console.log('ux-home-002-more-services-surface: ok');
-console.log('- fresh-source fence, intents, draft/apply/cancel, unsupported filters, canonical cards and progressive reveal validated');
+console.log('- portable panel authority, intents, draft/apply/cancel, unsupported filters, canonical cards and progressive reveal validated');
