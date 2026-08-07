@@ -140,11 +140,35 @@ async function main() {
     const guaranteedChip = page.locator('[data-more-filters-section="quick"] .filter-chip').filter({ hasText: 'Com garantia' }).first();
     assert.equal(await guaranteedChip.isDisabled(), false, 'Supported guarantee chip must remain interactive.');
     assert.equal(await guaranteedChip.getAttribute('data-more-services-filter'), 'guaranteed', 'Surface must bind the guarantee chip to the canonical filter key.');
-    await guaranteedChip.click();
+    const quickDiagnostic = await guaranteedChip.evaluate((element) => {
+      const binding = window.DokeHomeMoreServicesSurfaceBinding;
+      const region = document.querySelector('[data-home-list-region="more-services"]');
+      const before = window.Doke.homeMoreServicesSurface.getSnapshot().draftFilters.guaranteed;
+      const closest = element.closest('.filter-chip');
+      const diagnostic = {
+        before,
+        signalAborted: Boolean(binding?.abortController?.signal?.aborted),
+        bindingRootCurrent: binding?.root === document.querySelector('[data-state-boundary="index"], .shell-home__workspace'),
+        closestChip: Boolean(closest),
+        regionContains: Boolean(region?.contains(closest)),
+        key: closest?.dataset?.moreServicesFilter || ''
+      };
+      element.click();
+      diagnostic.after = window.Doke.homeMoreServicesSurface.getSnapshot().draftFilters.guaranteed;
+      diagnostic.ariaPressed = element.getAttribute('aria-pressed');
+      return diagnostic;
+    });
+    console.log('[ux-home-002-browser-contract] quick diagnostic', JSON.stringify(quickDiagnostic));
+    assert.equal(quickDiagnostic.before, false);
+    assert.equal(quickDiagnostic.signalAborted, false, 'More-services binding must remain active before quick-filter interaction.');
+    assert.equal(quickDiagnostic.bindingRootCurrent, true, 'Quick-filter interaction must target the current Home root binding.');
+    assert.equal(quickDiagnostic.closestChip, true);
+    assert.equal(quickDiagnostic.regionContains, true);
+    assert.equal(quickDiagnostic.key, 'guaranteed');
+    assert.equal(quickDiagnostic.after, true, 'Quick filter click must update the draft snapshot.');
+    assert.equal(quickDiagnostic.ariaPressed, 'true', 'Draft quick-filter state must be visible immediately.');
     state = await snapshot();
     assert.equal(state.appliedFilters.guaranteed, false, 'Quick filter must remain draft before Apply.');
-    assert.equal(state.draftFilters.guaranteed, true, 'Quick filter click must update the draft snapshot.');
-    assert.equal(await guaranteedChip.getAttribute('aria-pressed'), 'true', 'Draft quick-filter state must be visible immediately.');
     assert.equal(state.resultCount, 7);
 
     await page.getByRole('button', { name: 'Fechar' }).click();
