@@ -14,7 +14,7 @@
 
 A superfície `Mais anúncios` já renderizava a coleção canônica `services.slice(6)`, mas seus controles não compartilhavam uma autoridade funcional:
 
-1. as `.mini-tab` de `home.js` apenas alternavam `is-active`/`aria-pressed`;
+1. as `.mini-tab` de `home.js` apenas alternavam estado visual;
 2. o painel abria/fechava, mas `Aplicar filtros` não comprometia snapshot aplicado nem re-renderizava a coleção;
 3. o progressive reveal operava sobre cards já presentes no DOM, sem relação explícita com intent/filtros aplicados;
 4. o catálogo preserva metadata verificável para categoria, localização, rating, garantia, emergência, online, disponibilidade e timestamps;
@@ -26,6 +26,8 @@ Durante a integração em browser foi encontrada uma segunda causa raiz: o rail 
 - rail: `data-more-services-active-intent`.
 
 O painel de filtros também é portável para `document.body` no mobile. Por isso sua autoridade de eventos/draft passou a pertencer ao próprio nó `[data-more-filters-panel]`, e não ao rail que pode deixar de ser seu ancestral.
+
+A análise final também identificou semântica ARIA redundante: `role="tab"` não aceita `aria-pressed`. As tabs agora usam exclusivamente `aria-selected`; `aria-pressed` permanece apenas nos chips rápidos, onde o papel de botão toggle é válido.
 
 ## Fronteira arquitetural
 
@@ -96,7 +98,7 @@ list-state
 → index-data-controller
 ```
 
-As seis tabs possuem intents estáveis e ARIA explícita. O falso estado inicial `Com garantia` foi removido.
+As seis tabs possuem intents estáveis, `role="tab"`, `aria-selected` e roving tabindex. O falso estado inicial `Com garantia` foi removido.
 
 ## Intent contract
 
@@ -165,12 +167,13 @@ Eles cobrem:
 - ARIA e ordem de scripts;
 - eventos sanitizados.
 
-O browser contract permanece obrigatório antes do fechamento, especificamente para validar o event routing em DOM real após a separação `tab intent` versus `rail active intent`.
+O browser contract provou o event routing em DOM real, inclusive a separação `tab intent` versus `rail active intent`, o binding do painel portável e o quick-filter `guaranteed` antes do commit do snapshot aplicado.
 
 ## Acessibilidade
 
-- tabs usam identificadores estáveis;
-- seleção publica `aria-selected` e `aria-pressed` de forma consistente;
+- tabs usam identificadores estáveis e `aria-selected`;
+- roving tabindex mantém uma única tab inicialmente focável;
+- chips toggle usam `aria-pressed`;
 - `Seguindo` informa indisponibilidade sem simular resultado;
 - filtros suportados permanecem operáveis por teclado;
 - filtros não suportados ficam desabilitados;
@@ -207,4 +210,4 @@ A entrega permanece aditiva na camada de apresentação. Remover `more-services-
 
 ## Checkpoint atual
 
-A correção do roteamento ambíguo foi publicada e os executores temporários foram removidos. Este documento dispara a validação completa no head limpo. A issue #85 só pode ser encerrada após browser contract, regressões herdadas, LCOV e Sonar passarem no mesmo SHA final.
+No SHA `92bf7fbb74f3913a7704c80a770cc80fb99af376`, browser contract, regressões herdadas, LCOV e Quality Gate passaram, mas o Sonar apontou seis ocorrências idênticas de `aria-pressed` inválido em tabs. A semântica foi corrigida sem alterar intent ou filtro, e todos os executores temporários foram removidos. Este documento dispara a rodada final completa. A issue #85 só pode ser encerrada se o novo SHA repetir browser/regressões e Sonar com 0 new issues, 0 accepted issues e 0 Security Hotspots.
