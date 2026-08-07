@@ -168,7 +168,7 @@
     if (!list?.children) return 0;
     return Array.prototype.reduce.call(list.children, function (total, child) {
       if (child?.hidden ?? true) return total;
-      if (child.matches && child.matches('[data-list-loading], [data-home-rail-feedback]')) return total;
+      if (child.matches?.('[data-list-loading], [data-home-rail-feedback]')) return total;
       return total + 1;
     }, 0);
   }
