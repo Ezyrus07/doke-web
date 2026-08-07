@@ -63,12 +63,24 @@ assert(
   'The home services boundary must load the dedicated favorites surface.'
 );
 assert(
-  homeFavorites.includes('function ensureSurface()') &&
-    homeFavorites.includes("workspace.querySelector('.professional-showcase')") &&
-    homeFavorites.includes('function buildPreviewNodes(items)') &&
-    homeFavorites.includes('var preview = items.slice(0, 6)') &&
-    homeFavorites.includes('anchor.parentNode.insertBefore(section, anchor)'),
-  'Home favorites must create a bounded preview before the professional showcase.'
+  homeFavorites.includes('function ensureSurface()'),
+  'Home favorites must expose a dedicated surface boundary.'
+);
+assert(
+  homeFavorites.includes("workspace.querySelector('.professional-showcase')"),
+  'Home favorites must anchor placement against the professional showcase.'
+);
+assert(
+  homeFavorites.includes('function buildPreviewNodes(items)'),
+  'Home favorites must use an explicit bounded-preview builder.'
+);
+assert(
+  homeFavorites.includes('var preview = items.slice(0, 6)'),
+  'Home favorites must cap the preview at six services.'
+);
+assert(
+  homeFavorites.includes('anchor.parentNode.insertBefore(section, anchor)'),
+  'Home favorites must render before the professional showcase.'
 );
 assert(
   homeFavorites.includes('canonicalIds(item)') &&
@@ -78,11 +90,20 @@ assert(
   'Home favorites must reuse the canonical card without a private anatomy or inherited service grid.'
 );
 assert(
-  homeFavorites.includes('home-favorites__count') &&
-    homeFavorites.includes('function updateCount(ui, count)') &&
-    homeFavorites.includes("total === 1 ? ' favorito' : ' favoritos'") &&
-    homeFavorites.includes("ui.count.setAttribute('aria-label'"),
-  'The home favorites action must expose an accessible total.'
+  homeFavorites.includes('home-favorites__count'),
+  'Home favorites must expose a visible total element.'
+);
+assert(
+  homeFavorites.includes('function updateCount(ui, count)'),
+  'Home favorites must centralize count publication.'
+);
+assert(
+  homeFavorites.includes("total === 1 ? ' favorito' : ' favoritos'"),
+  'Home favorites must preserve singular and plural count labels.'
+);
+assert(
+  homeFavorites.includes("ui.count.setAttribute('aria-label'"),
+  'Home favorites must publish the total through an accessible label.'
 );
 assert(
   homeManifest.includes('./home/favorites.css?v=20260729-search-ux02-v2') &&
