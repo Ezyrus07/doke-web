@@ -382,8 +382,7 @@
     }
 
     var quick = supportedControl(target, '.filter-chip');
-    var quickSection = quick?.closest?.('[data-more-filters-section="quick"]');
-    if (quick && quickSection && binding.region.contains(quick) && quick.dataset.moreServicesFilter && !quick.disabled) {
+    if (quick && binding.region.contains(quick) && quick.dataset.moreServicesFilter && !quick.disabled) {
       event.preventDefault();
       event.stopPropagation();
       var key = quick.dataset.moreServicesFilter;
