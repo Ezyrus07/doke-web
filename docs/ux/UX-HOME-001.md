@@ -153,18 +153,23 @@ Contrato determinístico `scripts/test-ux-home-001-favorites-surface.js` valida:
 - retry localizado;
 - sanitização de eventos.
 
-Evidência da Fase 3 antes do checkpoint documental final:
+## Evidência da Fase 3
 
 - trusted run `31142950599`, head `0706619e3eb5dee1f87f1c6bdc6ebbd08467badc`: success;
 - Sonar Quality Gate: passed;
 - 0 new issues, 0 accepted issues, 0 Security Hotspots e 0 Sonar annotations;
 - 83,9% Coverage on New Code;
-- Home Favorites behavior, Playwright, LCOV e whitespace: success;
-- SEARCH-UX02 encontrou duas assertions textuais presas à implementação antiga (`services.slice(0, 6)` e contagem por `services.length`), embora o comportamento novo estivesse correto;
-- essas assertions foram atualizadas para as autoridades semânticas atuais `buildPreviewNodes(items)` e `updateCount(ui, count)`;
-- no head `c75c583c56acf7de2bcf8309acd712bb18a608f0`, SEARCH-UX02, UX-SEARCH-DEBT e UX-HOME passaram novamente em seus gates de PR.
+- Home Favorites behavior, Playwright, LCOV e whitespace: success.
 
-Este documento é o checkpoint que dispara a última análise confiável no SHA final candidato. A issue #83 só pode ser encerrada se esse novo SHA repetir Quality Gate verde e todos os contratos herdados permanecerem aprovados.
+### Compatibilidade com contratos herdados
+
+SEARCH-UX02 encontrou duas assertions textuais presas à implementação antiga (`services.slice(0, 6)` e contagem por `services.length`), embora o comportamento novo estivesse correto. Elas foram atualizadas para as autoridades atuais `buildPreviewNodes(items)` e `updateCount(ui, count)`.
+
+No head `c75c583c56acf7de2bcf8309acd712bb18a608f0`, SEARCH-UX02, UX-SEARCH-DEBT e UX-HOME voltaram a passar. A análise confiável seguinte (`5deeaf55e0a4e34a3250242032a82d9164ee3cd2`) manteve Quality Gate verde e 83,9% Coverage on New Code, porém apontou duas ocorrências exclusivamente nas assertions recém-alteradas: ambas eram assertions compostas com diagnóstico pouco granular.
+
+As duas ocorrências foram corrigidas em `eab98f99ec0877d302e94c4b9d1473903c8f55ca`, separando cada requisito em uma assertion independente: boundary, anchor, preview builder, limite de seis, posição, count element, count authority, pluralização e `aria-label`. Nesse head, SEARCH-UX02, UX-SEARCH-DEBT e UX-HOME passaram novamente.
+
+Este checkpoint dispara a análise confiável final. A issue #83 só pode ser encerrada se o novo SHA repetir Quality Gate verde com 0 new issues, 0 accepted issues e 0 Security Hotspots, mantendo os contratos herdados aprovados.
 
 ## Fora deste PR
 
