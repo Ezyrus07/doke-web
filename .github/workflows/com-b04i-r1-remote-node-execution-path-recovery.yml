@@ -1,0 +1,77 @@
+name: COM-B04I-R1 Remote Node Execution Path Recovery
+
+on:
+  push:
+    branches:
+      - com/com-001-baseline-audit
+    paths:
+      - 'config/com-b04i-r1-remote-node-execution-trigger.json'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: com-b04i-r1-remote-node-execution-path-recovery-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  recover:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      COM_B04I_R1_REPORT_PATH: reports/generated/COM-B04I-R1-REMOTE-NODE-EXECUTION-PATH-RECOVERY.json
+    steps:
+      - name: Checkout exact trigger head
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Validate preinstalled workflow and separate trigger
+        shell: bash
+        run: |
+          test "${GITHUB_RUN_ATTEMPT}" = "1"
+          trigger='config/com-b04i-r1-remote-node-execution-trigger.json'
+          status="$(git diff-tree --no-commit-id --name-status -r HEAD -- "$trigger")"
+          test "$status" = $'A\t'"$trigger"
+          parent="$(git rev-parse HEAD^)"
+          test "$(node -p "require('./$trigger').workflowInstallHead")" = "$parent"
+          git show "${parent}:.github/workflows/com-b04i-r1-remote-node-execution-path-recovery.yml" >/dev/null
+      - name: Syntax
+        run: |
+          node --check scripts/execute-com-b04i-r1-remote-node-execution-path-recovery.js
+          node --check scripts/audit-com-b04i-r1-remote-node-execution-path-recovery.js
+      - name: COM-B04I-R1 repository audit
+        run: node scripts/audit-com-b04i-r1-remote-node-execution-path-recovery.js
+      - name: Execute remote Node recovery proof
+        run: node scripts/execute-com-b04i-r1-remote-node-execution-path-recovery.js
+      - name: Default route remains fail closed
+        run: grep -F 'COM_B04G_ROUTE_NOT_DEPLOYED_OR_ACTIVATED' backend/modules/communities/route-handlers.js
+      - name: COM-B04H regression
+        run: |
+          node scripts/test-com-b04h-live-composition-activation-readiness.js
+          node scripts/audit-com-b04h-live-composition-activation-readiness.js
+      - name: COM-B04G regression
+        run: |
+          node scripts/test-com-b04g-route-runtime-wiring-execution.js
+          node scripts/audit-com-b04g-route-runtime-wiring-execution.js
+      - name: Repository-only security checks
+        shell: bash
+        run: |
+          ! grep -R -E 'SUPABASE_(ACCESS_TOKEN|DB_PASSWORD|SERVICE_ROLE_KEY)|process\.env\.SUPABASE' \
+            scripts/execute-com-b04i-r1-remote-node-execution-path-recovery.js \
+            config/com-b04i-r1-remote-node-execution-path-recovery.json
+          grep -F '"stagingAccessed": false' docs/validation/COM-B04I-R1-REMOTE-NODE-EXECUTION-PATH-RECOVERY.json
+          grep -F '"productionChanged": false' docs/validation/COM-B04I-R1-REMOTE-NODE-EXECUTION-PATH-RECOVERY.json
+      - name: Diff hygiene
+        run: git diff --check
+      - name: Upload sanitized recovery evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: com-b04i-r1-remote-node-execution-path-recovery-${{ github.run_id }}
+          path: reports/generated/COM-B04I-R1-REMOTE-NODE-EXECUTION-PATH-RECOVERY.json
+          if-no-files-found: error
+          retention-days: 14
