@@ -148,7 +148,14 @@ for (const [key, value] of Object.entries(config.effects)) {
 equal(r1.status, 'remote_node_execution_path_recovered_certified', 'R1 certified');
 equal(r1.recoveryMechanism.workflowPreinstalledBeforeTrigger, true, 'R1 install-before-trigger precedent');
 equal(r1.recoveryMechanism.workflowArchivedAfterCertification, true, 'R1 archived');
-equal(r1.authority.stagingAccessAuthority, false, 'R1 staging authority false');
+equal(r1.recoveryMechanism.stagingAccessAllowed, false, 'R1 mechanism staging access false');
+equal(r1.authority.stagingReadAuthority, false, 'R1 staging read authority false');
+equal(r1.authority.stagingMutationAuthority, false, 'R1 staging mutation authority false');
+equal(r1.authority.stagingSecretAuthority, false, 'R1 staging secret authority false');
+equal(r1.authority.publicTrafficAuthority, false, 'R1 public traffic authority false');
+equal(r1.authority.runtimeDeploymentAuthority, false, 'R1 runtime deployment authority false');
+equal(r1.authority.productionAuthority, false, 'R1 production authority false');
+equal(r1.authority.pullRequestMergeAuthority, false, 'R1 merge authority false');
 
 equal(evidence.contractId, config.contractId, 'evidence contract');
 equal(evidence.status, config.status, 'evidence status');
