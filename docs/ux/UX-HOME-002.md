@@ -66,14 +66,6 @@ source collection
 - eventos sanitizados;
 - `Seguindo` fail-closed.
 
-Checkpoint limpo da fundação:
-
-- SHA `8483e77afeaa504d04c3a5fc16f523638a194a06`;
-- trusted run `31197483201`;
-- Sonar Quality Gate: passed;
-- 0 new issues, 0 accepted issues, 0 Security Hotspots;
-- 94,0% Coverage on New Code.
-
 ### Fase 2 — surface e runtime da Home
 
 `assets/js/pages/home/more-services-surface.js`:
@@ -153,21 +145,7 @@ Draft não altera cards até `Aplicar filtros`. Fechar/cancelar restaura o snaps
 - `scripts/test-ux-home-002-index-contract.js`;
 - `scripts/test-ux-home-002-browser-contract.js`.
 
-Eles cobrem:
-
-- seis intents;
-- `Seguindo` fail-closed;
-- draft/applied/cancel/reset;
-- filtros combinados;
-- filtros sem autoridade desabilitados;
-- progressive reveal;
-- canonical card reuse;
-- stale source preservation;
-- painel portável;
-- ARIA e ordem de scripts;
-- eventos sanitizados.
-
-O browser contract provou o event routing em DOM real, inclusive a separação `tab intent` versus `rail active intent`, o binding do painel portável e o quick-filter `guaranteed` antes do commit do snapshot aplicado.
+Eles cobrem seis intents, `Seguindo` fail-closed, draft/applied/cancel/reset, filtros combinados, filtros sem autoridade desabilitados, progressive reveal, canonical card reuse, stale source preservation, painel portável, ARIA, ordem de scripts e eventos sanitizados.
 
 ## Acessibilidade
 
@@ -178,6 +156,27 @@ O browser contract provou o event routing em DOM real, inclusive a separação `
 - filtros suportados permanecem operáveis por teclado;
 - filtros não suportados ficam desabilitados;
 - contagem é anunciada em live region sem IDs ou dados pessoais.
+
+## Evidência final
+
+SHA final: `4749805126bfe00a3f195190c21b87dca1decfc9`.
+
+- PR gate: run `31203933194`, job `92950285582` — success;
+- trusted push: run `31203930476`, job `92950276426` — success;
+- UX-HOME-001 herdado: run `31203933880` — success;
+- Home composition, state, surface, browser, regressões herdadas, LCOV e whitespace — success;
+- Sonar Quality Gate — passed;
+- 0 New issues;
+- 0 Accepted issues;
+- 0 Security Hotspots;
+- 0 Sonar annotations;
+- 88,9% Coverage on New Code;
+- 0,0% Duplication on New Code;
+- LCOV artifact `9003955496`;
+- artifact digest `sha256:bb8361ac038cdd725c21d15c6c8efbf14777ba0af68d8b81fe1752289e81990e`;
+- branch 34 commits ahead e 0 commits atrás da base.
+
+Nenhum finding foi aceito, suprimido ou excluído para obter aprovação.
 
 ## Eventos
 
@@ -207,7 +206,3 @@ Não expor service IDs, provider IDs, user IDs, histórico/query privada ou mens
 ## Rollback
 
 A entrega permanece aditiva na camada de apresentação. Remover `more-services-state.js`, `more-services-surface.js` e restaurar os atributos/scripts do `index.html` recupera o comportamento anterior sem migration nem reparo de dados persistidos.
-
-## Checkpoint atual
-
-No SHA `92bf7fbb74f3913a7704c80a770cc80fb99af376`, browser contract, regressões herdadas, LCOV e Quality Gate passaram, mas o Sonar apontou seis ocorrências idênticas de `aria-pressed` inválido em tabs. A semântica foi corrigida sem alterar intent ou filtro, e todos os executores temporários foram removidos. Este documento dispara a rodada final completa. A issue #85 só pode ser encerrada se o novo SHA repetir browser/regressões e Sonar com 0 new issues, 0 accepted issues e 0 Security Hotspots.
