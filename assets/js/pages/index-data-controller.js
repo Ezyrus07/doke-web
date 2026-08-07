@@ -33,7 +33,7 @@
 
   function sanitizeErrorCode(error, fallback) {
     if (isOffline()) return 'DOKE_HOME_OFFLINE';
-    var candidate = error && error.code ? error.code : fallback;
+    var candidate = error?.code || fallback;
     var normalized = String(candidate || 'DOKE_HOME_FAILED').trim().toUpperCase();
     return normalized.replace(/[^A-Z0-9_:-]/g, '').slice(0, 96) || 'DOKE_HOME_FAILED';
   }
@@ -165,9 +165,9 @@
 
   function getRenderedItemCount(root, kind) {
     var list = getList(root, kind);
-    if (!list || !list.children) return 0;
+    if (!list?.children) return 0;
     return Array.prototype.reduce.call(list.children, function (total, child) {
-      if (!child || child.hidden) return total;
+      if (child?.hidden ?? true) return total;
       if (child.matches && child.matches('[data-list-loading], [data-home-rail-feedback]')) return total;
       return total + 1;
     }, 0);
@@ -215,7 +215,7 @@
 
   function ensureRailFeedback(root, kind) {
     var region = getRegion(root, kind);
-    if (!region || !region.querySelector) return null;
+    if (!region?.querySelector) return null;
     var existing = region.querySelector('[data-home-rail-feedback="' + kind + '"]');
     if (existing) return existing;
 
@@ -255,11 +255,13 @@
     var show = snapshot.dataState === 'error' || snapshot.freshnessState === 'stale';
     feedback.hidden = !show;
     if (status) {
-      status.textContent = snapshot.freshnessState === 'stale'
-        ? 'Não foi possível atualizar estes anúncios. Exibindo a última versão disponível.'
-        : (snapshot.errorCode === 'DOKE_HOME_OFFLINE'
-          ? 'Você está offline. Conecte-se e tente novamente.'
-          : 'Não foi possível carregar estes anúncios.');
+      var message = 'Não foi possível carregar estes anúncios.';
+      if (snapshot.freshnessState === 'stale') {
+        message = 'Não foi possível atualizar estes anúncios. Exibindo a última versão disponível.';
+      } else if (snapshot.errorCode === 'DOKE_HOME_OFFLINE') {
+        message = 'Você está offline. Conecte-se e tente novamente.';
+      }
+      status.textContent = message;
     }
   }
 
@@ -279,7 +281,7 @@
 
   function beginRail(root, controller, kind, options) {
     if (!controller) {
-      setRegionState(root, kind, options && options.retry ? 'loading' : 'loading');
+      setRegionState(root, kind, 'loading');
       return null;
     }
     var receipt = controller.begin(kind, options || {});
@@ -439,7 +441,7 @@
         renderedServiceCount: renderedServiceCount
       };
     }).finally(function () {
-      if (serviceRefreshFlight && serviceRefreshFlight.promise === promise) serviceRefreshFlight = null;
+      if (serviceRefreshFlight?.promise === promise) serviceRefreshFlight = null;
     });
 
     serviceRefreshFlight = { root: root, promise: promise };
