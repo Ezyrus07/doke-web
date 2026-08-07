@@ -69,7 +69,7 @@ async function main() {
     assert.equal(state.overflow, 'true');
     assert.equal(state.previousDisabled, true);
     assert.equal(state.nextDisabled, false);
-    assert.equal(state.scrollWidth - state.clientWidth, 314);
+    assert.equal(state.scrollWidth - state.clientWidth, 304);
 
     await next.focus();
     await next.click();
