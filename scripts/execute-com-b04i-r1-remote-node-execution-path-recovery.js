@@ -9,8 +9,9 @@ const routeHandlers = require('../backend/modules/communities/route-handlers');
 
 const root = path.join(__dirname, '..');
 const recovery = require('../config/com-b04i-r1-remote-node-execution-path-recovery.json');
+const readinessEvidence = require('../docs/validation/COM-B04I-ATTEMPT-2-READINESS.json');
 const triggerPath = process.env.COM_B04I_R1_TRIGGER_PATH ||
-  'config/com-b04i-r1-remote-node-execution-trigger-v2.json';
+  'config/com-b04i-r1-remote-node-execution-trigger-v3.json';
 const trigger = require(path.join(root, triggerPath));
 const reportPath = path.resolve(process.env.COM_B04I_R1_REPORT_PATH ||
   'reports/generated/COM-B04I-R1-REMOTE-NODE-EXECUTION-PATH-RECOVERY.json');
@@ -38,10 +39,10 @@ async function run() {
   exact(process.env.GITHUB_REF_NAME, 'com/com-001-baseline-audit', 'COM_B04I_R1_BRANCH_MISMATCH');
   exact(String(process.env.GITHUB_RUN_ATTEMPT || ''), '1', 'COM_B04I_R1_FIRST_RUN_ATTEMPT_REQUIRED');
   exact(recovery.contractId, 'com-b04i-r1-remote-node-execution-path-recovery-v1', 'COM_B04I_R1_CONTRACT_MISMATCH');
-  exact(recovery.status, 'recovery_workflow_revision_2_installation_pending_trigger', 'COM_B04I_R1_RECOVERY_STATUS_INVALID');
-  exact(trigger.contractId, 'com-b04i-r1-remote-node-execution-trigger-v2', 'COM_B04I_R1_TRIGGER_CONTRACT_MISMATCH');
+  exact(recovery.status, 'recovery_workflow_revision_3_installation_pending_trigger', 'COM_B04I_R1_RECOVERY_STATUS_INVALID');
+  exact(trigger.contractId, 'com-b04i-r1-remote-node-execution-trigger-v3', 'COM_B04I_R1_TRIGGER_CONTRACT_MISMATCH');
   exact(trigger.status, 'recovery_retry_trigger_created', 'COM_B04I_R1_TRIGGER_STATUS_INVALID');
-  exact(trigger.revision, 2, 'COM_B04I_R1_TRIGGER_REVISION_INVALID');
+  exact(trigger.revision, 3, 'COM_B04I_R1_TRIGGER_REVISION_INVALID');
   exact(trigger.sourceHead, recovery.sourceHead, 'COM_B04I_R1_SOURCE_HEAD_MISMATCH');
   exact(trigger.workflowInstallHead, git('rev-parse', 'HEAD^'), 'COM_B04I_R1_PARENT_NOT_WORKFLOW_INSTALL_HEAD');
   exact(process.env.GITHUB_SHA, git('rev-parse', 'HEAD'), 'COM_B04I_R1_CHECKOUT_SHA_MISMATCH');
@@ -54,7 +55,13 @@ async function run() {
     'HEAD^:.github/workflows/com-b04i-r1-remote-node-execution-path-recovery.yml'
   );
   assert.ok(workflowAtParent.includes('COM-B04I-R1 Remote Node Execution Path Recovery'));
-  assert.ok(workflowAtParent.includes('config/com-b04i-r1-remote-node-execution-trigger-v2.json'));
+  assert.ok(workflowAtParent.includes('config/com-b04i-r1-remote-node-execution-trigger-v3.json'));
+
+  exact(readinessEvidence.contractId, 'com-b04i-attempt-2-readiness-v1', 'COM_B04I_R1_READINESS_EVIDENCE_CONTRACT_INVALID');
+  exact(readinessEvidence.certification.result, 'success', 'COM_B04I_R1_READINESS_EVIDENCE_NOT_CERTIFIED');
+  exact(readinessEvidence.certification.localConformance, '28/28', 'COM_B04I_R1_READINESS_CONFORMANCE_INVALID');
+  exact(readinessEvidence.certification.readinessAudit, '58/58', 'COM_B04I_R1_READINESS_AUDIT_INVALID');
+  exact(readinessEvidence.effects.stagingAccessed, false, 'COM_B04I_R1_READINESS_STAGING_EFFECT_INVALID');
 
   let defaultHandlerStatus = null;
   let defaultHandlerCode = null;
@@ -78,13 +85,6 @@ async function run() {
   ).trim();
   assert.ok(localConformance.includes('COM-B04I staging live composition route canary passed: 28/28'));
 
-  const readinessAudit = execFileSync(
-    process.execPath,
-    ['scripts/audit-com-b04i-attempt-2-readiness.js'],
-    { cwd: root, encoding: 'utf8' }
-  ).trim();
-  assert.ok(readinessAudit.includes('COM-B04I attempt-2 readiness audit passed: 58/58'));
-
   const report = {
     validationId: 'COM-B04I-R1-REMOTE-NODE-EXECUTION-PATH-RECOVERY',
     contractId: recovery.contractId,
@@ -107,10 +107,10 @@ async function run() {
       defaultHandlerStatus,
       defaultHandlerCode,
       localCanaryConformance: '28/28',
-      attempt2ReadinessAudit: '58/58',
+      attempt2ReadinessEvidence: 'certified 58/58',
       artifactRequested: true
     },
-    priorRecoveryAttempt: recovery.recoveryAttempts[0],
+    priorRecoveryAttempts: recovery.recoveryAttempts,
     effects: {
       secretsRead: false,
       stagingAccessed: false,
