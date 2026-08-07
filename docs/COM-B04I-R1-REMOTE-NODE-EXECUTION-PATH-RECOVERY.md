@@ -6,6 +6,8 @@ Recover and certify a reliable GitHub Actions path for executing the certified N
 
 COM-B04I attempt 2 proved the real staging persistence, immutable ledger, evidence materialization and rollback boundary. It did not execute the Node handler remotely because no workflow run materialized for the exact trigger and bridge commits.
 
+The remote Node execution path recovered successfully under COM-B04I-R1.
+
 ## Recovery protocol
 
 The successful protocol used:
