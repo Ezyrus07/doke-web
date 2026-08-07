@@ -42,12 +42,12 @@ async function main() {
           <section data-home-list-region="more-services" data-home-rail-freshness-state="fresh" data-home-rail-data-state="ready" data-home-rail-visibility-state="visible" data-state="ready">
             <div class="more-services__controls">
               <div id="more-services-tabs-track" role="tablist" aria-label="Mais anúncios">
-                <button class="mini-tab is-active" data-more-services-intent="for-you" role="tab" aria-selected="true" aria-pressed="true" tabindex="0">Para você</button>
-                <button class="mini-tab" data-more-services-intent="following" role="tab" aria-selected="false" aria-pressed="false" tabindex="-1">Seguindo</button>
-                <button class="mini-tab" data-more-services-intent="top-rated" role="tab" aria-selected="false" aria-pressed="false" tabindex="-1">Bem avaliados</button>
-                <button class="mini-tab" data-more-services-intent="guaranteed" role="tab" aria-selected="false" aria-pressed="false" tabindex="-1">Com garantia</button>
-                <button class="mini-tab" data-more-services-intent="available-today" role="tab" aria-selected="false" aria-pressed="false" tabindex="-1">Disponíveis hoje</button>
-                <button class="mini-tab" data-more-services-intent="newest" role="tab" aria-selected="false" aria-pressed="false" tabindex="-1">Novos</button>
+                <button class="mini-tab is-active" data-more-services-intent="for-you" role="tab" aria-selected="true" tabindex="0">Para você</button>
+                <button class="mini-tab" data-more-services-intent="following" role="tab" aria-selected="false" tabindex="-1">Seguindo</button>
+                <button class="mini-tab" data-more-services-intent="top-rated" role="tab" aria-selected="false" tabindex="-1">Bem avaliados</button>
+                <button class="mini-tab" data-more-services-intent="guaranteed" role="tab" aria-selected="false" tabindex="-1">Com garantia</button>
+                <button class="mini-tab" data-more-services-intent="available-today" role="tab" aria-selected="false" tabindex="-1">Disponíveis hoje</button>
+                <button class="mini-tab" data-more-services-intent="newest" role="tab" aria-selected="false" tabindex="-1">Novos</button>
               </div>
             </div>
 

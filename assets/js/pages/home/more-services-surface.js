@@ -165,7 +165,6 @@
       tab.dataset.moreServicesIntent = intent;
       tab.setAttribute('role', 'tab');
       tab.setAttribute('aria-selected', String(intent === intents.FOR_YOU));
-      tab.setAttribute('aria-pressed', String(intent === intents.FOR_YOU));
       if (intent === intents.FOLLOWING) {
         tab.dataset.moreServicesAvailability = 'unavailable';
         tab.title = 'Em breve: depende da autoridade canônica de profissionais seguidos.';
@@ -306,7 +305,6 @@
       var selected = tab.dataset.moreServicesIntent === snapshot.intent;
       tab.classList.toggle('is-active', selected);
       tab.setAttribute('aria-selected', String(selected));
-      tab.setAttribute('aria-pressed', String(selected));
       tab.tabIndex = selected ? 0 : -1;
     });
   }

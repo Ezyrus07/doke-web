@@ -17,11 +17,12 @@ const intents = [
 
 for (const [intent, label, selected, tabIndex] of intents) {
   const pattern = new RegExp(
-    `<button[^>]*data-more-services-intent="${intent}"[^>]*role="tab"[^>]*aria-selected="${selected}"[^>]*aria-pressed="${selected}"[^>]*tabindex="${tabIndex}"[^>]*>${label}</button>`
+    `<button[^>]*data-more-services-intent="${intent}"[^>]*role="tab"[^>]*aria-selected="${selected}"[^>]*tabindex="${tabIndex}"[^>]*>${label}</button>`
   );
   assert(pattern.test(html), `${label} must expose the stable ${intent} intent and accessible tab state.`);
 }
 
+assert(!/<button[^>]*role="tab"[^>]*aria-pressed=/.test(html), 'Tabs must use aria-selected instead of aria-pressed.');
 assert.equal((html.match(/data-more-services-intent=/g) || []).length, 6, 'More services must expose exactly six stable intents.');
 assert.equal((html.match(/data-more-services-intent="for-you"[^>]*aria-selected="true"/g) || []).length, 1, 'Only Para você may start selected.');
 assert(
