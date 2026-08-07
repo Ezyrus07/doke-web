@@ -9,7 +9,9 @@ const routeHandlers = require('../backend/modules/communities/route-handlers');
 
 const root = path.join(__dirname, '..');
 const recovery = require('../config/com-b04i-r1-remote-node-execution-path-recovery.json');
-const trigger = require('../config/com-b04i-r1-remote-node-execution-trigger.json');
+const triggerPath = process.env.COM_B04I_R1_TRIGGER_PATH ||
+  'config/com-b04i-r1-remote-node-execution-trigger-v2.json';
+const trigger = require(path.join(root, triggerPath));
 const reportPath = path.resolve(process.env.COM_B04I_R1_REPORT_PATH ||
   'reports/generated/COM-B04I-R1-REMOTE-NODE-EXECUTION-PATH-RECOVERY.json');
 
@@ -36,9 +38,10 @@ async function run() {
   exact(process.env.GITHUB_REF_NAME, 'com/com-001-baseline-audit', 'COM_B04I_R1_BRANCH_MISMATCH');
   exact(String(process.env.GITHUB_RUN_ATTEMPT || ''), '1', 'COM_B04I_R1_FIRST_RUN_ATTEMPT_REQUIRED');
   exact(recovery.contractId, 'com-b04i-r1-remote-node-execution-path-recovery-v1', 'COM_B04I_R1_CONTRACT_MISMATCH');
-  exact(recovery.status, 'recovery_workflow_installation_pending_trigger', 'COM_B04I_R1_RECOVERY_STATUS_INVALID');
-  exact(trigger.contractId, 'com-b04i-r1-remote-node-execution-trigger-v1', 'COM_B04I_R1_TRIGGER_CONTRACT_MISMATCH');
-  exact(trigger.status, 'one_shot_recovery_trigger_created', 'COM_B04I_R1_TRIGGER_STATUS_INVALID');
+  exact(recovery.status, 'recovery_workflow_revision_2_installation_pending_trigger', 'COM_B04I_R1_RECOVERY_STATUS_INVALID');
+  exact(trigger.contractId, 'com-b04i-r1-remote-node-execution-trigger-v2', 'COM_B04I_R1_TRIGGER_CONTRACT_MISMATCH');
+  exact(trigger.status, 'recovery_retry_trigger_created', 'COM_B04I_R1_TRIGGER_STATUS_INVALID');
+  exact(trigger.revision, 2, 'COM_B04I_R1_TRIGGER_REVISION_INVALID');
   exact(trigger.sourceHead, recovery.sourceHead, 'COM_B04I_R1_SOURCE_HEAD_MISMATCH');
   exact(trigger.workflowInstallHead, git('rev-parse', 'HEAD^'), 'COM_B04I_R1_PARENT_NOT_WORKFLOW_INSTALL_HEAD');
   exact(process.env.GITHUB_SHA, git('rev-parse', 'HEAD'), 'COM_B04I_R1_CHECKOUT_SHA_MISMATCH');
@@ -51,7 +54,7 @@ async function run() {
     'HEAD^:.github/workflows/com-b04i-r1-remote-node-execution-path-recovery.yml'
   );
   assert.ok(workflowAtParent.includes('COM-B04I-R1 Remote Node Execution Path Recovery'));
-  assert.ok(workflowAtParent.includes("config/com-b04i-r1-remote-node-execution-trigger.json"));
+  assert.ok(workflowAtParent.includes('config/com-b04i-r1-remote-node-execution-trigger-v2.json'));
 
   let defaultHandlerStatus = null;
   let defaultHandlerCode = null;
@@ -87,6 +90,7 @@ async function run() {
     contractId: recovery.contractId,
     status: 'remote_node_execution_path_recovered',
     execution: {
+      recoveryRevision: trigger.revision,
       repository: process.env.GITHUB_REPOSITORY,
       event: process.env.GITHUB_EVENT_NAME,
       branch: process.env.GITHUB_REF_NAME,
@@ -106,6 +110,7 @@ async function run() {
       attempt2ReadinessAudit: '58/58',
       artifactRequested: true
     },
+    priorRecoveryAttempt: recovery.recoveryAttempts[0],
     effects: {
       secretsRead: false,
       stagingAccessed: false,
