@@ -141,10 +141,10 @@ async function main() {
     assert.equal(await guaranteedChip.isDisabled(), false, 'Supported guarantee chip must remain interactive.');
     assert.equal(await guaranteedChip.getAttribute('data-more-services-filter'), 'guaranteed', 'Surface must bind the guarantee chip to the canonical filter key.');
     await guaranteedChip.click();
-    assert.equal(await guaranteedChip.getAttribute('aria-pressed'), 'true', 'Draft quick-filter state must be visible immediately.');
     state = await snapshot();
     assert.equal(state.appliedFilters.guaranteed, false, 'Quick filter must remain draft before Apply.');
-    assert.equal(state.draftFilters.guaranteed, true);
+    assert.equal(state.draftFilters.guaranteed, true, 'Quick filter click must update the draft snapshot.');
+    assert.equal(await guaranteedChip.getAttribute('aria-pressed'), 'true', 'Draft quick-filter state must be visible immediately.');
     assert.equal(state.resultCount, 7);
 
     await page.getByRole('button', { name: 'Fechar' }).click();
