@@ -29,6 +29,10 @@
     catch (_error) { return value; }
   }
 
+  function hasOwn(object, key) {
+    return Boolean(object && Object.prototype.hasOwnProperty.call(object, key));
+  }
+
   function freezeItem(raw) {
     var item = clone(raw || {}) || {};
     item.id = normalizeText(item.id || item.notificationId);
@@ -37,6 +41,25 @@
     item.dismissed = item.dismissed === true || Boolean(item.dismissedAt);
     item.createdAt = item.createdAt || item.creatédAt || '';
     return Object.freeze(item);
+  }
+
+  function mergeExisting(existing, raw) {
+    var incoming = clone(raw || {}) || {};
+    var merged = Object.assign({}, existing, incoming);
+
+    merged.id = existing.id;
+    if (!hasOwn(incoming, 'eventKey') && !hasOwn(incoming, 'dedupeKey')) {
+      merged.eventKey = existing.eventKey;
+    }
+    if (!hasOwn(incoming, 'read') && !hasOwn(incoming, 'readAt')) {
+      merged.read = existing.read;
+      merged.readAt = existing.readAt;
+    }
+    if (!hasOwn(incoming, 'dismissed') && !hasOwn(incoming, 'dismissedAt')) {
+      merged.dismissed = existing.dismissed;
+      merged.dismissedAt = existing.dismissedAt;
+    }
+    return freezeItem(merged);
   }
 
   function resolveScopeToken() {
@@ -182,7 +205,7 @@
 
     if (existingIndex >= 0) {
       var existing = items[existingIndex];
-      var merged = freezeItem(Object.assign({}, existing, incoming));
+      var merged = mergeExisting(existing, raw);
       items = items.slice();
       items.splice(existingIndex, 1, merged);
     } else {
