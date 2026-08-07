@@ -2,7 +2,7 @@
   "contractId": "com-b04i-r1-remote-node-execution-path-recovery-v1",
   "domain": "COM-001",
   "scope": "repository_only_remote_node_execution_path_recovery",
-  "status": "recovery_workflow_installation_pending_trigger",
+  "status": "recovery_workflow_revision_2_installation_pending_trigger",
   "sourceHead": "61cc9f7c2f90e841498f545fd2cddc7236e3b420",
   "problem": {
     "attempt2AuthorizationConsumed": true,
@@ -15,18 +15,35 @@
     "splitPersistenceCanaryPassed": true,
     "endToEndLiveRouteCertified": false
   },
+  "recoveryAttempts": [
+    {
+      "revision": 1,
+      "workflowInstallHead": "5f436edfbdc7be6f3227a5e288ab936301a63e22",
+      "triggerHead": "c0178e2d41731d1c2d0f9b8775448b3fa5c2cc91",
+      "run": 31137291437,
+      "job": 92739396027,
+      "workflowRunCreated": true,
+      "exactTriggerCommitCheckedOut": true,
+      "parentBindingPassed": true,
+      "failureStage": "repository_audit_before_remote_node_executor",
+      "failureCause": "audit_expected_hyphenated_com_b04g_marker_instead_of_canonical_underscored_error_code",
+      "secretsRead": false,
+      "stagingAccessed": false
+    }
+  ],
   "recoveryMechanism": {
     "workflowPreinstalledBeforeTrigger": true,
     "triggerCreatedInSeparateCommit": true,
     "event": "push",
     "branch": "com/com-001-baseline-audit",
-    "triggerPath": "config/com-b04i-r1-remote-node-execution-trigger.json",
+    "triggerPath": "config/com-b04i-r1-remote-node-execution-trigger-v2.json",
     "runner": "ubuntu-24.04",
     "nodeVersion": "24",
     "remoteNodeProcessRequired": true,
     "defaultFailClosedHandlerInvocationRequired": true,
     "sanitizedArtifactRequired": true,
-    "workflowRerunAllowed": true,
+    "workflowRerunAllowed": false,
+    "newTriggerRevisionRequiredAfterFailure": true,
     "secretsRequired": false,
     "environmentRequired": false,
     "stagingAccessAllowed": false
@@ -61,5 +78,5 @@
     "promotionAllowed": false,
     "productionGate": "blocked"
   },
-  "nextAction": "install_recovery_workflow_then_create_separate_one_shot_trigger"
+  "nextAction": "install_recovery_workflow_revision_2_then_create_distinct_trigger_v2"
 }
