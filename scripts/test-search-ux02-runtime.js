@@ -65,7 +65,9 @@ assert(
 assert(
   homeFavorites.includes('function ensureSurface()') &&
     homeFavorites.includes("workspace.querySelector('.professional-showcase')") &&
-    homeFavorites.includes('services.slice(0, 6)'),
+    homeFavorites.includes('function buildPreviewNodes(items)') &&
+    homeFavorites.includes('var preview = items.slice(0, 6)') &&
+    homeFavorites.includes('anchor.parentNode.insertBefore(section, anchor)'),
   'Home favorites must create a bounded preview before the professional showcase.'
 );
 assert(
