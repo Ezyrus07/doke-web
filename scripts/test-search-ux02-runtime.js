@@ -79,7 +79,9 @@ assert(
 );
 assert(
   homeFavorites.includes('home-favorites__count') &&
-    homeFavorites.includes("services.length === 1 ? ' favorito' : ' favoritos'"),
+    homeFavorites.includes('function updateCount(ui, count)') &&
+    homeFavorites.includes("total === 1 ? ' favorito' : ' favoritos'") &&
+    homeFavorites.includes("ui.count.setAttribute('aria-label'"),
   'The home favorites action must expose an accessible total.'
 );
 assert(
