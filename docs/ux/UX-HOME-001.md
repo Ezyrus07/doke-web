@@ -99,7 +99,7 @@ Concluída:
 
 ### Fase 2 — Home remota/editorial
 
-Concluída no controller:
+Implementação concluída no controller:
 
 - `index-data-controller.js` integrado ao rail-state;
 - respostas remotas representadas por envelopes explícitos;
@@ -110,18 +110,22 @@ Concluída no controller:
 - root state resolvido por conteúdo aceito e autoridade remota;
 - contagens calculadas antes dos eventos;
 - retry single-flight e route fence validados;
-- LCOV atribuído ao código canônico;
-- sete findings de Reliability do Sonar corrigidos sem suppressão.
+- LCOV atribuído ao código canônico.
 
-Evidência intermediária:
+Evidência de validação:
 
-- commit de correção: `761efc2f3ad036366db6fd6bbe934c1930475e2b`;
-- cleanup operacional: `df07f8656b4dad935ea492672414e4afb062ef25`;
-- gate de PR após cleanup: sintaxe, testes, Playwright, LCOV e whitespace aprovados.
+- run confiável `31137028166`: sintaxe, rail-state, controller, Playwright, LCOV, credencial, artifact e whitespace aprovados;
+- cobertura executável desse checkpoint: `rail-state.js` 98,74% linhas e `index-data-controller.js` 80,19% linhas; conjunto 86,44%;
+- Sonar Quality Gate aprovado com 87,2% de cobertura em código novo e zero Security Hotspots;
+- a análise identificou uma última simplificação de optional chaining em `getRenderedItemCount()`;
+- correção final publicada em `f9e6113fa87f05ea540c533555380f70a7867565`, substituindo `child.matches && child.matches(...)` por `child.matches?.(...)`;
+- nenhum finding foi aceito, suprimido ou excluído para obter aprovação.
+
+A correção final deve ser reanalisada no Sonar antes de considerar a Fase 2 encerrada para fins de evidência.
 
 ### Fase 3 — Favoritos
 
-Pendente neste PR:
+Pendente neste PR até o gate final da Fase 2:
 
 - integrar `favorites-surface.js` ao rail-state;
 - separar falha de ledger e catálogo;
