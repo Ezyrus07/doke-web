@@ -1,0 +1,127 @@
+name: COM-B04I-R2 Attempt 3 Staging Live Composition Route Canary
+
+on:
+  push:
+    branches:
+      - com/com-001-baseline-audit
+    paths:
+      - 'config/com-b04i-r2-attempt-3-staging-trigger.json'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: com-b04i-r2-attempt3-staging-live-route-canary-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  authorize:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      workflow_install_head: ${{ steps.bind.outputs.workflow_install_head }}
+    steps:
+      - name: Checkout exact one-shot trigger
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Bind preinstalled workflow and exact attempt-3 authorization
+        id: bind
+        shell: bash
+        env:
+          COM_B04I_R2_ATTEMPT3_AUTHORIZATION: I_EXPLICITLY_AUTHORIZE_COM_B04I_ATTEMPT_3_STAGING_LIVE_COMPOSITION_ACTIVATION_AND_ROLLBACK_ONLY_ROUTE_CANARY
+        run: |
+          set -euo pipefail
+          test "${GITHUB_RUN_ATTEMPT}" = "1"
+          trigger='config/com-b04i-r2-attempt-3-staging-trigger.json'
+          test -f "$trigger"
+          changed="$(git diff-tree --no-commit-id --name-only -r HEAD)"
+          test "$changed" = "$trigger"
+          status="$(git diff-tree --no-commit-id --name-status -r HEAD -- "$trigger")"
+          test "$status" = $'A\t'"$trigger"
+          parent="$(git rev-parse HEAD^)"
+          test -f .github/workflows/com-b04i-r2-attempt-3-staging-live-composition-route-canary.yml
+          node <<'NODE'
+          const fs = require('fs');
+          const cp = require('child_process');
+          const trigger = JSON.parse(fs.readFileSync('config/com-b04i-r2-attempt-3-staging-trigger.json', 'utf8'));
+          const phrase = 'I_EXPLICITLY_AUTHORIZE_COM_B04I_ATTEMPT_3_STAGING_LIVE_COMPOSITION_ACTIVATION_AND_ROLLBACK_ONLY_ROUTE_CANARY';
+          const parent = cp.execFileSync('git', ['rev-parse', 'HEAD^'], { encoding: 'utf8' }).trim();
+          if (process.env.COM_B04I_R2_ATTEMPT3_AUTHORIZATION !== phrase) throw new Error('COM_B04I_R2_ATTEMPT3_ENV_AUTHORIZATION_MISMATCH');
+          if (trigger.contractId !== 'com-b04i-r2-attempt-3-staging-trigger-v1') throw new Error('COM_B04I_R2_ATTEMPT3_TRIGGER_CONTRACT_MISMATCH');
+          if (trigger.status !== 'authorization_consumed_execution_pending') throw new Error('COM_B04I_R2_ATTEMPT3_TRIGGER_NOT_PENDING');
+          if (trigger.authorization?.phrase !== phrase || trigger.authorization?.received !== true || trigger.authorization?.consumed !== true) throw new Error('COM_B04I_R2_ATTEMPT3_AUTHORIZATION_STATE_INVALID');
+          if (trigger.authorization?.singleUse !== true || trigger.authorization?.reusableAfterFailure !== false || trigger.authorization?.executionAttempted !== true) throw new Error('COM_B04I_R2_ATTEMPT3_SINGLE_USE_STATE_INVALID');
+          if (trigger.workflowInstallHead !== parent) throw new Error('COM_B04I_R2_ATTEMPT3_WORKFLOW_NOT_PREINSTALLED_ON_PARENT');
+          if (trigger.target?.environment !== 'staging' || trigger.target?.projectId !== 'zwkczgewzbsorbrjuzpb' || trigger.target?.pullRequest !== 61 || trigger.target?.branch !== 'com/com-001-baseline-audit') throw new Error('COM_B04I_R2_ATTEMPT3_TARGET_INVALID');
+          if (trigger.canary?.processLocalActivation !== true || trigger.canary?.publicTrafficEnabled !== false || trigger.canary?.syntheticOnly !== true || trigger.canary?.rollbackOnly !== true || trigger.canary?.outerIsolation !== 'serializable') throw new Error('COM_B04I_R2_ATTEMPT3_CANARY_SCOPE_INVALID');
+          const allowlist = ['com_moderation_load_case_v1', 'com_moderation_commit_case_command_v1'];
+          if (JSON.stringify(trigger.canary?.rpcAllowlist) !== JSON.stringify(allowlist)) throw new Error('COM_B04I_R2_ATTEMPT3_RPC_ALLOWLIST_INVALID');
+          if (!/^opaque:[A-Za-z0-9:_-]+$/.test(String(trigger.synthetic?.initialEvidenceReference || '')) || trigger.synthetic.initialEvidenceReference.includes('/')) throw new Error('COM_B04I_R2_ATTEMPT3_OPAQUE_REFERENCE_INVALID');
+          NODE
+          echo "workflow_install_head=$parent" >> "$GITHUB_OUTPUT"
+
+  canary:
+    needs: authorize
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: staging
+    env:
+      COM_B04I_R2_ATTEMPT3_AUTHORIZATION: I_EXPLICITLY_AUTHORIZE_COM_B04I_ATTEMPT_3_STAGING_LIVE_COMPOSITION_ACTIVATION_AND_ROLLBACK_ONLY_ROUTE_CANARY
+      COM_B04I_R2_ATTEMPT3_WORKFLOW_INSTALL_HEAD: ${{ needs.authorize.outputs.workflow_install_head }}
+      SUPABASE_PROJECT_REF: zwkczgewzbsorbrjuzpb
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      COM_B04I_R2_ATTEMPT3_REPORT_PATH: reports/generated/COM-B04I-R2-ATTEMPT-3-STAGING-LIVE-COMPOSITION-ROUTE-CANARY.json
+    steps:
+      - name: Checkout exact authorized trigger head
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Install pinned dependencies
+        run: npm ci --ignore-scripts
+      - name: Syntax
+        run: |
+          node --check backend/runtime/staging/community-moderation-live-route-canary-attempt-3.js
+          node --check scripts/execute-com-b04i-r2-attempt-3-staging-live-composition-route-canary.js
+          node --check scripts/test-com-b04i-r2-attempt-3-preinstalled-staging-workflow-readiness.js
+      - name: Attempt-3 local conformance
+        run: node scripts/test-com-b04i-r2-attempt-3-preinstalled-staging-workflow-readiness.js
+      - name: Default handler remains fail closed
+        run: |
+          node <<'NODE'
+          const assert = require('node:assert');
+          const { executeModerationCommand } = require('./backend/modules/communities/route-handlers');
+          executeModerationCommand({}).then(
+            () => { throw new Error('COM_B04I_R2_DEFAULT_HANDLER_MUST_FAIL'); },
+            (error) => {
+              assert.equal(error.code, 'COM_B04G_ROUTE_NOT_DEPLOYED_OR_ACTIVATED');
+              assert.equal(error.status, 503);
+              assert.equal(error.runtimeActivated, false);
+              assert.equal(error.stagingTrafficEnabled, false);
+              assert.equal(error.realModerationEnabled, false);
+            }
+          );
+          NODE
+      - name: Repository security checks
+        shell: bash
+        run: |
+          ! grep -R -E 'process\.env|SUPABASE_(SERVICE_ROLE_KEY|ACCESS_TOKEN|DB_PASSWORD)' backend/runtime/staging/community-moderation-live-route-canary-attempt-3.js
+          grep -F "Object.freeze(['disabled', 'local_test_double'])" backend/modules/communities/community-moderation-runtime-composition.js
+          ! grep -F 'staging_authenticated_server_runtime' backend/modules/communities/community-moderation-runtime-composition.js
+          git diff --check
+      - name: Execute authenticated attempt-3 canary with rollback
+        run: node scripts/execute-com-b04i-r2-attempt-3-staging-live-composition-route-canary.js
+      - name: Upload sanitized attempt-3 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: com-b04i-r2-attempt3-staging-live-composition-route-canary-${{ github.run_id }}
+          path: reports/generated/COM-B04I-R2-ATTEMPT-3-STAGING-LIVE-COMPOSITION-ROUTE-CANARY.json
+          if-no-files-found: error
+          retention-days: 14
