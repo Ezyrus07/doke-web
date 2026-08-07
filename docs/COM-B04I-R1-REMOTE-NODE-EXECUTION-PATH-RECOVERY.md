@@ -104,6 +104,8 @@ pull request merged: false
 
 The attempt-1 and attempt-2 authorizations remain consumed and cannot be reused.
 
+The final certification gate uses structural/grouped deny patterns so its own defensive checks cannot be misclassified as secret or staging usage.
+
 ## Workflow closure
 
 After certification, the recovery workflow was archived and now watches only:
