@@ -381,8 +381,9 @@
       return;
     }
 
-    var quick = supportedControl(target, QUICK_FILTER_SELECTOR);
-    if (quick && binding.region.contains(quick) && quick.dataset.moreServicesFilter && !quick.disabled) {
+    var quick = supportedControl(target, '.filter-chip');
+    var quickSection = quick?.closest?.('[data-more-filters-section="quick"]');
+    if (quick && quickSection && binding.region.contains(quick) && quick.dataset.moreServicesFilter && !quick.disabled) {
       event.preventDefault();
       event.stopPropagation();
       var key = quick.dataset.moreServicesFilter;
