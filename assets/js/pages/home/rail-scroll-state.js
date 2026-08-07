@@ -64,7 +64,7 @@
   function deriveItemStep(input) {
     input = input || {};
     var firstOffset = finiteNumber(input.firstOffset, 0);
-    var secondOffset = finiteNumber(input.secondOffset, NaN);
+    var secondOffset = finiteNumber(input.secondOffset, Number.NaN);
     var measuredDistance = secondOffset - firstOffset;
     if (Number.isFinite(measuredDistance) && measuredDistance > DEFAULT_EPSILON) {
       return measuredDistance;
