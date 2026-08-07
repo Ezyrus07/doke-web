@@ -5,19 +5,27 @@ on:
     branches:
       - ux/ux-home-003-rail-scroll-sync
     paths:
+      - 'index.html'
+      - 'assets/js/pages/home.js'
       - 'assets/js/pages/home/rail-scroll-state.js'
       - 'assets/js/pages/home/rail-scroll-controller.js'
       - 'scripts/test-ux-home-003-rail-scroll-state.js'
       - 'scripts/test-ux-home-003-rail-scroll-controller.js'
+      - 'scripts/test-ux-home-003-integration-contract.js'
+      - 'scripts/test-ux-home-003-browser-contract.js'
       - 'docs/ux/UX-HOME-003.md'
       - '.github/workflows/ux-home-003-rail-scroll-sync.yml'
       - 'sonar-project.properties'
   pull_request:
     paths:
+      - 'index.html'
+      - 'assets/js/pages/home.js'
       - 'assets/js/pages/home/rail-scroll-state.js'
       - 'assets/js/pages/home/rail-scroll-controller.js'
       - 'scripts/test-ux-home-003-rail-scroll-state.js'
       - 'scripts/test-ux-home-003-rail-scroll-controller.js'
+      - 'scripts/test-ux-home-003-integration-contract.js'
+      - 'scripts/test-ux-home-003-browser-contract.js'
       - 'docs/ux/UX-HOME-003.md'
       - '.github/workflows/ux-home-003-rail-scroll-sync.yml'
       - 'sonar-project.properties'
@@ -30,7 +38,7 @@ permissions:
 jobs:
   ux-home-003-rail-scroll-sync:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
 
     steps:
       - name: Checkout repository
@@ -44,12 +52,24 @@ jobs:
           node-version: '22'
           cache: npm
 
+      - name: Install repository dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts
+
+      - name: Install Playwright Chromium from locked dependency
+        run: ./node_modules/.bin/playwright install chromium
+
       - name: Validate JavaScript syntax
         run: |
+          node --check assets/js/pages/home.js
           node --check assets/js/pages/home/rail-scroll-state.js
           node --check assets/js/pages/home/rail-scroll-controller.js
           node --check scripts/test-ux-home-003-rail-scroll-state.js
           node --check scripts/test-ux-home-003-rail-scroll-controller.js
+          node --check scripts/test-ux-home-003-integration-contract.js
+          node --check scripts/test-ux-home-003-browser-contract.js
+
+      - name: Validate Home rail integration contract
+        run: node scripts/test-ux-home-003-integration-contract.js
 
       - name: Validate rail scroll state behavior
         run: node scripts/test-ux-home-003-rail-scroll-state.js
@@ -57,13 +77,18 @@ jobs:
       - name: Validate rail scroll controller behavior
         run: node scripts/test-ux-home-003-rail-scroll-controller.js
 
-      - name: Preserve inherited Home contracts
+      - name: Validate rail scroll browser behavior
+        run: node scripts/test-ux-home-003-browser-contract.js
+
+      - name: Preserve inherited Home and search contracts
         run: |
           node scripts/test-ux-home-001-rail-state.js
           node scripts/test-ux-home-001-index-controller.js
           node scripts/test-ux-home-001-favorites-surface.js
           node scripts/test-ux-home-002-more-services-state.js
           node scripts/test-ux-home-002-more-services-surface.js
+          node scripts/test-search-ux02-runtime.js
+          node scripts/test-ux-search-001-search-experience.js
 
       - name: Generate executable LCOV
         shell: bash
