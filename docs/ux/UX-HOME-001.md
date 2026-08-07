@@ -6,23 +6,23 @@
 - branch: `ux/ux-home-001-rail-states`;
 - base: `ux/ux-perf-debt-001-profile-hydration`;
 - base SHA: `fecf67c1a79df8ac3431982d8d004e253c5d4304`;
-- PR: pendente de abertura;
+- PR: #84, aberto e draft;
 - merge: não autorizado;
 - staging/produção: não acessados.
 
 ## Problema
 
-A Home combina navegação estática, catálogo remoto canônico, conteúdo editorial local e conteúdo personalizado. O controller atual ainda reduz falhas remotas a arrays vazios e publica um estado geral sobre coleções com autoridades distintas.
+A Home combina navegação estática, catálogo remoto canônico, conteúdo editorial local e conteúdo personalizado. O controller anterior reduzia falhas remotas a arrays vazios e publicava um estado geral sobre coleções com autoridades distintas.
 
 Consequências confirmadas:
 
-- timeout/erro pode aparecer como vazio legítimo;
-- Workers e Publicações editoriais podem ser escondidos por arrays remotos vazios;
-- Mais anúncios recebe estado pelo total, não pela fatia após os seis destaques;
-- Favoritos oculta vazio e erro da mesma forma;
-- refresh não possui snapshot local independente por rail;
-- receipt de serviços pode publicar contagem antes do cálculo;
-- eventos de Favoritos expõem IDs brutos e mensagens técnicas.
+- timeout/erro podia aparecer como vazio legítimo;
+- Workers e Publicações editoriais podiam ser escondidos por arrays remotos vazios;
+- Mais anúncios recebia estado pelo total, não pela fatia após os seis destaques;
+- Favoritos ocultava vazio e erro da mesma forma;
+- refresh não possuía snapshot local independente por rail;
+- receipt de serviços podia publicar contagem antes do cálculo;
+- eventos de Favoritos expunham IDs brutos e mensagens técnicas.
 
 ## Fronteira arquitetural
 
@@ -85,9 +85,11 @@ featuredCount = min(total, 6)
 moreCount = max(total - 6, 0)
 ```
 
-## Integração planejada
+## Implementação
 
 ### Fase 1 — contrato puro
+
+Concluída:
 
 - registry imutável;
 - controller de generations;
@@ -97,15 +99,31 @@ moreCount = max(total - 6, 0)
 
 ### Fase 2 — Home remota/editorial
 
-- integrar `index-data-controller.js`;
-- preservar rails editoriais;
-- diferenciar erro, offline, stale e vazio;
-- corrigir receipt e contagens;
-- estado localizado por rail.
+Concluída no controller:
+
+- `index-data-controller.js` integrado ao rail-state;
+- respostas remotas representadas por envelopes explícitos;
+- erro, offline, stale e vazio separados;
+- Featured e More derivados de coleções independentes;
+- rails editoriais preservados;
+- recovery localizado;
+- root state resolvido por conteúdo aceito e autoridade remota;
+- contagens calculadas antes dos eventos;
+- retry single-flight e route fence validados;
+- LCOV atribuído ao código canônico;
+- sete findings de Reliability do Sonar corrigidos sem suppressão.
+
+Evidência intermediária:
+
+- commit de correção: `761efc2f3ad036366db6fd6bbe934c1930475e2b`;
+- cleanup operacional: `df07f8656b4dad935ea492672414e4afb062ef25`;
+- gate de PR após cleanup: sintaxe, testes, Playwright, LCOV e whitespace aprovados.
 
 ### Fase 3 — Favoritos
 
-- integrar `favorites-surface.js`;
+Pendente neste PR:
+
+- integrar `favorites-surface.js` ao rail-state;
 - separar falha de ledger e catálogo;
 - retry localizado;
 - account/route generation;
@@ -122,4 +140,4 @@ moreCount = max(total - 6, 0)
 
 ## Rollback
 
-O módulo é aditivo. Enquanto não integrado, removê-lo e retirar seu script restaura o comportamento anterior. Após integração, cada consumer mantém fallback para `Doke.listState` e pode ser revertido isoladamente sem alterar dados persistidos.
+O módulo é aditivo. A integração do controller pode ser revertida isoladamente, retirando o carregamento de `home/rail-state.js` e restaurando o controller anterior, sem alterar dados persistidos. A fase de Favoritos permanecerá separada para preservar rollback localizado.
