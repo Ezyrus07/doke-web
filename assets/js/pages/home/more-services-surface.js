@@ -240,6 +240,35 @@
     return draft;
   }
 
+  function ratingFilterLabel(value) {
+    if (!value) return 'Qualquer nota';
+    return String(value).replace('.', ',') + '+ estrelas';
+  }
+
+  function syncSelectControl(control, key, filters) {
+    if (key === 'categories') {
+      setSelectByText(control, filters.categories?.[0] || 'Todas', 'Todas');
+      return;
+    }
+    if (key === 'minRating') {
+      setSelectByText(control, ratingFilterLabel(filters.minRating), 'Qualquer nota');
+      return;
+    }
+    if (key === 'guaranteed') {
+      setSelectByText(control, filters.guaranteed ? 'Com garantia' : 'Tanto faz', 'Tanto faz');
+      return;
+    }
+    if (key === 'emergency') {
+      setSelectByText(control, filters.emergency ? 'Sim' : 'Tanto faz', 'Tanto faz');
+      return;
+    }
+    if (key === 'online') {
+      setSelectByText(control, filters.online ? 'Online' : 'Tanto faz', 'Tanto faz');
+      return;
+    }
+    control.value = String(filters[key] || '');
+  }
+
   function syncDraftUi(region, filters) {
     filters = filters || {};
     Array.from(region.querySelectorAll('[data-more-services-filter]')).forEach(function (control) {
@@ -251,20 +280,7 @@
         control.setAttribute('aria-pressed', String(active));
         return;
       }
-      if (key === 'categories') {
-        setSelectByText(control, filters.categories?.[0] || 'Todas', 'Todas');
-      } else if (key === 'minRating') {
-        var ratingLabel = filters.minRating ? String(filters.minRating).replace('.', ',') + '+ estrelas' : 'Qualquer nota';
-        setSelectByText(control, ratingLabel, 'Qualquer nota');
-      } else if (key === 'guaranteed') {
-        setSelectByText(control, filters.guaranteed ? 'Com garantia' : 'Tanto faz', 'Tanto faz');
-      } else if (key === 'emergency') {
-        setSelectByText(control, filters.emergency ? 'Sim' : 'Tanto faz', 'Tanto faz');
-      } else if (key === 'online') {
-        setSelectByText(control, filters.online ? 'Online' : 'Tanto faz', 'Tanto faz');
-      } else {
-        control.value = String(filters[key] || '');
-      }
+      syncSelectControl(control, key, filters);
     });
   }
 
