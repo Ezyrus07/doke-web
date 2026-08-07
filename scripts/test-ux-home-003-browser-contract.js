@@ -109,6 +109,14 @@ async function main() {
     state = await snapshot();
     assert.equal(state.nextDisabled, false, 'Content mutation must resynchronize overflow without route reload.');
 
+    await track.evaluate((rail) => {
+      rail.style.width = '260px';
+      rail.scrollLeft = 0;
+    });
+    await page.evaluate(() => window.dispatchEvent(new Event('resize')));
+    await page.waitForFunction(() => document.querySelector('[data-catégory-track]').dataset.railScrollState === 'ready-overflow-start');
+    state = await snapshot();
+
     const beforeAbort = state.scrollLeft;
     await page.evaluate(() => window.__railRoute.abort());
     await next.click();
