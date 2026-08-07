@@ -5,7 +5,7 @@ on:
     branches:
       - com/com-001-baseline-audit
     paths:
-      - 'config/com-b04i-r1-remote-node-execution-trigger.json'
+      - 'config/com-b04i-r1-remote-node-execution-trigger-v2.json'
 
 permissions:
   contents: read
@@ -19,6 +19,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     env:
+      COM_B04I_R1_TRIGGER_PATH: config/com-b04i-r1-remote-node-execution-trigger-v2.json
       COM_B04I_R1_REPORT_PATH: reports/generated/COM-B04I-R1-REMOTE-NODE-EXECUTION-PATH-RECOVERY.json
     steps:
       - name: Checkout exact trigger head
@@ -33,7 +34,7 @@ jobs:
         shell: bash
         run: |
           test "${GITHUB_RUN_ATTEMPT}" = "1"
-          trigger='config/com-b04i-r1-remote-node-execution-trigger.json'
+          trigger="${COM_B04I_R1_TRIGGER_PATH}"
           status="$(git diff-tree --no-commit-id --name-status -r HEAD -- "$trigger")"
           test "$status" = $'A\t'"$trigger"
           parent="$(git rev-parse HEAD^)"
