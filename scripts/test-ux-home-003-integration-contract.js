@@ -26,7 +26,9 @@ assert.equal((html.match(new RegExp(controllerScript.replace(/[.*+?^${}()|[\]\\]
 const stateIndex = html.indexOf(stateScript);
 const controllerIndex = html.indexOf(controllerScript);
 const homeIndex = html.indexOf(homeScript);
-assert(stateIndex >= 0 && controllerIndex >= 0 && homeIndex >= 0, 'Rail authority and Home scripts must all be present.');
+assert(stateIndex >= 0, 'Pure rail state script must be present.');
+assert(controllerIndex >= 0, 'Rail DOM controller script must be present.');
+assert(homeIndex >= 0, 'Home runtime script must be present.');
 assert(stateIndex < controllerIndex, 'Pure rail state must load before the DOM controller.');
 assert(controllerIndex < homeIndex, 'Rail controller must load before home.js consumes it.');
 
