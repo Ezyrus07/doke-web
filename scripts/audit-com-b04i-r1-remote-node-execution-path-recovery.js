@@ -22,7 +22,7 @@ const files = Object.freeze({
   attempt1: 'config/com-b04i-staging-live-composition-route-canary.json',
   attempt2Readiness: 'config/com-b04i-attempt-2-readiness.json',
   attempt2Evidence: 'docs/validation/COM-B04I-ATTEMPT-2-READINESS.json',
-  splitEvidence: 'docs/validation/COM-B04I-ATTEMPT-2-SPLIT-STAGING-CANARY.json',
+  splitEvidence: 'docs/validation/COM-B04I-ATTEMPT-2-STAGING-LIVE-COMPOSITION-ROUTE-CANARY.json',
   handlers: 'backend/modules/communities/route-handlers.js',
   matrix: 'config/domain-completion-matrix.json'
 });
@@ -108,8 +108,12 @@ equal(attempt1.authorization.consumed, true, 'attempt 1 consumed');
 equal(attempt1.authorization.reusableAfterFailure, false, 'attempt 1 not reusable');
 equal(attempt2Readiness.status, 'repository_ready_new_explicit_authorization_required', 'attempt 2 readiness retained');
 equal(attempt2Evidence.certification.result, 'success', 'attempt 2 readiness certified');
-equal(splitEvidence.status, 'authenticated_split_route_persistence_canary_passed', 'split canary evidence retained');
-equal(splitEvidence.qualification.endToEndLiveRouteCertified, false, 'split not end-to-end');
+equal(splitEvidence.status, 'split_canary_passed_full_node_route_not_executed', 'split canary evidence retained');
+equal(splitEvidence.execution.githubActionsNodeExecutorStarted, false, 'remote Node executor remained absent');
+equal(splitEvidence.proof.transactionRolledBack, true, 'split transaction rolled back');
+equal(splitEvidence.proof.persistentResidue, false, 'split residue false');
+equal(splitEvidence.scopeQualification.remoteNodeHandlerExecuted, false, 'remote handler not executed');
+equal(splitEvidence.scopeQualification.endToEndLiveRouteCertified, false, 'split not end-to-end');
 ok(handlers.includes("const FAILURE_CODE = 'COM_B04G_ROUTE_NOT_DEPLOYED_OR_ACTIVATED'"), 'default handler fail closed');
 
 equal(matrix.version, '1.3.112', 'matrix unchanged');
