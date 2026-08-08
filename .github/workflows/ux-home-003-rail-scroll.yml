@@ -11,6 +11,7 @@ on:
       - 'index.html'
       - 'scripts/test-ux-home-003-rail-scroll-state.js'
       - 'scripts/test-ux-home-003-rail-scroll-surface.js'
+      - 'scripts/test-ux-home-003-integration-contract.js'
       - 'scripts/test-ux-home-003-browser-contract.js'
       - 'docs/ux/UX-HOME-003.md'
       - '.github/workflows/ux-home-003-rail-scroll.yml'
@@ -22,6 +23,7 @@ on:
       - 'index.html'
       - 'scripts/test-ux-home-003-rail-scroll-state.js'
       - 'scripts/test-ux-home-003-rail-scroll-surface.js'
+      - 'scripts/test-ux-home-003-integration-contract.js'
       - 'scripts/test-ux-home-003-browser-contract.js'
       - 'docs/ux/UX-HOME-003.md'
       - '.github/workflows/ux-home-003-rail-scroll.yml'
@@ -34,7 +36,7 @@ permissions:
 jobs:
   ux-home-003-rail-scroll:
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - name: Checkout repository
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -45,13 +47,26 @@ jobs:
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: '22'
+          cache: npm
+
+      - name: Install repository dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts
+
+      - name: Install Playwright Chromium from locked dependency
+        run: ./node_modules/.bin/playwright install chromium
 
       - name: Validate JavaScript syntax
         run: |
+          node --check assets/js/pages/home.js
           node --check assets/js/pages/home/rail-scroll-state.js
           node --check assets/js/pages/home/rail-scroll-surface.js
           node --check scripts/test-ux-home-003-rail-scroll-state.js
           node --check scripts/test-ux-home-003-rail-scroll-surface.js
+          node --check scripts/test-ux-home-003-integration-contract.js
+          node --check scripts/test-ux-home-003-browser-contract.js
+
+      - name: Validate Home rail integration contract
+        run: node scripts/test-ux-home-003-integration-contract.js
 
       - name: Validate rail scroll state behavior
         run: node scripts/test-ux-home-003-rail-scroll-state.js
@@ -59,11 +74,19 @@ jobs:
       - name: Validate rail scroll surface behavior
         run: node scripts/test-ux-home-003-rail-scroll-surface.js
 
-      - name: Preserve inherited Home More-services contracts
+      - name: Validate rail scroll browser behavior
+        run: node scripts/test-ux-home-003-browser-contract.js
+
+      - name: Preserve inherited Home and search contracts
         run: |
           node scripts/test-ux-home-002-more-services-state.js
           node scripts/test-ux-home-002-more-services-surface.js
+          node scripts/test-ux-home-002-index-contract.js
+          node scripts/test-ux-home-002-browser-contract.js
           node scripts/test-ux-home-001-rail-state.js
+          node scripts/test-index-return-hydration-contract.js
+          node scripts/test-search-ux02-runtime.js
+          node scripts/test-ux-search-001-search-experience.js
 
       - name: Generate executable LCOV
         shell: bash
