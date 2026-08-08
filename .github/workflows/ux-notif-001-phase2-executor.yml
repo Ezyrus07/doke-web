@@ -38,13 +38,13 @@ jobs:
       - name: Correct adapter event fixture
         run: python .github/scripts/ux-notif-001-phase2-postfix.py
 
-      - name: Remove temporary executor files from final tree
+      - name: Prepare intended final tree for matrix generation
         shell: bash
         run: |
           set -euo pipefail
           git rm -f .github/workflows/ux-notif-001-phase2-executor.yml .github/scripts/ux-notif-001-phase2-executor.py .github/scripts/ux-notif-001-phase2-fix.py .github/scripts/ux-notif-001-phase2-postfix.py
 
-      - name: Regenerate canonical domain matrix against final tree
+      - name: Regenerate canonical domain matrix against intended final tree
         run: npm run write:domain-completion-matrix
 
       - name: Guard matrix reconciliation as derived evidence only
@@ -84,11 +84,18 @@ jobs:
           npm run audit:domain-completion-matrix
           git diff --check
 
-      - name: Publish atomic Phase 2 commit
+      - name: Restore workflow paths for token-limited product push
         shell: bash
         run: |
           set -euo pipefail
+          git restore --source=HEAD -- .github/workflows/ux-notif-001-phase2-executor.yml
+          git restore --source=HEAD -- .github/workflows/ux-notif-001-notification-center.yml
           git diff --check
+
+      - name: Publish validated Phase 2 product commit
+        shell: bash
+        run: |
+          set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A
