@@ -1,0 +1,102 @@
+name: UX-NOTIF-001 Sonar Cleanup Executor
+
+on:
+  push:
+    branches:
+      - ux/ux-notif-001-center-badge-authority
+    paths:
+      - '.github/workflows/ux-notif-001-sonar-cleanup.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact branch head
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+          ref: ux/ux-notif-001-center-badge-authority
+
+      - name: Fail closed on concurrent branch movement
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin ux/ux-notif-001-center-badge-authority
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          test "$(git rev-parse origin/ux/ux-notif-001-center-badge-authority)" = "${GITHUB_SHA}"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install repository dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts
+
+      - name: Apply exact Sonar cleanup
+        run: python .github/scripts/ux-notif-001-sonar-cleanup.py
+
+      - name: Prepare product-only tree
+        run: git rm -f .github/scripts/ux-notif-001-sonar-cleanup.py
+
+      - name: Validate cleanup contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check assets/js/features/in-app-notifications.js
+          node --check scripts/test-ux-notif-001-in-app-adapter.js
+          node --check scripts/test-ux-notif-001-surface-contract.js
+          node scripts/test-ux-notif-001-notification-center.js
+          node scripts/test-ux-notif-001-in-app-adapter.js
+          node scripts/test-ux-notif-001-surface-contract.js
+          node scripts/test-notification-center-v2-contract.js
+          node scripts/test-notification-quick-actions-contract.js
+          node scripts/test-notification-quick-actions-v2-contract.js
+          node scripts/test-notification-delivery-controls-contract.js
+          node scripts/test-notification-authority-contract.js
+          node scripts/test-notifications-supabase-repository-contract.js
+          node scripts/audit-notifications-api-contract.js
+          node scripts/test-ux-priv-001-account-storage.js
+          node scripts/audit-auth-session-contracts.js
+          node scripts/test-navigation-lifecycle-core-contract.js
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git diff --check
+
+      - name: Validate executable LCOV does not regress
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf coverage/ux-notif-001-cleanup
+          mkdir -p coverage/ux-notif-001-cleanup
+          node --test \
+            --experimental-test-coverage \
+            --test-coverage-include='assets/js/core/notification-center.js' \
+            --test-coverage-include='assets/js/features/in-app-notifications.js' \
+            --test-reporter=spec \
+            --test-reporter-destination=stdout \
+            --test-reporter=lcov \
+            --test-reporter-destination=coverage/ux-notif-001-cleanup/lcov.info \
+            scripts/test-ux-notif-001-notification-center.js \
+            scripts/test-ux-notif-001-in-app-adapter.js
+          REPORT='coverage/ux-notif-001-cleanup/lcov.info'
+          read -r LH LF <<< "$(awk -F: '/^LF:/{lf+=$2} /^LH:/{lh+=$2} END{print lh+0, lf+0}' "${REPORT}")"
+          awk -v lh="${LH}" -v lf="${LF}" 'BEGIN { pct=(lf ? 100*lh/lf : 0); printf "[ux-notif-001] executable line coverage: %.2f%% (%d/%d)\n", pct, lh, lf; if (pct < 75) exit 1 }'
+
+      - name: Restore token-protected workflow path
+        run: git restore --source=HEAD -- .github/workflows/ux-notif-001-sonar-cleanup.yml
+
+      - name: Publish validated cleanup
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'fix(ux-notif-001): clear sonar notification findings'
+          git push origin HEAD:ux/ux-notif-001-center-badge-authority
