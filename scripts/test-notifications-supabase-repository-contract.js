@@ -9,6 +9,12 @@ const config = fs.readFileSync('assets/js/core/supabase-config.js', 'utf8');
 const notificationsPage = fs.readFileSync('notificacoes.html', 'utf8');
 const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
 
+function loadsScript(html, canonicalPath) {
+  const escapedPath = canonicalPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const pattern = new RegExp(`<script[^>]+src=["']${escapedPath}(?:\\?[^"']*)?["'][^>]*>`, 'i');
+  return pattern.test(html);
+}
+
 assert(repository.includes("REMOTE_TABLE = 'notifications'"), 'Notifications repository must target public.notifications.');
 assert(repository.includes("REMOTE_CREATE_RPC = 'create_transaction_notification'"), 'Cross-user creation must use the guarded RPC.');
 assert(repository.includes('data-doke-notifications-provider'), 'Notifications provider marker is required.');
@@ -20,7 +26,10 @@ assert(repository.includes("filter: 'user_id=eq.'"), 'Realtime subscription must
 assert(repository.includes('updateRemote'), 'Read and dismiss states must persist remotely.');
 assert(config.includes('notificationsEnabled: true'), 'Supabase notifications feature flag must be enabled.');
 assert(notificationsPage.includes('@supabase/supabase-js@2'), 'Notifications page must load the Supabase SDK.');
-assert(notificationsPage.includes('supabase-config.js?v=20260718-notifications-backend-v1'), 'Notifications page must load the current config.');
+assert(
+  loadsScript(notificationsPage, 'assets/js/core/supabase-config.js'),
+  'Notifications page must load the canonical Supabase config regardless of cache version.'
+);
 
 assert(migration.includes('notifications_recipient_select'), 'Recipient-only SELECT RLS is required.');
 assert(migration.includes('notifications_recipient_update'), 'Recipient-only UPDATE RLS is required.');
@@ -47,7 +56,10 @@ assert.strictEqual(
   'resultados.html'
 ].forEach((file) => {
   const html = fs.readFileSync(file, 'utf8');
-  assert(html.includes('notifications-repository.js?v=20260718-notifications-supabase-v1'), `${file} must bootstrap the shared notifications repository.`);
+  assert(
+    loadsScript(html, 'assets/js/repositories/notifications-repository.js'),
+    `${file} must bootstrap the shared notifications repository regardless of cache version.`
+  );
 });
 
 console.log('Notifications Supabase repository contract: PASS');

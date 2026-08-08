@@ -36,7 +36,7 @@
     }) || null;
     hydration?.start();
     hydration?.mark('dom');
-    const countNodes = [...document.querySelectorAll('[data-notifications-unread-count], [data-notifications-hero-count]')];
+    const countNodes = [...document.querySelectorAll('[data-notifications-hero-count]')];
     const pageTitle = root.querySelector('.notifications-page-header__heading h2');
     const searchInputs = [...root.querySelectorAll('[data-notifications-search]')];
     const searchInput = searchInputs[0] || null;
@@ -90,6 +90,7 @@
     let longPressTimer = null;
 
     const getNotificationsService = () => window.Doke?.services?.notifications || null;
+    const getNotificationCenter = () => window.Doke?.notificationCenter || null;
     let notificationsAccessAllowed = false;
     const navigateTo = (href, options = {}) => {
       const rawHref = String(href || '').trim();
@@ -285,7 +286,7 @@
       const result = await service.markAsRead(id);
       if (!result) throw new Error('A notificação não pôde ser marcada como lida.');
 
-      window.DokeInAppNotifications?.markAsRead?.(id);
+      getNotificationCenter()?.markRead?.(id);
       card.classList.remove('is-unread');
       const tokens = (card.dataset.catégory || card.dataset.category || '').split(/\s+/).filter((token) => token !== 'unread');
       card.dataset.catégory = tokens.join(' ');
@@ -342,14 +343,20 @@
       const id = card.dataset.notificationId || '';
       const service = getNotificationsService();
       if (!id || !service || typeof service.dismiss !== 'function') {
-        finalizeDismissNotification(card);
+        document.dispatchEvent(new CustomEvent('doke:notification-action-error', {
+          detail: { action: 'dismiss', id, error: 'Serviço de notificações indisponível.' }
+        }));
         return;
       }
 
       const mutation = window.Doke?.experience?.optimistic;
       if (!mutation?.mutate) {
         Promise.resolve(service.dismiss(id))
-          .then(() => finalizeDismissNotification(card))
+          .then((result) => {
+            if (!result) throw new Error('A notificação não pôde ser dispensada.');
+            getNotificationCenter()?.dismiss?.(id);
+            finalizeDismissNotification(card);
+          })
           .catch(() => restoreDismissedCard({ card, parent: card.parentElement, nextSibling: card.nextSibling }));
         return;
       }
@@ -373,6 +380,7 @@
           return result;
         }),
         commit: () => {
+          getNotificationCenter()?.dismiss?.(id);
           finalizeDismissNotification(card);
           window.Doke?.experience?.cache?.invalidatePrefix?.('notifications:');
           window.Doke?.stableShellRouter?.invalidate?.('notificacoes.html');
@@ -444,7 +452,7 @@
         });
       });
 
-      card.addEventListener('click', (event) => {
+      card.addEventListener('click', async (event) => {
         const target = event.target;
         if (!(target instanceof Element)) return;
         if (target.closest('.notification-card__inline-actions')) return;
@@ -455,8 +463,11 @@
           syncSelectedActions();
           return;
         }
-        const id = card.dataset.notificationId || '';
-        if (id) { getNotificationsService()?.markAsRead?.(id); window.DokeInAppNotifications?.markAsRead?.(id); }
+        try {
+          await setNotificationRead(card);
+        } catch (error) {
+          console.error('[Doke][notificacoes] Falha ao persistir leitura antes da navegação.', error);
+        }
         const primaryAction = card.querySelector('[data-notification-action]');
         const href = primaryAction?.dataset.notificationTarget;
         if (href) navigateTo(href);
@@ -494,6 +505,13 @@
       return true;
     };
 
+    const commitNotificationItems = (items, fence = null) => {
+      const center = getNotificationCenter();
+      if (!center) return renderNotificationItems(items);
+      const snapshot = center.replace(Array.isArray(items) ? items : [], fence ? { fence } : {});
+      return renderNotificationItems(snapshot.items);
+    };
+
     const getNotificationsCacheKey = () => {
       const user = window.Doke?.session?.getCurrentUser?.();
       return `notifications:${user?.id || 'guest'}`;
@@ -501,7 +519,8 @@
 
     const refreshLocalNotifications = ({ force = false } = {}) => {
       const service = getNotificationsService();
-      const center = window.DokeInAppNotifications;
+      const center = getNotificationCenter();
+      const centerFence = center?.createFence?.() || null;
       if (!notificationsAccessAllowed) return Promise.resolve(false);
       if (!service && !center) {
         notificationsHydrationLocalReady = true;
@@ -511,14 +530,14 @@
 
       const cache = window.Doke?.experience?.cache;
       const fetcher = () => {
-        const centerItems = center?.list?.() || [];
+        const centerItems = Array.from(center?.getSnapshot?.().items || []);
         if (typeof service?.list === 'function') return Promise.resolve(service.list({ dismissed: false, currentUser: true })).then((items) => [...centerItems, ...(Array.isArray(items) ? items : [])].filter((item, index, all) => all.findIndex((entry) => String(entry.id) === String(item.id)) === index));
         if (typeof service?.listLocal === 'function') return Promise.resolve([...centerItems, ...service.listLocal({ dismissed: false })].filter((item, index, all) => all.findIndex((entry) => String(entry.id) === String(item.id)) === index));
         return Promise.resolve(centerItems);
       };
 
       if (!cache?.query) {
-        return fetcher().then(renderNotificationItems);
+        return fetcher().then((items) => commitNotificationItems(items, centerFence));
       }
 
       const hasRenderedItems = refreshCards().some((card) => card.dataset.dismissed !== 'true');
@@ -531,11 +550,11 @@
         keepPreviousData: true,
         force
       }).then((result) => {
-        renderNotificationItems(result.data);
+        commitNotificationItems(result.data, centerFence);
         window.Doke?.experience?.states?.set?.(root, 'ready');
         if (result.revalidate) {
           result.revalidate
-            .then((freshItems) => renderNotificationItems(freshItems))
+            .then((freshItems) => commitNotificationItems(freshItems, centerFence))
             .catch(() => window.Doke?.experience?.states?.set?.(root, 'ready'));
         }
         return true;
@@ -971,7 +990,10 @@
       if (mutedScopes && mutedScopesList && !mutedScopesList.children.length) mutedScopes.hidden = true;
     });
 
-    document.addEventListener('doke:notification-center-changed', () => refreshLocalNotifications({ force: true }));
+    document.addEventListener('doke:notification-center-changed', () => {
+      const center = getNotificationCenter();
+      if (center) renderNotificationItems(center.getSnapshot().items);
+    });
 
     root.querySelectorAll('[data-notifications-clear-filter]').forEach((button) => button.addEventListener('click', () => {
       const allButton = root.querySelector('[data-filter="all"]');
