@@ -61,10 +61,18 @@ jobs:
           grep -q "channelMessagesExecutionAllowed.*false" config/com-b03c-r2-realtime-auth-predicate-ladder-readiness.json
           test ! -f config/com-b03c-r2-realtime-auth-predicate-ladder-staging-trigger.json || test "${{ github.event_name }}" = "push"
       - name: Diff hygiene
+        shell: bash
         run: |
-          git diff --check
-          if git diff --name-only HEAD^ HEAD | grep -E '(^|/)(node_modules|reports/generated)/'; then
-            echo "Generated/runtime files must not be committed"
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            TARGET_SHA="${{ github.event.pull_request.head.sha }}"
+            git fetch --no-tags --depth=2 origin "${TARGET_SHA}"
+          else
+            TARGET_SHA="${GITHUB_SHA}"
+          fi
+          git diff --check "${TARGET_SHA}^" "${TARGET_SHA}"
+          if git diff --name-only "${TARGET_SHA}^" "${TARGET_SHA}" | grep -E '(^|/)(node_modules|reports/generated)/'; then
+            echo "Generated/runtime files must not be committed by the current head commit"
             exit 1
           fi
 
