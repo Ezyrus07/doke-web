@@ -279,11 +279,66 @@
     return center.replace((Array.isArray(items) ? items : []).filter(isForCurrentUser));
   };
 
-  window.addEventListener('storage',(event)=>{if(event.key===ACTION_KEY&&event.newValue){const action=safeParse(event.newValue,null);if(action&&action.originTabId!==TAB_ID)document.dispatchEvent(new CustomEvent('doke:notification-action',{detail:action}));}if(event.key===PREFS_KEY)document.dispatchEvent(new CustomEvent('doke:notification-preferences-changed',{detail:readPrefs()}));if(event.key!==BUS_KEY||!event.newValue)return;const payload=safeParse(event.newValue,null);if(!payload||payload.originTabId===TAB_ID)return;const stored=persist(payload);show(stored);});
-  document.addEventListener('doke:in-app-notification',(event)=>{const payload=event.detail;if(!payload||payload.originTabId===TAB_ID)return;show(payload);});
-  document.addEventListener('doke:notifications-synced',(event)=>{applySynchronizedItems(event.detail?.items || []);});
-  document.addEventListener('doke:auth-session-change',()=>{getNotificationCenter()?.refreshAccount?.();hydrateNotificationCenter();});
-  document.addEventListener('DOMContentLoaded',()=>{hydrateNotificationCenter();syncGlobalBadges();flushDigest();window.setInterval(flushDigest,30000);});
+  window.addEventListener('storage', (event) => {
+    if (event.key === ACTION_KEY && event.newValue) {
+      const action = safeParse(event.newValue, null);
+      if (action && action.originTabId !== TAB_ID) {
+        document.dispatchEvent(new CustomEvent('doke:notification-action', { detail: action }));
+      }
+    }
+    if (event.key === PREFS_KEY) {
+      document.dispatchEvent(new CustomEvent('doke:notification-preferences-changed', { detail: readPrefs() }));
+    }
+    if (event.key !== BUS_KEY || !event.newValue) return;
+    const payload = safeParse(event.newValue, null);
+    if (!payload || payload.originTabId === TAB_ID) return;
+    const stored = persist(payload);
+    show(stored);
+  });
+  document.addEventListener('doke:in-app-notification', (event) => {
+    const payload = event.detail;
+    if (!payload || payload.originTabId === TAB_ID) return;
+    show(payload);
+  });
+  document.addEventListener('doke:notifications-synced', (event) => {
+    applySynchronizedItems(event.detail?.items || []);
+  });
+  document.addEventListener('doke:auth-session-change', () => {
+    getNotificationCenter()?.refreshAccount?.();
+    hydrateNotificationCenter();
+  });
+  document.addEventListener('DOMContentLoaded', () => {
+    hydrateNotificationCenter();
+    syncGlobalBadges();
+    flushDigest();
+    window.setInterval(flushDigest, 30000);
+  });
 
-  window.DokeInAppNotifications={publish,show,publishAction,recordActionResult,list:()=>readCenter().filter((item)=>isForCurrentUser(item)),markAsRead,dismiss,markAllAsRead(){const center=getNotificationCenter();if(!center)return null;readCenter().filter((item)=>isForCurrentUser(item)&&!item.read).forEach((item)=>center.markRead(item.id));return center.getSnapshot();},getPreferences:readPrefs,setPreferences(next={}){return writePrefs({...readPrefs(),...next});},muteScope,unmuteScope,isDndActive,flushDigest,syncGlobalBadges,hydrateNotificationCenter};
+  window.DokeInAppNotifications = {
+    publish,
+    show,
+    publishAction,
+    recordActionResult,
+    list: () => readCenter().filter((item) => isForCurrentUser(item)),
+    markAsRead,
+    dismiss,
+    markAllAsRead() {
+      const center = getNotificationCenter();
+      if (!center) return null;
+      readCenter()
+        .filter((item) => isForCurrentUser(item) && !item.read)
+        .forEach((item) => center.markRead(item.id));
+      return center.getSnapshot();
+    },
+    getPreferences: readPrefs,
+    setPreferences(next = {}) {
+      return writePrefs({ ...readPrefs(), ...next });
+    },
+    muteScope,
+    unmuteScope,
+    isDndActive,
+    flushDigest,
+    syncGlobalBadges,
+    hydrateNotificationCenter
+  };
 })();

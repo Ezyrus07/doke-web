@@ -84,7 +84,8 @@ require('../assets/js/features/in-app-notifications.js');
 
 const center = Doke.notificationCenter;
 const inApp = windowStub.DokeInAppNotifications;
-assert(center && inApp);
+assert(center, 'canonical notification center must be available');
+assert(inApp, 'in-app notification adapter must be available');
 
 async function flush() { await Promise.resolve(); await Promise.resolve(); }
 

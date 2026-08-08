@@ -16,7 +16,8 @@ for (const file of ['notificacoes.html', 'mensagens.html', 'comunidade-interna.h
   const accountStorage = html.indexOf('assets/js/core/account-storage.js');
   const notificationCenter = html.indexOf('assets/js/core/notification-center.js');
   const inApp = html.indexOf('assets/js/features/in-app-notifications.js');
-  assert(session >= 0 && accountStorage > session, `${file}: account storage must load after session`);
+  assert(session >= 0, `${file}: session script must be present`);
+  assert(accountStorage > session, `${file}: account storage must load after session`);
   assert(notificationCenter > accountStorage, `${file}: notification center must load after account storage`);
   assert(inApp > notificationCenter, `${file}: in-app adapter must load after notification center`);
 }
