@@ -1,0 +1,188 @@
+{
+  "validationId": "COM-B03C-R2-REALTIME-AUTH-PREDICATE-LADDER-READINESS",
+  "domain": "COM-001",
+  "contractId": "com-b03c-r2-realtime-authorization-predicate-ladder-readiness-v1",
+  "status": "repository_predicate_ladder_certified_new_authorization_required",
+  "predecessor": {
+    "validationId": "COM-B03C-R1-PRIVATE-REALTIME-AUTH-DIAGNOSTIC-STAGING-CANARY",
+    "evidenceCommit": "6fcbf5e7e555ee1f7aa27e99ded5aee53f37615e",
+    "status": "failed_closed_private_realtime_authorization_diagnostic",
+    "runId": 31284272139,
+    "canaryJobId": 93170438507,
+    "artifactId": 9029350268,
+    "presenceClassification": "realtime_rls_authorization_rejected",
+    "typingClassification": "realtime_rls_authorization_rejected",
+    "authorizationConsumed": true,
+    "authorizationReusable": false,
+    "cleanupZeroResidue": true
+  },
+  "implementation": {
+    "implementationCommit": "3f5e093b06af0535dd067fb6c4c175da89284b0d",
+    "assertionAlignmentCommit": "2d6622f9e46e93e41f01023f7e4dcce37be2dd0c",
+    "diffHygieneFixCommit": "4a0c7fd3525e058fe93fc89e0f5a8f9f8cde77fb",
+    "certificationMetadataCommit": "c1eeb1a5a01e67804eabd05ac2736c3154066885",
+    "files": [
+      "backend/modules/communities/community-realtime-private-auth-r2.js",
+      "config/com-b03c-r2-realtime-auth-predicate-ladder-readiness.json",
+      "scripts/test-com-b03c-r2-realtime-auth-predicate-ladder-readiness.js",
+      "scripts/execute-com-b03c-r2-realtime-auth-predicate-ladder-staging-canary.js",
+      "scripts/verify-com-b03c-r2-realtime-auth-predicate-ladder-staging-canary-evidence.js",
+      ".github/workflows/com-b03c-r2-realtime-auth-predicate-ladder-staging-canary.yml"
+    ]
+  },
+  "design": {
+    "scope": [
+      "channel_presence",
+      "channel_typing"
+    ],
+    "blockedTopics": [
+      "community_posts",
+      "channel_messages"
+    ],
+    "predicateRungs": [
+      "authenticated_basic",
+      "topic_only",
+      "auth_uid_only",
+      "extension_only",
+      "full_conjunction"
+    ],
+    "diagnosticAxes": [
+      "read_join",
+      "write_action"
+    ],
+    "readJoinAxis": {
+      "selectUsesRungPredicate": true,
+      "insertControlPredicate": "true",
+      "writeActionExecuted": false
+    },
+    "writeActionAxis": {
+      "selectControlPredicate": "true",
+      "insertUsesRungPredicate": true,
+      "presenceAction": "track",
+      "typingAction": "broadcast_send"
+    },
+    "negativeControl": {
+      "required": true,
+      "readSelectPredicate": "false",
+      "insertPredicate": "true",
+      "expected": "authenticated_private_join_denied"
+    },
+    "cacheIsolation": {
+      "freshSyntheticTopicPerRung": true,
+      "freshRealtimeClientPerRung": true,
+      "jwtAppliedBeforeChannelCreation": true
+    },
+    "featureIsolation": {
+      "presenceChannelBroadcastConfigOmitted": true,
+      "typingChannelPresenceDisabled": true
+    },
+    "policyLifecycle": {
+      "temporaryOnly": true,
+      "mutuallyExclusivePerRung": true,
+      "introspectedBeforeEachJoin": true,
+      "droppedAfterEachRung": true,
+      "zeroPersistentResidueRequired": true
+    },
+    "diagnostics": {
+      "sanitized": true,
+      "rawRemoteErrorPersistenceAllowed": false,
+      "messageHashOnly": true
+    }
+  },
+  "certification": {
+    "localReadinessChecksInitial": "65/65",
+    "initialRunId": 31284879109,
+    "initialCertifyJobId": 93171828771,
+    "initialResult": "failed_repository_assertion_only",
+    "initialFailure": "stale_read_write_json_key_assertion",
+    "initialAuthorizeResult": "skipped",
+    "initialCanaryResult": "skipped",
+    "secondRunId": 31284976264,
+    "secondCertifyJobId": 93172066489,
+    "secondResult": "failed_repository_diff_hygiene_only",
+    "secondFailure": "pull_request_merge_ref_scanned_historical_generated_file",
+    "secondAuthorizeJobId": 93172126445,
+    "secondAuthorizeResult": "skipped",
+    "secondCanaryJobId": 93172126423,
+    "secondCanaryResult": "skipped",
+    "certifiedRunId": 31285037140,
+    "certifiedCertifyJobId": 93172218730,
+    "certifiedResult": "success",
+    "certifiedAuthorizeJobId": 93172301312,
+    "certifiedAuthorizeResult": "skipped",
+    "certifiedCanaryJobId": 93172301741,
+    "certifiedCanaryResult": "skipped",
+    "metadataRecertificationRunId": 31285142440,
+    "metadataRecertificationJobId": 93172483115,
+    "metadataRecertificationResult": "success",
+    "metadataAuthorizeJobId": 93172529765,
+    "metadataAuthorizeResult": "skipped",
+    "metadataCanaryJobId": 93172529816,
+    "metadataCanaryResult": "skipped",
+    "syntax": true,
+    "readiness": true,
+    "predecessorRegression": true,
+    "failClosedBoundary": true,
+    "diffHygiene": true,
+    "stagingAccessExecuted": false,
+    "remoteEffectsExecuted": false
+  },
+  "authorization": {
+    "requiredPhrase": "I_EXPLICITLY_AUTHORIZE_COM_B03C_R2_REALTIME_AUTHORIZATION_PREDICATE_LADDER_ON_DOKE_STAGING",
+    "received": false,
+    "consumed": false,
+    "executionAttempted": false,
+    "singleUse": true,
+    "reusableAfterFailure": false,
+    "predecessorAuthorizationReusable": false,
+    "triggerPath": "config/com-b03c-r2-realtime-auth-predicate-ladder-staging-trigger.json",
+    "triggerExists": false
+  },
+  "futureCanaryBoundary": {
+    "targetEnvironment": "staging",
+    "projectId": "zwkczgewzbsorbrjuzpb",
+    "ephemeralAuthIdentityLifecycleAllowedOnlyAfterNewAuthorization": true,
+    "realtimeMessagesPolicyLifecycleAllowedOnlyAfterNewAuthorization": true,
+    "privateRealtimeSubscriptionAllowedOnlyAfterNewAuthorization": true,
+    "ephemeralPresenceAndBroadcastActionsAllowedOnlyAfterNewAuthorization": true,
+    "communityPostsExecutionAllowed": false,
+    "channelMessagesExecutionAllowed": false,
+    "domainMutationAllowed": false,
+    "publicationMutationAllowed": false,
+    "persistentResidueAllowed": false,
+    "runtimeDeployAllowed": false,
+    "productionAllowed": false,
+    "mergeAllowed": false
+  },
+  "authority": {
+    "repositoryReadinessAuthority": true,
+    "stagingReadAuthority": false,
+    "stagingMutationAuthority": false,
+    "authIdentityLifecycleAuthority": false,
+    "realtimePolicyLifecycleAuthority": false,
+    "realtimeSubscriptionAuthority": false,
+    "ephemeralRealtimeActionAuthority": false,
+    "domainMutationAuthority": false,
+    "publicationMutationAuthority": false,
+    "productionAuthority": false,
+    "pullRequestMergeAuthority": false
+  },
+  "effects": {
+    "stagingAccessExecuted": false,
+    "remoteEffectsExecuted": false,
+    "domainMutationExecuted": false,
+    "publicationMutationExecuted": false,
+    "runtimeDeployed": false,
+    "publicTrafficEnabled": false,
+    "productionChanged": false,
+    "pullRequestMerged": false
+  },
+  "governance": {
+    "matrixVersion": "1.3.113",
+    "maturity": 3,
+    "maturityPromoted": false,
+    "productionGate": "blocked",
+    "mergeAuthorized": false
+  },
+  "nextBoundary": "exact new single-use COM-B03C-R2 staging predicate-ladder authorization; no trigger may be created before that authorization"
+}
