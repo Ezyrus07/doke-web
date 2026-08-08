@@ -140,7 +140,14 @@ for (const [field, value, reason] of [
   eq(bad.reason, reason, `auth blocked ${field}`);
 }
 
-eq(cfg.status, 'repository_predicate_ladder_prepared_new_authorization_required', 'status');
+eq(cfg.status, 'repository_predicate_ladder_certified_new_authorization_required', 'status');
+eq(cfg.certification.localReadinessChecks, '65/65', 'local readiness metadata');
+eq(cfg.certification.certifiedResult, 'success', 'certification result');
+eq(cfg.certification.certifiedAuthorizeResult, 'skipped', 'authorize skipped');
+eq(cfg.certification.certifiedCanaryResult, 'skipped', 'canary skipped');
+eq(cfg.certification.stagingAccessExecuted, false, 'no staging access');
+eq(cfg.certification.remoteEffectsExecuted, false, 'no remote effects');
+eq(cfg.authority.repositoryReadinessAuthority, true, 'repository authority recorded');
 eq(cfg.authorization.received, false, 'auth not received');
 eq(cfg.authorization.consumed, false, 'auth not consumed');
 eq(cfg.authorization.executionAttempted, false, 'not executed');
@@ -152,5 +159,5 @@ eq(cfg.futureCanaryBoundary.runtimeDeployAllowed, false, 'no deploy');
 eq(cfg.futureCanaryBoundary.productionAllowed, false, 'no production cfg');
 eq(cfg.futureCanaryBoundary.mergeAllowed, false, 'no merge cfg');
 
-ok(checks >= 60, `expected >= 60 checks, got ${checks}`);
+ok(checks >= 68, `expected >= 68 checks, got ${checks}`);
 console.log(`COM-B03C-R2 readiness checks passed: ${checks}/${checks}`);
