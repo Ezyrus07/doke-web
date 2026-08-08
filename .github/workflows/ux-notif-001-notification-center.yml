@@ -5,16 +5,44 @@ on:
     branches:
       - ux/ux-notif-001-center-badge-authority
     paths:
+      - 'notificacoes.html'
       - 'assets/js/core/notification-center.js'
+      - 'assets/js/core/account-storage.js'
+      - 'assets/js/core/session.js'
+      - 'assets/js/core/supabase-config.js'
+      - 'assets/js/pages/notificacoes.js'
+      - 'assets/js/features/in-app-notifications.js'
+      - 'assets/js/repositories/notifications-repository.js'
+      - 'supabase/migrations/013_transaction_notifications_shared_runtime.sql'
+      - 'package.json'
       - 'scripts/test-ux-notif-001-notification-center.js'
+      - 'scripts/test-notification-authority-contract.js'
+      - 'scripts/test-notifications-supabase-repository-contract.js'
+      - 'scripts/audit-notifications-api-contract.js'
+      - 'scripts/test-ux-priv-001-account-storage.js'
+      - 'scripts/audit-auth-session-contracts.js'
       - 'docs/ux/UX-NOTIF-001.md'
       - 'docs/DOMAIN-COMPLETION-MATRIX.md'
       - '.github/workflows/ux-notif-001-notification-center.yml'
       - 'sonar-project.properties'
   pull_request:
     paths:
+      - 'notificacoes.html'
       - 'assets/js/core/notification-center.js'
+      - 'assets/js/core/account-storage.js'
+      - 'assets/js/core/session.js'
+      - 'assets/js/core/supabase-config.js'
+      - 'assets/js/pages/notificacoes.js'
+      - 'assets/js/features/in-app-notifications.js'
+      - 'assets/js/repositories/notifications-repository.js'
+      - 'supabase/migrations/013_transaction_notifications_shared_runtime.sql'
+      - 'package.json'
       - 'scripts/test-ux-notif-001-notification-center.js'
+      - 'scripts/test-notification-authority-contract.js'
+      - 'scripts/test-notifications-supabase-repository-contract.js'
+      - 'scripts/audit-notifications-api-contract.js'
+      - 'scripts/test-ux-priv-001-account-storage.js'
+      - 'scripts/audit-auth-session-contracts.js'
       - 'docs/ux/UX-NOTIF-001.md'
       - 'docs/DOMAIN-COMPLETION-MATRIX.md'
       - '.github/workflows/ux-notif-001-notification-center.yml'
@@ -49,6 +77,7 @@ jobs:
         run: |
           node --check assets/js/core/notification-center.js
           node --check scripts/test-ux-notif-001-notification-center.js
+          node --check scripts/test-notifications-supabase-repository-contract.js
 
       - name: Validate canonical domain matrix
         run: npm run audit:domain-completion-matrix
