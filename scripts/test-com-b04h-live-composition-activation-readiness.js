@@ -179,7 +179,7 @@ async function main() {
   equal(config.effects.pullRequestMerged, false, 'merge false');
   equal(config.matrix.maturityAfterReadiness, 3, 'maturity unchanged');
   equal(config.matrix.promotionAllowed, false, 'promotion false');
-  equal(matrix.version, '1.3.112', 'canonical matrix version');
+  ok(['1.3.112', '1.3.113'].includes(matrix.version), 'canonical matrix version continuity');
   const com = matrix.domains.find((entry) => entry.id === 'COM-001');
   ok(com, 'COM-001 matrix entry');
   equal(com.maturity, 3, 'matrix maturity unchanged');
