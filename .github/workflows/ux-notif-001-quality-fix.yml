@@ -1,0 +1,121 @@
+name: UX-NOTIF-001 Quality Remediation Executor
+
+on:
+  push:
+    branches:
+      - ux/ux-notif-001-center-badge-authority
+    paths:
+      - '.github/workflows/ux-notif-001-quality-fix.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  remediate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact branch head
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+          ref: ux/ux-notif-001-center-badge-authority
+
+      - name: Fail closed on concurrent branch movement
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin ux/ux-notif-001-center-badge-authority
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          test "$(git rev-parse origin/ux/ux-notif-001-center-badge-authority)" = "${GITHUB_SHA}"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install repository dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts
+
+      - name: Apply exact quality remediation
+        run: python .github/scripts/ux-notif-001-quality-fix.py
+
+      - name: Prepare intended final tree for matrix generation
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rm -f .github/workflows/ux-notif-001-quality-fix.yml .github/scripts/ux-notif-001-quality-fix.py
+
+      - name: Regenerate canonical domain matrix against intended final tree
+        run: npm run write:domain-completion-matrix
+
+      - name: Guard matrix reconciliation as derived evidence only
+        shell: bash
+        run: |
+          set -euo pipefail
+          BAD_LINES="$(git diff --unified=0 -- docs/DOMAIN-COMPLETION-MATRIX.md | grep -E '^[+-][^+-]' | grep -v -E '^[+-]\*\*Evidência estática observada:\*\*' || true)"
+          if [[ -n "${BAD_LINES}" ]]; then
+            echo '::error::Generated matrix changed governance fields beyond derived static evidence.'
+            printf '%s\n' "${BAD_LINES}"
+            exit 1
+          fi
+
+      - name: Validate remediation contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check assets/js/features/in-app-notifications.js
+          node --check scripts/test-ux-notif-001-in-app-adapter.js
+          node --check scripts/test-ux-notif-001-surface-contract.js
+          node scripts/test-ux-notif-001-notification-center.js
+          node scripts/test-ux-notif-001-in-app-adapter.js
+          node scripts/test-ux-notif-001-surface-contract.js
+          node scripts/test-notification-center-v2-contract.js
+          node scripts/test-notification-quick-actions-contract.js
+          node scripts/test-notification-quick-actions-v2-contract.js
+          node scripts/test-notification-delivery-controls-contract.js
+          node scripts/test-notification-authority-contract.js
+          node scripts/test-notifications-supabase-repository-contract.js
+          node scripts/audit-notifications-api-contract.js
+          node scripts/test-ux-priv-001-account-storage.js
+          node scripts/audit-auth-session-contracts.js
+          npm run audit:domain-completion-matrix
+          git diff --check
+
+      - name: Prove executable coverage buffer
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf coverage/ux-notif-001-remediation
+          mkdir -p coverage/ux-notif-001-remediation
+          node --test \
+            --experimental-test-coverage \
+            --test-coverage-include='assets/js/core/notification-center.js' \
+            --test-coverage-include='assets/js/features/in-app-notifications.js' \
+            --test-reporter=spec \
+            --test-reporter-destination=stdout \
+            --test-reporter=lcov \
+            --test-reporter-destination=coverage/ux-notif-001-remediation/lcov.info \
+            scripts/test-ux-notif-001-notification-center.js \
+            scripts/test-ux-notif-001-in-app-adapter.js
+          REPORT='coverage/ux-notif-001-remediation/lcov.info'
+          read -r LH LF <<< "$(awk -F: '/^LF:/{lf+=$2} /^LH:/{lh+=$2} END{print lh+0, lf+0}' "${REPORT}")"
+          awk -v lh="${LH}" -v lf="${LF}" 'BEGIN { pct=(lf ? 100*lh/lf : 0); printf "[ux-notif-001] executable line coverage: %.2f%% (%d/%d)\n", pct, lh, lf; if (pct < 82) exit 1 }'
+
+      - name: Restore token-protected workflow path
+        shell: bash
+        run: |
+          set -euo pipefail
+          git restore --source=HEAD -- .github/workflows/ux-notif-001-quality-fix.yml
+          git diff --check
+
+      - name: Publish validated quality remediation
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'test(ux-notif-001): close notification quality gate gaps'
+          git push origin HEAD:ux/ux-notif-001-center-badge-authority
