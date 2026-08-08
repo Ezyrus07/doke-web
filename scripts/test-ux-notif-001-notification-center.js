@@ -89,11 +89,24 @@ state = center.markRead('notif-d');
 assert.equal(state.unreadCount, 1);
 assert.equal(badgeA.textContent, '1');
 
+state = center.upsert({ id: 'notif-d-replayed', eventKey: 'evt-d', title: 'Nova atualizada' });
+const replayedRead = state.items.find((item) => item.eventKey === 'evt-d');
+assert(replayedRead, 'Replayed event must remain in the center.');
+assert.equal(replayedRead.id, 'notif-d', 'Event-key replay must preserve the canonical existing id.');
+assert.equal(replayedRead.read, true, 'Partial replay must not reopen an already-read notification.');
+assert.equal(state.unreadCount, 1);
+
 state = center.dismiss('notif-a');
 assert.equal(state.itemCount, 2);
 assert.equal(state.unreadCount, 0);
+assert.equal(state.dismissedCount, 2);
 assert.equal(badgeA.textContent, '0');
 assert.equal(badgeA.hidden, true);
+
+state = center.upsert({ id: 'notif-a-replayed', eventKey: 'evt-a', title: 'Pedido atualizado' });
+assert.equal(state.itemCount, 2, 'Partial replay must not reactivate a dismissed notification.');
+assert.equal(state.unreadCount, 0);
+assert.equal(state.dismissedCount, 2);
 
 const alphaFence = center.createFence();
 const alphaGeneration = state.accountGeneration;
@@ -144,4 +157,4 @@ delete require.cache[modulePath];
 for (const key of ['window', 'document', 'CustomEvent']) delete global[key];
 
 console.log('[ux-notif-001-notification-center] ok');
-console.log('- replace/upsert/dedupe, unread badge, read/dismiss, account fence and sanitized events validated');
+console.log('- replace/upsert/dedupe, lifecycle replay, unread badge, account fence and sanitized events validated');
