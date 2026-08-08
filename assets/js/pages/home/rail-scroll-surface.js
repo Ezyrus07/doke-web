@@ -179,16 +179,11 @@
   function bind(options) {
     options = options || {};
     var scope = options.root || homeRoot();
-    if (!scope || !Doke.homeRailScrollState?.derive || !Doke.homeRailScrollState?.resolveTarget) return null;
+    var externalSignal = options.signal;
+    if (!scope || externalSignal?.aborted || !Doke.homeRailScrollState?.derive || !Doke.homeRailScrollState?.resolveTarget) return null;
 
     root[BINDING_KEY]?.destroy?.();
     var controller = new AbortController();
-    var externalSignal = options.signal;
-    if (externalSignal?.aborted) controller.abort();
-    else externalSignal?.addEventListener?.('abort', function () {
-      controller.abort();
-    }, { once: true });
-
     var definitions = collectDefinitions(scope);
     var resources = definitions.map(function (definition) {
       return bindDefinition(definition, controller.signal);
@@ -220,6 +215,7 @@
       }
     };
 
+    externalSignal?.addEventListener?.('abort', binding.destroy, { once: true });
     root[BINDING_KEY] = binding;
     return binding;
   }
