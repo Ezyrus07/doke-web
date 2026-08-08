@@ -29,7 +29,7 @@ on:
       - 'scripts/audit-notifications-api-contract.js'
       - 'scripts/test-ux-priv-001-account-storage.js'
       - 'scripts/audit-auth-session-contracts.js'
-      - 'scripts/audit-shell-router-scroll-reset.js'
+      - 'scripts/test-navigation-lifecycle-core-contract.js'
       - 'docs/ux/UX-NOTIF-001.md'
       - 'docs/DOMAIN-COMPLETION-MATRIX.md'
       - '.github/workflows/ux-notif-001-notification-center.yml'
@@ -60,7 +60,7 @@ on:
       - 'scripts/audit-notifications-api-contract.js'
       - 'scripts/test-ux-priv-001-account-storage.js'
       - 'scripts/audit-auth-session-contracts.js'
-      - 'scripts/audit-shell-router-scroll-reset.js'
+      - 'scripts/test-navigation-lifecycle-core-contract.js'
       - 'docs/ux/UX-NOTIF-001.md'
       - 'docs/DOMAIN-COMPLETION-MATRIX.md'
       - '.github/workflows/ux-notif-001-notification-center.yml'
@@ -132,8 +132,8 @@ jobs:
           node scripts/test-ux-priv-001-account-storage.js
           node scripts/audit-auth-session-contracts.js
 
-      - name: Preserve stable-shell regression contract
-        run: npm run audit:shell-router-scroll-reset
+      - name: Preserve navigation and stable-shell lifecycle contract
+        run: node scripts/test-navigation-lifecycle-core-contract.js
 
       - name: Generate executable LCOV
         shell: bash
