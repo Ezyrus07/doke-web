@@ -39,13 +39,15 @@ jobs:
         run: npm ci --ignore-scripts
 
       - name: Apply exact quality remediation
-        run: python .github/scripts/ux-notif-001-quality-fix.py
+        run: |
+          python .github/scripts/ux-notif-001-quality-fix.py
+          python .github/scripts/ux-notif-001-quality-postfix.py
 
       - name: Prepare intended final tree for matrix generation
         shell: bash
         run: |
           set -euo pipefail
-          git rm -f .github/workflows/ux-notif-001-quality-fix.yml .github/scripts/ux-notif-001-quality-fix.py
+          git rm -f .github/workflows/ux-notif-001-quality-fix.yml .github/scripts/ux-notif-001-quality-fix.py .github/scripts/ux-notif-001-quality-postfix.py
 
       - name: Regenerate canonical domain matrix against intended final tree
         run: npm run write:domain-completion-matrix
