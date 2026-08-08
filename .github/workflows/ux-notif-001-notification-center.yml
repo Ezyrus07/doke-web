@@ -8,6 +8,7 @@ on:
       - 'assets/js/core/notification-center.js'
       - 'scripts/test-ux-notif-001-notification-center.js'
       - 'docs/ux/UX-NOTIF-001.md'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
       - '.github/workflows/ux-notif-001-notification-center.yml'
       - 'sonar-project.properties'
   pull_request:
@@ -15,6 +16,7 @@ on:
       - 'assets/js/core/notification-center.js'
       - 'scripts/test-ux-notif-001-notification-center.js'
       - 'docs/ux/UX-NOTIF-001.md'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
       - '.github/workflows/ux-notif-001-notification-center.yml'
       - 'sonar-project.properties'
   workflow_dispatch:
@@ -47,6 +49,21 @@ jobs:
         run: |
           node --check assets/js/core/notification-center.js
           node --check scripts/test-ux-notif-001-notification-center.js
+
+      - name: Generate canonical domain matrix candidate
+        run: npm run write:domain-completion-matrix
+
+      - name: Upload canonical domain matrix candidate
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ux-notif-001-domain-matrix-${{ github.event_name }}-${{ github.run_id }}
+          path: docs/DOMAIN-COMPLETION-MATRIX.md
+          if-no-files-found: error
+          retention-days: 2
+
+      - name: Reject uncommitted canonical domain matrix drift
+        shell: bash
+        run: git diff --exit-code -- docs/DOMAIN-COMPLETION-MATRIX.md
 
       - name: Validate canonical domain matrix
         run: npm run audit:domain-completion-matrix
