@@ -29,6 +29,9 @@ jobs:
           test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
           test "$(git rev-parse origin/ux/ux-notif-001-center-badge-authority)" = "${GITHUB_SHA}"
 
+      - name: Narrow repository assertion
+        run: python .github/scripts/ux-notif-001-phase2-fix.py
+
       - name: Apply exact Phase 2 authority integration
         run: python .github/scripts/ux-notif-001-phase2-executor.py
 
@@ -61,7 +64,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git rm .github/workflows/ux-notif-001-phase2-executor.yml .github/scripts/ux-notif-001-phase2-executor.py
+          git rm .github/workflows/ux-notif-001-phase2-executor.yml .github/scripts/ux-notif-001-phase2-executor.py .github/scripts/ux-notif-001-phase2-fix.py
           git diff --check
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
