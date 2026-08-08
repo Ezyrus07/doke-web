@@ -22,7 +22,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
   pull-requests: read
 
 jobs:
@@ -49,38 +49,6 @@ jobs:
         run: |
           node --check assets/js/core/notification-center.js
           node --check scripts/test-ux-notif-001-notification-center.js
-
-      - name: Generate canonical domain matrix candidate
-        run: npm run write:domain-completion-matrix
-
-      - name: Upload canonical domain matrix candidate
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: ux-notif-001-domain-matrix-${{ github.event_name }}-${{ github.run_id }}
-          path: docs/DOMAIN-COMPLETION-MATRIX.md
-          if-no-files-found: error
-          retention-days: 2
-
-      - name: Commit canonical domain matrix reconciliation
-        if: github.event_name == 'push'
-        shell: bash
-        run: |
-          set -euo pipefail
-          if git diff --quiet -- docs/DOMAIN-COMPLETION-MATRIX.md; then
-            echo '::error::Expected generated matrix drift, but no diff was produced.'
-            exit 1
-          fi
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add docs/DOMAIN-COMPLETION-MATRIX.md
-          git commit -m 'chore(governance): regenerate domain completion matrix'
-          git push origin HEAD:ux/ux-notif-001-center-badge-authority
-
-      - name: Stop diagnostic run after reconciliation
-        shell: bash
-        run: |
-          echo '::error::Diagnostic reconciliation completed; certify only on the subsequent strict workflow head.'
-          exit 1
 
       - name: Validate canonical domain matrix
         run: npm run audit:domain-completion-matrix
