@@ -38,6 +38,27 @@ jobs:
       - name: Correct adapter event fixture
         run: python .github/scripts/ux-notif-001-phase2-postfix.py
 
+      - name: Remove temporary executor files from final tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rm .github/workflows/ux-notif-001-phase2-executor.yml .github/scripts/ux-notif-001-phase2-executor.py .github/scripts/ux-notif-001-phase2-fix.py .github/scripts/ux-notif-001-phase2-postfix.py
+
+      - name: Regenerate canonical domain matrix against final tree
+        run: npm run write:domain-completion-matrix
+
+      - name: Guard matrix reconciliation as derived evidence only
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --unified=0 -- docs/DOMAIN-COMPLETION-MATRIX.md
+          BAD_LINES="$(git diff --unified=0 -- docs/DOMAIN-COMPLETION-MATRIX.md | grep -E '^[+-][^+-]' | grep -v -E '^[+-]\*\*Evidência estática observada:\*\*' || true)"
+          if [[ -n "${BAD_LINES}" ]]; then
+            echo '::error::Generated matrix changed governance fields beyond derived static evidence.'
+            printf '%s\n' "${BAD_LINES}"
+            exit 1
+          fi
+
       - name: Validate repository-only integration
         shell: bash
         run: |
@@ -63,11 +84,10 @@ jobs:
           npm run audit:domain-completion-matrix
           git diff --check
 
-      - name: Remove executor and publish atomic Phase 2 commit
+      - name: Publish atomic Phase 2 commit
         shell: bash
         run: |
           set -euo pipefail
-          git rm .github/workflows/ux-notif-001-phase2-executor.yml .github/scripts/ux-notif-001-phase2-executor.py .github/scripts/ux-notif-001-phase2-fix.py .github/scripts/ux-notif-001-phase2-postfix.py
           git diff --check
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
