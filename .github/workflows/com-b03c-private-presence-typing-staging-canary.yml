@@ -8,6 +8,13 @@ on:
       - 'scripts/test-com-b03c-private-presence-typing-readiness.js'
       - 'scripts/execute-com-b03c-private-presence-typing-staging-canary.js'
       - 'scripts/verify-com-b03c-private-presence-typing-staging-canary-evidence.js'
+      - 'backend/modules/communities/community-realtime-private-auth-r1.js'
+      - 'config/com-b03c-r1-private-realtime-auth-recovery-readiness.json'
+      - 'scripts/test-com-b03c-r1-private-realtime-auth-recovery-readiness.js'
+      - 'scripts/execute-com-b03c-r1-private-realtime-auth-diagnostic-staging-canary.js'
+      - 'scripts/verify-com-b03c-r1-private-realtime-auth-diagnostic-staging-canary-evidence.js'
+      - '.github/workflows/com-b03c-r1-private-realtime-auth-diagnostic-staging-canary.yml'
+      - 'docs/validation/COM-B03C-R1-PRIVATE-REALTIME-AUTH-RECOVERY-READINESS.json'
       - '.github/workflows/com-b03c-private-presence-typing-staging-canary.yml'
   push:
     branches:
@@ -37,8 +44,14 @@ jobs:
           node --check scripts/test-com-b03c-private-presence-typing-readiness.js
           node --check scripts/execute-com-b03c-private-presence-typing-staging-canary.js
           node --check scripts/verify-com-b03c-private-presence-typing-staging-canary-evidence.js
+          node --check backend/modules/communities/community-realtime-private-auth-r1.js
+          node --check scripts/test-com-b03c-r1-private-realtime-auth-recovery-readiness.js
+          node --check scripts/execute-com-b03c-r1-private-realtime-auth-diagnostic-staging-canary.js
+          node --check scripts/verify-com-b03c-r1-private-realtime-auth-diagnostic-staging-canary-evidence.js
       - name: COM-B03C readiness
         run: node scripts/test-com-b03c-private-presence-typing-readiness.js
+      - name: COM-B03C-R1 recovery readiness
+        run: node scripts/test-com-b03c-r1-private-realtime-auth-recovery-readiness.js
       - name: COM-B03B-R3 regression
         run: node scripts/test-com-b03b-r3-postgres-changes-delivery-diagnostic-readiness.js
       - name: COM-B03B-R2 regression
@@ -61,6 +74,22 @@ jobs:
           grep -F "realtime.messages.extension = 'broadcast'" scripts/execute-com-b03c-private-presence-typing-staging-canary.js
           ! grep -F 'community_posts' scripts/execute-com-b03c-private-presence-typing-staging-canary.js
           ! grep -E '^[[:space:]]+DOKE_STAGING_CLIENT_PASSWORD:' .github/workflows/com-b03c-private-presence-typing-staging-canary.yml
+      - name: COM-B03C-R1 fail-closed recovery boundary
+        shell: bash
+        run: |
+          grep -F '"received": false' config/com-b03c-r1-private-realtime-auth-recovery-readiness.json
+          grep -F '"consumed": false' config/com-b03c-r1-private-realtime-auth-recovery-readiness.json
+          grep -F '"executionAttempted": false' config/com-b03c-r1-private-realtime-auth-recovery-readiness.json
+          grep -F '"explicitPresenceEnabledRequired": true' config/com-b03c-r1-private-realtime-auth-recovery-readiness.json
+          grep -F '"noOrphanedPresenceWaiterRequired": true' config/com-b03c-r1-private-realtime-auth-recovery-readiness.json
+          grep -F '"policyIntrospectionRequired": true' config/com-b03c-r1-private-realtime-auth-recovery-readiness.json
+          grep -F '"communityPostsExecutionAllowed": false' config/com-b03c-r1-private-realtime-auth-recovery-readiness.json
+          grep -F '"channelMessagesExecutionAllowed": false' config/com-b03c-r1-private-realtime-auth-recovery-readiness.json
+          grep -F '"domainMutationAllowed": false' config/com-b03c-r1-private-realtime-auth-recovery-readiness.json
+          grep -F '"publicationMutationAllowed": false' config/com-b03c-r1-private-realtime-auth-recovery-readiness.json
+          grep -F 'presence:{enabled:true' scripts/execute-com-b03c-r1-private-realtime-auth-diagnostic-staging-canary.js
+          grep -F 'const join=await subscribeDiagnostic' scripts/execute-com-b03c-r1-private-realtime-auth-diagnostic-staging-canary.js
+          ! grep -E '^[[:space:]]+DOKE_STAGING_CLIENT_PASSWORD:' .github/workflows/com-b03c-r1-private-realtime-auth-diagnostic-staging-canary.yml
       - name: Diff hygiene
         run: git diff --check
 
