@@ -219,6 +219,7 @@ assert.equal(categoryTrack.scrollCalls[1].left, 475);
 
 categoryTrack.clientWidth = 1200;
 categoryTrack.scrollWidth = 1200;
+categoryTrack.scrollLeft = 0;
 resizeObservers.find((observer) => observer.targets.includes(categoryTrack)).trigger();
 categorySnapshot = surface.getSnapshot('categories');
 assert.equal(categorySnapshot.overflow, false, 'resize must recalculate overflow');
@@ -229,7 +230,8 @@ categoryTrack.scrollWidth = 1500;
 mutationObservers.find((observer) => observer.targets.some((entry) => entry.target === categoryTrack)).trigger();
 categorySnapshot = surface.getSnapshot('categories');
 assert.equal(categorySnapshot.overflow, true, 'content mutation must recalculate overflow');
-assert.equal(categorySnapshot.atStart, false, 'existing scroll offset must be preserved through content mutation');
+assert.equal(categorySnapshot.atStart, true, 'content growth after a static rail must begin from the normalized start boundary');
+assert.equal(categoryPrevious.disabled, true);
 assert.equal(categoryNext.disabled, false);
 
 const secondBinding = surface.bind({ root: scope });
