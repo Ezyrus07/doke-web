@@ -104,5 +104,25 @@ replace_once(
 """,
     'toast rendering coverage'
 )
+replace_once(
+    """  Doke.services.notifications = notificationsService;
+
+  inApp.markAllAsRead();
+  assert.equal(center.getSnapshot().unreadCount, 0);
+""",
+    """  Doke.services.notifications = notificationsService;
+
+  const availableCenter = Doke.notificationCenter;
+  Doke.notificationCenter = null;
+  assert.equal(inApp.markAsRead('center-unavailable'), null, 'mark read must fail closed without center');
+  assert.equal(inApp.dismiss('center-unavailable'), null, 'dismiss must fail closed without center');
+  assert.equal(inApp.markAllAsRead(), null, 'mark all must fail closed without center');
+  Doke.notificationCenter = availableCenter;
+
+  inApp.markAllAsRead();
+  assert.equal(center.getSnapshot().unreadCount, 0);
+""",
+    'unavailable center fallback coverage'
+)
 
 path.write_text(text, encoding='utf-8')
