@@ -56,8 +56,8 @@ jobs:
           grep -F '"channelMessagesExecutionAllowed": false' config/com-b03c-r1-private-realtime-auth-recovery-readiness.json
           grep -F '"domainMutationAllowed": false' config/com-b03c-r1-private-realtime-auth-recovery-readiness.json
           grep -F '"publicationMutationAllowed": false' config/com-b03c-r1-private-realtime-auth-recovery-readiness.json
-          grep -F 'presence: { enabled: true' scripts/execute-com-b03c-r1-private-realtime-auth-diagnostic-staging-canary.js
-          grep -F 'const join = await subscribeDiagnostic' scripts/execute-com-b03c-r1-private-realtime-auth-diagnostic-staging-canary.js
+          grep -F 'presence:{enabled:true' scripts/execute-com-b03c-r1-private-realtime-auth-diagnostic-staging-canary.js
+          grep -F 'const join=await subscribeDiagnostic' scripts/execute-com-b03c-r1-private-realtime-auth-diagnostic-staging-canary.js
           ! grep -E '^[[:space:]]+DOKE_STAGING_CLIENT_PASSWORD:' .github/workflows/com-b03c-r1-private-realtime-auth-diagnostic-staging-canary.yml
       - name: Diff hygiene
         run: git diff --check
