@@ -35,6 +35,9 @@ jobs:
       - name: Apply exact Phase 2 authority integration
         run: python .github/scripts/ux-notif-001-phase2-executor.py
 
+      - name: Correct adapter event fixture
+        run: python .github/scripts/ux-notif-001-phase2-postfix.py
+
       - name: Validate repository-only integration
         shell: bash
         run: |
@@ -64,7 +67,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git rm .github/workflows/ux-notif-001-phase2-executor.yml .github/scripts/ux-notif-001-phase2-executor.py .github/scripts/ux-notif-001-phase2-fix.py
+          git rm .github/workflows/ux-notif-001-phase2-executor.yml .github/scripts/ux-notif-001-phase2-executor.py .github/scripts/ux-notif-001-phase2-fix.py .github/scripts/ux-notif-001-phase2-postfix.py
           git diff --check
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
