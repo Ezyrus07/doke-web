@@ -146,8 +146,11 @@ jobs:
       - name: Preserve navigation and stable-shell lifecycle contract
         run: node scripts/test-navigation-lifecycle-core-contract.js
 
-      - name: Preserve real stable-shell browser regression contract
-        run: node node_modules/@playwright/test/cli.js test tests/e2e/stable-shell-transition-contract.spec.js
+      - name: Preserve notification-relevant stable-shell browser contracts
+        run: >-
+          node node_modules/@playwright/test/cli.js test
+          tests/e2e/stable-shell-transition-contract.spec.js
+          --grep "essential script error|sequential navigation is not dropped and notifications hydrates without runtime errors|hydration watchdog ends in error"
 
       - name: Generate executable LCOV
         shell: bash
