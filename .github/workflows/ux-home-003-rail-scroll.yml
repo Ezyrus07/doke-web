@@ -49,10 +49,15 @@ jobs:
       - name: Validate JavaScript syntax
         run: |
           node --check assets/js/pages/home/rail-scroll-state.js
+          node --check assets/js/pages/home/rail-scroll-surface.js
           node --check scripts/test-ux-home-003-rail-scroll-state.js
+          node --check scripts/test-ux-home-003-rail-scroll-surface.js
 
       - name: Validate rail scroll state behavior
         run: node scripts/test-ux-home-003-rail-scroll-state.js
+
+      - name: Validate rail scroll surface behavior
+        run: node scripts/test-ux-home-003-rail-scroll-surface.js
 
       - name: Preserve inherited Home More-services contracts
         run: |
@@ -69,11 +74,13 @@ jobs:
           node --test \
             --experimental-test-coverage \
             --test-coverage-include='assets/js/pages/home/rail-scroll-state.js' \
+            --test-coverage-include='assets/js/pages/home/rail-scroll-surface.js' \
             --test-reporter=spec \
             --test-reporter-destination=stdout \
             --test-reporter=lcov \
             --test-reporter-destination=coverage/ux-home-003/lcov.info \
-            scripts/test-ux-home-003-rail-scroll-state.js
+            scripts/test-ux-home-003-rail-scroll-state.js \
+            scripts/test-ux-home-003-rail-scroll-surface.js
 
       - name: Validate LCOV evidence
         shell: bash
@@ -82,6 +89,7 @@ jobs:
           REPORT='coverage/ux-home-003/lcov.info'
           test -s "${REPORT}"
           grep -Fq 'SF:assets/js/pages/home/rail-scroll-state.js' "${REPORT}"
+          grep -Fq 'SF:assets/js/pages/home/rail-scroll-surface.js' "${REPORT}"
 
       - name: Require SonarQube Cloud credential
         if: github.event_name == 'push'
