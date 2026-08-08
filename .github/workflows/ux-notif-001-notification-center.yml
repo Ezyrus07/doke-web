@@ -6,6 +6,8 @@ on:
       - ux/ux-notif-001-center-badge-authority
     paths:
       - 'notificacoes.html'
+      - 'mensagens.html'
+      - 'comunidade-interna.html'
       - 'assets/js/core/notification-center.js'
       - 'assets/js/core/account-storage.js'
       - 'assets/js/core/session.js'
@@ -16,6 +18,12 @@ on:
       - 'supabase/migrations/013_transaction_notifications_shared_runtime.sql'
       - 'package.json'
       - 'scripts/test-ux-notif-001-notification-center.js'
+      - 'scripts/test-ux-notif-001-in-app-adapter.js'
+      - 'scripts/test-ux-notif-001-surface-contract.js'
+      - 'scripts/test-notification-center-v2-contract.js'
+      - 'scripts/test-notification-quick-actions-contract.js'
+      - 'scripts/test-notification-quick-actions-v2-contract.js'
+      - 'scripts/test-notification-delivery-controls-contract.js'
       - 'scripts/test-notification-authority-contract.js'
       - 'scripts/test-notifications-supabase-repository-contract.js'
       - 'scripts/audit-notifications-api-contract.js'
@@ -28,6 +36,8 @@ on:
   pull_request:
     paths:
       - 'notificacoes.html'
+      - 'mensagens.html'
+      - 'comunidade-interna.html'
       - 'assets/js/core/notification-center.js'
       - 'assets/js/core/account-storage.js'
       - 'assets/js/core/session.js'
@@ -38,6 +48,12 @@ on:
       - 'supabase/migrations/013_transaction_notifications_shared_runtime.sql'
       - 'package.json'
       - 'scripts/test-ux-notif-001-notification-center.js'
+      - 'scripts/test-ux-notif-001-in-app-adapter.js'
+      - 'scripts/test-ux-notif-001-surface-contract.js'
+      - 'scripts/test-notification-center-v2-contract.js'
+      - 'scripts/test-notification-quick-actions-contract.js'
+      - 'scripts/test-notification-quick-actions-v2-contract.js'
+      - 'scripts/test-notification-delivery-controls-contract.js'
       - 'scripts/test-notification-authority-contract.js'
       - 'scripts/test-notifications-supabase-repository-contract.js'
       - 'scripts/audit-notifications-api-contract.js'
@@ -76,7 +92,12 @@ jobs:
       - name: Validate JavaScript syntax
         run: |
           node --check assets/js/core/notification-center.js
+          node --check assets/js/features/in-app-notifications.js
+          node --check assets/js/pages/notificacoes.js
+          node --check assets/js/repositories/notifications-repository.js
           node --check scripts/test-ux-notif-001-notification-center.js
+          node --check scripts/test-ux-notif-001-in-app-adapter.js
+          node --check scripts/test-ux-notif-001-surface-contract.js
           node --check scripts/test-notifications-supabase-repository-contract.js
 
       - name: Validate canonical domain matrix
@@ -86,7 +107,17 @@ jobs:
         run: npm run audit:agent-governance
 
       - name: Validate notification center behavior
-        run: node scripts/test-ux-notif-001-notification-center.js
+        run: |
+          node scripts/test-ux-notif-001-notification-center.js
+          node scripts/test-ux-notif-001-in-app-adapter.js
+          node scripts/test-ux-notif-001-surface-contract.js
+
+      - name: Preserve notification interaction contracts
+        run: |
+          node scripts/test-notification-center-v2-contract.js
+          node scripts/test-notification-quick-actions-contract.js
+          node scripts/test-notification-quick-actions-v2-contract.js
+          node scripts/test-notification-delivery-controls-contract.js
 
       - name: Preserve notification authority contracts
         run: |
@@ -108,11 +139,13 @@ jobs:
           node --test \
             --experimental-test-coverage \
             --test-coverage-include='assets/js/core/notification-center.js' \
+            --test-coverage-include='assets/js/features/in-app-notifications.js' \
             --test-reporter=spec \
             --test-reporter-destination=stdout \
             --test-reporter=lcov \
             --test-reporter-destination=coverage/ux-notif-001/lcov.info \
-            scripts/test-ux-notif-001-notification-center.js
+            scripts/test-ux-notif-001-notification-center.js \
+            scripts/test-ux-notif-001-in-app-adapter.js
 
       - name: Validate LCOV evidence
         shell: bash
@@ -121,6 +154,7 @@ jobs:
           REPORT='coverage/ux-notif-001/lcov.info'
           test -s "${REPORT}"
           grep -Fq 'SF:assets/js/core/notification-center.js' "${REPORT}"
+          grep -Fq 'SF:assets/js/features/in-app-notifications.js' "${REPORT}"
           FOUND="$(awk -F: '/^LF:/{lf+=$2} /^LH:/{lh+=$2} END{print lh+0 "/" lf+0}' "${REPORT}")"
           echo "[ux-notif-001] executable lines: ${FOUND}"
 
