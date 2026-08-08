@@ -17,6 +17,10 @@ on:
       - 'assets/js/repositories/notifications-repository.js'
       - 'supabase/migrations/013_transaction_notifications_shared_runtime.sql'
       - 'package.json'
+      - 'package-lock.json'
+      - 'playwright.config.js'
+      - 'scripts/serve-static-site.js'
+      - 'tests/e2e/stable-shell-transition-contract.spec.js'
       - 'scripts/test-ux-notif-001-notification-center.js'
       - 'scripts/test-ux-notif-001-in-app-adapter.js'
       - 'scripts/test-ux-notif-001-surface-contract.js'
@@ -48,6 +52,10 @@ on:
       - 'assets/js/repositories/notifications-repository.js'
       - 'supabase/migrations/013_transaction_notifications_shared_runtime.sql'
       - 'package.json'
+      - 'package-lock.json'
+      - 'playwright.config.js'
+      - 'scripts/serve-static-site.js'
+      - 'tests/e2e/stable-shell-transition-contract.spec.js'
       - 'scripts/test-ux-notif-001-notification-center.js'
       - 'scripts/test-ux-notif-001-in-app-adapter.js'
       - 'scripts/test-ux-notif-001-surface-contract.js'
@@ -74,7 +82,7 @@ permissions:
 jobs:
   ux-notif-001-notification-center:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
 
     steps:
       - name: Checkout repository
@@ -90,6 +98,9 @@ jobs:
 
       - name: Install repository dependencies without lifecycle scripts
         run: npm ci --ignore-scripts
+
+      - name: Install Playwright Chromium from locked dependency
+        run: ./node_modules/.bin/playwright install chromium
 
       - name: Validate JavaScript syntax
         run: |
@@ -134,6 +145,9 @@ jobs:
 
       - name: Preserve navigation and stable-shell lifecycle contract
         run: node scripts/test-navigation-lifecycle-core-contract.js
+
+      - name: Preserve real stable-shell browser regression contract
+        run: node node_modules/@playwright/test/cli.js test tests/e2e/stable-shell-transition-contract.spec.js
 
       - name: Generate executable LCOV
         shell: bash
