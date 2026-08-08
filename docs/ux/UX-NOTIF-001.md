@@ -7,6 +7,7 @@
 - Base: `ux/ux-home-003-rail-scroll-sync`;
 - Base SHA: `f0faf190aed84721c2ea69294370567cdfb1a382`;
 - Branch: `ux/ux-notif-001-center-badge-authority`;
+- Fase 2: integração aplicada; certificação final controlada pelos gates do PR;
 - Merge autorizado: não;
 - Ready for review autorizado: não;
 - Staging/produção: não acessados.
@@ -88,15 +89,18 @@ A Fase 1 foi certificada no mesmo SHA antes da integração. A Fase 2 migra as s
 - `notificacoes.html`, `mensagens.html` e `comunidade-interna.html` carregam `session → account-storage → notification-center → in-app`;
 - o center continua memory-first e não cria storage privado.
 
-## Fases seguintes do mesmo PR
+## Gate final da Fase 2
 
-Após os gates da Fase 2:
+A integração acima já está aplicada. O gate permanente do PR deve provar, no mesmo SHA:
 
-1. carregar `account-storage.js` e `notification-center.js` na ordem correta nas superfícies relevantes;
-2. adaptar `in-app-notifications.js` para delegar center/unread ao `Doke.notificationCenter`;
-3. remover de `notificacoes.js` a escrita independente do badge baseada no DOM;
-4. manter repository/service como autoridade de dados/mutations;
-5. validar account switch, reload, mark-read/dismiss, realtime e stable-shell.
+1. account switch e reload sem vazamento entre contas;
+2. mark-read/dismiss e repository sync sem segundo badge writer;
+3. contratos herdados de notification API, auth e privacy;
+4. regressão stable-shell nas superfícies migradas;
+5. LCOV executável do center e do adapter;
+6. Sonar Quality Gate sem novos issues, accepted issues ou hotspots e com cobertura de New Code dentro do threshold.
+
+Não há outro runtime subpasso dentro de `UX-NOTIF-001` depois desse gate. O próximo trabalho de produto pertence ao próximo sublote canônico do `EPIC-11`.
 
 ## Fora de escopo preservado
 
