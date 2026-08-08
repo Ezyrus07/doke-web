@@ -253,9 +253,6 @@ const uiModalLabel = document.querySelector("[data-ui-modal-label]");
 const uiModalInput = document.querySelector("[data-ui-modal-input]");
 const uiModalCancel = document.querySelector("[data-ui-modal-cancel]");
 const uiModalConfirm = document.querySelector("[data-ui-modal-confirm]");
-const catégoryTrack = document.querySelector("[data-catégory-track]");
-const catégoryArrows = document.querySelectorAll("[data-catégory-arrow]");
-const railArrows = document.querySelectorAll("[data-rail-arrow]");
 const orderFeedback = document.querySelector("[data-order-feedback]");
 const orderFeedbackLoading = document.querySelector("[data-order-feedback-loading]");
 const orderFeedbackSuccess = document.querySelector("[data-order-feedback-success]");
@@ -270,6 +267,7 @@ const initMobileHomeDrawer = window.DokeHomeDrawer?.create({ signal }) || (() =>
 const initHomeSearch = window.DokeHomeSearch?.create({ signal }) || (() => {});
 const initHomeBeforeAfter = window.DokeHomeBeforeAfter?.create({ signal }) || (() => {});
 const initHomeWorkers = window.DokeHomeWorkers?.create({ signal }) || (() => {});
+window.Doke?.homeRailScrollSurface?.bind?.({ signal });
 
 
 const sideMeta = document.querySelector(".home-side-meta");
@@ -1010,40 +1008,6 @@ document.addEventListener("keydown", (event) => {
     closeUiModal({ confirmed: true, value: uiModalInput?.value || "" });
   }
 }, { signal });
-
-const bindScrollRail = ({ track, arrows, directionAttr, amountFactor }) => {
-  if (!track || !arrows.length) return;
-
-  arrows.forEach((arrow) => {
-    arrow.addEventListener("click", () => {
-      const direction = arrow.dataset[directionAttr] === "next" ? 1 : -1;
-      const amount = Math.max(220, Math.round(track.clientWidth * amountFactor));
-      track.scrollBy({ left: amount * direction, behavior: "smooth" });
-    });
-  });
-};
-
-bindScrollRail({
-  track: catégoryTrack,
-  arrows: catégoryArrows,
-  directionAttr: "catégoryArrow",
-  amountFactor: 0.45
-});
-
-railArrows.forEach((arrow) => {
-  const targetId = arrow.dataset.railTarget;
-  if (!targetId) return;
-  const track = document.getElementById(targetId);
-  if (!track) return;
-
-  bindScrollRail({
-    track,
-    arrows: [arrow],
-    directionAttr: "railArrow",
-    amountFactor: 0.82
-  });
-});
-
 
 const initMoreServicesProgressiveReveal = () => {
   const grid = document.querySelector("[data-more-services-grid]");
