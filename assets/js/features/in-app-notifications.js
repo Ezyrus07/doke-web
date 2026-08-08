@@ -1,7 +1,6 @@
 (() => {
   const BUS_KEY = 'doke.in-app-notification.bus.v1';
   const ACTION_KEY = 'doke.in-app-notification.action.v1';
-  const CENTER_KEY = 'doke.in-app-notification.center.v1';
   const PREFS_KEY = 'doke.in-app-notification.preferences.v1';
   const DIGEST_KEY = 'doke.in-app-notification.digest.v1';
   const TAB_ID = `tab-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
@@ -16,11 +15,11 @@
   const escapeHtml = (value) => String(value || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   const getCurrentUser = () => { try { return window.Doke?.session?.getCurrentUser?.() || window.DokeAuth?.service?.getCurrentUser?.() || safeParse(localStorage.getItem('doke.auth.session.v1'), {})?.user || null; } catch (_error) { return null; } };
   const getAccountKeys = () => { const user = getCurrentUser() || {}; return [user.id, user.accountKey, user.email].map((value) => String(value || '').trim().toLowerCase()).filter(Boolean); };
+  const getNotificationCenter = () => window.Doke?.notificationCenter || null;
   const normalizePrefs = (prefs = {}) => ({ ...DEFAULT_PREFS, ...prefs, mutedScopes: Array.isArray(prefs.mutedScopes) ? prefs.mutedScopes : [] });
   const readPrefs = () => normalizePrefs(safeParse(localStorage.getItem(PREFS_KEY), {}) || {});
   const writePrefs = (prefs) => { const next = normalizePrefs(prefs); localStorage.setItem(PREFS_KEY, JSON.stringify(next)); document.dispatchEvent(new CustomEvent('doke:notification-preferences-changed', { detail: next })); return next; };
-  const readCenter = () => { const items = safeParse(localStorage.getItem(CENTER_KEY), []); return Array.isArray(items) ? items : []; };
-  const writeCenter = (items) => { try { localStorage.setItem(CENTER_KEY, JSON.stringify(items.slice(0, 250))); } catch (_error) {} document.dispatchEvent(new CustomEvent('doke:notification-center-changed', { detail: { items } })); syncGlobalBadges(items); };
+  const readCenter = () => Array.from(getNotificationCenter()?.getSnapshot?.().items || []);
   const typeGroup = (payload) => { const type = String(payload?.type || '').toLowerCase(); if (type.includes('mention')) return 'mentions'; if (type.includes('reaction')) return 'reactions'; if (type.includes('event')) return 'events'; if (type.includes('message') || payload?.category === 'messages') return 'messages'; return 'social'; };
   const priorityOf = (payload) => ['silent', 'normal', 'high'].includes(payload?.priority) ? payload.priority : (typeGroup(payload) === 'mentions' || String(payload?.type || '').includes('ban') ? 'high' : 'normal');
   const scopeOf = (payload) => String(payload?.scopeKey || payload?.conversationId || payload?.communityId || payload?.sourceKey || '').trim();
@@ -31,54 +30,76 @@
   const shouldToast = (payload, prefs = readPrefs()) => prefs[typeGroup(payload)] !== false && !isMuted(payload, prefs) && PRIORITY_RANK[priorityOf(payload)] >= PRIORITY_RANK[prefs.priorityMin || 'silent'];
   const persist = (payload) => {
     if (!isForCurrentUser(payload)) return payload;
-    const items = readCenter(); const now = Date.now(); const groupKey = makeGroupKey(payload);
+    const center = getNotificationCenter();
+    if (!center) return payload;
+    const items = readCenter();
+    const now = Date.now();
+    const groupKey = makeGroupKey(payload);
     const existing = items.find((item) => !item.dismissed && !item.read && item.groupKey === groupKey && now - Date.parse(item.updatedAt || item.createdAt || 0) < 86400000);
-    if (existing) { existing.repeatCount = Number(existing.repeatCount || 1) + 1; existing.updatedAt = payload.createdAt || new Date().toISOString(); existing.createdAt = existing.updatedAt; existing.body = payload.body || payload.message || existing.body; existing.targetUrl = payload.targetUrl || existing.targetUrl; existing.actionLabel = payload.actionLabel || existing.actionLabel; existing.priority = priorityOf(payload); writeCenter(items.sort((a,b)=>Date.parse(b.createdAt||0)-Date.parse(a.createdAt||0))); return existing; }
+    if (existing) {
+      const next = {
+        ...existing,
+        ...payload,
+        id: existing.id,
+        eventKey: existing.eventKey,
+        groupKey,
+        read: existing.read,
+        dismissed: existing.dismissed,
+        repeatCount: Number(existing.repeatCount || 1) + 1,
+        updatedAt: payload.createdAt || new Date().toISOString(),
+        createdAt: payload.createdAt || new Date().toISOString(),
+        body: payload.body || payload.message || existing.body,
+        targetUrl: payload.targetUrl || existing.targetUrl,
+        actionLabel: payload.actionLabel || existing.actionLabel,
+        priority: priorityOf(payload)
+      };
+      const state = center.upsert(next);
+      return state.items.find((item) => item.id === existing.id) || next;
+    }
     const item = { ...payload, priority: priorityOf(payload), groupKey, category: payload.category || (['messages','mentions','reactions'].includes(typeGroup(payload)) ? 'messages' : 'social'), read: false, dismissed: false, repeatCount: 1 };
-    items.unshift(item); writeCenter(items); return item;
+    const state = center.upsert(item);
+    return state.items.find((entry) => entry.id === item.id) || item;
   };
   const ensureHost = () => { if (host?.isConnected) return host; host = document.createElement('section'); host.className='doke-live-toast-stack'; host.dataset.liveToastStack=''; host.setAttribute('aria-live','polite'); host.setAttribute('aria-label','Notificações recentes'); document.body.appendChild(host); return host; };
   const iconFor = (payload) => ({ mentions: '@', reactions: '♥', events: '◷', messages: '●' }[typeGroup(payload)] || '!');
-  const markAsRead = (id) => { const items=readCenter(); const item=items.find((entry)=>String(entry.id)===String(id)); if(item)item.read=true; writeCenter(items); return item||null; };
-  const dismiss = (id) => { const items=readCenter(); const item=items.find((entry)=>String(entry.id)===String(id)); if(item)item.dismissed=true; writeCenter(items); return item||null; };
-  const syncGlobalBadges = (source=readCenter()) => {
-    const count = source.filter((item) => !item.read && !item.dismissed && isForCurrentUser(item)).length;
-
-    // A sidebar/header already expose the canonical blue notification counter.
-    // Remove the legacy red overlay instead of creating a second authority.
-    document.querySelectorAll('.doke-global-notification-badge').forEach((node) => node.remove());
-    document.querySelectorAll('[data-notifications-unread-count]').forEach((node) => {
-      if (node.classList.contains('doke-global-notification-badge')) {
-        node.remove();
-        return;
-      }
-      node.textContent = String(count);
-      node.hidden = count === 0;
-    });
-
-    document.documentElement.style.setProperty('--doke-notifications-unread', String(count));
+  const markAsRead = (id) => {
+    const center = getNotificationCenter();
+    if (!center) return null;
+    const item = readCenter().find((entry) => String(entry.id) === String(id)) || null;
+    center.markRead(id);
+    return item ? { ...item, read: true } : null;
   };
+  const dismiss = (id) => {
+    const center = getNotificationCenter();
+    if (!center) return null;
+    const item = readCenter().find((entry) => String(entry.id) === String(id)) || null;
+    center.dismiss(id);
+    return item ? { ...item, dismissed: true } : null;
+  };
+  const syncGlobalBadges = (_source, scope = document) => getNotificationCenter()?.syncBadges?.(scope) ?? 0;
   const openPayload = (payload) => { markAsRead(payload.id); const target=String(payload.targetUrl||'').trim(); if(target)window.location.href=target; };
   const playSound = (priority) => { if(priority==='silent'||!readPrefs().sound)return; try { const AudioContext=window.AudioContext||window.webkitAudioContext; if(!AudioContext)return; const ctx=new AudioContext(); const oscillator=ctx.createOscillator(); const gain=ctx.createGain(); oscillator.frequency.value=priority==='high'?760:620; gain.gain.setValueAtTime(.0001,ctx.currentTime); gain.gain.exponentialRampToValueAtTime(.045,ctx.currentTime+.015); gain.gain.exponentialRampToValueAtTime(.0001,ctx.currentTime+.14); oscillator.connect(gain).connect(ctx.destination); oscillator.start(); oscillator.stop(ctx.currentTime+.15); } catch(_error){} };
   const queueDigest = (payload) => { const queue=safeParse(localStorage.getItem(DIGEST_KEY),[]); const items=Array.isArray(queue)?queue:[]; items.push({id:payload.id,title:payload.title,type:typeGroup(payload),createdAt:payload.createdAt}); localStorage.setItem(DIGEST_KEY,JSON.stringify(items.slice(-100))); };
   const flushDigest = () => { const prefs=readPrefs(); if(isDndActive(prefs)||!prefs.digest)return; const queue=safeParse(localStorage.getItem(DIGEST_KEY),[]); if(!Array.isArray(queue)||!queue.length)return; localStorage.removeItem(DIGEST_KEY); const groups=queue.reduce((acc,item)=>{acc[item.type]=(acc[item.type]||0)+1;return acc;},{}); const body=Object.entries(groups).map(([key,count])=>`${count} ${key}`).join(' · '); show({id:`digest-${Date.now()}`,title:`${queue.length} alertas acumulados`,body,targetUrl:'notificacoes.html',priority:'normal',type:'digest',duration:9000},{skipDigest:true}); };
 
   const recordActionResult = (notificationId, status, message, undoPayload = null) => {
-    const items = readCenter();
-    const item = items.find((entry) => String(entry.id) === String(notificationId));
-    if (item) {
-      item.read = true;
-      item.actionStatus = status;
-      item.actionMessage = String(message || '');
-      item.actionUpdatedAt = new Date().toISOString();
-      item.undoPayload = undoPayload || null;
-      writeCenter(items);
+    const center = getNotificationCenter();
+    const item = readCenter().find((entry) => String(entry.id) === String(notificationId)) || null;
+    if (center && item) {
+      center.upsert({
+        ...item,
+        read: true,
+        actionStatus: status,
+        actionMessage: String(message || ''),
+        actionUpdatedAt: new Date().toISOString(),
+        undoPayload: undoPayload || null
+      });
     }
     pendingActions.delete(String(notificationId));
     document.dispatchEvent(new CustomEvent('doke:notification-action-result', {
       detail: { notificationId: String(notificationId || ''), status, message: String(message || ''), undoPayload: undoPayload || null }
     }));
-    return item || null;
+    return item ? { ...item, read: true, actionStatus: status, actionMessage: String(message || ''), undoPayload: undoPayload || null } : null;
   };
   const publishAction = (payload) => {
     const command = { ...payload, id: payload.id || `notification-action-${Date.now()}-${Math.random().toString(36).slice(2,8)}`, createdAt: new Date().toISOString(), originTabId: TAB_ID };
@@ -240,9 +261,29 @@
     }
   });
 
-  window.addEventListener('storage',(event)=>{if(event.key===ACTION_KEY&&event.newValue){const action=safeParse(event.newValue,null);if(action&&action.originTabId!==TAB_ID)document.dispatchEvent(new CustomEvent('doke:notification-action',{detail:action}));}if(event.key===CENTER_KEY)syncGlobalBadges(safeParse(event.newValue,[]));if(event.key===PREFS_KEY)document.dispatchEvent(new CustomEvent('doke:notification-preferences-changed',{detail:readPrefs()}));if(event.key!==BUS_KEY||!event.newValue)return;const payload=safeParse(event.newValue,null);if(!payload||payload.originTabId===TAB_ID)return;show(payload);});
-  document.addEventListener('doke:in-app-notification',(event)=>{const payload=event.detail;if(!payload||payload.originTabId===TAB_ID)return;show(payload);});
-  document.addEventListener('DOMContentLoaded',()=>{syncGlobalBadges();flushDigest();window.setInterval(flushDigest,30000);});
+  const hydrateNotificationCenter = () => {
+    const center = getNotificationCenter();
+    const service = window.Doke?.services?.notifications;
+    if (!center || typeof service?.list !== 'function') {
+      center?.syncBadges?.();
+      return Promise.resolve(center?.getSnapshot?.() || null);
+    }
+    const fence = center.createFence?.();
+    return Promise.resolve(service.list({ dismissed: false, currentUser: true }))
+      .then((items) => center.replace((Array.isArray(items) ? items : []).filter(isForCurrentUser), fence ? { fence } : {}))
+      .catch(() => center.getSnapshot());
+  };
+  const applySynchronizedItems = (items) => {
+    const center = getNotificationCenter();
+    if (!center) return null;
+    return center.replace((Array.isArray(items) ? items : []).filter(isForCurrentUser));
+  };
 
-  window.DokeInAppNotifications={publish,show,publishAction,recordActionResult,list:()=>readCenter().filter((item)=>isForCurrentUser(item)),markAsRead,dismiss,markAllAsRead(){const items=readCenter();items.forEach((item)=>{if(isForCurrentUser(item))item.read=true;});writeCenter(items);},getPreferences:readPrefs,setPreferences(next={}){return writePrefs({...readPrefs(),...next});},muteScope,unmuteScope,isDndActive,flushDigest,syncGlobalBadges};
+  window.addEventListener('storage',(event)=>{if(event.key===ACTION_KEY&&event.newValue){const action=safeParse(event.newValue,null);if(action&&action.originTabId!==TAB_ID)document.dispatchEvent(new CustomEvent('doke:notification-action',{detail:action}));}if(event.key===PREFS_KEY)document.dispatchEvent(new CustomEvent('doke:notification-preferences-changed',{detail:readPrefs()}));if(event.key!==BUS_KEY||!event.newValue)return;const payload=safeParse(event.newValue,null);if(!payload||payload.originTabId===TAB_ID)return;const stored=persist(payload);show(stored);});
+  document.addEventListener('doke:in-app-notification',(event)=>{const payload=event.detail;if(!payload||payload.originTabId===TAB_ID)return;show(payload);});
+  document.addEventListener('doke:notifications-synced',(event)=>{applySynchronizedItems(event.detail?.items || []);});
+  document.addEventListener('doke:auth-session-change',()=>{getNotificationCenter()?.refreshAccount?.();hydrateNotificationCenter();});
+  document.addEventListener('DOMContentLoaded',()=>{hydrateNotificationCenter();syncGlobalBadges();flushDigest();window.setInterval(flushDigest,30000);});
+
+  window.DokeInAppNotifications={publish,show,publishAction,recordActionResult,list:()=>readCenter().filter((item)=>isForCurrentUser(item)),markAsRead,dismiss,markAllAsRead(){const center=getNotificationCenter();if(!center)return null;readCenter().filter((item)=>isForCurrentUser(item)&&!item.read).forEach((item)=>center.markRead(item.id));return center.getSnapshot();},getPreferences:readPrefs,setPreferences(next={}){return writePrefs({...readPrefs(),...next});},muteScope,unmuteScope,isDndActive,flushDigest,syncGlobalBadges,hydrateNotificationCenter};
 })();

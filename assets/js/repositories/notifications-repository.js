@@ -355,11 +355,12 @@
     return clone(normalized);
   }
 
-  function syncGlobalBadges(items) {
-    var center = root.DokeInAppNotifications;
-    if (center && typeof center.syncGlobalBadges === 'function') {
-      center.syncGlobalBadges((items || []).filter(function (item) { return item.dismissed !== true; }));
-    }
+  function dispatchPresentationSnapshot(items, source) {
+    var user = getSessionUser();
+    var scoped = (Array.isArray(items) ? items : []).filter(function (item) {
+      return item && item.dismissed !== true && matchesCurrentUser(item, user);
+    });
+    dispatchSynced(scoped, source || 'repository');
   }
 
   function dispatchCreated(notification, source) {
@@ -408,7 +409,7 @@
     var eventType = normalizeText(payload && payload.eventType || '').toUpperCase();
     if (eventType === 'INSERT') dispatchCreated(notification, 'realtime');
     else dispatchUpdated(notification, 'realtime');
-    syncGlobalBadges(listLocal({ dismissed: false }));
+    dispatchPresentationSnapshot(listLocal({ dismissed: false }));
   }
 
   function startRealtime(userId) {
@@ -563,8 +564,7 @@
     if (!getSupabaseClient()) {
       return baseTask.then(function (base) {
         cache = mergeById(Array.isArray(base) ? base : [], local);
-        syncGlobalBadges(cache);
-        dispatchSynced(cache, 'remote');
+        dispatchPresentationSnapshot(cache);
         return clone(cache);
       });
     }
@@ -576,14 +576,14 @@
       cache = mergeById(base, local, remote);
       return synchronizePending(cache).then(function () {
         cache = mergeById(base, readLocal(), remote);
-        syncGlobalBadges(cache);
+        dispatchPresentationSnapshot(cache);
         return clone(cache);
       });
     }).catch(function (error) {
       warnRemote(error, 'leitura');
       return baseTask.then(function (base) {
         cache = mergeById(Array.isArray(base) ? base : [], readLocal());
-        syncGlobalBadges(cache);
+        dispatchPresentationSnapshot(cache);
         return clone(cache);
       });
     });
@@ -666,12 +666,12 @@
     }));
     var localSaved = saveLocal(normalized, getSupabaseClient() ? 'pending' : 'local');
     dispatchCreated(localSaved, 'local');
-    syncGlobalBadges(listLocal({ dismissed: false }));
+    dispatchPresentationSnapshot(listLocal({ dismissed: false }));
 
     if (!getSupabaseClient()) return Promise.resolve(clone(localSaved));
     return saveRemote(localSaved).then(function (remoteSaved) {
       var synced = saveLocal(remoteSaved, 'synced');
-      syncGlobalBadges(listLocal({ dismissed: false }));
+      dispatchPresentationSnapshot(listLocal({ dismissed: false }));
       return clone(synced);
     }).catch(function (error) {
       warnRemote(error, 'gravação');
@@ -720,14 +720,14 @@
     if (changed) {
       writeLocal(local);
       dispatchUpdated(changed, 'local');
-      syncGlobalBadges(listLocal({ dismissed: false }));
+      dispatchPresentationSnapshot(listLocal({ dismissed: false }));
     }
     if (!changed || !getSupabaseClient()) return Promise.resolve(clone(changed));
 
     return updateRemote(notificationId, patch || {}).then(function (remoteChanged) {
       if (!remoteChanged) return clone(changed);
       var synced = saveLocal(remoteChanged, 'synced');
-      syncGlobalBadges(listLocal({ dismissed: false }));
+      dispatchPresentationSnapshot(listLocal({ dismissed: false }));
       return clone(synced);
     }).catch(function (error) {
       warnRemote(error, 'atualização');
@@ -757,7 +757,7 @@
     });
     if (changed) {
       writeLocal(local);
-      syncGlobalBadges(listLocal({ dismissed: false }));
+      dispatchPresentationSnapshot(listLocal({ dismissed: false }));
     }
 
     var client = getSupabaseClient();

@@ -78,9 +78,19 @@ Persistência de cache só poderá existir se houver necessidade comprovada e de
 - eventos `doke:notification-center-changed` expõem apenas contagens, gerações, contrato e razão;
 - IDs de notificação, account IDs, title/body e payload completo não são publicados no evento DOM.
 
+## Fase 2 — integração das superfícies
+
+A Fase 1 foi certificada no mesmo SHA antes da integração. A Fase 2 migra as superfícies para a autoridade única sem alterar backend:
+
+- `in-app-notifications.js` delega snapshot/read/dismiss/badge ao `Doke.notificationCenter`;
+- `notifications-repository.js` publica snapshots de domínio e deixa de escrever badge;
+- `notificacoes.js` usa account fence para commits assíncronos e não calcula o badge global pelo DOM;
+- `notificacoes.html`, `mensagens.html` e `comunidade-interna.html` carregam `session → account-storage → notification-center → in-app`;
+- o center continua memory-first e não cria storage privado.
+
 ## Fases seguintes do mesmo PR
 
-Somente após a Fase 1 passar nos gates:
+Após os gates da Fase 2:
 
 1. carregar `account-storage.js` e `notification-center.js` na ordem correta nas superfícies relevantes;
 2. adaptar `in-app-notifications.js` para delegar center/unread ao `Doke.notificationCenter`;
