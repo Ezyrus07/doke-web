@@ -12,6 +12,7 @@ const files = {
   report: 'reports/generated/domain-completion-matrix-report.json',
   policy: 'config/com-b03-realtime-channel-scale-policy.json',
   evidence: 'docs/validation/COM-B03-COMMUNITY-REALTIME-CHANNEL-SCALE-POLICY.json',
+  r2Evidence: 'docs/validation/COM-B03B-R2-EPHEMERAL-AUTH-RECOVERY-READINESS.json',
   refresh: 'config/domain-completion-matrix-refresh.json',
   syncWorkflow: '.github/workflows/domain-completion-matrix-sync.yml'
 };
@@ -38,6 +39,7 @@ const doc = read('doc');
 const report = JSON.parse(read('report'));
 const policy = JSON.parse(read('policy'));
 const evidence = JSON.parse(read('evidence'));
+const r2Evidence = JSON.parse(read('r2Evidence'));
 const refresh = JSON.parse(read('refresh'));
 const syncWorkflow = read('syncWorkflow');
 const domain = matrix.domains.find((item) => item.id === 'COM-001');
@@ -73,8 +75,7 @@ for (const script of ['audit:com-b03-community-realtime-channel-scale-policy', '
 for (const marker of [
   'server-authority contract, Supabase repository adapter and private persistence foundation',
   'authenticated read-only composition-root canary passed',
-  'COM-B03 scalable realtime channel policy is repository-certified',
-  'No community Realtime publication, authenticated subscription, route or runtime integration is active yet.'
+  'COM-B03 scalable realtime channel policy is repository-certified'
 ]) {
   check(domain.evidence.some((item) => item.includes(marker)), `B03 evidence: ${marker}`);
   check(doc.includes(marker), `B03 generated evidence: ${marker}`);
@@ -82,15 +83,44 @@ for (const marker of [
 check(!domain.evidence.includes('Backend communities module is empty and all three core community tables have RLS disabled.'), 'stale evidence removed');
 check(!doc.includes('Backend communities module is empty and all three core community tables have RLS disabled.'), 'stale generated evidence removed');
 
+if (matrix.version === '1.3.113') {
+  for (const required of [
+    'backend/modules/communities/community-realtime-publication-subscription-readiness.js',
+    'backend/modules/communities/community-realtime-postgres-changes-recovery.js',
+    'backend/modules/communities/community-realtime-ephemeral-auth-recovery.js',
+    'config/com-b03b-r2-ephemeral-auth-recovery-readiness.json',
+    'docs/validation/COM-B03B-R1-POSTGRES-CHANGES-AUTHENTICATED-SUBSCRIPTION-STAGING-CANARY.json',
+    'docs/validation/COM-B03B-R2-EPHEMERAL-AUTH-RECOVERY-READINESS.json'
+  ]) check(domain.requiredPaths.includes(required), `B03B recovery required path: ${required}`);
+  for (const marker of [
+    'COM-B03B-R1 confirmed public.community_posts is present in the staging supabase_realtime publication',
+    'COM-B03B-R2 repository-certified an ephemeral Auth identity recovery'
+  ]) {
+    check(domain.evidence.some((item) => item.includes(marker)), `B03B matrix evidence: ${marker}`);
+    check(doc.includes(marker), `B03B generated evidence: ${marker}`);
+  }
+  check(!domain.evidence.some((item) => item.includes('No community Realtime publication, authenticated subscription, route or runtime integration is active yet.')), 'stale no-publication evidence removed');
+  check(!doc.includes('No community Realtime publication, authenticated subscription, route or runtime integration is active yet.'), 'stale generated no-publication evidence removed');
+}
+
 const b02 = domain.blockers.find((item) => item.id === 'COM-B02');
 const b03 = domain.blockers.find((item) => item.id === 'COM-B03');
 check(b02 && b03, 'B02/B03 blockers retained');
 equal(b02.category, 'server_runtime_activation', 'B02 category');
 equal(b03.category, 'realtime_activation', 'B03 category');
-equal(b03.description, 'Scalable channel policy is repository-certified, but no community Realtime publication or authenticated subscription is active.', 'B03 blocker precise');
+if (matrix.version === '1.3.113') {
+  equal(
+    b03.description,
+    'public.community_posts is published to Supabase Realtime in staging, but no authenticated community subscription is proven active; Presence/Typing remain canary-only and channel_messages still lacks canonical remote authority.',
+    'B03 blocker reconciled'
+  );
+  check(domain.nextActions.includes('Execute COM-B03B-R2 ephemeral-identity authenticated Realtime canary only after its exact separate single-use staging authorization.'), 'B03B-R2 next action');
+  check(doc.includes('public.community_posts is published to Supabase Realtime in staging'), 'B03 generated blocker reconciled');
+} else {
+  equal(b03.description, 'Scalable channel policy is repository-certified, but no community Realtime publication or authenticated subscription is active.', 'B03 blocker legacy precision');
+  check(domain.nextActions.includes('Prepare scoped Realtime publication and an authenticated subscription canary under separate explicit staging authorization.'), 'B03 legacy next action retained');
+}
 check(flow.blockers.includes('COM-B03'), 'FLOW-12 B03 retained');
-check(domain.nextActions.includes('Prepare scoped Realtime publication and an authenticated subscription canary under separate explicit staging authorization.'), 'B03 next action retained');
-check(doc.includes('**COM-B03 · HIGH · realtime_activation:** Scalable channel policy is repository-certified'), 'B03 generated blocker');
 
  equal(report.name, 'domain-completion-matrix', 'report name');
 equal(report.version, matrix.version, 'report follows matrix version');
@@ -103,7 +133,7 @@ check(Array.isArray(report.domains) && report.domains.some((item) => item.id ===
 equal(refresh.status, 'refresh_requested', 'refresh status');
 equal(refresh.matrixVersion, matrix.version, 'refresh version follows matrix');
 equal(refresh.domain, 'COM-001', 'refresh domain');
-check(['COM-B03', 'COM-B04'].includes(refresh.boundary), 'refresh boundary compatible');
+check(['COM-B03', 'COM-B04', 'COM-B04H', 'COM-B03B-R2'].includes(refresh.boundary), 'refresh boundary compatible');
 check(refresh.effects.repositoryDerivedArtifactsOnly === true || refresh.effects.repositorySourceAndDerivedArtifacts === true, 'refresh repository scope explicit');
 for (const [key, value] of Object.entries(refresh.effects)) {
   if (key === 'repositoryDerivedArtifactsOnly' || key === 'repositorySourceAndDerivedArtifacts') continue;
@@ -124,14 +154,22 @@ for (const forbidden of ['workflow_dispatch', 'secrets.', 'SUPABASE_', 'supabase
 }
 
  equal(policy.status, 'repository_contract_certified_runtime_blocked', 'B03 policy certified');
-equal(policy.realtimePublicationConfigured, false, 'publication false');
-equal(policy.subscriptionCreated, false, 'subscription false');
+equal(policy.realtimePublicationConfigured, false, 'base policy publication flag remains repository-only');
+equal(policy.subscriptionCreated, false, 'base policy subscription false');
 equal(policy.runtimeIntegrated, false, 'runtime disconnected');
 equal(policy.authority.realtimeSubscriptionAuthority, false, 'subscription authority closed');
-equal(policy.authority.realtimePublicationAuthority, false, 'publication authority closed');
+equal(policy.authority.realtimePublicationAuthority, false, 'base policy publication authority closed');
 equal(policy.authority.stagingMutationAuthority, false, 'staging mutation closed');
 equal(policy.authority.productionAuthority, false, 'production authority closed');
 equal(evidence.status, 'repository_contract_certified', 'B03 evidence certified');
 for (const value of Object.values(evidence.effects)) equal(value, false, 'B03 effect false');
+
+equal(r2Evidence.status, 'repository_recovery_certified_new_authorization_required', 'R2 evidence certified');
+equal(r2Evidence.authorization.received, false, 'R2 auth not received');
+equal(r2Evidence.authorization.consumed, false, 'R2 auth not consumed');
+equal(r2Evidence.authorization.executionAttempted, false, 'R2 execution not attempted');
+equal(r2Evidence.authority.stagingMutationAuthority, false, 'R2 staging authority closed');
+equal(r2Evidence.authority.productionAuthority, false, 'R2 production closed');
+equal(r2Evidence.authority.pullRequestMergeAuthority, false, 'R2 merge closed');
 
 console.log(`COM-B03 matrix reconciliation audit passed: ${checks}/${checks}`);
