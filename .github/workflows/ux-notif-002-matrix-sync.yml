@@ -1,0 +1,50 @@
+name: Doke UX-NOTIF-002 Matrix Sync
+
+on:
+  push:
+    branches:
+      - ux/ux-notif-002-event-schema
+    paths:
+      - '.github/workflows/ux-notif-002-matrix-sync.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  matrix-sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install repository dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts
+
+      - name: Regenerate and validate canonical matrix
+        run: |
+          set -euo pipefail
+          npm run write:domain-completion-matrix
+          npm run audit:domain-completion-matrix
+          git diff --check -- docs/DOMAIN-COMPLETION-MATRIX.md
+
+      - name: Publish matrix-only refresh
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- docs/DOMAIN-COMPLETION-MATRIX.md; then
+            echo 'Matrix already current.'
+            exit 0
+          fi
+          git config user.name 'doke-ci'
+          git config user.email 'actions@users.noreply.github.com'
+          git add docs/DOMAIN-COMPLETION-MATRIX.md
+          git commit -m 'docs(ux-notif-002): refresh domain completion matrix'
+          git push origin HEAD:ux/ux-notif-002-event-schema
