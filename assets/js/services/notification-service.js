@@ -91,6 +91,25 @@
     return String(value || '').trim();
   }
 
+  function canonicalizeProducerPayload(payload) {
+    payload = payload || {};
+    var eventId = normalizeText(payload.eventId || '');
+    var eventType = normalizeText(payload.eventType || '').toLowerCase();
+    var eventCategory = normalizeText(payload.eventCategory || '').toUpperCase();
+    if (!eventId || !eventType || !eventCategory) return payload;
+
+    return Object.assign({}, payload, {
+      eventId: eventId,
+      eventType: eventType,
+      eventVersion: Math.max(1, Number(payload.eventVersion || 1) || 1),
+      sourceDomain: normalizeText(payload.sourceDomain || eventCategory).toUpperCase(),
+      sourceAuthority: normalizeText(payload.sourceAuthority || 'DERIVED_INFORMATIONAL').toUpperCase(),
+      eventCategory: eventCategory,
+      dedupeKey: eventId,
+      eventKey: eventId
+    });
+  }
+
   var DEMO_PROFESSIONAL_ID = 'user_profissional_demo';
 
   function isProviderLikeId(value) {
@@ -170,7 +189,7 @@
   }
 
   function create(payload) {
-    payload = payload || {};
+    payload = canonicalizeProducerPayload(payload || {});
     var boundary = getBoundary();
     if (shouldUseNotificationsApi() && boundary) {
       var actor = getCurrentUser() || {};
@@ -198,6 +217,9 @@
       orderId: order.id,
       conversationId: options.conversationId || options.conversation && options.conversation.id || '',
       serviceId: order.serviceId,
+      eventId: ['order_created', order.id || '', recipientId].filter(Boolean).join(':'),
+      eventType: 'order_created',
+      eventCategory: 'ORDERS',
       eventKey: ['order_created', order.id || '', recipientId].filter(Boolean).join(':'),
       title: 'Novo pedido recebido',
       body: (order.clientName || 'Cliente') + ' solicitou orçamento para ' + (order.serviceTitle || order.title || 'um serviço') + '.',
@@ -220,8 +242,11 @@
     var body = 'O pedido "' + (order.serviceTitle || order.title || 'Pedido') + '" mudou para ' + (order.statusLabel || normalizedStatus || 'nova etapa') + '.';
     var actionLabel = 'Ver pedido';
     var targetUrl = 'pedidos.html?order=' + encodeURIComponent(order.id || '');
+    var canonicalEventType = 'order_status_changed';
+    var canonicalEventCategory = 'ORDERS';
 
     if (normalizedStatus === 'accepted' || normalizedStatus === 'conversation') {
+      canonicalEventType = 'order_accepted';
       title = 'Pedido aceito';
       body = (actor.name || 'Profissional') + ' aceitou o pedido "' + (order.serviceTitle || order.title || 'Pedido') + '". A conversa foi liberada.';
       actionLabel = 'Abrir conversa';
@@ -229,6 +254,8 @@
     }
 
     if (normalizedStatus === 'quoted') {
+      canonicalEventType = 'proposal_sent';
+      canonicalEventCategory = 'PROPOSALS';
       title = 'Proposta enviada';
       body = (actor.name || 'Profissional') + ' enviou uma proposta para "' + (order.serviceTitle || order.title || 'Pedido') + '".';
       if (options.amount || order.proposalAmount || order.budget) body += ' Valor: ' + (options.amount || order.proposalAmount || order.budget) + '.';
@@ -239,6 +266,8 @@
     if (normalizedStatus === 'in_progress') {
       var paymentStatus = normalizeText(options.paymentStatus || order.paymentStatus || '').toLowerCase();
       var paymentConfirmed = ['paid', 'confirmed', 'held', 'released'].indexOf(paymentStatus) !== -1 || options.paymentConfirmed === true;
+      canonicalEventType = paymentConfirmed ? 'order_in_progress' : 'proposal_approved';
+      canonicalEventCategory = paymentConfirmed ? 'ORDERS' : 'PROPOSALS';
       title = paymentConfirmed ? 'Pagamento confirmado' : 'Proposta aprovada';
       body = paymentConfirmed
         ? (actor.name || 'Cliente') + ' confirmou o pagamento do pedido "' + (order.serviceTitle || order.title || 'Pedido') + '". O atendimento segue em andamento.'
@@ -249,6 +278,8 @@
 
     if (normalizedStatus === 'completed') {
       var paymentReleased = normalizeText(options.paymentStatus || order.paymentStatus || '').toLowerCase() === 'released';
+      canonicalEventType = 'order_completed';
+      canonicalEventCategory = 'ORDERS';
       title = paymentReleased ? 'Pedido concluído e pagamento liberado' : 'Pedido concluído';
       body = paymentReleased
         ? (actor.name || 'Cliente') + ' confirmou a conclusão do pedido "' + (order.serviceTitle || order.title || 'Pedido') + '". O pagamento em garantia foi liberado.'
@@ -262,6 +293,8 @@
       var proposalRejected = cancellationType === 'proposal_rejected';
       var clientCancelled = cancellationType === 'client_cancelled_before_payment';
       var professionalCancelled = cancellationType === 'professional_cancelled_before_payment';
+      canonicalEventType = proposalRejected ? 'proposal_rejected' : 'order_cancelled';
+      canonicalEventCategory = proposalRejected ? 'PROPOSALS' : 'ORDERS';
       title = proposalRejected ? 'Proposta recusada' : clientCancelled || professionalCancelled ? 'Pedido cancelado' : 'Pedido recusado';
       body = proposalRejected
         ? (actor.name || 'Cliente') + ' recusou a proposta do pedido "' + (order.serviceTitle || order.title || 'Pedido') + '".'
@@ -288,6 +321,9 @@
       conversationId: options.conversationId || '',
       messageId: paymentMessageId,
       serviceId: order.serviceId,
+      eventId: [canonicalEventType, order.id || '', normalizedStatus || '', paymentMessageId, recipientId].filter(Boolean).join(':'),
+      eventType: canonicalEventType,
+      eventCategory: canonicalEventCategory,
       eventKey: eventKeyParts.filter(Boolean).join(':'),
       title: title,
       body: body,
@@ -317,6 +353,9 @@
       conversationId: options.conversationId || review.conversationId || '',
       messageId: options.messageId || review.messageId || '',
       serviceId: order.serviceId || review.serviceId || '',
+      eventId: ['order_reviewed', order.id || review.orderId || '', review.id || options.messageId || review.messageId || '', recipientId].filter(Boolean).join(':'),
+      eventType: 'order_reviewed',
+      eventCategory: 'ORDERS',
       eventKey: ['order_reviewed', order.id || review.orderId || '', review.id || '', recipientId].filter(Boolean).join(':'),
       title: 'Avaliação recebida',
       body: (actor.name || order.clientName || review.clientName || 'Cliente Doke') + ' avaliou o atendimento "' + (order.serviceTitle || order.title || review.serviceTitle || 'Pedido') + '" com nota ' + ratingLabel + '.',
@@ -354,6 +393,9 @@
       conversationId: conversation.id || message.conversationId || '',
       serviceId: conversation.serviceId || '',
       messageId: message.id || '',
+      eventId: ['message_received', message.id || message.createdAt || '', conversation.id || message.conversationId || '', recipientId].filter(Boolean).join(':'),
+      eventType: 'message_received',
+      eventCategory: 'MESSAGES',
       eventKey: ['message_received', message.id || '', recipientId].filter(Boolean).join(':'),
       title: 'Nova mensagem',
       body: (actor.name || message.author || 'Contato') + ' sobre ' + serviceTitle + ': "' + (compactMessage || 'Nova atualização na conversa.') + '"',
@@ -387,6 +429,10 @@
       conversationId: payment.conversationId || conversation.id || '',
       messageId: payment.messageId || payment.chargeMessageId || '',
       serviceId: order.serviceId || conversation.serviceId || '',
+      eventId: ['payment_held', payment.id || payment.orderId || order.id || '', recipientId].filter(Boolean).join(':'),
+      eventType: 'payment_held',
+      eventCategory: 'PAYMENTS',
+      sourceAuthority: normalizeText(options.sourceAuthority || payment.sourceAuthority || payment.source_authority || 'DERIVED_INFORMATIONAL').toUpperCase(),
       eventKey: ['payment_held', payment.id || '', recipientId].filter(Boolean).join(':'),
       title: 'Pagamento em garantia',
       body: (actor.name || order.clientName || 'O cliente') + ' confirmou o pagamento de ' + (amountLabel || 'valor combinado') + ' para "' + title + '". O valor ficará em garantia até a conclusão.',
@@ -416,6 +462,9 @@
       conversationId: payment.conversationId || conversation.id || '',
       messageId: payment.messageId || payment.chargeMessageId || '',
       serviceId: order.serviceId || conversation.serviceId || '',
+      eventId: ['order_completion_requested', order.id || payment.orderId || conversation.orderId || '', payment.id || '', recipientId].filter(Boolean).join(':'),
+      eventType: 'order_completion_requested',
+      eventCategory: 'ORDERS',
       eventKey: ['completion_requested', order.id || payment.orderId || '', recipientId].filter(Boolean).join(':'),
       title: 'Confirme a conclusão do serviço',
       body: (actor.name || order.professionalName || 'O profissional') + ' informou que "' + serviceTitle + '" foi concluído. Confirme a entrega ou relate um problema.',
@@ -448,6 +497,10 @@
         orderId: orderId,
         conversationId: conversationId,
         messageId: payment.messageId || payment.chargeMessageId || dispute.messageId || '',
+        eventId: ['dispute_opened', dispute.id || orderId, professionalId].filter(Boolean).join(':'),
+        eventType: 'dispute_opened',
+        eventCategory: 'DISPUTES',
+        sourceAuthority: normalizeText(options.sourceAuthority || dispute.sourceAuthority || payment.sourceAuthority || 'DERIVED_INFORMATIONAL').toUpperCase(),
         eventKey: ['order_dispute_opened', dispute.id || orderId, professionalId].filter(Boolean).join(':'),
         title: 'Pedido em contestação',
         body: 'O cliente relatou um problema. O pagamento permanece congelado até a análise.',
@@ -467,6 +520,10 @@
         orderId: orderId,
         conversationId: conversationId,
         messageId: payment.messageId || payment.chargeMessageId || dispute.messageId || '',
+        eventId: ['dispute_reported', dispute.id || orderId, clientId].filter(Boolean).join(':'),
+        eventType: 'dispute_reported',
+        eventCategory: 'DISPUTES',
+        sourceAuthority: normalizeText(options.sourceAuthority || dispute.sourceAuthority || payment.sourceAuthority || 'DERIVED_INFORMATIONAL').toUpperCase(),
         eventKey: ['order_dispute_reported', dispute.id || orderId, clientId].filter(Boolean).join(':'),
         title: 'Relato enviado',
         body: 'Seu relato foi registrado. O pagamento continuará em garantia durante a análise.',
@@ -498,6 +555,10 @@
       orderId: orderId,
       conversationId: conversationId,
       messageId: payment.messageId || payment.chargeMessageId || dispute.messageId || '',
+      eventId: ['dispute_responded', dispute.id || orderId, clientId].filter(Boolean).join(':'),
+      eventType: 'dispute_responded',
+      eventCategory: 'DISPUTES',
+      sourceAuthority: normalizeText(options.sourceAuthority || dispute.sourceAuthority || payment.sourceAuthority || 'DERIVED_INFORMATIONAL').toUpperCase(),
       eventKey: ['order_dispute_response', dispute.id || orderId, clientId].filter(Boolean).join(':'),
       title: 'Profissional respondeu',
       body: 'A resposta foi registrada. O pagamento continua congelado enquanto o suporte analisa o caso.',
@@ -535,6 +596,10 @@
         orderId: orderId,
         conversationId: conversationId,
         messageId: payment.messageId || payment.chargeMessageId || dispute.messageId || '',
+        eventId: ['dispute_resolved', dispute.id || orderId, resolution || 'resolved', recipientId].filter(Boolean).join(':'),
+        eventType: 'dispute_resolved',
+        eventCategory: 'DISPUTES',
+        sourceAuthority: normalizeText(options.sourceAuthority || dispute.sourceAuthority || payment.sourceAuthority || 'DERIVED_INFORMATIONAL').toUpperCase(),
         eventKey: ['order_dispute_resolved', dispute.id || orderId, resolution || 'resolved', recipientId].filter(Boolean).join(':'),
         title: title,
         body: body,

@@ -8,8 +8,8 @@
 - Base SHA certificado: `eab8836702e672494a69c244d481d32156e94d3e`;
 - Branch: `ux/ux-notif-002-event-schema`;
 - Fase 1: autoridade pura de evento + testes/CI certificada;
-- Fase 2A: repository adapter + dependência explícita nas rotas consumidoras implementada; certificação depende dos gates do mesmo SHA;
-- Fase 2B: producers nativos ainda não iniciados;
+- Fase 2A: repository adapter + dependência explícita nas rotas consumidoras certificada;
+- Fase 2B: producer envelopes nativos implementados; certificação depende dos gates do mesmo SHA;
 - Merge autorizado: não;
 - Ready for review autorizado: não;
 - Staging/produção: não acessados.
@@ -386,3 +386,19 @@ Remover os quatro artefatos da Fase 1. Nenhum schema, storage, dado remoto ou co
 - regressões herdadas verdes;
 - LCOV e Sonar aprovados;
 - PR aberto, draft, reversível e não mesclado.
+
+## Fase 2B — producer envelopes nativos
+
+`notification-service.js` passa a emitir identidade e classificação canônicas no producer boundary, antes do repository, preservando `type/category` legados apenas como compatibilidade transitória de UI. `notification-event.js` passa a priorizar `eventCategory/canonicalCategory` como input canônico antes do `category` legado.
+
+- producers emitem `eventId`, `eventType` e `eventCategory`;
+- o producer boundary completa `eventVersion`, `sourceDomain`, `dedupeKey` e o alias transitório `eventKey`;
+- ausência de proveniência explícita usa `DERIVED_INFORMATIONAL`, nunca infere autoridade pelo provider de persistência da notificação;
+- pagamentos e disputas só são aceitos pelo contrato quando recebem `sourceAuthority=CANONICAL_LOCAL|CANONICAL_REMOTE` de sua origem de negócio;
+- notification API ativa não eleva automaticamente um claim crítico;
+- `completion_requested` ganha `eventType=order_completion_requested`;
+- contestações usam `eventType=dispute_*` / `eventCategory=DISPUTES`, embora o `type/category` legado continue intacto;
+- estados de pedido que apenas refletem pagamento permanecem ORDERS; somente o producer financeiro definitivo usa PAYMENTS;
+- `Doke.notificationsRepository` continua autoridade de persistência/mutation e `Doke.notificationCenter` continua autoridade de apresentação/unread/badge.
+
+A API genérica `services.notifications.create(payload)` continua aceitando envelopes legados; apenas producers migrados recebem metadata canônica nativa nesta fase. Nenhuma mudança de backend, Supabase, migration, staging, produção, toast, digest ou browser notification faz parte deste sublote.

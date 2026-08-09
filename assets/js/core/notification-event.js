@@ -242,7 +242,7 @@
     raw = raw && typeof raw === 'object' ? raw : {};
     var eventType = normalizeText(raw.eventType || raw.type || '').toLowerCase();
     var actionRequired = raw.actionRequired === true || raw.action_required === true;
-    var category = normalizeCategory(raw.category, eventType);
+    var category = normalizeCategory(raw.eventCategory || raw.canonicalCategory || raw.category, eventType);
     var sourceAuthority = normalizeSourceAuthority(raw.sourceAuthority || raw.source_authority);
     var identity = resolveIdentity(raw, eventType);
     var privacyLevel = normalizePrivacy(raw.privacyLevel || raw.privacy_level);
