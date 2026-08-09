@@ -25,7 +25,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD^)" = "f94b945811b97ff335e4a305437c28b9d51da918"
+          test "$(git rev-parse HEAD^)" = "baf28e51e92e69a466f235e09e96dd8ae48a8af2"
 
       - name: Setup Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
@@ -53,6 +53,14 @@ jobs:
 
       - name: Validate canonical agent governance
         run: npm run audit:agent-governance
+
+      - name: Restore unrelated generated audit outputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          git restore docs/HOME-AUTHORITY-CLASSIFICATION.md \
+            docs/PAGE-ASSET-AUTHORITY-MATRIX.md \
+            reports/generated/domain-completion-matrix-report.json
 
       - name: Validate deterministic final-tree delta
         shell: bash
