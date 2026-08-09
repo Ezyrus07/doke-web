@@ -43,7 +43,11 @@ assert(page.includes("getNotificationCenter()?.markRead?.(id)"));
 assert(page.includes("getNotificationCenter()?.dismiss?.(id)"));
 assert(!page.includes("querySelectorAll('[data-notifications-unread-count]"));
 assert(!page.includes("doke:notification-center-changed', () => refreshLocalNotifications"));
-assert(center.includes("BADGE_SELECTOR = '[data-notifications-unread-count]'"));
+assert(center.includes('var BADGE_SELECTORS = Object.freeze({'));
+assert(center.includes("unreadTotal: '[data-notifications-unread-count]'"));
+assert(center.includes("actionRequiredTotal: '[data-notifications-action-required-count]'"));
+assert(center.includes("urgentTotal: '[data-notifications-urgent-count]'"));
+assert(center.includes("unreadMessages: '[data-notifications-messages-count]'"));
 assert(center.includes('node.dataset.notificationCenterWriter = CONTRACT'));
 
 console.log('[ux-notif-001-surface-contract] ok');
