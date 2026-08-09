@@ -1,4 +1,4 @@
-name: UX-NOTIF-003 Sonar Issues Inspect
+name: UX-NOTIF-003 Sonar Cleanup Apply
 
 on:
   push:
@@ -9,64 +9,77 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  inspect:
+  apply:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - name: Checkout repository
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           fetch-depth: 2
 
-      - name: Guard certified parent
+      - name: Guard exact cleanup parent
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD^)" = "ba7aae086505a87a8bec2b329334551447a36ba5"
+          test "$(git rev-parse HEAD^)" = "299f1a08c1ef1ae9757caa8e8f4f9fbba9f4c27f"
 
-      - name: Query Sonar PR issues
-        shell: bash
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: |
-          set -euo pipefail
-          test -n "${SONAR_TOKEN}"
-          curl -fsS -u "${SONAR_TOKEN}:" \
-            'https://sonarcloud.io/api/issues/search?componentKeys=Ezyrus07_doke-web&pullRequest=96&statuses=OPEN,CONFIRMED&ps=100' \
-            -o sonar-issues.json
-          node <<'NODE'
-          const fs = require('fs');
-          const payload = JSON.parse(fs.readFileSync('sonar-issues.json', 'utf8'));
-          const issues = Array.isArray(payload.issues) ? payload.issues : [];
-          console.log(`[ux-notif-003-sonar] total=${issues.length}`);
-          for (const issue of issues) {
-            const component = String(issue.component || '').replace('Ezyrus07_doke-web:', '');
-            const line = issue.line ?? issue.textRange?.startLine ?? null;
-            console.log(JSON.stringify({
-              key: issue.key,
-              rule: issue.rule,
-              severity: issue.severity,
-              type: issue.type,
-              component,
-              line,
-              message: issue.message,
-              cleanCodeAttribute: issue.cleanCodeAttribute,
-              impacts: issue.impacts || []
-            }));
-          }
-          if (issues.length !== 8) {
-            console.error(`[ux-notif-003-sonar] expected 8 open/confirmed PR issues, got ${issues.length}`);
-            process.exit(1);
-          }
-          NODE
-
-      - name: Upload inspection artifact
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
-          name: ux-notif-003-sonar-issues-${{ github.run_id }}
-          path: sonar-issues.json
-          if-no-files-found: error
-          retention-days: 2
+          node-version: '22'
+          cache: npm
+
+      - name: Install repository dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts
+
+      - name: Apply Sonar cleanup
+        run: python scripts/tmp-ux-notif-003-sonar-cleanup.py
+
+      - name: Validate syntax and focused behavior
+        run: |
+          node --check assets/js/core/notification-toast.js
+          node --check scripts/test-ux-notif-003-toast-manager-runtime.js
+          node scripts/test-ux-notif-003-toast-manager.js
+          node scripts/test-ux-notif-003-toast-manager-runtime.js
+          node scripts/test-ux-notif-003-in-app-delegation.js
+
+      - name: Regenerate canonical matrix
+        run: |
+          npm run write:domain-completion-matrix
+          npm run audit:domain-completion-matrix
+
+      - name: Preserve notification regressions and governance
+        run: |
+          node scripts/test-ux-notif-001-notification-center.js
+          node scripts/test-ux-notif-001-in-app-adapter.js
+          node scripts/test-ux-notif-001-surface-contract.js
+          node scripts/test-ux-notif-002-notification-event.js
+          node scripts/test-ux-notif-002-repository-adapter.js
+          node scripts/test-ux-notif-002-producer-envelopes.js
+          node scripts/test-ux-notif-002-financial-producer-handoff.js
+          node scripts/test-notification-authority-contract.js
+          node scripts/test-notifications-supabase-repository-contract.js
+          node scripts/audit-notifications-api-contract.js
+          node scripts/test-ux-priv-001-account-storage.js
+          node scripts/audit-auth-session-contracts.js
+          npm run audit:agent-governance
+
+      - name: Validate patch and publish functional cleanup
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          git status --short
+          git config user.name 'doke'
+          git config user.email 'bielantoniomma@gmail.com'
+          git add assets/js/core/notification-toast.js \
+            scripts/test-ux-notif-003-toast-manager-runtime.js \
+            docs/DOMAIN-COMPLETION-MATRIX.md
+          git diff --cached --check
+          git diff --cached --quiet && { echo '::error::No functional cleanup to commit.'; exit 1; }
+          git commit -m 'fix(ux-notif-003): resolve Sonar toast code smells'
+          git push origin HEAD:ux/ux-notif-003-toast-manager
