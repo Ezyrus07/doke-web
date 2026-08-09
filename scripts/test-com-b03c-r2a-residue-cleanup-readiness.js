@@ -59,7 +59,8 @@ for(const [k,v,reason] of [
  ['policyPrefix','bad','R2A_EXACT_RESIDUE_SELECTORS_REQUIRED'],['inspectPoliciesAllowed',false,'R2A_REQUIRED_FLAG_MISSING'],
  ['openRealtimeChannelsAllowed',true,'R2A_PROHIBITED_FLAG_ENABLED'],['realUserMutationAllowed',true,'R2A_PROHIBITED_FLAG_ENABLED']
 ]) eq(r.evaluateStagingAuthorization({...authGood,[k]:v}).reason,reason,`auth blocked ${k}`);
-eq(cfg.status,'repository_cleanup_recovery_prepared_new_authorization_required','status');eq(cfg.authorization.received,false,'not received');eq(cfg.authorization.consumed,false,'not consumed');eq(cfg.authorization.executionAttempted,false,'not attempted');eq(cfg.authorization.triggerExists,false,'no trigger');
+eq(cfg.status,'repository_cleanup_recovery_certified_new_authorization_required','status');
+eq(cfg.certification.runId,31285930006,'cert run');eq(cfg.certification.certifyJobId,93174632736,'cert job');eq(cfg.certification.certifyResult,'success','cert success');eq(cfg.certification.authorizeResult,'skipped','authorize skipped');eq(cfg.certification.canaryResult,'skipped','canary skipped');eq(cfg.certification.stagingAccessExecuted,false,'no staging during cert');eq(cfg.authority.repositoryReadinessAuthority,true,'cfg repo authority');eq(cfg.authorization.received,false,'not received');eq(cfg.authorization.consumed,false,'not consumed');eq(cfg.authorization.executionAttempted,false,'not attempted');eq(cfg.authorization.triggerExists,false,'no trigger');
 for(const k of ['createRealtimePoliciesAllowed','openRealtimeChannelsAllowed','rerunPredicateLadderAllowed','communityPostsExecutionAllowed','channelMessagesExecutionAllowed','publicationMutationAllowed','runtimeDeployAllowed','productionAllowed','mergeAllowed','realUserMutationAllowed']) eq(cfg.futureCleanupBoundary[k],false,`cfg no ${k}`);
 assert.ok(checks>=50,`expected >=50 checks, got ${checks}`);
 console.log(`COM-B03C-R2A residue cleanup readiness checks passed: ${checks}/${checks}`);
