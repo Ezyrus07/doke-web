@@ -1,0 +1,85 @@
+name: UX-NOTIF-003 Phase 1 Runner
+
+on:
+  push:
+    branches:
+      - ux/ux-notif-003-toast-manager
+    paths:
+      - '.github/workflows/ux-notif-003-phase1-runner.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Guard certified parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = '7ba1bc1ffaeeb189a7555ce42badded2793f81b3'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Apply toast authority patch
+        run: python scripts/tmp-ux-notif-003-phase1.py
+
+      - name: Install dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts
+
+      - name: Reconcile deterministic domain matrix
+        run: |
+          npm run write:domain-completion-matrix
+          npm run audit:domain-completion-matrix
+
+      - name: Validate UX-NOTIF-003 Phase 1
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check assets/js/core/notification-toast.js
+          node --check assets/js/features/in-app-notifications.js
+          node --check scripts/test-ux-notif-003-toast-manager.js
+          node --check scripts/test-ux-notif-003-in-app-delegation.js
+          node scripts/test-ux-notif-003-toast-manager.js
+          node scripts/test-ux-notif-003-in-app-delegation.js
+          node scripts/test-ux-notif-001-notification-center.js
+          node scripts/test-ux-notif-001-in-app-adapter.js
+          node scripts/test-ux-notif-001-surface-contract.js
+          node scripts/test-ux-notif-002-notification-event.js
+          node scripts/test-ux-notif-002-repository-adapter.js
+          node scripts/test-ux-notif-002-producer-envelopes.js
+          node scripts/test-ux-notif-002-financial-producer-handoff.js
+          node scripts/test-notification-authority-contract.js
+          node scripts/test-notifications-supabase-repository-contract.js
+          node scripts/audit-notifications-api-contract.js
+          npm run audit:agent-governance
+          git diff --check
+
+      - name: Commit validated Phase 1 implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'doke'
+          git config user.email 'bielantoniomma@gmail.com'
+          git add assets/js/core/notification-toast.js
+          git add assets/js/features/in-app-notifications.js
+          git add scripts/test-ux-notif-003-toast-manager.js
+          git add scripts/test-ux-notif-003-in-app-delegation.js
+          git add docs/ux/UX-NOTIF-003.md
+          git add docs/DOMAIN-COMPLETION-MATRIX.md
+          git add -- '*.html'
+          git diff --cached --check
+          git diff --cached --quiet && { echo '::error::No functional changes staged'; exit 1; }
+          git commit -m 'feat(ux-notif-003): extract canonical toast manager'
+          git push origin HEAD:ux/ux-notif-003-toast-manager
