@@ -2,7 +2,7 @@
   "validationId": "COM-B03C-R3-CORRECTED-REALTIME-AUTH-PREDICATE-LADDER-READINESS",
   "domain": "COM-001",
   "contractId": "com-b03c-r3-corrected-realtime-authorization-predicate-ladder-readiness-v1",
-  "status": "repository_corrected_predicate_ladder_certified_new_authorization_required",
+  "status": "staging_execution_completed_authorization_consumed_followup_repository_only_required",
   "checkpoint": {
     "branch": "com/com-001-baseline-audit",
     "pullRequest": 61,
@@ -12,7 +12,10 @@
     "maturity": 3,
     "r2aClosureHead": "4b55ce30924351d3f09bc3e4a8b6ffcecefb11a9",
     "implementationCommit": "c54854832cecb25c64bb2aaf990eba8d2088fc2e",
-    "certificationMetadataCommit": "ec8059d9b60b87f8aa3d7f46fa3b0ef28e6d3c7b"
+    "certificationMetadataCommit": "ec8059d9b60b87f8aa3d7f46fa3b0ef28e6d3c7b",
+    "certifiedEvidenceHead": "745e12b7873e016ae52e0b92a6d4e97a2f84e71a",
+    "triggerCommit": "12ee0d86ead7571b9db44e0dc696f0b0a5b64931",
+    "stagingEvidenceCommit": "7bd8754ea7efa451c1ea811a3bd570b56c3bafcc"
   },
   "predecessor": {
     "r2": {
@@ -104,24 +107,59 @@
     "metadataAuthorizeResult": "skipped",
     "metadataCanaryJobId": 93179645282,
     "metadataCanaryResult": "skipped",
+    "evidenceHeadCertificationRunId": 31287862063,
+    "evidenceHeadCertifyJobId": 93179848060,
+    "evidenceHeadCertifyResult": "success",
+    "evidenceHeadAuthorizeJobId": 93179895002,
+    "evidenceHeadAuthorizeResult": "skipped",
+    "evidenceHeadCanaryJobId": 93179895099,
+    "evidenceHeadCanaryResult": "skipped",
     "syntax": true,
     "r2aZeroResiduePredecessor": true,
     "correctedListenerOrderBoundary": true,
     "r2aRegression": true,
-    "diffHygiene": true,
-    "stagingAccessExecuted": false,
-    "remoteEffectsExecuted": false
+    "diffHygiene": true
+  },
+  "stagingExecution": {
+    "runId": 31288905160,
+    "runAttempt": 1,
+    "event": "push",
+    "runResult": "success",
+    "certifyJobId": 93182621738,
+    "certifyResult": "success",
+    "authorizeJobId": 93182650960,
+    "authorizeResult": "success",
+    "canaryJobId": 93182724070,
+    "canaryResult": "success",
+    "artifactId": 9030781850,
+    "artifactArchiveDigest": "sha256:7d23ba36fa27a82e3ffce867d641ff41acc62669f5381b9ba5a89261a877cc8e",
+    "artifactReportSha256": "1b60c47908c2dd6990414bdea6a2adac0df1b295caf6771703e0d746d26e1777",
+    "negativeControlPassed": true,
+    "r3PredicateConclusionValid": true,
+    "typingFullConjunctionReadProven": true,
+    "typingFullConjunctionWriteProven": true,
+    "presenceFullConjunctionReadProven": false,
+    "presenceFullConjunctionReadFailureClass": "realtime_rls_authorization_rejected",
+    "presenceFullConjunctionWriteProvenOnIndependentWriteAxis": true,
+    "exactCombinedPredicateCauseIsolated": false,
+    "zeroResidueProven": true,
+    "policyResidueAfter": 0,
+    "syntheticAuthResidueAfter": 0,
+    "syntheticDbRowsAfter": 0,
+    "stagingAccessExecuted": true,
+    "remoteEffectsExecuted": true,
+    "remoteEffectsLimitedToSyntheticAuthTemporaryPoliciesAndEphemeralRealtime": true
   },
   "authorization": {
     "requiredPhrase": "I_EXPLICITLY_AUTHORIZE_COM_B03C_R3_CORRECTED_REALTIME_AUTHORIZATION_PREDICATE_LADDER_ON_DOKE_STAGING",
-    "received": false,
-    "consumed": false,
-    "executionAttempted": false,
+    "received": true,
+    "consumed": true,
+    "executionAttempted": true,
     "singleUse": true,
     "reusableAfterFailure": false,
     "predecessorAuthorizationReusable": false,
     "triggerPath": "config/com-b03c-r3-corrected-realtime-auth-predicate-ladder-staging-trigger.json",
-    "triggerExists": false
+    "triggerExists": true
   },
   "authority": {
     "repositoryReadinessAuthority": true,
@@ -144,5 +182,5 @@
     "productionGate": "blocked",
     "mergeAuthorized": false
   },
-  "nextBoundary": "exact new single-use COM-B03C-R3 corrected Realtime authorization predicate ladder staging authorization; no trigger before the exact phrase"
+  "nextBoundary": "repository-only root-cause isolation of the full_conjunction Presence SELECT rejection; any future staging execution requires a new independent boundary and new single-use authorization"
 }
