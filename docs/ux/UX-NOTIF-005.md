@@ -38,6 +38,21 @@ Implementar `NOTIF-H05` da `UX-FOUNDATION-009` sem criar uma segunda store de no
 
 `sourceAuthority` do snapshot não transforma transporte em autoridade do evento de domínio.
 
+## Cobertura runtime da Fase 1
+
+O gate permanente executa harnesses determinísticos adicionais para os caminhos introduzidos por H05, sem excluir código produtivo da medição:
+
+- mutation remota de leitura com confirmação;
+- dispensa remota com falha, `PENDING_SYNC` e retry posterior;
+- retry de criação pendente preservado;
+- snapshot remoto e atualização realtime;
+- fallback remoto degradado;
+- settlement do adapter in-app em sucesso, pending, falha e service unavailable;
+- rejeição de sync de outra conta;
+- snapshot completo da conta atual preservando mutations locais ainda pendentes e removendo estado já sincronizado ausente do snapshot.
+
+Esses harnesses existem para provar os caminhos reais de reconciliation; não alteram as fronteiras de authority nem substituem certificação multi-browser/staging.
+
 ## Fora de escopo
 
 - H06+;
