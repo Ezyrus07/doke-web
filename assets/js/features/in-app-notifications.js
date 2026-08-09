@@ -6,22 +6,25 @@
   const TAB_ID = `tab-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
   const DEFAULT_PREFS = { messages: true, reactions: true, mentions: true, events: true, social: true, sound: true, digest: true, dndEnabled: false, dndUntil: 0, priorityMin: 'silent', mutedScopes: [] };
   const PRIORITY_RANK = { silent: 0, normal: 1, high: 2 };
-  const seen = new Set();
   const pendingActions = new Map();
-  const toastRegistry = new Map();
-  let host = null;
 
   const safeParse = (value, fallback = null) => { try { return JSON.parse(value); } catch (_error) { return fallback; } };
-  const escapeHtml = (value) => String(value || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   const getCurrentUser = () => { try { return window.Doke?.session?.getCurrentUser?.() || window.DokeAuth?.service?.getCurrentUser?.() || safeParse(localStorage.getItem('doke.auth.session.v1'), {})?.user || null; } catch (_error) { return null; } };
   const getAccountKeys = () => { const user = getCurrentUser() || {}; return [user.id, user.accountKey, user.email].map((value) => String(value || '').trim().toLowerCase()).filter(Boolean); };
   const getNotificationCenter = () => window.Doke?.notificationCenter || null;
+  const getToastManager = () => window.Doke?.notificationToast || null;
   const normalizePrefs = (prefs = {}) => ({ ...DEFAULT_PREFS, ...prefs, mutedScopes: Array.isArray(prefs.mutedScopes) ? prefs.mutedScopes : [] });
   const readPrefs = () => normalizePrefs(safeParse(localStorage.getItem(PREFS_KEY), {}) || {});
   const writePrefs = (prefs) => { const next = normalizePrefs(prefs); localStorage.setItem(PREFS_KEY, JSON.stringify(next)); document.dispatchEvent(new CustomEvent('doke:notification-preferences-changed', { detail: next })); return next; };
   const readCenter = () => Array.from(getNotificationCenter()?.getSnapshot?.().items || []);
   const typeGroup = (payload) => { const type = String(payload?.type || '').toLowerCase(); if (type.includes('mention')) return 'mentions'; if (type.includes('reaction')) return 'reactions'; if (type.includes('event')) return 'events'; if (type.includes('message') || payload?.category === 'messages') return 'messages'; return 'social'; };
-  const priorityOf = (payload) => ['silent', 'normal', 'high'].includes(payload?.priority) ? payload.priority : (typeGroup(payload) === 'mentions' || String(payload?.type || '').includes('ban') ? 'high' : 'normal');
+  const priorityOf = (payload) => {
+    const canonical = String(payload?.priority || '').trim().toLowerCase();
+    if (canonical === 'critical') return 'high';
+    if (canonical === 'low') return 'silent';
+    if (['silent', 'normal', 'high'].includes(canonical)) return canonical;
+    return typeGroup(payload) === 'mentions' || String(payload?.type || '').includes('ban') ? 'high' : 'normal';
+  };
   const scopeOf = (payload) => String(payload?.scopeKey || payload?.conversationId || payload?.communityId || payload?.sourceKey || '').trim();
   const isForCurrentUser = (payload) => { const recipient = String(payload?.recipientAccountKey || payload?.userId || '').trim().toLowerCase(); return !recipient || getAccountKeys().includes(recipient); };
   const makeGroupKey = (payload) => String(payload.groupKey || [payload.recipientAccountKey || payload.userId || 'all', typeGroup(payload), payload.type || '', payload.targetUrl || '', payload.title || ''].join('|')).toLowerCase();
@@ -60,7 +63,6 @@
     const state = center.upsert(item);
     return state.items.find((entry) => entry.id === item.id) || item;
   };
-  const ensureHost = () => { if (host?.isConnected) return host; host = document.createElement('section'); host.className='doke-live-toast-stack'; host.dataset.liveToastStack=''; host.setAttribute('aria-live','polite'); host.setAttribute('aria-label','Notificações recentes'); document.body.appendChild(host); return host; };
   const iconFor = (payload) => ({ mentions: '@', reactions: '♥', events: '◷', messages: '●' }[typeGroup(payload)] || '!');
   const markAsRead = (id) => {
     const center = getNotificationCenter();
@@ -181,51 +183,44 @@
   };
 
   const resolveActions = (payload) => { if(Array.isArray(payload.actions))return payload.actions.slice(0,3); const actions=[]; if(payload.targetUrl)actions.push({label:payload.actionLabel|| (typeGroup(payload)==='events'?'Ver evento':'Abrir'),url:payload.targetUrl}); if(scopeOf(payload))actions.push({label:'Silenciar origem',action:'mute-scope'}); return actions.slice(0,2); };
-  const show = (payload, options={}) => {
-    if(!payload||!isForCurrentUser(payload))return false;
-    const id=String(payload.id||payload.eventKey||`${payload.type||'notification'}:${payload.createdAt||Date.now()}`);
-    const prefs=readPrefs();
-    if(seen.has(id)||!shouldToast(payload,prefs))return false;
-    if(isDndActive(prefs)&&!options.skipDigest){queueDigest(payload);return false;}
-    seen.add(id);
-    const priority=priorityOf(payload);
-    const toast=document.createElement('article');
-    toast.className=`doke-live-toast doke-live-toast--${priority}`;
-    toast.tabIndex=0;
-    toast.dataset.liveToast=id;
-    const repeat=Number(payload.repeatCount||1);
-    const actions=resolveActions(payload);
-    toast.innerHTML=`<span class="doke-live-toast__icon" aria-hidden="true">${iconFor(payload)}</span><span class="doke-live-toast__content"><strong>${escapeHtml(payload.title||'Nova notificação')}${repeat>1?` <em>×${repeat}</em>`:''}</strong><span>${escapeHtml(payload.body||payload.message||'')}</span>${actions.length?`<span class="doke-live-toast__actions">${actions.map((action,index)=>`<button type="button" data-toast-action="${index}">${escapeHtml(action.label)}</button>`).join('')}</span>`:''}<small class="doke-live-toast__status" data-toast-action-status aria-live="polite"></small></span><button class="doke-live-toast__close doke-close-button doke-icon-btn doke-icon-btn--flat" type="button" aria-label="Fechar notificação"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6 6 18"></path></svg></button>`;
-    toastRegistry.set(String(payload.id||id), { toast, payload, actions });
-    let timer = null;
-    const close=()=>{if(timer)window.clearTimeout(timer);toastRegistry.delete(String(payload.id||id));toast.classList.add('is-leaving');window.setTimeout(()=>toast.remove(),180);};
-    const restartTimer=()=>{if(timer)window.clearTimeout(timer);timer=window.setTimeout(close,Number(payload.duration|| (priority==='high'?10000:6500)));};
-    toast.querySelector('.doke-live-toast__close')?.addEventListener('click',(event)=>{event.stopPropagation();close();});
-    toast.querySelectorAll('[data-toast-action]').forEach((button)=>button.addEventListener('click',(event)=>{
-      event.stopPropagation();
-      const action=actions[Number(button.dataset.toastAction)];
-      if(!action)return;
-      if(isActionExpired(payload,action)){button.disabled=true;button.textContent='Expirada';recordActionResult(payload.id,'expired','Esta ação expirou.');return;}
-      if(action.action==='mute-scope'){muteScope(scopeOf(payload),payload.scopeLabel||payload.communityName||payload.conversationName||'Origem');close();return;}
-      if(['quick-reply','event-rsvp','request-decision','undo'].includes(action.action)){runQuickAction(toast,payload,action,close);restartTimer();return;}
-      if(action.url){markAsRead(payload.id);window.location.href=action.url;}
-      else if(action.eventName){document.dispatchEvent(new CustomEvent(action.eventName,{detail:{payload,action}}));close();}
-    }));
-    toast.addEventListener('click',(event)=>{if(event.target.closest('button,input,form'))return;payload.targetUrl?openPayload(payload):close();});
-    toast.addEventListener('keydown',(event)=>{if(event.target.matches('input,button'))return;if(event.key==='Enter'||event.key===' '){event.preventDefault();payload.targetUrl?openPayload(payload):close();}if(event.key==='Escape')close();});
-    ensureHost().prepend(toast);
-    while(host.children.length>4)host.lastElementChild?.remove();
-    playSound(priority);
-    restartTimer();
-    return true;
+  const show = (payload, options = {}) => {
+    const manager = getToastManager();
+    if (!manager || typeof manager.show !== 'function') return false;
+    return manager.show(payload, options);
   };
   const publish = (payload={}) => { const envelope={...payload,id:payload.id||payload.eventKey||`live-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,createdAt:payload.createdAt||new Date().toISOString(),originTabId:TAB_ID};const stored=persist(envelope);try{localStorage.setItem(BUS_KEY,JSON.stringify(stored));}catch(_error){}document.dispatchEvent(new CustomEvent('doke:in-app-notification',{detail:stored}));return stored; };
   const muteScope = (scope,label='Origem') => { if(!scope)return readPrefs();const prefs=readPrefs();if(!prefs.mutedScopes.includes(scope))prefs.mutedScopes.push(scope);prefs.mutedScopeLabels={...(prefs.mutedScopeLabels||{}),[scope]:label};return writePrefs(prefs); };
   const unmuteScope = (scope) => { const prefs=readPrefs();prefs.mutedScopes=prefs.mutedScopes.filter((item)=>item!==scope);if(prefs.mutedScopeLabels)delete prefs.mutedScopeLabels[scope];return writePrefs(prefs); };
 
+  const configureToastManager = () => {
+    const manager = getToastManager();
+    if (!manager || typeof manager.configure !== 'function') return false;
+    manager.configure({
+      getAccountKey: () => getAccountKeys()[0] || 'anonymous',
+      isForCurrentUser,
+      shouldToast,
+      isDndActive,
+      queueDigest,
+      priorityOf,
+      iconFor,
+      resolveActions,
+      scopeOf,
+      onMarkRead: markAsRead,
+      onOpen: openPayload,
+      onMuteScope: muteScope,
+      onQuickAction: runQuickAction,
+      onRecordActionResult: recordActionResult,
+      onPublishAction: publishAction,
+      onPlaySound: playSound,
+      isActionExpired
+    });
+    return true;
+  };
+  configureToastManager();
+
   document.addEventListener('doke:notification-action-result', (event) => {
     const detail = event.detail || {};
-    const registered = toastRegistry.get(String(detail.notificationId || ''));
+    const registered = getToastManager()?.getRecord?.(String(detail.notificationId || '')) || null;
     if (!registered) return;
     const status = registered.toast.querySelector('[data-toast-action-status]');
     if (status) { status.textContent = detail.message || ''; status.dataset.status = detail.status || ''; }
@@ -247,7 +242,7 @@
   document.addEventListener('doke:notification-action-error', (event) => {
     const detail = event.detail || {};
     const notificationId = String(detail.notificationId || detail.id || '');
-    const registered = toastRegistry.get(notificationId);
+    const registered = getToastManager()?.getRecord?.(notificationId) || null;
     recordActionResult(notificationId, 'error', detail.message || detail.error || 'Não foi possível concluir a ação.');
     if (!registered) return;
     const status = registered.toast.querySelector('[data-toast-action-status]');
@@ -304,10 +299,12 @@
     applySynchronizedItems(event.detail?.items || []);
   });
   document.addEventListener('doke:auth-session-change', () => {
+    getToastManager()?.reset?.(getAccountKeys()[0] || 'anonymous');
     getNotificationCenter()?.refreshAccount?.();
     hydrateNotificationCenter();
   });
   document.addEventListener('DOMContentLoaded', () => {
+    configureToastManager();
     hydrateNotificationCenter();
     syncGlobalBadges();
     flushDigest();
@@ -317,6 +314,7 @@
   window.DokeInAppNotifications = {
     publish,
     show,
+    enqueueToast: show,
     publishAction,
     recordActionResult,
     list: () => readCenter().filter((item) => isForCurrentUser(item)),

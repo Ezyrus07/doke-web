@@ -78,8 +78,10 @@ global.CustomEvent = CustomEventStub;
 global.localStorage = localStorageStub;
 
 delete require.cache[require.resolve('../assets/js/core/notification-center.js')];
+delete require.cache[require.resolve('../assets/js/core/notification-toast.js')];
 delete require.cache[require.resolve('../assets/js/features/in-app-notifications.js')];
 require('../assets/js/core/notification-center.js');
+require('../assets/js/core/notification-toast.js');
 require('../assets/js/features/in-app-notifications.js');
 
 const center = Doke.notificationCenter;
