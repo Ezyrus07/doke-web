@@ -4,7 +4,7 @@ const crypto = require('node:crypto');
 
 const CONTRACT_ID = 'com-b03c-r3e-case-time-policy-snapshot-contract-v1';
 const PREDECESSOR_VALIDATION_ID = 'COM-B03C-R3D-R3A-POLICY-MATERIALIZATION-EVIDENCE-READINESS';
-const PREDECESSOR_STATUS = 'repository_r3a_policy_materialization_evidence_gap_isolated_no_staging_authority';
+const PREDECESSOR_STATUS = 'repository_r3a_policy_materialization_evidence_gap_isolated_and_certified_no_staging_authority';
 const REQUIRED_BRANCH = 'com/com-001-baseline-audit';
 const REQUIRED_PULL_REQUEST = 61;
 const HISTORICAL_EXECUTOR_PATH = 'scripts/execute-com-b03c-r3a-presence-full-conjunction-isolation-staging-canary.js';
