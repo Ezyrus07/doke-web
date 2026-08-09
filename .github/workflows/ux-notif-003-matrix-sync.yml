@@ -1,0 +1,53 @@
+name: UX-NOTIF-003 Matrix Sync
+
+on:
+  push:
+    branches:
+      - ux/ux-notif-003-toast-manager
+    paths:
+      - '.github/workflows/ux-notif-003-matrix-sync.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Guard exact candidate parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = 'f7440eb461dff8b413f2cd7c5eb7369a04e260b9'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install repository dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts
+
+      - name: Regenerate and audit matrix
+        run: |
+          npm run write:domain-completion-matrix
+          npm run audit:domain-completion-matrix
+
+      - name: Commit canonical matrix only
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'doke'
+          git config user.email 'bielantoniomma@gmail.com'
+          git add docs/DOMAIN-COMPLETION-MATRIX.md
+          git diff --cached --check
+          git diff --cached --quiet && { echo '::error::Matrix did not change'; exit 1; }
+          git commit -m 'docs(ux-notif-003): refresh domain completion matrix'
+          git push origin HEAD:ux/ux-notif-003-toast-manager
