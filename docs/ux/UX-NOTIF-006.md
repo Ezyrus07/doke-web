@@ -8,7 +8,7 @@
 - Base SHA certificado: `817d78df387c285b0a48a1b5a6d0a5453cb62c54`;
 - Branch: `ux/ux-notif-006-event-policy-matrix`;
 - Handoff: `NOTIF-H06 — category/priority matrix`;
-- Fase 1: implementação frontend/contract em certificação;
+- Fase 1: candidato permanente com Matrix sincronizada; certificação final em execução;
 - Merge autorizado: não;
 - Ready for review autorizado: não;
 - Backend/staging/produção: não acessados.
@@ -156,6 +156,18 @@ Valida que a policy alimenta H04 sem acoplar read e attention:
 ### `test-ux-notif-006-producer-policy-coverage.js`
 
 Faz fence do inventário atual de producers e impede que um novo `eventType` canônico dos domínios em escopo seja introduzido sem policy H06.
+
+## Evidência pré-certificação
+
+O executor temporário de Matrix validou, antes de qualquer publicação de evidência:
+
+- os três testes H06;
+- regressões UX-NOTIF-001/002/003/004/005;
+- geração e auditoria da Domain Completion Matrix;
+- agent governance;
+- delta final restrito a Matrix + remoção do próprio executor.
+
+O executor temporário não pertence à árvore permanente.
 
 ## Fora de escopo
 
