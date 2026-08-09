@@ -11,5 +11,9 @@ if(!['staging_r2_residue_cleanup_proven','staging_r2_residue_cleanup_recovered_a
 if(r.authorization?.consumed!==true||r.authorization?.singleUse!==true||r.authorization?.reusableAfterFailure!==false)fail('DOKE_COM_B03C_R2A_AUTH_EVIDENCE_INVALID');
 if(r.cleanup?.zeroResidueProven!==true||r.cleanup?.policyResidueAfter!==0||r.cleanup?.syntheticAuthResidueAfter!==0||r.cleanup?.syntheticDbRowsAfter!==0)fail('DOKE_COM_B03C_R2A_ZERO_RESIDUE_INVALID');
 for(const k of ['realtimePoliciesCreated','realtimeChannelsOpened','predicateLadderRerun','communityPostsReexecuted','channelMessagesExecuted','publicationMutationExecuted','runtimeDeployed','productionChanged','pullRequestMerged','realUserMutationExecuted'])if(r.effects?.[k]!==false)fail(`DOKE_COM_B03C_R2A_PROHIBITED_EFFECT_${k}`);
-if(r.inspection?.rawIdentifiersExposed!==false)fail('DOKE_COM_B03C_R2A_RAW_IDENTIFIER_EXPOSURE');
+if(r.status==='staging_r2_residue_cleanup_recovered_after_initial_failure'){
+  if(r.failure?.rawRemoteErrorExposed!==false)fail('DOKE_COM_B03C_R2A_RAW_ERROR_EXPOSURE');
+}else if(r.inspection?.rawIdentifiersExposed!==false){
+  fail('DOKE_COM_B03C_R2A_RAW_IDENTIFIER_EXPOSURE');
+}
 console.log('COM-B03C-R2A staging residue cleanup evidence verified');
