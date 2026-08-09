@@ -7,8 +7,9 @@
 - Base: `ux/ux-notif-001-center-badge-authority`;
 - Base SHA certificado: `eab8836702e672494a69c244d481d32156e94d3e`;
 - Branch: `ux/ux-notif-002-event-schema`;
-- Fase 1: autoridade pura de evento + testes/CI;
-- Integração com producers/repository: não iniciada nesta fase;
+- Fase 1: autoridade pura de evento + testes/CI certificada;
+- Fase 2A: repository adapter + dependência explícita nas rotas consumidoras implementada; certificação depende dos gates do mesmo SHA;
+- Fase 2B: producers nativos ainda não iniciados;
 - Merge autorizado: não;
 - Ready for review autorizado: não;
 - Staging/produção: não acessados.
@@ -320,6 +321,42 @@ notifications-repository / producer adapters
 ```
 
 Essa integração será separada da definição do contrato e não autoriza backend ou staging.
+
+
+## Fase 2A — repository adapter e runtime dependency
+
+O primeiro passo de integração remove a autoridade paralela do repository sem alterar ainda a semântica dos producers existentes.
+
+Decisões:
+
+- `notifications-repository.js` deixa de possuir `getCategory()` e `getEventKey()` heurísticos;
+- `Doke.notificationEvent` normaliza identidade/classificação no boundary do repository;
+- `eventKey` permanece como alias transitório de `dedupeKey`;
+- `category` legado permanece para filtros/UI enquanto `eventCategory` expõe a categoria canônica;
+- o repository acrescenta metadata canônica de identidade, domínio, source authority, prioridade, atenção, privacidade e channel policy;
+- origem remota usa `CANONICAL_REMOTE`, estado local usa `CANONICAL_LOCAL` e fixture/demo usa `DEMO`;
+- a ausência de `notification-event-v1` falha fechada em `UNKNOWN_OPERATIONAL`, sem recriar inferência paralela;
+- todas as páginas raiz consumidoras carregam `notification-event.js` antes do repository.
+
+Compatibilidade transitória:
+
+```text
+category       = contrato legado de UI/filtro
+eventCategory  = categoria canônica UX-NOTIF-002
+eventKey       = alias transitório de dedupeKey
+dedupeKey      = identidade canônica de deduplicação
+```
+
+O repository não inventa `eventId`. Enquanto producers legados enviarem apenas `eventKey`, a identidade permanece `explicit-dedupe`. A Fase 2B migrará producers para `eventId/eventType/sourceDomain` nativos e corrigirá eventos de pagamento/disputa que ainda carregam semântica legada.
+
+### Gate da Fase 2A
+
+- dependency order canônica nas 16 rotas consumidoras;
+- nenhuma heurística `getCategory()`/`getEventKey()` no repository;
+- metadata canônica sem quebrar `category` legado;
+- desconhecido operacional fail-closed;
+- source authority coerente com a origem;
+- testes herdados, Matrix, governança, LCOV, Sonar e `git diff --check` no mesmo SHA.
 
 ## Fora de escopo
 

@@ -155,74 +155,163 @@
     }).filter(Boolean)));
   }
 
-  function getCategory(type) {
-    if (/message/i.test(type || '')) return 'messages';
-    if (/order|budget|proposal|status/i.test(type || '')) return 'orders';
-    if (/service|ad/i.test(type || '')) return 'ads';
-    return 'social';
-  }
+  var EVENT_CONTRACT = 'notification-event-v1';
+var LEGACY_CATEGORY_BY_EVENT_CATEGORY = Object.freeze({
+  MESSAGES: 'messages',
+  ORDERS: 'orders',
+  PROPOSALS: 'proposals',
+  PAYMENTS: 'payments',
+  DISPUTES: 'disputes',
+  ACCOUNT: 'account',
+  SECURITY: 'security',
+  COMMUNITIES: 'communities',
+  SOCIAL: 'social',
+  PRODUCT: 'product',
+  UNKNOWN_OPERATIONAL: 'unknown_operational'
+});
 
-  function getActionLabel(type) {
-    return getCategory(type) === 'messages' ? 'Abrir conversa' : 'Abrir';
-  }
+function getEventContract() {
+  var contract = Doke.notificationEvent;
+  return contract
+    && contract.contract === EVENT_CONTRACT
+    && typeof contract.normalize === 'function'
+    ? contract
+    : null;
+}
 
-  function getTargetUrl(raw) {
-    if (raw.targetUrl) return raw.targetUrl;
-    if (raw.conversationId) return 'mensagens.html?conversation=' + encodeURIComponent(raw.conversationId);
-    if (raw.orderId) return 'pedidos.html?orderId=' + encodeURIComponent(raw.orderId);
-    return 'notificacoes.html';
-  }
+function inferSourceAuthority(raw, options) {
+  raw = raw || {};
+  options = options || {};
+  var explicit = normalizeText(options.sourceAuthority || raw.sourceAuthority || raw.source_authority || '').toUpperCase();
+  if (explicit) return explicit;
+  if (raw.remoteId || raw.syncStatus === 'synced') return 'CANONICAL_REMOTE';
+  if (raw.demo === true || raw.isDemo === true) return 'DEMO';
+  return 'CANONICAL_LOCAL';
+}
 
-  function getEventKey(raw) {
-    var explicit = normalizeText(raw.eventKey || raw.dedupeKey || '');
-    if (explicit) return explicit;
+function fallbackEventEnvelope(raw, sourceAuthority) {
+  raw = raw || {};
+  var eventId = normalizeText(raw.eventId || raw.event_id || '');
+  var explicitDedupe = normalizeText(raw.dedupeKey || raw.eventKey || raw.event_key || '');
+  var dedupeKey = eventId || explicitDedupe;
+  return Object.freeze({
+    contract: EVENT_CONTRACT,
+    eventId: eventId,
+    eventType: normalizeText(raw.eventType || raw.type || '').toLowerCase(),
+    eventVersion: Math.max(1, Number(raw.eventVersion || raw.event_version || 1) || 1),
+    sourceDomain: 'UNKNOWN_OPERATIONAL',
+    sourceAuthority: sourceAuthority,
+    dedupeKey: dedupeKey,
+    aggregationKey: normalizeText(raw.aggregationKey || raw.aggregation_key || ''),
+    category: 'UNKNOWN_OPERATIONAL',
+    priority: 'NORMAL',
+    attentionState: raw.actionRequired === true ? 'ACTION_REQUIRED' : 'INFORMATIONAL',
+    actionRequired: raw.actionRequired === true,
+    privacyLevel: 'PRIVATE_AUTHENTICATED',
+    channelPolicy: Object.freeze({
+      inbox: 'required',
+      toast: 'silent',
+      browser: 'generic_only',
+      sound: 'forbidden',
+      digest: 'forbidden'
+    }),
+    accepted: false,
+    rejectionReason: 'notification-event-authority-unavailable',
+    identitySource: eventId ? 'eventId' : explicitDedupe ? 'explicit-dedupe' : 'missing',
+    criticalOperational: false
+  });
+}
 
-    var type = normalizeText(raw.type || 'system');
-    var userId = normalizeText(raw.userId || raw.recipientId || '');
-    var messageId = normalizeText(raw.messageId || '');
-    var orderId = normalizeText(raw.orderId || '');
-    var conversationId = normalizeText(raw.conversationId || '');
+function normalizeEventEnvelope(raw, options) {
+  raw = raw || {};
+  var sourceAuthority = inferSourceAuthority(raw, options);
+  var contract = getEventContract();
+  if (!contract) return fallbackEventEnvelope(raw, sourceAuthority);
+  return contract.normalize(Object.assign({}, raw, {
+    eventType: raw.eventType || raw.type || '',
+    category: raw.eventCategory || raw.canonicalCategory || '',
+    sourceAuthority: sourceAuthority
+  }));
+}
 
-    if (messageId) return [type, messageId, userId].filter(Boolean).join(':');
-    if (orderId) return [type, orderId, userId].filter(Boolean).join(':');
-    if (conversationId) return [type, conversationId, userId].filter(Boolean).join(':');
-    return '';
-  }
+function getLegacyCategory(raw, event) {
+  var explicit = normalizeText(raw && raw.category || '').toLowerCase();
+  if (explicit) return explicit;
+  return LEGACY_CATEGORY_BY_EVENT_CATEGORY[event && event.category] || 'unknown_operational';
+}
 
-  function normalizeNotification(raw) {
-    raw = raw || {};
-    var type = normalizeText(raw.type || 'system');
-    var category = normalizeText(raw.category || getCategory(type));
-    var createdAt = raw.createdAt || raw.creatédAt || nowIso();
-    var title = normalizeText(raw.title || 'Nova notificação');
-    var body = normalizeText(raw.body || raw.message || raw.description || '');
-    var read = raw.read === true;
-    var dismissed = raw.dismissed === true;
+function getActionLabel(type) {
+  var contract = getEventContract();
+  var category = contract && typeof contract.inferCategory === 'function'
+    ? contract.inferCategory(type)
+    : '';
+  return category === 'MESSAGES' ? 'Abrir conversa' : 'Abrir';
+}
 
-    return Object.assign({}, raw, {
-      id: normalizeText(raw.id) || createNotificationId(),
-      type: type,
-      category: category,
-      userId: normalizeText(raw.userId || raw.recipientId || ''),
-      recipientAccountKey: normalizeText(raw.recipientAccountKey || raw.accountKey || raw.userAccountKey || ''),
-      eventKey: getEventKey(raw),
-      messageId: normalizeText(raw.messageId || ''),
-      actorId: normalizeText(raw.actorId || ''),
-      actorName: normalizeText(raw.actorName || ''),
-      orderId: normalizeText(raw.orderId || ''),
-      conversationId: normalizeText(raw.conversationId || ''),
-      serviceId: normalizeText(raw.serviceId || ''),
-      title: title,
-      body: body,
-      targetUrl: getTargetUrl(raw),
-      actionLabel: normalizeText(raw.actionLabel || raw.action || getActionLabel(type)),
-      read: read,
-      dismissed: dismissed,
-      createdAt: createdAt,
-      creatédAt: raw.creatédAt || createdAt,
-      updatedAt: raw.updatedAt || createdAt
-    });
-  }
+function getTargetUrl(raw) {
+  if (raw.targetUrl) return raw.targetUrl;
+  if (raw.conversationId) return 'mensagens.html?conversation=' + encodeURIComponent(raw.conversationId);
+  if (raw.orderId) return 'pedidos.html?orderId=' + encodeURIComponent(raw.orderId);
+  return 'notificacoes.html';
+}
+
+function normalizeNotification(raw, options) {
+  raw = raw || {};
+  var type = normalizeText(raw.type || raw.eventType || 'system');
+  var event = normalizeEventEnvelope(raw, options);
+  var createdAt = raw.createdAt || raw.creatédAt || nowIso();
+  var title = normalizeText(raw.title || 'Nova notificação');
+  var body = normalizeText(raw.body || raw.message || raw.description || '');
+  var read = raw.read === true;
+  var dismissed = raw.dismissed === true;
+
+  return Object.assign({}, raw, {
+    id: normalizeText(raw.id) || createNotificationId(),
+    type: type,
+    category: getLegacyCategory(raw, event),
+    userId: normalizeText(raw.userId || raw.recipientId || ''),
+    recipientAccountKey: normalizeText(raw.recipientAccountKey || raw.accountKey || raw.userAccountKey || ''),
+    eventId: event.eventId,
+    eventType: event.eventType,
+    eventVersion: event.eventVersion,
+    sourceDomain: event.sourceDomain,
+    sourceAuthority: event.sourceAuthority,
+    dedupeKey: event.dedupeKey,
+    eventKey: event.dedupeKey,
+    aggregationKey: event.aggregationKey,
+    eventCategory: event.category,
+    priority: event.priority,
+    attentionState: event.attentionState,
+    actionRequired: event.actionRequired,
+    privacyLevel: event.privacyLevel,
+    channelPolicy: clone(event.channelPolicy),
+    eventAccepted: event.accepted,
+    eventRejectionReason: event.rejectionReason,
+    eventIdentitySource: event.identitySource,
+    criticalOperational: event.criticalOperational,
+    messageId: normalizeText(raw.messageId || ''),
+    actorId: normalizeText(raw.actorId || ''),
+    actorName: normalizeText(raw.actorName || ''),
+    orderId: normalizeText(raw.orderId || ''),
+    conversationId: normalizeText(raw.conversationId || ''),
+    serviceId: normalizeText(raw.serviceId || ''),
+    title: title,
+    body: body,
+    targetUrl: getTargetUrl(raw),
+    actionLabel: normalizeText(raw.actionLabel || raw.action || getActionLabel(type)),
+    read: read,
+    dismissed: dismissed,
+    createdAt: createdAt,
+    creatédAt: raw.creatédAt || createdAt,
+    updatedAt: raw.updatedAt || createdAt
+  });
+}
+
+function normalizeDemoItems(items) {
+  return (Array.isArray(items) ? items : []).map(function (item) {
+    return normalizeNotification(item, { sourceAuthority: 'DEMO' });
+  });
+}
 
   function mergeById() {
     var map = Object.create(null);
@@ -323,7 +412,7 @@
       userId: row.user_id || metadata.userId || '',
       actorId: row.actor_id || metadata.actorId || '',
       type: row.type || metadata.type || 'system',
-      category: row.category || metadata.category || getCategory(row.type),
+      category: row.category || metadata.category || '',
       eventKey: row.event_key || metadata.eventKey || '',
       title: row.title || metadata.title || 'Nova notificação',
       body: row.body || metadata.body || '',
@@ -338,7 +427,7 @@
       updatedAt: row.updated_at || row.created_at || metadata.updatedAt || nowIso(),
       syncStatus: 'synced',
       syncError: ''
-    }));
+    }), { sourceAuthority: 'CANONICAL_REMOTE' });
   }
 
   function saveLocal(notification, syncStatus) {
@@ -468,7 +557,7 @@
         p_external_id: normalized.id,
         p_recipient_id: normalized.userId,
         p_type: normalized.type || 'system',
-        p_category: normalized.category || getCategory(normalized.type),
+        p_category: normalized.category || 'unknown_operational',
         p_title: normalized.title || 'Nova notificação',
         p_body: normalized.body || '',
         p_event_key: normalized.eventKey || null,
@@ -545,13 +634,13 @@
     if (!isStaticDemoEnabled()) return Promise.resolve([]);
 
     if (Doke.mockData && typeof Doke.mockData.load === 'function') {
-      return Doke.mockData.load('notifications', options);
+      return Doke.mockData.load('notifications', options).then(normalizeDemoItems);
     }
 
     return fetch(FALLBACK_URL, { cache: 'no-cache', credentials: 'same-origin' })
       .then(function (response) {
         if (!response.ok) throw new Error('Não foi possível carregar notificações mockadas.');
-        return response.json();
+        return response.json().then(normalizeDemoItems);
       });
   }
 
