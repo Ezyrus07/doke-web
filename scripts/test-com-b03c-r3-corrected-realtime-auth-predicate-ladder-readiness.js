@@ -176,7 +176,17 @@ for (const [field, value, reason] of [
   eq(bad.reason, reason, `auth blocked ${field}`);
 }
 
-eq(cfg.status, 'repository_corrected_predicate_ladder_prepared_new_authorization_required', 'status');
+eq(cfg.status, 'repository_corrected_predicate_ladder_certified_new_authorization_required', 'status');
+eq(cfg.implementation.implementationCommit, 'c54854832cecb25c64bb2aaf990eba8d2088fc2e', 'implementation commit');
+eq(cfg.certification.localReadinessChecks, '96/96', 'local readiness');
+eq(cfg.certification.initialRunId, 31287527733, 'initial run');
+eq(cfg.certification.initialCertifyJobId, 93178960607, 'initial certify');
+eq(cfg.certification.initialCertifyResult, 'success', 'initial certify result');
+eq(cfg.certification.initialAuthorizeResult, 'skipped', 'initial authorize skipped');
+eq(cfg.certification.initialCanaryResult, 'skipped', 'initial canary skipped');
+eq(cfg.certification.stagingAccessExecuted, false, 'no staging in certification');
+eq(cfg.certification.remoteEffectsExecuted, false, 'no remote effects in certification');
+eq(cfg.authority.repositoryReadinessAuthority, true, 'repository authority certified');
 eq(cfg.authorization.received, false, 'auth not received');
 eq(cfg.authorization.consumed, false, 'auth not consumed');
 eq(cfg.authorization.executionAttempted, false, 'not executed');
@@ -201,7 +211,7 @@ ok(/cleanupAllPolicies/.test(executor), 'outer policy cleanup fallback');
 ok(/postExecutionZeroResidue/.test(executor), 'post execution residue verification');
 ok(/reportAlwaysWritten: true/.test(executor), 'always-report harness flag');
 ok(/rawRemoteErrorExposed: false/.test(executor), 'sanitized executor');
-ok(/assert\.equal\(evidence\.cleanup\?\.zeroResidueProven, true\)/.test(verifier), 'verifier requires zero residue when lifecycle starts');
+ok(/assert\.equal\(evidence\.cleanup\?\.zeroResidueProven, true\)/.test(verifier), 'verifier requires zero residue');
 ok(/listenerRegistrationBeforeSubscribe/.test(verifier), 'verifier listener ordering');
 
 ok(checks >= 95, `expected >= 95 checks, got ${checks}`);
