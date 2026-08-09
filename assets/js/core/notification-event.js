@@ -6,8 +6,9 @@
 
   var root = window;
   var Doke = root.Doke || (root.Doke = {});
-  var VERSION = '20260808-ux-notif-002-v1';
+  var VERSION = '20260809-ux-notif-006-v1';
   var CONTRACT = 'notification-event-v1';
+  var POLICY_CONTRACT = 'notification-event-policy-matrix-v1';
 
   if (Doke.notificationEvent && Doke.notificationEvent.version === VERSION) return;
 
@@ -114,6 +115,49 @@
 
   function includes(list, value) {
     return list.indexOf(value) !== -1;
+  }
+
+  function createPolicy(category, priority, attentionState, actionRequired) {
+    return Object.freeze({
+      contract: POLICY_CONTRACT,
+      category: category,
+      priority: priority,
+      attentionState: attentionState,
+      actionRequired: actionRequired === true
+    });
+  }
+
+  var EVENT_POLICY = Object.freeze({
+    message_received: createPolicy('MESSAGES', 'NORMAL', 'INFORMATIONAL', false),
+
+    order_created: createPolicy('ORDERS', 'HIGH', 'ACTION_REQUIRED', true),
+    order_status_changed: createPolicy('ORDERS', 'NORMAL', 'INFORMATIONAL', false),
+    order_accepted: createPolicy('ORDERS', 'NORMAL', 'INFORMATIONAL', false),
+    order_in_progress: createPolicy('ORDERS', 'NORMAL', 'INFORMATIONAL', false),
+    order_completed: createPolicy('ORDERS', 'NORMAL', 'RESOLVED', false),
+    order_cancelled: createPolicy('ORDERS', 'NORMAL', 'RESOLVED', false),
+    order_reviewed: createPolicy('ORDERS', 'LOW', 'INFORMATIONAL', false),
+    order_completion_requested: createPolicy('ORDERS', 'HIGH', 'ACTION_REQUIRED', true),
+
+    proposal_sent: createPolicy('PROPOSALS', 'HIGH', 'ACTION_REQUIRED', true),
+    proposal_approved: createPolicy('PROPOSALS', 'HIGH', 'INFORMATIONAL', false),
+    proposal_rejected: createPolicy('PROPOSALS', 'NORMAL', 'RESOLVED', false),
+
+    payment_held: createPolicy('PAYMENTS', 'HIGH', 'INFORMATIONAL', false),
+    wallet_receivable_available: createPolicy('PAYMENTS', 'NORMAL', 'INFORMATIONAL', false),
+    wallet_withdraw_requested: createPolicy('PAYMENTS', 'NORMAL', 'INFORMATIONAL', false),
+    wallet_withdraw_completed: createPolicy('PAYMENTS', 'NORMAL', 'RESOLVED', false),
+    wallet_withdraw_declined: createPolicy('PAYMENTS', 'HIGH', 'ACTION_REQUIRED', true),
+
+    dispute_opened: createPolicy('DISPUTES', 'CRITICAL', 'URGENT_ACTION_REQUIRED', true),
+    dispute_reported: createPolicy('DISPUTES', 'HIGH', 'INFORMATIONAL', false),
+    dispute_responded: createPolicy('DISPUTES', 'HIGH', 'INFORMATIONAL', false),
+    dispute_resolved: createPolicy('DISPUTES', 'HIGH', 'RESOLVED', false)
+  });
+
+  function getPolicy(eventType) {
+    var normalized = normalizeText(eventType).toLowerCase();
+    return EVENT_POLICY[normalized] || null;
   }
 
   function eventPrefix(eventType) {
@@ -238,11 +282,31 @@
     return sourceAuthority === 'CANONICAL_REMOTE' || sourceAuthority === 'CANONICAL_LOCAL';
   }
 
+  function getExplicitCanonicalCategory(raw) {
+    raw = raw || {};
+    var explicit = normalizeUpper(raw.eventCategory || raw.canonicalCategory || '');
+    return explicit;
+  }
+
   function normalize(raw) {
     raw = raw && typeof raw === 'object' ? raw : {};
     var eventType = normalizeText(raw.eventType || raw.type || '').toLowerCase();
-    var actionRequired = raw.actionRequired === true || raw.action_required === true;
-    var category = normalizeCategory(raw.eventCategory || raw.canonicalCategory || raw.category, eventType);
+    var policy = getPolicy(eventType);
+    var explicitCanonicalCategory = getExplicitCanonicalCategory(raw);
+    var policyCategoryConflict = Boolean(
+      policy
+      && explicitCanonicalCategory
+      && (!includes(CATEGORIES, explicitCanonicalCategory) || explicitCanonicalCategory !== policy.category)
+    );
+    var rawActionRequired = raw.actionRequired === true || raw.action_required === true;
+    var actionRequired = policy ? policy.actionRequired : rawActionRequired;
+    var category = policy
+      ? policy.category
+      : normalizeCategory(raw.eventCategory || raw.canonicalCategory || raw.category, eventType);
+    var priority = policy ? policy.priority : normalizePriority(raw.priority);
+    var attentionState = policy
+      ? policy.attentionState
+      : normalizeAttention(raw.attentionState || raw.attention_state, actionRequired);
     var sourceAuthority = normalizeSourceAuthority(raw.sourceAuthority || raw.source_authority);
     var identity = resolveIdentity(raw, eventType);
     var privacyLevel = normalizePrivacy(raw.privacyLevel || raw.privacy_level);
@@ -252,7 +316,13 @@
     var sourceAccepted = !canonicalSourceRequired || isCanonicalSource(sourceAuthority);
     var classificationAccepted = category !== 'UNKNOWN_OPERATIONAL';
     var identityAccepted = Boolean(identity.dedupeKey);
-    var accepted = Boolean(eventType && identityAccepted && classificationAccepted && sourceAccepted);
+    var accepted = Boolean(
+      eventType
+      && identityAccepted
+      && classificationAccepted
+      && !policyCategoryConflict
+      && sourceAccepted
+    );
 
     return Object.freeze({
       contract: CONTRACT,
@@ -264,8 +334,8 @@
       dedupeKey: identity.dedupeKey,
       aggregationKey: normalizeText(raw.aggregationKey || raw.aggregation_key || ''),
       category: category,
-      priority: normalizePriority(raw.priority),
-      attentionState: normalizeAttention(raw.attentionState || raw.attention_state, actionRequired),
+      priority: priority,
+      attentionState: attentionState,
       actionRequired: actionRequired,
       privacyLevel: privacyLevel,
       channelPolicy: normalizeChannelPolicy(raw.channelPolicy || raw.channel_policy, category, privacyLevel),
@@ -276,11 +346,13 @@
           ? 'missing-event-type'
           : !identityAccepted
             ? 'missing-event-identity'
-            : !classificationAccepted
-              ? 'unknown-operational-category'
-              : !sourceAccepted
-                ? 'non-canonical-critical-source'
-                : 'invalid-event',
+            : policyCategoryConflict
+              ? 'event-policy-category-mismatch'
+              : !classificationAccepted
+                ? 'unknown-operational-category'
+                : !sourceAccepted
+                  ? 'non-canonical-critical-source'
+                  : 'invalid-event',
       identitySource: identity.identitySource,
       criticalOperational: criticalOperational
     });
@@ -304,6 +376,7 @@
   var api = Object.freeze({
     version: VERSION,
     contract: CONTRACT,
+    policyContract: POLICY_CONTRACT,
     categories: CATEGORIES,
     priorities: PRIORITIES,
     attentionStates: ATTENTION_STATES,
@@ -311,6 +384,7 @@
     sourceAuthorities: SOURCE_AUTHORITIES,
     domains: DOMAINS,
     inferCategory: inferCategory,
+    getPolicy: getPolicy,
     normalize: normalize,
     getDedupeKey: function (raw) {
       var eventType = normalizeText(raw && (raw.eventType || raw.type) || '').toLowerCase();
