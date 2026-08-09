@@ -1,0 +1,72 @@
+{
+  "validationId": "COM-B03C-R3A-PRESENCE-FULL-CONJUNCTION-ISOLATION-READINESS",
+  "domain": "COM-001",
+  "contractId": "com-b03c-r3a-presence-full-conjunction-isolation-readiness-v1",
+  "status": "repository_presence_full_conjunction_isolation_ready_no_staging_authority",
+  "predecessor": {
+    "validationId": "COM-B03C-R3-CORRECTED-REALTIME-AUTH-PREDICATE-LADDER-STAGING-ATTEMPT",
+    "runId": 31288905160,
+    "artifactId": 9030781850,
+    "r3AuthorizationConsumed": true,
+    "r3AuthorizationReusable": false,
+    "r3PredicateConclusionValid": true,
+    "r3ZeroResidueProven": true,
+    "presenceFullConjunctionReadProven": false,
+    "presenceFullConjunctionWriteProven": true,
+    "typingFullConjunctionReadProven": true,
+    "typingFullConjunctionWriteProven": true,
+    "failureClass": "full_conjunction_presence_read_rls_rejection",
+    "exactCauseIsolated": false
+  },
+  "repositoryDiagnosis": {
+    "r3CurrentPredicate": "(select auth.uid()) = <ephemeral-user> and realtime.topic() = <topic> and realtime.messages.extension = 'presence'",
+    "r3ComparisonLimitation": "each predicate rung used a different synthetic topic and fresh Realtime client, so individual-rung success is not an identical-context proof of the combined expression",
+    "supabaseDocumentedShapeNotes": [
+      "official examples use (select realtime.topic())",
+      "official examples combine auth uid, topic and extension under an EXISTS membership predicate",
+      "Presence read authorization is SELECT on realtime.messages with extension presence"
+    ],
+    "causeClaimAllowed": false
+  },
+  "isolationDesign": {
+    "scope": "channel_presence only",
+    "axis": "read_join only",
+    "sameIdentity": true,
+    "sameAccessToken": true,
+    "sameTopic": true,
+    "freshRealtimeClientPerCase": true,
+    "insertControlPredicate": "true",
+    "writeActions": false,
+    "temporaryPolicies": true,
+    "negativeControl": true,
+    "cases": [
+      "control_true",
+      "uid_topic_direct",
+      "uid_extension_eq",
+      "topic_extension_direct",
+      "full_current_direct",
+      "full_topic_select_wrapper",
+      "full_topic_select_extension_in",
+      "full_docs_canonical_exists"
+    ]
+  },
+  "authority": {
+    "repositoryReadinessAuthority": true,
+    "stagingReadAuthority": false,
+    "stagingMutationAuthority": false,
+    "authIdentityLifecycleAuthority": false,
+    "realtimePolicyLifecycleAuthority": false,
+    "realtimeSubscriptionAuthority": false,
+    "runtimeDeployAuthority": false,
+    "productionAuthority": false,
+    "mergeAuthority": false
+  },
+  "governance": {
+    "matrixVersion": "1.3.113",
+    "maturity": 3,
+    "maturityPromoted": false,
+    "productionGate": "blocked",
+    "mergeAuthorized": false
+  },
+  "nextBoundary": "implement and repository-certify the R3A isolation executor/verifier/workflow; do not define a staging authorization phrase or create a trigger yet"
+}
