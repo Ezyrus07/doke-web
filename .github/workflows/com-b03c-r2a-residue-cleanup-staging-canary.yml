@@ -12,6 +12,7 @@ on:
       - .github/workflows/com-b03c-r2a-residue-cleanup-staging-canary.yml
       - docs/validation/COM-B03C-R2-REALTIME-AUTH-PREDICATE-LADDER-STAGING-ATTEMPT.json
       - docs/validation/COM-B03C-R2A-STAGING-RESIDUE-CLEANUP-READINESS.json
+      - docs/validation/COM-B03C-R2A-STAGING-RESIDUE-CLEANUP.json
   push:
     branches: [com/com-001-baseline-audit]
     paths: [config/com-b03c-r2a-residue-cleanup-staging-trigger.json]
@@ -45,12 +46,24 @@ jobs:
           grep -q 'cleanup_unproven' docs/validation/COM-B03C-R2-REALTIME-AUTH-PREDICATE-LADDER-STAGING-ATTEMPT.json
           grep -q '"mustNotBeRerun": true' docs/validation/COM-B03C-R2-REALTIME-AUTH-PREDICATE-LADDER-STAGING-ATTEMPT.json
       - name: Cleanup-only boundary
+        shell: bash
         run: |
+          set -euo pipefail
           grep -q 'com_b03c_r2_' config/com-b03c-r2a-residue-cleanup-readiness.json
           grep -q 'com-b03c-r2-' config/com-b03c-r2a-residue-cleanup-readiness.json
           grep -q '"rerunPredicateLadderAllowed": false' config/com-b03c-r2a-residue-cleanup-readiness.json
           grep -q '"openRealtimeChannelsAllowed": false' config/com-b03c-r2a-residue-cleanup-readiness.json
-          test ! -f config/com-b03c-r2a-residue-cleanup-staging-trigger.json || test "${{ github.event_name }}" = "push"
+          if [ -f config/com-b03c-r2a-residue-cleanup-staging-trigger.json ]; then
+            node - <<'NODE'
+          const t=require('./config/com-b03c-r2a-residue-cleanup-staging-trigger.json');
+          const r=require('./backend/modules/communities/community-realtime-r2a-residue-cleanup-readiness');
+          if(t.contractId!=='com-b03c-r2a-residue-cleanup-staging-trigger-v1')process.exit(1);
+          if(t.status!=='authorization_consumed_execution_pending')process.exit(1);
+          if(t.authorization?.phrase!==r.REQUIRED_AUTHORIZATION_PHRASE)process.exit(1);
+          for(const k of ['received','consumed','executionAttempted','singleUse'])if(t.authorization?.[k]!==true)process.exit(1);
+          for(const k of ['reusableAfterFailure','predecessorAuthorizationReusable'])if(t.authorization?.[k]!==false)process.exit(1);
+          NODE
+          fi
       - name: Diff hygiene
         shell: bash
         run: |
