@@ -1,0 +1,242 @@
+name: Doke UX-NOTIF-005 Inbox Reconciliation
+
+on:
+  push:
+    branches:
+      - ux/ux-notif-005-inbox-reconciliation
+    paths:
+      - 'assets/js/core/notification-center.js'
+      - 'assets/js/core/notification-event.js'
+      - 'assets/js/core/notification-toast.js'
+      - 'assets/js/features/in-app-notifications.js'
+      - 'assets/js/repositories/notifications-repository.js'
+      - 'assets/js/services/notification-service.js'
+      - 'scripts/test-ux-notif-005-inbox-reconciliation.js'
+      - 'scripts/test-ux-notif-005-adapter-repository-contract.js'
+      - 'scripts/test-ux-notif-005-remote-mutation-runtime.js'
+      - 'scripts/test-ux-notif-005-in-app-mutation-runtime.js'
+      - 'scripts/test-ux-notif-004-badge-snapshot.js'
+      - 'scripts/test-ux-notif-001-notification-center.js'
+      - 'scripts/test-ux-notif-001-in-app-adapter.js'
+      - 'scripts/test-ux-notif-001-surface-contract.js'
+      - 'scripts/test-ux-notif-002-notification-event.js'
+      - 'scripts/test-ux-notif-002-repository-adapter.js'
+      - 'scripts/test-ux-notif-002-producer-envelopes.js'
+      - 'scripts/test-ux-notif-002-financial-producer-handoff.js'
+      - 'scripts/test-ux-notif-003-toast-manager.js'
+      - 'scripts/test-ux-notif-003-toast-manager-runtime.js'
+      - 'scripts/test-ux-notif-003-in-app-delegation.js'
+      - 'scripts/test-notification-authority-contract.js'
+      - 'scripts/test-notifications-supabase-repository-contract.js'
+      - 'scripts/audit-notifications-api-contract.js'
+      - 'scripts/test-ux-priv-001-account-storage.js'
+      - 'scripts/audit-auth-session-contracts.js'
+      - 'docs/ux/UX-NOTIF-005.md'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - '.github/workflows/ux-notif-005-inbox-reconciliation.yml'
+      - 'sonar-project.properties'
+  pull_request:
+    paths:
+      - 'assets/js/core/notification-center.js'
+      - 'assets/js/core/notification-event.js'
+      - 'assets/js/core/notification-toast.js'
+      - 'assets/js/features/in-app-notifications.js'
+      - 'assets/js/repositories/notifications-repository.js'
+      - 'assets/js/services/notification-service.js'
+      - 'scripts/test-ux-notif-005-inbox-reconciliation.js'
+      - 'scripts/test-ux-notif-005-adapter-repository-contract.js'
+      - 'scripts/test-ux-notif-005-remote-mutation-runtime.js'
+      - 'scripts/test-ux-notif-005-in-app-mutation-runtime.js'
+      - 'scripts/test-ux-notif-004-badge-snapshot.js'
+      - 'scripts/test-ux-notif-001-notification-center.js'
+      - 'scripts/test-ux-notif-001-in-app-adapter.js'
+      - 'scripts/test-ux-notif-001-surface-contract.js'
+      - 'scripts/test-ux-notif-002-notification-event.js'
+      - 'scripts/test-ux-notif-002-repository-adapter.js'
+      - 'scripts/test-ux-notif-002-producer-envelopes.js'
+      - 'scripts/test-ux-notif-002-financial-producer-handoff.js'
+      - 'scripts/test-ux-notif-003-toast-manager.js'
+      - 'scripts/test-ux-notif-003-toast-manager-runtime.js'
+      - 'scripts/test-ux-notif-003-in-app-delegation.js'
+      - 'scripts/test-notification-authority-contract.js'
+      - 'scripts/test-notifications-supabase-repository-contract.js'
+      - 'scripts/audit-notifications-api-contract.js'
+      - 'scripts/test-ux-priv-001-account-storage.js'
+      - 'scripts/audit-auth-session-contracts.js'
+      - 'docs/ux/UX-NOTIF-005.md'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - '.github/workflows/ux-notif-005-inbox-reconciliation.yml'
+      - 'sonar-project.properties'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  ux-notif-005-inbox-reconciliation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install repository dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts
+
+      - name: Validate clean permanent delivery tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          test ! -e .github/workflows/ux-notif-005-phase1-apply.yml
+          test ! -e .github/workflows/ux-notif-005-pending-preserve-apply.yml
+          test ! -e scripts/tmp-ux-notif-005-phase1.py
+          test ! -e scripts/tmp-ux-notif-005-pending-preserve.py
+
+      - name: Validate JavaScript syntax
+        run: |
+          node --check assets/js/core/notification-center.js
+          node --check assets/js/features/in-app-notifications.js
+          node --check assets/js/repositories/notifications-repository.js
+          node --check scripts/test-ux-notif-005-inbox-reconciliation.js
+          node --check scripts/test-ux-notif-005-adapter-repository-contract.js
+          node --check scripts/test-ux-notif-005-remote-mutation-runtime.js
+          node --check scripts/test-ux-notif-005-in-app-mutation-runtime.js
+          node --check scripts/test-ux-notif-002-repository-adapter.js
+          node --check scripts/test-ux-notif-001-surface-contract.js
+
+      - name: Validate canonical domain matrix
+        run: npm run audit:domain-completion-matrix
+
+      - name: Validate canonical agent governance
+        run: npm run audit:agent-governance
+
+      - name: Validate canonical inbox reconciliation
+        run: |
+          node scripts/test-ux-notif-005-inbox-reconciliation.js
+          node scripts/test-ux-notif-005-adapter-repository-contract.js
+          node scripts/test-ux-notif-005-remote-mutation-runtime.js
+          node scripts/test-ux-notif-005-in-app-mutation-runtime.js
+
+      - name: Preserve UX-NOTIF-001 presentation authority
+        run: |
+          node scripts/test-ux-notif-001-notification-center.js
+          node scripts/test-ux-notif-001-in-app-adapter.js
+          node scripts/test-ux-notif-001-surface-contract.js
+
+      - name: Preserve UX-NOTIF-002 event and repository authority
+        run: |
+          node scripts/test-ux-notif-002-notification-event.js
+          node scripts/test-ux-notif-002-repository-adapter.js
+          node scripts/test-ux-notif-002-producer-envelopes.js
+          node scripts/test-ux-notif-002-financial-producer-handoff.js
+
+      - name: Preserve UX-NOTIF-003 toast authority
+        run: |
+          node scripts/test-ux-notif-003-toast-manager.js
+          node scripts/test-ux-notif-003-toast-manager-runtime.js
+          node scripts/test-ux-notif-003-in-app-delegation.js
+
+      - name: Preserve UX-NOTIF-004 badge authority
+        run: node scripts/test-ux-notif-004-badge-snapshot.js
+
+      - name: Preserve notification repository and API authority
+        run: |
+          node scripts/test-notification-authority-contract.js
+          node scripts/test-notifications-supabase-repository-contract.js
+          node scripts/audit-notifications-api-contract.js
+
+      - name: Preserve account and session isolation contracts
+        run: |
+          node scripts/test-ux-priv-001-account-storage.js
+          node scripts/audit-auth-session-contracts.js
+
+      - name: Generate executable LCOV
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf coverage/ux-notif-005
+          mkdir -p coverage/ux-notif-005
+          node --test \
+            --experimental-test-coverage \
+            --test-coverage-include='assets/js/core/notification-center.js' \
+            --test-coverage-include='assets/js/features/in-app-notifications.js' \
+            --test-coverage-include='assets/js/repositories/notifications-repository.js' \
+            --test-reporter=spec \
+            --test-reporter-destination=stdout \
+            --test-reporter=lcov \
+            --test-reporter-destination=coverage/ux-notif-005/lcov.info \
+            scripts/test-ux-notif-001-notification-center.js \
+            scripts/test-ux-notif-001-in-app-adapter.js \
+            scripts/test-ux-notif-002-repository-adapter.js \
+            scripts/test-ux-notif-004-badge-snapshot.js \
+            scripts/test-ux-notif-005-inbox-reconciliation.js \
+            scripts/test-ux-notif-005-remote-mutation-runtime.js \
+            scripts/test-ux-notif-005-in-app-mutation-runtime.js
+
+      - name: Validate LCOV evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          REPORT='coverage/ux-notif-005/lcov.info'
+          test -s "${REPORT}"
+          grep -Fq 'SF:assets/js/core/notification-center.js' "${REPORT}"
+          grep -Fq 'SF:assets/js/features/in-app-notifications.js' "${REPORT}"
+          grep -Fq 'SF:assets/js/repositories/notifications-repository.js' "${REPORT}"
+          FOUND="$(awk -F: '/^LF:/{lf+=$2} /^LH:/{lh+=$2} END{print lh+0 "/" lf+0}' "${REPORT}")"
+          echo "[ux-notif-005] executable lines: ${FOUND}"
+
+      - name: Require SonarQube Cloud credential
+        if: github.event_name != 'pull_request'
+        shell: bash
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${SONAR_TOKEN}" ]]; then
+            echo '::error::SONAR_TOKEN is unavailable to the trusted branch workflow.'
+            exit 1
+          fi
+
+      - name: Upload LCOV evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ux-notif-005-lcov-${{ github.event_name }}-${{ github.run_id }}
+          path: coverage/ux-notif-005/lcov.info
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Validate patch whitespace
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            git diff --check "${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}"
+          else
+            git diff --check HEAD^
+          fi
+
+      - name: Analyze PR and enforce SonarQube Cloud Quality Gate
+        if: github.event_name != 'pull_request'
+        uses: SonarSource/sonarqube-scan-action@c7ee0f9df90b7aa20e8dcf9695dcfe2e7da5b4f2
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.projectKey=Ezyrus07_doke-web
+            -Dsonar.organization=ezyrus07
+            -Dsonar.pullrequest.key=100
+            -Dsonar.pullrequest.branch=ux/ux-notif-005-inbox-reconciliation
+            -Dsonar.pullrequest.base=ux/ux-notif-004-badge-snapshot
+            -Dsonar.javascript.lcov.reportPaths=coverage/ux-notif-005/lcov.info
+            -Dsonar.qualitygate.wait=true
+            -Dsonar.qualitygate.timeout=600

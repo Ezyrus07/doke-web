@@ -130,6 +130,41 @@ try {
   assert.equal(unknown.category, 'ads', 'legacy UI category is preserved during adapter migration');
   assert.notEqual(unknown.eventCategory, 'SOCIAL');
 
+  storage.set('doke.notifications.local.v1', JSON.stringify([{
+    id: 'notif-pending-stable',
+    eventId: 'evt-pending-read',
+    eventType: 'message_received',
+    eventCategory: 'MESSAGES',
+    type: 'message_received',
+    category: 'messages',
+    userId: 'user-1',
+    messageId: 'message-pending',
+    read: true,
+    syncStatus: 'synced',
+    stateSyncStatus: 'pending',
+    pendingStatePatch: { read: true },
+    stateSyncError: 'offline'
+  }]));
+  storage.set('doke.notifications', JSON.stringify([{
+    id: 'notif-remote-stale-id',
+    eventId: 'evt-pending-read',
+    eventType: 'message_received',
+    eventCategory: 'MESSAGES',
+    type: 'message_received',
+    category: 'messages',
+    userId: 'user-1',
+    messageId: 'message-pending',
+    read: false,
+    syncStatus: 'synced',
+    stateSyncStatus: 'synced'
+  }]));
+  const pendingMerged = repository.listLocal({ currentUser: true });
+  assert.equal(pendingMerged.length, 1, 'same eventId must merge into one repository entity');
+  assert.equal(pendingMerged[0].id, 'notif-pending-stable', 'repository identity must remain stable while eventId converges');
+  assert.equal(pendingMerged[0].read, true, 'stale remote copy must not erase pending optimistic read');
+  assert.equal(pendingMerged[0].stateSyncStatus, 'pending');
+  assert.deepEqual(pendingMerged[0].pendingStatePatch, { read: true });
+
   const sensitive = repository.normalize({
     id: 'notif-sensitive',
     type: 'security_session_revoked',
