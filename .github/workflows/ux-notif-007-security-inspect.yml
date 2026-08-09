@@ -1,0 +1,33 @@
+name: UX-NOTIF-007 Security Inspect
+
+on:
+  push:
+    branches:
+      - ux/ux-notif-007-digest-dnd-policy
+    paths:
+      - '.github/workflows/ux-notif-007-security-inspect.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Query current Sonar PR issues
+        shell: bash
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          set -euo pipefail
+          test -n "${SONAR_TOKEN}"
+          curl --fail --silent --show-error \
+            --user "${SONAR_TOKEN}:" \
+            --get 'https://sonarcloud.io/api/issues/search' \
+            --data-urlencode 'componentKeys=Ezyrus07_doke-web' \
+            --data-urlencode 'pullRequest=104' \
+            --data-urlencode 'issueStatuses=OPEN,CONFIRMED' \
+            --data-urlencode 'ps=100' \
+          | jq '{total, issues: [.issues[] | {key, rule, severity, type, component, line, message, cleanCodeAttribute, impacts}]}'
