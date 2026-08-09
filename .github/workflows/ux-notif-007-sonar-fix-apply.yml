@@ -26,9 +26,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD^)" = '41084abf4b1c5e748d219d12c34dcc93c65865ed'
-          test "$(git rev-parse HEAD^^)" = 'c9f394e77a14129496f6bd2844490c52d8373c2b'
-          test "$(git rev-parse HEAD^^^^^)" = 'd4f8437488ebeeb4eef1bffbd42ebd095ddf1bf6'
+          test "$(git rev-parse HEAD^)" = '7c207c97ed4cee975580ec46ea9c64819400179a'
+          test "$(git rev-parse HEAD^^)" = '41084abf4b1c5e748d219d12c34dcc93c65865ed'
+          test "$(git rev-parse HEAD^^^^^^)" = 'd4f8437488ebeeb4eef1bffbd42ebd095ddf1bf6'
 
       - name: Setup Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
@@ -40,13 +40,25 @@ jobs:
         run: npm ci --ignore-scripts
 
       - name: Apply Sonar cleanup patch
-        run: python3 scripts/tmp-ux-notif-007-sonar-fix.py
+        run: |
+          python3 scripts/tmp-ux-notif-007-sonar-fix.py
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('scripts/test-ux-notif-007-adapter-delegation.js')
+          text = path.read_text(encoding='utf-8')
+          old = 'assert.ok(toast.includes("outcome !== \'ALLOW_TOAST\'"));'
+          new = 'assert.ok(toast.includes("return outcome === \'ALLOW_TOAST\';"));'
+          if text.count(old) != 1:
+              raise SystemExit(f'adapter delegation structural assertion: expected 1 match, got {text.count(old)}')
+          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          PY
 
       - name: Validate JavaScript syntax
         run: |
           node --check assets/js/core/notification-delivery.js
           node --check assets/js/core/notification-toast.js
           node --check assets/js/features/in-app-notifications.js
+          node --check scripts/test-ux-notif-007-adapter-delegation.js
 
       - name: Validate H07 after cleanup
         run: |
@@ -93,16 +105,18 @@ jobs:
           set -euo pipefail
           git add assets/js/core/notification-delivery.js \
             assets/js/core/notification-toast.js \
-            assets/js/features/in-app-notifications.js
+            assets/js/features/in-app-notifications.js \
+            scripts/test-ux-notif-007-adapter-delegation.js
           git diff --cached --check
           mapfile -t paths < <(git diff --cached --name-only | sort)
           printf '%s\n' "${paths[@]}"
-          test "${#paths[@]}" -eq 6
+          test "${#paths[@]}" -eq 7
           printf '%s\n' "${paths[@]}" | grep -Fxq '.github/workflows/ux-notif-007-sonar-fix-apply.yml'
           printf '%s\n' "${paths[@]}" | grep -Fxq '.github/workflows/ux-notif-007-sonar-inspect.yml'
           printf '%s\n' "${paths[@]}" | grep -Fxq 'assets/js/core/notification-delivery.js'
           printf '%s\n' "${paths[@]}" | grep -Fxq 'assets/js/core/notification-toast.js'
           printf '%s\n' "${paths[@]}" | grep -Fxq 'assets/js/features/in-app-notifications.js'
+          printf '%s\n' "${paths[@]}" | grep -Fxq 'scripts/test-ux-notif-007-adapter-delegation.js'
           printf '%s\n' "${paths[@]}" | grep -Fxq 'scripts/tmp-ux-notif-007-sonar-fix.py'
           test "$(git diff --cached --name-status -- .github/workflows/ux-notif-007-sonar-inspect.yml | awk '{print $1}')" = 'D'
           test "$(git diff --cached --name-status -- scripts/tmp-ux-notif-007-sonar-fix.py | awk '{print $1}')" = 'D'
