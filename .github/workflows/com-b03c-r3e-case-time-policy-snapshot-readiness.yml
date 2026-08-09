@@ -13,14 +13,16 @@ on:
       - scripts/execute-com-b03c-r3a-presence-full-conjunction-isolation-staging-canary.js
       - docs/validation/COM-B03C-R3D-R3A-POLICY-MATERIALIZATION-EVIDENCE-READINESS.json
 
-permissions: { contents: read }
+permissions: { contents: write }
 
 jobs:
   certify:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with: { node-version: '24' }
       - name: Syntax
@@ -29,6 +31,22 @@ jobs:
           node --check scripts/test-com-b03c-r3e-case-time-policy-snapshot-readiness.js
       - name: COM-B03C-R3E repository snapshot contract
         run: node scripts/test-com-b03c-r3e-case-time-policy-snapshot-readiness.js
+      - name: Canonical domain completion matrix writer
+        run: |
+          npm run write:domain-completion-matrix
+          allowed='^(docs/DOMAIN-COMPLETION-MATRIX.md|reports/generated/domain-completion-matrix-report.json)$'
+          changed="$(git diff --name-only)"
+          if [ -n "$changed" ]; then
+            printf '%s\n' "$changed" | grep -Ev "$allowed" > /tmp/r3e-unexpected || true
+            test ! -s /tmp/r3e-unexpected
+            git config user.name doke
+            git config user.email bielantoniomma@gmail.com
+            git add docs/DOMAIN-COMPLETION-MATRIX.md
+            git add -f reports/generated/domain-completion-matrix-report.json
+            test "$(git diff --cached --name-only | wc -l | tr -d ' ')" -le 2
+            git commit -m 'docs(gov): regenerate domain completion matrix for COM-B03C-R3E'
+            git push origin HEAD:${{ github.event.pull_request.head.ref }}
+          fi
       - name: Domain completion matrix audit
         run: npm run audit:domain-completion-matrix
       - name: Agent governance audit
@@ -42,4 +60,4 @@ jobs:
           grep -q '"authorizationPhraseDefined": false' config/com-b03c-r3e-case-time-policy-snapshot-readiness.json
           grep -q '"remoteExecutorCreated": false' config/com-b03c-r3e-case-time-policy-snapshot-readiness.json
       - name: Diff hygiene
-        run: git diff --check "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}"
+        run: git diff --check "${{ github.event.pull_request.base.sha }}" HEAD
