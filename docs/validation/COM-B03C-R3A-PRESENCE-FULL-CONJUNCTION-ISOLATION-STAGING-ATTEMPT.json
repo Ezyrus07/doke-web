@@ -1,0 +1,101 @@
+{
+  "validationId": "COM-B03C-R3A-PRESENCE-FULL-CONJUNCTION-ISOLATION-STAGING-ATTEMPT",
+  "contractId": "com-b03c-r3a-presence-full-conjunction-isolation-readiness-v1",
+  "status": "staging_presence_extension_pairwise_interaction_rejection_observed_zero_residue_proven",
+  "sanitized": true,
+  "rawRemoteErrorsPersisted": false,
+  "execution": {
+    "workflow": "COM-B03C-R3A Presence Full-Conjunction Isolation Readiness",
+    "triggerHead": "0879f1352e1c35aedf25b98851a340784798dc1f",
+    "workflowInstallHead": "cb96365cfb336fc97589a25ff1a0c4d7c73e5063",
+    "runId": 31314875861,
+    "runAttempt": 1,
+    "event": "push",
+    "result": "success",
+    "certify": {"jobId": 93248401108, "result": "success"},
+    "authorize": {"jobId": 93248416334, "result": "success"},
+    "canary": {"jobId": 93248515535, "result": "success"}
+  },
+  "artifact": {
+    "id": 9038470363,
+    "name": "com-b03c-r3a-presence-isolation-31314875861",
+    "digest": "sha256:f09ecbe08c3b2619367cedf9b97b49717885768fdd4d2ba6b4aa5620432cb7a2",
+    "report": "COM-B03C-R3A-PRESENCE-FULL-CONJUNCTION-ISOLATION-STAGING-CANARY.json",
+    "reportSha256": "6bc2b4f92d2e682596957d43882d609c52b59616004a2a0e85f7e199386cabd1"
+  },
+  "authorization": {
+    "received": true,
+    "consumed": true,
+    "executionAttempted": true,
+    "singleUse": true,
+    "reusableAfterFailure": false,
+    "predecessorAuthorizationReusable": false
+  },
+  "scope": {
+    "transport": "channel_presence",
+    "axis": "read_join",
+    "sameAuthIdentityAcrossCases": true,
+    "sameAccessTokenAcrossCases": true,
+    "sameTopicAcrossCases": true,
+    "freshRealtimeClientPerCase": true,
+    "jwtAppliedBeforeChannelCreation": true
+  },
+  "negativeControl": {
+    "passed": true,
+    "classification": "realtime_rls_authorization_rejected"
+  },
+  "results": [
+    {"caseId": "control_true", "joinAllowed": true},
+    {"caseId": "uid_topic_direct", "joinAllowed": true},
+    {"caseId": "uid_extension_eq", "joinAllowed": false, "failureClassification": "realtime_rls_authorization_rejected"},
+    {"caseId": "topic_extension_direct", "joinAllowed": false, "failureClassification": "realtime_rls_authorization_rejected"},
+    {"caseId": "full_current_direct", "joinAllowed": false, "failureClassification": "realtime_rls_authorization_rejected"},
+    {"caseId": "full_topic_select_wrapper", "joinAllowed": false, "failureClassification": "realtime_rls_authorization_rejected"},
+    {"caseId": "full_topic_select_extension_in", "joinAllowed": false, "failureClassification": "realtime_rls_authorization_rejected"},
+    {"caseId": "full_docs_canonical_exists", "joinAllowed": false, "failureClassification": "realtime_rls_authorization_rejected"}
+  ],
+  "interpretation": {
+    "uidTopicDirectPasses": true,
+    "uidExtensionPairRejected": true,
+    "topicExtensionPairRejected": true,
+    "allFullConjunctionVariantsRejected": true,
+    "extensionSyntaxVariantsResolvedFailure": false,
+    "topicSelectWrapperResolvedFailure": false,
+    "docsCanonicalExistsResolvedFailure": false,
+    "candidateBoundary": "multiple_pairwise_interactions_rejected",
+    "commonObservedFactor": "realtime.messages.extension presence combined with another predicate",
+    "exactRootCauseProven": false,
+    "runtimeChangeAuthorized": false,
+    "requiresIndependentConfirmationBeforeRuntimeChange": true
+  },
+  "effects": {
+    "communityPostsExecuted": false,
+    "channelMessagesExecuted": false,
+    "domainMutationExecuted": false,
+    "publicationMutationExecuted": false,
+    "runtimeDeployed": false,
+    "publicTrafficEnabled": false,
+    "productionChanged": false,
+    "pullRequestMerged": false,
+    "realUserMutationExecuted": false,
+    "ephemeralAuthIdentityLifecycleExecuted": true,
+    "temporaryRealtimePolicyLifecycleExecuted": true,
+    "privatePresenceChannelsCreated": true,
+    "persistentResidue": false
+  },
+  "cleanup": {
+    "temporaryPoliciesAfter": 0,
+    "syntheticAuthAfter": 0,
+    "syntheticDomainRowsAfter": 0,
+    "zeroResidueProven": true
+  },
+  "governance": {
+    "matrixVersion": "1.3.113",
+    "maturity": 3,
+    "productionGate": "blocked",
+    "stagingAuthorityAfterExecution": false,
+    "productionAuthority": false,
+    "mergeAuthority": false
+  },
+  "nextBoundary": "repository-only investigation of Presence SELECT pairwise interaction with realtime.messages.extension; no staging rerun is authorized"
+}

@@ -10,6 +10,7 @@ on:
       - scripts/execute-com-b03c-r3a-presence-full-conjunction-isolation-staging-canary.js
       - scripts/verify-com-b03c-r3a-presence-full-conjunction-isolation-staging-canary-evidence.js
       - docs/validation/COM-B03C-R3A-PRESENCE-FULL-CONJUNCTION-ISOLATION-STAGING-READINESS.json
+      - docs/validation/COM-B03C-R3A-PRESENCE-FULL-CONJUNCTION-ISOLATION-STAGING-ATTEMPT.json
       - .github/workflows/com-b03c-r3a-presence-full-conjunction-isolation-readiness.yml
   push:
     branches: [com/com-001-baseline-audit]
@@ -34,21 +35,39 @@ jobs:
           node --check scripts/verify-com-b03c-r3a-presence-full-conjunction-isolation-staging-canary-evidence.js
       - name: COM-B03C-R3A staging readiness
         run: node scripts/test-com-b03c-r3a-presence-full-conjunction-isolation-readiness.js
-      - name: Authorization absent on repository certification
+      - name: Authorization lifecycle on repository certification
         if: github.event_name == 'pull_request'
         run: |
-          test ! -f config/com-b03c-r3a-presence-full-conjunction-isolation-staging-trigger.json
-          set +e
-          node scripts/execute-com-b03c-r3a-presence-full-conjunction-isolation-staging-canary.js 2> /tmp/r3a.err
-          status="$?"
-          set -e
-          test "${status}" = "2"
-          grep -q 'DOKE_COM_B03C_R3A_STAGING_AUTHORIZATION_REQUIRED' /tmp/r3a.err
+          TRIGGER=config/com-b03c-r3a-presence-full-conjunction-isolation-staging-trigger.json
+          if [ -f "${TRIGGER}" ]; then
+            node - <<'NODE'
+          const t = require('./config/com-b03c-r3a-presence-full-conjunction-isolation-staging-trigger.json');
+          const e = require('./docs/validation/COM-B03C-R3A-PRESENCE-FULL-CONJUNCTION-ISOLATION-STAGING-READINESS.json');
+          if (e.status !== 'staging_execution_completed_authorization_consumed_followup_repository_only_required') process.exit(1);
+          for (const k of ['received','consumed','executionAttempted','singleUse','triggerExists']) if (e.authorization?.[k] !== true) process.exit(1);
+          if (e.authorization?.reusableAfterFailure !== false || e.authorization?.predecessorAuthorizationReusable !== false) process.exit(1);
+          if (t.status !== 'authorization_consumed_execution_pending') process.exit(1);
+          for (const k of ['received','consumed','executionAttempted','singleUse']) if (t.authorization?.[k] !== true) process.exit(1);
+          if (t.authorization?.reusableAfterFailure !== false || t.authorization?.predecessorAuthorizationReusable !== false) process.exit(1);
+          if (e.stagingExecution?.runAttempt !== 1 || e.stagingExecution?.zeroResidueProven !== true) process.exit(1);
+          NODE
+          else
+            set +e
+            node scripts/execute-com-b03c-r3a-presence-full-conjunction-isolation-staging-canary.js 2> /tmp/r3a.err
+            status="$?"
+            set -e
+            test "${status}" = "2"
+            grep -q 'DOKE_COM_B03C_R3A_STAGING_AUTHORIZATION_REQUIRED' /tmp/r3a.err
+          fi
       - name: Governance invariants
         run: |
-          grep -q '"maturity": 3' config/com-b03c-r3a-presence-full-conjunction-isolation-readiness.json
-          grep -q '"productionGate": "blocked"' config/com-b03c-r3a-presence-full-conjunction-isolation-readiness.json
-          grep -q '"triggerExists": false' config/com-b03c-r3a-presence-full-conjunction-isolation-readiness.json
+          node - <<'NODE'
+          const e = require('./docs/validation/COM-B03C-R3A-PRESENCE-FULL-CONJUNCTION-ISOLATION-STAGING-READINESS.json');
+          if (e.checkpoint?.maturity !== 3 || e.checkpoint?.productionGate !== 'blocked') process.exit(1);
+          for (const k of ['stagingReadAuthority','stagingMutationAuthority','authIdentityLifecycleAuthority','realtimePolicyLifecycleAuthority','realtimeSubscriptionAuthority','ephemeralRealtimeActionAuthority','domainMutationAuthority','publicationMutationAuthority','persistentResidueAuthority','runtimeDeployAuthority','productionAuthority','pullRequestMergeAuthority']) {
+            if (e.authority?.[k] !== false) process.exit(1);
+          }
+          NODE
       - name: Diff hygiene
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then TARGET_SHA="${{ github.event.pull_request.head.sha }}"; git fetch --no-tags --depth=2 origin "${TARGET_SHA}"; else TARGET_SHA="${GITHUB_SHA}"; fi
