@@ -14,6 +14,7 @@ const eq = (actual, expected, message) => { assert.deepEqual(actual, expected, m
 const ok = (value, message) => { assert.equal(Boolean(value), true, message); checks += 1; };
 
 eq(r.CONTRACT_ID, cfg.contractId, 'contract');
+eq(r.TRIGGER_CONTRACT_ID, 'com-b03c-r3c-realtime-messages-policy-catalog-readonly-staging-trigger-v2', 'attempt 2 trigger contract');
 eq(r.PREDECESSOR_VALIDATION_ID, cfg.predecessor.validationId, 'predecessor');
 eq(r.PREDECESSOR_STATUS, cfg.predecessor.status, 'predecessor status');
 eq(r.REQUIRED_PROJECT_ID, 'zwkczgewzbsorbrjuzpb', 'project');
@@ -25,6 +26,10 @@ ok(r.POLICY_INVENTORY_SQL.trim().toLowerCase().startsWith('select '), 'inventory
 ok(r.POLICY_INVENTORY_SQL.includes('from pg_policies'), 'pg_policies source');
 ok(r.POLICY_INVENTORY_SQL.includes("schemaname = 'realtime'"), 'realtime schema');
 ok(r.POLICY_INVENTORY_SQL.includes("tablename = 'messages'"), 'messages table');
+
+eq(cfg.priorAttempt.authorizationConsumed, true, 'attempt 1 authorization consumed');
+eq(cfg.priorAttempt.authorizationReusable, false, 'attempt 1 authorization nonreusable');
+eq(cfg.priorAttempt.stagingAccessExecuted, false, 'attempt 1 never accessed staging');
 
 const sample = r.classifyPolicyInventory([
   { policyname: 'read_presence', permissive: 'PERMISSIVE', roles: '{authenticated}', cmd: 'SELECT', qual: "extension = 'presence'", with_check: null },
@@ -107,6 +112,7 @@ eq(authorized.decision, 'authorized_for_single_read_only_realtime_messages_polic
 eq(authorized.stagingReadAuthority, true, 'bounded staging read');
 for (const key of ['stagingMutationAuthority','realtimePolicyMutationAuthority','realtimeSubscriptionAuthority','authIdentityLifecycleAuthority','domainMutationAuthority','publicationMutationAuthority','runtimeDeployAuthority','productionAuthority','pullRequestMergeAuthority']) eq(authorized[key], false, key);
 eq(r.evaluateStagingAuthorization({ ...authInput, authorizationPhrase: 'wrong' }).reason, 'COM_B03C_R3C_EXACT_AUTHORIZATION_REQUIRED', 'exact auth');
+eq(r.evaluateStagingAuthorization({ ...authInput, authorizationPhrase: r.PREVIOUS_AUTHORIZATION_PHRASE }).reason, 'COM_B03C_R3C_EXACT_AUTHORIZATION_REQUIRED', 'attempt 1 phrase rejected');
 eq(r.evaluateStagingAuthorization({ ...authInput, reusableAfterFailure: true }).reason, 'COM_B03C_R3C_AUTHORIZATION_MUST_NOT_BE_REUSABLE', 'nonreusable');
 
 eq(evidence.status, 'repository_read_only_policy_catalog_staging_ready_new_authorization_required', 'evidence status');
@@ -126,9 +132,12 @@ ok(/\bpush:/.test(workflow), 'push trigger exists');
 ok(workflow.includes('com-b03c-r3c-realtime-messages-policy-catalog-readonly-staging-trigger.json'), 'exact trigger path');
 ok(workflow.includes('environment: doke-staging'), 'staging only future inspect job');
 ok(workflow.includes('GITHUB_RUN_ATTEMPT'), 'run attempt guard');
+ok(workflow.includes('Trigger commit continuity on staging execution'), 'transient trigger continuity guard');
 ok(workflow.includes('audit:domain-completion-matrix'), 'matrix audit');
 ok(workflow.includes('audit:agent-governance'), 'governance audit');
 ok(workflow.includes('git diff --check'), 'diff hygiene');
+ok(workflow.includes(r.REQUIRED_AUTHORIZATION_PHRASE), 'attempt 2 workflow authorization');
+ok(!workflow.includes(`COM_B03C_R3C_AUTHORIZATION: ${r.PREVIOUS_AUTHORIZATION_PHRASE}`), 'attempt 1 workflow authorization removed');
 ok(executor.includes('begin transaction read only'), 'read-only transaction');
 ok(executor.includes('r.POLICY_INVENTORY_SQL'), 'catalog query delegated');
 ok(!/\bcreate\s+policy\b/i.test(executor), 'no create policy');
@@ -139,5 +148,5 @@ ok(!/\binsert\s+into\b/i.test(executor), 'no insert');
 ok(!/\bdelete\s+from\b/i.test(executor), 'no delete');
 ok(!/\balter\s+publication\b/i.test(executor), 'no publication mutation');
 
-ok(checks >= 70, `expected at least 70 checks, got ${checks}`);
+ok(checks >= 75, `expected at least 75 checks, got ${checks}`);
 console.log(`COM-B03C-R3C repository staging readiness checks passed: ${checks}/${checks}`);
