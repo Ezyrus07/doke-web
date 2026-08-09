@@ -8,7 +8,8 @@
 - Base SHA certificado: `7ba99bfbd293f83d8e14bccf75b4bd0703a4199d`;
 - Branch: `ux/ux-notif-007-digest-dnd-policy`;
 - Handoff: `NOTIF-H07 — digest/DND`;
-- Fase 1: implementação frontend/contract em certificação;
+- Fase 1: candidato permanente em certificação final;
+- Matrix canônica sincronizada no parent `20f928ad19d5128c0ad8245b5bc856203f2290c9`;
 - Merge autorizado: não;
 - Ready for review autorizado: não;
 - Backend/staging/produção: não acessados.
