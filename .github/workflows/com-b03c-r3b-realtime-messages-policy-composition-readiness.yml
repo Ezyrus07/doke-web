@@ -7,6 +7,7 @@ on:
       - backend/modules/communities/community-realtime-private-auth-r3b.js
       - config/com-b03c-r3b-realtime-messages-policy-composition-readiness.json
       - scripts/test-com-b03c-r3b-realtime-messages-policy-composition-readiness.js
+      - docs/DOMAIN-COMPLETION-MATRIX.md
       - docs/validation/COM-B03C-R3B-REALTIME-MESSAGES-POLICY-COMPOSITION-READINESS.json
       - .github/workflows/com-b03c-r3b-realtime-messages-policy-composition-readiness.yml
 
@@ -29,6 +30,12 @@ jobs:
           node --check scripts/test-com-b03c-r3b-realtime-messages-policy-composition-readiness.js
       - name: COM-B03C-R3B repository RCA readiness
         run: node scripts/test-com-b03c-r3b-realtime-messages-policy-composition-readiness.js
+      - name: Generate canonical domain matrix preview
+        run: |
+          npm run write:domain-completion-matrix
+          echo '--- BEGIN R3B DOMAIN MATRIX GENERATED DIFF ---'
+          git diff --unified=0 -- docs/DOMAIN-COMPLETION-MATRIX.md
+          echo '--- END R3B DOMAIN MATRIX GENERATED DIFF ---'
       - name: Domain completion matrix audit
         run: npm run audit:domain-completion-matrix
       - name: Agent governance audit
@@ -54,6 +61,8 @@ jobs:
               exit 1
             fi
           done
+      - name: Generated matrix must be committed
+        run: git diff --exit-code -- docs/DOMAIN-COMPLETION-MATRIX.md
       - name: Diff hygiene
         run: |
           TARGET_SHA="${{ github.event.pull_request.head.sha }}"
