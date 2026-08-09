@@ -24,7 +24,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD^)" = '95ef07fc2ad6abf68fa9b1cb300f154b42301836'
+          test "$(git rev-parse HEAD^)" = '2c70581c4858fd99e8313bba5a9b51d8d7ed096d'
 
       - name: Setup Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
@@ -32,7 +32,7 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: Repair strict matchers and apply toast authority patch
+      - name: Apply toast authority patch and migrate inherited harness
         shell: bash
         run: |
           python <<'PY'
@@ -49,10 +49,27 @@ jobs:
           pattern_end = source.index('\n', pattern_start) + 1
           general_pattern = "script_pattern = re.compile(r'''(?P<indent>[ \\t]*)<script\\b[^>]*\\bsrc=[\"']assets/js/features/in-app-notifications\\.js(?:\\?[^\"']*)?[\"'][^>]*></script>''')\n"
           source = source[:pattern_start] + general_pattern + source[pattern_end:]
-
           path.write_text(source)
           PY
           python scripts/tmp-ux-notif-003-phase1.py
+          python <<'PY'
+          from pathlib import Path
+          path = Path('scripts/test-ux-notif-001-in-app-adapter.js')
+          text = path.read_text()
+          old = """delete require.cache[require.resolve('../assets/js/core/notification-center.js')];
+delete require.cache[require.resolve('../assets/js/features/in-app-notifications.js')];
+require('../assets/js/core/notification-center.js');
+require('../assets/js/features/in-app-notifications.js');"""
+          new = """delete require.cache[require.resolve('../assets/js/core/notification-center.js')];
+delete require.cache[require.resolve('../assets/js/core/notification-toast.js')];
+delete require.cache[require.resolve('../assets/js/features/in-app-notifications.js')];
+require('../assets/js/core/notification-center.js');
+require('../assets/js/core/notification-toast.js');
+require('../assets/js/features/in-app-notifications.js');"""
+          if text.count(old) != 1:
+              raise SystemExit('inherited in-app harness anchor mismatch')
+          path.write_text(text.replace(old, new, 1))
+          PY
 
       - name: Install dependencies without lifecycle scripts
         run: npm ci --ignore-scripts
@@ -70,6 +87,7 @@ jobs:
           node --check assets/js/features/in-app-notifications.js
           node --check scripts/test-ux-notif-003-toast-manager.js
           node --check scripts/test-ux-notif-003-in-app-delegation.js
+          node --check scripts/test-ux-notif-001-in-app-adapter.js
           node scripts/test-ux-notif-003-toast-manager.js
           node scripts/test-ux-notif-003-in-app-delegation.js
           node scripts/test-ux-notif-001-notification-center.js
@@ -95,6 +113,7 @@ jobs:
           git add assets/js/features/in-app-notifications.js
           git add scripts/test-ux-notif-003-toast-manager.js
           git add scripts/test-ux-notif-003-in-app-delegation.js
+          git add scripts/test-ux-notif-001-in-app-adapter.js
           git add docs/ux/UX-NOTIF-003.md
           git add docs/DOMAIN-COMPLETION-MATRIX.md
           git add -- '*.html'
