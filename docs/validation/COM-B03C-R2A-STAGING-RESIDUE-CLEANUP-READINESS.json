@@ -2,7 +2,7 @@
   "validationId": "COM-B03C-R2A-STAGING-RESIDUE-CLEANUP-READINESS",
   "domain": "COM-001",
   "contractId": "com-b03c-r2a-staging-residue-cleanup-readiness-v1",
-  "status": "repository_cleanup_recovery_certified_new_authorization_required",
+  "status": "staging_cleanup_completed_zero_residue_proven",
   "predecessor": {
     "validationId": "COM-B03C-R2-REALTIME-AUTH-PREDICATE-LADDER-STAGING-ATTEMPT",
     "evidenceCommit": "ebf39fe28d9db22ae81f50fdac620128eb737124",
@@ -11,7 +11,8 @@
     "canaryJobId": 93173744054,
     "authorizationConsumed": true,
     "authorizationReusable": false,
-    "cleanupZeroResidueProven": false,
+    "cleanupZeroResidueProvenAtR2": false,
+    "cleanupZeroResidueProvenByR2A": true,
     "reportWritten": false,
     "artifactUploaded": false
   },
@@ -20,20 +21,25 @@
     "presenceCallbackRegisteredAfterSubscribe": true,
     "broadcastCallbackHasSameOrderingRisk": true,
     "r2PredicateConclusionValid": false,
-    "cleanupState": "unproven_until_r2a_staging_cleanup"
+    "cleanupState": "recovered_by_r2a_zero_residue_proven"
   },
   "implementation": {
     "implementationCommit": "0240fa7f0fdd838f099ffe169e62edb0f3f26daa",
     "certificationMetadataCommit": "8a6fce2cb48a92cafde14a3fd3b625d1d7ed94fb",
     "evidenceFreezeCommit": "9a6e581ddafa10970597ef7b2d7ac9834d187fbf",
     "recoveredEvidenceVerifierFixCommit": "08b1d9a93afd1736512ad31afa6de24f0f8a19cd",
+    "finalPreAuthorizationEvidenceHead": "67ded40b3d804488b4b69ad7af9209b26d63feaa",
+    "triggerCommit": "e17ff82546b6330f7e85e7e4c60da124490b8522",
+    "postExecutionPullRequestCertificationFixCommit": "ad27c9451c5ab982afccf13f6d737bbf0be7956d",
+    "stagingEvidenceCommit": "ded986d9ea1f742e399ab98bc3fee82722bb7db9",
     "files": [
       "backend/modules/communities/community-realtime-r2a-residue-cleanup-readiness.js",
       "config/com-b03c-r2a-residue-cleanup-readiness.json",
       "scripts/test-com-b03c-r2a-residue-cleanup-readiness.js",
       "scripts/execute-com-b03c-r2a-residue-cleanup-staging-canary.js",
       "scripts/verify-com-b03c-r2a-residue-cleanup-staging-canary-evidence.js",
-      ".github/workflows/com-b03c-r2a-residue-cleanup-staging-canary.yml"
+      ".github/workflows/com-b03c-r2a-residue-cleanup-staging-canary.yml",
+      "docs/validation/COM-B03C-R2A-STAGING-RESIDUE-CLEANUP.json"
     ]
   },
   "cleanupBoundary": {
@@ -68,42 +74,58 @@
     "initialRunId": 31285930006,
     "initialCertifyJobId": 93174632736,
     "initialCertifyResult": "success",
-    "initialAuthorizeJobId": 93174751602,
-    "initialAuthorizeResult": "skipped",
-    "initialCanaryJobId": 93174751478,
-    "initialCanaryResult": "skipped",
     "metadataReadinessChecks": "71/71",
     "metadataRecertificationRunId": 31286024520,
     "metadataRecertificationJobId": 93174896375,
     "metadataRecertificationResult": "success",
-    "metadataAuthorizeJobId": 93174932635,
-    "metadataAuthorizeResult": "skipped",
-    "metadataCanaryJobId": 93174932773,
-    "metadataCanaryResult": "skipped",
     "verifierFixRunId": 31286170555,
     "verifierFixCertifyJobId": 93175309840,
     "verifierFixCertifyResult": "success",
-    "verifierFixAuthorizeJobId": 93175404078,
-    "verifierFixAuthorizeResult": "skipped",
-    "verifierFixCanaryJobId": 93175403905,
-    "verifierFixCanaryResult": "skipped",
-    "syntax": true,
-    "predecessorEvidence": true,
-    "cleanupOnlyBoundary": true,
-    "diffHygiene": true,
-    "stagingAccessExecuted": false,
-    "remoteEffectsExecuted": false
+    "finalPreAuthorizationRunId": 31286226682,
+    "finalPreAuthorizationCertifyJobId": 93175466118,
+    "finalPreAuthorizationCertifyResult": "success",
+    "stagingRunId": 31286571759,
+    "stagingRunAttempt": 1,
+    "stagingCertifyJobId": 93176387470,
+    "stagingCertifyResult": "success",
+    "stagingAuthorizeJobId": 93176412024,
+    "stagingAuthorizeResult": "success",
+    "stagingCanaryJobId": 93176495040,
+    "stagingCanaryResult": "success",
+    "artifactId": 9030027436,
+    "artifactArchiveDigest": "sha256:94174d22c1f1824c07bd7541828d26bca1315531ae209567f29b61bb9dbdefc7",
+    "artifactReportSha256": "08cafc2d4183d3a51a0ba9ddb367928e131c3a7a51093ae312226e702a3036d9",
+    "stagingAccessExecuted": true,
+    "remoteEffectsExecuted": true,
+    "remoteEffectsLimitedToSyntheticResidueInspectionAndCleanup": true
+  },
+  "stagingResult": {
+    "policyResidueBefore": 4,
+    "syntheticAuthResidueBefore": 1,
+    "syntheticDbRowsBefore": 3,
+    "passesExecuted": 1,
+    "policyDropErrors": 0,
+    "userDeleteErrors": 0,
+    "policyResidueAfter": 0,
+    "syntheticAuthResidueAfter": 0,
+    "syntheticDbRowsAfter": 0,
+    "zeroResidueProven": true,
+    "realtimePoliciesCreated": false,
+    "realtimeChannelsOpened": false,
+    "predicateLadderRerun": false,
+    "realUserMutationExecuted": false
   },
   "authorization": {
     "requiredPhrase": "I_EXPLICITLY_AUTHORIZE_COM_B03C_R2A_STAGING_RESIDUE_INSPECTION_AND_CLEANUP_ONLY",
-    "received": false,
-    "consumed": false,
-    "executionAttempted": false,
+    "received": true,
+    "consumed": true,
+    "executionAttempted": true,
     "singleUse": true,
     "reusableAfterFailure": false,
     "predecessorAuthorizationReusable": false,
     "triggerPath": "config/com-b03c-r2a-residue-cleanup-staging-trigger.json",
-    "triggerExists": false
+    "triggerExists": true,
+    "triggerCommit": "e17ff82546b6330f7e85e7e4c60da124490b8522"
   },
   "authority": {
     "repositoryReadinessAuthority": true,
@@ -124,5 +146,5 @@
     "productionGate": "blocked",
     "mergeAuthorized": false
   },
-  "nextBoundary": "exact new single-use COM-B03C-R2A staging residue inspection and cleanup-only authorization; no diagnostic rerun authority"
+  "nextBoundary": "repository-only preparation and certification of a corrected private Realtime diagnostic with listener registration before subscribe; any future staging diagnostic requires a separate new single-use authorization"
 }
