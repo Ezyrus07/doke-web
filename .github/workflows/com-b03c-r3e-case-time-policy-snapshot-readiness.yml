@@ -1,0 +1,45 @@
+name: COM-B03C-R3E Case-Time Policy Snapshot Readiness
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - backend/modules/communities/community-realtime-private-auth-r3e.js
+      - config/com-b03c-r3e-case-time-policy-snapshot-readiness.json
+      - scripts/test-com-b03c-r3e-case-time-policy-snapshot-readiness.js
+      - docs/validation/COM-B03C-R3E-CASE-TIME-POLICY-SNAPSHOT-READINESS.json
+      - .github/workflows/com-b03c-r3e-case-time-policy-snapshot-readiness.yml
+      - backend/modules/communities/community-realtime-private-auth-r3a.js
+      - scripts/execute-com-b03c-r3a-presence-full-conjunction-isolation-staging-canary.js
+      - docs/validation/COM-B03C-R3D-R3A-POLICY-MATERIALIZATION-EVIDENCE-READINESS.json
+
+permissions: { contents: read }
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+      - name: Syntax
+        run: |
+          node --check backend/modules/communities/community-realtime-private-auth-r3e.js
+          node --check scripts/test-com-b03c-r3e-case-time-policy-snapshot-readiness.js
+      - name: COM-B03C-R3E repository snapshot contract
+        run: node scripts/test-com-b03c-r3e-case-time-policy-snapshot-readiness.js
+      - name: Domain completion matrix audit
+        run: npm run audit:domain-completion-matrix
+      - name: Agent governance audit
+        run: npm run audit:agent-governance
+      - name: Governance invariants
+        run: |
+          grep -q '"matrixVersion": "1.3.113"' config/com-b03c-r3e-case-time-policy-snapshot-readiness.json
+          grep -q '"maturity": 3' config/com-b03c-r3e-case-time-policy-snapshot-readiness.json
+          grep -q '"productionGate": "blocked"' config/com-b03c-r3e-case-time-policy-snapshot-readiness.json
+          grep -q '"stagingReadAuthority": false' config/com-b03c-r3e-case-time-policy-snapshot-readiness.json
+          grep -q '"authorizationPhraseDefined": false' config/com-b03c-r3e-case-time-policy-snapshot-readiness.json
+          grep -q '"remoteExecutorCreated": false' config/com-b03c-r3e-case-time-policy-snapshot-readiness.json
+      - name: Diff hygiene
+        run: git diff --check "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}"
