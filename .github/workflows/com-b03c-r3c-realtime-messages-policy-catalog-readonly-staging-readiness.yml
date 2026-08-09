@@ -24,8 +24,6 @@ concurrency:
 
 jobs:
   certify:
-    permissions:
-      contents: write
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -50,29 +48,6 @@ jobs:
           set -e
           test "${status}" = "2"
           grep -q 'DOKE_COM_B03C_R3C_STAGING_AUTHORIZATION_REQUIRED' /tmp/r3c.err
-      - name: Canonical domain matrix writer
-        if: github.event_name == 'pull_request'
-        shell: bash
-        run: |
-          set -euo pipefail
-          TARGET_SHA="${{ github.event.pull_request.head.sha }}"
-          TARGET_BRANCH="${{ github.event.pull_request.head.ref }}"
-          git checkout --detach "${TARGET_SHA}"
-          git ls-files --error-unmatch docs/DOMAIN-COMPLETION-MATRIX.md >/dev/null
-          git ls-files --error-unmatch reports/generated/domain-completion-matrix-report.json >/dev/null
-          npm run write:domain-completion-matrix
-          ACTUAL="$(git diff --name-only | sort)"
-          EXPECTED="$(printf '%s\n' docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json | sort)"
-          test "${ACTUAL}" = "${EXPECTED}"
-          git add docs/DOMAIN-COMPLETION-MATRIX.md
-          git add -f reports/generated/domain-completion-matrix-report.json
-          git diff --cached --check
-          npm run audit:domain-completion-matrix
-          npm run audit:agent-governance
-          git config user.name doke
-          git config user.email bielantoniomma@gmail.com
-          git commit -m "docs(gov): regenerate domain completion matrix for COM-B03C-R3C"
-          git push origin "HEAD:${TARGET_BRANCH}"
       - name: Domain completion matrix audit
         run: npm run audit:domain-completion-matrix
       - name: Agent governance audit
