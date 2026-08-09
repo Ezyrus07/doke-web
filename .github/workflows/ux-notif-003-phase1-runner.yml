@@ -24,7 +24,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD^)" = 'b7546c22210c8245d72ba07f30320840dedf6805'
+          test "$(git rev-parse HEAD^)" = '95ef07fc2ad6abf68fa9b1cb300f154b42301836'
 
       - name: Setup Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
@@ -32,17 +32,25 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: Repair strict matcher and apply toast authority patch
+      - name: Repair strict matchers and apply toast authority patch
         shell: bash
         run: |
           python <<'PY'
           from pathlib import Path
           path = Path('scripts/tmp-ux-notif-003-phase1.py')
           source = path.read_text()
+
           start = source.index("text = replace_once(\n    text,\n    \"  const escapeHtml")
           end = source.index("text = replace_once(\n    text,\n    \"  const getNotificationCenter", start)
           replacement = """text, escape_count = re.subn(r'^  const escapeHtml = .*\\n', '', text, count=1, flags=re.MULTILINE)\nif escape_count != 1:\n    raise SystemExit(f'remove local toast escaping: expected 1 match, found {escape_count}')\n"""
-          path.write_text(source[:start] + replacement + source[end:])
+          source = source[:start] + replacement + source[end:]
+
+          pattern_start = source.index('script_pattern = re.compile(')
+          pattern_end = source.index('\n', pattern_start) + 1
+          general_pattern = "script_pattern = re.compile(r'''(?P<indent>[ \\t]*)<script\\b[^>]*\\bsrc=[\"']assets/js/features/in-app-notifications\\.js(?:\\?[^\"']*)?[\"'][^>]*></script>''')\n"
+          source = source[:pattern_start] + general_pattern + source[pattern_end:]
+
+          path.write_text(source)
           PY
           python scripts/tmp-ux-notif-003-phase1.py
 
