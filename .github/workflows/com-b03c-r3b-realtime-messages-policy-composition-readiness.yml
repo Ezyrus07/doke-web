@@ -34,13 +34,26 @@ jobs:
       - name: Agent governance audit
         run: npm run audit:agent-governance
       - name: Repository-only boundary guard
+        shell: bash
         run: |
           test ! -f config/com-b03c-r3b-realtime-messages-policy-composition-staging-trigger.json
-          ! grep -R -nE 'environment:[[:space:]]*doke-staging|secrets\.|SUPABASE_ACCESS_TOKEN|SUPABASE_DB_PASSWORD' \
-            backend/modules/communities/community-realtime-private-auth-r3b.js \
-            config/com-b03c-r3b-realtime-messages-policy-composition-readiness.json \
-            scripts/test-com-b03c-r3b-realtime-messages-policy-composition-readiness.js \
+          FILES=(
+            backend/modules/communities/community-realtime-private-auth-r3b.js
+            config/com-b03c-r3b-realtime-messages-policy-composition-readiness.json
+            scripts/test-com-b03c-r3b-realtime-messages-policy-composition-readiness.js
             docs/validation/COM-B03C-R3B-REALTIME-MESSAGES-POLICY-COMPOSITION-READINESS.json
+            .github/workflows/com-b03c-r3b-realtime-messages-policy-composition-readiness.yml
+          )
+          FORBIDDEN_ENV='environment:'" doke-staging"
+          FORBIDDEN_SECRETS='secrets'"."
+          FORBIDDEN_ACCESS='SUPABASE_'ACCESS'_TOKEN'
+          FORBIDDEN_DB='SUPABASE_'DB'_PASSWORD'
+          for forbidden in "${FORBIDDEN_ENV}" "${FORBIDDEN_SECRETS}" "${FORBIDDEN_ACCESS}" "${FORBIDDEN_DB}"; do
+            if grep -nF "${forbidden}" "${FILES[@]}"; then
+              echo "Repository-only boundary violation detected"
+              exit 1
+            fi
+          done
       - name: Diff hygiene
         run: |
           TARGET_SHA="${{ github.event.pull_request.head.sha }}"
