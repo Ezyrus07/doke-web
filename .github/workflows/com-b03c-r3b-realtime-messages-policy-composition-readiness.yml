@@ -8,6 +8,7 @@ on:
       - config/com-b03c-r3b-realtime-messages-policy-composition-readiness.json
       - scripts/test-com-b03c-r3b-realtime-messages-policy-composition-readiness.js
       - docs/DOMAIN-COMPLETION-MATRIX.md
+      - reports/generated/domain-completion-matrix-report.json
       - docs/validation/COM-B03C-R3B-REALTIME-MESSAGES-POLICY-COMPOSITION-READINESS.json
       - .github/workflows/com-b03c-r3b-realtime-messages-policy-composition-readiness.yml
 
@@ -34,18 +35,23 @@ jobs:
           node --check backend/modules/communities/community-realtime-private-auth-r3b.js
           node --check scripts/test-com-b03c-r3b-realtime-messages-policy-composition-readiness.js
           node scripts/test-com-b03c-r3b-realtime-messages-policy-composition-readiness.js
+      - name: Prove generated report is pre-existing tracked authority
+        run: git ls-files --error-unmatch reports/generated/domain-completion-matrix-report.json
       - name: Generate canonical domain matrix
         run: npm run write:domain-completion-matrix
-      - name: Verify deterministic versioned write scope
+      - name: Verify deterministic write scope
         shell: bash
         run: |
-          test -f reports/generated/domain-completion-matrix-report.json
           mapfile -t TRACKED_DIFF < <(git diff --name-only | sort)
-          if [ "${#TRACKED_DIFF[@]}" -ne 1 ] || [ "${TRACKED_DIFF[0]}" != "docs/DOMAIN-COMPLETION-MATRIX.md" ]; then
-            printf 'Unexpected tracked generated changes:\n%s\n' "${TRACKED_DIFF[*]}"
-            exit 1
-          fi
-          git diff --check -- docs/DOMAIN-COMPLETION-MATRIX.md
+          EXPECTED=(
+            "docs/DOMAIN-COMPLETION-MATRIX.md"
+            "reports/generated/domain-completion-matrix-report.json"
+          )
+          test "${#TRACKED_DIFF[@]}" -eq "${#EXPECTED[@]}"
+          for i in "${!EXPECTED[@]}"; do
+            test "${TRACKED_DIFF[$i]}" = "${EXPECTED[$i]}"
+          done
+          git diff --check -- docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json
       - name: Canonical audits before repository write
         run: |
           npm run audit:domain-completion-matrix
@@ -69,14 +75,17 @@ jobs:
               exit 1
             fi
           done
-      - name: Commit canonical generated document only
+      - name: Commit canonical generated artifacts only
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -- docs/DOMAIN-COMPLETION-MATRIX.md
-          mapfile -t STAGED < <(git diff --cached --name-only)
-          test "${#STAGED[@]}" -eq 1
+          git ls-files --error-unmatch reports/generated/domain-completion-matrix-report.json >/dev/null
+          git add -f -- reports/generated/domain-completion-matrix-report.json
+          mapfile -t STAGED < <(git diff --cached --name-only | sort)
+          test "${#STAGED[@]}" -eq 2
           test "${STAGED[0]}" = "docs/DOMAIN-COMPLETION-MATRIX.md"
+          test "${STAGED[1]}" = "reports/generated/domain-completion-matrix-report.json"
           git commit -m "docs(com): regenerate domain completion matrix [skip ci]"
           git push origin "HEAD:${{ github.head_ref }}"
