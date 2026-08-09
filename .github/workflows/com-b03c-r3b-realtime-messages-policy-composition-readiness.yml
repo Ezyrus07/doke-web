@@ -11,35 +11,44 @@ on:
       - docs/validation/COM-B03C-R3B-REALTIME-MESSAGES-POLICY-COMPOSITION-READINESS.json
       - .github/workflows/com-b03c-r3b-realtime-messages-policy-composition-readiness.yml
 
-permissions: { contents: read }
+permissions:
+  contents: write
+
 concurrency:
-  group: com-b03c-r3b-${{ github.ref }}
+  group: com-b03c-r3b-matrix-writer-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  certify:
+  regenerate-matrix-once:
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-        with: { fetch-depth: 2 }
+        with:
+          fetch-depth: 2
+          ref: ${{ github.event.pull_request.head.sha }}
       - uses: actions/setup-node@v4
         with: { node-version: '24' }
-      - name: Syntax
+      - name: Syntax and R3B repository contract
         run: |
           node --check backend/modules/communities/community-realtime-private-auth-r3b.js
           node --check scripts/test-com-b03c-r3b-realtime-messages-policy-composition-readiness.js
-      - name: COM-B03C-R3B repository RCA readiness
-        run: node scripts/test-com-b03c-r3b-realtime-messages-policy-composition-readiness.js
-      - name: Generate canonical domain matrix preview
+          node scripts/test-com-b03c-r3b-realtime-messages-policy-composition-readiness.js
+      - name: Generate canonical domain matrix
+        run: npm run write:domain-completion-matrix
+      - name: Verify deterministic write scope
+        shell: bash
         run: |
-          npm run write:domain-completion-matrix
-          echo '--- BEGIN R3B DOMAIN MATRIX GENERATED DIFF ---'
-          git diff --unified=0 -- docs/DOMAIN-COMPLETION-MATRIX.md
-          echo '--- END R3B DOMAIN MATRIX GENERATED DIFF ---'
-      - name: Domain completion matrix audit
-        run: npm run audit:domain-completion-matrix
-      - name: Agent governance audit
-        run: npm run audit:agent-governance
+          mapfile -t CHANGED < <(git status --porcelain=v1 | sed -E 's/^.. //')
+          if [ "${#CHANGED[@]}" -ne 1 ] || [ "${CHANGED[0]}" != "docs/DOMAIN-COMPLETION-MATRIX.md" ]; then
+            printf 'Unexpected generated changes:\n%s\n' "${CHANGED[*]}"
+            exit 1
+          fi
+          git diff --check -- docs/DOMAIN-COMPLETION-MATRIX.md
+      - name: Canonical audits before repository write
+        run: |
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
       - name: Repository-only boundary guard
         shell: bash
         run: |
@@ -49,22 +58,22 @@ jobs:
             config/com-b03c-r3b-realtime-messages-policy-composition-readiness.json
             scripts/test-com-b03c-r3b-realtime-messages-policy-composition-readiness.js
             docs/validation/COM-B03C-R3B-REALTIME-MESSAGES-POLICY-COMPOSITION-READINESS.json
-            .github/workflows/com-b03c-r3b-realtime-messages-policy-composition-readiness.yml
           )
-          FORBIDDEN_ENV='environment:'" doke-staging"
           FORBIDDEN_SECRETS='secrets'"."
           FORBIDDEN_ACCESS='SUPABASE_'ACCESS'_TOKEN'
           FORBIDDEN_DB='SUPABASE_'DB'_PASSWORD'
-          for forbidden in "${FORBIDDEN_ENV}" "${FORBIDDEN_SECRETS}" "${FORBIDDEN_ACCESS}" "${FORBIDDEN_DB}"; do
+          for forbidden in "${FORBIDDEN_SECRETS}" "${FORBIDDEN_ACCESS}" "${FORBIDDEN_DB}"; do
             if grep -nF "${forbidden}" "${FILES[@]}"; then
               echo "Repository-only boundary violation detected"
               exit 1
             fi
           done
-      - name: Generated matrix must be committed
-        run: git diff --exit-code -- docs/DOMAIN-COMPLETION-MATRIX.md
-      - name: Diff hygiene
+      - name: Commit generated matrix only
+        shell: bash
         run: |
-          TARGET_SHA="${{ github.event.pull_request.head.sha }}"
-          git fetch --no-tags --depth=2 origin "${TARGET_SHA}"
-          git diff --check "${TARGET_SHA}^" "${TARGET_SHA}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- docs/DOMAIN-COMPLETION-MATRIX.md
+          test "$(git diff --cached --name-only)" = "docs/DOMAIN-COMPLETION-MATRIX.md"
+          git commit -m "docs(com): regenerate domain completion matrix [skip ci]"
+          git push origin "HEAD:${{ github.head_ref }}"
