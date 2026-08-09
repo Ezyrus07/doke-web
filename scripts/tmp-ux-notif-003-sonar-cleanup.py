@@ -8,7 +8,7 @@ old_escape = '\n'.join([
     "    .replace(/&/g, '&amp;')",
     "    .replace(/</g, '&lt;')",
     "    .replace(/>/g, '&gt;')",
-    r'''    .replace(/\"/g, '&quot;');'''
+    '''    .replace(/"/g, '&quot;');'''
 ]) + '\n'
 new_escape = '\n'.join([
     "  const escapeHtml = (value) => normalizeText(value)",
