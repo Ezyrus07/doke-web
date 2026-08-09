@@ -1,11 +1,7 @@
 (() => {
   const BUS_KEY = 'doke.in-app-notification.bus.v1';
   const ACTION_KEY = 'doke.in-app-notification.action.v1';
-  const PREFS_KEY = 'doke.in-app-notification.preferences.v1';
-  const DIGEST_KEY = 'doke.in-app-notification.digest.v1';
   const TAB_ID = `tab-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-  const DEFAULT_PREFS = { messages: true, reactions: true, mentions: true, events: true, social: true, sound: true, digest: true, dndEnabled: false, dndUntil: 0, priorityMin: 'silent', mutedScopes: [] };
-  const PRIORITY_RANK = { silent: 0, normal: 1, high: 2 };
   const pendingActions = new Map();
 
   const safeParse = (value, fallback = null) => { try { return JSON.parse(value); } catch (_error) { return fallback; } };
@@ -14,9 +10,7 @@
   const getNotificationCenter = () => window.Doke?.notificationCenter || null;
   const getNotificationService = () => window.Doke?.services?.notifications || null;
   const getToastManager = () => window.Doke?.notificationToast || null;
-  const normalizePrefs = (prefs = {}) => ({ ...DEFAULT_PREFS, ...prefs, mutedScopes: Array.isArray(prefs.mutedScopes) ? prefs.mutedScopes : [] });
-  const readPrefs = () => normalizePrefs(safeParse(localStorage.getItem(PREFS_KEY), {}) || {});
-  const writePrefs = (prefs) => { const next = normalizePrefs(prefs); localStorage.setItem(PREFS_KEY, JSON.stringify(next)); document.dispatchEvent(new CustomEvent('doke:notification-preferences-changed', { detail: next })); return next; };
+  const getDeliveryManager = () => window.Doke?.notificationDelivery || null;
   const readCenter = () => Array.from(getNotificationCenter()?.getSnapshot?.().items || []);
   const typeGroup = (payload) => { const type = String(payload?.type || '').toLowerCase(); if (type.includes('mention')) return 'mentions'; if (type.includes('reaction')) return 'reactions'; if (type.includes('event')) return 'events'; if (type.includes('message') || payload?.category === 'messages') return 'messages'; return 'social'; };
   const priorityOf = (payload) => {
@@ -29,9 +23,6 @@
   const scopeOf = (payload) => String(payload?.scopeKey || payload?.conversationId || payload?.communityId || payload?.sourceKey || '').trim();
   const isForCurrentUser = (payload) => { const recipient = String(payload?.recipientAccountKey || payload?.userId || '').trim().toLowerCase(); return !recipient || getAccountKeys().includes(recipient); };
   const makeGroupKey = (payload) => String(payload.groupKey || [payload.recipientAccountKey || payload.userId || 'all', typeGroup(payload), payload.type || '', payload.targetUrl || '', payload.title || ''].join('|')).toLowerCase();
-  const isDndActive = (prefs = readPrefs()) => Boolean(prefs.dndEnabled && Number(prefs.dndUntil || 0) > Date.now());
-  const isMuted = (payload, prefs = readPrefs()) => { const scope = scopeOf(payload); return Boolean(scope && prefs.mutedScopes.includes(scope)); };
-  const shouldToast = (payload, prefs = readPrefs()) => prefs[typeGroup(payload)] !== false && !isMuted(payload, prefs) && PRIORITY_RANK[priorityOf(payload)] >= PRIORITY_RANK[prefs.priorityMin || 'silent'];
   const persist = (payload) => {
     if (!isForCurrentUser(payload)) return payload;
     const center = getNotificationCenter();
@@ -100,9 +91,7 @@
   };
   const syncGlobalBadges = (_source, scope = document) => getNotificationCenter()?.syncBadges?.(scope) ?? 0;
   const openPayload = (payload) => { markAsRead(payload.id); const target=String(payload.targetUrl||'').trim(); if(target)window.location.href=target; };
-  const playSound = (priority) => { if(priority==='silent'||!readPrefs().sound)return; try { const AudioContext=window.AudioContext||window.webkitAudioContext; if(!AudioContext)return; const ctx=new AudioContext(); const oscillator=ctx.createOscillator(); const gain=ctx.createGain(); oscillator.frequency.value=priority==='high'?760:620; gain.gain.setValueAtTime(.0001,ctx.currentTime); gain.gain.exponentialRampToValueAtTime(.045,ctx.currentTime+.015); gain.gain.exponentialRampToValueAtTime(.0001,ctx.currentTime+.14); oscillator.connect(gain).connect(ctx.destination); oscillator.start(); oscillator.stop(ctx.currentTime+.15); } catch(_error){} };
-  const queueDigest = (payload) => { const queue=safeParse(localStorage.getItem(DIGEST_KEY),[]); const items=Array.isArray(queue)?queue:[]; items.push({id:payload.id,title:payload.title,type:typeGroup(payload),createdAt:payload.createdAt}); localStorage.setItem(DIGEST_KEY,JSON.stringify(items.slice(-100))); };
-  const flushDigest = () => { const prefs=readPrefs(); if(isDndActive(prefs)||!prefs.digest)return; const queue=safeParse(localStorage.getItem(DIGEST_KEY),[]); if(!Array.isArray(queue)||!queue.length)return; localStorage.removeItem(DIGEST_KEY); const groups=queue.reduce((acc,item)=>{acc[item.type]=(acc[item.type]||0)+1;return acc;},{}); const body=Object.entries(groups).map(([key,count])=>`${count} ${key}`).join(' · '); show({id:`digest-${Date.now()}`,title:`${queue.length} alertas acumulados`,body,targetUrl:'notificacoes.html',priority:'normal',type:'digest',duration:9000},{skipDigest:true}); };
+  const playSound = (priority) => { if(priority==='silent'||getDeliveryManager()?.getPreferences?.().sound===false)return; try { const AudioContext=window.AudioContext||window.webkitAudioContext; if(!AudioContext)return; const ctx=new AudioContext(); const oscillator=ctx.createOscillator(); const gain=ctx.createGain(); oscillator.frequency.value=priority==='high'?760:620; gain.gain.setValueAtTime(.0001,ctx.currentTime); gain.gain.exponentialRampToValueAtTime(.045,ctx.currentTime+.015); gain.gain.exponentialRampToValueAtTime(.0001,ctx.currentTime+.14); oscillator.connect(gain).connect(ctx.destination); oscillator.start(); oscillator.stop(ctx.currentTime+.15); } catch(_error){} };
 
   const recordActionResult = (notificationId, status, message, undoPayload = null) => {
     const center = getNotificationCenter();
@@ -209,8 +198,12 @@
     return manager.show(payload, options);
   };
   const publish = (payload={}) => { const envelope={...payload,id:payload.id||payload.eventKey||`live-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,createdAt:payload.createdAt||new Date().toISOString(),originTabId:TAB_ID};const stored=persist(envelope);try{localStorage.setItem(BUS_KEY,JSON.stringify(stored));}catch(_error){}document.dispatchEvent(new CustomEvent('doke:in-app-notification',{detail:stored}));return stored; };
-  const muteScope = (scope,label='Origem') => { if(!scope)return readPrefs();const prefs=readPrefs();if(!prefs.mutedScopes.includes(scope))prefs.mutedScopes.push(scope);prefs.mutedScopeLabels={...(prefs.mutedScopeLabels||{}),[scope]:label};return writePrefs(prefs); };
-  const unmuteScope = (scope) => { const prefs=readPrefs();prefs.mutedScopes=prefs.mutedScopes.filter((item)=>item!==scope);if(prefs.mutedScopeLabels)delete prefs.mutedScopeLabels[scope];return writePrefs(prefs); };
+  const getPreferences = () => getDeliveryManager()?.getPreferences?.() || {};
+  const setPreferences = (next = {}) => getDeliveryManager()?.setPreferences?.(next) || getPreferences();
+  const muteScope = (scope, label='Origem') => getDeliveryManager()?.muteScope?.(scope, label) || getPreferences();
+  const unmuteScope = (scope) => getDeliveryManager()?.unmuteScope?.(scope) || getPreferences();
+  const isDndActive = (prefs) => getDeliveryManager()?.isDndActive?.(prefs) === true;
+  const flushDigest = () => { const result=getDeliveryManager()?.flushDigest?.() || null; if(result?.payload)show(result.payload,{skipDelivery:true}); return result; };
 
   const configureToastManager = () => {
     const manager = getToastManager();
@@ -218,9 +211,8 @@
     manager.configure({
       getAccountKey: () => getAccountKeys()[0] || 'anonymous',
       isForCurrentUser,
-      shouldToast,
-      isDndActive,
-      queueDigest,
+      getDeliveryDecision: (payload, options) => getDeliveryManager()?.decide?.(payload, options) || Object.freeze({ outcome: 'SUPPRESS', reason: 'delivery-authority-unavailable' }),
+      onQueueDigest: (payload, decision) => getDeliveryManager()?.enqueueDigest?.(payload, decision),
       priorityOf,
       iconFor,
       resolveActions,
@@ -311,9 +303,6 @@
         document.dispatchEvent(new CustomEvent('doke:notification-action', { detail: action }));
       }
     }
-    if (event.key === PREFS_KEY) {
-      document.dispatchEvent(new CustomEvent('doke:notification-preferences-changed', { detail: readPrefs() }));
-    }
     if (event.key !== BUS_KEY || !event.newValue) return;
     const payload = safeParse(event.newValue, null);
     if (!payload || payload.originTabId === TAB_ID) return;
@@ -329,6 +318,7 @@
     applySynchronizedItems(event.detail || {});
   });
   document.addEventListener('doke:auth-session-change', () => {
+    getDeliveryManager()?.refreshAccount?.();
     getToastManager()?.reset?.(getAccountKeys()[0] || 'anonymous');
     getNotificationCenter()?.refreshAccount?.();
     hydrateNotificationCenter();
@@ -358,10 +348,8 @@
         .forEach((item) => center.markRead(item.id));
       return center.getSnapshot();
     },
-    getPreferences: readPrefs,
-    setPreferences(next = {}) {
-      return writePrefs({ ...readPrefs(), ...next });
-    },
+    getPreferences,
+    setPreferences,
     muteScope,
     unmuteScope,
     isDndActive,

@@ -218,10 +218,20 @@
     const identity = identityOf(payload);
     if (!identity) return false;
     if (state.seen.has(identity) && options.force !== true) return false;
-    if (config.shouldToast?.(payload) === false) return false;
-    if (config.isDndActive?.() === true && options.skipDigest !== true) {
-      config.queueDigest?.(payload);
-      return false;
+    if (typeof config.getDeliveryDecision === 'function' && options.skipDelivery !== true && options.skipDigest !== true) {
+      const deliveryDecision = config.getDeliveryDecision(payload, options) || {};
+      const outcome = normalizeText(deliveryDecision.outcome).toUpperCase();
+      if (outcome === 'QUEUE_DIGEST') {
+        config.onQueueDigest?.(payload, deliveryDecision);
+        return false;
+      }
+      if (outcome !== 'ALLOW_TOAST') return false;
+    } else if (typeof config.getDeliveryDecision !== 'function') {
+      if (config.shouldToast?.(payload) === false) return false;
+      if (config.isDndActive?.() === true && options.skipDigest !== true) {
+        config.queueDigest?.(payload);
+        return false;
+      }
     }
 
     const renderer = typeof config.renderToast === 'function' ? config.renderToast : defaultRender;
