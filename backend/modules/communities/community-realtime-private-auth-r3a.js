@@ -49,16 +49,22 @@ function exactStringArray(value, expected) {
   return JSON.stringify(actual) === JSON.stringify(expected);
 }
 
+function validatePredecessor(input = {}) {
+  if (input.predecessorValidationId !== PREDECESSOR_VALIDATION_ID) return 'COM_B03C_R3_EVIDENCE_REQUIRED';
+  if (input.predecessorStatus !== PREDECESSOR_STATUS) return 'COM_B03C_R3_DIAGNOSTIC_STATUS_REQUIRED';
+  if (input.r3AuthorizationConsumed !== true || input.r3AuthorizationReusable !== false) return 'COM_B03C_R3_SINGLE_USE_HISTORY_REQUIRED';
+  if (input.r3PredicateConclusionValid !== true) return 'COM_B03C_R3_VALID_DIAGNOSTIC_REQUIRED';
+  if (input.r3ZeroResidueProven !== true) return 'COM_B03C_R3_ZERO_RESIDUE_REQUIRED';
+  if (input.typingFullConjunctionReadProven !== true || input.typingFullConjunctionWriteProven !== true) return 'COM_B03C_R3_TYPING_CONTROL_REQUIRED';
+  if (input.presenceFullConjunctionReadProven !== false || input.presenceFullConjunctionWriteProven !== true) return 'COM_B03C_R3_PRESENCE_SPLIT_RESULT_REQUIRED';
+  if (input.observedFailureClass !== FAILURE_CLASS) return 'COM_B03C_R3_FAILURE_CLASS_REQUIRED';
+  if (input.exactCombinedPredicateCauseIsolated !== false) return 'COM_B03C_R3_CAUSE_MUST_REMAIN_UNRESOLVED';
+  return null;
+}
+
 function evaluateRepositoryReadiness(input = {}) {
-  if (input.predecessorValidationId !== PREDECESSOR_VALIDATION_ID) return blocked('COM_B03C_R3_EVIDENCE_REQUIRED');
-  if (input.predecessorStatus !== PREDECESSOR_STATUS) return blocked('COM_B03C_R3_DIAGNOSTIC_STATUS_REQUIRED');
-  if (input.r3AuthorizationConsumed !== true || input.r3AuthorizationReusable !== false) return blocked('COM_B03C_R3_SINGLE_USE_HISTORY_REQUIRED');
-  if (input.r3PredicateConclusionValid !== true) return blocked('COM_B03C_R3_VALID_DIAGNOSTIC_REQUIRED');
-  if (input.r3ZeroResidueProven !== true) return blocked('COM_B03C_R3_ZERO_RESIDUE_REQUIRED');
-  if (input.typingFullConjunctionReadProven !== true || input.typingFullConjunctionWriteProven !== true) return blocked('COM_B03C_R3_TYPING_CONTROL_REQUIRED');
-  if (input.presenceFullConjunctionReadProven !== false || input.presenceFullConjunctionWriteProven !== true) return blocked('COM_B03C_R3_PRESENCE_SPLIT_RESULT_REQUIRED');
-  if (input.observedFailureClass !== FAILURE_CLASS) return blocked('COM_B03C_R3_FAILURE_CLASS_REQUIRED');
-  if (input.exactCombinedPredicateCauseIsolated !== false) return blocked('COM_B03C_R3_CAUSE_MUST_REMAIN_UNRESOLVED');
+  const predecessorFailure = validatePredecessor(input);
+  if (predecessorFailure) return blocked(predecessorFailure);
   if (!exactStringArray(input.isolationCases, ISOLATION_CASES)) return blocked('EXACT_ISOLATION_CASE_MATRIX_REQUIRED');
   if (input.presenceOnly !== true || input.readJoinOnly !== true) return blocked('PRESENCE_READ_JOIN_ONLY_REQUIRED');
   if (input.sameAuthIdentityAcrossCases !== true || input.sameTopicAcrossCases !== true) return blocked('SAME_CONTEXT_CONTROL_REQUIRED');
@@ -89,6 +95,48 @@ function evaluateRepositoryReadiness(input = {}) {
   });
 }
 
+function evaluateImplementationReadiness(input = {}) {
+  const predecessorFailure = validatePredecessor(input);
+  if (predecessorFailure) return blocked(predecessorFailure);
+  if (!exactStringArray(input.isolationCases, ISOLATION_CASES)) return blocked('EXACT_ISOLATION_CASE_MATRIX_REQUIRED');
+  if (input.sameAuthIdentityAcrossCases !== true || input.sameTopicAcrossCases !== true || input.freshRealtimeClientPerCase !== true) {
+    return blocked('IMPLEMENTATION_SAME_CONTEXT_CONTROLS_REQUIRED');
+  }
+  if (input.predicateBuilderPrepared !== true || input.caseOrderingPrepared !== true) return blocked('ISOLATION_PREDICATE_IMPLEMENTATION_REQUIRED');
+  if (input.executorPrepared !== true || input.executorHardBlockedWithoutFutureAuthorization !== true) return blocked('HARD_BLOCKED_EXECUTOR_REQUIRED');
+  if (input.verifierPrepared !== true || input.verifierRequiresZeroResidue !== true || input.verifierRequiresSanitizedEvidence !== true) {
+    return blocked('FAIL_CLOSED_VERIFIER_REQUIRED');
+  }
+  if (input.pullRequestOnlyWorkflowPrepared !== true || input.workflowUsesSecrets === true || input.workflowUsesStagingEnvironment === true) {
+    return blocked('REPOSITORY_ONLY_WORKFLOW_REQUIRED');
+  }
+  if (input.futureStagingAuthorizationDefined === true || input.triggerExists === true || input.pushTriggerExists === true) {
+    return blocked('FUTURE_REMOTE_AUTHORITY_MUST_REMAIN_UNDEFINED');
+  }
+  if (input.domainMutationPlanned === true || input.publicationMutationPlanned === true || input.runtimeDeployPlanned === true ||
+      input.productionPlanned === true || input.mergePlanned === true || input.realUserMutationPlanned === true) {
+    return blocked('OUT_OF_SCOPE_EXECUTION_PROHIBITED');
+  }
+
+  return freeze({
+    contractId: CONTRACT_ID,
+    decision: 'repository_presence_full_conjunction_isolation_implementation_ready_no_staging_authority',
+    reason: null,
+    isolationCases: ISOLATION_CASES,
+    repositoryReadinessAuthority: true,
+    stagingReadAuthority: false,
+    stagingMutationAuthority: false,
+    authIdentityLifecycleAuthority: false,
+    realtimePolicyLifecycleAuthority: false,
+    realtimeSubscriptionAuthority: false,
+    domainMutationAuthority: false,
+    publicationMutationAuthority: false,
+    runtimeDeployAuthority: false,
+    productionAuthority: false,
+    pullRequestMergeAuthority: false
+  });
+}
+
 module.exports = freeze({
   CONTRACT_ID,
   REQUIRED_BRANCH,
@@ -97,5 +145,6 @@ module.exports = freeze({
   PREDECESSOR_STATUS,
   FAILURE_CLASS,
   ISOLATION_CASES,
-  evaluateRepositoryReadiness
+  evaluateRepositoryReadiness,
+  evaluateImplementationReadiness
 });
