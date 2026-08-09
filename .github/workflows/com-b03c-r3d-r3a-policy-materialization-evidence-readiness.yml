@@ -39,7 +39,8 @@ jobs:
             test ! -s /tmp/r3d-unexpected
             git config user.name doke
             git config user.email bielantoniomma@gmail.com
-            git add docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json
+            git add docs/DOMAIN-COMPLETION-MATRIX.md
+            git add -f reports/generated/domain-completion-matrix-report.json
             test "$(git diff --cached --name-only | wc -l | tr -d ' ')" -le 2
             git commit -m 'docs(gov): regenerate domain completion matrix for COM-B03C-R3D'
             git push origin HEAD:${{ github.event.pull_request.head.ref }}
