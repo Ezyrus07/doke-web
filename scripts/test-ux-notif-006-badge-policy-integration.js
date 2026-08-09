@@ -54,7 +54,8 @@ require(centerPath);
 
 const event = Doke.notificationEvent;
 const center = Doke.notificationCenter;
-assert(event && center);
+assert.ok(event, 'notification event authority must be published');
+assert.ok(center, 'notification center authority must be published');
 
 function item(id, raw, entity) {
   const normalized = event.normalize(Object.assign({
