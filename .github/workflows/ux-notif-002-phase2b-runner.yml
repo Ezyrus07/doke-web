@@ -13,7 +13,7 @@ permissions:
 jobs:
   apply:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - name: Checkout repository
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -24,12 +24,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD^)" = '1a58bf371d9e25a9ef6fec3abfeae597ececb70f'
+          test "$(git rev-parse HEAD^)" = '12188f341aebf1f34588848a45a59610aa729fb5'
 
-      - name: Apply patch
+      - name: Apply hardened Phase 2B patch
         run: python scripts/tmp-ux-notif-002-phase2b.py
 
-      - name: Validate final-tree semantics
+      - name: Prepare exact intended permanent tree
         shell: bash
         run: |
           set -euo pipefail
@@ -37,8 +37,78 @@ jobs:
           rm .github/workflows/ux-notif-002-phase2b-apply.yml
           rm .github/workflows/ux-notif-002-phase2b-apply-v2.yml
           rm .github/workflows/ux-notif-002-phase2b-runner.yml
+          python <<'PY'
+          from pathlib import Path
+
+          path = Path('.github/workflows/ux-notif-002-event-schema.yml')
+          text = path.read_text()
+
+          def replace_exact(old, new, expected, label):
+              global text
+              count = text.count(old)
+              if count != expected:
+                  raise SystemExit(f'{label}: expected {expected} matches, found {count}')
+              text = text.replace(old, new)
+
+          replace_exact(
+              "      - 'scripts/test-ux-notif-002-repository-adapter.js'\n",
+              "      - 'scripts/test-ux-notif-002-repository-adapter.js'\n      - 'assets/js/services/notification-service.js'\n      - 'scripts/test-ux-notif-002-producer-envelopes.js'\n",
+              2,
+              'phase2b workflow paths'
+          )
+          replace_exact(
+              "          test ! -e .github/workflows/ux-notif-002-phase2a-fix-executor.yml\n",
+              "          test ! -e .github/workflows/ux-notif-002-phase2a-fix-executor.yml\n          test ! -e .github/workflows/ux-notif-002-phase2b-apply.yml\n          test ! -e .github/workflows/ux-notif-002-phase2b-apply-v2.yml\n          test ! -e .github/workflows/ux-notif-002-phase2b-runner.yml\n          test ! -e scripts/tmp-ux-notif-002-phase2b.py\n",
+              1,
+              'phase2b clean tree checks'
+          )
+          replace_exact(
+              "          node --check assets/js/repositories/notifications-repository.js\n          node --check scripts/test-ux-notif-002-notification-event.js\n          node --check scripts/test-ux-notif-002-repository-adapter.js\n",
+              "          node --check assets/js/repositories/notifications-repository.js\n          node --check assets/js/services/notification-service.js\n          node --check scripts/test-ux-notif-002-notification-event.js\n          node --check scripts/test-ux-notif-002-repository-adapter.js\n          node --check scripts/test-ux-notif-002-producer-envelopes.js\n",
+              1,
+              'phase2b syntax checks'
+          )
+          replace_exact(
+              "      - name: Validate repository event adapter and runtime dependency\n        run: node scripts/test-ux-notif-002-repository-adapter.js\n\n",
+              "      - name: Validate repository event adapter and runtime dependency\n        run: node scripts/test-ux-notif-002-repository-adapter.js\n\n      - name: Validate native producer envelopes and source provenance\n        run: node scripts/test-ux-notif-002-producer-envelopes.js\n\n",
+              1,
+              'phase2b producer gate'
+          )
+          replace_exact(
+              "            --test-coverage-include='assets/js/repositories/notifications-repository.js' \\\n",
+              "            --test-coverage-include='assets/js/repositories/notifications-repository.js' \\\n            --test-coverage-include='assets/js/services/notification-service.js' \\\n",
+              1,
+              'phase2b lcov include'
+          )
+          replace_exact(
+              "            scripts/test-ux-notif-002-notification-event.js \\\n            scripts/test-ux-notif-002-repository-adapter.js\n",
+              "            scripts/test-ux-notif-002-notification-event.js \\\n            scripts/test-ux-notif-002-repository-adapter.js \\\n            scripts/test-ux-notif-002-producer-envelopes.js\n",
+              1,
+              'phase2b lcov tests'
+          )
+          replace_exact(
+              "          grep -Fq 'SF:assets/js/repositories/notifications-repository.js' \"${REPORT}\"\n",
+              "          grep -Fq 'SF:assets/js/repositories/notifications-repository.js' \"${REPORT}\"\n          grep -Fq 'SF:assets/js/services/notification-service.js' \"${REPORT}\"\n",
+              1,
+              'phase2b lcov evidence'
+          )
+          path.write_text(text)
+          PY
+
+      - name: Reconcile deterministic domain matrix on intended tree
+        run: |
+          npm run write:domain-completion-matrix
+          npm run audit:domain-completion-matrix
+
+      - name: Validate intended Phase 2B tree
+        shell: bash
+        run: |
+          set -euo pipefail
           node --check assets/js/core/notification-event.js
+          node --check assets/js/repositories/notifications-repository.js
           node --check assets/js/services/notification-service.js
+          node --check scripts/test-ux-notif-002-notification-event.js
+          node --check scripts/test-ux-notif-002-repository-adapter.js
           node --check scripts/test-ux-notif-002-producer-envelopes.js
           node scripts/test-ux-notif-002-notification-event.js
           node scripts/test-ux-notif-002-repository-adapter.js
@@ -52,15 +122,28 @@ jobs:
           npm run audit:domain-completion-matrix
           npm run audit:agent-governance
           git diff --check
-          git checkout -- .github/workflows/ux-notif-002-phase2b-apply.yml .github/workflows/ux-notif-002-phase2b-apply-v2.yml .github/workflows/ux-notif-002-phase2b-runner.yml
 
-      - name: Commit functional Phase 2B
+      - name: Restore workflow files that runner token cannot publish
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout -- .github/workflows/ux-notif-002-event-schema.yml
+          git checkout -- .github/workflows/ux-notif-002-phase2b-apply.yml
+          git checkout -- .github/workflows/ux-notif-002-phase2b-apply-v2.yml
+          git checkout -- .github/workflows/ux-notif-002-phase2b-runner.yml
+
+      - name: Commit functional Phase 2B and synchronized matrix
         shell: bash
         run: |
           set -euo pipefail
           git config user.name 'doke'
           git config user.email 'bielantoniomma@gmail.com'
-          git add assets/js/core/notification-event.js assets/js/services/notification-service.js scripts/test-ux-notif-002-producer-envelopes.js docs/ux/UX-NOTIF-002.md scripts/tmp-ux-notif-002-phase2b.py
+          git add assets/js/core/notification-event.js
+          git add assets/js/services/notification-service.js
+          git add scripts/test-ux-notif-002-producer-envelopes.js
+          git add docs/ux/UX-NOTIF-002.md
+          git add docs/DOMAIN-COMPLETION-MATRIX.md
+          git add scripts/tmp-ux-notif-002-phase2b.py
           git diff --cached --check
           git diff --cached --quiet && { echo '::error::No Phase 2B changes staged'; exit 1; }
           git commit -m 'feat(ux-notif-002): emit canonical producer envelopes'
