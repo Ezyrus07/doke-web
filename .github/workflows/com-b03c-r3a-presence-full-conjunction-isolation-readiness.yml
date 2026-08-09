@@ -26,6 +26,8 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
@@ -49,14 +51,21 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          node scripts/execute-com-b03c-r3a-presence-full-conjunction-isolation-staging-canary.js 2> /tmp/r3a-executor.err && exit 1 || test "$?" = "2"
+          set +e
+          node scripts/execute-com-b03c-r3a-presence-full-conjunction-isolation-staging-canary.js 2> /tmp/r3a-executor.err
+          executor_status="$?"
+          set -e
+          test "${executor_status}" = "2"
           grep -q 'DOKE_COM_B03C_R3A_STAGING_AUTHORIZATION_NOT_DEFINED' /tmp/r3a-executor.err
           test "$(node -p "require('./config/com-b03c-r3a-presence-full-conjunction-isolation-readiness.json').authorization.futureStagingAuthorizationDefined")" = "false"
           test "$(node -p "require('./config/com-b03c-r3a-presence-full-conjunction-isolation-readiness.json').authorization.triggerExists")" = "false"
           test "$(node -p "require('./config/com-b03c-r3a-presence-full-conjunction-isolation-readiness.json').authorization.pushTriggerExists")" = "false"
-          ! grep -qE '^[[:space:]]*push:' .github/workflows/com-b03c-r3a-presence-full-conjunction-isolation-readiness.yml
-          ! grep -q 'secrets\.' .github/workflows/com-b03c-r3a-presence-full-conjunction-isolation-readiness.yml
-          ! grep -q 'environment: doke-staging' .github/workflows/com-b03c-r3a-presence-full-conjunction-isolation-readiness.yml
+          workflow='.github/workflows/com-b03c-r3a-presence-full-conjunction-isolation-readiness.yml'
+          forbidden_secrets_pattern='secrets[.]'
+          forbidden_environment_pattern='environment:[[:space:]]*doke-staging'
+          ! grep -qE '^[[:space:]]*push:' "${workflow}"
+          ! grep -qE "${forbidden_secrets_pattern}" "${workflow}"
+          ! grep -qE "${forbidden_environment_pattern}" "${workflow}"
       - name: Governance invariants
         shell: bash
         run: |
@@ -67,4 +76,9 @@ jobs:
           grep -q '"productionAuthority": false' docs/validation/COM-B03C-R3A-PRESENCE-FULL-CONJUNCTION-ISOLATION-IMPLEMENTATION.json
           grep -q '"mergeAuthority": false' docs/validation/COM-B03C-R3A-PRESENCE-FULL-CONJUNCTION-ISOLATION-IMPLEMENTATION.json
       - name: Diff hygiene
-        run: git diff --check HEAD^ HEAD
+        shell: bash
+        run: |
+          set -euo pipefail
+          TARGET_SHA="${{ github.event.pull_request.head.sha }}"
+          git fetch --no-tags --depth=2 origin "${TARGET_SHA}"
+          git diff --check "${TARGET_SHA}^" "${TARGET_SHA}"
