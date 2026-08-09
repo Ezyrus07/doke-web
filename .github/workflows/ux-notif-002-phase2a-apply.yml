@@ -29,7 +29,7 @@ jobs:
       - name: Install repository dependencies without lifecycle scripts
         run: npm ci --ignore-scripts
 
-      - name: Apply deterministic Phase 2A patch
+      - name: Apply deterministic Phase 2A functional patch
         shell: bash
         run: |
           set -euo pipefail
@@ -245,53 +245,9 @@ jobs:
               raise SystemExit(f'{html_path.name}: notification-event occurrence count={html.count(event_token)}')
             if html.index(event_token) > html.index(repo_token):
               raise SystemExit(f'{html_path.name}: notification-event loads after repository')
-          if len(consumers) < 10:
-            raise SystemExit(f'unexpected repository consumer count={len(consumers)}')
-          print('repository consumers:', len(consumers), ', '.join(consumers))
-
-          workflow_path = root / '.github/workflows/ux-notif-002-event-schema.yml'
-          workflow = workflow_path.read_text(encoding='utf-8')
-          def replace_once(source, old, new, label):
-            count = source.count(old)
-            if count != 1:
-              raise SystemExit(f'{label} anchor count={count}')
-            return source.replace(old, new, 1)
-
-          test_path = "      - 'scripts/test-ux-notif-002-notification-event.js'\n"
-          test_path_plus = test_path + "      - 'scripts/test-ux-notif-002-repository-adapter.js'\n"
-          workflow = replace_once(workflow, test_path, test_path_plus, 'push repository adapter path')
-          workflow = replace_once(workflow, test_path, test_path_plus, 'pr repository adapter path')
-          workflow = replace_once(
-            workflow,
-            "          node --check assets/js/core/notification-event.js\n          node --check scripts/test-ux-notif-002-notification-event.js\n",
-            "          node --check assets/js/core/notification-event.js\n          node --check assets/js/repositories/notifications-repository.js\n          node --check scripts/test-ux-notif-002-notification-event.js\n          node --check scripts/test-ux-notif-002-repository-adapter.js\n",
-            'syntax block'
-          )
-          workflow = replace_once(
-            workflow,
-            "      - name: Preserve UX-NOTIF-001 presentation authority\n",
-            "      - name: Validate repository event adapter\n        run: node scripts/test-ux-notif-002-repository-adapter.js\n\n      - name: Preserve UX-NOTIF-001 presentation authority\n",
-            'repository adapter gate'
-          )
-          workflow = replace_once(
-            workflow,
-            "            --test-coverage-include='assets/js/core/notification-event.js' \\\n",
-            "            --test-coverage-include='assets/js/core/notification-event.js' \\\n            --test-coverage-include='assets/js/repositories/notifications-repository.js' \\\n",
-            'coverage repository include'
-          )
-          workflow = replace_once(
-            workflow,
-            "            scripts/test-ux-notif-002-notification-event.js\n",
-            "            scripts/test-ux-notif-002-notification-event.js \\\n            scripts/test-ux-notif-002-repository-adapter.js\n",
-            'coverage repository test'
-          )
-          workflow = replace_once(
-            workflow,
-            "          grep -Fq 'SF:assets/js/core/notification-event.js' \"${REPORT}\"\n",
-            "          grep -Fq 'SF:assets/js/core/notification-event.js' \"${REPORT}\"\n          grep -Fq 'SF:assets/js/repositories/notifications-repository.js' \"${REPORT}\"\n",
-            'lcov repository assertion'
-          )
-          workflow_path.write_text(workflow, encoding='utf-8')
+          if len(consumers) != 16:
+            raise SystemExit(f'expected 16 repository consumers, found {len(consumers)}')
+          print('repository consumers:', ', '.join(consumers))
 
           docs_path = root / 'docs/ux/UX-NOTIF-002.md'
           docs = docs_path.read_text(encoding='utf-8')
@@ -329,7 +285,7 @@ jobs:
 
           ### Gate da Fase 2A
 
-          - dependency order canônica em todas as rotas consumidoras;
+          - dependency order canônica nas 16 rotas consumidoras;
           - nenhuma heurística `getCategory()`/`getEventKey()` no repository;
           - metadata canônica sem quebrar `category` legado;
           - desconhecido operacional fail-closed;
@@ -346,7 +302,7 @@ jobs:
       - name: Regenerate canonical matrix
         run: npm run write:domain-completion-matrix
 
-      - name: Validate Phase 2A repository-only patch
+      - name: Validate Phase 2A functional patch
         run: |
           node --check assets/js/core/notification-event.js
           node --check assets/js/repositories/notifications-repository.js
@@ -364,7 +320,7 @@ jobs:
           npm run audit:agent-governance
           git diff --check
 
-      - name: Publish Phase 2A patch
+      - name: Publish functional patch only
         shell: bash
         run: |
           set -euo pipefail
@@ -373,7 +329,10 @@ jobs:
           git add assets/js/repositories/notifications-repository.js
           git add scripts/test-ux-notif-002-repository-adapter.js
           git add docs/ux/UX-NOTIF-002.md docs/DOMAIN-COMPLETION-MATRIX.md
-          git add .github/workflows/ux-notif-002-event-schema.yml
           git add -- '*.html'
+          if git diff --cached --quiet; then
+            echo 'No functional Phase 2A changes to publish.'
+            exit 0
+          fi
           git commit -m 'feat(ux-notif-002): integrate repository event adapter'
           git push origin HEAD:ux/ux-notif-002-event-schema
