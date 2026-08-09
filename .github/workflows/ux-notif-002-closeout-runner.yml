@@ -1,0 +1,128 @@
+name: UX-NOTIF-002 Closeout Runner
+
+on:
+  push:
+    branches:
+      - ux/ux-notif-002-event-schema
+    paths:
+      - '.github/workflows/ux-notif-002-closeout-runner.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Guard exact parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = '7573aa08727a2a6f1d4d5873c2c67f0d38eedaf1'
+
+      - name: Apply financial producer closeout patch
+        run: python scripts/tmp-ux-notif-002-closeout.py
+
+      - name: Prepare exact intended permanent tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm scripts/tmp-ux-notif-002-closeout.py
+          rm .github/workflows/ux-notif-002-closeout-runner.yml
+
+      - name: Install repository dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts
+
+      - name: Reconcile deterministic domain matrix on intended tree
+        run: |
+          npm run write:domain-completion-matrix
+          npm run audit:domain-completion-matrix
+
+      - name: Validate intended closeout tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check assets/js/core/notification-event.js
+          node --check assets/js/repositories/notifications-repository.js
+          node --check assets/js/services/notification-service.js
+          node --check assets/js/services/payment-service.js
+          node --check assets/js/services/wallet-service.js
+          node --check assets/js/repositories/wallet-repository.js
+          node --check scripts/test-ux-notif-002-notification-event.js
+          node --check scripts/test-ux-notif-002-repository-adapter.js
+          node --check scripts/test-ux-notif-002-producer-envelopes.js
+          node --check scripts/test-ux-notif-002-financial-producer-handoff.js
+          node scripts/test-ux-notif-002-notification-event.js
+          node scripts/test-ux-notif-002-repository-adapter.js
+          node scripts/test-ux-notif-002-producer-envelopes.js
+          node scripts/test-ux-notif-002-financial-producer-handoff.js
+          node scripts/test-ux-notif-001-notification-center.js
+          node scripts/test-ux-notif-001-in-app-adapter.js
+          node scripts/test-ux-notif-001-surface-contract.js
+          node scripts/test-notification-authority-contract.js
+          node scripts/test-notifications-supabase-repository-contract.js
+          node scripts/audit-notifications-api-contract.js
+          node scripts/test-ux-priv-001-account-storage.js
+          node scripts/audit-auth-session-contracts.js
+          npm run audit:agent-governance
+          git diff --check
+
+      - name: Validate intended executable coverage
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf coverage/ux-notif-002
+          mkdir -p coverage/ux-notif-002
+          node --test \
+            --experimental-test-coverage \
+            --test-coverage-include='assets/js/core/notification-event.js' \
+            --test-coverage-include='assets/js/repositories/notifications-repository.js' \
+            --test-coverage-include='assets/js/services/notification-service.js' \
+            --test-coverage-include='assets/js/services/wallet-service.js' \
+            --test-coverage-include='assets/js/repositories/wallet-repository.js' \
+            --test-reporter=spec \
+            --test-reporter-destination=stdout \
+            --test-reporter=lcov \
+            --test-reporter-destination=coverage/ux-notif-002/lcov.info \
+            scripts/test-ux-notif-002-notification-event.js \
+            scripts/test-ux-notif-002-repository-adapter.js \
+            scripts/test-ux-notif-002-producer-envelopes.js \
+            scripts/test-ux-notif-002-financial-producer-handoff.js
+          REPORT='coverage/ux-notif-002/lcov.info'
+          test -s "${REPORT}"
+          grep -Fq 'SF:assets/js/core/notification-event.js' "${REPORT}"
+          grep -Fq 'SF:assets/js/repositories/notifications-repository.js' "${REPORT}"
+          grep -Fq 'SF:assets/js/services/notification-service.js' "${REPORT}"
+          grep -Fq 'SF:assets/js/services/wallet-service.js' "${REPORT}"
+          grep -Fq 'SF:assets/js/repositories/wallet-repository.js' "${REPORT}"
+
+      - name: Restore workflow files that runner token cannot publish
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout -- .github/workflows/ux-notif-002-event-schema.yml
+          git checkout -- .github/workflows/ux-notif-002-closeout-runner.yml
+          git checkout -- scripts/tmp-ux-notif-002-closeout.py
+
+      - name: Commit functional closeout and synchronized matrix
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'doke'
+          git config user.email 'bielantoniomma@gmail.com'
+          git add assets/js/services/payment-service.js
+          git add assets/js/services/wallet-service.js
+          git add assets/js/repositories/wallet-repository.js
+          git add scripts/test-ux-notif-002-financial-producer-handoff.js
+          git add docs/ux/UX-NOTIF-002.md
+          git add docs/DOMAIN-COMPLETION-MATRIX.md
+          git diff --cached --check
+          git diff --cached --quiet && { echo '::error::No closeout changes staged'; exit 1; }
+          git commit -m 'fix(ux-notif-002): close financial producer provenance'
+          git push origin HEAD:ux/ux-notif-002-event-schema
