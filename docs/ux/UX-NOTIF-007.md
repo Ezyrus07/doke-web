@@ -8,8 +8,9 @@
 - Base SHA certificado: `7ba99bfbd293f83d8e14bccf75b4bd0703a4199d`;
 - Branch: `ux/ux-notif-007-digest-dnd-policy`;
 - Handoff: `NOTIF-H07 — digest/DND`;
-- Fase 1: candidato permanente em certificação final;
+- Fase 1: candidato permanente pós-cleanup em certificação final;
 - Matrix canônica sincronizada no parent `20f928ad19d5128c0ad8245b5bc856203f2290c9`;
+- cleanup Sonar funcional validado no parent `67cfb123ba2be60081dbf22dc698ac0f19b675ca`;
 - Merge autorizado: não;
 - Ready for review autorizado: não;
 - Backend/staging/produção: não acessados.
@@ -86,6 +87,19 @@ Urgência vem apenas de metadata canônica H06, nunca de copy.
 O adapter mantém a API pública legada `window.DokeInAppNotifications` para a UI atual, mas `getPreferences`, `setPreferences`, `muteScope`, `unmuteScope`, `isDndActive` e `flushDigest` delegam para H07.
 
 `notification-toast.js` preserva o fallback antigo apenas quando nenhuma authority H07 foi configurada. No runtime canônico atual, o adapter configura `getDeliveryDecision` e `onQueueDigest`, portanto o toast manager não decide DND.
+
+## Cleanup de qualidade
+
+A primeira certificação integral encontrou 9 New Issues do Sonar pertencentes ao incremento. Todos foram tratados na fonte, sem aceitar ou suprimir regras:
+
+- optional chaining na guarda da authority H07;
+- tratamento explícito de falhas de storage local account-scoped;
+- extração da decisão de delivery para reduzir complexidade de `notificationToast.show()`;
+- expansão dos blocos `playSound` e cross-tab `publish` do adapter;
+- identidade única e consistente para o digest sintético;
+- migração do teste estrutural H07 para a expressão equivalente pós-refatoração.
+
+A certificação final deve provar novamente zero New Issues no mesmo SHA permanente.
 
 ## Testes dedicados
 
