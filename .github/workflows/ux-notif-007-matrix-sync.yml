@@ -1,0 +1,100 @@
+name: UX-NOTIF-007 Matrix Sync
+
+on:
+  push:
+    branches:
+      - ux/ux-notif-007-digest-dnd-policy
+    paths:
+      - '.github/workflows/ux-notif-007-matrix-sync.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ux/ux-notif-007-digest-dnd-policy
+          fetch-depth: 0
+
+      - name: Guard exact permanent parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = '7031ba762bb22c001401307de1d2e10555f058ac'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Validate H07 before evidence mutation
+        run: |
+          node scripts/test-ux-notif-007-delivery-policy.js
+          node scripts/test-ux-notif-007-toast-delivery-integration.js
+          node scripts/test-ux-notif-007-adapter-delegation.js
+          node scripts/test-notification-delivery-controls-contract.js
+
+      - name: Preserve predecessor contracts before matrix write
+        run: |
+          node scripts/test-ux-notif-001-notification-center.js
+          node scripts/test-ux-notif-001-in-app-adapter.js
+          node scripts/test-ux-notif-001-surface-contract.js
+          node scripts/test-ux-notif-002-notification-event.js
+          node scripts/test-ux-notif-002-repository-adapter.js
+          node scripts/test-ux-notif-002-producer-envelopes.js
+          node scripts/test-ux-notif-002-financial-producer-handoff.js
+          node scripts/test-ux-notif-003-toast-manager.js
+          node scripts/test-ux-notif-003-toast-manager-runtime.js
+          node scripts/test-ux-notif-003-in-app-delegation.js
+          node scripts/test-ux-notif-004-badge-snapshot.js
+          node scripts/test-ux-notif-005-inbox-reconciliation.js
+          node scripts/test-ux-notif-005-adapter-repository-contract.js
+          node scripts/test-ux-notif-005-remote-mutation-runtime.js
+          node scripts/test-ux-notif-005-in-app-mutation-runtime.js
+          node scripts/test-ux-notif-006-event-policy-matrix.js
+          node scripts/test-ux-notif-006-badge-policy-integration.js
+          node scripts/test-ux-notif-006-producer-policy-coverage.js
+
+      - name: Remove transient executor from intended final tree
+        run: git rm .github/workflows/ux-notif-007-matrix-sync.yml
+
+      - name: Regenerate canonical matrix
+        run: |
+          npm run write:domain-completion-matrix
+          git add docs/DOMAIN-COMPLETION-MATRIX.md
+          npm run audit:domain-completion-matrix
+
+      - name: Validate canonical agent governance
+        run: npm run audit:agent-governance
+
+      - name: Restore unrelated generated audit outputs
+        run: git restore --worktree -- .
+
+      - name: Validate deterministic publish delta
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --cached --check
+          mapfile -t paths < <(git diff --cached --name-only | sort)
+          printf '%s\n' "${paths[@]}"
+          test "${#paths[@]}" -eq 2
+          test "${paths[0]}" = '.github/workflows/ux-notif-007-matrix-sync.yml'
+          test "${paths[1]}" = 'docs/DOMAIN-COMPLETION-MATRIX.md'
+          test "$(git diff --cached --name-status -- .github/workflows/ux-notif-007-matrix-sync.yml | awk '{print $1}')" = 'D'
+
+      - name: Publish canonical matrix sync
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'docs(ux-notif-007): sync canonical completion matrix'
+          git push origin HEAD:ux/ux-notif-007-digest-dnd-policy
