@@ -1,0 +1,150 @@
+name: UX-NOTIF-007 Final Security Cleanup
+
+on:
+  push:
+    branches:
+      - ux/ux-notif-007-digest-dnd-policy
+    paths:
+      - '.github/workflows/ux-notif-007-final-security-fix.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ux/ux-notif-007-digest-dnd-policy
+          fetch-depth: 0
+
+      - name: Guard exact security-fix ancestry
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = '4fd64947f3cab55c07e7fbdc7e58ae4ccf5dcaca'
+          test "$(git rev-parse HEAD^^)" = '489b91d6b12ad377f1275296e1cbb137dd9d0d23'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Apply exact final source fix
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('assets/js/features/in-app-notifications.js')
+          text = path.read_text(encoding='utf-8')
+
+          anchor = "  const getToastManager = () => window.Doke?.notificationToast || null;\n  const getDeliveryManager = () => window.Doke?.notificationDelivery || null;"
+          replacement = """  const getToastManager = () => window.Doke?.notificationToast || null;
+          const getDeliveryManager = () => window.Doke?.notificationDelivery || null;
+          let localIdSequence = 0;
+          const secureLocalId = (prefix = 'live') => {
+            const cryptoApi = window.crypto;
+            if (typeof cryptoApi?.randomUUID === 'function') return `${prefix}-${cryptoApi.randomUUID()}`;
+            if (typeof cryptoApi?.getRandomValues === 'function') {
+              const values = new Uint32Array(4);
+              cryptoApi.getRandomValues(values);
+              return `${prefix}-${Array.from(values, (value) => value.toString(36)).join('-')}`;
+            }
+            localIdSequence += 1;
+            return `${prefix}-${Date.now().toString(36)}-${localIdSequence.toString(36)}`;
+          };"""
+          if text.count(anchor) != 1:
+              raise SystemExit(f'local id anchor: expected 1 match, got {text.count(anchor)}')
+          text = text.replace(anchor, replacement, 1)
+
+          old_id = "id: payload.id || payload.eventKey || `live-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`"
+          new_id = "id: payload.id || payload.eventKey || secureLocalId('live')"
+          if text.count(old_id) != 1:
+              raise SystemExit(f'live id expression: expected 1 match, got {text.count(old_id)}')
+          text = text.replace(old_id, new_id, 1)
+
+          old_flush = "  const flushDigest = () => { const result=getDeliveryManager()?.flushDigest?.() || null; if(result?.payload)show(result.payload,{skipDelivery:true}); return result; };"
+          new_flush = """  const flushDigest = () => {
+            const result = getDeliveryManager()?.flushDigest?.() || null;
+            if (result?.payload) {
+              show(result.payload, { skipDelivery: true });
+            }
+            return result;
+          };"""
+          if text.count(old_flush) != 1:
+              raise SystemExit(f'flushDigest: expected 1 match, got {text.count(old_flush)}')
+          text = text.replace(old_flush, new_flush, 1)
+
+          path.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Validate JavaScript syntax
+        run: node --check assets/js/features/in-app-notifications.js
+
+      - name: Validate H07 after final security cleanup
+        run: |
+          node scripts/test-ux-notif-007-delivery-policy.js
+          node scripts/test-ux-notif-007-toast-delivery-integration.js
+          node scripts/test-ux-notif-007-adapter-delegation.js
+          node scripts/test-notification-delivery-controls-contract.js
+
+      - name: Preserve H01-H06 notification contracts
+        run: |
+          node scripts/test-ux-notif-001-notification-center.js
+          node scripts/test-ux-notif-001-in-app-adapter.js
+          node scripts/test-ux-notif-001-surface-contract.js
+          node scripts/test-ux-notif-002-notification-event.js
+          node scripts/test-ux-notif-002-repository-adapter.js
+          node scripts/test-ux-notif-002-producer-envelopes.js
+          node scripts/test-ux-notif-002-financial-producer-handoff.js
+          node scripts/test-ux-notif-003-toast-manager.js
+          node scripts/test-ux-notif-003-toast-manager-runtime.js
+          node scripts/test-ux-notif-003-in-app-delegation.js
+          node scripts/test-ux-notif-004-badge-snapshot.js
+          node scripts/test-ux-notif-005-inbox-reconciliation.js
+          node scripts/test-ux-notif-005-adapter-repository-contract.js
+          node scripts/test-ux-notif-005-remote-mutation-runtime.js
+          node scripts/test-ux-notif-005-in-app-mutation-runtime.js
+          node scripts/test-ux-notif-006-event-policy-matrix.js
+          node scripts/test-ux-notif-006-badge-policy-integration.js
+          node scripts/test-ux-notif-006-producer-policy-coverage.js
+
+      - name: Remove temporary security executors
+        run: |
+          git rm .github/workflows/ux-notif-007-security-inspect.yml
+          git rm .github/workflows/ux-notif-007-final-security-fix.yml
+
+      - name: Validate intended permanent tree
+        run: |
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+
+      - name: Validate deterministic final delta
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add assets/js/features/in-app-notifications.js
+          git diff --cached --check
+          mapfile -t paths < <(git diff --cached --name-only | sort)
+          printf '%s\n' "${paths[@]}"
+          test "${#paths[@]}" -eq 3
+          printf '%s\n' "${paths[@]}" | grep -Fxq '.github/workflows/ux-notif-007-final-security-fix.yml'
+          printf '%s\n' "${paths[@]}" | grep -Fxq '.github/workflows/ux-notif-007-security-inspect.yml'
+          printf '%s\n' "${paths[@]}" | grep -Fxq 'assets/js/features/in-app-notifications.js'
+          test "$(git diff --cached --name-status -- .github/workflows/ux-notif-007-security-inspect.yml | awk '{print $1}')" = 'D'
+
+      - name: Publish final security cleanup
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'fix(ux-notif-007): use secure transient notification identity'
+          git push origin HEAD:ux/ux-notif-007-digest-dnd-policy
