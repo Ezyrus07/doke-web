@@ -3,8 +3,20 @@ from pathlib import Path
 source_path = Path('assets/js/core/notification-toast.js')
 source = source_path.read_text(encoding='utf-8')
 
-old_escape = """  const escapeHtml = (value) => normalizeText(value)\n    .replace(/&/g, '&amp;')\n    .replace(/</g, '&lt;')\n    .replace(/>/g, '&gt;')\n    .replace(/\\\"/g, '&quot;');\n"""
-new_escape = """  const escapeHtml = (value) => normalizeText(value)\n    .replaceAll('&', '&amp;')\n    .replaceAll('<', '&lt;')\n    .replaceAll('>', '&gt;')\n    .replaceAll('\\\"', '&quot;');\n"""
+old_escape = '\n'.join([
+    "  const escapeHtml = (value) => normalizeText(value)",
+    "    .replace(/&/g, '&amp;')",
+    "    .replace(/</g, '&lt;')",
+    "    .replace(/>/g, '&gt;')",
+    r'''    .replace(/\"/g, '&quot;');'''
+]) + '\n'
+new_escape = '\n'.join([
+    "  const escapeHtml = (value) => normalizeText(value)",
+    "    .replaceAll('&', '&amp;')",
+    "    .replaceAll('<', '&lt;')",
+    "    .replaceAll('>', '&gt;')",
+    '''    .replaceAll('"', '&quot;');'''
+]) + '\n'
 if old_escape not in source:
     raise SystemExit('escapeHtml anchor not found')
 source = source.replace(old_escape, new_escape, 1)
