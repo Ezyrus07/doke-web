@@ -1,0 +1,118 @@
+{
+  "validationId": "COM-B03C-R2A-STAGING-RESIDUE-CLEANUP-READINESS",
+  "domain": "COM-001",
+  "contractId": "com-b03c-r2a-staging-residue-cleanup-readiness-v1",
+  "status": "repository_cleanup_recovery_certified_new_authorization_required",
+  "predecessor": {
+    "validationId": "COM-B03C-R2-REALTIME-AUTH-PREDICATE-LADDER-STAGING-ATTEMPT",
+    "evidenceCommit": "ebf39fe28d9db22ae81f50fdac620128eb737124",
+    "status": "failed_closed_harness_listener_registration_order_cleanup_unproven",
+    "runId": 31285574756,
+    "canaryJobId": 93173744054,
+    "authorizationConsumed": true,
+    "authorizationReusable": false,
+    "cleanupZeroResidueProven": false,
+    "reportWritten": false,
+    "artifactUploaded": false
+  },
+  "rootCause": {
+    "class": "realtime_client_listener_registration_order_harness_failure",
+    "presenceCallbackRegisteredAfterSubscribe": true,
+    "broadcastCallbackHasSameOrderingRisk": true,
+    "r2PredicateConclusionValid": false,
+    "cleanupState": "unproven_until_r2a_staging_cleanup"
+  },
+  "implementation": {
+    "implementationCommit": "0240fa7f0fdd838f099ffe169e62edb0f3f26daa",
+    "certificationMetadataCommit": "8a6fce2cb48a92cafde14a3fd3b625d1d7ed94fb",
+    "files": [
+      "backend/modules/communities/community-realtime-r2a-residue-cleanup-readiness.js",
+      "config/com-b03c-r2a-residue-cleanup-readiness.json",
+      "scripts/test-com-b03c-r2a-residue-cleanup-readiness.js",
+      "scripts/execute-com-b03c-r2a-residue-cleanup-staging-canary.js",
+      "scripts/verify-com-b03c-r2a-residue-cleanup-staging-canary-evidence.js",
+      ".github/workflows/com-b03c-r2a-residue-cleanup-staging-canary.yml"
+    ]
+  },
+  "cleanupBoundary": {
+    "policySelector": {
+      "schema": "realtime",
+      "table": "messages",
+      "prefix": "com_b03c_r2_"
+    },
+    "authSelector": {
+      "emailShape": "com-b03c-r2-<20 lowercase hex>@doke.local",
+      "userMetadataPurpose": "realtime-auth-predicate-ladder",
+      "userMetadataName": "COM-B03C-R2 Canary",
+      "userMetadataRole": "client"
+    },
+    "bestEffortSecondPassPrepared": true,
+    "postCleanupZeroResidueVerificationRequired": true,
+    "rawIdentifiersPersisted": false,
+    "realUserMutationAllowed": false,
+    "createRealtimePoliciesAllowed": false,
+    "openRealtimeChannelsAllowed": false,
+    "rerunPredicateLadderAllowed": false,
+    "communityPostsExecutionAllowed": false,
+    "channelMessagesExecutionAllowed": false,
+    "publicationMutationAllowed": false,
+    "runtimeDeployAllowed": false,
+    "productionAllowed": false,
+    "mergeAllowed": false
+  },
+  "certification": {
+    "initialReadinessChecks": "64/64",
+    "initialRunId": 31285930006,
+    "initialCertifyJobId": 93174632736,
+    "initialCertifyResult": "success",
+    "initialAuthorizeJobId": 93174751602,
+    "initialAuthorizeResult": "skipped",
+    "initialCanaryJobId": 93174751478,
+    "initialCanaryResult": "skipped",
+    "metadataReadinessChecks": "71/71",
+    "metadataRecertificationRunId": 31286024520,
+    "metadataRecertificationJobId": 93174896375,
+    "metadataRecertificationResult": "success",
+    "metadataAuthorizeJobId": 93174932635,
+    "metadataAuthorizeResult": "skipped",
+    "metadataCanaryJobId": 93174932773,
+    "metadataCanaryResult": "skipped",
+    "syntax": true,
+    "predecessorEvidence": true,
+    "cleanupOnlyBoundary": true,
+    "diffHygiene": true,
+    "stagingAccessExecuted": false,
+    "remoteEffectsExecuted": false
+  },
+  "authorization": {
+    "requiredPhrase": "I_EXPLICITLY_AUTHORIZE_COM_B03C_R2A_STAGING_RESIDUE_INSPECTION_AND_CLEANUP_ONLY",
+    "received": false,
+    "consumed": false,
+    "executionAttempted": false,
+    "singleUse": true,
+    "reusableAfterFailure": false,
+    "predecessorAuthorizationReusable": false,
+    "triggerPath": "config/com-b03c-r2a-residue-cleanup-staging-trigger.json",
+    "triggerExists": false
+  },
+  "authority": {
+    "repositoryReadinessAuthority": true,
+    "stagingInspectionAuthority": false,
+    "stagingCleanupAuthority": false,
+    "realtimePolicyCreateAuthority": false,
+    "realtimeSubscriptionAuthority": false,
+    "diagnosticRerunAuthority": false,
+    "publicationMutationAuthority": false,
+    "runtimeDeployAuthority": false,
+    "productionAuthority": false,
+    "pullRequestMergeAuthority": false
+  },
+  "governance": {
+    "matrixVersion": "1.3.113",
+    "maturity": 3,
+    "maturityPromoted": false,
+    "productionGate": "blocked",
+    "mergeAuthorized": false
+  },
+  "nextBoundary": "exact new single-use COM-B03C-R2A staging residue inspection and cleanup-only authorization; no diagnostic rerun authority"
+}
