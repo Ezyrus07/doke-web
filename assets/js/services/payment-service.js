@@ -340,7 +340,8 @@
             actor: context.actor,
             order: orderResult,
             conversation: chargeResult.conversation,
-            charge: chargeResult.charge
+            charge: chargeResult.charge,
+            sourceAuthority: 'CANONICAL_LOCAL'
           }).catch(function (error) {
             console.warn('[DokePayments:createPaymentHeldNotification]', error);
             return null;

@@ -1352,6 +1352,26 @@
     return Doke.repositories && Doke.repositories.notifications;
   }
 
+  function canonicalLocalDisputeEnvelope(eventType, dispute, recipientId, revision) {
+    dispute = dispute || {};
+    var normalizedType = normalizeText(eventType).toLowerCase();
+    var eventId = [
+      normalizedType,
+      normalizeText(dispute.id || dispute.orderId || ''),
+      normalizeText(revision || ''),
+      normalizeText(recipientId || '')
+    ].filter(Boolean).join(':');
+    return {
+      eventId: eventId,
+      eventType: normalizedType,
+      eventCategory: 'DISPUTES',
+      sourceDomain: 'DISPUTES',
+      sourceAuthority: 'CANONICAL_LOCAL',
+      dedupeKey: eventId,
+      eventKey: eventId
+    };
+  }
+
   function getDisputeOrderLabel(status, resolution) {
     var normalized = normalizeDisputeStatus(status || '');
     if (normalized === 'em_analise') return 'Em análise';
@@ -1410,7 +1430,8 @@
     if (!notifications || typeof notifications.create !== 'function' || !transaction || !dispute) return Promise.resolve(null);
     var clientId = normalizeText(dispute.clientId || transaction.clientId || '');
     if (!clientId) return Promise.resolve(null);
-    return notifications.create({
+    var revision = normalizeText(dispute.responseAt || dispute.updatedAt || '');
+    return notifications.create(Object.assign({
       type: 'order_dispute_response',
       category: 'orders',
       userId: clientId,
@@ -1420,7 +1441,6 @@
       conversationId: dispute.conversationId || transaction.conversationId || '',
       messageId: dispute.messageId || transaction.messageId || '',
       serviceId: transaction.serviceId || '',
-      eventKey: ['order_dispute_response', dispute.id || '', clientId, dispute.responseAt || Date.now().toString(36)].filter(Boolean).join(':'),
       title: 'Resposta enviada pelo profissional',
       body: 'O profissional respondeu à contestação. Acompanhe a conversa até a análise ser concluída.',
       targetUrl: dispute.conversationId || transaction.conversationId
@@ -1428,7 +1448,7 @@
         : 'pedidos.html?order=' + encodeURIComponent(dispute.orderId || transaction.orderId || ''),
       actionLabel: 'Abrir conversa',
       read: false
-    }).catch(function (error) {
+    }, canonicalLocalDisputeEnvelope('dispute_responded', dispute, clientId, revision))).catch(function (error) {
       console.warn('[DokeWallet:disputeResponseNotification]', error);
       return null;
     });
@@ -1458,7 +1478,9 @@
       body = 'Um pedido está em análise financeira. Mantenha a conversa centralizada até a resolução.';
     }
 
-    var notificationsToCreate = [{
+    var professionalEventType = phase === 'resolved' ? 'dispute_resolved' : 'dispute_opened';
+    var professionalRevision = phase === 'resolved' ? dispute.resolvedAt || dispute.updatedAt || '' : dispute.createdAt || '';
+    var notificationsToCreate = [Object.assign({
       type: phase === 'resolved' ? 'order_dispute_resolved' : 'order_dispute_opened',
       category: 'orders',
       userId: userId || DEMO_PROFESSIONAL_ID,
@@ -1468,13 +1490,12 @@
       conversationId: dispute.conversationId || transaction.conversationId || '',
       messageId: dispute.messageId || transaction.messageId || '',
       serviceId: transaction.serviceId || '',
-      eventKey: [phase === 'resolved' ? 'order_dispute_resolved' : 'order_dispute_opened', dispute.id || '', userId || DEMO_PROFESSIONAL_ID].filter(Boolean).join(':'),
       title: title,
       body: body,
       targetUrl: targetUrl,
       actionLabel: actionLabel,
       read: false
-    }];
+    }, canonicalLocalDisputeEnvelope(professionalEventType, dispute, userId || DEMO_PROFESSIONAL_ID, professionalRevision))];
 
     var clientId = normalizeText(dispute.clientId || transaction.clientId || '');
     if (clientId) {
@@ -1484,7 +1505,9 @@
           ? 'Contestação encerrada. Cliente reembolsado.'
           : 'Contestação encerrada. Repasse liberado ao profissional.')
         : 'Seu relato foi enviado. O pedido entrou em análise e a conversa ficará centralizada até a resolução.';
-      notificationsToCreate.push({
+      var clientEventType = phase === 'resolved' ? 'dispute_resolved' : 'dispute_reported';
+      var clientRevision = phase === 'resolved' ? dispute.resolvedAt || dispute.updatedAt || '' : dispute.createdAt || '';
+      notificationsToCreate.push(Object.assign({
         type: phase === 'resolved' ? 'order_dispute_resolved' : 'order_dispute_reported',
         category: 'orders',
         userId: clientId,
@@ -1494,7 +1517,6 @@
         conversationId: dispute.conversationId || transaction.conversationId || '',
         messageId: dispute.messageId || transaction.messageId || '',
         serviceId: transaction.serviceId || '',
-        eventKey: [phase === 'resolved' ? 'order_dispute_client_resolved' : 'order_dispute_client_reported', dispute.id || '', clientId].filter(Boolean).join(':'),
         title: clientTitle,
         body: clientBody,
         targetUrl: dispute.conversationId || transaction.conversationId
@@ -1502,7 +1524,7 @@
           : 'pedidos.html?order=' + encodeURIComponent(dispute.orderId || transaction.orderId || ''),
         actionLabel: 'Abrir conversa',
         read: false
-      });
+      }, canonicalLocalDisputeEnvelope(clientEventType, dispute, clientId, clientRevision)));
     }
 
     return Promise.all(notificationsToCreate.map(function (notification) {

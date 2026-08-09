@@ -471,27 +471,44 @@
     });
   }
 
+  function localFinancialNotificationEnvelope(eventType, transaction, recipientId) {
+    transaction = transaction || {};
+    var normalizedType = normalizeText(eventType).toLowerCase();
+    var normalizedRecipient = normalizeText(recipientId || transaction.professionalId || transaction.userId || DEMO_PROFESSIONAL_ID);
+    var entityId = normalizeText(transaction.id || transaction.paymentId || transaction.orderId || transaction.messageId || '');
+    var eventId = [normalizedType, entityId, normalizedRecipient].filter(Boolean).join(':');
+    return {
+      eventId: eventId,
+      eventType: normalizedType,
+      eventCategory: 'PAYMENTS',
+      sourceDomain: 'PAYMENTS',
+      sourceAuthority: 'CANONICAL_LOCAL',
+      dedupeKey: eventId,
+      eventKey: eventId
+    };
+  }
+
   function createWalletNotification(transaction, payload) {
     var notifications = getNotificationsService();
     if (!notifications || typeof notifications.create !== 'function' || !transaction) return Promise.resolve(null);
     payload = payload || {};
-    return notifications.create({
+    var userId = transaction.professionalId || transaction.userId || DEMO_PROFESSIONAL_ID;
+    return notifications.create(Object.assign({
       type: 'wallet_receivable_available',
       category: 'wallet',
-      userId: transaction.professionalId || transaction.userId || DEMO_PROFESSIONAL_ID,
+      userId: userId,
       actorId: transaction.clientId || '',
       actorName: payload.clientName || 'Cliente Doke',
       orderId: transaction.orderId || '',
       conversationId: transaction.conversationId || '',
       messageId: transaction.messageId || '',
       serviceId: transaction.serviceId || '',
-      eventKey: ['wallet_receivable_available', transaction.orderId || '', transaction.messageId || '', transaction.professionalId || transaction.userId || ''].filter(Boolean).join(':'),
       title: 'Saldo disponível',
       body: 'O valor líquido de ' + formatCurrency(transaction.netAmount || transaction.amount || 0) + ' do pedido "' + (transaction.title || 'Pedido') + '" foi liberado na sua carteira.',
       targetUrl: 'carteira.html?transaction=' + encodeURIComponent(transaction.id || '') + '&receipt=1',
       actionLabel: 'Ver comprovante',
       read: false
-    }).catch(function (error) {
+    }, localFinancialNotificationEnvelope('wallet_receivable_available', transaction, userId))).catch(function (error) {
       console.warn('[DokeWallet:createNotification]', error);
       return null;
     });
@@ -501,19 +518,18 @@
     var notifications = getNotificationsService();
     if (!notifications || typeof notifications.create !== 'function' || !transaction) return Promise.resolve(null);
     var userId = transaction.professionalId || transaction.userId || DEMO_PROFESSIONAL_ID;
-    return notifications.create({
+    return notifications.create(Object.assign({
       type: 'wallet_withdraw_requested',
       category: 'wallet',
       userId: userId,
       actorId: userId,
       actorName: 'Carteira Doke',
-      eventKey: ['wallet_withdraw_requested', transaction.id || '', userId].filter(Boolean).join(':'),
       title: 'Saque solicitado',
       body: 'Seu saque de ' + formatCurrency(transaction.netAmount || transaction.amount || 0) + ' foi solicitado para a conta cadastrada.',
       targetUrl: 'carteira.html?transaction=' + encodeURIComponent(transaction.id || '') + '&receipt=1',
       actionLabel: 'Ver comprovante',
       read: false
-    }).catch(function (error) {
+    }, localFinancialNotificationEnvelope('wallet_withdraw_requested', transaction, userId))).catch(function (error) {
       console.warn('[DokeWallet:createWithdrawNotification]', error);
       return null;
     });
@@ -524,19 +540,18 @@
     var notifications = getNotificationsService();
     if (!notifications || typeof notifications.create !== 'function' || !transaction) return Promise.resolve(null);
     var userId = transaction.professionalId || transaction.userId || DEMO_PROFESSIONAL_ID;
-    return notifications.create({
+    return notifications.create(Object.assign({
       type: 'wallet_withdraw_completed',
       category: 'wallet',
       userId: userId,
       actorId: userId,
       actorName: 'Carteira Doke',
-      eventKey: ['wallet_withdraw_completed', transaction.id || '', userId].filter(Boolean).join(':'),
       title: 'Saque concluído',
       body: 'Seu saque de ' + formatCurrency(transaction.netAmount || transaction.amount || 0) + ' foi enviado para a conta cadastrada.',
       targetUrl: 'carteira.html?transaction=' + encodeURIComponent(transaction.id || '') + '&receipt=1',
       actionLabel: 'Ver comprovante',
       read: false
-    }).catch(function (error) {
+    }, localFinancialNotificationEnvelope('wallet_withdraw_completed', transaction, userId))).catch(function (error) {
       console.warn('[DokeWallet:createWithdrawCompletedNotification]', error);
       return null;
     });
@@ -547,19 +562,18 @@
     var notifications = getNotificationsService();
     if (!notifications || typeof notifications.create !== 'function' || !transaction) return Promise.resolve(null);
     var userId = transaction.professionalId || transaction.userId || DEMO_PROFESSIONAL_ID;
-    return notifications.create({
+    return notifications.create(Object.assign({
       type: 'wallet_withdraw_declined',
       category: 'wallet',
       userId: userId,
       actorId: userId,
       actorName: 'Suporte Doke',
-      eventKey: ['wallet_withdraw_declined', transaction.id || '', userId].filter(Boolean).join(':'),
       title: 'Saque recusado',
       body: 'Seu saque de ' + formatCurrency(transaction.netAmount || transaction.amount || 0) + ' foi recusado no mock de suporte. ' + (transaction.adminReason || 'Revise os dados bancários e solicite novamente.'),
       targetUrl: 'carteira.html?transaction=' + encodeURIComponent(transaction.id || '') + '&receipt=1',
       actionLabel: 'Ver comprovante',
       read: false
-    }).catch(function (error) {
+    }, localFinancialNotificationEnvelope('wallet_withdraw_declined', transaction, userId))).catch(function (error) {
       console.warn('[DokeWallet:createWithdrawDeclinedNotification]', error);
       return null;
     });
@@ -885,7 +899,7 @@
         ? 'createDisputeResponded'
         : 'createDisputeResolved';
     if (typeof notifications[method] !== 'function') return Promise.resolve([]);
-    return notifications[method](order, payment, dispute, { actor: actor, resolution: resolution });
+    return notifications[method](order, payment, dispute, { actor: actor, resolution: resolution, sourceAuthority: 'CANONICAL_LOCAL' });
   }
 
   function runDisputeTask(key, executor) {

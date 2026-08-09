@@ -9,7 +9,8 @@
 - Branch: `ux/ux-notif-002-event-schema`;
 - Fase 1: autoridade pura de evento + testes/CI certificada;
 - Fase 2A: repository adapter + dependência explícita nas rotas consumidoras certificada;
-- Fase 2B: producer envelopes nativos implementados; certificação depende dos gates do mesmo SHA;
+- Fase 2B: producer envelopes nativos certificados;
+- Closeout 2C: handoff de proveniência financeira local em implementação/certificação;
 - Merge autorizado: não;
 - Ready for review autorizado: não;
 - Staging/produção: não acessados.
@@ -402,3 +403,27 @@ Remover os quatro artefatos da Fase 1. Nenhum schema, storage, dado remoto ou co
 - `Doke.notificationsRepository` continua autoridade de persistência/mutation e `Doke.notificationCenter` continua autoridade de apresentação/unread/badge.
 
 A API genérica `services.notifications.create(payload)` continua aceitando envelopes legados; apenas producers migrados recebem metadata canônica nativa nesta fase. Nenhuma mudança de backend, Supabase, migration, staging, produção, toast, digest ou browser notification faz parte deste sublote.
+
+
+## Closeout 2C — financial producer authority handoff
+
+O closeout encontrou callers financeiros reais que ainda não concluíam o handoff de proveniência apesar de a Fase 2B rejeitar corretamente eventos críticos derivados.
+
+Correções deste fechamento:
+
+- `payment-service.js` declara `CANONICAL_LOCAL` somente no fluxo de pagamento local que passou pelas validações canônicas de pedido/cobrança/recebível;
+- caminhos API e Supabase sandbox continuam retornando antes desse fluxo e não recebem autoridade local artificial;
+- `wallet-service.js` emite `eventId/eventType/eventCategory=PAYMENTS/sourceDomain/sourceAuthority/dedupeKey` para recebível e saques locais;
+- o ciclo local de disputa do `wallet-service.js` passa `sourceAuthority=CANONICAL_LOCAL` ao notification service;
+- `wallet-repository.js`, quando usado diretamente sem `deferSideEffects`, publica envelopes `DISPUTES` nativos e remove identidade de resposta baseada em `Date.now()`;
+- `type/category` legados permanecem apenas para compatibilidade de UI;
+- notification provider não é usado para inferir autoridade de negócio.
+
+Gate de fechamento:
+
+1. teste comportamental executa recebível, saque e ciclo local de disputa;
+2. cada payload é validado por `Doke.notificationEvent.normalize()` como aceito, `eventId`-first e com fonte canônica local;
+3. payment caller e dispute service handoff possuem contrato estático explícito;
+4. Matrix, governança, regressões herdadas, LCOV, Sonar e whitespace devem passar no mesmo SHA permanente.
+
+Fronteiras permanecem: sem backend, migration, RPC, staging, produção, merge ou ready-for-review.
