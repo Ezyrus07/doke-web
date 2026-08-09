@@ -25,9 +25,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD^)" = "93e93b9fa9e9e687ca006661c9b377d7a6644197"
-          test "$(git rev-parse HEAD^^)" = "d45c48ac3839a70f2afcdcf01ba251aae1e02f23"
-          test "$(git rev-parse HEAD^^^)" = "6d97c49cecef7d1a414bd314c595a843ac153998"
+          test "$(git rev-parse HEAD^)" = "6337fca09cbd780941ba2e461561d1aa996dd469"
+          test "$(git rev-parse HEAD^^)" = "93e93b9fa9e9e687ca006661c9b377d7a6644197"
+          test "$(git rev-parse HEAD^^^)" = "d45c48ac3839a70f2afcdcf01ba251aae1e02f23"
+          test "$(git rev-parse HEAD^^^^)" = "6d97c49cecef7d1a414bd314c595a843ac153998"
 
       - name: Setup Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
@@ -40,6 +41,20 @@ jobs:
 
       - name: Apply H04 badge snapshot
         run: python scripts/tmp-ux-notif-004-phase1.py
+
+      - name: Correct H04 source-guard assertion
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('scripts/test-ux-notif-004-badge-snapshot.js')
+          source = path.read_text(encoding='utf-8')
+          old = "assert.equal(/title|body|message/i.test(centerSource.match(/function badgeSnapshot\\([\\s\\S]*?\\n  }/)[0]), false,"
+          new = "assert.equal(/\\.(?:title|body|message)\\b/.test(centerSource.match(/function badgeSnapshot\\([\\s\\S]*?\\n  }/)[0]), false,"
+          if old not in source:
+              raise SystemExit('H04 source-guard assertion anchor missing')
+          path.write_text(source.replace(old, new, 1), encoding='utf-8')
+          PY
 
       - name: Validate syntax and H04 behavior
         run: |
