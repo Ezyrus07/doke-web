@@ -1,0 +1,401 @@
+name: Doke UX-NOTIF-002 Phase 2A Apply
+
+on:
+  push:
+    branches:
+      - ux/ux-notif-002-event-schema
+    paths:
+      - '.github/workflows/ux-notif-002-phase2a-apply.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply-repository-adapter:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install repository dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts
+
+      - name: Apply deterministic Phase 2A adapter patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          root = Path('.')
+          repo_path = root / 'assets/js/repositories/notifications-repository.js'
+          text = repo_path.read_text(encoding='utf-8')
+
+          new_block = r'''  var EVENT_CONTRACT = 'notification-event-v1';
+          var LEGACY_CATEGORY_BY_EVENT_CATEGORY = Object.freeze({
+            MESSAGES: 'messages',
+            ORDERS: 'orders',
+            PROPOSALS: 'proposals',
+            PAYMENTS: 'payments',
+            DISPUTES: 'disputes',
+            ACCOUNT: 'account',
+            SECURITY: 'security',
+            COMMUNITIES: 'communities',
+            SOCIAL: 'social',
+            PRODUCT: 'product',
+            UNKNOWN_OPERATIONAL: 'unknown_operational'
+          });
+
+          function getEventContract() {
+            var contract = Doke.notificationEvent;
+            return contract
+              && contract.contract === EVENT_CONTRACT
+              && typeof contract.normalize === 'function'
+              ? contract
+              : null;
+          }
+
+          function inferSourceAuthority(raw, options) {
+            raw = raw || {};
+            options = options || {};
+            var explicit = normalizeText(options.sourceAuthority || raw.sourceAuthority || raw.source_authority || '').toUpperCase();
+            if (explicit) return explicit;
+            if (raw.remoteId || raw.syncStatus === 'synced') return 'CANONICAL_REMOTE';
+            if (raw.demo === true || raw.isDemo === true) return 'DEMO';
+            return 'CANONICAL_LOCAL';
+          }
+
+          function fallbackEventEnvelope(raw, sourceAuthority) {
+            raw = raw || {};
+            var eventId = normalizeText(raw.eventId || raw.event_id || '');
+            var explicitDedupe = normalizeText(raw.dedupeKey || raw.eventKey || raw.event_key || '');
+            var dedupeKey = eventId || explicitDedupe;
+            return Object.freeze({
+              contract: EVENT_CONTRACT,
+              eventId: eventId,
+              eventType: normalizeText(raw.eventType || raw.type || '').toLowerCase(),
+              eventVersion: Math.max(1, Number(raw.eventVersion || raw.event_version || 1) || 1),
+              sourceDomain: 'UNKNOWN_OPERATIONAL',
+              sourceAuthority: sourceAuthority,
+              dedupeKey: dedupeKey,
+              aggregationKey: normalizeText(raw.aggregationKey || raw.aggregation_key || ''),
+              category: 'UNKNOWN_OPERATIONAL',
+              priority: 'NORMAL',
+              attentionState: raw.actionRequired === true ? 'ACTION_REQUIRED' : 'INFORMATIONAL',
+              actionRequired: raw.actionRequired === true,
+              privacyLevel: 'PRIVATE_AUTHENTICATED',
+              channelPolicy: Object.freeze({
+                inbox: 'required',
+                toast: 'silent',
+                browser: 'generic_only',
+                sound: 'forbidden',
+                digest: 'forbidden'
+              }),
+              accepted: false,
+              rejectionReason: 'notification-event-authority-unavailable',
+              identitySource: eventId ? 'eventId' : explicitDedupe ? 'explicit-dedupe' : 'missing',
+              criticalOperational: false
+            });
+          }
+
+          function normalizeEventEnvelope(raw, options) {
+            raw = raw || {};
+            var sourceAuthority = inferSourceAuthority(raw, options);
+            var contract = getEventContract();
+            if (!contract) return fallbackEventEnvelope(raw, sourceAuthority);
+            return contract.normalize(Object.assign({}, raw, {
+              eventType: raw.eventType || raw.type || '',
+              category: raw.eventCategory || raw.canonicalCategory || raw.category || '',
+              sourceAuthority: sourceAuthority
+            }));
+          }
+
+          function getLegacyCategory(raw, event) {
+            var explicit = normalizeText(raw && raw.category || '').toLowerCase();
+            if (explicit) return explicit;
+            return LEGACY_CATEGORY_BY_EVENT_CATEGORY[event && event.category] || 'unknown_operational';
+          }
+
+          function getActionLabel(type) {
+            var contract = getEventContract();
+            var category = contract && typeof contract.inferCategory === 'function'
+              ? contract.inferCategory(type)
+              : '';
+            return category === 'MESSAGES' ? 'Abrir conversa' : 'Abrir';
+          }
+
+          function getTargetUrl(raw) {
+            if (raw.targetUrl) return raw.targetUrl;
+            if (raw.conversationId) return 'mensagens.html?conversation=' + encodeURIComponent(raw.conversationId);
+            if (raw.orderId) return 'pedidos.html?orderId=' + encodeURIComponent(raw.orderId);
+            return 'notificacoes.html';
+          }
+
+          function normalizeNotification(raw, options) {
+            raw = raw || {};
+            var type = normalizeText(raw.type || raw.eventType || 'system');
+            var event = normalizeEventEnvelope(raw, options);
+            var createdAt = raw.createdAt || raw.creatédAt || nowIso();
+            var title = normalizeText(raw.title || 'Nova notificação');
+            var body = normalizeText(raw.body || raw.message || raw.description || '');
+            var read = raw.read === true;
+            var dismissed = raw.dismissed === true;
+
+            return Object.assign({}, raw, {
+              id: normalizeText(raw.id) || createNotificationId(),
+              type: type,
+              category: getLegacyCategory(raw, event),
+              userId: normalizeText(raw.userId || raw.recipientId || ''),
+              recipientAccountKey: normalizeText(raw.recipientAccountKey || raw.accountKey || raw.userAccountKey || ''),
+              eventId: event.eventId,
+              eventType: event.eventType,
+              eventVersion: event.eventVersion,
+              sourceDomain: event.sourceDomain,
+              sourceAuthority: event.sourceAuthority,
+              dedupeKey: event.dedupeKey,
+              eventKey: event.dedupeKey,
+              aggregationKey: event.aggregationKey,
+              eventCategory: event.category,
+              priority: event.priority,
+              attentionState: event.attentionState,
+              actionRequired: event.actionRequired,
+              privacyLevel: event.privacyLevel,
+              channelPolicy: clone(event.channelPolicy),
+              eventAccepted: event.accepted,
+              eventRejectionReason: event.rejectionReason,
+              eventIdentitySource: event.identitySource,
+              criticalOperational: event.criticalOperational,
+              messageId: normalizeText(raw.messageId || ''),
+              actorId: normalizeText(raw.actorId || ''),
+              actorName: normalizeText(raw.actorName || ''),
+              orderId: normalizeText(raw.orderId || ''),
+              conversationId: normalizeText(raw.conversationId || ''),
+              serviceId: normalizeText(raw.serviceId || ''),
+              title: title,
+              body: body,
+              targetUrl: getTargetUrl(raw),
+              actionLabel: normalizeText(raw.actionLabel || raw.action || getActionLabel(type)),
+              read: read,
+              dismissed: dismissed,
+              createdAt: createdAt,
+              creatédAt: raw.creatédAt || createdAt,
+              updatedAt: raw.updatedAt || createdAt
+            });
+          }
+
+          function normalizeDemoItems(items) {
+            return (Array.isArray(items) ? items : []).map(function (item) {
+              return normalizeNotification(item, { sourceAuthority: 'DEMO' });
+            });
+          }'''
+
+          pattern = re.compile(r"  function getCategory\(type\) \{.*?\n  function mergeById\(\) \{", re.S)
+          text, count = pattern.subn(new_block + "\n\n  function mergeById() {", text, count=1)
+          if count != 1:
+            raise SystemExit('repository authority block replacement failed')
+
+          old = "      category: row.category || metadata.category || getCategory(row.type),"
+          if old not in text:
+            raise SystemExit('remote category heuristic anchor missing')
+          text = text.replace(old, "      category: row.category || metadata.category || '',", 1)
+
+          old = "      syncError: ''\n    }));\n  }\n\n  function saveLocal"
+          if old not in text:
+            raise SystemExit('remote normalization close anchor missing')
+          text = text.replace(old, "      syncError: ''\n    }), { sourceAuthority: 'CANONICAL_REMOTE' });\n  }\n\n  function saveLocal", 1)
+
+          old = "        p_category: normalized.category || getCategory(normalized.type),"
+          if old not in text:
+            raise SystemExit('remote p_category heuristic anchor missing')
+          text = text.replace(old, "        p_category: normalized.category || 'unknown_operational',", 1)
+
+          old = "      return Doke.mockData.load('notifications', options);"
+          if old not in text:
+            raise SystemExit('mock-data load anchor missing')
+          text = text.replace(old, "      return Doke.mockData.load('notifications', options).then(normalizeDemoItems);", 1)
+
+          old = "        return response.json();"
+          if old not in text:
+            raise SystemExit('fallback json anchor missing')
+          text = text.replace(old, "        return response.json().then(normalizeDemoItems);", 1)
+
+          if 'function getCategory(type)' in text or 'function getEventKey(raw)' in text:
+            raise SystemExit('legacy repository authority still present')
+          repo_path.write_text(text, encoding='utf-8')
+
+          event_src = 'assets/js/core/notification-event.js?v=20260808-ux-notif-002-v1'
+          repo_token = 'assets/js/repositories/notifications-repository.js'
+          repo_re = re.compile(r'(?m)^([ \t]*)(<script src="assets/js/repositories/notifications-repository\.js[^>]*></script>)$')
+          consumers = []
+          for html_path in sorted(root.glob('*.html')):
+            html = html_path.read_text(encoding='utf-8')
+            if repo_token not in html:
+              continue
+            consumers.append(html_path.name)
+            if event_src not in html:
+              html, inserted = repo_re.subn(
+                lambda m: f'{m.group(1)}<script src="{event_src}" defer></script>\n{m.group(1)}{m.group(2)}',
+                html,
+                count=1
+              )
+              if inserted != 1:
+                raise SystemExit(f'could not insert notification-event dependency in {html_path.name}')
+              html_path.write_text(html, encoding='utf-8')
+            if html.index('assets/js/core/notification-event.js') > html.index(repo_token):
+              raise SystemExit(f'notification-event loads after repository in {html_path.name}')
+          if len(consumers) < 10:
+            raise SystemExit(f'unexpected repository consumer count: {len(consumers)}')
+          print('repository consumers:', ', '.join(consumers))
+
+          workflow_path = root / '.github/workflows/ux-notif-002-event-schema.yml'
+          workflow = workflow_path.read_text(encoding='utf-8')
+          def replace_once(source, old, new, label):
+            if source.count(old) != 1:
+              raise SystemExit(f'{label} anchor count: {source.count(old)}')
+            return source.replace(old, new, 1)
+
+          workflow = replace_once(
+            workflow,
+            "      - 'scripts/test-ux-notif-002-notification-event.js'\n",
+            "      - 'scripts/test-ux-notif-002-notification-event.js'\n      - 'scripts/test-ux-notif-002-repository-adapter.js'\n",
+            'push test path'
+          )
+          workflow = replace_once(
+            workflow,
+            "      - 'scripts/test-ux-notif-002-notification-event.js'\n",
+            "      - 'scripts/test-ux-notif-002-notification-event.js'\n      - 'scripts/test-ux-notif-002-repository-adapter.js'\n",
+            'pr test path'
+          )
+          workflow = replace_once(
+            workflow,
+            "          node --check assets/js/core/notification-event.js\n          node --check scripts/test-ux-notif-002-notification-event.js\n",
+            "          node --check assets/js/core/notification-event.js\n          node --check assets/js/repositories/notifications-repository.js\n          node --check scripts/test-ux-notif-002-notification-event.js\n          node --check scripts/test-ux-notif-002-repository-adapter.js\n",
+            'syntax step'
+          )
+          workflow = replace_once(
+            workflow,
+            "      - name: Preserve UX-NOTIF-001 presentation authority\n",
+            "      - name: Validate repository event adapter\n        run: node scripts/test-ux-notif-002-repository-adapter.js\n\n      - name: Preserve UX-NOTIF-001 presentation authority\n",
+            'adapter validation step'
+          )
+          workflow = replace_once(
+            workflow,
+            "            --test-coverage-include='assets/js/core/notification-event.js' \\\n",
+            "            --test-coverage-include='assets/js/core/notification-event.js' \\\n            --test-coverage-include='assets/js/repositories/notifications-repository.js' \\\n",
+            'coverage include'
+          )
+          workflow = replace_once(
+            workflow,
+            "            scripts/test-ux-notif-002-notification-event.js\n",
+            "            scripts/test-ux-notif-002-notification-event.js \\\n            scripts/test-ux-notif-002-repository-adapter.js\n",
+            'coverage tests'
+          )
+          workflow = replace_once(
+            workflow,
+            "          grep -Fq 'SF:assets/js/core/notification-event.js' \"${REPORT}\"\n",
+            "          grep -Fq 'SF:assets/js/core/notification-event.js' \"${REPORT}\"\n          grep -Fq 'SF:assets/js/repositories/notifications-repository.js' \"${REPORT}\"\n",
+            'lcov repository evidence'
+          )
+          workflow_path.write_text(workflow, encoding='utf-8')
+
+          docs_path = root / 'docs/ux/UX-NOTIF-002.md'
+          docs = docs_path.read_text(encoding='utf-8')
+          old_status = "- Fase 1: autoridade pura de evento + testes/CI;\n- Integração com producers/repository: não iniciada nesta fase;"
+          new_status = "- Fase 1: autoridade pura de evento + testes/CI certificada;\n- Fase 2A: repository adapter + dependência explícita nas rotas consumidoras implementada no branch; certificação depende dos gates do mesmo SHA;\n- Fase 2B: producers nativos ainda não iniciados;"
+          if old_status not in docs:
+            raise SystemExit('docs status anchor missing')
+          docs = docs.replace(old_status, new_status, 1)
+          phase2a = r'''
+          ## Fase 2A — repository adapter e runtime dependency
+
+          O primeiro passo de integração remove a autoridade paralela do repository sem alterar ainda a semântica dos producers existentes.
+
+          Decisões:
+
+          - `notifications-repository.js` deixa de possuir `getCategory()` e `getEventKey()` heurísticos;
+          - `Doke.notificationEvent` passa a normalizar identidade/classificação no boundary do repository;
+          - `eventKey` permanece como alias transitório de `dedupeKey` para consumidores existentes;
+          - `category` legado permanece intacto para filtros/UI enquanto `eventCategory` expõe a categoria canônica;
+          - o repository acrescenta `eventId`, `eventType`, `eventVersion`, `sourceDomain`, `sourceAuthority`, `dedupeKey`, `eventCategory`, prioridade, atenção, privacidade, channel policy e estado de aceitação/rejeição;
+          - origem remota é marcada `CANONICAL_REMOTE`, estado local `CANONICAL_LOCAL` e fixture/demo `DEMO`;
+          - ausência da autoridade `notification-event-v1` falha fechada em `UNKNOWN_OPERATIONAL`, sem recriar inferência paralela;
+          - todas as páginas raiz que carregam `notifications-repository.js` passam a carregar `notification-event.js` antes dele.
+
+          Compatibilidade deliberada:
+
+          ```text
+          category       = contrato legado de UI/filtro
+          eventCategory  = categoria canônica UX-NOTIF-002
+          eventKey       = alias transitório de dedupeKey
+          dedupeKey      = identidade canônica de deduplicação
+          ```
+
+          Esta compatibilidade é temporária e impede que a migração de contrato force, no mesmo sublote, uma reescrita dos filtros/labels da inbox.
+
+          O repository ainda não deve inventar `eventId`. Enquanto os producers legados enviarem apenas `eventKey`, o contrato registra `identitySource = explicit-dedupe`. A Fase 2B migrará os producers para `eventId/eventType/sourceDomain` nativos e corrigirá categorias explícitas de eventos como disputa/pagamento.
+
+          ### Gate da Fase 2A
+
+          - todas as rotas consumidoras carregam `notification-event.js` antes do repository;
+          - nenhum `getCategory()`/`getEventKey()` heurístico permanece no repository;
+          - eventos conhecidos recebem metadata canônica sem quebrar `category` legado;
+          - evento operacional desconhecido fica `eventCategory = UNKNOWN_OPERATIONAL` e `eventAccepted = false`, sem fallback para social;
+          - eventos críticos preservam source authority de acordo com a origem;
+          - testes herdados, Matrix, governança, LCOV, Sonar e `git diff --check` passam no mesmo SHA.
+
+          '''
+          marker = '## Fora de escopo\n'
+          if marker not in docs:
+            raise SystemExit('docs out-of-scope marker missing')
+          docs = docs.replace(marker, phase2a + marker, 1)
+          docs_path.write_text(docs, encoding='utf-8')
+          PY
+
+      - name: Regenerate canonical matrix
+        run: npm run write:domain-completion-matrix
+
+      - name: Validate Phase 2A repository-only patch
+        run: |
+          node --check assets/js/core/notification-event.js
+          node --check assets/js/repositories/notifications-repository.js
+          node --check scripts/test-ux-notif-002-notification-event.js
+          node --check scripts/test-ux-notif-002-repository-adapter.js
+          node scripts/test-ux-notif-002-notification-event.js
+          node scripts/test-ux-notif-002-repository-adapter.js
+          node scripts/test-ux-notif-001-notification-center.js
+          node scripts/test-ux-notif-001-in-app-adapter.js
+          node scripts/test-ux-notif-001-surface-contract.js
+          node scripts/test-notification-authority-contract.js
+          node scripts/test-notifications-supabase-repository-contract.js
+          node scripts/audit-notifications-api-contract.js
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git diff --check
+
+      - name: Publish Phase 2A patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet; then
+            echo 'No Phase 2A changes to publish.'
+            exit 0
+          fi
+          git config user.name 'doke-ci'
+          git config user.email 'actions@users.noreply.github.com'
+          git add assets/js/repositories/notifications-repository.js
+          git add scripts/test-ux-notif-002-repository-adapter.js
+          git add docs/ux/UX-NOTIF-002.md docs/DOMAIN-COMPLETION-MATRIX.md
+          git add .github/workflows/ux-notif-002-event-schema.yml
+          git add -- '*.html'
+          git commit -m 'feat(ux-notif-002): integrate repository event adapter'
+          git push origin HEAD:ux/ux-notif-002-event-schema
