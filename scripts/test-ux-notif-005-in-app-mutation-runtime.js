@@ -214,7 +214,13 @@ async function flush() {
       }]
     }
   }));
-  assert.deepEqual(center.getSnapshot().items.map((entry) => entry.id), ['current-sync']);
+  const reconciledIds = center.getSnapshot().items.map((entry) => entry.id).sort();
+  assert.deepEqual(
+    reconciledIds,
+    ['current-sync', 'read-pending', 'read-reject', 'service-unavailable'].sort(),
+    'complete sync must replace settled items while preserving unmatched pending mutations'
+  );
+  assert.equal(reconciledIds.includes('read-success'), false, 'settled items absent from a complete snapshot must be removed');
   assert.equal(center.getBadgeSnapshot().freshness, 'FRESH');
   assert.equal(center.getBadgeSnapshot().sourceAuthority, 'DERIVED_PRESENTATION');
 
