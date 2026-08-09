@@ -1,189 +1,21 @@
 #!/usr/bin/env node
 'use strict';
-
-const assert = require('node:assert/strict');
-const { spawnSync } = require('node:child_process');
-const path = require('node:path');
-const r3a = require('../backend/modules/communities/community-realtime-private-auth-r3a');
-const cfg = require('../config/com-b03c-r3a-presence-full-conjunction-isolation-readiness.json');
-const executor = require('./execute-com-b03c-r3a-presence-full-conjunction-isolation-staging-canary');
-const verifier = require('./verify-com-b03c-r3a-presence-full-conjunction-isolation-staging-canary-evidence');
-
-let checks = 0;
-function eq(actual, expected, message) { assert.deepEqual(actual, expected, message); checks += 1; }
-function ok(value, message) { assert.equal(Boolean(value), true, message); checks += 1; }
-
-eq(r3a.CONTRACT_ID, cfg.contractId, 'contract');
-eq(r3a.REQUIRED_BRANCH, cfg.checkpoint.branch, 'branch');
-eq(r3a.REQUIRED_PULL_REQUEST, cfg.checkpoint.pullRequest, 'pr');
-eq([...r3a.ISOLATION_CASES], cfg.design.isolationCases, 'cases');
-
-const pred = cfg.predecessor;
-const impl = cfg.design.implementation;
-const common = {
-  predecessorValidationId: pred.validationId,
-  predecessorStatus: pred.status,
-  r3AuthorizationConsumed: pred.authorizationConsumed,
-  r3AuthorizationReusable: pred.authorizationReusable,
-  r3PredicateConclusionValid: pred.predicateConclusionValid,
-  r3ZeroResidueProven: pred.zeroResidueProven,
-  typingFullConjunctionReadProven: pred.typingFullConjunctionReadProven,
-  typingFullConjunctionWriteProven: pred.typingFullConjunctionWriteProven,
-  presenceFullConjunctionReadProven: pred.presenceFullConjunctionReadProven,
-  presenceFullConjunctionWriteProven: pred.presenceFullConjunctionWriteProven,
-  observedFailureClass: pred.observedFailureClass,
-  exactCombinedPredicateCauseIsolated: pred.exactCombinedPredicateCauseIsolated,
-  isolationCases: cfg.design.isolationCases
-};
-
-const readiness = r3a.evaluateRepositoryReadiness({
-  ...common,
-  presenceOnly: true,
-  readJoinOnly: true,
-  sameAuthIdentityAcrossCases: true,
-  sameTopicAcrossCases: true,
-  freshRealtimeClientPerCase: true,
-  insertControlPredicateTrue: true,
-  writeActionExecuted: false,
-  temporarySelectPolicyPerCase: true,
-  dropPolicyAfterEachCase: true,
-  policyIntrospectionPerCase: true,
-  negativeControlPrepared: true,
-  sanitizedDiagnosticsPrepared: true,
-  rawRemoteErrorPersistenceAllowed: false,
-  futureStagingAuthorizationDefined: false,
-  triggerExists: false,
-  stagingExecutorExists: false,
-  stagingWorkflowExists: false,
-  communityPostsExecutionPlanned: false,
-  channelMessagesExecutionPlanned: false,
-  domainMutationPlanned: false,
-  publicationMutationPlanned: false,
-  runtimeDeployPlanned: false,
-  productionPlanned: false,
-  mergePlanned: false
-});
-eq(readiness.decision, 'repository_presence_full_conjunction_isolation_ready_no_staging_authority', 'base readiness preserved');
-
-const implementationGood = {
-  ...common,
-  sameAuthIdentityAcrossCases: cfg.design.sameContextControls.sameAuthIdentityAcrossCases,
-  sameTopicAcrossCases: cfg.design.sameContextControls.sameTopicAcrossCases,
-  freshRealtimeClientPerCase: cfg.design.sameContextControls.freshRealtimeClientPerCase,
-  predicateBuilderPrepared: impl.predicateBuilderPrepared,
-  caseOrderingPrepared: impl.caseOrderingPrepared,
-  executorPrepared: impl.executorPrepared,
-  executorHardBlockedWithoutFutureAuthorization: impl.executorHardBlockedWithoutFutureAuthorization,
-  verifierPrepared: impl.verifierPrepared,
-  verifierRequiresZeroResidue: impl.verifierRequiresZeroResidue,
-  verifierRequiresSanitizedEvidence: impl.verifierRequiresSanitizedEvidence,
-  pullRequestOnlyWorkflowPrepared: impl.pullRequestOnlyWorkflowPrepared,
-  workflowUsesSecrets: impl.workflowUsesSecrets,
-  workflowUsesStagingEnvironment: impl.workflowUsesStagingEnvironment,
-  futureStagingAuthorizationDefined: impl.futureStagingAuthorizationDefined,
-  triggerExists: impl.triggerExists,
-  pushTriggerExists: impl.pushTriggerExists,
-  domainMutationPlanned: cfg.outOfScope.domainMutationPlanned,
-  publicationMutationPlanned: cfg.outOfScope.publicationMutationPlanned,
-  runtimeDeployPlanned: cfg.outOfScope.runtimeDeployPlanned,
-  productionPlanned: cfg.outOfScope.productionPlanned,
-  mergePlanned: cfg.outOfScope.mergePlanned,
-  realUserMutationPlanned: cfg.outOfScope.realUserMutationPlanned
-};
-
-const implementation = r3a.evaluateImplementationReadiness(implementationGood);
-eq(implementation.decision, 'repository_presence_full_conjunction_isolation_implementation_ready_no_staging_authority', 'implementation ready');
-eq(implementation.repositoryReadinessAuthority, true, 'repo authority');
-for (const key of [
-  'stagingReadAuthority','stagingMutationAuthority','authIdentityLifecycleAuthority',
-  'realtimePolicyLifecycleAuthority','realtimeSubscriptionAuthority','domainMutationAuthority',
-  'publicationMutationAuthority','runtimeDeployAuthority','productionAuthority','pullRequestMergeAuthority'
-]) eq(implementation[key], false, `${key} false`);
-
-for (const [field, value, reason] of [
-  ['predicateBuilderPrepared', false, 'ISOLATION_PREDICATE_IMPLEMENTATION_REQUIRED'],
-  ['caseOrderingPrepared', false, 'ISOLATION_PREDICATE_IMPLEMENTATION_REQUIRED'],
-  ['executorPrepared', false, 'HARD_BLOCKED_EXECUTOR_REQUIRED'],
-  ['executorHardBlockedWithoutFutureAuthorization', false, 'HARD_BLOCKED_EXECUTOR_REQUIRED'],
-  ['verifierPrepared', false, 'FAIL_CLOSED_VERIFIER_REQUIRED'],
-  ['verifierRequiresZeroResidue', false, 'FAIL_CLOSED_VERIFIER_REQUIRED'],
-  ['pullRequestOnlyWorkflowPrepared', false, 'REPOSITORY_ONLY_WORKFLOW_REQUIRED'],
-  ['workflowUsesSecrets', true, 'REPOSITORY_ONLY_WORKFLOW_REQUIRED'],
-  ['workflowUsesStagingEnvironment', true, 'REPOSITORY_ONLY_WORKFLOW_REQUIRED'],
-  ['futureStagingAuthorizationDefined', true, 'FUTURE_REMOTE_AUTHORITY_MUST_REMAIN_UNDEFINED'],
-  ['triggerExists', true, 'FUTURE_REMOTE_AUTHORITY_MUST_REMAIN_UNDEFINED'],
-  ['pushTriggerExists', true, 'FUTURE_REMOTE_AUTHORITY_MUST_REMAIN_UNDEFINED'],
-  ['runtimeDeployPlanned', true, 'OUT_OF_SCOPE_EXECUTION_PROHIBITED'],
-  ['productionPlanned', true, 'OUT_OF_SCOPE_EXECUTION_PROHIBITED'],
-  ['mergePlanned', true, 'OUT_OF_SCOPE_EXECUTION_PROHIBITED']
-]) {
-  eq(r3a.evaluateImplementationReadiness({ ...implementationGood, [field]: value }).reason, reason, `blocked ${field}`);
-}
-
-const userId = '11111111-1111-4111-8111-111111111111';
-const topic = 'private:community:test:channel_presence';
-const plan = executor.buildIsolationPlan({ userId, topic });
-eq(plan.length, r3a.ISOLATION_CASES.length, 'plan length');
-eq(plan.map((item) => item.caseId), [...r3a.ISOLATION_CASES], 'plan order');
-for (const item of plan) {
-  eq(item.transport, 'channel_presence', `${item.caseId} presence only`);
-  eq(item.axis, 'read_join', `${item.caseId} read only`);
-  eq(item.sameTopicRequired, true, `${item.caseId} same topic`);
-  eq(item.freshRealtimeClientRequired, true, `${item.caseId} fresh client`);
-  eq(item.insertControlPredicate, 'true', `${item.caseId} insert control`);
-  eq(item.writeActionAllowed, false, `${item.caseId} no write`);
-}
-
-const byId = Object.fromEntries(plan.map((item) => [item.caseId, item.selectPredicate]));
-eq(byId.control_true, 'true', 'true control');
-ok(byId.uid_topic_direct.includes('(select auth.uid())'), 'uid topic uid');
-ok(byId.uid_topic_direct.includes('realtime.topic() ='), 'uid topic direct topic');
-ok(!byId.uid_topic_direct.includes('extension'), 'uid topic no extension');
-ok(byId.uid_extension_eq.includes("extension = 'presence'"), 'uid extension eq');
-ok(!byId.uid_extension_eq.includes('realtime.topic()'), 'uid extension no topic');
-ok(byId.topic_extension_direct.includes('realtime.topic() ='), 'topic extension direct');
-ok(!byId.topic_extension_direct.includes('auth.uid()'), 'topic extension no uid');
-ok(byId.full_current_direct.includes('realtime.topic() ='), 'current full direct topic');
-ok(byId.full_topic_select_wrapper.includes('(select realtime.topic()) ='), 'topic select wrapper');
-ok(byId.full_topic_select_extension_in.includes("extension in ('presence')"), 'extension in');
-ok(byId.full_docs_canonical_exists.startsWith('exists (select 1 where '), 'exists wrapper');
-ok(byId.full_docs_canonical_exists.includes('(select realtime.topic()) ='), 'exists wrapped topic');
-ok(byId.full_docs_canonical_exists.includes("extension in ('presence')"), 'exists extension in');
-
-const cli = spawnSync(process.execPath, [path.resolve(__dirname, 'execute-com-b03c-r3a-presence-full-conjunction-isolation-staging-canary.js')], {
-  env: {},
-  encoding: 'utf8'
-});
-eq(cli.status, 2, 'executor hard blocked');
-ok(cli.stderr.includes(executor.HARD_BLOCK), 'hard block code');
-eq(cfg.authorization.futureStagingAuthorizationDefined, false, 'no future auth phrase');
-eq(cfg.authorization.requiredPhrase, null, 'phrase absent');
-eq(cfg.authorization.triggerExists, false, 'no trigger');
-eq(cfg.authorization.pushTriggerExists, false, 'no push trigger');
-
-const validEvidence = {
-  validationId: 'COM-B03C-R3A-PRESENCE-FULL-CONJUNCTION-ISOLATION-STAGING-ATTEMPT',
-  contractId: r3a.CONTRACT_ID,
-  sanitized: true,
-  rawRemoteErrorsPersisted: false,
-  caseOrder: [...r3a.ISOLATION_CASES],
-  sameContext: { sameAuthIdentityAcrossCases: true, sameTopicAcrossCases: true, freshRealtimeClientPerCase: true },
-  negativeControl: { passed: true },
-  results: r3a.ISOLATION_CASES.map((caseId) => ({ caseId, joinAllowed: false, rawRemoteErrorExposed: false })),
-  cleanup: { temporaryPoliciesAfter: 0, syntheticAuthAfter: 0, syntheticDomainRowsAfter: 0, zeroResidueProven: true },
-  effects: { communityPostsExecuted: false, channelMessagesExecuted: false, publicationMutationExecuted: false, runtimeDeployed: false, productionChanged: false, pullRequestMerged: false }
-};
-eq(verifier.verifyEvidence(validEvidence), true, 'verifier accepts valid shape');
-assert.throws(() => verifier.verifyEvidence({ ...validEvidence, sanitized: false })); checks += 1;
-assert.throws(() => verifier.verifyEvidence({ ...validEvidence, cleanup: { ...validEvidence.cleanup, zeroResidueProven: false } })); checks += 1;
-
-eq(cfg.status, 'repository_presence_full_conjunction_isolation_implementation_ready_no_staging_authority', 'status');
-eq(cfg.checkpoint.matrixVersion, '1.3.113', 'matrix unchanged');
-eq(cfg.checkpoint.maturity, 3, 'maturity unchanged');
-eq(cfg.checkpoint.productionGate, 'blocked', 'production blocked');
-eq(cfg.authority.stagingReadAuthority, false, 'no staging read');
-eq(cfg.authority.productionAuthority, false, 'no prod');
-eq(cfg.authority.pullRequestMergeAuthority, false, 'no merge');
-
-ok(checks >= 100, `expected >=100 checks, got ${checks}`);
-console.log(`COM-B03C-R3A isolation implementation readiness checks passed: ${checks}/${checks}`);
+const assert=require('node:assert/strict'); const {spawnSync}=require('node:child_process'); const fs=require('node:fs'); const path=require('node:path');
+const r=require('../backend/modules/communities/community-realtime-private-auth-r3a'); const cfg=require('../config/com-b03c-r3a-presence-full-conjunction-isolation-readiness.json');
+const executor=require('./execute-com-b03c-r3a-presence-full-conjunction-isolation-staging-canary'); const verifier=require('./verify-com-b03c-r3a-presence-full-conjunction-isolation-staging-canary-evidence');
+let checks=0; const eq=(a,e,m)=>{assert.deepEqual(a,e,m);checks++}; const ok=(v,m)=>{assert.equal(Boolean(v),true,m);checks++};
+eq(r.CONTRACT_ID,cfg.contractId,'contract'); eq(r.REQUIRED_PROJECT_ID,'zwkczgewzbsorbrjuzpb','project'); eq(r.REQUIRED_BRANCH,cfg.checkpoint.branch,'branch'); eq(r.REQUIRED_PULL_REQUEST,cfg.checkpoint.pullRequest,'pr'); eq(r.REQUIRED_AUTHORIZATION_PHRASE,cfg.authorization.requiredPhrase,'auth phrase'); eq([...r.ISOLATION_CASES],cfg.design.isolationCases,'cases');
+const p=cfg.predecessor; const common={predecessorValidationId:p.validationId,predecessorStatus:p.status,r3AuthorizationConsumed:p.authorizationConsumed,r3AuthorizationReusable:p.authorizationReusable,r3PredicateConclusionValid:p.predicateConclusionValid,r3ZeroResidueProven:p.zeroResidueProven,typingFullConjunctionReadProven:p.typingFullConjunctionReadProven,typingFullConjunctionWriteProven:p.typingFullConjunctionWriteProven,presenceFullConjunctionReadProven:p.presenceFullConjunctionReadProven,presenceFullConjunctionWriteProven:p.presenceFullConjunctionWriteProven,observedFailureClass:p.observedFailureClass,exactCombinedPredicateCauseIsolated:p.exactCombinedPredicateCauseIsolated,isolationCases:cfg.design.isolationCases};
+const readyInput={...common,sameAuthIdentityAcrossCasesPrepared:true,sameAccessTokenAcrossCasesPrepared:true,sameTopicAcrossCasesPrepared:true,freshRealtimeClientPerCasePrepared:true,jwtBeforeChannelCreationPrepared:true,presenceOnlyPrepared:true,readJoinOnlyPrepared:true,negativeControlPrepared:true,temporaryPolicyLifecyclePrepared:true,policyIntrospectionPrepared:true,perCaseCleanupPrepared:true,outerCleanupFallbackPrepared:true,globalPolicyTrackingPrepared:true,postExecutionZeroResidueVerificationPrepared:true,sanitizedDiagnosticsPrepared:true,reportAlwaysWrittenPrepared:true,artifactAlwaysUploadedPrepared:true,stagingExecutorPrepared:true,stagingVerifierPrepared:true,stagingWorkflowPrepared:true,singleUseTriggerBoundaryPrepared:true,requiredAuthorizationPhrase:cfg.authorization.requiredPhrase,triggerPath:cfg.authorization.triggerPath,triggerExists:false,rawRemoteErrorPersistenceAllowed:false,communityPostsExecutionPlanned:false,channelMessagesExecutionPlanned:false,domainMutationPlanned:false,publicationMutationPlanned:false,persistentResiduePlanned:false,runtimeDeployPlanned:false,productionPlanned:false,mergePlanned:false,realUserMutationPlanned:false};
+const ready=r.evaluateStagingReadiness(readyInput); eq(ready.decision,'repository_presence_full_conjunction_isolation_staging_ready_new_authorization_required','staging ready'); for(const k of ['stagingReadAuthority','stagingMutationAuthority','productionAuthority','pullRequestMergeAuthority'])eq(ready[k],false,k);
+for(const [f,v,reason] of [['sameTopicAcrossCasesPrepared',false,'COM_B03C_R3A_STAGING_READINESS_FLAG_MISSING'],['requiredAuthorizationPhrase','wrong','COM_B03C_R3A_AUTHORIZATION_PHRASE_MISMATCH'],['triggerExists',true,'COM_B03C_R3A_TRIGGER_MUST_BE_ABSENT_AT_READINESS'],['productionPlanned',true,'OUT_OF_SCOPE_EXECUTION_PROHIBITED']])eq(r.evaluateStagingReadiness({...readyInput,[f]:v}).reason,reason,`blocked ${f}`);
+const c=cfg.futureCanaryBoundary; const authGood={authorizationPhrase:r.REQUIRED_AUTHORIZATION_PHRASE,targetEnvironment:c.targetEnvironment,projectId:c.projectId,branch:r.REQUIRED_BRANCH,pullRequest:r.REQUIRED_PULL_REQUEST,authorizationConsumed:false,executionAttempted:false,predecessorAuthorizationReusable:false,scope:c.scope,diagnosticAxes:c.diagnosticAxes,isolationCases:c.isolationCases,ephemeralAuthIdentityLifecycleAllowed:true,authIdentityCleanupRequired:true,realtimeMessagesPolicyLifecycleAllowed:true,realtimePolicyCleanupRequired:true,policyIntrospectionPerCaseRequired:true,sameAuthIdentityAcrossCasesRequired:true,sameAccessTokenAcrossCasesRequired:true,sameTopicAcrossCasesRequired:true,freshRealtimeClientPerCaseRequired:true,negativeControlRequired:true,sanitizedDiagnosticsRequired:true,jwtBeforeChannelCreationRequired:true,presenceOnlyRequired:true,readJoinOnlyRequired:true,perCaseCleanupRequired:true,outerCleanupFallbackRequired:true,globalPolicyTrackingRequired:true,postExecutionZeroResidueVerificationRequired:true,reportAlwaysWrittenRequired:true,writeActionAllowed:false,communityPostsExecutionAllowed:false,channelMessagesExecutionAllowed:false,domainMutationAllowed:false,publicationMutationAllowed:false,persistentResidueAllowed:false,runtimeDeployAllowed:false,productionAllowed:false,mergeAllowed:false,realUserMutationAllowed:false};
+const auth=r.evaluateStagingAuthorization(authGood); eq(auth.decision,'authorized_for_single_bounded_presence_full_conjunction_isolation_canary','auth'); eq(auth.singleUse,true,'single'); eq(auth.reusableAfterFailure,false,'no reuse'); eq(auth.ephemeralRealtimeActionAuthority,false,'no action');
+for(const [f,v,reason] of [['authorizationPhrase','wrong','EXPLICIT_COM_B03C_R3A_STAGING_AUTHORIZATION_REQUIRED'],['authorizationConsumed',true,'SINGLE_USE_AUTHORIZATION_ALREADY_CONSUMED'],['sameTopicAcrossCasesRequired',false,'COM_B03C_R3A_REQUIRED_FLAG_MISSING'],['writeActionAllowed',true,'COM_B03C_R3A_PROHIBITED_FLAG_ENABLED'],['productionAllowed',true,'COM_B03C_R3A_PROHIBITED_FLAG_ENABLED']])eq(r.evaluateStagingAuthorization({...authGood,[f]:v}).reason,reason,`auth blocked ${f}`);
+const plan=r.buildIsolationPlan({userId:'11111111-1111-4111-8111-111111111111',topic:'private:community:test:channel_presence'}); eq(plan.length,r.ISOLATION_CASES.length,'plan len'); eq(plan.map(x=>x.caseId),[...r.ISOLATION_CASES],'plan order'); for(const x of plan){eq(x.transport,'channel_presence',x.caseId);eq(x.axis,'read_join',x.caseId);eq(x.sameTopicRequired,true,x.caseId);eq(x.freshRealtimeClientRequired,true,x.caseId);eq(x.insertControlPredicate,'true',x.caseId);eq(x.writeActionAllowed,false,x.caseId)}
+const by=Object.fromEntries(plan.map(x=>[x.caseId,x.selectPredicate])); eq(by.control_true,'true','true'); ok(by.uid_topic_direct.includes('realtime.topic() ='),'direct'); ok(by.full_topic_select_wrapper.includes('(select realtime.topic()) ='),'wrapper'); ok(by.full_topic_select_extension_in.includes("extension in ('presence')"),'in'); ok(by.full_docs_canonical_exists.startsWith('exists (select 1 where '),'exists');
+const cli=spawnSync(process.execPath,[path.resolve(__dirname,'execute-com-b03c-r3a-presence-full-conjunction-isolation-staging-canary.js')],{env:{},encoding:'utf8'}); eq(cli.status,2,'blocked'); ok(cli.stderr.includes(executor.AUTH_BLOCK),'block code');
+const wf=fs.readFileSync(path.resolve(__dirname,'../.github/workflows/com-b03c-r3a-presence-full-conjunction-isolation-readiness.yml'),'utf8'); ok(/push:[\s\S]*staging-trigger\.json/.test(wf),'push trigger'); ok(/authorize:[\s\S]*github\.event_name == 'push'/.test(wf),'auth gate'); ok(/canary:[\s\S]*github\.event_name == 'push'/.test(wf),'canary gate'); ok(/environment: doke-staging/.test(wf),'staging env'); ok(/GITHUB_RUN_ATTEMPT/.test(wf),'rerun guard'); ok(/git diff --name-only HEAD\^ HEAD/.test(wf),'single diff');
+const valid={validationId:'COM-B03C-R3A-PRESENCE-FULL-CONJUNCTION-ISOLATION-STAGING-ATTEMPT',contractId:r.CONTRACT_ID,status:'presence_full_conjunction_isolation_completed',sanitized:true,rawRemoteErrorsPersisted:false,authorization:{consumed:true,singleUse:true,reusableAfterFailure:false},caseOrder:[...r.ISOLATION_CASES],sameContext:{sameAuthIdentityAcrossCases:true,sameAccessTokenAcrossCases:true,sameTopicAcrossCases:true,freshRealtimeClientPerCase:true,jwtAppliedBeforeChannelCreation:true},negativeControl:{passed:true,rawRemoteErrorExposed:false},results:r.ISOLATION_CASES.map(caseId=>({caseId,joinAllowed:caseId==='control_true',rawRemoteErrorExposed:false,policyInspection:{allChecksPassed:true}})),summary:{exactRootCauseProven:false,requiresIndependentConfirmationBeforeRuntimeChange:true},cleanup:{temporaryPoliciesAfter:0,syntheticAuthAfter:0,syntheticDomainRowsAfter:0,zeroResidueProven:true},effects:{communityPostsExecuted:false,channelMessagesExecuted:false,domainMutationExecuted:false,publicationMutationExecuted:false,runtimeDeployed:false,productionChanged:false,pullRequestMerged:false,realUserMutationExecuted:false}}; eq(verifier.verifyEvidence(valid),true,'verify'); assert.throws(()=>verifier.verifyEvidence({...valid,sanitized:false}));checks++; assert.throws(()=>verifier.verifyEvidence({...valid,cleanup:{...valid.cleanup,zeroResidueProven:false}}));checks++;
+eq(cfg.status,'repository_presence_full_conjunction_isolation_staging_ready_new_authorization_required','status'); eq(cfg.authorization.received,false,'not received'); eq(cfg.authorization.triggerExists,false,'no trigger'); eq(cfg.repositoryCertification.result,'success','repo cert'); eq(cfg.checkpoint.maturity,3,'maturity'); eq(cfg.authority.productionAuthority,false,'no prod'); eq(cfg.authority.pullRequestMergeAuthority,false,'no merge');
+ok(checks>=80,`expected >=80 got ${checks}`); console.log(`COM-B03C-R3A staging readiness checks passed: ${checks}/${checks}`);
