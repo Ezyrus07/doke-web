@@ -1,0 +1,56 @@
+name: Doke UX-NOTIF-002 Phase 2A Anchor Fix
+
+on:
+  push:
+    branches:
+      - ux/ux-notif-002-event-schema
+    paths:
+      - '.github/workflows/ux-notif-002-phase2a-fix-anchor.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  fix-anchor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Fix permanent workflow path anchor
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('.github/workflows/ux-notif-002-phase2a-apply.yml')
+          text = path.read_text(encoding='utf-8')
+          old = """          test_path = \"      - 'scripts/test-ux-notif-002-notification-event.js'\\n\"
+          test_path_plus = test_path + \"      - 'scripts/test-ux-notif-002-repository-adapter.js'\\n\"
+          workflow = replace_once(workflow, test_path, test_path_plus, 'push repository adapter path')
+          workflow = replace_once(workflow, test_path, test_path_plus, 'pr repository adapter path')
+          """
+          new = """          test_path = \"      - 'scripts/test-ux-notif-002-notification-event.js'\\n\"
+          test_path_plus = test_path + \"      - 'scripts/test-ux-notif-002-repository-adapter.js'\\n\"
+          if workflow.count(test_path) != 2:
+            raise SystemExit(f'repository adapter path anchor count={workflow.count(test_path)}')
+          workflow = workflow.replace(test_path, test_path_plus, 2)
+          """
+          if text.count(old) != 1:
+            raise SystemExit(f'phase2a anchor-fix block count={text.count(old)}')
+          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          PY
+          git diff --check -- .github/workflows/ux-notif-002-phase2a-apply.yml
+
+      - name: Publish anchor correction
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'doke-ci'
+          git config user.email 'actions@users.noreply.github.com'
+          git add .github/workflows/ux-notif-002-phase2a-apply.yml
+          git commit -m 'chore(ux-notif-002): fix phase2a ci path anchor'
+          git push origin HEAD:ux/ux-notif-002-event-schema
