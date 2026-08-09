@@ -1,0 +1,72 @@
+name: UX-NOTIF-003 Sonar Issues Inspect
+
+on:
+  push:
+    branches:
+      - ux/ux-notif-003-toast-manager
+    paths:
+      - '.github/workflows/ux-notif-003-sonar-issues-inspect.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 2
+
+      - name: Guard certified parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = "ba7aae086505a87a8bec2b329334551447a36ba5"
+
+      - name: Query Sonar PR issues
+        shell: bash
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          set -euo pipefail
+          test -n "${SONAR_TOKEN}"
+          curl -fsS -u "${SONAR_TOKEN}:" \
+            'https://sonarcloud.io/api/issues/search?componentKeys=Ezyrus07_doke-web&pullRequest=96&statuses=OPEN,CONFIRMED&ps=100' \
+            -o sonar-issues.json
+          node <<'NODE'
+          const fs = require('fs');
+          const payload = JSON.parse(fs.readFileSync('sonar-issues.json', 'utf8'));
+          const issues = Array.isArray(payload.issues) ? payload.issues : [];
+          console.log(`[ux-notif-003-sonar] total=${issues.length}`);
+          for (const issue of issues) {
+            const component = String(issue.component || '').replace('Ezyrus07_doke-web:', '');
+            const line = issue.line ?? issue.textRange?.startLine ?? null;
+            console.log(JSON.stringify({
+              key: issue.key,
+              rule: issue.rule,
+              severity: issue.severity,
+              type: issue.type,
+              component,
+              line,
+              message: issue.message,
+              cleanCodeAttribute: issue.cleanCodeAttribute,
+              impacts: issue.impacts || []
+            }));
+          }
+          if (issues.length !== 8) {
+            console.error(`[ux-notif-003-sonar] expected 8 open/confirmed PR issues, got ${issues.length}`);
+            process.exit(1);
+          }
+          NODE
+
+      - name: Upload inspection artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ux-notif-003-sonar-issues-${{ github.run_id }}
+          path: sonar-issues.json
+          if-no-files-found: error
+          retention-days: 2
