@@ -24,7 +24,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD^)" = '94ff2d9e6f5066d0b3b89cf8dd71e4365d0494e1'
+          test "$(git rev-parse HEAD^)" = '1a58bf371d9e25a9ef6fec3abfeae597ececb70f'
 
       - name: Apply patch
         run: python scripts/tmp-ux-notif-002-phase2b.py
@@ -37,6 +37,7 @@ jobs:
           rm .github/workflows/ux-notif-002-phase2b-apply.yml
           rm .github/workflows/ux-notif-002-phase2b-apply-v2.yml
           rm .github/workflows/ux-notif-002-phase2b-runner.yml
+          node --check assets/js/core/notification-event.js
           node --check assets/js/services/notification-service.js
           node --check scripts/test-ux-notif-002-producer-envelopes.js
           node scripts/test-ux-notif-002-notification-event.js
@@ -59,7 +60,7 @@ jobs:
           set -euo pipefail
           git config user.name 'doke'
           git config user.email 'bielantoniomma@gmail.com'
-          git add assets/js/services/notification-service.js scripts/test-ux-notif-002-producer-envelopes.js docs/ux/UX-NOTIF-002.md scripts/tmp-ux-notif-002-phase2b.py
+          git add assets/js/core/notification-event.js assets/js/services/notification-service.js scripts/test-ux-notif-002-producer-envelopes.js docs/ux/UX-NOTIF-002.md scripts/tmp-ux-notif-002-phase2b.py
           git diff --cached --check
           git diff --cached --quiet && { echo '::error::No Phase 2B changes staged'; exit 1; }
           git commit -m 'feat(ux-notif-002): emit canonical producer envelopes'
