@@ -1,0 +1,77 @@
+{
+  "validationId": "COM-B03C-R3D-R3A-POLICY-MATERIALIZATION-EVIDENCE-READINESS",
+  "contractId": "com-b03c-r3d-r3a-policy-materialization-evidence-readiness-v1",
+  "status": "repository_r3a_policy_materialization_evidence_gap_isolated_no_staging_authority",
+  "checkpoint": {
+    "branch": "com/com-001-baseline-audit",
+    "pullRequest": 61,
+    "preparedFromHead": "72c535c93ff7eb227337bcfca3a15b6880833466",
+    "matrixVersion": "1.3.113",
+    "maturity": 3,
+    "productionGate": "blocked"
+  },
+  "evidence": {
+    "r3aRun": 31314875861,
+    "r3aCanaryJob": 93248515535,
+    "r3aArtifact": 9038470363,
+    "r3aArtifactPolicyCountPerCase": 2,
+    "r3aZeroResidueProven": true,
+    "r3cRun": 31320766650,
+    "r3cInspectJob": 93263314984,
+    "r3cArtifact": 9040102898,
+    "r3cCurrentPersistentPolicyCount": 0,
+    "r3cRemoteMutation": false
+  },
+  "historicalExecutorAudit": {
+    "generatedPoliciesPerCase": [
+      {"command": "SELECT", "purpose": "predicate under test"},
+      {"command": "INSERT", "purpose": "true control"}
+    ],
+    "createLifecycle": "BEGIN -> create SELECT -> create INSERT -> COMMIT -> inspect named policies -> create fresh Realtime client -> set JWT -> create Presence-enabled private channel -> register Presence listener -> subscribe",
+    "cleanupLifecycle": "remove channel -> drop both named policies -> assert both named policies absent",
+    "namedPolicyInspectionColumns": ["policyname", "cmd", "roles", "qual", "with_check"],
+    "permissiveCaptured": false,
+    "complexSelectQualPreservedInArtifact": false,
+    "completeCaseTimeCatalogPreserved": false,
+    "inspectionArtifactShape": {"policyCount": 2, "allChecksPassed": true}
+  },
+  "diagnosticConclusion": {
+    "simpleSameNamedPolicyResidueSupported": false,
+    "sameConnectionAuthorizationCacheExplainsCrossCaseResult": false,
+    "reasonSameConnectionCacheNotPromoted": "R3A created a fresh Supabase Realtime client per case, while official Realtime Authorization documentation scopes the authorization policy cache to the client connection and recalculates on channel subscription/new connection.",
+    "arbitrarySleepJustified": false,
+    "storedComplexSelectPredicateAtCaseTimeProven": false,
+    "caseTimePermissiveValueProven": false,
+    "completeCaseTimePolicyCompositionProven": false,
+    "realtimeAuthorizationSyntheticRowContextProven": false,
+    "hostedRealtimeDivergenceProven": false,
+    "presenceExactRootCauseProven": false,
+    "runtimeChangeAuthorized": false
+  },
+  "futureDiagnosticContract": {
+    "requiredPolicySnapshotColumns": ["policyname", "permissive", "roles", "cmd", "qual", "with_check"],
+    "snapshotAllRealtimeMessagesPoliciesImmediatelyBeforeSubscribe": true,
+    "preserveExpectedAndStoredSelectPredicateEvidence": true,
+    "preservePolicyCountByCommandAndRole": true,
+    "verifyZeroTemporaryPolicyInventoryBeforeAndAfterEachCase": true,
+    "doNotAddTimingSleepsWithoutIndependentEvidence": true,
+    "doNotPromoteCausalityFromJoinOutcomeAlone": true
+  },
+  "authority": {
+    "repositoryReadinessAuthority": true,
+    "stagingReadAuthority": false,
+    "stagingMutationAuthority": false,
+    "triggerCreationAuthority": false,
+    "authorizationPhraseDefined": false,
+    "realtimePolicyMutationAuthority": false,
+    "realtimeSubscriptionAuthority": false,
+    "authIdentityLifecycleAuthority": false,
+    "domainMutationAuthority": false,
+    "publicationMutationAuthority": false,
+    "runtimeDeployAuthority": false,
+    "productionAuthority": false,
+    "pullRequestMergeAuthority": false,
+    "realUserMutationAuthority": false
+  },
+  "nextBoundary": "certify this repository-only evidence boundary. Do not create a staging executor, trigger, authorization phrase, or timing workaround yet."
+}
