@@ -316,17 +316,56 @@ function normalizeDemoItems(items) {
   });
 }
 
+  function repositoryIdentityKey(item) {
+    if (!item) return '';
+    return normalizeText(item.eventId)
+      || normalizeText(item.dedupeKey)
+      || normalizeText(item.eventKey)
+      || normalizeText(item.id);
+  }
+
+  function pendingStateSatisfied(existing, incoming) {
+    var patch = existing && existing.pendingStatePatch;
+    if (!patch || typeof patch !== 'object') return true;
+    if (Object.prototype.hasOwnProperty.call(patch, 'read') && incoming.read !== (patch.read === true)) return false;
+    if (Object.prototype.hasOwnProperty.call(patch, 'dismissed') && incoming.dismissed !== (patch.dismissed === true)) return false;
+    return true;
+  }
+
+  function mergeNotificationState(existing, incoming) {
+    if (!existing) return incoming;
+    var merged = Object.assign({}, existing, incoming, { id: existing.id || incoming.id });
+    if (existing.stateSyncStatus !== 'pending' || incoming.stateSyncStatus !== 'synced') return merged;
+
+    if (pendingStateSatisfied(existing, incoming)) {
+      merged.stateSyncStatus = 'synced';
+      merged.pendingStatePatch = null;
+      merged.stateSyncError = '';
+      return merged;
+    }
+
+    var patch = existing.pendingStatePatch || {};
+    if (Object.prototype.hasOwnProperty.call(patch, 'read')) merged.read = patch.read === true;
+    if (Object.prototype.hasOwnProperty.call(patch, 'dismissed')) merged.dismissed = patch.dismissed === true;
+    merged.stateSyncStatus = 'pending';
+    merged.pendingStatePatch = clone(patch);
+    merged.stateSyncError = existing.stateSyncError;
+    return merged;
+  }
+
   function mergeById() {
     var map = Object.create(null);
-    var eventMap = Object.create(null);
+    var identityMap = Object.create(null);
     Array.prototype.slice.call(arguments).forEach(function (items) {
       (items || []).forEach(function (item) {
         var normalized = normalizeNotification(item);
         if (!normalized.id) return;
-        var existingId = normalized.eventKey && eventMap[normalized.eventKey];
+        var identity = repositoryIdentityKey(normalized);
+        var existingId = identity && identityMap[identity];
+        if (!existingId && map[normalized.id]) existingId = normalized.id;
         var key = existingId || normalized.id;
-        map[key] = Object.assign({}, map[key] || {}, normalized, { id: key });
-        if (normalized.eventKey) eventMap[normalized.eventKey] = key;
+        map[key] = normalizeNotification(mergeNotificationState(map[key], Object.assign({}, normalized, { id: key })));
+        if (identity) identityMap[identity] = key;
       });
     });
     return Object.keys(map)
@@ -443,14 +482,13 @@ function normalizeDemoItems(items) {
     var normalized = normalizeNotification(Object.assign({}, notification, {
       syncStatus: syncStatus || notification && notification.syncStatus || 'local'
     }));
-    var local = readLocal().filter(function (item) {
-      if (String(item.id) === String(normalized.id)) return false;
-      if (normalized.eventKey && item.eventKey && String(item.eventKey) === String(normalized.eventKey)) return false;
-      return true;
-    });
-    local.unshift(normalized);
+    var identity = repositoryIdentityKey(normalized);
+    var local = mergeById(readLocal(), [normalized]);
     writeLocal(local);
-    return clone(normalized);
+    var saved = local.find(function (item) {
+      return repositoryIdentityKey(item) === identity || String(item.id) === String(normalized.id);
+    }) || normalized;
+    return clone(saved);
   }
 
   function dispatchPresentationSnapshot(items, source, metadata) {
