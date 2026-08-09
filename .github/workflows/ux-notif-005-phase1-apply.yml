@@ -25,8 +25,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD^)" = "142602a8cdfc202b10583ca209b68909c70b3ccd"
-          test "$(git rev-parse HEAD^^)" = "18a244d0f55a05f97a9ca6c321dc0a7b12352f9c"
+          test "$(git rev-parse HEAD^)" = "ef25990ef2047a9dc677c947b1e9203caf96e51f"
+          test "$(git rev-parse HEAD^^)" = "142602a8cdfc202b10583ca209b68909c70b3ccd"
+          test "$(git rev-parse HEAD^^^)" = "18a244d0f55a05f97a9ca6c321dc0a7b12352f9c"
 
       - name: Setup Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
@@ -39,6 +40,44 @@ jobs:
 
       - name: Apply H05 reconciliation patch
         run: python scripts/tmp-ux-notif-005-phase1.py
+
+      - name: Correct dismissed reconciliation harness
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('scripts/test-ux-notif-005-inbox-reconciliation.js')
+          source = path.read_text(encoding='utf-8')
+          old = """center.dismiss('remote-a', { pendingSync: true });
+          item = center.getSnapshot().items.find((entry) => entry.id === 'remote-a');
+          assert.equal(item.dismissed, true);
+          assert.equal(item.dismissSyncState, 'PENDING_SYNC');
+          center.reconcile([
+            { id: 'remote-new-id', eventId: 'evt-shared', eventAccepted: true, eventCategory: 'MESSAGES', read: true, dismissed: false }
+          ], { completeSnapshot: true, freshness: 'STALE', sourceAuthority: 'CANONICAL_REMOTE' });
+          item = center.getSnapshot().items.find((entry) => entry.id === 'remote-a');
+          assert.equal(item.dismissed, true, 'stale remote snapshot must not undo optimistic dismiss');
+          assert.equal(item.dismissSyncState, 'PENDING_SYNC');
+          center.resolveMutation('remote-a', 'dismiss', { status: 'SYNCED', item: { dismissed: true } });
+          item = center.getSnapshot().items.find((entry) => entry.id === 'remote-a');
+          assert.equal(item.dismissSyncState, 'SYNCED');
+          """
+          new = """center.dismiss('remote-a', { pendingSync: true });
+          assert.equal(center.getSnapshot().items.some((entry) => entry.id === 'remote-a'), false,
+            'optimistically dismissed item must leave the active public snapshot');
+          center.reconcile([
+            { id: 'remote-new-id', eventId: 'evt-shared', eventAccepted: true, eventCategory: 'MESSAGES', read: true, dismissed: false }
+          ], { completeSnapshot: true, freshness: 'STALE', sourceAuthority: 'CANONICAL_REMOTE' });
+          assert.equal(center.getSnapshot().items.some((entry) => entry.id === 'remote-a'), false,
+            'stale remote snapshot must not resurrect an optimistic dismiss');
+          center.resolveMutation('remote-a', 'dismiss', { status: 'SYNCED', item: { dismissed: true } });
+          assert.equal(center.getSnapshot().items.some((entry) => entry.id === 'remote-a'), false,
+            'remote dismiss confirmation must preserve the item outside the active snapshot');
+          """
+          if old not in source:
+              raise SystemExit('dismiss harness anchor missing')
+          path.write_text(source.replace(old, new, 1), encoding='utf-8')
+          PY
 
       - name: Validate H05 syntax and behavior
         run: |
