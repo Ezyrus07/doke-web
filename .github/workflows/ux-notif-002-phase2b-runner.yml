@@ -1,0 +1,66 @@
+name: UX-NOTIF-002 Phase 2B Runner
+
+on:
+  push:
+    branches:
+      - ux/ux-notif-002-event-schema
+    paths:
+      - '.github/workflows/ux-notif-002-phase2b-runner.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Guard exact parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = '94ff2d9e6f5066d0b3b89cf8dd71e4365d0494e1'
+
+      - name: Apply patch
+        run: python scripts/tmp-ux-notif-002-phase2b.py
+
+      - name: Validate final-tree semantics
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm scripts/tmp-ux-notif-002-phase2b.py
+          rm .github/workflows/ux-notif-002-phase2b-apply.yml
+          rm .github/workflows/ux-notif-002-phase2b-apply-v2.yml
+          rm .github/workflows/ux-notif-002-phase2b-runner.yml
+          node --check assets/js/services/notification-service.js
+          node --check scripts/test-ux-notif-002-producer-envelopes.js
+          node scripts/test-ux-notif-002-notification-event.js
+          node scripts/test-ux-notif-002-repository-adapter.js
+          node scripts/test-ux-notif-002-producer-envelopes.js
+          node scripts/test-ux-notif-001-notification-center.js
+          node scripts/test-ux-notif-001-in-app-adapter.js
+          node scripts/test-ux-notif-001-surface-contract.js
+          node scripts/test-notification-authority-contract.js
+          node scripts/test-notifications-supabase-repository-contract.js
+          node scripts/audit-notifications-api-contract.js
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git diff --check
+          git checkout -- .github/workflows/ux-notif-002-phase2b-apply.yml .github/workflows/ux-notif-002-phase2b-apply-v2.yml .github/workflows/ux-notif-002-phase2b-runner.yml
+
+      - name: Commit functional Phase 2B
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'doke'
+          git config user.email 'bielantoniomma@gmail.com'
+          git add assets/js/services/notification-service.js scripts/test-ux-notif-002-producer-envelopes.js docs/ux/UX-NOTIF-002.md scripts/tmp-ux-notif-002-phase2b.py
+          git diff --cached --check
+          git diff --cached --quiet && { echo '::error::No Phase 2B changes staged'; exit 1; }
+          git commit -m 'feat(ux-notif-002): emit canonical producer envelopes'
+          git push origin HEAD:ux/ux-notif-002-event-schema
