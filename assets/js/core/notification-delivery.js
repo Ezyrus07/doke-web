@@ -39,7 +39,7 @@
     mutedScopeLabels: Object.freeze({})
   });
 
-  if (Doke.notificationDelivery && Doke.notificationDelivery.version === VERSION) return;
+  if (Doke.notificationDelivery?.version === VERSION) return;
 
   let scopeFingerprint = '';
 
@@ -78,7 +78,8 @@
       if (!accountStorage?.read) return fallback;
       const value = accountStorage.read({ domain: DOMAIN, key, version: STORAGE_VERSION });
       return value == null ? fallback : value;
-    } catch (_error) {
+    } catch {
+      console.warn('[Doke.notificationDelivery] account storage read failed');
       return fallback;
     }
   };
@@ -89,7 +90,8 @@
       if (!accountStorage?.write) return false;
       accountStorage.write({ domain: DOMAIN, key, version: STORAGE_VERSION, value });
       return true;
-    } catch (_error) {
+    } catch {
+      console.warn('[Doke.notificationDelivery] account storage write failed');
       return false;
     }
   };
@@ -100,7 +102,8 @@
       if (!accountStorage?.remove) return false;
       accountStorage.remove({ domain: DOMAIN, key, version: STORAGE_VERSION });
       return true;
-    } catch (_error) {
+    } catch {
+      console.warn('[Doke.notificationDelivery] account storage remove failed');
       return false;
     }
   };
@@ -286,9 +289,10 @@
       return acc;
     }, {});
     removeValue(DIGEST_KEY);
+    const digestId = `digest-${Date.now()}`;
     const payload = Object.freeze({
-      id: `digest-${Date.now()}`,
-      eventKey: `digest-${Date.now()}`,
+      id: digestId,
+      eventKey: digestId,
       title: `${queue.length} alertas acumulados`,
       body: digestBody(groups),
       targetUrl: 'notificacoes.html',

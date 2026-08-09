@@ -28,7 +28,7 @@ for (const required of [
 ]) assert.ok(adapter.includes(required), `missing H07 adapter delegation: ${required}`);
 
 assert.ok(toast.includes("outcome === 'QUEUE_DIGEST'"));
-assert.ok(toast.includes("outcome !== 'ALLOW_TOAST'"));
+assert.ok(toast.includes("return outcome === 'ALLOW_TOAST';"));
 assert.ok(delivery.includes("const CONTRACT = 'notification-delivery-v1'"));
 assert.ok(delivery.includes("domain: DOMAIN"));
 assert.ok(delivery.includes("ALLOW_TOAST"));

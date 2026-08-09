@@ -91,7 +91,25 @@
   };
   const syncGlobalBadges = (_source, scope = document) => getNotificationCenter()?.syncBadges?.(scope) ?? 0;
   const openPayload = (payload) => { markAsRead(payload.id); const target=String(payload.targetUrl||'').trim(); if(target)window.location.href=target; };
-  const playSound = (priority) => { if(priority==='silent'||getDeliveryManager()?.getPreferences?.().sound===false)return; try { const AudioContext=window.AudioContext||window.webkitAudioContext; if(!AudioContext)return; const ctx=new AudioContext(); const oscillator=ctx.createOscillator(); const gain=ctx.createGain(); oscillator.frequency.value=priority==='high'?760:620; gain.gain.setValueAtTime(.0001,ctx.currentTime); gain.gain.exponentialRampToValueAtTime(.045,ctx.currentTime+.015); gain.gain.exponentialRampToValueAtTime(.0001,ctx.currentTime+.14); oscillator.connect(gain).connect(ctx.destination); oscillator.start(); oscillator.stop(ctx.currentTime+.15); } catch(_error){} };
+  const playSound = (priority) => {
+    if (priority === 'silent' || getDeliveryManager()?.getPreferences?.().sound === false) return;
+    try {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContext) return;
+      const ctx = new AudioContext();
+      const oscillator = ctx.createOscillator();
+      const gain = ctx.createGain();
+      oscillator.frequency.value = priority === 'high' ? 760 : 620;
+      gain.gain.setValueAtTime(.0001, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(.045, ctx.currentTime + .015);
+      gain.gain.exponentialRampToValueAtTime(.0001, ctx.currentTime + .14);
+      oscillator.connect(gain).connect(ctx.destination);
+      oscillator.start();
+      oscillator.stop(ctx.currentTime + .15);
+    } catch {
+      console.warn('[Doke.inAppNotifications] notification sound failed');
+    }
+  };
 
   const recordActionResult = (notificationId, status, message, undoPayload = null) => {
     const center = getNotificationCenter();
@@ -197,7 +215,22 @@
     if (!manager || typeof manager.show !== 'function') return false;
     return manager.show(payload, options);
   };
-  const publish = (payload={}) => { const envelope={...payload,id:payload.id||payload.eventKey||`live-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,createdAt:payload.createdAt||new Date().toISOString(),originTabId:TAB_ID};const stored=persist(envelope);try{localStorage.setItem(BUS_KEY,JSON.stringify(stored));}catch(_error){}document.dispatchEvent(new CustomEvent('doke:in-app-notification',{detail:stored}));return stored; };
+  const publish = (payload = {}) => {
+    const envelope = {
+      ...payload,
+      id: payload.id || payload.eventKey || `live-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      createdAt: payload.createdAt || new Date().toISOString(),
+      originTabId: TAB_ID
+    };
+    const stored = persist(envelope);
+    try {
+      localStorage.setItem(BUS_KEY, JSON.stringify(stored));
+    } catch {
+      console.warn('[Doke.inAppNotifications] cross-tab notification publish failed');
+    }
+    document.dispatchEvent(new CustomEvent('doke:in-app-notification', { detail: stored }));
+    return stored;
+  };
   const getPreferences = () => getDeliveryManager()?.getPreferences?.() || {};
   const setPreferences = (next = {}) => getDeliveryManager()?.setPreferences?.(next) || getPreferences();
   const muteScope = (scope, label='Origem') => getDeliveryManager()?.muteScope?.(scope, label) || getPreferences();
