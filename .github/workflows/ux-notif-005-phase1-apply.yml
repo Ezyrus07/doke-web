@@ -25,9 +25,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD^)" = "ef25990ef2047a9dc677c947b1e9203caf96e51f"
-          test "$(git rev-parse HEAD^^)" = "142602a8cdfc202b10583ca209b68909c70b3ccd"
-          test "$(git rev-parse HEAD^^^)" = "18a244d0f55a05f97a9ca6c321dc0a7b12352f9c"
+          test "$(git rev-parse HEAD^)" = "2b724e7cbbd58ecaae5a9b4dc22ae434f7349af0"
+          test "$(git rev-parse HEAD^^)" = "ef25990ef2047a9dc677c947b1e9203caf96e51f"
+          test "$(git rev-parse HEAD^^^)" = "142602a8cdfc202b10583ca209b68909c70b3ccd"
+          test "$(git rev-parse HEAD^^^^)" = "18a244d0f55a05f97a9ca6c321dc0a7b12352f9c"
 
       - name: Setup Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
@@ -79,6 +80,23 @@ jobs:
           path.write_text(source.replace(old, new, 1), encoding='utf-8')
           PY
 
+      - name: Migrate H01 sync surface contract to H05 metadata
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('scripts/test-ux-notif-001-surface-contract.js')
+          source = path.read_text(encoding='utf-8')
+          old = "assert(repository.includes(\"dispatchSynced(scoped, source || 'repository')\"));"
+          new = """assert(repository.includes(\"dispatchSynced(scoped, source || 'repository', metadata || {})\"));
+          assert(repository.includes(\"accountId: normalizeText(user.id || user.userId || user.uid || '')\"));
+          assert(repository.includes(\"freshness: normalizeText(metadata.freshness || 'UNKNOWN').toUpperCase()\"));
+          assert(repository.includes('completeSnapshot: metadata.completeSnapshot !== false'));"""
+          if old not in source:
+              raise SystemExit('H01 sync surface anchor missing')
+          path.write_text(source.replace(old, new, 1), encoding='utf-8')
+          PY
+
       - name: Validate H05 syntax and behavior
         run: |
           node --check assets/js/core/notification-center.js
@@ -86,6 +104,7 @@ jobs:
           node --check assets/js/features/in-app-notifications.js
           node --check scripts/test-ux-notif-005-inbox-reconciliation.js
           node --check scripts/test-ux-notif-005-adapter-repository-contract.js
+          node --check scripts/test-ux-notif-001-surface-contract.js
           node scripts/test-ux-notif-005-inbox-reconciliation.js
           node scripts/test-ux-notif-005-adapter-repository-contract.js
 
@@ -129,6 +148,7 @@ jobs:
           git add assets/js/core/notification-center.js \
             assets/js/repositories/notifications-repository.js \
             assets/js/features/in-app-notifications.js \
+            scripts/test-ux-notif-001-surface-contract.js \
             scripts/test-ux-notif-005-inbox-reconciliation.js \
             scripts/test-ux-notif-005-adapter-repository-contract.js \
             docs/ux/UX-NOTIF-005.md \
