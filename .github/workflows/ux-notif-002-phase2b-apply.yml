@@ -1,0 +1,487 @@
+name: UX-NOTIF-002 Phase 2B Apply
+
+on:
+  push:
+    branches:
+      - ux/ux-notif-002-event-schema
+    paths:
+      - '.github/workflows/ux-notif-002-phase2b-apply.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Guard exact certified parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = '89473f69478e654c03f56081c22ac10f1d8613fc'
+
+      - name: Apply Phase 2B producer envelopes
+        shell: bash
+        run: |
+          python <<'PY'
+          from pathlib import Path
+
+          service_path = Path('assets/js/services/notification-service.js')
+          text = service_path.read_text()
+
+          def replace_once(old, new, label):
+              global text
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'{label}: expected 1 match, found {count}')
+              text = text.replace(old, new, 1)
+
+          replace_once(
+          """  function normalizeText(value) {
+            return String(value || '').trim();
+          }
+
+          var DEMO_PROFESSIONAL_ID = 'user_profissional_demo';
+          """,
+          """  function normalizeText(value) {
+            return String(value || '').trim();
+          }
+
+          function getProducerSourceAuthority() {
+            return shouldUseNotificationsApi() ? 'CANONICAL_REMOTE' : 'CANONICAL_LOCAL';
+          }
+
+          function buildProducerEvent(eventType, eventCategory, identityParts, options) {
+            options = options || {};
+            var normalizedType = normalizeText(eventType).toLowerCase();
+            var normalizedCategory = normalizeText(eventCategory).toUpperCase();
+            var identity = (Array.isArray(identityParts) ? identityParts : [])
+              .map(normalizeText)
+              .filter(Boolean);
+            var eventId = normalizedType && identity.length
+              ? [normalizedType].concat(identity).join(':')
+              : '';
+
+            return Object.freeze({
+              eventId: eventId,
+              eventType: normalizedType,
+              eventVersion: Math.max(1, Number(options.eventVersion || 1) || 1),
+              sourceDomain: normalizeText(options.sourceDomain || normalizedCategory).toUpperCase(),
+              sourceAuthority: normalizeText(options.sourceAuthority || getProducerSourceAuthority()).toUpperCase(),
+              eventCategory: normalizedCategory,
+              dedupeKey: eventId,
+              eventKey: eventId
+            });
+          }
+
+          var DEMO_PROFESSIONAL_ID = 'user_profissional_demo';
+          """,
+          'insert producer event builder')
+
+          replace_once(
+          """  function create(payload) {
+            payload = payload || {};
+            var boundary = getBoundary();
+          """,
+          """  function create(payload, eventEnvelope) {
+            payload = Object.assign({}, payload || {}, eventEnvelope || {});
+            var boundary = getBoundary();
+          """,
+          'extend create with producer envelope')
+
+          replace_once(
+          """      read: false
+            });
+          }
+
+          function createOrderStatusChanged""",
+          """      read: false
+            }, buildProducerEvent('order_created', 'ORDERS', [order.id || '', recipientId]));
+          }
+
+          function createOrderStatusChanged""",
+          'order created envelope')
+
+          replace_once(
+          """    var actionLabel = 'Ver pedido';
+            var targetUrl = 'pedidos.html?order=' + encodeURIComponent(order.id || '');
+
+            if (normalizedStatus === 'accepted' || normalizedStatus === 'conversation') {
+          """,
+          """    var actionLabel = 'Ver pedido';
+            var targetUrl = 'pedidos.html?order=' + encodeURIComponent(order.id || '');
+            var canonicalEventType = 'order_status_changed';
+            var canonicalEventCategory = 'ORDERS';
+
+            if (normalizedStatus === 'accepted' || normalizedStatus === 'conversation') {
+              canonicalEventType = 'order_accepted';
+          """,
+          'order status defaults')
+
+          replace_once(
+          """    if (normalizedStatus === 'quoted') {
+              title = 'Proposta enviada';
+          """,
+          """    if (normalizedStatus === 'quoted') {
+              canonicalEventType = 'proposal_sent';
+              canonicalEventCategory = 'PROPOSALS';
+              title = 'Proposta enviada';
+          """,
+          'quoted semantic')
+
+          replace_once(
+          """      var paymentConfirmed = ['paid', 'confirmed', 'held', 'released'].indexOf(paymentStatus) !== -1 || options.paymentConfirmed === true;
+              title = paymentConfirmed ? 'Pagamento confirmado' : 'Proposta aprovada';
+          """,
+          """      var paymentConfirmed = ['paid', 'confirmed', 'held', 'released'].indexOf(paymentStatus) !== -1 || options.paymentConfirmed === true;
+              canonicalEventType = paymentConfirmed ? 'payment_confirmed' : 'proposal_approved';
+              canonicalEventCategory = paymentConfirmed ? 'PAYMENTS' : 'PROPOSALS';
+              title = paymentConfirmed ? 'Pagamento confirmado' : 'Proposta aprovada';
+          """,
+          'in progress semantic')
+
+          replace_once(
+          """      var paymentReleased = normalizeText(options.paymentStatus || order.paymentStatus || '').toLowerCase() === 'released';
+              title = paymentReleased ? 'Pedido concluído e pagamento liberado' : 'Pedido concluído';
+          """,
+          """      var paymentReleased = normalizeText(options.paymentStatus || order.paymentStatus || '').toLowerCase() === 'released';
+              canonicalEventType = paymentReleased ? 'payment_released' : 'order_completed';
+              canonicalEventCategory = paymentReleased ? 'PAYMENTS' : 'ORDERS';
+              title = paymentReleased ? 'Pedido concluído e pagamento liberado' : 'Pedido concluído';
+          """,
+          'completed semantic')
+
+          replace_once(
+          """      var professionalCancelled = cancellationType === 'professional_cancelled_before_payment';
+              title = proposalRejected ? 'Proposta recusada' : clientCancelled || professionalCancelled ? 'Pedido cancelado' : 'Pedido recusado';
+          """,
+          """      var professionalCancelled = cancellationType === 'professional_cancelled_before_payment';
+              canonicalEventType = proposalRejected ? 'proposal_rejected' : 'order_cancelled';
+              canonicalEventCategory = proposalRejected ? 'PROPOSALS' : 'ORDERS';
+              title = proposalRejected ? 'Proposta recusada' : clientCancelled || professionalCancelled ? 'Pedido cancelado' : 'Pedido recusado';
+          """,
+          'cancelled semantic')
+
+          replace_once(
+          """      actionLabel: actionLabel,
+              read: false
+            });
+          }
+
+          function createOrderReviewed""",
+          """      actionLabel: actionLabel,
+              read: false
+            }, buildProducerEvent(canonicalEventType, canonicalEventCategory, [order.id || '', normalizedStatus || '', paymentMessageId, recipientId]));
+          }
+
+          function createOrderReviewed""",
+          'order status envelope')
+
+          replace_once(
+          """      actionLabel: 'Abrir conversa',
+              read: false
+            });
+          }
+
+          function createMessageReceived""",
+          """      actionLabel: 'Abrir conversa',
+              read: false
+            }, buildProducerEvent('order_reviewed', 'ORDERS', [order.id || review.orderId || '', review.id || options.messageId || review.messageId || '', recipientId]));
+          }
+
+          function createMessageReceived""",
+          'review envelope')
+
+          replace_once(
+          """      actionLabel: 'Abrir conversa',
+              read: false
+            });
+          }
+
+          function createPaymentHeld""",
+          """      actionLabel: 'Abrir conversa',
+              read: false
+            }, buildProducerEvent('message_received', 'MESSAGES', [message.id || message.createdAt || '', conversation.id || message.conversationId || '', recipientId]));
+          }
+
+          function createPaymentHeld""",
+          'message envelope')
+
+          replace_once(
+          """      actionLabel: 'Acompanhar atendimento',
+              read: false
+            });
+          }
+
+          function createCompletionRequested""",
+          """      actionLabel: 'Acompanhar atendimento',
+              read: false
+            }, buildProducerEvent('payment_held', 'PAYMENTS', [payment.id || payment.orderId || order.id || '', recipientId]));
+          }
+
+          function createCompletionRequested""",
+          'payment envelope')
+
+          replace_once(
+          """      actionLabel: 'Revisar conclusão',
+              read: false
+            });
+          }
+
+          function createDisputeOpened""",
+          """      actionLabel: 'Revisar conclusão',
+              read: false
+            }, buildProducerEvent('order_completion_requested', 'ORDERS', [order.id || payment.orderId || conversation.orderId || '', payment.id || '', recipientId]));
+          }
+
+          function createDisputeOpened""",
+          'completion envelope')
+
+          replace_once(
+          """        actionLabel: 'Responder contestação',
+                read: false
+              }));
+          """,
+          """        actionLabel: 'Responder contestação',
+                read: false
+              }, buildProducerEvent('dispute_opened', 'DISPUTES', [dispute.id || orderId, professionalId])));
+          """,
+          'dispute opened professional')
+
+          replace_once(
+          """        actionLabel: 'Acompanhar contestação',
+                read: false
+              }));
+          """,
+          """        actionLabel: 'Acompanhar contestação',
+                read: false
+              }, buildProducerEvent('dispute_reported', 'DISPUTES', [dispute.id || orderId, clientId])));
+          """,
+          'dispute opened client')
+
+          replace_once(
+          """      actionLabel: 'Ver resposta',
+              read: false
+            })]);
+          """,
+          """      actionLabel: 'Ver resposta',
+              read: false
+            }, buildProducerEvent('dispute_responded', 'DISPUTES', [dispute.id || orderId, clientId]))]);
+          """,
+          'dispute response envelope')
+
+          replace_once(
+          """        actionLabel: 'Ver resolução',
+                read: false
+              }));
+          """,
+          """        actionLabel: 'Ver resolução',
+                read: false
+              }, buildProducerEvent('dispute_resolved', 'DISPUTES', [dispute.id || orderId, resolution || 'resolved', recipientId])));
+          """,
+          'dispute resolved envelope')
+
+          service_path.write_text(text)
+
+          test_path = Path('scripts/test-ux-notif-002-producer-envelopes.js')
+          if test_path.exists():
+              raise SystemExit('producer envelope test already exists unexpectedly')
+          test_path.write_text(r'''const assert = require('node:assert/strict');
+          const path = require('node:path');
+
+          const rootDir = path.resolve(__dirname, '..');
+          const eventPath = path.join(rootDir, 'assets/js/core/notification-event.js');
+          const servicePath = path.join(rootDir, 'assets/js/services/notification-service.js');
+          const previous = {
+            window: global.window,
+            Doke: global.Doke,
+            localStorage: global.localStorage
+          };
+
+          let provider = 'mock';
+          const localPayloads = [];
+          const remotePayloads = [];
+
+          global.window = global;
+          global.localStorage = { getItem() { return null; } };
+          global.Doke = {
+            session: {
+              getCurrentUser() {
+                return { id: 'client-1', role: 'client', name: 'Cliente' };
+              }
+            },
+            repositories: {
+              notifications: {
+                create(payload) {
+                  localPayloads.push(payload);
+                  return Promise.resolve(payload);
+                }
+              }
+            },
+            repositoryBoundary: {
+              list() { return Promise.resolve([]); },
+              getActiveProviderName() { return provider; },
+              getDataProviderStatus() {
+                return { apiReady: provider === 'api', networkEnabled: provider === 'api', apiBaseUrlConfigured: provider === 'api' };
+              },
+              create(domain, payload) {
+                assert.equal(domain, 'notifications');
+                remotePayloads.push(payload);
+                return Promise.resolve(payload);
+              }
+            }
+          };
+
+          delete require.cache[require.resolve(eventPath)];
+          delete require.cache[require.resolve(servicePath)];
+
+          function assertEnvelope(payload, expected) {
+            assert.ok(payload.eventId, `${expected.eventType} must publish eventId`);
+            assert.equal(payload.eventType, expected.eventType);
+            assert.equal(payload.eventCategory, expected.category);
+            assert.equal(payload.sourceDomain, expected.category);
+            assert.equal(payload.sourceAuthority, expected.sourceAuthority || 'CANONICAL_LOCAL');
+            assert.equal(payload.dedupeKey, payload.eventId);
+            assert.equal(payload.eventKey, payload.eventId);
+            const normalized = global.Doke.notificationEvent.normalize(payload);
+            assert.equal(normalized.accepted, true, `${expected.eventType} must be accepted by notification-event-v1`);
+            assert.equal(normalized.identitySource, 'eventId');
+            assert.equal(normalized.category, expected.category);
+            assert.equal(normalized.sourceDomain, expected.category);
+            assert.equal(normalized.sourceAuthority, expected.sourceAuthority || 'CANONICAL_LOCAL');
+            return normalized;
+          }
+
+          (async () => {
+            try {
+              require(eventPath);
+              require(servicePath);
+              const notifications = global.Doke.services.notifications;
+              assert.ok(notifications, 'notification service must be published');
+
+              let payload = await notifications.createOrderCreated({ id: 'order-1', clientId: 'client-1', professionalId: 'pro-1', serviceTitle: 'Limpeza' }, { recipientId: 'pro-1' });
+              assert.equal(payload.type, 'order_created');
+              assert.equal(payload.category, 'orders');
+              assertEnvelope(payload, { eventType: 'order_created', category: 'ORDERS' });
+
+              payload = await notifications.createOrderStatusChanged({ id: 'order-2', clientId: 'client-1', professionalId: 'pro-2', serviceTitle: 'Pintura' }, 'quoted', { recipientId: 'client-1', amount: 'R$ 300' });
+              assert.equal(payload.type, 'order_status_changed');
+              assert.equal(payload.category, 'orders');
+              assertEnvelope(payload, { eventType: 'proposal_sent', category: 'PROPOSALS' });
+
+              payload = await notifications.createOrderStatusChanged({ id: 'order-3', clientId: 'client-1', professionalId: 'pro-3', serviceTitle: 'Reparo' }, 'in_progress', { recipientId: 'pro-3', paymentStatus: 'held', paymentMessageId: 'charge-3' });
+              const paymentStatusEvent = assertEnvelope(payload, { eventType: 'payment_confirmed', category: 'PAYMENTS' });
+              assert.equal(paymentStatusEvent.criticalOperational, true);
+
+              payload = await notifications.createCompletionRequested({ id: 'order-4', clientId: 'client-1', professionalId: 'pro-4' }, { id: 'pay-4', orderId: 'order-4', clientId: 'client-1' }, {});
+              assertEnvelope(payload, { eventType: 'order_completion_requested', category: 'ORDERS' });
+
+              payload = await notifications.createPaymentHeld({ id: 'pay-5', orderId: 'order-5', professionalId: 'pro-5', clientId: 'client-1', amount: 500 }, { order: { id: 'order-5', professionalId: 'pro-5' } });
+              const paymentEvent = assertEnvelope(payload, { eventType: 'payment_held', category: 'PAYMENTS' });
+              assert.equal(paymentEvent.criticalOperational, true);
+
+              const disputeOpened = await notifications.createDisputeOpened(
+                { id: 'order-6', clientId: 'client-1', professionalId: 'pro-6' },
+                { id: 'pay-6', orderId: 'order-6' },
+                { id: 'dispute-6', orderId: 'order-6' },
+                {}
+              );
+              assert.equal(disputeOpened.length, 2);
+              assert.equal(disputeOpened[0].category, 'orders', 'legacy dispute UI category remains orders');
+              assertEnvelope(disputeOpened[0], { eventType: 'dispute_opened', category: 'DISPUTES' });
+              assertEnvelope(disputeOpened[1], { eventType: 'dispute_reported', category: 'DISPUTES' });
+
+              const disputeResponse = await notifications.createDisputeResponded(
+                { id: 'order-6', clientId: 'client-1', professionalId: 'pro-6' },
+                { orderId: 'order-6' },
+                { id: 'dispute-6', orderId: 'order-6' },
+                { actor: { id: 'pro-6', name: 'Profissional' } }
+              );
+              assertEnvelope(disputeResponse[0], { eventType: 'dispute_responded', category: 'DISPUTES' });
+
+              const disputeResolved = await notifications.createDisputeResolved(
+                { id: 'order-6', clientId: 'client-1', professionalId: 'pro-6' },
+                { orderId: 'order-6' },
+                { id: 'dispute-6', orderId: 'order-6', resolution: 'client' },
+                {}
+              );
+              assert.equal(disputeResolved.length, 2);
+              disputeResolved.forEach((item) => assertEnvelope(item, { eventType: 'dispute_resolved', category: 'DISPUTES' }));
+
+              payload = await notifications.createMessageReceived(
+                { id: 'conversation-7', orderId: 'order-7', participants: ['client-1', 'pro-7'] },
+                { id: 'message-7', senderId: 'pro-7', text: 'Olá' },
+                { recipientId: 'client-1', actor: { id: 'pro-7', name: 'Profissional' } }
+              );
+              assertEnvelope(payload, { eventType: 'message_received', category: 'MESSAGES' });
+
+              provider = 'api';
+              payload = await notifications.createPaymentHeld({ id: 'pay-remote', orderId: 'order-remote', professionalId: 'pro-remote', amount: 10 }, { order: { id: 'order-remote', professionalId: 'pro-remote' } });
+              assertEnvelope(payload, { eventType: 'payment_held', category: 'PAYMENTS', sourceAuthority: 'CANONICAL_REMOTE' });
+              assert.equal(remotePayloads.length, 1);
+
+              assert.ok(localPayloads.length >= 10, 'expected local producer coverage');
+              console.log('[ux-notif-002-producer-envelopes] ok');
+              console.log('- native eventId/eventType/sourceDomain/sourceAuthority validated for order, proposal, payment, dispute and message producers');
+            } finally {
+              delete require.cache[require.resolve(eventPath)];
+              delete require.cache[require.resolve(servicePath)];
+              for (const [key, value] of Object.entries(previous)) {
+                if (value === undefined) delete global[key];
+                else global[key] = value;
+              }
+            }
+          })().catch((error) => {
+            console.error(error);
+            process.exitCode = 1;
+          });
+          ''')
+
+          doc_path = Path('docs/ux/UX-NOTIF-002.md')
+          doc = doc_path.read_text()
+          old = '- Fase 2A: repository adapter + dependência explícita nas rotas consumidoras implementada; certificação depende dos gates do mesmo SHA;\n- Fase 2B: producers nativos ainda não iniciados;'
+          new = '- Fase 2A: repository adapter + dependência explícita nas rotas consumidoras certificada;\n- Fase 2B: producer envelopes nativos implementados; certificação depende dos gates do mesmo SHA;'
+          if doc.count(old) != 1:
+              raise SystemExit('docs phase status anchor mismatch')
+          doc = doc.replace(old, new, 1)
+          appendix = '''\n\n## Fase 2B — producer envelopes nativos\n\nOs produtores de `notification-service.js` passam a publicar metadata canônica antes do repository, preservando `type/category` legados apenas como contrato transitório de UI.\n\nRegras:\n\n- `eventId`, `eventType`, `eventVersion`, `sourceDomain`, `sourceAuthority`, `eventCategory`, `dedupeKey` e alias `eventKey` são emitidos pelo produtor;\n- criação via notification API declara `CANONICAL_REMOTE`; criação pelo repository local declara `CANONICAL_LOCAL`;\n- `order_status_changed` mantém o tipo legado, mas propostas e pagamentos recebem `eventType` canônico próprio;\n- `completion_requested` passa a `order_completion_requested`, evitando `UNKNOWN_OPERATIONAL`;\n- `order_dispute_*` permanece como tipo legado de UI, enquanto `eventType` canônico usa prefixo `dispute_*` e categoria `DISPUTES`;\n- pagamentos e disputas chegam ao `notification-event-v1` com fonte canônica explícita, sem depender da inferência do repository;\n- o repository continua sendo a autoridade de persistência/mutation e `Doke.notificationCenter` continua sendo a autoridade de apresentação/unread/badge.\n\nNenhuma mudança de backend, Supabase, migration, staging, produção, toast, digest ou browser notification faz parte desta fase.\n'''
+          if '## Fase 2B — producer envelopes nativos' in doc:
+              raise SystemExit('docs phase 2B section already exists unexpectedly')
+          doc_path.write_text(doc.rstrip() + appendix)
+          PY
+
+      - name: Validate Phase 2B before commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check assets/js/services/notification-service.js
+          node --check scripts/test-ux-notif-002-producer-envelopes.js
+          node scripts/test-ux-notif-002-notification-event.js
+          node scripts/test-ux-notif-002-repository-adapter.js
+          node scripts/test-ux-notif-002-producer-envelopes.js
+          node scripts/test-ux-notif-001-notification-center.js
+          node scripts/test-ux-notif-001-in-app-adapter.js
+          node scripts/test-ux-notif-001-surface-contract.js
+          node scripts/test-notification-authority-contract.js
+          node scripts/test-notifications-supabase-repository-contract.js
+          node scripts/audit-notifications-api-contract.js
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git diff --check
+
+      - name: Commit Phase 2B
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'doke'
+          git config user.email 'bielantoniomma@gmail.com'
+          git add assets/js/services/notification-service.js scripts/test-ux-notif-002-producer-envelopes.js docs/ux/UX-NOTIF-002.md
+          git diff --cached --quiet && { echo '::error::No Phase 2B changes staged'; exit 1; }
+          git commit -m 'feat(ux-notif-002): emit canonical producer envelopes'
+          git push origin HEAD:ux/ux-notif-002-event-schema
