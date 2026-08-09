@@ -122,7 +122,8 @@ require(inAppPath);
 
 const center = Doke.notificationCenter;
 const inApp = windowStub.DokeInAppNotifications;
-assert(center && inApp);
+assert(center, 'notification center must load');
+assert(inApp, 'in-app notifications adapter must load');
 
 function seed(id) {
   center.upsert({
