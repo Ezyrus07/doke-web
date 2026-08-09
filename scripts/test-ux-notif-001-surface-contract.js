@@ -33,7 +33,10 @@ assert(!runtime.includes("querySelectorAll('[data-notifications-unread-count]"))
 
 assert(repository.includes('dispatchPresentationSnapshot'));
 assert(!repository.includes('syncGlobalBadges'));
-assert(repository.includes("dispatchSynced(scoped, source || 'repository')"));
+assert(repository.includes("dispatchSynced(scoped, source || 'repository', metadata || {})"));
+assert(repository.includes("accountId: normalizeText(user.id || user.userId || user.uid || '')"));
+assert(repository.includes("freshness: normalizeText(metadata.freshness || 'UNKNOWN').toUpperCase()"));
+assert(repository.includes('completeSnapshot: metadata.completeSnapshot !== false'));
 
 assert(page.includes("const getNotificationCenter = () => window.Doke?.notificationCenter || null"));
 assert(page.includes('center?.createFence?.()'));

@@ -6,9 +6,10 @@
 
   var root = window;
   var Doke = root.Doke || (root.Doke = {});
-  var VERSION = '20260809-ux-notif-004-v1';
+  var VERSION = '20260809-ux-notif-005-v1';
   var CONTRACT = 'notification-center-v1';
   var BADGE_CONTRACT = 'notification-badge-snapshot-v1';
+  var RECONCILIATION_CONTRACT = 'notification-inbox-reconciliation-v1';
   var MAX_ITEMS = 250;
   var BADGE_SELECTORS = Object.freeze({
     unreadTotal: '[data-notifications-unread-count]',
@@ -125,6 +126,13 @@
     item.dismissed = item.dismissed === true || Boolean(item.dismissedAt);
     item.createdAt = item.createdAt || item.creatédAt || '';
     item.updatedAt = item.updatedAt || item.createdAt || '';
+    item.readSyncState = normalizeUpper(item.readSyncState || 'SYNCED');
+    if (['SYNCED', 'PENDING_SYNC', 'CONFLICT'].indexOf(item.readSyncState) === -1) item.readSyncState = 'SYNCED';
+    item.dismissSyncState = normalizeUpper(item.dismissSyncState || 'SYNCED');
+    if (['SYNCED', 'PENDING_SYNC', 'CONFLICT'].indexOf(item.dismissSyncState) === -1) item.dismissSyncState = 'SYNCED';
+    item.readSyncError = normalizeText(item.readSyncError || '');
+    item.dismissSyncError = normalizeText(item.dismissSyncError || '');
+    item.mutationUpdatedAt = normalizeText(item.mutationUpdatedAt || '');
     [
       'primaryEntityId', 'messageId', 'conversationId', 'orderId', 'proposalId',
       'paymentId', 'disputeId', 'communityId', 'serviceId', 'sourceAuthority'
@@ -361,7 +369,47 @@
 
   function identityKey(item) {
     if (!item) return '';
-    return normalizeText(item.eventKey) || normalizeText(item.id);
+    return normalizeText(item.eventId)
+      || normalizeText(item.dedupeKey)
+      || normalizeText(item.eventKey)
+      || normalizeText(item.id);
+  }
+
+  function hasPendingMutation(item) {
+    return Boolean(item && (item.readSyncState === 'PENDING_SYNC' || item.dismissSyncState === 'PENDING_SYNC'));
+  }
+
+  function reconcileItem(existing, incoming) {
+    if (!existing) return incoming;
+    var merged = Object.assign({}, existing, incoming, { id: existing.id || incoming.id });
+
+    if (existing.readSyncState === 'PENDING_SYNC') {
+      if (incoming.read === true) {
+        merged.read = true;
+        merged.readSyncState = 'SYNCED';
+        merged.readSyncError = '';
+      } else {
+        merged.read = true;
+        merged.readSyncState = 'PENDING_SYNC';
+        merged.readSyncError = existing.readSyncError;
+        merged.mutationUpdatedAt = existing.mutationUpdatedAt;
+      }
+    }
+
+    if (existing.dismissSyncState === 'PENDING_SYNC') {
+      if (incoming.dismissed === true) {
+        merged.dismissed = true;
+        merged.dismissSyncState = 'SYNCED';
+        merged.dismissSyncError = '';
+      } else {
+        merged.dismissed = true;
+        merged.dismissSyncState = 'PENDING_SYNC';
+        merged.dismissSyncError = existing.dismissSyncError;
+        merged.mutationUpdatedAt = existing.mutationUpdatedAt;
+      }
+    }
+
+    return freezeItem(merged);
   }
 
   function normalizeItems(source) {
@@ -400,6 +448,37 @@
     applyBadgeMetadata(options.badgeMetadata || options, { derived: !options.sourceAuthority });
     generation += 1;
     return notify('replace');
+  }
+
+  function reconcile(source, options) {
+    if (!canCommit(options)) return snapshot();
+    options = options || {};
+    var incomingItems = normalizeItems(source);
+    var existingByKey = new Map();
+    items.forEach(function (item) {
+      var key = identityKey(item);
+      if (key) existingByKey.set(key, item);
+    });
+
+    var matchedKeys = new Set();
+    var nextItems = incomingItems.map(function (incoming) {
+      var key = identityKey(incoming);
+      matchedKeys.add(key);
+      return reconcileItem(existingByKey.get(key), incoming);
+    });
+
+    items.forEach(function (existing) {
+      var key = identityKey(existing);
+      if (!key || matchedKeys.has(key)) return;
+      if (options.completeSnapshot === false || hasPendingMutation(existing)) nextItems.push(existing);
+    });
+
+    items = nextItems.slice(0, MAX_ITEMS);
+    if (options.freshness || options.sourceAuthority || options.updatedAt) {
+      applyBadgeMetadata(options, { derived: !options.sourceAuthority });
+    }
+    generation += 1;
+    return notify('reconcile');
   }
 
   function upsert(raw, options) {
@@ -442,12 +521,49 @@
     return notify(reason);
   }
 
-  function markRead(id) {
-    return updateById(id, { read: true }, 'mark-read');
+  function markRead(id, options) {
+    options = options || {};
+    return updateById(id, {
+      read: true,
+      readSyncState: options.pendingSync === true ? 'PENDING_SYNC' : 'SYNCED',
+      readSyncError: '',
+      mutationUpdatedAt: options.pendingSync === true ? nowIso() : ''
+    }, options.pendingSync === true ? 'mark-read-pending' : 'mark-read');
   }
 
-  function dismiss(id) {
-    return updateById(id, { dismissed: true }, 'dismiss');
+  function dismiss(id, options) {
+    options = options || {};
+    return updateById(id, {
+      dismissed: true,
+      dismissSyncState: options.pendingSync === true ? 'PENDING_SYNC' : 'SYNCED',
+      dismissSyncError: '',
+      mutationUpdatedAt: options.pendingSync === true ? nowIso() : ''
+    }, options.pendingSync === true ? 'dismiss-pending' : 'dismiss');
+  }
+
+  function resolveMutation(id, kind, result, options) {
+    options = options || {};
+    if (!canCommit(options)) return snapshot();
+    result = result || {};
+    var normalizedKind = normalizeText(kind).toLowerCase();
+    var status = normalizeUpper(result.status || 'PENDING_SYNC');
+    if (['SYNCED', 'PENDING_SYNC', 'CONFLICT'].indexOf(status) === -1) status = 'PENDING_SYNC';
+    var patch = { mutationUpdatedAt: nowIso() };
+    var remoteItem = result.item && typeof result.item === 'object' ? result.item : null;
+
+    if (normalizedKind === 'read') {
+      patch.read = remoteItem && hasOwn(remoteItem, 'read') ? remoteItem.read === true : true;
+      patch.readSyncState = status;
+      patch.readSyncError = status === 'SYNCED' ? '' : normalizeText(result.errorCode || result.error || 'pending-sync');
+    } else if (normalizedKind === 'dismiss') {
+      patch.dismissed = remoteItem && hasOwn(remoteItem, 'dismissed') ? remoteItem.dismissed === true : true;
+      patch.dismissSyncState = status;
+      patch.dismissSyncError = status === 'SYNCED' ? '' : normalizeText(result.errorCode || result.error || 'pending-sync');
+    } else {
+      return snapshot();
+    }
+
+    return updateById(id, patch, 'mutation-' + normalizedKind + '-' + status.toLowerCase());
   }
 
   function reset(reason) {
@@ -482,6 +598,7 @@
     version: VERSION,
     contract: CONTRACT,
     badgeContract: BADGE_CONTRACT,
+    reconciliationContract: RECONCILIATION_CONTRACT,
     getSnapshot: function () {
       ensureAccount();
       return snapshot();
@@ -494,9 +611,11 @@
     createFence: createFence,
     isFenceCurrent: isFenceCurrent,
     replace: replace,
+    reconcile: reconcile,
     upsert: upsert,
     markRead: markRead,
     dismiss: dismiss,
+    resolveMutation: resolveMutation,
     reset: reset,
     refreshAccount: refreshAccount,
     subscribe: subscribe,

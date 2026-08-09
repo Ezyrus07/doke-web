@@ -12,6 +12,7 @@
   const getCurrentUser = () => { try { return window.Doke?.session?.getCurrentUser?.() || window.DokeAuth?.service?.getCurrentUser?.() || safeParse(localStorage.getItem('doke.auth.session.v1'), {})?.user || null; } catch (_error) { return null; } };
   const getAccountKeys = () => { const user = getCurrentUser() || {}; return [user.id, user.accountKey, user.email].map((value) => String(value || '').trim().toLowerCase()).filter(Boolean); };
   const getNotificationCenter = () => window.Doke?.notificationCenter || null;
+  const getNotificationService = () => window.Doke?.services?.notifications || null;
   const getToastManager = () => window.Doke?.notificationToast || null;
   const normalizePrefs = (prefs = {}) => ({ ...DEFAULT_PREFS, ...prefs, mutedScopes: Array.isArray(prefs.mutedScopes) ? prefs.mutedScopes : [] });
   const readPrefs = () => normalizePrefs(safeParse(localStorage.getItem(PREFS_KEY), {}) || {});
@@ -64,19 +65,38 @@
     return state.items.find((entry) => entry.id === item.id) || item;
   };
   const iconFor = (payload) => ({ mentions: '@', reactions: '♥', events: '◷', messages: '●' }[typeGroup(payload)] || '!');
+  const persistPresentationMutation = (id, kind, fence) => {
+    const center = getNotificationCenter();
+    const service = getNotificationService();
+    const mutation = kind === 'dismiss' ? service?.dismiss : service?.markAsRead;
+    if (!center || typeof mutation !== 'function') {
+      center?.resolveMutation?.(id, kind, { status: 'PENDING_SYNC', errorCode: 'service-unavailable' }, fence ? { fence } : {});
+      return;
+    }
+    Promise.resolve(mutation.call(service, id)).then((result) => {
+      const status = String(result?.stateSyncStatus || '').toLowerCase() === 'pending' ? 'PENDING_SYNC' : 'SYNCED';
+      center.resolveMutation?.(id, kind, { status, item: result || null }, fence ? { fence } : {});
+    }).catch(() => {
+      center.resolveMutation?.(id, kind, { status: 'PENDING_SYNC', errorCode: 'persistence-failed' }, fence ? { fence } : {});
+    });
+  };
   const markAsRead = (id) => {
     const center = getNotificationCenter();
     if (!center) return null;
     const item = readCenter().find((entry) => String(entry.id) === String(id)) || null;
-    center.markRead(id);
-    return item ? { ...item, read: true } : null;
+    const fence = center.createFence?.();
+    center.markRead(id, { pendingSync: true });
+    persistPresentationMutation(id, 'read', fence);
+    return item ? { ...item, read: true, readSyncState: 'PENDING_SYNC' } : null;
   };
   const dismiss = (id) => {
     const center = getNotificationCenter();
     if (!center) return null;
     const item = readCenter().find((entry) => String(entry.id) === String(id)) || null;
-    center.dismiss(id);
-    return item ? { ...item, dismissed: true } : null;
+    const fence = center.createFence?.();
+    center.dismiss(id, { pendingSync: true });
+    persistPresentationMutation(id, 'dismiss', fence);
+    return item ? { ...item, dismissed: true, dismissSyncState: 'PENDING_SYNC' } : null;
   };
   const syncGlobalBadges = (_source, scope = document) => getNotificationCenter()?.syncBadges?.(scope) ?? 0;
   const openPayload = (payload) => { markAsRead(payload.id); const target=String(payload.targetUrl||'').trim(); if(target)window.location.href=target; };
@@ -265,13 +285,23 @@
     }
     const fence = center.createFence?.();
     return Promise.resolve(service.list({ dismissed: false, currentUser: true }))
-      .then((items) => center.replace((Array.isArray(items) ? items : []).filter(isForCurrentUser), fence ? { fence } : {}))
-      .catch(() => center.getSnapshot());
+      .then((items) => center.reconcile((Array.isArray(items) ? items : []).filter(isForCurrentUser), fence ? { fence, completeSnapshot: true } : { completeSnapshot: true }))
+      .catch(() => {
+        center.setBadgeMetadata?.({ freshness: 'DEGRADED', sourceAuthority: 'DERIVED_PRESENTATION' });
+        return center.getSnapshot();
+      });
   };
-  const applySynchronizedItems = (items) => {
+  const applySynchronizedItems = (detail = {}) => {
     const center = getNotificationCenter();
     if (!center) return null;
-    return center.replace((Array.isArray(items) ? items : []).filter(isForCurrentUser));
+    const accountId = String(detail.accountId || '').trim().toLowerCase();
+    const currentId = String(getCurrentUser()?.id || '').trim().toLowerCase();
+    if (accountId && currentId && accountId !== currentId) return center.getSnapshot();
+    return center.reconcile((Array.isArray(detail.items) ? detail.items : []).filter(isForCurrentUser), {
+      completeSnapshot: detail.completeSnapshot !== false,
+      freshness: detail.freshness || 'UNKNOWN',
+      sourceAuthority: detail.sourceAuthority || 'DERIVED_PRESENTATION'
+    });
   };
 
   window.addEventListener('storage', (event) => {
@@ -296,7 +326,7 @@
     show(payload);
   });
   document.addEventListener('doke:notifications-synced', (event) => {
-    applySynchronizedItems(event.detail?.items || []);
+    applySynchronizedItems(event.detail || {});
   });
   document.addEventListener('doke:auth-session-change', () => {
     getToastManager()?.reset?.(getAccountKeys()[0] || 'anonymous');

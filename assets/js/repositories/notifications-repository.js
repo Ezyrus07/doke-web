@@ -303,7 +303,10 @@ function normalizeNotification(raw, options) {
     dismissed: dismissed,
     createdAt: createdAt,
     creatédAt: raw.creatédAt || createdAt,
-    updatedAt: raw.updatedAt || createdAt
+    updatedAt: raw.updatedAt || createdAt,
+    stateSyncStatus: normalizeText(raw.stateSyncStatus || 'synced').toLowerCase(),
+    pendingStatePatch: raw.pendingStatePatch && typeof raw.pendingStatePatch === 'object' ? clone(raw.pendingStatePatch) : null,
+    stateSyncError: normalizeText(raw.stateSyncError || '')
   });
 }
 
@@ -400,6 +403,9 @@ function normalizeDemoItems(items) {
     delete metadata.remoteId;
     delete metadata.syncError;
     delete metadata.syncStatus;
+    delete metadata.stateSyncStatus;
+    delete metadata.pendingStatePatch;
+    delete metadata.stateSyncError;
     return metadata;
   }
 
@@ -426,7 +432,10 @@ function normalizeDemoItems(items) {
       createdAt: row.created_at || metadata.createdAt || nowIso(),
       updatedAt: row.updated_at || row.created_at || metadata.updatedAt || nowIso(),
       syncStatus: 'synced',
-      syncError: ''
+      syncError: '',
+      stateSyncStatus: 'synced',
+      pendingStatePatch: null,
+      stateSyncError: ''
     }), { sourceAuthority: 'CANONICAL_REMOTE' });
   }
 
@@ -444,12 +453,12 @@ function normalizeDemoItems(items) {
     return clone(normalized);
   }
 
-  function dispatchPresentationSnapshot(items, source) {
+  function dispatchPresentationSnapshot(items, source, metadata) {
     var user = getSessionUser();
     var scoped = (Array.isArray(items) ? items : []).filter(function (item) {
       return item && item.dismissed !== true && matchesCurrentUser(item, user);
     });
-    dispatchSynced(scoped, source || 'repository');
+    dispatchSynced(scoped, source || 'repository', metadata || {});
   }
 
   function dispatchCreated(notification, source) {
@@ -472,10 +481,19 @@ function normalizeDemoItems(items) {
     } catch (error) { /* Event delivery is best-effort outside the browser. */ }
   }
 
-  function dispatchSynced(items, source) {
+  function dispatchSynced(items, source, metadata) {
+    metadata = metadata && typeof metadata === 'object' ? metadata : {};
+    var user = getSessionUser() || {};
     try {
       document.dispatchEvent(new CustomEvent('doke:notifications-synced', {
-        detail: { items: clone(items || []), source: source || 'remote' }
+        detail: {
+          items: clone(items || []),
+          source: source || 'remote',
+          accountId: normalizeText(user.id || user.userId || user.uid || ''),
+          freshness: normalizeText(metadata.freshness || 'UNKNOWN').toUpperCase(),
+          sourceAuthority: normalizeText(metadata.sourceAuthority || 'DERIVED_PRESENTATION').toUpperCase(),
+          completeSnapshot: metadata.completeSnapshot !== false
+        }
       }));
     } catch (error) { /* Event delivery is best-effort outside the browser. */ }
   }
@@ -498,7 +516,9 @@ function normalizeDemoItems(items) {
     var eventType = normalizeText(payload && payload.eventType || '').toUpperCase();
     if (eventType === 'INSERT') dispatchCreated(notification, 'realtime');
     else dispatchUpdated(notification, 'realtime');
-    dispatchPresentationSnapshot(listLocal({ dismissed: false }));
+    dispatchPresentationSnapshot(listLocal({ dismissed: false }), 'realtime', {
+      freshness: 'FRESH', sourceAuthority: 'DERIVED_PRESENTATION', completeSnapshot: true
+    });
   }
 
   function startRealtime(userId) {
@@ -612,20 +632,45 @@ function normalizeDemoItems(items) {
 
     return getCurrentSupabaseUser(client).then(function (user) {
       if (!user || !isUuid(user.id)) return items || [];
-      var pending = (items || []).filter(function (item) {
+      var pendingCreates = (items || []).filter(function (item) {
         if (!item || !item.id || item.syncStatus === 'synced' || !isUuid(item.userId)) return false;
         return !item.actorId || String(item.actorId) === String(user.id);
       });
-      return pending.reduce(function (chain, item) {
+
+      return pendingCreates.reduce(function (chain, item) {
         return chain.then(function () {
           return saveRemote(item).then(function (synced) {
-            saveLocal(synced, 'synced');
+            saveLocal(Object.assign({}, synced, {
+              stateSyncStatus: 'synced', pendingStatePatch: null, stateSyncError: ''
+            }), 'synced');
           }).catch(function (error) {
             warnRemote(error, 'sincronização pendente');
             saveLocal(Object.assign({}, item, { syncStatus: 'pending', syncError: normalizeText(error && error.message) }), 'pending');
           });
         });
-      }, Promise.resolve()).then(function () { return readLocal(); });
+      }, Promise.resolve()).then(function () {
+        var refreshed = readLocal();
+        var pendingState = refreshed.filter(function (item) {
+          return item && item.id && item.stateSyncStatus === 'pending'
+            && item.pendingStatePatch && typeof item.pendingStatePatch === 'object';
+        });
+        return pendingState.reduce(function (chain, item) {
+          return chain.then(function () {
+            return updateRemote(item.id, item.pendingStatePatch).then(function (remoteChanged) {
+              if (!remoteChanged) throw new Error('Estado remoto da notificação não confirmado.');
+              saveLocal(Object.assign({}, remoteChanged, {
+                stateSyncStatus: 'synced', pendingStatePatch: null, stateSyncError: ''
+              }), 'synced');
+            }).catch(function (error) {
+              warnRemote(error, 'sincronização de estado pendente');
+              saveLocal(Object.assign({}, item, {
+                stateSyncStatus: 'pending',
+                stateSyncError: normalizeText(error && error.message)
+              }), item.syncStatus || 'synced');
+            });
+          });
+        }, Promise.resolve());
+      }).then(function () { return readLocal(); });
     });
   }
 
@@ -653,7 +698,9 @@ function normalizeDemoItems(items) {
     if (!getSupabaseClient()) {
       return baseTask.then(function (base) {
         cache = mergeById(Array.isArray(base) ? base : [], local);
-        dispatchPresentationSnapshot(cache);
+        dispatchPresentationSnapshot(cache, 'local-list', {
+          freshness: 'FRESH', sourceAuthority: 'CANONICAL_LOCAL', completeSnapshot: true
+        });
         return clone(cache);
       });
     }
@@ -665,14 +712,18 @@ function normalizeDemoItems(items) {
       cache = mergeById(base, local, remote);
       return synchronizePending(cache).then(function () {
         cache = mergeById(base, readLocal(), remote);
-        dispatchPresentationSnapshot(cache);
+        dispatchPresentationSnapshot(cache, 'remote-list', {
+          freshness: 'FRESH', sourceAuthority: 'DERIVED_PRESENTATION', completeSnapshot: true
+        });
         return clone(cache);
       });
     }).catch(function (error) {
       warnRemote(error, 'leitura');
       return baseTask.then(function (base) {
         cache = mergeById(Array.isArray(base) ? base : [], readLocal());
-        dispatchPresentationSnapshot(cache);
+        dispatchPresentationSnapshot(cache, 'local-fallback', {
+          freshness: 'DEGRADED', sourceAuthority: 'DERIVED_PRESENTATION', completeSnapshot: true
+        });
         return clone(cache);
       });
     });
@@ -801,26 +852,54 @@ function normalizeDemoItems(items) {
   function update(id, patch) {
     var notificationId = normalizeText(id);
     var changed = null;
+    var client = getSupabaseClient();
+    var statePatch = {};
+    if (patch && Object.prototype.hasOwnProperty.call(patch, 'read')) statePatch.read = patch.read === true;
+    if (patch && Object.prototype.hasOwnProperty.call(patch, 'dismissed')) statePatch.dismissed = patch.dismissed === true;
+    var hasStatePatch = Object.keys(statePatch).length > 0;
+
     var local = readLocal().map(function (item) {
       if (String(item.id) !== notificationId) return item;
-      changed = normalizeNotification(Object.assign({}, item, patch || {}, { updatedAt: nowIso() }));
+      var next = Object.assign({}, item, patch || {}, { updatedAt: nowIso() });
+      if (hasStatePatch) {
+        next.stateSyncStatus = client ? 'pending' : 'local';
+        next.pendingStatePatch = client ? clone(statePatch) : null;
+        next.stateSyncError = '';
+      }
+      changed = normalizeNotification(next);
       return changed;
     });
     if (changed) {
       writeLocal(local);
       dispatchUpdated(changed, 'local');
-      dispatchPresentationSnapshot(listLocal({ dismissed: false }));
+      dispatchPresentationSnapshot(listLocal({ dismissed: false }), 'local-mutation', {
+        freshness: client ? 'STALE' : 'FRESH',
+        sourceAuthority: client ? 'DERIVED_PRESENTATION' : 'CANONICAL_LOCAL',
+        completeSnapshot: true
+      });
     }
-    if (!changed || !getSupabaseClient()) return Promise.resolve(clone(changed));
+    if (!changed || !client) return Promise.resolve(clone(changed));
 
     return updateRemote(notificationId, patch || {}).then(function (remoteChanged) {
-      if (!remoteChanged) return clone(changed);
-      var synced = saveLocal(remoteChanged, 'synced');
-      dispatchPresentationSnapshot(listLocal({ dismissed: false }));
+      if (!remoteChanged) throw new Error('Estado remoto da notificação não confirmado.');
+      var synced = saveLocal(Object.assign({}, remoteChanged, {
+        stateSyncStatus: 'synced', pendingStatePatch: null, stateSyncError: ''
+      }), 'synced');
+      dispatchPresentationSnapshot(listLocal({ dismissed: false }), 'remote-mutation', {
+        freshness: 'FRESH', sourceAuthority: 'DERIVED_PRESENTATION', completeSnapshot: true
+      });
       return clone(synced);
     }).catch(function (error) {
       warnRemote(error, 'atualização');
-      return clone(changed);
+      var pending = saveLocal(Object.assign({}, changed, {
+        stateSyncStatus: 'pending',
+        pendingStatePatch: clone(statePatch),
+        stateSyncError: normalizeText(error && error.message)
+      }), changed.syncStatus || 'synced');
+      dispatchPresentationSnapshot(listLocal({ dismissed: false }), 'offline-mutation', {
+        freshness: 'DEGRADED', sourceAuthority: 'DERIVED_PRESENTATION', completeSnapshot: true
+      });
+      return clone(pending);
     });
   }
 
