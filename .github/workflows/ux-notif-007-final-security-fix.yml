@@ -26,8 +26,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD^)" = '4fd64947f3cab55c07e7fbdc7e58ae4ccf5dcaca'
-          test "$(git rev-parse HEAD^^)" = '489b91d6b12ad377f1275296e1cbb137dd9d0d23'
+          test "$(git rev-parse HEAD^)" = '7043bcb574cd9f16bece4997ea54e52390ecb308'
+          test "$(git rev-parse HEAD^^)" = '4fd64947f3cab55c07e7fbdc7e58ae4ccf5dcaca'
+          test "$(git rev-parse HEAD^^^)" = '489b91d6b12ad377f1275296e1cbb137dd9d0d23'
 
       - name: Setup Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
@@ -123,28 +124,37 @@ jobs:
           git rm .github/workflows/ux-notif-007-security-inspect.yml
           git rm .github/workflows/ux-notif-007-final-security-fix.yml
 
-      - name: Validate intended permanent tree
+      - name: Regenerate canonical Matrix on intended final tree
         run: |
+          git add assets/js/features/in-app-notifications.js
+          npm run write:domain-completion-matrix
+          git add docs/DOMAIN-COMPLETION-MATRIX.md
           npm run audit:domain-completion-matrix
-          npm run audit:agent-governance
+
+      - name: Validate canonical agent governance
+        run: npm run audit:agent-governance
+
+      - name: Restore unrelated generated audit outputs
+        run: git restore --worktree -- .
 
       - name: Validate deterministic final delta
         shell: bash
         run: |
           set -euo pipefail
-          git add assets/js/features/in-app-notifications.js
           git diff --cached --check
           mapfile -t paths < <(git diff --cached --name-only | sort)
           printf '%s\n' "${paths[@]}"
-          test "${#paths[@]}" -eq 3
+          test "${#paths[@]}" -eq 4
           printf '%s\n' "${paths[@]}" | grep -Fxq '.github/workflows/ux-notif-007-final-security-fix.yml'
           printf '%s\n' "${paths[@]}" | grep -Fxq '.github/workflows/ux-notif-007-security-inspect.yml'
           printf '%s\n' "${paths[@]}" | grep -Fxq 'assets/js/features/in-app-notifications.js'
+          printf '%s\n' "${paths[@]}" | grep -Fxq 'docs/DOMAIN-COMPLETION-MATRIX.md'
           test "$(git diff --cached --name-status -- .github/workflows/ux-notif-007-security-inspect.yml | awk '{print $1}')" = 'D'
+          test "$(git diff --cached --name-status -- .github/workflows/ux-notif-007-final-security-fix.yml | awk '{print $1}')" = 'D'
 
       - name: Publish final security cleanup
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git commit -m 'fix(ux-notif-007): use secure transient notification identity'
+          git commit -m 'fix(ux-notif-007): secure transient notification identity'
           git push origin HEAD:ux/ux-notif-007-digest-dnd-policy
