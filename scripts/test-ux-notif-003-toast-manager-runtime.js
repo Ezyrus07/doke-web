@@ -95,6 +95,7 @@ let opened = 0;
 let actionResults = 0;
 let sounds = 0;
 let digest = 0;
+let renderErrors = 0;
 
 manager.configure({
   getAccountKey: () => accountKey,
@@ -112,7 +113,12 @@ manager.configure({
   onOpen: () => { opened += 1; },
   onRecordActionResult: () => { actionResults += 1; },
   onPlaySound: () => { sounds += 1; },
-  queueDigest: () => { digest += 1; }
+  queueDigest: () => { digest += 1; },
+  onRenderError: (diagnostic) => {
+    renderErrors += 1;
+    assert.equal(diagnostic.name, 'Error');
+    assert.equal(diagnostic.message, 'renderer failure');
+  }
 });
 
 const payload = (suffix, extra = {}) => ({
@@ -220,6 +226,7 @@ manager.configure({ renderToast: () => false });
 assert.equal(manager.show(payload('renderer-false')), false);
 manager.configure({ renderToast: () => { throw new Error('renderer failure'); } });
 assert.equal(manager.show(payload('renderer-error')), false);
+assert.equal(renderErrors, 1);
 manager.configure({ renderToast: () => ({}) });
 assert.equal(manager.show(payload('renderer-record')), true);
 assert.ok(manager.getRecord('runtime-event-renderer-record'));

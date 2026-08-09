@@ -15,10 +15,10 @@
 
   const normalizeText = (value) => String(value == null ? '' : value).trim();
   const escapeHtml = (value) => normalizeText(value)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;');
 
   const identityOf = (payload = {}) => normalizeText(
     payload.dedupeKey || payload.eventId || payload.eventKey || payload.id || ''
@@ -85,7 +85,16 @@
 
     const repeat = Number(payload.repeatCount || 1);
     const icon = normalizeText(config.iconFor?.(payload) || '!');
-    toast.innerHTML = `<span class="doke-live-toast__icon" aria-hidden="true">${escapeHtml(icon)}</span><span class="doke-live-toast__content"><strong>${escapeHtml(payload.title || 'Nova notificação')}${repeat > 1 ? ` <em>×${repeat}</em>` : ''}</strong><span>${escapeHtml(payload.body || payload.message || '')}</span>${actions.length ? `<span class="doke-live-toast__actions">${actions.map((action, index) => `<button type="button" data-toast-action="${index}">${escapeHtml(action.label)}</button>`).join('')}</span>` : ''}<small class="doke-live-toast__status" data-toast-action-status aria-live="polite"></small></span><button class="doke-live-toast__close doke-close-button doke-icon-btn doke-icon-btn--flat" type="button" aria-label="Fechar notificação"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6 6 18"></path></svg></button>`;
+    const repeatMarkup = repeat > 1 ? ` <em>×${repeat}</em>` : '';
+    const actionButtonsMarkup = actions
+      .map((action, index) => `<button type="button" data-toast-action="${index}">${escapeHtml(action.label)}</button>`)
+      .join('');
+    const actionsMarkup = actionButtonsMarkup
+      ? `<span class="doke-live-toast__actions">${actionButtonsMarkup}</span>`
+      : '';
+    const titleMarkup = `${escapeHtml(payload.title || 'Nova notificação')}${repeatMarkup}`;
+    const bodyMarkup = escapeHtml(payload.body || payload.message || '');
+    toast.innerHTML = `<span class="doke-live-toast__icon" aria-hidden="true">${escapeHtml(icon)}</span><span class="doke-live-toast__content"><strong>${titleMarkup}</strong><span>${bodyMarkup}</span>${actionsMarkup}<small class="doke-live-toast__status" data-toast-action-status aria-live="polite"></small></span><button class="doke-live-toast__close doke-close-button doke-icon-btn doke-icon-btn--flat" type="button" aria-label="Fechar notificação"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6 6 18"></path></svg></button>`;
 
     let timer = null;
     const close = () => {
@@ -229,8 +238,12 @@
       state.records.set(identity, normalizedRecord);
       if (normalizedRecord.notificationId) state.notificationIndex.set(normalizedRecord.notificationId, identity);
       return true;
-    } catch (_error) {
+    } catch (error) {
       state.seen.delete(identity);
+      config.onRenderError?.(Object.freeze({
+        name: normalizeText(error?.name || 'Error'),
+        message: normalizeText(error?.message || 'Toast renderer failed')
+      }));
       return false;
     }
   };
