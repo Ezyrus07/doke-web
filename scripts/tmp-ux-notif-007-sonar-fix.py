@@ -18,45 +18,94 @@ def replace_exact(text, old, new, label):
         raise SystemExit(f'{label}: expected 1 match, got {count}')
     return text.replace(old, new, 1)
 
-# notification-delivery: optional chain + explicit storage failure handling + stable synthetic digest identity.
+# notification-delivery
 path = 'assets/js/core/notification-delivery.js'
 text = read(path)
-text = replace_exact(
-    text,
+text = replace_exact(text,
     "  if (Doke.notificationDelivery && Doke.notificationDelivery.version === VERSION) return;",
     "  if (Doke.notificationDelivery?.version === VERSION) return;",
-    'delivery optional chain'
-)
-text = replace_exact(
-    text,
-    "    } catch (_error) {\n      return fallback;\n    }",
-    "    } catch {\n      console.warn('[Doke.notificationDelivery] account storage read failed');\n      return fallback;\n    }",
-    'delivery read catch'
-)
-text = replace_exact(
-    text,
-    "    } catch (_error) {\n      return false;\n    }",
-    "    } catch {\n      console.warn('[Doke.notificationDelivery] account storage write failed');\n      return false;\n    }",
-    'delivery write catch'
-)
-text = replace_exact(
-    text,
-    "    } catch (_error) {\n      return false;\n    }",
-    "    } catch {\n      console.warn('[Doke.notificationDelivery] account storage remove failed');\n      return false;\n    }",
-    'delivery remove catch'
-)
-text = replace_exact(
-    text,
-    "    const payload = Object.freeze({\n      id: `digest-${Date.now()}`,\n      eventKey: `digest-${Date.now()}`,",
-    "    const digestId = `digest-${Date.now()}`;\n    const payload = Object.freeze({\n      id: digestId,\n      eventKey: digestId,",
-    'delivery digest identity'
-)
+    'delivery optional chain')
+text = replace_exact(text,
+"""  const readValue = (key, fallback) => {
+    try {
+      const accountStorage = storage();
+      if (!accountStorage?.read) return fallback;
+      const value = accountStorage.read({ domain: DOMAIN, key, version: STORAGE_VERSION });
+      return value == null ? fallback : value;
+    } catch (_error) {
+      return fallback;
+    }
+  };""",
+"""  const readValue = (key, fallback) => {
+    try {
+      const accountStorage = storage();
+      if (!accountStorage?.read) return fallback;
+      const value = accountStorage.read({ domain: DOMAIN, key, version: STORAGE_VERSION });
+      return value == null ? fallback : value;
+    } catch {
+      console.warn('[Doke.notificationDelivery] account storage read failed');
+      return fallback;
+    }
+  };""", 'delivery read handler')
+text = replace_exact(text,
+"""  const writeValue = (key, value) => {
+    try {
+      const accountStorage = storage();
+      if (!accountStorage?.write) return false;
+      accountStorage.write({ domain: DOMAIN, key, version: STORAGE_VERSION, value });
+      return true;
+    } catch (_error) {
+      return false;
+    }
+  };""",
+"""  const writeValue = (key, value) => {
+    try {
+      const accountStorage = storage();
+      if (!accountStorage?.write) return false;
+      accountStorage.write({ domain: DOMAIN, key, version: STORAGE_VERSION, value });
+      return true;
+    } catch {
+      console.warn('[Doke.notificationDelivery] account storage write failed');
+      return false;
+    }
+  };""", 'delivery write handler')
+text = replace_exact(text,
+"""  const removeValue = (key) => {
+    try {
+      const accountStorage = storage();
+      if (!accountStorage?.remove) return false;
+      accountStorage.remove({ domain: DOMAIN, key, version: STORAGE_VERSION });
+      return true;
+    } catch (_error) {
+      return false;
+    }
+  };""",
+"""  const removeValue = (key) => {
+    try {
+      const accountStorage = storage();
+      if (!accountStorage?.remove) return false;
+      accountStorage.remove({ domain: DOMAIN, key, version: STORAGE_VERSION });
+      return true;
+    } catch {
+      console.warn('[Doke.notificationDelivery] account storage remove failed');
+      return false;
+    }
+  };""", 'delivery remove handler')
+text = replace_exact(text,
+"""    const payload = Object.freeze({
+      id: `digest-${Date.now()}`,
+      eventKey: `digest-${Date.now()}`,""",
+"""    const digestId = `digest-${Date.now()}`;
+    const payload = Object.freeze({
+      id: digestId,
+      eventKey: digestId,""", 'delivery digest identity')
 write(path, text)
 
-# notification-toast: extract delivery routing from show() to reduce cognitive complexity.
+# notification-toast
 path = 'assets/js/core/notification-toast.js'
 text = read(path)
-old = """  const show = (payload, options = {}) => {
+text = replace_exact(text,
+"""  const show = (payload, options = {}) => {
     if (!payload || config.isForCurrentUser?.(payload) === false) return false;
     ensureAccountFence();
     if (!policyAllows(payload)) return false;
@@ -79,9 +128,8 @@ old = """  const show = (payload, options = {}) => {
       }
     }
 
-    const renderer = typeof config.renderToast === 'function' ? config.renderToast : defaultRender;
-"""
-new = """  const deliveryAllows = (payload, options) => {
+    const renderer = typeof config.renderToast === 'function' ? config.renderToast : defaultRender;""",
+"""  const deliveryAllows = (payload, options) => {
     if (typeof config.getDeliveryDecision === 'function') {
       if (options.skipDelivery === true || options.skipDigest === true) return true;
       const deliveryDecision = config.getDeliveryDecision(payload, options) || {};
@@ -107,18 +155,15 @@ new = """  const deliveryAllows = (payload, options) => {
     if (state.seen.has(identity) && options.force !== true) return false;
     if (!deliveryAllows(payload, options)) return false;
 
-    const renderer = typeof config.renderToast === 'function' ? config.renderToast : defaultRender;
-"""
-text = replace_exact(text, old, new, 'toast delivery extraction')
+    const renderer = typeof config.renderToast === 'function' ? config.renderToast : defaultRender;""", 'toast delivery extraction')
 write(path, text)
 
-# in-app adapter: expand one-line sound/publish blocks and handle failures explicitly.
+# in-app adapter
 path = 'assets/js/features/in-app-notifications.js'
 text = read(path)
-text = replace_exact(
-    text,
-    "  const playSound = (priority) => { if(priority==='silent'||getDeliveryManager()?.getPreferences?.().sound===false)return; try { const AudioContext=window.AudioContext||window.webkitAudioContext; if(!AudioContext)return; const ctx=new AudioContext(); const oscillator=ctx.createOscillator(); const gain=ctx.createGain(); oscillator.frequency.value=priority==='high'?760:620; gain.gain.setValueAtTime(.0001,ctx.currentTime); gain.gain.exponentialRampToValueAtTime(.045,ctx.currentTime+.015); gain.gain.exponentialRampToValueAtTime(.0001,ctx.currentTime+.14); oscillator.connect(gain).connect(ctx.destination); oscillator.start(); oscillator.stop(ctx.currentTime+.15); } catch(_error){} };",
-    """  const playSound = (priority) => {
+text = replace_exact(text,
+"  const playSound = (priority) => { if(priority==='silent'||getDeliveryManager()?.getPreferences?.().sound===false)return; try { const AudioContext=window.AudioContext||window.webkitAudioContext; if(!AudioContext)return; const ctx=new AudioContext(); const oscillator=ctx.createOscillator(); const gain=ctx.createGain(); oscillator.frequency.value=priority==='high'?760:620; gain.gain.setValueAtTime(.0001,ctx.currentTime); gain.gain.exponentialRampToValueAtTime(.045,ctx.currentTime+.015); gain.gain.exponentialRampToValueAtTime(.0001,ctx.currentTime+.14); oscillator.connect(gain).connect(ctx.destination); oscillator.start(); oscillator.stop(ctx.currentTime+.15); } catch(_error){} };",
+"""  const playSound = (priority) => {
     if (priority === 'silent' || getDeliveryManager()?.getPreferences?.().sound === false) return;
     try {
       const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -136,13 +181,10 @@ text = replace_exact(
     } catch {
       console.warn('[Doke.inAppNotifications] notification sound failed');
     }
-  };""",
-    'adapter playSound'
-)
-text = replace_exact(
-    text,
-    "  const publish = (payload={}) => { const envelope={...payload,id:payload.id||payload.eventKey||`live-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,createdAt:payload.createdAt||new Date().toISOString(),originTabId:TAB_ID};const stored=persist(envelope);try{localStorage.setItem(BUS_KEY,JSON.stringify(stored));}catch(_error){}document.dispatchEvent(new CustomEvent('doke:in-app-notification',{detail:stored}));return stored; };",
-    """  const publish = (payload = {}) => {
+  };""", 'adapter playSound')
+text = replace_exact(text,
+"  const publish = (payload={}) => { const envelope={...payload,id:payload.id||payload.eventKey||`live-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,createdAt:payload.createdAt||new Date().toISOString(),originTabId:TAB_ID};const stored=persist(envelope);try{localStorage.setItem(BUS_KEY,JSON.stringify(stored));}catch(_error){}document.dispatchEvent(new CustomEvent('doke:in-app-notification',{detail:stored}));return stored; };",
+"""  const publish = (payload = {}) => {
     const envelope = {
       ...payload,
       id: payload.id || payload.eventKey || `live-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -157,9 +199,7 @@ text = replace_exact(
     }
     document.dispatchEvent(new CustomEvent('doke:in-app-notification', { detail: stored }));
     return stored;
-  };""",
-    'adapter publish'
-)
+  };""", 'adapter publish')
 write(path, text)
 
 print('UX-NOTIF-007 Sonar cleanup patch applied')
