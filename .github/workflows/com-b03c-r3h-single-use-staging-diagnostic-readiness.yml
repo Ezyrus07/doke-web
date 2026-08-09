@@ -18,7 +18,7 @@ on:
     branches: [com/com-001-baseline-audit]
     paths: [config/com-b03c-r3h-case-time-policy-snapshot-presence-diagnostic-staging-trigger.json]
 
-permissions: { contents: write }
+permissions: { contents: read }
 concurrency:
   group: com-b03c-r3h-${{ github.ref }}-${{ github.event_name }}
   cancel-in-progress: false
@@ -28,9 +28,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.ref }}
-          fetch-depth: 0
+        with: { fetch-depth: 0 }
       - uses: actions/setup-node@v4
         with: { node-version: '24' }
       - name: Syntax
@@ -69,24 +67,6 @@ jobs:
           test "$(git rev-parse HEAD^)" = "$(node -p "require('./${TRIGGER}').workflowInstallHead")"
           test "$(git diff --name-only HEAD^ HEAD | wc -l | tr -d ' ')" = "1"
           test "$(git diff --name-only HEAD^ HEAD)" = "${TRIGGER}"
-      - name: Canonical domain completion matrix writer
-        if: github.event_name == 'pull_request'
-        shell: bash
-        run: |
-          npm run write:domain-completion-matrix
-          allowed='^(docs/DOMAIN-COMPLETION-MATRIX.md|reports/generated/domain-completion-matrix-report.json)$'
-          changed="$(git diff --name-only)"
-          if [ -n "$changed" ]; then
-            printf '%s\n' "$changed" | grep -Ev "$allowed" > /tmp/r3h-unexpected || true
-            test ! -s /tmp/r3h-unexpected
-            git config user.name doke
-            git config user.email bielantoniomma@gmail.com
-            git add docs/DOMAIN-COMPLETION-MATRIX.md
-            git add -f reports/generated/domain-completion-matrix-report.json
-            test "$(git diff --cached --name-only | wc -l | tr -d ' ')" -le 2
-            git commit -m 'docs(gov): regenerate domain completion matrix for COM-B03C-R3H'
-            git push origin HEAD:${{ github.event.pull_request.head.ref }}
-          fi
       - name: Domain completion matrix audit
         if: github.event_name == 'pull_request'
         run: npm run audit:domain-completion-matrix
@@ -107,7 +87,7 @@ jobs:
       - name: Diff hygiene
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            git diff --check "${{ github.event.pull_request.base.sha }}" HEAD
+            git diff --check "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}"
           else
             git diff --check HEAD^ HEAD
           fi
