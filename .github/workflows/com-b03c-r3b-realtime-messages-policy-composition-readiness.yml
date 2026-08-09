@@ -1,0 +1,48 @@
+name: COM-B03C-R3B Realtime Messages Policy Composition Readiness
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - backend/modules/communities/community-realtime-private-auth-r3b.js
+      - config/com-b03c-r3b-realtime-messages-policy-composition-readiness.json
+      - scripts/test-com-b03c-r3b-realtime-messages-policy-composition-readiness.js
+      - docs/validation/COM-B03C-R3B-REALTIME-MESSAGES-POLICY-COMPOSITION-READINESS.json
+      - .github/workflows/com-b03c-r3b-realtime-messages-policy-composition-readiness.yml
+
+permissions: { contents: read }
+concurrency:
+  group: com-b03c-r3b-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 2 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+      - name: Syntax
+        run: |
+          node --check backend/modules/communities/community-realtime-private-auth-r3b.js
+          node --check scripts/test-com-b03c-r3b-realtime-messages-policy-composition-readiness.js
+      - name: COM-B03C-R3B repository RCA readiness
+        run: node scripts/test-com-b03c-r3b-realtime-messages-policy-composition-readiness.js
+      - name: Domain completion matrix audit
+        run: npm run audit:domain-completion-matrix
+      - name: Agent governance audit
+        run: npm run audit:agent-governance
+      - name: Repository-only boundary guard
+        run: |
+          test ! -f config/com-b03c-r3b-realtime-messages-policy-composition-staging-trigger.json
+          ! grep -R -nE 'environment:[[:space:]]*doke-staging|secrets\.|SUPABASE_ACCESS_TOKEN|SUPABASE_DB_PASSWORD' \
+            backend/modules/communities/community-realtime-private-auth-r3b.js \
+            config/com-b03c-r3b-realtime-messages-policy-composition-readiness.json \
+            scripts/test-com-b03c-r3b-realtime-messages-policy-composition-readiness.js \
+            docs/validation/COM-B03C-R3B-REALTIME-MESSAGES-POLICY-COMPOSITION-READINESS.json
+      - name: Diff hygiene
+        run: |
+          TARGET_SHA="${{ github.event.pull_request.head.sha }}"
+          git fetch --no-tags --depth=2 origin "${TARGET_SHA}"
+          git diff --check "${TARGET_SHA}^" "${TARGET_SHA}"
