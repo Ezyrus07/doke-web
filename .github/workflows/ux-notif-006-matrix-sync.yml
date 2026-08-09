@@ -22,11 +22,12 @@ jobs:
           ref: ux/ux-notif-006-event-policy-matrix
           fetch-depth: 0
 
-      - name: Guard exact implementation parent
+      - name: Guard exact implementation ancestry
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = '8f95078796567133b7566922625992c7fce3bcc6'
+          test "$(git rev-parse HEAD^)" = '24bd427e7b2f1085063975bcf91630d2021051f7'
+          test "$(git rev-parse HEAD^^)" = '72b5d89eaf7c422ff81e557a797f5b60ecdc2759'
 
       - name: Setup Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
@@ -100,8 +101,6 @@ jobs:
 
       - name: Publish canonical matrix sync
         shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
