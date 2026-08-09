@@ -9,9 +9,8 @@ const dispatchedEvents = [];
 let currentUser = { id: 'account_alpha_123456' };
 let serviceItems = [{ id: 'alpha-reload', eventKey: 'alpha-reload', userId: currentUser.id, title: 'Reload', read: false }];
 const badge = { textContent: '', hidden: true, dataset: {}, classList: { contains() { return false; } } };
-const storage = new Map([
-  ['doke.in-app-notification.preferences.v1', JSON.stringify({ social: false, messages: false, reactions: false, mentions: false, events: false, sound: false, digest: false })]
-]);
+const storage = new Map();
+const storageDomains = new Map();
 
 class CustomEventStub {
   constructor(type, options = {}) { this.type = type; this.detail = options.detail; }
@@ -45,9 +44,16 @@ const documentStub = {
 const Doke = {
   session: { getCurrentUser() { return currentUser; } },
   accountStorage: {
-    resolveScope() {
-      return currentUser ? { scopeId: currentUser.id, kind: 'account' } : { scopeId: 'guest_scope_123456', kind: 'guest' };
-    }
+    dataClasses: { ACCOUNT_PRIVATE: 'account_private' },
+    retention: { UNTIL_LOGOUT: 'until_logout' },
+    crossTab: { METADATA: 'metadata' },
+    registerDomain(policy) { storageDomains.set(policy.domain, { ...policy }); return policy; },
+    resolveScope() { return currentUser ? { scopeId: currentUser.id, kind: 'account' } : { scopeId: 'guest_scope_123456', kind: 'guest' }; },
+    makeKey({ domain, key, version = 1 }) { return `doke:${this.resolveScope().scopeId}:${domain}:${key}:v${version}`; },
+    publicDescriptor(key) { const parts=String(key).split(':'); return { scopeFingerprint:`scope_${parts[1]}`, domain:parts[2], keyFingerprint:`key_${parts[3]}`, version:Number(String(parts[4]||'').slice(1))||1 }; },
+    read(options) { const key=typeof options==='string'?options:this.makeKey(options); const raw=localStorageStub.getItem(key); return raw==null?null:JSON.parse(raw); },
+    write(options) { const key=options.storageKey||this.makeKey(options); localStorageStub.setItem(key,JSON.stringify(options.value)); return { storageKey:key, value:options.value, descriptor:this.publicDescriptor(key) }; },
+    remove(options) { const key=typeof options==='string'?options:this.makeKey(options); localStorageStub.removeItem(key); return true; }
   },
   services: {
     notifications: {
@@ -78,9 +84,11 @@ global.CustomEvent = CustomEventStub;
 global.localStorage = localStorageStub;
 
 delete require.cache[require.resolve('../assets/js/core/notification-center.js')];
+delete require.cache[require.resolve('../assets/js/core/notification-delivery.js')];
 delete require.cache[require.resolve('../assets/js/core/notification-toast.js')];
 delete require.cache[require.resolve('../assets/js/features/in-app-notifications.js')];
 require('../assets/js/core/notification-center.js');
+require('../assets/js/core/notification-delivery.js');
 require('../assets/js/core/notification-toast.js');
 require('../assets/js/features/in-app-notifications.js');
 
@@ -92,6 +100,7 @@ assert(inApp, 'in-app notification adapter must be available');
 async function flush() { await Promise.resolve(); await Promise.resolve(); }
 
 (async () => {
+  inApp.setPreferences({ social: false, messages: false, reactions: false, mentions: false, events: false, sound: false, digest: false });
   documentStub.dispatchEvent(new CustomEventStub('DOMContentLoaded'));
   await flush();
   assert.equal(center.getSnapshot().unreadCount, 1, 'reload hydration must populate canonical center');
@@ -153,7 +162,8 @@ async function flush() { await Promise.resolve(); await Promise.resolve(); }
     createdAt: new Date().toISOString()
   });
   assert.equal(queuedDuringDnd, false);
-  assert.equal(storage.has('doke.in-app-notification.digest.v1'), true, 'DND must queue digest instead of rendering DOM');
+  const alphaDigestKey = Doke.accountStorage.makeKey({ domain: 'notification_delivery', key: 'digest_queue', version: 1 });
+  assert.equal(storage.has(alphaDigestKey), true, 'DND must queue digest in the current account scope');
 
   const resumedPrefs = inApp.setPreferences({
     social: false,
@@ -169,8 +179,9 @@ async function flush() { await Promise.resolve(); await Promise.resolve(); }
     mutedScopes: []
   });
   assert.equal(inApp.isDndActive(resumedPrefs), false);
+  Doke.notificationToast.configure({ renderToast(payload) { return { payload, notificationId: payload.id }; } });
   inApp.flushDigest();
-  assert.equal(storage.has('doke.in-app-notification.digest.v1'), false, 'digest flush must drain queued notifications');
+  assert.equal(storage.has(alphaDigestKey), false, 'digest flush must drain the scoped queue');
 
   const actionCommand = inApp.publishAction({ kind: 'coverage-check', notificationId: 'alpha-reload' });
   assert.equal(actionCommand.kind, 'coverage-check');
@@ -185,12 +196,14 @@ async function flush() { await Promise.resolve(); await Promise.resolve(); }
   documentStub.dispatchEvent(new CustomEventStub('doke:auth-session-change'));
   await flush();
   assert.deepEqual(center.getSnapshot().items.map((item) => item.id), ['beta-1'], 'account switch must clear and rehydrate only current account');
+  assert.equal(inApp.getPreferences().social, true, 'beta account must not inherit alpha delivery preferences');
 
-  const storageListener = (windowListeners.get('storage') || [])[0];
-  assert(storageListener, 'cross-tab storage listener must be registered');
+  const storageListeners = windowListeners.get('storage') || [];
+  assert(storageListeners.length >= 2, 'delivery and adapter cross-tab storage listeners must be registered');
+  const dispatchStorage = (event) => storageListeners.forEach((listener) => listener(event));
 
   const actionEventsBefore = dispatchedEvents.filter((event) => event.type === 'doke:notification-action').length;
-  storageListener({
+  dispatchStorage({
     key: 'doke.in-app-notification.action.v1',
     newValue: JSON.stringify({ id: 'remote-action', originTabId: 'other-tab' })
   });
@@ -201,9 +214,9 @@ async function flush() { await Promise.resolve(); await Promise.resolve(); }
   );
 
   const preferenceEventsBefore = dispatchedEvents.filter((event) => event.type === 'doke:notification-preferences-changed').length;
-  storageListener({
-    key: 'doke.in-app-notification.preferences.v1',
-    newValue: JSON.stringify(inApp.getPreferences())
+  dispatchStorage({
+    key: Doke.accountStorage.makeKey({ domain: 'notification_delivery', key: 'preferences', version: 1 }),
+    newValue: storage.get(Doke.accountStorage.makeKey({ domain: 'notification_delivery', key: 'preferences', version: 1 }))
   });
   assert.equal(
     dispatchedEvents.filter((event) => event.type === 'doke:notification-preferences-changed').length,
@@ -211,7 +224,7 @@ async function flush() { await Promise.resolve(); await Promise.resolve(); }
     'cross-tab preference storage event must be forwarded once'
   );
 
-  storageListener({
+  dispatchStorage({
     key: 'doke.in-app-notification.bus.v1',
     newValue: JSON.stringify({ id: 'beta-cross-tab', eventKey: 'beta-cross-tab', recipientAccountKey: currentUser.id, title: 'Cross-tab', read: false, originTabId: 'other-tab' })
   });
