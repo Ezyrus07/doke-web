@@ -3,14 +3,15 @@
 const r3b = require('./community-realtime-private-auth-r3b');
 
 const CONTRACT_ID = 'com-b03c-r3c-realtime-messages-policy-catalog-readonly-staging-readiness-v1';
-const TRIGGER_CONTRACT_ID = 'com-b03c-r3c-realtime-messages-policy-catalog-readonly-staging-trigger-v1';
+const TRIGGER_CONTRACT_ID = 'com-b03c-r3c-realtime-messages-policy-catalog-readonly-staging-trigger-v2';
 const PREDECESSOR_VALIDATION_ID = 'COM-B03C-R3B-REALTIME-MESSAGES-POLICY-COMPOSITION-READINESS';
 const PREDECESSOR_STATUS = 'repository_policy_composition_rca_complete_current_staging_inventory_unobserved';
 const REPORT_VALIDATION_ID = 'COM-B03C-R3C-REALTIME-MESSAGES-POLICY-CATALOG-STAGING-ATTEMPT';
 const REQUIRED_PROJECT_ID = 'zwkczgewzbsorbrjuzpb';
 const REQUIRED_BRANCH = 'com/com-001-baseline-audit';
 const REQUIRED_PULL_REQUEST = 61;
-const REQUIRED_AUTHORIZATION_PHRASE = 'I_EXPLICITLY_AUTHORIZE_COM_B03C_R3C_READ_ONLY_REALTIME_MESSAGES_POLICY_CATALOG_INSPECTION_ON_DOKE_STAGING';
+const PREVIOUS_AUTHORIZATION_PHRASE = 'I_EXPLICITLY_AUTHORIZE_COM_B03C_R3C_READ_ONLY_REALTIME_MESSAGES_POLICY_CATALOG_INSPECTION_ON_DOKE_STAGING';
+const REQUIRED_AUTHORIZATION_PHRASE = 'I_EXPLICITLY_AUTHORIZE_COM_B03C_R3C_ATTEMPT_2_READ_ONLY_REALTIME_MESSAGES_POLICY_CATALOG_INSPECTION_ON_DOKE_STAGING';
 const TRIGGER_PATH = 'config/com-b03c-r3c-realtime-messages-policy-catalog-readonly-staging-trigger.json';
 const REQUIRED_POLICY_COLUMNS = Object.freeze(['policyname', 'permissive', 'roles', 'cmd', 'qual', 'with_check']);
 const REQUIRED_SCOPE = Object.freeze(['pg_policies:realtime.messages']);
@@ -187,6 +188,7 @@ module.exports = freeze({
   REQUIRED_PROJECT_ID,
   REQUIRED_BRANCH,
   REQUIRED_PULL_REQUEST,
+  PREVIOUS_AUTHORIZATION_PHRASE,
   REQUIRED_AUTHORIZATION_PHRASE,
   TRIGGER_PATH,
   REQUIRED_POLICY_COLUMNS,
