@@ -25,10 +25,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD^)" = "6337fca09cbd780941ba2e461561d1aa996dd469"
-          test "$(git rev-parse HEAD^^)" = "93e93b9fa9e9e687ca006661c9b377d7a6644197"
-          test "$(git rev-parse HEAD^^^)" = "d45c48ac3839a70f2afcdcf01ba251aae1e02f23"
-          test "$(git rev-parse HEAD^^^^)" = "6d97c49cecef7d1a414bd314c595a843ac153998"
+          test "$(git rev-parse HEAD^)" = "be33af7426852f3f865ac22a2a6c527c7a5771df"
+          test "$(git rev-parse HEAD^^)" = "6337fca09cbd780941ba2e461561d1aa996dd469"
+          test "$(git rev-parse HEAD^^^)" = "93e93b9fa9e9e687ca006661c9b377d7a6644197"
+          test "$(git rev-parse HEAD^^^^)" = "d45c48ac3839a70f2afcdcf01ba251aae1e02f23"
+          test "$(git rev-parse HEAD^^^^^)" = "6d97c49cecef7d1a414bd314c595a843ac153998"
 
       - name: Setup Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
@@ -56,10 +57,29 @@ jobs:
           path.write_text(source.replace(old, new, 1), encoding='utf-8')
           PY
 
+      - name: Migrate H01 surface contract to H04 selectors
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('scripts/test-ux-notif-001-surface-contract.js')
+          source = path.read_text(encoding='utf-8')
+          old = '''assert(center.includes("BADGE_SELECTOR = '[data-notifications-unread-count]'"));'''
+          new = '''assert(center.includes('var BADGE_SELECTORS = Object.freeze({'));
+          assert(center.includes("unreadTotal: '[data-notifications-unread-count]'"));
+          assert(center.includes("actionRequiredTotal: '[data-notifications-action-required-count]'"));
+          assert(center.includes("urgentTotal: '[data-notifications-urgent-count]'"));
+          assert(center.includes("unreadMessages: '[data-notifications-messages-count]'"));'''
+          if old not in source:
+              raise SystemExit('H01 badge selector assertion anchor missing')
+          path.write_text(source.replace(old, new, 1), encoding='utf-8')
+          PY
+
       - name: Validate syntax and H04 behavior
         run: |
           node --check assets/js/core/notification-center.js
           node --check scripts/test-ux-notif-004-badge-snapshot.js
+          node --check scripts/test-ux-notif-001-surface-contract.js
           node scripts/test-ux-notif-004-badge-snapshot.js
 
       - name: Preserve UX-NOTIF-001 through UX-NOTIF-003
@@ -100,6 +120,7 @@ jobs:
           git config user.email 'bielantoniomma@gmail.com'
           git add assets/js/core/notification-center.js \
             scripts/test-ux-notif-004-badge-snapshot.js \
+            scripts/test-ux-notif-001-surface-contract.js \
             docs/ux/UX-NOTIF-004.md \
             docs/DOMAIN-COMPLETION-MATRIX.md
           git diff --cached --check
