@@ -5,8 +5,10 @@ on:
     branches:
       - ux/ux-notif-002-event-schema
     paths:
+      - '*.html'
       - 'assets/js/core/notification-event.js'
       - 'scripts/test-ux-notif-002-notification-event.js'
+      - 'scripts/test-ux-notif-002-repository-adapter.js'
       - 'assets/js/core/notification-center.js'
       - 'assets/js/features/in-app-notifications.js'
       - 'assets/js/repositories/notifications-repository.js'
@@ -24,8 +26,10 @@ on:
       - 'sonar-project.properties'
   pull_request:
     paths:
+      - '*.html'
       - 'assets/js/core/notification-event.js'
       - 'scripts/test-ux-notif-002-notification-event.js'
+      - 'scripts/test-ux-notif-002-repository-adapter.js'
       - 'assets/js/core/notification-center.js'
       - 'assets/js/features/in-app-notifications.js'
       - 'assets/js/repositories/notifications-repository.js'
@@ -68,12 +72,20 @@ jobs:
         run: npm ci --ignore-scripts
 
       - name: Validate clean permanent delivery tree
-        run: test ! -e .github/workflows/ux-notif-002-matrix-sync.yml
+        shell: bash
+        run: |
+          set -euo pipefail
+          test ! -e .github/workflows/ux-notif-002-matrix-sync.yml
+          test ! -e .github/workflows/ux-notif-002-phase2a-apply.yml
+          test ! -e .github/workflows/ux-notif-002-phase2a-fix-anchor.yml
+          test ! -e .github/workflows/ux-notif-002-phase2a-fix-executor.yml
 
       - name: Validate JavaScript syntax
         run: |
           node --check assets/js/core/notification-event.js
+          node --check assets/js/repositories/notifications-repository.js
           node --check scripts/test-ux-notif-002-notification-event.js
+          node --check scripts/test-ux-notif-002-repository-adapter.js
 
       - name: Validate canonical domain matrix
         run: npm run audit:domain-completion-matrix
@@ -83,6 +95,9 @@ jobs:
 
       - name: Validate canonical notification event contract
         run: node scripts/test-ux-notif-002-notification-event.js
+
+      - name: Validate repository event adapter and runtime dependency
+        run: node scripts/test-ux-notif-002-repository-adapter.js
 
       - name: Preserve UX-NOTIF-001 presentation authority
         run: |
@@ -110,11 +125,13 @@ jobs:
           node --test \
             --experimental-test-coverage \
             --test-coverage-include='assets/js/core/notification-event.js' \
+            --test-coverage-include='assets/js/repositories/notifications-repository.js' \
             --test-reporter=spec \
             --test-reporter-destination=stdout \
             --test-reporter=lcov \
             --test-reporter-destination=coverage/ux-notif-002/lcov.info \
-            scripts/test-ux-notif-002-notification-event.js
+            scripts/test-ux-notif-002-notification-event.js \
+            scripts/test-ux-notif-002-repository-adapter.js
 
       - name: Validate LCOV evidence
         shell: bash
@@ -123,6 +140,7 @@ jobs:
           REPORT='coverage/ux-notif-002/lcov.info'
           test -s "${REPORT}"
           grep -Fq 'SF:assets/js/core/notification-event.js' "${REPORT}"
+          grep -Fq 'SF:assets/js/repositories/notifications-repository.js' "${REPORT}"
           FOUND="$(awk -F: '/^LF:/{lf+=$2} /^LH:/{lh+=$2} END{print lh+0 "/" lf+0}' "${REPORT}")"
           echo "[ux-notif-002] executable lines: ${FOUND}"
 
