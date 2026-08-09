@@ -10,7 +10,19 @@
   const getNotificationCenter = () => window.Doke?.notificationCenter || null;
   const getNotificationService = () => window.Doke?.services?.notifications || null;
   const getToastManager = () => window.Doke?.notificationToast || null;
-  const getDeliveryManager = () => window.Doke?.notificationDelivery || null;
+const getDeliveryManager = () => window.Doke?.notificationDelivery || null;
+let localIdSequence = 0;
+const secureLocalId = (prefix = 'live') => {
+  const cryptoApi = window.crypto;
+  if (typeof cryptoApi?.randomUUID === 'function') return `${prefix}-${cryptoApi.randomUUID()}`;
+  if (typeof cryptoApi?.getRandomValues === 'function') {
+    const values = new Uint32Array(4);
+    cryptoApi.getRandomValues(values);
+    return `${prefix}-${Array.from(values, (value) => value.toString(36)).join('-')}`;
+  }
+  localIdSequence += 1;
+  return `${prefix}-${Date.now().toString(36)}-${localIdSequence.toString(36)}`;
+};
   const readCenter = () => Array.from(getNotificationCenter()?.getSnapshot?.().items || []);
   const typeGroup = (payload) => { const type = String(payload?.type || '').toLowerCase(); if (type.includes('mention')) return 'mentions'; if (type.includes('reaction')) return 'reactions'; if (type.includes('event')) return 'events'; if (type.includes('message') || payload?.category === 'messages') return 'messages'; return 'social'; };
   const priorityOf = (payload) => {
@@ -218,7 +230,7 @@
   const publish = (payload = {}) => {
     const envelope = {
       ...payload,
-      id: payload.id || payload.eventKey || `live-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      id: payload.id || payload.eventKey || secureLocalId('live'),
       createdAt: payload.createdAt || new Date().toISOString(),
       originTabId: TAB_ID
     };
@@ -236,7 +248,13 @@
   const muteScope = (scope, label='Origem') => getDeliveryManager()?.muteScope?.(scope, label) || getPreferences();
   const unmuteScope = (scope) => getDeliveryManager()?.unmuteScope?.(scope) || getPreferences();
   const isDndActive = (prefs) => getDeliveryManager()?.isDndActive?.(prefs) === true;
-  const flushDigest = () => { const result=getDeliveryManager()?.flushDigest?.() || null; if(result?.payload)show(result.payload,{skipDelivery:true}); return result; };
+  const flushDigest = () => {
+  const result = getDeliveryManager()?.flushDigest?.() || null;
+  if (result?.payload) {
+    show(result.payload, { skipDelivery: true });
+  }
+  return result;
+};
 
   const configureToastManager = () => {
     const manager = getToastManager();
