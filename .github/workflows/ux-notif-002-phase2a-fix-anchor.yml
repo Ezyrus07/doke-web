@@ -27,21 +27,24 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           path = Path('.github/workflows/ux-notif-002-phase2a-apply.yml')
-          text = path.read_text(encoding='utf-8')
-          old = """          test_path = \"      - 'scripts/test-ux-notif-002-notification-event.js'\\n\"
-          test_path_plus = test_path + \"      - 'scripts/test-ux-notif-002-repository-adapter.js'\\n\"
-          workflow = replace_once(workflow, test_path, test_path_plus, 'push repository adapter path')
-          workflow = replace_once(workflow, test_path, test_path_plus, 'pr repository adapter path')
-          """
-          new = """          test_path = \"      - 'scripts/test-ux-notif-002-notification-event.js'\\n\"
-          test_path_plus = test_path + \"      - 'scripts/test-ux-notif-002-repository-adapter.js'\\n\"
-          if workflow.count(test_path) != 2:
-            raise SystemExit(f'repository adapter path anchor count={workflow.count(test_path)}')
-          workflow = workflow.replace(test_path, test_path_plus, 2)
-          """
-          if text.count(old) != 1:
-            raise SystemExit(f'phase2a anchor-fix block count={text.count(old)}')
-          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          lines = path.read_text(encoding='utf-8').splitlines()
+          targets = [
+            index for index, line in enumerate(lines)
+            if "workflow = replace_once(workflow, test_path, test_path_plus" in line
+          ]
+          if len(targets) != 2:
+            raise SystemExit(f'expected two path replacement calls, found {len(targets)}')
+          first, second = targets
+          if second != first + 1:
+            raise SystemExit(f'path replacement calls are not adjacent: {targets}')
+          indent = lines[first][:len(lines[first]) - len(lines[first].lstrip())]
+          replacement = [
+            indent + "if workflow.count(test_path) != 2:",
+            indent + "  raise SystemExit(f'repository adapter path anchor count={workflow.count(test_path)}')",
+            indent + "workflow = workflow.replace(test_path, test_path_plus, 2)"
+          ]
+          lines[first:second + 1] = replacement
+          path.write_text('\n'.join(lines) + '\n', encoding='utf-8')
           PY
           git diff --check -- .github/workflows/ux-notif-002-phase2a-apply.yml
 
