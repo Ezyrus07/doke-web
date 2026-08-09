@@ -9,6 +9,8 @@ on:
       - 'assets/js/core/notification-event.js'
       - 'scripts/test-ux-notif-002-notification-event.js'
       - 'scripts/test-ux-notif-002-repository-adapter.js'
+      - 'assets/js/services/notification-service.js'
+      - 'scripts/test-ux-notif-002-producer-envelopes.js'
       - 'assets/js/core/notification-center.js'
       - 'assets/js/features/in-app-notifications.js'
       - 'assets/js/repositories/notifications-repository.js'
@@ -30,6 +32,8 @@ on:
       - 'assets/js/core/notification-event.js'
       - 'scripts/test-ux-notif-002-notification-event.js'
       - 'scripts/test-ux-notif-002-repository-adapter.js'
+      - 'assets/js/services/notification-service.js'
+      - 'scripts/test-ux-notif-002-producer-envelopes.js'
       - 'assets/js/core/notification-center.js'
       - 'assets/js/features/in-app-notifications.js'
       - 'assets/js/repositories/notifications-repository.js'
@@ -79,13 +83,19 @@ jobs:
           test ! -e .github/workflows/ux-notif-002-phase2a-apply.yml
           test ! -e .github/workflows/ux-notif-002-phase2a-fix-anchor.yml
           test ! -e .github/workflows/ux-notif-002-phase2a-fix-executor.yml
+          test ! -e .github/workflows/ux-notif-002-phase2b-apply.yml
+          test ! -e .github/workflows/ux-notif-002-phase2b-apply-v2.yml
+          test ! -e .github/workflows/ux-notif-002-phase2b-runner.yml
+          test ! -e scripts/tmp-ux-notif-002-phase2b.py
 
       - name: Validate JavaScript syntax
         run: |
           node --check assets/js/core/notification-event.js
           node --check assets/js/repositories/notifications-repository.js
+          node --check assets/js/services/notification-service.js
           node --check scripts/test-ux-notif-002-notification-event.js
           node --check scripts/test-ux-notif-002-repository-adapter.js
+          node --check scripts/test-ux-notif-002-producer-envelopes.js
 
       - name: Validate canonical domain matrix
         run: npm run audit:domain-completion-matrix
@@ -98,6 +108,9 @@ jobs:
 
       - name: Validate repository event adapter and runtime dependency
         run: node scripts/test-ux-notif-002-repository-adapter.js
+
+      - name: Validate native producer envelopes and source provenance
+        run: node scripts/test-ux-notif-002-producer-envelopes.js
 
       - name: Preserve UX-NOTIF-001 presentation authority
         run: |
@@ -126,12 +139,14 @@ jobs:
             --experimental-test-coverage \
             --test-coverage-include='assets/js/core/notification-event.js' \
             --test-coverage-include='assets/js/repositories/notifications-repository.js' \
+            --test-coverage-include='assets/js/services/notification-service.js' \
             --test-reporter=spec \
             --test-reporter-destination=stdout \
             --test-reporter=lcov \
             --test-reporter-destination=coverage/ux-notif-002/lcov.info \
             scripts/test-ux-notif-002-notification-event.js \
-            scripts/test-ux-notif-002-repository-adapter.js
+            scripts/test-ux-notif-002-repository-adapter.js \
+            scripts/test-ux-notif-002-producer-envelopes.js
 
       - name: Validate LCOV evidence
         shell: bash
@@ -141,6 +156,7 @@ jobs:
           test -s "${REPORT}"
           grep -Fq 'SF:assets/js/core/notification-event.js' "${REPORT}"
           grep -Fq 'SF:assets/js/repositories/notifications-repository.js' "${REPORT}"
+          grep -Fq 'SF:assets/js/services/notification-service.js' "${REPORT}"
           FOUND="$(awk -F: '/^LF:/{lf+=$2} /^LH:/{lh+=$2} END{print lh+0 "/" lf+0}' "${REPORT}")"
           echo "[ux-notif-002] executable lines: ${FOUND}"
 
