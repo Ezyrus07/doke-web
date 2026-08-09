@@ -48,11 +48,22 @@ jobs:
           set -e
           test "${status}" = "2"
           grep -q 'DOKE_COM_B03C_R3C_STAGING_AUTHORIZATION_REQUIRED' /tmp/r3c.err
+      - name: Trigger commit continuity on staging execution
+        if: github.event_name == 'push'
+        run: |
+          test "${GITHUB_RUN_ATTEMPT}" = "1"
+          test -f config/com-b03c-r3c-realtime-messages-policy-catalog-readonly-staging-trigger.json
+          test "$(git rev-parse HEAD^)" = "$(node -p "require('./config/com-b03c-r3c-realtime-messages-policy-catalog-readonly-staging-trigger.json').workflowInstallHead")"
+          test "$(git diff --name-only HEAD^ HEAD | wc -l | tr -d ' ')" = "1"
+          test "$(git diff --name-only HEAD^ HEAD)" = "config/com-b03c-r3c-realtime-messages-policy-catalog-readonly-staging-trigger.json"
       - name: Domain completion matrix audit
+        if: github.event_name == 'pull_request'
         run: npm run audit:domain-completion-matrix
       - name: Agent governance audit
+        if: github.event_name == 'pull_request'
         run: npm run audit:agent-governance
       - name: Governance invariants
+        if: github.event_name == 'pull_request'
         run: |
           node - <<'NODE'
           const e=require('./docs/validation/COM-B03C-R3C-REALTIME-MESSAGES-POLICY-CATALOG-STAGING-READINESS.json');
