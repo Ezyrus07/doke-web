@@ -1,0 +1,132 @@
+{
+  "contractId": "com-b03c-r3a-presence-full-conjunction-isolation-readiness-v1",
+  "status": "repository_presence_full_conjunction_isolation_ready_no_staging_authority",
+  "domain": "COM-001",
+  "checkpoint": {
+    "branch": "com/com-001-baseline-audit",
+    "pullRequest": 61,
+    "base": "rep/rep-001-baseline-audit",
+    "baseSha": "71aca60204a736d219d03f1ec20378932d08c26e",
+    "predecessorHead": "b9f7bcd52a91d73427f733aed4fd1e645bc4ba3c",
+    "matrixVersion": "1.3.113",
+    "maturity": 3,
+    "productionGate": "blocked"
+  },
+  "predecessor": {
+    "validationId": "COM-B03C-R3-CORRECTED-REALTIME-AUTH-PREDICATE-LADDER-STAGING-ATTEMPT",
+    "status": "staging_diagnostic_completed_full_conjunction_presence_read_rejected_zero_residue_proven",
+    "runId": 31288905160,
+    "artifactId": 9030781850,
+    "authorizationConsumed": true,
+    "authorizationReusable": false,
+    "predicateConclusionValid": true,
+    "zeroResidueProven": true,
+    "typingFullConjunctionReadProven": true,
+    "typingFullConjunctionWriteProven": true,
+    "presenceFullConjunctionReadProven": false,
+    "presenceFullConjunctionWriteProven": true,
+    "observedFailureClass": "full_conjunction_presence_read_rls_rejection",
+    "exactCombinedPredicateCauseIsolated": false
+  },
+  "rootCauseHypotheses": {
+    "facts": [
+      "auth_uid_only passed in R3",
+      "topic_only passed in R3",
+      "extension_only passed in R3",
+      "full_conjunction Presence read_join was rejected by RLS",
+      "Typing full_conjunction passed on read_join and write_action",
+      "R3 used a different synthetic topic and fresh client for each rung"
+    ],
+    "repositoryObservation": [
+      "R3 current full predicate uses (select auth.uid()), direct realtime.topic(), and extension = literal",
+      "Supabase documentation examples use (select realtime.topic())",
+      "Supabase documentation commonly groups auth uid, topic, and extension under an EXISTS membership predicate"
+    ],
+    "notYetProven": [
+      "which pairwise interaction fails",
+      "whether direct realtime.topic() versus (select realtime.topic()) is causal",
+      "whether equality versus IN on extension is causal",
+      "whether EXISTS shape is required or merely conventional",
+      "whether the R3 failure was deterministic across identical topic context"
+    ]
+  },
+  "design": {
+    "scope": ["channel_presence"],
+    "axis": ["read_join"],
+    "sameContextControls": {
+      "sameAuthIdentityAcrossCases": true,
+      "sameAccessTokenAcrossCases": true,
+      "sameTopicAcrossCases": true,
+      "freshRealtimeClientPerCase": true,
+      "jwtBeforeChannelCreation": true,
+      "presenceChannelOnly": true,
+      "writeActionExecuted": false
+    },
+    "policyControls": {
+      "insertControlPredicate": "true",
+      "temporarySelectPolicyPerCase": true,
+      "dropPolicyAfterEachCase": true,
+      "policyIntrospectionPerCase": true,
+      "negativeControlPrepared": true,
+      "negativeControlSelectPredicate": "false",
+      "negativeControlExpected": "realtime_rls_authorization_rejected"
+    },
+    "isolationCases": [
+      "control_true",
+      "uid_topic_direct",
+      "uid_extension_eq",
+      "topic_extension_direct",
+      "full_current_direct",
+      "full_topic_select_wrapper",
+      "full_topic_select_extension_in",
+      "full_docs_canonical_exists"
+    ],
+    "caseIntent": {
+      "control_true": "prove the shared identity/topic/client harness can join",
+      "uid_topic_direct": "test auth.uid + direct realtime.topic pair without extension",
+      "uid_extension_eq": "test auth.uid + extension equality pair without topic",
+      "topic_extension_direct": "test direct realtime.topic + extension equality pair without auth.uid",
+      "full_current_direct": "reproduce the exact R3 full predicate shape in the controlled suite",
+      "full_topic_select_wrapper": "change only realtime.topic() to (select realtime.topic())",
+      "full_topic_select_extension_in": "then change only extension equality to extension IN ('presence')",
+      "full_docs_canonical_exists": "then wrap the canonical three-term predicate in EXISTS to mirror documented policy shape"
+    },
+    "diagnostics": {
+      "sanitized": true,
+      "rawRemoteErrorPersistenceAllowed": false,
+      "reportShapePrepared": false,
+      "artifactUploadPrepared": false
+    }
+  },
+  "authorization": {
+    "futureStagingAuthorizationDefined": false,
+    "triggerExists": false,
+    "stagingExecutorExists": false,
+    "stagingWorkflowExists": false,
+    "predecessorAuthorizationReusable": false
+  },
+  "authority": {
+    "repositoryReadinessAuthority": true,
+    "stagingReadAuthority": false,
+    "stagingMutationAuthority": false,
+    "authIdentityLifecycleAuthority": false,
+    "realtimePolicyLifecycleAuthority": false,
+    "realtimeSubscriptionAuthority": false,
+    "domainMutationAuthority": false,
+    "publicationMutationAuthority": false,
+    "runtimeDeployAuthority": false,
+    "productionAuthority": false,
+    "pullRequestMergeAuthority": false
+  },
+  "outOfScope": {
+    "communityPostsExecutionPlanned": false,
+    "channelMessagesExecutionPlanned": false,
+    "domainMutationPlanned": false,
+    "publicationMutationPlanned": false,
+    "runtimeDeployPlanned": false,
+    "productionPlanned": false,
+    "mergePlanned": false,
+    "realUserMutationPlanned": false
+  },
+  "nextBoundary": "implement and repository-certify the R3A isolation executor/verifier/workflow without creating a staging trigger or authorization phrase"
+}

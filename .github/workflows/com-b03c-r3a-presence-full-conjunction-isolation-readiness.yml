@@ -1,0 +1,52 @@
+name: COM-B03C-R3A Presence Full-Conjunction Isolation Readiness
+
+on:
+  pull_request:
+    branches:
+      - rep/rep-001-baseline-audit
+    paths:
+      - backend/modules/communities/community-realtime-private-auth-r3a.js
+      - config/com-b03c-r3a-presence-full-conjunction-isolation-readiness.json
+      - scripts/test-com-b03c-r3a-presence-full-conjunction-isolation-readiness.js
+      - docs/validation/COM-B03C-R3A-PRESENCE-FULL-CONJUNCTION-ISOLATION-READINESS.json
+      - .github/workflows/com-b03c-r3a-presence-full-conjunction-isolation-readiness.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: com-b03c-r3a-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: true
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Syntax
+        run: |
+          node --check backend/modules/communities/community-realtime-private-auth-r3a.js
+          node --check scripts/test-com-b03c-r3a-presence-full-conjunction-isolation-readiness.js
+      - name: COM-B03C-R3A readiness
+        run: node scripts/test-com-b03c-r3a-presence-full-conjunction-isolation-readiness.js
+      - name: Predecessor evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f docs/validation/COM-B03C-R3-CORRECTED-REALTIME-AUTH-PREDICATE-LADDER-STAGING-ATTEMPT.json
+          grep -q '"zeroResidueProven": true' docs/validation/COM-B03C-R3-CORRECTED-REALTIME-AUTH-PREDICATE-LADDER-STAGING-ATTEMPT.json
+          grep -q '"presenceFullConjunctionReadProven": false' docs/validation/COM-B03C-R3-CORRECTED-REALTIME-AUTH-PREDICATE-LADDER-STAGING-ATTEMPT.json
+          grep -q '"typingFullConjunctionReadProven": true' docs/validation/COM-B03C-R3-CORRECTED-REALTIME-AUTH-PREDICATE-LADDER-STAGING-ATTEMPT.json
+      - name: Repository-only boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(node -p "require('./config/com-b03c-r3a-presence-full-conjunction-isolation-readiness.json').authorization.futureStagingAuthorizationDefined")" = "false"
+          test "$(node -p "require('./config/com-b03c-r3a-presence-full-conjunction-isolation-readiness.json').authorization.triggerExists")" = "false"
+          test "$(node -p "require('./config/com-b03c-r3a-presence-full-conjunction-isolation-readiness.json').authorization.stagingExecutorExists")" = "false"
+          test "$(node -p "require('./config/com-b03c-r3a-presence-full-conjunction-isolation-readiness.json').authorization.stagingWorkflowExists")" = "false"
+      - name: Diff hygiene
+        run: git diff --check HEAD^ HEAD
