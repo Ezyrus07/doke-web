@@ -8,9 +8,10 @@
 - Base SHA certificado: `7ba99bfbd293f83d8e14bccf75b4bd0703a4199d`;
 - Branch: `ux/ux-notif-007-digest-dnd-policy`;
 - Handoff: `NOTIF-H07 — digest/DND`;
-- Fase 1: candidato permanente pós-cleanup em certificação final;
-- Matrix canônica sincronizada no parent `20f928ad19d5128c0ad8245b5bc856203f2290c9`;
-- cleanup Sonar funcional validado no parent `67cfb123ba2be60081dbf22dc698ac0f19b675ca`;
+- Fase 1: candidato permanente pós-security-cleanup em certificação final;
+- Matrix canônica regenerada na árvore final do parent `c02986ef7eb4def62f980f73cb723852edd1d44c`;
+- cleanup Sonar de maintainability validado no parent `67cfb123ba2be60081dbf22dc698ac0f19b675ca`;
+- cleanup final de segurança validado no parent `c02986ef7eb4def62f980f73cb723852edd1d44c`;
 - Merge autorizado: não;
 - Ready for review autorizado: não;
 - Backend/staging/produção: não acessados.
@@ -88,7 +89,7 @@ O adapter mantém a API pública legada `window.DokeInAppNotifications` para a U
 
 `notification-toast.js` preserva o fallback antigo apenas quando nenhuma authority H07 foi configurada. No runtime canônico atual, o adapter configura `getDeliveryDecision` e `onQueueDigest`, portanto o toast manager não decide DND.
 
-## Cleanup de qualidade
+## Cleanup de qualidade e segurança
 
 A primeira certificação integral encontrou 9 New Issues do Sonar pertencentes ao incremento. Todos foram tratados na fonte, sem aceitar ou suprimir regras:
 
@@ -99,7 +100,15 @@ A primeira certificação integral encontrou 9 New Issues do Sonar pertencentes 
 - identidade única e consistente para o digest sintético;
 - migração do teste estrutural H07 para a expressão equivalente pós-refatoração.
 
-A certificação final deve provar novamente zero New Issues no mesmo SHA permanente.
+A rodada seguinte reduziu a dívida a dois achados no adapter: uso de `Math.random()` para identidade transitória e um bloco condicional compactado. O cleanup final:
+
+- substitui `Math.random()` por `crypto.randomUUID()` quando disponível;
+- usa `crypto.getRandomValues()` como fallback criptográfico;
+- mantém fallback monotônico local sem pseudorandom inseguro quando Web Crypto não estiver disponível;
+- expande `flushDigest` para controle de fluxo explícito;
+- regenerou a Domain Completion Matrix sobre a árvore final sem executores temporários.
+
+A certificação final deve provar zero New Issues/Accepted Issues/Hotspots no mesmo SHA permanente.
 
 ## Testes dedicados
 
