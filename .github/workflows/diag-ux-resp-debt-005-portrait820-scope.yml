@@ -1,0 +1,99 @@
+name: Doke UX-RESP-DEBT-005 820 Portrait Scope Probe
+
+on:
+  push:
+    branches:
+      - diag/ux-resp-debt-005-portrait820-scope
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Guard certified parent ancestry
+        run: test "$(git merge-base HEAD ecb54eef031754cf91b9ec4340f382768f11f027)" = "ecb54eef031754cf91b9ec4340f382768f11f027"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Apply workspace-only 820 scope candidate
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs=require('fs');
+          const manifests=['assets/css/pages/pedidos-runtime-page.css','assets/css/pages/notificacoes-foundation.css','assets/css/pages/carteira-runtime-page.css'];
+          const re=/@import url\("\.\.\/components\/shell\/tablet-internal-rail-contract\.css\?([^\"]+)"\);/g;
+          for(const file of manifests){
+            const before=fs.readFileSync(file,'utf8');
+            const matches=[...before.matchAll(re)];
+            if(matches.length!==1) throw new Error(`${file}: expected one legacy import`);
+            const after=before.replace(re, '@import url("../components/shell/tablet-internal-rail-contract.css?$1") screen and (max-width: 760px);');
+            fs.writeFileSync(file,after);
+          }
+
+          const wallet='assets/css/pages/carteira/responsive-contract.css';
+          let css=fs.readFileSync(wallet,'utf8');
+          const start='  body[data-page="carteira"].has-global-header > .app-shell > .page > .app-header.app-header--wallet {\n';
+          const end='  body[data-page="carteira"].has-global-header > .app-shell > .page > .app-header.app-header--wallet > .app-header__inner {\n';
+          const a=css.indexOf(start), b=css.indexOf(end,a);
+          if(a<0||b<=a) throw new Error('wallet tablet header block not found');
+          const block=css.slice(a,b);
+          if(!block.includes('height: 96px;')||!block.includes('padding: 20px 0 10px;')) throw new Error('wallet block shape drifted');
+          css=css.slice(0,a)+css.slice(b);
+          fs.writeFileSync(wallet,css);
+          NODE
+
+      - name: Validate CSS import resolution
+        run: npm run audit:css-import-resolution
+
+      - name: Install Chromium
+        run: node node_modules/@playwright/test/cli.js install --with-deps chromium
+
+      - name: Generate baseline
+        run: node scripts/generate-responsive-index-baseline.js
+
+      - name: Execute responsive contract and prove exact reduction
+        shell: bash
+        run: |
+          set +e
+          node scripts/test-responsive-contract.js
+          STATUS=$?
+          set -e
+          test "$STATUS" -eq 1
+          node <<'NODE'
+          const fs=require('fs');
+          const r=JSON.parse(fs.readFileSync('reports/responsive-contract-test-report.json','utf8'));
+          const byPage={}; const byBp={};
+          for(const f of r.failures||[]){byPage[f.page]=(byPage[f.page]||0)+1;byBp[f.breakpoint]=(byBp[f.breakpoint]||0)+1;}
+          console.log('SCOPE820_SUMMARY',JSON.stringify(r.summary));
+          console.log('SCOPE820_BY_PAGE',JSON.stringify(byPage));
+          console.log('SCOPE820_BY_BP',JSON.stringify(byBp));
+          console.log('SCOPE820_FAILURES',JSON.stringify((r.failures||[]).map(f=>({page:f.page,breakpoint:f.breakpoint,component:f.component,property:f.property,expected:f.expected,actual:f.actual}))));
+          if(r.summary.checks!==897) throw new Error(`checks drifted ${r.summary.checks}`);
+          if(r.summary.skips!==276) throw new Error(`skips drifted ${r.summary.skips}`);
+          if(r.summary.failures!==7) throw new Error(`expected 7 residual failures, got ${r.summary.failures}`);
+          if((byBp['820x1180']||0)!==0) throw new Error(`820 residual remains ${byBp['820x1180']||0}`);
+          if((byPage['detalhe-anuncio.html']||0)!==4) throw new Error('Detail residual drifted');
+          for(const page of ['pedidos.html','notificacoes.html','carteira.html']) if((byPage[page]||0)!==1) throw new Error(`${page} should retain only 608 residual`);
+          NODE
+
+      - name: Validate boundaries and governance-adjacent audits
+        shell: bash
+        run: |
+          npm run audit:shared-app-header-contract
+          npm run audit:responsive-boundaries
+          npm run audit:css-responsive-conflicts
+          git diff --check ecb54eef031754cf91b9ec4340f382768f11f027...HEAD
