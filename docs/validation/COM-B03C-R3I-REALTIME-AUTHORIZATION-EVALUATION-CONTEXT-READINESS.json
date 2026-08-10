@@ -1,11 +1,12 @@
 {
   "validationId": "COM-B03C-R3I-REALTIME-AUTHORIZATION-EVALUATION-CONTEXT-READINESS",
   "contractId": "com-b03c-r3i-realtime-authorization-evaluation-context-readiness-v1",
-  "status": "repository_realtime_authorization_evaluation_context_differential_ready_no_remote_authority",
+  "status": "repository_realtime_authorization_evaluation_context_differential_certified_no_remote_authority",
   "checkpoint": {
     "branch": "com/com-001-baseline-audit",
     "pullRequest": 61,
     "preparedFromHead": "ea49d5ff7feb3eddc7417a03568e873cf0f7772e",
+    "normalCertificationHead": "158775ed727acfddc75bc8ba03db089ed7c85c84",
     "matrixVersion": "1.3.113",
     "maturity": 3,
     "productionGate": "blocked"
@@ -28,7 +29,15 @@
     "readAuthorizationSequencePinned": true,
     "messageSchemaPinned": true,
     "upstreamPresenceTopicUidPolicyPinned": true,
-    "upstreamPresenceTopicUidIntegrationCoveragePinned": true
+    "upstreamPresenceTopicUidIntegrationCoveragePinned": true,
+    "observedUpstreamSemantics": {
+      "syntheticRowsInsertedPerRequestedExtensionBeforeReadCheck": true,
+      "sessionRoleTopicJwtClaimsSubAndHeadersConfiguredBeforeRlsSelect": true,
+      "readAuthorizationSelectFiltersByAuthorizationTopicAndSyntheticIds": true,
+      "presenceMessageRowContainsTopicAndExtension": true,
+      "presenceTopicUidPolicyExistsInUpstreamTests": true,
+      "genericPresenceExtensionFailureClaimSupported": false
+    }
   },
   "diagnosticBoundary": {
     "caseCount": 16,
@@ -56,6 +65,61 @@
       "zero residue"
     ],
     "causalPromotionAllowedNow": false
+  },
+  "certificationHistory": {
+    "atomicPackage": {
+      "commit": "ec09777a69b720752400cd786a799d3ab1ee6c60",
+      "parent": "ea49d5ff7feb3eddc7417a03568e873cf0f7772e",
+      "filesChangedExactly": 6,
+      "remoteExecutorPrepared": false,
+      "triggerPrepared": false,
+      "authorizationPhraseDefined": false,
+      "stagingAccessOccurred": false
+    },
+    "initialCertification": {
+      "run": 31344129931,
+      "job": 93322771744,
+      "status": "failure",
+      "syntax": "success",
+      "differentialReadiness": "success",
+      "remoteHardBlock": "success",
+      "domainCompletionMatrix": "stale",
+      "stagingAccessOccurred": false
+    },
+    "canonicalWriter": {
+      "workflowHead": "fc7739a7c64953dc0b3efa0fb9093b378173601b",
+      "run": 31344374931,
+      "job": 93323469106,
+      "status": "success",
+      "generatedCommit": "17d3f079bca32e6b06e761e7b088a8697cd9629b",
+      "filesChangedExactly": [
+        "docs/DOMAIN-COMPLETION-MATRIX.md",
+        "reports/generated/domain-completion-matrix-report.json"
+      ],
+      "matrixVersionChanged": false,
+      "maturityChanged": false,
+      "remoteAuthorityChanged": false,
+      "stagingAccessOccurred": false
+    },
+    "workflowRestoration": {
+      "head": "158775ed727acfddc75bc8ba03db089ed7c85c84",
+      "permissions": "contents: read",
+      "writerPresent": false
+    },
+    "normalCertification": {
+      "head": "158775ed727acfddc75bc8ba03db089ed7c85c84",
+      "run": 31344449896,
+      "job": 93323668992,
+      "status": "success",
+      "syntax": "success",
+      "differentialReadiness": "success",
+      "remoteHardBlock": "success",
+      "domainCompletionMatrix": "success",
+      "agentGovernance": "success",
+      "governanceInvariants": "success",
+      "diffHygiene": "success",
+      "stagingAccessOccurred": false
+    }
   },
   "remoteBoundary": {
     "remoteExecutorPrepared": false,
@@ -85,5 +149,5 @@
     "mergeExecuted": false
   },
   "exactRootCauseProven": false,
-  "nextBoundary": "Certify R3I repository-only. Do not prepare or execute a remote canary until the differential design and source provenance are certified and a separate future remote boundary is created with fresh explicit authorization."
+  "nextBoundary": "R3I is repository-certified. Continue repository-only by implementing a fail-closed differential harness for the 16 evaluation-context probes. Do not prepare a trigger, authorization phrase, staging environment job, or runtime policy change until that harness is separately certified."
 }
