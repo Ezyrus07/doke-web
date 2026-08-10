@@ -63,3 +63,62 @@ jobs:
           console.log('FAILURES_608');
           console.log(JSON.stringify(at608, null, 2));
           NODE
+
+      - name: Probe computed 608px rail and header tokens
+        shell: bash
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          const { chromium } = require('@playwright/test');
+          const { loadHtmlWithLocalCss } = require('./scripts/lib/responsive-html-loader');
+          const rootDir = process.cwd();
+          const targets = [
+            ['index.html', '.app-header'],
+            ['detalhe-anuncio.html', '.app-header'],
+            ['perfil.html', '.app-header'],
+            ['resultados.html', '.app-header'],
+            ['comunidade.html', '.app-header'],
+          ];
+          (async () => {
+            const executablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE
+              || process.env.CHROMIUM_PATH
+              || (fs.existsSync('/usr/bin/chromium') ? '/usr/bin/chromium' : undefined);
+            const browser = await chromium.launch({ headless: true, executablePath, args: ['--no-sandbox', '--disable-dev-shm-usage'] });
+            try {
+              for (const [file, selector] of targets) {
+                const context = await browser.newContext({ viewport: { width: 608, height: 926 }, deviceScaleFactor: 1, javaScriptEnabled: false });
+                const page = await context.newPage();
+                await page.setContent(loadHtmlWithLocalCss(file, rootDir, { modeLabel: 'ux-resp-debt-004 token probe' }), { waitUntil: 'domcontentloaded', timeout: 30000 });
+                await page.waitForTimeout(80);
+                const result = await page.evaluate((selector) => {
+                  const body = document.body;
+                  const header = document.querySelector(selector);
+                  const inner = header?.querySelector('.app-header__inner');
+                  const style = getComputedStyle(body);
+                  const rect = header?.getBoundingClientRect();
+                  const innerRect = inner?.getBoundingClientRect();
+                  return {
+                    dataPage: body.dataset.page || null,
+                    classes: body.className,
+                    vars: {
+                      railInlineGutter: style.getPropertyValue('--doke-rail-inline-gutter').trim(),
+                      railAvailable: style.getPropertyValue('--doke-rail-available').trim(),
+                      railMax: style.getPropertyValue('--doke-rail-max').trim(),
+                      pageRail: style.getPropertyValue('--doke-page-rail').trim(),
+                      headerRail: style.getPropertyValue('--doke-header-rail').trim(),
+                      headerHeight: style.getPropertyValue('--doke-header-height').trim(),
+                      firstBlockTop: style.getPropertyValue('--doke-first-block-top').trim(),
+                    },
+                    header: rect ? { x: rect.x, y: rect.y, width: rect.width, height: rect.height } : null,
+                    inner: innerRect ? { x: innerRect.x, y: innerRect.y, width: innerRect.width, height: innerRect.height } : null,
+                  };
+                }, selector);
+                console.log(file, JSON.stringify(result));
+                await context.close();
+              }
+            } finally {
+              await browser.close();
+            }
+          })().catch(error => { console.error(error); process.exit(1); });
+          NODE
