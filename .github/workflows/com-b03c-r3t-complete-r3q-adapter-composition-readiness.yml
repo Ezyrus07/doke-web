@@ -1,0 +1,55 @@
+name: COM-B03C-R3T Complete R3Q Adapter Composition Readiness
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - 'backend/modules/communities/community-realtime-private-auth-r3t.js'
+      - 'config/com-b03c-r3t-complete-r3q-adapter-composition-readiness.json'
+      - 'scripts/test-com-b03c-r3t-complete-r3q-adapter-composition-readiness.js'
+      - 'docs/validation/COM-B03C-R3T-COMPLETE-R3Q-ADAPTER-COMPOSITION-READINESS.json'
+      - '.github/workflows/com-b03c-r3t-complete-r3q-adapter-composition-readiness.yml'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+
+permissions: { contents: read }
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Syntax
+        run: |
+          node --check backend/modules/communities/community-realtime-private-auth-r3t.js
+          node --check scripts/test-com-b03c-r3t-complete-r3q-adapter-composition-readiness.js
+      - name: R3T complete R3Q adapter composition
+        run: node scripts/test-com-b03c-r3t-complete-r3q-adapter-composition-readiness.js
+      - name: Pre-remote hard block
+        run: |
+          test ! -e config/com-b03c-r3t-complete-r3q-adapter-composition-staging-trigger.json
+          node - <<'NODE'
+          const r3t = require('./backend/modules/communities/community-realtime-private-auth-r3t');
+          const c = require('./config/com-b03c-r3t-complete-r3q-adapter-composition-readiness.json');
+          const e = require('./docs/validation/COM-B03C-R3T-COMPLETE-R3Q-ADAPTER-COMPOSITION-READINESS.json');
+          let blocked = false;
+          try { r3t.assertRemoteActivationBoundaryAbsent(); } catch (error) { blocked = error?.code === r3t.REMOTE_EXECUTION_BLOCK_CODE; }
+          if (!blocked) process.exit(1);
+          for (const value of Object.values(c.prohibitedPreparation)) if (value !== false) process.exit(1);
+          if (c.composition.methodCount !== 9 || c.composition.boundMethodCount !== 9 || c.composition.unboundMethodCount !== 0 || c.composition.fullyBound !== true) process.exit(1);
+          if (e.authority?.remoteAdapterActivation !== false || e.authority?.remoteExecution !== false || e.authority?.stagingRead !== false || e.authority?.stagingMutation !== false) process.exit(1);
+          if (e.effects?.stagingAccessExecuted !== false || e.effects?.remoteCredentialReadExecuted !== false || e.effects?.databaseQueryExecuted !== false || e.effects?.realtimeSubscriptionExecuted !== false) process.exit(1);
+          NODE
+      - name: Domain Completion Matrix
+        run: npm run audit:domain-completion-matrix
+      - name: Agent Governance
+        run: npm run audit:agent-governance
+      - name: Diff hygiene
+        run: git diff --check "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}"
