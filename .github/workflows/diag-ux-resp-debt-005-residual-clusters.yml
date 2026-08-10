@@ -18,10 +18,7 @@ jobs:
           fetch-depth: 0
 
       - name: Guard certified UX-RESP-DEBT-004 ancestry
-        shell: bash
-        run: |
-          set -euo pipefail
-          test "$(git merge-base HEAD ecb54eef031754cf91b9ec4340f382768f11f027)" = "ecb54eef031754cf91b9ec4340f382768f11f027"
+        run: test "$(git merge-base HEAD ecb54eef031754cf91b9ec4340f382768f11f027)" = "ecb54eef031754cf91b9ec4340f382768f11f027"
 
       - name: Setup Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
@@ -32,89 +29,52 @@ jobs:
       - name: Install dependencies
         run: npm ci --ignore-scripts
 
+      - name: Apply workspace-only canonical tablet header candidate
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('assets/css/components/shell/tablet-internal-rail-contract.css')
+          s=p.read_text()
+          reps={
+            '--doke-internal-tablet-header-height: 96px;':'--doke-internal-tablet-header-height: var(--doke-header-height, 70px);',
+            '--doke-internal-tablet-header-pad-top: 20px;':'--doke-internal-tablet-header-pad-top: 12px;',
+            '--doke-internal-tablet-header-pad-bottom: 10px;':'--doke-internal-tablet-header-pad-bottom: 8px;',
+            '--doke-internal-tablet-gap: 12px;':'--doke-internal-tablet-gap: var(--doke-header-gap, 8px);',
+            'border-radius: 50% !important;':'border-radius: var(--radius-pill) !important;',
+          }
+          for old,new in reps.items():
+            n=s.count(old)
+            print(old,'count=',n)
+            if n != 1: raise SystemExit(f'expected exactly one match for {old!r}, got {n}')
+            s=s.replace(old,new,1)
+          p.write_text(s)
+          PY
+          git diff -- assets/css/components/shell/tablet-internal-rail-contract.css
+
       - name: Install Chromium from lockfile-pinned Playwright
         run: node node_modules/@playwright/test/cli.js install --with-deps chromium
 
-      - name: Generate baseline and responsive report
+      - name: Run full responsive contract against candidate
         shell: bash
         run: |
-          set -euo pipefail
           node scripts/generate-responsive-index-baseline.js
           set +e
           node scripts/test-responsive-contract.js
           STATUS=$?
           set -e
           test "${STATUS}" -eq 1
-
-      - name: Print compact residual summary
-        run: |
           node <<'NODE'
-          const fs = require('fs');
-          const report = JSON.parse(fs.readFileSync('reports/responsive-contract-test-report.json', 'utf8'));
-          console.log('SUMMARY', JSON.stringify(report.summary));
-          for (const f of report.failures || []) console.log('FAIL', JSON.stringify({page:f.page,breakpoint:f.breakpoint,component:f.component,property:f.property,expected:f.expected,actual:f.actual,selector:f.selector}));
+          const fs=require('fs');
+          const r=JSON.parse(fs.readFileSync('reports/responsive-contract-test-report.json','utf8'));
+          console.log('PROBE_SUMMARY',JSON.stringify(r.summary));
+          console.log('PROBE_FAILURES',JSON.stringify((r.failures||[]).map(f=>({page:f.page,breakpoint:f.breakpoint,component:f.component,property:f.property,expected:f.expected,actual:f.actual,selector:f.selector}))));
+          if(r.summary.checks!==897) throw new Error('checks drift');
+          if(r.summary.skips!==276) throw new Error('skips drift');
+          if(r.summary.failures>=25) throw new Error('candidate did not reduce debt');
           NODE
 
-      - name: Trace compact cascade candidates in Chromium
+      - name: Run shared header and responsive boundaries audits
         run: |
-          node <<'NODE'
-          const { chromium } = require('@playwright/test');
-          const { loadHtmlWithLocalCss } = require('./scripts/lib/responsive-html-loader');
-          const root = process.cwd();
-          const targets = [
-            ['index.html',820,1180],['pedidos.html',820,1180],['notificacoes.html',820,1180],['carteira.html',820,1180],
-            ['index.html',608,926],['pedidos.html',608,926],['notificacoes.html',608,926],['carteira.html',608,926],
-          ];
-          (async () => {
-            const browser = await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
-            try {
-              for (const [file,width,height] of targets) {
-                const context = await browser.newContext({viewport:{width,height},deviceScaleFactor:1,javaScriptEnabled:false});
-                const page = await context.newPage();
-                await page.setContent(loadHtmlWithLocalCss(file, root, {modeLabel:'DEBT-005 compact cascade trace'}), {waitUntil:'domcontentloaded'});
-                const result = await page.evaluate(() => {
-                  const selectors = {header:'.app-header',inner:'.app-header__inner',search:'.home-side-meta__search',profile:'.home-side-meta__profile',avatar:'.home-side-meta__avatar'};
-                  const propsByKey = {
-                    header:['height','block-size','min-height','min-block-size','max-height','max-block-size','padding','padding-top','padding-bottom'],
-                    inner:['height','block-size','min-height','min-block-size','padding','padding-top','padding-bottom'],
-                    search:['margin','margin-left','margin-right','transform','position','left','right','top'],
-                    profile:['margin','margin-top','margin-bottom','transform','position','top'],
-                    avatar:['border-radius'],
-                  };
-                  const loadedHeaderSources = [...document.querySelectorAll('style[data-doke-source]')].map(n=>n.getAttribute('data-doke-source')).filter(x=>/header|pedidos|orders|notific|wallet|carteira/i.test(x));
-                  function candidates(el, props) {
-                    const out=[]; let order=0;
-                    function walk(rules, source, media='') {
-                      if (!rules) return;
-                      for (const rule of rules) {
-                        if (rule.type===CSSRule.MEDIA_RULE) { if (matchMedia(rule.conditionText).matches) walk(rule.cssRules,source,rule.conditionText); continue; }
-                        if (rule.type!==CSSRule.STYLE_RULE) continue;
-                        order++;
-                        try { if (!el.matches(rule.selectorText)) continue; } catch(_) { continue; }
-                        const decl={};
-                        for (const p of props) if (rule.style.getPropertyValue(p)) decl[p]={value:rule.style.getPropertyValue(p).trim(),important:rule.style.getPropertyPriority(p)==='important'};
-                        if (Object.keys(decl).length) out.push({order,source,media,selector:rule.selectorText,decl});
-                      }
-                    }
-                    for (const sheet of document.styleSheets) {
-                      let source='unknown';
-                      try { source=sheet.ownerNode?.getAttribute?.('data-doke-source') || sheet.href || 'inline'; walk(sheet.cssRules,source); } catch(_) {}
-                    }
-                    return out.filter(r=>/header|pedidos|orders|notific|wallet|carteira|internal|responsive|avatar|identity/i.test(r.source));
-                  }
-                  const snap={loadedHeaderSources,body:document.body.className,root:{}};
-                  const bodyStyle=getComputedStyle(document.body);
-                  for (const p of ['--doke-header-height','--doke-app-topbar-height','--doke-header-profile-height','--doke-header-avatar-size','--doke-header-inline-padding','--doke-header-rail','--doke-page-rail','--radius-pill']) snap.root[p]=bodyStyle.getPropertyValue(p).trim();
-                  for (const [key,sel] of Object.entries(selectors)) {
-                    const el=document.querySelector(sel); if(!el){snap[key]=null;continue;}
-                    const s=getComputedStyle(el),r=el.getBoundingClientRect();
-                    snap[key]={box:{x:r.x,y:r.y,width:r.width,height:r.height},computed:{height:s.height,paddingTop:s.paddingTop,paddingBottom:s.paddingBottom,marginTop:s.marginTop,marginLeft:s.marginLeft,top:s.top,transform:s.transform,borderRadius:s.borderRadius},candidates:candidates(el,propsByKey[key])};
-                  }
-                  return snap;
-                });
-                console.log('CASCADE', file, `${width}x${height}`, JSON.stringify(result));
-                await context.close();
-              }
-            } finally { await browser.close(); }
-          })().catch(err=>{console.error(err);process.exitCode=1;});
-          NODE
+          npm run audit:shared-app-header-contract
+          npm run audit:responsive-boundaries
