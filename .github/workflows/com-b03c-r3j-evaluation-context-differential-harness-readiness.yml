@@ -16,7 +16,7 @@ on:
       - docs/DOMAIN-COMPLETION-MATRIX.md
       - reports/generated/domain-completion-matrix-report.json
 
-permissions: { contents: write }
+permissions: { contents: read }
 concurrency:
   group: com-b03c-r3j-${{ github.ref }}-${{ github.event_name }}
   cancel-in-progress: false
@@ -26,9 +26,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.ref }}
+        with: { fetch-depth: 0 }
       - uses: actions/setup-node@v4
         with: { node-version: '24' }
       - name: Syntax
@@ -70,25 +68,6 @@ jobs:
             }
           }
           NODE
-      - name: Canonical domain completion matrix writer
-        shell: bash
-        run: |
-          npm run write:domain-completion-matrix
-          mapfile -t changed < <(git status --short | sed -E 's/^.. //')
-          for path in "${changed[@]}"; do
-            case "$path" in
-              docs/DOMAIN-COMPLETION-MATRIX.md|reports/generated/domain-completion-matrix-report.json) ;;
-              *) echo "Unexpected canonical-writer change: $path" >&2; exit 1 ;;
-            esac
-          done
-          if ! git diff --quiet -- docs/DOMAIN-COMPLETION-MATRIX.md || [ -n "$(git status --short -- reports/generated/domain-completion-matrix-report.json)" ]; then
-            git config user.name doke
-            git config user.email bielantoniomma@gmail.com
-            git add docs/DOMAIN-COMPLETION-MATRIX.md
-            git add -f reports/generated/domain-completion-matrix-report.json
-            git commit -m "docs(gov): regenerate domain completion matrix for COM-B03C-R3J"
-            git push origin "HEAD:${{ github.event.pull_request.head.ref }}"
-          fi
       - name: Domain completion matrix audit
         run: npm run audit:domain-completion-matrix
       - name: Agent governance audit
@@ -106,4 +85,4 @@ jobs:
           if(e.exactRootCauseProven!==false)process.exit(1);
           NODE
       - name: Diff hygiene
-        run: git diff --check "${{ github.event.pull_request.base.sha }}" HEAD
+        run: git diff --check "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}"
