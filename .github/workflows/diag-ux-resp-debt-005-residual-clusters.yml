@@ -1,0 +1,77 @@
+name: Doke UX-RESP-DEBT-005 Residual Cluster Diagnostic
+
+on:
+  push:
+    branches:
+      - diag/ux-resp-debt-005-residual-clusters
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Guard certified UX-RESP-DEBT-004 parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = "ecb54eef031754cf91b9ec4340f382768f11f027"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Install Chromium from lockfile-pinned Playwright
+        run: node node_modules/@playwright/test/cli.js install --with-deps chromium
+
+      - name: Generate baseline and responsive report
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/generate-responsive-index-baseline.js
+          set +e
+          node scripts/test-responsive-contract.js
+          STATUS=$?
+          set -e
+          test "${STATUS}" -eq 1
+
+      - name: Print residual failures grouped by page breakpoint component and property
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const report = JSON.parse(fs.readFileSync('reports/responsive-contract-test-report.json', 'utf8'));
+          console.log('SUMMARY', JSON.stringify(report.summary));
+          const rows = (report.failures || []).map((f) => ({
+            page: f.page,
+            breakpoint: f.breakpoint,
+            component: f.component,
+            property: f.property,
+            expected: f.expected,
+            actual: f.actual,
+            delta: f.delta,
+            selector: f.selector,
+          }));
+          console.log('FAILURES_JSON_START');
+          console.log(JSON.stringify(rows, null, 2));
+          console.log('FAILURES_JSON_END');
+          const grouped = {};
+          for (const r of rows) {
+            const key = [r.page, r.breakpoint, r.component, r.property].join(' | ');
+            grouped[key] = (grouped[key] || 0) + 1;
+          }
+          console.log('GROUPS_JSON_START');
+          console.log(JSON.stringify(grouped, null, 2));
+          console.log('GROUPS_JSON_END');
+          NODE
