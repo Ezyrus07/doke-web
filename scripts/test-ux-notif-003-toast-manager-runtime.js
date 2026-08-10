@@ -7,7 +7,6 @@ const previous = {
 };
 
 const timers = [];
-const dispatched = [];
 
 class FakeNode {
   constructor(tagName) {
@@ -72,27 +71,17 @@ global.window = {
 };
 global.document = {
   body,
-  createElement(tagName) { return new FakeNode(tagName); },
-  dispatchEvent(event) { dispatched.push(event); return true; }
+  createElement(tagName) { return new FakeNode(tagName); }
 };
-global.CustomEvent = class CustomEventStub {
-  constructor(type, options = {}) { this.type = type; this.detail = options.detail; }
-};
-global.window.CustomEvent = global.CustomEvent;
 
 delete require.cache[require.resolve('../assets/js/core/notification-toast.js')];
 require('../assets/js/core/notification-toast.js');
 const manager = global.window.Doke.notificationToast;
 assert.ok(manager);
+assert.equal(manager.version, '20260809-ux-notif-003-v1');
 
 let accountKey = 'runtime-a';
-let actions = [];
-let expired = false;
-let muted = 0;
-let quick = 0;
-let markedRead = 0;
 let opened = 0;
-let actionResults = 0;
 let sounds = 0;
 let digest = 0;
 let renderErrors = 0;
@@ -104,14 +93,7 @@ manager.configure({
   isDndActive: () => false,
   priorityOf: (payload) => payload.priority || 'normal',
   iconFor: () => '<!>',
-  resolveActions: () => actions,
-  scopeOf: () => 'conversation:runtime',
-  isActionExpired: () => expired,
-  onMuteScope: () => { muted += 1; },
-  onQuickAction: () => { quick += 1; },
-  onMarkRead: () => { markedRead += 1; },
   onOpen: () => { opened += 1; },
-  onRecordActionResult: () => { actionResults += 1; },
   onPlaySound: () => { sounds += 1; },
   queueDigest: () => { digest += 1; },
   onRenderError: (diagnostic) => {
@@ -161,37 +143,16 @@ assert.equal(opened, 1);
 basic.toast.fire('keydown', { key: 'Enter', target: { matches: () => false }, preventDefault() {} });
 assert.equal(opened, 2);
 
-expired = true;
-actions = [{ label: 'Expirar', action: 'event-rsvp' }];
-assert.equal(manager.show(payload('expired')), true);
-const expiredRecord = manager.getRecord('runtime-expired');
-expiredRecord.toast.actionButtons[0].fire('click', { stopPropagation() {} });
-assert.equal(expiredRecord.toast.actionButtons[0].disabled, true);
-assert.equal(actionResults, 1);
-expired = false;
+assert.equal(manager.show(payload('legacy-action', { actions: [{ label: 'Evento', eventName: 'doke:runtime-event' }] })), true);
+assert.equal(manager.getRecord('runtime-legacy-action').toast.actionButtons.length, 0, 'runtime toast must fail closed when H09 action authority is unavailable');
 
-actions = [{ label: 'Silenciar', action: 'mute-scope' }];
-assert.equal(manager.show(payload('mute', { scopeLabel: 'Sala' })), true);
-manager.getRecord('runtime-mute').toast.actionButtons[0].fire('click', { stopPropagation() {} });
-assert.equal(muted, 1);
+global.window.Doke.notificationAction = {
+  resolveActions: () => [{ label: 'Responder', action: 'quick-reply' }]
+};
+assert.equal(manager.show(payload('authorized-action')), true);
+assert.equal(manager.getRecord('runtime-authorized-action').toast.actionButtons.length, 1, 'runtime toast may render only actions returned by H09 authority');
+delete global.window.Doke.notificationAction;
 
-actions = [{ label: 'Responder', action: 'quick-reply' }];
-assert.equal(manager.show(payload('quick')), true);
-manager.getRecord('runtime-quick').toast.actionButtons[0].fire('click', { stopPropagation() {} });
-assert.equal(quick, 1);
-
-actions = [{ label: 'Abrir', url: 'pedidos.html' }];
-assert.equal(manager.show(payload('url')), true);
-manager.getRecord('runtime-url').toast.actionButtons[0].fire('click', { stopPropagation() {} });
-assert.equal(markedRead, 1);
-assert.equal(global.window.location.href, 'pedidos.html');
-
-actions = [{ label: 'Evento', eventName: 'doke:runtime-event' }];
-assert.equal(manager.show(payload('event')), true);
-manager.getRecord('runtime-event').toast.actionButtons[0].fire('click', { stopPropagation() {} });
-assert.equal(dispatched.some((event) => event.type === 'doke:runtime-event'), true);
-
-actions = [];
 assert.equal(manager.show(payload('escape')), true);
 manager.getRecord('runtime-escape').toast.fire('keydown', { key: 'Escape', target: { matches: () => false }, preventDefault() {} });
 assert.equal(manager.getRecord('runtime-escape'), null);
@@ -241,4 +202,4 @@ if (previous.document === undefined) delete global.document; else global.documen
 if (previous.CustomEvent === undefined) delete global.CustomEvent; else global.CustomEvent = previous.CustomEvent;
 
 console.log('[ux-notif-003-toast-manager-runtime] ok');
-console.log('- real module path covers policy, DOM renderer, action lifecycle, overflow, dedupe, DND, account fence and renderer failure paths');
+console.log('- real module path covers policy, DOM renderer, fail-closed H09 action delegation, overflow, dedupe, DND, account fence and renderer failure paths');
