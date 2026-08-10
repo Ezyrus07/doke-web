@@ -917,16 +917,17 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - COM-B03C-R3I/R3J/R3K repository-certified 16 differential probes plus one separate negative control and connected the harness to reusable R3G adapters while keeping remote credential, dependency, staging and Realtime execution authority false.
 - COM-B03C-R3L repository-certified the single-use differential authorization lifecycle for the 17 cases: certify passed, authorize/canary remained skipped, trigger absent, authorization unreceived/unconsumed, credential wiring and remote executor invocation unprepared, production and merge blocked.
 - COM-B03C-R3M repository-certified the separately governed executable envelope for the R3L 17-case diagnostic on head 9f719759ce0321756835354ab1fd4c1f260433cf (run 31386647462 / certify 93448453187 success): future push-only secret wiring, canary-only dependencies, R3L executor invocation, independent sanitized-report verification, artifact upload and single-use trigger enforcement are prepared; authorize/canary remained skipped, the trigger remains absent and no staging access occurred.
+- COM-B03C-R3L single-use differential staging diagnostic completed on run 31388916899 / canary 93455955823 with artifact 9062928795: all 17 structural gates completed, four direct probes subscribed (control_true, uid_helper_direct, topic_helper_direct, row_topic_direct), extension_direct and every tested presence-extension composition were rejected, policy/identity residue remained zero, the trigger was removed, and exactRootCauseProven remained false.
 
 **Bloqueadores:**
 - **COM-B02 · CRITICAL · server_runtime_activation:** Server-authority contracts, persistence foundation and a read-only canary are certified, but membership, roles, invitations, bans and content commands are not integrated into the canonical runtime. _(Fase 11)_
-- **COM-B03 · HIGH · realtime_activation:** Authenticated community_posts Postgres Changes is proven in staging. Private Presence remains diagnostic-only and is not promoted to functional/integrated; private Typing/Broadcast is not proven; channel_messages still lacks canonical remote authority; and the exact Presence root cause remains unproven. _(Fase 11)_
+- **COM-B03 · HIGH · realtime_activation:** Authenticated community_posts Postgres Changes is proven in staging. The R3L 17-case Presence differential diagnostic completed with zero residue: direct control/uid/topic/row-topic probes subscribed while extension_direct and all tested presence-extension compositions were rejected. This narrows the failing evaluation surface but does not prove the exact root cause; private Typing/Broadcast remains unproven and channel_messages still lacks canonical remote authority. _(Fase 11)_
 - **COM-B04 · HIGH · moderation_live_runtime_activation:** COM-B04I proved the authenticated live composition route in a rollback-only process-local staging canary, but the default shared handler remains HTTP 503 and no persistent runtime deployment or public traffic is active. _(Fase 12)_
 
 **Próximas ações:**
 - Integrate the certified server-authority repository into the main runtime for invitations, join requests, roles, bans and content commands.
 - Keep moderation fail-closed until a separately governed persistent staging runtime deployment/traffic boundary is defined and authorized.
-- R3M is repository-certified with no staging authority. Preserve the R3L trigger as absent until the final R3M evidence-head recertification succeeds; afterward, execution still requires the exact new single-use R3L staging authorization from the user and may not reuse any prior authorization.
+- Perform repository-only root-cause narrowing of Presence authorization semantics around realtime.messages.extension and its runtime evaluation context. Do not re-run staging unless a separately certified boundary identifies a precise missing observation and receives a new explicit single-use authorization.
 
 **Gate de saída:**
 - Community state survives device changes and refreshes.
@@ -1195,4 +1196,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-08-10T09:14:00-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-08-10T09:45:00-03:00._
