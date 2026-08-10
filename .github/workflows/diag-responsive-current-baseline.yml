@@ -1,0 +1,80 @@
+name: Doke Responsive Debt Current Baseline
+
+on:
+  push:
+    branches:
+      - diag/ux-responsive-debt-current-baseline
+    paths:
+      - '.github/workflows/diag-responsive-current-baseline.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  responsive-baseline:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Generate canonical responsive baseline
+        run: node scripts/generate-responsive-index-baseline.js
+
+      - name: Run responsive contract and preserve diagnostic result
+        shell: bash
+        run: |
+          set +e
+          node scripts/test-responsive-contract.js
+          STATUS=$?
+          set -e
+          test -f reports/responsive-contract-test-report.json
+          echo "responsive_contract_exit=${STATUS}"
+
+      - name: Print deterministic failure classification
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const report = JSON.parse(fs.readFileSync('reports/responsive-contract-test-report.json', 'utf8'));
+          const countBy = (items, keyFn) => {
+            const out = {};
+            for (const item of items) {
+              const key = keyFn(item);
+              out[key] = (out[key] || 0) + 1;
+            }
+            return Object.entries(out).sort((a, b) => b[1] - a[1]);
+          };
+          const byPage = countBy(report.failures, (x) => x.page);
+          const byComponent = countBy(report.failures, (x) => x.component);
+          const byBreakpoint = countBy(report.failures, (x) => x.breakpoint);
+          const byPageComponent = countBy(report.failures, (x) => `${x.page} :: ${x.component}`);
+          console.log('[responsive-debt-current] status=' + report.status);
+          console.log('[responsive-debt-current] checks=' + report.summary.checks);
+          console.log('[responsive-debt-current] failures=' + report.summary.failures);
+          console.log('[responsive-debt-current] skips=' + report.summary.skips);
+          console.log('[responsive-debt-current] failures_by_page=' + JSON.stringify(byPage));
+          console.log('[responsive-debt-current] failures_by_component=' + JSON.stringify(byComponent));
+          console.log('[responsive-debt-current] failures_by_breakpoint=' + JSON.stringify(byBreakpoint));
+          console.log('[responsive-debt-current] top_page_component=' + JSON.stringify(byPageComponent.slice(0, 25)));
+          console.log('[responsive-debt-current] first_failures=' + JSON.stringify(report.failures.slice(0, 40)));
+          NODE
+
+      - name: Verify diagnostic branch is repository-only
+        shell: bash
+        run: |
+          git diff --check
+          test "$(git diff --name-only HEAD^ HEAD)" = '.github/workflows/diag-responsive-current-baseline.yml'
