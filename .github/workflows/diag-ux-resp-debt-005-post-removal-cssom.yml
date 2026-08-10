@@ -1,0 +1,97 @@
+name: Doke UX-RESP-DEBT-005 Post Removal CSSOM
+
+on:
+  push:
+    branches:
+      - diag/ux-resp-debt-005-check-preservation
+
+permissions:
+  contents: read
+
+jobs:
+  trace:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Guard certified parent ancestry
+        run: test "$(git merge-base HEAD ecb54eef031754cf91b9ec4340f382768f11f027)" = "ecb54eef031754cf91b9ec4340f382768f11f027"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Remove quarantined imports workspace-only
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs=require('fs');
+          for (const file of ['assets/css/pages/pedidos-runtime-page.css','assets/css/pages/notificacoes-foundation.css','assets/css/pages/carteira-runtime-page.css']) {
+            let s=fs.readFileSync(file,'utf8');
+            const re=/^@import url\("\.\.\/components\/shell\/tablet-internal-rail-contract\.css\?[^\n]+\);\n/m;
+            if ((s.match(new RegExp(re.source,'gm'))||[]).length!==1) throw new Error(file);
+            fs.writeFileSync(file,s.replace(re,''));
+          }
+          NODE
+
+      - name: Install Chromium
+        run: node node_modules/@playwright/test/cli.js install --with-deps chromium
+
+      - name: Trace hidden elements and winning visibility rules
+        shell: bash
+        run: |
+          node <<'NODE'
+          const { chromium }=require('@playwright/test');
+          const { loadHtmlWithLocalCss }=require('./scripts/lib/responsive-html-loader');
+          const root=process.cwd();
+          const targets=[['pedidos.html',820,1180],['notificacoes.html',820,1180],['pedidos.html',608,926],['notificacoes.html',608,926],['carteira.html',608,926]];
+          const sels={header:'.app-header',inner:'.app-header__inner',search:'.home-side-meta__search',profile:'.home-side-meta__profile',avatar:'.home-side-meta__avatar'};
+          (async()=>{
+            const browser=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+            try {
+              for (const [file,width,height] of targets) {
+                const context=await browser.newContext({viewport:{width,height},javaScriptEnabled:false});
+                const page=await context.newPage();
+                await page.setContent(loadHtmlWithLocalCss(file,root,{modeLabel:'DEBT005 post-removal CSSOM'}),{waitUntil:'domcontentloaded'});
+                await page.waitForTimeout(60);
+                const out=await page.evaluate((sels)=>{
+                  function rules(el){
+                    const rows=[];
+                    function walk(rs,media=''){
+                      for(const r of rs||[]){
+                        if(r.type===CSSRule.MEDIA_RULE){if(matchMedia(r.conditionText).matches)walk(r.cssRules,r.conditionText);continue;}
+                        if(r.type!==CSSRule.STYLE_RULE)continue;
+                        let ok=false;try{ok=el.matches(r.selectorText)}catch(_){};if(!ok)continue;
+                        const decl={};
+                        for(const p of ['display','visibility','opacity','pointer-events','width','height','min-height','max-height','margin','padding','position','top','border-radius']){
+                          const v=r.style.getPropertyValue(p);if(v)decl[p]=v+(r.style.getPropertyPriority(p)?' !important':'');
+                        }
+                        if(Object.keys(decl).length)rows.push({media,selector:r.selectorText,decl});
+                      }
+                    }
+                    for(const sh of document.styleSheets){try{walk(sh.cssRules)}catch(_){}}
+                    return rows;
+                  }
+                  const o={};
+                  for(const [name,sel] of Object.entries(sels)){
+                    const el=document.querySelector(sel);if(!el){o[name]={exists:false};continue;}
+                    const s=getComputedStyle(el),r=el.getBoundingClientRect();
+                    o[name]={exists:true,rect:{x:r.x,y:r.y,width:r.width,height:r.height},computed:{display:s.display,visibility:s.visibility,opacity:s.opacity,pointerEvents:s.pointerEvents,position:s.position,margin:s.margin,padding:s.padding,height:s.height,borderRadius:s.borderRadius},rules:rules(el)};
+                  }
+                  return o;
+                },sels);
+                console.log(`POST_REMOVAL ${file} ${width}x${height}`);
+                console.log(JSON.stringify(out));
+                await context.close();
+              }
+            }finally{await browser.close();}
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
