@@ -1,0 +1,58 @@
+name: Doke UX-NOTIF-010 Matrix Sync
+
+on:
+  push:
+    branches:
+      - domain/ux-notif-010-matrix-sync
+    paths:
+      - .github/workflows/ux-notif-010-matrix-sync.yml
+
+permissions:
+  contents: write
+
+jobs:
+  sync-matrix:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout isolated matrix branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: domain/ux-notif-010-matrix-sync
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts
+
+      - name: Generate Matrix from permanent H10 tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/ux-notif-010-matrix-sync.yml
+          npm run write:domain-completion-matrix
+          npm run audit:domain-completion-matrix
+          grep -Fq '**Estado:** maturidade 3/6; UI hybrid; servidor partial; staging staging canary; segurança blocked; produção blocked.' docs/DOMAIN-COMPLETION-MATRIX.md
+          grep -Fq 'NTF-B01' docs/DOMAIN-COMPLETION-MATRIX.md
+          grep -Fq 'NTF-B02' docs/DOMAIN-COMPLETION-MATRIX.md
+          grep -Fq 'NTF-B03' docs/DOMAIN-COMPLETION-MATRIX.md
+          git diff --check -- docs/DOMAIN-COMPLETION-MATRIX.md
+
+      - name: Publish deterministic Matrix only
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add docs/DOMAIN-COMPLETION-MATRIX.md
+          test "$(git diff --cached --name-only | tr -d '\n')" = 'docs/DOMAIN-COMPLETION-MATRIX.md'
+          if git diff --cached --quiet; then
+            echo '[ux-notif-010] Matrix already synchronized.'
+            exit 0
+          fi
+          git commit -m 'docs(ux-notif-010): sync domain completion matrix'
+          git push origin HEAD:domain/ux-notif-010-matrix-sync
