@@ -51,6 +51,18 @@ function authority({ executor, store, hasPermission = () => true } = {}) {
 
   {
     let calls = 0;
+    const api = authority({ executor: { execute: async () => { calls += 1; return { ok: true }; } } });
+    const directUnsafe = await api.execute(candidate({ eventName: 'doke:danger' }), { body: 'Oi' });
+    const directIncomplete = await api.execute(candidate({ expectedState: '' }), { body: 'Oi' });
+    assert.equal(directUnsafe.state, 'FAILED');
+    assert.equal(directUnsafe.reason, 'invalid-action');
+    assert.equal(directIncomplete.state, 'FAILED');
+    assert.equal(directIncomplete.reason, 'invalid-action');
+    assert.equal(calls, 0, 'direct execute calls must pass the same schema/allowlist validation as rendered actions');
+  }
+
+  {
+    let calls = 0;
     const api = authority({ executor: { execute: async () => { calls += 1; } } });
     const action = api.resolveActions({ actions: [candidate({ expiresAt: '2026-08-09T20:00:00-03:00' })] })[0];
     const result = await api.execute(action, { body: 'Oi' });
@@ -122,11 +134,17 @@ function authority({ executor, store, hasPermission = () => true } = {}) {
 
   {
     const actionSource = read('assets/js/core/notification-action.js');
+    const messageService = read('assets/js/services/message-service.js');
+    const commandExecutor = read('assets/js/services/message-command-executor.js');
     assert.match(actionSource, /Doke\.services && Doke\.services\.messages/);
+    assert.match(actionSource, /getServerCommandBoundaryStatus/);
+    assert.match(actionSource, /status\.required !== true \|\| status\.ready !== true/);
     assert.match(actionSource, /commandId: action\.idempotencyKey/);
     assert.match(actionSource, /clientMutationId: action\.idempotencyKey/);
-    assert.match(actionSource, /acknowledgement/);
     assert.doesNotMatch(actionSource, /ORDER_ACCEPT/);
+    assert.match(messageService, /executeMessagesServerCommand\('sendMessage'/);
+    assert.match(commandExecutor, /validateAcknowledgement/);
+    assert.match(commandExecutor, /status !== 'accepted' && status !== 'replayed'/);
   }
 
   {
