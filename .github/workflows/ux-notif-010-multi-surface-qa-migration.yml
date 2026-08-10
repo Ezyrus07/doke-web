@@ -172,8 +172,13 @@ jobs:
           node scripts/audit-auth-session-contracts.js
 
       - name: Validate responsive structural contracts
+        shell: bash
+        env:
+          DOKE_PLAYWRIGHT_CHROMIUM_INSTALL: '1'
         run: |
-          npm run baseline:responsive-index
+          set -euo pipefail
+          npm run prepare:playwright-chromium
+          node scripts/generate-responsive-index-baseline.js
           node scripts/test-responsive-contract.js
           npm run audit:responsive-boundaries
 
