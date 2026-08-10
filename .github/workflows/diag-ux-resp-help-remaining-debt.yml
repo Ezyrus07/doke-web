@@ -1,0 +1,62 @@
+name: Doke diagnostic — ajuda responsive debt
+
+on:
+  push:
+    branches:
+      - diag/ux-resp-help-remaining-debt
+
+permissions:
+  contents: read
+
+jobs:
+  classify:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout exact diagnostic branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts
+
+      - name: Install Chromium from lockfile-pinned Playwright
+        run: node node_modules/@playwright/test/cli.js install --with-deps chromium
+
+      - name: Generate baseline
+        run: node scripts/generate-responsive-index-baseline.js
+
+      - name: Execute responsive contract
+        shell: bash
+        run: |
+          set +e
+          node scripts/test-responsive-contract.js
+          STATUS=$?
+          set -e
+          test "${STATUS}" -eq 0 -o "${STATUS}" -eq 1
+          test -f reports/responsive-contract-test-report.json
+
+      - name: Print exact ajuda failure cluster
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const report = JSON.parse(fs.readFileSync('reports/responsive-contract-test-report.json', 'utf8'));
+          const failures = report.failures.filter((failure) => failure.page === 'ajuda.html');
+          const byComponent = {};
+          const byBreakpoint = {};
+          for (const failure of failures) {
+            byComponent[failure.component] = (byComponent[failure.component] || 0) + 1;
+            byBreakpoint[failure.breakpoint] = (byBreakpoint[failure.breakpoint] || 0) + 1;
+          }
+          console.log('[diag-ajuda] summary');
+          console.log(JSON.stringify({ count: failures.length, byComponent, byBreakpoint }));
+          console.log('[diag-ajuda] failures');
+          for (const failure of failures) console.log(JSON.stringify(failure));
+          NODE
