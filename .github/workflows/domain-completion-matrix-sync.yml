@@ -48,6 +48,9 @@ jobs:
         run: node scripts/test-com-b03c-r3n-hosted-realtime-runtime-parity-readiness.js
       - name: Agent Governance
         run: npm run audit:agent-governance
+      - name: Contain known governance-generated side effects
+        run: |
+          git restore --worktree -- docs/HOME-AUTHORITY-CLASSIFICATION.md docs/PAGE-ASSET-AUTHORITY-MATRIX.md
       - name: Restrict writer outputs
         run: |
           unexpected="$(git status --porcelain | awk '{print $2}' | grep -v -E '^(docs/DOMAIN-COMPLETION-MATRIX\.md|reports/generated/domain-completion-matrix-report\.json)$' || true)"
