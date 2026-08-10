@@ -171,7 +171,10 @@ async function main() {
 
   const composed = buildAdapter();
   assert.equal(r3q.assertSyntheticAdapter(composed.adapter), composed.adapter);
-  assert.deepEqual(r3q.ADAPTER_METHODS.filter((method) => typeof composed.adapter[method] === 'function'), [...r3q.ADAPTER_METHODS]);
+  assert.deepEqual(
+    r3q.ADAPTER_METHODS.filter((method) => typeof composed.adapter[method] === 'function'),
+    [...r3q.ADAPTER_METHODS]
+  );
 
   const pinned = await classify();
   assert.equal(pinned.classification, 'hosted_runtime_observation_matches_pinned_presence_path');
@@ -196,10 +199,17 @@ async function main() {
   assert.equal(orJoin.classification, 'hosted_presence_only_or_join_diverged');
 
   const failed = buildAdapter({ failAt: 'presenceOnly' });
-  await assert.rejects(() => r3q.executeRepositoryObservationEnvelope(envelopeInput(), failed.adapter), /R3T_SYNTHETIC_PRESENCE_ONLY_FAILURE/);
+  await assert.rejects(
+    () => r3q.executeRepositoryObservationEnvelope(envelopeInput(), failed.adapter),
+    /R3T_SYNTHETIC_PRESENCE_ONLY_FAILURE/
+  );
   assert.ok(failed.lifecycleProvider.trace.includes('cleanup'));
-  assert.ok(failed.observationExecutor.calls.some((call) => call.descriptorId === r3s.COUNTER_READ_DESCRIPTOR.id && call.context.phase === 'after_cleanup'));
-  assert.ok(failed.observationExecutor.calls.some((call) => call.descriptorId === r3s.RESIDUE_INSPECTION_DESCRIPTOR.id));
+  assert.ok(failed.observationExecutor.calls.some(
+    (call) => call.descriptorId === r3s.COUNTER_READ_DESCRIPTOR.id && call.context.phase === 'after_cleanup'
+  ));
+  assert.ok(failed.observationExecutor.calls.some(
+    (call) => call.descriptorId === r3s.RESIDUE_INSPECTION_DESCRIPTOR.id
+  ));
 
   assert.equal(r3q.INSTRUMENTATION_SPEC.executableSqlPrepared, false);
   assert.equal(r3s.COUNTER_READ_DESCRIPTOR.executableSqlPrepared, false);
@@ -208,11 +218,41 @@ async function main() {
   assert.equal(r3k.CONTRACT_ID, config.continuity.r3kContractId);
 
   assert.equal(evidence.contractId, r3t.CONTRACT_ID);
-  assert.equal(evidence.status, 'repository_complete_r3q_adapter_composition_ready_nine_of_nine_no_remote_authority');
+  assert.equal(
+    evidence.status,
+    'repository_complete_r3q_adapter_composition_certified_nine_of_nine_no_remote_authority'
+  );
+  assert.equal(evidence.initialBoundaryCommit, '858e87aec924352c8b15253b98e6a84e9706ea34');
   assert.equal(evidence.composition.r3qMethodCount, 9);
   assert.equal(evidence.composition.boundMethodCount, 9);
   assert.equal(evidence.composition.unboundMethodCount, 0);
   assert.equal(evidence.composition.fullyBound, true);
+  assert.equal(evidence.certificationHistory.initialFailClosed.r3tRun, 31412008217);
+  assert.equal(evidence.certificationHistory.initialFailClosed.r3tJob, 93532071721);
+  assert.equal(evidence.certificationHistory.initialFailClosed.failedStep, 'Domain Completion Matrix');
+  assert.equal(evidence.certificationHistory.initialFailClosed.syntaxPassed, true);
+  assert.equal(evidence.certificationHistory.initialFailClosed.completeCompositionPassed, true);
+  assert.equal(evidence.certificationHistory.initialFailClosed.preRemoteHardBlockPassed, true);
+  assert.equal(evidence.certificationHistory.canonicalMatrixReconciliation.writerRun, 31412222397);
+  assert.equal(evidence.certificationHistory.canonicalMatrixReconciliation.writerJob, 93532770028);
+  assert.equal(evidence.certificationHistory.canonicalMatrixReconciliation.writerConclusion, 'success');
+  assert.equal(evidence.certificationHistory.canonicalMatrixReconciliation.writerOutputCommit, 'aa540b4c1c239d1ccb1078b6843fdbe3ccb9cc46');
+  assert.deepEqual(evidence.certificationHistory.canonicalMatrixReconciliation.writerOutputs, [
+    'docs/DOMAIN-COMPLETION-MATRIX.md',
+    'reports/generated/domain-completion-matrix-report.json'
+  ]);
+  assert.equal(evidence.certificationHistory.canonicalMatrixReconciliation.matrixSourceChanged, false);
+  assert.equal(evidence.certificationHistory.canonicalMatrixReconciliation.workflowRestoredHead, 'bd807e56b7290dfe1d1a93b62409bea5b13e5f0c');
+  assert.equal(evidence.certificationHistory.canonicalMatrixReconciliation.workflowRestoredBlob, '299108d86dc097ba090392ebe9f218f6849e74ad');
+  assert.equal(evidence.certificationHistory.canonicalMatrixReconciliation.workflowPermissions, 'contents: read');
+  assert.equal(evidence.certificationHistory.normalHeadCertification.head, 'bd807e56b7290dfe1d1a93b62409bea5b13e5f0c');
+  assert.equal(evidence.certificationHistory.normalHeadCertification.r3tRun, 31412341563);
+  assert.equal(evidence.certificationHistory.normalHeadCertification.r3tJob, 93533144199);
+  assert.equal(evidence.certificationHistory.normalHeadCertification.r3tConclusion, 'success');
+  assert.equal(evidence.certificationHistory.normalHeadCertification.matrixRun, 31412341381);
+  assert.equal(evidence.certificationHistory.normalHeadCertification.matrixJob, 93533143368);
+  assert.equal(evidence.certificationHistory.normalHeadCertification.matrixConclusion, 'success');
+  assert.equal(evidence.certificationHistory.normalHeadCertification.runAttempt, 1);
   assert.equal(evidence.authority.remoteAdapterActivation, false);
   assert.equal(evidence.authority.remoteExecution, false);
   assert.equal(evidence.effects.stagingAccessExecuted, false);
