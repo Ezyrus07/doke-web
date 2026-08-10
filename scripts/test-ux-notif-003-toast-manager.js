@@ -134,25 +134,11 @@ class FakeNode {
 }
 
 const body = new FakeNode('body');
-const dispatched = [];
 global.document = {
   body,
-  createElement(tagName) { return new FakeNode(tagName); },
-  dispatchEvent(event) { dispatched.push(event); return true; }
+  createElement(tagName) { return new FakeNode(tagName); }
 };
-class CustomEventStub {
-  constructor(type, options = {}) { this.type = type; this.detail = options.detail; }
-}
-global.CustomEvent = CustomEventStub;
-global.window.CustomEvent = CustomEventStub;
 
-let actions = [];
-let expired = false;
-let muted = 0;
-let quick = 0;
-let markedRead = 0;
-let opened = 0;
-let actionResults = 0;
 let sounds = 0;
 accountKey = 'dom-account';
 manager.reset(accountKey);
@@ -164,17 +150,11 @@ manager.configure({
   renderToast: null,
   priorityOf: (payload) => payload.priority || 'normal',
   iconFor: () => '<!>',
-  resolveActions: () => actions,
-  scopeOf: () => 'conversation:1',
-  isActionExpired: () => expired,
-  onMuteScope: () => { muted += 1; },
-  onQuickAction: () => { quick += 1; },
-  onMarkRead: () => { markedRead += 1; },
   onOpen: () => { opened += 1; },
-  onRecordActionResult: () => { actionResults += 1; },
   onPlaySound: () => { sounds += 1; }
 });
 
+let opened = 0;
 const domPayload = (suffix, extra = {}) => ({
   id: `dom-${suffix}`,
   eventId: `dom-event-${suffix}`,
@@ -201,37 +181,16 @@ assert.equal(opened, 1);
 basic.toast.fire('keydown', { key: 'Enter', target: { matches: () => false }, preventDefault() {} });
 assert.equal(opened, 2);
 
-expired = true;
-actions = [{ label: 'Expirar', action: 'event-rsvp' }];
-assert.equal(manager.show(domPayload('expired')), true);
-const expiredRecord = manager.getRecord('dom-expired');
-expiredRecord.toast.actionButtons[0].fire('click', { stopPropagation() {} });
-assert.equal(expiredRecord.toast.actionButtons[0].disabled, true);
-assert.equal(actionResults, 1);
-expired = false;
+assert.equal(manager.show(domPayload('legacy-action', { actions: [{ label: 'Evento', eventName: 'doke:test-toast-action' }] })), true);
+assert.equal(manager.getRecord('dom-legacy-action').toast.actionButtons.length, 0, 'toast must fail closed when no notification action authority is loaded');
 
-actions = [{ label: 'Silenciar', action: 'mute-scope' }];
-assert.equal(manager.show(domPayload('mute', { scopeLabel: 'Sala' })), true);
-manager.getRecord('dom-mute').toast.actionButtons[0].fire('click', { stopPropagation() {} });
-assert.equal(muted, 1);
+global.window.Doke.notificationAction = {
+  resolveActions: () => [{ label: 'Responder', action: 'quick-reply' }]
+};
+assert.equal(manager.show(domPayload('authorized-action')), true);
+assert.equal(manager.getRecord('dom-authorized-action').toast.actionButtons.length, 1, 'toast may render only actions returned by notification action authority');
+delete global.window.Doke.notificationAction;
 
-actions = [{ label: 'Responder', action: 'quick-reply' }];
-assert.equal(manager.show(domPayload('quick')), true);
-manager.getRecord('dom-quick').toast.actionButtons[0].fire('click', { stopPropagation() {} });
-assert.equal(quick, 1);
-
-actions = [{ label: 'Abrir', url: 'pedidos.html' }];
-assert.equal(manager.show(domPayload('url')), true);
-manager.getRecord('dom-url').toast.actionButtons[0].fire('click', { stopPropagation() {} });
-assert.equal(markedRead, 1);
-assert.equal(global.window.location.href, 'pedidos.html');
-
-actions = [{ label: 'Evento', eventName: 'doke:test-toast-action' }];
-assert.equal(manager.show(domPayload('event')), true);
-manager.getRecord('dom-event').toast.actionButtons[0].fire('click', { stopPropagation() {} });
-assert.equal(dispatched.some((event) => event.type === 'doke:test-toast-action'), true);
-
-actions = [];
 assert.equal(manager.show(domPayload('escape')), true);
 const escapeRecord = manager.getRecord('dom-escape');
 escapeRecord.toast.fire('keydown', { key: 'Escape', target: { matches: () => false }, preventDefault() {} });
@@ -256,4 +215,4 @@ if (previous.document === undefined) delete global.document; else global.documen
 if (previous.CustomEvent === undefined) delete global.CustomEvent; else global.CustomEvent = previous.CustomEvent;
 
 console.log('[ux-notif-003-toast-manager] ok');
-console.log('- canonical policy, critical provenance, logical dedupe, account fence and default DOM lifecycle validated');
+console.log('- canonical policy, provenance, dedupe, account fence, DOM lifecycle and fail-closed action delegation validated');
