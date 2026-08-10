@@ -266,6 +266,6 @@
 
   function getState() { return Object.freeze({ accountKey: state.accountKey, seenCount: state.seen.size, activeCount: state.records.size }); }
 
-  const api = Object.freeze({ version: '20260809-ux-notif-009-v1', configure, show, reset, getState, getRecord, identityOf, policyAllows });
+  const api = Object.freeze({ version: '20260809-ux-notif-003-v1', configure, show, reset, getState, getRecord, identityOf, policyAllows });
   Doke.notificationToast = api;
 })();
