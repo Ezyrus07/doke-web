@@ -117,6 +117,35 @@ On the H10 branch only, that transient expectation is replaced with the permanen
 
 All remaining H09 lifecycle, storage, permission, idempotency, expiry, acknowledgement and unknown-outcome expectations remain intact.
 
+## Responsive QA and inherited debt
+
+H10 touches two root HTML files, so responsive governance was evaluated rather than assumed.
+
+The repository-wide Playwright responsive contract was first executed on H10 with the canonical Chromium preparation and generated `index.html` baseline. It reported:
+
+```text
+Checks: 865
+Failures: 170
+Skips: 285
+```
+
+A controlled diagnostic branch created directly from the **certified H09 parent SHA** executed the exact same Chromium preparation, baseline generation and responsive contract. Diagnostic run `31384442487` reproduced exactly:
+
+```text
+Checks: 865
+Failures: 170
+Skips: 285
+```
+
+Therefore those 170 failures are inherited repository-wide responsive debt and are not attributable to the H10 delta.
+
+H10 must not hide or relabel that debt as resolved. Its blocking responsive gate is instead scoped to what H10 can regress:
+
+1. the canonical `audit:responsive-boundaries` must remain green; and
+2. the diff from certified H09 to H10 for `mensagens.html` and `comunidade-interna.html` must be exactly one added `notification-action.js` script tag per page, with zero deletions or other markup/CSS changes.
+
+This is a fail-closed delta gate: any additional structural change to either migrated HTML breaks H10 CI. The global 170-failure responsive debt remains separately observable and unresolved.
+
 ## Definition of Done
 
 H10 must prove on the same permanent SHA:
@@ -132,8 +161,9 @@ H10 must prove on the same permanent SHA:
 9. `notification-action-v1` and H03 toast ownership/version remain unchanged;
 10. H01-H09 and MSG-A07 regressions remain green through the H10 cumulative gate;
 11. Domain Completion Matrix and agent governance remain valid;
-12. executable LCOV and Sonar Quality Gate pass;
-13. the final PR remains OPEN / DRAFT / UNMERGED.
+12. scoped responsive delta gate remains green while inherited global responsive debt stays documented;
+13. executable LCOV and Sonar Quality Gate pass;
+14. the final PR remains OPEN / DRAFT / UNMERGED.
 
 ## Preserved blockers
 
@@ -155,6 +185,7 @@ This handoff does not implement or prove:
 - real two-device/browser-vendor E2E;
 - provider delivery receipts/retry/dead-letter;
 - closure of NTF-B01/B02/B03;
+- repair of the inherited repository-wide 170 responsive-contract failures;
 - `ORDER_ACCEPT` quick action;
 - merge or ready-for-review.
 
