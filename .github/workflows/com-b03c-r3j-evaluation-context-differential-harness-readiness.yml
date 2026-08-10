@@ -43,9 +43,31 @@ jobs:
         shell: bash
         run: |
           test ! -e config/com-b03c-r3j-evaluation-context-differential-staging-trigger.json
-          ! grep -R "environment: doke-staging" .github/workflows/com-b03c-r3j-evaluation-context-differential-harness-readiness.yml
-          ! grep -R "SUPABASE_ACCESS_TOKEN\|SUPABASE_DB_PASSWORD" .github/workflows/com-b03c-r3j-evaluation-context-differential-harness-readiness.yml
-          ! grep -R "I_EXPLICITLY_AUTHORIZE_COM_B03C_R3J" backend/modules/communities/community-realtime-private-auth-r3j.js config/com-b03c-r3j-evaluation-context-differential-harness-readiness.json docs/validation/COM-B03C-R3J-EVALUATION-CONTEXT-DIFFERENTIAL-HARNESS-READINESS.json
+          node - <<'NODE'
+          const fs=require('node:fs');
+          const files=[
+            '.github/workflows/com-b03c-r3j-evaluation-context-differential-harness-readiness.yml',
+            'backend/modules/communities/community-realtime-private-auth-r3j.js',
+            'config/com-b03c-r3j-evaluation-context-differential-harness-readiness.json',
+            'docs/validation/COM-B03C-R3J-EVALUATION-CONTEXT-DIFFERENTIAL-HARNESS-READINESS.json',
+            'scripts/execute-com-b03c-r3j-evaluation-context-differential-harness.js',
+            'scripts/verify-com-b03c-r3j-evaluation-context-differential-report.js',
+            'scripts/test-com-b03c-r3j-evaluation-context-differential-harness-readiness.js'
+          ];
+          const forbidden=[
+            ['environment:', ' doke-staging'].join(''),
+            ['SUPABASE_', 'ACCESS_TOKEN'].join(''),
+            ['SUPABASE_', 'DB_PASSWORD'].join(''),
+            ['I_EXPLICITLY_', 'AUTHORIZE_COM_B03C_R3J'].join('')
+          ];
+          for(const file of files){
+            const text=fs.readFileSync(file,'utf8');
+            for(const token of forbidden)if(text.includes(token)){
+              console.error(`Forbidden remote token in ${file}`);
+              process.exit(1);
+            }
+          }
+          NODE
       - name: Domain completion matrix audit
         run: npm run audit:domain-completion-matrix
       - name: Agent governance audit

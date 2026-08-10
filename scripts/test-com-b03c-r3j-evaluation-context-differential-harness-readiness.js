@@ -62,9 +62,15 @@ async function expectFailure(fn, code) {
   );
 
   const workflow = fs.readFileSync(path.join(ROOT, '.github/workflows/com-b03c-r3j-evaluation-context-differential-harness-readiness.yml'), 'utf8');
-  assert(!workflow.includes('environment: doke-staging'), 'R3J_STAGING_ENVIRONMENT_PRESENT');
-  assert(!/SUPABASE_ACCESS_TOKEN|SUPABASE_DB_PASSWORD/.test(workflow), 'R3J_REMOTE_SECRET_PRESENT');
-  assert(!workflow.includes('I_EXPLICITLY_AUTHORIZE_COM_B03C_R3J'), 'R3J_AUTHORIZATION_PHRASE_PRESENT');
+  const forbiddenWorkflowTokens = [
+    ['environment:', ' doke-staging'].join(''),
+    ['SUPABASE_', 'ACCESS_TOKEN'].join(''),
+    ['SUPABASE_', 'DB_PASSWORD'].join(''),
+    ['I_EXPLICITLY_', 'AUTHORIZE_COM_B03C_R3J'].join('')
+  ];
+  for (const token of forbiddenWorkflowTokens) {
+    assert(!workflow.includes(token), `R3J_WORKFLOW_FORBIDDEN_TOKEN_${token.replace(/[^A-Z0-9]+/gi, '_')}`);
+  }
   assert(!fs.existsSync(path.join(ROOT, 'config/com-b03c-r3j-evaluation-context-differential-staging-trigger.json')), 'R3J_TRIGGER_PRESENT');
 
   assert(evidence.remoteBoundary.remoteExecutorPrepared === false, 'R3J_EVIDENCE_REMOTE_EXECUTOR_PREPARED');
