@@ -1,86 +1,31 @@
 name: Domain Completion Matrix Artifact Sync
 
 on:
-  push:
-    branches:
-      - com/com-001-baseline-audit
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
     paths:
-      - 'config/domain-completion-matrix-refresh.json'
+      - 'config/domain-completion-matrix.json'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+      - '.github/workflows/domain-completion-matrix-sync.yml'
 
-# TEMPORARY one-shot writer authority for R3M certification-state reconciliation.
-# Restore to contents: read immediately after this run.
-permissions:
-  contents: write
+permissions: { contents: read }
 
 jobs:
-  sync:
+  verify:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: com/com-001-baseline-audit
-          fetch-depth: 2
-      - name: Validate refresh manifest
-        run: |
-          node <<'NODE'
-          const fs=require('fs');const m=JSON.parse(fs.readFileSync('config/domain-completion-matrix-refresh.json','utf8'));
-          if(m.contractId!=='domain-completion-matrix-refresh-v1'||m.status!=='refresh_requested'||m.matrixVersion!=='1.3.113'||m.domain!=='COM-001'||m.boundary!=='COM-B03C-R3M-CANONICAL-MATRIX-RECONCILIATION'||m.attempt!==2)throw new Error('REFRESH_SCOPE_MISMATCH');
-          if(m.effects?.repositorySourceAndDerivedArtifacts!==true)throw new Error('INVALID_REPOSITORY_SCOPE');
-          for(const k of ['databaseAccessed','migrationApplied','stagingChanged','runtimeActivated','stagingDeploymentExecuted','stagingTrafficEnabled','realModerationExecuted','productionChanged','pullRequestMerged'])if(m.effects?.[k]!==false)throw new Error(`OPERATIONAL_EFFECT_PROHIBITED:${k}`);
-          NODE
+        with: { fetch-depth: 0 }
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
           cache: npm
       - run: npm ci --ignore-scripts
-      - name: Pre-writer R3M certified-state gate
-        run: |
-          node scripts/test-com-b03c-r3m-r3l-executable-staging-envelope-readiness.js
-          node scripts/test-com-b03c-r3l-evaluation-context-differential-presence-diagnostic-readiness.js
-          node - <<'NODE'
-          const e=require('./docs/validation/COM-B03C-R3M-R3L-EXECUTABLE-STAGING-ENVELOPE-READINESS.json');
-          if(e.status!=='repository_r3l_executable_staging_envelope_certified_no_staging_authority')process.exit(1);
-          if(e.normalCertification?.run!==31386647462||e.normalCertification?.certifyJob!==93448453187||e.normalCertification?.certifyStatus!=='success')process.exit(1);
-          if(e.normalCertification?.authorizeStatus!=='skipped'||e.normalCertification?.canaryStatus!=='skipped'||e.effects?.stagingAccessExecuted!==false)process.exit(1);
-          NODE
-      - name: Reconcile R3M certification into canonical matrix source
-        run: |
-          node <<'NODE'
-          const fs=require('fs');const m=JSON.parse(fs.readFileSync('config/domain-completion-matrix-refresh.json','utf8'));
-          const p='config/domain-completion-matrix.json';const matrix=JSON.parse(fs.readFileSync(p,'utf8'));
-          const d=matrix.domains.find((x)=>x.id==='COM-001');
-          if(matrix.version!=='1.3.113'||!d||d.maturity!==3||d.serverAuthority!=='partial'||d.productionGate!=='blocked')throw new Error('UNEXPECTED_COM_STATE');
-          matrix.updatedAt=m.updatedAt;
-          d.evidence=(d.evidence||[]).filter((x)=>!x.startsWith('COM-B03C-R3M defines the separately governed executable envelope')&&!x.startsWith('COM-B03C-R3M repository-certified the separately governed executable envelope'));
-          d.evidence.push('COM-B03C-R3M repository-certified the separately governed executable envelope for the R3L 17-case diagnostic on head 9f719759ce0321756835354ab1fd4c1f260433cf (run 31386647462 / certify 93448453187 success): future push-only secret wiring, canary-only dependencies, R3L executor invocation, independent sanitized-report verification, artifact upload and single-use trigger enforcement are prepared; authorize/canary remained skipped, the trigger remains absent and no staging access occurred.');
-          d.nextActions=(d.nextActions||[]).filter((x)=>!x.includes('Certify R3M repository-only')&&!x.includes('R3M is repository-certified'));
-          d.nextActions.push('R3M is repository-certified with no staging authority. Preserve the R3L trigger as absent until the final R3M evidence-head recertification succeeds; afterward, execution still requires the exact new single-use R3L staging authorization from the user and may not reuse any prior authorization.');
-          fs.writeFileSync(p,`${JSON.stringify(matrix,null,2)}\n`);
-          NODE
-      - run: npm run write:domain-completion-matrix
-      - run: npm run audit:domain-completion-matrix
-      - name: Preserve R3L/R3M continuity
-        run: |
-          node scripts/test-com-b03c-r3m-r3l-executable-staging-envelope-readiness.js
-          node scripts/test-com-b03c-r3l-evaluation-context-differential-presence-diagnostic-readiness.js
-      - name: Restrict intended diff
-        run: |
-          unexpected="$(git status --porcelain | awk '{print $2}' | grep -v -E '^(config/domain-completion-matrix\.json|docs/DOMAIN-COMPLETION-MATRIX\.md|reports/generated/domain-completion-matrix-report\.json)$' || true)"
-          test -z "$unexpected" || { echo "$unexpected"; exit 1; }
-          git diff --check -- config/domain-completion-matrix.json docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json
-      - run: npm run audit:agent-governance
-      - name: Stage only canonical matrix source and official outputs
-        run: |
-          git add config/domain-completion-matrix.json docs/DOMAIN-COMPLETION-MATRIX.md
-          git add -f reports/generated/domain-completion-matrix-report.json
-          staged="$(git diff --cached --name-only | sort)"
-          expected="$(printf '%s\n' config/domain-completion-matrix.json docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json | sort)"
-          test "$staged" = "$expected"
-          git diff --cached --check
-      - name: Commit canonical matrix certification state
-        run: |
-          git config user.name 'doke-matrix-bot'
-          git config user.email 'doke-matrix-bot@users.noreply.github.com'
-          git commit -m 'docs(com): record certified R3M matrix state'
-          git push origin HEAD:com/com-001-baseline-audit
+      - name: Domain Completion Matrix
+        run: npm run audit:domain-completion-matrix
+      - name: Agent Governance
+        run: npm run audit:agent-governance
+      - name: Diff hygiene
+        run: git diff --check "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}"
