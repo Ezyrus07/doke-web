@@ -1,0 +1,80 @@
+{
+  "validationId": "COM-B03C-R3V-SINGLE-USE-REMOTE-EXECUTION-ENVELOPE-READINESS",
+  "contractId": "com-b03c-r3v-single-use-remote-execution-envelope-readiness-v1",
+  "status": "repository_single_use_remote_execution_envelope_prepared_no_remote_authority",
+  "matrixVersion": "1.3.113",
+  "maturity": 3,
+  "productionGate": "blocked",
+  "preparedFromHead": "08363a9023c9cd9c5ffc2d31b429309aef10018e",
+  "initialBoundaryCommit": null,
+  "predecessor": {
+    "validationId": "COM-B03C-R3U-INSTRUMENTATION-SQL-MATERIALIZATION-READINESS",
+    "status": "repository_instrumentation_sql_materialization_certified_no_remote_authority",
+    "head": "08363a9023c9cd9c5ffc2d31b429309aef10018e",
+    "recertRun": 31423888012,
+    "recertJob": 93570904450,
+    "matrixRecertRun": 31423888050,
+    "matrixRecertJob": 93570904770
+  },
+  "rootCauseNarrowing": {
+    "r3gJoinResultGap": "existing R3G subscribePresenceReadJoin exposes subscribed/classification but does not surface whether the Presence sync/state signal was observed",
+    "r3uCleanupCounterGap": "R3U cleanup removes the counter sequences before R3Q requests its after_cleanup counter phase, so a literal post-cleanup pg_sequences read would reset the visible snapshot to zero",
+    "resolution": [
+      "R3V adds a presence-aware bridge that reuses R3G subscribeChannel while surfacing presenceStateObserved",
+      "R3V carries forward the last immutable valid counter snapshot after destructive cleanup; residue inspection remains a real post-cleanup catalog read"
+    ],
+    "historicalBoundariesModified": false
+  },
+  "executionEnvelope": {
+    "phaseCount": 26,
+    "adapterMethodCount": 9,
+    "statementCount": 21,
+    "bridgeControls": [
+      "presence_state_observation_signal",
+      "after_cleanup_counter_terminal_snapshot_carry_forward"
+    ],
+    "singleUse": true,
+    "reusableAfterFailure": false,
+    "predecessorAuthorizationReusable": false,
+    "runAttemptMustBeOneWhenAuthorized": true,
+    "authorizationPhraseDefined": false,
+    "futureTriggerPath": "config/com-b03c-r3v-single-use-remote-execution-staging-trigger.json",
+    "triggerPrepared": false,
+    "remoteExecutorContractPrepared": true,
+    "remoteExecutorActivated": false
+  },
+  "authority": {
+    "repositoryRemoteEnvelope": true,
+    "remoteExecution": false,
+    "remoteAdapterActivation": false,
+    "triggerCreation": false,
+    "stagingRead": false,
+    "stagingMutation": false,
+    "remoteCredentialRead": false,
+    "remoteDependencyLoad": false,
+    "network": false,
+    "realtimeSubscription": false,
+    "authIdentityLifecycle": false,
+    "runtimeChange": false,
+    "production": false,
+    "merge": false
+  },
+  "effects": {
+    "stagingAccessExecuted": false,
+    "remoteCredentialReadExecuted": false,
+    "remoteDependencyLoadExecuted": false,
+    "networkAccessExecuted": false,
+    "databaseConnectionExecuted": false,
+    "databaseQueryAgainstRemoteExecuted": false,
+    "remoteClientInstantiated": false,
+    "realtimeSubscriptionExecuted": false,
+    "instrumentationInstalledOnRemote": false,
+    "authIdentityMutationExecuted": false,
+    "runtimePolicyChangeExecuted": false,
+    "productionExecuted": false,
+    "mergeExecuted": false
+  },
+  "exactRootCauseProven": false,
+  "causalPromotionAllowed": false,
+  "nextBoundary": "Define and certify a separate newly explicit single-use staging authorization lifecycle for this exact R3V envelope. No existing authorization is reusable."
+}

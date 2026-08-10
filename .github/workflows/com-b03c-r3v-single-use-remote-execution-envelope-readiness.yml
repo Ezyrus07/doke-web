@@ -1,0 +1,57 @@
+name: COM-B03C-R3V Single-Use Remote Execution Envelope Readiness
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - 'backend/modules/communities/community-realtime-private-auth-r3v.js'
+      - 'scripts/execute-com-b03c-r3v-single-use-remote-execution-envelope.js'
+      - 'scripts/test-com-b03c-r3v-single-use-remote-execution-envelope-readiness.js'
+      - 'config/com-b03c-r3v-single-use-remote-execution-envelope-readiness.json'
+      - 'docs/validation/COM-B03C-R3V-SINGLE-USE-REMOTE-EXECUTION-ENVELOPE-READINESS.json'
+      - '.github/workflows/com-b03c-r3v-single-use-remote-execution-envelope-readiness.yml'
+
+permissions: { contents: read }
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Syntax
+        run: |
+          node --check backend/modules/communities/community-realtime-private-auth-r3v.js
+          node --check scripts/execute-com-b03c-r3v-single-use-remote-execution-envelope.js
+          node --check scripts/test-com-b03c-r3v-single-use-remote-execution-envelope-readiness.js
+      - name: R3V single-use remote execution envelope
+        run: node scripts/test-com-b03c-r3v-single-use-remote-execution-envelope-readiness.js
+      - name: R3V repository executor self-test
+        run: node scripts/execute-com-b03c-r3v-single-use-remote-execution-envelope.js --repository-self-test
+      - name: Pre-remote hard block
+        run: |
+          node - <<'NODE'
+          const r3v = require('./backend/modules/communities/community-realtime-private-auth-r3v');
+          let sideEffects = 0;
+          try {
+            r3v.assertRemoteExecutionBoundaryAbsent();
+            sideEffects += 1;
+          } catch (error) {
+            if (error?.code !== r3v.REMOTE_EXECUTION_BLOCK_CODE) throw error;
+          }
+          if (sideEffects !== 0) throw new Error('R3V_PRE_REMOTE_SIDE_EFFECT_DETECTED');
+          NODE
+      - name: Trigger absence
+        run: test ! -e config/com-b03c-r3v-single-use-remote-execution-staging-trigger.json
+      - name: Domain Completion Matrix
+        run: npm run audit:domain-completion-matrix
+      - name: Agent Governance
+        run: npm run audit:agent-governance
+      - name: Diff hygiene
+        run: git diff --check "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}"
