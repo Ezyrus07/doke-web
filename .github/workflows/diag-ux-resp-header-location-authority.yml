@@ -1,0 +1,71 @@
+name: Diagnostic UX responsive header location authority
+
+on:
+  push:
+    branches:
+      - diag/ux-resp-header-location-authority
+
+permissions:
+  contents: read
+
+jobs:
+  diagnostic:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Apply workspace-only shared location width probe
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('assets/css/layout/header.css')
+          text = path.read_text()
+          marker = '@media (min-width: 561px) and (max-width: 760px) {'
+          idx = text.index(marker)
+          insert_at = text.index('\n', idx) + 1
+          probe = '''  body[data-page].has-global-header {\n    --doke-header-location-width-tablet: min(176px, 34vw);\n  }\n\n  body[data-page].has-global-header .app-header .home-side-meta__location {\n    box-sizing: border-box;\n    inline-size: var(--doke-header-location-width-tablet);\n    width: var(--doke-header-location-width-tablet);\n    min-inline-size: var(--doke-header-location-width-tablet);\n    max-inline-size: var(--doke-header-location-width-tablet);\n    flex: 0 1 var(--doke-header-location-width-tablet);\n  }\n\n'''
+          text = text[:insert_at] + probe + text[insert_at:]
+          path.write_text(text)
+          PY
+          git diff -- assets/css/layout/header.css
+
+      - name: Install Chromium from lockfile-pinned Playwright
+        run: node node_modules/@playwright/test/cli.js install --with-deps chromium
+
+      - name: Generate responsive index baseline
+        run: node scripts/generate-responsive-index-baseline.js
+
+      - name: Execute responsive contract and print classification
+        shell: bash
+        run: |
+          set +e
+          node scripts/test-responsive-contract.js
+          STATUS=$?
+          set -e
+          test "$STATUS" -eq 0 -o "$STATUS" -eq 1
+          node - <<'NODE'
+          const report = require('./reports/responsive-contract-test-report.json');
+          const byBreakpoint = {};
+          const byProperty = {};
+          for (const failure of report.failures) {
+            byBreakpoint[failure.breakpoint] = (byBreakpoint[failure.breakpoint] || 0) + 1;
+            byProperty[failure.property] = (byProperty[failure.property] || 0) + 1;
+          }
+          console.log(JSON.stringify({
+            summary: report.summary,
+            byBreakpoint,
+            byProperty,
+            ajuda: report.failures.filter(f => f.page === 'ajuda.html'),
+          }, null, 2));
+          NODE
