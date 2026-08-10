@@ -28,9 +28,7 @@ function candidate(overrides = {}) {
 function authority({ executor, store, hasPermission = () => true } = {}) {
   return actionModule.createAuthority({
     store: store || actionModule.createMemoryStore('scope_user_1'),
-    executors: {
-      MESSAGE_REPLY: executor || { execute: async () => ({ ok: true }) }
-    },
+    executors: { MESSAGE_REPLY: executor || { execute: async () => ({ ok: true }) } },
     now: () => FIXED_NOW,
     hasPermission
   });
@@ -104,10 +102,7 @@ function authority({ executor, store, hasPermission = () => true } = {}) {
 
   {
     let calls = 0;
-    const api = authority({
-      executor: { execute: async () => { calls += 1; } },
-      hasPermission: () => false
-    });
+    const api = authority({ executor: { execute: async () => { calls += 1; } }, hasPermission: () => false });
     const action = api.resolveActions({ actions: [candidate()] })[0];
     const result = await api.execute(action, { body: 'Oi' });
     assert.equal(result.state, 'FAILED');
@@ -132,6 +127,16 @@ function authority({ executor, store, hasPermission = () => true } = {}) {
     assert.match(actionSource, /clientMutationId: action\.idempotencyKey/);
     assert.match(actionSource, /acknowledgement/);
     assert.doesNotMatch(actionSource, /ORDER_ACCEPT/);
+  }
+
+  {
+    const notificationsPage = read('notificacoes.html');
+    const actionIndex = notificationsPage.indexOf('assets/js/core/notification-action.js');
+    const toastIndex = notificationsPage.indexOf('assets/js/core/notification-toast.js');
+    assert.ok(actionIndex >= 0, 'canonical notification surface must load notification-action authority');
+    assert.ok(toastIndex > actionIndex, 'notification-action must execute before notification-toast');
+    assert.doesNotMatch(read('mensagens.html'), /notification-action\.js/, 'H09 must not silently expand rollout to messages');
+    assert.doesNotMatch(read('comunidade-interna.html'), /notification-action\.js/, 'H09 must leave multi-surface migration to H10');
   }
 
   console.log('UX-NOTIF-009 notification action contract passed.');
