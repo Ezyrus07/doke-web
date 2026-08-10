@@ -1,0 +1,42 @@
+name: Doke UX-NOTIF-010 Parent Responsive Diagnostic
+
+on:
+  push:
+    branches:
+      - diag/ux-notif-010-responsive-parent
+    paths:
+      - .github/workflows/ux-notif-010-parent-responsive-diagnostic.yml
+
+permissions:
+  contents: read
+
+jobs:
+  responsive-parent-diagnostic:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout parent diagnostic branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+      - name: Run canonical parent responsive contract
+        shell: bash
+        env:
+          DOKE_PLAYWRIGHT_CHROMIUM_INSTALL: '1'
+        run: |
+          set -euo pipefail
+          npm run prepare:playwright-chromium
+          node scripts/generate-responsive-index-baseline.js
+          set +e
+          node scripts/test-responsive-contract.js
+          STATUS=$?
+          set -e
+          echo "[parent-responsive] exit=${STATUS}"
+          test -f reports/responsive-contract-test-report.md
+          grep -E '^Status:|^- Páginas avaliadas|^- Breakpoints:|^- Checks executados:|^- Falhas:|^- Skips informativos:' reports/responsive-contract-test-report.md || true
+          exit 0
