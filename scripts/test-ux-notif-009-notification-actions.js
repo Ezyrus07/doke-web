@@ -376,10 +376,10 @@ function browserAuthority({
     { boundaryThrows: true }
   ]) {
     const runtime = browserAuthority(scenario);
-    const action = runtime.api.resolveActions({ actions: [candidate()] })[0];
-    const result = await runtime.api.execute(action, { body: 'Não deve sair' });
+    assert.equal(runtime.api.resolveActions({ actions: [candidate()] }).length, 0, 'unavailable browser executor must fail closed before render');
+    const result = await runtime.api.execute(candidate(), { body: 'Não deve sair' });
     assert.equal(result.state, 'FAILED');
-    assert.equal(result.error.code, 'DOKE_NOTIFICATION_ACTION_EXECUTOR_UNAVAILABLE');
+    assert.equal(result.reason, 'invalid-action');
     assert.equal(runtime.calls.length, 0);
   }
 
@@ -467,8 +467,13 @@ function browserAuthority({
     const toastIndex = notificationsPage.indexOf('assets/js/core/notification-toast.js');
     assert.ok(actionIndex >= 0, 'canonical notification surface must load notification-action authority');
     assert.ok(toastIndex > actionIndex, 'notification-action must execute before notification-toast');
-    assert.doesNotMatch(read('mensagens.html'), /notification-action\.js/, 'H09 must not silently expand rollout to messages');
-    assert.doesNotMatch(read('comunidade-interna.html'), /notification-action\.js/, 'H09 must leave multi-surface migration to H10');
+    for (const surface of ['mensagens.html', 'comunidade-interna.html']) {
+      const source = read(surface);
+      const migratedActionIndex = source.indexOf('assets/js/core/notification-action.js');
+      const migratedToastIndex = source.indexOf('assets/js/core/notification-toast.js');
+      assert.ok(migratedActionIndex >= 0, `${surface} must load notification-action after H10 migration`);
+      assert.ok(migratedToastIndex > migratedActionIndex, `${surface} must load notification-action before notification-toast`);
+    }
   }
 
   delete require.cache[ACTION_MODULE_PATH];
