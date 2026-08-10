@@ -26,13 +26,36 @@ jobs:
       - name: Install dependencies
         run: npm ci --ignore-scripts
 
+      - name: Apply workspace-only internal tablet variant probe
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('assets/css/layout/page-rail-authority.css')
+          text = path.read_text()
+          anchor = '/* Tablet portrait internal rail authority.'
+          start = text.index(anchor)
+          end = text.index('@media (min-width: 761px) and (max-width: 1024px)', start)
+          segment = text[start:end]
+          if segment.count('--doke-rail-max: 560px;') != 1:
+              raise SystemExit('expected exactly one internal tablet rail max in authority segment')
+          if segment.count('--doke-header-height: 70px;') != 1:
+              raise SystemExit('expected exactly one internal tablet header height in authority segment')
+          segment = segment.replace('--doke-rail-max: 560px;', '--doke-rail-max: 572px;', 1)
+          segment = segment.replace('--doke-header-height: 70px;', '--doke-header-height: 64px;', 1)
+          text = text[:start] + segment + text[end:]
+          path.write_text(text)
+          PY
+          git diff --check
+          git diff -- assets/css/layout/page-rail-authority.css
+
       - name: Install Chromium from lockfile-pinned Playwright
         run: node node_modules/@playwright/test/cli.js install --with-deps chromium
 
       - name: Generate responsive baseline
         run: node scripts/generate-responsive-index-baseline.js
 
-      - name: Execute contract and classify remaining failures
+      - name: Execute contract and classify probed failures
         shell: bash
         run: |
           set +e
@@ -69,16 +92,20 @@ jobs:
         run: |
           node - <<'NODE'
           const fs = require('fs');
-          const path = require('path');
           const { chromium } = require('@playwright/test');
           const { loadHtmlWithLocalCss } = require('./scripts/lib/responsive-html-loader');
           const rootDir = process.cwd();
           const targets = [
             ['index.html', '.app-header'],
+            ['ajuda.html', '.app-header'],
             ['detalhe-anuncio.html', '.app-header'],
             ['perfil.html', '.app-header'],
             ['resultados.html', '.app-header'],
             ['comunidade.html', '.app-header'],
+            ['mensagens.html', '.app-header'],
+            ['pedidos.html', '.app-header'],
+            ['notificacoes.html', '.app-header'],
+            ['carteira.html', '.app-header'],
           ];
           (async () => {
             const executablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE
@@ -89,7 +116,7 @@ jobs:
               for (const [file, selector] of targets) {
                 const context = await browser.newContext({ viewport: { width: 608, height: 926 }, deviceScaleFactor: 1, javaScriptEnabled: false });
                 const page = await context.newPage();
-                await page.setContent(loadHtmlWithLocalCss(file, rootDir, { modeLabel: 'ux-resp-debt-004 token probe' }), { waitUntil: 'domcontentloaded', timeout: 30000 });
+                await page.setContent(loadHtmlWithLocalCss(file, rootDir, { modeLabel: 'ux-resp-debt-004 candidate probe' }), { waitUntil: 'domcontentloaded', timeout: 30000 });
                 await page.waitForTimeout(80);
                 const result = await page.evaluate((selector) => {
                   const body = document.body;
@@ -100,15 +127,10 @@ jobs:
                   const innerRect = inner?.getBoundingClientRect();
                   return {
                     dataPage: body.dataset.page || null,
-                    classes: body.className,
                     vars: {
-                      railInlineGutter: style.getPropertyValue('--doke-rail-inline-gutter').trim(),
-                      railAvailable: style.getPropertyValue('--doke-rail-available').trim(),
                       railMax: style.getPropertyValue('--doke-rail-max').trim(),
                       pageRail: style.getPropertyValue('--doke-page-rail').trim(),
-                      headerRail: style.getPropertyValue('--doke-header-rail').trim(),
                       headerHeight: style.getPropertyValue('--doke-header-height').trim(),
-                      firstBlockTop: style.getPropertyValue('--doke-first-block-top').trim(),
                     },
                     header: rect ? { x: rect.x, y: rect.y, width: rect.width, height: rect.height } : null,
                     inner: innerRect ? { x: innerRect.x, y: innerRect.y, width: innerRect.width, height: innerRect.height } : null,
