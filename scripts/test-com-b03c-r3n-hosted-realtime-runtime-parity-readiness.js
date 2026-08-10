@@ -60,17 +60,31 @@ assert.equal(config.contractId, r3n.CONTRACT_ID);
 assert.equal(config.status, 'repository_hosted_realtime_runtime_parity_contradiction_ready_no_remote_authority');
 assert.equal(config.preciseMissingObservation, r3n.PRECISE_MISSING_OBSERVATION);
 assert.equal(evidence.contractId, r3n.CONTRACT_ID);
-assert.equal(evidence.status, 'repository_hosted_realtime_runtime_parity_contradiction_prepared_no_remote_authority');
+assert.equal(evidence.status, 'repository_hosted_realtime_runtime_parity_contradiction_certified_no_remote_authority');
 assert.equal(evidence.exactRootCauseProven, false);
 assert.equal(evidence.causalPromotionAllowed, false);
 assert.equal(evidence.effects.stagingAccessExecuted, false);
 assert.equal(evidence.effects.runtimePolicyChangeExecuted, false);
 assert.equal(evidence.effects.productionExecuted, false);
 assert.equal(evidence.effects.mergeExecuted, false);
+assert.equal(evidence.certificationHistory.initialFailClosed.conclusion, 'failure');
+assert.equal(evidence.certificationHistory.initialFailClosed.failedStep, 'Domain Completion Matrix');
+assert.equal(evidence.certificationHistory.canonicalMatrixReconciliation.successfulWriterConclusion, 'success');
+assert.deepEqual(evidence.certificationHistory.canonicalMatrixReconciliation.writerOutputs, [
+  'docs/DOMAIN-COMPLETION-MATRIX.md',
+  'reports/generated/domain-completion-matrix-report.json'
+]);
+assert.equal(evidence.certificationHistory.canonicalMatrixReconciliation.matrixSourceChanged, false);
+assert.equal(evidence.certificationHistory.canonicalMatrixReconciliation.workflowPermissions, 'contents: read');
+assert.equal(evidence.certificationHistory.normalHeadCertification.head, 'c982b8e0fab3245a96b3a6c8dab82746b44b6c1f');
+assert.equal(evidence.certificationHistory.normalHeadCertification.r3nConclusion, 'success');
+assert.equal(evidence.certificationHistory.normalHeadCertification.matrixConclusion, 'success');
+assert.equal(evidence.certificationHistory.normalHeadCertification.runAttempt, 1);
 
 process.stdout.write(JSON.stringify({
   contractId: r3n.CONTRACT_ID,
   decision: decision.decision,
+  evidenceStatus: evidence.status,
   preciseMissingObservation: decision.preciseMissingObservation,
   rejectedHypotheses: decision.causalNarrowing.rejectedHypotheses,
   remoteExecutionAuthority: decision.remoteExecutionAuthority,
