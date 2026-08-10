@@ -1,0 +1,142 @@
+name: Doke UX-RESP-DEBT-005 Contextual Header CSSOM
+
+on:
+  push:
+    branches:
+      - diag/ux-resp-debt-005-contextual-cssom
+
+permissions:
+  contents: read
+
+jobs:
+  cssom:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Guard certified UX-RESP-DEBT-004 parent
+        run: test "$(git rev-parse HEAD^)" = "ecb54eef031754cf91b9ec4340f382768f11f027"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Install Chromium from lockfile-pinned Playwright
+        run: node node_modules/@playwright/test/cli.js install --with-deps chromium
+
+      - name: Trace contextual header runtime CSSOM
+        shell: bash
+        run: |
+          node <<'NODE'
+          const path = require('path');
+          const { chromium } = require('@playwright/test');
+          const { loadHtmlWithLocalCss } = require('./scripts/lib/responsive-html-loader');
+          const root = process.cwd();
+
+          const targets = [
+            ['index.html', 820, 1180],
+            ['pedidos.html', 820, 1180],
+            ['notificacoes.html', 820, 1180],
+            ['carteira.html', 820, 1180],
+            ['index.html', 608, 926],
+            ['pedidos.html', 608, 926],
+            ['notificacoes.html', 608, 926],
+            ['carteira.html', 608, 926],
+          ];
+
+          const selectors = {
+            header: '.app-header',
+            inner: '.app-header__inner',
+            search: '.home-side-meta__search',
+            profile: '.home-side-meta__profile',
+            avatar: '.home-side-meta__avatar',
+          };
+          const interesting = [
+            'display','position','top','left','width','min-width','max-width','height','min-height','max-height',
+            'padding','padding-top','padding-bottom','padding-left','padding-right','margin','margin-top','margin-bottom',
+            'align-items','justify-content','transform','border-radius','box-sizing'
+          ];
+
+          (async () => {
+            const browser = await chromium.launch({ headless: true, args: ['--no-sandbox','--disable-dev-shm-usage'] });
+            try {
+              for (const [file, width, height] of targets) {
+                const context = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: 1, javaScriptEnabled: false });
+                const page = await context.newPage();
+                await page.setContent(loadHtmlWithLocalCss(file, root, { modeLabel: 'UX-RESP-DEBT-005 CSSOM trace' }), { waitUntil: 'domcontentloaded', timeout: 30000 });
+                await page.waitForTimeout(80);
+                const result = await page.evaluate(({ selectors, interesting }) => {
+                  function matchedRules(el) {
+                    const rows = [];
+                    let order = 0;
+                    function walk(rules, sheetLabel) {
+                      if (!rules) return;
+                      for (const rule of rules) {
+                        if (rule.type === CSSRule.MEDIA_RULE) {
+                          if (matchMedia(rule.conditionText).matches) walk(rule.cssRules, sheetLabel);
+                          continue;
+                        }
+                        if (rule.type !== CSSRule.STYLE_RULE) continue;
+                        let matches = false;
+                        try { matches = el.matches(rule.selectorText); } catch (_) {}
+                        if (!matches) continue;
+                        const decl = {};
+                        for (const prop of interesting) {
+                          const value = rule.style.getPropertyValue(prop);
+                          if (value) decl[prop] = value + (rule.style.getPropertyPriority(prop) ? ' !important' : '');
+                        }
+                        if (Object.keys(decl).length) rows.push({ order: order++, sheet: sheetLabel, selector: rule.selectorText, decl });
+                      }
+                    }
+                    for (const sheet of document.styleSheets) {
+                      const label = sheet.ownerNode?.getAttribute?.('data-source-css') || sheet.href || 'inline';
+                      try { walk(sheet.cssRules, label); } catch (_) {}
+                    }
+                    return rows;
+                  }
+                  const out = {
+                    body: {
+                      page: document.body.getAttribute('data-page'),
+                      classes: document.body.className,
+                      vars: {},
+                    },
+                    elements: {},
+                  };
+                  const bodyStyle = getComputedStyle(document.body);
+                  for (const v of [
+                    '--doke-header-height','--doke-app-topbar-height','--doke-header-rail','--doke-page-rail',
+                    '--doke-header-control-size','--app-header-control-size','--doke-header-profile-height',
+                    '--app-header-profile-height','--doke-header-avatar-size','--app-header-profile-avatar',
+                    '--radius-pill','--doke-header-control-radius','--app-header-control-radius'
+                  ]) out.body.vars[v] = bodyStyle.getPropertyValue(v).trim();
+                  for (const [name, selector] of Object.entries(selectors)) {
+                    const el = document.querySelector(selector);
+                    if (!el) { out.elements[name] = null; continue; }
+                    const r = el.getBoundingClientRect();
+                    const s = getComputedStyle(el);
+                    out.elements[name] = {
+                      selector: el.className,
+                      rect: { x: r.x, y: r.y, width: r.width, height: r.height },
+                      computed: Object.fromEntries(interesting.map(p => [p, s.getPropertyValue(p)])),
+                      matched: matchedRules(el),
+                    };
+                  }
+                  return out;
+                }, { selectors, interesting });
+                console.log(`CSSOM_TRACE ${file} ${width}x${height}`);
+                console.log(JSON.stringify(result, null, 2));
+                await context.close();
+              }
+            } finally {
+              await browser.close();
+            }
+          })().catch(err => { console.error(err); process.exit(1); });
+          NODE
