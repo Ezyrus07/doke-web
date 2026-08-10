@@ -1,0 +1,95 @@
+name: Doke UX-RESP-DEBT-005 Canonical Visibility Probe
+
+on:
+  push:
+    branches:
+      - diag/ux-resp-debt-005-canonical-visibility
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Guard certified UX-RESP-DEBT-004 ancestry
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git merge-base HEAD ecb54eef031754cf91b9ec4340f382768f11f027)" = "ecb54eef031754cf91b9ec4340f382768f11f027"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Apply workspace-only migration candidate
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs=require('fs');
+          const manifests=[
+            'assets/css/pages/pedidos-runtime-page.css',
+            'assets/css/pages/notificacoes-foundation.css',
+            'assets/css/pages/carteira-runtime-page.css',
+          ];
+          const legacy=/^@import url\("\.\.\/components\/shell\/tablet-internal-rail-contract\.css\?[^\n]+\);\n/m;
+          for (const file of manifests) {
+            const before=fs.readFileSync(file,'utf8');
+            if ((before.match(new RegExp(legacy.source,'gm'))||[]).length!==1) throw new Error(`${file}: expected one quarantined import`);
+            fs.writeFileSync(file,before.replace(legacy,''));
+          }
+          const header='assets/css/layout/header.css';
+          const marker='/* UX-RESP-DEBT-005 DIAGNOSTIC: canonical contextual tablet visibility. */';
+          const addition=`\n${marker}\n@media (min-width: 561px) and (max-width: 900px) and (orientation: portrait) {\n  body:is(.orders-page-shell, .notifications-page-shell, .wallet-page-shell).has-global-header\n    > .app-shell > .page > .app-header.home-side-meta {\n    display: flex;\n    visibility: visible;\n    opacity: 1;\n    pointer-events: auto;\n  }\n}\n`;
+          let css=fs.readFileSync(header,'utf8');
+          if (css.includes(marker)) throw new Error('diagnostic marker already present');
+          fs.writeFileSync(header,css+addition);
+          NODE
+
+      - name: Validate CSS import inventory
+        run: npm run audit:css-import-resolution
+
+      - name: Install Chromium from lockfile-pinned Playwright
+        run: node node_modules/@playwright/test/cli.js install --with-deps chromium
+
+      - name: Generate responsive baseline
+        run: node scripts/generate-responsive-index-baseline.js
+
+      - name: Execute responsive contract and prove check preservation
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +e
+          node scripts/test-responsive-contract.js
+          STATUS=$?
+          set -e
+          test "$STATUS" -eq 1
+          node <<'NODE'
+          const fs=require('fs');
+          const r=JSON.parse(fs.readFileSync('reports/responsive-contract-test-report.json','utf8'));
+          console.log('VISIBILITY_PROBE_SUMMARY',JSON.stringify(r.summary));
+          console.log('VISIBILITY_PROBE_FAILURES',JSON.stringify((r.failures||[]).map(f=>({page:f.page,breakpoint:f.breakpoint,component:f.component,property:f.property,expected:f.expected,actual:f.actual}))));
+          if (r.summary.checks !== 897) throw new Error(`checks drifted: ${r.summary.checks}`);
+          if (r.summary.skips !== 276) throw new Error(`skips drifted: ${r.summary.skips}`);
+          if (r.summary.failures >= 25) throw new Error(`no causal reduction: ${r.summary.failures}`);
+          NODE
+
+      - name: Validate shared header and responsive boundaries
+        shell: bash
+        run: |
+          npm run audit:shared-app-header-contract
+          npm run audit:responsive-boundaries
+          npm run audit:css-responsive-conflicts
+
+      - name: Validate whitespace
+        run: git diff --check ecb54eef031754cf91b9ec4340f382768f11f027...HEAD
