@@ -34,7 +34,7 @@ jobs:
       - name: Generate canonical responsive baseline
         run: node scripts/generate-responsive-index-baseline.js
 
-      - name: Run responsive contract and preserve diagnostic result
+      - name: Run current responsive contract and preserve result
         shell: bash
         run: |
           set +e
@@ -44,7 +44,7 @@ jobs:
           test -f reports/responsive-contract-test-report.json
           echo "responsive_contract_exit=${STATUS}"
 
-      - name: Print deterministic failure classification
+      - name: Print current failure classification
         shell: bash
         run: |
           node <<'NODE'
@@ -58,21 +58,16 @@ jobs:
             }
             return Object.entries(out).sort((a, b) => b[1] - a[1]);
           };
-          const byPage = countBy(report.failures, (x) => x.page);
-          const byComponent = countBy(report.failures, (x) => x.component);
-          const byBreakpoint = countBy(report.failures, (x) => x.breakpoint);
-          const byPageComponent = countBy(report.failures, (x) => `${x.page} :: ${x.component}`);
           console.log('[responsive-debt-current] status=' + report.status);
           console.log('[responsive-debt-current] checks=' + report.summary.checks);
           console.log('[responsive-debt-current] failures=' + report.summary.failures);
           console.log('[responsive-debt-current] skips=' + report.summary.skips);
-          console.log('[responsive-debt-current] failures_by_page=' + JSON.stringify(byPage));
-          console.log('[responsive-debt-current] failures_by_component=' + JSON.stringify(byComponent));
-          console.log('[responsive-debt-current] failures_by_breakpoint=' + JSON.stringify(byBreakpoint));
-          console.log('[responsive-debt-current] top_page_component=' + JSON.stringify(byPageComponent.slice(0, 25)));
+          console.log('[responsive-debt-current] failures_by_page=' + JSON.stringify(countBy(report.failures, (x) => x.page)));
+          console.log('[responsive-debt-current] failures_by_component=' + JSON.stringify(countBy(report.failures, (x) => x.component)));
+          console.log('[responsive-debt-current] failures_by_breakpoint=' + JSON.stringify(countBy(report.failures, (x) => x.breakpoint)));
           NODE
 
-      - name: Trace detalhe-anuncio effective header cascade
+      - name: Prove current manifest loader drops imported CSS
         shell: bash
         run: |
           node <<'NODE'
@@ -80,91 +75,152 @@ jobs:
           const path = require('path');
           const { chromium } = require('@playwright/test');
           const root = process.cwd();
-
           function loadHtml(pageFile) {
             let html = fs.readFileSync(path.join(root, pageFile), 'utf8');
             html = html.replace(/<link\b([^>]*?)rel=["']stylesheet["']([^>]*?)>/gi, (tag) => {
               const m = tag.match(/href=["']([^"']+)["']/i);
               if (!m) return tag;
               const href = m[1].split('?')[0];
-              if (/^(https?:)?\/\//i.test(href)) return `<!-- external stylesheet skipped: ${m[1]} -->`;
+              if (/^(https?:)?\/\//i.test(href)) return '';
               const cssPath = path.join(root, href);
-              if (!fs.existsSync(cssPath)) return `<!-- missing stylesheet skipped: ${m[1]} -->`;
+              if (!fs.existsSync(cssPath)) return '';
               return `<style data-source-css="${href}">\n${fs.readFileSync(cssPath, 'utf8')}\n</style>`;
             });
-            html = html.replace(/<script\b[^>]*\bsrc=["'][^"']+["'][^>]*><\/script>/gi, '<!-- script disabled -->');
-            const base = `file://${root.replace(/\\/g, '/')}/`;
-            return html.replace(/<head([^>]*)>/i, `<head$1><base href="${base}">`);
+            html = html.replace(/<script\b[^>]*\bsrc=["'][^"']+["'][^>]*><\/script>/gi, '');
+            return html.replace(/<head([^>]*)>/i, `<head$1><base href="file://${root.replace(/\\/g, '/')}/">`);
           }
-
           (async () => {
             const browser = await chromium.launch({ headless: true, args: ['--no-sandbox', '--disable-dev-shm-usage'] });
             const context = await browser.newContext({ viewport: { width: 1366, height: 768 }, javaScriptEnabled: false });
             const page = await context.newPage();
             await page.setContent(loadHtml('detalhe-anuncio.html'), { waitUntil: 'domcontentloaded' });
             await page.waitForTimeout(300);
-            const trace = await page.evaluate(() => {
-              const targets = {
-                header: document.querySelector('.app-header.app-header--detail'),
-                inner: document.querySelector('.app-header.app-header--detail > .app-header__inner'),
-                primary: document.querySelector('.app-header.app-header--detail .app-header__group--primary'),
-                search: document.querySelector('.app-header.app-header--detail .home-side-meta__search'),
-                back: document.querySelector('.app-header.app-header--detail .detail-standard-topbar__back'),
-                profile: document.querySelector('.app-header.app-header--detail .home-side-meta__profile'),
-              };
-              const props = ['display','position','width','height','minWidth','minHeight','maxWidth','maxHeight','inlineSize','blockSize','paddingTop','paddingRight','paddingBottom','paddingLeft','marginTop','marginRight','marginBottom','marginLeft','flex','flexDirection','flexGrow','flexShrink','flexBasis','alignItems','justifyContent','gridTemplateColumns','aspectRatio','boxSizing','overflow','transform'];
-              const computed = {};
-              for (const [name, el] of Object.entries(targets)) {
-                if (!el) { computed[name] = null; continue; }
-                const cs = getComputedStyle(el);
-                const rect = el.getBoundingClientRect();
-                computed[name] = { rect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height }, styles: Object.fromEntries(props.map((p) => [p, cs[p]])) };
+            const result = await page.evaluate(() => {
+              const selectors = ['.app-header.app-header--detail', '.app-header__inner', '.home-side-meta__search', '.detail-standard-topbar__back', '.home-side-meta__profile'];
+              const data = {};
+              for (const selector of selectors) {
+                const el = document.querySelector(selector);
+                const rect = el?.getBoundingClientRect();
+                data[selector] = el ? { box: { x: rect.x, y: rect.y, width: rect.width, height: rect.height }, display: getComputedStyle(el).display } : null;
               }
-
-              const matched = Object.fromEntries(Object.keys(targets).map((k) => [k, []]));
-              function walkRules(rules, origin, mediaStack = []) {
-                if (!rules) return;
-                for (const rule of rules) {
-                  if (rule.type === CSSRule.IMPORT_RULE) {
-                    try { walkRules(rule.styleSheet && rule.styleSheet.cssRules, rule.href || origin, mediaStack); } catch (_) {}
-                    continue;
-                  }
-                  if (rule.type === CSSRule.MEDIA_RULE) {
-                    if (matchMedia(rule.conditionText).matches) walkRules(rule.cssRules, origin, mediaStack.concat(rule.conditionText));
-                    continue;
-                  }
-                  if (rule.type !== CSSRule.STYLE_RULE) continue;
-                  for (const [name, el] of Object.entries(targets)) {
-                    if (!el) continue;
-                    let matches = false;
-                    try { matches = el.matches(rule.selectorText); } catch (_) {}
-                    if (!matches) continue;
-                    const picked = {};
-                    for (const p of ['display','position','width','height','min-width','min-height','max-width','max-height','inline-size','block-size','padding','padding-top','padding-right','padding-bottom','padding-left','margin','flex','flex-direction','flex-grow','flex-shrink','flex-basis','align-items','justify-content','grid-template-columns','aspect-ratio','box-sizing','overflow','transform']) {
-                      const value = rule.style.getPropertyValue(p);
-                      if (value) picked[p] = `${value}${rule.style.getPropertyPriority(p) ? ' !important' : ''}`;
-                    }
-                    if (Object.keys(picked).length) matched[name].push({ origin, media: mediaStack, selector: rule.selectorText, declarations: picked });
-                  }
-                }
-              }
+              let matchedHeaderRules = 0;
               for (const sheet of document.styleSheets) {
-                let origin = sheet.href || sheet.ownerNode?.dataset?.sourceCss || 'inline';
-                try { walkRules(sheet.cssRules, origin); } catch (error) { origin += ` [unreadable:${error.name}]`; }
+                try {
+                  for (const rule of sheet.cssRules) {
+                    if (rule.type === CSSRule.STYLE_RULE && document.querySelector('.app-header.app-header--detail')?.matches(rule.selectorText)) matchedHeaderRules += 1;
+                  }
+                } catch (_) {}
               }
-              return { computed, matched };
+              return { data, matchedHeaderRules };
             });
-            console.log('[detail-header-cascade] computed=' + JSON.stringify(trace.computed));
-            for (const [target, rules] of Object.entries(trace.matched)) {
-              console.log(`[detail-header-cascade] ${target}_matched_count=${rules.length}`);
-              console.log(`[detail-header-cascade] ${target}_matched=${JSON.stringify(rules)}`);
-            }
+            console.log('[responsive-loader-proof] ' + JSON.stringify(result));
+            if (result.matchedHeaderRules !== 0) throw new Error('expected current harness to expose zero direct matched header rules for manifest-only entrypoint');
             await browser.close();
-          })().catch((error) => { console.error(error); process.exitCode = 1; });
+          })();
           NODE
 
-      - name: Verify diagnostic branch is repository-only
+      - name: Expand local CSS imports in workspace only
         shell: bash
         run: |
+          python3 <<'PY'
+          from pathlib import Path
+          import re
+
+          root = Path.cwd().resolve()
+          css_root = (root / 'assets' / 'css').resolve()
+          html_files = [
+              'index.html', 'detalhe-anuncio.html', 'perfil.html', 'resultados.html',
+              'pedidos.html', 'mensagens.html', 'notificacoes.html', 'comunidade.html',
+              'carteira.html', 'ajuda.html'
+          ]
+          originals = {p.resolve(): p.read_text(encoding='utf-8') for p in css_root.rglob('*.css')}
+          import_re = re.compile(r'@import\s+url\(\s*["\']?([^"\')]+)["\']?\s*\)\s*;')
+          link_re = re.compile(r'<link\b[^>]*\brel=["\']stylesheet["\'][^>]*>', re.I)
+          href_re = re.compile(r'href=["\']([^"\']+)["\']', re.I)
+          memo = {}
+
+          def expand(path, stack=()):
+              path = path.resolve()
+              if path in memo:
+                  return memo[path]
+              if path in stack:
+                  raise RuntimeError('CSS import cycle: ' + ' -> '.join(str(x) for x in stack + (path,)))
+              text = originals.get(path)
+              if text is None:
+                  raise RuntimeError(f'missing CSS import source: {path}')
+              def repl(match):
+                  href = match.group(1)
+                  clean = href.split('?', 1)[0].split('#', 1)[0]
+                  if clean.startswith(('http://', 'https://', '//')):
+                      return match.group(0)
+                  child = (path.parent / clean).resolve()
+                  if css_root not in child.parents and child != css_root:
+                      raise RuntimeError(f'import escapes assets/css: {href} from {path}')
+                  return f'/* diag import start: {href} */\n{expand(child, stack + (path,))}\n/* diag import end: {href} */'
+              result = import_re.sub(repl, text)
+              memo[path] = result
+              return result
+
+          entrypoints = set()
+          for html_name in html_files:
+              html = (root / html_name).read_text(encoding='utf-8')
+              for tag in link_re.findall(html):
+                  m = href_re.search(tag)
+                  if not m:
+                      continue
+                  href = m.group(1).split('?', 1)[0].split('#', 1)[0]
+                  if href.startswith(('http://', 'https://', '//')):
+                      continue
+                  p = (root / href).resolve()
+                  if p.suffix == '.css' and p.exists():
+                      entrypoints.add(p)
+
+          for p in sorted(entrypoints):
+              p.write_text(expand(p), encoding='utf-8')
+          print('[responsive-import-expansion] entrypoints=' + str(len(entrypoints)))
+          print('[responsive-import-expansion] files=' + ','.join(str(p.relative_to(root)) for p in sorted(entrypoints)))
+          PY
+
+      - name: Regenerate baseline with recursively expanded CSS
+        run: node scripts/generate-responsive-index-baseline.js
+
+      - name: Run responsive contract with recursively expanded CSS
+        shell: bash
+        run: |
+          set +e
+          node scripts/test-responsive-contract.js
+          STATUS=$?
+          set -e
+          test -f reports/responsive-contract-test-report.json
+          echo "expanded_responsive_contract_exit=${STATUS}"
+
+      - name: Print expanded-import failure classification
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const report = JSON.parse(fs.readFileSync('reports/responsive-contract-test-report.json', 'utf8'));
+          const countBy = (items, keyFn) => {
+            const out = {};
+            for (const item of items) {
+              const key = keyFn(item);
+              out[key] = (out[key] || 0) + 1;
+            }
+            return Object.entries(out).sort((a, b) => b[1] - a[1]);
+          };
+          console.log('[responsive-debt-expanded] status=' + report.status);
+          console.log('[responsive-debt-expanded] checks=' + report.summary.checks);
+          console.log('[responsive-debt-expanded] failures=' + report.summary.failures);
+          console.log('[responsive-debt-expanded] skips=' + report.summary.skips);
+          console.log('[responsive-debt-expanded] failures_by_page=' + JSON.stringify(countBy(report.failures, (x) => x.page)));
+          console.log('[responsive-debt-expanded] failures_by_component=' + JSON.stringify(countBy(report.failures, (x) => x.component)));
+          console.log('[responsive-debt-expanded] failures_by_breakpoint=' + JSON.stringify(countBy(report.failures, (x) => x.breakpoint)));
+          console.log('[responsive-debt-expanded] first_failures=' + JSON.stringify(report.failures.slice(0, 30)));
+          NODE
+
+      - name: Restore diagnostic workspace and verify branch scope
+        shell: bash
+        run: |
+          git restore assets/css
           git diff --check
           test "$(git diff --name-only HEAD^ HEAD)" = '.github/workflows/diag-responsive-current-baseline.yml'
