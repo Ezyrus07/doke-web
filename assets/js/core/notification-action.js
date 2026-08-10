@@ -54,6 +54,15 @@
     }
     return false;
   }
+  function isExecutorAvailable(executor, action) {
+    if (!executor || typeof executor.execute !== 'function') return false;
+    if (typeof executor.isAvailable !== 'function') return true;
+    try {
+      return executor.isAvailable(action) === true;
+    } catch (_error) {
+      return false;
+    }
+  }
   function validateCandidate(candidate, executors) {
     if (!candidate || typeof candidate !== 'object') return null;
     if ('eventName' in candidate || 'endpoint' in candidate || 'handler' in candidate || 'functionName' in candidate) return null;
@@ -75,7 +84,7 @@
     };
     if (!normalized.actionId || !normalized.entityId || !normalized.expectedState || !normalized.expiresAt || !normalized.idempotencyKey || !normalized.permissionRequirement) return null;
     if (normalized.commandType !== rule.commandType || normalized.confirmationPolicy !== rule.confirmationPolicy) return null;
-    if (!executors || !executors[normalized.commandType] || typeof executors[normalized.commandType].execute !== 'function') return null;
+    if (!executors || !isExecutorAvailable(executors[normalized.commandType], normalized)) return null;
     return Object.freeze(normalized);
   }
   function createMemoryStore(scope) {
@@ -221,16 +230,22 @@
     };
   }
   function createBrowserExecutors(Doke) {
+    function getReadyMessageService() {
+      var service = Doke && Doke.services && Doke.services.messages;
+      if (!service || typeof service.sendMessage !== 'function' || typeof service.getServerCommandBoundaryStatus !== 'function') return null;
+      var status;
+      try { status = service.getServerCommandBoundaryStatus(); } catch (_error) { status = null; }
+      if (!status || status.required !== true || status.ready !== true) return null;
+      return service;
+    }
     return {
       MESSAGE_REPLY: {
+        isAvailable: function () {
+          return Boolean(getReadyMessageService());
+        },
         execute: function (action, input) {
-          var service = Doke && Doke.services && Doke.services.messages;
-          if (!service || typeof service.sendMessage !== 'function' || typeof service.getServerCommandBoundaryStatus !== 'function') {
-            return Promise.reject(createError('Messages service indisponível.', 'DOKE_NOTIFICATION_ACTION_EXECUTOR_UNAVAILABLE'));
-          }
-          var status;
-          try { status = service.getServerCommandBoundaryStatus(); } catch (_error) { status = null; }
-          if (!status || status.required !== true || status.ready !== true) {
+          var service = getReadyMessageService();
+          if (!service) {
             return Promise.reject(createError('Boundary server-owned de mensagens indisponível.', 'DOKE_NOTIFICATION_ACTION_EXECUTOR_UNAVAILABLE'));
           }
           var body = normalizeText(input && input.body);
