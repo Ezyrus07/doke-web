@@ -70,7 +70,97 @@ jobs:
           console.log('[responsive-debt-current] failures_by_component=' + JSON.stringify(byComponent));
           console.log('[responsive-debt-current] failures_by_breakpoint=' + JSON.stringify(byBreakpoint));
           console.log('[responsive-debt-current] top_page_component=' + JSON.stringify(byPageComponent.slice(0, 25)));
-          console.log('[responsive-debt-current] first_failures=' + JSON.stringify(report.failures.slice(0, 40)));
+          NODE
+
+      - name: Trace detalhe-anuncio effective header cascade
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          const { chromium } = require('@playwright/test');
+          const root = process.cwd();
+
+          function loadHtml(pageFile) {
+            let html = fs.readFileSync(path.join(root, pageFile), 'utf8');
+            html = html.replace(/<link\b([^>]*?)rel=["']stylesheet["']([^>]*?)>/gi, (tag) => {
+              const m = tag.match(/href=["']([^"']+)["']/i);
+              if (!m) return tag;
+              const href = m[1].split('?')[0];
+              if (/^(https?:)?\/\//i.test(href)) return `<!-- external stylesheet skipped: ${m[1]} -->`;
+              const cssPath = path.join(root, href);
+              if (!fs.existsSync(cssPath)) return `<!-- missing stylesheet skipped: ${m[1]} -->`;
+              return `<style data-source-css="${href}">\n${fs.readFileSync(cssPath, 'utf8')}\n</style>`;
+            });
+            html = html.replace(/<script\b[^>]*\bsrc=["'][^"']+["'][^>]*><\/script>/gi, '<!-- script disabled -->');
+            const base = `file://${root.replace(/\\/g, '/')}/`;
+            return html.replace(/<head([^>]*)>/i, `<head$1><base href="${base}">`);
+          }
+
+          (async () => {
+            const browser = await chromium.launch({ headless: true, args: ['--no-sandbox', '--disable-dev-shm-usage'] });
+            const context = await browser.newContext({ viewport: { width: 1366, height: 768 }, javaScriptEnabled: false });
+            const page = await context.newPage();
+            await page.setContent(loadHtml('detalhe-anuncio.html'), { waitUntil: 'domcontentloaded' });
+            await page.waitForTimeout(300);
+            const trace = await page.evaluate(() => {
+              const targets = {
+                header: document.querySelector('.app-header.app-header--detail'),
+                inner: document.querySelector('.app-header.app-header--detail > .app-header__inner'),
+                primary: document.querySelector('.app-header.app-header--detail .app-header__group--primary'),
+                search: document.querySelector('.app-header.app-header--detail .home-side-meta__search'),
+                back: document.querySelector('.app-header.app-header--detail .detail-standard-topbar__back'),
+                profile: document.querySelector('.app-header.app-header--detail .home-side-meta__profile'),
+              };
+              const props = ['display','position','width','height','minWidth','minHeight','maxWidth','maxHeight','inlineSize','blockSize','paddingTop','paddingRight','paddingBottom','paddingLeft','marginTop','marginRight','marginBottom','marginLeft','flex','flexDirection','flexGrow','flexShrink','flexBasis','alignItems','justifyContent','gridTemplateColumns','aspectRatio','boxSizing','overflow','transform'];
+              const computed = {};
+              for (const [name, el] of Object.entries(targets)) {
+                if (!el) { computed[name] = null; continue; }
+                const cs = getComputedStyle(el);
+                const rect = el.getBoundingClientRect();
+                computed[name] = { rect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height }, styles: Object.fromEntries(props.map((p) => [p, cs[p]])) };
+              }
+
+              const matched = Object.fromEntries(Object.keys(targets).map((k) => [k, []]));
+              function walkRules(rules, origin, mediaStack = []) {
+                if (!rules) return;
+                for (const rule of rules) {
+                  if (rule.type === CSSRule.IMPORT_RULE) {
+                    try { walkRules(rule.styleSheet && rule.styleSheet.cssRules, rule.href || origin, mediaStack); } catch (_) {}
+                    continue;
+                  }
+                  if (rule.type === CSSRule.MEDIA_RULE) {
+                    if (matchMedia(rule.conditionText).matches) walkRules(rule.cssRules, origin, mediaStack.concat(rule.conditionText));
+                    continue;
+                  }
+                  if (rule.type !== CSSRule.STYLE_RULE) continue;
+                  for (const [name, el] of Object.entries(targets)) {
+                    if (!el) continue;
+                    let matches = false;
+                    try { matches = el.matches(rule.selectorText); } catch (_) {}
+                    if (!matches) continue;
+                    const picked = {};
+                    for (const p of ['display','position','width','height','min-width','min-height','max-width','max-height','inline-size','block-size','padding','padding-top','padding-right','padding-bottom','padding-left','margin','flex','flex-direction','flex-grow','flex-shrink','flex-basis','align-items','justify-content','grid-template-columns','aspect-ratio','box-sizing','overflow','transform']) {
+                      const value = rule.style.getPropertyValue(p);
+                      if (value) picked[p] = `${value}${rule.style.getPropertyPriority(p) ? ' !important' : ''}`;
+                    }
+                    if (Object.keys(picked).length) matched[name].push({ origin, media: mediaStack, selector: rule.selectorText, declarations: picked });
+                  }
+                }
+              }
+              for (const sheet of document.styleSheets) {
+                let origin = sheet.href || sheet.ownerNode?.dataset?.sourceCss || 'inline';
+                try { walkRules(sheet.cssRules, origin); } catch (error) { origin += ` [unreadable:${error.name}]`; }
+              }
+              return { computed, matched };
+            });
+            console.log('[detail-header-cascade] computed=' + JSON.stringify(trace.computed));
+            for (const [target, rules] of Object.entries(trace.matched)) {
+              console.log(`[detail-header-cascade] ${target}_matched_count=${rules.length}`);
+              console.log(`[detail-header-cascade] ${target}_matched=${JSON.stringify(rules)}`);
+            }
+            await browser.close();
+          })().catch((error) => { console.error(error); process.exitCode = 1; });
           NODE
 
       - name: Verify diagnostic branch is repository-only
