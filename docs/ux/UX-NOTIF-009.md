@@ -28,7 +28,7 @@ contract: notification-action-v1
 Responsibilities:
 
 - semantic command allowlist;
-- schema validation for mutable actions;
+- schema validation for mutable actions, including direct `execute()` calls;
 - account-scoped receipt persistence through `Doke.accountStorage`;
 - lifecycle `AVAILABLE | PENDING | SUCCEEDED | FAILED | EXPIRED | UNKNOWN_OUTCOME`;
 - expiry before side effect;
@@ -60,7 +60,7 @@ Required mutable-action fields:
 - `permissionRequirement`;
 - `confirmationPolicy`.
 
-Payload-provided `eventName`, endpoint, function handler or arbitrary command type is rejected.
+Payload-provided `eventName`, endpoint, function handler or arbitrary command type is rejected both during action resolution and again at the execution boundary.
 
 `ORDER_ACCEPT` is deliberately **not** enabled in H09. The current order service has idempotency support, but this handoff does not have sufficient server-owned acknowledgement evidence to classify a toast action as `SUCCEEDED` without ambiguity.
 
@@ -68,13 +68,13 @@ Payload-provided `eventName`, endpoint, function handler or arbitrary command ty
 
 `MESSAGE_REPLY` delegates to `Doke.services.messages.sendMessage` with the same `idempotencyKey` as both `commandId` and `clientMutationId`.
 
-H09 only classifies the action as `SUCCEEDED` when the domain result contains:
+The browser executor first requires `Doke.services.messages.getServerCommandBoundaryStatus()` to report both `required === true` and `ready === true`. This prevents the H09 browser path from treating fixture/local message persistence as a successful mutable quick action.
 
-- the same `commandId`;
-- an acknowledgement with the same `commandId`;
-- acknowledgement status `accepted` or `replayed`.
+The message service remains the owner of message command semantics. For server-owned actors, its `sendMessage` path delegates to `executeMessagesServerCommand('sendMessage', ...)`, which delegates to `Doke.messageCommandExecutor`. That executor rejects unless the server acknowledgement has the same command ID and status `accepted` or `replayed`.
 
-Missing or ambiguous acknowledgement becomes `UNKNOWN_OUTCOME`; it is not converted into local success.
+H09 therefore treats a resolved `sendMessage` call as a trusted domain-owned success only after that message boundary has internally validated the server acknowledgement. H09 does not require the message service to leak the raw acknowledgement through its public return value and does not manufacture a synthetic acknowledgement.
+
+`DOKE_MESSAGES_COMMAND_ACK_INVALID`, network ambiguity and equivalent uncertain command outcomes become `UNKNOWN_OUTCOME`; they are not converted into local success.
 
 The reply body is bounded to 2000 characters and is not persisted in the action receipt.
 
@@ -86,7 +86,7 @@ For inline reply:
 
 - draft stays in the DOM while the result is unresolved;
 - `PENDING` blocks duplicate submit;
-- `SUCCEEDED` closes only after acknowledgement;
+- `SUCCEEDED` closes only after the domain-owned command boundary resolves successfully;
 - `FAILED` keeps draft and allows retry;
 - `EXPIRED` sends no command and leaves the notification unresolved;
 - `UNKNOWN_OUTCOME` blocks retry and directs the user to open the conversation before another attempt.
@@ -118,19 +118,21 @@ If receipt read/write authority is unavailable, H09 returns `UNKNOWN_OUTCOME` wi
 
 H09 must prove:
 
-1. arbitrary `eventName`/endpoint/handler is rejected;
-2. incomplete or unknown command type is not rendered;
+1. arbitrary `eventName`/endpoint/handler is rejected during resolution and direct execution;
+2. incomplete or unknown command type is not rendered or executed;
 3. expired action invokes zero domain executors and becomes `EXPIRED`;
 4. same idempotency key cannot execute twice after success;
 5. unknown outcome blocks blind retry;
 6. receipt-storage failure fails closed before side effect;
 7. permission denial invokes zero executors;
-8. toast does not call legacy quick-action/result callbacks;
-9. central notification page loads action authority before toast;
-10. H10 surfaces are not silently migrated;
-11. H01-H08 contracts remain green;
-12. Domain Completion Matrix and agent governance remain valid;
-13. LCOV + Sonar Quality Gate pass on the final permanent SHA.
+8. browser quick reply requires the server-owned message command boundary to be required and ready;
+9. message command reliability rejects invalid or divergent acknowledgement;
+10. toast does not call legacy quick-action/result callbacks;
+11. central notification page loads action authority before toast;
+12. H10 surfaces are not silently migrated;
+13. H01-H08 contracts remain green;
+14. Domain Completion Matrix and agent governance remain valid;
+15. LCOV + Sonar Quality Gate pass on the final permanent SHA.
 
 ## Preserved blockers
 
