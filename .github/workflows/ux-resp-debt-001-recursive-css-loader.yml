@@ -1,0 +1,160 @@
+name: Doke UX-RESP-DEBT-001 Recursive CSS Loader
+
+on:
+  push:
+    branches:
+      - ux/ux-resp-debt-001-recursive-css-loader
+  pull_request:
+    branches:
+      - ux/ux-css-debt-001-community-media-closure
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  ux-resp-debt-001:
+    runs-on: ubuntu-24.04
+    env:
+      EXPECTED_BASE: 5d8a230b6aaf3e1cf49d29e2687bb717e31eb6ec
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Guard certified UX-CSS-DEBT-001 parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            ACTUAL_BASE="${{ github.event.pull_request.base.sha }}"
+          else
+            git fetch origin ux/ux-css-debt-001-community-media-closure --quiet
+            ACTUAL_BASE="$(git merge-base HEAD origin/ux/ux-css-debt-001-community-media-closure)"
+          fi
+          test "${ACTUAL_BASE}" = "${EXPECTED_BASE}"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install repository dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts
+
+      - name: Validate permanent delta allowlist
+        shell: bash
+        run: |
+          set -euo pipefail
+          test ! -e .github/workflows/ux-resp-debt-001-apply.yml
+          test ! -e .github/workflows/ux-resp-debt-001-matrix-sync.yml
+          while IFS= read -r changed_path; do
+            case "${changed_path}" in
+              .github/workflows/ux-resp-debt-001-recursive-css-loader.yml|docs/DOMAIN-COMPLETION-MATRIX.md|scripts/generate-responsive-index-baseline.js|scripts/lib/responsive-html-loader.js|scripts/test-responsive-contract.js|scripts/test-ux-resp-debt-001-responsive-html-loader.js|scripts/test-ux-resp-debt-001-responsive-runtime.js) ;;
+              *) echo "::error::Unexpected UX-RESP-DEBT-001 path: ${changed_path}"; exit 1 ;;
+            esac
+          done < <(git diff --name-only "${EXPECTED_BASE}"...HEAD)
+
+      - name: Validate JavaScript syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check scripts/generate-responsive-index-baseline.js
+          node --check scripts/lib/responsive-html-loader.js
+          node --check scripts/test-responsive-contract.js
+          node --check scripts/test-ux-resp-debt-001-responsive-html-loader.js
+          node --check scripts/test-ux-resp-debt-001-responsive-runtime.js
+
+      - name: Validate deterministic recursive CSS loader
+        run: node scripts/test-ux-resp-debt-001-responsive-html-loader.js
+
+      - name: Validate canonical CSS import inventory
+        run: npm run audit:css-import-resolution
+
+      - name: Install Chromium from lockfile-pinned Playwright
+        run: node node_modules/@playwright/test/cli.js install --with-deps chromium
+
+      - name: Prove manifest CSS reaches Chromium CSSOM
+        run: node scripts/test-ux-resp-debt-001-responsive-runtime.js
+
+      - name: Generate corrected responsive index baseline
+        run: node scripts/generate-responsive-index-baseline.js
+
+      - name: Execute responsive contract with known visual debt preserved
+        shell: bash
+        run: |
+          set +e
+          node scripts/test-responsive-contract.js
+          STATUS=$?
+          set -e
+          test "${STATUS}" -eq 0 -o "${STATUS}" -eq 1
+          test -f reports/responsive-contract-test-report.json
+          echo "responsive_contract_exit=${STATUS}"
+
+      - name: Validate corrected measurement coverage and classify remaining debt
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const report = JSON.parse(fs.readFileSync('reports/responsive-contract-test-report.json', 'utf8'));
+          if (report.summary.checks <= 865) {
+            throw new Error(`corrected loader must execute more than 865 checks; got ${report.summary.checks}`);
+          }
+          if (report.summary.skips >= 285) {
+            throw new Error(`corrected loader must reduce the old 285 skips; got ${report.summary.skips}`);
+          }
+          const detailFailures = report.summary.failuresByPage['detalhe-anuncio.html'] || 0;
+          if (detailFailures >= 65) {
+            throw new Error(`detail false-positive cluster was not reduced; got ${detailFailures}`);
+          }
+          const byBreakpoint = {};
+          for (const failure of report.failures) {
+            byBreakpoint[failure.breakpoint] = (byBreakpoint[failure.breakpoint] || 0) + 1;
+          }
+          console.log('[ux-resp-debt-001] corrected responsive classification');
+          console.log(JSON.stringify({
+            status: report.status,
+            checks: report.summary.checks,
+            failures: report.summary.failures,
+            skips: report.summary.skips,
+            failuresByPage: report.summary.failuresByPage,
+            failuresByComponent: report.summary.failuresByComponent,
+            failuresByBreakpoint: byBreakpoint,
+          }));
+          NODE
+
+      - name: Validate responsive and governance boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:responsive-boundaries
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+
+      - name: Validate patch whitespace
+        run: git diff --check "${EXPECTED_BASE}"...HEAD
+
+      - name: Require SonarQube Cloud credential
+        if: github.event_name == 'push'
+        shell: bash
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: test -n "${SONAR_TOKEN}"
+
+      - name: Analyze PR and enforce SonarQube Cloud Quality Gate
+        if: github.event_name == 'push'
+        uses: SonarSource/sonarqube-scan-action@c7ee0f9df90b7aa20e8dcf9695dcfe2e7da5b4f2
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >-
+            -Dsonar.projectKey=Ezyrus07_doke-web
+            -Dsonar.organization=ezyrus07
+            -Dsonar.pullrequest.key=116
+            -Dsonar.pullrequest.branch=ux/ux-resp-debt-001-recursive-css-loader
+            -Dsonar.pullrequest.base=ux/ux-css-debt-001-community-media-closure
+            -Dsonar.qualitygate.wait=true
+            -Dsonar.qualitygate.timeout=600

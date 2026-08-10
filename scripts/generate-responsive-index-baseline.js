@@ -7,6 +7,7 @@
 const fs = require('fs');
 const path = require('path');
 const { chromium } = require('@playwright/test');
+const { loadHtmlWithLocalCss } = require('./lib/responsive-html-loader');
 
 const rootDir = path.resolve(__dirname, '..');
 const outputPath = path.join(rootDir, 'reports', 'responsive-index-baseline.json');
@@ -70,38 +71,7 @@ function escapeRegExp(value) {
 }
 
 function loadHtmlWithInlineCss() {
-  const indexPath = path.join(rootDir, 'index.html');
-  let html = fs.readFileSync(indexPath, 'utf8');
-
-  html = html.replace(/<link\b([^>]*?)rel=["']stylesheet["']([^>]*?)>/gi, (tag) => {
-    const hrefMatch = tag.match(/href=["']([^"']+)["']/i);
-    if (!hrefMatch) return tag;
-
-    const cleanHref = hrefMatch[1].split('?')[0];
-    if (/^(https?:)?\/\//i.test(cleanHref)) return `<!-- External stylesheet disabled for deterministic responsive baseline: ${hrefMatch[1]} -->`;
-
-    const cssPath = path.join(rootDir, cleanHref);
-    if (!fs.existsSync(cssPath)) {
-      return `<!-- Missing stylesheet skipped by baseline generator: ${hrefMatch[1]} -->`;
-    }
-
-    const css = fs.readFileSync(cssPath, 'utf8');
-    return `<style data-baseline-inline-css="${cleanHref}">\n${css}\n</style>`;
-  });
-
-  html = html.replace(/<script\b[^>]*\bsrc=["'][^"']+["'][^>]*><\/script>/gi, (tag) => {
-    const srcMatch = tag.match(/src=["']([^"']+)["']/i);
-    return `<!-- External script disabled for deterministic responsive baseline: ${srcMatch ? srcMatch[1] : 'unknown'} -->`;
-  });
-
-  const baseHref = `file://${rootDir.replace(/\\/g, '/')}/`;
-  if (/<head[^>]*>/i.test(html)) {
-    html = html.replace(/<head([^>]*)>/i, `<head$1><base href="${baseHref}">`);
-  } else {
-    html = `<base href="${baseHref}">${html}`;
-  }
-
-  return html;
+  return loadHtmlWithLocalCss('index.html', rootDir, { modeLabel: 'deterministic responsive baseline' });
 }
 
 

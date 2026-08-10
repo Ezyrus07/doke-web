@@ -9,6 +9,7 @@
 const fs = require('fs');
 const path = require('path');
 const { chromium } = require('@playwright/test');
+const { loadHtmlWithLocalCss } = require('./lib/responsive-html-loader');
 
 const rootDir = path.resolve(__dirname, '..');
 const baselineFile = path.join(rootDir, 'reports/responsive-index-baseline.json');
@@ -189,21 +190,7 @@ function csv(value) {
 }
 
 function loadHtml(pageFile) {
-  let html = fs.readFileSync(path.join(rootDir, pageFile), 'utf8');
-  html = html.replace(/<link\b([^>]*?)rel=["']stylesheet["']([^>]*?)>/gi, (tag) => {
-    const hrefMatch = tag.match(/href=["']([^"']+)["']/i);
-    if (!hrefMatch) return tag;
-    const href = hrefMatch[1].split('?')[0];
-    if (/^(https?:)?\/\//i.test(href)) return `<!-- external stylesheet skipped: ${hrefMatch[1]} -->`;
-    const cssPath = path.join(rootDir, href);
-    if (!fs.existsSync(cssPath)) return `<!-- missing stylesheet skipped: ${hrefMatch[1]} -->`;
-    return `<style data-source-css="${href}">\n${fs.readFileSync(cssPath, 'utf8')}\n</style>`;
-  });
-  html = html.replace(/<script\b[^>]*\bsrc=["'][^"']+["'][^>]*><\/script>/gi, '<!-- script disabled for responsive contract test -->');
-  const base = `file://${rootDir.replace(/\\/g, '/')}/`;
-  return /<head[^>]*>/i.test(html)
-    ? html.replace(/<head([^>]*)>/i, `<head$1><base href="${base}">`)
-    : `<base href="${base}">${html}`;
+  return loadHtmlWithLocalCss(pageFile, rootDir, { modeLabel: 'responsive contract test' });
 }
 
 async function setLocalPage(page, pageFile) {
