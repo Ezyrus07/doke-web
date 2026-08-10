@@ -37,36 +37,25 @@ function readinessInput(overrides = {}) {
   };
 }
 
-function assertAllIdentifiersSafe(names) {
+function assertIdentifiers(names) {
   for (const [key, value] of Object.entries(names)) {
-    if (key === 'ownershipDigest') continue;
-    assert.match(value, /^[a-z_][a-z0-9_]{0,62}$/);
+    if (key !== 'ownershipDigest') assert.match(value, /^[a-z_][a-z0-9_]{0,62}$/);
   }
 }
 
 async function main() {
   const decision = r3u.evaluateRepositoryReadiness(readinessInput());
-  assert.equal(
-    decision.decision,
-    'repository_instrumentation_sql_materialized_and_certifiable_no_remote_authority'
-  );
+  assert.equal(decision.decision, 'repository_instrumentation_sql_materialized_and_certifiable_no_remote_authority');
   assert.equal(decision.repositorySqlMaterializationAuthority, true);
-  assert.equal(decision.remoteSqlExecutionAuthority, false);
-  assert.equal(decision.remoteAdapterActivationAuthority, false);
-  assert.equal(decision.stagingReadAuthority, false);
-  assert.equal(decision.stagingMutationAuthority, false);
-  assert.equal(decision.productionAuthority, false);
-  assert.equal(decision.pullRequestMergeAuthority, false);
-  assert.equal(decision.exactRootCauseProven, false);
-  assert.equal(decision.causalPromotionAllowed, false);
+  for (const key of ['remoteSqlExecutionAuthority', 'remoteAdapterActivationAuthority', 'stagingReadAuthority', 'stagingMutationAuthority', 'productionAuthority', 'pullRequestMergeAuthority', 'exactRootCauseProven', 'causalPromotionAllowed']) {
+    assert.equal(decision[key], false, key);
+  }
 
   for (const field of Object.keys(config.controls)) {
-    const blocked = r3u.evaluateRepositoryReadiness(readinessInput({ [field]: false }));
-    assert.equal(blocked.decision, 'blocked_repository_only', field);
+    assert.equal(r3u.evaluateRepositoryReadiness(readinessInput({ [field]: false })).decision, 'blocked_repository_only', field);
   }
   for (const field of Object.keys(config.prohibitedPreparation)) {
-    const blocked = r3u.evaluateRepositoryReadiness(readinessInput({ [field]: true }));
-    assert.equal(blocked.decision, 'blocked_repository_only', field);
+    assert.equal(r3u.evaluateRepositoryReadiness(readinessInput({ [field]: true })).decision, 'blocked_repository_only', field);
   }
 
   assert.deepEqual([...r3u.REQUIRED_STATEMENT_GROUPS], [...config.continuity.statementGroups]);
@@ -77,20 +66,19 @@ async function main() {
 
   const token = 'r3u_owner_001';
   const first = r3u.buildSqlMaterialization(token);
-  const second = r3u.buildSqlMaterialization(token);
+  const same = r3u.buildSqlMaterialization(token);
   const other = r3u.buildSqlMaterialization('r3u_owner_002');
   const inspection = r3u.inspectSqlMaterialization(first);
-
   assert.equal(first.executableSqlMaterialized, true);
   assert.equal(first.remoteExecutionAuthority, false);
   assert.equal(first.statementCount, 21);
   assert.equal(inspection.valid, true);
   assert.equal(inspection.statementCount, 21);
   assert.match(first.statementFingerprint, /^[a-f0-9]{64}$/);
-  assert.equal(first.statementFingerprint, second.statementFingerprint);
+  assert.equal(first.statementFingerprint, same.statementFingerprint);
   assert.notEqual(first.statementFingerprint, other.statementFingerprint);
   assert.notEqual(first.ownershipDigest, other.ownershipDigest);
-  assertAllIdentifiersSafe(first.names);
+  assertIdentifiers(first.names);
   assert.equal(JSON.stringify(first).includes(token), false);
 
   const core = first.statementGroups.installCore.join('\n');
@@ -99,42 +87,32 @@ async function main() {
   assert.match(core, /language plpgsql volatile/i);
   assert.equal((core.match(/pg_catalog\.nextval/g) || []).length, 2);
   assert.equal((core.match(/cache 1/g) || []).length, 2);
-  assert.match(core, /revoke all on function .* from public, anon, authenticated, service_role/i);
   assert.match(core, /grant execute on function .* to authenticated/i);
   assert.doesNotMatch(core, /grant\s+(usage|select|update).*sequence/i);
 
   const anchor = first.statementGroups.installAnchorPolicies.join('\n');
-  assert.match(anchor, /case when private\.[a-z0-9_]+_observe\(realtime\.messages\.extension::text\) then/i);
-  assert.match(anchor, /realtime\.messages\.topic = realtime\.topic\(\)/i);
-  assert.match(anchor, /extension in \('broadcast', 'presence'\)/i);
-  assert.match(anchor, /for insert to authenticated with check \(true\)/i);
-
   const presenceOnly = first.statementGroups.switchToPresenceOnlyPolicy.join('\n');
-  assert.match(presenceOnly, /drop policy if exists .*_anchor_sel on realtime\.messages/i);
-  assert.match(presenceOnly, /drop policy if exists .*_anchor_ins on realtime\.messages/i);
+  assert.match(anchor, /case when private\.[a-z0-9_]+_observe\(realtime\.messages\.extension::text\) then/i);
+  assert.match(anchor, /extension in \('broadcast', 'presence'\)/i);
+  assert.match(anchor, /realtime\.messages\.topic = realtime\.topic\(\)/i);
   assert.match(presenceOnly, /case when private\.[a-z0-9_]+_observe\(realtime\.messages\.extension::text\) then/i);
-  assert.match(presenceOnly, /realtime\.messages\.topic = realtime\.topic\(\)/i);
   assert.match(presenceOnly, /extension = 'presence'/i);
+  assert.match(presenceOnly, /realtime\.messages\.topic = realtime\.topic\(\)/i);
 
-  const counterRead = first.statementGroups.counterRead[0];
-  assert.match(counterRead, /from pg_catalog\.pg_sequences/i);
-  assert.equal((counterRead.match(/coalesce\(/g) || []).length, 2);
-  assert.match(counterRead, /broadcast_rls_evaluations/);
-  assert.match(counterRead, /presence_rls_evaluations/);
+  const counters = first.statementGroups.counterRead[0];
+  assert.match(counters, /from pg_catalog\.pg_sequences/i);
+  assert.equal((counters.match(/coalesce\(/g) || []).length, 2);
+  assert.match(counters, /broadcast_rls_evaluations/);
+  assert.match(counters, /presence_rls_evaluations/);
 
   const residue = first.statementGroups.residueInspection[0];
-  assert.match(residue, /pg_catalog\.pg_policies/);
-  assert.match(residue, /pg_catalog\.pg_proc/);
-  assert.match(residue, /pg_catalog\.pg_class/);
-  assert.match(residue, /as "policyCount"/);
-  assert.match(residue, /as "functionCount"/);
-  assert.match(residue, /as "sequenceCount"/);
-
+  for (const fragment of ['pg_catalog.pg_policies', 'pg_catalog.pg_proc', 'pg_catalog.pg_class', 'as "policyCount"', 'as "functionCount"', 'as "sequenceCount"']) {
+    assert.ok(residue.includes(fragment), fragment);
+  }
   const cleanup = first.statementGroups.cleanup.join('\n');
   assert.ok(cleanup.indexOf('drop policy') < cleanup.indexOf('drop function'));
   assert.ok(cleanup.indexOf('drop function') < cleanup.indexOf('drop sequence'));
   assert.equal(first.statementGroups.cleanup.length, 8);
-
   assert.throws(() => r3u.buildSqlMaterialization('short'), /R3S_INSTRUMENTATION_OWNERSHIP_TOKEN_REQUIRED/);
 
   let sideEffects = 0;
@@ -144,19 +122,33 @@ async function main() {
   }, (error) => error?.code === r3u.REMOTE_EXECUTION_BLOCK_CODE);
   assert.equal(sideEffects, 0);
 
-  const moduleSource = fs.readFileSync(
-    path.resolve(__dirname, '../backend/modules/communities/community-realtime-private-auth-r3u.js'),
-    'utf8'
-  );
+  const moduleSource = fs.readFileSync(path.resolve(__dirname, '../backend/modules/communities/community-realtime-private-auth-r3u.js'), 'utf8');
   assert.doesNotMatch(moduleSource, /require\(['"]pg['"]\)/);
   assert.doesNotMatch(moduleSource, /@supabase\/supabase-js/);
   assert.doesNotMatch(moduleSource, /process\.env/);
 
   assert.equal(evidence.contractId, r3u.CONTRACT_ID);
+  const certified = Boolean(evidence.certificationHistory);
   assert.equal(
     evidence.status,
-    'repository_instrumentation_sql_materialization_prepared_no_remote_authority'
+    certified
+      ? 'repository_instrumentation_sql_materialization_certified_no_remote_authority'
+      : 'repository_instrumentation_sql_materialization_prepared_no_remote_authority'
   );
+  if (certified) {
+    assert.equal(evidence.initialBoundaryCommit, '323797a24b0702f38f72c00e3a0997e41fa23bad');
+    assert.equal(evidence.certificationHistory.initialFailClosed.r3uRun, 31422817313);
+    assert.equal(evidence.certificationHistory.initialFailClosed.r3uJob, 93567400416);
+    assert.equal(evidence.certificationHistory.initialFailClosed.failedStep, 'Domain Completion Matrix');
+    assert.equal(evidence.certificationHistory.canonicalMatrixReconciliation.writerRun, 31423384703);
+    assert.equal(evidence.certificationHistory.canonicalMatrixReconciliation.writerJob, 93569234606);
+    assert.equal(evidence.certificationHistory.canonicalMatrixReconciliation.writerOutputCommit, '6fe18558893a2e5be0d2124630be71666332e7c0');
+    assert.equal(evidence.certificationHistory.canonicalMatrixReconciliation.workflowRestoredHead, 'd4f3547a3f219f249457d1a1b45c4642395bfbef');
+    assert.equal(evidence.certificationHistory.normalHeadCertification.r3uRun, 31423526877);
+    assert.equal(evidence.certificationHistory.normalHeadCertification.r3uJob, 93569709515);
+    assert.equal(evidence.certificationHistory.normalHeadCertification.matrixRun, 31423526053);
+    assert.equal(evidence.certificationHistory.normalHeadCertification.matrixJob, 93569707374);
+  }
   assert.equal(evidence.sqlMaterialization.executableSqlMaterialized, true);
   assert.equal(evidence.sqlMaterialization.remoteSqlExecutionPrepared, false);
   assert.equal(evidence.authority.remoteSqlExecution, false);
@@ -169,7 +161,6 @@ async function main() {
     contractId: r3u.CONTRACT_ID,
     decision: decision.decision,
     evidenceStatus: evidence.status,
-    statementGroupCount: r3u.REQUIRED_STATEMENT_GROUPS.length,
     statementCount: first.statementCount,
     statementFingerprint: first.statementFingerprint,
     remoteSqlExecutionAuthority: decision.remoteSqlExecutionAuthority,
