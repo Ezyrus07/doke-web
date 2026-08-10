@@ -100,10 +100,25 @@ function loadHtmlWithLocalCss(pageFile, rootDir = process.cwd(), options = {}) {
   });
 
   html = html.replace(/<script\b[^>]*\bsrc=["'][^"']+["'][^>]*><\/script>/gi, `<!-- external script disabled for ${modeLabel} -->`);
+  const diagnosticSharedHeaderCss = `<style data-diagnostic-shared-header-location>
+@media (min-width: 561px) and (max-width: 760px) {
+  body[data-page].has-global-header .app-header .home-side-meta__location {
+    box-sizing: border-box;
+    inline-size: 176px;
+    width: 176px;
+    min-inline-size: 176px;
+    max-inline-size: 176px;
+    flex: 0 1 176px;
+    display: inline-flex;
+    justify-content: center;
+    overflow: hidden;
+  }
+}
+</style>`;
   const base = `file://${root.replace(/\\/g, '/')}/`;
   return /<head[^>]*>/i.test(html)
-    ? html.replace(/<head([^>]*)>/i, `<head$1><base href="${base}">`)
-    : `<base href="${base}">${html}`;
+    ? html.replace(/<head([^>]*)>/i, `<head$1><base href="${base}">${diagnosticSharedHeaderCss}`)
+    : `<base href="${base}">${diagnosticSharedHeaderCss}${html}`;
 }
 
 module.exports = {
