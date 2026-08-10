@@ -7,6 +7,8 @@ on:
     paths:
       - 'config/domain-completion-matrix-refresh.json'
 
+# TEMPORARY writer authority for one canonical matrix reconciliation only.
+# Must be restored to contents: read immediately after the generated commit.
 permissions:
   contents: write
 
@@ -20,6 +22,7 @@ jobs:
         with:
           ref: com/com-001-baseline-audit
           fetch-depth: 2
+
       - name: Validate refresh manifest
         shell: bash
         run: |
@@ -29,38 +32,37 @@ jobs:
           if (manifest.contractId !== 'domain-completion-matrix-refresh-v1') throw new Error('INVALID_REFRESH_CONTRACT');
           if (manifest.status !== 'refresh_requested') throw new Error('INVALID_REFRESH_STATUS');
           if (manifest.matrixVersion !== '1.3.113') throw new Error('MATRIX_VERSION_MISMATCH');
-          if (manifest.domain !== 'COM-001' || manifest.boundary !== 'COM-B03B-R2') throw new Error('REFRESH_SCOPE_MISMATCH');
-          if (manifest.effects.repositorySourceAndDerivedArtifacts !== true) throw new Error('INVALID_REPOSITORY_EFFECT_SCOPE');
-          if (manifest.effects.databaseAccessed || manifest.effects.migrationApplied || manifest.effects.stagingChanged ||
-              manifest.effects.runtimeActivated || manifest.effects.stagingDeploymentExecuted ||
-              manifest.effects.stagingTrafficEnabled || manifest.effects.realModerationExecuted ||
-              manifest.effects.productionChanged || manifest.effects.pullRequestMerged) {
-            throw new Error('OPERATIONAL_EFFECT_PROHIBITED');
+          if (manifest.domain !== 'COM-001' || manifest.boundary !== 'COM-B03C-R3L-CANONICAL-MATRIX-RECONCILIATION') throw new Error('REFRESH_SCOPE_MISMATCH');
+          if (manifest.attempt !== 1) throw new Error('INVALID_ATTEMPT');
+          if (manifest.effects?.repositorySourceAndDerivedArtifacts !== true) throw new Error('INVALID_REPOSITORY_EFFECT_SCOPE');
+          for (const key of [
+            'databaseAccessed', 'migrationApplied', 'stagingChanged', 'runtimeActivated',
+            'stagingDeploymentExecuted', 'stagingTrafficEnabled', 'realModerationExecuted',
+            'productionChanged', 'pullRequestMerged'
+          ]) {
+            if (manifest.effects?.[key] !== false) throw new Error(`OPERATIONAL_EFFECT_PROHIBITED:${key}`);
           }
           NODE
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '24'
           cache: npm
+
       - name: Install pinned dependencies
         run: npm ci --ignore-scripts
-      - name: Reconcile COM-B03B-R2 and COM-B04I into canonical source
+
+      - name: Reconcile COM-B03C R3H-R3L into canonical matrix source
         shell: bash
         run: |
           node <<'NODE'
           const fs = require('fs');
           const manifest = JSON.parse(fs.readFileSync('config/domain-completion-matrix-refresh.json', 'utf8'));
-          const packagePath = 'package.json';
           const matrixPath = 'config/domain-completion-matrix.json';
-          const pkg = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
-          pkg.scripts['test:com-b03b-realtime-publication-authenticated-subscription-readiness'] = 'node scripts/test-com-b03b-realtime-publication-authenticated-subscription-readiness.js';
-          pkg.scripts['test:com-b03b-r1-postgres-changes-recovery-readiness'] = 'node scripts/test-com-b03b-r1-postgres-changes-recovery-readiness.js';
-          pkg.scripts['test:com-b03b-r2-ephemeral-auth-recovery-readiness'] = 'node scripts/test-com-b03b-r2-ephemeral-auth-recovery-readiness.js';
-          fs.writeFileSync(packagePath, `${JSON.stringify(pkg, null, 2)}\n`);
-
           const matrix = JSON.parse(fs.readFileSync(matrixPath, 'utf8'));
-          if (!['1.3.112', '1.3.113'].includes(matrix.version)) throw new Error('UNEXPECTED_MATRIX_VERSION');
+
+          if (matrix.version !== '1.3.113') throw new Error('UNEXPECTED_MATRIX_VERSION');
           const domain = matrix.domains.find((item) => item.id === 'COM-001');
           if (!domain) throw new Error('COM_DOMAIN_MISSING');
           if (domain.maturity !== 3 || domain.userFacingAuthority !== 'hybrid' ||
@@ -68,7 +70,7 @@ jobs:
               domain.productionGate !== 'blocked') {
             throw new Error('UNEXPECTED_COM_AUTHORITY_STATE');
           }
-          matrix.version = manifest.matrixVersion;
+
           matrix.updatedAt = manifest.updatedAt;
 
           const addUnique = (array, values) => {
@@ -78,101 +80,101 @@ jobs:
           };
 
           domain.requiredPaths = addUnique(domain.requiredPaths, [
-            'backend/modules/communities/community-realtime-publication-subscription-readiness.js',
-            'backend/modules/communities/community-realtime-postgres-changes-recovery.js',
-            'backend/modules/communities/community-realtime-ephemeral-auth-recovery.js',
-            'config/com-b03b-realtime-publication-authenticated-subscription-readiness.json',
-            'config/com-b03b-r1-postgres-changes-recovery-readiness.json',
-            'config/com-b03b-r2-ephemeral-auth-recovery-readiness.json',
-            'supabase/migrations/20260808135800_com_b03b_r1_community_posts_postgres_changes.sql',
-            'scripts/test-com-b03b-realtime-publication-authenticated-subscription-readiness.js',
-            'scripts/test-com-b03b-r1-postgres-changes-recovery-readiness.js',
-            'scripts/test-com-b03b-r2-ephemeral-auth-recovery-readiness.js',
-            'scripts/execute-com-b03b-r2-ephemeral-auth-postgres-changes-staging-canary.js',
-            '.github/workflows/com-b03b-r2-ephemeral-auth-postgres-changes-staging-canary.yml',
-            'docs/validation/COM-B03B-R1-POSTGRES-CHANGES-AUTHENTICATED-SUBSCRIPTION-STAGING-CANARY.json',
-            'docs/validation/COM-B03B-R2-EPHEMERAL-AUTH-RECOVERY-READINESS.json',
-            '.github/workflows/com-b04i-r2-attempt-3-staging-live-composition-route-canary.yml',
-            'docs/validation/COM-B04I-R2-ATTEMPT-3-STAGING-LIVE-COMPOSITION-ROUTE-CANARY.json'
-          ]);
-          domain.tests = addUnique(domain.tests, [
-            'test:com-b03b-realtime-publication-authenticated-subscription-readiness',
-            'test:com-b03b-r1-postgres-changes-recovery-readiness',
-            'test:com-b03b-r2-ephemeral-auth-recovery-readiness'
+            'backend/modules/communities/community-realtime-private-auth-r3h.js',
+            'backend/modules/communities/community-realtime-private-auth-r3i.js',
+            'backend/modules/communities/community-realtime-private-auth-r3j.js',
+            'backend/modules/communities/community-realtime-private-auth-r3k.js',
+            'backend/modules/communities/community-realtime-private-auth-r3l.js',
+            'config/com-b03c-r3h-single-use-staging-diagnostic-readiness.json',
+            'config/com-b03c-r3i-realtime-authorization-evaluation-context-readiness.json',
+            'config/com-b03c-r3j-evaluation-context-differential-harness-readiness.json',
+            'config/com-b03c-r3k-differential-remote-adapter-lifecycle-readiness.json',
+            'config/com-b03c-r3l-evaluation-context-differential-presence-diagnostic-readiness.json',
+            'scripts/test-com-b03c-r3h-single-use-staging-diagnostic-readiness.js',
+            'scripts/test-com-b03c-r3i-realtime-authorization-evaluation-context-readiness.js',
+            'scripts/test-com-b03c-r3j-evaluation-context-differential-harness-readiness.js',
+            'scripts/test-com-b03c-r3k-differential-remote-adapter-lifecycle-readiness.js',
+            'scripts/test-com-b03c-r3l-evaluation-context-differential-presence-diagnostic-readiness.js',
+            'scripts/execute-com-b03c-r3l-evaluation-context-differential-presence-staging-diagnostic.js',
+            'scripts/verify-com-b03c-r3l-evaluation-context-differential-presence-diagnostic-readiness.js',
+            '.github/workflows/com-b03c-r3h-single-use-staging-diagnostic-readiness.yml',
+            '.github/workflows/com-b03c-r3i-realtime-authorization-evaluation-context-readiness.yml',
+            '.github/workflows/com-b03c-r3j-evaluation-context-differential-harness-readiness.yml',
+            '.github/workflows/com-b03c-r3k-differential-remote-adapter-lifecycle-readiness.yml',
+            '.github/workflows/com-b03c-r3l-evaluation-context-differential-presence-diagnostic-readiness.yml',
+            'docs/validation/COM-B03C-R3H-SINGLE-USE-STAGING-DIAGNOSTIC-READINESS.json',
+            'docs/validation/COM-B03C-R3I-REALTIME-AUTHORIZATION-EVALUATION-CONTEXT-READINESS.json',
+            'docs/validation/COM-B03C-R3J-EVALUATION-CONTEXT-DIFFERENTIAL-HARNESS-READINESS.json',
+            'docs/validation/COM-B03C-R3K-DIFFERENTIAL-REMOTE-ADAPTER-LIFECYCLE-READINESS.json',
+            'docs/validation/COM-B03C-R3L-SINGLE-USE-EVALUATION-CONTEXT-DIFFERENTIAL-PRESENCE-DIAGNOSTIC-READINESS.json'
           ]);
 
+          const staleEvidencePrefixes = [
+            'COM-B03B authenticated community_posts Postgres Changes is proven',
+            'COM-B03C-R3H executed the single-use real Presence diagnostic',
+            'COM-B03C-R3I/R3J/R3K repository-certified',
+            'COM-B03C-R3L repository-certified the single-use differential authorization lifecycle'
+          ];
           domain.evidence = (domain.evidence || []).filter((item) =>
-            !item.includes('No community Realtime publication, authenticated subscription, route or runtime integration is active yet.') &&
-            !item.includes('COM-B03B-R1 confirmed public.community_posts is present in the staging supabase_realtime publication') &&
-            !item.includes('COM-B03B-R2 repository-certified an ephemeral Auth identity recovery') &&
-            !item.includes('COM-B04I authenticated a real staging session and passed the process-local') &&
-            !item.includes('default handler remains HTTP 503 COM_B04G_ROUTE_NOT_DEPLOYED_OR_ACTIVATED')
+            !staleEvidencePrefixes.some((prefix) => item.startsWith(prefix))
           );
           domain.evidence.push(
-            'COM-B03B-R1 confirmed public.community_posts is present in the staging supabase_realtime publication; the single-use authenticated canary then failed closed at the shared synthetic login boundary with zero persistent domain residue.',
-            'COM-B03B-R2 repository-certified an ephemeral Auth identity recovery that removes the shared staging credential dependency, verifies the existing publication without mutating it, materializes the account through the canonical auth trigger and keeps staging execution behind a new single-use authorization.',
-            'COM-B04I authenticated a real staging session and passed the process-local communities.moderation.command route canary inside a SERIALIZABLE rollback-only transaction with zero persistent residue.',
-            'The successful COM-B04I canary did not deploy a persistent runtime, enable public traffic, change production or merge the pull request; the default handler remains HTTP 503 COM_B04G_ROUTE_NOT_DEPLOYED_OR_ACTIVATED.'
+            'COM-B03B authenticated community_posts Postgres Changes is proven in Doke staging and remains preserved; R3H through R3L did not re-execute or weaken that proof.',
+            'COM-B03C-R3H executed the single-use real Presence diagnostic with nine cases, per-case policy cleanup and final synthetic-identity cleanup; zeroResidueProven=true while exactRootCauseProven remained false.',
+            'COM-B03C-R3I/R3J/R3K repository-certified 16 differential probes plus one separate negative control and connected the harness to reusable R3G adapters while keeping remote credential, dependency, staging and Realtime execution authority false.',
+            'COM-B03C-R3L repository-certified the single-use differential authorization lifecycle for the 17 cases: certify passed, authorize/canary remained skipped, trigger absent, authorization unreceived/unconsumed, credential wiring and remote executor invocation unprepared, production and merge blocked.'
           );
 
           const b03 = (domain.blockers || []).find((item) => item.id === 'COM-B03');
-          const b04 = (domain.blockers || []).find((item) => item.id === 'COM-B04');
-          if (!b03 || !b04) throw new Error('COM_BLOCKER_MISSING');
+          if (!b03) throw new Error('COM_B03_BLOCKER_MISSING');
           b03.category = 'realtime_activation';
-          b03.description = 'public.community_posts is published to Supabase Realtime in staging, but no authenticated community subscription is proven active; Presence/Typing remain canary-only and channel_messages still lacks canonical remote authority.';
-          b04.category = 'moderation_live_runtime_activation';
-          b04.description = 'COM-B04I proved the authenticated live composition route in a rollback-only process-local staging canary, but the default shared handler remains HTTP 503 and no persistent runtime deployment or public traffic is active.';
+          b03.description = 'Authenticated community_posts Postgres Changes is proven in staging. Private Presence remains diagnostic-only and is not promoted to functional/integrated; private Typing/Broadcast is not proven; channel_messages still lacks canonical remote authority; and the exact Presence root cause remains unproven.';
 
           domain.nextActions = (domain.nextActions || []).filter((item) =>
-            !item.includes('Prepare scoped Realtime publication') &&
-            !item.includes('authenticated subscription canary under separate explicit staging authorization') &&
-            !item.includes('Authorize and execute COM-B04I') &&
             !item.includes('COM-B03B-R2 ephemeral-identity authenticated Realtime canary') &&
-            !item.includes('Keep moderation fail-closed until a separately governed persistent staging runtime deployment/traffic boundary')
+            !item.includes('17 R3L differential cases') &&
+            !item.includes('R3L executable staging envelope')
           );
           domain.nextActions.push(
-            'Execute COM-B03B-R2 ephemeral-identity authenticated Realtime canary only after its exact separate single-use staging authorization.',
-            'Keep moderation fail-closed until a separately governed persistent staging runtime deployment/traffic boundary is defined and authorized.'
+            'Prepare and separately certify the repository-only executable staging envelope for the 17 R3L differential cases: explicit secrets/credential loading, R3K/R3L executor invocation, sanitized artifact, independent verifier and single-use trigger enforcement. Do not request or consume the R3L authorization before that envelope is certified.'
           );
 
           fs.writeFileSync(matrixPath, `${JSON.stringify(matrix, null, 2)}\n`);
           NODE
-      - name: Regenerate deterministic artifacts
+
+      - name: Regenerate deterministic official outputs
         run: npm run write:domain-completion-matrix
+
       - name: Audit generated matrix
         run: npm run audit:domain-completion-matrix
-      - name: Audit COM-B03 and recovery continuity
+
+      - name: Audit R3K and R3L repository continuity
         run: |
-          node scripts/test-com-b03-community-realtime-channel-scale-policy.js
-          node scripts/audit-com-b03-community-realtime-channel-scale-policy.js
-          node scripts/test-com-b03b-realtime-publication-authenticated-subscription-readiness.js
-          node scripts/test-com-b03b-r1-postgres-changes-recovery-readiness.js
-          node scripts/test-com-b03b-r2-ephemeral-auth-recovery-readiness.js
-          node scripts/audit-com-b03-domain-matrix-reconciliation.js
-      - name: Audit COM-B04 continuity
-        run: |
-          node scripts/test-com-b04-moderation-case-authority.js
-          node scripts/audit-com-b04-moderation-case-authority.js
-          node scripts/audit-com-b04-domain-matrix-reconciliation.js
-          node scripts/test-com-b04h-live-composition-activation-readiness.js
-          node scripts/audit-com-b04h-live-composition-activation-readiness.js
-      - name: Restrict repository diff
+          node scripts/test-com-b03c-r3k-differential-remote-adapter-lifecycle-readiness.js
+          node scripts/verify-com-b03c-r3k-differential-remote-adapter-lifecycle-readiness.js
+          node scripts/test-com-b03c-r3l-evaluation-context-differential-presence-diagnostic-readiness.js
+
+      - name: Agent governance audit
+        run: npm run audit:agent-governance
+
+      - name: Restrict generated diff
         shell: bash
         run: |
           unexpected="$(git status --porcelain | awk '{print $2}' \
-            | grep -v -E '^(package\.json|config/domain-completion-matrix\.json|docs/DOMAIN-COMPLETION-MATRIX\.md|reports/generated/domain-completion-matrix-report\.json)$' || true)"
+            | grep -v -E '^(config/domain-completion-matrix\.json|docs/DOMAIN-COMPLETION-MATRIX\.md|reports/generated/domain-completion-matrix-report\.json)$' || true)"
           test -z "$unexpected" || { echo "$unexpected"; exit 1; }
           git diff --check
-      - name: Commit canonical and generated artifacts
+
+      - name: Commit canonical source and two official generated outputs
         shell: bash
         run: |
           git config user.name 'doke-matrix-bot'
           git config user.email 'doke-matrix-bot@users.noreply.github.com'
-          git add package.json config/domain-completion-matrix.json docs/DOMAIN-COMPLETION-MATRIX.md
+          git add config/domain-completion-matrix.json docs/DOMAIN-COMPLETION-MATRIX.md
           git add -f reports/generated/domain-completion-matrix-report.json
           if git diff --cached --quiet; then
-            echo 'Canonical and generated artifacts already synchronized.'
+            echo 'Canonical source and generated outputs already synchronized.'
             exit 0
           fi
-          git commit -m 'docs(com): reconcile COM-B03B-R2 domain completion matrix'
+          git commit -m 'docs(com): reconcile R3L domain completion matrix'
           git push origin HEAD:com/com-001-baseline-audit
