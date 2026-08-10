@@ -17,8 +17,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Guard certified UX-RESP-DEBT-004 parent
-        run: test "$(git rev-parse HEAD^)" = "ecb54eef031754cf91b9ec4340f382768f11f027"
+      - name: Guard certified UX-RESP-DEBT-004 ancestry
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git merge-base HEAD ecb54eef031754cf91b9ec4340f382768f11f027)" = "ecb54eef031754cf91b9ec4340f382768f11f027"
 
       - name: Setup Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
@@ -32,111 +35,81 @@ jobs:
       - name: Install Chromium from lockfile-pinned Playwright
         run: node node_modules/@playwright/test/cli.js install --with-deps chromium
 
-      - name: Trace contextual header runtime CSSOM
+      - name: Print focused contextual header CSSOM
         shell: bash
         run: |
           node <<'NODE'
-          const path = require('path');
           const { chromium } = require('@playwright/test');
           const { loadHtmlWithLocalCss } = require('./scripts/lib/responsive-html-loader');
           const root = process.cwd();
-
           const targets = [
-            ['index.html', 820, 1180],
-            ['pedidos.html', 820, 1180],
-            ['notificacoes.html', 820, 1180],
-            ['carteira.html', 820, 1180],
-            ['index.html', 608, 926],
-            ['pedidos.html', 608, 926],
-            ['notificacoes.html', 608, 926],
-            ['carteira.html', 608, 926],
+            ['index.html', 820, 1180], ['pedidos.html', 820, 1180], ['notificacoes.html', 820, 1180], ['carteira.html', 820, 1180],
+            ['index.html', 608, 926], ['pedidos.html', 608, 926], ['notificacoes.html', 608, 926], ['carteira.html', 608, 926],
           ];
-
-          const selectors = {
-            header: '.app-header',
-            inner: '.app-header__inner',
-            search: '.home-side-meta__search',
-            profile: '.home-side-meta__profile',
-            avatar: '.home-side-meta__avatar',
+          const selectorMap = {
+            header: '.app-header', inner: '.app-header__inner', search: '.home-side-meta__search',
+            profile: '.home-side-meta__profile', avatar: '.home-side-meta__avatar'
           };
-          const interesting = [
-            'display','position','top','left','width','min-width','max-width','height','min-height','max-height',
-            'padding','padding-top','padding-bottom','padding-left','padding-right','margin','margin-top','margin-bottom',
-            'align-items','justify-content','transform','border-radius','box-sizing'
-          ];
-
+          const wanted = {
+            header: ['height','min-height','max-height','padding','padding-block','padding-top','padding-bottom','margin','top'],
+            inner: ['height','min-height','padding','padding-inline','margin','top','align-items','grid-template-columns','column-gap','gap','transform'],
+            search: ['width','min-width','max-width','margin','margin-left','left','top','transform','align-self'],
+            profile: ['width','min-width','max-width','height','min-height','margin','margin-left','left','top','transform','align-self'],
+            avatar: ['width','height','border-radius','margin','top','transform']
+          };
+          function toPxRect(r) { return { x:r.x, y:r.y, width:r.width, height:r.height }; }
           (async () => {
-            const browser = await chromium.launch({ headless: true, args: ['--no-sandbox','--disable-dev-shm-usage'] });
+            const browser = await chromium.launch({ headless:true, args:['--no-sandbox','--disable-dev-shm-usage'] });
             try {
-              for (const [file, width, height] of targets) {
-                const context = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: 1, javaScriptEnabled: false });
+              for (const [file,width,height] of targets) {
+                const context = await browser.newContext({ viewport:{width,height}, deviceScaleFactor:1, javaScriptEnabled:false });
                 const page = await context.newPage();
-                await page.setContent(loadHtmlWithLocalCss(file, root, { modeLabel: 'UX-RESP-DEBT-005 CSSOM trace' }), { waitUntil: 'domcontentloaded', timeout: 30000 });
-                await page.waitForTimeout(80);
-                const result = await page.evaluate(({ selectors, interesting }) => {
-                  function matchedRules(el) {
-                    const rows = [];
-                    let order = 0;
-                    function walk(rules, sheetLabel) {
+                await page.setContent(loadHtmlWithLocalCss(file, root, { modeLabel:'UX-RESP-DEBT-005 focused CSSOM' }), { waitUntil:'domcontentloaded', timeout:30000 });
+                await page.waitForTimeout(60);
+                const out = await page.evaluate(({selectorMap,wanted}) => {
+                  function collect(el, props) {
+                    const rows=[];
+                    function walk(rules,source,media='') {
                       if (!rules) return;
                       for (const rule of rules) {
                         if (rule.type === CSSRule.MEDIA_RULE) {
-                          if (matchMedia(rule.conditionText).matches) walk(rule.cssRules, sheetLabel);
+                          if (matchMedia(rule.conditionText).matches) walk(rule.cssRules, source, rule.conditionText);
                           continue;
                         }
                         if (rule.type !== CSSRule.STYLE_RULE) continue;
-                        let matches = false;
-                        try { matches = el.matches(rule.selectorText); } catch (_) {}
+                        let matches=false;
+                        try { matches=el.matches(rule.selectorText); } catch (_) {}
                         if (!matches) continue;
-                        const decl = {};
-                        for (const prop of interesting) {
-                          const value = rule.style.getPropertyValue(prop);
-                          if (value) decl[prop] = value + (rule.style.getPropertyPriority(prop) ? ' !important' : '');
+                        const decl={};
+                        for (const prop of props) {
+                          const value=rule.style.getPropertyValue(prop);
+                          if (value) decl[prop]=value + (rule.style.getPropertyPriority(prop)?' !important':'');
                         }
-                        if (Object.keys(decl).length) rows.push({ order: order++, sheet: sheetLabel, selector: rule.selectorText, decl });
+                        if (Object.keys(decl).length) rows.push({source,media,selector:rule.selectorText,decl});
                       }
                     }
                     for (const sheet of document.styleSheets) {
-                      const label = sheet.ownerNode?.getAttribute?.('data-source-css') || sheet.href || 'inline';
-                      try { walk(sheet.cssRules, label); } catch (_) {}
+                      const source=sheet.ownerNode?.getAttribute?.('data-source-css') || sheet.href || 'inline';
+                      try { walk(sheet.cssRules,source); } catch (_) {}
                     }
                     return rows;
                   }
-                  const out = {
-                    body: {
-                      page: document.body.getAttribute('data-page'),
-                      classes: document.body.className,
-                      vars: {},
-                    },
-                    elements: {},
-                  };
-                  const bodyStyle = getComputedStyle(document.body);
-                  for (const v of [
-                    '--doke-header-height','--doke-app-topbar-height','--doke-header-rail','--doke-page-rail',
-                    '--doke-header-control-size','--app-header-control-size','--doke-header-profile-height',
-                    '--app-header-profile-height','--doke-header-avatar-size','--app-header-profile-avatar',
-                    '--radius-pill','--doke-header-control-radius','--app-header-control-radius'
-                  ]) out.body.vars[v] = bodyStyle.getPropertyValue(v).trim();
-                  for (const [name, selector] of Object.entries(selectors)) {
-                    const el = document.querySelector(selector);
-                    if (!el) { out.elements[name] = null; continue; }
-                    const r = el.getBoundingClientRect();
-                    const s = getComputedStyle(el);
-                    out.elements[name] = {
-                      selector: el.className,
-                      rect: { x: r.x, y: r.y, width: r.width, height: r.height },
-                      computed: Object.fromEntries(interesting.map(p => [p, s.getPropertyValue(p)])),
-                      matched: matchedRules(el),
-                    };
+                  const bodyStyle=getComputedStyle(document.body);
+                  const result={body:{page:document.body.dataset.page,classes:document.body.className,vars:{}},elements:{}};
+                  for (const v of ['--doke-header-height','--doke-app-topbar-height','--doke-page-rail','--doke-header-rail','--doke-header-control-size','--doke-header-profile-height','--doke-header-avatar-size','--radius-pill']) result.body.vars[v]=bodyStyle.getPropertyValue(v).trim();
+                  for (const [name,selector] of Object.entries(selectorMap)) {
+                    const el=document.querySelector(selector);
+                    if (!el) { result.elements[name]=null; continue; }
+                    const r=el.getBoundingClientRect();
+                    const s=getComputedStyle(el);
+                    result.elements[name]={rect:{x:r.x,y:r.y,width:r.width,height:r.height},computed:Object.fromEntries(wanted[name].map(p=>[p,s.getPropertyValue(p)])),rules:collect(el,wanted[name])};
                   }
-                  return out;
-                }, { selectors, interesting });
-                console.log(`CSSOM_TRACE ${file} ${width}x${height}`);
-                console.log(JSON.stringify(result, null, 2));
+                  return result;
+                }, {selectorMap,wanted});
+                console.log(`FOCUSED_CSSOM ${file} ${width}x${height}`);
+                console.log(JSON.stringify(out));
                 await context.close();
               }
-            } finally {
-              await browser.close();
-            }
-          })().catch(err => { console.error(err); process.exit(1); });
+            } finally { await browser.close(); }
+          })().catch(e=>{console.error(e);process.exit(1)});
           NODE
