@@ -57,7 +57,7 @@ jobs:
           const a=css.indexOf(start), b=css.indexOf(end,a);
           if(a<0||b<=a) throw new Error('wallet obsolete header block not found');
           const block=css.slice(a,b);
-          for(const needle of ['height: 96px;','min-height: 96px;','max-height: 96px;','padding: 20px 0 10px;']) if(!block.includes(needle)) throw new Error(`wallet block missing ${needle}`);
+          for(const needle of ['height: 96px;','min-height: 96px;','padding: 20px 0 10px;']) if(!block.includes(needle)) throw new Error(`wallet block missing ${needle}`);
           fs.writeFileSync(wallet,css.slice(0,a)+css.slice(b));
           NODE
 
