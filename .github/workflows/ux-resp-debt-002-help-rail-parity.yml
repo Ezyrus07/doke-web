@@ -1,0 +1,130 @@
+name: Doke UX-RESP-DEBT-002 Help Rail Parity
+
+on:
+  push:
+    branches:
+      - ux/ux-resp-debt-002-help-rail-parity
+  pull_request:
+    branches:
+      - ux/ux-resp-debt-001-recursive-css-loader
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: ux-resp-debt-002-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  EXPECTED_BASE: 6581fd9299bc90481c96ff6cd3fa0225968fb49a
+
+jobs:
+  ux-resp-debt-002:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Guard certified UX-RESP-DEBT-001 parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            ACTUAL_BASE="${{ github.event.pull_request.base.sha }}"
+          else
+            git fetch origin ux/ux-resp-debt-001-recursive-css-loader --quiet
+            ACTUAL_BASE="$(git merge-base HEAD origin/ux/ux-resp-debt-001-recursive-css-loader)"
+          fi
+          test "${ACTUAL_BASE}" = "${EXPECTED_BASE}"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install repository dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts
+
+      - name: Validate permanent delta allowlist
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r changed_path; do
+            case "${changed_path}" in
+              .github/workflows/ux-resp-debt-002-help-rail-parity.yml|assets/css/pages/ajuda-foundation.css|assets/css/pages/ajuda/responsive-rail-contract.css|scripts/test-ux-resp-debt-002-help-rail-parity.js|docs/DOMAIN-COMPLETION-MATRIX.md) ;;
+              *) echo "::error::Unexpected UX-RESP-DEBT-002 path: ${changed_path}"; exit 1 ;;
+            esac
+          done < <(git diff --name-only "${EXPECTED_BASE}"...HEAD)
+
+      - name: Validate test syntax and page-only ownership
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check scripts/test-ux-resp-debt-002-help-rail-parity.js
+          test "$(grep -Fc '@import url("ajuda/responsive-rail-contract.css?v=20260810-ux-resp-debt-002-v1");' assets/css/pages/ajuda-foundation.css)" -eq 1
+          CLEAN_CSS="$(sed '/\/\*/,/\*\//d' assets/css/pages/ajuda/responsive-rail-contract.css)"
+          if printf '%s\n' "${CLEAN_CSS}" | grep -Eq '\.(app-header|home-side-meta|detail-standard-topbar|topbar-profile)(\b|__|--)'; then
+            echo '::error::Ajuda composition contract must not own shared header component anatomy'
+            exit 1
+          fi
+
+      - name: Validate canonical CSS import inventory
+        run: npm run audit:css-import-resolution
+
+      - name: Install Chromium from lockfile-pinned Playwright
+        run: node node_modules/@playwright/test/cli.js install --with-deps chromium
+
+      - name: Generate responsive index baseline
+        run: node scripts/generate-responsive-index-baseline.js
+
+      - name: Execute responsive contract with residual debt preserved
+        shell: bash
+        run: |
+          set +e
+          node scripts/test-responsive-contract.js
+          STATUS=$?
+          set -e
+          test "${STATUS}" -eq 0 -o "${STATUS}" -eq 1
+          test -f reports/responsive-contract-test-report.json
+          echo "responsive_contract_exit=${STATUS}"
+
+      - name: Prove exact help rail/gutter reduction
+        run: node scripts/test-ux-resp-debt-002-help-rail-parity.js
+
+      - name: Validate responsive CSS and governance boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:responsive-boundaries
+          npm run audit:css-responsive-conflicts
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+
+      - name: Validate patch whitespace
+        run: git diff --check "${EXPECTED_BASE}"...HEAD
+
+      - name: Require SonarQube Cloud credential
+        if: github.event_name == 'push'
+        shell: bash
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: test -n "${SONAR_TOKEN}"
+
+      - name: Analyze PR and enforce SonarQube Cloud Quality Gate
+        if: github.event_name == 'push'
+        uses: SonarSource/sonarqube-scan-action@c7ee0f9df90b7aa20e8dcf9695dcfe2e7da5b4f2
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >-
+            -Dsonar.projectKey=Ezyrus07_doke-web
+            -Dsonar.organization=ezyrus07
+            -Dsonar.pullrequest.key=118
+            -Dsonar.pullrequest.branch=ux/ux-resp-debt-002-help-rail-parity
+            -Dsonar.pullrequest.base=ux/ux-resp-debt-001-recursive-css-loader
+            -Dsonar.qualitygate.wait=true
+            -Dsonar.qualitygate.timeout=600
