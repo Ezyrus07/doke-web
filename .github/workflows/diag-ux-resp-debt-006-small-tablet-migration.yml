@@ -29,20 +29,24 @@ jobs:
       - name: Install dependencies
         run: npm ci --ignore-scripts
 
-      - name: Apply workspace-only minimal margin candidate
+      - name: Apply workspace-only canonical inset candidate
         shell: bash
         run: |
           python3 - <<'PY'
           from pathlib import Path
           p=Path('assets/css/components/shell/tablet-internal-rail-contract.css')
           s=p.read_text()
-          old='margin-block: 24px 28px !important;'
-          new='margin-block: 0 28px !important;'
-          count=s.count(old)
-          print('target_count=',count)
-          if count != 1:
-            raise SystemExit(f'expected exactly one small-tablet margin target, got {count}')
-          p.write_text(s.replace(old,new,1))
+          replacements={
+            'margin-block: 24px 28px !important;':'margin-block: 0 28px !important;',
+            'padding: 0 !important;\n    border: 0 !important;\n    background: transparent !important;':'padding: 11px 0 !important;\n    border: 0 !important;\n    background: transparent !important;',
+          }
+          for old,new in replacements.items():
+            count=s.count(old)
+            print('target=',old.splitlines()[0],'count=',count)
+            if count != 1:
+              raise SystemExit(f'expected exactly one target, got {count}: {old!r}')
+            s=s.replace(old,new,1)
+          p.write_text(s)
           PY
           git diff -- assets/css/components/shell/tablet-internal-rail-contract.css
           npm run audit:css-import-resolution
