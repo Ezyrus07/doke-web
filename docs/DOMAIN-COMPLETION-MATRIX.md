@@ -912,16 +912,20 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - COM-B03B-R2 repository-certified an ephemeral Auth identity recovery that removes the shared staging credential dependency, verifies the existing publication without mutating it, materializes the account through the canonical auth trigger and keeps staging execution behind a new single-use authorization.
 - COM-B04I authenticated a real staging session and passed the process-local communities.moderation.command route canary inside a SERIALIZABLE rollback-only transaction with zero persistent residue.
 - The successful COM-B04I canary did not deploy a persistent runtime, enable public traffic, change production or merge the pull request; the default handler remains HTTP 503 COM_B04G_ROUTE_NOT_DEPLOYED_OR_ACTIVATED.
+- COM-B03B authenticated community_posts Postgres Changes is proven in Doke staging and remains preserved; R3H through R3L did not re-execute or weaken that proof.
+- COM-B03C-R3H executed the single-use real Presence diagnostic with nine cases, per-case policy cleanup and final synthetic-identity cleanup; zeroResidueProven=true while exactRootCauseProven remained false.
+- COM-B03C-R3I/R3J/R3K repository-certified 16 differential probes plus one separate negative control and connected the harness to reusable R3G adapters while keeping remote credential, dependency, staging and Realtime execution authority false.
+- COM-B03C-R3L repository-certified the single-use differential authorization lifecycle for the 17 cases: certify passed, authorize/canary remained skipped, trigger absent, authorization unreceived/unconsumed, credential wiring and remote executor invocation unprepared, production and merge blocked.
 
 **Bloqueadores:**
 - **COM-B02 · CRITICAL · server_runtime_activation:** Server-authority contracts, persistence foundation and a read-only canary are certified, but membership, roles, invitations, bans and content commands are not integrated into the canonical runtime. _(Fase 11)_
-- **COM-B03 · HIGH · realtime_activation:** public.community_posts is published to Supabase Realtime in staging, but no authenticated community subscription is proven active; Presence/Typing remain canary-only and channel_messages still lacks canonical remote authority. _(Fase 11)_
+- **COM-B03 · HIGH · realtime_activation:** Authenticated community_posts Postgres Changes is proven in staging. Private Presence remains diagnostic-only and is not promoted to functional/integrated; private Typing/Broadcast is not proven; channel_messages still lacks canonical remote authority; and the exact Presence root cause remains unproven. _(Fase 11)_
 - **COM-B04 · HIGH · moderation_live_runtime_activation:** COM-B04I proved the authenticated live composition route in a rollback-only process-local staging canary, but the default shared handler remains HTTP 503 and no persistent runtime deployment or public traffic is active. _(Fase 12)_
 
 **Próximas ações:**
 - Integrate the certified server-authority repository into the main runtime for invitations, join requests, roles, bans and content commands.
-- Execute COM-B03B-R2 ephemeral-identity authenticated Realtime canary only after its exact separate single-use staging authorization.
 - Keep moderation fail-closed until a separately governed persistent staging runtime deployment/traffic boundary is defined and authorized.
+- Prepare and separately certify the repository-only executable staging envelope for the 17 R3L differential cases: explicit secrets/credential loading, R3K/R3L executor invocation, sanitized artifact, independent verifier and single-use trigger enforcement. Do not request or consume the R3L authorization before that envelope is certified.
 
 **Gate de saída:**
 - Community state survives device changes and refreshes.
@@ -1190,4 +1194,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-08-08T14:50:00-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-08-10T08:52:00-03:00._

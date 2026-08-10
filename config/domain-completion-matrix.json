@@ -1,6 +1,6 @@
 {
   "version": "1.3.113",
-  "updatedAt": "2026-08-08T14:50:00-03:00",
+  "updatedAt": "2026-08-10T08:52:00-03:00",
   "title": "Doke Domain Completion Matrix",
   "purpose": "Single source of truth for domain maturity, data authority, staging evidence, blockers, dependencies and mandatory completion order.",
   "maturityScale": {
@@ -2778,7 +2778,34 @@
         "docs/validation/COM-B03B-R1-POSTGRES-CHANGES-AUTHENTICATED-SUBSCRIPTION-STAGING-CANARY.json",
         "docs/validation/COM-B03B-R2-EPHEMERAL-AUTH-RECOVERY-READINESS.json",
         ".github/workflows/com-b04i-r2-attempt-3-staging-live-composition-route-canary.yml",
-        "docs/validation/COM-B04I-R2-ATTEMPT-3-STAGING-LIVE-COMPOSITION-ROUTE-CANARY.json"
+        "docs/validation/COM-B04I-R2-ATTEMPT-3-STAGING-LIVE-COMPOSITION-ROUTE-CANARY.json",
+        "backend/modules/communities/community-realtime-private-auth-r3h.js",
+        "backend/modules/communities/community-realtime-private-auth-r3i.js",
+        "backend/modules/communities/community-realtime-private-auth-r3j.js",
+        "backend/modules/communities/community-realtime-private-auth-r3k.js",
+        "backend/modules/communities/community-realtime-private-auth-r3l.js",
+        "config/com-b03c-r3h-single-use-staging-diagnostic-readiness.json",
+        "config/com-b03c-r3i-realtime-authorization-evaluation-context-readiness.json",
+        "config/com-b03c-r3j-evaluation-context-differential-harness-readiness.json",
+        "config/com-b03c-r3k-differential-remote-adapter-lifecycle-readiness.json",
+        "config/com-b03c-r3l-evaluation-context-differential-presence-diagnostic-readiness.json",
+        "scripts/test-com-b03c-r3h-single-use-staging-diagnostic-readiness.js",
+        "scripts/test-com-b03c-r3i-realtime-authorization-evaluation-context-readiness.js",
+        "scripts/test-com-b03c-r3j-evaluation-context-differential-harness-readiness.js",
+        "scripts/test-com-b03c-r3k-differential-remote-adapter-lifecycle-readiness.js",
+        "scripts/test-com-b03c-r3l-evaluation-context-differential-presence-diagnostic-readiness.js",
+        "scripts/execute-com-b03c-r3l-evaluation-context-differential-presence-staging-diagnostic.js",
+        "scripts/verify-com-b03c-r3l-evaluation-context-differential-presence-diagnostic-readiness.js",
+        ".github/workflows/com-b03c-r3h-single-use-staging-diagnostic-readiness.yml",
+        ".github/workflows/com-b03c-r3i-realtime-authorization-evaluation-context-readiness.yml",
+        ".github/workflows/com-b03c-r3j-evaluation-context-differential-harness-readiness.yml",
+        ".github/workflows/com-b03c-r3k-differential-remote-adapter-lifecycle-readiness.yml",
+        ".github/workflows/com-b03c-r3l-evaluation-context-differential-presence-diagnostic-readiness.yml",
+        "docs/validation/COM-B03C-R3H-SINGLE-USE-STAGING-DIAGNOSTIC-READINESS.json",
+        "docs/validation/COM-B03C-R3I-REALTIME-AUTHORIZATION-EVALUATION-CONTEXT-READINESS.json",
+        "docs/validation/COM-B03C-R3J-EVALUATION-CONTEXT-DIFFERENTIAL-HARNESS-READINESS.json",
+        "docs/validation/COM-B03C-R3K-DIFFERENTIAL-REMOTE-ADAPTER-LIFECYCLE-READINESS.json",
+        "docs/validation/COM-B03C-R3L-SINGLE-USE-EVALUATION-CONTEXT-DIFFERENTIAL-PRESENCE-DIAGNOSTIC-READINESS.json"
       ],
       "scanRoots": [
         "assets/js/features/community",
@@ -2841,7 +2868,11 @@
         "COM-B03B-R1 confirmed public.community_posts is present in the staging supabase_realtime publication; the single-use authenticated canary then failed closed at the shared synthetic login boundary with zero persistent domain residue.",
         "COM-B03B-R2 repository-certified an ephemeral Auth identity recovery that removes the shared staging credential dependency, verifies the existing publication without mutating it, materializes the account through the canonical auth trigger and keeps staging execution behind a new single-use authorization.",
         "COM-B04I authenticated a real staging session and passed the process-local communities.moderation.command route canary inside a SERIALIZABLE rollback-only transaction with zero persistent residue.",
-        "The successful COM-B04I canary did not deploy a persistent runtime, enable public traffic, change production or merge the pull request; the default handler remains HTTP 503 COM_B04G_ROUTE_NOT_DEPLOYED_OR_ACTIVATED."
+        "The successful COM-B04I canary did not deploy a persistent runtime, enable public traffic, change production or merge the pull request; the default handler remains HTTP 503 COM_B04G_ROUTE_NOT_DEPLOYED_OR_ACTIVATED.",
+        "COM-B03B authenticated community_posts Postgres Changes is proven in Doke staging and remains preserved; R3H through R3L did not re-execute or weaken that proof.",
+        "COM-B03C-R3H executed the single-use real Presence diagnostic with nine cases, per-case policy cleanup and final synthetic-identity cleanup; zeroResidueProven=true while exactRootCauseProven remained false.",
+        "COM-B03C-R3I/R3J/R3K repository-certified 16 differential probes plus one separate negative control and connected the harness to reusable R3G adapters while keeping remote credential, dependency, staging and Realtime execution authority false.",
+        "COM-B03C-R3L repository-certified the single-use differential authorization lifecycle for the 17 cases: certify passed, authorize/canary remained skipped, trigger absent, authorization unreceived/unconsumed, credential wiring and remote executor invocation unprepared, production and merge blocked."
       ],
       "blockers": [
         {
@@ -2855,7 +2886,7 @@
           "id": "COM-B03",
           "severity": "high",
           "category": "realtime_activation",
-          "description": "public.community_posts is published to Supabase Realtime in staging, but no authenticated community subscription is proven active; Presence/Typing remain canary-only and channel_messages still lacks canonical remote authority.",
+          "description": "Authenticated community_posts Postgres Changes is proven in staging. Private Presence remains diagnostic-only and is not promoted to functional/integrated; private Typing/Broadcast is not proven; channel_messages still lacks canonical remote authority; and the exact Presence root cause remains unproven.",
           "targetPhase": "Fase 11"
         },
         {
@@ -2868,8 +2899,8 @@
       ],
       "nextActions": [
         "Integrate the certified server-authority repository into the main runtime for invitations, join requests, roles, bans and content commands.",
-        "Execute COM-B03B-R2 ephemeral-identity authenticated Realtime canary only after its exact separate single-use staging authorization.",
-        "Keep moderation fail-closed until a separately governed persistent staging runtime deployment/traffic boundary is defined and authorized."
+        "Keep moderation fail-closed until a separately governed persistent staging runtime deployment/traffic boundary is defined and authorized.",
+        "Prepare and separately certify the repository-only executable staging envelope for the 17 R3L differential cases: explicit secrets/credential loading, R3K/R3L executor invocation, sanitized artifact, independent verifier and single-use trigger enforcement. Do not request or consume the R3L authorization before that envelope is certified."
       ],
       "exitCriteria": [
         "Community state survives device changes and refreshes.",
