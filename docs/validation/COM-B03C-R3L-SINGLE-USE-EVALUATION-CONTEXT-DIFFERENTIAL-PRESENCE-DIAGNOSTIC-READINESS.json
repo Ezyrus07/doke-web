@@ -82,12 +82,16 @@
   "workflowBoundary": {
     "canaryJobDefined": true,
     "stagingEnvironmentReferencedByFutureCanaryJob": true,
-    "secretsReferencedByFutureCanaryJob": true,
+    "secretsReferencedByFutureCanaryJob": false,
+    "futureCanaryCredentialWiringPrepared": false,
+    "remoteExecutorInvocationPrepared": false,
     "ordinaryPullRequestAuthorizeSkipped": true,
     "ordinaryPullRequestCanarySkipped": true,
     "pushFilteredToTriggerPathOnly": true,
     "triggerContinuityAndSingleFileDeltaRequired": true,
-    "repositoryCertifierReadsNoStagingSecrets": true
+    "repositoryCertifierReadsNoStagingSecrets": true,
+    "workflowPermissions": "contents: read",
+    "canonicalWriterPresent": false
   },
   "authority": {
     "stagingReadAuthority": false,
@@ -113,5 +117,5 @@
     "mergeExecuted": false
   },
   "exactRootCauseProven": false,
-  "nextBoundary": "Certify R3L repository-only. The authorization phrase is defined but not received or consumed, and the trigger must remain absent. Only a later exact user authorization may permit creation of one single-use trigger and a bounded staging canary."
+  "nextBoundary": "Certify R3L repository-only. The authorization phrase is defined but not received or consumed, the trigger remains absent, and the future canary is only a lifecycle placeholder without secrets, credential wiring, or remote executor invocation. A later repository boundary must wire any executable staging envelope and certify it before an exact user authorization may permit one single-use trigger."
 }

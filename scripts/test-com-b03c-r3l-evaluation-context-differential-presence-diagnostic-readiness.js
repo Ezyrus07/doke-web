@@ -151,15 +151,28 @@ async function main() {
     'utf8'
   );
   if (!workflow.includes(`- ${r3l.TRIGGER_PATH}`)) fail('DOKE_COM_B03C_R3L_PUSH_TRIGGER_PATH_FILTER_REQUIRED');
+  if (!workflow.includes('permissions: { contents: read }')) fail('DOKE_COM_B03C_R3L_WORKFLOW_MUST_BE_READ_ONLY');
+  if (workflow.includes('Canonical domain completion matrix writer')) fail('DOKE_COM_B03C_R3L_CANONICAL_WRITER_MUST_BE_ABSENT');
   if (!workflow.includes('environment: doke-staging')) fail('DOKE_COM_B03C_R3L_FUTURE_STAGING_JOB_REQUIRED');
   if (!workflow.includes('needs: authorize')) fail('DOKE_COM_B03C_R3L_CANARY_MUST_NEED_AUTHORIZE');
   if (!workflow.includes("if: github.event_name == 'push'")) fail('DOKE_COM_B03C_R3L_REMOTE_JOBS_PUSH_ONLY_REQUIRED');
+  const secretExpressionPrefix = ['${{ ', 'secrets.'].join('');
+  const directSupabaseEnv = ['process.env.', 'SUPABASE_'].join('');
+  if (workflow.includes(secretExpressionPrefix) || workflow.includes(directSupabaseEnv)) {
+    fail('DOKE_COM_B03C_R3L_FUTURE_CANARY_CREDENTIAL_WIRING_MUST_BE_ABSENT');
+  }
   if (/\bsleep\b|setTimeout\s*\(/.test([
     workflow,
     fs.readFileSync(path.resolve('backend/modules/communities/community-realtime-private-auth-r3l.js'), 'utf8'),
     fs.readFileSync(path.resolve('scripts/execute-com-b03c-r3l-evaluation-context-differential-presence-staging-diagnostic.js'), 'utf8')
   ].join('\n'))) fail('DOKE_COM_B03C_R3L_ARBITRARY_DELAY_PROHIBITED');
 
+  if (evidence.workflowBoundary.secretsReferencedByFutureCanaryJob !== false) fail('DOKE_COM_B03C_R3L_EVIDENCE_SECRET_WIRING_MISMATCH');
+  if (evidence.workflowBoundary.futureCanaryCredentialWiringPrepared !== false) fail('DOKE_COM_B03C_R3L_EVIDENCE_CREDENTIAL_WIRING_MISMATCH');
+  if (evidence.workflowBoundary.remoteExecutorInvocationPrepared !== false) fail('DOKE_COM_B03C_R3L_EVIDENCE_REMOTE_EXECUTOR_MISMATCH');
+  if (evidence.workflowBoundary.workflowPermissions !== 'contents: read' || evidence.workflowBoundary.canonicalWriterPresent !== false) {
+    fail('DOKE_COM_B03C_R3L_EVIDENCE_WORKFLOW_RESTORATION_MISMATCH');
+  }
   if (evidence.authority.stagingReadAuthority !== false || evidence.effects.stagingAccessExecuted !== false || evidence.exactRootCauseProven !== false) {
     fail('DOKE_COM_B03C_R3L_EVIDENCE_AUTHORITY_INVALID');
   }

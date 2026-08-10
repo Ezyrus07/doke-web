@@ -19,7 +19,7 @@ on:
     paths:
       - config/com-b03c-r3l-evaluation-context-differential-staging-trigger.json
 
-permissions: { contents: write }
+permissions: { contents: read }
 concurrency:
   group: com-b03c-r3l-${{ github.ref }}-${{ github.event_name }}
   cancel-in-progress: false
@@ -29,9 +29,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.ref }}
+        with: { fetch-depth: 0 }
       - uses: actions/setup-node@v4
         with: { node-version: '24' }
       - name: Syntax
@@ -71,26 +69,6 @@ jobs:
           test "$(git rev-parse HEAD^)" = "$(node -p "require('./${TRIGGER}').workflowInstallHead")"
           test "$(git diff --name-only HEAD^ HEAD | wc -l | tr -d ' ')" = "1"
           test "$(git diff --name-only HEAD^ HEAD)" = "${TRIGGER}"
-      - name: Canonical domain completion matrix writer
-        if: github.event_name == 'pull_request'
-        shell: bash
-        run: |
-          npm run write:domain-completion-matrix
-          mapfile -t changed < <(git status --short | sed -E 's/^.. //')
-          for file in "${changed[@]}"; do
-            case "$file" in
-              docs/DOMAIN-COMPLETION-MATRIX.md|reports/generated/domain-completion-matrix-report.json) ;;
-              *) echo "Unexpected canonical-writer change: $file" >&2; exit 1 ;;
-            esac
-          done
-          if ! git diff --quiet -- docs/DOMAIN-COMPLETION-MATRIX.md || [ -n "$(git status --short -- reports/generated/domain-completion-matrix-report.json)" ]; then
-            git config user.name doke
-            git config user.email bielantoniomma@gmail.com
-            git add docs/DOMAIN-COMPLETION-MATRIX.md
-            git add -f reports/generated/domain-completion-matrix-report.json
-            git commit -m "docs(gov): regenerate domain completion matrix for COM-B03C-R3L"
-            git push origin "HEAD:${{ github.event.pull_request.head.ref }}"
-          fi
       - name: Domain completion matrix audit
         if: github.event_name == 'pull_request'
         run: npm run audit:domain-completion-matrix
@@ -106,12 +84,14 @@ jobs:
           if(e.predecessor?.evidenceHeadRecertificationStatus!=='success'||e.predecessor?.remoteAuthority!==false||e.predecessor?.exactRootCauseProven!==false)process.exit(1);
           if(e.implementation?.totalExecutionCaseCount!==17||e.implementation?.runAttemptMustBeOne!==true||e.implementation?.causalPromotionAllowed!==false)process.exit(1);
           if(e.futureAuthorization?.defined!==true||e.futureAuthorization?.received!==false||e.futureAuthorization?.consumed!==false||e.futureAuthorization?.singleUse!==true||e.futureAuthorization?.reusableAfterFailure!==false)process.exit(1);
+          if(e.workflowBoundary?.secretsReferencedByFutureCanaryJob!==false||e.workflowBoundary?.futureCanaryCredentialWiringPrepared!==false||e.workflowBoundary?.remoteExecutorInvocationPrepared!==false)process.exit(1);
           for(const k of ['stagingReadAuthority','stagingMutationAuthority','remoteCredentialReadAuthority','remoteDependencyLoadAuthority','authIdentityLifecycleAuthority','realtimePolicyLifecycleAuthority','realtimeSubscriptionAuthority','runtimePolicyChangeAuthority','productionAuthority','pullRequestMergeAuthority'])if(e.authority?.[k]!==false)process.exit(1);
           for(const k of ['stagingAccessExecuted','remoteCredentialReadExecuted','remoteDependencyLoadExecuted','policyMutationExecuted','authIdentityMutationExecuted','realtimeSubscriptionExecuted','runtimePolicyChangeExecuted','productionExecuted','mergeExecuted'])if(e.effects?.[k]!==false)process.exit(1);
           if(e.exactRootCauseProven!==false)process.exit(1);
           NODE
       - name: Diff hygiene
-        run: git diff --check "${{ github.event.pull_request.base.sha }}" HEAD
+        if: github.event_name == 'pull_request'
+        run: git diff --check "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}"
 
   authorize:
     if: github.event_name == 'push'
