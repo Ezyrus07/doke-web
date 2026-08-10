@@ -1,0 +1,136 @@
+{
+  "contractId": "com-b03c-r3u-instrumentation-sql-materialization-readiness-v1",
+  "validationId": "COM-B03C-R3U-INSTRUMENTATION-SQL-MATERIALIZATION-READINESS",
+  "status": "repository_instrumentation_sql_materialization_ready_no_remote_authority",
+  "domain": "COM-001",
+  "boundary": "COM-B03C-R3U",
+  "matrixVersion": "1.3.113",
+  "maturity": 3,
+  "productionGate": "blocked",
+  "predecessor": {
+    "validationId": "COM-B03C-R3T-COMPLETE-R3Q-ADAPTER-COMPOSITION-READINESS",
+    "status": "repository_complete_r3q_adapter_composition_certified_nine_of_nine_no_remote_authority",
+    "head": "6a1ba255e751c1f46a661f8ce3052164036994b9",
+    "recertRun": 31413079280,
+    "recertJob": 93535537979,
+    "recertSuccess": true,
+    "matrixRecertRun": 31413079265,
+    "matrixRecertJob": 93535536354,
+    "matrixRecertSuccess": true
+  },
+  "continuity": {
+    "r3tContractId": "com-b03c-r3t-complete-r3q-adapter-composition-readiness-v1",
+    "r3sContractId": "com-b03c-r3s-constrained-observation-primitives-readiness-v1",
+    "r3qContractId": "com-b03c-r3q-repository-executable-observation-envelope-readiness-v1",
+    "statementGroups": [
+      "installCore",
+      "installAnchorPolicies",
+      "switchToPresenceOnlyPolicy",
+      "counterRead",
+      "residueInspection",
+      "cleanup"
+    ],
+    "counterIds": [
+      "broadcast_rls_evaluations",
+      "presence_rls_evaluations"
+    ],
+    "residueCountFields": [
+      "policyCount",
+      "functionCount",
+      "sequenceCount"
+    ]
+  },
+  "sqlContract": {
+    "objectSchema": "private",
+    "policyTarget": "realtime.messages",
+    "ownershipNaming": "sha256_16hex_of_single_use_ownership_token",
+    "observer": {
+      "language": "plpgsql",
+      "volatility": "volatile",
+      "security": "security definer",
+      "searchPath": "pg_catalog",
+      "executeRole": "authenticated"
+    },
+    "counters": {
+      "mechanism": "two_bigint_sequences",
+      "cache": 1,
+      "neverUsedReadValue": 0,
+      "rawSequenceGrantToAuthenticated": false
+    },
+    "anchorPolicy": {
+      "broadcastRead": true,
+      "presenceRead": true,
+      "topicGate": "realtime.messages.topic = realtime.topic()",
+      "observerBeforeDecision": true
+    },
+    "presenceOnlyPolicy": {
+      "broadcastRead": false,
+      "presenceRead": true,
+      "topicGate": "realtime.messages.topic = realtime.topic()",
+      "observerBeforeDecision": true
+    },
+    "cleanupOrder": [
+      "policies",
+      "observer_function",
+      "sequences"
+    ]
+  },
+  "controls": {
+    "deterministicOwnershipScopedSqlMaterializer": true,
+    "ownershipTokenHashedIntoSafeIdentifiers": true,
+    "securityDefinerObserverFunctionPrepared": true,
+    "observerSearchPathPinnedToPgCatalog": true,
+    "observerFunctionVolatile": true,
+    "observerFunctionExecuteRestrictedToAuthenticated": true,
+    "sequencesRemainUnexposedToAuthenticated": true,
+    "broadcastAndPresenceCountersSeparated": true,
+    "sequenceCacheOneRequired": true,
+    "sequenceNextvalRollbackResistanceRequired": true,
+    "anchorSelectPolicyMaterialized": true,
+    "anchorInsertPolicyMaterialized": true,
+    "anchorBroadcastAndPresenceReadAllowed": true,
+    "anchorObserverEvaluatedBeforeReadDecision": true,
+    "presenceOnlySelectPolicyMaterialized": true,
+    "presenceOnlyInsertPolicyMaterialized": true,
+    "presenceOnlyBroadcastDeniedPresenceAllowed": true,
+    "presenceOnlyObserverEvaluatedBeforeReadDecision": true,
+    "exactTopicGatePreserved": true,
+    "counterReadSqlMaterialized": true,
+    "counterReadNeverUsedNormalizesToZero": true,
+    "counterReadShapeMatchesR3s": true,
+    "residueInspectionSqlMaterialized": true,
+    "residueInspectionShapeMatchesR3s": true,
+    "residueInspectionOwnershipScoped": true,
+    "cleanupSqlMaterialized": true,
+    "cleanupDropsPoliciesBeforeFunctionAndSequences": true,
+    "noPersistentTableDdl": true,
+    "noDataMutationSql": true,
+    "noTransactionWrapperPrepared": true,
+    "statementFingerprintPrepared": true,
+    "repositorySelfTestPrepared": true,
+    "hardBlockBeforeRemoteExecutionPrepared": true,
+    "noCausalPromotionWithoutRemoteObservation": true
+  },
+  "prohibitedPreparation": {
+    "authorizationPhraseDefined": false,
+    "triggerPrepared": false,
+    "stagingEnvironmentJobPrepared": false,
+    "workflowSecretsReferenced": false,
+    "remoteCredentialLoadingPrepared": false,
+    "remoteDependencyLoadingPrepared": false,
+    "supabaseClientPrepared": false,
+    "pgClientPrepared": false,
+    "remoteExecutorPrepared": false,
+    "databaseConnectionPrepared": false,
+    "sqlExecutionPrepared": false,
+    "stagingReadPrepared": false,
+    "stagingMutationPrepared": false,
+    "runtimePolicyChangeAuthorized": false,
+    "runtimeDeployPrepared": false,
+    "productionPrepared": false,
+    "mergePrepared": false
+  },
+  "exactRootCauseProven": false,
+  "causalPromotionAllowed": false,
+  "nextBoundary": "Certify a separate repository-only single-use remote execution envelope binding the R3U SQL bundle to R3T. R3U itself grants no staging execution authority."
+}
