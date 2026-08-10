@@ -1,0 +1,113 @@
+name: Doke UX-RESP-DEBT-005 Check Preservation Diagnostic
+
+on:
+  push:
+    branches:
+      - diag/ux-resp-debt-005-check-preservation
+
+permissions:
+  contents: read
+
+jobs:
+  compare:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Guard certified UX-RESP-DEBT-004 ancestry
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git merge-base HEAD ecb54eef031754cf91b9ec4340f382768f11f027)" = "ecb54eef031754cf91b9ec4340f382768f11f027"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Install Chromium from lockfile-pinned Playwright
+        run: node node_modules/@playwright/test/cli.js install --with-deps chromium
+
+      - name: Generate parent responsive report
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/generate-responsive-index-baseline.js
+          set +e
+          node scripts/test-responsive-contract.js
+          STATUS=$?
+          set -e
+          test "$STATUS" -eq 1
+          cp reports/responsive-contract-test-report.json /tmp/parent.json
+
+      - name: Remove quarantined imports workspace-only
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs=require('fs');
+          const files=[
+            'assets/css/pages/pedidos-runtime-page.css',
+            'assets/css/pages/notificacoes-foundation.css',
+            'assets/css/pages/carteira-runtime-page.css',
+          ];
+          const needle=/^@import url\("\.\.\/components\/shell\/tablet-internal-rail-contract\.css\?[^\n]+\);\n/m;
+          for (const file of files) {
+            const before=fs.readFileSync(file,'utf8');
+            const matches=before.match(new RegExp(needle.source,'gm')) || [];
+            if (matches.length !== 1) throw new Error(`${file}: expected exactly one quarantined import, got ${matches.length}`);
+            fs.writeFileSync(file,before.replace(needle,''));
+          }
+          NODE
+
+      - name: Generate removal responsive report
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/generate-responsive-index-baseline.js
+          set +e
+          node scripts/test-responsive-contract.js
+          STATUS=$?
+          set -e
+          test "$STATUS" -eq 1
+          cp reports/responsive-contract-test-report.json /tmp/removed.json
+
+      - name: Compare exact skips and lost checks
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs=require('fs');
+          const parent=JSON.parse(fs.readFileSync('/tmp/parent.json','utf8'));
+          const removed=JSON.parse(fs.readFileSync('/tmp/removed.json','utf8'));
+          const key=s=>[s.page||'',s.breakpoint||'',s.component||'',s.reason||''].join(' | ');
+          const p=new Set(parent.skips.map(key));
+          const r=new Set(removed.skips.map(key));
+          const added=[...r].filter(x=>!p.has(x)).sort();
+          const gone=[...p].filter(x=>!r.has(x)).sort();
+          console.log('PARENT_SUMMARY',JSON.stringify(parent.summary));
+          console.log('REMOVED_SUMMARY',JSON.stringify(removed.summary));
+          console.log('NEW_SKIPS',JSON.stringify(added,null,2));
+          console.log('REMOVED_SKIPS',JSON.stringify(gone,null,2));
+          const metricCount={
+            'app-header':4,'app-header__inner':4,'search/back equivalent button':7,
+            'home-side-meta__location':7,'home-side-meta__profile':7,'avatar':3,
+            'doke-ad-card':3,'publication-card':3,'video-card / worker-card':5,
+            'service-card':3,'review-card':2
+          };
+          let estimated=0;
+          for (const row of added) {
+            const component=row.split(' | ')[2];
+            estimated += metricCount[component] || 0;
+          }
+          for (const row of gone) {
+            const component=row.split(' | ')[2];
+            estimated -= metricCount[component] || 0;
+          }
+          console.log('ESTIMATED_CHECK_DELTA_FROM_SKIP_SET',estimated);
+          NODE
