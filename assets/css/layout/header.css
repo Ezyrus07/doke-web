@@ -1498,3 +1498,20 @@ html:not([data-auth-surface-ready="true"]) body[data-page].has-global-header .ap
 body[data-page].has-global-header .app-header :is(.home-side-meta__profile, .app-header__profile) {
   display: inline-flex;
 }
+
+/* UX-RESP-DEBT-005 — contextual portrait tablet visibility authority. */
+@media (min-width: 768px) and (max-width: 899px) and (orientation: portrait) {
+  body:is(.orders-page-shell, .notifications-page-shell, .wallet-page-shell).has-global-header
+    > .app-shell > .page > .app-header.home-side-meta {
+    display: flex;
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  body:is(.orders-page-shell, .notifications-page-shell, .wallet-page-shell).has-global-header
+    > .app-shell > .page > .app-header.home-side-meta > .app-header__inner {
+    visibility: visible;
+    opacity: 1;
+  }
+}
