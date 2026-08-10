@@ -162,19 +162,45 @@ assert.throws(
 );
 
 assert.equal(evidence.contractId, r3p.CONTRACT_ID);
-assert.equal(evidence.status, 'repository_synthetic_two_probe_harness_prepared_no_remote_authority');
+assert.equal(evidence.status, 'repository_synthetic_two_probe_harness_certified_no_remote_authority');
+assert.equal(evidence.initialBoundaryCommit, 'c3f9479491e17d739c77726b648a7efafee016d9');
+assert.equal(evidence.certificationHistory.initialFailClosed.conclusion, 'failure');
+assert.equal(evidence.certificationHistory.initialFailClosed.failedStep, 'Domain Completion Matrix');
+assert.equal(evidence.certificationHistory.initialFailClosed.syntaxPassed, true);
+assert.equal(evidence.certificationHistory.initialFailClosed.syntheticHarnessPassed, true);
+assert.equal(evidence.certificationHistory.initialFailClosed.preRemoteHardBlockPassed, true);
+assert.equal(evidence.certificationHistory.canonicalMatrixReconciliation.writerConclusion, 'success');
+assert.deepEqual(evidence.certificationHistory.canonicalMatrixReconciliation.writerOutputs, [
+  'docs/DOMAIN-COMPLETION-MATRIX.md',
+  'reports/generated/domain-completion-matrix-report.json'
+]);
+assert.equal(evidence.certificationHistory.canonicalMatrixReconciliation.matrixSourceChanged, false);
+assert.equal(evidence.certificationHistory.canonicalMatrixReconciliation.workflowRestoredHead, '7bd9df7f7edf680078d811abf12705320add1de5');
+assert.equal(evidence.certificationHistory.canonicalMatrixReconciliation.workflowPermissions, 'contents: read');
+assert.equal(evidence.certificationHistory.normalHeadCertification.head, '7bd9df7f7edf680078d811abf12705320add1de5');
+assert.equal(evidence.certificationHistory.normalHeadCertification.r3pRun, 31399080121);
+assert.equal(evidence.certificationHistory.normalHeadCertification.r3pJob, 93489226084);
+assert.equal(evidence.certificationHistory.normalHeadCertification.r3pConclusion, 'success');
+assert.equal(evidence.certificationHistory.normalHeadCertification.matrixRun, 31399079656);
+assert.equal(evidence.certificationHistory.normalHeadCertification.matrixJob, 93489225268);
+assert.equal(evidence.certificationHistory.normalHeadCertification.matrixConclusion, 'success');
+assert.equal(evidence.certificationHistory.normalHeadCertification.runAttempt, 1);
 assert.equal(evidence.authority.remoteExecution, false);
 assert.equal(evidence.authority.stagingRead, false);
 assert.equal(evidence.authority.stagingMutation, false);
 assert.equal(evidence.effects.stagingAccessExecuted, false);
+assert.equal(evidence.effects.realtimePolicyMutationExecuted, false);
 assert.equal(evidence.effects.realtimeSubscriptionExecuted, false);
 assert.equal(evidence.effects.runtimePolicyChangeExecuted, false);
+assert.equal(evidence.effects.productionExecuted, false);
+assert.equal(evidence.effects.mergeExecuted, false);
 assert.equal(evidence.exactRootCauseProven, false);
 assert.equal(evidence.causalPromotionAllowed, false);
 
 process.stdout.write(`${JSON.stringify({
   contractId: r3p.CONTRACT_ID,
   decision: decision.decision,
+  evidenceStatus: evidence.status,
   scenarios: [...r3p.SYNTHETIC_SCENARIO_IDS],
   remoteExecutionAuthority: decision.remoteExecutionAuthority,
   exactRootCauseProven: decision.exactRootCauseProven
