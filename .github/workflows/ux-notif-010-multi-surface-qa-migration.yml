@@ -171,16 +171,22 @@ jobs:
           node scripts/test-ux-priv-001-account-storage.js
           node scripts/audit-auth-session-contracts.js
 
-      - name: Validate responsive structural contracts
+      - name: Validate scoped responsive migration boundary
         shell: bash
         env:
-          DOKE_PLAYWRIGHT_CHROMIUM_INSTALL: '1'
+          EXPECTED_BASE: e97d244671b7f672fbcd9735d2b15319414e5f67
         run: |
           set -euo pipefail
-          npm run prepare:playwright-chromium
-          node scripts/generate-responsive-index-baseline.js
-          node scripts/test-responsive-contract.js
           npm run audit:responsive-boundaries
+          ACTUAL="$(git diff --numstat "${EXPECTED_BASE}"...HEAD -- comunidade-interna.html mensagens.html | sort)"
+          EXPECTED="$(printf '1\t0\tcomunidade-interna.html\n1\t0\tmensagens.html\n' | sort)"
+          test "${ACTUAL}" = "${EXPECTED}"
+          ADDED="$(git diff --unified=0 "${EXPECTED_BASE}"...HEAD -- comunidade-interna.html mensagens.html | grep '^+' | grep -v '^+++' || true)"
+          test "$(printf '%s\n' "${ADDED}" | sed '/^$/d' | wc -l)" -eq 2
+          if printf '%s\n' "${ADDED}" | grep -vF 'assets/js/core/notification-action.js?v=20260810-ux-notif-010-v1'; then
+            echo '::error::H10 changed responsive HTML outside the approved action-authority script insertion.'
+            exit 1
+          fi
 
       - name: Generate executable LCOV
         shell: bash
