@@ -118,7 +118,7 @@ function main() {
   assert.equal(evidence.contractId, r3r.CONTRACT_ID);
   assert.equal(
     evidence.status,
-    'repository_remote_adapter_binding_contract_prepared_two_db_observation_primitives_unbound_no_remote_authority'
+    'repository_remote_adapter_binding_contract_certified_two_db_observation_primitives_unbound_no_remote_authority'
   );
   assert.equal(evidence.binding.fullyBound, false);
   assert.deepEqual(evidence.binding.missingCapabilities, config.binding.missingCapabilities);
@@ -132,12 +132,17 @@ function main() {
   assert.equal(evidence.effects.remoteCredentialReadExecuted, false);
   assert.equal(evidence.effects.remoteDependencyLoadExecuted, false);
   assert.equal(evidence.effects.remoteClientInstantiated, false);
+  assert.equal(evidence.certificationHistory.normalHeadCertification.r3rConclusion, 'success');
+  assert.equal(evidence.certificationHistory.normalHeadCertification.matrixConclusion, 'success');
+  assert.equal(evidence.certificationHistory.canonicalMatrixReconciliation.writerAttempt2Conclusion, 'success');
+  assert.equal(evidence.certificationHistory.canonicalMatrixReconciliation.workflowPermissions, 'contents: read');
   assert.equal(evidence.exactRootCauseProven, false);
   assert.equal(evidence.causalPromotionAllowed, false);
 
   process.stdout.write(`${JSON.stringify({
     contractId: r3r.CONTRACT_ID,
     decision: decision.decision,
+    evidenceStatus: evidence.status,
     r3qMethodCount: completeness.entries.length,
     missingCapabilities: completeness.missingCapabilities,
     remoteAdapterActivationAuthority: decision.remoteAdapterActivationAuthority,
