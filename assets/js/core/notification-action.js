@@ -29,7 +29,9 @@
 
   function normalizeText(value) { return String(value == null ? '' : value).trim(); }
   function iso(value) {
-    var date = new Date(value || 0);
+    var raw = normalizeText(value);
+    if (!raw) return '';
+    var date = new Date(raw);
     return Number.isFinite(date.getTime()) ? date.toISOString() : '';
   }
   function createError(message, code) {
