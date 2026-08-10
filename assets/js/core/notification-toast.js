@@ -88,7 +88,7 @@
     const form = document.createElement('form');
     form.className = 'doke-live-toast__reply-form';
     form.dataset.toastReplyForm = '';
-    form.innerHTML = '<label class="doke-sr-only" for="doke-toast-reply-input">Responder mensagem</label><input id="doke-toast-reply-input" class="doke-input" type="text" maxlength="2000" autocomplete="off" placeholder="Digite sua resposta" data-toast-reply-input><button class="doke-btn doke-btn--primary" type="submit" data-toast-reply-send>Enviar</button><button class="doke-btn doke-btn--ghost" type="button" data-toast-reply-cancel>Cancelar</button>';
+    form.innerHTML = '<input class="doke-input" type="text" maxlength="2000" autocomplete="off" aria-label="Responder mensagem" placeholder="Digite sua resposta" data-toast-reply-input><button class="doke-btn doke-btn--primary" type="submit" data-toast-reply-send>Enviar</button><button class="doke-btn doke-btn--ghost" type="button" data-toast-reply-cancel>Cancelar</button>';
     statusNode.before(form);
     const input = form.querySelector('[data-toast-reply-input]');
     const send = form.querySelector('[data-toast-reply-send]');
@@ -123,7 +123,6 @@
         if (input) input.disabled = false;
         if (send) send.disabled = false;
         input?.focus();
-        restartTimer();
         return;
       }
       button.disabled = true;
