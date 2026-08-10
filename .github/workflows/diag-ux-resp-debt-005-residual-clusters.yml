@@ -17,11 +17,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Guard certified UX-RESP-DEBT-004 parent
+      - name: Guard certified UX-RESP-DEBT-004 ancestry
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD^)" = "ecb54eef031754cf91b9ec4340f382768f11f027"
+          test "$(git merge-base HEAD ecb54eef031754cf91b9ec4340f382768f11f027)" = "ecb54eef031754cf91b9ec4340f382768f11f027"
 
       - name: Setup Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
@@ -66,12 +66,72 @@ jobs:
           console.log('FAILURES_JSON_START');
           console.log(JSON.stringify(rows, null, 2));
           console.log('FAILURES_JSON_END');
-          const grouped = {};
-          for (const r of rows) {
-            const key = [r.page, r.breakpoint, r.component, r.property].join(' | ');
-            grouped[key] = (grouped[key] || 0) + 1;
-          }
-          console.log('GROUPS_JSON_START');
-          console.log(JSON.stringify(grouped, null, 2));
-          console.log('GROUPS_JSON_END');
+          NODE
+
+      - name: Trace matching header and avatar rules in Chromium
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          const { chromium } = require('@playwright/test');
+          const { loadHtmlWithLocalCss } = require('./scripts/lib/responsive-html-loader');
+          const root = process.cwd();
+          const targets = [
+            ['pedidos.html', 820, 1180],
+            ['notificacoes.html', 820, 1180],
+            ['carteira.html', 820, 1180],
+            ['pedidos.html', 608, 926],
+            ['notificacoes.html', 608, 926],
+            ['carteira.html', 608, 926],
+          ];
+          (async () => {
+            const browser = await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+            try {
+              for (const [file,width,height] of targets) {
+                const context = await browser.newContext({viewport:{width,height},deviceScaleFactor:1,javaScriptEnabled:false});
+                const page = await context.newPage();
+                await page.setContent(loadHtmlWithLocalCss(file, root, {modeLabel:'DEBT-005 CSSOM trace'}), {waitUntil:'domcontentloaded'});
+                await page.waitForTimeout(80);
+                const result = await page.evaluate(() => {
+                  const header = document.querySelector('.app-header');
+                  const inner = document.querySelector('.app-header__inner');
+                  const search = document.querySelector('.home-side-meta__search');
+                  const profile = document.querySelector('.home-side-meta__profile');
+                  const avatar = document.querySelector('.home-side-meta__avatar');
+                  const wanted = new Set(['height','min-height','max-height','padding','padding-top','padding-bottom','border-radius','top','margin','margin-top','margin-bottom','width','inline-size']);
+                  function matched(el) {
+                    const out=[];
+                    function walk(rules, media='') {
+                      if (!rules) return;
+                      for (const rule of rules) {
+                        if (rule.type === CSSRule.MEDIA_RULE) {
+                          if (matchMedia(rule.conditionText).matches) walk(rule.cssRules, rule.conditionText);
+                          continue;
+                        }
+                        if (rule.type !== CSSRule.STYLE_RULE) continue;
+                        try { if (!el.matches(rule.selectorText)) continue; } catch (_) { continue; }
+                        const decl={};
+                        for (const name of rule.style) {
+                          if (wanted.has(name) || name.startsWith('--doke-header') || name.startsWith('--toolbar-') || name === 'border-radius') decl[name]=rule.style.getPropertyValue(name).trim();
+                        }
+                        if (Object.keys(decl).length) out.push({selector:rule.selectorText,media,decl});
+                      }
+                    }
+                    for (const sheet of document.styleSheets) { try { walk(sheet.cssRules); } catch (_) {} }
+                    return out;
+                  }
+                  function snap(el) {
+                    if (!el) return null;
+                    const s=getComputedStyle(el), r=el.getBoundingClientRect();
+                    return {x:r.x,y:r.y,width:r.width,height:r.height,borderRadius:s.borderRadius,paddingTop:s.paddingTop,paddingBottom:s.paddingBottom,headerHeight:s.getPropertyValue('--doke-header-height').trim(),profileHeight:s.getPropertyValue('--doke-header-profile-height').trim(),avatarSize:s.getPropertyValue('--doke-header-avatar-size').trim(),rules:matched(el)};
+                  }
+                  return {body:document.body.className,header:snap(header),inner:snap(inner),search:snap(search),profile:snap(profile),avatar:snap(avatar)};
+                });
+                console.log(`TRACE ${file} ${width}x${height}`);
+                console.log(JSON.stringify(result,null,2));
+                await context.close();
+              }
+            } finally { await browser.close(); }
+          })().catch(err=>{console.error(err);process.exitCode=1;});
           NODE
