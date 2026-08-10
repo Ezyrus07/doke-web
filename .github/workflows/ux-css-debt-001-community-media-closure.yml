@@ -1,0 +1,177 @@
+name: Doke UX-CSS-DEBT-001 Community Media Closure
+
+on:
+  push:
+    branches:
+      - ux/ux-css-debt-001-community-media-closure
+    paths:
+      - 'assets/css/pages/comunidade-interna.css'
+      - '.github/workflows/ux-css-debt-001-community-media-closure.yml'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'sonar-project.properties'
+  pull_request:
+    paths:
+      - 'assets/css/pages/comunidade-interna.css'
+      - '.github/workflows/ux-css-debt-001-community-media-closure.yml'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'sonar-project.properties'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  ux-css-debt-001-community-media-closure:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Guard certified UX-NOTIF-DEBT-001 parent
+        shell: bash
+        env:
+          EXPECTED_BASE: 5fbdcc31fc5dfbc84d64d2a8101d9453e634ff7e
+        run: |
+          set -euo pipefail
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            ACTUAL_BASE="${{ github.event.pull_request.base.sha }}"
+          else
+            git fetch origin ux/ux-notif-debt-001-h10-sonar-cleanup --quiet
+            ACTUAL_BASE="$(git merge-base HEAD origin/ux/ux-notif-debt-001-h10-sonar-cleanup)"
+          fi
+          test "${ACTUAL_BASE}" = "${EXPECTED_BASE}"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install repository dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts
+
+      - name: Validate permanent delta allowlist
+        shell: bash
+        env:
+          EXPECTED_BASE: 5fbdcc31fc5dfbc84d64d2a8101d9453e634ff7e
+        run: |
+          set -euo pipefail
+          test ! -e .github/workflows/ux-css-debt-001-apply.yml
+          while IFS= read -r path; do
+            case "${path}" in
+              assets/css/pages/comunidade-interna.css|.github/workflows/ux-css-debt-001-community-media-closure.yml|docs/DOMAIN-COMPLETION-MATRIX.md) ;;
+              *) echo "::error::Unexpected UX-CSS-DEBT-001 path: ${path}"; exit 1 ;;
+            esac
+          done < <(git diff --name-only "${EXPECTED_BASE}"...HEAD)
+          CSS_NUMSTAT="$(git diff --numstat "${EXPECTED_BASE}"...HEAD -- assets/css/pages/comunidade-interna.css)"
+          test "${CSS_NUMSTAT}" = $'1\t0\tassets/css/pages/comunidade-interna.css'
+
+      - name: Validate CSS structural recovery
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 <<'PY'
+          from pathlib import Path
+
+          path = Path('assets/css/pages/comunidade-interna.css')
+          text = path.read_text(encoding='utf-8')
+          expected = "\n".join([
+              '@media (min-width: 1181px) {',
+              '  body[data-page="comunidade-interna"] {',
+              '    --chat-sidebar-width-community: clamp(300px, 22vw, 340px);',
+              '  }',
+              '}',
+              '',
+              '@media (min-width: 1024px) and (max-width: 1180px) {'
+          ])
+          if text.count(expected) != 1:
+              raise SystemExit('desktop/tablet media queries are not siblings')
+
+          depth = 0
+          i = 0
+          quote = None
+          in_comment = False
+          while i < len(text):
+              ch = text[i]
+              nxt = text[i + 1] if i + 1 < len(text) else ''
+              if in_comment:
+                  if ch == '*' and nxt == '/':
+                      in_comment = False
+                      i += 2
+                      continue
+                  i += 1
+                  continue
+              if quote:
+                  if ch == '\\':
+                      i += 2
+                      continue
+                  if ch == quote:
+                      quote = None
+                  i += 1
+                  continue
+              if ch == '/' and nxt == '*':
+                  in_comment = True
+                  i += 2
+                  continue
+              if ch in ('"', "'"):
+                  quote = ch
+                  i += 1
+                  continue
+              if ch == '{':
+                  depth += 1
+              elif ch == '}':
+                  depth -= 1
+                  if depth < 0:
+                      raise SystemExit(f'extra closing brace at offset {i}')
+              i += 1
+
+          if in_comment or quote or depth != 0:
+              raise SystemExit(f'CSS remains unbalanced: depth={depth}, comment={in_comment}, quote={quote}')
+          print('[ux-css-debt-001] stylesheet structure balanced')
+          PY
+
+      - name: Validate canonical domain matrix
+        run: npm run audit:domain-completion-matrix
+
+      - name: Validate canonical agent governance
+        run: npm run audit:agent-governance
+
+      - name: Validate responsive and CSS boundaries
+        run: |
+          npm run audit:responsive-boundaries
+          npm run audit:css-responsive-conflicts
+          npm run audit:css-legacy-remaining
+          npm run audit:css-import-map
+
+      - name: Validate patch whitespace
+        shell: bash
+        env:
+          EXPECTED_BASE: 5fbdcc31fc5dfbc84d64d2a8101d9453e634ff7e
+        run: git diff --check "${EXPECTED_BASE}"...HEAD
+
+      - name: Require SonarQube Cloud credential
+        if: github.event_name != 'pull_request'
+        shell: bash
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: test -n "${SONAR_TOKEN}"
+
+      - name: Analyze PR and enforce SonarQube Cloud Quality Gate
+        if: github.event_name != 'pull_request'
+        uses: SonarSource/sonarqube-scan-action@c7ee0f9df90b7aa20e8dcf9695dcfe2e7da5b4f2
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.projectKey=Ezyrus07_doke-web
+            -Dsonar.organization=ezyrus07
+            -Dsonar.pullrequest.key=114
+            -Dsonar.pullrequest.branch=ux/ux-css-debt-001-community-media-closure
+            -Dsonar.pullrequest.base=ux/ux-notif-debt-001-h10-sonar-cleanup
+            -Dsonar.qualitygate.wait=true
+            -Dsonar.qualitygate.timeout=600
