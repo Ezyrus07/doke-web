@@ -46,44 +46,24 @@ jobs:
           set -e
           test "${STATUS}" -eq 1
 
-      - name: Print residual failures grouped by page breakpoint component and property
-        shell: bash
+      - name: Print compact residual summary
         run: |
           node <<'NODE'
           const fs = require('fs');
           const report = JSON.parse(fs.readFileSync('reports/responsive-contract-test-report.json', 'utf8'));
           console.log('SUMMARY', JSON.stringify(report.summary));
-          const rows = (report.failures || []).map((f) => ({
-            page: f.page,
-            breakpoint: f.breakpoint,
-            component: f.component,
-            property: f.property,
-            expected: f.expected,
-            actual: f.actual,
-            delta: f.delta,
-            selector: f.selector,
-          }));
-          console.log('FAILURES_JSON_START');
-          console.log(JSON.stringify(rows, null, 2));
-          console.log('FAILURES_JSON_END');
+          for (const f of report.failures || []) console.log('FAIL', JSON.stringify({page:f.page,breakpoint:f.breakpoint,component:f.component,property:f.property,expected:f.expected,actual:f.actual,selector:f.selector}));
           NODE
 
-      - name: Trace matching header and avatar rules in Chromium
-        shell: bash
+      - name: Trace compact cascade candidates in Chromium
         run: |
           node <<'NODE'
-          const fs = require('fs');
-          const path = require('path');
           const { chromium } = require('@playwright/test');
           const { loadHtmlWithLocalCss } = require('./scripts/lib/responsive-html-loader');
           const root = process.cwd();
           const targets = [
-            ['pedidos.html', 820, 1180],
-            ['notificacoes.html', 820, 1180],
-            ['carteira.html', 820, 1180],
-            ['pedidos.html', 608, 926],
-            ['notificacoes.html', 608, 926],
-            ['carteira.html', 608, 926],
+            ['index.html',820,1180],['pedidos.html',820,1180],['notificacoes.html',820,1180],['carteira.html',820,1180],
+            ['index.html',608,926],['pedidos.html',608,926],['notificacoes.html',608,926],['carteira.html',608,926],
           ];
           (async () => {
             const browser = await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
@@ -91,45 +71,48 @@ jobs:
               for (const [file,width,height] of targets) {
                 const context = await browser.newContext({viewport:{width,height},deviceScaleFactor:1,javaScriptEnabled:false});
                 const page = await context.newPage();
-                await page.setContent(loadHtmlWithLocalCss(file, root, {modeLabel:'DEBT-005 CSSOM trace'}), {waitUntil:'domcontentloaded'});
-                await page.waitForTimeout(80);
+                await page.setContent(loadHtmlWithLocalCss(file, root, {modeLabel:'DEBT-005 compact cascade trace'}), {waitUntil:'domcontentloaded'});
                 const result = await page.evaluate(() => {
-                  const header = document.querySelector('.app-header');
-                  const inner = document.querySelector('.app-header__inner');
-                  const search = document.querySelector('.home-side-meta__search');
-                  const profile = document.querySelector('.home-side-meta__profile');
-                  const avatar = document.querySelector('.home-side-meta__avatar');
-                  const wanted = new Set(['height','min-height','max-height','padding','padding-top','padding-bottom','border-radius','top','margin','margin-top','margin-bottom','width','inline-size']);
-                  function matched(el) {
-                    const out=[];
-                    function walk(rules, media='') {
+                  const selectors = {header:'.app-header',inner:'.app-header__inner',search:'.home-side-meta__search',profile:'.home-side-meta__profile',avatar:'.home-side-meta__avatar'};
+                  const propsByKey = {
+                    header:['height','block-size','min-height','min-block-size','max-height','max-block-size','padding','padding-top','padding-bottom'],
+                    inner:['height','block-size','min-height','min-block-size','padding','padding-top','padding-bottom'],
+                    search:['margin','margin-left','margin-right','transform','position','left','right','top'],
+                    profile:['margin','margin-top','margin-bottom','transform','position','top'],
+                    avatar:['border-radius'],
+                  };
+                  const loadedHeaderSources = [...document.querySelectorAll('style[data-doke-source]')].map(n=>n.getAttribute('data-doke-source')).filter(x=>/header|pedidos|orders|notific|wallet|carteira/i.test(x));
+                  function candidates(el, props) {
+                    const out=[]; let order=0;
+                    function walk(rules, source, media='') {
                       if (!rules) return;
                       for (const rule of rules) {
-                        if (rule.type === CSSRule.MEDIA_RULE) {
-                          if (matchMedia(rule.conditionText).matches) walk(rule.cssRules, rule.conditionText);
-                          continue;
-                        }
-                        if (rule.type !== CSSRule.STYLE_RULE) continue;
-                        try { if (!el.matches(rule.selectorText)) continue; } catch (_) { continue; }
+                        if (rule.type===CSSRule.MEDIA_RULE) { if (matchMedia(rule.conditionText).matches) walk(rule.cssRules,source,rule.conditionText); continue; }
+                        if (rule.type!==CSSRule.STYLE_RULE) continue;
+                        order++;
+                        try { if (!el.matches(rule.selectorText)) continue; } catch(_) { continue; }
                         const decl={};
-                        for (const name of rule.style) {
-                          if (wanted.has(name) || name.startsWith('--doke-header') || name.startsWith('--toolbar-') || name === 'border-radius') decl[name]=rule.style.getPropertyValue(name).trim();
-                        }
-                        if (Object.keys(decl).length) out.push({selector:rule.selectorText,media,decl});
+                        for (const p of props) if (rule.style.getPropertyValue(p)) decl[p]={value:rule.style.getPropertyValue(p).trim(),important:rule.style.getPropertyPriority(p)==='important'};
+                        if (Object.keys(decl).length) out.push({order,source,media,selector:rule.selectorText,decl});
                       }
                     }
-                    for (const sheet of document.styleSheets) { try { walk(sheet.cssRules); } catch (_) {} }
-                    return out;
+                    for (const sheet of document.styleSheets) {
+                      let source='unknown';
+                      try { source=sheet.ownerNode?.getAttribute?.('data-doke-source') || sheet.href || 'inline'; walk(sheet.cssRules,source); } catch(_) {}
+                    }
+                    return out.filter(r=>/header|pedidos|orders|notific|wallet|carteira|internal|responsive|avatar|identity/i.test(r.source));
                   }
-                  function snap(el) {
-                    if (!el) return null;
-                    const s=getComputedStyle(el), r=el.getBoundingClientRect();
-                    return {x:r.x,y:r.y,width:r.width,height:r.height,borderRadius:s.borderRadius,paddingTop:s.paddingTop,paddingBottom:s.paddingBottom,headerHeight:s.getPropertyValue('--doke-header-height').trim(),profileHeight:s.getPropertyValue('--doke-header-profile-height').trim(),avatarSize:s.getPropertyValue('--doke-header-avatar-size').trim(),rules:matched(el)};
+                  const snap={loadedHeaderSources,body:document.body.className,root:{}};
+                  const bodyStyle=getComputedStyle(document.body);
+                  for (const p of ['--doke-header-height','--doke-app-topbar-height','--doke-header-profile-height','--doke-header-avatar-size','--doke-header-inline-padding','--doke-header-rail','--doke-page-rail','--radius-pill']) snap.root[p]=bodyStyle.getPropertyValue(p).trim();
+                  for (const [key,sel] of Object.entries(selectors)) {
+                    const el=document.querySelector(sel); if(!el){snap[key]=null;continue;}
+                    const s=getComputedStyle(el),r=el.getBoundingClientRect();
+                    snap[key]={box:{x:r.x,y:r.y,width:r.width,height:r.height},computed:{height:s.height,paddingTop:s.paddingTop,paddingBottom:s.paddingBottom,marginTop:s.marginTop,marginLeft:s.marginLeft,top:s.top,transform:s.transform,borderRadius:s.borderRadius},candidates:candidates(el,propsByKey[key])};
                   }
-                  return {body:document.body.className,header:snap(header),inner:snap(inner),search:snap(search),profile:snap(profile),avatar:snap(avatar)};
+                  return snap;
                 });
-                console.log(`TRACE ${file} ${width}x${height}`);
-                console.log(JSON.stringify(result,null,2));
+                console.log('CASCADE', file, `${width}x${height}`, JSON.stringify(result));
                 await context.close();
               }
             } finally { await browser.close(); }
