@@ -1,97 +1,31 @@
 name: Domain Completion Matrix Artifact Sync
 
 on:
-  push:
-    branches:
-      - com/com-001-baseline-audit
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
     paths:
-      - 'config/domain-completion-matrix-refresh.json'
+      - 'config/domain-completion-matrix.json'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+      - '.github/workflows/domain-completion-matrix-sync.yml'
 
-# TEMPORARY one-shot writer authority for R3L staging-result reconciliation.
-# Restore to contents: read immediately after this run.
-permissions:
-  contents: write
+permissions: { contents: read }
 
 jobs:
-  sync:
+  verify:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: com/com-001-baseline-audit
-          fetch-depth: 2
-      - name: Validate refresh manifest
-        run: |
-          node <<'NODE'
-          const fs=require('fs');
-          const m=JSON.parse(fs.readFileSync('config/domain-completion-matrix-refresh.json','utf8'));
-          if(m.contractId!=='domain-completion-matrix-refresh-v1'||m.status!=='refresh_requested'||m.matrixVersion!=='1.3.113'||m.domain!=='COM-001'||m.boundary!=='COM-B03C-R3L-STAGING-DIAGNOSTIC-EVIDENCE-RECONCILIATION'||m.attempt!==1)throw new Error('REFRESH_SCOPE_MISMATCH');
-          if(m.effects?.repositorySourceAndDerivedArtifacts!==true)throw new Error('INVALID_REPOSITORY_SCOPE');
-          for(const k of ['databaseAccessed','migrationApplied','stagingChanged','runtimeActivated','stagingDeploymentExecuted','stagingTrafficEnabled','realModerationExecuted','productionChanged','pullRequestMerged'])if(m.effects?.[k]!==false)throw new Error(`OPERATIONAL_EFFECT_PROHIBITED:${k}`);
-          NODE
+        with: { fetch-depth: 0 }
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
           cache: npm
       - run: npm ci --ignore-scripts
-      - name: Pre-writer R3L staging-result evidence gate
-        run: |
-          test ! -e config/com-b03c-r3l-evaluation-context-differential-staging-trigger.json
-          node - <<'NODE'
-          const e=require('./docs/validation/COM-B03C-R3L-EVALUATION-CONTEXT-DIFFERENTIAL-PRESENCE-STAGING-SUMMARY.json');
-          if(e.status!=='single_use_staging_diagnostic_completed_zero_residue_exact_root_cause_not_proven')process.exit(1);
-          if(e.execution?.run!==31388916899||e.execution?.canaryJob!==93455955823||e.execution?.canaryStatus!=='success'||e.execution?.runAttempt!==1)process.exit(1);
-          if(e.artifact?.id!==9062928795||e.artifact?.digest!=='sha256:039e21753387e0477ef0c3a39c19b5e7448ca005231f8ec9e05a019d0dfba51a')process.exit(1);
-          if(e.execution?.totalExecutionCaseCount!==17||e.execution?.structuralGateCount!==17||e.results?.subscribedCount!==4||e.results?.rejectedCount!==13)process.exit(1);
-          if(e.cleanup?.zeroResidueProven!==true||e.cleanup?.policyResidueCount!==0||e.cleanup?.identityResidueCount!==0)process.exit(1);
-          if(e.authorization?.consumed!==true||e.authorization?.reusableAfterFailure!==false||e.authorization?.triggerRemoved!==true)process.exit(1);
-          if(e.exactRootCauseProven!==false||e.causalPromotionAllowed!==false||e.effects?.productionExecuted!==false||e.effects?.mergeExecuted!==false)process.exit(1);
-          NODE
-      - name: Reconcile R3L staging result into canonical matrix source
-        run: |
-          node <<'NODE'
-          const fs=require('fs');
-          const m=JSON.parse(fs.readFileSync('config/domain-completion-matrix-refresh.json','utf8'));
-          const p='config/domain-completion-matrix.json';
-          const matrix=JSON.parse(fs.readFileSync(p,'utf8'));
-          const d=matrix.domains.find((x)=>x.id==='COM-001');
-          if(matrix.version!=='1.3.113'||!d||d.maturity!==3||d.userFacingAuthority!=='hybrid'||d.serverAuthority!=='partial'||d.productionGate!=='blocked')throw new Error('UNEXPECTED_COM_STATE');
-          matrix.updatedAt=m.updatedAt;
-          const summary='docs/validation/COM-B03C-R3L-EVALUATION-CONTEXT-DIFFERENTIAL-PRESENCE-STAGING-SUMMARY.json';
-          d.requiredPaths=Array.isArray(d.requiredPaths)?d.requiredPaths:[];
-          if(!d.requiredPaths.includes(summary))d.requiredPaths.push(summary);
-          d.evidence=(d.evidence||[]).filter((x)=>!x.startsWith('COM-B03C-R3L single-use differential staging diagnostic completed'));
-          d.evidence.push('COM-B03C-R3L single-use differential staging diagnostic completed on run 31388916899 / canary 93455955823 with artifact 9062928795: all 17 structural gates completed, four direct probes subscribed (control_true, uid_helper_direct, topic_helper_direct, row_topic_direct), extension_direct and every tested presence-extension composition were rejected, policy/identity residue remained zero, the trigger was removed, and exactRootCauseProven remained false.');
-          const b=(d.blockers||[]).find((x)=>x.id==='COM-B03');
-          if(b)b.description='Authenticated community_posts Postgres Changes is proven in staging. The R3L 17-case Presence differential diagnostic completed with zero residue: direct control/uid/topic/row-topic probes subscribed while extension_direct and all tested presence-extension compositions were rejected. This narrows the failing evaluation surface but does not prove the exact root cause; private Typing/Broadcast remains unproven and channel_messages still lacks canonical remote authority.';
-          d.nextActions=(d.nextActions||[]).filter((x)=>!x.includes('R3M is repository-certified with no staging authority')&&!x.includes('single-use R3L staging authorization')&&!x.includes('R3L trigger'));
-          d.nextActions.push('Perform repository-only root-cause narrowing of Presence authorization semantics around realtime.messages.extension and its runtime evaluation context. Do not re-run staging unless a separately certified boundary identifies a precise missing observation and receives a new explicit single-use authorization.');
-          fs.writeFileSync(p,`${JSON.stringify(matrix,null,2)}\n`);
-          NODE
-      - run: npm run write:domain-completion-matrix
-      - run: npm run audit:domain-completion-matrix
-      - name: Preserve R3L/R3M repository guards after result reconciliation
-        run: |
-          node scripts/test-com-b03c-r3l-evaluation-context-differential-presence-diagnostic-readiness.js
-          node scripts/test-com-b03c-r3m-r3l-executable-staging-envelope-readiness.js
-      - name: Restrict intended diff
-        run: |
-          unexpected="$(git status --porcelain | awk '{print $2}' | grep -v -E '^(config/domain-completion-matrix\.json|docs/DOMAIN-COMPLETION-MATRIX\.md|reports/generated/domain-completion-matrix-report\.json)$' || true)"
-          test -z "$unexpected" || { echo "$unexpected"; exit 1; }
-          git diff --check -- config/domain-completion-matrix.json docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json
-      - run: npm run audit:agent-governance
-      - name: Stage only canonical source and official outputs
-        run: |
-          git add config/domain-completion-matrix.json docs/DOMAIN-COMPLETION-MATRIX.md
-          git add -f reports/generated/domain-completion-matrix-report.json
-          staged="$(git diff --cached --name-only | sort)"
-          expected="$(printf '%s\n' config/domain-completion-matrix.json docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json | sort)"
-          test "$staged" = "$expected"
-          git diff --cached --check
-      - name: Commit canonical R3L staging-result state
-        run: |
-          git config user.name 'doke-matrix-bot'
-          git config user.email 'doke-matrix-bot@users.noreply.github.com'
-          git commit -m 'docs(com): reconcile R3L staging diagnostic result'
-          git push origin HEAD:com/com-001-baseline-audit
+      - name: Domain Completion Matrix
+        run: npm run audit:domain-completion-matrix
+      - name: Agent Governance
+        run: npm run audit:agent-governance
+      - name: Diff hygiene
+        run: git diff --check "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}"
