@@ -450,7 +450,7 @@ function browserAuthority({
     const actionSource = read('assets/js/core/notification-action.js');
     const messageService = read('assets/js/services/message-service.js');
     const commandExecutor = read('assets/js/services/message-command-executor.js');
-    assert.match(actionSource, /Doke\.services && Doke\.services\.messages/);
+    assert.match(actionSource, /Doke\?\.services\?\.messages/);
     assert.match(actionSource, /getServerCommandBoundaryStatus/);
     assert.match(actionSource, /status\.required !== true \|\| status\.ready !== true/);
     assert.match(actionSource, /commandId: action\.idempotencyKey/);

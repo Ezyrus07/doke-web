@@ -1,12 +1,21 @@
 (function (root, factory) {
   'use strict';
-  var api = factory(root);
+  function isExecutorAvailable(executor, action) {
+    if (!executor || typeof executor.execute !== 'function') return false;
+    if (typeof executor.isAvailable !== 'function') return true;
+    try {
+      return executor.isAvailable(action) === true;
+    } catch (_error) {
+      return false;
+    }
+  }
+  var api = factory(root, isExecutorAvailable);
   if (typeof module === 'object' && module.exports) module.exports = api;
   if (root) {
     var Doke = root.Doke || (root.Doke = {});
     Doke.notificationAction = api.createBrowserAuthority();
   }
-})(typeof window !== 'undefined' ? window : null, function (root) {
+})(typeof window !== 'undefined' ? window : null, function (root, isExecutorAvailable) {
   'use strict';
 
   var STATES = Object.freeze({
@@ -53,15 +62,6 @@
       current = current.cause;
     }
     return false;
-  }
-  function isExecutorAvailable(executor, action) {
-    if (!executor || typeof executor.execute !== 'function') return false;
-    if (typeof executor.isAvailable !== 'function') return true;
-    try {
-      return executor.isAvailable(action) === true;
-    } catch (_error) {
-      return false;
-    }
   }
   function validateCandidate(candidate, executors) {
     if (!candidate || typeof candidate !== 'object') return null;
@@ -231,7 +231,7 @@
   }
   function createBrowserExecutors(Doke) {
     function getReadyMessageService() {
-      var service = Doke && Doke.services && Doke.services.messages;
+      var service = Doke?.services?.messages;
       if (!service || typeof service.sendMessage !== 'function' || typeof service.getServerCommandBoundaryStatus !== 'function') return null;
       var status;
       try { status = service.getServerCommandBoundaryStatus(); } catch (_error) { status = null; }
