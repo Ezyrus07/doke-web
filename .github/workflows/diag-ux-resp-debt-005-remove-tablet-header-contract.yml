@@ -1,0 +1,87 @@
+name: Doke UX-RESP-DEBT-005 Tablet Contract Removal Probe
+
+on:
+  push:
+    branches:
+      - diag/ux-resp-debt-005-remove-tablet-header-contract
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Guard certified UX-RESP-DEBT-004 ancestry
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git merge-base HEAD ecb54eef031754cf91b9ec4340f382768f11f027)" = "ecb54eef031754cf91b9ec4340f382768f11f027"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Validate import removal scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git diff --name-only ecb54eef031754cf91b9ec4340f382768f11f027...HEAD | grep -Ev '^(.github/workflows/diag-ux-resp-debt-005-remove-tablet-header-contract.yml|assets/css/pages/pedidos-runtime-page.css|assets/css/pages/notificacoes-foundation.css|assets/css/pages/carteira-runtime-page.css)$' | wc -l)" -eq 0
+          for file in assets/css/pages/pedidos-runtime-page.css assets/css/pages/notificacoes-foundation.css assets/css/pages/carteira-runtime-page.css; do
+            ! grep -q 'tablet-internal-rail-contract.css' "$file"
+          done
+
+      - name: Validate CSS import inventory
+        run: npm run audit:css-import-resolution
+
+      - name: Install Chromium from lockfile-pinned Playwright
+        run: node node_modules/@playwright/test/cli.js install --with-deps chromium
+
+      - name: Generate baseline
+        run: node scripts/generate-responsive-index-baseline.js
+
+      - name: Execute responsive contract and classify residuals
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +e
+          node scripts/test-responsive-contract.js
+          STATUS=$?
+          set -e
+          test "$STATUS" -eq 1
+          node <<'NODE'
+          const fs=require('fs');
+          const report=JSON.parse(fs.readFileSync('reports/responsive-contract-test-report.json','utf8'));
+          console.log('PROBE_SUMMARY', JSON.stringify(report.summary));
+          const byPage={}; const byBp={};
+          for (const f of report.failures||[]) {
+            byPage[f.page]=(byPage[f.page]||0)+1;
+            byBp[f.breakpoint]=(byBp[f.breakpoint]||0)+1;
+          }
+          console.log('PROBE_BY_PAGE', JSON.stringify(byPage));
+          console.log('PROBE_BY_BREAKPOINT', JSON.stringify(byBp));
+          console.log('PROBE_FAILURES', JSON.stringify((report.failures||[]).map(f=>({page:f.page,breakpoint:f.breakpoint,component:f.component,property:f.property,expected:f.expected,actual:f.actual}))));
+          if (report.summary.checks !== 897 || report.summary.skips !== 276) process.exit(2);
+          if (report.summary.failures >= 25) process.exit(3);
+          NODE
+
+      - name: Validate responsive boundaries and shared header
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:shared-app-header-contract
+          npm run audit:responsive-boundaries
+          npm run audit:css-responsive-conflicts
+
+      - name: Validate whitespace
+        run: git diff --check ecb54eef031754cf91b9ec4340f382768f11f027...HEAD
