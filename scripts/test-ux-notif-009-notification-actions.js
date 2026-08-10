@@ -3,6 +3,7 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const vm = require('node:vm');
 const actionModule = require('../assets/js/core/notification-action.js');
 
 const ROOT = path.resolve(__dirname, '..');
@@ -32,6 +33,54 @@ function authority({ executor, store, hasPermission = () => true } = {}) {
     now: () => FIXED_NOW,
     hasPermission
   });
+}
+
+function browserAuthority({ boundaryStatus, currentUser, sendMessage } = {}) {
+  const values = new Map();
+  const registrations = [];
+  const calls = [];
+  const user = currentUser === undefined
+    ? { id: '4aa842d5-3a96-48f9-8a8d-ccb231e7c991', role: 'client' }
+    : currentUser;
+  const status = boundaryStatus || { required: true, ready: true };
+  const window = {
+    Doke: {
+      accountStorage: {
+        registerDomain(name, metadata) { registrations.push({ name, metadata }); },
+        getJson(_domain, key, fallback) { return values.has(key) ? values.get(key) : fallback; },
+        setJson(_domain, key, value) { values.set(key, value); },
+        getScopeFingerprint() { return 'scope_user_1'; }
+      },
+      session: { getCurrentUser() { return user; } },
+      services: {
+        messages: {
+          getServerCommandBoundaryStatus() { return status; },
+          async sendMessage(conversationId, payload) {
+            calls.push({ conversationId, payload });
+            if (typeof sendMessage === 'function') return sendMessage(conversationId, payload);
+            return { id: 'message-1', conversationId, body: payload.body };
+          }
+        }
+      }
+    }
+  };
+  vm.runInNewContext(read('assets/js/core/notification-action.js'), {
+    window,
+    console,
+    Map,
+    Date,
+    Object,
+    Promise,
+    Error,
+    String,
+    Number,
+    Boolean,
+    Array,
+    JSON,
+    setTimeout,
+    clearTimeout
+  }, { filename: 'notification-action.js' });
+  return { api: window.Doke.notificationAction, calls, registrations, values };
 }
 
 (async () => {
@@ -120,6 +169,51 @@ function authority({ executor, store, hasPermission = () => true } = {}) {
     assert.equal(result.state, 'FAILED');
     assert.equal(result.reason, 'permission-denied');
     assert.equal(calls, 0);
+  }
+
+  {
+    const runtime = browserAuthority();
+    const action = runtime.api.resolveActions({ actions: [candidate()] })[0];
+    const result = await runtime.api.execute(action, { body: 'Resposta confirmada' });
+    assert.equal(result.state, 'SUCCEEDED');
+    assert.equal(runtime.calls.length, 1);
+    assert.equal(runtime.calls[0].conversationId, 'conversation-42');
+    assert.equal(runtime.calls[0].payload.commandId, 'notif-action:reply-1');
+    assert.equal(runtime.calls[0].payload.clientMutationId, 'notif-action:reply-1');
+    assert.equal(runtime.calls[0].payload.body, 'Resposta confirmada');
+    assert.equal(runtime.registrations[0].name, 'notification_action');
+  }
+
+  {
+    const runtime = browserAuthority({ boundaryStatus: { required: false, ready: true } });
+    const action = runtime.api.resolveActions({ actions: [candidate()] })[0];
+    const result = await runtime.api.execute(action, { body: 'Não deve sair' });
+    assert.equal(result.state, 'FAILED');
+    assert.equal(result.error.code, 'DOKE_NOTIFICATION_ACTION_EXECUTOR_UNAVAILABLE');
+    assert.equal(runtime.calls.length, 0, 'fixture/local command mode must not be promoted to H09 success');
+  }
+
+  {
+    const runtime = browserAuthority({
+      sendMessage: async () => {
+        const error = new Error('acknowledgement inválido');
+        error.code = 'DOKE_MESSAGES_COMMAND_ACK_INVALID';
+        throw error;
+      }
+    });
+    const action = runtime.api.resolveActions({ actions: [candidate()] })[0];
+    const result = await runtime.api.execute(action, { body: 'Resposta incerta' });
+    assert.equal(result.state, 'UNKNOWN_OUTCOME');
+    assert.equal(result.retryBlocked, true);
+  }
+
+  {
+    const runtime = browserAuthority({ currentUser: null });
+    const action = runtime.api.resolveActions({ actions: [candidate()] })[0];
+    const result = await runtime.api.execute(action, { body: 'Sem sessão' });
+    assert.equal(result.state, 'FAILED');
+    assert.equal(result.reason, 'permission-denied');
+    assert.equal(runtime.calls.length, 0);
   }
 
   {
