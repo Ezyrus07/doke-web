@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 1365 arquivos no escopo; 298 referências a localStorage; 81 a sessionStorage; 595 referências mock; 343 referências de rede/Supabase; 38 marcadores de implementação pendente.
+**Evidência estática observada:** 1366 arquivos no escopo; 298 referências a localStorage; 81 a sessionStorage; 595 referências mock; 343 referências de rede/Supabase; 38 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -539,7 +539,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI local; servidor partial; staging staging canary; segurança partial; produção blocked.
 
-**Evidência estática observada:** 1264 arquivos no escopo; 221 referências a localStorage; 73 a sessionStorage; 331 referências mock; 341 referências de rede/Supabase; 19 marcadores de implementação pendente.
+**Evidência estática observada:** 1265 arquivos no escopo; 221 referências a localStorage; 73 a sessionStorage; 331 referências mock; 341 referências de rede/Supabase; 19 marcadores de implementação pendente.
 
 **Páginas:** `anunciar-servico.html`, `pedidos.html`, `orcamento.html`.
 
@@ -880,7 +880,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI hybrid; servidor partial; staging staging canary; segurança partial; produção blocked.
 
-**Evidência estática observada:** 44 arquivos no escopo; 56 referências a localStorage; 24 a sessionStorage; 4 referências mock; 14 referências de rede/Supabase; 0 marcadores de implementação pendente.
+**Evidência estática observada:** 45 arquivos no escopo; 56 referências a localStorage; 24 a sessionStorage; 4 referências mock; 14 referências de rede/Supabase; 0 marcadores de implementação pendente.
 
 **Páginas:** `comunidade.html`, `comunidade-interna.html`.
 
@@ -916,6 +916,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - COM-B03C-R3H executed the single-use real Presence diagnostic with nine cases, per-case policy cleanup and final synthetic-identity cleanup; zeroResidueProven=true while exactRootCauseProven remained false.
 - COM-B03C-R3I/R3J/R3K repository-certified 16 differential probes plus one separate negative control and connected the harness to reusable R3G adapters while keeping remote credential, dependency, staging and Realtime execution authority false.
 - COM-B03C-R3L repository-certified the single-use differential authorization lifecycle for the 17 cases: certify passed, authorize/canary remained skipped, trigger absent, authorization unreceived/unconsumed, credential wiring and remote executor invocation unprepared, production and merge blocked.
+- COM-B03C-R3M defines the separately governed executable envelope for the R3L 17-case diagnostic: future push-only secret wiring, canary-only dependencies, R3L executor invocation, independent sanitized-report verification, artifact upload and single-use trigger enforcement are repository-prepared while the trigger remains absent and all staging/production authority remains false.
 
 **Bloqueadores:**
 - **COM-B02 · CRITICAL · server_runtime_activation:** Server-authority contracts, persistence foundation and a read-only canary are certified, but membership, roles, invitations, bans and content commands are not integrated into the canonical runtime. _(Fase 11)_
@@ -925,7 +926,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 **Próximas ações:**
 - Integrate the certified server-authority repository into the main runtime for invitations, join requests, roles, bans and content commands.
 - Keep moderation fail-closed until a separately governed persistent staging runtime deployment/traffic boundary is defined and authorized.
-- Prepare and separately certify the repository-only executable staging envelope for the 17 R3L differential cases: explicit secrets/credential loading, R3K/R3L executor invocation, sanitized artifact, independent verifier and single-use trigger enforcement. Do not request or consume the R3L authorization before that envelope is certified.
+- Certify R3M repository-only on an immutable head, restore any temporary matrix writer to contents: read, and recertify the final evidence head before the existing R3L single-use staging authorization may be requested or consumed.
 
 **Gate de saída:**
 - Community state survives device changes and refreshes.
@@ -1133,7 +1134,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 2930 arquivos no escopo; 567 referências a localStorage; 154 a sessionStorage; 926 referências mock; 765 referências de rede/Supabase; 92 marcadores de implementação pendente.
+**Evidência estática observada:** 2933 arquivos no escopo; 567 referências a localStorage; 154 a sessionStorage; 926 referências mock; 765 referências de rede/Supabase; 92 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
@@ -1194,4 +1195,4 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **SEC-001 — Segurança, RLS, grants e autoridade dos dados.** A execução deve começar por inventário e hardening em lotes pequenos, com testes negativos por persona e sem ativar mais escrita real antes do fechamento da superfície exposta.
 
-_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-08-10T08:52:00-03:00._
+_Documento gerado de forma determinística a partir de `config/domain-completion-matrix.json`. Baseline: 2026-08-10T09:05:00-03:00._
