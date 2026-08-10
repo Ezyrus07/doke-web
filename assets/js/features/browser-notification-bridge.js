@@ -74,7 +74,11 @@
       const storage = accountStorage();
       const value = storage?.read?.({ domain: DOMAIN, key: PREFS_KEY, version: STORAGE_VERSION });
       return normalizePrefs({ ...DEFAULT_PREFS, ...(value && typeof value === 'object' ? value : {}) });
-    } catch (_error) {
+    } catch (error) {
+      console.warn(
+        '[Doke.notificationBrowser] preference read failed:',
+        normalizeText(error?.code || error?.name || 'unknown')
+      );
       return DEFAULT_PREFS;
     }
   };
@@ -209,8 +213,8 @@
 
   const identityTag = (identity) => {
     let hash = 2166136261;
-    for (let index = 0; index < identity.length; index += 1) {
-      hash ^= identity.charCodeAt(index);
+    for (const character of identity) {
+      hash ^= character.codePointAt(0);
       hash = Math.imul(hash, 16777619);
     }
     return `doke-${(hash >>> 0).toString(36)}`;
@@ -227,21 +231,22 @@
     const fallback = 'notificacoes.html';
     const raw = normalizeText(rawTarget);
     if (!raw) return fallback;
-    try {
-      const base = new URL(window.location?.href || 'https://doke.local/notificacoes.html');
-      const target = new URL(raw, base);
-      if (target.origin !== base.origin || target.username || target.password) return fallback;
-      const route = target.pathname.split('/').filter(Boolean).pop() || '';
-      if (!ALLOWED_ROUTES.has(route)) return fallback;
-      const safeParams = new URLSearchParams();
-      target.searchParams.forEach((value, key) => {
-        if (ALLOWED_QUERY_KEYS.has(key)) safeParams.append(key, value);
-      });
-      const search = safeParams.toString();
-      return `${route}${search ? `?${search}` : ''}${target.hash || ''}`;
-    } catch (_error) {
-      return fallback;
-    }
+
+    const baseHref = window.location?.href || 'https://doke.local/notificacoes.html';
+    if (!URL.canParse(raw, baseHref)) return fallback;
+
+    const base = new URL(baseHref);
+    const target = new URL(raw, base);
+    if (target.origin !== base.origin || target.username || target.password) return fallback;
+    const route = target.pathname.split('/').findLast(Boolean) || '';
+    if (!ALLOWED_ROUTES.has(route)) return fallback;
+    const safeParams = new URLSearchParams();
+    target.searchParams.forEach((value, key) => {
+      if (ALLOWED_QUERY_KEYS.has(key)) safeParams.append(key, value);
+    });
+    const search = safeParams.toString();
+    const searchSuffix = search ? '?' + search : '';
+    return route + searchSuffix + (target.hash || '');
   };
 
   const navigate = (target) => {
