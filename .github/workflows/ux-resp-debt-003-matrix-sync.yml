@@ -1,0 +1,47 @@
+name: UX-RESP-DEBT-003 Matrix Sync
+
+on:
+  push:
+    branches:
+      - domain/ux-resp-debt-003-matrix-sync
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    if: ${{ github.event.head_commit.message != 'ux-resp-debt-003 matrix synced' }}
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: domain/ux-resp-debt-003-matrix-sync
+          fetch-depth: 1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Regenerate canonical Matrix
+        run: npm run write:domain-completion-matrix
+
+      - name: Validate canonical Matrix
+        run: npm run audit:domain-completion-matrix
+
+      - name: Commit Matrix only
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name doke
+          git config user.email bielantoniomma@gmail.com
+          git add docs/DOMAIN-COMPLETION-MATRIX.md
+          test "$(git diff --cached --name-only | wc -l)" -eq 1
+          test "$(git diff --cached --name-only)" = "docs/DOMAIN-COMPLETION-MATRIX.md"
+          git commit -m 'ux-resp-debt-003 matrix synced'
+          git push origin HEAD:domain/ux-resp-debt-003-matrix-sync
