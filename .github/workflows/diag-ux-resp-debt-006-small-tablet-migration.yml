@@ -29,61 +29,22 @@ jobs:
       - name: Install dependencies
         run: npm ci --ignore-scripts
 
-      - name: Apply workspace-only small-tablet migration candidate
+      - name: Apply workspace-only minimal margin candidate
         shell: bash
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          files = [
-            Path('assets/css/pages/pedidos-runtime-page.css'),
-            Path('assets/css/pages/notificacoes-foundation.css'),
-            Path('assets/css/pages/carteira-runtime-page.css'),
-          ]
-          needle = 'tablet-internal-rail-contract.css'
-          for p in files:
-            lines = p.read_text().splitlines(True)
-            matches = [line for line in lines if needle in line]
-            if len(matches) != 1:
-              raise SystemExit(f'{p}: expected one quarantined import, got {len(matches)}')
-            p.write_text(''.join(line for line in lines if needle not in line))
+          p=Path('assets/css/components/shell/tablet-internal-rail-contract.css')
+          s=p.read_text()
+          old='margin-block: 24px 28px !important;'
+          new='margin-block: 0 28px !important;'
+          count=s.count(old)
+          print('target_count=',count)
+          if count != 1:
+            raise SystemExit(f'expected exactly one small-tablet margin target, got {count}')
+          p.write_text(s.replace(old,new,1))
           PY
-          cat >> assets/css/layout/header.css <<'CSS'
-
-          /* UX-RESP-DEBT-006 diagnostic — contextual small-tablet account presence only. */
-          @media (min-width: 561px) and (max-width: 760px) {
-            body:is(.orders-page-shell, .notifications-page-shell, .wallet-page-shell).has-global-header
-              > .app-shell > .page > .app-header.home-side-meta
-              :is(.home-side-meta__group--secondary, .app-header__group--secondary) {
-              display: inline-flex;
-              visibility: visible;
-              opacity: 1;
-            }
-
-            body:is(.orders-page-shell, .notifications-page-shell, .wallet-page-shell).has-global-header
-              > .app-shell > .page > .app-header.home-side-meta
-              .home-side-meta__profile-wrap {
-              display: inline-flex;
-              visibility: visible;
-              opacity: 1;
-            }
-
-            body:is(.orders-page-shell, .notifications-page-shell, .wallet-page-shell).has-global-header
-              > .app-shell > .page > .app-header.home-side-meta
-              .home-side-meta__profile {
-              display: inline-flex;
-              visibility: visible;
-              opacity: 1;
-            }
-
-            body:is(.orders-page-shell, .notifications-page-shell, .wallet-page-shell).has-global-header
-              > .app-shell > .page > .app-header.home-side-meta
-              .home-side-meta__profile .home-side-meta__avatar.doke-avatar {
-              display: inline-grid;
-              visibility: visible;
-              opacity: 1;
-            }
-          }
-          CSS
+          git diff -- assets/css/components/shell/tablet-internal-rail-contract.css
           npm run audit:css-import-resolution
 
       - name: Install Chromium from lockfile-pinned Playwright
@@ -101,9 +62,8 @@ jobs:
           node <<'NODE'
           const fs=require('fs');
           const r=JSON.parse(fs.readFileSync('reports/responsive-contract-test-report.json','utf8'));
-          console.log('PROBE_SUMMARY', JSON.stringify(r.summary));
+          console.log('PROBE_SUMMARY',JSON.stringify(r.summary));
           for(const f of r.failures||[]) console.log('PROBE_FAILURE',JSON.stringify({page:f.page,breakpoint:f.breakpoint,component:f.component,property:f.property,expected:f.expected,actual:f.actual,selector:f.selector}));
-          for(const s of r.skips||[]) if(['pedidos.html','notificacoes.html','carteira.html'].includes(s.page) && s.breakpoint==='608x926' && ['home-side-meta__profile','avatar'].includes(s.component)) console.log('TARGET_SKIP',JSON.stringify(s));
           if(r.summary.checks!==897) throw new Error(`checks must remain 897, got ${r.summary.checks}`);
           if(r.summary.skips!==276) throw new Error(`skips must remain 276, got ${r.summary.skips}`);
           if(r.summary.failures!==4) throw new Error(`failures must reduce exactly 7 -> 4, got ${r.summary.failures}`);
