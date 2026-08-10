@@ -1,0 +1,49 @@
+{
+  "validationId": "COM-B03C-R3I-UPSTREAM-REALTIME-AUTHORIZATION-SOURCE-EVIDENCE",
+  "status": "repository_source_evidence_pinned_no_remote_authority",
+  "source": {
+    "repository": "supabase/realtime",
+    "commit": "744c6d60f000f721c3942b6df0e7601f54a3b69d"
+  },
+  "findings": [
+    {
+      "path": "lib/realtime/tenants/authorization.ex",
+      "finding": "read authorization builds Message changesets for broadcast/presence, inserts those rows, sets role/realtime.topic/JWT session configuration, then SELECTs the inserted message ids under RLS"
+    },
+    {
+      "path": "lib/realtime/tenants/authorization.ex",
+      "finding": "set_conn_config writes role, realtime.topic, request.jwt.claims, request.jwt.claim.sub, request.jwt.claim.role and request.headers"
+    },
+    {
+      "path": "lib/realtime/api/message.ex",
+      "finding": "realtime.messages authorization rows have topic and extension, with extension enum values broadcast/presence"
+    },
+    {
+      "path": "test/support/generators.ex",
+      "finding": "upstream defines authenticated_read_presence_for_sub using realtime.topic(), realtime.messages.extension='presence' and SELECT auth.uid() in one SELECT policy"
+    },
+    {
+      "path": "test/integration/rt_channel/presence_test.exs",
+      "finding": "upstream integration coverage uses authenticated_read_presence_for_sub for private Presence and expects the matching JWT sub member to receive Presence while a different sub is denied"
+    }
+  ],
+  "comparisonToDokeR3H": {
+    "dokeR3HEvidenceHead": "ea49d5ff7feb3eddc7417a03568e873cf0f7772e",
+    "dokeR3HObserved": {
+      "extensionOnlyHistoricallyPassed": true,
+      "uidTopicPassed": true,
+      "uidExtensionRejected": true,
+      "topicExtensionRejected": true,
+      "upstreamEquivalentFullConjunctionRejected": true
+    },
+    "interpretation": "The observed Doke staging behavior conflicts with the pinned upstream authorization source/tests. This is evidence of a parity/evaluation-context gap, not proof of a generic Supabase Presence defect.",
+    "exactRootCauseProven": false
+  },
+  "authority": {
+    "stagingReadAuthority": false,
+    "stagingMutationAuthority": false,
+    "runtimeChangeAuthority": false,
+    "productionAuthority": false,
+    "mergeAuthority": false
+  }
+}

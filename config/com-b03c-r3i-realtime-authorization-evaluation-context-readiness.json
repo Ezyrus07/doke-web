@@ -1,0 +1,88 @@
+{
+  "contractId": "com-b03c-r3i-realtime-authorization-evaluation-context-readiness-v1",
+  "status": "repository_realtime_authorization_evaluation_context_differential_ready_no_remote_authority",
+  "checkpoint": {
+    "branch": "com/com-001-baseline-audit",
+    "pullRequest": 61,
+    "preparedFromHead": "ea49d5ff7feb3eddc7417a03568e873cf0f7772e",
+    "matrixVersion": "1.3.113",
+    "maturity": 3,
+    "productionGate": "blocked"
+  },
+  "predecessor": {
+    "validationId": "COM-B03C-R3H-SINGLE-USE-STAGING-DIAGNOSTIC-READINESS",
+    "status": "staging_execution_completed_authorization_consumed_zero_residue_repository_followup_required",
+    "evidenceHead": "ea49d5ff7feb3eddc7417a03568e873cf0f7772e",
+    "closureRecertificationRun": 31343483545,
+    "closureRecertificationJob": 93321203834,
+    "closureRecertified": true,
+    "authorizationConsumed": true,
+    "authorizationReusable": false,
+    "triggerAbsent": true,
+    "zeroResidueProven": true
+  },
+  "upstream": {
+    "repository": "supabase/realtime",
+    "commit": "744c6d60f000f721c3942b6df0e7601f54a3b69d",
+    "sourcePaths": [
+      "lib/realtime/tenants/authorization.ex",
+      "lib/realtime/api/message.ex",
+      "test/support/generators.ex",
+      "test/integration/rt_channel/presence_test.exs"
+    ],
+    "observations": {
+      "readAuthorizationInsertBeforeSessionConfigObserved": true,
+      "readAuthorizationSessionConfigBeforeSelectObserved": true,
+      "topicAndJwtSessionSettingsObserved": true,
+      "presenceMessageRowMaterializationObserved": true,
+      "upstreamPresenceTopicUidPolicyObserved": true,
+      "upstreamPresenceTopicUidIntegrationTestObserved": true
+    }
+  },
+  "diagnosticDesign": {
+    "rowVsRawSettingVsHelperDifferentialRequired": true,
+    "plannerBarrierDifferentialRequired": true,
+    "sameIdentityTokenTopicFutureRequirementRecorded": true,
+    "fullCaseTimeCatalogEvidenceFutureRequirementRecorded": true,
+    "noCausalPromotionWithoutDifferentialEvidence": true,
+    "caseCount": 16,
+    "caseIds": [
+      "control_true",
+      "extension_direct",
+      "uid_helper_direct",
+      "topic_helper_direct",
+      "row_topic_direct",
+      "row_topic_extension",
+      "raw_topic_setting_extension",
+      "topic_helper_extension",
+      "raw_sub_setting_extension",
+      "claims_json_sub_extension",
+      "uid_helper_extension",
+      "upstream_exact_full",
+      "raw_settings_full",
+      "row_topic_uid_extension",
+      "case_barrier_full",
+      "exists_barrier_full"
+    ]
+  },
+  "remoteBoundary": {
+    "remoteExecutorPrepared": false,
+    "triggerPrepared": false,
+    "authorizationPhraseDefined": false,
+    "stagingEnvironmentJobPrepared": false,
+    "runtimePolicyChangePrepared": false,
+    "productionPrepared": false,
+    "mergePrepared": false
+  },
+  "authority": {
+    "repositoryReadinessAuthority": true,
+    "remoteExecutionAuthority": false,
+    "triggerCreationAuthority": false,
+    "stagingReadAuthority": false,
+    "stagingMutationAuthority": false,
+    "runtimeChangeAuthority": false,
+    "productionAuthority": false,
+    "pullRequestMergeAuthority": false
+  },
+  "exactRootCauseProven": false
+}
