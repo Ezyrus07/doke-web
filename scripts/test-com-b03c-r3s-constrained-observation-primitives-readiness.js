@@ -217,8 +217,33 @@ async function main() {
   assert.equal(evidence.contractId, r3s.CONTRACT_ID);
   assert.equal(
     evidence.status,
-    'repository_constrained_observation_primitives_prepared_no_remote_authority'
+    'repository_constrained_observation_primitives_certified_no_remote_authority'
   );
+  assert.equal(evidence.initialBoundaryCommit, 'a2df888b8f6703873e2c793fd2ea006786a06db7');
+  assert.equal(evidence.certificationHistory.initialFailClosed.r3sRun, 31405591010);
+  assert.equal(evidence.certificationHistory.initialFailClosed.r3sJob, 93510999566);
+  assert.equal(evidence.certificationHistory.initialFailClosed.failedStep, 'Domain Completion Matrix');
+  assert.equal(evidence.certificationHistory.initialFailClosed.syntaxPassed, true);
+  assert.equal(evidence.certificationHistory.initialFailClosed.primitiveContractPassed, true);
+  assert.equal(evidence.certificationHistory.initialFailClosed.preRemoteHardBlockPassed, true);
+  assert.equal(evidence.certificationHistory.canonicalMatrixReconciliation.writerRun, 31405803866);
+  assert.equal(evidence.certificationHistory.canonicalMatrixReconciliation.writerJob, 93511718971);
+  assert.equal(evidence.certificationHistory.canonicalMatrixReconciliation.writerConclusion, 'success');
+  assert.equal(evidence.certificationHistory.canonicalMatrixReconciliation.writerOutputCommit, '6454257484c181dddbc2831464abbf67eefd6244');
+  assert.deepEqual(evidence.certificationHistory.canonicalMatrixReconciliation.writerOutputs, [
+    'docs/DOMAIN-COMPLETION-MATRIX.md',
+    'reports/generated/domain-completion-matrix-report.json'
+  ]);
+  assert.equal(evidence.certificationHistory.canonicalMatrixReconciliation.matrixSourceChanged, false);
+  assert.equal(evidence.certificationHistory.canonicalMatrixReconciliation.workflowRestoredHead, '5428c359005130093f77547c0a0d6e3e6a675a33');
+  assert.equal(evidence.certificationHistory.canonicalMatrixReconciliation.workflowRestoredBlob, '299108d86dc097ba090392ebe9f218f6849e74ad');
+  assert.equal(evidence.certificationHistory.normalHeadCertification.r3sRun, 31405948588);
+  assert.equal(evidence.certificationHistory.normalHeadCertification.r3sJob, 93512205769);
+  assert.equal(evidence.certificationHistory.normalHeadCertification.r3sConclusion, 'success');
+  assert.equal(evidence.certificationHistory.normalHeadCertification.matrixRun, 31405948527);
+  assert.equal(evidence.certificationHistory.normalHeadCertification.matrixJob, 93512205620);
+  assert.equal(evidence.certificationHistory.normalHeadCertification.matrixConclusion, 'success');
+  assert.equal(evidence.certificationHistory.normalHeadCertification.runAttempt, 1);
   assert.equal(evidence.primitiveContract.executableSqlPrepared, false);
   assert.equal(evidence.primitiveContract.remoteExecutorPrepared, false);
   assert.equal(evidence.authority.repositoryObservationPrimitiveContract, true);
