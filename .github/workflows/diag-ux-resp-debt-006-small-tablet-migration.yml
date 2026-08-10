@@ -46,51 +46,44 @@ jobs:
             if len(matches) != 1:
               raise SystemExit(f'{p}: expected one quarantined import, got {len(matches)}')
             p.write_text(''.join(line for line in lines if needle not in line))
-
-          header = Path('assets/css/layout/header.css')
-          s = header.read_text()
-          bridge = r'''
-
-/* UX-RESP-DEBT-006 diagnostic — contextual small-tablet account presence only. */
-@media (min-width: 561px) and (max-width: 760px) {
-  body:is(.orders-page-shell, .notifications-page-shell, .wallet-page-shell).has-global-header
-    > .app-shell > .page > .app-header.home-side-meta
-    :is(.home-side-meta__group--secondary, .app-header__group--secondary) {
-    display: inline-flex;
-    visibility: visible;
-    opacity: 1;
-  }
-
-  body:is(.orders-page-shell, .notifications-page-shell, .wallet-page-shell).has-global-header
-    > .app-shell > .page > .app-header.home-side-meta
-    .home-side-meta__profile-wrap {
-    display: inline-flex;
-    visibility: visible;
-    opacity: 1;
-  }
-
-  body:is(.orders-page-shell, .notifications-page-shell, .wallet-page-shell).has-global-header
-    > .app-shell > .page > .app-header.home-side-meta
-    .home-side-meta__profile {
-    display: inline-flex;
-    visibility: visible;
-    opacity: 1;
-  }
-
-  body:is(.orders-page-shell, .notifications-page-shell, .wallet-page-shell).has-global-header
-    > .app-shell > .page > .app-header.home-side-meta
-    .home-side-meta__profile .home-side-meta__avatar.doke-avatar {
-    display: inline-grid;
-    visibility: visible;
-    opacity: 1;
-  }
-}
-'''
-          if 'UX-RESP-DEBT-006 diagnostic' in s:
-            raise SystemExit('diagnostic bridge already present')
-          header.write_text(s + bridge)
           PY
-          git diff -- assets/css/layout/header.css assets/css/pages/pedidos-runtime-page.css assets/css/pages/notificacoes-foundation.css assets/css/pages/carteira-runtime-page.css
+          cat >> assets/css/layout/header.css <<'CSS'
+
+          /* UX-RESP-DEBT-006 diagnostic — contextual small-tablet account presence only. */
+          @media (min-width: 561px) and (max-width: 760px) {
+            body:is(.orders-page-shell, .notifications-page-shell, .wallet-page-shell).has-global-header
+              > .app-shell > .page > .app-header.home-side-meta
+              :is(.home-side-meta__group--secondary, .app-header__group--secondary) {
+              display: inline-flex;
+              visibility: visible;
+              opacity: 1;
+            }
+
+            body:is(.orders-page-shell, .notifications-page-shell, .wallet-page-shell).has-global-header
+              > .app-shell > .page > .app-header.home-side-meta
+              .home-side-meta__profile-wrap {
+              display: inline-flex;
+              visibility: visible;
+              opacity: 1;
+            }
+
+            body:is(.orders-page-shell, .notifications-page-shell, .wallet-page-shell).has-global-header
+              > .app-shell > .page > .app-header.home-side-meta
+              .home-side-meta__profile {
+              display: inline-flex;
+              visibility: visible;
+              opacity: 1;
+            }
+
+            body:is(.orders-page-shell, .notifications-page-shell, .wallet-page-shell).has-global-header
+              > .app-shell > .page > .app-header.home-side-meta
+              .home-side-meta__profile .home-side-meta__avatar.doke-avatar {
+              display: inline-grid;
+              visibility: visible;
+              opacity: 1;
+            }
+          }
+          CSS
           npm run audit:css-import-resolution
 
       - name: Install Chromium from lockfile-pinned Playwright
