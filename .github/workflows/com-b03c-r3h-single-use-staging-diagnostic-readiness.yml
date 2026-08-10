@@ -79,9 +79,25 @@ jobs:
           node - <<'NODE'
           const e=require('./docs/validation/COM-B03C-R3H-SINGLE-USE-STAGING-DIAGNOSTIC-READINESS.json');
           if(e.checkpoint?.maturity!==3||e.checkpoint?.productionGate!=='blocked')process.exit(1);
-          if(e.futureAuthorization?.defined!==true||e.futureAuthorization?.received!==false||e.futureAuthorization?.consumed!==false||e.futureAuthorization?.executionAttempted!==false||e.futureAuthorization?.triggerExists!==false)process.exit(1);
+          const a=e.futureAuthorization||{};
+          if(a.defined!==true||a.singleUse!==true||a.reusableAfterFailure!==false||a.predecessorAuthorizationReusable!==false||a.triggerExists!==false)process.exit(1);
+          const pre=a.received===false&&a.consumed===false&&a.executionAttempted===false;
+          const s=e.stagingExecution||{};
+          const closed=a.received===true&&a.consumed===true&&a.executionAttempted===true&&
+            e.status==='staging_execution_completed_authorization_consumed_zero_residue_repository_followup_required'&&
+            s.run===31343163304&&s.certifyJob===93320157103&&s.authorizeJob===93320185686&&s.canaryJob===93320239022&&s.status==='success'&&
+            s.artifact?.id===9046469554&&s.cleanup?.zeroResidueProven===true&&s.cleanup?.temporaryPolicyResidue===0&&s.cleanup?.syntheticIdentityResidue===0&&
+            s.trigger?.commit==='a07daf53dce4c3c9635f54847c660daee1ab0c97'&&s.trigger?.removed===true&&s.trigger?.removalCommit==='ea98d34f10fd30bada960d35c6831b19db0b9ed5'&&
+            s.observedResult?.allStructuralEvidenceComplete===true&&s.observedResult?.negativeControlPassed===true&&s.observedResult?.initialCatalogCount===0&&s.observedResult?.finalCatalogCount===0;
+          if(!pre&&!closed)process.exit(1);
           for(const k of ['triggerCreationAuthority','stagingReadAuthority','stagingMutationAuthority','authIdentityLifecycleAuthority','syntheticAccountMaterializationAuthority','realtimePolicyLifecycleAuthority','realtimeSubscriptionAuthority','domainMutationAuthority','publicationMutationAuthority','runtimeDeployAuthority','productionAuthority','pullRequestMergeAuthority'])if(e.authority?.[k]!==false)process.exit(1);
-          for(const k of ['stagingAccessExecuted','remoteCredentialReadExecuted','remoteDependencyLoadExecuted','authIdentityMutationExecuted','syntheticAccountMaterializationExecuted','realtimePolicyMutationExecuted','realtimeSubscriptionExecuted','generalDomainMutationExecuted','publicationMutationExecuted','runtimeDeployExecuted','productionExecuted','mergeExecuted'])if(e.effects?.[k]!==false)process.exit(1);
+          if(pre){
+            for(const k of ['stagingAccessExecuted','remoteCredentialReadExecuted','remoteDependencyLoadExecuted','authIdentityMutationExecuted','syntheticAccountMaterializationExecuted','realtimePolicyMutationExecuted','realtimeSubscriptionExecuted','generalDomainMutationExecuted','publicationMutationExecuted','runtimeDeployExecuted','productionExecuted','mergeExecuted'])if(e.effects?.[k]!==false)process.exit(1);
+          }
+          if(closed){
+            for(const k of ['stagingAccessExecuted','remoteCredentialReadExecuted','remoteDependencyLoadExecuted','authIdentityMutationExecuted','syntheticAccountMaterializationExecuted','realtimePolicyMutationExecuted','realtimeSubscriptionExecuted'])if(e.effects?.[k]!==true)process.exit(1);
+            for(const k of ['generalDomainMutationExecuted','publicationMutationExecuted','runtimeDeployExecuted','productionExecuted','mergeExecuted'])if(e.effects?.[k]!==false)process.exit(1);
+          }
           if(e.exactRootCauseProven!==false)process.exit(1);
           NODE
       - name: Diff hygiene
