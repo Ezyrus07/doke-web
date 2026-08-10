@@ -127,7 +127,29 @@ async function main() {
   assert.ok(failed.trace.includes('assertZeroResidue'));
 
   assert.equal(evidence.contractId, r3q.CONTRACT_ID);
-  assert.equal(evidence.status, 'repository_executable_observation_envelope_prepared_no_remote_authority');
+  assert.equal(evidence.status, 'repository_executable_observation_envelope_certified_no_remote_authority');
+  assert.equal(evidence.initialBoundaryCommit, '25a21c87be989b29c965d70523d70e3d56f0b8c4');
+  assert.equal(evidence.certificationHistory.initialFailClosed.conclusion, 'failure');
+  assert.equal(evidence.certificationHistory.initialFailClosed.failedStep, 'Domain Completion Matrix');
+  assert.equal(evidence.certificationHistory.initialFailClosed.syntaxPassed, true);
+  assert.equal(evidence.certificationHistory.initialFailClosed.executableEnvelopePassed, true);
+  assert.equal(evidence.certificationHistory.initialFailClosed.preRemoteHardBlockPassed, true);
+  assert.equal(evidence.certificationHistory.canonicalMatrixReconciliation.writerConclusion, 'success');
+  assert.deepEqual(evidence.certificationHistory.canonicalMatrixReconciliation.writerOutputs, [
+    'docs/DOMAIN-COMPLETION-MATRIX.md',
+    'reports/generated/domain-completion-matrix-report.json'
+  ]);
+  assert.equal(evidence.certificationHistory.canonicalMatrixReconciliation.matrixSourceChanged, false);
+  assert.equal(evidence.certificationHistory.canonicalMatrixReconciliation.workflowRestoredHead, '639fc4528a5d4bcbdf48837574a407047e811f47');
+  assert.equal(evidence.certificationHistory.canonicalMatrixReconciliation.workflowPermissions, 'contents: read');
+  assert.equal(evidence.certificationHistory.normalHeadCertification.head, '639fc4528a5d4bcbdf48837574a407047e811f47');
+  assert.equal(evidence.certificationHistory.normalHeadCertification.r3qRun, 31401079003);
+  assert.equal(evidence.certificationHistory.normalHeadCertification.r3qJob, 93495923438);
+  assert.equal(evidence.certificationHistory.normalHeadCertification.r3qConclusion, 'success');
+  assert.equal(evidence.certificationHistory.normalHeadCertification.matrixRun, 31401079780);
+  assert.equal(evidence.certificationHistory.normalHeadCertification.matrixJob, 93495929208);
+  assert.equal(evidence.certificationHistory.normalHeadCertification.matrixConclusion, 'success');
+  assert.equal(evidence.certificationHistory.normalHeadCertification.runAttempt, 1);
   assert.equal(evidence.authority.remoteAdapterBinding, false);
   assert.equal(evidence.authority.remoteExecution, false);
   assert.equal(evidence.authority.stagingRead, false);
@@ -137,10 +159,19 @@ async function main() {
   assert.equal(evidence.envelope.supabaseClientPrepared, false);
   assert.equal(evidence.envelope.pgClientPrepared, false);
   assert.equal(evidence.envelope.remoteExecutorPrepared, false);
+  assert.equal(evidence.effects.stagingAccessExecuted, false);
+  assert.equal(evidence.effects.remoteCredentialReadExecuted, false);
+  assert.equal(evidence.effects.remoteDependencyLoadExecuted, false);
+  assert.equal(evidence.effects.authIdentityMutationExecuted, false);
+  assert.equal(evidence.effects.realtimePolicyMutationExecuted, false);
+  assert.equal(evidence.effects.realtimeSubscriptionExecuted, false);
+  assert.equal(evidence.effects.runtimePolicyChangeExecuted, false);
+  assert.equal(evidence.effects.productionExecuted, false);
+  assert.equal(evidence.effects.mergeExecuted, false);
   assert.equal(evidence.exactRootCauseProven, false);
   assert.equal(evidence.causalPromotionAllowed, false);
 
-  process.stdout.write(`${JSON.stringify({ contractId: r3q.CONTRACT_ID, decision: decision.decision, classificationsCovered: evidence.coverage.classifications.length, remoteAdapterBindingAuthority: decision.remoteAdapterBindingAuthority, exactRootCauseProven: decision.exactRootCauseProven })}\n`);
+  process.stdout.write(`${JSON.stringify({ contractId: r3q.CONTRACT_ID, decision: decision.decision, evidenceStatus: evidence.status, classificationsCovered: evidence.coverage.classifications.length, remoteAdapterBindingAuthority: decision.remoteAdapterBindingAuthority, exactRootCauseProven: decision.exactRootCauseProven })}\n`);
 }
 
 main().catch((error) => {
