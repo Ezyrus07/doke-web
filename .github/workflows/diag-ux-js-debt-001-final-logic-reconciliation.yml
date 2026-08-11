@@ -89,7 +89,7 @@ jobs:
       - name: Classify inherited community contracts on untouched parent
         shell: bash
         run: |
-          set -u
+          set +e
           for cmd in \
             "npm run test:community-logic-stability" \
             "npm run test:community-critical-hardening" \
@@ -103,6 +103,7 @@ jobs:
             echo "BASELINE_CONTRACT_STATUS ${status} ${cmd}"
             echo "BASELINE_CONTRACT_END ${cmd}"
           done
+          set -e
           exit 0
 
       - name: Apply workspace-only retirement candidate
@@ -111,7 +112,6 @@ jobs:
           set -euo pipefail
           node - <<'NODE'
           const fs = require('node:fs');
-          const path = require('node:path');
           const target = 'assets/js/features/community-final-logic-stability.js';
           for (const name of fs.readdirSync('.').filter((file) => file.endsWith('.html'))) {
             const before = fs.readFileSync(name, 'utf8');
