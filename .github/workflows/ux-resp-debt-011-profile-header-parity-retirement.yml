@@ -1,0 +1,198 @@
+name: Doke UX-RESP-DEBT-011 Profile Header Parity Retirement
+
+on:
+  push:
+    branches:
+      - ux/ux-resp-debt-011-profile-header-parity-retirement
+  pull_request:
+    branches:
+      - ux/ux-resp-debt-010-tablet-rail-retirement
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: ux-resp-debt-011-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  EXPECTED_BASE: 68f6b60d3a7a15a80d5704a0a3d521f500c4dcdb
+  PR_NUMBER: '136'
+
+jobs:
+  ux-resp-debt-011:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Guard certified UX-RESP-DEBT-010 parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin ux/ux-resp-debt-010-tablet-rail-retirement --quiet
+          test "$(git merge-base HEAD origin/ux/ux-resp-debt-010-tablet-rail-retirement)" = "${EXPECTED_BASE}"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install repository dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts
+
+      - name: Validate retirement-only delta allowlist
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r changed_path; do
+            case "${changed_path}" in
+              .github/workflows/ux-resp-debt-011-profile-header-parity-retirement.yml|assets/css/components/navigation/profile-header-index-parity.css|assets/css/pages/profile-foundation.css|scripts/test-ux-resp-debt-011-profile-header-parity-retirement.js) ;;
+              *) echo "::error::Unexpected UX-RESP-DEBT-011 path: ${changed_path}"; exit 1 ;;
+            esac
+          done < <(git diff --name-only "${EXPECTED_BASE}"...HEAD)
+          test "$(git diff --name-only "${EXPECTED_BASE}"...HEAD | grep -Ec '\.html$' || true)" -eq 0
+          test "$(git diff --name-only "${EXPECTED_BASE}"...HEAD | grep -Ec '^assets/js/' || true)" -eq 0
+          git cat-file -e "${EXPECTED_BASE}:assets/css/components/navigation/profile-header-index-parity.css"
+          test ! -e assets/css/components/navigation/profile-header-index-parity.css
+
+      - name: Validate manifest-only CSS delta
+        shell: bash
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const assert = require('assert');
+          const fs = require('fs');
+          const { execFileSync } = require('child_process');
+          const base = process.env.EXPECTED_BASE;
+          const file = 'assets/css/pages/profile-foundation.css';
+          const targetLine = '@import url("../components/navigation/profile-header-index-parity.css?v=20260719-profile-family-v1");\n';
+          const parent = execFileSync('git', ['show', `${base}:${file}`], { encoding: 'utf8' });
+          const current = fs.readFileSync(file, 'utf8');
+          assert.strictEqual(parent.split(targetLine).length - 1, 1, 'parent must contain exactly one parity import');
+          assert.strictEqual(current, parent.replace(targetLine, ''), 'profile foundation delta must remove only the parity import');
+          NODE
+
+      - name: Validate canonical CSS import inventory and structural debt
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:css-import-resolution
+          npm run audit:active-legacy-structures
+
+      - name: Validate dedicated retirement proof
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check scripts/test-ux-resp-debt-011-profile-header-parity-retirement.js
+          node scripts/test-ux-resp-debt-011-profile-header-parity-retirement.js
+
+      - name: Install Chromium from lockfile-pinned Playwright
+        run: node node_modules/@playwright/test/cli.js install --with-deps chromium
+
+      - name: Prove canonical dropdown authority on profile family
+        shell: bash
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const assert = require('assert');
+          const { chromium } = require('@playwright/test');
+          const { loadHtmlWithLocalCss } = require('./scripts/lib/responsive-html-loader');
+          const allViewports = [
+            { width: 1366, height: 768 },
+            { width: 1280, height: 802 },
+            { width: 820, height: 1180 },
+            { width: 608, height: 926 },
+            { width: 390, height: 844 },
+          ];
+          const cases = [
+            { pageName: 'index.html', viewports: allViewports.filter(({ width }) => width !== 390) },
+            { pageName: 'perfil.html', viewports: allViewports },
+            { pageName: 'meu-perfil.html', viewports: allViewports },
+            { pageName: 'perfil-cliente.html', viewports: allViewports },
+            { pageName: 'perfil-profissional.html', viewports: allViewports },
+          ];
+          (async () => {
+            const browser = await chromium.launch({ headless: true });
+            try {
+              for (const { pageName, viewports } of cases) {
+                for (const viewport of viewports) {
+                  const page = await browser.newPage({ viewport });
+                  const html = loadHtmlWithLocalCss(pageName, process.cwd(), { modeLabel: 'ux-resp-debt-011-permanent' });
+                  await page.setContent(html, { waitUntil: 'domcontentloaded' });
+                  const result = await page.evaluate(() => {
+                    document.querySelectorAll('.doke-document-preloader').forEach((node) => {
+                      node.hidden = true;
+                      node.style.display = 'none';
+                    });
+                    const dropdown = document.querySelector('.profile-dropdown--home-main');
+                    if (!dropdown) return null;
+                    dropdown.hidden = false;
+                    dropdown.style.display = 'block';
+                    const style = getComputedStyle(dropdown);
+                    const rect = dropdown.getBoundingClientRect();
+                    return { zIndex: style.zIndex, width: rect.width, height: rect.height };
+                  });
+                  assert.ok(result, `${pageName} ${viewport.width}x${viewport.height}: dropdown missing`);
+                  assert.strictEqual(result.zIndex, '80', `${pageName} ${viewport.width}x${viewport.height}: canonical dropdown z-index must be 80`);
+                  assert.ok(result.width > 0 && result.height > 0, `${pageName} ${viewport.width}x${viewport.height}: dropdown must render`);
+                  await page.close();
+                }
+              }
+            } finally {
+              await browser.close();
+            }
+            console.log('[ux-resp-debt-011] canonical dropdown z-index 80 proven on index desktop/tablet and 4 profile pages across all 5 viewports');
+          })().catch((error) => {
+            console.error(error);
+            process.exit(1);
+          });
+          NODE
+
+      - name: Generate responsive index baseline
+        run: node scripts/generate-responsive-index-baseline.js
+
+      - name: Execute semantic responsive contract
+        run: node scripts/test-responsive-contract.js
+
+      - name: Prove exact responsive surface preservation
+        run: node scripts/test-ux-resp-debt-011-profile-header-parity-retirement.js
+
+      - name: Validate responsive and governance boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:shared-app-header-contract
+          npm run audit:responsive-boundaries
+          npm run audit:css-responsive-conflicts
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+
+      - name: Validate patch whitespace
+        run: git diff --check "${EXPECTED_BASE}"...HEAD
+
+      - name: Require SonarQube Cloud credential
+        if: github.event_name == 'push' && env.PR_NUMBER != '0'
+        shell: bash
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: test -n "${SONAR_TOKEN}"
+
+      - name: Analyze PR and enforce SonarQube Cloud Quality Gate
+        if: github.event_name == 'push' && env.PR_NUMBER != '0'
+        uses: SonarSource/sonarqube-scan-action@c7ee0f9df90b7aa20e8dcf9695dcfe2e7da5b4f2
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >-
+            -Dsonar.projectKey=Ezyrus07_doke-web
+            -Dsonar.organization=ezyrus07
+            -Dsonar.pullrequest.key=${{ env.PR_NUMBER }}
+            -Dsonar.pullrequest.branch=ux/ux-resp-debt-011-profile-header-parity-retirement
+            -Dsonar.pullrequest.base=ux/ux-resp-debt-010-tablet-rail-retirement
+            -Dsonar.qualitygate.wait=true
+            -Dsonar.qualitygate.timeout=600
