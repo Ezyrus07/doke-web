@@ -1,0 +1,55 @@
+name: Doke UX-CSS-DEBT-002 Home Dead Declarations
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-002-high-risk-inventory-r2
+
+permissions:
+  contents: read
+
+env:
+  CERTIFIED_PARENT: 631990336cc7c2a023ec9629c611beb66aa23fba
+
+jobs:
+  candidate:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+      - name: Install Chromium
+        run: node node_modules/@playwright/test/cli.js install --with-deps chromium
+      - name: Capture parent responsive baseline
+        run: |
+          git show "${CERTIFIED_PARENT}:assets/css/pages/home/mobile-hero-feed.css" > assets/css/pages/home/mobile-hero-feed.css
+          node scripts/generate-responsive-index-baseline.js
+          cp reports/responsive-index-baseline.json /tmp/parent-responsive-index-baseline.json
+      - name: Apply provably dead declaration candidate
+        run: |
+          git checkout HEAD -- assets/css/pages/home/mobile-hero-feed.css
+          node scripts/diag-ux-css-debt-002-home-dead-declarations.js --apply
+          node scripts/audit-active-legacy-structures.js
+      - name: Validate responsive preservation against parent
+        run: |
+          cp /tmp/parent-responsive-index-baseline.json reports/responsive-index-baseline.json
+          node scripts/test-responsive-contract.js
+      - name: Validate CSS and governance boundaries
+        run: |
+          npm run audit:css-responsive-conflicts
+          npm run audit:shared-app-header-contract
+          npm run audit:responsive-boundaries
+          npm run audit:agent-governance
+          git diff --check
+      - name: Show candidate diff summary
+        run: |
+          git diff --stat -- assets/css/pages/home/mobile-hero-feed.css
+          git diff --numstat -- assets/css/pages/home/mobile-hero-feed.css
