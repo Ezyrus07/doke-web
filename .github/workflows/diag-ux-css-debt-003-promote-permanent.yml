@@ -1,0 +1,102 @@
+name: Doke UX-CSS-DEBT-003 Promote Permanent
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-003-readiness
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-24.04
+    env:
+      PARENT_SHA: 06dbac77dcdd8e2896744868eb40fd7031ad95cb
+      TARGET_BRANCH: ux/ux-css-debt-003-pedidos-command-center-compaction
+      TARGET_FILE: assets/css/pages/pedidos/orders-command-center.css
+      EXPECTED_CANDIDATE_SHA256: 9ecb1e63fb2baa5e1ca0d1502acad4ec0910563cc5e162086eb462f1bb82f2e3
+    steps:
+      - name: Checkout permanent target branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_BRANCH }}
+          fetch-depth: 0
+
+      - name: Guard target remains exact certified parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${PARENT_SHA}"
+          remote_sha="$(git ls-remote origin "refs/heads/${TARGET_BRANCH}" | awk '{print $1}')"
+          test "${remote_sha}" = "${PARENT_SHA}"
+          git diff --exit-code
+
+      - name: Build exact deterministic candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');
+          const file=process.env.TARGET_FILE;
+          const text=fs.readFileSync(file,'utf8');
+          const parentSha=crypto.createHash('sha256').update(text).digest('hex');
+          if(parentSha!=='f2c3721344f14bff395df0d6da9a1cc0e257240cce3463016fac9691ee7927af') throw new Error(`parent blob drift ${parentSha}`);
+          const lines=text.split(/\r?\n/);
+          let depth=0,selectorParts=[],selector=null;
+          const declarations=[],blockStack=[];
+          const declRe=/^\s*([\w-]+)\s*:\s*(.*?)\s*(!important)?\s*;\s*$/;
+          for(let i=0;i<lines.length;i++){
+            const line=lines[i],trimmed=line.trim();
+            const opens=(line.match(/\{/g)||[]).length,closes=(line.match(/\}/g)||[]).length;
+            if(!selector&&trimmed&&!trimmed.startsWith('/*')&&!trimmed.startsWith('*')&&trimmed!=='*/'&&trimmed!=='}'){
+              if(trimmed.startsWith('@')&&line.includes('{')) blockStack.push({type:'at',header:trimmed.replace(/\{\s*$/,'').replace(/\s+/g,' ').trim(),depthBefore:depth});
+              else if(!trimmed.startsWith('@')&&!trimmed.includes(':')&&!line.includes(';')){
+                selectorParts.push(trimmed.replace(/\{\s*$/,'').trim());
+                if(line.includes('{')){selector=selectorParts.join(' ').replace(/\s+/g,' ').trim();selectorParts=[];blockStack.push({type:'rule',selector,depthBefore:depth});}
+              }
+            }
+            if(selector){const m=line.match(declRe);if(m){const context=blockStack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');declarations.push({lineIndex:i,selector,property:m[1],important:Boolean(m[3]),context});}}
+            depth+=opens-closes;
+            while(blockStack.length&&depth<=blockStack[blockStack.length-1].depthBefore){const p=blockStack.pop();if(p.type==='rule')selector=null;}
+          }
+          const dead=[];
+          for(let i=0;i<declarations.length;i++){
+            const cur=declarations[i];
+            const later=declarations.slice(i+1).find(x=>x.selector===cur.selector&&x.property===cur.property&&x.context===cur.context&&(!cur.important||x.important));
+            if(later)dead.push(cur);
+          }
+          const deadLines=new Set(dead.map(x=>x.lineIndex));
+          const candidate=lines.filter((_l,i)=>!deadLines.has(i)).join('\n');
+          const candidateSha=crypto.createHash('sha256').update(candidate).digest('hex');
+          if(declarations.length!==2367) throw new Error(`declaration drift ${declarations.length}`);
+          if(dead.length!==596) throw new Error(`dead drift ${dead.length}`);
+          if(candidateSha!==process.env.EXPECTED_CANDIDATE_SHA256) throw new Error(`candidate sha drift ${candidateSha}`);
+          if(Buffer.byteLength(text)!==134301) throw new Error(`parent bytes drift ${Buffer.byteLength(text)}`);
+          if(Buffer.byteLength(candidate)!==120513) throw new Error(`candidate bytes drift ${Buffer.byteLength(candidate)}`);
+          fs.writeFileSync(file,candidate);
+          console.log(`candidate=${candidateSha}`);
+          console.log(`declarations=${declarations.length}->${declarations.length-dead.length}`);
+          console.log(`bytes=${Buffer.byteLength(text)}->${Buffer.byteLength(candidate)}`);
+          NODE
+
+      - name: Guard exact permanent delta
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git diff --name-only)" = "${TARGET_FILE}"
+          test "$(git diff --numstat -- "${TARGET_FILE}" | awk '{print $1}')" = "0"
+          test "$(git diff --numstat -- "${TARGET_FILE}" | awk '{print $2}')" = "596"
+          git diff --check
+
+      - name: Commit and push product-only tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name doke
+          git config user.email bielantoniomma@gmail.com
+          git add -- "${TARGET_FILE}"
+          git commit -m "UX-CSS-DEBT-003: compact superseded Pedidos command-center declarations"
+          test "$(git rev-parse HEAD^)" = "${PARENT_SHA}"
+          test "$(git diff --name-only "${PARENT_SHA}"...HEAD)" = "${TARGET_FILE}"
+          git push origin "HEAD:${TARGET_BRANCH}"
