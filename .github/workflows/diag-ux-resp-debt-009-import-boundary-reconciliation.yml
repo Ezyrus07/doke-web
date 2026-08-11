@@ -1,4 +1,4 @@
-name: Doke UX-RESP-DEBT-009 Import Boundary Reconciliation Diagnostic
+name: Doke UX-RESP-DEBT-009 CSSOM Winner Diagnostic
 
 on:
   push:
@@ -29,114 +29,48 @@ jobs:
       - name: Install dependencies
         run: npm ci --ignore-scripts
 
-      - name: Install Chromium from lockfile-pinned Playwright
+      - name: Install Chromium
         run: node node_modules/@playwright/test/cli.js install --with-deps chromium
 
-      - name: Capture certified parent responsive surface
-        shell: bash
-        run: |
-          node scripts/generate-responsive-index-baseline.js
-          node scripts/test-responsive-contract.js
-          cp reports/responsive-contract-test-report.json /tmp/ux-resp-debt-009-parent.json
-          node <<'NODE'
-          const fs=require('fs');
-          const r=JSON.parse(fs.readFileSync('/tmp/ux-resp-debt-009-parent.json','utf8'));
-          console.log('PARENT_SUMMARY',JSON.stringify(r.summary));
-          if(r.summary.checks!==893 || r.summary.failures!==0 || r.summary.skips!==277) {
-            throw new Error(`certified parent drift: ${JSON.stringify(r.summary)}`);
-          }
-          NODE
-
-      - name: Apply workspace-only ownership boundary candidate
+      - name: Apply rejected workspace candidate for CSSOM tracing
         shell: bash
         run: |
           python3 - <<'PY'
           from pathlib import Path
 
           legacy_import='@import url("../components/shell/tablet-internal-rail-contract.css?v=20260710-tablet-rail-authority-v1") screen and (max-width: 760px);\n'
-          manifests=[
-            Path('assets/css/pages/pedidos-runtime-page.css'),
-            Path('assets/css/pages/notificacoes-foundation.css'),
-            Path('assets/css/pages/carteira-runtime-page.css'),
-          ]
-          for p in manifests:
+          for name in [
+            'assets/css/pages/pedidos-runtime-page.css',
+            'assets/css/pages/notificacoes-foundation.css',
+            'assets/css/pages/carteira-runtime-page.css',
+          ]:
+            p=Path(name)
             s=p.read_text()
-            count=s.count(legacy_import)
-            print('legacy import',p,'count=',count)
-            if count != 1:
-              raise SystemExit(f'expected exactly one legacy import in {p}, got {count}')
+            if s.count(legacy_import) != 1:
+              raise SystemExit(f'unexpected legacy import count in {name}')
             p.write_text(s.replace(legacy_import,'',1))
 
           p=Path('assets/css/components/internal/list-page-toolbar.css')
           s=p.read_text()
           old='''@media (max-width: 760px) {\n  body.orders-page-shell .home-side-meta,\n  body.notifications-page-shell .home-side-meta,\n  body.wallet-page-shell .home-side-meta {\n    display: none;\n  }\n\n  .home-side-meta__search-form {'''
-          new='''/* The injected Mobile App Shell mounts only through 560px.\n   Keep list-page header suppression on the same ownership boundary. */\n@media (max-width: 560px) {\n  body.orders-page-shell .home-side-meta,\n  body.notifications-page-shell .home-side-meta,\n  body.wallet-page-shell .home-side-meta {\n    display: none;\n  }\n}\n\n@media (max-width: 760px) {\n  .home-side-meta__search-form {'''
-          count=s.count(old)
-          print('toolbar boundary target count=',count)
-          if count != 1:
-            raise SystemExit(f'expected exactly one toolbar boundary target, got {count}')
+          new='''@media (max-width: 560px) {\n  body.orders-page-shell .home-side-meta,\n  body.notifications-page-shell .home-side-meta,\n  body.wallet-page-shell .home-side-meta {\n    display: none;\n  }\n}\n\n@media (max-width: 760px) {\n  .home-side-meta__search-form {'''
+          if s.count(old) != 1:
+            raise SystemExit('unexpected list-page-toolbar boundary block')
           p.write_text(s.replace(old,new,1))
 
           p=Path('assets/css/components/shell/mobile-app-shell.css')
           s=p.read_text()
           old_item='''      .home-search-hero,\n      .home-side-meta,\n      .desktop-only,'''
           new_item='''      .home-search-hero,\n      .desktop-only,'''
-          count=s.count(old_item)
-          print('pending home-side-meta list item count=',count)
-          if count != 1:
-            raise SystemExit(f'expected exactly one pending home-side-meta list item, got {count}')
+          if s.count(old_item) != 1:
+            raise SystemExit('unexpected pending home-side-meta list item')
           s=s.replace(old_item,new_item,1)
           anchor='''.doke-mobile-shell,\n.doke-mobile-bottom-nav {\n  display: none;\n}\n\n'''
           guard='''@media (max-width: 560px),\n  (hover: none) and (pointer: coarse) and (max-device-width: 560px) {\n  html.doke-mobile-shell-pending body .home-side-meta {\n    display: none;\n    visibility: hidden;\n    pointer-events: none;\n  }\n}\n\n'''
-          count=s.count(anchor)
-          print('mobile shell guard insertion anchor count=',count)
-          if count != 1:
-            raise SystemExit(f'expected exactly one mobile shell guard insertion anchor, got {count}')
+          if s.count(anchor) != 1:
+            raise SystemExit('unexpected mobile shell guard anchor')
           p.write_text(s.replace(anchor,guard+anchor,1))
           PY
-          npm run audit:css-import-resolution
 
-      - name: Prove legacy contract leaves active graph for migrated consumers
-        run: |
-          node <<'NODE'
-          const fs=require('fs');
-          const {getLoadedCssAssets}=require('./scripts/lib/css-assets');
-          const target='assets/css/components/shell/tablet-internal-rail-contract.css';
-          for (const page of ['pedidos.html','notificacoes.html','carteira.html']) {
-            const assets=getLoadedCssAssets(fs.readFileSync(page,'utf8'),process.cwd());
-            const count=assets.filter((asset)=>asset===target).length;
-            console.log('ACTIVE_GRAPH',page,target,count);
-            if (count !== 0) throw new Error(`${page} still loads ${target} ${count} time(s)`);
-          }
-          NODE
-
-      - name: Capture candidate responsive surface and expose delta
-        shell: bash
-        run: |
-          node scripts/generate-responsive-index-baseline.js
-          node scripts/test-responsive-contract.js
-          cp reports/responsive-contract-test-report.json /tmp/ux-resp-debt-009-candidate.json
-          node <<'NODE'
-          const fs=require('fs');
-          const parent=JSON.parse(fs.readFileSync('/tmp/ux-resp-debt-009-parent.json','utf8'));
-          const candidate=JSON.parse(fs.readFileSync('/tmp/ux-resp-debt-009-candidate.json','utf8'));
-          const key=(s)=>JSON.stringify([s.page||'',s.breakpoint||'',s.component||'',s.reason||'']);
-          const p=new Map((parent.skips||[]).map((s)=>[key(s),s]));
-          const c=new Map((candidate.skips||[]).map((s)=>[key(s),s]));
-          console.log('CANDIDATE_SUMMARY',JSON.stringify(candidate.summary));
-          for(const [k,s] of c) if(!p.has(k)) console.log('NEW_SKIP',JSON.stringify(s));
-          for(const [k,s] of p) if(!c.has(k)) console.log('REMOVED_SKIP',JSON.stringify(s));
-          console.log('CHECK_DELTA',candidate.summary.checks-parent.summary.checks);
-          console.log('SKIP_DELTA',candidate.summary.skips-parent.summary.skips);
-          if(candidate.summary.checks!==893 || candidate.summary.failures!==0 || candidate.summary.skips!==277) {
-            throw new Error(`candidate does not preserve certified surface: ${JSON.stringify(candidate.summary)}`);
-          }
-          NODE
-
-      - name: Validate shared header and responsive boundaries
-        run: |
-          npm run audit:shared-app-header-contract
-          npm run audit:responsive-boundaries
-
-      - name: Validate patch whitespace
-        run: git diff --check
+      - name: Trace computed and matched CSSOM at 608px
+        run: node scripts/diag-ux-resp-debt-009-cssom.js
