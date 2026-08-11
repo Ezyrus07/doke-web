@@ -21,8 +21,8 @@ jobs:
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           fetch-depth: 0
-      - name: Capture validated transformer
-        run: cp scripts/diag-ux-css-debt-002-home-dead-declarations.js /tmp/ux-css-debt-002-transformer.js
+      - name: Capture validated transformer in repository-relative location
+        run: cp scripts/diag-ux-css-debt-002-home-dead-declarations.js scripts/.ux-css-debt-002-transformer.js
       - name: Checkout exact permanent parent
         shell: bash
         run: |
@@ -30,6 +30,7 @@ jobs:
           git fetch origin "${TARGET_BRANCH}" --quiet
           test "$(git rev-parse origin/${TARGET_BRANCH})" = "${CERTIFIED_PARENT}"
           git checkout -B "${TARGET_BRANCH}" "origin/${TARGET_BRANCH}"
+          test -f scripts/.ux-css-debt-002-transformer.js
           test "$(git hash-object assets/css/pages/home/mobile-hero-feed.css)" = "${TARGET_BLOB_SHA}"
       - name: Setup Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
@@ -40,7 +41,8 @@ jobs:
         run: npm ci --ignore-scripts
       - name: Apply exact validated candidate and Matrix writer
         run: |
-          node /tmp/ux-css-debt-002-transformer.js --apply
+          node scripts/.ux-css-debt-002-transformer.js --apply
+          rm scripts/.ux-css-debt-002-transformer.js
           npm run write:domain-completion-matrix
       - name: Restrict permanent delta
         shell: bash
