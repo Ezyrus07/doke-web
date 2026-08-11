@@ -1,0 +1,130 @@
+name: Doke UX-QA-DEBT-002 Agenda Hidden Contract Probe
+
+on:
+  push:
+    branches:
+      - diag/ux-qa-debt-002-pedidos-agenda-hidden-contract
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    env:
+      PARENT_SHA: 12e55ca25db38971c5ab5de12845839ca1a684a7
+    steps:
+      - name: Checkout diagnostic branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Guard diagnostic-only delta
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = "${PARENT_SHA}"
+          test "$(git diff --name-only "${PARENT_SHA}"...HEAD)" = ".github/workflows/diag-ux-qa-debt-002-agenda-hidden-contract.yml"
+          git diff --check "${PARENT_SHA}"...HEAD
+
+      - name: Inventory Agenda ownership
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo '=== HTML occurrences ==='
+          grep -n -C 3 'data-orders-agenda-toggle' pedidos.html || true
+          echo '=== JS occurrences ==='
+          grep -Rni -C 3 --include='*.js' 'data-orders-agenda-toggle' assets/js tests/e2e || true
+          echo '=== CSS occurrences ==='
+          grep -Rni -C 5 --include='*.css' 'data-orders-agenda-toggle' assets/css || true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies and Chromium
+        shell: bash
+        run: |
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install --with-deps chromium
+
+      - name: Reproduce parent E2E failure
+        shell: bash
+        run: |
+          set +e
+          node node_modules/@playwright/test/cli.js test tests/e2e/pedidos-role-composition.spec.js > /tmp/parent-e2e.log 2>&1
+          code=$?
+          set -e
+          cat /tmp/parent-e2e.log
+          test "$code" = "1"
+          grep -F "node.hidden && getComputedStyle(node).display === 'none'" /tmp/parent-e2e.log
+
+      - name: Probe client and professional Agenda runtime
+        shell: bash
+        run: |
+          cat > /tmp/probe-agenda.js <<'NODE'
+          const { chromium } = require(process.cwd() + '/node_modules/playwright');
+          const cp = require('child_process');
+          const server = cp.spawn(process.execPath, ['scripts/serve-static-site.js','--host=127.0.0.1','--port=5500'], {
+            stdio:['ignore','pipe','pipe'],
+            env:{...process.env,DOKE_E2E_DISABLE_REMOTE_SERVICES:'1'}
+          });
+          const sleep = ms => new Promise(r => setTimeout(r, ms));
+          const viewports = [
+            {name:'1366x768',width:1366,height:768},
+            {name:'820x1180',width:820,height:1180},
+            {name:'608x926',width:608,height:926},
+            {name:'390x844',width:390,height:844}
+          ];
+          async function main(){
+            await sleep(700);
+            const browser = await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+            for (const role of ['client','professional']) {
+              for (const vp of viewports) {
+                const context = await browser.newContext({viewport:{width:vp.width,height:vp.height},reducedMotion:'reduce'});
+                const page = await context.newPage();
+                await page.addInitScript(({role}) => {
+                  const user = {id: role === 'client' ? 'client_qa2' : 'professional_qa2', role, name:'QA'};
+                  const orders = [{
+                    id:'order_qa2',
+                    clientId: role === 'client' ? user.id : 'client_other',
+                    professionalId: role === 'professional' ? user.id : 'professional_other',
+                    providerName:'Studio QA',
+                    serviceTitle:'Serviço QA',
+                    status:'pending',
+                    viewerRole: role,
+                    createdAt:'2026-06-28T10:00:00.000Z'
+                  }];
+                  localStorage.setItem('doke.auth.session.v1', JSON.stringify({user}));
+                  localStorage.setItem('doke.orders.local.v1', JSON.stringify(orders));
+                  localStorage.setItem('doke.orders', JSON.stringify(orders));
+                }, {role});
+                await page.goto('http://127.0.0.1:5500/pedidos.html',{waitUntil:'domcontentloaded'});
+                await page.waitForFunction(expected => document.body.dataset.ordersAudience === expected, role, {timeout:10000});
+                await page.waitForFunction(() => document.querySelectorAll('[data-orders-agenda-toggle]').length === 2, {timeout:10000});
+                const snapshot = await page.evaluate(() => ({
+                  audience: document.body.dataset.ordersAudience,
+                  agenda: [...document.querySelectorAll('[data-orders-agenda-toggle]')].map((node,index) => {
+                    const cs=getComputedStyle(node), r=node.getBoundingClientRect();
+                    return {index,hidden:node.hidden,ariaHidden:node.getAttribute('aria-hidden'),display:cs.display,visibility:cs.visibility,rect:{x:+r.x.toFixed(2),y:+r.y.toFixed(2),width:+r.width.toFixed(2),height:+r.height.toFixed(2)},className:node.className};
+                  }),
+                  filters: [...document.querySelectorAll('[data-orders-filter-toggle]')].map((node,index) => {
+                    const cs=getComputedStyle(node), r=node.getBoundingClientRect();
+                    return {index,display:cs.display,rect:{x:+r.x.toFixed(2),y:+r.y.toFixed(2),width:+r.width.toFixed(2),height:+r.height.toFixed(2)}};
+                  }),
+                  selects: [...document.querySelectorAll('[data-orders-select-toggle]')].map((node,index) => {
+                    const cs=getComputedStyle(node), r=node.getBoundingClientRect();
+                    return {index,display:cs.display,rect:{x:+r.x.toFixed(2),y:+r.y.toFixed(2),width:+r.width.toFixed(2),height:+r.height.toFixed(2)}};
+                  })
+                }));
+                console.log(JSON.stringify({role,viewport:vp.name,...snapshot}));
+                await context.close();
+              }
+            }
+            await browser.close();
+          }
+          main().finally(() => server.kill('SIGTERM')).catch(e => {console.error(e);process.exit(1);});
+          NODE
+          node /tmp/probe-agenda.js
