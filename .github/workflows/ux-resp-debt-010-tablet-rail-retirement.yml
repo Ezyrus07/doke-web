@@ -1,0 +1,137 @@
+# Final certification trigger after generated Matrix synchronization.
+name: Doke UX-RESP-DEBT-010 Tablet Rail Retirement
+
+on:
+  push:
+    branches:
+      - ux/ux-resp-debt-010-tablet-rail-retirement
+  pull_request:
+    branches:
+      - ux/ux-resp-debt-009-small-tablet-header-ownership
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: ux-resp-debt-010-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  EXPECTED_BASE: 153fedff9bf4989a68ff99956181527926ed6533
+  PR_NUMBER: '134'
+
+jobs:
+  ux-resp-debt-010:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Guard certified UX-RESP-DEBT-009 parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin ux/ux-resp-debt-009-small-tablet-header-ownership --quiet
+          test "$(git merge-base HEAD origin/ux/ux-resp-debt-009-small-tablet-header-ownership)" = "${EXPECTED_BASE}"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install repository dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts
+
+      - name: Validate retirement-only delta allowlist
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r changed_path; do
+            case "${changed_path}" in
+              .github/workflows/ux-resp-debt-010-tablet-rail-retirement.yml|assets/css/components/shell/tablet-internal-rail-contract.css|assets/css/pages/mensagens/tablet-portrait-thread-contract.css|docs/DOMAIN-COMPLETION-MATRIX.md|scripts/test-ux-resp-debt-010-tablet-rail-retirement.js) ;;
+              *) echo "::error::Unexpected UX-RESP-DEBT-010 path: ${changed_path}"; exit 1 ;;
+            esac
+          done < <(git diff --name-only "${EXPECTED_BASE}"...HEAD)
+          test "$(git diff --name-only "${EXPECTED_BASE}"...HEAD | grep -Ec '\.html$' || true)" -eq 0
+          test "$(git diff --name-only "${EXPECTED_BASE}"...HEAD | grep -Ec '^assets/js/' || true)" -eq 0
+          git cat-file -e "${EXPECTED_BASE}:assets/css/components/shell/tablet-internal-rail-contract.css"
+          test ! -e assets/css/components/shell/tablet-internal-rail-contract.css
+
+      - name: Validate Messages comment-only CSS delta
+        shell: bash
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const assert = require('assert');
+          const fs = require('fs');
+          const { execFileSync } = require('child_process');
+          const base = process.env.EXPECTED_BASE;
+          const file = 'assets/css/pages/mensagens/tablet-portrait-thread-contract.css';
+          const parent = execFileSync('git', ['show', `${base}:${file}`], { encoding: 'utf8' });
+          const current = fs.readFileSync(file, 'utf8');
+          const oldLine = ' * O header tablet é governado pelo contrato global em components/shell/tablet-internal-rail-contract.css.';
+          const newLine = ' * O header tablet usa o rail global de layout/page-rail-authority.css e a anatomia final de layout/header.css.';
+          assert.strictEqual(parent.split(oldLine).length - 1, 1, 'parent must contain exactly one stale ownership comment');
+          assert.strictEqual(current, parent.replace(oldLine, newLine), 'Messages CSS delta must be comment-only');
+          NODE
+
+      - name: Validate dedicated retirement proof
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check scripts/test-ux-resp-debt-010-tablet-rail-retirement.js
+          node scripts/test-ux-resp-debt-010-tablet-rail-retirement.js
+
+      - name: Validate canonical CSS import inventory
+        run: npm run audit:css-import-resolution
+
+      - name: Install Chromium from lockfile-pinned Playwright
+        run: node node_modules/@playwright/test/cli.js install --with-deps chromium
+
+      - name: Generate responsive index baseline
+        run: node scripts/generate-responsive-index-baseline.js
+
+      - name: Execute semantic responsive contract
+        run: node scripts/test-responsive-contract.js
+
+      - name: Prove exact responsive surface preservation
+        run: node scripts/test-ux-resp-debt-010-tablet-rail-retirement.js
+
+      - name: Validate responsive and governance boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:shared-app-header-contract
+          npm run audit:responsive-boundaries
+          npm run audit:css-responsive-conflicts
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+
+      - name: Validate patch whitespace
+        run: git diff --check "${EXPECTED_BASE}"...HEAD
+
+      - name: Require SonarQube Cloud credential
+        if: github.event_name == 'push' && env.PR_NUMBER != '0'
+        shell: bash
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: test -n "${SONAR_TOKEN}"
+
+      - name: Analyze PR and enforce SonarQube Cloud Quality Gate
+        if: github.event_name == 'push' && env.PR_NUMBER != '0'
+        uses: SonarSource/sonarqube-scan-action@c7ee0f9df90b7aa20e8dcf9695dcfe2e7da5b4f2
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >-
+            -Dsonar.projectKey=Ezyrus07_doke-web
+            -Dsonar.organization=ezyrus07
+            -Dsonar.pullrequest.key=${{ env.PR_NUMBER }}
+            -Dsonar.pullrequest.branch=ux/ux-resp-debt-010-tablet-rail-retirement
+            -Dsonar.pullrequest.base=ux/ux-resp-debt-009-small-tablet-header-ownership
+            -Dsonar.qualitygate.wait=true
+            -Dsonar.qualitygate.timeout=600
