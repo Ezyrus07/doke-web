@@ -1,0 +1,76 @@
+name: Doke UX-RESP-DEBT-007 Contextual Back Contract Diagnostic
+
+on:
+  push:
+    branches:
+      - diag/ux-resp-debt-007-detail-back-offset
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Guard certified UX-RESP-DEBT-006 parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = "3b98ec7da8dbfab77e9ece410bea3d07b1ae16ba"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Apply workspace-only split contextual back contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('scripts/test-responsive-contract.js')
+          s = p.read_text()
+          old = """  {\n    key: 'search/back equivalent button',\n    baselineSelector: '.home-side-meta__search',\n    pageSelector: '.home-side-meta__search, .app-header__back, .header-back, .back-button, [aria-label*=\"Voltar\"], [aria-label*=\"voltar\"]',\n    pages: targetPages,\n    metrics: ['box.x', 'box.y', 'box.width', 'box.height', 'visual.borderRadius', 'spacing.padding.left', 'spacing.padding.right'],\n    requirement: 'botão de busca/voltar equivalente deve manter tamanho, posição e forma',\n  },\n"""
+          new = """  {\n    key: 'search equivalent button',\n    baselineSelector: '.home-side-meta__search',\n    pageSelector: '.home-side-meta__search',\n    pages: targetPages,\n    metrics: ['box.x', 'box.y', 'box.width', 'box.height', 'visual.borderRadius', 'spacing.padding.left', 'spacing.padding.right'],\n    requirement: 'botão de busca equivalente deve manter tamanho, posição e forma',\n  },\n  {\n    key: 'contextual back control',\n    baselineSelector: '.home-side-meta__search',\n    pageSelector: '.detail-standard-topbar__back[data-header-context]',\n    pages: ['detalhe-anuncio.html'],\n    metrics: ['box.y', 'box.width', 'box.height', 'visual.borderRadius', 'spacing.padding.left', 'spacing.padding.right'],\n    requirement: 'controle contextual de voltar deve manter tamanho, alinhamento vertical e forma do controle canônico sem assumir o mesmo slot horizontal da busca',\n  },\n"""
+          if s.count(old) != 1:
+              raise SystemExit(f'contract anchor count={s.count(old)}')
+          p.write_text(s.replace(old, new))
+          PY
+          node --check scripts/test-responsive-contract.js
+          git diff -- scripts/test-responsive-contract.js
+
+      - name: Install Chromium from lockfile-pinned Playwright
+        run: node node_modules/@playwright/test/cli.js install --with-deps chromium
+
+      - name: Generate baseline and execute full responsive contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/generate-responsive-index-baseline.js
+          node scripts/test-responsive-contract.js
+          node <<'NODE'
+          const fs = require('fs');
+          const report = JSON.parse(fs.readFileSync('reports/responsive-contract-test-report.json', 'utf8'));
+          console.log('SUMMARY', JSON.stringify(report.summary));
+          if (report.summary.checks !== 893) throw new Error(`expected semantic check total 893, got ${report.summary.checks}`);
+          if (report.summary.failures !== 0) throw new Error(`residual failures: ${report.summary.failures}`);
+          if (report.summary.skips !== 276) throw new Error(`skips drift: ${report.summary.skips}`);
+          NODE
+
+      - name: Validate shared boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:shared-app-header-contract
+          npm run audit:responsive-boundaries
+          npm run audit:css-responsive-conflicts
