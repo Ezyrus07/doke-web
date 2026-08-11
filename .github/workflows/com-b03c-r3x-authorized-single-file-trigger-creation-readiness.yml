@@ -33,6 +33,8 @@ jobs:
         run: node scripts/test-com-b03c-r3x-authorized-single-file-trigger-creation-readiness.js
       - name: Trigger state validation
         shell: bash
+        env:
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           TRIGGER=config/com-b03c-r3w-single-use-staging-authorization-trigger.json
           if test -f "$TRIGGER"; then
@@ -40,8 +42,11 @@ jobs:
           const cp = require('node:child_process');
           const r3x = require('./backend/modules/communities/community-realtime-private-auth-r3x');
           const trigger = require('./config/com-b03c-r3w-single-use-staging-authorization-trigger.json');
-          const parentHead = cp.execFileSync('git', ['rev-parse', 'HEAD^'], { encoding: 'utf8' }).trim();
-          const changedFiles = cp.execFileSync('git', ['diff', '--name-only', 'HEAD^', 'HEAD'], { encoding: 'utf8' }).trim().split(/\n/).filter(Boolean);
+          const actualHead = String(process.env.PR_HEAD_SHA || '').trim();
+          if (!/^[a-f0-9]{40}$/.test(actualHead)) throw new Error('R3X_PR_HEAD_SHA_REQUIRED');
+          cp.execFileSync('git', ['cat-file', '-e', `${actualHead}^{commit}`]);
+          const parentHead = cp.execFileSync('git', ['rev-parse', `${actualHead}^`], { encoding: 'utf8' }).trim();
+          const changedFiles = cp.execFileSync('git', ['diff', '--name-only', parentHead, actualHead], { encoding: 'utf8' }).trim().split(/\n/).filter(Boolean);
           const result = r3x.validateAuthorizedTriggerCommit({
             trigger,
             parentHead,
