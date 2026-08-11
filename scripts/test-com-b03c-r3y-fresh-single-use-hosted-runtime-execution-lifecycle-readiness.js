@@ -166,6 +166,56 @@ function assertConfigAndEvidence() {
   }
 }
 
+
+function assertCertificationHistory() {
+  if (
+    evidence.status !== 'repository_fresh_single_use_hosted_runtime_execution_lifecycle_certified_authorization_absent' ||
+    evidence.initialBoundaryCommit !== 'ce354069fb3db45deaad111167d3bfd128d2ceaa'
+  ) {
+    fail('R3Y_EVIDENCE_CERTIFIED_STATUS_INVALID');
+  }
+  const initial = evidence.certificationHistory?.initialFailClosed;
+  if (
+    initial?.head !== 'ce354069fb3db45deaad111167d3bfd128d2ceaa' ||
+    initial?.r3yRun !== 31447388164 ||
+    initial?.r3yJob !== 93644421183 ||
+    initial?.failedStep !== 'Domain Completion Matrix' ||
+    initial?.lifecycleReadinessPassed !== true ||
+    initial?.executorRepositorySelfTestPassed !== true ||
+    initial?.preAuthorizationHardBlockPassed !== true ||
+    initial?.authorizeSkipped !== true ||
+    initial?.canarySkipped !== true
+  ) {
+    fail('R3Y_INITIAL_FAIL_CLOSED_EVIDENCE_INVALID');
+  }
+  const matrix = evidence.certificationHistory?.canonicalMatrixReconciliation;
+  if (
+    matrix?.writerInstallHead !== '1c11825119cd5d933ca9acaec1802e0028782405' ||
+    matrix?.writerRun !== 31447567336 ||
+    matrix?.writerJob !== 93644948351 ||
+    matrix?.writerOutputCommit !== 'd3cced113eabac724518ea31a86a24c8d162ac46' ||
+    matrix?.workflowRestoredHead !== '21ea075af90d6c2e763bfb2283173d336bf9808d' ||
+    matrix?.workflowRestoredBlob !== '299108d86dc097ba090392ebe9f218f6849e74ad' ||
+    matrix?.matrixSourceChanged !== false
+  ) {
+    fail('R3Y_MATRIX_RECONCILIATION_EVIDENCE_INVALID');
+  }
+  const normal = evidence.certificationHistory?.normalHeadCertification;
+  if (
+    normal?.head !== '21ea075af90d6c2e763bfb2283173d336bf9808d' ||
+    normal?.r3yRun !== 31447634335 ||
+    normal?.r3yJob !== 93645173765 ||
+    normal?.matrixRun !== 31447634287 ||
+    normal?.matrixJob !== 93645147086 ||
+    normal?.r3yConclusion !== 'success' ||
+    normal?.matrixConclusion !== 'success' ||
+    normal?.authorizeSkipped !== true ||
+    normal?.canarySkipped !== true
+  ) {
+    fail('R3Y_NORMAL_HEAD_CERTIFICATION_EVIDENCE_INVALID');
+  }
+}
+
 function assertReadiness() {
   const ready = r3y.evaluateRepositoryReadiness(readinessInput());
   if (
@@ -528,6 +578,7 @@ function sampleVerifiedReport() {
 
 async function main() {
   assertConfigAndEvidence();
+  assertCertificationHistory();
   assertReadiness();
   assertAuthorizationLifecycle();
   assertWorkflowAndSourceGuards();
