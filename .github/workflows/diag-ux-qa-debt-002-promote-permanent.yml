@@ -1,0 +1,82 @@
+name: Doke UX-QA-DEBT-002 Promote Permanent
+
+on:
+  push:
+    branches:
+      - diag/ux-qa-debt-002-promote-permanent
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-24.04
+    env:
+      PARENT_SHA: 12e55ca25db38971c5ab5de12845839ca1a684a7
+      TARGET_BRANCH: ux/ux-qa-debt-002-pedidos-agenda-hidden-contract
+      HEADER_SHA256: 4f38ef71bd807179828e83042210b1c2543ad3ad0c1429c09851fdc706c5ee0b
+      COMMAND_SHA256: a775b3d0b334c7e4f524be722ad2f826e5a66224e857ecd9c464501f833522af
+      TABLET_SHA256: 8527cad340f2990bd456ca11b64fbc9a99c8c828fa76576bac3aaad0a403abfb
+    steps:
+      - name: Checkout permanent target branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ux/ux-qa-debt-002-pedidos-agenda-hidden-contract
+          fetch-depth: 0
+
+      - name: Guard target remains exact certified parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${PARENT_SHA}"
+          test -z "$(git status --porcelain)"
+
+      - name: Apply exact validated transformer
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          specs = [
+              (Path('assets/css/layout/header.css'), re.compile(r'(body:is\(\.orders-page-shell, \.notifications-page-shell\)\.has-global-header\s*\n\s*\.app-header\.home-side-meta \.page-header-context__action)(\s*\{\s*box-sizing:\s*border-box;\s*display:\s*inline-flex;)', re.MULTILINE), r'\1:where(:not([hidden]))\2', 'desktop contextual action display authority'),
+              (Path('assets/css/pages/pedidos/orders-command-center.css'), re.compile(r'(body\.orders-page-shell \.app-header--orders \.orders-page-actions \.page-header-context__action)(\s*\{\s*display:\s*inline-flex;)', re.MULTILINE), r'\1:where(:not([hidden]))\2', 'Pedidos 561-1180 orders-page-actions display authority'),
+              (Path('assets/css/pages/pedidos/orders-command-center.css'), re.compile(r'(body\.orders-page-shell \.app-header--orders \.page-header-context__action)(\s*\{\s*display:\s*inline-flex;)', re.MULTILINE), r'\1:where(:not([hidden]))\2', 'Pedidos contextual action display authority'),
+              (Path('assets/css/pages/pedidos/tablet-rail-contract.css'), re.compile(r'(body\.orders-page-shell\.has-global-header \.app-header\.app-header--orders \.orders-page-actions \.page-header-context__action)(\s*\{\s*display:\s*inline-flex;)', re.MULTILINE), r'\1:where(:not([hidden]))\2', 'Pedidos portrait tablet action display authority'),
+          ]
+          cache={}
+          for path,pattern,replacement,label in specs:
+              text=cache.get(path,path.read_text())
+              updated,count=pattern.subn(replacement,text,count=1)
+              print(f'{label}: matches={count}')
+              if count != 1:
+                  raise SystemExit(f'unexpected match count for {label}: {count}')
+              cache[path]=updated
+          for path,updated in cache.items():
+              path.write_text(updated)
+          PY
+
+      - name: Guard exact candidate identity and delta
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(sha256sum assets/css/layout/header.css | awk '{print $1}')" = "${HEADER_SHA256}"
+          test "$(sha256sum assets/css/pages/pedidos/orders-command-center.css | awk '{print $1}')" = "${COMMAND_SHA256}"
+          test "$(sha256sum assets/css/pages/pedidos/tablet-rail-contract.css | awk '{print $1}')" = "${TABLET_SHA256}"
+          expected=$'assets/css/layout/header.css\nassets/css/pages/pedidos/orders-command-center.css\nassets/css/pages/pedidos/tablet-rail-contract.css'
+          test "$(git diff --name-only)" = "$expected"
+          test -z "$(git diff --name-only -- '*.html' '*.js')"
+          test "$(git diff --shortstat | sed 's/^ *//')" = "3 files changed, 4 insertions(+), 4 deletions(-)"
+          git diff --check
+
+      - name: Commit and push one product-only commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name doke
+          git config user.email bielantoniomma@gmail.com
+          git add assets/css/layout/header.css assets/css/pages/pedidos/orders-command-center.css assets/css/pages/pedidos/tablet-rail-contract.css
+          git commit -m 'UX-QA-DEBT-002: restore Pedidos agenda hidden contract'
+          test "$(git rev-parse HEAD^)" = "${PARENT_SHA}"
+          test "$(git rev-list --count "${PARENT_SHA}"..HEAD)" = "1"
+          git push origin HEAD:"${TARGET_BRANCH}"
