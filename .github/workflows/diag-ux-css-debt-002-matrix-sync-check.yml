@@ -1,0 +1,52 @@
+name: Doke UX-CSS-DEBT-002 Matrix Sync Check
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-002-high-risk-inventory-r2
+
+permissions:
+  contents: read
+
+env:
+  CERTIFIED_PARENT: 631990336cc7c2a023ec9629c611beb66aa23fba
+  TARGET_BLOB_SHA: ffc22df76e922538d47fc7a540399c2d84d93b38
+
+jobs:
+  matrix-sync-check:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+      - name: Materialize exact parent product target
+        shell: bash
+        run: |
+          set -euo pipefail
+          git show "${CERTIFIED_PARENT}:assets/css/pages/home/mobile-hero-feed.css" > assets/css/pages/home/mobile-hero-feed.css
+          test "$(git hash-object assets/css/pages/home/mobile-hero-feed.css)" = "${TARGET_BLOB_SHA}"
+      - name: Apply deterministic dead-declaration candidate
+        run: node scripts/diag-ux-css-debt-002-home-dead-declarations.js --apply
+      - name: Regenerate canonical Matrix
+        run: npm run write:domain-completion-matrix
+      - name: Prove generated delta boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          git status --short
+          allowed='^( M|M |\?\?) (assets/css/pages/home/mobile-hero-feed.css|docs/DOMAIN-COMPLETION-MATRIX.md|reports/.*)$'
+          while IFS= read -r line; do
+            [[ "${line}" =~ ${allowed} ]] || { echo "::error::Unexpected generated path: ${line}"; exit 1; }
+          done < <(git status --short)
+          test -n "$(git status --short -- assets/css/pages/home/mobile-hero-feed.css)"
+          test -n "$(git status --short -- docs/DOMAIN-COMPLETION-MATRIX.md)"
+      - name: Validate regenerated Matrix
+        run: npm run audit:domain-completion-matrix
