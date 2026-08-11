@@ -1,0 +1,185 @@
+name: Doke UX-QA-DEBT-002 PR146 Exact Certification
+
+on:
+  push:
+    branches:
+      - diag/ux-qa-debt-002-certify-pr146
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 5769b3888e612145df6a94fcc8238d5a9ca6ca7f
+      PARENT_SHA: 12e55ca25db38971c5ab5de12845839ca1a684a7
+      PR_NUMBER: 146
+      HEADER_SHA256: 4f38ef71bd807179828e83042210b1c2543ad3ad0c1429c09851fdc706c5ee0b
+      COMMAND_SHA256: a775b3d0b334c7e4f524be722ad2f826e5a66224e857ecd9c464501f833522af
+      TABLET_SHA256: 8527cad340f2990bd456ca11b64fbc9a99c8c828fa76576bac3aaad0a403abfb
+    steps:
+      - name: Checkout exact permanent SHA
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: 5769b3888e612145df6a94fcc8238d5a9ca6ca7f
+          fetch-depth: 0
+
+      - name: Guard exact permanent tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test "$(git rev-parse HEAD^)" = "${PARENT_SHA}"
+          test "$(git rev-list --count "${PARENT_SHA}"..HEAD)" = "1"
+          expected=$'assets/css/layout/header.css\nassets/css/pages/pedidos/orders-command-center.css\nassets/css/pages/pedidos/tablet-rail-contract.css'
+          test "$(git diff --name-only "${PARENT_SHA}"...HEAD)" = "$expected"
+          test "$(git diff --shortstat "${PARENT_SHA}"...HEAD | sed 's/^ *//')" = "3 files changed, 4 insertions(+), 4 deletions(-)"
+          test "$(sha256sum assets/css/layout/header.css | awk '{print $1}')" = "${HEADER_SHA256}"
+          test "$(sha256sum assets/css/pages/pedidos/orders-command-center.css | awk '{print $1}')" = "${COMMAND_SHA256}"
+          test "$(sha256sum assets/css/pages/pedidos/tablet-rail-contract.css | awk '{print $1}')" = "${TABLET_SHA256}"
+          test -z "$(git diff --name-only "${PARENT_SHA}"...HEAD -- '*.html' '*.js' 'tests/**')"
+          git diff --check "${PARENT_SHA}"...HEAD
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install locked dependencies and Chromium
+        shell: bash
+        run: |
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install --with-deps chromium
+
+      - name: Write role runtime comparator
+        shell: bash
+        run: |
+          cat > /tmp/agenda-runtime.js <<'NODE'
+          const fs=require('fs'),cp=require('child_process');
+          const {chromium}=require(process.cwd()+'/node_modules/playwright');
+          const out=process.argv[2];
+          const server=cp.spawn(process.execPath,['scripts/serve-static-site.js','--host=127.0.0.1','--port=5500'],{stdio:['ignore','pipe','pipe'],env:{...process.env,DOKE_E2E_DISABLE_REMOTE_SERVICES:'1'}});
+          const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+          const viewports=[{name:'1366x768',width:1366,height:768},{name:'1280x802',width:1280,height:802},{name:'820x1180',width:820,height:1180},{name:'608x926',width:608,height:926},{name:'390x844',width:390,height:844}];
+          async function main(){
+            await sleep(700);
+            const browser=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+            const result={};
+            for(const role of ['client','professional']){
+              result[role]={};
+              for(const vp of viewports){
+                const context=await browser.newContext({viewport:{width:vp.width,height:vp.height},reducedMotion:'reduce'});
+                const page=await context.newPage();
+                await page.addInitScript(({role})=>{
+                  const user={id:role==='client'?'client_qa2':'professional_qa2',role,name:'QA'};
+                  const orders=[{id:'order_qa2',clientId:role==='client'?user.id:'client_other',professionalId:role==='professional'?user.id:'professional_other',providerName:'Studio QA',serviceTitle:'Serviço QA',status:'pending',viewerRole:role,createdAt:'2026-06-28T10:00:00.000Z'}];
+                  localStorage.setItem('doke.auth.session.v1',JSON.stringify({user}));
+                  localStorage.setItem('doke.orders.local.v1',JSON.stringify(orders));
+                  localStorage.setItem('doke.orders',JSON.stringify(orders));
+                },{role});
+                await page.goto('http://127.0.0.1:5500/pedidos.html',{waitUntil:'domcontentloaded'});
+                await page.waitForFunction(expected=>document.body.dataset.ordersAudience===expected,role,{timeout:10000});
+                await page.waitForFunction(()=>document.querySelectorAll('[data-orders-agenda-toggle]').length===2,{timeout:10000});
+                result[role][vp.name]=await page.evaluate(()=>{
+                  const snap=selector=>[...document.querySelectorAll(selector)].map((node,index)=>{const cs=getComputedStyle(node),r=node.getBoundingClientRect();return {index,hidden:Boolean(node.hidden),ariaHidden:node.getAttribute('aria-hidden'),display:cs.display,visibility:cs.visibility,rect:{x:+r.x.toFixed(3),y:+r.y.toFixed(3),width:+r.width.toFixed(3),height:+r.height.toFixed(3)},color:cs.color,backgroundColor:cs.backgroundColor,borderTopWidth:cs.borderTopWidth,borderTopColor:cs.borderTopColor,borderRadius:cs.borderTopLeftRadius,padding:cs.padding,gap:cs.gap,flex:cs.flex,className:node.className};});
+                  return {agenda:snap('[data-orders-agenda-toggle]'),filters:snap('[data-orders-filter-toggle]'),selects:snap('[data-orders-select-toggle]')};
+                });
+                await context.close();
+              }
+            }
+            await browser.close();
+            fs.writeFileSync(out,JSON.stringify(result,null,2));
+          }
+          main().finally(()=>server.kill('SIGTERM')).catch(e=>{console.error(e);process.exit(1);});
+          NODE
+
+      - name: Capture parent evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout "${PARENT_SHA}" -- assets/css/layout/header.css assets/css/pages/pedidos/orders-command-center.css assets/css/pages/pedidos/tablet-rail-contract.css
+          node /tmp/agenda-runtime.js /tmp/parent-runtime.json
+          node scripts/generate-responsive-index-baseline.js
+          cp reports/responsive-index-baseline.json /tmp/parent-responsive.json
+          set +e
+          node node_modules/@playwright/test/cli.js test tests/e2e/pedidos-role-composition.spec.js > /tmp/parent-e2e.log 2>&1
+          code=$?
+          set -e
+          cat /tmp/parent-e2e.log
+          test "$code" = "1"
+          grep -F "node.hidden && getComputedStyle(node).display === 'none'" /tmp/parent-e2e.log
+
+      - name: Restore exact permanent candidate and prove behavior
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout "${TARGET_SHA}" -- assets/css/layout/header.css assets/css/pages/pedidos/orders-command-center.css assets/css/pages/pedidos/tablet-rail-contract.css
+          test "$(sha256sum assets/css/layout/header.css | awk '{print $1}')" = "${HEADER_SHA256}"
+          test "$(sha256sum assets/css/pages/pedidos/orders-command-center.css | awk '{print $1}')" = "${COMMAND_SHA256}"
+          test "$(sha256sum assets/css/pages/pedidos/tablet-rail-contract.css | awk '{print $1}')" = "${TABLET_SHA256}"
+          node node_modules/@playwright/test/cli.js test tests/e2e/pedidos-role-composition.spec.js
+          cp /tmp/parent-responsive.json reports/responsive-index-baseline.json
+          node scripts/test-responsive-contract.js | tee /tmp/responsive.log
+          grep -F 'Checks: 893' /tmp/responsive.log
+          grep -F 'Failures: 0' /tmp/responsive.log
+          grep -F 'Skips: 277' /tmp/responsive.log
+          node /tmp/agenda-runtime.js /tmp/candidate-runtime.json
+          node <<'NODE'
+          const fs=require('fs'),assert=require('assert');
+          const p=JSON.parse(fs.readFileSync('/tmp/parent-runtime.json','utf8'));
+          const c=JSON.parse(fs.readFileSync('/tmp/candidate-runtime.json','utf8'));
+          for(const vp of Object.keys(p.professional)) assert.deepStrictEqual(c.professional[vp],p.professional[vp],`professional drift ${vp}`);
+          for(const vp of Object.keys(p.client)){
+            assert.deepStrictEqual(c.client[vp].filters,p.client[vp].filters,`client filter drift ${vp}`);
+            assert.deepStrictEqual(c.client[vp].selects,p.client[vp].selects,`client select drift ${vp}`);
+            for(const node of c.client[vp].agenda){
+              assert.strictEqual(node.hidden,true); assert.strictEqual(node.ariaHidden,'true'); assert.strictEqual(node.display,'none'); assert.strictEqual(node.rect.width,0); assert.strictEqual(node.rect.height,0);
+            }
+          }
+          console.log('Permanent hidden-contract runtime proof: PASS');
+          NODE
+
+      - name: Run structural governance suite on exact target
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/css-conflicts.log
+          npm run audit:shared-app-header-contract
+          npm run audit:responsive-boundaries
+          npm run audit:active-legacy-structures | tee /tmp/legacy.log
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git diff --check "${PARENT_SHA}"..."${TARGET_SHA}"
+          grep -E 'CSS files scanned|Definitions|Conflicting class/property pairs' /tmp/css-conflicts.log || true
+          grep -E 'active legacy/remediation css|active legacy/remediation js|high risk active css' /tmp/legacy.log || true
+
+      - name: Restore clean exact target
+        shell: bash
+        run: |
+          git reset --hard "${TARGET_SHA}"
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test -z "$(git status --porcelain)"
+
+      - name: Require SonarQube Cloud credential
+        shell: bash
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: test -n "${SONAR_TOKEN}"
+
+      - name: Analyze PR 146 exact SHA and enforce Quality Gate
+        uses: SonarSource/sonarqube-scan-action@c7ee0f9df90b7aa20e8dcf9695dcfe2e7da5b4f2
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >-
+            -Dsonar.projectKey=Ezyrus07_doke-web
+            -Dsonar.organization=ezyrus07
+            -Dsonar.pullrequest.key=146
+            -Dsonar.pullrequest.branch=ux/ux-qa-debt-002-pedidos-agenda-hidden-contract
+            -Dsonar.pullrequest.base=ux/ux-css-debt-003-pedidos-command-center-compaction
+            -Dsonar.scm.revision=5769b3888e612145df6a94fcc8238d5a9ca6ca7f
+            -Dsonar.qualitygate.wait=true
+            -Dsonar.qualitygate.timeout=600
