@@ -1,0 +1,121 @@
+name: Doke UX-RESP-DEBT-009 Small Tablet Header Ownership
+
+on:
+  push:
+    branches:
+      - ux/ux-resp-debt-009-small-tablet-header-ownership
+  pull_request:
+    branches:
+      - ux/ux-resp-debt-007-contextual-back-contract
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: ux-resp-debt-009-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  EXPECTED_BASE: b40866e1741c4c6dd41af821dc625e4a86703c53
+
+jobs:
+  ux-resp-debt-009:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Guard certified UX-RESP-DEBT-007 parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            ACTUAL_BASE="${{ github.event.pull_request.base.sha }}"
+          else
+            git fetch origin ux/ux-resp-debt-007-contextual-back-contract --quiet
+            ACTUAL_BASE="$(git merge-base HEAD origin/ux/ux-resp-debt-007-contextual-back-contract)"
+          fi
+          test "${ACTUAL_BASE}" = "${EXPECTED_BASE}"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install repository dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts
+
+      - name: Validate permanent ownership-only delta allowlist
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r changed_path; do
+            case "${changed_path}" in
+              .github/workflows/ux-resp-debt-009-small-tablet-header-ownership.yml|docs/DOMAIN-COMPLETION-MATRIX.md|scripts/test-ux-resp-debt-009-small-tablet-header-ownership.js|assets/css/components/internal/list-page-toolbar.css|assets/css/pages/pedidos-runtime-page.css|assets/css/pages/pedidos.css|assets/css/pages/notificacoes-foundation.css|assets/css/pages/notificacoes/pedidos-notification-layout.css|assets/css/pages/carteira-runtime-page.css) ;;
+              *) echo "::error::Unexpected UX-RESP-DEBT-009 path: ${changed_path}"; exit 1 ;;
+            esac
+          done < <(git diff --name-only "${EXPECTED_BASE}"...HEAD)
+          test "$(git diff --name-only "${EXPECTED_BASE}"...HEAD | grep -Ec '\.html$' || true)" -eq 0
+          test "$(git diff --name-only "${EXPECTED_BASE}"...HEAD | grep -Ec '^assets/js/' || true)" -eq 0
+          test "$(git diff --name-only "${EXPECTED_BASE}"...HEAD | grep -Ec 'tablet-internal-rail-contract\.css$' || true)" -eq 0
+
+      - name: Validate static ownership proof
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check scripts/test-ux-resp-debt-009-small-tablet-header-ownership.js
+          node scripts/test-ux-resp-debt-009-small-tablet-header-ownership.js
+
+      - name: Validate canonical CSS import inventory
+        run: npm run audit:css-import-resolution
+
+      - name: Install Chromium from lockfile-pinned Playwright
+        run: node node_modules/@playwright/test/cli.js install --with-deps chromium
+
+      - name: Generate responsive index baseline
+        run: node scripts/generate-responsive-index-baseline.js
+
+      - name: Execute semantic responsive contract
+        run: node scripts/test-responsive-contract.js
+
+      - name: Prove exact responsive surface preservation
+        run: node scripts/test-ux-resp-debt-009-small-tablet-header-ownership.js
+
+      - name: Validate responsive and governance boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:shared-app-header-contract
+          npm run audit:responsive-boundaries
+          npm run audit:css-responsive-conflicts
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+
+      - name: Validate patch whitespace
+        run: git diff --check "${EXPECTED_BASE}"...HEAD
+
+      - name: Require SonarQube Cloud credential
+        if: github.event_name == 'push'
+        shell: bash
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: test -n "${SONAR_TOKEN}"
+
+      - name: Analyze PR and enforce SonarQube Cloud Quality Gate
+        if: github.event_name == 'push'
+        uses: SonarSource/sonarqube-scan-action@c7ee0f9df90b7aa20e8dcf9695dcfe2e7da5b4f2
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >-
+            -Dsonar.projectKey=Ezyrus07_doke-web
+            -Dsonar.organization=ezyrus07
+            -Dsonar.pullrequest.key=132
+            -Dsonar.pullrequest.branch=ux/ux-resp-debt-009-small-tablet-header-ownership
+            -Dsonar.pullrequest.base=ux/ux-resp-debt-007-contextual-back-contract
+            -Dsonar.qualitygate.wait=true
+            -Dsonar.qualitygate.timeout=600
