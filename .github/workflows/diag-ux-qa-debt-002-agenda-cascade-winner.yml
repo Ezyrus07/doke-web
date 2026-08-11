@@ -23,7 +23,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD^)" = "${PARENT_SHA}"
+          test "$(git merge-base HEAD "${PARENT_SHA}")" = "${PARENT_SHA}"
           test "$(git diff --name-only "${PARENT_SHA}"...HEAD)" = ".github/workflows/diag-ux-qa-debt-002-agenda-cascade-winner.yml"
           git diff --check "${PARENT_SHA}"...HEAD
 
@@ -39,7 +39,7 @@ jobs:
           npm ci --ignore-scripts
           node node_modules/@playwright/test/cli.js install --with-deps chromium
 
-      - name: Trace matching display declarations
+      - name: Trace matching display declarations through imports
         shell: bash
         run: |
           cat > /tmp/trace-agenda-display.js <<'NODE'
@@ -61,35 +61,47 @@ jobs:
                 localStorage.setItem('doke.orders.local.v1',JSON.stringify(orders));
                 localStorage.setItem('doke.orders',JSON.stringify(orders));
               });
-              await page.goto('http://127.0.0.1:5500/pedidos.html',{waitUntil:'domcontentloaded'});
+              await page.goto('http://127.0.0.1:5500/pedidos.html',{waitUntil:'networkidle'});
               await page.waitForFunction(()=>document.body.dataset.ordersAudience==='client',{timeout:10000});
               const trace=await page.evaluate(()=>{
                 const el=document.querySelector('.app-header--orders [data-orders-agenda-toggle]');
                 if(!el) throw new Error('header Agenda toggle not found');
                 let globalOrder=0;
                 const matches=[];
-                const walk=(rules,href,contexts=[])=>{
-                  for(const rule of [...rules]){
-                    globalOrder++;
-                    if(rule.type===CSSRule.STYLE_RULE){
-                      const display=rule.style.getPropertyValue('display');
-                      if(!display) continue;
-                      let hit=false;
-                      try{hit=el.matches(rule.selectorText);}catch(_e){}
-                      if(hit) matches.push({href,selector:rule.selectorText,display:display.trim(),priority:rule.style.getPropertyPriority('display')||'',contexts:[...contexts],order:globalOrder});
-                      continue;
+                const seenSheets=new Set();
+                const walkSheet=(sheet,contexts=[])=>{
+                  if(!sheet||seenSheets.has(sheet)) return;
+                  seenSheets.add(sheet);
+                  let rules;
+                  try{rules=sheet.cssRules;}catch(e){matches.push({href:sheet.href||'<inline>',error:String(e)});return;}
+                  const walkRules=(ruleList,href,ctx)=>{
+                    for(const rule of [...ruleList]){
+                      globalOrder++;
+                      if(rule.type===CSSRule.IMPORT_RULE){
+                        const mediaText=rule.media&&rule.media.mediaText?rule.media.mediaText:'';
+                        const active=!mediaText||matchMedia(mediaText).matches;
+                        if(active) walkSheet(rule.styleSheet,mediaText?[...ctx,`@import media ${mediaText}`]:ctx);
+                        continue;
+                      }
+                      if(rule.type===CSSRule.STYLE_RULE){
+                        const display=rule.style.getPropertyValue('display');
+                        if(!display) continue;
+                        let hit=false;
+                        try{hit=el.matches(rule.selectorText);}catch(_e){}
+                        if(hit) matches.push({href,selector:rule.selectorText,display:display.trim(),priority:rule.style.getPropertyPriority('display')||'',contexts:[...ctx],order:globalOrder});
+                        continue;
+                      }
+                      let active=true;
+                      let label='';
+                      if(rule.type===CSSRule.MEDIA_RULE){label=`@media ${rule.conditionText}`;active=matchMedia(rule.conditionText).matches;}
+                      else if(rule.type===CSSRule.SUPPORTS_RULE){label=`@supports ${rule.conditionText}`;try{active=CSS.supports(rule.conditionText);}catch(_e){active=true;}}
+                      else if(rule.cssRules){label=rule.cssText.split('{',1)[0].trim();}
+                      if(rule.cssRules&&active) walkRules(rule.cssRules,href,label?[...ctx,label]:ctx);
                     }
-                    let active=true;
-                    let label='';
-                    if(rule.type===CSSRule.MEDIA_RULE){label=`@media ${rule.conditionText}`;active=matchMedia(rule.conditionText).matches;}
-                    else if(rule.type===CSSRule.SUPPORTS_RULE){label=`@supports ${rule.conditionText}`;try{active=CSS.supports(rule.conditionText);}catch(_e){active=true;}}
-                    else if(rule.cssRules){label=rule.cssText.split('{',1)[0].trim();}
-                    if(rule.cssRules&&active) walk(rule.cssRules,href,label?[...contexts,label]:contexts);
-                  }
+                  };
+                  walkRules(rules,sheet.href||'<inline>',contexts);
                 };
-                for(const sheet of [...document.styleSheets]){
-                  try{walk(sheet.cssRules,sheet.href||'<inline>');}catch(e){matches.push({href:sheet.href||'<inline>',error:String(e)});}
-                }
+                for(const sheet of [...document.styleSheets]) walkSheet(sheet,[]);
                 const cs=getComputedStyle(el),r=el.getBoundingClientRect();
                 return {hidden:el.hidden,ariaHidden:el.getAttribute('aria-hidden'),computedDisplay:cs.display,rect:{x:+r.x.toFixed(2),y:+r.y.toFixed(2),width:+r.width.toFixed(2),height:+r.height.toFixed(2)},matches};
               });
