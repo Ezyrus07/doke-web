@@ -1,0 +1,90 @@
+name: Diagnose UX-RESP-DEBT-011 Dropdown Z-Index Authority
+
+on:
+  push:
+    branches:
+      - diag/ux-resp-debt-011-active-legacy-inventory
+
+permissions:
+  contents: read
+
+env:
+  BASE_SHA: 68f6b60d3a7a15a80d5704a0a3d521f500c4dcdb
+
+jobs:
+  zindex-authority:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Guard diagnostic branch on certified parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git merge-base HEAD "${BASE_SHA}")" = "${BASE_SHA}"
+          test -z "$(git diff --name-only "${BASE_SHA}"...HEAD | grep -Ev '^\.github/workflows/diag-ux-resp-debt-011-' || true)"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Install Chromium
+        run: node node_modules/@playwright/test/cli.js install --with-deps chromium
+
+      - name: Measure index and profile dropdown z-index
+        shell: bash
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const { chromium } = require('@playwright/test');
+          const { loadHtmlWithLocalCss } = require('./scripts/lib/responsive-html-loader');
+
+          const pages = ['index.html', 'perfil.html', 'meu-perfil.html', 'perfil-cliente.html', 'perfil-profissional.html'];
+          const viewports = [
+            { width: 1366, height: 768 },
+            { width: 820, height: 1180 },
+            { width: 608, height: 926 },
+            { width: 390, height: 844 },
+          ];
+
+          (async () => {
+            const browser = await chromium.launch({ headless: true });
+            const out = {};
+            try {
+              for (const pageName of pages) {
+                out[pageName] = {};
+                for (const viewport of viewports) {
+                  const page = await browser.newPage({ viewport });
+                  const html = loadHtmlWithLocalCss(pageName, process.cwd(), { modeLabel: 'debt011-zindex-authority' });
+                  await page.setContent(html, { waitUntil: 'domcontentloaded' });
+                  out[pageName][`${viewport.width}x${viewport.height}`] = await page.evaluate(() => {
+                    const nodes = [...document.querySelectorAll('.profile-dropdown--home')];
+                    return nodes.map((node) => ({
+                      classes: node.className,
+                      zIndex: getComputedStyle(node).zIndex,
+                      display: getComputedStyle(node).display,
+                      parentClasses: node.parentElement?.className || '',
+                    }));
+                  });
+                  await page.close();
+                }
+              }
+            } finally {
+              await browser.close();
+            }
+            console.log('UX_RESP_DEBT_011_ZINDEX_BEGIN');
+            console.log(JSON.stringify(out, null, 2));
+            console.log('UX_RESP_DEBT_011_ZINDEX_END');
+          })().catch((error) => {
+            console.error(error);
+            process.exit(1);
+          });
+          NODE
