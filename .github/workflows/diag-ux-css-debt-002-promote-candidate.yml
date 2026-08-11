@@ -1,0 +1,66 @@
+name: Doke UX-CSS-DEBT-002 Promote Candidate
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-002-high-risk-inventory-r2
+
+permissions:
+  contents: write
+
+env:
+  CERTIFIED_PARENT: 631990336cc7c2a023ec9629c611beb66aa23fba
+  TARGET_BRANCH: ux/ux-css-debt-002-home-mobile-pass-compaction
+  TARGET_BLOB_SHA: ffc22df76e922538d47fc7a540399c2d84d93b38
+
+jobs:
+  promote:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout diagnostic source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - name: Capture validated transformer
+        run: cp scripts/diag-ux-css-debt-002-home-dead-declarations.js /tmp/ux-css-debt-002-transformer.js
+      - name: Checkout exact permanent parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin "${TARGET_BRANCH}" --quiet
+          test "$(git rev-parse origin/${TARGET_BRANCH})" = "${CERTIFIED_PARENT}"
+          git checkout -B "${TARGET_BRANCH}" "origin/${TARGET_BRANCH}"
+          test "$(git hash-object assets/css/pages/home/mobile-hero-feed.css)" = "${TARGET_BLOB_SHA}"
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+      - name: Apply exact validated candidate and Matrix writer
+        run: |
+          node /tmp/ux-css-debt-002-transformer.js --apply
+          npm run write:domain-completion-matrix
+      - name: Restrict permanent delta
+        shell: bash
+        run: |
+          set -euo pipefail
+          git restore reports || true
+          git status --short
+          changed="$(git diff --name-only)"
+          test "$(printf '%s\n' "${changed}" | sed '/^$/d' | wc -l)" -eq 2
+          printf '%s\n' "${changed}" | grep -Fx 'assets/css/pages/home/mobile-hero-feed.css'
+          printf '%s\n' "${changed}" | grep -Fx 'docs/DOMAIN-COMPLETION-MATRIX.md'
+          test "$(grep -o '!important' assets/css/pages/home/mobile-hero-feed.css | wc -l)" -eq 179
+          npm run audit:domain-completion-matrix
+          git diff --check
+      - name: Commit validated product and Matrix delta
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'doke'
+          git config user.email 'bielantoniomma@gmail.com'
+          git add assets/css/pages/home/mobile-hero-feed.css docs/DOMAIN-COMPLETION-MATRIX.md
+          git commit -m 'UX-CSS-DEBT-002: compact superseded Home mobile declarations'
+          git push origin HEAD:"${TARGET_BRANCH}"
