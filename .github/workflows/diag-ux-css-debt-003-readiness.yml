@@ -1,0 +1,115 @@
+name: Doke UX-CSS-DEBT-003 Readiness
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-003-readiness
+
+permissions:
+  contents: read
+
+jobs:
+  readiness:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 06dbac77dcdd8e2896744868eb40fd7031ad95cb
+      TARGET_FILE: assets/css/pages/home/mobile-hero-feed.css
+    steps:
+      - name: Checkout exact certified parent
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 0
+
+      - name: Guard exact parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+
+      - name: Inventory current active structural debt
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/audit-active-legacy-structures.js
+          node <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          const report = JSON.parse(fs.readFileSync('reports/generated/active-legacy-structures-report.json','utf8'));
+          const root = process.cwd();
+          const importRe = /@import\s+(?:url\()?['"]?([^'"\);]+\.css(?:\?[^'"\)]*)?)['"]?\)?/gi;
+          const strip = (v) => v.replace(/\?.*$/, '').replace(/^\.\//, '');
+          const normalize = (imp, from) => {
+            const clean = strip(imp);
+            if (clean.startsWith('/')) return clean.replace(/^\/+/, '');
+            if (clean.startsWith('assets/')) return clean;
+            return path.posix.normalize(path.posix.join(path.posix.dirname(from), clean));
+          };
+          const cssRoot = path.join(root,'assets','css');
+          const files=[];
+          const walk=(dir)=>{for(const e of fs.readdirSync(dir,{withFileTypes:true})){const p=path.join(dir,e.name);if(e.isDirectory())walk(p);else if(e.name.endsWith('.css'))files.push(p);}};
+          walk(cssRoot);
+          const refs = new Map();
+          for (const full of files) {
+            const rel = path.relative(root,full).replace(/\\/g,'/');
+            const text = fs.readFileSync(full,'utf8');
+            let m; importRe.lastIndex=0;
+            while((m=importRe.exec(text))){const target=normalize(m[1],rel);if(!refs.has(target))refs.set(target,new Set());refs.get(target).add(rel);}
+          }
+          console.log('TOTALS', JSON.stringify(report.totals));
+          console.log('HIGH_RISK_RANKING');
+          for (const [i,item] of report.highestRiskActiveCss.entries()) {
+            console.log(JSON.stringify({rank:i+1,file:item.file,sizeBytes:item.sizeBytes,importantCount:item.importantCount,importCount:item.importCount,direct:item.activeDirectLink,imported:item.importedByActiveOrKnownCss,parentImporters:[...(refs.get(item.file)||[])].sort()}));
+          }
+          NODE
+
+      - name: Probe residual mathematically superseded declarations
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs');
+          const file=process.env.TARGET_FILE;
+          const text=fs.readFileSync(file,'utf8');
+          const lines=text.split(/\r?\n/);
+          let depth=0,media=null,mediaIndex=0,selectorParts=[],selector=null;
+          const declarations=[];
+          const mediaKind=(header)=>/max-width\s*:\s*390px/.test(header)?'max390':/max-width\s*:\s*560px/.test(header)?'max560':'other';
+          const declRe=/^\s*([\w-]+)\s*:\s*(.*?)\s*(!important)?\s*;\s*$/;
+          for(let i=0;i<lines.length;i++){
+            const line=lines[i],trimmed=line.trim();
+            if(depth===0&&/^@media\b/.test(trimmed)){mediaIndex++;media={index:mediaIndex,kind:mediaKind(trimmed),header:trimmed};}
+            if(media&&depth===1&&!selector){
+              if(trimmed&&!trimmed.startsWith('/*')&&!trimmed.startsWith('*')&&trimmed!=='*/'&&trimmed!=='}'){
+                selectorParts.push(trimmed.replace(/\{\s*$/,'').trim());
+                if(line.includes('{')){selector=selectorParts.join(' ').replace(/\s+/g,' ').trim();selectorParts=[];}
+              }
+            }else if(media&&depth===2&&selector){
+              const m=line.match(declRe);if(m)declarations.push({lineIndex:i,lineNo:i+1,mediaIndex:media.index,mediaKind:media.kind,mediaHeader:media.header,selector,property:m[1],value:m[2].trim(),important:Boolean(m[3])});
+            }
+            for(const ch of line){if(ch==='{')depth++;else if(ch==='}')depth--;}
+            if(selector&&depth===1)selector=null;
+            if(media&&depth===0){media=null;selectorParts=[];selector=null;}
+          }
+          const covers=(later,earlier)=>earlier.mediaKind==='max560'?later.mediaKind==='max560':earlier.mediaKind==='max390'?(later.mediaKind==='max390'||later.mediaKind==='max560'):later.mediaKind===earlier.mediaKind;
+          const canOverride=(later,earlier)=>!earlier.important||later.important;
+          const dead=[];
+          for(let i=0;i<declarations.length;i++){
+            const cur=declarations[i];
+            const later=declarations.slice(i+1).find(x=>x.selector===cur.selector&&x.property===cur.property&&covers(x,cur)&&canOverride(x,cur));
+            if(later)dead.push({...cur,laterLine:later.lineNo,laterMedia:later.mediaIndex,laterValue:later.value,laterImportant:later.important});
+          }
+          const byBlock={}; for(const d of dead){byBlock[d.mediaIndex]=(byBlock[d.mediaIndex]||0)+1;}
+          console.log('RESIDUAL_DECLARATIONS', declarations.length);
+          console.log('RESIDUAL_IMPORTANT', (text.match(/!important/g)||[]).length);
+          console.log('SUPERSEDED_TOTAL', dead.length);
+          console.log('SUPERSEDED_IMPORTANT', dead.filter(x=>x.important).length);
+          console.log('SUPERSEDED_BY_BLOCK', JSON.stringify(byBlock));
+          for(const d of dead.slice(0,120)) console.log('DEAD', JSON.stringify(d));
+          NODE
+
+      - name: Preserve workspace
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code
