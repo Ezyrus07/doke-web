@@ -1,0 +1,68 @@
+name: Doke UX-CSS-DEBT-002 High-Risk Inventory R2
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-002-high-risk-inventory-r2
+
+permissions:
+  contents: read
+
+env:
+  EXPECTED_PARENT: 631990336cc7c2a023ec9629c611beb66aa23fba
+
+jobs:
+  inventory:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Guard certified UX-QA-DEBT-001 parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = "${EXPECTED_PARENT}"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+
+      - name: Generate canonical structural inventory
+        run: node scripts/audit-active-legacy-structures.js
+
+      - name: Print complete high-risk active CSS ranking
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          const root = process.cwd();
+          const walk = (dir, pred, out=[]) => { if (!fs.existsSync(dir)) return out; for (const e of fs.readdirSync(dir,{withFileTypes:true})) { const f=path.join(dir,e.name); if(e.isDirectory()){ if(!['node_modules','.git','dist','build'].includes(e.name)) walk(f,pred,out); } else if(pred(f)) out.push(f); } return out; };
+          const rel = f => path.relative(root,f).replace(/\\/g,'/');
+          const strip = v => v.replace(/\?.*$/,'').replace(/^\.\//,'');
+          const linkRe=/<link\b[^>]*\bhref=["']([^"']+\.css(?:\?[^"']*)?)["'][^>]*>/gi;
+          const importRe=/@import\s+(?:url\()?['"]?([^'"\);]+\.css(?:\?[^'"\)]*)?)['"]?\)?/gi;
+          const all=(re,t)=>{ const o=[]; let m; re.lastIndex=0; while((m=re.exec(t))) o.push(m[1]); return o; };
+          const normalize=(imp,from)=>{ const c=strip(imp); if(c.startsWith('/')) return c.replace(/^\/+/, ''); if(c.startsWith('assets/')) return c; return path.posix.normalize(path.posix.join(path.posix.dirname(from),c)); };
+          const html=walk(root,f=>f.endsWith('.html'));
+          const css=walk(path.join(root,'assets','css'),f=>f.endsWith('.css'));
+          const direct=new Set(); const pageConsumers=new Map();
+          for(const f of html){ const page=rel(f); for(const a of all(linkRe,fs.readFileSync(f,'utf8')).map(strip)){ direct.add(a); if(!pageConsumers.has(a)) pageConsumers.set(a,[]); pageConsumers.get(a).push(page); } }
+          const inv=new Map(); const importParents=new Map();
+          for(const f of css){ const file=rel(f), text=fs.readFileSync(f,'utf8'); const imports=all(importRe,text).map(i=>normalize(i,file)); const item={file,sizeBytes:fs.statSync(f).size,importantCount:(text.match(/!important/g)||[]).length,importCount:imports.length,imports,activeDirect:direct.has(file),activeImported:false}; inv.set(file,item); for(const child of imports){ if(!importParents.has(child)) importParents.set(child,[]); importParents.get(child).push(file); } }
+          for(const item of inv.values()){ if(!item.activeDirect) continue; const stack=[...item.imports], seen=new Set(); while(stack.length){ const child=stack.pop(); if(seen.has(child)) continue; seen.add(child); const t=inv.get(child); if(!t) continue; t.activeImported=true; stack.push(...t.imports); } }
+          const high=[...inv.values()].filter(x=>(x.activeDirect||x.activeImported)&&(x.sizeBytes>=50000||x.importantCount>=100||x.importCount>=10)).sort((a,b)=>(b.importantCount-a.importantCount)||(b.sizeBytes-a.sizeBytes)||(b.importCount-a.importCount));
+          console.log(`HIGH_RISK_COUNT=${high.length}`);
+          high.forEach((x,i)=>console.log(JSON.stringify({rank:i+1,file:x.file,sizeBytes:x.sizeBytes,importantCount:x.importantCount,importCount:x.importCount,activeDirect:x.activeDirect,pageConsumers:pageConsumers.get(x.file)||[],importParents:(importParents.get(x.file)||[]).filter(p=>inv.get(p)?.activeDirect||inv.get(p)?.activeImported)})));
+          NODE
+
+      - name: Preserve certified responsive contract
+        run: |
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install --with-deps chromium
+          node scripts/generate-responsive-index-baseline.js
+          node scripts/test-responsive-contract.js
