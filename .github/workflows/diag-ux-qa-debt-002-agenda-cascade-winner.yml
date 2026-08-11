@@ -1,0 +1,104 @@
+name: Doke UX-QA-DEBT-002 Agenda Cascade Winner
+
+on:
+  push:
+    branches:
+      - diag/ux-qa-debt-002-pedidos-agenda-cascade-winner
+
+permissions:
+  contents: read
+
+jobs:
+  trace:
+    runs-on: ubuntu-24.04
+    env:
+      PARENT_SHA: 12e55ca25db38971c5ab5de12845839ca1a684a7
+    steps:
+      - name: Checkout diagnostic branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Guard diagnostic-only delta
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = "${PARENT_SHA}"
+          test "$(git diff --name-only "${PARENT_SHA}"...HEAD)" = ".github/workflows/diag-ux-qa-debt-002-agenda-cascade-winner.yml"
+          git diff --check "${PARENT_SHA}"...HEAD
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies and Chromium
+        shell: bash
+        run: |
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install --with-deps chromium
+
+      - name: Trace matching display declarations
+        shell: bash
+        run: |
+          cat > /tmp/trace-agenda-display.js <<'NODE'
+          const cp=require('child_process');
+          const {chromium}=require(process.cwd()+'/node_modules/playwright');
+          const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+          const server=cp.spawn(process.execPath,['scripts/serve-static-site.js','--host=127.0.0.1','--port=5500'],{stdio:['ignore','pipe','pipe'],env:{...process.env,DOKE_E2E_DISABLE_REMOTE_SERVICES:'1'}});
+          const viewports=[{name:'1366x768',width:1366,height:768},{name:'820x1180',width:820,height:1180},{name:'608x926',width:608,height:926},{name:'390x844',width:390,height:844}];
+          async function main(){
+            await sleep(700);
+            const browser=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+            for(const vp of viewports){
+              const context=await browser.newContext({viewport:{width:vp.width,height:vp.height},reducedMotion:'reduce'});
+              const page=await context.newPage();
+              await page.addInitScript(()=>{
+                const user={id:'client_trace',role:'client',name:'Cliente Trace'};
+                const orders=[{id:'order_trace',clientId:user.id,professionalId:'professional_trace',providerName:'Studio Trace',serviceTitle:'Serviço Trace',status:'pending',createdAt:'2026-06-28T10:00:00.000Z'}];
+                localStorage.setItem('doke.auth.session.v1',JSON.stringify({user}));
+                localStorage.setItem('doke.orders.local.v1',JSON.stringify(orders));
+                localStorage.setItem('doke.orders',JSON.stringify(orders));
+              });
+              await page.goto('http://127.0.0.1:5500/pedidos.html',{waitUntil:'domcontentloaded'});
+              await page.waitForFunction(()=>document.body.dataset.ordersAudience==='client',{timeout:10000});
+              const trace=await page.evaluate(()=>{
+                const el=document.querySelector('.app-header--orders [data-orders-agenda-toggle]');
+                if(!el) throw new Error('header Agenda toggle not found');
+                let globalOrder=0;
+                const matches=[];
+                const walk=(rules,href,contexts=[])=>{
+                  for(const rule of [...rules]){
+                    globalOrder++;
+                    if(rule.type===CSSRule.STYLE_RULE){
+                      const display=rule.style.getPropertyValue('display');
+                      if(!display) continue;
+                      let hit=false;
+                      try{hit=el.matches(rule.selectorText);}catch(_e){}
+                      if(hit) matches.push({href,selector:rule.selectorText,display:display.trim(),priority:rule.style.getPropertyPriority('display')||'',contexts:[...contexts],order:globalOrder});
+                      continue;
+                    }
+                    let active=true;
+                    let label='';
+                    if(rule.type===CSSRule.MEDIA_RULE){label=`@media ${rule.conditionText}`;active=matchMedia(rule.conditionText).matches;}
+                    else if(rule.type===CSSRule.SUPPORTS_RULE){label=`@supports ${rule.conditionText}`;try{active=CSS.supports(rule.conditionText);}catch(_e){active=true;}}
+                    else if(rule.cssRules){label=rule.cssText.split('{',1)[0].trim();}
+                    if(rule.cssRules&&active) walk(rule.cssRules,href,label?[...contexts,label]:contexts);
+                  }
+                };
+                for(const sheet of [...document.styleSheets]){
+                  try{walk(sheet.cssRules,sheet.href||'<inline>');}catch(e){matches.push({href:sheet.href||'<inline>',error:String(e)});}
+                }
+                const cs=getComputedStyle(el),r=el.getBoundingClientRect();
+                return {hidden:el.hidden,ariaHidden:el.getAttribute('aria-hidden'),computedDisplay:cs.display,rect:{x:+r.x.toFixed(2),y:+r.y.toFixed(2),width:+r.width.toFixed(2),height:+r.height.toFixed(2)},matches};
+              });
+              console.log(`=== ${vp.name} ===`);
+              console.log(JSON.stringify(trace,null,2));
+              await context.close();
+            }
+            await browser.close();
+          }
+          main().finally(()=>server.kill('SIGTERM')).catch(e=>{console.error(e);process.exit(1);});
+          NODE
+          node /tmp/trace-agenda-display.js
