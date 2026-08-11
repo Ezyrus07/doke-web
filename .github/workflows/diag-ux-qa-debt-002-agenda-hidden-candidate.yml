@@ -1,0 +1,173 @@
+name: Doke UX-QA-DEBT-002 Agenda Hidden Candidate
+
+on:
+  push:
+    branches:
+      - diag/ux-qa-debt-002-pedidos-agenda-hidden-candidate
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    env:
+      PARENT_SHA: 12e55ca25db38971c5ab5de12845839ca1a684a7
+      TARGET_FILE: assets/css/pages/pedidos/orders-command-center.css
+    steps:
+      - name: Checkout diagnostic branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Guard diagnostic-only tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = "${PARENT_SHA}"
+          test "$(git diff --name-only "${PARENT_SHA}"...HEAD)" = ".github/workflows/diag-ux-qa-debt-002-agenda-hidden-candidate.yml"
+          git diff --check "${PARENT_SHA}"...HEAD
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies and Chromium
+        shell: bash
+        run: |
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install --with-deps chromium
+
+      - name: Write Agenda runtime comparator
+        shell: bash
+        run: |
+          cat > /tmp/agenda-runtime.js <<'NODE'
+          const fs=require('fs'),cp=require('child_process');
+          const {chromium}=require(process.cwd()+'/node_modules/playwright');
+          const out=process.argv[2];
+          const server=cp.spawn(process.execPath,['scripts/serve-static-site.js','--host=127.0.0.1','--port=5500'],{stdio:['ignore','pipe','pipe'],env:{...process.env,DOKE_E2E_DISABLE_REMOTE_SERVICES:'1'}});
+          const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+          const viewports=[{name:'1366x768',width:1366,height:768},{name:'820x1180',width:820,height:1180},{name:'608x926',width:608,height:926},{name:'390x844',width:390,height:844}];
+          async function main(){
+            await sleep(700);
+            const browser=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+            const result={};
+            for(const role of ['client','professional']){
+              result[role]={};
+              for(const vp of viewports){
+                const context=await browser.newContext({viewport:{width:vp.width,height:vp.height},reducedMotion:'reduce'});
+                const page=await context.newPage();
+                await page.addInitScript(({role})=>{
+                  const user={id:role==='client'?'client_qa2':'professional_qa2',role,name:'QA'};
+                  const orders=[{id:'order_qa2',clientId:role==='client'?user.id:'client_other',professionalId:role==='professional'?user.id:'professional_other',providerName:'Studio QA',serviceTitle:'Serviço QA',status:'pending',viewerRole:role,createdAt:'2026-06-28T10:00:00.000Z'}];
+                  localStorage.setItem('doke.auth.session.v1',JSON.stringify({user}));
+                  localStorage.setItem('doke.orders.local.v1',JSON.stringify(orders));
+                  localStorage.setItem('doke.orders',JSON.stringify(orders));
+                },{role});
+                await page.goto('http://127.0.0.1:5500/pedidos.html',{waitUntil:'domcontentloaded'});
+                await page.waitForFunction(expected=>document.body.dataset.ordersAudience===expected,role,{timeout:10000});
+                await page.waitForFunction(()=>document.querySelectorAll('[data-orders-agenda-toggle]').length===2,{timeout:10000});
+                result[role][vp.name]=await page.evaluate(()=>{
+                  const snap=selector=>[...document.querySelectorAll(selector)].map((node,index)=>{const cs=getComputedStyle(node),r=node.getBoundingClientRect();return {index,hidden:Boolean(node.hidden),ariaHidden:node.getAttribute('aria-hidden'),display:cs.display,visibility:cs.visibility,rect:{x:+r.x.toFixed(2),y:+r.y.toFixed(2),width:+r.width.toFixed(2),height:+r.height.toFixed(2)},className:node.className};});
+                  return {agenda:snap('[data-orders-agenda-toggle]'),filters:snap('[data-orders-filter-toggle]'),selects:snap('[data-orders-select-toggle]')};
+                });
+                await context.close();
+              }
+            }
+            await browser.close();
+            fs.writeFileSync(out,JSON.stringify(result,null,2));
+          }
+          main().finally(()=>server.kill('SIGTERM')).catch(e=>{console.error(e);process.exit(1);});
+          NODE
+
+      - name: Capture parent runtime and responsive baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          node /tmp/agenda-runtime.js /tmp/parent-agenda.json
+          node scripts/generate-responsive-index-baseline.js
+          cp reports/responsive-index-baseline.json /tmp/parent-responsive.json
+
+      - name: Confirm parent E2E is red for exact hidden assertion
+        shell: bash
+        run: |
+          set +e
+          node node_modules/@playwright/test/cli.js test tests/e2e/pedidos-role-composition.spec.js > /tmp/parent-e2e.log 2>&1
+          code=$?
+          set -e
+          cat /tmp/parent-e2e.log
+          test "$code" = "1"
+          grep -F "node.hidden && getComputedStyle(node).display === 'none'" /tmp/parent-e2e.log
+
+      - name: Apply minimal candidate in workspace only
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('assets/css/pages/pedidos/orders-command-center.css')
+          text=p.read_text()
+          old='''  body.orders-page-shell .app-header--orders :is(\n    button[data-orders-filter-toggle],\n    button[data-orders-select-toggle],\n    button[data-orders-agenda-toggle]\n  ) {\n    display: inline-flex;\n'''
+          new='''  body.orders-page-shell .app-header--orders :is(\n    button[data-orders-filter-toggle],\n    button[data-orders-select-toggle],\n    button[data-orders-agenda-toggle]:not([hidden])\n  ) {\n    display: inline-flex;\n'''
+          if text.count(old)!=1:
+              raise SystemExit(f'exact target count={text.count(old)}')
+          p.write_text(text.replace(old,new,1))
+          PY
+          test "$(git diff --name-only)" = "${TARGET_FILE}"
+          test "$(git diff --numstat -- "${TARGET_FILE}" | awk '{print $1}')" = "1"
+          test "$(git diff --numstat -- "${TARGET_FILE}" | awk '{print $2}')" = "1"
+          git diff --check
+          git diff -- "${TARGET_FILE}"
+
+      - name: Require Pedidos role-composition E2E green
+        shell: bash
+        run: node node_modules/@playwright/test/cli.js test tests/e2e/pedidos-role-composition.spec.js
+
+      - name: Preserve responsive contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp /tmp/parent-responsive.json reports/responsive-index-baseline.json
+          node scripts/test-responsive-contract.js | tee /tmp/responsive.log
+          grep -F 'Checks: 893' /tmp/responsive.log
+          grep -F 'Failures: 0' /tmp/responsive.log
+          grep -F 'Skips: 277' /tmp/responsive.log
+
+      - name: Prove client fix and professional geometry preservation
+        shell: bash
+        run: |
+          set -euo pipefail
+          node /tmp/agenda-runtime.js /tmp/candidate-agenda.json
+          node <<'NODE'
+          const fs=require('fs'),assert=require('assert');
+          const parent=JSON.parse(fs.readFileSync('/tmp/parent-agenda.json','utf8'));
+          const cand=JSON.parse(fs.readFileSync('/tmp/candidate-agenda.json','utf8'));
+          for(const vp of Object.keys(parent.professional)) assert.deepStrictEqual(cand.professional[vp],parent.professional[vp],`professional drift ${vp}`);
+          for(const vp of Object.keys(parent.client)){
+            assert.deepStrictEqual(cand.client[vp].filters,parent.client[vp].filters,`filter drift ${vp}`);
+            assert.deepStrictEqual(cand.client[vp].selects,parent.client[vp].selects,`select drift ${vp}`);
+            assert.strictEqual(cand.client[vp].agenda.length,2);
+            for(const node of cand.client[vp].agenda){
+              assert.strictEqual(node.hidden,true,`agenda hidden ${vp} #${node.index}`);
+              assert.strictEqual(node.ariaHidden,'true',`agenda aria ${vp} #${node.index}`);
+              assert.strictEqual(node.display,'none',`agenda display ${vp} #${node.index}`);
+              assert.strictEqual(node.rect.width,0,`agenda width ${vp} #${node.index}`);
+              assert.strictEqual(node.rect.height,0,`agenda height ${vp} #${node.index}`);
+            }
+          }
+          console.log('Agenda hidden contract candidate: PASS');
+          NODE
+
+      - name: Run structural audits
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/audit-css-responsive-conflicts.js
+          npm run audit:shared-app-header-contract
+          npm run audit:responsive-boundaries
+          npm run audit:active-legacy-structures
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git diff --check
