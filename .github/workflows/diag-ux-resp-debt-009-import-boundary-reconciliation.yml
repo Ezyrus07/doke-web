@@ -29,6 +29,24 @@ jobs:
       - name: Install dependencies
         run: npm ci --ignore-scripts
 
+      - name: Install Chromium from lockfile-pinned Playwright
+        run: node node_modules/@playwright/test/cli.js install --with-deps chromium
+
+      - name: Capture certified parent responsive surface
+        shell: bash
+        run: |
+          node scripts/generate-responsive-index-baseline.js
+          node scripts/test-responsive-contract.js
+          cp reports/responsive-contract-test-report.json /tmp/ux-resp-debt-009-parent.json
+          node <<'NODE'
+          const fs=require('fs');
+          const r=JSON.parse(fs.readFileSync('/tmp/ux-resp-debt-009-parent.json','utf8'));
+          console.log('PARENT_SUMMARY',JSON.stringify(r.summary));
+          if(r.summary.checks!==893 || r.summary.failures!==0 || r.summary.skips!==277) {
+            throw new Error(`certified parent drift: ${JSON.stringify(r.summary)}`);
+          }
+          NODE
+
       - name: Apply workspace-only import boundary candidate
         shell: bash
         run: |
@@ -59,7 +77,6 @@ jobs:
             raise SystemExit(f'expected exactly one toolbar boundary target, got {count}')
           p.write_text(s.replace(old,new,1))
           PY
-          git diff -- assets/css/pages/pedidos-runtime-page.css assets/css/pages/notificacoes-foundation.css assets/css/pages/carteira-runtime-page.css assets/css/components/internal/list-page-toolbar.css
           npm run audit:css-import-resolution
 
       - name: Prove legacy contract leaves active graph for migrated consumers
@@ -76,22 +93,28 @@ jobs:
           }
           NODE
 
-      - name: Install Chromium from lockfile-pinned Playwright
-        run: node node_modules/@playwright/test/cli.js install --with-deps chromium
-
-      - name: Run full responsive contract and require exact preservation
+      - name: Capture candidate responsive surface and expose delta
         shell: bash
         run: |
           node scripts/generate-responsive-index-baseline.js
           node scripts/test-responsive-contract.js
+          cp reports/responsive-contract-test-report.json /tmp/ux-resp-debt-009-candidate.json
           node <<'NODE'
           const fs=require('fs');
-          const r=JSON.parse(fs.readFileSync('reports/responsive-contract-test-report.json','utf8'));
-          console.log('PROBE_SUMMARY',JSON.stringify(r.summary));
-          for(const f of r.failures||[]) console.log('PROBE_FAILURE',JSON.stringify({page:f.page,breakpoint:f.breakpoint,component:f.component,property:f.property,expected:f.expected,actual:f.actual,selector:f.selector}));
-          if(r.summary.checks!==893) throw new Error(`checks must remain 893, got ${r.summary.checks}`);
-          if(r.summary.failures!==0) throw new Error(`failures must remain 0, got ${r.summary.failures}`);
-          if(r.summary.skips!==277) throw new Error(`skips must remain 277, got ${r.summary.skips}`);
+          const parent=JSON.parse(fs.readFileSync('/tmp/ux-resp-debt-009-parent.json','utf8'));
+          const candidate=JSON.parse(fs.readFileSync('/tmp/ux-resp-debt-009-candidate.json','utf8'));
+          const key=(s)=>JSON.stringify([s.page||'',s.breakpoint||'',s.component||'',s.reason||'']);
+          const p=new Map((parent.skips||[]).map((s)=>[key(s),s]));
+          const c=new Map((candidate.skips||[]).map((s)=>[key(s),s]));
+          console.log('CANDIDATE_SUMMARY',JSON.stringify(candidate.summary));
+          for(const s of candidate.skips||[]) console.log('CANDIDATE_SKIP',JSON.stringify(s));
+          for(const [k,s] of c) if(!p.has(k)) console.log('NEW_SKIP',JSON.stringify(s));
+          for(const [k,s] of p) if(!c.has(k)) console.log('REMOVED_SKIP',JSON.stringify(s));
+          console.log('CHECK_DELTA',candidate.summary.checks-parent.summary.checks);
+          console.log('SKIP_DELTA',candidate.summary.skips-parent.summary.skips);
+          if(candidate.summary.checks!==893 || candidate.summary.failures!==0 || candidate.summary.skips!==277) {
+            throw new Error(`candidate does not preserve certified surface: ${JSON.stringify(candidate.summary)}`);
+          }
           NODE
 
       - name: Validate shared header and responsive boundaries
