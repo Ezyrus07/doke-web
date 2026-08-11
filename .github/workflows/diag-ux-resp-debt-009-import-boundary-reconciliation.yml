@@ -1,4 +1,4 @@
-name: Doke UX-RESP-DEBT-009 CSSOM Winner Diagnostic
+name: Doke UX-RESP-DEBT-009 Active Header Suppressor Diagnostic
 
 on:
   push:
@@ -29,48 +29,35 @@ jobs:
       - name: Install dependencies
         run: npm ci --ignore-scripts
 
-      - name: Install Chromium
-        run: node node_modules/@playwright/test/cli.js install --with-deps chromium
-
-      - name: Apply rejected workspace candidate for CSSOM tracing
-        shell: bash
+      - name: Print active CSS files containing whole-header suppressors
         run: |
-          python3 - <<'PY'
-          from pathlib import Path
-
-          legacy_import='@import url("../components/shell/tablet-internal-rail-contract.css?v=20260710-tablet-rail-authority-v1") screen and (max-width: 760px);\n'
-          for name in [
-            'assets/css/pages/pedidos-runtime-page.css',
-            'assets/css/pages/notificacoes-foundation.css',
-            'assets/css/pages/carteira-runtime-page.css',
-          ]:
-            p=Path(name)
-            s=p.read_text()
-            if s.count(legacy_import) != 1:
-              raise SystemExit(f'unexpected legacy import count in {name}')
-            p.write_text(s.replace(legacy_import,'',1))
-
-          p=Path('assets/css/components/internal/list-page-toolbar.css')
-          s=p.read_text()
-          old='''@media (max-width: 760px) {\n  body.orders-page-shell .home-side-meta,\n  body.notifications-page-shell .home-side-meta,\n  body.wallet-page-shell .home-side-meta {\n    display: none;\n  }\n\n  .home-side-meta__search-form {'''
-          new='''@media (max-width: 560px) {\n  body.orders-page-shell .home-side-meta,\n  body.notifications-page-shell .home-side-meta,\n  body.wallet-page-shell .home-side-meta {\n    display: none;\n  }\n}\n\n@media (max-width: 760px) {\n  .home-side-meta__search-form {'''
-          if s.count(old) != 1:
-            raise SystemExit('unexpected list-page-toolbar boundary block')
-          p.write_text(s.replace(old,new,1))
-
-          p=Path('assets/css/components/shell/mobile-app-shell.css')
-          s=p.read_text()
-          old_item='''      .home-search-hero,\n      .home-side-meta,\n      .desktop-only,'''
-          new_item='''      .home-search-hero,\n      .desktop-only,'''
-          if s.count(old_item) != 1:
-            raise SystemExit('unexpected pending home-side-meta list item')
-          s=s.replace(old_item,new_item,1)
-          anchor='''.doke-mobile-shell,\n.doke-mobile-bottom-nav {\n  display: none;\n}\n\n'''
-          guard='''@media (max-width: 560px),\n  (hover: none) and (pointer: coarse) and (max-device-width: 560px) {\n  html.doke-mobile-shell-pending body .home-side-meta {\n    display: none;\n    visibility: hidden;\n    pointer-events: none;\n  }\n}\n\n'''
-          if s.count(anchor) != 1:
-            raise SystemExit('unexpected mobile shell guard anchor')
-          p.write_text(s.replace(anchor,guard+anchor,1))
-          PY
-
-      - name: Trace computed and matched CSSOM at 608px
-        run: node scripts/diag-ux-resp-debt-009-cssom.js
+          node <<'NODE'
+          const fs=require('fs');
+          const {getLoadedCssAssets}=require('./scripts/lib/css-assets');
+          const selectors={
+            'pedidos.html':'body.orders-page-shell .home-side-meta',
+            'notificacoes.html':'body.notifications-page-shell .home-side-meta',
+            'carteira.html':'body.wallet-page-shell .home-side-meta',
+          };
+          for (const [page,selector] of Object.entries(selectors)) {
+            const html=fs.readFileSync(page,'utf8');
+            const assets=[...new Set(getLoadedCssAssets(html,process.cwd()))];
+            console.log('PAGE_GRAPH',page,'COUNT',assets.length);
+            for (const asset of assets) {
+              if (!fs.existsSync(asset)) continue;
+              const css=fs.readFileSync(asset,'utf8');
+              if (!css.includes(selector)) continue;
+              console.log('ACTIVE_SUPPRESSOR_FILE',page,asset);
+              const lines=css.split(/\r?\n/);
+              lines.forEach((line,index)=>{
+                if (line.includes(selector)) {
+                  const start=Math.max(0,index-5);
+                  const end=Math.min(lines.length,index+10);
+                  console.log(`SNIPPET_START ${asset}:${index+1}`);
+                  console.log(lines.slice(start,end).map((v,i)=>`${start+i+1}: ${v}`).join('\n'));
+                  console.log(`SNIPPET_END ${asset}:${index+1}`);
+                }
+              });
+            }
+          }
+          NODE
