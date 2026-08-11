@@ -1,0 +1,166 @@
+name: Diagnose UX-RESP-DEBT-011 Open Dropdown Stacking
+
+on:
+  push:
+    branches:
+      - diag/ux-resp-debt-011-active-legacy-inventory
+
+permissions:
+  contents: read
+
+env:
+  BASE_SHA: 68f6b60d3a7a15a80d5704a0a3d521f500c4dcdb
+  TARGET_CSS: assets/css/components/navigation/profile-header-index-parity.css
+  PROFILE_MANIFEST: assets/css/pages/profile-foundation.css
+
+jobs:
+  open-dropdown-stacking:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Guard diagnostic-only branch on certified parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git merge-base HEAD "${BASE_SHA}")" = "${BASE_SHA}"
+          test -z "$(git diff --name-only "${BASE_SHA}"...HEAD | grep -Ev '^\.github/workflows/diag-ux-resp-debt-011-' || true)"
+          test -f "${TARGET_CSS}"
+          test -f "${PROFILE_MANIFEST}"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Install Chromium
+        run: node node_modules/@playwright/test/cli.js install --with-deps chromium
+
+      - name: Prove index authority and candidate open-dropdown stacking
+        shell: bash
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const fs = require('fs');
+          const assert = require('assert');
+          const { chromium } = require('@playwright/test');
+          const { loadHtmlWithLocalCss } = require('./scripts/lib/responsive-html-loader');
+
+          const pages = ['perfil.html', 'meu-perfil.html', 'perfil-cliente.html', 'perfil-profissional.html'];
+          const viewports = [
+            { width: 1366, height: 768 },
+            { width: 820, height: 1180 },
+            { width: 608, height: 926 },
+            { width: 390, height: 844 },
+          ];
+          const manifest = process.env.PROFILE_MANIFEST;
+          const target = process.env.TARGET_CSS;
+          const targetLine = '@import url("../components/navigation/profile-header-index-parity.css?v=20260719-profile-family-v1");\n';
+
+          async function inspect(pageName, viewport, mode) {
+            const browser = await chromium.launch({ headless: true });
+            const page = await browser.newPage({ viewport });
+            try {
+              const html = loadHtmlWithLocalCss(pageName, process.cwd(), { modeLabel: mode });
+              await page.setContent(html, { waitUntil: 'domcontentloaded' });
+              return await page.evaluate(() => {
+                const dropdown = document.querySelector('.profile-dropdown--home-main');
+                if (!dropdown) return { missing: true };
+                dropdown.hidden = false;
+                dropdown.style.display = 'block';
+                const style = getComputedStyle(dropdown);
+                const rect = dropdown.getBoundingClientRect();
+                const samplePoints = [
+                  [rect.left + Math.min(12, Math.max(1, rect.width / 4)), rect.top + Math.min(12, Math.max(1, rect.height / 4))],
+                  [rect.left + rect.width / 2, rect.top + Math.min(rect.height / 2, 40)],
+                  [rect.right - Math.min(12, Math.max(1, rect.width / 4)), rect.top + Math.min(12, Math.max(1, rect.height / 4))],
+                ].filter(([x, y]) => x >= 0 && x < innerWidth && y >= 0 && y < innerHeight);
+                const hits = samplePoints.map(([x, y]) => {
+                  const top = document.elementFromPoint(x, y);
+                  return {
+                    x,
+                    y,
+                    topTag: top?.tagName || null,
+                    topClass: top?.className || '',
+                    withinDropdown: !!top && (top === dropdown || dropdown.contains(top)),
+                  };
+                });
+                return {
+                  zIndex: style.zIndex,
+                  display: style.display,
+                  visibility: style.visibility,
+                  rect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height, right: rect.right, bottom: rect.bottom },
+                  viewport: { width: innerWidth, height: innerHeight },
+                  sampleCount: hits.length,
+                  hits,
+                };
+              });
+            } finally {
+              await page.close();
+              await browser.close();
+            }
+          }
+
+          (async () => {
+            const index = {};
+            for (const viewport of viewports) {
+              const result = await inspect('index.html', viewport, 'debt011-index-authority-open');
+              index[`${viewport.width}x${viewport.height}`] = result;
+              assert.strictEqual(result.missing, undefined, 'index dropdown must exist');
+              assert.strictEqual(result.zIndex, '80', `index dropdown authority must be 80 at ${viewport.width}`);
+              assert.ok(result.sampleCount > 0, `index dropdown must expose at least one visible sample point at ${viewport.width}`);
+              assert.ok(result.hits.every((hit) => hit.withinDropdown), `index dropdown must be topmost at sampled points at ${viewport.width}`);
+            }
+
+            const beforeManifest = fs.readFileSync(manifest, 'utf8');
+            assert.strictEqual(beforeManifest.split(targetLine).length - 1, 1, 'profile manifest must contain exactly one parity import');
+            fs.writeFileSync(manifest, beforeManifest.replace(targetLine, ''));
+            fs.unlinkSync(target);
+
+            const candidate = {};
+            for (const pageName of pages) {
+              candidate[pageName] = {};
+              for (const viewport of viewports) {
+                const result = await inspect(pageName, viewport, 'debt011-profile-candidate-open');
+                candidate[pageName][`${viewport.width}x${viewport.height}`] = result;
+                assert.strictEqual(result.missing, undefined, `${pageName}: dropdown must exist`);
+                assert.strictEqual(result.zIndex, '80', `${pageName}: candidate must inherit canonical z-index 80 at ${viewport.width}`);
+                assert.ok(result.sampleCount > 0, `${pageName}: dropdown must expose at least one visible sample point at ${viewport.width}`);
+                assert.ok(result.hits.every((hit) => hit.withinDropdown), `${pageName}: dropdown must remain topmost at sampled points at ${viewport.width}`);
+              }
+            }
+
+            console.log('UX_RESP_DEBT_011_OPEN_STACK_BEGIN');
+            console.log(JSON.stringify({ index, candidate }, null, 2));
+            console.log('UX_RESP_DEBT_011_OPEN_STACK_END');
+            console.log('[ux-resp-debt-011] canonical z-index 80 remains interactively topmost after shim removal across 4 profile pages x 4 viewports');
+          })().catch((error) => {
+            console.error(error);
+            process.exit(1);
+          });
+          NODE
+
+      - name: Reproduce responsive contract after candidate removal
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/generate-responsive-index-baseline.js
+          node scripts/test-responsive-contract.js | tee /tmp/debt011-open-stack-responsive.txt
+          grep -Fx 'Responsive contract test: PASS' /tmp/debt011-open-stack-responsive.txt
+          grep -Fx 'Checks: 893' /tmp/debt011-open-stack-responsive.txt
+          grep -Fx 'Failures: 0' /tmp/debt011-open-stack-responsive.txt
+          grep -Fx 'Skips: 277' /tmp/debt011-open-stack-responsive.txt
+
+      - name: Validate shared header and responsive boundaries after candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:shared-app-header-contract
+          npm run audit:responsive-boundaries
