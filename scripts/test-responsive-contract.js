@@ -62,12 +62,20 @@ const contracts = [
     requirement: 'rail interno do header deve seguir o index',
   },
   {
-    key: 'search/back equivalent button',
+    key: 'search equivalent button',
     baselineSelector: '.home-side-meta__search',
-    pageSelector: '.home-side-meta__search, .app-header__back, .header-back, .back-button, [aria-label*="Voltar"], [aria-label*="voltar"]',
+    pageSelector: '.home-side-meta__search',
     pages: targetPages,
     metrics: ['box.x', 'box.y', 'box.width', 'box.height', 'visual.borderRadius', 'spacing.padding.left', 'spacing.padding.right'],
-    requirement: 'botão de busca/voltar equivalente deve manter tamanho, posição e forma',
+    requirement: 'botão de busca equivalente deve manter tamanho, posição e forma',
+  },
+  {
+    key: 'contextual back control',
+    baselineSelector: '.home-side-meta__search',
+    pageSelector: '.detail-standard-topbar__back[data-header-context]',
+    pages: ['detalhe-anuncio.html'],
+    metrics: ['box.y', 'box.width', 'box.height', 'visual.borderRadius', 'spacing.padding.left', 'spacing.padding.right'],
+    requirement: 'controle contextual de voltar deve manter tamanho, alinhamento vertical e forma do controle canônico sem assumir o mesmo slot horizontal da busca',
   },
   {
     key: 'home-side-meta__location',
