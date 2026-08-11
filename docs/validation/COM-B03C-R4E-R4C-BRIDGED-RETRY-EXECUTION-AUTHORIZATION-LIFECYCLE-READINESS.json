@@ -1,7 +1,7 @@
 {
   "validationId": "COM-B03C-R4E-R4C-BRIDGED-RETRY-EXECUTION-AUTHORIZATION-LIFECYCLE-READINESS",
   "contractId": "com-b03c-r4e-r4c-bridged-retry-execution-authorization-lifecycle-readiness-v1",
-  "status": "repository_r4c_bridged_retry_execution_authorization_lifecycle_certified_authorization_absent",
+  "status": "hosted_r4c_bridged_retry_observed_single_use_authorization_terminal_cleanup_verified",
   "matrixVersion": "1.3.113",
   "maturity": 3,
   "productionGate": "blocked",
@@ -27,11 +27,14 @@
     "historicalR3sModified": false
   },
   "executionAuthorizationLifecycle": {
-    "freshExecutionAuthorizationReceived": false,
-    "freshExecutionAuthorizationConsumed": false,
+    "freshExecutionAuthorizationReceived": true,
+    "freshExecutionAuthorizationConsumed": true,
     "executionTriggerCreated": false,
+    "executionAttempted": true,
+    "cleanupVerified": true,
     "singleUse": true,
     "reusableAfterFailure": false,
+    "authorizationReusable": false,
     "previousR4bAuthorizationReusable": false,
     "r4dAuthorizationReusable": false,
     "concreteAuthorizationPhrasePersisted": false,
@@ -40,7 +43,7 @@
   "authority": {
     "repositoryExecutionAuthorizationLifecycle": true,
     "freshExecutionAuthorizationReceived": false,
-    "freshExecutionAuthorizationConsumed": false,
+    "freshExecutionAuthorizationConsumed": true,
     "triggerCreation": false,
     "remoteExecution": false,
     "remoteAdapterActivation": false,
@@ -56,18 +59,63 @@
     "merge": false
   },
   "effects": {
-    "stagingAccessExecuted": false,
-    "remoteCredentialReadExecuted": false,
-    "remoteDependencyLoadExecuted": false,
-    "networkAccessExecuted": false,
-    "databaseConnectionExecuted": false,
-    "databaseQueryAgainstRemoteExecuted": false,
-    "realtimeSubscriptionExecuted": false,
-    "authIdentityMutationExecuted": false,
+    "stagingAccessExecuted": true,
+    "remoteCredentialReadExecuted": true,
+    "remoteDependencyLoadExecuted": true,
+    "networkAccessExecuted": true,
+    "databaseConnectionExecuted": true,
+    "databaseQueryAgainstRemoteExecuted": true,
+    "realtimeSubscriptionExecuted": true,
+    "authIdentityMutationExecuted": true,
     "runtimePolicyChangeExecuted": false,
     "executionTriggerCreated": false,
     "productionExecuted": false,
     "mergeExecuted": false
+  },
+  "hostedObservation": {
+    "classification": "hosted_presence_only_or_join_diverged",
+    "codecBridgeApplied": true,
+    "codecBridgeScope": "exact_r3u_counter_read_result_only",
+    "executionFailure": null,
+    "failurePhase": null,
+    "phaseAttributionValid": true,
+    "historicalR4bFailurePhase": "baseline_counter_read",
+    "historicalR4bFailureReclassified": false,
+    "instrumentationInstalled": true,
+    "baselinePolicySnapshotComplete": true,
+    "baselineRestored": true,
+    "identityCreated": true,
+    "identityCleanupSucceeded": true,
+    "zeroResidueProven": true,
+    "residueCounts": {
+      "policyCount": 0,
+      "functionCount": 0,
+      "sequenceCount": 0
+    },
+    "observation": {
+      "anchorJoinSubscribed": true,
+      "anchorBroadcastEvaluationObserved": true,
+      "anchorPresenceEvaluationObserved": true,
+      "anchorPresenceStateObserved": true,
+      "presenceOnlyBroadcastEvaluationObserved": true,
+      "presenceOnlyPresenceEvaluationObserved": true,
+      "presenceOnlyJoinSubscribed": false
+    },
+    "deltas": {
+      "presence_read_effective_gate": {
+        "broadcast_rls_evaluations": 1,
+        "presence_rls_evaluations": 1
+      },
+      "presence_only_join": {
+        "broadcast_rls_evaluations": 1,
+        "presence_rls_evaluations": 1
+      }
+    },
+    "rawRemoteErrorExposed": false,
+    "rawOwnershipTokenPersisted": false,
+    "authorizationPlaintextPersisted": false,
+    "credentialValuesPersisted": false,
+    "rawAccessTokenPersisted": false
   },
   "exactRootCauseProven": false,
   "causalPromotionAllowed": false,
@@ -107,7 +155,59 @@
       "matrixRun": 31498510214,
       "matrixJob": 93802172957,
       "matrixConclusion": "success"
+    },
+    "preAuthorizationEvidenceHeadCertification": {
+      "head": "4bd1c383f1758c2ddda41849024b04981b68a691",
+      "r4eRun": 31499311609,
+      "r4eJob": 93805605889,
+      "r4eConclusion": "success",
+      "matrixRun": 31499311882,
+      "matrixJob": 93804858215,
+      "matrixConclusion": "success",
+      "authorizeJobSkipped": true,
+      "canaryJobSkipped": true,
+      "stagingExecuted": false
+    },
+    "authorizedHostedStagingExecution": {
+      "authorizationEvidenceHead": "4bd1c383f1758c2ddda41849024b04981b68a691",
+      "authorizationReceiptId": "e22cf1cfa77c76a03d7a9e5e1b87a86868c43f9e50d1d29c7677d41b50914e72",
+      "triggerCommit": "4433076683679666bd551776351ac5003b106cde",
+      "triggerParent": "4bd1c383f1758c2ddda41849024b04981b68a691",
+      "triggerChangedFiles": [
+        "config/com-b03c-r4e-single-use-r4c-bridged-retry-execution-trigger.json"
+      ],
+      "runAttempt": 1,
+      "pushRun": 31501456238,
+      "certifyJob": 93812219162,
+      "certifyConclusion": "success",
+      "authorizeJob": 93812341467,
+      "authorizeConclusion": "success",
+      "canaryJob": 93812463529,
+      "canaryConclusion": "success",
+      "artifactId": 9105302942,
+      "artifactName": "com-b03c-r4e-r4c-bridged-retry-31501456238",
+      "artifactDigest": "sha256:d82f12f68257aabe26d35a081228ce79cb93bfa8fa0421327cab933e26c7be29",
+      "classification": "hosted_presence_only_or_join_diverged",
+      "executionFailure": null,
+      "failurePhase": null,
+      "zeroResidueProven": true,
+      "baselineRestored": true,
+      "identityCleanupSucceeded": true,
+      "rawRemoteErrorExposed": false
+    },
+    "singleUseCleanup": {
+      "cleanupHead": "739eb86b44bf4f15e66f286b5edd83b0aa152cf0",
+      "cleanupRun": 31502115624,
+      "cleanupCertifyJob": 93814506572,
+      "cleanupConclusion": "failure",
+      "expectedFailedStep": "Execution trigger commit continuity",
+      "cleanupAuthorizeJob": 93814638375,
+      "cleanupAuthorizeSkipped": true,
+      "cleanupCanaryJob": 93814638929,
+      "cleanupCanarySkipped": true,
+      "secondStagingExecutionOccurred": false,
+      "authorizationReusable": false
     }
   },
-  "nextBoundary": "After R4E evidence-head certification, request the exact head-bound R4E execution authorization phrase. It may authorize one single-file R4E execution trigger and one R4C-bridged hosted staging retry only; runtime policy change, production, and merge remain blocked."
+  "nextBoundary": "Repository-only differential narrowing of hosted Presence-only join semantics is required. The R4C codec bridge removed the prior baseline_counter_read failure mode, but the hosted observation showed both Presence-only instrumentation counters advancing while the Presence-only join did not subscribe. Do not repeat staging by reuse or repetition; certify a new precise repository-only boundary before any fresh remote authorization."
 }
