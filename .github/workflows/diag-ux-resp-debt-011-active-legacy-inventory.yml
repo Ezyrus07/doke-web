@@ -1,4 +1,4 @@
-name: Diagnose UX-RESP-DEBT-011 Active Legacy Inventory
+name: Diagnose UX-RESP-DEBT-011 Profile Header Parity Retirement
 
 on:
   push:
@@ -8,8 +8,13 @@ on:
 permissions:
   contents: read
 
+env:
+  BASE_SHA: 68f6b60d3a7a15a80d5704a0a3d521f500c4dcdb
+  TARGET_CSS: assets/css/components/navigation/profile-header-index-parity.css
+  PROFILE_MANIFEST: assets/css/pages/profile-foundation.css
+
 jobs:
-  inventory:
+  redundancy-probe:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout repository
@@ -17,12 +22,14 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Guard exact UX-RESP-DEBT-010 parent
+      - name: Guard exact UX-RESP-DEBT-010 parent and diagnostic-only tree
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD^)" = "68f6b60d3a7a15a80d5704a0a3d521f500c4dcdb"
-          test "$(git diff --name-only HEAD^...HEAD)" = ".github/workflows/diag-ux-resp-debt-011-active-legacy-inventory.yml"
+          test "$(git merge-base HEAD "${BASE_SHA}")" = "${BASE_SHA}"
+          test "$(git diff --name-only "${BASE_SHA}"...HEAD)" = ".github/workflows/diag-ux-resp-debt-011-active-legacy-inventory.yml"
+          test -f "${TARGET_CSS}"
+          test -f "${PROFILE_MANIFEST}"
 
       - name: Setup Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
@@ -33,29 +40,207 @@ jobs:
       - name: Install dependencies
         run: npm ci --ignore-scripts
 
-      - name: Generate current structural inventory
-        run: npm run audit:active-legacy-structures
+      - name: Generate and validate parent structural inventory
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:active-legacy-structures
+          node - <<'NODE'
+          const fs = require('fs');
+          const assert = require('assert');
+          const report = JSON.parse(fs.readFileSync('reports/generated/active-legacy-structures-report.json', 'utf8'));
+          assert.strictEqual(report.totals.activeLegacyCss, 1, 'parent must expose exactly one active legacy CSS');
+          assert.strictEqual(report.totals.activeLegacyJs, 1, 'parent must preserve exactly one active legacy JS');
+          assert.strictEqual(report.activeLegacyCss[0]?.file, process.env.TARGET_CSS, 'unexpected active legacy CSS target');
+          console.log(JSON.stringify({ totals: report.totals, activeLegacyCss: report.activeLegacyCss, activeLegacyJs: report.activeLegacyJs }, null, 2));
+          NODE
 
-      - name: Print actionable inventory
+      - name: Validate parent import graph
+        run: npm run audit:css-import-resolution
+
+      - name: Install Chromium from lockfile-pinned Playwright
+        run: node node_modules/@playwright/test/cli.js install --with-deps chromium
+
+      - name: Reproduce certified parent responsive contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/generate-responsive-index-baseline.js
+          node scripts/test-responsive-contract.js | tee /tmp/debt011-parent-responsive.txt
+          grep -Fx 'Responsive contract test: PASS' /tmp/debt011-parent-responsive.txt
+          grep -Fx 'Checks: 893' /tmp/debt011-parent-responsive.txt
+          grep -Fx 'Failures: 0' /tmp/debt011-parent-responsive.txt
+          grep -Fx 'Skips: 277' /tmp/debt011-parent-responsive.txt
+
+      - name: Capture profile-family computed styles before candidate
         shell: bash
         run: |
           set -euo pipefail
           node - <<'NODE'
           const fs = require('fs');
-          const report = JSON.parse(fs.readFileSync('reports/generated/active-legacy-structures-report.json', 'utf8'));
-          const out = {
-            totals: report.totals,
-            activeLegacyCss: report.activeLegacyCss,
-            activeLegacyJs: report.activeLegacyJs,
-            highestRiskActiveCss: report.highestRiskActiveCss,
-            legacyConsumers: report.highestRiskPages
-              .filter((page) => page.activeLegacyCssLinks.length || page.activeLegacyJsLinks.length),
-            authorityCollisions: report.authorityCollisions
-          };
-          console.log('UX_RESP_DEBT_011_INVENTORY_BEGIN');
-          console.log(JSON.stringify(out, null, 2));
-          console.log('UX_RESP_DEBT_011_INVENTORY_END');
+          const { chromium } = require('@playwright/test');
+          const { loadHtmlWithLocalCss } = require('./scripts/lib/responsive-html-loader');
+
+          const pages = ['perfil.html', 'meu-perfil.html', 'perfil-cliente.html', 'perfil-profissional.html'];
+          const viewports = [
+            { width: 1366, height: 768 },
+            { width: 820, height: 1180 },
+            { width: 608, height: 926 },
+            { width: 390, height: 844 },
+          ];
+
+          (async () => {
+            const browser = await chromium.launch({ headless: true });
+            const results = {};
+            try {
+              for (const pageName of pages) {
+                results[pageName] = {};
+                for (const viewport of viewports) {
+                  const page = await browser.newPage({ viewport });
+                  const html = loadHtmlWithLocalCss(pageName, process.cwd(), { modeLabel: 'debt011-profile-before' });
+                  await page.setContent(html, { waitUntil: 'domcontentloaded' });
+                  results[pageName][`${viewport.width}x${viewport.height}`] = await page.evaluate(() => {
+                    const pick = (selector, props) => {
+                      const node = document.querySelector(selector);
+                      if (!node) return null;
+                      const style = getComputedStyle(node);
+                      const rect = node.getBoundingClientRect();
+                      return {
+                        rect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
+                        ...Object.fromEntries(props.map((prop) => [prop, style[prop]])),
+                      };
+                    };
+                    return {
+                      header: pick('.app-header.app-header--home.home-side-meta', ['display', 'width', 'minWidth', 'position']),
+                      profile: pick('.home-side-meta__profile', ['display', 'width', 'minWidth', 'cursor', 'visibility']),
+                      dropdown: pick('.profile-dropdown--home', ['display', 'position', 'zIndex', 'visibility']),
+                    };
+                  });
+                  await page.close();
+                }
+              }
+            } finally {
+              await browser.close();
+            }
+            fs.writeFileSync('/tmp/debt011-profile-before.json', JSON.stringify(results, null, 2));
+            console.log(JSON.stringify(results, null, 2));
+          })().catch((error) => {
+            console.error(error);
+            process.exit(1);
+          });
           NODE
 
-      - name: Validate import graph
-        run: npm run audit:css-import-resolution
+      - name: Apply removal-only candidate in workspace
+        shell: bash
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const fs = require('fs');
+          const assert = require('assert');
+          const file = process.env.PROFILE_MANIFEST;
+          const targetLine = '@import url("../components/navigation/profile-header-index-parity.css?v=20260719-profile-family-v1");\n';
+          const before = fs.readFileSync(file, 'utf8');
+          assert.strictEqual(before.split(targetLine).length - 1, 1, 'profile manifest must contain exactly one parity import');
+          fs.writeFileSync(file, before.replace(targetLine, ''));
+          NODE
+          rm "${TARGET_CSS}"
+          test ! -e "${TARGET_CSS}"
+          printf '%s\n' "${PROFILE_MANIFEST}" "${TARGET_CSS}" | sort > /tmp/debt011-expected-worktree.txt
+          git diff --name-only | sort > /tmp/debt011-actual-worktree.txt
+          diff -u /tmp/debt011-expected-worktree.txt /tmp/debt011-actual-worktree.txt
+          git diff --check
+
+      - name: Prove candidate removes only active legacy CSS classification
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:css-import-resolution
+          npm run audit:active-legacy-structures
+          node - <<'NODE'
+          const fs = require('fs');
+          const assert = require('assert');
+          const report = JSON.parse(fs.readFileSync('reports/generated/active-legacy-structures-report.json', 'utf8'));
+          assert.strictEqual(report.totals.activeLegacyCss, 0, 'candidate must reduce active legacy CSS to zero');
+          assert.strictEqual(report.totals.activeLegacyJs, 1, 'candidate must not touch the independent community legacy JS debt');
+          assert.strictEqual(report.totals.cssFiles, 533, 'candidate should remove exactly one physical CSS file');
+          assert.strictEqual(report.totals.activeOrImportedCss, 401, 'candidate should remove exactly one active/imported CSS file');
+          console.log(JSON.stringify({ totals: report.totals, activeLegacyCss: report.activeLegacyCss, activeLegacyJs: report.activeLegacyJs }, null, 2));
+          NODE
+
+      - name: Execute removal-only candidate responsive contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/generate-responsive-index-baseline.js
+          node scripts/test-responsive-contract.js | tee /tmp/debt011-candidate-responsive.txt
+          grep -Fx 'Responsive contract test: PASS' /tmp/debt011-candidate-responsive.txt
+          grep -Fx 'Checks: 893' /tmp/debt011-candidate-responsive.txt
+          grep -Fx 'Failures: 0' /tmp/debt011-candidate-responsive.txt
+          grep -Fx 'Skips: 277' /tmp/debt011-candidate-responsive.txt
+
+      - name: Compare profile-family computed styles after candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const fs = require('fs');
+          const assert = require('assert');
+          const { chromium } = require('@playwright/test');
+          const { loadHtmlWithLocalCss } = require('./scripts/lib/responsive-html-loader');
+
+          const pages = ['perfil.html', 'meu-perfil.html', 'perfil-cliente.html', 'perfil-profissional.html'];
+          const viewports = [
+            { width: 1366, height: 768 },
+            { width: 820, height: 1180 },
+            { width: 608, height: 926 },
+            { width: 390, height: 844 },
+          ];
+
+          (async () => {
+            const browser = await chromium.launch({ headless: true });
+            const after = {};
+            try {
+              for (const pageName of pages) {
+                after[pageName] = {};
+                for (const viewport of viewports) {
+                  const page = await browser.newPage({ viewport });
+                  const html = loadHtmlWithLocalCss(pageName, process.cwd(), { modeLabel: 'debt011-profile-after' });
+                  await page.setContent(html, { waitUntil: 'domcontentloaded' });
+                  after[pageName][`${viewport.width}x${viewport.height}`] = await page.evaluate(() => {
+                    const pick = (selector, props) => {
+                      const node = document.querySelector(selector);
+                      if (!node) return null;
+                      const style = getComputedStyle(node);
+                      const rect = node.getBoundingClientRect();
+                      return {
+                        rect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
+                        ...Object.fromEntries(props.map((prop) => [prop, style[prop]])),
+                      };
+                    };
+                    return {
+                      header: pick('.app-header.app-header--home.home-side-meta', ['display', 'width', 'minWidth', 'position']),
+                      profile: pick('.home-side-meta__profile', ['display', 'width', 'minWidth', 'cursor', 'visibility']),
+                      dropdown: pick('.profile-dropdown--home', ['display', 'position', 'zIndex', 'visibility']),
+                    };
+                  });
+                  await page.close();
+                }
+              }
+            } finally {
+              await browser.close();
+            }
+            const before = JSON.parse(fs.readFileSync('/tmp/debt011-profile-before.json', 'utf8'));
+            assert.deepStrictEqual(after, before, 'profile-family computed header styles changed after parity shim removal');
+            console.log('[ux-resp-debt-011] profile-family computed-style parity preserved across 4 pages x 4 viewports');
+          })().catch((error) => {
+            console.error(error);
+            process.exit(1);
+          });
+          NODE
+
+      - name: Validate shared header and responsive boundaries after candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:shared-app-header-contract
+          npm run audit:responsive-boundaries
