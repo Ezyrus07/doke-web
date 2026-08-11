@@ -1,0 +1,184 @@
+name: Doke UX-CSS-DEBT-004 Detalhe Candidate
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-004-residual-cluster
+
+permissions:
+  contents: read
+
+jobs:
+  prove:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 5769b3888e612145df6a94fcc8238d5a9ca6ca7f
+      TARGET_FILE: assets/css/pages/detalhe-anuncio.css
+      EXPECTED_PARENT_SHA256: 95ace85a3c08919b556fd3c53ea6ca1a2bb6881477415bb535bab654831c9d89
+    steps:
+      - name: Checkout exact certified parent
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: 5769b3888e612145df6a94fcc8238d5a9ca6ca7f
+          fetch-depth: 0
+
+      - name: Guard exact parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          git diff --quiet
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies and Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install --with-deps chromium
+
+      - name: Build deterministic deletion-only candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp "${TARGET_FILE}" /tmp/detail-parent.css
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');
+          const file=process.env.TARGET_FILE;
+          const text=fs.readFileSync(file,'utf8');
+          const sha=v=>crypto.createHash('sha256').update(v).digest('hex');
+          if(sha(text)!==process.env.EXPECTED_PARENT_SHA256) throw new Error(`parent hash drift ${sha(text)}`);
+          const lines=text.split(/\r?\n/);
+          let depth=0,selectorParts=[],selector=null;
+          const blockStack=[],declarations=[];
+          const declRe=/^\s*([\w-]+)\s*:\s*(.*?)\s*(!important)?\s*;\s*$/;
+          for(let i=0;i<lines.length;i++){
+            const line=lines[i],trimmed=line.trim();
+            const opens=(line.match(/\{/g)||[]).length,closes=(line.match(/\}/g)||[]).length;
+            if(!selector&&trimmed&&!trimmed.startsWith('/*')&&!trimmed.startsWith('*')&&trimmed!=='*/'&&trimmed!=='}'){
+              if(trimmed.startsWith('@')&&line.includes('{')) blockStack.push({type:'at',header:trimmed.replace(/\{\s*$/,'').replace(/\s+/g,' ').trim(),depthBefore:depth});
+              else if(!trimmed.startsWith('@')&&!line.includes(';')){
+                selectorParts.push(trimmed.replace(/\{\s*$/,'').trim());
+                if(line.includes('{')){selector=selectorParts.join(' ').replace(/\s+/g,' ').trim();selectorParts=[];blockStack.push({type:'rule',selector,depthBefore:depth});}
+              }
+            }
+            if(selector){const m=line.match(declRe);if(m){const context=blockStack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');declarations.push({lineIndex:i,selector,property:m[1],important:Boolean(m[3]),context});}}
+            depth+=opens-closes;
+            while(blockStack.length&&depth<=blockStack[blockStack.length-1].depthBefore){const p=blockStack.pop();if(p.type==='rule')selector=null;}
+          }
+          const lastStrong=new Map(),dead=[];
+          for(let i=declarations.length-1;i>=0;i--){
+            const cur=declarations[i],key=`${cur.context} >>> ${cur.selector} >>> ${cur.property}`,later=lastStrong.get(key);
+            if(later&&(!cur.important||later.important)) dead.push(cur);
+            if(!later||cur.important||!later.important) lastStrong.set(key,cur);
+          }
+          const deadLines=new Set(dead.map(x=>x.lineIndex));
+          const candidate=lines.filter((_l,i)=>!deadLines.has(i)).join('\n');
+          const selectors=[...new Set(dead.map(x=>x.selector))].sort();
+          if(declarations.length!==2097) throw new Error(`declaration drift ${declarations.length}`);
+          if(dead.length!==262) throw new Error(`superseded drift ${dead.length}`);
+          if(selectors.length!==56) throw new Error(`affected selector drift ${selectors.length}`);
+          if((text.match(/!important/g)||[]).length!==0||(candidate.match(/!important/g)||[]).length!==0) throw new Error('unexpected important');
+          fs.writeFileSync('/tmp/detail-candidate.css',candidate);
+          fs.writeFileSync('/tmp/detail-selectors.json',JSON.stringify(selectors,null,2));
+          console.log('DETALHE_CANDIDATE');
+          console.log(`declarations=${declarations.length}->${declarations.length-dead.length}`);
+          console.log(`deleted=${dead.length}`);
+          console.log(`affectedSelectors=${selectors.length}`);
+          console.log(`bytes=${Buffer.byteLength(text)}->${Buffer.byteLength(candidate)}`);
+          console.log(`candidateSha256=${sha(candidate)}`);
+          NODE
+
+      - name: Write targeted runtime comparator
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > /tmp/ux-css-debt-004-detail-runtime.js <<'NODE'
+          const fs=require('fs'),cp=require('child_process');
+          const {chromium}=require(process.cwd()+'/node_modules/playwright');
+          const out=process.argv[2];
+          const selectors=JSON.parse(fs.readFileSync('/tmp/detail-selectors.json','utf8'));
+          const viewports=[
+            {name:'1366x768',width:1366,height:768},
+            {name:'1280x802',width:1280,height:802},
+            {name:'820x1180',width:820,height:1180},
+            {name:'608x926',width:608,height:926},
+            {name:'390x844',width:390,height:844}
+          ];
+          const props=['display','position','top','right','bottom','left','zIndex','width','height','minWidth','maxWidth','minHeight','maxHeight','marginTop','marginRight','marginBottom','marginLeft','paddingTop','paddingRight','paddingBottom','paddingLeft','gap','rowGap','columnGap','gridTemplateColumns','gridTemplateRows','gridColumn','gridRow','alignItems','alignSelf','justifyItems','justifySelf','justifyContent','flex','flexBasis','flexGrow','flexShrink','flexDirection','flexWrap','order','fontFamily','fontSize','fontWeight','lineHeight','letterSpacing','textAlign','textOverflow','whiteSpace','color','backgroundColor','backgroundImage','borderTopWidth','borderRightWidth','borderBottomWidth','borderLeftWidth','borderTopColor','borderRightColor','borderBottomColor','borderLeftColor','borderTopLeftRadius','borderTopRightRadius','borderBottomRightRadius','borderBottomLeftRadius','boxShadow','opacity','visibility','overflow','overflowX','overflowY','transform','objectFit'];
+          const server=cp.spawn(process.execPath,['scripts/serve-static-site.js','--host=127.0.0.1','--port=5500'],{stdio:['ignore','pipe','pipe'],env:{...process.env,DOKE_E2E_DISABLE_REMOTE_SERVICES:'1'}});
+          const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+          async function main(){
+            await sleep(700);
+            const browser=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+            const result={};
+            for(const vp of viewports){
+              const context=await browser.newContext({viewport:{width:vp.width,height:vp.height},reducedMotion:'reduce'});
+              const page=await context.newPage();
+              await page.goto('http://127.0.0.1:5500/detalhe-anuncio.html?id=ux-css-debt-004',{waitUntil:'domcontentloaded'});
+              await page.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important;caret-color:transparent!important}.doke-document-preloader{display:none!important}'});
+              await page.evaluate(()=>document.fonts&&document.fonts.ready);
+              await sleep(350);
+              result[vp.name]=await page.evaluate(({selectors,props})=>{
+                const clean=v=>String(v??'').replace(/\s+/g,' ').trim();
+                const snapshot={affected:{},anchors:{}};
+                for(const selector of selectors){
+                  let nodes=[];try{nodes=[...document.querySelectorAll(selector)];}catch(_e){continue;}
+                  if(!nodes.length)continue;
+                  snapshot.affected[selector]=nodes.map((el,index)=>{const cs=getComputedStyle(el),r=el.getBoundingClientRect(),styles={};for(const p of props)styles[p]=clean(cs[p]);return {index,tag:el.tagName,id:el.id||'',className:typeof el.className==='string'?clean(el.className):'',hidden:Boolean(el.hidden),rect:{x:+r.x.toFixed(3),y:+r.y.toFixed(3),width:+r.width.toFixed(3),height:+r.height.toFixed(3)},styles};});
+                }
+                const anchorSelectors=['.app-header','.detail-standard-topbar','.detail-standard-topbar__back','.home-side-meta__profile','main','.service-detail-page','.service-detail-shell'];
+                for(const selector of anchorSelectors){const el=document.querySelector(selector);if(!el)continue;const cs=getComputedStyle(el),r=el.getBoundingClientRect();snapshot.anchors[selector]={tag:el.tagName,id:el.id||'',className:typeof el.className==='string'?clean(el.className):'',hidden:Boolean(el.hidden),rect:{x:+r.x.toFixed(3),y:+r.y.toFixed(3),width:+r.width.toFixed(3),height:+r.height.toFixed(3)},display:cs.display,position:cs.position,zIndex:cs.zIndex,visibility:cs.visibility};}
+                snapshot.matchedSelectorStrings=Object.keys(snapshot.affected).length;
+                return snapshot;
+              },{selectors,props});
+              if(result[vp.name].matchedSelectorStrings<10) throw new Error(`insufficient affected selector coverage at ${vp.name}: ${result[vp.name].matchedSelectorStrings}`);
+              await context.close();
+            }
+            await browser.close();
+            fs.writeFileSync(out,JSON.stringify(result,null,2));
+          }
+          main().finally(()=>server.kill('SIGTERM')).catch(e=>{console.error(e);process.exit(1);});
+          NODE
+
+      - name: Capture parent runtime and responsive baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp /tmp/detail-parent.css "${TARGET_FILE}"
+          node /tmp/ux-css-debt-004-detail-runtime.js /tmp/detail-parent-runtime.json
+          node scripts/generate-responsive-index-baseline.js
+          cp reports/responsive-index-baseline.json /tmp/detail-parent-responsive.json
+
+      - name: Apply candidate and preserve responsive contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp /tmp/detail-candidate.css "${TARGET_FILE}"
+          cp /tmp/detail-parent-responsive.json reports/responsive-index-baseline.json
+          node scripts/test-responsive-contract.js
+          git diff --check
+
+      - name: Require exact targeted runtime parity
+        shell: bash
+        run: |
+          set -euo pipefail
+          node /tmp/ux-css-debt-004-detail-runtime.js /tmp/detail-candidate-runtime.json
+          cmp /tmp/detail-parent-runtime.json /tmp/detail-candidate-runtime.json
+          echo 'Targeted Detalhe runtime parity: PASS'
+
+      - name: Validate shared CSS boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/audit-css-responsive-conflicts.js
+          npm run audit:shared-app-header-contract
+          npm run audit:responsive-boundaries
+          npm run audit:active-legacy-structures
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
