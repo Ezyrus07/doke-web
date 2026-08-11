@@ -66,9 +66,6 @@ jobs:
               raise SystemExit(f'expected one legacy import in {name}, got {count}')
             p.write_text(s.replace(legacy_import,'',1))
 
-          # Shared list-page toolbar: whole app-header suppression belongs only to
-          # the actual Mobile App Shell ownership range (<=560px). Keep the rest
-          # of the compact-toolbar rules at <=760px.
           p=Path('assets/css/components/internal/list-page-toolbar.css')
           s=p.read_text()
           old='''@media (max-width: 760px) {\n  body.orders-page-shell .home-side-meta,\n  body.notifications-page-shell .home-side-meta,\n  body.wallet-page-shell .home-side-meta {\n    display: none;\n  }\n\n  .home-side-meta__search-form {'''
@@ -77,19 +74,15 @@ jobs:
             raise SystemExit(f'unexpected shared suppressor count: {s.count(old)}')
           p.write_text(s.replace(old,new,1))
 
-          # Pedidos already has a dedicated <=560px header hide. Remove only
-          # the earlier stale <=760px duplicate, preserving sidebar/page rules.
           p=Path('assets/css/pages/pedidos.css')
           s=p.read_text()
           target='''  body.orders-page-shell .home-side-meta {\n    display: none;\n  }\n\n'''
           count=s.count(target)
-          print('pedidos whole-header hide count=',count)
-          if count < 2:
-            raise SystemExit(f'expected at least two pedidos header hides, got {count}')
+          print('pedidos stale whole-header hide count=',count)
+          if count != 1:
+            raise SystemExit(f'expected exactly one stale pedidos header hide, got {count}')
           p.write_text(s.replace(target,'',1))
 
-          # Notifications: preserve <=760 sidebar suppression but stop hiding
-          # the canonical app header there. <=560 remains covered by shared rule.
           p=Path('assets/css/pages/notificacoes.css')
           s=p.read_text()
           old='''  body.notifications-page-shell .sidebar,\n  body.notifications-page-shell .home-side-meta {\n    display: none;\n  }'''
@@ -98,8 +91,6 @@ jobs:
             raise SystemExit(f'unexpected notifications grouped suppressor count: {s.count(old)}')
           p.write_text(s.replace(old,new,1))
 
-          # Wallet: same ownership reconciliation. <=560 remains covered by
-          # shared list-page-toolbar suppression.
           p=Path('assets/css/pages/carteira/responsive-contract.css')
           s=p.read_text()
           old='''  body.wallet-page-shell .sidebar,\n  body.wallet-page-shell .home-side-meta {\n    display: none;\n  }'''
