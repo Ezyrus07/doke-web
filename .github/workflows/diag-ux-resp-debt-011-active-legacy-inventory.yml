@@ -134,6 +134,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          git restore -- docs/validation/css-import-resolution.md
+          test -z "$(git diff --name-only)"
           node - <<'NODE'
           const fs = require('fs');
           const assert = require('assert');
