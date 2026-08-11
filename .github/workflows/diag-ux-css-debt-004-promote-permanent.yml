@@ -1,0 +1,110 @@
+name: Doke UX-CSS-DEBT-004 Promote Permanent
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-004-residual-cluster
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-24.04
+    env:
+      PARENT_SHA: 5769b3888e612145df6a94fcc8238d5a9ca6ca7f
+      TARGET_BRANCH: ux/ux-css-debt-004-detalhe-anuncio-compaction
+      TARGET_FILE: assets/css/pages/detalhe-anuncio.css
+      EXPECTED_PARENT_SHA256: 95ace85a3c08919b556fd3c53ea6ca1a2bb6881477415bb535bab654831c9d89
+      EXPECTED_CANDIDATE_SHA256: 821c844b51907a65e3ba8ae61476a57aaef898d93cbd9e4a6be8b4b74a06c049
+    steps:
+      - name: Checkout permanent target branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ux/ux-css-debt-004-detalhe-anuncio-compaction
+          fetch-depth: 0
+
+      - name: Guard target remains exact certified parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${PARENT_SHA}"
+          test "$(git rev-parse origin/${TARGET_BRANCH})" = "${PARENT_SHA}"
+          git diff --quiet
+          test "$(sha256sum "${TARGET_FILE}" | awk '{print $1}')" = "${EXPECTED_PARENT_SHA256}"
+
+      - name: Build exact deterministic candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');
+          const file=process.env.TARGET_FILE;
+          const text=fs.readFileSync(file,'utf8');
+          const sha=v=>crypto.createHash('sha256').update(v).digest('hex');
+          if(sha(text)!==process.env.EXPECTED_PARENT_SHA256) throw new Error(`parent hash drift ${sha(text)}`);
+          const lines=text.split(/\r?\n/);
+          let depth=0,selectorParts=[],selector=null;
+          const blockStack=[],declarations=[];
+          const declRe=/^\s*([\w-]+)\s*:\s*(.*?)\s*(!important)?\s*;\s*$/;
+          for(let i=0;i<lines.length;i++){
+            const line=lines[i],trimmed=line.trim();
+            const opens=(line.match(/\{/g)||[]).length,closes=(line.match(/\}/g)||[]).length;
+            if(!selector&&trimmed&&!trimmed.startsWith('/*')&&!trimmed.startsWith('*')&&trimmed!=='*/'&&trimmed!=='}'){
+              if(trimmed.startsWith('@')&&line.includes('{')) blockStack.push({type:'at',header:trimmed.replace(/\{\s*$/,'').replace(/\s+/g,' ').trim(),depthBefore:depth});
+              else if(!trimmed.startsWith('@')&&!line.includes(';')){
+                selectorParts.push(trimmed.replace(/\{\s*$/,'').trim());
+                if(line.includes('{')){selector=selectorParts.join(' ').replace(/\s+/g,' ').trim();selectorParts=[];blockStack.push({type:'rule',selector,depthBefore:depth});}
+              }
+            }
+            if(selector){const m=line.match(declRe);if(m){const context=blockStack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');declarations.push({lineIndex:i,selector,property:m[1],important:Boolean(m[3]),context});}}
+            depth+=opens-closes;
+            while(blockStack.length&&depth<=blockStack[blockStack.length-1].depthBefore){const p=blockStack.pop();if(p.type==='rule')selector=null;}
+          }
+          const lastStrong=new Map(),dead=[];
+          for(let i=declarations.length-1;i>=0;i--){
+            const cur=declarations[i],key=`${cur.context} >>> ${cur.selector} >>> ${cur.property}`,later=lastStrong.get(key);
+            if(later&&(!cur.important||later.important)) dead.push(cur);
+            if(!later||cur.important||!later.important) lastStrong.set(key,cur);
+          }
+          const deadLines=new Set(dead.map(x=>x.lineIndex));
+          const candidate=lines.filter((_l,i)=>!deadLines.has(i)).join('\n');
+          const selectors=[...new Set(dead.map(x=>x.selector))];
+          if(declarations.length!==2097) throw new Error(`declaration drift ${declarations.length}`);
+          if(dead.length!==262) throw new Error(`superseded drift ${dead.length}`);
+          if(selectors.length!==56) throw new Error(`selector drift ${selectors.length}`);
+          if(sha(candidate)!==process.env.EXPECTED_CANDIDATE_SHA256) throw new Error(`candidate hash drift ${sha(candidate)}`);
+          if(Buffer.byteLength(candidate)!==113007) throw new Error(`candidate bytes drift ${Buffer.byteLength(candidate)}`);
+          if((text.match(/!important/g)||[]).length!==0||(candidate.match(/!important/g)||[]).length!==0) throw new Error('unexpected !important');
+          fs.writeFileSync(file,candidate);
+          console.log('Exact deterministic candidate built.');
+          console.log(`declarations=${declarations.length}->${declarations.length-dead.length}`);
+          console.log(`deleted=${dead.length}`);
+          console.log(`selectors=${selectors.length}`);
+          console.log(`sha256=${sha(candidate)}`);
+          NODE
+
+      - name: Guard exact permanent delta
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git diff --name-only)" = "${TARGET_FILE}"
+          test "$(git diff --numstat -- "${TARGET_FILE}" | awk '{print $1}')" = "0"
+          test "$(git diff --numstat -- "${TARGET_FILE}" | awk '{print $2}')" = "262"
+          test "$(sha256sum "${TARGET_FILE}" | awk '{print $1}')" = "${EXPECTED_CANDIDATE_SHA256}"
+          git diff --check
+
+      - name: Commit and push product-only tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name doke
+          git config user.email bielantoniomma@gmail.com
+          git add -- "${TARGET_FILE}"
+          test "$(git diff --cached --name-only)" = "${TARGET_FILE}"
+          git commit -m "UX-CSS-DEBT-004: compact superseded Detalhe anuncio declarations"
+          test "$(git rev-parse HEAD^)" = "${PARENT_SHA}"
+          test "$(git diff --name-only "${PARENT_SHA}"...HEAD)" = "${TARGET_FILE}"
+          test "$(git diff --numstat "${PARENT_SHA}"...HEAD -- "${TARGET_FILE}" | awk '{print $1}')" = "0"
+          test "$(git diff --numstat "${PARENT_SHA}"...HEAD -- "${TARGET_FILE}" | awk '{print $2}')" = "262"
+          git push origin HEAD:"refs/heads/${TARGET_BRANCH}"
