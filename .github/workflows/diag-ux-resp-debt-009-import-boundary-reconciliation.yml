@@ -47,7 +47,7 @@ jobs:
           }
           NODE
 
-      - name: Apply workspace-only import boundary candidate
+      - name: Apply workspace-only ownership boundary candidate
         shell: bash
         run: |
           python3 - <<'PY'
@@ -70,12 +70,29 @@ jobs:
           p=Path('assets/css/components/internal/list-page-toolbar.css')
           s=p.read_text()
           old='''@media (max-width: 760px) {\n  body.orders-page-shell .home-side-meta,\n  body.notifications-page-shell .home-side-meta,\n  body.wallet-page-shell .home-side-meta {\n    display: none;\n  }\n\n  .home-side-meta__search-form {'''
-          new='''/* The injected Mobile App Shell mounts only through 560px.\n   Keep the legacy list-page header suppression on the same boundary so\n   561-760px can be owned by the canonical app-header contract. */\n@media (max-width: 560px) {\n  body.orders-page-shell .home-side-meta,\n  body.notifications-page-shell .home-side-meta,\n  body.wallet-page-shell .home-side-meta {\n    display: none;\n  }\n}\n\n@media (max-width: 760px) {\n  .home-side-meta__search-form {'''
+          new='''/* The injected Mobile App Shell mounts only through 560px.\n   Keep list-page header suppression on the same ownership boundary. */\n@media (max-width: 560px) {\n  body.orders-page-shell .home-side-meta,\n  body.notifications-page-shell .home-side-meta,\n  body.wallet-page-shell .home-side-meta {\n    display: none;\n  }\n}\n\n@media (max-width: 760px) {\n  .home-side-meta__search-form {'''
           count=s.count(old)
           print('toolbar boundary target count=',count)
           if count != 1:
             raise SystemExit(f'expected exactly one toolbar boundary target, got {count}')
           p.write_text(s.replace(old,new,1))
+
+          p=Path('assets/css/components/shell/mobile-app-shell.css')
+          s=p.read_text()
+          old_item='''      .home-search-hero,\n      .home-side-meta,\n      .desktop-only,'''
+          new_item='''      .home-search-hero,\n      .desktop-only,'''
+          count=s.count(old_item)
+          print('pending home-side-meta list item count=',count)
+          if count != 1:
+            raise SystemExit(f'expected exactly one pending home-side-meta list item, got {count}')
+          s=s.replace(old_item,new_item,1)
+          anchor='''.doke-mobile-shell,\n.doke-mobile-bottom-nav {\n  display: none;\n}\n\n'''
+          guard='''@media (max-width: 560px),\n  (hover: none) and (pointer: coarse) and (max-device-width: 560px) {\n  html.doke-mobile-shell-pending body .home-side-meta {\n    display: none;\n    visibility: hidden;\n    pointer-events: none;\n  }\n}\n\n'''
+          count=s.count(anchor)
+          print('mobile shell guard insertion anchor count=',count)
+          if count != 1:
+            raise SystemExit(f'expected exactly one mobile shell guard insertion anchor, got {count}')
+          p.write_text(s.replace(anchor,guard+anchor,1))
           PY
           npm run audit:css-import-resolution
 
@@ -107,7 +124,6 @@ jobs:
           const p=new Map((parent.skips||[]).map((s)=>[key(s),s]));
           const c=new Map((candidate.skips||[]).map((s)=>[key(s),s]));
           console.log('CANDIDATE_SUMMARY',JSON.stringify(candidate.summary));
-          for(const s of candidate.skips||[]) console.log('CANDIDATE_SKIP',JSON.stringify(s));
           for(const [k,s] of c) if(!p.has(k)) console.log('NEW_SKIP',JSON.stringify(s));
           for(const [k,s] of p) if(!c.has(k)) console.log('REMOVED_SKIP',JSON.stringify(s));
           console.log('CHECK_DELTA',candidate.summary.checks-parent.summary.checks);
