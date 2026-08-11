@@ -1,4 +1,4 @@
-name: Doke UX-RESP-DEBT-009 Active Header Suppressor Diagnostic
+name: Doke UX-RESP-DEBT-009 Small Tablet Header Ownership Probe
 
 on:
   push:
@@ -29,35 +29,137 @@ jobs:
       - name: Install dependencies
         run: npm ci --ignore-scripts
 
-      - name: Print active CSS files containing whole-header suppressors
+      - name: Install Chromium from lockfile-pinned Playwright
+        run: node node_modules/@playwright/test/cli.js install --with-deps chromium
+
+      - name: Capture certified parent responsive surface
+        run: |
+          node scripts/generate-responsive-index-baseline.js
+          node scripts/test-responsive-contract.js
+          cp reports/responsive-contract-test-report.json /tmp/ux-resp-debt-009-parent.json
+          node <<'NODE'
+          const fs=require('fs');
+          const r=JSON.parse(fs.readFileSync('/tmp/ux-resp-debt-009-parent.json','utf8'));
+          console.log('PARENT_SUMMARY',JSON.stringify(r.summary));
+          if(r.summary.checks!==893 || r.summary.failures!==0 || r.summary.skips!==277) {
+            throw new Error(`certified parent drift: ${JSON.stringify(r.summary)}`);
+          }
+          NODE
+
+      - name: Apply workspace-only ownership reconciliation candidate
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          legacy_import='@import url("../components/shell/tablet-internal-rail-contract.css?v=20260710-tablet-rail-authority-v1") screen and (max-width: 760px);\n'
+          for name in [
+            'assets/css/pages/pedidos-runtime-page.css',
+            'assets/css/pages/notificacoes-foundation.css',
+            'assets/css/pages/carteira-runtime-page.css',
+          ]:
+            p=Path(name)
+            s=p.read_text()
+            count=s.count(legacy_import)
+            print('legacy import',name,'count=',count)
+            if count != 1:
+              raise SystemExit(f'expected one legacy import in {name}, got {count}')
+            p.write_text(s.replace(legacy_import,'',1))
+
+          # Shared list-page toolbar: whole app-header suppression belongs only to
+          # the actual Mobile App Shell ownership range (<=560px). Keep the rest
+          # of the compact-toolbar rules at <=760px.
+          p=Path('assets/css/components/internal/list-page-toolbar.css')
+          s=p.read_text()
+          old='''@media (max-width: 760px) {\n  body.orders-page-shell .home-side-meta,\n  body.notifications-page-shell .home-side-meta,\n  body.wallet-page-shell .home-side-meta {\n    display: none;\n  }\n\n  .home-side-meta__search-form {'''
+          new='''@media (max-width: 560px) {\n  body.orders-page-shell .home-side-meta,\n  body.notifications-page-shell .home-side-meta,\n  body.wallet-page-shell .home-side-meta {\n    display: none;\n  }\n}\n\n@media (max-width: 760px) {\n  .home-side-meta__search-form {'''
+          if s.count(old) != 1:
+            raise SystemExit(f'unexpected shared suppressor count: {s.count(old)}')
+          p.write_text(s.replace(old,new,1))
+
+          # Pedidos already has a dedicated <=560px header hide. Remove only
+          # the earlier stale <=760px duplicate, preserving sidebar/page rules.
+          p=Path('assets/css/pages/pedidos.css')
+          s=p.read_text()
+          target='''  body.orders-page-shell .home-side-meta {\n    display: none;\n  }\n\n'''
+          count=s.count(target)
+          print('pedidos whole-header hide count=',count)
+          if count < 2:
+            raise SystemExit(f'expected at least two pedidos header hides, got {count}')
+          p.write_text(s.replace(target,'',1))
+
+          # Notifications: preserve <=760 sidebar suppression but stop hiding
+          # the canonical app header there. <=560 remains covered by shared rule.
+          p=Path('assets/css/pages/notificacoes.css')
+          s=p.read_text()
+          old='''  body.notifications-page-shell .sidebar,\n  body.notifications-page-shell .home-side-meta {\n    display: none;\n  }'''
+          new='''  body.notifications-page-shell .sidebar {\n    display: none;\n  }'''
+          if s.count(old) != 1:
+            raise SystemExit(f'unexpected notifications grouped suppressor count: {s.count(old)}')
+          p.write_text(s.replace(old,new,1))
+
+          # Wallet: same ownership reconciliation. <=560 remains covered by
+          # shared list-page-toolbar suppression.
+          p=Path('assets/css/pages/carteira/responsive-contract.css')
+          s=p.read_text()
+          old='''  body.wallet-page-shell .sidebar,\n  body.wallet-page-shell .home-side-meta {\n    display: none;\n  }'''
+          new='''  body.wallet-page-shell .sidebar {\n    display: none;\n  }'''
+          if s.count(old) != 1:
+            raise SystemExit(f'unexpected wallet grouped suppressor count: {s.count(old)}')
+          p.write_text(s.replace(old,new,1))
+          PY
+
+          git diff -- \
+            assets/css/pages/pedidos-runtime-page.css \
+            assets/css/pages/notificacoes-foundation.css \
+            assets/css/pages/carteira-runtime-page.css \
+            assets/css/components/internal/list-page-toolbar.css \
+            assets/css/pages/pedidos.css \
+            assets/css/pages/notificacoes.css \
+            assets/css/pages/carteira/responsive-contract.css
+          npm run audit:css-import-resolution
+
+      - name: Prove legacy contract leaves migrated page graphs
         run: |
           node <<'NODE'
           const fs=require('fs');
           const {getLoadedCssAssets}=require('./scripts/lib/css-assets');
-          const selectors={
-            'pedidos.html':'body.orders-page-shell .home-side-meta',
-            'notificacoes.html':'body.notifications-page-shell .home-side-meta',
-            'carteira.html':'body.wallet-page-shell .home-side-meta',
-          };
-          for (const [page,selector] of Object.entries(selectors)) {
-            const html=fs.readFileSync(page,'utf8');
-            const assets=[...new Set(getLoadedCssAssets(html,process.cwd()))];
-            console.log('PAGE_GRAPH',page,'COUNT',assets.length);
-            for (const asset of assets) {
-              if (!fs.existsSync(asset)) continue;
-              const css=fs.readFileSync(asset,'utf8');
-              if (!css.includes(selector)) continue;
-              console.log('ACTIVE_SUPPRESSOR_FILE',page,asset);
-              const lines=css.split(/\r?\n/);
-              lines.forEach((line,index)=>{
-                if (line.includes(selector)) {
-                  const start=Math.max(0,index-5);
-                  const end=Math.min(lines.length,index+10);
-                  console.log(`SNIPPET_START ${asset}:${index+1}`);
-                  console.log(lines.slice(start,end).map((v,i)=>`${start+i+1}: ${v}`).join('\n'));
-                  console.log(`SNIPPET_END ${asset}:${index+1}`);
-                }
-              });
-            }
+          const target='assets/css/components/shell/tablet-internal-rail-contract.css';
+          for (const page of ['pedidos.html','notificacoes.html','carteira.html']) {
+            const assets=getLoadedCssAssets(fs.readFileSync(page,'utf8'),process.cwd());
+            const count=assets.filter((asset)=>asset===target).length;
+            console.log('ACTIVE_GRAPH',page,target,count);
+            if (count !== 0) throw new Error(`${page} still loads legacy contract ${count} time(s)`);
           }
           NODE
+
+      - name: Run candidate responsive contract with exact surface guard
+        run: |
+          node scripts/generate-responsive-index-baseline.js
+          node scripts/test-responsive-contract.js
+          cp reports/responsive-contract-test-report.json /tmp/ux-resp-debt-009-candidate.json
+          node <<'NODE'
+          const fs=require('fs');
+          const parent=JSON.parse(fs.readFileSync('/tmp/ux-resp-debt-009-parent.json','utf8'));
+          const candidate=JSON.parse(fs.readFileSync('/tmp/ux-resp-debt-009-candidate.json','utf8'));
+          const key=(s)=>JSON.stringify([s.page||'',s.breakpoint||'',s.component||'',s.reason||'']);
+          const p=new Map((parent.skips||[]).map((s)=>[key(s),s]));
+          const c=new Map((candidate.skips||[]).map((s)=>[key(s),s]));
+          console.log('CANDIDATE_SUMMARY',JSON.stringify(candidate.summary));
+          for(const f of candidate.failures||[]) console.log('CANDIDATE_FAILURE',JSON.stringify(f));
+          for(const [k,s] of c) if(!p.has(k)) console.log('NEW_SKIP',JSON.stringify(s));
+          for(const [k,s] of p) if(!c.has(k)) console.log('REMOVED_SKIP',JSON.stringify(s));
+          console.log('CHECK_DELTA',candidate.summary.checks-parent.summary.checks);
+          console.log('SKIP_DELTA',candidate.summary.skips-parent.summary.skips);
+          if(candidate.summary.checks!==893 || candidate.summary.failures!==0 || candidate.summary.skips!==277) {
+            throw new Error(`candidate does not preserve certified surface: ${JSON.stringify(candidate.summary)}`);
+          }
+          NODE
+
+      - name: Validate shared header and responsive boundaries
+        run: |
+          npm run audit:shared-app-header-contract
+          npm run audit:responsive-boundaries
+
+      - name: Validate patch whitespace
+        run: git diff --check
