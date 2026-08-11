@@ -1,0 +1,263 @@
+name: Doke UX-CSS-DEBT-003 PR144 Exact Certification
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-003-certify-pr144
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 12e55ca25db38971c5ab5de12845839ca1a684a7
+      PARENT_SHA: 06dbac77dcdd8e2896744868eb40fd7031ad95cb
+      TARGET_FILE: assets/css/pages/pedidos/orders-command-center.css
+      EXPECTED_PARENT_SHA256: f2c3721344f14bff395df0d6da9a1cc0e257240cce3463016fac9691ee7927af
+      EXPECTED_CANDIDATE_SHA256: 9ecb1e63fb2baa5e1ca0d1502acad4ec0910563cc5e162086eb462f1bb82f2e3
+      PR_NUMBER: 144
+    steps:
+      - name: Checkout exact permanent SHA
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 0
+
+      - name: Guard exact one-commit product-only tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test "$(git rev-parse HEAD^)" = "${PARENT_SHA}"
+          test "$(git rev-list --count "${PARENT_SHA}"..HEAD)" = "1"
+          test "$(git diff --name-only "${PARENT_SHA}"...HEAD)" = "${TARGET_FILE}"
+          test "$(git diff --numstat "${PARENT_SHA}"...HEAD -- "${TARGET_FILE}" | awk '{print $1}')" = "0"
+          test "$(git diff --numstat "${PARENT_SHA}"...HEAD -- "${TARGET_FILE}" | awk '{print $2}')" = "596"
+          git diff --check "${PARENT_SHA}"...HEAD
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies and Chromium
+        run: |
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install --with-deps chromium
+
+      - name: Prove permanent CSS equals deterministic deletion-only candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          git show "${PARENT_SHA}:${TARGET_FILE}" > /tmp/orders-parent.css
+          cp "${TARGET_FILE}" /tmp/orders-candidate.css
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),cp=require('child_process');
+          const file=process.env.TARGET_FILE;
+          const parent=fs.readFileSync('/tmp/orders-parent.css','utf8');
+          const current=fs.readFileSync('/tmp/orders-candidate.css','utf8');
+          const sha=v=>crypto.createHash('sha256').update(v).digest('hex');
+          if(sha(parent)!==process.env.EXPECTED_PARENT_SHA256) throw new Error(`parent sha drift ${sha(parent)}`);
+          if(sha(current)!==process.env.EXPECTED_CANDIDATE_SHA256) throw new Error(`candidate sha drift ${sha(current)}`);
+          if(Buffer.byteLength(parent)!==134301) throw new Error(`parent bytes drift ${Buffer.byteLength(parent)}`);
+          if(Buffer.byteLength(current)!==120513) throw new Error(`candidate bytes drift ${Buffer.byteLength(current)}`);
+          const lines=parent.split(/\r?\n/);
+          let depth=0,selectorParts=[],selector=null;
+          const declarations=[],blockStack=[];
+          const declRe=/^\s*([\w-]+)\s*:\s*(.*?)\s*(!important)?\s*;\s*$/;
+          for(let i=0;i<lines.length;i++){
+            const line=lines[i],trimmed=line.trim();
+            const opens=(line.match(/\{/g)||[]).length,closes=(line.match(/\}/g)||[]).length;
+            if(!selector&&trimmed&&!trimmed.startsWith('/*')&&!trimmed.startsWith('*')&&trimmed!=='*/'&&trimmed!=='}'){
+              if(trimmed.startsWith('@')&&line.includes('{')) blockStack.push({type:'at',header:trimmed.replace(/\{\s*$/,'').replace(/\s+/g,' ').trim(),depthBefore:depth});
+              else if(!trimmed.startsWith('@')&&!trimmed.includes(':')&&!line.includes(';')){
+                selectorParts.push(trimmed.replace(/\{\s*$/,'').trim());
+                if(line.includes('{')){selector=selectorParts.join(' ').replace(/\s+/g,' ').trim();selectorParts=[];blockStack.push({type:'rule',selector,depthBefore:depth});}
+              }
+            }
+            if(selector){const m=line.match(declRe);if(m){const context=blockStack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');declarations.push({lineIndex:i,selector,property:m[1],important:Boolean(m[3]),context});}}
+            depth+=opens-closes;
+            while(blockStack.length&&depth<=blockStack[blockStack.length-1].depthBefore){const p=blockStack.pop();if(p.type==='rule')selector=null;}
+          }
+          const dead=[];
+          for(let i=0;i<declarations.length;i++){
+            const cur=declarations[i];
+            const later=declarations.slice(i+1).find(x=>x.selector===cur.selector&&x.property===cur.property&&x.context===cur.context&&(!cur.important||x.important));
+            if(later)dead.push(cur);
+          }
+          const deadLines=new Set(dead.map(x=>x.lineIndex));
+          const rebuilt=lines.filter((_l,i)=>!deadLines.has(i)).join('\n');
+          const selectors=[...new Set(dead.map(x=>x.selector))].sort();
+          if(declarations.length!==2367) throw new Error(`declaration drift ${declarations.length}`);
+          if(dead.length!==596) throw new Error(`dead drift ${dead.length}`);
+          if(selectors.length!==68) throw new Error(`selector drift ${selectors.length}`);
+          if(rebuilt!==current) throw new Error('permanent CSS differs from deterministic candidate');
+          if((parent.match(/!important/g)||[]).length!==0 || (current.match(/!important/g)||[]).length!==0) throw new Error('unexpected !important');
+          fs.writeFileSync('/tmp/orders-affected-selectors.json',JSON.stringify(selectors,null,2));
+          console.log('Exact deletion-only proof: PASS');
+          console.log(`- declarations: ${declarations.length} -> ${declarations.length-dead.length}`);
+          console.log(`- deleted: ${dead.length}`);
+          console.log(`- affected selectors: ${selectors.length}`);
+          console.log(`- bytes: ${Buffer.byteLength(parent)} -> ${Buffer.byteLength(current)}`);
+          NODE
+
+      - name: Write targeted Pedidos runtime snapshot harness
+        shell: bash
+        run: |
+          cat > /tmp/ux-css-debt-003-runtime.js <<'NODE'
+          const fs=require('fs'),cp=require('child_process');
+          const {chromium}=require(process.cwd()+'/node_modules/playwright');
+          const out=process.argv[2];
+          const selectors=JSON.parse(fs.readFileSync('/tmp/orders-affected-selectors.json','utf8'));
+          const viewports=[
+            {name:'1366x768',width:1366,height:768},
+            {name:'1280x802',width:1280,height:802},
+            {name:'820x1180',width:820,height:1180},
+            {name:'608x926',width:608,height:926},
+            {name:'390x844',width:390,height:844}
+          ];
+          const props=['display','position','top','right','bottom','left','zIndex','width','height','minWidth','maxWidth','minHeight','maxHeight','marginTop','marginRight','marginBottom','marginLeft','paddingTop','paddingRight','paddingBottom','paddingLeft','gap','rowGap','columnGap','gridTemplateColumns','gridTemplateRows','gridColumn','gridRow','alignItems','alignSelf','justifyItems','justifySelf','justifyContent','flex','flexBasis','flexGrow','flexShrink','flexDirection','flexWrap','order','fontFamily','fontSize','fontWeight','lineHeight','letterSpacing','textAlign','textOverflow','whiteSpace','color','backgroundColor','backgroundImage','borderTopWidth','borderRightWidth','borderBottomWidth','borderLeftWidth','borderTopColor','borderRightColor','borderBottomColor','borderLeftColor','borderTopLeftRadius','borderTopRightRadius','borderBottomRightRadius','borderBottomLeftRadius','boxShadow','opacity','visibility','overflow','overflowX','overflowY','transform','objectFit'];
+          const server=cp.spawn(process.execPath,['scripts/serve-static-site.js','--host=127.0.0.1','--port=5500'],{stdio:['ignore','pipe','pipe'],env:{...process.env,DOKE_E2E_DISABLE_REMOTE_SERVICES:'1'}});
+          const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+          async function main(){
+            await sleep(700);
+            const browser=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+            const result={};
+            for(const vp of viewports){
+              const context=await browser.newContext({viewport:{width:vp.width,height:vp.height},reducedMotion:'reduce'});
+              const page=await context.newPage();
+              await page.addInitScript(()=>{
+                const user={id:'client_css_debt_003',role:'client',name:'Cliente CSS'};
+                const orders=[
+                  {id:'order_css_1',clientId:user.id,professionalId:'professional_1',providerName:'Studio Aquarela',serviceTitle:'Pintura comercial',status:'pending',createdAt:'2026-06-28T10:00:00.000Z'},
+                  {id:'order_css_2',clientId:user.id,professionalId:'professional_2',providerName:'Casa Limpa',serviceTitle:'Limpeza residencial',status:'accepted',createdAt:'2026-06-27T10:00:00.000Z'}
+                ];
+                localStorage.setItem('doke.auth.session.v1',JSON.stringify({user}));
+                localStorage.setItem('doke.orders.local.v1',JSON.stringify(orders));
+                localStorage.setItem('doke.orders',JSON.stringify(orders));
+              });
+              await page.goto('http://127.0.0.1:5500/pedidos.html',{waitUntil:'domcontentloaded'});
+              await page.waitForFunction(()=>document.body.dataset.ordersAudience==='client',{timeout:10000});
+              await page.waitForFunction(()=>document.querySelectorAll('.orders-list .order-card:not([hidden])').length===2,{timeout:10000});
+              await page.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important;caret-color:transparent!important}'});
+              await page.evaluate(()=>document.fonts&&document.fonts.ready);
+              await sleep(150);
+              result[vp.name]=await page.evaluate(({selectors,props})=>{
+                const clean=v=>String(v??'').replace(/\s+/g,' ').trim();
+                const snapshot={affected:{},agenda:[]};
+                for(const selector of selectors){
+                  let nodes=[];try{nodes=[...document.querySelectorAll(selector)];}catch(_e){continue;}
+                  if(!nodes.length)continue;
+                  snapshot.affected[selector]=nodes.map((el,index)=>{const cs=getComputedStyle(el),r=el.getBoundingClientRect(),styles={};for(const p of props)styles[p]=clean(cs[p]);return {index,tag:el.tagName,id:el.id||'',className:typeof el.className==='string'?clean(el.className):'',hidden:Boolean(el.hidden),rect:{x:+r.x.toFixed(3),y:+r.y.toFixed(3),width:+r.width.toFixed(3),height:+r.height.toFixed(3)},styles};});
+                }
+                snapshot.agenda=[...document.querySelectorAll('[data-orders-agenda-toggle]')].map((el,index)=>{const cs=getComputedStyle(el),r=el.getBoundingClientRect();return {index,tag:el.tagName,className:typeof el.className==='string'?clean(el.className):'',hidden:Boolean(el.hidden),display:cs.display,visibility:cs.visibility,ariaHidden:el.getAttribute('aria-hidden'),rect:{x:+r.x.toFixed(3),y:+r.y.toFixed(3),width:+r.width.toFixed(3),height:+r.height.toFixed(3)}};});
+                return snapshot;
+              },{selectors,props});
+              await context.close();
+            }
+            await browser.close();
+            fs.writeFileSync(out,JSON.stringify(result,null,2));
+          }
+          main().finally(()=>server.kill('SIGTERM')).catch(e=>{console.error(e);process.exit(1);});
+          NODE
+
+      - name: Capture parent targeted runtime and responsive baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp /tmp/orders-parent.css "${TARGET_FILE}"
+          node /tmp/ux-css-debt-003-runtime.js /tmp/orders-parent-runtime.json
+          node scripts/generate-responsive-index-baseline.js
+          cp reports/responsive-index-baseline.json /tmp/ux-css-debt-003-parent-responsive.json
+
+      - name: Reproduce known parent Pedidos E2E debt
+        id: parent_e2e
+        shell: bash
+        run: |
+          set +e
+          node node_modules/@playwright/test/cli.js test tests/e2e/pedidos-role-composition.spec.js > /tmp/parent-e2e.log 2>&1
+          code=$?
+          set -e
+          cat /tmp/parent-e2e.log
+          test "$code" = "1"
+          grep -F 'Expected: true' /tmp/parent-e2e.log
+          grep -F 'Received: false' /tmp/parent-e2e.log
+          grep -F "node.hidden && getComputedStyle(node).display === 'none'" /tmp/parent-e2e.log
+
+      - name: Restore exact permanent candidate and preserve responsive contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp /tmp/orders-candidate.css "${TARGET_FILE}"
+          cp /tmp/ux-css-debt-003-parent-responsive.json reports/responsive-index-baseline.json
+          node scripts/test-responsive-contract.js
+
+      - name: Require exact parent-to-candidate targeted runtime parity
+        shell: bash
+        run: |
+          set -euo pipefail
+          node /tmp/ux-css-debt-003-runtime.js /tmp/orders-candidate-runtime.json
+          cmp /tmp/orders-parent-runtime.json /tmp/orders-candidate-runtime.json
+          echo 'Targeted Pedidos runtime parity: PASS'
+
+      - name: Require known Pedidos E2E debt unchanged
+        shell: bash
+        run: |
+          set +e
+          node node_modules/@playwright/test/cli.js test tests/e2e/pedidos-role-composition.spec.js > /tmp/candidate-e2e.log 2>&1
+          code=$?
+          set -e
+          cat /tmp/candidate-e2e.log
+          test "$code" = "1"
+          grep -F 'Expected: true' /tmp/candidate-e2e.log
+          grep -F 'Received: false' /tmp/candidate-e2e.log
+          grep -F "node.hidden && getComputedStyle(node).display === 'none'" /tmp/candidate-e2e.log
+          echo 'Known pre-existing Pedidos E2E failure reproduced without widening.'
+
+      - name: Validate CSS debt and shared boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/css-conflicts.log
+          npm run audit:shared-app-header-contract
+          npm run audit:responsive-boundaries
+          npm run audit:active-legacy-structures | tee /tmp/legacy.log
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git diff --check "${PARENT_SHA}"...HEAD
+          echo '--- final metrics ---'
+          grep -E 'CSS files scanned|Definitions|Conflicting class/property pairs' /tmp/css-conflicts.log || true
+          grep -E 'active legacy/remediation css|active legacy/remediation js|high risk active css' /tmp/legacy.log || true
+
+      - name: Restore tracked workspace to exact permanent SHA
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "${TARGET_SHA}"
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test "$(sha256sum "${TARGET_FILE}" | awk '{print $1}')" = "${EXPECTED_CANDIDATE_SHA256}"
+
+      - name: Require SonarQube Cloud credential
+        shell: bash
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: test -n "${SONAR_TOKEN}"
+
+      - name: Analyze PR 144 exact SHA and enforce SonarQube Cloud Quality Gate
+        uses: SonarSource/sonarqube-scan-action@c7ee0f9df90b7aa20e8dcf9695dcfe2e7da5b4f2
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >-
+            -Dsonar.projectKey=Ezyrus07_doke-web
+            -Dsonar.organization=ezyrus07
+            -Dsonar.pullrequest.key=144
+            -Dsonar.pullrequest.branch=ux/ux-css-debt-003-pedidos-command-center-compaction
+            -Dsonar.pullrequest.base=ux/ux-css-debt-002-home-mobile-pass-compaction
+            -Dsonar.scm.revision=12e55ca25db38971c5ab5de12845839ca1a684a7
+            -Dsonar.qualitygate.wait=true
+            -Dsonar.qualitygate.timeout=600
