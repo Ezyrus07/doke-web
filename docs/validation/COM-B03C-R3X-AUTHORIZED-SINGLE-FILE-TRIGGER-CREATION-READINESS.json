@@ -23,18 +23,36 @@
     "receiptId": "7fcbee37389539920ea5c0941226f9952315cb58177e613d2abe1fccf649c985",
     "plaintextPersisted": false,
     "received": true,
+    "consumed": true,
     "consumedForTriggerCreationOnly": true,
-    "reusableAfterFailure": false
+    "reusable": false,
+    "reusableAfterFailure": false,
+    "remoteExecutionAuthorized": false
   },
   "trigger": {
     "path": "config/com-b03c-r3w-single-use-staging-authorization-trigger.json",
     "contractId": "com-b03c-r3w-single-use-staging-authorization-trigger-v1",
     "status": "authorization_consumed_execution_pending",
+    "workflowInstallHead": "83b45825c518f51df78cb493351388972bc42b73",
+    "creationCommit": "e4889241fcbd5a88322d011c67de6711ead04abe",
+    "creationDelta": "exactly_one_added_trigger_file",
+    "runAttempt": 1,
+    "actionsValidationRun": 31445609703,
+    "actionsValidationJob": 93639049960,
+    "actionsValidationConclusion": "failure",
+    "actionsFailedStep": "Trigger state validation",
+    "actionsFailureReason": "pull_request checkout used merge ref; HEAD^ resolved PR base parent instead of branch trigger parent",
+    "actionsFailClosedReasonCode": "R3W_TRIGGER_PARENT_CONTINUITY_REQUIRED",
+    "connectorStructuralContinuityVerified": true,
+    "connectorVerifiedParent": "83b45825c518f51df78cb493351388972bc42b73",
+    "connectorVerifiedChangedFiles": [
+      "config/com-b03c-r3w-single-use-staging-authorization-trigger.json"
+    ],
+    "remoteStepsReached": false,
+    "cleanupCommit": "6dad839ba780f60b90179504682d91c348c40cd5",
+    "cleanupDelta": "exactly_one_removed_trigger_file",
     "exists": false,
-    "singleFileDeltaRequired": true,
-    "parentContinuityRequired": true,
-    "runAttemptMustBeOne": true,
-    "cleanupAfterValidationRequired": true
+    "retryWithSameAuthorizationAllowed": false
   },
   "certificationHistory": {
     "implementationCorrections": [
@@ -45,17 +63,10 @@
       "head": "a1fb314aaecbf63657fe2d16120bc11d3f5ed460",
       "r3xRun": 31444999977,
       "r3xJob": 93637171247,
-      "r3xConclusion": "failure",
       "matrixRun": 31444999922,
       "matrixJob": 93637171055,
-      "matrixConclusion": "failure",
       "failedStep": "Domain Completion Matrix",
-      "reason": "derived matrix artifacts stale after R3X inventory expansion",
-      "syntaxPassed": true,
-      "authorizationReceiptLifecyclePassed": true,
-      "triggerStateValidationPassed": true,
-      "preRemoteHardBlockPassed": true,
-      "workflowRepositoryOnlyGuardPassed": true
+      "substantiveR3xGatesPassed": true
     },
     "canonicalMatrixReconciliation": {
       "writerInstallHead": "0669602c006a73a129247d7ef6e95029d05dba2e",
@@ -66,24 +77,71 @@
       "writerOutputs": ["docs/DOMAIN-COMPLETION-MATRIX.md","reports/generated/domain-completion-matrix-report.json"],
       "matrixSourceChanged": false,
       "workflowRestoredHead": "4c2d413abe60bb8e2bfce197326ea0400e1270a8",
-      "workflowRestoredBlob": "299108d86dc097ba090392ebe9f218f6849e74ad",
-      "workflowPermissions": "contents: read"
+      "workflowRestoredBlob": "299108d86dc097ba090392ebe9f218f6849e74ad"
     },
-    "normalHeadCertification": {
-      "head": "4c2d413abe60bb8e2bfce197326ea0400e1270a8",
-      "r3xRun": 31445220464,
-      "r3xJob": 93637851350,
+    "preTriggerEvidenceCertification": {
+      "head": "83b45825c518f51df78cb493351388972bc42b73",
+      "r3xRun": 31445481172,
+      "r3xJob": 93638649757,
       "r3xConclusion": "success",
-      "matrixRun": 31445220048,
-      "matrixJob": 93637850130,
-      "matrixConclusion": "success",
-      "runAttempt": 1
+      "matrixRun": 31445481208,
+      "matrixJob": 93638650034,
+      "matrixConclusion": "success"
+    },
+    "postCleanupHardening": {
+      "cleanupCommit": "6dad839ba780f60b90179504682d91c348c40cd5",
+      "validatorHardeningCommit": "988f55bf3901da71489d9ef357e7a816e4afe9e9",
+      "hardening": "validate parent and changed files from github.event.pull_request.head.sha instead of merge-ref HEAD",
+      "r3xRun": 31445778013,
+      "r3xJob": 93639568026,
+      "r3xConclusion": "success",
+      "matrixRun": 31445778049,
+      "matrixJob": 93639568279,
+      "matrixConclusion": "success"
     }
   },
-  "workflowBoundary": {"pullRequestOnly":true,"pushTrigger":false,"environment":false,"secretsReferenced":false,"permissions":"contents: read"},
-  "authority": {"repositoryTriggerLifecycle":true,"triggerCreation":true,"remoteExecution":false,"remoteAdapterActivation":false,"stagingRead":false,"stagingMutation":false,"remoteCredentialRead":false,"remoteDependencyLoad":false,"network":false,"realtimeSubscription":false,"authIdentityLifecycle":false,"runtimeChange":false,"production":false,"merge":false},
-  "effects": {"triggerCreated":false,"stagingAccessExecuted":false,"remoteCredentialReadExecuted":false,"remoteDependencyLoadExecuted":false,"networkAccessExecuted":false,"databaseConnectionExecuted":false,"databaseQueryAgainstRemoteExecuted":false,"remoteClientInstantiated":false,"realtimeSubscriptionExecuted":false,"authIdentityMutationExecuted":false,"runtimePolicyChangeExecuted":false,"productionExecuted":false,"mergeExecuted":false},
+  "workflowBoundary": {
+    "pullRequestOnly": true,
+    "pushTrigger": false,
+    "environment": false,
+    "secretsReferenced": false,
+    "permissions": "contents: read",
+    "prHeadContinuityHardeningApplied": true
+  },
+  "authority": {
+    "repositoryTriggerLifecycle": true,
+    "triggerCreation": false,
+    "authorizationReusable": false,
+    "remoteExecution": false,
+    "remoteAdapterActivation": false,
+    "stagingRead": false,
+    "stagingMutation": false,
+    "remoteCredentialRead": false,
+    "remoteDependencyLoad": false,
+    "network": false,
+    "realtimeSubscription": false,
+    "authIdentityLifecycle": false,
+    "runtimeChange": false,
+    "production": false,
+    "merge": false
+  },
+  "effects": {
+    "triggerCreated": true,
+    "triggerRemoved": true,
+    "stagingAccessExecuted": false,
+    "remoteCredentialReadExecuted": false,
+    "remoteDependencyLoadExecuted": false,
+    "networkAccessExecuted": false,
+    "databaseConnectionExecuted": false,
+    "databaseQueryAgainstRemoteExecuted": false,
+    "remoteClientInstantiated": false,
+    "realtimeSubscriptionExecuted": false,
+    "authIdentityMutationExecuted": false,
+    "runtimePolicyChangeExecuted": false,
+    "productionExecuted": false,
+    "mergeExecuted": false
+  },
   "exactRootCauseProven": false,
   "causalPromotionAllowed": false,
-  "nextBoundary": "Create exactly one trigger file commit bound to this certified R3X pre-trigger evidence head and the consumed authorization receipt. Validate it without remote execution, then remove the trigger immediately. A later fresh authorization is required for actual staging execution."
+  "nextBoundary": "The current authorization is consumed and non-reusable. Any actual hosted staging observation requires a new repository-only execution boundary plus a fresh explicit authorization bound to its certified head."
 }
