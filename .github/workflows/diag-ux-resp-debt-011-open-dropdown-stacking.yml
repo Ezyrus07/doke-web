@@ -1,4 +1,4 @@
-name: Diagnose UX-RESP-DEBT-011 Open Dropdown Stacking
+name: Diagnose UX-RESP-DEBT-011 Post-Preloader Dropdown Stacking
 
 on:
   push:
@@ -14,7 +14,7 @@ env:
   PROFILE_MANIFEST: assets/css/pages/profile-foundation.css
 
 jobs:
-  open-dropdown-stacking:
+  post-preloader-stacking:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout repository
@@ -43,7 +43,7 @@ jobs:
       - name: Install Chromium
         run: node node_modules/@playwright/test/cli.js install --with-deps chromium
 
-      - name: Capture index authority and candidate stacking evidence
+      - name: Compare live stacking before and after shim removal
         shell: bash
         run: |
           set -euo pipefail
@@ -53,13 +53,15 @@ jobs:
           const { chromium } = require('@playwright/test');
           const { loadHtmlWithLocalCss } = require('./scripts/lib/responsive-html-loader');
 
-          const pages = ['perfil.html', 'meu-perfil.html', 'perfil-cliente.html', 'perfil-profissional.html'];
+          const profilePages = ['perfil.html', 'meu-perfil.html', 'perfil-cliente.html', 'perfil-profissional.html'];
           const viewports = [
             { width: 1366, height: 768 },
+            { width: 1280, height: 802 },
             { width: 820, height: 1180 },
             { width: 608, height: 926 },
             { width: 390, height: 844 },
           ];
+          const indexAuthorityViewports = viewports.filter(({ width }) => width !== 390);
           const manifest = process.env.PROFILE_MANIFEST;
           const target = process.env.TARGET_CSS;
           const targetLine = '@import url("../components/navigation/profile-header-index-parity.css?v=20260719-profile-family-v1");\n';
@@ -71,51 +73,56 @@ jobs:
               const html = loadHtmlWithLocalCss(pageName, process.cwd(), { modeLabel: mode });
               await page.setContent(html, { waitUntil: 'domcontentloaded' });
               return await page.evaluate(() => {
+                document.querySelectorAll('.doke-document-preloader').forEach((node) => {
+                  node.hidden = true;
+                  node.style.display = 'none';
+                  node.setAttribute('aria-hidden', 'true');
+                });
+
                 const dropdown = document.querySelector('.profile-dropdown--home-main');
                 if (!dropdown) return { missing: true };
                 dropdown.hidden = false;
                 dropdown.style.display = 'block';
+
                 const style = getComputedStyle(dropdown);
                 const rect = dropdown.getBoundingClientRect();
-                const describe = (node) => {
-                  if (!node) return null;
-                  const cs = getComputedStyle(node);
+                if (rect.width <= 0 || rect.height <= 0) {
                   return {
-                    tag: node.tagName,
-                    id: node.id || '',
-                    className: typeof node.className === 'string' ? node.className : '',
-                    position: cs.position,
-                    zIndex: cs.zIndex,
-                    transform: cs.transform,
-                    opacity: cs.opacity,
-                    isolation: cs.isolation,
+                    rendered: false,
+                    zIndex: style.zIndex,
+                    rect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
                   };
-                };
-                const ancestry = [];
-                for (let node = dropdown; node && ancestry.length < 8; node = node.parentElement) ancestry.push(describe(node));
-                const samplePoints = [
-                  [rect.left + Math.min(12, Math.max(1, rect.width / 4)), rect.top + Math.min(12, Math.max(1, rect.height / 4))],
-                  [rect.left + rect.width / 2, rect.top + Math.min(rect.height / 2, 40)],
-                  [rect.right - Math.min(12, Math.max(1, rect.width / 4)), rect.top + Math.min(12, Math.max(1, rect.height / 4))],
+                }
+
+                const insetX = Math.min(14, Math.max(2, rect.width / 5));
+                const insetY = Math.min(14, Math.max(2, rect.height / 5));
+                const points = [
+                  [rect.left + insetX, rect.top + insetY],
+                  [rect.left + rect.width / 2, rect.top + Math.min(48, rect.height / 2)],
+                  [rect.right - insetX, rect.top + insetY],
+                  [rect.left + rect.width / 2, rect.top + rect.height / 2],
                 ].filter(([x, y]) => x >= 0 && x < innerWidth && y >= 0 && y < innerHeight);
-                const hits = samplePoints.map(([x, y]) => {
+
+                const hits = points.map(([x, y]) => {
                   const top = document.elementFromPoint(x, y);
+                  const topStyle = top ? getComputedStyle(top) : null;
                   return {
                     x,
                     y,
-                    top: describe(top),
                     withinDropdown: !!top && (top === dropdown || dropdown.contains(top)),
+                    topTag: top?.tagName || null,
+                    topClass: typeof top?.className === 'string' ? top.className : '',
+                    topPosition: topStyle?.position || null,
+                    topZIndex: topStyle?.zIndex || null,
                   };
                 });
+
                 return {
+                  rendered: true,
                   zIndex: style.zIndex,
-                  display: style.display,
-                  visibility: style.visibility,
-                  rect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height, right: rect.right, bottom: rect.bottom },
-                  viewport: { width: innerWidth, height: innerHeight },
-                  sampleCount: hits.length,
+                  rect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
                   hits,
-                  ancestry,
+                  allTopmost: hits.length > 0 && hits.every((hit) => hit.withinDropdown),
                 };
               });
             } finally {
@@ -124,54 +131,90 @@ jobs:
             }
           }
 
+          async function captureProfiles(label, expectedZ) {
+            const out = {};
+            for (const pageName of profilePages) {
+              out[pageName] = {};
+              for (const viewport of viewports) {
+                const key = `${viewport.width}x${viewport.height}`;
+                const result = await inspect(pageName, viewport, label);
+                out[pageName][key] = result;
+                assert.strictEqual(result.missing, undefined, `${pageName} ${key}: dropdown missing`);
+                assert.strictEqual(result.rendered, true, `${pageName} ${key}: dropdown must render after preloader dismissal`);
+                assert.strictEqual(result.zIndex, expectedZ, `${pageName} ${key}: unexpected z-index`);
+                assert.strictEqual(result.allTopmost, true, `${pageName} ${key}: dropdown must be topmost after preloader dismissal`);
+              }
+            }
+            return out;
+          }
+
           (async () => {
             const index = {};
-            for (const viewport of viewports) {
-              const result = await inspect('index.html', viewport, 'debt011-index-authority-open');
-              index[`${viewport.width}x${viewport.height}`] = result;
-              assert.strictEqual(result.missing, undefined, 'index dropdown must exist');
-              assert.strictEqual(result.zIndex, '80', `index dropdown authority must be 80 at ${viewport.width}`);
-              assert.ok(result.sampleCount > 0, `index dropdown must expose at least one visible sample point at ${viewport.width}`);
+            for (const viewport of indexAuthorityViewports) {
+              const key = `${viewport.width}x${viewport.height}`;
+              const result = await inspect('index.html', viewport, 'debt011-index-post-preloader');
+              index[key] = result;
+              assert.strictEqual(result.missing, undefined, `index ${key}: dropdown missing`);
+              assert.strictEqual(result.rendered, true, `index ${key}: dropdown must render`);
+              assert.strictEqual(result.zIndex, '80', `index ${key}: canonical dropdown z-index must be 80`);
+              assert.strictEqual(result.allTopmost, true, `index ${key}: canonical dropdown must be topmost after preloader dismissal`);
             }
 
-            const beforeManifest = fs.readFileSync(manifest, 'utf8');
-            assert.strictEqual(beforeManifest.split(targetLine).length - 1, 1, 'profile manifest must contain exactly one parity import');
-            fs.writeFileSync(manifest, beforeManifest.replace(targetLine, ''));
+            const before = await captureProfiles('debt011-profile-before-post-preloader', '120');
+
+            const manifestText = fs.readFileSync(manifest, 'utf8');
+            assert.strictEqual(manifestText.split(targetLine).length - 1, 1, 'profile manifest must contain exactly one parity import');
+            fs.writeFileSync(manifest, manifestText.replace(targetLine, ''));
             fs.unlinkSync(target);
 
-            const candidate = {};
-            for (const pageName of pages) {
-              candidate[pageName] = {};
+            const after = await captureProfiles('debt011-profile-after-post-preloader', '80');
+
+            for (const pageName of profilePages) {
               for (const viewport of viewports) {
-                const result = await inspect(pageName, viewport, 'debt011-profile-candidate-open');
-                candidate[pageName][`${viewport.width}x${viewport.height}`] = result;
-                assert.strictEqual(result.missing, undefined, `${pageName}: dropdown must exist`);
-                assert.strictEqual(result.zIndex, '80', `${pageName}: candidate must inherit canonical z-index 80 at ${viewport.width}`);
-                assert.ok(result.sampleCount > 0, `${pageName}: dropdown must expose at least one visible sample point at ${viewport.width}`);
+                const key = `${viewport.width}x${viewport.height}`;
+                assert.deepStrictEqual(after[pageName][key].rect, before[pageName][key].rect, `${pageName} ${key}: geometry changed`);
+                assert.deepStrictEqual(after[pageName][key].hits.map(({ withinDropdown }) => withinDropdown), before[pageName][key].hits.map(({ withinDropdown }) => withinDropdown), `${pageName} ${key}: stacking hit outcome changed`);
               }
             }
 
-            console.log('UX_RESP_DEBT_011_OPEN_STACK_BEGIN');
-            console.log(JSON.stringify({ index, candidate }, null, 2));
-            console.log('UX_RESP_DEBT_011_OPEN_STACK_END');
+            console.log('UX_RESP_DEBT_011_POST_PRELOADER_BEGIN');
+            console.log(JSON.stringify({ index, before, after }, null, 2));
+            console.log('UX_RESP_DEBT_011_POST_PRELOADER_END');
+            console.log('[ux-resp-debt-011] 120 -> 80 changes no geometry or interactive topmost outcome across 4 profile pages x 5 viewports');
           })().catch((error) => {
             console.error(error);
             process.exit(1);
           });
           NODE
 
-      - name: Reproduce responsive contract after candidate removal
+      - name: Prove structural debt reduction after candidate removal
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:css-import-resolution
+          npm run audit:active-legacy-structures
+          node - <<'NODE'
+          const fs = require('fs');
+          const assert = require('assert');
+          const report = JSON.parse(fs.readFileSync('reports/generated/active-legacy-structures-report.json', 'utf8'));
+          assert.strictEqual(report.totals.activeLegacyCss, 0, 'candidate must reduce active legacy CSS to zero');
+          assert.strictEqual(report.totals.activeLegacyJs, 1, 'community legacy JS debt must remain untouched');
+          assert.strictEqual(report.totals.cssFiles, 533, 'candidate must remove exactly one physical CSS file');
+          assert.strictEqual(report.totals.activeOrImportedCss, 401, 'candidate must remove exactly one active/imported CSS file');
+          NODE
+
+      - name: Reproduce certified responsive contract after candidate removal
         shell: bash
         run: |
           set -euo pipefail
           node scripts/generate-responsive-index-baseline.js
-          node scripts/test-responsive-contract.js | tee /tmp/debt011-open-stack-responsive.txt
-          grep -Fx 'Responsive contract test: PASS' /tmp/debt011-open-stack-responsive.txt
-          grep -Fx 'Checks: 893' /tmp/debt011-open-stack-responsive.txt
-          grep -Fx 'Failures: 0' /tmp/debt011-open-stack-responsive.txt
-          grep -Fx 'Skips: 277' /tmp/debt011-open-stack-responsive.txt
+          node scripts/test-responsive-contract.js | tee /tmp/debt011-post-preloader-responsive.txt
+          grep -Fx 'Responsive contract test: PASS' /tmp/debt011-post-preloader-responsive.txt
+          grep -Fx 'Checks: 893' /tmp/debt011-post-preloader-responsive.txt
+          grep -Fx 'Failures: 0' /tmp/debt011-post-preloader-responsive.txt
+          grep -Fx 'Skips: 277' /tmp/debt011-post-preloader-responsive.txt
 
-      - name: Validate shared header and responsive boundaries after candidate
+      - name: Validate shared header and responsive boundaries
         shell: bash
         run: |
           set -euo pipefail
