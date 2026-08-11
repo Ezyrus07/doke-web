@@ -37,22 +37,22 @@ jobs:
           TRIGGER=config/com-b03c-r3w-single-use-staging-authorization-trigger.json
           if test -f "$TRIGGER"; then
             node - <<'NODE'
-            const cp = require('node:child_process');
-            const r3x = require('./backend/modules/communities/community-realtime-private-auth-r3x');
-            const trigger = require('./config/com-b03c-r3w-single-use-staging-authorization-trigger.json');
-            const parentHead = cp.execFileSync('git', ['rev-parse', 'HEAD^'], { encoding: 'utf8' }).trim();
-            const changedFiles = cp.execFileSync('git', ['diff', '--name-only', 'HEAD^', 'HEAD'], { encoding: 'utf8' }).trim().split(/\n/).filter(Boolean);
-            const result = r3x.validateAuthorizedTriggerCommit({
-              trigger,
-              parentHead,
-              changedFiles,
-              runAttempt: Number(process.env.GITHUB_RUN_ATTEMPT)
-            });
-            if (result.decision !== 'future_trigger_commit_shape_valid_remote_execution_still_separately_blocked') {
-              console.error(result);
-              process.exit(1);
-            }
-            NODE
+          const cp = require('node:child_process');
+          const r3x = require('./backend/modules/communities/community-realtime-private-auth-r3x');
+          const trigger = require('./config/com-b03c-r3w-single-use-staging-authorization-trigger.json');
+          const parentHead = cp.execFileSync('git', ['rev-parse', 'HEAD^'], { encoding: 'utf8' }).trim();
+          const changedFiles = cp.execFileSync('git', ['diff', '--name-only', 'HEAD^', 'HEAD'], { encoding: 'utf8' }).trim().split(/\n/).filter(Boolean);
+          const result = r3x.validateAuthorizedTriggerCommit({
+            trigger,
+            parentHead,
+            changedFiles,
+            runAttempt: Number(process.env.GITHUB_RUN_ATTEMPT)
+          });
+          if (result.decision !== 'future_trigger_commit_shape_valid_remote_execution_still_separately_blocked') {
+            console.error(result);
+            process.exit(1);
+          }
+          NODE
           else
             echo 'R3X trigger absent: repository pre-trigger or post-cleanup state.'
           fi
