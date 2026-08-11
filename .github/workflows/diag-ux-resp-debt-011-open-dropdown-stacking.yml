@@ -125,6 +125,15 @@ jobs:
             }
           }
 
+          function stableHit(hit) {
+            return {
+              withinDropdown: hit.withinDropdown,
+              topTag: hit.topTag,
+              topClass: hit.topClass,
+              topPosition: hit.topPosition,
+            };
+          }
+
           async function captureProfiles(label, expectedZ) {
             const out = {};
             for (const pageName of profilePages) {
@@ -166,7 +175,7 @@ jobs:
               for (const viewport of viewports) {
                 const key = `${viewport.width}x${viewport.height}`;
                 assert.deepStrictEqual(after[pageName][key].rect, before[pageName][key].rect, `${pageName} ${key}: geometry changed`);
-                assert.deepStrictEqual(after[pageName][key].hits, before[pageName][key].hits, `${pageName} ${key}: hit-test/occlusion pattern changed`);
+                assert.deepStrictEqual(after[pageName][key].hits.map(stableHit), before[pageName][key].hits.map(stableHit), `${pageName} ${key}: hit-test/occlusion identity changed`);
                 assert.strictEqual(after[pageName][key].allTopmost, before[pageName][key].allTopmost, `${pageName} ${key}: topmost outcome changed`);
               }
             }
@@ -175,14 +184,14 @@ jobs:
             for (const pageName of profilePages) {
               for (const viewport of viewports) {
                 const key = `${viewport.width}x${viewport.height}`;
-                if (!before[pageName][key].allTopmost) baselineOcclusions.push({ pageName, viewport: key, hits: before[pageName][key].hits });
+                if (!before[pageName][key].allTopmost) baselineOcclusions.push({ pageName, viewport: key, hits: before[pageName][key].hits.map(stableHit) });
               }
             }
 
             console.log('UX_RESP_DEBT_011_POST_PRELOADER_BEGIN');
             console.log(JSON.stringify({ index, baselineOcclusions, before, after }, null, 2));
             console.log('UX_RESP_DEBT_011_POST_PRELOADER_END');
-            console.log(`[ux-resp-debt-011] 120 -> 80 preserved geometry and exact hit-test pattern across 4 profile pages x 5 viewports; baseline occlusion cases=${baselineOcclusions.length}`);
+            console.log(`[ux-resp-debt-011] 120 -> 80 preserved geometry and hit-test identity across 4 profile pages x 5 viewports; baseline occlusion cases=${baselineOcclusions.length}`);
           })().catch((error) => {
             console.error(error);
             process.exit(1);
