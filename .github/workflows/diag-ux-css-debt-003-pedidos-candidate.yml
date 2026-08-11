@@ -1,0 +1,267 @@
+name: Doke UX-CSS-DEBT-003 Pedidos Candidate
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-003-readiness
+
+permissions:
+  contents: read
+
+jobs:
+  candidate:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 06dbac77dcdd8e2896744868eb40fd7031ad95cb
+      TARGET_FILE: assets/css/pages/pedidos/orders-command-center.css
+    steps:
+      - name: Checkout exact certified parent
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 0
+
+      - name: Guard exact parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          git diff --exit-code
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Install Chromium
+        run: node node_modules/@playwright/test/cli.js install --with-deps chromium
+
+      - name: Build deterministic deletion-only candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs');
+          const crypto=require('crypto');
+          const file=process.env.TARGET_FILE;
+          const text=fs.readFileSync(file,'utf8');
+          const lines=text.split(/\r?\n/);
+          let depth=0, selectorParts=[], selector=null;
+          const declarations=[];
+          const blockStack=[];
+          const declRe=/^\s*([\w-]+)\s*:\s*(.*?)\s*(!important)?\s*;\s*$/;
+          for(let i=0;i<lines.length;i++){
+            const line=lines[i],trimmed=line.trim();
+            const opens=(line.match(/\{/g)||[]).length;
+            const closes=(line.match(/\}/g)||[]).length;
+            if(!selector&&trimmed&&!trimmed.startsWith('/*')&&!trimmed.startsWith('*')&&trimmed!=='*/'&&trimmed!=='}'){
+              if(trimmed.startsWith('@')&&line.includes('{')){
+                blockStack.push({type:'at',header:trimmed.replace(/\{\s*$/,'').replace(/\s+/g,' ').trim(),depthBefore:depth});
+              }else if(!trimmed.startsWith('@')&&!trimmed.includes(':')&&!line.includes(';')){
+                selectorParts.push(trimmed.replace(/\{\s*$/,'').trim());
+                if(line.includes('{')){
+                  selector=selectorParts.join(' ').replace(/\s+/g,' ').trim();
+                  selectorParts=[];
+                  blockStack.push({type:'rule',selector,depthBefore:depth});
+                }
+              }
+            }
+            if(selector){
+              const m=line.match(declRe);
+              if(m){
+                const context=blockStack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');
+                declarations.push({lineIndex:i,lineNo:i+1,selector,property:m[1],value:m[2].trim(),important:Boolean(m[3]),context});
+              }
+            }
+            depth+=opens-closes;
+            while(blockStack.length&&depth<=blockStack[blockStack.length-1].depthBefore){
+              const popped=blockStack.pop();
+              if(popped.type==='rule')selector=null;
+            }
+          }
+          const dead=[];
+          for(let i=0;i<declarations.length;i++){
+            const cur=declarations[i];
+            const later=declarations.slice(i+1).find(x=>x.selector===cur.selector&&x.property===cur.property&&x.context===cur.context&&(!cur.important||x.important));
+            if(later)dead.push({...cur,laterLine:later.lineNo,laterValue:later.value,laterImportant:later.important});
+          }
+          const deadLines=new Set(dead.map(x=>x.lineIndex));
+          const candidate=lines.filter((_line,i)=>!deadLines.has(i)).join('\n');
+          const selectors=[...new Set(dead.map(x=>x.selector))].sort();
+          const sha=(value)=>crypto.createHash('sha256').update(value).digest('hex');
+          if(declarations.length!==2367) throw new Error(`declaration drift: ${declarations.length}`);
+          if(dead.length!==596) throw new Error(`dead declaration drift: ${dead.length}`);
+          if((text.match(/!important/g)||[]).length!==0) throw new Error('unexpected !important in parent');
+          if((candidate.match(/!important/g)||[]).length!==0) throw new Error('unexpected !important in candidate');
+          fs.writeFileSync('/tmp/orders-command-center-parent.css',text);
+          fs.writeFileSync('/tmp/orders-command-center-candidate.css',candidate);
+          fs.writeFileSync('/tmp/orders-command-center-dead.json',JSON.stringify(dead,null,2));
+          fs.writeFileSync('/tmp/orders-command-center-selectors.json',JSON.stringify(selectors,null,2));
+          console.log('Deletion candidate: PASS');
+          console.log(`- declarations: ${declarations.length} -> ${declarations.length-dead.length}`);
+          console.log(`- deleted declarations: ${dead.length}`);
+          console.log(`- affected selector strings: ${selectors.length}`);
+          console.log(`- bytes: ${Buffer.byteLength(text)} -> ${Buffer.byteLength(candidate)}`);
+          console.log(`- sha256 parent: ${sha(text)}`);
+          console.log(`- sha256 candidate: ${sha(candidate)}`);
+          NODE
+          cmp "${TARGET_FILE}" /tmp/orders-command-center-parent.css
+
+      - name: Generate parent responsive baseline
+        run: |
+          node scripts/generate-responsive-index-baseline.js
+          cp reports/responsive-index-baseline.json /tmp/ux-css-debt-003-parent-responsive.json
+
+      - name: Write targeted runtime snapshot harness
+        shell: bash
+        run: |
+          cat > /tmp/ux-css-debt-003-orders-snapshot.js <<'NODE'
+          const fs=require('fs');
+          const cp=require('child_process');
+          const { chromium }=require(process.cwd()+'/node_modules/playwright');
+          const out=process.argv[2];
+          const selectors=JSON.parse(fs.readFileSync('/tmp/orders-command-center-selectors.json','utf8'));
+          const viewports=[
+            {name:'1366x768',width:1366,height:768},
+            {name:'1280x802',width:1280,height:802},
+            {name:'820x1180',width:820,height:1180},
+            {name:'608x926',width:608,height:926},
+            {name:'390x844',width:390,height:844}
+          ];
+          const props=[
+            'display','position','top','right','bottom','left','zIndex','width','height','minWidth','maxWidth','minHeight','maxHeight',
+            'marginTop','marginRight','marginBottom','marginLeft','paddingTop','paddingRight','paddingBottom','paddingLeft',
+            'gap','rowGap','columnGap','gridTemplateColumns','gridTemplateRows','gridColumn','gridRow','alignItems','alignSelf','justifyItems','justifySelf','justifyContent',
+            'flex','flexBasis','flexGrow','flexShrink','flexDirection','flexWrap','order',
+            'fontFamily','fontSize','fontWeight','lineHeight','letterSpacing','textAlign','textOverflow','whiteSpace',
+            'color','backgroundColor','backgroundImage','borderTopWidth','borderRightWidth','borderBottomWidth','borderLeftWidth',
+            'borderTopColor','borderRightColor','borderBottomColor','borderLeftColor','borderTopLeftRadius','borderTopRightRadius','borderBottomRightRadius','borderBottomLeftRadius',
+            'boxShadow','opacity','visibility','overflow','overflowX','overflowY','transform','objectFit'
+          ];
+          const server=cp.spawn(process.execPath,['scripts/serve-static-site.js','--host=127.0.0.1','--port=5500'],{stdio:['ignore','pipe','pipe'],env:{...process.env,DOKE_E2E_DISABLE_REMOTE_SERVICES:'1'}});
+          const sleep=(ms)=>new Promise(r=>setTimeout(r,ms));
+          async function main(){
+            await sleep(700);
+            const browser=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+            const result={};
+            for(const vp of viewports){
+              const context=await browser.newContext({viewport:{width:vp.width,height:vp.height},reducedMotion:'reduce'});
+              const page=await context.newPage();
+              await page.addInitScript(()=>{
+                const user={id:'client_css_debt_003',role:'client',name:'Cliente CSS'};
+                const orders=[
+                  {id:'order_css_1',clientId:user.id,professionalId:'professional_1',providerName:'Studio Aquarela',serviceTitle:'Pintura comercial',status:'pending',createdAt:'2026-06-28T10:00:00.000Z'},
+                  {id:'order_css_2',clientId:user.id,professionalId:'professional_2',providerName:'Casa Limpa',serviceTitle:'Limpeza residencial',status:'accepted',createdAt:'2026-06-27T10:00:00.000Z'}
+                ];
+                localStorage.setItem('doke.auth.session.v1',JSON.stringify({user}));
+                localStorage.setItem('doke.orders.local.v1',JSON.stringify(orders));
+                localStorage.setItem('doke.orders',JSON.stringify(orders));
+              });
+              await page.goto('http://127.0.0.1:5500/pedidos.html',{waitUntil:'domcontentloaded'});
+              await page.waitForFunction(()=>document.body.dataset.ordersAudience==='client',{timeout:10000});
+              await page.waitForFunction(()=>document.querySelectorAll('.orders-list .order-card:not([hidden])').length===2,{timeout:10000});
+              await page.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important;caret-color:transparent!important}'});
+              await page.evaluate(()=>document.fonts&&document.fonts.ready);
+              await sleep(150);
+              result[vp.name]=await page.evaluate(({selectors,props})=>{
+                const clean=(v)=>String(v??'').replace(/\s+/g,' ').trim();
+                const snapshot={};
+                for(const selector of selectors){
+                  let nodes=[];
+                  try{nodes=[...document.querySelectorAll(selector)];}catch(_e){continue;}
+                  if(!nodes.length)continue;
+                  snapshot[selector]=nodes.map((el,index)=>{
+                    const cs=getComputedStyle(el);
+                    const r=el.getBoundingClientRect();
+                    const styles={}; for(const p of props)styles[p]=clean(cs[p]);
+                    return {index,tag:el.tagName,id:el.id||'',className:typeof el.className==='string'?clean(el.className):'',hidden:Boolean(el.hidden),rect:{x:+r.x.toFixed(3),y:+r.y.toFixed(3),width:+r.width.toFixed(3),height:+r.height.toFixed(3)},styles};
+                  });
+                }
+                return snapshot;
+              },{selectors,props});
+              await context.close();
+            }
+            await browser.close();
+            fs.writeFileSync(out,JSON.stringify(result,null,2));
+          }
+          main().finally(()=>server.kill('SIGTERM')).catch(err=>{console.error(err);process.exit(1);});
+          NODE
+
+      - name: Capture parent targeted runtime snapshot
+        run: node /tmp/ux-css-debt-003-orders-snapshot.js /tmp/orders-parent-runtime.json
+
+      - name: Apply deletion-only candidate in workspace
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp /tmp/orders-command-center-candidate.css "${TARGET_FILE}"
+          test "$(git diff --name-only)" = "${TARGET_FILE}"
+          echo "Candidate numstat:"
+          git diff --numstat -- "${TARGET_FILE}"
+          git diff --check -- "${TARGET_FILE}"
+
+      - name: Preserve responsive surface against certified parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp /tmp/ux-css-debt-003-parent-responsive.json reports/responsive-index-baseline.json
+          node scripts/test-responsive-contract.js
+
+      - name: Capture candidate targeted runtime snapshot
+        run: node /tmp/ux-css-debt-003-orders-snapshot.js /tmp/orders-candidate-runtime.json
+
+      - name: Require exact targeted runtime parity
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! cmp -s /tmp/orders-parent-runtime.json /tmp/orders-candidate-runtime.json; then
+            echo 'Targeted runtime snapshot drift detected.'
+            diff -u /tmp/orders-parent-runtime.json /tmp/orders-candidate-runtime.json | head -n 500 || true
+            exit 1
+          fi
+          echo 'Targeted Pedidos runtime parity: PASS'
+
+      - name: Run Pedidos role composition E2E
+        run: node node_modules/@playwright/test/cli.js test tests/e2e/pedidos-role-composition.spec.js --project=chromium
+
+      - name: Validate CSS and shared boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/audit-css-responsive-conflicts.js
+          npm run audit:shared-app-header-contract
+          npm run audit:responsive-boundaries
+          npm run audit:active-legacy-structures
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+
+      - name: Report candidate metrics
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs');
+          const parent=fs.readFileSync('/tmp/orders-command-center-parent.css','utf8');
+          const candidate=fs.readFileSync('/tmp/orders-command-center-candidate.css','utf8');
+          const dead=JSON.parse(fs.readFileSync('/tmp/orders-command-center-dead.json','utf8'));
+          console.log(JSON.stringify({
+            parentBytes:Buffer.byteLength(parent),
+            candidateBytes:Buffer.byteLength(candidate),
+            bytesRemoved:Buffer.byteLength(parent)-Buffer.byteLength(candidate),
+            declarationsRemoved:dead.length,
+            parentLines:parent.split(/\r?\n/).length,
+            candidateLines:candidate.split(/\r?\n/).length
+          },null,2));
+          NODE
+
+      - name: Restore exact parent workspace
+        if: always()
+        shell: bash
+        run: |
+          git checkout -- "${TARGET_FILE}" reports/responsive-index-baseline.json 2>/dev/null || true
+          rm -rf reports/generated/playwright-html reports/generated/playwright-results.json test-results playwright-report || true
+          git diff --exit-code || true
