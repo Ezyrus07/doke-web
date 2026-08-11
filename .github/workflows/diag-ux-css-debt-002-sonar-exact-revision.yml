@@ -1,0 +1,55 @@
+name: Doke UX-CSS-DEBT-002 Sonar Exact Revision
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-002-sonar-exact-revision
+
+permissions:
+  contents: read
+  pull-requests: read
+
+env:
+  TARGET_SHA: 06dbac77dcdd8e2896744868eb40fd7031ad95cb
+  EXPECTED_BASE: 631990336cc7c2a023ec9629c611beb66aa23fba
+  PR_NUMBER: 142
+
+jobs:
+  sonar-exact-revision:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout exact permanent SHA
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 0
+
+      - name: Guard exact one-file permanent delta
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test "$(git rev-parse HEAD^)" = "${EXPECTED_BASE}"
+          test "$(git diff --name-only "${EXPECTED_BASE}"...HEAD)" = 'assets/css/pages/home/mobile-hero-feed.css'
+          git diff --check "${EXPECTED_BASE}"...HEAD
+
+      - name: Require SonarQube Cloud credential
+        shell: bash
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: test -n "${SONAR_TOKEN}"
+
+      - name: Analyze PR 142 with exact SCM revision
+        uses: SonarSource/sonarqube-scan-action@c7ee0f9df90b7aa20e8dcf9695dcfe2e7da5b4f2
+        with:
+          args: >-
+            -Dsonar.projectKey=Ezyrus07_doke-web
+            -Dsonar.organization=ezyrus07
+            -Dsonar.pullrequest.key=${{ env.PR_NUMBER }}
+            -Dsonar.pullrequest.branch=ux/ux-css-debt-002-home-mobile-pass-compaction
+            -Dsonar.pullrequest.base=ux/ux-qa-debt-001-community-stability-contract
+            -Dsonar.scm.revision=${{ env.TARGET_SHA }}
+            -Dsonar.qualitygate.wait=true
+            -Dsonar.qualitygate.timeout=600
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
