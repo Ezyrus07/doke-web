@@ -226,7 +226,7 @@ jobs:
           echo 'Targeted Pedidos runtime parity: PASS'
 
       - name: Run Pedidos role composition E2E
-        run: node node_modules/@playwright/test/cli.js test tests/e2e/pedidos-role-composition.spec.js --project=chromium
+        run: node node_modules/@playwright/test/cli.js test tests/e2e/pedidos-role-composition.spec.js
 
       - name: Validate CSS and shared boundaries
         shell: bash
@@ -262,6 +262,7 @@ jobs:
         if: always()
         shell: bash
         run: |
-          git checkout -- "${TARGET_FILE}" reports/responsive-index-baseline.json 2>/dev/null || true
+          git checkout -- "${TARGET_FILE}" || true
+          git checkout -- reports/responsive-index-baseline.json 2>/dev/null || true
           rm -rf reports/generated/playwright-html reports/generated/playwright-results.json test-results playwright-report || true
           git diff --exit-code || true
