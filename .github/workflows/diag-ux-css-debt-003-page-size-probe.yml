@@ -1,0 +1,122 @@
+name: Doke UX-CSS-DEBT-003 Page Size Probe
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-003-readiness
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 06dbac77dcdd8e2896744868eb40fd7031ad95cb
+    steps:
+      - name: Checkout exact certified parent
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 0
+
+      - name: Guard exact parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+
+      - name: Compare page-scoped size-only high-risk candidates
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs');
+          const candidates=[
+            'assets/css/pages/carteira.css',
+            'assets/css/pages/pedidos/orders-command-center.css',
+            'assets/css/pages/comunidade-interna.css',
+            'assets/css/pages/detalhe-anuncio.css'
+          ];
+
+          function analyze(file){
+            const text=fs.readFileSync(file,'utf8');
+            const lines=text.split(/\r?\n/);
+            let depth=0, atContext=[], selectorParts=[], selector=null, ruleDepth=null;
+            const declarations=[];
+            const selectors=new Map();
+            const blockStack=[];
+            const declRe=/^\s*([\w-]+)\s*:\s*(.*?)\s*(!important)?\s*;\s*$/;
+
+            for(let i=0;i<lines.length;i++){
+              const line=lines[i], trimmed=line.trim();
+              const opens=(line.match(/\{/g)||[]).length;
+              const closes=(line.match(/\}/g)||[]).length;
+
+              if(!selector && trimmed && !trimmed.startsWith('/*') && !trimmed.startsWith('*') && trimmed!=='*/' && trimmed!=='}'){
+                if(trimmed.startsWith('@') && line.includes('{')){
+                  const header=trimmed.replace(/\{\s*$/,'').replace(/\s+/g,' ').trim();
+                  blockStack.push({type:'at',header,depthBefore:depth});
+                } else if(!trimmed.startsWith('@') && !trimmed.includes(':') && !line.includes(';')) {
+                  selectorParts.push(trimmed.replace(/\{\s*$/,'').trim());
+                  if(line.includes('{')){
+                    selector=selectorParts.join(' ').replace(/\s+/g,' ').trim();
+                    selectorParts=[];
+                    ruleDepth=depth+opens-closes;
+                    const key=selector;
+                    selectors.set(key,(selectors.get(key)||0)+1);
+                    blockStack.push({type:'rule',selector,depthBefore:depth});
+                  }
+                }
+              }
+
+              if(selector){
+                const m=line.match(declRe);
+                if(m){
+                  const context=blockStack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');
+                  declarations.push({lineIndex:i,lineNo:i+1,selector,property:m[1],value:m[2].trim(),important:Boolean(m[3]),context});
+                }
+              }
+
+              depth += opens-closes;
+              while(blockStack.length && depth<=blockStack[blockStack.length-1].depthBefore){
+                const popped=blockStack.pop();
+                if(popped.type==='rule'){selector=null;ruleDepth=null;}
+              }
+            }
+
+            const dead=[];
+            for(let i=0;i<declarations.length;i++){
+              const cur=declarations[i];
+              const later=declarations.slice(i+1).find(x=>x.selector===cur.selector&&x.property===cur.property&&x.context===cur.context&&(!cur.important||x.important));
+              if(later)dead.push({...cur,laterLine:later.lineNo,laterValue:later.value,laterImportant:later.important});
+            }
+            const duplicateSelectors=[...selectors.entries()].filter(([,n])=>n>1).sort((a,b)=>b[1]-a[1]);
+            return {
+              file,
+              bytes:Buffer.byteLength(text),
+              declarations:declarations.length,
+              important:(text.match(/!important/g)||[]).length,
+              selectorBlocks:[...selectors.values()].reduce((a,b)=>a+b,0),
+              uniqueSelectors:selectors.size,
+              duplicatedSelectorNames:duplicateSelectors.length,
+              repeatedSelectorBlocks:duplicateSelectors.reduce((s,[,n])=>s+n-1,0),
+              supersededDeclarations:dead.length,
+              supersededImportant:dead.filter(x=>x.important).length,
+              topDuplicateSelectors:duplicateSelectors.slice(0,20),
+              dead:dead.slice(0,80)
+            };
+          }
+
+          for(const file of candidates){
+            const r=analyze(file);
+            console.log('CANDIDATE', JSON.stringify({...r,dead:undefined}));
+            for(const d of r.dead) console.log('DEAD',file,JSON.stringify(d));
+          }
+          NODE
+
+      - name: Preserve workspace
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code
