@@ -39,30 +39,30 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci --ignore-scripts
-      - name: Apply exact validated candidate and Matrix writer
+      - name: Apply exact validated candidate and verify Matrix remains current
         run: |
           node scripts/.ux-css-debt-002-transformer.js --apply
           rm scripts/.ux-css-debt-002-transformer.js
           npm run write:domain-completion-matrix
-      - name: Restrict permanent delta
+      - name: Restrict permanent delta to one product file
         shell: bash
         run: |
           set -euo pipefail
           git restore reports || true
           git status --short
           changed="$(git diff --name-only)"
-          test "$(printf '%s\n' "${changed}" | sed '/^$/d' | wc -l)" -eq 2
-          printf '%s\n' "${changed}" | grep -Fx 'assets/css/pages/home/mobile-hero-feed.css'
-          printf '%s\n' "${changed}" | grep -Fx 'docs/DOMAIN-COMPLETION-MATRIX.md'
+          test "$(printf '%s\n' "${changed}" | sed '/^$/d' | wc -l)" -eq 1
+          test "${changed}" = 'assets/css/pages/home/mobile-hero-feed.css'
+          test -z "$(git status --short -- docs/DOMAIN-COMPLETION-MATRIX.md)"
           test "$(grep -o '!important' assets/css/pages/home/mobile-hero-feed.css | wc -l)" -eq 179
           npm run audit:domain-completion-matrix
           git diff --check
-      - name: Commit validated product and Matrix delta
+      - name: Commit validated CSS delta
         shell: bash
         run: |
           set -euo pipefail
           git config user.name 'doke'
           git config user.email 'bielantoniomma@gmail.com'
-          git add assets/css/pages/home/mobile-hero-feed.css docs/DOMAIN-COMPLETION-MATRIX.md
+          git add assets/css/pages/home/mobile-hero-feed.css
           git commit -m 'UX-CSS-DEBT-002: compact superseded Home mobile declarations'
           git push origin HEAD:"${TARGET_BRANCH}"
