@@ -1,0 +1,343 @@
+name: Build UX-JS-DEBT-001 Retirement Candidate
+
+on:
+  push:
+    branches:
+      - tmp/ux-js-debt-001-build
+
+permissions:
+  contents: write
+
+env:
+  EXPECTED_PARENT: da913753aef021e94ead3dbdbd8e369764dc999b
+  TARGET_BRANCH: ux/ux-js-debt-001-final-logic-retirement
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout exact certified parent
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+          ref: ${{ env.EXPECTED_PARENT }}
+
+      - name: Apply bounded retirement patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${EXPECTED_PARENT}"
+
+          python3 - <<'PY'
+          from pathlib import Path
+          target = '<script src="assets/js/features/community-final-logic-stability.js?v=20260714-interaction-stability-v1" defer></script>\n'
+          for name in ('mensagens.html', 'notificacoes.html'):
+              path = Path(name)
+              before = path.read_text(encoding='utf-8')
+              if before.count(target) != 1:
+                  raise SystemExit(f'{name}: expected exactly one retired shim script tag')
+              path.write_text(before.replace(target, ''), encoding='utf-8')
+          PY
+
+          rm assets/js/features/community-final-logic-stability.js
+
+          cat > scripts/test-community-final-logic-stability-contract.js <<'EOF'
+          const fs = require('fs');
+          const path = require('path');
+
+          const root = path.resolve(__dirname, '..');
+          const retired = 'assets/js/features/community-final-logic-stability.js';
+          const fail = (message) => { throw new Error(message); };
+          const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
+
+          if (fs.existsSync(path.join(root, retired))) fail('retired final logic shim still exists');
+
+          const rootHtml = fs.readdirSync(root).filter((name) => name.endsWith('.html'));
+          for (const page of rootHtml) {
+            if (read(page).includes('community-final-logic-stability.js')) {
+              fail(`${page} still loads retired final logic shim`);
+            }
+          }
+
+          const messages = read('assets/js/pages/mensagens.js');
+          const notifications = read('assets/js/pages/notificacoes.js');
+          const ownerChecks = [
+            ['messages owns auth-session refresh', messages.includes('doke:auth-session-change')],
+            ['notifications owns auth-session refresh', notifications.includes('doke:auth-session-change')],
+            ['messages owns hydration', messages.includes('DokePageHydration?.create')],
+            ['notifications owns hydration', notifications.includes('DokePageHydration?.create')],
+            ['messages owns aria-expanded state', messages.includes('setAttribute("aria-expanded"') || messages.includes("setAttribute('aria-expanded'")],
+            ['notifications owns aria-expanded state', notifications.includes("setAttribute('aria-expanded'") || notifications.includes('setAttribute("aria-expanded"')]
+          ];
+          ownerChecks.forEach(([label, ok]) => { if (!ok) fail(label); });
+
+          const activeProductFiles = [];
+          const walk = (dir) => {
+            for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+              const full = path.join(dir, entry.name);
+              if (entry.isDirectory()) walk(full);
+              else if (entry.name.endsWith('.js')) activeProductFiles.push(full);
+            }
+          };
+          walk(path.join(root, 'assets', 'js'));
+          const retiredTokens = [
+            'doke:account-context-invalidated',
+            'doke:account-context-refreshed',
+            'doke:submit-complete',
+            'logicSubmitting',
+            'data-logic-fallback-error',
+            'doke:final-logic-stability-ready'
+          ];
+          for (const token of retiredTokens) {
+            const owners = activeProductFiles.filter((file) => fs.readFileSync(file, 'utf8').includes(token));
+            if (owners.length) fail(`retired shim token still active in product JS: ${token} -> ${owners.map((file) => path.relative(root, file)).join(', ')}`);
+          }
+
+          console.log('Community final logic retirement contract: OK');
+          EOF
+
+          cat > scripts/test-community-final-readiness-contract.js <<'EOF'
+          const fs = require('fs');
+          const path = require('path');
+
+          const root = path.resolve(__dirname, '..');
+          const requiredFiles = [
+            'comunidade-interna.html',
+            'mensagens.html',
+            'notificacoes.html',
+            'assets/js/pages/comunidade-interna.js',
+            'assets/js/pages/mensagens.js',
+            'assets/js/pages/notificacoes.js',
+            'assets/js/features/community-runtime-stability.js',
+            'assets/js/features/chat-realtime-presence.js',
+            'assets/js/features/in-app-notifications.js',
+            'docs/COMMUNITY-LOGIC-FINAL-READINESS.md'
+          ];
+
+          const missing = requiredFiles.filter((file) => !fs.existsSync(path.join(root, file)));
+          if (missing.length) {
+            console.error('Arquivos obrigatórios ausentes:\n- ' + missing.join('\n- '));
+            process.exit(1);
+          }
+
+          const report = fs.readFileSync(path.join(root, 'docs/COMMUNITY-LOGIC-FINAL-READINESS.md'), 'utf8');
+          const requiredSections = [
+            '## Pronto no frontend local',
+            '## Simulado localmente',
+            '## Dependente de backend/Supabase',
+            '## Bloqueadores encontrados nesta auditoria',
+            '## Critério para considerar a lógica encerrada'
+          ];
+          const absentSections = requiredSections.filter((section) => !report.includes(section));
+          if (absentSections.length) {
+            console.error('Seções obrigatórias ausentes no relatório:\n- ' + absentSections.join('\n- '));
+            process.exit(1);
+          }
+
+          const retired = 'community-final-logic-stability.js';
+          for (const file of ['comunidade-interna.html', 'mensagens.html', 'notificacoes.html']) {
+            const html = fs.readFileSync(path.join(root, file), 'utf8');
+            if (html.includes(retired)) {
+              console.error(`${file}: módulo legacy aposentado ainda está carregado.`);
+              process.exit(1);
+            }
+          }
+
+          const messages = fs.readFileSync(path.join(root, 'assets/js/pages/mensagens.js'), 'utf8');
+          const notifications = fs.readFileSync(path.join(root, 'assets/js/pages/notificacoes.js'), 'utf8');
+          for (const [label, source] of [['mensagens', messages], ['notificacoes', notifications]]) {
+            if (!source.includes('DokePageHydration?.create')) {
+              console.error(`${label}: authority canônica de hydration ausente.`);
+              process.exit(1);
+            }
+            if (!source.includes('doke:auth-session-change')) {
+              console.error(`${label}: refresh canônico de auth/session ausente.`);
+              process.exit(1);
+            }
+          }
+
+          console.log('Community final readiness contract: OK (canonical owners, retired shim absent)');
+          EOF
+
+          cat > scripts/test-messages-interaction-stability-contract.js <<'EOF'
+          const fs = require('fs');
+          const path = require('path');
+
+          const root = path.resolve(__dirname, '..');
+          const runtime = fs.readFileSync(path.join(root, 'assets/js/features/community-runtime-stability.js'), 'utf8');
+          const messagesHtml = fs.readFileSync(path.join(root, 'mensagens.html'), 'utf8');
+          const notificationsHtml = fs.readFileSync(path.join(root, 'notificacoes.html'), 'utf8');
+          const messagesJs = fs.readFileSync(path.join(root, 'assets/js/pages/mensagens.js'), 'utf8');
+          const notificationsJs = fs.readFileSync(path.join(root, 'assets/js/pages/notificacoes.js'), 'utf8');
+          const failures = [];
+          const check = (label, condition) => { if (!condition) failures.push(label); };
+
+          check('retired final logic shim is absent', !fs.existsSync(path.join(root, 'assets/js/features/community-final-logic-stability.js')));
+          check('messages no longer loads retired final logic shim', !messagesHtml.includes('community-final-logic-stability.js'));
+          check('notifications no longer loads retired final logic shim', !notificationsHtml.includes('community-final-logic-stability.js'));
+          check('messages owns aria-expanded synchronization', /setAttribute\(["']aria-expanded["']/.test(messagesJs));
+          check('notifications owns aria-expanded synchronization', /setAttribute\(["']aria-expanded["']/.test(notificationsJs));
+          check('messages owns page hydration fallback', messagesJs.includes('DokePageHydration?.create'));
+          check('notifications owns page hydration fallback', notificationsJs.includes('DokePageHydration?.create'));
+          check('messages refreshes on canonical auth-session change', messagesJs.includes('doke:auth-session-change'));
+          check('notifications refreshes on canonical auth-session change', notificationsJs.includes('doke:auth-session-change'));
+          check('offline queue rejects non-array values before length access', /!Array\.isArray\(queue\) \|\| !queue\.length/.test(runtime));
+          check('offline enqueue normalizes non-array storage', /Array\.isArray\(parsedQueue\) \? parsedQueue : \[\]/.test(runtime));
+          check('messages invalidates the shared runtime cache', messagesHtml.includes('20260714-interaction-stability-v1'));
+          check('notifications invalidates the shared runtime cache', notificationsHtml.includes('20260714-interaction-stability-v1'));
+
+          if (failures.length) {
+            console.error('Messages interaction stability contract failed:');
+            failures.forEach((failure) => console.error(`- ${failure}`));
+            process.exit(1);
+          }
+
+          console.log('Messages interaction stability contract: OK');
+          EOF
+
+          cat > .github/workflows/ux-js-debt-001-final-logic-retirement.yml <<'EOF'
+          name: Doke UX-JS-DEBT-001 Final Logic Retirement
+
+          on:
+            push:
+              branches:
+                - ux/ux-js-debt-001-final-logic-retirement
+            pull_request:
+              branches:
+                - ux/ux-resp-debt-011-profile-header-parity-retirement
+
+          permissions:
+            contents: read
+            pull-requests: read
+
+          concurrency:
+            group: ux-js-debt-001-${{ github.event_name }}-${{ github.ref }}
+            cancel-in-progress: true
+
+          env:
+            EXPECTED_BASE: da913753aef021e94ead3dbdbd8e369764dc999b
+            PR_NUMBER: '0'
+
+          jobs:
+            ux-js-debt-001:
+              runs-on: ubuntu-24.04
+              steps:
+                - name: Checkout repository
+                  uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+                  with:
+                    fetch-depth: 0
+
+                - name: Guard certified UX-RESP-DEBT-011 parent
+                  shell: bash
+                  run: |
+                    set -euo pipefail
+                    git fetch origin ux/ux-resp-debt-011-profile-header-parity-retirement --quiet
+                    test "$(git merge-base HEAD origin/ux/ux-resp-debt-011-profile-header-parity-retirement)" = "${EXPECTED_BASE}"
+
+                - name: Setup Node.js
+                  uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+                  with:
+                    node-version: 22
+                    cache: npm
+
+                - name: Install dependencies
+                  run: npm ci --ignore-scripts
+
+                - name: Validate bounded retirement delta
+                  shell: bash
+                  run: |
+                    set -euo pipefail
+                    while IFS= read -r changed_path; do
+                      case "${changed_path}" in
+                        .github/workflows/ux-js-debt-001-final-logic-retirement.yml|assets/js/features/community-final-logic-stability.js|mensagens.html|notificacoes.html|scripts/test-community-final-logic-stability-contract.js|scripts/test-community-final-readiness-contract.js|scripts/test-messages-interaction-stability-contract.js|docs/DOMAIN-COMPLETION-MATRIX.md) ;;
+                        *) echo "::error::Unexpected UX-JS-DEBT-001 path: ${changed_path}"; exit 1 ;;
+                      esac
+                    done < <(git diff --name-only "${EXPECTED_BASE}"...HEAD)
+                    git cat-file -e "${EXPECTED_BASE}:assets/js/features/community-final-logic-stability.js"
+                    test ! -e assets/js/features/community-final-logic-stability.js
+
+                - name: Validate HTML import-only delta
+                  shell: bash
+                  run: |
+                    set -euo pipefail
+                    node - <<'NODE'
+                    const assert = require('assert');
+                    const fs = require('fs');
+                    const { execFileSync } = require('child_process');
+                    const base = process.env.EXPECTED_BASE;
+                    const line = '<script src="assets/js/features/community-final-logic-stability.js?v=20260714-interaction-stability-v1" defer></script>\n';
+                    for (const file of ['mensagens.html', 'notificacoes.html']) {
+                      const parent = execFileSync('git', ['show', `${base}:${file}`], { encoding: 'utf8' });
+                      const current = fs.readFileSync(file, 'utf8');
+                      assert.strictEqual(parent.split(line).length - 1, 1, `${file}: parent must load retired shim exactly once`);
+                      assert.strictEqual(current, parent.replace(line, ''), `${file}: delta must remove only retired shim import`);
+                    }
+                    NODE
+
+                - name: Validate reconciled ownership contracts
+                  shell: bash
+                  run: |
+                    set -euo pipefail
+                    npm run test:community:final-logic
+                    npm run test:community:final-readiness
+                    node scripts/test-messages-interaction-stability-contract.js
+                    npm run test:community-critical-hardening
+                    npm run audit:auth-session
+                    npm run audit:active-legacy-structures
+
+                - name: Install Chromium from lockfile-pinned Playwright
+                  run: node node_modules/@playwright/test/cli.js install --with-deps chromium
+
+                - name: Preserve responsive surface
+                  shell: bash
+                  run: |
+                    set -euo pipefail
+                    node scripts/generate-responsive-index-baseline.js
+                    node scripts/test-responsive-contract.js
+
+                - name: Validate shared boundaries and governance
+                  shell: bash
+                  run: |
+                    set -euo pipefail
+                    npm run audit:shared-app-header-contract
+                    npm run audit:responsive-boundaries
+                    npm run audit:domain-completion-matrix
+                    npm run audit:agent-governance
+
+                - name: Validate patch whitespace
+                  run: git diff --check "${EXPECTED_BASE}"...HEAD
+
+                - name: Require SonarQube Cloud credential
+                  if: github.event_name == 'push' && env.PR_NUMBER != '0'
+                  shell: bash
+                  env:
+                    SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+                  run: test -n "${SONAR_TOKEN}"
+
+                - name: Analyze PR and enforce SonarQube Cloud Quality Gate
+                  if: github.event_name == 'push' && env.PR_NUMBER != '0'
+                  uses: SonarSource/sonarqube-scan-action@c7ee0f9df90b7aa20e8dcf9695dcfe2e7da5b4f2
+                  env:
+                    SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+                  with:
+                    args: >-
+                      -Dsonar.projectKey=Ezyrus07_doke-web
+                      -Dsonar.organization=ezyrus07
+                      -Dsonar.pullrequest.key=${{ env.PR_NUMBER }}
+                      -Dsonar.pullrequest.branch=ux/ux-js-debt-001-final-logic-retirement
+                      -Dsonar.pullrequest.base=ux/ux-resp-debt-011-profile-header-parity-retirement
+                      -Dsonar.qualitygate.wait=true
+                      -Dsonar.qualitygate.timeout=600
+          EOF
+
+          git diff --check
+
+      - name: Commit and push candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name doke
+          git config user.email bielantoniomma@gmail.com
+          git add -A
+          git commit -m 'UX-JS-DEBT-001: retire obsolete final logic stability shim'
+          git push origin "HEAD:${TARGET_BRANCH}"
