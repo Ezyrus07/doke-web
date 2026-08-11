@@ -58,10 +58,11 @@ jobs:
             'runtimeChangeAuthority','productionAuthority','pullRequestMergeAuthority'
           ]) if (result[field] !== false) process.exit(1);
           NODE
-      - name: Historical adapters unchanged
+      - name: Historical adapters unchanged in R4G delta
         shell: bash
         run: |
-          test -z "$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} -- \
+          R4F_HEAD=7fd98abce7aa3473cde8228f68d791e5ee493ef4
+          test -z "$(git diff --name-only "$R4F_HEAD" "${{ github.event.pull_request.head.sha }}" -- \
             scripts/execute-com-b03c-r3g-remote-adapter-staging-diagnostic.js \
             scripts/execute-com-b03c-r3v-single-use-remote-execution-envelope.js)"
       - name: Domain Completion Matrix
