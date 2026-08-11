@@ -1,0 +1,61 @@
+name: Doke UX-RESP-DEBT-010 Matrix Sync
+
+on:
+  push:
+    branches:
+      - diag/ux-resp-debt-010-tablet-rail-retirement-readiness
+
+permissions:
+  contents: write
+
+jobs:
+  sync-matrix:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout permanent DEBT-010 branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ux/ux-resp-debt-010-tablet-rail-retirement
+          fetch-depth: 0
+
+      - name: Guard exact permanent head and parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "4edc94af940fb6f9ef5df602a7d10d0ca79cf4b8"
+          git fetch origin ux/ux-resp-debt-009-small-tablet-header-ownership --quiet
+          test "$(git merge-base HEAD origin/ux/ux-resp-debt-009-small-tablet-header-ownership)" = "153fedff9bf4989a68ff99956181527926ed6533"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Regenerate constrained Matrix outputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run write:domain-completion-matrix
+          mapfile -t CHANGED < <(git diff --name-only)
+          printf '%s\n' "${CHANGED[@]}"
+          test "${#CHANGED[@]}" -eq 2
+          printf '%s\n' "${CHANGED[@]}" | grep -Fxq 'docs/DOMAIN-COMPLETION-MATRIX.md'
+          printf '%s\n' "${CHANGED[@]}" | grep -Fxq 'reports/generated/domain-completion-matrix-report.json'
+          npm run audit:domain-completion-matrix
+          git diff --check
+          git restore reports/generated/domain-completion-matrix-report.json
+          test "$(git diff --name-only)" = "docs/DOMAIN-COMPLETION-MATRIX.md"
+
+      - name: Commit canonical Matrix document only
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "doke-ci"
+          git config user.email "actions@users.noreply.github.com"
+          git add docs/DOMAIN-COMPLETION-MATRIX.md
+          git commit -m "docs(ux-resp-debt-010): sync domain completion matrix"
+          git push origin HEAD:ux/ux-resp-debt-010-tablet-rail-retirement
