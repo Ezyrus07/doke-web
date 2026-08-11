@@ -1,0 +1,179 @@
+name: Diagnose UX-JS-DEBT-001 Final Logic Reconciliation
+
+on:
+  push:
+    branches:
+      - diag/ux-js-debt-001-final-logic-reconciliation
+
+permissions:
+  contents: read
+
+env:
+  EXPECTED_PARENT: da913753aef021e94ead3dbdbd8e369764dc999b
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout diagnostic branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Guard exact certified parent and QA-only delta
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git merge-base HEAD "${EXPECTED_PARENT}")" = "${EXPECTED_PARENT}"
+          changed="$(git diff --name-only "${EXPECTED_PARENT}"...HEAD)"
+          test "${changed}" = ".github/workflows/diag-ux-js-debt-001-final-logic-reconciliation.yml"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Verify certified parent governance before probe
+        run: |
+          npm run audit:domain-completion-matrix
+          npm run audit:active-legacy-structures
+          npm run audit:agent-governance
+
+      - name: Inventory live consumers and responsibility ownership
+        shell: bash
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const path = require('node:path');
+          const root = process.cwd();
+          const target = 'assets/js/features/community-final-logic-stability.js';
+          const rootHtml = fs.readdirSync(root).filter((name) => name.endsWith('.html')).sort();
+          const consumers = rootHtml.filter((name) => fs.readFileSync(path.join(root, name), 'utf8').includes(target));
+          const expectedPages = ['comunidade-interna.html', 'mensagens.html', 'notificacoes.html'];
+          console.log('FINAL_LOGIC_CONSUMERS=' + JSON.stringify(consumers));
+          console.log('FINAL_LOGIC_CONSUMER_COUNT=' + consumers.length);
+          for (const page of expectedPages) console.log(`FINAL_LOGIC_${page.replace(/[^a-z0-9]+/gi, '_').toUpperCase()}=${consumers.includes(page)}`);
+
+          const files = [];
+          const skipRoots = new Set(['.git', 'node_modules', '.scannerwork']);
+          function walk(dir) {
+            for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+              if (skipRoots.has(entry.name)) continue;
+              const full = path.join(dir, entry.name);
+              if (entry.isDirectory()) walk(full);
+              else if (/\.(?:js|html)$/.test(entry.name)) files.push(full);
+            }
+          }
+          walk(root);
+          const needles = [
+            'doke:account-context-invalidated',
+            'doke:account-context-refreshed',
+            'doke:submit-complete',
+            'logicSubmitting',
+            'data-logic-fallback-error',
+            'doke:final-logic-stability-ready'
+          ];
+          for (const needle of needles) {
+            const owners = files
+              .filter((file) => fs.readFileSync(file, 'utf8').includes(needle))
+              .map((file) => path.relative(root, file).replaceAll('\\', '/'));
+            console.log(`OWNER_MAP ${needle} ${JSON.stringify(owners)}`);
+          }
+          NODE
+
+      - name: Classify inherited community contracts on untouched parent
+        shell: bash
+        run: |
+          set -u
+          for cmd in \
+            "npm run test:community-logic-stability" \
+            "npm run test:community-critical-hardening" \
+            "npm run test:community:final-logic" \
+            "npm run test:community:final-readiness" \
+            "node scripts/test-messages-interaction-stability-contract.js"
+          do
+            echo "BASELINE_CONTRACT_BEGIN ${cmd}"
+            bash -lc "${cmd}"
+            status=$?
+            echo "BASELINE_CONTRACT_STATUS ${status} ${cmd}"
+            echo "BASELINE_CONTRACT_END ${cmd}"
+          done
+          exit 0
+
+      - name: Apply workspace-only retirement candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const path = require('node:path');
+          const target = 'assets/js/features/community-final-logic-stability.js';
+          for (const name of fs.readdirSync('.').filter((file) => file.endsWith('.html'))) {
+            const before = fs.readFileSync(name, 'utf8');
+            const lines = before.split(/(?<=\n)/);
+            const after = lines.filter((line) => !line.includes(target)).join('');
+            if (after !== before) fs.writeFileSync(name, after);
+          }
+          NODE
+          rm assets/js/features/community-final-logic-stability.js
+          echo 'WORKSPACE_RETIREMENT_DIFF_BEGIN'
+          git diff --stat
+          git diff --name-only
+          echo 'WORKSPACE_RETIREMENT_DIFF_END'
+
+      - name: Run non-self-referential behavioral contracts after retirement candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run test:community-critical-hardening
+          npm run audit:auth-session
+          npm run audit:active-legacy-structures
+
+      - name: Install Chromium from lockfile-pinned Playwright
+        run: node node_modules/@playwright/test/cli.js install --with-deps chromium
+
+      - name: Preserve responsive surface after workspace-only candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/generate-responsive-index-baseline.js
+          node scripts/test-responsive-contract.js
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const report = fs.readFileSync('reports/responsive-contract-test-report.md', 'utf8');
+          if (!report.includes('Checks: 893')) throw new Error('responsive check count changed');
+          if (!report.includes('Failures: 0')) throw new Error('responsive failures changed');
+          if (!report.includes('Skips: 277')) throw new Error('responsive skips changed');
+          console.log('WORKSPACE_RESPONSIVE=893/0/277');
+          NODE
+
+      - name: Report stale self-referential contract impact without masking it
+        shell: bash
+        run: |
+          set +e
+          npm run test:community:final-logic
+          final_logic_status=$?
+          npm run test:community:final-readiness
+          readiness_status=$?
+          node scripts/test-messages-interaction-stability-contract.js
+          messages_status=$?
+          set -e
+          echo "CANDIDATE_SELF_REFERENTIAL_FINAL_LOGIC_STATUS=${final_logic_status}"
+          echo "CANDIDATE_SELF_REFERENTIAL_READINESS_STATUS=${readiness_status}"
+          echo "CANDIDATE_SELF_REFERENTIAL_MESSAGES_STATUS=${messages_status}"
+          test "${final_logic_status}" -ne 0
+          test "${readiness_status}" -ne 0
+          test "${messages_status}" -ne 0
+
+      - name: Ensure diagnostic branch itself remains product-clean
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard HEAD
+          git clean -fd
+          test -z "$(git status --porcelain)"
