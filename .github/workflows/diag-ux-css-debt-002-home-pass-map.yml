@@ -1,0 +1,54 @@
+name: Doke UX-CSS-DEBT-002 Home Pass Map
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-002-high-risk-inventory-r2
+
+permissions:
+  contents: read
+
+jobs:
+  map:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Map top-level blocks and duplicate selector pressure
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs=require('fs');
+          const file='assets/css/pages/home/mobile-hero-feed.css';
+          const s=fs.readFileSync(file,'utf8');
+          const lines=s.split(/\r?\n/);
+          let depth=0,start=-1,header='',blocks=[];
+          for(let i=0;i<lines.length;i++){
+            const line=lines[i];
+            if(depth===0 && /^\s*@media\b/.test(line)){ start=i; header=line.trim(); }
+            for(const ch of line){ if(ch==='{') depth++; else if(ch==='}') depth--; }
+            if(start>=0 && depth===0){
+              const text=lines.slice(start,i+1).join('\n');
+              let j=start-1, comments=[];
+              while(j>=0 && (lines[j].trim()==='' || /^\s*(\/\*|\*|\*\/)/.test(lines[j]))){ if(lines[j].trim()) comments.unshift(lines[j].trim()); j--; }
+              blocks.push({index:blocks.length+1,start:start+1,end:i+1,header,important:(text.match(/!important/g)||[]).length,comment:comments.slice(-6).join(' '),text});
+              start=-1; header='';
+            }
+          }
+          console.log(`TOP_LEVEL_MEDIA_BLOCKS=${blocks.length}`);
+          for(const b of blocks) console.log(JSON.stringify({index:b.index,start:b.start,end:b.end,header:b.header,important:b.important,comment:b.comment}));
+          const selectorMap=new Map();
+          for(const b of blocks){
+            const re=/([^{}]+)\{([^{}]*)\}/g; let m;
+            while((m=re.exec(b.text))){
+              const sel=m[1].trim().replace(/\s+/g,' ');
+              if(!sel || sel.startsWith('@')) continue;
+              const props=[...m[2].matchAll(/([\w-]+)\s*:/g)].map(x=>x[1]);
+              if(!selectorMap.has(sel)) selectorMap.set(sel,[]);
+              selectorMap.get(sel).push({block:b.index,props});
+            }
+          }
+          const dup=[...selectorMap.entries()].filter(([,hits])=>new Set(hits.map(h=>h.block)).size>1).map(([selector,hits])=>({selector,blocks:[...new Set(hits.map(h=>h.block))],hits})).sort((a,b)=>b.blocks.length-a.blocks.length);
+          console.log(`CROSS_BLOCK_DUPLICATE_SELECTORS=${dup.length}`);
+          dup.slice(0,80).forEach(x=>console.log('DUP '+JSON.stringify(x)));
+          NODE
