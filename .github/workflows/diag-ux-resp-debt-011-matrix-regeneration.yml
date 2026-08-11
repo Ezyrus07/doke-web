@@ -15,17 +15,18 @@ jobs:
   matrix-diff:
     runs-on: ubuntu-24.04
     steps:
-      - name: Checkout repository
+      - name: Checkout exact candidate tree
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           fetch-depth: 0
+          ref: ${{ env.CANDIDATE_SHA }}
 
-      - name: Guard diagnostic-only child of candidate
+      - name: Guard exact candidate checkout
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git merge-base HEAD "${CANDIDATE_SHA}")" = "${CANDIDATE_SHA}"
-          test "$(git diff --name-only "${CANDIDATE_SHA}"...HEAD)" = ".github/workflows/diag-ux-resp-debt-011-matrix-regeneration.yml"
+          test "$(git rev-parse HEAD)" = "${CANDIDATE_SHA}"
+          test -z "$(git status --porcelain)"
 
       - name: Setup Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
