@@ -68,9 +68,10 @@ jobs:
       - name: Workflow repository-only guard
         shell: bash
         run: |
-          test "$(grep -c '^  push:' .github/workflows/com-b03c-r3x-authorized-single-file-trigger-creation-readiness.yml || true)" -eq 0
-          test "$(grep -c 'environment:' .github/workflows/com-b03c-r3x-authorized-single-file-trigger-creation-readiness.yml || true)" -eq 0
-          test "$(grep -c 'secrets\.' .github/workflows/com-b03c-r3x-authorized-single-file-trigger-creation-readiness.yml || true)" -eq 0
+          WORKFLOW=.github/workflows/com-b03c-r3x-authorized-single-file-trigger-creation-readiness.yml
+          test "$(grep -c '^  push:' "$WORKFLOW" || true)" -eq 0
+          test "$(grep -Ec '^[[:space:]]+environment:' "$WORKFLOW" || true)" -eq 0
+          test "$(grep -c 'secrets[.]' "$WORKFLOW" || true)" -eq 0
       - name: Domain Completion Matrix
         run: npm run audit:domain-completion-matrix
       - name: Agent Governance
