@@ -1,0 +1,103 @@
+name: Doke UX-RESP-DEBT-009 Import Boundary Reconciliation Diagnostic
+
+on:
+  push:
+    branches:
+      - diag/ux-resp-debt-009-import-boundary-reconciliation
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Guard certified UX-RESP-DEBT-007 ancestry
+        run: test "$(git merge-base HEAD b40866e1741c4c6dd41af821dc625e4a86703c53)" = "b40866e1741c4c6dd41af821dc625e4a86703c53"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Apply workspace-only import boundary candidate
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          legacy_import='@import url("../components/shell/tablet-internal-rail-contract.css?v=20260710-tablet-rail-authority-v1") screen and (max-width: 760px);\n'
+          manifests=[
+            Path('assets/css/pages/pedidos-runtime-page.css'),
+            Path('assets/css/pages/notificacoes-foundation.css'),
+            Path('assets/css/pages/carteira-runtime-page.css'),
+          ]
+          for p in manifests:
+            s=p.read_text()
+            count=s.count(legacy_import)
+            print('legacy import',p,'count=',count)
+            if count != 1:
+              raise SystemExit(f'expected exactly one legacy import in {p}, got {count}')
+            p.write_text(s.replace(legacy_import,'',1))
+
+          p=Path('assets/css/components/internal/list-page-toolbar.css')
+          s=p.read_text()
+          old='''@media (max-width: 760px) {\n  body.orders-page-shell .home-side-meta,\n  body.notifications-page-shell .home-side-meta,\n  body.wallet-page-shell .home-side-meta {\n    display: none;\n  }\n\n  .home-side-meta__search-form {'''
+          new='''/* The injected Mobile App Shell mounts only through 560px.\n   Keep the legacy list-page header suppression on the same boundary so\n   561-760px can be owned by the canonical app-header contract. */\n@media (max-width: 560px) {\n  body.orders-page-shell .home-side-meta,\n  body.notifications-page-shell .home-side-meta,\n  body.wallet-page-shell .home-side-meta {\n    display: none;\n  }\n}\n\n@media (max-width: 760px) {\n  .home-side-meta__search-form {'''
+          count=s.count(old)
+          print('toolbar boundary target count=',count)
+          if count != 1:
+            raise SystemExit(f'expected exactly one toolbar boundary target, got {count}')
+          p.write_text(s.replace(old,new,1))
+          PY
+          git diff -- assets/css/pages/pedidos-runtime-page.css assets/css/pages/notificacoes-foundation.css assets/css/pages/carteira-runtime-page.css assets/css/components/internal/list-page-toolbar.css
+          npm run audit:css-import-resolution
+
+      - name: Prove legacy contract leaves active graph for migrated consumers
+        run: |
+          node <<'NODE'
+          const fs=require('fs');
+          const {getLoadedCssAssets}=require('./scripts/lib/css-assets');
+          const target='assets/css/components/shell/tablet-internal-rail-contract.css';
+          for (const page of ['pedidos.html','notificacoes.html','carteira.html']) {
+            const assets=getLoadedCssAssets(fs.readFileSync(page,'utf8'),process.cwd());
+            const count=assets.filter((asset)=>asset===target).length;
+            console.log('ACTIVE_GRAPH',page,target,count);
+            if (count !== 0) throw new Error(`${page} still loads ${target} ${count} time(s)`);
+          }
+          NODE
+
+      - name: Install Chromium from lockfile-pinned Playwright
+        run: node node_modules/@playwright/test/cli.js install --with-deps chromium
+
+      - name: Run full responsive contract and require exact preservation
+        shell: bash
+        run: |
+          node scripts/generate-responsive-index-baseline.js
+          node scripts/test-responsive-contract.js
+          node <<'NODE'
+          const fs=require('fs');
+          const r=JSON.parse(fs.readFileSync('reports/responsive-contract-test-report.json','utf8'));
+          console.log('PROBE_SUMMARY',JSON.stringify(r.summary));
+          for(const f of r.failures||[]) console.log('PROBE_FAILURE',JSON.stringify({page:f.page,breakpoint:f.breakpoint,component:f.component,property:f.property,expected:f.expected,actual:f.actual,selector:f.selector}));
+          if(r.summary.checks!==893) throw new Error(`checks must remain 893, got ${r.summary.checks}`);
+          if(r.summary.failures!==0) throw new Error(`failures must remain 0, got ${r.summary.failures}`);
+          if(r.summary.skips!==277) throw new Error(`skips must remain 277, got ${r.summary.skips}`);
+          NODE
+
+      - name: Validate shared header and responsive boundaries
+        run: |
+          npm run audit:shared-app-header-contract
+          npm run audit:responsive-boundaries
+
+      - name: Validate patch whitespace
+        run: git diff --check
