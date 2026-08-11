@@ -1,20 +1,17 @@
 name: Domain Completion Matrix Artifact Sync
 
 on:
-  pull_request:
-    branches: [rep/rep-001-baseline-audit]
+  push:
+    branches: [com/com-001-baseline-audit]
     paths:
-      - 'config/domain-completion-matrix.json'
-      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
-      - 'reports/generated/domain-completion-matrix-report.json'
       - '.github/workflows/domain-completion-matrix-sync.yml'
 
-permissions: { contents: read }
+permissions: { contents: write }
 
 jobs:
-  verify:
+  sync:
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
@@ -23,9 +20,93 @@ jobs:
           node-version: '24'
           cache: npm
       - run: npm ci --ignore-scripts
-      - name: Domain Completion Matrix
+      - name: Pre-writer R4I repository-only gates
+        shell: bash
+        run: |
+          node --check backend/modules/communities/community-realtime-private-auth-r4i.js
+          node --check scripts/test-com-b03c-r4i-r4h-terminal-observation-authorization-consumption.js
+          node scripts/test-com-b03c-r4i-r4h-terminal-observation-authorization-consumption.js
+          test ! -e config/com-b03c-r4h-single-use-hosted-terminal-status-observation-authorization-trigger.json
+          node - <<'NODE'
+          const r4i = require('./backend/modules/communities/community-realtime-private-auth-r4i');
+          const config = require('./config/com-b03c-r4i-r4h-terminal-observation-authorization-consumption.json');
+          if (!r4i.validatePersistedReceipt(config.receipt)) process.exit(1);
+          if (config.receipt.authorizationConsumed !== true || config.receipt.authorizationReusable !== false) process.exit(1);
+          if (config.receipt.executionAttempted !== false || config.receipt.triggerExists !== false) process.exit(1);
+          for (const field of [
+            'triggerCreationAuthority','remoteExecutionAuthority','remoteCredentialReadAuthority',
+            'remoteDependencyLoadAuthority','networkAuthority','stagingReadAuthority',
+            'stagingMutationAuthority','realtimeSubscriptionAuthority','authIdentityLifecycleAuthority',
+            'runtimeChangeAuthority','productionAuthority','pullRequestMergeAuthority'
+          ]) if (config.receipt[field] !== false) process.exit(1);
+          if (config.receipt.separateExecutionBoundaryRequired !== true || config.receipt.rawAuthorizationPhrasePersisted !== false) process.exit(1);
+          if (config.receipt.exactRootCauseProven !== false || config.receipt.causalPromotionAllowed !== false) process.exit(1);
+          NODE
+          R4H_HEAD=bb2fb9188ae054916bc3b770ef89e2a0addb38e3
+          test -z "$(git diff --name-only "$R4H_HEAD" HEAD -- \
+            backend/modules/communities/community-realtime-private-auth-r4h.js \
+            scripts/test-com-b03c-r4h-presence-only-terminal-observation-authorization-lifecycle-readiness.js \
+            config/com-b03c-r4h-presence-only-terminal-observation-authorization-lifecycle-readiness.json \
+            docs/validation/COM-B03C-R4H-HOSTED-TERMINAL-OBSERVATION-AUTHORIZATION-LIFECYCLE-READINESS.json \
+            backend/modules/communities/community-realtime-private-auth-r4g.js \
+            scripts/execute-com-b03c-r4g-presence-only-terminal-observation-envelope.js \
+            scripts/execute-com-b03c-r3g-remote-adapter-staging-diagnostic.js \
+            scripts/execute-com-b03c-r3v-single-use-remote-execution-envelope.js)"
+      - name: Canonical writer
+        run: npm run write:domain-completion-matrix
+      - name: Restrict canonical writer outputs
+        shell: bash
+        run: |
+          mapfile -t changed < <(git diff --name-only)
+          test "${#changed[@]}" -eq 2
+          printf '%s\n' "${changed[@]}" | grep -Fx 'docs/DOMAIN-COMPLETION-MATRIX.md'
+          printf '%s\n' "${changed[@]}" | grep -Fx 'reports/generated/domain-completion-matrix-report.json'
+      - name: Canonical matrix audit
         run: npm run audit:domain-completion-matrix
+      - name: Preserve R4I repository guards
+        shell: bash
+        run: |
+          node scripts/test-com-b03c-r4i-r4h-terminal-observation-authorization-consumption.js
+          test ! -e config/com-b03c-r4h-single-use-hosted-terminal-status-observation-authorization-trigger.json
+          node - <<'NODE'
+          const r4i = require('./backend/modules/communities/community-realtime-private-auth-r4i');
+          const config = require('./config/com-b03c-r4i-r4h-terminal-observation-authorization-consumption.json');
+          if (!r4i.validatePersistedReceipt(config.receipt)) process.exit(1);
+          if (config.receipt.authorizationConsumed !== true || config.receipt.authorizationReusable !== false) process.exit(1);
+          if (config.receipt.remoteExecutionAuthority !== false || config.receipt.stagingReadAuthority !== false || config.receipt.stagingMutationAuthority !== false) process.exit(1);
+          if (config.receipt.productionAuthority !== false || config.receipt.pullRequestMergeAuthority !== false) process.exit(1);
+          if (config.receipt.exactRootCauseProven !== false || config.receipt.causalPromotionAllowed !== false) process.exit(1);
+          NODE
       - name: Agent Governance
         run: npm run audit:agent-governance
-      - name: Diff hygiene
-        run: git diff --check "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}"
+      - name: Contain governance-generated side effects
+        shell: bash
+        run: |
+          mkdir -p /tmp/r4i-matrix
+          cp docs/DOMAIN-COMPLETION-MATRIX.md /tmp/r4i-matrix/DOMAIN-COMPLETION-MATRIX.md
+          cp reports/generated/domain-completion-matrix-report.json /tmp/r4i-matrix/domain-completion-matrix-report.json
+          git reset --hard HEAD
+          git clean -fd
+          cp /tmp/r4i-matrix/DOMAIN-COMPLETION-MATRIX.md docs/DOMAIN-COMPLETION-MATRIX.md
+          mkdir -p reports/generated
+          cp /tmp/r4i-matrix/domain-completion-matrix-report.json reports/generated/domain-completion-matrix-report.json
+      - name: Stage exactly two canonical outputs
+        shell: bash
+        run: |
+          mapfile -t changed < <(git diff --name-only)
+          test "${#changed[@]}" -eq 2
+          printf '%s\n' "${changed[@]}" | grep -Fx 'docs/DOMAIN-COMPLETION-MATRIX.md'
+          printf '%s\n' "${changed[@]}" | grep -Fx 'reports/generated/domain-completion-matrix-report.json'
+          git add docs/DOMAIN-COMPLETION-MATRIX.md
+          git add -f reports/generated/domain-completion-matrix-report.json
+          mapfile -t staged < <(git diff --name-only --cached)
+          test "${#staged[@]}" -eq 2
+          printf '%s\n' "${staged[@]}" | grep -Fx 'docs/DOMAIN-COMPLETION-MATRIX.md'
+          printf '%s\n' "${staged[@]}" | grep -Fx 'reports/generated/domain-completion-matrix-report.json'
+      - name: Commit canonical R4I-derived outputs
+        shell: bash
+        run: |
+          git config user.name doke
+          git config user.email bielantoniomma@gmail.com
+          git commit -m 'docs(com): reconcile domain matrix after R4I authorization consumption'
+          git push origin HEAD:com/com-001-baseline-audit
