@@ -1,0 +1,164 @@
+name: Doke UX-CSS-DEBT-002 Final Exact-SHA Certification
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-002-final-certification
+
+permissions:
+  contents: read
+  pull-requests: read
+
+env:
+  TARGET_SHA: 06dbac77dcdd8e2896744868eb40fd7031ad95cb
+  EXPECTED_BASE: 631990336cc7c2a023ec9629c611beb66aa23fba
+  TARGET_FILE: assets/css/pages/home/mobile-hero-feed.css
+  PARENT_BLOB: ffc22df76e922538d47fc7a540399c2d84d93b38
+  PR_NUMBER: 142
+
+jobs:
+  exact-sha-certification:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout exact permanent SHA
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 0
+
+      - name: Guard exact permanent tree and one-file delta
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test "$(git rev-parse HEAD^)" = "${EXPECTED_BASE}"
+          changed="$(git diff --name-only "${EXPECTED_BASE}"...HEAD)"
+          test "${changed}" = "${TARGET_FILE}"
+          test "$(git diff --numstat "${EXPECTED_BASE}"...HEAD -- "${TARGET_FILE}" | awk '{print $1}')" = "0"
+          test "$(git diff --numstat "${EXPECTED_BASE}"...HEAD -- "${TARGET_FILE}" | awk '{print $2}')" = "130"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Prove exact deletion-only deterministic CSS output
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs=require('fs');
+          const path=require('path');
+          const crypto=require('crypto');
+          const cp=require('child_process');
+          const assert=require('assert');
+          const file=process.env.TARGET_FILE;
+          const base=process.env.EXPECTED_BASE;
+          const parentBlob=process.env.PARENT_BLOB;
+          const parent=cp.execFileSync('git',['show',`${base}:${file}`],{encoding:'utf8'});
+          const current=fs.readFileSync(file,'utf8');
+          const blobSha=(text)=>{const b=Buffer.from(text);return crypto.createHash('sha1').update(Buffer.from(`blob ${b.length}\0`)).update(b).digest('hex');};
+          assert.strictEqual(blobSha(parent),parentBlob,'parent blob drift');
+          const lines=parent.split(/\r?\n/);
+          let depth=0,media=null,mediaIndex=0,selectorParts=[],selector=null;
+          const declarations=[];
+          const mediaKind=(header)=>/max-width\s*:\s*390px/.test(header)?'max390':/max-width\s*:\s*560px/.test(header)?'max560':'other';
+          const declRe=/^\s*([\w-]+)\s*:\s*(.*?)\s*(!important)?\s*;\s*$/;
+          for(let i=0;i<lines.length;i++){
+            const line=lines[i],trimmed=line.trim();
+            if(depth===0&&/^@media\b/.test(trimmed)){mediaIndex++;media={index:mediaIndex,kind:mediaKind(trimmed)};}
+            if(media&&depth===1&&!selector){
+              if(trimmed&&!trimmed.startsWith('/*')&&!trimmed.startsWith('*')&&trimmed!=='*/'&&trimmed!=='}'){
+                selectorParts.push(trimmed.replace(/\{\s*$/,'').trim());
+                if(line.includes('{')){selector=selectorParts.join(' ').replace(/\s+/g,' ').trim();selectorParts=[];}
+              }
+            }else if(media&&depth===2&&selector){
+              const m=line.match(declRe);if(m)declarations.push({lineIndex:i,mediaIndex:media.index,mediaKind:media.kind,selector,property:m[1],important:Boolean(m[3])});
+            }
+            for(const ch of line){if(ch==='{')depth++;else if(ch==='}')depth--;}
+            if(selector&&depth===1)selector=null;
+            if(media&&depth===0){media=null;selectorParts=[];selector=null;}
+          }
+          const covers=(later,earlier)=>earlier.mediaKind==='max560'?later.mediaKind==='max560':earlier.mediaKind==='max390'?(later.mediaKind==='max390'||later.mediaKind==='max560'):later.mediaKind===earlier.mediaKind;
+          const canOverride=(later,earlier)=>!earlier.important||later.important;
+          const dead=[];
+          for(let i=0;i<declarations.length;i++){
+            const cur=declarations[i];if(cur.mediaIndex>6)continue;
+            const later=declarations.slice(i+1).find(x=>x.selector===cur.selector&&x.property===cur.property&&covers(x,cur)&&canOverride(x,cur));
+            if(later)dead.push(cur);
+          }
+          const deadLines=new Set(dead.map(x=>x.lineIndex));
+          const candidate=lines.filter((_l,i)=>!deadLines.has(i)).join('\n');
+          assert.strictEqual(declarations.length,713);
+          assert.strictEqual(dead.length,130);
+          assert.strictEqual(dead.filter(x=>x.important).length,23);
+          assert.strictEqual((parent.match(/!important/g)||[]).length,202);
+          assert.strictEqual((candidate.match(/!important/g)||[]).length,179);
+          assert.strictEqual(Buffer.byteLength(parent),41752);
+          assert.strictEqual(Buffer.byteLength(candidate),37769);
+          assert.strictEqual(current,candidate,'permanent CSS differs from deterministic candidate');
+          console.log('Exact deletion-only proof: PASS');
+          console.log('- declarations: 713 -> 583');
+          console.log('- deleted: 130');
+          console.log('- !important: 202 -> 179');
+          console.log('- bytes: 41752 -> 37769');
+          NODE
+
+      - name: Install Chromium from lockfile-pinned Playwright
+        run: node node_modules/@playwright/test/cli.js install --with-deps chromium
+
+      - name: Preserve responsive surface against certified parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp "${TARGET_FILE}" /tmp/ux-css-debt-002-candidate.css
+          git show "${EXPECTED_BASE}:${TARGET_FILE}" > "${TARGET_FILE}"
+          node scripts/generate-responsive-index-baseline.js
+          cp reports/responsive-index-baseline.json /tmp/ux-css-debt-002-parent-responsive.json
+          cp /tmp/ux-css-debt-002-candidate.css "${TARGET_FILE}"
+          cp /tmp/ux-css-debt-002-parent-responsive.json reports/responsive-index-baseline.json
+          node scripts/test-responsive-contract.js
+
+      - name: Validate CSS debt and shared boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/ux-css-debt-002-conflicts.log
+          grep -F 'Conflicting class/property pairs: 339' /tmp/ux-css-debt-002-conflicts.log
+          npm run audit:shared-app-header-contract
+          npm run audit:responsive-boundaries
+          npm run audit:active-legacy-structures | tee /tmp/ux-css-debt-002-legacy.log
+          grep -F 'active legacy/remediation css: 0' /tmp/ux-css-debt-002-legacy.log
+          grep -F 'active legacy/remediation js: 0' /tmp/ux-css-debt-002-legacy.log
+          grep -F 'high risk active css: 38' /tmp/ux-css-debt-002-legacy.log
+
+      - name: Validate Matrix and agent governance
+        run: |
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+
+      - name: Validate patch whitespace
+        run: git diff --check "${EXPECTED_BASE}"...HEAD
+
+      - name: Require SonarQube Cloud credential
+        shell: bash
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: test -n "${SONAR_TOKEN}"
+
+      - name: Analyze PR 142 exact SHA and enforce SonarQube Cloud Quality Gate
+        uses: SonarSource/sonarqube-scan-action@c7ee0f9df90b7aa20e8dcf9695dcfe2e7da5b4f2
+        with:
+          args: >-
+            -Dsonar.projectKey=Ezyrus07_doke-web
+            -Dsonar.organization=ezyrus07
+            -Dsonar.pullrequest.key=${{ env.PR_NUMBER }}
+            -Dsonar.pullrequest.branch=ux/ux-css-debt-002-home-mobile-pass-compaction
+            -Dsonar.pullrequest.base=ux/ux-qa-debt-001-community-stability-contract
+            -Dsonar.qualitygate.wait=true
+            -Dsonar.qualitygate.timeout=600
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
