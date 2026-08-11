@@ -1,0 +1,228 @@
+name: Doke UX-CSS-DEBT-004 PR148 Exact Certification
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-004-certify-pr148
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: b5e569ae0f4827f4981ec436967e59470f6a7404
+      PARENT_SHA: 5769b3888e612145df6a94fcc8238d5a9ca6ca7f
+      TARGET_FILE: assets/css/pages/detalhe-anuncio.css
+      EXPECTED_PARENT_SHA256: 95ace85a3c08919b556fd3c53ea6ca1a2bb6881477415bb535bab654831c9d89
+      EXPECTED_CANDIDATE_SHA256: 821c844b51907a65e3ba8ae61476a57aaef898d93cbd9e4a6be8b4b74a06c049
+      PR_NUMBER: '148'
+    steps:
+      - name: Checkout exact permanent SHA
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: b5e569ae0f4827f4981ec436967e59470f6a7404
+          fetch-depth: 0
+
+      - name: Guard exact one-commit product-only tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test "$(git rev-parse HEAD^)" = "${PARENT_SHA}"
+          test "$(git rev-list --count "${PARENT_SHA}"..HEAD)" = "1"
+          test "$(git diff --name-only "${PARENT_SHA}"...HEAD)" = "${TARGET_FILE}"
+          test "$(git diff --numstat "${PARENT_SHA}"...HEAD -- "${TARGET_FILE}" | awk '{print $1}')" = "0"
+          test "$(git diff --numstat "${PARENT_SHA}"...HEAD -- "${TARGET_FILE}" | awk '{print $2}')" = "262"
+          git diff --check "${PARENT_SHA}"...HEAD
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies and Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install --with-deps chromium
+
+      - name: Prove permanent CSS equals deterministic deletion-only candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          git show "${PARENT_SHA}:${TARGET_FILE}" > /tmp/detail-parent.css
+          cp "${TARGET_FILE}" /tmp/detail-candidate.css
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');
+          const parent=fs.readFileSync('/tmp/detail-parent.css','utf8');
+          const current=fs.readFileSync('/tmp/detail-candidate.css','utf8');
+          const sha=v=>crypto.createHash('sha256').update(v).digest('hex');
+          if(sha(parent)!==process.env.EXPECTED_PARENT_SHA256) throw new Error(`parent sha drift ${sha(parent)}`);
+          if(sha(current)!==process.env.EXPECTED_CANDIDATE_SHA256) throw new Error(`candidate sha drift ${sha(current)}`);
+          if(Buffer.byteLength(parent)!==119560) throw new Error(`parent bytes drift ${Buffer.byteLength(parent)}`);
+          if(Buffer.byteLength(current)!==113007) throw new Error(`candidate bytes drift ${Buffer.byteLength(current)}`);
+          const lines=parent.split(/\r?\n/);
+          let depth=0,selectorParts=[],selector=null;
+          const declarations=[],blockStack=[];
+          const declRe=/^\s*([\w-]+)\s*:\s*(.*?)\s*(!important)?\s*;\s*$/;
+          for(let i=0;i<lines.length;i++){
+            const line=lines[i],trimmed=line.trim();
+            const opens=(line.match(/\{/g)||[]).length,closes=(line.match(/\}/g)||[]).length;
+            if(!selector&&trimmed&&!trimmed.startsWith('/*')&&!trimmed.startsWith('*')&&trimmed!=='*/'&&trimmed!=='}'){
+              if(trimmed.startsWith('@')&&line.includes('{')) blockStack.push({type:'at',header:trimmed.replace(/\{\s*$/,'').replace(/\s+/g,' ').trim(),depthBefore:depth});
+              else if(!trimmed.startsWith('@')&&!line.includes(';')){
+                selectorParts.push(trimmed.replace(/\{\s*$/,'').trim());
+                if(line.includes('{')){selector=selectorParts.join(' ').replace(/\s+/g,' ').trim();selectorParts=[];blockStack.push({type:'rule',selector,depthBefore:depth});}
+              }
+            }
+            if(selector){const m=line.match(declRe);if(m){const context=blockStack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');declarations.push({lineIndex:i,selector,property:m[1],important:Boolean(m[3]),context});}}
+            depth+=opens-closes;
+            while(blockStack.length&&depth<=blockStack[blockStack.length-1].depthBefore){const p=blockStack.pop();if(p.type==='rule')selector=null;}
+          }
+          const lastStrong=new Map(),dead=[];
+          for(let i=declarations.length-1;i>=0;i--){
+            const cur=declarations[i],key=`${cur.context} >>> ${cur.selector} >>> ${cur.property}`,later=lastStrong.get(key);
+            if(later&&(!cur.important||later.important)) dead.push(cur);
+            if(!later||cur.important||!later.important) lastStrong.set(key,cur);
+          }
+          const deadLines=new Set(dead.map(x=>x.lineIndex));
+          const rebuilt=lines.filter((_l,i)=>!deadLines.has(i)).join('\n');
+          const selectors=[...new Set(dead.map(x=>x.selector))].sort();
+          if(declarations.length!==2097) throw new Error(`declaration drift ${declarations.length}`);
+          if(dead.length!==262) throw new Error(`dead drift ${dead.length}`);
+          if(selectors.length!==56) throw new Error(`selector drift ${selectors.length}`);
+          if(rebuilt!==current) throw new Error('permanent CSS differs from deterministic candidate');
+          if((parent.match(/!important/g)||[]).length!==0 || (current.match(/!important/g)||[]).length!==0) throw new Error('unexpected !important');
+          fs.writeFileSync('/tmp/detail-affected-selectors.json',JSON.stringify(selectors,null,2));
+          console.log('Exact deletion-only proof: PASS');
+          console.log(`- declarations: ${declarations.length} -> ${declarations.length-dead.length}`);
+          console.log(`- deleted: ${dead.length}`);
+          console.log(`- affected selectors: ${selectors.length}`);
+          console.log(`- bytes: ${Buffer.byteLength(parent)} -> ${Buffer.byteLength(current)}`);
+          NODE
+
+      - name: Write targeted Detalhe runtime snapshot harness
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > /tmp/ux-css-debt-004-runtime.js <<'NODE'
+          const fs=require('fs'),cp=require('child_process');
+          const {chromium}=require(process.cwd()+'/node_modules/playwright');
+          const out=process.argv[2];
+          const selectors=JSON.parse(fs.readFileSync('/tmp/detail-affected-selectors.json','utf8'));
+          const viewports=[
+            {name:'1366x768',width:1366,height:768},
+            {name:'1280x802',width:1280,height:802},
+            {name:'820x1180',width:820,height:1180},
+            {name:'608x926',width:608,height:926},
+            {name:'390x844',width:390,height:844}
+          ];
+          const props=['display','position','top','right','bottom','left','zIndex','width','height','minWidth','maxWidth','minHeight','maxHeight','marginTop','marginRight','marginBottom','marginLeft','paddingTop','paddingRight','paddingBottom','paddingLeft','gap','rowGap','columnGap','gridTemplateColumns','gridTemplateRows','gridColumn','gridRow','alignItems','alignSelf','justifyItems','justifySelf','justifyContent','flex','flexBasis','flexGrow','flexShrink','flexDirection','flexWrap','order','fontFamily','fontSize','fontWeight','lineHeight','letterSpacing','textAlign','textOverflow','whiteSpace','color','backgroundColor','backgroundImage','borderTopWidth','borderRightWidth','borderBottomWidth','borderLeftWidth','borderTopColor','borderRightColor','borderBottomColor','borderLeftColor','borderTopLeftRadius','borderTopRightRadius','borderBottomRightRadius','borderBottomLeftRadius','boxShadow','opacity','visibility','overflow','overflowX','overflowY','transform','objectFit'];
+          const server=cp.spawn(process.execPath,['scripts/serve-static-site.js','--host=127.0.0.1','--port=5500'],{stdio:['ignore','pipe','pipe'],env:{...process.env,DOKE_E2E_DISABLE_REMOTE_SERVICES:'1'}});
+          const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+          async function main(){
+            await sleep(700);
+            const browser=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+            const result={};
+            for(const vp of viewports){
+              const context=await browser.newContext({viewport:{width:vp.width,height:vp.height},reducedMotion:'reduce'});
+              const page=await context.newPage();
+              await page.goto('http://127.0.0.1:5500/detalhe-anuncio.html?id=ux-css-debt-004',{waitUntil:'domcontentloaded'});
+              await page.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important;caret-color:transparent!important}.doke-document-preloader{display:none!important}'});
+              await page.evaluate(()=>document.fonts&&document.fonts.ready);
+              await sleep(350);
+              result[vp.name]=await page.evaluate(({selectors,props})=>{
+                const clean=v=>String(v??'').replace(/\s+/g,' ').trim();
+                const snapshot={affected:{},anchors:{}};
+                for(const selector of selectors){
+                  let nodes=[];try{nodes=[...document.querySelectorAll(selector)];}catch(_e){continue;}
+                  if(!nodes.length)continue;
+                  snapshot.affected[selector]=nodes.map((el,index)=>{const cs=getComputedStyle(el),r=el.getBoundingClientRect(),styles={};for(const p of props)styles[p]=clean(cs[p]);return {index,tag:el.tagName,id:el.id||'',className:typeof el.className==='string'?clean(el.className):'',hidden:Boolean(el.hidden),rect:{x:+r.x.toFixed(3),y:+r.y.toFixed(3),width:+r.width.toFixed(3),height:+r.height.toFixed(3)},styles};});
+                }
+                for(const selector of ['.app-header','.detail-standard-topbar','.detail-standard-topbar__back','.home-side-meta__profile','main','.service-detail-page','.service-detail-shell']){const el=document.querySelector(selector);if(!el)continue;const cs=getComputedStyle(el),r=el.getBoundingClientRect();snapshot.anchors[selector]={tag:el.tagName,id:el.id||'',className:typeof el.className==='string'?clean(el.className):'',hidden:Boolean(el.hidden),rect:{x:+r.x.toFixed(3),y:+r.y.toFixed(3),width:+r.width.toFixed(3),height:+r.height.toFixed(3)},display:cs.display,position:cs.position,zIndex:cs.zIndex,visibility:cs.visibility};}
+                snapshot.matchedSelectorStrings=Object.keys(snapshot.affected).length;
+                return snapshot;
+              },{selectors,props});
+              if(result[vp.name].matchedSelectorStrings<10) throw new Error(`insufficient affected selector coverage at ${vp.name}: ${result[vp.name].matchedSelectorStrings}`);
+              await context.close();
+            }
+            await browser.close();
+            fs.writeFileSync(out,JSON.stringify(result,null,2));
+          }
+          main().finally(()=>server.kill('SIGTERM')).catch(e=>{console.error(e);process.exit(1);});
+          NODE
+
+      - name: Capture parent targeted runtime and responsive baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp /tmp/detail-parent.css "${TARGET_FILE}"
+          node /tmp/ux-css-debt-004-runtime.js /tmp/detail-parent-runtime.json
+          node scripts/generate-responsive-index-baseline.js
+          cp reports/responsive-index-baseline.json /tmp/ux-css-debt-004-parent-responsive.json
+
+      - name: Restore exact permanent candidate and preserve responsive contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp /tmp/detail-candidate.css "${TARGET_FILE}"
+          cp /tmp/ux-css-debt-004-parent-responsive.json reports/responsive-index-baseline.json
+          node scripts/test-responsive-contract.js
+          git diff --check
+
+      - name: Require exact parent-to-candidate targeted runtime parity
+        shell: bash
+        run: |
+          set -euo pipefail
+          node /tmp/ux-css-debt-004-runtime.js /tmp/detail-candidate-runtime.json
+          cmp /tmp/detail-parent-runtime.json /tmp/detail-candidate-runtime.json
+          echo 'Targeted Detalhe runtime parity: PASS'
+
+      - name: Validate CSS debt and shared boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/css-conflicts.log
+          npm run audit:shared-app-header-contract
+          npm run audit:responsive-boundaries
+          npm run audit:active-legacy-structures | tee /tmp/legacy.log
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git diff --check
+          echo '--- final metrics ---'
+          grep -E 'CSS files scanned|Definitions|Conflicting class/property pairs' /tmp/css-conflicts.log || true
+          grep -E 'active legacy/remediation css|active legacy/remediation js|high risk active css' /tmp/legacy.log || true
+
+      - name: Restore tracked workspace to exact permanent SHA
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "${TARGET_SHA}"
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test "$(sha256sum "${TARGET_FILE}" | awk '{print $1}')" = "${EXPECTED_CANDIDATE_SHA256}"
+
+      - name: Require SonarQube Cloud credential
+        shell: bash
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: test -n "${SONAR_TOKEN}"
+
+      - name: Analyze PR 148 exact SHA and enforce SonarQube Cloud Quality Gate
+        uses: SonarSource/sonarqube-scan-action@c7ee0f9df90b7aa20e8dcf9695dcfe2e7da5b4f2
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >-
+            -Dsonar.projectKey=Ezyrus07_doke-web
+            -Dsonar.organization=ezyrus07
+            -Dsonar.pullrequest.key=148
+            -Dsonar.pullrequest.branch=ux/ux-css-debt-004-detalhe-anuncio-compaction
+            -Dsonar.pullrequest.base=ux/ux-qa-debt-002-pedidos-agenda-hidden-contract
+            -Dsonar.scm.revision=b5e569ae0f4827f4981ec436967e59470f6a7404
+            -Dsonar.qualitygate.wait=true
+            -Dsonar.qualitygate.timeout=600
