@@ -1,0 +1,106 @@
+name: Doke UX-CSS-DEBT-003 Parent E2E Baseline
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-003-parent-e2e
+
+permissions:
+  contents: read
+
+jobs:
+  parent-baseline:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 06dbac77dcdd8e2896744868eb40fd7031ad95cb
+    steps:
+      - name: Checkout exact certified parent
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 0
+
+      - name: Guard exact parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          git diff --exit-code
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies and Chromium
+        run: |
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install --with-deps chromium
+
+      - name: Run existing Pedidos role-composition spec on parent
+        id: existing_spec
+        shell: bash
+        run: |
+          set +e
+          node node_modules/@playwright/test/cli.js test tests/e2e/pedidos-role-composition.spec.js
+          code=$?
+          echo "exit_code=${code}" >> "$GITHUB_OUTPUT"
+          echo "Existing parent spec exit code: ${code}"
+          exit 0
+
+      - name: Inspect parent agenda-toggle visibility semantics
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > /tmp/inspect-parent-pedidos.js <<'NODE'
+          const cp=require('child_process');
+          const { chromium }=require(process.cwd()+'/node_modules/playwright');
+          const sleep=(ms)=>new Promise(r=>setTimeout(r,ms));
+          const server=cp.spawn(process.execPath,['scripts/serve-static-site.js','--host=127.0.0.1','--port=5500'],{stdio:['ignore','pipe','pipe'],env:{...process.env,DOKE_E2E_DISABLE_REMOTE_SERVICES:'1'}});
+          async function main(){
+            await sleep(700);
+            const browser=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+            const page=await browser.newPage({viewport:{width:1280,height:802}});
+            await page.addInitScript(()=>{
+              const user={id:'client_test',role:'client',name:'Cliente Teste'};
+              const orders=[
+                {id:'order_client_1',clientId:user.id,professionalId:'professional_1',providerName:'Studio Aquarela',serviceTitle:'Pintura comercial',status:'pending',createdAt:'2026-06-28T10:00:00.000Z'},
+                {id:'order_client_2',clientId:user.id,professionalId:'professional_1',providerName:'Studio Aquarela',serviceTitle:'Textura e acabamento',status:'pending',createdAt:'2026-06-27T10:00:00.000Z'}
+              ];
+              localStorage.setItem('doke.auth.session.v1',JSON.stringify({user}));
+              localStorage.setItem('doke.orders.local.v1',JSON.stringify(orders));
+              localStorage.setItem('doke.orders',JSON.stringify(orders));
+            });
+            await page.goto('http://127.0.0.1:5500/pedidos.html',{waitUntil:'domcontentloaded'});
+            await page.waitForFunction(()=>document.body.dataset.ordersAudience==='client',{timeout:10000});
+            await page.waitForFunction(()=>document.querySelectorAll('.orders-list .order-card:not([hidden])').length===2,{timeout:10000});
+            const state=await page.evaluate(()=>(
+              [...document.querySelectorAll('[data-orders-agenda-toggle]')].map((node,index)=>({
+                index,
+                tag:node.tagName,
+                id:node.id||'',
+                className:node.className||'',
+                hidden:node.hidden,
+                display:getComputedStyle(node).display,
+                visibility:getComputedStyle(node).visibility,
+                ariaHidden:node.getAttribute('aria-hidden'),
+                rect:(()=>{const r=node.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height};})()
+              }))
+            ));
+            console.log('PARENT_AGENDA_TOGGLE_STATE',JSON.stringify(state));
+            console.log('PARENT_ALL_HIDDEN_AND_DISPLAY_NONE',state.every(x=>x.hidden&&x.display==='none'));
+            await browser.close();
+          }
+          main().finally(()=>server.kill('SIGTERM')).catch(err=>{console.error(err);process.exit(1);});
+          NODE
+          node /tmp/inspect-parent-pedidos.js
+
+      - name: Require parent spec to reproduce baseline failure
+        shell: bash
+        env:
+          SPEC_EXIT: ${{ steps.existing_spec.outputs.exit_code }}
+        run: |
+          set -euo pipefail
+          test "${SPEC_EXIT}" != "0"
+          echo "Pre-existing parent E2E failure reproduced on ${TARGET_SHA}."
