@@ -83,21 +83,14 @@ jobs:
             raise SystemExit(f'expected exactly one stale pedidos header hide, got {count}')
           p.write_text(s.replace(target,'',1))
 
-          p=Path('assets/css/pages/notificacoes.css')
+          p=Path('assets/css/pages/notificacoes/pedidos-notification-layout.css')
           s=p.read_text()
-          old='''  body.notifications-page-shell .sidebar,\n  body.notifications-page-shell .home-side-meta {\n    display: none;\n  }'''
-          new='''  body.notifications-page-shell .sidebar {\n    display: none;\n  }'''
-          if s.count(old) != 1:
-            raise SystemExit(f'unexpected notifications grouped suppressor count: {s.count(old)}')
-          p.write_text(s.replace(old,new,1))
-
-          p=Path('assets/css/pages/carteira/responsive-contract.css')
-          s=p.read_text()
-          old='''  body.wallet-page-shell .sidebar,\n  body.wallet-page-shell .home-side-meta {\n    display: none;\n  }'''
-          new='''  body.wallet-page-shell .sidebar {\n    display: none;\n  }'''
-          if s.count(old) != 1:
-            raise SystemExit(f'unexpected wallet grouped suppressor count: {s.count(old)}')
-          p.write_text(s.replace(old,new,1))
+          target='''\n  body.notifications-page-shell .home-side-meta {\n    display: none;\n  }'''
+          count=s.count(target)
+          print('notifications stale whole-header hide count=',count)
+          if count != 1:
+            raise SystemExit(f'expected exactly one stale notifications header hide, got {count}')
+          p.write_text(s.replace(target,'',1))
           PY
 
           git diff -- \
@@ -106,8 +99,7 @@ jobs:
             assets/css/pages/carteira-runtime-page.css \
             assets/css/components/internal/list-page-toolbar.css \
             assets/css/pages/pedidos.css \
-            assets/css/pages/notificacoes.css \
-            assets/css/pages/carteira/responsive-contract.css
+            assets/css/pages/notificacoes/pedidos-notification-layout.css
           npm run audit:css-import-resolution
 
       - name: Prove legacy contract leaves migrated page graphs
