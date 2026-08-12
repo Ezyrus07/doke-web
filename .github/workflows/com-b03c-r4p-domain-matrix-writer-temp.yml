@@ -14,7 +14,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  EXPECTED_PARENT: 988bd5573af89a30308b9763d8d6e71352f0d71c
+  EXPECTED_PARENT: 4e8b46e7c322a6009d97a67828758c1c5ce208c4
   TARGET_BRANCH: com/com-001-baseline-audit
   WRITER_PATH: .github/workflows/com-b03c-r4p-domain-matrix-writer-temp.yml
   MATRIX_MD: docs/DOMAIN-COMPLETION-MATRIX.md
@@ -72,7 +72,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git add -- "${MATRIX_MD}" "${MATRIX_JSON}"
+          git add -- "${MATRIX_MD}"
+          git add -f -- "${MATRIX_JSON}"
           staged="$(git diff --cached --name-only | sort)"
           expected="$(printf '%s\n%s\n' "${MATRIX_MD}" "${MATRIX_JSON}" | sort)"
           test "${staged}" = "${expected}"
