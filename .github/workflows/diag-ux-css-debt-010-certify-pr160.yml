@@ -1,0 +1,182 @@
+name: Doke UX-CSS-DEBT-010 PR160 Exact Certification
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-010-certify-pr160
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      TARGET_SHA: 9f1274abeff4aa0d17391cfc9929559d3d286f93
+      PARENT_SHA: 4d96f04758ba0e33b7b1490a95a5c1e6e2f3e819
+      TARGET_FILE: assets/css/pages/pedidos/orders-command-center.css
+      EXPECTED_PARENT_SHA256: a775b3d0b334c7e4f524be722ad2f826e5a66224e857ecd9c464501f833522af
+      EXPECTED_CANDIDATE_SHA256: 4e21d66fb22b5e3b4409670e66adef26551642b1e6ce9cb6896e6146d47f3e7f
+      FOCUS_SELECTOR: 'body.orders-page-shell .orders-page .home-side-meta.is-search-open .home-side-meta__search-input:focus'
+      PR_NUMBER: '160'
+    steps:
+      - name: Checkout exact permanent SHA
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 0
+
+      - name: Guard exact one-commit product-only tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test "$(git rev-parse HEAD^)" = "${PARENT_SHA}"
+          test "$(git rev-list --count "${PARENT_SHA}"..HEAD)" = "1"
+          test "$(git diff --name-only "${PARENT_SHA}"...HEAD)" = "${TARGET_FILE}"
+          test "$(git diff --numstat "${PARENT_SHA}"...HEAD -- "${TARGET_FILE}" | awk '{print $1}')" = "0"
+          test "$(git diff --numstat "${PARENT_SHA}"...HEAD -- "${TARGET_FILE}" | awk '{print $2}')" = "22"
+          test "$(sha256sum "${TARGET_FILE}" | awk '{print $1}')" = "${EXPECTED_CANDIDATE_SHA256}"
+          git diff --check "${PARENT_SHA}"...HEAD
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies and Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install --with-deps chromium
+
+      - name: Prove permanent equals deterministic deletion-only candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          git show "${PARENT_SHA}:${TARGET_FILE}" > /tmp/orders-command-parent.css
+          cp "${TARGET_FILE}" /tmp/orders-command-permanent.css
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');
+          const parent=fs.readFileSync('/tmp/orders-command-parent.css','utf8'),permanent=fs.readFileSync('/tmp/orders-command-permanent.css','utf8'),lines=parent.split(/\r?\n/);
+          let depth=0,selectorParts=[],atRuleParts=[],selector=null;const declarations=[],stack=[];
+          const declRe=/^\s*([\w-]+)\s*:\s*(.*?)\s*;\s*$/,norm=parts=>parts.join(' ').replace(/\{\s*$/,'').replace(/\s+/g,' ').trim();
+          for(let i=0;i<lines.length;i++){
+            const line=lines[i],t=line.trim(),opens=(line.match(/\{/g)||[]).length,closes=(line.match(/\}/g)||[]).length;
+            if(!selector){
+              if(atRuleParts.length){if(t)atRuleParts.push(t);if(line.includes('{')){stack.push({type:'at',header:norm(atRuleParts),depthBefore:depth});atRuleParts=[];}}
+              else if(t.startsWith('@')&&!t.includes(';')){if(line.includes('{'))stack.push({type:'at',header:norm([t]),depthBefore:depth});else atRuleParts=[t];}
+              else if(selectorParts.length){if(t)selectorParts.push(t);if(line.includes('{')){selector=norm(selectorParts);selectorParts=[];stack.push({type:'rule',selector,depthBefore:depth});}}
+              else if(t&&!t.startsWith('/*')&&!t.startsWith('*')&&t!=='*/'&&t!=='}'&&!t.startsWith('@')&&!line.includes(';')){selectorParts=[t];if(line.includes('{')){selector=norm(selectorParts);selectorParts=[];stack.push({type:'rule',selector,depthBefore:depth});}}
+            }
+            if(selector){const m=line.match(declRe);if(m){const raw=m[2].trim(),important=/\s*!important\s*$/i.test(raw),context=stack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');declarations.push({lineIndex:i,selector,property:m[1].toLowerCase(),important,context});}}
+            depth+=opens-closes;while(stack.length&&depth<=stack[stack.length-1].depthBefore){const p=stack.pop();if(p.type==='rule')selector=null;}
+          }
+          if(atRuleParts.length)throw new Error('unterminated multiline at-rule');
+          const last=new Map(),dead=[];for(let i=declarations.length-1;i>=0;i--){const d=declarations[i],key=`${d.context} >>> ${d.selector} >>> ${d.property}`,later=last.get(key);if(later&&(!d.important||later.important))dead.push(d);if(!later||d.important||!later.important)last.set(key,d);}
+          const selectors=[...new Set(dead.map(d=>d.selector))].sort(),focus=process.env.FOCUS_SELECTOR,focusRows=dead.filter(d=>d.selector===focus),otherRows=dead.filter(d=>d.selector!==focus),deadSet=new Set(dead.map(d=>d.lineIndex)),rebuilt=lines.filter((_l,i)=>!deadSet.has(i)).join('\n'),sha=v=>crypto.createHash('sha256').update(v).digest('hex');
+          if(declarations.length!==1931||dead.length!==22||selectors.length!==4)throw new Error('metric drift');
+          if(focusRows.length!==8||!focusRows.every(d=>d.context==='@media (min-width: 1024px)'))throw new Error('focus context drift');
+          if(!otherRows.every(d=>d.context===''))throw new Error('global context drift');
+          if(sha(parent)!==process.env.EXPECTED_PARENT_SHA256||sha(permanent)!==process.env.EXPECTED_CANDIDATE_SHA256)throw new Error('hash drift');
+          if(rebuilt!==permanent)throw new Error('permanent differs from deterministic candidate');
+          if(Buffer.byteLength(parent)!==120557||Buffer.byteLength(permanent)!==120028)throw new Error('byte drift');
+          if((parent.match(/!important/gi)||[]).length||(permanent.match(/!important/gi)||[]).length)throw new Error('unexpected important');
+          fs.writeFileSync('/tmp/orders-command-selectors.json',JSON.stringify(selectors));
+          console.log('Exact deletion-only proof: PASS');console.log('- declarations: 1931 -> 1909');console.log('- deleted: 22');console.log('- affected selectors: 4');console.log('- focus scoped dead rows: 8 @ min-width 1024');console.log('- bytes: 120557 -> 120028');
+          NODE
+
+      - name: Write viewport-aware runtime harness
+        shell: bash
+        run: |
+          cat > /tmp/orders-command-pr160-capture.js <<'NODE'
+          const fs=require('fs'),cp=require('child_process'),{chromium}=require(process.cwd()+'/node_modules/playwright');
+          const out=process.argv[2],selectors=JSON.parse(fs.readFileSync('/tmp/orders-command-selectors.json','utf8')),focus=process.env.FOCUS_SELECTOR;
+          const vps=[['1600x1000',1600,1000],['1366x768',1366,768],['1280x802',1280,802],['1024x900',1024,900],['820x1180',820,1180],['608x926',608,926],['390x844',390,844]];
+          const server=cp.spawn(process.execPath,['scripts/serve-static-site.js','--host=127.0.0.1','--port=5500'],{stdio:'ignore',env:{...process.env,DOKE_E2E_DISABLE_REMOTE_SERVICES:'1'}}),sleep=ms=>new Promise(r=>setTimeout(r,ms));
+          async function main(){await sleep(500);const browser=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage']}),result={};for(const [name,width,height] of vps){const ctx=await browser.newContext({viewport:{width,height},reducedMotion:'reduce'}),page=await ctx.newPage();await page.route('**/*',route=>{const u=new URL(route.request().url()),local=u.origin==='http://127.0.0.1:5500';if(local&&u.pathname.endsWith('.js'))return route.abort();if(local||u.protocol==='data:'||u.protocol==='blob:')return route.continue();return route.abort();});await page.goto('http://127.0.0.1:5500/pedidos.html',{waitUntil:'domcontentloaded'});await page.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important;caret-color:transparent!important}.doke-document-preloader{display:none!important}html,body{visibility:visible!important;opacity:1!important}'});if(await page.locator('.orders-page .home-side-meta').count())throw new Error('canonical DOM drift: nested home-side-meta exists');await page.evaluate(()=>{document.documentElement.removeAttribute('data-auth-guard');document.body.setAttribute('data-page','pedidos');document.body.classList.add('orders-page-shell');const controls=document.querySelector('#orders-action-controls'),select=document.querySelector('[data-orders-select-panel]'),ordersPage=document.querySelector('.orders-page');if(!controls||!select||!ordersPage)throw new Error('canonical targets missing');controls.hidden=false;select.hidden=false;const fixture=document.createElement('div');fixture.dataset.cssDebtFixture='orders-focus';fixture.className='home-side-meta is-search-open';fixture.innerHTML='<input class="home-side-meta__search-input" value="fixture" />';ordersPage.appendChild(fixture);fixture.querySelector('input').focus();});await page.evaluate(()=>document.fonts&&document.fonts.ready);await sleep(80);const applicable=width>=1024?selectors:selectors.filter(s=>s!==focus);result[name]=await page.evaluate(applicable=>{const clean=v=>String(v??'').replace(/\s+/g,' ').trim(),capture=el=>{const cs=getComputedStyle(el),r=el.getBoundingClientRect(),style={};for(let i=0;i<cs.length;i++){const p=cs[i];style[p]=clean(cs.getPropertyValue(p));}return{tag:el.tagName,id:el.id||'',className:typeof el.className==='string'?clean(el.className):'',rect:[+r.x.toFixed(3),+r.y.toFixed(3),+r.width.toFixed(3),+r.height.toFixed(3)],style};},samples={},missing=[];for(const s of applicable){let nodes=[];try{nodes=[...document.querySelectorAll(s)];}catch(e){missing.push(`${s} [invalid:${e.message}]`);continue;}if(!nodes.length)missing.push(s);else samples[s]=nodes.map(capture);}return{applicable,samples,missing};},applicable);const expected=width>=1024?4:3,got=expected-result[name].missing.length;console.log(`${name}: applicable coverage ${got}/${expected}`);if(result[name].missing.length)throw new Error(`missing selectors ${name}`);await ctx.close();}await browser.close();fs.writeFileSync(out,JSON.stringify(result));console.log('viewport-aware affected-selector coverage: PASS (4/4 >=1024; 3/3 <1024)');}
+          main().finally(()=>server.kill('SIGTERM')).catch(e=>{console.error(e);process.exit(1);});
+          NODE
+
+      - name: Capture parent runtime, responsive and conflicts
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp /tmp/orders-command-parent.css "${TARGET_FILE}"
+          node /tmp/orders-command-pr160-capture.js /tmp/orders-command-parent-runtime.json
+          node scripts/generate-responsive-index-baseline.js
+          cp reports/responsive-index-baseline.json /tmp/orders-command-parent-responsive.json
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/parent-conflicts.log
+          test "$(grep 'Conflicting class/property pairs:' /tmp/parent-conflicts.log | tail -1 | awk '{print $4}')" = "339"
+
+      - name: Restore exact permanent candidate and preserve responsive contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp /tmp/orders-command-permanent.css "${TARGET_FILE}"
+          test "$(sha256sum "${TARGET_FILE}" | awk '{print $1}')" = "${EXPECTED_CANDIDATE_SHA256}"
+          cp /tmp/orders-command-parent-responsive.json reports/responsive-index-baseline.json
+          node scripts/test-responsive-contract.js | tee /tmp/responsive.log
+          grep -q 'Checks: 893' /tmp/responsive.log
+          grep -q 'Failures: 0' /tmp/responsive.log
+          grep -q 'Skips: 277' /tmp/responsive.log
+
+      - name: Require exact parent-to-permanent runtime parity
+        shell: bash
+        run: |
+          set -euo pipefail
+          node /tmp/orders-command-pr160-capture.js /tmp/orders-command-permanent-runtime.json
+          node <<'NODE'
+          const fs=require('fs'),a=JSON.parse(fs.readFileSync('/tmp/orders-command-parent-runtime.json')),b=JSON.parse(fs.readFileSync('/tmp/orders-command-permanent-runtime.json')),diffs=[];function walk(x,y,p){if(typeof x!==typeof y||x===null||y===null||typeof x!=='object'){if(x!==y)diffs.push({path:p,parent:x,candidate:y});return;}if(Array.isArray(x)!==Array.isArray(y)){diffs.push({path:p,parent:x,candidate:y});return;}for(const k of [...new Set([...Object.keys(x),...Object.keys(y)])].sort())walk(x[k],y[k],p?`${p}.${k}`:k);}walk(a,b,'');if(diffs.length){console.error(JSON.stringify(diffs.slice(0,80),null,2));throw new Error(`runtime differences ${diffs.length}`);}console.log('Affected-selector computed-style + rect parity: PASS (0 diffs)');
+          NODE
+
+      - name: Validate structural and governance contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/permanent-conflicts.log
+          test "$(grep 'Conflicting class/property pairs:' /tmp/permanent-conflicts.log | tail -1 | awk '{print $4}')" = "339"
+          echo 'CSS conflicts: 339 -> 339'
+          npm run audit:shared-app-header-contract
+          npm run audit:responsive-boundaries
+          npm run audit:active-legacy-structures | tee /tmp/legacy.log
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          npm run audit:duplicate-assets
+          grep -q 'active legacy/remediation css: 0' /tmp/legacy.log
+          grep -q 'active legacy/remediation js: 0' /tmp/legacy.log
+          grep -q 'high risk active css: 38' /tmp/legacy.log
+
+      - name: Restore tracked workspace to exact permanent SHA
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "${TARGET_SHA}"
+          git clean -fd
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test "$(sha256sum "${TARGET_FILE}" | awk '{print $1}')" = "${EXPECTED_CANDIDATE_SHA256}"
+          git diff --exit-code
+
+      - name: Require SonarQube Cloud credential
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: test -n "${SONAR_TOKEN}"
+
+      - name: Analyze PR 160 exact SHA and enforce SonarQube Cloud Quality Gate
+        uses: SonarSource/sonarqube-scan-action@c7ee0f9df90b7aa20e8dcf9695dcfe2e7da5b4f2
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >-
+            -Dsonar.projectKey=Ezyrus07_doke-web
+            -Dsonar.organization=ezyrus07
+            -Dsonar.pullrequest.key=160
+            -Dsonar.pullrequest.branch=ux/ux-css-debt-010-pedidos-command-center-compaction
+            -Dsonar.pullrequest.base=ux/ux-css-debt-009-community-settings-compaction
+            -Dsonar.scm.revision=9f1274abeff4aa0d17391cfc9929559d3d286f93
+            -Dsonar.qualitygate.wait=true
+            -Dsonar.qualitygate.timeout=600
