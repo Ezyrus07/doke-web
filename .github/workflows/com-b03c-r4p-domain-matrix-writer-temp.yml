@@ -14,14 +14,14 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  EXPECTED_PARENT: 4e8b46e7c322a6009d97a67828758c1c5ce208c4
+  EXPECTED_PARENT: 91a7d1736f4e1df12ab4274e1ae448ea8f775549
   TARGET_BRANCH: com/com-001-baseline-audit
   WRITER_PATH: .github/workflows/com-b03c-r4p-domain-matrix-writer-temp.yml
   MATRIX_MD: docs/DOMAIN-COMPLETION-MATRIX.md
   MATRIX_JSON: reports/generated/domain-completion-matrix-report.json
 
 jobs:
-  reconcile:
+  reconcile-and-remove:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -35,7 +35,7 @@ jobs:
           node-version: '24'
           cache: npm
 
-      - name: Fail-closed installation lineage
+      - name: Fail-closed self-cleanup lineage
         shell: bash
         run: |
           set -euo pipefail
@@ -49,15 +49,21 @@ jobs:
       - name: Install dependencies
         run: npm ci --ignore-scripts
 
-      - name: Generate canonical Domain Completion Matrix outputs
-        run: npm run write:domain-completion-matrix
-
-      - name: Enforce exact writer scope
+      - name: Remove temporary writer before final generation
         shell: bash
         run: |
           set -euo pipefail
-          actual="$(git diff --name-only | sort)"
-          expected="$(printf '%s\n%s\n' "${MATRIX_MD}" "${MATRIX_JSON}" | sort)"
+          git rm -- "${WRITER_PATH}"
+
+      - name: Generate final canonical Domain Completion Matrix outputs
+        run: npm run write:domain-completion-matrix
+
+      - name: Enforce exact final scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual="$(git diff --name-only HEAD | sort)"
+          expected="$(printf '%s\n%s\n%s\n' "${WRITER_PATH}" "${MATRIX_MD}" "${MATRIX_JSON}" | sort)"
           test "${actual}" = "${expected}"
           test -z "$(git ls-files --others --exclude-standard)"
           git diff --check
@@ -68,16 +74,16 @@ jobs:
       - name: Agent Governance
         run: npm run audit:agent-governance
 
-      - name: Commit canonical outputs only
+      - name: Commit writer removal and canonical outputs atomically
         shell: bash
         run: |
           set -euo pipefail
-          git add -- "${MATRIX_MD}"
+          git add -u -- "${WRITER_PATH}" "${MATRIX_MD}"
           git add -f -- "${MATRIX_JSON}"
           staged="$(git diff --cached --name-only | sort)"
-          expected="$(printf '%s\n%s\n' "${MATRIX_MD}" "${MATRIX_JSON}" | sort)"
+          expected="$(printf '%s\n%s\n%s\n' "${WRITER_PATH}" "${MATRIX_MD}" "${MATRIX_JSON}" | sort)"
           test "${staged}" = "${expected}"
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git commit -m 'docs(com): reconcile domain matrix after R4P authorization consumption'
+          git commit -m 'ci(com): remove temporary R4P writer and freeze matrix'
           git push origin "HEAD:${TARGET_BRANCH}"
