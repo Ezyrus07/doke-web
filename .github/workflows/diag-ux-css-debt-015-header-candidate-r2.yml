@@ -1,0 +1,115 @@
+name: Doke UX-CSS-DEBT-015 Shared Header Candidate R2
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-015-header-candidate-r2
+
+permissions:
+  contents: read
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: a5dcbc7caaaea14729eb3576bb1e0c2173950594
+      TARGET_FILE: assets/css/layout/header.css
+      PARENT_SHA256: 4f38ef71bd807179828e83042210b1c2543ad3ad0c1429c09851fdc706c5ee0b
+      CANDIDATE_SHA256: 838e4421e89a8f191c99c7a6bed2911dee92a38e95a5290cbba5597a507d9ebb
+    steps:
+      - name: Checkout exact certified parent
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 0
+
+      - name: Guard exact parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test "$(sha256sum "${TARGET_FILE}" | awk '{print $1}')" = "${PARENT_SHA256}"
+          git diff --check
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Rebuild identical deletion-only candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');
+          const file=process.env.TARGET_FILE,text=fs.readFileSync(file,'utf8'),lines=text.split(/\r?\n/);
+          let depth=0,selectorParts=[],atRuleParts=[],selector=null;const declarations=[],stack=[];
+          const declRe=/^\s*([\w-]+)\s*:\s*(.*?)\s*;\s*$/,norm=parts=>parts.join(' ').replace(/\{\s*$/,'').replace(/\s+/g,' ').trim();
+          for(let i=0;i<lines.length;i++){
+            const line=lines[i],t=line.trim(),opens=(line.match(/\{/g)||[]).length,closes=(line.match(/\}/g)||[]).length;
+            if(!selector){
+              if(atRuleParts.length){if(t)atRuleParts.push(t);if(line.includes('{')){stack.push({type:'at',header:norm(atRuleParts),depthBefore:depth});atRuleParts=[];}}
+              else if(t.startsWith('@')&&!t.includes(';')){if(line.includes('{'))stack.push({type:'at',header:norm([t]),depthBefore:depth});else atRuleParts=[t];}
+              else if(selectorParts.length){if(t)selectorParts.push(t);if(line.includes('{')){selector=norm(selectorParts);selectorParts=[];stack.push({type:'rule',selector,depthBefore:depth});}}
+              else if(t&&!t.startsWith('/*')&&!t.startsWith('*')&&t!=='*/'&&t!=='}'&&!t.startsWith('@')&&!line.includes(';')){selectorParts=[t];if(line.includes('{')){selector=norm(selectorParts);selectorParts=[];stack.push({type:'rule',selector,depthBefore:depth});}}
+            }
+            if(selector){const m=line.match(declRe);if(m){const raw=m[2].trim(),important=/\s*!important\s*$/i.test(raw),context=stack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');declarations.push({lineIndex:i,line:i+1,selector,property:m[1].toLowerCase(),value:raw,important,context});}}
+            depth+=opens-closes;while(stack.length&&depth<=stack[stack.length-1].depthBefore){const p=stack.pop();if(p.type==='rule')selector=null;}
+          }
+          if(atRuleParts.length)throw new Error('unterminated multiline at-rule');
+          const last=new Map(),dead=[];for(let i=declarations.length-1;i>=0;i--){const d=declarations[i],key=`${d.context} >>> ${d.selector} >>> ${d.property}`,later=last.get(key);if(later&&(!d.important||later.important))dead.push({...d,winnerLine:later.line,winnerValue:later.value,winnerImportant:later.important});if(!later||d.important||!later.important)last.set(key,d);}
+          const selectors=[...new Set(dead.map(d=>d.selector))].sort(),contexts=[...new Set(dead.map(d=>d.context))].sort();
+          if(declarations.length!==855||dead.length!==20||selectors.length!==6)throw new Error(`metric drift ${declarations.length}/${dead.length}/${selectors.length}`);
+          if(JSON.stringify(contexts)!==JSON.stringify(['','@media (max-width: 760px)']))throw new Error(`context drift ${JSON.stringify(contexts)}`);
+          if((text.match(/!important/gi)||[]).length!==0||Buffer.byteLength(text)!==50025)throw new Error('parent contract drift');
+          const candidate=lines.filter((_l,i)=>!new Set(dead.map(d=>d.lineIndex)).has(i)).join('\n');
+          const sha=v=>crypto.createHash('sha256').update(v).digest('hex');
+          if(sha(text)!==process.env.PARENT_SHA256||sha(candidate)!==process.env.CANDIDATE_SHA256)throw new Error('hash drift');
+          if(Buffer.byteLength(candidate)!==49281)throw new Error(`candidate byte drift ${Buffer.byteLength(candidate)}`);
+          fs.writeFileSync(file,candidate);
+          console.log('R2 IDENTICAL CANDIDATE: PASS');
+          console.log('- declarations: 855 -> 835');
+          console.log('- superseded removed: 20');
+          console.log('- selectors: 6');
+          console.log('- contexts: global + @media (max-width: 760px)');
+          console.log('- bytes: 50025 -> 49281');
+          console.log('- !important: 0 -> 0');
+          NODE
+          test "$(sha256sum "${TARGET_FILE}" | awk '{print $1}')" = "${CANDIDATE_SHA256}"
+          test "$(git diff --numstat -- "${TARGET_FILE}" | awk '{print $1}')" = "0"
+          test "$(git diff --numstat -- "${TARGET_FILE}" | awk '{print $2}')" = "20"
+          git diff --check
+
+      - name: Reconcile structural and governance gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/header-conflicts.log
+          grep -q 'Definitions: 14910' /tmp/header-conflicts.log
+          grep -q 'Conflicting class/property pairs: 339' /tmp/header-conflicts.log
+          npm run audit:shared-app-header-contract
+          npm run audit:responsive-boundaries
+          npm run audit:active-legacy-structures | tee /tmp/header-legacy.log
+          grep -q 'active legacy/remediation css: 0' /tmp/header-legacy.log
+          grep -q 'active legacy/remediation js: 0' /tmp/header-legacy.log
+          grep -q 'high risk active css: 37' /tmp/header-legacy.log
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          npm run audit:duplicate-assets
+
+      - name: Restore generated outputs and require exact candidate scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout "${TARGET_SHA}" -- docs/HOME-AUTHORITY-CLASSIFICATION.md docs/PAGE-ASSET-AUTHORITY-MATRIX.md 2>/dev/null || true
+          test "$(git diff --name-only | wc -l)" = "1"
+          test "$(git diff --name-only)" = "${TARGET_FILE}"
+          test "$(git diff --numstat -- "${TARGET_FILE}" | awk '{print $1}')" = "0"
+          test "$(git diff --numstat -- "${TARGET_FILE}" | awk '{print $2}')" = "20"
+          test "$(sha256sum "${TARGET_FILE}" | awk '{print $1}')" = "${CANDIDATE_SHA256}"
+          git diff --check
+          echo 'R2 EXACT PRODUCT DELTA: assets/css/layout/header.css only, +0/-20'
