@@ -1,0 +1,208 @@
+name: Doke UX-CSS-DEBT-005 Community Internal Diagnostic R3
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-005-community-interna-compaction
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      TARGET_SHA: b5e569ae0f4827f4981ec436967e59470f6a7404
+      TARGET_FILE: assets/css/pages/comunidade-interna.css
+      EXPECTED_PARENT_SHA256: ddee624f00fe72d13b0c8d48b7bb93c4381b3461c7ca384464241178473c8696
+      EXPECTED_CANDIDATE_SHA256: af971af4a1b5a907ff317d350afe8b1ae7deeaa1b38143f6732f87b4cba66bc8
+    steps:
+      - name: Checkout exact certified parent
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 0
+
+      - name: Guard exact parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          git diff --exit-code
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies and Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install --with-deps chromium
+
+      - name: Build exact deterministic deletion-only candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp "${TARGET_FILE}" /tmp/community-parent.css
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');
+          const source=fs.readFileSync(process.env.TARGET_FILE,'utf8');
+          const lines=source.split(/\r?\n/);
+          let depth=0,selectorParts=[],selector=null;
+          const declarations=[],blockStack=[];
+          const declRe=/^\s*([\w-]+)\s*:\s*(.*?)\s*(!important)?\s*;\s*$/;
+          for(let i=0;i<lines.length;i++){
+            const line=lines[i],trimmed=line.trim();
+            const opens=(line.match(/\{/g)||[]).length,closes=(line.match(/\}/g)||[]).length;
+            if(!selector&&trimmed&&!trimmed.startsWith('/*')&&!trimmed.startsWith('*')&&trimmed!=='*/'&&trimmed!=='}'){
+              if(trimmed.startsWith('@')&&line.includes('{')) blockStack.push({type:'at',header:trimmed.replace(/\{\s*$/,'').replace(/\s+/g,' ').trim(),depthBefore:depth});
+              else if(!trimmed.startsWith('@')&&!line.includes(';')){
+                selectorParts.push(trimmed.replace(/\{\s*$/,'').trim());
+                if(line.includes('{')){selector=selectorParts.join(' ').replace(/\s+/g,' ').trim();selectorParts=[];blockStack.push({type:'rule',selector,depthBefore:depth});}
+              }
+            }
+            if(selector){const m=line.match(declRe);if(m){const context=blockStack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');declarations.push({lineIndex:i,selector,property:m[1],important:Boolean(m[3]),context});}}
+            depth+=opens-closes;
+            while(blockStack.length&&depth<=blockStack[blockStack.length-1].depthBefore){const p=blockStack.pop();if(p.type==='rule')selector=null;}
+          }
+          const lastStrong=new Map(),dead=[];
+          for(let i=declarations.length-1;i>=0;i--){
+            const cur=declarations[i],key=`${cur.context} >>> ${cur.selector} >>> ${cur.property}`,later=lastStrong.get(key);
+            if(later&&(!cur.important||later.important)) dead.push(cur);
+            if(!later||cur.important||!later.important) lastStrong.set(key,cur);
+          }
+          const candidate=lines.filter((_l,i)=>!new Set(dead.map(x=>x.lineIndex)).has(i)).join('\n');
+          const selectors=[...new Set(dead.map(x=>x.selector))].sort();
+          const sha=v=>crypto.createHash('sha256').update(v).digest('hex');
+          if(sha(source)!==process.env.EXPECTED_PARENT_SHA256) throw new Error(`parent hash drift ${sha(source)}`);
+          if(sha(candidate)!==process.env.EXPECTED_CANDIDATE_SHA256) throw new Error(`candidate hash drift ${sha(candidate)}`);
+          if(declarations.length!==2670||dead.length!==98||selectors.length!==25) throw new Error(`candidate metric drift ${declarations.length}/${dead.length}/${selectors.length}`);
+          if(Buffer.byteLength(source)!==133343||Buffer.byteLength(candidate)!==130867) throw new Error('byte count drift');
+          if((source.match(/!important/g)||[]).length||(candidate.match(/!important/g)||[]).length) throw new Error('unexpected !important');
+          fs.writeFileSync('/tmp/community-candidate.css',candidate);
+          fs.writeFileSync('/tmp/community-affected-selectors.json',JSON.stringify(selectors,null,2));
+          console.log('Exact Community candidate: PASS');
+          console.log(`declarations ${declarations.length} -> ${declarations.length-dead.length}; deleted=${dead.length}; selectors=${selectors.length}; bytes=${Buffer.byteLength(source)} -> ${Buffer.byteLength(candidate)}`);
+          NODE
+
+      - name: Write 25-selector static CSS parity harness
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > /tmp/community-static-parity.js <<'NODE'
+          const fs=require('fs'),cp=require('child_process');
+          const {chromium}=require(process.cwd()+'/node_modules/playwright');
+          const out=process.argv[2];
+          const selectors=JSON.parse(fs.readFileSync('/tmp/community-affected-selectors.json','utf8'));
+          const viewports=[['1366x768',1366,768],['1280x802',1280,802],['820x1180',820,1180],['608x926',608,926],['390x844',390,844]];
+          const server=cp.spawn(process.execPath,['scripts/serve-static-site.js','--host=127.0.0.1','--port=5500'],{stdio:['ignore','pipe','pipe'],env:{...process.env,DOKE_E2E_DISABLE_REMOTE_SERVICES:'1'}});
+          const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+          async function main(){
+            await sleep(600);
+            const browser=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+            const result={},matchedUnion=new Set();
+            for(const [name,width,height] of viewports){
+              const context=await browser.newContext({viewport:{width,height},reducedMotion:'reduce'});
+              const page=await context.newPage();
+              await page.route('**/*',route=>{
+                const u=new URL(route.request().url()),local=u.origin==='http://127.0.0.1:5500';
+                if(local&&u.pathname.endsWith('.js')) return route.abort();
+                if(local||u.protocol==='data:'||u.protocol==='blob:') return route.continue();
+                return route.abort();
+              });
+              await page.goto('http://127.0.0.1:5500/comunidade-interna.html?ux-css-debt-005=1',{waitUntil:'domcontentloaded'});
+              await page.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important;caret-color:transparent!important}.doke-document-preloader{display:none!important}'});
+              await page.evaluate(()=>{
+                const pending=document.querySelector('[data-community-room-pending]'); if(pending) pending.hidden=true;
+                const layout=document.querySelector('.community-room-layout'); if(!layout) throw new Error('static layout missing');
+                layout.hidden=false; layout.setAttribute('aria-hidden','false'); layout.dataset.mobileView='list'; layout.classList.remove('is-settings-mode');
+                document.body.classList.remove('community-room-thread-is-open');
+                for(const el of layout.querySelectorAll('[hidden]')) el.hidden=false;
+                for(const el of layout.querySelectorAll('[aria-hidden="true"]')) el.setAttribute('aria-hidden','false');
+                const events=document.querySelector('.community-events-panel');
+                if(events&&!events.querySelector('.community-event-calendar__day')){
+                  const calendar=events.querySelector('.community-event-calendar')||events;
+                  const day=document.createElement('button'); day.className='community-event-calendar__day'; day.type='button'; day.textContent='12'; calendar.appendChild(day);
+                }
+                const fixture=document.createElement('section'); fixture.id='ux-css-debt-005-fixture';
+                fixture.innerHTML=`<button class="community-room-channel" type="button">Canal</button><div class="community-room-message__actions"><button>Ação</button></div><div class="community-room-message-menu"><button>Menu</button></div><section class="community-room-panel-empty"><strong>Vazio</strong><p>Sem itens</p></section><section class="community-room-thread-empty"><h3>Sem mensagens</h3><p>Comece</p></section><article class="community-room-request-item"><div class="community-room-request-actions"><button class="doke-btn">Aceitar</button></div></article><section class="community-member-directory"><div class="community-member-directory__menu"><div class="community-member-directory__discipline-actions"></div><button class="community-member-directory__remove">Remover</button><div class="community-member-directory__role-list"><label class="community-member-directory__role-option"><span class="community-member-directory__role-option-copy"><strong>Cargo</strong></span></label></div></div></section>`;
+                layout.appendChild(fixture);
+              });
+              await page.evaluate(()=>document.fonts&&document.fonts.ready);
+              await sleep(60);
+              const snap=await page.evaluate((selectors)=>{
+                const clean=v=>String(v??'').replace(/\s+/g,' ').trim();
+                const capture=el=>{const cs=getComputedStyle(el),r=el.getBoundingClientRect(),style={};for(let i=0;i<cs.length;i++){const p=cs[i];style[p]=clean(cs.getPropertyValue(p));}return {tag:el.tagName,id:el.id||'',className:typeof el.className==='string'?clean(el.className):'',hidden:Boolean(el.hidden),rect:[+r.x.toFixed(3),+r.y.toFixed(3),+r.width.toFixed(3),+r.height.toFixed(3)],style};};
+                const samples={},matched=[];
+                for(const selector of selectors){const nodes=[...document.querySelectorAll(selector)];if(!nodes.length)continue;matched.push(selector);samples[selector]=nodes.map(capture);}
+                const anchors={};for(const s of ['.app-header','.community-room-layout','.community-room-sidebar','.community-room-thread','.community-events-panel','#ux-css-debt-005-fixture']){const e=document.querySelector(s);if(e)anchors[s]=capture(e);}
+                return {matched,samples,anchors};
+              },selectors);
+              for(const s of snap.matched)matchedUnion.add(s); result[name]=snap; await context.close();
+            }
+            await browser.close();
+            result.__coverage={matched:matchedUnion.size,total:selectors.length};
+            fs.writeFileSync(out,JSON.stringify(result,null,2));
+            console.log(`Static affected-selector coverage: ${matchedUnion.size}/${selectors.length}`);
+            if(matchedUnion.size!==selectors.length) throw new Error(`incomplete coverage ${matchedUnion.size}/${selectors.length}`);
+          }
+          main().finally(()=>server.kill('SIGTERM')).catch(e=>{console.error(e);process.exit(1);});
+          NODE
+
+      - name: Capture exact parent runtime and responsive baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          node /tmp/community-static-parity.js /tmp/community-parent-runtime.json
+          node scripts/generate-responsive-index-baseline.js
+          cp reports/responsive-index-baseline.json /tmp/community-parent-responsive.json
+
+      - name: Apply workspace-only candidate and preserve responsive contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp /tmp/community-candidate.css "${TARGET_FILE}"
+          cp /tmp/community-parent-responsive.json reports/responsive-index-baseline.json
+          node scripts/test-responsive-contract.js
+          git diff --check
+
+      - name: Require exact parent-to-candidate Community CSS parity
+        shell: bash
+        run: |
+          set -euo pipefail
+          node /tmp/community-static-parity.js /tmp/community-candidate-runtime.json
+          cmp /tmp/community-parent-runtime.json /tmp/community-candidate-runtime.json
+          echo 'Community Internal static CSS runtime parity: PASS'
+
+      - name: Validate Community and structural contracts on candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/test-community-logic-stability-contract.js
+          node scripts/test-community-final-logic-stability-contract.js
+          node scripts/test-community-final-readiness-contract.js
+          node scripts/test-community-critical-hardening-contract.js
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/css-conflicts.log
+          npm run audit:shared-app-header-contract
+          npm run audit:responsive-boundaries
+          npm run audit:active-legacy-structures | tee /tmp/legacy.log
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          npm run audit:duplicate-assets
+          git diff --check
+          echo '--- candidate structural metrics ---'
+          grep -E 'CSS files scanned|Definitions|Conflicting class/property pairs' /tmp/css-conflicts.log || true
+          grep -Ei 'active legacy/remediation css|active legacy/remediation js|high risk active css' /tmp/legacy.log || true
+
+      - name: Restore exact certified parent
+        if: always()
+        shell: bash
+        run: |
+          git reset --hard "${TARGET_SHA}"
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test "$(sha256sum "${TARGET_FILE}" | awk '{print $1}')" = "${EXPECTED_PARENT_SHA256}"
