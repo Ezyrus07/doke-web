@@ -52,12 +52,7 @@ jobs:
           ! grep -Eq '^[[:space:]]*push:' .github/workflows/com-b03c-r4k-r4j-lineage-reconciliation-readiness.yml
           ! grep -Eq '^[[:space:]]*environment:' .github/workflows/com-b03c-r4k-r4j-lineage-reconciliation-readiness.yml
           ! grep -Eq 'secrets\.' .github/workflows/com-b03c-r4k-r4j-lineage-reconciliation-readiness.yml
-          set +e
-          output="$(node -e \"const r=require('./backend/modules/communities/community-realtime-private-auth-r4k'); try { r.assertRemoteExecutionBoundaryAbsent(); } catch (e) { process.stderr.write(String(e.code || e.message)); process.exit(2); }\" 2>&1)"
-          code=$?
-          set -e
-          test "$code" -eq 2
-          printf '%s\n' "$output" | grep -q 'DOKE_COM_B03C_R4K_REMOTE_EXECUTION_NOT_AUTHORIZED'
+          node -e 'const r=require("./backend/modules/communities/community-realtime-private-auth-r4k"); let blocked=false; try { r.assertRemoteExecutionBoundaryAbsent(); } catch (e) { blocked=e && e.code===r.REMOTE_EXECUTION_BLOCK_CODE; } if (!blocked) process.exit(1);'
       - name: Domain Completion Matrix
         run: npm run audit:domain-completion-matrix
       - name: Agent Governance
