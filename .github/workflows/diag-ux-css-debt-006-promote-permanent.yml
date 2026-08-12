@@ -1,0 +1,68 @@
+name: Doke UX-CSS-DEBT-006 Promote Permanent
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-006-promote-permanent
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      PARENT_SHA: e3453eeb1f2123377eefac0a8213f7f04c519d44
+      TARGET_BRANCH: ux/ux-css-debt-006-carteira-compaction
+      TARGET_FILE: assets/css/pages/carteira.css
+      EXPECTED_PARENT_SHA256: c81f0359bf4d32dae5ea581f4270f93cc66dbbeb46db178c2d6b907125ca4459
+      EXPECTED_CANDIDATE_SHA256: a709b432ba2587eb1d164a4d7ae57161d5c4ab39d42b3f9dca04f11d9b5ee4fa
+    steps:
+      - name: Checkout permanent target branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_BRANCH }}
+          fetch-depth: 0
+
+      - name: Guard target remains exact certified parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${PARENT_SHA}"
+          test "$(sha256sum "${TARGET_FILE}" | awk '{print $1}')" = "${EXPECTED_PARENT_SHA256}"
+          git diff --exit-code
+
+      - name: Build exact deterministic candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');
+          const file=process.env.TARGET_FILE,parent=fs.readFileSync(file,'utf8'),lines=parent.split(/\r?\n/);let depth=0,selectorParts=[],selector=null;const declarations=[],stack=[];const re=/^\s*([\w-]+)\s*:\s*(.*?)\s*(!important)?\s*;\s*$/;
+          for(let i=0;i<lines.length;i++){const line=lines[i],t=line.trim(),opens=(line.match(/\{/g)||[]).length,closes=(line.match(/\}/g)||[]).length;if(!selector&&t&&!t.startsWith('/*')&&!t.startsWith('*')&&t!=='*/'&&t!=='}'){if(t.startsWith('@')&&line.includes('{'))stack.push({type:'at',header:t.replace(/\{\s*$/,'').replace(/\s+/g,' ').trim(),depthBefore:depth});else if(!t.startsWith('@')&&!line.includes(';')){selectorParts.push(t.replace(/\{\s*$/,'').trim());if(line.includes('{')){selector=selectorParts.join(' ').replace(/\s+/g,' ').trim();selectorParts=[];stack.push({type:'rule',selector,depthBefore:depth});}}}if(selector){const m=line.match(re);if(m){const context=stack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');declarations.push({lineIndex:i,selector,property:m[1],important:Boolean(m[3]),context});}}depth+=opens-closes;while(stack.length&&depth<=stack[stack.length-1].depthBefore){const p=stack.pop();if(p.type==='rule')selector=null;}}
+          const last=new Map(),dead=[];for(let i=declarations.length-1;i>=0;i--){const d=declarations[i],key=`${d.context} >>> ${d.selector} >>> ${d.property}`,later=last.get(key);if(later&&(!d.important||later.important))dead.push(d);if(!later||d.important||!later.important)last.set(key,d);}const deadSet=new Set(dead.map(d=>d.lineIndex)),candidate=lines.filter((_l,i)=>!deadSet.has(i)).join('\n'),sha=v=>crypto.createHash('sha256').update(v).digest('hex');
+          if(sha(parent)!==process.env.EXPECTED_PARENT_SHA256)throw new Error('parent hash drift');if(sha(candidate)!==process.env.EXPECTED_CANDIDATE_SHA256)throw new Error('candidate hash drift');if(declarations.length!==2331||dead.length!==79)throw new Error('metric drift');fs.writeFileSync(file,candidate);
+          NODE
+
+      - name: Guard exact permanent delta
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(sha256sum "${TARGET_FILE}" | awk '{print $1}')" = "${EXPECTED_CANDIDATE_SHA256}"
+          test "$(git diff --name-only)" = "${TARGET_FILE}"
+          test "$(git diff --numstat -- "${TARGET_FILE}" | awk '{print $1}')" = "0"
+          test "$(git diff --numstat -- "${TARGET_FILE}" | awk '{print $2}')" = "79"
+          git diff --check
+
+      - name: Commit and push product-only tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name doke
+          git config user.email bielantoniomma@gmail.com
+          git add "${TARGET_FILE}"
+          git commit -m "UX-CSS-DEBT-006: compact superseded Carteira declarations"
+          test "$(git rev-parse HEAD^)" = "${PARENT_SHA}"
+          test "$(git diff --name-only "${PARENT_SHA}"...HEAD)" = "${TARGET_FILE}"
+          git push origin HEAD:"${TARGET_BRANCH}"
