@@ -1,0 +1,57 @@
+name: Doke UX-CSS-DEBT-006 Cleanup Empty Refs
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-006-cleanup-empty-refs
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      EXPECTED_SHA: e3453eeb1f2123377eefac0a8213f7f04c519d44
+    steps:
+      - name: Checkout cleanup branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Guard and delete accidental empty refs only
+        shell: bash
+        run: |
+          set -euo pipefail
+          branches=(
+            "noop"
+            "diag/ux-css-debt-006-noop-cleanup-marker"
+            "diag/ux-css-debt-006-stop"
+            "diag/ux-css-debt-006-temp-final"
+            "diag/ux-css-debt-006-temp-final-2"
+            "diag/ux-css-debt-006-issue-placeholder"
+          )
+          for branch in "${branches[@]}"; do
+            actual="$(git ls-remote --heads origin "refs/heads/${branch}" | awk '{print $1}')"
+            test -n "${actual}" || { echo "missing ref before cleanup: ${branch}"; exit 1; }
+            test "${actual}" = "${EXPECTED_SHA}" || { echo "ref drift: ${branch} -> ${actual}"; exit 1; }
+          done
+          git push origin --delete "${branches[@]}"
+
+      - name: Verify refs are gone
+        shell: bash
+        run: |
+          set -euo pipefail
+          branches=(
+            "noop"
+            "diag/ux-css-debt-006-noop-cleanup-marker"
+            "diag/ux-css-debt-006-stop"
+            "diag/ux-css-debt-006-temp-final"
+            "diag/ux-css-debt-006-temp-final-2"
+            "diag/ux-css-debt-006-issue-placeholder"
+          )
+          for branch in "${branches[@]}"; do
+            test -z "$(git ls-remote --heads origin "refs/heads/${branch}")" || { echo "ref still exists: ${branch}"; exit 1; }
+          done
+          echo "Accidental empty refs cleanup: PASS (6/6 deleted)"
