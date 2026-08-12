@@ -1,17 +1,20 @@
 name: Domain Completion Matrix Artifact Sync
 
 on:
-  push:
-    branches: [com/com-001-baseline-audit]
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
     paths:
+      - 'config/domain-completion-matrix.json'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
       - '.github/workflows/domain-completion-matrix-sync.yml'
 
-permissions: { contents: write }
+permissions: { contents: read }
 
 jobs:
-  sync:
+  verify:
     runs-on: ubuntu-24.04
-    timeout-minutes: 12
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
@@ -20,82 +23,9 @@ jobs:
           node-version: '24'
           cache: npm
       - run: npm ci --ignore-scripts
-      - name: Pre-writer R4K repository-only gates
-        shell: bash
-        run: |
-          node --check backend/modules/communities/community-realtime-private-auth-r4k.js
-          node --check scripts/test-com-b03c-r4k-r4j-lineage-reconciliation-readiness.js
-          node scripts/test-com-b03c-r4k-r4j-lineage-reconciliation-readiness.js
-          test ! -e config/com-b03c-r4j-single-use-hosted-terminal-status-observation-trigger.json
-          R4J_HEAD=66e8b1fefdbf7fa70be3093bdcad50880a5cdf70
-          test -z "$(git diff --name-only "$R4J_HEAD" HEAD -- \
-            backend/modules/communities/community-realtime-private-auth-r4j.js \
-            scripts/execute-com-b03c-r4j-hosted-terminal-status-observation-envelope.js \
-            config/com-b03c-r4j-hosted-terminal-status-observation-execution-envelope-readiness.json \
-            docs/validation/COM-B03C-R4J-HOSTED-TERMINAL-STATUS-OBSERVATION-EXECUTION-ENVELOPE-READINESS.json \
-            .github/workflows/com-b03c-r4j-hosted-terminal-status-observation-execution-envelope-readiness.yml \
-            backend/modules/communities/community-realtime-private-auth-r4i.js \
-            config/com-b03c-r4i-r4h-terminal-observation-authorization-consumption.json \
-            docs/validation/COM-B03C-R4I-R4H-TERMINAL-OBSERVATION-AUTHORIZATION-CONSUMPTION.json)"
-          ! grep -Eq '^[[:space:]]*push:' .github/workflows/com-b03c-r4k-r4j-lineage-reconciliation-readiness.yml
-          ! grep -Eq '^[[:space:]]*environment:' .github/workflows/com-b03c-r4k-r4j-lineage-reconciliation-readiness.yml
-          ! grep -Eq 'secrets\.' .github/workflows/com-b03c-r4k-r4j-lineage-reconciliation-readiness.yml
-      - name: Canonical writer
-        run: npm run write:domain-completion-matrix
-      - name: Restrict canonical writer outputs
-        shell: bash
-        run: |
-          mapfile -t changed < <(git diff --name-only)
-          test "${#changed[@]}" -eq 2
-          printf '%s\n' "${changed[@]}" | grep -Fx 'docs/DOMAIN-COMPLETION-MATRIX.md'
-          printf '%s\n' "${changed[@]}" | grep -Fx 'reports/generated/domain-completion-matrix-report.json'
-      - name: Canonical matrix audit
+      - name: Domain Completion Matrix
         run: npm run audit:domain-completion-matrix
-      - name: Preserve R4K repository guards
-        shell: bash
-        run: |
-          node scripts/test-com-b03c-r4k-r4j-lineage-reconciliation-readiness.js
-          test ! -e config/com-b03c-r4j-single-use-hosted-terminal-status-observation-trigger.json
-          node - <<'NODE'
-          const r4k = require('./backend/modules/communities/community-realtime-private-auth-r4k');
-          const config = require('./config/com-b03c-r4k-r4j-lineage-reconciliation-readiness.json');
-          const result = r4k.evaluateRepositoryReadiness(config.readinessInput);
-          if (result.lineageReconciled !== true || result.authorizationEvidenceHead !== r4k.PREDECESSOR_R4J_HEAD) process.exit(1);
-          if (result.futureWorkflowInstallHead !== null || result.futureWorkflowInstallHeadMaterialized !== false) process.exit(1);
-          if (result.triggerCreationAuthority !== false || result.remoteExecutionAuthority !== false || result.stagingReadAuthority !== false || result.stagingMutationAuthority !== false) process.exit(1);
-          if (result.productionAuthority !== false || result.pullRequestMergeAuthority !== false) process.exit(1);
-          if (result.exactRootCauseProven !== false || result.causalPromotionAllowed !== false) process.exit(1);
-          NODE
       - name: Agent Governance
         run: npm run audit:agent-governance
-      - name: Contain governance-generated side effects
-        shell: bash
-        run: |
-          mkdir -p /tmp/r4k-matrix
-          cp docs/DOMAIN-COMPLETION-MATRIX.md /tmp/r4k-matrix/DOMAIN-COMPLETION-MATRIX.md
-          cp reports/generated/domain-completion-matrix-report.json /tmp/r4k-matrix/domain-completion-matrix-report.json
-          git reset --hard HEAD
-          git clean -fd
-          cp /tmp/r4k-matrix/DOMAIN-COMPLETION-MATRIX.md docs/DOMAIN-COMPLETION-MATRIX.md
-          mkdir -p reports/generated
-          cp /tmp/r4k-matrix/domain-completion-matrix-report.json reports/generated/domain-completion-matrix-report.json
-      - name: Stage exactly two canonical outputs
-        shell: bash
-        run: |
-          mapfile -t changed < <(git diff --name-only)
-          test "${#changed[@]}" -eq 2
-          printf '%s\n' "${changed[@]}" | grep -Fx 'docs/DOMAIN-COMPLETION-MATRIX.md'
-          printf '%s\n' "${changed[@]}" | grep -Fx 'reports/generated/domain-completion-matrix-report.json'
-          git add docs/DOMAIN-COMPLETION-MATRIX.md
-          git add -f reports/generated/domain-completion-matrix-report.json
-          mapfile -t staged < <(git diff --name-only --cached)
-          test "${#staged[@]}" -eq 2
-          printf '%s\n' "${staged[@]}" | grep -Fx 'docs/DOMAIN-COMPLETION-MATRIX.md'
-          printf '%s\n' "${staged[@]}" | grep -Fx 'reports/generated/domain-completion-matrix-report.json'
-      - name: Commit canonical R4K-derived outputs
-        shell: bash
-        run: |
-          git config user.name doke
-          git config user.email bielantoniomma@gmail.com
-          git commit -m 'docs(com): reconcile domain matrix after R4K lineage reconciliation'
-          git push origin HEAD:com/com-001-baseline-audit
+      - name: Diff hygiene
+        run: git diff --check "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}"
