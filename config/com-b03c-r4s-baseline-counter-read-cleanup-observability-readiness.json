@@ -1,0 +1,62 @@
+{
+  "contractId": "com-b03c-r4s-baseline-counter-read-cleanup-observability-readiness-v1",
+  "validationId": "COM-B03C-R4S-BASELINE-COUNTER-READ-CLEANUP-OBSERVABILITY-READINESS",
+  "status": "repository_baseline_counter_read_decomposed_r4c_bridge_and_cleanup_observability_ready_pre_certification_no_remote_authority",
+  "predecessorR4rEvidenceHead": "7940c8fc95e40577144ac3f80597f02d27f5334c",
+  "matrixVersion": "1.3.113",
+  "maturity": 3,
+  "productionGate": "blocked",
+  "observedFailure": {
+    "run": 31613730213,
+    "canaryJob": 94171514832,
+    "artifactId": 9148351664,
+    "artifactDigest": "sha256:3a97c0f26d68d227d147ba0564305fc93a9ed9c7e0f6f17b7f444ef295d37939",
+    "lastSucceededPhase": "baseline_policy_snapshot",
+    "failedPhase": "baseline_counter_read",
+    "databaseCleanupSucceeded": false,
+    "identityCleanupSucceeded": true,
+    "zeroResidueProven": false
+  },
+  "counterReadDecomposition": {
+    "subphases": [
+      "counter_query_dispatch",
+      "counter_result_single_row_shape",
+      "counter_pg_int8_codec",
+      "counter_strict_normalization"
+    ],
+    "historicalR4cCodecReusedByReference": true,
+    "r3sStrictSafeIntegerContractPreserved": true,
+    "legacyPgInt8TextMismatchReproduced": true,
+    "remoteCauseStillNotClaimed": true
+  },
+  "cleanupObservability": {
+    "subphases": [
+      "cleanup_mutation_if_instrumentation_installed",
+      "cleanup_residue_inspection",
+      "cleanup_baseline_policy_resnapshot",
+      "cleanup_baseline_comparison"
+    ],
+    "mutationConditionalOnInstrumentationInstalled": true,
+    "preInstallFailureSkipsDestructiveCleanup": true,
+    "residueInspectionStillRequired": true,
+    "baselinePolicyResnapshotRequiredWhenSnapshotAvailable": true,
+    "zeroResidueDerivedOnlyFromScopedCounts": true
+  },
+  "authority": {
+    "triggerCreationAuthority": false,
+    "remoteExecutionAuthority": false,
+    "remoteCredentialReadAuthority": false,
+    "remoteDependencyLoadAuthority": false,
+    "networkAuthority": false,
+    "stagingReadAuthority": false,
+    "stagingMutationAuthority": false,
+    "realtimeSubscriptionAuthority": false,
+    "authIdentityLifecycleAuthority": false,
+    "runtimeChangeAuthority": false,
+    "productionAuthority": false,
+    "pullRequestMergeAuthority": false
+  },
+  "exactRootCauseProven": false,
+  "causalPromotionAllowed": false,
+  "nextBoundary": "After R4S evidence-head certification, create a separate repository-only R4Q-successor executor integration that wraps the PG client with the certified R4C codec before building the R3V restricted DB adapter and applies the R4S cleanup plan. No new authorization or staging attempt in R4S."
+}
