@@ -14,7 +14,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  EXPECTED_PARENT: 13d2610b34abbceb7d4a18812a55289faf111bef
+  EXPECTED_PARENT: 33679c505f38be248a78716a561ea65ee3a30eee
   TARGET_BRANCH: com/com-001-baseline-audit
   WRITER_PATH: .github/workflows/com-b03c-r4p-domain-matrix-writer-temp.yml
   MATRIX_MD: docs/DOMAIN-COMPLETION-MATRIX.md
@@ -74,11 +74,10 @@ jobs:
       - name: Agent Governance
         run: npm run audit:agent-governance
 
-      - name: Commit writer removal only
+      - name: Commit already-staged writer removal only
         shell: bash
         run: |
           set -euo pipefail
-          git add -u -- "${WRITER_PATH}"
           staged="$(git diff --cached --name-only)"
           printf 'staged-final-scope: %s\n' "${staged}"
           test "${staged}" = "${WRITER_PATH}"
