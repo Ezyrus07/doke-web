@@ -111,6 +111,22 @@ jobs:
                 for(const e of document.querySelectorAll('[aria-hidden="true"]')) e.setAttribute('aria-hidden','false');
                 const action=document.querySelector('.app-header.app-header--communities .page-header-context__action');
                 if(action){action.classList.add('is-view-active');action.setAttribute('aria-expanded','true');}
+                const discovery=document.querySelector('.communities-discovery-v2');
+                if(!discovery) throw new Error('missing canonical communities-discovery-v2 fixture host');
+                if(!discovery.querySelector('[data-css-debt-fixture="community-card"]')){
+                  const card=document.createElement('article');
+                  card.className='community-card-v2';
+                  card.dataset.cssDebtFixture='community-card';
+                  card.innerHTML='<div class="community-card-v2__image"></div><div class="community-card-v2__body"><span class="community-pill">Categoria</span><h3>Comunidade sintética</h3><p>Descrição sintética</p><div class="community-card-v2__stats"><span>12 membros</span></div><div class="community-activity">Ativa agora</div><button class="community-card-v2__button" type="button">Participar</button><button class="community-open-button" type="button">Abrir</button></div>';
+                  discovery.appendChild(card);
+                }
+                if(!discovery.querySelector('[data-css-debt-fixture="continue-card"]')){
+                  const card=document.createElement('article');
+                  card.className='community-continue-card';
+                  card.dataset.cssDebtFixture='continue-card';
+                  card.innerHTML='<img alt="" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=="><div class="community-continue-card__content"><span class="community-pill">Continuar</span><h3>Comunidade seguida</h3><div class="community-continue-card__meta">3 novas mensagens</div></div>';
+                  discovery.appendChild(card);
+                }
               });
               await page.evaluate(()=>document.fonts&&document.fonts.ready);await sleep(60);
               result[name]=await page.evaluate(selectors=>{
