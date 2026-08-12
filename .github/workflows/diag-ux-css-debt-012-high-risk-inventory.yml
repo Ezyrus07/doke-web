@@ -1,0 +1,123 @@
+name: Doke UX-CSS-DEBT-012 High-Risk Inventory
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-012-high-risk-inventory
+
+permissions:
+  contents: read
+
+jobs:
+  inventory:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 76b2d52d9beddf03160869c0b07926dc8eb5fdd4
+    steps:
+      - name: Checkout exact UX-CSS-DEBT-011 checkpoint
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 0
+
+      - name: Guard exact checkpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          git diff --check
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Required governance pre-flight
+        run: npm run audit:agent-governance
+
+      - name: Generate canonical inventory inputs
+        run: npm run audit:active-legacy-structures
+
+      - name: Recompute reconciled superseded clusters
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs'),path=require('path');
+          const report=JSON.parse(fs.readFileSync('reports/generated/active-legacy-structures-report.json','utf8'));
+          const allCss=[];
+          function walk(d){for(const e of fs.readdirSync(d,{withFileTypes:true})){const f=path.join(d,e.name);if(e.isDirectory())walk(f);else if(f.endsWith('.css'))allCss.push(f.replace(/\\/g,'/'));}}
+          walk('assets/css');
+          const importRe=/@import\s+(?:url\()?['"]?([^'"\);]+\.css(?:\?[^'"\)]*)?)['"]?\)?/gi;
+          const normalize=(v,from)=>{v=v.replace(/\?.*$/,'').replace(/^\.\//,'');if(v.startsWith('/'))return v.replace(/^\/+/, '');if(v.startsWith('assets/'))return v;return path.posix.normalize(path.posix.join(path.posix.dirname(from),v));};
+          const meta=new Map();
+          for(const file of allCss){const text=fs.readFileSync(file,'utf8'),imports=[];let m;importRe.lastIndex=0;while((m=importRe.exec(text)))imports.push(normalize(m[1],file));meta.set(file,{file,text,imports,size:Buffer.byteLength(text),important:(text.match(/!important/gi)||[]).length});}
+          const directKnown=[...new Set(report.pageAssets.flatMap(p=>p.css))].filter(f=>meta.has(f));
+          const active=new Set(),todo=[...directKnown];
+          while(todo.length){const f=todo.pop();if(active.has(f)||!meta.has(f))continue;active.add(f);for(const n of meta.get(f).imports)if(meta.has(n))todo.push(n);}
+          const high=[...active].map(f=>meta.get(f)).filter(x=>x&&(x.size>=50000||x.important>=100||x.imports.length>=10));
+          if(active.size!==401)throw new Error(`active/imported drift: ${active.size}`);
+          if(high.length!==38)throw new Error(`high-risk drift: ${high.length}`);
+
+          function pagesFor(target){const out=[];for(const p of report.pageAssets){const seen=new Set(),stack=[...p.css.filter(f=>meta.has(f))];let hit=false;while(stack.length){const f=stack.pop();if(seen.has(f)||!meta.has(f))continue;seen.add(f);if(f===target){hit=true;break;}for(const n of meta.get(f).imports)if(meta.has(n))stack.push(n);}if(hit)out.push(p.page);}return out.sort();}
+
+          function superseded(file){
+            const text=meta.get(file).text,lines=text.split(/\r?\n/);
+            let depth=0,selectorParts=[],atRuleParts=[],selector=null;
+            const declarations=[],stack=[];
+            const declRe=/^\s*([\w-]+)\s*:\s*(.*?)\s*;\s*$/;
+            const norm=parts=>parts.join(' ').replace(/\{\s*$/,'').replace(/\s+/g,' ').trim();
+            for(let i=0;i<lines.length;i++){
+              const line=lines[i],t=line.trim(),opens=(line.match(/\{/g)||[]).length,closes=(line.match(/\}/g)||[]).length;
+              if(!selector){
+                if(atRuleParts.length){if(t)atRuleParts.push(t);if(line.includes('{')){stack.push({type:'at',header:norm(atRuleParts),depthBefore:depth});atRuleParts=[];}}
+                else if(t.startsWith('@')&&!t.includes(';')){if(line.includes('{'))stack.push({type:'at',header:norm([t]),depthBefore:depth});else atRuleParts=[t];}
+                else if(selectorParts.length){if(t)selectorParts.push(t);if(line.includes('{')){selector=norm(selectorParts);selectorParts=[];stack.push({type:'rule',selector,depthBefore:depth});}}
+                else if(t&&!t.startsWith('/*')&&!t.startsWith('*')&&t!=='*/'&&t!=='}'&&!t.startsWith('@')&&!line.includes(';')){selectorParts=[t];if(line.includes('{')){selector=norm(selectorParts);selectorParts=[];stack.push({type:'rule',selector,depthBefore:depth});}}
+              }
+              if(selector){const m=line.match(declRe);if(m){const raw=m[2].trim(),important=/\s*!important\s*$/i.test(raw),context=stack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');declarations.push({lineIndex:i,line:i+1,selector,property:m[1].toLowerCase(),value:raw,important,context});}}
+              depth+=opens-closes;
+              while(stack.length&&depth<=stack[stack.length-1].depthBefore){const p=stack.pop();if(p.type==='rule')selector=null;}
+            }
+            if(atRuleParts.length)throw new Error(`${file}: unterminated multiline at-rule`);
+            const last=new Map(),dead=[];
+            for(let i=declarations.length-1;i>=0;i--){const d=declarations[i],key=`${d.context} >>> ${d.selector} >>> ${d.property}`,later=last.get(key);if(later&&(!d.important||later.important))dead.push({...d,winnerLine:later.line,winnerValue:later.value,winnerImportant:later.important});if(!later||d.important||!later.important)last.set(key,d);}
+            return{decl:declarations.length,dead:dead.length,selectors:[...new Set(dead.map(d=>d.selector))].sort(),deadRows:dead};
+          }
+
+          const rows=high.map(x=>{const s=superseded(x.file),pages=pagesFor(x.file),parents=allCss.filter(f=>(meta.get(f)?.imports||[]).includes(x.file));return{file:x.file,size:x.size,important:x.important,imports:x.imports.length,decl:s.decl,dead:s.dead,deadPct:s.decl?+(100*s.dead/s.decl).toFixed(2):0,selectors:s.selectors.length,selectorList:s.selectors,pages:pages.length,pageList:pages,importParents:parents.length,parentList:parents.sort(),scope:x.file.includes('/pages/')?'page':'shared',deadRows:s.deadRows};}).sort((a,b)=>(b.dead-a.dead)||(a.pages-b.pages)||(b.deadPct-a.deadPct)||(a.important-b.important)||(b.size-a.size));
+
+          const guards=[
+            ['011-pedidos','assets/css/pages/pedidos.css',1275],
+            ['010-orders-command','assets/css/pages/pedidos/orders-command-center.css',1909],
+            ['009-community-settings','assets/css/pages/comunidade-interna-settings.css',968],
+            ['008-owner-card','assets/css/components/cards/profile-service-owner-card.css',1397]
+          ];
+          for(const [name,file,decl] of guards){const s=superseded(file);if(s.decl!==decl||s.dead!==0)throw new Error(`${name} checkpoint drift: ${s.decl}/${s.dead}`);console.log(`${name}=${s.decl} declarations / ${s.dead} superseded`);}
+
+          console.log('UX-CSS-DEBT-012 reconciled fresh inventory');
+          console.log(`checkpoint=${process.env.TARGET_SHA}`);
+          console.log(`activeImported=${active.size}`);
+          console.log(`highRisk=${rows.length}`);
+          console.log('RANK | DEAD | PCT | SELECTORS | PAGES | SCOPE | !IMP | BYTES | FILE');
+          rows.forEach((r,i)=>console.log(`${String(i+1).padStart(2)} | ${String(r.dead).padStart(4)} | ${String(r.deadPct).padStart(5)} | ${String(r.selectors).padStart(3)} | ${String(r.pages).padStart(2)} | ${r.scope.padEnd(6)} | ${String(r.important).padStart(4)} | ${String(r.size).padStart(6)} | ${r.file}`));
+          console.log('\nTop 16 detail JSON:');
+          console.log(JSON.stringify(rows.slice(0,16).map(({deadRows,...r})=>r),null,2));
+          console.log('\nTop 8 candidates dead declaration evidence:');
+          console.log(JSON.stringify(rows.slice(0,8).map(r=>({file:r.file,dead:r.dead,pages:r.pages,rows:r.deadRows})),null,2));
+          NODE
+
+      - name: Preserve certified baseline governance
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:domain-completion-matrix
+          npm run audit:shared-app-header-contract
+          npm run audit:responsive-boundaries
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/css-conflicts.log
+          grep -q 'Conflicting class/property pairs: 339' /tmp/css-conflicts.log
+          git diff --check
