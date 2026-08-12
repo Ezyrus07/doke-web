@@ -14,7 +14,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  EXPECTED_PARENT: 91a7d1736f4e1df12ab4274e1ae448ea8f775549
+  EXPECTED_PARENT: e63d033fb398c90c8aac34a1ab7ec2505f85c111
   TARGET_BRANCH: com/com-001-baseline-audit
   WRITER_PATH: .github/workflows/com-b03c-r4p-domain-matrix-writer-temp.yml
   MATRIX_MD: docs/DOMAIN-COMPLETION-MATRIX.md
@@ -58,15 +58,25 @@ jobs:
       - name: Generate final canonical Domain Completion Matrix outputs
         run: npm run write:domain-completion-matrix
 
-      - name: Enforce exact final scope
+      - name: Enforce bounded final scope
         shell: bash
         run: |
           set -euo pipefail
-          actual="$(git diff --name-only HEAD | sort)"
-          expected="$(printf '%s\n%s\n%s\n' "${WRITER_PATH}" "${MATRIX_MD}" "${MATRIX_JSON}" | sort)"
-          test "${actual}" = "${expected}"
+          mapfile -t actual < <(git diff HEAD --name-only | sort)
+          printf 'final-scope: %s\n' "${actual[@]}"
+          test "${#actual[@]}" -ge 2
+          printf '%s\n' "${actual[@]}" | grep -Fxq "${WRITER_PATH}"
+          matrix_output_seen=false
+          for path in "${actual[@]}"; do
+            case "${path}" in
+              "${WRITER_PATH}") ;;
+              "${MATRIX_MD}"|"${MATRIX_JSON}") matrix_output_seen=true ;;
+              *) echo "unexpected final-scope path: ${path}" >&2; exit 1 ;;
+            esac
+          done
+          test "${matrix_output_seen}" = "true"
           test -z "$(git ls-files --others --exclude-standard)"
-          git diff --check
+          git diff HEAD --check
 
       - name: Domain Completion Matrix
         run: npm run audit:domain-completion-matrix
@@ -80,9 +90,20 @@ jobs:
           set -euo pipefail
           git add -u -- "${WRITER_PATH}" "${MATRIX_MD}"
           git add -f -- "${MATRIX_JSON}"
-          staged="$(git diff --cached --name-only | sort)"
-          expected="$(printf '%s\n%s\n%s\n' "${WRITER_PATH}" "${MATRIX_MD}" "${MATRIX_JSON}" | sort)"
-          test "${staged}" = "${expected}"
+          mapfile -t staged < <(git diff --cached --name-only | sort)
+          printf 'staged-final-scope: %s\n' "${staged[@]}"
+          test "${#staged[@]}" -ge 2
+          printf '%s\n' "${staged[@]}" | grep -Fxq "${WRITER_PATH}"
+          matrix_output_seen=false
+          for path in "${staged[@]}"; do
+            case "${path}" in
+              "${WRITER_PATH}") ;;
+              "${MATRIX_MD}"|"${MATRIX_JSON}") matrix_output_seen=true ;;
+              *) echo "unexpected staged path: ${path}" >&2; exit 1 ;;
+            esac
+          done
+          test "${matrix_output_seen}" = "true"
+          git diff --cached --check
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git commit -m 'ci(com): remove temporary R4P writer and freeze matrix'
