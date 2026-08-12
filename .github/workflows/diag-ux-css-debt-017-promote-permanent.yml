@@ -1,0 +1,71 @@
+name: Doke UX-CSS-DEBT-017 Promote Permanent
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-017-promote-permanent
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-24.04
+    env:
+      PARENT_SHA: b83318f51f429019cb5bc43685e33b904653f54c
+      PERMANENT_BRANCH: ux/ux-css-debt-017-home-mobile-alignment-compaction
+      TARGET_FILE: assets/css/pages/home/mobile-alignment.css
+      EXPECTED_SELECTOR: html.home-index-root body.home-index-shell section.more-services [data-more-services-grid]
+      PARENT_SHA256: 662c66707e973a3c488103af65689b5b85c4459d2d17f685d1bdb736c01ee118
+      CANDIDATE_SHA256: d75e60438e75833fa3e6aec4c97b51c4eaa29b70f9dd291982b12293d13cc2c3
+    steps:
+      - name: Checkout exact certified parent
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.PARENT_SHA }}
+          fetch-depth: 2
+
+      - name: Guard permanent branch starts exactly at parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${PARENT_SHA}"
+          git fetch origin "${PERMANENT_BRANCH}"
+          test "$(git rev-parse FETCH_HEAD)" = "${PARENT_SHA}"
+          test "$(sha256sum "${TARGET_FILE}" | awk '{print $1}')" = "${PARENT_SHA256}"
+          git diff --check
+
+      - name: Rebuild exact deterministic candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),file=process.env.TARGET_FILE,text=fs.readFileSync(file,'utf8');
+          function parse(src){const lines=src.split(/\r?\n/);let depth=0,selectorParts=[],atRuleParts=[],selector=null;const declarations=[],stack=[],re=/^\s*([\w-]+)\s*:\s*(.*?)\s*;\s*$/,norm=p=>p.join(' ').replace(/\{\s*$/,'').replace(/\s+/g,' ').trim();for(let i=0;i<lines.length;i++){const line=lines[i],t=line.trim(),opens=(line.match(/\{/g)||[]).length,closes=(line.match(/\}/g)||[]).length;if(!selector){if(atRuleParts.length){if(t)atRuleParts.push(t);if(line.includes('{')){stack.push({type:'at',header:norm(atRuleParts),depthBefore:depth});atRuleParts=[];}}else if(t.startsWith('@')&&!t.includes(';')){if(line.includes('{'))stack.push({type:'at',header:norm([t]),depthBefore:depth});else atRuleParts=[t];}else if(selectorParts.length){if(t)selectorParts.push(t);if(line.includes('{')){selector=norm(selectorParts);selectorParts=[];stack.push({type:'rule',selector,depthBefore:depth});}}else if(t&&!t.startsWith('/*')&&!t.startsWith('*')&&t!=='*/'&&t!=='}'&&!t.startsWith('@')&&!line.includes(';')){selectorParts=[t];if(line.includes('{')){selector=norm(selectorParts);selectorParts=[];stack.push({type:'rule',selector,depthBefore:depth});}}}if(selector){const m=line.match(re);if(m){const raw=m[2].trim(),important=/\s*!important\s*$/i.test(raw),context=stack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');declarations.push({lineIndex:i,line:i+1,selector,property:m[1].toLowerCase(),value:raw,important,context});}}depth+=opens-closes;while(stack.length&&depth<=stack[stack.length-1].depthBefore){const p=stack.pop();if(p.type==='rule')selector=null;}}if(atRuleParts.length)throw new Error('unterminated multiline at-rule');const last=new Map(),dead=[];for(let i=declarations.length-1;i>=0;i--){const d=declarations[i],key=`${d.context} >>> ${d.selector} >>> ${d.property}`,later=last.get(key);if(later&&(!d.important||later.important))dead.push({...d,winnerLine:later.line,winnerValue:later.value,winnerImportant:later.important});if(!later||d.important||!later.important)last.set(key,d);}return{lines,declarations,dead};}
+          const sha=s=>crypto.createHash('sha256').update(s).digest('hex'),p=parse(text),selector=process.env.EXPECTED_SELECTOR;
+          if(sha(text)!==process.env.PARENT_SHA256||Buffer.byteLength(text)!==10472||p.declarations.length!==167||p.dead.length!==6)throw new Error('parent contract drift');
+          if(p.dead.some(d=>d.selector!==selector||d.context!=='@media (max-width: 560px)'||d.important||d.winnerImportant||d.value!==d.winnerValue))throw new Error('dead-row contract drift');
+          const deadSet=new Set(p.dead.map(d=>d.lineIndex)),candidate=p.lines.filter((_l,i)=>!deadSet.has(i)).join('\n'),c=parse(candidate);
+          if(sha(candidate)!==process.env.CANDIDATE_SHA256||Buffer.byteLength(candidate)!==10331||c.declarations.length!==161||c.dead.length!==0)throw new Error('candidate contract drift');
+          fs.writeFileSync(file,candidate);
+          console.log('PROMOTION CANDIDATE PASS: 167 -> 161; -6; 1 selector; max560; 10472 -> 10331; important 0 -> 0; dead 0');
+          NODE
+          test "$(git diff --name-only "${PARENT_SHA}" --)" = "${TARGET_FILE}"
+          test "$(git diff --numstat "${PARENT_SHA}" -- "${TARGET_FILE}" | awk '{print $1}')" = "0"
+          test "$(git diff --numstat "${PARENT_SHA}" -- "${TARGET_FILE}" | awk '{print $2}')" = "6"
+          test "$(sha256sum "${TARGET_FILE}" | awk '{print $1}')" = "${CANDIDATE_SHA256}"
+          git diff --check "${PARENT_SHA}" -- "${TARGET_FILE}"
+
+      - name: Commit and push only product CSS
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name doke
+          git config user.email bielantoniomma@gmail.com
+          git add -- "${TARGET_FILE}"
+          test "$(git diff --cached --name-only)" = "${TARGET_FILE}"
+          git commit -m "UX-CSS-DEBT-017: compact superseded home mobile alignment declarations"
+          test "$(git rev-parse HEAD^)" = "${PARENT_SHA}"
+          test "$(sha256sum "${TARGET_FILE}" | awk '{print $1}')" = "${CANDIDATE_SHA256}"
+          git push origin "HEAD:refs/heads/${PERMANENT_BRANCH}"
+          echo "PERMANENT_SHA=$(git rev-parse HEAD)"
