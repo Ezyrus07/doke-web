@@ -1,0 +1,258 @@
+name: Doke UX-CSS-DEBT-005 Community Internal Diagnostic
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-005-community-interna-compaction
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      TARGET_SHA: b5e569ae0f4827f4981ec436967e59470f6a7404
+      TARGET_FILE: assets/css/pages/comunidade-interna.css
+    steps:
+      - name: Checkout exact certified parent
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 0
+
+      - name: Guard exact parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          git diff --exit-code
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies and Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install --with-deps chromium
+
+      - name: Build deterministic deletion-only candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp "${TARGET_FILE}" /tmp/community-parent.css
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');
+          const source=fs.readFileSync(process.env.TARGET_FILE,'utf8');
+          const lines=source.split(/\r?\n/);
+          let depth=0,selectorParts=[],selector=null;
+          const declarations=[],blockStack=[];
+          const declRe=/^\s*([\w-]+)\s*:\s*(.*?)\s*(!important)?\s*;\s*$/;
+          for(let i=0;i<lines.length;i++){
+            const line=lines[i],trimmed=line.trim();
+            const opens=(line.match(/\{/g)||[]).length,closes=(line.match(/\}/g)||[]).length;
+            if(!selector&&trimmed&&!trimmed.startsWith('/*')&&!trimmed.startsWith('*')&&trimmed!=='*/'&&trimmed!=='}'){
+              if(trimmed.startsWith('@')&&line.includes('{')) blockStack.push({type:'at',header:trimmed.replace(/\{\s*$/,'').replace(/\s+/g,' ').trim(),depthBefore:depth});
+              else if(!trimmed.startsWith('@')&&!line.includes(';')){
+                selectorParts.push(trimmed.replace(/\{\s*$/,'').trim());
+                if(line.includes('{')){selector=selectorParts.join(' ').replace(/\s+/g,' ').trim();selectorParts=[];blockStack.push({type:'rule',selector,depthBefore:depth});}
+              }
+            }
+            if(selector){
+              const m=line.match(declRe);
+              if(m){
+                const context=blockStack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');
+                declarations.push({lineIndex:i,selector,property:m[1],value:m[2],important:Boolean(m[3]),context});
+              }
+            }
+            depth+=opens-closes;
+            while(blockStack.length&&depth<=blockStack[blockStack.length-1].depthBefore){const p=blockStack.pop();if(p.type==='rule')selector=null;}
+          }
+          const lastStrong=new Map(),dead=[];
+          for(let i=declarations.length-1;i>=0;i--){
+            const cur=declarations[i],key=`${cur.context} >>> ${cur.selector} >>> ${cur.property}`,later=lastStrong.get(key);
+            if(later&&(!cur.important||later.important)) dead.push(cur);
+            if(!later||cur.important||!later.important) lastStrong.set(key,cur);
+          }
+          const deadLines=new Set(dead.map(x=>x.lineIndex));
+          const candidate=lines.filter((_l,i)=>!deadLines.has(i)).join('\n');
+          const selectors=[...new Set(dead.map(x=>x.selector))].sort();
+          const sha=v=>crypto.createHash('sha256').update(v).digest('hex');
+          fs.writeFileSync('/tmp/community-candidate.css',candidate);
+          fs.writeFileSync('/tmp/community-affected-selectors.json',JSON.stringify(selectors,null,2));
+          fs.writeFileSync('/tmp/community-dead-declarations.json',JSON.stringify(dead,null,2));
+          console.log('COMMUNITY_CANDIDATE_METRICS');
+          console.log(`parent_sha256=${sha(source)}`);
+          console.log(`candidate_sha256=${sha(candidate)}`);
+          console.log(`parent_bytes=${Buffer.byteLength(source)}`);
+          console.log(`candidate_bytes=${Buffer.byteLength(candidate)}`);
+          console.log(`declarations=${declarations.length}`);
+          console.log(`deleted=${dead.length}`);
+          console.log(`affected_selectors=${selectors.length}`);
+          console.log(`important_parent=${(source.match(/!important/g)||[]).length}`);
+          console.log(`important_candidate=${(candidate.match(/!important/g)||[]).length}`);
+          console.log('AFFECTED_SELECTORS_BEGIN');
+          for(const s of selectors) console.log(s);
+          console.log('AFFECTED_SELECTORS_END');
+          if(dead.length===0) throw new Error('no deterministic superseded declarations found');
+          NODE
+
+      - name: Write Community runtime parity harness
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > /tmp/ux-css-debt-005-runtime.js <<'NODE'
+          const fs=require('fs'),cp=require('child_process'),crypto=require('crypto');
+          const {chromium}=require(process.cwd()+'/node_modules/playwright');
+          const out=process.argv[2];
+          const shotDir=process.argv[3];
+          const selectors=JSON.parse(fs.readFileSync('/tmp/community-affected-selectors.json','utf8'));
+          const viewports=[
+            {name:'1366x768',width:1366,height:768},
+            {name:'1280x802',width:1280,height:802},
+            {name:'820x1180',width:820,height:1180},
+            {name:'608x926',width:608,height:926},
+            {name:'390x844',width:390,height:844}
+          ];
+          const states=['list','thread','settings','filter'];
+          const props=['display','position','top','right','bottom','left','zIndex','width','height','minWidth','maxWidth','minHeight','maxHeight','marginTop','marginRight','marginBottom','marginLeft','paddingTop','paddingRight','paddingBottom','paddingLeft','gap','rowGap','columnGap','gridTemplateColumns','gridTemplateRows','gridColumn','gridRow','alignItems','alignSelf','justifyItems','justifySelf','justifyContent','flex','flexBasis','flexGrow','flexShrink','flexDirection','flexWrap','order','fontFamily','fontSize','fontWeight','lineHeight','letterSpacing','textAlign','textOverflow','whiteSpace','color','backgroundColor','backgroundImage','borderTopWidth','borderRightWidth','borderBottomWidth','borderLeftWidth','borderTopColor','borderRightColor','borderBottomColor','borderLeftColor','borderTopLeftRadius','borderTopRightRadius','borderBottomRightRadius','borderBottomLeftRadius','boxShadow','opacity','visibility','overflow','overflowX','overflowY','transform','objectFit'];
+          const server=cp.spawn(process.execPath,['scripts/serve-static-site.js','--host=127.0.0.1','--port=5500'],{stdio:['ignore','pipe','pipe'],env:{...process.env,DOKE_E2E_DISABLE_REMOTE_SERVICES:'1'}});
+          const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+          const hashFile=p=>crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex');
+          async function applyState(page,state){
+            await page.evaluate((state)=>{
+              const body=document.body;
+              const layout=document.querySelector('.community-room-layout');
+              if(!layout) throw new Error('community-room-layout missing');
+              body.classList.remove('community-room-thread-is-open');
+              layout.classList.remove('is-settings-mode');
+              layout.dataset.mobileView='list';
+              const filter=document.querySelector('.community-room-filter-menu');
+              if(filter) filter.hidden=true;
+              if(state==='thread'){
+                body.classList.add('community-room-thread-is-open');
+                layout.dataset.mobileView='thread';
+              } else if(state==='settings'){
+                layout.classList.add('is-settings-mode');
+              } else if(state==='filter'){
+                if(filter) filter.hidden=false;
+              }
+            },state);
+          }
+          async function main(){
+            fs.mkdirSync(shotDir,{recursive:true});
+            await sleep(700);
+            const browser=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+            const result={};
+            const matchedUnion=new Set();
+            for(const vp of viewports){
+              result[vp.name]={};
+              for(const state of states){
+                const context=await browser.newContext({viewport:{width:vp.width,height:vp.height},reducedMotion:'reduce'});
+                await context.addInitScript(()=>{
+                  const fixed=1786482000000;
+                  Date.now=()=>fixed;
+                  Math.random=()=>0.123456789;
+                });
+                const page=await context.newPage();
+                await page.route('**/*',route=>{
+                  const u=route.request().url();
+                  if(u.startsWith('http://127.0.0.1:5500/')||u.startsWith('data:')||u.startsWith('blob:')) route.continue();
+                  else route.abort();
+                });
+                await page.goto('http://127.0.0.1:5500/comunidade-interna.html?ux-css-debt-005=1',{waitUntil:'domcontentloaded'});
+                await page.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important;caret-color:transparent!important}.doke-document-preloader{display:none!important}'});
+                await page.evaluate(()=>document.fonts&&document.fonts.ready);
+                await applyState(page,state);
+                await sleep(120);
+                const snap=await page.evaluate(({selectors,props})=>{
+                  if(document.body?.dataset?.page!=='comunidade-interna') throw new Error(`unexpected page ${document.body?.dataset?.page||'none'}`);
+                  const clean=v=>String(v??'').replace(/\s+/g,' ').trim();
+                  const matched=[];
+                  for(const selector of selectors){
+                    try{if(document.querySelector(selector)) matched.push(selector);}catch(_e){}
+                  }
+                  const nodes=[...document.querySelectorAll('body *')];
+                  if(nodes.length<25) throw new Error(`insufficient community DOM ${nodes.length}`);
+                  const elements=nodes.map((el,index)=>{
+                    const cs=getComputedStyle(el),r=el.getBoundingClientRect(),styles={};
+                    for(const p of props) styles[p]=clean(cs[p]);
+                    return {index,tag:el.tagName,id:el.id||'',className:typeof el.className==='string'?clean(el.className):'',hidden:Boolean(el.hidden),rect:{x:+r.x.toFixed(3),y:+r.y.toFixed(3),width:+r.width.toFixed(3),height:+r.height.toFixed(3)},styles};
+                  });
+                  return {matched,elements,bodyClass:clean(document.body.className),layoutClass:clean(document.querySelector('.community-room-layout')?.className||''),mobileView:document.querySelector('.community-room-layout')?.dataset?.mobileView||''};
+                },{selectors,props});
+                for(const s of snap.matched) matchedUnion.add(s);
+                const png=`${shotDir}/${vp.name}-${state}.png`;
+                await page.screenshot({path:png,fullPage:true,animations:'disabled'});
+                snap.screenshotSha256=hashFile(png);
+                result[vp.name][state]=snap;
+                await context.close();
+              }
+            }
+            await browser.close();
+            result.__coverage={affectedSelectors:selectors.length,matchedSelectors:matchedUnion.size,matched:[...matchedUnion].sort()};
+            fs.writeFileSync(out,JSON.stringify(result,null,2));
+            console.log(`runtime selector coverage ${matchedUnion.size}/${selectors.length}`);
+            if(matchedUnion.size<Math.min(12,selectors.length)) throw new Error(`insufficient affected-selector runtime coverage ${matchedUnion.size}/${selectors.length}`);
+          }
+          main().finally(()=>server.kill('SIGTERM')).catch(e=>{console.error(e);process.exit(1);});
+          NODE
+
+      - name: Capture parent runtime and responsive baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/community-parent-shots /tmp/community-candidate-shots
+          node /tmp/ux-css-debt-005-runtime.js /tmp/community-parent-runtime.json /tmp/community-parent-shots
+          node scripts/generate-responsive-index-baseline.js
+          cp reports/responsive-index-baseline.json /tmp/ux-css-debt-005-parent-responsive.json
+
+      - name: Apply workspace-only candidate and preserve responsive contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp /tmp/community-candidate.css "${TARGET_FILE}"
+          cp /tmp/ux-css-debt-005-parent-responsive.json reports/responsive-index-baseline.json
+          node scripts/test-responsive-contract.js
+          git diff --check
+
+      - name: Require exact parent-to-candidate Community runtime parity
+        shell: bash
+        run: |
+          set -euo pipefail
+          node /tmp/ux-css-debt-005-runtime.js /tmp/community-candidate-runtime.json /tmp/community-candidate-shots
+          cmp /tmp/community-parent-runtime.json /tmp/community-candidate-runtime.json
+          echo 'Community Internal runtime parity: PASS'
+
+      - name: Validate Community and structural contracts on candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/test-community-logic-stability-contract.js
+          node scripts/test-community-final-logic-stability-contract.js
+          node scripts/test-community-final-readiness-contract.js
+          node scripts/test-community-critical-hardening-contract.js
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/css-conflicts.log
+          npm run audit:shared-app-header-contract
+          npm run audit:responsive-boundaries
+          npm run audit:active-legacy-structures | tee /tmp/legacy.log
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          npm run audit:duplicate-assets
+          git diff --check
+          echo '--- candidate structural metrics ---'
+          grep -E 'CSS files scanned|Definitions|Conflicting class/property pairs' /tmp/css-conflicts.log || true
+          grep -Ei 'active legacy/remediation css|active legacy/remediation js|high risk active css' /tmp/legacy.log || true
+
+      - name: Restore exact certified parent
+        if: always()
+        shell: bash
+        run: |
+          git reset --hard "${TARGET_SHA}"
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
