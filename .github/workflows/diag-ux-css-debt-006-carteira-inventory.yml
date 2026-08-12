@@ -1,0 +1,132 @@
+name: Doke UX-CSS-DEBT-006 Carteira Inventory
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-006-carteira-inventory
+
+permissions:
+  contents: read
+
+jobs:
+  inventory:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      TARGET_SHA: e3453eeb1f2123377eefac0a8213f7f04c519d44
+      TARGET_FILE: assets/css/pages/carteira.css
+    steps:
+      - name: Checkout exact certified parent
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 0
+
+      - name: Guard exact parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test -f "${TARGET_FILE}"
+          git diff --exit-code
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies and Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install --with-deps chromium
+
+      - name: Build deterministic Carteira candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp "${TARGET_FILE}" /tmp/carteira-parent.css
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');
+          const file=process.env.TARGET_FILE;
+          const parent=fs.readFileSync(file,'utf8');
+          const lines=parent.split(/\r?\n/);
+          let depth=0,selectorParts=[],selector=null;const declarations=[],stack=[];
+          const re=/^\s*([\w-]+)\s*:\s*(.*?)\s*(!important)?\s*;\s*$/;
+          for(let i=0;i<lines.length;i++){
+            const line=lines[i],t=line.trim(),opens=(line.match(/\{/g)||[]).length,closes=(line.match(/\}/g)||[]).length;
+            if(!selector&&t&&!t.startsWith('/*')&&!t.startsWith('*')&&t!=='*/'&&t!=='}'){
+              if(t.startsWith('@')&&line.includes('{')) stack.push({type:'at',header:t.replace(/\{\s*$/,'').replace(/\s+/g,' ').trim(),depthBefore:depth});
+              else if(!t.startsWith('@')&&!line.includes(';')){
+                selectorParts.push(t.replace(/\{\s*$/,'').trim());
+                if(line.includes('{')){selector=selectorParts.join(' ').replace(/\s+/g,' ').trim();selectorParts=[];stack.push({type:'rule',selector,depthBefore:depth});}
+              }
+            }
+            if(selector){const m=line.match(re);if(m){const context=stack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');declarations.push({lineIndex:i,selector,property:m[1],important:Boolean(m[3]),context,value:m[2]});}}
+            depth+=opens-closes;
+            while(stack.length&&depth<=stack[stack.length-1].depthBefore){const p=stack.pop();if(p.type==='rule')selector=null;}
+          }
+          const last=new Map(),dead=[];
+          for(let i=declarations.length-1;i>=0;i--){
+            const d=declarations[i],key=`${d.context} >>> ${d.selector} >>> ${d.property}`,later=last.get(key);
+            if(later&&(!d.important||later.important)) dead.push({...d,later});
+            if(!later||d.important||!later.important) last.set(key,d);
+          }
+          const deadSet=new Set(dead.map(d=>d.lineIndex));
+          const candidate=lines.filter((_l,i)=>!deadSet.has(i)).join('\n');
+          const selectors=[...new Set(dead.map(d=>d.selector))].sort();
+          const sha=v=>crypto.createHash('sha256').update(v).digest('hex');
+          fs.writeFileSync('/tmp/carteira-candidate.css',candidate);
+          fs.writeFileSync('/tmp/carteira-selectors.json',JSON.stringify(selectors,null,2));
+          fs.writeFileSync('/tmp/carteira-dead.json',JSON.stringify(dead,null,2));
+          console.log('Carteira superseded inventory');
+          console.log(`- parent sha256: ${sha(parent)}`);
+          console.log(`- candidate sha256: ${sha(candidate)}`);
+          console.log(`- declarations: ${declarations.length} -> ${declarations.length-dead.length}`);
+          console.log(`- deleted declarations: ${dead.length}`);
+          console.log(`- affected selector strings: ${selectors.length}`);
+          console.log(`- bytes: ${Buffer.byteLength(parent)} -> ${Buffer.byteLength(candidate)}`);
+          console.log(`- !important: ${(parent.match(/!important/g)||[]).length} -> ${(candidate.match(/!important/g)||[]).length}`);
+          console.log('--- affected selectors ---');
+          for(const s of selectors) console.log(s);
+          console.log('--- deleted declarations ---');
+          for(const d of dead.sort((a,b)=>a.lineIndex-b.lineIndex)) console.log(`${d.lineIndex+1}\t${d.context||'<root>'}\t${d.selector}\t${d.property}: ${d.value}`);
+          NODE
+
+      - name: Capture exact parent responsive baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp /tmp/carteira-parent.css "${TARGET_FILE}"
+          node scripts/generate-responsive-index-baseline.js
+          cp reports/responsive-index-baseline.json /tmp/carteira-parent-responsive.json
+
+      - name: Validate candidate responsive and structural contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp /tmp/carteira-candidate.css "${TARGET_FILE}"
+          cp /tmp/carteira-parent-responsive.json reports/responsive-index-baseline.json
+          node scripts/test-responsive-contract.js | tee /tmp/responsive.log
+          grep -q 'Checks: 893' /tmp/responsive.log
+          grep -q 'Failures: 0' /tmp/responsive.log
+          grep -q 'Skips: 277' /tmp/responsive.log
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/css-conflicts.log
+          npm run audit:shared-app-header-contract
+          npm run audit:responsive-boundaries
+          npm run audit:active-legacy-structures | tee /tmp/legacy.log
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          npm run audit:duplicate-assets
+          git diff --check
+          echo '--- candidate structural metrics ---'
+          grep -E 'CSS files scanned|Definitions|Conflicting class/property pairs' /tmp/css-conflicts.log || true
+          grep -Ei 'active legacy/remediation css|active legacy/remediation js|high risk active css' /tmp/legacy.log || true
+
+      - name: Restore exact certified parent
+        if: always()
+        shell: bash
+        run: |
+          git reset --hard "${TARGET_SHA}"
