@@ -1,0 +1,108 @@
+name: Doke UX-CSS-DEBT-017 Tracked Active Inventory R2
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-017-tracked-active-inventory-r2
+
+permissions:
+  contents: read
+
+jobs:
+  inventory:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: b83318f51f429019cb5bc43685e33b904653f54c
+      PARENT_SHA: d7dcc2c0264a77d8d8a326210c3074c0eb4057df
+    steps:
+      - name: Checkout exact certified product SHA
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+
+      - name: Guard clean tracked tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test "$(git rev-parse HEAD^)" = "${PARENT_SHA}"
+          test ! -e assets/css/components/core/content-surface.css
+          test ! -e assets/css/components/core/content-system.css
+          git diff --check
+          git status --short --untracked-files=all
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Generate clean page asset graph only
+        run: npm run audit:active-legacy-structures
+
+      - name: Scan only git-tracked active CSS with reconciled parser
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs'),path=require('path'),cp=require('child_process');
+          const report=JSON.parse(fs.readFileSync('reports/generated/active-legacy-structures-report.json','utf8'));
+          const tracked=cp.execFileSync('git',['ls-files','-z','assets/css'],{encoding:'utf8'}).split('\0').filter(f=>f.endsWith('.css'));
+          const trackedSet=new Set(tracked);
+          if(tracked.some(f=>!fs.existsSync(f))) throw new Error('tracked CSS missing from filesystem');
+          if(trackedSet.has('assets/css/components/core/content-surface.css')||trackedSet.has('assets/css/components/core/content-system.css')) throw new Error('phantom content core paths unexpectedly tracked');
+          const importRe=/@import\s+(?:url\()?['"]?([^'"\);]+\.css(?:\?[^'"\)]*)?)['"]?\)?/gi;
+          const normalize=(v,from)=>{v=v.replace(/\?.*$/,'').replace(/^\.\//,'');if(v.startsWith('/'))return v.replace(/^\/+/, '');if(v.startsWith('assets/'))return v;return path.posix.normalize(path.posix.join(path.posix.dirname(from),v));};
+          const meta=new Map();
+          for(const f of tracked){const text=fs.readFileSync(f,'utf8'),imports=[];let m;importRe.lastIndex=0;while((m=importRe.exec(text)))imports.push(normalize(m[1],f));meta.set(f,{text,imports,size:Buffer.byteLength(text),important:(text.match(/!important/gi)||[]).length});}
+          const active=new Set(),todo=[...new Set(report.pageAssets.flatMap(p=>p.css))].filter(f=>meta.has(f));
+          while(todo.length){const f=todo.pop();if(active.has(f)||!meta.has(f))continue;active.add(f);for(const n of meta.get(f).imports)if(meta.has(n))todo.push(n);}
+          if(active.size!==401)throw new Error(`active/imported drift ${active.size}`);
+          const high=[...active].filter(f=>{const x=meta.get(f);return x.size>=50000||x.important>=100||x.imports.length>=10;});
+          if(high.length!==37)throw new Error(`high-risk drift ${high.length}`);
+          function parse(src){const lines=src.split(/\r?\n/);let depth=0,selectorParts=[],atRuleParts=[],selector=null;const declarations=[],stack=[],re=/^\s*([\w-]+)\s*:\s*(.*?)\s*;\s*$/,norm=p=>p.join(' ').replace(/\{\s*$/,'').replace(/\s+/g,' ').trim();for(let i=0;i<lines.length;i++){const line=lines[i],t=line.trim(),opens=(line.match(/\{/g)||[]).length,closes=(line.match(/\}/g)||[]).length;if(!selector){if(atRuleParts.length){if(t)atRuleParts.push(t);if(line.includes('{')){stack.push({type:'at',header:norm(atRuleParts),depthBefore:depth});atRuleParts=[];}}else if(t.startsWith('@')&&!t.includes(';')){if(line.includes('{'))stack.push({type:'at',header:norm([t]),depthBefore:depth});else atRuleParts=[t];}else if(selectorParts.length){if(t)selectorParts.push(t);if(line.includes('{')){selector=norm(selectorParts);selectorParts=[];stack.push({type:'rule',selector,depthBefore:depth});}}else if(t&&!t.startsWith('/*')&&!t.startsWith('*')&&t!=='*/'&&t!=='}'&&!t.startsWith('@')&&!line.includes(';')){selectorParts=[t];if(line.includes('{')){selector=norm(selectorParts);selectorParts=[];stack.push({type:'rule',selector,depthBefore:depth});}}}if(selector){const m=line.match(re);if(m){const raw=m[2].trim(),important=/\s*!important\s*$/i.test(raw),context=stack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');declarations.push({line:i+1,selector,property:m[1].toLowerCase(),value:raw,important,context});}}depth+=opens-closes;while(stack.length&&depth<=stack[stack.length-1].depthBefore){const p=stack.pop();if(p.type==='rule')selector=null;}}if(atRuleParts.length)throw new Error('unterminated multiline at-rule');const last=new Map(),dead=[];for(let i=declarations.length-1;i>=0;i--){const d=declarations[i],key=`${d.context} >>> ${d.selector} >>> ${d.property}`,later=last.get(key);if(later&&(!d.important||later.important))dead.push({...d,winnerLine:later.line,winnerValue:later.value,winnerImportant:later.important});if(!later||d.important||!later.important)last.set(key,d);}return{declarations,dead};}
+          const rows=[...active].map(file=>{const p=parse(meta.get(file).text);return{file,decl:p.declarations.length,dead:p.dead.length,high:high.includes(file),rows:p.dead};}).filter(r=>r.dead).sort((a,b)=>b.dead-a.dead||a.file.localeCompare(b.file));
+          const highRows=rows.filter(r=>r.high);
+          console.log(`TRACKED_ACTIVE_CSS=${active.size}`);
+          console.log(`TRACKED_HIGH_RISK_CSS=${high.length}`);
+          console.log(`TRACKED_ACTIVE_FILES_WITH_SUPERSEDED=${rows.length}`);
+          console.log(`TRACKED_ACTIVE_SUPERSEDED_DECLARATIONS=${rows.reduce((n,r)=>n+r.dead,0)}`);
+          console.log(`TRACKED_HIGH_RISK_FILES_WITH_SUPERSEDED=${highRows.length}`);
+          console.log(JSON.stringify(rows,null,2));
+          if(rows.length!==0)throw new Error('tracked active superseded declarations remain');
+          NODE
+
+      - name: Run governance after clean inventory and prove result is stable
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:agent-governance
+          test ! -e assets/css/components/core/content-surface.css
+          test ! -e assets/css/components/core/content-system.css
+          npm run audit:active-legacy-structures | tee /tmp/legacy.log
+          grep -q 'css files: 533 (55 direct, 401 active/imported)' /tmp/legacy.log
+          grep -q 'high risk active css: 37' /tmp/legacy.log
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/conflicts.log
+          grep -q 'Conflicting class/property pairs: 339' /tmp/conflicts.log
+          npm run audit:domain-completion-matrix | tee /tmp/domain.log
+          grep -q 'Domains: 23' /tmp/domain.log
+          grep -q 'Critical flows: 15' /tmp/domain.log
+          grep -q 'Average maturity: 2.91/6' /tmp/domain.log
+          grep -q 'Critical blockers: 12' /tmp/domain.log
+          npm run audit:shared-app-header-contract
+          npm run audit:mobile-shell-location-contract
+          npm run audit:responsive-boundaries
+          npm run audit:duplicate-assets
+
+      - name: Restore exact certified product SHA
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "${TARGET_SHA}"
+          git clean -fd
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          git diff --exit-code
