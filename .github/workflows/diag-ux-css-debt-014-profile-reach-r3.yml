@@ -1,0 +1,57 @@
+name: Doke UX-CSS-DEBT-014 Profile Reach R3
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-014-profile-reach-r3
+
+permissions:
+  contents: read
+
+jobs:
+  reach:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 6fee4223f75b86833e0d6540315d6185d2e74f2a
+    steps:
+      - name: Checkout exact UX-CSS-DEBT-013 checkpoint
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 0
+
+      - name: Prove recursive profile CSS authority and canonical DOM
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          node <<'NODE'
+          const fs=require('fs'),path=require('path');
+          const pages=['meu-perfil.html','perfil-cliente.html','perfil-profissional.html','perfil.html'];
+          const target='assets/css/pages/profile-page.css';
+          const manifest='assets/css/pages/profile-foundation.css';
+          const importRe=/@import\s+(?:url\()?['"]?([^'"\);]+\.css(?:\?[^'"\)]*)?)['"]?\)?/gi;
+          const normalize=(v,from)=>{v=v.replace(/&amp;/g,'&').replace(/\?.*$/,'').replace(/^\.\//,'');if(/^https?:/i.test(v))return null;if(v.startsWith('/'))return v.replace(/^\/+/, '');if(v.startsWith('assets/'))return v;return path.posix.normalize(path.posix.join(path.posix.dirname(from),v));};
+          function cssImports(file){const text=fs.readFileSync(file,'utf8'),out=[];let m;importRe.lastIndex=0;while((m=importRe.exec(text))){const n=normalize(m[1],file);if(n&&fs.existsSync(n))out.push(n);}return out;}
+          function stylesheetRoots(html,page){const roots=[];for(const tag of html.match(/<link\b[^>]*>/gi)||[]){const attrs={};for(const m of tag.matchAll(/([\w:-]+)\s*=\s*(["'])(.*?)\2/gi))attrs[m[1].toLowerCase()]=m[3];if(String(attrs.rel||'').toLowerCase().split(/\s+/).includes('stylesheet')&&attrs.href){const n=normalize(attrs.href,page);if(n&&fs.existsSync(n))roots.push(n);}}return roots;}
+          const manifestText=fs.readFileSync(manifest,'utf8');
+          if(!manifestText.includes('Keep declarations in profile-page.css'))throw new Error('owner declaration missing');
+          if(!manifestText.includes('@import url("./profile-page.css'))throw new Error('manifest target import missing');
+          for(const page of pages){
+            const html=fs.readFileSync(page,'utf8');
+            const body=(html.match(/<body\b[^>]*>/i)||[])[0];if(!body)throw new Error(`${page}: body missing`);
+            if(!/class=["'][^"']*\bprofile-page-shell\b[^"']*["']/i.test(body))throw new Error(`${page}: profile-page-shell missing`);
+            if(!/data-profile-contract=["']clean-v1["']/i.test(body))throw new Error(`${page}: clean-v1 missing`);
+            const feedCount=(html.match(/class=["'][^"']*\bprofile-feed\b[^"']*["']/gi)||[]).length;
+            if(feedCount!==1)throw new Error(`${page}: profile-feed count ${feedCount}`);
+            const roots=stylesheetRoots(html,page),seen=new Set(),stack=[...roots];
+            while(stack.length){const f=stack.pop();if(seen.has(f))continue;seen.add(f);for(const n of cssImports(f))stack.push(n);}
+            if(!seen.has(manifest))throw new Error(`${page}: profile-foundation unreachable; roots=${roots.join(',')}`);
+            if(!seen.has(target))throw new Error(`${page}: profile-page owner unreachable`);
+            console.log(`${page}: profile-feed=1 / clean-v1 / profile-page.css reachable / roots=${roots.length} / css=${seen.size}`);
+          }
+          const owner=fs.readFileSync(target,'utf8');
+          if(!owner.includes('gap: 28px;')||!owner.includes('gap: 20px;'))throw new Error('dead/winner evidence missing');
+          console.log('Profile family recursive owner/reach R3: PASS');
+          NODE
+          git diff --check
