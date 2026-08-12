@@ -1,7 +1,7 @@
 {
   "contractId": "com-b03c-r4t-r4q-successor-executor-integration-readiness-v1",
   "validationId": "COM-B03C-R4T-R4Q-SUCCESSOR-EXECUTOR-INTEGRATION-READINESS",
-  "status": "repository_r4q_successor_r4c_bridged_executor_and_r4s_cleanup_integration_ready_pre_certification_no_remote_authority",
+  "status": "repository_r4q_successor_r4c_bridged_executor_and_r4s_cleanup_integration_certified_no_remote_authority",
   "predecessorR4s": {
     "evidenceHead": "d5c7329e67f400ac4c5176b2e4ed4ff582885bb2",
     "evidenceBlob": "41fa7d01ed69c1cf946f3b41ba274c97f7574743",
@@ -25,7 +25,11 @@
     "historicalR3vModified": false,
     "baselineCounterPgInt8TextAcceptedAfterBridge": true,
     "terminalCounterPgInt8TextAcceptedAfterBridge": true,
-    "strictSafeIntegerContractPreserved": true
+    "strictSafeIntegerContractPreserved": true,
+    "unsafePgInt8Rejected": true,
+    "malformedCounterRowRejected": true,
+    "nonCounterSqlPassesThroughUnmodified": true,
+    "residueInspectionUsesExistingIntegerCast": true
   },
   "cleanup": {
     "r4sPlanApplied": true,
@@ -38,33 +42,75 @@
     "failureSanitized": true,
     "rawRemoteErrorExposed": false
   },
+  "initialCertification": {
+    "implementationHead": "b8a0acf470308d9afb56c90d6ebdffe4ad00a7b4",
+    "r4tRun": 31632508780,
+    "r4tJob": 94234559698,
+    "r4tRunAttempt": 1,
+    "syntax": true,
+    "successorExecutorIntegrationSelfTest": true,
+    "historicalBoundariesUnchanged": true,
+    "repositoryOnlyHardBlock": true,
+    "repositoryOnlyWorkflowSurface": true,
+    "failureIsolatedToDomainCompletionMatrixDrift": true
+  },
+  "matrixReconciliation": {
+    "temporaryWriterInstallHead": "ebd2c036da903f4cf50e92119376276a95cc4ba4",
+    "temporaryWriterRun": 31632852817,
+    "temporaryWriterJob": 94235744758,
+    "temporaryWriterRunAttempt": 1,
+    "temporaryWriterConclusion": "success",
+    "temporaryWriterSelfRemoved": true,
+    "cleanReconciledHead": "22f2bf8ea345ff7c1eb171157fd115a860676664",
+    "netChangedFilesFromImplementationHead": [
+      "docs/DOMAIN-COMPLETION-MATRIX.md",
+      "reports/generated/domain-completion-matrix-report.json"
+    ],
+    "canonicalMatrixWorkflowBlob": "299108d86dc097ba090392ebe9f218f6849e74ad",
+    "canonicalMatrixWorkflowContentsRead": true,
+    "triggerExists": false,
+    "remoteExecutionOccurred": false
+  },
+  "repositoryCertification": {
+    "preFreezeHead": "e1651a43db2a28575c5955980f6156ffa9121767",
+    "preFreezeChangedFilesFromCleanReconciledHead": 0,
+    "r4tRun": 31633159972,
+    "r4tJob": 94236780992,
+    "r4tRunAttempt": 1,
+    "r4tConclusion": "success",
+    "syntax": true,
+    "successorExecutorIntegrationSelfTest": true,
+    "historicalBoundariesUnchanged": true,
+    "repositoryOnlyHardBlock": true,
+    "repositoryOnlyWorkflowSurface": true,
+    "domainCompletionMatrix": true,
+    "agentGovernance": true,
+    "diffHygiene": true,
+    "independentMatrixRun": 31633159247,
+    "independentMatrixJob": 94236776096,
+    "independentMatrixRunAttempt": 1,
+    "independentMatrixConclusion": "success",
+    "temporaryMatrixWriterExists": false,
+    "triggerExists": false,
+    "remoteExecutionOccurred": false
+  },
   "authority": {
     "authorizationPhraseDefined": false,
     "authorizationReceiptCreated": false,
     "triggerExists": false,
     "remoteExecutionAuthority": false,
+    "remoteCredentialReadAuthority": false,
+    "remoteDependencyLoadAuthority": false,
+    "networkAuthority": false,
     "stagingReadAuthority": false,
     "stagingMutationAuthority": false,
-    "networkAuthority": false,
+    "realtimeSubscriptionAuthority": false,
+    "authIdentityLifecycleAuthority": false,
     "runtimeChangeAuthority": false,
     "productionAuthority": false,
     "pullRequestMergeAuthority": false
   },
   "exactRootCauseProven": false,
   "causalPromotionAllowed": false,
-  "repositoryCertification": {
-    "implementationHead": null,
-    "r4tRun": null,
-    "r4tJob": null,
-    "r4tRunAttempt": null,
-    "r4tConclusion": null,
-    "independentMatrixRun": null,
-    "independentMatrixJob": null,
-    "independentMatrixRunAttempt": null,
-    "independentMatrixConclusion": null,
-    "temporaryMatrixWriterUsed": false,
-    "triggerExists": false,
-    "remoteExecutionOccurred": false
-  },
-  "nextBoundary": "After exact R4T evidence-head certification, create a separate fresh head-bound single-use authorization lifecycle for the R4T successor executor. No prior authorization or receipt is reusable."
+  "nextBoundary": "Create a separate repository-only fresh head-bound single-use authorization lifecycle readiness boundary for the certified R4T successor executor. Bind any future authorization only after that boundary has an exact certified head. Do not reuse any prior authorization or receipt, and do not execute staging in R4T."
 }
