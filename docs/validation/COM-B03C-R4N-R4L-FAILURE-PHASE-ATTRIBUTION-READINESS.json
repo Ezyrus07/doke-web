@@ -1,0 +1,81 @@
+{
+  "validationId": "COM-B03C-R4N-R4L-FAILURE-PHASE-ATTRIBUTION-READINESS",
+  "contractId": "com-b03c-r4n-r4l-failure-phase-attribution-readiness-v1",
+  "status": "repository_r4l_failure_phase_attribution_ready_no_remote_authority",
+  "predecessorCleanupHead": "1fab972b5050167e615a0c57579f488cf3185ffe",
+  "r4m": {
+    "triggerHead": "289ea3bd58ea23f85323c63d08e04657fdfbd6e2",
+    "workflowInstallHead": "f0d6dbd30c83818c39d462f7ef89a4f7794c740c",
+    "run": 31553962698,
+    "certifyJob": 93982391898,
+    "authorizeJob": 93982455548,
+    "canaryJob": 93982632238,
+    "canaryConclusion": "failure",
+    "artifactId": 9125307330,
+    "artifactDigest": "sha256:73897d2e9eaa0a3e207046ece6206e4465676cc532b78817f09d0060910455e9",
+    "cleanupHead": "1fab972b5050167e615a0c57579f488cf3185ffe",
+    "cleanupRun": 31554148892,
+    "cleanupCertifyJob": 93982952530,
+    "cleanupAuthorizeJob": 93982999194,
+    "cleanupCanaryJob": 93982999306,
+    "cleanupAuthorizeConclusion": "skipped",
+    "cleanupCanaryConclusion": "skipped"
+  },
+  "sanitizedObservedEvidence": {
+    "projectPreflight": "ACTIVE_HEALTHY",
+    "identityCreated": true,
+    "identityCleanupSucceeded": true,
+    "instrumentationInstalled": false,
+    "cleanupAttempted": false,
+    "baselinePolicySnapshotComplete": false,
+    "terminalStatus": null,
+    "observation": null,
+    "zeroResidueProven": false,
+    "executionFailureCode": "DOKE_COM_B03C_R4L_REMOTE_FAILURE",
+    "rawRemoteErrorExposed": false
+  },
+  "phaseAttribution": {
+    "lastProvenPhase": "synthetic_identity_create",
+    "firstUnprovenPhases": [
+      "synthetic_identity_login",
+      "baseline_policy_snapshot",
+      "baseline_counter_read"
+    ],
+    "inference": "The R4L executor creates the synthetic identity only after project preflight, API-key discovery, database connection, and adapter construction. Because identityCreated=true while the terminal observation object was never returned and instrumentationInstalled=false, the unresolved failure window starts at synthetic identity login and includes the two baseline reads that occur before the instrumented try/finally.",
+    "exactRootCauseProven": false
+  },
+  "authorization": {
+    "authorizationReceiptId": "004a68f8916eb8f63b2e6812a9183924f2ceb8135b9e3864b77f280f11efab1f",
+    "consumed": true,
+    "reusable": false,
+    "reusableAfterFailure": false,
+    "retryAllowed": false,
+    "freshAuthorizationRequiredForAnyFutureRemoteAttempt": true
+  },
+  "repositoryBoundary": {
+    "historicalR4lMustRemainUnchanged": true,
+    "triggerExists": false,
+    "remoteExecutionAuthority": false,
+    "remoteCredentialReadAuthority": false,
+    "remoteDependencyLoadAuthority": false,
+    "networkAuthority": false,
+    "stagingReadAuthority": false,
+    "stagingMutationAuthority": false,
+    "realtimeSubscriptionAuthority": false,
+    "authIdentityLifecycleAuthority": false,
+    "runtimeChangeAuthority": false,
+    "productionAuthority": false,
+    "mergeAuthority": false
+  },
+  "matrixVersion": "1.3.113",
+  "maturity": 3,
+  "productionGate": "blocked",
+  "exactRootCauseProven": false,
+  "causalPromotionAllowed": false,
+  "repositoryCertification": {
+    "hostedRun": null,
+    "hostedJob": null,
+    "conclusion": null
+  },
+  "nextBoundary": "After final R4N repository certification, any future remote attempt must first define a separate fresh single-use authorization lifecycle bound to a newly certified phase-attributed execution envelope. The consumed R4H/R4I authorization receipt may remain as historical evidence but may not authorize another run."
+}
