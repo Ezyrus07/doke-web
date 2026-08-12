@@ -1,0 +1,106 @@
+name: Doke UX-CSS-DEBT-017 Content Surface Provenance
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-017-content-surface-provenance
+
+permissions:
+  contents: read
+
+jobs:
+  provenance:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: b83318f51f429019cb5bc43685e33b904653f54c
+      PARENT_SHA: d7dcc2c0264a77d8d8a326210c3074c0eb4057df
+      TARGET_FILE: assets/css/components/core/content-surface.css
+      IMPORT_PARENT: assets/css/components/core/content-system.css
+    steps:
+      - name: Checkout exact certified product SHA
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 0
+
+      - name: Prove tracked-tree baseline before any npm or audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test "$(git rev-parse HEAD^)" = "${PARENT_SHA}"
+          echo 'TRACKED CONTENT CORE MATCHES:'
+          git ls-tree -r --name-only HEAD | grep -E 'assets/css/components/core/content-(surface|system)\.css$' || true
+          echo 'FILESYSTEM BEFORE NPM:'
+          for f in "${TARGET_FILE}" "${IMPORT_PARENT}"; do if test -e "$f"; then echo "EXISTS $f"; else echo "ABSENT $f"; fi; done
+          echo 'CORE DIRECTORY:'
+          find assets/css/components/core -maxdepth 1 -type f -print 2>/dev/null | sort || true
+          echo 'TRACKED STATUS:'
+          git status --short --untracked-files=all
+          node -e "const p=require('./package.json'); for(const [k,v] of Object.entries(p.scripts||{})) if(/content-surface|active-legacy|agent-governance|page-asset-authority/.test(k+' '+v)) console.log(k+'='+v)" || true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies only
+        run: npm ci --ignore-scripts
+
+      - name: Snapshot after npm ci
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in "${TARGET_FILE}" "${IMPORT_PARENT}"; do if test -e "$f"; then echo "AFTER_NPM_EXISTS $f"; else echo "AFTER_NPM_ABSENT $f"; fi; done
+          git status --short --untracked-files=all
+
+      - name: Probe audit active legacy in isolation
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "${TARGET_SHA}"
+          git clean -fd
+          npm run audit:active-legacy-structures
+          for f in "${TARGET_FILE}" "${IMPORT_PARENT}"; do if test -e "$f"; then echo "AFTER_ACTIVE_EXISTS $f"; else echo "AFTER_ACTIVE_ABSENT $f"; fi; done
+          echo 'STATUS AFTER ACTIVE:'
+          git status --short --untracked-files=all
+          echo 'CORE AFTER ACTIVE:'
+          find assets/css/components/core -maxdepth 1 -type f -print 2>/dev/null | sort || true
+
+      - name: Probe content surface contract in isolation
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "${TARGET_SHA}"
+          git clean -fd
+          npm run audit:content-surface-contract
+          for f in "${TARGET_FILE}" "${IMPORT_PARENT}"; do if test -e "$f"; then echo "AFTER_SURFACE_CONTRACT_EXISTS $f"; else echo "AFTER_SURFACE_CONTRACT_ABSENT $f"; fi; done
+          echo 'STATUS AFTER CONTENT SURFACE CONTRACT:'
+          git status --short --untracked-files=all
+          echo 'CORE AFTER CONTENT SURFACE CONTRACT:'
+          find assets/css/components/core -maxdepth 1 -type f -print 2>/dev/null | sort || true
+
+      - name: Probe full agent governance in isolation
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "${TARGET_SHA}"
+          git clean -fd
+          npm run audit:agent-governance
+          for f in "${TARGET_FILE}" "${IMPORT_PARENT}"; do if test -e "$f"; then echo "AFTER_GOVERNANCE_EXISTS $f"; else echo "AFTER_GOVERNANCE_ABSENT $f"; fi; done
+          echo 'STATUS AFTER GOVERNANCE:'
+          git status --short --untracked-files=all
+          echo 'CORE AFTER GOVERNANCE:'
+          find assets/css/components/core -maxdepth 1 -type f -print 2>/dev/null | sort || true
+          if test -e "${TARGET_FILE}"; then echo 'GENERATED TARGET:'; nl -ba "${TARGET_FILE}"; fi
+          if test -e "${IMPORT_PARENT}"; then echo 'GENERATED IMPORT PARENT:'; nl -ba "${IMPORT_PARENT}"; fi
+
+      - name: Restore exact checkpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "${TARGET_SHA}"
+          git clean -fd
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          git diff --exit-code
