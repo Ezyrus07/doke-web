@@ -1,0 +1,115 @@
+name: Doke UX-CSS-DEBT-015 Shared Header Reach R2
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-015-header-reach-r2
+
+permissions:
+  contents: read
+
+jobs:
+  reach:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: a5dcbc7caaaea14729eb3576bb1e0c2173950594
+      TARGET_FILE: assets/css/layout/header.css
+    steps:
+      - name: Checkout exact certified parent
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 0
+
+      - name: Guard exact parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          git diff --check
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install and generate authority inventory
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          npm run audit:active-legacy-structures
+          npm run audit:shared-app-header-contract
+
+      - name: Prove exact rows and 26-page reach
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs'),path=require('path');
+          const target=process.env.TARGET_FILE,text=fs.readFileSync(target,'utf8'),lines=text.split(/\r?\n/);
+          let depth=0,selectorParts=[],atRuleParts=[],selector=null;const declarations=[],stack=[];
+          const declRe=/^\s*([\w-]+)\s*:\s*(.*?)\s*;\s*$/,norm=parts=>parts.join(' ').replace(/\{\s*$/,'').replace(/\s+/g,' ').trim();
+          for(let i=0;i<lines.length;i++){
+            const line=lines[i],t=line.trim(),opens=(line.match(/\{/g)||[]).length,closes=(line.match(/\}/g)||[]).length;
+            if(!selector){
+              if(atRuleParts.length){if(t)atRuleParts.push(t);if(line.includes('{')){stack.push({type:'at',header:norm(atRuleParts),depthBefore:depth});atRuleParts=[];}}
+              else if(t.startsWith('@')&&!t.includes(';')){if(line.includes('{'))stack.push({type:'at',header:norm([t]),depthBefore:depth});else atRuleParts=[t];}
+              else if(selectorParts.length){if(t)selectorParts.push(t);if(line.includes('{')){selector=norm(selectorParts);selectorParts=[];stack.push({type:'rule',selector,depthBefore:depth});}}
+              else if(t&&!t.startsWith('/*')&&!t.startsWith('*')&&t!=='*/'&&t!=='}'&&!t.startsWith('@')&&!line.includes(';')){selectorParts=[t];if(line.includes('{')){selector=norm(selectorParts);selectorParts=[];stack.push({type:'rule',selector,depthBefore:depth});}}
+            }
+            if(selector){const m=line.match(declRe);if(m){const raw=m[2].trim(),important=/\s*!important\s*$/i.test(raw),context=stack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');declarations.push({lineIndex:i,line:i+1,selector,property:m[1].toLowerCase(),value:raw,important,context});}}
+            depth+=opens-closes;while(stack.length&&depth<=stack[stack.length-1].depthBefore){const p=stack.pop();if(p.type==='rule')selector=null;}
+          }
+          if(atRuleParts.length)throw new Error('unterminated multiline at-rule');
+          const last=new Map(),dead=[];for(let i=declarations.length-1;i>=0;i--){const d=declarations[i],key=`${d.context} >>> ${d.selector} >>> ${d.property}`,later=last.get(key);if(later&&(!d.important||later.important))dead.push({...d,winnerLine:later.line,winnerValue:later.value,winnerImportant:later.important});if(!later||d.important||!later.important)last.set(key,d);}
+          const selectors=[...new Set(dead.map(d=>d.selector))].sort(),contexts=[...new Set(dead.map(d=>d.context))].sort();
+          const expectedSelectors=[
+            'body[data-page].has-global-header',
+            'body[data-page].has-global-header .app-header .home-side-meta__profile-caret-button',
+            'body[data-page].has-global-header .app-header .home-side-meta__profile-wrap',
+            'body[data-page].has-global-header .app-header :is(.home-side-meta__profile, .app-header__profile)',
+            'body[data-page].has-global-header > .app-shell > .page > .app-header',
+            'body[data-page].has-global-header > .app-shell > .page > .app-header > .app-header__inner'
+          ].sort();
+          if(declarations.length!==855||dead.length!==20||JSON.stringify(selectors)!==JSON.stringify(expectedSelectors))throw new Error(`header metric/selector drift ${declarations.length}/${dead.length}/${JSON.stringify(selectors)}`);
+          if(JSON.stringify(contexts)!==JSON.stringify(['','@media (max-width: 760px)']))throw new Error(`context drift ${JSON.stringify(contexts)}`);
+          if((text.match(/!important/gi)||[]).length!==0)throw new Error('important drift');
+          console.log('HEADER EXACT DEAD ROWS');console.log(JSON.stringify(dead.sort((a,b)=>a.line-b.line),null,2));
+
+          const report=JSON.parse(fs.readFileSync('reports/generated/active-legacy-structures-report.json','utf8'));
+          const cssFiles=[];function walk(d){for(const e of fs.readdirSync(d,{withFileTypes:true})){const f=path.join(d,e.name);if(e.isDirectory())walk(f);else if(f.endsWith('.css'))cssFiles.push(f.replace(/\\/g,'/'));}}walk('assets/css');
+          const importRe=/@import\s+(?:url\()?['"]?([^'"\);]+\.css(?:\?[^'"\)]*)?)['"]?\)?/gi,meta=new Map();
+          const normalize=(v,from)=>{v=v.replace(/\?.*$/,'').replace(/^\.\//,'');if(v.startsWith('/'))return v.replace(/^\/+/, '');if(v.startsWith('assets/'))return v;return path.posix.normalize(path.posix.join(path.posix.dirname(from),v));};
+          for(const f of cssFiles){const t=fs.readFileSync(f,'utf8'),imports=[];let m;importRe.lastIndex=0;while((m=importRe.exec(t)))imports.push(normalize(m[1],f));meta.set(f,{imports});}
+          function reaches(list){const seen=new Set(),todo=[...list.filter(f=>meta.has(f))];while(todo.length){const f=todo.pop();if(seen.has(f)||!meta.has(f))continue;seen.add(f);if(f===target)return true;for(const n of meta.get(f).imports)if(meta.has(n))todo.push(n);}return false;}
+          const consumers=report.pageAssets.filter(p=>reaches(p.css)).map(p=>p.page).sort();if(consumers.length!==26)throw new Error(`consumer drift ${consumers.length}`);
+          console.log('CSS CONSUMERS');console.log(JSON.stringify(consumers,null,2));
+
+          const dom=[];
+          for(const page of consumers){
+            const html=fs.readFileSync(page,'utf8');
+            const bodyAttrs=(html.match(/<body\b([^>]*)>/i)||[])[1]||'',bodyClass=((bodyAttrs.match(/class\s*=\s*["']([^"']*)["']/i)||[])[1]||'').split(/\s+/).filter(Boolean),dataPage=(bodyAttrs.match(/data-page\s*=\s*["']([^"']*)["']/i)||[])[1]||'';
+            const countClass=c=>[...html.matchAll(new RegExp(`class\\s*=\\s*["'][^"']*(?:^|\\s)${c}(?:\\s|$)[^"']*["']`,'gi'))].length;
+            dom.push({page,dataPage,hasGlobalHeader:bodyClass.includes('has-global-header'),appHeader:countClass('app-header'),inner:countClass('app-header__inner'),profileWrap:countClass('home-side-meta__profile-wrap'),profile:countClass('home-side-meta__profile')+countClass('app-header__profile'),caret:countClass('home-side-meta__profile-caret-button')});
+          }
+          console.log('STATIC DOM MAP');console.log(JSON.stringify(dom,null,2));
+          const exceptions=dom.filter(x=>!(x.hasGlobalHeader&&x.appHeader===1&&x.inner===1));
+          if(JSON.stringify(exceptions.map(x=>x.page))!==JSON.stringify(['comunidade-interna.html']))throw new Error(`unexpected no-header surfaces ${JSON.stringify(exceptions)}`);
+          const active=dom.filter(x=>x.page!=='comunidade-interna.html');if(active.length!==25)throw new Error(`active header count drift ${active.length}`);
+          for(const x of active){if(!x.dataPage||x.profileWrap<1||x.profile<1||x.caret<1)throw new Error(`canonical header anatomy missing ${JSON.stringify(x)}`);}
+          console.log('ACTIVE SHARED HEADERS: 25; explicit full-screen exception: comunidade-interna.html');
+          console.log('Affected selector static anatomy: PASS');
+          NODE
+
+      - name: Preserve governance and clean workspace
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git reset --hard "${TARGET_SHA}"
+          git clean -fd
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          git diff --exit-code
