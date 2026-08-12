@@ -1,0 +1,90 @@
+name: Doke UX-CSS-DEBT-008 Owner Card Scope Probe
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-008-profile-service-owner-card-candidate
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 5c0da5f3f2657778140cad33c0753d6faf33202f
+      TARGET_FILE: assets/css/components/cards/profile-service-owner-card.css
+    steps:
+      - name: Checkout exact certified parent
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Reproduce pre-flight mutations
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:agent-governance >/tmp/preflight.log
+          echo '=== AFTER PREFLIGHT ==='
+          git status --short
+          echo '--- diff names ---'
+          git diff --name-only
+          echo '--- diff numstat ---'
+          git diff --numstat
+          echo '=== AFTER RESTORE REPORTS ==='
+          git restore -- reports
+          git status --short
+          echo '--- diff names ---'
+          git diff --name-only
+          echo '--- diff numstat ---'
+          git diff --numstat
+
+      - name: Build and apply exact deterministic candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs');
+          const file=process.env.TARGET_FILE,parent=fs.readFileSync(file,'utf8'),lines=parent.split(/\r?\n/);
+          let depth=0,selectorParts=[],atRuleParts=[],selector=null;
+          const declarations=[],stack=[];
+          const declRe=/^\s*([\w-]+)\s*:\s*(.*?)\s*;\s*$/;
+          const norm=parts=>parts.join(' ').replace(/\{\s*$/,'').replace(/\s+/g,' ').trim();
+          for(let i=0;i<lines.length;i++){
+            const line=lines[i],t=line.trim(),opens=(line.match(/\{/g)||[]).length,closes=(line.match(/\}/g)||[]).length;
+            if(!selector){
+              if(atRuleParts.length){if(t)atRuleParts.push(t);if(line.includes('{')){stack.push({type:'at',header:norm(atRuleParts),depthBefore:depth});atRuleParts=[];}}
+              else if(t.startsWith('@')&&!t.includes(';')){if(line.includes('{'))stack.push({type:'at',header:norm([t]),depthBefore:depth});else atRuleParts=[t];}
+              else if(selectorParts.length){if(t)selectorParts.push(t);if(line.includes('{')){selector=norm(selectorParts);selectorParts=[];stack.push({type:'rule',selector,depthBefore:depth});}}
+              else if(t&&!t.startsWith('/*')&&!t.startsWith('*')&&t!=='*/'&&t!=='}'&&!t.startsWith('@')&&!line.includes(';')){selectorParts=[t];if(line.includes('{')){selector=norm(selectorParts);selectorParts=[];stack.push({type:'rule',selector,depthBefore:depth});}}
+            }
+            if(selector){const m=line.match(declRe);if(m){const raw=m[2].trim(),important=/\s*!important\s*$/i.test(raw),context=stack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');declarations.push({lineIndex:i,selector,property:m[1].toLowerCase(),important,context});}}
+            depth+=opens-closes;
+            while(stack.length&&depth<=stack[stack.length-1].depthBefore){const p=stack.pop();if(p.type==='rule')selector=null;}
+          }
+          const last=new Map(),dead=[];
+          for(let i=declarations.length-1;i>=0;i--){const d=declarations[i],key=`${d.context} >>> ${d.selector} >>> ${d.property}`,later=last.get(key);if(later&&(!d.important||later.important))dead.push(d);if(!later||d.important||!later.important)last.set(key,d);}
+          if(declarations.length!==1479||dead.length!==82)throw new Error(`candidate drift ${declarations.length}/${dead.length}`);
+          const deadSet=new Set(dead.map(d=>d.lineIndex));
+          fs.writeFileSync(file,lines.filter((_l,i)=>!deadSet.has(i)).join('\n'));
+          NODE
+          echo '=== AFTER CANDIDATE + REPORT RESTORE ==='
+          git status --short
+          echo '--- diff names ---'
+          git diff --name-only
+          echo '--- target numstat ---'
+          git diff --numstat -- "${TARGET_FILE}"
+          echo '--- full numstat ---'
+          git diff --numstat
+          echo '--- diff check ---'
+          git diff --check
