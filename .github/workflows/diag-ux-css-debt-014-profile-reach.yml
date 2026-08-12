@@ -1,0 +1,41 @@
+name: Doke UX-CSS-DEBT-014 Profile Reach
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-014-profile-reach
+
+permissions:
+  contents: read
+
+jobs:
+  reach:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 6fee4223f75b86833e0d6540315d6185d2e74f2a
+    steps:
+      - name: Checkout exact UX-CSS-DEBT-013 checkpoint
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 0
+
+      - name: Prove profile family authority and canonical reach
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          grep -Fq 'Keep declarations in profile-page.css' assets/css/pages/profile-foundation.css
+          grep -Fq '@import url("./profile-page.css' assets/css/pages/profile-foundation.css
+          grep -Fq 'gap: 28px;' assets/css/pages/profile-page.css
+          grep -Fq 'gap: 20px;' assets/css/pages/profile-page.css
+          for page in meu-perfil.html perfil-cliente.html perfil-profissional.html perfil.html; do
+            grep -Fq 'profile-foundation.css' "$page"
+            grep -Fq 'profile-page-shell' "$page"
+            grep -Fq 'data-profile-contract="clean-v1"' "$page"
+            count=$(grep -o 'class="[^"]*profile-feed[^"]*"' "$page" | wc -l | tr -d ' ')
+            test "$count" = "1"
+            echo "$page: profile-feed=1 / contract=clean-v1 / manifest=profile-foundation.css"
+          done
+          echo 'Profile family owner/reach: PASS'
+          git diff --check
