@@ -1,0 +1,101 @@
+name: Doke UX-CSS-DEBT-018 Home Mobile Base Candidate R2
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-018-home-mobile-base-candidate-r2
+
+permissions:
+  contents: read
+
+jobs:
+  cleanup-proof:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: f9c0d4b77abf00447c3440041e4966b7504f04bc
+      PARENT_SHA: b83318f51f429019cb5bc43685e33b904653f54c
+      TARGET_FILE: assets/css/pages/home/mobile/base.css
+      TARGET_SELECTOR: body.home-index-shell .page__content
+      PARENT_SHA256: f071cda3c7628f7b95fb1db51f01cc99f32a2b3e6272ce95231041e9a447752c
+      CANDIDATE_SHA256: 57e758688a88fe01aafba9d4c3acbce3d2ae8f5133c4c452796f240e951453ce
+    steps:
+      - name: Checkout exact certified parent
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+
+      - name: Guard exact checkpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test "$(git rev-parse HEAD^)" = "${PARENT_SHA}"
+          test "$(sha256sum "${TARGET_FILE}" | awk '{print $1}')" = "${PARENT_SHA256}"
+          test -z "$(git status --porcelain)"
+          git diff --check
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Rebuild exact deterministic candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),file=process.env.TARGET_FILE,selector=process.env.TARGET_SELECTOR;
+          function parse(src){const lines=src.split(/\r?\n/);let depth=0,selectorParts=[],atRuleParts=[],sel=null;const declarations=[],stack=[],re=/^\s*([\w-]+)\s*:\s*(.*?)\s*;\s*$/,norm=p=>p.join(' ').replace(/\{\s*$/,'').replace(/\s+/g,' ').trim();for(let i=0;i<lines.length;i++){const line=lines[i],t=line.trim(),opens=(line.match(/\{/g)||[]).length,closes=(line.match(/\}/g)||[]).length;if(!sel){if(atRuleParts.length){if(t)atRuleParts.push(t);if(line.includes('{')){stack.push({type:'at',header:norm(atRuleParts),depthBefore:depth});atRuleParts=[];}}else if(t.startsWith('@')&&!t.includes(';')){if(line.includes('{'))stack.push({type:'at',header:norm([t]),depthBefore:depth});else atRuleParts=[t];}else if(selectorParts.length){if(t)selectorParts.push(t);if(line.includes('{')){sel=norm(selectorParts);selectorParts=[];stack.push({type:'rule',selector:sel,depthBefore:depth});}}else if(t&&!t.startsWith('/*')&&!t.startsWith('*')&&t!=='*/'&&t!=='}'&&!t.startsWith('@')&&!line.includes(';')){selectorParts=[t];if(line.includes('{')){sel=norm(selectorParts);selectorParts=[];stack.push({type:'rule',selector:sel,depthBefore:depth});}}}if(sel){const m=line.match(re);if(m){const raw=m[2].trim(),important=/\s*!important\s*$/i.test(raw),context=stack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');declarations.push({lineIndex:i,line:i+1,selector:sel,property:m[1].toLowerCase(),value:raw,important,context});}}depth+=opens-closes;while(stack.length&&depth<=stack[stack.length-1].depthBefore){const p=stack.pop();if(p.type==='rule')sel=null;}}if(atRuleParts.length)throw new Error('unterminated multiline at-rule');const last=new Map(),dead=[];for(let i=declarations.length-1;i>=0;i--){const d=declarations[i],key=`${d.context} >>> ${d.selector} >>> ${d.property}`,later=last.get(key);if(later&&(!d.important||later.important))dead.push({...d,winnerLine:later.line,winnerValue:later.value,winnerImportant:later.important});if(!later||d.important||!later.important)last.set(key,d);}return{lines,declarations,dead};}
+          const sha=s=>crypto.createHash('sha256').update(s).digest('hex'),parent=fs.readFileSync(file,'utf8'),p=parse(parent);
+          if(sha(parent)!==process.env.PARENT_SHA256||p.declarations.length!==76||p.dead.length!==1)throw new Error('parent drift');
+          const d=p.dead[0];if(d.selector!==selector||d.property!=='padding-bottom'||d.context!=='@media (max-width: 560px)'||d.value!=='0'||d.winnerValue!=='0'||d.important||d.winnerImportant)throw new Error('dead-row drift '+JSON.stringify(d));
+          const candidate=p.lines.filter((_l,i)=>i!==d.lineIndex).join('\n'),c=parse(candidate);
+          if(sha(candidate)!==process.env.CANDIDATE_SHA256||c.declarations.length!==75||c.dead.length!==0)throw new Error('candidate drift');
+          fs.writeFileSync('/tmp/candidate.css',candidate);fs.writeFileSync(file,candidate);
+          console.log(`DETERMINISTIC CANDIDATE PASS: line ${d.line} removed; 76->75; dead 1->0; sha=${sha(candidate)}`);
+          NODE
+          test "$(git diff --name-only)" = "${TARGET_FILE}"
+          test "$(git diff --numstat -- "${TARGET_FILE}" | awk '{print $1}')" = "0"
+          test "$(git diff --numstat -- "${TARGET_FILE}" | awk '{print $2}')" = "1"
+          git diff --check
+
+      - name: Demonstrate audit-generated workspace drift
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:agent-governance
+          echo '--- workspace after governance audits ---'
+          git status --short
+          test -f /tmp/candidate.css
+
+      - name: Reset every generated output and reapply only certified candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "${TARGET_SHA}"
+          git clean -fd
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test -z "$(git status --porcelain)"
+          test "$(sha256sum "${TARGET_FILE}" | awk '{print $1}')" = "${PARENT_SHA256}"
+          cp /tmp/candidate.css "${TARGET_FILE}"
+          test "$(sha256sum "${TARGET_FILE}" | awk '{print $1}')" = "${CANDIDATE_SHA256}"
+          test "$(git diff --name-only)" = "${TARGET_FILE}"
+          test "$(git diff --numstat -- "${TARGET_FILE}" | awk '{print $1}')" = "0"
+          test "$(git diff --numstat -- "${TARGET_FILE}" | awk '{print $2}')" = "1"
+          git diff --check
+          echo 'PRODUCT-ONLY CLEANUP PROOF PASS: exactly one CSS file, +0/-1 after generated-output reset'
+
+      - name: Restore exact parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "${TARGET_SHA}"
+          git clean -fd
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test -z "$(git status --porcelain)"
+          test "$(sha256sum "${TARGET_FILE}" | awk '{print $1}')" = "${PARENT_SHA256}"
