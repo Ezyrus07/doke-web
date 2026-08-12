@@ -42,7 +42,7 @@ jobs:
       - name: Generate canonical inventory inputs
         run: npm run audit:active-legacy-structures
 
-      - name: Recompute all physical high-risk active CSS and rank superseded clusters
+      - name: Reconcile multiline at-rules and important-aware superseded clusters
         shell: bash
         run: |
           set -euo pipefail
@@ -55,26 +55,75 @@ jobs:
           const importRe=/@import\s+(?:url\()?['"]?([^'"\);]+\.css(?:\?[^'"\)]*)?)['"]?\)?/gi;
           const normalize=(v,from)=>{v=v.replace(/\?.*$/,'').replace(/^\.\//,'');if(v.startsWith('/'))return v.replace(/^\/+/, '');if(v.startsWith('assets/'))return v;return path.posix.normalize(path.posix.join(path.posix.dirname(from),v));};
           const meta=new Map();
-          for(const file of allCss){const text=fs.readFileSync(file,'utf8'),imports=[];let m;importRe.lastIndex=0;while((m=importRe.exec(text)))imports.push(normalize(m[1],file));meta.set(file,{file,text,imports,size:Buffer.byteLength(text),important:(text.match(/!important/g)||[]).length});}
+          for(const file of allCss){const text=fs.readFileSync(file,'utf8'),imports=[];let m;importRe.lastIndex=0;while((m=importRe.exec(text)))imports.push(normalize(m[1],file));meta.set(file,{file,text,imports,size:Buffer.byteLength(text),important:(text.match(/!important/gi)||[]).length});}
           const directKnown=[...new Set(report.pageAssets.flatMap(p=>p.css))].filter(f=>meta.has(f));
-          const active=new Set(),stack=[...directKnown];
-          while(stack.length){const f=stack.pop();if(active.has(f)||!meta.has(f))continue;active.add(f);for(const n of meta.get(f).imports)if(meta.has(n))stack.push(n);}
+          const active=new Set(),todo=[...directKnown];
+          while(todo.length){const f=todo.pop();if(active.has(f)||!meta.has(f))continue;active.add(f);for(const n of meta.get(f).imports)if(meta.has(n))todo.push(n);}
           const high=[...active].map(f=>meta.get(f)).filter(x=>x&&(x.size>=50000||x.important>=100||x.imports.length>=10));
           if(active.size!==401) throw new Error(`active/imported drift: ${active.size}`);
           if(high.length!==38) throw new Error(`full high-risk drift: ${high.length}`);
-          function pagesFor(target){const out=[];for(const p of report.pageAssets){const seen=new Set(),todo=p.css.filter(f=>meta.has(f));let hit=false;while(todo.length){const f=todo.pop();if(seen.has(f)||!meta.has(f))continue;seen.add(f);if(f===target){hit=true;break;}for(const n of meta.get(f).imports)if(meta.has(n))todo.push(n);}if(hit)out.push(p.page);}return out.sort();}
-          function superseded(file){const text=meta.get(file).text,lines=text.split(/\r?\n/);let depth=0,selectorParts=[],selector=null;const declarations=[],stack=[];const re=/^\s*([\w-]+)\s*:\s*(.*?)\s*(!important)?\s*;\s*$/;for(let i=0;i<lines.length;i++){const line=lines[i],t=line.trim(),opens=(line.match(/\{/g)||[]).length,closes=(line.match(/\}/g)||[]).length;if(!selector&&t&&!t.startsWith('/*')&&!t.startsWith('*')&&t!=='*/'&&t!=='}'){if(t.startsWith('@')&&line.includes('{'))stack.push({type:'at',header:t.replace(/\{\s*$/,'').replace(/\s+/g,' ').trim(),depthBefore:depth});else if(!t.startsWith('@')&&!line.includes(';')){selectorParts.push(t.replace(/\{\s*$/,'').trim());if(line.includes('{')){selector=selectorParts.join(' ').replace(/\s+/g,' ').trim();selectorParts=[];stack.push({type:'rule',selector,depthBefore:depth});}}}if(selector){const m=line.match(re);if(m){const context=stack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');declarations.push({lineIndex:i,selector,property:m[1],important:Boolean(m[3]),context});}}depth+=opens-closes;while(stack.length&&depth<=stack[stack.length-1].depthBefore){const p=stack.pop();if(p.type==='rule')selector=null;}}
-            const last=new Map(),dead=[];for(let i=declarations.length-1;i>=0;i--){const d=declarations[i],key=`${d.context} >>> ${d.selector} >>> ${d.property}`,later=last.get(key);if(later&&(!d.important||later.important))dead.push(d);if(!later||d.important||!later.important)last.set(key,d);}return{decl:declarations.length,dead:dead.length,selectors:[...new Set(dead.map(d=>d.selector))].sort()};}
+
+          function pagesFor(target){const out=[];for(const p of report.pageAssets){const seen=new Set(),stack=[...p.css.filter(f=>meta.has(f))];let hit=false;while(stack.length){const f=stack.pop();if(seen.has(f)||!meta.has(f))continue;seen.add(f);if(f===target){hit=true;break;}for(const n of meta.get(f).imports)if(meta.has(n))stack.push(n);}if(hit)out.push(p.page);}return out.sort();}
+
+          function superseded(file){
+            const text=meta.get(file).text,lines=text.split(/\r?\n/);
+            let depth=0,selectorParts=[],atRuleParts=[],selector=null;
+            const declarations=[],stack=[];
+            const declRe=/^\s*([\w-]+)\s*:\s*(.*?)\s*;\s*$/;
+            const normalizeHeader=parts=>parts.join(' ').replace(/\{\s*$/,'').replace(/\s+/g,' ').trim();
+            const normalizeSelector=parts=>parts.join(' ').replace(/\{\s*$/,'').replace(/\s+/g,' ').trim();
+            for(let i=0;i<lines.length;i++){
+              const line=lines[i],t=line.trim(),opens=(line.match(/\{/g)||[]).length,closes=(line.match(/\}/g)||[]).length;
+              if(!selector){
+                if(atRuleParts.length){
+                  if(t) atRuleParts.push(t);
+                  if(line.includes('{')){stack.push({type:'at',header:normalizeHeader(atRuleParts),depthBefore:depth});atRuleParts=[];}
+                } else if(t.startsWith('@')&&!t.includes(';')){
+                  if(line.includes('{')) stack.push({type:'at',header:normalizeHeader([t]),depthBefore:depth});
+                  else atRuleParts=[t];
+                } else if(selectorParts.length){
+                  if(t) selectorParts.push(t);
+                  if(line.includes('{')){selector=normalizeSelector(selectorParts);selectorParts=[];stack.push({type:'rule',selector,depthBefore:depth});}
+                } else if(t&&!t.startsWith('/*')&&!t.startsWith('*')&&t!=='*/'&&t!=='}'&&!t.startsWith('@')&&!line.includes(';')){
+                  selectorParts=[t];
+                  if(line.includes('{')){selector=normalizeSelector(selectorParts);selectorParts=[];stack.push({type:'rule',selector,depthBefore:depth});}
+                }
+              }
+              if(selector){
+                const m=line.match(declRe);
+                if(m){
+                  const raw=m[2].trim();
+                  const important=/\s*!important\s*$/i.test(raw);
+                  const context=stack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');
+                  declarations.push({lineIndex:i,selector,property:m[1].toLowerCase(),important,context});
+                }
+              }
+              depth+=opens-closes;
+              while(stack.length&&depth<=stack[stack.length-1].depthBefore){const popped=stack.pop();if(popped.type==='rule')selector=null;}
+            }
+            if(atRuleParts.length) throw new Error(`${file}: unterminated multiline at-rule parse state`);
+            const last=new Map(),dead=[];
+            for(let i=declarations.length-1;i>=0;i--){
+              const d=declarations[i],key=`${d.context} >>> ${d.selector} >>> ${d.property}`,later=last.get(key);
+              if(later&&(!d.important||later.important)) dead.push(d);
+              if(!later||d.important||!later.important) last.set(key,d);
+            }
+            return{decl:declarations.length,dead:dead.length,selectors:[...new Set(dead.map(d=>d.selector))].sort(),deadRows:dead};
+          }
+
           const globalPenalty=file=>/(components\/shell|layout\/header|layout\/page|components\/domain|components\/cards|mobile-app-shell|app-shell)/.test(file)?1:0;
-          const rows=high.map(x=>{const s=superseded(x.file),pages=pagesFor(x.file),parents=allCss.filter(f=>(meta.get(f)?.imports||[]).includes(x.file));return{file:x.file,size:x.size,important:x.important,imports:x.imports.length,decl:s.decl,dead:s.dead,deadPct:s.decl?+(100*s.dead/s.decl).toFixed(2):0,selectors:s.selectors.length,selectorList:s.selectors,pages:pages.length,pageList:pages,importParents:parents.length,parentList:parents.sort(),scope:x.file.includes('/pages/')?'page':'shared',globalPenalty:globalPenalty(x.file)};}).sort((a,b)=>(b.dead-a.dead)||(a.globalPenalty-b.globalPenalty)||(a.pages-b.pages)||(b.deadPct-a.deadPct)||(b.size-a.size));
-          console.log('UX-CSS-DEBT-008 COMPLETE fresh inventory');
+          const rows=high.map(x=>{const s=superseded(x.file),pages=pagesFor(x.file),parents=allCss.filter(f=>(meta.get(f)?.imports||[]).includes(x.file));return{file:x.file,size:x.size,important:x.important,imports:x.imports.length,decl:s.decl,dead:s.dead,deadPct:s.decl?+(100*s.dead/s.decl).toFixed(2):0,selectors:s.selectors.length,selectorList:s.selectors,pages:pages.length,pageList:pages,importParents:parents.length,parentList:parents.sort(),scope:x.file.includes('/pages/')?'page':'shared',globalPenalty:globalPenalty(x.file),deadRows:s.deadRows};}).sort((a,b)=>(b.dead-a.dead)||(a.globalPenalty-b.globalPenalty)||(a.pages-b.pages)||(b.deadPct-a.deadPct)||(b.size-a.size));
+
+          console.log('UX-CSS-DEBT-008 RECONCILED fresh inventory');
           console.log(`checkpoint=${process.env.TARGET_SHA}`);
           console.log(`activeImported=${active.size}`);
           console.log(`highRisk=${rows.length}`);
           console.log('RANK | DEAD | PCT | PAGES | SCOPE | !IMP | BYTES | FILE');
           rows.forEach((r,i)=>console.log(`${String(i+1).padStart(2)} | ${String(r.dead).padStart(4)} | ${String(r.deadPct).padStart(5)} | ${String(r.pages).padStart(2)} | ${r.scope.padEnd(6)} | ${String(r.important).padStart(4)} | ${String(r.size).padStart(6)} | ${r.file}`));
-          console.log('\nTop 15 detail JSON:');
-          console.log(JSON.stringify(rows.slice(0,15),null,2));
+          console.log('\nTop 10 detail JSON:');
+          console.log(JSON.stringify(rows.slice(0,10).map(({deadRows,...r})=>r),null,2));
+          console.log('\nTop candidate dead declaration evidence:');
+          console.log(JSON.stringify(rows[0].deadRows.slice(0,120),null,2));
           NODE
 
       - name: Preserve baseline governance
