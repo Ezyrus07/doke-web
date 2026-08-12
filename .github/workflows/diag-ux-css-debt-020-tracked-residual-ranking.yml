@@ -1,0 +1,138 @@
+name: Doke UX-CSS-DEBT-020 Tracked Residual Ranking
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-020-tracked-residual-ranking
+
+permissions:
+  contents: read
+
+jobs:
+  ranking:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: daadc8dbbb91f0ddb75591251fce4ea176b66d95
+      PARENT_SHA: 70a99a6dd8b82fe54c8380ed9b1f28fe1965c836
+    steps:
+      - name: Checkout exact certified UX-CSS-DEBT-019 SHA
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+
+      - name: Guard exact checkpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test "$(git rev-parse HEAD^)" = "${PARENT_SHA}"
+          test -z "$(git status --porcelain)"
+          git diff --check
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Generate canonical active asset graph
+        run: npm run audit:active-legacy-structures
+
+      - name: Rank tracked active CSS residuals
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs'),path=require('path'),cp=require('child_process');
+          const report=JSON.parse(fs.readFileSync('reports/generated/active-legacy-structures-report.json','utf8'));
+          const tracked=cp.execFileSync('git',['ls-files','-z','assets/css'],{encoding:'utf8'}).split('\0').filter(f=>f.endsWith('.css'));
+          const importRe=/@import\s+(?:url\()?['"]?([^'"\);]+\.css(?:\?[^'"\)]*)?)['"]?\)?/gi;
+          const normImport=(v,from)=>{v=v.replace(/\?.*$/,'').replace(/^\.\//,'');if(v.startsWith('/'))return v.replace(/^\/+/, '');if(v.startsWith('assets/'))return v;return path.posix.normalize(path.posix.join(path.posix.dirname(from),v));};
+          const meta=new Map();
+          for(const f of tracked){const text=fs.readFileSync(f,'utf8'),imports=[];let m;importRe.lastIndex=0;while((m=importRe.exec(text)))imports.push(normImport(m[1],f));meta.set(f,{text,imports,size:Buffer.byteLength(text),important:(text.match(/!important/gi)||[]).length});}
+          const active=new Set(),todo=[...new Set(report.pageAssets.flatMap(p=>p.css))].filter(f=>meta.has(f));
+          while(todo.length){const f=todo.pop();if(active.has(f)||!meta.has(f))continue;active.add(f);for(const n of meta.get(f).imports)if(meta.has(n))todo.push(n);}
+          const high=[...active].filter(f=>{const x=meta.get(f);return x.size>=50000||x.important>=100||x.imports.length>=10;});
+          if(active.size!==401||high.length!==37)throw new Error(`baseline drift active=${active.size} high=${high.length}`);
+
+          function parse(src){
+            const lines=src.split(/\r?\n/);let depth=0,sp=[],ap=[],sel=null;const declarations=[],stack=[];
+            const re=/^\s*([\w-]+)\s*:\s*(.*?)\s*;\s*$/,norm=p=>p.join(' ').replace(/\{\s*$/,'').replace(/\s+/g,' ').trim();
+            for(let i=0;i<lines.length;i++){
+              const line=lines[i],t=line.trim(),opens=(line.match(/\{/g)||[]).length,closes=(line.match(/\}/g)||[]).length;
+              if(!sel){
+                if(ap.length){if(t)ap.push(t);if(line.includes('{')){stack.push({type:'at',header:norm(ap),depthBefore:depth});ap=[];}}
+                else if(t.startsWith('@')&&!t.includes(';')){if(line.includes('{'))stack.push({type:'at',header:norm([t]),depthBefore:depth});else ap=[t];}
+                else if(sp.length){if(t)sp.push(t);if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth});}}
+                else if(t&&!t.startsWith('/*')&&!t.startsWith('*')&&t!=='*/'&&t!=='}'&&!t.startsWith('@')&&!line.includes(';')){sp=[t];if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth});}}
+              }
+              if(sel){const m=line.match(re);if(m){const raw=m[2].trim(),important=/\s*!important\s*$/i.test(raw),context=stack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');declarations.push({lineIndex:i,line:i+1,selector:sel,property:m[1].toLowerCase(),value:raw,important,context});}}
+              depth+=opens-closes;while(stack.length&&depth<=stack[stack.length-1].depthBefore){const p=stack.pop();if(p.type==='rule')sel=null;}
+            }
+            if(ap.length)throw new Error('unterminated multiline at-rule');
+            const last=new Map(),dead=[];
+            for(let i=declarations.length-1;i>=0;i--){const d=declarations[i],key=`${d.context} >>> ${d.selector} >>> ${d.property}`,later=last.get(key);if(later&&(!d.important||later.important))dead.push({...d,winnerLine:later.line,winnerValue:later.value,winnerImportant:later.important});if(!later||d.important||!later.important)last.set(key,d);}
+            return{declarations,dead};
+          }
+
+          const pagesFor=target=>{const out=[];for(const p of report.pageAssets){const seen=new Set(),stack=[...p.css.filter(f=>meta.has(f))];let hit=false;while(stack.length){const f=stack.pop();if(seen.has(f)||!meta.has(f))continue;seen.add(f);if(f===target){hit=true;break;}for(const n of meta.get(f).imports)if(meta.has(n))stack.push(n);}if(hit)out.push(p.page);}return out.sort();};
+          const importParents=new Map([...active].map(f=>[f,[]]));for(const [parent,x] of meta)for(const child of x.imports)if(importParents.has(child)&&active.has(parent))importParents.get(child).push(parent);
+
+          const guards=[
+            ['assets/css/pages/home/mobile/categories.css',51],
+            ['assets/css/pages/home/mobile/base.css',75],
+            ['assets/css/pages/home/mobile-alignment.css',161],
+            ['assets/css/components/shell/mobile-app-shell.css',502],
+            ['assets/css/layout/header.css',835],
+            ['assets/css/pages/profile-page.css',746],
+            ['assets/css/pages/search-results.css',245],
+            ['assets/css/pages/anunciar-servico.css',1027],
+            ['assets/css/pages/pedidos.css',1275],
+            ['assets/css/pages/pedidos/orders-command-center.css',1909],
+            ['assets/css/pages/comunidade-interna-settings.css',968],
+            ['assets/css/components/cards/profile-service-owner-card.css',1397]
+          ];
+          for(const [file,decl] of guards){const p=parse(meta.get(file).text);if(p.declarations.length!==decl||p.dead.length!==0)throw new Error(`checkpoint drift ${file} ${p.declarations.length}/${p.dead.length}`);}
+
+          const rows=[...active].map(file=>{const x=meta.get(file),p=parse(x.text),pages=pagesFor(file),parents=(importParents.get(file)||[]).sort(),selectors=[...new Set(p.dead.map(d=>d.selector))].sort(),identical=p.dead.filter(d=>d.value===d.winnerValue&&d.important===d.winnerImportant).length;return{file,decl:p.declarations.length,dead:p.dead.length,deadPct:p.declarations.length?+(100*p.dead.length/p.declarations.length).toFixed(2):0,selectors:selectors.length,selectorList:selectors,pages:pages.length,pageList:pages,scope:file.includes('/pages/')?'page':'shared',important:x.important,bytes:x.size,importParents:parents.length,parentList:parents,identical,changed:p.dead.length-identical,highRisk:high.includes(file),deadRows:p.dead.slice().sort((a,b)=>a.line-b.line).map(d=>({line:d.line,selector:d.selector,property:d.property,value:d.value,important:d.important,context:d.context||'<global>',winnerLine:d.winnerLine,winnerValue:d.winnerValue,winnerImportant:d.winnerImportant}))};}).filter(r=>r.dead>0);
+          const total=rows.reduce((n,r)=>n+r.dead,0),highResidual=rows.filter(r=>r.highRisk);
+          if(rows.length!==55||total!==1309||highResidual.length!==0)throw new Error(`residual drift files=${rows.length} dead=${total} highResidual=${highResidual.length}`);
+          const sorter=(a,b)=>(a.pages-b.pages)||(a.dead-b.dead)||(a.selectors-b.selectors)||(a.important-b.important)||(a.changed-b.changed)||(a.bytes-b.bytes)||a.file.localeCompare(b.file);
+          const pageRows=rows.filter(r=>r.scope==='page').sort(sorter),sharedRows=rows.filter(r=>r.scope==='shared').sort(sorter);
+          console.log(`TRACKED RESIDUAL UX-CSS-DEBT-020 active=${active.size} highRisk=${high.length} filesWithDead=${rows.length} superseded=${total} highRiskWithDead=${highResidual.length}`);
+          console.log('TOP PAGE-LOCAL DETAILS');console.log(JSON.stringify(pageRows.slice(0,20),null,2));
+          console.log('TOP SHARED DETAILS');console.log(JSON.stringify(sharedRows.slice(0,15),null,2));
+          NODE
+
+      - name: Preserve certified governance baselines
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:agent-governance
+          npm run audit:active-legacy-structures | tee /tmp/legacy.log
+          grep -q 'css files: 533 (55 direct, 401 active/imported)' /tmp/legacy.log
+          grep -q 'high risk active css: 37' /tmp/legacy.log
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/conflicts.log
+          grep -q 'Conflicting class/property pairs: 339' /tmp/conflicts.log
+          npm run audit:domain-completion-matrix | tee /tmp/domain.log
+          grep -q 'Domains: 23' /tmp/domain.log
+          grep -q 'Critical flows: 15' /tmp/domain.log
+          grep -q 'Average maturity: 2.91/6' /tmp/domain.log
+          grep -q 'Critical blockers: 12' /tmp/domain.log
+          npm run audit:shared-app-header-contract
+          npm run audit:mobile-shell-location-contract
+          npm run audit:responsive-boundaries
+          npm run audit:duplicate-assets
+
+      - name: Restore exact checkpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "${TARGET_SHA}"
+          git clean -fd
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test -z "$(git status --porcelain)"
