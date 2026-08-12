@@ -1,0 +1,145 @@
+name: Doke UX-CSS-DEBT-016 Mobile Shell Candidate
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-016-mobile-shell-candidate
+
+permissions:
+  contents: read
+
+jobs:
+  candidate:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: d7dcc2c0264a77d8d8a326210c3074c0eb4057df
+      TARGET_CSS: assets/css/components/shell/mobile-app-shell.css
+      TARGET_JS: assets/js/components/mobile-app-shell.js
+    steps:
+      - name: Checkout exact UX-CSS-DEBT-015 checkpoint
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 0
+
+      - name: Guard exact parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test -f "${TARGET_CSS}"
+          test -f "${TARGET_JS}"
+          git diff --check
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies and Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install --with-deps chromium
+
+      - name: Build deterministic deletion-only candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp "${TARGET_CSS}" /tmp/mobile-shell-parent.css
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');
+          const file=process.env.TARGET_CSS,text=fs.readFileSync(file,'utf8');
+          function parse(src){const lines=src.split(/\r?\n/);let depth=0,selectorParts=[],atRuleParts=[],selector=null;const declarations=[],stack=[];const declRe=/^\s*([\w-]+)\s*:\s*(.*?)\s*;\s*$/,norm=p=>p.join(' ').replace(/\{\s*$/,'').replace(/\s+/g,' ').trim();for(let i=0;i<lines.length;i++){const line=lines[i],t=line.trim(),opens=(line.match(/\{/g)||[]).length,closes=(line.match(/\}/g)||[]).length;if(!selector){if(atRuleParts.length){if(t)atRuleParts.push(t);if(line.includes('{')){stack.push({type:'at',header:norm(atRuleParts),depthBefore:depth});atRuleParts=[];}}else if(t.startsWith('@')&&!t.includes(';')){if(line.includes('{'))stack.push({type:'at',header:norm([t]),depthBefore:depth});else atRuleParts=[t];}else if(selectorParts.length){if(t)selectorParts.push(t);if(line.includes('{')){selector=norm(selectorParts);selectorParts=[];stack.push({type:'rule',selector,depthBefore:depth});}}else if(t&&!t.startsWith('/*')&&!t.startsWith('*')&&t!=='*/'&&t!=='}'&&!t.startsWith('@')&&!line.includes(';')){selectorParts=[t];if(line.includes('{')){selector=norm(selectorParts);selectorParts=[];stack.push({type:'rule',selector,depthBefore:depth});}}}if(selector){const m=line.match(declRe);if(m){const raw=m[2].trim(),important=/\s*!important\s*$/i.test(raw),context=stack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');declarations.push({lineIndex:i,line:i+1,selector,property:m[1].toLowerCase(),value:raw,important,context});}}depth+=opens-closes;while(stack.length&&depth<=stack[stack.length-1].depthBefore){const p=stack.pop();if(p.type==='rule')selector=null;}}if(atRuleParts.length)throw new Error('unterminated multiline at-rule');const last=new Map(),dead=[];for(let i=declarations.length-1;i>=0;i--){const d=declarations[i],key=`${d.context} >>> ${d.selector} >>> ${d.property}`,later=last.get(key);if(later&&(!d.important||later.important))dead.push({...d,winnerLine:later.line,winnerValue:later.value,winnerImportant:later.important});if(!later||d.important||!later.important)last.set(key,d);}return{lines,declarations,dead,selectors:[...new Set(dead.map(d=>d.selector))].sort(),contexts:[...new Set(dead.map(d=>d.context))].sort()};}
+          const expected=['body.doke-mobile-shell-mounted .doke-mobile-shell__filter','body.doke-mobile-shell-mounted .doke-mobile-shell__input::selection','body.doke-mobile-shell-mounted .doke-mobile-shell__search'].sort();
+          const p=parse(text);if(p.declarations.length!==509||p.dead.length!==7||JSON.stringify(p.selectors)!==JSON.stringify(expected)||JSON.stringify(p.contexts)!==JSON.stringify(['@media (max-width: 760px)']))throw new Error('parent parser contract drift');if(p.dead.some(d=>!d.important||!d.winnerImportant||d.value!==d.winnerValue))throw new Error('non-identical important dead row');if(Buffer.byteLength(text)!==40715||(text.match(/!important/gi)||[]).length!==321)throw new Error('parent byte/important drift');
+          const deadSet=new Set(p.dead.map(d=>d.lineIndex)),candidate=p.lines.filter((_l,i)=>!deadSet.has(i)).join('\n'),c=parse(candidate);if(c.declarations.length!==502||c.dead.length!==0)throw new Error(`candidate parser drift ${c.declarations.length}/${c.dead.length}`);if((candidate.match(/!important/gi)||[]).length!==314)throw new Error('candidate important drift');
+          fs.writeFileSync('/tmp/mobile-shell-candidate.css',candidate);fs.writeFileSync(file,candidate);
+          const sha=v=>crypto.createHash('sha256').update(v).digest('hex');
+          console.log(`PARENT_SHA256=${sha(text)}`);console.log(`CANDIDATE_SHA256=${sha(candidate)}`);console.log(`PARENT_BYTES=${Buffer.byteLength(text)}`);console.log(`CANDIDATE_BYTES=${Buffer.byteLength(candidate)}`);console.log('CANDIDATE BUILD PASS: 509 -> 502 declarations; -7; 3 selectors; max760; !important 321 -> 314; dead -> 0');
+          NODE
+          test "$(git diff --name-only "${TARGET_SHA}" --)" = "${TARGET_CSS}"
+          test "$(git diff --numstat "${TARGET_SHA}" -- "${TARGET_CSS}" | awk '{print $1}')" = "0"
+          test "$(git diff --numstat "${TARGET_SHA}" -- "${TARGET_CSS}" | awk '{print $2}')" = "7"
+          git diff --check "${TARGET_SHA}" -- "${TARGET_CSS}"
+
+      - name: Write canonical runtime parity harness
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:active-legacy-structures
+          cat > /tmp/mobile-shell-capture.js <<'NODE'
+          const fs=require('fs'),path=require('path'),cp=require('child_process'),{chromium}=require(process.cwd()+'/node_modules/playwright');
+          const out=process.argv[2],target='assets/css/components/shell/mobile-app-shell.css',report=JSON.parse(fs.readFileSync('reports/generated/active-legacy-structures-report.json','utf8'));
+          const allCss=[];function walk(d){for(const e of fs.readdirSync(d,{withFileTypes:true})){const f=path.join(d,e.name);if(e.isDirectory())walk(f);else if(f.endsWith('.css'))allCss.push(f.replace(/\\/g,'/'));}}walk('assets/css');
+          const importRe=/@import\s+(?:url\()?['"]?([^'"\);]+\.css(?:\?[^'"\)]*)?)['"]?\)?/gi,meta=new Map(),normalize=(v,from)=>{v=v.replace(/\?.*$/,'').replace(/^\.\//,'');if(v.startsWith('/'))return v.replace(/^\/+/, '');if(v.startsWith('assets/'))return v;return path.posix.normalize(path.posix.join(path.posix.dirname(from),v));};for(const f of allCss){const text=fs.readFileSync(f,'utf8'),imports=[];let m;while((m=importRe.exec(text)))imports.push(normalize(m[1],f));importRe.lastIndex=0;meta.set(f,imports);}function reaches(list){const seen=new Set(),stack=[...list];while(stack.length){const f=stack.pop();if(seen.has(f)||!meta.has(f))continue;seen.add(f);if(f===target)return true;for(const n of meta.get(f))stack.push(n);}return false;}
+          const pages=report.pageAssets.filter(p=>reaches(p.css)).map(p=>p.page).sort();if(pages.length!==26)throw new Error(`consumer drift ${pages.length}`);
+          const shellJs=fs.readFileSync(process.env.TARGET_JS,'utf8'),vps=[['560x900',560,900,true],['390x844',390,844,true],['561x900',561,900,false],['608x926',608,926,false],['760x900',760,900,false]],server=cp.spawn(process.execPath,['scripts/serve-static-site.js','--host=127.0.0.1','--port=5500'],{stdio:'ignore',env:{...process.env,DOKE_E2E_DISABLE_REMOTE_SERVICES:'1'}}),sleep=ms=>new Promise(r=>setTimeout(r,ms));
+          const clean=v=>String(v??'').replace(/\s+/g,' ').trim();
+          async function main(){await sleep(500);const browser=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});const result={};let mounted=0,unmounted=0,searchHits=0,pseudoHits=0;
+            for(const html of pages)for(const [name,width,height,shouldMount] of vps){const ctx=await browser.newContext({viewport:{width,height},reducedMotion:'reduce'}),page=await ctx.newPage();await page.route('**/*',route=>{const u=new URL(route.request().url()),local=u.origin==='http://127.0.0.1:5500';if(local&&u.pathname.endsWith('.js'))return route.abort();if(local||u.protocol==='data:'||u.protocol==='blob:')return route.continue();return route.abort();});await page.goto(`http://127.0.0.1:5500/${html}`,{waitUntil:'domcontentloaded',timeout:15000});await page.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important;caret-color:transparent!important}.doke-document-preloader{display:none!important}html,body{visibility:visible!important;opacity:1!important}'});await page.addScriptTag({content:shellJs});await sleep(25);const snap=await page.evaluate(({shouldMount})=>{const capture=(el,props)=>{if(!el)return null;const cs=getComputedStyle(el),r=el.getBoundingClientRect(),style={};for(const p of props)style[p]=String(cs.getPropertyValue(p)||'').replace(/\s+/g,' ').trim();return{rect:[+r.x.toFixed(3),+r.y.toFixed(3),+r.width.toFixed(3),+r.height.toFixed(3)],style};};const body=document.body,shell=document.querySelector('.doke-mobile-shell'),search=document.querySelector('body.doke-mobile-shell-mounted .doke-mobile-shell__search'),input=document.querySelector('body.doke-mobile-shell-mounted .doke-mobile-shell__input'),filter=document.querySelector('body.doke-mobile-shell-mounted .doke-mobile-shell__filter');const mounted=body.classList.contains('doke-mobile-shell-mounted')&&Boolean(shell);if(mounted!==shouldMount)throw new Error(`mount mismatch expected=${shouldMount} actual=${mounted}`);if(!shouldMount&&[search,input,filter].some(Boolean))throw new Error('affected anatomy exists outside runtime boundary');if(Boolean(search)!==Boolean(input)||Boolean(search)!==Boolean(filter))throw new Error('search anatomy diverged');let selection=null;if(input){input.value='Doke shell parity';input.focus();input.setSelectionRange(0,input.value.length);const ps=getComputedStyle(input,'::selection');selection={color:ps.color,backgroundColor:ps.backgroundColor};}return{mounted,search:capture(search,['background-color','box-shadow']),filter:capture(filter,['width','height','min-width','min-height']),selection};},{shouldMount});result[`${html}:${name}`]=snap;if(snap.mounted)mounted++;else unmounted++;if(snap.search)searchHits++;if(snap.selection)pseudoHits++;await ctx.close();}
+            await browser.close();if(mounted!==52||unmounted!==78||searchHits!==24||pseudoHits!==24)throw new Error(`coverage drift ${JSON.stringify({mounted,unmounted,searchHits,pseudoHits})}`);fs.writeFileSync(out,JSON.stringify(result));console.log(`RUNTIME CAPTURE PASS mounted=${mounted} unmounted=${unmounted} search=${searchHits} pseudo=${pseudoHits}`);}
+          main().finally(()=>server.kill('SIGTERM')).catch(e=>{console.error(e);process.exit(1)});
+          NODE
+
+      - name: Capture exact parent runtime, responsive baseline and conflicts
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp /tmp/mobile-shell-parent.css "${TARGET_CSS}"
+          node /tmp/mobile-shell-capture.js /tmp/mobile-shell-parent-runtime.json
+          node scripts/generate-responsive-index-baseline.js
+          cp reports/responsive-index-baseline.json /tmp/mobile-shell-parent-responsive.json
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/mobile-shell-parent-conflicts.log
+          grep -q 'Definitions: 14910' /tmp/mobile-shell-parent-conflicts.log
+          grep -q 'Conflicting class/property pairs: 339' /tmp/mobile-shell-parent-conflicts.log
+
+      - name: Restore candidate and preserve responsive contract without rebaseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp /tmp/mobile-shell-candidate.css "${TARGET_CSS}"
+          cp /tmp/mobile-shell-parent-responsive.json reports/responsive-index-baseline.json
+          node scripts/test-responsive-contract.js | tee /tmp/mobile-shell-responsive.log
+          grep -q 'Checks: 893' /tmp/mobile-shell-responsive.log
+          grep -q 'Failures: 0' /tmp/mobile-shell-responsive.log
+          grep -q 'Skips: 277' /tmp/mobile-shell-responsive.log
+
+      - name: Require exact parent-to-candidate runtime parity
+        shell: bash
+        run: |
+          set -euo pipefail
+          node /tmp/mobile-shell-capture.js /tmp/mobile-shell-candidate-runtime.json
+          node <<'NODE'
+          const fs=require('fs'),a=JSON.parse(fs.readFileSync('/tmp/mobile-shell-parent-runtime.json')),b=JSON.parse(fs.readFileSync('/tmp/mobile-shell-candidate-runtime.json')),diffs=[];function walk(x,y,p){if(typeof x!==typeof y||x===null||y===null||typeof x!=='object'){if(x!==y)diffs.push({path:p,parent:x,candidate:y});return;}if(Array.isArray(x)!==Array.isArray(y)){diffs.push({path:p,parent:x,candidate:y});return;}for(const k of [...new Set([...Object.keys(x),...Object.keys(y)])].sort())walk(x[k],y[k],p?`${p}.${k}`:k);}walk(a,b,'');if(diffs.length){console.error(JSON.stringify(diffs.slice(0,100),null,2));throw new Error(`runtime diffs=${diffs.length}`);}console.log('MOBILE SHELL COMPUTED-STYLE + BOUNDING-RECT PARITY PASS: 0 diffs');
+          NODE
+
+      - name: Validate candidate structural and governance contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git diff --name-only "${TARGET_SHA}" --)" = "${TARGET_CSS}"
+          test "$(git diff --numstat "${TARGET_SHA}" -- "${TARGET_CSS}" | awk '{print $1}')" = "0"
+          test "$(git diff --numstat "${TARGET_SHA}" -- "${TARGET_CSS}" | awk '{print $2}')" = "7"
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/mobile-shell-candidate-conflicts.log
+          grep -q 'Conflicting class/property pairs: 339' /tmp/mobile-shell-candidate-conflicts.log
+          npm run audit:mobile-shell-location-contract
+          npm run audit:shared-app-header-contract
+          npm run audit:responsive-boundaries
+          npm run audit:active-legacy-structures | tee /tmp/mobile-shell-legacy.log
+          grep -q 'css files: 533 (55 direct, 401 active/imported)' /tmp/mobile-shell-legacy.log
+          grep -q 'active legacy/remediation css: 0' /tmp/mobile-shell-legacy.log
+          grep -q 'active legacy/remediation js: 0' /tmp/mobile-shell-legacy.log
+          grep -q 'high risk active css: 37' /tmp/mobile-shell-legacy.log
+          npm run audit:domain-completion-matrix | tee /tmp/mobile-shell-domain.log
+          grep -q 'Domains: 23' /tmp/mobile-shell-domain.log
+          grep -q 'Critical flows: 15' /tmp/mobile-shell-domain.log
+          grep -q 'Average maturity: 2.91/6' /tmp/mobile-shell-domain.log
+          grep -q 'Critical blockers: 12' /tmp/mobile-shell-domain.log
+          npm run audit:agent-governance
+          npm run audit:duplicate-assets | tee /tmp/mobile-shell-duplicates.log
+          grep -q 'Duplicate groups: 0' /tmp/mobile-shell-duplicates.log
+          grep -q 'Duplicated files: 0' /tmp/mobile-shell-duplicates.log
+          echo 'UX-CSS-DEBT-016 CANDIDATE CERTIFIED'
