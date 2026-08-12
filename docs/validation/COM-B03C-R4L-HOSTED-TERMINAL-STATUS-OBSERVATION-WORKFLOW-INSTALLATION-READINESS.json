@@ -1,7 +1,7 @@
 {
   "validationId": "COM-B03C-R4L-HOSTED-TERMINAL-STATUS-OBSERVATION-WORKFLOW-INSTALLATION-READINESS",
   "contractId": "com-b03c-r4l-hosted-terminal-status-observation-workflow-installation-readiness-v1",
-  "status": "repository_hosted_execution_workflow_installed_certification_ready_no_current_remote_authority",
+  "status": "repository_hosted_execution_workflow_installed_certified_no_current_remote_authority",
   "initialHead": "21446d7ba3d359873bb2bf491568c53178d69174",
   "matrixVersion": "1.3.113",
   "maturity": 3,
@@ -11,7 +11,7 @@
     "authorizationEvidenceHead": "66e8b1fefdbf7fa70be3093bdcad50880a5cdf70",
     "authorizationReceiptId": "004a68f8916eb8f63b2e6812a9183924f2ceb8135b9e3864b77f280f11efab1f",
     "futureWorkflowInstallHead": null,
-    "futureWorkflowInstallHeadSource": "final_certified_r4l_head",
+    "futureWorkflowInstallHeadSource": "final_certified_r4l_evidence_head",
     "workflowInstallHeadMustDifferFromAuthorizationEvidenceHead": true,
     "futureTriggerParentMustEqualWorkflowInstallHead": true,
     "futureTriggerPath": "config/com-b03c-r4j-single-use-hosted-terminal-status-observation-trigger.json",
@@ -36,15 +36,32 @@
     "zeroResidueRequired": true
   },
   "repositoryCertification": {
-    "hostedRun": null,
-    "certifyJob": null,
-    "authorizeJob": null,
-    "canaryJob": null,
+    "hostedRun": 31553330028,
+    "headUnderCertification": "420b02969224e5ba67d3ed7f657d52f8f7f20d62",
+    "runAttempt": 1,
+    "runConclusion": "success",
+    "certifyJob": 93980945377,
+    "certifyConclusion": "success",
+    "authorizeJob": 93981308227,
+    "authorizeConclusion": "skipped",
+    "canaryJob": 93981308720,
+    "canaryConclusion": "skipped",
+    "independentMatrixRun": 31553330074,
+    "independentMatrixJob": 93980509003,
+    "independentMatrixConclusion": "success",
     "localSyntaxPassed": true,
     "localReadinessPassed": true,
     "localExecutorSelfTestPassed": true,
     "currentRepositoryHardBlockPassed": true,
     "historicalBoundaryGuardDefined": true,
+    "hostedSyntaxPassed": true,
+    "hostedReadinessPassed": true,
+    "hostedExecutorSelfTestPassed": true,
+    "hostedRepositoryHardBlockPassed": true,
+    "historicalR4jR4kR4iR4gUnchangedPassed": true,
+    "hostedMatrixGatePassed": true,
+    "hostedAgentGovernancePassed": true,
+    "hostedDiffHygienePassed": true,
     "stagingExecuted": false,
     "hostedCertificationActivation": {
       "preActivationHead": "7ea0152717edf368646e6ad5361c87d56cfa6392",
@@ -54,6 +71,13 @@
       "hostedRunObservedBeforeActivation": false,
       "triggerExists": false,
       "repositoryOnly": true
+    },
+    "operationalRecovery": {
+      "accidentalTemporaryFileCommit": "b4594366d015aef86499e97e784083e4aced6ddc",
+      "temporaryFileCleanupCommit": "a2f682229a280c2a87ae9b92eef47050df4faa7a",
+      "temporaryFilePresentAfterCleanup": false,
+      "triggerTouched": false,
+      "remoteAuthorityOpened": false
     }
   },
   "authority": {
@@ -85,5 +109,5 @@
   },
   "exactRootCauseProven": false,
   "causalPromotionAllowed": false,
-  "nextBoundary": "After the final R4L head is certified, that exact head becomes workflowInstallHead. A later and separate single-file trigger boundary may bind the preserved authorizationEvidenceHead and receipt to that parent. R4L itself creates no trigger and executes no staging canary."
+  "nextBoundary": "After this evidence freeze head is independently recertified by R4L and the Domain Completion Matrix, that exact final R4L evidence head becomes workflowInstallHead. Only a later and separate single-file trigger boundary may bind the preserved authorizationEvidenceHead and receipt to that exact parent. R4L itself creates no trigger and executes no staging canary."
 }
