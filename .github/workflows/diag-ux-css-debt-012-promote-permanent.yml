@@ -1,0 +1,90 @@
+name: Doke UX-CSS-DEBT-012 Promote Permanent
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-012-promote-permanent
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-24.04
+    env:
+      PARENT_SHA: 76b2d52d9beddf03160869c0b07926dc8eb5fdd4
+      TARGET_BRANCH: ux/ux-css-debt-012-anunciar-servico-availability-compaction
+      TARGET_FILE: assets/css/pages/anunciar-servico.css
+      EXPECTED_PARENT_SHA256: 6c31d3c7bae148acde943309811d80f34b508569ed1a192bd86762774ea803b1
+      EXPECTED_CANDIDATE_SHA256: d9255caead6aaa94b67ced90637dea2620b50e05b65167cd3743bfb0f7294b6a
+    steps:
+      - name: Checkout permanent target branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_BRANCH }}
+          fetch-depth: 0
+
+      - name: Guard target remains exact certified parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${PARENT_SHA}"
+          test "$(sha256sum "${TARGET_FILE}" | awk '{print $1}')" = "${EXPECTED_PARENT_SHA256}"
+          git diff --check
+
+      - name: Build exact deterministic candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');
+          const file=process.env.TARGET_FILE,text=fs.readFileSync(file,'utf8'),lines=text.split(/\r?\n/);
+          let depth=0,selectorParts=[],atRuleParts=[],selector=null;const declarations=[],stack=[];
+          const declRe=/^\s*([\w-]+)\s*:\s*(.*?)\s*;\s*$/,norm=parts=>parts.join(' ').replace(/\{\s*$/,'').replace(/\s+/g,' ').trim();
+          for(let i=0;i<lines.length;i++){
+            const line=lines[i],t=line.trim(),opens=(line.match(/\{/g)||[]).length,closes=(line.match(/\}/g)||[]).length;
+            if(!selector){
+              if(atRuleParts.length){if(t)atRuleParts.push(t);if(line.includes('{')){stack.push({type:'at',header:norm(atRuleParts),depthBefore:depth});atRuleParts=[];}}
+              else if(t.startsWith('@')&&!t.includes(';')){if(line.includes('{'))stack.push({type:'at',header:norm([t]),depthBefore:depth});else atRuleParts=[t];}
+              else if(selectorParts.length){if(t)selectorParts.push(t);if(line.includes('{')){selector=norm(selectorParts);selectorParts=[];stack.push({type:'rule',selector,depthBefore:depth});}}
+              else if(t&&!t.startsWith('/*')&&!t.startsWith('*')&&t!=='*/'&&t!=='}'&&!t.startsWith('@')&&!line.includes(';')){selectorParts=[t];if(line.includes('{')){selector=norm(selectorParts);selectorParts=[];stack.push({type:'rule',selector,depthBefore:depth});}}
+            }
+            if(selector){const m=line.match(declRe);if(m){const raw=m[2].trim(),important=/\s*!important\s*$/i.test(raw),context=stack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');declarations.push({lineIndex:i,selector,property:m[1].toLowerCase(),important,context});}}
+            depth+=opens-closes;while(stack.length&&depth<=stack[stack.length-1].depthBefore){const p=stack.pop();if(p.type==='rule')selector=null;}
+          }
+          if(atRuleParts.length)throw new Error('unterminated multiline at-rule');
+          const last=new Map(),dead=[];for(let i=declarations.length-1;i>=0;i--){const d=declarations[i],key=`${d.context} >>> ${d.selector} >>> ${d.property}`,later=last.get(key);if(later&&(!d.important||later.important))dead.push(d);if(!later||d.important||!later.important)last.set(key,d);}
+          const selectors=[...new Set(dead.map(d=>d.selector))].sort(),contexts=[...new Set(dead.map(d=>d.context))].sort(),deadSet=new Set(dead.map(d=>d.lineIndex));
+          if(declarations.length!==1033||dead.length!==6||selectors.length!==1)throw new Error(`metric drift ${declarations.length}/${dead.length}/${selectors.length}`);
+          if(JSON.stringify(selectors)!==JSON.stringify(['body[data-page="anunciar-servico"] .post-service-availability__toolbar']))throw new Error(`selector drift ${JSON.stringify(selectors)}`);
+          if(JSON.stringify(contexts)!==JSON.stringify(['','@media (max-width: 560px)','@media (max-width: 860px)']))throw new Error(`context drift ${JSON.stringify(contexts)}`);
+          const candidate=lines.filter((_l,i)=>!deadSet.has(i)).join('\n');const sha=v=>crypto.createHash('sha256').update(v).digest('hex');
+          if(sha(text)!==process.env.EXPECTED_PARENT_SHA256)throw new Error('parent hash drift');
+          if(sha(candidate)!==process.env.EXPECTED_CANDIDATE_SHA256)throw new Error('candidate hash drift');
+          if(Buffer.byteLength(text)!==57421||Buffer.byteLength(candidate)!==57190)throw new Error('byte drift');
+          if((text.match(/!important/gi)||[]).length||(candidate.match(/!important/gi)||[]).length)throw new Error('important drift');
+          fs.writeFileSync(file,candidate);
+          console.log('Promotion candidate proof: PASS');console.log('- declarations 1033 -> 1027');console.log('- deleted 6');console.log('- selectors 1');console.log('- contexts global + max-width860 + max-width560');
+          NODE
+
+      - name: Guard exact permanent delta
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git diff --name-only)" = "${TARGET_FILE}"
+          test "$(git diff --numstat -- "${TARGET_FILE}" | awk '{print $1}')" = "0"
+          test "$(git diff --numstat -- "${TARGET_FILE}" | awk '{print $2}')" = "6"
+          test "$(sha256sum "${TARGET_FILE}" | awk '{print $1}')" = "${EXPECTED_CANDIDATE_SHA256}"
+          git diff --check
+
+      - name: Commit and push product-only tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name doke
+          git config user.email bielantoniomma@gmail.com
+          git add -- "${TARGET_FILE}"
+          test "$(git diff --cached --name-only)" = "${TARGET_FILE}"
+          git commit -m "UX-CSS-DEBT-012: compact superseded Anunciar Servico availability declarations"
+          test "$(git rev-parse HEAD^)" = "${PARENT_SHA}"
+          git push origin "HEAD:${TARGET_BRANCH}"
