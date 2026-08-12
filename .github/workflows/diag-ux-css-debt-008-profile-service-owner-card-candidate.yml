@@ -15,6 +15,8 @@ jobs:
     env:
       TARGET_SHA: 5c0da5f3f2657778140cad33c0753d6faf33202f
       TARGET_FILE: assets/css/components/cards/profile-service-owner-card.css
+      GENERATED_DOC_A: docs/HOME-AUTHORITY-CLASSIFICATION.md
+      GENERATED_DOC_B: docs/PAGE-ASSET-AUTHORITY-MATRIX.md
     steps:
       - name: Checkout exact certified parent
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -147,7 +149,7 @@ jobs:
           cp reports/responsive-index-baseline.json /tmp/profile-owner-parent-responsive.json
           node scripts/audit-css-responsive-conflicts.js | tee /tmp/profile-owner-parent-conflicts.log
           grep 'Conflicting class/property pairs:' /tmp/profile-owner-parent-conflicts.log | tail -1 | awk '{print $4}' > /tmp/profile-owner-parent-conflicts.count
-          git restore -- reports
+          git restore -- reports "${GENERATED_DOC_A}" "${GENERATED_DOC_B}"
           git diff --check
 
       - name: Apply candidate and preserve responsive contract
@@ -160,7 +162,10 @@ jobs:
           grep -q 'Checks: 893' /tmp/responsive.log
           grep -q 'Failures: 0' /tmp/responsive.log
           grep -q 'Skips: 277' /tmp/responsive.log
-          git restore -- reports
+          git restore -- reports "${GENERATED_DOC_A}" "${GENERATED_DOC_B}"
+          echo 'Permanent-candidate diff:'
+          git diff --name-only
+          git diff --numstat -- "${TARGET_FILE}"
           test "$(git diff --name-only)" = "${TARGET_FILE}"
           test "$(git diff --numstat -- "${TARGET_FILE}" | awk '{print $1}')" = "0"
           test "$(git diff --numstat -- "${TARGET_FILE}" | awk '{print $2}')" = "82"
@@ -195,6 +200,8 @@ jobs:
           grep -q 'active legacy/remediation css: 0' /tmp/legacy.log
           grep -q 'active legacy/remediation js: 0' /tmp/legacy.log
           grep -q 'high risk active css: 38' /tmp/legacy.log
-          git restore -- reports
+          git restore -- reports "${GENERATED_DOC_A}" "${GENERATED_DOC_B}"
           test "$(git diff --name-only)" = "${TARGET_FILE}"
+          test "$(git diff --numstat -- "${TARGET_FILE}" | awk '{print $1}')" = "0"
+          test "$(git diff --numstat -- "${TARGET_FILE}" | awk '{print $2}')" = "82"
           git diff --check
