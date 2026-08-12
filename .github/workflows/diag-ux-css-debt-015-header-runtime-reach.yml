@@ -1,0 +1,129 @@
+name: Doke UX-CSS-DEBT-015 Runtime Header Reach
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-015-header-runtime-reach
+
+permissions:
+  contents: read
+
+jobs:
+  runtime-reach:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: a5dcbc7caaaea14729eb3576bb1e0c2173950594
+    steps:
+      - name: Checkout exact certified parent
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 0
+
+      - name: Guard exact parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          git diff --check
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies and Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install --with-deps chromium
+
+      - name: Discover canonical runtime header owner
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo '=== app-header__inner references ==='
+          grep -RIn --exclude-dir=.git --exclude-dir=node_modules --exclude-dir=reports --exclude-dir=coverage 'app-header__inner' . || true
+          echo '=== home-side-meta__profile-wrap references ==='
+          grep -RIn --exclude-dir=.git --exclude-dir=node_modules --exclude-dir=reports --exclude-dir=coverage 'home-side-meta__profile-wrap' . || true
+          echo '=== has-global-header references in JS ==='
+          grep -RIn --include='*.js' --exclude-dir=node_modules --exclude-dir=reports 'has-global-header' assets scripts . || true
+          echo '=== remote-service test switches ==='
+          grep -RIn --include='*.js' --exclude-dir=node_modules --exclude-dir=reports 'DOKE_E2E_DISABLE_REMOTE_SERVICES\|disableRemoteServices' assets scripts . || true
+
+      - name: Inspect runtime reach on all CSS consumers
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > /tmp/header-runtime-reach.js <<'NODE'
+          const fs=require('fs'),cp=require('child_process'),{chromium}=require(process.cwd()+'/node_modules/playwright');
+          const pages=[
+            'admin-anuncio-revisao.html','admin-pedidos-operacao.html','admin-verificacao.html','admin.html','ajuda.html','anunciar-servico.html','avaliacao-profissional.html','carteira.html','comunidade-interna.html','comunidade.html','configuracoes.html','detalhe-anuncio.html','index.html','mensagens.html','meu-perfil.html','notificacoes.html','novidades.html','orcamento.html','pagamento-profissional.html','pedidos.html','perfil-cliente.html','perfil-profissional.html','perfil.html','resultados.html','tornar-profissional.html','verificacao-profissional.html'
+          ];
+          const selectors=[
+            'body[data-page].has-global-header',
+            'body[data-page].has-global-header .app-header .home-side-meta__profile-caret-button',
+            'body[data-page].has-global-header .app-header .home-side-meta__profile-wrap',
+            'body[data-page].has-global-header .app-header :is(.home-side-meta__profile, .app-header__profile)',
+            'body[data-page].has-global-header > .app-shell > .page > .app-header',
+            'body[data-page].has-global-header > .app-shell > .page > .app-header > .app-header__inner'
+          ];
+          const server=cp.spawn(process.execPath,['scripts/serve-static-site.js','--host=127.0.0.1','--port=5500'],{stdio:'ignore',env:{...process.env,DOKE_E2E_DISABLE_REMOTE_SERVICES:'1'}});
+          const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+          async function main(){
+            await sleep(600);
+            const browser=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+            const results=[];
+            for(const html of pages){
+              const ctx=await browser.newContext({viewport:{width:1366,height:768},reducedMotion:'reduce'});
+              const page=await ctx.newPage();
+              const pageErrors=[]; const blocked=[];
+              page.on('pageerror',e=>pageErrors.push(String(e.message||e)));
+              await page.route('**/*',route=>{
+                const req=route.request(),u=new URL(req.url());
+                const local=u.origin==='http://127.0.0.1:5500';
+                if(local||u.protocol==='data:'||u.protocol==='blob:')return route.continue();
+                blocked.push(`${req.resourceType()}:${u.hostname}`);
+                return route.abort();
+              });
+              await page.goto(`http://127.0.0.1:5500/${html}`,{waitUntil:'domcontentloaded',timeout:15000});
+              await sleep(1200);
+              const row=await page.evaluate(selectors=>({
+                url:location.pathname,
+                bodyClass:document.body.className,
+                dataPage:document.body.getAttribute('data-page')||'',
+                authGuard:document.documentElement.getAttribute('data-auth-guard')||document.body.getAttribute('data-auth-guard')||'',
+                counts:Object.fromEntries(selectors.map(s=>[s,document.querySelectorAll(s).length])),
+                headers:[...document.querySelectorAll('.app-header')].map(h=>({classes:h.className,variant:h.getAttribute('data-header-variant')||'',contract:h.getAttribute('data-header-contract')||'',hidden:h.hidden,display:getComputedStyle(h).display,visibility:getComputedStyle(h).visibility}))
+              }),selectors);
+              row.page=html;row.pageErrors=pageErrors.slice(0,8);row.blocked=[...new Set(blocked)].slice(0,12);
+              results.push(row);
+              console.log(JSON.stringify(row));
+              await ctx.close();
+            }
+            await browser.close();
+            const bodyMiss=results.filter(r=>r.counts[selectors[0]]!==1);
+            if(bodyMiss.length)throw new Error(`body contract missing: ${bodyMiss.map(r=>r.page).join(',')}`);
+            const mounted=results.filter(r=>r.counts[selectors[4]]>0);
+            console.log(`RUNTIME HEADER MOUNTED ${mounted.length}/26`);
+            console.log('MOUNTED PAGES '+JSON.stringify(mounted.map(r=>r.page)));
+            console.log('UNMOUNTED PAGES '+JSON.stringify(results.filter(r=>r.counts[selectors[4]]===0).map(r=>r.page)));
+            fs.writeFileSync('/tmp/header-runtime-reach.json',JSON.stringify(results,null,2));
+            if(mounted.length===0)throw new Error('runtime header did not mount on any consumer');
+          }
+          main().finally(()=>server.kill('SIGTERM')).catch(e=>{console.error(e);process.exit(1)});
+          NODE
+          node /tmp/header-runtime-reach.js
+
+      - name: Preserve governance and exact parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:shared-app-header-contract
+          npm run audit:domain-completion-matrix
+          git reset --hard "${TARGET_SHA}"
+          git clean -fd
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          git diff --exit-code
