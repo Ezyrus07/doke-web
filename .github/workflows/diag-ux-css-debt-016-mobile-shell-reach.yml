@@ -29,8 +29,8 @@ jobs:
           test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
           test -f "${TARGET_CSS}"
           test -f "${TARGET_JS}"
-          grep -Fq '@import "../components/shell/mobile-app-shell.css"' assets/css/pages/app-shell.css
-          grep -Fq '@import "../components/shell/mobile-app-shell.css"' assets/css/pages/home-runtime-shell.css
+          grep -Fq 'components/shell/mobile-app-shell.css?v=' assets/css/pages/app-shell.css
+          grep -Fq 'components/shell/mobile-app-shell.css?v=' assets/css/pages/home-runtime-shell.css
           grep -Fq "function createShell(cfg)" "${TARGET_JS}"
           grep -Fq "doke-mobile-shell-mounted" "${TARGET_JS}"
           grep -Fq "max-width: 560px" "${TARGET_JS}"
