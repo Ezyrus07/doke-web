@@ -1,0 +1,107 @@
+name: Doke UX-CSS-DEBT-017 Sonar Scope R2
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-017-sonar-scope-r2
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  sonar-scope:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: f9c0d4b77abf00447c3440041e4966b7504f04bc
+      PARENT_SHA: b83318f51f429019cb5bc43685e33b904653f54c
+      BASE_BRANCH: ux/ux-css-debt-016-mobile-shell-compaction
+      HEAD_BRANCH: ux/ux-css-debt-017-home-mobile-alignment-compaction
+      PROJECT_KEY: Ezyrus07_doke-web
+      PR_NUMBER: '174'
+    steps:
+      - name: Checkout exact PR174 SHA with full history
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 0
+
+      - name: Materialize and prove exact Sonar base ref
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test "$(git rev-parse HEAD^)" = "${PARENT_SHA}"
+          test "$(git rev-parse --is-shallow-repository)" = "false"
+          git fetch --no-tags origin "+refs/heads/${BASE_BRANCH}:refs/remotes/origin/${BASE_BRANCH}"
+          test "$(git rev-parse "refs/remotes/origin/${BASE_BRANCH}")" = "${PARENT_SHA}"
+          test "$(git merge-base "${TARGET_SHA}" "refs/remotes/origin/${BASE_BRANCH}")" = "${PARENT_SHA}"
+          test "$(git diff --name-only "refs/remotes/origin/${BASE_BRANCH}"..."${TARGET_SHA}")" = "assets/css/pages/home/mobile-alignment.css"
+          echo "SONAR SCOPE GUARD PASS: full history; base ref materialized; merge-base=${PARENT_SHA}; one product file"
+
+      - name: Require Sonar token
+        shell: bash
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: test -n "${SONAR_TOKEN}"
+
+      - name: Read current PR174 Quality Gate conditions before corrected scan
+        shell: bash
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          set -euo pipefail
+          curl -fsS -H "Authorization: Bearer ${SONAR_TOKEN}" \
+            "https://sonarcloud.io/api/qualitygates/project_status?projectKey=${PROJECT_KEY}&pullRequest=${PR_NUMBER}" \
+            -o /tmp/qg-before.json
+          python3 - <<'PY'
+          import json
+          d=json.load(open('/tmp/qg-before.json'))['projectStatus']
+          print('QG BEFORE status='+str(d.get('status')))
+          for c in d.get('conditions',[]):
+              print('QG BEFORE condition metric={metricKey} status={status} actual={actualValue} threshold={errorThreshold} op={comparator}'.format(**c))
+          PY
+
+      - name: Reanalyze PR174 exact SHA with correct base ref and enforce gate
+        id: sonar
+        continue-on-error: true
+        uses: SonarSource/sonarqube-scan-action@c7ee0f9df90b7aa20e8dcf9695dcfe2e7da5b4f2
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          scannerVersion: 8.0.1.6346
+          args: >-
+            -Dsonar.projectKey=Ezyrus07_doke-web
+            -Dsonar.organization=ezyrus07
+            -Dsonar.pullrequest.key=174
+            -Dsonar.pullrequest.branch=ux/ux-css-debt-017-home-mobile-alignment-compaction
+            -Dsonar.pullrequest.base=ux/ux-css-debt-016-mobile-shell-compaction
+            -Dsonar.scm.revision=f9c0d4b77abf00447c3440041e4966b7504f04bc
+            -Dsonar.qualitygate.wait=true
+            -Dsonar.qualitygate.timeout=600
+
+      - name: Read corrected PR174 Quality Gate conditions and classify
+        shell: bash
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_ACTION_OUTCOME: ${{ steps.sonar.outcome }}
+        run: |
+          set -euo pipefail
+          curl -fsS -H "Authorization: Bearer ${SONAR_TOKEN}" \
+            "https://sonarcloud.io/api/qualitygates/project_status?projectKey=${PROJECT_KEY}&pullRequest=${PR_NUMBER}" \
+            -o /tmp/qg-after.json
+          python3 - <<'PY'
+          import json,os,sys
+          d=json.load(open('/tmp/qg-after.json'))['projectStatus']
+          print('SONAR ACTION outcome='+os.environ.get('SONAR_ACTION_OUTCOME',''))
+          print('QG AFTER status='+str(d.get('status')))
+          failed=[]
+          for c in d.get('conditions',[]):
+              print('QG AFTER condition metric={metricKey} status={status} actual={actualValue} threshold={errorThreshold} op={comparator}'.format(**c))
+              if c.get('status') not in ('OK','NO_VALUE'):
+                  failed.append(c)
+          if d.get('status') != 'OK' or failed:
+              print('CORRECTED SONAR QUALITY GATE FAIL: '+json.dumps(failed,sort_keys=True))
+              sys.exit(1)
+          print('CORRECTED SONAR QUALITY GATE PASS: base ref and full-history PR scope verified')
+          PY
