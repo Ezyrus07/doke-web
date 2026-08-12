@@ -1,0 +1,105 @@
+name: Doke UX-CSS-DEBT-017 Home Mobile Alignment Reach
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-017-home-mobile-alignment-reach
+
+permissions:
+  contents: read
+
+jobs:
+  reach:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: b83318f51f429019cb5bc43685e33b904653f54c
+      TARGET_FILE: assets/css/pages/home/mobile-alignment.css
+      EXPECTED_SELECTOR: html.home-index-root body.home-index-shell section.more-services [data-more-services-grid]
+    steps:
+      - name: Checkout exact certified parent
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+
+      - name: Guard exact product tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test -f "${TARGET_FILE}"
+          git diff --check
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies and Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install --with-deps chromium
+
+      - name: Prove exact superseded rows and owner
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs');
+          const file=process.env.TARGET_FILE,text=fs.readFileSync(file,'utf8');
+          function parse(src){const lines=src.split(/\r?\n/);let depth=0,selectorParts=[],atRuleParts=[],selector=null;const declarations=[],stack=[],re=/^\s*([\w-]+)\s*:\s*(.*?)\s*;\s*$/,norm=p=>p.join(' ').replace(/\{\s*$/,'').replace(/\s+/g,' ').trim();for(let i=0;i<lines.length;i++){const line=lines[i],t=line.trim(),opens=(line.match(/\{/g)||[]).length,closes=(line.match(/\}/g)||[]).length;if(!selector){if(atRuleParts.length){if(t)atRuleParts.push(t);if(line.includes('{')){stack.push({type:'at',header:norm(atRuleParts),depthBefore:depth});atRuleParts=[];}}else if(t.startsWith('@')&&!t.includes(';')){if(line.includes('{'))stack.push({type:'at',header:norm([t]),depthBefore:depth});else atRuleParts=[t];}else if(selectorParts.length){if(t)selectorParts.push(t);if(line.includes('{')){selector=norm(selectorParts);selectorParts=[];stack.push({type:'rule',selector,depthBefore:depth});}}else if(t&&!t.startsWith('/*')&&!t.startsWith('*')&&t!=='*/'&&t!=='}'&&!t.startsWith('@')&&!line.includes(';')){selectorParts=[t];if(line.includes('{')){selector=norm(selectorParts);selectorParts=[];stack.push({type:'rule',selector,depthBefore:depth});}}}if(selector){const m=line.match(re);if(m){const raw=m[2].trim(),important=/\s*!important\s*$/i.test(raw),context=stack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');declarations.push({lineIndex:i,line:i+1,selector,property:m[1].toLowerCase(),value:raw,important,context});}}depth+=opens-closes;while(stack.length&&depth<=stack[stack.length-1].depthBefore){const p=stack.pop();if(p.type==='rule')selector=null;}}if(atRuleParts.length)throw new Error('unterminated multiline at-rule');const last=new Map(),dead=[];for(let i=declarations.length-1;i>=0;i--){const d=declarations[i],key=`${d.context} >>> ${d.selector} >>> ${d.property}`,later=last.get(key);if(later&&(!d.important||later.important))dead.push({...d,winnerLine:later.line,winnerValue:later.value,winnerImportant:later.important});if(!later||d.important||!later.important)last.set(key,d);}return{declarations,dead};}
+          const p=parse(text),selector=process.env.EXPECTED_SELECTOR;
+          if(p.declarations.length!==167||p.dead.length!==6)throw new Error(`target drift ${p.declarations.length}/${p.dead.length}`);
+          if(p.dead.some(d=>d.selector!==selector||d.context!=='@media (max-width: 560px)'||d.important||d.winnerImportant||d.value!==d.winnerValue))throw new Error('dead-row contract drift');
+          const props=[...new Set(p.dead.map(d=>d.property))].sort();
+          if(props.length!==6)throw new Error(`property count drift ${props.length}`);
+          fs.writeFileSync('/tmp/properties.json',JSON.stringify(props));
+          console.log('HOME MOBILE ALIGNMENT DEAD ROWS PASS');
+          console.log(JSON.stringify(p.dead,null,2));
+          console.log(`selector=${selector}`);
+          console.log(`properties=${props.join(',')}`);
+          NODE
+          grep -nF '@import' assets/css/pages/home-runtime-feed.css | grep -F 'home/mobile-alignment.css'
+
+      - name: Require canonical static selector ownership
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -n 'home-index-root' index.html
+          grep -n 'home-index-shell' index.html
+          grep -n 'data-more-services-grid' index.html
+          grep -RIn --include='*.html' --include='*.js' 'data-more-services-grid' . --exclude-dir=node_modules --exclude-dir=.git | tee /tmp/grid-refs.log
+          test -s /tmp/grid-refs.log
+
+      - name: Prove runtime reach and media boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > /tmp/reach.js <<'NODE'
+          const fs=require('fs'),cp=require('child_process'),{chromium}=require(process.cwd()+'/node_modules/playwright');
+          const props=JSON.parse(fs.readFileSync('/tmp/properties.json','utf8')),selector=process.env.EXPECTED_SELECTOR,vps=[['560x900',560,900,true],['390x844',390,844,true],['561x900',561,900,false],['608x926',608,926,false],['760x900',760,900,false]],server=cp.spawn(process.execPath,['scripts/serve-static-site.js','--host=127.0.0.1','--port=5500'],{stdio:'ignore',env:{...process.env,DOKE_E2E_DISABLE_REMOTE_SERVICES:'1'}}),sleep=ms=>new Promise(r=>setTimeout(r,ms));
+          async function main(){await sleep(500);const browser=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});const out=[];for(const [name,width,height,media] of vps){const ctx=await browser.newContext({viewport:{width,height},reducedMotion:'reduce'}),page=await ctx.newPage();await page.route('**/*',route=>{const u=new URL(route.request().url()),local=u.origin==='http://127.0.0.1:5500';if(local&&u.pathname.endsWith('.js'))return route.abort();if(local||u.protocol==='data:'||u.protocol==='blob:')return route.continue();return route.abort();});await page.goto('http://127.0.0.1:5500/index.html',{waitUntil:'domcontentloaded',timeout:15000});await page.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important;caret-color:transparent!important}.doke-document-preloader{display:none!important}html,body{visibility:visible!important;opacity:1!important}'});const snap=await page.evaluate(({selector,props,media})=>{const el=document.querySelector(selector);if(!el)throw new Error('canonical target selector absent');const r=el.getBoundingClientRect(),cs=getComputedStyle(el),style={};for(const p of props)style[p]=String(cs.getPropertyValue(p)||'').replace(/\s+/g,' ').trim();return{mediaMatch:matchMedia('(max-width: 560px)').matches,expectedMedia:media,rect:[+r.x.toFixed(3),+r.y.toFixed(3),+r.width.toFixed(3),+r.height.toFixed(3)],style};},{selector,props,media});if(snap.mediaMatch!==media)throw new Error(`media mismatch ${name}`);out.push({viewport:name,...snap});await ctx.close();}await browser.close();server.kill('SIGTERM');console.log('CANONICAL REACH PASS: index.html target present at all 5 boundary viewports; max560 context exercised at 560/390 and inactive at 561/608/760');console.log(JSON.stringify(out,null,2));}
+          main().catch(e=>{server.kill('SIGTERM');console.error(e);process.exit(1)});
+          NODE
+          node /tmp/reach.js
+
+      - name: Preserve parent governance baselines
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:shared-app-header-contract
+          npm run audit:mobile-shell-location-contract
+          npm run audit:responsive-boundaries
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/conflicts.log
+          grep -q 'Conflicting class/property pairs: 339' /tmp/conflicts.log
+          npm run audit:domain-completion-matrix | tee /tmp/domain.log
+          grep -q 'Domains: 23' /tmp/domain.log
+          grep -q 'Critical flows: 15' /tmp/domain.log
+          grep -q 'Average maturity: 2.91/6' /tmp/domain.log
+          grep -q 'Critical blockers: 12' /tmp/domain.log
+          git reset --hard "${TARGET_SHA}"
+          git clean -fd
+          git diff --exit-code
