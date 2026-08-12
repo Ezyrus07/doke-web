@@ -1,0 +1,185 @@
+name: Doke UX-CSS-DEBT-006 Carteira Runtime Parity
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-006-carteira-runtime-parity
+
+permissions:
+  contents: read
+
+jobs:
+  parity:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      TARGET_SHA: e3453eeb1f2123377eefac0a8213f7f04c519d44
+      TARGET_FILE: assets/css/pages/carteira.css
+      EXPECTED_PARENT_SHA256: c81f0359bf4d32dae5ea581f4270f93cc66dbbeb46db178c2d6b907125ca4459
+      EXPECTED_CANDIDATE_SHA256: a709b432ba2587eb1d164a4d7ae57161d5c4ab39d42b3f9dca04f11d9b5ee4fa
+    steps:
+      - name: Checkout exact certified parent
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 0
+
+      - name: Guard exact parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test -f "${TARGET_FILE}"
+          git diff --exit-code
+          test "$(sha256sum "${TARGET_FILE}" | awk '{print $1}')" = "${EXPECTED_PARENT_SHA256}"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies and Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install --with-deps chromium
+
+      - name: Rebuild exact deterministic candidate and selector set
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp "${TARGET_FILE}" /tmp/carteira-parent.css
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');
+          const file=process.env.TARGET_FILE,parent=fs.readFileSync(file,'utf8'),lines=parent.split(/\r?\n/);
+          let depth=0,selectorParts=[],selector=null;const declarations=[],stack=[];
+          const re=/^\s*([\w-]+)\s*:\s*(.*?)\s*(!important)?\s*;\s*$/;
+          for(let i=0;i<lines.length;i++){
+            const line=lines[i],t=line.trim(),opens=(line.match(/\{/g)||[]).length,closes=(line.match(/\}/g)||[]).length;
+            if(!selector&&t&&!t.startsWith('/*')&&!t.startsWith('*')&&t!=='*/'&&t!=='}'){
+              if(t.startsWith('@')&&line.includes('{')) stack.push({type:'at',header:t.replace(/\{\s*$/,'').replace(/\s+/g,' ').trim(),depthBefore:depth});
+              else if(!t.startsWith('@')&&!line.includes(';')){selectorParts.push(t.replace(/\{\s*$/,'').trim());if(line.includes('{')){selector=selectorParts.join(' ').replace(/\s+/g,' ').trim();selectorParts=[];stack.push({type:'rule',selector,depthBefore:depth});}}
+            }
+            if(selector){const m=line.match(re);if(m){const context=stack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');declarations.push({lineIndex:i,selector,property:m[1],important:Boolean(m[3]),context});}}
+            depth+=opens-closes;while(stack.length&&depth<=stack[stack.length-1].depthBefore){const p=stack.pop();if(p.type==='rule')selector=null;}
+          }
+          const last=new Map(),dead=[];
+          for(let i=declarations.length-1;i>=0;i--){const d=declarations[i],key=`${d.context} >>> ${d.selector} >>> ${d.property}`,later=last.get(key);if(later&&(!d.important||later.important))dead.push(d);if(!later||d.important||!later.important)last.set(key,d);}
+          const deadSet=new Set(dead.map(d=>d.lineIndex)),candidate=lines.filter((_l,i)=>!deadSet.has(i)).join('\n'),selectors=[...new Set(dead.map(d=>d.selector))].sort();
+          const sha=v=>crypto.createHash('sha256').update(v).digest('hex');
+          if(sha(parent)!==process.env.EXPECTED_PARENT_SHA256)throw new Error(`parent hash drift ${sha(parent)}`);
+          if(sha(candidate)!==process.env.EXPECTED_CANDIDATE_SHA256)throw new Error(`candidate hash drift ${sha(candidate)}`);
+          if(declarations.length!==2331||dead.length!==79||selectors.length!==36)throw new Error(`metric drift declarations=${declarations.length} dead=${dead.length} selectors=${selectors.length}`);
+          if(Buffer.byteLength(parent)!==136212||Buffer.byteLength(candidate)!==134054)throw new Error('byte drift');
+          if((parent.match(/!important/g)||[]).length||(candidate.match(/!important/g)||[]).length)throw new Error('unexpected !important');
+          fs.writeFileSync('/tmp/carteira-candidate.css',candidate);fs.writeFileSync('/tmp/carteira-selectors.json',JSON.stringify(selectors,null,2));
+          console.log('Exact candidate reconstruction: PASS');
+          console.log('- declarations: 2331 -> 2252');
+          console.log('- deleted: 79');
+          console.log('- affected selectors: 36');
+          console.log('- bytes: 136212 -> 134054');
+          NODE
+
+      - name: Write Carteira CSS-only runtime harness
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > /tmp/carteira-capture.js <<'NODE'
+          const fs=require('fs'),cp=require('child_process');
+          const {chromium}=require(process.cwd()+'/node_modules/playwright');
+          const out=process.argv[2],selectors=JSON.parse(fs.readFileSync('/tmp/carteira-selectors.json','utf8'));
+          const vps=[['1366x768',1366,768],['1280x802',1280,802],['820x1180',820,1180],['608x926',608,926],['390x844',390,844]];
+          const server=cp.spawn(process.execPath,['scripts/serve-static-site.js','--host=127.0.0.1','--port=5500'],{stdio:'ignore',env:{...process.env,DOKE_E2E_DISABLE_REMOTE_SERVICES:'1'}});
+          const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+          async function main(){
+            await sleep(500);const browser=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});const result={},matched=new Set();
+            for(const [name,width,height] of vps){
+              const ctx=await browser.newContext({viewport:{width,height},reducedMotion:'reduce'}),page=await ctx.newPage();
+              await page.route('**/*',route=>{const u=new URL(route.request().url()),local=u.origin==='http://127.0.0.1:5500';if(local&&u.pathname.endsWith('.js'))return route.abort();if(local||u.protocol==='data:'||u.protocol==='blob:')return route.continue();return route.abort();});
+              await page.goto('http://127.0.0.1:5500/carteira.html',{waitUntil:'domcontentloaded'});
+              await page.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important;caret-color:transparent!important}.doke-document-preloader{display:none!important}html,body{visibility:visible!important;opacity:1!important}'});
+              await page.evaluate(()=>{
+                document.documentElement.removeAttribute('data-auth-guard');document.documentElement.classList.remove('doke-mobile-shell-pending');
+                document.body.removeAttribute('aria-busy');
+                for(const e of document.querySelectorAll('[hidden]')) e.hidden=false;
+                for(const e of document.querySelectorAll('[aria-hidden="true"]')) e.setAttribute('aria-hidden','false');
+                const txList=document.querySelector('[data-wallet-transaction-list]');
+                if(txList&&!txList.querySelector('.wallet-transaction')){
+                  const tx=document.createElement('article');tx.className='wallet-transaction';tx.innerHTML='<span class="wallet-transaction__icon">$</span><div class="wallet-transaction__content"><strong>Pagamento</strong><span>Pedido sintético</span></div><div class="wallet-transaction__amount"><strong>R$ 120,00</strong><span>Concluído</span></div>';txList.appendChild(tx);
+                }
+                const recList=document.querySelector('.wallet-receivables-list')||document.querySelector('[data-wallet-receivables-panel]');
+                if(recList&&!recList.querySelector('.wallet-receivable-row')){
+                  const row=document.createElement('article');row.className='wallet-receivable-row';row.innerHTML='<div class="wallet-receivable-row__date"><strong>12</strong><span>AGO</span></div><div class="wallet-receivable-row__content"><strong>Serviço sintético</strong><span>Pedido de teste</span></div><div class="wallet-receivable-row__amount"><strong>R$ 120,00</strong><span>A receber</span></div>';recList.appendChild(row);
+                }
+                if(!document.querySelector('.wallet-empty-state--receivables')){
+                  const empty=document.createElement('article');empty.className='wallet-empty-state wallet-empty-state--receivables';empty.innerHTML='<strong>Nenhum recebível</strong><p>Fixture</p>';recList&&recList.appendChild(empty);
+                }
+              });
+              await page.evaluate(()=>document.fonts&&document.fonts.ready);await sleep(60);
+              result[name]=await page.evaluate(selectors=>{
+                const clean=v=>String(v??'').replace(/\s+/g,' ').trim();
+                const capture=el=>{const cs=getComputedStyle(el),r=el.getBoundingClientRect(),style={};for(let i=0;i<cs.length;i++){const p=cs[i];style[p]=clean(cs.getPropertyValue(p));}return{tag:el.tagName,id:el.id||'',className:typeof el.className==='string'?clean(el.className):'',rect:[+r.x.toFixed(3),+r.y.toFixed(3),+r.width.toFixed(3),+r.height.toFixed(3)],style};};
+                const samples={};for(const s of selectors){const nodes=[...document.querySelectorAll(s)];if(!nodes.length)throw new Error(`missing selector ${s}`);samples[s]=nodes.map(capture);}return samples;
+              },selectors);
+              for(const s of selectors)matched.add(s);await ctx.close();
+            }
+            await browser.close();if(matched.size!==selectors.length)throw new Error(`coverage ${matched.size}/${selectors.length}`);fs.writeFileSync(out,JSON.stringify(result,null,2));console.log(`affected-selector coverage: ${matched.size}/${selectors.length}`);
+          }
+          main().finally(()=>server.kill('SIGTERM')).catch(e=>{console.error(e);process.exit(1);});
+          NODE
+
+      - name: Capture parent runtime and responsive baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp /tmp/carteira-parent.css "${TARGET_FILE}"
+          node /tmp/carteira-capture.js /tmp/carteira-parent-runtime.json
+          node scripts/generate-responsive-index-baseline.js
+          cp reports/responsive-index-baseline.json /tmp/carteira-parent-responsive.json
+
+      - name: Apply candidate and preserve responsive contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp /tmp/carteira-candidate.css "${TARGET_FILE}"
+          cp /tmp/carteira-parent-responsive.json reports/responsive-index-baseline.json
+          node scripts/test-responsive-contract.js | tee /tmp/responsive.log
+          grep -q 'Checks: 893' /tmp/responsive.log
+          grep -q 'Failures: 0' /tmp/responsive.log
+          grep -q 'Skips: 277' /tmp/responsive.log
+          git diff --check
+
+      - name: Require exact affected-selector runtime parity
+        shell: bash
+        run: |
+          set -euo pipefail
+          node /tmp/carteira-capture.js /tmp/carteira-candidate-runtime.json
+          node <<'NODE'
+          const fs=require('fs'),a=JSON.parse(fs.readFileSync('/tmp/carteira-parent-runtime.json')),b=JSON.parse(fs.readFileSync('/tmp/carteira-candidate-runtime.json')),diffs=[];
+          function walk(x,y,p){if(typeof x!==typeof y||x===null||y===null||typeof x!=='object'){if(x!==y)diffs.push({path:p,parent:x,candidate:y});return;}if(Array.isArray(x)!==Array.isArray(y)){diffs.push({path:p,parent:x,candidate:y});return;}for(const k of [...new Set([...Object.keys(x),...Object.keys(y)])].sort())walk(x[k],y[k],p?`${p}.${k}`:k);}
+          walk(a,b,'');if(diffs.length){console.error(JSON.stringify(diffs.slice(0,50),null,2));throw new Error(`runtime differences ${diffs.length}`);}console.log('Affected-selector computed-style + rect parity: PASS (0 diffs)');
+          NODE
+
+      - name: Validate structural contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/css-conflicts.log
+          npm run audit:shared-app-header-contract
+          npm run audit:responsive-boundaries
+          npm run audit:active-legacy-structures | tee /tmp/legacy.log
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          npm run audit:duplicate-assets
+          git diff --check
+          echo '--- final metrics ---'
+          grep -E 'CSS files scanned|Definitions|Conflicting class/property pairs' /tmp/css-conflicts.log || true
+          grep -Ei 'active legacy/remediation css|active legacy/remediation js|high risk active css' /tmp/legacy.log || true
+
+      - name: Restore exact certified parent
+        if: always()
+        shell: bash
+        run: |
+          git reset --hard "${TARGET_SHA}"
