@@ -1,0 +1,189 @@
+name: Doke UX-CSS-DEBT-015 PR170 Exact Certification R2
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-015-certify-pr170-r2
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: d7dcc2c0264a77d8d8a326210c3074c0eb4057df
+      PARENT_SHA: a5dcbc7caaaea14729eb3576bb1e0c2173950594
+      TARGET_FILE: assets/css/layout/header.css
+      PARENT_SHA256: 4f38ef71bd807179828e83042210b1c2543ad3ad0c1429c09851fdc706c5ee0b
+      TARGET_SHA256: 838e4421e89a8f191c99c7a6bed2911dee92a38e95a5290cbba5597a507d9ebb
+    steps:
+      - name: Checkout exact permanent SHA
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 0
+
+      - name: Guard exact one-commit product-only tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test "$(git rev-parse HEAD^)" = "${PARENT_SHA}"
+          test "$(git rev-list --count "${PARENT_SHA}"..HEAD)" = "1"
+          test "$(git diff --name-only "${PARENT_SHA}"...HEAD)" = "${TARGET_FILE}"
+          test "$(git diff --numstat "${PARENT_SHA}"...HEAD -- "${TARGET_FILE}" | awk '{print $1}')" = "0"
+          test "$(git diff --numstat "${PARENT_SHA}"...HEAD -- "${TARGET_FILE}" | awk '{print $2}')" = "20"
+          test "$(sha256sum "${TARGET_FILE}" | awk '{print $1}')" = "${TARGET_SHA256}"
+          test -z "$(git diff --name-only "${PARENT_SHA}"...HEAD -- package.json package-lock.json)"
+          git diff --check "${PARENT_SHA}"...HEAD
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies and Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install --with-deps chromium
+
+      - name: Record inherited npm advisory snapshot without mutating lockfile
+        shell: bash
+        run: |
+          set -uo pipefail
+          npm audit --json > /tmp/npm-audit-pr170.json 2>/tmp/npm-audit-pr170.err
+          code=$?
+          echo "npm audit exit=${code} (non-blocking for deletion-only CSS; package files are unchanged from parent)"
+          node - <<'NODE'
+          const fs=require('fs');
+          try{const a=JSON.parse(fs.readFileSync('/tmp/npm-audit-pr170.json','utf8'));console.log('npm audit metadata='+JSON.stringify(a.metadata?.vulnerabilities||{}));}catch(e){console.log('npm audit snapshot unavailable: '+e.message)}
+          NODE
+          exit 0
+
+      - name: Prove permanent equals deterministic deletion-only candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          git show "${PARENT_SHA}:${TARGET_FILE}" > /tmp/header-parent.css
+          cp "${TARGET_FILE}" /tmp/header-permanent.css
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');
+          function parse(src){const lines=src.split(/\r?\n/);let depth=0,selectorParts=[],atRuleParts=[],selector=null;const declarations=[],stack=[];const declRe=/^\s*([\w-]+)\s*:\s*(.*?)\s*;\s*$/,norm=parts=>parts.join(' ').replace(/\{\s*$/,'').replace(/\s+/g,' ').trim();for(let i=0;i<lines.length;i++){const line=lines[i],t=line.trim(),opens=(line.match(/\{/g)||[]).length,closes=(line.match(/\}/g)||[]).length;if(!selector){if(atRuleParts.length){if(t)atRuleParts.push(t);if(line.includes('{')){stack.push({type:'at',header:norm(atRuleParts),depthBefore:depth});atRuleParts=[];}}else if(t.startsWith('@')&&!t.includes(';')){if(line.includes('{'))stack.push({type:'at',header:norm([t]),depthBefore:depth});else atRuleParts=[t];}else if(selectorParts.length){if(t)selectorParts.push(t);if(line.includes('{')){selector=norm(selectorParts);selectorParts=[];stack.push({type:'rule',selector,depthBefore:depth});}}else if(t&&!t.startsWith('/*')&&!t.startsWith('*')&&t!=='*/'&&t!=='}'&&!t.startsWith('@')&&!line.includes(';')){selectorParts=[t];if(line.includes('{')){selector=norm(selectorParts);selectorParts=[];stack.push({type:'rule',selector,depthBefore:depth});}}}if(selector){const m=line.match(declRe);if(m){const raw=m[2].trim(),important=/\s*!important\s*$/i.test(raw),context=stack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');declarations.push({lineIndex:i,line:i+1,selector,property:m[1].toLowerCase(),value:raw,important,context});}}depth+=opens-closes;while(stack.length&&depth<=stack[stack.length-1].depthBefore){const p=stack.pop();if(p.type==='rule')selector=null;}}if(atRuleParts.length)throw new Error('unterminated multiline at-rule');const last=new Map(),dead=[];for(let i=declarations.length-1;i>=0;i--){const d=declarations[i],key=`${d.context} >>> ${d.selector} >>> ${d.property}`,later=last.get(key);if(later&&(!d.important||later.important))dead.push({...d,winnerLine:later.line,winnerValue:later.value,winnerImportant:later.important});if(!later||d.important||!later.important)last.set(key,d);}return{lines,declarations,dead,selectors:[...new Set(dead.map(d=>d.selector))].sort(),contexts:[...new Set(dead.map(d=>d.context))].sort()};}
+          const expected=['body[data-page].has-global-header','body[data-page].has-global-header .app-header .home-side-meta__profile-caret-button','body[data-page].has-global-header .app-header .home-side-meta__profile-wrap','body[data-page].has-global-header .app-header :is(.home-side-meta__profile, .app-header__profile)','body[data-page].has-global-header > .app-shell > .page > .app-header','body[data-page].has-global-header > .app-shell > .page > .app-header > .app-header__inner'].sort();
+          const parent=fs.readFileSync('/tmp/header-parent.css','utf8'),permanent=fs.readFileSync('/tmp/header-permanent.css','utf8'),p=parse(parent),t=parse(permanent),sha=v=>crypto.createHash('sha256').update(v).digest('hex');
+          if(p.declarations.length!==855||p.dead.length!==20||JSON.stringify(p.selectors)!==JSON.stringify(expected)||JSON.stringify(p.contexts)!==JSON.stringify(['','@media (max-width: 760px)']))throw new Error('parent parser contract drift');
+          if(t.declarations.length!==835||t.dead.length!==0)throw new Error('permanent parser contract drift');
+          const deadSet=new Set(p.dead.map(d=>d.lineIndex)),rebuilt=p.lines.filter((_l,i)=>!deadSet.has(i)).join('\n');
+          if(rebuilt!==permanent)throw new Error('permanent differs from deterministic candidate');
+          if(sha(parent)!==process.env.PARENT_SHA256||sha(permanent)!==process.env.TARGET_SHA256)throw new Error('hash drift');
+          if(Buffer.byteLength(parent)!==50025||Buffer.byteLength(permanent)!==49281)throw new Error('byte drift');
+          if((parent.match(/!important/gi)||[]).length||(permanent.match(/!important/gi)||[]).length)throw new Error('important drift');
+          console.log('EXACT DELETION-ONLY PROOF PASS: 855 -> 835; -20; 6 selectors; global+max760; 50025 -> 49281; !important 0');
+          NODE
+
+      - name: Write 26-page shared-header parity harness
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > /tmp/header-pr170-capture.js <<'NODE'
+          const fs=require('fs'),cp=require('child_process'),{chromium}=require(process.cwd()+'/node_modules/playwright');
+          const out=process.argv[2],pages=['admin-anuncio-revisao.html','admin-pedidos-operacao.html','admin-verificacao.html','admin.html','ajuda.html','anunciar-servico.html','avaliacao-profissional.html','carteira.html','comunidade-interna.html','comunidade.html','configuracoes.html','detalhe-anuncio.html','index.html','mensagens.html','meu-perfil.html','notificacoes.html','novidades.html','orcamento.html','pagamento-profissional.html','pedidos.html','perfil-cliente.html','perfil-profissional.html','perfil.html','resultados.html','tornar-profissional.html','verificacao-profissional.html'];
+          const vps=[['1600x1000',1600,1000],['1366x768',1366,768],['1280x802',1280,802],['1024x900',1024,900],['820x1180',820,1180],['608x926',608,926],['390x844',390,844]];
+          const selectors=['body[data-page].has-global-header','body[data-page].has-global-header .app-header .home-side-meta__profile-wrap','body[data-page].has-global-header .app-header :is(.home-side-meta__profile, .app-header__profile)','body[data-page].has-global-header > .app-shell > .page > .app-header','body[data-page].has-global-header > .app-shell > .page > .app-header > .app-header__inner'];
+          const caretSelector='body[data-page].has-global-header .app-header .home-side-meta__profile-caret-button',props=['min-block-size','block-size','max-block-size','padding-block-start','padding-block-end','align-items','box-sizing','display','visibility','--doke-header-height','--doke-header-control-size','--doke-header-profile-height','--doke-header-avatar-size'];
+          const server=cp.spawn(process.execPath,['scripts/serve-static-site.js','--host=127.0.0.1','--port=5500'],{stdio:'ignore',env:{...process.env,DOKE_E2E_DISABLE_REMOTE_SERVICES:'1'}}),sleep=ms=>new Promise(r=>setTimeout(r,ms));
+          async function main(){await sleep(500);const browser=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});const result={};let mobileHits=0,fixtureHits=0;for(const html of pages)for(const [name,width,height] of vps){const ctx=await browser.newContext({viewport:{width,height},reducedMotion:'reduce'}),page=await ctx.newPage();await page.route('**/*',route=>{const u=new URL(route.request().url()),local=u.origin==='http://127.0.0.1:5500';if(local&&u.pathname.endsWith('.js'))return route.abort();if(local||u.protocol==='data:'||u.protocol==='blob:')return route.continue();return route.abort();});await page.goto(`http://127.0.0.1:5500/${html}`,{waitUntil:'domcontentloaded',timeout:15000});await page.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important;caret-color:transparent!important}.doke-document-preloader{display:none!important}html,body{visibility:visible!important;opacity:1!important}'});await page.evaluate(()=>{document.documentElement.dataset.authSurfaceReady='true';document.documentElement.removeAttribute('data-auth-guard');document.body.removeAttribute('data-auth-guard');});await page.evaluate(()=>document.fonts&&document.fonts.ready);await sleep(30);const canonical=await page.evaluate(({selectors,props})=>{const clean=v=>String(v??'').replace(/\s+/g,' ').trim(),capture=el=>{const cs=getComputedStyle(el),r=el.getBoundingClientRect(),style={};for(const p of props)style[p]=clean(cs.getPropertyValue(p));return{tag:el.tagName,id:el.id||'',className:typeof el.className==='string'?clean(el.className):'',rect:[+r.x.toFixed(3),+r.y.toFixed(3),+r.width.toFixed(3),+r.height.toFixed(3)],style};};const counts=Object.fromEntries(selectors.map(s=>[s,document.querySelectorAll(s).length]));const samples=Object.fromEntries(selectors.map(s=>[s,[...document.querySelectorAll(s)].map(capture)]));return{counts,samples};},{selectors,props});for(const s of selectors)if(canonical.counts[s]<1)throw new Error(`${html}/${name}: canonical selector absent ${s}`);if(await page.locator(caretSelector).count())throw new Error(`${html}/${name}: canonical caret unexpectedly present`);const fixture=await page.evaluate(({caretSelector,props})=>{const wrap=document.querySelector('.app-header .home-side-meta__profile-wrap');if(!wrap)throw new Error('profile wrap absent');const b=document.createElement('button');b.type='button';b.className='home-side-meta__profile-caret-button';b.textContent='⌄';wrap.appendChild(b);const el=document.querySelector(caretSelector),cs=getComputedStyle(el),r=el.getBoundingClientRect(),style={};for(const p of props)style[p]=String(cs.getPropertyValue(p)||'').replace(/\s+/g,' ').trim();const snap={tag:el.tagName,className:el.className,rect:[+r.x.toFixed(3),+r.y.toFixed(3),+r.width.toFixed(3),+r.height.toFixed(3)],style};b.remove();return snap;},{caretSelector,props});fixtureHits++;if(width<=760){if(!(await page.evaluate(()=>matchMedia('(max-width: 760px)').matches)))throw new Error('mobile context inactive');mobileHits++;}result[`${html}:${name}`]={canonical,caretFixture:fixture};console.log(`${html} ${name}: 5 canonical + caret fixture`);await ctx.close();}await browser.close();if(mobileHits!==52||fixtureHits!==182)throw new Error(`coverage drift mobile=${mobileHits}, fixture=${fixtureHits}`);fs.writeFileSync(out,JSON.stringify(result));console.log('SHARED HEADER COVERAGE PASS: 182 captures; mobile=52; caret fixtures=182');}
+          main().finally(()=>server.kill('SIGTERM')).catch(e=>{console.error(e);process.exit(1)});
+          NODE
+
+      - name: Capture parent runtime, baseline and conflicts
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp /tmp/header-parent.css "${TARGET_FILE}"
+          node /tmp/header-pr170-capture.js /tmp/header-parent-runtime.json
+          node scripts/generate-responsive-index-baseline.js
+          cp reports/responsive-index-baseline.json /tmp/header-parent-responsive.json
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/header-parent-conflicts.log
+          grep -q 'Definitions: 14935' /tmp/header-parent-conflicts.log
+          grep -q 'Conflicting class/property pairs: 339' /tmp/header-parent-conflicts.log
+
+      - name: Restore permanent and preserve responsive contract without rebaseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp /tmp/header-permanent.css "${TARGET_FILE}"
+          cp /tmp/header-parent-responsive.json reports/responsive-index-baseline.json
+          node scripts/test-responsive-contract.js | tee /tmp/header-responsive.log
+          grep -q 'Checks: 893' /tmp/header-responsive.log
+          grep -q 'Failures: 0' /tmp/header-responsive.log
+          grep -q 'Skips: 277' /tmp/header-responsive.log
+
+      - name: Require exact parent-to-permanent 26-page parity
+        shell: bash
+        run: |
+          set -euo pipefail
+          node /tmp/header-pr170-capture.js /tmp/header-permanent-runtime.json
+          node <<'NODE'
+          const fs=require('fs'),a=JSON.parse(fs.readFileSync('/tmp/header-parent-runtime.json')),b=JSON.parse(fs.readFileSync('/tmp/header-permanent-runtime.json')),diffs=[];function walk(x,y,p){if(typeof x!==typeof y||x===null||y===null||typeof x!=='object'){if(x!==y)diffs.push({path:p,parent:x,permanent:y});return;}if(Array.isArray(x)!==Array.isArray(y)){diffs.push({path:p,parent:x,permanent:y});return;}for(const k of [...new Set([...Object.keys(x),...Object.keys(y)])].sort())walk(x[k],y[k],p?`${p}.${k}`:k);}walk(a,b,'');if(diffs.length){console.error(JSON.stringify(diffs.slice(0,100),null,2));throw new Error(`runtime differences ${diffs.length}`);}console.log('26-page computed-style + bounding-rect parity PASS: 0 diffs');
+          NODE
+
+      - name: Validate permanent structural and governance contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/header-permanent-conflicts.log
+          grep -q 'Definitions: 14910' /tmp/header-permanent-conflicts.log
+          grep -q 'Conflicting class/property pairs: 339' /tmp/header-permanent-conflicts.log
+          npm run audit:shared-app-header-contract
+          npm run audit:responsive-boundaries
+          npm run audit:active-legacy-structures | tee /tmp/header-legacy.log
+          grep -q 'css files: 533 (55 direct, 401 active/imported)' /tmp/header-legacy.log
+          grep -q 'active legacy/remediation css: 0' /tmp/header-legacy.log
+          grep -q 'active legacy/remediation js: 0' /tmp/header-legacy.log
+          grep -q 'high risk active css: 37' /tmp/header-legacy.log
+          npm run audit:domain-completion-matrix | tee /tmp/header-domain.log
+          grep -q 'Domains: 23' /tmp/header-domain.log
+          grep -q 'Critical flows: 15' /tmp/header-domain.log
+          grep -q 'Average maturity: 2.91/6' /tmp/header-domain.log
+          grep -q 'Critical blockers: 12' /tmp/header-domain.log
+          npm run audit:agent-governance
+          npm run audit:duplicate-assets | tee /tmp/header-duplicates.log
+          grep -q 'Duplicate groups: 0' /tmp/header-duplicates.log
+          grep -q 'Duplicated files: 0' /tmp/header-duplicates.log
+
+      - name: Restore workspace to exact permanent SHA before Sonar
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "${TARGET_SHA}"
+          git clean -fd
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test "$(sha256sum "${TARGET_FILE}" | awk '{print $1}')" = "${TARGET_SHA256}"
+          git diff --exit-code
+
+      - name: Require SonarQube Cloud credential
+        shell: bash
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: test -n "${SONAR_TOKEN}"
+
+      - name: Analyze PR 170 exact SHA and enforce SonarQube Cloud Quality Gate
+        uses: SonarSource/sonarqube-scan-action@c7ee0f9df90b7aa20e8dcf9695dcfe2e7da5b4f2
+        with:
+          args: >-
+            -Dsonar.projectKey=Ezyrus07_doke-web
+            -Dsonar.organization=ezyrus07
+            -Dsonar.pullrequest.key=170
+            -Dsonar.pullrequest.branch=ux/ux-css-debt-015-shared-header-compaction
+            -Dsonar.pullrequest.base=ux/ux-css-debt-014-profile-feed-gap-compaction
+            -Dsonar.scm.revision=d7dcc2c0264a77d8d8a326210c3074c0eb4057df
+            -Dsonar.qualitygate.wait=true
+            -Dsonar.qualitygate.timeout=600
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
