@@ -56,8 +56,8 @@ jobs:
         shell: bash
         run: |
           set -uo pipefail
-          npm audit --json > /tmp/npm-audit-pr170.json 2>/tmp/npm-audit-pr170.err
-          code=$?
+          code=0
+          npm audit --json > /tmp/npm-audit-pr170.json 2>/tmp/npm-audit-pr170.err || code=$?
           echo "npm audit exit=${code} (non-blocking for deletion-only CSS; package files are unchanged from parent)"
           node - <<'NODE'
           const fs=require('fs');
