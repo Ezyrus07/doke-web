@@ -1,0 +1,91 @@
+name: Doke UX-CSS-DEBT-014 Promote Permanent
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-014-promote-permanent
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-24.04
+    env:
+      PARENT_SHA: 6fee4223f75b86833e0d6540315d6185d2e74f2a
+      TARGET_BRANCH: ux/ux-css-debt-014-profile-feed-gap-compaction
+      TARGET_FILE: assets/css/pages/profile-page.css
+      EXPECTED_PARENT_SHA256: dd6377b618e7a0303e80da20ec5851aa60a2d81e2f22d86808e26315bcc859ca
+      EXPECTED_CANDIDATE_SHA256: a331d4814bb0462c19cd2e88400f0d2806b84130bf891f936ba057c1ceff2b68
+    steps:
+      - name: Checkout permanent target branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_BRANCH }}
+          fetch-depth: 0
+
+      - name: Guard target remains exact certified parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${PARENT_SHA}"
+          test "$(sha256sum "${TARGET_FILE}" | awk '{print $1}')" = "${EXPECTED_PARENT_SHA256}"
+          git diff --check
+
+      - name: Build exact deterministic candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');
+          const file=process.env.TARGET_FILE,text=fs.readFileSync(file,'utf8'),lines=text.split(/\r?\n/);
+          let depth=0,selectorParts=[],atRuleParts=[],selector=null;const declarations=[],stack=[];
+          const declRe=/^\s*([\w-]+)\s*:\s*(.*?)\s*;\s*$/,norm=parts=>parts.join(' ').replace(/\{\s*$/,'').replace(/\s+/g,' ').trim();
+          for(let i=0;i<lines.length;i++){
+            const line=lines[i],t=line.trim(),opens=(line.match(/\{/g)||[]).length,closes=(line.match(/\}/g)||[]).length;
+            if(!selector){
+              if(atRuleParts.length){if(t)atRuleParts.push(t);if(line.includes('{')){stack.push({type:'at',header:norm(atRuleParts),depthBefore:depth});atRuleParts=[];}}
+              else if(t.startsWith('@')&&!t.includes(';')){if(line.includes('{'))stack.push({type:'at',header:norm([t]),depthBefore:depth});else atRuleParts=[t];}
+              else if(selectorParts.length){if(t)selectorParts.push(t);if(line.includes('{')){selector=norm(selectorParts);selectorParts=[];stack.push({type:'rule',selector,depthBefore:depth});}}
+              else if(t&&!t.startsWith('/*')&&!t.startsWith('*')&&t!=='*/'&&t!=='}'&&!t.startsWith('@')&&!line.includes(';')){selectorParts=[t];if(line.includes('{')){selector=norm(selectorParts);selectorParts=[];stack.push({type:'rule',selector,depthBefore:depth});}}
+            }
+            if(selector){const m=line.match(declRe);if(m){const raw=m[2].trim(),important=/\s*!important\s*$/i.test(raw),context=stack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');declarations.push({lineIndex:i,line:i+1,selector,property:m[1].toLowerCase(),value:raw,important,context});}}
+            depth+=opens-closes;while(stack.length&&depth<=stack[stack.length-1].depthBefore){const p=stack.pop();if(p.type==='rule')selector=null;}
+          }
+          if(atRuleParts.length)throw new Error('unterminated multiline at-rule');
+          const last=new Map(),dead=[];for(let i=declarations.length-1;i>=0;i--){const d=declarations[i],key=`${d.context} >>> ${d.selector} >>> ${d.property}`,later=last.get(key);if(later&&(!d.important||later.important))dead.push({...d,winnerLine:later.line,winnerValue:later.value,winnerImportant:later.important});if(!later||d.important||!later.important)last.set(key,d);}
+          const selectors=[...new Set(dead.map(d=>d.selector))].sort(),contexts=[...new Set(dead.map(d=>d.context))].sort(),deadSet=new Set(dead.map(d=>d.lineIndex));
+          if(declarations.length!==747||dead.length!==1||selectors.length!==1)throw new Error(`metric drift ${declarations.length}/${dead.length}/${selectors.length}`);
+          if(JSON.stringify(selectors)!==JSON.stringify(['body.profile-page-shell[data-profile-contract="clean-v1"] .profile-feed']))throw new Error(`selector drift ${JSON.stringify(selectors)}`);
+          if(JSON.stringify(contexts)!==JSON.stringify(['@media (max-width: 760px)']))throw new Error(`context drift ${JSON.stringify(contexts)}`);
+          const d=dead[0];if(d.property!=='gap'||d.value!=='28px'||d.winnerValue!=='20px'||d.important||d.winnerImportant)throw new Error(`dead row drift ${JSON.stringify(d)}`);
+          const candidate=lines.filter((_l,i)=>!deadSet.has(i)).join('\n'),sha=v=>crypto.createHash('sha256').update(v).digest('hex');
+          if(sha(text)!==process.env.EXPECTED_PARENT_SHA256)throw new Error('parent hash drift');
+          if(sha(candidate)!==process.env.EXPECTED_CANDIDATE_SHA256)throw new Error('candidate hash drift');
+          if(Buffer.byteLength(text)!==51261||Buffer.byteLength(candidate)!==51246)throw new Error('byte drift');
+          if((text.match(/!important/gi)||[]).length||(candidate.match(/!important/gi)||[]).length)throw new Error('important drift');
+          fs.writeFileSync(file,candidate);
+          console.log('Promotion candidate proof: PASS');console.log('- declarations 747 -> 746');console.log('- deleted 1');console.log('- selectors 1');console.log('- context @media (max-width: 760px)');
+          NODE
+
+      - name: Guard exact permanent delta
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git diff --name-only)" = "${TARGET_FILE}"
+          test "$(git diff --numstat -- "${TARGET_FILE}" | awk '{print $1}')" = "0"
+          test "$(git diff --numstat -- "${TARGET_FILE}" | awk '{print $2}')" = "1"
+          test "$(sha256sum "${TARGET_FILE}" | awk '{print $1}')" = "${EXPECTED_CANDIDATE_SHA256}"
+          git diff --check
+
+      - name: Commit and push product-only tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name doke
+          git config user.email bielantoniomma@gmail.com
+          git add -- "${TARGET_FILE}"
+          test "$(git diff --cached --name-only)" = "${TARGET_FILE}"
+          git commit -m "UX-CSS-DEBT-014: compact superseded Profile mobile feed gap"
+          test "$(git rev-parse HEAD^)" = "${PARENT_SHA}"
+          git push origin "HEAD:${TARGET_BRANCH}"
