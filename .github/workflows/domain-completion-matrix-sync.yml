@@ -1,17 +1,20 @@
 name: Domain Completion Matrix Artifact Sync
 
 on:
-  push:
-    branches: [com/com-001-baseline-audit]
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
     paths:
+      - 'config/domain-completion-matrix.json'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
       - '.github/workflows/domain-completion-matrix-sync.yml'
 
-permissions: { contents: write }
+permissions: { contents: read }
 
 jobs:
-  sync:
+  verify:
     runs-on: ubuntu-24.04
-    timeout-minutes: 12
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
@@ -20,78 +23,9 @@ jobs:
           node-version: '24'
           cache: npm
       - run: npm ci --ignore-scripts
-      - name: Pre-writer R4O repository-only gates
-        shell: bash
-        run: |
-          node --check backend/modules/communities/community-realtime-private-auth-r4o.js
-          node --check scripts/test-com-b03c-r4o-fresh-single-use-phase-attributed-execution-readiness.js
-          node --check scripts/execute-com-b03c-r4o-phase-attributed-hosted-terminal-observation.js
-          node --check scripts/verify-com-b03c-r4o-phase-attributed-hosted-terminal-observation-report.js
-          node scripts/test-com-b03c-r4o-fresh-single-use-phase-attributed-execution-readiness.js
-          node scripts/execute-com-b03c-r4o-phase-attributed-hosted-terminal-observation.js --repository-self-test
-          node scripts/verify-com-b03c-r4o-phase-attributed-hosted-terminal-observation-report.js --repository-self-test
-          test ! -e config/com-b03c-r4p-r4o-fresh-authorization-consumption.json
-          test ! -e config/com-b03c-r4o-single-use-phase-attributed-hosted-terminal-observation-trigger.json
-          ! grep -Eq '^[[:space:]]*push:' .github/workflows/com-b03c-r4o-fresh-single-use-phase-attributed-execution-readiness.yml
-          ! grep -Eq '^[[:space:]]*environment:' .github/workflows/com-b03c-r4o-fresh-single-use-phase-attributed-execution-readiness.yml
-          ! grep -Eq 'secrets\.' .github/workflows/com-b03c-r4o-fresh-single-use-phase-attributed-execution-readiness.yml
-          grep -Fq 'permissions: { contents: read }' .github/workflows/com-b03c-r4o-fresh-single-use-phase-attributed-execution-readiness.yml
-      - name: Canonical writer
-        run: npm run write:domain-completion-matrix
-      - name: Restrict canonical writer outputs
-        shell: bash
-        run: |
-          mapfile -t changed < <(git diff --name-only)
-          test "${#changed[@]}" -eq 2
-          printf '%s\n' "${changed[@]}" | grep -Fx 'docs/DOMAIN-COMPLETION-MATRIX.md'
-          printf '%s\n' "${changed[@]}" | grep -Fx 'reports/generated/domain-completion-matrix-report.json'
-      - name: Canonical matrix audit
+      - name: Domain Completion Matrix
         run: npm run audit:domain-completion-matrix
-      - name: Preserve R4O repository guards
-        shell: bash
-        run: |
-          node scripts/test-com-b03c-r4o-fresh-single-use-phase-attributed-execution-readiness.js
-          node scripts/execute-com-b03c-r4o-phase-attributed-hosted-terminal-observation.js --repository-self-test
-          node scripts/verify-com-b03c-r4o-phase-attributed-hosted-terminal-observation-report.js --repository-self-test
-          test ! -e config/com-b03c-r4p-r4o-fresh-authorization-consumption.json
-          test ! -e config/com-b03c-r4o-single-use-phase-attributed-hosted-terminal-observation-trigger.json
-          node - <<'NODE'
-          const r4o = require('./backend/modules/communities/community-realtime-private-auth-r4o');
-          const request = r4o.buildFreshAuthorizationRequest({ certifiedHead: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' });
-          if (!request.authorizationPhrase.startsWith(r4o.AUTHORIZATION_PHRASE_PREFIX)) process.exit(1);
-          if (request.singleUse !== true || request.authorizationReusable !== false || request.reusableAfterFailure !== false) process.exit(1);
-          if (r4o.PREDECESSOR_R4N_EVIDENCE_HEAD !== '125791a4de79b2e740e9b73c3b18777a5a5168e2') process.exit(1);
-          NODE
       - name: Agent Governance
         run: npm run audit:agent-governance
-      - name: Contain governance-generated side effects
-        shell: bash
-        run: |
-          mkdir -p /tmp/r4o-matrix
-          cp docs/DOMAIN-COMPLETION-MATRIX.md /tmp/r4o-matrix/DOMAIN-COMPLETION-MATRIX.md
-          cp reports/generated/domain-completion-matrix-report.json /tmp/r4o-matrix/domain-completion-matrix-report.json
-          git reset --hard HEAD
-          git clean -fd
-          cp /tmp/r4o-matrix/DOMAIN-COMPLETION-MATRIX.md docs/DOMAIN-COMPLETION-MATRIX.md
-          mkdir -p reports/generated
-          cp /tmp/r4o-matrix/domain-completion-matrix-report.json reports/generated/domain-completion-matrix-report.json
-      - name: Stage exactly two canonical outputs
-        shell: bash
-        run: |
-          mapfile -t changed < <(git diff --name-only)
-          test "${#changed[@]}" -eq 2
-          printf '%s\n' "${changed[@]}" | grep -Fx 'docs/DOMAIN-COMPLETION-MATRIX.md'
-          printf '%s\n' "${changed[@]}" | grep -Fx 'reports/generated/domain-completion-matrix-report.json'
-          git add docs/DOMAIN-COMPLETION-MATRIX.md
-          git add -f reports/generated/domain-completion-matrix-report.json
-          mapfile -t staged < <(git diff --name-only --cached)
-          test "${#staged[@]}" -eq 2
-          printf '%s\n' "${staged[@]}" | grep -Fx 'docs/DOMAIN-COMPLETION-MATRIX.md'
-          printf '%s\n' "${staged[@]}" | grep -Fx 'reports/generated/domain-completion-matrix-report.json'
-      - name: Commit canonical R4O-derived outputs
-        shell: bash
-        run: |
-          git config user.name doke
-          git config user.email bielantoniomma@gmail.com
-          git commit -m 'docs(com): reconcile domain matrix after R4O readiness'
-          git push origin HEAD:com/com-001-baseline-audit
+      - name: Diff hygiene
+        run: git diff --check "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}"
