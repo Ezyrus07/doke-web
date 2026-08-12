@@ -1,0 +1,57 @@
+name: Doke UX-CSS-DEBT-014 Profile Reach R2
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-014-profile-reach-r2
+
+permissions:
+  contents: read
+
+jobs:
+  reach:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 6fee4223f75b86833e0d6540315d6185d2e74f2a
+    steps:
+      - name: Checkout exact UX-CSS-DEBT-013 checkpoint
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 0
+
+      - name: Reconcile profile family recursive CSS reach and canonical DOM
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          node <<'NODE'
+          const fs=require('fs'),path=require('path');
+          const pages=['meu-perfil.html','perfil-cliente.html','perfil-profissional.html','perfil.html'];
+          const target='assets/css/pages/profile-page.css';
+          const manifest='assets/css/pages/profile-foundation.css';
+          const manifestText=fs.readFileSync(manifest,'utf8');
+          if(!manifestText.includes('Keep declarations in profile-page.css')) throw new Error('profile owner declaration missing');
+          if(!manifestText.includes('@import url("./profile-page.css')) throw new Error('profile-page import missing from manifest');
+          const importRe=/@import\s+(?:url\()?['"]?([^'"\);]+\.css(?:\?[^'"\)]*)?)['"]?\)?/gi;
+          const linkRe=/<link\b[^>]*rel=["']stylesheet["'][^>]*href=["']([^"']+\.css(?:\?[^"']*)?)["'][^>]*>/gi;
+          const normalize=(v,from)=>{v=v.replace(/\?.*$/,'').replace(/^\.\//,'');if(/^https?:/i.test(v))return null;if(v.startsWith('/'))return v.replace(/^\/+/, '');if(v.startsWith('assets/'))return v;return path.posix.normalize(path.posix.join(path.posix.dirname(from),v));};
+          function imports(file){if(!fs.existsSync(file))return[];const text=fs.readFileSync(file,'utf8'),out=[];let m;importRe.lastIndex=0;while((m=importRe.exec(text))){const n=normalize(m[1],file);if(n&&fs.existsSync(n))out.push(n);}return out;}
+          for(const page of pages){
+            const html=fs.readFileSync(page,'utf8');
+            const body=html.match(/<body\b([^>]*)>/i);if(!body)throw new Error(`${page}: body missing`);
+            if(!/\bclass=["'][^"']*\bprofile-page-shell\b[^"']*["']/i.test(body[0]))throw new Error(`${page}: profile-page-shell missing`);
+            if(!/\bdata-profile-contract=["']clean-v1["']/i.test(body[0]))throw new Error(`${page}: clean-v1 contract missing`);
+            const feedCount=(html.match(/\bclass=["'][^"']*\bprofile-feed\b[^"']*["']/gi)||[]).length;
+            if(feedCount!==1)throw new Error(`${page}: profile-feed count ${feedCount}`);
+            const roots=[];let m;linkRe.lastIndex=0;while((m=linkRe.exec(html))){const n=normalize(m[1],page);if(n&&fs.existsSync(n))roots.push(n);}
+            const seen=new Set(),stack=[...roots];while(stack.length){const f=stack.pop();if(seen.has(f))continue;seen.add(f);for(const n of imports(f))stack.push(n);}
+            if(!seen.has(manifest))throw new Error(`${page}: profile-foundation not recursively reachable`);
+            if(!seen.has(target))throw new Error(`${page}: profile-page owner not recursively reachable`);
+            console.log(`${page}: profile-feed=1 / clean-v1 / profile-page.css reachable (${seen.size} CSS)`);
+          }
+          const owner=fs.readFileSync(target,'utf8');
+          if(!owner.includes('gap: 28px;')||!owner.includes('gap: 20px;'))throw new Error('candidate/winner gap evidence missing');
+          console.log('Profile family recursive owner/reach: PASS');
+          NODE
+          git diff --check
