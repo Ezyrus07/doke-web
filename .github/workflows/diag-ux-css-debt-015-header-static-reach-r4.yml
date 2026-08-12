@@ -1,0 +1,77 @@
+name: Doke UX-CSS-DEBT-015 Static Header Reach R4
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-015-header-static-reach-r4
+
+permissions:
+  contents: read
+
+jobs:
+  reach:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: a5dcbc7caaaea14729eb3576bb1e0c2173950594
+    steps:
+      - name: Checkout exact certified parent
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 0
+
+      - name: Guard exact parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          git diff --check
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install and generate canonical authority inventory
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          npm run audit:active-legacy-structures
+          npm run audit:shared-app-header-contract
+
+      - name: Prove canonical static header anatomy and caret absence
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs'),path=require('path');
+          const pages=[
+            'admin-anuncio-revisao.html','admin-pedidos-operacao.html','admin-verificacao.html','admin.html','ajuda.html','anunciar-servico.html','avaliacao-profissional.html','carteira.html','comunidade-interna.html','comunidade.html','configuracoes.html','detalhe-anuncio.html','index.html','mensagens.html','meu-perfil.html','notificacoes.html','novidades.html','orcamento.html','pagamento-profissional.html','pedidos.html','perfil-cliente.html','perfil-profissional.html','perfil.html','resultados.html','tornar-profissional.html','verificacao-profissional.html'
+          ];
+          function tags(html){
+            const out=[]; for(const m of html.matchAll(/<([a-zA-Z][\w:-]*)\b([^>]*)>/g)){const attrs=m[2]||'',cm=attrs.match(/\bclass\s*=\s*["']([^"']*)["']/i),classes=(cm?cm[1]:'').split(/\s+/).filter(Boolean),dm=attrs.match(/\bdata-page\s*=\s*["']([^"']*)["']/i);out.push({tag:m[1].toLowerCase(),attrs,classes,dataPage:dm?dm[1]:''});}return out;
+          }
+          const rows=[];
+          for(const page of pages){const html=fs.readFileSync(page,'utf8'),t=tags(html),body=t.find(x=>x.tag==='body');if(!body)throw new Error(`${page}: body absent`);const count=c=>t.filter(x=>x.classes.includes(c)).length;const row={page,dataPage:body.dataPage,hasGlobalHeader:body.classes.includes('has-global-header'),appHeader:count('app-header'),inner:count('app-header__inner'),profileWrap:count('home-side-meta__profile-wrap'),profile:count('home-side-meta__profile')+count('app-header__profile'),caret:count('home-side-meta__profile-caret-button')};rows.push(row);}
+          console.log(JSON.stringify(rows,null,2));
+          for(const r of rows){if(!r.dataPage||!r.hasGlobalHeader||r.appHeader<1||r.inner<1||r.profileWrap<1||r.profile<1)throw new Error(`canonical anatomy drift ${JSON.stringify(r)}`);if(r.caret!==0)throw new Error(`unexpected canonical caret ${JSON.stringify(r)}`);}
+          const activeSource=[];function walk(d){for(const e of fs.readdirSync(d,{withFileTypes:true})){if(['.git','node_modules','reports','coverage'].includes(e.name))continue;const f=path.join(d,e.name);if(e.isDirectory())walk(f);else if(/\.(html|js)$/.test(f))activeSource.push(f.replace(/\\/g,'/'));}}walk('.');
+          const caretHits=activeSource.filter(f=>fs.readFileSync(f,'utf8').includes('home-side-meta__profile-caret-button'));
+          console.log('CARET ACTIVE HTML/JS REFERENCES '+caretHits.length);console.log(JSON.stringify(caretHits,null,2));
+          if(caretHits.length!==0)throw new Error(`caret active-source reach drift ${JSON.stringify(caretHits)}`);
+          console.log('STATIC SHARED HEADER REACH: PASS — 26/26 consumers have canonical body/header/inner/profile-wrap/profile anatomy');
+          console.log('CARET CANONICAL ABSENCE: PASS — 0 active HTML/JS references; minimal synthetic fixture required only for caret selector parity');
+          NODE
+
+      - name: Preserve governance and exact parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git reset --hard "${TARGET_SHA}"
+          git clean -fd
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          git diff --exit-code
