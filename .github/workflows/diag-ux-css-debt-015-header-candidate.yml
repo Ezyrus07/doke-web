@@ -1,0 +1,215 @@
+name: Doke UX-CSS-DEBT-015 Shared Header Candidate
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-015-header-candidate
+
+permissions:
+  contents: read
+
+jobs:
+  candidate:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: a5dcbc7caaaea14729eb3576bb1e0c2173950594
+      TARGET_FILE: assets/css/layout/header.css
+    steps:
+      - name: Checkout exact certified parent
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 0
+
+      - name: Guard exact parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          git diff --check
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies and Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install --with-deps chromium
+
+      - name: Build deterministic deletion-only candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp "${TARGET_FILE}" /tmp/header-parent.css
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');
+          function parse(text){
+            const lines=text.split(/\r?\n/);let depth=0,selectorParts=[],atRuleParts=[],selector=null;const declarations=[],stack=[];
+            const declRe=/^\s*([\w-]+)\s*:\s*(.*?)\s*;\s*$/,norm=parts=>parts.join(' ').replace(/\{\s*$/,'').replace(/\s+/g,' ').trim();
+            for(let i=0;i<lines.length;i++){
+              const line=lines[i],t=line.trim(),opens=(line.match(/\{/g)||[]).length,closes=(line.match(/\}/g)||[]).length;
+              if(!selector){
+                if(atRuleParts.length){if(t)atRuleParts.push(t);if(line.includes('{')){stack.push({type:'at',header:norm(atRuleParts),depthBefore:depth});atRuleParts=[];}}
+                else if(t.startsWith('@')&&!t.includes(';')){if(line.includes('{'))stack.push({type:'at',header:norm([t]),depthBefore:depth});else atRuleParts=[t];}
+                else if(selectorParts.length){if(t)selectorParts.push(t);if(line.includes('{')){selector=norm(selectorParts);selectorParts=[];stack.push({type:'rule',selector,depthBefore:depth});}}
+                else if(t&&!t.startsWith('/*')&&!t.startsWith('*')&&t!=='*/'&&t!=='}'&&!t.startsWith('@')&&!line.includes(';')){selectorParts=[t];if(line.includes('{')){selector=norm(selectorParts);selectorParts=[];stack.push({type:'rule',selector,depthBefore:depth});}}
+              }
+              if(selector){const m=line.match(declRe);if(m){const raw=m[2].trim(),important=/\s*!important\s*$/i.test(raw),context=stack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');declarations.push({lineIndex:i,line:i+1,selector,property:m[1].toLowerCase(),value:raw,important,context});}}
+              depth+=opens-closes;while(stack.length&&depth<=stack[stack.length-1].depthBefore){const p=stack.pop();if(p.type==='rule')selector=null;}
+            }
+            if(atRuleParts.length)throw new Error('unterminated multiline at-rule');
+            const last=new Map(),dead=[];for(let i=declarations.length-1;i>=0;i--){const d=declarations[i],key=`${d.context} >>> ${d.selector} >>> ${d.property}`,later=last.get(key);if(later&&(!d.important||later.important))dead.push({...d,winnerLine:later.line,winnerValue:later.value,winnerImportant:later.important});if(!later||d.important||!later.important)last.set(key,d);}
+            return {lines,declarations,dead,selectors:[...new Set(dead.map(d=>d.selector))].sort(),contexts:[...new Set(dead.map(d=>d.context))].sort()};
+          }
+          const parent=fs.readFileSync('/tmp/header-parent.css','utf8'),p=parse(parent);
+          const expectedSelectors=[
+            'body[data-page].has-global-header',
+            'body[data-page].has-global-header .app-header .home-side-meta__profile-caret-button',
+            'body[data-page].has-global-header .app-header .home-side-meta__profile-wrap',
+            'body[data-page].has-global-header .app-header :is(.home-side-meta__profile, .app-header__profile)',
+            'body[data-page].has-global-header > .app-shell > .page > .app-header',
+            'body[data-page].has-global-header > .app-shell > .page > .app-header > .app-header__inner'
+          ].sort();
+          if(p.declarations.length!==855||p.dead.length!==20||JSON.stringify(p.selectors)!==JSON.stringify(expectedSelectors))throw new Error(`parent metric drift ${p.declarations.length}/${p.dead.length}/${JSON.stringify(p.selectors)}`);
+          if(JSON.stringify(p.contexts)!==JSON.stringify(['','@media (max-width: 760px)']))throw new Error(`context drift ${JSON.stringify(p.contexts)}`);
+          if((parent.match(/!important/gi)||[]).length!==0)throw new Error('important drift');
+          if(Buffer.byteLength(parent)!==50025)throw new Error(`parent byte drift ${Buffer.byteLength(parent)}`);
+          const deadSet=new Set(p.dead.map(d=>d.lineIndex)),candidate=p.lines.filter((_l,i)=>!deadSet.has(i)).join('\n'),c=parse(candidate);
+          if(c.declarations.length!==835||c.dead.length!==0)throw new Error(`candidate metric drift ${c.declarations.length}/${c.dead.length}`);
+          if((candidate.match(/!important/gi)||[]).length!==0)throw new Error('candidate important drift');
+          const sha=v=>crypto.createHash('sha256').update(v).digest('hex');
+          fs.writeFileSync('/tmp/header-candidate.css',candidate);
+          fs.writeFileSync('/tmp/header-selectors.json',JSON.stringify(expectedSelectors));
+          fs.writeFileSync('/tmp/header-dead-rows.json',JSON.stringify(p.dead.sort((a,b)=>a.line-b.line),null,2));
+          console.log('DETERMINISTIC HEADER CANDIDATE: PASS');
+          console.log(`parentSha256=${sha(parent)}`);
+          console.log(`candidateSha256=${sha(candidate)}`);
+          console.log(`parentBytes=${Buffer.byteLength(parent)}`);
+          console.log(`candidateBytes=${Buffer.byteLength(candidate)}`);
+          console.log('declarations=855 -> 835');
+          console.log('dead=20 -> 0');
+          console.log('affectedSelectors=6');
+          console.log('contexts=global + @media (max-width: 760px)');
+          console.log('DEAD ROWS');console.log(JSON.stringify(p.dead,null,2));
+          NODE
+
+      - name: Write 26-page seven-viewport runtime parity harness
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > /tmp/header-capture.js <<'NODE'
+          const fs=require('fs'),cp=require('child_process'),{chromium}=require(process.cwd()+'/node_modules/playwright');
+          const out=process.argv[2];
+          const pages=[
+            'admin-anuncio-revisao.html','admin-pedidos-operacao.html','admin-verificacao.html','admin.html','ajuda.html','anunciar-servico.html','avaliacao-profissional.html','carteira.html','comunidade-interna.html','comunidade.html','configuracoes.html','detalhe-anuncio.html','index.html','mensagens.html','meu-perfil.html','notificacoes.html','novidades.html','orcamento.html','pagamento-profissional.html','pedidos.html','perfil-cliente.html','perfil-profissional.html','perfil.html','resultados.html','tornar-profissional.html','verificacao-profissional.html'
+          ];
+          const vps=[['1600x1000',1600,1000],['1366x768',1366,768],['1280x802',1280,802],['1024x900',1024,900],['820x1180',820,1180],['608x926',608,926],['390x844',390,844]];
+          const selectors=[
+            'body[data-page].has-global-header',
+            'body[data-page].has-global-header .app-header .home-side-meta__profile-wrap',
+            'body[data-page].has-global-header .app-header :is(.home-side-meta__profile, .app-header__profile)',
+            'body[data-page].has-global-header > .app-shell > .page > .app-header',
+            'body[data-page].has-global-header > .app-shell > .page > .app-header > .app-header__inner'
+          ];
+          const caretSelector='body[data-page].has-global-header .app-header .home-side-meta__profile-caret-button';
+          const props=['min-block-size','block-size','max-block-size','padding-block-start','padding-block-end','align-items','box-sizing','display','visibility','--doke-header-height','--doke-header-control-size','--doke-header-profile-height','--doke-header-avatar-size'];
+          const server=cp.spawn(process.execPath,['scripts/serve-static-site.js','--host=127.0.0.1','--port=5500'],{stdio:'ignore',env:{...process.env,DOKE_E2E_DISABLE_REMOTE_SERVICES:'1'}}),sleep=ms=>new Promise(r=>setTimeout(r,ms));
+          const clean=v=>String(v??'').replace(/\s+/g,' ').trim();
+          async function main(){
+            await sleep(500);const browser=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});const result={};let mobileHits=0,canonicalHits=0,fixtureHits=0;
+            for(const html of pages)for(const [name,width,height] of vps){
+              const ctx=await browser.newContext({viewport:{width,height},reducedMotion:'reduce'}),page=await ctx.newPage();
+              await page.route('**/*',route=>{const u=new URL(route.request().url()),local=u.origin==='http://127.0.0.1:5500';if(local&&u.pathname.endsWith('.js'))return route.abort();if(local||u.protocol==='data:'||u.protocol==='blob:')return route.continue();return route.abort();});
+              await page.goto(`http://127.0.0.1:5500/${html}`,{waitUntil:'domcontentloaded',timeout:15000});
+              await page.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important;caret-color:transparent!important}.doke-document-preloader{display:none!important}html,body{visibility:visible!important;opacity:1!important}'});
+              await page.evaluate(()=>{document.documentElement.dataset.authSurfaceReady='true';document.documentElement.removeAttribute('data-auth-guard');document.body.removeAttribute('data-auth-guard');});
+              await page.evaluate(()=>document.fonts&&document.fonts.ready);await sleep(30);
+              const canonical=await page.evaluate(({selectors,props})=>{
+                const clean=v=>String(v??'').replace(/\s+/g,' ').trim(),capture=el=>{const cs=getComputedStyle(el),r=el.getBoundingClientRect(),style={};for(const p of props)style[p]=clean(cs.getPropertyValue(p));return{tag:el.tagName,id:el.id||'',className:typeof el.className==='string'?clean(el.className):'',rect:[+r.x.toFixed(3),+r.y.toFixed(3),+r.width.toFixed(3),+r.height.toFixed(3)],style};};
+                const counts=Object.fromEntries(selectors.map(s=>[s,document.querySelectorAll(s).length]));
+                const samples=Object.fromEntries(selectors.map(s=>[s,[...document.querySelectorAll(s)].map(capture)]));return{counts,samples};
+              },{selectors,props});
+              for(const s of selectors){if(canonical.counts[s]<1)throw new Error(`${html}/${name}: canonical selector absent ${s}`);canonicalHits+=canonical.counts[s];}
+              const preCaret=await page.locator(caretSelector).count();if(preCaret!==0)throw new Error(`${html}/${name}: caret should be canonically absent, got ${preCaret}`);
+              const fixture=await page.evaluate(({caretSelector,props})=>{
+                const wrap=document.querySelector('.app-header .home-side-meta__profile-wrap');if(!wrap)throw new Error('profile wrap absent for caret fixture');const b=document.createElement('button');b.type='button';b.className='home-side-meta__profile-caret-button';b.textContent='⌄';b.setAttribute('data-ux-css-debt-fixture','caret');wrap.appendChild(b);
+                const el=document.querySelector(caretSelector),cs=getComputedStyle(el),r=el.getBoundingClientRect(),style={};for(const p of props)style[p]=String(cs.getPropertyValue(p)||'').replace(/\s+/g,' ').trim();const snap={tag:el.tagName,className:el.className,rect:[+r.x.toFixed(3),+r.y.toFixed(3),+r.width.toFixed(3),+r.height.toFixed(3)],style};b.remove();return snap;
+              },{caretSelector,props});fixtureHits++;
+              if(width<=760){if(!(await page.evaluate(()=>matchMedia('(max-width: 760px)').matches)))throw new Error(`${html}/${name}: mobile context inactive`);mobileHits++;}
+              result[`${html}:${name}`]={canonical,caretFixture:fixture};
+              console.log(`${html} ${name}: canonical 5/5; caret fixture 1/1`);await ctx.close();
+            }
+            await browser.close();
+            if(mobileHits!==52)throw new Error(`mobile context hit drift ${mobileHits}`);
+            if(fixtureHits!==182)throw new Error(`fixture count drift ${fixtureHits}`);
+            fs.writeFileSync(out,JSON.stringify(result));
+            console.log(`SHARED HEADER COVERAGE PASS: 26 pages x 7 viewports = 182 captures; mobile context hits=${mobileHits}; caret fixtures=${fixtureHits}; canonicalSamples=${canonicalHits}`);
+          }
+          main().finally(()=>server.kill('SIGTERM')).catch(e=>{console.error(e);process.exit(1)});
+          NODE
+
+      - name: Capture parent runtime, responsive baseline and conflicts
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp /tmp/header-parent.css "${TARGET_FILE}"
+          node /tmp/header-capture.js /tmp/header-parent-runtime.json
+          node scripts/generate-responsive-index-baseline.js
+          cp reports/responsive-index-baseline.json /tmp/header-parent-responsive.json
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/header-parent-conflicts.log
+          grep -q 'Conflicting class/property pairs: 339' /tmp/header-parent-conflicts.log
+
+      - name: Restore candidate and preserve responsive contract without rebaseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp /tmp/header-candidate.css "${TARGET_FILE}"
+          cp /tmp/header-parent-responsive.json reports/responsive-index-baseline.json
+          node scripts/test-responsive-contract.js | tee /tmp/header-responsive.log
+          grep -q 'Checks: 893' /tmp/header-responsive.log
+          grep -q 'Failures: 0' /tmp/header-responsive.log
+          grep -q 'Skips: 277' /tmp/header-responsive.log
+
+      - name: Require exact parent-to-candidate 26-page runtime parity
+        shell: bash
+        run: |
+          set -euo pipefail
+          node /tmp/header-capture.js /tmp/header-candidate-runtime.json
+          node <<'NODE'
+          const fs=require('fs'),a=JSON.parse(fs.readFileSync('/tmp/header-parent-runtime.json')),b=JSON.parse(fs.readFileSync('/tmp/header-candidate-runtime.json')),diffs=[];
+          function walk(x,y,p){if(typeof x!==typeof y||x===null||y===null||typeof x!=='object'){if(x!==y)diffs.push({path:p,parent:x,candidate:y});return;}if(Array.isArray(x)!==Array.isArray(y)){diffs.push({path:p,parent:x,candidate:y});return;}for(const k of [...new Set([...Object.keys(x),...Object.keys(y)])].sort())walk(x[k],y[k],p?`${p}.${k}`:k);}walk(a,b,'');if(diffs.length){console.error(JSON.stringify(diffs.slice(0,100),null,2));throw new Error(`runtime differences ${diffs.length}`);}console.log('26-page affected-selector computed-style + bounding-rect parity: PASS (0 diffs)');
+          NODE
+
+      - name: Validate structural, conflict and governance contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/header-candidate-conflicts.log
+          grep -q 'Conflicting class/property pairs: 339' /tmp/header-candidate-conflicts.log
+          echo 'CSS conflicts: 339 -> 339'
+          npm run audit:shared-app-header-contract
+          npm run audit:responsive-boundaries
+          npm run audit:active-legacy-structures | tee /tmp/header-legacy.log
+          grep -q 'active legacy/remediation css: 0' /tmp/header-legacy.log
+          grep -q 'active legacy/remediation js: 0' /tmp/header-legacy.log
+          grep -q 'high risk active css: 38' /tmp/header-legacy.log
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          npm run audit:duplicate-assets
+
+      - name: Restore generated governance outputs and require exact product scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout "${TARGET_SHA}" -- docs/HOME-AUTHORITY-CLASSIFICATION.md docs/PAGE-ASSET-AUTHORITY-MATRIX.md 2>/dev/null || true
+          test "$(git diff --name-only | wc -l)" = "1"
+          test "$(git diff --name-only)" = "${TARGET_FILE}"
+          test "$(git diff --numstat -- "${TARGET_FILE}" | awk '{print $1}')" = "0"
+          test "$(git diff --numstat -- "${TARGET_FILE}" | awk '{print $2}')" = "20"
+          git diff --check
+          echo 'EXACT PRODUCT DELTA: assets/css/layout/header.css only, +0/-20'
