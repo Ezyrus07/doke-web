@@ -1,0 +1,116 @@
+name: Doke UX-CSS-DEBT-017 Content Surface Provenance R2
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-017-content-surface-provenance-r2
+
+permissions:
+  contents: read
+
+jobs:
+  provenance:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: b83318f51f429019cb5bc43685e33b904653f54c
+      PARENT_SHA: d7dcc2c0264a77d8d8a326210c3074c0eb4057df
+      TARGET_FILE: assets/css/components/core/content-surface.css
+      IMPORT_PARENT: assets/css/components/core/content-system.css
+    steps:
+      - name: Checkout exact certified product SHA with minimal history
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+
+      - name: Prove clean tracked-tree baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test "$(git rev-parse HEAD^)" = "${PARENT_SHA}"
+          echo 'TRACKED TREE MATCHES:'
+          git ls-tree -r --name-only HEAD | grep -E 'assets/css/components/core/content-(surface|system)\.css$' || true
+          for f in "${TARGET_FILE}" "${IMPORT_PARENT}"; do
+            if test -e "$f"; then echo "BASELINE_EXISTS $f"; else echo "BASELINE_ABSENT $f"; fi
+          done
+          echo 'SOURCE REFERENCES TO TARGET FILENAME:'
+          grep -RIn --exclude-dir=node_modules --exclude-dir=.git --exclude='*.md' 'content-surface\.css' scripts assets package.json .github 2>/dev/null || true
+          git status --short --untracked-files=all
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies only
+        run: npm ci --ignore-scripts
+
+      - name: Prove npm ci does not create target
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in "${TARGET_FILE}" "${IMPORT_PARENT}"; do
+            if test -e "$f"; then echo "AFTER_NPM_EXISTS $f"; else echo "AFTER_NPM_ABSENT $f"; fi
+          done
+          git status --short --untracked-files=all
+
+      - name: Probe active legacy audit alone
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "${TARGET_SHA}"
+          git clean -fd
+          npm run audit:active-legacy-structures
+          for f in "${TARGET_FILE}" "${IMPORT_PARENT}"; do
+            if test -e "$f"; then echo "AFTER_ACTIVE_EXISTS $f"; else echo "AFTER_ACTIVE_ABSENT $f"; fi
+          done
+          git status --short --untracked-files=all
+
+      - name: Trace agent governance sequentially and identify first creator
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "${TARGET_SHA}"
+          git clean -fd
+          node <<'NODE' > /tmp/governance-scripts.txt
+          const p=require('./package.json');
+          const cmd=p.scripts['audit:agent-governance'];
+          if(!cmd) throw new Error('missing audit:agent-governance');
+          const scripts=[...cmd.matchAll(/npm run ([\w:-]+)/g)].map(m=>m[1]);
+          if(!scripts.length) throw new Error('no governance scripts parsed');
+          console.log(scripts.join('\n'));
+          NODE
+          echo 'GOVERNANCE ORDER:'
+          cat /tmp/governance-scripts.txt
+          creator=''
+          while IFS= read -r script; do
+            echo "--- RUN $script ---"
+            npm run "$script"
+            target_state=ABSENT; parent_state=ABSENT
+            test -e "${TARGET_FILE}" && target_state=EXISTS
+            test -e "${IMPORT_PARENT}" && parent_state=EXISTS
+            echo "AFTER_SCRIPT script=$script target=$target_state importParent=$parent_state"
+            if test -e "${TARGET_FILE}" && test -z "$creator"; then
+              creator="$script"
+              echo "FIRST_TARGET_CREATOR=$script"
+              echo 'TARGET CONTENT:'
+              nl -ba "${TARGET_FILE}"
+              echo 'IMPORT PARENT CONTENT:'
+              if test -e "${IMPORT_PARENT}"; then nl -ba "${IMPORT_PARENT}"; fi
+              echo 'STATUS AT FIRST CREATION:'
+              git status --short --untracked-files=all
+              break
+            fi
+          done < /tmp/governance-scripts.txt
+          if test -z "$creator"; then echo 'NO_GOVERNANCE_SCRIPT_CREATED_TARGET'; fi
+
+      - name: Restore exact certified product SHA
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "${TARGET_SHA}"
+          git clean -fd
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          git diff --exit-code
