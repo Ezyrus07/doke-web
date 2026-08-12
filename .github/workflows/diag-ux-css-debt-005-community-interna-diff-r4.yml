@@ -1,0 +1,102 @@
+name: Doke UX-CSS-DEBT-005 Community Internal Delta R4
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-005-community-interna-compaction
+
+permissions:
+  contents: read
+
+jobs:
+  classify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      TARGET_SHA: b5e569ae0f4827f4981ec436967e59470f6a7404
+      TARGET_FILE: assets/css/pages/comunidade-interna.css
+      EXPECTED_PARENT_SHA256: ddee624f00fe72d13b0c8d48b7bb93c4381b3461c7ca384464241178473c8696
+      EXPECTED_CANDIDATE_SHA256: af971af4a1b5a907ff317d350afe8b1ae7deeaa1b38143f6732f87b4cba66bc8
+    steps:
+      - name: Checkout exact parent
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 0
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install browser
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install --with-deps chromium
+      - name: Build exact candidate and selector set
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp "${TARGET_FILE}" /tmp/parent.css
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');
+          const src=fs.readFileSync(process.env.TARGET_FILE,'utf8'),lines=src.split(/\r?\n/);
+          let depth=0,selectorParts=[],selector=null; const declarations=[],stack=[];
+          const re=/^\s*([\w-]+)\s*:\s*(.*?)\s*(!important)?\s*;\s*$/;
+          for(let i=0;i<lines.length;i++){
+            const line=lines[i],t=line.trim(),opens=(line.match(/\{/g)||[]).length,closes=(line.match(/\}/g)||[]).length;
+            if(!selector&&t&&!t.startsWith('/*')&&!t.startsWith('*')&&t!=='*/'&&t!=='}'){
+              if(t.startsWith('@')&&line.includes('{')) stack.push({type:'at',header:t.replace(/\{\s*$/,'').replace(/\s+/g,' ').trim(),depthBefore:depth});
+              else if(!t.startsWith('@')&&!line.includes(';')){selectorParts.push(t.replace(/\{\s*$/,'').trim());if(line.includes('{')){selector=selectorParts.join(' ').replace(/\s+/g,' ').trim();selectorParts=[];stack.push({type:'rule',selector,depthBefore:depth});}}
+            }
+            if(selector){const m=line.match(re);if(m){const context=stack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');declarations.push({lineIndex:i,selector,property:m[1],value:m[2],important:Boolean(m[3]),context});}}
+            depth+=opens-closes; while(stack.length&&depth<=stack[stack.length-1].depthBefore){const p=stack.pop();if(p.type==='rule')selector=null;}
+          }
+          const last=new Map(),dead=[];
+          for(let i=declarations.length-1;i>=0;i--){const d=declarations[i],key=`${d.context} >>> ${d.selector} >>> ${d.property}`,later=last.get(key);if(later&&(!d.important||later.important))dead.push({...d,later});if(!later||d.important||!later.important)last.set(key,d);}
+          const deadSet=new Set(dead.map(d=>d.lineIndex)); const cand=lines.filter((_l,i)=>!deadSet.has(i)).join('\n');
+          const sha=v=>crypto.createHash('sha256').update(v).digest('hex');
+          if(sha(src)!==process.env.EXPECTED_PARENT_SHA256||sha(cand)!==process.env.EXPECTED_CANDIDATE_SHA256)throw new Error('hash drift');
+          if(dead.length!==98)throw new Error(`dead drift ${dead.length}`);
+          fs.writeFileSync('/tmp/candidate.css',cand);fs.writeFileSync('/tmp/selectors.json',JSON.stringify([...new Set(dead.map(d=>d.selector))].sort()));fs.writeFileSync('/tmp/dead.json',JSON.stringify(dead,null,2));
+          NODE
+      - name: Write deterministic capture
+        shell: bash
+        run: |
+          cat > /tmp/capture.js <<'NODE'
+          const fs=require('fs'),cp=require('child_process'); const {chromium}=require(process.cwd()+'/node_modules/playwright');
+          const out=process.argv[2],selectors=JSON.parse(fs.readFileSync('/tmp/selectors.json','utf8'));
+          const vps=[['1366x768',1366,768],['1280x802',1280,802],['820x1180',820,1180],['608x926',608,926],['390x844',390,844]];
+          const server=cp.spawn(process.execPath,['scripts/serve-static-site.js','--host=127.0.0.1','--port=5500'],{stdio:'ignore',env:{...process.env,DOKE_E2E_DISABLE_REMOTE_SERVICES:'1'}}); const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+          async function main(){await sleep(500);const browser=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});const result={};
+            for(const [name,width,height] of vps){const ctx=await browser.newContext({viewport:{width,height},reducedMotion:'reduce'});const page=await ctx.newPage();await page.route('**/*',route=>{const u=new URL(route.request().url()),local=u.origin==='http://127.0.0.1:5500';if(local&&u.pathname.endsWith('.js'))return route.abort();if(local||u.protocol==='data:'||u.protocol==='blob:')return route.continue();return route.abort();});await page.goto('http://127.0.0.1:5500/comunidade-interna.html',{waitUntil:'domcontentloaded'});await page.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important;caret-color:transparent!important}.doke-document-preloader{display:none!important}'});await page.evaluate(()=>{const p=document.querySelector('[data-community-room-pending]');if(p)p.hidden=true;const l=document.querySelector('.community-room-layout');if(!l)throw new Error('layout missing');l.hidden=false;l.setAttribute('aria-hidden','false');l.dataset.mobileView='list';for(const e of l.querySelectorAll('[hidden]'))e.hidden=false;for(const e of l.querySelectorAll('[aria-hidden="true"]'))e.setAttribute('aria-hidden','false');const ev=document.querySelector('.community-events-panel');if(ev&&!ev.querySelector('.community-event-calendar__day')){const day=document.createElement('button');day.className='community-event-calendar__day';day.textContent='12';(ev.querySelector('.community-event-calendar')||ev).appendChild(day);}const f=document.createElement('section');f.id='ux-css-debt-005-fixture';f.innerHTML=`<button class="community-room-channel">Canal</button><div class="community-room-message__actions"><button>Ação</button></div><div class="community-room-message-menu"><button>Menu</button></div><section class="community-room-panel-empty"><strong>Vazio</strong><p>Sem itens</p></section><section class="community-room-thread-empty"><h3>Sem mensagens</h3><p>Comece</p></section><article class="community-room-request-item"><div class="community-room-request-actions"><button class="doke-btn">Aceitar</button></div></article><section class="community-member-directory"><div class="community-member-directory__menu"><div class="community-member-directory__discipline-actions"></div><button class="community-member-directory__remove">Remover</button><div class="community-member-directory__role-list"><label class="community-member-directory__role-option"><span class="community-member-directory__role-option-copy"><strong>Cargo</strong></span></label></div></div></section>`;l.appendChild(f);});await page.evaluate(()=>document.fonts&&document.fonts.ready);await sleep(60);result[name]=await page.evaluate(selectors=>{const clean=v=>String(v??'').replace(/\s+/g,' ').trim(),capture=el=>{const cs=getComputedStyle(el),r=el.getBoundingClientRect(),style={};for(let i=0;i<cs.length;i++){const p=cs[i];style[p]=clean(cs.getPropertyValue(p));}return{tag:el.tagName,id:el.id||'',className:typeof el.className==='string'?clean(el.className):'',rect:[+r.x.toFixed(3),+r.y.toFixed(3),+r.width.toFixed(3),+r.height.toFixed(3)],style};};const samples={};for(const s of selectors){const nodes=[...document.querySelectorAll(s)];if(!nodes.length)throw new Error(`missing ${s}`);samples[s]=nodes.map(capture);}return samples;},selectors);await ctx.close();}
+            await browser.close();fs.writeFileSync(out,JSON.stringify(result,null,2));}
+          main().finally(()=>server.kill('SIGTERM')).catch(e=>{console.error(e);process.exit(1);});
+          NODE
+      - name: Capture parent and candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node /tmp/capture.js /tmp/parent.json
+          cp /tmp/candidate.css "${TARGET_FILE}"
+          node /tmp/capture.js /tmp/candidate.json
+      - name: Print exact runtime differences
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs'); const a=JSON.parse(fs.readFileSync('/tmp/parent.json')),b=JSON.parse(fs.readFileSync('/tmp/candidate.json'));
+          const diffs=[];
+          function walk(x,y,path){if(diffs.length>=80)return;if(typeof x!==typeof y||x===null||y===null||typeof x!=='object'){if(x!==y)diffs.push({path,parent:x,candidate:y});return;}if(Array.isArray(x)!==Array.isArray(y)){diffs.push({path,parent:x,candidate:y});return;}const keys=[...new Set([...Object.keys(x),...Object.keys(y)])].sort();for(const k of keys)walk(x[k],y[k],path?`${path}.${k}`:k);}
+          walk(a,b,''); console.log(`RUNTIME_DIFF_COUNT_CAPPED=${diffs.length}`); for(const d of diffs)console.log(JSON.stringify(d)); if(!diffs.length)console.log('NO_RUNTIME_DIFF');
+          NODE
+          echo '--- deletion records for properties appearing in runtime diff should be inspected above ---'
+          head -200 /tmp/dead.json
+      - name: Restore parent
+        if: always()
+        shell: bash
+        run: |
+          git reset --hard "${TARGET_SHA}"
+          test "$(sha256sum "${TARGET_FILE}" | awk '{print $1}')" = "${EXPECTED_PARENT_SHA256}"
