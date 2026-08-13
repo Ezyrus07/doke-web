@@ -1,0 +1,64 @@
+name: Doke UX-CSS-DEBT-020 Top Candidates
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-020-top-candidates
+
+permissions:
+  contents: read
+
+jobs:
+  top:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: daadc8dbbb91f0ddb75591251fce4ea176b66d95
+    steps:
+      - name: Checkout exact certified parent
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+      - name: Guard exact parent
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test -z "$(git status --porcelain)"
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install and generate active graph
+        run: |
+          npm ci --ignore-scripts
+          npm run audit:active-legacy-structures
+      - name: Print compact top five page-local residuals
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs'),path=require('path'),cp=require('child_process');
+          const report=JSON.parse(fs.readFileSync('reports/generated/active-legacy-structures-report.json','utf8'));
+          const files=cp.execFileSync('git',['ls-files','-z','assets/css'],{encoding:'utf8'}).split('\0').filter(f=>f.endsWith('.css'));
+          const ir=/@import\s+(?:url\()?['"]?([^'"\);]+\.css(?:\?[^'"\)]*)?)['"]?\)?/gi;
+          const norm=(v,from)=>{v=v.replace(/\?.*$/,'').replace(/^\.\//,'');if(v.startsWith('/'))return v.replace(/^\/+/, '');if(v.startsWith('assets/'))return v;return path.posix.normalize(path.posix.join(path.posix.dirname(from),v));};
+          const meta=new Map();for(const f of files){const text=fs.readFileSync(f,'utf8'),imports=[];let m;ir.lastIndex=0;while((m=ir.exec(text)))imports.push(norm(m[1],f));meta.set(f,{text,imports,size:Buffer.byteLength(text),important:(text.match(/!important/gi)||[]).length});}
+          const active=new Set(),todo=[...new Set(report.pageAssets.flatMap(p=>p.css))].filter(f=>meta.has(f));while(todo.length){const f=todo.pop();if(active.has(f)||!meta.has(f))continue;active.add(f);for(const n of meta.get(f).imports)if(meta.has(n))todo.push(n);}
+          const high=[...active].filter(f=>{const x=meta.get(f);return x.size>=50000||x.important>=100||x.imports.length>=10;});
+          function parse(src){const lines=src.split(/\r?\n/);let depth=0,sp=[],ap=[],sel=null;const ds=[],stack=[],re=/^\s*([\w-]+)\s*:\s*(.*?)\s*;\s*$/,n=p=>p.join(' ').replace(/\{\s*$/,'').replace(/\s+/g,' ').trim();for(let i=0;i<lines.length;i++){const line=lines[i],t=line.trim(),o=(line.match(/\{/g)||[]).length,c=(line.match(/\}/g)||[]).length;if(!sel){if(ap.length){if(t)ap.push(t);if(line.includes('{')){stack.push({type:'at',header:n(ap),depthBefore:depth});ap=[];}}else if(t.startsWith('@')&&!t.includes(';')){if(line.includes('{'))stack.push({type:'at',header:n([t]),depthBefore:depth});else ap=[t];}else if(sp.length){if(t)sp.push(t);if(line.includes('{')){sel=n(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth});}}else if(t&&!t.startsWith('/*')&&!t.startsWith('*')&&t!=='*/'&&t!=='}'&&!t.startsWith('@')&&!line.includes(';')){sp=[t];if(line.includes('{')){sel=n(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth});}}}if(sel){const m=line.match(re);if(m){const raw=m[2].trim();ds.push({lineIndex:i,line:i+1,selector:sel,property:m[1].toLowerCase(),value:raw,important:/\s*!important\s*$/i.test(raw),context:stack.filter(x=>x.type==='at').map(x=>x.header).join(' || ')});}}depth+=o-c;while(stack.length&&depth<=stack[stack.length-1].depthBefore){const p=stack.pop();if(p.type==='rule')sel=null;}}if(ap.length)throw new Error('unterminated at-rule');const last=new Map(),dead=[];for(let i=ds.length-1;i>=0;i--){const d=ds[i],k=`${d.context} >>> ${d.selector} >>> ${d.property}`,l=last.get(k);if(l&&(!d.important||l.important))dead.push({...d,winnerLine:l.line,winnerValue:l.value,winnerImportant:l.important});if(!l||d.important||!l.important)last.set(k,d);}return{decl:ds.length,dead};}
+          const pagesFor=t=>report.pageAssets.filter(p=>{const seen=new Set(),s=p.css.filter(f=>meta.has(f));while(s.length){const f=s.pop();if(seen.has(f)||!meta.has(f))continue;seen.add(f);if(f===t)return true;for(const n of meta.get(f).imports)if(meta.has(n))s.push(n);}return false;}).map(p=>p.page).sort();
+          const parents=new Map([...active].map(f=>[f,[]]));for(const [p,x] of meta)if(active.has(p))for(const c of x.imports)if(parents.has(c))parents.get(c).push(p);
+          const rows=[...active].map(file=>{const x=meta.get(file),p=parse(x.text),pages=pagesFor(file),sels=[...new Set(p.dead.map(d=>d.selector))],identical=p.dead.filter(d=>d.value===d.winnerValue&&d.important===d.winnerImportant).length;return{file,decl:p.decl,dead:p.dead.length,selectors:sels.length,selectorList:sels,pages:pages.length,pageList:pages,important:x.important,bytes:x.size,parents:(parents.get(file)||[]).sort(),identical,changed:p.dead.length-identical,highRisk:high.includes(file),rows:p.dead.sort((a,b)=>a.line-b.line)};}).filter(r=>r.dead&&r.file.includes('/pages/'));
+          const all=[...active].map(f=>parse(meta.get(f).text).dead.length),total=all.reduce((a,b)=>a+b,0),filesWithDead=all.filter(Boolean).length,highDead=high.filter(f=>parse(meta.get(f).text).dead.length).length;
+          if(active.size!==401||high.length!==37||filesWithDead!==55||total!==1309||highDead!==0)throw new Error(`drift ${active.size}/${high.length}/${filesWithDead}/${total}/${highDead}`);
+          rows.sort((a,b)=>(a.pages-b.pages)||(a.dead-b.dead)||(a.selectors-b.selectors)||(a.important-b.important)||(a.changed-b.changed)||(a.bytes-b.bytes)||a.file.localeCompare(b.file));
+          console.log(`BASE|active=401|high=37|files=55|dead=1309|highDead=0`);
+          rows.slice(0,5).forEach((r,i)=>console.log(`TOP${i}|file=${r.file}|decl=${r.decl}|dead=${r.dead}|selectors=${r.selectors}|pages=${r.pages}|important=${r.important}|bytes=${r.bytes}|parents=${r.parents.join(',')||'-'}|pageList=${r.pageList.join(',')||'-'}|selectorList=${r.selectorList.join(' <OR> ')}|identical=${r.identical}|changed=${r.changed}`));
+          const r=rows[0];for(const d of r.rows)console.log(`ROW|line=${d.line}|selector=${d.selector}|prop=${d.property}|value=${d.value}|imp=${d.important}|ctx=${d.context||'<global>'}|winnerLine=${d.winnerLine}|winnerValue=${d.winnerValue}|winnerImp=${d.winnerImportant}`);
+          NODE
+      - name: Restore exact parent
+        run: |
+          git reset --hard "${TARGET_SHA}"
+          git clean -fd
+          test -z "$(git status --porcelain)"
