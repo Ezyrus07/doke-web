@@ -1,0 +1,115 @@
+name: Doke UX-CSS-DEBT-026 Pedidos Phone Rail Candidate
+
+on:
+  push:
+    branches: [diag/ux-css-debt-026-pedidos-phone-rail-candidate]
+
+permissions:
+  contents: read
+
+jobs:
+  candidate:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 330fce87f3db885402cfd14d70af8a4b177b9c62
+      TARGET_FILE: assets/css/pages/pedidos/tablet-rail-contract.css
+    steps:
+      - name: Checkout exact certified UX-CSS-DEBT-025 SHA
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+      - name: Guard exact parent
+        run: |
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test -z "$(git status --porcelain)"
+          git diff --check
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies and Chromium
+        run: |
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install --with-deps chromium
+          npm run audit:active-legacy-structures
+      - name: Capture exact parent baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp "$TARGET_FILE" /tmp/parent.css
+          node scripts/generate-responsive-index-baseline.js
+          cp reports/responsive-index-baseline.json /tmp/parent-responsive.json
+          cat >/tmp/capture026.js <<'NODE'
+          const fs=require('fs'),cp=require('child_process');const {chromium}=require(process.cwd()+'/node_modules/playwright');
+          const widths=[390,559,560,561,760,761,820,1366],needle='/assets/css/pages/pedidos/tablet-rail-contract.css';
+          const sel='body.orders-page-shell .orders-command-summary, body.orders-page-shell .orders-planner, body.orders-page-shell .orders-command-insights, body.orders-page-shell .orders-list, body.orders-page-shell .orders-empty';
+          const sleep=m=>new Promise(r=>setTimeout(r,m));
+          async function capture(out,mode){const srv=cp.spawn(process.execPath,['scripts/serve-static-site.js','--host=127.0.0.1','--port=5500'],{stdio:'ignore',env:{...process.env,DOKE_E2E_DISABLE_REMOTE_SERVICES:'1'}});try{await sleep(500);const b=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});const result={};let active=0;for(const w of widths){const c=await b.newContext({viewport:{width:w,height:900},reducedMotion:'reduce'}),p=await c.newPage();await p.route('**/*',r=>{const u=new URL(r.request().url()),local=u.origin==='http://127.0.0.1:5500';if(local&&u.pathname.endsWith('.js'))return r.abort();if(local||u.protocol==='data:'||u.protocol==='blob:')return r.continue();return r.abort();});await p.goto('http://127.0.0.1:5500/pedidos.html',{waitUntil:'domcontentloaded',timeout:15000});await p.addStyleTag({content:'html,body{visibility:visible!important;opacity:1!important}.doke-document-preloader,.doke-page-hydration-skeleton{display:none!important}'});const x=await p.evaluate(({sel,needle})=>{const canon=s=>(s||'').replace(/\s+/g,' ').replace(/\(\s+/g,'(').replace(/\s+\)/g,')').replace(/\s*,\s*/g,',').trim(),hits=[];function walk(rules,ctx,href){for(const r of [...rules]){const n=r.constructor?.name||'';if(n==='CSSImportRule'&&r.styleSheet){try{walk(r.styleSheet.cssRules,ctx,r.styleSheet.href||href)}catch{}}else if(n==='CSSMediaRule')walk(r.cssRules,[...ctx,`@media ${r.conditionText}`],href);else if(r.selectorText){for(const q of ['inline-size','width','max-inline-size','max-width','margin-inline']){const v=r.style.getPropertyValue(q);if(v)hits.push({selector:canon(r.selectorText),prop:q,value:v.trim(),priority:r.style.getPropertyPriority(q),ctx:ctx.join(' || '),href});}}}}for(const sh of [...document.styleSheets])try{walk(sh.cssRules,[],sh.href||'')}catch{}const nodes=[...document.querySelectorAll(sel)],visible=nodes.filter(n=>{const s=getComputedStyle(n),r=n.getBoundingClientRect();return s.display!=='none'&&s.visibility!=='hidden'&&r.width>0&&r.height>0;});const details=visible.map(n=>{const s=getComputedStyle(n),r=n.getBoundingClientRect();return{className:n.className,rect:[+r.x.toFixed(3),+r.y.toFixed(3),+r.width.toFixed(3),+r.height.toFixed(3)],inlineSize:s.inlineSize,width:s.width,maxInlineSize:s.maxInlineSize,maxWidth:s.maxWidth,marginLeft:s.marginLeft,marginRight:s.marginRight}});return{total:nodes.length,visible:visible.length,details,media:matchMedia('(max-width: 560px)').matches,hits:hits.filter(z=>String(z.href).includes(needle)&&z.ctx==='@media (max-width: 560px)'&&z.selector===canon(sel)),doc:[document.documentElement.scrollWidth,document.documentElement.clientWidth,document.documentElement.scrollHeight,document.documentElement.clientHeight,document.body.scrollWidth,document.body.clientWidth,document.body.scrollHeight,document.body.clientHeight]};},{sel,needle});if(x.total!==8||x.visible<1)throw Error(`DOM ${mode} ${w} ${x.total}/${x.visible}`);if(x.media)active++;if(x.doc[0]>x.doc[1]+1||x.doc[4]>x.doc[5]+1)throw Error(`overflow ${mode} ${w}`);const expectedCount=mode==='parent'?2:1;for(const q of ['inline-size','width','max-inline-size','max-width','margin-inline']){const a=x.hits.filter(z=>z.prop===q);if(a.length!==expectedCount)throw Error(`CSSOM count ${mode} ${w} ${q}=${a.length}`);if(a.some(z=>z.priority!==''))throw Error(`priority ${mode} ${w} ${q}`);}delete x.hits;result[w]=x;await c.close();}await b.close();if(active!==3)throw Error(`boundary ${mode}=${active}`);fs.writeFileSync(out,JSON.stringify(result));console.log(`CAPTURE PASS|mode=${mode}|viewports=8|activeMax560=3|cssom=${mode==='parent'?'2+2+2+2+2':'1+1+1+1+1'}`);}finally{srv.kill('SIGTERM')}}
+          capture(process.argv[2],process.argv[3]).catch(e=>{console.error(e);process.exit(1)});
+          NODE
+          node --check /tmp/capture026.js
+          node /tmp/capture026.js /tmp/parent.json parent
+      - name: Build deterministic deletion-only candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),file=process.env.TARGET_FILE;
+          const src=fs.readFileSync(file,'utf8'),lines=src.split(/\r?\n/),exact=[[509,'inline-size: 100%;'],[510,'width: 100%;'],[511,'max-inline-size: 100%;'],[512,'max-width: 100%;'],[513,'margin-inline: 0;']];
+          for(const [i,v] of exact)if(lines[i].trim()!==v)throw Error(`row drift ${i+1}`);const del=new Set(exact.map(x=>x[0]));const out=lines.filter((_l,i)=>!del.has(i)).join('\n');fs.writeFileSync(file,out);const hash=crypto.createHash('sha256').update(out).digest('hex');console.log(`CANDIDATE HASH=${hash}|bytes=${Buffer.byteLength(src)}->${Buffer.byteLength(out)}`);
+          NODE
+          test "$(git diff --name-only)" = "$TARGET_FILE"
+          test "$(git diff --numstat -- "$TARGET_FILE" | awk '{print $1}')" = 0
+          test "$(git diff --numstat -- "$TARGET_FILE" | awk '{print $2}')" = 5
+          test -z "$(git diff --name-only -- package.json package-lock.json)"
+          git diff --check
+      - name: Prove parser compaction and candidate runtime parity
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs');
+          function parse(src){const lines=src.split(/\r?\n/);let depth=0,sp=[],ap=[],sel=null,ds=[],stack=[],re=/^\s*([\w-]+)\s*:\s*(.*?)\s*;\s*$/,norm=p=>p.join(' ').replace(/\{\s*$/,'').replace(/\s+/g,' ').trim();for(const line of lines){const t=line.trim(),o=(line.match(/\{/g)||[]).length,c=(line.match(/\}/g)||[]).length;if(!sel){if(ap.length){if(t)ap.push(t);if(line.includes('{')){stack.push({type:'at',header:norm(ap),depthBefore:depth});ap=[];}}else if(t.startsWith('@')&&!t.includes(';')){if(line.includes('{'))stack.push({type:'at',header:norm([t]),depthBefore:depth});else ap=[t];}else if(sp.length){if(t)sp.push(t);if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth});}}else if(t&&!t.startsWith('/*')&&!t.startsWith('*')&&t!=='*/'&&t!=='}'&&!t.startsWith('@')&&!line.includes(';')){sp=[t];if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth});}}}if(sel){const m=line.match(re);if(m){const raw=m[2].trim();ds.push({sel,prop:m[1].toLowerCase(),imp:/\s*!important\s*$/i.test(raw),ctx:stack.filter(x=>x.type==='at').map(x=>x.header).join(' || ')});}}depth+=o-c;while(stack.length&&depth<=stack[stack.length-1].depthBefore){const p=stack.pop();if(p.type==='rule')sel=null;}}const last=new Map();let dead=0;for(let i=ds.length-1;i>=0;i--){const d=ds[i],k=`${d.ctx}>${d.sel}>${d.prop}`,l=last.get(k);if(l&&(!d.imp||l.imp))dead++;if(!l||d.imp||!l.imp)last.set(k,d);}return{decl:ds.length,dead};}
+          const p=parse(fs.readFileSync('/tmp/parent.css','utf8')),c=parse(fs.readFileSync(process.env.TARGET_FILE,'utf8'));if(p.decl!==347||p.dead!==5||c.decl!==342||c.dead!==0)throw Error(`parser ${p.decl}/${p.dead}->${c.decl}/${c.dead}`);console.log('PARSER PASS|347/5->342/0');
+          NODE
+          node /tmp/capture026.js /tmp/candidate.json candidate
+          node <<'NODE'
+          const fs=require('fs'),a=JSON.parse(fs.readFileSync('/tmp/parent.json')),b=JSON.parse(fs.readFileSync('/tmp/candidate.json'));if(JSON.stringify(a)!==JSON.stringify(b)){for(const k of Object.keys(a))if(JSON.stringify(a[k])!==JSON.stringify(b[k]))console.error('DIFF',k,JSON.stringify(a[k]),JSON.stringify(b[k]));throw Error('runtime mismatch')}console.log('RUNTIME PARITY PASS|computed+rect+document/body=0-diffs|cssom=2x5->1x5');
+          NODE
+      - name: Preserve responsive contract without rebaseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp /tmp/parent-responsive.json reports/responsive-index-baseline.json
+          node scripts/test-responsive-contract.js | tee /tmp/responsive.log
+          grep -q 'Checks: 893' /tmp/responsive.log
+          grep -q 'Failures: 0' /tmp/responsive.log
+          grep -q 'Skips: 277' /tmp/responsive.log
+      - name: Validate candidate governance and residual
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/conflicts.log
+          grep -q 'Conflicting class/property pairs: 339' /tmp/conflicts.log
+          npm run audit:agent-governance
+          npm run audit:shared-app-header-contract
+          npm run audit:mobile-shell-location-contract
+          npm run audit:responsive-boundaries
+          npm run audit:duplicate-assets
+          npm run audit:domain-completion-matrix | tee /tmp/domain.log
+          grep -q 'Domains: 23' /tmp/domain.log
+          grep -q 'Critical flows: 15' /tmp/domain.log
+          grep -q 'Average maturity: 2.91/6' /tmp/domain.log
+          grep -q 'Critical blockers: 12' /tmp/domain.log
+          npm run audit:active-legacy-structures
+          node <<'NODE'
+          const fs=require('fs'),path=require('path'),cp=require('child_process');const report=JSON.parse(fs.readFileSync('reports/generated/active-legacy-structures-report.json','utf8')),files=cp.execFileSync('git',['ls-files','-z','assets/css'],{encoding:'utf8'}).split('\0').filter(f=>f.endsWith('.css')),ir=/@import\s+(?:url\()?['"]?([^'"\);]+\.css(?:\?[^'"\)]*)?)['"]?\)?/gi,norm=(v,from)=>{v=v.replace(/\?.*$/,'').replace(/^\.\//,'');if(v.startsWith('/'))return v.replace(/^\/+/, '');if(v.startsWith('assets/'))return v;return path.posix.normalize(path.posix.join(path.posix.dirname(from),v));},meta=new Map();for(const f of files){const text=fs.readFileSync(f,'utf8'),imports=[];let m;ir.lastIndex=0;while((m=ir.exec(text)))imports.push(norm(m[1],f));meta.set(f,{text,imports,size:Buffer.byteLength(text),important:(text.match(/!important/gi)||[]).length});}const active=new Set(),todo=[...new Set(report.pageAssets.flatMap(p=>p.css))].filter(f=>meta.has(f));while(todo.length){const f=todo.pop();if(active.has(f)||!meta.has(f))continue;active.add(f);for(const n of meta.get(f).imports)if(meta.has(n))todo.push(n)}const high=[...active].filter(f=>{const x=meta.get(f);return x.size>=50000||x.important>=100||x.imports.length>=10});function dead(src){const r=/([^{}]+)\{([^{}]*)\}/gs,last=new Map();let total=0,m;const all=[];while((m=r.exec(src))){const sel=m[1].trim(),body=m[2],d=/([\w-]+)\s*:\s*([^;]+);/g;let q;while((q=d.exec(body)))all.push({sel,prop:q[1],imp:/!important/.test(q[2])})}for(let i=all.length-1;i>=0;i--){const d=all[i],k=d.sel+'>'+d.prop,l=last.get(k);if(l&&(!d.imp||l.imp))total++;if(!l||d.imp||!l.imp)last.set(k,d)}return total}const rows=[...active].map(f=>dead(meta.get(f).text)),total=rows.reduce((a,b)=>a+b,0),withDead=rows.filter(Boolean).length,highDead=high.filter(f=>dead(meta.get(f).text)).length;if(active.size!==401||high.length!==37||withDead!==48||total!==1286||highDead!==0)throw Error(`residual ${active.size}/${high.length}/${withDead}/${total}/${highDead}`);console.log('RESIDUAL PASS|active=401|high=37|files=48|dead=1286|highDead=0');
+          NODE
+      - name: Restore exact parent
+        if: always()
+        run: |
+          git reset --hard "$TARGET_SHA"
+          git clean -fd
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test -z "$(git status --porcelain)"
