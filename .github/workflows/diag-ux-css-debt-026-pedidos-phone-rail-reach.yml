@@ -1,0 +1,109 @@
+name: Doke UX-CSS-DEBT-026 Pedidos Phone Rail Reach
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-026-pedidos-phone-rail-reach
+
+permissions:
+  contents: read
+
+jobs:
+  reach:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 330fce87f3db885402cfd14d70af8a4b177b9c62
+      PARENT_SHA: 32089a725a156cabe8cc2be52ba0b75b6774ee28
+      TARGET_FILE: assets/css/pages/pedidos/tablet-rail-contract.css
+    steps:
+      - name: Checkout exact certified UX-CSS-DEBT-025 SHA
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+
+      - name: Guard exact checkpoint and authority chain
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test "$(git rev-parse HEAD^)" = "${PARENT_SHA}"
+          test -z "$(git status --porcelain)"
+          grep -Fq 'assets/css/pages/pedidos-foundation.css' pedidos.html
+          grep -Fq './pedidos-runtime-page.css' assets/css/pages/pedidos-foundation.css
+          grep -Fq './pedidos/tablet-rail-contract.css' assets/css/pages/pedidos-runtime-page.css
+          git diff --check
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies and Chromium
+        run: |
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install --with-deps chromium
+          npm run audit:active-legacy-structures
+
+      - name: Prove single consumer and parser rows
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs'),path=require('path'),cp=require('child_process');
+          const target=process.env.TARGET_FILE;
+          const lines=fs.readFileSync(target,'utf8').split(/\r?\n/);
+          const old=[[509,'inline-size: 100%;'],[510,'width: 100%;'],[511,'max-inline-size: 100%;'],[512,'max-width: 100%;'],[513,'margin-inline: 0;']];
+          const win=[[546,'inline-size: var(--doke-orders-phone-surface-rail);'],[547,'width: var(--doke-orders-phone-surface-rail);'],[548,'max-inline-size: var(--doke-orders-phone-surface-rail);'],[549,'max-width: var(--doke-orders-phone-surface-rail);'],[550,'margin-inline: auto;']];
+          for(const [i,v] of [...old,...win]) if(lines[i].trim()!==v) throw new Error(`row drift ${i+1}: ${lines[i]}`);
+          const report=JSON.parse(fs.readFileSync('reports/generated/active-legacy-structures-report.json','utf8'));
+          const files=cp.execFileSync('git',['ls-files','-z','assets/css'],{encoding:'utf8'}).split('\0').filter(f=>f.endsWith('.css'));
+          const ir=/@import\s+(?:url\()?['"]?([^'"\);]+\.css(?:\?[^'"\)]*)?)['"]?\)?/gi;
+          const norm=(v,from)=>{v=v.replace(/\?.*$/,'').replace(/^\.\//,'');if(v.startsWith('/'))return v.replace(/^\/+/, '');if(v.startsWith('assets/'))return v;return path.posix.normalize(path.posix.join(path.posix.dirname(from),v));};
+          const meta=new Map();for(const f of files){const text=fs.readFileSync(f,'utf8'),imports=[];let m;ir.lastIndex=0;while((m=ir.exec(text)))imports.push(norm(m[1],f));meta.set(f,{imports});}
+          const pages=[];for(const p of report.pageAssets){const seen=new Set(),stack=[...p.css.filter(f=>meta.has(f))];while(stack.length){const f=stack.pop();if(seen.has(f)||!meta.has(f))continue;seen.add(f);if(f===target){pages.push(p.page);break;}for(const n of meta.get(f).imports)if(meta.has(n))stack.push(n);}}
+          if(JSON.stringify(pages.sort())!==JSON.stringify(['pedidos.html'])) throw new Error(`consumer drift ${JSON.stringify(pages)}`);
+          console.log('AUTHORITY PASS|consumer=pedidos.html|oldRows=510-514|winnerRows=547-551|important=0');
+          NODE
+
+      - name: Prove CSSOM winners and phone geometry
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat >/tmp/reach026.js <<'NODE'
+          const cp=require('child_process');
+          const {chromium}=require(process.cwd()+'/node_modules/playwright');
+          const viewports=[[390,844],[559,900],[560,900],[561,900],[760,900],[761,900],[820,1180],[1366,900]];
+          const fileNeedle='/assets/css/pages/pedidos/tablet-rail-contract.css';
+          const selector='body.orders-page-shell .orders-command-summary, body.orders-page-shell .orders-planner, body.orders-page-shell .orders-command-insights, body.orders-page-shell .orders-list, body.orders-page-shell .orders-empty';
+          const classes=['orders-command-summary','orders-planner','orders-command-insights','orders-list','orders-empty'];
+          const canon=s=>(s||'').replace(/\s+/g,' ').replace(/\(\s+/g,'(').replace(/\s+\)/g,')').replace(/\s*,\s*/g,',').trim();
+          const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+          (async()=>{const server=cp.spawn(process.execPath,['scripts/serve-static-site.js','--host=127.0.0.1','--port=5500'],{stdio:'ignore',env:{...process.env,DOKE_E2E_DISABLE_REMOTE_SERVICES:'1'}});try{await sleep(500);const browser=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});let active=0;for(const [w,h] of viewports){const ctx=await browser.newContext({viewport:{width:w,height:h},reducedMotion:'reduce'}),page=await ctx.newPage();await page.route('**/*',route=>{const u=new URL(route.request().url()),local=u.origin==='http://127.0.0.1:5500';if(local&&u.pathname.endsWith('.js'))return route.abort();if(local||u.protocol==='data:'||u.protocol==='blob:')return route.continue();return route.abort();});await page.goto('http://127.0.0.1:5500/pedidos.html',{waitUntil:'domcontentloaded',timeout:15000});await page.addStyleTag({content:'html,body{visibility:visible!important;opacity:1!important}.doke-document-preloader,.doke-page-hydration-skeleton{display:none!important}'});const x=await page.evaluate(({selector,classes,fileNeedle})=>{const canon=s=>(s||'').replace(/\s+/g,' ').replace(/\(\s+/g,'(').replace(/\s+\)/g,')').replace(/\s*,\s*/g,',').trim(),hits=[];function walk(rules,ctx,href){for(const r of [...rules]){const n=r.constructor?.name||'';if(n==='CSSImportRule'&&r.styleSheet){try{walk(r.styleSheet.cssRules,ctx,r.styleSheet.href||href)}catch{}}else if(n==='CSSMediaRule')walk(r.cssRules,[...ctx,`@media ${r.conditionText}`],href);else if(r.selectorText){for(const p of ['inline-size','width','max-inline-size','max-width','margin-inline']){const v=r.style?.getPropertyValue(p);if(v)hits.push({selector:canon(r.selectorText),prop:p,value:v.trim(),priority:r.style.getPropertyPriority(p),ctx:ctx.join(' || '),href});}}else if(r.cssRules)walk(r.cssRules,ctx,href);}}for(const sh of [...document.styleSheets]){try{walk(sh.cssRules,[],sh.href||'inline')}catch{}}const nodes=[...document.querySelectorAll(selector)],counts=Object.fromEntries(classes.map(c=>[c,document.querySelectorAll('.'+c).length]));const visible=nodes.filter(n=>{const s=getComputedStyle(n),r=n.getBoundingClientRect();return s.display!=='none'&&r.width>0&&r.height>0;});const details=visible.map(n=>{const s=getComputedStyle(n),r=n.getBoundingClientRect(),p=n.parentElement?.getBoundingClientRect();return{className:n.className,inlineSize:s.inlineSize,width:s.width,maxInlineSize:s.maxInlineSize,maxWidth:s.maxWidth,marginLeft:s.marginLeft,marginRight:s.marginRight,rect:[r.x,r.y,r.width,r.height],parent:p?[p.x,p.y,p.width,p.height]:null};});return{counts,total:nodes.length,visible:visible.length,details,media:matchMedia('(max-width: 560px)').matches,hits:hits.filter(z=>String(z.href).includes(fileNeedle)&&z.ctx==='@media (max-width: 560px)'&&z.selector===canon(selector)),doc:[document.documentElement.scrollWidth,document.documentElement.clientWidth,document.body.scrollWidth,document.body.clientWidth]};},{selector,classes,fileNeedle});for(const c of classes)if(x.counts[c]!==1)throw new Error(`DOM ${w} ${c}=${x.counts[c]}`);if(x.total!==5||x.visible<3)throw new Error(`DOM visibility ${w} total=${x.total} visible=${x.visible}`);const by=p=>x.hits.filter(z=>z.prop===p);const expected={"inline-size":['100%','var(--doke-orders-phone-surface-rail)'],width:['100%','var(--doke-orders-phone-surface-rail)'],"max-inline-size":['100%','var(--doke-orders-phone-surface-rail)'],"max-width":['100%','var(--doke-orders-phone-surface-rail)'],"margin-inline":['0','auto']};for(const p of Object.keys(expected)){const a=by(p);if(JSON.stringify(a.map(z=>z.value))!==JSON.stringify(expected[p]))throw new Error(`CSSOM ${w} ${p} ${JSON.stringify(a)}`);if(a.some(z=>z.priority!==''))throw new Error(`priority ${w} ${p}`);}if(x.media){active++;for(const d of x.details){const rw=d.rect[2],pw=d.parent?.[2]||0;if(!(rw>0&&pw>0&&rw<pw))throw new Error(`rail width ${w} ${JSON.stringify(d)}`);const ml=parseFloat(d.marginLeft),mr=parseFloat(d.marginRight);if(!Number.isFinite(ml)||!Number.isFinite(mr)||Math.abs(ml-mr)>1.1)throw new Error(`rail center ${w} ${d.marginLeft}/${d.marginRight}`);if(Math.abs(parseFloat(d.inlineSize)-rw)>1.1||Math.abs(parseFloat(d.width)-rw)>1.1)throw new Error(`computed width ${w}`);}}for(const d of x.details)if(d.rect.some(n=>!Number.isFinite(n))||d.rect[2]<=0||d.rect[3]<=0)throw new Error(`geometry ${w}`);if(x.doc[0]>x.doc[1]+1||x.doc[2]>x.doc[3]+1)throw new Error(`overflow ${w} ${x.doc}`);console.log(`VIEWPORT PASS|w=${w}|active=${x.media}|nodes=${x.total}|visible=${x.visible}|cssom=2+2+2+2+2`);await ctx.close();}await browser.close();if(active!==3)throw new Error(`boundary active=${active}`);console.log('RUNTIME REACH PASS|viewports=8|boundary=560/561|activeMax560=3|cssom=2+2+2+2+2|geometry=valid|overflow=0');}finally{server.kill('SIGTERM')}})().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+          node --check /tmp/reach026.js
+          node /tmp/reach026.js
+
+      - name: Preserve governance baselines
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/conflicts.log
+          grep -q 'Conflicting class/property pairs: 339' /tmp/conflicts.log
+          npm run audit:domain-completion-matrix | tee /tmp/domain.log
+          grep -q 'Domains: 23' /tmp/domain.log
+          grep -q 'Critical flows: 15' /tmp/domain.log
+          grep -q 'Average maturity: 2.91/6' /tmp/domain.log
+          grep -q 'Critical blockers: 12' /tmp/domain.log
+          npm run audit:shared-app-header-contract
+          npm run audit:mobile-shell-location-contract
+          npm run audit:responsive-boundaries
+          npm run audit:duplicate-assets
+
+      - name: Restore exact checkpoint
+        run: |
+          git reset --hard "${TARGET_SHA}"
+          git clean -fd
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test -z "$(git status --porcelain)"
