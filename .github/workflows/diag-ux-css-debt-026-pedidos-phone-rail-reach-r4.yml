@@ -9,15 +9,23 @@ jobs:
     runs-on: ubuntu-24.04
     env:
       TARGET_SHA: 330fce87f3db885402cfd14d70af8a4b177b9c62
+      DIAG_SHA: f8007919c6bdc8086bfad9ca8d7de95c12c9a8ac
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Checkout exact product SHA
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           ref: ${{ env.TARGET_SHA }}
           fetch-depth: 2
-      - name: Guard exact checkpoint
+      - name: Checkout diagnostic helper separately
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.DIAG_SHA }}
+          path: .diag026
+          fetch-depth: 1
+      - name: Guard exact product checkpoint
         run: |
           test "$(git rev-parse HEAD)" = "$TARGET_SHA"
-          test -z "$(git status --porcelain)"
+          test -z "$(git status --porcelain --untracked-files=no)"
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: 22
@@ -26,9 +34,11 @@ jobs:
         run: |
           npm ci --ignore-scripts
           node node_modules/@playwright/test/cli.js install --with-deps chromium
-          node scripts/diag-ux-css-debt-026-reach-r4.js
+          node .diag026/scripts/diag-ux-css-debt-026-reach-r4.js
+          rm -rf .diag026
       - name: Preserve governance
         run: |
+          test -z "$(git status --porcelain)"
           node scripts/audit-css-responsive-conflicts.js | tee /tmp/c
           grep -q 'Conflicting class/property pairs: 339' /tmp/c
           npm run audit:agent-governance
