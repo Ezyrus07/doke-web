@@ -1,0 +1,194 @@
+name: COM-B03C-R4W R4T Successor Hosted Execution
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - 'backend/modules/communities/community-realtime-private-auth-r4w.js'
+      - 'config/com-b03c-r4w-r4v-consumed-authorization-successor-workflow-installation-readiness.json'
+      - 'scripts/test-com-b03c-r4w-r4v-consumed-authorization-successor-workflow-installation-readiness.js'
+      - 'scripts/execute-com-b03c-r4w-single-use-r4t-successor-hosted-execution.js'
+      - 'scripts/verify-com-b03c-r4w-single-use-r4t-successor-hosted-execution-report.js'
+      - 'docs/validation/COM-B03C-R4W-R4V-CONSUMED-AUTHORIZATION-R4T-SUCCESSOR-WORKFLOW-INSTALLATION-READINESS.json'
+      - '.github/workflows/com-b03c-r4w-r4t-successor-hosted-execution.yml'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+  push:
+    branches: [com/com-001-baseline-audit]
+    paths:
+      - 'config/com-b03c-r4t-single-use-successor-executor-trigger.json'
+
+permissions: { contents: read }
+
+concurrency:
+  group: com-b03c-r4w-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: false
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '24', cache: npm }
+      - run: npm ci --ignore-scripts
+      - name: Syntax
+        run: |
+          node --check backend/modules/communities/community-realtime-private-auth-r4w.js
+          node --check scripts/test-com-b03c-r4w-r4v-consumed-authorization-successor-workflow-installation-readiness.js
+          node --check scripts/execute-com-b03c-r4w-single-use-r4t-successor-hosted-execution.js
+          node --check scripts/verify-com-b03c-r4w-single-use-r4t-successor-hosted-execution-report.js
+      - name: R4W repository workflow installation readiness
+        if: github.event_name == 'pull_request'
+        run: node scripts/test-com-b03c-r4w-r4v-consumed-authorization-successor-workflow-installation-readiness.js
+      - name: R4W successor executor repository self-test
+        if: github.event_name == 'pull_request'
+        run: node scripts/execute-com-b03c-r4w-single-use-r4t-successor-hosted-execution.js --repository-self-test
+      - name: R4W verifier repository self-test
+        if: github.event_name == 'pull_request'
+        run: node scripts/verify-com-b03c-r4w-single-use-r4t-successor-hosted-execution-report.js --repository-self-test
+      - name: Current repository-only hard block
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          test ! -e config/com-b03c-r4t-single-use-successor-executor-trigger.json
+          set +e
+          output="$(node scripts/execute-com-b03c-r4w-single-use-r4t-successor-hosted-execution.js 2>&1)"
+          code=$?
+          set -e
+          test "$code" -eq 2
+          printf '%s\n' "$output" | grep -q 'DOKE_COM_B03C_R4W_SINGLE_FILE_TRIGGER_REQUIRED'
+      - name: Historical R4T R4V R4U R4Q boundaries unchanged
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          PREDECESSOR=6673c49da04658b9fc4276997a7f2a281dad8826
+          test -z "$(git diff --name-only "$PREDECESSOR" "${{ github.event.pull_request.head.sha }}" -- \
+            backend/modules/communities/community-realtime-private-auth-r4t.js \
+            scripts/build-com-b03c-r4t-r4q-successor-executor.js \
+            config/com-b03c-r4t-r4q-successor-executor-integration-readiness.json \
+            docs/validation/COM-B03C-R4T-R4Q-SUCCESSOR-EXECUTOR-INTEGRATION-READINESS.json \
+            .github/workflows/com-b03c-r4t-r4q-successor-executor-integration-readiness.yml \
+            backend/modules/communities/community-realtime-private-auth-r4v.js \
+            config/com-b03c-r4v-r4u-fresh-authorization-consumption.json \
+            backend/modules/communities/community-realtime-private-auth-r4u.js \
+            backend/modules/communities/community-realtime-private-auth-r4q.js \
+            scripts/execute-com-b03c-r4q-single-use-phase-attributed-hosted-terminal-observation.js)"
+      - name: Trigger commit continuity
+        if: github.event_name == 'push'
+        shell: bash
+        run: |
+          test "$GITHUB_RUN_ATTEMPT" = "1"
+          TRIGGER=config/com-b03c-r4t-single-use-successor-executor-trigger.json
+          test -f "$TRIGGER"
+          test "$(git rev-parse HEAD^)" = "$(node -p "require('./${TRIGGER}').workflowInstallHead")"
+          test "$(git diff --name-only HEAD^ HEAD | wc -l | tr -d ' ')" = "1"
+          test "$(git diff --name-only HEAD^ HEAD)" = "$TRIGGER"
+          node - <<'NODE'
+          const cp = require('node:child_process');
+          const r4w = require('./backend/modules/communities/community-realtime-private-auth-r4w');
+          const receipt = require('./config/com-b03c-r4v-r4u-fresh-authorization-consumption.json');
+          const trigger = require('./config/com-b03c-r4t-single-use-successor-executor-trigger.json');
+          const parentHead = cp.execFileSync('git', ['rev-parse','HEAD^'], { encoding: 'utf8' }).trim();
+          const changedFiles = cp.execFileSync('git', ['diff','--name-only','HEAD^','HEAD'], { encoding: 'utf8' }).trim().split(/\n/).filter(Boolean);
+          const result = r4w.validateFutureTriggerCommit({
+            trigger,
+            parentHead,
+            changedFiles,
+            runAttempt: Number(process.env.GITHUB_RUN_ATTEMPT),
+            hostedWorkflowCertified: true,
+            authorizationReceipt: receipt
+          });
+          if (result.decision !== 'r4w_future_trigger_valid_authority_available_for_this_attempt') process.exit(1);
+          NODE
+      - name: Domain Completion Matrix
+        if: github.event_name == 'pull_request'
+        run: npm run audit:domain-completion-matrix
+      - name: Agent Governance
+        if: github.event_name == 'pull_request'
+        run: npm run audit:agent-governance
+      - name: Diff hygiene
+        if: github.event_name == 'pull_request'
+        run: git diff --check "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}"
+
+  authorize:
+    if: github.event_name == 'push'
+    needs: certify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 2 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+      - name: Authorize exact single-use R4W R4T successor trigger
+        shell: bash
+        run: |
+          test "$GITHUB_RUN_ATTEMPT" = "1"
+          TRIGGER=config/com-b03c-r4t-single-use-successor-executor-trigger.json
+          test -f "$TRIGGER"
+          test "$(git rev-parse HEAD^)" = "$(node -p "require('./${TRIGGER}').workflowInstallHead")"
+          test "$(git diff --name-only HEAD^ HEAD | wc -l | tr -d ' ')" = "1"
+          test "$(git diff --name-only HEAD^ HEAD)" = "$TRIGGER"
+          node - <<'NODE'
+          const cp = require('node:child_process');
+          const r4w = require('./backend/modules/communities/community-realtime-private-auth-r4w');
+          const receipt = require('./config/com-b03c-r4v-r4u-fresh-authorization-consumption.json');
+          const trigger = require('./config/com-b03c-r4t-single-use-successor-executor-trigger.json');
+          const parentHead = cp.execFileSync('git', ['rev-parse','HEAD^'], { encoding: 'utf8' }).trim();
+          const changedFiles = cp.execFileSync('git', ['diff','--name-only','HEAD^','HEAD'], { encoding: 'utf8' }).trim().split(/\n/).filter(Boolean);
+          const result = r4w.authorizeFutureTriggerExecution({
+            trigger,
+            parentHead,
+            changedFiles,
+            runAttempt: Number(process.env.GITHUB_RUN_ATTEMPT),
+            hostedWorkflowCertified: true,
+            authorizationReceipt: receipt
+          });
+          if (result.decision !== r4w.AUTHORIZED_DECISION) process.exit(1);
+          if (result.remoteExecutionAuthority !== true || result.remoteCredentialReadAuthority !== true ||
+              result.remoteDependencyLoadAuthority !== true || result.networkAuthority !== true ||
+              result.stagingReadAuthority !== true || result.stagingMutationAuthority !== true ||
+              result.realtimeSubscriptionAuthority !== true || result.authIdentityLifecycleAuthority !== true ||
+              result.runtimeChangeAuthority !== false || result.productionAuthority !== false ||
+              result.pullRequestMergeAuthority !== false) process.exit(1);
+          NODE
+
+  canary:
+    if: github.event_name == 'push'
+    needs: authorize
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: doke-staging
+    env:
+      SUPABASE_PROJECT_REF: zwkczgewzbsorbrjuzpb
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      COM_B03C_R4W_REPORT_PATH: reports/generated/COM-B03C-R4W-SINGLE-USE-R4T-SUCCESSOR-HOSTED-EXECUTION.json
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 2 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+      - name: Install canary-only dependencies
+        run: npm install --no-save --ignore-scripts pg@8 @supabase/supabase-js@2.112.2
+      - name: Execute single-use R4T successor hosted observation
+        id: execute
+        continue-on-error: true
+        run: node scripts/execute-com-b03c-r4w-single-use-r4t-successor-hosted-execution.js
+      - name: Verify sanitized R4T successor evidence
+        if: always()
+        run: node scripts/verify-com-b03c-r4w-single-use-r4t-successor-hosted-execution-report.js reports/generated/COM-B03C-R4W-SINGLE-USE-R4T-SUCCESSOR-HOSTED-EXECUTION.json
+      - name: Upload sanitized R4T successor evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: com-b03c-r4w-r4t-successor-${{ github.run_id }}
+          path: reports/generated/COM-B03C-R4W-SINGLE-USE-R4T-SUCCESSOR-HOSTED-EXECUTION.json
+          if-no-files-found: error
+          retention-days: 30
+      - name: Propagate R4T successor observation result
+        if: steps.execute.outcome != 'success'
+        run: exit 1
