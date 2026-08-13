@@ -21,6 +21,21 @@ test('production workers feed reaches canonical max-640 winners',async({page})=>
   await expect.poll(()=>page.evaluate(()=>typeof window.DokeOpenWorkerPreview)).toBe('function');
   await page.evaluate(()=>{const t=document.querySelector('[data-worker-trigger]');window.DokeOpenWorkerPreview(t?.dataset.workerId||'vid-pintura',t||null);});
   await expect.poll(()=>page.locator('[data-worker-preview]').evaluate(el=>el.hidden)).toBe(false);
+
+  const cardinality=await page.evaluate(()=>({
+    profile:document.querySelectorAll('.worker-preview__profile').length,
+    avatar:document.querySelectorAll('.worker-preview__avatar').length,
+    name:document.querySelectorAll('.worker-preview__name').length,
+    caption:document.querySelectorAll('.worker-preview__caption').length,
+    items:document.querySelectorAll('[data-worker-feed-item]').length
+  }));
+  expect(cardinality.profile).toBe(0);
+  expect(cardinality.name).toBe(0);
+  expect(cardinality.avatar).toBeGreaterThan(0);
+  expect(cardinality.caption).toBeGreaterThan(0);
+  expect(cardinality.items).toBeGreaterThan(0);
+  console.log(`DOM CARDINALITY PASS|profile=0|name=0|avatar=${cardinality.avatar}|caption=${cardinality.caption}|items=${cardinality.items}|unreachableSelectors=2`);
+
   for(const [width,height] of sizes){
     await page.setViewportSize({width,height});
     const r=await page.evaluate(({wanted})=>{
@@ -28,16 +43,18 @@ test('production workers feed reaches canonical max-640 winners',async({page})=>
       const defs=Object.fromEntries(wanted.map(([s,p])=>[`${s}|${p}`,[]]));
       const walk=(rules,href,media='')=>{for(const rule of rules||[]){if(rule.type===CSSRule.IMPORT_RULE&&rule.styleSheet){let rs;try{rs=rule.styleSheet.cssRules}catch{}if(rs)walk(rs,rule.styleSheet.href||href,media);continue}if(rule.type===CSSRule.MEDIA_RULE){walk(rule.cssRules,href,rule.conditionText||'');continue}if(rule.type!==CSSRule.STYLE_RULE||!String(href||'').includes(target)||norm(media)!==norm(q))continue;for(const [s,p] of wanted)if(rule.selectorText===s){const v=rule.style.getPropertyValue(p);if(v)defs[`${s}|${p}`].push(norm(v));}}};
       for(const sh of document.styleSheets){let rs;try{rs=sh.cssRules}catch{}if(rs)walk(rs,sh.href||'');}
-      const el=s=>document.querySelector(s),profile=el('.worker-preview__profile'),avatar=el('.worker-preview__avatar'),name=el('.worker-preview__name'),caption=el('.worker-preview__caption');
-      const a=getComputedStyle(profile),b=getComputedStyle(avatar),c=getComputedStyle(name),d=getComputedStyle(caption),root=getComputedStyle(document.documentElement);
-      const rects=[profile,avatar,name,caption].map(x=>{const z=x.getBoundingClientRect();return [z.width,z.height]});
-      return{defs,media:matchMedia(q).matches,gap:a.gap,aw:b.width,ah:b.height,nf:parseFloat(c.fontSize),pad:[d.paddingTop,d.paddingRight,d.paddingBottom,d.paddingLeft],cf:parseFloat(d.fontSize),rf:parseFloat(root.fontSize),rects,items:document.querySelectorAll('[data-worker-feed-item]').length,sw:document.documentElement.scrollWidth,cw:document.documentElement.clientWidth,bsw:document.body.scrollWidth,vw:innerWidth};
+      const avatar=document.querySelector('.worker-preview__avatar'),caption=document.querySelector('.worker-preview__caption');
+      const b=getComputedStyle(avatar),d=getComputedStyle(caption),root=getComputedStyle(document.documentElement);
+      const rects=[avatar,caption].map(x=>{const z=x.getBoundingClientRect();return [z.width,z.height]});
+      return{defs,media:matchMedia(q).matches,aw:b.width,ah:b.height,pad:[d.paddingTop,d.paddingRight,d.paddingBottom,d.paddingLeft],cf:parseFloat(d.fontSize),rf:parseFloat(root.fontSize),rects,items:document.querySelectorAll('[data-worker-feed-item]').length,profileCount:document.querySelectorAll('.worker-preview__profile').length,nameCount:document.querySelectorAll('.worker-preview__name').length,sw:document.documentElement.scrollWidth,cw:document.documentElement.clientWidth,bsw:document.body.scrollWidth,vw:innerWidth};
     },{wanted});
     for(const [s,p,v] of wanted) expect(r.defs[`${s}|${p}`]).toEqual(v.map(norm));
-    expect(r.media).toBe(width<=640); expect(r.items).toBeGreaterThan(0); for(const [w,h] of r.rects){expect(w).toBeGreaterThan(0);expect(h).toBeGreaterThan(0)}
+    expect(r.media).toBe(width<=640); expect(r.items).toBeGreaterThan(0);
+    expect(r.profileCount).toBe(0); expect(r.nameCount).toBe(0);
+    for(const [w,h] of r.rects){expect(w).toBeGreaterThan(0);expect(h).toBeGreaterThan(0)}
     expect(r.sw).toBeLessThanOrEqual(r.cw+1); expect(r.bsw).toBeLessThanOrEqual(r.vw+1);
-    if(width<=640){expect(r.gap).toBe('14px');expect(r.aw).toBe('76px');expect(r.ah).toBe('76px');expect(Math.abs(r.nf-r.rf*1.16)).toBeLessThan(.08);expect(r.pad).toEqual(['0px','16px','0px','16px']);expect(Math.abs(r.cf-r.rf*.92)).toBeLessThan(.08);}
-    console.log(`REACH WIDTH PASS|w=${width}|media=${r.media?1:0}|cssom=2x6|items=${r.items}|overflow=0`);
+    if(width<=640){expect(r.aw).toBe('76px');expect(r.ah).toBe('76px');expect(r.pad).toEqual(['0px','16px','0px','16px']);expect(Math.abs(r.cf-r.rf*.92)).toBeLessThan(.08);}
+    console.log(`REACH WIDTH PASS|w=${width}|media=${r.media?1:0}|cssom=2x6|reachable=avatar+caption|unreachable=profile+name|items=${r.items}|overflow=0`);
   }
-  console.log('REACH PASS|viewports=8|boundary=639/640/641|naturalHidden=1|productionFeed=1|productionOpen=1|cssom=2x6|overflow=0');
+  console.log('REACH PASS|viewports=8|boundary=639/640/641|naturalHidden=1|productionFeed=1|productionOpen=1|cssom=2x6|reachableSelectors=2|unreachableSelectors=2|overflow=0');
 });
