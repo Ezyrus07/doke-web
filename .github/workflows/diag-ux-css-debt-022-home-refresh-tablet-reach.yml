@@ -1,0 +1,96 @@
+name: Doke UX-CSS-DEBT-022 Home Refresh Tablet Reach
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-022-home-refresh-tablet-reach
+
+permissions:
+  contents: read
+
+jobs:
+  reach:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: f29547f405cad765f8cac75d52d59bd3575f469f
+      TARGET_FILE: assets/css/pages/home-refresh/tablet-rails.css
+    steps:
+      - name: Checkout exact parent
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+      - name: Guard exact owner and dead rows
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          grep -Fq '@import url("./home-refresh/tablet-rails.css?v=20260426-home-refresh-v10");' assets/css/pages/home-refresh.css
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');
+          const f=process.env.TARGET_FILE,s=fs.readFileSync(f,'utf8'),lines=s.split(/\r?\n/),sha=crypto.createHash('sha256').update(s).digest('hex');
+          const exact=[
+            [54,'width: 100%;'],[55,'text-align: center;'],[97,'flex: 0 0 auto;'],
+            [213,'flex: 0 0 auto;'],[327,'width: 100%;'],[329,'text-align: center;']
+          ];
+          for(const [n,v] of exact) if(lines[n-1].trim()!==v) throw new Error(`line ${n} drift: ${lines[n-1]}`);
+          const decl=(s.match(/^\s*[\w-]+\s*:\s*.*;\s*$/gm)||[]).length;
+          if(decl!==150) throw new Error('decl drift '+decl);
+          console.log(`STATIC PASS|decl=150|dead=3|sha=${sha}|bytes=${Buffer.byteLength(s)}`);
+          NODE
+      - name: Setup Node and Chromium
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+      - run: |
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install --with-deps chromium
+      - name: Prove canonical DOM CSSOM and tablet boundaries
+        run: |
+          set -euo pipefail
+          cat >/tmp/reach.js <<'NODE'
+          const cp=require('child_process'); const {chromium}=require(process.cwd()+'/node_modules/playwright');
+          const viewports=[[560,900],[561,900],[699,900],[700,900],[820,1180],[1024,900],[1025,900],[390,844]];
+          const fileNeedle='/assets/css/pages/home-refresh/tablet-rails.css';
+          const sLabel='body.shell-home .home-catégory__label';
+          const sTabs='body.shell-home .mini-tabs .mini-tab, body.shell-home .mini-tabs .filter-toggle';
+          const canon=s=>(s||'').replace(/\s+/g,' ').replace(/\(\s+/g,'(').replace(/\s+\)/g,')').replace(/\s*,\s*/g,',').trim();
+          const server=cp.spawn(process.execPath,['scripts/serve-static-site.js','--host=127.0.0.1','--port=5500'],{stdio:'ignore',env:{...process.env,DOKE_E2E_DISABLE_REMOTE_SERVICES:'1'}});
+          const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+          (async()=>{try{await sleep(500);const browser=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});let active=0;
+            for(const [w,h] of viewports){const ctx=await browser.newContext({viewport:{width:w,height:h},reducedMotion:'reduce'});const page=await ctx.newPage();
+              await page.route('**/*',route=>{const u=new URL(route.request().url()),local=u.origin==='http://127.0.0.1:5500';if(local&&u.pathname.endsWith('.js'))return route.abort();if(local||u.protocol==='data:'||u.protocol==='blob:')return route.continue();return route.abort();});
+              await page.goto('http://127.0.0.1:5500/index.html',{waitUntil:'domcontentloaded',timeout:15000});
+              await page.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important}.doke-document-preloader{display:none!important}html,body{visibility:visible!important;opacity:1!important}'});
+              const out=await page.evaluate(({sLabel,sTabs,fileNeedle})=>{const canon=s=>(s||'').replace(/\s+/g,' ').replace(/\(\s+/g,'(').replace(/\s+\)/g,')').replace(/\s*,\s*/g,',').trim();const hits=[];
+                function walk(rules,ctx,href){for(const r of [...rules]){if(r.constructor?.name==='CSSImportRule'&&r.styleSheet){try{walk(r.styleSheet.cssRules,ctx,r.styleSheet.href||href)}catch{}}else if(r.constructor?.name==='CSSMediaRule'){walk(r.cssRules,[...ctx,`@media ${r.conditionText}`],href)}else if([canon(sLabel),canon(sTabs)].includes(canon(r.selectorText))){for(const p of ['width','text-align','flex']){const v=r.style?.getPropertyValue(p);if(v)hits.push({sel:canon(r.selectorText),prop:p,value:v.trim(),priority:r.style.getPropertyPriority(p),ctx:ctx.join(' || '),href});}}}}
+                for(const sh of [...document.styleSheets]){try{walk(sh.cssRules,[],sh.href||'inline')}catch{}}
+                return {labels:document.querySelectorAll(sLabel).length,tabs:document.querySelectorAll(sTabs).length,media:matchMedia('(min-width: 561px) and (max-width: 1024px)').matches,hits:hits.filter(x=>String(x.href).includes(fileNeedle))};
+              },{sLabel,sTabs,fileNeedle});
+              if(out.labels<1||out.tabs<1)throw new Error(`canonical DOM absent ${w}: labels=${out.labels} tabs=${out.tabs}`);
+              const mh=out.hits.filter(x=>x.ctx==='@media (min-width: 561px) and (max-width: 1024px)');
+              const widths=mh.filter(x=>x.sel===canon(sLabel)&&x.prop==='width'), texts=mh.filter(x=>x.sel===canon(sLabel)&&x.prop==='text-align'), flex=mh.filter(x=>x.sel===canon(sTabs)&&x.prop==='flex');
+              if(widths.length!==2||texts.length!==2||flex.length!==2)throw new Error(`CSSOM cardinality ${w}: ${widths.length}/${texts.length}/${flex.length}`);
+              if(widths.some(x=>x.value!=='100%')||texts.some(x=>x.value!=='center')||flex.some(x=>x.value!=='0 0 auto'))throw new Error(`value drift ${w}`);
+              if(mh.some(x=>x.priority!==''))throw new Error(`priority drift ${w}`);
+              if(out.media)active++;
+              await ctx.close();
+            }
+            await browser.close(); if(active!==5)throw new Error(`tablet boundary count=${active}`); console.log('REACH PASS|viewports=8|tabletActive=5|DOM=canonical|cssom=2+2+2');
+          }finally{server.kill('SIGTERM')}})().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+          node --check /tmp/reach.js
+          node /tmp/reach.js
+      - name: Governance baseline
+        run: |
+          set -euo pipefail
+          npm run audit:shared-app-header-contract
+          npm run audit:mobile-shell-location-contract
+          npm run audit:responsive-boundaries
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/conflicts.log
+          grep -q 'Conflicting class/property pairs: 339' /tmp/conflicts.log
+      - name: Restore exact parent
+        run: |
+          git reset --hard "${TARGET_SHA}"
+          git clean -fd
+          test -z "$(git status --porcelain)"
