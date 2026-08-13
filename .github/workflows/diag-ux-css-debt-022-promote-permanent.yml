@@ -1,0 +1,58 @@
+name: Doke UX-CSS-DEBT-022 Promote Permanent
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-022-promote-permanent
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-24.04
+    env:
+      PARENT_SHA: f29547f405cad765f8cac75d52d59bd3575f469f
+      PERMANENT_BRANCH: ux/ux-css-debt-022-home-refresh-tablet-rails-compaction
+      TARGET_FILE: assets/css/pages/home-refresh/tablet-rails.css
+      PARENT_SHA256: b94e817bb4938c0cf97a39c64f22bcb4b334926926ae3b7cc3f72d9cf3e15f9b
+      CANDIDATE_SHA256: f5a0e35a58cb946941967fdbc6f854a720d2946e31747220d7eaec9b9b64ba44
+    steps:
+      - name: Checkout exact parent
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.PARENT_SHA }}
+          fetch-depth: 2
+      - name: Guard permanent branch and reconstruct exact candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${PARENT_SHA}"
+          REMOTE_SHA=$(git ls-remote --heads origin "refs/heads/${PERMANENT_BRANCH}" | awk '{print $1}')
+          test "${REMOTE_SHA}" = "${PARENT_SHA}"
+          test "$(sha256sum "${TARGET_FILE}" | awk '{print $1}')" = "${PARENT_SHA256}"
+          cp "${TARGET_FILE}" /tmp/parent.css
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),f=process.env.TARGET_FILE;const p=fs.readFileSync(f,'utf8'),lines=p.split(/\r?\n/),sha=s=>crypto.createHash('sha256').update(s).digest('hex');
+          const exact=[[53,'width: 100%;'],[54,'text-align: center;'],[96,'flex: 0 0 auto;']];for(const [i,v] of exact)if(lines[i].trim()!==v)throw new Error(`line ${i+1} drift`);const c=lines.filter((_l,i)=>![53,54,96].includes(i)).join('\n');if(sha(c)!==process.env.CANDIDATE_SHA256)throw new Error(`candidate hash ${sha(c)}`);fs.writeFileSync(f,c);console.log('PROMOTION CANDIDATE HASH PASS '+sha(c));
+          NODE
+          git diff --check
+          test "$(git diff --name-only)" = "${TARGET_FILE}"
+          test "$(git diff --numstat -- "${TARGET_FILE}" | awk '{print $1}')" = "0"
+          test "$(git diff --numstat -- "${TARGET_FILE}" | awk '{print $2}')" = "3"
+      - name: Commit and push guarded permanent branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name doke
+          git config user.email bielantoniomma@gmail.com
+          git switch -C "${PERMANENT_BRANCH}"
+          git add "${TARGET_FILE}"
+          git commit -m "UX-CSS-DEBT-022: compact superseded Home tablet rail duplicates"
+          test "$(git rev-parse HEAD^)" = "${PARENT_SHA}"
+          test "$(git diff --name-only "${PARENT_SHA}"...HEAD)" = "${TARGET_FILE}"
+          test "$(git diff --numstat "${PARENT_SHA}"...HEAD -- "${TARGET_FILE}" | awk '{print $1}')" = "0"
+          test "$(git diff --numstat "${PARENT_SHA}"...HEAD -- "${TARGET_FILE}" | awk '{print $2}')" = "3"
+          test "$(sha256sum "${TARGET_FILE}" | awk '{print $1}')" = "${CANDIDATE_SHA256}"
+          git push origin "HEAD:refs/heads/${PERMANENT_BRANCH}"
+          echo "PERMANENT_SHA=$(git rev-parse HEAD)"
