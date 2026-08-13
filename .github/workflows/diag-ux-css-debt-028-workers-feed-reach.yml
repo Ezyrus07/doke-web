@@ -150,7 +150,8 @@ jobs:
                   const item=root.querySelector('[data-worker-feed-item].is-active')||root.querySelector('[data-worker-feed-item]');
                   if(!item)throw new Error('worker item missing');
                   const values=Object.fromEntries(keys.map(([s,p])=>[`${s}|${p}`,[]]));
-                  const walk=sheet=>{let rules;try{rules=sheet.cssRules}catch{return}for(const rule of rules||[]){if(rule.type===CSSRule.IMPORT_RULE&&rule.styleSheet){walk(rule.styleSheet);continue}if(rule.type!==CSSRule.STYLE_RULE)continue;const href=rule.parentStyleSheet?.href||sheet.href||'';if(!href.includes('/assets/css/pages/home-overlays/workers-feed-base.css'))continue;for(const [s,p] of keys)if(rule.selectorText===s){const v=rule.style.getPropertyValue(p).trim();if(v)values[`${s}|${p}`].push({value:v,priority:rule.style.getPropertyPriority(p)})}}};
+                  const inspectRules=(rules,href)=>{for(const rule of rules||[]){if(rule.type===CSSRule.IMPORT_RULE&&rule.styleSheet){walk(rule.styleSheet);continue}if(rule.cssRules){try{inspectRules(rule.cssRules,href)}catch{}continue}if(rule.type!==CSSRule.STYLE_RULE)continue;const owner=rule.parentStyleSheet?.href||href||'';if(!owner.includes('/assets/css/pages/home-overlays/workers-feed-base.css'))continue;for(const [s,p] of keys)if(rule.selectorText===s){const v=rule.style.getPropertyValue(p).trim();if(v)values[`${s}|${p}`].push({value:v,priority:rule.style.getPropertyPriority(p)})}}};
+                  const walk=sheet=>{let rules;try{rules=sheet.cssRules}catch{return}inspectRules(rules,sheet.href||'')};
                   for(const sheet of document.styleSheets)walk(sheet);
                   const pick=(sel,props)=>{const el=item.querySelector(sel);if(!el)throw new Error(`missing ${sel}`);const c=getComputedStyle(el),b=el.getBoundingClientRect(),o={display:c.display,visibility:c.visibility,rect:[b.x,b.y,b.width,b.height].map(n=>Math.round(n*1000)/1000)};for(const p of props)o[p]=c.getPropertyValue(p);return o;};
                   const geom=el=>{const c=getComputedStyle(el),b=el.getBoundingClientRect();return{display:c.display,visibility:c.visibility,rect:[b.x,b.y,b.width,b.height].map(n=>Math.round(n*1000)/1000)}};
@@ -191,12 +192,11 @@ jobs:
             assert(gitBlob(TARGET)===TARGET_BLOB,'target blob drift');
             assert(gitBlob('index.html')===INDEX_BLOB,'index blob drift');
             assert(gitBlob('resultados.html')===RESULTS_BLOB,'resultados blob drift');
-            const original=fs.readFileSync(TARGET,'utf8');
             const parent=await capture('parent');
             const build=buildCandidate();
             const candidate=await capture('candidate');
             for(const width of VIEWPORTS){
-              for(const [s,p] of KEYS){const k=`${s}|${p}`;assert(parent[width].values[k].length===candidate[width].values[k].length+1,`CSSOM declaration count ${width} ${k}`);}
+              for(const [s,p] of KEYS){const k=`${s}|${p}`;assert(parent[width].values[k].length===candidate[width].values[k].length+1,`CSSOM declaration count ${width} ${k}: ${parent[width].values[k].length}->${candidate[width].values[k].length}`);}
               const a=structuredClone(parent[width]),b=structuredClone(candidate[width]);delete a.values;delete b.values;assert(JSON.stringify(a)===JSON.stringify(b),`runtime mismatch ${width}`);
             }
             console.log('RUNTIME PARITY PASS|computed+rect+document/body=0-diffs|targetPropertyOccurrences=-6|ownershipFixture=dom-only');
