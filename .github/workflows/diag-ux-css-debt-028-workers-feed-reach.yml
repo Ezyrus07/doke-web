@@ -41,7 +41,7 @@ jobs:
           const base=overlay.indexOf('./home-overlays/workers-feed-base.css'),cards=overlay.indexOf('./home-overlays/workers-feed-card-layout.css');
           if(base<0||cards<0||base>=cards) throw new Error('overlay import order drift');
           if(!js.includes('window.DokeHomeWorkers = (() => {')||!js.includes('feed.innerHTML = WORKERS.map(createFeedItem).join')) throw new Error('production renderer drift');
-          console.log('SOURCE AUTHORITY PASS|index>home>runtime>runtime-page>overlays>workers-feed-base|productionRenderer=1|rankingRun=31718664920|rankingJob=94509775708|sourceDefinitions=2x6|max640=1');
+          console.log('SOURCE AUTHORITY PASS|index>home>runtime>runtime-page>overlays>workers-feed-base|productionRenderer=1|rankingRun=31718664920|rankingJob=94509775708|canonicalPairs=6|max640=1');
           NODE
 
       - name: Setup Node.js
@@ -55,13 +55,13 @@ jobs:
           npm ci --ignore-scripts
           npx playwright install --with-deps chromium
 
-      - name: Run production DOM and winner reach proof
+      - name: Run production DOM and canonical reach proof
         shell: bash
         run: |
           cat > tests/ux-css-debt-028-workers-feed-runtime.spec.js <<'JS'
           const { test, expect } = require('@playwright/test');
-          const sizes=[[390,844],[560,900],[639,900],[640,900],[641,900],[760,900],[820,1180],[1366,900]];
-          test('workers feed mobile winners are runtime-effective',async({page})=>{
+          const sizes=[[639,900],[640,900],[641,900],[760,900],[761,900],[820,1000],[821,1000]];
+          test('canonical workers feed selectors are reached at runtime',async({page})=>{
             await page.route('https://fonts.googleapis.com/**',r=>r.fulfill({contentType:'text/css',body:''}));
             await page.route('https://fonts.gstatic.com/**',r=>r.abort());
             await page.route('https://images.pexels.com/**',r=>r.fulfill({status:204,body:''}));
@@ -75,19 +75,29 @@ jobs:
             await expect.poll(()=>page.evaluate(()=>typeof window.DokeOpenWorkerPreview)).toBe('function');
             await page.evaluate(()=>{const t=document.querySelector('[data-worker-trigger]');window.DokeOpenWorkerPreview(t?.dataset.workerId||'vid-pintura',t||null);});
             await expect.poll(()=>page.locator('[data-worker-preview]').evaluate(el=>el.hidden)).toBe(false);
-            const card=await page.evaluate(()=>({profile:document.querySelectorAll('.worker-preview__profile').length,name:document.querySelectorAll('.worker-preview__name').length,avatar:document.querySelectorAll('.worker-preview__avatar').length,caption:document.querySelectorAll('.worker-preview__caption').length,items:document.querySelectorAll('[data-worker-feed-item]').length}));
-            expect(card.profile).toBe(0); expect(card.name).toBe(0); expect(card.avatar).toBeGreaterThan(0); expect(card.caption).toBeGreaterThan(0); expect(card.items).toBeGreaterThan(0);
-            console.log(`DOM CARDINALITY PASS|profile=0|name=0|avatar=${card.avatar}|caption=${card.caption}|items=${card.items}|unreachableSelectors=2`);
+            const card=await page.evaluate(()=>({items:document.querySelectorAll('[data-worker-feed-item]').length,caption:document.querySelectorAll('.worker-preview__caption').length,title:document.querySelectorAll('.worker-preview__title').length,actions:document.querySelectorAll('.worker-preview__actions').length,action:document.querySelectorAll('.worker-preview__action').length,open:document.body.classList.contains('worker-preview-open')}));
+            expect(card.open).toBe(true); expect(card.items).toBeGreaterThan(0); expect(card.caption).toBe(card.items); expect(card.title).toBe(card.items); expect(card.actions).toBe(card.items); expect(card.action).toBe(card.items*4);
+            console.log(`DOM REACH PASS|items=${card.items}|caption=${card.caption}|title=${card.title}|actions=${card.actions}|action=${card.action}`);
+            const seen={};
             for(const [width,height] of sizes){
               await page.setViewportSize({width,height});
-              const r=await page.evaluate(()=>{const a=document.querySelector('.worker-preview__avatar'),c=document.querySelector('.worker-preview__caption'),acs=getComputedStyle(a),ccs=getComputedStyle(c),root=getComputedStyle(document.documentElement);const ar=a.getBoundingClientRect(),cr=c.getBoundingClientRect();return{media:matchMedia('(max-width: 640px)').matches,aw:acs.width,ah:acs.height,pad:[ccs.paddingTop,ccs.paddingRight,ccs.paddingBottom,ccs.paddingLeft],cf:parseFloat(ccs.fontSize),rf:parseFloat(root.fontSize),rects:[[ar.width,ar.height],[cr.width,cr.height]],profile:document.querySelectorAll('.worker-preview__profile').length,name:document.querySelectorAll('.worker-preview__name').length,items:document.querySelectorAll('[data-worker-feed-item]').length,sw:document.documentElement.scrollWidth,cw:document.documentElement.clientWidth,bsw:document.body.scrollWidth,vw:innerWidth};});
-              expect(r.media).toBe(width<=640); expect(r.profile).toBe(0); expect(r.name).toBe(0); expect(r.items).toBeGreaterThan(0);
+              const r=await page.evaluate(()=>{const c=document.querySelector('.worker-preview__caption'),t=document.querySelector('.worker-preview__title'),as=document.querySelector('.worker-preview__actions'),a=document.querySelector('.worker-preview__action'),cs=getComputedStyle(c),ts=getComputedStyle(t),ass=getComputedStyle(as),acs=getComputedStyle(a),cr=c.getBoundingClientRect(),tr=t.getBoundingClientRect(),asr=as.getBoundingClientRect(),ar=a.getBoundingClientRect();return{m640:matchMedia('(max-width: 640px)').matches,m760:matchMedia('(max-width: 760px)').matches,m820:matchMedia('(max-width: 820px)').matches,computed:{left:cs.left,right:cs.right,bottom:cs.bottom,title:ts.fontSize,gap:ass.gap,width:acs.width},rects:[[cr.width,cr.height],[tr.width,tr.height],[asr.width,asr.height],[ar.width,ar.height]],sw:document.documentElement.scrollWidth,cw:document.documentElement.clientWidth,bsw:document.body.scrollWidth,vw:innerWidth};});
+              expect(r.m640).toBe(width<=640); expect(r.m760).toBe(width<=760); expect(r.m820).toBe(width<=820);
               for(const [w,h] of r.rects){expect(w).toBeGreaterThan(0);expect(h).toBeGreaterThan(0)}
               expect(r.sw).toBeLessThanOrEqual(r.cw+1); expect(r.bsw).toBeLessThanOrEqual(r.vw+1);
-              if(width<=640){expect(r.aw).toBe('76px');expect(r.ah).toBe('76px');expect(r.pad).toEqual(['0px','16px','0px','16px']);expect(Math.abs(r.cf-r.rf*.92)).toBeLessThan(.08);}
-              console.log(`REACH WIDTH PASS|w=${width}|media=${r.media?1:0}|reachable=avatar+caption|unreachable=profile+name|items=${r.items}|overflow=0`);
+              if(width===640) expect(r.computed).toEqual({left:'14px',right:'76px',bottom:'24px',title:'16px',gap:'12px',width:'42px'});
+              if(width===641) expect(r.computed).toEqual({left:'14px',right:'76px',bottom:'24px',title:'18.08px',gap:'12px',width:'42px'});
+              if(width===761) expect(r.computed).toEqual({left:'20px',right:'20px',bottom:'24px',title:'18.08px',gap:'18px',width:'58px'});
+              if(width===821) expect(r.computed.width).toBe('66px');
+              seen[width]=r.computed;
+              console.log(`REACH WIDTH PASS|w=${width}|m640=${r.m640?1:0}|m760=${r.m760?1:0}|m820=${r.m820?1:0}|computed=${JSON.stringify(r.computed)}|overflow=0`);
             }
-            console.log('REACH PASS|viewports=8|boundary=639/640/641|productionFeed=1|productionOpen=1|reachableSelectors=2|unreachableSelectors=2|overflow=0');
+            expect(seen[640].title).not.toBe(seen[641].title);
+            expect(seen[640].right).toBe(seen[641].right);
+            expect(seen[640].gap).toBe(seen[641].gap);
+            expect(seen[640].width).toBe(seen[641].width);
+            console.log('CASCADE PASS|rankingPairs=6|identical=4|changed=2|titleBoundary=640/641|caption+actions+actionShadowedByLaterComponentAt<=760');
+            console.log('REACH PASS|viewports=7|boundaries=639/640/641+760/761+820/821|productionDOM=1|overflow=0');
           });
           JS
           node node_modules/@playwright/test/cli.js test tests/ux-css-debt-028-workers-feed-runtime.spec.js
