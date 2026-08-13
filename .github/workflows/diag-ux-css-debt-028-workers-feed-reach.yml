@@ -57,6 +57,7 @@ jobs:
             ['.worker-preview__actions','gap','12px','12px'],
             ['.worker-preview__action','width','52px','52px'],
           ];
+          const sortRows=rows=>rows.slice().sort((a,b)=>a[0].localeCompare(b[0])||a[1].localeCompare(b[1])||a[2].localeCompare(b[2])||a[3].localeCompare(b[3]));
           function parse(src){
             const lines=src.split(/\r?\n/);let depth=0,sp=[],ap=[],sel=null;const ds=[],stack=[],re=/^\s*([\w-]+)\s*:\s*(.*?)\s*;\s*$/,norm=p=>p.join(' ').replace(/\{\s*$/,'').replace(/\s+/g,' ').trim();
             for(let i=0;i<lines.length;i++){
@@ -115,7 +116,7 @@ jobs:
           test('six superseded declarations are deletion-safe after ownership correction',async({browser})=>{
             const original=fs.readFileSync(target,'utf8');
             const p=parse(original);expect(p.declarations.length).toBe(372);expect(p.dead.length).toBe(6);
-            expect(p.dead.map(d=>[d.selector,d.property,d.value,d.winnerValue])).toEqual(declarations);
+            expect(sortRows(p.dead.map(d=>[d.selector,d.property,d.value,d.winnerValue]))).toEqual(sortRows(declarations));
             const parent=await capture(browser,'parent');
             const candidate=removeSix(original);fs.writeFileSync(target,candidate);
             const q=parse(candidate);expect(q.declarations.length).toBe(366);expect(q.dead.length).toBe(0);
