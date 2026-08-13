@@ -1,0 +1,203 @@
+name: Doke UX-CSS-DEBT-024 Professional Profile Editor Reach
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-024-professional-profile-editor-reach
+
+permissions:
+  contents: read
+
+jobs:
+  reach:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: a81b046521eca19f23223522198b00d387e41b03
+      PARENT_SHA: c72fdba37031001c0d503af7b61babbeb46e1c96
+      TARGET_FILE: assets/css/pages/professional-profile-editor.css
+    steps:
+      - name: Checkout exact certified UX-CSS-DEBT-023 SHA
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+
+      - name: Guard exact checkpoint owner and parser-proven rows
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test "$(git rev-parse HEAD^)" = "${PARENT_SHA}"
+          test -z "$(git status --porcelain)"
+          git diff --check
+          grep -Fq '<link href="assets/css/pages/professional-profile-editor.css?v=20260720-quote-template-smart-guidance-v1" rel="stylesheet"/>' perfil-profissional.html
+          grep -Fq 'data-page="perfil-profissional"' perfil-profissional.html
+          grep -Fq 'data-profile-mode="owner-edit"' perfil-profissional.html
+          grep -Fq 'class="profile-service-management"' perfil-profissional.html
+          grep -Fq 'class="profile-service-filters"' perfil-profissional.html
+          grep -Fq 'class="profile-area profile-area--ads doke-page-section"' perfil-profissional.html
+          grep -Fq 'class="profile-area__rail profile-area__rail--ads"' perfil-profissional.html
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');
+          const f=process.env.TARGET_FILE,s=fs.readFileSync(f,'utf8'),lines=s.split(/\r?\n/);
+          const exact=[
+            [118,'padding: 16px;'],
+            [127,'width: 100%;'],
+            [144,'grid-template-columns: minmax(0, 1fr);'],
+            [153,'grid-template-columns: repeat(2, minmax(0, 1fr));'],
+            [212,'grid-template-columns: minmax(0, 1fr);'],
+            [227,'padding: 13px;'],
+            [245,'width: 100%;']
+          ];
+          for(const [n,v] of exact) if(lines[n-1].trim()!==v) throw new Error(`line ${n} drift: ${lines[n-1]}`);
+          const decl=(s.match(/^\s*[\w-]+\s*:\s*.*;\s*$/gm)||[]).length;
+          const important=(s.match(/!important/gi)||[]).length;
+          if(decl!==140) throw new Error(`declaration drift ${decl}`);
+          if(important!==0) throw new Error(`important drift ${important}`);
+          const sha=crypto.createHash('sha256').update(s).digest('hex');
+          console.log(`STATIC PASS|decl=140|dead=4|important=0|bytes=${Buffer.byteLength(s)}|sha=${sha}`);
+          NODE
+
+      - name: Setup Node and Chromium
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies and Chromium
+        run: |
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install --with-deps chromium
+
+      - name: Prove canonical DOM CSSOM computed geometry and responsive boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat >/tmp/reach.js <<'NODE'
+          const cp=require('child_process');
+          const {chromium}=require(process.cwd()+'/node_modules/playwright');
+          const viewports=[[390,844],[600,900],[601,900],[760,900],[820,1180],[1180,900],[1181,900],[1366,900]];
+          const fileNeedle='/assets/css/pages/professional-profile-editor.css';
+          const management='body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-service-management';
+          const filters=management+' .profile-service-filters';
+          const rail='body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-area__rail--ads';
+          const area='body[data-page="perfil-profissional"][data-profile-mode="owner-edit"] .profile-area--ads';
+          const canon=s=>(s||'').replace(/\s+/g,' ').replace(/\(\s+/g,'(').replace(/\s+\)/g,')').replace(/\s*,\s*/g,',').trim();
+          const server=cp.spawn(process.execPath,['scripts/serve-static-site.js','--host=127.0.0.1','--port=5500'],{stdio:'ignore',env:{...process.env,DOKE_E2E_DISABLE_REMOTE_SERVICES:'1'}});
+          const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+          function same(a,b){return canon(a)===canon(b)}
+          (async()=>{try{
+            await sleep(500);
+            const browser=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+            let mobileActive=0,tabletMaxActive=0;
+            for(const [w,h] of viewports){
+              const ctx=await browser.newContext({viewport:{width:w,height:h},reducedMotion:'reduce'});
+              const page=await ctx.newPage();
+              await page.route('**/*',route=>{const u=new URL(route.request().url()),local=u.origin==='http://127.0.0.1:5500';if(local&&u.pathname.endsWith('.js'))return route.abort();if(local||u.protocol==='data:'||u.protocol==='blob:')return route.continue();return route.abort();});
+              await page.goto('http://127.0.0.1:5500/perfil-profissional.html',{waitUntil:'domcontentloaded',timeout:15000});
+              await page.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important}.doke-document-preloader,.doke-page-hydration-skeleton{display:none!important}html,body{visibility:visible!important;opacity:1!important}'});
+              const out=await page.evaluate(({management,filters,rail,area,fileNeedle})=>{
+                const canon=s=>(s||'').replace(/\s+/g,' ').replace(/\(\s+/g,'(').replace(/\s+\)/g,')').replace(/\s*,\s*/g,',').trim();
+                const counts={management:document.querySelectorAll(management).length,filters:document.querySelectorAll(filters).length,rail:document.querySelectorAll(rail).length,area:document.querySelectorAll(area).length};
+                document.querySelectorAll('[data-professional-profile-hydration-ready], .profile-feed, .profile-area__rail--ads').forEach(el=>{el.hidden=false;el.removeAttribute('hidden');});
+                const railNode=document.querySelector(rail);
+                if(railNode && !railNode.children.length){for(let i=0;i<2;i++){const d=document.createElement('div');d.textContent='reach probe '+i;d.style.minHeight='40px';railNode.appendChild(d);}}
+                const hits=[];
+                function walk(rules,ctx,href){for(const r of [...rules]){
+                  const name=r.constructor?.name||'';
+                  if(name==='CSSImportRule'&&r.styleSheet){try{walk(r.styleSheet.cssRules,ctx,r.styleSheet.href||href)}catch{}}
+                  else if(name==='CSSMediaRule') walk(r.cssRules,[...ctx,`@media ${r.conditionText}`],href);
+                  else if(name==='CSSContainerRule'){const head=(r.cssText||'').split('{')[0].trim();walk(r.cssRules,[...ctx,head],href);}
+                  else if(r.cssRules) walk(r.cssRules,ctx,href);
+                  else if(r.selectorText){for(const p of ['padding','width','grid-template-columns']){const v=r.style?.getPropertyValue(p);if(v)hits.push({selector:canon(r.selectorText),prop:p,value:v.trim(),priority:r.style.getPropertyPriority(p),ctx:ctx.join(' || '),href});}}
+                }}
+                for(const sh of [...document.styleSheets]){try{walk(sh.cssRules,[],sh.href||'inline')}catch{}}
+                const m=document.querySelector(management),f=document.querySelector(filters),r=document.querySelector(rail),a=document.querySelector(area);
+                const rect=n=>{const x=n.getBoundingClientRect();return [+x.x.toFixed(3),+x.y.toFixed(3),+x.width.toFixed(3),+x.height.toFixed(3)]};
+                const ms=m?getComputedStyle(m):null,fs=f?getComputedStyle(f):null,rs=r?getComputedStyle(r):null;
+                return {
+                  counts,
+                  media600:matchMedia('(max-width: 600px)').matches,
+                  media1180:matchMedia('(max-width: 1180px)').matches,
+                  computed:m&&f&&r&&a?{
+                    management:{padding:[ms.paddingTop,ms.paddingRight,ms.paddingBottom,ms.paddingLeft],rect:rect(m)},
+                    filters:{width:fs.width,display:fs.display,rect:rect(f)},
+                    rail:{gridTemplateColumns:rs.gridTemplateColumns,display:rs.display,rect:rect(r)},
+                    area:{rect:rect(a)},
+                    document:{html:[document.documentElement.scrollWidth,document.documentElement.clientWidth,document.documentElement.scrollHeight,document.documentElement.clientHeight],body:[document.body.scrollWidth,document.body.clientWidth,document.body.scrollHeight,document.body.clientHeight]}
+                  }:null,
+                  hits:hits.filter(x=>String(x.href).includes(fileNeedle))
+                };
+              },{management,filters,rail,area,fileNeedle});
+              for(const [k,v] of Object.entries(out.counts)) if(v!==1) throw new Error(`canonical DOM ${k} ${w}: ${v}`);
+              if(!out.computed) throw new Error(`computed capture missing ${w}`);
+              const relevant=out.hits;
+              const select=(sel,prop,ctxText)=>relevant.filter(x=>same(x.selector,sel)&&x.prop===prop&&x.ctx===ctxText);
+              const mg=select(management,'padding','@media (max-width: 600px)');
+              const fw=select(filters,'width','@media (max-width: 600px)');
+              const rg=select(rail,'grid-template-columns','');
+              const rm=select(rail,'grid-template-columns','@media (max-width: 1180px)');
+              const rc=relevant.filter(x=>same(x.selector,rail)&&x.prop==='grid-template-columns'&&x.ctx.startsWith('@container owner-ads'));
+              if(JSON.stringify(mg.map(x=>x.value))!==JSON.stringify(['16px','13px'])) throw new Error(`mobile padding CSSOM ${w}: ${JSON.stringify(mg)}`);
+              if(JSON.stringify(fw.map(x=>x.value))!==JSON.stringify(['100%','100%'])) throw new Error(`mobile width CSSOM ${w}: ${JSON.stringify(fw)}`);
+              if(JSON.stringify(rg.map(x=>x.value))!==JSON.stringify(['minmax(0, 1fr)','repeat(2, minmax(0, 1fr))','minmax(0, 1fr)'])) throw new Error(`global grid CSSOM ${w}: ${JSON.stringify(rg)}`);
+              if(rm.length!==1||rm[0].value!=='minmax(0, 1fr)') throw new Error(`1180 media grid CSSOM ${w}: ${JSON.stringify(rm)}`);
+              if(rc.length!==1||rc[0].value!=='repeat(2, minmax(0, 1fr))') throw new Error(`container grid CSSOM ${w}: ${JSON.stringify(rc)}`);
+              if([...mg,...fw,...rg,...rm,...rc].some(x=>x.priority!=='')) throw new Error(`unexpected important ${w}`);
+              if(out.media600){mobileActive++;if(out.computed.management.padding[0]!=='13px')throw new Error(`mobile winner padding ${w}: ${out.computed.management.padding}`);} else if(out.computed.management.padding[0]==='13px') throw new Error(`mobile padding leaked ${w}`);
+              if(out.media1180)tabletMaxActive++;
+              for(const group of [out.computed.management.rect,out.computed.filters.rect,out.computed.rail.rect,out.computed.area.rect]) if(group.some(n=>!Number.isFinite(n))||group[2]<=0) throw new Error(`invalid geometry ${w}: ${JSON.stringify(group)}`);
+              const areaWidth=out.computed.area.rect[2],columns=out.computed.rail.gridTemplateColumns.trim().split(/\s+/).filter(Boolean).length;
+              if(out.media1180&&columns!==1) throw new Error(`<=1180 must resolve one grid column ${w}: ${out.computed.rail.gridTemplateColumns}`);
+              if(!out.media1180&&areaWidth>=1260&&columns<2) throw new Error(`container >=1260 must resolve 2-up ${w}: area=${areaWidth} grid=${out.computed.rail.gridTemplateColumns}`);
+              console.log(`VIEW|w=${w}|mobile=${out.media600}|max1180=${out.media1180}|padding=${out.computed.management.padding.join(',')}|filterWidth=${out.computed.filters.width}|areaWidth=${areaWidth}|grid=${out.computed.rail.gridTemplateColumns}|html=${out.computed.document.html.join(',')}|body=${out.computed.document.body.join(',')}`);
+              await ctx.close();
+            }
+            await browser.close();
+            if(mobileActive!==2) throw new Error(`600 boundary count ${mobileActive}`);
+            if(tabletMaxActive!==6) throw new Error(`1180 boundary count ${tabletMaxActive}`);
+            console.log('REACH PASS|viewports=8|mobileActive=2|max1180Active=6|DOM=1+1+1+1|mobileCSSOM=2+2|globalGridCSSOM=3|mediaGridCSSOM=1|containerGridCSSOM=1');
+          } finally { server.kill('SIGTERM'); }
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+          node --check /tmp/reach.js
+          node /tmp/reach.js
+
+      - name: Preserve governance conflicts matrix and exact residual baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:agent-governance
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/conflicts.log
+          grep -q 'Conflicting class/property pairs: 339' /tmp/conflicts.log
+          npm run audit:domain-completion-matrix | tee /tmp/domain.log
+          grep -q 'Domains: 23' /tmp/domain.log
+          grep -q 'Critical flows: 15' /tmp/domain.log
+          grep -q 'Average maturity: 2.91/6' /tmp/domain.log
+          grep -q 'Critical blockers: 12' /tmp/domain.log
+          npm run audit:shared-app-header-contract
+          npm run audit:mobile-shell-location-contract
+          npm run audit:responsive-boundaries
+          npm run audit:duplicate-assets
+          node <<'NODE'
+          const fs=require('fs'),path=require('path'),cp=require('child_process');
+          const report=JSON.parse(fs.readFileSync('reports/generated/active-legacy-structures-report.json','utf8'));
+          const tracked=cp.execFileSync('git',['ls-files','-z','assets/css'],{encoding:'utf8'}).split('\0').filter(f=>f.endsWith('.css'));
+          const importRe=/@import\s+(?:url\()?['"]?([^'"\);]+\.css(?:\?[^'"\)]*)?)['"]?\)?/gi;
+          const norm=(v,from)=>{v=v.replace(/\?.*$/,'').replace(/^\.\//,'');if(v.startsWith('/'))return v.replace(/^\/+/, '');if(v.startsWith('assets/'))return v;return path.posix.normalize(path.posix.join(path.posix.dirname(from),v));};
+          const meta=new Map();for(const f of tracked){const text=fs.readFileSync(f,'utf8'),imports=[];let m;importRe.lastIndex=0;while((m=importRe.exec(text)))imports.push(norm(m[1],f));meta.set(f,{text,imports,size:Buffer.byteLength(text),important:(text.match(/!important/gi)||[]).length});}
+          const active=new Set(),todo=[...new Set(report.pageAssets.flatMap(p=>p.css))].filter(f=>meta.has(f));while(todo.length){const f=todo.pop();if(active.has(f)||!meta.has(f))continue;active.add(f);for(const n of meta.get(f).imports)if(meta.has(n))todo.push(n);}
+          const high=[...active].filter(f=>{const x=meta.get(f);return x.size>=50000||x.important>=100||x.imports.length>=10;});
+          function deadCount(src){const lines=src.split(/\r?\n/);let depth=0,sp=[],ap=[],sel=null;const ds=[],stack=[],re=/^\s*([\w-]+)\s*:\s*(.*?)\s*;\s*$/,normH=p=>p.join(' ').replace(/\{\s*$/,'').replace(/\s+/g,' ').trim();for(let i=0;i<lines.length;i++){const line=lines[i],t=line.trim(),o=(line.match(/\{/g)||[]).length,c=(line.match(/\}/g)||[]).length;if(!sel){if(ap.length){if(t)ap.push(t);if(line.includes('{')){stack.push({type:'at',header:normH(ap),depthBefore:depth});ap=[];}}else if(t.startsWith('@')&&!t.includes(';')){if(line.includes('{'))stack.push({type:'at',header:normH([t]),depthBefore:depth});else ap=[t];}else if(sp.length){if(t)sp.push(t);if(line.includes('{')){sel=normH(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth});}}else if(t&&!t.startsWith('/*')&&!t.startsWith('*')&&t!=='*/'&&t!=='}'&&!t.startsWith('@')&&!line.includes(';')){sp=[t];if(line.includes('{')){sel=normH(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth});}}}if(sel){const m=line.match(re);if(m){const raw=m[2].trim(),important=/\s*!important\s*$/i.test(raw),context=stack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');ds.push({selector:sel,property:m[1].toLowerCase(),important,context});}}depth+=o-c;while(stack.length&&depth<=stack[stack.length-1].depthBefore){const p=stack.pop();if(p.type==='rule')sel=null;}}const last=new Map();let dead=0;for(let i=ds.length-1;i>=0;i--){const d=ds[i],k=`${d.context} >>> ${d.selector} >>> ${d.property}`,l=last.get(k);if(l&&(!d.important||l.important))dead++;if(!l||d.important||!l.important)last.set(k,d);}return dead;}
+          if(active.size!==401||high.length!==37)throw new Error(`active/high drift ${active.size}/${high.length}`);
+          const counts=[...active].map(f=>deadCount(meta.get(f).text));const files=counts.filter(Boolean).length,total=counts.reduce((a,b)=>a+b,0),highDead=high.filter(f=>deadCount(meta.get(f).text)>0).length;
+          if(files!==51||total!==1299||highDead!==0)throw new Error(`residual drift ${files}/${total}/${highDead}`);
+          console.log('RESIDUAL PASS|active=401|high=37|files=51|dead=1299|highDead=0');
+          NODE
+
+      - name: Restore exact certified checkpoint
+        run: |
+          git reset --hard "${TARGET_SHA}"
+          git clean -fd
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test -z "$(git status --porcelain)"
