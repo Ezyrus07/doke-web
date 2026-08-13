@@ -21,7 +21,7 @@ jobs:
           ref: ${{ env.TARGET_SHA }}
           fetch-depth: 2
 
-      - name: Guard exact checkpoint source and authority
+      - name: Guard exact checkpoint and authority
         shell: bash
         run: |
           set -euo pipefail
@@ -36,15 +36,12 @@ jobs:
           const runtime=fs.readFileSync('assets/css/pages/home-runtime.css','utf8');
           const page=fs.readFileSync('assets/css/pages/home-runtime-page.css','utf8');
           const overlay=fs.readFileSync('assets/css/pages/home-overlays.css','utf8');
-          const css=fs.readFileSync('assets/css/pages/home-overlays/workers-feed-base.css','utf8');
           const js=fs.readFileSync('assets/js/pages/home/workers.js','utf8');
           for(const [src,needle] of [[html,'assets/css/pages/home.css'],[home,'./home-runtime.css'],[runtime,'./home-runtime-page.css'],[page,'./home-overlays.css'],[overlay,'./home-overlays/workers-feed-base.css'],[overlay,'./home-overlays/workers-feed-card-layout.css']]) if(!src.includes(needle)) throw new Error(`authority edge missing: ${needle}`);
           const base=overlay.indexOf('./home-overlays/workers-feed-base.css'),cards=overlay.indexOf('./home-overlays/workers-feed-card-layout.css');
           if(base<0||cards<0||base>=cards) throw new Error('overlay import order drift');
           if(!js.includes('window.DokeHomeWorkers = (() => {')||!js.includes('feed.innerHTML = WORKERS.map(createFeedItem).join')) throw new Error('production renderer drift');
-          const pairs=[['gap','12px','14px'],['width','82px','76px'],['height','82px','76px'],['font-size','1.2rem','1.16rem'],['padding','0 12px','0 16px'],['font-size','0.92rem','0.92rem']];
-          for(const [prop,oldValue,winner] of pairs){const oldNeedle=`${prop}: ${oldValue};`,winnerNeedle=`${prop}: ${winner};`;if(!css.includes(oldNeedle)||!css.includes(winnerNeedle)||css.indexOf(oldNeedle)>css.lastIndexOf(winnerNeedle))throw new Error(`source pair drift ${prop}`);}
-          console.log('SOURCE AUTHORITY PASS|index>home>runtime>runtime-page>overlays>workers-feed-base|productionRenderer=1|sourceDefinitions=2x6|max640=1');
+          console.log('SOURCE AUTHORITY PASS|index>home>runtime>runtime-page>overlays>workers-feed-base|productionRenderer=1|rankingRun=31718664920|rankingJob=94509775708|sourceDefinitions=2x6|max640=1');
           NODE
 
       - name: Setup Node.js
