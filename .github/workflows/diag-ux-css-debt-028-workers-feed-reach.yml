@@ -38,17 +38,19 @@ jobs:
           test "$(git rev-parse HEAD^)" = "${PARENT_SHA}"
           test -z "$(git status --porcelain)"
           git diff --check
-          grep -Fq '@import url("./home-runtime.css")' assets/css/pages/home.css
-          grep -Fq '@import url("./home-runtime-page.css")' assets/css/pages/home-runtime.css
-          grep -Fq '@import url("./home-overlays.css")' assets/css/pages/home-runtime-page.css
-          grep -Fq '@import url("./home-overlays/workers-feed-base.css")' assets/css/pages/home-overlays.css
-          grep -Fq '@import url("./home-overlays/workers-feed-card-layout.css")' assets/css/pages/home-overlays.css
           node - <<'NODE'
-          const fs=require('fs');const h=fs.readFileSync('index.html','utf8'),o=fs.readFileSync('assets/css/pages/home-overlays.css','utf8'),j=fs.readFileSync('assets/js/pages/home/workers.js','utf8');
-          const a=o.indexOf('./home-overlays/workers-feed-base.css'),b=o.indexOf('./home-overlays/workers-feed-card-layout.css');
-          if(a<0||b<0||a>=b)throw new Error('overlay import order drift');
-          if(!h.includes('assets/js/pages/home/workers.js')||!h.includes('assets/js/pages/home.js')||h.indexOf('assets/js/pages/home/workers.js')>=h.indexOf('assets/js/pages/home.js'))throw new Error('runtime authority drift');
-          if(!j.includes('window.DokeHomeWorkers = (() => {')||!j.includes('feed.innerHTML = WORKERS.map(createFeedItem).join'))throw new Error('production renderer drift');
+          const fs=require('fs');
+          const html=fs.readFileSync('index.html','utf8');
+          const home=fs.readFileSync('assets/css/pages/home.css','utf8');
+          const runtime=fs.readFileSync('assets/css/pages/home-runtime.css','utf8');
+          const page=fs.readFileSync('assets/css/pages/home-runtime-page.css','utf8');
+          const overlay=fs.readFileSync('assets/css/pages/home-overlays.css','utf8');
+          const js=fs.readFileSync('assets/js/pages/home/workers.js','utf8');
+          for(const [src,needle] of [[html,'assets/css/pages/home.css'],[home,'./home-runtime.css'],[runtime,'./home-runtime-page.css'],[page,'./home-overlays.css'],[overlay,'./home-overlays/workers-feed-base.css'],[overlay,'./home-overlays/workers-feed-card-layout.css']]) if(!src.includes(needle)) throw new Error(`authority edge missing: ${needle}`);
+          const a=overlay.indexOf('./home-overlays/workers-feed-base.css'),b=overlay.indexOf('./home-overlays/workers-feed-card-layout.css');
+          if(a>=b)throw new Error('overlay import order drift');
+          if(!html.includes('assets/js/pages/home/workers.js')||!html.includes('assets/js/pages/home.js')||html.indexOf('assets/js/pages/home/workers.js')>=html.indexOf('assets/js/pages/home.js'))throw new Error('runtime authority drift');
+          if(!js.includes('window.DokeHomeWorkers = (() => {')||!js.includes('feed.innerHTML = WORKERS.map(createFeedItem).join'))throw new Error('production renderer drift');
           console.log('AUTHORITY PASS|index>home>runtime>runtime-page>overlays>workers-feed-base|card-layout-after-base=1|production-renderer=1');
           NODE
       - name: Setup Node.js
