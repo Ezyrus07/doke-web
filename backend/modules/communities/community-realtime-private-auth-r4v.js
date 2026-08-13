@@ -89,7 +89,7 @@ function assertSha(value, code = 'R4V_SHA_REQUIRED') {
 }
 
 function exactKeys(value, expected) {
-  return value && typeof value === 'object' && !Array.isArray(value) &&
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value) &&
     JSON.stringify(Object.keys(value).sort()) === JSON.stringify([...expected].sort());
 }
 
@@ -282,7 +282,7 @@ function buildConsumedReceiptDescriptor({ issuerEvidenceHead } = {}) {
     authorizationPhraseFingerprint: consumed.authorizationPhraseFingerprint,
     authorizationReceiptId: consumed.authorizationReceiptId,
     predecessorR4tEvidenceHead: r4u.PREDECESSOR_R4T_EVIDENCE_HEAD,
-    r4tContractId: require('./community-realtime-private-auth-r4t').CONTRACT_ID,
+    r4tContractId: scope.r4tContractId,
     r4tExecutionSemanticsFingerprint: r4u.R4T_EXECUTION_SEMANTICS_FINGERPRINT,
     targetEnvironment: TARGET_ENVIRONMENT,
     projectId: REQUIRED_PROJECT_ID,
@@ -312,6 +312,7 @@ function validateConsumedReceiptDescriptor({ receipt, issuerEvidenceHead } = {})
     receipt.issuerContractId !== CONTRACT_ID ||
     receipt.issuerEvidenceHead !== issuerEvidenceHead ||
     receipt.authorizationPhraseFingerprint !== authorizationPhraseFingerprint() ||
+    receipt.authorizationReceiptId !== deriveAuthorizationReceiptId() ||
     receipt.projectName !== REQUIRED_PROJECT_NAME ||
     receipt.remoteExecutionAuthority !== false
   ) {
