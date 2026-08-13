@@ -1,0 +1,262 @@
+name: Doke UX-CSS-DEBT-028 Ownership Prerequisite Promotion
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-028-media-overlay-ownership-prereq-promote
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-24.04
+    env:
+      PARENT_SHA: e648173f3f98966e3f5bf15413bec3c08f97aab1
+      INDEX_BLOB: 266e4323115909cf174bafb361a33b19dd7d5433
+      RESULTS_BLOB: fc9833984725957829311d31037a2e3dad86c4f7
+      INDEX_SHA256: 852ef932ce8d29130292881cdb888b8dc7362009bf6df4ded48cc6842a2bd6e4
+      RESULTS_SHA256: 4fa1f117f881ea5c8b691952165fa2724bd34d398cf362d7731f798cb2ed9f1d
+      COMBINED_SHA256: 27bf764d4f374a4d4fce73e6239b8b6fbc158fa06f5ff71264c2f2efb900b8c8
+      PERMANENT_BRANCH: ux/ux-css-debt-028-media-overlay-ownership-prereq
+    steps:
+      - name: Checkout exact certified parent
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.PARENT_SHA }}
+          fetch-depth: 2
+
+      - name: Guard parent, source blobs, and namespace
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${PARENT_SHA}"
+          test "$(git hash-object index.html)" = "${INDEX_BLOB}"
+          test "$(git hash-object resultados.html)" = "${RESULTS_BLOB}"
+          test -z "$(git status --porcelain)"
+          if git ls-remote --exit-code --heads origin "refs/heads/${PERMANENT_BRANCH}" >/dev/null 2>&1; then
+            echo "Permanent branch already exists: ${PERMANENT_BRANCH}" >&2
+            exit 1
+          fi
+          git diff --check
+          echo "PARENT GUARD PASS|sha=${PARENT_SHA}|indexBlob=${INDEX_BLOB}|resultadosBlob=${RESULTS_BLOB}|permanentBranchAbsent=1"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies and parent responsive baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          node scripts/generate-responsive-index-baseline.js
+
+      - name: Build exact certified prerequisite candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 <<'PY'
+          from pathlib import Path
+          targets = [Path('index.html'), Path('resultados.html')]
+          roots = ['before-after-preview', 'worker-preview']
+          removed = 0
+          for path in targets:
+              text = path.read_text(encoding='utf-8')
+              original = text
+              for root in roots:
+                  old = f'class="{root} doke-worker-card doke-media-card doke-card doke-page-section doke-overlay doke-overlay--media"'
+                  new = f'class="{root} doke-media-card doke-card doke-page-section doke-overlay doke-overlay--media"'
+                  count = text.count(old)
+                  if count != 1:
+                      raise SystemExit(f'{path}: expected exactly one {root} overlay root, found {count}')
+                  text = text.replace(old, new, 1)
+                  removed += 1
+              path.write_text(text, encoding='utf-8')
+              if original == text:
+                  raise SystemExit(f'{path}: no mutation applied')
+          if removed != 4:
+              raise SystemExit(f'expected 4 removed ownership tokens, got {removed}')
+          print('CANDIDATE BUILD PASS|files=2|tokensRemoved=4|css=0|js=0|domReorder=0')
+          PY
+          mapfile -t files < <(git diff --name-only)
+          test "${#files[@]}" -eq 2
+          test "${files[0]}" = "index.html"
+          test "${files[1]}" = "resultados.html"
+          test "$(git diff --numstat | awk '{a+=$1; d+=$2} END {print a "/" d}')" = "4/4"
+          test -z "$(git diff --name-only -- '*.css' '*.js' assets)"
+          test "$(git diff -U0 | grep -c '^-.*doke-worker-card.*doke-overlay' || true)" -eq 4
+          test "$(git diff -U0 | grep -c '^+.*doke-worker-card.*doke-overlay' || true)" -eq 0
+          test "$(sha256sum index.html | awk '{print $1}')" = "${INDEX_SHA256}"
+          test "$(sha256sum resultados.html | awk '{print $1}')" = "${RESULTS_SHA256}"
+          test "$(cat index.html resultados.html | sha256sum | awk '{print $1}')" = "${COMBINED_SHA256}"
+          git diff --check
+          echo "CANDIDATE HASH PASS|index=${INDEX_SHA256}|resultados=${RESULTS_SHA256}|combined=${COMBINED_SHA256}"
+
+      - name: Guard ownership semantics
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('fs');
+          for (const file of ['index.html','resultados.html']) {
+            const html = fs.readFileSync(file,'utf8');
+            for (const root of ['worker-preview','before-after-preview']) {
+              const re = new RegExp(`<section\\s+class="([^"]*\\b${root}\\b[^"]*)"[^>]*data-${root}`);
+              const m = html.match(re);
+              if (!m) throw new Error(`${file}: missing ${root} overlay root`);
+              const classes = m[1].split(/\s+/);
+              if (classes.includes('doke-worker-card')) throw new Error(`${file}: ${root} still owns doke-worker-card`);
+              if (!classes.includes('doke-overlay') || !classes.includes('doke-overlay--media')) throw new Error(`${file}: ${root} lost overlay authority`);
+            }
+          }
+          const index = fs.readFileSync('index.html','utf8');
+          const results = fs.readFileSync('resultados.html','utf8');
+          const legitimate = (index.match(/\bdoke-worker-card\b/g)||[]).length + (results.match(/\bdoke-worker-card\b/g)||[]).length;
+          if (legitimate !== 7) throw new Error(`expected exactly 7 preserved legitimate worker-card tokens, got ${legitimate}`);
+          console.log(`OWNERSHIP STATIC PASS|overlayRoots=4|misowned=0|legitimateWorkerCardTokens=${legitimate}`);
+          NODE
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Runtime overlay ownership proof
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/doke-server.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill ${SERVER_PID} 2>/dev/null || true' EXIT
+          for i in {1..30}; do curl -fsS http://127.0.0.1:4173/index.html >/dev/null && break; sleep 1; done
+          node <<'NODE'
+          const { chromium } = require('@playwright/test');
+          (async () => {
+            const browser = await chromium.launch({ headless: true });
+            const widths = [390, 430, 640, 641, 760, 761, 820, 1280];
+            const pages = ['index.html', 'resultados.html'];
+            const overlays = [
+              { root: '[data-worker-preview]', children: ['.worker-preview__scrim', '.worker-preview__close', '.worker-preview__stage'] },
+              { root: '[data-before-after-preview]', children: ['.before-after-preview__scrim', '.before-after-preview__dialog'] }
+            ];
+            let checks = 0;
+            for (const pageName of pages) {
+              for (const width of widths) {
+                const page = await browser.newPage({ viewport: { width, height: 900 } });
+                await page.goto(`http://127.0.0.1:4173/${pageName}`, { waitUntil: 'domcontentloaded' });
+                for (const overlay of overlays) {
+                  const result = await page.evaluate(({ rootSel, childSels }) => {
+                    const root = document.querySelector(rootSel);
+                    if (!root) return { error: 'missing-root' };
+                    root.hidden = false;
+                    root.removeAttribute('hidden');
+                    root.setAttribute('aria-hidden', 'false');
+                    const rootStyle = getComputedStyle(root);
+                    const children = childSels.map(sel => {
+                      const el = root.querySelector(sel);
+                      if (!el) return { sel, missing: true };
+                      const s = getComputedStyle(el);
+                      return { sel, display: s.display };
+                    });
+                    return {
+                      rootDisplay: rootStyle.display,
+                      rootPosition: rootStyle.position,
+                      hasWorkerCard: root.classList.contains('doke-worker-card'),
+                      overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+                      children
+                    };
+                  }, { rootSel: overlay.root, childSels: overlay.children });
+                  if (result.error) throw new Error(`${pageName}@${width} ${overlay.root}: ${result.error}`);
+                  if (result.hasWorkerCard) throw new Error(`${pageName}@${width} ${overlay.root}: doke-worker-card leaked`);
+                  if (result.rootDisplay === 'none' || result.rootPosition !== 'fixed') throw new Error(`${pageName}@${width} ${overlay.root}: invalid root ${result.rootDisplay}/${result.rootPosition}`);
+                  for (const child of result.children) {
+                    if (child.missing) throw new Error(`${pageName}@${width} ${overlay.root}: missing ${child.sel}`);
+                    if (child.display === 'none') throw new Error(`${pageName}@${width} ${overlay.root}: ${child.sel} still display:none`);
+                  }
+                  if (result.overflow > 1) throw new Error(`${pageName}@${width}: horizontal overflow ${result.overflow}`);
+                  checks++;
+                }
+                await page.close();
+              }
+            }
+            await browser.close();
+            if (checks !== 32) throw new Error(`expected 32 overlay viewport checks, got ${checks}`);
+            console.log(`RUNTIME REPAIR PASS|pages=2|viewports=8|overlays=2|checks=${checks}|displayNone=0|overflow=0`);
+          })().catch(err => { console.error(err); process.exit(1); });
+          NODE
+
+      - name: Responsive and governance contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/test-responsive-contract.js | tee /tmp/responsive.log
+          grep -q 'Checks: 893' /tmp/responsive.log
+          grep -q 'Failures: 0' /tmp/responsive.log
+          grep -q 'Skips: 277' /tmp/responsive.log
+          npm run audit:agent-governance
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/conflicts.log
+          grep -q 'Conflicting class/property pairs: 339' /tmp/conflicts.log
+          npm run audit:domain-completion-matrix | tee /tmp/domain.log
+          grep -q 'Domains: 23' /tmp/domain.log
+          grep -q 'Critical flows: 15' /tmp/domain.log
+          grep -q 'Average maturity: 2.91/6' /tmp/domain.log
+          grep -q 'Critical blockers: 12' /tmp/domain.log
+          npm run audit:shared-app-header-contract
+          npm run audit:mobile-shell-location-contract
+          npm run audit:responsive-boundaries
+          npm run audit:duplicate-assets | tee /tmp/dup.log
+          grep -q 'Duplicate groups: 0' /tmp/dup.log
+          grep -q 'Duplicated files: 0' /tmp/dup.log
+          mapfile -t product_files < <(git diff --name-only -- index.html resultados.html assets)
+          test "${#product_files[@]}" -eq 2
+          test "${product_files[0]}" = "index.html"
+          test "${product_files[1]}" = "resultados.html"
+          test -z "$(git diff --name-only -- assets)"
+          test "$(sha256sum index.html | awk '{print $1}')" = "${INDEX_SHA256}"
+          test "$(sha256sum resultados.html | awk '{print $1}')" = "${RESULTS_SHA256}"
+          echo 'CONTRACTS PASS|responsive=893/0/277|conflicts=339|domain=23/15/2.91/12|duplicates=0/0|assets=0'
+
+      - name: Create one exact permanent commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout -- docs reports 2>/dev/null || true
+          git clean -fd docs reports >/dev/null 2>&1 || true
+          mapfile -t files < <(git diff --name-only)
+          test "${#files[@]}" -eq 2
+          test "${files[0]}" = "index.html"
+          test "${files[1]}" = "resultados.html"
+          test "$(git diff --numstat | awk '{a+=$1; d+=$2} END {print a "/" d}')" = "4/4"
+          test "$(sha256sum index.html | awk '{print $1}')" = "${INDEX_SHA256}"
+          test "$(sha256sum resultados.html | awk '{print $1}')" = "${RESULTS_SHA256}"
+          git diff --check
+          git config user.name doke
+          git config user.email bielantoniomma@gmail.com
+          git add -- index.html resultados.html
+          git commit -m 'UX-CSS-DEBT-028 prerequisite: remove worker-card ownership from media overlay roots'
+          PERMANENT_SHA="$(git rev-parse HEAD)"
+          test "$(git rev-parse HEAD^)" = "${PARENT_SHA}"
+          test -z "$(git status --porcelain)"
+          test "$(sha256sum index.html | awk '{print $1}')" = "${INDEX_SHA256}"
+          test "$(sha256sum resultados.html | awk '{print $1}')" = "${RESULTS_SHA256}"
+          mapfile -t committed < <(git diff --name-only "${PARENT_SHA}"..HEAD)
+          test "${#committed[@]}" -eq 2
+          test "${committed[0]}" = "index.html"
+          test "${committed[1]}" = "resultados.html"
+          test "$(git diff --numstat "${PARENT_SHA}"..HEAD | awk '{a+=$1; d+=$2} END {print a "/" d}')" = "4/4"
+          echo "PERMANENT COMMIT PASS|sha=${PERMANENT_SHA}|parent=${PARENT_SHA}|files=2|additions=4|deletions=4|index=${INDEX_SHA256}|resultados=${RESULTS_SHA256}"
+
+      - name: Publish guarded permanent branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          PERMANENT_SHA="$(git rev-parse HEAD)"
+          if git ls-remote --exit-code --heads origin "refs/heads/${PERMANENT_BRANCH}" >/dev/null 2>&1; then
+            echo "Permanent branch appeared during promotion: ${PERMANENT_BRANCH}" >&2
+            exit 1
+          fi
+          git push origin "HEAD:refs/heads/${PERMANENT_BRANCH}"
+          REMOTE_SHA="$(git ls-remote --heads origin "refs/heads/${PERMANENT_BRANCH}" | awk '{print $1}')"
+          test "${REMOTE_SHA}" = "${PERMANENT_SHA}"
+          echo "PERMANENT PROMOTION PASS|branch=${PERMANENT_BRANCH}|sha=${PERMANENT_SHA}|parent=${PARENT_SHA}|files=2|tokensRemoved=4|css=0|js=0|assets=0|runtime=32|responsive=893/0/277|conflicts=339|domain=23/15/2.91/12"
