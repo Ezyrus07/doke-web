@@ -1,0 +1,117 @@
+name: Doke UX-CSS-DEBT-025 Orcamento Reach
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-025-orcamento-reach
+
+permissions:
+  contents: read
+
+jobs:
+  reach:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 32089a725a156cabe8cc2be52ba0b75b6774ee28
+      PARENT_SHA: a81b046521eca19f23223522198b00d387e41b03
+      TARGET_FILE: assets/css/pages/orcamento.css
+    steps:
+      - name: Checkout exact certified UX-CSS-DEBT-024 SHA
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+
+      - name: Guard exact checkpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test "$(git rev-parse HEAD^)" = "${PARENT_SHA}"
+          test -z "$(git status --porcelain)"
+          git diff --check
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies and Chromium
+        run: |
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install --with-deps chromium
+          npm run audit:active-legacy-structures
+
+      - name: Prove import authority and parser residual
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs'),path=require('path'),cp=require('child_process');
+          const target=process.env.TARGET_FILE;
+          const html=fs.readFileSync('orcamento.html','utf8');
+          const foundation=fs.readFileSync('assets/css/pages/orcamento-foundation.css','utf8');
+          const src=fs.readFileSync(target,'utf8');
+          if(!html.includes('assets/css/pages/orcamento-foundation.css'))throw new Error('orcamento foundation not linked');
+          if(!foundation.includes('@import url("orcamento.css'))throw new Error('target not imported by foundation');
+          const lines=src.split(/\r?\n/);
+          const exact=[[590,'gap: 6px;'],[594,'min-height: 46px;'],[595,'padding: 7px 8px;'],[604,'font-size: 0.78rem;'],[1024,'gap: 8px;'],[1028,'min-height: 68px;'],[1032,'padding: 9px 6px;'],[1044,'font-size: 0.78rem;']];
+          for(const [i,v] of exact)if(lines[i].trim()!==v)throw new Error(`line ${i+1} drift: ${lines[i]}`);
+          function parse(src){const lines=src.split(/\r?\n/);let depth=0,sp=[],ap=[],sel=null;const ds=[],stack=[],re=/^\s*([\w-]+)\s*:\s*(.*?)\s*;\s*$/,norm=p=>p.join(' ').replace(/\{\s*$/,'').replace(/\s+/g,' ').trim();for(let i=0;i<lines.length;i++){const line=lines[i],t=line.trim(),o=(line.match(/\{/g)||[]).length,c=(line.match(/\}/g)||[]).length;if(!sel){if(ap.length){if(t)ap.push(t);if(line.includes('{')){stack.push({type:'at',header:norm(ap),depthBefore:depth});ap=[];}}else if(t.startsWith('@')&&!t.includes(';')){if(line.includes('{'))stack.push({type:'at',header:norm([t]),depthBefore:depth});else ap=[t];}else if(sp.length){if(t)sp.push(t);if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth});}}else if(t&&!t.startsWith('/*')&&!t.startsWith('*')&&t!=='*/'&&t!=='}'&&!t.startsWith('@')&&!line.includes(';')){sp=[t];if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth});}}}if(sel){const m=line.match(re);if(m){const raw=m[2].trim(),important=/\s*!important\s*$/i.test(raw),context=stack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');ds.push({line:i+1,selector:sel,property:m[1].toLowerCase(),value:raw,important,context});}}depth+=o-c;while(stack.length&&depth<=stack[stack.length-1].depthBefore){const p=stack.pop();if(p.type==='rule')sel=null;}}const last=new Map(),dead=[];for(let i=ds.length-1;i>=0;i--){const d=ds[i],k=`${d.context}>${d.selector}>${d.property}`,l=last.get(k);if(l&&(!d.important||l.important))dead.push({...d,winner:l});if(!l||d.important||!l.important)last.set(k,d);}return{ds,dead};}
+          const parsed=parse(src);
+          if(parsed.ds.length!==567||parsed.dead.length!==4)throw new Error(`parser drift ${parsed.ds.length}/${parsed.dead.length}`);
+          const expected=[
+            [591,'gap','6px',1025,'8px'],
+            [595,'min-height','46px',1029,'68px'],
+            [596,'padding','7px 8px',1033,'9px 6px'],
+            [605,'font-size','0.78rem',1045,'0.78rem']
+          ];
+          for(const e of expected){const d=parsed.dead.find(x=>x.line===e[0]&&x.property===e[1]);if(!d||d.value!==e[2]||d.winner.line!==e[3]||d.winner.value!==e[4]||d.context!=='@media (max-width: 760px)'||d.important||d.winner.important)throw new Error(`dead row mismatch ${e[0]}`);}
+          const report=JSON.parse(fs.readFileSync('reports/generated/active-legacy-structures-report.json','utf8'));
+          const pages=report.pageAssets.filter(p=>p.page==='orcamento.html');if(pages.length!==1)throw new Error('orcamento page matrix drift');
+          console.log(`STATIC REACH PASS|file=${target}|decl=567|dead=4|selectors=3|consumer=orcamento.html|important=0`);
+          NODE
+
+      - name: Prove CSSOM reach boundaries and runtime winner geometry
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat >/tmp/reach-pr190.js <<'NODE'
+          const cp=require('child_process');
+          const {chromium}=require(process.cwd()+'/node_modules/playwright');
+          const viewports=[[390,844],[600,900],[759,900],[760,900],[761,900],[820,1180],[1180,900],[1366,900]];
+          const fileNeedle='/assets/css/pages/orcamento.css';
+          const steps='body[data-page="orcamento"] .budget-steps.become-pro-steps.doke-flow-steps';
+          const step='body[data-page="orcamento"] .budget-step.become-pro-step.doke-flow-step';
+          const strong='body[data-page="orcamento"] .budget-step.become-pro-step.doke-flow-step strong';
+          const canon=s=>(s||'').replace(/\s+/g,' ').replace(/\(\s+/g,'(').replace(/\s+\)/g,')').replace(/\s*,\s*/g,',').trim();
+          const same=(a,b)=>canon(a)===canon(b),sleep=ms=>new Promise(r=>setTimeout(r,ms));
+          (async()=>{const server=cp.spawn(process.execPath,['scripts/serve-static-site.js','--host=127.0.0.1','--port=5500'],{stdio:'ignore',env:{...process.env,DOKE_E2E_DISABLE_REMOTE_SERVICES:'1'}});try{await sleep(500);const browser=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});let active=0;for(const [w,h] of viewports){const ctx=await browser.newContext({viewport:{width:w,height:h},reducedMotion:'reduce'}),page=await ctx.newPage();await page.route('**/*',route=>{const u=new URL(route.request().url()),local=u.origin==='http://127.0.0.1:5500';if(local&&u.pathname.endsWith('.js'))return route.abort();if(local||u.protocol==='data:'||u.protocol==='blob:')return route.continue();return route.abort();});await page.goto('http://127.0.0.1:5500/orcamento.html',{waitUntil:'domcontentloaded',timeout:15000});await page.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important}.doke-document-preloader,.doke-page-hydration-skeleton{display:none!important}html,body{visibility:visible!important;opacity:1!important}'});const x=await page.evaluate(({steps,step,strong,fileNeedle})=>{document.querySelectorAll('[data-budget-hydration-ready]').forEach(el=>{el.hidden=false;el.removeAttribute('hidden')});const canon=s=>(s||'').replace(/\s+/g,' ').replace(/\(\s+/g,'(').replace(/\s+\)/g,')').replace(/\s*,\s*/g,',').trim(),hits=[];function walk(rules,ctx,href){for(const r of [...rules]){const n=r.constructor?.name||'';if(n==='CSSImportRule'&&r.styleSheet){try{walk(r.styleSheet.cssRules,ctx,r.styleSheet.href||href)}catch{}}else if(n==='CSSMediaRule')walk(r.cssRules,[...ctx,`@media ${r.conditionText}`],href);else if(r.selectorText){for(const p of ['gap','min-height','padding','font-size']){const v=r.style?.getPropertyValue(p);if(v)hits.push({selector:canon(r.selectorText),prop:p,value:v.trim(),priority:r.style.getPropertyPriority(p),ctx:ctx.join(' || '),href});}}else if(r.cssRules)walk(r.cssRules,ctx,href);}}for(const sh of [...document.styleSheets]){try{walk(sh.cssRules,[],sh.href||'inline')}catch{}}const sn=document.querySelector(steps),st=document.querySelector(step),sg=document.querySelector(strong),de=document.documentElement,b=document.body;if(!sn||!st||!sg)return{counts:{steps:document.querySelectorAll(steps).length,step:document.querySelectorAll(step).length,strong:document.querySelectorAll(strong).length},computed:null,hits:[]};const ss=getComputedStyle(sn),ts=getComputedStyle(st),gs=getComputedStyle(sg),rect=n=>{const q=n.getBoundingClientRect();return[+q.x.toFixed(3),+q.y.toFixed(3),+q.width.toFixed(3),+q.height.toFixed(3)]};return{counts:{steps:document.querySelectorAll(steps).length,step:document.querySelectorAll(step).length,strong:document.querySelectorAll(strong).length},media:matchMedia('(max-width: 760px)').matches,computed:{steps:{rowGap:ss.rowGap,columnGap:ss.columnGap,rect:rect(sn)},step:{minHeight:ts.minHeight,padding:[ts.paddingTop,ts.paddingRight,ts.paddingBottom,ts.paddingLeft],rect:rect(st)},strong:{fontSize:gs.fontSize,rect:rect(sg)},document:{html:[de.scrollWidth,de.clientWidth,de.scrollHeight,de.clientHeight],body:[b.scrollWidth,b.clientWidth,b.scrollHeight,b.clientHeight]}},hits:hits.filter(z=>String(z.href).includes(fileNeedle))};},{steps,step,strong,fileNeedle});if(x.counts.steps!==1||x.counts.step!==3||x.counts.strong!==3||!x.computed)throw new Error(`DOM ${w} ${JSON.stringify(x.counts)}`);const q=(sel,prop)=>x.hits.filter(z=>same(z.selector,sel)&&z.prop===prop&&z.ctx==='@media (max-width: 760px)');const sg=q(steps,'gap'),mh=q(step,'min-height'),pd=q(step,'padding'),fs=q(strong,'font-size');if(JSON.stringify(sg.map(z=>z.value))!==JSON.stringify(['6px','8px']))throw new Error(`gap cssom ${w} ${JSON.stringify(sg)}`);if(JSON.stringify(mh.map(z=>z.value))!==JSON.stringify(['46px','68px']))throw new Error(`minheight cssom ${w}`);if(JSON.stringify(pd.map(z=>z.value))!==JSON.stringify(['7px 8px','9px 6px']))throw new Error(`padding cssom ${w}`);if(JSON.stringify(fs.map(z=>z.value))!==JSON.stringify(['0.78rem','0.78rem']))throw new Error(`font cssom ${w}`);if([...sg,...mh,...pd,...fs].some(z=>z.priority!==''))throw new Error(`priority ${w}`);if(x.media){active++;if(x.computed.steps.rowGap!=='8px'||x.computed.steps.columnGap!=='8px'||x.computed.step.minHeight!=='68px'||JSON.stringify(x.computed.step.padding)!==JSON.stringify(['9px','6px','9px','6px']))throw new Error(`winner ${w} ${JSON.stringify(x.computed)}`);}for(const g of [x.computed.steps.rect,x.computed.step.rect,x.computed.strong.rect])if(g.some(n=>!Number.isFinite(n))||g[2]<=0||g[3]<=0)throw new Error(`geometry ${w}`);if(x.computed.document.html[0]>x.computed.document.html[1]+1||x.computed.document.body[0]>x.computed.document.body[1]+1)throw new Error(`overflow ${w}`);console.log(`VIEW PASS|w=${w}|media=${x.media}|cssom=2+2+2+2|gap=${x.computed.steps.rowGap}|minH=${x.computed.step.minHeight}|padding=${x.computed.step.padding.join('/')}`);await ctx.close();}await browser.close();if(active!==4)throw new Error(`boundary active=${active}`);console.log('RUNTIME REACH PASS|viewports=8|activeMax760=4|boundaries=760/761|cssom=2+2+2+2|geometry=valid|overflow=0');}finally{server.kill('SIGTERM')}})().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+          node --check /tmp/reach-pr190.js
+          node /tmp/reach-pr190.js
+
+      - name: Preserve governance baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/conflicts.log
+          grep -q 'Conflicting class/property pairs: 339' /tmp/conflicts.log
+          npm run audit:agent-governance
+          npm run audit:domain-completion-matrix | tee /tmp/domain.log
+          grep -q 'Domains: 23' /tmp/domain.log
+          grep -q 'Critical flows: 15' /tmp/domain.log
+          grep -q 'Average maturity: 2.91/6' /tmp/domain.log
+          grep -q 'Critical blockers: 12' /tmp/domain.log
+          npm run audit:shared-app-header-contract
+          npm run audit:mobile-shell-location-contract
+          npm run audit:responsive-boundaries
+          npm run audit:duplicate-assets
+
+      - name: Restore exact checkpoint
+        run: |
+          git reset --hard "${TARGET_SHA}"
+          git clean -fd
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test -z "$(git status --porcelain)"
