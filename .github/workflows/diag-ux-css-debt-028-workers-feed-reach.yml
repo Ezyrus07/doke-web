@@ -1,14 +1,15 @@
-name: Doke UX-CSS-DEBT-028 Workers Feed Candidate
+name: Doke UX-CSS-DEBT-028 Workers Feed Candidate Final
 on:
   push:
     branches: [diag/ux-css-debt-028-workers-feed-reach-r1]
 permissions: {contents: read}
 jobs:
-  candidate:
+  candidate-final:
     runs-on: ubuntu-24.04
     env:
       TARGET_SHA: e648173f3f98966e3f5bf15413bec3c08f97aab1
       TARGET_CSS: assets/css/pages/home-overlays/workers-feed-base.css
+      HARNESS_SHA: 7c2340b12a8c4273759aabb121644cc9c798e6f4
     steps:
       - name: Checkout exact certified UX-CSS-DEBT-027 parent
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -30,197 +31,58 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with: {node-version: 22, cache: npm}
 
-      - name: Install dependencies and Chromium
+      - name: Install dependencies and generate parent baseline
+        shell: bash
         run: |
+          set -euo pipefail
           npm ci --ignore-scripts
           node node_modules/@playwright/test/cli.js install --with-deps chromium
           npm run audit:active-legacy-structures
           node scripts/generate-responsive-index-baseline.js
           test -s reports/responsive-index-baseline.json
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
           echo 'PARENT RESPONSIVE BASELINE PASS|beforeCandidate=1'
 
-      - name: Run CSS-only candidate proof
+      - name: Extract R17 harness and patch only post-audit scope guard
         shell: bash
         run: |
-          cat > /tmp/ux-css-debt-028-candidate.js <<'JS'
-          const fs=require('fs');
-          const path=require('path');
-          const crypto=require('crypto');
-          const cp=require('child_process');
-          const {chromium}=require(process.cwd() + '/node_modules/playwright');
-
-          const TARGET='assets/css/pages/home-overlays/workers-feed-base.css';
-          const TARGET_SHA='e648173f3f98966e3f5bf15413bec3c08f97aab1';
-          const TARGET_BLOB='59b2304099888c9bab059c9db133c20107122a05';
-          const INDEX_BLOB='266e4323115909cf174bafb361a33b19dd7d5433';
-          const RESULTS_BLOB='fc9833984725957829311d31037a2e3dad86c4f7';
-          const VIEWPORTS=[639,640,641,760,761,820,821,1280];
-          const EXPECTED=[
-            ['.worker-preview__caption','left','14px','14px'],
-            ['.worker-preview__caption','right','14px','70px'],
-            ['.worker-preview__caption','bottom','14px','14px'],
-            ['.worker-preview__title','font-size','1.02rem','1rem'],
-            ['.worker-preview__actions','gap','12px','12px'],
-            ['.worker-preview__action','width','52px','52px'],
-          ];
-          const KEYS=[
-            ['.worker-preview__caption','left'],
-            ['.worker-preview__caption','right'],
-            ['.worker-preview__caption','bottom'],
-            ['.worker-preview__title','font-size'],
-            ['.worker-preview__actions','gap'],
-            ['.worker-preview__action','width'],
-          ];
-          const assert=(c,m)=>{if(!c)throw new Error(m)};
-          const sortRows=rows=>rows.slice().sort((a,b)=>a.join('|').localeCompare(b.join('|')));
-          const gitBlob=f=>cp.execFileSync('git',['hash-object',f],{encoding:'utf8'}).trim();
-          const sh=(cmd,capture=false)=>cp.execSync(cmd,{cwd:process.cwd(),encoding:'utf8',stdio:capture?['ignore','pipe','pipe']:'inherit',shell:'/bin/bash'});
-          const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-
-          function parseCss(src){
-            const lines=src.split(/\r?\n/);let depth=0,sp=[],ap=[],sel=null;const ds=[],stack=[];
-            const re=/^\s*([\w-]+)\s*:\s*(.*?)\s*;\s*$/,norm=p=>p.join(' ').replace(/\{\s*$/,'').replace(/\s+/g,' ').trim();
-            for(let i=0;i<lines.length;i++){
-              const line=lines[i],t=line.trim(),o=(line.match(/\{/g)||[]).length,c=(line.match(/\}/g)||[]).length;
-              if(!sel){
-                if(ap.length){if(t)ap.push(t);if(line.includes('{')){stack.push({type:'at',header:norm(ap),depthBefore:depth});ap=[];}}
-                else if(t.startsWith('@')&&!t.includes(';')){if(line.includes('{'))stack.push({type:'at',header:norm([t]),depthBefore:depth});else ap=[t];}
-                else if(sp.length){if(t)sp.push(t);if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth});}}
-                else if(t&&!t.startsWith('/*')&&!t.startsWith('*')&&t!=='*/'&&t!=='}'&&!t.startsWith('@')&&!line.includes(';')){sp=[t];if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth});}}
-              }
-              if(sel){const m=line.match(re);if(m){const raw=m[2].trim();ds.push({line:i+1,selector:sel,property:m[1].toLowerCase(),value:raw,important:/\s*!important\s*$/i.test(raw),context:stack.filter(x=>x.type==='at').map(x=>x.header).join(' || ')});}}
-              depth+=o-c;while(stack.length&&depth<=stack[stack.length-1].depthBefore){const p=stack.pop();if(p.type==='rule')sel=null;}
-            }
-            const last=new Map(),dead=[];
-            for(let i=ds.length-1;i>=0;i--){const d=ds[i],k=`${d.context} >>> ${d.selector} >>> ${d.property}`,l=last.get(k);if(l&&(!d.important||l.important))dead.push({...d,winnerValue:l.value});if(!l||d.important||!l.important)last.set(k,d);}
-            return {declarations:ds,dead,decl:ds.length};
-          }
-
-          function buildCandidate(){
-            const src=fs.readFileSync(TARGET,'utf8');
-            const parent=parseCss(src);
-            assert(parent.decl===372,`parent declarations ${parent.decl}`);
-            assert(parent.dead.length===6,`parent dead ${parent.dead.length}`);
-            assert(JSON.stringify(sortRows(parent.dead.map(d=>[d.selector,d.property,d.value,d.winnerValue])))===JSON.stringify(sortRows(EXPECTED)),'dead-set drift');
-            const marker='@media (max-width: 640px) {';
-            const i=src.indexOf(marker),j=src.indexOf(marker,i+marker.length);
-            assert(i>=0&&j>i,'expected two <=640 blocks');
-            let mid=src.slice(i,j);
-            const replacements=[
-              ['  .worker-preview__caption {\n    left: 14px;\n    right: 14px;\n    bottom: 14px;\n  }','  .worker-preview__caption {\n  }'],
-              ['  .worker-preview__title {\n    font-size: 1.02rem;\n  }','  .worker-preview__title {\n  }'],
-              ['  .worker-preview__actions {\n    gap: 12px;\n  }','  .worker-preview__actions {\n  }'],
-              ['  .worker-preview__action {\n    width: 52px;\n  }','  .worker-preview__action {\n  }'],
-            ];
-            for(const [oldBlock,newBlock] of replacements){const n=mid.split(oldBlock).length-1;assert(n===1,`selector block drift ${oldBlock.split('\n')[0]}=${n}`);mid=mid.replace(oldBlock,newBlock);}
-            const out=src.slice(0,i)+mid+src.slice(j);
-            fs.writeFileSync(TARGET,out);
-            const candidate=parseCss(out);
-            assert(candidate.decl===366&&candidate.dead.length===0,`candidate parser ${candidate.decl}/${candidate.dead.length}`);
-            const num=cp.execFileSync('git',['diff','--numstat','--',TARGET],{encoding:'utf8'}).trim().split(/\s+/);
-            assert(num[0]==='0'&&num[1]==='6',`candidate delta ${num.join('/')}`);
-            assert(cp.execFileSync('git',['diff','--name-only'],{encoding:'utf8'}).trim()===TARGET,'candidate product scope drift');
-            const patch=cp.execFileSync('git',['diff','--',TARGET],{encoding:'utf8'});
-            assert((patch.match(/^-[ \t]*(left: 14px;|right: 14px;|bottom: 14px;|font-size: 1.02rem;|gap: 12px;|width: 52px;)$/gm)||[]).length===6,'exact six deletions drift');
-            assert(!patch.includes('-  .worker-preview__close--fixed'),'close-fixed selector touched');
-            const hash=crypto.createHash('sha256').update(out).digest('hex');
-            console.log(`CANDIDATE BUILD PASS|hash=${hash}|bytes=${Buffer.byteLength(src)}->${Buffer.byteLength(out)}|files=1|additions=0|deletions=6`);
-            console.log('PARSER PASS|decl=372->366|dead=6->0');
-            return {hash,parent};
-          }
-
-          async function capture(mode){
-            const server=cp.spawn(process.execPath,['scripts/serve-static-site.js','--host=127.0.0.1','--port=5500'],{stdio:'ignore',env:{...process.env,DOKE_E2E_DISABLE_REMOTE_SERVICES:'1'}});
-            try{
-              await sleep(700);
-              const browser=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
-              const out={};
-              for(const width of VIEWPORTS){
-                const context=await browser.newContext({viewport:{width,height:900},reducedMotion:'reduce'});
-                const page=await context.newPage();
-                await page.route('https://fonts.googleapis.com/**',r=>r.fulfill({contentType:'text/css',body:''}));
-                await page.route('https://fonts.gstatic.com/**',r=>r.abort());
-                await page.route('https://images.pexels.com/**',r=>r.fulfill({status:204,body:''}));
-                await page.goto('http://127.0.0.1:5500/index.html',{waitUntil:'domcontentloaded',timeout:15000});
-                await page.waitForFunction(()=>document.querySelectorAll('[data-worker-feed-item]').length>0&&typeof window.DokeOpenWorkerPreview==='function',null,{timeout:10000});
-                const state=await page.evaluate(({keys})=>{
-                  const root=document.querySelector('[data-worker-preview]');
-                  if(!root||!root.classList.contains('doke-worker-card'))throw new Error('ownership fixture precondition missing');
-                  root.classList.remove('doke-worker-card');
-                  const trigger=document.querySelector('[data-worker-trigger]');
-                  if(!trigger)throw new Error('worker trigger missing');
-                  window.DokeOpenWorkerPreview(trigger.dataset.workerId,trigger);
-                  const item=root.querySelector('[data-worker-feed-item].is-active')||root.querySelector('[data-worker-feed-item]');
-                  if(!item)throw new Error('worker item missing');
-                  const values=Object.fromEntries(keys.map(([s,p])=>[`${s}|${p}`,[]]));
-                  const inspectRules=(rules,href)=>{for(const rule of rules||[]){if(rule.type===CSSRule.IMPORT_RULE&&rule.styleSheet){walk(rule.styleSheet);continue}if(rule.type===CSSRule.STYLE_RULE){const owner=rule.parentStyleSheet?.href||href||'';if(owner.includes('/assets/css/pages/home-overlays/workers-feed-base.css'))for(const [s,p] of keys)if(rule.selectorText===s){const v=rule.style.getPropertyValue(p).trim();if(v)values[`${s}|${p}`].push({value:v,priority:rule.style.getPropertyPriority(p)})}continue}if(rule.cssRules){try{inspectRules(rule.cssRules,href)}catch{}}}};
-                  const walk=sheet=>{let rules;try{rules=sheet.cssRules}catch{return}inspectRules(rules,sheet.href||'')};
-                  for(const sheet of document.styleSheets)walk(sheet);
-                  const pick=(sel,props)=>{const el=item.querySelector(sel);if(!el)throw new Error(`missing ${sel}`);const c=getComputedStyle(el),b=el.getBoundingClientRect(),o={display:c.display,visibility:c.visibility,rect:[b.x,b.y,b.width,b.height].map(n=>Math.round(n*1000)/1000)};for(const p of props)o[p]=c.getPropertyValue(p);return o;};
-                  const geom=el=>{const c=getComputedStyle(el),b=el.getBoundingClientRect();return{display:c.display,visibility:c.visibility,rect:[b.x,b.y,b.width,b.height].map(n=>Math.round(n*1000)/1000)}};
-                  return {ownershipFixture:!root.classList.contains('doke-worker-card'),values,caption:pick('.worker-preview__caption',['left','right','bottom']),title:pick('.worker-preview__title',['font-size']),actions:pick('.worker-preview__actions',['gap']),action:pick('.worker-preview__action',['width']),stage:geom(root.querySelector('.worker-preview__stage')),feed:geom(root.querySelector('[data-worker-preview-feed]')),item:geom(item),active:root.querySelectorAll('[data-worker-feed-item].is-active').length,overflow:Math.max(0,document.documentElement.scrollWidth-innerWidth),doc:[document.documentElement.scrollWidth,document.documentElement.scrollHeight,document.body.scrollWidth,document.body.scrollHeight]};
-                },{keys:KEYS});
-                assert(state.ownershipFixture&&state.active===1,`runtime activation ${mode} ${width}`);
-                assert(state.stage.display!=='none'&&state.stage.rect[2]>0&&state.item.rect[2]>0,`runtime visibility ${mode} ${width}`);
-                assert(state.overflow===0,`overflow ${mode} ${width}`);
-                out[width]=state;
-                console.log(`${mode.toUpperCase()}|${width}|${JSON.stringify(state)}`);
-                await context.close();
-              }
-              await browser.close();
-              console.log(`CAPTURE PASS|mode=${mode}|viewports=8|ownershipFixture=dom-only|overflow=0`);
-              return out;
-            }finally{server.kill('SIGTERM')}
-          }
-
-          function residual(){
-            const report=JSON.parse(fs.readFileSync('reports/generated/active-legacy-structures-report.json','utf8'));
-            const files=cp.execFileSync('git',['ls-files','-z','assets/css'],{encoding:'utf8'}).split('\0').filter(f=>f.endsWith('.css'));
-            const ir=/@import\s+(?:url\()?['"]?([^'"\);]+\.css(?:\?[^'"\)]*)?)['"]?\)?/gi;
-            const norm=(v,from)=>{v=v.replace(/\?.*$/,'').replace(/^\.\//,'');if(v.startsWith('/'))return v.replace(/^\/+/, '');if(v.startsWith('assets/'))return v;return path.posix.normalize(path.posix.join(path.posix.dirname(from),v));};
-            const meta=new Map();
-            for(const f of files){const text=fs.readFileSync(f,'utf8'),imports=[];let m;ir.lastIndex=0;while((m=ir.exec(text)))imports.push(norm(m[1],f));meta.set(f,{text,imports,size:Buffer.byteLength(text),important:(text.match(/!important/gi)||[]).length});}
-            const active=new Set(),todo=[...new Set(report.pageAssets.flatMap(p=>p.css))].filter(f=>meta.has(f));
-            while(todo.length){const f=todo.pop();if(active.has(f)||!meta.has(f))continue;active.add(f);for(const n of meta.get(f).imports)if(meta.has(n))todo.push(n);}
-            const high=[...active].filter(f=>{const x=meta.get(f);return x.size>=50000||x.important>=100||x.imports.length>=10;});
-            const rows=[...active].map(f=>({f,...parseCss(meta.get(f).text)})).filter(r=>r.dead.length),total=rows.reduce((n,r)=>n+r.dead.length,0),highDead=rows.filter(r=>high.includes(r.f)).length,target=parseCss(meta.get(TARGET).text);
-            assert(active.size===401&&high.length===37,`estate ${active.size}/${high.length}`);
-            assert(rows.length===46&&total===1274&&highDead===0,`residual ${rows.length}/${total}/${highDead}`);
-            assert(target.decl===366&&target.dead.length===0,`target residual ${target.decl}/${target.dead.length}`);
-            console.log(`CANDIDATE RESIDUAL PASS|active=401|high=37|files=46|dead=1274|highDead=0|target=366/dead0`);
-          }
-
-          async function main(){
-            assert(cp.execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim()===TARGET_SHA,'parent SHA drift');
-            assert(gitBlob(TARGET)===TARGET_BLOB,'target blob drift');
-            assert(gitBlob('index.html')===INDEX_BLOB,'index blob drift');
-            assert(gitBlob('resultados.html')===RESULTS_BLOB,'resultados blob drift');
-            const parent=await capture('parent');
-            const build=buildCandidate();
-            const candidate=await capture('candidate');
-            for(const width of VIEWPORTS){
-              for(const [s,p] of KEYS){const k=`${s}|${p}`;assert(parent[width].values[k].length===candidate[width].values[k].length+1,`CSSOM declaration count ${width} ${k}: ${parent[width].values[k].length}->${candidate[width].values[k].length}`);}
-              const a=structuredClone(parent[width]),b=structuredClone(candidate[width]);delete a.values;delete b.values;assert(JSON.stringify(a)===JSON.stringify(b),`runtime mismatch ${width}`);
-            }
-            console.log('RUNTIME PARITY PASS|computed+rect+document/body=0-diffs|targetPropertyOccurrences=-6|ownershipFixture=dom-only');
-            const responsive=sh('node scripts/test-responsive-contract.js',true);process.stdout.write(responsive);assert(responsive.includes('Checks: 893')&&responsive.includes('Failures: 0')&&responsive.includes('Skips: 277'),'responsive drift');
-            const conflicts=sh('node scripts/audit-css-responsive-conflicts.js',true);process.stdout.write(conflicts);const cm=conflicts.match(/Conflicting class\/property pairs:\s*(\d+)/);assert(cm,'conflict marker missing');const conflictCount=Number(cm[1]);assert(conflictCount<=339,`conflicts increased ${conflictCount}`);
-            sh('npm run audit:agent-governance');
-            sh('npm run audit:shared-app-header-contract');
-            sh('npm run audit:mobile-shell-location-contract');
-            sh('npm run audit:responsive-boundaries');
-            sh('npm run audit:duplicate-assets');
-            const domain=sh('npm run audit:domain-completion-matrix',true);process.stdout.write(domain);for(const marker of ['Domains: 23','Critical flows: 15','Average maturity: 2.91/6','Critical blockers: 12'])assert(domain.includes(marker),`domain drift ${marker}`);
-            sh('npm run audit:active-legacy-structures');
-            residual();
-            sh('git diff --check');
-            assert(cp.execFileSync('git',['diff','--name-only'],{encoding:'utf8'}).trim()===TARGET,'post-audit product scope drift');
-            console.log(`CANDIDATE FINAL PASS|hash=${build.hash}|files=1|additions=0|deletions=6|decl=372->366|dead=6->0|residual=46/1274/0|conflicts=${conflictCount}|responsive=893/0/277|ownershipPrerequisite=external`);
-          }
-
-          main().catch(e=>{console.error(e);process.exit(1)});
-          JS
+          set -euo pipefail
+          git cat-file -e "$HARNESS_SHA^{commit}"
+          git show "$HARNESS_SHA:.github/workflows/diag-ux-css-debt-028-workers-feed-reach.yml" > /tmp/r17.yml
+          python - <<'PY'
+          from pathlib import Path
+          src = Path('/tmp/r17.yml').read_text()
+          start = "          cat > /tmp/ux-css-debt-028-candidate.js <<'JS'\n"
+          end = "\n          JS\n"
+          a = src.find(start)
+          if a < 0:
+              raise SystemExit('R17 heredoc start missing')
+          b = src.find(end, a + len(start))
+          if b < 0:
+              raise SystemExit('R17 heredoc end missing')
+          body = src[a + len(start):b]
+          lines = [(line[10:] if line.startswith('          ') else line) for line in body.splitlines()]
+          script = '\n'.join(lines) + '\n'
+          old = "    assert(cp.execFileSync('git',['diff','--name-only'],{encoding:'utf8'}).trim()===TARGET,'post-audit product scope drift');"
+          new = """    const productScope=cp.execFileSync('git',['diff','--name-only','--','assets','index.html','resultados.html'],{encoding:'utf8'}).trim();
+    assert(productScope===TARGET,`post-audit product scope drift: ${productScope}`);
+    const finalNum=cp.execFileSync('git',['diff','--numstat','--',TARGET],{encoding:'utf8'}).trim().split(/\\s+/);
+    assert(finalNum[0]==='0'&&finalNum[1]==='6',`post-audit target delta ${finalNum.join('/')}`);
+    assert(cp.spawnSync('git',['diff','--quiet','--','index.html','resultados.html']).status===0,'ownership HTML persisted');
+    assert(crypto.createHash('sha256').update(fs.readFileSync(TARGET)).digest('hex')===build.hash,'post-audit target hash drift');"""
+          if script.count(old) != 1:
+              raise SystemExit(f'expected one R17 scope guard, got {script.count(old)}')
+          script = script.replace(old, new)
+          Path('/tmp/ux-css-debt-028-candidate.js').write_text(script)
+          print(f'R17 HARNESS PATCH PASS|source={Path("/tmp/r17.yml").stat().st_size}|candidateScript={len(script.encode())}|changedGuard=1')
+          PY
           node --check /tmp/ux-css-debt-028-candidate.js
+
+      - name: Run exact CSS-only candidate proof
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s reports/responsive-index-baseline.json
           node /tmp/ux-css-debt-028-candidate.js
 
       - name: Restore exact certified parent
@@ -240,5 +102,6 @@ jobs:
           test "$(git hash-object "$TARGET_CSS")" = "59b2304099888c9bab059c9db133c20107122a05"
           test "$(git hash-object index.html)" = "266e4323115909cf174bafb361a33b19dd7d5433"
           test "$(git hash-object resultados.html)" = "fc9833984725957829311d31037a2e3dad86c4f7"
+          test ! -e reports/responsive-index-baseline.json
           test -z "$(git status --porcelain)"
-          echo "CHECKPOINT PASS|sha=$TARGET_SHA|productMutation=0"
+          echo "CHECKPOINT PASS|sha=$TARGET_SHA|productMutation=0|generatedArtifactsCleaned=1"
