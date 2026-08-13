@@ -1,0 +1,72 @@
+name: Doke UX-CSS-DEBT-021 Promote Permanent
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-021-promote-permanent
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-24.04
+    env:
+      PARENT_SHA: 928b74a947a7301f9a645d1f316ad3a3f6e37b1e
+      PERMANENT_BRANCH: ux/ux-css-debt-021-detalhe-related-heading-mobile-compaction
+      TARGET_FILE: assets/css/pages/detalhe-anuncio-related-sections.css
+      PARENT_SHA256: 75dad013a3c75a04a334217c25ce4c8f9b5c056fd4c7fdfa5c78981a33b99b3f
+      CANDIDATE_SHA256: a3e2b022f8615e9c5e5e550fa86f2e256e0aa42af47162f0219db9fbec08fbf5
+    steps:
+      - name: Checkout untouched permanent branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.PERMANENT_BRANCH }}
+          fetch-depth: 2
+
+      - name: Guard permanent branch still equals certified parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${PARENT_SHA}"
+          test "$(sha256sum "${TARGET_FILE}" | awk '{print $1}')" = "${PARENT_SHA256}"
+          test -z "$(git status --porcelain)"
+          git diff --check
+
+      - name: Rebuild exact certified candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),file=process.env.TARGET_FILE;
+          const src=fs.readFileSync(file,'utf8'),lines=src.split(/\r?\n/),sha=s=>crypto.createHash('sha256').update(s).digest('hex');
+          if(sha(src)!==process.env.PARENT_SHA256||Buffer.byteLength(src)!==34103)throw new Error('parent drift');
+          if(lines[100].trim()!=='font-size: var(--doke-section-title-size, 0.96rem);')throw new Error('line101 drift: '+lines[100]);
+          if(lines[101].trim()!=='letter-spacing: var(--doke-section-title-letter, 0.08em);')throw new Error('line102 drift: '+lines[101]);
+          const out=lines.filter((_l,i)=>i!==100&&i!==101).join('\n');
+          if(sha(out)!==process.env.CANDIDATE_SHA256||Buffer.byteLength(out)!==33985)throw new Error('candidate drift '+sha(out)+' bytes='+Buffer.byteLength(out));
+          fs.writeFileSync(file,out);
+          console.log(`PROMOTION_CANDIDATE_PASS|sha=${sha(out)}|bytes=34103->33985|deleted=101,102`);
+          NODE
+          test "$(git diff --name-only)" = "${TARGET_FILE}"
+          test "$(git diff --numstat -- "${TARGET_FILE}" | awk '{print $1}')" = "0"
+          test "$(git diff --numstat -- "${TARGET_FILE}" | awk '{print $2}')" = "2"
+          test "$(sha256sum "${TARGET_FILE}" | awk '{print $1}')" = "${CANDIDATE_SHA256}"
+          git diff --check
+
+      - name: Commit and push exact product-only delta
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "doke"
+          git config user.email "bielantoniomma@gmail.com"
+          git add -- "${TARGET_FILE}"
+          test "$(git diff --cached --name-only)" = "${TARGET_FILE}"
+          test "$(git diff --cached --numstat -- "${TARGET_FILE}" | awk '{print $1}')" = "0"
+          test "$(git diff --cached --numstat -- "${TARGET_FILE}" | awk '{print $2}')" = "2"
+          git commit -m "UX-CSS-DEBT-021: compact superseded Detalhe Anuncio related heading mobile typography"
+          NEW_SHA="$(git rev-parse HEAD)"
+          test "$(git rev-parse HEAD^)" = "${PARENT_SHA}"
+          test "$(sha256sum "${TARGET_FILE}" | awk '{print $1}')" = "${CANDIDATE_SHA256}"
+          git push origin "HEAD:${PERMANENT_BRANCH}"
+          echo "PERMANENT_SHA=${NEW_SHA}"
