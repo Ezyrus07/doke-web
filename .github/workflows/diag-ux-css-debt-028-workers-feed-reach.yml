@@ -15,22 +15,13 @@ jobs:
       TARGET_SHA: e648173f3f98966e3f5bf15413bec3c08f97aab1
       PARENT_SHA: 820896977bfbba4f499b67f1707298f5bd7339be
     steps:
-      - name: Checkout diagnostic helper only
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-        with:
-          ref: ${{ github.sha }}
-          path: .diag028
-          fetch-depth: 1
-      - name: Isolate helper outside product workspace
-        run: |
-          cp .diag028/tests/e2e/ux-css-debt-028-workers-feed-reach.spec.js /tmp/ux-css-debt-028-workers-feed-reach.spec.js
-          rm -rf .diag028
       - name: Checkout exact certified UX-CSS-DEBT-027 SHA
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           ref: ${{ env.TARGET_SHA }}
           fetch-depth: 2
-      - name: Guard exact checkpoint and authority chain
+
+      - name: Guard exact checkpoint source and authority
         shell: bash
         run: |
           set -euo pipefail
@@ -45,27 +36,65 @@ jobs:
           const runtime=fs.readFileSync('assets/css/pages/home-runtime.css','utf8');
           const page=fs.readFileSync('assets/css/pages/home-runtime-page.css','utf8');
           const overlay=fs.readFileSync('assets/css/pages/home-overlays.css','utf8');
+          const css=fs.readFileSync('assets/css/pages/home-overlays/workers-feed-base.css','utf8');
           const js=fs.readFileSync('assets/js/pages/home/workers.js','utf8');
           for(const [src,needle] of [[html,'assets/css/pages/home.css'],[home,'./home-runtime.css'],[runtime,'./home-runtime-page.css'],[page,'./home-overlays.css'],[overlay,'./home-overlays/workers-feed-base.css'],[overlay,'./home-overlays/workers-feed-card-layout.css']]) if(!src.includes(needle)) throw new Error(`authority edge missing: ${needle}`);
-          const a=overlay.indexOf('./home-overlays/workers-feed-base.css'),b=overlay.indexOf('./home-overlays/workers-feed-card-layout.css');
-          if(a>=b)throw new Error('overlay import order drift');
-          if(!html.includes('assets/js/pages/home/workers.js')||!html.includes('assets/js/pages/home.js')||html.indexOf('assets/js/pages/home/workers.js')>=html.indexOf('assets/js/pages/home.js'))throw new Error('runtime authority drift');
-          if(!js.includes('window.DokeHomeWorkers = (() => {')||!js.includes('feed.innerHTML = WORKERS.map(createFeedItem).join'))throw new Error('production renderer drift');
-          console.log('AUTHORITY PASS|index>home>runtime>runtime-page>overlays>workers-feed-base|card-layout-after-base=1|production-renderer=1');
+          const base=overlay.indexOf('./home-overlays/workers-feed-base.css'),cards=overlay.indexOf('./home-overlays/workers-feed-card-layout.css');
+          if(base<0||cards<0||base>=cards) throw new Error('overlay import order drift');
+          if(!js.includes('window.DokeHomeWorkers = (() => {')||!js.includes('feed.innerHTML = WORKERS.map(createFeedItem).join')) throw new Error('production renderer drift');
+          const pairs=[['gap','12px','14px'],['width','82px','76px'],['height','82px','76px'],['font-size','1.2rem','1.16rem'],['padding','0 12px','0 16px'],['font-size','0.92rem','0.92rem']];
+          for(const [prop,oldValue,winner] of pairs){const oldNeedle=`${prop}: ${oldValue};`,winnerNeedle=`${prop}: ${winner};`;if(!css.includes(oldNeedle)||!css.includes(winnerNeedle)||css.indexOf(oldNeedle)>css.lastIndexOf(winnerNeedle))throw new Error(`source pair drift ${prop}`);}
+          console.log('SOURCE AUTHORITY PASS|index>home>runtime>runtime-page>overlays>workers-feed-base|productionRenderer=1|sourceDefinitions=2x6|max640=1');
           NODE
+
       - name: Setup Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: 22
           cache: npm
+
       - name: Install reach runtime
         run: |
           npm ci --ignore-scripts
           npx playwright install --with-deps chromium
-      - name: Run production reach proof
+
+      - name: Run production DOM and winner reach proof
+        shell: bash
         run: |
-          cp /tmp/ux-css-debt-028-workers-feed-reach.spec.js tests/ux-css-debt-028-workers-feed-reach.spec.js
-          node node_modules/@playwright/test/cli.js test tests/ux-css-debt-028-workers-feed-reach.spec.js
+          cat > tests/ux-css-debt-028-workers-feed-runtime.spec.js <<'JS'
+          const { test, expect } = require('@playwright/test');
+          const sizes=[[390,844],[560,900],[639,900],[640,900],[641,900],[760,900],[820,1180],[1366,900]];
+          test('workers feed mobile winners are runtime-effective',async({page})=>{
+            await page.route('https://fonts.googleapis.com/**',r=>r.fulfill({contentType:'text/css',body:''}));
+            await page.route('https://fonts.gstatic.com/**',r=>r.abort());
+            await page.route('https://images.pexels.com/**',r=>r.fulfill({status:204,body:''}));
+            await page.goto('/index.html',{waitUntil:'domcontentloaded'});
+            await expect.poll(()=>page.locator('[data-worker-preview]').count()).toBe(1);
+            await expect.poll(()=>page.evaluate(()=>Boolean(window.DokeHomeWorkers?.create))).toBe(true);
+            const natural=await page.evaluate(()=>({hidden:document.querySelector('[data-worker-preview]').hidden,triggers:document.querySelectorAll('[data-worker-trigger]').length,items:document.querySelectorAll('[data-worker-feed-item]').length}));
+            expect(natural.hidden).toBe(true); expect(natural.triggers).toBeGreaterThan(0);
+            if(!natural.items) await page.evaluate(()=>{window.__diagWorkersAbort=new AbortController();window.DokeHomeWorkers.create({signal:window.__diagWorkersAbort.signal});});
+            await expect.poll(()=>page.locator('[data-worker-feed-item]').count()).toBeGreaterThan(0);
+            await expect.poll(()=>page.evaluate(()=>typeof window.DokeOpenWorkerPreview)).toBe('function');
+            await page.evaluate(()=>{const t=document.querySelector('[data-worker-trigger]');window.DokeOpenWorkerPreview(t?.dataset.workerId||'vid-pintura',t||null);});
+            await expect.poll(()=>page.locator('[data-worker-preview]').evaluate(el=>el.hidden)).toBe(false);
+            const card=await page.evaluate(()=>({profile:document.querySelectorAll('.worker-preview__profile').length,name:document.querySelectorAll('.worker-preview__name').length,avatar:document.querySelectorAll('.worker-preview__avatar').length,caption:document.querySelectorAll('.worker-preview__caption').length,items:document.querySelectorAll('[data-worker-feed-item]').length}));
+            expect(card.profile).toBe(0); expect(card.name).toBe(0); expect(card.avatar).toBeGreaterThan(0); expect(card.caption).toBeGreaterThan(0); expect(card.items).toBeGreaterThan(0);
+            console.log(`DOM CARDINALITY PASS|profile=0|name=0|avatar=${card.avatar}|caption=${card.caption}|items=${card.items}|unreachableSelectors=2`);
+            for(const [width,height] of sizes){
+              await page.setViewportSize({width,height});
+              const r=await page.evaluate(()=>{const a=document.querySelector('.worker-preview__avatar'),c=document.querySelector('.worker-preview__caption'),acs=getComputedStyle(a),ccs=getComputedStyle(c),root=getComputedStyle(document.documentElement);const ar=a.getBoundingClientRect(),cr=c.getBoundingClientRect();return{media:matchMedia('(max-width: 640px)').matches,aw:acs.width,ah:acs.height,pad:[ccs.paddingTop,ccs.paddingRight,ccs.paddingBottom,ccs.paddingLeft],cf:parseFloat(ccs.fontSize),rf:parseFloat(root.fontSize),rects:[[ar.width,ar.height],[cr.width,cr.height]],profile:document.querySelectorAll('.worker-preview__profile').length,name:document.querySelectorAll('.worker-preview__name').length,items:document.querySelectorAll('[data-worker-feed-item]').length,sw:document.documentElement.scrollWidth,cw:document.documentElement.clientWidth,bsw:document.body.scrollWidth,vw:innerWidth};});
+              expect(r.media).toBe(width<=640); expect(r.profile).toBe(0); expect(r.name).toBe(0); expect(r.items).toBeGreaterThan(0);
+              for(const [w,h] of r.rects){expect(w).toBeGreaterThan(0);expect(h).toBeGreaterThan(0)}
+              expect(r.sw).toBeLessThanOrEqual(r.cw+1); expect(r.bsw).toBeLessThanOrEqual(r.vw+1);
+              if(width<=640){expect(r.aw).toBe('76px');expect(r.ah).toBe('76px');expect(r.pad).toEqual(['0px','16px','0px','16px']);expect(Math.abs(r.cf-r.rf*.92)).toBeLessThan(.08);}
+              console.log(`REACH WIDTH PASS|w=${width}|media=${r.media?1:0}|reachable=avatar+caption|unreachable=profile+name|items=${r.items}|overflow=0`);
+            }
+            console.log('REACH PASS|viewports=8|boundary=639/640/641|productionFeed=1|productionOpen=1|reachableSelectors=2|unreachableSelectors=2|overflow=0');
+          });
+          JS
+          node node_modules/@playwright/test/cli.js test tests/ux-css-debt-028-workers-feed-runtime.spec.js
+
       - name: Restore exact product before governance
         if: always()
         run: |
@@ -73,6 +102,7 @@ jobs:
           git clean -fd
           test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
           test -z "$(git status --porcelain)"
+
       - name: Preserve governance baselines
         shell: bash
         run: |
@@ -92,6 +122,7 @@ jobs:
           grep -q 'Duplicate groups: 0' /tmp/dup.log
           grep -q 'Duplicated files: 0' /tmp/dup.log
           echo 'REACH GOVERNANCE PASS|conflicts=339|domain=23/15/2.91/12|duplicates=0/0'
+
       - name: Final exact checkpoint guard
         run: |
           git reset --hard "${TARGET_SHA}"
