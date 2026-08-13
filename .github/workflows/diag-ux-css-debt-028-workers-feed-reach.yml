@@ -1,0 +1,99 @@
+name: Doke UX-CSS-DEBT-028 Workers Feed Reach
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-028-workers-feed-reach
+
+permissions:
+  contents: read
+
+jobs:
+  reach:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: e648173f3f98966e3f5bf15413bec3c08f97aab1
+      PARENT_SHA: 820896977bfbba4f499b67f1707298f5bd7339be
+    steps:
+      - name: Checkout diagnostic helper only
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          path: .diag028
+          fetch-depth: 1
+      - name: Isolate helper outside product workspace
+        run: |
+          cp .diag028/tests/e2e/ux-css-debt-028-workers-feed-reach.spec.js /tmp/ux-css-debt-028-workers-feed-reach.spec.js
+          rm -rf .diag028
+      - name: Checkout exact certified UX-CSS-DEBT-027 SHA
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+      - name: Guard exact checkpoint and authority chain
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test "$(git rev-parse HEAD^)" = "${PARENT_SHA}"
+          test -z "$(git status --porcelain)"
+          git diff --check
+          grep -Fq '@import url("./home-runtime.css")' assets/css/pages/home.css
+          grep -Fq '@import url("./home-runtime-page.css")' assets/css/pages/home-runtime.css
+          grep -Fq '@import url("./home-overlays.css")' assets/css/pages/home-runtime-page.css
+          grep -Fq '@import url("./home-overlays/workers-feed-base.css")' assets/css/pages/home-overlays.css
+          grep -Fq '@import url("./home-overlays/workers-feed-card-layout.css")' assets/css/pages/home-overlays.css
+          node - <<'NODE'
+          const fs=require('fs');const h=fs.readFileSync('index.html','utf8'),o=fs.readFileSync('assets/css/pages/home-overlays.css','utf8'),j=fs.readFileSync('assets/js/pages/home/workers.js','utf8');
+          const a=o.indexOf('./home-overlays/workers-feed-base.css'),b=o.indexOf('./home-overlays/workers-feed-card-layout.css');
+          if(a<0||b<0||a>=b)throw new Error('overlay import order drift');
+          if(!h.includes('assets/js/pages/home/workers.js')||!h.includes('assets/js/pages/home.js')||h.indexOf('assets/js/pages/home/workers.js')>=h.indexOf('assets/js/pages/home.js'))throw new Error('runtime authority drift');
+          if(!j.includes('window.DokeHomeWorkers = (() => {')||!j.includes('feed.innerHTML = WORKERS.map(createFeedItem).join'))throw new Error('production renderer drift');
+          console.log('AUTHORITY PASS|index>home>runtime>runtime-page>overlays>workers-feed-base|card-layout-after-base=1|production-renderer=1');
+          NODE
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install reach runtime
+        run: |
+          npm ci --ignore-scripts
+          npx playwright install --with-deps chromium
+      - name: Run production reach proof
+        run: |
+          cp /tmp/ux-css-debt-028-workers-feed-reach.spec.js tests/ux-css-debt-028-workers-feed-reach.spec.js
+          node node_modules/@playwright/test/cli.js test tests/ux-css-debt-028-workers-feed-reach.spec.js --project=desktop-chrome
+      - name: Restore exact product before governance
+        if: always()
+        run: |
+          git reset --hard "${TARGET_SHA}"
+          git clean -fd
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test -z "$(git status --porcelain)"
+      - name: Preserve governance baselines
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:agent-governance
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/conflicts.log
+          grep -q 'Conflicting class/property pairs: 339' /tmp/conflicts.log
+          npm run audit:domain-completion-matrix | tee /tmp/domain.log
+          grep -q 'Domains: 23' /tmp/domain.log
+          grep -q 'Critical flows: 15' /tmp/domain.log
+          grep -q 'Average maturity: 2.91/6' /tmp/domain.log
+          grep -q 'Critical blockers: 12' /tmp/domain.log
+          npm run audit:shared-app-header-contract
+          npm run audit:mobile-shell-location-contract
+          npm run audit:responsive-boundaries
+          npm run audit:duplicate-assets | tee /tmp/dup.log
+          grep -q 'Duplicate groups: 0' /tmp/dup.log
+          grep -q 'Duplicated files: 0' /tmp/dup.log
+          echo 'REACH GOVERNANCE PASS|conflicts=339|domain=23/15/2.91/12|duplicates=0/0'
+      - name: Final exact checkpoint guard
+        run: |
+          git reset --hard "${TARGET_SHA}"
+          git clean -fd
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test -z "$(git status --porcelain)"
+          echo "REACH CHECKPOINT PASS|sha=${TARGET_SHA}|productMutation=0"
