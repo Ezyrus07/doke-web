@@ -63,8 +63,8 @@ jobs:
           body = src[a + len(start):b]
           lines = [(line[10:] if line.startswith('          ') else line) for line in body.splitlines()]
           script = '\n'.join(lines) + '\n'
-          old = "    assert(cp.execFileSync('git',['diff','--name-only'],{encoding:'utf8'}).trim()===TARGET,'post-audit product scope drift');"
-          new = "    const productScope=cp.execFileSync('git',['diff','--name-only','--','assets','index.html','resultados.html'],{encoding:'utf8'}).trim();\n    assert(productScope===TARGET,`post-audit product scope drift: ${productScope}`);\n    const finalNum=cp.execFileSync('git',['diff','--numstat','--',TARGET],{encoding:'utf8'}).trim().split(/\\s+/);\n    assert(finalNum[0]==='0'&&finalNum[1]==='6',`post-audit target delta ${finalNum.join('/')}`);\n    assert(cp.spawnSync('git',['diff','--quiet','--','index.html','resultados.html']).status===0,'ownership HTML persisted');\n    assert(crypto.createHash('sha256').update(fs.readFileSync(TARGET)).digest('hex')===build.hash,'post-audit target hash drift');"
+          old = "assert(cp.execFileSync('git',['diff','--name-only'],{encoding:'utf8'}).trim()===TARGET,'post-audit product scope drift');"
+          new = "const productScope=cp.execFileSync('git',['diff','--name-only','--','assets','index.html','resultados.html'],{encoding:'utf8'}).trim();assert(productScope===TARGET,`post-audit product scope drift: ${productScope}`);const finalNum=cp.execFileSync('git',['diff','--numstat','--',TARGET],{encoding:'utf8'}).trim().split(/\\s+/);assert(finalNum[0]==='0'&&finalNum[1]==='6',`post-audit target delta ${finalNum.join('/')}`);assert(cp.spawnSync('git',['diff','--quiet','--','index.html','resultados.html']).status===0,'ownership HTML persisted');assert(crypto.createHash('sha256').update(fs.readFileSync(TARGET)).digest('hex')===build.hash,'post-audit target hash drift');"
           if script.count(old) != 1:
               raise SystemExit(f'expected one R17 scope guard, got {script.count(old)}')
           script = script.replace(old, new)
