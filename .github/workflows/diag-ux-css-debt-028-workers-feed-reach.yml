@@ -1,27 +1,32 @@
-name: Doke UX-CSS-DEBT-028 Workers Overlay Ownership Probe
+name: Doke UX-CSS-DEBT-028 Workers Feed Reach Final
 on:
   push:
     branches: [diag/ux-css-debt-028-workers-feed-reach-r1]
 permissions: {contents: read}
 jobs:
-  probe:
+  reach:
     runs-on: ubuntu-24.04
-    env: {TARGET_SHA: e648173f3f98966e3f5bf15413bec3c08f97aab1}
+    env:
+      TARGET_SHA: e648173f3f98966e3f5bf15413bec3c08f97aab1
+      TARGET_CSS: assets/css/pages/home-overlays/workers-feed-base.css
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {ref: '${{ env.TARGET_SHA }}'}
-      - name: Guard certified parent
+      - name: Guard certified parent and target authority
         run: |
+          set -euo pipefail
           test "$(git rev-parse HEAD)" = "$TARGET_SHA"
           test "$(git hash-object index.html)" = "266e4323115909cf174bafb361a33b19dd7d5433"
           test "$(git hash-object resultados.html)" = "fc9833984725957829311d31037a2e3dad86c4f7"
+          test "$(git hash-object "$TARGET_CSS")" = "59b2304099888c9bab059c9db133c20107122a05"
+          test -z "$(git status --porcelain)"
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with: {node-version: 22, cache: npm}
       - name: Install browser
         run: |
           npm ci --ignore-scripts
           npx playwright install --with-deps chromium
-      - name: Apply ephemeral ownership correction
+      - name: Apply ephemeral overlay ownership correction
         run: |
           node <<'JS'
           const fs=require('fs');
@@ -29,71 +34,110 @@ jobs:
             const before=fs.readFileSync(file,'utf8');
             const re=/(<section class="worker-preview )doke-worker-card (doke-media-card doke-card doke-page-section doke-overlay doke-overlay--media" data-worker-preview)/g;
             const matches=[...before.matchAll(re)];
-            if(matches.length!==1) throw new Error(`${file}: expected one worker-preview root with doke-worker-card, got ${matches.length}`);
-            const after=before.replace(re,'$1$2');
-            if(after===before) throw new Error(`${file}: no mutation`);
-            fs.writeFileSync(file,after);
+            if(matches.length!==1) throw new Error(`${file}: ownership root count=${matches.length}`);
+            fs.writeFileSync(file,before.replace(re,'$1$2'));
           }
-          const results=fs.readFileSync('resultados.html','utf8');
-          if(!results.includes('before-after-preview doke-worker-card')) throw new Error('before-after root changed unexpectedly');
-          console.log('PATCH PASS|files=2|workerPreviewClassRemoved=2|beforeAfterUntouched=1');
+          if(!fs.readFileSync('resultados.html','utf8').includes('before-after-preview doke-worker-card')) throw new Error('before-after root changed');
+          console.log('OWNERSHIP PATCH PASS|files=2|workerPreviewClassRemoved=2|beforeAfterUntouched=1');
           JS
-          git diff --check
           test "$(git diff --name-only | sort)" = $'index.html\nresultados.html'
-          test "$(git diff --numstat | awk '{a+=$1;d+=$2} END{print a"/"d}')" = "2/2"
-          test "$(git diff -- index.html | grep -c '^-.*worker-preview doke-worker-card')" = "1"
-          test "$(git diff -- resultados.html | grep -c '^-.*worker-preview doke-worker-card')" = "1"
-      - name: Prove restored viewer geometry
+          git diff --check
+      - name: Prove six-declaration parent to deletion parity
         run: |
-          cat > tests/ux-css-debt-028-ownership-probe.spec.js <<'JS'
+          cat > tests/ux-css-debt-028-reach-final.spec.js <<'JS'
           const {test,expect}=require('@playwright/test');
-          const widths=[1280,639,640,641,760,761,820,821];
-          test('removing card semantics restores workers overlay ownership',async({page})=>{
+          const fs=require('fs');
+          const target='assets/css/pages/home-overlays/workers-feed-base.css';
+          const widths=[639,640,641,760,761,820,821,1280];
+          const declarations=[
+            ['.worker-preview__caption','left','14px','14px'],
+            ['.worker-preview__caption','right','14px','70px'],
+            ['.worker-preview__caption','bottom','14px','14px'],
+            ['.worker-preview__title','font-size','1.02rem','1rem'],
+            ['.worker-preview__actions','gap','12px','12px'],
+            ['.worker-preview__action','width','52px','52px'],
+          ];
+          function parse(src){
+            const lines=src.split(/\r?\n/);let depth=0,sp=[],ap=[],sel=null;const ds=[],stack=[],re=/^\s*([\w-]+)\s*:\s*(.*?)\s*;\s*$/,norm=p=>p.join(' ').replace(/\{\s*$/,'').replace(/\s+/g,' ').trim();
+            for(let i=0;i<lines.length;i++){
+              const line=lines[i],t=line.trim(),o=(line.match(/\{/g)||[]).length,c=(line.match(/\}/g)||[]).length;
+              if(!sel){
+                if(ap.length){if(t)ap.push(t);if(line.includes('{')){stack.push({type:'at',header:norm(ap),depthBefore:depth});ap=[];}}
+                else if(t.startsWith('@')&&!t.includes(';')){if(line.includes('{'))stack.push({type:'at',header:norm([t]),depthBefore:depth});else ap=[t];}
+                else if(sp.length){if(t)sp.push(t);if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth});}}
+                else if(t&&!t.startsWith('/*')&&!t.startsWith('*')&&t!=='*/'&&t!=='}'&&!t.startsWith('@')&&!line.includes(';')){sp=[t];if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth});}}
+              }
+              if(sel){const m=line.match(re);if(m){const raw=m[2].trim(),important=/\s*!important\s*$/i.test(raw),context=stack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');ds.push({line:i+1,selector:sel,property:m[1].toLowerCase(),value:raw,important,context});}}
+              depth+=o-c;while(stack.length&&depth<=stack[stack.length-1].depthBefore){const p=stack.pop();if(p.type==='rule')sel=null;}
+            }
+            const last=new Map(),dead=[];
+            for(let i=ds.length-1;i>=0;i--){const d=ds[i],k=`${d.context} >>> ${d.selector} >>> ${d.property}`,l=last.get(k);if(l&&(!d.important||l.important))dead.push({...d,winnerLine:l.line,winnerValue:l.value});if(!l||d.important||!l.important)last.set(k,d);}
+            return {declarations:ds,dead};
+          }
+          function removeSix(src){
+            const first='@media (max-width: 640px) {';
+            const second='@media (max-width: 640px) {';
+            const i=src.indexOf(first); const j=src.indexOf(second,i+first.length);
+            if(i<0||j<0) throw new Error('expected two <=640 blocks');
+            const head=src.slice(0,i), mid=src.slice(i,j), tail=src.slice(j);
+            const lines=['    left: 14px;\n','    right: 14px;\n','    bottom: 14px;\n','    font-size: 1.02rem;\n','    gap: 12px;\n','    width: 52px;\n'];
+            let next=mid;
+            for(const line of lines){const n=next.split(line).length-1;if(n!==1) throw new Error(`expected one first-block declaration ${line.trim()}, got ${n}`);next=next.replace(line,'');}
+            return head+next+tail;
+          }
+          async function capture(browser,label){
+            const context=await browser.newContext();
+            const page=await context.newPage();
             await page.route('https://fonts.googleapis.com/**',r=>r.fulfill({contentType:'text/css',body:''}));
             await page.route('https://fonts.gstatic.com/**',r=>r.abort());
             await page.route('https://images.pexels.com/**',r=>r.fulfill({status:204,body:''}));
             await page.goto('/index.html',{waitUntil:'domcontentloaded'});
             await expect.poll(()=>page.locator('[data-worker-feed-item]').count()).toBeGreaterThan(0);
-            const pre=await page.locator('[data-worker-preview]').evaluate(el=>({hidden:el.hidden,hasWorkerCard:el.classList.contains('doke-worker-card')}));
-            expect(pre.hidden).toBe(true); expect(pre.hasWorkerCard).toBe(false);
-            await page.evaluate(()=>{const t=document.querySelector('[data-worker-trigger]'); if(!t||typeof window.DokeOpenWorkerPreview!=='function') throw new Error('worker opener unavailable'); window.DokeOpenWorkerPreview(t.dataset.workerId,t)});
+            const loaded=await page.evaluate(()=>performance.getEntriesByType('resource').some(e=>e.name.includes('workers-feed-base.css')));
+            expect(loaded).toBe(true);
+            await page.evaluate(()=>{const t=document.querySelector('[data-worker-trigger]');if(!t||typeof window.DokeOpenWorkerPreview!=='function')throw new Error('worker opener unavailable');window.DokeOpenWorkerPreview(t.dataset.workerId,t);});
+            const out={};
             for(const w of widths){
-              await page.setViewportSize({width:w,height:900}); await page.waitForTimeout(120);
-              const r=await page.evaluate(()=>{
+              await page.setViewportSize({width:w,height:900});await page.waitForTimeout(180);
+              out[w]=await page.evaluate(()=>{
                 const root=document.querySelector('[data-worker-preview]');
-                const stage=root.querySelector('.worker-preview__stage');
-                const feed=root.querySelector('[data-worker-preview-feed]');
                 const item=root.querySelector('[data-worker-feed-item].is-active')||root.querySelector('[data-worker-feed-item]');
-                const snap=x=>{const c=getComputedStyle(x),b=x.getBoundingClientRect();return{display:c.display,visibility:c.visibility,rect:[b.x,b.y,b.width,b.height]}};
-                return {bodyOpen:document.body.classList.contains('worker-preview-open'),hidden:root.hidden,aria:root.getAttribute('aria-hidden'),hasWorkerCard:root.classList.contains('doke-worker-card'),root:snap(root),stage:snap(stage),feed:snap(feed),item:snap(item),active:root.querySelectorAll('[data-worker-feed-item].is-active').length,overflow:Math.max(0,document.documentElement.scrollWidth-window.innerWidth)};
+                const pick=(sel,props)=>{const el=item.querySelector(sel);if(!el)throw new Error(`missing ${sel}`);const c=getComputedStyle(el),b=el.getBoundingClientRect(),o={display:c.display,visibility:c.visibility,rect:[b.x,b.y,b.width,b.height].map(n=>Math.round(n*1000)/1000)};for(const p of props)o[p]=c.getPropertyValue(p);return o;};
+                const stage=root.querySelector('.worker-preview__stage'),feed=root.querySelector('[data-worker-preview-feed]');
+                const geom=el=>{const c=getComputedStyle(el),b=el.getBoundingClientRect();return{display:c.display,visibility:c.visibility,rect:[b.x,b.y,b.width,b.height].map(n=>Math.round(n*1000)/1000)}};
+                return {caption:pick('.worker-preview__caption',['left','right','bottom']),title:pick('.worker-preview__title',['font-size']),actions:pick('.worker-preview__actions',['gap']),action:pick('.worker-preview__action',['width']),stage:geom(stage),feed:geom(feed),item:geom(item),active:root.querySelectorAll('[data-worker-feed-item].is-active').length,overflow:Math.max(0,document.documentElement.scrollWidth-window.innerWidth),doc:[document.documentElement.scrollWidth,document.documentElement.scrollHeight,document.body.scrollWidth,document.body.scrollHeight]};
               });
-              console.log(`OWNERSHIP|${w}|${JSON.stringify(r)}`);
-              expect(r.bodyOpen).toBe(true); expect(r.hidden).toBe(false); expect(r.aria).toBe('false'); expect(r.hasWorkerCard).toBe(false); expect(r.active).toBe(1);
-              expect(r.stage.display).not.toBe('none'); expect(r.stage.visibility).toBe('visible'); expect(r.stage.rect[2]).toBeGreaterThan(0); expect(r.stage.rect[3]).toBeGreaterThan(0);
-              expect(r.feed.display).not.toBe('none'); expect(r.feed.rect[2]).toBeGreaterThan(0); expect(r.feed.rect[3]).toBeGreaterThan(0);
-              expect(r.item.display).not.toBe('none'); expect(r.item.rect[2]).toBeGreaterThan(0); expect(r.item.rect[3]).toBeGreaterThan(0);
-              expect(r.overflow).toBe(0);
+              expect(out[w].active).toBe(1);expect(out[w].stage.display).not.toBe('none');expect(out[w].stage.rect[2]).toBeGreaterThan(0);expect(out[w].item.rect[2]).toBeGreaterThan(0);expect(out[w].overflow).toBe(0);
+              console.log(`${label.toUpperCase()}|${w}|${JSON.stringify(out[w])}`);
             }
-            console.log(`OWNERSHIP PASS|viewports=${widths.length}|stageVisible=1|feedVisible=1|itemVisible=1|overflow=0`);
+            await context.close(); return out;
+          }
+          test('six superseded declarations are deletion-safe after ownership correction',async({browser})=>{
+            const original=fs.readFileSync(target,'utf8');
+            const p=parse(original);expect(p.declarations.length).toBe(372);expect(p.dead.length).toBe(6);
+            expect(p.dead.map(d=>[d.selector,d.property,d.value,d.winnerValue])).toEqual(declarations);
+            const parent=await capture(browser,'parent');
+            const candidate=removeSix(original);fs.writeFileSync(target,candidate);
+            const q=parse(candidate);expect(q.declarations.length).toBe(366);expect(q.dead.length).toBe(0);
+            const after=await capture(browser,'after');
+            expect(after).toEqual(parent);
+            console.log('REACH PARITY PASS|viewports=8|decl=372->366|dead=6->0|runtimeDiffs=0|overflow=0');
           });
           JS
-          node node_modules/@playwright/test/cli.js test tests/ux-css-debt-028-ownership-probe.spec.js
-      - name: Static parity on resultados
+          node node_modules/@playwright/test/cli.js test tests/ux-css-debt-028-reach-final.spec.js
+      - name: Verify exact ephemeral CSS delta
         run: |
-          node <<'JS'
-          const fs=require('fs');
-          const html=fs.readFileSync('resultados.html','utf8');
-          const worker=html.match(/<section class="([^"]*worker-preview[^"]*)" data-worker-preview/);
-          if(!worker) throw new Error('resultados worker-preview root missing');
-          if(/\bdoke-worker-card\b/.test(worker[1])) throw new Error('resultados worker-preview still has card semantics');
-          if(!html.includes('before-after-preview doke-worker-card')) throw new Error('unrelated before-after root changed');
-          console.log('RESULTADOS STATIC PASS|workerPreviewCardSemantics=0|beforeAfterUntouched=1');
-          JS
+          set -euo pipefail
+          test "$(git diff --numstat -- "$TARGET_CSS" | awk '{print $1"/"$2}')" = "0/6"
+          test "$(git diff -- "$TARGET_CSS" | grep -c '^-[[:space:]]*\(left: 14px;\|right: 14px;\|bottom: 14px;\|font-size: 1.02rem;\|gap: 12px;\|width: 52px;\)$')" = "6"
+          git diff --check
+          echo 'DELTA PASS|target=workers-feed-base.css|additions=0|deletions=6'
       - if: always()
-        name: Restore certified checkpoint
+        name: Restore exact certified checkpoint
         run: |
           git reset --hard "$TARGET_SHA"
           git clean -fd
           test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git hash-object "$TARGET_CSS")" = "59b2304099888c9bab059c9db133c20107122a05"
           test -z "$(git status --porcelain)"
           echo "CHECKPOINT PASS|sha=$TARGET_SHA|productMutation=0"
