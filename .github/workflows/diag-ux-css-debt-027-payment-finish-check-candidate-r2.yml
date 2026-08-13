@@ -1,0 +1,55 @@
+name: Doke UX-CSS-DEBT-027 Payment Finish Check Candidate R2
+
+on:
+  push:
+    branches: [diag/ux-css-debt-027-payment-finish-check-candidate-r2]
+
+permissions:
+  contents: read
+
+jobs:
+  candidate-r2:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 820896977bfbba4f499b67f1707298f5bd7339be
+      TARGET_FILE: assets/css/pages/pagamento-profissional.css
+    steps:
+      - name: Checkout diagnostic candidate harness
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 4
+      - name: Guard exact parent ancestry and product blobs
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git merge-base HEAD "$TARGET_SHA")" = "$TARGET_SHA"
+          EXPECTED=$(printf '%s\n' \
+            '.github/workflows/diag-ux-css-debt-027-payment-finish-check-candidate-r2.yml' \
+            'scripts/diag-ux-css-debt-027-candidate-r2-launch.js' \
+            'scripts/diag-ux-css-debt-027-candidate-r2.js' | sort)
+          ACTUAL=$(git diff --name-only "$TARGET_SHA...HEAD" | sort)
+          test "$ACTUAL" = "$EXPECTED"
+          test "$(git hash-object "$TARGET_FILE")" = "4411ec3c8fe73a925963b59602b2fefad2e5a264"
+          test "$(git hash-object assets/css/components/overlays/modal-visual-contract.css)" = "2fd0b2fc22c9437052e00442848c0ed93966021a"
+          test "$(git hash-object assets/css/pages/pagamento-profissional-foundation.css)" = "e9a65fb9c44c42e58f6b52cf8b3af5c89322108c"
+          test "$(git hash-object pagamento-profissional.html)" = "b9f9e504f9d521100b8bbc0c67a08bf361aacd91"
+          test -z "$(git status --porcelain)"
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies and Chromium
+        run: |
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install --with-deps chromium
+          npm run audit:active-legacy-structures
+      - name: Run deletion-only candidate proof
+        run: node scripts/diag-ux-css-debt-027-candidate-r2-launch.js
+      - name: Verify diagnostic branch remained product-clean after runner
+        if: always()
+        shell: bash
+        run: |
+          git checkout -- "$TARGET_FILE" reports/responsive-index-baseline.json || true
+          git clean -fd reports/generated || true
+          test "$(git hash-object "$TARGET_FILE")" = "4411ec3c8fe73a925963b59602b2fefad2e5a264"
+          test -z "$(git status --porcelain)"
