@@ -1,0 +1,129 @@
+name: Doke UX-CSS-DEBT-026 PR192 Exact Certification R2
+on:
+  push:
+    branches: [diag/ux-css-debt-026-certify-pr192-r2]
+permissions:
+  contents: read
+  pull-requests: read
+jobs:
+  certify-r2:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 820896977bfbba4f499b67f1707298f5bd7339be
+      PARENT_SHA: 330fce87f3db885402cfd14d70af8a4b177b9c62
+      BASE_BRANCH: ux/ux-css-debt-025-orcamento-step-compaction
+      HEAD_BRANCH: ux/ux-css-debt-026-pedidos-rail-compaction
+      TARGET_FILE: assets/css/pages/pedidos/tablet-rail-contract.css
+      TARGET_SHA256: 1e5830ef34501d0f649a92197655b12b8e8a482ca9433c8256ffd6a16fedc96e
+      DIAG_SHA: d633fb63e9a9973e4222fa8144f8a2df5676ccf3
+      PROJECT_KEY: Ezyrus07_doke-web
+      PR_NUMBER: 192
+    steps:
+      - name: Checkout exact permanent SHA with full history
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 0
+      - name: Guard exact permanent tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git rev-list --count "$PARENT_SHA..HEAD")" = 1
+          test "$(git diff --name-only "$PARENT_SHA...HEAD")" = "$TARGET_FILE"
+          test "$(git diff --numstat "$PARENT_SHA...HEAD" -- "$TARGET_FILE" | awk '{print $1}')" = 0
+          test "$(git diff --numstat "$PARENT_SHA...HEAD" -- "$TARGET_FILE" | awk '{print $2}')" = 5
+          test "$(sha256sum "$TARGET_FILE" | awk '{print $1}')" = "$TARGET_SHA256"
+          git fetch --no-tags origin "+refs/heads/$BASE_BRANCH:refs/remotes/origin/$BASE_BRANCH"
+          test "$(git rev-parse "refs/remotes/origin/$BASE_BRANCH")" = "$PARENT_SHA"
+          test "$(git merge-base "$TARGET_SHA" "refs/remotes/origin/$BASE_BRANCH")" = "$PARENT_SHA"
+          git diff --check "$PARENT_SHA...HEAD"
+          echo "EXACT TREE PASS|head=$TARGET_SHA|parent=$PARENT_SHA|count=1|files=1|additions=0|deletions=5|merge-base=$PARENT_SHA"
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+      - name: Checkout residual helper separately
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.DIAG_SHA }}
+          path: .diag026
+          fetch-depth: 1
+      - name: Materialize helper outside repository and remove nested checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp .diag026/scripts/diag-ux-css-debt-026-certify-residual.js /tmp/diag-ux-css-debt-026-certify-residual.js
+          rm -rf .diag026
+          test -f /tmp/diag-ux-css-debt-026-certify-residual.js
+          test -z "$(git status --porcelain)"
+          echo "HARNESS ISOLATION PASS|nested-checkout=removed|helper=/tmp"
+      - name: Re-run clean governance and canonical residual
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/conflicts.log
+          grep -q 'Conflicting class/property pairs: 339' /tmp/conflicts.log
+          npm run audit:agent-governance
+          npm run audit:shared-app-header-contract
+          npm run audit:mobile-shell-location-contract
+          npm run audit:responsive-boundaries
+          npm run audit:duplicate-assets | tee /tmp/dup.log
+          grep -q 'Duplicate groups: 0' /tmp/dup.log
+          grep -q 'Duplicated files: 0' /tmp/dup.log
+          npm run audit:domain-completion-matrix | tee /tmp/domain.log
+          grep -q 'Domains: 23' /tmp/domain.log
+          grep -q 'Critical flows: 15' /tmp/domain.log
+          grep -q 'Average maturity: 2.91/6' /tmp/domain.log
+          grep -q 'Critical blockers: 12' /tmp/domain.log
+          npm run audit:active-legacy-structures
+          node /tmp/diag-ux-css-debt-026-certify-residual.js
+          echo "CLEAN GOVERNANCE PASS|conflicts=339|residual=48/1286/0|domain=23/15/2.91/12"
+      - name: Reset exact permanent SHA before Sonar
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "$TARGET_SHA"
+          git clean -fd
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test -z "$(git status --porcelain)"
+          test "$(sha256sum "$TARGET_FILE" | awk '{print $1}')" = "$TARGET_SHA256"
+          git fetch --no-tags origin "+refs/heads/$BASE_BRANCH:refs/remotes/origin/$BASE_BRANCH"
+          test "$(git rev-parse "refs/remotes/origin/$BASE_BRANCH")" = "$PARENT_SHA"
+          test "$(git merge-base "$TARGET_SHA" "refs/remotes/origin/$BASE_BRANCH")" = "$PARENT_SHA"
+      - name: Require Sonar token
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: test -n "$SONAR_TOKEN"
+      - name: Analyze PR 192 exact SHA and enforce SonarQube Cloud Quality Gate
+        uses: SonarSource/sonarqube-scan-action@c7ee0f9df90b7aa20e8dcf9695dcfe2e7da5b4f2
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >-
+            -Dsonar.projectKey=Ezyrus07_doke-web
+            -Dsonar.organization=ezyrus07
+            -Dsonar.pullrequest.key=192
+            -Dsonar.pullrequest.branch=ux/ux-css-debt-026-pedidos-rail-compaction
+            -Dsonar.pullrequest.base=ux/ux-css-debt-025-orcamento-step-compaction
+            -Dsonar.scm.revision=820896977bfbba4f499b67f1707298f5bd7339be
+            -Dsonar.qualitygate.wait=true
+            -Dsonar.qualitygate.timeout=600
+      - name: Verify Sonar API final PR gate
+        shell: bash
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          set -euo pipefail
+          curl -fsS -u "$SONAR_TOKEN:" "https://sonarcloud.io/api/qualitygates/project_status?projectKey=$PROJECT_KEY&pullRequest=$PR_NUMBER" -o /tmp/sonar-gate.json
+          node - <<'NODE'
+          const fs=require('fs');const x=JSON.parse(fs.readFileSync('/tmp/sonar-gate.json','utf8'));const s=x.projectStatus?.status;console.log('SONAR API STATUS='+s);if(s!=='OK')throw Error('Sonar gate '+s);
+          NODE
+      - name: Final exact certification marker
+        run: |
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          echo "CERTIFICATION R2 PASS|pr=$PR_NUMBER|sha=$TARGET_SHA|parent=$PARENT_SHA|candidate=$TARGET_SHA256|runtime-r1=0-diffs|responsive-r1=893/0/277|conflicts=339|residual=48/1286/0|domain=23/15/2.91/12|sonar=OK"
