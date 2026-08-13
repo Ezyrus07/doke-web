@@ -1,0 +1,172 @@
+name: Doke UX-CSS-DEBT-026 PR192 Exact Certification
+on:
+  push:
+    branches: [diag/ux-css-debt-026-certify-pr192]
+permissions:
+  contents: read
+  pull-requests: read
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 820896977bfbba4f499b67f1707298f5bd7339be
+      PARENT_SHA: 330fce87f3db885402cfd14d70af8a4b177b9c62
+      BASE_BRANCH: ux/ux-css-debt-025-orcamento-step-compaction
+      HEAD_BRANCH: ux/ux-css-debt-026-pedidos-rail-compaction
+      TARGET_FILE: assets/css/pages/pedidos/tablet-rail-contract.css
+      TARGET_SHA256: 1e5830ef34501d0f649a92197655b12b8e8a482ca9433c8256ffd6a16fedc96e
+      DIAG_SHA: d633fb63e9a9973e4222fa8144f8a2df5676ccf3
+      PROJECT_KEY: Ezyrus07_doke-web
+      PR_NUMBER: 192
+    steps:
+      - name: Checkout exact permanent SHA with full history
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 0
+      - name: Guard exact tree and SCM base
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git rev-list --count "$PARENT_SHA..HEAD")" = 1
+          test "$(git diff --name-only "$PARENT_SHA...HEAD")" = "$TARGET_FILE"
+          test "$(git diff --numstat "$PARENT_SHA...HEAD" -- "$TARGET_FILE" | awk '{print $1}')" = 0
+          test "$(git diff --numstat "$PARENT_SHA...HEAD" -- "$TARGET_FILE" | awk '{print $2}')" = 5
+          test "$(sha256sum "$TARGET_FILE" | awk '{print $1}')" = "$TARGET_SHA256"
+          test -z "$(git diff --name-only "$PARENT_SHA...HEAD" -- package.json package-lock.json)"
+          test "$(git rev-parse --is-shallow-repository)" = false
+          git fetch --no-tags origin "+refs/heads/$BASE_BRANCH:refs/remotes/origin/$BASE_BRANCH"
+          test "$(git rev-parse "refs/remotes/origin/$BASE_BRANCH")" = "$PARENT_SHA"
+          test "$(git merge-base "$TARGET_SHA" "refs/remotes/origin/$BASE_BRANCH")" = "$PARENT_SHA"
+          git diff --check "$PARENT_SHA...HEAD"
+          echo "EXACT TREE PASS|head=$TARGET_SHA|parent=$PARENT_SHA|count=1|files=1|additions=0|deletions=5|merge-base=$PARENT_SHA"
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies and Chromium
+        run: |
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install --with-deps chromium
+      - name: Record dependency advisory snapshot
+        shell: bash
+        run: |
+          set -uo pipefail
+          code=0
+          npm audit --json >/tmp/npm-audit-pr192.json 2>/tmp/npm-audit-pr192.err || code=$?
+          echo "npm audit exit=$code (non-blocking; package files unchanged)"
+          node - <<'NODE'
+          const fs=require('fs');try{const a=JSON.parse(fs.readFileSync('/tmp/npm-audit-pr192.json','utf8'));console.log('npm audit metadata='+JSON.stringify(a.metadata?.vulnerabilities||{}));}catch(e){console.log('npm audit snapshot unavailable: '+e.message)}
+          NODE
+          exit 0
+      - name: Reprove deterministic permanent bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          git show "$PARENT_SHA:$TARGET_FILE" >/tmp/parent.css
+          cp "$TARGET_FILE" /tmp/permanent.css
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),sha=s=>crypto.createHash('sha256').update(s).digest('hex');const p=fs.readFileSync('/tmp/parent.css','utf8'),q=fs.readFileSync('/tmp/permanent.css','utf8'),lines=p.split(/\r?\n/);if(Buffer.byteLength(p)!==19507||Buffer.byteLength(q)!==19397)throw Error('byte drift');const exact=[[509,'inline-size: 100%;'],[510,'width: 100%;'],[511,'max-inline-size: 100%;'],[512,'max-width: 100%;'],[513,'margin-inline: 0;']];for(const[i,v]of exact)if(lines[i].trim()!==v)throw Error(`line ${i+1}`);const d=new Set(exact.map(x=>x[0])),rebuilt=lines.filter((_l,i)=>!d.has(i)).join('\n');if(rebuilt!==q||sha(q)!==process.env.TARGET_SHA256)throw Error('permanent drift');const decl=s=>(s.match(/^\s*[\w-]+\s*:\s*.*;\s*$/gm)||[]).length;if(decl(p)!==347||decl(q)!==342)throw Error('declaration drift');console.log(`DETERMINISTIC BYTES PASS|19507->19397|decl=347->342|dead=5->0|hash=${sha(q)}`);
+          NODE
+      - name: Checkout diagnostic helpers separately
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.DIAG_SHA }}
+          path: .diag026
+          fetch-depth: 1
+      - name: Capture exact parent and responsive baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp /tmp/parent.css "$TARGET_FILE"
+          node .diag026/scripts/diag-ux-css-debt-026-certify-runtime.js /tmp/parent.json parent
+          node scripts/generate-responsive-index-baseline.js
+          cp reports/responsive-index-baseline.json /tmp/parent-responsive.json
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/parent-conflicts.log
+          grep -q 'Conflicting class/property pairs: 339' /tmp/parent-conflicts.log
+      - name: Restore exact permanent and require runtime parity
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp /tmp/permanent.css "$TARGET_FILE"
+          node .diag026/scripts/diag-ux-css-debt-026-certify-runtime.js /tmp/permanent.json permanent
+          node <<'NODE'
+          const fs=require('fs'),a=JSON.parse(fs.readFileSync('/tmp/parent.json')),b=JSON.parse(fs.readFileSync('/tmp/permanent.json'));if(JSON.stringify(a)!==JSON.stringify(b)){for(const k of Object.keys(a))if(JSON.stringify(a[k])!==JSON.stringify(b[k]))console.error('DIFF',k,JSON.stringify(a[k]),JSON.stringify(b[k]));throw Error('runtime mismatch')}console.log('PERMANENT RUNTIME PARITY PASS|computed+rect+document/body=0-diffs|cssom=2+2+2+2+2->1+1+1+1+1');
+          NODE
+      - name: Preserve responsive contract without rebaseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp /tmp/parent-responsive.json reports/responsive-index-baseline.json
+          node scripts/test-responsive-contract.js | tee /tmp/responsive.log
+          grep -q 'Checks: 893' /tmp/responsive.log
+          grep -q 'Failures: 0' /tmp/responsive.log
+          grep -q 'Skips: 277' /tmp/responsive.log
+      - name: Validate governance and canonical residual
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/conflicts.log
+          grep -q 'Conflicting class/property pairs: 339' /tmp/conflicts.log
+          npm run audit:agent-governance
+          npm run audit:shared-app-header-contract
+          npm run audit:mobile-shell-location-contract
+          npm run audit:responsive-boundaries
+          npm run audit:duplicate-assets | tee /tmp/dup.log
+          grep -q 'Duplicate groups: 0' /tmp/dup.log
+          grep -q 'Duplicated files: 0' /tmp/dup.log
+          npm run audit:domain-completion-matrix | tee /tmp/domain.log
+          grep -q 'Domains: 23' /tmp/domain.log
+          grep -q 'Critical flows: 15' /tmp/domain.log
+          grep -q 'Average maturity: 2.91/6' /tmp/domain.log
+          grep -q 'Critical blockers: 12' /tmp/domain.log
+          npm run audit:active-legacy-structures
+          node .diag026/scripts/diag-ux-css-debt-026-certify-residual.js
+      - name: Reset to exact permanent SHA before Sonar
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .diag026
+          git reset --hard "$TARGET_SHA"
+          git clean -fd
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test -z "$(git status --porcelain)"
+          test "$(sha256sum "$TARGET_FILE" | awk '{print $1}')" = "$TARGET_SHA256"
+          git fetch --no-tags origin "+refs/heads/$BASE_BRANCH:refs/remotes/origin/$BASE_BRANCH"
+          test "$(git rev-parse "refs/remotes/origin/$BASE_BRANCH")" = "$PARENT_SHA"
+          test "$(git merge-base "$TARGET_SHA" "refs/remotes/origin/$BASE_BRANCH")" = "$PARENT_SHA"
+      - name: Require Sonar token
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: test -n "$SONAR_TOKEN"
+      - name: Analyze PR 192 exact SHA and enforce SonarQube Cloud Quality Gate
+        uses: SonarSource/sonarqube-scan-action@c7ee0f9df90b7aa20e8dcf9695dcfe2e7da5b4f2
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >-
+            -Dsonar.projectKey=Ezyrus07_doke-web
+            -Dsonar.organization=ezyrus07
+            -Dsonar.pullrequest.key=192
+            -Dsonar.pullrequest.branch=ux/ux-css-debt-026-pedidos-rail-compaction
+            -Dsonar.pullrequest.base=ux/ux-css-debt-025-orcamento-step-compaction
+            -Dsonar.scm.revision=820896977bfbba4f499b67f1707298f5bd7339be
+            -Dsonar.qualitygate.wait=true
+            -Dsonar.qualitygate.timeout=600
+      - name: Verify Sonar API final PR gate
+        shell: bash
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          set -euo pipefail
+          curl -fsS -u "$SONAR_TOKEN:" "https://sonarcloud.io/api/qualitygates/project_status?projectKey=$PROJECT_KEY&pullRequest=$PR_NUMBER" -o /tmp/sonar-gate.json
+          node - <<'NODE'
+          const fs=require('fs'),x=JSON.parse(fs.readFileSync('/tmp/sonar-gate.json','utf8')),s=x.projectStatus?.status;console.log('SONAR API STATUS='+s);if(s!=='OK')throw Error('Sonar gate '+s);
+          NODE
+      - name: Final exact certification marker
+        run: |
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          echo "CERTIFICATION PASS|pr=$PR_NUMBER|sha=$TARGET_SHA|parent=$PARENT_SHA|candidate=$TARGET_SHA256|responsive=893/0/277|conflicts=339|residual=48/1286/0|domain=23/15/2.91/12|sonar=OK"
