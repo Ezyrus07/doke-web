@@ -35,6 +35,9 @@ jobs:
           npm ci --ignore-scripts
           node node_modules/@playwright/test/cli.js install --with-deps chromium
           npm run audit:active-legacy-structures
+          node scripts/generate-responsive-index-baseline.js
+          test -s reports/responsive-index-baseline.json
+          echo 'PARENT RESPONSIVE BASELINE PASS|beforeCandidate=1'
 
       - name: Run CSS-only candidate proof
         shell: bash
