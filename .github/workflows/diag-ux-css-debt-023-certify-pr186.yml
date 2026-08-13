@@ -1,0 +1,214 @@
+name: Doke UX-CSS-DEBT-023 PR186 Exact Certification
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-023-certify-pr186
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: a81b046521eca19f23223522198b00d387e41b03
+      PARENT_SHA: c72fdba37031001c0d503af7b61babbeb46e1c96
+      BASE_BRANCH: ux/ux-css-debt-022-home-refresh-tablet-rails-compaction
+      HEAD_BRANCH: ux/ux-css-debt-023-notifications-tablet-header-compaction
+      TARGET_FILE: assets/css/pages/notificacoes/tablet-header-rail.css
+      PARENT_SHA256: 340f0ffe86085931dd1f79440eea640837b0136eff33c848a89a399ee366e028
+      TARGET_SHA256: f79b5b0471e96ff694454add500f7e0995e32c810bc1f4131f220e014dc894c8
+      PROJECT_KEY: Ezyrus07_doke-web
+      PR_NUMBER: '186'
+    steps:
+      - name: Checkout exact permanent SHA with full history
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 0
+
+      - name: Guard exact tree and base
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test "$(git rev-parse HEAD^)" = "${PARENT_SHA}"
+          test "$(git rev-list --count "${PARENT_SHA}"..HEAD)" = "1"
+          test "$(git diff --name-only "${PARENT_SHA}"...HEAD)" = "${TARGET_FILE}"
+          test "$(git diff --numstat "${PARENT_SHA}"...HEAD -- "${TARGET_FILE}" | awk '{print $1}')" = "0"
+          test "$(git diff --numstat "${PARENT_SHA}"...HEAD -- "${TARGET_FILE}" | awk '{print $2}')" = "4"
+          test -z "$(git diff --name-only "${PARENT_SHA}"...HEAD -- package.json package-lock.json)"
+          test "$(git rev-parse --is-shallow-repository)" = "false"
+          git fetch --no-tags origin "+refs/heads/${BASE_BRANCH}:refs/remotes/origin/${BASE_BRANCH}"
+          test "$(git rev-parse "refs/remotes/origin/${BASE_BRANCH}")" = "${PARENT_SHA}"
+          test "$(git merge-base "${TARGET_SHA}" "refs/remotes/origin/${BASE_BRANCH}")" = "${PARENT_SHA}"
+          test "$(sha256sum "${TARGET_FILE}" | awk '{print $1}')" = "${TARGET_SHA256}"
+          git diff --check "${PARENT_SHA}"...HEAD
+          echo 'EXACT TREE PASS'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies and Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install --with-deps chromium
+
+      - name: Record current dependency advisory snapshot
+        shell: bash
+        run: |
+          set -uo pipefail
+          code=0
+          npm audit --json >/tmp/npm-audit-pr186.json 2>/tmp/npm-audit-pr186.err || code=$?
+          echo "npm audit exit=${code} (non-blocking; package files unchanged)"
+          node - <<'NODE'
+          const fs=require('fs');try{const a=JSON.parse(fs.readFileSync('/tmp/npm-audit-pr186.json','utf8'));console.log('npm audit metadata='+JSON.stringify(a.metadata?.vulnerabilities||{}));}catch(e){console.log('npm audit snapshot unavailable: '+e.message)}
+          NODE
+          exit 0
+
+      - name: Reprove exact deterministic permanent bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          git show "${PARENT_SHA}:${TARGET_FILE}" >/tmp/parent.css
+          cp "${TARGET_FILE}" /tmp/permanent.css
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),sha=s=>crypto.createHash('sha256').update(s).digest('hex');
+          const p=fs.readFileSync('/tmp/parent.css','utf8'),q=fs.readFileSync('/tmp/permanent.css','utf8'),lines=p.split(/\r?\n/);
+          if(sha(p)!==process.env.PARENT_SHA256||Buffer.byteLength(p)!==6085)throw new Error('parent drift');
+          const exact=[[158,'flex: 0 0 auto;'],[159,'inline-size: max-content;'],[160,'min-inline-size: max-content;'],[161,'overflow: visible;']];
+          for(const [i,v] of exact)if(lines[i].trim()!==v)throw new Error(`line ${i+1} drift`);
+          const rebuilt=lines.filter((_l,i)=>![158,159,160,161].includes(i)).join('\n');
+          if(rebuilt!==q||sha(q)!==process.env.TARGET_SHA256||Buffer.byteLength(q)!==5978)throw new Error('permanent drift');
+          const decl=s=>(s.match(/^\s*[\w-]+\s*:\s*.*;\s*$/gm)||[]).length;
+          if(decl(p)!==119||decl(q)!==115)throw new Error('declaration drift');
+          console.log(`DETERMINISTIC BYTES PASS|6085->5978|decl=119->115|hash=${sha(q)}`);
+          NODE
+
+      - name: Write syntax-checked runtime capture
+        shell: bash
+        run: |
+          cat >/tmp/capture-pr186.js <<'NODE'
+          const fs=require('fs'),cp=require('child_process');const {chromium}=require(process.cwd()+'/node_modules/playwright');
+          const viewports=[[760,900],[761,900],[820,1180],[1024,900],[1179,900],[1180,900],[1181,900],[390,844]];
+          const fileNeedle='/assets/css/pages/notificacoes/tablet-header-rail.css';
+          const selector='body[data-page="notificacoes"].has-global-header .app-header--notifications .notifications-header-context';
+          const canon=s=>(s||'').replace(/\s+/g,' ').replace(/\(\s+/g,'(').replace(/\s+\)/g,')').replace(/\s*,\s*/g,',').trim(),sleep=ms=>new Promise(r=>setTimeout(r,ms));
+          async function capture(out,expected){const server=cp.spawn(process.execPath,['scripts/serve-static-site.js','--host=127.0.0.1','--port=5500'],{stdio:'ignore',env:{...process.env,DOKE_E2E_DISABLE_REMOTE_SERVICES:'1'}});try{await sleep(500);const browser=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage']}),result={};let active=0;for(const [w,h] of viewports){const ctx=await browser.newContext({viewport:{width:w,height:h},reducedMotion:'reduce'}),page=await ctx.newPage();await page.route('**/*',route=>{const u=new URL(route.request().url()),local=u.origin==='http://127.0.0.1:5500';if(local&&u.pathname.endsWith('.js'))return route.abort();if(local||u.protocol==='data:'||u.protocol==='blob:')return route.continue();return route.abort();});await page.goto('http://127.0.0.1:5500/notificacoes.html',{waitUntil:'domcontentloaded',timeout:15000});await page.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important}.doke-document-preloader{display:none!important}html,body{visibility:visible!important;opacity:1!important}'});const x=await page.evaluate(({selector,fileNeedle})=>{const canon=s=>(s||'').replace(/\s+/g,' ').replace(/\(\s+/g,'(').replace(/\s+\)/g,')').replace(/\s*,\s*/g,',').trim(),hits=[];function walk(rules,ctx,href){for(const r of [...rules]){if(r.constructor?.name==='CSSImportRule'&&r.styleSheet){try{walk(r.styleSheet.cssRules,ctx,r.styleSheet.href||href)}catch{}}else if(r.constructor?.name==='CSSMediaRule')walk(r.cssRules,[...ctx,`@media ${r.conditionText}`],href);else if(canon(r.selectorText)===canon(selector)){for(const p of ['flex','inline-size','min-inline-size','overflow']){const v=r.style?.getPropertyValue(p);if(v)hits.push({prop:p,value:v.trim(),priority:r.style.getPropertyPriority(p),ctx:ctx.join(' || '),href});}}}}for(const sh of [...document.styleSheets]){try{walk(sh.cssRules,[],sh.href||'inline')}catch{}}const n=document.querySelector(selector);if(!n)return{count:0};const c=getComputedStyle(n),r=n.getBoundingClientRect(),de=document.documentElement,b=document.body;return{count:document.querySelectorAll(selector).length,media:matchMedia('(min-width: 761px) and (max-width: 1180px)').matches,computed:{display:c.display,alignItems:c.alignItems,justifyContent:c.justifyContent,flexGrow:c.flexGrow,flexShrink:c.flexShrink,flexBasis:c.flexBasis,inlineSize:c.inlineSize,width:c.width,minInlineSize:c.minInlineSize,minWidth:c.minWidth,maxInlineSize:c.maxInlineSize,maxWidth:c.maxWidth,overflow:c.overflow,boxSizing:c.boxSizing,rect:[+r.x.toFixed(3),+r.y.toFixed(3),+r.width.toFixed(3),+r.height.toFixed(3)]},doc:[de.scrollWidth,de.scrollHeight,de.clientWidth,de.clientHeight],body:[b.scrollWidth,b.scrollHeight,b.clientWidth,b.clientHeight],hits:hits.filter(z=>String(z.href).includes(fileNeedle))};},{selector,fileNeedle});if(x.count!==1)throw new Error(`DOM ${w}`);const mh=x.hits.filter(z=>z.ctx==='@media (min-width: 761px) and (max-width: 1180px)');for(const p of ['flex','inline-size','min-inline-size','overflow']){const a=mh.filter(z=>z.prop===p);if(a.length!==expected)throw new Error(`CSSOM ${p} ${w}: ${a.length}/${expected}`);if(a.some(z=>z.priority!==''))throw new Error(`priority ${p} ${w}`);}if(expected===2){const inline=mh.filter(z=>z.prop==='inline-size').map(z=>z.value);if(JSON.stringify(inline)!==JSON.stringify(['max-content','auto']))throw new Error(`parent inline ${w}`);}else{const vals=Object.fromEntries(['flex','inline-size','min-inline-size','overflow'].map(p=>[p,mh.filter(z=>z.prop===p).map(z=>z.value)]));if(vals.flex[0]!=='0 0 auto'||vals['inline-size'][0]!=='auto'||vals['min-inline-size'][0]!=='max-content'||vals.overflow[0]!=='visible')throw new Error(`permanent values ${w}`);}if(x.media)active++;delete x.hits;result[w]=x;await ctx.close();}await browser.close();if(active!==5)throw new Error(`boundary ${active}`);fs.writeFileSync(out,JSON.stringify(result));console.log(`CAPTURE PASS|expected=${expected}|viewports=8|tablet=5`);}finally{server.kill('SIGTERM')}}capture(process.argv[2],Number(process.argv[3])).catch(e=>{console.error(e);process.exit(1)});
+          NODE
+          node --check /tmp/capture-pr186.js
+
+      - name: Capture exact parent and responsive baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp /tmp/parent.css "${TARGET_FILE}"
+          node /tmp/capture-pr186.js /tmp/parent.json 2
+          node scripts/generate-responsive-index-baseline.js
+          cp reports/responsive-index-baseline.json /tmp/parent-responsive.json
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/parent-conflicts.log
+          grep -q 'Conflicting class/property pairs: 339' /tmp/parent-conflicts.log
+
+      - name: Restore exact permanent and require runtime parity
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp /tmp/permanent.css "${TARGET_FILE}"
+          node /tmp/capture-pr186.js /tmp/permanent.json 1
+          node - <<'NODE'
+          const fs=require('fs'),a=JSON.parse(fs.readFileSync('/tmp/parent.json')),b=JSON.parse(fs.readFileSync('/tmp/permanent.json'));if(JSON.stringify(a)!==JSON.stringify(b))throw new Error('runtime mismatch');console.log('PERMANENT RUNTIME PARITY PASS|computed+rect+doc/body=0-diffs');
+          NODE
+
+      - name: Preserve responsive contract without rebaseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp /tmp/parent-responsive.json reports/responsive-index-baseline.json
+          node scripts/test-responsive-contract.js | tee /tmp/responsive.log
+          grep -q 'Checks: 893' /tmp/responsive.log
+          grep -q 'Failures: 0' /tmp/responsive.log
+          grep -q 'Skips: 277' /tmp/responsive.log
+
+      - name: Validate permanent governance and residual
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/conflicts.log
+          grep -q 'Conflicting class/property pairs: 339' /tmp/conflicts.log
+          npm run audit:agent-governance
+          npm run audit:active-legacy-structures | tee /tmp/legacy.log
+          grep -q 'css files: 533 (55 direct, 401 active/imported)' /tmp/legacy.log
+          grep -q 'active legacy/remediation css: 0' /tmp/legacy.log
+          grep -q 'active legacy/remediation js: 0' /tmp/legacy.log
+          grep -q 'high risk active css: 37' /tmp/legacy.log
+          npm run audit:shared-app-header-contract
+          npm run audit:mobile-shell-location-contract
+          npm run audit:responsive-boundaries
+          npm run audit:duplicate-assets | tee /tmp/dup.log
+          grep -q 'Duplicate groups: 0' /tmp/dup.log
+          grep -q 'Duplicated files: 0' /tmp/dup.log
+          npm run audit:domain-completion-matrix | tee /tmp/domain.log
+          grep -q 'Domains: 23' /tmp/domain.log
+          grep -q 'Critical flows: 15' /tmp/domain.log
+          grep -q 'Average maturity: 2.91/6' /tmp/domain.log
+          grep -q 'Critical blockers: 12' /tmp/domain.log
+          node <<'NODE'
+          const fs=require('fs'),path=require('path'),cp=require('child_process'),target=process.env.TARGET_FILE,report=JSON.parse(fs.readFileSync('reports/generated/active-legacy-structures-report.json'));const files=cp.execFileSync('git',['ls-files','-z','assets/css'],{encoding:'utf8'}).split('\0').filter(f=>f.endsWith('.css')),ir=/@import\s+(?:url\()?['"]?([^'"\);]+\.css(?:\?[^'"\)]*)?)['"]?\)?/gi,norm=(v,from)=>{v=v.replace(/\?.*$/,'').replace(/^\.\//,'');if(v.startsWith('/'))return v.replace(/^\/+/, '');if(v.startsWith('assets/'))return v;return path.posix.normalize(path.posix.join(path.posix.dirname(from),v));},meta=new Map();for(const f of files){const text=fs.readFileSync(f,'utf8'),imports=[];let m;ir.lastIndex=0;while((m=ir.exec(text)))imports.push(norm(m[1],f));meta.set(f,{text,imports,size:Buffer.byteLength(text),important:(text.match(/!important/gi)||[]).length});}const active=new Set(),todo=[...new Set(report.pageAssets.flatMap(p=>p.css))].filter(f=>meta.has(f));while(todo.length){const f=todo.pop();if(active.has(f)||!meta.has(f))continue;active.add(f);for(const n of meta.get(f).imports)if(meta.has(n))todo.push(n);}const high=[...active].filter(f=>{const x=meta.get(f);return x.size>=50000||x.important>=100||x.imports.length>=10;});function parse(src){const lines=src.split(/\r?\n/);let depth=0,sp=[],ap=[],sel=null,ds=[],stack=[],re=/^\s*([\w-]+)\s*:\s*(.*?)\s*;\s*$/,n=p=>p.join(' ').replace(/\{\s*$/,'').replace(/\s+/g,' ').trim();for(const line of lines){const t=line.trim(),o=(line.match(/\{/g)||[]).length,c=(line.match(/\}/g)||[]).length;if(!sel){if(ap.length){if(t)ap.push(t);if(line.includes('{')){stack.push({type:'at',header:n(ap),depthBefore:depth});ap=[];}}else if(t.startsWith('@')&&!t.includes(';')){if(line.includes('{'))stack.push({type:'at',header:n([t]),depthBefore:depth});else ap=[t];}else if(sp.length){if(t)sp.push(t);if(line.includes('{')){sel=n(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth});}}else if(t&&!t.startsWith('/*')&&!t.startsWith('*')&&t!=='*/'&&t!=='}'&&!t.startsWith('@')&&!line.includes(';')){sp=[t];if(line.includes('{')){sel=n(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth});}}}if(sel){const m=line.match(re);if(m){const raw=m[2].trim();ds.push({sel,prop:m[1].toLowerCase(),imp:/\s*!important\s*$/i.test(raw),ctx:stack.filter(x=>x.type==='at').map(x=>x.header).join(' || ')});}}depth+=o-c;while(stack.length&&depth<=stack[stack.length-1].depthBefore){const p=stack.pop();if(p.type==='rule')sel=null;}}const last=new Map();let dead=0;for(let i=ds.length-1;i>=0;i--){const d=ds[i],k=`${d.ctx}>${d.sel}>${d.prop}`,l=last.get(k);if(l&&(!d.imp||l.imp))dead++;if(!l||d.imp||!l.imp)last.set(k,d);}return{decl:ds.length,dead};}const rows=[...active].map(f=>({f,...parse(meta.get(f).text)})).filter(r=>r.dead),total=rows.reduce((n,r)=>n+r.dead,0),hr=rows.filter(r=>high.includes(r.f)),t=parse(meta.get(target).text);if(active.size!==401||high.length!==37||rows.length!==51||total!==1299||hr.length!==0||t.decl!==115||t.dead!==0)throw new Error(`residual ${active.size}/${high.length}/${rows.length}/${total}/${hr.length}/${t.decl}/${t.dead}`);console.log('PERMANENT RESIDUAL PASS|active=401|highRisk=37|files=51|dead=1299|highRiskDead=0|target=115/dead0');
+          NODE
+
+      - name: Reset generated outputs to exact permanent SHA before Sonar
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "${TARGET_SHA}"
+          git clean -fd
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test -z "$(git status --porcelain)"
+          test "$(sha256sum "${TARGET_FILE}" | awk '{print $1}')" = "${TARGET_SHA256}"
+          test "$(git rev-parse "refs/remotes/origin/${BASE_BRANCH}")" = "${PARENT_SHA}"
+          test "$(git merge-base "${TARGET_SHA}" "refs/remotes/origin/${BASE_BRANCH}")" = "${PARENT_SHA}"
+
+      - name: Require Sonar token
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: test -n "${SONAR_TOKEN}"
+
+      - name: Analyze PR 186 exact SHA and enforce SonarQube Cloud Quality Gate
+        uses: SonarSource/sonarqube-scan-action@c7ee0f9df90b7aa20e8dcf9695dcfe2e7da5b4f2
+        with:
+          skipSignatureVerification: true
+          args: >-
+            -Dsonar.projectKey=${{ env.PROJECT_KEY }}
+            -Dsonar.organization=ezyrus07
+            -Dsonar.pullrequest.key=${{ env.PR_NUMBER }}
+            -Dsonar.pullrequest.branch=${{ env.HEAD_BRANCH }}
+            -Dsonar.pullrequest.base=${{ env.BASE_BRANCH }}
+            -Dsonar.scm.revision=${{ env.TARGET_SHA }}
+            -Dsonar.qualitygate.wait=true
+            -Dsonar.qualitygate.timeout=600
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+      - name: Verify Sonar API final PR gate
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsS -H "Authorization: Bearer ${SONAR_TOKEN}" "https://sonarcloud.io/api/qualitygates/project_status?projectKey=${PROJECT_KEY}&pullRequest=${PR_NUMBER}" -o /tmp/qg.json
+          python3 - <<'PY'
+          import json,sys
+          d=json.load(open('/tmp/qg.json'))['projectStatus'];print('QG API status='+str(d.get('status')));failed=[]
+          for c in d.get('conditions',[]):
+              print('QG condition metric={metricKey} status={status} actual={actualValue} threshold={errorThreshold} op={comparator}'.format(**c))
+              if c.get('status') not in ('OK','NO_VALUE'): failed.append(c)
+          if d.get('status')!='OK' or failed: sys.exit(1)
+          print('SONAR PR186 FINAL QUALITY GATE PASS')
+          PY
