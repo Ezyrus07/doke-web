@@ -1,0 +1,65 @@
+name: Doke UX-CSS-DEBT-023 Promote Permanent
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-023-promote-permanent
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-24.04
+    env:
+      PARENT_SHA: c72fdba37031001c0d503af7b61babbeb46e1c96
+      PERMANENT_BRANCH: ux/ux-css-debt-023-notifications-tablet-header-compaction
+      TARGET_FILE: assets/css/pages/notificacoes/tablet-header-rail.css
+      PARENT_SHA256: 340f0ffe86085931dd1f79440eea640837b0136eff33c848a89a399ee366e028
+      CANDIDATE_SHA256: f79b5b0471e96ff694454add500f7e0995e32c810bc1f4131f220e014dc894c8
+    steps:
+      - name: Checkout exact parent
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.PARENT_SHA }}
+          fetch-depth: 2
+      - name: Guard permanent branch and reconstruct exact candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${PARENT_SHA}"
+          REMOTE_SHA=$(git ls-remote --heads origin "refs/heads/${PERMANENT_BRANCH}" | awk '{print $1}')
+          test "${REMOTE_SHA}" = "${PARENT_SHA}"
+          test "$(sha256sum "${TARGET_FILE}" | awk '{print $1}')" = "${PARENT_SHA256}"
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),f=process.env.TARGET_FILE;
+          const p=fs.readFileSync(f,'utf8'),lines=p.split(/\r?\n/),sha=s=>crypto.createHash('sha256').update(s).digest('hex');
+          const exact=[[158,'flex: 0 0 auto;'],[159,'inline-size: max-content;'],[160,'min-inline-size: max-content;'],[161,'overflow: visible;']];
+          for(const [i,v] of exact)if(lines[i].trim()!==v)throw new Error(`line ${i+1} drift`);
+          const c=lines.filter((_l,i)=>![158,159,160,161].includes(i)).join('\n');
+          if(sha(c)!==process.env.CANDIDATE_SHA256)throw new Error(`candidate hash ${sha(c)}`);
+          fs.writeFileSync(f,c);
+          const decl=s=>(s.match(/^\s*[\w-]+\s*:\s*.*;\s*$/gm)||[]).length;
+          if(decl(p)!==119||decl(c)!==115)throw new Error(`decl ${decl(p)}>${decl(c)}`);
+          console.log('PROMOTION CANDIDATE HASH PASS '+sha(c));
+          NODE
+          git diff --check
+          test "$(git diff --name-only)" = "${TARGET_FILE}"
+          test "$(git diff --numstat -- "${TARGET_FILE}" | awk '{print $1}')" = "0"
+          test "$(git diff --numstat -- "${TARGET_FILE}" | awk '{print $2}')" = "4"
+      - name: Commit and push guarded permanent branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name doke
+          git config user.email bielantoniomma@gmail.com
+          git switch -C "${PERMANENT_BRANCH}"
+          git add "${TARGET_FILE}"
+          git commit -m "UX-CSS-DEBT-023: compact superseded Notifications tablet header context declarations"
+          test "$(git rev-parse HEAD^)" = "${PARENT_SHA}"
+          test "$(git diff --name-only "${PARENT_SHA}"...HEAD)" = "${TARGET_FILE}"
+          test "$(git diff --numstat "${PARENT_SHA}"...HEAD -- "${TARGET_FILE}" | awk '{print $1}')" = "0"
+          test "$(git diff --numstat "${PARENT_SHA}"...HEAD -- "${TARGET_FILE}" | awk '{print $2}')" = "4"
+          test "$(sha256sum "${TARGET_FILE}" | awk '{print $1}')" = "${CANDIDATE_SHA256}"
+          git push origin "HEAD:refs/heads/${PERMANENT_BRANCH}"
+          echo "PERMANENT_SHA=$(git rev-parse HEAD)"
