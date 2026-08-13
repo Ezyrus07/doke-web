@@ -1,0 +1,192 @@
+name: Doke UX-CSS-DEBT-028 Prerequisite PR197 Exact Certification
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-028-certify-pr197-prereq
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 2b4fda807a207f3a7c4a93a35a69a5401ee330dc
+      PARENT_SHA: e648173f3f98966e3f5bf15413bec3c08f97aab1
+      BASE_BRANCH: ux/ux-css-debt-027-payment-finish-check-compaction
+      HEAD_BRANCH: ux/ux-css-debt-028-media-overlay-ownership-prereq
+      INDEX_BLOB: a3b2bffb4fd6bc4208b40930b621a9c54ce22cea
+      RESULTS_BLOB: 9b4431143ef80dafc70788bfa5c96ebf6460b5d1
+      INDEX_SHA256: 852ef932ce8d29130292881cdb888b8dc7362009bf6df4ded48cc6842a2bd6e4
+      RESULTS_SHA256: 4fa1f117f881ea5c8b691952165fa2724bd34d398cf362d7731f798cb2ed9f1d
+      COMBINED_SHA256: 27bf764d4f374a4d4fce73e6239b8b6fbc158fa06f5ff71264c2f2efb900b8c8
+      PROJECT_KEY: Ezyrus07_doke-web
+      PR_NUMBER: 197
+      CANDIDATE_RUN: 31753608703
+      CANDIDATE_JOB: 94624569044
+      PROMOTION_RUN: 31754128607
+      PROMOTION_JOB: 94626141314
+    steps:
+      - name: Checkout exact permanent SHA with full history
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 0
+          clean: true
+
+      - name: Guard exact permanent tree and candidate identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git rev-list --count "$PARENT_SHA..HEAD")" = 1
+          mapfile -t files < <(git diff --name-only "$PARENT_SHA...HEAD")
+          test "${#files[@]}" -eq 2
+          test "${files[0]}" = "index.html"
+          test "${files[1]}" = "resultados.html"
+          test "$(git diff --numstat "$PARENT_SHA...HEAD" | awk '{a+=$1; d+=$2} END {print a "/" d}')" = "4/4"
+          test "$(git hash-object index.html)" = "$INDEX_BLOB"
+          test "$(git hash-object resultados.html)" = "$RESULTS_BLOB"
+          test "$(sha256sum index.html | awk '{print $1}')" = "$INDEX_SHA256"
+          test "$(sha256sum resultados.html | awk '{print $1}')" = "$RESULTS_SHA256"
+          test "$(cat index.html resultados.html | sha256sum | awk '{print $1}')" = "$COMBINED_SHA256"
+          test -z "$(git diff --name-only "$PARENT_SHA...HEAD" -- '*.css' '*.js' assets)"
+          git fetch --no-tags origin "+refs/heads/$BASE_BRANCH:refs/remotes/origin/$BASE_BRANCH"
+          test "$(git rev-parse "refs/remotes/origin/$BASE_BRANCH")" = "$PARENT_SHA"
+          test "$(git merge-base "$TARGET_SHA" "refs/remotes/origin/$BASE_BRANCH")" = "$PARENT_SHA"
+          git diff --check "$PARENT_SHA...HEAD"
+          echo "EXACT TREE PASS|head=$TARGET_SHA|parent=$PARENT_SHA|count=1|files=2|additions=4|deletions=4|merge-base=$PARENT_SHA|indexBlob=$INDEX_BLOB|resultadosBlob=$RESULTS_BLOB"
+          echo "CANDIDATE IDENTITY PASS|run=$CANDIDATE_RUN|job=$CANDIDATE_JOB|promotionRun=$PROMOTION_RUN|promotionJob=$PROMOTION_JOB|index=$INDEX_SHA256|resultados=$RESULTS_SHA256|combined=$COMBINED_SHA256|runtime=32-pass|responsive=893/0/277"
+
+      - name: Guard ownership semantics on exact SHA
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('fs');
+          let roots = 0;
+          for (const file of ['index.html','resultados.html']) {
+            const html = fs.readFileSync(file,'utf8');
+            for (const root of ['worker-preview','before-after-preview']) {
+              const re = new RegExp(`<section\\s+class="([^"]*\\b${root}\\b[^"]*)"[^>]*data-${root}`);
+              const m = html.match(re);
+              if (!m) throw new Error(`${file}: missing ${root} overlay root`);
+              const classes = m[1].split(/\s+/);
+              if (classes.includes('doke-worker-card')) throw new Error(`${file}: ${root} still owns doke-worker-card`);
+              if (!classes.includes('doke-overlay') || !classes.includes('doke-overlay--media')) throw new Error(`${file}: ${root} lost overlay authority`);
+              roots++;
+            }
+          }
+          const index = fs.readFileSync('index.html','utf8');
+          const results = fs.readFileSync('resultados.html','utf8');
+          const legitimate = (index.match(/\bdoke-worker-card\b/g)||[]).length + (results.match(/\bdoke-worker-card\b/g)||[]).length;
+          if (roots !== 4) throw new Error(`expected 4 overlay roots, got ${roots}`);
+          if (legitimate !== 7) throw new Error(`expected exactly 7 preserved legitimate worker-card tokens, got ${legitimate}`);
+          console.log(`OWNERSHIP EXACT PASS|overlayRoots=${roots}|misowned=0|legitimateWorkerCardTokens=${legitimate}`);
+          NODE
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Clean governance on exact permanent SHA
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/conflicts.log
+          grep -q 'Conflicting class/property pairs: 339' /tmp/conflicts.log
+          npm run audit:agent-governance
+          npm run audit:shared-app-header-contract
+          npm run audit:mobile-shell-location-contract
+          npm run audit:responsive-boundaries
+          npm run audit:duplicate-assets | tee /tmp/dup.log
+          grep -q 'Duplicate groups: 0' /tmp/dup.log
+          grep -q 'Duplicated files: 0' /tmp/dup.log
+          npm run audit:domain-completion-matrix | tee /tmp/domain.log
+          grep -q 'Domains: 23' /tmp/domain.log
+          grep -q 'Critical flows: 15' /tmp/domain.log
+          grep -q 'Average maturity: 2.91/6' /tmp/domain.log
+          grep -q 'Critical blockers: 12' /tmp/domain.log
+          npm run audit:active-legacy-structures | tee /tmp/legacy.log
+          grep -q 'active/imported' /tmp/legacy.log
+          echo "CLEAN GOVERNANCE PASS|conflicts=339|domain=23/15/2.91/12|duplicates=0/0|cssEstate=unchanged-html-only"
+
+      - name: Dependency advisory snapshot
+        shell: bash
+        run: |
+          npm audit --json > /tmp/npm-audit.json || true
+          node - <<'NODE'
+          const fs=require('fs');
+          const x=JSON.parse(fs.readFileSync('/tmp/npm-audit.json','utf8'));
+          const v=x.metadata?.vulnerabilities||{};
+          console.log(`NPM AUDIT SNAPSHOT|total=${v.total}|high=${v.high}|moderate=${v.moderate}|low=${v.low}|critical=${v.critical}`);
+          if(v.total!==13||v.high!==10||v.moderate!==1||v.low!==2||v.critical!==0) throw new Error('audit snapshot drift');
+          NODE
+
+      - name: Reset exact permanent SHA before Sonar
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "$TARGET_SHA"
+          git clean -fd
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test -z "$(git status --porcelain)"
+          test "$(git hash-object index.html)" = "$INDEX_BLOB"
+          test "$(git hash-object resultados.html)" = "$RESULTS_BLOB"
+          test "$(sha256sum index.html | awk '{print $1}')" = "$INDEX_SHA256"
+          test "$(sha256sum resultados.html | awk '{print $1}')" = "$RESULTS_SHA256"
+          test "$(cat index.html resultados.html | sha256sum | awk '{print $1}')" = "$COMBINED_SHA256"
+          git fetch --no-tags origin "+refs/heads/$BASE_BRANCH:refs/remotes/origin/$BASE_BRANCH"
+          test "$(git rev-parse "refs/remotes/origin/$BASE_BRANCH")" = "$PARENT_SHA"
+          test "$(git merge-base "$TARGET_SHA" "refs/remotes/origin/$BASE_BRANCH")" = "$PARENT_SHA"
+
+      - name: Require Sonar token
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: test -n "$SONAR_TOKEN"
+
+      - name: Analyze PR 197 exact SHA and enforce SonarQube Cloud Quality Gate
+        uses: SonarSource/sonarqube-scan-action@c7ee0f9df90b7aa20e8dcf9695dcfe2e7da5b4f2
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >-
+            -Dsonar.projectKey=Ezyrus07_doke-web
+            -Dsonar.organization=ezyrus07
+            -Dsonar.pullrequest.key=197
+            -Dsonar.pullrequest.branch=ux/ux-css-debt-028-media-overlay-ownership-prereq
+            -Dsonar.pullrequest.base=ux/ux-css-debt-027-payment-finish-check-compaction
+            -Dsonar.scm.revision=2b4fda807a207f3a7c4a93a35a69a5401ee330dc
+            -Dsonar.qualitygate.wait=true
+            -Dsonar.qualitygate.timeout=600
+
+      - name: Verify Sonar API final PR gate
+        shell: bash
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          set -euo pipefail
+          curl -fsS -u "$SONAR_TOKEN:" "https://sonarcloud.io/api/qualitygates/project_status?projectKey=$PROJECT_KEY&pullRequest=$PR_NUMBER" -o /tmp/sonar-gate.json
+          node - <<'NODE'
+          const fs=require('fs');
+          const x=JSON.parse(fs.readFileSync('/tmp/sonar-gate.json','utf8'));
+          const s=x.projectStatus?.status;
+          console.log('SONAR API STATUS='+s);
+          if(s!=='OK') throw Error('Sonar gate '+s);
+          NODE
+
+      - name: Final exact certification marker
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test -z "$(git status --porcelain)"
+          echo "CERTIFICATION PASS|pr=$PR_NUMBER|sha=$TARGET_SHA|parent=$PARENT_SHA|files=2|additions=4|deletions=4|candidate=$COMBINED_SHA256|ownership=4-corrected+7-preserved|runtime=promotion-32-pass|responsive=893/0/277|conflicts=339|domain=23/15/2.91/12|sonar=OK"
