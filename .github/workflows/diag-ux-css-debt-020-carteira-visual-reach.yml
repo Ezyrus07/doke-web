@@ -1,0 +1,97 @@
+name: Doke UX-CSS-DEBT-020 Carteira Visual Reach
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-020-carteira-visual-reach
+
+permissions:
+  contents: read
+
+jobs:
+  reach:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: daadc8dbbb91f0ddb75591251fce4ea176b66d95
+      TARGET_FILE: assets/css/pages/carteira/visual-hierarchy.css
+      IMPORT_OWNER: assets/css/pages/carteira-runtime-page.css
+      TARGET_SELECTOR: 'body[data-page="carteira"] :is( .wallet-hero, .wallet-panel, .wallet-analytics, .wallet-bank-panel, .wallet-transaction-detail-panel, .wallet-receivables-panel, .wallet-empty-state )'
+    steps:
+      - name: Checkout exact certified parent
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+      - name: Guard exact parent
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test -z "$(git status --porcelain)"
+          git diff --check
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies and Chromium
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install --with-deps chromium
+      - name: Prove exact parser row, owner and recursive consumer
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:active-legacy-structures
+          node <<'NODE'
+          const fs=require('fs'),path=require('path'),cp=require('child_process'),crypto=require('crypto');
+          const target=process.env.TARGET_FILE,owner=process.env.IMPORT_OWNER,selector=process.env.TARGET_SELECTOR;
+          function parse(src){const lines=src.split(/\r?\n/);let depth=0,sp=[],ap=[],sel=null;const ds=[],stack=[],re=/^\s*([\w-]+)\s*:\s*(.*?)\s*;\s*$/,n=p=>p.join(' ').replace(/\{\s*$/,'').replace(/\s+/g,' ').trim();for(let i=0;i<lines.length;i++){const line=lines[i],t=line.trim(),o=(line.match(/\{/g)||[]).length,c=(line.match(/\}/g)||[]).length;if(!sel){if(ap.length){if(t)ap.push(t);if(line.includes('{')){stack.push({type:'at',header:n(ap),depthBefore:depth});ap=[];}}else if(t.startsWith('@')&&!t.includes(';')){if(line.includes('{'))stack.push({type:'at',header:n([t]),depthBefore:depth});else ap=[t];}else if(sp.length){if(t)sp.push(t);if(line.includes('{')){sel=n(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth});}}else if(t&&!t.startsWith('/*')&&!t.startsWith('*')&&t!=='*/'&&t!=='}'&&!t.startsWith('@')&&!line.includes(';')){sp=[t];if(line.includes('{')){sel=n(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth});}}}if(sel){const m=line.match(re);if(m){const raw=m[2].trim();ds.push({lineIndex:i,line:i+1,selector:sel,property:m[1].toLowerCase(),value:raw,important:/\s*!important\s*$/i.test(raw),context:stack.filter(x=>x.type==='at').map(x=>x.header).join(' || ')});}}depth+=o-c;while(stack.length&&depth<=stack[stack.length-1].depthBefore){const p=stack.pop();if(p.type==='rule')sel=null;}}if(ap.length)throw new Error('unterminated at-rule');const last=new Map(),dead=[];for(let i=ds.length-1;i>=0;i--){const d=ds[i],k=`${d.context} >>> ${d.selector} >>> ${d.property}`,l=last.get(k);if(l&&(!d.important||l.important))dead.push({...d,winnerLine:l.line,winnerValue:l.value,winnerImportant:l.important});if(!l||d.important||!l.important)last.set(k,d);}return{lines,decl:ds.length,dead};}
+          const text=fs.readFileSync(target,'utf8'),p=parse(text),sha=crypto.createHash('sha256').update(text).digest('hex');
+          if(p.decl!==56||p.dead.length!==1)throw new Error(`target drift ${p.decl}/${p.dead.length}`);const d=p.dead[0];
+          if(d.line!==26||d.selector!==selector||d.property!=='box-shadow'||d.value!=='var(--doke-surface-shadow)'||d.context!==''||d.important||d.winnerLine!==282||d.winnerValue!=='var(--doke-shadow-nested-soft)'||d.winnerImportant)throw new Error('dead row drift '+JSON.stringify(d));
+          const ownerText=fs.readFileSync(owner,'utf8');if(!ownerText.includes('@import url("./carteira/visual-hierarchy.css?v=20260716-static-shadow-clean-v1");'))throw new Error('owner import drift');
+          const report=JSON.parse(fs.readFileSync('reports/generated/active-legacy-structures-report.json','utf8')),tracked=cp.execFileSync('git',['ls-files','-z','assets/css'],{encoding:'utf8'}).split('\0').filter(Boolean),set=new Set(tracked),ir=/@import\s+(?:url\()?['"]?([^'"\);]+\.css(?:\?[^'"\)]*)?)['"]?\)?/gi,norm=(v,from)=>{v=v.replace(/\?.*$/,'').replace(/^\.\//,'');if(v.startsWith('/'))return v.replace(/^\/+/, '');if(v.startsWith('assets/'))return v;return path.posix.normalize(path.posix.join(path.posix.dirname(from),v));};
+          const imports=new Map();for(const f of tracked){let t;try{t=fs.readFileSync(f,'utf8')}catch{continue}const a=[];let m;ir.lastIndex=0;while((m=ir.exec(t)))a.push(norm(m[1],f));imports.set(f,a);}
+          const consumers=[];for(const pg of report.pageAssets){const todo=[...pg.css],seen=new Set();let hit=false;while(todo.length){const f=todo.pop();if(seen.has(f))continue;seen.add(f);if(f===target){hit=true;break;}for(const n of imports.get(f)||[])if(set.has(n))todo.push(n);}if(hit)consumers.push(pg.page);}
+          if(JSON.stringify(consumers)!==JSON.stringify(['carteira.html']))throw new Error('consumer drift '+JSON.stringify(consumers));
+          console.log(`STATIC PASS|sha256=${sha}|bytes=${Buffer.byteLength(text)}|decl=56|dead=1|line=26|winnerLine=282|consumer=carteira.html|owner=${owner}`);
+          NODE
+      - name: Prove canonical DOM and CSSOM reach across boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat >/tmp/reach.js <<'NODE'
+          const cp=require('child_process'),{chromium}=require(process.cwd()+'/node_modules/playwright');
+          const selector=process.env.TARGET_SELECTOR,vps=[['1600x1000',1600,1000],['1280x802',1280,802],['1024x900',1024,900],['901x900',901,900],['900x900',900,900],['820x1180',820,1180],['608x926',608,926],['390x844',390,844]],sleep=ms=>new Promise(r=>setTimeout(r,ms)),server=cp.spawn(process.execPath,['scripts/serve-static-site.js','--host=127.0.0.1','--port=5500'],{stdio:'ignore',env:{...process.env,DOKE_E2E_DISABLE_REMOTE_SERVICES:'1'}});
+          const norm=s=>(s||'').replace(/\s+/g,' ').trim();
+          (async()=>{await sleep(500);const b=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});let total=0;for(const [name,width,height] of vps){const c=await b.newContext({viewport:{width,height},reducedMotion:'reduce'}),p=await c.newPage();await p.route('**/*',r=>{const u=new URL(r.request().url()),local=u.origin==='http://127.0.0.1:5500';if(local&&u.pathname.endsWith('.js'))return r.abort();if(local||u.protocol==='data:'||u.protocol==='blob:')return r.continue();return r.abort();});await p.goto('http://127.0.0.1:5500/carteira.html',{waitUntil:'domcontentloaded',timeout:15000});await p.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important;caret-color:transparent!important}.doke-document-preloader{display:none!important}html,body{visibility:visible!important;opacity:1!important}'});const s=await p.evaluate(({selector,normText})=>{const norm=s=>(s||'').replace(/\s+/g,' ').trim(),nodes=[...document.querySelectorAll(selector)],hits=[];function walk(rules,ctx,href){for(const r of [...rules]){if(r.constructor?.name==='CSSImportRule'&&r.styleSheet){try{walk(r.styleSheet.cssRules,ctx,r.styleSheet.href||href)}catch{}}else if(r.constructor?.name==='CSSMediaRule'){walk(r.cssRules,[...ctx,`@media ${r.conditionText}`],href)}else if(norm(r.selectorText)===norm(selector)&&r.style?.getPropertyValue('box-shadow'))hits.push({href,ctx:ctx.join(' || '),value:r.style.getPropertyValue('box-shadow').trim(),priority:r.style.getPropertyPriority('box-shadow')});}}for(const st of [...document.styleSheets]){try{walk(st.cssRules,[],st.href||'inline')}catch{}}return{count:nodes.length,classes:nodes.map(n=>n.className),computed:nodes.map(n=>getComputedStyle(n).boxShadow),hits:hits.filter(h=>String(h.href).includes('/assets/css/pages/carteira/visual-hierarchy.css'))};},{selector,normText:norm(selector)});if(s.count<1)throw new Error(`selector absent ${name}`);if(s.hits.length!==2)throw new Error(`CSSOM hits ${name} ${JSON.stringify(s.hits)}`);if(s.hits[0].ctx!==''||s.hits[1].ctx!==''||s.hits[0].value!=='var(--doke-surface-shadow)'||s.hits[1].value!=='var(--doke-shadow-nested-soft)'||s.hits.some(h=>h.priority!==''))throw new Error(`CSSOM drift ${name} ${JSON.stringify(s.hits)}`);total+=s.count;console.log(`VIEW|${name}|nodes=${s.count}|classes=${s.classes.join(',')}|computed=${[...new Set(s.computed)].join(' <> ')}`);await c.close();}await b.close();server.kill('SIGTERM');console.log(`RUNTIME PASS|viewports=${vps.length}|totalMatchedOccurrences=${total}|cssomHitsPerViewport=2|winner=var(--doke-shadow-nested-soft)`);})().catch(e=>{server.kill('SIGTERM');console.error(e);process.exit(1)});
+          NODE
+          node /tmp/reach.js
+      - name: Preserve governance baselines
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/conflicts.log
+          grep -q 'Conflicting class/property pairs: 339' /tmp/conflicts.log
+          npm run audit:agent-governance
+          npm run audit:active-legacy-structures | tee /tmp/legacy.log
+          grep -q 'css files: 533 (55 direct, 401 active/imported)' /tmp/legacy.log
+          grep -q 'high risk active css: 37' /tmp/legacy.log
+          npm run audit:shared-app-header-contract
+          npm run audit:mobile-shell-location-contract
+          npm run audit:responsive-boundaries
+          npm run audit:duplicate-assets | tee /tmp/dup.log
+          grep -q 'Duplicate groups: 0' /tmp/dup.log
+          grep -q 'Duplicated files: 0' /tmp/dup.log
+          npm run audit:domain-completion-matrix | tee /tmp/domain.log
+          grep -q 'Domains: 23' /tmp/domain.log
+          grep -q 'Critical flows: 15' /tmp/domain.log
+          grep -q 'Average maturity: 2.91/6' /tmp/domain.log
+          grep -q 'Critical blockers: 12' /tmp/domain.log
+      - name: Restore exact parent
+        run: |
+          set -euo pipefail
+          git reset --hard "${TARGET_SHA}"
+          git clean -fd
+          test -z "$(git status --porcelain)"
