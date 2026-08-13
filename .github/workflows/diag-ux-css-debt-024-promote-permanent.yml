@@ -62,7 +62,7 @@ jobs:
           git commit -m "UX-CSS-DEBT-024: compact superseded Professional Profile Editor declarations"
           test "$(git rev-list --count "${PARENT_SHA}..HEAD")" = "1"
           test "$(git rev-parse HEAD^)" = "${PARENT_SHA}"
-          test "$(git diff --name-only "${PARENT_SHA}..HEAD)" = "${TARGET_FILE}"
+          test "$(git diff --name-only "${PARENT_SHA}..HEAD")" = "${TARGET_FILE}"
           test "$(git diff --numstat "${PARENT_SHA}..HEAD -- "${TARGET_FILE}" | awk '{print $1}')" = "0"
           test "$(git diff --numstat "${PARENT_SHA}..HEAD -- "${TARGET_FILE}" | awk '{print $2}')" = "4"
           test "$(sha256sum "${TARGET_FILE}" | awk '{print $1}')" = "${CANDIDATE_SHA256}"
