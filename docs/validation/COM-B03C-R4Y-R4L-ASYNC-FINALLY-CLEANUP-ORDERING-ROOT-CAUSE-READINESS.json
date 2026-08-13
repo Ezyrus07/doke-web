@@ -1,0 +1,100 @@
+{
+  "validationId": "COM-B03C-R4Y-R4L-ASYNC-FINALLY-CLEANUP-ORDERING-ROOT-CAUSE-READINESS",
+  "contractId": "com-b03c-r4y-r4l-async-finally-cleanup-ordering-root-cause-readiness-v1",
+  "status": "repository_r4l_async_finally_cleanup_ordering_root_cause_pre_certification_no_remote_authority",
+  "predecessor": {
+    "r4xEvidenceHead": "0526aa73e5c0e6a61126a31cf72cab1605ba2b56",
+    "r4xEvidenceBlob": "ccbdb07c74f32afce94cf75a4412dface7d48e9f",
+    "r4xContractId": "com-b03c-r4x-r4w-terminal-no-counter-path-attribution-readiness-v1",
+    "r4xStatus": "repository_r4w_terminal_no_counter_path_attribution_certified_no_remote_authority",
+    "r4xFinalRun": 31660159779,
+    "r4xFinalJob": 94323122082,
+    "r4xFinalConclusion": "success",
+    "independentMatrixRun": 31660159802,
+    "independentMatrixJob": 94323121938,
+    "independentMatrixConclusion": "success"
+  },
+  "sdkBinding": {
+    "supabaseJs": "2.110.0",
+    "realtimeJs": "2.110.0",
+    "phoenix": "0.4.4"
+  },
+  "repositoryRootCause": {
+    "harnessRootCause": "async_return_without_await_allows_finally_remove_channel_before_probe_promise_resolution",
+    "r4lReturnsUnresolvedProbePromiseFromTry": true,
+    "r4lReturnUsesAwait": false,
+    "r4lFinallyAwaitsRemoveChannel": true,
+    "javascriptFinallyRunsBeforeReturnedPromiseSettlesWithoutAwait": true,
+    "supabaseRemoveChannelCallsChannelUnsubscribe": true,
+    "channelUnsubscribeTriggersCloseHooks": true,
+    "realtimeClosedStatusComesFromChannelCloseHook": true,
+    "syntheticMirrorReproducedClosedBeforeProbeResolution": true,
+    "correctedReturnAwaitMirrorPreservedProbeResolutionBeforeCleanup": true,
+    "harnessRootCauseProven": true
+  },
+  "r4wEvidenceImpact": {
+    "terminalStatus": "CLOSED",
+    "joinSubscribed": false,
+    "broadcastDelta": 0,
+    "presenceDelta": 0,
+    "observationClassification": "presence_only_counter_path_diverged",
+    "terminalObservationContaminatedByLocalCleanupOrdering": true,
+    "validForPresenceCausalPromotion": false,
+    "historicalEvidenceMustRemainImmutable": true
+  },
+  "scopeClarification": {
+    "harnessRootCauseProven": true,
+    "privatePresenceExactRootCauseProven": false,
+    "exactRootCauseProven": false,
+    "causalPromotionAllowed": false,
+    "inference": "The repository proves a root cause in the R4L/R4W diagnostic harness: returning the unresolved subscribe observation Promise from try causes finally to begin removeChannel before that observation settles. removeChannel unsubscribes the same channel, and channel unsubscribe triggers close hooks that map to CLOSED. Therefore the R4W CLOSED terminal result is contaminated by local cleanup ordering and cannot be used to promote a causal conclusion about the private Presence/RLS runtime itself. This does not yet prove the private Presence production/staging root cause."
+  },
+  "repositoryBoundary": {
+    "historicalR4wAndR4xMustRemainUnchanged": true,
+    "triggerExists": false,
+    "remoteExecutionAuthority": false,
+    "remoteCredentialReadAuthority": false,
+    "remoteDependencyLoadAuthority": false,
+    "networkAuthority": false,
+    "stagingReadAuthority": false,
+    "stagingMutationAuthority": false,
+    "realtimeSubscriptionAuthority": false,
+    "authIdentityLifecycleAuthority": false,
+    "runtimeChangeAuthority": false,
+    "productionAuthority": false,
+    "mergeAuthority": false
+  },
+  "authorization": {
+    "previousAuthorizationConsumed": true,
+    "previousAuthorizationReusable": false,
+    "retryAllowed": false,
+    "freshAuthorizationRequiredForAnyFutureRemoteAttempt": true
+  },
+  "matrixVersion": "1.3.113",
+  "maturity": 3,
+  "productionGate": "blocked",
+  "exactRootCauseProven": false,
+  "causalPromotionAllowed": false,
+  "repositoryCertification": {
+    "preFreezeHead": null,
+    "r4yRun": null,
+    "r4yJob": null,
+    "r4yRunAttempt": null,
+    "r4yConclusion": null,
+    "independentMatrixRun": null,
+    "independentMatrixJob": null,
+    "independentMatrixRunAttempt": null,
+    "independentMatrixConclusion": null,
+    "matrixWriterInstallHead": null,
+    "matrixWriterRun": null,
+    "matrixWriterJob": null,
+    "matrixWriterConclusion": null,
+    "matrixOutputHead": null,
+    "matrixWorkflowRestoredHead": null,
+    "canonicalMatrixWorkflowBlob": "299108d86dc097ba090392ebe9f218f6849e74ad",
+    "canonicalMatrixWorkflowContentsRead": true,
+    "stagingExecutedInR4y": false,
+    "remoteExecutionAuthority": false
+  },
+  "nextBoundary": "After final R4Y evidence-head certification, create a separate repository-only corrected terminal bridge readiness boundary that awaits the subscribe observation before finally cleanup. Preserve R4L/R4W/R4X/R4Y immutable. Only after that corrected bridge is independently certified may a fresh single-use authorization lifecycle be prepared for any new staging observation."
+}
