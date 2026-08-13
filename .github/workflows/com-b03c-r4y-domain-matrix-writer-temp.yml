@@ -1,0 +1,122 @@
+name: COM-B03C-R4Y Temporary Domain Matrix Reconciler
+
+on:
+  push:
+    branches: [com/com-001-baseline-audit]
+    paths:
+      - '.github/workflows/com-b03c-r4y-domain-matrix-writer-temp.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: com-b03c-r4y-domain-matrix-writer-temp
+  cancel-in-progress: false
+
+env:
+  EXPECTED_PARENT: 45eb4f0b115f94ba4a6753b30a4e315b5654ef73
+  TARGET_BRANCH: com/com-001-baseline-audit
+  WRITER_PATH: .github/workflows/com-b03c-r4y-domain-matrix-writer-temp.yml
+  MATRIX_MD: docs/DOMAIN-COMPLETION-MATRIX.md
+  MATRIX_JSON: reports/generated/domain-completion-matrix-report.json
+
+jobs:
+  reconcile-and-remove:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.ref_name }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Fail-closed writer installation lineage
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${GITHUB_EVENT_NAME}" = "push"
+          test "${GITHUB_REF}" = "refs/heads/${TARGET_BRANCH}"
+          test "${GITHUB_RUN_ATTEMPT}" = "1"
+          test "$(git rev-parse HEAD^)" = "${EXPECTED_PARENT}"
+          changed="$(git diff-tree --no-commit-id --name-only -r HEAD)"
+          test "${changed}" = "${WRITER_PATH}"
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+      - name: R4Y pre-gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check backend/modules/communities/community-realtime-private-auth-r4y.js
+          node --check scripts/test-com-b03c-r4y-r4l-async-finally-cleanup-ordering-root-cause-readiness.js
+          node scripts/test-com-b03c-r4y-r4l-async-finally-cleanup-ordering-root-cause-readiness.js
+          test ! -e config/com-b03c-r4t-single-use-successor-executor-trigger.json
+          R4X_EVIDENCE_HEAD=0526aa73e5c0e6a61126a31cf72cab1605ba2b56
+          test -z "$(git diff --name-only "$R4X_EVIDENCE_HEAD" "${EXPECTED_PARENT}" -- \
+            backend/modules/communities/community-realtime-private-auth-r4w.js \
+            scripts/execute-com-b03c-r4w-single-use-r4t-successor-hosted-execution.js \
+            scripts/verify-com-b03c-r4w-single-use-r4t-successor-hosted-execution-report.js \
+            config/com-b03c-r4w-r4v-consumed-authorization-successor-workflow-installation-readiness.json \
+            docs/validation/COM-B03C-R4W-R4V-CONSUMED-AUTHORIZATION-R4T-SUCCESSOR-WORKFLOW-INSTALLATION-READINESS.json \
+            backend/modules/communities/community-realtime-private-auth-r4x.js \
+            config/com-b03c-r4x-r4w-terminal-no-counter-path-attribution-readiness.json \
+            scripts/test-com-b03c-r4x-r4w-terminal-no-counter-path-attribution-readiness.js \
+            docs/validation/COM-B03C-R4X-R4W-TERMINAL-NO-COUNTER-PATH-ATTRIBUTION-READINESS.json \
+            .github/workflows/com-b03c-r4x-r4w-terminal-no-counter-path-attribution-readiness.yml \
+            package-lock.json \
+            scripts/execute-com-b03c-r4l-single-use-hosted-terminal-status-observation.js \
+            config/com-b03c-r4v-r4u-fresh-authorization-consumption.json)"
+      - name: Remove writer before canonical generation
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rm -- "${WRITER_PATH}"
+      - name: Generate canonical Domain Completion Matrix outputs
+        run: npm run write:domain-completion-matrix
+      - name: Enforce final reconciliation scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual="$(git diff HEAD --name-only | sort)"
+          printf '%s\n' "${actual}" | grep -qx "${WRITER_PATH}"
+          printf '%s\n' "${actual}" | grep -qx "${MATRIX_MD}"
+          while IFS= read -r file; do
+            [ -z "${file}" ] && continue
+            case "${file}" in
+              "${WRITER_PATH}"|"${MATRIX_MD}"|"${MATRIX_JSON}") ;;
+              *) echo "unauthorized final path: ${file}" >&2; exit 1 ;;
+            esac
+          done <<< "${actual}"
+          test -z "$(git ls-files --others --exclude-standard)"
+          git diff HEAD --check
+      - name: Domain Completion Matrix
+        run: npm run audit:domain-completion-matrix
+      - name: Agent Governance
+        run: npm run audit:agent-governance
+      - name: Stage and verify exact final scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add -- "${MATRIX_MD}"
+          git add -f -- "${MATRIX_JSON}"
+          staged="$(git diff --cached --name-only | sort)"
+          printf '%s\n' "${staged}" | grep -qx "${WRITER_PATH}"
+          printf '%s\n' "${staged}" | grep -qx "${MATRIX_MD}"
+          while IFS= read -r file; do
+            [ -z "${file}" ] && continue
+            case "${file}" in
+              "${WRITER_PATH}"|"${MATRIX_MD}"|"${MATRIX_JSON}") ;;
+              *) echo "unauthorized staged path: ${file}" >&2; exit 1 ;;
+            esac
+          done <<< "${staged}"
+          git diff --cached --check
+      - name: Commit clean reconciled tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'docs(com): reconcile matrix after R4Y root-cause readiness'
+          git push origin "HEAD:${TARGET_BRANCH}"
