@@ -1,0 +1,113 @@
+name: Doke UX-CSS-DEBT-021 Detalhe Related Reach
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-021-detalhe-related-reach
+
+permissions:
+  contents: read
+
+jobs:
+  reach:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 928b74a947a7301f9a645d1f316ad3a3f6e37b1e
+      PARENT_SHA: daadc8dbbb91f0ddb75591251fce4ea176b66d95
+      TARGET_FILE: assets/css/pages/detalhe-anuncio-related-sections.css
+      OWNER_FILE: assets/css/pages/marketplace-detail-foundation.css
+      TARGET_SELECTOR: 'body[data-page="detalhe-anuncio"] :is( .detail-section--ad-workers, .detail-section--ad-publications, .detail-section--similar-ads ) .detail-related-section-heading .section-heading__title.home-section-title'
+    steps:
+      - name: Checkout exact certified parent
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+
+      - name: Guard exact parent and authority chain
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test "$(git rev-parse HEAD^)" = "${PARENT_SHA}"
+          test -z "$(git status --porcelain)"
+          git diff --check
+          grep -Fq 'marketplace-detail-foundation.css' detalhe-anuncio.html
+          grep -Fq 'detalhe-anuncio-related-sections.css' "${OWNER_FILE}"
+          grep -Fq 'data-page="detalhe-anuncio"' detalhe-anuncio.html
+          echo "PARENT_SHA256=$(sha256sum "${TARGET_FILE}" | awk '{print $1}')"
+          echo "AUTHORITY_CHAIN_PASS|consumer=detalhe-anuncio.html|owner=${OWNER_FILE}|target=${TARGET_FILE}"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies and Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install --with-deps chromium
+
+      - name: Prove exact parser rows and tracked reach
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:active-legacy-structures
+          node <<'NODE'
+          const fs=require('fs'),path=require('path'),cp=require('child_process'),file=process.env.TARGET_FILE,selector=process.env.TARGET_SELECTOR;
+          function parse(src){const lines=src.split(/\r?\n/);let depth=0,sp=[],ap=[],sel=null;const ds=[],stack=[],re=/^\s*([\w-]+)\s*:\s*(.*?)\s*;\s*$/,norm=p=>p.join(' ').replace(/\{\s*$/,'').replace(/\s+/g,' ').trim();for(let i=0;i<lines.length;i++){const line=lines[i],t=line.trim(),o=(line.match(/\{/g)||[]).length,c=(line.match(/\}/g)||[]).length;if(!sel){if(ap.length){if(t)ap.push(t);if(line.includes('{')){stack.push({type:'at',header:norm(ap),depthBefore:depth});ap=[];}}else if(t.startsWith('@')&&!t.includes(';')){if(line.includes('{'))stack.push({type:'at',header:norm([t]),depthBefore:depth});else ap=[t];}else if(sp.length){if(t)sp.push(t);if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth});}}else if(t&&!t.startsWith('/*')&&!t.startsWith('*')&&t!=='*/'&&t!=='}'&&!t.startsWith('@')&&!line.includes(';')){sp=[t];if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth});}}}if(sel){const m=line.match(re);if(m){const raw=m[2].trim();ds.push({lineIndex:i,line:i+1,selector:sel,property:m[1].toLowerCase(),value:raw,important:/\s*!important\s*$/i.test(raw),context:stack.filter(x=>x.type==='at').map(x=>x.header).join(' || ')});}}depth+=o-c;while(stack.length&&depth<=stack[stack.length-1].depthBefore){const p=stack.pop();if(p.type==='rule')sel=null;}}if(ap.length)throw new Error('unterminated multiline at-rule');const last=new Map(),dead=[];for(let i=ds.length-1;i>=0;i--){const d=ds[i],k=`${d.context} >>> ${d.selector} >>> ${d.property}`,l=last.get(k);if(l&&(!d.important||l.important))dead.push({...d,winnerLine:l.line,winnerValue:l.value,winnerImportant:l.important});if(!l||d.important||!l.important)last.set(k,d);}return{declarations:ds,dead};}
+          const p=parse(fs.readFileSync(file,'utf8'));if(p.declarations.length!==549||p.dead.length!==2)throw new Error(`target drift ${p.declarations.length}/${p.dead.length}`);
+          const rows=p.dead.slice().sort((a,b)=>a.line-b.line);const exp=[{line:101,property:'font-size',value:'var(--doke-section-title-size, 0.96rem)',winnerLine:253,winnerValue:'13px'},{line:102,property:'letter-spacing',value:'var(--doke-section-title-letter, 0.08em)',winnerLine:256,winnerValue:'0.06em'}];for(let i=0;i<2;i++){const d=rows[i],e=exp[i];if(d.line!==e.line||d.selector!==selector||d.property!==e.property||d.value!==e.value||d.important||d.context!=='@media (max-width: 760px)'||d.winnerLine!==e.winnerLine||d.winnerValue!==e.winnerValue||d.winnerImportant)throw new Error('dead-row drift '+JSON.stringify(d));}
+          const report=JSON.parse(fs.readFileSync('reports/generated/active-legacy-structures-report.json','utf8')),tracked=cp.execFileSync('git',['ls-files','-z','assets/css'],{encoding:'utf8'}).split('\0').filter(Boolean),ir=/@import\s+(?:url\()?['"]?([^'"\);]+\.css(?:\?[^'"\)]*)?)['"]?\)?/gi,norm=(v,from)=>{v=v.replace(/\?.*$/,'').replace(/^\.\//,'');if(v.startsWith('/'))return v.replace(/^\/+/, '');if(v.startsWith('assets/'))return v;return path.posix.normalize(path.posix.join(path.posix.dirname(from),v));},meta=new Map();for(const f of tracked){const text=fs.readFileSync(f,'utf8'),imports=[];let m;ir.lastIndex=0;while((m=ir.exec(text)))imports.push(norm(m[1],f));meta.set(f,{imports});}
+          const pages=[];for(const page of report.pageAssets){const seen=new Set(),todo=[...page.css.filter(f=>meta.has(f))];while(todo.length){const f=todo.pop();if(seen.has(f))continue;seen.add(f);if(f===file){pages.push(page.page);break;}for(const n of meta.get(f)?.imports||[])if(meta.has(n))todo.push(n);}}
+          if(JSON.stringify(pages.sort())!==JSON.stringify(['detalhe-anuncio.html']))throw new Error('consumer drift '+JSON.stringify(pages));
+          console.log('PARSER_REACH_PASS|decl=549|dead=2|selector=1|context=max760|consumer=detalhe-anuncio.html|important=0');
+          NODE
+
+      - name: Prove canonical DOM and CSSOM cascade at boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat >/tmp/reach-pr021.js <<'NODE'
+          const cp=require('child_process'),{chromium}=require(process.cwd()+'/node_modules/playwright'),selector=process.env.TARGET_SELECTOR;
+          const vps=[['1600',1600,1000],['1280',1280,802],['1024',1024,900],['820',820,1180],['761',761,900],['760',760,900],['608',608,926],['390',390,844]],sleep=ms=>new Promise(r=>setTimeout(r,ms)),server=cp.spawn(process.execPath,['scripts/serve-static-site.js','--host=127.0.0.1','--port=5500'],{stdio:'ignore',env:{...process.env,DOKE_E2E_DISABLE_REMOTE_SERVICES:'1'}});
+          const canon=s=>(s||'').replace(/\s+/g,' ').replace(/\(\s+/g,'(').replace(/\s+\)/g,')').replace(/\s*,\s*/g,',').trim();
+          (async()=>{await sleep(500);const b=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});let mobile=0,totalNodes=0;for(const [name,w,h] of vps){const c=await b.newContext({viewport:{width:w,height:h},reducedMotion:'reduce'}),p=await c.newPage();await p.route('**/*',r=>{const u=new URL(r.request().url()),local=u.origin==='http://127.0.0.1:5500';if(local&&u.pathname.endsWith('.js'))return r.abort();if(local||['data:','blob:'].includes(u.protocol))return r.continue();return r.abort();});await p.goto('http://127.0.0.1:5500/detalhe-anuncio.html',{waitUntil:'domcontentloaded',timeout:15000});const s=await p.evaluate(({selector})=>{const canon=s=>(s||'').replace(/\s+/g,' ').replace(/\(\s+/g,'(').replace(/\s+\)/g,')').replace(/\s*,\s*/g,',').trim(),nodes=[...document.querySelectorAll(selector)],hits=[];function walk(rs,ctx,href){for(const r of [...rs]){if(r.constructor?.name==='CSSImportRule'&&r.styleSheet){try{walk(r.styleSheet.cssRules,ctx,r.styleSheet.href||href)}catch{}}else if(r.constructor?.name==='CSSMediaRule')walk(r.cssRules,[...ctx,`@media ${r.conditionText}`],href);else if(canon(r.selectorText)===canon(selector)){for(const prop of ['font-size','letter-spacing']){const value=r.style?.getPropertyValue(prop);if(value)hits.push({href,ctx:ctx.join(' || '),prop,value:value.trim(),priority:r.style.getPropertyPriority(prop)});}}}for(const st of [...document.styleSheets])try{walk(st.cssRules,[],st.href||'inline')}catch{}return{mobile:matchMedia('(max-width: 760px)').matches,count:nodes.length,hits:hits.filter(x=>String(x.href).includes('/assets/css/pages/detalhe-anuncio-related-sections.css')),computed:nodes.map(n=>{const cs=getComputedStyle(n),r=n.getBoundingClientRect();return{fontSize:cs.fontSize,letterSpacing:cs.letterSpacing,rect:[+r.x.toFixed(3),+r.y.toFixed(3),+r.width.toFixed(3),+r.height.toFixed(3)]};})};},{selector});if(s.count<1)throw new Error(`canonical selector absent ${name}`);const media=s.hits.filter(x=>x.ctx==='@media (max-width: 760px)');if(media.length!==4)throw new Error(`media declarations=${media.length} ${name} ${JSON.stringify(media)}`);const fs=media.filter(x=>x.prop==='font-size'),ls=media.filter(x=>x.prop==='letter-spacing');if(fs.length!==2||fs[0].value!=='var(--doke-section-title-size, 0.96rem)'||fs[1].value!=='13px'||ls.length!==2||ls[0].value!=='var(--doke-section-title-letter, 0.08em)'||ls[1].value!=='0.06em'||media.some(x=>x.priority!==''))throw new Error(`cascade drift ${name} ${JSON.stringify(media)}`);if(s.mobile)mobile++;totalNodes+=s.count;console.log(`VIEW|${name}|mobile=${s.mobile}|nodes=${s.count}|computed=${JSON.stringify(s.computed)}`);await c.close();}await b.close();server.kill('SIGTERM');if(mobile!==3)throw new Error(`mobile boundary drift count=${mobile}`);console.log(`RUNTIME_REACH_PASS|viewports=8|mobileViewports=3|occurrences=${totalNodes}|mediaDeclsPerViewport=4|winners=13px,0.06em`);})().catch(e=>{server.kill('SIGTERM');console.error(e);process.exit(1)});
+          NODE
+          node /tmp/reach-pr021.js
+
+      - name: Preserve certified governance baselines
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/conflicts.log
+          grep -q 'Conflicting class/property pairs: 339' /tmp/conflicts.log
+          npm run audit:agent-governance
+          npm run audit:active-legacy-structures | tee /tmp/legacy.log
+          grep -q 'css files: 533 (55 direct, 401 active/imported)' /tmp/legacy.log
+          grep -q 'active legacy/remediation css: 0' /tmp/legacy.log
+          grep -q 'active legacy/remediation js: 0' /tmp/legacy.log
+          grep -q 'high risk active css: 37' /tmp/legacy.log
+          npm run audit:shared-app-header-contract
+          npm run audit:mobile-shell-location-contract
+          npm run audit:responsive-boundaries
+          npm run audit:duplicate-assets | tee /tmp/duplicates.log
+          grep -q 'Duplicate groups: 0' /tmp/duplicates.log
+          grep -q 'Duplicated files: 0' /tmp/duplicates.log
+          npm run audit:domain-completion-matrix | tee /tmp/domain.log
+          grep -q 'Domains: 23' /tmp/domain.log
+          grep -q 'Critical flows: 15' /tmp/domain.log
+          grep -q 'Average maturity: 2.91/6' /tmp/domain.log
+          grep -q 'Critical blockers: 12' /tmp/domain.log
+
+      - name: Restore exact parent
+        if: always()
+        shell: bash
+        run: |
+          git reset --hard "${TARGET_SHA}"
+          git clean -fd
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test -z "$(git status --porcelain)"
