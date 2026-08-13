@@ -1,0 +1,95 @@
+name: Doke UX-CSS-DEBT-025 Promotion R1
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-025-promotion-r1
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 32089a725a156cabe8cc2be52ba0b75b6774ee28
+      TARGET_FILE: assets/css/pages/orcamento.css
+      CANDIDATE_SHA256: 9e5c178ad61f78fab8e7ce9d19e9e54c7f116ff6efbbbc1f1291856f435e450f
+      PERM_BRANCH: ux/ux-css-debt-025-orcamento-mobile-step-compaction
+    steps:
+      - name: Checkout exact certified UX-CSS-DEBT-024 SHA
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+
+      - name: Guard exact parent and clean permanent namespace
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test -z "$(git status --porcelain)"
+          if git ls-remote --exit-code --heads origin "refs/heads/${PERM_BRANCH}" >/tmp/perm-existing 2>/dev/null; then
+            echo "permanent branch already exists"
+            cat /tmp/perm-existing
+            exit 1
+          fi
+
+      - name: Rebuild exact deterministic candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs');
+          const file=process.env.TARGET_FILE,src=fs.readFileSync(file,'utf8'),lines=src.split(/\r?\n/);
+          const exact=[[590,'gap: 6px;'],[594,'min-height: 46px;'],[595,'padding: 7px 8px;'],[604,'font-size: 0.78rem;']];
+          for(const [i,v] of exact)if(lines[i].trim()!==v)throw new Error(`line ${i+1} drift`);
+          const deleted=new Set(exact.map(x=>x[0]));
+          fs.writeFileSync(file,lines.filter((_l,i)=>!deleted.has(i)).join('\n'));
+          NODE
+          HASH=$(sha256sum "${TARGET_FILE}" | awk '{print $1}')
+          DIFF_NAMES=$(git diff --name-only)
+          ADD=$(git diff --numstat -- "${TARGET_FILE}" | awk '{print $1}')
+          DEL=$(git diff --numstat -- "${TARGET_FILE}" | awk '{print $2}')
+          test "${HASH}" = "${CANDIDATE_SHA256}"
+          test "${DIFF_NAMES}" = "${TARGET_FILE}"
+          test "${ADD}" = "0"
+          test "${DEL}" = "4"
+          test -z "$(git diff --name-only -- package.json package-lock.json)"
+          git diff --check
+          echo "PROMOTION BYTES PASS|sha256=${HASH}|delta=+0/-4"
+
+      - name: Commit exact one-file product delta
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "doke"
+          git config user.email "bielantoniomma@gmail.com"
+          git switch -c "${PERM_BRANCH}"
+          git add "${TARGET_FILE}"
+          test "$(git diff --cached --name-only)" = "${TARGET_FILE}"
+          git commit -m "UX-CSS-DEBT-025: compact superseded Orcamento mobile step declarations"
+          HEAD_NOW=$(git rev-parse HEAD)
+          DIRECT_PARENT=$(git rev-parse HEAD^)
+          COUNT=$(git rev-list --count "${TARGET_SHA}..HEAD")
+          DIFF_NAMES=$(git diff --name-only "${TARGET_SHA}...HEAD")
+          ADD=$(git diff --numstat "${TARGET_SHA}...HEAD" -- "${TARGET_FILE}" | awk '{print $1}')
+          DEL=$(git diff --numstat "${TARGET_SHA}...HEAD" -- "${TARGET_FILE}" | awk '{print $2}')
+          HASH=$(sha256sum "${TARGET_FILE}" | awk '{print $1}')
+          test "${DIRECT_PARENT}" = "${TARGET_SHA}"
+          test "${COUNT}" = "1"
+          test "${DIFF_NAMES}" = "${TARGET_FILE}"
+          test "${ADD}" = "0"
+          test "${DEL}" = "4"
+          test "${HASH}" = "${CANDIDATE_SHA256}"
+          test -z "$(git status --porcelain)"
+          echo "LOCAL PERMANENT PASS|sha=${HEAD_NOW}|parent=${DIRECT_PARENT}|count=1|files=1|additions=0|deletions=4|hash=${HASH}"
+
+      - name: Publish permanent branch once
+        shell: bash
+        run: |
+          set -euo pipefail
+          git push origin "HEAD:refs/heads/${PERM_BRANCH}"
+          REMOTE=$(git ls-remote --heads origin "refs/heads/${PERM_BRANCH}" | awk '{print $1}')
+          test "${REMOTE}" = "$(git rev-parse HEAD)"
+          echo "PROMOTION PASS|branch=${PERM_BRANCH}|sha=${REMOTE}|parent=${TARGET_SHA}|candidate=${CANDIDATE_SHA256}"
