@@ -1,0 +1,81 @@
+name: COM-B03C-R4V R4U-Bound Successor Authorization Issuance Consumption Readiness
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - 'backend/modules/communities/community-realtime-private-auth-r4v.js'
+      - 'scripts/test-com-b03c-r4v-r4u-bound-successor-authorization-issuance-consumption-readiness.js'
+      - 'config/com-b03c-r4v-r4u-bound-successor-authorization-issuance-consumption-readiness.json'
+      - 'docs/validation/COM-B03C-R4V-R4U-BOUND-SUCCESSOR-AUTHORIZATION-ISSUANCE-CONSUMPTION-READINESS.json'
+      - '.github/workflows/com-b03c-r4v-r4u-bound-successor-authorization-issuance-consumption-readiness.yml'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+
+permissions: { contents: read }
+
+concurrency:
+  group: com-b03c-r4v-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '24', cache: npm }
+      - run: npm ci --ignore-scripts
+      - name: Syntax
+        run: |
+          node --check backend/modules/communities/community-realtime-private-auth-r4v.js
+          node --check scripts/test-com-b03c-r4v-r4u-bound-successor-authorization-issuance-consumption-readiness.js
+      - name: R4V R4U-bound authorization issuance consumption self-test
+        run: node scripts/test-com-b03c-r4v-r4u-bound-successor-authorization-issuance-consumption-readiness.js
+      - name: Historical R4U and R4T boundaries unchanged
+        shell: bash
+        run: |
+          PREDECESSOR=87e245ea2e6598014fa14f471db314f5eaa10760
+          test -z "$(git diff --name-only "$PREDECESSOR" "${{ github.event.pull_request.head.sha }}" -- \
+            backend/modules/communities/community-realtime-private-auth-r4u.js \
+            config/com-b03c-r4u-fresh-head-bound-r4t-successor-authorization-lifecycle-readiness.json \
+            docs/validation/COM-B03C-R4U-FRESH-HEAD-BOUND-R4T-SUCCESSOR-AUTHORIZATION-LIFECYCLE-READINESS.json \
+            backend/modules/communities/community-realtime-private-auth-r4t.js \
+            docs/validation/COM-B03C-R4T-R4Q-SUCCESSOR-EXECUTOR-INTEGRATION-READINESS.json)"
+      - name: Repository-only hard block
+        shell: bash
+        run: |
+          test ! -e config/com-b03c-r4v-r4u-fresh-authorization-consumption.json
+          test ! -e config/com-b03c-r4t-single-use-successor-executor-trigger.json
+          set +e
+          output="$(node - <<'NODE'
+          const r4v = require('./backend/modules/communities/community-realtime-private-auth-r4v');
+          try { r4v.assertRemoteExecutionBoundaryAbsent(); } catch (error) {
+            console.log(error.code);
+            process.exit(error.code === r4v.REMOTE_EXECUTION_BLOCK_CODE ? 2 : 1);
+          }
+          process.exit(1);
+          NODE
+          )"
+          code=$?
+          set -e
+          test "$code" -eq 2
+          printf '%s\n' "$output" | grep -q 'DOKE_COM_B03C_R4V_REMOTE_EXECUTION_NOT_AUTHORIZED'
+      - name: Authorization remains absent before explicit user grant
+        shell: bash
+        run: |
+          workflow=.github/workflows/com-b03c-r4v-r4u-bound-successor-authorization-issuance-consumption-readiness.yml
+          module=backend/modules/communities/community-realtime-private-auth-r4v.js
+          ! grep -Eq '^  push:' "$workflow"
+          ! grep -Eq '^    environment:' "$workflow"
+          ! grep -Eq 'secrets\.' "$workflow"
+          grep -Fq 'permissions: { contents: read }' "$workflow"
+          ! grep -Fq 'I_EXPLICITLY_AUTHORIZE_COM_B03C_R4T_SUCCESSOR_EXECUTOR_SINGLE_USE_ON_DOKE_STAGING_FOR_R4U_HEAD_87e245ea2e6598014fa14f471db314f5eaa10760' "$module"
+      - name: Domain Completion Matrix
+        run: npm run audit:domain-completion-matrix
+      - name: Agent Governance
+        run: npm run audit:agent-governance
+      - name: Diff hygiene
+        run: git diff --check "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}"
