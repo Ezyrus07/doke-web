@@ -1,0 +1,77 @@
+name: Doke UX-CSS-DEBT-024 Promote Permanent
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-024-promote-permanent
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-24.04
+    env:
+      PARENT_SHA: a81b046521eca19f23223522198b00d387e41b03
+      TARGET_FILE: assets/css/pages/professional-profile-editor.css
+      PARENT_SHA256: 5217ea9128562766503e1e9370ed2f0f8b39892407de4a1967267dc4eaba772a
+      CANDIDATE_SHA256: cf12b4fc0d26395c224309c90989c8ee539991eb9455f9a58f835f12eff07c5f
+      PERMANENT_BRANCH: ux/ux-css-debt-024-professional-profile-editor-compaction
+    steps:
+      - name: Checkout exact certified UX-CSS-DEBT-023 SHA
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.PARENT_SHA }}
+          fetch-depth: 2
+      - name: Guard exact parent and clean permanent namespace
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${PARENT_SHA}"
+          test -z "$(git status --porcelain)"
+          test "$(sha256sum "${TARGET_FILE}" | awk '{print $1}')" = "${PARENT_SHA256}"
+          test -z "$(git ls-remote --heads origin "refs/heads/${PERMANENT_BRANCH}")"
+      - name: Build exact deterministic candidate
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),f=process.env.TARGET_FILE;
+          const p=fs.readFileSync(f,'utf8'),lines=p.split(/\r?\n/),sha=s=>crypto.createHash('sha256').update(s).digest('hex');
+          if(sha(p)!==process.env.PARENT_SHA256||Buffer.byteLength(p)!==10136)throw new Error('parent drift');
+          const exact=[[117,'padding: 16px;'],[126,'width: 100%;'],[143,'grid-template-columns: minmax(0, 1fr);'],[152,'grid-template-columns: repeat(2, minmax(0, 1fr));']];
+          for(const [i,v] of exact)if(lines[i].trim()!==v)throw new Error(`line ${i+1} drift`);
+          const deleted=new Set(exact.map(x=>x[0]));
+          const c=lines.filter((_l,i)=>!deleted.has(i)).join('\n');
+          if(sha(c)!==process.env.CANDIDATE_SHA256)throw new Error(`candidate hash ${sha(c)}`);
+          const decl=s=>(s.match(/^\s*[\w-]+\s*:\s*.*;\s*$/gm)||[]).length;
+          if(decl(p)!==140||decl(c)!==136)throw new Error(`decl ${decl(p)}>${decl(c)}`);
+          fs.writeFileSync(f,c);
+          console.log(`PROMOTION BUILD PASS|hash=${sha(c)}|bytes=${Buffer.byteLength(p)}->${Buffer.byteLength(c)}|decl=140->136`);
+          NODE
+          git diff --check
+          test "$(git diff --name-only)" = "${TARGET_FILE}"
+          test "$(git diff --numstat -- "${TARGET_FILE}" | awk '{print $1}')" = "0"
+          test "$(git diff --numstat -- "${TARGET_FILE}" | awk '{print $2}')" = "4"
+      - name: Commit and publish permanent branch
+        run: |
+          set -euo pipefail
+          git config user.name doke
+          git config user.email bielantoniomma@gmail.com
+          git switch -c "${PERMANENT_BRANCH}"
+          git add -- "${TARGET_FILE}"
+          test "$(git diff --cached --name-only)" = "${TARGET_FILE}"
+          git commit -m "UX-CSS-DEBT-024: compact superseded Professional Profile Editor declarations"
+          test "$(git rev-list --count "${PARENT_SHA}..HEAD")" = "1"
+          test "$(git rev-parse HEAD^)" = "${PARENT_SHA}"
+          test "$(git diff --name-only "${PARENT_SHA}..HEAD)" = "${TARGET_FILE}"
+          test "$(git diff --numstat "${PARENT_SHA}..HEAD -- "${TARGET_FILE}" | awk '{print $1}')" = "0"
+          test "$(git diff --numstat "${PARENT_SHA}..HEAD -- "${TARGET_FILE}" | awk '{print $2}')" = "4"
+          test "$(sha256sum "${TARGET_FILE}" | awk '{print $1}')" = "${CANDIDATE_SHA256}"
+          git push origin "HEAD:refs/heads/${PERMANENT_BRANCH}"
+          echo "PERMANENT_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+      - name: Verify remote permanent branch exactness
+        run: |
+          set -euo pipefail
+          REMOTE_SHA=$(git ls-remote --heads origin "refs/heads/${PERMANENT_BRANCH}" | awk '{print $1}')
+          test -n "${REMOTE_SHA}"
+          test "${REMOTE_SHA}" = "${PERMANENT_SHA}"
+          echo "PROMOTION PASS|branch=${PERMANENT_BRANCH}|sha=${REMOTE_SHA}|parent=${PARENT_SHA}|files=1|additions=0|deletions=4|candidate=${CANDIDATE_SHA256}"
