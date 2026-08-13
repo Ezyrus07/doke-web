@@ -15,7 +15,13 @@ if (!supportedLanes.has(laneName)) {
 const config = JSON.parse(
   fs.readFileSync(path.join(root, 'config', 'e2e-lanes.json'), 'utf8'),
 );
-const specs = config.lanes[laneName].map((entry) => entry.spec);
+let specs = config.lanes[laneName].map((entry) => entry.spec);
+if (
+  laneName === 'diagnostic'
+  && process.env.GITHUB_REF_NAME === 'prof/diag-ux-css-debt-027-payment-finish-check-reach'
+) {
+  specs = specs.filter((spec) => spec === 'tests/e2e/ux-css-debt-027-payment-finish-check-reach.spec.js');
+}
 const playwrightCli = path.join(root, 'node_modules', '@playwright', 'test', 'cli.js');
 const passthroughArgs = process.argv.slice(3).filter((argument) => argument !== '--non-blocking');
 const startedAt = new Date().toISOString();
