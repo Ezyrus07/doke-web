@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {ref: '${{ env.TARGET_SHA }}'}
-      - name: Guard certified parent and target authority
+      - name: Guard exact parent
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "$TARGET_SHA"
@@ -33,8 +33,7 @@ jobs:
           for(const file of ['index.html','resultados.html']){
             const before=fs.readFileSync(file,'utf8');
             const re=/(<section class="worker-preview )doke-worker-card (doke-media-card doke-card doke-page-section doke-overlay doke-overlay--media" data-worker-preview)/g;
-            const matches=[...before.matchAll(re)];
-            if(matches.length!==1) throw new Error(`${file}: ownership root count=${matches.length}`);
+            if([...before.matchAll(re)].length!==1) throw new Error(`${file}: unexpected worker-preview ownership root`);
             fs.writeFileSync(file,before.replace(re,'$1$2'));
           }
           if(!fs.readFileSync('resultados.html','utf8').includes('before-after-preview doke-worker-card')) throw new Error('before-after root changed');
@@ -42,14 +41,14 @@ jobs:
           JS
           test "$(git diff --name-only | sort)" = $'index.html\nresultados.html'
           git diff --check
-      - name: Prove six-declaration parent to deletion parity
+      - name: Prove six-declaration reach parity
         run: |
           cat > tests/ux-css-debt-028-reach-final.spec.js <<'JS'
           const {test,expect}=require('@playwright/test');
           const fs=require('fs');
           const target='assets/css/pages/home-overlays/workers-feed-base.css';
           const widths=[639,640,641,760,761,820,821,1280];
-          const declarations=[
+          const expected=[
             ['.worker-preview__caption','left','14px','14px'],
             ['.worker-preview__caption','right','14px','70px'],
             ['.worker-preview__caption','bottom','14px','14px'],
@@ -57,7 +56,7 @@ jobs:
             ['.worker-preview__actions','gap','12px','12px'],
             ['.worker-preview__action','width','52px','52px'],
           ];
-          const sortRows=rows=>rows.slice().sort((a,b)=>a[0].localeCompare(b[0])||a[1].localeCompare(b[1])||a[2].localeCompare(b[2])||a[3].localeCompare(b[3]));
+          const sortRows=rows=>rows.slice().sort((a,b)=>a.join('|').localeCompare(b.join('|')));
           function parse(src){
             const lines=src.split(/\r?\n/);let depth=0,sp=[],ap=[],sel=null;const ds=[],stack=[],re=/^\s*([\w-]+)\s*:\s*(.*?)\s*;\s*$/,norm=p=>p.join(' ').replace(/\{\s*$/,'').replace(/\s+/g,' ').trim();
             for(let i=0;i<lines.length;i++){
@@ -72,51 +71,50 @@ jobs:
               depth+=o-c;while(stack.length&&depth<=stack[stack.length-1].depthBefore){const p=stack.pop();if(p.type==='rule')sel=null;}
             }
             const last=new Map(),dead=[];
-            for(let i=ds.length-1;i>=0;i--){const d=ds[i],k=`${d.context} >>> ${d.selector} >>> ${d.property}`,l=last.get(k);if(l&&(!d.important||l.important))dead.push({...d,winnerLine:l.line,winnerValue:l.value});if(!l||d.important||!l.important)last.set(k,d);}
+            for(let i=ds.length-1;i>=0;i--){const d=ds[i],k=`${d.context} >>> ${d.selector} >>> ${d.property}`,l=last.get(k);if(l&&(!d.important||l.important))dead.push({...d,winnerValue:l.value});if(!l||d.important||!l.important)last.set(k,d);}
             return {declarations:ds,dead};
           }
           function removeSix(src){
-            const first='@media (max-width: 640px) {';
-            const second='@media (max-width: 640px) {';
-            const i=src.indexOf(first); const j=src.indexOf(second,i+first.length);
+            const marker='@media (max-width: 640px) {';
+            const i=src.indexOf(marker),j=src.indexOf(marker,i+marker.length);
             if(i<0||j<0) throw new Error('expected two <=640 blocks');
-            const head=src.slice(0,i), mid=src.slice(i,j), tail=src.slice(j);
-            const lines=['    left: 14px;\n','    right: 14px;\n','    bottom: 14px;\n','    font-size: 1.02rem;\n','    gap: 12px;\n','    width: 52px;\n'];
-            let next=mid;
-            for(const line of lines){const n=next.split(line).length-1;if(n!==1) throw new Error(`expected one first-block declaration ${line.trim()}, got ${n}`);next=next.replace(line,'');}
-            return head+next+tail;
+            let mid=src.slice(i,j);
+            const replacements=[
+              ['  .worker-preview__caption {\n    left: 14px;\n    right: 14px;\n    bottom: 14px;\n  }','  .worker-preview__caption {\n  }'],
+              ['  .worker-preview__title {\n    font-size: 1.02rem;\n  }','  .worker-preview__title {\n  }'],
+              ['  .worker-preview__actions {\n    gap: 12px;\n  }','  .worker-preview__actions {\n  }'],
+              ['  .worker-preview__action {\n    width: 52px;\n  }','  .worker-preview__action {\n  }'],
+            ];
+            for(const [oldBlock,newBlock] of replacements){const count=mid.split(oldBlock).length-1;if(count!==1)throw new Error(`selector-specific block count=${count}: ${oldBlock.split('\n')[0]}`);mid=mid.replace(oldBlock,newBlock);}
+            return src.slice(0,i)+mid+src.slice(j);
           }
           async function capture(browser,label){
-            const context=await browser.newContext();
-            const page=await context.newPage();
+            const context=await browser.newContext();const page=await context.newPage();
             await page.route('https://fonts.googleapis.com/**',r=>r.fulfill({contentType:'text/css',body:''}));
             await page.route('https://fonts.gstatic.com/**',r=>r.abort());
             await page.route('https://images.pexels.com/**',r=>r.fulfill({status:204,body:''}));
             await page.goto('/index.html',{waitUntil:'domcontentloaded'});
             await expect.poll(()=>page.locator('[data-worker-feed-item]').count()).toBeGreaterThan(0);
-            const loaded=await page.evaluate(()=>performance.getEntriesByType('resource').some(e=>e.name.includes('workers-feed-base.css')));
-            expect(loaded).toBe(true);
-            await page.evaluate(()=>{const t=document.querySelector('[data-worker-trigger]');if(!t||typeof window.DokeOpenWorkerPreview!=='function')throw new Error('worker opener unavailable');window.DokeOpenWorkerPreview(t.dataset.workerId,t);});
+            expect(await page.evaluate(()=>performance.getEntriesByType('resource').some(e=>e.name.includes('workers-feed-base.css')))).toBe(true);
+            await page.evaluate(()=>{const t=document.querySelector('[data-worker-trigger]');if(!t||typeof window.DokeOpenWorkerPreview!=='function')throw new Error('opener unavailable');window.DokeOpenWorkerPreview(t.dataset.workerId,t);});
             const out={};
             for(const w of widths){
               await page.setViewportSize({width:w,height:900});await page.waitForTimeout(180);
               out[w]=await page.evaluate(()=>{
-                const root=document.querySelector('[data-worker-preview]');
-                const item=root.querySelector('[data-worker-feed-item].is-active')||root.querySelector('[data-worker-feed-item]');
+                const root=document.querySelector('[data-worker-preview]'),item=root.querySelector('[data-worker-feed-item].is-active')||root.querySelector('[data-worker-feed-item]');
                 const pick=(sel,props)=>{const el=item.querySelector(sel);if(!el)throw new Error(`missing ${sel}`);const c=getComputedStyle(el),b=el.getBoundingClientRect(),o={display:c.display,visibility:c.visibility,rect:[b.x,b.y,b.width,b.height].map(n=>Math.round(n*1000)/1000)};for(const p of props)o[p]=c.getPropertyValue(p);return o;};
-                const stage=root.querySelector('.worker-preview__stage'),feed=root.querySelector('[data-worker-preview-feed]');
                 const geom=el=>{const c=getComputedStyle(el),b=el.getBoundingClientRect();return{display:c.display,visibility:c.visibility,rect:[b.x,b.y,b.width,b.height].map(n=>Math.round(n*1000)/1000)}};
-                return {caption:pick('.worker-preview__caption',['left','right','bottom']),title:pick('.worker-preview__title',['font-size']),actions:pick('.worker-preview__actions',['gap']),action:pick('.worker-preview__action',['width']),stage:geom(stage),feed:geom(feed),item:geom(item),active:root.querySelectorAll('[data-worker-feed-item].is-active').length,overflow:Math.max(0,document.documentElement.scrollWidth-window.innerWidth),doc:[document.documentElement.scrollWidth,document.documentElement.scrollHeight,document.body.scrollWidth,document.body.scrollHeight]};
+                return {caption:pick('.worker-preview__caption',['left','right','bottom']),title:pick('.worker-preview__title',['font-size']),actions:pick('.worker-preview__actions',['gap']),action:pick('.worker-preview__action',['width']),stage:geom(root.querySelector('.worker-preview__stage')),feed:geom(root.querySelector('[data-worker-preview-feed]')),item:geom(item),active:root.querySelectorAll('[data-worker-feed-item].is-active').length,overflow:Math.max(0,document.documentElement.scrollWidth-window.innerWidth),doc:[document.documentElement.scrollWidth,document.documentElement.scrollHeight,document.body.scrollWidth,document.body.scrollHeight]};
               });
               expect(out[w].active).toBe(1);expect(out[w].stage.display).not.toBe('none');expect(out[w].stage.rect[2]).toBeGreaterThan(0);expect(out[w].item.rect[2]).toBeGreaterThan(0);expect(out[w].overflow).toBe(0);
               console.log(`${label.toUpperCase()}|${w}|${JSON.stringify(out[w])}`);
             }
-            await context.close(); return out;
+            await context.close();return out;
           }
           test('six superseded declarations are deletion-safe after ownership correction',async({browser})=>{
-            const original=fs.readFileSync(target,'utf8');
-            const p=parse(original);expect(p.declarations.length).toBe(372);expect(p.dead.length).toBe(6);
-            expect(sortRows(p.dead.map(d=>[d.selector,d.property,d.value,d.winnerValue]))).toEqual(sortRows(declarations));
+            const original=fs.readFileSync(target,'utf8'),p=parse(original);
+            expect(p.declarations.length).toBe(372);expect(p.dead.length).toBe(6);
+            expect(sortRows(p.dead.map(d=>[d.selector,d.property,d.value,d.winnerValue]))).toEqual(sortRows(expected));
             const parent=await capture(browser,'parent');
             const candidate=removeSix(original);fs.writeFileSync(target,candidate);
             const q=parse(candidate);expect(q.declarations.length).toBe(366);expect(q.dead.length).toBe(0);
@@ -131,8 +129,9 @@ jobs:
           set -euo pipefail
           test "$(git diff --numstat -- "$TARGET_CSS" | awk '{print $1"/"$2}')" = "0/6"
           test "$(git diff -- "$TARGET_CSS" | grep -c '^-[[:space:]]*\(left: 14px;\|right: 14px;\|bottom: 14px;\|font-size: 1.02rem;\|gap: 12px;\|width: 52px;\)$')" = "6"
+          test "$(git diff -- "$TARGET_CSS" | grep -c '^-.*worker-preview__close--fixed')" = "0"
           git diff --check
-          echo 'DELTA PASS|target=workers-feed-base.css|additions=0|deletions=6'
+          echo 'DELTA PASS|target=workers-feed-base.css|additions=0|deletions=6|closeFixedUntouched=1'
       - if: always()
         name: Restore exact certified checkpoint
         run: |
