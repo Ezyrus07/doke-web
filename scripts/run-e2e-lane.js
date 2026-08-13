@@ -20,7 +20,7 @@ if (
   laneName === 'diagnostic'
   && process.env.GITHUB_REF_NAME === 'prof/diag-ux-css-debt-027-payment-finish-check-reach'
 ) {
-  specs = specs.filter((spec) => spec === 'tests/e2e/ux-css-debt-027-payment-finish-check-reach.spec.js');
+  specs = specs.filter((spec) => spec === 'tests/e2e/ux-css-debt-027-payment-finish-check-reach-r3.spec.js');
 }
 const playwrightCli = path.join(root, 'node_modules', '@playwright', 'test', 'cli.js');
 const passthroughArgs = process.argv.slice(3).filter((argument) => argument !== '--non-blocking');
