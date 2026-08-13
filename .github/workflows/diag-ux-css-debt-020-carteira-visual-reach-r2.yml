@@ -1,0 +1,63 @@
+name: Doke UX-CSS-DEBT-020 Carteira Visual Reach R2
+on:
+  push:
+    branches: [diag/ux-css-debt-020-carteira-visual-reach-r2]
+permissions:
+  contents: read
+jobs:
+  reach:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: daadc8dbbb91f0ddb75591251fce4ea176b66d95
+      TARGET_FILE: assets/css/pages/carteira/visual-hierarchy.css
+      TARGET_SELECTOR: 'body[data-page="carteira"] :is( .wallet-hero, .wallet-panel, .wallet-analytics, .wallet-bank-panel, .wallet-transaction-detail-panel, .wallet-receivables-panel, .wallet-empty-state )'
+      PARENT_HASH: d2139c19e4aac8ef0793bd7a97a9c3bfb6d44edf58cde30e0b862c42003d1655
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {ref: '${{ env.TARGET_SHA }}', fetch-depth: 2}
+      - run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(sha256sum "$TARGET_FILE"|awk '{print $1}')" = "$PARENT_HASH"
+          test -z "$(git status --porcelain)"
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: {node-version: 22, cache: npm}
+      - name: Install browser
+        run: |
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install --with-deps chromium
+      - name: Canonical CSSOM and DOM proof
+        shell: bash
+        run: |
+          cat >/tmp/reach-r2.js <<'NODE'
+          const cp=require('child_process'),{chromium}=require(process.cwd()+'/node_modules/playwright');
+          const selector=process.env.TARGET_SELECTOR,vps=[['1600',1600,1000],['1280',1280,802],['1024',1024,900],['901',901,900],['900',900,900],['820',820,1180],['608',608,926],['390',390,844]],sleep=ms=>new Promise(r=>setTimeout(r,ms)),server=cp.spawn(process.execPath,['scripts/serve-static-site.js','--host=127.0.0.1','--port=5500'],{stdio:'ignore',env:{...process.env,DOKE_E2E_DISABLE_REMOTE_SERVICES:'1'}});
+          const canon=s=>(s||'').replace(/\s+/g,' ').replace(/\(\s+/g,'(').replace(/\s+\)/g,')').replace(/\s*,\s*/g,',').trim();
+          (async()=>{await sleep(500);const b=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});let total=0;for(const [name,w,h] of vps){const c=await b.newContext({viewport:{width:w,height:h},reducedMotion:'reduce'}),p=await c.newPage();await p.route('**/*',r=>{const u=new URL(r.request().url()),local=u.origin==='http://127.0.0.1:5500';if(local&&u.pathname.endsWith('.js'))return r.abort();if(local||['data:','blob:'].includes(u.protocol))return r.continue();return r.abort();});await p.goto('http://127.0.0.1:5500/carteira.html',{waitUntil:'domcontentloaded',timeout:15000});const s=await p.evaluate(({selector})=>{const canon=s=>(s||'').replace(/\s+/g,' ').replace(/\(\s+/g,'(').replace(/\s+\)/g,')').replace(/\s*,\s*/g,',').trim(),nodes=[...document.querySelectorAll(selector)],hits=[];function walk(rs,ctx,href){for(const r of [...rs]){if(r.constructor?.name==='CSSImportRule'&&r.styleSheet){try{walk(r.styleSheet.cssRules,ctx,r.styleSheet.href||href)}catch{}}else if(r.constructor?.name==='CSSMediaRule')walk(r.cssRules,[...ctx,`@media ${r.conditionText}`],href);else if(canon(r.selectorText)===canon(selector)&&r.style?.getPropertyValue('box-shadow'))hits.push({href,ctx:ctx.join(' || '),value:r.style.getPropertyValue('box-shadow').trim(),priority:r.style.getPropertyPriority('box-shadow')});}}for(const st of [...document.styleSheets])try{walk(st.cssRules,[],st.href||'inline')}catch{}return{count:nodes.length,classes:nodes.map(n=>n.className),computed:[...new Set(nodes.map(n=>getComputedStyle(n).boxShadow))],hits:hits.filter(x=>String(x.href).includes('/assets/css/pages/carteira/visual-hierarchy.css'))};},{selector});if(s.count<1)throw new Error(`DOM absent ${name}`);if(s.hits.length!==2)throw new Error(`hits=${s.hits.length} ${name} ${JSON.stringify(s.hits)}`);if(s.hits[0].ctx||s.hits[1].ctx||s.hits[0].value!=='var(--doke-surface-shadow)'||s.hits[1].value!=='var(--doke-shadow-nested-soft)'||s.hits.some(x=>x.priority))throw new Error(`cascade drift ${name} ${JSON.stringify(s.hits)}`);total+=s.count;console.log(`VIEW|${name}|nodes=${s.count}|classes=${s.classes.join(',')}|computed=${s.computed.join('<>')}`);await c.close();}await b.close();server.kill('SIGTERM');console.log(`RUNTIME_R2_PASS|viewports=8|occurrences=${total}|cssom=2|winner=var(--doke-shadow-nested-soft)`);})().catch(e=>{server.kill('SIGTERM');console.error(e);process.exit(1)});
+          NODE
+          node /tmp/reach-r2.js
+      - name: Governance
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/c
+          grep -q 'Conflicting class/property pairs: 339' /tmp/c
+          npm run audit:agent-governance
+          npm run audit:active-legacy-structures | tee /tmp/l
+          grep -q 'css files: 533 (55 direct, 401 active/imported)' /tmp/l
+          grep -q 'high risk active css: 37' /tmp/l
+          npm run audit:shared-app-header-contract
+          npm run audit:mobile-shell-location-contract
+          npm run audit:responsive-boundaries
+          npm run audit:duplicate-assets | tee /tmp/d
+          grep -q 'Duplicate groups: 0' /tmp/d
+          grep -q 'Duplicated files: 0' /tmp/d
+          npm run audit:domain-completion-matrix | tee /tmp/m
+          grep -q 'Domains: 23' /tmp/m
+          grep -q 'Critical flows: 15' /tmp/m
+          grep -q 'Average maturity: 2.91/6' /tmp/m
+          grep -q 'Critical blockers: 12' /tmp/m
+      - if: always()
+        run: |
+          git reset --hard "$TARGET_SHA"
+          git clean -fd
