@@ -1,0 +1,194 @@
+name: Doke UX-CSS-DEBT-021 Detalhe Related Reach R2
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-021-detalhe-related-reach-r2
+
+permissions:
+  contents: read
+
+jobs:
+  reach:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 928b74a947a7301f9a645d1f316ad3a3f6e37b1e
+      PARENT_SHA: daadc8dbbb91f0ddb75591251fce4ea176b66d95
+      TARGET_FILE: assets/css/pages/detalhe-anuncio-related-sections.css
+      TARGET_SELECTOR: 'body[data-page="detalhe-anuncio"] :is( .detail-section--ad-workers, .detail-section--ad-publications, .detail-section--similar-ads ) .detail-related-section-heading .section-heading__title.home-section-title'
+      PARENT_SHA256: 75dad013a3c75a04a334217c25ce4c8f9b5c056fd4c7fdfa5c78981a33b99b3f
+    steps:
+      - name: Checkout exact certified parent
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+
+      - name: Guard exact parent, owner and parser rows
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test "$(git rev-parse HEAD^)" = "${PARENT_SHA}"
+          test "$(sha256sum "${TARGET_FILE}" | awk '{print $1}')" = "${PARENT_SHA256}"
+          test -z "$(git status --porcelain)"
+          grep -Fq 'marketplace-detail-foundation.css' detalhe-anuncio.html
+          grep -Fq 'detalhe-anuncio-related-sections.css' assets/css/pages/marketplace-detail-foundation.css
+          git diff --check
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies and Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install --with-deps chromium
+
+      - name: Reprove exact parser and tracked consumer
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:active-legacy-structures
+          node <<'NODE'
+          const fs=require('fs'),path=require('path'),cp=require('child_process');
+          const file=process.env.TARGET_FILE,selector=process.env.TARGET_SELECTOR;
+          function parse(src){
+            const lines=src.split(/\r?\n/),ds=[],stack=[];let depth=0,sp=[],ap=[],sel=null;
+            const re=/^\s*([\w-]+)\s*:\s*(.*?)\s*;\s*$/,norm=p=>p.join(' ').replace(/\{\s*$/,'').replace(/\s+/g,' ').trim();
+            for(let i=0;i<lines.length;i++){
+              const line=lines[i],t=line.trim(),o=(line.match(/\{/g)||[]).length,c=(line.match(/\}/g)||[]).length;
+              if(!sel){
+                if(ap.length){if(t)ap.push(t);if(line.includes('{')){stack.push({type:'at',header:norm(ap),depthBefore:depth});ap=[];}}
+                else if(t.startsWith('@')&&!t.includes(';')){if(line.includes('{'))stack.push({type:'at',header:norm([t]),depthBefore:depth});else ap=[t];}
+                else if(sp.length){if(t)sp.push(t);if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth});}}
+                else if(t&&!t.startsWith('/*')&&!t.startsWith('*')&&t!=='*/'&&t!=='}'&&!t.startsWith('@')&&!line.includes(';')){sp=[t];if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth});}}
+              }
+              if(sel){const m=line.match(re);if(m){const raw=m[2].trim();ds.push({lineIndex:i,line:i+1,selector:sel,property:m[1].toLowerCase(),value:raw,important:/\s*!important\s*$/i.test(raw),context:stack.filter(x=>x.type==='at').map(x=>x.header).join(' || ')});}}
+              depth+=o-c;while(stack.length&&depth<=stack[stack.length-1].depthBefore){const p=stack.pop();if(p.type==='rule')sel=null;}
+            }
+            if(ap.length)throw new Error('unterminated at-rule');
+            const last=new Map(),dead=[];
+            for(let i=ds.length-1;i>=0;i--){const d=ds[i],k=`${d.context} >>> ${d.selector} >>> ${d.property}`,l=last.get(k);if(l&&(!d.important||l.important))dead.push({...d,winnerLine:l.line,winnerValue:l.value,winnerImportant:l.important});if(!l||d.important||!l.important)last.set(k,d);}
+            return {declarations:ds,dead};
+          }
+          const p=parse(fs.readFileSync(file,'utf8'));if(p.declarations.length!==549||p.dead.length!==2)throw new Error(`target ${p.declarations.length}/${p.dead.length}`);
+          const rows=p.dead.slice().sort((a,b)=>a.line-b.line);
+          const e=[['font-size','var(--doke-section-title-size, 0.96rem)',101,253,'13px'],['letter-spacing','var(--doke-section-title-letter, 0.08em)',102,256,'0.06em']];
+          rows.forEach((d,i)=>{const x=e[i];if(d.selector!==selector||d.context!=='@media (max-width: 760px)'||d.property!==x[0]||d.value!==x[1]||d.line!==x[2]||d.winnerLine!==x[3]||d.winnerValue!==x[4]||d.important||d.winnerImportant)throw new Error('row drift '+JSON.stringify(d));});
+          const report=JSON.parse(fs.readFileSync('reports/generated/active-legacy-structures-report.json','utf8')),tracked=cp.execFileSync('git',['ls-files','-z','assets/css'],{encoding:'utf8'}).split('\0').filter(Boolean),ir=/@import\s+(?:url\()?['"]?([^'"\);]+\.css(?:\?[^'"\)]*)?)['"]?\)?/gi;
+          const norm=(v,from)=>{v=v.replace(/\?.*$/,'').replace(/^\.\//,'');if(v.startsWith('/'))return v.replace(/^\/+/, '');if(v.startsWith('assets/'))return v;return path.posix.normalize(path.posix.join(path.posix.dirname(from),v));};
+          const meta=new Map();for(const f of tracked){const text=fs.readFileSync(f,'utf8'),imports=[];let m;ir.lastIndex=0;while((m=ir.exec(text)))imports.push(norm(m[1],f));meta.set(f,imports);}
+          const pages=[];for(const page of report.pageAssets){const seen=new Set(),todo=page.css.filter(f=>meta.has(f));while(todo.length){const f=todo.pop();if(seen.has(f))continue;seen.add(f);if(f===file){pages.push(page.page);break;}for(const n of meta.get(f)||[])if(meta.has(n))todo.push(n);}}
+          if(JSON.stringify(pages.sort())!==JSON.stringify(['detalhe-anuncio.html']))throw new Error('consumer '+JSON.stringify(pages));
+          console.log('PARSER_R2_PASS|decl=549|dead=2|max760|consumer=detalhe-anuncio.html');
+          NODE
+
+      - name: Canonical DOM and CSSOM boundary proof R2
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat >/tmp/reach-r2.js <<'NODE'
+          const cp=require('child_process');
+          const {chromium}=require(process.cwd()+'/node_modules/playwright');
+          const selector=process.env.TARGET_SELECTOR;
+          const viewports=[['1600',1600,1000],['1280',1280,802],['1024',1024,900],['820',820,1180],['761',761,900],['760',760,900],['608',608,926],['390',390,844]];
+          const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+          const server=cp.spawn(process.execPath,['scripts/serve-static-site.js','--host=127.0.0.1','--port=5500'],{stdio:'ignore',env:{...process.env,DOKE_E2E_DISABLE_REMOTE_SERVICES:'1'}});
+          (async()=>{
+            await sleep(500);
+            const browser=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+            let mobileCount=0,totalNodes=0;
+            for(const [name,width,height] of viewports){
+              const context=await browser.newContext({viewport:{width,height},reducedMotion:'reduce'});
+              const page=await context.newPage();
+              await page.route('**/*',route=>{
+                const u=new URL(route.request().url());
+                const local=u.origin==='http://127.0.0.1:5500';
+                if(local&&u.pathname.endsWith('.js')) return route.abort();
+                if(local||u.protocol==='data:'||u.protocol==='blob:') return route.continue();
+                return route.abort();
+              });
+              await page.goto('http://127.0.0.1:5500/detalhe-anuncio.html',{waitUntil:'domcontentloaded',timeout:15000});
+              const snap=await page.evaluate(selector=>{
+                const canon=s=>(s||'').replace(/\s+/g,' ').replace(/\(\s+/g,'(').replace(/\s+\)/g,')').replace(/\s*,\s*/g,',').trim();
+                const nodes=[...document.querySelectorAll(selector)],hits=[];
+                function walk(rules,contexts,href){
+                  for(const rule of [...rules]){
+                    if(rule.constructor?.name==='CSSImportRule'&&rule.styleSheet){
+                      try{walk(rule.styleSheet.cssRules,contexts,rule.styleSheet.href||href);}catch{}
+                    }else if(rule.constructor?.name==='CSSMediaRule'){
+                      walk(rule.cssRules,[...contexts,`@media ${rule.conditionText}`],href);
+                    }else if(canon(rule.selectorText)===canon(selector)){
+                      for(const prop of ['font-size','letter-spacing']){
+                        const value=rule.style?.getPropertyValue(prop);
+                        if(value)hits.push({href,ctx:contexts.join(' || '),prop,value:value.trim(),priority:rule.style.getPropertyPriority(prop)});
+                      }
+                    }
+                  }
+                }
+                for(const sheet of [...document.styleSheets]){
+                  try{walk(sheet.cssRules,[],sheet.href||'inline');}catch{}
+                }
+                return {
+                  mobile:matchMedia('(max-width: 760px)').matches,
+                  nodes:nodes.map(n=>{const cs=getComputedStyle(n),r=n.getBoundingClientRect();return{className:n.className,fontSize:cs.fontSize,letterSpacing:cs.letterSpacing,rect:[+r.x.toFixed(3),+r.y.toFixed(3),+r.width.toFixed(3),+r.height.toFixed(3)]};}),
+                  hits:hits.filter(h=>String(h.href).includes('/assets/css/pages/detalhe-anuncio-related-sections.css'))
+                };
+              },selector);
+              if(snap.nodes.length<1) throw new Error(`canonical selector absent ${name}`);
+              const media=snap.hits.filter(h=>h.ctx==='@media (max-width: 760px)');
+              const font=media.filter(h=>h.prop==='font-size'),letter=media.filter(h=>h.prop==='letter-spacing');
+              if(media.length!==4||font.length!==2||letter.length!==2) throw new Error(`media cardinality ${name} ${JSON.stringify(media)}`);
+              if(font[0].value!=='var(--doke-section-title-size, 0.96rem)'||font[1].value!=='13px') throw new Error(`font cascade ${name} ${JSON.stringify(font)}`);
+              if(letter[0].value!=='var(--doke-section-title-letter, 0.08em)'||letter[1].value!=='0.06em') throw new Error(`letter cascade ${name} ${JSON.stringify(letter)}`);
+              if(media.some(h=>h.priority!=='')) throw new Error(`priority drift ${name}`);
+              if(snap.mobile) mobileCount++;
+              totalNodes+=snap.nodes.length;
+              console.log(`VIEW|${name}|mobile=${snap.mobile}|nodes=${snap.nodes.length}|computed=${JSON.stringify(snap.nodes)}`);
+              await context.close();
+            }
+            await browser.close();server.kill('SIGTERM');
+            if(mobileCount!==3) throw new Error(`mobile boundary count=${mobileCount}`);
+            console.log(`RUNTIME_R2_PASS|viewports=8|mobile=3|occurrences=${totalNodes}|mediaDecls=4|winners=13px,0.06em`);
+          })().catch(err=>{server.kill('SIGTERM');console.error(err);process.exit(1);});
+          NODE
+          node --check /tmp/reach-r2.js
+          node /tmp/reach-r2.js
+
+      - name: Governance
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/c
+          grep -q 'Conflicting class/property pairs: 339' /tmp/c
+          npm run audit:agent-governance
+          npm run audit:active-legacy-structures | tee /tmp/l
+          grep -q 'css files: 533 (55 direct, 401 active/imported)' /tmp/l
+          grep -q 'active legacy/remediation css: 0' /tmp/l
+          grep -q 'active legacy/remediation js: 0' /tmp/l
+          grep -q 'high risk active css: 37' /tmp/l
+          npm run audit:shared-app-header-contract
+          npm run audit:mobile-shell-location-contract
+          npm run audit:responsive-boundaries
+          npm run audit:duplicate-assets | tee /tmp/d
+          grep -q 'Duplicate groups: 0' /tmp/d
+          grep -q 'Duplicated files: 0' /tmp/d
+          npm run audit:domain-completion-matrix | tee /tmp/m
+          grep -q 'Domains: 23' /tmp/m
+          grep -q 'Critical flows: 15' /tmp/m
+          grep -q 'Average maturity: 2.91/6' /tmp/m
+          grep -q 'Critical blockers: 12' /tmp/m
+
+      - name: Restore exact parent
+        if: always()
+        shell: bash
+        run: |
+          git reset --hard "${TARGET_SHA}"
+          git clean -fd
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test -z "$(git status --porcelain)"
