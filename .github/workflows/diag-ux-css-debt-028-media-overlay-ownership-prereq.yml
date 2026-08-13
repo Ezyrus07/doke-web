@@ -81,7 +81,10 @@ jobs:
           test "$(git diff -U0 | grep -c '^-.*doke-worker-card.*doke-overlay' || true)" -eq 4
           test "$(git diff -U0 | grep -c '^+.*doke-worker-card.*doke-overlay' || true)" -eq 0
           git diff --check
-          echo "CANDIDATE HASHES|index=$(sha256sum index.html | awk '{print $1}')|resultados=$(sha256sum resultados.html | awk '{print $1}')|combined=$(cat index.html resultados.html | sha256sum | awk '{print $1}')"
+          test "$(sha256sum index.html | awk '{print $1}')" = "852ef932ce8d29130292881cdb888b8dc7362009bf6df4ded48cc6842a2bd6e4"
+          test "$(sha256sum resultados.html | awk '{print $1}')" = "4fa1f117f881ea5c8b691952165fa2724bd34d398cf362d7731f798cb2ed9f1d"
+          test "$(cat index.html resultados.html | sha256sum | awk '{print $1}')" = "27bf764d4f374a4d4fce73e6239b8b6fbc158fa06f5ff71264c2f2efb900b8c8"
+          echo "CANDIDATE HASHES|index=852ef932ce8d29130292881cdb888b8dc7362009bf6df4ded48cc6842a2bd6e4|resultados=4fa1f117f881ea5c8b691952165fa2724bd34d398cf362d7731f798cb2ed9f1d|combined=27bf764d4f374a4d4fce73e6239b8b6fbc158fa06f5ff71264c2f2efb900b8c8"
 
       - name: Guard ownership semantics
         shell: bash
@@ -92,7 +95,7 @@ jobs:
           for (const file of ['index.html','resultados.html']) {
             const html = fs.readFileSync(file,'utf8');
             for (const root of ['worker-preview','before-after-preview']) {
-              const re = new RegExp(`<section\\s+class="([^"]*\\b${root}\\b[^"]*)"[^>]*data-${root.replace('worker-preview','worker-preview').replace('before-after-preview','before-after-preview')}`);
+              const re = new RegExp(`<section\\s+class="([^"]*\\b${root}\\b[^"]*)"[^>]*data-${root}`);
               const m = html.match(re);
               if (!m) throw new Error(`${file}: missing ${root} overlay root`);
               const classes = m[1].split(/\s+/);
@@ -103,7 +106,7 @@ jobs:
           const index = fs.readFileSync('index.html','utf8');
           const results = fs.readFileSync('resultados.html','utf8');
           const legitimate = (index.match(/\bdoke-worker-card\b/g)||[]).length + (results.match(/\bdoke-worker-card\b/g)||[]).length;
-          if (legitimate < 8) throw new Error(`legitimate card authority unexpectedly low: ${legitimate}`);
+          if (legitimate !== 7) throw new Error(`expected exactly 7 preserved legitimate worker-card tokens, got ${legitimate}`);
           console.log(`OWNERSHIP STATIC PASS|overlayRoots=4|misowned=0|legitimateWorkerCardTokens=${legitimate}`);
           NODE
 
@@ -202,6 +205,8 @@ jobs:
           test "${product_files[0]}" = "index.html"
           test "${product_files[1]}" = "resultados.html"
           test -z "$(git diff --name-only -- '*.css' '*.js')"
+          test "$(sha256sum index.html | awk '{print $1}')" = "852ef932ce8d29130292881cdb888b8dc7362009bf6df4ded48cc6842a2bd6e4"
+          test "$(sha256sum resultados.html | awk '{print $1}')" = "4fa1f117f881ea5c8b691952165fa2724bd34d398cf362d7731f798cb2ed9f1d"
           echo 'CANDIDATE FINAL PASS|files=2|tokensRemoved=4|css=0|js=0|responsive=893/0/277|conflicts=339|domain=23/15/2.91/12|duplicates=0/0'
 
       - name: Restore exact certified parent
