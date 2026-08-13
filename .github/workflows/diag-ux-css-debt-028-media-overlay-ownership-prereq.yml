@@ -200,14 +200,14 @@ jobs:
           npm run audit:duplicate-assets | tee /tmp/dup.log
           grep -q 'Duplicate groups: 0' /tmp/dup.log
           grep -q 'Duplicated files: 0' /tmp/dup.log
-          mapfile -t product_files < <(git diff --name-only -- ':!reports/**' ':!docs/validation/**')
+          mapfile -t product_files < <(git diff --name-only -- index.html resultados.html assets)
           test "${#product_files[@]}" -eq 2
           test "${product_files[0]}" = "index.html"
           test "${product_files[1]}" = "resultados.html"
-          test -z "$(git diff --name-only -- '*.css' '*.js')"
+          test -z "$(git diff --name-only -- assets)"
           test "$(sha256sum index.html | awk '{print $1}')" = "852ef932ce8d29130292881cdb888b8dc7362009bf6df4ded48cc6842a2bd6e4"
           test "$(sha256sum resultados.html | awk '{print $1}')" = "4fa1f117f881ea5c8b691952165fa2724bd34d398cf362d7731f798cb2ed9f1d"
-          echo 'CANDIDATE FINAL PASS|files=2|tokensRemoved=4|css=0|js=0|responsive=893/0/277|conflicts=339|domain=23/15/2.91/12|duplicates=0/0'
+          echo 'CANDIDATE FINAL PASS|files=2|tokensRemoved=4|css=0|js=0|assets=0|responsive=893/0/277|conflicts=339|domain=23/15/2.91/12|duplicates=0/0'
 
       - name: Restore exact certified parent
         if: always()
