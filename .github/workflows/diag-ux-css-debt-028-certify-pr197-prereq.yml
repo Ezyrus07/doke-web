@@ -183,10 +183,27 @@ jobs:
           if(s!=='OK') throw Error('Sonar gate '+s);
           NODE
 
+      - name: Reset exact permanent SHA after Sonar
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "$TARGET_SHA"
+          git clean -fdx
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test -z "$(git status --porcelain)"
+          test "$(git hash-object index.html)" = "$INDEX_BLOB"
+          test "$(git hash-object resultados.html)" = "$RESULTS_BLOB"
+          test "$(sha256sum index.html | awk '{print $1}')" = "$INDEX_SHA256"
+          test "$(sha256sum resultados.html | awk '{print $1}')" = "$RESULTS_SHA256"
+          test "$(cat index.html resultados.html | sha256sum | awk '{print $1}')" = "$COMBINED_SHA256"
+          echo "POST-SONAR RESET PASS|sha=$TARGET_SHA|worktree=clean|candidate=$COMBINED_SHA256"
+
       - name: Final exact certification marker
         shell: bash
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "$TARGET_SHA"
           test -z "$(git status --porcelain)"
+          test "$(git hash-object index.html)" = "$INDEX_BLOB"
+          test "$(git hash-object resultados.html)" = "$RESULTS_BLOB"
           echo "CERTIFICATION PASS|pr=$PR_NUMBER|sha=$TARGET_SHA|parent=$PARENT_SHA|files=2|additions=4|deletions=4|candidate=$COMBINED_SHA256|ownership=4-corrected+7-preserved|runtime=promotion-32-pass|responsive=893/0/277|conflicts=339|domain=23/15/2.91/12|sonar=OK"
