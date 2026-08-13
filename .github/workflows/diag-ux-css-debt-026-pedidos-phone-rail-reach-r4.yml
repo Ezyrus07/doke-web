@@ -1,0 +1,48 @@
+name: Doke UX-CSS-DEBT-026 Pedidos Phone Rail Reach R4
+on:
+  push:
+    branches: [diag/ux-css-debt-026-pedidos-phone-rail-reach-r4]
+permissions:
+  contents: read
+jobs:
+  reach:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 330fce87f3db885402cfd14d70af8a4b177b9c62
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+      - name: Guard exact checkpoint
+        run: |
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test -z "$(git status --porcelain)"
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install and probe
+        run: |
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install --with-deps chromium
+          node scripts/diag-ux-css-debt-026-reach-r4.js
+      - name: Preserve governance
+        run: |
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/c
+          grep -q 'Conflicting class/property pairs: 339' /tmp/c
+          npm run audit:agent-governance
+          npm run audit:shared-app-header-contract
+          npm run audit:mobile-shell-location-contract
+          npm run audit:responsive-boundaries
+          npm run audit:duplicate-assets
+          npm run audit:domain-completion-matrix | tee /tmp/d
+          grep -q 'Domains: 23' /tmp/d
+          grep -q 'Critical flows: 15' /tmp/d
+          grep -q 'Average maturity: 2.91/6' /tmp/d
+          grep -q 'Critical blockers: 12' /tmp/d
+      - name: Restore checkpoint
+        run: |
+          git reset --hard "$TARGET_SHA"
+          git clean -fd
+          test -z "$(git status --porcelain)"
