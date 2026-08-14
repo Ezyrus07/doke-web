@@ -1,0 +1,68 @@
+name: Doke UX-CSS-DEBT-030 Avaliacao Profissional Reach
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-030-avaliacao-profissional-reach
+
+permissions:
+  contents: read
+
+jobs:
+  reach:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 44bde2226174f0e5b3a8944ea754ca1635708d61
+      TARGET_BLOB: 233130872b9ef0b4ca5c399da079caa25d4b8ee1
+    steps:
+      - name: Checkout diagnostic harness
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 3
+
+      - name: Preserve harness and checkout exact UX-CSS-DEBT-029 checkpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp .github/diagnostics/ux-css-debt-030-avaliacao-profissional-reach.cjs /tmp/ux-css-debt-030-avaliacao-profissional-reach.cjs
+          git fetch origin "${TARGET_SHA}" --depth=1
+          git checkout --detach "${TARGET_SHA}"
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test "$(git hash-object assets/css/pages/avaliacao-profissional.css)" = "${TARGET_BLOB}"
+          test -z "$(git status --porcelain)"
+          git diff --check
+          echo "CHECKPOINT GUARD PASS|sha=${TARGET_SHA}|blob=${TARGET_BLOB}"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies and Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install --with-deps chromium
+
+      - name: Generate canonical active graph
+        run: npm run audit:active-legacy-structures
+
+      - name: Prove reach, cascade and runtime parity
+        shell: bash
+        run: |
+          set -euo pipefail
+          NODE_PATH="$PWD/node_modules" node /tmp/ux-css-debt-030-avaliacao-profissional-reach.cjs
+
+      - name: Verify exact restore
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "${TARGET_SHA}"
+          git clean -fdx
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test "$(git hash-object assets/css/pages/avaliacao-profissional.css)" = "${TARGET_BLOB}"
+          test -z "$(git status --porcelain)"
+          echo "FINAL CHECKPOINT PASS|sha=${TARGET_SHA}|productMutation=0"
