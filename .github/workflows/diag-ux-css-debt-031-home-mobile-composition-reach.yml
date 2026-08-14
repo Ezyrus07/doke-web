@@ -48,6 +48,21 @@ jobs:
           if old not in s:
               raise SystemExit('reach patch anchor missing')
           s=s.replace(old,new)
+          old_goto="""    await page.goto(`http://127.0.0.1:4173/.diag-home-mobile-composition.html?${tag}-${width}-${Date.now()}`, {waitUntil:'networkidle'});
+          """
+          new_goto="""    await page.route('**/*', route=>{
+              const u=new URL(route.request().url());
+              const local=u.origin==='http://127.0.0.1:4173';
+              if(local && u.pathname.endsWith('.js')) return route.abort();
+              if(local || u.protocol==='data:' || u.protocol==='blob:') return route.continue();
+              return route.abort();
+            });
+            await page.goto(`http://127.0.0.1:4173/index.html?${tag}-${width}-${Date.now()}`, {waitUntil:'domcontentloaded',timeout:15000});
+            await page.waitForTimeout(250);
+          """
+          if old_goto not in s:
+              raise SystemExit('runtime patch anchor missing')
+          s=s.replace(old_goto,new_goto)
           open(p,'w',encoding='utf-8').write(s)
           PY
           git fetch origin "${TARGET_SHA}" --depth=1
