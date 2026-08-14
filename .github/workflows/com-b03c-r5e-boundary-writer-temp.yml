@@ -1,0 +1,183 @@
+name: COM-B03C-R5E Canonical Matrix Reconciliation Writer
+
+on:
+  push:
+    branches:
+      - com/com-001-baseline-audit
+    paths:
+      - '.github/workflows/com-b03c-r5e-boundary-writer-temp.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Fail-closed install boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = "com/com-001-baseline-audit"
+          test "${GITHUB_RUN_ATTEMPT}" = "1"
+          test "$(git rev-parse HEAD^)" = "97db23147c6b3c944f0305971a9ec77964271055"
+          mapfile -t changed < <(git diff --name-only HEAD^ HEAD)
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = ".github/workflows/com-b03c-r5e-boundary-writer-temp.yml"
+
+      - name: Install repository dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Freeze R5E and immutable lineage
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD:backend/modules/communities/community-realtime-private-auth-r5e.js)" = "e6e71f10007c796576e036902dfb1cb8e285b7f8"
+          test "$(git rev-parse HEAD:config/com-b03c-r5e-fresh-head-bound-r5d-execution-authorization-lifecycle-readiness.json)" = "18b1b6c3d96cc6a826896b3f22b8e82c9351f61c"
+          test "$(git rev-parse HEAD:scripts/test-com-b03c-r5e-fresh-head-bound-r5d-execution-authorization-lifecycle-readiness.js)" = "d7d88068958b0af9ea10acd890d2785b54ffcd29"
+          test "$(git rev-parse HEAD:docs/validation/COM-B03C-R5E-FRESH-HEAD-BOUND-R5D-EXECUTION-AUTHORIZATION-LIFECYCLE-READINESS.json)" = "78dc2e49a78082f15283e60516a8c0e004683241"
+          test "$(git rev-parse HEAD:.github/workflows/com-b03c-r5e-fresh-head-bound-r5d-execution-authorization-lifecycle-readiness.yml)" = "ea933b28b0763ced6b5dd4e1f75e452e2f755fca"
+          test "$(git rev-parse HEAD:backend/modules/communities/community-realtime-private-auth-r5d.js)" = "7cde416f2922230bae6b1e4b1e48fdfaf411da99"
+          test "$(git rev-parse HEAD:config/com-b03c-r5b-r5a-fresh-authorization-consumption.json)" = "a2ed29dc6a44f9d62f5159dfeabd2c769f677b50"
+          test "$(git rev-parse HEAD:scripts/build-com-b03c-r4z-corrected-terminal-realtime-bridge.js)" = "ff083f29e43b2f85045b23bf8f12a4b354fb0005"
+          test ! -e config/com-b03c-r5c-single-use-corrected-terminal-observation-trigger.json
+          test ! -e config/com-b03c-r5f-r5e-fresh-execution-authorization-consumption.json
+
+      - name: Preserve permanent R5E repository-only surface
+        shell: bash
+        run: |
+          set -euo pipefail
+          workflow=.github/workflows/com-b03c-r5e-fresh-head-bound-r5d-execution-authorization-lifecycle-readiness.yml
+          ! grep -nE 'secrets\.|environment:|workflow_dispatch:|repository_dispatch:|schedule:|^[[:space:]]*push:' "$workflow"
+          node --check backend/modules/communities/community-realtime-private-auth-r5e.js
+          node --check scripts/test-com-b03c-r5e-fresh-head-bound-r5d-execution-authorization-lifecycle-readiness.js
+          node scripts/test-com-b03c-r5e-fresh-head-bound-r5d-execution-authorization-lifecycle-readiness.js
+          node - <<'NODE'
+          const r5e = require('./backend/modules/communities/community-realtime-private-auth-r5e');
+          try {
+            r5e.assertRemoteExecutionBoundaryAbsent();
+            process.exit(1);
+          } catch (error) {
+            if (error?.code !== r5e.REMOTE_EXECUTION_BLOCK_CODE) throw error;
+          }
+          NODE
+
+      - name: Reconcile COM-001 source through R5E
+        shell: bash
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const path = 'config/domain-completion-matrix.json';
+          const matrix = JSON.parse(fs.readFileSync(path, 'utf8'));
+          if (matrix.version !== '1.3.113') throw new Error('R5E_MATRIX_VERSION_DRIFT');
+          if (!Array.isArray(matrix.domains)) throw new Error('R5E_MATRIX_DOMAINS_REQUIRED');
+          const matches = matrix.domains.filter((domain) => domain.id === 'COM-001');
+          if (matches.length !== 1) throw new Error('R5E_COM001_UNIQUE_REQUIRED');
+          const com = matches[0];
+          const expectedState = {
+            maturity: 3,
+            userFacingAuthority: 'hybrid',
+            serverAuthority: 'partial',
+            stagingEvidence: 'staging_canary',
+            securityGate: 'partial',
+            productionGate: 'blocked'
+          };
+          for (const [key, value] of Object.entries(expectedState)) {
+            if (com[key] !== value) throw new Error(`R5E_COM001_STATE_DRIFT_${key}`);
+          }
+          for (const key of ['requiredPaths', 'evidence', 'blockers', 'nextActions']) {
+            if (!Array.isArray(com[key])) throw new Error(`R5E_COM001_${key}_ARRAY_REQUIRED`);
+          }
+          const r5dEvidence = com.evidence.filter((item) => typeof item === 'string' && item.startsWith('COM-B03C-R5D repository-certifies'));
+          if (r5dEvidence.length !== 1) throw new Error('R5E_R5D_EVIDENCE_CONTINUITY_REQUIRED');
+
+          const newPaths = [
+            'backend/modules/communities/community-realtime-private-auth-r5e.js',
+            'config/com-b03c-r5e-fresh-head-bound-r5d-execution-authorization-lifecycle-readiness.json',
+            'scripts/test-com-b03c-r5e-fresh-head-bound-r5d-execution-authorization-lifecycle-readiness.js',
+            'docs/validation/COM-B03C-R5E-FRESH-HEAD-BOUND-R5D-EXECUTION-AUTHORIZATION-LIFECYCLE-READINESS.json',
+            '.github/workflows/com-b03c-r5e-fresh-head-bound-r5d-execution-authorization-lifecycle-readiness.yml'
+          ];
+          for (const item of newPaths) {
+            if (!com.requiredPaths.includes(item)) com.requiredPaths.push(item);
+          }
+
+          const evidence = 'COM-B03C-R5E repository-prepares a fresh head-bound execution-authorization lifecycle for the certified R5D corrected-terminal-observation envelope. The future authorization must bind the exact final R5E head; no authorization phrase or receipt exists, the R5B lineage receipt is preserved and not reissued, the trigger remains absent, all remote/staging/network/credential authority remains false, exactRootCauseProven remains false and causal promotion remains blocked.';
+          if (!com.evidence.includes(evidence)) com.evidence.push(evidence);
+
+          const blockerMatches = com.blockers.filter((item) => item?.id === 'COM-B03');
+          if (blockerMatches.length !== 1) throw new Error('R5E_COM_B03_UNIQUE_REQUIRED');
+          if (!String(blockerMatches[0].description).includes('R5D now repository-certifies')) {
+            throw new Error('R5E_COM_B03_EXPECTED_R5D_BLOCKER_REQUIRED');
+          }
+          blockerMatches[0].description = 'Authenticated community_posts Postgres Changes is proven in staging. R3L narrowed the private Presence authorization failure to evaluation involving realtime.messages.extension without proving the exact root cause. R5B consumed the original R5A-bound authorization without execution; R5C certified trigger readiness; R5D certified the corrected-terminal-observation execution envelope; R5E now repository-prepares a fresh head-bound execution-authorization lifecycle while keeping the prior receipt immutable and non-reusable. No authorization phrase or receipt for R5E exists, the trigger remains absent, and no staging, network, credential or Realtime authority is active. Private Typing/Broadcast remains unproven and channel_messages still lacks canonical remote authority.';
+
+          const oldAction = 'Preserve the R5D repository-only corrected terminal observation execution envelope without promoting Presence, Typing/Broadcast or channel_messages. After exact R5D head certification, any future trigger must be a separate single-file boundary bound to that R5D head, the certified R5C head, frozen R5B receipt and corrected R4Z bridge; staging execution remains separately gated by a new exact single-use authorization.';
+          const actionIndex = com.nextActions.indexOf(oldAction);
+          if (actionIndex === -1) throw new Error('R5E_EXPECTED_R5D_NEXT_ACTION_REQUIRED');
+          const newAction = 'Preserve the R5E repository-only execution-authorization lifecycle without promoting Presence, Typing/Broadcast or channel_messages. After exact R5E head certification, any new execution authorization must be handled by a separate repository-only issuance/consumption boundary bound to that exact R5E head and the immutable R5D lineage; trigger creation and staging execution remain separately gated.';
+          com.nextActions[actionIndex] = newAction;
+
+          fs.writeFileSync(path, `${JSON.stringify(matrix, null, 2)}\n`);
+          NODE
+
+          rm .github/workflows/com-b03c-r5e-boundary-writer-temp.yml
+          npm run write:domain-completion-matrix
+
+      - name: Canonical audits
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git restore --source=HEAD -- docs/HOME-AUTHORITY-CLASSIFICATION.md docs/PAGE-ASSET-AUTHORITY-MATRIX.md
+          git diff --check
+
+      - name: Enforce exact persistent reconciliation scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected=$(printf '%s\n' \
+            '.github/workflows/com-b03c-r5e-boundary-writer-temp.yml' \
+            'config/domain-completion-matrix.json' \
+            'docs/DOMAIN-COMPLETION-MATRIX.md' \
+            'reports/generated/domain-completion-matrix-report.json' | sort)
+          actual=$(git diff --name-only | sort)
+          test "$actual" = "$expected"
+          test ! -e .github/workflows/com-b03c-r5e-boundary-writer-temp.yml
+          test ! -e config/com-b03c-r5c-single-use-corrected-terminal-observation-trigger.json
+          test ! -e config/com-b03c-r5f-r5e-fresh-execution-authorization-consumption.json
+          test "$(git rev-parse HEAD:backend/modules/communities/community-realtime-private-auth-r5e.js)" = "e6e71f10007c796576e036902dfb1cb8e285b7f8"
+          test "$(git rev-parse HEAD:.github/workflows/com-b03c-r5e-fresh-head-bound-r5d-execution-authorization-lifecycle-readiness.yml)" = "ea933b28b0763ced6b5dd4e1f75e452e2f755fca"
+
+      - name: Commit canonical R5E reconciliation
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add -- \
+            .github/workflows/com-b03c-r5e-boundary-writer-temp.yml \
+            config/domain-completion-matrix.json \
+            docs/DOMAIN-COMPLETION-MATRIX.md \
+            reports/generated/domain-completion-matrix-report.json
+          expected=$(printf '%s\n' \
+            '.github/workflows/com-b03c-r5e-boundary-writer-temp.yml' \
+            'config/domain-completion-matrix.json' \
+            'docs/DOMAIN-COMPLETION-MATRIX.md' \
+            'reports/generated/domain-completion-matrix-report.json' | sort)
+          staged=$(git diff --cached --name-only | sort)
+          test "$staged" = "$expected"
+          git diff --cached --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'docs(com): reconcile R5E canonical matrix'
+          git push origin HEAD:com/com-001-baseline-audit
