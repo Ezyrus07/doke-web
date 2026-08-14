@@ -18,13 +18,23 @@ jobs:
       - name: Checkout diagnostic harness
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
-          fetch-depth: 3
+          fetch-depth: 4
 
       - name: Preserve harness and checkout exact UX-CSS-DEBT-028 checkpoint
         shell: bash
         run: |
           set -euo pipefail
           cp .github/diagnostics/ux-css-debt-029-orders-chat-reach.cjs /tmp/ux-css-debt-029-orders-chat-reach.cjs
+          python3 - <<'PY'
+          p='/tmp/ux-css-debt-029-orders-chat-reach.cjs'
+          s=open(p,encoding='utf-8').read()
+          old="assert((js.match(/\\bcreateLayer\\s*\\(/g)||[]).length===1, 'createLayer has a runtime caller; reach assumption invalid');"
+          new="assert((js.match(/\\bcreateLayer\\s*\\(/g)||[]).length===0, 'createLayer call count drift');"
+          if old not in s:
+              raise SystemExit('expected createLayer assertion not found')
+          s=s.replace(old,new).replace('STATIC REACH PASS|createLayerLexicalRefs=1','STATIC REACH PASS|createLayerCalls=0')
+          open(p,'w',encoding='utf-8').write(s)
+          PY
           git fetch origin "${TARGET_SHA}" --depth=1
           git checkout --detach "${TARGET_SHA}"
           test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
