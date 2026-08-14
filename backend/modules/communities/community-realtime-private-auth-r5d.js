@@ -1,5 +1,7 @@
 'use strict';
 
+const r5c = require('./community-realtime-private-auth-r5c');
+
 const CONTRACT_ID = 'com-b03c-r5d-corrected-terminal-observation-execution-envelope-v1';
 const VALIDATION_ID = 'COM-B03C-R5D-CORRECTED-TERMINAL-OBSERVATION-EXECUTION-ENVELOPE-READINESS';
 const STATUS = 'repository_corrected_terminal_observation_execution_envelope_ready_no_remote_authority';
@@ -43,7 +45,19 @@ function blocked(reason, extra = {}) {
 }
 function assertRemoteExecutionBoundaryAbsent() { const error = new Error(REMOTE_EXECUTION_BLOCK_CODE); error.code = REMOTE_EXECUTION_BLOCK_CODE; throw error; }
 function assertFrozenReceipt(receipt = {}) {
-  return receipt.receiptId === AUTHORIZATION_RECEIPT_ID && receipt.status === 'authorization_consumed_trigger_boundary_pending' && receipt.authorizationConsumed === true && receipt.authorizationReusable === false && receipt.reusableAfterFailure === false && receipt.authorizationPhrasePersisted === false && receipt.rawAuthorizationPhrasePersisted === false && receipt.triggerCreated === false && receipt.executionAttempted === false && receipt.remoteExecutorInvoked === false && receipt.stagingReadAttempted === false && receipt.stagingMutationAttempted === false && receipt.networkParticipation === false && receipt.credentialParticipation === false && receipt.dependencyParticipation === false && receipt.exactRootCauseProven === false && receipt.causalPromotionAllowed === false && receipt.futureTriggerPath === FUTURE_TRIGGER_PATH && receipt.correctedBridgeBlob === CORRECTED_BRIDGE_BLOB && receipt.correctedBridgeSemanticsFingerprint === CORRECTED_BRIDGE_SEMANTICS_FINGERPRINT;
+  const result = r5c.validateConsumedAuthorizationReceipt({
+    receipt,
+    receiptBlob: AUTHORIZATION_RECEIPT_BLOB
+  });
+  return result.decision === 'r5c_consumed_authorization_receipt_valid_repository_only' &&
+    result.authorizationReceiptId === AUTHORIZATION_RECEIPT_ID &&
+    result.receiptBlob === AUTHORIZATION_RECEIPT_BLOB &&
+    result.authorizationConsumed === true &&
+    result.authorizationReusable === false &&
+    result.reusableAfterFailure === false &&
+    result.triggerCreated === false &&
+    result.triggerCreationAuthority === false &&
+    result.remoteExecutionAuthority === false;
 }
 function evaluateRepositoryReadiness(input = {}) {
   if (input.r5cCertifiedHead !== R5C_CERTIFIED_HEAD || input.r5cCertificationRun !== R5C_CERTIFICATION_RUN || input.r5cCertificationJob !== R5C_CERTIFICATION_JOB || input.r5cCertificationSuccess !== true || input.canonicalReconciledHead !== CANONICAL_RECONCILED_HEAD) return blocked('R5D_CERTIFIED_R5C_AND_RECONCILED_HEAD_REQUIRED');
