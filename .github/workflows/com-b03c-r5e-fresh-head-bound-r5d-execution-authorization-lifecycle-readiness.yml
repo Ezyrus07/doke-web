@@ -1,0 +1,71 @@
+name: COM-B03C-R5E Fresh Head-Bound R5D Execution Authorization Lifecycle Readiness
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - 'backend/modules/communities/community-realtime-private-auth-r5e.js'
+      - 'config/com-b03c-r5e-fresh-head-bound-r5d-execution-authorization-lifecycle-readiness.json'
+      - 'docs/validation/COM-B03C-R5E-FRESH-HEAD-BOUND-R5D-EXECUTION-AUTHORIZATION-LIFECYCLE-READINESS.json'
+      - 'scripts/test-com-b03c-r5e-fresh-head-bound-r5d-execution-authorization-lifecycle-readiness.js'
+      - '.github/workflows/com-b03c-r5e-fresh-head-bound-r5d-execution-authorization-lifecycle-readiness.yml'
+      - 'backend/modules/communities/community-realtime-private-auth-r5d.js'
+      - 'config/com-b03c-r5d-corrected-terminal-observation-execution-envelope-readiness.json'
+      - 'docs/validation/COM-B03C-R5D-CORRECTED-TERMINAL-OBSERVATION-EXECUTION-ENVELOPE-READINESS.json'
+      - 'config/com-b03c-r5b-r5a-fresh-authorization-consumption.json'
+      - 'scripts/build-com-b03c-r4z-corrected-terminal-realtime-bridge.js'
+      - 'config/domain-completion-matrix.json'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+
+permissions: { contents: read }
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Syntax
+        run: |
+          node --check backend/modules/communities/community-realtime-private-auth-r5e.js
+          node --check scripts/test-com-b03c-r5e-fresh-head-bound-r5d-execution-authorization-lifecycle-readiness.js
+      - name: R5E repository execution authorization lifecycle readiness
+        run: node scripts/test-com-b03c-r5e-fresh-head-bound-r5d-execution-authorization-lifecycle-readiness.js
+      - name: Remote execution hard block
+        run: |
+          node - <<'NODE'
+          const r5e = require('./backend/modules/communities/community-realtime-private-auth-r5e');
+          try {
+            r5e.assertRemoteExecutionBoundaryAbsent();
+            process.exit(1);
+          } catch (error) {
+            if (error?.code !== r5e.REMOTE_EXECUTION_BLOCK_CODE) throw error;
+          }
+          NODE
+      - name: Certified R5D lineage preserved
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD:backend/modules/communities/community-realtime-private-auth-r5d.js)" = "7cde416f2922230bae6b1e4b1e48fdfaf411da99"
+          test "$(git rev-parse HEAD:config/com-b03c-r5b-r5a-fresh-authorization-consumption.json)" = "a2ed29dc6a44f9d62f5159dfeabd2c769f677b50"
+          test "$(git rev-parse HEAD:scripts/build-com-b03c-r4z-corrected-terminal-realtime-bridge.js)" = "ff083f29e43b2f85045b23bf8f12a4b354fb0005"
+          test ! -e config/com-b03c-r5c-single-use-corrected-terminal-observation-trigger.json
+      - name: Repository-only workflow surface
+        run: |
+          set -euo pipefail
+          workflow=.github/workflows/com-b03c-r5e-fresh-head-bound-r5d-execution-authorization-lifecycle-readiness.yml
+          ! grep -nE 'secrets\.|environment:|workflow_dispatch:|repository_dispatch:|schedule:|^[[:space:]]*push:' "$workflow"
+          ! test -e config/com-b03c-r5f-r5e-fresh-execution-authorization-consumption.json
+          ! test -e config/com-b03c-r5c-single-use-corrected-terminal-observation-trigger.json
+      - name: Domain Completion Matrix
+        run: npm run audit:domain-completion-matrix
+      - name: Agent Governance
+        run: npm run audit:agent-governance
+      - name: Diff hygiene
+        run: git diff --check "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}"
