@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  EXPECTED_PARENT: a217a9190afce601de3afa748073aaa5e5c1f609
+  EXPECTED_PARENT: 75f83e26e504ade151bc9f721228448b58aacbb9
   TARGET_BRANCH: com/com-001-baseline-audit
   WRITER_PATH: .github/workflows/com-b03c-r5d-boundary-writer-temp.yml
   FUTURE_TRIGGER_PATH: config/com-b03c-r5c-single-use-corrected-terminal-observation-trigger.json
@@ -45,15 +45,14 @@ jobs:
           test "${GITHUB_REF}" = "refs/heads/${TARGET_BRANCH}"
           test "${GITHUB_RUN_ATTEMPT}" = "1"
           test "$(git rev-parse HEAD^)" = "${EXPECTED_PARENT}"
-          git diff-tree --no-commit-id --name-only -r HEAD | sort > /tmp/actual
-          printf '%s' 'LmdpdGh1Yi93b3JrZmxvd3MvY29tLWIwM2MtcjVkLWJvdW5kYXJ5LXdyaXRlci10ZW1wLnltbAouZ2l0aHViL3dvcmtmbG93cy9jb20tYjAzYy1yNWQtY29ycmVjdGVkLXRlcm1pbmFsLW9ic2VydmF0aW9uLWV4ZWN1dGlvbi1lbnZlbG9wZS1yZWFkaW5lc3MueW1sCmJhY2tlbmQvbW9kdWxlcy9jb21tdW5pdGllcy9jb21tdW5pdHktcmVhbHRpbWUtcHJpdmF0ZS1hdXRoLXI1ZC5qcwpjb25maWcvY29tLWIwM2MtcjVkLWNvcnJlY3RlZC10ZXJtaW5hbC1vYnNlcnZhdGlvbi1leGVjdXRpb24tZW52ZWxvcGUtcmVhZGluZXNzLmpzb24KZG9jcy92YWxpZGF0aW9uL0NPTS1CMDNDLVI1RC1DT1JSRUNURUQtVEVSTUlOQUwtT0JTRVJWQVRJT04tRVhFQ1VUSU9OLUVOVkVMT1BFLVJFQURJTkVTUy5qc29uCnNjcmlwdHMvZXhlY3V0ZS1jb20tYjAzYy1yNWQtY29ycmVjdGVkLXRlcm1pbmFsLW9ic2VydmF0aW9uLWVudmVsb3BlLmpzCnNjcmlwdHMvdGVzdC1jb20tYjAzYy1yNWQtY29ycmVjdGVkLXRlcm1pbmFsLW9ic2VydmF0aW9uLWV4ZWN1dGlvbi1lbnZlbG9wZS1yZWFkaW5lc3MuanMK' | base64 -d > /tmp/expected
-          diff -u /tmp/expected /tmp/actual
-          test "$(git hash-object backend/modules/communities/community-realtime-private-auth-r5d.js)" = "8d9816755606f11f8c4f01515093924e625a51ff"
+          changed="$(git diff-tree --no-commit-id --name-only -r HEAD)"
+          test "$changed" = "${WRITER_PATH}"
+          test "$(git hash-object backend/modules/communities/community-realtime-private-auth-r5d.js)" = "64c19d83a6009dc511d296e8a48ef97967a99f9d"
           test "$(git hash-object config/com-b03c-r5d-corrected-terminal-observation-execution-envelope-readiness.json)" = "372dc22b8d3a808799b4b753fb293db430706197"
-          test "$(git hash-object scripts/test-com-b03c-r5d-corrected-terminal-observation-execution-envelope-readiness.js)" = "05be2978a4b49e1284292f54a37c74d2def51eaa"
-          test "$(git hash-object scripts/execute-com-b03c-r5d-corrected-terminal-observation-envelope.js)" = "6b75ff10405a386151270aec4a5b867760b3a60c"
-          test "$(git hash-object .github/workflows/com-b03c-r5d-corrected-terminal-observation-execution-envelope-readiness.yml)" = "c84c3c709a60848ab08531531b608eb349572155"
-          test "$(git hash-object docs/validation/COM-B03C-R5D-CORRECTED-TERMINAL-OBSERVATION-EXECUTION-ENVELOPE-READINESS.json)" = "50856be405b1c25a8c5cdfa1916cc053d9dbf850"
+          test "$(git hash-object scripts/test-com-b03c-r5d-corrected-terminal-observation-execution-envelope-readiness.js)" = "d5ed898245bd9b007c90b9b6f8c33a345156d513"
+          test "$(git hash-object scripts/execute-com-b03c-r5d-corrected-terminal-observation-envelope.js)" = "7fa0ee82bbf627f8d1d3bf8c0323e79630841d05"
+          test "$(git hash-object .github/workflows/com-b03c-r5d-corrected-terminal-observation-execution-envelope-readiness.yml)" = "35851a8ed3fcc175617a7e89e9ff87329208f538"
+          test "$(git hash-object docs/validation/COM-B03C-R5D-CORRECTED-TERMINAL-OBSERVATION-EXECUTION-ENVELOPE-READINESS.json)" = "6f9beace8205d4f44861355f54c8f1346ecf5c7e"
       - name: Install dependencies
         run: npm ci --ignore-scripts
       - name: Preserve R5C receipt bridge and absent trigger
