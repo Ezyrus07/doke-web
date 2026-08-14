@@ -1,0 +1,112 @@
+name: Doke UX-CSS-DEBT-030 PR200 Sonar Exact Certification
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-030-certify-pr200
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 97ce1fb2514b3e0373da25c5cf7893acc84dca28
+      PARENT_SHA: 44bde2226174f0e5b3a8944ea754ca1635708d61
+      BASE_BRANCH: ux/ux-css-debt-029-orders-chat-compaction
+      HEAD_BRANCH: ux/ux-css-debt-030-avaliacao-profissional-compaction
+      TARGET_FILE: assets/css/pages/avaliacao-profissional.css
+      TARGET_SHA256: b5cef235b3ad83d0ac8c665014b125714058d517a539e1ca6439d4e8f44a28cc
+      TARGET_BLOB: d15c5f91189a464c7fcd3b07553cd85c56235537
+      TARGET_BYTES: '14765'
+      PROJECT_KEY: Ezyrus07_doke-web
+      PR_NUMBER: '200'
+    steps:
+      - name: Checkout diagnostic harness
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+
+      - name: Checkout exact permanent SHA with full history
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: 97ce1fb2514b3e0373da25c5cf7893acc84dca28
+          fetch-depth: 0
+          clean: true
+
+      - name: Guard exact PR scope and permanent identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          git fetch --no-tags origin "+refs/heads/$BASE_BRANCH:refs/remotes/origin/$BASE_BRANCH" "+refs/heads/$HEAD_BRANCH:refs/remotes/origin/$HEAD_BRANCH"
+          test "$(git rev-parse "refs/remotes/origin/$BASE_BRANCH")" = "$PARENT_SHA"
+          test "$(git rev-parse "refs/remotes/origin/$HEAD_BRANCH")" = "$TARGET_SHA"
+          test "$(git merge-base "$TARGET_SHA" "refs/remotes/origin/$BASE_BRANCH")" = "$PARENT_SHA"
+          test "$(git rev-list --count "$PARENT_SHA..HEAD")" = 1
+          test "$(git diff --name-only "$PARENT_SHA...HEAD")" = "$TARGET_FILE"
+          read -r add del file < <(git diff --numstat "$PARENT_SHA...HEAD" -- "$TARGET_FILE")
+          test "$add" = "0" && test "$del" = "15" && test "$file" = "$TARGET_FILE"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(sha256sum "$TARGET_FILE" | awk '{print $1}')" = "$TARGET_SHA256"
+          test "$(wc -c < "$TARGET_FILE" | tr -d ' ')" = "$TARGET_BYTES"
+          test -z "$(git diff --name-only "$PARENT_SHA...HEAD" -- '*.js' '*.html' 'package.json' 'package-lock.json')"
+          git diff --check "$PARENT_SHA...HEAD"
+          test -z "$(git status --porcelain)"
+          echo "PR200 EXACT SCOPE PASS|sha=$TARGET_SHA|parent=$PARENT_SHA|files=1|additions=0|deletions=15|blob=$TARGET_BLOB|sha256=$TARGET_SHA256|bytes=$TARGET_BYTES"
+
+      - name: Require Sonar token
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: test -n "$SONAR_TOKEN"
+
+      - name: Analyze PR 200 exact SHA and enforce SonarQube Cloud Quality Gate
+        uses: SonarSource/sonarqube-scan-action@c7ee0f9df90b7aa20e8dcf9695dcfe2e7da5b4f2
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >-
+            -Dsonar.projectKey=Ezyrus07_doke-web
+            -Dsonar.organization=ezyrus07
+            -Dsonar.pullrequest.key=200
+            -Dsonar.pullrequest.branch=ux/ux-css-debt-030-avaliacao-profissional-compaction
+            -Dsonar.pullrequest.base=ux/ux-css-debt-029-orders-chat-compaction
+            -Dsonar.scm.revision=97ce1fb2514b3e0373da25c5cf7893acc84dca28
+            -Dsonar.qualitygate.wait=true
+            -Dsonar.qualitygate.timeout=600
+
+      - name: Verify Sonar API final PR gate
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsS -u "$SONAR_TOKEN:" "https://sonarcloud.io/api/qualitygates/project_status?projectKey=$PROJECT_KEY&pullRequest=$PR_NUMBER" -o /tmp/sonar-gate.json
+          node - <<'NODE'
+          const fs=require('fs');
+          const x=JSON.parse(fs.readFileSync('/tmp/sonar-gate.json','utf8'));
+          const s=x.projectStatus?.status;
+          console.log('SONAR API STATUS='+s);
+          if(s!=='OK') throw Error('Sonar gate '+s);
+          NODE
+
+      - name: Final PR200 certification marker and cleanup
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "$TARGET_SHA"
+          git clean -fdx
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(sha256sum "$TARGET_FILE" | awk '{print $1}')" = "$TARGET_SHA256"
+          test -z "$(git status --porcelain)"
+          git fetch --no-tags origin "+refs/heads/$BASE_BRANCH:refs/remotes/origin/$BASE_BRANCH" "+refs/heads/$HEAD_BRANCH:refs/remotes/origin/$HEAD_BRANCH"
+          test "$(git rev-parse "refs/remotes/origin/$BASE_BRANCH")" = "$PARENT_SHA"
+          test "$(git rev-parse "refs/remotes/origin/$HEAD_BRANCH")" = "$TARGET_SHA"
+          test "$(git merge-base "$TARGET_SHA" "refs/remotes/origin/$BASE_BRANCH")" = "$PARENT_SHA"
+          echo "PR200 CERTIFICATION CHECKPOINT|pr=200|sha=$TARGET_SHA|parent=$PARENT_SHA|candidate=$TARGET_SHA256|productMutation=0"
