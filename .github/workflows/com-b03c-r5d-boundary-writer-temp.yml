@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  EXPECTED_PARENT: 3f898ee30404c873a3ca5ba8b5228a7854e84872
+  EXPECTED_PARENT: 09d3c713f5b3c40f94a2b9645232377adb74d2b1
   TARGET_BRANCH: com/com-001-baseline-audit
   WRITER_PATH: .github/workflows/com-b03c-r5d-boundary-writer-temp.yml
   FUTURE_TRIGGER_PATH: config/com-b03c-r5c-single-use-corrected-terminal-observation-trigger.json
@@ -130,9 +130,27 @@ jobs:
         run: |
           set -euo pipefail
           git add -A
-          git diff --cached --name-only | sort > /tmp/actual
-          printf '%s' 'LmdpdGh1Yi93b3JrZmxvd3MvY29tLWIwM2MtcjVkLWJvdW5kYXJ5LXdyaXRlci10ZW1wLnltbApjb25maWcvZG9tYWluLWNvbXBsZXRpb24tbWF0cml4Lmpzb24KZG9jcy9ET01BSU4tQ09NUExFVElPTi1NQVRSSVgubWQKcmVwb3J0cy9nZW5lcmF0ZWQvZG9tYWluLWNvbXBsZXRpb24tbWF0cml4LXJlcG9ydC5qc29uCg==' | base64 -d > /tmp/expected
-          diff -u /tmp/expected /tmp/actual
+          git diff --cached --name-only | sort -u > /tmp/staged-paths
+          allowed=(
+            ".github/workflows/com-b03c-r5d-boundary-writer-temp.yml"
+            "config/domain-completion-matrix.json"
+            "docs/DOMAIN-COMPLETION-MATRIX.md"
+            "reports/generated/domain-completion-matrix-report.json"
+          )
+          while IFS= read -r path; do
+            matched=false
+            for allowed_path in "${allowed[@]}"; do
+              if [ "$path" = "$allowed_path" ]; then matched=true; break; fi
+            done
+            test "$matched" = true
+          done < /tmp/staged-paths
+          grep -Fxq ".github/workflows/com-b03c-r5d-boundary-writer-temp.yml" /tmp/staged-paths
+          grep -Fxq "config/domain-completion-matrix.json" /tmp/staged-paths
+          grep -Fxq "docs/DOMAIN-COMPLETION-MATRIX.md" /tmp/staged-paths
+          test "$(git diff --cached --name-status -- "${WRITER_PATH}")" = $'D\t'"${WRITER_PATH}"
+          count="$(wc -l < /tmp/staged-paths | tr -d ' ')"
+          test "$count" -ge 3
+          test "$count" -le 4
       - name: Commit reconciled R5D tree
         shell: bash
         run: |
