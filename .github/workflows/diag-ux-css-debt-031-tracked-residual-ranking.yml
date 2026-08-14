@@ -1,0 +1,126 @@
+name: Doke UX-CSS-DEBT-031 Tracked Residual Ranking
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-031-tracked-residual-ranking
+
+permissions:
+  contents: read
+
+jobs:
+  ranking:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 97ce1fb2514b3e0373da25c5cf7893acc84dca28
+      PARENT_SHA: 44bde2226174f0e5b3a8944ea754ca1635708d61
+      PRIOR_030_FILE: assets/css/pages/avaliacao-profissional.css
+      PRIOR_030_BLOB: d15c5f91189a464c7fcd3b07553cd85c56235537
+    steps:
+      - name: Checkout exact certified UX-CSS-DEBT-030 SHA
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+
+      - name: Guard exact checkpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test "$(git rev-parse HEAD^)" = "${PARENT_SHA}"
+          test "$(git hash-object "${PRIOR_030_FILE}")" = "${PRIOR_030_BLOB}"
+          test -z "$(git status --porcelain)"
+          git diff --check
+          echo "CHECKPOINT GUARD PASS|sha=${TARGET_SHA}|parent=${PARENT_SHA}|030blob=${PRIOR_030_BLOB}"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install and generate canonical active graph
+        run: |
+          npm ci --ignore-scripts
+          npm run audit:active-legacy-structures
+
+      - name: Rank tracked active CSS residuals
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs'),path=require('path'),cp=require('child_process');
+          const report=JSON.parse(fs.readFileSync('reports/generated/active-legacy-structures-report.json','utf8'));
+          const tracked=cp.execFileSync('git',['ls-files','-z','assets/css'],{encoding:'utf8'}).split('\0').filter(f=>f.endsWith('.css'));
+          const importRe=/@import\s+(?:url\()?['"]?([^'"\);]+\.css(?:\?[^'"\)]*)?)['"]?\)?/gi;
+          const normImport=(v,from)=>{v=v.replace(/\?.*$/,'').replace(/^\.\//,'');if(v.startsWith('/'))return v.replace(/^\/+/, '');if(v.startsWith('assets/'))return v;return path.posix.normalize(path.posix.join(path.posix.dirname(from),v));};
+          const meta=new Map();
+          for(const f of tracked){const text=fs.readFileSync(f,'utf8'),imports=[];let m;importRe.lastIndex=0;while((m=importRe.exec(text)))imports.push(normImport(m[1],f));meta.set(f,{text,imports,size:Buffer.byteLength(text),important:(text.match(/!important/gi)||[]).length});}
+          const active=new Set(),todo=[...new Set(report.pageAssets.flatMap(p=>p.css))].filter(f=>meta.has(f));
+          while(todo.length){const f=todo.pop();if(active.has(f)||!meta.has(f))continue;active.add(f);for(const n of meta.get(f).imports)if(meta.has(n))todo.push(n);}
+          const high=[...active].filter(f=>{const x=meta.get(f);return x.size>=50000||x.important>=100||x.imports.length>=10;});
+          function parse(src){
+            const lines=src.split(/\r?\n/);let depth=0,sp=[],ap=[],sel=null;const ds=[],stack=[],re=/^\s*([\w-]+)\s*:\s*(.*?)\s*;\s*$/,norm=p=>p.join(' ').replace(/\{\s*$/,'').replace(/\s+/g,' ').trim();
+            for(let i=0;i<lines.length;i++){
+              const line=lines[i],t=line.trim(),o=(line.match(/\{/g)||[]).length,c=(line.match(/\}/g)||[]).length;
+              if(!sel){
+                if(ap.length){if(t)ap.push(t);if(line.includes('{')){stack.push({type:'at',header:norm(ap),depthBefore:depth});ap=[];}}
+                else if(t.startsWith('@')&&!t.includes(';')){if(line.includes('{'))stack.push({type:'at',header:norm([t]),depthBefore:depth});else ap=[t];}
+                else if(sp.length){if(t)sp.push(t);if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth});}}
+                else if(t&&!t.startsWith('/*')&&!t.startsWith('*')&&t!=='*/'&&t!=='}'&&!t.startsWith('@')&&!line.includes(';')){sp=[t];if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth});}}
+              }
+              if(sel){const m=line.match(re);if(m){const raw=m[2].trim(),important=/\s*!important\s*$/i.test(raw),context=stack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');ds.push({line:i+1,selector:sel,property:m[1].toLowerCase(),value:raw,important,context});}}
+              depth+=o-c;while(stack.length&&depth<=stack[stack.length-1].depthBefore){const p=stack.pop();if(p.type==='rule')sel=null;}
+            }
+            const last=new Map(),dead=[];
+            for(let i=ds.length-1;i>=0;i--){const d=ds[i],k=`${d.context} >>> ${d.selector} >>> ${d.property}`,l=last.get(k);if(l&&(!d.important||l.important))dead.push({...d,winnerLine:l.line,winnerValue:l.value,winnerImportant:l.important});if(!l||d.important||!l.important)last.set(k,d);}
+            return{declarations:ds,dead};
+          }
+          if(active.size!==401||high.length!==37)throw new Error(`baseline drift active=${active.size} high=${high.length}`);
+          const prior28=parse(meta.get('assets/css/pages/home-overlays/workers-feed-base.css').text);if(prior28.declarations.length!==366||prior28.dead.length!==0)throw new Error(`028 drift ${prior28.declarations.length}/${prior28.dead.length}`);
+          const prior29=parse(meta.get('assets/css/pages/pedidos/orders-chat.css').text);if(prior29.declarations.length!==416||prior29.dead.length!==0)throw new Error(`029 drift ${prior29.declarations.length}/${prior29.dead.length}`);
+          const prior30=parse(meta.get('assets/css/pages/avaliacao-profissional.css').text);if(prior30.declarations.length!==376||prior30.dead.length!==0)throw new Error(`030 drift ${prior30.declarations.length}/${prior30.dead.length}`);
+          const pagesFor=target=>{const out=[];for(const p of report.pageAssets){const seen=new Set(),stack=[...p.css.filter(f=>meta.has(f))];let hit=false;while(stack.length){const f=stack.pop();if(seen.has(f)||!meta.has(f))continue;seen.add(f);if(f===target){hit=true;break;}for(const n of meta.get(f).imports)if(meta.has(n))stack.push(n);}if(hit)out.push(p.page);}return out.sort();};
+          const parents=new Map([...active].map(f=>[f,[]]));for(const [p,x] of meta)if(active.has(p))for(const c of x.imports)if(parents.has(c))parents.get(c).push(p);
+          const parsed=new Map([...active].map(f=>[f,parse(meta.get(f).text)]));
+          const rows=[...active].map(file=>{const x=meta.get(file),p=parsed.get(file),pages=pagesFor(file),sels=[...new Set(p.dead.map(d=>d.selector))],identical=p.dead.filter(d=>d.value===d.winnerValue&&d.important===d.winnerImportant).length;return{file,decl:p.declarations.length,dead:p.dead.length,selectors:sels.length,selectorList:sels,pages:pages.length,pageList:pages,important:x.important,bytes:x.size,parents:(parents.get(file)||[]).sort(),identical,changed:p.dead.length-identical,highRisk:high.includes(file),rows:p.dead.sort((a,b)=>a.line-b.line)};}).filter(r=>r.dead&&r.file.includes('/pages/'));
+          const allRows=[...active].map(file=>({file,dead:parsed.get(file).dead.length,highRisk:high.includes(file)}));
+          const total=allRows.reduce((a,r)=>a+r.dead,0),filesWithDead=allRows.filter(r=>r.dead).length,highDeadRows=allRows.filter(r=>r.dead&&r.highRisk),highDead=highDeadRows.length;
+          if(filesWithDead!==44||total!==1247||highDead!==0)throw new Error(`residual drift ${filesWithDead}/${total}/${highDead}; high=${highDeadRows.map(r=>r.file).join(',')||'-'}`);
+          rows.sort((a,b)=>(a.pages-b.pages)||(a.dead-b.dead)||(a.selectors-b.selectors)||(a.important-b.important)||(a.changed-b.changed)||(a.bytes-b.bytes)||a.file.localeCompare(b.file));
+          console.log(`BASE|active=401|high=37|files=44|dead=1247|highDead=0|highRiskFormula=size>=50000||important>=100||imports>=10`);
+          rows.slice(0,10).forEach((r,i)=>console.log(`TOP${i}|file=${r.file}|decl=${r.decl}|dead=${r.dead}|selectors=${r.selectors}|pages=${r.pages}|important=${r.important}|bytes=${r.bytes}|highRisk=${r.highRisk}|parents=${r.parents.join(',')||'-'}|pageList=${r.pageList.join(',')||'-'}|selectorList=${r.selectorList.join(' <OR> ')}|identical=${r.identical}|changed=${r.changed}`));
+          const r=rows[0];if(!r)throw new Error('no page candidate');if(r.highRisk)throw new Error(`TOP0 unexpectedly high-risk: ${r.file}`);for(const d of r.rows)console.log(`ROW|line=${d.line}|selector=${d.selector}|prop=${d.property}|value=${d.value}|imp=${d.important}|ctx=${d.context||'<global>'}|winnerLine=${d.winnerLine}|winnerValue=${d.winnerValue}|winnerImp=${d.winnerImportant}`);
+          console.log(`RANKING PASS|top0=${r.file}|dead=${r.dead}|highRisk=${r.highRisk}|residual=44/1247/0`);
+          NODE
+
+      - name: Preserve governance baselines
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:agent-governance
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/conflicts.log
+          grep -q 'Conflicting class/property pairs: 339' /tmp/conflicts.log
+          npm run audit:domain-completion-matrix | tee /tmp/domain.log
+          grep -q 'Domains: 23' /tmp/domain.log
+          grep -q 'Critical flows: 15' /tmp/domain.log
+          grep -q 'Average maturity: 2.91/6' /tmp/domain.log
+          grep -q 'Critical blockers: 12' /tmp/domain.log
+          npm run audit:shared-app-header-contract
+          npm run audit:mobile-shell-location-contract
+          npm run audit:responsive-boundaries
+          npm run audit:duplicate-assets | tee /tmp/dup.log
+          grep -q 'Duplicate groups: 0' /tmp/dup.log
+          grep -q 'Duplicated files: 0' /tmp/dup.log
+          echo 'GOVERNANCE PASS|conflicts=339|domain=23/15/2.91/12|duplicates=0/0'
+
+      - name: Restore exact checkpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "${TARGET_SHA}"
+          git clean -fdx
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test -z "$(git status --porcelain)"
+          echo "CHECKPOINT PASS|sha=${TARGET_SHA}|productMutation=0"
