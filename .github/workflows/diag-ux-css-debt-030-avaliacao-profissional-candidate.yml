@@ -1,0 +1,156 @@
+name: Doke UX-CSS-DEBT-030 Avaliacao Profissional Candidate
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-030-avaliacao-profissional-candidate-r1
+
+permissions:
+  contents: read
+
+jobs:
+  candidate:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 44bde2226174f0e5b3a8944ea754ca1635708d61
+      TARGET_CSS: assets/css/pages/avaliacao-profissional.css
+      TARGET_BLOB: 233130872b9ef0b4ca5c399da079caa25d4b8ee1
+    steps:
+      - name: Checkout diagnostic harness
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          clean: true
+
+      - name: Preserve helpers outside product worktree
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp .github/diagnostics/ux-css-debt-030-avaliacao-profissional-candidate.cjs /tmp/ux-css-debt-030-avaliacao-profissional-candidate.cjs
+          cp .github/diagnostics/ux-css-debt-030-candidate-residual.cjs /tmp/ux-css-debt-030-candidate-residual.cjs
+          node --check /tmp/ux-css-debt-030-avaliacao-profissional-candidate.cjs
+          node --check /tmp/ux-css-debt-030-candidate-residual.cjs
+
+      - name: Checkout exact certified UX-CSS-DEBT-029 parent
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 0
+          clean: true
+
+      - name: Guard exact parent and reach
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git hash-object "$TARGET_CSS")" = "$TARGET_BLOB"
+          test -z "$(git status --porcelain)"
+          git diff --check
+          node <<'NODE'
+          const fs=require('fs'),cp=require('child_process');
+          const foundation='assets/css/pages/avaliacao-profissional-foundation.css';
+          const target='assets/css/pages/avaliacao-profissional.css';
+          const page='avaliacao-profissional.html';
+          const f=fs.readFileSync(foundation,'utf8'),h=fs.readFileSync(page,'utf8');
+          if((f.match(/avaliacao-profissional\.css\?/g)||[]).length!==1) throw new Error('foundation target import drift');
+          if((h.match(/avaliacao-profissional-foundation\.css\?/g)||[]).length!==1) throw new Error('page foundation link drift');
+          if(/<link[^>]+avaliacao-profissional\.css\?/i.test(h)) throw new Error('target became direct page stylesheet');
+          const importers=cp.execSync("git grep -l -F 'avaliacao-profissional.css?v=' -- assets/css || true",{encoding:'utf8'}).trim().split(/\r?\n/).filter(Boolean).sort();
+          if(JSON.stringify(importers)!==JSON.stringify([foundation])) throw new Error('target importer drift '+JSON.stringify(importers));
+          console.log(`REACH AUTHORITY PASS|page=${page}|foundation=${foundation}|target=${target}|pages=1`);
+          NODE
+          echo "PARENT PASS|sha=$TARGET_SHA|blob=$TARGET_BLOB"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies and generate parent responsive baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install --with-deps chromium
+          npm run audit:active-legacy-structures
+          node scripts/generate-responsive-index-baseline.js
+          test -s reports/responsive-index-baseline.json
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          echo "PARENT RESPONSIVE BASELINE PASS|beforeCandidate=1|parent=$TARGET_SHA"
+
+      - name: Build exact CSS-only candidate and prove runtime parity
+        shell: bash
+        run: |
+          set -euo pipefail
+          NODE_PATH="$PWD/node_modules" node /tmp/ux-css-debt-030-avaliacao-profissional-candidate.cjs
+          test -s /tmp/ux-css-debt-030-candidate-hash
+          test "$(git diff --name-only -- assets index.html resultados.html)" = "$TARGET_CSS"
+          read -r add del file < <(git diff --numstat -- "$TARGET_CSS")
+          test "$add" = "0" && test "$del" = "15" && test "$file" = "$TARGET_CSS"
+          echo "CANDIDATE HASH|$(cat /tmp/ux-css-debt-030-candidate-hash)"
+
+      - name: Responsive and governance gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run test:responsive-contract | tee /tmp/responsive.log
+          grep -q 'Responsive contract test: PASS' /tmp/responsive.log
+          grep -q 'Checks: 893' /tmp/responsive.log
+          grep -q 'Failures: 0' /tmp/responsive.log
+          grep -q 'Skips: 277' /tmp/responsive.log
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/conflicts.log
+          grep -q 'Conflicting class/property pairs: 339' /tmp/conflicts.log
+          npm run audit:agent-governance
+          npm run audit:shared-app-header-contract
+          npm run audit:mobile-shell-location-contract
+          npm run audit:responsive-boundaries
+          npm run audit:duplicate-assets | tee /tmp/dup.log
+          grep -q 'Duplicate groups: 0' /tmp/dup.log
+          grep -q 'Duplicated files: 0' /tmp/dup.log
+          npm run audit:domain-completion-matrix | tee /tmp/domain.log
+          grep -q 'Domains: 23' /tmp/domain.log
+          grep -q 'Critical flows: 15' /tmp/domain.log
+          grep -q 'Average maturity: 2.91/6' /tmp/domain.log
+          grep -q 'Critical blockers: 12' /tmp/domain.log
+          echo 'GOVERNANCE PASS|responsive=893/0/277|conflicts=339|domain=23/15/2.91/12|duplicates=0/0'
+
+      - name: Recalculate exact CSS residual
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:active-legacy-structures
+          node /tmp/ux-css-debt-030-candidate-residual.cjs
+
+      - name: Final candidate scope and identity guard
+        shell: bash
+        run: |
+          set -euo pipefail
+          HASH="$(tr -d '\r\n' < /tmp/ux-css-debt-030-candidate-hash)"
+          test -n "$HASH"
+          test "$(sha256sum "$TARGET_CSS" | awk '{print $1}')" = "$HASH"
+          test "$(git diff --name-only -- assets index.html resultados.html)" = "$TARGET_CSS"
+          read -r add del file < <(git diff --numstat -- "$TARGET_CSS")
+          test "$add" = "0" && test "$del" = "15" && test "$file" = "$TARGET_CSS"
+          git diff --check
+          echo "CANDIDATE FINAL PASS|hash=$HASH|files=1|additions=0|deletions=15|decl=391->376|dead=15->0|residual=44/1247/0|conflicts=339|responsive=893/0/277|page=avaliacao-profissional.html"
+
+      - name: Restore exact certified parent
+        if: always()
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+          clean: true
+
+      - name: Verify exact restored checkpoint
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git hash-object "$TARGET_CSS")" = "$TARGET_BLOB"
+          test ! -e reports/responsive-index-baseline.json
+          test -z "$(git status --porcelain)"
+          echo "CHECKPOINT PASS|sha=$TARGET_SHA|productMutation=0|candidatePermanentPromotion=0|generatedArtifactsCleaned=1"
