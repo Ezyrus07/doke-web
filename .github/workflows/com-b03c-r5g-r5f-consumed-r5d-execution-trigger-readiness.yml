@@ -1,0 +1,67 @@
+name: COM-B03C-R5G R5F-Consumed R5D Execution Trigger Readiness
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - 'backend/modules/communities/community-realtime-private-auth-r5g.js'
+      - 'config/com-b03c-r5g-r5f-consumed-r5d-execution-trigger-readiness.json'
+      - 'scripts/test-com-b03c-r5g-r5f-consumed-r5d-execution-trigger-readiness.js'
+      - 'docs/validation/COM-B03C-R5G-R5F-CONSUMED-R5D-EXECUTION-TRIGGER-READINESS.json'
+      - '.github/workflows/com-b03c-r5g-r5f-consumed-r5d-execution-trigger-readiness.yml'
+      - 'config/domain-completion-matrix.json'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Syntax
+        run: |
+          node --check backend/modules/communities/community-realtime-private-auth-r5g.js
+          node --check scripts/test-com-b03c-r5g-r5f-consumed-r5d-execution-trigger-readiness.js
+      - name: R5G repository trigger readiness
+        run: node scripts/test-com-b03c-r5g-r5f-consumed-r5d-execution-trigger-readiness.js
+      - name: Consumed R5F receipt and certified R5D lineage preserved
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor 24ada4e33a24488cd7be796b32dc19664b88e694 HEAD
+          test "$(git rev-parse HEAD:config/com-b03c-r5f-r5e-fresh-execution-authorization-consumption.json)" = "12a1e21253759ae334ee6c9bf423cfe3ea7d27f4"
+          test "$(git rev-parse HEAD:backend/modules/communities/community-realtime-private-auth-r5d.js)" = "7cde416f2922230bae6b1e4b1e48fdfaf411da99"
+          test "$(git rev-parse HEAD:backend/modules/communities/community-realtime-private-auth-r5e.js)" = "e6e71f10007c796576e036902dfb1cb8e285b7f8"
+          test "$(git rev-parse HEAD:backend/modules/communities/community-realtime-private-auth-r5f.js)" = "fc3d88efa391d33d95906bfd6e8bf63c6d05db15"
+          test ! -e config/com-b03c-r5c-single-use-corrected-terminal-observation-trigger.json
+      - name: Remote execution hard block
+        run: |
+          node - <<'NODE'
+          const r5g = require('./backend/modules/communities/community-realtime-private-auth-r5g');
+          try { r5g.assertRemoteExecutionBoundaryAbsent(); process.exit(1); }
+          catch (error) { if (error?.code !== r5g.REMOTE_EXECUTION_BLOCK_CODE) throw error; }
+          NODE
+      - name: Repository-only workflow surface
+        shell: bash
+        run: |
+          set -euo pipefail
+          workflow=.github/workflows/com-b03c-r5g-r5f-consumed-r5d-execution-trigger-readiness.yml
+          test ! -e config/com-b03c-r5c-single-use-corrected-terminal-observation-trigger.json
+          ! grep -nE '^[[:space:]]*(environment:|workflow_dispatch:|repository_dispatch:|schedule:|push:)|^[[:space:]]+secrets\.' "$workflow"
+      - name: Domain Completion Matrix
+        run: npm run audit:domain-completion-matrix
+      - name: Agent Governance
+        run: npm run audit:agent-governance
+      - name: Diff hygiene
+        run: git diff --check
