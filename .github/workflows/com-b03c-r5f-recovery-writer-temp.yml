@@ -27,10 +27,11 @@ jobs:
           set -euo pipefail
           test "$GITHUB_REF_NAME" = "com/com-001-baseline-audit"
           test "$GITHUB_RUN_ATTEMPT" = "1"
-          test "$(git rev-parse HEAD^)" = "f0ae6524c497caea3ac02b5924bd0429ef7419fb"
+          test "$(git rev-parse HEAD^)" = "7c213d241d751c2e10094902634da29b9a409813"
           mapfile -t changed < <(git diff --name-only HEAD^ HEAD)
           test "${#changed[@]}" -eq 1
           test "${changed[0]}" = ".github/workflows/com-b03c-r5f-recovery-writer-temp.yml"
+          test "$(git rev-parse HEAD^:.github/workflows/com-b03c-r5f-recovery-writer-temp.yml)" = "c819fb47f101cf98f8f436c1eaf7e65466d2aa0c"
           test "$(git rev-parse HEAD:.github/workflows/com-b03c-r5f-boundary-writer-temp.yml)" = "a0b75c2ef7ee4cc04f41fdb637969c8dcb71ffd9"
           test ! -e backend/modules/communities/community-realtime-private-auth-r5f.js
           test ! -e config/com-b03c-r5f-r5e-bound-r5d-execution-authorization-issuance-consumption-readiness.json
@@ -117,9 +118,10 @@ jobs:
             config/com-b03c-r5f-r5e-bound-r5d-execution-authorization-issuance-consumption-readiness.json \
             config/domain-completion-matrix.json \
             docs/DOMAIN-COMPLETION-MATRIX.md \
-            docs/validation/COM-B03C-R5F-R5E-BOUND-R5D-EXECUTION-AUTHORIZATION-ISSUANCE-CONSUMPTION-READINESS.json \
             scripts/test-com-b03c-r5f-r5e-bound-r5d-execution-authorization-issuance-consumption-readiness.js
-          git add -f -- reports/generated/domain-completion-matrix-report.json
+          git add -f -- \
+            docs/validation/COM-B03C-R5F-R5E-BOUND-R5D-EXECUTION-AUTHORIZATION-ISSUANCE-CONSUMPTION-READINESS.json \
+            reports/generated/domain-completion-matrix-report.json
 
           expected=$(printf '%s\n' \
             '.github/workflows/com-b03c-r5f-boundary-writer-temp.yml' \
