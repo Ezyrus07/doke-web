@@ -1,0 +1,124 @@
+name: diag UX-CSS-DEBT-028 promote permanent
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-028-promote-permanent
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 2b4fda807a207f3a7c4a93a35a69a5401ee330dc
+      TARGET_CSS: assets/css/pages/home-overlays/workers-feed-base.css
+      TARGET_BLOB: 59b2304099888c9bab059c9db133c20107122a05
+      EXPECTED_SHA256: 5c41013a124efaf1e9b03912a854f14d033e11be49234b35130bfedbb5406c95
+      PERM_BRANCH: ux/ux-css-debt-028-workers-feed-compaction
+    steps:
+      - name: Checkout exact certified parent
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+          clean: true
+
+      - name: Guard parent and namespace
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git hash-object "$TARGET_CSS")" = "$TARGET_BLOB"
+          test -z "$(git status --porcelain)"
+          test -z "$(git ls-remote --heads origin "refs/heads/$PERM_BRANCH")"
+          echo "PROMOTION GUARD PASS|parent=$TARGET_SHA|targetBlob=$TARGET_BLOB|branchAbsent=1"
+
+      - name: Build exact candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib, os
+
+          path = Path(os.environ['TARGET_CSS'])
+          expected_hash = os.environ['EXPECTED_SHA256']
+          lines = path.read_text(encoding='utf-8').splitlines(keepends=True)
+
+          targets = {
+              '.worker-preview__caption': {'left: 14px;', 'right: 14px;', 'bottom: 14px;'},
+              '.worker-preview__title': {'font-size: 1.02rem;'},
+              '.worker-preview__actions': {'gap: 12px;'},
+              '.worker-preview__action': {'width: 52px;'},
+          }
+          removed = []
+          out = []
+          seen_media = False
+          current = None
+
+          for line in lines:
+              s = line.strip()
+              if s == '@media (max-width: 640px) {' and not seen_media:
+                  seen_media = True
+              if seen_media and s.endswith('{'):
+                  selector = s[:-1].strip()
+                  current = selector if selector in targets else None
+              elif seen_media and s == '}':
+                  current = None
+
+              if seen_media and current in targets and s in targets[current]:
+                  key = (current, s)
+                  if key not in removed:
+                      removed.append(key)
+                      continue
+              out.append(line)
+
+          expected_removed = {
+              ('.worker-preview__caption', 'left: 14px;'),
+              ('.worker-preview__caption', 'right: 14px;'),
+              ('.worker-preview__caption', 'bottom: 14px;'),
+              ('.worker-preview__title', 'font-size: 1.02rem;'),
+              ('.worker-preview__actions', 'gap: 12px;'),
+              ('.worker-preview__action', 'width: 52px;'),
+          }
+          if set(removed) != expected_removed or len(removed) != 6:
+              raise SystemExit(f'candidate removal mismatch: {removed!r}')
+
+          data = ''.join(out).encode('utf-8')
+          actual_hash = hashlib.sha256(data).hexdigest()
+          if actual_hash != expected_hash:
+              raise SystemExit(f'candidate sha256 mismatch: {actual_hash} != {expected_hash}')
+          path.write_bytes(data)
+          print(f'CANDIDATE HASH PASS|sha256={actual_hash}|removed={len(removed)}|bytes={len(data)}')
+          PY
+
+          test "$(git diff --name-only | wc -l)" -eq 1
+          test "$(git diff --name-only)" = "$TARGET_CSS"
+          test "$(git diff --numstat -- "$TARGET_CSS")" = $'0\t6\t'"$TARGET_CSS"
+          echo "CANDIDATE DIFF PASS|files=1|additions=0|deletions=6"
+
+      - name: Commit and publish permanent branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "doke-governance-bot"
+          git config user.email "doke-governance-bot@users.noreply.github.com"
+          git switch -c "$PERM_BRANCH"
+          git add "$TARGET_CSS"
+          git commit -m "UX-CSS-DEBT-028: compact superseded workers feed declarations"
+
+          test "$(git rev-parse HEAD^)" = "$TARGET_SHA"
+          test "$(git diff --name-only "$TARGET_SHA"..HEAD | wc -l)" -eq 1
+          test "$(git diff --name-only "$TARGET_SHA"..HEAD)" = "$TARGET_CSS"
+          test "$(git diff --numstat "$TARGET_SHA"..HEAD -- "$TARGET_CSS")" = $'0\t6\t'"$TARGET_CSS"
+          test "$(sha256sum "$TARGET_CSS" | awk '{print $1}')" = "$EXPECTED_SHA256"
+
+          PERM_SHA="$(git rev-parse HEAD)"
+          PERM_TREE="$(git rev-parse HEAD^{tree})"
+          PERM_BLOB="$(git hash-object "$TARGET_CSS")"
+          git push origin "HEAD:refs/heads/$PERM_BRANCH"
+          REMOTE_SHA="$(git ls-remote --heads origin "refs/heads/$PERM_BRANCH" | awk '{print $1}')"
+          test "$REMOTE_SHA" = "$PERM_SHA"
+          echo "PROMOTION PASS|branch=$PERM_BRANCH|sha=$PERM_SHA|tree=$PERM_TREE|parent=$TARGET_SHA|blob=$PERM_BLOB|sha256=$EXPECTED_SHA256|files=1|additions=0|deletions=6"
