@@ -27,11 +27,11 @@ jobs:
           set -euo pipefail
           test "$GITHUB_REF_NAME" = "com/com-001-baseline-audit"
           test "$GITHUB_RUN_ATTEMPT" = "1"
-          test "$(git rev-parse HEAD^)" = "7c213d241d751c2e10094902634da29b9a409813"
+          test "$(git rev-parse HEAD^)" = "f309ec7758789831666d87d9a0c7070a7310d3dd"
           mapfile -t changed < <(git diff --name-only HEAD^ HEAD)
           test "${#changed[@]}" -eq 1
           test "${changed[0]}" = ".github/workflows/com-b03c-r5f-recovery-writer-temp.yml"
-          test "$(git rev-parse HEAD^:.github/workflows/com-b03c-r5f-recovery-writer-temp.yml)" = "c819fb47f101cf98f8f436c1eaf7e65466d2aa0c"
+          test "$(git rev-parse HEAD^:.github/workflows/com-b03c-r5f-recovery-writer-temp.yml)" = "6a239638ce3928253749fae63b518466b890b5af"
           test "$(git rev-parse HEAD:.github/workflows/com-b03c-r5f-boundary-writer-temp.yml)" = "a0b75c2ef7ee4cc04f41fdb637969c8dcb71ffd9"
           test ! -e backend/modules/communities/community-realtime-private-auth-r5f.js
           test ! -e config/com-b03c-r5f-r5e-bound-r5d-execution-authorization-issuance-consumption-readiness.json
@@ -87,7 +87,8 @@ jobs:
           set -euo pipefail
           /tmp/r5f-materialize.sh
           /tmp/r5f-reconcile.sh
-          rm .github/workflows/com-b03c-r5f-recovery-writer-temp.yml
+          git restore --source=HEAD -- .github/workflows/com-b03c-r5f-boundary-writer-temp.yml
+          test -e .github/workflows/com-b03c-r5f-recovery-writer-temp.yml
       - name: Validate R5F and canonical governance
         shell: bash
         run: |
@@ -106,14 +107,16 @@ jobs:
           git diff --check
           test ! -e config/com-b03c-r5f-r5e-fresh-execution-authorization-consumption.json
           test ! -e config/com-b03c-r5c-single-use-corrected-terminal-observation-trigger.json
-      - name: Stage only authorized persistent R5F scope
+      - name: Stage non-workflow R5F surface only
         shell: bash
         run: |
           set -euo pipefail
+          permanent_workflow=.github/workflows/com-b03c-r5f-r5e-bound-r5d-execution-authorization-issuance-consumption-readiness.yml
+          test -f "$permanent_workflow"
+          workflow_blob=$(git hash-object "$permanent_workflow")
+          printf '%s\n' "R5F_PERMANENT_WORKFLOW_BLOB=$workflow_blob"
+
           git add -- \
-            .github/workflows/com-b03c-r5f-boundary-writer-temp.yml \
-            .github/workflows/com-b03c-r5f-recovery-writer-temp.yml \
-            .github/workflows/com-b03c-r5f-r5e-bound-r5d-execution-authorization-issuance-consumption-readiness.yml \
             backend/modules/communities/community-realtime-private-auth-r5f.js \
             config/com-b03c-r5f-r5e-bound-r5d-execution-authorization-issuance-consumption-readiness.json \
             config/domain-completion-matrix.json \
@@ -124,9 +127,6 @@ jobs:
             reports/generated/domain-completion-matrix-report.json
 
           expected=$(printf '%s\n' \
-            '.github/workflows/com-b03c-r5f-boundary-writer-temp.yml' \
-            '.github/workflows/com-b03c-r5f-recovery-writer-temp.yml' \
-            '.github/workflows/com-b03c-r5f-r5e-bound-r5d-execution-authorization-issuance-consumption-readiness.yml' \
             'backend/modules/communities/community-realtime-private-auth-r5f.js' \
             'config/com-b03c-r5f-r5e-bound-r5d-execution-authorization-issuance-consumption-readiness.json' \
             'config/domain-completion-matrix.json' \
@@ -135,20 +135,21 @@ jobs:
             'reports/generated/domain-completion-matrix-report.json' \
             'scripts/test-com-b03c-r5f-r5e-bound-r5d-execution-authorization-issuance-consumption-readiness.js' | sort)
           staged=$(git diff --cached --name-only | sort)
-          printf '%s\n' '--- R5F staged scope ---' "$staged"
+          printf '%s\n' '--- R5F non-workflow staged scope ---' "$staged"
           test "$staged" = "$expected"
           git diff --cached --check
           test -z "$(git diff --name-only)"
-          test -z "$(git ls-files --others --exclude-standard)"
-          test ! -e .github/workflows/com-b03c-r5f-boundary-writer-temp.yml
-          test ! -e .github/workflows/com-b03c-r5f-recovery-writer-temp.yml
+          untracked=$(git ls-files --others --exclude-standard | sort)
+          test "$untracked" = "$permanent_workflow"
+          test -e .github/workflows/com-b03c-r5f-boundary-writer-temp.yml
+          test -e .github/workflows/com-b03c-r5f-recovery-writer-temp.yml
           test ! -e config/com-b03c-r5f-r5e-fresh-execution-authorization-consumption.json
           test ! -e config/com-b03c-r5c-single-use-corrected-terminal-observation-trigger.json
-      - name: Commit canonical R5F readiness
+      - name: Commit non-workflow canonical R5F readiness
         shell: bash
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git commit -m 'feat(com): prepare R5F authorization issuance boundary'
+          git commit -m 'feat(com): prepare R5F non-workflow authorization boundary'
           git push origin HEAD:com/com-001-baseline-audit
