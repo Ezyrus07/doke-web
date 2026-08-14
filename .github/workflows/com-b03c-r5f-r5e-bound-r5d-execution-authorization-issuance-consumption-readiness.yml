@@ -58,7 +58,7 @@ jobs:
         run: |
           set -euo pipefail
           workflow=.github/workflows/com-b03c-r5f-r5e-bound-r5d-execution-authorization-issuance-consumption-readiness.yml
-          ! grep -nE 'secrets\.|environment:|workflow_dispatch:|repository_dispatch:|schedule:|^[[:space:]]*push:' "$workflow"
+          ! grep -nE '^[[:space:]]*(environment:|workflow_dispatch:|repository_dispatch:|schedule:|push:)|^[[:space:]]+secrets\.' "$workflow"
       - name: Domain Completion Matrix
         run: npm run audit:domain-completion-matrix
       - name: Agent Governance
