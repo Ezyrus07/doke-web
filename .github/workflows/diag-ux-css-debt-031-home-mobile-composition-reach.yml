@@ -25,6 +25,31 @@ jobs:
         run: |
           set -euo pipefail
           cp .github/diagnostics/ux-css-debt-031-home-mobile-composition-reach.cjs /tmp/ux-css-debt-031-home-mobile-composition-reach.cjs
+          python3 - <<'PY'
+          p='/tmp/ux-css-debt-031-home-mobile-composition-reach.cjs'
+          s=open(p,encoding='utf-8').read()
+          old="""  const pages=[];
+            for (const p of report.pageAssets) if ((p.css||[]).includes(TARGET)) pages.push(p.page);
+            assert(JSON.stringify(pages.sort())===JSON.stringify([PAGE]), `active reach drift ${JSON.stringify(pages)}`);
+          """
+          new="""  const path=require('path');
+            const tracked=new Set(cp.execFileSync('git',['ls-files','-z','assets/css'],{encoding:'utf8'}).split('\\0').filter(f=>f.endsWith('.css')));
+            const importRe=/@import\\s+(?:url\\()?['\"]?([^'\"\\);]+\\.css(?:\\?[^'\"\\)]*)?)['\"]?\\)?/gi;
+            const normImport=(v,from)=>{v=v.replace(/\\?.*$/,'').replace(/^\\.\\//,'');if(v.startsWith('/'))return v.replace(/^\\/+/, '');if(v.startsWith('assets/'))return v;return path.posix.normalize(path.posix.join(path.posix.dirname(from),v));};
+            const imports=f=>{const src=fs.readFileSync(f,'utf8'),out=[];let m;importRe.lastIndex=0;while((m=importRe.exec(src)))out.push(normImport(m[1],f));return out;};
+            const pages=[];
+            for (const page of report.pageAssets) {
+              const seen=new Set(),stack=[...(page.css||[]).filter(f=>tracked.has(f))]; let hit=false;
+              while(stack.length){const f=stack.pop();if(seen.has(f)||!tracked.has(f))continue;seen.add(f);if(f===TARGET){hit=true;break;}for(const n of imports(f))if(tracked.has(n))stack.push(n);}
+              if(hit) pages.push(page.page);
+            }
+            assert(JSON.stringify(pages.sort())===JSON.stringify([PAGE]), `active reach drift ${JSON.stringify(pages)}`);
+          """
+          if old not in s:
+              raise SystemExit('reach patch anchor missing')
+          s=s.replace(old,new)
+          open(p,'w',encoding='utf-8').write(s)
+          PY
           git fetch origin "${TARGET_SHA}" --depth=1
           git checkout --detach "${TARGET_SHA}"
           test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
