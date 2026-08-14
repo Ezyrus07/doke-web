@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  EXPECTED_PARENT: 09d3c713f5b3c40f94a2b9645232377adb74d2b1
+  EXPECTED_PARENT: 109ff27c01a38d18538ddc50ec7eccac33ae040d
   TARGET_BRANCH: com/com-001-baseline-audit
   WRITER_PATH: .github/workflows/com-b03c-r5d-boundary-writer-temp.yml
   FUTURE_TRIGGER_PATH: config/com-b03c-r5c-single-use-corrected-terminal-observation-trigger.json
@@ -131,6 +131,10 @@ jobs:
           set -euo pipefail
           git add -A
           git diff --cached --name-only | sort -u > /tmp/staged-paths
+          staged_paths="$(paste -sd ',' /tmp/staged-paths)"
+          staged_status="$(git diff --cached --name-status | tr '\n' ';')"
+          echo "::notice title=COM-B03C-R5D staged paths::${staged_paths}"
+          echo "::notice title=COM-B03C-R5D staged status::${staged_status}"
           allowed=(
             ".github/workflows/com-b03c-r5d-boundary-writer-temp.yml"
             "config/domain-completion-matrix.json"
@@ -142,15 +146,27 @@ jobs:
             for allowed_path in "${allowed[@]}"; do
               if [ "$path" = "$allowed_path" ]; then matched=true; break; fi
             done
-            test "$matched" = true
+            if [ "$matched" != true ]; then
+              echo "::error title=COM-B03C-R5D unexpected staged path::${path}"
+              exit 1
+            fi
           done < /tmp/staged-paths
-          grep -Fxq ".github/workflows/com-b03c-r5d-boundary-writer-temp.yml" /tmp/staged-paths
-          grep -Fxq "config/domain-completion-matrix.json" /tmp/staged-paths
-          grep -Fxq "docs/DOMAIN-COMPLETION-MATRIX.md" /tmp/staged-paths
-          test "$(git diff --cached --name-status -- "${WRITER_PATH}")" = $'D\t'"${WRITER_PATH}"
+          for required in ".github/workflows/com-b03c-r5d-boundary-writer-temp.yml" "config/domain-completion-matrix.json" "docs/DOMAIN-COMPLETION-MATRIX.md"; do
+            if ! grep -Fxq "$required" /tmp/staged-paths; then
+              echo "::error title=COM-B03C-R5D missing staged path::${required}"
+              exit 1
+            fi
+          done
+          writer_status="$(git diff --cached --name-status -- "${WRITER_PATH}")"
+          if [ "$writer_status" != $'D\t'"${WRITER_PATH}" ]; then
+            echo "::error title=COM-B03C-R5D writer deletion mismatch::${writer_status}"
+            exit 1
+          fi
           count="$(wc -l < /tmp/staged-paths | tr -d ' ')"
-          test "$count" -ge 3
-          test "$count" -le 4
+          if [ "$count" -lt 3 ] || [ "$count" -gt 4 ]; then
+            echo "::error title=COM-B03C-R5D staged count mismatch::${count}"
+            exit 1
+          fi
       - name: Commit reconciled R5D tree
         shell: bash
         run: |
