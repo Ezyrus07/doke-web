@@ -125,7 +125,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 4/6; UI hybrid; servidor canonical; staging staging operational; segurança partial; produção candidate.
 
-**Evidência estática observada:** 1428 arquivos no escopo; 298 referências a localStorage; 81 a sessionStorage; 595 referências mock; 358 referências de rede/Supabase; 38 marcadores de implementação pendente.
+**Evidência estática observada:** 1429 arquivos no escopo; 298 referências a localStorage; 81 a sessionStorage; 595 referências mock; 358 referências de rede/Supabase; 38 marcadores de implementação pendente.
 
 **Evidências:**
 - The machine-readable domain completion matrix and generated living document are active and drift-audited.
@@ -539,7 +539,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI local; servidor partial; staging staging canary; segurança partial; produção blocked.
 
-**Evidência estática observada:** 1327 arquivos no escopo; 221 referências a localStorage; 73 a sessionStorage; 331 referências mock; 356 referências de rede/Supabase; 19 marcadores de implementação pendente.
+**Evidência estática observada:** 1328 arquivos no escopo; 221 referências a localStorage; 73 a sessionStorage; 331 referências mock; 356 referências de rede/Supabase; 19 marcadores de implementação pendente.
 
 **Páginas:** `anunciar-servico.html`, `pedidos.html`, `orcamento.html`.
 
@@ -880,7 +880,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 3/6; UI hybrid; servidor partial; staging staging canary; segurança partial; produção blocked.
 
-**Evidência estática observada:** 86 arquivos no escopo; 56 referências a localStorage; 24 a sessionStorage; 4 referências mock; 14 referências de rede/Supabase; 0 marcadores de implementação pendente.
+**Evidência estática observada:** 87 arquivos no escopo; 56 referências a localStorage; 24 a sessionStorage; 4 referências mock; 14 referências de rede/Supabase; 0 marcadores de implementação pendente.
 
 **Páginas:** `comunidade.html`, `comunidade-interna.html`.
 
@@ -922,16 +922,17 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 - COM-B03C-R5C repository-certified single-use corrected terminal observation trigger readiness at head 65554baca33933cdbf6c660ba87658ab3ab4c5db; the future trigger remains absent, staging/network/Realtime/credential authority remains false, exactRootCauseProven remains false and causal promotion remains blocked.
 - R5C final CI run 31713609745 / certify job 94492595157 passed repository readiness, consumed receipt and corrected-bridge preservation, remote execution hard block, Domain Completion Matrix, Agent Governance and diff hygiene.
 - COM-B03C-R5D repository-certifies a corrected terminal observation execution envelope bound to R5C head 65554baca33933cdbf6c660ba87658ab3ab4c5db, the frozen R5B receipt 7f83ad580442b634912f776745f25ec2de7d935ed93a6c3f5c0b622e561f3551 and R4Z corrected bridge blob ff083f29e43b2f85045b23bf8f12a4b354fb0005; the future trigger remains absent, all remote/staging/network/credential authority remains false, exactRootCauseProven remains false and causal promotion remains blocked.
+- COM-B03C-R5E repository-prepares a fresh head-bound execution-authorization lifecycle for the certified R5D corrected-terminal-observation envelope. The future authorization must bind the exact final R5E head; no authorization phrase or receipt exists, the R5B lineage receipt is preserved and not reissued, the trigger remains absent, all remote/staging/network/credential authority remains false, exactRootCauseProven remains false and causal promotion remains blocked.
 
 **Bloqueadores:**
 - **COM-B02 · CRITICAL · server_runtime_activation:** Server-authority contracts, persistence foundation and a read-only canary are certified, but membership, roles, invitations, bans and content commands are not integrated into the canonical runtime. _(Fase 11)_
-- **COM-B03 · HIGH · realtime_activation:** Authenticated community_posts Postgres Changes is proven in staging. R3L narrowed the private Presence authorization failure to evaluation involving realtime.messages.extension without proving the exact root cause. R5B consumed the fresh R5A-bound authorization without execution; R5C certified trigger readiness; R5D now repository-certifies a corrected-terminal-observation execution envelope bound to the R5C head, frozen receipt and corrected R4Z bridge. The trigger remains absent and no staging, network, credential or Realtime authority is active. Private Typing/Broadcast remains unproven and channel_messages still lacks canonical remote authority. _(Fase 11)_
+- **COM-B03 · HIGH · realtime_activation:** Authenticated community_posts Postgres Changes is proven in staging. R3L narrowed the private Presence authorization failure to evaluation involving realtime.messages.extension without proving the exact root cause. R5B consumed the original R5A-bound authorization without execution; R5C certified trigger readiness; R5D certified the corrected-terminal-observation execution envelope; R5E now repository-prepares a fresh head-bound execution-authorization lifecycle while keeping the prior receipt immutable and non-reusable. No authorization phrase or receipt for R5E exists, the trigger remains absent, and no staging, network, credential or Realtime authority is active. Private Typing/Broadcast remains unproven and channel_messages still lacks canonical remote authority. _(Fase 11)_
 - **COM-B04 · HIGH · moderation_live_runtime_activation:** COM-B04I proved the authenticated live composition route in a rollback-only process-local staging canary, but the default shared handler remains HTTP 503 and no persistent runtime deployment or public traffic is active. _(Fase 12)_
 
 **Próximas ações:**
 - Integrate the certified server-authority repository into the main runtime for invitations, join requests, roles, bans and content commands.
 - Keep moderation fail-closed until a separately governed persistent staging runtime deployment/traffic boundary is defined and authorized.
-- Preserve the R5D repository-only corrected terminal observation execution envelope without promoting Presence, Typing/Broadcast or channel_messages. After exact R5D head certification, any future trigger must be a separate single-file boundary bound to that R5D head, the certified R5C head, frozen R5B receipt and corrected R4Z bridge; staging execution remains separately gated by a new exact single-use authorization.
+- Preserve the R5E repository-only execution-authorization lifecycle without promoting Presence, Typing/Broadcast or channel_messages. After exact R5E head certification, any new execution authorization must be handled by a separate repository-only issuance/consumption boundary bound to that exact R5E head and the immutable R5D lineage; trigger creation and staging execution remain separately gated.
 
 **Gate de saída:**
 - Community state survives device changes and refreshes.
@@ -1139,7 +1140,7 @@ A ordem pode receber sublotes internos, mas nenhum domínio pode ser promovido i
 
 **Estado:** maturidade 0/6; UI local; servidor none; staging absent; segurança blocked; produção blocked.
 
-**Evidência estática observada:** 3078 arquivos no escopo; 567 referências a localStorage; 154 a sessionStorage; 926 referências mock; 780 referências de rede/Supabase; 92 marcadores de implementação pendente.
+**Evidência estática observada:** 3081 arquivos no escopo; 567 referências a localStorage; 154 a sessionStorage; 926 referências mock; 780 referências de rede/Supabase; 92 marcadores de implementação pendente.
 
 **Evidências:**
 - The repository contains responsive web and mobile shell work, but no native/cross-platform app project.
