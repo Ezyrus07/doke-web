@@ -18,7 +18,7 @@ jobs:
       - name: Checkout diagnostic harness
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
-          fetch-depth: 4
+          fetch-depth: 5
 
       - name: Preserve harness and checkout exact UX-CSS-DEBT-029 checkpoint
         shell: bash
@@ -28,17 +28,16 @@ jobs:
           python3 - <<'PY'
           p='/tmp/ux-css-debt-030-avaliacao-profissional-reach.cjs'
           s=open(p,encoding='utf-8').read()
-          old='''  const pages=[];
-          for (const p of report.pageAssets) if ((p.css||[]).includes(TARGET)) pages.push(p.page);
-          assert(JSON.stringify(pages.sort())===JSON.stringify([PAGE]), `active reach drift ${JSON.stringify(pages)}`);'''
-          new='''  const importers=sh(`git grep -l -F 'avaliacao-profissional.css?v=' -- 'assets/css/**/*.css' 'assets/css/*.css' || true`).split(/\\r?\\n/).filter(Boolean).sort();
-          assert(JSON.stringify(importers)===JSON.stringify([FOUNDATION]), `target importer drift ${JSON.stringify(importers)}`);
-          const pages=[];
-          for (const p of report.pageAssets) if ((p.css||[]).includes(FOUNDATION)) pages.push(p.page);
-          assert(JSON.stringify(pages.sort())===JSON.stringify([PAGE]), `foundation page reach drift ${JSON.stringify(pages)}`);'''
-          if old not in s:
-              raise SystemExit('expected direct pageAssets reach assertion not found')
-          s=s.replace(old,new)
+          scope=s.index('function verifyReach()')
+          start=s.index('  const pages=[];', scope)
+          end=s.index('  console.log(`STATIC REACH PASS', start)
+          new='''  const importers=sh(`git grep -l -F 'avaliacao-profissional.css?v=' -- assets/css || true`).split(/\\r?\\n/).filter(Boolean).sort();
+            assert(JSON.stringify(importers)===JSON.stringify([FOUNDATION]), `target importer drift ${JSON.stringify(importers)}`);
+            const pages=[];
+            for (const p of report.pageAssets) if ((p.css||[]).includes(FOUNDATION)) pages.push(p.page);
+            assert(JSON.stringify(pages.sort())===JSON.stringify([PAGE]), `foundation page reach drift ${JSON.stringify(pages)}`);
+          '''
+          s=s[:start]+new+s[end:]
           open(p,'w',encoding='utf-8').write(s)
           PY
           git fetch origin "${TARGET_SHA}" --depth=1
