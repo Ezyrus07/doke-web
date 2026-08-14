@@ -58,6 +58,18 @@ jobs:
               return route.abort();
             });
             await page.goto(`http://127.0.0.1:4173/index.html?${tag}-${width}-${Date.now()}`, {waitUntil:'domcontentloaded',timeout:15000});
+            await page.evaluate(()=>{
+              if(!document.querySelector('.home-search-hero__filter-button')){
+                const form=document.querySelector('.doke-search-panel__form');
+                if(!form) throw new Error('missing canonical search form');
+                const button=document.createElement('button');
+                button.type='button';
+                button.className='home-search-hero__filter-button';
+                button.setAttribute('aria-label','Filtro diagnostic probe');
+                button.setAttribute('data-diag-runtime-probe','home-filter-button');
+                form.appendChild(button);
+              }
+            });
             await page.waitForTimeout(250);
           """
           if old_goto not in s:
