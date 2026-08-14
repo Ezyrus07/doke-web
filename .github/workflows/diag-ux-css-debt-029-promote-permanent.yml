@@ -1,0 +1,84 @@
+name: Doke UX-CSS-DEBT-029 Promote Permanent
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-029-promote-permanent
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: baf6adc3dffcb875ff9442be4c808bad589d4cf4
+      TARGET_CSS: assets/css/pages/pedidos/orders-chat.css
+      TARGET_BLOB: f7d980dd5839493bf5c45a09adcbf654ee51a5ff
+      TARGET_HASH: cf3b47b22e32f5711cef7b42d43eb2d9a3af8394cd86c2c380f0b63012bd6be3
+      PERM_BRANCH: ux/ux-css-debt-029-orders-chat-compaction
+    steps:
+      - name: Checkout diagnostic harness
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+
+      - name: Preserve promotion helper
+        run: |
+          set -euo pipefail
+          cp .github/diagnostics/ux-css-debt-029-promote.cjs /tmp/ux-css-debt-029-promote.cjs
+          node --check /tmp/ux-css-debt-029-promote.cjs
+
+      - name: Checkout exact certified UX-CSS-DEBT-028 parent
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+          clean: true
+          persist-credentials: true
+
+      - name: Guard exact parent and empty permanent namespace
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git hash-object "$TARGET_CSS")" = "$TARGET_BLOB"
+          test -z "$(git status --porcelain)"
+          if git ls-remote --exit-code --heads origin "refs/heads/$PERM_BRANCH" >/dev/null 2>&1; then
+            echo "permanent branch already exists: $PERM_BRANCH" >&2
+            exit 1
+          fi
+          echo "PROMOTION PARENT PASS|sha=$TARGET_SHA|blob=$TARGET_BLOB|permanentNamespace=absent"
+
+      - name: Build exact candidate on permanent branch
+        run: |
+          set -euo pipefail
+          git switch -c "$PERM_BRANCH"
+          node /tmp/ux-css-debt-029-promote.cjs
+          test "$(sha256sum "$TARGET_CSS" | awk '{print $1}')" = "$TARGET_HASH"
+          test "$(git diff --name-only)" = "$TARGET_CSS"
+          read -r add del file < <(git diff --numstat -- "$TARGET_CSS")
+          test "$add" = "0" && test "$del" = "12" && test "$file" = "$TARGET_CSS"
+
+      - name: Commit exact permanent product delta
+        run: |
+          set -euo pipefail
+          git config user.name "doke"
+          git config user.email "bielantoniomma@gmail.com"
+          git add "$TARGET_CSS"
+          git commit -m "UX-CSS-DEBT-029: compact superseded orders chat declarations"
+          COMMIT="$(git rev-parse HEAD)"
+          test "$(git rev-parse HEAD^)" = "$TARGET_SHA"
+          test "$(git diff --name-only "$TARGET_SHA"...HEAD)" = "$TARGET_CSS"
+          read -r add del file < <(git diff --numstat "$TARGET_SHA"...HEAD -- "$TARGET_CSS")
+          test "$add" = "0" && test "$del" = "12" && test "$file" = "$TARGET_CSS"
+          test "$(sha256sum "$TARGET_CSS" | awk '{print $1}')" = "$TARGET_HASH"
+          echo "PERMANENT COMMIT PASS|sha=$COMMIT|parent=$TARGET_SHA|hash=$TARGET_HASH|files=1|additions=0|deletions=12"
+
+      - name: Publish permanent branch
+        run: |
+          set -euo pipefail
+          COMMIT="$(git rev-parse HEAD)"
+          git push origin "HEAD:refs/heads/$PERM_BRANCH"
+          REMOTE="$(git ls-remote --heads origin "refs/heads/$PERM_BRANCH" | awk '{print $1}')"
+          test "$REMOTE" = "$COMMIT"
+          echo "PROMOTION FINAL PASS|branch=$PERM_BRANCH|sha=$COMMIT|parent=$TARGET_SHA|hash=$TARGET_HASH|files=1|additions=0|deletions=12|prCreated=0"
