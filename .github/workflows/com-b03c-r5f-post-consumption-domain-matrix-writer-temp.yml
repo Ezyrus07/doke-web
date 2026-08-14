@@ -1,0 +1,142 @@
+name: COM-B03C-R5F Post-Consumption Domain Matrix Reconciler
+
+on:
+  push:
+    branches: [com/com-001-baseline-audit]
+    paths:
+      - '.github/workflows/com-b03c-r5f-post-consumption-domain-matrix-writer-temp.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: com-b03c-r5f-post-consumption-domain-matrix-writer-temp
+  cancel-in-progress: false
+
+env:
+  EXPECTED_PARENT: 9e11fd5da5d30af19c33e960cc93c3f907342587
+  R5F_CERTIFIED_ISSUER_HEAD: 5f60bc2d9fecd35570c99c91e64d06201e0bbb82
+  RECEIPT_BLOB: 12a1e21253759ae334ee6c9bf423cfe3ea7d27f4
+  TARGET_BRANCH: com/com-001-baseline-audit
+  WRITER_PATH: .github/workflows/com-b03c-r5f-post-consumption-domain-matrix-writer-temp.yml
+  RECEIPT_PATH: config/com-b03c-r5f-r5e-fresh-execution-authorization-consumption.json
+  TRIGGER_PATH: config/com-b03c-r5c-single-use-corrected-terminal-observation-trigger.json
+  MATRIX_MD: docs/DOMAIN-COMPLETION-MATRIX.md
+  MATRIX_JSON: reports/generated/domain-completion-matrix-report.json
+
+jobs:
+  reconcile-and-remove:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.ref_name }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Fail-closed writer installation lineage
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${GITHUB_EVENT_NAME}" = "push"
+          test "${GITHUB_REF}" = "refs/heads/${TARGET_BRANCH}"
+          test "${GITHUB_RUN_ATTEMPT}" = "1"
+          test "$(git rev-parse HEAD^)" = "${EXPECTED_PARENT}"
+          changed="$(git diff-tree --no-commit-id --name-only -r HEAD)"
+          test "${changed}" = "${WRITER_PATH}"
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+      - name: Validate consumed R5F receipt and no remote authority
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f "${RECEIPT_PATH}"
+          test "$(git rev-parse HEAD:${RECEIPT_PATH})" = "${RECEIPT_BLOB}"
+          test ! -e "${TRIGGER_PATH}"
+          node --check backend/modules/communities/community-realtime-private-auth-r5f.js
+          node - <<'NODE'
+          const r5f = require('./backend/modules/communities/community-realtime-private-auth-r5f');
+          const receipt = require('./config/com-b03c-r5f-r5e-fresh-execution-authorization-consumption.json');
+          const issuerEvidenceHead = process.env.R5F_CERTIFIED_ISSUER_HEAD;
+          const result = r5f.validateConsumedReceiptDescriptor({ receipt, issuerEvidenceHead });
+          if (result.decision !== 'consumed_r5e_bound_execution_authorization_receipt_valid_repository_only') process.exit(1);
+          if (result.authorizationConsumed !== true || result.authorizationReusable !== false ||
+              result.reusableAfterFailure !== false || result.triggerCreationAuthority !== false ||
+              result.remoteExecutionAuthority !== false || result.exactRootCauseProven !== false ||
+              result.causalPromotionAllowed !== false) process.exit(1);
+          try {
+            r5f.assertRemoteExecutionBoundaryAbsent();
+            process.exit(1);
+          } catch (error) {
+            if (error?.code !== r5f.REMOTE_EXECUTION_BLOCK_CODE) throw error;
+          }
+          NODE
+      - name: Preserve certified R5E R5D R5B R4Z and R5F lineage
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -z "$(git diff --name-only "${R5F_CERTIFIED_ISSUER_HEAD}" HEAD -- \
+            backend/modules/communities/community-realtime-private-auth-r5f.js \
+            config/com-b03c-r5f-r5e-bound-r5d-execution-authorization-issuance-consumption-readiness.json \
+            docs/validation/COM-B03C-R5F-R5E-BOUND-R5D-EXECUTION-AUTHORIZATION-ISSUANCE-CONSUMPTION-READINESS.json \
+            backend/modules/communities/community-realtime-private-auth-r5e.js \
+            config/com-b03c-r5e-fresh-head-bound-r5d-execution-authorization-lifecycle-readiness.json \
+            backend/modules/communities/community-realtime-private-auth-r5d.js \
+            config/com-b03c-r5b-r5a-fresh-authorization-consumption.json \
+            scripts/build-com-b03c-r4z-corrected-terminal-realtime-bridge.js)"
+      - name: Remove writer before canonical generation
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rm -- "${WRITER_PATH}"
+      - name: Generate canonical Domain Completion Matrix outputs
+        run: npm run write:domain-completion-matrix
+      - name: Enforce final reconciliation scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual="$(git diff HEAD --name-only | sort)"
+          printf '%s\n' "${actual}" | grep -qx "${WRITER_PATH}"
+          printf '%s\n' "${actual}" | grep -qx "${MATRIX_MD}"
+          while IFS= read -r file; do
+            [ -z "${file}" ] && continue
+            case "${file}" in
+              "${WRITER_PATH}"|"${MATRIX_MD}"|"${MATRIX_JSON}") ;;
+              *) echo "unauthorized final path: ${file}" >&2; exit 1 ;;
+            esac
+          done <<< "${actual}"
+          test -z "$(git ls-files --others --exclude-standard)"
+          git diff HEAD --check
+      - name: Domain Completion Matrix
+        run: npm run audit:domain-completion-matrix
+      - name: Agent Governance
+        run: npm run audit:agent-governance
+      - name: Stage and verify exact final scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add -- "${MATRIX_MD}"
+          git add -f -- "${MATRIX_JSON}"
+          staged="$(git diff --cached --name-only | sort)"
+          printf '%s\n' "${staged}" | grep -qx "${WRITER_PATH}"
+          printf '%s\n' "${staged}" | grep -qx "${MATRIX_MD}"
+          while IFS= read -r file; do
+            [ -z "${file}" ] && continue
+            case "${file}" in
+              "${WRITER_PATH}"|"${MATRIX_MD}"|"${MATRIX_JSON}") ;;
+              *) echo "unauthorized staged path: ${file}" >&2; exit 1 ;;
+            esac
+          done <<< "${staged}"
+          git diff --cached --check
+      - name: Commit reconciled outputs and certify clean tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'docs(com): reconcile matrix after R5F authorization consumption'
+          git commit --allow-empty -m 'chore: certify R5F post-consumption reconciled tree'
+          git push origin "HEAD:${TARGET_BRANCH}"
