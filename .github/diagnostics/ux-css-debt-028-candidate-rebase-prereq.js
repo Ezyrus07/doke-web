@@ -50,9 +50,14 @@ one(
 );
 
 one(
-  "if(!root||!root.classList.contains('doke-worker-card'))throw new Error('ownership fixture precondition missing');\n                  root.classList.remove('doke-worker-card');",
-  "if(!root)throw new Error('worker preview root missing');\n                  if(root.classList.contains('doke-worker-card'))throw new Error('certified ownership prerequisite regressed');",
-  'runtime ownership precondition'
+  "if(!root||!root.classList.contains('doke-worker-card'))throw new Error('ownership fixture precondition missing');",
+  "if(!root)throw new Error('worker preview root missing');if(root.classList.contains('doke-worker-card'))throw new Error('certified ownership prerequisite regressed');",
+  'runtime ownership assertion'
+);
+one(
+  "root.classList.remove('doke-worker-card');",
+  'void 0;',
+  'runtime ownership fixture removal'
 );
 
 const fixtureMarkers = script.split('ownershipFixture=dom-only').length - 1;
