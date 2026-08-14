@@ -1,0 +1,158 @@
+name: Doke UX-CSS-DEBT-028 Candidate Revalidation on Prerequisite
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-028-candidate-rebase-prereq-r1
+
+permissions:
+  contents: read
+
+jobs:
+  candidate-revalidate:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 2b4fda807a207f3a7c4a93a35a69a5401ee330dc
+      TARGET_CSS: assets/css/pages/home-overlays/workers-feed-base.css
+      TARGET_BLOB: 59b2304099888c9bab059c9db133c20107122a05
+      INDEX_BLOB: a3b2bffb4fd6bc4208b40930b621a9c54ce22cea
+      RESULTS_BLOB: 9b4431143ef80dafc70788bfa5c96ebf6460b5d1
+      HARNESS_SHA: 7c2340b12a8c4273759aabb121644cc9c798e6f4
+      EXPECTED_CANDIDATE_SHA256: 5c41013a124efaf1e9b03912a854f14d033e11be49234b35130bfedbb5406c95
+    steps:
+      - name: Checkout exact certified prerequisite parent
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 0
+          clean: true
+
+      - name: Guard exact parent, CSS authority and permanent ownership prerequisite
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git hash-object "$TARGET_CSS")" = "$TARGET_BLOB"
+          test "$(git hash-object index.html)" = "$INDEX_BLOB"
+          test "$(git hash-object resultados.html)" = "$RESULTS_BLOB"
+          test -z "$(git status --porcelain)"
+          node <<'NODE'
+          const fs=require('fs');
+          let roots=0;
+          let legitimate=0;
+          for(const file of ['index.html','resultados.html']){
+            const html=fs.readFileSync(file,'utf8');
+            for(const root of ['worker-preview','before-after-preview']){
+              const re=new RegExp(`<section\\s+class="([^"]*\\b${root}\\b[^"]*)"[^>]*data-${root}`);
+              const m=html.match(re);
+              if(!m) throw new Error(`${file}: missing ${root} root`);
+              const classes=m[1].split(/\s+/);
+              if(classes.includes('doke-worker-card')) throw new Error(`${file}: ${root} ownership regression`);
+              if(!classes.includes('doke-overlay')||!classes.includes('doke-overlay--media')) throw new Error(`${file}: ${root} lost overlay authority`);
+              roots++;
+            }
+            legitimate+=(html.match(/\bdoke-worker-card\b/g)||[]).length;
+          }
+          if(roots!==4) throw new Error(`overlay roots ${roots}`);
+          if(legitimate!==7) throw new Error(`legitimate worker-card tokens ${legitimate}`);
+          console.log(`PREREQUISITE AUTHORITY PASS|sha=${process.env.TARGET_SHA}|overlayRoots=${roots}|misowned=0|legitimateWorkerCardTokens=${legitimate}`);
+          NODE
+          echo "PARENT AUTHORITY PASS|sha=$TARGET_SHA|targetBlob=$TARGET_BLOB|indexBlob=$INDEX_BLOB|resultadosBlob=$RESULTS_BLOB"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies and generate parent responsive baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install --with-deps chromium
+          npm run audit:active-legacy-structures
+          node scripts/generate-responsive-index-baseline.js
+          test -s reports/responsive-index-baseline.json
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          echo 'PARENT RESPONSIVE BASELINE PASS|beforeCandidate=1|parent=certified-prerequisite'
+
+      - name: Extract proven R17 candidate harness and bind it to certified prerequisite
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin "$HARNESS_SHA"
+          git cat-file -e "$HARNESS_SHA^{commit}"
+          git show "$HARNESS_SHA:.github/workflows/diag-ux-css-debt-028-workers-feed-reach.yml" > /tmp/r17.yml
+          python - <<'PY'
+          from pathlib import Path
+          import os
+
+          src=Path('/tmp/r17.yml').read_text()
+          start="          cat > /tmp/ux-css-debt-028-candidate.js <<'JS'\n"
+          end="\n          JS\n"
+          a=src.find(start)
+          if a<0: raise SystemExit('R17 heredoc start missing')
+          b=src.find(end,a+len(start))
+          if b<0: raise SystemExit('R17 heredoc end missing')
+          body=src[a+len(start):b]
+          lines=[line[10:] if line.startswith('          ') else line for line in body.splitlines()]
+          script='\n'.join(lines)+'\n'
+
+          def one(old,new,label):
+            global script
+            n=script.count(old)
+            if n!=1: raise SystemExit(f'{label}: expected 1, got {n}')
+            script=script.replace(old,new)
+
+          one("const TARGET_SHA='e648173f3f98966e3f5bf15413bec3c08f97aab1';",f"const TARGET_SHA='{os.environ['TARGET_SHA']}';",'target sha')
+          one("const INDEX_BLOB='266e4323115909cf174bafb361a33b19dd7d5433';",f"const INDEX_BLOB='{os.environ['INDEX_BLOB']}';",'index blob')
+          one("const RESULTS_BLOB='fc9833984725957829311d31037a2e3dad86c4f7';",f"const RESULTS_BLOB='{os.environ['RESULTS_BLOB']}';",'results blob')
+
+          old_ownership="if(!root||!root.classList.contains('doke-worker-card'))throw new Error('ownership fixture precondition missing');\n                  root.classList.remove('doke-worker-card');"
+          new_ownership="if(!root)throw new Error('worker preview root missing');\n                  if(root.classList.contains('doke-worker-card'))throw new Error('certified ownership prerequisite regressed');"
+          one(old_ownership,new_ownership,'ownership runtime precondition')
+
+          count=script.count('ownershipFixture=dom-only')
+          if count!=2: raise SystemExit(f'ownership marker count {count}')
+          script=script.replace('ownershipFixture=dom-only','ownershipPrerequisite=certified-parent')
+          one('ownershipPrerequisite=external','ownershipPrerequisite=certified-parent-exact','final ownership marker')
+
+          one("const build=buildCandidate();",f"const build=buildCandidate();assert(build.hash==='{os.environ['EXPECTED_CANDIDATE_SHA256']}',`candidate hash drift ${{build.hash}}`);",'candidate hash guard')
+
+          old_scope="assert(cp.execFileSync('git',['diff','--name-only'],{encoding:'utf8'}).trim()===TARGET,'post-audit product scope drift');"
+          new_scope="const productScope=cp.execFileSync('git',['diff','--name-only','--','assets','index.html','resultados.html'],{encoding:'utf8'}).trim();assert(productScope===TARGET,`post-audit product scope drift: ${productScope}`);const finalNum=cp.execFileSync('git',['diff','--numstat','--',TARGET],{encoding:'utf8'}).trim().split(/\\s+/);assert(finalNum[0]==='0'&&finalNum[1]==='6',`post-audit target delta ${finalNum.join('/')}`);assert(cp.spawnSync('git',['diff','--quiet','--','index.html','resultados.html']).status===0,'certified prerequisite HTML drift');assert(crypto.createHash('sha256').update(fs.readFileSync(TARGET)).digest('hex')===build.hash,'post-audit target hash drift');"
+          one(old_scope,new_scope,'post-audit product scope')
+
+          Path('/tmp/ux-css-debt-028-candidate.js').write_text(script)
+          print(f"HARNESS REBASE PASS|source={os.environ['HARNESS_SHA']}|parent={os.environ['TARGET_SHA']}|candidateHash={os.environ['EXPECTED_CANDIDATE_SHA256']}|ownershipFixture=removed")
+          PY
+          node --check /tmp/ux-css-debt-028-candidate.js
+
+      - name: Run exact CSS-only candidate revalidation
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s reports/responsive-index-baseline.json
+          node /tmp/ux-css-debt-028-candidate.js
+
+      - name: Restore exact certified prerequisite parent
+        if: always()
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+          clean: true
+
+      - name: Verify exact restored checkpoint
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git hash-object "$TARGET_CSS")" = "$TARGET_BLOB"
+          test "$(git hash-object index.html)" = "$INDEX_BLOB"
+          test "$(git hash-object resultados.html)" = "$RESULTS_BLOB"
+          test ! -e reports/responsive-index-baseline.json
+          test -z "$(git status --porcelain)"
+          echo "CHECKPOINT PASS|sha=$TARGET_SHA|productMutation=0|candidatePermanentPromotion=0|generatedArtifactsCleaned=1"
