@@ -27,7 +27,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD^)" = "4f30d1b66b9778828e6aa8c4a9acb9c7ece40036"
+          test "$(git rev-parse HEAD^)" = "7c59d1edad15bf701fd8afd72e3064719727a926"
           test "$(git diff --name-only HEAD^ HEAD)" = ".github/workflows/com-b03c-r5h-trigger-certification-matrix-writer-temp.yml"
           test "${GITHUB_RUN_ATTEMPT}" = "1"
       - name: R5H syntax and repository certification self-test
@@ -77,7 +77,8 @@ jobs:
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -A .github/workflows/com-b03c-r5h-trigger-certification-matrix-writer-temp.yml config/domain-completion-matrix.json docs/DOMAIN-COMPLETION-MATRIX.md docs/HOME-AUTHORITY-CLASSIFICATION.md docs/PAGE-ASSET-AUTHORITY-MATRIX.md reports/generated/domain-completion-matrix-report.json
+          git add -A .github/workflows/com-b03c-r5h-trigger-certification-matrix-writer-temp.yml config/domain-completion-matrix.json docs/DOMAIN-COMPLETION-MATRIX.md docs/HOME-AUTHORITY-CLASSIFICATION.md docs/PAGE-ASSET-AUTHORITY-MATRIX.md
+          git add -f reports/generated/domain-completion-matrix-report.json
           staged="$(git diff --cached --name-only)"
           test -n "$staged" || { echo 'R5H_RECONCILIATION_EMPTY_UNEXPECTED'; exit 1; }
           printf '%s\n' "$staged" | grep -Ev '^(\.github/workflows/com-b03c-r5h-trigger-certification-matrix-writer-temp\.yml|config/domain-completion-matrix\.json|docs/DOMAIN-COMPLETION-MATRIX\.md|docs/HOME-AUTHORITY-CLASSIFICATION\.md|docs/PAGE-ASSET-AUTHORITY-MATRIX\.md|reports/generated/domain-completion-matrix-report\.json)$' && exit 1 || true
