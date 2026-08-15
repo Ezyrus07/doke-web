@@ -1,0 +1,150 @@
+name: Doke UX-CSS-DEBT-033 Carteira Responsive Contract Candidate
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-033-carteira-responsive-contract-candidate-r1
+
+permissions:
+  contents: read
+
+jobs:
+  candidate:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 3290b1485476af247fdcf822f9381b8d220f083a
+      PARENT_SHA: 5b0dbde506b210d5a4a25897abdb55ae9432cea7
+      TARGET_CSS: assets/css/pages/carteira/responsive-contract.css
+      TARGET_BLOB: dea9e0fcaa5b112a2458789f3dc1d88ed15370b4
+    steps:
+      - name: Checkout diagnostic harness
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          clean: true
+
+      - name: Preserve helpers outside product worktree
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp .github/diagnostics/ux-css-debt-033-carteira-responsive-contract-candidate.cjs /tmp/ux-css-debt-033-carteira-responsive-contract-candidate.cjs
+          cp .github/diagnostics/ux-css-debt-033-candidate-residual.cjs /tmp/ux-css-debt-033-candidate-residual.cjs
+          node --check /tmp/ux-css-debt-033-carteira-responsive-contract-candidate.cjs
+          node --check /tmp/ux-css-debt-033-candidate-residual.cjs
+
+      - name: Checkout exact certified UX-CSS-DEBT-032 parent
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 0
+          clean: true
+
+      - name: Guard exact parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git hash-object "$TARGET_CSS")" = "$TARGET_BLOB"
+          test -z "$(git status --porcelain)"
+          git diff --check
+          echo "PARENT PASS|sha=$TARGET_SHA|parent=$PARENT_SHA|blob=$TARGET_BLOB"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies and generate parent responsive baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install --with-deps chromium
+          npm run audit:active-legacy-structures
+          node scripts/generate-responsive-index-baseline.js
+          test -s reports/responsive-index-baseline.json
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          echo "PARENT RESPONSIVE BASELINE PASS|beforeCandidate=1|parent=$TARGET_SHA"
+
+      - name: Build exact CSS-only candidate and prove R2 runtime parity
+        shell: bash
+        run: |
+          set -euo pipefail
+          NODE_PATH="$PWD/node_modules" node /tmp/ux-css-debt-033-carteira-responsive-contract-candidate.cjs
+          test -s /tmp/ux-css-debt-033-candidate-hash
+          test -s /tmp/ux-css-debt-033-candidate-bytes
+          test "$(git diff --name-only -- assets)" = "$TARGET_CSS"
+          read -r add del file < <(git diff --numstat -- "$TARGET_CSS")
+          test "$add" = "0" && test "$del" = "45" && test "$file" = "$TARGET_CSS"
+          echo "CANDIDATE HASH|$(cat /tmp/ux-css-debt-033-candidate-hash)"
+          echo "CANDIDATE BYTES|$(cat /tmp/ux-css-debt-033-candidate-bytes)"
+
+      - name: Responsive and governance gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run test:responsive-contract | tee /tmp/responsive.log
+          grep -q 'Responsive contract test: PASS' /tmp/responsive.log
+          grep -q 'Checks: 893' /tmp/responsive.log
+          grep -q 'Failures: 0' /tmp/responsive.log
+          grep -q 'Skips: 277' /tmp/responsive.log
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/conflicts.log
+          grep -q 'Conflicting class/property pairs: 339' /tmp/conflicts.log
+          npm run audit:agent-governance
+          npm run audit:shared-app-header-contract
+          npm run audit:mobile-shell-location-contract
+          npm run audit:responsive-boundaries
+          npm run audit:duplicate-assets | tee /tmp/dup.log
+          grep -q 'Duplicate groups: 0' /tmp/dup.log
+          grep -q 'Duplicated files: 0' /tmp/dup.log
+          npm run audit:domain-completion-matrix | tee /tmp/domain.log
+          grep -q 'Domains: 23' /tmp/domain.log
+          grep -q 'Critical flows: 15' /tmp/domain.log
+          grep -q 'Average maturity: 2.91/6' /tmp/domain.log
+          grep -q 'Critical blockers: 12' /tmp/domain.log
+          echo 'GOVERNANCE PASS|responsive=893/0/277|conflicts=339|domain=23/15/2.91/12|duplicates=0/0'
+
+      - name: Recalculate exact CSS residual
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:active-legacy-structures
+          node /tmp/ux-css-debt-033-candidate-residual.cjs
+
+      - name: Final candidate scope and identity guard
+        shell: bash
+        run: |
+          set -euo pipefail
+          HASH="$(tr -d '\r\n' < /tmp/ux-css-debt-033-candidate-hash)"
+          BYTES="$(tr -d '\r\n' < /tmp/ux-css-debt-033-candidate-bytes)"
+          test -n "$HASH" && test -n "$BYTES"
+          test "$(sha256sum "$TARGET_CSS" | awk '{print $1}')" = "$HASH"
+          test "$(wc -c < "$TARGET_CSS" | tr -d ' ')" = "$BYTES"
+          test "$(git diff --name-only -- assets)" = "$TARGET_CSS"
+          read -r add del file < <(git diff --numstat -- "$TARGET_CSS")
+          test "$add" = "0" && test "$del" = "45" && test "$file" = "$TARGET_CSS"
+          git diff --check
+          echo "CANDIDATE FINAL PASS|hash=$HASH|bytes=$BYTES|files=1|additions=0|deletions=45|decl=763->718|dead=45->0|residual=41/1168/0|conflicts=339|responsive=893/0/277|page=carteira.html"
+
+      - name: Restore exact certified parent
+        if: always()
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+          clean: true
+
+      - name: Verify exact restored checkpoint
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git hash-object "$TARGET_CSS")" = "$TARGET_BLOB"
+          test ! -e reports/responsive-index-baseline.json
+          test -z "$(git status --porcelain)"
+          echo "CHECKPOINT PASS|sha=$TARGET_SHA|productMutation=0|candidatePermanentPromotion=0|generatedArtifactsCleaned=1"
