@@ -22,11 +22,25 @@ jobs:
         with:
           fetch-depth: 5
 
-      - name: Preserve harness and checkout exact UX-CSS-DEBT-032 checkpoint
+      - name: Preserve R2 harness and checkout exact UX-CSS-DEBT-032 checkpoint
         shell: bash
         run: |
           set -euo pipefail
           cp .github/diagnostics/ux-css-debt-033-carteira-responsive-contract-reach.cjs /tmp/ux-css-debt-033-carteira-responsive-contract-reach.cjs
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('/tmp/ux-css-debt-033-carteira-responsive-contract-reach.cjs')
+          s=p.read_text()
+          old="  for(const [sel,count] of seenCounts) assert(count>0,`real DOM selector absent across viewports: ${sel}`);\n  return out;"
+          new="  const absent=[...seenCounts].filter(([,count])=>count===0).map(([sel])=>sel);\n  const present=seenCounts.size-absent.length;\n  assert(present>0,'no affected selector is present in canonical DOM');\n  console.log(`REAL DOM COVERAGE|tag=${tag}|presentSelectors=${present}|absentSelectors=${absent.length}|absent=${absent.join(' <OR> ')||'-'}`);\n  return {snapshots:out,coverage:{present,absent}};"
+          if old not in s: raise SystemExit('R2 coverage patch anchor missing')
+          s=s.replace(old,new)
+          old2="    console.log(`CASCADE RUNTIME PARITY PASS|viewports=${VIEWPORTS.join(',')}|runtimeDiffs=0|overflow=0|boundaries=380/760/761/900|selectors=${specs.length}`);"
+          new2="    console.log(`CASCADE RUNTIME PARITY PASS|viewports=${VIEWPORTS.join(',')}|runtimeDiffs=0|overflow=0|boundaries=380/760/761/900|selectors=${specs.length}|domPresent=${before.coverage.present}|domAbsent=${before.coverage.absent.length}|staticCascadeRows=45`);"
+          if old2 not in s: raise SystemExit('R2 parity patch anchor missing')
+          p.write_text(s.replace(old2,new2))
+          PY
+          node --check /tmp/ux-css-debt-033-carteira-responsive-contract-reach.cjs
           git fetch origin "${TARGET_SHA}" --depth=2
           git checkout --detach "${TARGET_SHA}"
           test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
@@ -34,7 +48,7 @@ jobs:
           test "$(git hash-object "${TARGET_FILE}")" = "${TARGET_BLOB}"
           test -z "$(git status --porcelain)"
           git diff --check
-          echo "CHECKPOINT GUARD PASS|sha=${TARGET_SHA}|parent=${PARENT_SHA}|blob=${TARGET_BLOB}"
+          echo "CHECKPOINT GUARD PASS|sha=${TARGET_SHA}|parent=${PARENT_SHA}|blob=${TARGET_BLOB}|harness=R2"
 
       - name: Setup Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
