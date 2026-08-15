@@ -1,0 +1,152 @@
+name: COM-B03C R5H Matrix Semantic Reconciliation TEMP
+
+on:
+  push:
+    branches: [com/com-001-baseline-audit]
+    paths:
+      - '.github/workflows/com-b03c-r5h-matrix-semantic-reconciliation-temp.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  reconcile:
+    if: github.run_attempt == 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - run: npm ci --ignore-scripts
+
+      - name: Exact repository-only writer boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          workflow=.github/workflows/com-b03c-r5h-matrix-semantic-reconciliation-temp.yml
+          test "$(git rev-parse HEAD^)" = "a06de307f580c6b787a4c233a342a28a751f3621"
+          test "$(git diff --name-only HEAD^ HEAD)" = "$workflow"
+          test "${GITHUB_RUN_ATTEMPT}" = "1"
+          test "$(git rev-parse HEAD^:backend/modules/communities/community-realtime-private-auth-r5h.js)" = "a8f20583aa78554bcb01da8b6cb6e1e17dd99370"
+          test "$(git rev-parse HEAD^:config/com-b03c-r5c-single-use-corrected-terminal-observation-trigger.json)" = "0d8b8a39104a1de003f9097a867e51b2313bb750"
+          test "$(git rev-parse HEAD^:config/com-b03c-r5f-r5e-fresh-execution-authorization-consumption.json)" = "12a1e21253759ae334ee6c9bf423cfe3ea7d27f4"
+
+      - name: Reconcile COM-B03 semantics to certified R5H state
+        shell: bash
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const fs = require('fs');
+          const file = 'config/domain-completion-matrix.json';
+          const matrix = JSON.parse(fs.readFileSync(file, 'utf8'));
+          if (matrix.version !== '1.3.113') throw new Error('R5H_MATRIX_VERSION_DRIFT');
+          const com = matrix.domains.find((domain) => domain.id === 'COM-001');
+          if (!com) throw new Error('R5H_COM_DOMAIN_MISSING');
+          if (
+            com.maturity !== 3 ||
+            com.userFacingAuthority !== 'hybrid' ||
+            com.serverAuthority !== 'partial' ||
+            com.stagingEvidence !== 'staging_canary' ||
+            com.securityGate !== 'partial' ||
+            com.productionGate !== 'blocked'
+          ) throw new Error('R5H_COM_GATE_DRIFT');
+
+          const blocker = com.blockers.find((item) => item.id === 'COM-B03');
+          if (!blocker) throw new Error('R5H_COM_B03_MISSING');
+          const staleMarker = 'R5F now repository-prepares R5E-bound issuance/consumption while no explicit R5F authorization has been received or consumed. The future receipt and trigger remain absent';
+          if (!blocker.description.includes(staleMarker)) throw new Error('R5H_EXPECTED_STALE_BLOCKER_NOT_FOUND');
+
+          const staleAction = com.nextActions.findIndex((item) => item.startsWith('Preserve the R5F repository-only R5E-bound execution-authorization issuance/consumption readiness'));
+          if (staleAction < 0) throw new Error('R5H_EXPECTED_STALE_NEXT_ACTION_NOT_FOUND');
+
+          const addRequiredPath = (value) => {
+            if (!com.requiredPaths.includes(value)) com.requiredPaths.push(value);
+          };
+          [
+            'config/com-b03c-r5f-r5e-fresh-execution-authorization-consumption.json',
+            'backend/modules/communities/community-realtime-private-auth-r5g.js',
+            'config/com-b03c-r5g-r5f-consumed-r5d-execution-trigger-readiness.json',
+            'scripts/test-com-b03c-r5g-r5f-consumed-r5d-execution-trigger-readiness.js',
+            'docs/validation/COM-B03C-R5G-R5F-CONSUMED-R5D-EXECUTION-TRIGGER-READINESS.json',
+            '.github/workflows/com-b03c-r5g-r5f-consumed-r5d-execution-trigger-readiness.yml',
+            'config/com-b03c-r5c-single-use-corrected-terminal-observation-trigger.json',
+            'backend/modules/communities/community-realtime-private-auth-r5h.js',
+            'config/com-b03c-r5h-r5g-bound-single-use-r5d-trigger-certification.json',
+            'scripts/test-com-b03c-r5h-r5g-bound-single-use-r5d-trigger-certification.js',
+            'docs/validation/COM-B03C-R5H-R5G-BOUND-SINGLE-USE-R5D-TRIGGER-CERTIFICATION.json',
+            '.github/workflows/com-b03c-r5h-r5g-bound-single-use-r5d-trigger-certification.yml'
+          ].forEach(addRequiredPath);
+
+          const appendEvidence = (value) => {
+            if (!com.evidence.includes(value)) com.evidence.push(value);
+          };
+          appendEvidence('COM-B03C-R5G repository-certified the consumed R5F authorization receipt and R5D execution-envelope trigger readiness at head 4fc3577316f6426c12cebdd12bb6374e5c45a5f7 (run 31850460232 / job 94925137596) without creating a trigger or granting remote, staging, credential or network authority.');
+          appendEvidence('The single-use corrected-terminal-observation trigger was later materialized as the only changed file at head 3e0f5d1de27099009b4f778f6e40e3e944e00ec1 from certified R5G, with blob 0d8b8a39104a1de003f9097a867e51b2313bb750; its creation authorization is consumed, non-reusable and distinct from remote execution authority.');
+          appendEvidence('COM-B03C-R5H certified the frozen R5G-bound single-use R5D trigger at head a06de307f580c6b787a4c233a342a28a751f3621 (run 31852587738 / job 94931027687). R5H is repository-only: corrected terminal observation staging execution has not occurred, remote/staging/network/credential authority remains false, exactRootCauseProven=false and causalPromotionAllowed=false.');
+
+          blocker.description = 'Authenticated community_posts Postgres Changes is proven in staging. R3L narrowed the private Presence authorization failure to evaluation involving realtime.messages.extension without proving the exact root cause. R5B preserves the original consumed lineage receipt; R5F produced a fresh consumed execution-authorization receipt that is non-reusable; R5G certified repository-only trigger readiness; the R5D-bound single-use trigger was subsequently materialized and R5H certified it at head a06de307f580c6b787a4c233a342a28a751f3621. R5H grants no remote, staging, network, credential, Realtime subscription or runtime-change authority, and the corrected terminal observation has not executed. exactRootCauseProven=false and causalPromotionAllowed=false. Private Typing/Broadcast remains unproven and channel_messages still lacks canonical remote authority. Any corrected terminal observation staging execution is a separate boundary requiring fresh explicit single-use authorization bound to the exact current head.';
+
+          com.nextActions[staleAction] = 'Preserve the R5H frozen trigger certification without promoting Presence, Typing/Broadcast or channel_messages. Do not recreate R5H, recreate the trigger, or reuse consumed R5B/R5F/trigger-creation authorizations. Before any corrected terminal observation staging execution, determine and certify the separate remote-execution boundary and require a fresh explicit single-use authorization bound to the exact current head; generic continuation is non-authorizing.';
+
+          matrix.updatedAt = '2026-08-15T20:44:00-03:00';
+          fs.writeFileSync(file, JSON.stringify(matrix, null, 2) + '\n');
+          NODE
+
+      - name: Regenerate canonical Matrix derivatives
+        run: npm run write:domain-completion-matrix
+
+      - name: Repository governance validation
+        run: |
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git diff --check
+
+      - name: R5H semantic fail-closed assertions
+        shell: bash
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const matrix = require('./config/domain-completion-matrix.json');
+          const com = matrix.domains.find((domain) => domain.id === 'COM-001');
+          const blocker = com.blockers.find((item) => item.id === 'COM-B03');
+          if (com.maturity !== 3 || com.productionGate !== 'blocked') throw new Error('R5H_PROMOTION_FORBIDDEN');
+          if (!blocker.description.includes('R5H certified it at head a06de307f580c6b787a4c233a342a28a751f3621')) throw new Error('R5H_MATRIX_SEMANTICS_NOT_RECONCILED');
+          if (!blocker.description.includes('corrected terminal observation has not executed')) throw new Error('R5H_REMOTE_EXECUTION_FALSE_REQUIRED');
+          if (!blocker.description.includes('exactRootCauseProven=false') || !blocker.description.includes('causalPromotionAllowed=false')) throw new Error('R5H_CAUSAL_PROMOTION_BLOCK_REQUIRED');
+          if (blocker.description.includes('future receipt and trigger remain absent')) throw new Error('R5H_STALE_TRIGGER_STATE_REMAINS');
+          if (!com.nextActions.some((item) => item.includes('generic continuation is non-authorizing'))) throw new Error('R5H_FRESH_AUTHORITY_GATE_REQUIRED');
+          NODE
+
+      - name: Exact reconciliation scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          workflow=.github/workflows/com-b03c-r5h-matrix-semantic-reconciliation-temp.yml
+          rm "$workflow"
+          allowed='^(\.github/workflows/com-b03c-r5h-matrix-semantic-reconciliation-temp\.yml|config/domain-completion-matrix\.json|docs/DOMAIN-COMPLETION-MATRIX\.md|reports/generated/domain-completion-matrix-report\.json)$'
+          unexpected="$(git status --porcelain=v1 | sed -E 's/^.. //' | grep -Ev "$allowed" || true)"
+          test -z "$unexpected" || { echo "$unexpected"; exit 1; }
+          git diff --check
+
+      - name: Publish reconciled source and generated derivatives
+        shell: bash
+        run: |
+          set -euo pipefail
+          workflow=.github/workflows/com-b03c-r5h-matrix-semantic-reconciliation-temp.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A "$workflow" config/domain-completion-matrix.json docs/DOMAIN-COMPLETION-MATRIX.md
+          git add -f reports/generated/domain-completion-matrix-report.json
+          staged="$(git diff --cached --name-only)"
+          test -n "$staged" || { echo 'R5H_MATRIX_RECONCILIATION_EMPTY_UNEXPECTED'; exit 1; }
+          printf '%s\n' "$staged" | grep -Ev '^(\.github/workflows/com-b03c-r5h-matrix-semantic-reconciliation-temp\.yml|config/domain-completion-matrix\.json|docs/DOMAIN-COMPLETION-MATRIX\.md|reports/generated/domain-completion-matrix-report\.json)$' && exit 1 || true
+          git diff --cached --check
+          git commit -m 'docs(com): reconcile R5H matrix semantics'
+          git push origin HEAD:com/com-001-baseline-audit
