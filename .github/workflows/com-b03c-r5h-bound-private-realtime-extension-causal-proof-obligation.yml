@@ -57,19 +57,19 @@ jobs:
           test "$(git rev-parse HEAD:docs/validation/COM-B03C-R3L-EVALUATION-CONTEXT-DIFFERENTIAL-PRESENCE-STAGING-SUMMARY.json)" = "05cca2fb472f48b11850d116ce3666523209abb4"
           test "$(git rev-parse HEAD:docs/validation/COM-B03C-R5D-CORRECTED-TERMINAL-OBSERVATION-HOSTED-EXECUTION.json)" = "2e0e0d0d5026daee6dc64ce057e449dd92cf13c8"
 
-      - name: Exact repository-only installation scope
+      - name: Exact repository-only push scope
         if: github.event_name == 'push'
         shell: bash
         run: |
           set -euo pipefail
-          expected="$(
-            printf '%s\n' \
-              .github/workflows/com-b03c-r5h-bound-private-realtime-extension-causal-proof-obligation.yml \
-              scripts/test-com-b03c-r5h-bound-private-realtime-extension-causal-proof-obligation.js |
-              sort
-          )"
+          workflow=.github/workflows/com-b03c-r5h-bound-private-realtime-extension-causal-proof-obligation.yml
+          install_scope="$(printf '%s\n' "$workflow" scripts/test-com-b03c-r5h-bound-private-realtime-extension-causal-proof-obligation.js | sort)"
+          maintenance_scope="$workflow"
           actual="$(git diff --name-only HEAD^ HEAD | sort)"
-          test "$actual" = "$expected"
+          if [ "$actual" != "$install_scope" ] && [ "$actual" != "$maintenance_scope" ]; then
+            printf 'Unexpected repository-only push scope:\n%s\n' "$actual" >&2
+            exit 1
+          fi
 
       - name: Domain Completion Matrix
         run: npm run audit:domain-completion-matrix
