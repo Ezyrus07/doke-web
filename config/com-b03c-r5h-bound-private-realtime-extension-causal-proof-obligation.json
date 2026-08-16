@@ -1,0 +1,125 @@
+{
+  "contractId": "com-b03c-r5h-bound-private-realtime-extension-causal-proof-obligation-v1",
+  "validationId": "COM-B03C-R5H-BOUND-PRIVATE-REALTIME-EXTENSION-CAUSAL-PROOF-OBLIGATION",
+  "status": "repository_r5h_bound_private_realtime_extension_causal_proof_obligation_defined_no_remote_authority",
+  "repositoryContext": {
+    "repository": "Ezyrus07/doke-web",
+    "pullRequest": 61,
+    "branch": "com/com-001-baseline-audit",
+    "base": "rep/rep-001-baseline-audit",
+    "repositoryBaselineHead": "b8f6f94443434bae4c75f7bcbc7239011702a6c5",
+    "repositoryBaselineTree": "9d19aeb06cd81f434c90d82cf5de5dfe37baa352",
+    "matrixVersion": "1.3.113",
+    "maturity": 3,
+    "productionGate": "blocked"
+  },
+  "functionalCheckpoint": {
+    "lastFunctionalCheckpoint": "COM-B03C-R5H",
+    "r5hCertifiedHead": "a06de307f580c6b787a4c233a342a28a751f3621",
+    "r5hCertifiedTree": "6ef6a16772785200b1ddf0564b01b7da5d55abe5",
+    "r5hCertificationRun": 31852587738,
+    "r5hCertificationJob": 94931027687,
+    "r5hContractId": "com-b03c-r5h-r5g-bound-single-use-r5d-trigger-certification-v1",
+    "r5iCreated": false,
+    "r5iInferred": false
+  },
+  "causalEvidence": {
+    "r3l": {
+      "path": "docs/validation/COM-B03C-R3L-EVALUATION-CONTEXT-DIFFERENTIAL-PRESENCE-STAGING-SUMMARY.json",
+      "blob": "05cca2fb472f48b11850d116ce3666523209abb4",
+      "contractId": "com-b03c-r3l-single-use-evaluation-context-differential-presence-diagnostic-readiness-v1",
+      "run": 31388916899,
+      "runAttempt": 1,
+      "artifactId": 9062928795,
+      "artifactDigest": "sha256:039e21753387e0477ef0c3a39c19b5e7448ca005231f8ec9e05a019d0dfba51a",
+      "subscribedCaseIds": [
+        "control_true",
+        "uid_helper_direct",
+        "topic_helper_direct",
+        "row_topic_direct"
+      ],
+      "extensionDirectRejected": true,
+      "allTestedPresenceExtensionPredicateCasesRejected": true,
+      "exactRootCauseProven": false,
+      "causalPromotionAllowed": false
+    },
+    "r5dHostedExecution": {
+      "path": "docs/validation/COM-B03C-R5D-CORRECTED-TERMINAL-OBSERVATION-HOSTED-EXECUTION.json",
+      "blob": "2e0e0d0d5026daee6dc64ce057e449dd92cf13c8",
+      "contractId": "com-b03c-r5d-corrected-terminal-observation-hosted-execution-evidence-v1",
+      "authorizedBoundaryHead": "b3a5bdcd35df41ea64d14c9ff562d5615e13ce6d",
+      "receiptCommit": "9854d1950223892c16a1939198dec27eab534e16",
+      "authorizationReceiptId": "a17197d865430b0e2184117eb1ede6a8324bbd30f320dc523b05d427ee13ad24",
+      "run": 31916760689,
+      "runAttempt": 1,
+      "artifactId": 9255154728,
+      "artifactDigest": "sha256:bacf4b188b16708a7d246f40764f37269a72178da813fa71166331840610391d",
+      "terminalStatus": "CHANNEL_ERROR",
+      "joinSubscribed": false,
+      "sanitizedJoinClassification": "realtime_rls_authorization_rejected",
+      "identityCleanupSucceeded": true,
+      "zeroResidueProven": true,
+      "exactRootCauseProven": false,
+      "causalPromotionAllowed": false,
+      "rerunForbidden": true,
+      "receiptReuseForbidden": true,
+      "triggerRecreationForbidden": true
+    }
+  },
+  "proofObligation": {
+    "evaluationSurface": "realtime.messages.extension",
+    "goal": "Distinguish whether the private Presence RLS rejection is associated with an unavailable or NULL extension value, the expected presence value, or an unexpected non-NULL extension value during policy evaluation.",
+    "casesAreMutuallyExclusive": true,
+    "casesAreCollectivelyExhaustiveForExtensionValueClassification": true,
+    "cases": [
+      {
+        "id": "extension_is_null",
+        "predicate": "extension IS NULL",
+        "classification": "extension_unavailable_or_null"
+      },
+      {
+        "id": "extension_equals_presence",
+        "predicate": "extension = 'presence'",
+        "classification": "extension_expected_presence_value"
+      },
+      {
+        "id": "extension_non_null_not_presence",
+        "predicate": "extension IS NOT NULL AND extension <> 'presence'",
+        "classification": "extension_unexpected_non_null_value"
+      }
+    ],
+    "resultMustRemainObservational": true,
+    "terminalStatusAloneCannotProveCause": true,
+    "exactRootCauseProven": false,
+    "causalPromotionAllowed": false,
+    "privatePresencePromotionAllowed": false,
+    "privateTypingBroadcastProven": false,
+    "channelMessagesCanonicalRemoteAuthority": false
+  },
+  "governance": {
+    "repositoryOnlyDefinition": true,
+    "executionBoundaryDefined": false,
+    "triggerCreated": false,
+    "receiptCreated": false,
+    "executionAttempted": false,
+    "remoteExecutionAuthority": false,
+    "remoteCredentialReadAuthority": false,
+    "remoteDependencyLoadAuthority": false,
+    "networkAuthority": false,
+    "stagingReadAuthority": false,
+    "stagingMutationAuthority": false,
+    "realtimeSubscriptionAuthority": false,
+    "authIdentityLifecycleAuthority": false,
+    "runtimeChangeAuthority": false,
+    "productionAuthority": false,
+    "pullRequestMergeAuthority": false,
+    "readyForReviewAuthority": false,
+    "priorAuthorizationReuseForbidden": true,
+    "priorReceiptReuseForbidden": true,
+    "priorTriggerRecreationForbidden": true,
+    "futureRemoteProbeRequiresSeparateCertifiedExecutionBoundary": true,
+    "futureRemoteProbeRequiresFreshExplicitSingleUseAuthorization": true,
+    "futureAuthorizationMustBindExactCertifiedHeadAndResource": true,
+    "genericContinuationGrantsRemoteAuthority": false
+  }
+}
