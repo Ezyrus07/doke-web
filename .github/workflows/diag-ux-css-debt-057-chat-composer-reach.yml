@@ -1,0 +1,110 @@
+name: Doke UX-CSS-DEBT-057 Chat Composer Reach
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-057-chat-composer-reach
+
+permissions:
+  contents: read
+
+jobs:
+  reach:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 28e5d98e1d640a730b2b24457a1ebc83f743f786
+      PARENT_SHA: c03cc9a3c6aef88a83a04e11eda4e9cc0c14d931
+      TARGET_BLOB: 4d1fb1fa21f7a7e06f9afa26f0e5019747d0114c
+      TARGET_FILE: assets/css/components/chat-composer.css
+      MANIFEST: assets/css/pages/chat-workspace-foundation.css
+      MANIFEST_BLOB: 27f16f7013ad55c134d49932e62825ff3a89a6e5
+      MESSAGES_HTML: mensagens.html
+      MESSAGES_BLOB: 7259ddb38a68e911af815e2d7e628ac6d70dc945
+      COMMUNITY_HTML: comunidade-interna.html
+      COMMUNITY_BLOB: ba3923026a532fa86f0784f34c3db71a2759ee11
+    steps:
+      - name: Checkout diagnostic harness
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          clean: true
+
+      - name: Preserve harness and checkout exact UX-CSS-DEBT-056 checkpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp .github/diagnostics/ux-css-debt-057-chat-composer-reach.cjs /tmp/ux-css-debt-057-chat-composer-reach.cjs
+          node --check /tmp/ux-css-debt-057-chat-composer-reach.cjs
+          git fetch origin "${TARGET_SHA}" --depth=2
+          git checkout --detach "${TARGET_SHA}"
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test "$(git rev-parse HEAD^)" = "${PARENT_SHA}"
+          test "$(git hash-object "${TARGET_FILE}")" = "${TARGET_BLOB}"
+          test "$(git hash-object "${MANIFEST}")" = "${MANIFEST_BLOB}"
+          test "$(git hash-object "${MESSAGES_HTML}")" = "${MESSAGES_BLOB}"
+          test "$(git hash-object "${COMMUNITY_HTML}")" = "${COMMUNITY_BLOB}"
+          test -z "$(git status --porcelain)"
+          git diff --check
+          echo "CHECKPOINT GUARD PASS|sha=${TARGET_SHA}|parent=${PARENT_SHA}|target=${TARGET_BLOB}|manifest=${MANIFEST_BLOB}|pages=2|harness=R1"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies and Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install --with-deps chromium
+
+      - name: Generate canonical active graph
+        run: npm run audit:active-legacy-structures
+
+      - name: Prove two-page real-DOM runtime parity
+        shell: bash
+        run: |
+          set -euo pipefail
+          NODE_PATH="$PWD/node_modules" node /tmp/ux-css-debt-057-chat-composer-reach.cjs
+
+      - name: Preserve governance baselines
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/conflicts.log
+          grep -q 'Conflicting class/property pairs: 339' /tmp/conflicts.log
+          npm run audit:agent-governance
+          npm run audit:active-legacy-structures | tee /tmp/active.log
+          grep -q 'css files: 533 (55 direct, 401 active/imported)' /tmp/active.log
+          grep -q 'high risk active css: 37' /tmp/active.log
+          npm run audit:shared-app-header-contract
+          npm run audit:mobile-shell-location-contract
+          npm run audit:responsive-boundaries
+          npm run audit:duplicate-assets | tee /tmp/dup.log
+          grep -q 'Duplicate groups: 0' /tmp/dup.log
+          grep -q 'Duplicated files: 0' /tmp/dup.log
+          npm run audit:domain-completion-matrix | tee /tmp/domain.log
+          grep -q 'Domains: 23' /tmp/domain.log
+          grep -q 'Critical flows: 15' /tmp/domain.log
+          grep -q 'Average maturity: 2.91/6' /tmp/domain.log
+          grep -q 'Critical blockers: 12' /tmp/domain.log
+          echo 'GOVERNANCE PASS|active=401|high=37|conflicts=339|domain=23/15/2.91/12|duplicates=0/0'
+
+      - name: Verify exact restore
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "${TARGET_SHA}"
+          git clean -ffdx
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test "$(git rev-parse HEAD^)" = "${PARENT_SHA}"
+          test "$(git hash-object "${TARGET_FILE}")" = "${TARGET_BLOB}"
+          test "$(git hash-object "${MANIFEST}")" = "${MANIFEST_BLOB}"
+          test "$(git hash-object "${MESSAGES_HTML}")" = "${MESSAGES_BLOB}"
+          test "$(git hash-object "${COMMUNITY_HTML}")" = "${COMMUNITY_BLOB}"
+          test -z "$(git status --porcelain)"
+          echo "FINAL CHECKPOINT PASS|sha=${TARGET_SHA}|productMutation=0|issueCreated=0|prCreated=0"
