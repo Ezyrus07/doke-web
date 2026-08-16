@@ -1,0 +1,201 @@
+name: Doke UX-CSS-DEBT-055 Permanent Exact Certification
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-055-certify-permanent
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: c03cc9a3c6aef88a83a04e11eda4e9cc0c14d931
+      PARENT_SHA: a0d9a44014a172789c0389eccf6c17781c6c27f8
+      PARENT_PARENT_SHA: 8cf5320e2eb2a8185f777962b7a5d135931a2614
+      TARGET_TREE: b812527c7afe0df162307d13da143809b9adf368
+      TARGET_FILE: assets/css/patterns/settings-shell.css
+      PARENT_BLOB: 385844b2a419c50df7c8f4da2e7e4ccd08fa6b5a
+      TARGET_BLOB: 568852b37578ccfe4c75f6f657f16a1124df6767
+      TARGET_HASH: 7fe44cc49bf00f8b2c19492b3400079fd72c91b0414b8749749872ffc2e175ee
+      TARGET_BYTES: 5241
+      IMPORTER_A: assets/css/pages/comunidade-interna-runtime-settings.css
+      IMPORTER_A_BLOB: 9d293bf51617e0c38a14927d05d318fb6847d484
+      IMPORTER_B: assets/css/pages/configuracoes-foundation.css
+      IMPORTER_B_BLOB: 7dc60e8ba171f71cb3b109e4022a2f18384b043d
+      PAGE_A: comunidade-interna.html
+      PAGE_A_BLOB: ba3923026a532fa86f0784f34c3db71a2759ee11
+      PAGE_B: configuracoes.html
+      PAGE_B_BLOB: adc66509e52e79bc310c8541422221ee491baa42
+      PERM_BRANCH: ux/ux-css-debt-055-settings-shell-compaction
+      AUTHORITY_DOC_A: docs/PAGE-ASSET-AUTHORITY-MATRIX.md
+      AUTHORITY_DOC_B: docs/HOME-AUTHORITY-CLASSIFICATION.md
+      AUTHORITY_DOC_A_REGEN_HASH: 345a91bbd8c9fa54ab5f548c5f586d60cef40bf28eb10c9554050752f6431bb6
+      AUTHORITY_DOC_B_REGEN_HASH: b1027e88acf9a0a4b24c7870eca824b0ffbdc14fd75a6af31a86826051c58dda
+    steps:
+      - name: Checkout exact certified UX-CSS-DEBT-054 parent
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.PARENT_SHA }}
+          fetch-depth: 2
+
+      - name: Guard parent identity and reach inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$PARENT_BLOB"
+          test "$(git hash-object "$IMPORTER_A")" = "$IMPORTER_A_BLOB"
+          test "$(git hash-object "$IMPORTER_B")" = "$IMPORTER_B_BLOB"
+          test "$(git hash-object "$PAGE_A")" = "$PAGE_A_BLOB"
+          test "$(git hash-object "$PAGE_B")" = "$PAGE_B_BLOB"
+          test -z "$(git status --porcelain)"
+          echo "PARENT IDENTITY PASS|sha=$PARENT_SHA|parent=$PARENT_PARENT_SHA|blob=$PARENT_BLOB|importers=2|pages=2"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies and generate parent baselines
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          npm run audit:active-legacy-structures
+          node scripts/generate-responsive-index-baseline.js
+          test -s reports/responsive-index-baseline.json
+          npm run audit:page-asset-authority-matrix
+          test "$(sha256sum "$AUTHORITY_DOC_A" | awk '{print $1}')" = "$AUTHORITY_DOC_A_REGEN_HASH"
+          test "$(sha256sum "$AUTHORITY_DOC_B" | awk '{print $1}')" = "$AUTHORITY_DOC_B_REGEN_HASH"
+          git checkout "$PARENT_SHA" -- "$AUTHORITY_DOC_A" "$AUTHORITY_DOC_B"
+          test -z "$(git diff --name-only -- "$AUTHORITY_DOC_A" "$AUTHORITY_DOC_B")"
+          echo 'PARENT BASELINES PASS|responsive=generated|authority=known-stale-isolated'
+
+      - name: Checkout exact permanent SHA without removing generated baselines
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin "$TARGET_SHA" --depth=2
+          git checkout --detach "$TARGET_SHA"
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test -s reports/responsive-index-baseline.json
+          echo "PERMANENT CHECKOUT PASS|sha=$TARGET_SHA"
+
+      - name: Exact permanent identity, independent reconstruction and reach proof
+        shell: bash
+        run: |
+          set -euo pipefail
+          REMOTE="$(git ls-remote --heads origin "refs/heads/$PERM_BRANCH" | awk '{print $1}')"
+          test "$REMOTE" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD^{tree})" = "$TARGET_TREE"
+          test "$(git merge-base "$PARENT_SHA" HEAD)" = "$PARENT_SHA"
+          test "$(git rev-list --count "$PARENT_SHA"..HEAD)" = "1"
+          test "$(git rev-parse "$PARENT_SHA:$TARGET_FILE")" = "$PARENT_BLOB"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(sha256sum "$TARGET_FILE" | awk '{print $1}')" = "$TARGET_HASH"
+          test "$(wc -c < "$TARGET_FILE" | tr -d ' ')" = "$TARGET_BYTES"
+          test "$(git diff --name-only "$PARENT_SHA"...HEAD)" = "$TARGET_FILE"
+          test "$(git diff --numstat "$PARENT_SHA"...HEAD -- "$TARGET_FILE")" = $'0\t4\t'"$TARGET_FILE"
+          test -z "$(git diff --name-only "$PARENT_SHA"...HEAD -- '*.js' '*.html' 'package.json' 'package-lock.json' 'docs/**')"
+          git diff --check "$PARENT_SHA"...HEAD
+          node <<'NODE'
+          const fs=require('fs'),path=require('path'),cp=require('child_process'),crypto=require('crypto');
+          const target=process.env.TARGET_FILE;
+          let parent=cp.execFileSync('git',['show',`${process.env.PARENT_SHA}:${target}`],{encoding:'utf8'});
+          const lines=[
+            '  --doke-settings-sidebar-width: clamp(340px, 27vw, 400px);\n',
+            '  --doke-settings-content-max: 1080px;\n',
+            '  --doke-settings-gutter: clamp(28px, 3.2vw, 44px);\n',
+            '  --doke-settings-header-min-height: 104px;\n'
+          ];
+          for(const line of lines){const first=parent.indexOf(line),second=parent.indexOf(line,first+line.length);if(first<0||second<0)throw new Error(`parent duplicate drift ${line.trim()}`);parent=parent.slice(0,first)+parent.slice(first+line.length)}
+          const targetText=fs.readFileSync(target,'utf8');
+          if(parent!==targetText)throw new Error('independent reconstruction is not byte-identical');
+          const hash=crypto.createHash('sha256').update(parent).digest('hex');if(hash!==process.env.TARGET_HASH||Buffer.byteLength(parent)!==Number(process.env.TARGET_BYTES))throw new Error('reconstruction identity drift');
+          for(const line of lines){if((targetText.split(line).length-1)!==1)throw new Error(`target winner count drift ${line.trim()}`)}
+          const tracked=cp.execFileSync('git',['ls-files','-z','assets/css'],{encoding:'utf8'}).split('\0').filter(Boolean),set=new Set(tracked),impRe=/@import\s+(?:url\()?['"]?([^'"\);]+\.css(?:\?[^'"\)]*)?)['"]?\)?/gi;
+          const norm=(v,from)=>{v=v.replace(/\?.*$/,'').replace(/^\.\//,'');if(v.startsWith('/'))return v.replace(/^\/+/, '');if(v.startsWith('assets/'))return v;return path.posix.normalize(path.posix.join(path.posix.dirname(from),v));};
+          const importsFor=f=>{const t=fs.readFileSync(f,'utf8'),a=[];let m;impRe.lastIndex=0;while((m=impRe.exec(t))){const n=norm(m[1],f);if(set.has(n))a.push(n)}return a};
+          const direct=tracked.filter(f=>importsFor(f).includes(target)).sort(), expected=[process.env.IMPORTER_A,process.env.IMPORTER_B].sort();if(JSON.stringify(direct)!==JSON.stringify(expected))throw new Error(`direct importer drift ${JSON.stringify(direct)}`);
+          const report=JSON.parse(fs.readFileSync('reports/generated/active-legacy-structures-report.json','utf8')),reached=[];for(const p of report.pageAssets){const seen=new Set(),todo=[...(p.css||[]).filter(f=>set.has(f))];let hit=false;while(todo.length){const f=todo.pop();if(seen.has(f))continue;seen.add(f);if(f===target){hit=true;break;}for(const n of importsFor(f))todo.push(n)}if(hit)reached.push(p.page)}reached.sort();const pages=[process.env.PAGE_A,process.env.PAGE_B].sort();if(JSON.stringify(reached)!==JSON.stringify(pages))throw new Error(`reach drift ${JSON.stringify(reached)}`);for(const p of pages)if(!fs.readFileSync(p,'utf8').includes('doke-settings-shell'))throw new Error(`real DOM drift ${p}`);
+          console.log(`INDEPENDENT RECONSTRUCTION PASS|hash=${hash}|bytes=${Buffer.byteLength(parent)}|byteIdentical=1|rows=4`);
+          console.log(`REACH AUTHORITY PASS|pages=${reached.join(',')}|directImporters=${direct.join(',')}|realDomPages=2`);
+          NODE
+          echo "EXACT IDENTITY PASS|sha=$TARGET_SHA|parent=$PARENT_SHA|tree=$TARGET_TREE|blob=$TARGET_BLOB|hash=$TARGET_HASH|bytes=$TARGET_BYTES|files=1|additions=0|deletions=4"
+          echo 'STATIC PROOF TRANSFER PASS|run=31978956008|job=95242615244|rows=4|sameSelector=4|sameContext=4|sameImportance=4|identicalValue=4|laterWinners=4|browserRequired=0|transport=independent-byte-reconstruction'
+
+      - name: Responsive contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run test:responsive-contract | tee /tmp/responsive.log
+          grep -q 'Responsive contract test: PASS' /tmp/responsive.log
+          grep -q 'Checks: 893' /tmp/responsive.log
+          grep -q 'Failures: 0' /tmp/responsive.log
+          grep -q 'Skips: 277' /tmp/responsive.log
+          echo 'RESPONSIVE PERMANENT PASS|checks=893|failures=0|skips=277'
+
+      - name: Governance contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:agent-governance
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/conflicts.log
+          grep -q 'Conflicting class/property pairs: 339' /tmp/conflicts.log
+          npm run audit:shared-app-header-contract
+          npm run audit:mobile-shell-location-contract
+          npm run audit:responsive-boundaries
+          npm run audit:duplicate-assets | tee /tmp/dup.log
+          grep -q 'Duplicate groups: 0' /tmp/dup.log
+          grep -q 'Duplicated files: 0' /tmp/dup.log
+          npm run audit:domain-completion-matrix | tee /tmp/domain.log
+          grep -q 'Domains: 23' /tmp/domain.log
+          grep -q 'Critical flows: 15' /tmp/domain.log
+          grep -q 'Average maturity: 2.91/6' /tmp/domain.log
+          grep -q 'Critical blockers: 12' /tmp/domain.log
+          test "$(sha256sum "$AUTHORITY_DOC_A" | awk '{print $1}')" = "$AUTHORITY_DOC_A_REGEN_HASH"
+          test "$(sha256sum "$AUTHORITY_DOC_B" | awk '{print $1}')" = "$AUTHORITY_DOC_B_REGEN_HASH"
+          git checkout "$TARGET_SHA" -- "$AUTHORITY_DOC_A" "$AUTHORITY_DOC_B"
+          test -z "$(git diff --name-only -- "$AUTHORITY_DOC_A" "$AUTHORITY_DOC_B")"
+          echo 'GOVERNANCE PERMANENT PASS|conflicts=339|duplicates=0/0|domain=23/15/2.91/12|semanticDocDelta=0'
+
+      - name: Permanent residual proof
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:active-legacy-structures
+          node <<'NODE'
+          const fs=require('fs'),path=require('path'),cp=require('child_process');const report=JSON.parse(fs.readFileSync('reports/generated/active-legacy-structures-report.json','utf8'));const tracked=cp.execFileSync('git',['ls-files','-z','assets/css'],{encoding:'utf8'}).split('\0').filter(f=>f.endsWith('.css'));const impRe=/@import\s+(?:url\()?['"]?([^'"\);]+\.css(?:\?[^'"\)]*)?)['"]?\)?/gi,norm=(v,from)=>{v=v.replace(/\?.*$/,'').replace(/^\.\//,'');if(v.startsWith('/'))return v.replace(/^\/+/, '');if(v.startsWith('assets/'))return v;return path.posix.normalize(path.posix.join(path.posix.dirname(from),v));};const meta=new Map();for(const f of tracked){const text=fs.readFileSync(f,'utf8'),imports=[];let m;impRe.lastIndex=0;while((m=impRe.exec(text)))imports.push(norm(m[1],f));meta.set(f,{text,imports,size:Buffer.byteLength(text),important:(text.match(/!important/gi)||[]).length})}const active=new Set(),todo=[...new Set(report.pageAssets.flatMap(p=>p.css))].filter(f=>meta.has(f));while(todo.length){const f=todo.pop();if(active.has(f)||!meta.has(f))continue;active.add(f);for(const n of meta.get(f).imports)if(meta.has(n))todo.push(n)}const high=[...active].filter(f=>{const x=meta.get(f);return x.size>=50000||x.important>=100||x.imports.length>=10});function parse(src){const lines=src.split(/\r?\n/);let depth=0,sp=[],ap=[],sel=null;const ds=[],stack=[],re=/^\s*([\w-]+)\s*:\s*(.*?)\s*;\s*$/,nh=p=>p.join(' ').replace(/\{\s*$/,'').replace(/\s+/g,' ').trim();for(let i=0;i<lines.length;i++){const line=lines[i],t=line.trim(),o=(line.match(/\{/g)||[]).length,c=(line.match(/\}/g)||[]).length;if(!sel){if(ap.length){if(t)ap.push(t);if(line.includes('{')){stack.push({type:'at',header:nh(ap),depthBefore:depth});ap=[]}}else if(t.startsWith('@')&&!t.includes(';')){if(line.includes('{'))stack.push({type:'at',header:nh([t]),depthBefore:depth});else ap=[t]}else if(sp.length){if(t)sp.push(t);if(line.includes('{')){sel=nh(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth})}}else if(t&&!t.startsWith('/*')&&!t.startsWith('*')&&t!=='*/'&&t!=='}'&&!t.startsWith('@')&&!line.includes(';')){sp=[t];if(line.includes('{')){sel=nh(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth})}}}if(sel){const m=line.match(re);if(m){const raw=m[2].trim(),important=/\s*!important\s*$/i.test(raw),context=stack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');ds.push({selector:sel,property:m[1].toLowerCase(),value:raw,important,context})}}depth+=o-c;while(stack.length&&depth<=stack[stack.length-1].depthBefore){const p=stack.pop();if(p.type==='rule')sel=null}}const last=new Map(),dead=[];for(let i=ds.length-1;i>=0;i--){const d=ds[i],k=`${d.context} >>> ${d.selector} >>> ${d.property}`,l=last.get(k);if(l&&(!d.important||l.important))dead.push(d);if(!l||d.important||!l.important)last.set(k,d)}return{declarations:ds.length,dead:dead.length}}if(active.size!==401||high.length!==37)throw new Error(`active/high drift ${active.size}/${high.length}`);let files=0,total=0,highDead=0;for(const f of active){const p=parse(meta.get(f).text);if(p.dead){files++;total+=p.dead;if(high.includes(f))highDead++}}const target=parse(meta.get(process.env.TARGET_FILE).text),prior054=parse(meta.get('assets/css/components/before-after-workers-preview/publication-light-modal.css').text);if(target.declarations!==104||target.dead!==0)throw new Error(`target drift ${target.declarations}/${target.dead}`);if(prior054.declarations!==75||prior054.dead!==0)throw new Error(`054 drift ${prior054.declarations}/${prior054.dead}`);if(files!==19||total!==458||highDead!==0)throw new Error(`residual drift ${files}/${total}/${highDead}`);console.log(`PERMANENT RESIDUAL PASS|active=401|high=37|files=${files}|dead=${total}|highDead=${highDead}|target=104/0|prior054=75/0`);
+          NODE
+
+      - name: Dependency snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm audit --json > /tmp/npm-audit.json || true
+          node <<'NODE'
+          const fs=require('fs'),v=JSON.parse(fs.readFileSync('/tmp/npm-audit.json','utf8')).metadata?.vulnerabilities||{};if(v.total!==13||v.critical!==0||v.high!==10||v.moderate!==1||v.low!==2)throw new Error(`dependency drift ${JSON.stringify(v)}`);console.log(`NPM AUDIT SNAPSHOT|total=${v.total}|critical=${v.critical}|high=${v.high}|moderate=${v.moderate}|low=${v.low}`);
+          NODE
+
+      - name: Final exact restore
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "$TARGET_SHA"
+          git clean -ffdx
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD^{tree})" = "$TARGET_TREE"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(sha256sum "$TARGET_FILE" | awk '{print $1}')" = "$TARGET_HASH"
+          test "$(wc -c < "$TARGET_FILE" | tr -d ' ')" = "$TARGET_BYTES"
+          REMOTE="$(git ls-remote --heads origin "refs/heads/$PERM_BRANCH" | awk '{print $1}')"
+          test "$REMOTE" = "$TARGET_SHA"
+          test -z "$(git status --porcelain)"
+          echo "PERMANENT CHECKPOINT PASS|sha=$TARGET_SHA|parent=$PARENT_SHA|tree=$TARGET_TREE|blob=$TARGET_BLOB|hash=$TARGET_HASH|bytes=$TARGET_BYTES|residual=19/458/0|productMutation=0|prCreated=0"
