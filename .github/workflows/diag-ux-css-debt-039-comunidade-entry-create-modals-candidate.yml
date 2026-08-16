@@ -123,6 +123,15 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          echo 'DIFF INTEGRITY DIAGNOSTIC BEGIN'
+          git status --short --untracked-files=all || true
+          echo 'TRACKED DIFF NAMES:'
+          git diff --name-only || true
+          echo 'TARGET NUMSTAT:'
+          git diff --numstat -- "${TARGET_FILE}" || true
+          echo 'DIFF CHECK:'
+          git diff --check || true
+          echo 'DIFF INTEGRITY DIAGNOSTIC END'
           test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
           test "$(git diff --name-only)" = "${TARGET_FILE}"
           read -r add del file < <(git diff --numstat -- "${TARGET_FILE}")
