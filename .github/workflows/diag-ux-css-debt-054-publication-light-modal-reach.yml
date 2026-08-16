@@ -1,0 +1,109 @@
+name: Doke UX-CSS-DEBT-054 Publication Light Modal Static Reach Proof
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-054-publication-light-modal-reach
+
+permissions:
+  contents: read
+
+jobs:
+  proof:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 8cf5320e2eb2a8185f777962b7a5d135931a2614
+      PARENT_SHA: fbdd853af425ed9249c0a93ac42a1babeded1993
+      TARGET_FILE: assets/css/components/before-after-workers-preview/publication-light-modal.css
+      TARGET_BLOB: 0427f3ca7c901bfb40efe5446e0e9f24a6ac9bfc
+    steps:
+      - name: Checkout diagnostic harness
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          clean: true
+
+      - name: Preserve proof helper
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp .github/diagnostics/ux-css-debt-054-publication-light-modal-reach.cjs /tmp/ux054-reach.cjs
+          node --check /tmp/ux054-reach.cjs
+
+      - name: Checkout exact certified UX-CSS-DEBT-053 parent
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+          clean: true
+
+      - name: Guard exact checkpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test -z "$(git status --porcelain)"
+          git diff --check
+          echo "CHECKPOINT GUARD PASS|sha=$TARGET_SHA|parent=$PARENT_SHA|blob=$TARGET_BLOB"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install and generate canonical active graph
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          npm run audit:active-legacy-structures
+
+      - name: Prove unconditional static cascade runtime authority and exact reach
+        shell: bash
+        run: |
+          set -euo pipefail
+          node /tmp/ux054-reach.cjs | tee /tmp/proof.log
+          grep -q 'STATIC CASCADE PROOF PASS|rows=2|sameSelector=2|sameContext=2|sameImportance=2|laterWinners=2|unconditionalDominance=2' /tmp/proof.log
+          grep -q 'REACH AUTHORITY PASS' /tmp/proof.log
+          grep -q 'realDomPages=2|stateClass=before-after-preview-open' /tmp/proof.log
+          grep -q 'EPHEMERAL CANDIDATE PASS|decl=77->75|dead=2->0|additions=0|deletions=2' /tmp/proof.log
+          test "$(git diff --name-only)" = "$TARGET_FILE"
+          test "$(git diff --numstat -- "$TARGET_FILE")" = $'0\t2\t'"$TARGET_FILE"
+          git diff --check
+
+      - name: Preserve governance baselines
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:agent-governance
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/conflicts.log
+          grep -q 'Conflicting class/property pairs: 339' /tmp/conflicts.log
+          npm run audit:domain-completion-matrix | tee /tmp/domain.log
+          grep -q 'Domains: 23' /tmp/domain.log
+          grep -q 'Critical flows: 15' /tmp/domain.log
+          grep -q 'Average maturity: 2.91/6' /tmp/domain.log
+          grep -q 'Critical blockers: 12' /tmp/domain.log
+          npm run audit:shared-app-header-contract
+          npm run audit:mobile-shell-location-contract
+          npm run audit:responsive-boundaries
+          npm run audit:duplicate-assets | tee /tmp/dup.log
+          grep -q 'Duplicate groups: 0' /tmp/dup.log
+          grep -q 'Duplicated files: 0' /tmp/dup.log
+          echo 'GOVERNANCE PASS|conflicts=339|domain=23/15/2.91/12|duplicates=0/0'
+
+      - name: Restore exact checkpoint
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "$TARGET_SHA"
+          git clean -ffdx
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test -z "$(git status --porcelain)"
+          echo "CHECKPOINT PASS|sha=$TARGET_SHA|productMutation=0|issueCreated=0|prCreated=0"
