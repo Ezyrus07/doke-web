@@ -75,7 +75,8 @@ jobs:
           AUTHORIZED=f854c3b624e273b58f42e83036c149e8d42f1712
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json .github/workflows/tmp-com-b02g-matrix-sync.yml
+          git add docs/DOMAIN-COMPLETION-MATRIX.md .github/workflows/tmp-com-b02g-matrix-sync.yml
+          git add -f reports/generated/domain-completion-matrix-report.json
           staged="$(git diff --cached --name-only | sort)"
           expected="$(printf '%s\n' .github/workflows/tmp-com-b02g-matrix-sync.yml docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json | sort)"
           test "$staged" = "$expected"
