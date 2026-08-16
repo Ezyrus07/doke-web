@@ -1,0 +1,97 @@
+name: Doke UX-CSS-DEBT-035 Promote Permanent
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-035-promote-permanent
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: c2cdf591c0b3b902c4def0e8ffca4e575c96e22f
+      PARENT_SHA: 08a3602415a08448f843e528bb37bab3b4c87b11
+      TARGET_CSS: assets/css/pages/comunidade/photo-discovery.css
+      TARGET_BLOB: aff7b79c3b79545bf0a9546de96732704c84ddc2
+      TARGET_HASH: a4f2273f49796bed07a634b4a9197431b67801cda4c3e84c24358fdb99268cff
+      TARGET_BYTES: 28083
+      PERM_BRANCH: ux/ux-css-debt-035-photo-discovery-compaction
+    steps:
+      - name: Checkout diagnostic harness
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          clean: true
+
+      - name: Preserve promotion helper
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp .github/diagnostics/ux-css-debt-035-promote.cjs /tmp/ux-css-debt-035-promote.cjs
+          node --check /tmp/ux-css-debt-035-promote.cjs
+
+      - name: Checkout exact certified UX-CSS-DEBT-034 parent
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+          clean: true
+          persist-credentials: true
+
+      - name: Guard exact parent and seeded permanent namespace
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git hash-object "$TARGET_CSS")" = "$TARGET_BLOB"
+          test "$(wc -c < "$TARGET_CSS" | tr -d ' ')" = "29368"
+          test -z "$(git status --porcelain)"
+          REMOTE_BEFORE="$(git ls-remote --heads origin "refs/heads/$PERM_BRANCH" | awk '{print $1}')"
+          test "$REMOTE_BEFORE" = "$TARGET_SHA"
+          echo "PROMOTION PARENT PASS|sha=$TARGET_SHA|parent=$PARENT_SHA|blob=$TARGET_BLOB|permanentNamespace=seeded-at-parent"
+
+      - name: Build exact candidate on permanent branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git switch -c "$PERM_BRANCH"
+          node /tmp/ux-css-debt-035-promote.cjs
+          test "$(sha256sum "$TARGET_CSS" | awk '{print $1}')" = "$TARGET_HASH"
+          test "$(wc -c < "$TARGET_CSS" | tr -d ' ')" = "$TARGET_BYTES"
+          test "$(git diff --name-only)" = "$TARGET_CSS"
+          read -r add del file < <(git diff --numstat -- "$TARGET_CSS")
+          test "$add" = "0" && test "$del" = "54" && test "$file" = "$TARGET_CSS"
+
+      - name: Commit exact permanent product delta
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "doke"
+          git config user.email "bielantoniomma@gmail.com"
+          git add "$TARGET_CSS"
+          git commit -m "UX-CSS-DEBT-035: compact superseded community photo discovery declarations"
+          COMMIT="$(git rev-parse HEAD)"
+          test "$(git rev-parse HEAD^)" = "$TARGET_SHA"
+          test "$(git diff --name-only "$TARGET_SHA"...HEAD)" = "$TARGET_CSS"
+          read -r add del file < <(git diff --numstat "$TARGET_SHA"...HEAD -- "$TARGET_CSS")
+          test "$add" = "0" && test "$del" = "54" && test "$file" = "$TARGET_CSS"
+          test "$(sha256sum "$TARGET_CSS" | awk '{print $1}')" = "$TARGET_HASH"
+          test "$(wc -c < "$TARGET_CSS" | tr -d ' ')" = "$TARGET_BYTES"
+          echo "PERMANENT COMMIT PASS|sha=$COMMIT|parent=$TARGET_SHA|hash=$TARGET_HASH|bytes=$TARGET_BYTES|files=1|additions=0|deletions=54"
+
+      - name: Fast-forward permanent branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          COMMIT="$(git rev-parse HEAD)"
+          REMOTE_BEFORE="$(git ls-remote --heads origin "refs/heads/$PERM_BRANCH" | awk '{print $1}')"
+          test "$REMOTE_BEFORE" = "$TARGET_SHA"
+          git push origin "HEAD:refs/heads/$PERM_BRANCH"
+          REMOTE_AFTER="$(git ls-remote --heads origin "refs/heads/$PERM_BRANCH" | awk '{print $1}')"
+          test "$REMOTE_AFTER" = "$COMMIT"
+          echo "PROMOTION FINAL PASS|branch=$PERM_BRANCH|sha=$COMMIT|parent=$TARGET_SHA|hash=$TARGET_HASH|bytes=$TARGET_BYTES|files=1|additions=0|deletions=54|prCreated=0|transport=seeded-fast-forward"
