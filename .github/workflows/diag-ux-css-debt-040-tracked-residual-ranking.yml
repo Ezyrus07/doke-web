@@ -1,0 +1,108 @@
+name: Doke UX-CSS-DEBT-040 Tracked Residual Ranking
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-040-tracked-residual-ranking
+
+permissions:
+  contents: read
+
+jobs:
+  ranking:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 275b9fe2fed70885b9af7215073fc284dd3be7fc
+      PARENT_SHA: 721c8036a7f1a23208f512ce5a6f4b532209595a
+      PRIOR_039_FILE: assets/css/pages/comunidade/entry-create-modals.css
+      PRIOR_039_BLOB: 3307a97e05474a9f4f3bfee769a21ea3b06848f0
+      PRIOR_RANKING_SHA: 84e16e9a4880b6a24ce6a101223ec53cbbe2b8d7
+      PRIOR_RANKING_FILE: .github/workflows/diag-ux-css-debt-039-tracked-residual-ranking.yml
+    steps:
+      - name: Checkout exact certified UX-CSS-DEBT-039 SHA
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+
+      - name: Guard exact checkpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test "$(git rev-parse HEAD^)" = "${PARENT_SHA}"
+          test "$(git hash-object "${PRIOR_039_FILE}")" = "${PRIOR_039_BLOB}"
+          test -z "$(git status --porcelain)"
+          git diff --check
+          echo "CHECKPOINT GUARD PASS|sha=${TARGET_SHA}|parent=${PARENT_SHA}|039blob=${PRIOR_039_BLOB}"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install and generate canonical active graph
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          npm run audit:active-legacy-structures
+
+      - name: Reuse certified ranking algorithm against UX-CSS-DEBT-039
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin "${PRIOR_RANKING_SHA}" --depth=1
+          git show "${PRIOR_RANKING_SHA}:${PRIOR_RANKING_FILE}" > /tmp/prior-ranking.yml
+          python3 <<'PY'
+          from pathlib import Path
+          text = Path('/tmp/prior-ranking.yml').read_text()
+          marker = "          node <<'NODE'\n"
+          start = text.index(marker) + len(marker)
+          end = text.index("\n          NODE", start)
+          lines = text[start:end].splitlines()
+          script = "\n".join(line[10:] if line.startswith('          ') else line for line in lines) + "\n"
+          script = script.replace('filesWithDead!==36||total!==849', 'filesWithDead!==35||total!==657')
+          script = script.replace('BASE|active=401|high=37|files=36|dead=849|highDead=0', 'BASE|active=401|high=37|files=35|dead=657|highDead=0')
+          script = script.replace('residual=36/849/0', 'residual=35/657/0')
+          Path('/tmp/rank.cjs').write_text(script)
+          PY
+          node --check /tmp/rank.cjs
+          node /tmp/rank.cjs | tee /tmp/ranking.log
+          grep -q 'BASE|active=401|high=37|files=35|dead=657|highDead=0' /tmp/ranking.log
+          grep -q 'RANKING PASS|' /tmp/ranking.log
+          grep -q 'residual=35/657/0' /tmp/ranking.log
+
+      - name: Preserve governance baselines
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:agent-governance
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/conflicts.log
+          grep -q 'Conflicting class/property pairs: 339' /tmp/conflicts.log
+          npm run audit:domain-completion-matrix | tee /tmp/domain.log
+          grep -q 'Domains: 23' /tmp/domain.log
+          grep -q 'Critical flows: 15' /tmp/domain.log
+          grep -q 'Average maturity: 2.91/6' /tmp/domain.log
+          grep -q 'Critical blockers: 12' /tmp/domain.log
+          npm run audit:shared-app-header-contract
+          npm run audit:mobile-shell-location-contract
+          npm run audit:responsive-boundaries
+          npm run audit:duplicate-assets | tee /tmp/dup.log
+          grep -q 'Duplicate groups: 0' /tmp/dup.log
+          grep -q 'Duplicated files: 0' /tmp/dup.log
+          echo 'GOVERNANCE PASS|conflicts=339|domain=23/15/2.91/12|duplicates=0/0'
+
+      - name: Restore exact checkpoint
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "${TARGET_SHA}"
+          git clean -ffdx
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test "$(git rev-parse HEAD^)" = "${PARENT_SHA}"
+          test "$(git hash-object "${PRIOR_039_FILE}")" = "${PRIOR_039_BLOB}"
+          test -z "$(git status --porcelain)"
+          echo "CHECKPOINT PASS|sha=${TARGET_SHA}|productMutation=0|issueCreated=0|prCreated=0"
