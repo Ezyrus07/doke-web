@@ -1,0 +1,108 @@
+name: COM-B03C R5H Harness Implementation Matrix Materialization TEMP
+
+on:
+  push:
+    branches: [com/com-001-baseline-audit]
+    paths:
+      - '.github/workflows/com-b03c-r5h-extension-classification-probe-harness-implementation-matrix-materialization-temp.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  prepare:
+    if: github.run_attempt == 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - run: npm ci --ignore-scripts
+
+      - name: Exact repository-only installation scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          temp=.github/workflows/com-b03c-r5h-extension-classification-probe-harness-implementation-matrix-materialization-temp.yml
+          test "$(git rev-parse HEAD^)" = "3f5dfb342acf2beee96a7b0399ce59c9ad4d0f56"
+          test "$(git diff --name-only HEAD^ HEAD)" = "$temp"
+
+      - name: Generate final-tree Matrix derivatives
+        shell: bash
+        run: |
+          set -euo pipefail
+          temp=.github/workflows/com-b03c-r5h-extension-classification-probe-harness-implementation-matrix-materialization-temp.yml
+          rm "$temp"
+          npm run write:domain-completion-matrix
+          git diff --exit-code -- config/domain-completion-matrix.json
+          expected="$(printf '%s\n' "$temp" docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json | sort)"
+          actual="$(git diff --name-only | sort)"
+          test "$actual" = "$expected"
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git diff --check
+
+      - name: Fail-closed harness implementation assertions
+        shell: bash
+        run: |
+          set -euo pipefail
+          module=backend/modules/communities/community-realtime-private-auth-r5h-extension-classification-probe-harness.js
+          test "$(git rev-parse HEAD:$module)" = "723d33aea011a28766b819fa823aad82f341aba3"
+          test "$(git rev-parse HEAD:config/com-b03c-r5h-extension-classification-probe-harness-implementation-boundary.json)" = "b046c20c7ec572bf38af1780b64a703fe4ce4880"
+          ! grep -Eq 'process\.env|createClient|@supabase|\.channel\(|\.subscribe\(|fetch\(|https?://' "$module"
+          node - <<'NODE'
+          const boundary = require('./config/com-b03c-r5h-extension-classification-probe-harness-implementation-boundary.json');
+          const harness = require('./backend/modules/communities/community-realtime-private-auth-r5h-extension-classification-probe-harness.js');
+          if (boundary.functionalCheckpoint.lastFunctionalCheckpoint !== 'COM-B03C-R5H' || boundary.functionalCheckpoint.r5iCreated !== false || boundary.functionalCheckpoint.r5iInferred !== false) throw new Error('FUNCTIONAL_CHECKPOINT_DRIFT');
+          if (boundary.implementationBoundary.implementationPresent !== true || boundary.implementationBoundary.executionHarnessDefined !== true || boundary.implementationBoundary.executableHarnessPresent !== true || boundary.implementationBoundary.transportBound !== false || boundary.implementationBoundary.executionEntryPointExported !== false) throw new Error('HARNESS_IMPLEMENTATION_STATE_DRIFT');
+          if (boundary.executionWiringBoundary.defined !== false || boundary.executionWiringBoundary.executionEntrypointEnabled !== false || boundary.executionWiringBoundary.executionWorkflowDefined !== false || boundary.executionWiringBoundary.authorizationEvaluatorDefined !== false) throw new Error('EXECUTION_WIRING_MUST_REMAIN_ABSENT');
+          for (const key of ['triggerCreated','receiptCreated','explicitExecutionAuthorizationReceived','executionAttempted','remoteExecutionAuthority','remoteCredentialReadAuthority','remoteDependencyLoadAuthority','networkAuthority','stagingReadAuthority','stagingMutationAuthority','realtimeSubscriptionAuthority','authIdentityLifecycleAuthority','runtimeChangeAuthority','productionAuthority','pullRequestMergeAuthority','readyForReviewAuthority']) {
+            if (boundary.governance[key] !== false) throw new Error(`${key}_MUST_REMAIN_FALSE`);
+          }
+          for (const forbiddenExport of ['execute','run','subscribe','createClient','bindRuntime','authorize']) {
+            if (Object.prototype.hasOwnProperty.call(harness, forbiddenExport)) throw new Error(`REMOTE_ENTRYPOINT_EXPORT_FORBIDDEN:${forbiddenExport}`);
+          }
+          NODE
+
+      - name: Prepare immutable Git commit without moving branch ref
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          temp=.github/workflows/com-b03c-r5h-extension-classification-probe-harness-implementation-matrix-materialization-temp.yml
+          parent="$(git rev-parse HEAD)"
+          base_tree="$(git rev-parse HEAD^{tree})"
+
+          md_blob="$(jq -Rs '{content: ., encoding: "utf-8"}' docs/DOMAIN-COMPLETION-MATRIX.md | gh api --method POST "repos/${GITHUB_REPOSITORY}/git/blobs" --input - --jq .sha)"
+          report_blob="$(jq -Rs '{content: ., encoding: "utf-8"}' reports/generated/domain-completion-matrix-report.json | gh api --method POST "repos/${GITHUB_REPOSITORY}/git/blobs" --input - --jq .sha)"
+
+          tree="$(jq -n \
+            --arg base "$base_tree" \
+            --arg md "$md_blob" \
+            --arg report "$report_blob" \
+            --arg temp "$temp" \
+            '{base_tree:$base,tree:[
+              {path:"docs/DOMAIN-COMPLETION-MATRIX.md",mode:"100644",type:"blob",sha:$md},
+              {path:"reports/generated/domain-completion-matrix-report.json",mode:"100644",type:"blob",sha:$report},
+              {path:$temp,mode:"100644",type:"blob",sha:null}
+            ]}' | gh api --method POST "repos/${GITHUB_REPOSITORY}/git/trees" --input - --jq .sha)"
+
+          commit="$(jq -n \
+            --arg message "docs(com): synchronize Matrix derivatives for harness implementation" \
+            --arg tree "$tree" \
+            --arg parent "$parent" \
+            '{message:$message,tree:$tree,parents:[$parent]}' | gh api --method POST "repos/${GITHUB_REPOSITORY}/git/commits" --input - --jq .sha)"
+
+          test "$(git rev-parse HEAD)" = "$parent"
+          printf 'PREPARED_COMMIT_SHA=%s\n' "$commit"
+          printf 'PREPARED_TREE_SHA=%s\n' "$tree"
+          printf 'MARKDOWN_BLOB_SHA=%s\n' "$md_blob"
+          printf 'REPORT_BLOB_SHA=%s\n' "$report_blob"
