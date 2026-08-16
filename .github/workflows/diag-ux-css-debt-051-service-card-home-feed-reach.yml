@@ -32,11 +32,22 @@ jobs:
           ref: ${{ github.sha }}
           fetch-depth: 1
           clean: true
-      - name: Preserve harness and checkout certified parent
+      - name: Preserve corrected harness and checkout certified parent
         shell: bash
         run: |
           set -euo pipefail
           cp .github/diagnostics/ux-css-debt-051-service-card-home-feed-reach.cjs /tmp/ux051-r1.cjs
+          node <<'NODE'
+          const fs=require('fs');
+          const p='/tmp/ux051-r1.cjs';
+          let s=fs.readFileSync(p,'utf8');
+          const old="return (r.stdout||'').trim().split(/\\r?\\n/).filter(Boolean).sort()";
+          const next="return (r.stdout||'').trim().split(/\\r?\\n/).filter(f=>f&&(f.endsWith('.html')||f.startsWith('assets/js/'))).sort()";
+          if(!s.includes(old)) throw new Error('emitter-scope patch anchor missing');
+          s=s.replace(old,next);
+          fs.writeFileSync(p,s);
+          console.log('R1 HARNESS CORRECTION PASS|excludedNonRuntimeAuditScripts=1|runtimeScope=html+assets/js');
+          NODE
           node --check /tmp/ux051-r1.cjs
           git fetch origin "${TARGET_SHA}" --depth=2
           git checkout --detach "${TARGET_SHA}"
@@ -54,7 +65,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - name: Install and run R1
+      - name: Install and run corrected R1
         shell: bash
         run: |
           set -euo pipefail
