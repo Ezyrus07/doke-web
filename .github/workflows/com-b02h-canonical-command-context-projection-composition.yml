@@ -1,0 +1,94 @@
+name: COM-B02H Canonical Command Context and Projection Composition Contract
+
+on:
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - 'backend/modules/communities/community-command-context-projection-composition-contract.js'
+      - 'config/com-b02h-canonical-command-context-projection-composition.json'
+      - 'scripts/test-com-b02h-canonical-command-context-projection-composition.js'
+      - '.github/workflows/com-b02h-canonical-command-context-projection-composition.yml'
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: com-b02h-command-context-projection-contract-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Frozen B02G predecessor and exact repository-only scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE=4a80324287dcc1b41096a675bd90d561ba5e79eb
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+          test "$(git rev-parse HEAD^)" = "$BASE"
+          test "$(git rev-parse HEAD:backend/modules/communities/community-server-authority-runtime-composition-readiness.js)" = "772875cfe9b6076f2393d6d8ce826973ce7d8011"
+          test "$(git rev-parse HEAD:config/com-b02g-server-authority-runtime-composition-readiness.json)" = "54732dc9eca329565e4067ebf96675fb13c11275"
+          test "$(git rev-parse HEAD:.github/workflows/com-b02g-server-authority-runtime-composition-readiness.yml)" = "30a07521271b3907a3ddf6649fd4c5c9dbb54fb3"
+          test "$(git rev-parse HEAD:backend/shared/http/route-registry.js)" = "04a039c1967ffb59502e05584d05831f7c9a1a41"
+          test "$(git rev-parse HEAD:backend/shared/http/module-route-loader.js)" = "7b3c897c0bf20069b733632c0b424b8664eb8cf5"
+          test "$(git rev-parse HEAD:backend/modules/communities/route-handlers.js)" = "332da22f604806ba06a0687c69d3d89903c4222c"
+          test "$(git rev-parse HEAD:backend/modules/communities/community-supabase-repository-adapter.js)" = "94bc05d9797bc2b5673e440d0b25f09485d8215d"
+          test "$(git rev-parse HEAD:supabase/migrations/20260805121500_com_b02b_server_authority.sql)" = "fd74f6abc029023c4e0972b32b35daca975c3d57"
+          expected="$(printf '%s\n' \
+            .github/workflows/com-b02h-canonical-command-context-projection-composition.yml \
+            backend/modules/communities/community-command-context-projection-composition-contract.js \
+            config/com-b02h-canonical-command-context-projection-composition.json \
+            scripts/test-com-b02h-canonical-command-context-projection-composition.js | sort)"
+          actual="$(git diff --name-only "$BASE" HEAD | sort)"
+          test "$actual" = "$expected"
+
+      - name: Syntax and semantic contract conformance
+        run: |
+          node --check backend/modules/communities/community-command-context-projection-composition-contract.js
+          node --check scripts/test-com-b02h-canonical-command-context-projection-composition.js
+          node scripts/test-com-b02h-canonical-command-context-projection-composition.js
+
+      - name: Fail-closed hard blocks
+        shell: bash
+        run: |
+          set -euo pipefail
+          ! grep -E 'createClient\(|\.rpc\(|\.from\(|fetch\(|process\.env|SUPABASE_SERVICE_ROLE_KEY' backend/modules/communities/community-command-context-projection-composition-contract.js
+          grep -F 'COM_B02F_ROUTE_NOT_DEPLOYED_OR_ACTIVATED' backend/modules/communities/route-handlers.js
+          node - <<'NODE'
+          const b=require('./config/com-b02h-canonical-command-context-projection-composition.json');
+          if(b.authorization.received!==true||b.authorization.consumed!==true||b.authorization.consumedFromHead!=='4a80324287dcc1b41096a675bd90d561ba5e79eb'||b.authorization.singleExecutionOnly!==true||b.authorization.workflowRerunAllowedAfterAttempt!==false)throw new Error('B02H_AUTHORIZATION_DRIFT');
+          for(const k of ['commandContextHydrationAuthority','projectionAssemblyAuthority','domainMutationPlanAuthority','communityUuidAllocationAuthority','repositoryAdapterMutationAuthority','handlerMutationAuthority','runtimeActivationAuthority','stagingDeploymentAuthority','stagingTrafficAuthority','realCommunityMutationAuthority','realtimeActivationAuthority','remoteExecutionAuthority','networkAuthority','credentialReadAuthority','identityLifecycleAuthority','migrationAuthority','triggerCreationAuthority','receiptCreationAuthority','productionAuthority','pullRequestMergeAuthority','readyForReviewAuthority','r5iCreationAuthority'])if(b.authority[k]!==false)throw new Error(`B02H_FORBIDDEN_AUTHORITY:${k}`);
+          for(const k of ['existingRouteRegistryChanged','existingModuleRouteLoaderChanged','existingCommunityRouteHandlersChanged','repositoryAdapterChanged','migrationChanged','commandContextHydratorConnectedToRuntime','projectionAssemblerConnectedToRuntime','domainMutationPlanProducerCreated','communityUuidAllocatorConnected','runtimeActivated','stagingDeploymentExecuted','stagingTrafficEnabled','rpcExecuted','networkRequestExecuted','realtimeSubscriptionExecuted','credentialReadExecuted','identityMutationExecuted','realCommunityMutationExecuted','migrationExecuted','triggerCreated','receiptCreated','productionChanged','pullRequestMerged','readyForReviewChanged'])if(b.effects[k]!==false)throw new Error(`B02H_FORBIDDEN_EFFECT:${k}`);
+          if(b.functionalCheckpoint.lastFunctionalCheckpoint!=='COM-B03C-R5H'||b.functionalCheckpoint.exactRootCauseProven!==false||b.functionalCheckpoint.causalPromotionAllowed!==false||b.functionalCheckpoint.privatePresencePromotionAllowed!==false||b.functionalCheckpoint.r5iCreated!==false||b.functionalCheckpoint.r5iInferred!==false)throw new Error('B02H_FUNCTIONAL_CHECKPOINT_DRIFT');
+          NODE
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Domain Completion Matrix
+        run: npm run audit:domain-completion-matrix
+
+      - name: Agent Governance
+        run: npm run audit:agent-governance
+
+      - name: Diff hygiene
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE=4a80324287dcc1b41096a675bd90d561ba5e79eb
+          git diff --check "$BASE" HEAD
