@@ -10,6 +10,7 @@ const PAGE = 'pedidos.html';
 const TARGET_SHA = process.env.TARGET_SHA;
 const TARGET_BLOB = process.env.TARGET_BLOB;
 const VIEWPORTS = [359, 360, 361, 390, 430, 759, 760, 761, 762, 1024, 1280, 1440];
+const SHELL_STATES = ['unmounted', 'mounted'];
 
 function sh(cmd, opts = {}) {
   return cp.execSync(cmd, { encoding: 'utf8', stdio: opts.stdio || ['ignore', 'pipe', 'pipe'] }).trim();
@@ -147,53 +148,56 @@ async function capture(browser, tag, specs) {
   const out={};
   const seenCounts=new Map(specs.map(s=>[s.selector,0]));
   for(const width of VIEWPORTS){
-    const context=await browser.newContext({viewport:{width,height:1200},reducedMotion:'reduce'});
-    const page=await context.newPage();
-    await page.route('**/*', route=>{
-      const u=new URL(route.request().url());
-      const local=u.origin==='http://127.0.0.1:4173';
-      if(local && u.pathname.endsWith('.js')) return route.abort();
-      if(local || u.protocol==='data:' || u.protocol==='blob:') return route.continue();
-      return route.abort();
-    });
-    await page.goto(`http://127.0.0.1:4173/${PAGE}?${tag}-${width}-${Date.now()}`,{waitUntil:'domcontentloaded',timeout:20000});
-    await page.evaluate(()=>{
-      document.querySelector('[data-doke-document-preloader]')?.remove();
-      document.documentElement.removeAttribute('data-auth-guard');
-      document.documentElement.classList.remove('doke-mobile-shell-pending');
-      document.body.classList.remove('doke-mobile-shell-mounted');
-      document.querySelectorAll('[hidden]').forEach(el=>{
-        if(el.matches('.orders-page-header__controls,.orders-planner,[data-orders-agenda-toggle]')) el.hidden=false;
+    for(const shellState of SHELL_STATES){
+      const context=await browser.newContext({viewport:{width,height:1200},reducedMotion:'reduce'});
+      const page=await context.newPage();
+      await page.route('**/*', route=>{
+        const u=new URL(route.request().url());
+        const local=u.origin==='http://127.0.0.1:4173';
+        if(local && u.pathname.endsWith('.js')) return route.abort();
+        if(local || u.protocol==='data:' || u.protocol==='blob:') return route.continue();
+        return route.abort();
       });
-    });
-    await page.waitForTimeout(120);
-    const snap=await page.evaluate((specs)=>{
-      const round=n=>Math.round(n*1000)/1000;
-      const rows={};
-      for(const spec of specs){
-        const nodes=[...document.querySelectorAll(spec.selector)];
-        rows[spec.selector]=nodes.slice(0,8).map((el,index)=>{
-          const cs=getComputedStyle(el), r=el.getBoundingClientRect(), props={};
-          for(const p of spec.props) props[p]=cs.getPropertyValue(p).trim();
-          return {index,tag:el.tagName,className:String(el.className||''),props,rect:[round(r.x),round(r.y),round(r.width),round(r.height)]};
+      await page.goto(`http://127.0.0.1:4173/${PAGE}?${tag}-${shellState}-${width}-${Date.now()}`,{waitUntil:'domcontentloaded',timeout:20000});
+      await page.evaluate((shellState)=>{
+        document.querySelector('[data-doke-document-preloader]')?.remove();
+        document.documentElement.removeAttribute('data-auth-guard');
+        document.documentElement.classList.remove('doke-mobile-shell-pending');
+        document.body.classList.toggle('doke-mobile-shell-mounted', shellState==='mounted');
+        document.querySelectorAll('[hidden]').forEach(el=>{
+          if(el.matches('.orders-page-header__controls,.orders-planner,[data-orders-agenda-toggle]')) el.hidden=false;
         });
-        rows[spec.selector+'::__count']=nodes.length;
-      }
-      return {
-        rows,
-        media:{max760:matchMedia('(max-width: 760px)').matches,max360:matchMedia('(max-width: 360px)').matches},
-        doc:{clientWidth:document.documentElement.clientWidth,scrollWidth:document.documentElement.scrollWidth,bodyClientWidth:document.body.clientWidth,bodyScrollWidth:document.body.scrollWidth,scrollHeight:document.documentElement.scrollHeight}
-      };
-    },specs);
-    for(const spec of specs){const n=snap.rows[spec.selector+'::__count'];seenCounts.set(spec.selector,seenCounts.get(spec.selector)+n);}
-    assert(snap.doc.scrollWidth<=snap.doc.clientWidth,`horizontal overflow ${tag} width=${width} ${JSON.stringify(snap.doc)}`);
-    out[width]=snap;
-    await context.close();
+      },shellState);
+      await page.waitForTimeout(120);
+      const snap=await page.evaluate((specs)=>{
+        const round=n=>Math.round(n*1000)/1000;
+        const rows={};
+        for(const spec of specs){
+          const nodes=[...document.querySelectorAll(spec.selector)];
+          rows[spec.selector]=nodes.slice(0,8).map((el,index)=>{
+            const cs=getComputedStyle(el), r=el.getBoundingClientRect(), props={};
+            for(const p of spec.props) props[p]=cs.getPropertyValue(p).trim();
+            return {index,tag:el.tagName,className:String(el.className||''),props,rect:[round(r.x),round(r.y),round(r.width),round(r.height)]};
+          });
+          rows[spec.selector+'::__count']=nodes.length;
+        }
+        return {
+          rows,
+          media:{max760:matchMedia('(max-width: 760px)').matches,max360:matchMedia('(max-width: 360px)').matches},
+          bodyMounted:document.body.classList.contains('doke-mobile-shell-mounted'),
+          doc:{clientWidth:document.documentElement.clientWidth,scrollWidth:document.documentElement.scrollWidth,bodyClientWidth:document.body.clientWidth,bodyScrollWidth:document.body.scrollWidth,scrollHeight:document.documentElement.scrollHeight}
+        };
+      },specs);
+      for(const spec of specs){const n=snap.rows[spec.selector+'::__count'];seenCounts.set(spec.selector,seenCounts.get(spec.selector)+n);}
+      assert(snap.doc.scrollWidth<=snap.doc.clientWidth,`horizontal overflow ${tag} state=${shellState} width=${width} ${JSON.stringify(snap.doc)}`);
+      out[`${width}:${shellState}`]=snap;
+      await context.close();
+    }
   }
   const absent=[...seenCounts].filter(([,count])=>count===0).map(([sel])=>sel);
   const present=seenCounts.size-absent.length;
-  assert(present>0,'no affected selector is present in canonical DOM');
-  console.log(`REAL DOM COVERAGE|tag=${tag}|presentSelectors=${present}|absentSelectors=${absent.length}|absent=${absent.join(' <OR> ')||'-'}`);
+  assert(present===specs.length,`incomplete affected selector coverage present=${present} absent=${absent.length} ${absent.join(' <OR> ')}`);
+  console.log(`REAL DOM COVERAGE|tag=${tag}|states=${SHELL_STATES.join(',')}|presentSelectors=${present}|absentSelectors=${absent.length}|absent=${absent.join(' <OR> ')||'-'}`);
   return {snapshots:out,coverage:{present,absent}};
 }
 
@@ -214,7 +218,7 @@ async function capture(browser, tag, specs) {
     assert(JSON.stringify(before.snapshots)===JSON.stringify(after.snapshots),'runtime parity mismatch');
     assert(before.coverage.present===after.coverage.present,'DOM present coverage drift');
     assert(JSON.stringify(before.coverage.absent)===JSON.stringify(after.coverage.absent),'DOM absent coverage drift');
-    console.log(`CASCADE RUNTIME PARITY PASS|viewports=${VIEWPORTS.join(',')}|runtimeDiffs=0|overflow=0|boundaries=360/361/760/761|selectors=${specs.length}|domPresent=${before.coverage.present}|domAbsent=${before.coverage.absent.length}|staticCascadeRows=73|page=${PAGE}`);
+    console.log(`CASCADE RUNTIME PARITY PASS|viewports=${VIEWPORTS.join(',')}|states=${SHELL_STATES.join(',')}|runtimeDiffs=0|overflow=0|boundaries=360/361/760/761|selectors=${specs.length}|domPresent=${before.coverage.present}|domAbsent=${before.coverage.absent.length}|staticCascadeRows=73|page=${PAGE}`);
   } finally {
     server.kill('SIGTERM');
   }
