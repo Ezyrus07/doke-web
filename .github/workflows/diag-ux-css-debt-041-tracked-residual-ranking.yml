@@ -16,8 +16,8 @@ jobs:
       PARENT_SHA: 275b9fe2fed70885b9af7215073fc284dd3be7fc
       PRIOR_040_FILE: assets/css/pages/chat-audio-draft-contract.css
       PRIOR_040_BLOB: added1ddb828a27f99ba3abac9929a7c248ee55e
-      PRIOR_RANKING_SHA: dd7270ceb8844ba8dddbf1c8573395a18e277bdc
-      PRIOR_RANKING_FILE: .github/workflows/diag-ux-css-debt-040-tracked-residual-ranking.yml
+      RANKING_SOURCE_SHA: 84e16e9a4880b6a24ce6a101223ec53cbbe2b8d7
+      RANKING_SOURCE_FILE: .github/workflows/diag-ux-css-debt-039-tracked-residual-ranking.yml
       TARGET_FILE: assets/css/pages/chat-audio-draft-contract.css
     steps:
       - name: Checkout diagnostic harness
@@ -70,19 +70,19 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git fetch --no-tags origin "${PRIOR_RANKING_SHA}" --depth=1
-          git show "${PRIOR_RANKING_SHA}:${PRIOR_RANKING_FILE}" > /tmp/prior-ranking.yml
+          git fetch --no-tags origin "${RANKING_SOURCE_SHA}" --depth=1
+          git show "${RANKING_SOURCE_SHA}:${RANKING_SOURCE_FILE}" > /tmp/ranking-source.yml
           python3 <<'PY'
           from pathlib import Path
-          text = Path('/tmp/prior-ranking.yml').read_text()
+          text = Path('/tmp/ranking-source.yml').read_text()
           marker = "          node <<'NODE'\n"
           start = text.index(marker) + len(marker)
           end = text.index("\n          NODE", start)
           lines = text[start:end].splitlines()
           script = "\n".join(line[10:] if line.startswith('          ') else line for line in lines) + "\n"
-          script = script.replace('filesWithDead!==35||total!==657', 'filesWithDead!==34||total!==656')
-          script = script.replace('BASE|active=401|high=37|files=35|dead=657|highDead=0', 'BASE|active=401|high=37|files=34|dead=656|highDead=0')
-          script = script.replace('residual=35/657/0', 'residual=34/656/0')
+          script = script.replace('filesWithDead!==36||total!==849', 'filesWithDead!==34||total!==656')
+          script = script.replace('BASE|active=401|high=37|files=36|dead=849|highDead=0', 'BASE|active=401|high=37|files=34|dead=656|highDead=0')
+          script = script.replace('residual=36/849/0', 'residual=34/656/0')
           Path('/tmp/rank.cjs').write_text(script)
           PY
           node --check /tmp/rank.cjs
