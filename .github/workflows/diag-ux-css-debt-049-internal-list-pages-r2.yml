@@ -1,0 +1,76 @@
+name: Doke UX-CSS-DEBT-049 Internal List Pages R2
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-049-internal-list-pages-r2
+permissions:
+  contents: read
+jobs:
+  r2:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: b7b7df01b2f681172f9e522f253f97543eaebabd
+      PARENT_SHA: 5e9ca1d26039e6a78547916d149328d2d77b445f
+      TARGET_BLOB: b523624e6dcec53051629471d580d0c65aa3e120
+      TARGET_FILE: assets/css/pages/internal-list-pages.css
+    steps:
+      - name: Checkout diagnostic harness
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          clean: true
+      - name: Preserve R2 and checkout exact UX-CSS-DEBT-048 checkpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp .github/diagnostics/ux-css-debt-049-internal-list-pages-r2.cjs /tmp/ux-css-debt-049-internal-list-pages-r2.cjs
+          node --check /tmp/ux-css-debt-049-internal-list-pages-r2.cjs
+          git fetch origin "$TARGET_SHA" --depth=2
+          git checkout --detach "$TARGET_SHA"
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test -z "$(git status --porcelain)"
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies and Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install --with-deps chromium
+      - name: Run canonical nine-family fixture parity
+        shell: bash
+        run: |
+          set -euo pipefail
+          NODE_PATH="$PWD/node_modules" node /tmp/ux-css-debt-049-internal-list-pages-r2.cjs
+      - name: Verify governance and exact restore
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:agent-governance
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/conflicts.log
+          grep -q 'Conflicting class/property pairs: 339' /tmp/conflicts.log
+          npm run audit:duplicate-assets | tee /tmp/dup.log
+          grep -q 'Duplicate groups: 0' /tmp/dup.log
+          grep -q 'Duplicated files: 0' /tmp/dup.log
+          git reset --hard "$TARGET_SHA"
+          git clean -ffdx
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test -z "$(git status --porcelain)"
+          echo "R2 FINAL PASS|sha=$TARGET_SHA|families=9/9|productMutation=0|prCreated=0"
+      - name: Emergency exact restore
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "$TARGET_SHA"
+          git clean -ffdx
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test -z "$(git status --porcelain)"
