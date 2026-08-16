@@ -1,0 +1,227 @@
+name: Doke UX-CSS-DEBT-054 Permanent Exact Certification
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-054-certify-permanent
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: a0d9a44014a172789c0389eccf6c17781c6c27f8
+      PARENT_SHA: 8cf5320e2eb2a8185f777962b7a5d135931a2614
+      PARENT_PARENT_SHA: fbdd853af425ed9249c0a93ac42a1babeded1993
+      TARGET_TREE: 953bbb95a2c8fb6714ca6ecdc24a6e0644329ea9
+      TARGET_FILE: assets/css/components/before-after-workers-preview/publication-light-modal.css
+      PARENT_BLOB: 0427f3ca7c901bfb40efe5446e0e9f24a6ac9bfc
+      TARGET_BLOB: 626254247db9e05f0d52d6cdd01b0914e584cf91
+      TARGET_HASH: 620c4ac18fa00263b5c938fc707785028f12f86f74be253bf570b3ea9fd61e1b
+      TARGET_BYTES: '4383'
+      IMPORTER_FILE: assets/css/components/before-after-workers-preview.css
+      IMPORTER_BLOB: d2065a1d52d82fd7e13a7eeaaf636c526c433f23
+      HOME_PAGE: index.html
+      HOME_PAGE_BLOB: a3b2bffb4fd6bc4208b40930b621a9c54ce22cea
+      RESULTS_PAGE: resultados.html
+      RESULTS_PAGE_BLOB: 9b4431143ef80dafc70788bfa5c96ebf6460b5d1
+      RUNTIME_FILE: assets/js/pages/home/before-after.js
+      RUNTIME_BLOB: ed7ee1dc165a14f9408b4228a0095b9c86b83d9b
+      RESULTS_RUNTIME_FILE: assets/js/pages/search-results.js
+      RESULTS_RUNTIME_BLOB: 76ae990f89829d8c85968e6b2550841312fefbdc
+      PERM_BRANCH: ux/ux-css-debt-054-publication-light-modal-compaction
+      AUTHORITY_DOC_A: docs/PAGE-ASSET-AUTHORITY-MATRIX.md
+      AUTHORITY_DOC_B: docs/HOME-AUTHORITY-CLASSIFICATION.md
+      AUTHORITY_DOC_A_REGEN_HASH: 345a91bbd8c9fa54ab5f548c5f586d60cef40bf28eb10c9554050752f6431bb6
+      AUTHORITY_DOC_B_REGEN_HASH: b1027e88acf9a0a4b24c7870eca824b0ffbdc14fd75a6af31a86826051c58dda
+    steps:
+      - name: Checkout diagnostic harness
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          clean: true
+
+      - name: Preserve exact-cert helpers
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp .github/diagnostics/ux-css-debt-054-cert-identity.cjs /tmp/ux054-cert-identity.cjs
+          cp .github/diagnostics/ux-css-debt-054-cert-residual.cjs /tmp/ux054-cert-residual.cjs
+          node --check /tmp/ux054-cert-identity.cjs
+          node --check /tmp/ux054-cert-residual.cjs
+
+      - name: Checkout exact certified UX-CSS-DEBT-053 parent
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.PARENT_SHA }}
+          fetch-depth: 2
+          clean: true
+
+      - name: Guard parent identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$PARENT_BLOB"
+          test "$(git hash-object "$IMPORTER_FILE")" = "$IMPORTER_BLOB"
+          test "$(git hash-object "$HOME_PAGE")" = "$HOME_PAGE_BLOB"
+          test "$(git hash-object "$RESULTS_PAGE")" = "$RESULTS_PAGE_BLOB"
+          test "$(git hash-object "$RUNTIME_FILE")" = "$RUNTIME_BLOB"
+          test "$(git hash-object "$RESULTS_RUNTIME_FILE")" = "$RESULTS_RUNTIME_BLOB"
+          test -z "$(git status --porcelain)"
+          git diff --check
+          echo "PARENT IDENTITY PASS|sha=$PARENT_SHA|parent=$PARENT_PARENT_SHA|blob=$PARENT_BLOB|importer=$IMPORTER_BLOB|runtime=$RUNTIME_BLOB/$RESULTS_RUNTIME_BLOB"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies and generate parent governance baselines
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          npm run audit:active-legacy-structures
+          node scripts/generate-responsive-index-baseline.js
+          test -s reports/responsive-index-baseline.json
+          npm run audit:page-asset-authority-matrix
+          test "$(sha256sum "$AUTHORITY_DOC_A" | awk '{print $1}')" = "$AUTHORITY_DOC_A_REGEN_HASH"
+          test "$(sha256sum "$AUTHORITY_DOC_B" | awk '{print $1}')" = "$AUTHORITY_DOC_B_REGEN_HASH"
+          git checkout "$PARENT_SHA" -- "$AUTHORITY_DOC_A" "$AUTHORITY_DOC_B"
+          test -z "$(git diff --name-only -- "$AUTHORITY_DOC_A" "$AUTHORITY_DOC_B")"
+          echo "PARENT BASELINES PASS|responsive=generated|authorityHashes=$AUTHORITY_DOC_A_REGEN_HASH/$AUTHORITY_DOC_B_REGEN_HASH"
+
+      - name: Checkout exact permanent SHA without removing generated baselines
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin "$TARGET_SHA" --depth=2
+          git checkout --detach "$TARGET_SHA"
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test -s reports/responsive-index-baseline.json
+          echo "PERMANENT CHECKOUT PASS|sha=$TARGET_SHA"
+
+      - name: Exact permanent identity static proof and runtime reach transfer
+        shell: bash
+        run: |
+          set -euo pipefail
+          REMOTE="$(git ls-remote --heads origin "refs/heads/$PERM_BRANCH" | awk '{print $1}')"
+          test "$REMOTE" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD^{tree})" = "$TARGET_TREE"
+          test "$(git merge-base "$PARENT_SHA" HEAD)" = "$PARENT_SHA"
+          test "$(git rev-list --count "$PARENT_SHA"..HEAD)" = "1"
+          test "$(git rev-parse "$PARENT_SHA:$TARGET_FILE")" = "$PARENT_BLOB"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(git hash-object "$IMPORTER_FILE")" = "$IMPORTER_BLOB"
+          test "$(git hash-object "$HOME_PAGE")" = "$HOME_PAGE_BLOB"
+          test "$(git hash-object "$RESULTS_PAGE")" = "$RESULTS_PAGE_BLOB"
+          test "$(git hash-object "$RUNTIME_FILE")" = "$RUNTIME_BLOB"
+          test "$(git hash-object "$RESULTS_RUNTIME_FILE")" = "$RESULTS_RUNTIME_BLOB"
+          test "$(sha256sum "$TARGET_FILE" | awk '{print $1}')" = "$TARGET_HASH"
+          test "$(wc -c < "$TARGET_FILE" | tr -d ' ')" = "$TARGET_BYTES"
+          test "$(git diff --name-only "$PARENT_SHA"...HEAD)" = "$TARGET_FILE"
+          test "$(git diff --numstat "$PARENT_SHA"...HEAD -- "$TARGET_FILE")" = $'0\t2\t'"$TARGET_FILE"
+          test -z "$(git diff --name-only "$PARENT_SHA"...HEAD -- '*.js' '*.html' 'package.json' 'package-lock.json' 'docs/**')"
+          git diff --check "$PARENT_SHA"...HEAD
+          node /tmp/ux054-cert-identity.cjs
+          node <<'NODE'
+          const fs=require('fs'),path=require('path'),cp=require('child_process');
+          const target=process.env.TARGET_FILE,imp=process.env.IMPORTER_FILE,home=process.env.HOME_PAGE,results=process.env.RESULTS_PAGE,rt=process.env.RUNTIME_FILE,rr=process.env.RESULTS_RUNTIME_FILE;
+          const tracked=new Set(cp.execFileSync('git',['ls-files','-z','assets/css'],{encoding:'utf8'}).split('\0').filter(Boolean));
+          function importsFor(file){const src=fs.readFileSync(file,'utf8'),out=[],re=/@import\s+(?:url\()?['"]?([^'"\);]+\.css(?:\?[^'"\)]*)?)['"]?\)?/gi;let m;while((m=re.exec(src))){let v=m[1].replace(/\?.*$/,'').replace(/^\.\//,'');if(v.startsWith('/'))v=v.replace(/^\/+/, '');else if(!v.startsWith('assets/'))v=path.posix.normalize(path.posix.join(path.posix.dirname(file),v));if(tracked.has(v))out.push(v)}return out}
+          const direct=[...tracked].filter(f=>importsFor(f).includes(target)).sort();if(JSON.stringify(direct)!==JSON.stringify([imp]))throw new Error('direct importer drift '+JSON.stringify(direct));
+          const report=JSON.parse(fs.readFileSync('reports/generated/active-legacy-structures-report.json','utf8')),reached=[];for(const p of report.pageAssets){const seen=new Set(),todo=[...(p.css||[]).filter(f=>tracked.has(f))];let hit=false;while(todo.length){const f=todo.pop();if(seen.has(f)||!tracked.has(f))continue;seen.add(f);if(f===target){hit=true;break}for(const n of importsFor(f))todo.push(n)}if(hit)reached.push(p.page)}reached.sort();if(JSON.stringify(reached)!==JSON.stringify(['index.html','resultados.html']))throw new Error('active reach drift '+JSON.stringify(reached));
+          for(const page of [home,results]){const html=fs.readFileSync(page,'utf8');if(!html.includes('data-before-after-preview')||!html.includes('before-after-preview__scrim')||!html.includes('assets/js/pages/home/before-after.js'))throw new Error('preview runtime DOM drift '+page)}
+          const runtime=fs.readFileSync(rt,'utf8'),resultsRuntime=fs.readFileSync(rr,'utf8');if(!runtime.includes("document.body.classList.add('before-after-preview-open')")||!runtime.includes("document.body.classList.remove('before-after-preview-open')"))throw new Error('state class authority drift');if(!runtime.includes("root.hidden = false")||!runtime.includes("root.setAttribute('aria-hidden', 'false')"))throw new Error('open DOM contract drift');if(!resultsRuntime.includes('window.DokeHomeBeforeAfter?.create({ signal: previewSignal })'))throw new Error('results bootstrap drift');
+          console.log(`REACH AUTHORITY PASS|pages=${reached.join(',')}|directImporter=${direct[0]}|runtime=${rt}|resultsBootstrap=${rr}|realDomPages=2|stateClass=before-after-preview-open`);
+          NODE
+          echo "EXACT IDENTITY PASS|sha=$TARGET_SHA|parent=$PARENT_SHA|tree=$TARGET_TREE|blob=$TARGET_BLOB|hash=$TARGET_HASH|bytes=$TARGET_BYTES|files=1|additions=0|deletions=2"
+          echo 'STATIC PROOF TRANSFER PASS|run=31977986659|job=95240234466|rows=2|sameSelector=2|sameContext=2|sameImportance=2|laterWinners=2|unconditionalDominance=2|browserRequired=0|transport=independent-byte-reconstruction'
+
+      - name: Responsive contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run test:responsive-contract | tee /tmp/responsive.log
+          grep -q 'Responsive contract test: PASS' /tmp/responsive.log
+          grep -q 'Checks: 893' /tmp/responsive.log
+          grep -q 'Failures: 0' /tmp/responsive.log
+          grep -q 'Skips: 277' /tmp/responsive.log
+          echo 'RESPONSIVE PERMANENT PASS|checks=893|failures=0|skips=277'
+
+      - name: Governance contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:agent-governance
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/conflicts.log
+          grep -q 'Conflicting class/property pairs: 339' /tmp/conflicts.log
+          npm run audit:shared-app-header-contract
+          npm run audit:mobile-shell-location-contract
+          npm run audit:responsive-boundaries
+          npm run audit:duplicate-assets | tee /tmp/dup.log
+          grep -q 'Duplicate groups: 0' /tmp/dup.log
+          grep -q 'Duplicated files: 0' /tmp/dup.log
+          npm run audit:domain-completion-matrix | tee /tmp/domain.log
+          grep -q 'Domains: 23' /tmp/domain.log
+          grep -q 'Critical flows: 15' /tmp/domain.log
+          grep -q 'Average maturity: 2.91/6' /tmp/domain.log
+          grep -q 'Critical blockers: 12' /tmp/domain.log
+          echo 'GOVERNANCE PERMANENT PASS|conflicts=339|domain=23/15/2.91/12|duplicates=0/0'
+
+      - name: Isolate known parent-stale authority-doc regeneration
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(sha256sum "$AUTHORITY_DOC_A" | awk '{print $1}')" = "$AUTHORITY_DOC_A_REGEN_HASH"
+          test "$(sha256sum "$AUTHORITY_DOC_B" | awk '{print $1}')" = "$AUTHORITY_DOC_B_REGEN_HASH"
+          git checkout "$TARGET_SHA" -- "$AUTHORITY_DOC_A" "$AUTHORITY_DOC_B"
+          test -z "$(git diff --name-only -- "$AUTHORITY_DOC_A" "$AUTHORITY_DOC_B")"
+          echo "AUTHORITY DOC BASELINE ISOLATION PASS|permanentSemanticDocDelta=0|knownHashes=$AUTHORITY_DOC_A_REGEN_HASH/$AUTHORITY_DOC_B_REGEN_HASH"
+
+      - name: Permanent residual proof
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:active-legacy-structures
+          node /tmp/ux054-cert-residual.cjs
+
+      - name: Dependency snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm audit --json > /tmp/npm-audit.json || true
+          node <<'NODE'
+          const fs=require('fs');const a=JSON.parse(fs.readFileSync('/tmp/npm-audit.json','utf8'));const v=a.metadata?.vulnerabilities||{};if((v.critical??0)!==0)throw new Error(`critical dependency vulnerability drift: ${v.critical}`);console.log(`NPM AUDIT SNAPSHOT|total=${v.total??'n/a'}|critical=${v.critical??'n/a'}|high=${v.high??'n/a'}|moderate=${v.moderate??'n/a'}|low=${v.low??'n/a'}`);
+          NODE
+
+      - name: Final exact restore
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "$TARGET_SHA"
+          git clean -ffdx
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD^{tree})" = "$TARGET_TREE"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(git hash-object "$IMPORTER_FILE")" = "$IMPORTER_BLOB"
+          test "$(git hash-object "$HOME_PAGE")" = "$HOME_PAGE_BLOB"
+          test "$(git hash-object "$RESULTS_PAGE")" = "$RESULTS_PAGE_BLOB"
+          test "$(git hash-object "$RUNTIME_FILE")" = "$RUNTIME_BLOB"
+          test "$(git hash-object "$RESULTS_RUNTIME_FILE")" = "$RESULTS_RUNTIME_BLOB"
+          test "$(sha256sum "$TARGET_FILE" | awk '{print $1}')" = "$TARGET_HASH"
+          test "$(wc -c < "$TARGET_FILE" | tr -d ' ')" = "$TARGET_BYTES"
+          REMOTE="$(git ls-remote --heads origin "refs/heads/$PERM_BRANCH" | awk '{print $1}')"
+          test "$REMOTE" = "$TARGET_SHA"
+          test -z "$(git status --porcelain)"
+          echo "PERMANENT CHECKPOINT PASS|sha=$TARGET_SHA|parent=$PARENT_SHA|tree=$TARGET_TREE|blob=$TARGET_BLOB|hash=$TARGET_HASH|bytes=$TARGET_BYTES|residual=20/462/0|productMutation=0|prCreated=0"
