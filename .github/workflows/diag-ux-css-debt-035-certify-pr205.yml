@@ -1,0 +1,138 @@
+name: Doke UX-CSS-DEBT-035 PR205 Sonar Exact Certification
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-035-certify-pr205
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: f77656491a382a4385bfb1faf94fe08a1e31166c
+      PARENT_SHA: c2cdf591c0b3b902c4def0e8ffca4e575c96e22f
+      BASE_BRANCH: ux/ux-css-debt-034-configuracoes-compaction
+      HEAD_BRANCH: ux/ux-css-debt-035-photo-discovery-compaction
+      TARGET_FILE: assets/css/pages/comunidade/photo-discovery.css
+      TARGET_SHA256: a4f2273f49796bed07a634b4a9197431b67801cda4c3e84c24358fdb99268cff
+      TARGET_BLOB: 3ecc2557b65057567e97974265c0505d69d2f293
+      TARGET_BYTES: '28083'
+      PROJECT_KEY: Ezyrus07_doke-web
+      PR_NUMBER: '205'
+    steps:
+      - name: Checkout diagnostic harness
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+
+      - name: Checkout exact permanent SHA with full history
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: f77656491a382a4385bfb1faf94fe08a1e31166c
+          fetch-depth: 0
+          clean: true
+
+      - name: Guard exact PR scope permanent identity and draft state
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          git fetch --no-tags origin "+refs/heads/$BASE_BRANCH:refs/remotes/origin/$BASE_BRANCH" "+refs/heads/$HEAD_BRANCH:refs/remotes/origin/$HEAD_BRANCH"
+          test "$(git rev-parse "refs/remotes/origin/$BASE_BRANCH")" = "$PARENT_SHA"
+          test "$(git rev-parse "refs/remotes/origin/$HEAD_BRANCH")" = "$TARGET_SHA"
+          test "$(git merge-base "$TARGET_SHA" "refs/remotes/origin/$BASE_BRANCH")" = "$PARENT_SHA"
+          test "$(git rev-list --count "$PARENT_SHA..HEAD")" = 1
+          test "$(git diff --name-only "$PARENT_SHA...HEAD")" = "$TARGET_FILE"
+          read -r add del file < <(git diff --numstat "$PARENT_SHA...HEAD" -- "$TARGET_FILE")
+          test "$add" = "0" && test "$del" = "54" && test "$file" = "$TARGET_FILE"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(sha256sum "$TARGET_FILE" | awk '{print $1}')" = "$TARGET_SHA256"
+          test "$(wc -c < "$TARGET_FILE" | tr -d ' ')" = "$TARGET_BYTES"
+          test -z "$(git diff --name-only "$PARENT_SHA...HEAD" -- '*.js' '*.html' 'package.json' 'package-lock.json')"
+          git diff --check "$PARENT_SHA...HEAD"
+          test -z "$(git status --porcelain)"
+          curl -fsSL -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/Ezyrus07/doke-web/pulls/$PR_NUMBER" -o /tmp/pr.json
+          node - <<'NODE'
+          const fs=require('fs');
+          const p=JSON.parse(fs.readFileSync('/tmp/pr.json','utf8'));
+          const eq=(actual,expected,label)=>{if(actual!==expected)throw new Error(`${label}: ${actual} != ${expected}`)};
+          eq(p.number,205,'number');
+          eq(p.state,'open','state');
+          eq(p.draft,true,'draft');
+          eq(p.merged_at,null,'merged_at');
+          eq(p.head.sha,process.env.TARGET_SHA,'head sha');
+          eq(p.base.sha,process.env.PARENT_SHA,'base sha');
+          eq(p.head.ref,process.env.HEAD_BRANCH,'head ref');
+          eq(p.base.ref,process.env.BASE_BRANCH,'base ref');
+          console.log(`PR205 STATE PASS|state=${p.state}|draft=${p.draft}|merged=${p.merged_at!==null}|head=${p.head.sha}|base=${p.base.sha}`);
+          NODE
+          echo "PR205 EXACT SCOPE PASS|sha=$TARGET_SHA|parent=$PARENT_SHA|files=1|additions=0|deletions=54|blob=$TARGET_BLOB|sha256=$TARGET_SHA256|bytes=$TARGET_BYTES"
+
+      - name: Require Sonar token
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: test -n "$SONAR_TOKEN"
+
+      - name: Analyze PR 205 exact SHA and enforce SonarQube Cloud Quality Gate
+        uses: SonarSource/sonarqube-scan-action@c7ee0f9df90b7aa20e8dcf9695dcfe2e7da5b4f2
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >-
+            -Dsonar.projectKey=Ezyrus07_doke-web
+            -Dsonar.organization=ezyrus07
+            -Dsonar.pullrequest.key=205
+            -Dsonar.pullrequest.branch=ux/ux-css-debt-035-photo-discovery-compaction
+            -Dsonar.pullrequest.base=ux/ux-css-debt-034-configuracoes-compaction
+            -Dsonar.scm.revision=f77656491a382a4385bfb1faf94fe08a1e31166c
+            -Dsonar.qualitygate.wait=true
+            -Dsonar.qualitygate.timeout=600
+
+      - name: Verify Sonar API final PR gate
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsS -u "$SONAR_TOKEN:" "https://sonarcloud.io/api/qualitygates/project_status?projectKey=$PROJECT_KEY&pullRequest=$PR_NUMBER" -o /tmp/sonar-gate.json
+          node - <<'NODE'
+          const fs=require('fs');
+          const x=JSON.parse(fs.readFileSync('/tmp/sonar-gate.json','utf8'));
+          const s=x.projectStatus?.status;
+          console.log('SONAR API STATUS='+s);
+          if(s!=='OK') throw Error('Sonar gate '+s);
+          NODE
+
+      - name: Final PR205 certification marker and cleanup
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "$TARGET_SHA"
+          git clean -fdx
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(sha256sum "$TARGET_FILE" | awk '{print $1}')" = "$TARGET_SHA256"
+          test -z "$(git status --porcelain)"
+          git fetch --no-tags origin "+refs/heads/$BASE_BRANCH:refs/remotes/origin/$BASE_BRANCH" "+refs/heads/$HEAD_BRANCH:refs/remotes/origin/$HEAD_BRANCH"
+          test "$(git rev-parse "refs/remotes/origin/$BASE_BRANCH")" = "$PARENT_SHA"
+          test "$(git rev-parse "refs/remotes/origin/$HEAD_BRANCH")" = "$TARGET_SHA"
+          test "$(git merge-base "$TARGET_SHA" "refs/remotes/origin/$BASE_BRANCH")" = "$PARENT_SHA"
+          curl -fsSL -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/Ezyrus07/doke-web/pulls/$PR_NUMBER" -o /tmp/pr-final.json
+          node - <<'NODE'
+          const fs=require('fs');
+          const p=JSON.parse(fs.readFileSync('/tmp/pr-final.json','utf8'));
+          if(p.state!=='open'||p.draft!==true||p.merged_at!==null||p.head.sha!==process.env.TARGET_SHA||p.base.sha!==process.env.PARENT_SHA) throw new Error('PR205 final state drift');
+          console.log(`PR205 FINAL STATE PASS|state=${p.state}|draft=${p.draft}|merged=${p.merged_at!==null}|head=${p.head.sha}|base=${p.base.sha}`);
+          NODE
+          echo "PR205 CERTIFICATION CHECKPOINT|pr=205|sha=$TARGET_SHA|parent=$PARENT_SHA|candidate=$TARGET_SHA256|productMutation=0"
