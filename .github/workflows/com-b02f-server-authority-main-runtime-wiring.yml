@@ -1,0 +1,119 @@
+name: COM-B02F Server Authority Main Runtime Wiring
+
+on:
+  push:
+    branches: [com/com-001-baseline-audit]
+    paths:
+      - 'backend/shared/http/route-registry.js'
+      - 'backend/modules/communities/route-handlers.js'
+      - 'config/com-b02f-server-authority-main-runtime-wiring-authorization.json'
+      - 'scripts/test-com-b02f-server-authority-main-runtime-wiring.js'
+      - '.github/workflows/com-b02f-server-authority-main-runtime-wiring.yml'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - 'backend/shared/http/route-registry.js'
+      - 'backend/modules/communities/route-handlers.js'
+      - 'config/com-b02f-server-authority-main-runtime-wiring-authorization.json'
+      - 'scripts/test-com-b02f-server-authority-main-runtime-wiring.js'
+      - '.github/workflows/com-b02f-server-authority-main-runtime-wiring.yml'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: com-b02f-main-runtime-wiring-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: false
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Frozen B02E lineage and exact authorized repository-only scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE=f6e38822b1ad2b6ac6125f75e98a38a958957d5b
+          git merge-base --is-ancestor "$BASE" HEAD
+          test "$(git rev-parse HEAD:config/com-b02e-server-authority-main-runtime-integration-readiness.json)" = "468aa1d27ab88ed002f3bbf4b6c79bb829808144"
+          test "$(git rev-parse HEAD:backend/modules/communities/community-server-authority-runtime-integration-readiness.js)" = "e1e512dd9e92fcf66316cf2e45379978d114ad4a"
+          test "$(git rev-parse HEAD:backend/shared/http/module-route-loader.js)" = "7b3c897c0bf20069b733632c0b424b8664eb8cf5"
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "b9b2abbee1aed1033c122bf7f2802c7e80844623"
+          expected="$(printf '%s\n' \
+            .github/workflows/com-b02f-server-authority-main-runtime-wiring.yml \
+            backend/modules/communities/route-handlers.js \
+            backend/shared/http/route-registry.js \
+            config/com-b02f-server-authority-main-runtime-wiring-authorization.json \
+            scripts/test-com-b02f-server-authority-main-runtime-wiring.js | sort)"
+          expected_reconciled="$(printf '%s\n' \
+            .github/workflows/com-b02f-server-authority-main-runtime-wiring.yml \
+            backend/modules/communities/route-handlers.js \
+            backend/shared/http/route-registry.js \
+            config/com-b02f-server-authority-main-runtime-wiring-authorization.json \
+            docs/DOMAIN-COMPLETION-MATRIX.md \
+            reports/generated/domain-completion-matrix-report.json \
+            scripts/test-com-b02f-server-authority-main-runtime-wiring.js | sort)"
+          actual="$(git diff --name-only "$BASE" HEAD | sort)"
+          test "$actual" = "$expected" || test "$actual" = "$expected_reconciled"
+
+      - name: Syntax and B02F repository wiring conformance
+        run: |
+          node --check backend/shared/http/route-registry.js
+          node --check backend/modules/communities/route-handlers.js
+          node --check scripts/test-com-b02f-server-authority-main-runtime-wiring.js
+          node scripts/test-com-b02f-server-authority-main-runtime-wiring.js
+
+      - name: Fail-closed runtime and remote authority hard blocks
+        shell: bash
+        run: |
+          set -euo pipefail
+          for route in communities.membership.command communities.governance.command communities.content.command; do
+            grep -F "$route" backend/shared/http/route-registry.js
+          done
+          for handler in executeMembershipCommand executeGovernanceCommand executeContentCommand; do
+            grep -F "$handler" backend/modules/communities/route-handlers.js
+          done
+          grep -F 'COM_B02F_ROUTE_NOT_DEPLOYED_OR_ACTIVATED' backend/modules/communities/route-handlers.js
+          grep -F 'COM_B04G_ROUTE_NOT_DEPLOYED_OR_ACTIVATED' backend/modules/communities/route-handlers.js
+          ! grep -E 'createClient\(|\.rpc\(|\.from\(|fetch\(|process\.env|SUPABASE_SERVICE_ROLE_KEY' backend/modules/communities/route-handlers.js
+          node - <<'NODE'
+          const b=require('./config/com-b02f-server-authority-main-runtime-wiring-authorization.json');
+          if(b.authorization.consumedFromHead!=='f6e38822b1ad2b6ac6125f75e98a38a958957d5b'||b.authorization.received!==true||b.authorization.consumed!==true||b.authorization.singleExecutionOnly!==true||b.authorization.workflowRerunAllowedAfterAttempt!==false)throw new Error('B02F_AUTHORIZATION_DRIFT');
+          for(const k of ['routeRegistryMutationAuthority','communityRouteHandlerMutationAuthority','runtimeWiringAuthority'])if(b.authority[k]!==true)throw new Error(`B02F_MISSING_AUTHORITY:${k}`);
+          for(const k of ['moduleRouteLoaderMutationAuthority','stagingDeploymentAuthority','stagingTrafficAuthority','realCommunityMutationAuthority','realtimeActivationAuthority','remoteExecutionAuthority','networkAuthority','credentialReadAuthority','identityLifecycleAuthority','productionAuthority','pullRequestMergeAuthority','readyForReviewAuthority','triggerCreationAuthority','receiptCreationAuthority','r5iCreationAuthority'])if(b.authority[k]!==false)throw new Error(`B02F_FORBIDDEN_AUTHORITY:${k}`);
+          for(const k of ['runtimeActivated','stagingDeploymentExecuted','stagingTrafficEnabled','networkRequestExecuted','realtimeSubscriptionExecuted','credentialReadExecuted','identityMutationExecuted','realCommunityMutationExecuted','triggerCreated','receiptCreated','productionChanged','pullRequestMerged','readyForReviewChanged'])if(b.effects[k]!==false)throw new Error(`B02F_FORBIDDEN_EFFECT:${k}`);
+          if(b.functionalCheckpoint.lastFunctionalCheckpoint!=='COM-B03C-R5H'||b.functionalCheckpoint.exactRootCauseProven!==false||b.functionalCheckpoint.causalPromotionAllowed!==false||b.functionalCheckpoint.privatePresencePromotionAllowed!==false||b.functionalCheckpoint.r5iCreated!==false||b.functionalCheckpoint.r5iInferred!==false)throw new Error('B02F_FUNCTIONAL_CHECKPOINT_DRIFT');
+          NODE
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Domain Completion Matrix
+        run: npm run audit:domain-completion-matrix
+
+      - name: Agent Governance
+        run: npm run audit:agent-governance
+
+      - name: Diff hygiene
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE=f6e38822b1ad2b6ac6125f75e98a38a958957d5b
+          git diff --check "$BASE" HEAD
