@@ -1,0 +1,85 @@
+name: TEMP COM-B02G Matrix Derivative Materializer
+
+on:
+  push:
+    branches:
+      - tmp/com-b02g-matrix-sync-20260816
+    paths:
+      - '.github/workflows/tmp-com-b02g-matrix-sync.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tmp-com-b02g-matrix-sync-20260816
+  cancel-in-progress: false
+
+jobs:
+  materialize:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact temporary candidate
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify authorized parent and temporary-only install
+        shell: bash
+        run: |
+          set -euo pipefail
+          AUTHORIZED=f854c3b624e273b58f42e83036c149e8d42f1712
+          test "$(git rev-parse HEAD^)" = "$AUTHORIZED"
+          test "$(git diff --name-only "$AUTHORIZED" HEAD)" = ".github/workflows/tmp-com-b02g-matrix-sync.yml"
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "$(git rev-parse "$AUTHORIZED":config/domain-completion-matrix.json)"
+          test "$(git rev-parse HEAD:backend/modules/communities/community-server-authority-runtime-composition-readiness.js)" = "$(git rev-parse "$AUTHORIZED":backend/modules/communities/community-server-authority-runtime-composition-readiness.js)"
+          test "$(git rev-parse HEAD:config/com-b02g-server-authority-runtime-composition-readiness.json)" = "$(git rev-parse "$AUTHORIZED":config/com-b02g-server-authority-runtime-composition-readiness.json)"
+          test "$(git rev-parse HEAD:scripts/test-com-b02g-server-authority-runtime-composition-readiness.js)" = "$(git rev-parse "$AUTHORIZED":scripts/test-com-b02g-server-authority-runtime-composition-readiness.js)"
+          test "$(git rev-parse HEAD:.github/workflows/com-b02g-server-authority-runtime-composition-readiness.yml)" = "$(git rev-parse "$AUTHORIZED":.github/workflows/com-b02g-server-authority-runtime-composition-readiness.yml)"
+
+      - name: Materialize only deterministic Matrix derivatives
+        shell: bash
+        run: |
+          set -euo pipefail
+          AUTHORIZED=f854c3b624e273b58f42e83036c149e8d42f1712
+          CONFIG_BLOB="$(git rev-parse "$AUTHORIZED":config/domain-completion-matrix.json)"
+          npm run write:domain-completion-matrix
+          test "$(git hash-object config/domain-completion-matrix.json)" = "$CONFIG_BLOB"
+          rm .github/workflows/tmp-com-b02g-matrix-sync.yml
+          actual="$(git diff --name-only "$AUTHORIZED" | sort)"
+          allowed="$(printf '%s\n' docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json | sort)"
+          test "$actual" = "$allowed"
+          git diff --quiet "$AUTHORIZED" -- backend/modules/communities/community-server-authority-runtime-composition-readiness.js
+          git diff --quiet "$AUTHORIZED" -- config/com-b02g-server-authority-runtime-composition-readiness.json
+          git diff --quiet "$AUTHORIZED" -- scripts/test-com-b02g-server-authority-runtime-composition-readiness.js
+          git diff --quiet "$AUTHORIZED" -- .github/workflows/com-b02g-server-authority-runtime-composition-readiness.yml
+          git diff --quiet "$AUTHORIZED" -- backend/modules/communities/route-handlers.js
+          git diff --quiet "$AUTHORIZED" -- backend/shared/http/route-registry.js
+          git diff --quiet "$AUTHORIZED" -- backend/shared/http/module-route-loader.js
+
+      - name: Repository-only certification gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          node --check backend/modules/communities/community-server-authority-runtime-composition-readiness.js
+          node --check scripts/test-com-b02g-server-authority-runtime-composition-readiness.js
+          node scripts/test-com-b02g-server-authority-runtime-composition-readiness.js
+          git diff --check f854c3b624e273b58f42e83036c149e8d42f1712
+
+      - name: Commit synchronized derivatives and self-remove materializer
+        shell: bash
+        run: |
+          set -euo pipefail
+          AUTHORIZED=f854c3b624e273b58f42e83036c149e8d42f1712
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json .github/workflows/tmp-com-b02g-matrix-sync.yml
+          staged="$(git diff --cached --name-only | sort)"
+          expected="$(printf '%s\n' .github/workflows/tmp-com-b02g-matrix-sync.yml docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json | sort)"
+          test "$staged" = "$expected"
+          git commit -m "docs(com): synchronize Matrix derivatives for B02G certification"
+          test "$(git diff --name-only "$AUTHORIZED" HEAD | sort)" = "$(printf '%s\n' docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json | sort)"
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "$(git rev-parse "$AUTHORIZED":config/domain-completion-matrix.json)"
+          git push origin HEAD:refs/heads/tmp/com-b02g-matrix-sync-20260816
