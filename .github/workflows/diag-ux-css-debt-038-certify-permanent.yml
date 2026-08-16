@@ -37,12 +37,48 @@ jobs:
           node --check /tmp/ux-css-debt-038-cert-residual.cjs
           node --check /tmp/ux-css-debt-038-cert-identity.cjs
 
-      - name: Checkout exact permanent SHA
+      - name: Checkout exact certified UX-CSS-DEBT-037 parent
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
-          ref: ${{ env.TARGET_SHA }}
+          ref: ${{ env.PARENT_SHA }}
           fetch-depth: 2
           clean: true
+
+      - name: Guard parent identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$PARENT_SHA"
+          test "$(git hash-object "$TARGET_CSS")" = "$PARENT_BLOB"
+          test -z "$(git status --porcelain)"
+          echo "PARENT IDENTITY PASS|sha=$PARENT_SHA|blob=$PARENT_BLOB"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies and generate parent responsive baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          npm run audit:active-legacy-structures
+          node scripts/generate-responsive-index-baseline.js
+          test -s reports/responsive-index-baseline.json
+          test "$(git rev-parse HEAD)" = "$PARENT_SHA"
+          echo "PARENT RESPONSIVE BASELINE PASS|parent=$PARENT_SHA"
+
+      - name: Checkout exact permanent SHA without removing generated baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin "$TARGET_SHA" --depth=2
+          git checkout --detach "$TARGET_SHA"
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test -s reports/responsive-index-baseline.json
+          echo "PERMANENT CHECKOUT PASS|sha=$TARGET_SHA|responsiveBaseline=preserved"
 
       - name: Exact permanent identity scope reach and candidate-byte guard
         shell: bash
@@ -55,7 +91,6 @@ jobs:
           test "$(git rev-parse HEAD^{tree})" = "$TARGET_TREE"
           test "$(git merge-base "$PARENT_SHA" HEAD)" = "$PARENT_SHA"
           test "$(git rev-list --count "$PARENT_SHA"..HEAD)" = "1"
-          test "$(git hash-object "$PARENT_SHA:$TARGET_CSS" 2>/dev/null || true)" = "" || true
           test "$(git rev-parse "$PARENT_SHA:$TARGET_CSS")" = "$PARENT_BLOB"
           test "$(git hash-object "$TARGET_CSS")" = "$TARGET_BLOB"
           test "$(git diff --name-only "$PARENT_SHA"...HEAD)" = "$TARGET_CSS"
@@ -79,15 +114,6 @@ jobs:
           NODE
           echo "EXACT IDENTITY PASS|sha=$TARGET_SHA|parent=$PARENT_SHA|tree=$TARGET_TREE|blob=$TARGET_BLOB|files=1|additions=0|deletions=73"
 
-      - name: Setup Node.js
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with:
-          node-version: 22
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci --ignore-scripts
-
       - name: Responsive contract
         shell: bash
         run: |
@@ -97,6 +123,7 @@ jobs:
           grep -q 'Checks: 893' /tmp/responsive.log
           grep -q 'Failures: 0' /tmp/responsive.log
           grep -q 'Skips: 277' /tmp/responsive.log
+          echo 'RESPONSIVE PASS|checks=893|failures=0|skips=277'
 
       - name: Governance contracts
         shell: bash
@@ -147,7 +174,7 @@ jobs:
           test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
           test "$(git rev-parse HEAD^{tree})" = "$TARGET_TREE"
           test "$(git hash-object "$TARGET_CSS")" = "$TARGET_BLOB"
-          echo "PERMANENT EXACT CERT PASS|sha=$TARGET_SHA|parent=$PARENT_SHA|tree=$TARGET_TREE|blob=$TARGET_BLOB|files=1|additions=0|deletions=73|residual=36/849/0|runtimeProof=transferred-by-exact-candidate-bytes|prCreated=0"
+          echo "PERMANENT EXACT CERT PASS|sha=$TARGET_SHA|parent=$PARENT_SHA|tree=$TARGET_TREE|blob=$TARGET_BLOB|files=1|additions=0|deletions=73|responsive=893/0/277|residual=36/849/0|runtimeProof=transferred-by-exact-candidate-bytes|prCreated=0"
 
       - name: Clean generated artifacts and restore exact permanent checkpoint
         if: always()
