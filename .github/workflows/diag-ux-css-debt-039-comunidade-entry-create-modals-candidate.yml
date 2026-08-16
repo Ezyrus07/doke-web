@@ -16,6 +16,10 @@ jobs:
       PARENT_SHA: 2c2b87e287a2df5f261be5cc9f94439ed9719145
       TARGET_BLOB: 9dea353aa056080433035b044d9c92fb83f80062
       TARGET_FILE: assets/css/pages/comunidade/entry-create-modals.css
+      AUTHORITY_DOC_A: docs/PAGE-ASSET-AUTHORITY-MATRIX.md
+      AUTHORITY_DOC_B: docs/HOME-AUTHORITY-CLASSIFICATION.md
+      AUTHORITY_DOC_A_REGEN_HASH: 345a91bbd8c9fa54ab5f548c5f586d60cef40bf28eb10c9554050752f6431bb6
+      AUTHORITY_DOC_B_REGEN_HASH: b1027e88acf9a0a4b24c7870eca824b0ffbdc14fd75a6af31a86826051c58dda
     steps:
       - name: Checkout diagnostic harness
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -100,6 +104,19 @@ jobs:
           grep -q 'Critical blockers: 12' /tmp/domain.log
           echo "GOVERNANCE CANDIDATE PASS|conflicts=$conflicts|domain=23/15/2.91/12|duplicates=0/0"
 
+      - name: Isolate parent-stale authority-doc regeneration
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(sha256sum "${AUTHORITY_DOC_A}" | awk '{print $1}')" = "${AUTHORITY_DOC_A_REGEN_HASH}"
+          test "$(sha256sum "${AUTHORITY_DOC_B}" | awk '{print $1}')" = "${AUTHORITY_DOC_B_REGEN_HASH}"
+          test -n "$(git diff --name-only -- "${AUTHORITY_DOC_A}")"
+          test -n "$(git diff --name-only -- "${AUTHORITY_DOC_B}")"
+          git checkout "${TARGET_SHA}" -- "${AUTHORITY_DOC_A}" "${AUTHORITY_DOC_B}"
+          test -z "$(git diff --name-only -- "${AUTHORITY_DOC_A}" "${AUTHORITY_DOC_B}")"
+          test "$(git diff --name-only)" = "${TARGET_FILE}"
+          echo "AUTHORITY DOC BASELINE ISOLATION PASS|candidateSemanticDocDelta=0|parentGeneratedHashes=${AUTHORITY_DOC_A_REGEN_HASH}/${AUTHORITY_DOC_B_REGEN_HASH}|trackedProductDiff=${TARGET_FILE}"
+
       - name: Candidate residual proof
         shell: bash
         run: |
@@ -123,15 +140,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          echo 'DIFF INTEGRITY DIAGNOSTIC BEGIN'
-          git status --short --untracked-files=all || true
-          echo 'TRACKED DIFF NAMES:'
-          git diff --name-only || true
-          echo 'TARGET NUMSTAT:'
-          git diff --numstat -- "${TARGET_FILE}" || true
-          echo 'DIFF CHECK:'
-          git diff --check || true
-          echo 'DIFF INTEGRITY DIAGNOSTIC END'
           test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
           test "$(git diff --name-only)" = "${TARGET_FILE}"
           read -r add del file < <(git diff --numstat -- "${TARGET_FILE}")
@@ -139,7 +147,9 @@ jobs:
           git diff --check
           hash="$(sha256sum "${TARGET_FILE}" | awk '{print $1}')"
           bytes="$(wc -c < "${TARGET_FILE}" | tr -d ' ')"
-          echo "CANDIDATE FINAL PASS|parent=${TARGET_SHA}|hash=$hash|bytes=$bytes|files=1|additions=0|deletions=192|residual=35/657/0|prCreated=0"
+          test "$hash" = "2a00446c049d4095400c0e696236b2ee88c91015b23a5bc2bf9936fd983ea81c"
+          test "$bytes" = "44057"
+          echo "CANDIDATE FINAL PASS|parent=${TARGET_SHA}|hash=$hash|bytes=$bytes|files=1|additions=0|deletions=192|responsive=893/0/277|residual=35/657/0|prCreated=0"
 
       - name: Verify exact restore
         if: always()
