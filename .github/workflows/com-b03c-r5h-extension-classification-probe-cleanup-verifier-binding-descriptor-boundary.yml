@@ -1,0 +1,160 @@
+name: COM-B03C R5H Cleanup Verifier Binding Descriptor Boundary
+
+on:
+  push:
+    branches: [com/com-001-baseline-audit]
+    paths:
+      - 'config/com-b03c-r5h-extension-classification-probe-cleanup-verifier-binding-descriptor-boundary.json'
+      - '.github/workflows/com-b03c-r5h-extension-classification-probe-cleanup-verifier-binding-descriptor-boundary.yml'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  certify:
+    if: github.run_attempt == 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - run: npm ci --ignore-scripts
+
+      - name: Frozen certified sanitized-evidence-recorder binding lineage
+        shell: bash
+        run: |
+          set -euo pipefail
+          parent=34ec11fc4c7a6613e1a5ae4fba692730bac69b05
+          git merge-base --is-ancestor "$parent" HEAD
+          test "$(git rev-parse "$parent^{tree}")" = "053d9d58206807522aa3e646ba70d4400fd9e322"
+          test "$(git rev-parse HEAD:config/com-b03c-r5h-extension-classification-probe-sanitized-evidence-recorder-binding-boundary.json)" = "11ca808f80e3cae310b966b39e20d86e1dba113b"
+          test "$(git rev-parse HEAD:.github/workflows/com-b03c-r5h-extension-classification-probe-sanitized-evidence-recorder-binding-boundary.yml)" = "94f3e5da876f6954be4974e18365731668df49c7"
+          test "$(git rev-parse HEAD:backend/modules/communities/community-realtime-private-auth-r5h-extension-classification-probe-sanitized-evidence-recorder.js)" = "11c61cd8666a7929819dc02ea3d367ff4834c85d"
+          test "$(git rev-parse HEAD:config/com-b03c-r5h-extension-classification-probe-harness-specification.json)" = "8611bc7cffd54d813248988b3b4fcf9bd894384c"
+          test "$(git rev-parse HEAD:backend/modules/communities/community-realtime-private-auth-r5h-extension-classification-probe-harness.js)" = "723d33aea011a28766b819fa823aad82f341aba3"
+          test "$(git rev-parse HEAD:config/com-b03c-r5h-extension-classification-probe-cleanup-verifier-binding-descriptor-boundary.json)" = "b76b4ecb846a71d01708bb686d3f9b9d340368b0"
+
+      - name: Exact repository-only materialization scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          parent=34ec11fc4c7a6613e1a5ae4fba692730bac69b05
+          descriptor=config/com-b03c-r5h-extension-classification-probe-cleanup-verifier-binding-descriptor-boundary.json
+          certifier=.github/workflows/com-b03c-r5h-extension-classification-probe-cleanup-verifier-binding-descriptor-boundary.yml
+          initial="$(printf '%s\n' "$certifier" "$descriptor" | sort)"
+          final="$(printf '%s\n' "$certifier" "$descriptor" docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json | sort)"
+          actual="$(git diff --name-only "$parent" HEAD | sort)"
+          if [ "$actual" != "$initial" ] && [ "$actual" != "$final" ]; then
+            printf 'Unexpected scope:\n%s\n' "$actual" >&2
+            exit 1
+          fi
+
+      - name: Static descriptor-only no-runtime boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          descriptor=config/com-b03c-r5h-extension-classification-probe-cleanup-verifier-binding-descriptor-boundary.json
+          if grep -En 'https?://|process\.env|secrets\.|@supabase|createClient|\.channel\(|\.subscribe\(|fetch\(|WebSocket|projectRef|projectUrl|apiKey|service_role|anonKey|SUPABASE_|\.auth\.admin|createUser\(|deleteUser\(|signUp\(' "$descriptor"; then
+            echo 'Runtime, endpoint, credential, remote dependency or Realtime syntax is forbidden in cleanup-verifier descriptor boundary' >&2
+            exit 1
+          fi
+
+      - name: Semantic cleanup-verifier binding descriptor assertions
+        shell: bash
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const d = require('./config/com-b03c-r5h-extension-classification-probe-cleanup-verifier-binding-descriptor-boundary.json');
+          const p = require('./config/com-b03c-r5h-extension-classification-probe-sanitized-evidence-recorder-binding-boundary.json');
+          const hs = require('./config/com-b03c-r5h-extension-classification-probe-harness-specification.json');
+          const h = require('./backend/modules/communities/community-realtime-private-auth-r5h-extension-classification-probe-harness.js');
+          const r = require('./backend/modules/communities/community-realtime-private-auth-r5h-extension-classification-probe-sanitized-evidence-recorder.js');
+
+          const environment='doke-web-staging';
+          const resource='doke-web-staging-realtime-messages-extension-classification-probe';
+          const fingerprint='sha256:2ab84b52b269ef4c9556c9818f4355d466bce9f735878213b49d9840cdd00fbf';
+          const bindingFields=['verifierContractId','verifierModulePath','verifierModuleBlob','bindingBoundaryHead'];
+          const evidenceFields=['caseId','predicate','expectedClassification','joinSubscribed','terminalStatusClassification','extensionValueClassification','cleanupCompleted','zeroResidue','rawErrorCaptured'];
+          const allTrue=(o,keys,label)=>keys.forEach(k=>{if(o[k]!==true)throw new Error(`${label}:${k}`)});
+          const allFalse=(o,keys,label)=>keys.forEach(k=>{if(o[k]!==false)throw new Error(`${label}:${k}`)});
+          const allNull=(o,keys,label)=>keys.forEach(k=>{if(o[k]!==null)throw new Error(`${label}:${k}`)});
+
+          if(d.contractId!=='com-b03c-r5h-extension-classification-probe-cleanup-verifier-binding-descriptor-boundary-v1') throw new Error('CONTRACT_DRIFT');
+          const rc=d.repositoryContext;
+          if(rc.parentCertifiedSanitizedEvidenceRecorderBindingHead!=='34ec11fc4c7a6613e1a5ae4fba692730bac69b05' || rc.parentCertifiedSanitizedEvidenceRecorderBindingTree!=='053d9d58206807522aa3e646ba70d4400fd9e322' || rc.parentCertificationRun!==31963571348 || rc.parentCertificationJob!==95205142944) throw new Error('PARENT_CERTIFICATION_DRIFT');
+          if(rc.parentBoundaryBlob!=='11ca808f80e3cae310b966b39e20d86e1dba113b' || rc.parentCertifierBlob!=='94f3e5da876f6954be4974e18365731668df49c7' || rc.parentRecorderModuleBlob!=='11c61cd8666a7929819dc02ea3d367ff4834c85d' || rc.harnessSpecificationBlob!=='8611bc7cffd54d813248988b3b4fcf9bd894384c' || rc.harnessImplementationBlob!=='723d33aea011a28766b819fa823aad82f341aba3') throw new Error('PARENT_OR_SCHEMA_BLOB_DRIFT');
+          if(rc.matrixVersion!=='1.3.113' || rc.maturity!==3 || rc.productionGate!=='blocked') throw new Error('MATRIX_CONTEXT_DRIFT');
+          if(d.functionalCheckpoint.lastFunctionalCheckpoint!=='COM-B03C-R5H' || d.functionalCheckpoint.r5iCreated!==false || d.functionalCheckpoint.r5iInferred!==false) throw new Error('FUNCTIONAL_CHECKPOINT_DRIFT');
+
+          if(p.contractId!=='com-b03c-r5h-extension-classification-probe-sanitized-evidence-recorder-binding-boundary-v1') throw new Error('PARENT_CONTRACT_DRIFT');
+          const pb=p.sanitizedEvidenceRecorderBinding;
+          if(pb.slotId!=='sanitized_evidence_recorder' || pb.sanitizedEvidenceRecorderBindingDescriptorDefined!==true || pb.sanitizedEvidenceRecorderImplementationPresent!==true || pb.sanitizedEvidenceRecorderBindingDefined!==true || pb.sanitizedEvidenceRecorderBound!==true || pb.bindingKind!=='repository_owned_immutable_inert_module' || pb.localRepositoryBindingOnly!==true || pb.recorderModuleBlob!=='11c61cd8666a7929819dc02ea3d367ff4834c85d') throw new Error('PARENT_RECORDER_BINDING_DRIFT');
+          allFalse(pb,['evidenceWriteImplemented','evidencePersistenceImplemented','transportBound','cleanupVerifierBound','stagingReadAuthority','stagingMutationAuthority','networkAuthority','realtimeSubscriptionAuthority','authIdentityLifecycleAuthority','remoteCredentialReadAuthority','remoteExecutionAuthority'],'PARENT_RECORDER_AUTHORITY');
+          allNull(pb,['sanitizedEvidenceRecorder','evidenceSink','evidencePersistenceTarget'],'PARENT_CONCRETE_RECORDER_VALUE');
+          if(p.remainingDependentPortState.length!==1 || p.remainingDependentPortState[0].slotId!=='cleanup_verifier' || p.remainingDependentPortState[0].descriptorDefined!==false || p.remainingDependentPortState[0].bound!==false || p.remainingDependentPortState[0].concreteValuePresent!==false || p.remainingDependentPortState[0].separateCertifiedDescriptorBoundaryRequired!==true) throw new Error('PARENT_NEXT_PORT_DRIFT');
+
+          if(r.CONTRACT_ID!=='com-b03c-r5h-extension-classification-probe-sanitized-evidence-recorder-repository-implementation-v1' || r.EVIDENCE_FIELDS.join('|')!==evidenceFields.join('|')) throw new Error('RECORDER_IMPLEMENTATION_DRIFT');
+          if(hs.contractId!=='com-b03c-r5h-extension-classification-probe-harness-specification-v1') throw new Error('HARNESS_SPEC_CONTRACT_DRIFT');
+          if(hs.harnessSpecification.futureEvidenceSchema.fields.join('|')!==evidenceFields.join('|') || hs.harnessSpecification.futureEvidenceSchema.rawErrorCapturedMustEqual!==false || hs.harnessSpecification.futureEvidenceSchema.rawCredentialMaterialForbidden!==true || hs.harnessSpecification.futureEvidenceSchema.rawIdentityMaterialForbidden!==true || hs.harnessSpecification.futureEvidenceSchema.rawRemotePayloadForbidden!==true) throw new Error('HARNESS_EVIDENCE_SCHEMA_DRIFT');
+          const op=hs.harnessSpecification.observationProtocol;
+          allTrue(op,['exactlyOneObservationPerCase','identityCleanupRequired','zeroResidueRequired','sanitizedEvidenceOnly','rawRemoteErrorCaptureForbidden','terminalStatusAloneCannotProveCause','crossCaseComparisonRequiredForCausalConclusion'],'HARNESS_CLEANUP_PROTOCOL');
+          if(h.CONTRACT_ID!=='com-b03c-r5h-extension-classification-probe-harness-implementation-v1' || h.SPEC_BLOB!=='8611bc7cffd54d813248988b3b4fcf9bd894384c') throw new Error('HARNESS_IMPLEMENTATION_DRIFT');
+          const good=h.sanitizeObservation({caseId:'extension_is_null',predicate:'extension IS NULL',expectedClassification:'extension_unavailable_or_null',joinSubscribed:false,terminalStatusClassification:'channel_error',extensionValueClassification:'extension_unavailable_or_null',cleanupCompleted:true,zeroResidue:true,rawErrorCaptured:false});
+          if(good.decision!=='sanitized_observation_valid_repository_only' || good.cleanupCompleted!==true || good.zeroResidue!==true || good.rawErrorCaptured!==false || good.exactRootCauseProven!==false || good.causalPromotionAllowed!==false || good.privatePresencePromotionAllowed!==false) throw new Error('HARNESS_SANITIZER_ACCEPTANCE_DRIFT');
+          const rejected=h.sanitizeObservation({caseId:'extension_is_null',predicate:'extension IS NULL',expectedClassification:'extension_unavailable_or_null',joinSubscribed:false,terminalStatusClassification:'channel_error',extensionValueClassification:'extension_unavailable_or_null',cleanupCompleted:true,zeroResidue:true,rawErrorCaptured:false,rawRemoteError:'forbidden-test-value'});
+          if(rejected.decision!=='blocked_repository_only' || rejected.reason!=='HARNESS_RAW_MATERIAL_FORBIDDEN' || rejected.forbiddenField!=='rawRemoteError') throw new Error('HARNESS_SANITIZER_REJECTION_DRIFT');
+
+          const c=d.canonicalCleanupVerificationContract;
+          if(c.slotId!=='cleanup_verifier' || c.inputContractKind!=='canonical_sanitized_evidence_record' || c.evidenceFields.join('|')!==evidenceFields.join('|')) throw new Error('CLEANUP_CONTRACT_DRIFT');
+          allTrue(c.invariants,['exactlyOneObservationPerCaseRequired','sanitizedEvidenceOnly','cleanupCompletedMustEqualTrue','zeroResidueMustEqualTrue','rawErrorCapturedMustEqualFalse','identityCleanupRequired','zeroResidueRequired','terminalStatusAloneCannotProveCause','crossCaseComparisonRequiredForCausalConclusion','rawRemoteErrorForbidden','rawCredentialMaterialForbidden','rawIdentityMaterialForbidden','rawRemotePayloadForbidden','endpointMaterialForbidden','processEnvironmentReadForbidden','remoteDependencyImportForbidden','networkCallForbidden','realtimeSubscriptionForbidden'],'CLEANUP_INVARIANT');
+          allTrue(c.failClosedConditions,['missingCanonicalFieldMustBlock','nonCanonicalFieldMustBlock','cleanupCompletedFalseMustBlock','zeroResidueFalseMustBlock','rawErrorCapturedTrueMustBlock','rawMaterialPresentMustBlock'],'CLEANUP_FAIL_CLOSED');
+
+          const b=d.cleanupVerifierBindingDescriptor;
+          if(b.slotId!=='cleanup_verifier' || b.cleanupVerifierBindingDescriptorDefined!==true || b.cleanupVerifierImplementationPresent!==false || b.cleanupVerifierBindingDefined!==false || b.cleanupVerifierBound!==false || b.schemaOnly!==true || b.requiredFields.join('|')!==bindingFields.join('|')) throw new Error('DESCRIPTOR_DRIFT');
+          allTrue(b,['repositoryOwnedModuleRequired','repositoryRelativeModulePathRequired','immutableModuleBlobRequired','canonicalSanitizedEvidenceInputRequired','inputMustRemainReadOnly','verificationFailureMustFailClosed','futureBindingBoundaryRequired','futureBindingBoundaryMustBeSeparateCertifiedBoundary','futureBindingBoundaryMustReferenceThisDescriptorCertifiedHead','futureBindingBoundaryMayBindOnlyCleanupVerifierSlot','futureBindingBoundaryMustProvideRepositoryOwnedModuleContract','futureBindingBoundaryMustProvideRepositoryRelativeModulePath','futureBindingBoundaryMustProvideImmutableModuleBlob','futureBindingBoundaryMustPreserveSanitizedEvidenceRecorderBindingExactly','futureBindingBoundaryMustPreserveCanonicalEvidenceFieldsExactly','futureBindingBoundaryMustPreserveCleanupVerificationInvariants','futureBindingBoundaryMustTreatEvidenceInputAsReadOnly','futureBindingBoundaryMustFailClosedOnVerificationFailure','futureBindingBoundaryMayNotMutateEvidence','futureBindingBoundaryMayNotPersistEvidence','futureBindingBoundaryMayNotIntroduceEvidenceSink','futureBindingBoundaryMayNotIntroduceEndpoint','futureBindingBoundaryMayNotBindTransport','futureBindingBoundaryMayNotReadCredential','futureBindingBoundaryMayNotReadIdentityMaterial','futureBindingBoundaryMayNotReadProcessEnvironment','futureBindingBoundaryMayNotImportRemoteDependency','futureBindingBoundaryMayNotOpenRealtimeChannel','futureBindingBoundaryMayNotSubscribeRealtime','futureBindingBoundaryMayNotGrantStagingReadAuthority','futureBindingBoundaryMayNotGrantStagingMutationAuthority','futureBindingBoundaryMayNotGrantNetworkAuthority','futureBindingBoundaryMayNotGrantRealtimeSubscriptionAuthority','futureBindingBoundaryMayNotGrantAuthIdentityLifecycleAuthority','futureBindingBoundaryMayNotGrantRemoteExecutionAuthority','futureBindingBoundaryMayNotGrantCausalPromotionAuthority','futureBindingBoundaryMayNotGrantPrivatePresencePromotionAuthority'],'FUTURE_BINDING_FAIL_CLOSED');
+          allFalse(b,['evidenceMutationImplemented','verificationResultPersistenceImplemented','transportBound'],'DESCRIPTOR_MUST_REMAIN_FALSE');
+          allNull(b,['verifierContractId','verifierModulePath','verifierModuleBlob','bindingBoundaryHead','cleanupVerifier'],'CONCRETE_VERIFIER_FORBIDDEN');
+
+          const u=d.preservedUpstreamBindings;
+          if(u.runtimeAdapter.bound!==true || u.runtimeAdapter.bindingBoundaryHead!=='e2809ba029930eac76729c9ae5f1496919a500de') throw new Error('UPSTREAM_RUNTIME_ADAPTER_DRIFT');
+          if(u.targetEnvironment.bound!==true || u.targetEnvironment.bindingBoundaryHead!=='10ddea2bb7a4ded9bf1b7654585092a396f885cb' || u.targetEnvironment.stableEnvironmentIdentifier!==environment || u.targetEnvironment.production!==false) throw new Error('UPSTREAM_ENV_DRIFT');
+          if(u.targetResource.bound!==true || u.targetResource.bindingBoundaryHead!=='e297b7f921c72864471e123a3d628a7f3e2dd3fd' || u.targetResource.stableResourceIdentifier!==resource || u.targetResource.resourceScopeFingerprint!==fingerprint) throw new Error('UPSTREAM_RESOURCE_DRIFT');
+          if(u.credentialProvider.bound!==true || u.credentialProvider.bindingBoundaryHead!=='8ebf9cce39ded220df4a361b82145884041048bb' || u.credentialProvider.providerModuleBlob!=='6419696544fb9e1906df92e3591e93efcf04b826' || u.credentialProvider.credentialReadImplemented!==false) throw new Error('UPSTREAM_PROVIDER_DRIFT');
+          if(u.syntheticIdentityLifecycle.bound!==true || u.syntheticIdentityLifecycle.bindingBoundaryHead!=='feb50f13e3dc312deffeadb3d8814f3fca98be17' || u.syntheticIdentityLifecycle.lifecycleModuleBlob!=='ebc2e17cc27721c14c06d068de7889d119953e5c' || u.syntheticIdentityLifecycle.identityProvisioningImplemented!==false || u.syntheticIdentityLifecycle.identityDeletionImplemented!==false || u.syntheticIdentityLifecycle.identityMaterializationImplemented!==false) throw new Error('UPSTREAM_IDENTITY_DRIFT');
+          if(u.realtimeClientFactory.bound!==true || u.realtimeClientFactory.bindingBoundaryHead!=='08c524bd421abf1a68af36158fa79712fdbf3d0c' || u.realtimeClientFactory.factoryModuleBlob!=='6048f2850b2c87871204a6d669300329c2adf204' || u.realtimeClientFactory.clientInstantiationImplemented!==false || u.realtimeClientFactory.clientDisposalImplemented!==false) throw new Error('UPSTREAM_FACTORY_DRIFT');
+          if(u.sanitizedEvidenceRecorder.bound!==true || u.sanitizedEvidenceRecorder.bindingBoundaryHead!=='34ec11fc4c7a6613e1a5ae4fba692730bac69b05' || u.sanitizedEvidenceRecorder.recorderModuleBlob!=='11c61cd8666a7929819dc02ea3d367ff4834c85d' || u.sanitizedEvidenceRecorder.evidenceWriteImplemented!==false || u.sanitizedEvidenceRecorder.evidencePersistenceImplemented!==false || u.sanitizedEvidenceRecorder.transportBound!==false) throw new Error('UPSTREAM_RECORDER_DRIFT');
+
+          if(d.remainingDependentPortState.length!==1 || d.remainingDependentPortState[0].slotId!=='cleanup_verifier' || d.remainingDependentPortState[0].descriptorDefined!==true || d.remainingDependentPortState[0].bound!==false || d.remainingDependentPortState[0].concreteValuePresent!==false || d.remainingDependentPortState[0].separateCertifiedBindingBoundaryRequired!==true) throw new Error('REMAINING_PORT_DRIFT');
+          allNull(d.concreteState,['verifierContractId','verifierModulePath','verifierModuleBlob','bindingBoundaryHead','cleanupVerifier','evidenceSink','evidencePersistenceTarget','networkEndpoint','executionCommand','executionWorkflow','executionEntrypoint'],'CONCRETE_STATE_FORBIDDEN');
+          const bc=d.bindingCompleteness;
+          allTrue(bc,['runtimeAdapterSlotBound','targetEnvironmentSlotBound','targetResourceSlotBound','credentialProviderSlotBound','syntheticIdentityLifecycleSlotBound','realtimeClientFactorySlotBound','sanitizedEvidenceRecorderSlotBound','cleanupVerifierSlotDescriptorDefined'],'BINDING_COMPLETENESS_TRUE');
+          allFalse(bc,['cleanupVerifierSlotBound','allDependentPortsBound','transportBound','executionReady'],'BINDING_COMPLETENESS_FALSE');
+
+          allTrue(d.futureBindingBoundaryRequirements,['repositoryOnlyBoundaryRequired','exactDescriptorCertifiedHeadRequired','cleanupVerifierSlotOnly','requiredFieldsMustRemainExact','sanitizedEvidenceRecorderBindingMustRemainExact','canonicalEvidenceFieldsMustRemainExact','cleanupVerificationInvariantsMustRemainExact','evidenceInputMustRemainReadOnly','verificationFailureMustFailClosed','evidenceMutationMustRemainFalse','evidencePersistenceMustRemainFalse','evidenceSinkMustRemainAbsent','endpointMustRemainAbsent','transportMustRemainUnbound','credentialReadAuthorityMustRemainFalse','identityLifecycleMutationAuthorityMustRemainFalse','remoteClientInstantiationMustRemainFalse','processEnvironmentReadMustRemainAbsent','remoteDependencyLoadAuthorityMustRemainFalse','stagingReadAuthorityMustRemainFalse','stagingMutationAuthorityMustRemainFalse','networkAuthorityMustRemainFalse','realtimeSubscriptionAuthorityMustRemainFalse','authIdentityLifecycleAuthorityMustRemainFalse','executionEntrypointMustRemainAbsent','executionWorkflowMustRemainAbsent','remoteExecutionAuthorityMustRemainFalse','causalPromotionAuthorityMustRemainFalse','privatePresencePromotionAuthorityMustRemainFalse'],'FUTURE_REQUIREMENT');
+          const a=d.authorizationState;
+          allTrue(a,['freshExplicitSingleUseAuthorizationRequiredForFutureRemoteBoundary','futureAuthorizationMustBindExactCertifiedHeadEnvironmentResourceFingerprint','futureReceiptMustBeSeparateSingleFileCommit','receiptParentMustEqualAuthorizedHead','futureTriggerMustBeSeparateCanonicalBoundary','runAttemptOneRequired'],'AUTHORIZATION_MODEL');
+          allFalse(a,['priorR5dAuthorizationReusable','priorR5dReceiptReusable','priorR5dTriggerReusable','genericContinuationGrantsRemoteAuthority'],'AUTHORIZATION_REUSE');
+          allTrue(d.prohibitedCapabilities,Object.keys(d.prohibitedCapabilities),'PROHIBITED_CAPABILITY');
+          const g=d.governance;
+          if(g.cleanupVerifierBindingDescriptorDefined!==true) throw new Error('GOVERNANCE_DESCRIPTOR_MISSING');
+          allFalse(g,['cleanupVerifierImplementationPresent','cleanupVerifierBindingDefined','cleanupVerifierBound','evidenceMutationImplemented','evidencePersistenceImplemented','transportBound','executionEntryPointExported','executionWorkflowDefined','triggerCreated','receiptCreated','explicitExecutionAuthorizationReceived','executionAttempted','remoteExecutionAuthority','remoteCredentialReadAuthority','remoteDependencyLoadAuthority','networkAuthority','stagingReadAuthority','stagingMutationAuthority','realtimeSubscriptionAuthority','authIdentityLifecycleAuthority','runtimeChangeAuthority','productionAuthority','pullRequestMergeAuthority','readyForReviewAuthority','exactRootCauseProven','causalPromotionAllowed','privatePresencePromotionAllowed','r5iCreated','r5iInferred'],'GOVERNANCE_MUST_REMAIN_FALSE');
+          NODE
+
+      - name: Domain Completion Matrix
+        run: npm run audit:domain-completion-matrix
+
+      - name: Agent Governance
+        run: npm run audit:agent-governance
+
+      - name: Diff hygiene
+        run: git diff --check
