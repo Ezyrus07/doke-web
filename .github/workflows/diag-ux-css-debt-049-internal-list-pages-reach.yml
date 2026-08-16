@@ -29,6 +29,8 @@ jobs:
         run: |
           set -euo pipefail
           cp .github/diagnostics/ux-css-debt-049-internal-list-pages-reach.cjs /tmp/ux-css-debt-049-internal-list-pages-reach.cjs
+          sed -i 's/vals.filter(s=>s.page===p)/vals.filter(s=>s.default.page===p)/' /tmp/ux-css-debt-049-internal-list-pages-reach.cjs
+          grep -q 'vals.filter(s=>s.default.page===p)' /tmp/ux-css-debt-049-internal-list-pages-reach.cjs
           node --check /tmp/ux-css-debt-049-internal-list-pages-reach.cjs
           git fetch origin "${TARGET_SHA}" --depth=2
           git checkout --detach "${TARGET_SHA}"
@@ -37,7 +39,7 @@ jobs:
           test "$(git hash-object "${TARGET_FILE}")" = "${TARGET_BLOB}"
           test -z "$(git status --porcelain)"
           git diff --check
-          echo "CHECKPOINT GUARD PASS|sha=${TARGET_SHA}|parent=${PARENT_SHA}|blob=${TARGET_BLOB}|harness=R1"
+          echo "CHECKPOINT GUARD PASS|sha=${TARGET_SHA}|parent=${PARENT_SHA}|blob=${TARGET_BLOB}|harness=R1|coverageWrapper=fixed"
 
       - name: Setup Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
