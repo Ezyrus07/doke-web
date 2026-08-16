@@ -1,0 +1,96 @@
+name: COM-B02F Server Authority Main Runtime Wiring Matrix Materialization TEMP
+
+on:
+  push:
+    branches: [com/com-001-baseline-audit]
+    paths:
+      - '.github/workflows/com-b02f-server-authority-main-runtime-wiring-matrix-materialization-temp.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  prepare:
+    if: github.run_attempt == 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - run: npm ci --ignore-scripts
+
+      - name: Exact repository-only installation scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          candidate=ef3becb9cdfbf8c800339c80dbe6e46f2478bb27
+          temp=.github/workflows/com-b02f-server-authority-main-runtime-wiring-matrix-materialization-temp.yml
+          test "$(git rev-parse HEAD^)" = "$candidate"
+          test "$(git diff --name-only HEAD^ HEAD)" = "$temp"
+          test "$(git rev-parse HEAD:backend/shared/http/route-registry.js)" = "04a039c1967ffb59502e05584d05831f7c9a1a41"
+          test "$(git rev-parse HEAD:backend/modules/communities/route-handlers.js)" = "332da22f604806ba06a0687c69d3d89903c4222c"
+          test "$(git rev-parse HEAD:config/com-b02f-server-authority-main-runtime-wiring-authorization.json)" = "a1905e3cba0182edbda0741c96853a2e7bfacc53"
+          test "$(git rev-parse HEAD:scripts/test-com-b02f-server-authority-main-runtime-wiring.js)" = "2f6890030145c75d6245710f575c0ada9a428bdc"
+          test "$(git rev-parse HEAD:.github/workflows/com-b02f-server-authority-main-runtime-wiring.yml)" = "e542dc841ed9bbaa15a5f8dd765aaf569ef826e6"
+          test "$(git rev-parse HEAD:backend/shared/http/module-route-loader.js)" = "7b3c897c0bf20069b733632c0b424b8664eb8cf5"
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "b9b2abbee1aed1033c122bf7f2802c7e80844623"
+
+      - name: Generate final-tree Matrix derivatives
+        shell: bash
+        run: |
+          set -euo pipefail
+          temp=.github/workflows/com-b02f-server-authority-main-runtime-wiring-matrix-materialization-temp.yml
+          rm "$temp"
+          npm run write:domain-completion-matrix
+          git diff --exit-code -- config/domain-completion-matrix.json
+          expected="$(printf '%s\n' "$temp" docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json | sort)"
+          actual="$(git diff --name-only | sort)"
+          test "$actual" = "$expected"
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git diff --check
+
+      - name: Fail-closed B02F wiring assertions
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD:backend/shared/http/route-registry.js)" = "04a039c1967ffb59502e05584d05831f7c9a1a41"
+          test "$(git rev-parse HEAD:backend/modules/communities/route-handlers.js)" = "332da22f604806ba06a0687c69d3d89903c4222c"
+          test "$(git rev-parse HEAD:config/com-b02f-server-authority-main-runtime-wiring-authorization.json)" = "a1905e3cba0182edbda0741c96853a2e7bfacc53"
+          test "$(git rev-parse HEAD:scripts/test-com-b02f-server-authority-main-runtime-wiring.js)" = "2f6890030145c75d6245710f575c0ada9a428bdc"
+          test "$(git rev-parse HEAD:.github/workflows/com-b02f-server-authority-main-runtime-wiring.yml)" = "e542dc841ed9bbaa15a5f8dd765aaf569ef826e6"
+          test "$(git rev-parse HEAD:backend/shared/http/module-route-loader.js)" = "7b3c897c0bf20069b733632c0b424b8664eb8cf5"
+          node scripts/test-com-b02f-server-authority-main-runtime-wiring.js
+          ! grep -E 'createClient\(|\.rpc\(|\.from\(|fetch\(|process\.env|SUPABASE_SERVICE_ROLE_KEY' backend/modules/communities/route-handlers.js
+          node - <<'NODE'
+          const b=require('./config/com-b02f-server-authority-main-runtime-wiring-authorization.json');
+          if(b.authorization.consumedFromHead!=='f6e38822b1ad2b6ac6125f75e98a38a958957d5b'||b.authorization.consumed!==true||b.authorization.singleExecutionOnly!==true||b.authorization.workflowRerunAllowedAfterAttempt!==false)throw new Error('B02F_AUTHORIZATION_DRIFT');
+          for(const k of ['moduleRouteLoaderMutationAuthority','stagingDeploymentAuthority','stagingTrafficAuthority','realCommunityMutationAuthority','realtimeActivationAuthority','remoteExecutionAuthority','networkAuthority','credentialReadAuthority','identityLifecycleAuthority','productionAuthority','pullRequestMergeAuthority','readyForReviewAuthority','triggerCreationAuthority','receiptCreationAuthority','r5iCreationAuthority'])if(b.authority[k]!==false)throw new Error(`B02F_FORBIDDEN_AUTHORITY:${k}`);
+          for(const k of ['runtimeActivated','stagingDeploymentExecuted','stagingTrafficEnabled','networkRequestExecuted','realtimeSubscriptionExecuted','credentialReadExecuted','identityMutationExecuted','realCommunityMutationExecuted','triggerCreated','receiptCreated','productionChanged','pullRequestMerged','readyForReviewChanged'])if(b.effects[k]!==false)throw new Error(`B02F_FORBIDDEN_EFFECT:${k}`);
+          NODE
+
+      - name: Prepare immutable Git commit without moving branch ref
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          temp=.github/workflows/com-b02f-server-authority-main-runtime-wiring-matrix-materialization-temp.yml
+          parent="$(git rev-parse HEAD)"
+          base_tree="$(git rev-parse HEAD^{tree})"
+          md_blob="$(jq -Rs '{content: ., encoding: "utf-8"}' docs/DOMAIN-COMPLETION-MATRIX.md | gh api --method POST "repos/${GITHUB_REPOSITORY}/git/blobs" --input - --jq .sha)"
+          report_blob="$(jq -Rs '{content: ., encoding: "utf-8"}' reports/generated/domain-completion-matrix-report.json | gh api --method POST "repos/${GITHUB_REPOSITORY}/git/blobs" --input - --jq .sha)"
+          tree="$(jq -n --arg base "$base_tree" --arg md "$md_blob" --arg report "$report_blob" --arg temp "$temp" '{base_tree:$base,tree:[{path:"docs/DOMAIN-COMPLETION-MATRIX.md",mode:"100644",type:"blob",sha:$md},{path:"reports/generated/domain-completion-matrix-report.json",mode:"100644",type:"blob",sha:$report},{path:$temp,mode:"100644",type:"blob",sha:null}]}' | gh api --method POST "repos/${GITHUB_REPOSITORY}/git/trees" --input - --jq .sha)"
+          commit="$(jq -n --arg message "docs(com): synchronize Matrix derivatives for B02F runtime wiring" --arg tree "$tree" --arg parent "$parent" '{message:$message,tree:$tree,parents:[$parent]}' | gh api --method POST "repos/${GITHUB_REPOSITORY}/git/commits" --input - --jq .sha)"
+          test "$(git rev-parse HEAD)" = "$parent"
+          printf 'PREPARED_COMMIT_SHA=%s\n' "$commit"
+          printf 'PREPARED_TREE_SHA=%s\n' "$tree"
+          printf 'MARKDOWN_BLOB_SHA=%s\n' "$md_blob"
+          printf 'REPORT_BLOB_SHA=%s\n' "$report_blob"
