@@ -1,0 +1,115 @@
+name: COM-B03C R5H Target Environment Binding Matrix Materialization TEMP
+
+on:
+  push:
+    branches: [com/com-001-baseline-audit]
+    paths:
+      - '.github/workflows/com-b03c-r5h-extension-classification-probe-target-environment-binding-matrix-materialization-temp.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  prepare:
+    if: github.run_attempt == 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - run: npm ci --ignore-scripts
+
+      - name: Exact repository-only installation scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          temp=.github/workflows/com-b03c-r5h-extension-classification-probe-target-environment-binding-matrix-materialization-temp.yml
+          test "$(git rev-parse HEAD^)" = "baa2ede1239f0359dc12f86e5f48409205f3eab7"
+          test "$(git diff --name-only HEAD^ HEAD)" = "$temp"
+          test "$(git rev-parse HEAD:config/com-b03c-r5h-extension-classification-probe-target-environment-binding-boundary.json)" = "34d3d179090ccca8c51aaaf12a2ba1bb673ef495"
+          test "$(git rev-parse HEAD:.github/workflows/com-b03c-r5h-extension-classification-probe-target-environment-binding-boundary.yml)" = "575d7bab78f04caaa405e88c71454a3ef28399e4"
+
+      - name: Generate final-tree Matrix derivatives
+        shell: bash
+        run: |
+          set -euo pipefail
+          temp=.github/workflows/com-b03c-r5h-extension-classification-probe-target-environment-binding-matrix-materialization-temp.yml
+          rm "$temp"
+          npm run write:domain-completion-matrix
+          git diff --exit-code -- config/domain-completion-matrix.json
+          expected="$(printf '%s\n' "$temp" docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json | sort)"
+          actual="$(git diff --name-only | sort)"
+          test "$actual" = "$expected"
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git diff --check
+
+      - name: Fail-closed target environment binding assertions
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD:config/com-b03c-r5h-extension-classification-probe-target-environment-binding-boundary.json)" = "34d3d179090ccca8c51aaaf12a2ba1bb673ef495"
+          test "$(git rev-parse HEAD:.github/workflows/com-b03c-r5h-extension-classification-probe-target-environment-binding-boundary.yml)" = "575d7bab78f04caaa405e88c71454a3ef28399e4"
+          test "$(git rev-parse HEAD:config/com-b03c-r5h-extension-classification-probe-target-environment-binding-descriptor-boundary.json)" = "824b2073fdb46091277d5454ffe3268553c16d83"
+          test "$(git rev-parse HEAD:config/com-b03c-r5h-extension-classification-probe-runtime-adapter-binding-boundary.json)" = "8d3003477e7c8728b453ea250aa464ad66b76f33"
+          test "$(git rev-parse HEAD:backend/modules/communities/community-realtime-private-auth-r5h-extension-classification-probe-concrete-runtime-adapter-binding.js)" = "6fc34e1b365ec801665fdab0c7d0c6761a8013e6"
+          test "$(git rev-parse HEAD:assets/js/core/runtime-config.js)" = "8c87a09918a54c60d1cf26143b3e6ad194db51f7"
+          test "$(git rev-parse HEAD:docs/SUPABASE-STAGING-RUNBOOK.md)" = "b672643d86fe10cf3df1bb16e1b6fcfd384990ed"
+          node - <<'NODE'
+          const boundary = require('./config/com-b03c-r5h-extension-classification-probe-target-environment-binding-boundary.json');
+          if (boundary.contractId !== 'com-b03c-r5h-extension-classification-probe-target-environment-binding-boundary-v1') throw new Error('BOUNDARY_CONTRACT_DRIFT');
+          if (boundary.functionalCheckpoint.lastFunctionalCheckpoint !== 'COM-B03C-R5H' || boundary.functionalCheckpoint.r5iCreated !== false || boundary.functionalCheckpoint.r5iInferred !== false) throw new Error('FUNCTIONAL_CHECKPOINT_DRIFT');
+          const binding = boundary.targetEnvironmentBinding;
+          if (binding.targetEnvironmentBindingDefined !== true || binding.targetEnvironmentBound !== true) throw new Error('TARGET_ENVIRONMENT_BINDING_DRIFT');
+          if (binding.environmentClass !== 'non_production_staging' || binding.stableEnvironmentIdentifier !== 'doke-web-staging' || binding.production !== false) throw new Error('TARGET_ENVIRONMENT_VALUE_DRIFT');
+          if (binding.targetResourceBound !== false || binding.transportBound !== false || binding.stagingReadAuthority !== false || binding.stagingMutationAuthority !== false || binding.networkAuthority !== false || binding.remoteExecutionAuthority !== false) throw new Error('REMOTE_AUTHORITY_FORBIDDEN');
+          if (boundary.preservedRuntimeAdapterBinding.runtimeAdapterBound !== true || boundary.preservedRuntimeAdapterBinding.transportBound !== false || boundary.preservedRuntimeAdapterBinding.adapterModuleBlob !== '6fc34e1b365ec801665fdab0c7d0c6761a8013e6') throw new Error('RUNTIME_ADAPTER_DRIFT');
+          for (const slot of boundary.delegatedPortState) if (slot.bound !== false || slot.concreteValuePresent !== false) throw new Error(`DELEGATED_PORT_BOUND:${slot.slotId}`);
+          const forbidden = ['targetResource','targetResourceStableIdentifier','targetResourceScopeFingerprint','credentialProvider','credentialMaterial','syntheticIdentity','realtimeClientFactory','sanitizedEvidenceRecorder','cleanupVerifier','networkEndpoint','executionCommand','executionWorkflow','executionEntrypoint'];
+          for (const key of forbidden) if (boundary.concreteBindingState[key] !== null) throw new Error(`FORBIDDEN_CONCRETE_BINDING:${key}`);
+          const g = boundary.governance;
+          if (g.runtimeAdapterBound !== true || g.targetEnvironmentBound !== true || g.targetResourceBound !== false || g.transportBound !== false || g.remoteExecutionAuthority !== false || g.networkAuthority !== false || g.stagingReadAuthority !== false || g.stagingMutationAuthority !== false || g.executionAttempted !== false || g.productionAuthority !== false || g.pullRequestMergeAuthority !== false || g.readyForReviewAuthority !== false) throw new Error('GOVERNANCE_DRIFT');
+          NODE
+
+      - name: Prepare immutable Git commit without moving branch ref
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          temp=.github/workflows/com-b03c-r5h-extension-classification-probe-target-environment-binding-matrix-materialization-temp.yml
+          parent="$(git rev-parse HEAD)"
+          base_tree="$(git rev-parse HEAD^{tree})"
+
+          md_blob="$(jq -Rs '{content: ., encoding: "utf-8"}' docs/DOMAIN-COMPLETION-MATRIX.md | gh api --method POST "repos/${GITHUB_REPOSITORY}/git/blobs" --input - --jq .sha)"
+          report_blob="$(jq -Rs '{content: ., encoding: "utf-8"}' reports/generated/domain-completion-matrix-report.json | gh api --method POST "repos/${GITHUB_REPOSITORY}/git/blobs" --input - --jq .sha)"
+
+          tree="$(jq -n \
+            --arg base "$base_tree" \
+            --arg md "$md_blob" \
+            --arg report "$report_blob" \
+            --arg temp "$temp" \
+            '{base_tree:$base,tree:[
+              {path:"docs/DOMAIN-COMPLETION-MATRIX.md",mode:"100644",type:"blob",sha:$md},
+              {path:"reports/generated/domain-completion-matrix-report.json",mode:"100644",type:"blob",sha:$report},
+              {path:$temp,mode:"100644",type:"blob",sha:null}
+            ]}' | gh api --method POST "repos/${GITHUB_REPOSITORY}/git/trees" --input - --jq .sha)"
+
+          commit="$(jq -n \
+            --arg message "docs(com): synchronize Matrix derivatives for target environment binding" \
+            --arg tree "$tree" \
+            --arg parent "$parent" \
+            '{message:$message,tree:$tree,parents:[$parent]}' | gh api --method POST "repos/${GITHUB_REPOSITORY}/git/commits" --input - --jq .sha)"
+
+          test "$(git rev-parse HEAD)" = "$parent"
+          printf 'PREPARED_COMMIT_SHA=%s\n' "$commit"
+          printf 'PREPARED_TREE_SHA=%s\n' "$tree"
+          printf 'MARKDOWN_BLOB_SHA=%s\n' "$md_blob"
+          printf 'REPORT_BLOB_SHA=%s\n' "$report_blob"
