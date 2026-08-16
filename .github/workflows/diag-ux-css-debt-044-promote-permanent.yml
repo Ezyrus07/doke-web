@@ -1,0 +1,94 @@
+name: Doke UX-CSS-DEBT-044 Promote Permanent
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-044-promote-permanent
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 9a5e9f73e93ede3abc8b9f8e133bac16e4a40052
+      PARENT_SHA: 33480c3c79a86e2ef8b7a2dba84fa6da36287e5b
+      TARGET_FILE: assets/css/pages/chat-workspace-layout-contract.css
+      TARGET_BLOB: 5e562c7c02c27010b816f61c52b2cc0fff1d3406
+      TARGET_HASH: 469384fcf0d21673aa333308c8192be534c05d1fce0834ca745b033cdd4f4de1
+      TARGET_BYTES: '39542'
+      PERM_BRANCH: ux/ux-css-debt-044-chat-workspace-layout-compaction
+    steps:
+      - name: Checkout diagnostic harness
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          clean: true
+
+      - name: Preserve promotion helper
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp .github/diagnostics/ux-css-debt-044-promote.cjs /tmp/ux-css-debt-044-promote.cjs
+          node --check /tmp/ux-css-debt-044-promote.cjs
+
+      - name: Checkout exact certified UX-CSS-DEBT-043 parent
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+          clean: true
+          persist-credentials: true
+
+      - name: Guard exact parent and seeded permanent namespace
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test -z "$(git status --porcelain)"
+          REMOTE_BEFORE="$(git ls-remote --heads origin "refs/heads/$PERM_BRANCH" | awk '{print $1}')"
+          test "$REMOTE_BEFORE" = "$TARGET_SHA"
+          echo "PROMOTION PARENT PASS|sha=$TARGET_SHA|parent=$PARENT_SHA|blob=$TARGET_BLOB|permanentNamespace=seeded-at-parent"
+
+      - name: Build exact candidate on permanent branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git switch -c "$PERM_BRANCH"
+          node /tmp/ux-css-debt-044-promote.cjs
+          test "$(sha256sum "$TARGET_FILE" | awk '{print $1}')" = "$TARGET_HASH"
+          test "$(wc -c < "$TARGET_FILE" | tr -d ' ')" = "$TARGET_BYTES"
+          test "$(git diff --name-only)" = "$TARGET_FILE"
+          test "$(git diff --numstat -- "$TARGET_FILE")" = $'0\t27\t'"$TARGET_FILE"
+
+      - name: Commit exact permanent product delta
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "doke"
+          git config user.email "bielantoniomma@gmail.com"
+          git add "$TARGET_FILE"
+          git commit -m "UX-CSS-DEBT-044: compact superseded chat workspace layout declarations"
+          COMMIT="$(git rev-parse HEAD)"
+          test "$(git rev-parse HEAD^)" = "$TARGET_SHA"
+          test "$(git diff --name-only "$TARGET_SHA"...HEAD)" = "$TARGET_FILE"
+          test "$(git diff --numstat "$TARGET_SHA"...HEAD -- "$TARGET_FILE")" = $'0\t27\t'"$TARGET_FILE"
+          test "$(sha256sum "$TARGET_FILE" | awk '{print $1}')" = "$TARGET_HASH"
+          test "$(wc -c < "$TARGET_FILE" | tr -d ' ')" = "$TARGET_BYTES"
+          echo "PERMANENT COMMIT PASS|sha=$COMMIT|parent=$TARGET_SHA|hash=$TARGET_HASH|bytes=$TARGET_BYTES|files=1|additions=0|deletions=27"
+
+      - name: Fast-forward permanent branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          COMMIT="$(git rev-parse HEAD)"
+          REMOTE_BEFORE="$(git ls-remote --heads origin "refs/heads/$PERM_BRANCH" | awk '{print $1}')"
+          test "$REMOTE_BEFORE" = "$TARGET_SHA"
+          git push origin "HEAD:refs/heads/$PERM_BRANCH"
+          REMOTE_AFTER="$(git ls-remote --heads origin "refs/heads/$PERM_BRANCH" | awk '{print $1}')"
+          test "$REMOTE_AFTER" = "$COMMIT"
+          echo "PROMOTION FINAL PASS|branch=$PERM_BRANCH|sha=$COMMIT|parent=$TARGET_SHA|hash=$TARGET_HASH|bytes=$TARGET_BYTES|files=1|additions=0|deletions=27|prCreated=0|transport=seeded-fast-forward"
