@@ -1,0 +1,101 @@
+name: Doke UX-CSS-DEBT-039 Authority Doc Diff
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-039-authority-doc-diff
+
+permissions:
+  contents: read
+
+jobs:
+  compare:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 721c8036a7f1a23208f512ce5a6f4b532209595a
+      PARENT_SHA: 2c2b87e287a2df5f261be5cc9f94439ed9719145
+      TARGET_BLOB: 9dea353aa056080433035b044d9c92fb83f80062
+      TARGET_FILE: assets/css/pages/comunidade/entry-create-modals.css
+      DOC_A: docs/PAGE-ASSET-AUTHORITY-MATRIX.md
+      DOC_B: docs/HOME-AUTHORITY-CLASSIFICATION.md
+    steps:
+      - name: Checkout diagnostic harness
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 5
+
+      - name: Preserve helper and checkout exact parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp .github/diagnostics/ux-css-debt-039-authority-doc-candidate.cjs /tmp/candidate.cjs
+          node --check /tmp/candidate.cjs
+          git fetch origin "${TARGET_SHA}" --depth=2
+          git checkout --detach "${TARGET_SHA}"
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test "$(git rev-parse HEAD^)" = "${PARENT_SHA}"
+          test "$(git hash-object "${TARGET_FILE}")" = "${TARGET_BLOB}"
+          test -z "$(git status --porcelain)"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Regenerate authority docs on untouched parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:page-asset-authority-matrix
+          cp "${DOC_A}" /tmp/parent-A.md
+          cp "${DOC_B}" /tmp/parent-B.md
+          echo 'PARENT TRACKED DIFF:'
+          git diff --name-only -- "${DOC_A}" "${DOC_B}" || true
+          echo 'PARENT DOC A DIFF:'
+          git diff -- "${DOC_A}" || true
+          echo 'PARENT DOC B DIFF:'
+          git diff -- "${DOC_B}" || true
+          echo "PARENT GENERATED HASHES|A=$(sha256sum /tmp/parent-A.md | awk '{print $1}')|B=$(sha256sum /tmp/parent-B.md | awk '{print $1}')"
+          git checkout -- "${DOC_A}" "${DOC_B}"
+          test -z "$(git diff --name-only -- "${DOC_A}" "${DOC_B}")"
+
+      - name: Build candidate and regenerate authority docs
+        shell: bash
+        run: |
+          set -euo pipefail
+          node /tmp/candidate.cjs
+          npm run audit:page-asset-authority-matrix
+          cp "${DOC_A}" /tmp/candidate-A.md
+          cp "${DOC_B}" /tmp/candidate-B.md
+          echo 'CANDIDATE TRACKED DIFF:'
+          git diff --name-only || true
+          echo 'CANDIDATE DOC A DIFF:'
+          git diff -- "${DOC_A}" || true
+          echo 'CANDIDATE DOC B DIFF:'
+          git diff -- "${DOC_B}" || true
+          echo "CANDIDATE GENERATED HASHES|A=$(sha256sum /tmp/candidate-A.md | awk '{print $1}')|B=$(sha256sum /tmp/candidate-B.md | awk '{print $1}')"
+
+      - name: Compare parent and candidate generated docs
+        shell: bash
+        run: |
+          set -euo pipefail
+          cmp -s /tmp/parent-A.md /tmp/candidate-A.md
+          cmp -s /tmp/parent-B.md /tmp/candidate-B.md
+          echo 'AUTHORITY DOC COMPARISON PASS|parentGeneratedEqualsCandidateGenerated=1|candidateSemanticDocDelta=0'
+
+      - name: Verify exact restore
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "${TARGET_SHA}"
+          git clean -ffdx
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test "$(git rev-parse HEAD^)" = "${PARENT_SHA}"
+          test "$(git hash-object "${TARGET_FILE}")" = "${TARGET_BLOB}"
+          test -z "$(git status --porcelain)"
+          echo 'AUTHORITY DOC CHECKPOINT PASS|productMutation=0|issueCreated=0|prCreated=0'
