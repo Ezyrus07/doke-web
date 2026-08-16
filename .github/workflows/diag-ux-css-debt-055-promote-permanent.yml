@@ -1,0 +1,89 @@
+name: Doke UX-CSS-DEBT-055 Promote Permanent
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-055-promote-permanent
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-24.04
+    env:
+      PARENT_SHA: a0d9a44014a172789c0389eccf6c17781c6c27f8
+      PARENT_PARENT_SHA: 8cf5320e2eb2a8185f777962b7a5d135931a2614
+      TARGET_FILE: assets/css/patterns/settings-shell.css
+      PARENT_BLOB: 385844b2a419c50df7c8f4da2e7e4ccd08fa6b5a
+      TARGET_HASH: 7fe44cc49bf00f8b2c19492b3400079fd72c91b0414b8749749872ffc2e175ee
+      TARGET_BYTES: 5241
+      PERM_BRANCH: ux/ux-css-debt-055-settings-shell-compaction
+    steps:
+      - name: Checkout exact certified UX-CSS-DEBT-054 parent
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.PARENT_SHA }}
+          fetch-depth: 2
+
+      - name: Guard parent and seeded permanent namespace
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$PARENT_BLOB"
+          REMOTE="$(git ls-remote --heads origin "refs/heads/$PERM_BRANCH" | awk '{print $1}')"
+          test "$REMOTE" = "$PARENT_SHA"
+          test -z "$(git status --porcelain)"
+          echo "PROMOTION GUARD PASS|parent=$PARENT_SHA|permanentSeed=$REMOTE"
+
+      - name: Build exact certified candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');
+          const f=process.env.TARGET_FILE;let s=fs.readFileSync(f,'utf8');
+          const lines=[
+            '  --doke-settings-sidebar-width: clamp(340px, 27vw, 400px);\n',
+            '  --doke-settings-content-max: 1080px;\n',
+            '  --doke-settings-gutter: clamp(28px, 3.2vw, 44px);\n',
+            '  --doke-settings-header-min-height: 104px;\n'
+          ];
+          for(const line of lines){const first=s.indexOf(line),second=s.indexOf(line,first+line.length);if(first<0||second<0)throw new Error(`duplicate drift ${line.trim()}`);s=s.slice(0,first)+s.slice(first+line.length)}
+          fs.writeFileSync(f,s);
+          const hash=crypto.createHash('sha256').update(s).digest('hex'),bytes=Buffer.byteLength(s);
+          if(hash!==process.env.TARGET_HASH||String(bytes)!==process.env.TARGET_BYTES)throw new Error(`identity drift ${hash}/${bytes}`);
+          console.log(`PROMOTION CANDIDATE PASS|sha256=${hash}|bytes=${bytes}`);
+          NODE
+          test "$(git diff --name-only)" = "$TARGET_FILE"
+          test "$(git diff --numstat -- "$TARGET_FILE")" = $'0\t4\t'"$TARGET_FILE"
+          git diff --check
+
+      - name: Commit exact permanent product delta
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name doke
+          git config user.email bielantoniomma@gmail.com
+          git add -- "$TARGET_FILE"
+          git commit -m 'UX-CSS-DEBT-055: compact duplicated settings shell geometry tokens'
+          NEW_SHA="$(git rev-parse HEAD)"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git rev-list --count "$PARENT_SHA"..HEAD)" = "1"
+          test "$(git diff --name-only "$PARENT_SHA"...HEAD)" = "$TARGET_FILE"
+          test "$(git diff --numstat "$PARENT_SHA"...HEAD -- "$TARGET_FILE")" = $'0\t4\t'"$TARGET_FILE"
+          test "$(sha256sum "$TARGET_FILE" | awk '{print $1}')" = "$TARGET_HASH"
+          test "$(wc -c < "$TARGET_FILE" | tr -d ' ')" = "$TARGET_BYTES"
+          echo "PERMANENT COMMIT BUILT|sha=$NEW_SHA|parent=$PARENT_SHA|files=1|additions=0|deletions=4"
+
+      - name: Atomic fast-forward permanent branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          NEW_SHA="$(git rev-parse HEAD)"
+          git push --force-with-lease="refs/heads/$PERM_BRANCH:$PARENT_SHA" origin "HEAD:refs/heads/$PERM_BRANCH"
+          REMOTE="$(git ls-remote --heads origin "refs/heads/$PERM_BRANCH" | awk '{print $1}')"
+          test "$REMOTE" = "$NEW_SHA"
+          echo "PERMANENT PROMOTION PASS|branch=$PERM_BRANCH|sha=$REMOTE|parent=$PARENT_SHA"
