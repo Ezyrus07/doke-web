@@ -1,0 +1,180 @@
+name: Doke UX-CSS-DEBT-035 Permanent Exact Certification
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-035-certify-permanent
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: f77656491a382a4385bfb1faf94fe08a1e31166c
+      PARENT_SHA: c2cdf591c0b3b902c4def0e8ffca4e575c96e22f
+      TARGET_CSS: assets/css/pages/comunidade/photo-discovery.css
+      PARENT_BLOB: aff7b79c3b79545bf0a9546de96732704c84ddc2
+      TARGET_BLOB: 3ecc2557b65057567e97974265c0505d69d2f293
+      TARGET_HASH: a4f2273f49796bed07a634b4a9197431b67801cda4c3e84c24358fdb99268cff
+      TARGET_BYTES: '28083'
+      PERM_BRANCH: ux/ux-css-debt-035-photo-discovery-compaction
+      PAGE: comunidade.html
+      PAGE_FOUNDATION: assets/css/pages/comunidade-foundation.css
+      PAGE_MANIFEST: assets/css/pages/comunidade.css
+    steps:
+      - name: Checkout diagnostic harness
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+
+      - name: Preserve exact-cert helper
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp .github/diagnostics/ux-css-debt-035-cert-residual.cjs /tmp/ux-css-debt-035-cert-residual.cjs
+          node --check /tmp/ux-css-debt-035-cert-residual.cjs
+
+      - name: Checkout exact certified UX-CSS-DEBT-034 parent
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.PARENT_SHA }}
+          fetch-depth: 2
+          clean: true
+
+      - name: Guard parent identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$PARENT_SHA"
+          test "$(git hash-object "$TARGET_CSS")" = "$PARENT_BLOB"
+          test "$(wc -c < "$TARGET_CSS" | tr -d ' ')" = "29368"
+          test -z "$(git status --porcelain)"
+          echo "PARENT IDENTITY PASS|sha=$PARENT_SHA|blob=$PARENT_BLOB|bytes=29368"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies and generate parent responsive baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          npm run audit:active-legacy-structures
+          node scripts/generate-responsive-index-baseline.js
+          test -s reports/responsive-index-baseline.json
+          test "$(git rev-parse HEAD)" = "$PARENT_SHA"
+          echo "PARENT RESPONSIVE BASELINE PASS|parent=$PARENT_SHA"
+
+      - name: Checkout exact permanent SHA without product mutation
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin "$TARGET_SHA" --depth=2
+          git checkout --detach "$TARGET_SHA"
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          echo "PERMANENT CHECKOUT PASS|sha=$TARGET_SHA"
+
+      - name: Exact permanent identity scope and reach guard
+        shell: bash
+        run: |
+          set -euo pipefail
+          REMOTE="$(git ls-remote --heads origin "refs/heads/$PERM_BRANCH" | awk '{print $1}')"
+          test "$REMOTE" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git merge-base "$PARENT_SHA" HEAD)" = "$PARENT_SHA"
+          test "$(git rev-list --count "$PARENT_SHA"..HEAD)" = "1"
+          test "$(git diff --name-only "$PARENT_SHA"...HEAD)" = "$TARGET_CSS"
+          read -r add del file < <(git diff --numstat "$PARENT_SHA"...HEAD -- "$TARGET_CSS")
+          test "$add" = "0" && test "$del" = "54" && test "$file" = "$TARGET_CSS"
+          test "$(git hash-object "$TARGET_CSS")" = "$TARGET_BLOB"
+          test "$(sha256sum "$TARGET_CSS" | awk '{print $1}')" = "$TARGET_HASH"
+          test "$(wc -c < "$TARGET_CSS" | tr -d ' ')" = "$TARGET_BYTES"
+          test -z "$(git diff --name-only "$PARENT_SHA"...HEAD -- '*.js' '*.html' 'package.json' 'package-lock.json')"
+          git diff --check "$PARENT_SHA"...HEAD
+          node <<'NODE'
+          const fs=require('fs'),cp=require('child_process'),path=require('path');
+          const page=process.env.PAGE,foundation=process.env.PAGE_FOUNDATION,manifest=process.env.PAGE_MANIFEST,target=process.env.TARGET_CSS;
+          const h=fs.readFileSync(page,'utf8'),f=fs.readFileSync(foundation,'utf8'),m=fs.readFileSync(manifest,'utf8');
+          const assert=(x,msg)=>{if(!x)throw new Error(msg)};
+          assert((h.match(/assets\/css\/pages\/comunidade-foundation\.css\?/g)||[]).length===1,'community foundation link cardinality drift');
+          assert((f.match(/\.\/comunidade\.css\?/g)||[]).length===1,'community manifest import cardinality drift');
+          assert((m.match(/\.\/comunidade\/photo-discovery\.css\?/g)||[]).length===1,'target import cardinality drift');
+          const targetImporters=cp.execSync("git grep -l -F 'photo-discovery.css?v=' -- assets/css || true",{encoding:'utf8'}).trim().split(/\r?\n/).filter(Boolean).sort();
+          assert(JSON.stringify(targetImporters)===JSON.stringify([manifest]),'target importer drift '+JSON.stringify(targetImporters));
+          const manifestImporters=cp.execSync("git grep -l -F './comunidade.css?v=' -- assets/css || true",{encoding:'utf8'}).trim().split(/\r?\n/).filter(Boolean).sort();
+          assert(manifestImporters.includes(foundation),'foundation no longer imports manifest '+JSON.stringify(manifestImporters));
+          assert(!new RegExp('href=[\\"\\\'][^\\"\\\']*/photo-discovery\\.css\\?','i').test(h),'target became direct page stylesheet');
+          console.log(`REACH AUTHORITY PASS|chain=${page}->${foundation}->${manifest}->${target}|pages=1`);
+          NODE
+          echo "EXACT IDENTITY PASS|sha=$TARGET_SHA|parent=$PARENT_SHA|blob=$TARGET_BLOB|hash=$TARGET_HASH|bytes=$TARGET_BYTES|files=1|additions=0|deletions=54"
+
+      - name: Responsive and governance gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run test:responsive-contract | tee /tmp/responsive.log
+          grep -q 'Responsive contract test: PASS' /tmp/responsive.log
+          grep -q 'Checks: 893' /tmp/responsive.log
+          grep -q 'Failures: 0' /tmp/responsive.log
+          grep -q 'Skips: 277' /tmp/responsive.log
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/conflicts.log
+          grep -q 'Conflicting class/property pairs: 339' /tmp/conflicts.log
+          npm run audit:agent-governance
+          npm run audit:shared-app-header-contract
+          npm run audit:mobile-shell-location-contract
+          npm run audit:responsive-boundaries
+          npm run audit:duplicate-assets | tee /tmp/dup.log
+          grep -q 'Duplicate groups: 0' /tmp/dup.log
+          grep -q 'Duplicated files: 0' /tmp/dup.log
+          npm run audit:domain-completion-matrix | tee /tmp/domain.log
+          grep -q 'Domains: 23' /tmp/domain.log
+          grep -q 'Critical flows: 15' /tmp/domain.log
+          grep -q 'Average maturity: 2.91/6' /tmp/domain.log
+          grep -q 'Critical blockers: 12' /tmp/domain.log
+          echo 'GOVERNANCE PASS|responsive=893/0/277|conflicts=339|domain=23/15/2.91/12|duplicates=0/0'
+
+      - name: Recalculate permanent CSS residual
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:active-legacy-structures
+          node /tmp/ux-css-debt-035-cert-residual.cjs
+
+      - name: Dependency snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm audit --json > /tmp/npm-audit.json || true
+          node <<'NODE'
+          const fs=require('fs');
+          const a=JSON.parse(fs.readFileSync('/tmp/npm-audit.json','utf8'));
+          const v=a.metadata?.vulnerabilities||{};
+          console.log(`NPM AUDIT SNAPSHOT|total=${v.total??'n/a'}|critical=${v.critical??'n/a'}|high=${v.high??'n/a'}|moderate=${v.moderate??'n/a'}|low=${v.low??'n/a'}`);
+          NODE
+
+      - name: Final exact-SHA certification marker
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git hash-object "$TARGET_CSS")" = "$TARGET_BLOB"
+          test "$(sha256sum "$TARGET_CSS" | awk '{print $1}')" = "$TARGET_HASH"
+          echo "PERMANENT EXACT CERT PASS|sha=$TARGET_SHA|parent=$PARENT_SHA|blob=$TARGET_BLOB|hash=$TARGET_HASH|bytes=$TARGET_BYTES|files=1|additions=0|deletions=54|residual=39/1061/0|conflicts=339|responsive=893/0/277|runtimeProof=transferred-by-byte-identity|prCreated=0"
+
+      - name: Clean generated artifacts and restore exact permanent checkpoint
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "$TARGET_SHA"
+          git clean -ffdx
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git hash-object "$TARGET_CSS")" = "$TARGET_BLOB"
+          test "$(sha256sum "$TARGET_CSS" | awk '{print $1}')" = "$TARGET_HASH"
+          test -z "$(git status --porcelain)"
+          echo "CHECKPOINT PASS|sha=$TARGET_SHA|productMutation=0|prCreated=0|generatedArtifactsCleaned=1"
