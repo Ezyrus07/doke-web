@@ -37,25 +37,13 @@ body:is([data-page="mensagens"], [data-page="comunidade-interna"]) .page__conten
 
 body:is([data-page="mensagens"], [data-page="comunidade-interna"]) .messages-shell-content,
 body[data-page="comunidade-interna"] .community-room-shell {
-  width: min(100%, var(--doke-page-rail, 1360px));
-  max-width: var(--doke-page-rail, 1360px);
-  margin-inline: auto;
-  padding: 0;
 }
 
 body:is([data-page="mensagens"], [data-page="comunidade-interna"]) .messages-app {
   display: grid;
-  grid-template-columns: minmax(310px, 360px) minmax(0, 1fr);
-  min-height: min(780px, calc(100dvh - 118px));
-  overflow: hidden;
-  border: 1px solid var(--chat-border);
-  border-radius: var(--chat-radius-lg);
-  background: var(--chat-surface);
-  box-shadow: var(--chat-shadow);
 }
 
 body[data-page="comunidade-interna"] .community-room-layout {
-  grid-template-columns: minmax(310px, 380px) minmax(0, 1fr);
 }
 
 .messages-sidebar {
@@ -702,13 +690,9 @@ body[data-page="comunidade-interna"] .community-room-layout {
 @media (max-width: 1023px) {
   body:is([data-page="mensagens"], [data-page="comunidade-interna"]) .messages-shell-content,
   body[data-page="comunidade-interna"] .community-room-shell {
-    width: min(100%, calc(100vw - 28px));
-    max-width: 760px;
   }
 
   body:is([data-page="mensagens"], [data-page="comunidade-interna"]) .messages-app {
-    grid-template-columns: 1fr;
-    min-height: calc(100dvh - 112px);
   }
 
   .messages-thread,
@@ -819,7 +803,6 @@ body[data-page="comunidade-interna"] .community-room-layout {
  * Goal: usable redesign foundation with clear list/thread anatomy.
  */
 body:is([data-page="mensagens"], [data-page="comunidade-interna"]) {
-  --chat-rail-max: min(var(--doke-page-rail, 1360px), calc(100vw - 56px));
   --chat-app-height: minmax(680px, calc(100dvh - 132px));
   --chat-sidebar-width: clamp(340px, 28vw, 420px);
 }
@@ -978,8 +961,6 @@ body:is([data-page="mensagens"], [data-page="comunidade-interna"]) :is(.message-
 body:is([data-page="mensagens"], [data-page="comunidade-interna"]) :is(.messages-composer, .community-room-composer) {
   min-height: 76px;
   padding: 14px clamp(18px, 2vw, 26px);
-  border-top: 1px solid rgba(31, 95, 174, 0.12);
-  background: rgba(255, 255, 255, 0.96);
 }
 
 body:is([data-page="mensagens"], [data-page="comunidade-interna"]) :is(.messages-composer__field, .community-room-composer__field) {
@@ -998,7 +979,6 @@ body:is([data-page="mensagens"], [data-page="comunidade-interna"]) :is(.messages
   }
 
   body[data-page="comunidade-interna"] .community-room-layout {
-    grid-template-columns: clamp(330px, 27vw, 405px) minmax(0, 1fr);
   }
 }
 
@@ -1099,20 +1079,13 @@ body:is([data-page="mensagens"], [data-page="comunidade-interna"]) {
 
   body:is([data-page="mensagens"], [data-page="comunidade-interna"]) .messages-sidebar {
     grid-auto-rows: max-content;
-    align-content: start;
-    gap: 20px;
-    overflow-y: auto;
-    overflow-x: hidden;
     scrollbar-width: thin;
   }
 
   body:is([data-page="mensagens"], [data-page="comunidade-interna"]) :is(.messages-list, .community-room-channel-list, .community-room-online-list) {
-    overflow: visible;
-    max-height: none;
   }
 
   body:is([data-page="mensagens"], [data-page="comunidade-interna"]) :is(.messages-block, .community-room-block) {
-    min-height: auto;
   }
 
   body:is([data-page="mensagens"], [data-page="comunidade-interna"]) :is(.message-item, .community-room-channel, .community-room-online-list > *) {
