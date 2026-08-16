@@ -1,0 +1,103 @@
+name: Doke UX-CSS-DEBT-053 Professional Showcase Reach
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-053-professional-showcase-reach
+
+permissions:
+  contents: read
+
+jobs:
+  reach:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: fbdd853af425ed9249c0a93ac42a1babeded1993
+      PARENT_SHA: e8176fc05c9ac47745cf70e9ac560ffe0036fbec
+      TARGET_FILE: assets/css/components/cards/professional-showcase-card.css
+      TARGET_BLOB: 1566c2da510526dc87a0c8cf135ab8d79b98269e
+      HOME_CSS_FILE: assets/css/pages/home.css
+      HOME_CSS_BLOB: 9ca81620efb9b16a0705f80bc92fc7020e9f2daf
+      RESULTS_CSS_FILE: assets/css/pages/search-results.css
+      RESULTS_CSS_BLOB: 6986e380800690d4f6b7e87e6e0780673400e2ed
+      HOME_PAGE: index.html
+      HOME_PAGE_BLOB: a3b2bffb4fd6bc4208b40930b621a9c54ce22cea
+      RESULTS_PAGE: resultados.html
+      RESULTS_PAGE_BLOB: 9b4431143ef80dafc70788bfa5c96ebf6460b5d1
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          clean: true
+
+      - name: Preserve harness and checkout certified UX-CSS-DEBT-052
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp .github/diagnostics/ux-css-debt-053-professional-showcase-reach.cjs /tmp/ux053-r1.cjs
+          node --check /tmp/ux053-r1.cjs
+          git fetch origin "${TARGET_SHA}" --depth=2
+          git checkout --detach "${TARGET_SHA}"
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test "$(git rev-parse HEAD^)" = "${PARENT_SHA}"
+          test "$(git hash-object "${TARGET_FILE}")" = "${TARGET_BLOB}"
+          test "$(git hash-object "${HOME_CSS_FILE}")" = "${HOME_CSS_BLOB}"
+          test "$(git hash-object "${RESULTS_CSS_FILE}")" = "${RESULTS_CSS_BLOB}"
+          test "$(git hash-object "${HOME_PAGE}")" = "${HOME_PAGE_BLOB}"
+          test "$(git hash-object "${RESULTS_PAGE}")" = "${RESULTS_PAGE_BLOB}"
+          test -z "$(git status --porcelain)"
+          git diff --check
+          echo "R1 PARENT PASS|sha=${TARGET_SHA}|parent=${PARENT_SHA}|targetBlob=${TARGET_BLOB}|importers=${HOME_CSS_BLOB}/${RESULTS_CSS_BLOB}|pages=${HOME_PAGE_BLOB}/${RESULTS_PAGE_BLOB}"
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install and run browser/reach proof
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install --with-deps chromium
+          npm run audit:active-legacy-structures
+          NODE_PATH="$PWD/node_modules" node /tmp/ux053-r1.cjs
+          git diff --check
+
+      - name: Preserve governance and responsive contracts under ephemeral removal
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:agent-governance
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/conflicts.log
+          grep -q 'Conflicting class/property pairs: 339' /tmp/conflicts.log
+          npm run audit:domain-completion-matrix | tee /tmp/domain.log
+          grep -q 'Domains: 23' /tmp/domain.log
+          grep -q 'Critical flows: 15' /tmp/domain.log
+          grep -q 'Average maturity: 2.91/6' /tmp/domain.log
+          grep -q 'Critical blockers: 12' /tmp/domain.log
+          npm run audit:shared-app-header-contract
+          npm run audit:mobile-shell-location-contract
+          npm run audit:responsive-boundaries
+          npm run audit:duplicate-assets | tee /tmp/dup.log
+          grep -q 'Duplicate groups: 0' /tmp/dup.log
+          grep -q 'Duplicated files: 0' /tmp/dup.log
+          echo 'R1 GOVERNANCE PASS|conflicts=339|domain=23/15/2.91/12|duplicates=0/0'
+
+      - name: Restore exact certified checkpoint
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "${TARGET_SHA}"
+          git clean -ffdx
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test "$(git rev-parse HEAD^)" = "${PARENT_SHA}"
+          test "$(git hash-object "${TARGET_FILE}")" = "${TARGET_BLOB}"
+          test "$(git hash-object "${HOME_CSS_FILE}")" = "${HOME_CSS_BLOB}"
+          test "$(git hash-object "${RESULTS_CSS_FILE}")" = "${RESULTS_CSS_BLOB}"
+          test "$(git hash-object "${HOME_PAGE}")" = "${HOME_PAGE_BLOB}"
+          test "$(git hash-object "${RESULTS_PAGE}")" = "${RESULTS_PAGE_BLOB}"
+          test -z "$(git status --porcelain)"
+          echo "R1 FINAL PASS|sha=${TARGET_SHA}|productMutation=0|issueCreated=0|prCreated=0"
