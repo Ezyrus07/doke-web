@@ -75,7 +75,7 @@ const ROUTES = Object.freeze([
   route('receipts.get', 'GET', '/receipts/:id', 'wallet', 'getReceipt', ['client', 'professional', 'support', 'admin'], 'receipt_owner_or_support', false, false),
   route('auditEvents.list', 'GET', '/admin/audit-events', 'admin', 'listAuditEvents', ['support', 'admin'], 'internal_operator', false, false, true),
 
-  // Communities moderation — repository wired, deployment and live composition blocked.
+  // Communities — repository wired, deployment and live composition blocked.
   route(
     'communities.moderation.command',
     'POST',
@@ -84,6 +84,48 @@ const ROUTES = Object.freeze([
     'executeModerationCommand',
     ['client', 'professional', 'support', 'admin'],
     'canonical_community_moderation_authority',
+    true,
+    true,
+    true,
+    true,
+    'backend_route_guard_plus_canonical_domain_authority'
+  ),
+  route(
+    'communities.membership.command',
+    'POST',
+    '/communities/:communityId/membership/commands',
+    'communities',
+    'executeMembershipCommand',
+    ['client', 'professional', 'support', 'admin'],
+    'canonical_community_membership_authority',
+    true,
+    true,
+    true,
+    true,
+    'backend_route_guard_plus_canonical_domain_authority'
+  ),
+  route(
+    'communities.governance.command',
+    'POST',
+    '/communities/:communityId/governance/commands',
+    'communities',
+    'executeGovernanceCommand',
+    ['client', 'professional', 'support', 'admin'],
+    'canonical_community_governance_discipline_authority',
+    true,
+    true,
+    true,
+    true,
+    'backend_route_guard_plus_canonical_domain_authority'
+  ),
+  route(
+    'communities.content.command',
+    'POST',
+    '/communities/:communityId/content/commands',
+    'communities',
+    'executeContentCommand',
+    ['client', 'professional', 'support', 'admin'],
+    'canonical_community_content_authority',
     true,
     true,
     true,
