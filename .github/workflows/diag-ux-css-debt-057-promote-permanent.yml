@@ -1,0 +1,87 @@
+name: Doke UX-CSS-DEBT-057 Promote Permanent
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-057-promote-permanent
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-24.04
+    env:
+      PARENT_SHA: 28e5d98e1d640a730b2b24457a1ebc83f743f786
+      PARENT_PARENT_SHA: c03cc9a3c6aef88a83a04e11eda4e9cc0c14d931
+      TARGET_FILE: assets/css/components/chat-composer.css
+      PARENT_BLOB: 4d1fb1fa21f7a7e06f9afa26f0e5019747d0114c
+      TARGET_HASH: 5965c5c07b164c8e1ff6122036a80ced256b28985f426a249f7366c0c4ecd22f
+      TARGET_BYTES: 9696
+      PERM_BRANCH: ux/ux-css-debt-057-chat-composer-compaction
+    steps:
+      - name: Checkout exact certified UX-CSS-DEBT-056 parent
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.PARENT_SHA }}
+          fetch-depth: 2
+
+      - name: Guard parent and seeded permanent namespace
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$PARENT_BLOB"
+          REMOTE="$(git ls-remote --heads origin "refs/heads/$PERM_BRANCH" | awk '{print $1}')"
+          test "$REMOTE" = "$PARENT_SHA"
+          test -z "$(git status --porcelain)"
+          echo "PROMOTION GUARD PASS|parent=$PARENT_SHA|permanentSeed=$REMOTE"
+
+      - name: Build exact R1-certified candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');
+          const f=process.env.TARGET_FILE,src=fs.readFileSync(f,'utf8'),nl=/\r?\n$/.test(src),lines=src.split(/\r?\n/);if(nl&&lines.at(-1)==='')lines.pop();
+          const remove=new Set([8,9,10,19,49,50,64,66,127,128,140,141,142,143,144]);
+          const expected=new Map([
+            [8,'  align-items: end;'],[9,'  gap: 12px;'],[10,'  padding: 12px 22px calc(env(safe-area-inset-bottom, 0px) + 6px);'],[19,'  gap: 10px;'],[49,'  width: 20px;'],[50,'  height: 20px;'],[64,'  min-height: 56px;'],[66,'  border-radius: var(--radius-surface);'],[127,'    gap: 10px;'],[128,'    padding: 10px 12px calc(env(safe-area-inset-bottom, 0px) + 8px);'],[140,'    width: 50px;'],[141,'    height: var(--control-height-xl);'],[142,'    min-width: 50px;'],[143,'    min-height: var(--control-height-xl);'],[144,'    border-radius: var(--radius-base);']
+          ]);
+          for(const [n,text] of expected)if(lines[n-1]!==text)throw new Error(`line ${n} drift: ${lines[n-1]}`);
+          const s=lines.filter((_,i)=>!remove.has(i+1)).join('\n')+(nl?'\n':'');fs.writeFileSync(f,s);
+          const hash=crypto.createHash('sha256').update(s).digest('hex'),bytes=Buffer.byteLength(s);
+          if(hash!==process.env.TARGET_HASH||String(bytes)!==process.env.TARGET_BYTES)throw new Error(`identity drift ${hash}/${bytes}`);
+          console.log(`PROMOTION CANDIDATE PASS|sha256=${hash}|bytes=${bytes}`);
+          NODE
+          test "$(git diff --name-only)" = "$TARGET_FILE"
+          test "$(git diff --numstat -- "$TARGET_FILE")" = $'0\t15\t'"$TARGET_FILE"
+          git diff --check
+
+      - name: Commit exact permanent product delta
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name doke
+          git config user.email bielantoniomma@gmail.com
+          git add -- "$TARGET_FILE"
+          git commit -m 'UX-CSS-DEBT-057: compact superseded shared chat composer declarations'
+          NEW_SHA="$(git rev-parse HEAD)"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git rev-list --count "$PARENT_SHA"..HEAD)" = "1"
+          test "$(git diff --name-only "$PARENT_SHA"...HEAD)" = "$TARGET_FILE"
+          test "$(git diff --numstat "$PARENT_SHA"...HEAD -- "$TARGET_FILE")" = $'0\t15\t'"$TARGET_FILE"
+          test "$(sha256sum "$TARGET_FILE" | awk '{print $1}')" = "$TARGET_HASH"
+          test "$(wc -c < "$TARGET_FILE" | tr -d ' ')" = "$TARGET_BYTES"
+          echo "PERMANENT COMMIT BUILT|sha=$NEW_SHA|parent=$PARENT_SHA|files=1|additions=0|deletions=15"
+
+      - name: Atomic fast-forward permanent branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          NEW_SHA="$(git rev-parse HEAD)"
+          git push --force-with-lease="refs/heads/$PERM_BRANCH:$PARENT_SHA" origin "HEAD:refs/heads/$PERM_BRANCH"
+          REMOTE="$(git ls-remote --heads origin "refs/heads/$PERM_BRANCH" | awk '{print $1}')"
+          test "$REMOTE" = "$NEW_SHA"
+          echo "PERMANENT PROMOTION PASS|branch=$PERM_BRANCH|sha=$REMOTE|parent=$PARENT_SHA"
