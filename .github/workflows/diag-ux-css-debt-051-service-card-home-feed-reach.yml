@@ -1,0 +1,86 @@
+name: Doke UX-CSS-DEBT-051 Service Card Home Feed Reach
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-051-service-card-home-feed-reach
+
+permissions:
+  contents: read
+
+jobs:
+  reach:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 62dcfa29b7a4a21e07d5fefe2c336c4c76a0eb05
+      PARENT_SHA: 927b4d24e26d1684864cc3a4222540bb7c9f9667
+      TARGET_FILE: assets/css/components/cards/service-card-home-feed.css
+      TARGET_BLOB: 95f4b03a325a5fd62dae8b89bfe89b94b1290027
+      IMPORTER_A: assets/css/pages/home-refresh.css
+      IMPORTER_A_BLOB: 595588303bb372e753e2ff3901e31dad1d4a38ce
+      IMPORTER_B: assets/css/pages/home/mobile/index.css
+      IMPORTER_B_BLOB: 43265a98e654aa25989272489a7d87dc3a667e1f
+      PAGE_FILE: index.html
+      PAGE_BLOB: a3b2bffb4fd6bc4208b40930b621a9c54ce22cea
+      FEED_RUNTIME: assets/js/pages/home/public-services.js
+      FEED_BLOB: f0ff25d7552b5195611435dd62ea96d8e20eba6f
+      CARD_RUNTIME: assets/js/components/public-service-card.js
+      CARD_BLOB: f8575282a436a10da632c137ca066476877bc039
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          clean: true
+      - name: Preserve harness and checkout certified parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp .github/diagnostics/ux-css-debt-051-service-card-home-feed-reach.cjs /tmp/ux051-r1.cjs
+          node --check /tmp/ux051-r1.cjs
+          git fetch origin "${TARGET_SHA}" --depth=2
+          git checkout --detach "${TARGET_SHA}"
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test "$(git rev-parse HEAD^)" = "${PARENT_SHA}"
+          test "$(git hash-object "${TARGET_FILE}")" = "${TARGET_BLOB}"
+          test "$(git hash-object "${IMPORTER_A}")" = "${IMPORTER_A_BLOB}"
+          test "$(git hash-object "${IMPORTER_B}")" = "${IMPORTER_B_BLOB}"
+          test "$(git hash-object "${PAGE_FILE}")" = "${PAGE_BLOB}"
+          test "$(git hash-object "${FEED_RUNTIME}")" = "${FEED_BLOB}"
+          test "$(git hash-object "${CARD_RUNTIME}")" = "${CARD_BLOB}"
+          test -z "$(git status --porcelain)"
+          echo "R1 PARENT PASS|sha=${TARGET_SHA}|targetBlob=${TARGET_BLOB}|runtimeBlobs=${FEED_BLOB}/${CARD_BLOB}"
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install and run R1
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install --with-deps chromium
+          npm run audit:active-legacy-structures
+          NODE_PATH="$PWD/node_modules" node /tmp/ux051-r1.cjs
+      - name: Governance
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:agent-governance
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/conflicts.log
+          grep -q 'Conflicting class/property pairs: 339' /tmp/conflicts.log
+          npm run audit:duplicate-assets | tee /tmp/dup.log
+          grep -q 'Duplicate groups: 0' /tmp/dup.log
+          grep -q 'Duplicated files: 0' /tmp/dup.log
+          echo 'R1 GOVERNANCE PASS|conflicts=339|duplicates=0/0'
+      - name: Restore exact checkpoint
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "${TARGET_SHA}"
+          git clean -ffdx
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test "$(git hash-object "${TARGET_FILE}")" = "${TARGET_BLOB}"
+          test -z "$(git status --porcelain)"
+          echo "R1 FINAL PASS|sha=${TARGET_SHA}|productMutation=0|issueCreated=0|prCreated=0"
