@@ -24,13 +24,21 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Verify authorized parent and temporary-only install
+      - name: Verify authorized lineage and temporary-only changes
         shell: bash
         run: |
           set -euo pipefail
           AUTHORIZED=f854c3b624e273b58f42e83036c149e8d42f1712
-          test "$(git rev-parse HEAD^)" = "$AUTHORIZED"
-          test "$(git diff --name-only "$AUTHORIZED" HEAD)" = ".github/workflows/tmp-com-b02g-matrix-sync.yml"
+          INSTALL=028daeee220032aaeb0588c4a61b0306df25ded6
+          FIX=943e6adde85e763ee72c6dcbdfce3c39652b6fcc
+          TEMP=.github/workflows/tmp-com-b02g-matrix-sync.yml
+          test "$(git rev-parse HEAD^)" = "$FIX"
+          test "$(git rev-parse "${FIX}^")" = "$INSTALL"
+          test "$(git rev-parse "${INSTALL}^")" = "$AUTHORIZED"
+          test "$(git diff --name-only "$AUTHORIZED" "$INSTALL")" = "$TEMP"
+          test "$(git diff --name-only "$INSTALL" "$FIX")" = "$TEMP"
+          test "$(git diff --name-only "$FIX" HEAD)" = "$TEMP"
+          test "$(git diff --name-only "$AUTHORIZED" HEAD)" = "$TEMP"
           test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "$(git rev-parse "$AUTHORIZED":config/domain-completion-matrix.json)"
           test "$(git rev-parse HEAD:backend/modules/communities/community-server-authority-runtime-composition-readiness.js)" = "$(git rev-parse "$AUTHORIZED":backend/modules/communities/community-server-authority-runtime-composition-readiness.js)"
           test "$(git rev-parse HEAD:config/com-b02g-server-authority-runtime-composition-readiness.json)" = "$(git rev-parse "$AUTHORIZED":config/com-b02g-server-authority-runtime-composition-readiness.json)"
