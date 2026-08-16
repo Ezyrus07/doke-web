@@ -1,0 +1,95 @@
+name: Doke UX-CSS-DEBT-054 Promote Permanent
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-054-promote-permanent
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 8cf5320e2eb2a8185f777962b7a5d135931a2614
+      PARENT_SHA: fbdd853af425ed9249c0a93ac42a1babeded1993
+      TARGET_FILE: assets/css/components/before-after-workers-preview/publication-light-modal.css
+      TARGET_BLOB: 0427f3ca7c901bfb40efe5446e0e9f24a6ac9bfc
+      TARGET_HASH: 620c4ac18fa00263b5c938fc707785028f12f86f74be253bf570b3ea9fd61e1b
+      TARGET_BYTES: '4383'
+      PERM_BRANCH: ux/ux-css-debt-054-publication-light-modal-compaction
+    steps:
+      - name: Checkout diagnostic harness
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          clean: true
+
+      - name: Preserve promotion helper
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp .github/diagnostics/ux-css-debt-054-promote.cjs /tmp/ux054-promote.cjs
+          node --check /tmp/ux054-promote.cjs
+
+      - name: Checkout exact certified UX-CSS-DEBT-053 parent
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+          clean: true
+          persist-credentials: true
+
+      - name: Guard exact parent and seeded permanent namespace
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test -z "$(git status --porcelain)"
+          REMOTE_BEFORE="$(git ls-remote --heads origin "refs/heads/$PERM_BRANCH" | awk '{print $1}')"
+          test "$REMOTE_BEFORE" = "$TARGET_SHA"
+          echo "PROMOTION PARENT PASS|sha=$TARGET_SHA|parent=$PARENT_SHA|blob=$TARGET_BLOB|permanentNamespace=seeded-at-parent"
+
+      - name: Build exact candidate on permanent branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git switch -c "$PERM_BRANCH"
+          node /tmp/ux054-promote.cjs
+          test "$(sha256sum "$TARGET_FILE" | awk '{print $1}')" = "$TARGET_HASH"
+          test "$(wc -c < "$TARGET_FILE" | tr -d ' ')" = "$TARGET_BYTES"
+          test "$(git diff --name-only)" = "$TARGET_FILE"
+          test "$(git diff --numstat -- "$TARGET_FILE")" = $'0\t2\t'"$TARGET_FILE"
+          git diff --check
+
+      - name: Commit exact permanent product delta
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "doke"
+          git config user.email "bielantoniomma@gmail.com"
+          git add "$TARGET_FILE"
+          git commit -m "UX-CSS-DEBT-054: compact superseded publication preview backdrop declarations"
+          COMMIT="$(git rev-parse HEAD)"
+          test "$(git rev-parse HEAD^)" = "$TARGET_SHA"
+          test "$(git diff --name-only "$TARGET_SHA"...HEAD)" = "$TARGET_FILE"
+          test "$(git diff --numstat "$TARGET_SHA"...HEAD -- "$TARGET_FILE")" = $'0\t2\t'"$TARGET_FILE"
+          test "$(sha256sum "$TARGET_FILE" | awk '{print $1}')" = "$TARGET_HASH"
+          test "$(wc -c < "$TARGET_FILE" | tr -d ' ')" = "$TARGET_BYTES"
+          echo "PERMANENT COMMIT PASS|sha=$COMMIT|parent=$TARGET_SHA|hash=$TARGET_HASH|bytes=$TARGET_BYTES|files=1|additions=0|deletions=2"
+
+      - name: Fast-forward permanent branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          COMMIT="$(git rev-parse HEAD)"
+          REMOTE_BEFORE="$(git ls-remote --heads origin "refs/heads/$PERM_BRANCH" | awk '{print $1}')"
+          test "$REMOTE_BEFORE" = "$TARGET_SHA"
+          git push origin "HEAD:refs/heads/$PERM_BRANCH"
+          REMOTE_AFTER="$(git ls-remote --heads origin "refs/heads/$PERM_BRANCH" | awk '{print $1}')"
+          test "$REMOTE_AFTER" = "$COMMIT"
+          echo "PROMOTION FINAL PASS|branch=$PERM_BRANCH|sha=$COMMIT|parent=$TARGET_SHA|hash=$TARGET_HASH|bytes=$TARGET_BYTES|files=1|additions=0|deletions=2|prCreated=0|transport=seeded-fast-forward"
