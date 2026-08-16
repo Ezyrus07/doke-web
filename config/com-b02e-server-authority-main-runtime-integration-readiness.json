@@ -1,0 +1,172 @@
+{
+  "contractId": "com-b02e-server-authority-main-runtime-integration-readiness-v1",
+  "domain": "COM-001",
+  "scope": "repository_only",
+  "status": "repository_only_readiness_defined_wiring_blocked_pending_certification",
+  "repositoryContext": {
+    "repository": "Ezyrus07/doke-web",
+    "pullRequest": 61,
+    "branch": "com/com-001-baseline-audit",
+    "base": "rep/rep-001-baseline-audit",
+    "parentCertifiedHead": "5e3fbf6d0bfd8a6f254ef1d0f2fb0879be7ae894",
+    "readinessModuleCommit": "35a47c9b3cf4ba38b1a2c4d92d3ee5c92756f0ef",
+    "readinessModulePath": "backend/modules/communities/community-server-authority-runtime-integration-readiness.js",
+    "readinessModuleBlob": "e1e512dd9e92fcf66316cf2e45379978d114ad4a",
+    "matrixVersion": "1.3.113",
+    "maturity": 3,
+    "productionGate": "blocked"
+  },
+  "predecessor": {
+    "contractId": "com-b02d-community-composition-root-canary-readiness-v1",
+    "configPath": "config/com-b02d-community-composition-root-canary-readiness.json",
+    "configBlob": "86bc40fc8d5700996e1c47e025a8af23aef75143",
+    "status": "authenticated_read_only_canary_certified",
+    "compositionPrepared": true,
+    "connectedToMainRuntime": false,
+    "routeRegistered": false,
+    "authorizationConsumed": true,
+    "executionAttempted": true,
+    "successfulExecutions": 1,
+    "successfulRunId": 31026205446,
+    "successfulExecutionJobId": 92375512459,
+    "readOnly": true,
+    "mutationAllowed": false,
+    "countsUnchanged": true,
+    "domainRowsCreated": 0,
+    "endedWithRollback": true
+  },
+  "authorityBindings": {
+    "serverBoundary": {
+      "contractId": "com-b02-server-authority-contract-v1",
+      "path": "backend/modules/communities/community-server-authority-contract.js",
+      "blob": "792893c57d8ccc0194f4dc22f16475ae361ebf89"
+    },
+    "repositoryAdapter": {
+      "contractId": "com-b02b-supabase-repository-migration-readiness-v1",
+      "path": "backend/modules/communities/community-supabase-repository-adapter.js",
+      "blob": "94bc05d9797bc2b5673e440d0b25f09485d8215d"
+    },
+    "membership": {
+      "contractId": "com-a02-canonical-discovery-membership-v1",
+      "path": "backend/modules/communities/community-membership-command.js",
+      "blob": "bd26ebf77038cdba5077a2e524a7d15f3055a96f"
+    },
+    "governance": {
+      "contractId": "com-a03-governance-discipline-ledger-v1",
+      "path": "backend/modules/communities/community-governance-discipline-contract.js",
+      "blob": "c7935bb5881d64b6d3f1b3ea4cccfb88075549b1"
+    },
+    "content": {
+      "contractId": "com-a04-content-realtime-rate-limit-v1",
+      "path": "backend/modules/communities/community-content-realtime-contract.js",
+      "blob": "ec2c4b01e38b1a9c771154c37ffc8d896d33ce5d"
+    }
+  },
+  "candidateRoutes": [
+    {
+      "name": "communities.membership.command",
+      "method": "POST",
+      "path": "/communities/:communityId/membership/commands",
+      "module": "communities",
+      "handler": "executeMembershipCommand",
+      "scope": "canonical_community_membership_authority"
+    },
+    {
+      "name": "communities.governance.command",
+      "method": "POST",
+      "path": "/communities/:communityId/governance/commands",
+      "module": "communities",
+      "handler": "executeGovernanceCommand",
+      "scope": "canonical_community_governance_discipline_authority"
+    },
+    {
+      "name": "communities.content.command",
+      "method": "POST",
+      "path": "/communities/:communityId/content/commands",
+      "module": "communities",
+      "handler": "executeContentCommand",
+      "scope": "canonical_community_content_authority"
+    }
+  ],
+  "routeRequirements": {
+    "allowedRoles": ["client", "professional", "support", "admin"],
+    "idempotencyRequired": true,
+    "auditRequired": true,
+    "serviceRoleRequired": true,
+    "requestFreshnessRequired": true,
+    "authorizationGate": "backend_route_guard_plus_canonical_domain_authority",
+    "rlsValidationRequired": true,
+    "registrationAllowed": false,
+    "runtimeWiringAllowed": false,
+    "stagingTrafficAllowed": false,
+    "realMutationAllowed": false,
+    "realtimeActivationAllowed": false,
+    "productionAllowed": false
+  },
+  "frozenCurrentRuntime": {
+    "routeRegistryPath": "backend/shared/http/route-registry.js",
+    "routeRegistryBlob": "cda8292ce3669a2b76b70ed2d2aae9a017973254",
+    "moduleRouteLoaderPath": "backend/shared/http/module-route-loader.js",
+    "moduleRouteLoaderBlob": "7b3c897c0bf20069b733632c0b424b8664eb8cf5",
+    "communityRouteHandlersPath": "backend/modules/communities/route-handlers.js",
+    "communityRouteHandlersBlob": "e2eec65d156f023ef745eb96849277ec914a07f6",
+    "communitiesModuleLoaded": true,
+    "existingModerationRoutePreserved": true,
+    "candidateRoutesRegistered": false,
+    "candidateHandlersExported": false
+  },
+  "requiredSeparateAuthorities": [
+    "route_registry_mutation",
+    "community_route_handler_mutation",
+    "runtime_wiring",
+    "staging_deployment",
+    "staging_traffic",
+    "real_community_mutation",
+    "realtime_activation"
+  ],
+  "authority": {
+    "readinessDefinitionAuthority": true,
+    "routeRegistryMutationAuthority": false,
+    "routeHandlerMutationAuthority": false,
+    "runtimeWiringAuthority": false,
+    "stagingDeploymentAuthority": false,
+    "stagingTrafficAuthority": false,
+    "realCommunityMutationAuthority": false,
+    "realtimeActivationAuthority": false,
+    "remoteExecutionAuthority": false,
+    "networkAuthority": false,
+    "productionAuthority": false,
+    "pullRequestMergeAuthority": false,
+    "readyForReviewAuthority": false,
+    "r5iCreationAuthority": false
+  },
+  "effects": {
+    "routeRegistryChanged": false,
+    "moduleRouteLoaderChanged": false,
+    "communityRouteHandlersChanged": false,
+    "routeRegistered": false,
+    "candidateHandlerExported": false,
+    "runtimeActivated": false,
+    "networkRequestExecuted": false,
+    "stagingReadExecuted": false,
+    "stagingMutationExecuted": false,
+    "realtimeSubscriptionExecuted": false,
+    "credentialReadExecuted": false,
+    "identityMutationExecuted": false,
+    "triggerCreated": false,
+    "receiptCreated": false,
+    "productionChanged": false,
+    "pullRequestMerged": false
+  },
+  "functionalCheckpoint": {
+    "lastFunctionalCheckpoint": "COM-B03C-R5H",
+    "r5hCertifiedHead": "a06de307f580c6b787a4c233a342a28a751f3621",
+    "exactRootCauseProven": false,
+    "causalPromotionAllowed": false,
+    "privatePresencePromotionAllowed": false,
+    "r5iCreated": false,
+    "r5iInferred": false
+  },
+  "nextSublotAfterCertification": "COM-B02F",
+  "nextActionAfterCertification": "request_separate_explicit_authority_for_repository_only_route_registry_and_blocked_handler_wiring"
+}
