@@ -36,17 +36,19 @@ jobs:
           set -euo pipefail
           workflow=.github/workflows/com-b03c-r5d-hosted-execution-post-matrix-reconciliation-temp.yml
           RECEIPT=config/com-b03c-r5d-single-use-corrected-terminal-observation-execution-authorization-consumption.json
-          test "$(git rev-parse HEAD^)" = "05079fcc5c58fdbfb790c843f4d7a2093f113fba"
-          test "$(git rev-parse HEAD^^)" = "06e9bd172ece4c5bd2a64e8c97e93fc078a14206"
-          test "$(git rev-parse HEAD^^^)" = "9854d1950223892c16a1939198dec27eab534e16"
-          test "$(git rev-parse HEAD^^^^)" = "b3a5bdcd35df41ea64d14c9ff562d5615e13ce6d"
+          test "$(git rev-parse HEAD^)" = "ec7fe94c9de005b5fadbeb972020e1b72c2423d6"
+          test "$(git rev-parse HEAD^^)" = "05079fcc5c58fdbfb790c843f4d7a2093f113fba"
+          test "$(git rev-parse HEAD^^^)" = "06e9bd172ece4c5bd2a64e8c97e93fc078a14206"
+          test "$(git rev-parse HEAD^^^^)" = "9854d1950223892c16a1939198dec27eab534e16"
+          test "$(git rev-parse HEAD^^^^^)" = "b3a5bdcd35df41ea64d14c9ff562d5615e13ce6d"
           test "$(git diff --name-only HEAD^ HEAD)" = "$workflow"
           test "$(git diff --name-only HEAD^^ HEAD^)" = "$workflow"
           test "$(git diff --name-only HEAD^^^ HEAD^^)" = "$workflow"
-          test "$(git diff --name-only HEAD^^^^ HEAD^^^)" = "$RECEIPT"
+          test "$(git diff --name-only HEAD^^^^ HEAD^^^)" = "$workflow"
+          test "$(git diff --name-only HEAD^^^^^ HEAD^^^^)" = "$RECEIPT"
           test "$GITHUB_RUN_ATTEMPT" = "1"
-          test "$(git rev-parse HEAD^^^:$RECEIPT)" = "4cf9881eaf6043493a36176bf7b96a35708bac53"
-          test "$(git rev-parse HEAD^^^:.github/workflows/com-b03c-r5d-corrected-terminal-observation-hosted-execution.yml)" = "91ec3418dc211a290efe091789bf00c9292b388b"
+          test "$(git rev-parse HEAD^^^^:$RECEIPT)" = "4cf9881eaf6043493a36176bf7b96a35708bac53"
+          test "$(git rev-parse HEAD^^^^:.github/workflows/com-b03c-r5d-corrected-terminal-observation-hosted-execution.yml)" = "91ec3418dc211a290efe091789bf00c9292b388b"
 
           pr="$(gh api repos/${GITHUB_REPOSITORY}/pulls/61)"
           test "$(jq -r '.state' <<<"$pr")" = "open"
@@ -254,34 +256,31 @@ jobs:
           if (Object.values(evidence.authorityAfterAttempt).some((value) => value !== false)) throw new Error('R5D_POST_EXEC_REMOTE_AUTHORITY_MUST_BE_FALSE');
           NODE
 
-      - name: Exact reconciliation scope
+      - name: Stage and verify exact reconciliation scope
         shell: bash
         run: |
           set -euo pipefail
           workflow=.github/workflows/com-b03c-r5d-hosted-execution-post-matrix-reconciliation-temp.yml
           evidence=docs/validation/COM-B03C-R5D-CORRECTED-TERMINAL-OBSERVATION-HOSTED-EXECUTION.json
-          expected_tracked="$(printf '%s\n' \
+          git add config/domain-completion-matrix.json docs/DOMAIN-COMPLETION-MATRIX.md
+          git add -f "$evidence" reports/generated/domain-completion-matrix-report.json
+          git rm "$workflow"
+          expected="$(printf '%s\n' \
             "$workflow" \
             config/domain-completion-matrix.json \
             docs/DOMAIN-COMPLETION-MATRIX.md \
+            "$evidence" \
             reports/generated/domain-completion-matrix-report.json | sort)"
-          actual_tracked="$(git diff --name-only HEAD^ | sort)"
-          printf 'expected tracked:\n%s\nactual tracked:\n%s\n' "$expected_tracked" "$actual_tracked"
-          test "$actual_tracked" = "$expected_tracked"
-          test -f "$evidence"
-          test "$(git ls-files --others --exclude-standard -- "$evidence")" = "$evidence"
-          test -z "$(git ls-files --others --exclude-standard | grep -vFx "$evidence" || true)"
+          actual="$(git diff --cached --name-only | sort)"
+          printf 'expected staged:\n%s\nactual staged:\n%s\n' "$expected" "$actual"
+          test "$actual" = "$expected"
+          git diff --cached --check
 
       - name: Publish reconciled source and generated derivatives
         shell: bash
         run: |
           set -euo pipefail
-          workflow=.github/workflows/com-b03c-r5d-hosted-execution-post-matrix-reconciliation-temp.yml
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add config/domain-completion-matrix.json docs/DOMAIN-COMPLETION-MATRIX.md docs/validation/COM-B03C-R5D-CORRECTED-TERMINAL-OBSERVATION-HOSTED-EXECUTION.json
-          git add -f reports/generated/domain-completion-matrix-report.json
-          git rm "$workflow"
-          git diff --cached --check
           git commit -m 'docs(com): reconcile R5D hosted execution evidence'
           git push origin HEAD:com/com-001-baseline-audit
