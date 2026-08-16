@@ -1,0 +1,83 @@
+name: Doke UX-CSS-DEBT-052 Service Card Home Hero Feed Fixture
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-052-service-card-home-hero-feed-fixture
+
+permissions:
+  contents: read
+
+jobs:
+  fixture:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: e8176fc05c9ac47745cf70e9ac560ffe0036fbec
+      PARENT_SHA: 62dcfa29b7a4a21e07d5fefe2c336c4c76a0eb05
+      TARGET_FILE: assets/css/components/cards/service-card-home-hero-feed.css
+      TARGET_BLOB: a412e3753a6a599bb74a61ece9164e490735014d
+      IMPORTER_FILE: assets/css/pages/home-runtime-feed.css
+      IMPORTER_BLOB: b88ba6f422e8226f290c72347563383b0069afce
+      PAGE_FILE: index.html
+      PAGE_BLOB: a3b2bffb4fd6bc4208b40930b621a9c54ce22cea
+      FEED_RUNTIME: assets/js/pages/home/public-services.js
+      FEED_BLOB: f0ff25d7552b5195611435dd62ea96d8e20eba6f
+      CARD_RUNTIME: assets/js/components/public-service-card.js
+      CARD_BLOB: f8575282a436a10da632c137ca066476877bc039
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          clean: true
+      - name: Preserve fixture helper and checkout certified parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp .github/diagnostics/ux-css-debt-052-service-card-home-hero-feed-fixture.cjs /tmp/ux052-r2.cjs
+          node --check /tmp/ux052-r2.cjs
+          git fetch origin "${TARGET_SHA}" --depth=2
+          git checkout --detach "${TARGET_SHA}"
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test "$(git rev-parse HEAD^)" = "${PARENT_SHA}"
+          test "$(git hash-object "${TARGET_FILE}")" = "${TARGET_BLOB}"
+          test "$(git hash-object "${IMPORTER_FILE}")" = "${IMPORTER_BLOB}"
+          test "$(git hash-object "${PAGE_FILE}")" = "${PAGE_BLOB}"
+          test "$(git hash-object "${FEED_RUNTIME}")" = "${FEED_BLOB}"
+          test "$(git hash-object "${CARD_RUNTIME}")" = "${CARD_BLOB}"
+          test -z "$(git status --porcelain)"
+          echo "R2 PARENT IDENTITY PASS|sha=${TARGET_SHA}|targetBlob=${TARGET_BLOB}|importerBlob=${IMPORTER_BLOB}"
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install and run R2 fixture
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install --with-deps chromium
+          NODE_PATH="$PWD/node_modules" node /tmp/ux052-r2.cjs
+      - name: Governance
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:agent-governance
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/conflicts.log
+          grep -q 'Conflicting class/property pairs: 339' /tmp/conflicts.log
+          npm run audit:duplicate-assets | tee /tmp/dup.log
+          grep -q 'Duplicate groups: 0' /tmp/dup.log
+          grep -q 'Duplicated files: 0' /tmp/dup.log
+          echo 'R2 GOVERNANCE PASS|conflicts=339|duplicates=0/0'
+      - name: Restore exact checkpoint
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "${TARGET_SHA}"
+          git clean -ffdx
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test "$(git rev-parse HEAD^)" = "${PARENT_SHA}"
+          test "$(git hash-object "${TARGET_FILE}")" = "${TARGET_BLOB}"
+          test -z "$(git status --porcelain)"
+          echo "R2 FINAL PASS|sha=${TARGET_SHA}|productMutation=0|issueCreated=0|prCreated=0"
