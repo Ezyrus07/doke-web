@@ -76,7 +76,20 @@ jobs:
           workflow=.github/workflows/com-b03c-r5h-extension-classification-probe-concrete-runtime-adapter-binding-specification.yml
           node -e "JSON.parse(require('fs').readFileSync(process.argv[1], 'utf8'))" "$spec"
           ! grep -Eq 'https?://|eyJ[A-Za-z0-9_-]+|sk[-_][A-Za-z0-9_-]+|sbp_[A-Za-z0-9_-]+' "$spec"
-          ! grep -Eq 'contents:[[:space:]]*write|secrets\.|environment:[[:space:]]|SUPABASE_|https?://' "$workflow"
+          grep -Fq '  contents: read' "$workflow"
+          grep -Fq '  pull-requests: read' "$workflow"
+          contents_write='  contents'': write'
+          secret_ref='secrets''.'
+          environment_key='environment'':'
+          supabase_prefix='SUPABASE''_'
+          http_prefix='http'':'
+          https_prefix='https'':'
+          ! grep -Fq "$contents_write" "$workflow"
+          ! grep -Fq "$secret_ref" "$workflow"
+          ! grep -Fq "$environment_key" "$workflow"
+          ! grep -Fq "$supabase_prefix" "$workflow"
+          ! grep -Fq "${http_prefix}//" "$workflow"
+          ! grep -Fq "${https_prefix}//" "$workflow"
 
       - name: Certify concrete runtime adapter binding specification repository-only
         shell: bash
