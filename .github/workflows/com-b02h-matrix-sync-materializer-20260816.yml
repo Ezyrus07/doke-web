@@ -1,0 +1,113 @@
+name: COM-B02H Single-Use Domain Matrix Derivative Materializer
+
+on:
+  push:
+    branches:
+      - tmp/com-b02h-matrix-sync-20260816
+    paths:
+      - '.github/workflows/com-b02h-matrix-sync-materializer-20260816.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: com-b02h-matrix-sync-materializer-20260816
+  cancel-in-progress: false
+
+env:
+  AUTHORIZED_HEAD: 409838c038fa7d886dbdf472310ec10408752b82
+  TEMP_BRANCH: tmp/com-b02h-matrix-sync-20260816
+  MATERIALIZER_PATH: .github/workflows/com-b02h-matrix-sync-materializer-20260816.yml
+
+jobs:
+  materialize:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact temporary branch
+        uses: actions/checkout@v4
+        with:
+          ref: tmp/com-b02h-matrix-sync-20260816
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Frozen authorized lineage and install scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = "$AUTHORIZED_HEAD"
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "b9b2abbee1aed1033c122bf7f2802c7e80844623"
+          test "$(git rev-parse HEAD:backend/modules/communities/community-command-context-projection-composition-contract.js)" = "37b2628138bfff972c20f3a2ee1faa1d342d7bdd"
+          test "$(git rev-parse HEAD:config/com-b02h-canonical-command-context-projection-composition.json)" = "caac558722e68033cd1859a282a74938ff1b8d8d"
+          test "$(git rev-parse HEAD:scripts/test-com-b02h-canonical-command-context-projection-composition.js)" = "3729812445d119a8c7fe23e42e5b22c31ec5909a"
+          test "$(git rev-parse HEAD:.github/workflows/com-b02h-canonical-command-context-projection-composition.yml)" = "406ee7549943ddaf43c11fcc97c3225cd5d2a99f"
+          test "$(git rev-parse HEAD:backend/shared/http/route-registry.js)" = "04a039c1967ffb59502e05584d05831f7c9a1a41"
+          test "$(git rev-parse HEAD:backend/shared/http/module-route-loader.js)" = "7b3c897c0bf20069b733632c0b424b8664eb8cf5"
+          test "$(git rev-parse HEAD:backend/modules/communities/route-handlers.js)" = "332da22f604806ba06a0687c69d3d89903c4222c"
+          test "$(git rev-parse HEAD:backend/modules/communities/community-supabase-repository-adapter.js)" = "94bc05d9797bc2b5673e440d0b25f09485d8215d"
+          test "$(git rev-parse HEAD:supabase/migrations/20260805121500_com_b02b_server_authority.sql)" = "fd74f6abc029023c4e0972b32b35daca975c3d57"
+          expected="$MATERIALIZER_PATH"
+          actual="$(git diff --name-only "$AUTHORIZED_HEAD" HEAD)"
+          test "$actual" = "$expected"
+
+      - name: Materialize, validate, self-remove, and push
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+
+          SOURCE_BLOB_BEFORE="$(git hash-object config/domain-completion-matrix.json)"
+          test "$SOURCE_BLOB_BEFORE" = "b9b2abbee1aed1033c122bf7f2802c7e80844623"
+
+          npm run write:domain-completion-matrix
+
+          SOURCE_BLOB_AFTER="$(git hash-object config/domain-completion-matrix.json)"
+          test "$SOURCE_BLOB_AFTER" = "$SOURCE_BLOB_BEFORE"
+          git diff --quiet -- config/domain-completion-matrix.json
+
+          expected_generated="$(printf '%s\n' docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json | sort)"
+          actual_generated="$(git diff --name-only | sort)"
+          test "$actual_generated" = "$expected_generated"
+
+          node --check backend/modules/communities/community-command-context-projection-composition-contract.js
+          node --check scripts/test-com-b02h-canonical-command-context-projection-composition.js
+          node scripts/test-com-b02h-canonical-command-context-projection-composition.js
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git diff --check
+
+          git config user.name doke
+          git config user.email bielantoniomma@gmail.com
+          git add docs/DOMAIN-COMPLETION-MATRIX.md
+          git add -f reports/generated/domain-completion-matrix-report.json
+          git rm "$MATERIALIZER_PATH"
+          git commit -m "chore(com): sync B02H domain matrix derivatives"
+
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "b9b2abbee1aed1033c122bf7f2802c7e80844623"
+          test "$(git rev-parse HEAD:backend/modules/communities/community-command-context-projection-composition-contract.js)" = "37b2628138bfff972c20f3a2ee1faa1d342d7bdd"
+          test "$(git rev-parse HEAD:config/com-b02h-canonical-command-context-projection-composition.json)" = "caac558722e68033cd1859a282a74938ff1b8d8d"
+          test "$(git rev-parse HEAD:scripts/test-com-b02h-canonical-command-context-projection-composition.js)" = "3729812445d119a8c7fe23e42e5b22c31ec5909a"
+          test "$(git rev-parse HEAD:.github/workflows/com-b02h-canonical-command-context-projection-composition.yml)" = "406ee7549943ddaf43c11fcc97c3225cd5d2a99f"
+          test "$(git rev-parse HEAD:backend/shared/http/route-registry.js)" = "04a039c1967ffb59502e05584d05831f7c9a1a41"
+          test "$(git rev-parse HEAD:backend/shared/http/module-route-loader.js)" = "7b3c897c0bf20069b733632c0b424b8664eb8cf5"
+          test "$(git rev-parse HEAD:backend/modules/communities/route-handlers.js)" = "332da22f604806ba06a0687c69d3d89903c4222c"
+          test "$(git rev-parse HEAD:backend/modules/communities/community-supabase-repository-adapter.js)" = "94bc05d9797bc2b5673e440d0b25f09485d8215d"
+          test "$(git rev-parse HEAD:supabase/migrations/20260805121500_com_b02b_server_authority.sql)" = "fd74f6abc029023c4e0972b32b35daca975c3d57"
+
+          expected_final="$(printf '%s\n' docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json | sort)"
+          actual_final="$(git diff --name-only "$AUTHORIZED_HEAD" HEAD | sort)"
+          test "$actual_final" = "$expected_final"
+          git diff --check "$AUTHORIZED_HEAD" HEAD
+
+          node scripts/test-com-b02h-canonical-command-context-projection-composition.js
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+
+          git push origin HEAD:"refs/heads/$TEMP_BRANCH"
+          echo "FINAL_HEAD=$(git rev-parse HEAD)"
+          echo "FINAL_TREE=$(git rev-parse HEAD^{tree})"
