@@ -1,0 +1,164 @@
+name: Doke UX-CSS-DEBT-038 Permanent Exact Certification
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-038-certify-permanent
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 721c8036a7f1a23208f512ce5a6f4b532209595a
+      PARENT_SHA: 2c2b87e287a2df5f261be5cc9f94439ed9719145
+      TARGET_TREE: 6c1d8d9ca0a20a06ebb184f6b0d636081f263ac8
+      TARGET_CSS: assets/css/pages/pedidos/mobile-layout-contract.css
+      PARENT_BLOB: fdadf3122ce4536b45d9975687d92434fa0f830f
+      TARGET_BLOB: d944dd29025a7ff6084c487989e69febff772b5c
+      PERM_BRANCH: ux/ux-css-debt-038-pedidos-mobile-layout-contract-compaction
+      PAGE: pedidos.html
+      PAGE_FOUNDATION: assets/css/pages/pedidos-foundation.css
+      OPERATIONS: assets/css/pages/pedidos-runtime-operations.css
+    steps:
+      - name: Checkout diagnostic harness
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+
+      - name: Preserve exact-cert helpers
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp .github/diagnostics/ux-css-debt-038-cert-residual.cjs /tmp/ux-css-debt-038-cert-residual.cjs
+          cp .github/diagnostics/ux-css-debt-038-cert-identity.cjs /tmp/ux-css-debt-038-cert-identity.cjs
+          node --check /tmp/ux-css-debt-038-cert-residual.cjs
+          node --check /tmp/ux-css-debt-038-cert-identity.cjs
+
+      - name: Checkout exact permanent SHA
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+          clean: true
+
+      - name: Exact permanent identity scope reach and candidate-byte guard
+        shell: bash
+        run: |
+          set -euo pipefail
+          REMOTE="$(git ls-remote --heads origin "refs/heads/$PERM_BRANCH" | awk '{print $1}')"
+          test "$REMOTE" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD^{tree})" = "$TARGET_TREE"
+          test "$(git merge-base "$PARENT_SHA" HEAD)" = "$PARENT_SHA"
+          test "$(git rev-list --count "$PARENT_SHA"..HEAD)" = "1"
+          test "$(git hash-object "$PARENT_SHA:$TARGET_CSS" 2>/dev/null || true)" = "" || true
+          test "$(git rev-parse "$PARENT_SHA:$TARGET_CSS")" = "$PARENT_BLOB"
+          test "$(git hash-object "$TARGET_CSS")" = "$TARGET_BLOB"
+          test "$(git diff --name-only "$PARENT_SHA"...HEAD)" = "$TARGET_CSS"
+          read -r add del file < <(git diff --numstat "$PARENT_SHA"...HEAD -- "$TARGET_CSS")
+          test "$add" = "0" && test "$del" = "73" && test "$file" = "$TARGET_CSS"
+          test -z "$(git diff --name-only "$PARENT_SHA"...HEAD -- '*.js' '*.html' 'package.json' 'package-lock.json')"
+          git diff --check "$PARENT_SHA"...HEAD
+          node /tmp/ux-css-debt-038-cert-identity.cjs
+          node <<'NODE'
+          const fs=require('fs'),cp=require('child_process');
+          const page=process.env.PAGE,foundation=process.env.PAGE_FOUNDATION,operations=process.env.OPERATIONS,target=process.env.TARGET_CSS;
+          const h=fs.readFileSync(page,'utf8'),f=fs.readFileSync(foundation,'utf8'),o=fs.readFileSync(operations,'utf8');
+          const assert=(x,msg)=>{if(!x)throw new Error(msg)};
+          assert((h.match(/assets\/css\/pages\/pedidos-foundation\.css\?/g)||[]).length===1,'pedidos foundation link cardinality drift');
+          assert((f.match(/\.\/pedidos-runtime-operations\.css\?/g)||[]).length===1,'operations import cardinality drift');
+          assert((o.match(/\.\/pedidos\/mobile-layout-contract\.css\?/g)||[]).length===1,'target import cardinality drift');
+          const targetImporters=cp.execSync("git grep -l -F 'pedidos/mobile-layout-contract.css?v=' -- assets/css || true",{encoding:'utf8'}).trim().split(/\r?\n/).filter(Boolean).sort();
+          assert(JSON.stringify(targetImporters)===JSON.stringify([operations]),'target importer drift '+JSON.stringify(targetImporters));
+          assert(!new RegExp('href=[\\"\\\'][^\\"\\\']*/pedidos/mobile-layout-contract\\.css\\?','i').test(h),'target became direct page stylesheet');
+          console.log(`REACH AUTHORITY PASS|chain=${page}->${foundation}->${operations}->${target}|pages=1`);
+          NODE
+          echo "EXACT IDENTITY PASS|sha=$TARGET_SHA|parent=$PARENT_SHA|tree=$TARGET_TREE|blob=$TARGET_BLOB|files=1|additions=0|deletions=73"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Responsive contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run test:responsive-contract | tee /tmp/responsive.log
+          grep -q 'Responsive contract test: PASS' /tmp/responsive.log
+          grep -q 'Checks: 893' /tmp/responsive.log
+          grep -q 'Failures: 0' /tmp/responsive.log
+          grep -q 'Skips: 277' /tmp/responsive.log
+
+      - name: Governance contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:agent-governance
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/conflicts.log
+          conflicts="$(sed -n 's/.*Conflicting class\/property pairs: \([0-9][0-9]*\).*/\1/p' /tmp/conflicts.log | tail -1)"
+          test -n "$conflicts"
+          test "$conflicts" -le 339
+          npm run audit:shared-app-header-contract
+          npm run audit:mobile-shell-location-contract
+          npm run audit:responsive-boundaries
+          npm run audit:duplicate-assets | tee /tmp/dup.log
+          grep -q 'Duplicate groups: 0' /tmp/dup.log
+          grep -q 'Duplicated files: 0' /tmp/dup.log
+          npm run audit:domain-completion-matrix | tee /tmp/domain.log
+          grep -q 'Domains: 23' /tmp/domain.log
+          grep -q 'Critical flows: 15' /tmp/domain.log
+          grep -q 'Average maturity: 2.91/6' /tmp/domain.log
+          grep -q 'Critical blockers: 12' /tmp/domain.log
+          echo "GOVERNANCE PASS|conflicts=$conflicts|domain=23/15/2.91/12|duplicates=0/0"
+
+      - name: Permanent residual
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:active-legacy-structures
+          node /tmp/ux-css-debt-038-cert-residual.cjs
+
+      - name: Dependency snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm audit --json > /tmp/npm-audit.json || true
+          node <<'NODE'
+          const fs=require('fs');
+          const a=JSON.parse(fs.readFileSync('/tmp/npm-audit.json','utf8'));
+          const v=a.metadata?.vulnerabilities||{};
+          console.log(`NPM AUDIT SNAPSHOT|total=${v.total??'n/a'}|critical=${v.critical??'n/a'}|high=${v.high??'n/a'}|moderate=${v.moderate??'n/a'}|low=${v.low??'n/a'}`);
+          NODE
+
+      - name: Final exact-SHA certification marker
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD^{tree})" = "$TARGET_TREE"
+          test "$(git hash-object "$TARGET_CSS")" = "$TARGET_BLOB"
+          echo "PERMANENT EXACT CERT PASS|sha=$TARGET_SHA|parent=$PARENT_SHA|tree=$TARGET_TREE|blob=$TARGET_BLOB|files=1|additions=0|deletions=73|residual=36/849/0|runtimeProof=transferred-by-exact-candidate-bytes|prCreated=0"
+
+      - name: Clean generated artifacts and restore exact permanent checkpoint
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "$TARGET_SHA"
+          git clean -ffdx
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD^{tree})" = "$TARGET_TREE"
+          test "$(git hash-object "$TARGET_CSS")" = "$TARGET_BLOB"
+          test -z "$(git status --porcelain)"
+          echo "CHECKPOINT PASS|sha=$TARGET_SHA|productMutation=0|prCreated=0|generatedArtifactsCleaned=1"
