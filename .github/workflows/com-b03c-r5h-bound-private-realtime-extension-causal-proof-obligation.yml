@@ -1,0 +1,104 @@
+name: COM-B03C R5H-Bound Private Realtime Extension Causal Proof Obligation
+
+on:
+  push:
+    branches: [com/com-001-baseline-audit]
+    paths:
+      - 'config/com-b03c-r5h-bound-private-realtime-extension-causal-proof-obligation.json'
+      - 'scripts/test-com-b03c-r5h-bound-private-realtime-extension-causal-proof-obligation.js'
+      - '.github/workflows/com-b03c-r5h-bound-private-realtime-extension-causal-proof-obligation.yml'
+      - 'docs/validation/COM-B03C-R3L-EVALUATION-CONTEXT-DIFFERENTIAL-PRESENCE-STAGING-SUMMARY.json'
+      - 'docs/validation/COM-B03C-R5D-CORRECTED-TERMINAL-OBSERVATION-HOSTED-EXECUTION.json'
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - 'config/com-b03c-r5h-bound-private-realtime-extension-causal-proof-obligation.json'
+      - 'scripts/test-com-b03c-r5h-bound-private-realtime-extension-causal-proof-obligation.js'
+      - '.github/workflows/com-b03c-r5h-bound-private-realtime-extension-causal-proof-obligation.yml'
+      - 'docs/validation/COM-B03C-R3L-EVALUATION-CONTEXT-DIFFERENTIAL-PRESENCE-STAGING-SUMMARY.json'
+      - 'docs/validation/COM-B03C-R5D-CORRECTED-TERMINAL-OBSERVATION-HOSTED-EXECUTION.json'
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: com-b03c-r5h-extension-proof-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: false
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Install repository dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Syntax
+        run: node --check scripts/test-com-b03c-r5h-bound-private-realtime-extension-causal-proof-obligation.js
+
+      - name: Certify causal proof obligation repository-only
+        run: node scripts/test-com-b03c-r5h-bound-private-realtime-extension-causal-proof-obligation.js
+
+      - name: Frozen causal evidence lineage
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD:config/com-b03c-r5h-bound-private-realtime-extension-causal-proof-obligation.json)" = "0f59265ecb6ff8c36c2e42780c171896f21c7d6a"
+          test "$(git rev-parse HEAD:docs/validation/COM-B03C-R3L-EVALUATION-CONTEXT-DIFFERENTIAL-PRESENCE-STAGING-SUMMARY.json)" = "05cca2fb472f48b11850d116ce3666523209abb4"
+          test "$(git rev-parse HEAD:docs/validation/COM-B03C-R5D-CORRECTED-TERMINAL-OBSERVATION-HOSTED-EXECUTION.json)" = "2e0e0d0d5026daee6dc64ce057e449dd92cf13c8"
+
+      - name: Exact repository-only installation scope
+        if: github.event_name == 'push'
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected="$(
+            printf '%s\n' \
+              .github/workflows/com-b03c-r5h-bound-private-realtime-extension-causal-proof-obligation.yml \
+              scripts/test-com-b03c-r5h-bound-private-realtime-extension-causal-proof-obligation.js |
+              sort
+          )"
+          actual="$(git diff --name-only HEAD^ HEAD | sort)"
+          test "$actual" = "$expected"
+
+      - name: Domain Completion Matrix
+        run: npm run audit:domain-completion-matrix
+
+      - name: Agent Governance
+        run: npm run audit:agent-governance
+
+      - name: Diff hygiene
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git diff --check "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}"
+          else
+            git diff --check HEAD^ HEAD
+          fi
+
+      - name: Fail-closed authority assertions
+        shell: bash
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const cfg = require('./config/com-b03c-r5h-bound-private-realtime-extension-causal-proof-obligation.json');
+          if (cfg.functionalCheckpoint.lastFunctionalCheckpoint !== 'COM-B03C-R5H') throw new Error('R5H_CHECKPOINT_NOT_PRESERVED');
+          if (cfg.functionalCheckpoint.r5iCreated !== false || cfg.functionalCheckpoint.r5iInferred !== false) throw new Error('R5I_MUST_NOT_EXIST');
+          if (cfg.proofObligation.exactRootCauseProven !== false || cfg.proofObligation.causalPromotionAllowed !== false) throw new Error('CAUSAL_PROMOTION_MUST_REMAIN_BLOCKED');
+          for (const key of ['remoteExecutionAuthority','remoteCredentialReadAuthority','remoteDependencyLoadAuthority','networkAuthority','stagingReadAuthority','stagingMutationAuthority','realtimeSubscriptionAuthority','authIdentityLifecycleAuthority','runtimeChangeAuthority','productionAuthority','pullRequestMergeAuthority','readyForReviewAuthority']) {
+            if (cfg.governance[key] !== false) throw new Error(`${key}_MUST_REMAIN_FALSE`);
+          }
+          if (cfg.governance.executionBoundaryDefined !== false || cfg.governance.executionAttempted !== false) throw new Error('EXECUTION_BOUNDARY_MUST_REMAIN_ABSENT');
+          if (cfg.governance.genericContinuationGrantsRemoteAuthority !== false) throw new Error('GENERIC_CONTINUATION_MUST_NOT_AUTHORIZE_REMOTE');
+          NODE
