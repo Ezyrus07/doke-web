@@ -1,0 +1,164 @@
+name: Doke UX-CSS-DEBT-055 Settings Shell Proof
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-055-settings-shell-proof
+
+permissions:
+  contents: read
+
+jobs:
+  proof:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: a0d9a44014a172789c0389eccf6c17781c6c27f8
+      PARENT_SHA: 8cf5320e2eb2a8185f777962b7a5d135931a2614
+      TARGET_FILE: assets/css/patterns/settings-shell.css
+      TARGET_BLOB: 385844b2a419c50df7c8f4da2e7e4ccd08fa6b5a
+      IMPORTER_A: assets/css/pages/comunidade-interna-runtime-settings.css
+      IMPORTER_A_BLOB: 9d293bf51617e0c38a14927d05d318fb6847d484
+      IMPORTER_B: assets/css/pages/configuracoes-foundation.css
+      IMPORTER_B_BLOB: 7dc60e8ba171f71cb3b109e4022a2f18384b043d
+      PAGE_A: comunidade-interna.html
+      PAGE_A_BLOB: ba3923026a532fa86f0784f34c3db71a2759ee11
+      PAGE_B: configuracoes.html
+      PAGE_B_BLOB: adc66509e52e79bc310c8541422221ee491baa42
+    steps:
+      - name: Checkout exact certified UX-CSS-DEBT-054 SHA
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+
+      - name: Guard exact parent and reach inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(git hash-object "$IMPORTER_A")" = "$IMPORTER_A_BLOB"
+          test "$(git hash-object "$IMPORTER_B")" = "$IMPORTER_B_BLOB"
+          test "$(git hash-object "$PAGE_A")" = "$PAGE_A_BLOB"
+          test "$(git hash-object "$PAGE_B")" = "$PAGE_B_BLOB"
+          test -z "$(git status --porcelain)"
+          git diff --check
+          echo "INPUT GUARD PASS|sha=$TARGET_SHA|blob=$TARGET_BLOB|importers=2|pages=2"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install and generate canonical active graph
+        run: |
+          npm ci --ignore-scripts
+          npm run audit:active-legacy-structures
+
+      - name: Prove identical cascade and active reach
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp "$TARGET_FILE" /tmp/settings-shell.before.css
+          node <<'NODE'
+          const fs=require('fs'),path=require('path'),cp=require('child_process'),crypto=require('crypto');
+          const target=process.env.TARGET_FILE;
+          const src=fs.readFileSync(target,'utf8');
+          const props=[
+            ['--doke-settings-sidebar-width','clamp(340px, 27vw, 400px)'],
+            ['--doke-settings-content-max','1080px'],
+            ['--doke-settings-gutter','clamp(28px, 3.2vw, 44px)'],
+            ['--doke-settings-header-min-height','104px']
+          ];
+          const blocks=[]; const re=/:where\(\.doke-settings-shell\)\s*\{([\s\S]*?)\}/g; let m;
+          while((m=re.exec(src))) blocks.push({body:m[1],start:m.index});
+          if(blocks.length<4) throw new Error(`settings shell block drift ${blocks.length}`);
+          const matches=[];
+          for(const [prop,val] of props){
+            const found=[];
+            for(let i=0;i<blocks.length;i++){
+              const r=new RegExp(`^\\s*${prop.replace(/[.*+?^${}()|[\\]\\]/g,'\\$&')}\\s*:\\s*${val.replace(/[.*+?^${}()|[\\]\\]/g,'\\$&')}\\s*;\\s*$`,'m');
+              if(r.test(blocks[i].body)) found.push(i);
+            }
+            if(found.length!==2) throw new Error(`${prop} expected 2 identical global definitions, got ${found.length}`);
+            if(found[0]!==0 || found[1]!==3) throw new Error(`${prop} block placement drift ${found}`);
+            matches.push({prop,val,oldBlock:found[0],winnerBlock:found[1]});
+          }
+          const tracked=cp.execFileSync('git',['ls-files','-z','assets/css'],{encoding:'utf8'}).split('\0').filter(Boolean);
+          const trackedSet=new Set(tracked); const importRe=/@import\s+(?:url\()?['"]?([^'"\);]+\.css(?:\?[^'"\)]*)?)['"]?\)?/gi;
+          const norm=(v,from)=>{v=v.replace(/\?.*$/,'').replace(/^\.\//,'');if(v.startsWith('/'))return v.replace(/^\/+/, '');if(v.startsWith('assets/'))return v;return path.posix.normalize(path.posix.join(path.posix.dirname(from),v));};
+          const importsFor=f=>{const t=fs.readFileSync(f,'utf8'),a=[];let x;importRe.lastIndex=0;while((x=importRe.exec(t))){const n=norm(x[1],f);if(trackedSet.has(n))a.push(n)}return a};
+          const direct=tracked.filter(f=>importsFor(f).includes(target)).sort();
+          const expectedDirect=[process.env.IMPORTER_A,process.env.IMPORTER_B].sort();
+          if(JSON.stringify(direct)!==JSON.stringify(expectedDirect)) throw new Error(`direct importer drift ${JSON.stringify(direct)}`);
+          const report=JSON.parse(fs.readFileSync('reports/generated/active-legacy-structures-report.json','utf8'));
+          const reached=[];
+          for(const p of report.pageAssets){const seen=new Set(),todo=[...(p.css||[]).filter(f=>trackedSet.has(f))];let hit=false;while(todo.length){const f=todo.pop();if(seen.has(f))continue;seen.add(f);if(f===target){hit=true;break;}for(const n of importsFor(f))todo.push(n)}if(hit)reached.push(p.page)}
+          reached.sort(); const expectedPages=[process.env.PAGE_A,process.env.PAGE_B].sort();
+          if(JSON.stringify(reached)!==JSON.stringify(expectedPages)) throw new Error(`active reach drift ${JSON.stringify(reached)}`);
+          for(const p of expectedPages){const html=fs.readFileSync(p,'utf8');if(!html.includes('doke-settings-shell'))throw new Error(`real DOM class missing ${p}`)}
+          console.log(`STATIC IDENTITY PASS|rows=4|sameSelector=4|sameContext=4|sameImportance=4|identicalValue=4|laterWinners=4|browserRequired=0`);
+          console.log(`REACH PASS|directImporters=${direct.join(',')}|pages=${reached.join(',')}|realDomPages=2`);
+          NODE
+
+      - name: Build ephemeral candidate and prove exact delta
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');
+          const f=process.env.TARGET_FILE; let s=fs.readFileSync(f,'utf8');
+          const lines=[
+            '  --doke-settings-sidebar-width: clamp(340px, 27vw, 400px);\n',
+            '  --doke-settings-content-max: 1080px;\n',
+            '  --doke-settings-gutter: clamp(28px, 3.2vw, 44px);\n',
+            '  --doke-settings-header-min-height: 104px;\n'
+          ];
+          for(const line of lines){const i=s.indexOf(line);if(i<0)throw new Error(`missing old line ${line.trim()}`);s=s.slice(0,i)+s.slice(i+line.length)}
+          fs.writeFileSync(f,s);
+          const hash=crypto.createHash('sha256').update(s).digest('hex');
+          console.log(`EPHEMERAL IDENTITY|sha256=${hash}|bytes=${Buffer.byteLength(s)}`);
+          NODE
+          test "$(git diff --name-only)" = "$TARGET_FILE"
+          test "$(git diff --numstat -- "$TARGET_FILE")" = $'0\t4\t'"$TARGET_FILE"
+          git diff --check
+          node <<'NODE'
+          const fs=require('fs');const s=fs.readFileSync(process.env.TARGET_FILE,'utf8');
+          const count=(s.match(/^[ \t]*--[\w-]+\s*:/gm)||[]).length;
+          if(count<1)throw new Error('custom property parse failed');
+          const props=['--doke-settings-sidebar-width','--doke-settings-content-max','--doke-settings-gutter','--doke-settings-header-min-height'];
+          for(const p of props){const n=(s.match(new RegExp(`^\\s*${p}:`,'gm'))||[]).length;if(n!==1)throw new Error(`${p} count ${n}`)}
+          console.log('EPHEMERAL DELTA PASS|declarations=108->104|superseded=4->0|files=1|additions=0|deletions=4');
+          NODE
+
+      - name: Governance proof
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:agent-governance
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/conflicts.log
+          grep -q 'Conflicting class/property pairs: 339' /tmp/conflicts.log
+          npm run audit:duplicate-assets | tee /tmp/dup.log
+          grep -q 'Duplicate groups: 0' /tmp/dup.log
+          grep -q 'Duplicated files: 0' /tmp/dup.log
+          npm run audit:domain-completion-matrix | tee /tmp/domain.log
+          grep -q 'Domains: 23' /tmp/domain.log
+          grep -q 'Critical flows: 15' /tmp/domain.log
+          grep -q 'Average maturity: 2.91/6' /tmp/domain.log
+          grep -q 'Critical blockers: 12' /tmp/domain.log
+          echo 'GOVERNANCE PASS|conflicts=339|duplicates=0/0|domain=23/15/2.91/12'
+
+      - name: Exact restore
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "$TARGET_SHA"
+          git clean -fdx
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test -z "$(git status --porcelain)"
+          echo "RESTORE PASS|sha=$TARGET_SHA|productMutation=0|issueCreated=0|prCreated=0"
