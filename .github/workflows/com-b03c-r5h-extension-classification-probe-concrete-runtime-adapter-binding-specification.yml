@@ -1,0 +1,181 @@
+name: COM-B03C R5H Concrete Runtime Adapter Binding Specification
+
+on:
+  push:
+    branches: [com/com-001-baseline-audit]
+    paths:
+      - 'config/com-b03c-r5h-extension-classification-probe-concrete-runtime-adapter-binding-specification.json'
+      - '.github/workflows/com-b03c-r5h-extension-classification-probe-concrete-runtime-adapter-binding-specification.yml'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+  pull_request:
+    branches: [rep/rep-001-baseline-audit]
+    paths:
+      - 'config/com-b03c-r5h-extension-classification-probe-concrete-runtime-adapter-binding-specification.json'
+      - '.github/workflows/com-b03c-r5h-extension-classification-probe-concrete-runtime-adapter-binding-specification.yml'
+      - 'docs/DOMAIN-COMPLETION-MATRIX.md'
+      - 'reports/generated/domain-completion-matrix-report.json'
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: com-b03c-r5h-concrete-runtime-adapter-binding-specification-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: false
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - run: npm ci --ignore-scripts
+
+      - name: Frozen certified runtime target binding implementation lineage
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD:config/com-b03c-r5h-extension-classification-probe-runtime-target-binding-implementation-boundary.json)" = "a2e7e516c0ca57239dfa584095d6d6349b810e32"
+          test "$(git rev-parse HEAD:backend/modules/communities/community-realtime-private-auth-r5h-extension-classification-probe-runtime-target-binding.js)" = "759935689fccc695cf7bcfa5d495fefb0965d8be"
+          test "$(git rev-parse HEAD:.github/workflows/com-b03c-r5h-extension-classification-probe-runtime-target-binding-implementation-boundary.yml)" = "2b15b11c9a2fb62874c6f92113c21e17050d4cce"
+          test "$(git rev-parse HEAD:config/com-b03c-r5h-extension-classification-probe-concrete-runtime-adapter-binding-specification.json)" = "9f30614b073b62eb90724867204f95b02373020a"
+
+      - name: Exact repository-only push scope
+        if: github.event_name == 'push'
+        shell: bash
+        run: |
+          set -euo pipefail
+          spec=config/com-b03c-r5h-extension-classification-probe-concrete-runtime-adapter-binding-specification.json
+          workflow=.github/workflows/com-b03c-r5h-extension-classification-probe-concrete-runtime-adapter-binding-specification.yml
+          temp=.github/workflows/com-b03c-r5h-extension-classification-probe-concrete-runtime-adapter-binding-specification-matrix-materialization-temp.yml
+          installation_scope="$(printf '%s\n' "$spec" "$workflow" | sort)"
+          maintenance_scope="$workflow"
+          materialization_scope="$(printf '%s\n' "$temp" docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json | sort)"
+          actual="$(git diff --name-only HEAD^ HEAD | sort)"
+          if [ "$actual" = "$installation_scope" ]; then
+            test "$(git rev-parse HEAD^)" = "50034d8fb73415f69230371b3d5a66209f699ec4"
+          elif [ "$actual" != "$maintenance_scope" ] && [ "$actual" != "$materialization_scope" ]; then
+            printf 'Unexpected repository-only push scope:\n%s\n' "$actual" >&2
+            exit 1
+          fi
+
+      - name: Static specification-only no-runtime boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          spec=config/com-b03c-r5h-extension-classification-probe-concrete-runtime-adapter-binding-specification.json
+          workflow=.github/workflows/com-b03c-r5h-extension-classification-probe-concrete-runtime-adapter-binding-specification.yml
+          node -e "JSON.parse(require('fs').readFileSync(process.argv[1], 'utf8'))" "$spec"
+          ! grep -Eq 'https?://|eyJ[A-Za-z0-9_-]+|sk[-_][A-Za-z0-9_-]+|sbp_[A-Za-z0-9_-]+' "$spec"
+          ! grep -Eq 'contents:[[:space:]]*write|secrets\.|environment:[[:space:]]|SUPABASE_|https?://' "$workflow"
+
+      - name: Certify concrete runtime adapter binding specification repository-only
+        shell: bash
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const spec = require('./config/com-b03c-r5h-extension-classification-probe-concrete-runtime-adapter-binding-specification.json');
+          const parent = require('./config/com-b03c-r5h-extension-classification-probe-runtime-target-binding-implementation-boundary.json');
+          const binding = require('./backend/modules/communities/community-realtime-private-auth-r5h-extension-classification-probe-runtime-target-binding.js');
+
+          if (spec.contractId !== 'com-b03c-r5h-extension-classification-probe-concrete-runtime-adapter-binding-specification-v1') throw new Error('CONCRETE_RUNTIME_ADAPTER_BINDING_SPEC_CONTRACT_DRIFT');
+          const ctx = spec.repositoryContext;
+          if (ctx.parentCertifiedRuntimeTargetBindingImplementationHead !== '50034d8fb73415f69230371b3d5a66209f699ec4') throw new Error('PARENT_RUNTIME_TARGET_BINDING_IMPLEMENTATION_HEAD_DRIFT');
+          if (ctx.parentCertifiedRuntimeTargetBindingImplementationTree !== '1df04df9b2142366d61683378f0bfe8a5bf7e9e3') throw new Error('PARENT_RUNTIME_TARGET_BINDING_IMPLEMENTATION_TREE_DRIFT');
+          if (ctx.parentRuntimeTargetBindingImplementationCertificationRun !== 31950225916 || ctx.parentRuntimeTargetBindingImplementationCertificationJob !== 95172453966) throw new Error('PARENT_RUNTIME_TARGET_BINDING_IMPLEMENTATION_CERTIFICATION_DRIFT');
+          if (ctx.parentRuntimeTargetBindingImplementationBoundaryBlob !== 'a2e7e516c0ca57239dfa584095d6d6349b810e32' || ctx.parentRuntimeTargetBindingImplementationModuleBlob !== '759935689fccc695cf7bcfa5d495fefb0965d8be' || ctx.parentRuntimeTargetBindingImplementationCertifierBlob !== '2b15b11c9a2fb62874c6f92113c21e17050d4cce') throw new Error('PARENT_RUNTIME_TARGET_BINDING_IMPLEMENTATION_BLOB_DRIFT');
+          if (ctx.matrixVersion !== '1.3.113' || ctx.maturity !== 3 || ctx.productionGate !== 'blocked') throw new Error('MATRIX_STATE_DRIFT');
+          if (spec.functionalCheckpoint.lastFunctionalCheckpoint !== 'COM-B03C-R5H' || spec.functionalCheckpoint.r5iCreated !== false || spec.functionalCheckpoint.r5iInferred !== false) throw new Error('FUNCTIONAL_CHECKPOINT_DRIFT');
+
+          if (parent.contractId !== 'com-b03c-r5h-extension-classification-probe-runtime-target-binding-implementation-boundary-v1') throw new Error('PARENT_IMPLEMENTATION_CONTRACT_DRIFT');
+          if (parent.implementation.runtimeTargetBindingImplementationBoundaryDefined !== true || parent.implementation.descriptorValidatorImplementationPresent !== true || parent.implementation.bindingPlanBuilderImplementationPresent !== true) throw new Error('PARENT_IMPLEMENTATION_STATE_DRIFT');
+          if (parent.implementation.runtimeTargetBindingDefined !== false || parent.implementation.runtimeTargetBindingImplemented !== false || parent.implementation.concreteBindingPresent !== false) throw new Error('PARENT_IMPLEMENTATION_MUST_REMAIN_UNBOUND');
+
+          const state = spec.bindingSpecification;
+          for (const key of ['repositoryOnlySpecification','specificationOnly','concreteRuntimeAdapterBindingSpecificationDefined']) {
+            if (state[key] !== true) throw new Error(`${key}_REQUIRED`);
+          }
+          for (const key of ['runtimeAdapterBindingDefined','runtimeAdapterBound','runtimeAdapterImplementationPresent','targetEnvironmentBindingAllowed','targetResourceBindingAllowed','dependentPortBindingAllowed','credentialMaterialAllowed','syntheticIdentityMaterialAllowed','networkEndpointAllowed','executionEntrypointAllowed','executionWorkflowAllowed','remoteExecutionAllowed']) {
+            if (state[key] !== false) throw new Error(`${key}_MUST_REMAIN_FALSE`);
+          }
+          for (const key of ['adapterContractId','adapterModulePath','adapterModuleBlob','bindingBoundaryHead']) {
+            if (state[key] !== null) throw new Error(`${key}_MUST_REMAIN_NULL`);
+          }
+
+          const descriptor = spec.futureAdapterDescriptorRequirements;
+          if (JSON.stringify(descriptor.requiredFields) !== JSON.stringify(['adapterContractId','adapterModulePath','adapterModuleBlob','bindingBoundaryHead'])) throw new Error('ADAPTER_DESCRIPTOR_FIELDS_DRIFT');
+          for (const [key, value] of Object.entries(descriptor)) {
+            if (key !== 'requiredFields' && value !== true) throw new Error(`${key}_REQUIRED`);
+          }
+
+          const input = spec.futureAdapterInterfaceRequirements.acceptedInput;
+          if (input.validatedObservationPlanCaseOnly !== true || input.exactlyOneCasePerInvocation !== true || input.freshRealtimeClientPerObservationRequired !== true || input.privateChannelRequired !== true || input.presenceOnlyRequired !== true) throw new Error('ADAPTER_INPUT_POLICY_DRIFT');
+          const caseIds = ['extension_unavailable_or_null','extension_expected_presence_value','extension_unexpected_non_null_value'];
+          if (JSON.stringify(input.requiredCaseIds) !== JSON.stringify(caseIds)) throw new Error('ADAPTER_CASE_SET_DRIFT');
+
+          const delegatedSlots = ['target_environment','target_resource','credential_provider','synthetic_identity_lifecycle','realtime_client_factory','sanitized_evidence_recorder','cleanup_verifier'];
+          if (JSON.stringify(Object.keys(spec.futureAdapterInterfaceRequirements.delegatedPorts)) !== JSON.stringify(delegatedSlots)) throw new Error('ADAPTER_DELEGATED_PORT_SET_DRIFT');
+          for (const value of Object.values(spec.futureAdapterInterfaceRequirements.delegatedPorts)) {
+            if (value !== 'must_be_injected_by_separate_certified_binding_boundary') throw new Error('ADAPTER_DELEGATED_PORT_POLICY_DRIFT');
+          }
+          for (const value of Object.values(spec.futureAdapterInterfaceRequirements.adapterMustNot)) {
+            if (value !== true) throw new Error('ADAPTER_PROHIBITION_DRIFT');
+          }
+
+          const output = spec.futureAdapterInterfaceRequirements.sanitizedOutputContract;
+          const allowed = ['caseId','extensionPredicate','sanitizedClassification','terminalChannelStatus','joinSubscribed','cleanupAttempted','cleanupSucceeded','zeroResidue','observationSequence','crossCaseComparable'];
+          const forbidden = ['rawRemoteError','rawCredential','rawSyntheticIdentity','rawRemotePayload','unredactedEndpointParameters'];
+          if (JSON.stringify(output.allowedFields) !== JSON.stringify(allowed) || JSON.stringify(output.forbiddenFields) !== JSON.stringify(forbidden)) throw new Error('SANITIZED_OUTPUT_FIELD_SET_DRIFT');
+          for (const key of ['rawRemoteMaterialForbidden','cleanupAndZeroResidueRequired','terminalStatusAloneCannotProveCause','crossCaseComparisonRequiredBeforeCausalDecision']) {
+            if (output[key] !== true) throw new Error(`${key}_REQUIRED`);
+          }
+
+          if (JSON.stringify(spec.dependentPortState.map((item) => item.slotId)) !== JSON.stringify(delegatedSlots)) throw new Error('DEPENDENT_PORT_SET_DRIFT');
+          for (const item of spec.dependentPortState) {
+            if (item.mustRemainUnboundInThisSpecification !== true || item.boundNow !== false || item.concreteValuePresent !== false) throw new Error(`DEPENDENT_PORT_MUST_REMAIN_UNBOUND:${item.slotId}`);
+          }
+
+          const auth = spec.futureAuthorizationRequirements;
+          for (const key of ['futureAuthorizationMustBeFresh','futureAuthorizationMustBeExplicit','futureAuthorizationMustBeSingleUse','futureAuthorizationMustBindExactCertifiedAdapterBindingHead','futureAuthorizationMustBindExactNonProductionEnvironmentIdentifier','futureAuthorizationMustBindExactResourceIdentifier','futureAuthorizationMustBindExactResourceScopeFingerprint','futureReceiptMustBeSeparateSingleFileCommit','receiptParentMustEqualAuthorizedHead','futureTriggerMustBeSeparateCanonicalBoundary','runAttemptOneRequired','priorR5dAuthorizationReuseForbidden','priorR5dReceiptReuseForbidden','priorR5dTriggerReuseForbidden']) {
+            if (auth[key] !== true) throw new Error(`${key}_REQUIRED`);
+          }
+          if (auth.genericContinuationGrantsRemoteAuthority !== false) throw new Error('GENERIC_CONTINUATION_MUST_NOT_AUTHORIZE_REMOTE');
+
+          for (const value of Object.values(spec.prohibitedInThisSpecification)) {
+            if (value !== true) throw new Error('PROHIBITED_CAPABILITY_POLICY_DRIFT');
+          }
+
+          const gov = spec.governance;
+          for (const key of ['repositoryOnlyDefinition','runtimeTargetBindingImplementationBoundaryDefined','concreteRuntimeAdapterBindingSpecificationDefined']) {
+            if (gov[key] !== true) throw new Error(`${key}_REQUIRED`);
+          }
+          for (const key of ['runtimeAdapterBindingDefined','runtimeAdapterBound','runtimeAdapterImplementationPresent','transportBound','executionEntryPointExported','targetEnvironmentBound','targetResourceBound','credentialProviderBound','identityLifecycleBound','realtimeClientFactoryBound','sanitizedEvidenceRecorderBound','cleanupVerifierBound','executionWorkflowDefined','triggerCreated','receiptCreated','explicitExecutionAuthorizationReceived','executionAttempted','remoteExecutionAuthority','remoteCredentialReadAuthority','remoteDependencyLoadAuthority','networkAuthority','stagingReadAuthority','stagingMutationAuthority','realtimeSubscriptionAuthority','authIdentityLifecycleAuthority','runtimeChangeAuthority','productionAuthority','pullRequestMergeAuthority','readyForReviewAuthority']) {
+            if (gov[key] !== false) throw new Error(`${key}_MUST_REMAIN_FALSE`);
+          }
+
+          if (spec.causalState.exactRootCauseProven !== false || spec.causalState.causalPromotionAllowed !== false || spec.causalState.privatePresencePromotionAllowed !== false || spec.causalState.privateTypingBroadcastProven !== false || spec.causalState.channelMessagesCanonicalRemoteAuthority !== false) throw new Error('CAUSAL_STATE_MUST_REMAIN_BLOCKED');
+
+          const parentDescriptor = binding.repositoryDescriptor();
+          if (parentDescriptor.runtimeTargetBindingImplementationBoundaryDefined !== true || parentDescriptor.runtimeTargetBindingDefined !== false || parentDescriptor.runtimeTargetBindingImplemented !== false || parentDescriptor.concreteBindingPresent !== false) throw new Error('PARENT_BINDING_DESCRIPTOR_DRIFT');
+          for (const key of ['transportBound','executionEntryPointExported','runtimeAdapterBound','targetEnvironmentBound','targetResourceBound','credentialProviderBound','identityLifecycleBound','realtimeClientFactoryBound','triggerCreated','receiptCreated','explicitExecutionAuthorizationReceived','executionAttempted','remoteExecutionAuthority','networkAuthority','stagingReadAuthority','stagingMutationAuthority','realtimeSubscriptionAuthority']) {
+            if (parentDescriptor[key] !== false) throw new Error(`PARENT_BINDING_DESCRIPTOR_${key}_MUST_REMAIN_FALSE`);
+          }
+          NODE
+
+      - name: Domain Completion Matrix
+        run: npm run audit:domain-completion-matrix
+
+      - name: Agent Governance
+        run: npm run audit:agent-governance
+
+      - name: Diff hygiene
+        run: git diff --check
