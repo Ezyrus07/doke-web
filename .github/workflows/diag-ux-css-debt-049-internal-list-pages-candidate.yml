@@ -1,0 +1,147 @@
+name: Doke UX-CSS-DEBT-049 Internal List Pages Candidate
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-049-internal-list-pages-candidate
+permissions:
+  contents: read
+jobs:
+  candidate:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: b7b7df01b2f681172f9e522f253f97543eaebabd
+      PARENT_SHA: 5e9ca1d26039e6a78547916d149328d2d77b445f
+      TARGET_BLOB: b523624e6dcec53051629471d580d0c65aa3e120
+      TARGET_FILE: assets/css/pages/internal-list-pages.css
+      AUTHORITY_DOC_A: docs/PAGE-ASSET-AUTHORITY-MATRIX.md
+      AUTHORITY_DOC_B: docs/HOME-AUTHORITY-CLASSIFICATION.md
+      AUTHORITY_DOC_A_REGEN_HASH: 345a91bbd8c9fa54ab5f548c5f586d60cef40bf28eb10c9554050752f6431bb6
+      AUTHORITY_DOC_B_REGEN_HASH: b1027e88acf9a0a4b24c7870eca824b0ffbdc14fd75a6af31a86826051c58dda
+    steps:
+      - name: Checkout diagnostic harness
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          clean: true
+      - name: Preserve helpers and checkout exact UX-CSS-DEBT-048 checkpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp .github/diagnostics/ux-css-debt-049-candidate.cjs /tmp/ux-css-debt-049-candidate.cjs
+          cp .github/diagnostics/ux-css-debt-049-candidate-residual.cjs /tmp/ux-css-debt-049-candidate-residual.cjs
+          node --check /tmp/ux-css-debt-049-candidate.cjs
+          node --check /tmp/ux-css-debt-049-candidate-residual.cjs
+          git fetch origin "$TARGET_SHA" --depth=2
+          git checkout --detach "$TARGET_SHA"
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test -z "$(git status --porcelain)"
+          git diff --check
+          echo "CANDIDATE PARENT PASS|sha=$TARGET_SHA|parent=$PARENT_SHA|blob=$TARGET_BLOB"
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies and generate parent baselines
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          npm run audit:active-legacy-structures
+          node scripts/generate-responsive-index-baseline.js
+          test -s reports/responsive-index-baseline.json
+          npm run audit:page-asset-authority-matrix
+          test "$(sha256sum "$AUTHORITY_DOC_A" | awk '{print $1}')" = "$AUTHORITY_DOC_A_REGEN_HASH"
+          test "$(sha256sum "$AUTHORITY_DOC_B" | awk '{print $1}')" = "$AUTHORITY_DOC_B_REGEN_HASH"
+          git checkout "$TARGET_SHA" -- "$AUTHORITY_DOC_A" "$AUTHORITY_DOC_B"
+          test -z "$(git diff --name-only -- "$AUTHORITY_DOC_A" "$AUTHORITY_DOC_B")"
+          echo "PARENT BASELINES PASS|responsive=generated|authorityHashes=$AUTHORITY_DOC_A_REGEN_HASH/$AUTHORITY_DOC_B_REGEN_HASH"
+      - name: Build exact ephemeral candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node /tmp/ux-css-debt-049-candidate.cjs | tee /tmp/candidate-build.log
+          grep -q 'CANDIDATE BUILD PASS' /tmp/candidate-build.log
+          test "$(git diff --name-only)" = "$TARGET_FILE"
+          test "$(git diff --numstat -- "$TARGET_FILE")" = $'0\t52\t'"$TARGET_FILE"
+          git diff --check
+      - name: Responsive contract on candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run test:responsive-contract | tee /tmp/responsive.log
+          grep -q 'Responsive contract test: PASS' /tmp/responsive.log
+          grep -q 'Checks: 893' /tmp/responsive.log
+          grep -q 'Failures: 0' /tmp/responsive.log
+          grep -q 'Skips: 277' /tmp/responsive.log
+          echo 'RESPONSIVE CANDIDATE PASS|checks=893|failures=0|skips=277'
+      - name: Governance contracts on candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:agent-governance
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/conflicts.log
+          grep -q 'Conflicting class/property pairs: 339' /tmp/conflicts.log
+          npm run audit:shared-app-header-contract
+          npm run audit:mobile-shell-location-contract
+          npm run audit:responsive-boundaries
+          npm run audit:duplicate-assets | tee /tmp/dup.log
+          grep -q 'Duplicate groups: 0' /tmp/dup.log
+          grep -q 'Duplicated files: 0' /tmp/dup.log
+          npm run audit:domain-completion-matrix | tee /tmp/domain.log
+          grep -q 'Domains: 23' /tmp/domain.log
+          grep -q 'Critical flows: 15' /tmp/domain.log
+          grep -q 'Average maturity: 2.91/6' /tmp/domain.log
+          grep -q 'Critical blockers: 12' /tmp/domain.log
+          echo 'GOVERNANCE CANDIDATE PASS|conflicts=339|domain=23/15/2.91/12|duplicates=0/0'
+      - name: Isolate known parent-stale authority-doc regeneration
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(sha256sum "$AUTHORITY_DOC_A" | awk '{print $1}')" = "$AUTHORITY_DOC_A_REGEN_HASH"
+          test "$(sha256sum "$AUTHORITY_DOC_B" | awk '{print $1}')" = "$AUTHORITY_DOC_B_REGEN_HASH"
+          git checkout "$TARGET_SHA" -- "$AUTHORITY_DOC_A" "$AUTHORITY_DOC_B"
+          test -z "$(git diff --name-only -- "$AUTHORITY_DOC_A" "$AUTHORITY_DOC_B")"
+          test "$(git diff --name-only)" = "$TARGET_FILE"
+          echo "AUTHORITY DOC BASELINE ISOLATION PASS|candidateSemanticDocDelta=0|knownHashes=$AUTHORITY_DOC_A_REGEN_HASH/$AUTHORITY_DOC_B_REGEN_HASH"
+      - name: Candidate residual proof
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:active-legacy-structures
+          node /tmp/ux-css-debt-049-candidate-residual.cjs
+      - name: Dependency snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm audit --json > /tmp/npm-audit.json || true
+          node <<'NODE'
+          const fs=require('fs');const a=JSON.parse(fs.readFileSync('/tmp/npm-audit.json','utf8'));const v=a.metadata?.vulnerabilities||{};console.log(`NPM AUDIT SNAPSHOT|total=${v.total??'n/a'}|critical=${v.critical??'n/a'}|high=${v.high??'n/a'}|moderate=${v.moderate??'n/a'}|low=${v.low??'n/a'}`);
+          NODE
+      - name: Candidate diff integrity
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git diff --name-only)" = "$TARGET_FILE"
+          test "$(git diff --numstat -- "$TARGET_FILE")" = $'0\t52\t'"$TARGET_FILE"
+          hash="$(sha256sum "$TARGET_FILE" | awk '{print $1}')"
+          bytes="$(wc -c < "$TARGET_FILE" | tr -d ' ')"
+          grep -q "hash=$hash|bytes=$bytes" /tmp/candidate-build.log
+          git diff --check
+          echo "CANDIDATE FINAL PASS|parent=$TARGET_SHA|hash=$hash|bytes=$bytes|files=1|additions=0|deletions=52|residual=25/473/0|runtimeProof=R1+R2|prCreated=0"
+      - name: Verify exact restore
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "$TARGET_SHA"
+          git clean -ffdx
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test -z "$(git status --porcelain)"
+          echo "CANDIDATE CHECKPOINT PASS|sha=$TARGET_SHA|productMutation=0|issueCreated=0|prCreated=0"
