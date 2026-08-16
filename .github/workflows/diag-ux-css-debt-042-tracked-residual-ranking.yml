@@ -1,0 +1,125 @@
+name: Doke UX-CSS-DEBT-042 Tracked Residual Ranking
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-042-tracked-residual-ranking
+
+permissions:
+  contents: read
+
+jobs:
+  ranking:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 3dbdbf1da84ddd48667a8501ebb0da207e96fefb
+      PARENT_SHA: c126c95093f596495ed6fd4744209b79cd7c4718
+      PRIOR_041_FILE: assets/css/pages/chat-sidebar-controls.css
+      PRIOR_041_BLOB: 34e394761d726f96f8e28b1025b4118feb953f67
+      RANKING_SOURCE_SHA: 84e16e9a4880b6a24ce6a101223ec53cbbe2b8d7
+      RANKING_SOURCE_FILE: .github/workflows/diag-ux-css-debt-039-tracked-residual-ranking.yml
+      TARGET_FILE: assets/css/pages/chat-sidebar-controls.css
+    steps:
+      - name: Checkout diagnostic harness
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          clean: true
+
+      - name: Preserve ranking baseline helper
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp .github/diagnostics/ux-css-debt-042-ranking-baseline.cjs /tmp/ux-css-debt-042-ranking-baseline.cjs
+          node --check /tmp/ux-css-debt-042-ranking-baseline.cjs
+
+      - name: Checkout exact certified UX-CSS-DEBT-041 SHA
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+          clean: true
+
+      - name: Guard exact checkpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test "$(git rev-parse HEAD^)" = "${PARENT_SHA}"
+          test "$(git hash-object "${PRIOR_041_FILE}")" = "${PRIOR_041_BLOB}"
+          test -z "$(git status --porcelain)"
+          git diff --check
+          echo "CHECKPOINT GUARD PASS|sha=${TARGET_SHA}|parent=${PARENT_SHA}|041blob=${PRIOR_041_BLOB}"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install and generate canonical active graph
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          npm run audit:active-legacy-structures
+          node /tmp/ux-css-debt-042-ranking-baseline.cjs
+
+      - name: Reuse certified ranking algorithm against UX-CSS-DEBT-041
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin "${RANKING_SOURCE_SHA}" --depth=1
+          git show "${RANKING_SOURCE_SHA}:${RANKING_SOURCE_FILE}" > /tmp/ranking-source.yml
+          python3 <<'PY'
+          from pathlib import Path
+          text = Path('/tmp/ranking-source.yml').read_text()
+          marker = "          node <<'NODE'\n"
+          start = text.index(marker) + len(marker)
+          end = text.index("\n          NODE", start)
+          lines = text[start:end].splitlines()
+          script = "\n".join(line[10:] if line.startswith('          ') else line for line in lines) + "\n"
+          script = script.replace('filesWithDead!==36||total!==849', 'filesWithDead!==33||total!==654')
+          script = script.replace('BASE|active=401|high=37|files=36|dead=849|highDead=0', 'BASE|active=401|high=37|files=33|dead=654|highDead=0')
+          script = script.replace('residual=36/849/0', 'residual=33/654/0')
+          Path('/tmp/rank.cjs').write_text(script)
+          PY
+          node --check /tmp/rank.cjs
+          node /tmp/rank.cjs | tee /tmp/ranking.log
+          grep -q 'BASE|active=401|high=37|files=33|dead=654|highDead=0' /tmp/ranking.log
+          grep -q 'RANKING PASS|' /tmp/ranking.log
+          grep -q 'residual=33/654/0' /tmp/ranking.log
+
+      - name: Preserve governance baselines
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:agent-governance
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/conflicts.log
+          grep -q 'Conflicting class/property pairs: 339' /tmp/conflicts.log
+          npm run audit:domain-completion-matrix | tee /tmp/domain.log
+          grep -q 'Domains: 23' /tmp/domain.log
+          grep -q 'Critical flows: 15' /tmp/domain.log
+          grep -q 'Average maturity: 2.91/6' /tmp/domain.log
+          grep -q 'Critical blockers: 12' /tmp/domain.log
+          npm run audit:shared-app-header-contract
+          npm run audit:mobile-shell-location-contract
+          npm run audit:responsive-boundaries
+          npm run audit:duplicate-assets | tee /tmp/dup.log
+          grep -q 'Duplicate groups: 0' /tmp/dup.log
+          grep -q 'Duplicated files: 0' /tmp/dup.log
+          echo 'GOVERNANCE PASS|conflicts=339|domain=23/15/2.91/12|duplicates=0/0'
+
+      - name: Restore exact checkpoint
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "${TARGET_SHA}"
+          git clean -ffdx
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test "$(git rev-parse HEAD^)" = "${PARENT_SHA}"
+          test "$(git hash-object "${PRIOR_041_FILE}")" = "${PRIOR_041_BLOB}"
+          test -z "$(git status --porcelain)"
+          echo "CHECKPOINT PASS|sha=${TARGET_SHA}|productMutation=0|issueCreated=0|prCreated=0"
