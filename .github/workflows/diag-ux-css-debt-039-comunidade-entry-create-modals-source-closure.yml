@@ -1,0 +1,55 @@
+name: Doke UX-CSS-DEBT-039 Comunidade Source Closure
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-039-comunidade-entry-create-modals-source-closure
+
+permissions:
+  contents: read
+
+jobs:
+  closure:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 721c8036a7f1a23208f512ce5a6f4b532209595a
+      PARENT_SHA: 2c2b87e287a2df5f261be5cc9f94439ed9719145
+      TARGET_BLOB: 9dea353aa056080433035b044d9c92fb83f80062
+      TARGET_FILE: assets/css/pages/comunidade/entry-create-modals.css
+    steps:
+      - name: Checkout diagnostic harness
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 5
+
+      - name: Preserve helper and checkout exact UX-CSS-DEBT-038 checkpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp .github/diagnostics/ux-css-debt-039-comunidade-entry-create-modals-source-closure.cjs /tmp/source-closure.cjs
+          node --check /tmp/source-closure.cjs
+          git fetch origin "${TARGET_SHA}" --depth=2
+          git checkout --detach "${TARGET_SHA}"
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test "$(git rev-parse HEAD^)" = "${PARENT_SHA}"
+          test "$(git hash-object "${TARGET_FILE}")" = "${TARGET_BLOB}"
+          test -z "$(git status --porcelain)"
+
+      - name: Prove absent selector source closure
+        shell: bash
+        run: |
+          set -euo pipefail
+          node /tmp/source-closure.cjs
+
+      - name: Verify exact restore
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "${TARGET_SHA}"
+          git clean -fdx
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          test "$(git rev-parse HEAD^)" = "${PARENT_SHA}"
+          test "$(git hash-object "${TARGET_FILE}")" = "${TARGET_BLOB}"
+          test -z "$(git status --porcelain)"
+          echo "SOURCE CLOSURE CHECKPOINT PASS|sha=${TARGET_SHA}|productMutation=0|issueCreated=0|prCreated=0"
