@@ -1,0 +1,91 @@
+name: COM-B03C R5H Realtime Client Factory Binding Descriptor Matrix Materialization TEMP
+
+on:
+  push:
+    branches: [com/com-001-baseline-audit]
+    paths:
+      - '.github/workflows/com-b03c-r5h-extension-classification-probe-realtime-client-factory-binding-descriptor-matrix-materialization-temp.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  prepare:
+    if: github.run_attempt == 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - run: npm ci --ignore-scripts
+
+      - name: Exact repository-only installation scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          candidate=b84fc6da5cf65a5aeb4e227a84793bced01233e4
+          temp=.github/workflows/com-b03c-r5h-extension-classification-probe-realtime-client-factory-binding-descriptor-matrix-materialization-temp.yml
+          test "$(git rev-parse HEAD^)" = "$candidate"
+          test "$(git diff --name-only HEAD^ HEAD)" = "$temp"
+          test "$(git rev-parse HEAD:config/com-b03c-r5h-extension-classification-probe-realtime-client-factory-binding-descriptor-boundary.json)" = "914054a66b32991f30757a330874b35c953efd9a"
+          test "$(git rev-parse HEAD:.github/workflows/com-b03c-r5h-extension-classification-probe-realtime-client-factory-binding-descriptor-boundary.yml)" = "b3e7bb5c808ad8d72c91d61d92486e72bc0f9937"
+
+      - name: Generate final-tree Matrix derivatives
+        shell: bash
+        run: |
+          set -euo pipefail
+          temp=.github/workflows/com-b03c-r5h-extension-classification-probe-realtime-client-factory-binding-descriptor-matrix-materialization-temp.yml
+          rm "$temp"
+          npm run write:domain-completion-matrix
+          git diff --exit-code -- config/domain-completion-matrix.json
+          expected="$(printf '%s\n' "$temp" docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json | sort)"
+          actual="$(git diff --name-only | sort)"
+          test "$actual" = "$expected"
+          npm run audit:domain-completion-matrix
+          npm run audit:agent-governance
+          git diff --check
+
+      - name: Fail-closed realtime-client-factory descriptor assertions
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD:config/com-b03c-r5h-extension-classification-probe-realtime-client-factory-binding-descriptor-boundary.json)" = "914054a66b32991f30757a330874b35c953efd9a"
+          test "$(git rev-parse HEAD:.github/workflows/com-b03c-r5h-extension-classification-probe-realtime-client-factory-binding-descriptor-boundary.yml)" = "b3e7bb5c808ad8d72c91d61d92486e72bc0f9937"
+          node - <<'NODE'
+          const d=require('./config/com-b03c-r5h-extension-classification-probe-realtime-client-factory-binding-descriptor-boundary.json');
+          if(d.contractId!=='com-b03c-r5h-extension-classification-probe-realtime-client-factory-binding-descriptor-boundary-v1')throw new Error('BOUNDARY_DRIFT');
+          const x=d.realtimeClientFactoryBindingDescriptor;
+          if(x.realtimeClientFactoryBindingDescriptorDefined!==true||x.schemaOnly!==true)throw new Error('DESCRIPTOR_DRIFT');
+          for(const k of ['realtimeClientFactoryBindingDefined','realtimeClientFactoryBound','clientInstantiationImplemented','clientDisposalImplemented','transportBound'])if(x[k]!==false)throw new Error(`FACTORY_AUTHORITY_DRIFT:${k}`);
+          for(const k of ['factoryContractId','factoryModulePath','factoryModuleBlob','bindingBoundaryHead','realtimeClientFactory','runtimeClient','networkEndpoint'])if(x[k]!==null)throw new Error(`FACTORY_VALUE_FORBIDDEN:${k}`);
+          const g=d.governance;
+          for(const k of ['realtimeClientFactoryBindingDefined','realtimeClientFactoryBound','remoteClientInstantiationImplemented','sanitizedEvidenceRecorderBound','cleanupVerifierBound','transportBound','executionEntryPointExported','executionWorkflowDefined','triggerCreated','receiptCreated','explicitExecutionAuthorizationReceived','executionAttempted','remoteExecutionAuthority','remoteCredentialReadAuthority','remoteDependencyLoadAuthority','networkAuthority','stagingReadAuthority','stagingMutationAuthority','realtimeSubscriptionAuthority','authIdentityLifecycleAuthority','runtimeChangeAuthority','productionAuthority','pullRequestMergeAuthority','readyForReviewAuthority'])if(g[k]!==false)throw new Error(`GOVERNANCE_DRIFT:${k}`);
+          const c=d.causalState;
+          for(const k of ['exactRootCauseProven','causalPromotionAllowed','privatePresencePromotionAllowed','r5iCreated','r5iInferred'])if(c[k]!==false)throw new Error(`CAUSAL_DRIFT:${k}`);
+          NODE
+
+      - name: Prepare immutable Git commit without moving branch ref
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          temp=.github/workflows/com-b03c-r5h-extension-classification-probe-realtime-client-factory-binding-descriptor-matrix-materialization-temp.yml
+          parent="$(git rev-parse HEAD)"
+          base_tree="$(git rev-parse HEAD^{tree})"
+          md_blob="$(jq -Rs '{content: ., encoding: "utf-8"}' docs/DOMAIN-COMPLETION-MATRIX.md | gh api --method POST "repos/${GITHUB_REPOSITORY}/git/blobs" --input - --jq .sha)"
+          report_blob="$(jq -Rs '{content: ., encoding: "utf-8"}' reports/generated/domain-completion-matrix-report.json | gh api --method POST "repos/${GITHUB_REPOSITORY}/git/blobs" --input - --jq .sha)"
+          tree="$(jq -n --arg base "$base_tree" --arg md "$md_blob" --arg report "$report_blob" --arg temp "$temp" '{base_tree:$base,tree:[{path:"docs/DOMAIN-COMPLETION-MATRIX.md",mode:"100644",type:"blob",sha:$md},{path:"reports/generated/domain-completion-matrix-report.json",mode:"100644",type:"blob",sha:$report},{path:$temp,mode:"100644",type:"blob",sha:null}]}' | gh api --method POST "repos/${GITHUB_REPOSITORY}/git/trees" --input - --jq .sha)"
+          commit="$(jq -n --arg message "docs(com): synchronize Matrix derivatives for realtime client factory descriptor" --arg tree "$tree" --arg parent "$parent" '{message:$message,tree:$tree,parents:[$parent]}' | gh api --method POST "repos/${GITHUB_REPOSITORY}/git/commits" --input - --jq .sha)"
+          test "$(git rev-parse HEAD)" = "$parent"
+          printf 'PREPARED_COMMIT_SHA=%s\n' "$commit"
+          printf 'PREPARED_TREE_SHA=%s\n' "$tree"
+          printf 'MARKDOWN_BLOB_SHA=%s\n' "$md_blob"
+          printf 'REPORT_BLOB_SHA=%s\n' "$report_blob"
