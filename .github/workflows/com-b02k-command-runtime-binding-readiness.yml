@@ -44,8 +44,8 @@ jobs:
           test "$(git rev-parse HEAD:backend/modules/communities/community-command-handler-composition.js)" = "27b1e212c3656dd4ad5a1f2f604903ce44c8dbfb"
           test "$(git rev-parse HEAD:backend/modules/communities/route-handlers.js)" = "990ee5c8895446f44cdcd5819101f0b3d5370e63"
           test "$(git rev-parse HEAD:config/com-b02j-canonical-command-handler-composition.json)" = "50d67be0a5417afd7725a35fbe07c501f2c5992b"
-          test "$(git rev-parse HEAD:scripts/test-com-b02j-canonical-command-handler-composition.js)" = "18a69f1d95c75aac8ea0a02dc2d4157c5b1ab580"
-          test "$(git rev-parse HEAD:.github/workflows/com-b02j-canonical-command-handler-composition.yml)" = "1c79b8ad7617d29c8cbe2b9074c92ae55b89bece"
+          test "$(git rev-parse HEAD:scripts/test-com-b02j-canonical-command-handler-composition.js)" = "1c79b8ad7617d29c8cbe2b9074c92ae55b89bece"
+          test "$(git rev-parse HEAD:.github/workflows/com-b02j-canonical-command-handler-composition.yml)" = "18a69f1d95c75aac8ea0a02dc2d4157c5b1ab580"
           test "$(git rev-parse HEAD:backend/shared/http/route-registry.js)" = "04a039c1967ffb59502e05584d05831f7c9a1a41"
           test "$(git rev-parse HEAD:backend/shared/http/module-route-loader.js)" = "7b3c897c0bf20069b733632c0b424b8664eb8cf5"
           test "$(git rev-parse HEAD:config/com-b02d-authenticated-read-only-canary-attempt-2.json)" = "7d8a864d8c2418e116d21982449ecc1a3fb3e5b8"
@@ -54,7 +54,7 @@ jobs:
           test "$(git rev-parse HEAD:backend/modules/communities/sql/com-b02i-command-sources.sql)" = "1ff7621973be5ef38aa5e033b91f5b75216b9ec1"
           test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = "b9b2abbee1aed1033c122bf7f2802c7e80844623"
           test "$(git rev-parse HEAD:backend/modules/communities/community-command-runtime-binding-readiness.js)" = "154871f0997177ce2c74c0850cba33a45bf0f22e"
-          test "$(git rev-parse HEAD:config/com-b02k-command-runtime-binding-readiness.json)" = "d02ee2bbda5cdbbaf267e280d4d8e16c421dc543"
+          test "$(git rev-parse HEAD:config/com-b02k-command-runtime-binding-readiness.json)" = "7a2dbdf2bb7d43309ecd0b7314244b335fca49f8"
           test "$(git rev-parse HEAD:scripts/test-com-b02k-command-runtime-binding-readiness.js)" = "64db7b7d0e597e4f46db8b1a56e2408a3175897f"
           expected="$(printf '%s\n' \
             .github/workflows/com-b02k-command-runtime-binding-readiness.yml \
@@ -95,6 +95,7 @@ jobs:
           const b=require('./config/com-b02k-command-runtime-binding-readiness.json');
           if(b.authorization.received!==true||b.authorization.type!=='standing_repository_only'||b.authorization.genericNextAuthorized!==true||b.authorization.sensitiveBoundariesExcluded!==true)throw new Error('B02K_AUTHORIZATION_DRIFT');
           if(b.observedRuntime.runtimeActivated!==false||b.provenSources.repositoryV2.executorBound!==false||b.provenSources.repositoryV2.migrationApplied!==false||b.provenSources.repositoryV2.rpcExecuted!==false)throw new Error('B02K_RUNTIME_STATE_DRIFT');
+          if(b.boundFrozenBlobs.b02jTest!=='1c79b8ad7617d29c8cbe2b9074c92ae55b89bece'||b.boundFrozenBlobs.b02jWorkflow!=='18a69f1d95c75aac8ea0a02dc2d4157c5b1ab580')throw new Error('B02K_B02J_BLOB_BINDING_DRIFT');
           for(const k of ['runtimeHandlerMutationAuthority','moduleRouteLoaderMutationAuthority','repositoryExecutorBindingAuthority','runtimeActivationAuthority','stagingDeploymentAuthority','stagingTrafficAuthority','rpcExecutionAuthority','networkAuthority','realtimeActivationAuthority','credentialReadAuthority','identityLifecycleRemoteAuthority','realCommunityMutationAuthority','migrationApplicationAuthority','triggerCreationAuthority','receiptCreationAuthority','productionAuthority','pullRequestMergeAuthority','readyForReviewAuthority','r5iCreationAuthority'])if(b.authority[k]!==false)throw new Error(`B02K_FORBIDDEN_AUTHORITY:${k}`);
           for(const k of ['existingB02jCompositionChanged','existingRouteHandlersChanged','routeRegistryChanged','moduleRouteLoaderChanged','repositoryExecutorBound','runtimeActivated','stagingDeploymentExecuted','stagingTrafficEnabled','rpcExecuted','networkRequestExecuted','realtimeSubscriptionExecuted','credentialReadExecuted','remoteIdentityMutationExecuted','realCommunityMutationExecuted','migrationApplied','triggerCreated','receiptCreated','productionChanged','pullRequestMerged','readyForReviewChanged'])if(b.effects[k]!==false)throw new Error(`B02K_FORBIDDEN_EFFECT:${k}`);
           if(b.functionalCheckpoint.lastFunctionalCheckpoint!=='COM-B03C-R5H'||b.functionalCheckpoint.exactRootCauseProven!==false||b.functionalCheckpoint.causalPromotionAllowed!==false||b.functionalCheckpoint.privatePresencePromotionAllowed!==false||b.functionalCheckpoint.r5iCreated!==false||b.functionalCheckpoint.r5iInferred!==false)throw new Error('B02K_FUNCTIONAL_CHECKPOINT_DRIFT');
