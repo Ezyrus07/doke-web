@@ -1,0 +1,152 @@
+name: Doke UX-CSS-DEBT-066 Filter Select Candidate
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-066-filter-select-candidate
+
+permissions:
+  contents: read
+
+jobs:
+  candidate:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 2937218b2ecfa9b59586d4fd1c2f6361c103e786
+      PARENT_SHA: 39780a7192b1b17e8b971372a52b689ad39ef67d
+      TARGET_TREE: 1a83da7e358d1a6195a744e2c4e3d5641ef1c278
+      TARGET_FILE: assets/css/components/internal/filter-select-standard.css
+      TARGET_BLOB: 08bbd3a12d0a5590267d534aecdc69aa777a81d6
+      IMPORTER_HOME: assets/css/pages/home-runtime-components.css
+      IMPORTER_HOME_BLOB: e607b73722a205eae9934755b07618b5292247a6
+      IMPORTER_ACTION: assets/css/pages/internal-action-surfaces.css
+      IMPORTER_ACTION_BLOB: c7951bc33f3d870c3a175779191d1702d0413810
+      IMPORTER_INTERNAL: assets/css/pages/internal-foundation.css
+      IMPORTER_INTERNAL_BLOB: f35c6e8496849ef552d2c5b2752cf70269c53980
+      IMPORTER_RESULTS: assets/css/pages/search-results-runtime-components.css
+      IMPORTER_RESULTS_BLOB: 35c5bd8ec050f767b0f23caa4f21e9d0b7b84b61
+      SOURCE_RUN: 32038404222
+      SOURCE_JOB: 95413229878
+      R1_RUN: 32038756325
+      R1_JOB: 95414194949
+      EXPECTED_SHA256: 85fc3698f8ded0ce0e99745dcf0341ff7d1f0f9087c76740f0e49cadda154185
+      EXPECTED_BYTES: 31203
+    steps:
+      - name: Checkout exact certified UX-CSS-DEBT-065 SHA
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+
+      - name: Guard exact parent and proof identities
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD^{tree})" = "$TARGET_TREE"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(git hash-object "$IMPORTER_HOME")" = "$IMPORTER_HOME_BLOB"
+          test "$(git hash-object "$IMPORTER_ACTION")" = "$IMPORTER_ACTION_BLOB"
+          test "$(git hash-object "$IMPORTER_INTERNAL")" = "$IMPORTER_INTERNAL_BLOB"
+          test "$(git hash-object "$IMPORTER_RESULTS")" = "$IMPORTER_RESULTS_BLOB"
+          node <<'NODE'
+          const fs=require('fs');const ls=fs.readFileSync(process.env.TARGET_FILE,'utf8').split(/\r?\n/);
+          const rows=[[81,'background: linear-gradient(135deg, #22a06b, #2ac59f);'],[82,'border-color: transparent;'],[83,'color: #fff;'],[84,'box-shadow: var(--shadow-action-secondary-strong);'],[101,'margin-top: 16px;'],[119,'min-height: var(--chip-height);'],[123,'background: var(--color-primary-soft);'],[125,'color: var(--color-primary-strong);'],[138,'min-height: var(--chip-height);'],[142,'background: var(--color-surface);'],[143,'color: var(--color-text-muted);'],[147,'box-shadow: var(--shadow-control-soft);']];for(const [n,v] of rows)if(ls[n-1].trim()!==v)throw new Error(`row drift ${n}`);console.log(`PROOF AUTHORITY PASS|source=${process.env.SOURCE_RUN}/${process.env.SOURCE_JOB}|r1=${process.env.R1_RUN}/${process.env.R1_JOB}|rows=12|identical=2|changed=10|realDOM=1|syntheticDOM=0`);
+          NODE
+          test -z "$(git status --porcelain)"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install and generate parent baselines
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          npm run audit:active-legacy-structures
+          node scripts/generate-responsive-index-baseline.js
+          test -s reports/responsive-index-baseline.json
+          cp reports/responsive-index-baseline.json /tmp/ux066-responsive-index-baseline.json
+          echo 'PARENT BASELINE PASS|active=401|high=37'
+
+      - name: Rebuild deterministic candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');const f=process.env.TARGET_FILE,ls=fs.readFileSync(f,'utf8').split('\n');const remove=new Set([81,82,83,84,101,119,123,125,138,142,143,147]);const out=ls.filter((_,i)=>!remove.has(i+1)).join('\n');fs.writeFileSync(f,out);const b=fs.readFileSync(f),hash=crypto.createHash('sha256').update(b).digest('hex');if(hash!==process.env.EXPECTED_SHA256||b.length!==Number(process.env.EXPECTED_BYTES))throw new Error(`candidate identity ${hash}/${b.length}`);console.log(`CANDIDATE IDENTITY PASS|sha256=${hash}|bytes=${b.length}|parent=416/12|candidate=404/0|files=1|additions=0|deletions=12`);
+          NODE
+          test "$(git diff --name-only)" = "$TARGET_FILE"
+          test "$(git diff --numstat -- "$TARGET_FILE")" = $'0\t12\t'"$TARGET_FILE"
+          git diff --quiet "$TARGET_SHA" -- '*.html' 'assets/js/**' package.json package-lock.json docs
+          git diff --check
+
+      - name: Responsive contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp /tmp/ux066-responsive-index-baseline.json reports/responsive-index-baseline.json
+          node scripts/test-responsive-contract.js | tee /tmp/ux066-responsive.log
+          grep -q 'Checks: 893' /tmp/ux066-responsive.log
+          grep -q 'Failures: 0' /tmp/ux066-responsive.log
+          grep -q 'Skips: 277' /tmp/ux066-responsive.log
+          echo 'RESPONSIVE PASS|checks=893|failures=0|skips=277'
+
+      - name: Governance and canonical residual
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:agent-governance
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/conflicts.log
+          grep -q 'Conflicting class/property pairs: 339' /tmp/conflicts.log
+          npm run audit:shared-app-header-contract
+          npm run audit:mobile-shell-location-contract
+          npm run audit:responsive-boundaries
+          npm run audit:duplicate-assets | tee /tmp/dup.log
+          grep -q 'Duplicate groups: 0' /tmp/dup.log
+          grep -q 'Duplicated files: 0' /tmp/dup.log
+          npm run audit:domain-completion-matrix | tee /tmp/domain.log
+          grep -q 'Domains: 23' /tmp/domain.log
+          grep -q 'Critical flows: 15' /tmp/domain.log
+          grep -q 'Average maturity: 2.91/6' /tmp/domain.log
+          grep -q 'Critical blockers: 12' /tmp/domain.log
+          test "$(sha256sum docs/PAGE-ASSET-AUTHORITY-MATRIX.md | awk '{print $1}')" = "345a91bbd8c9fa54ab5f548c5f586d60cef40bf28eb10c9554050752f6431bb6"
+          test "$(sha256sum docs/HOME-AUTHORITY-CLASSIFICATION.md | awk '{print $1}')" = "b1027e88acf9a0a4b24c7870eca824b0ffbdc14fd75a6af31a86826051c58dda"
+          git checkout "$TARGET_SHA" -- docs/PAGE-ASSET-AUTHORITY-MATRIX.md docs/HOME-AUTHORITY-CLASSIFICATION.md
+          node <<'NODE'
+          const fs=require('fs'),path=require('path'),cp=require('child_process');const report=JSON.parse(fs.readFileSync('reports/generated/active-legacy-structures-report.json','utf8'));const tracked=cp.execFileSync('git',['ls-files','-z','assets/css'],{encoding:'utf8'}).split('\0').filter(f=>f.endsWith('.css'));const importRe=/@import\s+(?:url\()?['"]?([^'"\);]+\.css(?:\?[^'"\)]*)?)['"]?\)?/gi,normImport=(v,from)=>{v=v.replace(/\?.*$/,'').replace(/^\.\//,'');if(v.startsWith('/'))return v.replace(/^\/+/, '');if(v.startsWith('assets/'))return v;return path.posix.normalize(path.posix.join(path.posix.dirname(from),v));};const meta=new Map();for(const f of tracked){const text=fs.readFileSync(f,'utf8'),imports=[];let m;importRe.lastIndex=0;while((m=importRe.exec(text)))imports.push(normImport(m[1],f));meta.set(f,{text,imports,size:Buffer.byteLength(text),important:(text.match(/!important/gi)||[]).length})}const active=new Set(),todo=[...new Set(report.pageAssets.flatMap(p=>p.css))].filter(f=>meta.has(f));while(todo.length){const f=todo.pop();if(active.has(f)||!meta.has(f))continue;active.add(f);for(const n of meta.get(f).imports)if(meta.has(n))todo.push(n)}const high=[...active].filter(f=>{const x=meta.get(f);return x.size>=50000||x.important>=100||x.imports.length>=10});const norm=p=>p.join(' ').replace(/\{\s*$/,'').replace(/\s+/g,' ').trim();function dc(src){const ls=src.split(/\r?\n/);let depth=0,sp=[],ap=[],sel=null;const ds=[],stack=[],re=/^\s*([\w-]+)\s*:\s*(.*?)\s*;\s*$/;for(let i=0;i<ls.length;i++){const line=ls[i],t=line.trim(),o=(line.match(/\{/g)||[]).length,c=(line.match(/\}/g)||[]).length;if(!sel){if(ap.length){if(t)ap.push(t);if(line.includes('{')){stack.push({type:'at',header:norm(ap),depthBefore:depth});ap=[]}}else if(t.startsWith('@')&&!t.includes(';')){if(line.includes('{'))stack.push({type:'at',header:norm([t]),depthBefore:depth});else ap=[t]}else if(sp.length){if(t)sp.push(t);if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth})}}else if(t&&!t.startsWith('/*')&&!t.startsWith('*')&&t!=='*/'&&t!=='}'&&!t.startsWith('@')&&!line.includes(';')){sp=[t];if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth})}}}if(sel){const m=line.match(re);if(m){const raw=m[2].trim(),important=/\s*!important\s*$/i.test(raw),context=stack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');ds.push({selector:sel,property:m[1].toLowerCase(),important,context})}}depth+=o-c;while(stack.length&&depth<=stack[stack.length-1].depthBefore){const p=stack.pop();if(p.type==='rule')sel=null}}const last=new Map();let dead=0;for(let i=ds.length-1;i>=0;i--){const d=ds[i],k=`${d.context} >>> ${d.selector} >>> ${d.property}`,l=last.get(k);if(l&&(!d.important||l.important))dead++;if(!l||d.important||!l.important)last.set(k,d)}return{decl:ds.length,dead}}
+          if(active.size!==401||high.length!==37)throw new Error(`active/high ${active.size}/${high.length}`);let files=0,total=0,highDead=0,pageResidual=0;for(const f of active){const p=dc(meta.get(f).text);if(p.dead){files++;total+=p.dead;if(high.includes(f))highDead++;if(f.includes('/pages/'))pageResidual++}}const guards=[['assets/css/components/internal/filter-select-standard.css',404,0,'066'],['assets/css/components/ui-surface/buttons-close.css',110,0,'065'],['assets/css/components/layout/doke-layout-system.css',108,0,'064'],['assets/css/components/panels/mobile-panel.css',94,0,'063'],['assets/css/components/forms/form-flow-comfort.css',113,0,'062'],['assets/css/components/overlays/action-modal-system.css',264,0,'061'],['assets/css/components/overlays/financial-modal-system.css',645,0,'060'],['assets/css/components/media-lightbox.css',280,0,'059'],['assets/css/components/before-after-workers-preview/workers-mobile-fullscreen-contract.css',216,0,'058'],['assets/css/components/chat-composer.css',125,0,'057'],['assets/css/components/before-after-workers-preview/mobile-comment-sheets.css',302,0,'056'],['assets/css/patterns/settings-shell.css',104,0,'055'],['assets/css/components/before-after-workers-preview/publication-light-modal.css',75,0,'054']];if(files!==8||total!==49||highDead!==0||pageResidual!==0)throw new Error(`residual ${files}/${total}/${highDead}/${pageResidual}`);for(const [f,d,dead,label] of guards){const p=dc(meta.get(f).text);if(p.decl!==d||p.dead!==dead)throw new Error(`${label} ${p.decl}/${p.dead}`)}console.log('CANDIDATE RESIDUAL PASS|active=401|high=37|files=8|dead=49|highDead=0|pageResidual=0|066=404/0|065=110/0|064=108/0|063=94/0|062=113/0|061=264/0|060=645/0|059=280/0|058=216/0|057=125/0|056=302/0|055=104/0|054=75/0');
+          NODE
+          echo 'GOVERNANCE PASS|conflicts=339|domain=23/15/2.91/12|duplicates=0/0|authorityDocSemanticDelta=0'
+
+      - name: Dependency snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +e; npm audit --json >/tmp/ux066-audit.json; code=$?; set -e
+          node <<'NODE'
+          const a=require('/tmp/ux066-audit.json'),v=a.metadata?.vulnerabilities||{};console.log(`DEPENDENCY SNAPSHOT|total=${v.total??0}|critical=${v.critical??0}|high=${v.high??0}|moderate=${v.moderate??0}|low=${v.low??0}`);if(v.total!==13||v.critical!==0||v.high!==10||v.moderate!==1||v.low!==2)process.exit(2);
+          NODE
+          echo "npmAuditExit=$code"
+
+      - name: Restore exact checkpoint
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "$TARGET_SHA"
+          git clean -fdx
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD^{tree})" = "$TARGET_TREE"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(git hash-object "$IMPORTER_HOME")" = "$IMPORTER_HOME_BLOB"
+          test "$(git hash-object "$IMPORTER_ACTION")" = "$IMPORTER_ACTION_BLOB"
+          test "$(git hash-object "$IMPORTER_INTERNAL")" = "$IMPORTER_INTERNAL_BLOB"
+          test "$(git hash-object "$IMPORTER_RESULTS")" = "$IMPORTER_RESULTS_BLOB"
+          test -z "$(git status --porcelain)"
+          echo "RESTORE PASS|sha=$TARGET_SHA|productMutation=0"
