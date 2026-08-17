@@ -1,0 +1,68 @@
+name: TEMP COM-B02I Matrix Blob Materializer
+
+on:
+  push:
+    branches: ['tmp/com-b02i-matrix-blobs-20260816']
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: tmp/com-b02i-matrix-blobs-20260816
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Freeze base
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE=4edf21b5374c54c1cf4995c7c44d7df0332c9bbe
+          test "$(git rev-parse HEAD^)" = "$BASE"
+          test "$(git diff --name-only "$BASE" HEAD)" = '.github/workflows/tmp-com-b02i-matrix-blobs.yml'
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = b9b2abbee1aed1033c122bf7f2802c7e80844623
+          test "$(git rev-parse HEAD:backend/modules/communities/community-command-source-providers.js)" = b919a29337edf40d69109fb2f338616c75b3911b
+          test "$(git rev-parse HEAD:backend/modules/communities/community-command-source-repository-contract.js)" = 38cd77fd6d3cf0c9f13d4c35ed000b9831481840
+          test "$(git rev-parse HEAD:backend/modules/communities/sql/com-b02i-command-sources.sql)" = 1ff7621973be5ef38aa5e033b91f5b75216b9ec1
+          test "$(git rev-parse HEAD:config/com-b02i-canonical-command-source-providers.json)" = 4817bf608943a435c999f77badde57c9aa9a1764
+          test "$(git rev-parse HEAD:scripts/test-com-b02i-canonical-command-source-providers.js)" = eee15fecfc12e231113922ca6eb337632160eddc
+
+      - name: Generate exact derivatives
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          npm run write:domain-completion-matrix
+          npm run audit:domain-completion-matrix
+          node scripts/test-com-b02i-canonical-command-source-providers.js
+          test "$(git hash-object config/domain-completion-matrix.json)" = b9b2abbee1aed1033c122bf7f2802c7e80844623
+          test "$(git hash-object docs/DOMAIN-COMPLETION-MATRIX.md)" = 447e359a6774caa826b01f21cb3038c098de2956
+          test "$(git hash-object reports/generated/domain-completion-matrix-report.json)" = beb8a40209906d6ad646f22d486b9bf3e1d020ee
+          expected="$(printf '%s\n' docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json | sort)"
+          actual="$(git status --porcelain --untracked-files=all | sed -E 's/^...//' | sort)"
+          test "$actual" = "$expected"
+          git diff --check
+
+      - name: Persist only derivative blobs
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name doke
+          git config user.email bielantoniomma@gmail.com
+          git add docs/DOMAIN-COMPLETION-MATRIX.md
+          git add -f reports/generated/domain-completion-matrix-report.json
+          git diff --cached --name-only | sort | diff -u - <(printf '%s\n' docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json | sort)
+          git diff --cached --check
+          git commit -m 'chore(com): persist B02I Matrix derivative blobs'
+          git push origin HEAD:refs/heads/tmp/com-b02i-matrix-blobs-20260816
