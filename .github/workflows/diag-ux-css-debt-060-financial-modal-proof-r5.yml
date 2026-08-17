@@ -1,0 +1,108 @@
+name: Doke UX-CSS-DEBT-060 Financial Modal Proof R5
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-060-financial-modal-proof-r5
+
+permissions:
+  contents: read
+
+jobs:
+  proof-r5:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 5a93b7fdf0b61e91d6dcd3867ae98d97f94d7eb9
+      PARENT_SHA: 025ee39a521d8297dd68db58749b2f46a42bcdbe
+      TARGET_FILE: assets/css/components/overlays/financial-modal-system.css
+      TARGET_BLOB: 291af9edb634992955e324128ed5d661970d1aa5
+      R4_COMMIT: eb239c7ed106f4b6cb246972905ec5a0e52b5b29
+      R4_PATH: .github/workflows/diag-ux-css-debt-060-financial-modal-proof-r4.yml
+      EXPECTED_SHA256: 807124bff55d3d593749f1ee8b74f6e90ef0efb79fd4c74c216130a44fd4cd64
+      EXPECTED_BYTES: 35185
+    steps:
+      - name: Checkout exact certified UX-CSS-DEBT-059 SHA
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+
+      - name: Guard exact product and R4 provenance
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          git fetch origin "$R4_COMMIT" --depth=1
+          git cat-file -e "$R4_COMMIT:$R4_PATH"
+          test -z "$(git status --porcelain)"
+          echo "R5 INPUT PASS|sha=$TARGET_SHA|r4=$R4_COMMIT|criteriaRelaxed=0|stateSettled=1"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install Chromium and serve
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install chromium
+          python3 -m http.server 4174 >/tmp/ux060-r5-http.log 2>&1 &
+          echo $! >/tmp/ux060-r5-http.pid
+          sleep 1
+          curl -fsS http://127.0.0.1:4174/carteira.html >/dev/null
+          curl -fsS http://127.0.0.1:4174/mensagens.html >/dev/null
+
+      - name: Extract R4 proof and settle state transitions before snapshots
+        shell: bash
+        run: |
+          set -euo pipefail
+          git show "$R4_COMMIT:$R4_PATH" >/tmp/ux060-r4.yml
+          python3 - <<'PY'
+          from pathlib import Path
+          src=Path('/tmp/ux060-r4.yml').read_text()
+          marker="          cat >/tmp/ux060-r4.js <<'NODE'\n"
+          a=src.find(marker)
+          if a < 0: raise SystemExit('R4 script marker missing')
+          a += len(marker)
+          end="\n          NODE\n          node /tmp/ux060-r4.js"
+          b=src.find(end,a)
+          if b < 0: raise SystemExit('R4 script end missing')
+          lines=src[a:b].splitlines()
+          script='\n'.join(line[10:] if line.startswith('          ') else line for line in lines)+'\n'
+          needle="await page.waitForTimeout(20);"
+          if script.count(needle) != 1: raise SystemExit(f'expected exactly one state wait, got {script.count(needle)}')
+          script=script.replace(needle,"await page.waitForTimeout(400);")
+          Path('/tmp/ux060-r5.js').write_text(script)
+          print('R5 PATCH PASS|changedSites=1|stateWaitMs=400|criteriaRelaxed=0|measurementComparatorUnchanged=1')
+          PY
+          node --check /tmp/ux060-r5.js
+          node /tmp/ux060-r5.js | tee /tmp/ux060-r5.log
+          grep -q 'STATIC PASS|parent=852/207|candidate=645/0|families=31|identical=118|changed=89' /tmp/ux060-r5.log
+          grep -q 'COVERAGE|parent|families=31/31' /tmp/ux060-r5.log
+          grep -q 'COVERAGE|candidate|families=31/31' /tmp/ux060-r5.log
+          grep -q 'BROWSER SEMANTIC PARITY PASS|pages=2|families=31/31' /tmp/ux060-r5.log
+          test "$(sha256sum "$TARGET_FILE" | awk '{print $1}')" = "$EXPECTED_SHA256"
+          test "$(wc -c < "$TARGET_FILE" | tr -d ' ')" = "$EXPECTED_BYTES"
+          test "$(git diff --name-only)" = "$TARGET_FILE"
+          test "$(git diff --numstat -- "$TARGET_FILE")" = $'0\t207\t'"$TARGET_FILE"
+          git diff --check
+          echo "R5 PROOF PASS|sha256=$EXPECTED_SHA256|bytes=$EXPECTED_BYTES|files=1|additions=0|deletions=207|browserRequired=1|criteriaRelaxed=0|measurementNormalized=1|stateSettled=1"
+
+      - name: Exact restore
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if test -f /tmp/ux060-r5-http.pid; then kill "$(cat /tmp/ux060-r5-http.pid)" 2>/dev/null || true; fi
+          git reset --hard "$TARGET_SHA"
+          git clean -fdx
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test -z "$(git status --porcelain)"
+          echo "R5 RESTORE PASS|sha=$TARGET_SHA|productMutation=0|permanentBranchMutation=0"
