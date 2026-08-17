@@ -1,0 +1,80 @@
+name: Doke UX-CSS-DEBT-064 Promote Permanent
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-064-promote-permanent
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-24.04
+    env:
+      PARENT_SHA: 6756a335c3bd5ecedf7ba0b6bb40cfbb1cab6d54
+      PARENT_PARENT_SHA: ffe9c5a19921422fac17e93e6208a58f2f829429
+      TARGET_FILE: assets/css/components/layout/doke-layout-system.css
+      PARENT_TARGET_BLOB: cc65227479408e2b86c1e6ad58c0388caa1327b3
+      EXPECTED_SHA256: b6f8a59ddbdcd33b85924f4c1c291d673390e539ec2c20fea47d2cc4fa0b189b
+      EXPECTED_BYTES: 5283
+      PERMANENT_BRANCH: ux/ux-css-debt-064-layout-section-description-compaction
+    steps:
+      - name: Checkout exact certified parent
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.PARENT_SHA }}
+          fetch-depth: 2
+
+      - name: Guard parent and seeded permanent namespace
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$PARENT_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$PARENT_TARGET_BLOB"
+          remote_sha="$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | awk '{print $1}')"
+          test "$remote_sha" = "$PARENT_SHA"
+          test -z "$(git status --porcelain)"
+          echo "PROMOTION GUARD PASS|parent=$PARENT_SHA|permanentSeed=$remote_sha|targetBlob=$PARENT_TARGET_BLOB"
+
+      - name: Rebuild exact certified candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs');
+          const file=process.env.TARGET_FILE,src=fs.readFileSync(file,'utf8'),lines=src.split('\n');
+          const needle='  color: var(--color-muted, #667085);';
+          const ids=lines.map((l,i)=>[l.replace(/\r$/,''),i]).filter(([l])=>l===needle).map(([,i])=>i);
+          if(ids.length!==1||ids[0]!==73)throw new Error(`target drift ${ids}`);
+          fs.writeFileSync(file,lines.filter((_,i)=>i!==ids[0]).join('\n'));
+          console.log('DETERMINISTIC REBUILD PASS|parent=109/1|candidate=108/0|families=1|identical=0|changed=1');
+          NODE
+          test "$(sha256sum "$TARGET_FILE" | awk '{print $1}')" = "$EXPECTED_SHA256"
+          test "$(wc -c < "$TARGET_FILE" | tr -d ' ')" = "$EXPECTED_BYTES"
+          test "$(git diff --name-only)" = "$TARGET_FILE"
+          test "$(git diff --numstat -- "$TARGET_FILE")" = $'0\t1\t'"$TARGET_FILE"
+          git diff --check
+          echo "CANDIDATE IDENTITY PASS|sha256=$EXPECTED_SHA256|bytes=$EXPECTED_BYTES|files=1|additions=0|deletions=1"
+
+      - name: Commit and atomically fast-forward permanent branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "doke"
+          git config user.email "bielantoniomma@gmail.com"
+          git add -- "$TARGET_FILE"
+          git commit -m "UX-CSS-DEBT-064: compact superseded mobile section description color"
+          commit_sha="$(git rev-parse HEAD)"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git diff --name-only "$PARENT_SHA" HEAD)" = "$TARGET_FILE"
+          test "$(git diff --numstat "$PARENT_SHA" HEAD -- "$TARGET_FILE")" = $'0\t1\t'"$TARGET_FILE"
+          test "$(sha256sum "$TARGET_FILE" | awk '{print $1}')" = "$EXPECTED_SHA256"
+          test "$(wc -c < "$TARGET_FILE" | tr -d ' ')" = "$EXPECTED_BYTES"
+          remote_sha="$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | awk '{print $1}')"
+          test "$remote_sha" = "$PARENT_SHA"
+          git push --force-with-lease="refs/heads/$PERMANENT_BRANCH:$PARENT_SHA" origin "HEAD:refs/heads/$PERMANENT_BRANCH"
+          after="$(git ls-remote origin "refs/heads/$PERMANENT_BRANCH" | awk '{print $1}')"
+          test "$after" = "$commit_sha"
+          echo "PROMOTION PASS|permanent=$after|parent=$PARENT_SHA|sha256=$EXPECTED_SHA256|bytes=$EXPECTED_BYTES|files=1|additions=0|deletions=1"
