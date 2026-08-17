@@ -1,0 +1,56 @@
+name: TEMP COM-B02J Matrix Blob Materializer
+
+on:
+  push:
+    branches: ['tmp/com-b02j-matrix-blobs-20260816']
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout temporary branch
+        uses: actions/checkout@v4
+        with:
+          ref: tmp/com-b02j-matrix-blobs-20260816
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Freeze candidate and install scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          CANDIDATE=1dcda21bcaa8afee9de25d9ca63b119e6bf12a76
+          test "$(git rev-parse HEAD^)" = "$CANDIDATE"
+          test "$(git diff --name-only "$CANDIDATE" HEAD)" = '.github/workflows/tmp-com-b02j-matrix-blobs-20260816.yml'
+          test "$(git rev-parse HEAD:config/domain-completion-matrix.json)" = 'b9b2abbee1aed1033c122bf7f2802c7e80844623'
+          test "$(git rev-parse HEAD:backend/modules/communities/community-command-handler-composition.js)" = '27b1e212c3656dd4ad5a1f2f604903ce44c8dbfb'
+          test "$(git rev-parse HEAD:backend/modules/communities/route-handlers.js)" = '990ee5c8895446f44cdcd5819101f0b3d5370e63'
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Generate and persist only Matrix derivatives
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run write:domain-completion-matrix
+          test "$(git hash-object config/domain-completion-matrix.json)" = 'b9b2abbee1aed1033c122bf7f2802c7e80844623'
+          expected="$(printf '%s\n' docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json | sort)"
+          actual="$(git status --porcelain --untracked-files=all | sed -E 's/^...//' | sort)"
+          test "$actual" = "$expected"
+          git config user.name doke
+          git config user.email bielantoniomma@gmail.com
+          git add docs/DOMAIN-COMPLETION-MATRIX.md
+          git add -f reports/generated/domain-completion-matrix-report.json
+          git diff --cached --check
+          git commit -m 'ci(com): materialize B02J Matrix derivative blobs'
+          git push origin HEAD:refs/heads/tmp/com-b02j-matrix-blobs-20260816
