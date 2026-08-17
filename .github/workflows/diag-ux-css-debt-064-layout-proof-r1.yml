@@ -1,0 +1,120 @@
+name: Doke UX-CSS-DEBT-064 Layout Proof R1
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-064-layout-proof-r1
+
+permissions:
+  contents: read
+
+jobs:
+  proof-r1:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 6756a335c3bd5ecedf7ba0b6bb40cfbb1cab6d54
+      PARENT_SHA: ffe9c5a19921422fac17e93e6208a58f2f829429
+      TARGET_FILE: assets/css/components/layout/doke-layout-system.css
+      TARGET_BLOB: cc65227479408e2b86c1e6ad58c0388caa1327b3
+    steps:
+      - name: Checkout exact certified UX-CSS-DEBT-063 SHA
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+
+      - name: Exact input and zero-source guard
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          node <<'NODE'
+          const fs=require('fs'),cp=require('child_process');
+          const files=cp.execFileSync('git',['ls-files','-z','*.html','assets/js'],{encoding:'utf8'}).split('\0').filter(Boolean).filter(f=>fs.existsSync(f)&&fs.statSync(f).isFile());
+          const exact=[],fragment=[];
+          for(const f of files){const s=fs.readFileSync(f,'utf8');if(s.includes('doke-section-description'))exact.push(f);if(s.includes('section-description'))fragment.push(f)}
+          if(exact.length||fragment.length)throw new Error(`source drift exact=${exact} fragment=${fragment}`);
+          console.log(`SOURCE GUARD PASS|exactSources=0|fragmentSources=0|trackedHtmlJs=${files.length}`);
+          NODE
+          test -z "$(git status --porcelain)"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install Chromium and serve exact product
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install chromium
+          python3 -m http.server 4182 >/tmp/ux064-r1-http.log 2>&1 &
+          echo $! >/tmp/ux064-r1-http.pid
+          sleep 1
+          curl -fsS http://127.0.0.1:4182/index.html >/dev/null
+
+      - name: Browser runtime zero-match and candidate identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat >/tmp/ux064-r1.js <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');
+          const {chromium}=require(process.cwd()+'/node_modules/@playwright/test');
+          const file=process.env.TARGET_FILE,original=fs.readFileSync(file,'utf8');
+          const needle='  color: var(--color-muted, #667085);';
+          const occurrences=original.split('\n').filter(l=>l.replace(/\r$/,'')===needle).length;
+          if(occurrences!==1)throw new Error(`needle occurrences=${occurrences}`);
+          const candidate=original.split('\n').filter(l=>l.replace(/\r$/,'')!==needle).join('\n');
+          const parentCount=(original.match(/^[ \t]*[\w-]+\s*:\s*.*;\s*$/gm)||[]).length;
+          const candidateCount=(candidate.match(/^[ \t]*[\w-]+\s*:\s*.*;\s*$/gm)||[]).length;
+          if(parentCount!==109||candidateCount!==108)throw new Error(`declaration identity ${parentCount}/${candidateCount}`);
+          const hash=crypto.createHash('sha256').update(candidate).digest('hex'),bytes=Buffer.byteLength(candidate);
+          const pages=['admin-anuncio-revisao.html','admin-pedidos-operacao.html','admin-verificacao.html','admin.html','carteira.html','comunidade-interna.html','comunidade.html','configuracoes.html','index.html','mensagens.html','meu-perfil.html','notificacoes.html','pedidos.html','perfil-cliente.html','perfil-profissional.html','perfil.html','resultados.html'];
+          const widths=[359,430,759,760,761,1024,1280];
+          async function capture(tag){
+            const browser=await chromium.launch({headless:true});let samples=0,matches=0,overflow=0,redirected=0;
+            try{
+              for(const p of pages)for(const width of widths){
+                const ctx=await browser.newContext({viewport:{width,height:900}});const page=await ctx.newPage();
+                await page.route('**/*',route=>{const u=new URL(route.request().url());if(['127.0.0.1','localhost'].includes(u.hostname))return route.continue();return route.abort()});
+                const requested=`http://127.0.0.1:4182/${p}?ux064=${tag}-${width}`;
+                await page.goto(requested,{waitUntil:'domcontentloaded'});await page.waitForTimeout(300);
+                const final=page.url();if(!final.includes('/'+p))redirected++;
+                const snap=await page.evaluate(()=>({matches:document.querySelectorAll('.doke-section-description').length,overflow:Math.max(0,document.documentElement.scrollWidth-document.documentElement.clientWidth)}));
+                matches+=snap.matches;overflow=Math.max(overflow,snap.overflow);samples++;await ctx.close();
+              }
+            } finally {await browser.close()}
+            console.log(`COVERAGE|${tag}|routes=${pages.length}|viewports=${widths.length}|samples=${samples}|runtimeMatches=${matches}|redirectedSamples=${redirected}|boundary=759/760/761|overflow=${overflow}`);
+            if(matches!==0)throw new Error(`${tag} runtime target matches=${matches}`);if(overflow!==0)throw new Error(`${tag} overflow=${overflow}`);
+            return {samples,matches,overflow,redirected};
+          }
+          (async()=>{try{
+            fs.writeFileSync(file,original);const p=await capture('parent');
+            fs.writeFileSync(file,candidate);const c=await capture('candidate');
+            if(JSON.stringify(p)!==JSON.stringify(c))throw new Error(`parent/candidate runtime envelope drift ${JSON.stringify({p,c})}`);
+            console.log('R1 BROWSER INERTNESS PASS|realProductRoutes=17|syntheticDOM=0|sourceFiles=0|runtimeMatches=0|samplesPerSide=119|runtimeEnvelopeDiffs=0|overflow=0|criteriaRelaxed=0');
+            console.log(`CANDIDATE IDENTITY|sha256=${hash}|bytes=${bytes}|declarations=108|superseded=0|files=1|additions=0|deletions=1`);
+          }finally{fs.writeFileSync(file,original)}})().catch(e=>{console.error(e.stack||e);process.exit(1)});
+          NODE
+          node --check /tmp/ux064-r1.js
+          node /tmp/ux064-r1.js | tee /tmp/ux064-r1.log
+          grep -q 'R1 BROWSER INERTNESS PASS|realProductRoutes=17|syntheticDOM=0|sourceFiles=0|runtimeMatches=0|samplesPerSide=119|runtimeEnvelopeDiffs=0|overflow=0|criteriaRelaxed=0' /tmp/ux064-r1.log
+          test -z "$(git status --porcelain)"
+
+      - name: Exact restore
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if test -f /tmp/ux064-r1-http.pid; then kill "$(cat /tmp/ux064-r1-http.pid)" 2>/dev/null || true; fi
+          git reset --hard "$TARGET_SHA"
+          git clean -fdx
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test -z "$(git status --porcelain)"
+          echo 'R1 RESTORE PASS|productMutation=0|permanentMutation=0'
