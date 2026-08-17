@@ -1,0 +1,67 @@
+name: Doke UX-CSS-DEBT-064 Layout Source Closure V2
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-064-layout-source-closure-v2
+
+permissions:
+  contents: read
+
+jobs:
+  closure:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 6756a335c3bd5ecedf7ba0b6bb40cfbb1cab6d54
+      PARENT_SHA: ffe9c5a19921422fac17e93e6208a58f2f829429
+      TARGET_FILE: assets/css/components/layout/doke-layout-system.css
+      TARGET_BLOB: cc65227479408e2b86c1e6ad58c0388caa1327b3
+    steps:
+      - name: Checkout exact certified UX-CSS-DEBT-063 SHA
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+
+      - name: Guard exact target, importer closure and source closure
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          node <<'NODE'
+          const fs=require('fs'),path=require('path'),cp=require('child_process');
+          const target='assets/css/components/layout/doke-layout-system.css';
+          const css=cp.execFileSync('git',['ls-files','-z','assets/css'],{encoding:'utf8'}).split('\0').filter(f=>f.endsWith('.css'));
+          const importRe=/@import\s+(?:url\()?['"]?([^'"\);]+\.css(?:\?[^'"\)]*)?)['"]?\)?/gi;
+          const norm=(v,from)=>{v=v.replace(/\?.*$/,'').replace(/^\.\//,'');if(v.startsWith('/'))return v.replace(/^\/+/, '');if(v.startsWith('assets/'))return v;return path.posix.normalize(path.posix.join(path.posix.dirname(from),v));};
+          const parents=[];
+          for(const f of css){const s=fs.readFileSync(f,'utf8');let m;importRe.lastIndex=0;while((m=importRe.exec(s)))if(norm(m[1],f)===target)parents.push(f)}
+          parents.sort();
+          const expected=['assets/css/pages/admin-foundation.css','assets/css/pages/carteira-runtime-platform.css','assets/css/pages/comunidade-foundation.css','assets/css/pages/comunidade-interna-runtime-platform.css','assets/css/pages/configuracoes-foundation.css','assets/css/pages/home-runtime-shell.css','assets/css/pages/messaging-runtime-platform.css','assets/css/pages/notificacoes-foundation.css','assets/css/pages/pedidos-runtime-platform.css','assets/css/pages/profile-runtime-platform.css','assets/css/pages/resultados-foundation.css','assets/css/pages/search-results-runtime-platform.css'];
+          if(JSON.stringify(parents)!==JSON.stringify(expected))throw new Error(`direct importers drift ${JSON.stringify(parents)}`);
+          for(const f of parents)console.log(`IMPORTER|file=${f}|blob=${cp.execFileSync('git',['hash-object',f],{encoding:'utf8'}).trim()}`);
+          const files=cp.execFileSync('git',['ls-files','-z','*.html','assets/js'],{encoding:'utf8'}).split('\0').filter(Boolean).filter(f=>fs.existsSync(f)&&fs.statSync(f).isFile());
+          const hits=[];
+          for(const f of files){const s=fs.readFileSync(f,'utf8');if(s.includes('doke-section-description'))hits.push(f)}
+          const html=[...new Set(hits.filter(f=>f.endsWith('.html')))].sort(),js=[...new Set(hits.filter(f=>f.endsWith('.js')))].sort();
+          const rankingReach=['admin-anuncio-revisao.html','admin-pedidos-operacao.html','admin-verificacao.html','admin.html','carteira.html','comunidade-interna.html','comunidade.html','configuracoes.html','index.html','mensagens.html','meu-perfil.html','notificacoes.html','pedidos.html','perfil-cliente.html','perfil-profissional.html','perfil.html','resultados.html'];
+          const outside=html.filter(f=>!rankingReach.includes(f));if(outside.length)throw new Error(`source outside ranking reach ${outside}`);
+          console.log(`SOURCE CLOSURE|html=${html.join(',')||'-'}|js=${js.join(',')||'-'}|htmlCount=${html.length}|jsCount=${js.length}`);
+          console.log(`REACH GUARD PASS|rankingPages=${rankingReach.length}|sourceHtmlInsideReach=1|outside=0|trackedDirectImporters=${parents.length}|activeRankingParents=11`);
+          NODE
+          test -z "$(git status --porcelain)"
+
+      - name: Restore exact checkpoint
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "$TARGET_SHA"
+          git clean -fdx
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test -z "$(git status --porcelain)"
+          echo 'SOURCE CLOSURE V2 RESTORE PASS|productMutation=0|permanentMutation=0'
