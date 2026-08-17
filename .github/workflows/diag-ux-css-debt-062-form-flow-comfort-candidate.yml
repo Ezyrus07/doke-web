@@ -1,0 +1,150 @@
+name: Doke UX-CSS-DEBT-062 Form Flow Comfort Candidate
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-062-form-flow-comfort-candidate
+
+permissions:
+  contents: read
+
+jobs:
+  candidate:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 10a9a51cfd0a96e7c6a56eb71cf44452ddb8813f
+      PARENT_SHA: 1f2c971a2b74455dc752e68d680f8a4231d01cab
+      TARGET_FILE: assets/css/components/forms/form-flow-comfort.css
+      TARGET_BLOB: 28863e14d84271f1ce71dd87d61140555b304a22
+      IMPORTER: assets/css/pages/flow-foundation.css
+      IMPORTER_BLOB: dc5af3f258630570f7de83638044034020009ac3
+      ACTIVATOR: assets/js/components/forms/form-flow-comfort.js
+      ACTIVATOR_BLOB: 2feefdbaf1845888d900b37054d5ac2bf1259ede
+      EXPECTED_SHA256: 9ca1eb69e77d302fe4418cc055ae53f0169b05e93c6ca3a0e9c308fdbfd19325
+      EXPECTED_BYTES: 7449
+      PROOF_RUN: 32024097173
+      PROOF_JOB: 95369701530
+    steps:
+      - name: Checkout exact certified UX-CSS-DEBT-061 SHA
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+
+      - name: Guard parent identity and R6 authority
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(git hash-object "$IMPORTER")" = "$IMPORTER_BLOB"
+          test "$(git hash-object "$ACTIVATOR")" = "$ACTIVATOR_BLOB"
+          grep -q 'components/forms/form-flow-comfort.css' "$IMPORTER"
+          grep -q "document.body.classList.add('doke-form-comfort-ready')" "$ACTIVATOR"
+          test -z "$(git status --porcelain)"
+          echo "INPUT PASS|sha=$TARGET_SHA|parent=$PARENT_SHA|targetBlob=$TARGET_BLOB|importerBlob=$IMPORTER_BLOB|activatorBlob=$ACTIVATOR_BLOB|proof=$PROOF_RUN/$PROOF_JOB"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install and generate exact-parent baselines
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          npm run audit:active-legacy-structures
+          node scripts/generate-responsive-index-baseline.js
+          test -s reports/responsive-index-baseline.json
+          echo 'PARENT BASELINE PASS|active=401|high=37|responsiveBaseline=1'
+
+      - name: Rebuild exact R6-certified candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs');
+          const file=process.env.TARGET_FILE,src=fs.readFileSync(file,'utf8'),lines=src.split('\n'),row=110,expected='  margin-bottom: 16px;';
+          if((lines[row-1]||'').replace(/\r$/,'')!==expected)throw new Error(`row drift ${row}`);
+          const norm=p=>p.join(' ').replace(/\{\s*$/,'').replace(/\s+/g,' ').trim();
+          function parse(src){const ls=src.split(/\r?\n/);let depth=0,sp=[],ap=[],sel=null;const ds=[],stack=[],re=/^\s*([\w-]+)\s*:\s*(.*?)\s*;\s*$/;for(let i=0;i<ls.length;i++){const line=ls[i],t=line.trim(),o=(line.match(/\{/g)||[]).length,c=(line.match(/\}/g)||[]).length;if(!sel){if(ap.length){if(t)ap.push(t);if(line.includes('{')){stack.push({type:'at',header:norm(ap),depthBefore:depth});ap=[]}}else if(t.startsWith('@')&&!t.includes(';')){if(line.includes('{'))stack.push({type:'at',header:norm([t]),depthBefore:depth});else ap=[t]}else if(sp.length){if(t)sp.push(t);if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth})}}else if(t&&!t.startsWith('/*')&&!t.startsWith('*')&&t!=='*/'&&t!=='}'&&!t.startsWith('@')&&!line.includes(';')){sp=[t];if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth})}}}if(sel){const m=line.match(re);if(m){const raw=m[2].trim(),important=/\s*!important\s*$/i.test(raw),context=stack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');ds.push({line:i+1,selector:sel,property:m[1].toLowerCase(),value:raw,important,context})}}depth+=o-c;while(stack.length&&depth<=stack[stack.length-1].depthBefore){const p=stack.pop();if(p.type==='rule')sel=null}}const last=new Map(),dead=[];for(let i=ds.length-1;i>=0;i--){const d=ds[i],k=`${d.context} >>> ${d.selector} >>> ${d.property}`,l=last.get(k);if(l&&(!d.important||l.important))dead.push({...d,winner:l});if(!l||d.important||!l.important)last.set(k,d)}return{declarations:ds,dead}}
+          const p=parse(src);if(p.declarations.length!==114||p.dead.length!==1)throw new Error(`parent ${p.declarations.length}/${p.dead.length}`);const d=p.dead[0];if(d.line!==110||d.property!=='margin-bottom'||d.value!=='16px'||d.winner.value!=='12px'||d.important||d.winner.important)throw new Error('dead-row drift');
+          const candidate=lines.filter((_,i)=>i+1!==row).join('\n');fs.writeFileSync(file,candidate);const q=parse(candidate);if(q.declarations.length!==113||q.dead.length!==0)throw new Error(`candidate ${q.declarations.length}/${q.dead.length}`);
+          console.log(`CANDIDATE REBUILD PASS|parent=114/1|candidate=113/0|families=1|identical=0|changed=1|browserTransfer=${process.env.PROOF_RUN}/${process.env.PROOF_JOB}`);
+          NODE
+          test "$(sha256sum "$TARGET_FILE" | awk '{print $1}')" = "$EXPECTED_SHA256"
+          test "$(wc -c < "$TARGET_FILE" | tr -d ' ')" = "$EXPECTED_BYTES"
+          test "$(git diff --name-only)" = "$TARGET_FILE"
+          test "$(git diff --numstat -- "$TARGET_FILE")" = $'0\t1\t'"$TARGET_FILE"
+          git diff --quiet "$TARGET_SHA" -- '*.html' 'assets/js/**' package.json package-lock.json docs
+          git diff --check
+          echo "CANDIDATE IDENTITY PASS|sha256=$EXPECTED_SHA256|bytes=$EXPECTED_BYTES|files=1|additions=0|deletions=1|proof=$PROOF_RUN/$PROOF_JOB"
+
+      - name: Responsive contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/test-responsive-contract.js | tee /tmp/ux062-responsive.log
+          grep -q 'Checks: 893' /tmp/ux062-responsive.log
+          grep -q 'Failures: 0' /tmp/ux062-responsive.log
+          grep -q 'Skips: 277' /tmp/ux062-responsive.log
+          echo 'RESPONSIVE PASS|checks=893|failures=0|skips=277'
+
+      - name: Governance and canonical residual
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:agent-governance
+          node scripts/audit-css-responsive-conflicts.js | tee /tmp/conflicts.log
+          grep -q 'Conflicting class/property pairs: 339' /tmp/conflicts.log
+          npm run audit:shared-app-header-contract
+          npm run audit:mobile-shell-location-contract
+          npm run audit:responsive-boundaries
+          npm run audit:duplicate-assets | tee /tmp/dup.log
+          grep -q 'Duplicate groups: 0' /tmp/dup.log
+          grep -q 'Duplicated files: 0' /tmp/dup.log
+          npm run audit:domain-completion-matrix | tee /tmp/domain.log
+          grep -q 'Domains: 23' /tmp/domain.log
+          grep -q 'Critical flows: 15' /tmp/domain.log
+          grep -q 'Average maturity: 2.91/6' /tmp/domain.log
+          grep -q 'Critical blockers: 12' /tmp/domain.log
+          test "$(sha256sum docs/PAGE-ASSET-AUTHORITY-MATRIX.md | awk '{print $1}')" = "345a91bbd8c9fa54ab5f548c5f586d60cef40bf28eb10c9554050752f6431bb6"
+          test "$(sha256sum docs/HOME-AUTHORITY-CLASSIFICATION.md | awk '{print $1}')" = "b1027e88acf9a0a4b24c7870eca824b0ffbdc14fd75a6af31a86826051c58dda"
+          git checkout "$TARGET_SHA" -- docs/PAGE-ASSET-AUTHORITY-MATRIX.md docs/HOME-AUTHORITY-CLASSIFICATION.md
+          node <<'NODE'
+          const fs=require('fs'),path=require('path'),cp=require('child_process');
+          const report=JSON.parse(fs.readFileSync('reports/generated/active-legacy-structures-report.json','utf8'));const tracked=cp.execFileSync('git',['ls-files','-z','assets/css'],{encoding:'utf8'}).split('\0').filter(f=>f.endsWith('.css'));const importRe=/@import\s+(?:url\()?['"]?([^'"\);]+\.css(?:\?[^'"\)]*)?)['"]?\)?/gi,normImport=(v,from)=>{v=v.replace(/\?.*$/,'').replace(/^\.\//,'');if(v.startsWith('/'))return v.replace(/^\/+/, '');if(v.startsWith('assets/'))return v;return path.posix.normalize(path.posix.join(path.posix.dirname(from),v));};const meta=new Map();for(const f of tracked){const text=fs.readFileSync(f,'utf8'),imports=[];let m;importRe.lastIndex=0;while((m=importRe.exec(text)))imports.push(normImport(m[1],f));meta.set(f,{text,imports,size:Buffer.byteLength(text),important:(text.match(/!important/gi)||[]).length});}const active=new Set(),todo=[...new Set(report.pageAssets.flatMap(p=>p.css))].filter(f=>meta.has(f));while(todo.length){const f=todo.pop();if(active.has(f)||!meta.has(f))continue;active.add(f);for(const n of meta.get(f).imports)if(meta.has(n))todo.push(n)}const high=[...active].filter(f=>{const x=meta.get(f);return x.size>=50000||x.important>=100||x.imports.length>=10});
+          function dc(src){const lines=src.split(/\r?\n/);let depth=0,sp=[],ap=[],sel=null;const ds=[],stack=[],re=/^\s*([\w-]+)\s*:\s*(.*?)\s*;\s*$/,norm=p=>p.join(' ').replace(/\{\s*$/,'').replace(/\s+/g,' ').trim();for(let i=0;i<lines.length;i++){const line=lines[i],t=line.trim(),o=(line.match(/\{/g)||[]).length,c=(line.match(/\}/g)||[]).length;if(!sel){if(ap.length){if(t)ap.push(t);if(line.includes('{')){stack.push({type:'at',header:norm(ap),depthBefore:depth});ap=[]}}else if(t.startsWith('@')&&!t.includes(';')){if(line.includes('{'))stack.push({type:'at',header:norm([t]),depthBefore:depth});else ap=[t]}else if(sp.length){if(t)sp.push(t);if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth})}}else if(t&&!t.startsWith('/*')&&!t.startsWith('*')&&t!=='*/'&&t!=='}'&&!t.startsWith('@')&&!line.includes(';')){sp=[t];if(line.includes('{')){sel=norm(sp);sp=[];stack.push({type:'rule',selector:sel,depthBefore:depth})}}}if(sel){const m=line.match(re);if(m){const raw=m[2].trim(),important=/\s*!important\s*$/i.test(raw),context=stack.filter(x=>x.type==='at').map(x=>x.header).join(' || ');ds.push({selector:sel,property:m[1].toLowerCase(),important,context})}}depth+=o-c;while(stack.length&&depth<=stack[stack.length-1].depthBefore){const p=stack.pop();if(p.type==='rule')sel=null}}const last=new Map();let dead=0;for(let i=ds.length-1;i>=0;i--){const d=ds[i],k=`${d.context} >>> ${d.selector} >>> ${d.property}`,l=last.get(k);if(l&&(!d.important||l.important))dead++;if(!l||d.important||!l.important)last.set(k,d)}return{decl:ds.length,dead}}
+          if(active.size!==401||high.length!==37)throw new Error(`active/high ${active.size}/${high.length}`);let files=0,total=0,highDead=0;for(const f of active){const p=dc(meta.get(f).text);if(p.dead){files++;total+=p.dead;if(high.includes(f))highDead++}}const guards=[['assets/css/components/forms/form-flow-comfort.css',113,0,'062'],['assets/css/components/overlays/action-modal-system.css',264,0,'061'],['assets/css/components/overlays/financial-modal-system.css',645,0,'060'],['assets/css/components/media-lightbox.css',280,0,'059'],['assets/css/components/before-after-workers-preview/workers-mobile-fullscreen-contract.css',216,0,'058'],['assets/css/components/chat-composer.css',125,0,'057'],['assets/css/components/before-after-workers-preview/mobile-comment-sheets.css',302,0,'056'],['assets/css/patterns/settings-shell.css',104,0,'055'],['assets/css/components/before-after-workers-preview/publication-light-modal.css',75,0,'054']];if(files!==12||total!==68||highDead!==0)throw new Error(`residual ${files}/${total}/${highDead}`);for(const [f,d,dead,label] of guards){const p=dc(meta.get(f).text);if(p.decl!==d||p.dead!==dead)throw new Error(`${label} ${p.decl}/${p.dead}`)}console.log('CANONICAL RESIDUAL PASS|active=401|high=37|files=12|dead=68|highDead=0|062=113/0|061=264/0|060=645/0|059=280/0|058=216/0|057=125/0|056=302/0|055=104/0|054=75/0');
+          NODE
+          test "$(git diff --name-only)" = "$TARGET_FILE"
+          test "$(git diff --numstat -- "$TARGET_FILE")" = $'0\t1\t'"$TARGET_FILE"
+          echo 'GOVERNANCE PASS|conflicts=339|domain=23/15/2.91/12|duplicates=0/0|authorityDocSemanticDelta=0'
+
+      - name: Dependency snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +e; npm audit --json >/tmp/ux062-audit.json; code=$?; set -e
+          node <<'NODE'
+          const a=require('/tmp/ux062-audit.json'),v=a.metadata?.vulnerabilities||{};console.log(`DEPENDENCY SNAPSHOT|total=${v.total??0}|critical=${v.critical??0}|high=${v.high??0}|moderate=${v.moderate??0}|low=${v.low??0}`);if(v.total!==13||v.critical!==0||v.high!==10||v.moderate!==1||v.low!==2)process.exit(2);
+          NODE
+          echo "npmAuditExit=$code"
+
+      - name: Exact restore
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "$TARGET_SHA"
+          git clean -fdx
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(git hash-object "$IMPORTER")" = "$IMPORTER_BLOB"
+          test "$(git hash-object "$ACTIVATOR")" = "$ACTIVATOR_BLOB"
+          test -z "$(git status --porcelain)"
+          echo "CANDIDATE RESTORE PASS|sha=$TARGET_SHA|productMutation=0|permanentBranchMutation=0"
