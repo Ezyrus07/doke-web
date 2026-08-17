@@ -1,0 +1,95 @@
+name: TEMP COM-B02M Validate and Matrix Materializer
+
+on:
+  push:
+    branches: [tmp/com-b02m-validate-20260816-2246]
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout temporary branch
+        uses: actions/checkout@v4
+        with:
+          ref: tmp/com-b02m-validate-20260816-2246
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Freeze candidate lineage and temporary scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          CANDIDATE=18b391c0af226fb75ac91583a1b8d654476e78bd
+          git merge-base --is-ancestor "$CANDIDATE" HEAD
+          expected='.github/workflows/tmp-com-b02m-validate-20260816-2246.yml'
+          actual="$(git diff --name-only "$CANDIDATE" HEAD)"
+          test "$actual" = "$expected"
+          test "$(git rev-parse "$CANDIDATE":backend/modules/communities/community-command-runtime-binding-adapter-implementation.js)" = "233e241fa9da0494d0d350c9ac686168e508d2e2"
+          test "$(git rev-parse "$CANDIDATE":config/com-b02m-command-runtime-binding-adapter-implementation.json)" = "86c5aefeb3826932bd1ce7cafaddf557a5a57acc"
+          test "$(git rev-parse "$CANDIDATE":scripts/test-com-b02m-command-runtime-binding-adapter-implementation.js)" = "68de4eb458a8d4d59aa20a02731ec9e139222f62"
+          test "$(git rev-parse "$CANDIDATE":.github/workflows/com-b02m-command-runtime-binding-adapter-implementation.yml)" = "1abd4d52a7847516bba242f78319cded97874440"
+          test "$(git rev-parse "$CANDIDATE":config/domain-completion-matrix.json)" = "b9b2abbee1aed1033c122bf7f2802c7e80844623"
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Semantic and fail-closed validation
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check backend/modules/communities/community-command-runtime-binding-adapter-implementation.js
+          node --check scripts/test-com-b02m-command-runtime-binding-adapter-implementation.js
+          node scripts/test-com-b02m-command-runtime-binding-adapter-implementation.js
+          TARGET=backend/modules/communities/community-command-runtime-binding-adapter-implementation.js
+          ! grep -E 'createClient\(|\.rpc\(|\.from\(|fetch\(|process\.env|SUPABASE_SERVICE_ROLE_KEY' "$TARGET"
+          ! grep -E 'loadCanonicalState\(|claimIdempotencyKey\(|createCommunityProjectionOutcome\(|commitEventProjectionOutcome\(' "$TARGET"
+          ! grep -E '^\s*async\s+|\bawait\b' "$TARGET"
+          grep -F 'COM_B02F_ROUTE_NOT_DEPLOYED_OR_ACTIVATED' backend/modules/communities/route-handlers.js
+          test "$(git rev-parse HEAD:backend/modules/communities/route-handlers.js)" = "990ee5c8895446f44cdcd5819101f0b3d5370e63"
+          test "$(git rev-parse HEAD:backend/shared/http/module-route-loader.js)" = "7b3c897c0bf20069b733632c0b424b8664eb8cf5"
+          test "$(git rev-parse HEAD:backend/modules/communities/community-command-runtime-binding-adapter-contract.js)" = "c48eabab7bb5b37b6a1663a051b3a8a6223cd0c9"
+          test "$(git rev-parse HEAD:backend/modules/communities/community-command-handler-composition.js)" = "27b1e212c3656dd4ad5a1f2f604903ce44c8dbfb"
+          test "$(git rev-parse HEAD:backend/modules/communities/community-command-source-repository-contract.js)" = "38cd77fd6d3cf0c9f13d4c35ed000b9831481840"
+          test "$(git rev-parse HEAD:backend/modules/communities/sql/com-b02i-command-sources.sql)" = "1ff7621973be5ef38aa5e033b91f5b75216b9ec1"
+
+      - name: Generate exact Matrix derivatives
+        shell: bash
+        run: |
+          set -euo pipefail
+          SOURCE_BEFORE="$(git hash-object config/domain-completion-matrix.json)"
+          test "$SOURCE_BEFORE" = "b9b2abbee1aed1033c122bf7f2802c7e80844623"
+          npm run write:domain-completion-matrix
+          SOURCE_AFTER="$(git hash-object config/domain-completion-matrix.json)"
+          test "$SOURCE_AFTER" = "$SOURCE_BEFORE"
+          expected="$(printf '%s\n' docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json | sort)"
+          actual="$(git diff --name-only | sort)"
+          test "$actual" = "$expected"
+
+      - name: Domain Completion Matrix
+        run: npm run audit:domain-completion-matrix
+
+      - name: Agent Governance
+        run: npm run audit:agent-governance
+
+      - name: Diff hygiene
+        run: git diff --check
+
+      - name: Persist only Matrix derivatives and remove materializer
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name doke
+          git config user.email bielantoniomma@gmail.com
+          git add -f docs/DOMAIN-COMPLETION-MATRIX.md reports/generated/domain-completion-matrix-report.json
+          git rm .github/workflows/tmp-com-b02m-validate-20260816-2246.yml
+          git commit -m 'ci(com): materialize B02M Matrix derivatives'
+          git push origin HEAD:tmp/com-b02m-validate-20260816-2246
