@@ -1,0 +1,138 @@
+name: Doke UX-CSS-DEBT-061 Action Modal Proof R3
+
+on:
+  push:
+    branches:
+      - diag/ux-css-debt-061-action-modal-proof-r3
+
+permissions:
+  contents: read
+
+jobs:
+  proof-r3:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_SHA: 1f2c971a2b74455dc752e68d680f8a4231d01cab
+      PARENT_SHA: 5a93b7fdf0b61e91d6dcd3867ae98d97f94d7eb9
+      TARGET_FILE: assets/css/components/overlays/action-modal-system.css
+      TARGET_BLOB: 94227b1313fa55a56cbea342e327553b7280c6d7
+      COMMUNITY_IMPORTER: assets/css/pages/comunidade/entry-create-modals.css
+      COMMUNITY_IMPORTER_BLOB: 3307a97e05474a9f4f3bfee769a21ea3b06848f0
+      MESSAGES_IMPORTER: assets/css/pages/messaging-runtime-chat.css
+      MESSAGES_IMPORTER_BLOB: 225939d37e493d4f7d3ae3349e75866a5196a94b
+      ORDERS_IMPORTER: assets/css/pages/pedidos-runtime-page.css
+      ORDERS_IMPORTER_BLOB: 26a650eaa1212aaff334bed383c630251659aac4
+      COMMUNITY_HTML_BLOB: aeb03acca897a4949e02699c55af5c24a9f8d6f5
+      MESSAGES_HTML_BLOB: 7259ddb38a68e911af815e2d7e628ac6d70dc945
+      ORDERS_HTML_BLOB: bc97ee8dc0f08cc6f3f894aad2654c95323f9274
+    steps:
+      - name: Checkout exact certified UX-CSS-DEBT-060 SHA
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+
+      - name: Guard exact inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test "$(git hash-object "$COMMUNITY_IMPORTER")" = "$COMMUNITY_IMPORTER_BLOB"
+          test "$(git hash-object "$MESSAGES_IMPORTER")" = "$MESSAGES_IMPORTER_BLOB"
+          test "$(git hash-object "$ORDERS_IMPORTER")" = "$ORDERS_IMPORTER_BLOB"
+          test "$(git hash-object comunidade.html)" = "$COMMUNITY_HTML_BLOB"
+          test "$(git hash-object mensagens.html)" = "$MESSAGES_HTML_BLOB"
+          test "$(git hash-object pedidos.html)" = "$ORDERS_HTML_BLOB"
+          test -z "$(git status --porcelain)"
+          echo "R3 INPUT PASS|sha=$TARGET_SHA|blob=$TARGET_BLOB|importers=3|pages=3|criteriaRelaxed=0|stateSettled=1"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install Chromium and serve
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          node node_modules/@playwright/test/cli.js install chromium
+          python3 -m http.server 4175 >/tmp/ux061-r3-http.log 2>&1 &
+          echo $! >/tmp/ux061-r3-http.pid
+          sleep 1
+          curl -fsS http://127.0.0.1:4175/comunidade.html >/dev/null
+          curl -fsS http://127.0.0.1:4175/mensagens.html >/dev/null
+          curl -fsS http://127.0.0.1:4175/pedidos.html >/dev/null
+
+      - name: Browser proof with settled real DOM states
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat >/tmp/ux061-r3.js <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');
+          const {chromium}=require(process.cwd()+'/node_modules/@playwright/test');
+          const target=process.env.TARGET_FILE, original=fs.readFileSync(target,'utf8'), lines=original.split('\n');
+          const rows=new Map([[182,'  gap: 16px;'],[242,'  background: var(--doke-action-modal-soft);'],[258,'  min-height: 88px;'],[269,'  border-color: transparent;'],[271,'  box-shadow: var(--doke-visual-focus-ring);'],[307,'  background: var(--modal-surface-bg-soft);']]);
+          for(const [n,e] of rows){const a=(lines[n-1]||'').replace(/\r$/,'');if(a!==e)throw new Error(`row drift ${n}: ${JSON.stringify(a)} != ${JSON.stringify(e)}`)}
+          const candidate=lines.filter((_,i)=>!rows.has(i+1)).join('\n');
+          const hash=crypto.createHash('sha256').update(candidate).digest('hex'),bytes=Buffer.byteLength(candidate);
+          const widths=[359,430,719,720,721,1024,1280];
+          const families={body:'.doke-action-modal__body',control:'.doke-action-modal__field input, .doke-action-modal__field select, .doke-action-modal__field textarea, .doke-action-modal__money-field',textarea:'.doke-action-modal__field textarea',focus:'.doke-action-modal__field input, .doke-action-modal__field select, .doke-action-modal__field textarea, .doke-action-modal__money-field',summary:'.doke-action-modal__summary-card'};
+          const props=['display','gap','background-color','min-height','height','border-top-color','border-right-color','border-bottom-color','border-left-color','box-shadow','padding-top','padding-right','padding-bottom','padding-left','overflow-x','overflow-y'];
+          async function capture(tag){
+            const browser=await chromium.launch({headless:true});const out=[];const cover=new Set();let samples=0;
+            try{
+              for(const width of widths){
+                const ctx=await browser.newContext({viewport:{width,height:900},javaScriptEnabled:false});const page=await ctx.newPage();
+                await page.route('**/*',r=>{const u=new URL(r.request().url());if(!['127.0.0.1','localhost'].includes(u.hostname)||u.pathname.endsWith('.js'))return r.abort();return r.continue()});
+                await page.goto(`http://127.0.0.1:4175/comunidade.html?ux061=${tag}-${width}`,{waitUntil:'domcontentloaded'});
+                await page.evaluate(()=>{for(const id of ['community-request-modal','community-code-modal']){const el=document.getElementById(id);if(!el)throw new Error('missing '+id);el.hidden=false;el.removeAttribute('hidden');el.setAttribute('aria-hidden','false')}});
+                await page.waitForTimeout(500);
+                const counts=await page.evaluate(f=>Object.fromEntries(Object.entries(f).map(([k,s])=>[k,document.querySelectorAll(s).length])),families);
+                for(const [k,n] of Object.entries(counts))if(n>0)cover.add(k);if(Object.values(counts).some(n=>n===0))throw new Error(`coverage gap ${width} ${JSON.stringify(counts)}`);
+                for(const [state,sel] of [['idle',null],['focus-input','#community-action-code-input'],['focus-select','[data-community-request-role]'],['focus-textarea','[data-community-request-message]']]){
+                  if(sel)await page.focus(sel);else await page.evaluate(()=>document.activeElement?.blur?.());
+                  await page.waitForTimeout(500);
+                  const snap=await page.evaluate(({families,props})=>{const result={};for(const [k,s] of Object.entries(families)){result[k]=[...document.querySelectorAll(s)].map((el,i)=>{const cs=getComputedStyle(el),r=el.getBoundingClientRect();return{i,tag:el.tagName,id:el.id||'',cls:el.className||'',props:Object.fromEntries(props.map(p=>[p,cs.getPropertyValue(p)])),rect:[r.x,r.y,r.width,r.height].map(v=>Math.round(v*1000)/1000)}})}return{result,overflow:Math.max(0,document.documentElement.scrollWidth-document.documentElement.clientWidth)}},{families,props});
+                  samples+=Object.values(snap.result).reduce((a,v)=>a+v.length,0);out.push({page:'comunidade.html',width,state,snap});
+                }
+                await ctx.close();
+              }
+              for(const pageName of ['mensagens.html','pedidos.html']){
+                const ctx=await browser.newContext({viewport:{width:1024,height:900},javaScriptEnabled:false});const page=await ctx.newPage();
+                await page.route('**/*',r=>{const u=new URL(r.request().url());if(!['127.0.0.1','localhost'].includes(u.hostname)||u.pathname.endsWith('.js'))return r.abort();return r.continue()});
+                await page.goto(`http://127.0.0.1:4175/${pageName}?ux061=${tag}`,{waitUntil:'domcontentloaded'});await page.waitForTimeout(500);
+                const counts=await page.evaluate(f=>Object.fromEntries(Object.entries(f).map(([k,s])=>[k,document.querySelectorAll(s).length])),families);if(Object.values(counts).some(Boolean))throw new Error(`${pageName} zero-match drift ${JSON.stringify(counts)}`);out.push({page:pageName,width:1024,state:'zero-match',counts});await ctx.close();
+              }
+            }finally{await browser.close()}
+            if(cover.size!==5)throw new Error(`family coverage ${cover.size}/5`);console.log(`COVERAGE|${tag}|families=5/5|viewports=7|states=4|samples=${samples}|zeroMatchConsumers=2/2|boundary=719/720/721`);return out;
+          }
+          (async()=>{try{fs.writeFileSync(target,original);const p=await capture('parent');fs.writeFileSync(target,candidate);const c=await capture('candidate');const a=JSON.stringify(p),b=JSON.stringify(c);if(a!==b){let i=0;while(i<a.length&&i<b.length&&a[i]===b[i])i++;throw new Error(`semantic drift idx=${i} parent=${a.slice(i,i+700)} candidate=${b.slice(i,i+700)}`)}const maxOverflow=Math.max(0,...p.filter(x=>x.snap).map(x=>x.snap.overflow));console.log(`BROWSER SEMANTIC PARITY PASS|pages=3|realDomPage=1|zeroMatchConsumers=2|families=5/5|viewports=7|states=4|snapshots=${p.length}|runtimeDiffs=0|maxOverflow=${maxOverflow}|boundary=719/720/721|stateWaitMs=500|criteriaRelaxed=0`);console.log(`CANDIDATE IDENTITY|sha256=${hash}|bytes=${bytes}|declarations=264|superseded=0|files=1|additions=0|deletions=6`);fs.writeFileSync(target,candidate)}catch(e){fs.writeFileSync(target,original);throw e}})().catch(e=>{console.error(e.stack||e);process.exit(1)});
+          NODE
+          node --check /tmp/ux061-r3.js
+          node /tmp/ux061-r3.js | tee /tmp/ux061-r3.log
+          grep -q 'COVERAGE|parent|families=5/5|viewports=7|states=4' /tmp/ux061-r3.log
+          grep -q 'COVERAGE|candidate|families=5/5|viewports=7|states=4' /tmp/ux061-r3.log
+          grep -q 'BROWSER SEMANTIC PARITY PASS|pages=3|realDomPage=1|zeroMatchConsumers=2|families=5/5|viewports=7|states=4' /tmp/ux061-r3.log
+          grep -q 'criteriaRelaxed=0' /tmp/ux061-r3.log
+          test "$(git diff --name-only)" = "$TARGET_FILE"
+          test "$(git diff --numstat -- "$TARGET_FILE")" = $'0\t6\t'"$TARGET_FILE"
+          git diff --check
+          echo 'R3 PROOF PASS|browserRequired=1|criteriaRelaxed=0|realProductDOM=1|syntheticDOM=0|stateSettled=1|candidateLeftForDiff=1'
+
+      - name: Exact restore
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if test -f /tmp/ux061-r3-http.pid; then kill "$(cat /tmp/ux061-r3-http.pid)" 2>/dev/null || true; fi
+          git reset --hard "$TARGET_SHA"
+          git clean -fdx
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          test "$(git rev-parse HEAD^)" = "$PARENT_SHA"
+          test "$(git hash-object "$TARGET_FILE")" = "$TARGET_BLOB"
+          test -z "$(git status --porcelain)"
+          echo "R3 RESTORE PASS|sha=$TARGET_SHA|productMutation=0|permanentBranchMutation=0"
